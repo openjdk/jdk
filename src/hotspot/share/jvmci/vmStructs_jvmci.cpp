@@ -263,8 +263,6 @@
                                                                                                                                      \
   static_field(os,                             _polling_page,                                 address)                               \
                                                                                                                                      \
-  volatile_nonstatic_field(OSThread,           _interrupted,                                  jint)                                  \
-                                                                                                                                     \
   static_field(StubRoutines,                _verify_oop_count,                                jint)                                  \
                                                                                                                                      \
   static_field(StubRoutines,                _throw_delayed_StackOverflowError_entry,          address)                               \
@@ -641,7 +639,6 @@
   declare_function(JVMCIRuntime::dynamic_new_array_or_null) \
   declare_function(JVMCIRuntime::dynamic_new_instance_or_null) \
   \
-  declare_function(JVMCIRuntime::thread_is_interrupted) \
   declare_function(JVMCIRuntime::vm_message) \
   declare_function(JVMCIRuntime::identity_hash_code) \
   declare_function(JVMCIRuntime::exception_handler_for_pc) \

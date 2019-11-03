@@ -315,7 +315,7 @@ public class GraalHotSpotVMConfig extends GraalHotSpotVMConfigBase {
     public final int javaThreadAnchorOffset = getFieldOffset("JavaThread::_anchor", Integer.class, "JavaFrameAnchor");
     public final int javaThreadShouldPostOnExceptionsFlagOffset = getFieldOffset("JavaThread::_should_post_on_exceptions_flag", Integer.class, "int", Integer.MIN_VALUE);
     public final int threadObjectOffset = getFieldOffset("JavaThread::_threadObj", Integer.class, "oop");
-    public final int osThreadOffset = getFieldOffset("JavaThread::_osthread", Integer.class, "OSThread*");
+    public final int osThreadOffset = getFieldOffset("JavaThread::_osthread", Integer.class, "OSThread*", Integer.MAX_VALUE);
     public final int threadIsMethodHandleReturnOffset = getFieldOffset("JavaThread::_is_method_handle_return", Integer.class, "int");
     public final int threadObjectResultOffset = getFieldOffset("JavaThread::_vm_result", Integer.class, "oop");
     public final int jvmciCountersThreadOffset = getFieldOffset("JavaThread::_jvmci_counters", Integer.class, "jlong*");
@@ -419,7 +419,7 @@ public class GraalHotSpotVMConfig extends GraalHotSpotVMConfigBase {
     public final int frameInterpreterFrameSenderSpOffset = getConstant("frame::interpreter_frame_sender_sp_offset", Integer.class, intRequiredOnAMD64);
     public final int frameInterpreterFrameLastSpOffset = getConstant("frame::interpreter_frame_last_sp_offset", Integer.class, intRequiredOnAMD64);
 
-    public final int osThreadInterruptedOffset = getFieldOffset("OSThread::_interrupted", Integer.class, "jint");
+    public final int osThreadInterruptedOffset = getFieldOffset("OSThread::_interrupted", Integer.class, "jint", Integer.MAX_VALUE);
 
     public final long markWordHashShift = getConstant(markWordField("hash_shift"), Long.class);
 
@@ -714,7 +714,6 @@ public class GraalHotSpotVMConfig extends GraalHotSpotVMConfigBase {
         return true;
     }
 
-    public final long threadIsInterruptedAddress = getAddress("JVMCIRuntime::thread_is_interrupted");
     public final long vmMessageAddress = getAddress("JVMCIRuntime::vm_message");
     public final long identityHashCodeAddress = getAddress("JVMCIRuntime::identity_hash_code");
     public final long exceptionHandlerForPcAddress = getAddress("JVMCIRuntime::exception_handler_for_pc");

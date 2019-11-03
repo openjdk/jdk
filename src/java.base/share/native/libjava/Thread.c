@@ -51,7 +51,6 @@ static JNINativeMethod methods[] = {
     {"sleep",            "(J)V",       (void *)&JVM_Sleep},
     {"currentThread",    "()" THD,     (void *)&JVM_CurrentThread},
     {"interrupt0",       "()V",        (void *)&JVM_Interrupt},
-    {"isInterrupted",    "(Z)Z",       (void *)&JVM_IsInterrupted},
     {"holdsLock",        "(" OBJ ")Z", (void *)&JVM_HoldsLock},
     {"getThreads",        "()[" THD,   (void *)&JVM_GetAllThreads},
     {"dumpThreads",      "([" THD ")[[" STE, (void *)&JVM_DumpThreads},
@@ -67,4 +66,13 @@ JNIEXPORT void JNICALL
 Java_java_lang_Thread_registerNatives(JNIEnv *env, jclass cls)
 {
     (*env)->RegisterNatives(env, cls, methods, ARRAY_LENGTH(methods));
+}
+
+JNIEXPORT void JNICALL
+Java_java_lang_Thread_clearInterruptEvent(JNIEnv *env, jclass cls)
+{
+#if defined(_WIN32)
+    // Need to reset the interrupt event used by Process.waitFor
+    ResetEvent((HANDLE) JVM_GetThreadInterruptEvent());
+#endif
 }

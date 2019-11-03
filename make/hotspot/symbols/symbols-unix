@@ -142,7 +142,6 @@ JVM_InvokeMethod
 JVM_IsArrayClass
 JVM_IsConstructorIx
 JVM_IsInterface
-JVM_IsInterrupted
 JVM_IsPrimitiveClass
 JVM_IsSameClassPackage
 JVM_IsSupportedJNIVersion

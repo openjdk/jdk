@@ -264,7 +264,6 @@ class LibraryCallKit : public GraphKit {
   bool inline_native_classID();
   bool inline_native_getEventWriter();
 #endif
-  bool inline_native_isInterrupted();
   bool inline_native_Class_query(vmIntrinsics::ID id);
   bool inline_native_subtype_check();
   bool inline_native_getLength();
@@ -752,7 +751,6 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_onSpinWait:               return inline_onspinwait();
 
   case vmIntrinsics::_currentThread:            return inline_native_currentThread();
-  case vmIntrinsics::_isInterrupted:            return inline_native_isInterrupted();
 
 #ifdef JFR_HAVE_INTRINSICS
   case vmIntrinsics::_counterTime:              return inline_native_time_funcs(CAST_FROM_FN_PTR(address, JFR_TIME_FUNCTION), "counterTime");
@@ -3038,128 +3036,6 @@ bool LibraryCallKit::inline_native_getEventWriter() {
 bool LibraryCallKit::inline_native_currentThread() {
   Node* junk = NULL;
   set_result(generate_current_thread(junk));
-  return true;
-}
-
-//------------------------inline_native_isInterrupted------------------
-// private native boolean java.lang.Thread.isInterrupted(boolean ClearInterrupted);
-bool LibraryCallKit::inline_native_isInterrupted() {
-  // Add a fast path to t.isInterrupted(clear_int):
-  //   (t == Thread.current() &&
-  //    (!TLS._osthread._interrupted || WINDOWS_ONLY(false) NOT_WINDOWS(!clear_int)))
-  //   ? TLS._osthread._interrupted : /*slow path:*/ t.isInterrupted(clear_int)
-  // So, in the common case that the interrupt bit is false,
-  // we avoid making a call into the VM.  Even if the interrupt bit
-  // is true, if the clear_int argument is false, we avoid the VM call.
-  // However, if the receiver is not currentThread, we must call the VM,
-  // because there must be some locking done around the operation.
-
-  // We only go to the fast case code if we pass two guards.
-  // Paths which do not pass are accumulated in the slow_region.
-
-  enum {
-    no_int_result_path   = 1, // t == Thread.current() && !TLS._osthread._interrupted
-    no_clear_result_path = 2, // t == Thread.current() &&  TLS._osthread._interrupted && !clear_int
-    slow_result_path     = 3, // slow path: t.isInterrupted(clear_int)
-    PATH_LIMIT
-  };
-
-  // Ensure that it's not possible to move the load of TLS._osthread._interrupted flag
-  // out of the function.
-  insert_mem_bar(Op_MemBarCPUOrder);
-
-  RegionNode* result_rgn = new RegionNode(PATH_LIMIT);
-  PhiNode*    result_val = new PhiNode(result_rgn, TypeInt::BOOL);
-
-  RegionNode* slow_region = new RegionNode(1);
-  record_for_igvn(slow_region);
-
-  // (a) Receiving thread must be the current thread.
-  Node* rec_thr = argument(0);
-  Node* tls_ptr = NULL;
-  Node* cur_thr = generate_current_thread(tls_ptr);
-
-  // Resolve oops to stable for CmpP below.
-  cur_thr = access_resolve(cur_thr, 0);
-  rec_thr = access_resolve(rec_thr, 0);
-
-  Node* cmp_thr = _gvn.transform(new CmpPNode(cur_thr, rec_thr));
-  Node* bol_thr = _gvn.transform(new BoolNode(cmp_thr, BoolTest::ne));
-
-  generate_slow_guard(bol_thr, slow_region);
-
-  // (b) Interrupt bit on TLS must be false.
-  Node* p = basic_plus_adr(top()/*!oop*/, tls_ptr, in_bytes(JavaThread::osthread_offset()));
-  Node* osthread = make_load(NULL, p, TypeRawPtr::NOTNULL, T_ADDRESS, MemNode::unordered);
-  p = basic_plus_adr(top()/*!oop*/, osthread, in_bytes(OSThread::interrupted_offset()));
-
-  // Set the control input on the field _interrupted read to prevent it floating up.
-  Node* int_bit = make_load(control(), p, TypeInt::BOOL, T_INT, MemNode::unordered);
-  Node* cmp_bit = _gvn.transform(new CmpINode(int_bit, intcon(0)));
-  Node* bol_bit = _gvn.transform(new BoolNode(cmp_bit, BoolTest::ne));
-
-  IfNode* iff_bit = create_and_map_if(control(), bol_bit, PROB_UNLIKELY_MAG(3), COUNT_UNKNOWN);
-
-  // First fast path:  if (!TLS._interrupted) return false;
-  Node* false_bit = _gvn.transform(new IfFalseNode(iff_bit));
-  result_rgn->init_req(no_int_result_path, false_bit);
-  result_val->init_req(no_int_result_path, intcon(0));
-
-  // drop through to next case
-  set_control( _gvn.transform(new IfTrueNode(iff_bit)));
-
-#ifndef _WINDOWS
-  // (c) Or, if interrupt bit is set and clear_int is false, use 2nd fast path.
-  Node* clr_arg = argument(1);
-  Node* cmp_arg = _gvn.transform(new CmpINode(clr_arg, intcon(0)));
-  Node* bol_arg = _gvn.transform(new BoolNode(cmp_arg, BoolTest::ne));
-  IfNode* iff_arg = create_and_map_if(control(), bol_arg, PROB_FAIR, COUNT_UNKNOWN);
-
-  // Second fast path:  ... else if (!clear_int) return true;
-  Node* false_arg = _gvn.transform(new IfFalseNode(iff_arg));
-  result_rgn->init_req(no_clear_result_path, false_arg);
-  result_val->init_req(no_clear_result_path, intcon(1));
-
-  // drop through to next case
-  set_control( _gvn.transform(new IfTrueNode(iff_arg)));
-#else
-  // To return true on Windows you must read the _interrupted field
-  // and check the event state i.e. take the slow path.
-#endif // _WINDOWS
-
-  // (d) Otherwise, go to the slow path.
-  slow_region->add_req(control());
-  set_control( _gvn.transform(slow_region));
-
-  if (stopped()) {
-    // There is no slow path.
-    result_rgn->init_req(slow_result_path, top());
-    result_val->init_req(slow_result_path, top());
-  } else {
-    // non-virtual because it is a private non-static
-    CallJavaNode* slow_call = generate_method_call(vmIntrinsics::_isInterrupted);
-
-    Node* slow_val = set_results_for_java_call(slow_call);
-    // this->control() comes from set_results_for_java_call
-
-    Node* fast_io  = slow_call->in(TypeFunc::I_O);
-    Node* fast_mem = slow_call->in(TypeFunc::Memory);
-
-    // These two phis are pre-filled with copies of of the fast IO and Memory
-    PhiNode* result_mem  = PhiNode::make(result_rgn, fast_mem, Type::MEMORY, TypePtr::BOTTOM);
-    PhiNode* result_io   = PhiNode::make(result_rgn, fast_io,  Type::ABIO);
-
-    result_rgn->init_req(slow_result_path, control());
-    result_io ->init_req(slow_result_path, i_o());
-    result_mem->init_req(slow_result_path, reset_memory());
-    result_val->init_req(slow_result_path, slow_val);
-
-    set_all_memory(_gvn.transform(result_mem));
-    set_i_o(       _gvn.transform(result_io));
-  }
-
-  C->set_has_split_ifs(true); // Has chance for split-if optimization
-  set_result(result_rgn, result_val);
   return true;
 }
 

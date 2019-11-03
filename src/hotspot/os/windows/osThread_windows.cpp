@@ -39,28 +39,15 @@ void OSThread::pd_destroy() {
   }
 }
 
-// We need to specialize these to interact with the _interrupt_event.
-
-volatile bool OSThread::interrupted() {
-  return _interrupted != 0 &&
-    (WaitForSingleObject(_interrupt_event, 0) == WAIT_OBJECT_0);
-}
+// We need to specialize this to interact with the _interrupt_event.
 
 void OSThread::set_interrupted(bool z) {
   if (z) {
-    _interrupted = 1;
-    // More than one thread can get here with the same value of osthread,
-    // resulting in multiple notifications.  We do, however, want the store
-    // to interrupted() to be visible to other threads before we post
-    // the interrupt event.
-    OrderAccess::release();
     SetEvent(_interrupt_event);
   }
   else {
     // We should only ever clear the interrupt if we are in fact interrupted,
     // and this can only be done by the current thread on itself.
-    assert(_interrupted == 1, "invariant for clearing interrupt state");
-    _interrupted = 0;
     ResetEvent(_interrupt_event);
   }
 }

@@ -3065,21 +3065,6 @@ JVM_ENTRY(void, JVM_Interrupt(JNIEnv* env, jobject jthread))
 JVM_END
 
 
-JVM_ENTRY(jboolean, JVM_IsInterrupted(JNIEnv* env, jobject jthread, jboolean clear_interrupted))
-  JVMWrapper("JVM_IsInterrupted");
-
-  ThreadsListHandle tlh(thread);
-  JavaThread* receiver = NULL;
-  bool is_alive = tlh.cv_internal_thread_to_JavaThread(jthread, &receiver, NULL);
-  if (is_alive) {
-    // jthread refers to a live JavaThread.
-    return (jboolean) receiver->is_interrupted(clear_interrupted != 0);
-  } else {
-    return JNI_FALSE;
-  }
-JVM_END
-
-
 // Return true iff the current thread has locked the object passed in
 
 JVM_ENTRY(jboolean, JVM_HoldsLock(JNIEnv* env, jclass threadClass, jobject obj))

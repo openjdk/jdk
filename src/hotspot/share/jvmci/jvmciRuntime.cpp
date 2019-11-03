@@ -620,21 +620,6 @@ JRT_ENTRY(jint, JVMCIRuntime::identity_hash_code(JavaThread* thread, oopDesc* ob
   return (jint) obj->identity_hash();
 JRT_END
 
-JRT_ENTRY(jboolean, JVMCIRuntime::thread_is_interrupted(JavaThread* thread, oopDesc* receiver, jboolean clear_interrupted))
-  Handle receiverHandle(thread, receiver);
-  // A nested ThreadsListHandle may require the Threads_lock which
-  // requires thread_in_vm which is why this method cannot be JRT_LEAF.
-  ThreadsListHandle tlh;
-
-  JavaThread* receiverThread = java_lang_Thread::thread(receiverHandle());
-  if (receiverThread == NULL || (EnableThreadSMRExtraValidityChecks && !tlh.includes(receiverThread))) {
-    // The other thread may exit during this process, which is ok so return false.
-    return JNI_FALSE;
-  } else {
-    return (jint) receiverThread->is_interrupted(clear_interrupted != 0);
-  }
-JRT_END
-
 JRT_ENTRY(jint, JVMCIRuntime::test_deoptimize_call_int(JavaThread* thread, int value))
   deopt_caller();
   return (jint) value;

@@ -441,7 +441,10 @@ public class HotSpotGraphBuilderPlugins {
             }
         });
 
-        r.registerMethodSubstitution(ThreadSubstitutions.class, "isInterrupted", Receiver.class, boolean.class);
+        if (config.osThreadInterruptedOffset != Integer.MAX_VALUE) {
+            r.registerMethodSubstitution(ThreadSubstitutions.class, "isInterrupted", Receiver.class, boolean.class);
+        }
+
     }
 
     public static final String reflectionClass;

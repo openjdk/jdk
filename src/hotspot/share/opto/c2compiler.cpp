@@ -582,7 +582,6 @@ bool C2Compiler::is_intrinsic_supported(const methodHandle& method, bool is_virt
   case vmIntrinsics::_storeFence:
   case vmIntrinsics::_fullFence:
   case vmIntrinsics::_currentThread:
-  case vmIntrinsics::_isInterrupted:
 #ifdef JFR_HAVE_INTRINSICS
   case vmIntrinsics::_counterTime:
   case vmIntrinsics::_getClassId:

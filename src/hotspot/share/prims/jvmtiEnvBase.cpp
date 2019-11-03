@@ -1214,8 +1214,7 @@ VM_GetMultipleStackTraces::fill_frames(jthread jt, JavaThread *thr, oop thread_o
     if (jts == _thread_in_native) {
       state |= JVMTI_THREAD_STATE_IN_NATIVE;
     }
-    OSThread* osThread = thr->osthread();
-    if (osThread != NULL && osThread->interrupted()) {
+    if (thr->is_interrupted(false)) {
       state |= JVMTI_THREAD_STATE_INTERRUPTED;
     }
   }

@@ -568,7 +568,6 @@ bool vmIntrinsics::is_disabled_by_flags(vmIntrinsics::ID id) {
     if (!InlineClassNatives) return true;
     break;
   case vmIntrinsics::_currentThread:
-  case vmIntrinsics::_isInterrupted:
     if (!InlineThreadNatives) return true;
     break;
   case vmIntrinsics::_floatToRawIntBits:

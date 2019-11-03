@@ -62,12 +62,6 @@ class OSThread: public CHeapObj<mtThread> {
   OSThreadStartFunc _start_proc;  // Thread start routine
   void* _start_parm;              // Thread start routine parameter
   volatile ThreadState _state;    // Thread state *hint*
-  volatile jint _interrupted;     // Thread.isInterrupted state
-
-  // Note:  _interrupted must be jint, so that Java intrinsics can access it.
-  // The value stored there must be either 0 or 1.  It must be possible
-  // for Java to emulate Thread.currentThread().isInterrupted() by performing
-  // the double indirection Thread::current()->_osthread->_interrupted.
 
   // Methods
  public:
@@ -82,17 +76,13 @@ class OSThread: public CHeapObj<mtThread> {
   void set_start_proc(OSThreadStartFunc start_proc) { _start_proc = start_proc; }
   void* start_parm() const                          { return _start_parm; }
   void set_start_parm(void* start_parm)             { _start_parm = start_parm; }
-  // These are specialized on Windows.
+  // This is specialized on Windows.
 #ifndef _WINDOWS
-  volatile bool interrupted() const                 { return _interrupted != 0; }
-  void set_interrupted(bool z)                      { _interrupted = z ? 1 : 0; }
+  void set_interrupted(bool z)                      { /* nothing to do */ }
 #endif
   // Printing
   void print_on(outputStream* st) const;
   void print() const;
-
-  // For java intrinsics:
-  static ByteSize interrupted_offset()            { return byte_offset_of(OSThread, _interrupted); }
 
   // Platform dependent stuff
 #include OS_HEADER(osThread)

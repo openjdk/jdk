@@ -56,6 +56,7 @@
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/init.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
@@ -1634,6 +1635,7 @@ int java_lang_Thread::_contextClassLoader_offset = 0;
 int java_lang_Thread::_inheritedAccessControlContext_offset = 0;
 int java_lang_Thread::_priority_offset = 0;
 int java_lang_Thread::_eetop_offset = 0;
+int java_lang_Thread::_interrupted_offset = 0;
 int java_lang_Thread::_daemon_offset = 0;
 int java_lang_Thread::_stillborn_offset = 0;
 int java_lang_Thread::_stackSize_offset = 0;
@@ -1649,6 +1651,7 @@ int java_lang_Thread::_park_blocker_offset = 0;
   macro(_priority_offset,      k, vmSymbols::priority_name(), int_signature, false); \
   macro(_daemon_offset,        k, vmSymbols::daemon_name(), bool_signature, false); \
   macro(_eetop_offset,         k, "eetop", long_signature, false); \
+  macro(_interrupted_offset,   k, "interrupted", bool_signature, false); \
   macro(_stillborn_offset,     k, "stillborn", bool_signature, false); \
   macro(_stackSize_offset,     k, "stackSize", long_signature, false); \
   macro(_tid_offset,           k, "tid", long_signature, false); \
@@ -1675,6 +1678,21 @@ JavaThread* java_lang_Thread::thread(oop java_thread) {
 
 void java_lang_Thread::set_thread(oop java_thread, JavaThread* thread) {
   java_thread->address_field_put(_eetop_offset, (address)thread);
+}
+
+bool java_lang_Thread::interrupted(oop java_thread) {
+#if INCLUDE_JFR
+  if (java_thread == NULL) {
+    // can happen from Jfr::on_vm_init leading to call of JavaThread::sleep
+    assert(!is_init_completed(), "should only happen during init");
+    return false;
+  }
+#endif
+  return java_thread->bool_field_volatile(_interrupted_offset);
+}
+
+void java_lang_Thread::set_interrupted(oop java_thread, bool val) {
+  java_thread->bool_field_put_volatile(_interrupted_offset, val);
 }
 
 

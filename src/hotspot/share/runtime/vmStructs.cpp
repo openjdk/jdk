@@ -786,7 +786,6 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
   /* OSThread */                                                                                                                     \
   /************/                                                                                                                     \
                                                                                                                                      \
-  volatile_nonstatic_field(OSThread,           _interrupted,                                  jint)                                  \
   volatile_nonstatic_field(OSThread,           _state,                                        ThreadState)                           \
                                                                                                                                      \
   /************************/                                                                                                         \

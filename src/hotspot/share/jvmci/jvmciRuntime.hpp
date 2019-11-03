@@ -309,7 +309,6 @@ class JVMCIRuntime: public CHeapObj<mtJVMCI> {
   static void dynamic_new_array_or_null(JavaThread* thread, oopDesc* element_mirror, jint length) { dynamic_new_array_common(thread, element_mirror, length, true); }
   static void dynamic_new_instance_or_null(JavaThread* thread, oopDesc* type_mirror) { dynamic_new_instance_common(thread, type_mirror, true); }
 
-  static jboolean thread_is_interrupted(JavaThread* thread, oopDesc* obj, jboolean clear_interrupted);
   static void vm_message(jboolean vmError, jlong format, jlong v1, jlong v2, jlong v3);
   static jint identity_hash_code(JavaThread* thread, oopDesc* obj);
   static address exception_handler_for_pc(JavaThread* thread);
