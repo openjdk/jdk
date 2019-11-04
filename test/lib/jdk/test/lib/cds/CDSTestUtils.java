@@ -601,4 +601,64 @@ public class CDSTestUtils {
         ps.close();
         fos.close();
     }
+
+    // Format a line that defines an extra symbol in the file specify by -XX:SharedArchiveConfigFile=<file>
+    public static String formatArchiveConfigSymbol(String symbol) {
+        int refCount = -1; // This is always -1 in the current HotSpot implementation.
+        if (isAsciiPrintable(symbol)) {
+            return symbol.length() + " " + refCount + ": " + symbol;
+        } else {
+            StringBuilder sb = new StringBuilder();
+            int utf8_length = escapeArchiveConfigString(sb, symbol);
+            return utf8_length + " " + refCount + ": " + sb.toString();
+        }
+    }
+
+    // This method generates the same format as HashtableTextDump::put_utf8() in HotSpot,
+    // to be used by -XX:SharedArchiveConfigFile=<file>.
+    private static int escapeArchiveConfigString(StringBuilder sb, String s) {
+        byte arr[];
+        try {
+            arr = s.getBytes("UTF8");
+        } catch (java.io.UnsupportedEncodingException e) {
+            throw new RuntimeException("Unexpected", e);
+        }
+        for (int i = 0; i < arr.length; i++) {
+            char ch = (char)(arr[i] & 0xff);
+            if (isAsciiPrintable(ch)) {
+                sb.append(ch);
+            } else if (ch == '\t') {
+                sb.append("\\t");
+            } else if (ch == '\r') {
+                sb.append("\\r");
+            } else if (ch == '\n') {
+                sb.append("\\n");
+            } else if (ch == '\\') {
+                sb.append("\\\\");
+            } else {
+                String hex = Integer.toHexString(ch);
+                if (ch < 16) {
+                    sb.append("\\x0");
+                } else {
+                    sb.append("\\x");
+                }
+                sb.append(hex);
+            }
+        }
+
+        return arr.length;
+    }
+
+    private static boolean isAsciiPrintable(String s) {
+        for (int i = 0; i < s.length(); i++) {
+            if (!isAsciiPrintable(s.charAt(i))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static boolean isAsciiPrintable(char ch) {
+        return ch >= 32 && ch < 127;
+    }
 }
