@@ -148,7 +148,6 @@ JVM_IsSupportedJNIVersion
 JVM_IsThreadAlive
 JVM_IsVMGeneratedMethodIx
 JVM_LatestUserDefinedLoader
-JVM_LinkClass
 JVM_LoadLibrary
 JVM_MaxMemory
 JVM_MaxObjectInspectionAge

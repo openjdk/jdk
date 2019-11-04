@@ -346,11 +346,6 @@ JVM_GetCallerClass(JNIEnv *env);
 JNIEXPORT jclass JNICALL
 JVM_FindPrimitiveClass(JNIEnv *env, const char *utf);
 
-/*
- * Link the 'arg' class
- */
-JNIEXPORT void JNICALL
-JVM_LinkClass(JNIEnv *env, jclass classClass, jclass arg);
 
 /*
  * Find a class from a boot class loader. Returns NULL if class not found.

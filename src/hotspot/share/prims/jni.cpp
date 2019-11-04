@@ -419,7 +419,7 @@ JNI_ENTRY(jclass, jni_FindClass(JNIEnv *env, const char *name))
   }
 
   TempNewSymbol sym = SymbolTable::new_symbol(name);
-  result = find_class_from_class_loader(env, sym, true, true, loader,
+  result = find_class_from_class_loader(env, sym, true, loader,
                                         protection_domain, true, thread);
 
   if (log_is_enabled(Debug, class, resolve) && result != NULL) {
@@ -3208,7 +3208,7 @@ static jclass lookupOne(JNIEnv* env, const char* name, TRAPS) {
   Handle protection_domain; // null protection domain
 
   TempNewSymbol sym = SymbolTable::new_symbol(name);
-  jclass result =  find_class_from_class_loader(env, sym, true, true, loader, protection_domain, true, CHECK_NULL);
+  jclass result =  find_class_from_class_loader(env, sym, true, loader, protection_domain, true, CHECK_NULL);
 
   if (log_is_enabled(Debug, class, resolve) && result != NULL) {
     trace_class_resolution(java_lang_Class::as_Klass(JNIHandles::resolve_non_null(result)));
