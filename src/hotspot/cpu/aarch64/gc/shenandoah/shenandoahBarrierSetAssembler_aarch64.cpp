@@ -443,8 +443,9 @@ void ShenandoahBarrierSetAssembler::try_resolve_jobject_in_native(MacroAssembler
   __ cbz(obj, done);
 
   assert(obj != rscratch2, "need rscratch2");
-  Address gc_state(rthread, in_bytes(ShenandoahThreadLocalData::gc_state_offset()));
-  __ ldrb(rscratch2, gc_state);
+  Address gc_state(jni_env, ShenandoahThreadLocalData::gc_state_offset() - JavaThread::jni_environment_offset());
+  __ lea(rscratch2, gc_state);
+  __ ldrb(rscratch2, Address(rscratch2));
 
   // Check for heap in evacuation phase
   __ tbnz(rscratch2, ShenandoahHeap::EVACUATION_BITPOS, slowpath);
