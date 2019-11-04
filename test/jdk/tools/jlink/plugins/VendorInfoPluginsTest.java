@@ -87,8 +87,8 @@ public class VendorInfoPluginsTest {
                                              "--version");
         oa.stderrShouldMatch("^ +java.vendor.url.bug = " + BUG_URL + "$");
         oa.stderrShouldMatch("^ +java.vendor.version = " + VERSION + "$");
-        oa.stdoutShouldMatch("^.*Runtime Environment " + VERSION + " \\(build.*$");
-        oa.stdoutShouldMatch("^.*Server VM " + VERSION + " \\(build.*$");
+        oa.stdoutShouldMatch("^.*Runtime Environment " + VERSION + " \\(.*build.*$");
+        oa.stdoutShouldMatch("^.*VM " + VERSION + " \\(.*build.*$");
 
         // VM error log
         oa = ProcessTools.executeProcess(launcher,
@@ -97,7 +97,7 @@ public class VendorInfoPluginsTest {
                                          "VendorInfoPluginsTest$Crasher");
         oa.stdoutShouldMatch("^# +" + VM_BUG_URL + "$");
         oa.stdoutShouldMatch("^.*Runtime Environment " + VERSION + " \\(.*$");
-        oa.stdoutShouldMatch("^.*Server VM " + VERSION + " \\(.*$");
+        oa.stdoutShouldMatch("^.*VM " + VERSION + " \\(.*$");
 
     }
 
