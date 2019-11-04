@@ -74,11 +74,8 @@ import static com.sun.tools.javac.code.Kinds.*;
 import static com.sun.tools.javac.code.Kinds.Kind.*;
 import static com.sun.tools.javac.code.TypeTag.*;
 import static com.sun.tools.javac.code.TypeTag.WILDCARD;
-import com.sun.tools.javac.comp.Analyzer.AnalyzerMode;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticFlag;
-import com.sun.tools.javac.util.Log.DeferredDiagnosticHandler;
-import com.sun.tools.javac.util.Log.DiscardDiagnosticHandler;
 
 /** This is the main context-dependent analysis phase in GJC. It
  *  encompasses name resolution, type checking and constant folding as
@@ -394,35 +391,20 @@ public class Attr extends JCTree.Visitor {
     }
 
     public Env<AttrContext> attribExprToTree(JCTree expr, Env<AttrContext> env, JCTree tree) {
-        breakTree = tree;
-        JavaFileObject prev = log.useSource(env.toplevel.sourcefile);
-        EnumSet<AnalyzerMode> analyzerModes = EnumSet.copyOf(analyzer.analyzerModes);
-        try {
-            analyzer.analyzerModes.clear();
-            attribExpr(expr, env);
-        } catch (BreakAttr b) {
-            return b.env;
-        } catch (AssertionError ae) {
-            if (ae.getCause() instanceof BreakAttr) {
-                return ((BreakAttr)(ae.getCause())).env;
-            } else {
-                throw ae;
-            }
-        } finally {
-            breakTree = null;
-            log.useSource(prev);
-            analyzer.analyzerModes.addAll(analyzerModes);
-        }
-        return env;
+        return attribToTree(expr, env, tree, unknownExprInfo);
     }
 
     public Env<AttrContext> attribStatToTree(JCTree stmt, Env<AttrContext> env, JCTree tree) {
+        return attribToTree(stmt, env, tree, statInfo);
+    }
+
+    private Env<AttrContext> attribToTree(JCTree root, Env<AttrContext> env, JCTree tree, ResultInfo resultInfo) {
         breakTree = tree;
         JavaFileObject prev = log.useSource(env.toplevel.sourcefile);
-        EnumSet<AnalyzerMode> analyzerModes = EnumSet.copyOf(analyzer.analyzerModes);
         try {
-            analyzer.analyzerModes.clear();
-            attribStat(stmt, env);
+            deferredAttr.attribSpeculative(root, env, resultInfo,
+                    null, DeferredAttr.AttributionMode.ANALYZER,
+                    argumentAttr.withLocalCacheContext());
         } catch (BreakAttr b) {
             return b.env;
         } catch (AssertionError ae) {
@@ -434,7 +416,6 @@ public class Attr extends JCTree.Visitor {
         } finally {
             breakTree = null;
             log.useSource(prev);
-            analyzer.analyzerModes.addAll(analyzerModes);
         }
         return env;
     }
@@ -1273,7 +1254,7 @@ public class Attr extends JCTree.Visitor {
     }
 
     public void visitBlock(JCBlock tree) {
-        if (env.info.scope.owner.kind == TYP) {
+        if (env.info.scope.owner.kind == TYP || env.info.scope.owner.kind == ERR) {
             // Block is a static or instance initializer;
             // let the owner of the environment be a freshly
             // created BLOCK-method.
@@ -1533,8 +1514,8 @@ public class Attr extends JCTree.Visitor {
                     attribCase.accept(c, caseEnv);
                 } finally {
                     caseEnv.info.scope.leave();
-                    addVars(c.stats, switchEnv.info.scope);
                 }
+                addVars(c.stats, switchEnv.info.scope);
             }
         } finally {
             switchEnv.info.scope.leave();

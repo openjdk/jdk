@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1376,5 +1376,32 @@ public class Annotate {
 
     public void newRound() {
         blockCount = 1;
+    }
+
+    public Queues setQueues(Queues nue) {
+        Queues stored = new Queues(q, validateQ, typesQ, afterTypesQ);
+        this.q = nue.q;
+        this.typesQ = nue.typesQ;
+        this.afterTypesQ = nue.afterTypesQ;
+        this.validateQ = nue.validateQ;
+        return stored;
+    }
+
+    static class Queues {
+        private final ListBuffer<Runnable> q;
+        private final ListBuffer<Runnable> validateQ;
+        private final ListBuffer<Runnable> typesQ;
+        private final ListBuffer<Runnable> afterTypesQ;
+
+        public Queues() {
+            this(new ListBuffer<Runnable>(), new ListBuffer<Runnable>(), new ListBuffer<Runnable>(), new ListBuffer<Runnable>());
+        }
+
+        public Queues(ListBuffer<Runnable> q, ListBuffer<Runnable> validateQ, ListBuffer<Runnable> typesQ, ListBuffer<Runnable> afterTypesQ) {
+            this.q = q;
+            this.validateQ = validateQ;
+            this.typesQ = typesQ;
+            this.afterTypesQ = afterTypesQ;
+        }
     }
 }
