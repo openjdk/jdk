@@ -138,9 +138,9 @@ JAVA_PLATFORM := Java Platform
 ifeq ($(IS_DRAFT), true)
   DRAFT_MARKER_STR := <br><strong>DRAFT $(VERSION_STRING)</strong>
   ifeq ($(VERSION_BUILD), 0)
-    DRAFT_MARKER_TITLE := [ad-hoc build]
+    DRAFT_MARKER_TITLE := $(SPACE)[ad-hoc build]
   else
-    DRAFT_MARKER_TITLE := [build $(VERSION_BUILD)]
+    DRAFT_MARKER_TITLE := $(SPACE)[build $(VERSION_BUILD)]
   endif
   DRAFT_TEXT := This specification is not final and is subject to change. \
       Use is subject to <a href="$(LICENSE_URL)">license terms</a>.
@@ -304,7 +304,7 @@ define SetupApiDocsGenerationBody
 
   $1_DOC_TITLE := $$($1_LONG_NAME)<br>Version $$(VERSION_SPECIFICATION) API \
       Specification
-  $1_WINDOW_TITLE := $$(subst &amp;,&,$$($1_SHORT_NAME)) $$(DRAFT_MARKER_TITLE)
+  $1_WINDOW_TITLE := $$(subst &amp;,&,$$($1_SHORT_NAME))$$(DRAFT_MARKER_TITLE)
   $1_HEADER_TITLE := <div $$(HEADER_STYLE)><strong>$$($1_SHORT_NAME)</strong> \
       $$(DRAFT_MARKER_STR)</div>
 
