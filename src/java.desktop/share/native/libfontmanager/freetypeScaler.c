@@ -611,6 +611,12 @@ Java_sun_font_FreetypeFontScaler_getFontMetricsNative(
     return metrics;
 }
 
+static jlong
+    getGlyphImageNativeInternal(
+        JNIEnv *env, jobject scaler, jobject font2D,
+        jlong pScalerContext, jlong pScaler, jint glyphCode,
+        jboolean renderImage);
+
 /*
  * Class:     sun_font_FreetypeFontScaler
  * Method:    getGlyphAdvanceNative
@@ -622,24 +628,23 @@ Java_sun_font_FreetypeFontScaler_getGlyphAdvanceNative(
         jlong pScalerContext, jlong pScaler, jint glyphCode) {
 
    /* This method is rarely used because requests for metrics are usually
-      coupled with request for bitmap and to large extend work can be reused
-      (to find out metrics we need to hint glyph).
-      So, we typically go through getGlyphImage code path.
-
-      For initial freetype implementation we delegate
-      all work to getGlyphImage but drop result image.
-      This is waste of work related to scan conversion and conversion from
-      freetype format to our format but for now this seems to be ok.
-
-      NB: investigate performance benefits of refactoring code
-      to avoid unnecesary work with bitmaps. */
+    * coupled with a request for the bitmap and to a large extent the
+    * work can be reused (to find out metrics we may need to hint the glyph).
+    * So, we typically go through the getGlyphImage code path.
+    * When we do get here, we need to pass a parameter which indicates
+    * that we don't need freetype to render the bitmap, and consequently
+    * don't need to allocate our own storage either.
+    * This is also important when enter here requesting metrics for sizes
+    * of text which a large size would be rejected for a bitmap but we
+    * still need the metrics.
+    */
 
     GlyphInfo *info;
     jfloat advance = 0.0f;
     jlong image;
 
-    image = Java_sun_font_FreetypeFontScaler_getGlyphImageNative(
-                 env, scaler, font2D, pScalerContext, pScaler, glyphCode);
+    image = getGlyphImageNativeInternal(
+          env, scaler, font2D, pScalerContext, pScaler, glyphCode, JNI_FALSE);
     info = (GlyphInfo*) jlong_to_ptr(image);
 
     if (info != NULL) {
@@ -660,17 +665,12 @@ Java_sun_font_FreetypeFontScaler_getGlyphMetricsNative(
         JNIEnv *env, jobject scaler, jobject font2D, jlong pScalerContext,
         jlong pScaler, jint glyphCode, jobject metrics) {
 
-     /* As initial implementation we delegate all work to getGlyphImage
-        but drop result image. This is clearly waste of resorces.
-
-        TODO: investigate performance benefits of refactoring code
-              by avoiding bitmap generation and conversion from FT
-              bitmap format. */
+     /* See the comments in getGlyphMetricsNative. They apply here too. */
      GlyphInfo *info;
 
-     jlong image = Java_sun_font_FreetypeFontScaler_getGlyphImageNative(
+     jlong image = getGlyphImageNativeInternal(
                                  env, scaler, font2D,
-                                 pScalerContext, pScaler, glyphCode);
+                                 pScalerContext, pScaler, glyphCode, JNI_FALSE);
      info = (GlyphInfo*) jlong_to_ptr(image);
 
      if (info != NULL) {
@@ -804,6 +804,17 @@ Java_sun_font_FreetypeFontScaler_getGlyphImageNative(
         JNIEnv *env, jobject scaler, jobject font2D,
         jlong pScalerContext, jlong pScaler, jint glyphCode) {
 
+    return getGlyphImageNativeInternal(
+        env, scaler, font2D,
+        pScalerContext, pScaler, glyphCode, JNI_TRUE);
+}
+
+static jlong
+     getGlyphImageNativeInternal(
+        JNIEnv *env, jobject scaler, jobject font2D,
+        jlong pScalerContext, jlong pScaler, jint glyphCode,
+        jboolean renderImage) {
+
     int error, imageSize;
     UInt16 width, height;
     GlyphInfo *glyphInfo;
@@ -866,7 +877,7 @@ Java_sun_font_FreetypeFontScaler_getGlyphImageNative(
 
     /* generate bitmap if it is not done yet
      e.g. if algorithmic styling is performed and style was added to outline */
-    if (ftglyph->format == FT_GLYPH_FORMAT_OUTLINE) {
+    if (renderImage && (ftglyph->format == FT_GLYPH_FORMAT_OUTLINE)) {
         FT_BBox bbox;
         FT_Outline_Get_CBox(&(ftglyph->outline), &bbox);
         int w = (int)((bbox.xMax>>6)-(bbox.xMin>>6));
@@ -881,12 +892,17 @@ Java_sun_font_FreetypeFontScaler_getGlyphImageNative(
         }
     }
 
-    width  = (UInt16) ftglyph->bitmap.width;
-    height = (UInt16) ftglyph->bitmap.rows;
-    if (width > MAX_GLYPH_DIM || height > MAX_GLYPH_DIM) {
-        glyphInfo = getNullGlyphImage();
-        return ptr_to_jlong(glyphInfo);
-    }
+    if (renderImage) {
+        width  = (UInt16) ftglyph->bitmap.width;
+        height = (UInt16) ftglyph->bitmap.rows;
+            if (width > MAX_GLYPH_DIM || height > MAX_GLYPH_DIM) {
+              glyphInfo = getNullGlyphImage();
+              return ptr_to_jlong(glyphInfo);
+            }
+     } else {
+        width = 0;
+        height = 0;
+     }
 
 
     imageSize = width*height;
@@ -900,13 +916,16 @@ Java_sun_font_FreetypeFontScaler_getGlyphImageNative(
     glyphInfo->rowBytes  = width;
     glyphInfo->width     = width;
     glyphInfo->height    = height;
-    glyphInfo->topLeftX  = (float)  ftglyph->bitmap_left;
-    glyphInfo->topLeftY  = (float) -ftglyph->bitmap_top;
 
-    if (ftglyph->bitmap.pixel_mode ==  FT_PIXEL_MODE_LCD) {
-        glyphInfo->width = width/3;
-    } else if (ftglyph->bitmap.pixel_mode ==  FT_PIXEL_MODE_LCD_V) {
-        glyphInfo->height = glyphInfo->height/3;
+    if (renderImage) {
+        glyphInfo->topLeftX  = (float)  ftglyph->bitmap_left;
+        glyphInfo->topLeftY  = (float) -ftglyph->bitmap_top;
+
+        if (ftglyph->bitmap.pixel_mode ==  FT_PIXEL_MODE_LCD) {
+            glyphInfo->width = width/3;
+        } else if (ftglyph->bitmap.pixel_mode ==  FT_PIXEL_MODE_LCD_V) {
+            glyphInfo->height = glyphInfo->height/3;
+        }
     }
 
     if (context->fmType == TEXT_FM_ON) {
