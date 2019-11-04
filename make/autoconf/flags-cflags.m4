@@ -597,7 +597,7 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
     LANGSTD_CFLAGS="-xc99=all,no_lib"
   elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
     # MSVC doesn't support C99/C11 explicitly, unless you compile as C++:
-    # LANGSTD_CFLAGS="/TP"
+    # LANGSTD_CFLAGS="-TP"
     # but that requires numerous changes to the sources files. So we are limited
     # to C89/C90 plus whatever extensions Visual Studio has decided to implement.
     # This is the lowest bar for shared code.
