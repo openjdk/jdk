@@ -278,8 +278,9 @@ public abstract class SubscriberWhiteboxVerification<T> extends WithHelperPublis
       @Override
       public void run(WhiteboxTestStage stage) throws InterruptedException {
         stage.puppet().triggerRequest(1);
-        stage.puppet().signalCancel();
         stage.expectRequest();
+        stage.puppet().signalCancel();
+        stage.expectCancelling();
         stage.signalNext();
 
         stage.puppet().triggerRequest(1);
@@ -824,11 +825,17 @@ public abstract class SubscriberWhiteboxVerification<T> extends WithHelperPublis
      * Before sending any element to the subscriber, the TCK must wait for the subscriber to request that element, and
      * must be prepared for the subscriber to only request one element at a time, it is not enough for the TCK to
      * simply invoke this method before sending elements.
+     * <p>
+     * An invocation of {@link #signalCancel()} may be coalesced into any elements that have not yet been requested,
+     * such that only a cancel signal is emitted.
      */
     void triggerRequest(long elements);
 
     /**
-     * Trigger {@code cancel()} on your {@link Subscriber}
+     * Trigger {@code cancel()} on your {@link Subscriber}.
+     * <p>
+     * An invocation of this method may be coalesced into any outstanding requests, as requested by
+     *{@link #triggerRequest(long)}, such that only a cancel signal is emitted.
      */
     void signalCancel();
   }
