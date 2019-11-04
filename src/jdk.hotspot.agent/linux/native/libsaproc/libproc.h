@@ -47,12 +47,17 @@
 
 // This C bool type must be int for compatibility with Linux calls and
 // it would be a mistake to equivalence it to C++ bool on many platforms
-
+#ifndef __cplusplus
 typedef int bool;
 #define true  1
 #define false 0
+#endif
 
 struct ps_prochandle;
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 // attach to a process
 JNIEXPORT struct ps_prochandle* JNICALL
@@ -104,5 +109,9 @@ const char* symbol_for_pc(struct ps_prochandle* ph, uintptr_t addr, uintptr_t* p
 struct ps_prochandle* get_proc_handle(JNIEnv* env, jobject this_obj);
 
 void throw_new_debugger_exception(JNIEnv* env, const char* errMsg);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif //__LIBPROC_H_

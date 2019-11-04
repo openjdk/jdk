@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2015, Red Hat Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -133,10 +133,10 @@ class LinuxCDebugger implements CDebugger {
   }
 
   public boolean canDemangle() {
-    return false;
+    return true;
   }
 
   public String demangle(String sym) {
-    throw new UnsupportedOperationException();
+    return dbg.demangle(sym);
   }
 }

@@ -118,6 +118,9 @@ public class LinuxDebuggerLocal extends DebuggerBase implements LinuxDebugger {
                                 throws DebuggerException;
     public native static int  getAddressSize() ;
 
+    @Override
+    public native String demangle(String sym);
+
     // Note on Linux threads are really processes. When target process is
     // attached by a serviceability agent thread, only that thread can do
     // ptrace operations on the target. This is because from kernel's point
