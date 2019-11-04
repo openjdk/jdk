@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @author weijun.wang
+ * @bug 6251120 8231950
  * @summary Testing keytool
  *
  * Run through autotest.sh and manualtest.sh
@@ -1319,11 +1319,13 @@ public class KeyToolTest {
         // cRLSign cannot be cs
         testFail("", pre + "ku6 -ext KU=cs");
         testOK("", pre + "ku11 -ext KU=nr");
-        // ke also means keyAgreement
+        // ke means keyAgreement and keyCertSign...
         testFail("", pre + "ku12 -ext KU=ke");
         testOK("", pre + "ku12 -ext KU=keyE");
+        testOK("", pre + "ku12a -ext KU=kE"); // kE is only keyEncipherment
         // de also means decipherOnly
-        testFail("", pre + "ku13 -ext KU=de");
+        testOK("", pre + "ku13a -ext KU=de"); // de is decipherOnly
+        testOK("", pre + "ku13b -ext KU=dE"); // dE is dataEncipherment
         testOK("", pre + "ku13 -ext KU=dataE");
         testOK("", pre + "ku14 -ext KU=ka");
         testOK("", pre + "ku15 -ext KU=kcs");
