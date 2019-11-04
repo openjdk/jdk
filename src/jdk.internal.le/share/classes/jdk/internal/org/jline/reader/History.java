@@ -4,11 +4,12 @@
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
  *
- * http://www.opensource.org/licenses/bsd-license.php
+ * https://opensource.org/licenses/BSD-3-Clause
  */
 package jdk.internal.org.jline.reader;
 
 import java.io.IOException;
+import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Iterator;
 import java.util.ListIterator;
@@ -40,6 +41,26 @@ public interface History extends Iterable<History.Entry>
      * @throws IOException if a problem occurs
      */
     void save() throws IOException;
+
+    /**
+     * Write history to the file. If incremental only the events that are new since the last incremental operation to
+     * the file are added.
+     * @throws IOException if a problem occurs
+     */
+    void write(Path file, boolean incremental) throws IOException;
+
+    /**
+     * Append history to the file. If incremental only the events that are new since the last incremental operation to
+     * the file are added.
+     * @throws IOException if a problem occurs
+     */
+    void append(Path file, boolean incremental) throws IOException;
+
+    /**
+     * Read history from the file. If incremental only the events that are not contained within the internal list are added.
+     * @throws IOException if a problem occurs
+     */
+    void read(Path file, boolean incremental) throws IOException;
 
     /**
      * Purge history.

@@ -4,7 +4,7 @@
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
  *
- * http://www.opensource.org/licenses/bsd-license.php
+ * https://opensource.org/licenses/BSD-3-Clause
  */
 package jdk.internal.org.jline.reader;
 
@@ -85,7 +85,7 @@ public final class LineReaderBuilder {
     public LineReaderBuilder parser(Parser parser) {
         if (parser != null) {
             try {
-                if (!Boolean.parseBoolean(LineReader.PROP_SUPPORT_PARSEDLINE)
+                if (!Boolean.getBoolean(LineReader.PROP_SUPPORT_PARSEDLINE)
                         && !(parser.parse("", 0) instanceof CompletingParsedLine)) {
                     Log.warn("The Parser of class " + parser.getClass().getName() + " does not support the CompletingParsedLine interface. " +
                             "Completion with escaped or quoted words won't work correctly.");

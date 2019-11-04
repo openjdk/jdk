@@ -4,12 +4,13 @@
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
  *
- * http://www.opensource.org/licenses/bsd-license.php
+ * https://opensource.org/licenses/BSD-3-Clause
  */
 package jdk.internal.org.jline.utils;
 
 import java.security.InvalidParameterException;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -98,6 +99,10 @@ public class AttributedString extends AttributedCharSequence {
     }
 
     public static AttributedString fromAnsi(String ansi, int tabs) {
+        return fromAnsi(ansi, Arrays.asList(tabs));
+    }
+
+    public static AttributedString fromAnsi(String ansi, List<Integer> tabs) {
         if (ansi == null) {
             return null;
         }

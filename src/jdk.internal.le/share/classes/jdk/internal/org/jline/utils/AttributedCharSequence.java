@@ -1,10 +1,10 @@
 /*
- * Copyright (c) 2002-2016, the original author or authors.
+ * Copyright (c) 2002-2019, the original author or authors.
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
  *
- * http://www.opensource.org/licenses/bsd-license.php
+ * https://opensource.org/licenses/BSD-3-Clause
  */
 package jdk.internal.org.jline.utils;
 
@@ -38,6 +38,14 @@ public abstract class AttributedCharSequence implements CharSequence {
     // cache the value here as we can't afford to get it each time
     static final boolean DISABLE_ALTERNATE_CHARSET = Boolean.getBoolean(PROP_DISABLE_ALTERNATE_CHARSET);
 
+    public void print(Terminal terminal) {
+        terminal.writer().print(toAnsi(terminal));
+    }
+
+    public void println(Terminal terminal) {
+        terminal.writer().println(toAnsi(terminal));
+    }
+
     public String toAnsi() {
         return toAnsi(null);
     }
@@ -54,7 +62,8 @@ public abstract class AttributedCharSequence implements CharSequence {
             if (max_colors != null) {
                 colors = max_colors;
             }
-            force256colors = AbstractWindowsTerminal.TYPE_WINDOWS_256_COLOR.equals(terminal.getType());
+            force256colors = AbstractWindowsTerminal.TYPE_WINDOWS_256_COLOR.equals(terminal.getType())
+                || AbstractWindowsTerminal.TYPE_WINDOWS_CONEMU.equals(terminal.getType());
             if (!DISABLE_ALTERNATE_CHARSET) {
                 alternateIn = Curses.tputs(terminal.getStringCapability(Capability.enter_alt_charset_mode));
                 alternateOut = Curses.tputs(terminal.getStringCapability(Capability.exit_alt_charset_mode));
@@ -293,7 +302,7 @@ public abstract class AttributedCharSequence implements CharSequence {
             if (col + w > start) {
                 break;
             }
-            begin++;
+            begin += Character.charCount(cp);
             col += w;
         }
         int end = begin;
@@ -305,7 +314,7 @@ public abstract class AttributedCharSequence implements CharSequence {
             if (col + w > stop) {
                 break;
             }
-            end++;
+            end += Character.charCount(cp);
             col += w;
         }
         return subSequence(begin, end);

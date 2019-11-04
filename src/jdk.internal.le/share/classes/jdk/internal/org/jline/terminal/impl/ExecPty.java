@@ -1,10 +1,10 @@
 /*
- * Copyright (c) 2002-2019, the original author or authors.
+ * Copyright (c) 2002-2016, the original author or authors.
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
  *
- * http://www.opensource.org/licenses/bsd-license.php
+ * https://opensource.org/licenses/BSD-3-Clause
  */
 package jdk.internal.org.jline.terminal.impl;
 
@@ -137,15 +137,12 @@ public class ExecPty extends AbstractPty implements Pty {
         }
         String undef = System.getProperty("os.name").toLowerCase().startsWith("hp") ? "^-" : "undef";
         for (ControlChar cchar : ControlChar.values()) {
-            if (attr.getControlChar(cchar) != current.getControlChar(cchar)) {
+            int v = attr.getControlChar(cchar);
+            if (v >= 0 && v != current.getControlChar(cchar)) {
                 String str = "";
-                int v = attr.getControlChar(cchar);
-                if (v == -1) { // Skip if ControlChar is <UNDEF>
-                    continue;
-                }
                 commands.add(cchar.name().toLowerCase().substring(1));
                 if (cchar == ControlChar.VMIN || cchar == ControlChar.VTIME) {
-                    commands.add(Integer.toBinaryString(v));
+                    commands.add(Integer.toString(v));
                 }
                 else if (v == 0) {
                     commands.add(undef);

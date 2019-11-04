@@ -4,7 +4,7 @@
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
  *
- * http://www.opensource.org/licenses/bsd-license.php
+ * https://opensource.org/licenses/BSD-3-Clause
  */
 package jdk.internal.org.jline.terminal.impl.jna.win;
 
@@ -26,7 +26,7 @@ package jdk.internal.org.jline.terminal.impl.jna.win;
 interface Kernel32 {//extends StdCallLibrary {
 
     Kernel32 INSTANCE = new Kernel32Impl();
-//    Kernel32 INSTANCE = (Kernel32) Native.loadLibrary("kernel32", Kernel32.class, W32APIOptions.UNICODE_OPTIONS);
+//    Kernel32 INSTANCE = Native.load("kernel32", Kernel32.class, W32APIOptions.UNICODE_OPTIONS);
 
 //    Pointer INVALID_HANDLE_VALUE = Pointer.createConstant(-1L);
 
