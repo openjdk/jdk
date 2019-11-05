@@ -81,11 +81,11 @@ JVMFlag::Error CICompilerCountConstraintFunc(intx value, bool verbose) {
     } else {
       min_number_of_compiler_threads = 2;   // case 4 (tiered)
     }
-  } else
-#else
-  {
+  } else {
     min_number_of_compiler_threads = 1; // case 2
   }
+#else
+  min_number_of_compiler_threads = 1; // case 2
 #endif
 
   // The default CICompilerCount's value is CI_COMPILER_COUNT.
