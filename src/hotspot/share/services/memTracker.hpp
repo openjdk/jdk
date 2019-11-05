@@ -59,7 +59,7 @@ class MemTracker : AllStatic {
   static inline size_t malloc_header_size(NMT_TrackingLevel level) { return 0; }
   static inline size_t malloc_header_size(void* memblock) { return 0; }
   static inline void* malloc_base(void* memblock) { return memblock; }
-  static inline void* record_free(void* memblock) { return memblock; }
+  static inline void* record_free(void* memblock, NMT_TrackingLevel level) { return memblock; }
 
   static inline void record_new_arena(MEMFLAGS flag) { }
   static inline void record_arena_free(MEMFLAGS flag) { }
