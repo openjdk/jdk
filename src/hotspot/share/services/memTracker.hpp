@@ -157,7 +157,10 @@ class MemTracker : AllStatic {
 
   static inline void* record_malloc(void* mem_base, size_t size, MEMFLAGS flag,
     const NativeCallStack& stack, NMT_TrackingLevel level) {
-    return MallocTracker::record_malloc(mem_base, size, flag, stack, level);
+    if (level != NMT_off) {
+      return MallocTracker::record_malloc(mem_base, size, flag, stack, level);
+    }
+    return mem_base;
   }
 
   static inline size_t malloc_header_size(NMT_TrackingLevel level) {
@@ -177,7 +180,11 @@ class MemTracker : AllStatic {
   static void* malloc_base(void* memblock);
 
   // Record malloc free and return malloc base address
-  static inline void* record_free(void* memblock) {
+  static inline void* record_free(void* memblock, NMT_TrackingLevel level) {
+    // Never turned on
+    if (level == NMT_off || memblock == NULL) {
+      return memblock;
+    }
     return MallocTracker::record_free(memblock);
   }
 
