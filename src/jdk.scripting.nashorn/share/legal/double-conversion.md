@@ -1,4 +1,4 @@
-## Double-conversion v1.1.5
+## Double-conversion v3.1.5
 
 ### Double-conversion License
 
