@@ -28,8 +28,7 @@
  * @modules java.base/jdk.internal.org.objectweb.asm
  *          java.base/jdk.internal.misc
  * @build compiler.calls.common.InvokeDynamic
- *        compiler.calls.common.InvokeDynamicPatcher
- *        compiler.aot.AotCompiler
+ *        sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *      sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run driver compiler.calls.common.InvokeDynamicPatcher

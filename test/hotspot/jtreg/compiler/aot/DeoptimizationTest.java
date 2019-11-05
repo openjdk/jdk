@@ -27,7 +27,7 @@
  * @library /test/lib /testlibrary /
  * @modules java.base/jdk.internal.misc
  * @build compiler.aot.DeoptimizationTest
- *        compiler.aot.AotCompiler
+ *        sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *     sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run driver compiler.aot.AotCompiler -libname libDeoptimizationTest.so

@@ -29,7 +29,7 @@
  *          java.management
  * @requires vm.aot & vm.cds
  * @build compiler.aot.fingerprint.SelfChanged
- *        compiler.aot.AotCompiler
+ *        sun.hotspot.WhiteBox
  *
  * @run main compiler.aot.fingerprint.SelfChanged WRITE-UNMODIFIED-CLASS
  * @run driver compiler.aot.AotCompiler -libname libSelfChanged.so
