@@ -817,7 +817,7 @@ public class AArch64MacroAssembler extends AArch64Assembler {
     }
 
     /**
-     * unsigned multiply high. dst = (src1 * src2) >> size
+     * Unsigned multiply high. dst = (src1 * src2) >> size
      *
      * @param size register size. Has to be 32 or 64.
      * @param dst general purpose register. May not be null or the stackpointer.
@@ -838,7 +838,7 @@ public class AArch64MacroAssembler extends AArch64Assembler {
     }
 
     /**
-     * signed multiply high. dst = (src1 * src2) >> size
+     * Signed multiply high. dst = (src1 * src2) >> size
      *
      * @param size register size. Has to be 32 or 64.
      * @param dst general purpose register. May not be null or the stackpointer.
@@ -856,6 +856,60 @@ public class AArch64MacroAssembler extends AArch64Assembler {
             // xDst = xDst >> 32
             lshr(64, dst, dst, 32);
         }
+    }
+
+    /**
+     * Signed multiply long. xDst = wSrc1 * wSrc2
+     *
+     * @param size destination register size. Has to be 64.
+     * @param dst 64-bit general purpose register. May not be null or the stackpointer.
+     * @param src1 32-bit general purpose register. May not be null or the stackpointer.
+     * @param src2 32-bit general purpose register. May not be null or the stackpointer.
+     */
+    public void smull(int size, Register dst, Register src1, Register src2) {
+        this.smaddl(size, dst, src1, src2, zr);
+    }
+
+    /**
+     * Signed multiply-negate long. xDst = -(wSrc1 * wSrc2)
+     *
+     * @param size destination register size. Has to be 64.
+     * @param dst 64-bit general purpose register. May not be null or the stackpointer.
+     * @param src1 32-bit general purpose register. May not be null or the stackpointer.
+     * @param src2 32-bit general purpose register. May not be null or the stackpointer.
+     */
+    public void smnegl(int size, Register dst, Register src1, Register src2) {
+        this.smsubl(size, dst, src1, src2, zr);
+    }
+
+    /**
+     * Signed multiply-add long. xDst = xSrc3 + (wSrc1 * wSrc2)
+     *
+     * @param size destination register size. Has to be 64.
+     * @param dst 64-bit general purpose register. May not be null or the stackpointer.
+     * @param src1 32-bit general purpose register. May not be null or the stackpointer.
+     * @param src2 32-bit general purpose register. May not be null or the stackpointer.
+     * @param src3 64-bit general purpose register. May not be null or the stackpointer.
+     */
+    public void smaddl(int size, Register dst, Register src1, Register src2, Register src3) {
+        assert (!dst.equals(sp) && !src1.equals(sp) && !src2.equals(sp) && !src3.equals(sp));
+        assert size == 64;
+        super.smaddl(dst, src1, src2, src3);
+    }
+
+    /**
+     * Signed multiply-sub long. xDst = xSrc3 - (wSrc1 * wSrc2)
+     *
+     * @param size destination register size. Has to be 64.
+     * @param dst 64-bit general purpose register. May not be null or the stackpointer.
+     * @param src1 32-bit general purpose register. May not be null or the stackpointer.
+     * @param src2 32-bit general purpose register. May not be null or the stackpointer.
+     * @param src3 64-bit general purpose register. May not be null or the stackpointer.
+     */
+    public void smsubl(int size, Register dst, Register src1, Register src2, Register src3) {
+        assert (!dst.equals(sp) && !src1.equals(sp) && !src2.equals(sp) && !src3.equals(sp));
+        assert size == 64;
+        super.smsubl(dst, src1, src2, src3);
     }
 
     /**

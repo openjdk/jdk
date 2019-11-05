@@ -9,7 +9,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 14982 $"/>
+		<version number="$Revision$"/>
 		<language type="or"/>
 	</identity>
 	<localeDisplayNames>
@@ -515,14 +515,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="yi">ୟିଡିସ୍</language>
 			<language type="yo">ୟୋରୁବା</language>
 			<language type="yue">କାନଟୋନେସେ</language>
+			<language type="yue" alt="menu">ଚାଇନିଜ୍‌, କାନଟୋନେସେ</language>
 			<language type="za">ଜୁଆଙ୍ଗ</language>
 			<language type="zap">ଜାପୋଟେକ୍</language>
 			<language type="zbl">ବ୍ଲିସିମ୍ବଲସ୍</language>
 			<language type="zen">ଜେନାଗା</language>
 			<language type="zgh">ମାନାଙ୍କ ମରୋକିୟ ତାମାଜିଘାଟ୍</language>
 			<language type="zh">ଚାଇନିଜ୍‌</language>
+			<language type="zh" alt="menu">ଚାଇନିଜ୍, ମାଣ୍ଡାରିନ୍</language>
 			<language type="zh_Hans">ସରଳୀକୃତ ଚାଇନିଜ୍‌</language>
+			<language type="zh_Hans" alt="long">ସରଳୀକୃତ ମାଣ୍ଡାରିନ୍ ଚାଇନିଜ୍</language>
 			<language type="zh_Hant">ପାରମ୍ପରିକ ଚାଇନିଜ୍‌</language>
+			<language type="zh_Hant" alt="long">ପାରମ୍ପରିକ ମାଣ୍ଡାରିନ୍ ଚାଇନିଜ୍</language>
 			<language type="zu">ଜୁଲୁ</language>
 			<language type="zun">ଜୁନୀ</language>
 			<language type="zxx">କୌଣସି ଲିଙ୍ଗୁଇଷ୍ଟ ସାମଗ୍ରୀ ନାହିଁ</language>
@@ -737,7 +741,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="BZ">ବେଲିଜ୍</territory>
 			<territory type="CA">କାନାଡା</territory>
 			<territory type="CC">କୋକୋସ୍ (କୀଲିଂ) ଦ୍ଵୀପପୁଞ୍ଜ</territory>
-			<territory type="CD">କଙ୍ଗୋ-କିନସାସା</territory>
+			<territory type="CD">କଙ୍ଗୋ (ଡିଆରସି)</territory>
 			<territory type="CD" alt="variant">କଙ୍ଗୋ (ଡିଆରସି)</territory>
 			<territory type="CF">ମଧ୍ୟ ଆଫ୍ରିକୀୟ ସାଧାରଣତନ୍ତ୍ର</territory>
 			<territory type="CG">କଙ୍ଗୋ-ବ୍ରାଜିଭିଲ୍ଲେ</territory>
@@ -1061,8 +1065,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<exemplarCharacters>[\u0B3C ଅ ଆ ଇ ଈ ଉ ଊ ଋ ଏ ଐ ଓ ଔ \u0B01 ଂ ଃ କ ଖ ଗ ଘ ଙ ଚ ଛ ଜ ଝ ଞ ଟ ଠ ଡ {ଡ\u0B3C} ଢ {ଢ\u0B3C} ଣ ତ ଥ ଦ ଧ ନ ପ ଫ ବ ଭ ମ ଯ ୟ ର ଲ ଳ ଵ ୱ ଶ ଷ ସ ହ ା \u0B3F ୀ \u0B41 \u0B42 \u0B43 େ ୈ ୋ ୌ \u0B4D]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[\u200C\u200D]</exemplarCharacters>
 		<exemplarCharacters type="index" draft="contributed">[ଅ ଆ ଇ ଈ ଉ ଊ ଋ ଏ ଐ ଓ ଔ କ ଖ ଗ ଘ ଙ ଚ ଛ ଜ ଝ ଞ ଟ ଠ ଡ ଢ ଣ ତ ଥ ଦ ଧ ନ ପ ଫ ବ ଭ ମ ଯ ର ଲ ଳ ଶ ଷ ସ ହ {କ\u0B4Dଷ}]</exemplarCharacters>
-		<exemplarCharacters type="numbers">[\- , . % ‰ + 0୦ 1୧ 2୨ 3୩ 4୪ 5୫ 6୬ 7୭ 8୮ 9୯]</exemplarCharacters>
-		<exemplarCharacters type="punctuation" draft="contributed">[\- ‐ – — , ; \: ! ? . … ' ‘ ’ &quot; “ ” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
+		<exemplarCharacters type="numbers">[\- ‑ , . % ‰ + 0୦ 1୧ 2୨ 3୩ 4୪ 5୫ 6୬ 7୭ 8୮ 9୯]</exemplarCharacters>
+		<exemplarCharacters type="punctuation" draft="contributed">[\- ‐ ‑ – — , ; \: ! ? . … ' ‘ ’ &quot; “ ” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
 		<ellipsis type="final">{0}…</ellipsis>
 		<ellipsis type="initial">…{0}</ellipsis>
 		<ellipsis type="medial">{0}…{1}</ellipsis>
@@ -1193,53 +1197,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
 						<intervalFormatItem id="Bh">
 							<greatestDifference id="B">h B – h B</greatestDifference>
-							<greatestDifference id="h">h–h B</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="Bhm">
-							<greatestDifference id="B">h:mm B – h:mm B</greatestDifference>
-							<greatestDifference id="h">h:mm–h:mm B</greatestDifference>
-							<greatestDifference id="m">h:mm–h:mm B</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="d">
 							<greatestDifference id="d">d–d</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="Gy">
-							<greatestDifference id="G">G y – G y</greatestDifference>
-							<greatestDifference id="y">G y–y</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="GyM">
-							<greatestDifference id="G">GGGGG y-MM – GGGGG y-MM</greatestDifference>
-							<greatestDifference id="M">GGGGG y-MM – y-MM</greatestDifference>
-							<greatestDifference id="y">GGGGG y-MM – y-MM</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="GyMd">
-							<greatestDifference id="d">GGGGG y-MM-dd – y-MM-dd</greatestDifference>
-							<greatestDifference id="G">GGGGG y-MM-dd – GGGGG y-MM-dd</greatestDifference>
-							<greatestDifference id="M">GGGGG y-MM-dd – y-MM-dd</greatestDifference>
-							<greatestDifference id="y">GGGGG y-MM-dd – y-MM-dd</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="GyMEd">
-							<greatestDifference id="d">GGGGG y-MM-dd, E – y-MM-dd, E</greatestDifference>
-							<greatestDifference id="G">GGGGG y-MM-dd, E – GGGGG y-MM-dd, E</greatestDifference>
-							<greatestDifference id="M">GGGGG y-MM-dd, E – y-MM-dd, E</greatestDifference>
-							<greatestDifference id="y">GGGGG y-MM-dd, E – y-MM-dd, E</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="GyMMM">
-							<greatestDifference id="G">G y MMM – G y MMM</greatestDifference>
-							<greatestDifference id="M">G y MMM–MMM</greatestDifference>
-							<greatestDifference id="y">G y MMM – y MMM</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="GyMMMd">
-							<greatestDifference id="d">G y MMM d–d</greatestDifference>
-							<greatestDifference id="G">G y MMM d – G y MMM d</greatestDifference>
-							<greatestDifference id="M">G y MMM d – MMM d</greatestDifference>
-							<greatestDifference id="y">G y MMM d – y MMM d</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="GyMMMEd">
-							<greatestDifference id="d">G y MMM d, E – MMM d, E</greatestDifference>
-							<greatestDifference id="G">G y MMM d, E – G y MMM d, E</greatestDifference>
-							<greatestDifference id="M">G y MMM d, E – MMM d, E</greatestDifference>
-							<greatestDifference id="y">G y MMM d, E – y MMM d, E</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="M">
 							<greatestDifference id="M">M – M</greatestDifference>
@@ -1678,55 +1638,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					</appendItems>
 					<intervalFormats>
 						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
-						<intervalFormatItem id="Bh">
-							<greatestDifference id="B">h B – h B</greatestDifference>
-							<greatestDifference id="h">h–h B</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="Bhm">
-							<greatestDifference id="B">h:mm B – h:mm B</greatestDifference>
-							<greatestDifference id="h">h:mm–h:mm B</greatestDifference>
-							<greatestDifference id="m">h:mm–h:mm B</greatestDifference>
-						</intervalFormatItem>
 						<intervalFormatItem id="d">
 							<greatestDifference id="d">d–d</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="Gy">
-							<greatestDifference id="G">G y – G y</greatestDifference>
-							<greatestDifference id="y">G y–y</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="GyM">
-							<greatestDifference id="G">GGGGG y-MM – GGGGG y-MM</greatestDifference>
-							<greatestDifference id="M">GGGGG y-MM – y-MM</greatestDifference>
-							<greatestDifference id="y">GGGGG y-MM – y-MM</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="GyMd">
-							<greatestDifference id="d">GGGGG y-MM-dd – y-MM-dd</greatestDifference>
-							<greatestDifference id="G">GGGGG y-MM-dd – GGGGG y-MM-dd</greatestDifference>
-							<greatestDifference id="M">GGGGG y-MM-dd – y-MM-dd</greatestDifference>
-							<greatestDifference id="y">GGGGG y-MM-dd – y-MM-dd</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="GyMEd">
-							<greatestDifference id="d">GGGGG y-MM-dd, E – y-MM-dd, E</greatestDifference>
-							<greatestDifference id="G">GGGGG y-MM-dd, E – GGGGG y-MM-dd, E</greatestDifference>
-							<greatestDifference id="M">GGGGG y-MM-dd, E – y-MM-dd, E</greatestDifference>
-							<greatestDifference id="y">GGGGG y-MM-dd, E – y-MM-dd, E</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="GyMMM">
-							<greatestDifference id="G">G y MMM – G y MMM</greatestDifference>
-							<greatestDifference id="M">G y MMM–MMM</greatestDifference>
-							<greatestDifference id="y">G y MMM – y MMM</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="GyMMMd">
-							<greatestDifference id="d">G y MMM d–d</greatestDifference>
-							<greatestDifference id="G">G y MMM d – G y MMM d</greatestDifference>
-							<greatestDifference id="M">G y MMM d – MMM d</greatestDifference>
-							<greatestDifference id="y">G y MMM d – y MMM d</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="GyMMMEd">
-							<greatestDifference id="d">G y MMM d, E – MMM d, E</greatestDifference>
-							<greatestDifference id="G">G y MMM d, E – G y MMM d, E</greatestDifference>
-							<greatestDifference id="M">G y MMM d, E – MMM d, E</greatestDifference>
-							<greatestDifference id="y">G y MMM d, E – y MMM d, E</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="h">
 							<greatestDifference id="a">h a – h a</greatestDifference>
@@ -3125,6 +3038,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Asia/Aqtobe">
 				<exemplarCity>ଆକଟୋବ୍‌</exemplarCity>
+			</zone>
+			<zone type="Asia/Qostanay">
+				<exemplarCity>କୋଷ୍ଟନେ</exemplarCity>
 			</zone>
 			<zone type="Asia/Qyzylorda">
 				<exemplarCity>କୀଜିଲୋର୍ଡା</exemplarCity>
@@ -4630,8 +4546,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<otherNumberingSystems>
 			<native>orya</native>
 		</otherNumberingSystems>
+		<minimumGroupingDigits draft="contributed">1</minimumGroupingDigits>
 		<symbols numberSystem="latn">
+			<decimal draft="contributed">.</decimal>
+			<group draft="contributed">,</group>
 			<percentSign>%</percentSign>
+			<plusSign draft="contributed">+</plusSign>
+			<minusSign draft="contributed">-</minusSign>
 			<exponential>E</exponential>
 			<superscriptingExponent>×</superscriptingExponent>
 			<perMille>‰</perMille>
@@ -4639,7 +4560,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<nan>NaN</nan>
 		</symbols>
 		<symbols numberSystem="orya">
+			<decimal draft="contributed">.</decimal>
+			<group draft="contributed">,</group>
 			<percentSign>%</percentSign>
+			<plusSign draft="contributed">+</plusSign>
+			<minusSign draft="contributed">-</minusSign>
 			<exponential>E</exponential>
 			<superscriptingExponent>×</superscriptingExponent>
 			<perMille>‰</perMille>
@@ -5769,7 +5694,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ଭେନେଜୁଏଲାନ୍ ବୋଲିଭାର୍</displayName>
 				<displayName count="one">ଭେନେଜୁଏଲାନ୍ ବୋଲିଭାର୍</displayName>
 				<displayName count="other">ଭେନେଜୁଏଲାନ୍ ବୋଲିଭାର୍</displayName>
-				<symbol draft="contributed">VES</symbol>
 			</currency>
 			<currency type="VND">
 				<displayName>ଭୀଏତନାମୀୟ ଡଙ୍ଗ</displayName>
@@ -5848,8 +5772,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<pattern type="range">{0}–{1}</pattern>
 		</miscPatterns>
 		<minimalPairs>
-			<pluralMinimalPairs count="one" draft="contributed">{0} ଦିନ</pluralMinimalPairs>
-			<pluralMinimalPairs count="other" draft="contributed">{0} ଦିନଗୁଡ଼ିକ</pluralMinimalPairs>
+			<pluralMinimalPairs count="one">{0} ଦିନ</pluralMinimalPairs>
+			<pluralMinimalPairs count="other">{0} ଦିନଗୁଡ଼ିକ</pluralMinimalPairs>
 			<ordinalMinimalPairs ordinal="other" draft="contributed">ଡାହାଣରେ ଥିବା {0} ନିଅନ୍ତୁ</ordinalMinimalPairs>
 		</minimalPairs>
 	</numbers>
@@ -6185,6 +6109,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ବ୍ରିଟିଶ ଥର୍ମାଲ ଏକକ</unitPattern>
 				<unitPattern count="other">{0} ବ୍ରିଟିଶ ଥର୍ମାଲ ଏକକ</unitPattern>
 			</unit>
+			<unit type="energy-therm-us">
+				<displayName>ୟୁଏସ୍‌ ଥର୍ମ</displayName>
+				<unitPattern count="one">{0} ୟୁଏସ୍‌ ଥର୍ମ</unitPattern>
+				<unitPattern count="other">{0} ୟୁଏସ୍‌ ଥର୍ମ</unitPattern>
+			</unit>
 			<unit type="force-pound-force">
 				<displayName>ପାଉଣ୍ଡସ ଅଫ ଫୋର୍ସ</displayName>
 				<unitPattern count="one">{0} ପାଉଣ୍ଡସ ଅଫ ଫୋର୍ସ</unitPattern>
@@ -6424,11 +6353,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ହର୍ସପାୱାର୍</unitPattern>
 				<unitPattern count="other">{0} ହର୍ସପାୱାର୍</unitPattern>
 			</unit>
-			<unit type="pressure-hectopascal">
-				<displayName>ହେକ୍ଟୋପାସ୍କେଲ୍</displayName>
-				<unitPattern count="one">{0} ହେକ୍ଟୋପାସ୍କେଲ୍</unitPattern>
-				<unitPattern count="other">{0} ହେକ୍ଟୋପାସ୍କେଲ୍</unitPattern>
-			</unit>
 			<unit type="pressure-millimeter-of-mercury">
 				<displayName>ପାରାର ମିଲିମିଟର୍</displayName>
 				<unitPattern count="one">ପାରାର {0} ମିଲିମିଟର୍</unitPattern>
@@ -6444,6 +6368,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">ପାରାର {0} ଇଞ୍ଜି</unitPattern>
 				<unitPattern count="other">ପାରାର {0} ଇଞ୍ଜି</unitPattern>
 			</unit>
+			<unit type="pressure-bar">
+				<displayName>ବାର୍‌</displayName>
+				<unitPattern count="one">{0} ବାର୍‌</unitPattern>
+				<unitPattern count="other">{0} ବାର୍‌</unitPattern>
+			</unit>
 			<unit type="pressure-millibar">
 				<displayName>ମିଲିବାର୍</displayName>
 				<unitPattern count="one">{0} ମିଲିବାର୍</unitPattern>
@@ -6453,6 +6382,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ଆଟମୋସ୍ପିଅର</displayName>
 				<unitPattern count="one">{0} ଆଟମୋସ୍ପିଅର</unitPattern>
 				<unitPattern count="other">{0} ଆଟମୋସ୍ପିଅର</unitPattern>
+			</unit>
+			<unit type="pressure-pascal">
+				<displayName>ପା</displayName>
+				<unitPattern count="one">{0} ପା</unitPattern>
+				<unitPattern count="other">{0} ପା</unitPattern>
+			</unit>
+			<unit type="pressure-hectopascal">
+				<displayName>ହେକ୍ଟୋପାସ୍କେଲ୍</displayName>
+				<unitPattern count="one">{0} ହେକ୍ଟୋପାସ୍କେଲ୍</unitPattern>
+				<unitPattern count="other">{0} ହେକ୍ଟୋପାସ୍କେଲ୍</unitPattern>
 			</unit>
 			<unit type="pressure-kilopascal">
 				<displayName>କିଲୋପାସକଲ</displayName>
@@ -6661,6 +6600,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
 			</compoundUnit>
+			<compoundUnit type="times">
+				<compoundUnitPattern>{0}⋅{1}</compoundUnitPattern>
+			</compoundUnit>
 			<unit type="acceleration-g-force">
 				<displayName>ଜି-ଫୋର୍ସ୍</displayName>
 				<unitPattern count="one">{0} ଜି</unitPattern>
@@ -6783,13 +6725,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="concentr-permyriad">
 				<displayName>ପରମାଇରିଆଡ</displayName>
-				<unitPattern count="one" draft="contributed">{0}‱</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}‱</unitPattern>
 			</unit>
 			<unit type="concentr-mole">
 				<displayName>ମୋଲ</displayName>
 				<unitPattern count="one">ମୋଲ</unitPattern>
-				<unitPattern count="other">{0} mol</unitPattern>
+				<unitPattern count="other">{0} ମୋଲ</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>ଲିଟର୍/କିମି</displayName>
@@ -6870,6 +6810,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>c</displayName>
 				<unitPattern count="one">{0} c</unitPattern>
 				<unitPattern count="other">{0} c</unitPattern>
+			</unit>
+			<unit type="duration-decade">
+				<displayName>dec</displayName>
+				<unitPattern count="one">{0} dec</unitPattern>
+				<unitPattern count="other">{0} dec</unitPattern>
 			</unit>
 			<unit type="duration-year">
 				<displayName>ବର୍ଷ</displayName>
@@ -6980,23 +6925,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="energy-electronvolt">
 				<displayName>ଇଲେକ୍ଟ୍ରୋନ୍‌ ଭୋଲ୍ଟ</displayName>
-				<unitPattern count="one" draft="contributed">{0} eV</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} eV</unitPattern>
 			</unit>
-			<unit type="energy-british-thermal-unit">
-				<displayName>Btu</displayName>
-				<unitPattern count="one" draft="contributed">{0} Btu</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} Btu</unitPattern>
+			<unit type="energy-therm-us">
+				<displayName>ୟୁଏସ୍‌ ଥର୍ମ</displayName>
+				<unitPattern count="one">{0} ୟୁଏସ୍‌ ଥର୍ମ</unitPattern>
+				<unitPattern count="other">{0} ୟୁଏସ୍‌ ଥର୍ମ</unitPattern>
 			</unit>
 			<unit type="force-pound-force">
 				<displayName>ପାଉଣ୍ଡ-ଫୋର୍ସ</displayName>
-				<unitPattern count="one" draft="contributed">{0} lbf</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} lbf</unitPattern>
 			</unit>
 			<unit type="force-newton">
 				<displayName>ନ୍ୟୁଟନ</displayName>
-				<unitPattern count="one" draft="contributed">{0} N</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} N</unitPattern>
 			</unit>
 			<unit type="frequency-gigahertz">
 				<displayName>GHz</displayName>
@@ -7115,8 +7054,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="length-solar-radius">
 				<displayName>ସୋଲାର ରାଡି</displayName>
-				<unitPattern count="one" draft="contributed">{0} R☉</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} R☉</unitPattern>
 			</unit>
 			<unit type="light-lux">
 				<displayName>ଲକ୍ସ</displayName>
@@ -7125,8 +7062,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="light-solar-luminosity">
 				<displayName>ସୋଲର ଲ୍ୟୁମିନୋସିଟିସ</displayName>
-				<unitPattern count="one" draft="contributed">{0} L☉</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} L☉</unitPattern>
 			</unit>
 			<unit type="mass-metric-ton">
 				<displayName>ଟ</displayName>
@@ -7189,13 +7124,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="mass-earth-mass">
 				<displayName>ଅର୍ଥ ମାସେସ</displayName>
-				<unitPattern count="one" draft="contributed">{0} M⊕</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} M⊕</unitPattern>
 			</unit>
 			<unit type="mass-solar-mass">
 				<displayName>ସୋଲର ମାସେସ</displayName>
-				<unitPattern count="one" draft="contributed">{0} M☉</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} M☉</unitPattern>
 			</unit>
 			<unit type="power-gigawatt">
 				<displayName>ଗିୱା</displayName>
@@ -7227,11 +7158,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ଏଚପି</unitPattern>
 				<unitPattern count="other">{0} ଏଚପି</unitPattern>
 			</unit>
-			<unit type="pressure-hectopascal">
-				<displayName>hPa</displayName>
-				<unitPattern count="one">{0} hPa</unitPattern>
-				<unitPattern count="other">{0} hPa</unitPattern>
-			</unit>
 			<unit type="pressure-millimeter-of-mercury">
 				<displayName>mmHg</displayName>
 				<unitPattern count="one">{0} mmHg</unitPattern>
@@ -7247,6 +7173,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} inHg</unitPattern>
 				<unitPattern count="other">{0} inHg</unitPattern>
 			</unit>
+			<unit type="pressure-bar">
+				<displayName>ବାର୍‌</displayName>
+				<unitPattern count="one">{0} ବାର୍‌</unitPattern>
+				<unitPattern count="other">{0} ବାର୍‌</unitPattern>
+			</unit>
 			<unit type="pressure-millibar">
 				<displayName>mbar</displayName>
 				<unitPattern count="one">{0} mbar</unitPattern>
@@ -7257,15 +7188,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} atm</unitPattern>
 				<unitPattern count="other">{0} atm</unitPattern>
 			</unit>
-			<unit type="pressure-kilopascal">
-				<displayName>kPa</displayName>
-				<unitPattern count="one" draft="contributed">{0} kPa</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} kPa</unitPattern>
+			<unit type="pressure-pascal">
+				<displayName>ପା</displayName>
+				<unitPattern count="one">{0} ପା</unitPattern>
+				<unitPattern count="other">{0} ପା</unitPattern>
 			</unit>
-			<unit type="pressure-megapascal">
-				<displayName>MPa</displayName>
-				<unitPattern count="one" draft="contributed">{0} MPa</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} MPa</unitPattern>
+			<unit type="pressure-hectopascal">
+				<displayName>hPa</displayName>
+				<unitPattern count="one">{0} hPa</unitPattern>
+				<unitPattern count="other">{0} hPa</unitPattern>
 			</unit>
 			<unit type="speed-kilometer-per-hour">
 				<displayName>କିମି/ଘଣ୍ଟା</displayName>
@@ -7306,16 +7237,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>କେ</displayName>
 				<unitPattern count="one">{0} K</unitPattern>
 				<unitPattern count="other">{0} K</unitPattern>
-			</unit>
-			<unit type="torque-pound-foot">
-				<displayName>lbf⋅ft</displayName>
-				<unitPattern count="one" draft="contributed">{0} lbf⋅ft</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} lbf⋅ft</unitPattern>
-			</unit>
-			<unit type="torque-newton-meter">
-				<displayName>N⋅m</displayName>
-				<unitPattern count="one" draft="contributed">{0} N⋅m</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} N⋅m</unitPattern>
 			</unit>
 			<unit type="volume-cubic-kilometer">
 				<displayName>କିମି³</displayName>
@@ -7434,8 +7355,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="volume-fluid-ounce-imperial">
 				<displayName>ଇମ୍ପ. ଏଫଏଲ ଓଜେ</displayName>
-				<unitPattern count="one" draft="contributed">{0} fl oz Imp.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} fl oz Imp.</unitPattern>
 			</unit>
 			<unit type="volume-tablespoon">
 				<displayName>ଖାଇବା ଚାମଚ</displayName>
@@ -7449,8 +7368,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="volume-barrel">
 				<displayName>ବାରେଲ</displayName>
-				<unitPattern count="one" draft="contributed">{0} bbl</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} bbl</unitPattern>
 			</unit>
 			<coordinateUnit>
 				<displayName>ଦିଗ</displayName>
@@ -7590,17 +7507,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<listPatternPart type="end">{0} କିମ୍ବା {1}</listPatternPart>
 			<listPatternPart type="2">{0} କିମ୍ବା {1}</listPatternPart>
 		</listPattern>
-		<listPattern type="standard-narrow">
-			<listPatternPart type="start">{0}, {1}</listPatternPart>
-			<listPatternPart type="middle">{0}, {1}</listPatternPart>
-			<listPatternPart type="end">{0}, ଓ {1}</listPatternPart>
-			<listPatternPart type="2">{0} ଓ {1}</listPatternPart>
-		</listPattern>
 		<listPattern type="standard-short">
-			<listPatternPart type="start">{0}, {1}</listPatternPart>
-			<listPatternPart type="middle">{0}, {1}</listPatternPart>
 			<listPatternPart type="end">{0}, ଓ {1}</listPatternPart>
-			<listPatternPart type="2">{0} ଓ {1}</listPatternPart>
 		</listPattern>
 		<listPattern type="unit">
 			<listPatternPart type="start">{0}, {1}</listPatternPart>

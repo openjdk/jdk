@@ -24,6 +24,7 @@
 #include "precompiled.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
+#include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zBarrier.inline.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zGranuleMap.inline.hpp"
@@ -126,7 +127,7 @@ public:
 
 ZHeapIterator::ZHeapIterator() :
     _visit_stack(),
-    _visit_map() {}
+    _visit_map(ZAddressOffsetMax) {}
 
 ZHeapIterator::~ZHeapIterator() {
   ZVisitMapIterator iter(&_visit_map);
@@ -148,11 +149,11 @@ static size_t object_index(oop obj) {
 }
 
 ZHeapIteratorBitMap* ZHeapIterator::object_map(oop obj) {
-  const uintptr_t addr = ZOop::to_address(obj);
-  ZHeapIteratorBitMap* map = _visit_map.get(addr);
+  const uintptr_t offset = ZAddress::offset(ZOop::to_address(obj));
+  ZHeapIteratorBitMap* map = _visit_map.get(offset);
   if (map == NULL) {
     map = new ZHeapIteratorBitMap(object_index_max());
-    _visit_map.put(addr, map);
+    _visit_map.put(offset, map);
   }
 
   return map;

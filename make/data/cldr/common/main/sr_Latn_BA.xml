@@ -7,7 +7,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 14877 $"/>
+		<version number="$Revision$"/>
 		<language type="sr"/>
 		<script type="Latn"/>
 		<territory type="BA"/>
@@ -25,9 +25,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="nqo" draft="contributed">n’ko</language>
 			<language type="shi" draft="contributed">južni šilha</language>
 			<language type="si" draft="contributed">sinhalski</language>
+			<language type="sw_CD" draft="contributed">kisvahili</language>
 			<language type="tzm" draft="contributed">centralnoatlaski tamašek</language>
 			<language type="xh" draft="contributed">isikosa</language>
 			<language type="zgh" draft="contributed">standardni marokanski tamašek</language>
+			<language type="zh_Hans" draft="contributed">pojednostavljeni kineski</language>
+			<language type="zh_Hant" draft="contributed">tradicionalni kineski</language>
 			<language type="zu" draft="contributed">isizulu</language>
 		</languages>
 		<territories>
@@ -37,7 +40,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="CZ" draft="contributed">Češka Republika</territory>
 			<territory type="DE" draft="contributed">Njemačka</territory>
 			<territory type="KN" draft="contributed">Sveti Kits i Nevis</territory>
-			<territory type="MK" alt="variant" draft="contributed">BJR Makedonija</territory>
 			<territory type="MO" draft="contributed">SAR Makao</territory>
 			<territory type="PM" draft="contributed">Sveti Pjer i Mikelon</territory>
 			<territory type="RE" draft="contributed">Reunion</territory>
@@ -63,34 +65,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</dateTimeFormats>
 			</calendar>
 			<calendar type="gregorian">
-				<months>
-					<monthContext type="stand-alone">
-						<monthWidth type="abbreviated">
-							<month type="1">jan</month>
-							<month type="2">feb</month>
-							<month type="3">mart</month>
-							<month type="4">apr</month>
-							<month type="5">maj</month>
-							<month type="6">jun</month>
-							<month type="7">jul</month>
-							<month type="8">avg</month>
-							<month type="9">sept</month>
-							<month type="10">okt</month>
-							<month type="11">nov</month>
-							<month type="12">dec</month>
-						</monthWidth>
-					</monthContext>
-				</months>
 				<days>
 					<dayContext type="format">
 						<dayWidth type="abbreviated">
-							<day type="sun">ned</day>
-							<day type="mon">pon</day>
+							<day type="sun" draft="contributed">ned</day>
+							<day type="mon" draft="contributed">pon</day>
 							<day type="tue">ut</day>
 							<day type="wed">sr</day>
-							<day type="thu">čet</day>
-							<day type="fri">pet</day>
-							<day type="sat">sub</day>
+							<day type="thu" draft="contributed">čet</day>
+							<day type="fri" draft="contributed">pet</day>
+							<day type="sat" draft="contributed">sub</day>
 						</dayWidth>
 						<dayWidth type="wide">
 							<day type="sun" draft="contributed">nedjelja</day>
@@ -104,13 +88,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					</dayContext>
 					<dayContext type="stand-alone">
 						<dayWidth type="abbreviated">
-							<day type="sun">ned</day>
-							<day type="mon">pon</day>
+							<day type="sun" draft="contributed">ned</day>
+							<day type="mon" draft="contributed">pon</day>
 							<day type="tue">ut</day>
 							<day type="wed">sr</day>
-							<day type="thu">čet</day>
-							<day type="fri">pet</day>
-							<day type="sat">sub</day>
+							<day type="thu" draft="contributed">čet</day>
+							<day type="fri" draft="contributed">pet</day>
+							<day type="sat" draft="contributed">sub</day>
 						</dayWidth>
 						<dayWidth type="wide">
 							<day type="sun" draft="contributed">nedjelja</day>
@@ -133,7 +117,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<dayPeriod type="morning1" draft="contributed">jutro</dayPeriod>
 							<dayPeriod type="afternoon1" draft="contributed">po pod.</dayPeriod>
 							<dayPeriod type="evening1" draft="contributed">veče</dayPeriod>
-							<dayPeriod type="night1" draft="contributed">noću</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="narrow">
 							<dayPeriod type="midnight" draft="contributed">ponoć</dayPeriod>

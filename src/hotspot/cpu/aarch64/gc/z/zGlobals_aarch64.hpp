@@ -24,23 +24,13 @@
 #ifndef CPU_AARCH64_GC_Z_ZGLOBALS_AARCH64_HPP
 #define CPU_AARCH64_GC_Z_ZGLOBALS_AARCH64_HPP
 
-//
-// Page Allocation Tiers
-// ---------------------
-//
-//  Page Type     Page Size     Object Size Limit     Object Alignment
-//  ------------------------------------------------------------------
-//  Small         2M            <= 265K               <MinObjAlignmentInBytes>
-//  Medium        32M           <= 4M                 4K
-//  Large         X*M           > 4M                  2M
-//  ------------------------------------------------------------------
-//
 const size_t ZPlatformGranuleSizeShift      = 21; // 2MB
+const size_t ZPlatformHeapViews             = 3;
 const size_t ZPlatformNMethodDisarmedOffset = 4;
 const size_t ZPlatformCacheLineSize         = 64;
 
-uintptr_t    ZPlatformAddressBase();
-size_t       ZPlatformAddressOffsetBits();
-size_t       ZPlatformAddressMetadataShift();
+uintptr_t ZPlatformAddressBase();
+size_t ZPlatformAddressOffsetBits();
+size_t ZPlatformAddressMetadataShift();
 
 #endif // CPU_AARCH64_GC_Z_ZGLOBALS_AARCH64_HPP

@@ -69,8 +69,8 @@ public class ConditionalEliminationTestBase extends GraalCompilerTest {
         DebugContext debug = graph.getDebug();
         debug.dump(DebugContext.BASIC_LEVEL, graph, "Graph");
         CoreProviders context = getProviders();
-        CanonicalizerPhase canonicalizer1 = new CanonicalizerPhase();
-        CanonicalizerPhase canonicalizer = new CanonicalizerPhase();
+        CanonicalizerPhase canonicalizer1 = createCanonicalizerPhase();
+        CanonicalizerPhase canonicalizer = createCanonicalizerPhase();
         try (DebugContext.Scope scope = debug.scope("ConditionalEliminationTest", graph)) {
             prepareGraph(graph, canonicalizer1, context, applyLowering);
             new IterativeConditionalEliminationPhase(canonicalizer, true).apply(graph, context);
@@ -106,10 +106,9 @@ public class ConditionalEliminationTestBase extends GraalCompilerTest {
     public void testProxies(String snippet, int expectedProxiesCreated) {
         StructuredGraph graph = parseEager(snippet, AllowAssumptions.YES);
         CoreProviders context = getProviders();
-        CanonicalizerPhase canonicalizer1 = new CanonicalizerPhase();
-        canonicalizer1.disableSimplification();
+        CanonicalizerPhase canonicalizer1 = CanonicalizerPhase.createWithoutCFGSimplification();
         canonicalizer1.apply(graph, context);
-        CanonicalizerPhase canonicalizer = new CanonicalizerPhase();
+        CanonicalizerPhase canonicalizer = createCanonicalizerPhase();
         new LoweringPhase(canonicalizer, LoweringTool.StandardLoweringStage.HIGH_TIER).apply(graph, context);
         canonicalizer.apply(graph, context);
 

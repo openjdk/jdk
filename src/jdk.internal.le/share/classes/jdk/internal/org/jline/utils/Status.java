@@ -4,7 +4,7 @@
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
  *
- * http://www.opensource.org/licenses/bsd-license.php
+ * https://opensource.org/licenses/BSD-3-Clause
  */
 package jdk.internal.org.jline.utils;
 
@@ -24,9 +24,11 @@ public class Status {
     protected final AbstractTerminal terminal;
     protected final boolean supported;
     protected List<AttributedString> oldLines = Collections.emptyList();
+    protected List<AttributedString> linesToRestore = Collections.emptyList();
     protected int rows;
     protected int columns;
     protected boolean force;
+    protected boolean suspended = false;
 
     public static Status getStatus(Terminal terminal) {
         return getStatus(terminal, true);
@@ -61,15 +63,34 @@ public class Status {
         this.force = true;
     }
 
+    public void hardReset() {
+        if (suspended) {
+            return;
+        }
+        List<AttributedString> lines = new ArrayList<>(oldLines);
+        update(null);
+        update(lines);
+    }
+
     public void redraw() {
+        if (suspended) {
+            return;
+        }
         update(oldLines);
     }
 
     public void update(List<AttributedString> lines) {
+        if (!supported) {
+            return;
+        }
         if (lines == null) {
             lines = Collections.emptyList();
         }
-        if (!supported || (oldLines.equals(lines) && !force)) {
+        if (suspended) {
+            linesToRestore = new ArrayList<>(lines);
+            return;
+        }
+        if (oldLines.equals(lines) && !force) {
             return;
         }
         int nb = lines.size() - oldLines.size();
@@ -82,10 +103,11 @@ public class Status {
             }
         }
         terminal.puts(Capability.save_cursor);
+        terminal.puts(Capability.cursor_address, rows - lines.size(), 0);
         terminal.puts(Capability.clr_eos);
         for (int i = 0; i < lines.size(); i++) {
             terminal.puts(Capability.cursor_address, rows - lines.size() + i, 0);
-            terminal.writer().write(lines.get(i).columnSubSequence(0, columns).toAnsi(terminal));
+            lines.get(i).columnSubSequence(0, columns).print(terminal);
         }
         terminal.puts(Capability.change_scroll_region, 0, rows - 1 - lines.size());
         terminal.puts(Capability.restore_cursor);
@@ -93,4 +115,27 @@ public class Status {
         oldLines = new ArrayList<>(lines);
         force = false;
     }
+
+    public void suspend() {
+        if (suspended) {
+            return;
+        }
+        linesToRestore = new ArrayList<>(oldLines);
+        update(null);
+        suspended = true;
+    }
+
+    public void restore() {
+        if (!suspended) {
+            return;
+        }
+        suspended = false;
+        update(linesToRestore);
+        linesToRestore = Collections.emptyList();
+    }
+
+    public int size() {
+        return oldLines.size();
+    }
+
 }

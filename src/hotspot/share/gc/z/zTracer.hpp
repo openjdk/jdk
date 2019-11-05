@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,10 +37,10 @@ private:
 
   ZTracer();
 
-  void send_stat_counter(uint32_t counter_id, uint64_t increment, uint64_t value);
-  void send_stat_sampler(uint32_t sampler_id, uint64_t value);
+  void send_stat_counter(const ZStatCounter& counter, uint64_t increment, uint64_t value);
+  void send_stat_sampler(const ZStatSampler& sampler, uint64_t value);
   void send_thread_phase(const char* name, const Ticks& start, const Ticks& end);
-  void send_page_alloc(size_t size, size_t used, size_t free, size_t cache, bool nonblocking, bool noreserve);
+  void send_page_alloc(size_t size, size_t used, size_t free, size_t cache, ZAllocationFlags flags);
 
 public:
   static ZTracer* tracer();
@@ -48,7 +48,6 @@ public:
 
   void report_stat_counter(const ZStatCounter& counter, uint64_t increment, uint64_t value);
   void report_stat_sampler(const ZStatSampler& sampler, uint64_t value);
-  void report_thread_phase(const ZStatPhase& phase, const Ticks& start, const Ticks& end);
   void report_thread_phase(const char* name, const Ticks& start, const Ticks& end);
   void report_page_alloc(size_t size, size_t used, size_t free, size_t cache, ZAllocationFlags flags);
 };

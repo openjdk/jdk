@@ -266,6 +266,8 @@ void ciReceiverTypeData::translate_receiver_data_from(const ProfileData* data) {
         // With concurrent class unloading, the MDO could have stale metadata; override it
         clear_row(row);
       }
+    } else {
+      set_receiver(row, NULL);
     }
   }
 }

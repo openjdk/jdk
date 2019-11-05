@@ -159,7 +159,7 @@ public final class InvokeWithExceptionNode extends ControlSplitNode implements I
     @Override
     public void setNext(FixedNode x) {
         if (x != null) {
-            this.setNext(KillingBeginNode.begin(x, getLocationIdentity()));
+            this.setNext(KillingBeginNode.begin(x, this.getKilledLocationIdentity()));
         } else {
             this.setNext(null);
         }
@@ -192,7 +192,7 @@ public final class InvokeWithExceptionNode extends ControlSplitNode implements I
     }
 
     @Override
-    public LocationIdentity getLocationIdentity() {
+    public LocationIdentity getKilledLocationIdentity() {
         return LocationIdentity.any();
     }
 
@@ -290,7 +290,7 @@ public final class InvokeWithExceptionNode extends ControlSplitNode implements I
      * code.
      */
     public InvokeNode replaceWithInvoke() {
-        InvokeNode newInvoke = graph().add(new InvokeNode(callTarget, bci, stamp, getLocationIdentity()));
+        InvokeNode newInvoke = graph().add(new InvokeNode(callTarget, bci, stamp, this.getKilledLocationIdentity()));
         newInvoke.setStateAfter(stateAfter);
         newInvoke.setStateDuring(stateDuring);
         AbstractBeginNode oldException = this.exceptionEdge;

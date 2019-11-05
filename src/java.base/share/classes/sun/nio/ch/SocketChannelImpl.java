@@ -573,13 +573,32 @@ class SocketChannelImpl
     }
 
     /**
-     * Adjust the blocking mode while holding the readLock or writeLock.
+     * Adjusts the blocking mode. readLock or writeLock must already be held.
      */
     private void lockedConfigureBlocking(boolean block) throws IOException {
         assert readLock.isHeldByCurrentThread() || writeLock.isHeldByCurrentThread();
         synchronized (stateLock) {
             ensureOpen();
             IOUtil.configureBlocking(fd, block);
+        }
+    }
+
+    /**
+     * Adjusts the blocking mode if the channel is open. readLock or writeLock
+     * must already be held.
+     *
+     * @return {@code true} if the blocking mode was adjusted, {@code false} if
+     *         the blocking mode was not adjusted because the channel is closed
+     */
+    private boolean tryLockedConfigureBlocking(boolean block) throws IOException {
+        assert readLock.isHeldByCurrentThread() || writeLock.isHeldByCurrentThread();
+        synchronized (stateLock) {
+            if (isOpen()) {
+                IOUtil.configureBlocking(fd, block);
+                return true;
+            } else {
+                return false;
+            }
         }
     }
 
@@ -1051,8 +1070,8 @@ class SocketChannelImpl
                             int n = Net.connect(fd, isa.getAddress(), isa.getPort());
                             connected = (n > 0) ? true : finishTimedConnect(nanos);
                         } finally {
-                            // restore socket to blocking mode
-                            lockedConfigureBlocking(true);
+                            // restore socket to blocking mode (if channel is open)
+                            tryLockedConfigureBlocking(true);
                         }
                     } finally {
                         endConnect(true, connected);
@@ -1144,8 +1163,8 @@ class SocketChannelImpl
                     try {
                         n = timedRead(b, off, len, nanos);
                     } finally {
-                        // restore socket to blocking mode
-                        lockedConfigureBlocking(true);
+                        // restore socket to blocking mode (if channel is open)
+                        tryLockedConfigureBlocking(true);
                     }
                 } else {
                     // read, no timeout

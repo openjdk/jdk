@@ -55,8 +55,6 @@ public class ConcurrentHashMapTest extends JSR166TestCase {
         class Implementation implements MapImplementation {
             public Class<?> klazz() { return ConcurrentHashMap.class; }
             public Map emptyMap() { return new ConcurrentHashMap(); }
-            public Object makeKey(int i) { return i; }
-            public Object makeValue(int i) { return i; }
             public boolean isConcurrent() { return true; }
             public boolean permitsNullKeys() { return false; }
             public boolean permitsNullValues() { return false; }

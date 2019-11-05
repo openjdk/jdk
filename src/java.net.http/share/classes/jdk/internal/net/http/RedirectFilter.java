@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,6 +89,31 @@ class RedirectFilter implements HeaderFilter {
         }
     }
 
+    private static boolean isRedirecting(int statusCode) {
+        // < 300: not a redirect codes
+        if (statusCode < 300) return false;
+        // 309-399 Unassigned => don't follow
+        // > 399: not a redirect code
+        if (statusCode > 308) return false;
+        switch (statusCode) {
+            // 300: MultipleChoice => don't follow
+            case 300:
+                return false;
+            // 304: Not Modified => don't follow
+            case 304:
+                return false;
+            // 305: Proxy Redirect => don't follow.
+            case 305:
+                return false;
+            // 306: Unused => don't follow
+            case 306:
+                return false;
+            // 301, 302, 303, 307, 308: OK to follow.
+            default:
+                return true;
+        }
+    }
+
     /**
      * Checks to see if a new request is needed and returns it.
      * Null means response is ok to return to user.
@@ -102,13 +127,13 @@ class RedirectFilter implements HeaderFilter {
         if (rcode == HTTP_NOT_MODIFIED)
             return null;
 
-        if (rcode >= 300 && rcode <= 399) {
+        if (isRedirecting(rcode)) {
             URI redir = getRedirectedURI(r.headers());
             String newMethod = redirectedMethod(rcode, method);
             Log.logTrace("response code: {0}, redirected URI: {1}", rcode, redir);
             if (canRedirect(redir) && ++exchange.numberOfRedirects < max_redirects) {
                 Log.logTrace("redirect to: {0} with method: {1}", redir, newMethod);
-                return HttpRequestImpl.newInstanceForRedirection(redir, newMethod, request);
+                return HttpRequestImpl.newInstanceForRedirection(redir, newMethod, request, rcode != 303);
             } else {
                 Log.logTrace("not redirecting");
                 return null;

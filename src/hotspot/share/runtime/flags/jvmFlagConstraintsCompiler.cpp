@@ -60,16 +60,29 @@ JVMFlag::Error AliasLevelConstraintFunc(intx value, bool verbose) {
  * 4) The JVM is build using the compilers and tiered compilation is enabled. The option
  *    'TieredStopAtLevel = CompLevel_full_optimization' (the default value). As a result,
  *    the minimum number of compiler threads is 2.
+ * 5) Non-tiered emulation mode is on. CompilationModeFlag::disable_intermediate() == true.
+ *    The mininum number of threads is 2. But if CompilationModeFlag::quick_internal() == false, then it's 1.
  */
 JVMFlag::Error CICompilerCountConstraintFunc(intx value, bool verbose) {
   int min_number_of_compiler_threads = 0;
 #if !defined(COMPILER1) && !defined(COMPILER2) && !INCLUDE_JVMCI
   // case 1
 #else
-  if (!TieredCompilation || (TieredStopAtLevel < CompLevel_full_optimization)) {
-    min_number_of_compiler_threads = 1; // case 2 or case 3
+  if (TieredCompilation) {
+    if (TieredStopAtLevel < CompLevel_full_optimization || CompilationModeFlag::quick_only()) {
+      min_number_of_compiler_threads = 1; // case 3
+    } else if (CompilationModeFlag::disable_intermediate()) {
+      // case 5
+      if (CompilationModeFlag::quick_internal()) {
+        min_number_of_compiler_threads = 2;
+      } else {
+        min_number_of_compiler_threads = 1;
+      }
+    } else {
+      min_number_of_compiler_threads = 2;   // case 4 (tiered)
+    }
   } else {
-    min_number_of_compiler_threads = 2;   // case 4 (tiered)
+    min_number_of_compiler_threads = 1; // case 2
   }
 #endif
 

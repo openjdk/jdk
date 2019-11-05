@@ -951,34 +951,20 @@ public class JavacTrees extends DocTrees {
 
     private Env<AttrContext> attribStatToTree(JCTree stat, Env<AttrContext>env,
                                               JCTree tree, Map<JCClassDecl, JCClassDecl> copiedClasses) {
-        JavaFileObject prev = log.useSource(env.toplevel.sourcefile);
-        Log.DiagnosticHandler diagHandler = new Log.DiscardDiagnosticHandler(log);
-        try {
-            Env<AttrContext> result = attr.attribStatToTree(stat, env, tree);
+        Env<AttrContext> result = attr.attribStatToTree(stat, env, tree);
 
-            enter.unenter(env.toplevel, stat);
-            fixLocalClassNames(copiedClasses, env);
-            return result;
-        } finally {
-            log.popDiagnosticHandler(diagHandler);
-            log.useSource(prev);
-        }
+        fixLocalClassNames(copiedClasses, env);
+
+        return result;
     }
 
     private Env<AttrContext> attribExprToTree(JCExpression expr, Env<AttrContext>env,
                                               JCTree tree, Map<JCClassDecl, JCClassDecl> copiedClasses) {
-        JavaFileObject prev = log.useSource(env.toplevel.sourcefile);
-        Log.DiagnosticHandler diagHandler = new Log.DiscardDiagnosticHandler(log);
-        try {
-            Env<AttrContext> result = attr.attribExprToTree(expr, env, tree);
+        Env<AttrContext> result = attr.attribExprToTree(expr, env, tree);
 
-            enter.unenter(env.toplevel, expr);
-            fixLocalClassNames(copiedClasses, env);
-            return result;
-        } finally {
-            log.popDiagnosticHandler(diagHandler);
-            log.useSource(prev);
-        }
+        fixLocalClassNames(copiedClasses, env);
+
+        return result;
     }
 
     /* Change the flatnames of the local and anonymous classes in the Scope to

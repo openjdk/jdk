@@ -33,7 +33,6 @@
 #include "jfr/recorder/stringpool/jfrStringPoolWriter.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
 #include "logging/log.hpp"
-#include "runtime/atomic.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/safepoint.hpp"
@@ -42,12 +41,42 @@
 typedef JfrStringPool::Buffer* BufferPtr;
 
 static JfrStringPool* _instance = NULL;
+static uint64_t store_generation = 0;
+static uint64_t serialized_generation = 0;
+
+inline void set_generation(uint64_t value, uint64_t* const dest) {
+  assert(dest != NULL, "invariant");
+  OrderAccess::release_store(dest, value);
+}
+static void increment_store_generation() {
+  const uint64_t current_serialized = OrderAccess::load_acquire(&serialized_generation);
+  const uint64_t current_stored = OrderAccess::load_acquire(&store_generation);
+  if (current_serialized == current_stored) {
+    set_generation(current_serialized + 1, &store_generation);
+  }
+}
+
+static bool increment_serialized_generation() {
+  const uint64_t current_stored = OrderAccess::load_acquire(&store_generation);
+  const uint64_t current_serialized = OrderAccess::load_acquire(&serialized_generation);
+  if (current_stored != current_serialized) {
+    set_generation(current_stored, &serialized_generation);
+    return true;
+  }
+  return false;
+}
+
+bool JfrStringPool::is_modified() {
+  return increment_serialized_generation();
+}
 
 JfrStringPool& JfrStringPool::instance() {
   return *_instance;
 }
 
 JfrStringPool* JfrStringPool::create(JfrChunkWriter& cw) {
+  store_generation = 0;
+  serialized_generation = 0;
   assert(_instance == NULL, "invariant");
   _instance = new JfrStringPool(cw);
   return _instance;
@@ -131,12 +160,16 @@ BufferPtr JfrStringPool::lease_buffer(Thread* thread, size_t size /* 0 */) {
 bool JfrStringPool::add(bool epoch, jlong id, jstring string, JavaThread* jt) {
   assert(jt != NULL, "invariant");
   const bool current_epoch = JfrTraceIdEpoch::epoch();
-  if (current_epoch == epoch) {
+  if (current_epoch != epoch) {
+    return current_epoch;
+  }
+  {
     JfrStringPoolWriter writer(jt);
     writer.write(id);
     writer.write(string);
     writer.inc_nof_strings();
   }
+  increment_store_generation();
   return current_epoch;
 }
 
@@ -163,9 +196,10 @@ class StringPoolOp {
   size_t processed() { return _strings_processed; }
 };
 
-template <typename Type>
+template <typename T>
 class StringPoolDiscarderStub {
  public:
+  typedef T Type;
   bool write(Type* buffer, const u1* data, size_t size) {
     // stub only, discard happens at higher level
     return true;
@@ -197,6 +231,7 @@ size_t JfrStringPool::write_at_safepoint() {
 }
 
 size_t JfrStringPool::clear() {
+  increment_serialized_generation();
   DiscardOperation discard_operation;
   ExclusiveDiscardOperation edo(discard_operation);
   StringPoolReleaseOperation spro(_free_list_mspace, Thread::current(), false);

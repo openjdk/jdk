@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,10 +63,10 @@ final class RepositoryChunk {
                 LocalDateTime.ofInstant(startTime, z.getZone()));
         this.startTime = startTime;
         this.repositoryPath = path;
-        this.unFinishedFile = findFileName(repositoryPath, fileName, ".part");
+        this.unFinishedFile = findFileName(repositoryPath, fileName, ".jfr");
         this.file = findFileName(repositoryPath, fileName, ".jfr");
         this.unFinishedRAF = SecuritySupport.createRandomAccessFile(unFinishedFile);
-        SecuritySupport.touch(file);
+ //       SecuritySupport.touch(file);
     }
 
     private static SafePath findFileName(SafePath directory, String name, String extension) throws Exception {
@@ -105,8 +105,6 @@ final class RepositoryChunk {
     private static long finish(SafePath unFinishedFile, SafePath file) throws IOException {
         Objects.requireNonNull(unFinishedFile);
         Objects.requireNonNull(file);
-        SecuritySupport.delete(file);
-        SecuritySupport.moveReplace(unFinishedFile, file);
         return SecuritySupport.getFileSize(file);
     }
 
@@ -123,9 +121,11 @@ final class RepositoryChunk {
             SecuritySupport.delete(f);
             Logger.log(LogTag.JFR, LogLevel.DEBUG, () -> "Repository chunk " + f + " deleted");
         } catch (IOException e) {
-            Logger.log(LogTag.JFR, LogLevel.ERROR, ()  -> "Repository chunk " + f + " could not be deleted: " + e.getMessage());
+            // Probably happens because file is being streamed
+            // on Windows where files in use can't be removed.
+            Logger.log(LogTag.JFR, LogLevel.DEBUG, ()  -> "Repository chunk " + f + " could not be deleted: " + e.getMessage());
             if (f != null) {
-                SecuritySupport.deleteOnExit(f);
+                FilePurger.add(f);
             }
         }
     }

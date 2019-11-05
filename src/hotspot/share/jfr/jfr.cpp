@@ -71,6 +71,18 @@ void Jfr::on_thread_exit(Thread* t) {
   JfrThreadLocal::on_exit(t);
 }
 
+void Jfr::exclude_thread(Thread* t) {
+  JfrThreadLocal::exclude(t);
+}
+
+void Jfr::include_thread(Thread* t) {
+  JfrThreadLocal::include(t);
+}
+
+bool Jfr::is_excluded(Thread* t) {
+  return t != NULL && t->jfr_thread_local()->is_excluded();
+}
+
 void Jfr::on_java_thread_dismantle(JavaThread* jt) {
   if (JfrRecorder::is_recording()) {
     JfrCheckpointManager::write_thread_checkpoint(jt);

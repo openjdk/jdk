@@ -1826,57 +1826,183 @@ void nmethod::oops_do(OopClosure* f, bool allow_dead) {
   }
 }
 
-#define NMETHOD_SENTINEL ((nmethod*)badAddress)
-
 nmethod* volatile nmethod::_oops_do_mark_nmethods;
 
-// An nmethod is "marked" if its _mark_link is set non-null.
-// Even if it is the end of the linked list, it will have a non-null link value,
-// as long as it is on the list.
-// This code must be MP safe, because it is used from parallel GC passes.
-bool nmethod::test_set_oops_do_mark() {
-  assert(nmethod::oops_do_marking_is_active(), "oops_do_marking_prologue must be called");
-  if (_oops_do_mark_link == NULL) {
-    // Claim this nmethod for this thread to mark.
-    if (Atomic::replace_if_null(NMETHOD_SENTINEL, &_oops_do_mark_link)) {
-      // Atomically append this nmethod (now claimed) to the head of the list:
-      nmethod* observed_mark_nmethods = _oops_do_mark_nmethods;
-      for (;;) {
-        nmethod* required_mark_nmethods = observed_mark_nmethods;
-        _oops_do_mark_link = required_mark_nmethods;
-        observed_mark_nmethods =
-          Atomic::cmpxchg(this, &_oops_do_mark_nmethods, required_mark_nmethods);
-        if (observed_mark_nmethods == required_mark_nmethods)
-          break;
-      }
-      // Mark was clear when we first saw this guy.
-      LogTarget(Trace, gc, nmethod) lt;
-      if (lt.is_enabled()) {
-        LogStream ls(lt);
-        CompileTask::print(&ls, this, "oops_do, mark", /*short_form:*/ true);
-      }
-      return false;
-    }
+void nmethod::oops_do_log_change(const char* state) {
+  LogTarget(Trace, gc, nmethod) lt;
+  if (lt.is_enabled()) {
+    LogStream ls(lt);
+    CompileTask::print(&ls, this, state, true /* short_form */);
   }
-  // On fall through, another racing thread marked this nmethod before we did.
-  return true;
+}
+
+bool nmethod::oops_do_try_claim() {
+  if (oops_do_try_claim_weak_request()) {
+    nmethod* result = oops_do_try_add_to_list_as_weak_done();
+    assert(result == NULL, "adding to global list as weak done must always succeed.");
+    return true;
+  }
+  return false;
+}
+
+bool nmethod::oops_do_try_claim_weak_request() {
+  assert(SafepointSynchronize::is_at_safepoint(), "only at safepoint");
+
+  if ((_oops_do_mark_link == NULL) &&
+      (Atomic::replace_if_null(mark_link(this, claim_weak_request_tag), &_oops_do_mark_link))) {
+    oops_do_log_change("oops_do, mark weak request");
+    return true;
+  }
+  return false;
+}
+
+void nmethod::oops_do_set_strong_done(nmethod* old_head) {
+  _oops_do_mark_link = mark_link(old_head, claim_strong_done_tag);
+}
+
+nmethod::oops_do_mark_link* nmethod::oops_do_try_claim_strong_done() {
+  assert(SafepointSynchronize::is_at_safepoint(), "only at safepoint");
+
+  oops_do_mark_link* old_next = Atomic::cmpxchg(mark_link(this, claim_strong_done_tag), &_oops_do_mark_link, mark_link(NULL, claim_weak_request_tag));
+  if (old_next == NULL) {
+    oops_do_log_change("oops_do, mark strong done");
+  }
+  return old_next;
+}
+
+nmethod::oops_do_mark_link* nmethod::oops_do_try_add_strong_request(nmethod::oops_do_mark_link* next) {
+  assert(SafepointSynchronize::is_at_safepoint(), "only at safepoint");
+  assert(next == mark_link(this, claim_weak_request_tag), "Should be claimed as weak");
+
+  oops_do_mark_link* old_next = Atomic::cmpxchg(mark_link(this, claim_strong_request_tag), &_oops_do_mark_link, next);
+  if (old_next == next) {
+    oops_do_log_change("oops_do, mark strong request");
+  }
+  return old_next;
+}
+
+bool nmethod::oops_do_try_claim_weak_done_as_strong_done(nmethod::oops_do_mark_link* next) {
+  assert(SafepointSynchronize::is_at_safepoint(), "only at safepoint");
+  assert(extract_state(next) == claim_weak_done_tag, "Should be claimed as weak done");
+
+  oops_do_mark_link* old_next = Atomic::cmpxchg(mark_link(extract_nmethod(next), claim_strong_done_tag), &_oops_do_mark_link, next);
+  if (old_next == next) {
+    oops_do_log_change("oops_do, mark weak done -> mark strong done");
+    return true;
+  }
+  return false;
+}
+
+nmethod* nmethod::oops_do_try_add_to_list_as_weak_done() {
+  assert(SafepointSynchronize::is_at_safepoint(), "only at safepoint");
+
+  assert(extract_state(_oops_do_mark_link) == claim_weak_request_tag ||
+         extract_state(_oops_do_mark_link) == claim_strong_request_tag,
+         "must be but is nmethod " PTR_FORMAT " %u", p2i(extract_nmethod(_oops_do_mark_link)), extract_state(_oops_do_mark_link));
+
+  nmethod* old_head = Atomic::xchg(this, &_oops_do_mark_nmethods);
+  // Self-loop if needed.
+  if (old_head == NULL) {
+    old_head = this;
+  }
+  // Try to install end of list and weak done tag.
+  if (Atomic::cmpxchg(mark_link(old_head, claim_weak_done_tag), &_oops_do_mark_link, mark_link(this, claim_weak_request_tag)) == mark_link(this, claim_weak_request_tag)) {
+    oops_do_log_change("oops_do, mark weak done");
+    return NULL;
+  } else {
+    return old_head;
+  }
+}
+
+void nmethod::oops_do_add_to_list_as_strong_done() {
+  assert(SafepointSynchronize::is_at_safepoint(), "only at safepoint");
+
+  nmethod* old_head = Atomic::xchg(this, &_oops_do_mark_nmethods);
+  // Self-loop if needed.
+  if (old_head == NULL) {
+    old_head = this;
+  }
+  assert(_oops_do_mark_link == mark_link(this, claim_strong_done_tag), "must be but is nmethod " PTR_FORMAT " state %u",
+         p2i(extract_nmethod(_oops_do_mark_link)), extract_state(_oops_do_mark_link));
+
+  oops_do_set_strong_done(old_head);
+}
+
+void nmethod::oops_do_process_weak(OopsDoProcessor* p) {
+  if (!oops_do_try_claim_weak_request()) {
+    // Failed to claim for weak processing.
+    oops_do_log_change("oops_do, mark weak request fail");
+    return;
+  }
+
+  p->do_regular_processing(this);
+
+  nmethod* old_head = oops_do_try_add_to_list_as_weak_done();
+  if (old_head == NULL) {
+    return;
+  }
+  oops_do_log_change("oops_do, mark weak done fail");
+  // Adding to global list failed, another thread added a strong request.
+  assert(extract_state(_oops_do_mark_link) == claim_strong_request_tag,
+         "must be but is %u", extract_state(_oops_do_mark_link));
+
+  oops_do_log_change("oops_do, mark weak request -> mark strong done");
+
+  oops_do_set_strong_done(old_head);
+  // Do missing strong processing.
+  p->do_remaining_strong_processing(this);
+}
+
+void nmethod::oops_do_process_strong(OopsDoProcessor* p) {
+  oops_do_mark_link* next_raw = oops_do_try_claim_strong_done();
+  if (next_raw == NULL) {
+    p->do_regular_processing(this);
+    oops_do_add_to_list_as_strong_done();
+    return;
+  }
+  // Claim failed. Figure out why and handle it.
+  if (oops_do_has_weak_request(next_raw)) {
+    oops_do_mark_link* old = next_raw;
+    // Claim failed because being weak processed (state == "weak request").
+    // Try to request deferred strong processing.
+    next_raw = oops_do_try_add_strong_request(old);
+    if (next_raw == old) {
+      // Successfully requested deferred strong processing.
+      return;
+    }
+    // Failed because of a concurrent transition. No longer in "weak request" state.
+  }
+  if (oops_do_has_any_strong_state(next_raw)) {
+    // Already claimed for strong processing or requested for such.
+    return;
+  }
+  if (oops_do_try_claim_weak_done_as_strong_done(next_raw)) {
+    // Successfully claimed "weak done" as "strong done". Do the missing marking.
+    p->do_remaining_strong_processing(this);
+    return;
+  }
+  // Claim failed, some other thread got it.
 }
 
 void nmethod::oops_do_marking_prologue() {
+  assert_at_safepoint();
+
   log_trace(gc, nmethod)("oops_do_marking_prologue");
-  assert(_oops_do_mark_nmethods == NULL, "must not call oops_do_marking_prologue twice in a row");
-  // We use cmpxchg instead of regular assignment here because the user
-  // may fork a bunch of threads, and we need them all to see the same state.
-  nmethod* observed = Atomic::cmpxchg(NMETHOD_SENTINEL, &_oops_do_mark_nmethods, (nmethod*)NULL);
-  guarantee(observed == NULL, "no races in this sequential code");
+  assert(_oops_do_mark_nmethods == NULL, "must be empty");
 }
 
 void nmethod::oops_do_marking_epilogue() {
-  assert(_oops_do_mark_nmethods != NULL, "must not call oops_do_marking_epilogue twice in a row");
-  nmethod* cur = _oops_do_mark_nmethods;
-  while (cur != NMETHOD_SENTINEL) {
-    assert(cur != NULL, "not NULL-terminated");
-    nmethod* next = cur->_oops_do_mark_link;
+  assert_at_safepoint();
+
+  nmethod* next = _oops_do_mark_nmethods;
+  _oops_do_mark_nmethods = NULL;
+  if (next == NULL) {
+    return;
+  }
+  nmethod* cur;
+  do {
+    cur = next;
+    next = extract_nmethod(cur->_oops_do_mark_link);
     cur->_oops_do_mark_link = NULL;
     DEBUG_ONLY(cur->verify_oop_relocations());
 
@@ -1885,11 +2011,8 @@ void nmethod::oops_do_marking_epilogue() {
       LogStream ls(lt);
       CompileTask::print(&ls, cur, "oops_do, unmark", /*short_form:*/ true);
     }
-    cur = next;
-  }
-  nmethod* required = _oops_do_mark_nmethods;
-  nmethod* observed = Atomic::cmpxchg((nmethod*)NULL, &_oops_do_mark_nmethods, required);
-  guarantee(observed == required, "no races in this sequential code");
+    // End if self-loop has been detected.
+  } while (cur != next);
   log_trace(gc, nmethod)("oops_do_marking_epilogue");
 }
 
@@ -2262,6 +2385,8 @@ void nmethod::verify() {
   assert(voc.ok(), "embedded oops must be OK");
   Universe::heap()->verify_nmethod(this);
 
+  assert(_oops_do_mark_link == NULL, "_oops_do_mark_link for %s should be NULL but is " PTR_FORMAT,
+         nm->method()->external_name(), p2i(_oops_do_mark_link));
   verify_scopes();
 
   CompiledICLocker nm_verify(this);

@@ -46,11 +46,10 @@ class JfrRecorderService : public StackObj {
   void open_new_chunk(bool vm_error = false);
   void chunk_rotation();
   void in_memory_rotation();
-  void serialize_storage_from_in_memory_recording();
   void finalize_current_chunk();
-  void finalize_current_chunk_on_vm_error();
   void prepare_for_vm_error_rotation();
   void vm_error_rotation();
+  void invoke_flush();
 
   void clear();
   void pre_safepoint_clear();
@@ -67,7 +66,9 @@ class JfrRecorderService : public StackObj {
  public:
   JfrRecorderService();
   void start();
+  size_t flush();
   void rotate(int msgs);
+  void flushpoint();
   void process_full_buffers();
   void scavenge();
   void evaluate_chunk_size_for_rotation();

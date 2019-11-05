@@ -34,6 +34,7 @@ import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderPlugin;
 import org.graalvm.compiler.nodes.graphbuilderconf.IntrinsicContext;
+import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugin;
 import org.graalvm.compiler.nodes.graphbuilderconf.MethodSubstitutionPlugin;
 import org.graalvm.compiler.options.OptionValues;
 
@@ -82,8 +83,13 @@ public class DelegatingReplacements implements Replacements {
     }
 
     @Override
-    public void registerMethodSubstitution(MethodSubstitutionPlugin plugin, ResolvedJavaMethod original, IntrinsicContext.CompilationContext context, OptionValues options) {
-        delegate.registerMethodSubstitution(plugin, original, context, options);
+    public void registerMethodSubstitution(MethodSubstitutionPlugin plugin) {
+        delegate.registerMethodSubstitution(plugin);
+    }
+
+    @Override
+    public void registerConditionalPlugin(InvocationPlugin plugin) {
+        delegate.registerConditionalPlugin(plugin);
     }
 
     @Override

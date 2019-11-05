@@ -419,7 +419,7 @@ JNI_ENTRY(jclass, jni_FindClass(JNIEnv *env, const char *name))
   }
 
   TempNewSymbol sym = SymbolTable::new_symbol(name);
-  result = find_class_from_class_loader(env, sym, true, true, loader,
+  result = find_class_from_class_loader(env, sym, true, loader,
                                         protection_domain, true, thread);
 
   if (log_is_enabled(Debug, class, resolve) && result != NULL) {
@@ -2151,7 +2151,7 @@ JNI_ENTRY_NO_PRESERVE(void, jni_SetObjectField(JNIEnv *env, jobject obj, jfieldI
   if (JvmtiExport::should_post_field_modification()) {
     jvalue field_value;
     field_value.l = value;
-    o = JvmtiExport::jni_SetField_probe_nh(thread, obj, o, k, fieldID, false, 'L', (jvalue *)&field_value);
+    o = JvmtiExport::jni_SetField_probe_nh(thread, obj, o, k, fieldID, false, JVM_SIGNATURE_CLASS, (jvalue *)&field_value);
   }
   HeapAccess<ON_UNKNOWN_OOP_REF>::oop_store_at(o, offset, JNIHandles::resolve(value));
   HOTSPOT_JNI_SETOBJECTFIELD_RETURN();
@@ -2177,34 +2177,34 @@ JNI_ENTRY_NO_PRESERVE(void, jni_Set##Result##Field(JNIEnv *env, jobject obj, jfi
     field_value.unionType = value; \
     o = JvmtiExport::jni_SetField_probe_nh(thread, obj, o, k, fieldID, false, SigType, (jvalue *)&field_value); \
   } \
-  if (SigType == 'Z') { value = ((jboolean)value) & 1; } \
+  if (SigType == JVM_SIGNATURE_BOOLEAN) { value = ((jboolean)value) & 1; } \
   o->Fieldname##_field_put(offset, value); \
   ReturnProbe; \
 JNI_END
 
-DEFINE_SETFIELD(jboolean, bool,   Boolean, 'Z', z
+DEFINE_SETFIELD(jboolean, bool,   Boolean, JVM_SIGNATURE_BOOLEAN, z
                 , HOTSPOT_JNI_SETBOOLEANFIELD_ENTRY(env, obj, (uintptr_t)fieldID, value),
                 HOTSPOT_JNI_SETBOOLEANFIELD_RETURN())
-DEFINE_SETFIELD(jbyte,    byte,   Byte,    'B', b
+DEFINE_SETFIELD(jbyte,    byte,   Byte,    JVM_SIGNATURE_BYTE, b
                 , HOTSPOT_JNI_SETBYTEFIELD_ENTRY(env, obj, (uintptr_t)fieldID, value),
                 HOTSPOT_JNI_SETBYTEFIELD_RETURN())
-DEFINE_SETFIELD(jchar,    char,   Char,    'C', c
+DEFINE_SETFIELD(jchar,    char,   Char,    JVM_SIGNATURE_CHAR, c
                 , HOTSPOT_JNI_SETCHARFIELD_ENTRY(env, obj, (uintptr_t)fieldID, value),
                 HOTSPOT_JNI_SETCHARFIELD_RETURN())
-DEFINE_SETFIELD(jshort,   short,  Short,   'S', s
+DEFINE_SETFIELD(jshort,   short,  Short,   JVM_SIGNATURE_SHORT, s
                 , HOTSPOT_JNI_SETSHORTFIELD_ENTRY(env, obj, (uintptr_t)fieldID, value),
                 HOTSPOT_JNI_SETSHORTFIELD_RETURN())
-DEFINE_SETFIELD(jint,     int,    Int,     'I', i
+DEFINE_SETFIELD(jint,     int,    Int,     JVM_SIGNATURE_INT, i
                 , HOTSPOT_JNI_SETINTFIELD_ENTRY(env, obj, (uintptr_t)fieldID, value),
                 HOTSPOT_JNI_SETINTFIELD_RETURN())
-DEFINE_SETFIELD(jlong,    long,   Long,    'J', j
+DEFINE_SETFIELD(jlong,    long,   Long,    JVM_SIGNATURE_LONG, j
                 , HOTSPOT_JNI_SETLONGFIELD_ENTRY(env, obj, (uintptr_t)fieldID, value),
                 HOTSPOT_JNI_SETLONGFIELD_RETURN())
 // Float and double probes don't return value because dtrace doesn't currently support it
-DEFINE_SETFIELD(jfloat,   float,  Float,   'F', f
+DEFINE_SETFIELD(jfloat,   float,  Float,   JVM_SIGNATURE_FLOAT, f
                 , HOTSPOT_JNI_SETFLOATFIELD_ENTRY(env, obj, (uintptr_t)fieldID),
                 HOTSPOT_JNI_SETFLOATFIELD_RETURN())
-DEFINE_SETFIELD(jdouble,  double, Double,  'D', d
+DEFINE_SETFIELD(jdouble,  double, Double,  JVM_SIGNATURE_DOUBLE, d
                 , HOTSPOT_JNI_SETDOUBLEFIELD_ENTRY(env, obj, (uintptr_t)fieldID),
                 HOTSPOT_JNI_SETDOUBLEFIELD_RETURN())
 
@@ -2352,7 +2352,7 @@ JNI_ENTRY(void, jni_SetStaticObjectField(JNIEnv *env, jclass clazz, jfieldID fie
   if (JvmtiExport::should_post_field_modification()) {
     jvalue field_value;
     field_value.l = value;
-    JvmtiExport::jni_SetField_probe(thread, NULL, NULL, id->holder(), fieldID, true, 'L', (jvalue *)&field_value);
+    JvmtiExport::jni_SetField_probe(thread, NULL, NULL, id->holder(), fieldID, true, JVM_SIGNATURE_CLASS, (jvalue *)&field_value);
   }
   id->holder()->java_mirror()->obj_field_put(id->offset(), JNIHandles::resolve(value));
   HOTSPOT_JNI_SETSTATICOBJECTFIELD_RETURN();
@@ -2376,34 +2376,34 @@ JNI_ENTRY(void, jni_SetStatic##Result##Field(JNIEnv *env, jclass clazz, jfieldID
     field_value.unionType = value; \
     JvmtiExport::jni_SetField_probe(thread, NULL, NULL, id->holder(), fieldID, true, SigType, (jvalue *)&field_value); \
   } \
-  if (SigType == 'Z') { value = ((jboolean)value) & 1; } \
+  if (SigType == JVM_SIGNATURE_BOOLEAN) { value = ((jboolean)value) & 1; } \
   id->holder()->java_mirror()-> Fieldname##_field_put (id->offset(), value); \
   ReturnProbe;\
 JNI_END
 
-DEFINE_SETSTATICFIELD(jboolean, bool,   Boolean, 'Z', z
+DEFINE_SETSTATICFIELD(jboolean, bool,   Boolean, JVM_SIGNATURE_BOOLEAN, z
                       , HOTSPOT_JNI_SETSTATICBOOLEANFIELD_ENTRY(env, clazz, (uintptr_t)fieldID, value),
                       HOTSPOT_JNI_SETSTATICBOOLEANFIELD_RETURN())
-DEFINE_SETSTATICFIELD(jbyte,    byte,   Byte,    'B', b
+DEFINE_SETSTATICFIELD(jbyte,    byte,   Byte,    JVM_SIGNATURE_BYTE, b
                       , HOTSPOT_JNI_SETSTATICBYTEFIELD_ENTRY(env, clazz, (uintptr_t) fieldID, value),
                       HOTSPOT_JNI_SETSTATICBYTEFIELD_RETURN())
-DEFINE_SETSTATICFIELD(jchar,    char,   Char,    'C', c
+DEFINE_SETSTATICFIELD(jchar,    char,   Char,    JVM_SIGNATURE_CHAR, c
                       , HOTSPOT_JNI_SETSTATICCHARFIELD_ENTRY(env, clazz, (uintptr_t) fieldID, value),
                       HOTSPOT_JNI_SETSTATICCHARFIELD_RETURN())
-DEFINE_SETSTATICFIELD(jshort,   short,  Short,   'S', s
+DEFINE_SETSTATICFIELD(jshort,   short,  Short,   JVM_SIGNATURE_SHORT, s
                       , HOTSPOT_JNI_SETSTATICSHORTFIELD_ENTRY(env, clazz, (uintptr_t) fieldID, value),
                       HOTSPOT_JNI_SETSTATICSHORTFIELD_RETURN())
-DEFINE_SETSTATICFIELD(jint,     int,    Int,     'I', i
+DEFINE_SETSTATICFIELD(jint,     int,    Int,     JVM_SIGNATURE_INT, i
                       , HOTSPOT_JNI_SETSTATICINTFIELD_ENTRY(env, clazz, (uintptr_t) fieldID, value),
                       HOTSPOT_JNI_SETSTATICINTFIELD_RETURN())
-DEFINE_SETSTATICFIELD(jlong,    long,   Long,    'J', j
+DEFINE_SETSTATICFIELD(jlong,    long,   Long,    JVM_SIGNATURE_LONG, j
                       , HOTSPOT_JNI_SETSTATICLONGFIELD_ENTRY(env, clazz, (uintptr_t) fieldID, value),
                       HOTSPOT_JNI_SETSTATICLONGFIELD_RETURN())
 // Float and double probes don't return value because dtrace doesn't currently support it
-DEFINE_SETSTATICFIELD(jfloat,   float,  Float,   'F', f
+DEFINE_SETSTATICFIELD(jfloat,   float,  Float,   JVM_SIGNATURE_FLOAT, f
                       , HOTSPOT_JNI_SETSTATICFLOATFIELD_ENTRY(env, clazz, (uintptr_t) fieldID),
                       HOTSPOT_JNI_SETSTATICFLOATFIELD_RETURN())
-DEFINE_SETSTATICFIELD(jdouble,  double, Double,  'D', d
+DEFINE_SETSTATICFIELD(jdouble,  double, Double,  JVM_SIGNATURE_DOUBLE, d
                       , HOTSPOT_JNI_SETSTATICDOUBLEFIELD_ENTRY(env, clazz, (uintptr_t) fieldID),
                       HOTSPOT_JNI_SETSTATICDOUBLEFIELD_RETURN())
 
@@ -2909,89 +2909,6 @@ DEFINE_SETSCALARARRAYREGION(T_DOUBLE,  jdouble,  Double,  double
                             HOTSPOT_JNI_SETDOUBLEARRAYREGION_RETURN())
 
 
-//
-// Interception of natives
-//
-
-// The RegisterNatives call being attempted tried to register with a method that
-// is not native.  Ask JVM TI what prefixes have been specified.  Then check
-// to see if the native method is now wrapped with the prefixes.  See the
-// SetNativeMethodPrefix(es) functions in the JVM TI Spec for details.
-static Method* find_prefixed_native(Klass* k, Symbol* name, Symbol* signature, TRAPS) {
-#if INCLUDE_JVMTI
-  ResourceMark rm(THREAD);
-  Method* method;
-  int name_len = name->utf8_length();
-  char* name_str = name->as_utf8();
-  int prefix_count;
-  char** prefixes = JvmtiExport::get_all_native_method_prefixes(&prefix_count);
-  for (int i = 0; i < prefix_count; i++) {
-    char* prefix = prefixes[i];
-    int prefix_len = (int)strlen(prefix);
-
-    // try adding this prefix to the method name and see if it matches another method name
-    int trial_len = name_len + prefix_len;
-    char* trial_name_str = NEW_RESOURCE_ARRAY(char, trial_len + 1);
-    strcpy(trial_name_str, prefix);
-    strcat(trial_name_str, name_str);
-    TempNewSymbol trial_name = SymbolTable::probe(trial_name_str, trial_len);
-    if (trial_name == NULL) {
-      continue; // no such symbol, so this prefix wasn't used, try the next prefix
-    }
-    method = k->lookup_method(trial_name, signature);
-    if (method == NULL) {
-      continue; // signature doesn't match, try the next prefix
-    }
-    if (method->is_native()) {
-      method->set_is_prefixed_native();
-      return method; // wahoo, we found a prefixed version of the method, return it
-    }
-    // found as non-native, so prefix is good, add it, probably just need more prefixes
-    name_len = trial_len;
-    name_str = trial_name_str;
-  }
-#endif // INCLUDE_JVMTI
-  return NULL; // not found
-}
-
-static bool register_native(Klass* k, Symbol* name, Symbol* signature, address entry, TRAPS) {
-  Method* method = k->lookup_method(name, signature);
-  if (method == NULL) {
-    ResourceMark rm;
-    stringStream st;
-    st.print("Method '");
-    Method::print_external_name(&st, k, name, signature);
-    st.print("' name or signature does not match");
-    THROW_MSG_(vmSymbols::java_lang_NoSuchMethodError(), st.as_string(), false);
-  }
-  if (!method->is_native()) {
-    // trying to register to a non-native method, see if a JVM TI agent has added prefix(es)
-    method = find_prefixed_native(k, name, signature, THREAD);
-    if (method == NULL) {
-      ResourceMark rm;
-      stringStream st;
-      st.print("Method '");
-      Method::print_external_name(&st, k, name, signature);
-      st.print("' is not declared as native");
-      THROW_MSG_(vmSymbols::java_lang_NoSuchMethodError(), st.as_string(), false);
-    }
-  }
-
-  if (entry != NULL) {
-    method->set_native_function(entry,
-      Method::native_bind_event_is_interesting);
-  } else {
-    method->clear_native_function();
-  }
-  if (PrintJNIResolving) {
-    ResourceMark rm(THREAD);
-    tty->print_cr("[Registering JNI native method %s.%s]",
-      method->method_holder()->external_name(),
-      method->name()->as_C_string());
-  }
-  return true;
-}
-
 DT_RETURN_MARK_DECL(RegisterNatives, jint
                     , HOTSPOT_JNI_REGISTERNATIVES_RETURN(_ret_ref));
 
@@ -3024,8 +2941,8 @@ JNI_ENTRY(jint, jni_RegisterNatives(JNIEnv *env, jclass clazz,
       THROW_MSG_(vmSymbols::java_lang_NoSuchMethodError(), st.as_string(), -1);
     }
 
-    bool res = register_native(k, name, signature,
-                               (address) methods[index].fnPtr, THREAD);
+    bool res = Method::register_native(k, name, signature,
+                                       (address) methods[index].fnPtr, THREAD);
     if (!res) {
       ret = -1;
       break;
@@ -3291,7 +3208,7 @@ static jclass lookupOne(JNIEnv* env, const char* name, TRAPS) {
   Handle protection_domain; // null protection domain
 
   TempNewSymbol sym = SymbolTable::new_symbol(name);
-  jclass result =  find_class_from_class_loader(env, sym, true, true, loader, protection_domain, true, CHECK_NULL);
+  jclass result =  find_class_from_class_loader(env, sym, true, loader, protection_domain, true, CHECK_NULL);
 
   if (log_is_enabled(Debug, class, resolve) && result != NULL) {
     trace_class_resolution(java_lang_Class::as_Klass(JNIHandles::resolve_non_null(result)));

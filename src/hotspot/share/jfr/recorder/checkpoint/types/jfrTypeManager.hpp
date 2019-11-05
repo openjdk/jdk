@@ -32,13 +32,13 @@ class JfrCheckpointWriter;
 class JfrTypeManager : public AllStatic {
  public:
   static bool initialize();
-  static void clear();
-  static void write_types(JfrCheckpointWriter& writer);
-  static void write_safepoint_types(JfrCheckpointWriter& writer);
-  static void write_type_set();
-  static void write_type_set_for_unloaded_classes();
-  static void create_thread_blob(JavaThread* jt);
-  static void write_thread_checkpoint(JavaThread* jt);
+  static void destroy();
+  static void on_rotation();
+  static void write_threads(JfrCheckpointWriter& writer);
+  static void create_thread_blob(Thread* t);
+  static void write_thread_checkpoint(Thread* t);
+  static bool has_new_static_type();
+  static void write_static_types(JfrCheckpointWriter& writer);
 };
 
 #endif // SHARE_JFR_RECORDER_CHECKPOINT_TYPES_JFRTYPEMANAGER_HPP

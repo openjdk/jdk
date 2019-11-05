@@ -56,6 +56,7 @@ import org.graalvm.compiler.graph.NodeInputList;
 import org.graalvm.compiler.graph.NodeMap;
 import org.graalvm.compiler.graph.NodeSourcePosition;
 import org.graalvm.compiler.graph.NodeWorkList;
+import org.graalvm.compiler.nodeinfo.InputType;
 import org.graalvm.compiler.nodeinfo.Verbosity;
 import org.graalvm.compiler.nodes.AbstractBeginNode;
 import org.graalvm.compiler.nodes.AbstractEndNode;
@@ -87,6 +88,7 @@ import org.graalvm.compiler.nodes.UnwindNode;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.IsNullNode;
 import org.graalvm.compiler.nodes.extended.ForeignCallNode;
+import org.graalvm.compiler.nodes.extended.GuardedNode;
 import org.graalvm.compiler.nodes.extended.GuardingNode;
 import org.graalvm.compiler.nodes.java.ExceptionObjectNode;
 import org.graalvm.compiler.nodes.java.MethodCallTargetNode;
@@ -526,7 +528,17 @@ public class InliningUtil extends ValueMergeUtil {
                 assert unwindNode.predecessor() != null;
                 assert invokeWithException.exceptionEdge().successors().count() == 1;
                 ExceptionObjectNode obj = (ExceptionObjectNode) invokeWithException.exceptionEdge();
-                obj.replaceAtUsages(unwindNode.exception());
+                /*
+                 * The exception object node is a begin node, i.e., it can be used as an anchor for
+                 * other nodes, thus we need to re-route them to a valid anchor, i.e. the begin node
+                 * of the unwind block.
+                 */
+                assert obj.usages().filter(x -> x instanceof GuardedNode && ((GuardedNode) x).getGuard() == obj).count() == 0 : "Must not have guards attached to an exception object node";
+                AbstractBeginNode replacementAnchor = AbstractBeginNode.prevBegin(unwindNode);
+                assert replacementAnchor != null;
+                obj.replaceAtUsages(InputType.Anchor, replacementAnchor);
+                obj.replaceAtUsages(InputType.Value, unwindNode.exception());
+
                 Node n = obj.next();
                 obj.setNext(null);
                 unwindNode.replaceAndDelete(n);

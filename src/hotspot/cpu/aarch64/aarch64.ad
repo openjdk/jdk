@@ -10413,6 +10413,56 @@ instruct mnegL(iRegLNoSp dst, iRegL src1, iRegL src2, immL0 zero) %{
   ins_pipe(lmac_reg_reg);
 %}
 
+// Combine Integer Signed Multiply & Add/Sub/Neg Long
+
+instruct smaddL(iRegLNoSp dst, iRegIorL2I src1, iRegIorL2I src2, iRegLNoSp src3) %{
+  match(Set dst (AddL src3 (MulL (ConvI2L src1) (ConvI2L src2))));
+
+  ins_cost(INSN_COST * 3);
+  format %{ "smaddl  $dst, $src1, $src2, $src3" %}
+
+  ins_encode %{
+    __ smaddl(as_Register($dst$$reg),
+              as_Register($src1$$reg),
+              as_Register($src2$$reg),
+              as_Register($src3$$reg));
+  %}
+
+  ins_pipe(imac_reg_reg);
+%}
+
+instruct smsubL(iRegLNoSp dst, iRegIorL2I src1, iRegIorL2I src2, iRegLNoSp src3) %{
+  match(Set dst (SubL src3 (MulL (ConvI2L src1) (ConvI2L src2))));
+
+  ins_cost(INSN_COST * 3);
+  format %{ "smsubl  $dst, $src1, $src2, $src3" %}
+
+  ins_encode %{
+    __ smsubl(as_Register($dst$$reg),
+              as_Register($src1$$reg),
+              as_Register($src2$$reg),
+              as_Register($src3$$reg));
+  %}
+
+  ins_pipe(imac_reg_reg);
+%}
+
+instruct smnegL(iRegLNoSp dst, iRegIorL2I src1, iRegIorL2I src2, immL0 zero) %{
+  match(Set dst (MulL (SubL zero (ConvI2L src1)) (ConvI2L src2)));
+  match(Set dst (MulL (ConvI2L src1) (SubL zero (ConvI2L src2))));
+
+  ins_cost(INSN_COST * 3);
+  format %{ "smnegl  $dst, $src1, $src2" %}
+
+  ins_encode %{
+    __ smnegl(as_Register($dst$$reg),
+              as_Register($src1$$reg),
+              as_Register($src2$$reg));
+  %}
+
+  ins_pipe(imac_reg_reg);
+%}
+
 // Integer Divide
 
 instruct divI(iRegINoSp dst, iRegIorL2I src1, iRegIorL2I src2) %{

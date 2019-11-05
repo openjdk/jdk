@@ -99,12 +99,6 @@ class ClearArtifact<const Method*> {
 };
 
 template <typename T>
-class Stub {
- public:
-  bool operator()(T const& value) { return true; }
-};
-
-template <typename T>
 class SerializePredicate {
   bool _class_unload;
  public:
@@ -222,6 +216,8 @@ class JfrSymbolId : public JfrCHeapObj {
   CStringTable* _cstring_table;
   const SymbolEntry* _sym_list;
   const CStringEntry* _cstring_list;
+  const Symbol* _sym_query;
+  const char* _cstring_query;
   traceid _symbol_id_counter;
   bool _class_unload;
 
@@ -300,9 +296,7 @@ class JfrArtifactSet : public JfrCHeapObj {
   ~JfrArtifactSet();
 
   // caller needs ResourceMark
-  void initialize(bool class_unload);
-  void clear();
-
+  void initialize(bool class_unload, bool clear = false);
 
   traceid mark(uintptr_t hash, const Symbol* sym, bool leakp);
   traceid mark(const Klass* klass, bool leakp);

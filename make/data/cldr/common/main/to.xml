@@ -7,7 +7,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 14782 $"/>
+		<version number="$Revision$"/>
 		<language type="to"/>
 	</identity>
 	<localeDisplayNames>
@@ -104,6 +104,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="car">lea fakakalipa</language>
 			<language type="cay">lea fakakaiuka</language>
 			<language type="cch">lea fakaʻatisami</language>
+			<language type="ccp">lea fakasākima</language>
 			<language type="ce">lea fakasese</language>
 			<language type="ceb">lea fakasepuano</language>
 			<language type="cgg">lea fakakika</language>
@@ -337,6 +338,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="ln">lea lingikala</language>
 			<language type="lo">lea fakalau</language>
 			<language type="lol">lea fakamongikō</language>
+			<language type="lou" draft="unconfirmed">lea fakaluisiana</language>
 			<language type="loz">lea fakalosi</language>
 			<language type="lrc">lea fakaluli-tokelau</language>
 			<language type="lt">lea fakalituania</language>
@@ -621,6 +623,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="yo">lea fakaʻiōlupa</language>
 			<language type="yrl">lea fakaneʻēngatū</language>
 			<language type="yue">lea fakakuangitongi</language>
+			<language type="yue" alt="menu">lea fakakuangitongi (Siaina)</language>
 			<language type="za">lea fakasuangi</language>
 			<language type="zap">lea fakasapoteki</language>
 			<language type="zbl">lea fakaʻilonga-pilisi</language>
@@ -628,8 +631,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="zen">lea fakasenaka</language>
 			<language type="zgh">lea fakatamasaiti-moloko</language>
 			<language type="zh">lea fakasiaina</language>
+			<language type="zh" alt="menu">lea fakasiaina-mānitali</language>
 			<language type="zh_Hans">lea fakasiaina-fakafaingofua</language>
+			<language type="zh_Hans" alt="long">lea fakasiaina-mānitali-fakafaingofua</language>
 			<language type="zh_Hant">lea fakasiaina-tukufakaholo</language>
+			<language type="zh_Hant" alt="long">lea fakasiaina-mānitali-tukufakaholo</language>
 			<language type="zu">lea fakasulu</language>
 			<language type="zun">lea fakasuni</language>
 			<language type="zxx">ʻikai ha lea</language>
@@ -667,16 +673,19 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<script type="Cyrl">tohinima fakalūsia</script>
 			<script type="Cyrs">tohinima fakalūsia-lotu-motuʻa</script>
 			<script type="Deva">tohinima fakaʻinitia-tevanākalī</script>
+			<script type="Dogr" draft="unconfirmed">tohinima fakatokala</script>
 			<script type="Dsrt">tohinima fakateseleti</script>
 			<script type="Dupl">tohinimanounou fakatupoloiē</script>
 			<script type="Egyd">tohinima temotika-fakaʻisipite</script>
 			<script type="Egyh">tohinima hielatika-fakaʻisipite</script>
 			<script type="Egyp">tohinima tongitapu-fakaʻisipite</script>
 			<script type="Elba">tohinima fakaʻelepasani</script>
+			<script type="Elym" draft="unconfirmed">tohinima fakaʻelimiti</script>
 			<script type="Ethi">tohinima fakaʻītiōpia</script>
 			<script type="Geok">tohinima fakakutusuli-seōsia</script>
 			<script type="Geor">tohinima fakaseōsia</script>
 			<script type="Glag">tohinima fakakalakoliti</script>
+			<script type="Gong" draft="unconfirmed">tohinima fakakunisala-kōniti</script>
 			<script type="Gonm" draft="unconfirmed">tohinima fakakōniti-masalami</script>
 			<script type="Goth">tohinima fakakotika</script>
 			<script type="Gran">tohinima fakasilanitā</script>
@@ -696,6 +705,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<script type="Hira">tohinima fakasiapani-hilakana</script>
 			<script type="Hluw">tohinima tongitapu-fakaʻanatolia</script>
 			<script type="Hmng">tohinima fakapahaumongi</script>
+			<script type="Hmnp" draft="unconfirmed">tohinima fakaniakengi-puasue-hamongi</script>
 			<script type="Hrkt">tohinima fakasilapa-siapani</script>
 			<script type="Hung">tohinima fakahungakalia-motuʻa</script>
 			<script type="Inds">tohinima fakaʻinitusi</script>
@@ -727,10 +737,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<script type="Lyci">tohinima fakalīsia</script>
 			<script type="Lydi">tohinima fakalītia</script>
 			<script type="Mahj">tohinima fakamahasani</script>
+			<script type="Maka" draft="unconfirmed">tohinima fakamakasā</script>
 			<script type="Mand">tohinima fakamanitaea</script>
 			<script type="Mani">tohinima fakamanikaea</script>
 			<script type="Marc" draft="unconfirmed">tohinima fakamaʻake</script>
 			<script type="Maya">tohinima tongitapu fakamaia</script>
+			<script type="Medf" draft="unconfirmed">tohinima fakametefaitili</script>
 			<script type="Mend">tohinima fakamēniti</script>
 			<script type="Merc">tohinima fakameloue-heihei</script>
 			<script type="Mero">tohinima fakameloue</script>
@@ -742,6 +754,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<script type="Mtei">tohinima fakametei-maieki</script>
 			<script type="Mult" draft="unconfirmed">tohinima fakamulitani</script>
 			<script type="Mymr">tohinima fakapema</script>
+			<script type="Nand" draft="unconfirmed">tohinima fakananitinakali</script>
 			<script type="Narb">tohinima fakaʻalepea-tokelau-motuʻa</script>
 			<script type="Nbat">tohinima fakanapatea</script>
 			<script type="Newa" draft="unconfirmed">tohinima fakaneua</script>
@@ -764,7 +777,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<script type="Phnx">tohinima fakafoinikia</script>
 			<script type="Plrd">tohinima fakafonētiki-polāti</script>
 			<script type="Prti">tohinima fakapātia-tongi</script>
+			<script type="Qaag" draft="unconfirmed">tohinima fakakāki</script>
 			<script type="Rjng">tohinima fakalesiangi</script>
+			<script type="Rohg" draft="unconfirmed">tohinima fakahanifi-lohingia</script>
 			<script type="Roro">tohinima fakalongolongo</script>
 			<script type="Runr">tohinima fakaluniki</script>
 			<script type="Samr">tohinima fakasamalitane</script>
@@ -777,6 +792,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<script type="Sidd">tohinima fakasititami</script>
 			<script type="Sind">tohinima fakakutauāti</script>
 			<script type="Sinh">tohinima fakasingihala</script>
+			<script type="Sogd" draft="unconfirmed">tohinima fakasokitia</script>
+			<script type="Sogo" draft="unconfirmed">tohinima fakasokitia-motuʻa</script>
 			<script type="Sora">tohinima fakasolasomipengi</script>
 			<script type="Soyo" draft="unconfirmed">tohinima fakasoiōmipo</script>
 			<script type="Sund">tohinima fakasunitā</script>
@@ -804,6 +821,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<script type="Vaii">tohinima fakavai</script>
 			<script type="Visp">tohinima fakafonētiki-hāmai</script>
 			<script type="Wara">tohinima fakavalangi-kisitī</script>
+			<script type="Wcho" draft="unconfirmed">tohinima fakauāniso</script>
 			<script type="Wole">tohinima fakauoleai</script>
 			<script type="Xpeo">tohinima fakapēsiamuʻa</script>
 			<script type="Xsux">tohinima fakamataʻingahau-sumelo-akatia</script>
@@ -847,6 +865,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="151">ʻEulope fakahahake</territory>
 			<territory type="154">ʻEulope fakatokelau</territory>
 			<territory type="155">ʻEulope fakahihifo</territory>
+			<territory type="202">ʻAfilika fakasahala-tonga</territory>
 			<territory type="419">ʻAmelika fakalatina</territory>
 			<territory type="AC">Motu ʻAsenisini</territory>
 			<territory type="AD">ʻAnitola</territory>
@@ -895,6 +914,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="CG" alt="variant">Kongo (Lepupelika)</territory>
 			<territory type="CH">Suisilani</territory>
 			<territory type="CI">Matafonua ʻAivolī</territory>
+			<territory type="CI" alt="variant">Matafonua ʻAivolī</territory>
 			<territory type="CK">ʻOtumotu Kuki</territory>
 			<territory type="CL">Sili</territory>
 			<territory type="CM">Kameluni</territory>
@@ -929,6 +949,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="FI">Finilani</territory>
 			<territory type="FJ">Fisi</territory>
 			<territory type="FK">ʻOtumotu Fokulani</territory>
+			<territory type="FK" alt="variant">ʻOtumotu Malivina</territory>
 			<territory type="FM">Mikolonīsia</territory>
 			<territory type="FO">ʻOtumotu Faloe</territory>
 			<territory type="FR">Falanisē</territory>
@@ -1003,8 +1024,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="MF">Sā Mātini (fakafalanisē)</territory>
 			<territory type="MG">Matakasika</territory>
 			<territory type="MH">ʻOtumotu Māsolo</territory>
-			<territory type="MK">Masetōnia</territory>
-			<territory type="MK" alt="variant">Masetōnia (FYROM)</territory>
+			<territory type="MK">Masetōnia fakatokelau</territory>
 			<territory type="ML">Māli</territory>
 			<territory type="MM">Mianimā (Pema)</territory>
 			<territory type="MN">Mongokōlia</territory>
@@ -1076,7 +1096,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="SV">ʻEle Salavatoa</territory>
 			<territory type="SX">Sā Mātini (fakahōlani)</territory>
 			<territory type="SY">Sīlia</territory>
-			<territory type="SZ">Suasilani</territory>
+			<territory type="SZ">ʻEsuatini</territory>
+			<territory type="SZ" alt="variant">Suasilani</territory>
 			<territory type="TA">Tulisitani ta Kunuha</territory>
 			<territory type="TC">ʻOtumotu Tuki mo Kaikosi</territory>
 			<territory type="TD">Sāti</territory>
@@ -1085,7 +1106,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="TH">Tailani</territory>
 			<territory type="TJ">Tasikitani</territory>
 			<territory type="TK">Tokelau</territory>
-			<territory type="TL">Timoa hahake</territory>
+			<territory type="TL">Timoa fakahahake</territory>
+			<territory type="TL" alt="variant">Timoa fakahahake</territory>
 			<territory type="TM">Tūkimenisitani</territory>
 			<territory type="TN">Tunīsia</territory>
 			<territory type="TO">Tonga</territory>
@@ -1111,6 +1133,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="VU">Vanuatu</territory>
 			<territory type="WF">ʻUvea mo Futuna</territory>
 			<territory type="WS">Haʻamoa</territory>
+			<territory type="XA">fasiʻalea loi</territory>
+			<territory type="XB">fua-ua loi</territory>
 			<territory type="XK">Kōsovo</territory>
 			<territory type="YE">Iemeni</territory>
 			<territory type="YT">Maiote</territory>
@@ -1127,31 +1151,45 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<variant type="1694ACAD" draft="unconfirmed">lea fakafalanisē fakaonopooni-tōmuʻa</variant>
 			<variant type="1959ACAD" draft="unconfirmed">fakaako</variant>
 			<variant type="ABL1943" draft="unconfirmed">sipelatotonu fokotuʻu 1943</variant>
+			<variant type="ALALC97" draft="unconfirmed">mataʻitohi liliu laipeli ʻamelika 1997</variant>
 			<variant type="ALUKU" draft="unconfirmed">lea fakafeituʻu fakaʻaluku</variant>
 			<variant type="AO1990" draft="unconfirmed">sipelatotonu ʻoe lea fakapotukali he 1990</variant>
+			<variant type="ARANES" draft="unconfirmed">lea fakafeituʻu fakaʻalanese</variant>
 			<variant type="AREVELA" draft="unconfirmed">lea fakaʻāmenia-hahake</variant>
 			<variant type="AREVMDA" draft="unconfirmed">lea fakaʻāmenia-hihifo</variant>
+			<variant type="ASANTE" draft="unconfirmed">lea fakafeituʻu fakaʻasanitē</variant>
+			<variant type="AUVERN" draft="unconfirmed">lea fakafeituʻu fakaʻauvēniati</variant>
 			<variant type="BAKU1926" draft="unconfirmed">motuʻalea fakalatina fakatahataha ki Toake</variant>
 			<variant type="BALANKA" draft="unconfirmed">lea fakafeituʻu fakapalanika ʻo Anii</variant>
 			<variant type="BARLA" draft="unconfirmed">lea fakafeituʻu fakapālavenito-pupunga</variant>
+			<variant type="BASICENG" draft="unconfirmed">lea fakapilitānia fakafaingofua</variant>
+			<variant type="BISCAYAN" draft="unconfirmed">lea fakafeituʻu fakapisikaea</variant>
 			<variant type="BISKE" draft="unconfirmed">lea fakafeituʻu fakapila mo fakasā-siōsio</variant>
 			<variant type="BOHORIC" draft="unconfirmed">motuʻalea fakapoholisi</variant>
-			<variant type="BOONT" draft="unconfirmed">lea fakapunavila</variant>
+			<variant type="BOONT" draft="unconfirmed">lea fakafeituʻu fakapunavila</variant>
 			<variant type="COLB1945" draft="unconfirmed">sipelatotonu ʻoe lea fakapotukali-palāsili he 1945</variant>
 			<variant type="DAJNKO" draft="unconfirmed">motuʻalea fakatainikō</variant>
 			<variant type="EKAVSK" draft="unconfirmed">lea fakasēpia (puʻaki fakaʻekavia)</variant>
 			<variant type="EMODENG" draft="unconfirmed">lea fakapilitānia fakonopooni-tōmuʻa</variant>
 			<variant type="FONIPA" draft="unconfirmed">fonētiki IPA</variant>
 			<variant type="FONUPA" draft="unconfirmed">fonētiki UPA</variant>
+			<variant type="GASCON" draft="unconfirmed">lea fakafeituʻu fakakasikō</variant>
 			<variant type="HEPBURN" draft="unconfirmed">mataʻitohi liliu fakahepipūnu</variant>
+			<variant type="HOGNORSK" draft="unconfirmed">lea fakafeituʻu fakanoauē-hake</variant>
 			<variant type="IJEKAVSK" draft="unconfirmed">lea fakasēpia (puʻaki fakaʻisekavia)</variant>
+			<variant type="JAUER" draft="unconfirmed">lea fakafeituʻu fakatiaue</variant>
+			<variant type="JYUTPING" draft="unconfirmed">mataʻitohi liliu fakakuangitongi</variant>
 			<variant type="KKCOR" draft="unconfirmed">sipelatotonu fakatatau</variant>
+			<variant type="KOCIEWIE" draft="unconfirmed">lea fakafeituʻu fakakosivie</variant>
 			<variant type="KSCOR" draft="unconfirmed">sipelatotonu fakasīpinga</variant>
+			<variant type="LEMOSIN" draft="unconfirmed">lea fakafeituʻu fakalemosini</variant>
+			<variant type="LENGADOC" draft="unconfirmed">lea fakafeituʻu fakalangetoki</variant>
 			<variant type="LIPAW" draft="unconfirmed">lea fakafeituʻu fakalipovasi ʻo Lesia</variant>
 			<variant type="METELKO" draft="unconfirmed">motuʻalea fakametēliko</variant>
 			<variant type="MONOTON" draft="unconfirmed">fasiʻalea taha</variant>
 			<variant type="NDYUKA" draft="unconfirmed">lea fakafeituʻu fakanitiuka</variant>
 			<variant type="NEDIS" draft="unconfirmed">lea fakafeituʻu fakanatisone</variant>
+			<variant type="NICARD" draft="unconfirmed">lea fakafeituʻu fakanisāti</variant>
 			<variant type="NJIVA" draft="unconfirmed">lea fakafeituʻu fakangiva</variant>
 			<variant type="NULIK" draft="unconfirmed">lea fakavolapuki fakaonopooni</variant>
 			<variant type="OSOJS" draft="unconfirmed">lea fakafeituʻu fakaʻoseako</variant>
@@ -1160,17 +1198,25 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<variant type="PINYIN" draft="unconfirmed">mataʻitohi liliu fakapīnīni</variant>
 			<variant type="POLYTON" draft="unconfirmed">fasiʻalea lahi</variant>
 			<variant type="POSIX" draft="unconfirmed">fakakomipiuta</variant>
+			<variant type="PROVENC" draft="unconfirmed">lea fakafeituʻu fakapolevenise</variant>
 			<variant type="REVISED" draft="unconfirmed">sipelatotonu kuo sivi</variant>
 			<variant type="RIGIK" draft="unconfirmed">lea fakavolapuki motuʻa</variant>
 			<variant type="ROZAJ" draft="unconfirmed">lea fakafeituʻu fakalesia</variant>
+			<variant type="SAAHO" draft="unconfirmed">lea fakasaho</variant>
 			<variant type="SCOTLAND" draft="unconfirmed">lea fakasikotilani fakasīpinga</variant>
+			<variant type="SCOUSE" draft="unconfirmed">lea fakafeituʻu fakasikause</variant>
 			<variant type="SOLBA" draft="unconfirmed">lea fakafeituʻu fakasolipika</variant>
 			<variant type="SOTAV" draft="unconfirmed">lea fakafeituʻu fakasotavenito-pupunga</variant>
+			<variant type="SURMIRAN" draft="unconfirmed">lea fakafeituʻu fakasulimila</variant>
+			<variant type="SURSILV" draft="unconfirmed">lea fakafeituʻu fakasulisiliva</variant>
 			<variant type="TARASK" draft="unconfirmed">sipelatotunu fakatalasikievika</variant>
 			<variant type="UCCOR" draft="unconfirmed">sipelatotonu fakatahataha</variant>
 			<variant type="UCRCOR" draft="unconfirmed">sipelatotonu fakatahataha kuo sivi</variant>
+			<variant type="ULSTER" draft="unconfirmed">lea fakafeituʻu fakaʻulisitā</variant>
 			<variant type="UNIFON" draft="unconfirmed">motuʻalea fonētiki ʻo Unifoni</variant>
-			<variant type="VALENCIA" draft="unconfirmed">lea fakavalenisia</variant>
+			<variant type="VALENCIA" draft="unconfirmed">lea fakafeituʻu fakavalenisia</variant>
+			<variant type="VALLADER" draft="unconfirmed">lea fakafeituʻu fakavalate</variant>
+			<variant type="VIVARAUP" draft="unconfirmed">lea fakafeituʻu fakavivalo-alapeno</variant>
 			<variant type="WADEGILE" draft="unconfirmed">mataʻitohi liliu fakauate-kilesi</variant>
 		</variants>
 		<keys>
@@ -1246,6 +1292,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="numbers" type="ethi">fika fakaʻītiōpia</type>
 			<type key="numbers" type="fullwide">fika laulahi</type>
 			<type key="numbers" type="geor">fika fakaseōsia</type>
+			<type key="numbers" type="gong" draft="unconfirmed">fika fakakoniti-kunisala</type>
+			<type key="numbers" type="gonm" draft="unconfirmed">fika fakakoniti–masalami</type>
 			<type key="numbers" type="grek">fika fakakalisi</type>
 			<type key="numbers" type="greklow">fika fakakalisi fakalalo</type>
 			<type key="numbers" type="gujr">fika fakakutalati</type>
@@ -1256,7 +1304,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="numbers" type="hant">fika fakasiaina tukufakaholo</type>
 			<type key="numbers" type="hantfin">fika fakasiaina tukufakaholo fakapaʻanga</type>
 			<type key="numbers" type="hebr">fika fakahepelū</type>
-			<type key="numbers" type="hmng" draft="unconfirmed">fika fakapahaumongi</type>
+			<type key="numbers" type="hmng" draft="unconfirmed">fika fakamōngi-pahau</type>
+			<type key="numbers" type="hmnp" draft="unconfirmed">fika fakamōngi-niakengi</type>
 			<type key="numbers" type="java" draft="unconfirmed">fika fakasava</type>
 			<type key="numbers" type="jpan">fika fakasiapani</type>
 			<type key="numbers" type="jpanfin">fika fakasiapani fakapaʻanga</type>
@@ -1286,6 +1335,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="numbers" type="olck" draft="unconfirmed">fika fakaʻolisiki</type>
 			<type key="numbers" type="orya">fika fakaʻotia</type>
 			<type key="numbers" type="osma" draft="unconfirmed">fika fakaʻosimania</type>
+			<type key="numbers" type="rohg" draft="unconfirmed">fika fakalohingia-hanifi</type>
 			<type key="numbers" type="roman">fika fakaloma</type>
 			<type key="numbers" type="romanlow">fika fakaloma fakalalo</type>
 			<type key="numbers" type="saur" draft="unconfirmed">fika fakasaulasitā</type>
@@ -1304,6 +1354,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="numbers" type="tirh" draft="unconfirmed">fika fakatīhuta</type>
 			<type key="numbers" type="vaii" draft="unconfirmed">fika fakavai</type>
 			<type key="numbers" type="wara" draft="unconfirmed">fika fakavalangi</type>
+			<type key="numbers" type="wcho" draft="unconfirmed">fika fakauāniko</type>
 		</types>
 		<measurementSystemNames>
 			<measurementSystemName type="metric">fakamita</measurementSystemName>
@@ -1320,8 +1371,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<exemplarCharacters>[a á ā e é ē f h i í ī k l m n {ng} o ó ō p s t u ú ū v ʻ]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[à ă â å ä æ b c ç d è ĕ ê ë g ì ĭ î ï j ñ ò ŏ ô ö ø œ q r ù ŭ û ü w x y ÿ z]</exemplarCharacters>
 		<exemplarCharacters type="index">[A E F H I K L M N {NG} O P S T U V ʻ]</exemplarCharacters>
-		<exemplarCharacters type="numbers">[\- , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
-		<exemplarCharacters type="punctuation">[\- ‐ – — , ; \: ! ? . … ' ‘ ’ &quot; “ ” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
+		<exemplarCharacters type="numbers">[\- ‑ , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‐ ‑ – — , ; \: ! ? . … ' ‘ ’ &quot; “ ” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
 		<ellipsis type="final">{0}…</ellipsis>
 		<ellipsis type="initial">…{0}</ellipsis>
 		<ellipsis type="medial">{0}…{1}</ellipsis>
@@ -1330,22 +1381,22 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<ellipsis type="word-medial">{0} … {1}</ellipsis>
 		<moreInformation>?</moreInformation>
 		<parseLenients scope="date" level="lenient">
-			<parseLenient sample="-" draft="unconfirmed">[\--/]</parseLenient>
-			<parseLenient sample=":" draft="unconfirmed">[\:∶]</parseLenient>
+			<parseLenient sample="-" draft="contributed">[\--/]</parseLenient>
+			<parseLenient sample=":" draft="contributed">[\:∶]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="general" level="lenient">
-			<parseLenient sample="." draft="unconfirmed">[.․。︒﹒．｡]</parseLenient>
-			<parseLenient sample="$" draft="unconfirmed">[\$﹩＄$]</parseLenient>
-			<parseLenient sample="£" draft="unconfirmed">[£₤]</parseLenient>
+			<parseLenient sample="." draft="contributed">[.․。︒﹒．｡]</parseLenient>
+			<parseLenient sample="$" draft="contributed">[\$﹩＄$]</parseLenient>
+			<parseLenient sample="£" draft="contributed">[£₤]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="lenient">
-			<parseLenient sample="-" draft="unconfirmed">[\-‒⁻₋−➖﹣－]</parseLenient>
-			<parseLenient sample="," draft="unconfirmed">[,،٫、︐︑﹐﹑，､]</parseLenient>
-			<parseLenient sample="+" draft="unconfirmed">[+⁺₊➕﬩﹢＋]</parseLenient>
+			<parseLenient sample="-" draft="contributed">[\-‒⁻₋−➖﹣－]</parseLenient>
+			<parseLenient sample="," draft="contributed">[,،٫、︐︑﹐﹑，､]</parseLenient>
+			<parseLenient sample="+" draft="contributed">[+⁺₊➕﬩﹢＋]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="stricter">
-			<parseLenient sample="," draft="unconfirmed">[,٫︐﹐，]</parseLenient>
-			<parseLenient sample="." draft="unconfirmed">[.․﹒．｡]</parseLenient>
+			<parseLenient sample="," draft="contributed">[,٫︐﹐，]</parseLenient>
+			<parseLenient sample="." draft="contributed">[.․﹒．｡]</parseLenient>
 		</parseLenients>
 	</characters>
 	<delimiters>
@@ -1356,6 +1407,28 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</delimiters>
 	<dates>
 		<calendars>
+			<calendar type="chinese">
+				<cyclicNameSets>
+					<cyclicNameSet type="zodiacs">
+						<cyclicNameContext type="format">
+							<cyclicNameWidth type="abbreviated">
+								<cyclicName type="1" draft="unconfirmed">Kumā</cyclicName>
+								<cyclicName type="2" draft="unconfirmed">Pulupokaʻi</cyclicName>
+								<cyclicName type="3" draft="unconfirmed">Taika</cyclicName>
+								<cyclicName type="4" draft="unconfirmed">Lapisi</cyclicName>
+								<cyclicName type="5" draft="unconfirmed">Talakoni</cyclicName>
+								<cyclicName type="6" draft="unconfirmed">Ngata</cyclicName>
+								<cyclicName type="7" draft="unconfirmed">Hoosi</cyclicName>
+								<cyclicName type="8" draft="unconfirmed">Kosi</cyclicName>
+								<cyclicName type="9" draft="unconfirmed">Ngeli</cyclicName>
+								<cyclicName type="10" draft="unconfirmed">Moataʻane</cyclicName>
+								<cyclicName type="11" draft="unconfirmed">Kulī</cyclicName>
+								<cyclicName type="12" draft="unconfirmed">Puaka</cyclicName>
+							</cyclicNameWidth>
+						</cyclicNameContext>
+					</cyclicNameSet>
+				</cyclicNameSets>
+			</calendar>
 			<calendar type="generic">
 				<dateFormats>
 					<dateFormatLength type="full">
@@ -1417,8 +1490,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E d MMM y G</dateFormatItem>
-						<dateFormatItem id="h" draft="unconfirmed">h a</dateFormatItem>
-						<dateFormatItem id="H" draft="unconfirmed">HH</dateFormatItem>
+						<dateFormatItem id="h">h a</dateFormatItem>
+						<dateFormatItem id="H">HH</dateFormatItem>
 						<dateFormatItem id="hm">h:mm a</dateFormatItem>
 						<dateFormatItem id="Hm">H:mm</dateFormatItem>
 						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
@@ -1458,6 +1531,44 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
 						<intervalFormatItem id="d">
 							<greatestDifference id="d">d – d</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Gy">
+							<greatestDifference id="G">y G – y G</greatestDifference>
+							<greatestDifference id="y">y – y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyM">
+							<greatestDifference id="G">M/y GGGGG – M/y GGGGG</greatestDifference>
+							<greatestDifference id="M">M/y – M/y GGGGG</greatestDifference>
+							<greatestDifference id="y">M/y – M/y GGGGG</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMd">
+							<greatestDifference id="d">d/M/y – d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="G">d/M/y GGGGG – d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="M">d/M/y – d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="y">d/M/y – d/M/y GGGGG</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMEd">
+							<greatestDifference id="d">E d/M/y – E d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="G">E d/M/y GGGGG – E d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="M">E d/M/y – E d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="y">E d/M/y – E d/M/y GGGGG</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMM">
+							<greatestDifference id="G">MMM y G – MMM y G</greatestDifference>
+							<greatestDifference id="M">MMM – MMM y G</greatestDifference>
+							<greatestDifference id="y">MMM y – MMM y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMd">
+							<greatestDifference id="d">d – d MMM y G</greatestDifference>
+							<greatestDifference id="G">d MMM y G – d MMM y G</greatestDifference>
+							<greatestDifference id="M">d MMM – d MMM y G</greatestDifference>
+							<greatestDifference id="y">d MMM y – d MMM y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMEd">
+							<greatestDifference id="d">E d MMM – E d MMM y G</greatestDifference>
+							<greatestDifference id="G">E d MMM y G – E d MMM y G</greatestDifference>
+							<greatestDifference id="M">E d MMM – E d MMM y G</greatestDifference>
+							<greatestDifference id="y">E d MMM y – E d MMM y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="h">
 							<greatestDifference id="a">h a – h a</greatestDifference>
@@ -1801,11 +1912,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					</eraNames>
 					<eraAbbr>
 						<era type="0">KM</era>
+						<era type="0" alt="variant" draft="unconfirmed">KM</era>
 						<era type="1">TS</era>
+						<era type="1" alt="variant" draft="unconfirmed">TS</era>
 					</eraAbbr>
 					<eraNarrow>
 						<era type="0" draft="unconfirmed">KM</era>
+						<era type="0" alt="variant" draft="unconfirmed">KM</era>
 						<era type="1" draft="unconfirmed">TS</era>
+						<era type="1" alt="variant" draft="unconfirmed">TS</era>
 					</eraNarrow>
 				</eras>
 				<dateFormats>
@@ -1874,13 +1989,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
-						<dateFormatItem id="Bh" draft="unconfirmed">h B</dateFormatItem>
-						<dateFormatItem id="Bhm" draft="unconfirmed">h:mm B</dateFormatItem>
-						<dateFormatItem id="Bhms" draft="unconfirmed">h:mm:ss B</dateFormatItem>
+						<dateFormatItem id="Bh">h B</dateFormatItem>
+						<dateFormatItem id="Bhm">h:mm B</dateFormatItem>
+						<dateFormatItem id="Bhms">h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="d">d</dateFormatItem>
 						<dateFormatItem id="E">ccc</dateFormatItem>
-						<dateFormatItem id="EBhm" draft="unconfirmed">E h:mm B</dateFormatItem>
-						<dateFormatItem id="EBhms" draft="unconfirmed">E h:mm:ss B</dateFormatItem>
+						<dateFormatItem id="EBhm">E h:mm B</dateFormatItem>
+						<dateFormatItem id="EBhms">E h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="Ed">E d</dateFormatItem>
 						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
 						<dateFormatItem id="EHm">E HH:mm</dateFormatItem>
@@ -1908,7 +2023,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="MMMEd">E d MMM</dateFormatItem>
 						<dateFormatItem id="MMMMd">d MMMM</dateFormatItem>
 						<dateFormatItem id="MMMMEd">E d MMMM</dateFormatItem>
-						<dateFormatItem id="MMMMW" count="other" draft="unconfirmed">'uike' 'hono' W ʻ'o' MMMM</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="other">'uike' 'hono' W ʻ'o' MMMM</dateFormatItem>
 						<dateFormatItem id="ms">mm:ss</dateFormatItem>
 						<dateFormatItem id="y">y</dateFormatItem>
 						<dateFormatItem id="yM">M/y</dateFormatItem>
@@ -1921,7 +2036,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="yMMMM">MMMM y</dateFormatItem>
 						<dateFormatItem id="yQQQ">y QQQ</dateFormatItem>
 						<dateFormatItem id="yQQQQ">y QQQQ</dateFormatItem>
-						<dateFormatItem id="yw" count="other" draft="unconfirmed">'uike' 'hono' w ʻ'o' Y</dateFormatItem>
+						<dateFormatItem id="yw" count="other">'uike' 'hono' w ʻ'o' Y</dateFormatItem>
 					</availableFormats>
 					<appendItems>
 						<appendItem request="Timezone">{0} {1}</appendItem>
@@ -1930,6 +2045,44 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
 						<intervalFormatItem id="d">
 							<greatestDifference id="d">d – d</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Gy">
+							<greatestDifference id="G">y G – y G</greatestDifference>
+							<greatestDifference id="y">y – y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyM">
+							<greatestDifference id="G">M/y GGGGG – M/y GGGGG</greatestDifference>
+							<greatestDifference id="M">M/y – M/y GGGGG</greatestDifference>
+							<greatestDifference id="y">M/y – M/y GGGGG</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMd">
+							<greatestDifference id="d">d/M/y – d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="G">d/M/y GGGGG – d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="M">d/M/y – d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="y">d/M/y – d/M/y GGGGG</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMEd">
+							<greatestDifference id="d">E d/M/y – E d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="G">E d/M/y GGGGG – E d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="M">E d/M/y – E d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="y">E d/M/y– E d/M/y GGGGG</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMM">
+							<greatestDifference id="G">MMM y G – MMM y G</greatestDifference>
+							<greatestDifference id="M">MMM – MMM y G</greatestDifference>
+							<greatestDifference id="y">MMM y – MMM y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMd">
+							<greatestDifference id="d">d – d MMM y G</greatestDifference>
+							<greatestDifference id="G">d MMM y G – d MMM y G</greatestDifference>
+							<greatestDifference id="M">d MMM – d MMM y G</greatestDifference>
+							<greatestDifference id="y">d MMM y – d MMM y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMEd">
+							<greatestDifference id="d">E d MMM – E d MMM y G</greatestDifference>
+							<greatestDifference id="G">E d MMM y G – E d MMM y G</greatestDifference>
+							<greatestDifference id="M">E d MMM – E d MMM y G</greatestDifference>
+							<greatestDifference id="y">E d MMM y – E d MMM y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="h">
 							<greatestDifference id="a">h a – h a</greatestDifference>
@@ -2029,10 +2182,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>kuonga</displayName>
 			</field>
 			<field type="era-short">
-				<displayName draft="unconfirmed">kuonga</displayName>
+				<displayName>kuonga</displayName>
 			</field>
 			<field type="era-narrow">
-				<displayName draft="unconfirmed">kuonga</displayName>
+				<displayName>kuonga</displayName>
 			</field>
 			<field type="year">
 				<displayName>taʻu</displayName>
@@ -2153,7 +2306,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relativeTime type="past">
 					<relativeTimePattern count="other">uike ʻe {0} kuoʻosi</relativeTimePattern>
 				</relativeTime>
-				<relativePeriod draft="unconfirmed">ʻi he uike ʻo e {0}</relativePeriod>
+				<relativePeriod>ʻi he uike ʻo e {0}</relativePeriod>
 			</field>
 			<field type="week-short">
 				<displayName>uike</displayName>
@@ -2166,7 +2319,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relativeTime type="past">
 					<relativeTimePattern count="other">uike ʻe {0} kuoʻosi</relativeTimePattern>
 				</relativeTime>
-				<relativePeriod draft="unconfirmed">ʻi he uike ʻo e {0}</relativePeriod>
+				<relativePeriod>ʻi he uike ʻo e {0}</relativePeriod>
 			</field>
 			<field type="week-narrow">
 				<displayName>uike</displayName>
@@ -2179,7 +2332,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relativeTime type="past">
 					<relativeTimePattern count="other">uike ʻe {0} kuoʻosi</relativeTimePattern>
 				</relativeTime>
-				<relativePeriod draft="unconfirmed">ʻi he uike ʻo e {0}</relativePeriod>
+				<relativePeriod>ʻi he uike ʻo e {0}</relativePeriod>
 			</field>
 			<field type="weekOfMonth">
 				<displayName>uike ʻo e māhina</displayName>
@@ -2264,10 +2417,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="0">Sāpaté ni</relative>
 				<relative type="1">Sāpate kahaʻu</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="other" draft="unconfirmed">Ngaahi Sāpate ʻe {0} ʻi he kahaʻu</relativeTimePattern>
+					<relativeTimePattern count="other">Ngaahi Sāpate ʻe {0} ʻi he kahaʻu</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="other" draft="unconfirmed">Ngaahi Sāpate ʻe {0} ʻi he kuohili</relativeTimePattern>
+					<relativeTimePattern count="other">Ngaahi Sāpate ʻe {0} ʻi he kuohili</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="sun-short">
@@ -2275,10 +2428,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="0">Sāpaté ni</relative>
 				<relative type="1">Sāpate kahaʻu</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="other" draft="unconfirmed">Sāpate ʻe {0} ʻi he kahaʻu</relativeTimePattern>
+					<relativeTimePattern count="other">Sāpate ʻe {0} ʻi he kahaʻu</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="other" draft="unconfirmed">Sāpate ʻe {0} ʻi he kuohili</relativeTimePattern>
+					<relativeTimePattern count="other">Sāpate ʻe {0} ʻi he kuohili</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="sun-narrow">
@@ -2286,10 +2439,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="0">Sāpaté ni</relative>
 				<relative type="1">Sāpate kahaʻu</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="other" draft="unconfirmed">Sāpate ʻe {0} ʻi he kahaʻu</relativeTimePattern>
+					<relativeTimePattern count="other">Sāpate ʻe {0} ʻi he kahaʻu</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="other" draft="unconfirmed">Sāpate ʻe {0} ʻi he kuohili</relativeTimePattern>
+					<relativeTimePattern count="other">Sāpate ʻe {0} ʻi he kuohili</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="mon">
@@ -2297,10 +2450,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="0">Mōnité ni</relative>
 				<relative type="1">Mōnite kahaʻu</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="other" draft="unconfirmed">Ngaahi Mōnite ʻe {0} ʻi he kahaʻu</relativeTimePattern>
+					<relativeTimePattern count="other">Ngaahi Mōnite ʻe {0} ʻi he kahaʻu</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="other" draft="unconfirmed">Ngaahi Mōnite ʻe {0} ʻi he kuohili</relativeTimePattern>
+					<relativeTimePattern count="other">Ngaahi Mōnite ʻe {0} ʻi he kuohili</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="mon-short">
@@ -2308,10 +2461,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="0">Mōnité ni</relative>
 				<relative type="1">Mōnite kahaʻu</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="other" draft="unconfirmed">Mōnite ʻe {0} ʻi he kahaʻu</relativeTimePattern>
+					<relativeTimePattern count="other">Mōnite ʻe {0} ʻi he kahaʻu</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="other" draft="unconfirmed">Mōnite ʻe {0} ʻi he kuohili</relativeTimePattern>
+					<relativeTimePattern count="other">Mōnite ʻe {0} ʻi he kuohili</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="mon-narrow">
@@ -2319,10 +2472,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="0">Mōnité ni</relative>
 				<relative type="1">Mōnite kahaʻu</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="other" draft="unconfirmed">Mōnite ʻe {0} ʻi he kahaʻu</relativeTimePattern>
+					<relativeTimePattern count="other">Mōnite ʻe {0} ʻi he kahaʻu</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="other" draft="unconfirmed">Mōnite ʻe {0} ʻi he kuohili</relativeTimePattern>
+					<relativeTimePattern count="other">Mōnite ʻe {0} ʻi he kuohili</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="tue">
@@ -2330,10 +2483,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="0">Tūsité ni</relative>
 				<relative type="1">Tūsite kahaʻu</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="other" draft="unconfirmed">Ngaahi Tūsite ʻe {0} ʻi he kahaʻu</relativeTimePattern>
+					<relativeTimePattern count="other">Ngaahi Tūsite ʻe {0} ʻi he kahaʻu</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="other" draft="unconfirmed">Ngaahi Tūsite ʻe {0} ʻi he kuohili</relativeTimePattern>
+					<relativeTimePattern count="other">Ngaahi Tūsite ʻe {0} ʻi he kuohili</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="tue-short">
@@ -2341,10 +2494,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="0">Tūsité ni</relative>
 				<relative type="1">Tūsite kahaʻu</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="other" draft="unconfirmed">Tūsite ʻe {0} ʻi he kahaʻu</relativeTimePattern>
+					<relativeTimePattern count="other">Tūsite ʻe {0} ʻi he kahaʻu</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="other" draft="unconfirmed">Tūsite ʻe {0} ʻi he kuohili</relativeTimePattern>
+					<relativeTimePattern count="other">Tūsite ʻe {0} ʻi he kuohili</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="tue-narrow">
@@ -2352,10 +2505,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="0">Tūsité ni</relative>
 				<relative type="1">Tūsite kahaʻu</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="other" draft="unconfirmed">Tūsite ʻe {0} ʻi he kahaʻu</relativeTimePattern>
+					<relativeTimePattern count="other">Tūsite ʻe {0} ʻi he kahaʻu</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="other" draft="unconfirmed">Tūsite ʻe {0} ʻi he kuohili</relativeTimePattern>
+					<relativeTimePattern count="other">Tūsite ʻe {0} ʻi he kuohili</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="wed">
@@ -2363,10 +2516,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="0">Pulelulú ni</relative>
 				<relative type="1">Pulelulu kahaʻu</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="other" draft="unconfirmed">Ngaahi Pulelulu ʻe {0} ʻi he kahaʻu</relativeTimePattern>
+					<relativeTimePattern count="other">Ngaahi Pulelulu ʻe {0} ʻi he kahaʻu</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="other" draft="unconfirmed">Ngaahi Pulelulu ʻe {0} ʻi he kuohili</relativeTimePattern>
+					<relativeTimePattern count="other">Ngaahi Pulelulu ʻe {0} ʻi he kuohili</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="wed-short">
@@ -2374,10 +2527,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="0">Pulelulú ni</relative>
 				<relative type="1">Pulelulu kahaʻu</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="other" draft="unconfirmed">Pulelulu ʻe {0} ʻi he kahaʻu</relativeTimePattern>
+					<relativeTimePattern count="other">Pulelulu ʻe {0} ʻi he kahaʻu</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="other" draft="unconfirmed">Pulelulu ʻe {0} ʻi he kuohili</relativeTimePattern>
+					<relativeTimePattern count="other">Pulelulu ʻe {0} ʻi he kuohili</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="wed-narrow">
@@ -2385,10 +2538,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="0">Pulelulú ni</relative>
 				<relative type="1">Pulelulu kahaʻu</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="other" draft="unconfirmed">Pulelulu ʻe {0} ʻi he kahaʻu</relativeTimePattern>
+					<relativeTimePattern count="other">Pulelulu ʻe {0} ʻi he kahaʻu</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="other" draft="unconfirmed">Pulelulu ʻe {0} ʻi he kuohili</relativeTimePattern>
+					<relativeTimePattern count="other">Pulelulu ʻe {0} ʻi he kuohili</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="thu">
@@ -2396,10 +2549,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="0">Tuʻapulelulú ni</relative>
 				<relative type="1">Tuʻapulelulu kahaʻu</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="other" draft="unconfirmed">Ngaahi Tuʻapulelulu ʻe {0} ʻi he kahaʻu</relativeTimePattern>
+					<relativeTimePattern count="other">Ngaahi Tuʻapulelulu ʻe {0} ʻi he kahaʻu</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="other" draft="unconfirmed">Ngaahi Tuʻapulelulu ʻe {0} ʻi he kuohili</relativeTimePattern>
+					<relativeTimePattern count="other">Ngaahi Tuʻapulelulu ʻe {0} ʻi he kuohili</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="thu-short">
@@ -2407,10 +2560,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="0">Tuʻapulelulú ni</relative>
 				<relative type="1">Tuʻapulelulu kahaʻu</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="other" draft="unconfirmed">Tuʻapulelulu ʻe {0} ʻi he kahaʻu</relativeTimePattern>
+					<relativeTimePattern count="other">Tuʻapulelulu ʻe {0} ʻi he kahaʻu</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="other" draft="unconfirmed">Tuʻapulelulu ʻe {0} ʻi he kuohili</relativeTimePattern>
+					<relativeTimePattern count="other">Tuʻapulelulu ʻe {0} ʻi he kuohili</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="thu-narrow">
@@ -2418,10 +2571,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="0">Tuʻapulelulú ni</relative>
 				<relative type="1">Tuʻapulelulu kahaʻu</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="other" draft="unconfirmed">Tuʻapulelulu ʻe {0} ʻi he kahaʻu</relativeTimePattern>
+					<relativeTimePattern count="other">Tuʻapulelulu ʻe {0} ʻi he kahaʻu</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="other" draft="unconfirmed">Tuʻapulelulu ʻe {0} ʻi he kuohili</relativeTimePattern>
+					<relativeTimePattern count="other">Tuʻapulelulu ʻe {0} ʻi he kuohili</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="fri">
@@ -2429,10 +2582,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="0">Falaité ni</relative>
 				<relative type="1">Falaite kahaʻu</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="other" draft="unconfirmed">Ngaahi Falaite ʻe {0} ʻi he kahaʻu</relativeTimePattern>
+					<relativeTimePattern count="other">Ngaahi Falaite ʻe {0} ʻi he kahaʻu</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="other" draft="unconfirmed">Ngaahi Falaite ʻe {0} ʻi he kuohili</relativeTimePattern>
+					<relativeTimePattern count="other">Ngaahi Falaite ʻe {0} ʻi he kuohili</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="fri-short">
@@ -2440,10 +2593,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="0">Falaité ni</relative>
 				<relative type="1">Falaite kahaʻu</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="other" draft="unconfirmed">Falaite ʻe {0} ʻi he kahaʻu</relativeTimePattern>
+					<relativeTimePattern count="other">Falaite ʻe {0} ʻi he kahaʻu</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="other" draft="unconfirmed">Falaite ʻe {0} ʻi he kuohili</relativeTimePattern>
+					<relativeTimePattern count="other">Falaite ʻe {0} ʻi he kuohili</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="fri-narrow">
@@ -2451,10 +2604,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="0">Falaité ni</relative>
 				<relative type="1">Falaite kahaʻu</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="other" draft="unconfirmed">Falaite ʻe {0} ʻi he kahaʻu</relativeTimePattern>
+					<relativeTimePattern count="other">Falaite ʻe {0} ʻi he kahaʻu</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="other" draft="unconfirmed">Falaite ʻe {0} ʻi he kuohili</relativeTimePattern>
+					<relativeTimePattern count="other">Falaite ʻe {0} ʻi he kuohili</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="sat">
@@ -2462,10 +2615,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="0">Tokonakí ni</relative>
 				<relative type="1">Tokonaki kahaʻu</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="other" draft="unconfirmed">Ngaahi Tokonaki ʻe {0} ʻi he kahaʻu</relativeTimePattern>
+					<relativeTimePattern count="other">Ngaahi Tokonaki ʻe {0} ʻi he kahaʻu</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="other" draft="unconfirmed">Ngaahi Tokonaki ʻe {0} ʻi he kuohili</relativeTimePattern>
+					<relativeTimePattern count="other">Ngaahi Tokonaki ʻe {0} ʻi he kuohili</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="sat-short">
@@ -2473,10 +2626,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="0">Tokonakí ni</relative>
 				<relative type="1">Tokonaki kahaʻu</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="other" draft="unconfirmed">Tokonaki ʻe {0} ʻi he kahaʻu</relativeTimePattern>
+					<relativeTimePattern count="other">Tokonaki ʻe {0} ʻi he kahaʻu</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="other" draft="unconfirmed">Tokonaki ʻe {0} ʻi he kuohili</relativeTimePattern>
+					<relativeTimePattern count="other">Tokonaki ʻe {0} ʻi he kuohili</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="sat-narrow">
@@ -2484,10 +2637,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="0">Tokonakí ni</relative>
 				<relative type="1">Tokonaki kahaʻu</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="other" draft="unconfirmed">Tokonaki ʻe {0} ʻi he kahaʻu</relativeTimePattern>
+					<relativeTimePattern count="other">Tokonaki ʻe {0} ʻi he kahaʻu</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="other" draft="unconfirmed">Tokonaki ʻe {0} ʻi he kuohili</relativeTimePattern>
+					<relativeTimePattern count="other">Tokonaki ʻe {0} ʻi he kuohili</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="dayperiod-short">
@@ -2501,7 +2654,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="hour">
 				<displayName>houa</displayName>
-				<relative type="0" draft="unconfirmed">ko e houa ʻeni</relative>
+				<relative type="0">ko e houa ʻeni</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="other">ʻi he houa ʻe {0}</relativeTimePattern>
 				</relativeTime>
@@ -2531,7 +2684,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="minute">
 				<displayName>miniti</displayName>
-				<relative type="0" draft="unconfirmed">ko e miniti ʻeni</relative>
+				<relative type="0">ko e miniti ʻeni</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="other">ʻi he miniti ʻe {0}</relativeTimePattern>
 				</relativeTime>
@@ -2593,10 +2746,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>taimi fakavahe</displayName>
 			</field>
 			<field type="zone-short">
-				<displayName draft="unconfirmed">taimi fakavahe</displayName>
+				<displayName>taimi fakavahe</displayName>
 			</field>
 			<field type="zone-narrow">
-				<displayName draft="unconfirmed">taimi fakavahe</displayName>
+				<displayName>taimi fakavahe</displayName>
 			</field>
 		</fields>
 		<timeZoneNames>
@@ -2615,7 +2768,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</zone>
 			<zone type="Etc/UTC">
 				<long>
-					<standard draft="unconfirmed">taimi fakaemāmani</standard>
+					<standard>taimi fakaemāmani</standard>
 				</long>
 				<short>
 					<standard draft="unconfirmed">UTC</standard>
@@ -2886,7 +3039,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>Vancouver</exemplarCity>
 			</zone>
 			<zone type="America/Fort_Nelson">
-				<exemplarCity draft="unconfirmed">Fort Nelson</exemplarCity>
+				<exemplarCity>Fort Nelson</exemplarCity>
 			</zone>
 			<zone type="America/Dawson_Creek">
 				<exemplarCity>Dawson Creek</exemplarCity>
@@ -2985,7 +3138,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>Lapanui</exemplarCity>
 			</zone>
 			<zone type="America/Punta_Arenas">
-				<exemplarCity draft="unconfirmed">Punta Arenas</exemplarCity>
+				<exemplarCity>Punta Arenas</exemplarCity>
 			</zone>
 			<zone type="America/Santiago">
 				<exemplarCity>Santiago</exemplarCity>
@@ -3021,7 +3174,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>Nicosia</exemplarCity>
 			</zone>
 			<zone type="Asia/Famagusta">
-				<exemplarCity draft="unconfirmed">Famagusta</exemplarCity>
+				<exemplarCity>Famagusta</exemplarCity>
 			</zone>
 			<zone type="Europe/Prague">
 				<exemplarCity>Prague</exemplarCity>
@@ -3249,10 +3402,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>Phnom Penh</exemplarCity>
 			</zone>
 			<zone type="Pacific/Enderbury">
-				<exemplarCity>Enderbury</exemplarCity>
+				<exemplarCity>ʻEnitipulī</exemplarCity>
 			</zone>
 			<zone type="Pacific/Kiritimati">
-				<exemplarCity>Kiritimati</exemplarCity>
+				<exemplarCity>Kilisimasi</exemplarCity>
 			</zone>
 			<zone type="Pacific/Tarawa">
 				<exemplarCity>Talava</exemplarCity>
@@ -3282,7 +3435,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>Oral</exemplarCity>
 			</zone>
 			<zone type="Asia/Atyrau">
-				<exemplarCity draft="unconfirmed">Atyrau</exemplarCity>
+				<exemplarCity>Atyrau</exemplarCity>
 			</zone>
 			<zone type="Asia/Aqtobe">
 				<exemplarCity>Aqtobe</exemplarCity>
@@ -3345,10 +3498,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>Antananarivo</exemplarCity>
 			</zone>
 			<zone type="Pacific/Kwajalein">
-				<exemplarCity>Kwajalein</exemplarCity>
+				<exemplarCity>Kuasaleni</exemplarCity>
 			</zone>
 			<zone type="Pacific/Majuro">
-				<exemplarCity>Majuro</exemplarCity>
+				<exemplarCity>Masulo</exemplarCity>
 			</zone>
 			<zone type="Europe/Skopje">
 				<exemplarCity>Skopje</exemplarCity>
@@ -3372,7 +3525,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>Macau</exemplarCity>
 			</zone>
 			<zone type="Pacific/Saipan">
-				<exemplarCity>Saipan</exemplarCity>
+				<exemplarCity>Saʻipani</exemplarCity>
 			</zone>
 			<zone type="America/Martinique">
 				<exemplarCity>Martinique</exemplarCity>
@@ -3489,16 +3642,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>Tahisi</exemplarCity>
 			</zone>
 			<zone type="Pacific/Marquesas">
-				<exemplarCity>Marquesas</exemplarCity>
+				<exemplarCity>Malikuesa</exemplarCity>
 			</zone>
 			<zone type="Pacific/Gambier">
-				<exemplarCity>Gambier</exemplarCity>
+				<exemplarCity>Kamipiē</exemplarCity>
 			</zone>
 			<zone type="Pacific/Port_Moresby">
-				<exemplarCity>Port Moresby</exemplarCity>
+				<exemplarCity>Taulanga Molesipi</exemplarCity>
 			</zone>
 			<zone type="Pacific/Bougainville">
-				<exemplarCity draft="unconfirmed">Bougainville</exemplarCity>
+				<exemplarCity>Pukanivila</exemplarCity>
 			</zone>
 			<zone type="Asia/Manila">
 				<exemplarCity>Manila</exemplarCity>
@@ -3513,7 +3666,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>Miquelon</exemplarCity>
 			</zone>
 			<zone type="Pacific/Pitcairn">
-				<exemplarCity>Pitcairn</exemplarCity>
+				<exemplarCity>Pitikeni</exemplarCity>
 			</zone>
 			<zone type="America/Puerto_Rico">
 				<exemplarCity>Puerto Rico</exemplarCity>
@@ -3564,16 +3717,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>Volgograd</exemplarCity>
 			</zone>
 			<zone type="Europe/Saratov">
-				<exemplarCity draft="unconfirmed">Saratov</exemplarCity>
+				<exemplarCity>Saratov</exemplarCity>
 			</zone>
 			<zone type="Europe/Astrakhan">
-				<exemplarCity draft="unconfirmed">Astrakhan</exemplarCity>
+				<exemplarCity>Astrakhan</exemplarCity>
 			</zone>
 			<zone type="Europe/Ulyanovsk">
-				<exemplarCity draft="unconfirmed">Ulyanovsk</exemplarCity>
+				<exemplarCity>Ulyanovsk</exemplarCity>
 			</zone>
 			<zone type="Europe/Kirov">
-				<exemplarCity draft="unconfirmed">Kirov</exemplarCity>
+				<exemplarCity>Kirov</exemplarCity>
 			</zone>
 			<zone type="Europe/Samara">
 				<exemplarCity>Samara</exemplarCity>
@@ -3588,10 +3741,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>Novosibirsk</exemplarCity>
 			</zone>
 			<zone type="Asia/Barnaul">
-				<exemplarCity draft="unconfirmed">Barnaul</exemplarCity>
+				<exemplarCity>Barnaul</exemplarCity>
 			</zone>
 			<zone type="Asia/Tomsk">
-				<exemplarCity draft="unconfirmed">Tomsk</exemplarCity>
+				<exemplarCity>Tomsk</exemplarCity>
 			</zone>
 			<zone type="Asia/Novokuznetsk">
 				<exemplarCity>Novokuznetsk</exemplarCity>
@@ -3603,7 +3756,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>Irkutsk</exemplarCity>
 			</zone>
 			<zone type="Asia/Chita">
-				<exemplarCity draft="unconfirmed">Chita</exemplarCity>
+				<exemplarCity>Chita</exemplarCity>
 			</zone>
 			<zone type="Asia/Yakutsk">
 				<exemplarCity>Yakutsk</exemplarCity>
@@ -3624,7 +3777,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>Magadan</exemplarCity>
 			</zone>
 			<zone type="Asia/Srednekolymsk">
-				<exemplarCity draft="unconfirmed">Srednekolymsk</exemplarCity>
+				<exemplarCity>Srednekolymsk</exemplarCity>
 			</zone>
 			<zone type="Asia/Kamchatka">
 				<exemplarCity>Kamchatka</exemplarCity>
@@ -3639,7 +3792,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>Riyadh</exemplarCity>
 			</zone>
 			<zone type="Pacific/Guadalcanal">
-				<exemplarCity>Guadalcanal</exemplarCity>
+				<exemplarCity>Kuatākanali</exemplarCity>
 			</zone>
 			<zone type="Indian/Mahe">
 				<exemplarCity>Mahe</exemplarCity>
@@ -3759,10 +3912,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>Kampala</exemplarCity>
 			</zone>
 			<zone type="Pacific/Midway">
-				<exemplarCity>Midway</exemplarCity>
+				<exemplarCity>Mitiuai</exemplarCity>
 			</zone>
 			<zone type="Pacific/Wake">
-				<exemplarCity>Wake</exemplarCity>
+				<exemplarCity>Ueke</exemplarCity>
 			</zone>
 			<zone type="America/Adak">
 				<exemplarCity>Adak</exemplarCity>
@@ -3771,7 +3924,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>Nome</exemplarCity>
 			</zone>
 			<zone type="Pacific/Johnston">
-				<exemplarCity>Johnston</exemplarCity>
+				<exemplarCity>Sionesitoni</exemplarCity>
 			</zone>
 			<zone type="America/Anchorage">
 				<exemplarCity>Anchorage</exemplarCity>
@@ -4678,7 +4831,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Pyongyang">
 				<long>
-					<standard draft="unconfirmed">houa fakapiongiangi</standard>
+					<standard>houa fakapiongiangi</standard>
 				</long>
 			</metazone>
 			<metazone type="Qyzylorda">
@@ -6636,15 +6789,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<pattern type="1000" count="other">¤ 0a</pattern>
 					<pattern type="10000" count="other">¤ 0m</pattern>
 					<pattern type="100000" count="other">¤ 0k</pattern>
-					<pattern type="1000000" count="other" draft="provisional">¤ 0M</pattern>
-					<pattern type="10000000" count="other" draft="provisional">¤ 00M</pattern>
-					<pattern type="100000000" count="other" draft="provisional">¤ 000M</pattern>
+					<pattern type="1000000" count="other">¤ 0M</pattern>
+					<pattern type="10000000" count="other">¤ 00M</pattern>
+					<pattern type="100000000" count="other">¤ 000M</pattern>
 					<pattern type="1000000000" count="other">¤ 0P</pattern>
 					<pattern type="10000000000" count="other">¤ 00P</pattern>
 					<pattern type="100000000000" count="other">¤ 000P</pattern>
-					<pattern type="1000000000000" count="other" draft="provisional">¤ 0T</pattern>
-					<pattern type="10000000000000" count="other" draft="provisional">¤ 00T</pattern>
-					<pattern type="100000000000000" count="other" draft="provisional">¤ 000T</pattern>
+					<pattern type="1000000000000" count="other">¤ 0T</pattern>
+					<pattern type="10000000000000" count="other">¤ 00T</pattern>
+					<pattern type="100000000000000" count="other">¤ 000T</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<unitPattern count="other">{1} {0}</unitPattern>
@@ -6893,27 +7046,54 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</currencyFormats>
 		<currencies>
 			<currency type="AUD">
-				<displayName>Australian Dollar</displayName>
-				<displayName count="other">Australian Dollar</displayName>
+				<displayName>Tola fakaʻaositelēlia</displayName>
+				<displayName count="other">Tola fakaʻaositelēlia</displayName>
 				<symbol>AUD$</symbol>
+				<symbol alt="narrow" draft="contributed">AU$</symbol>
 			</currency>
 			<currency type="BRL">
 				<displayName>BRL</displayName>
+			</currency>
+			<currency type="FJD">
+				<displayName>Tola fakafisi</displayName>
+				<displayName count="other">Tola fakafisi</displayName>
+				<symbol alt="narrow" draft="contributed">F$</symbol>
 			</currency>
 			<currency type="GEL">
 				<symbol alt="variant" draft="contributed">₾</symbol>
 			</currency>
 			<currency type="NZD">
+				<displayName>Tola fakanuʻusila</displayName>
+				<displayName count="other">Tola fakanuʻusila</displayName>
 				<symbol>NZD$</symbol>
+				<symbol alt="narrow" draft="contributed">NZ$</symbol>
+			</currency>
+			<currency type="PGK">
+				<displayName>Kina fakapapuaniukini</displayName>
+				<displayName count="other">Kina fakapapuaniukini</displayName>
+			</currency>
+			<currency type="SBD">
+				<displayName>Tola fakaʻotusolomone</displayName>
+				<displayName count="other">Tola fakaʻotusolomone</displayName>
+				<symbol alt="narrow" draft="contributed">S$</symbol>
 			</currency>
 			<currency type="TOP">
 				<displayName>Paʻanga fakatonga</displayName>
 				<displayName count="other">Paʻanga fakatonga</displayName>
 				<symbol>T$</symbol>
+				<symbol alt="narrow" draft="contributed">T$</symbol>
+			</currency>
+			<currency type="VUV">
+				<displayName>Vatu fakavanuatu</displayName>
+				<displayName count="other">Vatu fakavanuatu</displayName>
 			</currency>
 			<currency type="WST">
 				<displayName>Tala fakahaʻamoa</displayName>
 				<displayName count="other">Tala fakahaʻamoa</displayName>
+			</currency>
+			<currency type="XPF">
+				<displayName>Falaniki fakapasifika</displayName>
+				<displayName count="other">Falaniki fakapasifika</displayName>
 			</currency>
 			<currency type="XXX">
 				<displayName>Pa’anga Ta’e’ilo</displayName>
@@ -7142,12 +7322,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="area-square-meter">
 				<displayName>mita sikuea ʻe</displayName>
 				<unitPattern count="other">mita sikuea ʻe {0}</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0} ki he mita sikuea</perUnitPattern>
+				<perUnitPattern>{0} he mita sikuea</perUnitPattern>
 			</unit>
 			<unit type="area-square-centimeter">
 				<displayName>senitimita sikuea</displayName>
 				<unitPattern count="other">senitimita sikuea ʻe {0}</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0} ki he senitimita sikuea</perUnitPattern>
+				<perUnitPattern>{0} he senitimita sikuea</perUnitPattern>
 			</unit>
 			<unit type="area-square-mile">
 				<displayName>maile sikuea</displayName>
@@ -7169,7 +7349,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="area-square-inch">
 				<displayName>ʻinisi sikuea</displayName>
 				<unitPattern count="other">ʻinisi sikuea ʻe {0}</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0} ki he ʻinisi sikuea</perUnitPattern>
+				<perUnitPattern>{0} he ʻinisi sikuea</perUnitPattern>
+			</unit>
+			<unit type="area-dunam">
+				<displayName>tunami</displayName>
+				<unitPattern count="other">tunami ʻe {0}</unitPattern>
 			</unit>
 			<unit type="concentr-karat">
 				<displayName>kalati</displayName>
@@ -7188,12 +7372,20 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">konga ʻe {0} he miliona</unitPattern>
 			</unit>
 			<unit type="concentr-percent">
-				<displayName draft="unconfirmed">peseti</displayName>
-				<unitPattern count="other" draft="unconfirmed">peseti ʻe {0}</unitPattern>
+				<displayName>peseti</displayName>
+				<unitPattern count="other">peseti ʻe {0}</unitPattern>
 			</unit>
 			<unit type="concentr-permille">
-				<displayName draft="unconfirmed">pemili</displayName>
-				<unitPattern count="other" draft="unconfirmed">pemili ʻe {0}</unitPattern>
+				<displayName>pemili</displayName>
+				<unitPattern count="other">pemili ʻe {0}</unitPattern>
+			</unit>
+			<unit type="concentr-permyriad">
+				<displayName>pemano</displayName>
+				<unitPattern count="other">pemano ʻe {0}</unitPattern>
+			</unit>
+			<unit type="concentr-mole">
+				<displayName>molo</displayName>
+				<unitPattern count="other">molo ʻe {0}</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>lita he kilomita</displayName>
@@ -7212,8 +7404,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">maile ʻe {0} he kālani fakaʻemipaea</unitPattern>
 			</unit>
 			<unit type="digital-petabyte">
-				<displayName draft="unconfirmed">petapaiti</displayName>
-				<unitPattern count="other" draft="unconfirmed">petapaiti ʻe {0}</unitPattern>
+				<displayName>petapaiti</displayName>
+				<unitPattern count="other">petapaiti ʻe {0}</unitPattern>
 			</unit>
 			<unit type="digital-terabyte">
 				<displayName>telapaiti</displayName>
@@ -7256,28 +7448,32 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">piti ʻe {0}</unitPattern>
 			</unit>
 			<unit type="duration-century">
-				<displayName draft="unconfirmed">teautaʻu</displayName>
-				<unitPattern count="other" draft="unconfirmed">teautaʻu ʻe {0}</unitPattern>
+				<displayName>teautaʻu</displayName>
+				<unitPattern count="other">teautaʻu ʻe {0}</unitPattern>
+			</unit>
+			<unit type="duration-decade">
+				<displayName>honofuluʻitaʻu</displayName>
+				<unitPattern count="other">honofuluʻitaʻu ʻe {0}</unitPattern>
 			</unit>
 			<unit type="duration-year">
 				<displayName>taʻu</displayName>
 				<unitPattern count="other">taʻu ʻe {0}</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0} ki he taʻu</perUnitPattern>
+				<perUnitPattern>{0} he taʻu</perUnitPattern>
 			</unit>
 			<unit type="duration-month">
 				<displayName>māhina</displayName>
 				<unitPattern count="other">māhina ʻe {0}</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0} ki he māhina</perUnitPattern>
+				<perUnitPattern>{0} he māhina</perUnitPattern>
 			</unit>
 			<unit type="duration-week">
 				<displayName>uike</displayName>
 				<unitPattern count="other">uike ʻe {0}</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0} ki he uike</perUnitPattern>
+				<perUnitPattern>{0} he uike</perUnitPattern>
 			</unit>
 			<unit type="duration-day">
 				<displayName>ʻaho</displayName>
 				<unitPattern count="other">ʻaho ʻe {0}</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0} ki he ʻaho</perUnitPattern>
+				<perUnitPattern>{0} he ʻaho</perUnitPattern>
 			</unit>
 			<unit type="duration-hour">
 				<displayName>houa</displayName>
@@ -7287,7 +7483,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="duration-minute">
 				<displayName>miniti</displayName>
 				<unitPattern count="other">miniti ʻe {0}</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0} ki he miniti</perUnitPattern>
+				<perUnitPattern>{0} he miniti</perUnitPattern>
 			</unit>
 			<unit type="duration-second">
 				<displayName>sekoni</displayName>
@@ -7346,6 +7542,26 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>kilouate-houa</displayName>
 				<unitPattern count="other">kilouate-houa ʻe {0}</unitPattern>
 			</unit>
+			<unit type="energy-electronvolt">
+				<displayName>volotāʻelekitō</displayName>
+				<unitPattern count="other">volotāʻelekitō ʻe {0}</unitPattern>
+			</unit>
+			<unit type="energy-british-thermal-unit">
+				<displayName>ʻiuniti māfana fakapilitānia</displayName>
+				<unitPattern count="other">ʻiuniti māfana fakapilitānia ʻe {0}</unitPattern>
+			</unit>
+			<unit type="energy-therm-us">
+				<displayName>ʻiuniti māfana fakaʻamelika</displayName>
+				<unitPattern count="other">ʻiuniti māfana fakaʻamelika ʻe {0}</unitPattern>
+			</unit>
+			<unit type="force-pound-force">
+				<displayName>pāunimālohi</displayName>
+				<unitPattern count="other">pāunimālohi ʻe {0}</unitPattern>
+			</unit>
+			<unit type="force-newton">
+				<displayName>Niutoni</displayName>
+				<unitPattern count="other">Niutoni ʻe {0}</unitPattern>
+			</unit>
 			<unit type="frequency-gigahertz">
 				<displayName>kikahēti</displayName>
 				<unitPattern count="other">kikahēti ʻe {0}</unitPattern>
@@ -7362,15 +7578,43 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>hēti</displayName>
 				<unitPattern count="other">hēti ʻe {0}</unitPattern>
 			</unit>
+			<unit type="graphics-em">
+				<displayName>ʻemi fakataipe</displayName>
+				<unitPattern count="other">ʻemi fakataipe ʻe {0}</unitPattern>
+			</unit>
+			<unit type="graphics-pixel">
+				<displayName>meʻatā</displayName>
+				<unitPattern count="other">meʻatā ʻe {0}</unitPattern>
+			</unit>
+			<unit type="graphics-megapixel">
+				<displayName>Mekameʻatā</displayName>
+				<unitPattern count="other">Mekameʻatā ʻe {0}</unitPattern>
+			</unit>
+			<unit type="graphics-pixel-per-centimeter">
+				<displayName>meʻatā he senitimita</displayName>
+				<unitPattern count="other">meʻatā ʻe {0} he senitimita</unitPattern>
+			</unit>
+			<unit type="graphics-pixel-per-inch">
+				<displayName>meʻatā he ʻinisi</displayName>
+				<unitPattern count="other">meʻatā ʻe {0} he ʻinisi</unitPattern>
+			</unit>
+			<unit type="graphics-dot-per-centimeter">
+				<displayName>toti he senitimita</displayName>
+				<unitPattern count="other">toti ʻe {0} he senitimita</unitPattern>
+			</unit>
+			<unit type="graphics-dot-per-inch">
+				<displayName>toti he ʻinisi</displayName>
+				<unitPattern count="other">toti ʻe {0} he ʻinisi</unitPattern>
+			</unit>
 			<unit type="length-kilometer">
 				<displayName>kilomita</displayName>
 				<unitPattern count="other">kilomita ʻe {0}</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0} ki he kilomita</perUnitPattern>
+				<perUnitPattern>{0} he kilomita</perUnitPattern>
 			</unit>
 			<unit type="length-meter">
 				<displayName>mita</displayName>
 				<unitPattern count="other">mita ʻe {0}</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0} ki he mita</perUnitPattern>
+				<perUnitPattern>{0} he mita</perUnitPattern>
 			</unit>
 			<unit type="length-decimeter">
 				<displayName>tesimita</displayName>
@@ -7379,7 +7623,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="length-centimeter">
 				<displayName>senitimita</displayName>
 				<unitPattern count="other">senitimita ʻe {0}</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0} ki he senitimita</perUnitPattern>
+				<perUnitPattern>{0} he senitimita</perUnitPattern>
 			</unit>
 			<unit type="length-millimeter">
 				<displayName>milimita</displayName>
@@ -7408,12 +7652,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="length-foot">
 				<displayName>fute</displayName>
 				<unitPattern count="other">fute ʻe {0}</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0} ki he fute</perUnitPattern>
+				<perUnitPattern>{0} he fute</perUnitPattern>
 			</unit>
 			<unit type="length-inch">
 				<displayName>ʻinisi</displayName>
 				<unitPattern count="other">ʻinisi ʻe {0}</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0} ki he ʻinise</perUnitPattern>
+				<perUnitPattern>{0} he ʻinisi</perUnitPattern>
 			</unit>
 			<unit type="length-parsec">
 				<displayName>ngaofesekoni</displayName>
@@ -7440,16 +7684,24 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">maile ʻi tahi ʻe {0}</unitPattern>
 			</unit>
 			<unit type="length-mile-scandinavian">
-				<displayName draft="unconfirmed">smi</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} smi</unitPattern>
+				<displayName>maile fakasikanitinavia</displayName>
+				<unitPattern count="other">maile fakasikanitinavia ʻe {0}</unitPattern>
 			</unit>
 			<unit type="length-point">
-				<displayName draft="unconfirmed">pt</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} pt</unitPattern>
+				<displayName>poini</displayName>
+				<unitPattern count="other">poini ʻe {0}</unitPattern>
+			</unit>
+			<unit type="length-solar-radius">
+				<displayName>lētiasi fakalaʻā</displayName>
+				<unitPattern count="other">lētiasi fakalaʻā ʻe {0}</unitPattern>
 			</unit>
 			<unit type="light-lux">
 				<displayName>lukisi</displayName>
 				<unitPattern count="other">lukisi ʻe {0}</unitPattern>
+			</unit>
+			<unit type="light-solar-luminosity">
+				<displayName>huhulu fakalaʻā</displayName>
+				<unitPattern count="other">huhulu fakalaʻā ʻe {0}</unitPattern>
 			</unit>
 			<unit type="mass-metric-ton">
 				<displayName>toni</displayName>
@@ -7458,12 +7710,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="mass-kilogram">
 				<displayName>kilokalami</displayName>
 				<unitPattern count="other">kilokalami ʻe {0}</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0} ki he kilokalami</perUnitPattern>
+				<perUnitPattern>{0} he kilokalami</perUnitPattern>
 			</unit>
 			<unit type="mass-gram">
 				<displayName>kalami</displayName>
 				<unitPattern count="other">kalami ʻe {0}</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0} ki he kalami</perUnitPattern>
+				<perUnitPattern>{0} he kalami</perUnitPattern>
 			</unit>
 			<unit type="mass-milligram">
 				<displayName>milikalami</displayName>
@@ -7484,12 +7736,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="mass-pound">
 				<displayName>pāuni</displayName>
 				<unitPattern count="other">pāuni ʻe {0}</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0} ki he pāuni</perUnitPattern>
+				<perUnitPattern>{0} he pāuni</perUnitPattern>
 			</unit>
 			<unit type="mass-ounce">
 				<displayName>ʻaunise</displayName>
 				<unitPattern count="other">ʻaunisi ʻe {0}</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0} ki he ʻaunise</perUnitPattern>
+				<perUnitPattern>{0} he ʻaunise</perUnitPattern>
 			</unit>
 			<unit type="mass-ounce-troy">
 				<displayName>ʻaunisi koula</displayName>
@@ -7498,6 +7750,18 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="mass-carat">
 				<displayName>kalati</displayName>
 				<unitPattern count="other">kalati ʻe {0}</unitPattern>
+			</unit>
+			<unit type="mass-dalton">
+				<displayName>talatoni</displayName>
+				<unitPattern count="other">talatoni ʻe {0}</unitPattern>
+			</unit>
+			<unit type="mass-earth-mass">
+				<displayName>mamafa ʻo māmani</displayName>
+				<unitPattern count="other">mamafa ʻo māmani ʻe {0}</unitPattern>
+			</unit>
+			<unit type="mass-solar-mass">
+				<displayName>mamafa ʻo e laʻā</displayName>
+				<unitPattern count="other">mamafa ʻo e laʻā ʻe {0}</unitPattern>
 			</unit>
 			<unit type="power-gigawatt">
 				<displayName>kikauate</displayName>
@@ -7523,10 +7787,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>hoosipaoa</displayName>
 				<unitPattern count="other">hoosipaoa ʻe {0}</unitPattern>
 			</unit>
-			<unit type="pressure-hectopascal">
-				<displayName>hēkitopasikale</displayName>
-				<unitPattern count="other">hēkitopasikale ʻe {0}</unitPattern>
-			</unit>
 			<unit type="pressure-millimeter-of-mercury">
 				<displayName>milimita meakuli</displayName>
 				<unitPattern count="other">milimita meakuli ʻe {0}</unitPattern>
@@ -7539,13 +7799,33 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>ʻinisi meakuli</displayName>
 				<unitPattern count="other">ʻinisi meakuli ʻe {0}</unitPattern>
 			</unit>
+			<unit type="pressure-bar">
+				<displayName>pā</displayName>
+				<unitPattern count="other">pā ʻe {0}</unitPattern>
+			</unit>
 			<unit type="pressure-millibar">
 				<displayName>milipā</displayName>
 				<unitPattern count="other">milipā ʻe {0}</unitPattern>
 			</unit>
 			<unit type="pressure-atmosphere">
-				<displayName draft="unconfirmed">ʻatimosifia</displayName>
-				<unitPattern count="other" draft="unconfirmed">ʻatimosifia ʻe {0}</unitPattern>
+				<displayName>ʻatimosifia</displayName>
+				<unitPattern count="other">ʻatimosifia ʻe {0}</unitPattern>
+			</unit>
+			<unit type="pressure-pascal">
+				<displayName>pasikale</displayName>
+				<unitPattern count="other">pasikale ʻe {0}</unitPattern>
+			</unit>
+			<unit type="pressure-hectopascal">
+				<displayName>hēkitopasikale</displayName>
+				<unitPattern count="other">hēkitopasikale ʻe {0}</unitPattern>
+			</unit>
+			<unit type="pressure-kilopascal">
+				<displayName>kilopasikale</displayName>
+				<unitPattern count="other">kilopasikale ʻe {0}</unitPattern>
+			</unit>
+			<unit type="pressure-megapascal">
+				<displayName>mekapasikale</displayName>
+				<unitPattern count="other">mekapasikale ʻe {0}</unitPattern>
 			</unit>
 			<unit type="speed-kilometer-per-hour">
 				<displayName>kilomita he houa</displayName>
@@ -7560,8 +7840,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">maile he houa ʻe {0}</unitPattern>
 			</unit>
 			<unit type="speed-knot">
-				<displayName draft="unconfirmed">fakapona</displayName>
-				<unitPattern count="other" draft="unconfirmed">fakapona ʻe {0}</unitPattern>
+				<displayName>fakapona</displayName>
+				<unitPattern count="other">fakapona ʻe {0}</unitPattern>
 			</unit>
 			<unit type="temperature-generic">
 				<displayName>tikili</displayName>
@@ -7579,6 +7859,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>kelevini</displayName>
 				<unitPattern count="other">kelevini ʻe {0}</unitPattern>
 			</unit>
+			<unit type="torque-pound-foot">
+				<displayName>pāunifute</displayName>
+				<unitPattern count="other">pāunifute ʻe {0}</unitPattern>
+			</unit>
+			<unit type="torque-newton-meter">
+				<displayName>Niutonimita</displayName>
+				<unitPattern count="other">Niutonimita ʻe {0}</unitPattern>
+			</unit>
 			<unit type="volume-cubic-kilometer">
 				<displayName>kilomita kiupiki</displayName>
 				<unitPattern count="other">kilomita kiupiki ʻe {0}</unitPattern>
@@ -7586,12 +7874,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="volume-cubic-meter">
 				<displayName>mita kiupiki</displayName>
 				<unitPattern count="other">mita kiupiki ʻe {0}</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0} ki he mita kiupiki</perUnitPattern>
+				<perUnitPattern>{0} he mita kiupiki</perUnitPattern>
 			</unit>
 			<unit type="volume-cubic-centimeter">
 				<displayName>senitimita kiupiki</displayName>
 				<unitPattern count="other">senitimita kiupiki ʻe {0}</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0} ki he senitimita kiupiki</perUnitPattern>
+				<perUnitPattern>{0} he senitimita kiupiki</perUnitPattern>
 			</unit>
 			<unit type="volume-cubic-mile">
 				<displayName>maile kiupiki</displayName>
@@ -7620,7 +7908,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="volume-liter">
 				<displayName>lita</displayName>
 				<unitPattern count="other">lita ʻe {0}</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0} ki he lita</perUnitPattern>
+				<perUnitPattern>{0} he lita</perUnitPattern>
 			</unit>
 			<unit type="volume-deciliter">
 				<displayName>tesilita</displayName>
@@ -7635,12 +7923,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">mililita ʻe {0}</unitPattern>
 			</unit>
 			<unit type="volume-pint-metric">
-				<displayName draft="unconfirmed">painite fakamita</displayName>
-				<unitPattern count="other" draft="unconfirmed">painite fakamita ʻe {0}</unitPattern>
+				<displayName>painite fakamita</displayName>
+				<unitPattern count="other">painite fakamita ʻe {0}</unitPattern>
 			</unit>
 			<unit type="volume-cup-metric">
-				<displayName draft="unconfirmed">ipu fakamita</displayName>
-				<unitPattern count="other" draft="unconfirmed">ipu fakamita ʻe {0}</unitPattern>
+				<displayName>ipu fakamita</displayName>
+				<unitPattern count="other">ipu fakamita ʻe {0}</unitPattern>
 			</unit>
 			<unit type="volume-acre-foot">
 				<displayName>ʻeka-fute</displayName>
@@ -7653,7 +7941,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="volume-gallon">
 				<displayName>kālani</displayName>
 				<unitPattern count="other">kālani ʻe {0}</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0} ki he kālani</perUnitPattern>
+				<perUnitPattern>{0} he kālani</perUnitPattern>
 			</unit>
 			<unit type="volume-gallon-imperial">
 				<displayName>kālani fakaʻemipaea</displayName>
@@ -7676,6 +7964,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>ʻaunise tafe</displayName>
 				<unitPattern count="other">ʻaunise tafe ʻe {0}</unitPattern>
 			</unit>
+			<unit type="volume-fluid-ounce-imperial">
+				<displayName>ʻaunise fakaʻemipaea</displayName>
+				<unitPattern count="other">ʻaunise fakaʻemipaea ʻe {0}</unitPattern>
+			</unit>
 			<unit type="volume-tablespoon">
 				<displayName>sēpuni tēpile</displayName>
 				<unitPattern count="other">sēpuni tēpile ʻe {0}</unitPattern>
@@ -7684,8 +7976,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>sēpuni tī</displayName>
 				<unitPattern count="other">sēpuni tī ʻe {0}</unitPattern>
 			</unit>
+			<unit type="volume-barrel">
+				<displayName>paelo</displayName>
+				<unitPattern count="other">paelo ʻe {0}</unitPattern>
+			</unit>
 			<coordinateUnit>
-				<displayName draft="unconfirmed">fua tefitoʻi</displayName>
+				<displayName>fua tefitoʻi</displayName>
 				<coordinateUnitPattern type="east">hahake ʻe {0}</coordinateUnitPattern>
 				<coordinateUnitPattern type="north">tokelau ʻe {0}</coordinateUnitPattern>
 				<coordinateUnitPattern type="south">tonga ʻe {0}</coordinateUnitPattern>
@@ -7736,17 +8032,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="area-square-meter">
 				<displayName>m²</displayName>
 				<unitPattern count="other">m² ʻe {0}</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0} /m²</perUnitPattern>
+				<perUnitPattern>{0}/m²</perUnitPattern>
 			</unit>
 			<unit type="area-square-centimeter">
 				<displayName>sm²</displayName>
 				<unitPattern count="other">sm² ʻe {0}</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0} /sm²</perUnitPattern>
+				<perUnitPattern>{0}/sm²</perUnitPattern>
 			</unit>
 			<unit type="area-square-mile">
 				<displayName>mi²</displayName>
 				<unitPattern count="other">mi² ʻe {0}</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0} /mi²</perUnitPattern>
+				<perUnitPattern>{0}/mi²</perUnitPattern>
 			</unit>
 			<unit type="area-acre">
 				<displayName>ʻek</displayName>
@@ -7763,7 +8059,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="area-square-inch">
 				<displayName>in²</displayName>
 				<unitPattern count="other">in² ʻe {0}</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0} /in²</perUnitPattern>
+				<perUnitPattern>{0}/in²</perUnitPattern>
+			</unit>
+			<unit type="area-dunam">
+				<displayName>tunami</displayName>
+				<unitPattern count="other">tunami ʻe {0}</unitPattern>
 			</unit>
 			<unit type="concentr-karat">
 				<displayName>kt</displayName>
@@ -7782,12 +8082,19 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">khm ʻe {0}</unitPattern>
 			</unit>
 			<unit type="concentr-percent">
-				<displayName draft="unconfirmed">%</displayName>
-				<unitPattern count="other" draft="unconfirmed">% ʻe {0}</unitPattern>
+				<displayName>%</displayName>
+				<unitPattern count="other">% ʻe {0}</unitPattern>
 			</unit>
 			<unit type="concentr-permille">
-				<displayName draft="unconfirmed">‰</displayName>
-				<unitPattern count="other" draft="unconfirmed">‰ ʻe {0}</unitPattern>
+				<displayName>‰</displayName>
+				<unitPattern count="other">‰ ʻe {0}</unitPattern>
+			</unit>
+			<unit type="concentr-permyriad">
+				<unitPattern count="other">‱ ʻe {0}</unitPattern>
+			</unit>
+			<unit type="concentr-mole">
+				<displayName>mol</displayName>
+				<unitPattern count="other">mol ʻe {0}</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>l/km</displayName>
@@ -7806,7 +8113,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">mi ʻe {0}/kāʻem</unitPattern>
 			</unit>
 			<unit type="digital-petabyte">
-				<displayName draft="unconfirmed">PB</displayName>
+				<displayName>PB</displayName>
 				<unitPattern count="other">PB ʻe {0}</unitPattern>
 			</unit>
 			<unit type="digital-terabyte">
@@ -7850,28 +8157,32 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">piti ʻe {0}</unitPattern>
 			</unit>
 			<unit type="duration-century">
-				<displayName draft="unconfirmed">tt</displayName>
-				<unitPattern count="other" draft="unconfirmed">tt ʻe {0}</unitPattern>
+				<displayName>tt</displayName>
+				<unitPattern count="other">tt ʻe {0}</unitPattern>
+			</unit>
+			<unit type="duration-decade">
+				<displayName>ht</displayName>
+				<unitPattern count="other">ht ʻe {0}</unitPattern>
 			</unit>
 			<unit type="duration-year">
 				<displayName>taʻu</displayName>
 				<unitPattern count="other">taʻu ʻe {0}</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0} /t</perUnitPattern>
+				<perUnitPattern>{0} /t</perUnitPattern>
 			</unit>
 			<unit type="duration-month">
 				<displayName>mā</displayName>
 				<unitPattern count="other">mā ʻe {0}</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0} /mā</perUnitPattern>
+				<perUnitPattern>{0} /mā</perUnitPattern>
 			</unit>
 			<unit type="duration-week">
 				<displayName>u</displayName>
 				<unitPattern count="other">u ʻe {0}</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0} /u</perUnitPattern>
+				<perUnitPattern>{0} /u</perUnitPattern>
 			</unit>
 			<unit type="duration-day">
 				<displayName>ʻa</displayName>
 				<unitPattern count="other">ʻa ʻe {0}</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0} /ʻa</perUnitPattern>
+				<perUnitPattern>{0} /ʻa</perUnitPattern>
 			</unit>
 			<unit type="duration-hour">
 				<displayName>h</displayName>
@@ -7881,7 +8192,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="duration-minute">
 				<displayName>m</displayName>
 				<unitPattern count="other">m ʻe {0}</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0} /m</perUnitPattern>
+				<perUnitPattern>{0} /m</perUnitPattern>
 			</unit>
 			<unit type="duration-second">
 				<displayName>s</displayName>
@@ -7940,6 +8251,24 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>kWh</displayName>
 				<unitPattern count="other">kWh ʻe {0}</unitPattern>
 			</unit>
+			<unit type="energy-electronvolt">
+				<unitPattern count="other">eV ʻe {0}</unitPattern>
+			</unit>
+			<unit type="energy-british-thermal-unit">
+				<displayName>imfP</displayName>
+				<unitPattern count="other">imfP ʻe {0}</unitPattern>
+			</unit>
+			<unit type="energy-therm-us">
+				<displayName>imfA</displayName>
+				<unitPattern count="other">imfA ʻe {0}</unitPattern>
+			</unit>
+			<unit type="force-pound-force">
+				<displayName>pāmā</displayName>
+				<unitPattern count="other">pāmā ʻe {0}</unitPattern>
+			</unit>
+			<unit type="force-newton">
+				<unitPattern count="other">N ʻe {0}</unitPattern>
+			</unit>
 			<unit type="frequency-gigahertz">
 				<displayName>GHz</displayName>
 				<unitPattern count="other">GHz ʻe {0}</unitPattern>
@@ -7956,15 +8285,43 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>Hz</displayName>
 				<unitPattern count="other">Hz ʻe {0}</unitPattern>
 			</unit>
+			<unit type="graphics-em">
+				<displayName>ʻemi</displayName>
+				<unitPattern count="other">ʻemi ʻe {0}</unitPattern>
+			</unit>
+			<unit type="graphics-pixel">
+				<displayName>meʻatā</displayName>
+				<unitPattern count="other">meʻatā ʻe {0}</unitPattern>
+			</unit>
+			<unit type="graphics-megapixel">
+				<displayName>Mmeʻatā</displayName>
+				<unitPattern count="other">Mmeʻatā ʻe {0}</unitPattern>
+			</unit>
+			<unit type="graphics-pixel-per-centimeter">
+				<displayName>meʻatā/sm</displayName>
+				<unitPattern count="other">meʻatā ʻe {0}/sm</unitPattern>
+			</unit>
+			<unit type="graphics-pixel-per-inch">
+				<displayName>meʻatā/in</displayName>
+				<unitPattern count="other">meʻatā ʻe {0}/in</unitPattern>
+			</unit>
+			<unit type="graphics-dot-per-centimeter">
+				<displayName>toti/sm</displayName>
+				<unitPattern count="other">toti ʻe {0}/sm</unitPattern>
+			</unit>
+			<unit type="graphics-dot-per-inch">
+				<displayName>toti/in</displayName>
+				<unitPattern count="other">toti ʻe {0}/in</unitPattern>
+			</unit>
 			<unit type="length-kilometer">
 				<displayName>km</displayName>
 				<unitPattern count="other">km ʻe {0}</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0} /km</perUnitPattern>
+				<perUnitPattern>{0}/km</perUnitPattern>
 			</unit>
 			<unit type="length-meter">
 				<displayName>m</displayName>
 				<unitPattern count="other">m ʻe {0}</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0} /m</perUnitPattern>
+				<perUnitPattern>{0}/m</perUnitPattern>
 			</unit>
 			<unit type="length-decimeter">
 				<displayName>tm</displayName>
@@ -7973,7 +8330,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="length-centimeter">
 				<displayName>sm</displayName>
 				<unitPattern count="other">sm ʻe {0}</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0} /sm</perUnitPattern>
+				<perUnitPattern>{0} /sm</perUnitPattern>
 			</unit>
 			<unit type="length-millimeter">
 				<displayName>mm</displayName>
@@ -8002,12 +8359,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="length-foot">
 				<displayName>ft</displayName>
 				<unitPattern count="other">ft ʻe {0}</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0} /ft</perUnitPattern>
+				<perUnitPattern>{0}/ft</perUnitPattern>
 			</unit>
 			<unit type="length-inch">
 				<displayName>in</displayName>
 				<unitPattern count="other">in ʻe {0}</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0} /in</perUnitPattern>
+				<perUnitPattern>{0}/in</perUnitPattern>
 			</unit>
 			<unit type="length-parsec">
 				<displayName>ngs</displayName>
@@ -8034,16 +8391,24 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">mt ʻe {0}</unitPattern>
 			</unit>
 			<unit type="length-mile-scandinavian">
-				<displayName draft="unconfirmed">mis</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} smi</unitPattern>
+				<displayName>msi</displayName>
+				<unitPattern count="other">msi ʻe {0}</unitPattern>
 			</unit>
 			<unit type="length-point">
-				<displayName draft="unconfirmed">pt</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} pt</unitPattern>
+				<displayName>pn</displayName>
+				<unitPattern count="other">pn ʻe {0}</unitPattern>
+			</unit>
+			<unit type="length-solar-radius">
+				<displayName>L☉</displayName>
+				<unitPattern count="other">L☉ ʻe {0}</unitPattern>
 			</unit>
 			<unit type="light-lux">
 				<displayName>lx</displayName>
 				<unitPattern count="other">lx ʻe {0}</unitPattern>
+			</unit>
+			<unit type="light-solar-luminosity">
+				<displayName>H☉</displayName>
+				<unitPattern count="other">H☉ ʻe {0}</unitPattern>
 			</unit>
 			<unit type="mass-metric-ton">
 				<displayName>to</displayName>
@@ -8052,12 +8417,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="mass-kilogram">
 				<displayName>kk</displayName>
 				<unitPattern count="other">kk ʻe {0}</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0} /kk</perUnitPattern>
+				<perUnitPattern>{0}/kk</perUnitPattern>
 			</unit>
 			<unit type="mass-gram">
 				<displayName>k</displayName>
 				<unitPattern count="other">k ʻe {0}</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0} /k</perUnitPattern>
+				<perUnitPattern>{0}/k</perUnitPattern>
 			</unit>
 			<unit type="mass-milligram">
 				<displayName>mk</displayName>
@@ -8076,14 +8441,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">st ʻe {0}</unitPattern>
 			</unit>
 			<unit type="mass-pound">
-				<displayName>pā</displayName>
-				<unitPattern count="other">pā ʻe {0}</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0} /pā</perUnitPattern>
+				<displayName>pāu</displayName>
+				<unitPattern count="other">pāu ʻe {0}</unitPattern>
+				<perUnitPattern>{0}/pāu</perUnitPattern>
 			</unit>
 			<unit type="mass-ounce">
 				<displayName>ʻau</displayName>
 				<unitPattern count="other">ʻau ʻe {0}</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0} /ʻau</perUnitPattern>
+				<perUnitPattern>{0}/ʻau</perUnitPattern>
 			</unit>
 			<unit type="mass-ounce-troy">
 				<displayName>ʻau-k</displayName>
@@ -8092,6 +8457,18 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="mass-carat">
 				<displayName>kt</displayName>
 				<unitPattern count="other">kt ʻe {0}</unitPattern>
+			</unit>
+			<unit type="mass-dalton">
+				<displayName>tlt</displayName>
+				<unitPattern count="other">tlt ʻe {0}</unitPattern>
+			</unit>
+			<unit type="mass-earth-mass">
+				<displayName>mamafa ⊕</displayName>
+				<unitPattern count="other">mamafa ⊕ ʻe {0}</unitPattern>
+			</unit>
+			<unit type="mass-solar-mass">
+				<displayName>mamafa ☉</displayName>
+				<unitPattern count="other">mamafa ☉ ʻe {0}</unitPattern>
 			</unit>
 			<unit type="power-gigawatt">
 				<displayName>GW</displayName>
@@ -8117,10 +8494,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>hp</displayName>
 				<unitPattern count="other">hp ʻe {0}</unitPattern>
 			</unit>
-			<unit type="pressure-hectopascal">
-				<displayName>hPa</displayName>
-				<unitPattern count="other">hPa ʻe {0}</unitPattern>
-			</unit>
 			<unit type="pressure-millimeter-of-mercury">
 				<displayName>mm-Hg</displayName>
 				<unitPattern count="other">mm-Hg ʻe {0}</unitPattern>
@@ -8133,13 +8506,30 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>in-Hg</displayName>
 				<unitPattern count="other">in-Hg ʻe {0}</unitPattern>
 			</unit>
+			<unit type="pressure-bar">
+				<displayName>pā</displayName>
+				<unitPattern count="other">pā ʻe {0}</unitPattern>
+			</unit>
 			<unit type="pressure-millibar">
 				<displayName>mpā</displayName>
 				<unitPattern count="other">mpā ʻe {0}</unitPattern>
 			</unit>
 			<unit type="pressure-atmosphere">
-				<displayName draft="unconfirmed">ʻati</displayName>
-				<unitPattern count="other" draft="unconfirmed">ʻati ʻe {0}</unitPattern>
+				<displayName>ʻati</displayName>
+				<unitPattern count="other">ʻati ʻe {0}</unitPattern>
+			</unit>
+			<unit type="pressure-pascal">
+				<unitPattern count="other">Pā ʻe {0}</unitPattern>
+			</unit>
+			<unit type="pressure-hectopascal">
+				<displayName>hPa</displayName>
+				<unitPattern count="other">hPa ʻe {0}</unitPattern>
+			</unit>
+			<unit type="pressure-kilopascal">
+				<unitPattern count="other">kPa ʻe {0}</unitPattern>
+			</unit>
+			<unit type="pressure-megapascal">
+				<unitPattern count="other">MPa ʻe {0}</unitPattern>
 			</unit>
 			<unit type="speed-kilometer-per-hour">
 				<displayName>km/h</displayName>
@@ -8154,11 +8544,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">mi/h ʻe {0}</unitPattern>
 			</unit>
 			<unit type="speed-knot">
-				<displayName draft="unconfirmed">fp</displayName>
-				<unitPattern count="other" draft="unconfirmed">fp ʻe {0}</unitPattern>
+				<displayName>fp</displayName>
+				<unitPattern count="other">fp ʻe {0}</unitPattern>
 			</unit>
 			<unit type="temperature-generic">
-				<displayName draft="unconfirmed">°</displayName>
+				<displayName>°</displayName>
 				<unitPattern count="other">° ʻe {0}</unitPattern>
 			</unit>
 			<unit type="temperature-celsius">
@@ -8173,6 +8563,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>K</displayName>
 				<unitPattern count="other">K ʻe {0}</unitPattern>
 			</unit>
+			<unit type="torque-pound-foot">
+				<displayName>pā⋅ft</displayName>
+				<unitPattern count="other">pā⋅ft ʻe {0}</unitPattern>
+			</unit>
+			<unit type="torque-newton-meter">
+				<unitPattern count="other">N⋅m ʻe {0}</unitPattern>
+			</unit>
 			<unit type="volume-cubic-kilometer">
 				<displayName>km³</displayName>
 				<unitPattern count="other">km³ ʻe {0}</unitPattern>
@@ -8180,12 +8577,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="volume-cubic-meter">
 				<displayName>m³</displayName>
 				<unitPattern count="other">m³ ʻe {0}</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0} /m³</perUnitPattern>
+				<perUnitPattern>{0}/m³</perUnitPattern>
 			</unit>
 			<unit type="volume-cubic-centimeter">
 				<displayName>sm³</displayName>
 				<unitPattern count="other">sm³ ʻe {0}</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0} /sm³</perUnitPattern>
+				<perUnitPattern>{0}/sm³</perUnitPattern>
 			</unit>
 			<unit type="volume-cubic-mile">
 				<displayName>mi³</displayName>
@@ -8229,12 +8626,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">ml ʻe {0}</unitPattern>
 			</unit>
 			<unit type="volume-pint-metric">
-				<displayName draft="unconfirmed">ptm</displayName>
-				<unitPattern count="other" draft="unconfirmed">ptm ʻe {0}</unitPattern>
+				<displayName>ptm</displayName>
+				<unitPattern count="other">ptm ʻe {0}</unitPattern>
 			</unit>
 			<unit type="volume-cup-metric">
-				<displayName draft="unconfirmed">ipm</displayName>
-				<unitPattern count="other" draft="unconfirmed">ipm ʻe {0}</unitPattern>
+				<displayName>ipm</displayName>
+				<unitPattern count="other">ipm ʻe {0}</unitPattern>
 			</unit>
 			<unit type="volume-acre-foot">
 				<displayName>ʻe-ft</displayName>
@@ -8247,7 +8644,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="volume-gallon">
 				<displayName>kā</displayName>
 				<unitPattern count="other">kā ʻe {0}</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0} /kā</perUnitPattern>
+				<perUnitPattern>{0}/kā</perUnitPattern>
 			</unit>
 			<unit type="volume-gallon-imperial">
 				<displayName>kāʻem</displayName>
@@ -8270,6 +8667,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>ʻau-tf</displayName>
 				<unitPattern count="other">ʻau-tf ʻe {0}</unitPattern>
 			</unit>
+			<unit type="volume-fluid-ounce-imperial">
+				<displayName>ʻau-ʻem</displayName>
+				<unitPattern count="other">ʻau-ʻem ʻe {0}</unitPattern>
+			</unit>
 			<unit type="volume-tablespoon">
 				<displayName>sētē</displayName>
 				<unitPattern count="other">sētē ʻe {0}</unitPattern>
@@ -8278,8 +8679,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>sētī</displayName>
 				<unitPattern count="other">sētī ʻe {0}</unitPattern>
 			</unit>
+			<unit type="volume-barrel">
+				<displayName>paelo</displayName>
+				<unitPattern count="other">paelo ʻe {0}</unitPattern>
+			</unit>
 			<coordinateUnit>
-				<displayName draft="unconfirmed">fua</displayName>
+				<displayName>fua</displayName>
 				<coordinateUnitPattern type="east">ha ʻe {0}</coordinateUnitPattern>
 				<coordinateUnitPattern type="north">tk ʻe {0}</coordinateUnitPattern>
 				<coordinateUnitPattern type="south">to ʻe {0}</coordinateUnitPattern>
@@ -8359,6 +8764,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} in²</unitPattern>
 				<perUnitPattern draft="unconfirmed">{0}/in²</perUnitPattern>
 			</unit>
+			<unit type="area-dunam">
+				<displayName draft="unconfirmed">tu</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} tu</unitPattern>
+			</unit>
 			<unit type="concentr-karat">
 				<displayName>kt</displayName>
 				<unitPattern count="other">{0} kt</unitPattern>
@@ -8376,12 +8785,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" draft="unconfirmed">{0} khm</unitPattern>
 			</unit>
 			<unit type="concentr-percent">
-				<displayName draft="unconfirmed">%</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0}%</unitPattern>
+				<displayName>%</displayName>
+				<unitPattern count="other">{0}%</unitPattern>
 			</unit>
 			<unit type="concentr-permille">
 				<displayName draft="unconfirmed">‰</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0}‰</unitPattern>
+			</unit>
+			<unit type="concentr-mole">
+				<displayName draft="unconfirmed">mol</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} mol</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>l/km</displayName>
@@ -8446,6 +8859,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="duration-century">
 				<displayName draft="unconfirmed">tt</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} tt</unitPattern>
+			</unit>
+			<unit type="duration-decade">
+				<displayName draft="unconfirmed">ht</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} ht</unitPattern>
 			</unit>
 			<unit type="duration-year">
 				<displayName>t</displayName>
@@ -8534,6 +8951,18 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>kWh</displayName>
 				<unitPattern count="other">{0} kWh</unitPattern>
 			</unit>
+			<unit type="energy-british-thermal-unit">
+				<displayName draft="unconfirmed">imfP</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} imfP</unitPattern>
+			</unit>
+			<unit type="energy-therm-us">
+				<displayName draft="unconfirmed">imfA</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} imfA</unitPattern>
+			</unit>
+			<unit type="force-pound-force">
+				<displayName draft="unconfirmed">pāmā</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} pāmā</unitPattern>
+			</unit>
 			<unit type="frequency-gigahertz">
 				<displayName>GHz</displayName>
 				<unitPattern count="other">{0} GHz</unitPattern>
@@ -8549,6 +8978,34 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="frequency-hertz">
 				<displayName>Hz</displayName>
 				<unitPattern count="other">{0} Hz</unitPattern>
+			</unit>
+			<unit type="graphics-em">
+				<displayName draft="unconfirmed">ʻemi</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0}ʻemi</unitPattern>
+			</unit>
+			<unit type="graphics-pixel">
+				<displayName draft="unconfirmed">mt</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0}mt</unitPattern>
+			</unit>
+			<unit type="graphics-megapixel">
+				<displayName draft="unconfirmed">Mmt</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0}Mmt</unitPattern>
+			</unit>
+			<unit type="graphics-pixel-per-centimeter">
+				<displayName draft="unconfirmed">mt/sm</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0}mt/sm</unitPattern>
+			</unit>
+			<unit type="graphics-pixel-per-inch">
+				<displayName draft="unconfirmed">mt/in</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0}mt/in</unitPattern>
+			</unit>
+			<unit type="graphics-dot-per-centimeter">
+				<displayName draft="unconfirmed">t/sm</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0}t/sm</unitPattern>
+			</unit>
+			<unit type="graphics-dot-per-inch">
+				<displayName draft="unconfirmed">t/in</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0}t/in</unitPattern>
 			</unit>
 			<unit type="length-kilometer">
 				<displayName>km</displayName>
@@ -8628,16 +9085,24 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} mt</unitPattern>
 			</unit>
 			<unit type="length-mile-scandinavian">
-				<displayName draft="unconfirmed">mis</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} smi</unitPattern>
+				<displayName draft="unconfirmed">msi</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} msi</unitPattern>
 			</unit>
 			<unit type="length-point">
-				<displayName draft="unconfirmed">pt</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} pt</unitPattern>
+				<displayName draft="unconfirmed">pn</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} pn</unitPattern>
+			</unit>
+			<unit type="length-solar-radius">
+				<displayName draft="unconfirmed">L☉</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} L☉</unitPattern>
 			</unit>
 			<unit type="light-lux">
 				<displayName>lx</displayName>
 				<unitPattern count="other">{0} lx</unitPattern>
+			</unit>
+			<unit type="light-solar-luminosity">
+				<displayName draft="unconfirmed">H☉</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} H☉</unitPattern>
 			</unit>
 			<unit type="mass-metric-ton">
 				<displayName>to</displayName>
@@ -8670,9 +9135,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} st</unitPattern>
 			</unit>
 			<unit type="mass-pound">
-				<displayName>pā</displayName>
-				<unitPattern count="other">{0} pā</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0}/pā</perUnitPattern>
+				<displayName>pāu</displayName>
+				<unitPattern count="other">{0} pāu</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/pāu</perUnitPattern>
 			</unit>
 			<unit type="mass-ounce">
 				<displayName>ʻau</displayName>
@@ -8686,6 +9151,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="mass-carat">
 				<displayName>kt</displayName>
 				<unitPattern count="other">{0} kt</unitPattern>
+			</unit>
+			<unit type="mass-dalton">
+				<displayName draft="unconfirmed">tlt</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} tlt</unitPattern>
+			</unit>
+			<unit type="mass-earth-mass">
+				<displayName draft="unconfirmed">M⊕</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} M⊕</unitPattern>
 			</unit>
 			<unit type="power-gigawatt">
 				<displayName>GW</displayName>
@@ -8711,10 +9184,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>hp</displayName>
 				<unitPattern count="other">{0} hp</unitPattern>
 			</unit>
-			<unit type="pressure-hectopascal">
-				<displayName>hPa</displayName>
-				<unitPattern count="other">{0} hPa</unitPattern>
-			</unit>
 			<unit type="pressure-millimeter-of-mercury">
 				<displayName>mm-Hg</displayName>
 				<unitPattern count="other">{0} mm-Hg</unitPattern>
@@ -8727,6 +9196,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>in-Hg</displayName>
 				<unitPattern count="other">{0} in-Hg</unitPattern>
 			</unit>
+			<unit type="pressure-bar">
+				<displayName draft="unconfirmed">pā</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} pā</unitPattern>
+			</unit>
 			<unit type="pressure-millibar">
 				<displayName>mpā</displayName>
 				<unitPattern count="other">{0} mpā</unitPattern>
@@ -8734,6 +9207,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="pressure-atmosphere">
 				<displayName draft="unconfirmed">ʻati</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} ʻati</unitPattern>
+			</unit>
+			<unit type="pressure-hectopascal">
+				<displayName>hPa</displayName>
+				<unitPattern count="other">{0} hPa</unitPattern>
 			</unit>
 			<unit type="speed-kilometer-per-hour">
 				<displayName>km/h</displayName>
@@ -8766,6 +9243,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="temperature-kelvin">
 				<displayName>K</displayName>
 				<unitPattern count="other">{0} K</unitPattern>
+			</unit>
+			<unit type="torque-pound-foot">
+				<displayName draft="unconfirmed">pā⋅ft</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} pā⋅ft</unitPattern>
 			</unit>
 			<unit type="volume-cubic-kilometer">
 				<displayName>km³</displayName>
@@ -8808,7 +9289,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="volume-liter">
 				<displayName>l</displayName>
 				<unitPattern count="other">{0} l</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0} /l</perUnitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/l</perUnitPattern>
 			</unit>
 			<unit type="volume-deciliter">
 				<displayName>tl</displayName>
@@ -8864,6 +9345,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>ʻau-tf</displayName>
 				<unitPattern count="other">{0} ʻau-tf</unitPattern>
 			</unit>
+			<unit type="volume-fluid-ounce-imperial">
+				<displayName draft="unconfirmed">ʻau-ʻem</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0}ʻau-ʻem</unitPattern>
+			</unit>
 			<unit type="volume-tablespoon">
 				<displayName>sētē</displayName>
 				<unitPattern count="other">{0} sētē</unitPattern>
@@ -8872,8 +9357,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>sētī</displayName>
 				<unitPattern count="other">{0} sētī</unitPattern>
 			</unit>
+			<unit type="volume-barrel">
+				<displayName draft="unconfirmed">pl</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0}pl</unitPattern>
+			</unit>
 			<coordinateUnit>
-				<displayName draft="unconfirmed">fua</displayName>
+				<displayName>fua</displayName>
 				<coordinateUnitPattern type="east">{0} ha</coordinateUnitPattern>
 				<coordinateUnitPattern type="north">{0} tk</coordinateUnitPattern>
 				<coordinateUnitPattern type="south">{0} to</coordinateUnitPattern>
@@ -8898,8 +9387,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<listPatternPart type="2">{0} mo {1}</listPatternPart>
 		</listPattern>
 		<listPattern type="or">
-			<listPatternPart type="start" draft="unconfirmed">{0}, {1}</listPatternPart>
-			<listPatternPart type="middle" draft="unconfirmed">{0}, {1}</listPatternPart>
+			<listPatternPart type="start">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle">{0}, {1}</listPatternPart>
 			<listPatternPart type="end">{0}, pē {1}</listPatternPart>
 			<listPatternPart type="2">{0} pē {1}</listPatternPart>
 		</listPattern>
@@ -8935,102 +9424,102 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</messages>
 	</posix>
 	<characterLabels>
-		<characterLabelPattern type="all" draft="unconfirmed">{0} — kotoa</characterLabelPattern>
-		<characterLabelPattern type="category-list" draft="unconfirmed">{0}: {1}</characterLabelPattern>
-		<characterLabelPattern type="compatibility" draft="unconfirmed">{0} — hoa</characterLabelPattern>
-		<characterLabelPattern type="enclosed" draft="unconfirmed">{0} — kāpui</characterLabelPattern>
-		<characterLabelPattern type="extended" draft="unconfirmed">{0} — toloi</characterLabelPattern>
-		<characterLabelPattern type="historic" draft="unconfirmed">{0} — tupuʻa</characterLabelPattern>
-		<characterLabelPattern type="miscellaneous" draft="unconfirmed">{0} — kehekehe</characterLabelPattern>
-		<characterLabelPattern type="other" draft="unconfirmed">{0} — kehe</characterLabelPattern>
-		<characterLabelPattern type="scripts" draft="unconfirmed">ngaahi tohinima — {0}</characterLabelPattern>
-		<characterLabelPattern type="strokes" count="other" draft="unconfirmed">kohi ʻe {0}</characterLabelPattern>
-		<characterLabel type="activities" draft="unconfirmed">vaʻinga</characterLabel>
-		<characterLabel type="african_scripts" draft="unconfirmed">tohinima fakaʻafilika</characterLabel>
-		<characterLabel type="american_scripts" draft="unconfirmed">tohinima fakaʻamelika</characterLabel>
+		<characterLabelPattern type="all">{0} — kotoa</characterLabelPattern>
+		<characterLabelPattern type="category-list">{0}: {1}</characterLabelPattern>
+		<characterLabelPattern type="compatibility">{0} — hoa</characterLabelPattern>
+		<characterLabelPattern type="enclosed">{0} — kāpui</characterLabelPattern>
+		<characterLabelPattern type="extended">{0} — toloi</characterLabelPattern>
+		<characterLabelPattern type="historic">{0} — tupuʻa</characterLabelPattern>
+		<characterLabelPattern type="miscellaneous">{0} — kehekehe</characterLabelPattern>
+		<characterLabelPattern type="other">{0} — kehe</characterLabelPattern>
+		<characterLabelPattern type="scripts">ngaahi tohinima — {0}</characterLabelPattern>
+		<characterLabelPattern type="strokes" count="other">kohi ʻe {0}</characterLabelPattern>
+		<characterLabel type="activities">vaʻinga</characterLabel>
+		<characterLabel type="african_scripts">tohinima fakaʻafilika</characterLabel>
+		<characterLabel type="american_scripts">tohinima fakaʻamelika</characterLabel>
 		<characterLabel type="animal">manu</characterLabel>
-		<characterLabel type="animals_nature" draft="unconfirmed">manu &amp; natula</characterLabel>
-		<characterLabel type="arrows" draft="unconfirmed">ngahau</characterLabel>
+		<characterLabel type="animals_nature">manu &amp; natula</characterLabel>
+		<characterLabel type="arrows">ngahau</characterLabel>
 		<characterLabel type="body">sino</characterLabel>
-		<characterLabel type="box_drawing" draft="unconfirmed">tā puha</characterLabel>
-		<characterLabel type="braille" draft="unconfirmed">mataʻitohi maʻae kakai kui</characterLabel>
+		<characterLabel type="box_drawing">tā puha</characterLabel>
+		<characterLabel type="braille">mataʻitohi maʻae kakai kui</characterLabel>
 		<characterLabel type="building">fale</characterLabel>
-		<characterLabel type="bullets_stars" draft="unconfirmed">pulu &amp; fetuʻu</characterLabel>
-		<characterLabel type="consonantal_jamo" draft="unconfirmed">samo fakakonisinanite</characterLabel>
-		<characterLabel type="currency_symbols" draft="unconfirmed">fakaʻilonga paʻanga</characterLabel>
-		<characterLabel type="dash_connector" draft="unconfirmed">kohi</characterLabel>
-		<characterLabel type="digits" draft="unconfirmed">mataʻifika</characterLabel>
-		<characterLabel type="dingbats" draft="unconfirmed">nikonikoʻi</characterLabel>
-		<characterLabel type="divination_symbols" draft="unconfirmed">fakaʻilonga tongafisi</characterLabel>
-		<characterLabel type="downwards_arrows" draft="unconfirmed">ngahau hifo</characterLabel>
-		<characterLabel type="downwards_upwards_arrows" draft="unconfirmed">ngahau hake-hifo</characterLabel>
-		<characterLabel type="east_asian_scripts" draft="unconfirmed">tohinima fakaʻēsia-hahake</characterLabel>
-		<characterLabel type="emoji" draft="unconfirmed">ngaahi ongo</characterLabel>
-		<characterLabel type="european_scripts" draft="unconfirmed">tohinima fakaʻeulope</characterLabel>
+		<characterLabel type="bullets_stars">pulu &amp; fetuʻu</characterLabel>
+		<characterLabel type="consonantal_jamo">samo fakakonisinanite</characterLabel>
+		<characterLabel type="currency_symbols">fakaʻilonga paʻanga</characterLabel>
+		<characterLabel type="dash_connector">kohi</characterLabel>
+		<characterLabel type="digits">mataʻifika</characterLabel>
+		<characterLabel type="dingbats">nikonikoʻi</characterLabel>
+		<characterLabel type="divination_symbols">fakaʻilonga tongafisi</characterLabel>
+		<characterLabel type="downwards_arrows">ngahau hifo</characterLabel>
+		<characterLabel type="downwards_upwards_arrows">ngahau hake-hifo</characterLabel>
+		<characterLabel type="east_asian_scripts">tohinima fakaʻēsia-hahake</characterLabel>
+		<characterLabel type="emoji">ngaahi ongo</characterLabel>
+		<characterLabel type="european_scripts">tohinima fakaʻeulope</characterLabel>
 		<characterLabel type="female">fakafefine</characterLabel>
 		<characterLabel type="flag">fuka</characterLabel>
 		<characterLabel type="flags">ngaahi fuka</characterLabel>
-		<characterLabel type="food_drink" draft="unconfirmed">inu &amp; kai</characterLabel>
-		<characterLabel type="format" draft="unconfirmed">anga</characterLabel>
-		<characterLabel type="format_whitespace" draft="unconfirmed">anga &amp; vā hinehina</characterLabel>
-		<characterLabel type="full_width_form_variant" draft="unconfirmed">fuo faikeheʻi fakalaulahiloa</characterLabel>
-		<characterLabel type="geometric_shapes" draft="unconfirmed">fuo fakasiomita</characterLabel>
-		<characterLabel type="half_width_form_variant" draft="unconfirmed">fuo faikeheʻi fakalaulahi</characterLabel>
-		<characterLabel type="han_characters" draft="unconfirmed">mataʻitohi hana</characterLabel>
-		<characterLabel type="han_radicals" draft="unconfirmed">ʻelitoʻi hana</characterLabel>
-		<characterLabel type="hanja" draft="unconfirmed">hanisa</characterLabel>
-		<characterLabel type="hanzi_simplified" draft="unconfirmed">hanisī fakafaingofua</characterLabel>
-		<characterLabel type="hanzi_traditional" draft="unconfirmed">hanisī tukufakaholo</characterLabel>
+		<characterLabel type="food_drink">inu &amp; kai</characterLabel>
+		<characterLabel type="format">anga</characterLabel>
+		<characterLabel type="format_whitespace">anga &amp; vā hinehina</characterLabel>
+		<characterLabel type="full_width_form_variant">fuo faikeheʻi fakalaulahiloa</characterLabel>
+		<characterLabel type="geometric_shapes">fuo fakasiomita</characterLabel>
+		<characterLabel type="half_width_form_variant">fuo faikeheʻi fakalaulahi</characterLabel>
+		<characterLabel type="han_characters">mataʻitohi hana</characterLabel>
+		<characterLabel type="han_radicals">ʻelitoʻi hana</characterLabel>
+		<characterLabel type="hanja">hanisa</characterLabel>
+		<characterLabel type="hanzi_simplified">hanisī fakafaingofua</characterLabel>
+		<characterLabel type="hanzi_traditional">hanisī tukufakaholo</characterLabel>
 		<characterLabel type="heart">mafu</characterLabel>
-		<characterLabel type="historic_scripts" draft="unconfirmed">tohinima fakatupuʻanga</characterLabel>
-		<characterLabel type="ideographic_desc_characters" draft="unconfirmed">fakaʻilonga fakakaukau</characterLabel>
-		<characterLabel type="japanese_kana" draft="unconfirmed">kana fakasiapani</characterLabel>
-		<characterLabel type="kanbun" draft="unconfirmed">kanipuni</characterLabel>
-		<characterLabel type="kanji" draft="unconfirmed">kanisī</characterLabel>
+		<characterLabel type="historic_scripts">tohinima fakatupuʻanga</characterLabel>
+		<characterLabel type="ideographic_desc_characters">fakaʻilonga fakakaukau</characterLabel>
+		<characterLabel type="japanese_kana">kana fakasiapani</characterLabel>
+		<characterLabel type="kanbun">kanipuni</characterLabel>
+		<characterLabel type="kanji">kanisī</characterLabel>
 		<characterLabel type="keycap">tatā foʻi kī</characterLabel>
-		<characterLabel type="leftwards_arrows" draft="unconfirmed">ngahau hema</characterLabel>
-		<characterLabel type="leftwards_rightwards_arrows" draft="unconfirmed">ngahau hema-mataʻu</characterLabel>
-		<characterLabel type="letterlike_symbols" draft="unconfirmed">fakaʻilonga vāofi mataʻitohi</characterLabel>
-		<characterLabel type="limited_use" draft="unconfirmed">ngāueʻaki fakangatangata</characterLabel>
+		<characterLabel type="leftwards_arrows">ngahau hema</characterLabel>
+		<characterLabel type="leftwards_rightwards_arrows">ngahau hema-mataʻu</characterLabel>
+		<characterLabel type="letterlike_symbols">fakaʻilonga vāofi mataʻitohi</characterLabel>
+		<characterLabel type="limited_use">ngāueʻaki fakangatangata</characterLabel>
 		<characterLabel type="male">fakatangata</characterLabel>
-		<characterLabel type="math_symbols" draft="unconfirmed">fakaʻilonga matematika</characterLabel>
-		<characterLabel type="middle_eastern_scripts" draft="unconfirmed">tohinima fakahahake-lotoloto</characterLabel>
-		<characterLabel type="miscellaneous" draft="unconfirmed">kehekehe</characterLabel>
-		<characterLabel type="modern_scripts" draft="unconfirmed">tohinima fakaonopooni</characterLabel>
-		<characterLabel type="modifier" draft="unconfirmed">fakaliliu</characterLabel>
-		<characterLabel type="musical_symbols" draft="unconfirmed">fakaʻilonga fasi</characterLabel>
+		<characterLabel type="math_symbols">fakaʻilonga matematika</characterLabel>
+		<characterLabel type="middle_eastern_scripts">tohinima fakahahake-lotoloto</characterLabel>
+		<characterLabel type="miscellaneous">kehekehe</characterLabel>
+		<characterLabel type="modern_scripts">tohinima fakaonopooni</characterLabel>
+		<characterLabel type="modifier">fakaliliu</characterLabel>
+		<characterLabel type="musical_symbols">fakaʻilonga fasi</characterLabel>
 		<characterLabel type="nature">natula</characterLabel>
-		<characterLabel type="nonspacing" draft="unconfirmed">taʻevā</characterLabel>
-		<characterLabel type="numbers" draft="unconfirmed">fika</characterLabel>
-		<characterLabel type="objects" draft="unconfirmed">foʻi meʻa</characterLabel>
-		<characterLabel type="other" draft="unconfirmed">kehe</characterLabel>
-		<characterLabel type="paired" draft="unconfirmed">tauhoa</characterLabel>
+		<characterLabel type="nonspacing">taʻevā</characterLabel>
+		<characterLabel type="numbers">fika</characterLabel>
+		<characterLabel type="objects">foʻi meʻa</characterLabel>
+		<characterLabel type="other">kehe</characterLabel>
+		<characterLabel type="paired">tauhoa</characterLabel>
 		<characterLabel type="person">kakai</characterLabel>
-		<characterLabel type="phonetic_alphabet" draft="unconfirmed">motuʻalea fakafonētiki</characterLabel>
-		<characterLabel type="pictographs" draft="unconfirmed">foʻi ʻata</characterLabel>
+		<characterLabel type="phonetic_alphabet">motuʻalea fakafonētiki</characterLabel>
+		<characterLabel type="pictographs">foʻi ʻata</characterLabel>
 		<characterLabel type="place">feituʻu</characterLabel>
 		<characterLabel type="plant">ʻakau</characterLabel>
-		<characterLabel type="punctuation" draft="unconfirmed">fakaʻilonga mālōlō</characterLabel>
-		<characterLabel type="rightwards_arrows" draft="unconfirmed">ngahau mataʻu</characterLabel>
-		<characterLabel type="sign_standard_symbols" draft="unconfirmed">fakaʻilonga sīpinga</characterLabel>
-		<characterLabel type="small_form_variant" draft="unconfirmed">fuo faikeheʻi iiki</characterLabel>
+		<characterLabel type="punctuation">fakaʻilonga mālōlō</characterLabel>
+		<characterLabel type="rightwards_arrows">ngahau mataʻu</characterLabel>
+		<characterLabel type="sign_standard_symbols">fakaʻilonga sīpinga</characterLabel>
+		<characterLabel type="small_form_variant">fuo faikeheʻi iiki</characterLabel>
 		<characterLabel type="smiley">malimali</characterLabel>
-		<characterLabel type="smileys_people" draft="unconfirmed">malimali &amp; kakai</characterLabel>
-		<characterLabel type="south_asian_scripts" draft="unconfirmed">tohinima fakaʻēsia-tonga</characterLabel>
-		<characterLabel type="southeast_asian_scripts" draft="unconfirmed">tohinima fakaʻēsia-tongahahake</characterLabel>
-		<characterLabel type="spacing" draft="unconfirmed">vā</characterLabel>
+		<characterLabel type="smileys_people">malimali &amp; kakai</characterLabel>
+		<characterLabel type="south_asian_scripts">tohinima fakaʻēsia-tonga</characterLabel>
+		<characterLabel type="southeast_asian_scripts">tohinima fakaʻēsia-tongahahake</characterLabel>
+		<characterLabel type="spacing">vā</characterLabel>
 		<characterLabel type="sport">vāʻinga</characterLabel>
-		<characterLabel type="symbols" draft="unconfirmed">fakaʻilonga</characterLabel>
-		<characterLabel type="technical_symbols" draft="unconfirmed">fakaʻilonga tekinikale</characterLabel>
-		<characterLabel type="tone_marks" draft="unconfirmed">fakaʻilonga fasiʻalea</characterLabel>
+		<characterLabel type="symbols">fakaʻilonga</characterLabel>
+		<characterLabel type="technical_symbols">fakaʻilonga tekinikale</characterLabel>
+		<characterLabel type="tone_marks">fakaʻilonga fasiʻalea</characterLabel>
 		<characterLabel type="travel">folau</characterLabel>
-		<characterLabel type="travel_places" draft="unconfirmed">folau &amp; feituʻu</characterLabel>
-		<characterLabel type="upwards_arrows" draft="unconfirmed">ngahau hake</characterLabel>
-		<characterLabel type="variant_forms" draft="unconfirmed">fuo faikeheʻi</characterLabel>
-		<characterLabel type="vocalic_jamo" draft="unconfirmed">samo fakavauele</characterLabel>
+		<characterLabel type="travel_places">folau &amp; feituʻu</characterLabel>
+		<characterLabel type="upwards_arrows">ngahau hake</characterLabel>
+		<characterLabel type="variant_forms">fuo faikeheʻi</characterLabel>
+		<characterLabel type="vocalic_jamo">samo fakavauele</characterLabel>
 		<characterLabel type="weather">ʻea</characterLabel>
-		<characterLabel type="western_asian_scripts" draft="unconfirmed">tohinima fakaʻēsia-hihifo</characterLabel>
-		<characterLabel type="whitespace" draft="unconfirmed">vā hinehina</characterLabel>
+		<characterLabel type="western_asian_scripts">tohinima fakaʻēsia-hihifo</characterLabel>
+		<characterLabel type="whitespace">vā hinehina</characterLabel>
 	</characterLabels>
 	<typographicNames>
 		<axisName type="ital">falala</axisName>
@@ -9060,6 +9549,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<styleName type="wdth" subtype="87.5">nounou siʻi</styleName>
 		<styleName type="wdth" subtype="87.5" alt="compressed">koko siʻi</styleName>
 		<styleName type="wdth" subtype="87.5" alt="narrow">lausiʻi siʻi</styleName>
+		<styleName type="wdth" subtype="100">nōmolo</styleName>
 		<styleName type="wdth" subtype="112.5">fano siʻi</styleName>
 		<styleName type="wdth" subtype="112.5" alt="extended">fakalōloa siʻi</styleName>
 		<styleName type="wdth" subtype="112.5" alt="wide">fālahi siʻi</styleName>

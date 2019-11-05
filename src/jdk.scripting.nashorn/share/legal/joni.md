@@ -1,9 +1,9 @@
-## JRuby Joni v1.1.9
+## JRuby Joni v2.1.16
 
-### JRuby License
+### MIT License
 <pre>
 
-Jruby 2012
+Copyright (c) 2017 JRuby Team
 
 Permission is hereby granted, free of charge, to any person obtaining a
 copy of this software and associated documentation files (the "Software"),

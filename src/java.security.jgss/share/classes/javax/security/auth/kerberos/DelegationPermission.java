@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,7 +78,8 @@ public final class DelegationPermission extends BasicPermission
      * @param principals the name of the subordinate and target principals
      *
      * @throws NullPointerException if {@code principals} is {@code null}.
-     * @throws IllegalArgumentException if {@code principals} is empty.
+     * @throws IllegalArgumentException if {@code principals} is empty,
+     *      or does not contain a pair of principals, or is improperly quoted
      */
     public DelegationPermission(String principals) {
         super(principals);
@@ -94,7 +95,8 @@ public final class DelegationPermission extends BasicPermission
      * @param actions should be null.
      *
      * @throws NullPointerException if {@code principals} is {@code null}.
-     * @throws IllegalArgumentException if {@code principals} is empty.
+     * @throws IllegalArgumentException if {@code principals} is empty,
+     *      or does not contain a pair of principals, or is improperly quoted
      */
     public DelegationPermission(String principals, String actions) {
         super(principals, actions);
@@ -116,14 +118,19 @@ public final class DelegationPermission extends BasicPermission
         } else {
             t = new StringTokenizer(target, "\"", false);
             subordinate = t.nextToken();
-            if (t.countTokens() == 2) {
-                t.nextToken();  // bypass whitespace
-                service = t.nextToken();
-            } else if (t.countTokens() > 0) {
-                throw new IllegalArgumentException
-                    ("service principal [" + t.nextToken() +
-                     "] syntax invalid: " +
-                     "improperly quoted");
+            switch (t.countTokens()) {
+                case 2:
+                    t.nextToken();  // bypass whitespace
+                    service = t.nextToken();
+                    break;
+                case 0:
+                    throw new IllegalArgumentException
+                            ("service principal not provided");
+                default:
+                    throw new IllegalArgumentException
+                            ("service principal [" + t.nextToken() +
+                            "] syntax invalid: " +
+                            "improperly quoted");
             }
         }
     }

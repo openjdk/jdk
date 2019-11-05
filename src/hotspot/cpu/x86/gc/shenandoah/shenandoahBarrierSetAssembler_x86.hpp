@@ -55,10 +55,7 @@ private:
                                     bool tosca_live,
                                     bool expand_call);
 
-  void resolve_forward_pointer(MacroAssembler* masm, Register dst, Register tmp = noreg);
-  void resolve_forward_pointer_not_null(MacroAssembler* masm, Register dst, Register tmp = noreg);
-
-  void load_reference_barrier_not_null(MacroAssembler* masm, Register dst);
+  void load_reference_barrier_not_null(MacroAssembler* masm, Register dst, Address src);
 
   void storeval_barrier_impl(MacroAssembler* masm, Register dst, Register tmp);
 
@@ -75,8 +72,8 @@ public:
   void generate_c1_load_reference_barrier_runtime_stub(StubAssembler* sasm);
 #endif
 
-  void load_reference_barrier(MacroAssembler* masm, Register dst);
-  void load_reference_barrier_native(MacroAssembler* masm, Register dst);
+  void load_reference_barrier(MacroAssembler* masm, Register dst, Address src);
+  void load_reference_barrier_native(MacroAssembler* masm, Register dst, Address src);
 
   void cmpxchg_oop(MacroAssembler* masm,
                    Register res, Address addr, Register oldval, Register newval,

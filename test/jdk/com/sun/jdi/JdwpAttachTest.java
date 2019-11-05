@@ -32,6 +32,7 @@ import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
+import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.Iterator;
@@ -41,7 +42,6 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 
 /*
  * @test
@@ -54,24 +54,36 @@ import java.util.concurrent.TimeUnit;
  */
 public class JdwpAttachTest {
 
+    private static final boolean IsWindows = System.getProperty("os.name").toLowerCase().contains("windows");
+
+    // Set to true to perform testing of attach from wrong address (expected to fail).
+    // It's off by default as it caused significant test time increase\
+    // (tests <number_of_addresses> * <number_of_addresses> cases, each case fails by timeout).
+    private static boolean testFailedAttach = false;
+
     public static void main(String[] args) throws Exception {
         List<InetAddress> addresses = getAddresses();
 
         boolean ipv4EnclosedTested = false;
         boolean ipv6EnclosedTested = false;
         for (InetAddress addr: addresses) {
-            // also test that addresses enclosed in square brackets are supported
-            attachTest(addr.getHostAddress(), addr.getHostAddress());
+            if (testFailedAttach) {
+                for (InetAddress connectAddr : addresses) {
+                    attachTest(addr.getHostAddress(), connectAddr.getHostAddress(), addr.equals(connectAddr));
+                }
+            } else {
+                attachTest(addr.getHostAddress(), addr.getHostAddress(), true);
+            }
             // listening on "*" should accept connections from all addresses
-            attachTest("*", addr.getHostAddress());
+            attachTest("*", addr.getHostAddress(), true);
 
-            // test that addresses enclosed in square brackets are supported.
+            // also test that addresses enclosed in square brackets are supported.
             if (addr instanceof Inet4Address && !ipv4EnclosedTested) {
-                attachTest("[" + addr.getHostAddress() + "]", "[" + addr.getHostAddress() + "]");
+                attachTest("[" + addr.getHostAddress() + "]", "[" + addr.getHostAddress() + "]", true);
                 ipv4EnclosedTested = true;
             }
             if (addr instanceof Inet6Address && !ipv6EnclosedTested) {
-                attachTest("[" + addr.getHostAddress() + "]", "[" + addr.getHostAddress() + "]");
+                attachTest("[" + addr.getHostAddress() + "]", "[" + addr.getHostAddress() + "]", true);
                 ipv6EnclosedTested = true;
             }
         }
@@ -80,13 +92,14 @@ public class JdwpAttachTest {
         // we should be able to attach to both IPv4 and IPv6 addresses (127.0.0.1 & ::1)
         InetAddress localAddresses[] = InetAddress.getAllByName("localhost");
         for (int i = 0; i < localAddresses.length; i++) {
-            attachTest(localAddresses[i].getHostAddress(), "");
+            attachTest(localAddresses[i].getHostAddress(), "", true);
         }
     }
 
-    private static void attachTest(String listenAddress, String connectAddresses)
+    private static void attachTest(String listenAddress, String connectAddress, boolean expectedResult)
             throws Exception {
-        log("Starting listening at " + listenAddress);
+        log("\nTest: listen on '" + listenAddress + "', attach to '" + connectAddress + "'");
+        log("  Starting listening at " + listenAddress);
         ListeningConnector connector = getListenConnector();
         Map<String, Connector.Argument> args = connector.defaultArguments();
         setConnectorArg(args, "localAddress", listenAddress);
@@ -100,29 +113,46 @@ public class JdwpAttachTest {
             throw new RuntimeException("values from connector.startListening (" + actualPort
                     + " is not equal to values from arguments (" + port + ")");
         }
-        log("Listening port: " + port);
+        log("  Listening port: " + port);
 
-        log("Attaching from " + connectAddresses);
+        log("  Attaching from " + connectAddress);
         try {
             ExecutorService executor = Executors.newSingleThreadExecutor();
             executor.submit((Callable<Exception>)() -> {
                 VirtualMachine vm = connector.accept(args);
-                log("ACCEPTED.");
                 vm.dispose();
                 return null;
             });
             executor.shutdown();
 
-            LingeredApp debuggee = LingeredApp.startApp(
-                    Arrays.asList("-agentlib:jdwp=transport=dt_socket"
-                                +",address=" + connectAddresses + ":" + port
-                                + ",server=n,suspend=n"));
-            debuggee.stopApp();
-
-            executor.awaitTermination(20, TimeUnit.SECONDS);
+            try {
+                LingeredApp debuggee = LingeredApp.startApp(
+                        Arrays.asList("-agentlib:jdwp=transport=dt_socket"
+                                + ",address=" + connectAddress + ":" + port
+                                + ",server=n,suspend=n"
+                                // if failure is expected set small timeout (default is 20 sec)
+                                + (!expectedResult ? ",timeout=1000" : "")));
+                debuggee.stopApp();
+                if (expectedResult) {
+                    log("OK: attached as expected");
+                } else {
+                    throw new RuntimeException("ERROR: LingeredApp.startApp was able to attach");
+                }
+            } catch (Exception ex) {
+                if (expectedResult) {
+                    throw new RuntimeException("ERROR: LingeredApp.startApp was able to attach");
+                } else {
+                    log("OK: failed to attach as expected");
+                }
+            }
         } finally {
             connector.stopListening(args);
         }
+    }
+
+    private static void addAddr(List<InetAddress> list, InetAddress addr) {
+        log(" - (" + addr.getClass().getSimpleName() + ") " + addr.getHostAddress());
+        list.add(addr);
     }
 
     private static List<InetAddress> getAddresses() {
@@ -136,17 +166,37 @@ public class JdwpAttachTest {
                         Enumeration<InetAddress> addresses = iface.getInetAddresses();
                         while (addresses.hasMoreElements()) {
                             InetAddress addr = addresses.nextElement();
-                            // Java reports link local addresses with named scope,
-                            // but Windows sockets routines support only numeric scope id.
-                            // skip such addresses.
+                            // Java reports link local addresses with symbolic scope,
+                            // but on Windows java.net.NetworkInterface generates its own scope names
+                            // which are incompatible with native Windows routines.
+                            // So on Windows test only addresses with numeric scope.
+                            // On other platforms test both symbolic and numeric scopes.
                             if (addr instanceof Inet6Address) {
                                 Inet6Address addr6 = (Inet6Address)addr;
-                                if (addr6.getScopedInterface() != null) {
-                                    continue;
+                                NetworkInterface scopeIface = addr6.getScopedInterface();
+                                if (scopeIface != null && scopeIface.getName() != null) {
+                                    // On some test machines VPN creates link local addresses
+                                    // which we cannot connect to.
+                                    // Skip them.
+                                    if (scopeIface.isPointToPoint()) {
+                                        continue;
+                                    }
+
+                                    try {
+                                        // the same address with numeric scope
+                                        addAddr(result, Inet6Address.getByAddress(null, addr6.getAddress(), addr6.getScopeId()));
+                                    } catch (UnknownHostException e) {
+                                        // cannot happen!
+                                        throw new RuntimeException("Unexpected", e);
+                                    }
+
+                                    if (IsWindows) {
+                                        // don't add addresses with symbolic scope
+                                        continue;
+                                    }
                                 }
                             }
-                            log(" - (" + addr.getClass().getSimpleName() + ") " + addr.getHostAddress());
-                            result.add(addr);
+                            addAddr(result, addr);
                         }
                     }
                 } catch (SocketException e) {
@@ -184,8 +234,11 @@ public class JdwpAttachTest {
         arg.setValue(value);
     }
 
+    private static long startTime = System.currentTimeMillis();
+
     private static void log(Object o) {
-        System.out.println(String.valueOf(o));
+        long time = System.currentTimeMillis() - startTime;
+        System.out.println(String.format("[%7.3f] %s", (time / 1000f), String.valueOf(o)));
     }
 
 }

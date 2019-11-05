@@ -30,8 +30,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.VarHandle;
+import java.lang.ref.Cleaner.Cleanable;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ProtocolFamily;
@@ -106,7 +105,7 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
 
     // set by SocketImpl.create, protected by stateLock
     private boolean stream;
-    private FileDescriptorCloser closer;
+    private Cleanable cleaner;
 
     // set to true when the socket is in non-blocking mode
     private volatile boolean nonBlocking;
@@ -471,9 +470,10 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
                     ResourceManager.afterUdpClose();
                 throw ioe;
             }
+            Runnable closer = closerFor(fd, stream);
             this.fd = fd;
             this.stream = stream;
-            this.closer = FileDescriptorCloser.create(this);
+            this.cleaner = CleanerFactory.cleaner().register(this, closer);
             this.state = ST_UNCONNECTED;
         }
     }
@@ -777,10 +777,11 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
         }
 
         // set the fields
+        Runnable closer = closerFor(newfd, true);
         synchronized (nsi.stateLock) {
             nsi.fd = newfd;
             nsi.stream = true;
-            nsi.closer = FileDescriptorCloser.create(nsi);
+            nsi.cleaner = CleanerFactory.cleaner().register(nsi, closer);
             nsi.localport = localAddress.getPort();
             nsi.address = isaa[0].getAddress();
             nsi.port = isaa[0].getPort();
@@ -850,7 +851,7 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
         assert Thread.holdsLock(stateLock) && state == ST_CLOSING;
         if (readerThread == 0 && writerThread == 0) {
             try {
-                closer.run();
+                cleaner.clean();
             } catch (UncheckedIOException ioe) {
                 throw ioe.getCause();
             } finally {
@@ -1193,53 +1194,28 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
     }
 
     /**
-     * A task that closes a SocketImpl's file descriptor. The task runs when the
-     * SocketImpl is explicitly closed and when the SocketImpl becomes phantom
-     * reachable.
+     * Returns an action to close the given file descriptor.
      */
-    private static class FileDescriptorCloser implements Runnable {
-        private static final VarHandle CLOSED;
-        static {
-            try {
-                MethodHandles.Lookup l = MethodHandles.lookup();
-                CLOSED = l.findVarHandle(FileDescriptorCloser.class,
-                                         "closed",
-                                         boolean.class);
-            } catch (Exception e) {
-                throw new InternalError(e);
-            }
-        }
-
-        private final FileDescriptor fd;
-        private final boolean stream;
-        private volatile boolean closed;
-
-        FileDescriptorCloser(FileDescriptor fd, boolean stream) {
-            this.fd = fd;
-            this.stream = stream;
-        }
-
-        static FileDescriptorCloser create(NioSocketImpl impl) {
-            assert Thread.holdsLock(impl.stateLock);
-            var closer = new FileDescriptorCloser(impl.fd, impl.stream);
-            CleanerFactory.cleaner().register(impl, closer);
-            return closer;
-        }
-
-        @Override
-        public void run() {
-            if (CLOSED.compareAndSet(this, false, true)) {
+    private static Runnable closerFor(FileDescriptor fd, boolean stream) {
+        if (stream) {
+            return () -> {
+                try {
+                    nd.close(fd);
+                } catch (IOException ioe) {
+                    throw new UncheckedIOException(ioe);
+                }
+            };
+        } else {
+            return () -> {
                 try {
                     nd.close(fd);
                 } catch (IOException ioe) {
                     throw new UncheckedIOException(ioe);
                 } finally {
-                    if (!stream) {
-                        // decrement
-                        ResourceManager.afterUdpClose();
-                    }
+                    // decrement
+                    ResourceManager.afterUdpClose();
                 }
-            }
+            };
         }
     }
 

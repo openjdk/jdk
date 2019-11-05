@@ -52,4 +52,13 @@ public abstract class HotSpotResolvedJavaType extends HotSpotJavaType implements
         }
         return arrayOfType;
     }
+
+    /**
+     * Checks whether this type is currently being initialized. If a type is being initialized it
+     * implies that it was {@link #isLinked() linked} and that the static initializer is currently
+     * being run.
+     *
+     * @return {@code true} if this type is being initialized
+     */
+    abstract boolean isBeingInitialized();
 }

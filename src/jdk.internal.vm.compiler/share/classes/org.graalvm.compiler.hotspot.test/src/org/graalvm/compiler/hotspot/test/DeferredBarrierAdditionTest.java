@@ -38,7 +38,6 @@ import org.graalvm.compiler.nodes.java.AbstractNewObjectNode;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.OptimisticOptimizations;
-import org.graalvm.compiler.phases.common.CanonicalizerPhase;
 import org.graalvm.compiler.phases.common.GuardLoweringPhase;
 import org.graalvm.compiler.phases.common.LoweringPhase;
 import org.graalvm.compiler.phases.common.WriteBarrierAdditionPhase;
@@ -83,12 +82,12 @@ public class DeferredBarrierAdditionTest extends HotSpotGraalCompilerTest {
             StructuredGraph graph = parseEager(snippet, AllowAssumptions.NO, debug);
             HighTierContext highContext = getDefaultHighTierContext();
             MidTierContext midContext = new MidTierContext(getProviders(), getTargetProvider(), OptimisticOptimizations.ALL, graph.getProfilingInfo());
-            new InliningPhase(new InlineEverythingPolicy(), new CanonicalizerPhase()).apply(graph, highContext);
-            new CanonicalizerPhase().apply(graph, highContext);
-            new PartialEscapePhase(false, new CanonicalizerPhase(), debug.getOptions()).apply(graph, highContext);
-            new LoweringPhase(new CanonicalizerPhase(), LoweringTool.StandardLoweringStage.HIGH_TIER).apply(graph, highContext);
+            new InliningPhase(new InlineEverythingPolicy(), createCanonicalizerPhase()).apply(graph, highContext);
+            this.createCanonicalizerPhase().apply(graph, highContext);
+            new PartialEscapePhase(false, createCanonicalizerPhase(), debug.getOptions()).apply(graph, highContext);
+            new LoweringPhase(createCanonicalizerPhase(), LoweringTool.StandardLoweringStage.HIGH_TIER).apply(graph, highContext);
             new GuardLoweringPhase().apply(graph, midContext);
-            new LoweringPhase(new CanonicalizerPhase(), LoweringTool.StandardLoweringStage.MID_TIER).apply(graph, midContext);
+            new LoweringPhase(createCanonicalizerPhase(), LoweringTool.StandardLoweringStage.MID_TIER).apply(graph, midContext);
             new WriteBarrierAdditionPhase().apply(graph, midContext);
             debug.dump(DebugContext.BASIC_LEVEL, graph, "After Write Barrier Addition");
 

@@ -23,7 +23,7 @@
 
 #include "precompiled.hpp"
 #include "gc/z/zCollectedHeap.hpp"
-#include "gc/z/zCPU.hpp"
+#include "gc/z/zCPU.inline.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zHeap.inline.hpp"
 #include "gc/z/zLargePages.inline.hpp"
@@ -716,7 +716,7 @@ void ZStatSubPhase::register_start(const Ticks& start) const {
 }
 
 void ZStatSubPhase::register_end(const Ticks& start, const Ticks& end) const {
-  ZTracer::tracer()->report_thread_phase(*this, start, end);
+  ZTracer::tracer()->report_thread_phase(name(), start, end);
 
   const Tickspan duration = end - start;
   ZStatSample(_sampler, duration.value());
@@ -736,7 +736,7 @@ void ZStatCriticalPhase::register_start(const Ticks& start) const {
 }
 
 void ZStatCriticalPhase::register_end(const Ticks& start, const Ticks& end) const {
-  ZTracer::tracer()->report_thread_phase(*this, start, end);
+  ZTracer::tracer()->report_thread_phase(name(), start, end);
 
   const Tickspan duration = end - start;
   ZStatSample(_sampler, duration.value());
@@ -759,7 +759,7 @@ THREAD_LOCAL uint32_t ZStatTimerDisable::_active = 0;
 //
 // Stat sample/inc
 //
-void ZStatSample(const ZStatSampler& sampler, uint64_t value, bool trace) {
+void ZStatSample(const ZStatSampler& sampler, uint64_t value) {
   ZStatSamplerData* const cpu_data = sampler.get();
   Atomic::add(1u, &cpu_data->_nsamples);
   Atomic::add(value, &cpu_data->_sum);
@@ -782,18 +782,14 @@ void ZStatSample(const ZStatSampler& sampler, uint64_t value, bool trace) {
     max = prev_max;
   }
 
-  if (trace) {
-    ZTracer::tracer()->report_stat_sampler(sampler, value);
-  }
+  ZTracer::tracer()->report_stat_sampler(sampler, value);
 }
 
-void ZStatInc(const ZStatCounter& counter, uint64_t increment, bool trace) {
+void ZStatInc(const ZStatCounter& counter, uint64_t increment) {
   ZStatCounterData* const cpu_data = counter.get();
   const uint64_t value = Atomic::add(increment, &cpu_data->_counter);
 
-  if (trace) {
-    ZTracer::tracer()->report_stat_counter(counter, increment, value);
-  }
+  ZTracer::tracer()->report_stat_counter(counter, increment, value);
 }
 
 void ZStatInc(const ZStatUnsampledCounter& counter, uint64_t increment) {
@@ -1049,6 +1045,14 @@ void ZStatCycle::at_end(double boost_factor) {
   _normalized_duration.add(normalized_duration);
 }
 
+bool ZStatCycle::is_first() {
+  return _ncycles == 0;
+}
+
+bool ZStatCycle::is_warm() {
+  return _ncycles >= 3;
+}
+
 uint64_t ZStatCycle::ncycles() {
   return _ncycles;
 }
@@ -1215,6 +1219,20 @@ ZStatHeap::ZAtMarkEnd ZStatHeap::_at_mark_end;
 ZStatHeap::ZAtRelocateStart ZStatHeap::_at_relocate_start;
 ZStatHeap::ZAtRelocateEnd ZStatHeap::_at_relocate_end;
 
+size_t ZStatHeap::capacity_high() {
+  return MAX4(_at_mark_start.capacity,
+              _at_mark_end.capacity,
+              _at_relocate_start.capacity,
+              _at_relocate_end.capacity);
+}
+
+size_t ZStatHeap::capacity_low() {
+  return MIN4(_at_mark_start.capacity,
+              _at_mark_end.capacity,
+              _at_relocate_start.capacity,
+              _at_relocate_end.capacity);
+}
+
 size_t ZStatHeap::available(size_t used) {
   return _at_initialize.max_capacity - used;
 }
@@ -1282,8 +1300,8 @@ void ZStatHeap::set_at_relocate_end(size_t capacity,
                                     size_t used_high,
                                     size_t used_low) {
   _at_relocate_end.capacity = capacity;
-  _at_relocate_end.capacity_high = capacity;
-  _at_relocate_end.capacity_low = _at_mark_start.capacity;
+  _at_relocate_end.capacity_high = capacity_high();
+  _at_relocate_end.capacity_low = capacity_low();
   _at_relocate_end.reserve = reserve(used);
   _at_relocate_end.reserve_high = reserve(used_low);
   _at_relocate_end.reserve_low = reserve(used_high);

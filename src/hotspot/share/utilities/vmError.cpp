@@ -128,9 +128,14 @@ static char* next_OnError_command(char* buf, int buflen, const char** ptr) {
 
 static void print_bug_submit_message(outputStream *out, Thread *thread) {
   if (out == NULL) return;
-  out->print_raw_cr("# If you would like to submit a bug report, please visit:");
-  out->print_raw   ("#   ");
-  out->print_raw_cr(Arguments::java_vendor_url_bug());
+  const char *url = Arguments::java_vendor_url_bug();
+  if (url == NULL || *url == '\0')
+    url = JDK_Version::runtime_vendor_vm_bug_url();
+  if (url != NULL && *url != '\0') {
+    out->print_raw_cr("# If you would like to submit a bug report, please visit:");
+    out->print_raw   ("#   ");
+    out->print_raw_cr(url);
+  }
   // If the crash is in native code, encourage user to submit a bug to the
   // provider of that code.
   if (thread && thread->is_Java_thread() &&
@@ -321,15 +326,19 @@ static void report_vm_version(outputStream* st, char* buf, int buflen) {
                                 JDK_Version::runtime_name() : "";
    const char* runtime_version = JDK_Version::runtime_version() != NULL ?
                                    JDK_Version::runtime_version() : "";
+   const char* vendor_version = JDK_Version::runtime_vendor_version() != NULL ?
+                                  JDK_Version::runtime_vendor_version() : "";
    const char* jdk_debug_level = VM_Version::printable_jdk_debug_level() != NULL ?
                                    VM_Version::printable_jdk_debug_level() : "";
 
-   st->print_cr("# JRE version: %s (%s) (%sbuild %s)", runtime_name, buf,
-                 jdk_debug_level, runtime_version);
+   st->print_cr("# JRE version: %s%s%s (%s) (%sbuild %s)", runtime_name,
+                (*vendor_version != '\0') ? " " : "", vendor_version,
+                buf, jdk_debug_level, runtime_version);
 
    // This is the long version with some default settings added
-   st->print_cr("# Java VM: %s (%s%s, %s%s%s%s%s, %s, %s)",
+   st->print_cr("# Java VM: %s%s%s (%s%s, %s%s%s%s%s, %s, %s)",
                  VM_Version::vm_name(),
+                (*vendor_version != '\0') ? " " : "", vendor_version,
                  jdk_debug_level,
                  VM_Version::vm_release(),
                  VM_Version::vm_info_string(),

@@ -27,7 +27,7 @@
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @requires vm.aot
+ * @requires vm.aot & vm.cds
  * @build compiler.aot.fingerprint.SelfChanged
  *        compiler.aot.AotCompiler
  *

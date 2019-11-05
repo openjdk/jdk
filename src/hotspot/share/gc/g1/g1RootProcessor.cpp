@@ -45,34 +45,10 @@
 #include "services/management.hpp"
 #include "utilities/macros.hpp"
 
-void G1RootProcessor::worker_has_discovered_all_strong_nmethods() {
-  assert(ClassUnloadingWithConcurrentMark, "Currently only needed when doing G1 Class Unloading");
-
-  uint new_value = (uint)Atomic::add(1, &_n_workers_discovered_strong_classes);
-  if (new_value == n_workers()) {
-    // This thread is last. Notify the others.
-    MonitorLocker ml(&_lock, Mutex::_no_safepoint_check_flag);
-    _lock.notify_all();
-  }
-}
-
-void G1RootProcessor::wait_until_all_strong_nmethods_discovered() {
-  assert(ClassUnloadingWithConcurrentMark, "Currently only needed when doing G1 Class Unloading");
-
-  if ((uint)_n_workers_discovered_strong_classes != n_workers()) {
-    MonitorLocker ml(&_lock, Mutex::_no_safepoint_check_flag);
-    while ((uint)_n_workers_discovered_strong_classes != n_workers()) {
-      ml.wait(0);
-    }
-  }
-}
-
 G1RootProcessor::G1RootProcessor(G1CollectedHeap* g1h, uint n_workers) :
     _g1h(g1h),
     _process_strong_tasks(G1RP_PS_NumElements),
-    _srs(n_workers),
-    _lock(Mutex::leaf, "G1 Root Scan barrier lock", false, Mutex::_safepoint_check_never),
-    _n_workers_discovered_strong_classes(0) {}
+    _srs(n_workers) {}
 
 void G1RootProcessor::evacuate_roots(G1ParScanThreadState* pss, uint worker_id) {
   G1GCPhaseTimes* phase_times = _g1h->phase_times();
@@ -80,7 +56,7 @@ void G1RootProcessor::evacuate_roots(G1ParScanThreadState* pss, uint worker_id) 
   G1EvacPhaseTimesTracker timer(phase_times, pss, G1GCPhaseTimes::ExtRootScan, worker_id);
 
   G1EvacuationRootClosures* closures = pss->closures();
-  process_java_roots(closures, phase_times, worker_id, closures->trace_metadata() /* notify_claimed_nmethods_done */);
+  process_java_roots(closures, phase_times, worker_id);
 
   process_vm_roots(closures, phase_times, worker_id);
 
@@ -94,12 +70,6 @@ void G1RootProcessor::evacuate_roots(G1ParScanThreadState* pss, uint worker_id) 
       // until they can be processed at the end of marking.
       _g1h->ref_processor_cm()->weak_oops_do(closures->strong_oops());
     }
-  }
-
-  if (closures->trace_metadata()) {
-    G1GCParPhaseTimesTracker x(phase_times, G1GCPhaseTimes::WaitForStrongRoots, worker_id);
-    // Wait to make sure all workers passed the strong nmethods phase.
-    wait_until_all_strong_nmethods_discovered();
   }
 
   _process_strong_tasks.all_tasks_completed(n_workers());
@@ -171,8 +141,7 @@ void G1RootProcessor::process_all_roots(OopClosure* oops,
 
 void G1RootProcessor::process_java_roots(G1RootClosures* closures,
                                          G1GCPhaseTimes* phase_times,
-                                         uint worker_id,
-                                         bool notify_claimed_nmethods_done) {
+                                         uint worker_id) {
   // We need to make make sure that the "strong" nmethods are processed first
   // using the strong closure. Only after that we process the weakly reachable
   // nmethods.
@@ -195,12 +164,6 @@ void G1RootProcessor::process_java_roots(G1RootClosures* closures,
     Threads::possibly_parallel_oops_do(is_par,
                                        closures->strong_oops(),
                                        closures->strong_codeblobs());
-  }
-
-  // This is the point where this worker thread will not find more strong nmethods.
-  // Report this so G1 can synchronize the strong and weak CLDs/nmethods processing.
-  if (notify_claimed_nmethods_done) {
-    worker_has_discovered_all_strong_nmethods();
   }
 
   {

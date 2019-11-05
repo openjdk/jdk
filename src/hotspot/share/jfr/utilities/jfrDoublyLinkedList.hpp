@@ -48,8 +48,8 @@ class JfrDoublyLinkedList {
   void prepend(T* const node);
   void append(T* const node);
   void append_list(T* const head_node, T* const tail_node, size_t count);
-  debug_only(bool in_list(const T* const target_node) const;)
-  debug_only(bool locate(const T* start_node, const T* const target_node) const;)
+  bool in_list(const T* const target_node) const;
+  bool locate(const T* start_node, const T* const target_node) const;
 };
 
 template <typename T>
@@ -153,7 +153,6 @@ T* JfrDoublyLinkedList<T>::clear(bool return_tail /* false */) {
   return node;
 }
 
-#ifdef ASSERT
 template <typename T>
 bool JfrDoublyLinkedList<T>::locate(const T* node, const T* const target) const {
   assert(target != NULL, "invariant");
@@ -182,7 +181,6 @@ inline void validate_count_param(T* node, size_t count_param) {
   }
   assert(count_param == count, "invariant");
 }
-#endif // ASSERT
 
 template <typename T>
 void JfrDoublyLinkedList<T>::append_list(T* const head_node, T* const tail_node, size_t count) {

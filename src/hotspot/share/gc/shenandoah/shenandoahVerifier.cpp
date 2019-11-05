@@ -695,8 +695,8 @@ void ShenandoahVerifier::verify_at_safepoint(const char *label,
     guarantee(cl.committed() == heap_committed,
               "%s: heap committed size must be consistent: heap-committed = " SIZE_FORMAT "%s, regions-committed = " SIZE_FORMAT "%s",
               label,
-              byte_size_in_exact_unit(heap_committed), proper_unit_for_byte_size(heap_committed),
-              byte_size_in_exact_unit(cl.committed()), proper_unit_for_byte_size(cl.committed()));
+              byte_size_in_proper_unit(heap_committed), proper_unit_for_byte_size(heap_committed),
+              byte_size_in_proper_unit(cl.committed()), proper_unit_for_byte_size(cl.committed()));
   }
 
   // Internal heap region checks

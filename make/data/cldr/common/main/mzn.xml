@@ -7,7 +7,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 14782 $"/>
+		<version number="$Revision$"/>
 		<language type="mzn"/>
 	</identity>
 	<localeDisplayNames>
@@ -462,8 +462,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="MF">سنت مارتین</territory>
 			<territory type="MG">ماداگاسکار</territory>
 			<territory type="MH">مارشال جزایر</territory>
-			<territory type="MK">مقدونیه</territory>
-			<territory type="MK" alt="variant">مقدونیه جمهوری</territory>
 			<territory type="ML">مالی</territory>
 			<territory type="MM">میانمار</territory>
 			<territory type="MN">مغولستون</territory>
@@ -599,7 +597,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<exemplarCharacters>[\u064B \u064C \u064D \u0651 \u0654 ء آ أ ؤ ئ ا ب پ ة ت ث ج چ ح خ د ذ ر ز ژ س ش ص ض ط ظ ع غ ف ق ک گ ل م ن ه و ی]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[\u200C\u200D\u200E\u200F \u064E \u064F \u0650 \u0652 \u0656 \u0670 إ ك ى ي]</exemplarCharacters>
 		<exemplarCharacters type="index">[آ ا ب پ ت ث ج چ ح خ د ذ ر ز ژ س ش ص ض ط ظ ع غ ف ق ک گ ل م ن ه و ی]</exemplarCharacters>
-		<exemplarCharacters type="punctuation">[\- ‐ ، ٫ ٬ ؛ \: ! ؟ . … ‹ › « » ( ) \[ \] * / \\]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‐ ‑ ، ٫ ٬ ؛ \: ! ؟ . … ‹ › « » ( ) \[ \] * / \\]</exemplarCharacters>
 		<ellipsis type="final">{0}…</ellipsis>
 		<ellipsis type="initial">…{0}</ellipsis>
 		<ellipsis type="medial">{0}…{1}</ellipsis>

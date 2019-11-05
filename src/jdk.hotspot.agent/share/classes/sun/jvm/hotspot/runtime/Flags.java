@@ -35,7 +35,8 @@ public enum Flags {
   MANAGEMENT ("Management"),
   ERGONOMIC ("Ergonomic"),
   ATTACH_ON_DEMAND ("Attach on demand"),
-  INTERNAL ("Internal");
+  INTERNAL ("Internal"),
+  JIMAGE_RESOURCE ("JImage");
 
   private final String value;
 

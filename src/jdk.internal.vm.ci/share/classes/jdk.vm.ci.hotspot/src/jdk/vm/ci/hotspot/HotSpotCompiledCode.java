@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,12 @@ package jdk.vm.ci.hotspot;
 import jdk.vm.ci.code.BytecodeFrame;
 import jdk.vm.ci.code.CompiledCode;
 import jdk.vm.ci.code.StackSlot;
+import jdk.vm.ci.code.VirtualObject;
 import jdk.vm.ci.code.site.DataPatch;
 import jdk.vm.ci.code.site.Infopoint;
 import jdk.vm.ci.code.site.Site;
 import jdk.vm.ci.meta.Assumptions.Assumption;
+import jdk.vm.ci.meta.ResolvedJavaField;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 
 /**
@@ -156,9 +158,23 @@ public class HotSpotCompiledCode implements CompiledCode {
                 if (info.debugInfo != null) {
                     BytecodeFrame frame = info.debugInfo.frame();
                     assert frame == null || frame.validateFormat();
+                    if (info.debugInfo.getVirtualObjectMapping() != null) {
+                        for (VirtualObject v : info.debugInfo.getVirtualObjectMapping()) {
+                            verifyVirtualObject(v);
+                        }
+                    }
                 }
             }
         }
         return true;
+    }
+
+    public static void verifyVirtualObject(VirtualObject v) {
+        v.verifyLayout(new VirtualObject.LayoutVerifier() {
+            @Override
+            public int getOffset(ResolvedJavaField field) {
+                return field.getOffset();
+            }
+        });
     }
 }

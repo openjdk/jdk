@@ -147,7 +147,6 @@ Symbol* Bytecode_member_ref::signature() const {
 
 BasicType Bytecode_member_ref::result_type() const {
   ResultTypeFinder rts(signature());
-  rts.iterate();
   return rts.type();
 }
 

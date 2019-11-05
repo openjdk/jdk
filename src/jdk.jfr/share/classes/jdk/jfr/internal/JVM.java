@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -270,7 +270,6 @@ public final class JVM {
      *
      * @param file the file where data should be written, or null if it should
      *        not be copied out (in memory).
-     *
      * @throws IOException
      */
     public native void setOutput(String file);
@@ -460,6 +459,16 @@ public final class JVM {
     public static native boolean flush(EventWriter writer, int uncommittedSize, int requestedSize);
 
     /**
+     * Flushes all thread buffers to disk and the constant pool data needed to read
+     * them.
+     * <p>
+     * When the method returns, the chunk header should be updated with valid
+     * pointers to the metadata event, last check point event, correct file size and
+     * the generation id.
+     *
+     */
+    public native void flush();
+    /**
      * Sets the location of the disk repository, to be used at an emergency
      * dump.
      *
@@ -523,4 +532,30 @@ public final class JVM {
      * @return if it is time to perform a chunk rotation
      */
     public native boolean shouldRotateDisk();
+
+    /**
+     * Exclude a thread from the jfr system
+     *
+     */
+    public native void exclude(Thread thread);
+
+    /**
+     * Include a thread back into the jfr system
+     *
+     */
+    public native void include(Thread thread);
+
+    /**
+     * Test if a thread ius currently excluded from the jfr system.
+     *
+     * @return is thread currently excluded
+     */
+    public native boolean isExcluded(Thread thread);
+
+    /**
+     * Get the start time in nanos from the header of the current chunk
+     *
+     *@return start time of the recording in nanos, -1 in case of in-memory
+     */
+    public native long getChunkStartNanos();
 }

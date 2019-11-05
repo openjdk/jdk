@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -126,7 +126,7 @@ import org.graalvm.compiler.printer.GraalDebugHandlersFactory;
 import org.graalvm.compiler.runtime.RuntimeProvider;
 import org.graalvm.compiler.test.AddExports;
 import org.graalvm.compiler.test.GraalTest;
-import org.graalvm.compiler.test.ModuleSupport;
+import org.graalvm.compiler.api.test.ModuleSupport;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -643,7 +643,7 @@ public abstract class GraalCompilerTest extends GraalTest {
     }
 
     protected final BasePhase<HighTierContext> createInliningPhase() {
-        return createInliningPhase(new CanonicalizerPhase());
+        return createInliningPhase(this.createCanonicalizerPhase());
     }
 
     protected BasePhase<HighTierContext> createInliningPhase(CanonicalizerPhase canonicalizer) {
@@ -1119,6 +1119,12 @@ public abstract class GraalCompilerTest extends GraalTest {
         return graph;
     }
 
+    protected StructuredGraph getFinalGraph(ResolvedJavaMethod method, OptionValues options) {
+        StructuredGraph graph = parseForCompile(method, options);
+        applyFrontEnd(graph);
+        return graph;
+    }
+
     @SuppressWarnings("try")
     protected void applyFrontEnd(StructuredGraph graph) {
         DebugContext debug = graph.getDebug();
@@ -1514,5 +1520,9 @@ public abstract class GraalCompilerTest extends GraalTest {
      */
     protected boolean isArchitecture(String name) {
         return name.equals(backend.getTarget().arch.getName());
+    }
+
+    protected CanonicalizerPhase createCanonicalizerPhase() {
+        return CanonicalizerPhase.create();
     }
 }

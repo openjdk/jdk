@@ -7,7 +7,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 14771 $"/>
+		<version number="$Revision$"/>
 		<language type="zh"/>
 		<script type="Hans"/>
 		<territory type="HK"/>
@@ -202,22 +202,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</fields>
 	</dates>
 	<numbers>
-		<decimalFormats numberSystem="latn">
-			<decimalFormatLength type="long">
-				<decimalFormat>
-					<pattern type="1000000000000" count="other" draft="contributed">0万亿</pattern>
-					<pattern type="10000000000000" count="other" draft="contributed">00万亿</pattern>
-					<pattern type="100000000000000" count="other" draft="contributed">000万亿</pattern>
-				</decimalFormat>
-			</decimalFormatLength>
-			<decimalFormatLength type="short">
-				<decimalFormat>
-					<pattern type="1000000000000" count="other" draft="contributed">0万亿</pattern>
-					<pattern type="10000000000000" count="other" draft="contributed">00万亿</pattern>
-					<pattern type="100000000000000" count="other" draft="contributed">000万亿</pattern>
-				</decimalFormat>
-			</decimalFormatLength>
-		</decimalFormats>
 		<currencyFormats numberSystem="latn">
 			<unitPattern count="other" draft="contributed">{0} {1}</unitPattern>
 		</currencyFormats>

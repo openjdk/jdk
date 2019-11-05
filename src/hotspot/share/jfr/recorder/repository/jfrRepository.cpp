@@ -26,13 +26,14 @@
 #include "jfr/jfr.hpp"
 #include "jfr/jni/jfrJavaSupport.hpp"
 #include "jfr/recorder/jfrRecorder.hpp"
-#include "jfr/recorder/repository/jfrChunkState.hpp"
 #include "jfr/recorder/repository/jfrChunkWriter.hpp"
 #include "jfr/recorder/repository/jfrEmergencyDump.hpp"
 #include "jfr/recorder/repository/jfrRepository.hpp"
 #include "jfr/recorder/service/jfrPostBox.hpp"
+#include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/mutex.hpp"
+#include "runtime/os.hpp"
 #include "runtime/thread.inline.hpp"
 
 static JfrRepository* _instance = NULL;
@@ -43,11 +44,6 @@ JfrRepository& JfrRepository::instance() {
 
 static JfrChunkWriter* _chunkwriter = NULL;
 
-static bool initialize_chunkwriter() {
-  assert(_chunkwriter == NULL, "invariant");
-  _chunkwriter = new JfrChunkWriter();
-  return _chunkwriter != NULL && _chunkwriter->initialize();
-}
 
 JfrChunkWriter& JfrRepository::chunkwriter() {
   return *_chunkwriter;
@@ -56,7 +52,9 @@ JfrChunkWriter& JfrRepository::chunkwriter() {
 JfrRepository::JfrRepository(JfrPostBox& post_box) : _path(NULL), _post_box(post_box) {}
 
 bool JfrRepository::initialize() {
-  return initialize_chunkwriter();
+  assert(_chunkwriter == NULL, "invariant");
+  _chunkwriter = new JfrChunkWriter();
+  return _chunkwriter != NULL;
 }
 
 JfrRepository::~JfrRepository() {
@@ -84,7 +82,6 @@ void JfrRepository::destroy() {
 }
 
 void JfrRepository::on_vm_error() {
-  assert(!JfrStream_lock->owned_by_self(), "invariant");
   if (_path == NULL) {
     // completed already
     return;
@@ -107,15 +104,19 @@ bool JfrRepository::set_path(const char* path) {
   return true;
 }
 
-void JfrRepository::set_chunk_path(const char* path) {
-  assert(JfrStream_lock->owned_by_self(), "invariant");
-  chunkwriter().set_chunk_path(path);
-}
-
 void JfrRepository::notify_on_new_chunk_path() {
   if (Jfr::is_recording()) {
+    // rotations are synchronous, block until rotation completes
     instance()._post_box.post(MSG_ROTATE);
   }
+}
+
+void JfrRepository::set_chunk_path(const char* path) {
+  chunkwriter().set_path(path);
+}
+
+jlong JfrRepository::current_chunk_start_nanos() {
+  return chunkwriter().current_chunk_start_nanos();
 }
 
 /**
@@ -134,14 +135,11 @@ void JfrRepository::set_chunk_path(jstring path, JavaThread* jt) {
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(jt));
   ResourceMark rm(jt);
   const char* const canonical_chunk_path = JfrJavaSupport::c_str(path, jt);
-  {
-    MutexLocker stream_lock(JfrStream_lock, Mutex::_no_safepoint_check_flag);
-    if (NULL == canonical_chunk_path && !_chunkwriter->is_valid()) {
-      // new output is NULL and current output is NULL
-      return;
-    }
-    instance().set_chunk_path(canonical_chunk_path);
+  if (NULL == canonical_chunk_path && !_chunkwriter->is_valid()) {
+    // new output is NULL and current output is NULL
+    return;
   }
+  instance().set_chunk_path(canonical_chunk_path);
   notify_on_new_chunk_path();
 }
 
@@ -155,14 +153,28 @@ void JfrRepository::set_path(jstring location, JavaThread* jt) {
 }
 
 bool JfrRepository::open_chunk(bool vm_error /* false */) {
-  assert(JfrStream_lock->owned_by_self(), "invariant");
   if (vm_error) {
     ResourceMark rm;
-    _chunkwriter->set_chunk_path(JfrEmergencyDump::build_dump_path(_path));
+    _chunkwriter->set_path(JfrEmergencyDump::build_dump_path(_path));
   }
   return _chunkwriter->open();
 }
 
-size_t JfrRepository::close_chunk(int64_t metadata_offset) {
-  return _chunkwriter->close(metadata_offset);
+size_t JfrRepository::close_chunk() {
+  return _chunkwriter->close();
+}
+
+void JfrRepository::flush(JavaThread* jt) {
+  DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(jt));
+  if (!Jfr::is_recording()) {
+    return;
+  }
+  if (!_chunkwriter->is_valid()) {
+    return;
+  }
+  instance()._post_box.post(MSG_FLUSHPOINT);
+}
+
+size_t JfrRepository::flush_chunk() {
+  return _chunkwriter->flush_chunk(true);
 }

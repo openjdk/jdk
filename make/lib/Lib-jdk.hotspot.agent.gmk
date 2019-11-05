@@ -53,15 +53,21 @@ else ifeq ($(call isTargetOs, windows), true)
   endif
 endif
 
+SA_TOOLCHAIN := $(TOOLCHAIN_DEFAULT)
+ifeq ($(call isTargetOs, linux), true)
+  SA_TOOLCHAIN := TOOLCHAIN_BUILD_LINK_CXX
+endif
+
 ################################################################################
 
 $(eval $(call SetupJdkLibrary, BUILD_LIBSA, \
     NAME := saproc, \
+    TOOLCHAIN := $(SA_TOOLCHAIN), \
     OPTIMIZATION := HIGH, \
     DISABLED_WARNINGS_microsoft := 4267, \
     DISABLED_WARNINGS_gcc := sign-compare pointer-arith, \
     DISABLED_WARNINGS_clang := sign-compare pointer-arith format-nonliteral, \
-    DISABLED_WARNINGS_CXX_solstudio := truncwarn unknownpragma, \
+    DISABLED_WARNINGS_CXX_solstudio := truncwarn unknownpragma doubunder, \
     CFLAGS := $(CFLAGS_JDKLIB) $(SA_CFLAGS), \
     CXXFLAGS := $(CXXFLAGS_JDKLIB) $(SA_CFLAGS) $(SA_CXXFLAGS), \
     EXTRA_SRC := $(LIBSA_EXTRA_SRC), \

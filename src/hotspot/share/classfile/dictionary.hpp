@@ -156,7 +156,6 @@ class DictionaryEntry : public HashtableEntry<InstanceKlass*, mtClass> {
   // Tells whether the initiating class' protection domain can access the klass in this entry
   bool is_valid_protection_domain(Handle protection_domain) {
     if (!ProtectionDomainVerification) return true;
-    if (!SystemDictionary::has_checkPackageAccess()) return true;
 
     return protection_domain() == NULL
          ? true

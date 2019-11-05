@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,6 +61,7 @@
 /*
  * @test
  * @modules jdk.localedata
+ * @bug 8231273
  */
 
 package test.java.time.format;
@@ -92,13 +93,13 @@ public class TestDateTimeTextProviderWithLocale extends AbstractTestPrinterParse
     @DataProvider(name = "Text")
     Object[][] data_text() {
         return new Object[][] {
-            {DAY_OF_WEEK, 1, TextStyle.SHORT, ptBR, "seg"},
-            {DAY_OF_WEEK, 2, TextStyle.SHORT, ptBR, "ter"},
-            {DAY_OF_WEEK, 3, TextStyle.SHORT, ptBR, "qua"},
-            {DAY_OF_WEEK, 4, TextStyle.SHORT, ptBR, "qui"},
-            {DAY_OF_WEEK, 5, TextStyle.SHORT, ptBR, "sex"},
-            {DAY_OF_WEEK, 6, TextStyle.SHORT, ptBR, "s\u00E1b"},
-            {DAY_OF_WEEK, 7, TextStyle.SHORT, ptBR, "dom"},
+            {DAY_OF_WEEK, 1, TextStyle.SHORT, ptBR, "seg."},
+            {DAY_OF_WEEK, 2, TextStyle.SHORT, ptBR, "ter."},
+            {DAY_OF_WEEK, 3, TextStyle.SHORT, ptBR, "qua."},
+            {DAY_OF_WEEK, 4, TextStyle.SHORT, ptBR, "qui."},
+            {DAY_OF_WEEK, 5, TextStyle.SHORT, ptBR, "sex."},
+            {DAY_OF_WEEK, 6, TextStyle.SHORT, ptBR, "s\u00E1b."},
+            {DAY_OF_WEEK, 7, TextStyle.SHORT, ptBR, "dom."},
 
             {DAY_OF_WEEK, 1, TextStyle.FULL, ptBR, "segunda-feira"},
             {DAY_OF_WEEK, 2, TextStyle.FULL, ptBR, "ter\u00E7a-feira"},
@@ -108,18 +109,18 @@ public class TestDateTimeTextProviderWithLocale extends AbstractTestPrinterParse
             {DAY_OF_WEEK, 6, TextStyle.FULL, ptBR, "s\u00E1bado"},
             {DAY_OF_WEEK, 7, TextStyle.FULL, ptBR, "domingo"},
 
-            {MONTH_OF_YEAR, 1, TextStyle.SHORT, ptBR, "jan"},
-            {MONTH_OF_YEAR, 2, TextStyle.SHORT, ptBR, "fev"},
-            {MONTH_OF_YEAR, 3, TextStyle.SHORT, ptBR, "mar"},
-            {MONTH_OF_YEAR, 4, TextStyle.SHORT, ptBR, "abr"},
-            {MONTH_OF_YEAR, 5, TextStyle.SHORT, ptBR, "mai"},
-            {MONTH_OF_YEAR, 6, TextStyle.SHORT, ptBR, "jun"},
-            {MONTH_OF_YEAR, 7, TextStyle.SHORT, ptBR, "jul"},
-            {MONTH_OF_YEAR, 8, TextStyle.SHORT, ptBR, "ago"},
-            {MONTH_OF_YEAR, 9, TextStyle.SHORT, ptBR, "set"},
-            {MONTH_OF_YEAR, 10, TextStyle.SHORT, ptBR, "out"},
-            {MONTH_OF_YEAR, 11, TextStyle.SHORT, ptBR, "nov"},
-            {MONTH_OF_YEAR, 12, TextStyle.SHORT, ptBR, "dez"},
+            {MONTH_OF_YEAR, 1, TextStyle.SHORT, ptBR, "jan."},
+            {MONTH_OF_YEAR, 2, TextStyle.SHORT, ptBR, "fev."},
+            {MONTH_OF_YEAR, 3, TextStyle.SHORT, ptBR, "mar."},
+            {MONTH_OF_YEAR, 4, TextStyle.SHORT, ptBR, "abr."},
+            {MONTH_OF_YEAR, 5, TextStyle.SHORT, ptBR, "mai."},
+            {MONTH_OF_YEAR, 6, TextStyle.SHORT, ptBR, "jun."},
+            {MONTH_OF_YEAR, 7, TextStyle.SHORT, ptBR, "jul."},
+            {MONTH_OF_YEAR, 8, TextStyle.SHORT, ptBR, "ago."},
+            {MONTH_OF_YEAR, 9, TextStyle.SHORT, ptBR, "set."},
+            {MONTH_OF_YEAR, 10, TextStyle.SHORT, ptBR, "out."},
+            {MONTH_OF_YEAR, 11, TextStyle.SHORT, ptBR, "nov."},
+            {MONTH_OF_YEAR, 12, TextStyle.SHORT, ptBR, "dez."},
 
             {MONTH_OF_YEAR, 1, TextStyle.FULL, ptBR, "janeiro"},
             {MONTH_OF_YEAR, 2, TextStyle.FULL, ptBR, "fevereiro"},

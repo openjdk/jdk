@@ -618,8 +618,13 @@ public abstract class HttpURLConnection extends URLConnection {
 
     /**
      * Indicates if the connection is going through a proxy.
-     * @return a boolean indicating if the connection is
-     * using a proxy.
+     *
+     * This method returns {@code true} if the connection is known
+     * to be going or has gone through proxies, and returns {@code false}
+     * if the connection will never go through a proxy or if
+     * the use of a proxy cannot be determined.
+     *
+     * @return a boolean indicating if the connection is using a proxy.
      */
     public abstract boolean usingProxy();
 

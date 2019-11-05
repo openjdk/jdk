@@ -879,8 +879,7 @@ JvmtiEnv::GetThreadState(jthread thread, jint* thread_state_ptr) {
     if (jts == _thread_in_native) {
       state |= JVMTI_THREAD_STATE_IN_NATIVE;
     }
-    OSThread* osThread = java_thread->osthread();
-    if (osThread != NULL && osThread->interrupted()) {
+    if (java_thread->is_interrupted(false)) {
       state |= JVMTI_THREAD_STATE_INTERRUPTED;
     }
   }
@@ -1092,7 +1091,6 @@ JvmtiEnv::StopThread(JavaThread* java_thread, jobject exception) {
 // thread - NOT pre-checked
 jvmtiError
 JvmtiEnv::InterruptThread(jthread thread) {
-  // TODO: this is very similar to JVM_Interrupt(); share code in future
   JavaThread* current_thread  = JavaThread::current();
   JavaThread* java_thread = NULL;
   ThreadsListHandle tlh(current_thread);
@@ -1100,7 +1098,11 @@ JvmtiEnv::InterruptThread(jthread thread) {
   if (err != JVMTI_ERROR_NONE) {
     return err;
   }
-
+  // Really this should be a Java call to Thread.interrupt to ensure the same
+  // semantics, however historically this has not been done for some reason.
+  // So we continue with that (which means we don't interact with any Java-level
+  // Interruptible object) but we must set the Java-level interrupted state.
+  java_lang_Thread::set_interrupted(JNIHandles::resolve(thread), true);
   java_thread->interrupt();
 
   return JVMTI_ERROR_NONE;

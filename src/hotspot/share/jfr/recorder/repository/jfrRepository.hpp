@@ -55,8 +55,10 @@ class JfrRepository : public JfrCHeapObj {
   bool set_path(const char* path);
   void set_chunk_path(const char* path);
   bool open_chunk(bool vm_error = false);
-  size_t close_chunk(int64_t metadata_offset);
+  size_t close_chunk();
+  size_t flush_chunk();
   void on_vm_error();
+
   static void notify_on_new_chunk_path();
   static JfrChunkWriter& chunkwriter();
 
@@ -68,6 +70,8 @@ class JfrRepository : public JfrCHeapObj {
  public:
   static void set_path(jstring location, JavaThread* jt);
   static void set_chunk_path(jstring path, JavaThread* jt);
+  static void flush(JavaThread* jt);
+  static jlong current_chunk_start_nanos();
 };
 
 #endif // SHARE_JFR_RECORDER_REPOSITORY_JFRREPOSITORY_HPP

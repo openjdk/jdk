@@ -7,7 +7,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 14770 $"/>
+		<version number="$Revision$"/>
 		<language type="en"/>
 		<territory type="SG"/>
 	</identity>
@@ -94,11 +94,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</calendar>
 		</calendars>
 		<fields>
-			<field type="year-short">
-				<relative type="-1">last yr</relative>
-				<relative type="0">this yr</relative>
-				<relative type="1">next yr</relative>
-			</field>
 			<field type="quarter-short">
 				<relative type="-1">last qtr</relative>
 				<relative type="0">this qtr</relative>
@@ -125,11 +120,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<relativeTimePattern count="one">{0} mth ago</relativeTimePattern>
 					<relativeTimePattern count="other">{0} mth ago</relativeTimePattern>
 				</relativeTime>
-			</field>
-			<field type="week-short">
-				<relative type="-1">last wk</relative>
-				<relative type="0">this wk</relative>
-				<relative type="1">next wk</relative>
 			</field>
 		</fields>
 		<timeZoneNames>

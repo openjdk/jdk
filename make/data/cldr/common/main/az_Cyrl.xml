@@ -7,7 +7,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 14782 $"/>
+		<version number="$Revision$"/>
 		<language type="az"/>
 		<script type="Cyrl"/>
 	</identity>
@@ -100,7 +100,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="en_GB">Британија инҝилисҹәси</language>
 			<language type="en_GB" alt="short">инҝилис (Б.К.)</language>
 			<language type="en_US">Америка инҝилисҹәси</language>
-			<language type="en_US" alt="short">инҝилис (АБШ)</language>
 			<language type="eo">есперанто</language>
 			<language type="es">испан</language>
 			<language type="es_419">Латын Америкасы испанҹасы</language>
@@ -591,7 +590,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="MF">Сент Мартин</territory>
 			<territory type="MG">Мадагаскар</territory>
 			<territory type="MH">Маршал адалары</territory>
-			<territory type="MK" alt="variant">Македонија (КЈРМ)</territory>
 			<territory type="ML">Мали</territory>
 			<territory type="MM">Мјанма</territory>
 			<territory type="MN">Монголустан</territory>
@@ -713,7 +711,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<exemplarCharacters>[а ә б в г ғ д е ж з и й ј к ҝ л м н о ө п р с т у ү ф х һ ч ҹ ш ы]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[ц щ ъ ь э ю я]</exemplarCharacters>
 		<exemplarCharacters type="index" draft="unconfirmed">[А Ә Б В Г Ғ Д Е Ж З И Й Ј К Ҝ Л М Н О Ө П Р С Т У Ү Ф Х Һ Ч Ҹ Ш Ы]</exemplarCharacters>
-		<exemplarCharacters type="numbers">[\- , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
+		<exemplarCharacters type="numbers">[\- ‑ , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
 	</characters>
 	<delimiters>
 		<quotationStart>«</quotationStart>

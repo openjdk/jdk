@@ -56,7 +56,7 @@ final class CompilerToVM {
     private static native void registerNatives();
 
     /**
-     * These values mirror the equivalent values from {@link Unsafe} but are approriate for the JVM
+     * These values mirror the equivalent values from {@code Unsafe} but are appropriate for the JVM
      * being compiled against.
      */
     // Checkstyle: stop
@@ -514,10 +514,10 @@ final class CompilerToVM {
 
     /**
      * Reads an object pointer within a VM data structure. That is, any {@link VMField} whose
-     * {@link VMField#type type} is {@code "oop"} (e.g.,
-     * {@code Klass::_java_mirror}, {@code JavaThread::_threadObj}).
+     * {@link VMField#type type} is {@code "oop"} (e.g., {@code Klass::_java_mirror},
+     * {@code JavaThread::_threadObj}).
      *
-     * Note that {@link Unsafe#getObject(Object, long)} cannot be used for this since it does a
+     * Note that {@code Unsafe.getObject(Object, long)} cannot be used for this since it does a
      * {@code narrowOop} read if the VM is using compressed oops whereas oops within VM data
      * structures are (currently) always uncompressed.
      *
@@ -965,6 +965,11 @@ final class CompilerToVM {
      * @see HotSpotJVMCIRuntime#isCurrentThreadAttached()
      */
     native boolean isCurrentThreadAttached();
+
+    /**
+     * @see HotSpotJVMCIRuntime#getCurrentJavaThread()
+     */
+    native long getCurrentJavaThread();
 
     /**
      * @see HotSpotJVMCIRuntime#attachCurrentThread

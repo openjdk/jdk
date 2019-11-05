@@ -4,11 +4,13 @@
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
  *
- * http://www.opensource.org/licenses/bsd-license.php
+ * https://opensource.org/licenses/BSD-3-Clause
  */
 package jdk.internal.org.jline.utils;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.regex.Matcher;
@@ -24,7 +26,7 @@ public class AttributedStringBuilder extends AttributedCharSequence implements A
     private char[] buffer;
     private int[] style;
     private int length;
-    private int tabs = 0;
+    private TabStops tabs = new TabStops(0);
     private int lastLineLength = 0;
     private AttributedStyle current = AttributedStyle.DEFAULT;
 
@@ -151,7 +153,7 @@ public class AttributedStringBuilder extends AttributedCharSequence implements A
         for (int i = start; i < end; i++) {
             char c = str.charAt(i);
             int s = str.styleCodeAt(i) & ~current.getMask() | current.getStyle();
-            if (tabs > 0 && c == '\t') {
+            if (tabs.defined() && c == '\t') {
                 insertTab(new AttributedStyle(s, 0));
             } else {
                 ensureCapacity(length + 1);
@@ -332,7 +334,7 @@ public class AttributedStringBuilder extends AttributedCharSequence implements A
                     // This is not a SGR code, so ignore
                     ansiState = 0;
                 }
-            } else if (c == '\t' && tabs > 0) {
+            } else if (c == '\t' && tabs.defined()) {
                 insertTab(current);
             } else {
                 ensureCapacity(length + 1);
@@ -350,7 +352,7 @@ public class AttributedStringBuilder extends AttributedCharSequence implements A
     }
 
     protected void insertTab(AttributedStyle s) {
-        int nb = tabs - lastLineLength % tabs;
+        int nb = tabs.spaces(lastLineLength);
         ensureCapacity(length + nb);
         for (int i = 0; i < nb; i++) {
             buffer[length] = ' ';
@@ -373,13 +375,17 @@ public class AttributedStringBuilder extends AttributedCharSequence implements A
      * @return this
      */
     public AttributedStringBuilder tabs(int tabsize) {
-        if (length > 0) {
-            throw new IllegalStateException("Cannot change tab size after appending text");
-        }
         if (tabsize < 0) {
             throw new IllegalArgumentException("Tab size must be non negative");
         }
-        this.tabs = tabsize;
+        return tabs(Arrays.asList(tabsize));
+    }
+
+    public AttributedStringBuilder tabs(List<Integer> tabs) {
+        if (length > 0) {
+            throw new IllegalStateException("Cannot change tab size after appending text");
+        }
+        this.tabs = new TabStops(tabs);
         return this;
     }
 
@@ -391,6 +397,62 @@ public class AttributedStringBuilder extends AttributedCharSequence implements A
             }
         }
         return this;
+    }
+
+    public AttributedStringBuilder styleMatches(Pattern pattern, List<AttributedStyle> styles) {
+        Matcher matcher = pattern.matcher(this);
+        while (matcher.find()) {
+            for (int group = 0; group < matcher.groupCount(); group++) {
+                AttributedStyle s = styles.get(group);
+                for (int i = matcher.start(group + 1); i < matcher.end(group + 1); i++) {
+                    style[i] = (style[i] & ~s.getMask()) | s.getStyle();
+                }
+            }
+        }
+        return this;
+    }
+
+    private class TabStops {
+        private List<Integer> tabs = new ArrayList<>();
+        private int lastStop = 0;
+        private int lastSize = 0;
+
+        public TabStops(int tabs) {
+            this.lastSize = tabs;
+        }
+
+        public TabStops(List<Integer> tabs) {
+            this.tabs = tabs;
+            int p = 0;
+            for (int s: tabs) {
+                if (s <= p) {
+                    continue;
+                }
+                lastStop = s;
+                lastSize = s - p;
+                p = s;
+            }
+        }
+
+        boolean defined() {
+            return lastSize > 0;
+        }
+
+        int spaces(int lastLineLength) {
+            int out = 0;
+            if (lastLineLength >= lastStop) {
+                out = lastSize - (lastLineLength - lastStop) % lastSize;
+            } else {
+                for (int s: tabs) {
+                    if (s > lastLineLength) {
+                        out = s - lastLineLength;
+                        break;
+                    }
+                }
+            }
+            return out;
+        }
+
     }
 
 }

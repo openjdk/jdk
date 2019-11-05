@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,9 +42,11 @@ class VersionProps {
     private static final String java_version_date =
         "@@VERSION_DATE@@";
 
+    // This field is read by HotSpot
     private static final String java_runtime_name =
         "@@RUNTIME_NAME@@";
 
+    // This field is read by HotSpot
     private static final String java_runtime_version =
         "@@VERSION_STRING@@";
 
@@ -69,21 +71,25 @@ class VersionProps {
     private static final String CLASSFILE_MAJOR_MINOR =
         "@@VERSION_CLASSFILE_MAJOR@@.@@VERSION_CLASSFILE_MINOR@@";
 
-    private static final String VENDOR_VERSION_STRING =
-        "@@VENDOR_VERSION_STRING@@";
-
-    private static final String vendor_version =
-        (!VENDOR_VERSION_STRING.isEmpty()
-         ? " " + VENDOR_VERSION_STRING : "");
-
     private static final String VENDOR =
         "@@VENDOR@@";
 
     private static final String VENDOR_URL =
         "@@VENDOR_URL@@";
 
-    private static final String VENDOR_URL_BUG =
+    // The remaining VENDOR_* fields must not be final,
+    // so that they can be redefined by jlink plugins
+
+    // This field is read by HotSpot
+    private static String VENDOR_VERSION =
+        "@@VENDOR_VERSION_STRING@@";
+
+    private static String VENDOR_URL_BUG =
         "@@VENDOR_URL_BUG@@";
+
+    // This field is read by HotSpot
+    private static String VENDOR_URL_VM_BUG =
+        "@@VENDOR_URL_VM_BUG@@";
 
     /**
      * Initialize system properties using build provided values.
@@ -95,8 +101,8 @@ class VersionProps {
         props.put("java.version.date", java_version_date);
         props.put("java.runtime.version", java_runtime_version);
         props.put("java.runtime.name", java_runtime_name);
-        if (!VENDOR_VERSION_STRING.isEmpty())
-            props.put("java.vendor.version", VENDOR_VERSION_STRING);
+        if (!VENDOR_VERSION.isEmpty())
+            props.put("java.vendor.version", VENDOR_VERSION);
 
         props.put("java.class.version", CLASSFILE_MAJOR_MINOR);
 
@@ -215,6 +221,9 @@ class VersionProps {
         } else {
             jdk_debug_level = jdk_debug_level + " ";
         }
+
+        String vendor_version = (VENDOR_VERSION.isEmpty()
+                                 ? "" : " " + VENDOR_VERSION);
 
         ps.println(java_runtime_name + vendor_version
                    + " (" + jdk_debug_level + "build " + java_runtime_version + ")");

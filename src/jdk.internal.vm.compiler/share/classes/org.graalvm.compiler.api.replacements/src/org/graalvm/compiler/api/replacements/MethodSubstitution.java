@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,9 +35,7 @@ import jdk.vm.ci.meta.Signature;
 /**
  * Denotes a method whose body is used by a compiler as the substitute (or intrinsification) of
  * another method. The exact mechanism used to do the substitution is compiler dependent but every
- * compiler should require substitute methods to be annotated with {@link MethodSubstitution}. In
- * addition, a compiler is recommended to implement {@link MethodSubstitutionRegistry} to advertise
- * the mechanism by which it supports registration of method substitutes.
+ * compiler should require substitute methods to be annotated with {@link MethodSubstitution}.
  *
  * A compiler may support partial intrinsification where only a part of a method is implemented by
  * the compiler. The unsupported path is expressed by a call to either the original or substitute

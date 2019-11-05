@@ -1478,6 +1478,12 @@ void ShenandoahHeap::op_final_mark() {
   if (!cancelled_gc()) {
     concurrent_mark()->finish_mark_from_roots(/* full_gc = */ false);
 
+    // Marking is completed, deactivate SATB barrier
+    set_concurrent_mark_in_progress(false);
+    mark_complete_marking_context();
+
+    parallel_cleaning(false /* full gc*/);
+
     if (has_forwarded_objects()) {
       // Degen may be caused by failed evacuation of roots
       if (is_degenerated_gc_in_progress()) {
@@ -1485,14 +1491,12 @@ void ShenandoahHeap::op_final_mark() {
       } else {
         concurrent_mark()->update_thread_roots(ShenandoahPhaseTimings::update_roots);
       }
+      set_has_forwarded_objects(false);
    }
 
     if (ShenandoahVerify) {
       verifier()->verify_roots_no_forwarded();
     }
-
-    stop_concurrent_marking();
-
     // All allocations past TAMS are implicitly live, adjust the region data.
     // Bitmaps/TAMS are swapped at this point, so we need to poll complete bitmap.
     {
@@ -1505,6 +1509,14 @@ void ShenandoahHeap::op_final_mark() {
     {
       ShenandoahGCPhase phase(ShenandoahPhaseTimings::retire_tlabs);
       make_parsable(true);
+    }
+
+    // We are about to select the collection set, make sure it knows about
+    // current pinning status. Also, this allows trashing more regions that
+    // now have their pinning status dropped.
+    {
+      ShenandoahGCPhase phase(ShenandoahPhaseTimings::sync_pinned);
+      sync_pinned_region_status();
     }
 
     // Trash the collection set left over from previous cycle, if any.
@@ -1567,8 +1579,10 @@ void ShenandoahHeap::op_final_mark() {
     }
 
   } else {
+    // If this cycle was updating references, we need to keep the has_forwarded_objects
+    // flag on, for subsequent phases to deal with it.
     concurrent_mark()->cancel();
-    stop_concurrent_marking();
+    set_concurrent_mark_in_progress(false);
 
     if (process_references()) {
       // Abandon reference processing right away: pre-cleaning must have failed.
@@ -1784,6 +1798,7 @@ void ShenandoahHeap::op_degenerated(ShenandoahDegenPoint point) {
         // it, we fail degeneration right away and slide into Full GC to recover.
 
         {
+          sync_pinned_region_status();
           collection_set()->clear_current_index();
 
           ShenandoahHeapRegion* r;
@@ -1861,17 +1876,6 @@ void ShenandoahHeap::op_degenerated_fail() {
 void ShenandoahHeap::op_degenerated_futile() {
   shenandoah_policy()->record_degenerated_upgrade_to_full();
   op_full(GCCause::_shenandoah_upgrade_to_full_gc);
-}
-
-void ShenandoahHeap::stop_concurrent_marking() {
-  assert(is_concurrent_mark_in_progress(), "How else could we get here?");
-  set_concurrent_mark_in_progress(false);
-  if (!cancelled_gc()) {
-    // If we needed to update refs, and concurrent marking has been cancelled,
-    // we need to finish updating references.
-    set_has_forwarded_objects(false);
-    mark_complete_marking_context();
-  }
 }
 
 void ShenandoahHeap::force_satb_flush_all_threads() {
@@ -2148,15 +2152,44 @@ void ShenandoahHeap::unregister_nmethod(nmethod* nm) {
 }
 
 oop ShenandoahHeap::pin_object(JavaThread* thr, oop o) {
-  ShenandoahHeapLocker locker(lock());
-  heap_region_containing(o)->make_pinned();
+  heap_region_containing(o)->record_pin();
   return o;
 }
 
 void ShenandoahHeap::unpin_object(JavaThread* thr, oop o) {
-  ShenandoahHeapLocker locker(lock());
-  heap_region_containing(o)->make_unpinned();
+  heap_region_containing(o)->record_unpin();
 }
+
+void ShenandoahHeap::sync_pinned_region_status() {
+  ShenandoahHeapLocker locker(lock());
+
+  for (size_t i = 0; i < num_regions(); i++) {
+    ShenandoahHeapRegion *r = get_region(i);
+    if (r->is_active()) {
+      if (r->is_pinned()) {
+        if (r->pin_count() == 0) {
+          r->make_unpinned();
+        }
+      } else {
+        if (r->pin_count() > 0) {
+          r->make_pinned();
+        }
+      }
+    }
+  }
+
+  assert_pinned_region_status();
+}
+
+#ifdef ASSERT
+void ShenandoahHeap::assert_pinned_region_status() {
+  for (size_t i = 0; i < num_regions(); i++) {
+    ShenandoahHeapRegion* r = get_region(i);
+    assert((r->is_pinned() && r->pin_count() > 0) || (!r->is_pinned() && r->pin_count() == 0),
+           "Region " SIZE_FORMAT " pinning status is inconsistent", i);
+  }
+}
+#endif
 
 GCTimer* ShenandoahHeap::gc_timer() const {
   return _gc_timer;
@@ -2314,6 +2347,13 @@ void ShenandoahHeap::op_final_updaterefs() {
   // Has to be done before cset is clear
   if (ShenandoahVerify) {
     verifier()->verify_roots_in_to_space();
+  }
+
+  // Drop unnecessary "pinned" state from regions that does not have CP marks
+  // anymore, as this would allow trashing them below.
+  {
+    ShenandoahGCPhase phase(ShenandoahPhaseTimings::final_update_refs_sync_pinned);
+    sync_pinned_region_status();
   }
 
   {

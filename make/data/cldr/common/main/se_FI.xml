@@ -7,7 +7,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 14783 $"/>
+		<version number="$Revision$"/>
 		<language type="se"/>
 		<territory type="FI"/>
 	</identity>
@@ -44,6 +44,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="th">thaigiella</language>
 			<language type="vi">vietnamagiella</language>
 			<language type="zh_Hans">álkes kiinnágiella</language>
+			<language type="zh_Hant">árbevirolaš kiinnágiella</language>
 		</languages>
 		<scripts>
 			<script type="Arab">arábalaš</script>
@@ -653,9 +654,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="day">
 				<relative type="-2">ovddet beaivvi</relative>
-				<relative type="-1">ikte</relative>
-				<relative type="0">odne</relative>
-				<relative type="1">ihttin</relative>
 				<relative type="2">don beaivve</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">{0} beaivve siste</relativeTimePattern>

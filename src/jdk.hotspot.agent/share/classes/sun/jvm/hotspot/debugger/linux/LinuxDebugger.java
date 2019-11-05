@@ -57,6 +57,7 @@ public interface LinuxDebugger extends JVMDebugger {
   public List         getThreadList();
   public List         getLoadObjectList();
   public ClosestSymbol lookup(long address);
+  public String demangle(String sym);
 
   // NOTE: this interface implicitly contains the following methods:
   // From the Debugger interface via JVMDebugger

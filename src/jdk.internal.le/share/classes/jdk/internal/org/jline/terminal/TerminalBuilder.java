@@ -1,10 +1,10 @@
 /*
- * Copyright (c) 2002-2018, the original author or authors.
+ * Copyright (c) 2002-2019, the original author or authors.
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
  *
- * http://www.opensource.org/licenses/bsd-license.php
+ * https://opensource.org/licenses/BSD-3-Clause
  */
 package jdk.internal.org.jline.terminal;
 
@@ -32,9 +32,6 @@ import jdk.internal.org.jline.terminal.spi.JnaSupport;
 import jdk.internal.org.jline.terminal.spi.Pty;
 import jdk.internal.org.jline.utils.Log;
 import jdk.internal.org.jline.utils.OSUtils;
-
-import static jdk.internal.org.jline.terminal.impl.AbstractWindowsTerminal.TYPE_WINDOWS;
-import static jdk.internal.org.jline.terminal.impl.AbstractWindowsTerminal.TYPE_WINDOWS_256_COLOR;
 
 /**
  * Builder class to create terminals.

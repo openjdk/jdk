@@ -229,17 +229,17 @@ void ClassListParser::print_specified_interfaces() {
   jio_fprintf(defaultStream::error_stream(), "}\n");
 }
 
-void ClassListParser::print_actual_interfaces(InstanceKlass *ik) {
+void ClassListParser::print_actual_interfaces(InstanceKlass* ik) {
   int n = ik->local_interfaces()->length();
   jio_fprintf(defaultStream::error_stream(), "Actual interfaces[%d] = {\n", n);
   for (int i = 0; i < n; i++) {
-    InstanceKlass* e = InstanceKlass::cast(ik->local_interfaces()->at(i));
+    InstanceKlass* e = ik->local_interfaces()->at(i);
     jio_fprintf(defaultStream::error_stream(), "  %s\n", e->name()->as_klass_external_name());
   }
   jio_fprintf(defaultStream::error_stream(), "}\n");
 }
 
-void ClassListParser::error(const char *msg, ...) {
+void ClassListParser::error(const char* msg, ...) {
   va_list ap;
   va_start(ap, msg);
   int error_index = _token - _line;
@@ -328,7 +328,7 @@ InstanceKlass* ClassListParser::load_class_from_source(Symbol* class_name, TRAPS
 Klass* ClassListParser::load_current_class(TRAPS) {
   TempNewSymbol class_name_symbol = SymbolTable::new_symbol(_class_name);
 
-  Klass *klass = NULL;
+  Klass* klass = NULL;
   if (!is_loading_from_source()) {
     // Load classes for the boot/platform/app loaders only.
     if (is_super_specified()) {

@@ -9,7 +9,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 14817 $"/>
+		<version number="$Revision$"/>
 		<language type="ka"/>
 	</identity>
 	<localeDisplayNames>
@@ -78,6 +78,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="byn">ბილინი</language>
 			<language type="ca">კატალანური</language>
 			<language type="cay">კაიუგა</language>
+			<language type="ccp">ჩაკმა</language>
 			<language type="ce">ჩეჩნური</language>
 			<language type="ceb">სებუანო</language>
 			<language type="cgg">ჩიგა</language>
@@ -489,12 +490,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="yi">იდიში</language>
 			<language type="yo">იორუბა</language>
 			<language type="yue">კანტონური</language>
+			<language type="yue" alt="menu">ჩინური, კანტონური</language>
 			<language type="zbl">ბლისსიმბოლოები</language>
 			<language type="zen">ზენაგა</language>
 			<language type="zgh">სტანდარტული მაროკოული ტამაზიგხტი</language>
 			<language type="zh">ჩინური</language>
+			<language type="zh" alt="menu">ჩინური, მანდარინი</language>
 			<language type="zh_Hans">გამარტივებული ჩინური</language>
+			<language type="zh_Hans" alt="long">გამარტივებული ჩინური მანდარინი</language>
 			<language type="zh_Hant">ტრადიციული ჩინური</language>
+			<language type="zh_Hant" alt="long">ტრადიციული ჩინური მანდარინი</language>
 			<language type="zu">ზულუ</language>
 			<language type="zun">ზუნი</language>
 			<language type="zxx">ლინგვისტური შიგთავსი არ არის</language>
@@ -854,8 +859,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="MF">სენ-მარტენი</territory>
 			<territory type="MG">მადაგასკარი</territory>
 			<territory type="MH">მარშალის კუნძულები</territory>
-			<territory type="MK">მაკედონია</territory>
-			<territory type="MK" alt="variant">მაკედონია (ყოფილი იუგოსლავიის რესპუბლიკა მაკედონია)</territory>
+			<territory type="MK">ჩრდილოეთ მაკედონია</territory>
 			<territory type="ML">მალი</territory>
 			<territory type="MM">მიანმარი (ბირმა)</territory>
 			<territory type="MN">მონღოლეთი</territory>
@@ -965,6 +969,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="VU">ვანუატუ</territory>
 			<territory type="WF">უოლისი და ფუტუნა</territory>
 			<territory type="WS">სამოა</territory>
+			<territory type="XA">ფსევდო-აქცენტები</territory>
+			<territory type="XB">ფსევდო-ორმიმართულებიანი</territory>
 			<territory type="XK">კოსოვო</territory>
 			<territory type="YE">იემენი</territory>
 			<territory type="YT">მაიოტა</territory>
@@ -1156,8 +1162,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<exemplarCharacters>[ა ბ გ დ ე ვ ზ თ ი კ ლ მ ნ ო პ ჟ რ ს ტ უ ფ ქ ღ ყ შ ჩ ც ძ წ ჭ ხ ჯ ჰ]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[ⴀ ⴁ ⴂ ⴃ ⴄ ⴅ ⴆ ჱ ⴡ ⴇ ⴈ ⴉ ⴊ ⴋ ⴌ ჲ ⴢ ⴍ ⴎ ⴏ ⴐ ⴑ ⴒ ჳ ⴣ ⴓ ⴔ ⴕ ⴖ ⴗ ⴘ ⴙ ⴚ ⴛ ⴜ ⴝ ⴞ ჴ ⴤ ⴟ ⴠ ჵ ⴥ ჶ ჷ ჸ ჹ ჺ]</exemplarCharacters>
 		<exemplarCharacters type="index">[ა ბ გ დ ე ვ ზ თ ი კ ლ მ ნ ო პ ჟ რ ს ტ უ ფ ქ ღ ყ შ ჩ ც ძ წ ჭ ხ ჯ ჰ]</exemplarCharacters>
-		<exemplarCharacters type="numbers">[  \- , % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
-		<exemplarCharacters type="punctuation">[\- ‐ – — , ; \: ! ? . … ჻ ' ‘ ‚ “ „ « » ( ) \[ \] \{ \} § @ * / \&amp; # † ‡ ′ ″ №]</exemplarCharacters>
+		<exemplarCharacters type="numbers">[  \- ‑ , % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‐ ‑ – — , ; \: ! ? . … ჻ ' ‘ ‚ “ „ « » ( ) \[ \] \{ \} § @ * / \&amp; # † ‡ ′ ″ №]</exemplarCharacters>
 		<ellipsis type="final">{0}…</ellipsis>
 		<ellipsis type="initial">…{0}</ellipsis>
 		<ellipsis type="medial">{0}…{1}</ellipsis>
@@ -1283,35 +1289,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="G">GGGGG y-MM – GGGGG y-MM</greatestDifference>
 							<greatestDifference id="M">GGGGG y-MM – y-MM</greatestDifference>
 							<greatestDifference id="y">GGGGG y-MM – y-MM</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="GyMd">
-							<greatestDifference id="d">GGGGG y-MM-dd – y-MM-dd</greatestDifference>
-							<greatestDifference id="G">GGGGG y-MM-dd – GGGGG y-MM-dd</greatestDifference>
-							<greatestDifference id="M">GGGGG y-MM-dd – y-MM-dd</greatestDifference>
-							<greatestDifference id="y">GGGGG y-MM-dd – y-MM-dd</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="GyMEd">
-							<greatestDifference id="d">GGGGG y-MM-dd, E – y-MM-dd, E</greatestDifference>
-							<greatestDifference id="G">GGGGG y-MM-dd, E – GGGGG y-MM-dd, E</greatestDifference>
-							<greatestDifference id="M">GGGGG y-MM-dd, E – y-MM-dd, E</greatestDifference>
-							<greatestDifference id="y">GGGGG y-MM-dd, E – y-MM-dd, E</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="GyMMM">
-							<greatestDifference id="G">G y MMM – G y MMM</greatestDifference>
-							<greatestDifference id="M">G y MMM–MMM</greatestDifference>
-							<greatestDifference id="y">G y MMM – y MMM</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="GyMMMd">
-							<greatestDifference id="d">G y MMM d–d</greatestDifference>
-							<greatestDifference id="G">G y MMM d – G y MMM d</greatestDifference>
-							<greatestDifference id="M">G y MMM d – MMM d</greatestDifference>
-							<greatestDifference id="y">G y MMM d – y MMM d</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="GyMMMEd">
-							<greatestDifference id="d">G y MMM d, E – MMM d, E</greatestDifference>
-							<greatestDifference id="G">G y MMM d, E – G y MMM d, E</greatestDifference>
-							<greatestDifference id="M">G y MMM d, E – MMM d, E</greatestDifference>
-							<greatestDifference id="y">G y MMM d, E – y MMM d, E</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="h">
 							<greatestDifference id="a">h a – h a</greatestDifference>
@@ -1674,7 +1651,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<dayPeriod type="midnight">შუაღამე</dayPeriod>
 							<dayPeriod type="am">AM</dayPeriod>
 							<dayPeriod type="noon">შუადღე</dayPeriod>
-							<dayPeriod type="pm">შუადღ. შემდეგ</dayPeriod>
+							<dayPeriod type="pm">PM</dayPeriod>
 							<dayPeriod type="morning1">დილა</dayPeriod>
 							<dayPeriod type="afternoon1">ნაშუადღევი</dayPeriod>
 							<dayPeriod type="evening1">საღამო</dayPeriod>
@@ -1795,8 +1772,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="MMMd">d MMM</dateFormatItem>
 						<dateFormatItem id="MMMEd">E, d MMM</dateFormatItem>
 						<dateFormatItem id="MMMMd">d MMMM</dateFormatItem>
-						<dateFormatItem id="MMMMW" count="one">MMMM-ის კვირა W</dateFormatItem>
-						<dateFormatItem id="MMMMW" count="other">MMMM-ის კვირა W</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="one">MMMMს კვირა W</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="other">MMMMს კვირა W</dateFormatItem>
 						<dateFormatItem id="ms">mm:ss</dateFormatItem>
 						<dateFormatItem id="y">y</dateFormatItem>
 						<dateFormatItem id="yM">M.y</dateFormatItem>
@@ -1831,40 +1808,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<intervalFormatItem id="Gy">
 							<greatestDifference id="G">G y – G y</greatestDifference>
 							<greatestDifference id="y">G y–y</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="GyM">
-							<greatestDifference id="G">GGGGG y-MM – GGGGG y-MM</greatestDifference>
-							<greatestDifference id="M">GGGGG y-MM – y-MM</greatestDifference>
-							<greatestDifference id="y">GGGGG y-MM – y-MM</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="GyMd">
-							<greatestDifference id="d">GGGGG y-MM-dd – y-MM-dd</greatestDifference>
-							<greatestDifference id="G">GGGGG y-MM-dd – GGGGG y-MM-dd</greatestDifference>
-							<greatestDifference id="M">GGGGG y-MM-dd – y-MM-dd</greatestDifference>
-							<greatestDifference id="y">GGGGG y-MM-dd – y-MM-dd</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="GyMEd">
-							<greatestDifference id="d">GGGGG y-MM-dd, E – y-MM-dd, E</greatestDifference>
-							<greatestDifference id="G">GGGGG y-MM-dd, E – GGGGG y-MM-dd, E</greatestDifference>
-							<greatestDifference id="M">GGGGG y-MM-dd, E – y-MM-dd, E</greatestDifference>
-							<greatestDifference id="y">GGGGG y-MM-dd, E – y-MM-dd, E</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="GyMMM">
-							<greatestDifference id="G">G y MMM – G y MMM</greatestDifference>
-							<greatestDifference id="M">G y MMM–MMM</greatestDifference>
-							<greatestDifference id="y">G y MMM – y MMM</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="GyMMMd">
-							<greatestDifference id="d">G y MMM d–d</greatestDifference>
-							<greatestDifference id="G">G y MMM d – G y MMM d</greatestDifference>
-							<greatestDifference id="M">G y MMM d – MMM d</greatestDifference>
-							<greatestDifference id="y">G y MMM d – y MMM d</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="GyMMMEd">
-							<greatestDifference id="d">G y MMM d, E – MMM d, E</greatestDifference>
-							<greatestDifference id="G">G y MMM d, E – G y MMM d, E</greatestDifference>
-							<greatestDifference id="M">G y MMM d, E – MMM d, E</greatestDifference>
-							<greatestDifference id="y">G y MMM d, E – y MMM d, E</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="h">
 							<greatestDifference id="a">h a – h a</greatestDifference>
@@ -2918,7 +2861,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>ანტიგუა</exemplarCity>
 			</zone>
 			<zone type="America/Anguilla">
-				<exemplarCity>ანგილა</exemplarCity>
+				<exemplarCity>ანგილია</exemplarCity>
 			</zone>
 			<zone type="Europe/Tirane">
 				<exemplarCity>ტირანა</exemplarCity>
@@ -5068,7 +5011,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		</timeZoneNames>
 	</dates>
 	<numbers>
+		<defaultNumberingSystem draft="contributed">latn</defaultNumberingSystem>
 		<otherNumberingSystems>
+			<native draft="contributed">latn</native>
 			<traditional>geor</traditional>
 		</otherNumberingSystems>
 		<minimumGroupingDigits draft="contributed">2</minimumGroupingDigits>
@@ -5077,6 +5022,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<group> </group>
 			<list>;</list>
 			<percentSign>%</percentSign>
+			<plusSign draft="contributed">+</plusSign>
+			<minusSign draft="contributed">-</minusSign>
 			<exponential>E</exponential>
 			<superscriptingExponent>×</superscriptingExponent>
 			<perMille>‰</perMille>
@@ -5085,6 +5032,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<timeSeparator draft="contributed">:</timeSeparator>
 		</symbols>
 		<decimalFormats numberSystem="latn">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="contributed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
 			<decimalFormatLength type="long">
 				<decimalFormat>
 					<pattern type="1000" count="one">0 ათასი</pattern>
@@ -5204,6 +5156,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>არაბთა გაერთიანებული საამიროების დირჰამი</displayName>
 				<displayName count="one">არაბთა გაერთიანებული საამიროების დირჰამი</displayName>
 				<displayName count="other">არაბთა გაერთიანებული საამიროების დირჰამი</displayName>
+				<symbol draft="contributed">AED</symbol>
 			</currency>
 			<currency type="AFA">
 				<displayName draft="contributed">ავღანი (1927–2002)</displayName>
@@ -5212,26 +5165,32 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ავღანური ავღანი</displayName>
 				<displayName count="one">ავღანური ავღანი</displayName>
 				<displayName count="other">ავღანური ავღანი</displayName>
+				<symbol draft="contributed">AFN</symbol>
 			</currency>
 			<currency type="ALL">
 				<displayName>ალბანური ლეკი</displayName>
 				<displayName count="one">ალბანური ლეკი</displayName>
 				<displayName count="other">ალბანური ლეკი</displayName>
+				<symbol draft="contributed">ALL</symbol>
 			</currency>
 			<currency type="AMD">
 				<displayName>სომხური დრამი</displayName>
 				<displayName count="one">სომხური დრამი</displayName>
 				<displayName count="other">სომხური დრამი</displayName>
+				<symbol draft="contributed">AMD</symbol>
 			</currency>
 			<currency type="ANG">
 				<displayName>ნიდერლანდების ანტილების გულდენი</displayName>
 				<displayName count="one">ნიდრელანდების ანტილიის გულდენი</displayName>
 				<displayName count="other">ნიდრელანდების ანტილიის გულდენი</displayName>
+				<symbol draft="contributed">ANG</symbol>
 			</currency>
 			<currency type="AOA">
 				<displayName>ანგოლური კვანზა</displayName>
 				<displayName count="one">ანგოლური კვანზა</displayName>
 				<displayName count="other">ანგოლური კვანზა</displayName>
+				<symbol draft="contributed">AOA</symbol>
+				<symbol alt="narrow" draft="contributed">Kz</symbol>
 			</currency>
 			<currency type="AOK">
 				<displayName draft="contributed">ანგოლური კვანზა (1977–1990)</displayName>
@@ -5252,6 +5211,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>არგენტინული პესო</displayName>
 				<displayName count="one">არგენტინული პესო</displayName>
 				<displayName count="other">არგენტინული პესო</displayName>
+				<symbol draft="contributed">ARS</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="ATS">
@@ -5268,6 +5228,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>არუბანული გულდენი</displayName>
 				<displayName count="one">არუბანული გულდენი</displayName>
 				<displayName count="other">არუბანული გულდენი</displayName>
+				<symbol draft="contributed">AWG</symbol>
 			</currency>
 			<currency type="AZM">
 				<displayName draft="contributed">აზერბაიჯანული მანათი (1993–2006)</displayName>
@@ -5276,6 +5237,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>აზერბაიჯანული მანათი</displayName>
 				<displayName count="one">აზერბაიჯანული მანათი</displayName>
 				<displayName count="other">აზერბაიჯანული მანათი</displayName>
+				<symbol draft="contributed">AZN</symbol>
 			</currency>
 			<currency type="BAD">
 				<displayName draft="contributed">ბოსნია-ჰერცოგოვინას დინარი</displayName>
@@ -5284,17 +5246,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ბოსნია და ჰერცოგოვინას კონვერტირებადი მარკა</displayName>
 				<displayName count="one">ბოსნია და ჰერცოგოვინას კონვერტირებადი მარკა</displayName>
 				<displayName count="other">ბოსნია და ჰერცოგოვინას კონვერტირებადი მარკა</displayName>
+				<symbol draft="contributed">BAM</symbol>
+				<symbol alt="narrow" draft="contributed">KM</symbol>
 			</currency>
 			<currency type="BBD">
 				<displayName>ბარბადოსული დოლარი</displayName>
 				<displayName count="one">ბარბადოსული დოლარი</displayName>
 				<displayName count="other">ბარბადოსული დოლარი</displayName>
+				<symbol draft="contributed">BBD</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="BDT">
 				<displayName>ბანგლადეშური ტაკა</displayName>
 				<displayName count="one">ბანგლადეშური ტაკა</displayName>
 				<displayName count="other">ბანგლადეშური ტაკა</displayName>
+				<symbol draft="contributed">BDT</symbol>
 				<symbol alt="narrow" draft="contributed">৳</symbol>
 			</currency>
 			<currency type="BEC">
@@ -5313,33 +5279,40 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ბულგარული ლევი</displayName>
 				<displayName count="one">ბულგარული ლევი</displayName>
 				<displayName count="other">ბულგარული ლევი</displayName>
+				<symbol draft="contributed">BGN</symbol>
 			</currency>
 			<currency type="BHD">
 				<displayName>ბაჰრეინული დინარი</displayName>
 				<displayName count="one">ბაჰრეინული დინარი</displayName>
 				<displayName count="other">ბაჰრეინული დინარი</displayName>
+				<symbol draft="contributed">BHD</symbol>
 			</currency>
 			<currency type="BIF">
 				<displayName>ბურუნდიული ფრანკი</displayName>
 				<displayName count="one">ბურუნდიული ფრანკი</displayName>
 				<displayName count="other">ბურუნდიული ფრანკი</displayName>
+				<symbol draft="contributed">BIF</symbol>
 			</currency>
 			<currency type="BMD">
 				<displayName>ბერმუდული დოლარი</displayName>
 				<displayName count="one">ბერმუდული დოლარი</displayName>
 				<displayName count="other">ბერმუდული დოლარი</displayName>
+				<symbol draft="contributed">BMD</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="BND">
 				<displayName>ბრუნეული დოლარი</displayName>
 				<displayName count="one">ბრუნეული დოლარი</displayName>
 				<displayName count="other">ბრუნეული დოლარი</displayName>
+				<symbol draft="contributed">BND</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="BOB">
 				<displayName>ბოლივიური ბოლივიანო</displayName>
 				<displayName count="one">ბოლივიური ბოლივიანო</displayName>
 				<displayName count="other">ბოლივიური ბოლივიანო</displayName>
+				<symbol draft="contributed">BOB</symbol>
+				<symbol alt="narrow" draft="contributed">Bs</symbol>
 			</currency>
 			<currency type="BOP">
 				<displayName draft="contributed">ბოლივიური პესო</displayName>
@@ -5357,6 +5330,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ბრაზილიური რეალი</displayName>
 				<displayName count="one">ბრაზილიური რეალი</displayName>
 				<displayName count="other">ბრაზილიური რეალი</displayName>
+				<symbol draft="contributed">R$</symbol>
 				<symbol alt="narrow" draft="contributed">R$</symbol>
 			</currency>
 			<currency type="BRN">
@@ -5369,17 +5343,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ბაჰამური დოლარი</displayName>
 				<displayName count="one">ბაჰამური დოლარი</displayName>
 				<displayName count="other">ბაჰამური დოლარი</displayName>
+				<symbol draft="contributed">BSD</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="BTN">
 				<displayName>ბუტანური ნგულტრუმი</displayName>
 				<displayName count="one">ბუტანური ნგულტრუმი</displayName>
 				<displayName count="other">ბუტანური ნგულტრუმი</displayName>
+				<symbol draft="contributed">BTN</symbol>
 			</currency>
 			<currency type="BWP">
 				<displayName>ბოცვანური პულა</displayName>
 				<displayName count="one">ბოცვანური პულა</displayName>
 				<displayName count="other">ბოცვანური პულა</displayName>
+				<symbol draft="contributed">BWP</symbol>
+				<symbol alt="narrow" draft="contributed">P</symbol>
 			</currency>
 			<currency type="BYB">
 				<displayName draft="contributed">ახალი ბელარუსიული რუბლი (1994–1999)</displayName>
@@ -5388,44 +5366,53 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ბელორუსული რუბლი</displayName>
 				<displayName count="one">ბელორუსული რუბლი</displayName>
 				<displayName count="other">ბელორუსული რუბლი</displayName>
+				<symbol draft="contributed">BYN</symbol>
+				<symbol alt="narrow" draft="contributed">р.</symbol>
 			</currency>
 			<currency type="BYR">
 				<displayName>ბელორუსული რუბლი (2000–2016)</displayName>
 				<displayName count="one">ბელორუსული რუბლი (2000–2016)</displayName>
 				<displayName count="other">ბელორუსული რუბლი (2000–2016)</displayName>
+				<symbol draft="contributed">BYR</symbol>
 			</currency>
 			<currency type="BZD">
 				<displayName>ბელიზის დოლარი</displayName>
 				<displayName count="one">ბელიზის დოლარი</displayName>
 				<displayName count="other">ბელიზის დოლარი</displayName>
+				<symbol draft="contributed">BZD</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="CAD">
 				<displayName>კანადური დოლარი</displayName>
 				<displayName count="one">კანადური დოლარი</displayName>
 				<displayName count="other">კანადური დოლარი</displayName>
+				<symbol draft="contributed">CA$</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="CDF">
 				<displayName>კონგოს ფრანკი</displayName>
 				<displayName count="one">კონგოს ფრანკი</displayName>
 				<displayName count="other">კონგოს ფრანკი</displayName>
+				<symbol draft="contributed">CDF</symbol>
 			</currency>
 			<currency type="CHF">
 				<displayName>შვეიცარიული ფრანკი</displayName>
 				<displayName count="one">შვეიცარიული ფრანკი</displayName>
 				<displayName count="other">შვეიცარიული ფრანკი</displayName>
+				<symbol draft="contributed">CHF</symbol>
 			</currency>
 			<currency type="CLP">
 				<displayName>ჩილეს პესო</displayName>
 				<displayName count="one">ჩილეს პესო</displayName>
 				<displayName count="other">ჩილეს პესო</displayName>
+				<symbol draft="contributed">CLP</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="CNH">
 				<displayName>ჩინური იუანი (ოფშორი)</displayName>
 				<displayName count="one">ჩინური იუანი (ოფშორი)</displayName>
 				<displayName count="other">ჩინური იუანი (ოფშორი)</displayName>
+				<symbol draft="contributed">CNH</symbol>
 			</currency>
 			<currency type="CNY">
 				<displayName>ჩინური იუანი</displayName>
@@ -5438,12 +5425,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>კოლუმბიური პესო</displayName>
 				<displayName count="one">კოლუმბიური პესო</displayName>
 				<displayName count="other">კოლუმბიური პესო</displayName>
+				<symbol draft="contributed">COP</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="CRC">
 				<displayName>კოსტა-რიკული კოლონი</displayName>
 				<displayName count="one">კოსტა-რიკული კოლონი</displayName>
 				<displayName count="other">კოსტა რიკული კოლონი</displayName>
+				<symbol draft="contributed">CRC</symbol>
 				<symbol alt="narrow" draft="contributed">₡</symbol>
 			</currency>
 			<currency type="CSD">
@@ -5456,17 +5445,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>კუბური კონვერტირებადი პესო</displayName>
 				<displayName count="one">კუბური კონვერტირებადი პესო</displayName>
 				<displayName count="other">კუბური კონვერტირებადი პესო</displayName>
+				<symbol draft="contributed">CUC</symbol>
+				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="CUP">
 				<displayName>კუბური პესო</displayName>
 				<displayName count="one">კუბური პესო</displayName>
 				<displayName count="other">კუბური პესო</displayName>
+				<symbol draft="contributed">CUP</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="CVE">
 				<displayName>კაბო-ვერდეს ესკუდო</displayName>
 				<displayName count="one">კაბო-ვერდეს ესკუდო</displayName>
 				<displayName count="other">კაბო-ვერდეს ესკუდო</displayName>
+				<symbol draft="contributed">CVE</symbol>
 			</currency>
 			<currency type="CYP">
 				<displayName draft="contributed">კვიპროსის გირვანქა</displayName>
@@ -5475,6 +5468,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ჩეხური კრონა</displayName>
 				<displayName count="one">ჩეხური კრონა</displayName>
 				<displayName count="other">ჩეხური კრონა</displayName>
+				<symbol draft="contributed">CZK</symbol>
+				<symbol alt="narrow" draft="contributed">Kč</symbol>
 			</currency>
 			<currency type="DDM">
 				<displayName draft="contributed">აღმოსავლეთ გერმანული მარკა</displayName>
@@ -5486,22 +5481,27 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ჯიბუტის ფრანკი</displayName>
 				<displayName count="one">ჯიბუტის ფრანკი</displayName>
 				<displayName count="other">ჯიბუტის ფრანკი</displayName>
+				<symbol draft="contributed">DJF</symbol>
 			</currency>
 			<currency type="DKK">
 				<displayName>დანიური კრონა</displayName>
 				<displayName count="one">დანიური კრონა</displayName>
 				<displayName count="other">დანიური კრონა</displayName>
+				<symbol draft="contributed">DKK</symbol>
+				<symbol alt="narrow" draft="contributed">kr</symbol>
 			</currency>
 			<currency type="DOP">
 				<displayName>დომინიკური პესო</displayName>
 				<displayName count="one">დომინიკური პესო</displayName>
 				<displayName count="other">დომინიკური პესო</displayName>
+				<symbol draft="contributed">DOP</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="DZD">
 				<displayName>ალჟირული დინარი</displayName>
 				<displayName count="one">ალჟირული დინარი</displayName>
 				<displayName count="other">ალჟირული დინარი</displayName>
+				<symbol draft="contributed">DZD</symbol>
 			</currency>
 			<currency type="EEK">
 				<displayName draft="contributed">ესტონური კრუნა</displayName>
@@ -5510,11 +5510,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ეგვიპტური გირვანქა</displayName>
 				<displayName count="one">ეგვიპტური გირვანქა</displayName>
 				<displayName count="other">ეგვიპტური გირვანქა</displayName>
+				<symbol draft="contributed">EGP</symbol>
+				<symbol alt="narrow" draft="contributed">E£</symbol>
 			</currency>
 			<currency type="ERN">
 				<displayName>ერიტრეის ნაკფა</displayName>
 				<displayName count="one">ერიტრეის ნაკფა</displayName>
 				<displayName count="other">ერიტრეის ნაკფა</displayName>
+				<symbol draft="contributed">ERN</symbol>
 			</currency>
 			<currency type="ESP">
 				<displayName draft="contributed">ესპანური პესეტა</displayName>
@@ -5523,11 +5526,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ეთიოპიური ბირი</displayName>
 				<displayName count="one">ეთიოპიური ბირი</displayName>
 				<displayName count="other">ეთიოპიური ბირი</displayName>
+				<symbol draft="contributed">ETB</symbol>
 			</currency>
 			<currency type="EUR">
 				<displayName>ევრო</displayName>
 				<displayName count="one">ევრო</displayName>
 				<displayName count="other">ევრო</displayName>
+				<symbol draft="contributed">€</symbol>
 				<symbol alt="narrow" draft="contributed">€</symbol>
 			</currency>
 			<currency type="FIM">
@@ -5537,12 +5542,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ფიჯის დოლარი</displayName>
 				<displayName count="one">ფიჯის დოლარი</displayName>
 				<displayName count="other">ფიჯის დოლარი</displayName>
+				<symbol draft="contributed">FJD</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="FKP">
 				<displayName>ფოლკლენდის კუნძულების ფუნტი</displayName>
 				<displayName count="one">ფოლკლენდის კუნძულების ფუნტი</displayName>
 				<displayName count="other">ფოლკლენდის კუნძულების ფუნტი</displayName>
+				<symbol draft="contributed">FKP</symbol>
+				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
 			<currency type="FRF">
 				<displayName draft="contributed">ფრანგული ფრანკი</displayName>
@@ -5551,6 +5559,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ბრიტანული გირვანქა სტერლინგი</displayName>
 				<displayName count="one">ბრიტანული გირვანქა სტერლინგი</displayName>
 				<displayName count="other">ბრიტანული გირვანქა სტერლინგი</displayName>
+				<symbol draft="contributed">£</symbol>
 				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
 			<currency type="GEK">
@@ -5567,22 +5576,27 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>განური სედი</displayName>
 				<displayName count="one">განური სედი</displayName>
 				<displayName count="other">განური სედი</displayName>
+				<symbol draft="contributed">GHS</symbol>
 			</currency>
 			<currency type="GIP">
 				<displayName>გიბრალტარული ფუნტი</displayName>
 				<displayName count="one">გიბრალტარული ფუნტი</displayName>
 				<displayName count="other">გიბრალტარული ფუნტი</displayName>
+				<symbol draft="contributed">GIP</symbol>
 				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
 			<currency type="GMD">
 				<displayName>გამბიური დალასი</displayName>
 				<displayName count="one">გამბიური დალასი</displayName>
 				<displayName count="other">გამბიური დალასი</displayName>
+				<symbol draft="contributed">GMD</symbol>
 			</currency>
 			<currency type="GNF">
 				<displayName>გვინეური ფრანკი</displayName>
 				<displayName count="one">გვინეური ფრანკი</displayName>
 				<displayName count="other">გვინეური ფრანკი</displayName>
+				<symbol draft="contributed">GNF</symbol>
+				<symbol alt="narrow" draft="contributed">FG</symbol>
 			</currency>
 			<currency type="GRD">
 				<displayName draft="contributed">ბერძნული დრაჰმა</displayName>
@@ -5591,6 +5605,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>გვატემალური კეტსალი</displayName>
 				<displayName count="one">გვატემალური კეტსალი</displayName>
 				<displayName count="other">გვატემალური კეტსალი</displayName>
+				<symbol draft="contributed">GTQ</symbol>
+				<symbol alt="narrow" draft="contributed">Q</symbol>
 			</currency>
 			<currency type="GWE">
 				<displayName draft="contributed">პორტუგალიური გინეა ესკუდო</displayName>
@@ -5599,6 +5615,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>გაიანური დოლარი</displayName>
 				<displayName count="one">გაიანური დოლარი</displayName>
 				<displayName count="other">გაიანური დოლარი</displayName>
+				<symbol draft="contributed">GYD</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="HKD">
@@ -5612,6 +5629,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ჰონდურასული ლემპირა</displayName>
 				<displayName count="one">ჰონდურასული ლემპირა</displayName>
 				<displayName count="other">ჰონდურასული ლემპირა</displayName>
+				<symbol draft="contributed">HNL</symbol>
+				<symbol alt="narrow" draft="contributed">L</symbol>
 			</currency>
 			<currency type="HRD">
 				<displayName draft="contributed">ხორვატიული დინარი</displayName>
@@ -5620,21 +5639,28 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ხორვატული კუნა</displayName>
 				<displayName count="one">ხორვატული კუნა</displayName>
 				<displayName count="other">ხორვატული კუნა</displayName>
+				<symbol draft="contributed">HRK</symbol>
+				<symbol alt="narrow" draft="contributed">kn</symbol>
 			</currency>
 			<currency type="HTG">
 				<displayName>ჰაიტური გურდი</displayName>
 				<displayName count="one">ჰაიტური გურდი</displayName>
 				<displayName count="other">ჰაიტური გურდი</displayName>
+				<symbol draft="contributed">HTG</symbol>
 			</currency>
 			<currency type="HUF">
 				<displayName>უნგრული ფორინტი</displayName>
 				<displayName count="one">უნგრული ფორინტი</displayName>
 				<displayName count="other">უნგრული ფორინტი</displayName>
+				<symbol draft="contributed">HUF</symbol>
+				<symbol alt="narrow" draft="contributed">Ft</symbol>
 			</currency>
 			<currency type="IDR">
 				<displayName>ინდონეზიური რუპია</displayName>
 				<displayName count="one">ინდონეზიური რუპია</displayName>
 				<displayName count="other">ინდონეზიური რუპია</displayName>
+				<symbol draft="contributed">IDR</symbol>
+				<symbol alt="narrow" draft="contributed">Rp</symbol>
 			</currency>
 			<currency type="IEP">
 				<displayName draft="contributed">ირლანდიური გირვანქა</displayName>
@@ -5657,16 +5683,20 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ერაყული დინარი</displayName>
 				<displayName count="one">ერაყული დინარი</displayName>
 				<displayName count="other">ერაყული დინარი</displayName>
+				<symbol draft="contributed">IQD</symbol>
 			</currency>
 			<currency type="IRR">
 				<displayName>ირანული რიალი</displayName>
 				<displayName count="one">ირანული რიალი</displayName>
 				<displayName count="other">ირანული რიალი</displayName>
+				<symbol draft="contributed">IRR</symbol>
 			</currency>
 			<currency type="ISK">
 				<displayName>ისლანდიური კრონა</displayName>
 				<displayName count="one">ისლანდიური კრონა</displayName>
 				<displayName count="other">ისლანდიური კრონა</displayName>
+				<symbol draft="contributed">ISK</symbol>
+				<symbol alt="narrow" draft="contributed">kr</symbol>
 			</currency>
 			<currency type="ITL">
 				<displayName draft="contributed">იტალიური ლირა</displayName>
@@ -5675,12 +5705,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>იამაიკური დოლარი</displayName>
 				<displayName count="one">იამაიკური დოლარი</displayName>
 				<displayName count="other">იამაიკური დოლარი</displayName>
+				<symbol draft="contributed">JMD</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="JOD">
 				<displayName>იორდანიული დოლარი</displayName>
 				<displayName count="one">იორდანიული დოლარი</displayName>
 				<displayName count="other">იორდანიული დოლარი</displayName>
+				<symbol draft="contributed">JOD</symbol>
 			</currency>
 			<currency type="JPY">
 				<displayName>იაპონური იენი</displayName>
@@ -5693,27 +5725,34 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>კენიური შილინგი</displayName>
 				<displayName count="one">კენიური შილინგი</displayName>
 				<displayName count="other">კენიური შილინგი</displayName>
+				<symbol draft="contributed">KES</symbol>
 			</currency>
 			<currency type="KGS">
 				<displayName>ყირგიზული სომი</displayName>
 				<displayName count="one">ყირგიზული სომი</displayName>
 				<displayName count="other">ყირგიზული სომი</displayName>
+				<symbol draft="contributed">KGS</symbol>
 			</currency>
 			<currency type="KHR">
 				<displayName>კამბოჯური რიელი</displayName>
 				<displayName count="one">კამბოჯური რიელი</displayName>
 				<displayName count="other">კამბოჯური რიელი</displayName>
+				<symbol draft="contributed">KHR</symbol>
 				<symbol alt="narrow" draft="contributed">៛</symbol>
 			</currency>
 			<currency type="KMF">
 				<displayName>კომორული ფრანკი</displayName>
 				<displayName count="one">კომორული ფრანკი</displayName>
 				<displayName count="other">კომორული ფრანკი</displayName>
+				<symbol draft="contributed">KMF</symbol>
+				<symbol alt="narrow" draft="contributed">CF</symbol>
 			</currency>
 			<currency type="KPW">
 				<displayName>ჩრდილოეთ კორეული ვონი</displayName>
 				<displayName count="one">ჩრდილოეთ კორეული ვონი</displayName>
 				<displayName count="other">ჩრდილოეთ კორეული ვონი</displayName>
+				<symbol draft="contributed">KPW</symbol>
+				<symbol alt="narrow" draft="contributed">₩</symbol>
 			</currency>
 			<currency type="KRW">
 				<displayName>სამხრეთ კორეული ვონი</displayName>
@@ -5726,45 +5765,55 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ქუვეითური დინარი</displayName>
 				<displayName count="one">ქუვეითური დინარი</displayName>
 				<displayName count="other">ქუვეითური დინარი</displayName>
+				<symbol draft="contributed">KWD</symbol>
 			</currency>
 			<currency type="KYD">
 				<displayName>კაიმანის კუნძულების დოლარი</displayName>
 				<displayName count="one">კაიმანის კუნძულების დოლარი</displayName>
 				<displayName count="other">კაიმანის კუნძულების დოლარი</displayName>
+				<symbol draft="contributed">KYD</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="KZT">
 				<displayName>ყაზახური ტენგე</displayName>
 				<displayName count="one">ყაზახური ტენგე</displayName>
 				<displayName count="other">ყაზახური ტენგე</displayName>
+				<symbol draft="contributed">KZT</symbol>
 				<symbol alt="narrow" draft="contributed">₸</symbol>
 			</currency>
 			<currency type="LAK">
 				<displayName>ლაოსური კიპი</displayName>
 				<displayName count="one">ლაოსური კიპი</displayName>
 				<displayName count="other">ლაოსური კიპი</displayName>
+				<symbol draft="contributed">LAK</symbol>
 				<symbol alt="narrow" draft="contributed">₭</symbol>
 			</currency>
 			<currency type="LBP">
 				<displayName>ლიბანური ფუნტი</displayName>
 				<displayName count="one">ლიბანური ფუნტი</displayName>
 				<displayName count="other">ლიბანური ფუნტი</displayName>
+				<symbol draft="contributed">LBP</symbol>
+				<symbol alt="narrow" draft="contributed">L£</symbol>
 			</currency>
 			<currency type="LKR">
 				<displayName>შრი-ლანკური რუპია</displayName>
 				<displayName count="one">შრი-ლანკური რუპია</displayName>
 				<displayName count="other">შრი-ლანკური რუპია</displayName>
+				<symbol draft="contributed">LKR</symbol>
+				<symbol alt="narrow" draft="contributed">Rs</symbol>
 			</currency>
 			<currency type="LRD">
 				<displayName>ლიბერიული დოლარი</displayName>
 				<displayName count="one">ლიბერიული დოლარი</displayName>
 				<displayName count="other">ლიბერიული დოლარი</displayName>
+				<symbol draft="contributed">LRD</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="LTL">
 				<displayName>ლიტვური ლიტა</displayName>
 				<displayName count="one">ლიტვური ლიტა</displayName>
 				<displayName count="other">ლიტვური ლიტა</displayName>
+				<symbol draft="contributed">LTL</symbol>
 			</currency>
 			<currency type="LTT">
 				<displayName draft="contributed">ლიტვური ტალონი</displayName>
@@ -5782,6 +5831,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ლატვიური ლატი</displayName>
 				<displayName count="one">ლატვიური ლატი</displayName>
 				<displayName count="other">ლატვიური ლატი</displayName>
+				<symbol draft="contributed">LVL</symbol>
 			</currency>
 			<currency type="LVR">
 				<displayName draft="contributed">ლატვიური რუბლი</displayName>
@@ -5790,11 +5840,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ლიბიური დინარი</displayName>
 				<displayName count="one">ლიბიური დინარი</displayName>
 				<displayName count="other">ლიბიური დინარი</displayName>
+				<symbol draft="contributed">LYD</symbol>
 			</currency>
 			<currency type="MAD">
 				<displayName>მაროკოს დირჰამი</displayName>
 				<displayName count="one">მაროკოს დირჰამი</displayName>
 				<displayName count="other">მაროკოს დირჰამი</displayName>
+				<symbol draft="contributed">MAD</symbol>
 			</currency>
 			<currency type="MAF">
 				<displayName draft="contributed">მაროკოს ფრანკი</displayName>
@@ -5803,11 +5855,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>მოლდოვური ლეუ</displayName>
 				<displayName count="one">მოლდოვური ლეუ</displayName>
 				<displayName count="other">მოლდოვური ლეუ</displayName>
+				<symbol draft="contributed">MDL</symbol>
 			</currency>
 			<currency type="MGA">
 				<displayName>მადაგასკარის არიარი</displayName>
 				<displayName count="one">მადაგასკარის არიარი</displayName>
 				<displayName count="other">მადაგასკარის არიარი</displayName>
+				<symbol draft="contributed">MGA</symbol>
+				<symbol alt="narrow" draft="contributed">Ar</symbol>
 			</currency>
 			<currency type="MGF">
 				<displayName draft="contributed">მადაგასკარის ფრანკი</displayName>
@@ -5816,6 +5871,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>მაკედონიური დინარი</displayName>
 				<displayName count="one">მაკედონიური დინარი</displayName>
 				<displayName count="other">მაკედონიური დინარი</displayName>
+				<symbol draft="contributed">MKD</symbol>
 			</currency>
 			<currency type="MLF">
 				<displayName draft="contributed">მალის ფრანკი</displayName>
@@ -5824,27 +5880,33 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>მიანმარის კიატი</displayName>
 				<displayName count="one">მიანმარის კიატი</displayName>
 				<displayName count="other">მიანმარის კიატი</displayName>
+				<symbol draft="contributed">MMK</symbol>
+				<symbol alt="narrow" draft="contributed">K</symbol>
 			</currency>
 			<currency type="MNT">
 				<displayName>მონღოლური ტუგრიკი</displayName>
 				<displayName count="one">მონღოლური ტუგრიკი</displayName>
 				<displayName count="other">მონღოლური ტუგრიკი</displayName>
+				<symbol draft="contributed">MNT</symbol>
 				<symbol alt="narrow" draft="contributed">₮</symbol>
 			</currency>
 			<currency type="MOP">
 				<displayName>მაკაუს პატაკა</displayName>
 				<displayName count="one">მაკაუს პატაკა</displayName>
 				<displayName count="other">მაკაუს პატაკა</displayName>
+				<symbol draft="contributed">MOP</symbol>
 			</currency>
 			<currency type="MRO">
 				<displayName>მავრიტანული უგია (1973–2017)</displayName>
 				<displayName count="one">მავრიტანული უგია (1973–2017)</displayName>
 				<displayName count="other">მავრიტანული უგია (1973–2017)</displayName>
+				<symbol draft="contributed">MRO</symbol>
 			</currency>
 			<currency type="MRU">
 				<displayName>მავრიტანული უგია</displayName>
 				<displayName count="one">მავრიტანული უგია</displayName>
 				<displayName count="other">მავრიტანული უგია</displayName>
+				<symbol draft="contributed">MRU</symbol>
 			</currency>
 			<currency type="MTL">
 				<displayName draft="contributed">მალტის ლირა</displayName>
@@ -5856,21 +5918,26 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>მავრიტანული რუპია</displayName>
 				<displayName count="one">მავრიტანული რუპია</displayName>
 				<displayName count="other">მავრიტანული რუპია</displayName>
+				<symbol draft="contributed">MUR</symbol>
+				<symbol alt="narrow" draft="contributed">Rs</symbol>
 			</currency>
 			<currency type="MVR">
 				<displayName>მალდივური რუფია</displayName>
 				<displayName count="one">მალდივური რუფია</displayName>
 				<displayName count="other">მალდივური რუფია</displayName>
+				<symbol draft="contributed">MVR</symbol>
 			</currency>
 			<currency type="MWK">
 				<displayName>მალავიური კვაჩა</displayName>
 				<displayName count="one">მალავიური კვაჩა</displayName>
 				<displayName count="other">მალავიური კვაჩა</displayName>
+				<symbol draft="contributed">MWK</symbol>
 			</currency>
 			<currency type="MXN">
 				<displayName>მექსიკური პესო</displayName>
 				<displayName count="one">მექსიკური პესო</displayName>
 				<displayName count="other">მექსიკური პესო</displayName>
+				<symbol draft="contributed">MX$</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="MXP">
@@ -5880,6 +5947,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>მალაიზიური რინგიტი</displayName>
 				<displayName count="one">მალაიზიური რინგიტი</displayName>
 				<displayName count="other">მალაიზიური რინგიტი</displayName>
+				<symbol draft="contributed">MYR</symbol>
+				<symbol alt="narrow" draft="contributed">RM</symbol>
 			</currency>
 			<currency type="MZE">
 				<displayName>მოზამბიკური ესკუდო</displayName>
@@ -5893,17 +5962,20 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>მოზამბიკური მეტიკალი</displayName>
 				<displayName count="one">მოზამბიკური მეტიკალი</displayName>
 				<displayName count="other">მოზამბიკური მეტიკალი</displayName>
+				<symbol draft="contributed">MZN</symbol>
 			</currency>
 			<currency type="NAD">
 				<displayName>ნამიბიური დოლარი</displayName>
 				<displayName count="one">ნამიბიური დოლარი</displayName>
 				<displayName count="other">ნამიბიური დოლარი</displayName>
+				<symbol draft="contributed">NAD</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="NGN">
 				<displayName>ნიგერიული ნაირა</displayName>
 				<displayName count="one">ნიგერიული ნაირა</displayName>
 				<displayName count="other">ნიგერიული ნაირა</displayName>
+				<symbol draft="contributed">NGN</symbol>
 				<symbol alt="narrow" draft="contributed">₦</symbol>
 			</currency>
 			<currency type="NIC">
@@ -5913,6 +5985,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ნიკარაგუული კორდობა</displayName>
 				<displayName count="one">ნიკარაგუას ოქროს კორდობა</displayName>
 				<displayName count="other">ნიკარაგუას ოქროს კორდობა</displayName>
+				<symbol draft="contributed">NIO</symbol>
+				<symbol alt="narrow" draft="contributed">C$</symbol>
 			</currency>
 			<currency type="NLG">
 				<displayName draft="contributed">ჰოლანდიური გულდენი</displayName>
@@ -5921,11 +5995,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ნორვეგიული კრონა</displayName>
 				<displayName count="one">ნორვეგიული კრონა</displayName>
 				<displayName count="other">ნორვეგიული კრონა</displayName>
+				<symbol draft="contributed">NOK</symbol>
+				<symbol alt="narrow" draft="contributed">kr</symbol>
 			</currency>
 			<currency type="NPR">
 				<displayName>ნეპალური რუპია</displayName>
 				<displayName count="one">ნეპალური რუპია</displayName>
 				<displayName count="other">ნეპალური რუპია</displayName>
+				<symbol draft="contributed">NPR</symbol>
+				<symbol alt="narrow" draft="contributed">Rs</symbol>
 			</currency>
 			<currency type="NZD">
 				<displayName>ახალი ზელანდიის დოლარი</displayName>
@@ -5938,11 +6016,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ომანის რიალი</displayName>
 				<displayName count="one">ომანის რიალი</displayName>
 				<displayName count="other">ომანის რიალი</displayName>
+				<symbol draft="contributed">OMR</symbol>
 			</currency>
 			<currency type="PAB">
 				<displayName>პანამური ბალბოა</displayName>
 				<displayName count="one">პანამური ბალბოა</displayName>
 				<displayName count="other">პანამური ბალბოა</displayName>
+				<symbol draft="contributed">PAB</symbol>
 			</currency>
 			<currency type="PEI">
 				<displayName draft="contributed">პერუს ინტი</displayName>
@@ -5951,6 +6031,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>პერუს სოლი</displayName>
 				<displayName count="one">პერუს სოლი</displayName>
 				<displayName count="other">პერუს სოლი</displayName>
+				<symbol draft="contributed">PEN</symbol>
 			</currency>
 			<currency type="PES">
 				<displayName draft="contributed">პერუს სოლი (1863–1965)</displayName>
@@ -5959,22 +6040,28 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>პაპუა-ახალი გვინეის კინა</displayName>
 				<displayName count="one">პაპუა-ახალი გვინეის კინა</displayName>
 				<displayName count="other">პაპუა-ახალი გვინეის კინა</displayName>
+				<symbol draft="contributed">PGK</symbol>
 			</currency>
 			<currency type="PHP">
 				<displayName>ფილიპინური პესო</displayName>
 				<displayName count="one">ფილიპინური პესო</displayName>
 				<displayName count="other">ფილიპინური პესო</displayName>
+				<symbol draft="contributed">PHP</symbol>
 				<symbol alt="narrow" draft="contributed">₱</symbol>
 			</currency>
 			<currency type="PKR">
 				<displayName>პაკისტანური რუპია</displayName>
 				<displayName count="one">პაკისტანური რუპია</displayName>
 				<displayName count="other">პაკისტანური რუპია</displayName>
+				<symbol draft="contributed">PKR</symbol>
+				<symbol alt="narrow" draft="contributed">Rs</symbol>
 			</currency>
 			<currency type="PLN">
 				<displayName>პოლონური ზლოტი</displayName>
 				<displayName count="one">პოლონური ზლოტი</displayName>
 				<displayName count="other">პოლონური ზლოტი</displayName>
+				<symbol draft="contributed">PLN</symbol>
+				<symbol alt="narrow" draft="contributed">zł</symbol>
 			</currency>
 			<currency type="PLZ">
 				<displayName draft="contributed">პოლონური ზლოტი (1950–1995)</displayName>
@@ -5986,12 +6073,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>პარაგვაული გუარანი</displayName>
 				<displayName count="one">პარაგვაული გუარანი</displayName>
 				<displayName count="other">პარაგვაული გუარანი</displayName>
+				<symbol draft="contributed">PYG</symbol>
 				<symbol alt="narrow" draft="contributed">₲</symbol>
 			</currency>
 			<currency type="QAR">
 				<displayName>კატარის რიალი</displayName>
 				<displayName count="one">კატარის რიალი</displayName>
 				<displayName count="other">კატარის რიალი</displayName>
+				<symbol draft="contributed">QAR</symbol>
 			</currency>
 			<currency type="RHD">
 				<displayName draft="contributed">როდეზიული დოლარი</displayName>
@@ -6003,16 +6092,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>რუმინული ლეუ</displayName>
 				<displayName count="one">რუმინული ლეუ</displayName>
 				<displayName count="other">რუმინული ლეუ</displayName>
+				<symbol draft="contributed">RON</symbol>
+				<symbol alt="narrow" draft="contributed">lei</symbol>
 			</currency>
 			<currency type="RSD">
 				<displayName>სერბული დინარი</displayName>
 				<displayName count="one">სერბული დინარი</displayName>
 				<displayName count="other">სერბული დინარი</displayName>
+				<symbol draft="contributed">RSD</symbol>
 			</currency>
 			<currency type="RUB">
 				<displayName>რუსული რუბლი</displayName>
 				<displayName count="one">რუსული რუბლი</displayName>
 				<displayName count="other">რუსული რუბლი</displayName>
+				<symbol draft="contributed">RUB</symbol>
+				<symbol alt="narrow" draft="contributed">₽</symbol>
 			</currency>
 			<currency type="RUR">
 				<displayName draft="contributed">რუსული რუბლი (1991–1998)</displayName>
@@ -6021,22 +6115,27 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>რუანდული ფრანკი</displayName>
 				<displayName count="one">რუანდული ფრანკი</displayName>
 				<displayName count="other">რუანდული ფრანკი</displayName>
+				<symbol draft="contributed">RWF</symbol>
+				<symbol alt="narrow" draft="contributed">RF</symbol>
 			</currency>
 			<currency type="SAR">
 				<displayName>საუდის არაბეთის რიალი</displayName>
 				<displayName count="one">საუდის არაბეთის რიალი</displayName>
 				<displayName count="other">საუდის არაბეთის რიალი</displayName>
+				<symbol draft="contributed">SAR</symbol>
 			</currency>
 			<currency type="SBD">
 				<displayName>სოლომონის კუნძულების დოლარი</displayName>
 				<displayName count="one">სოლომონის კუნძულების დოლარი</displayName>
 				<displayName count="other">სოლომონის კუნძულების დოლარი</displayName>
+				<symbol draft="contributed">SBD</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="SCR">
 				<displayName>სეიშელური რუპია</displayName>
 				<displayName count="one">სეიშელური რუპია</displayName>
 				<displayName count="other">სეიშელური რუპია</displayName>
+				<symbol draft="contributed">SCR</symbol>
 			</currency>
 			<currency type="SDD">
 				<displayName draft="contributed">სუდანის დინარი</displayName>
@@ -6045,6 +6144,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>სუდანური ფუნტი</displayName>
 				<displayName count="one">სუდანური ფუნტი</displayName>
 				<displayName count="other">სუდანური ფუნტი</displayName>
+				<symbol draft="contributed">SDG</symbol>
 			</currency>
 			<currency type="SDP">
 				<displayName draft="contributed">სუდანის გირვანქა</displayName>
@@ -6053,32 +6153,40 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>შვედური კრონა</displayName>
 				<displayName count="one">შვედური კრონა</displayName>
 				<displayName count="other">შვედური კრონა</displayName>
+				<symbol draft="contributed">SEK</symbol>
+				<symbol alt="narrow" draft="contributed">kr</symbol>
 			</currency>
 			<currency type="SGD">
 				<displayName>სინგაპურის დოლარი</displayName>
 				<displayName count="one">სინგაპურის დოლარი</displayName>
 				<displayName count="other">სინგაპურის დოლარი</displayName>
+				<symbol draft="contributed">SGD</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="SHP">
 				<displayName>წმ. ელენეს კუნძულის ფუნტი</displayName>
 				<displayName count="one">წმ. ელენეს კუნძულის ფუნტი</displayName>
 				<displayName count="other">წმ. ელენეს კუნძულის ფუნტი</displayName>
+				<symbol draft="contributed">SHP</symbol>
+				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
 			<currency type="SLL">
 				<displayName>სიერა-ლეონეს ლეონე</displayName>
 				<displayName count="one">სიერა-ლეონეს ლეონე</displayName>
 				<displayName count="other">სიერა-ლეონეს ლეონე</displayName>
+				<symbol draft="contributed">SLL</symbol>
 			</currency>
 			<currency type="SOS">
 				<displayName>სომალური შილინგი</displayName>
 				<displayName count="one">სომალური შილინგი</displayName>
 				<displayName count="other">სომალური შილინგი</displayName>
+				<symbol draft="contributed">SOS</symbol>
 			</currency>
 			<currency type="SRD">
 				<displayName>სურინამული დოლარი</displayName>
 				<displayName count="one">სურინამული დოლარი</displayName>
 				<displayName count="other">სურინამული დოლარი</displayName>
+				<symbol draft="contributed">SRD</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="SRG">
@@ -6088,17 +6196,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>სამხრეთ სუდანური ფუნტი</displayName>
 				<displayName count="one">სამხრეთ სუდანური ფუნტი</displayName>
 				<displayName count="other">სამხრეთ სუდანური ფუნტი</displayName>
+				<symbol draft="contributed">SSP</symbol>
 				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
 			<currency type="STD">
 				<displayName>სან-ტომე და პრინსიპის დობრა (1977–2017)</displayName>
 				<displayName count="one">სან-ტომე და პრინსიპის დობრა (1977–2017)</displayName>
 				<displayName count="other">სან-ტომე და პრინსიპის დობრა (1977–2017)</displayName>
+				<symbol draft="contributed">STD</symbol>
 			</currency>
 			<currency type="STN">
 				<displayName>სან-ტომე და პრინსიპის დობრა</displayName>
 				<displayName count="one">სან-ტომე და პრინსიპის დობრა</displayName>
 				<displayName count="other">სან-ტომე და პრინსიპის დობრა</displayName>
+				<symbol draft="contributed">STN</symbol>
+				<symbol alt="narrow" draft="contributed">Db</symbol>
 			</currency>
 			<currency type="SUR">
 				<displayName draft="contributed">საბჭოთა რუბლი</displayName>
@@ -6107,16 +6219,20 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>სირიული ფუნტი</displayName>
 				<displayName count="one">სირიული გირვანქა</displayName>
 				<displayName count="other">სირიული გირვანქა</displayName>
+				<symbol draft="contributed">SYP</symbol>
+				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
 			<currency type="SZL">
 				<displayName>სვაზილენდის ლილანგენი</displayName>
 				<displayName count="one">სვაზილენდის ლილანგენი</displayName>
 				<displayName count="other">სვაზილენდის ლილანგენი</displayName>
+				<symbol draft="contributed">SZL</symbol>
 			</currency>
 			<currency type="THB">
 				<displayName>ტაილანდური ბატი</displayName>
 				<displayName count="one">ტაილანდური ბატი</displayName>
 				<displayName count="other">ტაილანდური ბატი</displayName>
+				<symbol draft="contributed">THB</symbol>
 				<symbol alt="narrow" draft="contributed">฿</symbol>
 			</currency>
 			<currency type="TJR">
@@ -6126,6 +6242,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ტაჯიკური სომონი</displayName>
 				<displayName count="one">ტაჯიკური სომონი</displayName>
 				<displayName count="other">ტაჯიკური სომონი</displayName>
+				<symbol draft="contributed">TJS</symbol>
 			</currency>
 			<currency type="TMM">
 				<displayName draft="contributed">თურქმენული მანათი</displayName>
@@ -6134,16 +6251,20 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>თურქმენეთის მანათი</displayName>
 				<displayName count="one">თურქმენეთის მანათი</displayName>
 				<displayName count="other">თურქმენეთის მანათი</displayName>
+				<symbol draft="contributed">TMT</symbol>
 			</currency>
 			<currency type="TND">
 				<displayName>ტუნისური დინარი</displayName>
 				<displayName count="one">ტუნისის დინარი</displayName>
 				<displayName count="other">ტუნისის დინარი</displayName>
+				<symbol draft="contributed">TND</symbol>
 			</currency>
 			<currency type="TOP">
 				<displayName>ტონგანური პაანგა</displayName>
 				<displayName count="one">ტონგანური პაანგა</displayName>
 				<displayName count="other">ტონგანური პაანგა</displayName>
+				<symbol draft="contributed">TOP</symbol>
+				<symbol alt="narrow" draft="contributed">T$</symbol>
 			</currency>
 			<currency type="TRL">
 				<displayName draft="contributed">თურქული ლირა</displayName>
@@ -6152,29 +6273,35 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ახალი თურქული ლირა</displayName>
 				<displayName count="one">ახალი თურქული ლირა</displayName>
 				<displayName count="other">ახალი თურქული ლირა</displayName>
+				<symbol draft="contributed">TRY</symbol>
 				<symbol alt="narrow" draft="contributed">₺</symbol>
+				<symbol alt="variant" draft="contributed">TL</symbol>
 			</currency>
 			<currency type="TTD">
 				<displayName>ტრინიდად და ტობაგოს დოლარი</displayName>
 				<displayName count="one">ტრინიდად და ტობაგოს დოლარი</displayName>
 				<displayName count="other">ტრინიდად და ტობაგოს დოლარი</displayName>
+				<symbol draft="contributed">TTD</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="TWD">
 				<displayName>ტაივანური ახალი დოლარი</displayName>
 				<displayName count="one">ტაივანური ახალი დოლარი</displayName>
 				<displayName count="other">ტაივანური ახალი დოლარი</displayName>
+				<symbol draft="contributed">NT$</symbol>
 				<symbol alt="narrow" draft="contributed">NT$</symbol>
 			</currency>
 			<currency type="TZS">
 				<displayName>ტანზანიური შილინგი</displayName>
 				<displayName count="one">ტანზანიური შილინგი</displayName>
 				<displayName count="other">ტანზანიური შილინგი</displayName>
+				<symbol draft="contributed">TZS</symbol>
 			</currency>
 			<currency type="UAH">
 				<displayName>უკრაინული გრივნა</displayName>
 				<displayName count="one">უკრაინული გრივნა</displayName>
 				<displayName count="other">უკრაინული გრივნა</displayName>
+				<symbol draft="contributed">UAH</symbol>
 				<symbol alt="narrow" draft="contributed">₴</symbol>
 			</currency>
 			<currency type="UAK">
@@ -6187,11 +6314,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>უგანდური შილინგი</displayName>
 				<displayName count="one">უგანდური შილინგი</displayName>
 				<displayName count="other">უგანდური შილინგი</displayName>
+				<symbol draft="contributed">UGX</symbol>
 			</currency>
 			<currency type="USD">
 				<displayName>აშშ დოლარი</displayName>
 				<displayName count="one">აშშ დოლარი</displayName>
 				<displayName count="other">აშშ დოლარი</displayName>
+				<symbol draft="contributed">US$</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="USN">
@@ -6207,12 +6336,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ურუგვაის პესო</displayName>
 				<displayName count="one">ურუგვაის პესო</displayName>
 				<displayName count="other">ურუგვაის პესო</displayName>
+				<symbol draft="contributed">UYU</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="UZS">
 				<displayName>უზბეკური სუმი</displayName>
 				<displayName count="one">უზბეკური სუმი</displayName>
 				<displayName count="other">უზბეკური სუმი</displayName>
+				<symbol draft="contributed">UZS</symbol>
 			</currency>
 			<currency type="VEB">
 				<displayName draft="contributed">ვენესუელის ბოლივარი (1871–2008)</displayName>
@@ -6221,6 +6352,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ვენესუელის ბოლივარი (2008–2018)</displayName>
 				<displayName count="one">ვენესუელის ბოლივარი (2008–2018)</displayName>
 				<displayName count="other">ვენესუელის ბოლივარი (2008–2018)</displayName>
+				<symbol draft="contributed">VEF</symbol>
+				<symbol alt="narrow" draft="contributed">Bs</symbol>
 			</currency>
 			<currency type="VES">
 				<displayName>ვენესუელის ბოლივარი</displayName>
@@ -6239,16 +6372,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ვანუატუს ვატუ</displayName>
 				<displayName count="one">ვანატუს ვატუ</displayName>
 				<displayName count="other">ვანატუს ვატუ</displayName>
+				<symbol draft="contributed">VUV</symbol>
 			</currency>
 			<currency type="WST">
 				<displayName>სამოური ტალა</displayName>
 				<displayName count="one">დასავლეთ სამოას ტალა</displayName>
 				<displayName count="other">სამოური ტალა</displayName>
+				<symbol draft="contributed">WST</symbol>
 			</currency>
 			<currency type="XAF">
 				<displayName>ცენტრალურ აფრიკული CFA ფრანკი</displayName>
 				<displayName count="one">ცენტრალურ აფრიკული CFA ფრანკი</displayName>
 				<displayName count="other">ცენტრალურ აფრიკული CFA ფრანკი</displayName>
+				<symbol draft="contributed">FCFA</symbol>
 			</currency>
 			<currency type="XAG">
 				<displayName draft="contributed">ვერცხლი</displayName>
@@ -6263,6 +6399,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>აღმოსავლეთ კარიბიული დოლარი</displayName>
 				<displayName count="one">აღმოსავლეთ კარიბიული დოლარი</displayName>
 				<displayName count="other">აღმოსავლეთ კარიბიული დოლარი</displayName>
+				<symbol draft="contributed">EC$</symbol>
+				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="XEU">
 				<displayName draft="contributed">ევროპული სავალუტო ერთეული</displayName>
@@ -6274,11 +6412,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>დასავლეთ აფრიკული CFA ფრანკი</displayName>
 				<displayName count="one">დასავლეთ აფრიკული CFA ფრანკი</displayName>
 				<displayName count="other">დასავლეთ აფრიკული CFA ფრანკი</displayName>
+				<symbol draft="contributed">CFA</symbol>
 			</currency>
 			<currency type="XPF">
 				<displayName>CFP ფრანკი</displayName>
 				<displayName count="one">CFP ფრანკი</displayName>
 				<displayName count="other">CFP ფრანკი</displayName>
+				<symbol draft="contributed">CFPF</symbol>
 			</currency>
 			<currency type="XXX">
 				<displayName>უცნობი ვალუტა</displayName>
@@ -6292,6 +6432,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>იემენის რეალი</displayName>
 				<displayName count="one">იემენის რეალი</displayName>
 				<displayName count="other">იემენის რეალი</displayName>
+				<symbol draft="contributed">YER</symbol>
 			</currency>
 			<currency type="YUD">
 				<displayName draft="contributed">იუგოსლავიური მყარი დინარი</displayName>
@@ -6306,16 +6447,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>სამხრეთ აფრიკული რანდი</displayName>
 				<displayName count="one">სამხრეთ აფრიკული რანდი</displayName>
 				<displayName count="other">სამხრეთ აფრიკული რანდი</displayName>
+				<symbol draft="contributed">ZAR</symbol>
+				<symbol alt="narrow" draft="contributed">R</symbol>
 			</currency>
 			<currency type="ZMK">
 				<displayName>ზამბიური კვაჭა (1968–2012)</displayName>
 				<displayName count="one">ზამბიური კვაჭა (1968–2012)</displayName>
 				<displayName count="other">ზამბიური კვაჭა (1968–2012)</displayName>
+				<symbol draft="contributed">ZMK</symbol>
 			</currency>
 			<currency type="ZMW">
 				<displayName>ზამბიური კვაჭა</displayName>
 				<displayName count="one">ზამბიური კვაჭა</displayName>
 				<displayName count="other">ზამბიური კვაჭა</displayName>
+				<symbol draft="contributed">ZMW</symbol>
+				<symbol alt="narrow" draft="contributed">ZK</symbol>
 			</currency>
 			<currency type="ZRN">
 				<displayName draft="contributed">ზაირის ახალი ზაირი</displayName>
@@ -6466,16 +6612,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} პრომილე</unitPattern>
 				<unitPattern count="other">{0} პრომილე</unitPattern>
 			</unit>
-			<unit type="concentr-permyriad">
-				<displayName>‱</displayName>
-				<unitPattern count="one" draft="contributed">{0}‱</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}‱</unitPattern>
-			</unit>
-			<unit type="concentr-mole">
-				<displayName>mol</displayName>
-				<unitPattern count="one" draft="contributed">{0} mol</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} mol</unitPattern>
-			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>ლიტრი კილომეტრზე</displayName>
 				<unitPattern count="one">{0} ლიტრი კილომეტრზე</unitPattern>
@@ -6555,6 +6691,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>საუკუნე</displayName>
 				<unitPattern count="one">{0} საუკუნე</unitPattern>
 				<unitPattern count="other">{0} საუკუნე</unitPattern>
+			</unit>
+			<unit type="duration-decade">
+				<displayName>დეკადა</displayName>
+				<unitPattern count="one">{0} დეკადა</unitPattern>
+				<unitPattern count="other">{0} დეკადა</unitPattern>
 			</unit>
 			<unit type="duration-year">
 				<displayName>წელი</displayName>
@@ -6673,15 +6814,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ბრიტანული სითბური ერთეული</unitPattern>
 				<unitPattern count="other">{0} ბრიტანული სითბური ერთეული</unitPattern>
 			</unit>
-			<unit type="force-pound-force">
-				<displayName>lbf</displayName>
-				<unitPattern count="one" draft="contributed">{0} lbf</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} lbf</unitPattern>
-			</unit>
-			<unit type="force-newton">
-				<displayName>N</displayName>
-				<unitPattern count="one" draft="contributed">{0} N</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} N</unitPattern>
+			<unit type="energy-therm-us">
+				<displayName>აშშ თერმი</displayName>
+				<unitPattern count="one">{0} აშშ თერმი</unitPattern>
+				<unitPattern count="other">{0} აშშ თერმი</unitPattern>
 			</unit>
 			<unit type="frequency-gigahertz">
 				<displayName>გიგაჰერცი</displayName>
@@ -6702,6 +6838,41 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ჰერცი</displayName>
 				<unitPattern count="one">{0} ჰერცი</unitPattern>
 				<unitPattern count="other">{0} ჰერცი</unitPattern>
+			</unit>
+			<unit type="graphics-em">
+				<displayName>ტიპოგრაფიული ემი</displayName>
+				<unitPattern count="one">{0} ემი</unitPattern>
+				<unitPattern count="other">{0} ემი</unitPattern>
+			</unit>
+			<unit type="graphics-pixel">
+				<displayName>პიქსელი</displayName>
+				<unitPattern count="one">{0} პიქსელი</unitPattern>
+				<unitPattern count="other">{0} პიქსელი</unitPattern>
+			</unit>
+			<unit type="graphics-megapixel">
+				<displayName>მეგაპიქსელი</displayName>
+				<unitPattern count="one">{0} მეგაპიქსელი</unitPattern>
+				<unitPattern count="other">{0} მეგაპიქსელი</unitPattern>
+			</unit>
+			<unit type="graphics-pixel-per-centimeter">
+				<displayName>პიქსელი სანტიმეტრზე</displayName>
+				<unitPattern count="one">{0} პიქსელი სანტიმეტრზე</unitPattern>
+				<unitPattern count="other">{0} პიქსელი სანტიმეტრზე</unitPattern>
+			</unit>
+			<unit type="graphics-pixel-per-inch">
+				<displayName>პიქსელი დუიმზე</displayName>
+				<unitPattern count="one">{0} პიქსელი დუიმზე</unitPattern>
+				<unitPattern count="other">{0} პიქსელი დუიმზე</unitPattern>
+			</unit>
+			<unit type="graphics-dot-per-centimeter">
+				<displayName>წერტილი სანტიმეტრზე</displayName>
+				<unitPattern count="one">{0} წერტილი სანტიმეტრზე</unitPattern>
+				<unitPattern count="other">{0} წერტილი სანტიმეტრზე</unitPattern>
+			</unit>
+			<unit type="graphics-dot-per-inch">
+				<displayName>წერტილი დუიმზე</displayName>
+				<unitPattern count="one">{0} წერტილი დუიმზე</unitPattern>
+				<unitPattern count="other">{0} წერტილი დუიმზე</unitPattern>
 			</unit>
 			<unit type="length-kilometer">
 				<displayName>კილომეტრი</displayName>
@@ -6798,20 +6969,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} პუნქტი</unitPattern>
 				<unitPattern count="other">{0} პუნქტი</unitPattern>
 			</unit>
-			<unit type="length-solar-radius">
-				<displayName>R☉</displayName>
-				<unitPattern count="one" draft="contributed">{0} R☉</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} R☉</unitPattern>
-			</unit>
 			<unit type="light-lux">
 				<displayName>ლუქსი</displayName>
 				<unitPattern count="one">{0} ლუქსი</unitPattern>
 				<unitPattern count="other">{0} ლუქსი</unitPattern>
-			</unit>
-			<unit type="light-solar-luminosity">
-				<displayName>L☉</displayName>
-				<unitPattern count="one" draft="contributed">{0} L☉</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} L☉</unitPattern>
 			</unit>
 			<unit type="mass-metric-ton">
 				<displayName>მეტრული ტონა</displayName>
@@ -6912,11 +7073,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ცხენის ძალა</unitPattern>
 				<unitPattern count="other">{0} ცხენის ძალა</unitPattern>
 			</unit>
-			<unit type="pressure-hectopascal">
-				<displayName>ჰექტოპასკალი</displayName>
-				<unitPattern count="one">{0} ჰექტოპასკალი</unitPattern>
-				<unitPattern count="other">{0} ჰექტოპასკალი</unitPattern>
-			</unit>
 			<unit type="pressure-millimeter-of-mercury">
 				<displayName>მილიმეტრი ვერცხლისწყლის სვეტისა</displayName>
 				<unitPattern count="one">{0} მილიმეტრი ვერცხლისწყლის სვეტისა</unitPattern>
@@ -6932,6 +7088,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ვერცხლისწყლის დუიმი</unitPattern>
 				<unitPattern count="other">{0} ვერცხლისწყლის დუიმი</unitPattern>
 			</unit>
+			<unit type="pressure-bar">
+				<displayName>ბარი</displayName>
+				<unitPattern count="one">{0} ბარი</unitPattern>
+				<unitPattern count="other">{0} ბარი</unitPattern>
+			</unit>
 			<unit type="pressure-millibar">
 				<displayName>მილიბარი</displayName>
 				<unitPattern count="one">{0} მილიბარი</unitPattern>
@@ -6941,6 +7102,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ატმოსფეროები</displayName>
 				<unitPattern count="one">{0} ატმოსფერო</unitPattern>
 				<unitPattern count="other">{0} ატმოსფერო</unitPattern>
+			</unit>
+			<unit type="pressure-pascal">
+				<displayName>პასკალი</displayName>
+				<unitPattern count="one">{0} პასკალი</unitPattern>
+				<unitPattern count="other">{0} პასკალი</unitPattern>
+			</unit>
+			<unit type="pressure-hectopascal">
+				<displayName>ჰექტოპასკალი</displayName>
+				<unitPattern count="one">{0} ჰექტოპასკალი</unitPattern>
+				<unitPattern count="other">{0} ჰექტოპასკალი</unitPattern>
 			</unit>
 			<unit type="pressure-kilopascal">
 				<displayName>კილოპასკალი</displayName>
@@ -6991,16 +7162,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>კელვინის გრადუსი</displayName>
 				<unitPattern count="one">{0} კელვინი</unitPattern>
 				<unitPattern count="other">{0} კელვინის გრადუსი</unitPattern>
-			</unit>
-			<unit type="torque-pound-foot">
-				<displayName>lbf⋅ft</displayName>
-				<unitPattern count="one" draft="contributed">{0} lbf⋅ft</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} lbf⋅ft</unitPattern>
-			</unit>
-			<unit type="torque-newton-meter">
-				<displayName>N⋅m</displayName>
-				<unitPattern count="one" draft="contributed">{0} N⋅m</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} N⋅m</unitPattern>
 			</unit>
 			<unit type="volume-cubic-kilometer">
 				<displayName>კუბური კილომეტრი</displayName>
@@ -7269,16 +7430,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0}‰</unitPattern>
 				<unitPattern count="other">{0}‰</unitPattern>
 			</unit>
-			<unit type="concentr-permyriad">
-				<displayName>‱</displayName>
-				<unitPattern count="one" draft="contributed">{0}‱</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}‱</unitPattern>
-			</unit>
-			<unit type="concentr-mole">
-				<displayName>mol</displayName>
-				<unitPattern count="one" draft="contributed">{0} mol</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} mol</unitPattern>
-			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>ლიტრი/კმ</displayName>
 				<unitPattern count="one">{0} ლ/კმ</unitPattern>
@@ -7358,6 +7509,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ს.</displayName>
 				<unitPattern count="one">{0} ს.</unitPattern>
 				<unitPattern count="other">{0} ს.</unitPattern>
+			</unit>
+			<unit type="duration-decade">
+				<displayName>დეკადა</displayName>
+				<unitPattern count="one">{0} დეკადა</unitPattern>
+				<unitPattern count="other">{0} დეკადა</unitPattern>
 			</unit>
 			<unit type="duration-year">
 				<displayName>წ</displayName>
@@ -7476,15 +7632,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ბსე</unitPattern>
 				<unitPattern count="other">{0} ბსე</unitPattern>
 			</unit>
-			<unit type="force-pound-force">
-				<displayName>lbf</displayName>
-				<unitPattern count="one" draft="contributed">{0} lbf</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} lbf</unitPattern>
-			</unit>
-			<unit type="force-newton">
-				<displayName>N</displayName>
-				<unitPattern count="one" draft="contributed">{0} N</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} N</unitPattern>
+			<unit type="energy-therm-us">
+				<displayName>აშშ თერმი</displayName>
+				<unitPattern count="one">{0} აშშ თერმი</unitPattern>
+				<unitPattern count="other">{0} აშშ თერმი</unitPattern>
 			</unit>
 			<unit type="frequency-gigahertz">
 				<displayName>გჰც.</displayName>
@@ -7505,6 +7656,41 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ჰც.</displayName>
 				<unitPattern count="one">{0} ჰც.</unitPattern>
 				<unitPattern count="other">{0} ჰც.</unitPattern>
+			</unit>
+			<unit type="graphics-em">
+				<displayName>ემი</displayName>
+				<unitPattern count="one">{0} ემი</unitPattern>
+				<unitPattern count="other">{0} ემი</unitPattern>
+			</unit>
+			<unit type="graphics-pixel">
+				<displayName>პქს</displayName>
+				<unitPattern count="one">{0} პქს</unitPattern>
+				<unitPattern count="other">{0} პქს</unitPattern>
+			</unit>
+			<unit type="graphics-megapixel">
+				<displayName>მპქს</displayName>
+				<unitPattern count="one">{0} მპქს</unitPattern>
+				<unitPattern count="other">{0} მპქს</unitPattern>
+			</unit>
+			<unit type="graphics-pixel-per-centimeter">
+				<displayName>პქს/სმ-ზე</displayName>
+				<unitPattern count="one">{0} პქს/სმ-ზე</unitPattern>
+				<unitPattern count="other">{0} პქს/სმ-ზე</unitPattern>
+			</unit>
+			<unit type="graphics-pixel-per-inch">
+				<displayName>პიქს/დუიმზე</displayName>
+				<unitPattern count="one">{0} პიქს/დუიმზე</unitPattern>
+				<unitPattern count="other">{0} პიქს/დუიმზე</unitPattern>
+			</unit>
+			<unit type="graphics-dot-per-centimeter">
+				<displayName>წერტ/სმ-ზე</displayName>
+				<unitPattern count="one">{0} წერტ/სმ-ზე</unitPattern>
+				<unitPattern count="other">{0} წერტ/სმ-ზე</unitPattern>
+			</unit>
+			<unit type="graphics-dot-per-inch">
+				<displayName>წერტ/დუიმზე</displayName>
+				<unitPattern count="one">{0} წერტ/დუიმზე</unitPattern>
+				<unitPattern count="other">{0} წერტ/დუიმზე</unitPattern>
 			</unit>
 			<unit type="length-kilometer">
 				<displayName>კმ</displayName>
@@ -7601,20 +7787,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} პნქტ.</unitPattern>
 				<unitPattern count="other">{0} პქნტ.</unitPattern>
 			</unit>
-			<unit type="length-solar-radius">
-				<displayName>R☉</displayName>
-				<unitPattern count="one" draft="contributed">{0} R☉</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} R☉</unitPattern>
-			</unit>
 			<unit type="light-lux">
 				<displayName>ლუქსი</displayName>
 				<unitPattern count="one">{0} ლუქსი</unitPattern>
 				<unitPattern count="other">{0} ლუქსი</unitPattern>
-			</unit>
-			<unit type="light-solar-luminosity">
-				<displayName>L☉</displayName>
-				<unitPattern count="one" draft="contributed">{0} L☉</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} L☉</unitPattern>
 			</unit>
 			<unit type="mass-metric-ton">
 				<displayName>მტ</displayName>
@@ -7675,16 +7851,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} დალტ.</unitPattern>
 				<unitPattern count="other">{0} დალტ.</unitPattern>
 			</unit>
-			<unit type="mass-earth-mass">
-				<displayName>M⊕</displayName>
-				<unitPattern count="one" draft="contributed">{0} M⊕</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} M⊕</unitPattern>
-			</unit>
-			<unit type="mass-solar-mass">
-				<displayName>M☉</displayName>
-				<unitPattern count="one" draft="contributed">{0} M☉</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} M☉</unitPattern>
-			</unit>
 			<unit type="power-gigawatt">
 				<displayName>გვტ</displayName>
 				<unitPattern count="one">{0} გვტ</unitPattern>
@@ -7715,11 +7881,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ცხ. ძ.</unitPattern>
 				<unitPattern count="other">{0} ცხ. ძ.</unitPattern>
 			</unit>
-			<unit type="pressure-hectopascal">
-				<displayName>ჰპა</displayName>
-				<unitPattern count="one">{0} ჰპა</unitPattern>
-				<unitPattern count="other">{0} ჰპა</unitPattern>
-			</unit>
 			<unit type="pressure-millimeter-of-mercury">
 				<displayName>მმ ვწყ. სვ.</displayName>
 				<unitPattern count="one">{0} მმ ვწყ. სვ.</unitPattern>
@@ -7735,6 +7896,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ვრც. დმ.</unitPattern>
 				<unitPattern count="other">{0} ვრც. დმ.</unitPattern>
 			</unit>
+			<unit type="pressure-bar">
+				<displayName>ბარი</displayName>
+				<unitPattern count="one">{0} ბარი</unitPattern>
+				<unitPattern count="other">{0} ბარი</unitPattern>
+			</unit>
 			<unit type="pressure-millibar">
 				<displayName>მბარი</displayName>
 				<unitPattern count="one">{0} მბარი</unitPattern>
@@ -7744,6 +7910,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ატმ.</displayName>
 				<unitPattern count="one">{0} ატმ.</unitPattern>
 				<unitPattern count="other">{0} ატმ.</unitPattern>
+			</unit>
+			<unit type="pressure-pascal">
+				<displayName>პა</displayName>
+				<unitPattern count="one">{0} პა</unitPattern>
+				<unitPattern count="other">{0} პა</unitPattern>
+			</unit>
+			<unit type="pressure-hectopascal">
+				<displayName>ჰპა</displayName>
+				<unitPattern count="one">{0} ჰპა</unitPattern>
+				<unitPattern count="other">{0} ჰპა</unitPattern>
 			</unit>
 			<unit type="pressure-kilopascal">
 				<displayName>კპა</displayName>
@@ -7794,16 +7970,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>K</displayName>
 				<unitPattern count="one">{0} K</unitPattern>
 				<unitPattern count="other">{0} K</unitPattern>
-			</unit>
-			<unit type="torque-pound-foot">
-				<displayName>lbf⋅ft</displayName>
-				<unitPattern count="one" draft="contributed">{0} lbf⋅ft</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} lbf⋅ft</unitPattern>
-			</unit>
-			<unit type="torque-newton-meter">
-				<displayName>N⋅m</displayName>
-				<unitPattern count="one" draft="contributed">{0} N⋅m</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} N⋅m</unitPattern>
 			</unit>
 			<unit type="volume-cubic-kilometer">
 				<displayName>კუბური კილომეტრი</displayName>
@@ -8116,10 +8282,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0}ცხ.ძ.</unitPattern>
 				<unitPattern count="other">{0}ცხ.ძ.</unitPattern>
 			</unit>
-			<unit type="pressure-hectopascal">
-				<unitPattern count="one">{0} ჰპა</unitPattern>
-				<unitPattern count="other">{0} ჰპა</unitPattern>
-			</unit>
 			<unit type="pressure-inch-hg">
 				<unitPattern count="one">{0} ვრც. დმ.</unitPattern>
 				<unitPattern count="other">{0} ვრც. დმ.</unitPattern>
@@ -8127,6 +8289,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="pressure-millibar">
 				<unitPattern count="one">{0} მბრ</unitPattern>
 				<unitPattern count="other">{0} მბრ</unitPattern>
+			</unit>
+			<unit type="pressure-hectopascal">
+				<unitPattern count="one">{0} ჰპა</unitPattern>
+				<unitPattern count="other">{0} ჰპა</unitPattern>
 			</unit>
 			<unit type="speed-kilometer-per-hour">
 				<displayName>კმ/სთ</displayName>
@@ -8193,12 +8359,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<listPatternPart type="middle">{0}, {1}</listPatternPart>
 			<listPatternPart type="end">{0} ან {1}</listPatternPart>
 			<listPatternPart type="2">{0} ან {1}</listPatternPart>
-		</listPattern>
-		<listPattern type="standard-narrow">
-			<listPatternPart type="start">{0}, {1}</listPatternPart>
-			<listPatternPart type="middle">{0}, {1}</listPatternPart>
-			<listPatternPart type="end">{0} და {1}</listPatternPart>
-			<listPatternPart type="2">{0} და {1}</listPatternPart>
 		</listPattern>
 		<listPattern type="standard-short">
 			<listPatternPart type="start">{0}, {1}</listPatternPart>

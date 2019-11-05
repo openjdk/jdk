@@ -22,7 +22,7 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/z/zAddress.inline.hpp"
+#include "gc/z/zGlobals.hpp"
 #include "gc/z/zGranuleMap.inline.hpp"
 #include "gc/z/zPage.inline.hpp"
 #include "gc/z/zPageTable.inline.hpp"
@@ -30,24 +30,24 @@
 #include "utilities/debug.hpp"
 
 ZPageTable::ZPageTable() :
-    _map() {}
+    _map(ZAddressOffsetMax) {}
 
 void ZPageTable::insert(ZPage* page) {
-  const uintptr_t addr = ZAddress::good(page->start());
+  const uintptr_t offset = page->start();
   const size_t size = page->size();
 
   // Make sure a newly created page is
   // visible before updating the page table.
   OrderAccess::storestore();
 
-  assert(get(addr) == NULL, "Invalid entry");
-  _map.put(addr, size, page);
+  assert(_map.get(offset) == NULL, "Invalid entry");
+  _map.put(offset, size, page);
 }
 
 void ZPageTable::remove(ZPage* page) {
-  const uintptr_t addr = ZAddress::good(page->start());
+  const uintptr_t offset = page->start();
   const size_t size = page->size();
 
-  assert(get(addr) == page, "Invalid entry");
-  _map.put(addr, size, NULL);
+  assert(_map.get(offset) == page, "Invalid entry");
+  _map.put(offset, size, NULL);
 }

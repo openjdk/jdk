@@ -54,6 +54,18 @@ public final class XorNode extends BinaryArithmeticNode<Xor> implements BinaryCo
         assert x.stamp(NodeView.DEFAULT).isCompatible(y.stamp(NodeView.DEFAULT));
     }
 
+    private XorNode(ValueNode x, ValueNode y, Stamp forcedStamp) {
+        super(TYPE, forcedStamp, x, y);
+    }
+
+    /**
+     * Create a new XorNode with a forced stamp, without eager folding. This should only be used in
+     * snippet code, where native-image may assign wrong stamps during graph generation.
+     */
+    public static ValueNode createForSnippet(ValueNode x, ValueNode y, Stamp forcedStamp) {
+        return new XorNode(x, y, forcedStamp);
+    }
+
     public static ValueNode create(ValueNode x, ValueNode y, NodeView view) {
         BinaryOp<Xor> op = ArithmeticOpTable.forStamp(x.stamp(view)).getXor();
         Stamp stamp = op.foldStamp(x.stamp(view), y.stamp(view));

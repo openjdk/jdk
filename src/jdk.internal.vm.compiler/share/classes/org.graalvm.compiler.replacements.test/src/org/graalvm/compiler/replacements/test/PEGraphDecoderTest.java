@@ -46,7 +46,6 @@ import org.graalvm.compiler.nodes.memory.address.AddressNode;
 import org.graalvm.compiler.nodes.memory.address.OffsetAddressNode;
 import org.graalvm.compiler.nodes.spi.CoreProviders;
 import org.graalvm.compiler.phases.OptimisticOptimizations;
-import org.graalvm.compiler.phases.common.CanonicalizerPhase;
 import org.graalvm.compiler.replacements.CachingPEGraphDecoder;
 import jdk.internal.vm.compiler.word.LocationIdentity;
 import org.junit.Test;
@@ -146,7 +145,7 @@ public class PEGraphDecoderTest extends GraalCompilerTest {
             targetGraph.verify();
 
             CoreProviders context = getProviders();
-            new CanonicalizerPhase().apply(targetGraph, context);
+            createCanonicalizerPhase().apply(targetGraph, context);
             targetGraph.verify();
 
         } catch (Throwable ex) {

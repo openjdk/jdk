@@ -360,6 +360,11 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
     }
 
     @Override
+    public boolean isBeingInitialized() {
+        return isArray() ? false : getInitState() == config().instanceKlassStateBeingInitialized;
+    }
+
+    @Override
     public boolean isLinked() {
         return isArray() ? true : getInitState() >= config().instanceKlassStateLinked;
     }
@@ -379,7 +384,7 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
     public void initialize() {
         if (!isInitialized()) {
             runtime().compilerToVm.ensureInitialized(this);
-            assert isInitialized();
+            assert isInitialized() || isBeingInitialized();
         }
     }
 
@@ -558,6 +563,10 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
          * a deopt instead since they can't really be used if they aren't linked yet.
          */
         if (!declaredHolder.isAssignableFrom(this) || this.isArray() || this.equals(declaredHolder) || !isLinked() || isInterface()) {
+            if (hmethod.canBeStaticallyBound()) {
+                // No assumptions are required.
+                return new AssumptionResult<>(hmethod);
+            }
             ResolvedJavaMethod result = hmethod.uniqueConcreteMethod(declaredHolder);
             if (result != null) {
                 return new AssumptionResult<>(result, new ConcreteMethod(method, declaredHolder, result));
@@ -573,11 +582,6 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
             // The type isn't known to implement the method.
             return null;
         }
-        if (resolvedMethod.canBeStaticallyBound()) {
-            // No assumptions are required.
-            return new AssumptionResult<>(resolvedMethod);
-        }
-
         if (resolvedMethod.canBeStaticallyBound()) {
             // No assumptions are required.
             return new AssumptionResult<>(resolvedMethod);

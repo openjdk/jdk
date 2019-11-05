@@ -34,6 +34,7 @@ import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
+import java.net.UnknownHostException;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -51,6 +52,8 @@ import java.util.Map;
  */
 public class JdwpListenTest {
 
+    private static final boolean IsWindows = System.getProperty("os.name").toLowerCase().contains("windows");
+
     public static void main(String[] args) throws Exception {
         List<InetAddress> addresses = getAddresses();
 
@@ -60,6 +63,8 @@ public class JdwpListenTest {
             for (InetAddress attach: addresses) {
                 // can connect only from the same address
                 // IPv6 cannot connect to IPv4 (::1 to 127.0.0.1) and vice versa.
+                // Note: for IPv6 addresses equals() does not compare scopes
+                // (so addresses with symbolic and numeric scopes are equals).
                 listenTest(listen.getHostAddress(), attach.getHostAddress(), attach.equals(listen));
             }
             // test that addresses enclosed in square brackets are supported.
@@ -80,6 +85,8 @@ public class JdwpListenTest {
 
     private static void listenTest(String listenAddress, String connectAddress, boolean expectedResult)
             throws IOException {
+        log("\nTest: listen at " + listenAddress + ", attaching from " + connectAddress
+                + ", expected: " + (expectedResult ? "SUCCESS" : "FAILURE"));
         log("Starting listening debuggee at " + listenAddress);
         try (Debuggee debuggee = Debuggee.launcher("HelloWorld").setAddress(listenAddress + ":0").launch()) {
             log("Debuggee is listening on " + listenAddress + ":" + debuggee.getAddress());
@@ -98,6 +105,11 @@ public class JdwpListenTest {
         }
     }
 
+    private static void addAddr(List<InetAddress> list, InetAddress addr) {
+        log(" - (" + addr.getClass().getSimpleName() + ") " + addr.getHostAddress());
+        list.add(addr);
+    }
+
     private static List<InetAddress> getAddresses() {
         List<InetAddress> result = new LinkedList<>();
         try {
@@ -109,17 +121,37 @@ public class JdwpListenTest {
                         Enumeration<InetAddress> addresses = iface.getInetAddresses();
                         while (addresses.hasMoreElements()) {
                             InetAddress addr = addresses.nextElement();
-                            // Java reports link local addresses with named scope,
-                            // but Windows sockets routines support only numeric scope id.
-                            // skip such addresses.
+                            // Java reports link local addresses with symbolic scope,
+                            // but on Windows java.net.NetworkInterface generates its own scope names
+                            // which are incompatible with native Windows routines.
+                            // So on Windows test only addresses with numeric scope.
+                            // On other platforms test both symbolic and numeric scopes.
                             if (addr instanceof Inet6Address) {
                                 Inet6Address addr6 = (Inet6Address)addr;
-                                if (addr6.getScopedInterface() != null) {
-                                    continue;
+                                NetworkInterface scopeIface = addr6.getScopedInterface();
+                                if (scopeIface != null && scopeIface.getName() != null) {
+                                    // On some test machines VPN creates link local addresses
+                                    // which we cannot connect to.
+                                    // Skip them.
+                                    if (scopeIface.isPointToPoint()) {
+                                        continue;
+                                    }
+
+                                    try {
+                                        // the same address with numeric scope
+                                        addAddr(result, Inet6Address.getByAddress(null, addr6.getAddress(), addr6.getScopeId()));
+                                    } catch (UnknownHostException e) {
+                                        // cannot happen!
+                                        throw new RuntimeException("Unexpected", e);
+                                    }
+
+                                    if (IsWindows) {
+                                        // don't add addresses with symbolic scope
+                                        continue;
+                                    }
                                 }
                             }
-                            log(" - (" + addr.getClass().getSimpleName() + ") " + addr.getHostAddress());
-                            result.add(addr);
+                            addAddr(result, addr);
                         }
                     }
                 } catch (SocketException e) {

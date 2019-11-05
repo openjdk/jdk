@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,8 @@ private:
   static PaddedEnd<ZCPUAffinity>* _affinity;
   static THREAD_LOCAL Thread*     _self;
   static THREAD_LOCAL uint32_t    _cpu;
+
+  static uint32_t id_slow();
 
 public:
   static void initialize();

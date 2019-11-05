@@ -35,9 +35,11 @@
 #ifdef _WIN32
  #include <winsock2.h>
  #include <ws2tcpip.h>
+ #include <iphlpapi.h>
 #else
  #include <arpa/inet.h>
  #include <sys/socket.h>
+ #include <net/if.h>
 #endif
 
 /*
@@ -267,16 +269,101 @@ static unsigned short getPort(struct sockaddr *sa)
 }
 
 /*
+ * Parses scope id.
+ * Scope id is ulong on Windows, uint32 on unix, so returns long which can be cast to uint32.
+ * On error sets last error and returns -1.
+ */
+static long parseScopeId(const char *str) {
+    // try to handle scope as interface name
+    unsigned long scopeId = if_nametoindex(str);
+    if (scopeId == 0) {
+        // try to parse integer value
+        char *end;
+        scopeId = strtoul(str, &end, 10);
+        if (*end != '\0') {
+            setLastError(JDWPTRANSPORT_ERROR_ILLEGAL_ARGUMENT, "failed to parse scope");
+            return -1;
+        }
+    }
+    // ensure parsed value is in uint32 range
+    if (scopeId > 0xFFFFFFFF) {
+        setLastError(JDWPTRANSPORT_ERROR_ILLEGAL_ARGUMENT, "scope is out of range");
+        return -1;
+    }
+    return (long)scopeId;
+}
+
+/*
+ * Wrapper for dbgsysGetAddrInfo (getaddrinfo).
+ * Handles enclosing square brackets and scopes.
+ */
+static jdwpTransportError
+getAddrInfo(const char *hostname, size_t hostnameLen,
+            const char *service,
+            const struct addrinfo *hints,
+            struct addrinfo **result)
+{
+    int err = 0;
+    char *buffer = NULL;
+    long scopeId = 0;
+
+    if (hostname != NULL) {
+        char *scope = NULL;
+        // skip surrounding
+        if (hostnameLen > 2 && hostname[0] == '[' && hostname[hostnameLen - 1] == ']') {
+            hostname++;
+            hostnameLen -= 2;
+        }
+        buffer = (*callback->alloc)((int)hostnameLen + 1);
+        if (buffer == NULL) {
+            RETURN_ERROR(JDWPTRANSPORT_ERROR_OUT_OF_MEMORY, "out of memory");
+        }
+        memcpy(buffer, hostname, hostnameLen);
+        buffer[hostnameLen] = '\0';
+
+        scope = strchr(buffer, '%');
+        if (scope != NULL) {
+            // drop scope from the address
+            *scope = '\0';
+            // and parse the value
+            scopeId = parseScopeId(scope + 1);
+            if (scopeId < 0) {
+                (*callback->free)(buffer);
+                return JDWPTRANSPORT_ERROR_ILLEGAL_ARGUMENT;
+            }
+        }
+    }
+
+    err = dbgsysGetAddrInfo(buffer, service, hints, result);
+
+    if (buffer != NULL) {
+        (*callback->free)(buffer);
+    }
+    if (err != 0) {
+        setLastError(err, "getaddrinfo: failed to parse address");
+        return JDWPTRANSPORT_ERROR_IO_ERROR;
+    }
+
+    if (scopeId > 0) {
+        if ((*result)->ai_family != AF_INET6) {
+            RETURN_ERROR(JDWPTRANSPORT_ERROR_ILLEGAL_ARGUMENT, "IPv4 address cannot contain scope");
+        }
+
+        ((struct sockaddr_in6 *)((*result)->ai_addr))->sin6_scope_id = (uint32_t)scopeId;
+    }
+
+    return JDWPTRANSPORT_ERROR_NONE;
+}
+
+/*
  * Result must be released with dbgsysFreeAddrInfo.
  */
 static jdwpTransportError
 parseAddress(const char *address, struct addrinfo **result) {
     const char *colon;
-    size_t hostLen;
-    char *host = NULL;
+    size_t hostnameLen;
     const char *port;
     struct addrinfo hints;
-    int res;
 
     *result = NULL;
 
@@ -295,39 +382,21 @@ parseAddress(const char *address, struct addrinfo **result) {
     hints.ai_protocol = IPPROTO_TCP;
     hints.ai_flags = AI_NUMERICSERV;    // port must be a number
 
-    hostLen = (colon == NULL ? 0 : colon - address);
-    if (hostLen == 0) {
+    hostnameLen = (colon == NULL ? 0 : colon - address);
+    if (hostnameLen == 0) {
         /* no hostname - use localhost address (pass NULL to getaddrinfo) */
-    } else  if (*address == '*' && hostLen == 1) {
+        address = NULL;
+    } else  if (*address == '*' && hostnameLen == 1) {
         /* *:port - listen on all interfaces
          * use IPv6 socket (to accept IPv6 and mapped IPv4),
          * pass hostname == NULL to getaddrinfo.
          */
         hints.ai_family = allowOnlyIPv4 ? AF_INET : AF_INET6;
         hints.ai_flags |= AI_PASSIVE | (allowOnlyIPv4 ? 0 : AI_V4MAPPED | AI_ALL);
-    } else {
-        if (address[0] == '[' && colon[-1] == ']') {
-            address++;
-            hostLen -= 2;
-        }
-        host = (*callback->alloc)((int)hostLen + 1);
-        if (host == NULL) {
-            RETURN_ERROR(JDWPTRANSPORT_ERROR_OUT_OF_MEMORY, "out of memory");
-        }
-        strncpy(host, address, hostLen);
-        host[hostLen] = '\0';
+        address = NULL;
     }
 
-    res = dbgsysGetAddrInfo(host, port, &hints, result);
-    if (host != NULL) {
-        (*callback->free)(host);
-    }
-    if (res != 0) {
-        setLastError(res, "getaddrinfo: unknown host");
-        return JDWPTRANSPORT_ERROR_IO_ERROR;
-    }
-
-    return JDWPTRANSPORT_ERROR_NONE;
+    return getAddrInfo(address, hostnameLen, port, &hints, result);
 }
 
 /*
@@ -352,7 +421,7 @@ static jdwpTransportError
 parseAllowedAddr(const char *buffer, struct in6_addr *result, int *isIPv4) {
     struct addrinfo hints;
     struct addrinfo *addrInfo = NULL;
-    int err;
+    jdwpTransportError err;
 
     /*
      * To parse both IPv4 and IPv6 need to specify AF_UNSPEC family
@@ -364,11 +433,10 @@ parseAllowedAddr(const char *buffer, struct in6_addr *result, int *isIPv4) {
     hints.ai_protocol = IPPROTO_TCP;
     hints.ai_flags = AI_NUMERICHOST;        // only numeric addresses, no resolution
 
-    err = dbgsysGetAddrInfo(buffer, NULL, &hints, &addrInfo);
+    err = getAddrInfo(buffer, strlen(buffer), NULL, &hints, &addrInfo);
 
-    if (err != 0) {
-        setLastError(err, "getaddrinfo: failed to parse address");
-        return JDWPTRANSPORT_ERROR_IO_ERROR;
+    if (err != JDWPTRANSPORT_ERROR_NONE) {
+        return err;
     }
 
     if (addrInfo->ai_family == AF_INET6) {
@@ -844,6 +912,7 @@ static jdwpTransportError connectToAddr(struct addrinfo *ai, jlong timeout, int 
     }
 
     err = dbgsysConnect(socketFD, ai->ai_addr, (socklen_t)ai->ai_addrlen);
+
     if (err == DBG_EINPROGRESS && timeout > 0) {
         err = dbgsysFinishConnect(socketFD, (long)timeout);
 

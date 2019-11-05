@@ -7,7 +7,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 14782 $"/>
+		<version number="$Revision$"/>
 		<language type="kab"/>
 	</identity>
 	<localeDisplayNames>
@@ -32,6 +32,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="an" draft="unconfirmed">Taṛagunit</language>
 			<language type="anp" draft="unconfirmed">Tangikat</language>
 			<language type="ar">Taɛrabt</language>
+			<language type="ar_001" draft="unconfirmed">Taɛrabt tamezdayt tatrart</language>
 			<language type="arn" draft="unconfirmed">Tamapuct</language>
 			<language type="arp" draft="unconfirmed">Taṛapahut</language>
 			<language type="as" draft="unconfirmed">Tasamizt</language>
@@ -40,7 +41,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="av" draft="unconfirmed">Tavarikt</language>
 			<language type="awa" draft="unconfirmed">Tawadhit</language>
 			<language type="ay" draft="unconfirmed">Taymarit</language>
-			<language type="az" draft="unconfirmed">Tazerbiǧanit</language>
+			<language type="az" draft="unconfirmed">Tazerbayǧant</language>
 			<language type="az" alt="short" draft="unconfirmed">Tazrit</language>
 			<language type="ba" draft="unconfirmed">Tabackirt</language>
 			<language type="ban" draft="unconfirmed">Tabalinit</language>
@@ -62,7 +63,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="bug" draft="unconfirmed">Tabujinit</language>
 			<language type="byn" draft="unconfirmed">Tablint</language>
 			<language type="ca" draft="unconfirmed">Takaṭalant</language>
-			<language type="ce" draft="unconfirmed">Tačičant</language>
+			<language type="ccp" draft="unconfirmed">Tacakmat</language>
+			<language type="ce" draft="unconfirmed">Tačičinit</language>
 			<language type="ceb" draft="unconfirmed">Tacibwanit</language>
 			<language type="cgg" draft="unconfirmed">Tacigat</language>
 			<language type="ch" draft="unconfirmed">Tacamuṛut</language>
@@ -400,10 +402,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="yi" draft="unconfirmed">Tayiddict</language>
 			<language type="yo">Tayurubit</language>
 			<language type="yue" draft="unconfirmed">Takantunit</language>
+			<language type="yue" alt="menu" draft="unconfirmed">Tacinwat, Takantunit</language>
 			<language type="zgh" draft="unconfirmed">Tamaziɣt Tizeɣt Tamerrukit</language>
 			<language type="zh">Tacinwat, Tamundarint</language>
+			<language type="zh" alt="menu" draft="unconfirmed">Tacinwat, Tamundarint</language>
 			<language type="zh_Hans" draft="unconfirmed">Tacinwat taḥerfit</language>
+			<language type="zh_Hans" alt="long" draft="unconfirmed">Tacinwat tamundarint taḥerfit</language>
 			<language type="zh_Hant" draft="unconfirmed">Tacinwat tamensayt</language>
+			<language type="zh_Hant" alt="long" draft="unconfirmed">Tacinwat tamundarint tamensayt</language>
 			<language type="zu">Tazulut</language>
 			<language type="zun" draft="unconfirmed">Tazunit</language>
 			<language type="zxx" draft="unconfirmed">Ulac agbur utlayan</language>
@@ -645,8 +651,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="MF" draft="unconfirmed">San Maṛtan</territory>
 			<territory type="MG">Madaɣecqer</territory>
 			<territory type="MH">Tigzirin n Marcal</territory>
-			<territory type="MK">Masidwan</territory>
-			<territory type="MK" alt="variant" draft="unconfirmed">Masidunya (Tagduda Taqbuṛt Tayuguslavit n Masidunya)</territory>
 			<territory type="ML">Mali</territory>
 			<territory type="MM">Myanmar</territory>
 			<territory type="MN">Mungulya</territory>
@@ -843,15 +847,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<codePatterns>
 			<codePattern type="language" draft="unconfirmed">Tutlayt: {0}</codePattern>
 			<codePattern type="script" draft="unconfirmed">Tira: {0}</codePattern>
-			<codePattern type="territory" draft="unconfirmed">Tamnaṭ: {0}</codePattern>
+			<codePattern type="territory" draft="unconfirmed">Tamnaḍt: {0}</codePattern>
 		</codePatterns>
 	</localeDisplayNames>
 	<characters>
 		<exemplarCharacters>[a b c č d ḍ e ɛ f g ǧ ɣ h ḥ i j k l m n p q r ṛ s ṣ t ṭ u w x y z ẓ]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[o v]</exemplarCharacters>
 		<exemplarCharacters type="index">[A B C Č D Ḍ E Ɛ F G Ǧ Ɣ H Ḥ I J K L M N P Q R Ṛ S Ṣ T Ṭ U W X Y Z Ẓ]</exemplarCharacters>
-		<exemplarCharacters type="numbers">[  \- , % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
-		<exemplarCharacters type="punctuation" draft="unconfirmed">[\- , ; \: ! ? . ( ) \[ \] \{ \}]</exemplarCharacters>
+		<exemplarCharacters type="numbers">[  \- ‑ , % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
+		<exemplarCharacters type="punctuation" draft="unconfirmed">[\- ‐ ‑ – — , ; \: ! ? . … ' ‘ ’ &quot; “ ” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
 		<ellipsis type="final" draft="unconfirmed">{0}…</ellipsis>
 		<ellipsis type="initial" draft="unconfirmed">…{0}</ellipsis>
 		<ellipsis type="medial" draft="unconfirmed">{0}…{1}</ellipsis>
@@ -865,7 +869,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</parseLenients>
 		<parseLenients scope="general" level="lenient">
 			<parseLenient sample="." draft="unconfirmed">[.․。︒﹒．｡]</parseLenient>
-			<parseLenient sample="$" draft="unconfirmed">[\$﹩＄$]</parseLenient>
+			<parseLenient sample="’" draft="unconfirmed">['ʼ՚᾽᾿’＇]</parseLenient>
+			<parseLenient sample="%" draft="unconfirmed">[%٪﹪％]</parseLenient>
+			<parseLenient sample="‰" draft="unconfirmed">[؉‰]</parseLenient>
 			<parseLenient sample="£" draft="unconfirmed">[£₤]</parseLenient>
 			<parseLenient sample="₹" draft="unconfirmed">[₨₹{Rp}{Rs}]</parseLenient>
 		</parseLenients>
@@ -2163,9 +2169,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<hourFormat draft="unconfirmed">+HH:mm;-HH:mm</hourFormat>
 			<gmtFormat draft="unconfirmed">KLG {0}</gmtFormat>
 			<gmtZeroFormat draft="unconfirmed">KLG</gmtZeroFormat>
-			<regionFormat draft="unconfirmed">akud: {0}</regionFormat>
-			<regionFormat type="daylight" draft="unconfirmed">{0} (akud n unebdu)</regionFormat>
-			<regionFormat type="standard" draft="unconfirmed">{0} (akud amagnu)</regionFormat>
+			<regionFormat draft="unconfirmed">Akud: {0}</regionFormat>
+			<regionFormat type="daylight" draft="unconfirmed">{0} (Akud n unebdu)</regionFormat>
+			<regionFormat type="standard" draft="unconfirmed">{0} (Akud amagnu)</regionFormat>
 			<fallbackFormat draft="unconfirmed">{1} ({0})</fallbackFormat>
 			<zone type="Pacific/Honolulu">
 				<exemplarCity draft="unconfirmed">Honolulu</exemplarCity>
@@ -7296,6 +7302,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<listPatternPart type="end" draft="unconfirmed">{0}, neɣ {1}</listPatternPart>
 			<listPatternPart type="2" draft="unconfirmed">{0} neɣ {1}</listPatternPart>
 		</listPattern>
+		<listPattern type="standard-narrow">
+			<listPatternPart type="end" draft="unconfirmed">{0}, {1}</listPatternPart>
+			<listPatternPart type="2" draft="unconfirmed">{0}, {1}</listPatternPart>
+		</listPattern>
 		<listPattern type="standard-short">
 			<listPatternPart type="start" draft="unconfirmed">{0}, {1}</listPatternPart>
 			<listPatternPart type="middle" draft="unconfirmed">{0}, {1}</listPatternPart>
@@ -7426,4 +7436,72 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<characterLabel type="western_asian_scripts" draft="unconfirmed">Askript n Asya n Unẓul</characterLabel>
 		<characterLabel type="whitespace" draft="unconfirmed">asekkil amellal</characterLabel>
 	</characterLabels>
+	<typographicNames>
+		<axisName type="ital" draft="unconfirmed">uknan</axisName>
+		<axisName type="opsz" draft="unconfirmed">tafekka tasniẓrant</axisName>
+		<axisName type="slnt" draft="unconfirmed">kennu</axisName>
+		<axisName type="wdth" draft="unconfirmed">tehri</axisName>
+		<axisName type="wght" draft="unconfirmed">tuzert</axisName>
+		<styleName type="ital" subtype="1" draft="unconfirmed">idewweṛ</styleName>
+		<styleName type="opsz" subtype="8" draft="unconfirmed">taneffust</styleName>
+		<styleName type="opsz" subtype="12" draft="unconfirmed">aḍris</styleName>
+		<styleName type="opsz" subtype="18" draft="unconfirmed">asezwel</styleName>
+		<styleName type="opsz" subtype="72" draft="unconfirmed">askan</styleName>
+		<styleName type="opsz" subtype="144" draft="unconfirmed">anazal</styleName>
+		<styleName type="slnt" subtype="-12" draft="unconfirmed">yekna s azelmaḍ</styleName>
+		<styleName type="slnt" subtype="0" draft="unconfirmed">ubdid</styleName>
+		<styleName type="slnt" subtype="12" draft="unconfirmed">yekna</styleName>
+		<styleName type="slnt" subtype="24" draft="unconfirmed">yekna nezzeh</styleName>
+		<styleName type="wdth" subtype="50" draft="unconfirmed">yezmeḍ aṭas</styleName>
+		<styleName type="wdth" subtype="50" alt="compressed" draft="unconfirmed">yessed aṭas</styleName>
+		<styleName type="wdth" subtype="50" alt="narrow" draft="unconfirmed">yeḥreṣ aṭas</styleName>
+		<styleName type="wdth" subtype="62.5" draft="unconfirmed">yezmeḍ nezzeh</styleName>
+		<styleName type="wdth" subtype="62.5" alt="compressed" draft="unconfirmed">yessed nezzeh</styleName>
+		<styleName type="wdth" subtype="62.5" alt="narrow" draft="unconfirmed">yeḥreṣ nezzeh</styleName>
+		<styleName type="wdth" subtype="75" draft="unconfirmed">yezmeḍ</styleName>
+		<styleName type="wdth" subtype="75" alt="compressed" draft="unconfirmed">yessed</styleName>
+		<styleName type="wdth" subtype="75" alt="narrow" draft="unconfirmed">yessed</styleName>
+		<styleName type="wdth" subtype="87.5" draft="unconfirmed">azgen yezmeḍ</styleName>
+		<styleName type="wdth" subtype="87.5" alt="compressed" draft="unconfirmed">azgen yessed</styleName>
+		<styleName type="wdth" subtype="87.5" alt="narrow" draft="unconfirmed">azgen yeḥreṣ</styleName>
+		<styleName type="wdth" subtype="100" draft="unconfirmed">amagnu</styleName>
+		<styleName type="wdth" subtype="112.5" draft="unconfirmed">azgen yejbed</styleName>
+		<styleName type="wdth" subtype="112.5" alt="extended" draft="unconfirmed">azgen yennejbad</styleName>
+		<styleName type="wdth" subtype="112.5" alt="wide" draft="unconfirmed">azgen hraw</styleName>
+		<styleName type="wdth" subtype="125" draft="unconfirmed">yejbed</styleName>
+		<styleName type="wdth" subtype="125" alt="extended" draft="unconfirmed">yennejbad</styleName>
+		<styleName type="wdth" subtype="125" alt="wide" draft="unconfirmed">hraw</styleName>
+		<styleName type="wdth" subtype="150" draft="unconfirmed">yejbed nezzeh</styleName>
+		<styleName type="wdth" subtype="150" alt="extended" draft="unconfirmed">yennejbad nezzeh</styleName>
+		<styleName type="wdth" subtype="150" alt="wide" draft="unconfirmed">hraw nezzeh</styleName>
+		<styleName type="wdth" subtype="200" draft="unconfirmed">yejbed aṭas</styleName>
+		<styleName type="wdth" subtype="200" alt="extended" draft="unconfirmed">yennejbad aṭas</styleName>
+		<styleName type="wdth" subtype="200" alt="wide" draft="unconfirmed">hraw aṭas</styleName>
+		<styleName type="wght" subtype="100" draft="unconfirmed">rqiq</styleName>
+		<styleName type="wght" subtype="200" draft="unconfirmed">rqiq nezzeh</styleName>
+		<styleName type="wght" subtype="200" alt="ultra" draft="unconfirmed">rqiq aṭas</styleName>
+		<styleName type="wght" subtype="300" draft="unconfirmed">afessas</styleName>
+		<styleName type="wght" subtype="350" draft="unconfirmed">azgen afessas</styleName>
+		<styleName type="wght" subtype="380" draft="unconfirmed">adlis</styleName>
+		<styleName type="wght" subtype="400" draft="unconfirmed">alugan</styleName>
+		<styleName type="wght" subtype="500" draft="unconfirmed">alemmas</styleName>
+		<styleName type="wght" subtype="600" draft="unconfirmed">zur azgen</styleName>
+		<styleName type="wght" subtype="600" alt="demi" draft="unconfirmed">zur nnefṣ</styleName>
+		<styleName type="wght" subtype="700" draft="unconfirmed">zur</styleName>
+		<styleName type="wght" subtype="800" draft="unconfirmed">zur nezzeh</styleName>
+		<styleName type="wght" subtype="900" draft="unconfirmed">aberkan</styleName>
+		<styleName type="wght" subtype="900" alt="heavy" draft="unconfirmed">ẓẓay</styleName>
+		<styleName type="wght" subtype="950" draft="unconfirmed">aberkan nezzeh</styleName>
+		<styleName type="wght" subtype="950" alt="ultrablack" draft="unconfirmed">aberkan aṭas</styleName>
+		<styleName type="wght" subtype="950" alt="ultraheavy" draft="unconfirmed">ẓẓay aṭas</styleName>
+		<featureName type="afrc" draft="unconfirmed">tirẓiyin tubdidin</featureName>
+		<featureName type="cpsp" draft="unconfirmed">aṣiẓi n yisekkilen meqqṛen</featureName>
+		<featureName type="lnum" draft="unconfirmed">imḍanen n ureyyec</featureName>
+		<featureName type="onum" draft="unconfirmed">imḍanen s tṛuẓi n wadda</featureName>
+		<featureName type="ordn" draft="unconfirmed">imḍanen udusen</featureName>
+		<featureName type="pnum" draft="unconfirmed">imḍanen iẓunanen</featureName>
+		<featureName type="smcp" draft="unconfirmed">isekkilen imeqṛanen mecṭuḥen</featureName>
+		<featureName type="tnum" draft="unconfirmed">izwilen imdewṛen</featureName>
+		<featureName type="zero" draft="unconfirmed">tagrumma tilemt</featureName>
+	</typographicNames>
 </ldml>

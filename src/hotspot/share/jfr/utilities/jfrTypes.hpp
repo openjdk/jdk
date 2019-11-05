@@ -26,11 +26,14 @@
 #define SHARE_JFR_UTILITIES_JFRTYPES_HPP
 
 #include "jfrfiles/jfrEventIds.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 typedef u8 traceid;
 typedef int fio_fd;
+
 const int invalid_fd = -1;
 const jlong invalid_offset = -1;
+const int64_t invalid_time = -1;
 const u4 STACK_DEPTH_DEFAULT = 64;
 const u4 MIN_STACK_DEPTH = 1;
 const u4 MAX_STACK_DEPTH = 2048;
@@ -46,6 +49,14 @@ inline int sort_traceid(traceid* lhs, traceid* rhs) {
 enum EventStartTime {
   UNTIMED,
   TIMED
+};
+
+enum JfrCheckpointType {
+  GENERIC,
+  FLUSH,
+  HEADER,
+  STATICS = 4,
+  THREADS = 8
 };
 
 #endif // SHARE_JFR_UTILITIES_JFRTYPES_HPP

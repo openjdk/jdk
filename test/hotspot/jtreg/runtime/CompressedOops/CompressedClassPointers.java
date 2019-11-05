@@ -53,10 +53,10 @@ public class CompressedClassPointers {
         output.shouldHaveExitValue(0);
     }
 
-    public static void smallHeapTestWith3G() throws Exception {
+    public static void smallHeapTestWith1G() throws Exception {
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
             "-XX:+UnlockDiagnosticVMOptions",
-            "-XX:CompressedClassSpaceSize=3g",
+            "-XX:CompressedClassSpaceSize=1g",
             "-Xmx128m",
             "-Xlog:gc+metaspace=trace",
             "-Xshare:off",
@@ -149,7 +149,7 @@ public class CompressedClassPointers {
              }
         }
         smallHeapTest();
-        smallHeapTestWith3G();
+        smallHeapTestWith1G();
         largeHeapTest();
         largePagesTest();
         heapBaseMinAddressTest();

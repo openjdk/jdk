@@ -65,13 +65,6 @@ bool ShenandoahCompactHeuristics::should_start_gc() const {
     return true;
   }
 
-  if (available < threshold_bytes_allocated) {
-    log_info(gc)("Trigger: Free (" SIZE_FORMAT "%s) is lower than allocated recently (" SIZE_FORMAT "%s)",
-                 byte_size_in_proper_unit(available),                 proper_unit_for_byte_size(available),
-                 byte_size_in_proper_unit(threshold_bytes_allocated), proper_unit_for_byte_size(threshold_bytes_allocated));
-    return true;
-  }
-
   size_t bytes_allocated = heap->bytes_allocated_since_gc_start();
   if (bytes_allocated > threshold_bytes_allocated) {
     log_info(gc)("Trigger: Allocated since last cycle (" SIZE_FORMAT "%s) is larger than allocation threshold (" SIZE_FORMAT "%s)",

@@ -56,6 +56,7 @@ private:
 public:
   ZPage(const ZVirtualMemory& vmem, const ZPhysicalMemory& pmem);
   ZPage(uint8_t type, const ZVirtualMemory& vmem, const ZPhysicalMemory& pmem);
+  ~ZPage();
 
   uint32_t object_max_count() const;
   size_t object_alignment_shift() const;
@@ -109,6 +110,11 @@ public:
 
   void print_on(outputStream* out) const;
   void print() const;
+};
+
+class ZPageClosure {
+public:
+  virtual void do_page(const ZPage* page) = 0;
 };
 
 #endif // SHARE_GC_Z_ZPAGE_HPP

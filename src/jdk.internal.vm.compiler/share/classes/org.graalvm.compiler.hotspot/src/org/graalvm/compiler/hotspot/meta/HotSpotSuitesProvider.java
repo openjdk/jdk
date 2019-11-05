@@ -168,7 +168,7 @@ public class HotSpotSuitesProvider extends SuitesProviderBase {
         if (profileInstructions != null) {
             suites.getPostAllocationOptimizationStage().appendPhase(new HotSpotInstructionProfiling(profileInstructions));
         }
-        if (Assertions.detailedAssertionsEnabled(options)) {
+        if (Assertions.assertionsEnabled()) {
             suites.getPostAllocationOptimizationStage().appendPhase(new VerifyMaxRegisterSizePhase(config.maxVectorSize));
         }
         return suites;

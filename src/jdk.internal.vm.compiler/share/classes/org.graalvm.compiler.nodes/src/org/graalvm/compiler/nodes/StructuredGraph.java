@@ -125,6 +125,10 @@ public final class StructuredGraph extends Graph implements JavaMethodContext {
         public boolean areDeoptsFixed() {
             return this.ordinal() >= FIXED_DEOPTS.ordinal();
         }
+
+        public boolean requiresValueProxies() {
+            return this != AFTER_FSA;
+        }
     }
 
     /**

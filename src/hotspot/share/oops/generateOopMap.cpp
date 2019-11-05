@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1993,14 +1993,14 @@ void GenerateOopMap::do_method(int is_static, int is_interface, int idx, int bci
 // This is used to parse the signature for fields, since they are very simple...
 CellTypeState *GenerateOopMap::sigchar_to_effect(char sigch, int bci, CellTypeState *out) {
   // Object and array
-  if (sigch=='L' || sigch=='[') {
+  if (sigch==JVM_SIGNATURE_CLASS || sigch==JVM_SIGNATURE_ARRAY) {
     out[0] = CellTypeState::make_line_ref(bci);
     out[1] = CellTypeState::bottom;
     return out;
   }
-  if (sigch == 'J' || sigch == 'D' ) return vvCTS;  // Long and Double
-  if (sigch == 'V' ) return epsilonCTS;             // Void
-  return vCTS;                                      // Otherwise
+  if (sigch == JVM_SIGNATURE_LONG || sigch == JVM_SIGNATURE_DOUBLE) return vvCTS;  // Long and Double
+  if (sigch == JVM_SIGNATURE_VOID) return epsilonCTS; // Void
+  return vCTS;                                        // Otherwise
 }
 
 long GenerateOopMap::_total_byte_count = 0;

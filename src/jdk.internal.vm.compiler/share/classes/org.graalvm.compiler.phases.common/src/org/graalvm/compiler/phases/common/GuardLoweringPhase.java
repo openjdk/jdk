@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
 
 package org.graalvm.compiler.phases.common;
 
-import org.graalvm.compiler.core.common.cfg.Loop;
 import org.graalvm.compiler.debug.DebugCloseable;
 import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.graph.Node;
@@ -34,8 +33,6 @@ import org.graalvm.compiler.nodes.DeoptimizeNode;
 import org.graalvm.compiler.nodes.FixedWithNextNode;
 import org.graalvm.compiler.nodes.GuardNode;
 import org.graalvm.compiler.nodes.IfNode;
-import org.graalvm.compiler.nodes.LoopBeginNode;
-import org.graalvm.compiler.nodes.LoopExitNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.StructuredGraph.GuardsStage;
 import org.graalvm.compiler.nodes.StructuredGraph.ScheduleResult;
@@ -62,11 +59,9 @@ public class GuardLoweringPhase extends BasePhase<MidTierContext> {
 
     private static class LowerGuards extends ScheduledNodeIterator {
 
-        private final Block block;
         private boolean useGuardIdAsDebugId;
 
-        LowerGuards(Block block, boolean useGuardIdAsDebugId) {
-            this.block = block;
+        LowerGuards(boolean useGuardIdAsDebugId) {
             this.useGuardIdAsDebugId = useGuardIdAsDebugId;
         }
 
@@ -95,7 +90,6 @@ public class GuardLoweringPhase extends BasePhase<MidTierContext> {
                 AbstractBeginNode deoptBranch = BeginNode.begin(deopt);
                 AbstractBeginNode trueSuccessor;
                 AbstractBeginNode falseSuccessor;
-                insertLoopExits(deopt);
                 if (guard.isNegated()) {
                     trueSuccessor = deoptBranch;
                     falseSuccessor = fastPath;
@@ -106,16 +100,6 @@ public class GuardLoweringPhase extends BasePhase<MidTierContext> {
                 IfNode ifNode = graph.add(new IfNode(guard.getCondition(), trueSuccessor, falseSuccessor, trueSuccessor == fastPath ? 1 : 0));
                 guard.replaceAndDelete(fastPath);
                 insert(ifNode, fastPath);
-            }
-        }
-
-        private void insertLoopExits(DeoptimizeNode deopt) {
-            Loop<Block> loop = block.getLoop();
-            StructuredGraph graph = deopt.graph();
-            while (loop != null) {
-                LoopExitNode exit = graph.add(new LoopExitNode((LoopBeginNode) loop.getHeader().getBeginNode()));
-                graph.addBeforeFixed(deopt, exit);
-                loop = loop.getParent();
             }
         }
     }
@@ -143,6 +127,6 @@ public class GuardLoweringPhase extends BasePhase<MidTierContext> {
 
     private static void processBlock(Block block, ScheduleResult schedule) {
         DebugContext debug = block.getBeginNode().getDebug();
-        new LowerGuards(block, debug.isDumpEnabledForMethod() || debug.isLogEnabledForMethod()).processNodes(block, schedule);
+        new LowerGuards(debug.isDumpEnabledForMethod() || debug.isLogEnabledForMethod()).processNodes(block, schedule);
     }
 }

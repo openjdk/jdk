@@ -56,7 +56,6 @@ import org.graalvm.compiler.nodes.ReturnNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.options.OptionValues;
-import org.graalvm.compiler.phases.common.RemoveValueProxyPhase;
 import org.graalvm.compiler.replacements.GraphKit;
 import org.graalvm.compiler.replacements.nodes.ReadRegisterNode;
 import org.graalvm.compiler.word.Word;
@@ -258,7 +257,6 @@ public class ForeignCallStub extends Stub {
             debug.dump(DebugContext.VERBOSE_LEVEL, graph, "Initial stub graph");
 
             kit.inlineInvokes("Foreign call stub.", "Backend");
-            new RemoveValueProxyPhase().apply(graph);
 
             debug.dump(DebugContext.VERBOSE_LEVEL, graph, "Stub graph before compilation");
             return graph;

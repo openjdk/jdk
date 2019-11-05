@@ -134,12 +134,14 @@ public class SPARCNodeMatchRules extends NodeMatchRules {
 
     @MatchRule("(SignExtend Read=access)")
     @MatchRule("(SignExtend FloatingRead=access)")
+    @MatchRule("(SignExtend VolatileRead=access)")
     public ComplexMatchResult signExtend(SignExtendNode root, Access access) {
         return emitSignExtendMemory(access, root.getInputBits(), root.getResultBits());
     }
 
     @MatchRule("(ZeroExtend Read=access)")
     @MatchRule("(ZeroExtend FloatingRead=access)")
+    @MatchRule("(ZeroExtend VolatileRead=access)")
     public ComplexMatchResult zeroExtend(ZeroExtendNode root, Access access) {
         return emitZeroExtendMemory(access, root.getInputBits(), root.getResultBits());
     }

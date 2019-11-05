@@ -4,10 +4,11 @@
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
  *
- * http://www.opensource.org/licenses/bsd-license.php
+ * https://opensource.org/licenses/BSD-3-Clause
  */
 package jdk.internal.org.jline.utils;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Proxy;
 import java.util.Objects;
 
@@ -85,13 +86,16 @@ public final class Signals {
 
     private static Object doRegister(String name, Object handler) throws Exception {
         Log.trace(() -> "Registering signal " + name + " with handler " + toString(handler));
-        if ("QUIT".equals(name) || "INFO".equals(name) && "9".equals(System.getProperty("java.specification.version"))) {
+        Class<?> signalClass = Class.forName("sun.misc.Signal");
+        Constructor<?> constructor = signalClass.getConstructor(String.class);
+        Object signal;
+        try {
+            signal = constructor.newInstance(name);
+        } catch (IllegalArgumentException e) {
             Log.trace(() -> "Ignoring unsupported signal " + name);
             return null;
         }
-        Class<?> signalClass = Class.forName("sun.misc.Signal");
         Class<?> signalHandlerClass = Class.forName("sun.misc.SignalHandler");
-        Object signal = signalClass.getConstructor(String.class).newInstance(name);
         return signalClass.getMethod("handle", signalClass, signalHandlerClass)
                 .invoke(null, signal, handler);
     }

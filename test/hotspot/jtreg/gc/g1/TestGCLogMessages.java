@@ -128,7 +128,6 @@ public class TestGCLogMessages {
         new LogMessageWithLevel("CLDG Roots", Level.TRACE),
         new LogMessageWithLevel("JVMTI Roots", Level.TRACE),
         new LogMessageWithLevel("CM RefProcessor Roots", Level.TRACE),
-        new LogMessageWithLevel("Wait For Strong Roots", Level.TRACE),
         // Redirty Cards
         new LogMessageWithLevel("Redirty Cards", Level.DEBUG),
         new LogMessageWithLevel("Parallel Redirty", Level.TRACE),

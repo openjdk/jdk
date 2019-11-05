@@ -6,22 +6,14 @@ Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
-	<!-- This is a special purpose locale so that a user can request the C or POSIX
-		 style formatting. This does not include grouping separators in numbers, nor
-		 unusual characters for infinity or NaN. Some people have known this to be the
-		 invariant locale, which is different from the root locale.
-		 This locale should not be modified to create some sort of custom collation to
-		 represent a specific codepage. Many users complained when the C locale was
-		 being used, and multi-level UCA collation was expected.
-	-->
 	<identity>
-		<version number="$Revision: 14770 $"/>
+		<version number="$Revision$"/>
 		<language type="en"/>
 		<territory type="US"/>
 		<variant type="POSIX"/>
 	</identity>
 	<characters>
-		<exemplarCharacters type="numbers">[\- , . / % + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
+		<exemplarCharacters type="numbers">[\- ‑ , . / % + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
 	</characters>
 	<numbers>
 		<symbols numberSystem="latn">

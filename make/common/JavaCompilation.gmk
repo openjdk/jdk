@@ -222,7 +222,7 @@ define SetupJavaCompilationBody
     ) \
   )
   $$(call MakeDir,$$($1_BIN))
-  # Order src files according to the order of the src dirs. Correct odering is
+  # Order src files according to the order of the src dirs. Correct ordering is
   # needed for correct overriding between different source roots.
   $1_ALL_SRC_RAW := $$(call FindFiles, $$($1_SRC))
   $1_ALL_SRCS := $$($1_EXTRA_FILES) \

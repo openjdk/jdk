@@ -27,7 +27,7 @@ package com.sun.tools.javac.tree;
 
 import java.util.Iterator;
 
-import com.sun.source.tree.CaseTree.CaseKind;
+import com.sun.source.tree.CaseTree;
 import com.sun.source.tree.ModuleTree.ModuleKind;
 import com.sun.source.tree.Tree.Kind;
 import com.sun.tools.javac.code.*;
@@ -274,7 +274,7 @@ public class TreeMaker implements JCTree.Factory {
         return tree;
     }
 
-    public JCCase Case(@SuppressWarnings("removal") CaseKind caseKind, List<JCExpression> pats,
+    public JCCase Case(@SuppressWarnings("preview") CaseTree.CaseKind caseKind, List<JCExpression> pats,
                        List<JCStatement> stats, JCTree body) {
         JCCase tree = new JCCase(caseKind, pats, stats, body);
         tree.pos = pos;

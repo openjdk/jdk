@@ -609,6 +609,8 @@ java/nio/Buffer/EqualsCompareTest.java                          8193917 solaris-
 
 java/nio/channels/DatagramChannel/ChangingAddress.java          7141822 macosx-all
 
+java/nio/channels/DatagramChannel/Unref.java                    8233519 generic-all
+
 java/nio/channels/AsynchronousSocketChannel/StressLoopback.java 8211851 aix-ppc64
 
 java/nio/channels/Selector/Wakeup.java                          6963118 windows-all
@@ -774,6 +776,7 @@ javax/swing/MultiUIDefaults/Test6860438.java 8198391 generic-all
 javax/swing/MultiUIDefaults/4300666/bug4300666.java 7105119 macosx-all
 javax/swing/UITest/UITest.java 8198392 generic-all
 javax/swing/plaf/basic/BasicComboBoxEditor/Test8015336.java 8198394 generic-all
+javax/swing/plaf/basic/BasicGraphicsUtils/8132119/bug8132119.java linux-all
 javax/swing/plaf/metal/MetalLookAndFeel/Test8039750.java 8198395 generic-all
 javax/swing/text/DevanagariEditor.java 8198397 generic-all
 javax/swing/SpringLayout/4726194/bug4726194.java 8198399 generic-all
@@ -885,12 +888,10 @@ jdk/jfr/api/recording/event/TestPeriod.java                     8215890    gener
 jdk/jfr/event/io/EvilInstrument.java                            8221331    generic-all
 jdk/jfr/event/runtime/TestNetworkUtilizationEvent.java          8228990,8229370    generic-all
 jdk/jfr/event/compiler/TestCodeSweeper.java                     8225209    generic-all
-jdk/jfr/event/oldobject/TestLargeRootSet.java                   8205651    generic-all
+jdk/jfr/api/consumer/recordingstream/TestSetStartTime.java      8233217    generic-all
 
 ############################################################################
 
 # jdk_internal
-
-jdk/internal/platform/docker/TestDockerMemoryMetrics.java       8227317    linux-x64
 
 ############################################################################

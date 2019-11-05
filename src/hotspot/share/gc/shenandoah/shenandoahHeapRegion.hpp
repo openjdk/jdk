@@ -203,6 +203,10 @@ public:
   RegionState state()              const { return _state; }
   int  state_ordinal()             const { return region_state_to_ordinal(_state); }
 
+  void record_pin();
+  void record_unpin();
+  size_t pin_count() const;
+
 private:
   static size_t RegionCount;
   static size_t RegionSizeBytes;
@@ -238,7 +242,6 @@ private:
 
   // Rarely updated fields
   HeapWord* _new_top;
-  size_t _critical_pins;
   double _empty_time;
 
   // Seldom updated fields
@@ -255,6 +258,7 @@ private:
   uint64_t _seqnum_last_alloc_gc;
 
   volatile size_t _live_data;
+  volatile size_t _critical_pins;
 
   // Claim some space at the end to protect next region
   DEFINE_PAD_MINUS_SIZE(0, DEFAULT_CACHE_LINE_SIZE, 0);

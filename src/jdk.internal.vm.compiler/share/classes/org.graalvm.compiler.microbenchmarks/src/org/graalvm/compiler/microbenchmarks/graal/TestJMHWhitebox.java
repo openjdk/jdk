@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ import org.openjdk.jmh.annotations.Warmup;
 /**
  * This dummy class is used to verify that the JMH microbenchmarking environment is set up properly.
  */
-public class TestJMHWhitebox {
+public class TestJMHWhitebox extends GraalBenchmark {
 
     @Benchmark
     public void testJMH(@SuppressWarnings("unused") GraalState s) {

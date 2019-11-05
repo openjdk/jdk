@@ -739,7 +739,20 @@ class ZipFileSystem extends FileSystem {
                         Files.copy(eSrc.file, u.file, REPLACE_EXISTING);
                     }
                 }
+            } else if (eSrc.type == Entry.CEN && eSrc.method != defaultCompressionMethod) {
+
+                /**
+                 * We are copying a file within the same Zip file using a
+                 * different compression method.
+                 */
+                try (InputStream in = newInputStream(src);
+                     OutputStream out = newOutputStream(dst,
+                             CREATE, TRUNCATE_EXISTING, WRITE)) {
+                    in.transferTo(out);
+                }
+                u = getEntry(dst);
             }
+
             if (!hasCopyAttrs)
                 u.mtime = u.atime= u.ctime = System.currentTimeMillis();
             update(u);
@@ -789,7 +802,8 @@ class ZipFileSystem extends FileSystem {
                     return os;
                 }
                 return getOutputStream(supportPosix ?
-                    new PosixEntry((PosixEntry)e, Entry.NEW) : new Entry(e, Entry.NEW));
+                    new PosixEntry((PosixEntry)e, Entry.NEW, defaultCompressionMethod)
+                        : new Entry(e, Entry.NEW, defaultCompressionMethod));
             } else {
                 if (!hasCreate && !hasCreateNew)
                     throw new NoSuchFileException(getString(path));
@@ -1760,12 +1774,6 @@ class ZipFileSystem extends FileSystem {
         }
 
         @Override
-        public synchronized void write(int b) throws IOException {
-            super.write(b);
-            crc.update(b);
-        }
-
-        @Override
         public synchronized void write(byte[] b, int off, int len)
                 throws IOException {
             super.write(b, off, len);
@@ -2344,6 +2352,11 @@ class ZipFileSystem extends FileSystem {
             this.file = file;
         }
 
+        Entry(Entry e, int type, int compressionMethod) {
+            this(e, type);
+            this.method = compressionMethod;
+        }
+
         Entry(Entry e, int type) {
             name(e.name);
             this.isdir     = e.isdir;
@@ -2909,6 +2922,11 @@ class ZipFileSystem extends FileSystem {
 
         PosixEntry(byte[] name, Path file, int type, FileAttribute<?>... attrs) {
             super(name, file, type, attrs);
+        }
+
+        PosixEntry(PosixEntry e, int type, int compressionMethod) {
+            super(e, type);
+            this.method = compressionMethod;
         }
 
         PosixEntry(PosixEntry e, int type) {

@@ -13,7 +13,7 @@ for derived annotations.
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 14982 $"/>
+		<version number="$Revision$"/>
 		<language type="root"/>
 	</identity>
 	<localeDisplayNames>
@@ -42,8 +42,8 @@ for derived annotations.
 	<characters>
 		<exemplarCharacters>[]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[]</exemplarCharacters>
-		<exemplarCharacters type="numbers">[\- , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
-		<exemplarCharacters type="punctuation">[\- , ; \: ! ? . ( ) \[ \] \{ \}]</exemplarCharacters>
+		<exemplarCharacters type="numbers">[\- ‑ , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‑ , ; \: ! ? . ( ) \[ \] \{ \}]</exemplarCharacters>
 		<ellipsis type="final">{0}…</ellipsis>
 		<ellipsis type="initial">…{0}</ellipsis>
 		<ellipsis type="medial">{0}…{1}</ellipsis>
@@ -103,7 +103,6 @@ for derived annotations.
 					</eraNames>
 					<eraAbbr>
 						<era type="0">BE</era>
-						<!-- = 544 BC gregorian. -->
 					</eraAbbr>
 					<eraNarrow>
 						<alias source="locale" path="../eraAbbr"/>
@@ -204,7 +203,6 @@ for derived annotations.
 				<dayPeriods>
 					<alias source="locale" path="../../calendar[@type='gregorian']/dayPeriods"/>
 				</dayPeriods>
-				<!-- chinese eras are computed, and don't fall back to gregorian -->
 				<cyclicNameSets>
 					<cyclicNameSet type="dayParts">
 						<cyclicNameContext type="format">
@@ -376,7 +374,6 @@ for derived annotations.
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
-							<!-- using y here to be short in locales that may not understand U anyway -->
 							<pattern>r-MM-dd</pattern>
 						</dateFormat>
 					</dateFormatLength>
@@ -1597,7 +1594,6 @@ for derived annotations.
 					</eraNames>
 					<eraAbbr>
 						<era type="0">AM</era>
-						<!-- HY = Anno Mundi = -180799862400000 milliseconds since 1/1/1970 AD -->
 					</eraAbbr>
 					<eraNarrow>
 						<alias source="locale" path="../eraAbbr"/>
@@ -1763,7 +1759,6 @@ for derived annotations.
 					</eraNames>
 					<eraAbbr>
 						<era type="0">AH</era>
-						<!-- Anno Hijri, = 7/16/622 AD = -42521587200000.0 millis since 1/1/1970 -->
 					</eraAbbr>
 					<eraNarrow>
 						<alias source="locale" path="../eraAbbr"/>
@@ -1901,9 +1896,6 @@ for derived annotations.
 						<alias source="locale" path="../eraAbbr"/>
 					</eraNames>
 					<eraAbbr>
-						<!-- These eras are numbered according to the data used by the ICU Japanese Calendar. search for
-							 'ERAS ='
-						-->
 						<era type="0">Taika (645–650)</era>
 						<era type="1">Hakuchi (650–671)</era>
 						<era type="2">Hakuhō (672–686)</era>
@@ -2486,7 +2478,6 @@ for derived annotations.
 					<eraNames>
 						<alias source="locale" path="../eraAbbr"/>
 					</eraNames>
-					<!-- = 1912 AD gregorian. See: http://en.wikipedia.org/wiki/Minguo_calendar -->
 					<eraAbbr>
 						<era type="0">Before R.O.C.</era>
 						<era type="1">R.O.C.</era>
@@ -2581,7 +2572,7 @@ for derived annotations.
 				<relativeTime type="past">
 					<relativeTimePattern count="other">-{0} w</relativeTimePattern>
 				</relativeTime>
-				<relativePeriod>the week of {0}</relativePeriod> <!-- for example, “the week of April 1” -->
+				<relativePeriod>the week of {0}</relativePeriod>
 			</field>
 			<field type="week-short">
 				<alias source="locale" path="../field[@type='week']"/>
@@ -2959,9 +2950,9 @@ for derived annotations.
 			<decimal>٫</decimal>
 			<group>٬</group>
 			<list>؛</list>
-			<percentSign>٪؜</percentSign> <!-- includes ALM after sign -->
-			<plusSign>؜+</plusSign> <!-- includes ALM before sign -->
-			<minusSign>؜-</minusSign> <!-- includes ALM before sign (002D) -->
+			<percentSign>٪؜</percentSign>
+			<plusSign>؜+</plusSign>
+			<minusSign>؜-</minusSign>
 			<exponential>اس</exponential>
 			<superscriptingExponent>×</superscriptingExponent>
 			<perMille>؉</perMille>
@@ -2974,8 +2965,8 @@ for derived annotations.
 			<group>٬</group>
 			<list>؛</list>
 			<percentSign>٪</percentSign>
-			<plusSign>‎+‎</plusSign> <!-- includes LRM before and after sign -->
-			<minusSign>‎-‎</minusSign> <!-- includes LRM before and after sign (002D) -->
+			<plusSign>‎+‎</plusSign>
+			<minusSign>‎-‎</minusSign>
 			<exponential>×۱۰^</exponential>
 			<superscriptingExponent>×</superscriptingExponent>
 			<perMille>؉</perMille>
@@ -4248,6 +4239,9 @@ for derived annotations.
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
 			</compoundUnit>
+			<compoundUnit type="times">
+				<compoundUnitPattern>{0}⋅{1}</compoundUnitPattern>
+			</compoundUnit>
 			<unit type="acceleration-g-force">
 				<displayName>g-force</displayName>
 				<unitPattern count="other">{0} G</unitPattern>
@@ -4417,6 +4411,10 @@ for derived annotations.
 				<displayName>c</displayName>
 				<unitPattern count="other">{0} c</unitPattern>
 			</unit>
+			<unit type="duration-decade">
+				<displayName>dec</displayName>
+				<unitPattern count="other">{0} dec</unitPattern>
+			</unit>
 			<unit type="duration-year">
 				<displayName>yr</displayName>
 				<unitPattern count="other">{0} y</unitPattern>
@@ -4524,6 +4522,10 @@ for derived annotations.
 				<displayName>Btu</displayName>
 				<unitPattern count="other">{0} Btu</unitPattern>
 			</unit>
+			<unit type="energy-therm-us">
+				<displayName>US therm</displayName>
+				<unitPattern count="other">{0} US therm</unitPattern>
+			</unit>
 			<unit type="force-pound-force">
 				<displayName>lbf</displayName>
 				<unitPattern count="other">{0} lbf</unitPattern>
@@ -4547,6 +4549,34 @@ for derived annotations.
 			<unit type="frequency-hertz">
 				<displayName>Hz</displayName>
 				<unitPattern count="other">{0} Hz</unitPattern>
+			</unit>
+			<unit type="graphics-em">
+				<displayName>em</displayName>
+				<unitPattern count="other">{0} em</unitPattern>
+			</unit>
+			<unit type="graphics-pixel">
+				<displayName>px</displayName>
+				<unitPattern count="other">{0} px</unitPattern>
+			</unit>
+			<unit type="graphics-megapixel">
+				<displayName>MP</displayName>
+				<unitPattern count="other">{0} MP</unitPattern>
+			</unit>
+			<unit type="graphics-pixel-per-centimeter">
+				<displayName>ppcm</displayName>
+				<unitPattern count="other">{0} ppcm</unitPattern>
+			</unit>
+			<unit type="graphics-pixel-per-inch">
+				<displayName>ppi</displayName>
+				<unitPattern count="other">{0} ppi</unitPattern>
+			</unit>
+			<unit type="graphics-dot-per-centimeter">
+				<displayName>dpcm</displayName>
+				<unitPattern count="other">{0} dpcm</unitPattern>
+			</unit>
+			<unit type="graphics-dot-per-inch">
+				<displayName>dpi</displayName>
+				<unitPattern count="other">{0} dpi</unitPattern>
 			</unit>
 			<unit type="length-kilometer">
 				<displayName>km</displayName>
@@ -4729,10 +4759,6 @@ for derived annotations.
 				<displayName>hp</displayName>
 				<unitPattern count="other">{0} hp</unitPattern>
 			</unit>
-			<unit type="pressure-hectopascal">
-				<displayName>hPa</displayName>
-				<unitPattern count="other">{0} hPa</unitPattern>
-			</unit>
 			<unit type="pressure-millimeter-of-mercury">
 				<displayName>mm Hg</displayName>
 				<unitPattern count="other">{0} mm Hg</unitPattern>
@@ -4745,6 +4771,10 @@ for derived annotations.
 				<displayName>inHg</displayName>
 				<unitPattern count="other">{0} inHg</unitPattern>
 			</unit>
+			<unit type="pressure-bar">
+				<displayName>bar</displayName>
+				<unitPattern count="other">{0} bar</unitPattern>
+			</unit>
 			<unit type="pressure-millibar">
 				<displayName>mbar</displayName>
 				<unitPattern count="other">{0} mbar</unitPattern>
@@ -4752,6 +4782,14 @@ for derived annotations.
 			<unit type="pressure-atmosphere">
 				<displayName>atm</displayName>
 				<unitPattern count="other">{0} atm</unitPattern>
+			</unit>
+			<unit type="pressure-pascal">
+				<displayName>Pa</displayName>
+				<unitPattern count="other">{0} Pa</unitPattern>
+			</unit>
+			<unit type="pressure-hectopascal">
+				<displayName>hPa</displayName>
+				<unitPattern count="other">{0} hPa</unitPattern>
 			</unit>
 			<unit type="pressure-kilopascal">
 				<displayName>kPa</displayName>
@@ -4926,13 +4964,13 @@ for derived annotations.
 			<alias source="locale" path="../unitLength[@type='short']"/>
 		</unitLength>
 		<durationUnit type="hm">
-			<durationUnitPattern>h:mm</durationUnitPattern> <!-- 33:59 -->
+			<durationUnitPattern>h:mm</durationUnitPattern>
 		</durationUnit>
 		<durationUnit type="hms">
-			<durationUnitPattern>h:mm:ss</durationUnitPattern> <!-- 33:04:59 -->
+			<durationUnitPattern>h:mm:ss</durationUnitPattern>
 		</durationUnit>
 		<durationUnit type="ms">
-			<durationUnitPattern>m:ss</durationUnitPattern> <!-- 33:59 -->
+			<durationUnitPattern>m:ss</durationUnitPattern>
 		</durationUnit>
 	</units>
 	<listPatterns>
@@ -4987,7 +5025,6 @@ for derived annotations.
 		<characterLabelPattern type="other">{0} — other</characterLabelPattern>
 		<characterLabelPattern type="scripts">scripts — {0}</characterLabelPattern>
 		<characterLabelPattern type="strokes" count="other">{0} strokes</characterLabelPattern>
-		<!-- regular -->
 		<characterLabel type="activities">activity</characterLabel>
 		<characterLabel type="african_scripts">African script</characterLabel>
 		<characterLabel type="american_scripts">American script</characterLabel>
@@ -5146,79 +5183,3 @@ for derived annotations.
 		<featureName type="zero">slashed zero</featureName>
 	</typographicNames>
 </ldml>
-<!-- Comments without bases
-1F9C8: butter	 - was on: //ldml/annotations/annotation[@cp="🧈"]
-1F9C6: falafel	 - was on: //ldml/annotations/annotation[@cp="🧆"]
-1F7EB: brown square	 - was on: //ldml/annotations/annotation[@cp="🟫"]
-1F9C4: garlic	 - was on: //ldml/annotations/annotation[@cp="🧄"]
-1FA91: chair	 - was on: //ldml/annotations/annotation[@cp="🪑"]
-1F9CD 200D 2642: man standing	 - was on: //ldml/annotations/annotation[@cp="🧍‍♂"]
-1F7E9: green square	 - was on: //ldml/annotations/annotation[@cp="🟩"]
-1F9CD 200D 2640: woman standing	 - was on: //ldml/annotations/annotation[@cp="🧍‍♀"]
-1FA95: banjo	 - was on: //ldml/annotations/annotation[@cp="🪕"]
-1F9BE: mechanical arm	 - was on: //ldml/annotations/annotation[@cp="🦾"]
-1FA93: axe	 - was on: //ldml/annotations/annotation[@cp="🪓"]
-1F469 200D 1F9BC: woman in motorized wheelchair	 - was on: //ldml/annotations/annotation[@cp="👩‍🦼"]
-1F9BC: motorized wheelchair	 - was on: //ldml/annotations/annotation[@cp="🦼"]
-1F97B: sari	 - was on: //ldml/annotations/annotation[@cp="🥻"]
-1F9BA: safety vest	 - was on: //ldml/annotations/annotation[@cp="🦺"]
-1F468 200D 1F9BC: man in motorized wheelchair	 - was on: //ldml/annotations/annotation[@cp="👨‍🦼"]
-1F9CE 200D 2642: man kneeling	 - was on: //ldml/annotations/annotation[@cp="🧎‍♂"]
-1FA81: kite	 - was on: //ldml/annotations/annotation[@cp="🪁"]
-1F90F: pinching hand	 - was on: //ldml/annotations/annotation[@cp="🤏"]
-1F7E7: orange square	 - was on: //ldml/annotations/annotation[@cp="🟧"]
-1F7E5: red square	 - was on: //ldml/annotations/annotation[@cp="🟥"]
-1F9CE: person kneeling	 - was on: //ldml/annotations/annotation[@cp="🧎"]
-1F9CE 200D 2640: woman kneeling	 - was on: //ldml/annotations/annotation[@cp="🧎‍♀"]
-1F7E3: purple circle	 - was on: //ldml/annotations/annotation[@cp="🟣"]
-1F90D: white heart	 - was on: //ldml/annotations/annotation[@cp="🤍"]
-1F7E1: yellow circle	 - was on: //ldml/annotations/annotation[@cp="🟡"]
-1F9CA: ice cube	 - was on: //ldml/annotations/annotation[@cp="🧊"]
-1F9A9: flamingo	 - was on: //ldml/annotations/annotation[@cp="🦩"]
-1F9A7: orangutan	 - was on: //ldml/annotations/annotation[@cp="🦧"]
-1F9A5: sloth	 - was on: //ldml/annotations/annotation[@cp="🦥"]
-1FA70: ballet shoes	 - was on: //ldml/annotations/annotation[@cp="🩰"]
-1F415 200D 1F9BA: service dog	 - was on: //ldml/annotations/annotation[@cp="🐕‍🦺"]
-1FA72: briefs	 - was on: //ldml/annotations/annotation[@cp="🩲"]
-1FA78: drop of blood	 - was on: //ldml/annotations/annotation[@cp="🩸"]
-1F9AF: probing cane	 - was on: //ldml/annotations/annotation[@cp="🦯"]
-1F9C9: mate	 - was on: //ldml/annotations/annotation[@cp="🧉"]
-1F468 200D 1F9AF: man with probing cane	 - was on: //ldml/annotations/annotation[@cp="👨‍🦯"]
-1F9C7: waffle	 - was on: //ldml/annotations/annotation[@cp="🧇"]
-1F9C5: onion	 - was on: //ldml/annotations/annotation[@cp="🧅"]
-1FA90: ringed planet	 - was on: //ldml/annotations/annotation[@cp="🪐"]
-1F7EA: purple square	 - was on: //ldml/annotations/annotation[@cp="🟪"]
-1F9C3: beverage box	 - was on: //ldml/annotations/annotation[@cp="🧃"]
-1F93F: diving mask	 - was on: //ldml/annotations/annotation[@cp="🤿"]
-1FA94: diya lamp	 - was on: //ldml/annotations/annotation[@cp="🪔"]
-1F9BF: mechanical leg	 - was on: //ldml/annotations/annotation[@cp="🦿"]
-1FA92: razor	 - was on: //ldml/annotations/annotation[@cp="🪒"]
-1F9BD: manual wheelchair	 - was on: //ldml/annotations/annotation[@cp="🦽"]
-1F469 200D 1F9BD: woman in manual wheelchair	 - was on: //ldml/annotations/annotation[@cp="👩‍🦽"]
-1F9BB: ear with hearing aid	 - was on: //ldml/annotations/annotation[@cp="🦻"]
-1F7E0: orange circle	 - was on: //ldml/annotations/annotation[@cp="🟠"]
-1FA7A: stethoscope	 - was on: //ldml/annotations/annotation[@cp="🩺"]
-1F468 200D 1F9BD: man in manual wheelchair	 - was on: //ldml/annotations/annotation[@cp="👨‍🦽"]
-1FA80: yo-yo	 - was on: //ldml/annotations/annotation[@cp="🪀"]
-1F469 200D 1F9AF: woman with probing cane	 - was on: //ldml/annotations/annotation[@cp="👩‍🦯"]
-1F7E8: yellow square	 - was on: //ldml/annotations/annotation[@cp="🟨"]
-1F90E: brown heart	 - was on: //ldml/annotations/annotation[@cp="🤎"]
-1F7E6: blue square	 - was on: //ldml/annotations/annotation[@cp="🟦"]
-1F9CF: deaf person	 - was on: //ldml/annotations/annotation[@cp="🧏"]
-1FA82: parachute	 - was on: //ldml/annotations/annotation[@cp="🪂"]
-1F7E4: brown circle	 - was on: //ldml/annotations/annotation[@cp="🟤"]
-1F9CD: person standing	 - was on: //ldml/annotations/annotation[@cp="🧍"]
-1F7E2: green circle	 - was on: //ldml/annotations/annotation[@cp="🟢"]
-1F9CF 200D 2642: deaf man	 - was on: //ldml/annotations/annotation[@cp="🧏‍♂"]
-1F9A8: skunk	 - was on: //ldml/annotations/annotation[@cp="🦨"]
-1F9CF 200D 2640: deaf woman	 - was on: //ldml/annotations/annotation[@cp="🧏‍♀"]
-1F9A6: otter	 - was on: //ldml/annotations/annotation[@cp="🦦"]
-1FA71: one-piece	 - was on: //ldml/annotations/annotation[@cp="🩱"]
-1FA73: shorts	 - was on: //ldml/annotations/annotation[@cp="🩳"]
-1FA79: adhesive bandage	 - was on: //ldml/annotations/annotation[@cp="🩹"]
-1F6D5: hindu temple	 - was on: //ldml/annotations/annotation[@cp="🛕"]
-1F6FA: auto rickshaw	 - was on: //ldml/annotations/annotation[@cp="🛺"]
-1F971: yawning face	 - was on: //ldml/annotations/annotation[@cp="🥱"]
-1F9AE: guide dog	 - was on: //ldml/annotations/annotation[@cp="🦮"]
-1F9AA: oyster	 - was on: //ldml/annotations/annotation[@cp="🦪"]
--->

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -122,23 +122,57 @@ public class CountedLoopInfo {
         }
         ValueNode range = sub(max, min);
 
-        ConstantNode one = ConstantNode.forIntegerStamp(stamp, 1);
+        ConstantNode one = ConstantNode.forIntegerStamp(stamp, 1, graph);
         if (oneOff) {
             range = add(range, one);
         }
         // round-away-from-zero divison: (range + stride -/+ 1) / stride
-        ValueNode denominator = add(range, sub(absStride, one));
+        ValueNode denominator = add(graph, range, sub(absStride, one), NodeView.DEFAULT);
         ValueNode div = unsignedDivBefore(graph, loop.entryPoint(), denominator, absStride, null);
 
         if (assumeLoopEntered) {
             return graph.addOrUniqueWithInputs(div);
         }
-        ConstantNode zero = ConstantNode.forIntegerStamp(stamp, 0);
+        ConstantNode zero = ConstantNode.forIntegerStamp(stamp, 0, graph);
         // This check is "wide": it looks like min <= max
         // That's OK even if the loop is strict (`!isLimitIncluded()`)
         // because in this case, `div` will be zero when min == max
         LogicNode noEntryCheck = getCounterIntegerHelper().createCompareNode(max, min, NodeView.DEFAULT);
         return graph.addOrUniqueWithInputs(ConditionalNode.create(noEntryCheck, zero, div, NodeView.DEFAULT));
+    }
+
+    /**
+     * Determine if the loop might be entered. Returns {@code false} if we can tell statically that
+     * the loop cannot be entered; returns {@code true} if the loop might possibly be entered,
+     * including in the case where we cannot be sure statically.
+     *
+     * @return false if the loop can definitely not be entered, true otherwise
+     */
+    public boolean loopMightBeEntered() {
+        Stamp stamp = iv.valueNode().stamp(NodeView.DEFAULT);
+
+        ValueNode max;
+        ValueNode min;
+        if (iv.direction() == Direction.Up) {
+            max = end;
+            min = iv.initNode();
+        } else {
+            assert iv.direction() == Direction.Down;
+            max = iv.initNode();
+            min = end;
+        }
+        if (oneOff) {
+            max = add(max, ConstantNode.forIntegerStamp(stamp, 1));
+        }
+
+        LogicNode entryCheck = getCounterIntegerHelper().createCompareNode(min, max, NodeView.DEFAULT);
+        if (entryCheck.isContradiction()) {
+            // We can definitely not enter this loop.
+            return false;
+        } else {
+            // We don't know for sure that the loop can't be entered, so assume it can.
+            return true;
+        }
     }
 
     /**

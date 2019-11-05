@@ -7,7 +7,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 14783 $"/>
+		<version number="$Revision$"/>
 		<language type="ku"/>
 	</identity>
 	<localeDisplayNames>
@@ -236,6 +236,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="udm">udmurtî</language>
 			<language type="ug">oygurî</language>
 			<language type="uk">ukraynî</language>
+			<language type="und" draft="unconfirmed">zimanê nenas</language>
 			<language type="ur">urdûyî</language>
 			<language type="uz">ozbekî</language>
 			<language type="vi">viyetnamî</language>
@@ -247,6 +248,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="yi">yidîşî</language>
 			<language type="yo">yorubayî</language>
 			<language type="yue">kantonî</language>
+			<language type="zh" draft="unconfirmed">çînî</language>
+			<language type="zh" alt="menu" draft="unconfirmed">çînî, mandarînî</language>
+			<language type="zh_Hans" draft="unconfirmed">çîniya sadekirî</language>
+			<language type="zh_Hans" alt="long" draft="unconfirmed">çîniya mandarînî ya sadekirî</language>
+			<language type="zh_Hant" draft="unconfirmed">çîniya kevneşopî</language>
+			<language type="zh_Hant" alt="long" draft="unconfirmed">çîniya mandarînî ya kevneşopî</language>
 			<language type="zu">zuluyî</language>
 			<language type="zza">zazakî</language>
 		</languages>
@@ -258,7 +265,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<script type="Deva">devanagarî</script>
 			<script type="Geor">gurcî</script>
 			<script type="Grek">yewnanî</script>
+			<script type="Hans" draft="unconfirmed">sadekirî</script>
+			<script type="Hans" alt="stand-alone" draft="unconfirmed">haniya sadekirî</script>
+			<script type="Hant" draft="unconfirmed">kevneşopî</script>
+			<script type="Hant" alt="stand-alone" draft="unconfirmed">haniya kevneşopî</script>
+			<script type="Jpan" draft="unconfirmed">japonî</script>
 			<script type="Khmr">ximêrî</script>
+			<script type="Kore" draft="unconfirmed">koreyî</script>
 			<script type="Latn">latînî</script>
 			<script type="Mong">mongolî</script>
 			<script type="Tibt">tîbetî</script>
@@ -273,8 +286,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="003">Amerîkaya Bakur</territory>
 			<territory type="005">Amerîkaya Başûr</territory>
 			<territory type="009">Okyanûsya</territory>
+			<territory type="011" draft="unconfirmed">Afrîkaya Rojava</territory>
 			<territory type="013">Amerîkaya Navîn</territory>
+			<territory type="014" draft="unconfirmed">Afrîkaya Rojhilat</territory>
 			<territory type="015">Afrîkaya Bakur</territory>
+			<territory type="017" draft="unconfirmed">Afrîkaya Navîn</territory>
 			<territory type="019">Amerîka</territory>
 			<territory type="029">Karîb</territory>
 			<territory type="053">Awistralasya</territory>
@@ -425,7 +441,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="MG">Madagaskar</territory>
 			<territory type="MH">Giravên Marşal</territory>
 			<territory type="MK">Makedonya</territory>
-			<territory type="MK" alt="variant">MK</territory>
 			<territory type="ML">Malî</territory>
 			<territory type="MM">Myanmar (Birmanya)</territory>
 			<territory type="MN">Mongolya</territory>
@@ -554,7 +569,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<exemplarCharacters>[a b c ç d e ê f g h i î j k l m n o p q r s ş t u û v w x y z]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[á à ă â å ä ã ā æ è ĕ ë ē é ì ĭ ï ī í ñ ó ò ŏ ô ø ō œ ß ù ŭ ū ú ÿ]</exemplarCharacters>
 		<exemplarCharacters type="index">[A B C Ç D E Ê F G H I Î J K L M N O P Q R S Ş T U Û V W X Y Z]</exemplarCharacters>
-		<exemplarCharacters type="punctuation">[\- ‐ – — , ; \: ! ? . … ' ‘ ’ &quot; “ ” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‐ ‑ – — , ; \: ! ? . … ' ‘ ’ &quot; “ ” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
 		<ellipsis type="final">{0}…</ellipsis>
 		<ellipsis type="initial">…{0}</ellipsis>
 		<ellipsis type="medial">{0}…{1}</ellipsis>
@@ -563,23 +578,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<ellipsis type="word-medial">{0} … {1}</ellipsis>
 		<moreInformation>?</moreInformation>
 		<parseLenients scope="date" level="lenient">
-			<parseLenient sample="-" draft="contributed">[\--/]</parseLenient>
 			<parseLenient sample=":" draft="contributed">[\:∶]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="general" level="lenient">
-			<parseLenient sample="." draft="contributed">[.․。︒﹒．｡]</parseLenient>
 			<parseLenient sample="$" draft="contributed">[\$﹩＄$]</parseLenient>
 			<parseLenient sample="£" draft="contributed">[£₤]</parseLenient>
-			<parseLenient sample="₹" draft="contributed">[₨₹{Rp}{Rs}]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="lenient">
 			<parseLenient sample="-" draft="contributed">[\-‒⁻₋−➖﹣－]</parseLenient>
-			<parseLenient sample="," draft="contributed">[,،٫、︐︑﹐﹑，､]</parseLenient>
-			<parseLenient sample="+" draft="contributed">[+⁺₊➕﬩﹢＋]</parseLenient>
-		</parseLenients>
-		<parseLenients scope="number" level="stricter">
-			<parseLenient sample="," draft="contributed">[,٫︐﹐，]</parseLenient>
-			<parseLenient sample="." draft="contributed">[.․﹒．｡]</parseLenient>
 		</parseLenients>
 	</characters>
 	<delimiters>
@@ -792,10 +798,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<quarter type="4">4</quarter>
 						</quarterWidth>
 						<quarterWidth type="wide">
-							<quarter type="1" draft="unconfirmed">Ç1</quarter>
-							<quarter type="2" draft="unconfirmed">Ç2</quarter>
-							<quarter type="3" draft="unconfirmed">Ç3</quarter>
-							<quarter type="4" draft="unconfirmed">Ç4</quarter>
+							<quarter type="1">Çarêka 1em</quarter>
+							<quarter type="2">Çarêka 2em</quarter>
+							<quarter type="3">Çarêka 3em</quarter>
+							<quarter type="4">Çarêka 4em</quarter>
 						</quarterWidth>
 					</quarterContext>
 					<quarterContext type="stand-alone">
@@ -811,28 +817,38 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<quarter type="3">3</quarter>
 							<quarter type="4">4</quarter>
 						</quarterWidth>
+						<quarterWidth type="wide">
+							<quarter type="1">Çarêka 1em</quarter>
+							<quarter type="2">Çarêka 2em</quarter>
+							<quarter type="3">Çarêka 3em</quarter>
+							<quarter type="4">Çarêka 4em</quarter>
+						</quarterWidth>
 					</quarterContext>
 				</quarters>
 				<dayPeriods>
 					<dayPeriodContext type="format">
 						<dayPeriodWidth type="abbreviated">
-							<dayPeriod type="am" draft="unconfirmed">BN</dayPeriod>
-							<dayPeriod type="pm" draft="unconfirmed">PN</dayPeriod>
+							<dayPeriod type="am">BN</dayPeriod>
+							<dayPeriod type="pm">PN</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="wide">
-							<dayPeriod type="am" draft="unconfirmed">BN</dayPeriod>
-							<dayPeriod type="pm" draft="unconfirmed">PN</dayPeriod>
+							<dayPeriod type="am">BN</dayPeriod>
+							<dayPeriod type="pm">PN</dayPeriod>
 						</dayPeriodWidth>
 					</dayPeriodContext>
 				</dayPeriods>
 				<eras>
 					<eraNames>
 						<era type="0">berî zayînê</era>
+						<era type="0" alt="variant">berî zayînê</era>
 						<era type="1">piştî zayînê</era>
+						<era type="1" alt="variant">piştî zayînê</era>
 					</eraNames>
 					<eraAbbr>
 						<era type="0">BZ</era>
+						<era type="0" alt="variant">BZ</era>
 						<era type="1">PZ</era>
+						<era type="1" alt="variant">PZ</era>
 					</eraAbbr>
 				</eras>
 				<dateTimeFormats>
@@ -885,12 +901,42 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="-1">par</relative>
 				<relative type="0">îsal</relative>
 				<relative type="1">sala piştî</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">di salekê de</relativeTimePattern>
+					<relativeTimePattern count="other">di {0} salan de</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">berî {0} salê</relativeTimePattern>
+					<relativeTimePattern count="other">berî {0} salan</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="year-short">
 				<displayName>sal</displayName>
+				<relative type="-1">par</relative>
+				<relative type="0">îsal</relative>
+				<relative type="1">sala bê</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">piştî salekê</relativeTimePattern>
+					<relativeTimePattern count="other">piştî {0} salan</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">berî salekê</relativeTimePattern>
+					<relativeTimePattern count="other">berî {0} salan</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="year-narrow">
 				<displayName>sl</displayName>
+				<relative type="-1">par</relative>
+				<relative type="0">îsal</relative>
+				<relative type="1">sala bê</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">piştî salekê</relativeTimePattern>
+					<relativeTimePattern count="other">piştî {0} salan</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">berî salekê</relativeTimePattern>
+					<relativeTimePattern count="other">berî {0} salan</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="quarter">
 				<displayName>çarêk</displayName>
@@ -903,21 +949,45 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="month">
 				<displayName>meh</displayName>
+				<relative type="-1">meha borî</relative>
+				<relative type="0">vê mehê</relative>
+				<relative type="1">meha were</relative>
 			</field>
 			<field type="month-short">
 				<displayName>m.</displayName>
+				<relative type="-1">meha br.</relative>
+				<relative type="0">vê mehê</relative>
+				<relative type="1">meha bê</relative>
 			</field>
 			<field type="month-narrow">
 				<displayName>m.</displayName>
+				<relative type="-1">meha br.</relative>
+				<relative type="0">vê mehê</relative>
+				<relative type="1">meha bê</relative>
 			</field>
 			<field type="week">
 				<displayName>hefte</displayName>
+				<relative type="-1">hefteya borî</relative>
+				<relative type="0">vê hefteyê</relative>
+				<relative type="1">hefteya were</relative>
+				<relativePeriod>hefteya {0}</relativePeriod>
 			</field>
 			<field type="week-short">
 				<displayName>hf.</displayName>
+				<relative type="-1">hft. borî</relative>
+				<relative type="0">vê hft.</relative>
+				<relative type="1">hft. bê</relative>
+				<relativePeriod>hft. {0}</relativePeriod>
 			</field>
 			<field type="week-narrow">
 				<displayName>hf.</displayName>
+				<relative type="-1">hft. borî</relative>
+				<relative type="0">vê hft.</relative>
+				<relative type="1">hft. bê</relative>
+				<relativePeriod>hft. {0}</relativePeriod>
+			</field>
+			<field type="weekOfMonth">
+				<displayName>hefteya mehê</displayName>
 			</field>
 			<field type="day">
 				<displayName>roj</displayName>
@@ -930,6 +1000,42 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="day-narrow">
 				<displayName>r.</displayName>
+			</field>
+			<field type="dayOfYear">
+				<displayName>roja salê</displayName>
+			</field>
+			<field type="dayOfYear-short">
+				<displayName>roja salê</displayName>
+			</field>
+			<field type="dayOfYear-narrow">
+				<displayName>roja salê</displayName>
+			</field>
+			<field type="weekday">
+				<displayName>roja hefteyê</displayName>
+			</field>
+			<field type="weekday-short">
+				<displayName>roja hefteyê</displayName>
+			</field>
+			<field type="weekday-narrow">
+				<displayName>roja hefteyê</displayName>
+			</field>
+			<field type="weekdayOfMonth">
+				<displayName>roja mehê</displayName>
+			</field>
+			<field type="weekdayOfMonth-short">
+				<displayName>roja mehê</displayName>
+			</field>
+			<field type="weekdayOfMonth-narrow">
+				<displayName>roja mehê</displayName>
+			</field>
+			<field type="dayperiod-short">
+				<displayName>BN/PN</displayName>
+			</field>
+			<field type="dayperiod">
+				<displayName>BN/PN</displayName>
+			</field>
+			<field type="dayperiod-narrow">
+				<displayName>BN/PN</displayName>
 			</field>
 			<field type="hour">
 				<displayName>saet</displayName>
@@ -958,14 +1064,18 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<field type="second-narrow">
 				<displayName>s.</displayName>
 			</field>
+			<field type="zone">
+				<displayName>qada demê</displayName>
+			</field>
+			<field type="zone-short">
+				<displayName>qad</displayName>
+			</field>
+			<field type="zone-narrow">
+				<displayName>qad</displayName>
+			</field>
 		</fields>
 	</dates>
 	<numbers>
-		<defaultNumberingSystem draft="contributed">latn</defaultNumberingSystem>
-		<otherNumberingSystems>
-			<native draft="contributed">latn</native>
-		</otherNumberingSystems>
-		<minimumGroupingDigits draft="contributed">1</minimumGroupingDigits>
 		<symbols numberSystem="latn">
 			<decimal>,</decimal>
 			<group>.</group>
@@ -1016,8 +1126,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>ewro</displayName>
 				<displayName count="one">ewro</displayName>
 				<displayName count="other">ewro</displayName>
-				<symbol draft="contributed">€</symbol>
-				<symbol alt="narrow" draft="contributed">€</symbol>
 			</currency>
 			<currency type="TRY">
 				<symbol>₺</symbol>
@@ -1034,6 +1142,41 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</numbers>
 	<units>
 		<unitLength type="long">
+			<unit type="angle-revolution">
+				<displayName>dewr</displayName>
+				<unitPattern count="one">{0} dewr</unitPattern>
+				<unitPattern count="other">{0} dewr</unitPattern>
+			</unit>
+			<unit type="angle-radian">
+				<displayName>radyan</displayName>
+				<unitPattern count="one">{0} radyan</unitPattern>
+				<unitPattern count="other">{0} radyan</unitPattern>
+			</unit>
+			<unit type="angle-degree">
+				<displayName>derece</displayName>
+				<unitPattern count="one">{0} derece</unitPattern>
+				<unitPattern count="other">{0} derece</unitPattern>
+			</unit>
+			<unit type="angle-arc-minute">
+				<displayName>xuleka kevanî</displayName>
+				<unitPattern count="one">{0} xuleka kevanî</unitPattern>
+				<unitPattern count="other">{0} xulekên kevanî</unitPattern>
+			</unit>
+			<unit type="angle-arc-second">
+				<displayName>çirkeya kevanî</displayName>
+				<unitPattern count="one">{0} çirkeya kevanî</unitPattern>
+				<unitPattern count="other">{0} çirkeyên kevanî</unitPattern>
+			</unit>
+			<unit type="concentr-karat">
+				<displayName>qerat</displayName>
+				<unitPattern count="one">{0} qerat</unitPattern>
+				<unitPattern count="other">{0} qerat</unitPattern>
+			</unit>
+			<unit type="concentr-percent">
+				<displayName>ji sedî</displayName>
+				<unitPattern count="one">ji sedî {0}</unitPattern>
+				<unitPattern count="other">ji sedî {0}</unitPattern>
+			</unit>
 			<unit type="duration-year">
 				<displayName>sal</displayName>
 				<unitPattern count="one">{0} sal</unitPattern>
@@ -1083,6 +1226,42 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</coordinateUnit>
 		</unitLength>
 		<unitLength type="short">
+			<unit type="angle-revolution">
+				<displayName>dwr</displayName>
+				<unitPattern count="one">{0} dwr</unitPattern>
+				<unitPattern count="other">{0} dwr</unitPattern>
+			</unit>
+			<unit type="angle-radian">
+				<displayName>radyan</displayName>
+				<unitPattern count="one">{0} rad</unitPattern>
+				<unitPattern count="other">{0} rad</unitPattern>
+			</unit>
+			<unit type="angle-degree">
+				<displayName>derece</displayName>
+			</unit>
+			<unit type="angle-arc-minute">
+				<displayName>xlk. kevanî</displayName>
+			</unit>
+			<unit type="angle-arc-second">
+				<displayName>çrk. kevanî</displayName>
+			</unit>
+			<unit type="concentr-karat">
+				<displayName>qerat</displayName>
+			</unit>
+			<unit type="concentr-percent">
+				<unitPattern count="one">%{0}</unitPattern>
+				<unitPattern count="other">%{0}</unitPattern>
+			</unit>
+			<unit type="consumption-liter-per-kilometer">
+				<displayName>l/km</displayName>
+				<unitPattern count="one">{0} l/km</unitPattern>
+				<unitPattern count="other">{0} l/km</unitPattern>
+			</unit>
+			<unit type="consumption-liter-per-100kilometers">
+				<displayName>l/100 km</displayName>
+				<unitPattern count="one">{0} l/100 km</unitPattern>
+				<unitPattern count="other">{0} l/100 km</unitPattern>
+			</unit>
 			<unit type="duration-year">
 				<displayName>sal</displayName>
 				<unitPattern count="one">{0} sal</unitPattern>
@@ -1133,6 +1312,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</coordinateUnit>
 		</unitLength>
 		<unitLength type="narrow">
+			<unit type="concentr-percent">
+				<unitPattern count="one">%{0}</unitPattern>
+				<unitPattern count="other">%{0}</unitPattern>
+			</unit>
+			<unit type="consumption-liter-per-100kilometers">
+				<displayName>l/100km</displayName>
+				<unitPattern count="one">{0}l/100km</unitPattern>
+				<unitPattern count="other">{0}l/100km</unitPattern>
+			</unit>
 			<unit type="duration-year">
 				<displayName>sl</displayName>
 				<unitPattern count="one">{0}sl</unitPattern>

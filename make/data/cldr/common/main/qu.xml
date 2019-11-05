@@ -7,56 +7,84 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 14982 $"/>
+		<version number="$Revision$"/>
 		<language type="qu"/>
 	</identity>
 	<localeDisplayNames>
 		<languages>
 			<language type="af">Afrikaans Simi</language>
+			<language type="agq">Aghem Simi</language>
+			<language type="ak">Akan Simi</language>
 			<language type="am">Amarico Simi</language>
 			<language type="ar">Arabe Simi</language>
 			<language type="arn">Mapuche Simi</language>
 			<language type="as">Asames Simi</language>
+			<language type="asa">Asu Simi</language>
+			<language type="ast">Asturiano Simi</language>
 			<language type="ay">Aymara Simi</language>
 			<language type="az">Azerbaiyano Simi</language>
+			<language type="az" alt="short">Azerí Simi</language>
 			<language type="ba">Baskir Simi</language>
+			<language type="bas">Basaa Simi</language>
 			<language type="be">Bielorruso Simi</language>
+			<language type="bem">Bemba Simi</language>
+			<language type="bez">Bena Simi</language>
 			<language type="bg">Bulgaro Simi</language>
+			<language type="bm">Bambara Simi</language>
 			<language type="bn">Bangla Simi</language>
 			<language type="bo">Tibetano Simi</language>
 			<language type="br">Breton Simi</language>
+			<language type="brx">Bodo Simi</language>
 			<language type="bs">Bosnio Simi</language>
 			<language type="ca">Catalan Simi</language>
+			<language type="ccp">Chakma Simi</language>
+			<language type="ce">Checheno Simi</language>
+			<language type="ceb">Cebuano Simi</language>
+			<language type="cgg">Kiga Simi</language>
 			<language type="chr">Cheroqui Simi</language>
 			<language type="ckb">Chawpi Kurdo Simi</language>
 			<language type="co">Corso Simi</language>
 			<language type="cs">Checo Simi</language>
+			<language type="cu">Eslavo Eclesiástico Simi</language>
 			<language type="cy">Gales Simi</language>
 			<language type="da">Danes Simi</language>
+			<language type="dav">Taita Simi</language>
 			<language type="de">Aleman Simi</language>
+			<language type="dje">Zarma Simi</language>
 			<language type="dsb">Bajo Sorbio Simi</language>
+			<language type="dua">Duala Simi</language>
 			<language type="dv">Divehi Simi</language>
+			<language type="dyo">Jola-Fonyi Simi</language>
+			<language type="dz">Butanés Simi</language>
+			<language type="ebu">Embu Simi</language>
+			<language type="ee">Ewé Simi</language>
 			<language type="el">Griego Simi</language>
 			<language type="en">Ingles Simi</language>
 			<language type="en_GB" alt="short">Ingles Simi (GB)</language>
 			<language type="en_US" alt="short">Ingles Simi (US)</language>
+			<language type="eo">Esperanto Simi</language>
 			<language type="es">Español Simi</language>
 			<language type="es_419">Español Simi (Latino América)</language>
 			<language type="et">Estonio Simi</language>
 			<language type="eu">Euskera Simi</language>
+			<language type="ewo">Ewondo Simi</language>
 			<language type="fa">Persa Simi</language>
 			<language type="ff">Fulah Simi</language>
 			<language type="fi">Fines Simi</language>
 			<language type="fil">Filipino Simi</language>
 			<language type="fo">Feroes Simi</language>
 			<language type="fr">Frances Simi</language>
+			<language type="fur">Friulano Simi</language>
 			<language type="fy">Frison Simi</language>
 			<language type="ga">Irlandes Simi</language>
 			<language type="gd">Gaelico Escoces Simi</language>
 			<language type="gl">Gallego Simi</language>
 			<language type="gsw">Alsaciano Simi</language>
 			<language type="gu">Gujarati Simi</language>
+			<language type="guz">Guzí Simi</language>
+			<language type="gv">Manés Simi</language>
 			<language type="ha">Hausa Simi</language>
+			<language type="haw">Hawaiano Simi</language>
 			<language type="he">Hebreo Simi</language>
 			<language type="hi">Hindi Simi</language>
 			<language type="hmn">Hmong Daw Simi</language>
@@ -65,6 +93,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="ht">Haitiano Criollo Simi</language>
 			<language type="hu">Hungaro Simi</language>
 			<language type="hy">Armenio Simi</language>
+			<language type="ia">Interlingua Simi</language>
 			<language type="id">Indonesio Simi</language>
 			<language type="ig">Igbo Simi</language>
 			<language type="ii">Yi Simi</language>
@@ -72,18 +101,50 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="it">Italiano Simi</language>
 			<language type="iu">Inuktitut Simi</language>
 			<language type="ja">Japones Simi</language>
+			<language type="jgo">Ngomba Simi</language>
+			<language type="jmc">Machame Simi</language>
+			<language type="jv">Javanés Simi</language>
 			<language type="ka">Georgiano Simi</language>
+			<language type="kab">Cabilio Simi</language>
+			<language type="kam">Kamba Simi</language>
+			<language type="kde">Makonde Simi</language>
+			<language type="kea">Caboverdiano Simi</language>
+			<language type="khq">Koyra Chiini Simi</language>
+			<language type="ki">Kikuyu Simi</language>
 			<language type="kk">Kazajo Simi</language>
+			<language type="kkj">Kako Simi</language>
 			<language type="kl">Groenlandes Simi</language>
+			<language type="kln">Kalenjin Simi</language>
 			<language type="km">Khmer Simi</language>
 			<language type="kn">Kannada Simi</language>
 			<language type="ko">Coreano Simi</language>
 			<language type="kok">Konkani Simi</language>
+			<language type="ks">Cachemir Simi</language>
+			<language type="ksb">Shambala Simi</language>
+			<language type="ksf">Bafia Simi</language>
+			<language type="ksh">Kölsch Simi</language>
+			<language type="ku">Kurdo Simi</language>
+			<language type="kw">Córnico Simi</language>
 			<language type="ky">Kirghiz Simi</language>
+			<language type="la">Latín Simi</language>
+			<language type="lag">Langi Simi</language>
 			<language type="lb">Luxemburgues Simi</language>
+			<language type="lg">Luganda Simi</language>
+			<language type="lkt">Lakota Simi</language>
+			<language type="ln">Lingala Simi</language>
 			<language type="lo">Lao Simi</language>
+			<language type="lrc">Luri septentrional Simi</language>
 			<language type="lt">Lituano Simi</language>
+			<language type="lu">Luba-Katanga Simi</language>
+			<language type="luo">Luo Simi</language>
+			<language type="luy">Luyia Simi</language>
 			<language type="lv">Leton Simi</language>
+			<language type="mas">Masai Simi</language>
+			<language type="mer">Meru Simi</language>
+			<language type="mfe">Mauriciano Simi</language>
+			<language type="mg">Malgache Simi</language>
+			<language type="mgh">Makhuwa-Meetto Simi</language>
+			<language type="mgo">Metaʼ Simi</language>
 			<language type="mi">Maori Simi</language>
 			<language type="mk">Macedonio Simi</language>
 			<language type="ml">Malayalam Simi</language>
@@ -92,122 +153,214 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="mr">Marathi Simi</language>
 			<language type="ms">Malayo Simi</language>
 			<language type="mt">Maltes Simi</language>
+			<language type="mua">Mundang Simi</language>
+			<language type="mul">Idiomas M´últiples Simi</language>
+			<language type="my">Birmano Simi</language>
+			<language type="mzn">Mazandaraní Simi</language>
+			<language type="naq">Nama Simi</language>
+			<language type="nb">Noruego Bokmål Simi</language>
+			<language type="nd">Ndebele septentrional Simi</language>
+			<language type="nds">Bajo Alemán Simi</language>
 			<language type="ne">Nepali Simi</language>
 			<language type="nl">Neerlandes Simi</language>
+			<language type="nl_BE">Flamenco Simi</language>
+			<language type="nmg">Kwasio Ngumba Simi</language>
+			<language type="nn">Noruego Nynorsk Simi</language>
+			<language type="nnh">Ngiemboon Simi</language>
 			<language type="no">Noruego Simi</language>
 			<language type="nso">Sesotho Sa Leboa Simi</language>
+			<language type="nus">Nuer Simi</language>
+			<language type="ny">Nyanja Simi</language>
+			<language type="nyn">Nyankole Simi</language>
 			<language type="oc">Occitano Simi</language>
+			<language type="om">Oromo Simi</language>
 			<language type="or">Odia Simi</language>
+			<language type="os">Osetio Simi</language>
 			<language type="pa">Punyabi Simi</language>
 			<language type="pap">Papiamento Simi</language>
 			<language type="pl">Polaco Simi</language>
+			<language type="prg">Prusiano Simi</language>
 			<language type="ps">Pashto Simi</language>
 			<language type="pt">Portugues Simi</language>
 			<language type="qu">Runasimi</language>
 			<language type="quc">Kʼicheʼ Simi</language>
 			<language type="rm">Romanche Simi</language>
+			<language type="rn">Rundi Simi</language>
 			<language type="ro">Rumano Simi</language>
+			<language type="rof">Rombo Simi</language>
 			<language type="ru">Ruso Simi</language>
 			<language type="rw">Kinyarwanda Simi</language>
+			<language type="rwk">Rwa Simi</language>
 			<language type="sa">Sanscrito Simi</language>
 			<language type="sah">Sakha Simi</language>
+			<language type="saq">Samburu Simi</language>
+			<language type="sbp">Sangu Simi</language>
 			<language type="sd">Sindhi Simi</language>
 			<language type="se">Chincha Sami Simi</language>
+			<language type="seh">Sena Simi</language>
+			<language type="ses">Koyraboro Senni Simi</language>
+			<language type="sg">Sango Simi</language>
+			<language type="shi">Tashelhit Simi</language>
 			<language type="si">Cingales Simi</language>
 			<language type="sk">Eslovaco Simi</language>
 			<language type="sl">Esloveno Simi</language>
+			<language type="sm">Samoano Simi</language>
 			<language type="sma">Qulla Sami Simi</language>
 			<language type="smj">Sami Lule Simi</language>
 			<language type="smn">Sami Inari Simi</language>
 			<language type="sms">Sami Skolt Simi</language>
+			<language type="sn">Shona Simi</language>
+			<language type="so">Somali Simi</language>
 			<language type="sq">Albanes Simi</language>
 			<language type="sr">Serbio Simi</language>
+			<language type="st">Soto Meridional Simi</language>
+			<language type="su">Sundanés Simi</language>
 			<language type="sv">Sueco Simi</language>
 			<language type="sw">Suajili Simi</language>
 			<language type="sw_CD">Suajili Simi (Congo (RDC))</language>
 			<language type="syr">Siriaco Simi</language>
 			<language type="ta">Tamil Simi</language>
 			<language type="te">Telugu Simi</language>
+			<language type="teo">Teso Simi</language>
 			<language type="tg">Tayiko Simi</language>
 			<language type="th">Tailandes Simi</language>
 			<language type="ti">Tigriña Simi</language>
 			<language type="tk">Turcomano Simi</language>
 			<language type="tn">Setsuana Simi</language>
+			<language type="to">Tongano Simi</language>
 			<language type="tr">Turco Simi</language>
 			<language type="tt">Tartaro Simi</language>
+			<language type="twq">Tasawaq Simi</language>
+			<language type="tzm">Tamazight Simi</language>
 			<language type="ug">Uigur Simi</language>
 			<language type="uk">Ucraniano Simi</language>
+			<language type="und">Mana Riqsisqa Simi</language>
 			<language type="ur">Urdu Simi</language>
 			<language type="uz">Uzbeko Simi</language>
+			<language type="vai">Vai Simi</language>
 			<language type="vi">Vietnamita Simi</language>
+			<language type="vo">Volapük Simi</language>
+			<language type="vun">Vunjo Simi</language>
+			<language type="wae">Walser Simi</language>
 			<language type="wo">Wolof Simi</language>
 			<language type="xh">Isixhosa Simi</language>
+			<language type="xog">Soga Simi</language>
+			<language type="yav">Yangben Simi</language>
+			<language type="yi">Yiddish Simi</language>
 			<language type="yo">Yoruba Simi</language>
+			<language type="yue">Cantonés Simi</language>
+			<language type="yue" alt="menu">Chino Cantonés Simi</language>
+			<language type="zgh">Bereber Marroquí Estándar Simi</language>
 			<language type="zh">Chino Simi</language>
+			<language type="zh" alt="menu">Chino Mandarín Simi</language>
+			<language type="zh_Hans">Chino Simplificado Simi</language>
+			<language type="zh_Hans" alt="long">Chino Mandarín Simplificado Simi</language>
+			<language type="zh_Hant">Chino Tradicional Simi</language>
+			<language type="zh_Hant" alt="long">Chino Mandarín Tradicional Simi</language>
 			<language type="zu">Isizulu Simi</language>
+			<language type="zxx">Sin contenido linguístico</language>
 		</languages>
 		<territories>
+			<territory type="AC">Islas Ascensión</territory>
 			<territory type="AD">Andorra</territory>
+			<territory type="AE">Emiratos Árabes Unidos</territory>
 			<territory type="AF">Afganistán</territory>
+			<territory type="AG">Antigua y Barbuda</territory>
+			<territory type="AI">Anguila</territory>
 			<territory type="AL">Albania</territory>
 			<territory type="AM">Armenia</territory>
 			<territory type="AO">Angola</territory>
+			<territory type="AQ">Antártida</territory>
 			<territory type="AR">Argentina</territory>
 			<territory type="AS">Samoa Americana</territory>
 			<territory type="AT">Austria</territory>
 			<territory type="AU">Australia</territory>
+			<territory type="AW">Aruba</territory>
+			<territory type="AX">Islas Åland</territory>
 			<territory type="AZ">Azerbaiyán</territory>
+			<territory type="BA">Bosnia y Herzegovina</territory>
+			<territory type="BB">Barbados</territory>
 			<territory type="BD">Bangladesh</territory>
 			<territory type="BE">Bélgica</territory>
+			<territory type="BF">Burkina Faso</territory>
 			<territory type="BG">Bulgaria</territory>
 			<territory type="BH">Baréin</territory>
 			<territory type="BI">Burundi</territory>
 			<territory type="BJ">Benín</territory>
+			<territory type="BL">San Bartolomé</territory>
+			<territory type="BM">Bermudas</territory>
 			<territory type="BN">Brunéi</territory>
 			<territory type="BO">Bolivia</territory>
 			<territory type="BQ">Bonaire</territory>
 			<territory type="BR">Brasil</territory>
 			<territory type="BS">Bahamas</territory>
 			<territory type="BT">Bután</territory>
+			<territory type="BV">Isla Bouvet</territory>
 			<territory type="BW">Botsuana</territory>
 			<territory type="BY">Belarús</territory>
+			<territory type="BZ">Belice</territory>
+			<territory type="CA">Canadá</territory>
 			<territory type="CC">Islas Cocos</territory>
 			<territory type="CD">Congo (RDC)</territory>
+			<territory type="CD" alt="variant">Congo (RDC)</territory>
+			<territory type="CF">República Centroafricana</territory>
 			<territory type="CG">Congo</territory>
+			<territory type="CG" alt="variant">Congo</territory>
 			<territory type="CH">Suiza</territory>
 			<territory type="CI">Côte d’Ivoire</territory>
+			<territory type="CI" alt="variant">Côte d’Ivoire</territory>
+			<territory type="CK">Islas Cook</territory>
 			<territory type="CL">Chile</territory>
 			<territory type="CM">Camerún</territory>
 			<territory type="CN">China</territory>
 			<territory type="CO">Colombia</territory>
+			<territory type="CP">Isla Clipperton</territory>
 			<territory type="CR">Costa Rica</territory>
 			<territory type="CU">Cuba</territory>
+			<territory type="CV">Cabo Verde</territory>
 			<territory type="CW">Curazao</territory>
 			<territory type="CX">Isla Christmas</territory>
 			<territory type="CY">Chipre</territory>
+			<territory type="CZ">Chequia</territory>
+			<territory type="CZ" alt="variant">República Checa</territory>
 			<territory type="DE">Alemania</territory>
+			<territory type="DG">Diego García</territory>
 			<territory type="DJ">Yibuti</territory>
 			<territory type="DK">Dinamarca</territory>
 			<territory type="DM">Dominica</territory>
+			<territory type="DO">República Dominicana</territory>
 			<territory type="DZ">Argelia</territory>
+			<territory type="EA">Ceuta y Melilla</territory>
 			<territory type="EC">Ecuador</territory>
 			<territory type="EE">Estonia</territory>
 			<territory type="EG">Egipto</territory>
+			<territory type="EH">Sahara Occidental</territory>
 			<territory type="ER">Eritrea</territory>
 			<territory type="ES">España</territory>
 			<territory type="ET">Etiopía</territory>
 			<territory type="FI">Finlandia</territory>
 			<territory type="FJ">Fiyi</territory>
+			<territory type="FK">Islas Malvinas</territory>
+			<territory type="FK" alt="variant">Islas Malvinas</territory>
 			<territory type="FM">Micronesia</territory>
+			<territory type="FO">Islas Feroe</territory>
 			<territory type="FR">Francia</territory>
 			<territory type="GA">Gabón</territory>
 			<territory type="GB">Reino Unido</territory>
+			<territory type="GB" alt="short">Reino Unido</territory>
+			<territory type="GD">Granada</territory>
+			<territory type="GE">Georgia</territory>
+			<territory type="GF">Guayana Francesa</territory>
 			<territory type="GG">Guernesey</territory>
 			<territory type="GH">Ghana</territory>
+			<territory type="GI">Gibraltar</territory>
+			<territory type="GL">Groenlandia</territory>
 			<territory type="GM">Gambia</territory>
 			<territory type="GN">Guinea</territory>
+			<territory type="GP">Guadalupe</territory>
 			<territory type="GQ">Guinea Ecuatorial</territory>
 			<territory type="GR">Grecia</territory>
+			<territory type="GS">Georgia del Sur e Islas Sandwich del Sur</territory>
 			<territory type="GT">Guatemala</territory>
 			<territory type="GU">Guam</territory>
 			<territory type="GW">Guinea-Bisáu</territory>
@@ -217,15 +370,22 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="HN">Honduras</territory>
 			<territory type="HR">Croacia</territory>
 			<territory type="HT">Haití</territory>
+			<territory type="HU">Hungría</territory>
+			<territory type="IC">Islas Canarias</territory>
 			<territory type="ID">Indonesia</territory>
+			<territory type="IE">Irlanda</territory>
 			<territory type="IL">Israel</territory>
+			<territory type="IM">Isla de Man</territory>
 			<territory type="IN">India</territory>
+			<territory type="IO">Territorio Británico del Océano Índico</territory>
 			<territory type="IQ">Irak</territory>
 			<territory type="IR">Irán</territory>
 			<territory type="IS">Islandia</territory>
 			<territory type="IT">Italia</territory>
 			<territory type="JE">Jersey</territory>
+			<territory type="JM">Jamaica</territory>
 			<territory type="JO">Jordania</territory>
+			<territory type="JP">Japón</territory>
 			<territory type="KE">Kenia</territory>
 			<territory type="KG">Kirguistán</territory>
 			<territory type="KH">Camboya</territory>
@@ -235,9 +395,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="KP">Corea del Norte</territory>
 			<territory type="KR">Corea del Sur</territory>
 			<territory type="KW">Kuwait</territory>
+			<territory type="KY">Islas Caimán</territory>
 			<territory type="KZ">Kazajistán</territory>
 			<territory type="LA">Laos</territory>
 			<territory type="LB">Líbano</territory>
+			<territory type="LC">Santa Lucia</territory>
 			<territory type="LI">Liechtenstein</territory>
 			<territory type="LK">Sri Lanka</territory>
 			<territory type="LR">Liberia</territory>
@@ -245,23 +407,29 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="LT">Lituania</territory>
 			<territory type="LU">Luxemburgo</territory>
 			<territory type="LV">Letonia</territory>
+			<territory type="LY">Libia</territory>
 			<territory type="MA">Marruecos</territory>
 			<territory type="MC">Mónaco</territory>
 			<territory type="MD">Moldova</territory>
+			<territory type="ME">Montenegro</territory>
 			<territory type="MF">San Martín</territory>
 			<territory type="MG">Madagascar</territory>
 			<territory type="MH">Islas Marshall</territory>
 			<territory type="MK">Macedonia del Norte</territory>
 			<territory type="ML">Malí</territory>
 			<territory type="MM">Myanmar</territory>
+			<territory type="MN">Mongolia</territory>
 			<territory type="MO">Macao RAE</territory>
 			<territory type="MP">Islas Marianas del Norte</territory>
+			<territory type="MQ">Martinica</territory>
 			<territory type="MR">Mauritania</territory>
+			<territory type="MS">Montserrat</territory>
 			<territory type="MT">Malta</territory>
 			<territory type="MU">Mauricio</territory>
 			<territory type="MV">Maldivas</territory>
 			<territory type="MW">Malawi</territory>
 			<territory type="MX">México</territory>
+			<territory type="MY">Malasia</territory>
 			<territory type="MZ">Mozambique</territory>
 			<territory type="NA">Namibia</territory>
 			<territory type="NC">Nueva Caledonia</territory>
@@ -273,6 +441,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="NO">Noruega</territory>
 			<territory type="NP">Nepal</territory>
 			<territory type="NR">Nauru</territory>
+			<territory type="NU">Niue</territory>
+			<territory type="NZ">Nueva Zelanda</territory>
 			<territory type="OM">Omán</territory>
 			<territory type="PA">Panamá</territory>
 			<territory type="PE">Perú</territory>
@@ -289,15 +459,20 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="PW">Palaos</territory>
 			<territory type="PY">Paraguay</territory>
 			<territory type="QA">Qatar</territory>
+			<territory type="RE">Reunión</territory>
+			<territory type="RO">Rumania</territory>
 			<territory type="RS">Serbia</territory>
 			<territory type="RU">Rusia</territory>
 			<territory type="RW">Ruanda</territory>
 			<territory type="SA">Arabia Saudí</territory>
+			<territory type="SB">Islas Salomón</territory>
 			<territory type="SC">Seychelles</territory>
 			<territory type="SD">Sudán</territory>
 			<territory type="SE">Suecia</territory>
 			<territory type="SG">Singapur</territory>
+			<territory type="SH">Santa Elena</territory>
 			<territory type="SI">Eslovenia</territory>
+			<territory type="SJ">Svalbard y Jan Mayen</territory>
 			<territory type="SK">Eslovaquia</territory>
 			<territory type="SL">Sierra Leona</territory>
 			<territory type="SM">San Marino</territory>
@@ -310,37 +485,121 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="SX">Sint Maarten</territory>
 			<territory type="SY">Siria</territory>
 			<territory type="SZ">Suazilandia</territory>
+			<territory type="SZ" alt="variant">Suazilandia</territory>
+			<territory type="TA">Tristán de Acuña</territory>
+			<territory type="TC">Islas Turcas y Caicos</territory>
 			<territory type="TD">Chad</territory>
 			<territory type="TF">Territorios Australes Franceses</territory>
 			<territory type="TG">Togo</territory>
 			<territory type="TH">Tailandia</territory>
 			<territory type="TJ">Tayikistán</territory>
+			<territory type="TK">Tokelau</territory>
 			<territory type="TL">Timor-Leste</territory>
+			<territory type="TL" alt="variant">Timor-Leste</territory>
+			<territory type="TM">Turkmenistán</territory>
 			<territory type="TN">Túnez</territory>
 			<territory type="TO">Tonga</territory>
 			<territory type="TR">Turquía</territory>
 			<territory type="TT">Trinidad y Tobago</territory>
+			<territory type="TV">Tuvalu</territory>
+			<territory type="TW">Taiwán</territory>
 			<territory type="TZ">Tanzania</territory>
+			<territory type="UA">Ucrania</territory>
 			<territory type="UG">Uganda</territory>
 			<territory type="UM">Islas menores alejadas de los EE.UU.</territory>
 			<territory type="US">Estados Unidos</territory>
+			<territory type="US" alt="short">Estados Unidos</territory>
 			<territory type="UY">Uruguay</territory>
 			<territory type="UZ">Uzbekistán</territory>
 			<territory type="VA">Santa Sede (Ciudad del Vaticano)</territory>
+			<territory type="VC">San Vicente y las Granadinas</territory>
 			<territory type="VE">Venezuela</territory>
+			<territory type="VG">Islas Vírgenes Británicas</territory>
 			<territory type="VI">EE.UU. Islas Vírgenes</territory>
 			<territory type="VN">Vietnam</territory>
 			<territory type="VU">Vanuatu</territory>
 			<territory type="WF">Wallis y Futuna</territory>
 			<territory type="WS">Samoa</territory>
+			<territory type="XK">Kosovo</territory>
 			<territory type="YE">Yemen</territory>
+			<territory type="YT">Mayotte</territory>
 			<territory type="ZA">Sudáfrica</territory>
 			<territory type="ZM">Zambia</territory>
 			<territory type="ZW">Zimbabue</territory>
 		</territories>
-		<variants>
-			<variant type="VALENCIA">Valenciano Simi</variant>
-		</variants>
+		<keys>
+			<key type="calendar">Intiwatana</key>
+			<key type="cf">Imayna Qullqi kaynin</key>
+			<key type="collation">Ñiqinchana</key>
+			<key type="currency">qullqi</key>
+			<key type="hc">Ciclo de Horas (12 vs 24)</key>
+			<key type="lb">Siqi paway kaynin</key>
+			<key type="ms">Tupuy Kamay</key>
+			<key type="numbers">Yupaykuna</key>
+		</keys>
+		<types>
+			<type key="calendar" type="buddhist">Budista Intiwatana</type>
+			<type key="calendar" type="chinese">Chino Intiwatana</type>
+			<type key="calendar" type="dangi">Dangi Intiwatana</type>
+			<type key="calendar" type="ethiopic">Etiope Intiwatana</type>
+			<type key="calendar" type="gregorian">Gregoriano Intiwatana</type>
+			<type key="calendar" type="hebrew">Hebreo Intiwatana</type>
+			<type key="calendar" type="islamic">Islamico Intiwatana</type>
+			<type key="calendar" type="iso8601">ISO-8601 Intiwatana</type>
+			<type key="calendar" type="japanese">Japones Intiwatana</type>
+			<type key="calendar" type="persian">Persa Intiwatana</type>
+			<type key="calendar" type="roc">Minguo Intiwatana</type>
+			<type key="cf" type="account">Yupana Qullqi imayna kaynin</type>
+			<type key="cf" type="standard">Estandar nisqa qullqi imayna kaynin</type>
+			<type key="collation" type="ducet">Ñawpaqchasqa Unicode Nisqa Ñiqinchana</type>
+			<type key="collation" type="search">Llapanpaq maskana</type>
+			<type key="collation" type="standard">Estandar nisqa Ñiqinchana</type>
+			<type key="hc" type="h11">12 hora kaynin (0–11)</type>
+			<type key="hc" type="h12">12 hora kaynin (1–12)</type>
+			<type key="hc" type="h23">24 hora kaynin (0–23)</type>
+			<type key="hc" type="h24">24 hora kaynin (1–24)</type>
+			<type key="lb" type="loose">Siqi paway chinkachiy kaynin</type>
+			<type key="lb" type="normal">Siqi paway Normal kaynin</type>
+			<type key="lb" type="strict">Siqi paway Chiqa kaynin</type>
+			<type key="ms" type="metric">Metrico Kamay</type>
+			<type key="ms" type="uksystem">Metrico Ingles Kamay</type>
+			<type key="ms" type="ussystem">Metrico Americano Kamay</type>
+			<type key="numbers" type="arab">Arabe Sananpakuna</type>
+			<type key="numbers" type="arabext">Arabe Mirachisqa Sananpakuna</type>
+			<type key="numbers" type="armn">Armenio Sananpakuna</type>
+			<type key="numbers" type="armnlow">Armenio Uchuy Sananpakuna</type>
+			<type key="numbers" type="beng">Bangla Sananpakuna</type>
+			<type key="numbers" type="deva">Devanagari Sananpakuna</type>
+			<type key="numbers" type="ethi">Etiope Sananpakuna</type>
+			<type key="numbers" type="fullwide">Llapan kinray Sananpakuna</type>
+			<type key="numbers" type="geor">Gregoriano Yupaykuna</type>
+			<type key="numbers" type="grek">Griego Yupaykuna</type>
+			<type key="numbers" type="greklow">Griego Uchuy Yupaykuna</type>
+			<type key="numbers" type="gujr">Gujarati Sananpakuna</type>
+			<type key="numbers" type="guru">Gurmukhi Sananpakuna</type>
+			<type key="numbers" type="hanidec">Chunkachasqa Chino Yupaykuna</type>
+			<type key="numbers" type="hans">Uchuyachusqa Chino Yupaypakuna</type>
+			<type key="numbers" type="hansfin">Uchuyachisqa Qullqi Chino Yupaypakuna</type>
+			<type key="numbers" type="hant">Kikin Chino Yupaypakuna</type>
+			<type key="numbers" type="hantfin">Kikin Qullqi Chino Yupaypakuna</type>
+			<type key="numbers" type="hebr">Hebreo Yupaykuna</type>
+			<type key="numbers" type="jpan">Japones Yupaykuna</type>
+			<type key="numbers" type="jpanfin">Japones Qullqi Yupaykuna</type>
+			<type key="numbers" type="khmr">Khmer Sananpakuna</type>
+			<type key="numbers" type="knda">Kannada Sananpakuna</type>
+			<type key="numbers" type="laoo">Lao Sananpakuna</type>
+			<type key="numbers" type="latn">Occidental Sananpakuna</type>
+			<type key="numbers" type="mlym">Malayalam Sananpakuna</type>
+			<type key="numbers" type="mymr">Myanmar Sananpakuna</type>
+			<type key="numbers" type="orya">Odia Sananpakuna</type>
+			<type key="numbers" type="roman">Romano Sananpakuna</type>
+			<type key="numbers" type="romanlow">Roman Uchuy Yupaykuna</type>
+			<type key="numbers" type="taml">Kikin Tamil Yupaykuna</type>
+			<type key="numbers" type="tamldec">Tamil Sananpakuna</type>
+			<type key="numbers" type="telu">Telegu Sananpakuna</type>
+			<type key="numbers" type="thai">Thai Sananpakuna</type>
+			<type key="numbers" type="tibt">Tibetano Sananpakuna</type>
+		</types>
 	</localeDisplayNames>
 	<layout>
 		<orientation>
@@ -352,7 +611,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<exemplarCharacters>[a {ch} {chʼ} h i k {kʼ} l {ll} m n ñ p {pʼ} q {qʼ} s t {tʼ} u w y]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[á à ă â å ä ã ā æ b c ç d e é è ĕ ê ë ē f g í ì ĭ î ï ī j o ó ò ŏ ô ö ø ō œ r ú ù ŭ û ü ū v x ÿ z]</exemplarCharacters>
 		<exemplarCharacters type="index">[A {Ch} H I K L {Ll} M N Ñ P Q S T U W Y]</exemplarCharacters>
-		<exemplarCharacters type="numbers">[\- , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
+		<exemplarCharacters type="numbers">[\- ‑ , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
 	</characters>
 	<dates>
 		<calendars>
@@ -447,6 +706,44 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
 						<intervalFormatItem id="d">
 							<greatestDifference id="d">d–d</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Gy">
+							<greatestDifference id="G">y G – y G</greatestDifference>
+							<greatestDifference id="y">y – y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyM">
+							<greatestDifference id="G">MM-y GGGGG – MM-y GGGGG</greatestDifference>
+							<greatestDifference id="M">MM-y GGGGG – MM-y GGGGG</greatestDifference>
+							<greatestDifference id="y">MM-y – MM-y GGGGG</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMd">
+							<greatestDifference id="d">d-MM-y – d–MM-y GGGGG</greatestDifference>
+							<greatestDifference id="G">d-MM-y GGGG – d-MM-y GGGGG</greatestDifference>
+							<greatestDifference id="M">d-MM-y – d-MM-y GGGGG</greatestDifference>
+							<greatestDifference id="y">d-MM-y – d-MM-y GGGGG</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMEd">
+							<greatestDifference id="d">E, d-MM-y – E, d-MM-y GGGGG</greatestDifference>
+							<greatestDifference id="G">E, d-MM-y GGGG – E, d-MM-y GGGGG</greatestDifference>
+							<greatestDifference id="M">E, d-MM-y – E, d-MM-y GGGGG</greatestDifference>
+							<greatestDifference id="y">E, d-MM-y – E, d-MM-y GGGGG</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMM">
+							<greatestDifference id="G">MMM y G – MMM y G</greatestDifference>
+							<greatestDifference id="M">MMM – MMM y G</greatestDifference>
+							<greatestDifference id="y">MMM y – MMM y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMd">
+							<greatestDifference id="d">d – d MMM y G</greatestDifference>
+							<greatestDifference id="G">d MMM y G – d MMM y G</greatestDifference>
+							<greatestDifference id="M">d MMM – d MMM y G</greatestDifference>
+							<greatestDifference id="y">d MMM y – d MMM y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMEd">
+							<greatestDifference id="d">E, d MMM – E, d MMM y G</greatestDifference>
+							<greatestDifference id="G">E, d MMM y G – E, d MMM y G</greatestDifference>
+							<greatestDifference id="M">E, d MMM – E, d MMM y G</greatestDifference>
+							<greatestDifference id="y">E, d MMM y – E, d MMM y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="M">
 							<greatestDifference id="M">MM–MM</greatestDifference>
@@ -752,11 +1049,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<eras>
 					<eraNames>
 						<era type="0">BCE</era>
+						<era type="0" alt="variant">BCE</era>
 						<era type="1">d.C.</era>
 						<era type="1" alt="variant">CE</era>
 					</eraNames>
 					<eraAbbr>
 						<era type="0">BCE</era>
+						<era type="0" alt="variant">BCE</era>
 						<era type="1">d.C.</era>
 						<era type="1" alt="variant">CE</era>
 					</eraAbbr>
@@ -884,6 +1183,44 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
 						<intervalFormatItem id="d">
 							<greatestDifference id="d">d–d</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Gy">
+							<greatestDifference id="G">y G – y G</greatestDifference>
+							<greatestDifference id="y">y–y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyM">
+							<greatestDifference id="G">MM-y GGGGG – MM-y GGGGG</greatestDifference>
+							<greatestDifference id="M">MM-y – MM-y GGGGG</greatestDifference>
+							<greatestDifference id="y">MM-y – MM-y GGGGG</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMd">
+							<greatestDifference id="d">dd-MM-y – dd-MM-y GGGGG</greatestDifference>
+							<greatestDifference id="G">dd-MM-y GGGGG – dd-MM-y GGGGG</greatestDifference>
+							<greatestDifference id="M">dd-MM-y – dd-MM-y GGGGG</greatestDifference>
+							<greatestDifference id="y">dd-MM-y – dd-MM-y GGGGG</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMEd">
+							<greatestDifference id="d">E, dd-MM-y – E, dd-MM-y GGGGG</greatestDifference>
+							<greatestDifference id="G">E, dd-MM-y GGGG – E, dd-MM-y GGGGG</greatestDifference>
+							<greatestDifference id="M">E, dd-MM-y – E, dd-MM-y GGGGG</greatestDifference>
+							<greatestDifference id="y">E, dd-MM-y – E, dd-MM-y GGGGG</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMM">
+							<greatestDifference id="G">MMM y G – MMM y G</greatestDifference>
+							<greatestDifference id="M">MMM y – MMM y G</greatestDifference>
+							<greatestDifference id="y">MMM y – MMM y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMd">
+							<greatestDifference id="d">d – d, MMM y G</greatestDifference>
+							<greatestDifference id="G">d, MMM y G – d, MMM y G</greatestDifference>
+							<greatestDifference id="M">d, MMM – d, MMM y G</greatestDifference>
+							<greatestDifference id="y">d, MMM y – d, MMM y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMEd">
+							<greatestDifference id="d">E, d MMM – E, d MMM y G</greatestDifference>
+							<greatestDifference id="G">E, d MMM y G – E, d MMM y G</greatestDifference>
+							<greatestDifference id="M">E, d MMM d – E, d MMM y G</greatestDifference>
+							<greatestDifference id="y">E, d MMM y – E, d MMM y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="h">
 							<greatestDifference id="a">h a – h a</greatestDifference>
@@ -1522,6 +1859,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Pacific/Honolulu">
 				<exemplarCity>Honolulu</exemplarCity>
 			</zone>
+			<zone type="Etc/UTC">
+				<long>
+					<standard>Tiqsimuyuntin Tupachisqa Hora</standard>
+				</long>
+			</zone>
+			<zone type="Etc/Unknown">
+				<exemplarCity>Mana risisqa llaqta</exemplarCity>
+			</zone>
 			<zone type="Europe/Andorra">
 				<exemplarCity>Andorra</exemplarCity>
 			</zone>
@@ -1535,13 +1880,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>Antigua</exemplarCity>
 			</zone>
 			<zone type="America/Anguilla">
-				<exemplarCity>Anguilla</exemplarCity>
+				<exemplarCity>Anguila</exemplarCity>
 			</zone>
 			<zone type="Europe/Tirane">
-				<exemplarCity>Tirane</exemplarCity>
+				<exemplarCity>Tirana</exemplarCity>
 			</zone>
 			<zone type="Asia/Yerevan">
-				<exemplarCity>Yerevan</exemplarCity>
+				<exemplarCity>Ereván</exemplarCity>
 			</zone>
 			<zone type="Africa/Luanda">
 				<exemplarCity>Luanda</exemplarCity>
@@ -1616,7 +1961,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>Pago Pago</exemplarCity>
 			</zone>
 			<zone type="Europe/Vienna">
-				<exemplarCity>Vienna</exemplarCity>
+				<exemplarCity>Viena</exemplarCity>
 			</zone>
 			<zone type="Australia/Perth">
 				<exemplarCity>Perth</exemplarCity>
@@ -1628,7 +1973,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>Darwin</exemplarCity>
 			</zone>
 			<zone type="Australia/Adelaide">
-				<exemplarCity>Adelaide</exemplarCity>
+				<exemplarCity>Adelaida</exemplarCity>
 			</zone>
 			<zone type="Australia/Broken_Hill">
 				<exemplarCity>Broken Hill</exemplarCity>
@@ -1646,7 +1991,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>Lindeman</exemplarCity>
 			</zone>
 			<zone type="Australia/Sydney">
-				<exemplarCity>Sydney</exemplarCity>
+				<exemplarCity>Sidney</exemplarCity>
 			</zone>
 			<zone type="Australia/Brisbane">
 				<exemplarCity>Brisbane</exemplarCity>
@@ -1676,7 +2021,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>Dhaka</exemplarCity>
 			</zone>
 			<zone type="Europe/Brussels">
-				<exemplarCity>Brussels</exemplarCity>
+				<exemplarCity>Bruselas</exemplarCity>
 			</zone>
 			<zone type="Africa/Ouagadougou">
 				<exemplarCity>Ouagadougou</exemplarCity>
@@ -1685,7 +2030,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>Sofia</exemplarCity>
 			</zone>
 			<zone type="Asia/Bahrain">
-				<exemplarCity>Bahrain</exemplarCity>
+				<exemplarCity>Baréin</exemplarCity>
 			</zone>
 			<zone type="Africa/Bujumbura">
 				<exemplarCity>Bujumbura</exemplarCity>
@@ -1694,7 +2039,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>Porto-Novo</exemplarCity>
 			</zone>
 			<zone type="America/St_Barthelemy">
-				<exemplarCity>St. Barthelemy</exemplarCity>
+				<exemplarCity>San Bartolomé</exemplarCity>
 			</zone>
 			<zone type="Atlantic/Bermuda">
 				<exemplarCity>Bermuda</exemplarCity>
@@ -1769,7 +2114,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>Minsk</exemplarCity>
 			</zone>
 			<zone type="America/Belize">
-				<exemplarCity>Belize</exemplarCity>
+				<exemplarCity>Belice</exemplarCity>
 			</zone>
 			<zone type="America/Dawson">
 				<exemplarCity>Dawson</exemplarCity>
@@ -1853,7 +2198,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>Blanc-Sablon</exemplarCity>
 			</zone>
 			<zone type="America/St_Johns">
-				<exemplarCity>St. John’s</exemplarCity>
+				<exemplarCity>San Juan de Terranova</exemplarCity>
 			</zone>
 			<zone type="Indian/Cocos">
 				<exemplarCity>Cocos</exemplarCity>
@@ -1874,7 +2219,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>Zurich</exemplarCity>
 			</zone>
 			<zone type="Africa/Abidjan">
-				<exemplarCity>Abidjan</exemplarCity>
+				<exemplarCity>Abiyán</exemplarCity>
 			</zone>
 			<zone type="Pacific/Rarotonga">
 				<exemplarCity>Rarotonga</exemplarCity>
@@ -1889,13 +2234,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>Santiago</exemplarCity>
 			</zone>
 			<zone type="Africa/Douala">
-				<exemplarCity>Douala</exemplarCity>
+				<exemplarCity>Duala</exemplarCity>
 			</zone>
 			<zone type="Asia/Urumqi">
 				<exemplarCity>Urumqi</exemplarCity>
 			</zone>
 			<zone type="Asia/Shanghai">
-				<exemplarCity>Shanghai</exemplarCity>
+				<exemplarCity>Shangái</exemplarCity>
 			</zone>
 			<zone type="America/Bogota">
 				<exemplarCity>Bogota</exemplarCity>
@@ -1904,13 +2249,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>Costa Rica</exemplarCity>
 			</zone>
 			<zone type="America/Havana">
-				<exemplarCity>Havana</exemplarCity>
+				<exemplarCity>La Habana</exemplarCity>
 			</zone>
 			<zone type="Atlantic/Cape_Verde">
-				<exemplarCity>Cape Verde</exemplarCity>
+				<exemplarCity>Cabo Verde</exemplarCity>
 			</zone>
 			<zone type="America/Curacao">
-				<exemplarCity>Curacao</exemplarCity>
+				<exemplarCity>Curazao</exemplarCity>
 			</zone>
 			<zone type="Indian/Christmas">
 				<exemplarCity>Christmas</exemplarCity>
@@ -1922,7 +2267,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>Famagusta</exemplarCity>
 			</zone>
 			<zone type="Europe/Prague">
-				<exemplarCity>Prague</exemplarCity>
+				<exemplarCity>Praga</exemplarCity>
 			</zone>
 			<zone type="Europe/Busingen">
 				<exemplarCity>Busingen</exemplarCity>
@@ -1931,10 +2276,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>Berlin</exemplarCity>
 			</zone>
 			<zone type="Africa/Djibouti">
-				<exemplarCity>Djibouti</exemplarCity>
+				<exemplarCity>Yibuti</exemplarCity>
 			</zone>
 			<zone type="Europe/Copenhagen">
-				<exemplarCity>Copenhagen</exemplarCity>
+				<exemplarCity>Copenhague</exemplarCity>
 			</zone>
 			<zone type="America/Dominica">
 				<exemplarCity>Dominica</exemplarCity>
@@ -1943,7 +2288,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>Santo Domingo</exemplarCity>
 			</zone>
 			<zone type="Africa/Algiers">
-				<exemplarCity>Algiers</exemplarCity>
+				<exemplarCity>Argel</exemplarCity>
 			</zone>
 			<zone type="Pacific/Galapagos">
 				<exemplarCity>Galapagos</exemplarCity>
@@ -1955,7 +2300,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>Tallinn</exemplarCity>
 			</zone>
 			<zone type="Africa/Cairo">
-				<exemplarCity>Cairo</exemplarCity>
+				<exemplarCity>El Cairo</exemplarCity>
 			</zone>
 			<zone type="Africa/El_Aaiun">
 				<exemplarCity>El Aaiun</exemplarCity>
@@ -1964,7 +2309,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>Asmara</exemplarCity>
 			</zone>
 			<zone type="Atlantic/Canary">
-				<exemplarCity>Canary</exemplarCity>
+				<exemplarCity>Canarias</exemplarCity>
 			</zone>
 			<zone type="Africa/Ceuta">
 				<exemplarCity>Ceuta</exemplarCity>
@@ -1973,7 +2318,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>Madrid</exemplarCity>
 			</zone>
 			<zone type="Africa/Addis_Ababa">
-				<exemplarCity>Addis Ababa</exemplarCity>
+				<exemplarCity>Adís Abeba</exemplarCity>
 			</zone>
 			<zone type="Europe/Helsinki">
 				<exemplarCity>Helsinki</exemplarCity>
@@ -2003,13 +2348,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>Libreville</exemplarCity>
 			</zone>
 			<zone type="Europe/London">
-				<exemplarCity>London</exemplarCity>
+				<long>
+					<daylight>Hora de Verano Británico</daylight>
+				</long>
+				<exemplarCity>Londres</exemplarCity>
 			</zone>
 			<zone type="America/Grenada">
-				<exemplarCity>Grenada</exemplarCity>
+				<exemplarCity>Granada</exemplarCity>
 			</zone>
 			<zone type="Asia/Tbilisi">
-				<exemplarCity>Tbilisi</exemplarCity>
+				<exemplarCity>Tiflis</exemplarCity>
 			</zone>
 			<zone type="America/Cayenne">
 				<exemplarCity>Cayenne</exemplarCity>
@@ -2018,7 +2366,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>Guernsey</exemplarCity>
 			</zone>
 			<zone type="Africa/Accra">
-				<exemplarCity>Accra</exemplarCity>
+				<exemplarCity>Acra</exemplarCity>
 			</zone>
 			<zone type="Europe/Gibraltar">
 				<exemplarCity>Gibraltar</exemplarCity>
@@ -2042,7 +2390,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>Conakry</exemplarCity>
 			</zone>
 			<zone type="America/Guadeloupe">
-				<exemplarCity>Guadeloupe</exemplarCity>
+				<exemplarCity>Guadalupe</exemplarCity>
 			</zone>
 			<zone type="Africa/Malabo">
 				<exemplarCity>Malabo</exemplarCity>
@@ -2051,7 +2399,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>Athens</exemplarCity>
 			</zone>
 			<zone type="Atlantic/South_Georgia">
-				<exemplarCity>South Georgia</exemplarCity>
+				<exemplarCity>Georgia del Sur</exemplarCity>
 			</zone>
 			<zone type="America/Guatemala">
 				<exemplarCity>Guatemala</exemplarCity>
@@ -2075,31 +2423,34 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>Zagreb</exemplarCity>
 			</zone>
 			<zone type="America/Port-au-Prince">
-				<exemplarCity>Port-au-Prince</exemplarCity>
+				<exemplarCity>Puerto Príncipe</exemplarCity>
 			</zone>
 			<zone type="Europe/Budapest">
 				<exemplarCity>Budapest</exemplarCity>
 			</zone>
 			<zone type="Asia/Jakarta">
-				<exemplarCity>Jakarta</exemplarCity>
+				<exemplarCity>Yakarta</exemplarCity>
 			</zone>
 			<zone type="Asia/Pontianak">
 				<exemplarCity>Pontianak</exemplarCity>
 			</zone>
 			<zone type="Asia/Makassar">
-				<exemplarCity>Makassar</exemplarCity>
+				<exemplarCity>Macasar</exemplarCity>
 			</zone>
 			<zone type="Asia/Jayapura">
 				<exemplarCity>Jayapura</exemplarCity>
 			</zone>
 			<zone type="Europe/Dublin">
+				<long>
+					<daylight>Hora Estandar de Irlanda</daylight>
+				</long>
 				<exemplarCity>Dublin</exemplarCity>
 			</zone>
 			<zone type="Asia/Jerusalem">
 				<exemplarCity>Jerusalem</exemplarCity>
 			</zone>
 			<zone type="Europe/Isle_of_Man">
-				<exemplarCity>Isle of Man</exemplarCity>
+				<exemplarCity>Isla de Man</exemplarCity>
 			</zone>
 			<zone type="Asia/Calcutta">
 				<exemplarCity>Kolkata</exemplarCity>
@@ -2108,16 +2459,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>Chagos</exemplarCity>
 			</zone>
 			<zone type="Asia/Baghdad">
-				<exemplarCity>Baghdad</exemplarCity>
+				<exemplarCity>Bagdad</exemplarCity>
 			</zone>
 			<zone type="Asia/Tehran">
-				<exemplarCity>Tehran</exemplarCity>
+				<exemplarCity>Teherán</exemplarCity>
 			</zone>
 			<zone type="Atlantic/Reykjavik">
 				<exemplarCity>Reykjavik</exemplarCity>
 			</zone>
 			<zone type="Europe/Rome">
-				<exemplarCity>Rome</exemplarCity>
+				<exemplarCity>Roma</exemplarCity>
 			</zone>
 			<zone type="Europe/Jersey">
 				<exemplarCity>Jersey</exemplarCity>
@@ -2126,10 +2477,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>Jamaica</exemplarCity>
 			</zone>
 			<zone type="Asia/Amman">
-				<exemplarCity>Amman</exemplarCity>
+				<exemplarCity>Amán</exemplarCity>
 			</zone>
 			<zone type="Asia/Tokyo">
-				<exemplarCity>Tokyo</exemplarCity>
+				<exemplarCity>Tokio</exemplarCity>
 			</zone>
 			<zone type="Africa/Nairobi">
 				<exemplarCity>Nairobi</exemplarCity>
@@ -2153,13 +2504,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>Comoro</exemplarCity>
 			</zone>
 			<zone type="America/St_Kitts">
-				<exemplarCity>St. Kitts</exemplarCity>
+				<exemplarCity>San Cristobal</exemplarCity>
 			</zone>
 			<zone type="Asia/Pyongyang">
-				<exemplarCity>Pyongyang</exemplarCity>
+				<exemplarCity>Pionyang</exemplarCity>
 			</zone>
 			<zone type="Asia/Seoul">
-				<exemplarCity>Seoul</exemplarCity>
+				<exemplarCity>Seúl</exemplarCity>
 			</zone>
 			<zone type="Asia/Kuwait">
 				<exemplarCity>Kuwait</exemplarCity>
@@ -2168,7 +2519,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>Cayman</exemplarCity>
 			</zone>
 			<zone type="Asia/Aqtau">
-				<exemplarCity>Aqtau</exemplarCity>
+				<exemplarCity>Aktau</exemplarCity>
 			</zone>
 			<zone type="Asia/Oral">
 				<exemplarCity>Oral</exemplarCity>
@@ -2177,10 +2528,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>Atyrau</exemplarCity>
 			</zone>
 			<zone type="Asia/Aqtobe">
-				<exemplarCity>Aqtobe</exemplarCity>
+				<exemplarCity>Aktobe</exemplarCity>
+			</zone>
+			<zone type="Asia/Qostanay">
+				<exemplarCity>Kostanái</exemplarCity>
 			</zone>
 			<zone type="Asia/Qyzylorda">
-				<exemplarCity>Qyzylorda</exemplarCity>
+				<exemplarCity>Kyzylorda</exemplarCity>
 			</zone>
 			<zone type="Asia/Almaty">
 				<exemplarCity>Almaty</exemplarCity>
@@ -2192,7 +2546,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>Beirut</exemplarCity>
 			</zone>
 			<zone type="America/St_Lucia">
-				<exemplarCity>St. Lucia</exemplarCity>
+				<exemplarCity>Santa Lucia</exemplarCity>
 			</zone>
 			<zone type="Europe/Vaduz">
 				<exemplarCity>Vaduz</exemplarCity>
@@ -2210,7 +2564,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>Vilnius</exemplarCity>
 			</zone>
 			<zone type="Europe/Luxembourg">
-				<exemplarCity>Luxembourg</exemplarCity>
+				<exemplarCity>Luxemburgo</exemplarCity>
 			</zone>
 			<zone type="Europe/Riga">
 				<exemplarCity>Riga</exemplarCity>
@@ -2249,25 +2603,25 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>Bamako</exemplarCity>
 			</zone>
 			<zone type="Asia/Rangoon">
-				<exemplarCity>Rangoon</exemplarCity>
+				<exemplarCity>Rangún</exemplarCity>
 			</zone>
 			<zone type="Asia/Hovd">
 				<exemplarCity>Hovd</exemplarCity>
 			</zone>
 			<zone type="Asia/Ulaanbaatar">
-				<exemplarCity>Ulaanbaatar</exemplarCity>
+				<exemplarCity>Ulan Bator</exemplarCity>
 			</zone>
 			<zone type="Asia/Choibalsan">
 				<exemplarCity>Choibalsan</exemplarCity>
 			</zone>
 			<zone type="Asia/Macau">
-				<exemplarCity>Macau</exemplarCity>
+				<exemplarCity>Macao</exemplarCity>
 			</zone>
 			<zone type="Pacific/Saipan">
 				<exemplarCity>Saipan</exemplarCity>
 			</zone>
 			<zone type="America/Martinique">
-				<exemplarCity>Martinique</exemplarCity>
+				<exemplarCity>Martinica</exemplarCity>
 			</zone>
 			<zone type="Africa/Nouakchott">
 				<exemplarCity>Nouakchott</exemplarCity>
@@ -2282,7 +2636,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>Mauritius</exemplarCity>
 			</zone>
 			<zone type="Indian/Maldives">
-				<exemplarCity>Maldives</exemplarCity>
+				<exemplarCity>Maldivas</exemplarCity>
 			</zone>
 			<zone type="Africa/Blantyre">
 				<exemplarCity>Blantyre</exemplarCity>
@@ -2309,7 +2663,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>Monterrey</exemplarCity>
 			</zone>
 			<zone type="America/Mexico_City">
-				<exemplarCity>Mexico City</exemplarCity>
+				<exemplarCity>Ciudad de Mexico</exemplarCity>
 			</zone>
 			<zone type="America/Matamoros">
 				<exemplarCity>Matamoros</exemplarCity>
@@ -2354,7 +2708,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>Oslo</exemplarCity>
 			</zone>
 			<zone type="Asia/Katmandu">
-				<exemplarCity>Kathmandu</exemplarCity>
+				<exemplarCity>Katmandú</exemplarCity>
 			</zone>
 			<zone type="Pacific/Nauru">
 				<exemplarCity>Nauru</exemplarCity>
@@ -2369,7 +2723,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>Auckland</exemplarCity>
 			</zone>
 			<zone type="Asia/Muscat">
-				<exemplarCity>Muscat</exemplarCity>
+				<exemplarCity>Mascate</exemplarCity>
 			</zone>
 			<zone type="America/Panama">
 				<exemplarCity>Panama</exemplarCity>
@@ -2399,7 +2753,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>Karachi</exemplarCity>
 			</zone>
 			<zone type="Europe/Warsaw">
-				<exemplarCity>Warsaw</exemplarCity>
+				<exemplarCity>Varsovia</exemplarCity>
 			</zone>
 			<zone type="America/Miquelon">
 				<exemplarCity>Miquelon</exemplarCity>
@@ -2423,7 +2777,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>Madeira</exemplarCity>
 			</zone>
 			<zone type="Europe/Lisbon">
-				<exemplarCity>Lisbon</exemplarCity>
+				<exemplarCity>Lisboa</exemplarCity>
 			</zone>
 			<zone type="Pacific/Palau">
 				<exemplarCity>Palau</exemplarCity>
@@ -2432,28 +2786,28 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>Asuncion</exemplarCity>
 			</zone>
 			<zone type="Asia/Qatar">
-				<exemplarCity>Qatar</exemplarCity>
+				<exemplarCity>Catar</exemplarCity>
 			</zone>
 			<zone type="Indian/Reunion">
 				<exemplarCity>Reunion</exemplarCity>
 			</zone>
 			<zone type="Europe/Bucharest">
-				<exemplarCity>Bucharest</exemplarCity>
+				<exemplarCity>Bucarest</exemplarCity>
 			</zone>
 			<zone type="Europe/Belgrade">
 				<exemplarCity>Belgrade</exemplarCity>
 			</zone>
 			<zone type="Europe/Kaliningrad">
-				<exemplarCity>Kaliningrad</exemplarCity>
+				<exemplarCity>Kaliningrado</exemplarCity>
 			</zone>
 			<zone type="Europe/Simferopol">
 				<exemplarCity>Simferopol</exemplarCity>
 			</zone>
 			<zone type="Europe/Moscow">
-				<exemplarCity>Moscow</exemplarCity>
+				<exemplarCity>Moscú</exemplarCity>
 			</zone>
 			<zone type="Europe/Volgograd">
-				<exemplarCity>Volgograd</exemplarCity>
+				<exemplarCity>Volgogrado</exemplarCity>
 			</zone>
 			<zone type="Europe/Saratov">
 				<exemplarCity>Saratov</exemplarCity>
@@ -2471,7 +2825,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>Samara</exemplarCity>
 			</zone>
 			<zone type="Asia/Yekaterinburg">
-				<exemplarCity>Yekaterinburg</exemplarCity>
+				<exemplarCity>Ekaterinburgo</exemplarCity>
 			</zone>
 			<zone type="Asia/Omsk">
 				<exemplarCity>Omsk</exemplarCity>
@@ -2528,7 +2882,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>Kigali</exemplarCity>
 			</zone>
 			<zone type="Asia/Riyadh">
-				<exemplarCity>Riyadh</exemplarCity>
+				<exemplarCity>Riad</exemplarCity>
 			</zone>
 			<zone type="Pacific/Guadalcanal">
 				<exemplarCity>Guadalcanal</exemplarCity>
@@ -2537,19 +2891,19 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>Mahe</exemplarCity>
 			</zone>
 			<zone type="Africa/Khartoum">
-				<exemplarCity>Khartoum</exemplarCity>
+				<exemplarCity>Jartum</exemplarCity>
 			</zone>
 			<zone type="Europe/Stockholm">
-				<exemplarCity>Stockholm</exemplarCity>
+				<exemplarCity>Estocolmo</exemplarCity>
 			</zone>
 			<zone type="Asia/Singapore">
-				<exemplarCity>Singapore</exemplarCity>
+				<exemplarCity>Singapur</exemplarCity>
 			</zone>
 			<zone type="Atlantic/St_Helena">
-				<exemplarCity>St. Helena</exemplarCity>
+				<exemplarCity>Santa Elena</exemplarCity>
 			</zone>
 			<zone type="Europe/Ljubljana">
-				<exemplarCity>Ljubljana</exemplarCity>
+				<exemplarCity>Liubliana</exemplarCity>
 			</zone>
 			<zone type="Arctic/Longyearbyen">
 				<exemplarCity>Longyearbyen</exemplarCity>
@@ -2567,7 +2921,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>Dakar</exemplarCity>
 			</zone>
 			<zone type="Africa/Mogadishu">
-				<exemplarCity>Mogadishu</exemplarCity>
+				<exemplarCity>Mogadiscio</exemplarCity>
 			</zone>
 			<zone type="America/Paramaribo">
 				<exemplarCity>Paramaribo</exemplarCity>
@@ -2585,7 +2939,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>Lower Prince’s Quarter</exemplarCity>
 			</zone>
 			<zone type="Asia/Damascus">
-				<exemplarCity>Damascus</exemplarCity>
+				<exemplarCity>Damasco</exemplarCity>
 			</zone>
 			<zone type="Africa/Mbabane">
 				<exemplarCity>Mbabane</exemplarCity>
@@ -2606,7 +2960,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>Bangkok</exemplarCity>
 			</zone>
 			<zone type="Asia/Dushanbe">
-				<exemplarCity>Dushanbe</exemplarCity>
+				<exemplarCity>Dusambé</exemplarCity>
 			</zone>
 			<zone type="Pacific/Fakaofo">
 				<exemplarCity>Fakaofo</exemplarCity>
@@ -2615,19 +2969,19 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>Dili</exemplarCity>
 			</zone>
 			<zone type="Asia/Ashgabat">
-				<exemplarCity>Ashgabat</exemplarCity>
+				<exemplarCity>Asjabad</exemplarCity>
 			</zone>
 			<zone type="Africa/Tunis">
-				<exemplarCity>Tunis</exemplarCity>
+				<exemplarCity>Tunez</exemplarCity>
 			</zone>
 			<zone type="Pacific/Tongatapu">
 				<exemplarCity>Tongatapu</exemplarCity>
 			</zone>
 			<zone type="Europe/Istanbul">
-				<exemplarCity>Istanbul</exemplarCity>
+				<exemplarCity>Estambul</exemplarCity>
 			</zone>
 			<zone type="America/Port_of_Spain">
-				<exemplarCity>Port of Spain</exemplarCity>
+				<exemplarCity>Puerto España</exemplarCity>
 			</zone>
 			<zone type="Pacific/Funafuti">
 				<exemplarCity>Funafuti</exemplarCity>
@@ -2661,6 +3015,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</zone>
 			<zone type="America/Nome">
 				<exemplarCity>Nome</exemplarCity>
+			</zone>
+			<zone type="Pacific/Johnston">
+				<exemplarCity>Johnston</exemplarCity>
 			</zone>
 			<zone type="America/Anchorage">
 				<exemplarCity>Anchorage</exemplarCity>
@@ -2744,16 +3101,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>Montevideo</exemplarCity>
 			</zone>
 			<zone type="Asia/Samarkand">
-				<exemplarCity>Samarkand</exemplarCity>
+				<exemplarCity>Samarcanda</exemplarCity>
 			</zone>
 			<zone type="Asia/Tashkent">
-				<exemplarCity>Tashkent</exemplarCity>
+				<exemplarCity>Taskent</exemplarCity>
 			</zone>
 			<zone type="Europe/Vatican">
-				<exemplarCity>Vatican</exemplarCity>
+				<exemplarCity>El Vaticano</exemplarCity>
 			</zone>
 			<zone type="America/St_Vincent">
-				<exemplarCity>St. Vincent</exemplarCity>
+				<exemplarCity>San Vicente</exemplarCity>
 			</zone>
 			<zone type="America/Caracas">
 				<exemplarCity>Caracas</exemplarCity>
@@ -2762,7 +3119,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>Tortola</exemplarCity>
 			</zone>
 			<zone type="America/St_Thomas">
-				<exemplarCity>St. Thomas</exemplarCity>
+				<exemplarCity>Santo Tomas</exemplarCity>
 			</zone>
 			<zone type="Asia/Saigon">
 				<exemplarCity>Ho Chi Minh</exemplarCity>
@@ -2783,7 +3140,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>Mayotte</exemplarCity>
 			</zone>
 			<zone type="Africa/Johannesburg">
-				<exemplarCity>Johannesburg</exemplarCity>
+				<exemplarCity>Johannesburgo</exemplarCity>
 			</zone>
 			<zone type="Africa/Lusaka">
 				<exemplarCity>Lusaka</exemplarCity>
@@ -2793,40 +3150,167 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</zone>
 			<metazone type="Afghanistan">
 				<long>
-					<standard>Afghanistan Time</standard>
+					<standard>Hora de Afganistán</standard>
+				</long>
+			</metazone>
+			<metazone type="Africa_Central">
+				<long>
+					<standard>Hora de Africa Central</standard>
+				</long>
+			</metazone>
+			<metazone type="Africa_Eastern">
+				<long>
+					<standard>Hora de Africa Oriental</standard>
+				</long>
+			</metazone>
+			<metazone type="Africa_Southern">
+				<long>
+					<standard>Hora de Sudafrica</standard>
+				</long>
+			</metazone>
+			<metazone type="Africa_Western">
+				<long>
+					<generic>Hora de Africa Occidental</generic>
+					<standard>Hora Estandar de Africa Occidental</standard>
+					<daylight>Hora Estandar de Verano de Africa Occidental</daylight>
+				</long>
+			</metazone>
+			<metazone type="Alaska">
+				<long>
+					<generic>Hora de Alaska</generic>
+					<standard>Hora Estandar de Alaska</standard>
+					<daylight>Hora de Verano de Alaska</daylight>
+				</long>
+			</metazone>
+			<metazone type="Amazon">
+				<long>
+					<generic>Hora de Amazonas</generic>
+					<standard>Hora Estandar de Amazonas</standard>
+					<daylight>Hora de Verano de Amazonas</daylight>
+				</long>
+			</metazone>
+			<metazone type="America_Central">
+				<long>
+					<generic>Hora Central</generic>
+					<standard>Estandard Hora Central</standard>
+					<daylight>Hora Central de Verano</daylight>
+				</long>
+			</metazone>
+			<metazone type="America_Eastern">
+				<long>
+					<generic>Hora del Este</generic>
+					<standard>Hora Estandar del Este</standard>
+					<daylight>Hora de Verano del Este</daylight>
+				</long>
+			</metazone>
+			<metazone type="America_Mountain">
+				<long>
+					<generic>Hora de la Montaña</generic>
+					<standard>Hora Estandar de la Montaña</standard>
+					<daylight>Hora de Verano de la Montaña</daylight>
+				</long>
+			</metazone>
+			<metazone type="America_Pacific">
+				<long>
+					<generic>Hora del Pacífico</generic>
+					<standard>Hora Estandar del Pacífico</standard>
+					<daylight>Hora de Verano del Pacífico</daylight>
+				</long>
+			</metazone>
+			<metazone type="Apia">
+				<long>
+					<generic>Hora de Apia</generic>
+					<standard>Hora Estandar de Apia</standard>
+					<daylight>Hora de Verano de Apia</daylight>
+				</long>
+			</metazone>
+			<metazone type="Arabian">
+				<long>
+					<generic>Hora de Arabia</generic>
+					<standard>Hora Estandar de Arabia</standard>
+					<daylight>Hora de Verano de Arabia</daylight>
 				</long>
 			</metazone>
 			<metazone type="Argentina">
 				<long>
-					<generic>Argentina Time</generic>
-					<standard>Argentina Standard Time</standard>
-					<daylight>Argentina Summer Time</daylight>
+					<generic>Hora de Argentina</generic>
+					<standard>Hora Estandar de Argentina</standard>
+					<daylight>Hora de Verano de Argentina</daylight>
+				</long>
+			</metazone>
+			<metazone type="Argentina_Western">
+				<long>
+					<generic>Hora del Oeste de Argentina</generic>
+					<standard>Hora Estandar del Oeste de Argentina</standard>
+					<daylight>Hora de Verano del Oeste de Argentina</daylight>
 				</long>
 			</metazone>
 			<metazone type="Armenia">
 				<long>
-					<generic>Armenia Time</generic>
-					<standard>Armenia Standard Time</standard>
-					<daylight>Armenia Summer Time</daylight>
+					<generic>Hora de Armenia</generic>
+					<standard>Hora Estandar de Armenia</standard>
+					<daylight>Hora de Verano de Armenia</daylight>
+				</long>
+			</metazone>
+			<metazone type="Atlantic">
+				<long>
+					<generic>Hora del Atlántico</generic>
+					<standard>Hora Estandar del Atlántico</standard>
+					<daylight>Hora De Verano del Atlántico</daylight>
+				</long>
+			</metazone>
+			<metazone type="Australia_Central">
+				<long>
+					<generic>Hora de Australia Central</generic>
+					<standard>Hora Estandar de Australia Central</standard>
+					<daylight>Hora de Verano de Australia Central</daylight>
+				</long>
+			</metazone>
+			<metazone type="Australia_CentralWestern">
+				<long>
+					<generic>Hora de Australia Central Occidental</generic>
+					<standard>Hora Estandar de Australia Central Occidental</standard>
+					<daylight>Hora de Verano de Australia Central Occidental</daylight>
+				</long>
+			</metazone>
+			<metazone type="Australia_Eastern">
+				<long>
+					<generic>Hora de Australia Oriental</generic>
+					<standard>Hora Estandar de Australia Oriental</standard>
+					<daylight>Hora de Verano de Australia Oriental</daylight>
+				</long>
+			</metazone>
+			<metazone type="Australia_Western">
+				<long>
+					<generic>Hora de Australia Occidental</generic>
+					<standard>Hora Estandar de Australia Occidental</standard>
+					<daylight>Hora de Verano de Australia Occidental</daylight>
 				</long>
 			</metazone>
 			<metazone type="Azerbaijan">
 				<long>
-					<generic>Azerbaijan Time</generic>
-					<standard>Azerbaijan Standard Time</standard>
-					<daylight>Azerbaijan Summer Time</daylight>
+					<generic>Hora de Azerbaiyán</generic>
+					<standard>Hora Estandar de Azerbaiyán</standard>
+					<daylight>Hora de Verano de Azerbaiyán</daylight>
+				</long>
+			</metazone>
+			<metazone type="Azores">
+				<long>
+					<generic>Hora de las Azores</generic>
+					<standard>Hora Estandar de las Azores</standard>
+					<daylight>Hora de Verano de las Azores</daylight>
 				</long>
 			</metazone>
 			<metazone type="Bangladesh">
 				<long>
-					<generic>Bangladesh Time</generic>
-					<standard>Bangladesh Standard Time</standard>
-					<daylight>Bangladesh Summer Time</daylight>
+					<generic>Hora de Bangladesh</generic>
+					<standard>Hora Estandar de Bangladesh</standard>
+					<daylight>Hora de Verano de Bangladesh</daylight>
 				</long>
 			</metazone>
 			<metazone type="Bhutan">
 				<long>
-					<standard>Bhutan Time</standard>
+					<standard>Hora de Bután</standard>
 				</long>
 			</metazone>
 			<metazone type="Bolivia">
@@ -2834,292 +3318,718 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>Bolivia Time</standard>
 				</long>
 			</metazone>
+			<metazone type="Brasilia">
+				<long>
+					<generic>Hora de Brasilia</generic>
+					<standard>Hora Estandar de Brasilia</standard>
+					<daylight>Hora de Verano de Brasilia</daylight>
+				</long>
+			</metazone>
 			<metazone type="Brunei">
 				<long>
-					<standard>Brunei Darussalam Time</standard>
+					<standard>Hora de Brunei Darussalam</standard>
+				</long>
+			</metazone>
+			<metazone type="Cape_Verde">
+				<long>
+					<generic>Hora de Cabo Verde</generic>
+					<standard>Hora Estandar de Cabo Verde</standard>
+					<daylight>Hora de Verano de Cabo Verde</daylight>
+				</long>
+			</metazone>
+			<metazone type="Chamorro">
+				<long>
+					<standard>Hora Estandar de Chamorro</standard>
+				</long>
+			</metazone>
+			<metazone type="Chatham">
+				<long>
+					<generic>Hora de Chatham</generic>
+					<standard>Hora Estandar de Chatham</standard>
+					<daylight>Hora de Verano de Chatham</daylight>
 				</long>
 			</metazone>
 			<metazone type="Chile">
 				<long>
-					<generic>Chile Time</generic>
-					<standard>Chile Standard Time</standard>
-					<daylight>Chile Summer Time</daylight>
+					<generic>Hora de Chile</generic>
+					<standard>Hora Estandar de Chile</standard>
+					<daylight>Hora de Verano de Chile</daylight>
 				</long>
 			</metazone>
 			<metazone type="China">
 				<long>
-					<generic>China Time</generic>
-					<standard>China Standard Time</standard>
-					<daylight>China Daylight Time</daylight>
+					<generic>Hora de China</generic>
+					<standard>Hora Estandar de China</standard>
+					<daylight>Hora de Verano de China</daylight>
+				</long>
+			</metazone>
+			<metazone type="Choibalsan">
+				<long>
+					<generic>Hora de Choybalsan</generic>
+					<standard>Hora Estandar de Choybalsan</standard>
+					<daylight>Hora de Verano de Choybalsan</daylight>
+				</long>
+			</metazone>
+			<metazone type="Christmas">
+				<long>
+					<standard>Hora de Isla Christmas</standard>
+				</long>
+			</metazone>
+			<metazone type="Cocos">
+				<long>
+					<standard>Hora de Islas Cocos</standard>
 				</long>
 			</metazone>
 			<metazone type="Colombia">
 				<long>
-					<generic>Colombia Time</generic>
-					<standard>Colombia Standard Time</standard>
-					<daylight>Colombia Summer Time</daylight>
+					<generic>Hora de Colombia</generic>
+					<standard>Hora Estandar de Colombia</standard>
+					<daylight>Hora de Verano de Colombia</daylight>
 				</long>
 			</metazone>
 			<metazone type="Cook">
 				<long>
-					<generic>Cook Islands Time</generic>
-					<standard>Cook Islands Standard Time</standard>
-					<daylight>Cook Islands Half Summer Time</daylight>
+					<generic>Hora de Islas Cook</generic>
+					<standard>Hora Estandar de Isla Cocos</standard>
+					<daylight>Hora de Verano de Isla Cocos</daylight>
 				</long>
 			</metazone>
 			<metazone type="Cuba">
 				<long>
-					<generic>Cuba Time</generic>
-					<standard>Cuba Standard Time</standard>
-					<daylight>Cuba Daylight Time</daylight>
+					<generic>Hora de Cuba</generic>
+					<standard>Hora Estandar de Cuba</standard>
+					<daylight>Hora de Verano de Cuba</daylight>
+				</long>
+			</metazone>
+			<metazone type="Davis">
+				<long>
+					<standard>Hora de Davis</standard>
+				</long>
+			</metazone>
+			<metazone type="DumontDUrville">
+				<long>
+					<standard>Hora de Dumont-d’Urville</standard>
+				</long>
+			</metazone>
+			<metazone type="East_Timor">
+				<long>
+					<standard>Hora de Timor Oriental</standard>
+				</long>
+			</metazone>
+			<metazone type="Easter">
+				<long>
+					<generic>Hora de Isla de Pascua</generic>
+					<standard>Hora Estandar de Isla de Pascua</standard>
+					<daylight>Hora de Verano de Isla de Pascua</daylight>
 				</long>
 			</metazone>
 			<metazone type="Ecuador">
 				<long>
-					<standard>Ecuador Time</standard>
+					<standard>Hora de Ecuador</standard>
+				</long>
+			</metazone>
+			<metazone type="Europe_Central">
+				<long>
+					<generic>Hora de Europa Central</generic>
+					<standard>Hora Estandar de Europa Central</standard>
+					<daylight>Hora de Verano de Europa Central</daylight>
+				</long>
+			</metazone>
+			<metazone type="Europe_Eastern">
+				<long>
+					<generic>Hora de Europa Oriental</generic>
+					<standard>Hora Estandar de Europa Oriental</standard>
+					<daylight>Hora de Verano de Europa Oriental</daylight>
+				</long>
+			</metazone>
+			<metazone type="Europe_Further_Eastern">
+				<long>
+					<standard>Hora de Verano más Oriental de Europa</standard>
+				</long>
+			</metazone>
+			<metazone type="Europe_Western">
+				<long>
+					<generic>Hora de Europa Occidental</generic>
+					<standard>Hora Estandar de Europa Occidental</standard>
+					<daylight>Hora de Verano de Europa Occidental</daylight>
 				</long>
 			</metazone>
 			<metazone type="Falkland">
 				<long>
-					<generic>Falkland Islands Time</generic>
-					<standard>Falkland Islands Standard Time</standard>
-					<daylight>Falkland Islands Summer Time</daylight>
+					<generic>Hora de Islas Malvinas</generic>
+					<standard>Hora Estandar de Islas Malvinas</standard>
+					<daylight>Hora de Verano de Islas Malvinas</daylight>
 				</long>
 			</metazone>
 			<metazone type="Fiji">
 				<long>
-					<generic>Fiji Time</generic>
-					<standard>Fiji Standard Time</standard>
-					<daylight>Fiji Summer Time</daylight>
+					<generic>Hora de Fiji</generic>
+					<standard>Hora Estandar de Fiji</standard>
+					<daylight>Hora de Verano de Fiji</daylight>
 				</long>
 			</metazone>
 			<metazone type="French_Guiana">
 				<long>
-					<standard>French Guiana Time</standard>
+					<standard>Hora de Guayana Francesa</standard>
+				</long>
+			</metazone>
+			<metazone type="French_Southern">
+				<long>
+					<standard>Hora Francés meridional y antártico</standard>
+				</long>
+			</metazone>
+			<metazone type="Galapagos">
+				<long>
+					<standard>Hora de Islas Galápagos</standard>
+				</long>
+			</metazone>
+			<metazone type="Gambier">
+				<long>
+					<standard>Hora de Gambier</standard>
 				</long>
 			</metazone>
 			<metazone type="Georgia">
 				<long>
-					<generic>Georgia Time</generic>
-					<standard>Georgia Standard Time</standard>
-					<daylight>Georgia Summer Time</daylight>
+					<generic>Hora de Georgia</generic>
+					<standard>Hora Estandar de Georgia</standard>
+					<daylight>Hora de Verano de Georgia</daylight>
+				</long>
+			</metazone>
+			<metazone type="Gilbert_Islands">
+				<long>
+					<standard>Hora de Islas Gilbert</standard>
+				</long>
+			</metazone>
+			<metazone type="GMT">
+				<long>
+					<standard>Hora del Meridiano de Greenwich</standard>
 				</long>
 			</metazone>
 			<metazone type="Greenland_Eastern">
 				<long>
-					<generic>East Greenland Time</generic>
-					<standard>East Greenland Standard Time</standard>
-					<daylight>East Greenland Summer Time</daylight>
+					<generic>Hora de Groenlandia</generic>
+					<standard>Hora Estandar de Groenlandia</standard>
+					<daylight>Hora de Verano de Groenlandia</daylight>
+				</long>
+			</metazone>
+			<metazone type="Greenland_Western">
+				<long>
+					<generic>Hora de Groenlandia Occidental</generic>
+					<standard>Hora Estandar de Groenlandia Occidental</standard>
+					<daylight>Hora de Verano de Groenlandia Occidental</daylight>
+				</long>
+			</metazone>
+			<metazone type="Gulf">
+				<long>
+					<standard>Hora Estandar del Golfo</standard>
+				</long>
+			</metazone>
+			<metazone type="Guyana">
+				<long>
+					<standard>Hora de Guyana</standard>
+				</long>
+			</metazone>
+			<metazone type="Hawaii_Aleutian">
+				<long>
+					<generic>Hora de Hawai-Aleutiano</generic>
+					<standard>Hora Estandar de Hawai-Aleutiano</standard>
+					<daylight>Hora de Verano de Hawai-Aleutiano</daylight>
 				</long>
 			</metazone>
 			<metazone type="Hong_Kong">
 				<long>
-					<generic>Hong Kong Time</generic>
-					<standard>Hong Kong Standard Time</standard>
-					<daylight>Hong Kong Summer Time</daylight>
+					<generic>Hora de Hong Kong</generic>
+					<standard>Hora Estandar de Hong Kong</standard>
+					<daylight>Hora de Verano de Hong Kong</daylight>
+				</long>
+			</metazone>
+			<metazone type="Hovd">
+				<long>
+					<generic>Hora de Hovd</generic>
+					<standard>Hora Estandar de Hovd</standard>
+					<daylight>Hora de Verano de Hovd</daylight>
 				</long>
 			</metazone>
 			<metazone type="India">
 				<long>
-					<standard>India Standard Time</standard>
+					<standard>Hora Estandar de India</standard>
+				</long>
+			</metazone>
+			<metazone type="Indian_Ocean">
+				<long>
+					<standard>Hora del Oceano Índico</standard>
+				</long>
+			</metazone>
+			<metazone type="Indochina">
+				<long>
+					<standard>Hora de Indochina</standard>
 				</long>
 			</metazone>
 			<metazone type="Indonesia_Central">
 				<long>
-					<standard>Central Indonesia Time</standard>
+					<standard>Hora de Indonesia Central</standard>
 				</long>
 			</metazone>
 			<metazone type="Indonesia_Eastern">
 				<long>
-					<standard>Eastern Indonesia Time</standard>
+					<standard>Hora de Indonesia Oriental</standard>
+				</long>
+			</metazone>
+			<metazone type="Indonesia_Western">
+				<long>
+					<standard>Hora de Indonesia Occidental</standard>
 				</long>
 			</metazone>
 			<metazone type="Iran">
 				<long>
-					<generic>Iran Time</generic>
-					<standard>Iran Standard Time</standard>
-					<daylight>Iran Daylight Time</daylight>
+					<generic>Hora de Irán</generic>
+					<standard>Hora Estandar de Irán</standard>
+					<daylight>Hora de Verano de Irán</daylight>
+				</long>
+			</metazone>
+			<metazone type="Irkutsk">
+				<long>
+					<generic>Hora de Irkutsk</generic>
+					<standard>Hora Estandar de Irkutsk</standard>
+					<daylight>Hora de Verano de Irkutsk</daylight>
 				</long>
 			</metazone>
 			<metazone type="Israel">
 				<long>
-					<generic>Israel Time</generic>
-					<standard>Israel Standard Time</standard>
-					<daylight>Israel Daylight Time</daylight>
+					<generic>Hora de Israel</generic>
+					<standard>Hora Estandar de Israel</standard>
+					<daylight>Hora de Verano de Israel</daylight>
 				</long>
 			</metazone>
 			<metazone type="Japan">
 				<long>
-					<generic>Japan Time</generic>
-					<standard>Japan Standard Time</standard>
-					<daylight>Japan Daylight Time</daylight>
+					<generic>Hora de Japón</generic>
+					<standard>Hora Estandar de Japón</standard>
+					<daylight>Hora de Verano de Japón</daylight>
 				</long>
 			</metazone>
 			<metazone type="Kazakhstan_Eastern">
 				<long>
-					<standard>East Kazakhstan Time</standard>
+					<standard>Hora de Kazajistán Oriental</standard>
 				</long>
 			</metazone>
 			<metazone type="Kazakhstan_Western">
 				<long>
-					<standard>West Kazakhstan Time</standard>
+					<standard>Hora de Kazajistán del Oeste</standard>
+				</long>
+			</metazone>
+			<metazone type="Korea">
+				<long>
+					<generic>Hora de Corea</generic>
+					<standard>Hora Estandar de Corea</standard>
+					<daylight>Hora de Verano de Corea</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kosrae">
+				<long>
+					<standard>Hora de Kosrae</standard>
+				</long>
+			</metazone>
+			<metazone type="Krasnoyarsk">
+				<long>
+					<generic>Hora de Krasnoyarsk</generic>
+					<standard>Hora Estandar de Krasnoyarsk</standard>
+					<daylight>Hora de Verano de Krasnoyarsk</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kyrgystan">
+				<long>
+					<standard>Hora de Kirguistán</standard>
+				</long>
+			</metazone>
+			<metazone type="Line_Islands">
+				<long>
+					<standard>Hora de Espóradas Ecuatoriales</standard>
+				</long>
+			</metazone>
+			<metazone type="Lord_Howe">
+				<long>
+					<generic>Hora de Lord Howe</generic>
+					<standard>Hora Estandar de Lord Howe</standard>
+					<daylight>Hora de Verano de Lord Howe</daylight>
+				</long>
+			</metazone>
+			<metazone type="Macquarie">
+				<long>
+					<standard>Hora de Isla Macquarie</standard>
+				</long>
+			</metazone>
+			<metazone type="Magadan">
+				<long>
+					<generic>Hora de Magadan</generic>
+					<standard>Hora Estandar de Magadan</standard>
+					<daylight>Hora de Verano de Magadan</daylight>
 				</long>
 			</metazone>
 			<metazone type="Malaysia">
 				<long>
-					<standard>Malaysia Time</standard>
+					<standard>Hora de Malasia</standard>
 				</long>
 			</metazone>
 			<metazone type="Maldives">
 				<long>
-					<standard>Maldives Time</standard>
+					<standard>Hora de Maldivas</standard>
+				</long>
+			</metazone>
+			<metazone type="Marquesas">
+				<long>
+					<standard>Hora de Marquesas</standard>
+				</long>
+			</metazone>
+			<metazone type="Marshall_Islands">
+				<long>
+					<standard>Hora de Islas Marshall</standard>
 				</long>
 			</metazone>
 			<metazone type="Mauritius">
 				<long>
-					<generic>Mauritius Time</generic>
-					<standard>Mauritius Standard Time</standard>
-					<daylight>Mauritius Summer Time</daylight>
+					<generic>Hora de Mauricio</generic>
+					<standard>Hora Estandar de Mauricio</standard>
+					<daylight>Hora de Verano de Mauricio</daylight>
+				</long>
+			</metazone>
+			<metazone type="Mawson">
+				<long>
+					<standard>Hora de Mawson</standard>
+				</long>
+			</metazone>
+			<metazone type="Mexico_Northwest">
+				<long>
+					<generic>Hora Estandar de Verano de México</generic>
+					<standard>Hora Estandar del Noroeste de México</standard>
+					<daylight>Hora de Verano del Noroeste de México</daylight>
+				</long>
+			</metazone>
+			<metazone type="Mexico_Pacific">
+				<long>
+					<generic>Hora del Pacífico Mexicano</generic>
+					<standard>Hora Estandar del Pacífico Mexicano</standard>
+					<daylight>Hora de Verano del Pacífico Mexicano</daylight>
+				</long>
+			</metazone>
+			<metazone type="Mongolia">
+				<long>
+					<generic>Hora de Ulán Bator</generic>
+					<standard>Hora Estandar de Ulán Bator</standard>
+					<daylight>Hora de Verano de Ulán Bator</daylight>
+				</long>
+			</metazone>
+			<metazone type="Moscow">
+				<long>
+					<generic>Hora de Moscú</generic>
+					<standard>Hora Estandar de Moscú</standard>
+					<daylight>Hora de Verano de Moscú</daylight>
 				</long>
 			</metazone>
 			<metazone type="Myanmar">
 				<long>
-					<standard>Myanmar Time</standard>
+					<standard>Hora de Myanmar</standard>
 				</long>
 			</metazone>
 			<metazone type="Nauru">
 				<long>
-					<standard>Nauru Time</standard>
+					<standard>Hora de Nauru</standard>
 				</long>
 			</metazone>
 			<metazone type="Nepal">
 				<long>
-					<standard>Nepal Time</standard>
+					<standard>Hora de Nepal</standard>
 				</long>
 			</metazone>
 			<metazone type="New_Caledonia">
 				<long>
-					<generic>New Caledonia Time</generic>
-					<standard>New Caledonia Standard Time</standard>
-					<daylight>New Caledonia Summer Time</daylight>
+					<generic>Hora de Nueva Caledonia</generic>
+					<standard>Hora Estandar de Nueva Caledonia</standard>
+					<daylight>Hora de Verano de Nueva Caledonia</daylight>
 				</long>
 			</metazone>
 			<metazone type="New_Zealand">
 				<long>
-					<generic>New Zealand Time</generic>
-					<standard>New Zealand Standard Time</standard>
-					<daylight>New Zealand Daylight Time</daylight>
+					<generic>Hora de Nueva Zelanda</generic>
+					<standard>Hora Estandar de Nueva Zelanda</standard>
+					<daylight>Hora de Verano de Nueva Zelanda</daylight>
+				</long>
+			</metazone>
+			<metazone type="Newfoundland">
+				<long>
+					<generic>Hora de Terranova</generic>
+					<standard>Hora Estandar de Terranova</standard>
+					<daylight>Hora de Verano de Terranova</daylight>
 				</long>
 			</metazone>
 			<metazone type="Niue">
 				<long>
-					<standard>Niue Time</standard>
+					<standard>Hora de Niue</standard>
+				</long>
+			</metazone>
+			<metazone type="Norfolk">
+				<long>
+					<standard>Hora de la Isla Norfolk</standard>
+				</long>
+			</metazone>
+			<metazone type="Noronha">
+				<long>
+					<generic>Hora de Fernando de Noronha</generic>
+					<standard>Hora Estandar de Fernando de Noronha</standard>
+					<daylight>Hora de Verano de Fernando de Noronha</daylight>
+				</long>
+			</metazone>
+			<metazone type="Novosibirsk">
+				<long>
+					<generic>Hora de Novosibirsk</generic>
+					<standard>Hora Estandar de Novosibirsk</standard>
+					<daylight>Hora de Verano de Novosibirsk</daylight>
+				</long>
+			</metazone>
+			<metazone type="Omsk">
+				<long>
+					<generic>Hora de Omsk</generic>
+					<standard>Hora Estandar de Omsk</standard>
+					<daylight>Hora de Verano de Omsk</daylight>
 				</long>
 			</metazone>
 			<metazone type="Pakistan">
 				<long>
-					<generic>Pakistan Time</generic>
-					<standard>Pakistan Standard Time</standard>
-					<daylight>Pakistan Summer Time</daylight>
+					<generic>Hora de Pakistán</generic>
+					<standard>Hora Estandar de Pakistán</standard>
+					<daylight>Hora de Verano de Pakistán</daylight>
 				</long>
 			</metazone>
 			<metazone type="Palau">
 				<long>
-					<standard>Palau Time</standard>
+					<standard>Hora de Palau</standard>
 				</long>
 			</metazone>
 			<metazone type="Papua_New_Guinea">
 				<long>
-					<standard>Papua New Guinea Time</standard>
+					<standard>Hora de Papua Nueva Guinea</standard>
 				</long>
 			</metazone>
 			<metazone type="Paraguay">
 				<long>
-					<generic>Paraguay Time</generic>
-					<standard>Paraguay Standard Time</standard>
-					<daylight>Paraguay Summer Time</daylight>
+					<generic>Hora de Paraguay</generic>
+					<standard>Hora Estandar de Paraguay</standard>
+					<daylight>Hora de Verano de Paraguay</daylight>
 				</long>
 			</metazone>
 			<metazone type="Peru">
+				<long>
+					<generic>Hora de Perú</generic>
+					<standard>Hora Estandar de Perú</standard>
+					<daylight>Hora de Verano de Perú</daylight>
+				</long>
 				<short>
 					<generic>PET</generic>
 					<standard>PET</standard>
 					<daylight>PEST</daylight>
 				</short>
 			</metazone>
+			<metazone type="Philippines">
+				<long>
+					<generic>Hora de Filipinas</generic>
+					<standard>Hora Estandar de Filipinas</standard>
+					<daylight>Hora de Verano de Filipinas</daylight>
+				</long>
+			</metazone>
+			<metazone type="Phoenix_Islands">
+				<long>
+					<standard>Hora de Islas Phoenix</standard>
+				</long>
+			</metazone>
+			<metazone type="Pierre_Miquelon">
+				<long>
+					<generic>Hora de San Pedro y Miquelón</generic>
+					<standard>Hora Estandar de San Pedro y Miquelón</standard>
+					<daylight>Hora de Verano de San Pedro y Miquelón</daylight>
+				</long>
+			</metazone>
+			<metazone type="Pitcairn">
+				<long>
+					<standard>Hora de Pitcairn</standard>
+				</long>
+			</metazone>
+			<metazone type="Ponape">
+				<long>
+					<standard>Hora de Pohnpei</standard>
+				</long>
+			</metazone>
+			<metazone type="Pyongyang">
+				<long>
+					<standard>Hora de Pionyang</standard>
+				</long>
+			</metazone>
 			<metazone type="Reunion">
 				<long>
-					<standard>Reunion Time</standard>
+					<standard>Hora de Réunion</standard>
+				</long>
+			</metazone>
+			<metazone type="Rothera">
+				<long>
+					<standard>Hora de Rothera</standard>
+				</long>
+			</metazone>
+			<metazone type="Sakhalin">
+				<long>
+					<generic>Hora de Sakhalin</generic>
+					<standard>Hora Estandar de Sakhalin</standard>
+					<daylight>Hora de Verano de Sakhalin</daylight>
 				</long>
 			</metazone>
 			<metazone type="Samoa">
 				<long>
-					<generic>Samoa Time</generic>
-					<standard>Samoa Standard Time</standard>
-					<daylight>Samoa Daylight Time</daylight>
+					<generic>Hora de Samoa</generic>
+					<standard>Hora Estandar de Samoa</standard>
+					<daylight>Hora de Verano de Samoa</daylight>
 				</long>
 			</metazone>
 			<metazone type="Seychelles">
 				<long>
-					<standard>Seychelles Time</standard>
+					<standard>Hora de Seychelles</standard>
 				</long>
 			</metazone>
 			<metazone type="Singapore">
 				<long>
-					<standard>Singapore Standard Time</standard>
+					<standard>Hora Estandar de Singapur</standard>
 				</long>
 			</metazone>
 			<metazone type="Solomon">
 				<long>
-					<standard>Solomon Islands Time</standard>
+					<standard>Hora de Islas Salomón</standard>
+				</long>
+			</metazone>
+			<metazone type="South_Georgia">
+				<long>
+					<standard>Hora de Georgia del Sur</standard>
+				</long>
+			</metazone>
+			<metazone type="Suriname">
+				<long>
+					<standard>Hora de Surinam</standard>
+				</long>
+			</metazone>
+			<metazone type="Syowa">
+				<long>
+					<standard>Hora de Syowa</standard>
+				</long>
+			</metazone>
+			<metazone type="Tahiti">
+				<long>
+					<standard>Hora de Tahiti</standard>
+				</long>
+			</metazone>
+			<metazone type="Taipei">
+				<long>
+					<generic>Hora de Taipéi</generic>
+					<standard>Hora Estandar de Taipéi</standard>
+					<daylight>Hora de Verano de Taipéi</daylight>
 				</long>
 			</metazone>
 			<metazone type="Tajikistan">
 				<long>
-					<standard>Tajikistan Time</standard>
+					<standard>Hora de Tayikistán</standard>
 				</long>
 			</metazone>
 			<metazone type="Tokelau">
 				<long>
-					<standard>Tokelau Time</standard>
+					<standard>Hora de Tokelau</standard>
 				</long>
 			</metazone>
 			<metazone type="Tonga">
 				<long>
-					<generic>Tonga Time</generic>
-					<standard>Tonga Standard Time</standard>
-					<daylight>Tonga Summer Time</daylight>
+					<generic>Hora de Tonga</generic>
+					<standard>Hora Estandar de Tonga</standard>
+					<daylight>Hora de Verano de Tonga</daylight>
+				</long>
+			</metazone>
+			<metazone type="Truk">
+				<long>
+					<standard>Hora de Chuuk</standard>
 				</long>
 			</metazone>
 			<metazone type="Turkmenistan">
 				<long>
-					<generic>Turkmenistan Time</generic>
-					<standard>Turkmenistan Standard Time</standard>
-					<daylight>Turkmenistan Summer Time</daylight>
+					<generic>Hora de Turkmenistán</generic>
+					<standard>Hora Estandar de Turkmenistán</standard>
+					<daylight>Hora de Verano de Turkmenistán</daylight>
 				</long>
 			</metazone>
 			<metazone type="Tuvalu">
 				<long>
-					<standard>Tuvalu Time</standard>
+					<standard>Hora de Tuvalu</standard>
+				</long>
+			</metazone>
+			<metazone type="Uruguay">
+				<long>
+					<generic>Hora de Uruguay</generic>
+					<standard>Hora Estandar de Uruguay</standard>
+					<daylight>Hora de Verano de Uruguay</daylight>
 				</long>
 			</metazone>
 			<metazone type="Uzbekistan">
 				<long>
-					<generic>Uzbekistan Time</generic>
-					<standard>Uzbekistan Standard Time</standard>
-					<daylight>Uzbekistan Summer Time</daylight>
+					<generic>Hora de Uzbekistán</generic>
+					<standard>Hora Estandar de Uzbekistán</standard>
+					<daylight>Hora de Verano de Uzbekistán</daylight>
 				</long>
 			</metazone>
 			<metazone type="Vanuatu">
 				<long>
-					<generic>Vanuatu Time</generic>
-					<standard>Vanuatu Standard Time</standard>
-					<daylight>Vanuatu Summer Time</daylight>
+					<generic>Hora de Vanuatu</generic>
+					<standard>Hora Estandar de Vanuatu</standard>
+					<daylight>Hora de Verano de Vanuatu</daylight>
+				</long>
+			</metazone>
+			<metazone type="Venezuela">
+				<long>
+					<standard>Hora de Venezuela</standard>
+				</long>
+			</metazone>
+			<metazone type="Vladivostok">
+				<long>
+					<generic>Hora de Vladivostok</generic>
+					<standard>Hora Estandar de Vladivostok</standard>
+					<daylight>Hora de Verano de Vladivostok</daylight>
+				</long>
+			</metazone>
+			<metazone type="Volgograd">
+				<long>
+					<generic>Hora de Volgogrado</generic>
+					<standard>Hora Estandar de Volgogrado</standard>
+					<daylight>Hora de Verano de Volgogrado</daylight>
+				</long>
+			</metazone>
+			<metazone type="Vostok">
+				<long>
+					<standard>Hora de Vostok</standard>
+				</long>
+			</metazone>
+			<metazone type="Wake">
+				<long>
+					<standard>Hora de Isla Wake</standard>
 				</long>
 			</metazone>
 			<metazone type="Wallis">
 				<long>
-					<standard>Wallis &amp; Futuna Time</standard>
+					<standard>Hora de Wallis y Futuna</standard>
+				</long>
+			</metazone>
+			<metazone type="Yakutsk">
+				<long>
+					<generic>Hora de Yakutsk</generic>
+					<standard>Hora Estandar de Yakutsk</standard>
+					<daylight>Hora de Verano de Yakutsk</daylight>
+				</long>
+			</metazone>
+			<metazone type="Yekaterinburg">
+				<long>
+					<generic>Hora de Ekaterinburgo</generic>
+					<standard>Hora Estandar de Ekaterinburgo</standard>
+					<daylight>Hora de Verano de Ekaterinburgo</daylight>
 				</long>
 			</metazone>
 		</timeZoneNames>
@@ -3219,8 +4129,759 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unitPattern count="other">{0} {1}</unitPattern>
 		</currencyFormats>
 		<currencies>
+			<currency type="AED">
+				<symbol draft="contributed">AED</symbol>
+			</currency>
+			<currency type="AFN">
+				<displayName>Afgani Afgano</displayName>
+				<displayName count="other">Afgani afgano</displayName>
+				<symbol draft="contributed">AFN</symbol>
+			</currency>
+			<currency type="ALL">
+				<displayName>Lek albanés</displayName>
+				<displayName count="other">Lek albanés</displayName>
+				<symbol draft="contributed">ALL</symbol>
+			</currency>
+			<currency type="AMD">
+				<symbol draft="contributed">AMD</symbol>
+			</currency>
+			<currency type="ANG">
+				<displayName>Florín Antillano Neerlandés</displayName>
+				<displayName count="other">Florín antillano neerlandés</displayName>
+				<symbol draft="contributed">ANG</symbol>
+			</currency>
+			<currency type="AOA">
+				<displayName>Kwanza Angoleño</displayName>
+				<displayName count="other">Kwanza angoleño</displayName>
+				<symbol draft="contributed">AOA</symbol>
+			</currency>
+			<currency type="ARS">
+				<displayName>Peso Argentino</displayName>
+				<displayName count="other">Peso argentino</displayName>
+				<symbol draft="contributed">ARS</symbol>
+			</currency>
+			<currency type="AUD">
+				<displayName>Dólar Australiano</displayName>
+				<displayName count="other">Dólar Australiano</displayName>
+			</currency>
+			<currency type="AWG">
+				<displayName>Florín Arubeño</displayName>
+				<displayName count="other">Florín arubeño</displayName>
+				<symbol draft="contributed">AWG</symbol>
+			</currency>
+			<currency type="AZN">
+				<symbol draft="contributed">AZN</symbol>
+			</currency>
+			<currency type="BAM">
+				<displayName>Marco Bosnioherzegovino</displayName>
+				<displayName count="other">Marco bosnioherzegovino</displayName>
+				<symbol draft="contributed">BAM</symbol>
+			</currency>
+			<currency type="BBD">
+				<displayName>Dólar de Barbados</displayName>
+				<displayName count="other">Dólar de Barbados</displayName>
+				<symbol draft="contributed">BBG</symbol>
+			</currency>
+			<currency type="BDT">
+				<displayName>Taka Bangladesí</displayName>
+				<displayName count="other">Taka bangladesí</displayName>
+				<symbol draft="contributed">BDT</symbol>
+			</currency>
+			<currency type="BGN">
+				<displayName>Lev</displayName>
+				<displayName count="other">Lev</displayName>
+				<symbol draft="contributed">BGN</symbol>
+			</currency>
+			<currency type="BHD">
+				<displayName>Dinar Bareiní</displayName>
+				<displayName count="other">Dinar bareiní</displayName>
+				<symbol draft="contributed">BHD</symbol>
+			</currency>
+			<currency type="BIF">
+				<displayName>Franco Burundés</displayName>
+				<displayName count="other">Franco burundés</displayName>
+				<symbol draft="contributed">BIF</symbol>
+			</currency>
+			<currency type="BMD">
+				<displayName>Dólar Bermudeño</displayName>
+				<displayName count="other">Dólar bermudeño</displayName>
+				<symbol draft="contributed">DBM</symbol>
+			</currency>
+			<currency type="BND">
+				<displayName>Dólar de Brunéi</displayName>
+				<displayName count="other">Dólar de Brunéi</displayName>
+				<symbol draft="contributed">BND</symbol>
+			</currency>
+			<currency type="BOB">
+				<displayName>Boliviano</displayName>
+				<displayName count="other">Boliviano</displayName>
+				<symbol draft="contributed">BOB</symbol>
+			</currency>
+			<currency type="BRL">
+				<displayName>Real Brasileño</displayName>
+				<displayName count="other">Real brasileño</displayName>
+			</currency>
+			<currency type="BSD">
+				<displayName>Dólar Bahameño</displayName>
+				<displayName count="other">Dólar bahameño</displayName>
+				<symbol draft="contributed">BSD</symbol>
+			</currency>
+			<currency type="BTN">
+				<displayName>Ngultrum Butanés</displayName>
+				<displayName count="other">Ngultrum butanés</displayName>
+				<symbol draft="contributed">BTN</symbol>
+			</currency>
+			<currency type="BWP">
+				<displayName>Pula Botswano</displayName>
+				<displayName count="other">Pula Botswano</displayName>
+				<symbol draft="contributed">BWP</symbol>
+			</currency>
+			<currency type="BYN">
+				<displayName>Nuevo Rublo Bielorruso</displayName>
+				<displayName count="other">Nuevo rublo bielorruso</displayName>
+				<symbol draft="contributed">BYN</symbol>
+			</currency>
+			<currency type="BZD">
+				<displayName>Dólar Beliceño</displayName>
+				<displayName count="other">Dólar beliceño</displayName>
+				<symbol draft="contributed">DBZ</symbol>
+			</currency>
+			<currency type="CAD">
+				<displayName>Dólar Canadiense</displayName>
+				<displayName count="other">Dólar canadiense</displayName>
+				<symbol draft="contributed">$CA</symbol>
+			</currency>
+			<currency type="CDF">
+				<displayName>Franco Congoleño</displayName>
+				<displayName count="other">Franco congoleño</displayName>
+				<symbol draft="contributed">CDF</symbol>
+			</currency>
+			<currency type="CHF">
+				<displayName>Franco Suizo</displayName>
+				<displayName count="other">Franco suizo</displayName>
+				<symbol draft="contributed">CHF</symbol>
+			</currency>
+			<currency type="CLP">
+				<displayName>Peso Chileno</displayName>
+				<displayName count="other">Peso chileno</displayName>
+				<symbol draft="contributed">CLP</symbol>
+			</currency>
+			<currency type="CNH">
+				<displayName>Yuan Chino (offshore)</displayName>
+				<displayName count="other">Yuan chino (offshore)</displayName>
+				<symbol draft="contributed">CNH</symbol>
+			</currency>
+			<currency type="CNY">
+				<displayName>Yuan Chino</displayName>
+				<displayName count="other">Yuan chino</displayName>
+			</currency>
+			<currency type="COP">
+				<displayName>Peso Colombiano</displayName>
+				<displayName count="other">Peso colombiano</displayName>
+				<symbol draft="contributed">COP</symbol>
+			</currency>
+			<currency type="CRC">
+				<displayName>Colón Costarricense</displayName>
+				<displayName count="other">Colón costarricense</displayName>
+				<symbol draft="contributed">CRC</symbol>
+			</currency>
+			<currency type="CUC">
+				<displayName>Peso Cubano Convertible</displayName>
+				<displayName count="other">Peso cubano convertible</displayName>
+				<symbol draft="contributed">CUC</symbol>
+			</currency>
+			<currency type="CUP">
+				<displayName>Peso Cubano</displayName>
+				<displayName count="other">Peso cubano</displayName>
+				<symbol draft="contributed">CUP</symbol>
+			</currency>
+			<currency type="CVE">
+				<displayName>Escudo Caboverdiano</displayName>
+				<displayName count="other">Escudo caboverdiano</displayName>
+				<symbol draft="contributed">CVE</symbol>
+			</currency>
+			<currency type="CZK">
+				<displayName>Corona Checa</displayName>
+				<displayName count="other">Corona checa</displayName>
+				<symbol draft="contributed">CZK</symbol>
+			</currency>
+			<currency type="DJF">
+				<displayName>Franco Yibutiano</displayName>
+				<displayName count="other">Franco yibutiano</displayName>
+				<symbol draft="contributed">DJF</symbol>
+			</currency>
+			<currency type="DKK">
+				<displayName>Corona Danesa</displayName>
+				<displayName count="other">Corona danesa</displayName>
+				<symbol draft="contributed">DKK</symbol>
+			</currency>
+			<currency type="DOP">
+				<displayName>Peso Dominicano</displayName>
+				<displayName count="other">Peso dominicano</displayName>
+				<symbol draft="contributed">DOP</symbol>
+			</currency>
+			<currency type="DZD">
+				<displayName>Dinar Argelino</displayName>
+				<displayName count="other">Dinar argelino</displayName>
+				<symbol draft="contributed">DZD</symbol>
+			</currency>
+			<currency type="EGP">
+				<displayName>Libra Egipcia</displayName>
+				<displayName count="other">Libra egipcia</displayName>
+				<symbol draft="contributed">EGP</symbol>
+			</currency>
+			<currency type="ERN">
+				<displayName>Nakfa Eritreano</displayName>
+				<displayName count="other">Nakfa Eritreano</displayName>
+				<symbol draft="contributed">ERN</symbol>
+			</currency>
+			<currency type="ETB">
+				<displayName>Birr Etíope</displayName>
+				<displayName count="other">Birr etíope</displayName>
+				<symbol draft="contributed">ETB</symbol>
+			</currency>
+			<currency type="EUR">
+				<displayName>Euro</displayName>
+				<displayName count="other">euro</displayName>
+			</currency>
+			<currency type="FJD">
+				<displayName>Dólar Fiyiano</displayName>
+				<symbol draft="contributed">FJD</symbol>
+			</currency>
+			<currency type="FKP">
+				<displayName>Libra Malvinense</displayName>
+				<displayName count="other">Libra malvinense</displayName>
+				<symbol draft="contributed">FKP</symbol>
+			</currency>
+			<currency type="GBP">
+				<displayName>Libra Esterlina</displayName>
+				<displayName count="other">Libra esterlina</displayName>
+			</currency>
+			<currency type="GEL">
+				<displayName>Lari Georgiano</displayName>
+				<displayName count="other">Lari georgiano</displayName>
+				<symbol draft="contributed">GEL</symbol>
+			</currency>
+			<currency type="GHS">
+				<displayName>Cedi Ganés</displayName>
+				<displayName count="other">Cedi ganés</displayName>
+				<symbol draft="contributed">GHS</symbol>
+			</currency>
+			<currency type="GIP">
+				<displayName>Libra Gibraltareña</displayName>
+				<displayName count="other">Libra gibraltareña</displayName>
+				<symbol draft="contributed">GIP</symbol>
+			</currency>
+			<currency type="GMD">
+				<displayName>Dalasi</displayName>
+				<displayName count="other">Dalasi</displayName>
+				<symbol draft="contributed">GMD</symbol>
+			</currency>
+			<currency type="GNF">
+				<displayName>Franco Guineano</displayName>
+				<displayName count="other">Franco guineano</displayName>
+				<symbol draft="contributed">GNF</symbol>
+			</currency>
+			<currency type="GTQ">
+				<displayName>Quetzal Guatemalteco</displayName>
+				<displayName count="other">Quetzal guatemalteco</displayName>
+				<symbol draft="contributed">GTQ</symbol>
+			</currency>
+			<currency type="GYD">
+				<displayName>Dólar Guyanés</displayName>
+				<displayName count="other">Dólar guyanés</displayName>
+				<symbol draft="contributed">GYD</symbol>
+			</currency>
+			<currency type="HKD">
+				<displayName>Dólar de Hong Kong</displayName>
+				<displayName count="other">Dólar de Hong Kong</displayName>
+			</currency>
+			<currency type="HNL">
+				<displayName>Lempira Hondureño</displayName>
+				<displayName count="other">Lempira hondureño</displayName>
+				<symbol draft="contributed">HNL</symbol>
+			</currency>
+			<currency type="HRK">
+				<displayName>Kuna Croata</displayName>
+				<displayName count="other">Kuna croata</displayName>
+				<symbol draft="contributed">HRK</symbol>
+			</currency>
+			<currency type="HTG">
+				<displayName>Gourde Haitiano</displayName>
+				<displayName count="other">Gourde haitiano</displayName>
+				<symbol draft="contributed">HTG</symbol>
+			</currency>
+			<currency type="HUF">
+				<displayName>Florín Húngaro</displayName>
+				<displayName count="other">Florín húngaro</displayName>
+				<symbol draft="contributed">HUF</symbol>
+			</currency>
+			<currency type="IDR">
+				<displayName>Rupia Indonesia</displayName>
+				<displayName count="other">Rupia indonesia</displayName>
+				<symbol draft="contributed">IDR</symbol>
+			</currency>
+			<currency type="ILS">
+				<displayName>Nuevo Séquel</displayName>
+				<displayName count="other">Nuevo séquel</displayName>
+			</currency>
+			<currency type="INR">
+				<displayName>Rupia India</displayName>
+				<displayName count="other">Rupia india</displayName>
+			</currency>
+			<currency type="IQD">
+				<displayName>Dinar Iraquí</displayName>
+				<displayName count="other">Dinar iraquí</displayName>
+				<symbol draft="contributed">IQD</symbol>
+			</currency>
+			<currency type="IRR">
+				<displayName>Rial Iraní</displayName>
+				<displayName count="other">Rial iraní</displayName>
+				<symbol draft="contributed">IRR</symbol>
+			</currency>
+			<currency type="ISK">
+				<displayName>Corona Islandesa</displayName>
+				<displayName count="other">Corona islandesa</displayName>
+				<symbol draft="contributed">ISK</symbol>
+			</currency>
+			<currency type="JMD">
+				<displayName>Dólar Jamaiquino</displayName>
+				<displayName count="other">Dólar jamaiquino</displayName>
+				<symbol draft="contributed">JMD</symbol>
+			</currency>
+			<currency type="JOD">
+				<displayName>Dinar Jordano</displayName>
+				<displayName count="other">Dinar jordano</displayName>
+				<symbol draft="contributed">JOD</symbol>
+			</currency>
+			<currency type="JPY">
+				<displayName>Yen Japonés</displayName>
+				<displayName count="other">Yen japonés</displayName>
+			</currency>
+			<currency type="KES">
+				<displayName>Chelín Keniano</displayName>
+				<displayName count="other">Chelín keniano</displayName>
+				<symbol draft="contributed">KES</symbol>
+			</currency>
+			<currency type="KGS">
+				<displayName>Som Kirguís</displayName>
+				<displayName count="other">Som kirguís</displayName>
+				<symbol draft="contributed">KGS</symbol>
+			</currency>
+			<currency type="KHR">
+				<displayName>Riel Camboyano</displayName>
+				<displayName count="other">Riel camboyano</displayName>
+				<symbol draft="contributed">KHR</symbol>
+			</currency>
+			<currency type="KMF">
+				<displayName>Franco Comorense</displayName>
+				<displayName count="other">Franco comorense</displayName>
+				<symbol draft="contributed">KMF</symbol>
+			</currency>
+			<currency type="KPW">
+				<displayName>Won Norcoreano</displayName>
+				<displayName count="other">Won norcoreano</displayName>
+				<symbol draft="contributed">KPW</symbol>
+			</currency>
+			<currency type="KRW">
+				<displayName>Won Surcoreano</displayName>
+				<displayName count="other">Won surcoreano</displayName>
+			</currency>
+			<currency type="KWD">
+				<displayName>Dinar Kuwaití</displayName>
+				<displayName count="other">Dinar kuwaití</displayName>
+				<symbol draft="contributed">KWD</symbol>
+			</currency>
+			<currency type="KYD">
+				<displayName>Dólar de las Islas Caimán</displayName>
+				<displayName count="other">Dólar de las islas caimán</displayName>
+				<symbol draft="contributed">KYD</symbol>
+			</currency>
+			<currency type="KZT">
+				<displayName>Tenge Kazajo</displayName>
+				<displayName count="other">Tenge kazajo</displayName>
+				<symbol draft="contributed">KZT</symbol>
+			</currency>
+			<currency type="LAK">
+				<displayName>Kip Laosiano</displayName>
+				<displayName count="other">Kip laosiano</displayName>
+				<symbol draft="contributed">LAK</symbol>
+			</currency>
+			<currency type="LBP">
+				<displayName>Libra Libanesa</displayName>
+				<displayName count="other">Libra libanesa</displayName>
+				<symbol draft="contributed">LBP</symbol>
+			</currency>
+			<currency type="LKR">
+				<displayName>Rupia de Sri Lanka</displayName>
+				<displayName count="other">Rupia de Sri Lanka</displayName>
+				<symbol draft="contributed">LKR</symbol>
+			</currency>
+			<currency type="LRD">
+				<displayName>Dólar Liberiano</displayName>
+				<displayName count="other">Dólar liberiano</displayName>
+				<symbol draft="contributed">LRD</symbol>
+			</currency>
+			<currency type="LYD">
+				<displayName>Dinar Libio</displayName>
+				<displayName count="other">Dinar libio</displayName>
+				<symbol draft="contributed">LYD</symbol>
+			</currency>
+			<currency type="MAD">
+				<displayName>Dírham Marroquí</displayName>
+				<displayName count="other">Dírham marroquí</displayName>
+				<symbol draft="contributed">MAD</symbol>
+			</currency>
+			<currency type="MDL">
+				<displayName>Leu Moldavo</displayName>
+				<displayName count="other">Leu moldavo</displayName>
+				<symbol draft="contributed">MDL</symbol>
+			</currency>
+			<currency type="MGA">
+				<displayName>Ariary Malgache</displayName>
+				<displayName count="other">Ariary malgache</displayName>
+				<symbol draft="contributed">MGA</symbol>
+			</currency>
+			<currency type="MKD">
+				<displayName>Dinar Macedonio</displayName>
+				<displayName count="other">Dinar macedonio</displayName>
+				<symbol draft="contributed">MKD</symbol>
+			</currency>
+			<currency type="MMK">
+				<displayName>Kyat Birmano</displayName>
+				<displayName count="other">Kyat birmano</displayName>
+				<symbol draft="contributed">MMK</symbol>
+			</currency>
+			<currency type="MNT">
+				<displayName>Tugrik Mongol</displayName>
+				<displayName count="other">Tugrik mongol</displayName>
+				<symbol draft="contributed">MNT</symbol>
+			</currency>
+			<currency type="MOP">
+				<displayName>Pataca Macaense</displayName>
+				<displayName count="other">Pataca macaense</displayName>
+				<symbol draft="contributed">MOP</symbol>
+			</currency>
+			<currency type="MRU">
+				<displayName>Uguiya Mauritano</displayName>
+				<displayName count="other">Uguiya Mauritano</displayName>
+				<symbol draft="contributed">MRU</symbol>
+			</currency>
+			<currency type="MUR">
+				<displayName>Rupia de Mauricio</displayName>
+				<displayName count="other">Rupia de mauricio</displayName>
+				<symbol draft="contributed">MUR</symbol>
+			</currency>
+			<currency type="MVR">
+				<displayName>Rupia de Maldivas</displayName>
+				<displayName count="other">Rupia de Maldivas</displayName>
+				<symbol draft="contributed">MVR</symbol>
+			</currency>
+			<currency type="MWK">
+				<displayName>Kwacha Malauí</displayName>
+				<displayName count="other">Kwacha malauí</displayName>
+				<symbol draft="contributed">MWK</symbol>
+			</currency>
+			<currency type="MXN">
+				<displayName>Peso Mexicano</displayName>
+				<displayName count="other">Peso mexicano</displayName>
+			</currency>
+			<currency type="MYR">
+				<displayName>Ringgit Malayo</displayName>
+				<displayName count="other">Ringgit malayo</displayName>
+				<symbol draft="contributed">MYR</symbol>
+			</currency>
+			<currency type="MZN">
+				<displayName>Metical Mozambiqueño</displayName>
+				<displayName count="other">Metical mozambiqueño</displayName>
+				<symbol draft="contributed">MZN</symbol>
+			</currency>
+			<currency type="NAD">
+				<displayName>Dólar Namibio</displayName>
+				<displayName count="other">Dólar namibio</displayName>
+				<symbol draft="contributed">NAD</symbol>
+			</currency>
+			<currency type="NGN">
+				<displayName>Naira Nigeriano</displayName>
+				<displayName count="other">Naira nigeriano</displayName>
+				<symbol draft="contributed">NGN</symbol>
+			</currency>
+			<currency type="NIO">
+				<displayName>Córdova Nicaragüense</displayName>
+				<displayName count="other">Córdova nicaragüense</displayName>
+				<symbol draft="contributed">NIO</symbol>
+			</currency>
+			<currency type="NOK">
+				<displayName>Corona Noruega</displayName>
+				<displayName count="other">Corona noruega</displayName>
+				<symbol draft="contributed">NOK</symbol>
+			</currency>
+			<currency type="NPR">
+				<displayName>Rupia Nepalí</displayName>
+				<displayName count="other">Rupia Nepalí</displayName>
+				<symbol draft="contributed">NPR</symbol>
+			</currency>
+			<currency type="NZD">
+				<displayName>Dólar Neozelandés</displayName>
+				<displayName count="other">Dólar neozelandés</displayName>
+			</currency>
+			<currency type="OMR">
+				<displayName>Rial Omaní</displayName>
+				<displayName count="other">Rial omaní</displayName>
+				<symbol draft="contributed">OMR</symbol>
+			</currency>
+			<currency type="PAB">
+				<displayName>Balboa Panameño</displayName>
+				<displayName count="other">Balboa panameño</displayName>
+				<symbol draft="contributed">PAB</symbol>
+			</currency>
 			<currency type="PEN">
+				<displayName>Sol Peruano</displayName>
+				<displayName count="other">Sol peruano</displayName>
 				<symbol>S/</symbol>
+			</currency>
+			<currency type="PGK">
+				<displayName>Kina Papuano</displayName>
+				<displayName count="other">Kina papuano</displayName>
+				<symbol draft="contributed">PGK</symbol>
+			</currency>
+			<currency type="PHP">
+				<displayName>Peso Filipino</displayName>
+				<displayName count="other">Peso filipino</displayName>
+				<symbol draft="contributed">PHP</symbol>
+			</currency>
+			<currency type="PKR">
+				<displayName>Rupia Pakistaní</displayName>
+				<displayName count="other">Rupia pakistaní</displayName>
+				<symbol draft="contributed">PKR</symbol>
+			</currency>
+			<currency type="PLN">
+				<displayName>Zloty</displayName>
+				<displayName count="other">Zloty</displayName>
+				<symbol draft="contributed">PLN</symbol>
+			</currency>
+			<currency type="PYG">
+				<displayName>Guaraní Paraguayo</displayName>
+				<displayName count="other">Guaraní paraguayo</displayName>
+				<symbol draft="contributed">PYG</symbol>
+			</currency>
+			<currency type="QAR">
+				<displayName>Riyal Catarí</displayName>
+				<displayName count="other">Riyal catarí</displayName>
+				<symbol draft="contributed">QAR</symbol>
+			</currency>
+			<currency type="RON">
+				<displayName>Leu Rumano</displayName>
+				<displayName count="other">Leu rumano</displayName>
+				<symbol draft="contributed">RON</symbol>
+			</currency>
+			<currency type="RSD">
+				<displayName>Dinar Serbio</displayName>
+				<displayName count="other">Dinar serbio</displayName>
+				<symbol draft="contributed">RSD</symbol>
+			</currency>
+			<currency type="RUB">
+				<displayName>Rublo Ruso</displayName>
+				<displayName count="other">Rublo ruso</displayName>
+				<symbol draft="contributed">RUB</symbol>
+			</currency>
+			<currency type="RWF">
+				<displayName>Franco Ruandés</displayName>
+				<displayName count="other">Franco ruandés</displayName>
+				<symbol draft="contributed">RWF</symbol>
+			</currency>
+			<currency type="SAR">
+				<displayName>Riyal Saudí</displayName>
+				<displayName count="other">Riyal saudí</displayName>
+				<symbol draft="contributed">SAR</symbol>
+			</currency>
+			<currency type="SBD">
+				<displayName>Dólar de las Islas Salomón</displayName>
+				<displayName count="other">Dólar de las Islas Salomón</displayName>
+				<symbol draft="contributed">SBD</symbol>
+			</currency>
+			<currency type="SCR">
+				<displayName>Rupia de Seychelles</displayName>
+				<displayName count="other">Rupia de seychelles</displayName>
+				<symbol draft="contributed">SCR</symbol>
+			</currency>
+			<currency type="SDG">
+				<displayName>Libra Sudanesa</displayName>
+				<displayName count="other">Libra sudanesa</displayName>
+				<symbol draft="contributed">SDG</symbol>
+			</currency>
+			<currency type="SEK">
+				<displayName>Corona Sueca</displayName>
+				<displayName count="other">Corona sueca</displayName>
+				<symbol draft="contributed">SEK</symbol>
+			</currency>
+			<currency type="SGD">
+				<displayName>Dólar de Singapur</displayName>
+				<displayName count="other">Dólar de Singapur</displayName>
+				<symbol draft="contributed">SGD</symbol>
+			</currency>
+			<currency type="SHP">
+				<displayName>Libra de Santa Helena</displayName>
+				<displayName count="other">Libra de santa helena</displayName>
+				<symbol draft="contributed">SHP</symbol>
+			</currency>
+			<currency type="SLL">
+				<displayName>Leone de Sierra Leona</displayName>
+				<displayName count="other">Leone de sierra leona</displayName>
+				<symbol draft="contributed">SLL</symbol>
+			</currency>
+			<currency type="SOS">
+				<displayName>Chelín Somalí</displayName>
+				<displayName count="other">Chelín somalí</displayName>
+				<symbol draft="contributed">SOS</symbol>
+			</currency>
+			<currency type="SRD">
+				<displayName>Dólar Surinamés</displayName>
+				<displayName count="other">Dólar Surinamés</displayName>
+				<symbol draft="contributed">SRD</symbol>
+			</currency>
+			<currency type="SSP">
+				<displayName>Libra Sursudanesa</displayName>
+				<displayName count="other">Libra sursudanesa</displayName>
+				<symbol draft="contributed">SSP</symbol>
+			</currency>
+			<currency type="STN">
+				<displayName>Dobra Santotomense</displayName>
+				<displayName count="other">Dobra santotomense</displayName>
+				<symbol draft="contributed">STN</symbol>
+			</currency>
+			<currency type="SYP">
+				<displayName>Libra Siria</displayName>
+				<displayName count="other">Libra siria</displayName>
+				<symbol draft="contributed">SYP</symbol>
+			</currency>
+			<currency type="SZL">
+				<displayName>Lilangeni Swazi</displayName>
+				<displayName count="other">Lilangeni swazi</displayName>
+				<symbol draft="contributed">SZL</symbol>
+			</currency>
+			<currency type="THB">
+				<displayName>Baht Tailandés</displayName>
+				<displayName count="other">Baht tailandés</displayName>
+				<symbol draft="contributed">THB</symbol>
+			</currency>
+			<currency type="TJS">
+				<displayName>Somoni Tayiko</displayName>
+				<displayName count="other">Somoni tayiko</displayName>
+				<symbol draft="contributed">TJS</symbol>
+			</currency>
+			<currency type="TMT">
+				<displayName>Manat Turcomano</displayName>
+				<displayName count="other">Manat turcomano</displayName>
+				<symbol draft="contributed">TMT</symbol>
+			</currency>
+			<currency type="TND">
+				<displayName>Dinar Tunecino</displayName>
+				<displayName count="other">Dinar tunecino</displayName>
+				<symbol draft="contributed">TND</symbol>
+			</currency>
+			<currency type="TOP">
+				<displayName>Paʻanga Tongano</displayName>
+				<displayName count="other">Paʻanga tongano</displayName>
+				<symbol draft="contributed">TOP</symbol>
+			</currency>
+			<currency type="TRY">
+				<displayName>Lira Turca</displayName>
+				<displayName count="other">Lira turca</displayName>
+				<symbol draft="contributed">TRY</symbol>
+			</currency>
+			<currency type="TTD">
+				<displayName>Dólar de Trinidad y Tobago</displayName>
+				<displayName count="other">Dólar de trinidad y tobago</displayName>
+				<symbol draft="contributed">TTD</symbol>
+			</currency>
+			<currency type="TWD">
+				<displayName>Nuevo Dólar Taiwanés</displayName>
+				<displayName count="other">Nuevo dólar taiwanés</displayName>
+			</currency>
+			<currency type="TZS">
+				<displayName>Chelín Tanzano</displayName>
+				<displayName count="other">Chelín tanzano</displayName>
+				<symbol draft="contributed">TZS</symbol>
+			</currency>
+			<currency type="UAH">
+				<displayName>Grivna</displayName>
+				<displayName count="other">Grivna</displayName>
+				<symbol draft="contributed">UAH</symbol>
+			</currency>
+			<currency type="UGX">
+				<displayName>Chelín Ugandés</displayName>
+				<displayName count="other">Chelín ugandés</displayName>
+				<symbol draft="contributed">UGX</symbol>
+			</currency>
+			<currency type="USD">
+				<displayName>Dólar Americano</displayName>
+				<displayName count="other">Dólar americano</displayName>
+				<symbol draft="contributed">$US</symbol>
+			</currency>
+			<currency type="UYU">
+				<displayName>Peso Uruguayo</displayName>
+				<displayName count="other">Peso uruguayo</displayName>
+				<symbol draft="contributed">UYU</symbol>
+			</currency>
+			<currency type="UZS">
+				<displayName>Som Ubzeko</displayName>
+				<displayName count="other">Som Ubzeko</displayName>
+				<symbol draft="contributed">UZS</symbol>
+			</currency>
+			<currency type="VES">
+				<displayName>Bolívar Venezolano</displayName>
+				<displayName count="other">Bolívar venezolano</displayName>
+				<symbol draft="contributed">VES</symbol>
+			</currency>
+			<currency type="VND">
+				<displayName>Dong Vietnamita</displayName>
+				<displayName count="other">Dong vietnamita</displayName>
+			</currency>
+			<currency type="VUV">
+				<displayName>Vatu Vanuatu</displayName>
+				<displayName count="other">Vatu vanuatu</displayName>
+				<symbol draft="contributed">VUV</symbol>
+			</currency>
+			<currency type="WST">
+				<displayName>Tala Samoano</displayName>
+				<displayName count="other">Tala samoano</displayName>
+				<symbol draft="contributed">WST</symbol>
+			</currency>
+			<currency type="XAF">
+				<displayName>Franco CFA de África Central</displayName>
+				<displayName count="other">Franco CFA de áfrica central</displayName>
+			</currency>
+			<currency type="XCD">
+				<displayName>Dólar del Caribe Oriental</displayName>
+				<displayName count="other">Dólar del caribe oriental</displayName>
+			</currency>
+			<currency type="XOF">
+				<displayName>Franco CFA de África Occidental</displayName>
+				<displayName count="other">Franco CFA de áfrica occidental</displayName>
+			</currency>
+			<currency type="XPF">
+				<displayName>Franco CFP</displayName>
+				<displayName count="other">Franco CFP</displayName>
+			</currency>
+			<currency type="XXX">
+				<displayName>Mana riqsisqa Qullqi</displayName>
+				<displayName count="other">Mana riqsisqa qullqi</displayName>
+			</currency>
+			<currency type="YER">
+				<displayName>Rial Yemení</displayName>
+				<displayName count="other">Rial yemení</displayName>
+				<symbol draft="contributed">YER</symbol>
+			</currency>
+			<currency type="ZAR">
+				<displayName>Rand Sudafricano</displayName>
+				<displayName count="other">Rand sudafricano</displayName>
+				<symbol draft="contributed">ZAR</symbol>
+			</currency>
+			<currency type="ZMW">
+				<displayName>Kwacha Zambiano</displayName>
+				<displayName count="other">Kwacha zambiano</displayName>
+				<symbol draft="contributed">ZMW</symbol>
 			</currency>
 		</currencies>
 		<miscPatterns numberSystem="latn">
@@ -3231,6 +4892,376 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</miscPatterns>
 	</numbers>
 	<units>
+		<unitLength type="long">
+			<unit type="area-square-kilometer">
+				<displayName>kilómetro cuadrado</displayName>
+				<unitPattern count="other">{0} kilómetro cuadrado</unitPattern>
+				<perUnitPattern>{0}/kilómetro cuadrado</perUnitPattern>
+			</unit>
+			<unit type="area-hectare">
+				<displayName>hectárea</displayName>
+				<unitPattern count="other">{0} hectárea</unitPattern>
+			</unit>
+			<unit type="area-square-meter">
+				<displayName>metro cuadrado</displayName>
+				<unitPattern count="other">{0} metro cuadrado</unitPattern>
+				<perUnitPattern>{0}/metro cuadrado</perUnitPattern>
+			</unit>
+			<unit type="area-square-centimeter">
+				<displayName>centímetro cuadrado</displayName>
+				<unitPattern count="other">{0} centímetro cuadrado</unitPattern>
+				<perUnitPattern>{0}/centímetro cuadrado</perUnitPattern>
+			</unit>
+			<unit type="area-square-mile">
+				<displayName>milla cuadrada</displayName>
+				<unitPattern count="other">{0} milla cuadrada</unitPattern>
+				<perUnitPattern>{0}/milla cuadrada</perUnitPattern>
+			</unit>
+			<unit type="area-acre">
+				<displayName>acre</displayName>
+				<unitPattern count="other">{0} acre</unitPattern>
+			</unit>
+			<unit type="area-square-yard">
+				<displayName>yarda cuadrada</displayName>
+				<unitPattern count="other">{0} yarda cuadrada</unitPattern>
+			</unit>
+			<unit type="area-square-foot">
+				<displayName>pie cuadrado</displayName>
+				<unitPattern count="other">{0} pie cuadrado</unitPattern>
+			</unit>
+			<unit type="area-square-inch">
+				<displayName>pulgada cuadrada</displayName>
+				<unitPattern count="other">{0} pulgada cuadrada</unitPattern>
+				<perUnitPattern>{0}/pulgada cuadrada</perUnitPattern>
+			</unit>
+			<unit type="area-dunam">
+				<displayName>dunam</displayName>
+				<unitPattern count="other">{0} dunam</unitPattern>
+			</unit>
+			<unit type="duration-century">
+				<displayName>siglos</displayName>
+				<unitPattern count="other">{0} siglos</unitPattern>
+			</unit>
+			<unit type="duration-decade">
+				<displayName>décadas</displayName>
+				<unitPattern count="other">{0} décadas</unitPattern>
+			</unit>
+			<unit type="duration-year">
+				<displayName>wata</displayName>
+				<unitPattern count="other">{0} wata</unitPattern>
+				<perUnitPattern>{0} por wata</perUnitPattern>
+			</unit>
+			<unit type="duration-month">
+				<displayName>killa</displayName>
+				<unitPattern count="other">{0} killa</unitPattern>
+				<perUnitPattern>{0}/k</perUnitPattern>
+			</unit>
+			<unit type="duration-week">
+				<displayName>semana</displayName>
+				<unitPattern count="other">{0} semana</unitPattern>
+				<perUnitPattern>{0} por semana</perUnitPattern>
+			</unit>
+			<unit type="duration-day">
+				<displayName>punchaw</displayName>
+				<unitPattern count="other">{0} punchaw</unitPattern>
+				<perUnitPattern>{0}/p</perUnitPattern>
+			</unit>
+			<unit type="duration-hour">
+				<displayName>hora</displayName>
+				<unitPattern count="other">{0} hora</unitPattern>
+				<perUnitPattern>{0}/h</perUnitPattern>
+			</unit>
+			<unit type="duration-minute">
+				<displayName>minuto</displayName>
+				<unitPattern count="other">{0} minuto</unitPattern>
+				<perUnitPattern>{0} por minuto</perUnitPattern>
+			</unit>
+			<unit type="duration-second">
+				<displayName>segundo</displayName>
+				<unitPattern count="other">{0} segundo</unitPattern>
+				<perUnitPattern>{0} por segundo</perUnitPattern>
+			</unit>
+			<unit type="duration-millisecond">
+				<displayName>milisegundo</displayName>
+				<unitPattern count="other">{0} milisegundo</unitPattern>
+			</unit>
+			<unit type="duration-microsecond">
+				<displayName>microsegundo</displayName>
+				<unitPattern count="other">{0} microsegundo</unitPattern>
+			</unit>
+			<unit type="duration-nanosecond">
+				<displayName>nanosegundo</displayName>
+				<unitPattern count="other">{0} nanosegundo</unitPattern>
+			</unit>
+			<unit type="graphics-em">
+				<displayName>tipográfico em</displayName>
+				<unitPattern count="other">{0} tipográfico em</unitPattern>
+			</unit>
+			<unit type="graphics-pixel">
+				<displayName>pixels</displayName>
+				<unitPattern count="other">{0} pixels</unitPattern>
+			</unit>
+			<unit type="graphics-megapixel">
+				<displayName>megapixels</displayName>
+				<unitPattern count="other">{0} megapixels</unitPattern>
+			</unit>
+			<unit type="graphics-pixel-per-centimeter">
+				<displayName>pixels por centímetro</displayName>
+				<unitPattern count="other">{0} pixels por centímetro</unitPattern>
+			</unit>
+			<unit type="graphics-pixel-per-inch">
+				<displayName>pixels por pulgada</displayName>
+				<unitPattern count="other">{0} pixels por pulgada</unitPattern>
+			</unit>
+			<unit type="graphics-dot-per-centimeter">
+				<displayName>puntos por centímetro</displayName>
+				<unitPattern count="other">{0} puntos por centímetro</unitPattern>
+			</unit>
+			<unit type="graphics-dot-per-inch">
+				<displayName>puntos por pulgada</displayName>
+				<unitPattern count="other">{0} puntos por pulgada</unitPattern>
+			</unit>
+			<unit type="length-kilometer">
+				<displayName>kilómetro</displayName>
+				<unitPattern count="other">{0} kilómetro</unitPattern>
+				<perUnitPattern>{0}/km</perUnitPattern>
+			</unit>
+			<unit type="length-meter">
+				<displayName>metro</displayName>
+				<unitPattern count="other">{0} metro</unitPattern>
+				<perUnitPattern>{0}/m</perUnitPattern>
+			</unit>
+			<unit type="length-decimeter">
+				<displayName>decímetro</displayName>
+				<unitPattern count="other">{0} decímetro</unitPattern>
+			</unit>
+			<unit type="length-centimeter">
+				<displayName>centímetro</displayName>
+				<unitPattern count="other">{0} centímetro</unitPattern>
+				<perUnitPattern>{0}/centímetro</perUnitPattern>
+			</unit>
+			<unit type="length-millimeter">
+				<displayName>milímetro</displayName>
+				<unitPattern count="other">{0} milímetro</unitPattern>
+			</unit>
+			<unit type="length-micrometer">
+				<displayName>micrómetro</displayName>
+				<unitPattern count="other">{0} micrómetro</unitPattern>
+			</unit>
+			<unit type="length-nanometer">
+				<displayName>nanómetro</displayName>
+				<unitPattern count="other">{0} nanómetro</unitPattern>
+			</unit>
+			<unit type="length-picometer">
+				<displayName>picómetro</displayName>
+				<unitPattern count="other">{0} picómetro</unitPattern>
+			</unit>
+			<unit type="length-mile">
+				<displayName>milla</displayName>
+				<unitPattern count="other">{0} milla</unitPattern>
+			</unit>
+			<unit type="length-yard">
+				<displayName>yarda</displayName>
+				<unitPattern count="other">{0} yarda</unitPattern>
+			</unit>
+			<unit type="length-foot">
+				<displayName>pie</displayName>
+				<unitPattern count="other">{0} pie</unitPattern>
+				<perUnitPattern>{0}/pie</perUnitPattern>
+			</unit>
+			<unit type="length-inch">
+				<displayName>pulgada</displayName>
+				<unitPattern count="other">{0} pulgada</unitPattern>
+				<perUnitPattern>{0}/pulgada</perUnitPattern>
+			</unit>
+			<unit type="length-parsec">
+				<displayName>parsecs</displayName>
+				<unitPattern count="other">{0} parsecs</unitPattern>
+			</unit>
+			<unit type="length-light-year">
+				<displayName>años luz</displayName>
+				<unitPattern count="other">{0} años luz</unitPattern>
+			</unit>
+			<unit type="length-astronomical-unit">
+				<displayName>unidades astronómicas</displayName>
+				<unitPattern count="other">{0} unidades astronómicas</unitPattern>
+			</unit>
+			<unit type="length-nautical-mile">
+				<displayName>millas naúticas</displayName>
+				<unitPattern count="other">{0} millas naúticas</unitPattern>
+			</unit>
+			<unit type="length-mile-scandinavian">
+				<displayName>milla escandinava</displayName>
+				<unitPattern count="other">{0} milla escandinava</unitPattern>
+			</unit>
+			<unit type="length-point">
+				<displayName>puntos</displayName>
+				<unitPattern count="other">{0} puntos</unitPattern>
+			</unit>
+			<unit type="length-solar-radius">
+				<displayName>radiación solar</displayName>
+				<unitPattern count="other">{0} radiación solar</unitPattern>
+			</unit>
+			<unit type="volume-cubic-kilometer">
+				<displayName>kilómetro cúbico</displayName>
+				<unitPattern count="other">{0} kilómetro cúbico</unitPattern>
+			</unit>
+			<unit type="volume-cubic-meter">
+				<displayName>metro cúbico</displayName>
+				<unitPattern count="other">{0} metro cúbico</unitPattern>
+				<perUnitPattern>{0}/metro cúbico</perUnitPattern>
+			</unit>
+			<unit type="volume-cubic-centimeter">
+				<displayName>centímetro cúbico</displayName>
+				<unitPattern count="other">{0} centímetro cúbico</unitPattern>
+				<perUnitPattern>{0}/centímetro cúbico</perUnitPattern>
+			</unit>
+			<unit type="volume-cubic-mile">
+				<displayName>milla cúbica</displayName>
+				<unitPattern count="other">{0} milla cúbica</unitPattern>
+			</unit>
+			<unit type="volume-cubic-yard">
+				<displayName>yarda cúbica</displayName>
+				<unitPattern count="other">{0} yarda cúbica</unitPattern>
+			</unit>
+			<unit type="volume-cubic-foot">
+				<displayName>pie cúbico</displayName>
+				<unitPattern count="other">{0} pie cúbico</unitPattern>
+			</unit>
+			<unit type="volume-cubic-inch">
+				<displayName>pulgada cúbica</displayName>
+				<unitPattern count="other">{0} pulgada cúbica</unitPattern>
+			</unit>
+			<unit type="volume-megaliter">
+				<displayName>megalitro</displayName>
+				<unitPattern count="other">{0} megalitro</unitPattern>
+			</unit>
+			<unit type="volume-hectoliter">
+				<displayName>hectolitro</displayName>
+				<unitPattern count="other">{0} hectolitro</unitPattern>
+			</unit>
+			<unit type="volume-liter">
+				<displayName>litro</displayName>
+				<unitPattern count="other">{0} litro</unitPattern>
+				<perUnitPattern>{0}/litro</perUnitPattern>
+			</unit>
+			<unit type="volume-deciliter">
+				<displayName>decilitro</displayName>
+				<unitPattern count="other">{0} decilitro</unitPattern>
+			</unit>
+			<unit type="volume-centiliter">
+				<displayName>centilitro</displayName>
+				<unitPattern count="other">{0} centilitro</unitPattern>
+			</unit>
+			<unit type="volume-milliliter">
+				<displayName>mililitro</displayName>
+				<unitPattern count="other">{0} mililitro</unitPattern>
+			</unit>
+			<unit type="volume-pint-metric">
+				<displayName>pinta métrica</displayName>
+				<unitPattern count="other">{0} pinta métrica</unitPattern>
+			</unit>
+			<unit type="volume-cup-metric">
+				<displayName>taza métrica</displayName>
+				<unitPattern count="other">{0} taza métrica</unitPattern>
+			</unit>
+			<unit type="volume-acre-foot">
+				<displayName>acre-pie</displayName>
+				<unitPattern count="other">{0} acre-pie</unitPattern>
+			</unit>
+			<unit type="volume-gallon">
+				<displayName>galón</displayName>
+				<unitPattern count="other">{0} US galón</unitPattern>
+				<perUnitPattern>{0}/US galón</perUnitPattern>
+			</unit>
+			<unit type="volume-gallon-imperial">
+				<displayName>UK galón</displayName>
+				<unitPattern count="other">{0} UK galón</unitPattern>
+				<perUnitPattern>{0}/UK galón</perUnitPattern>
+			</unit>
+			<unit type="volume-quart">
+				<displayName>cuarto</displayName>
+				<unitPattern count="other">{0} cuarto</unitPattern>
+			</unit>
+			<unit type="volume-pint">
+				<displayName>pinta</displayName>
+				<unitPattern count="other">{0} pinta</unitPattern>
+			</unit>
+			<unit type="volume-cup">
+				<displayName>taza</displayName>
+				<unitPattern count="other">{0} taza</unitPattern>
+			</unit>
+			<unit type="volume-fluid-ounce">
+				<displayName>Onza líquida</displayName>
+				<unitPattern count="other">{0} US Onza líquida</unitPattern>
+			</unit>
+			<unit type="volume-fluid-ounce-imperial">
+				<displayName>UK Onza líquida</displayName>
+				<unitPattern count="other">{0} UK Onza líquida</unitPattern>
+			</unit>
+			<unit type="volume-tablespoon">
+				<displayName>cucharada</displayName>
+				<unitPattern count="other">{0} cucharada</unitPattern>
+			</unit>
+			<unit type="volume-teaspoon">
+				<displayName>cucharadita</displayName>
+				<unitPattern count="other">{0} cucharadita</unitPattern>
+			</unit>
+			<unit type="volume-barrel">
+				<displayName>barril</displayName>
+				<unitPattern count="other">{0} barril</unitPattern>
+			</unit>
+		</unitLength>
+		<unitLength type="narrow">
+			<unit type="duration-year">
+				<displayName>wata</displayName>
+				<unitPattern count="other">{0} w</unitPattern>
+			</unit>
+			<unit type="duration-month">
+				<displayName>killa</displayName>
+				<unitPattern count="other">{0} k</unitPattern>
+			</unit>
+			<unit type="duration-week">
+				<displayName>semana</displayName>
+				<unitPattern count="other">{0} s</unitPattern>
+			</unit>
+			<unit type="duration-day">
+				<displayName>punchaw</displayName>
+				<unitPattern count="other">{0} p</unitPattern>
+			</unit>
+			<unit type="duration-hour">
+				<displayName>hora</displayName>
+				<unitPattern count="other">{0} h</unitPattern>
+			</unit>
+			<unit type="duration-second">
+				<displayName>segundo</displayName>
+				<unitPattern count="other">{0} s</unitPattern>
+			</unit>
+			<unit type="duration-millisecond">
+				<displayName>milisegundo</displayName>
+				<unitPattern count="other">{0} ms</unitPattern>
+			</unit>
+			<unit type="length-kilometer">
+				<displayName>km</displayName>
+				<unitPattern count="other">{0}km</unitPattern>
+			</unit>
+			<unit type="length-meter">
+				<displayName>metro</displayName>
+				<unitPattern count="other">{0} m</unitPattern>
+			</unit>
+			<unit type="length-centimeter">
+				<displayName>cm</displayName>
+				<unitPattern count="other">{0} cm</unitPattern>
+			</unit>
+			<unit type="length-millimeter">
+				<displayName>mm</displayName>
+				<unitPattern count="other">{0} mm</unitPattern>
+			</unit>
+			<unit type="volume-liter">
+				<displayName>litro</displayName>
+				<unitPattern count="other">{0} litro</unitPattern>
+			</unit>
+		</unitLength>
 		<durationUnit type="hm">
 			<durationUnitPattern>h:mm</durationUnitPattern>
 		</durationUnit>
@@ -3241,4 +5272,19 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<durationUnitPattern>m:ss</durationUnitPattern>
 		</durationUnit>
 	</units>
+	<listPatterns>
+		<listPattern type="or">
+			<listPatternPart type="start">{0}, {1}</listPatternPart>
+			<listPatternPart type="end">{0}, utaq {1}</listPatternPart>
+			<listPatternPart type="2">{0} utaq {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="or-narrow">
+			<listPatternPart type="end">{0}, utaq {1}</listPatternPart>
+			<listPatternPart type="2">{0} utaq {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="or-short">
+			<listPatternPart type="end">{0}, utaq {1}</listPatternPart>
+			<listPatternPart type="2">{0} utaq {1}</listPatternPart>
+		</listPattern>
+	</listPatterns>
 </ldml>

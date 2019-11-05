@@ -32,6 +32,7 @@
 #include "gc/z/zTask.hpp"
 #include "gc/z/zTracer.inline.hpp"
 #include "gc/z/zUtils.inline.hpp"
+#include "gc/z/zValue.inline.hpp"
 #include "memory/universe.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"

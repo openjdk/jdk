@@ -177,25 +177,6 @@ public abstract class Loop<T extends AbstractBlockBase<T>> {
         return true;
     }
 
-    /**
-     * Determines if one loop is a transitive parent of another loop.
-     *
-     * @param childLoop The loop for which parentLoop might be a transitive parent loop.
-     * @param parentLoop The loop which might be a transitive parent loop of child loop.
-     * @return {@code true} if parentLoop is a (transitive) parent loop of childLoop, {@code false}
-     *         otherwise
-     */
-    public static <T extends AbstractBlockBase<T>> boolean transitiveParentLoop(Loop<T> childLoop, Loop<T> parentLoop) {
-        Loop<T> curr = childLoop;
-        while (curr != null) {
-            if (curr == parentLoop) {
-                return true;
-            }
-            curr = curr.getParent();
-        }
-        return false;
-    }
-
     @Override
     public int hashCode() {
         return index + depth * 31;

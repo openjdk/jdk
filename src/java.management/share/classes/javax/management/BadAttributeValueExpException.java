@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,6 +47,7 @@ public class BadAttributeValueExpException extends Exception   {
      * @serial A string representation of the attribute that originated this exception.
      * for example, the string value can be the return of {@code attribute.toString()}
      */
+    @SuppressWarnings("serial") // See handling in constructor and readObject
     private Object val;
 
     /**

@@ -233,7 +233,7 @@ public class LoopFragmentInside extends LoopFragment {
             }
         }
         mainLoopBegin.setUnrollFactor(mainLoopBegin.getUnrollFactor() * 2);
-        mainLoopBegin.setLoopFrequency(mainLoopBegin.loopFrequency() / 2);
+        mainLoopBegin.setLoopFrequency(Math.max(1.0, mainLoopBegin.loopFrequency() / 2));
         graph.getDebug().dump(DebugContext.DETAILED_LEVEL, graph, "LoopPartialUnroll %s", loop);
 
         mainLoopBegin.getDebug().dump(DebugContext.VERBOSE_LEVEL, mainLoopBegin.graph(), "After insertWithinAfter %s", mainLoopBegin);
@@ -438,7 +438,7 @@ public class LoopFragmentInside extends LoopFragment {
             for (int i = 0; i < phi.valueCount(); i++) {
                 ValueNode v = phi.valueAt(i);
                 if (loopBegin.isPhiAtMerge(v)) {
-                    PhiNode newV = peel.getDuplicatedNode((ValuePhiNode) v);
+                    PhiNode newV = peel.getDuplicatedNode((PhiNode) v);
                     if (newV != null) {
                         phi.setValueAt(i, newV);
                     }

@@ -7,7 +7,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 14782 $"/>
+		<version number="$Revision$"/>
 		<language type="yav"/>
 	</identity>
 	<localeDisplayNames>
@@ -184,7 +184,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="MD">moltafí</territory>
 			<territory type="MG">matakaskáal</territory>
 			<territory type="MH">ílmalasáal</territory>
-			<territory type="MK">masetuán</territory>
 			<territory type="ML">malí</territory>
 			<territory type="MM">miaŋmáal</territory>
 			<territory type="MN">mongolí</territory>
@@ -288,7 +287,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<exemplarCharacters>[a á à â ǎ ā b c d e é è ɛ {ɛ\u0301} {ɛ\u0300} f h i í ì î ī k l m {mb} n {ny} ŋ {ŋg} o ó ò ô ǒ ō ɔ {ɔ\u0301} {ɔ\u0300} p s t u ú ù û ǔ ū v w y]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[g j q r x z]</exemplarCharacters>
 		<exemplarCharacters type="index">[A B C D E Ɛ F H I K L M N Ŋ O Ɔ P S T U V W Y]</exemplarCharacters>
-		<exemplarCharacters type="numbers">[  \- , % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
+		<exemplarCharacters type="numbers">[  \- ‑ , % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
 	</characters>
 	<delimiters>
 		<quotationStart>«</quotationStart>

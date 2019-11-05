@@ -28,6 +28,7 @@
 #include "compiler/tieredThresholdPolicy.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/arguments.hpp"
+#include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/safepointVerifiers.hpp"
@@ -42,43 +43,61 @@
 #include "c1/c1_Compiler.hpp"
 #include "opto/c2compiler.hpp"
 
-template<CompLevel level>
-bool TieredThresholdPolicy::call_predicate_helper(int i, int b, double scale, Method* method) {
+bool TieredThresholdPolicy::call_predicate_helper(Method* method, CompLevel cur_level, int i, int b, double scale) {
   double threshold_scaling;
   if (CompilerOracle::has_option_value(method, "CompileThresholdScaling", threshold_scaling)) {
     scale *= threshold_scaling;
   }
-  switch(level) {
+  switch(cur_level) {
   case CompLevel_aot:
-    return (i >= Tier3AOTInvocationThreshold * scale) ||
-           (i >= Tier3AOTMinInvocationThreshold * scale && i + b >= Tier3AOTCompileThreshold * scale);
+    if (CompilationModeFlag::disable_intermediate()) {
+      return (i >= Tier0AOTInvocationThreshold * scale) ||
+             (i >= Tier0AOTMinInvocationThreshold * scale && i + b >= Tier0AOTCompileThreshold * scale);
+    } else {
+      return (i >= Tier3AOTInvocationThreshold * scale) ||
+             (i >= Tier3AOTMinInvocationThreshold * scale && i + b >= Tier3AOTCompileThreshold * scale);
+    }
   case CompLevel_none:
+    if (CompilationModeFlag::disable_intermediate()) {
+      return (i >= Tier40InvocationThreshold * scale) ||
+             (i >= Tier40MinInvocationThreshold * scale && i + b >= Tier40CompileThreshold * scale);
+    }
+    // Fall through
   case CompLevel_limited_profile:
     return (i >= Tier3InvocationThreshold * scale) ||
            (i >= Tier3MinInvocationThreshold * scale && i + b >= Tier3CompileThreshold * scale);
   case CompLevel_full_profile:
    return (i >= Tier4InvocationThreshold * scale) ||
           (i >= Tier4MinInvocationThreshold * scale && i + b >= Tier4CompileThreshold * scale);
+  default:
+   return true;
   }
-  return true;
 }
 
-template<CompLevel level>
-bool TieredThresholdPolicy::loop_predicate_helper(int i, int b, double scale, Method* method) {
+bool TieredThresholdPolicy::loop_predicate_helper(Method* method, CompLevel cur_level, int i, int b, double scale) {
   double threshold_scaling;
   if (CompilerOracle::has_option_value(method, "CompileThresholdScaling", threshold_scaling)) {
     scale *= threshold_scaling;
   }
-  switch(level) {
+  switch(cur_level) {
   case CompLevel_aot:
-    return b >= Tier3AOTBackEdgeThreshold * scale;
+    if (CompilationModeFlag::disable_intermediate()) {
+      return b >= Tier0AOTBackEdgeThreshold * scale;
+    } else {
+      return b >= Tier3AOTBackEdgeThreshold * scale;
+    }
   case CompLevel_none:
+    if (CompilationModeFlag::disable_intermediate()) {
+      return b >= Tier40BackEdgeThreshold * scale;
+    }
+    // Fall through
   case CompLevel_limited_profile:
     return b >= Tier3BackEdgeThreshold * scale;
   case CompLevel_full_profile:
     return b >= Tier4BackEdgeThreshold * scale;
+  default:
+    return true;
   }
-  return true;
 }
 
 // Simple methods are as good being compiled with C1 as C2.
@@ -91,18 +110,17 @@ bool TieredThresholdPolicy::is_trivial(Method* method) {
   return false;
 }
 
-bool TieredThresholdPolicy::should_compile_at_level_simple(Method* method) {
-  if (TieredThresholdPolicy::is_trivial(method)) {
-    return true;
-  }
+bool TieredThresholdPolicy::force_comp_at_level_simple(Method* method) {
+  if (CompilationModeFlag::quick_internal()) {
 #if INCLUDE_JVMCI
-  if (UseJVMCICompiler) {
-    AbstractCompiler* comp = CompileBroker::compiler(CompLevel_full_optimization);
-    if (comp != NULL && comp->is_jvmci() && ((JVMCICompiler*) comp)->force_comp_at_level_simple(method)) {
-      return true;
+    if (UseJVMCICompiler) {
+      AbstractCompiler* comp = CompileBroker::compiler(CompLevel_full_optimization);
+      if (comp != NULL && comp->is_jvmci() && ((JVMCICompiler*) comp)->force_comp_at_level_simple(method)) {
+        return true;
+      }
     }
-  }
 #endif
+  }
   return false;
 }
 
@@ -181,7 +199,12 @@ void TieredThresholdPolicy::print_event(EventType type, const methodHandle& mh, 
   tty->print("@%d queues=%d,%d", bci, CompileBroker::queue_size(CompLevel_full_profile),
                                       CompileBroker::queue_size(CompLevel_full_optimization));
 
-  print_specific(type, mh, imh, bci, level);
+  tty->print(" rate=");
+  if (mh->prev_time() == 0) tty->print("n/a");
+  else tty->print("%f", mh->rate());
+
+  tty->print(" k=%.2lf,%.2lf", threshold_scale(CompLevel_full_profile, Tier3LoadFeedback),
+                               threshold_scale(CompLevel_full_optimization, Tier4LoadFeedback));
 
   if (type != COMPILE) {
     print_counters("", mh);
@@ -216,9 +239,11 @@ void TieredThresholdPolicy::print_event(EventType type, const methodHandle& mh, 
   tty->print_cr("]");
 }
 
+
 void TieredThresholdPolicy::initialize() {
   int count = CICompilerCount;
-  bool c1_only = TieredStopAtLevel < CompLevel_full_optimization;
+  bool c1_only = TieredStopAtLevel < CompLevel_full_optimization || CompilationModeFlag::quick_only();
+  bool c2_only = CompilationModeFlag::high_only();
 #ifdef _LP64
   // Turn on ergonomic compiler count selection
   if (FLAG_IS_DEFAULT(CICompilerCountPerCPU) && FLAG_IS_DEFAULT(CICompilerCount)) {
@@ -257,6 +282,8 @@ void TieredThresholdPolicy::initialize() {
   if (c1_only) {
     // No C2 compiler thread required
     set_c1_count(count);
+  } else if (c2_only) {
+    set_c2_count(count);
   } else {
     set_c1_count(MAX2(count / 3, 1));
     set_c2_count(MAX2(count - c1_count(), 1));
@@ -413,7 +440,7 @@ nmethod* TieredThresholdPolicy::event(const methodHandle& method, const methodHa
     method_back_branch_event(method, inlinee, bci, comp_level, nm, thread);
     // Check if event led to a higher level OSR compilation
     CompLevel expected_comp_level = comp_level;
-    if (inlinee->is_not_osr_compilable(expected_comp_level)) {
+    if (!CompilationModeFlag::disable_intermediate() && inlinee->is_not_osr_compilable(expected_comp_level)) {
       // It's not possble to reach the expected level so fall back to simple.
       expected_comp_level = CompLevel_simple;
     }
@@ -430,7 +457,25 @@ nmethod* TieredThresholdPolicy::event(const methodHandle& method, const methodHa
 // Check if the method can be compiled, change level if necessary
 void TieredThresholdPolicy::compile(const methodHandle& mh, int bci, CompLevel level, JavaThread* thread) {
   assert(level <= TieredStopAtLevel, "Invalid compilation level");
+  if (CompilationModeFlag::quick_only()) {
+    assert(level <= CompLevel_simple, "Invalid compilation level");
+  } else if (CompilationModeFlag::disable_intermediate()) {
+    assert(level != CompLevel_full_profile && level != CompLevel_limited_profile, "C1 profiling levels shouldn't be used with intermediate levels disabled");
+  }
+
   if (level == CompLevel_none) {
+    if (mh->has_compiled_code()) {
+      // Happens when we switch from AOT to interpreter to profile.
+      MutexLocker ml(Compile_lock);
+      NoSafepointVerifier nsv;
+      if (mh->has_compiled_code()) {
+        mh->code()->make_not_used();
+      }
+      // Deoptimize immediately (we don't have to wait for a compile).
+      RegisterMap map(thread, false);
+      frame fr = thread->last_frame().sender(&map);
+      Deoptimization::deoptimize_frame(thread, fr.id());
+    }
     return;
   }
   if (level == CompLevel_aot) {
@@ -452,26 +497,28 @@ void TieredThresholdPolicy::compile(const methodHandle& mh, int bci, CompLevel l
     return;
   }
 
-  // Check if the method can be compiled. If it cannot be compiled with C1, continue profiling
-  // in the interpreter and then compile with C2 (the transition function will request that,
-  // see common() ). If the method cannot be compiled with C2 but still can with C1, compile it with
-  // pure C1.
-  if ((bci == InvocationEntryBci && !can_be_compiled(mh, level))) {
-    if (level == CompLevel_full_optimization && can_be_compiled(mh, CompLevel_simple)) {
-      compile(mh, bci, CompLevel_simple, thread);
-    }
-    return;
-  }
-  if ((bci != InvocationEntryBci && !can_be_osr_compiled(mh, level))) {
-    if (level == CompLevel_full_optimization && can_be_osr_compiled(mh, CompLevel_simple)) {
-      nmethod* osr_nm = mh->lookup_osr_nmethod_for(bci, CompLevel_simple, false);
-      if (osr_nm != NULL && osr_nm->comp_level() > CompLevel_simple) {
-        // Invalidate the existing OSR nmethod so that a compile at CompLevel_simple is permitted.
-        osr_nm->make_not_entrant();
+  if (!CompilationModeFlag::disable_intermediate()) {
+    // Check if the method can be compiled. If it cannot be compiled with C1, continue profiling
+    // in the interpreter and then compile with C2 (the transition function will request that,
+    // see common() ). If the method cannot be compiled with C2 but still can with C1, compile it with
+    // pure C1.
+    if ((bci == InvocationEntryBci && !can_be_compiled(mh, level))) {
+      if (level == CompLevel_full_optimization && can_be_compiled(mh, CompLevel_simple)) {
+        compile(mh, bci, CompLevel_simple, thread);
       }
-      compile(mh, bci, CompLevel_simple, thread);
+      return;
     }
-    return;
+    if ((bci != InvocationEntryBci && !can_be_osr_compiled(mh, level))) {
+      if (level == CompLevel_full_optimization && can_be_osr_compiled(mh, CompLevel_simple)) {
+        nmethod* osr_nm = mh->lookup_osr_nmethod_for(bci, CompLevel_simple, false);
+        if (osr_nm != NULL && osr_nm->comp_level() > CompLevel_simple) {
+          // Invalidate the existing OSR nmethod so that a compile at CompLevel_simple is permitted.
+          osr_nm->make_not_entrant();
+        }
+        compile(mh, bci, CompLevel_simple, thread);
+      }
+      return;
+    }
   }
   if (bci != InvocationEntryBci && mh->is_not_osr_compilable(level)) {
     return;
@@ -480,27 +527,10 @@ void TieredThresholdPolicy::compile(const methodHandle& mh, int bci, CompLevel l
     if (PrintTieredEvents) {
       print_event(COMPILE, mh, mh, bci, level);
     }
-    submit_compile(mh, bci, level, thread);
+    int hot_count = (bci == InvocationEntryBci) ? mh->invocation_count() : mh->backedge_count();
+    update_rate(os::javaTimeMillis(), mh());
+    CompileBroker::compile_method(mh, bci, level, mh, hot_count, CompileTask::Reason_Tiered, thread);
   }
-}
-
-// Update the rate and submit compile
-void TieredThresholdPolicy::submit_compile(const methodHandle& mh, int bci, CompLevel level, JavaThread* thread) {
-  int hot_count = (bci == InvocationEntryBci) ? mh->invocation_count() : mh->backedge_count();
-  update_rate(os::javaTimeMillis(), mh());
-  CompileBroker::compile_method(mh, bci, level, mh, hot_count, CompileTask::Reason_Tiered, thread);
-}
-
-// Print an event.
-void TieredThresholdPolicy::print_specific(EventType type, const methodHandle& mh, const methodHandle& imh,
-                                             int bci, CompLevel level) {
-  tty->print(" rate=");
-  if (mh->prev_time() == 0) tty->print("n/a");
-  else tty->print("%f", mh->rate());
-
-  tty->print(" k=%.2lf,%.2lf", threshold_scale(CompLevel_full_profile, Tier3LoadFeedback),
-                               threshold_scale(CompLevel_full_optimization, Tier4LoadFeedback));
-
 }
 
 // update_rate() is called from select_task() while holding a compile queue lock.
@@ -585,27 +615,30 @@ bool TieredThresholdPolicy::is_method_profiled(Method* method) {
   if (mdo != NULL) {
     int i = mdo->invocation_count_delta();
     int b = mdo->backedge_count_delta();
-    return call_predicate_helper<CompLevel_full_profile>(i, b, 1, method);
+    return call_predicate_helper(method, CompilationModeFlag::disable_intermediate() ? CompLevel_none : CompLevel_full_profile, i, b, 1);
   }
   return false;
 }
 
 double TieredThresholdPolicy::threshold_scale(CompLevel level, int feedback_k) {
-  double queue_size = CompileBroker::queue_size(level);
   int comp_count = compiler_count(level);
-  double k = queue_size / (feedback_k * comp_count) + 1;
+  if (comp_count > 0) {
+    double queue_size = CompileBroker::queue_size(level);
+    double k = queue_size / (feedback_k * comp_count) + 1;
 
-  // Increase C1 compile threshold when the code cache is filled more
-  // than specified by IncreaseFirstTierCompileThresholdAt percentage.
-  // The main intention is to keep enough free space for C2 compiled code
-  // to achieve peak performance if the code cache is under stress.
-  if ((TieredStopAtLevel == CompLevel_full_optimization) && (level != CompLevel_full_optimization))  {
-    double current_reverse_free_ratio = CodeCache::reverse_free_ratio(CodeCache::get_code_blob_type(level));
-    if (current_reverse_free_ratio > _increase_threshold_at_ratio) {
-      k *= exp(current_reverse_free_ratio - _increase_threshold_at_ratio);
+    // Increase C1 compile threshold when the code cache is filled more
+    // than specified by IncreaseFirstTierCompileThresholdAt percentage.
+    // The main intention is to keep enough free space for C2 compiled code
+    // to achieve peak performance if the code cache is under stress.
+    if (!CompilationModeFlag::disable_intermediate() && TieredStopAtLevel == CompLevel_full_optimization && level != CompLevel_full_optimization)  {
+      double current_reverse_free_ratio = CodeCache::reverse_free_ratio(CodeCache::get_code_blob_type(level));
+      if (current_reverse_free_ratio > _increase_threshold_at_ratio) {
+        k *= exp(current_reverse_free_ratio - _increase_threshold_at_ratio);
+      }
     }
+    return k;
   }
-  return k;
+  return 1;
 }
 
 // Call and loop predicates determine whether a transition to a higher
@@ -615,55 +648,71 @@ double TieredThresholdPolicy::threshold_scale(CompLevel level, int feedback_k) {
 // how many methods per compiler thread can be in the queue before
 // the threshold values double.
 bool TieredThresholdPolicy::loop_predicate(int i, int b, CompLevel cur_level, Method* method) {
+  double k = 1;
   switch(cur_level) {
   case CompLevel_aot: {
-    double k = threshold_scale(CompLevel_full_profile, Tier3LoadFeedback);
-    return loop_predicate_helper<CompLevel_aot>(i, b, k, method);
+    k = CompilationModeFlag::disable_intermediate() ? 1 : threshold_scale(CompLevel_full_profile, Tier3LoadFeedback);
+    break;
   }
-  case CompLevel_none:
+  case CompLevel_none: {
+    if (CompilationModeFlag::disable_intermediate()) {
+      k = threshold_scale(CompLevel_full_optimization, Tier4LoadFeedback);
+      break;
+    }
+  }
+  // Fall through
   case CompLevel_limited_profile: {
-    double k = threshold_scale(CompLevel_full_profile, Tier3LoadFeedback);
-    return loop_predicate_helper<CompLevel_none>(i, b, k, method);
+    k = threshold_scale(CompLevel_full_profile, Tier3LoadFeedback);
+    break;
   }
   case CompLevel_full_profile: {
-    double k = threshold_scale(CompLevel_full_optimization, Tier4LoadFeedback);
-    return loop_predicate_helper<CompLevel_full_profile>(i, b, k, method);
+    k = threshold_scale(CompLevel_full_optimization, Tier4LoadFeedback);
+    break;
   }
   default:
     return true;
   }
+ return loop_predicate_helper(method, cur_level, i, b, k);
 }
 
 bool TieredThresholdPolicy::call_predicate(int i, int b, CompLevel cur_level, Method* method) {
+  double k = 1;
   switch(cur_level) {
   case CompLevel_aot: {
-    double k = threshold_scale(CompLevel_full_profile, Tier3LoadFeedback);
-    return call_predicate_helper<CompLevel_aot>(i, b, k, method);
+    k = CompilationModeFlag::disable_intermediate() ? 1 : threshold_scale(CompLevel_full_profile, Tier3LoadFeedback);
+    break;
   }
-  case CompLevel_none:
+  case CompLevel_none: {
+    if (CompilationModeFlag::disable_intermediate()) {
+      k = threshold_scale(CompLevel_full_optimization, Tier4LoadFeedback);
+      break;
+    }
+  }
+  // Fall through
   case CompLevel_limited_profile: {
-    double k = threshold_scale(CompLevel_full_profile, Tier3LoadFeedback);
-    return call_predicate_helper<CompLevel_none>(i, b, k, method);
+    k = threshold_scale(CompLevel_full_profile, Tier3LoadFeedback);
+    break;
   }
   case CompLevel_full_profile: {
-    double k = threshold_scale(CompLevel_full_optimization, Tier4LoadFeedback);
-    return call_predicate_helper<CompLevel_full_profile>(i, b, k, method);
+    k = threshold_scale(CompLevel_full_optimization, Tier4LoadFeedback);
+    break;
   }
   default:
     return true;
   }
+  return call_predicate_helper(method, cur_level, i, b, k);
 }
 
 // Determine is a method is mature.
 bool TieredThresholdPolicy::is_mature(Method* method) {
-  if (should_compile_at_level_simple(method)) return true;
+  if (is_trivial(method) || force_comp_at_level_simple(method)) return true;
   MethodData* mdo = method->method_data();
   if (mdo != NULL) {
     int i = mdo->invocation_count();
     int b = mdo->backedge_count();
     double k = ProfileMaturityPercentage / 100.0;
-    return call_predicate_helper<CompLevel_full_profile>(i, b, k, method) ||
-           loop_predicate_helper<CompLevel_full_profile>(i, b, k, method);
+    CompLevel main_profile_level = CompilationModeFlag::disable_intermediate() ? CompLevel_none : CompLevel_full_profile;
+    return call_predicate_helper(method, main_profile_level, i, b, k) || loop_predicate_helper(method, main_profile_level, i, b, k);
   }
   return false;
 }
@@ -672,13 +721,16 @@ bool TieredThresholdPolicy::is_mature(Method* method) {
 // start profiling without waiting for the compiled method to arrive.
 // We also take the load on compilers into the account.
 bool TieredThresholdPolicy::should_create_mdo(Method* method, CompLevel cur_level) {
-  if (cur_level == CompLevel_none &&
-      CompileBroker::queue_size(CompLevel_full_optimization) <=
-      Tier3DelayOn * compiler_count(CompLevel_full_optimization)) {
-    int i = method->invocation_count();
-    int b = method->backedge_count();
-    double k = Tier0ProfilingStartPercentage / 100.0;
-    return call_predicate_helper<CompLevel_none>(i, b, k, method) || loop_predicate_helper<CompLevel_none>(i, b, k, method);
+  if (cur_level != CompLevel_none || force_comp_at_level_simple(method)) {
+    return false;
+  }
+  int i = method->invocation_count();
+  int b = method->backedge_count();
+  double k = Tier0ProfilingStartPercentage / 100.0;
+
+  // If the top level compiler is not keeping up, delay profiling.
+  if (CompileBroker::queue_size(CompLevel_full_optimization) <=  (CompilationModeFlag::disable_intermediate() ? Tier0Delay : Tier3DelayOn) * compiler_count(CompLevel_full_optimization)) {
+    return call_predicate_helper(method, CompLevel_none, i, b, k) || loop_predicate_helper(method, CompLevel_none, i, b, k);
   }
   return false;
 }
@@ -714,7 +766,7 @@ void TieredThresholdPolicy::create_mdo(const methodHandle& mh, JavaThread* THREA
  *   1 - pure C1 (CompLevel_simple)
  *   2 - C1 with invocation and backedge counting (CompLevel_limited_profile)
  *   3 - C1 with full profiling (CompLevel_full_profile)
- *   4 - C2 (CompLevel_full_optimization)
+ *   4 - C2 or Graal (CompLevel_full_optimization)
  *
  * Common state transition patterns:
  * a. 0 -> 3 -> 4.
@@ -752,106 +804,129 @@ CompLevel TieredThresholdPolicy::common(Predicate p, Method* method, CompLevel c
   int i = method->invocation_count();
   int b = method->backedge_count();
 
-  if (should_compile_at_level_simple(method)) {
+  if (force_comp_at_level_simple(method)) {
     next_level = CompLevel_simple;
   } else {
-    switch(cur_level) {
+    if (!CompilationModeFlag::disable_intermediate() && is_trivial(method)) {
+      next_level = CompLevel_simple;
+    } else {
+      switch(cur_level) {
       default: break;
-      case CompLevel_aot: {
-      // If we were at full profile level, would we switch to full opt?
-      if (common(p, method, CompLevel_full_profile, disable_feedback) == CompLevel_full_optimization) {
-        next_level = CompLevel_full_optimization;
-      } else if (disable_feedback || (CompileBroker::queue_size(CompLevel_full_optimization) <=
-                               Tier3DelayOff * compiler_count(CompLevel_full_optimization) &&
-                               (this->*p)(i, b, cur_level, method))) {
-        next_level = CompLevel_full_profile;
-      }
-    }
-    break;
-    case CompLevel_none:
-      // If we were at full profile level, would we switch to full opt?
-      if (common(p, method, CompLevel_full_profile, disable_feedback) == CompLevel_full_optimization) {
-        next_level = CompLevel_full_optimization;
-      } else if ((this->*p)(i, b, cur_level, method)) {
-#if INCLUDE_JVMCI
-        if (EnableJVMCI && UseJVMCICompiler) {
-          // Since JVMCI takes a while to warm up, its queue inevitably backs up during
-          // early VM execution. As of 2014-06-13, JVMCI's inliner assumes that the root
-          // compilation method and all potential inlinees have mature profiles (which
-          // includes type profiling). If it sees immature profiles, JVMCI's inliner
-          // can perform pathologically bad (e.g., causing OutOfMemoryErrors due to
-          // exploring/inlining too many graphs). Since a rewrite of the inliner is
-          // in progress, we simply disable the dialing back heuristic for now and will
-          // revisit this decision once the new inliner is completed.
-          next_level = CompLevel_full_profile;
-        } else
-#endif
-        {
-          // C1-generated fully profiled code is about 30% slower than the limited profile
-          // code that has only invocation and backedge counters. The observation is that
-          // if C2 queue is large enough we can spend too much time in the fully profiled code
-          // while waiting for C2 to pick the method from the queue. To alleviate this problem
-          // we introduce a feedback on the C2 queue size. If the C2 queue is sufficiently long
-          // we choose to compile a limited profiled version and then recompile with full profiling
-          // when the load on C2 goes down.
-          if (!disable_feedback && CompileBroker::queue_size(CompLevel_full_optimization) >
-              Tier3DelayOn * compiler_count(CompLevel_full_optimization)) {
-            next_level = CompLevel_limited_profile;
-          } else {
-            next_level = CompLevel_full_profile;
-          }
-        }
-      }
-      break;
-    case CompLevel_limited_profile:
-      if (is_method_profiled(method)) {
-        // Special case: we got here because this method was fully profiled in the interpreter.
-        next_level = CompLevel_full_optimization;
-      } else {
-        MethodData* mdo = method->method_data();
-        if (mdo != NULL) {
-          if (mdo->would_profile()) {
-            if (disable_feedback || (CompileBroker::queue_size(CompLevel_full_optimization) <=
-                                     Tier3DelayOff * compiler_count(CompLevel_full_optimization) &&
-                                     (this->*p)(i, b, cur_level, method))) {
-              next_level = CompLevel_full_profile;
-            }
-          } else {
-            next_level = CompLevel_full_optimization;
+      case CompLevel_aot:
+        if (CompilationModeFlag::disable_intermediate()) {
+          if (disable_feedback || (CompileBroker::queue_size(CompLevel_full_optimization) <=
+                                   Tier0Delay * compiler_count(CompLevel_full_optimization) &&
+                                  (this->*p)(i, b, cur_level, method))) {
+            next_level = CompLevel_none;
           }
         } else {
-          // If there is no MDO we need to profile
-          if (disable_feedback || (CompileBroker::queue_size(CompLevel_full_optimization) <=
-                                   Tier3DelayOff * compiler_count(CompLevel_full_optimization) &&
-                                   (this->*p)(i, b, cur_level, method))) {
+          // If we were at full profile level, would we switch to full opt?
+          if (common(p, method, CompLevel_full_profile, disable_feedback) == CompLevel_full_optimization) {
+            next_level = CompLevel_full_optimization;
+          } else if (disable_feedback || (CompileBroker::queue_size(CompLevel_full_optimization) <=
+                                          Tier3DelayOff * compiler_count(CompLevel_full_optimization) &&
+                                         (this->*p)(i, b, cur_level, method))) {
             next_level = CompLevel_full_profile;
           }
         }
-      }
-      break;
-    case CompLevel_full_profile:
-      {
-        MethodData* mdo = method->method_data();
-        if (mdo != NULL) {
-          if (mdo->would_profile()) {
+        break;
+      case CompLevel_none:
+        if (CompilationModeFlag::disable_intermediate()) {
+          MethodData* mdo = method->method_data();
+          if (mdo != NULL) {
+            // If mdo exists that means we are in a normal profiling mode.
             int mdo_i = mdo->invocation_count_delta();
             int mdo_b = mdo->backedge_count_delta();
             if ((this->*p)(mdo_i, mdo_b, cur_level, method)) {
               next_level = CompLevel_full_optimization;
             }
-          } else {
+          }
+        } else {
+          // If we were at full profile level, would we switch to full opt?
+          if (common(p, method, CompLevel_full_profile, disable_feedback) == CompLevel_full_optimization) {
             next_level = CompLevel_full_optimization;
+          } else if ((this->*p)(i, b, cur_level, method)) {
+  #if INCLUDE_JVMCI
+            if (EnableJVMCI && UseJVMCICompiler) {
+              // Since JVMCI takes a while to warm up, its queue inevitably backs up during
+              // early VM execution. As of 2014-06-13, JVMCI's inliner assumes that the root
+              // compilation method and all potential inlinees have mature profiles (which
+              // includes type profiling). If it sees immature profiles, JVMCI's inliner
+              // can perform pathologically bad (e.g., causing OutOfMemoryErrors due to
+              // exploring/inlining too many graphs). Since a rewrite of the inliner is
+              // in progress, we simply disable the dialing back heuristic for now and will
+              // revisit this decision once the new inliner is completed.
+              next_level = CompLevel_full_profile;
+            } else
+  #endif
+            {
+              // C1-generated fully profiled code is about 30% slower than the limited profile
+              // code that has only invocation and backedge counters. The observation is that
+              // if C2 queue is large enough we can spend too much time in the fully profiled code
+              // while waiting for C2 to pick the method from the queue. To alleviate this problem
+              // we introduce a feedback on the C2 queue size. If the C2 queue is sufficiently long
+              // we choose to compile a limited profiled version and then recompile with full profiling
+              // when the load on C2 goes down.
+              if (!disable_feedback && CompileBroker::queue_size(CompLevel_full_optimization) >
+                  Tier3DelayOn * compiler_count(CompLevel_full_optimization)) {
+                next_level = CompLevel_limited_profile;
+              } else {
+                next_level = CompLevel_full_profile;
+              }
+            }
           }
         }
+        break;
+      case CompLevel_limited_profile:
+        if (is_method_profiled(method)) {
+          // Special case: we got here because this method was fully profiled in the interpreter.
+          next_level = CompLevel_full_optimization;
+        } else {
+          MethodData* mdo = method->method_data();
+          if (mdo != NULL) {
+            if (mdo->would_profile()) {
+              if (disable_feedback || (CompileBroker::queue_size(CompLevel_full_optimization) <=
+                                       Tier3DelayOff * compiler_count(CompLevel_full_optimization) &&
+                                       (this->*p)(i, b, cur_level, method))) {
+                next_level = CompLevel_full_profile;
+              }
+            } else {
+              next_level = CompLevel_full_optimization;
+            }
+          } else {
+            // If there is no MDO we need to profile
+            if (disable_feedback || (CompileBroker::queue_size(CompLevel_full_optimization) <=
+                                     Tier3DelayOff * compiler_count(CompLevel_full_optimization) &&
+                                     (this->*p)(i, b, cur_level, method))) {
+              next_level = CompLevel_full_profile;
+            }
+          }
+        }
+        break;
+      case CompLevel_full_profile:
+        {
+          MethodData* mdo = method->method_data();
+          if (mdo != NULL) {
+            if (mdo->would_profile()) {
+              int mdo_i = mdo->invocation_count_delta();
+              int mdo_b = mdo->backedge_count_delta();
+              if ((this->*p)(mdo_i, mdo_b, cur_level, method)) {
+                next_level = CompLevel_full_optimization;
+              }
+            } else {
+              next_level = CompLevel_full_optimization;
+            }
+          }
+        }
+        break;
       }
-      break;
     }
   }
-  return MIN2(next_level, (CompLevel)TieredStopAtLevel);
+  return MIN2(next_level, CompilationModeFlag::quick_only() ? CompLevel_simple : (CompLevel)TieredStopAtLevel);
 }
 
 // Determine if a method should be compiled with a normal entry point at a different level.
-CompLevel TieredThresholdPolicy::call_event(Method* method, CompLevel cur_level, JavaThread * thread) {
+CompLevel TieredThresholdPolicy::call_event(Method* method, CompLevel cur_level, JavaThread* thread) {
   CompLevel osr_level = MIN2((CompLevel) method->highest_osr_comp_level(),
                              common(&TieredThresholdPolicy::loop_predicate, method, cur_level, true));
   CompLevel next_level = common(&TieredThresholdPolicy::call_predicate, method, cur_level);
@@ -950,7 +1025,8 @@ void TieredThresholdPolicy::method_back_branch_event(const methodHandle& mh, con
       if (level == CompLevel_aot) {
         // Recompile the enclosing method to prevent infinite OSRs. Stay at AOT level while it's compiling.
         if (max_osr_level != CompLevel_none && !CompileBroker::compilation_is_in_queue(mh)) {
-          compile(mh, InvocationEntryBci, MIN2((CompLevel)TieredStopAtLevel, CompLevel_full_profile), thread);
+          CompLevel enclosing_level = MIN2(CompilationModeFlag::quick_only() ? CompLevel_simple : (CompLevel)TieredStopAtLevel, CompLevel_full_profile);
+          compile(mh, InvocationEntryBci, enclosing_level, thread);
         }
       } else {
         // Current loop event level is not AOT

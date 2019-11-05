@@ -101,11 +101,20 @@ public class InetSocketAddress
 
         @Override
         public String toString() {
+
+            String formatted;
+
             if (isUnresolved()) {
-                return hostname + ":" + port;
+                formatted = hostname + "/<unresolved>";
             } else {
-                return addr.toString() + ":" + port;
+                formatted = addr.toString();
+                if (addr instanceof Inet6Address) {
+                    int i = formatted.lastIndexOf("/");
+                    formatted = formatted.substring(0, i + 1)
+                            + "[" + formatted.substring(i + 1) + "]";
+                }
             }
+            return formatted + ":" + port;
         }
 
         @Override
@@ -367,7 +376,9 @@ public class InetSocketAddress
      * Constructs a string representation of this InetSocketAddress.
      * This String is constructed by calling toString() on the InetAddress
      * and concatenating the port number (with a colon). If the address
-     * is unresolved then the part before the colon will only contain the hostname.
+     * is an IPv6 address, the IPv6 literal is enclosed in square brackets.
+     * If the address is {@linkplain #isUnresolved() unresolved},
+     * {@code <unresolved>} is displayed in place of the address literal.
      *
      * @return  a string representation of this object.
      */

@@ -107,6 +107,7 @@ class HotSpotVMConfig extends HotSpotVMConfigAccess {
 
     final int instanceKlassStateLinked = getConstant("InstanceKlass::linked", Integer.class);
     final int instanceKlassStateFullyInitialized = getConstant("InstanceKlass::fully_initialized", Integer.class);
+    final int instanceKlassStateBeingInitialized = getConstant("InstanceKlass::being_initialized", Integer.class);
     final int instanceKlassMiscIsUnsafeAnonymous = getConstant("InstanceKlass::_misc_is_unsafe_anonymous", Integer.class);
 
     final int annotationsFieldAnnotationsOffset = getFieldOffset("Annotations::_fields_annotations", Integer.class, "Array<AnnotationArray*>*");

@@ -42,6 +42,10 @@ typedef enum {
         PS_NOFREGS      /* FPU register set not available for given lwp */
 } ps_err_e;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // ps_getpid() is only defined on Linux to return a thread's process ID
 JNIEXPORT pid_t JNICALL
 ps_getpid(struct ps_prochandle *ph);
@@ -76,5 +80,9 @@ ps_lgetfpregs(struct ps_prochandle *ph, lwpid_t lid, prfpregset_t *fpregs);
 
 JNIEXPORT ps_err_e JNICALL
 ps_lgetregs(struct ps_prochandle *ph, lwpid_t lid, prgregset_t gregset);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _PROC_SERVICE_H_ */

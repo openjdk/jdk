@@ -7,7 +7,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 14982 $"/>
+		<version number="$Revision$"/>
 		<language type="mi"/>
 	</identity>
 	<localeDisplayNames>
@@ -43,6 +43,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="ru">Ruhiana</language>
 			<language type="und">Reo Tē Mōhiotia</language>
 			<language type="zh">Hainamana</language>
+			<language type="zh" alt="menu">Hainamana Manarini</language>
 			<language type="zh_Hans">Hainamana Māmā</language>
 			<language type="zh_Hant">Hainamana Tukuiho</language>
 		</languages>
@@ -83,9 +84,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<measurementSystemName type="US">US</measurementSystemName>
 		</measurementSystemNames>
 		<codePatterns>
-			<codePattern type="language">{0}</codePattern>
-			<codePattern type="script">{0}</codePattern>
-			<codePattern type="territory">{0}</codePattern>
+			<codePattern type="language">Reo: {0}</codePattern>
+			<codePattern type="script">Momotuhi: {0}</codePattern>
+			<codePattern type="territory">Rohe: {0}</codePattern>
 		</codePatterns>
 	</localeDisplayNames>
 	<characters>
@@ -118,22 +119,22 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<dateFormats>
 					<dateFormatLength type="full">
 						<dateFormat>
-							<pattern>G y MMMM d, EEEE</pattern>
+							<pattern>EEEE, d MMMM y G</pattern>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
-							<pattern>G y MMMM d</pattern>
+							<pattern>d MMMM y G</pattern>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
-							<pattern>G y MMM d</pattern>
+							<pattern>d MMM y G</pattern>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
-							<pattern>GGGGG y-MM-dd</pattern>
+							<pattern>dd-MM-y GGGGG</pattern>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -467,32 +468,36 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<eras>
 					<eraNames>
 						<era type="0">BCE</era>
+						<era type="0" alt="variant">BCE</era>
 						<era type="1">CE</era>
+						<era type="1" alt="variant">CE</era>
 					</eraNames>
 					<eraAbbr>
 						<era type="0">BCE</era>
+						<era type="0" alt="variant">BCE</era>
 						<era type="1">CE</era>
+						<era type="1" alt="variant">CE</era>
 					</eraAbbr>
 				</eras>
 				<dateFormats>
 					<dateFormatLength type="full">
 						<dateFormat>
-							<pattern>y MMMM d, EEEE</pattern>
+							<pattern>EEEE, d MMMM y</pattern>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
-							<pattern>y MMMM d</pattern>
+							<pattern>d MMMM y</pattern>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
-							<pattern>y MMM d</pattern>
+							<pattern>d MMM y</pattern>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
-							<pattern>y-MM-dd</pattern>
+							<pattern>dd-MM-y</pattern>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -509,12 +514,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					</timeFormatLength>
 					<timeFormatLength type="medium">
 						<timeFormat>
-							<pattern>h:mm:ss</pattern>
+							<pattern>h:mm:ss a</pattern>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="short">
 						<timeFormat>
-							<pattern>h:mm</pattern>
+							<pattern>h:mm a</pattern>
 						</timeFormat>
 					</timeFormatLength>
 				</timeFormats>
@@ -539,6 +544,46 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
+					<availableFormats>
+						<dateFormatItem id="Bh">h B</dateFormatItem>
+						<dateFormatItem id="Bhm">h:mm B</dateFormatItem>
+						<dateFormatItem id="Bhms">h:mm:ss B</dateFormatItem>
+						<dateFormatItem id="d">d</dateFormatItem>
+						<dateFormatItem id="E">ccc</dateFormatItem>
+						<dateFormatItem id="EBhm">E h:mm B</dateFormatItem>
+						<dateFormatItem id="EBhms">E h:mm:ss B</dateFormatItem>
+						<dateFormatItem id="Ed">E, d</dateFormatItem>
+						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
+						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="Gy">y G</dateFormatItem>
+						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
+						<dateFormatItem id="GyMMMd">d MMM y G</dateFormatItem>
+						<dateFormatItem id="GyMMMEd">E, d MMM y G</dateFormatItem>
+						<dateFormatItem id="h">h a</dateFormatItem>
+						<dateFormatItem id="hm">h:mm a</dateFormatItem>
+						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="hmsv">h:mm:ss a v</dateFormatItem>
+						<dateFormatItem id="hmv">h:mm a v</dateFormatItem>
+						<dateFormatItem id="M">L</dateFormatItem>
+						<dateFormatItem id="Md">dd-MM</dateFormatItem>
+						<dateFormatItem id="MEd">E, dd-MM</dateFormatItem>
+						<dateFormatItem id="MMM">LLL</dateFormatItem>
+						<dateFormatItem id="MMMd">d MMM</dateFormatItem>
+						<dateFormatItem id="MMMEd">E, d MMM</dateFormatItem>
+						<dateFormatItem id="MMMMd">d MMMM</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="other">'wiki' W 'o' MMMM</dateFormatItem>
+						<dateFormatItem id="y">y</dateFormatItem>
+						<dateFormatItem id="yM">MM-y</dateFormatItem>
+						<dateFormatItem id="yMd">dd-MM-y</dateFormatItem>
+						<dateFormatItem id="yMEd">E, dd-MM-y</dateFormatItem>
+						<dateFormatItem id="yMMM">MMM y</dateFormatItem>
+						<dateFormatItem id="yMMMd">d MMM y</dateFormatItem>
+						<dateFormatItem id="yMMMEd">E, d MMM y</dateFormatItem>
+						<dateFormatItem id="yMMMM">MMMM y</dateFormatItem>
+						<dateFormatItem id="yQQQ">QQQ y</dateFormatItem>
+						<dateFormatItem id="yQQQQ">QQQQ y</dateFormatItem>
+						<dateFormatItem id="yw" count="other">'wiki' w 'o' Y</dateFormatItem>
+					</availableFormats>
 					<intervalFormats>
 						<intervalFormatFallback>{0} ki te {1}</intervalFormatFallback>
 					</intervalFormats>
@@ -846,11 +891,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</timeZoneNames>
 	</dates>
 	<numbers>
-		<defaultNumberingSystem draft="contributed">latn</defaultNumberingSystem>
-		<otherNumberingSystems>
-			<native draft="contributed">latn</native>
-		</otherNumberingSystems>
-		<minimumGroupingDigits draft="contributed">1</minimumGroupingDigits>
 		<symbols numberSystem="latn">
 			<decimal>.</decimal>
 			<group>,</group>
@@ -947,183 +987,128 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currency type="ANG">
 				<displayName>ANG</displayName>
 				<displayName count="other">ANG</displayName>
-				<symbol draft="contributed">ANG</symbol>
 			</currency>
 			<currency type="ARS">
 				<displayName>ARS</displayName>
 				<displayName count="other">ARS</displayName>
-				<symbol draft="contributed">ARS</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="AWG">
 				<displayName>AWG</displayName>
 				<displayName count="other">AWG</displayName>
-				<symbol draft="contributed">AWG</symbol>
 			</currency>
 			<currency type="BBD">
 				<displayName>BBD</displayName>
 				<displayName count="other">BBD</displayName>
-				<symbol draft="contributed">BBD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="BMD">
 				<displayName>BMD</displayName>
 				<displayName count="other">BMD</displayName>
-				<symbol draft="contributed">BMD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="BRL">
 				<displayName>Real Parahi</displayName>
-				<displayName count="other">Ngā real Parahi</displayName>
-				<symbol draft="contributed">R$</symbol>
-				<symbol alt="narrow" draft="contributed">R$</symbol>
+				<displayName count="other">real Parahi</displayName>
 			</currency>
 			<currency type="BSD">
 				<displayName>BSD</displayName>
 				<displayName count="other">BSD</displayName>
-				<symbol draft="contributed">BSD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="BZD">
 				<displayName>BZD</displayName>
 				<displayName count="other">BZD</displayName>
-				<symbol draft="contributed">BZD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="CAD">
 				<displayName>CAD</displayName>
 				<displayName count="other">CAD</displayName>
-				<symbol draft="contributed">CA$</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="CNY">
 				<displayName>Yuan Haina</displayName>
-				<displayName count="other">Yuan Haina</displayName>
-				<symbol draft="contributed">CN¥</symbol>
-				<symbol alt="narrow" draft="contributed">¥</symbol>
+				<displayName count="other">yuan Haina</displayName>
 			</currency>
 			<currency type="CRC">
 				<displayName>CRC</displayName>
 				<displayName count="other">CRC</displayName>
-				<symbol draft="contributed">CRC</symbol>
-				<symbol alt="narrow" draft="contributed">₡</symbol>
 			</currency>
 			<currency type="CUC">
 				<displayName>CUC</displayName>
 				<displayName count="other">CUC</displayName>
-				<symbol draft="contributed">CUC</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="CUP">
 				<displayName>CUP</displayName>
 				<displayName count="other">CUP</displayName>
-				<symbol draft="contributed">CUP</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="DOP">
 				<displayName>DOP</displayName>
 				<displayName count="other">DOP</displayName>
-				<symbol draft="contributed">DOP</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="EUR">
 				<displayName>Euro</displayName>
-				<displayName count="other">euros</displayName>
-				<symbol draft="contributed">€</symbol>
-				<symbol alt="narrow" draft="contributed">€</symbol>
+				<displayName count="other">euro</displayName>
 			</currency>
 			<currency type="GBP">
 				<displayName>Pāuna Piritene</displayName>
-				<displayName count="other">Ngā pāuna Piritene</displayName>
-				<symbol draft="contributed">£</symbol>
-				<symbol alt="narrow" draft="contributed">£</symbol>
+				<displayName count="other">pāuna Piritene</displayName>
 			</currency>
 			<currency type="GTQ">
 				<displayName>GTQ</displayName>
 				<displayName count="other">GTQ</displayName>
-				<symbol draft="contributed">GTQ</symbol>
-				<symbol alt="narrow" draft="contributed">Q</symbol>
 			</currency>
 			<currency type="HNL">
 				<displayName>HNL</displayName>
 				<displayName count="other">HNL</displayName>
-				<symbol draft="contributed">HNL</symbol>
-				<symbol alt="narrow" draft="contributed">L</symbol>
 			</currency>
 			<currency type="HTG">
 				<displayName>HTG</displayName>
 				<displayName count="other">HTG</displayName>
-				<symbol draft="contributed">HTG</symbol>
 			</currency>
 			<currency type="INR">
-				<displayName>Rupee Iniana</displayName>
-				<displayName count="other">Ngā rupee Iniana</displayName>
-				<symbol draft="contributed">₹</symbol>
-				<symbol alt="narrow" draft="contributed">₹</symbol>
+				<displayName>Rupī Iniana</displayName>
+				<displayName count="other">rupī Iniana</displayName>
 			</currency>
 			<currency type="JMD">
 				<displayName>JMD</displayName>
 				<displayName count="other">JMD</displayName>
-				<symbol draft="contributed">JMD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="JPY">
 				<displayName>Yen Hapanihi</displayName>
-				<displayName count="other">Yen Hapanihi</displayName>
+				<displayName count="other">yen Hapanihi</displayName>
 				<symbol draft="contributed">¥</symbol>
-				<symbol alt="narrow" draft="contributed">¥</symbol>
 			</currency>
 			<currency type="KYD">
 				<displayName>KYD</displayName>
 				<displayName count="other">KYD</displayName>
-				<symbol draft="contributed">KYD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="MXN">
 				<displayName>MXN</displayName>
 				<displayName count="other">MXN</displayName>
-				<symbol draft="contributed">MX$</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="NIO">
 				<displayName>NIO</displayName>
 				<displayName count="other">NIO</displayName>
-				<symbol draft="contributed">NIO</symbol>
-				<symbol alt="narrow" draft="contributed">C$</symbol>
 			</currency>
 			<currency type="NZD">
 				<displayName>Tāra o Aotearoa</displayName>
-				<displayName count="other">Ngā tāra o Aotearoa</displayName>
+				<displayName count="other">tāra o Aotearoa</displayName>
 				<symbol>$</symbol>
 			</currency>
 			<currency type="PAB">
 				<displayName>PAB</displayName>
 				<displayName count="other">PAB</displayName>
-				<symbol draft="contributed">PAB</symbol>
 			</currency>
 			<currency type="RUB">
 				<displayName>Rūpera Ruhiana</displayName>
-				<displayName count="other">Ngā rūpera Ruhiana</displayName>
-				<symbol draft="contributed">RUB</symbol>
-				<symbol alt="narrow" draft="contributed">₽</symbol>
+				<displayName count="other">rūpera Ruhiana</displayName>
 			</currency>
 			<currency type="TTD">
 				<displayName>TTD</displayName>
 				<displayName count="other">TTD</displayName>
-				<symbol draft="contributed">TTD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="USD">
 				<displayName>Tāra US</displayName>
-				<displayName count="other">Ngā tāra US</displayName>
-				<symbol draft="contributed">US$</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<displayName count="other">tāra US</displayName>
 			</currency>
 			<currency type="XCD">
 				<displayName>XCD</displayName>
 				<displayName count="other">XCD</displayName>
-				<symbol draft="contributed">EC$</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="XXX">
 				<displayName>Moni Tē Mōhiotia</displayName>

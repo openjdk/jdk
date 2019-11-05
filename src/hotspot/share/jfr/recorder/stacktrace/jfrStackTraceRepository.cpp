@@ -62,7 +62,7 @@ class JfrFrameType : public JfrSerializer {
 };
 
 bool JfrStackTraceRepository::initialize() {
-  return JfrSerializer::register_serializer(TYPE_FRAMETYPE, false, true, new JfrFrameType());
+  return JfrSerializer::register_serializer(TYPE_FRAMETYPE, true, new JfrFrameType());
 }
 
 void JfrStackTraceRepository::destroy() {
@@ -71,7 +71,16 @@ void JfrStackTraceRepository::destroy() {
   _instance = NULL;
 }
 
-size_t JfrStackTraceRepository::write_impl(JfrChunkWriter& sw, bool clear) {
+static traceid last_id = 0;
+
+bool JfrStackTraceRepository::is_modified() const {
+  return last_id != _next_id;
+}
+
+size_t JfrStackTraceRepository::write(JfrChunkWriter& sw, bool clear) {
+  if (_entries == 0) {
+    return 0;
+  }
   MutexLocker lock(JfrStacktrace_lock, Mutex::_no_safepoint_check_flag);
   assert(_entries > 0, "invariant");
   int count = 0;
@@ -93,27 +102,8 @@ size_t JfrStackTraceRepository::write_impl(JfrChunkWriter& sw, bool clear) {
     memset(_table, 0, sizeof(_table));
     _entries = 0;
   }
+  last_id = _next_id;
   return count;
-}
-
-size_t JfrStackTraceRepository::write(JfrChunkWriter& sw, bool clear) {
-  return _entries > 0 ? write_impl(sw, clear) : 0;
-}
-
-traceid JfrStackTraceRepository::write(JfrCheckpointWriter& writer, traceid id, unsigned int hash) {
-  assert(JfrStacktrace_lock->owned_by_self(), "invariant");
-  const JfrStackTrace* const trace = lookup(hash, id);
-  assert(trace != NULL, "invariant");
-  assert(trace->hash() == hash, "invariant");
-  assert(trace->id() == id, "invariant");
-  trace->write(writer);
-  return id;
-}
-
-void JfrStackTraceRepository::write_metadata(JfrCheckpointWriter& writer) {
-  JfrFrameType fct;
-  writer.write_type(TYPE_FRAMETYPE);
-  fct.serialize(writer);
 }
 
 size_t JfrStackTraceRepository::clear() {
@@ -142,7 +132,7 @@ traceid JfrStackTraceRepository::record(Thread* thread, int skip /* 0 */) {
   if (tl->has_cached_stack_trace()) {
     return tl->cached_stack_trace_id();
   }
-  if (!thread->is_Java_thread() || thread->is_hidden_from_external_view()) {
+  if (!thread->is_Java_thread() || thread->is_hidden_from_external_view() || tl->is_excluded()) {
     return 0;
   }
   JfrStackFrame* frames = tl->stackframes();

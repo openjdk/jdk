@@ -9,7 +9,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 14982 $"/>
+		<version number="$Revision$"/>
 		<language type="bs"/>
 	</identity>
 	<localeDisplayNames>
@@ -89,6 +89,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="car">karipski</language>
 			<language type="cay">kajuga</language>
 			<language type="cch">atsam</language>
+			<language type="ccp">čakma</language>
 			<language type="ce">čečenski</language>
 			<language type="ceb">cebuano</language>
 			<language type="cgg">čiga</language>
@@ -100,7 +101,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="chn">činukski žargon</language>
 			<language type="cho">čoktav</language>
 			<language type="chp">čipvijanski</language>
-			<language type="chr">čiroki</language>
+			<language type="chr">čeroki</language>
 			<language type="chy">čejenski</language>
 			<language type="ckb">centralnokurdski</language>
 			<language type="co">korzikanski</language>
@@ -118,7 +119,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="dar">dargva</language>
 			<language type="dav">taita</language>
 			<language type="de">njemački</language>
-			<language type="de_CH">gornjonjemački (Švicarska)</language>
 			<language type="del">delaver</language>
 			<language type="den">slave</language>
 			<language type="dgr">dogrib</language>
@@ -141,8 +141,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="el">grčki</language>
 			<language type="elx">elamitski</language>
 			<language type="en">engleski</language>
-			<language type="en_GB" alt="short">engleski (UK)</language>
-			<language type="en_US" alt="short">engleski (SAD)</language>
 			<language type="enm">srednjovjekovni engleski</language>
 			<language type="eo">esperanto</language>
 			<language type="es">španski</language>
@@ -368,7 +366,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="oc">oksitanski</language>
 			<language type="oj">ojibva</language>
 			<language type="om">oromo</language>
-			<language type="or">orijski</language>
+			<language type="or">odija</language>
 			<language type="os">osetski</language>
 			<language type="osa">osage</language>
 			<language type="ota">osmanski turski</language>
@@ -523,14 +521,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="yi">jidiš</language>
 			<language type="yo">jorubanski</language>
 			<language type="yue">kantonski</language>
+			<language type="yue" alt="menu">jue</language>
 			<language type="za">zuang</language>
 			<language type="zap">zapotečki</language>
 			<language type="zbl">blis simboli</language>
 			<language type="zen">zenaga</language>
 			<language type="zgh">standardni marokanski tamazigt</language>
 			<language type="zh">kineski</language>
+			<language type="zh" alt="menu">kineski (standardni)</language>
 			<language type="zh_Hans">kineski (pojednostavljeni)</language>
+			<language type="zh_Hans" alt="long">kineski (pojednostavljeni standardni)</language>
 			<language type="zh_Hant">kineski (tradicionalni)</language>
+			<language type="zh_Hant" alt="long">kineski (tradicionalni standardni)</language>
 			<language type="zu">zulu</language>
 			<language type="zun">zuni</language>
 			<language type="zxx">bez lingvističkog sadržaja</language>
@@ -819,7 +821,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="FO">Farska ostrva</territory>
 			<territory type="FR">Francuska</territory>
 			<territory type="GA">Gabon</territory>
-			<territory type="GB">Velika Britanija</territory>
+			<territory type="GB">Ujedinjeno Kraljevstvo</territory>
 			<territory type="GB" alt="short">UK</territory>
 			<territory type="GD">Grenada</territory>
 			<territory type="GE">Gruzija</territory>
@@ -961,8 +963,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="SV">Salvador</territory>
 			<territory type="SX">Sint Marten</territory>
 			<territory type="SY">Sirija</territory>
-			<territory type="SZ">Svazilend</territory>
-			<territory type="SZ" alt="variant">Svazi</territory>
+			<territory type="SZ">Esvatini</territory>
+			<territory type="SZ" alt="variant">Svazilend</territory>
 			<territory type="TA">Tristan da Cunha</territory>
 			<territory type="TC">Ostrva Turks i Kaikos</territory>
 			<territory type="TD">Čad</territory>
@@ -972,7 +974,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="TJ">Tadžikistan</territory>
 			<territory type="TK">Tokelau</territory>
 			<territory type="TL">Istočni Timor</territory>
-			<territory type="TL" alt="variant">TL</territory>
 			<territory type="TM">Turkmenistan</territory>
 			<territory type="TN">Tunis</territory>
 			<territory type="TO">Tonga</territory>
@@ -986,7 +987,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="UM">Američka Vanjska Ostrva</territory>
 			<territory type="UN">Ujedinjene Nacije</territory>
 			<territory type="UN" alt="short">UN</territory>
-			<territory type="US">Sjedinjene Američke Države</territory>
+			<territory type="US">Sjedinjene Države</territory>
 			<territory type="US" alt="short">SAD</territory>
 			<territory type="UY">Urugvaj</territory>
 			<territory type="UZ">Uzbekistan</territory>
@@ -1051,22 +1052,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<keys>
 			<key type="calendar">Kalendar</key>
 			<key type="cf">Format valute</key>
-			<key type="colAlternate" draft="provisional">Zanemarivanje poredavanja simbola</key>
-			<key type="colBackwards" draft="provisional">Obrnuto poredavanje po naglasku</key>
-			<key type="colCaseFirst" draft="provisional">Poredavanje po velikim/malim slovima</key>
-			<key type="colCaseLevel" draft="provisional">Poredavanje u skladu s veličinom slova</key>
+			<key type="colAlternate">Zanemarivanje poredavanja simbola</key>
+			<key type="colBackwards">Obrnuto poredavanje po naglasku</key>
+			<key type="colCaseFirst">Poredavanje po velikim/malim slovima</key>
+			<key type="colCaseLevel">Poredavanje u skladu s veličinom slova</key>
 			<key type="collation">Sortiranje</key>
-			<key type="colNormalization" draft="provisional">Normalizirano poredavanje</key>
-			<key type="colNumeric" draft="provisional">Numeričko poredavanje</key>
-			<key type="colStrength" draft="provisional">Jačina poredavanja</key>
+			<key type="colNormalization">Normalizirano poredavanje</key>
+			<key type="colNumeric">Numeričko poredavanje</key>
+			<key type="colStrength">Jačina poredavanja</key>
 			<key type="currency">Valuta</key>
 			<key type="hc">Format vremena (12 ili 24)</key>
 			<key type="lb">Stil prijeloma reda</key>
 			<key type="ms">Mjerni sistem</key>
 			<key type="numbers">Brojevi</key>
-			<key type="timezone" draft="provisional">Vremenska zona</key>
-			<key type="va" draft="provisional">Varijanta zemlje/jezika</key>
-			<key type="x" draft="provisional">Privatna upotreba</key>
+			<key type="timezone">Vremenska zona</key>
+			<key type="va">Varijanta zemlje/jezika</key>
+			<key type="x">Privatna upotreba</key>
 		</keys>
 		<types>
 			<type key="calendar" type="buddhist">budistički kalendar</type>
@@ -1211,9 +1212,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 	<characters>
 		<exemplarCharacters>[a b c č ć d {dž} đ e f g h i j k l {lj} m n {nj} o p r s š t u v z ž]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[q w x y]</exemplarCharacters>
-		<exemplarCharacters type="index" draft="provisional">[A B C Č Ć D {DŽ} E F G H I J K L {LJ} M N {NJ} O P Q R S Š T U V W X Y Z Ž]</exemplarCharacters>
-		<exemplarCharacters type="numbers">[\- , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
-		<exemplarCharacters type="punctuation" draft="provisional">[‐ – — , ; \: ! ? . … ' ‘ ’ &quot; “ ” ( ) \[ \] @ * / ′ ″]</exemplarCharacters>
+		<exemplarCharacters type="index" draft="contributed">[A B C Č Ć D {DŽ} E F G H I J K L {LJ} M N {NJ} O P Q R S Š T U V W X Y Z Ž]</exemplarCharacters>
+		<exemplarCharacters type="numbers">[\- ‑ , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
+		<exemplarCharacters type="punctuation" draft="contributed">[‐ – — , ; \: ! ? . … ' ‘ ’ &quot; “ ” ( ) \[ \] @ * / ′ ″]</exemplarCharacters>
 		<ellipsis type="final">{0}…</ellipsis>
 		<ellipsis type="initial">…{0}</ellipsis>
 		<ellipsis type="medial">{0}… {1}</ellipsis>
@@ -1889,9 +1890,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="MMMEd">E, d. MMM</dateFormatItem>
 						<dateFormatItem id="MMMMd">d. MMMM</dateFormatItem>
 						<dateFormatItem id="MMMMEd">E, d. MMMM</dateFormatItem>
-						<dateFormatItem id="MMMMW" count="one">W. 'sedmica' 'u' MMMM</dateFormatItem>
-						<dateFormatItem id="MMMMW" count="few">W. 'sedmica' 'u' MMMM</dateFormatItem>
-						<dateFormatItem id="MMMMW" count="other">W. 'sedmica' 'u' MMMM</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="one">W. 'sedmica' 'mjesec' MMMM</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="few">W. 'sedmica' 'mjesec' MMMM</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="other">W. 'sedmica' 'mjesec' MMMM</dateFormatItem>
 						<dateFormatItem id="ms">mm:ss</dateFormatItem>
 						<dateFormatItem id="y">y.</dateFormatItem>
 						<dateFormatItem id="yM">MM/y</dateFormatItem>
@@ -3582,10 +3583,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>Oral</exemplarCity>
 			</zone>
 			<zone type="Asia/Atyrau">
-				<exemplarCity>Atyrau</exemplarCity>
+				<exemplarCity>Atiraj</exemplarCity>
 			</zone>
 			<zone type="Asia/Aqtobe">
 				<exemplarCity>Akutobe</exemplarCity>
+			</zone>
+			<zone type="Asia/Qostanay">
+				<exemplarCity>Kostanaj</exemplarCity>
 			</zone>
 			<zone type="Asia/Qyzylorda">
 				<exemplarCity>Kizilorda</exemplarCity>
@@ -5180,6 +5184,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		</timeZoneNames>
 	</dates>
 	<numbers>
+		<defaultNumberingSystem draft="contributed">latn</defaultNumberingSystem>
+		<otherNumberingSystems>
+			<native draft="contributed">latn</native>
+		</otherNumberingSystems>
 		<minimumGroupingDigits draft="contributed">1</minimumGroupingDigits>
 		<symbols numberSystem="latn">
 			<decimal>,</decimal>
@@ -5192,6 +5200,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<perMille>‰</perMille>
 			<infinity>∞</infinity>
 			<nan>NaN</nan>
+			<timeSeparator draft="contributed">:</timeSeparator>
 		</symbols>
 		<decimalFormats numberSystem="latn">
 			<decimalFormatLength>
@@ -5359,6 +5368,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">dirham (UAE)</displayName>
 				<displayName count="few">dirhama (UAE)</displayName>
 				<displayName count="other">dirhama (UAE)</displayName>
+				<symbol draft="contributed">AED</symbol>
 			</currency>
 			<currency type="AFA">
 				<displayName>Avganistanski avgani (1927–2002)</displayName>
@@ -5371,6 +5381,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">afganistanski afgan</displayName>
 				<displayName count="few">afganistanska afgana</displayName>
 				<displayName count="other">afganistanskih afgana</displayName>
+				<symbol draft="contributed">AFN</symbol>
 			</currency>
 			<currency type="ALK">
 				<displayName>Albanski lek (1946–1965)</displayName>
@@ -5383,24 +5394,28 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">albanski lek</displayName>
 				<displayName count="few">albanska leka</displayName>
 				<displayName count="other">albanskih leka</displayName>
+				<symbol draft="contributed">ALL</symbol>
 			</currency>
 			<currency type="AMD">
 				<displayName>Armenski dram</displayName>
 				<displayName count="one">armenski dram</displayName>
 				<displayName count="few">armenska drama</displayName>
 				<displayName count="other">armenskih drama</displayName>
+				<symbol draft="contributed">AMD</symbol>
 			</currency>
 			<currency type="ANG">
 				<displayName>Holandskoantilski gulden</displayName>
 				<displayName count="one">holandskoantilski gulden</displayName>
 				<displayName count="few">holandskoantilska guldena</displayName>
 				<displayName count="other">holandskoantilskih guldena</displayName>
+				<symbol draft="contributed">ANG</symbol>
 			</currency>
 			<currency type="AOA">
 				<displayName>Angolska kvanza</displayName>
 				<displayName count="one">angolska kvanza</displayName>
 				<displayName count="few">angolske kvanze</displayName>
 				<displayName count="other">angolskih kvanzi</displayName>
+				<symbol draft="contributed">AOA</symbol>
 				<symbol alt="narrow" draft="contributed">Kz</symbol>
 			</currency>
 			<currency type="AOK">
@@ -5448,6 +5463,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">argentinski pezos</displayName>
 				<displayName count="few">argentinska pezosa</displayName>
 				<displayName count="other">argentinskih pezosa</displayName>
+				<symbol draft="contributed">ARS</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="ATS">
@@ -5469,6 +5485,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">arubanski florin</displayName>
 				<displayName count="few">arubanska florina</displayName>
 				<displayName count="other">arubanskih florina</displayName>
+				<symbol draft="contributed">AWG</symbol>
 			</currency>
 			<currency type="AZM">
 				<displayName>Azerbejdžanski manat (1993–2006)</displayName>
@@ -5481,6 +5498,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">azerbejdžanski manat</displayName>
 				<displayName count="few">azerbejdžanska manata</displayName>
 				<displayName count="other">azerbejdžanskih manata</displayName>
+				<symbol draft="contributed">AZN</symbol>
 			</currency>
 			<currency type="BAD">
 				<displayName>Bosansko-Hercegovački dinar</displayName>
@@ -5507,6 +5525,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">barbadoski dolar</displayName>
 				<displayName count="few">barbadoska dolara</displayName>
 				<displayName count="other">barbadoskih dolara</displayName>
+				<symbol draft="contributed">BBD</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="BDT">
@@ -5514,6 +5533,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">bangladeška taka</displayName>
 				<displayName count="few">bangladeške take</displayName>
 				<displayName count="other">bangladeških taka</displayName>
+				<symbol draft="contributed">BDT</symbol>
 				<symbol alt="narrow" draft="contributed">৳</symbol>
 			</currency>
 			<currency type="BEC">
@@ -5551,6 +5571,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">bugarski lev</displayName>
 				<displayName count="few">bugarska leva</displayName>
 				<displayName count="other">bugarskih leva</displayName>
+				<symbol draft="contributed">BGN</symbol>
 			</currency>
 			<currency type="BGO">
 				<displayName>Bugarski lev (1879–1952)</displayName>
@@ -5563,18 +5584,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">bahreinski dinar</displayName>
 				<displayName count="few">bahreinska dinara</displayName>
 				<displayName count="other">bahreinskih dinara</displayName>
+				<symbol draft="contributed">BHD</symbol>
 			</currency>
 			<currency type="BIF">
 				<displayName>Burundski franak</displayName>
 				<displayName count="one">burundski franak</displayName>
 				<displayName count="few">burundska franka</displayName>
 				<displayName count="other">burundskih franaka</displayName>
+				<symbol draft="contributed">BIF</symbol>
 			</currency>
 			<currency type="BMD">
 				<displayName>Bermudski dolar</displayName>
 				<displayName count="one">bermudski dolar</displayName>
 				<displayName count="few">bermudska dolara</displayName>
 				<displayName count="other">bermudskih dolara</displayName>
+				<symbol draft="contributed">BMD</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="BND">
@@ -5582,6 +5606,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">brunejski dolar</displayName>
 				<displayName count="few">brunejska dolara</displayName>
 				<displayName count="other">brunejskih dolara</displayName>
+				<symbol draft="contributed">BND</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="BOB">
@@ -5589,6 +5614,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">bolivijski boliviano</displayName>
 				<displayName count="few">bolivijska boliviana</displayName>
 				<displayName count="other">bolivijskih boliviana</displayName>
+				<symbol draft="contributed">BOB</symbol>
 				<symbol alt="narrow" draft="contributed">Bs</symbol>
 			</currency>
 			<currency type="BOL">
@@ -5658,6 +5684,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">bahamski dolar</displayName>
 				<displayName count="few">bahamska dolara</displayName>
 				<displayName count="other">bahamskih dolara</displayName>
+				<symbol draft="contributed">BSD</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="BTN">
@@ -5665,6 +5692,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">butanski ngultrum</displayName>
 				<displayName count="few">butanska ngultruma</displayName>
 				<displayName count="other">butanskih ngultruma</displayName>
+				<symbol draft="contributed">BTN</symbol>
 			</currency>
 			<currency type="BUK">
 				<displayName>Burmanski kjat</displayName>
@@ -5677,6 +5705,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">bocvanska pula</displayName>
 				<displayName count="few">bocvanske pule</displayName>
 				<displayName count="other">bocvanskih pula</displayName>
+				<symbol draft="contributed">BWP</symbol>
 				<symbol alt="narrow" draft="contributed">P</symbol>
 			</currency>
 			<currency type="BYB">
@@ -5690,6 +5719,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">bjeloruska rublja</displayName>
 				<displayName count="few">bjeloruske rublje</displayName>
 				<displayName count="other">bjeloruskih rubalja</displayName>
+				<symbol draft="contributed">BYN</symbol>
 				<symbol alt="narrow" draft="contributed">р.</symbol>
 			</currency>
 			<currency type="BYR">
@@ -5697,12 +5727,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">bjeloruska rublja (2000–2016)</displayName>
 				<displayName count="few">bjeloruske rublje (2000–2016)</displayName>
 				<displayName count="other">bjeloruskih rubalja (2000–2016)</displayName>
+				<symbol draft="contributed">BYR</symbol>
 			</currency>
 			<currency type="BZD">
 				<displayName>Belizeanski dolar</displayName>
 				<displayName count="one">belizeanski dolar</displayName>
 				<displayName count="few">belizeanska dolara</displayName>
 				<displayName count="other">belizeanskih dolara</displayName>
+				<symbol draft="contributed">BZD</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="CAD">
@@ -5718,6 +5750,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">kongoanski franak</displayName>
 				<displayName count="few">kongoanska franka</displayName>
 				<displayName count="other">kongoanskih franaka</displayName>
+				<symbol draft="contributed">CDF</symbol>
 			</currency>
 			<currency type="CHE">
 				<displayName>WIR Evro</displayName>
@@ -5730,6 +5763,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">švicarski franak</displayName>
 				<displayName count="few">švicarska franka</displayName>
 				<displayName count="other">švicarskih franaka</displayName>
+				<symbol draft="contributed">CHF</symbol>
 			</currency>
 			<currency type="CHW">
 				<displayName>WIR franak</displayName>
@@ -5754,6 +5788,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">čileanski pezos</displayName>
 				<displayName count="few">čileanska pezosa</displayName>
 				<displayName count="other">čileanskih pezosa</displayName>
+				<symbol draft="contributed">CLP</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="CNH">
@@ -5761,6 +5796,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">kineski juan (izvanteritorijalni)</displayName>
 				<displayName count="few">kineska juana (izvanteritorijalni)</displayName>
 				<displayName count="other">kineskih juana (izvanteritorijalni)</displayName>
+				<symbol draft="contributed">CNH</symbol>
 			</currency>
 			<currency type="CNX">
 				<displayName draft="provisional">Dolar kineske narodne banke</displayName>
@@ -5781,6 +5817,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">kolumbijski pezos</displayName>
 				<displayName count="few">kolumbijska pezosa</displayName>
 				<displayName count="other">kolumbijskih pezosa</displayName>
+				<symbol draft="contributed">COP</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="COU">
@@ -5794,6 +5831,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">kostarikanski kolon</displayName>
 				<displayName count="few">kostarikanska kolona</displayName>
 				<displayName count="other">kostarikanskih kolona</displayName>
+				<symbol draft="contributed">CRC</symbol>
 				<symbol alt="narrow" draft="contributed">₡</symbol>
 			</currency>
 			<currency type="CSD">
@@ -5813,6 +5851,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">kubanski konvertibilni pezos</displayName>
 				<displayName count="few">kubanska konvertibilna pezosa</displayName>
 				<displayName count="other">kubanskih konvertibilnih pezosa</displayName>
+				<symbol draft="contributed">CUC</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="CUP">
@@ -5820,6 +5859,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">kubanski pezos</displayName>
 				<displayName count="few">kubanska pezosa</displayName>
 				<displayName count="other">kubanskih pezosa</displayName>
+				<symbol draft="contributed">CUP</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="CVE">
@@ -5827,6 +5867,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">zelenortski eskudo</displayName>
 				<displayName count="few">zelenortska eskuda</displayName>
 				<displayName count="other">zelenortskih eskuda</displayName>
+				<symbol draft="contributed">CVE</symbol>
 			</currency>
 			<currency type="CYP">
 				<displayName>Kipratska funta</displayName>
@@ -5839,6 +5880,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">češka kruna</displayName>
 				<displayName count="few">češke krune</displayName>
 				<displayName count="other">čeških kruna</displayName>
+				<symbol draft="contributed">CZK</symbol>
 				<symbol alt="narrow" draft="contributed">Kč</symbol>
 			</currency>
 			<currency type="DDM">
@@ -5858,12 +5900,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">džibutski franak</displayName>
 				<displayName count="few">džibutska franka</displayName>
 				<displayName count="other">džibutskih franaka</displayName>
+				<symbol draft="contributed">DJF</symbol>
 			</currency>
 			<currency type="DKK">
 				<displayName>Danska kruna</displayName>
 				<displayName count="one">danska kruna</displayName>
 				<displayName count="few">danske krune</displayName>
 				<displayName count="other">danskih kruna</displayName>
+				<symbol draft="contributed">DKK</symbol>
 				<symbol alt="narrow" draft="contributed">kr</symbol>
 			</currency>
 			<currency type="DOP">
@@ -5871,6 +5915,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">dominikanski pezos</displayName>
 				<displayName count="few">dominikanska pezosa</displayName>
 				<displayName count="other">dominikanskih pezosa</displayName>
+				<symbol draft="contributed">DOP</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="DZD">
@@ -5878,6 +5923,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">alžirski dinar</displayName>
 				<displayName count="few">alžirska dinara</displayName>
 				<displayName count="other">alžirskih dinara</displayName>
+				<symbol draft="contributed">DZD</symbol>
 			</currency>
 			<currency type="ECS">
 				<displayName>Ekvadorijski sukr</displayName>
@@ -5902,6 +5948,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">egipatska funta</displayName>
 				<displayName count="few">egipatske funte</displayName>
 				<displayName count="other">egipatskih funti</displayName>
+				<symbol draft="contributed">EGP</symbol>
 				<symbol alt="narrow" draft="contributed">E£</symbol>
 			</currency>
 			<currency type="ERN">
@@ -5909,6 +5956,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">eritrejska nakfa</displayName>
 				<displayName count="few">eritrejske nakfe</displayName>
 				<displayName count="other">eritrejskih nakfi</displayName>
+				<symbol draft="contributed">ERN</symbol>
 			</currency>
 			<currency type="ESA">
 				<displayName>Španska pezeta (račun) ESA</displayName>
@@ -5933,12 +5981,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">etiopski bir</displayName>
 				<displayName count="few">etiopska bira</displayName>
 				<displayName count="other">etiopskih bira</displayName>
+				<symbol draft="contributed">ETB</symbol>
 			</currency>
 			<currency type="EUR">
 				<displayName>Euro</displayName>
 				<displayName count="one">euro</displayName>
 				<displayName count="few">eura</displayName>
 				<displayName count="other">eura</displayName>
+				<symbol draft="contributed">€</symbol>
 				<symbol alt="narrow" draft="contributed">€</symbol>
 			</currency>
 			<currency type="FIM">
@@ -5952,6 +6002,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">fidžijski dolar</displayName>
 				<displayName count="few">fidžijska dolara</displayName>
 				<displayName count="other">fidžijskih dolara</displayName>
+				<symbol draft="contributed">FJD</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="FKP">
@@ -5959,6 +6010,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">folklandska funta</displayName>
 				<displayName count="few">folklandske funte</displayName>
 				<displayName count="other">folklandskih funti</displayName>
+				<symbol draft="contributed">FKP</symbol>
 				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
 			<currency type="FRF">
@@ -5986,6 +6038,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">gruzijski lari</displayName>
 				<displayName count="few">gruzijska larija</displayName>
 				<displayName count="other">gruzijskih larija</displayName>
+				<symbol draft="contributed">GEL</symbol>
 				<symbol alt="narrow" draft="contributed">₾</symbol>
 			</currency>
 			<currency type="GHC">
@@ -5999,12 +6052,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">ganski cedi</displayName>
 				<displayName count="few">ganska cedija</displayName>
 				<displayName count="other">ganskih cedija</displayName>
+				<symbol draft="contributed">GHS</symbol>
 			</currency>
 			<currency type="GIP">
 				<displayName>Gibraltarska funta</displayName>
 				<displayName count="one">gibraltarska funta</displayName>
 				<displayName count="few">gibraltarske funte</displayName>
 				<displayName count="other">gibraltarskih funti</displayName>
+				<symbol draft="contributed">GIP</symbol>
 				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
 			<currency type="GMD">
@@ -6012,12 +6067,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">gambijski dalasi</displayName>
 				<displayName count="few">gambijska dalasija</displayName>
 				<displayName count="other">gambijskih dalasija</displayName>
+				<symbol draft="contributed">GMD</symbol>
 			</currency>
 			<currency type="GNF">
 				<displayName>Gvinejski franak</displayName>
 				<displayName count="one">gvinejski franak</displayName>
 				<displayName count="few">gvinejska franka</displayName>
 				<displayName count="other">gvinejskih franaka</displayName>
+				<symbol draft="contributed">GNF</symbol>
 				<symbol alt="narrow" draft="contributed">FG</symbol>
 			</currency>
 			<currency type="GNS">
@@ -6043,6 +6100,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">gvatemalski kecal</displayName>
 				<displayName count="few">gvatemalska kecala</displayName>
 				<displayName count="other">gvatemalskih kecala</displayName>
+				<symbol draft="contributed">GTQ</symbol>
 				<symbol alt="narrow" draft="contributed">Q</symbol>
 			</currency>
 			<currency type="GWE">
@@ -6062,6 +6120,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">gvajanski dolar</displayName>
 				<displayName count="few">gvajanska dolara</displayName>
 				<displayName count="other">gvajanskih dolara</displayName>
+				<symbol draft="contributed">GYD</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="HKD">
@@ -6077,6 +6136,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">honduraška lempira</displayName>
 				<displayName count="few">honduraške lempire</displayName>
 				<displayName count="other">honduraških lempira</displayName>
+				<symbol draft="contributed">HNL</symbol>
 				<symbol alt="narrow" draft="contributed">L</symbol>
 			</currency>
 			<currency type="HRD">
@@ -6098,12 +6158,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">haićanski gurd</displayName>
 				<displayName count="few">haićanska gurda</displayName>
 				<displayName count="other">haićanskih gurda</displayName>
+				<symbol draft="contributed">HTG</symbol>
 			</currency>
 			<currency type="HUF">
 				<displayName>Mađarska forinta</displayName>
 				<displayName count="one">mađarska forinta</displayName>
 				<displayName count="few">mađarske forinte</displayName>
 				<displayName count="other">mađarskih forinti</displayName>
+				<symbol draft="contributed">HUF</symbol>
 				<symbol alt="narrow" draft="contributed">Ft</symbol>
 			</currency>
 			<currency type="IDR">
@@ -6111,6 +6173,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">indonežanska rupija</displayName>
 				<displayName count="few">indonežanske rupije</displayName>
 				<displayName count="other">indonežanskih rupija</displayName>
+				<symbol draft="contributed">IDR</symbol>
 				<symbol alt="narrow" draft="contributed">Rp</symbol>
 			</currency>
 			<currency type="IEP">
@@ -6144,6 +6207,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">indijska rupija</displayName>
 				<displayName count="few">indijske rupije</displayName>
 				<displayName count="other">indijskih rupija</displayName>
+				<symbol draft="contributed">₹</symbol>
 				<symbol alt="narrow" draft="contributed">₹</symbol>
 			</currency>
 			<currency type="IQD">
@@ -6151,12 +6215,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">irački dinar</displayName>
 				<displayName count="few">iračka dinara</displayName>
 				<displayName count="other">iračkih dinara</displayName>
+				<symbol draft="contributed">IQD</symbol>
 			</currency>
 			<currency type="IRR">
 				<displayName>Iranski rijal</displayName>
 				<displayName count="one">iranski rijal</displayName>
 				<displayName count="few">iranska rijala</displayName>
 				<displayName count="other">iranskih rijala</displayName>
+				<symbol draft="contributed">IRR</symbol>
 			</currency>
 			<currency type="ISJ">
 				<displayName>stara islandska kruna</displayName>
@@ -6169,6 +6235,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">islandska kruna</displayName>
 				<displayName count="few">islandske krune</displayName>
 				<displayName count="other">islandskih kruna</displayName>
+				<symbol draft="contributed">ISK</symbol>
 				<symbol alt="narrow" draft="contributed">kr</symbol>
 			</currency>
 			<currency type="ITL">
@@ -6182,6 +6249,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">jamajčanski dolar</displayName>
 				<displayName count="few">jamajčanska dolara</displayName>
 				<displayName count="other">jamajčanskih dolara</displayName>
+				<symbol draft="contributed">JMD</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="JOD">
@@ -6189,6 +6257,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">jordanski dinar</displayName>
 				<displayName count="few">jordanska dinara</displayName>
 				<displayName count="other">jordanskih dinara</displayName>
+				<symbol draft="contributed">JOD</symbol>
 			</currency>
 			<currency type="JPY">
 				<displayName>Japanski jen</displayName>
@@ -6203,18 +6272,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">kenijski šiling</displayName>
 				<displayName count="few">kenijska šilinga</displayName>
 				<displayName count="other">kenijskih šilinga</displayName>
+				<symbol draft="contributed">KES</symbol>
 			</currency>
 			<currency type="KGS">
 				<displayName>Kirgistanski som</displayName>
 				<displayName count="one">kirgistanski som</displayName>
 				<displayName count="few">kirgistanska soma</displayName>
 				<displayName count="other">kirgistanskih soma</displayName>
+				<symbol draft="contributed">KGS</symbol>
 			</currency>
 			<currency type="KHR">
 				<displayName>Kambodžanski rijel</displayName>
 				<displayName count="one">kambodžanski rijel</displayName>
 				<displayName count="few">kambodžanska rijela</displayName>
 				<displayName count="other">kambodžanskih rijela</displayName>
+				<symbol draft="contributed">KHR</symbol>
 				<symbol alt="narrow" draft="contributed">៛</symbol>
 			</currency>
 			<currency type="KMF">
@@ -6222,6 +6294,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">komorski franak</displayName>
 				<displayName count="few">komorska franka</displayName>
 				<displayName count="other">komorskih franaka</displayName>
+				<symbol draft="contributed">KMF</symbol>
 				<symbol alt="narrow" draft="contributed">CF</symbol>
 			</currency>
 			<currency type="KPW">
@@ -6229,6 +6302,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">sjevernokorejski von</displayName>
 				<displayName count="few">sjevernokorejska vona</displayName>
 				<displayName count="other">sjevernokorejskih vona</displayName>
+				<symbol draft="contributed">KPW</symbol>
 				<symbol alt="narrow" draft="contributed">₩</symbol>
 			</currency>
 			<currency type="KRH">
@@ -6248,6 +6322,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">južnokorejski von</displayName>
 				<displayName count="few">južnokorejska vona</displayName>
 				<displayName count="other">južnokorejskih vona</displayName>
+				<symbol draft="contributed">₩</symbol>
 				<symbol alt="narrow" draft="contributed">₩</symbol>
 			</currency>
 			<currency type="KWD">
@@ -6255,12 +6330,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">kuvajtski dinar</displayName>
 				<displayName count="few">kuvajtska dinara</displayName>
 				<displayName count="other">kuvajtskih dinara</displayName>
+				<symbol draft="contributed">KWD</symbol>
 			</currency>
 			<currency type="KYD">
 				<displayName>Kajmanski dolar</displayName>
 				<displayName count="one">kajmanski dolar</displayName>
 				<displayName count="few">kajmanska dolara</displayName>
 				<displayName count="other">kajmanskih dolara</displayName>
+				<symbol draft="contributed">KYD</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="KZT">
@@ -6268,6 +6345,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">kazahstanski tenge</displayName>
 				<displayName count="few">kazahstanska tenga</displayName>
 				<displayName count="other">kazahstanskih tenga</displayName>
+				<symbol draft="contributed">KZT</symbol>
 				<symbol alt="narrow" draft="contributed">₸</symbol>
 			</currency>
 			<currency type="LAK">
@@ -6275,6 +6353,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">laoski kip</displayName>
 				<displayName count="few">laoska kipa</displayName>
 				<displayName count="other">laoskih kipa</displayName>
+				<symbol draft="contributed">LAK</symbol>
 				<symbol alt="narrow" draft="contributed">₭</symbol>
 			</currency>
 			<currency type="LBP">
@@ -6282,6 +6361,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">libanska funta</displayName>
 				<displayName count="few">libanske funte</displayName>
 				<displayName count="other">libanskih funti</displayName>
+				<symbol draft="contributed">LBP</symbol>
 				<symbol alt="narrow" draft="contributed">L£</symbol>
 			</currency>
 			<currency type="LKR">
@@ -6289,6 +6369,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">šrilankanska rupija</displayName>
 				<displayName count="few">šrilankanske rupije</displayName>
 				<displayName count="other">šrilankanskih rupija</displayName>
+				<symbol draft="contributed">LKR</symbol>
 				<symbol alt="narrow" draft="contributed">Rs</symbol>
 			</currency>
 			<currency type="LRD">
@@ -6296,6 +6377,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">liberijski dolar</displayName>
 				<displayName count="few">liberijska dolara</displayName>
 				<displayName count="other">liberijskih dolara</displayName>
+				<symbol draft="contributed">LRD</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="LSL">
@@ -6353,12 +6435,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">libijski dinar</displayName>
 				<displayName count="few">libijska dinara</displayName>
 				<displayName count="other">libijskih dinara</displayName>
+				<symbol draft="contributed">LYD</symbol>
 			</currency>
 			<currency type="MAD">
 				<displayName>Marokanski dirham</displayName>
 				<displayName count="one">marokanski dirham</displayName>
 				<displayName count="few">marokanska dirhama</displayName>
 				<displayName count="other">marokanskih dirhama</displayName>
+				<symbol draft="contributed">MAD</symbol>
 			</currency>
 			<currency type="MAF">
 				<displayName>Marokanski franak</displayName>
@@ -6383,12 +6467,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">moldavski lej</displayName>
 				<displayName count="few">moldavska leja</displayName>
 				<displayName count="other">moldavskih leja</displayName>
+				<symbol draft="contributed">MDL</symbol>
 			</currency>
 			<currency type="MGA">
 				<displayName>Malagaški arijari</displayName>
 				<displayName count="one">malagaški arijari</displayName>
 				<displayName count="few">malagaška arijarija</displayName>
 				<displayName count="other">malagaških arijarija</displayName>
+				<symbol draft="contributed">MGA</symbol>
 				<symbol alt="narrow" draft="contributed">Ar</symbol>
 			</currency>
 			<currency type="MGF">
@@ -6402,6 +6488,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">makedonski denar</displayName>
 				<displayName count="few">makedonska denara</displayName>
 				<displayName count="other">makedonskih denara</displayName>
+				<symbol draft="contributed">MKD</symbol>
 			</currency>
 			<currency type="MKN">
 				<displayName>Makedonski denar (1992–1993)</displayName>
@@ -6420,6 +6507,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">mijanmarski kjat</displayName>
 				<displayName count="few">mijanmarska kjata</displayName>
 				<displayName count="other">mijanmarskih kjata</displayName>
+				<symbol draft="contributed">MMK</symbol>
 				<symbol alt="narrow" draft="contributed">K</symbol>
 			</currency>
 			<currency type="MNT">
@@ -6427,6 +6515,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">mongolski tugrik</displayName>
 				<displayName count="few">mongolska tugrika</displayName>
 				<displayName count="other">mongolskih tugrika</displayName>
+				<symbol draft="contributed">MNT</symbol>
 				<symbol alt="narrow" draft="contributed">₮</symbol>
 			</currency>
 			<currency type="MOP">
@@ -6434,12 +6523,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">makaonska pataka</displayName>
 				<displayName count="few">makaonske patake</displayName>
 				<displayName count="other">makaonskih pataka</displayName>
+				<symbol draft="contributed">MOP</symbol>
 			</currency>
 			<currency type="MRO">
 				<displayName>Mauritanijska ugvija (1973–2017)</displayName>
 				<displayName count="one">mauritanijska ugvija (1973–2017)</displayName>
 				<displayName count="few">mauritanijske ugvije (1973–2017)</displayName>
 				<displayName count="other">mauritanijskih ugvija (1973–2017)</displayName>
+				<symbol draft="contributed">MRO</symbol>
 			</currency>
 			<currency type="MRU">
 				<displayName>Mauritanijska ugvija</displayName>
@@ -6464,6 +6555,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">mauricijska rupija</displayName>
 				<displayName count="few">mauricijske rupije</displayName>
 				<displayName count="other">mauricijskih rupija</displayName>
+				<symbol draft="contributed">MUR</symbol>
 				<symbol alt="narrow" draft="contributed">Rs</symbol>
 			</currency>
 			<currency type="MVR">
@@ -6471,12 +6563,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">maldivska rufija</displayName>
 				<displayName count="few">maldivske rufije</displayName>
 				<displayName count="other">maldivskih rufija</displayName>
+				<symbol draft="contributed">MVR</symbol>
 			</currency>
 			<currency type="MWK">
 				<displayName>Malavijska kvača</displayName>
 				<displayName count="one">malavijska kvača</displayName>
 				<displayName count="few">malavijske kvače</displayName>
 				<displayName count="other">malavijskih kvača</displayName>
+				<symbol draft="contributed">MWK</symbol>
 			</currency>
 			<currency type="MXN">
 				<displayName>Meksički pezos</displayName>
@@ -6503,6 +6597,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">malezijski ringit</displayName>
 				<displayName count="few">malezijska ringita</displayName>
 				<displayName count="other">malezijskih ringita</displayName>
+				<symbol draft="contributed">MYR</symbol>
 				<symbol alt="narrow" draft="contributed">RM</symbol>
 			</currency>
 			<currency type="MZE">
@@ -6522,12 +6617,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">mozambijski metikal</displayName>
 				<displayName count="few">mozambijska metikala</displayName>
 				<displayName count="other">mozambijskih metikala</displayName>
+				<symbol draft="contributed">MZN</symbol>
 			</currency>
 			<currency type="NAD">
 				<displayName>Namibijski dolar</displayName>
 				<displayName count="one">namibijski dolar</displayName>
 				<displayName count="few">namibijska dolara</displayName>
 				<displayName count="other">namibijskih dolara</displayName>
+				<symbol draft="contributed">NAD</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="NGN">
@@ -6535,6 +6632,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">nigerijska naira</displayName>
 				<displayName count="few">nigerijske naire</displayName>
 				<displayName count="other">nigerijskih naira</displayName>
+				<symbol draft="contributed">NGN</symbol>
 				<symbol alt="narrow" draft="contributed">₦</symbol>
 			</currency>
 			<currency type="NIC">
@@ -6548,6 +6646,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">nikaragvanska kordoba</displayName>
 				<displayName count="few">nikaragvanske kordobe</displayName>
 				<displayName count="other">nikaragvanskih kordoba</displayName>
+				<symbol draft="contributed">NIO</symbol>
 				<symbol alt="narrow" draft="contributed">C$</symbol>
 			</currency>
 			<currency type="NLG">
@@ -6561,6 +6660,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">norveška kruna</displayName>
 				<displayName count="few">norveške krune</displayName>
 				<displayName count="other">norveških kruna</displayName>
+				<symbol draft="contributed">NOK</symbol>
 				<symbol alt="narrow" draft="contributed">kr</symbol>
 			</currency>
 			<currency type="NPR">
@@ -6568,6 +6668,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">nepalska rupija</displayName>
 				<displayName count="few">nepalske rupije</displayName>
 				<displayName count="other">nepalskih rupija</displayName>
+				<symbol draft="contributed">NPR</symbol>
 				<symbol alt="narrow" draft="contributed">Rs</symbol>
 			</currency>
 			<currency type="NZD">
@@ -6583,12 +6684,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">omanski rijal</displayName>
 				<displayName count="few">omanska rijala</displayName>
 				<displayName count="other">omanskih rijala</displayName>
+				<symbol draft="contributed">OMR</symbol>
 			</currency>
 			<currency type="PAB">
 				<displayName>Panamska balboa</displayName>
 				<displayName count="one">panamska balboa</displayName>
 				<displayName count="few">panamske balboe</displayName>
 				<displayName count="other">panamskih balboa</displayName>
+				<symbol draft="contributed">PAB</symbol>
 			</currency>
 			<currency type="PEI">
 				<displayName>Peruvijski inti</displayName>
@@ -6601,6 +6704,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">peruanski sol</displayName>
 				<displayName count="few">peruanska sola</displayName>
 				<displayName count="other">peruanskih sola</displayName>
+				<symbol draft="contributed">PEN</symbol>
 			</currency>
 			<currency type="PES">
 				<displayName>Peruvijski sol (1863–1965)</displayName>
@@ -6613,12 +6717,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">kina Papue Nove Gvineje</displayName>
 				<displayName count="few">kine Papue Nove Gvineje</displayName>
 				<displayName count="other">kina Papue Nove Gvineje</displayName>
+				<symbol draft="contributed">PGK</symbol>
 			</currency>
 			<currency type="PHP">
 				<displayName>Filipinski pezos</displayName>
 				<displayName count="one">filipinski pezos</displayName>
 				<displayName count="few">filipinska pezosa</displayName>
 				<displayName count="other">filipinskih pezosa</displayName>
+				<symbol draft="contributed">PHP</symbol>
 				<symbol alt="narrow" draft="contributed">₱</symbol>
 			</currency>
 			<currency type="PKR">
@@ -6626,6 +6732,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">pakistanska rupija</displayName>
 				<displayName count="few">pakistanske rupije</displayName>
 				<displayName count="other">pakistanskih rupija</displayName>
+				<symbol draft="contributed">PKR</symbol>
 				<symbol alt="narrow" draft="contributed">Rs</symbol>
 			</currency>
 			<currency type="PLN">
@@ -6633,6 +6740,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">poljski zlot</displayName>
 				<displayName count="few">poljska zlota</displayName>
 				<displayName count="other">poljskih zlota</displayName>
+				<symbol draft="contributed">PLN</symbol>
 				<symbol alt="narrow" draft="contributed">zł</symbol>
 			</currency>
 			<currency type="PLZ">
@@ -6652,6 +6760,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">paragvajski gvarani</displayName>
 				<displayName count="few">paragvajska gvaranija</displayName>
 				<displayName count="other">paragvajskih gvaranija</displayName>
+				<symbol draft="contributed">PYG</symbol>
 				<symbol alt="narrow" draft="contributed">₲</symbol>
 			</currency>
 			<currency type="QAR">
@@ -6659,6 +6768,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">katarski rijal</displayName>
 				<displayName count="few">katarska rijala</displayName>
 				<displayName count="other">katarskih rijala</displayName>
+				<symbol draft="contributed">QAR</symbol>
 			</currency>
 			<currency type="RHD">
 				<displayName>Rodizijski dolar</displayName>
@@ -6677,6 +6787,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">rumunski lej</displayName>
 				<displayName count="few">rumunska leja</displayName>
 				<displayName count="other">rumunskih leja</displayName>
+				<symbol draft="contributed">RON</symbol>
 				<symbol alt="narrow" draft="contributed">lei</symbol>
 			</currency>
 			<currency type="RSD">
@@ -6691,6 +6802,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">ruska rublja</displayName>
 				<displayName count="few">ruske rublje</displayName>
 				<displayName count="other">ruskih rubalja</displayName>
+				<symbol draft="contributed">RUB</symbol>
 				<symbol alt="narrow" draft="contributed">₽</symbol>
 			</currency>
 			<currency type="RUR">
@@ -6704,6 +6816,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">ruandski franak</displayName>
 				<displayName count="few">ruandska franka</displayName>
 				<displayName count="other">ruandskih franaka</displayName>
+				<symbol draft="contributed">RWF</symbol>
 				<symbol alt="narrow" draft="contributed">RF</symbol>
 			</currency>
 			<currency type="SAR">
@@ -6711,12 +6824,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">saudijski rijal</displayName>
 				<displayName count="few">saudijska rijala</displayName>
 				<displayName count="other">saudijskih rijala</displayName>
+				<symbol draft="contributed">SAR</symbol>
 			</currency>
 			<currency type="SBD">
 				<displayName>Solomonski dolar</displayName>
 				<displayName count="one">solomonski dolar</displayName>
 				<displayName count="few">solomonska dolara</displayName>
 				<displayName count="other">solomonskih dolara</displayName>
+				<symbol draft="contributed">SBD</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="SCR">
@@ -6724,6 +6839,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">sejšelska rupija</displayName>
 				<displayName count="few">sejšelske rupije</displayName>
 				<displayName count="other">sejšelskih rupija</displayName>
+				<symbol draft="contributed">SCR</symbol>
 			</currency>
 			<currency type="SDD">
 				<displayName>Sudanski dinar (1992–2007)</displayName>
@@ -6736,6 +6852,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">sudanska funta</displayName>
 				<displayName count="few">sudanske funte</displayName>
 				<displayName count="other">sudanskih funti</displayName>
+				<symbol draft="contributed">SDG</symbol>
 			</currency>
 			<currency type="SDP">
 				<displayName>Sudanska funta (1957–1998)</displayName>
@@ -6748,6 +6865,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">švedska kruna</displayName>
 				<displayName count="few">švedske krune</displayName>
 				<displayName count="other">švedskih kruna</displayName>
+				<symbol draft="contributed">SEK</symbol>
 				<symbol alt="narrow" draft="contributed">kr</symbol>
 			</currency>
 			<currency type="SGD">
@@ -6755,6 +6873,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">singapurski dolar</displayName>
 				<displayName count="few">singapurska dolara</displayName>
 				<displayName count="other">singapurskih dolara</displayName>
+				<symbol draft="contributed">SGD</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="SHP">
@@ -6762,6 +6881,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">svetohelenska funta</displayName>
 				<displayName count="few">svetohelenske funte</displayName>
 				<displayName count="other">svetohelenskih funti</displayName>
+				<symbol draft="contributed">SHP</symbol>
 				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
 			<currency type="SIT">
@@ -6781,18 +6901,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">sijeraleonski leone</displayName>
 				<displayName count="few">sijeraleonska leona</displayName>
 				<displayName count="other">sijeraleonskih leona</displayName>
+				<symbol draft="contributed">SLL</symbol>
 			</currency>
 			<currency type="SOS">
 				<displayName>Somalski šiling</displayName>
 				<displayName count="one">somalski šiling</displayName>
 				<displayName count="few">somalska šilinga</displayName>
 				<displayName count="other">somalskih šilinga</displayName>
+				<symbol draft="contributed">SOS</symbol>
 			</currency>
 			<currency type="SRD">
 				<displayName>Surinamski dolar</displayName>
 				<displayName count="one">surinamski dolar</displayName>
 				<displayName count="few">surinamska dolara</displayName>
 				<displayName count="other">surinamskih dolara</displayName>
+				<symbol draft="contributed">SRD</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="SRG">
@@ -6806,6 +6929,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">južnosudanska funta</displayName>
 				<displayName count="few">južnosudanske funte</displayName>
 				<displayName count="other">južnosudanskih funti</displayName>
+				<symbol draft="contributed">SSP</symbol>
 				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
 			<currency type="STD">
@@ -6813,12 +6937,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">dobra Sao Toma i Principa (1977–2017)</displayName>
 				<displayName count="few">dobre Sao Toma i Principa (1977–2017)</displayName>
 				<displayName count="other">dobri Sao Toma i Principa (1977–2017)</displayName>
+				<symbol draft="contributed">STD</symbol>
 			</currency>
 			<currency type="STN">
 				<displayName>Dobra Sao Toma i Principa</displayName>
 				<displayName count="one">dobra Sao Toma i Principa</displayName>
 				<displayName count="few">dobre Sao Toma i Principa</displayName>
 				<displayName count="other">dobri Sao Toma i Principa</displayName>
+				<symbol draft="contributed">STN</symbol>
 				<symbol alt="narrow" draft="contributed">Db</symbol>
 			</currency>
 			<currency type="SUR">
@@ -6838,6 +6964,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">sirijska funta</displayName>
 				<displayName count="few">sirijske funte</displayName>
 				<displayName count="other">sirijskih funti</displayName>
+				<symbol draft="contributed">SYP</symbol>
 				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
 			<currency type="SZL">
@@ -6845,6 +6972,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">svazilendski lilangeni</displayName>
 				<displayName count="few">svazilendska lilangena</displayName>
 				<displayName count="other">svazilendskih lilangena</displayName>
+				<symbol draft="contributed">SZL</symbol>
 			</currency>
 			<currency type="THB">
 				<displayName>Tajlandski baht</displayName>
@@ -6865,6 +6993,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">tadžikistanski somoni</displayName>
 				<displayName count="few">tadžikistanska somonija</displayName>
 				<displayName count="other">tadžikistanskih somonija</displayName>
+				<symbol draft="contributed">TJS</symbol>
 			</currency>
 			<currency type="TMM">
 				<displayName>Turkmenistanski manat (1993–2009)</displayName>
@@ -6877,18 +7006,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">turkmenistanski manat</displayName>
 				<displayName count="few">turkmenistanska manata</displayName>
 				<displayName count="other">turkmenistanskih manata</displayName>
+				<symbol draft="contributed">TMT</symbol>
 			</currency>
 			<currency type="TND">
 				<displayName>Tuniški dinar</displayName>
 				<displayName count="one">tuniški dinar</displayName>
 				<displayName count="few">tuniška dinara</displayName>
 				<displayName count="other">tuniških dinara</displayName>
+				<symbol draft="contributed">TND</symbol>
 			</currency>
 			<currency type="TOP">
 				<displayName>Tonganska panga</displayName>
 				<displayName count="one">tonganska panga</displayName>
 				<displayName count="few">tonganske pange</displayName>
 				<displayName count="other">tonganskih panga</displayName>
+				<symbol draft="contributed">TOP</symbol>
 				<symbol alt="narrow" draft="contributed">T$</symbol>
 			</currency>
 			<currency type="TPE">
@@ -6908,6 +7040,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">turska lira</displayName>
 				<displayName count="few">turske lire</displayName>
 				<displayName count="other">turskih lira</displayName>
+				<symbol draft="contributed">TRY</symbol>
 				<symbol alt="narrow" draft="contributed">₺</symbol>
 				<symbol alt="variant" draft="contributed">TL</symbol>
 			</currency>
@@ -6916,6 +7049,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">trinidadtobaški dolar</displayName>
 				<displayName count="few">trinidadtobaška dolara</displayName>
 				<displayName count="other">trinidadtobaških dolara</displayName>
+				<symbol draft="contributed">TTD</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="TWD">
@@ -6923,6 +7057,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">novi tajvanski dolar</displayName>
 				<displayName count="few">nova tajvanska dolara</displayName>
 				<displayName count="other">novih tajvanskih dolara</displayName>
+				<symbol draft="contributed">NT$</symbol>
 				<symbol alt="narrow" draft="contributed">NT$</symbol>
 			</currency>
 			<currency type="TZS">
@@ -6930,12 +7065,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">tanzanijski šiling</displayName>
 				<displayName count="few">tanzanijska šilinga</displayName>
 				<displayName count="other">tanzanijskih šilinga</displayName>
+				<symbol draft="contributed">TZS</symbol>
 			</currency>
 			<currency type="UAH">
 				<displayName>Ukrajinska hrivnja</displayName>
 				<displayName count="one">ukrajinska hrivnja</displayName>
 				<displayName count="few">ukrajinske hrivnje</displayName>
 				<displayName count="other">ukrajinskih hrivnji</displayName>
+				<symbol draft="contributed">UAH</symbol>
 				<symbol alt="narrow" draft="contributed">₴</symbol>
 			</currency>
 			<currency type="UAK">
@@ -6955,6 +7092,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">ugandski šiling</displayName>
 				<displayName count="few">ugandska šilinga</displayName>
 				<displayName count="other">ugandskih šilinga</displayName>
+				<symbol draft="contributed">UGX</symbol>
 			</currency>
 			<currency type="USD">
 				<displayName>Američki dolar</displayName>
@@ -6993,6 +7131,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">urugvajski pezos</displayName>
 				<displayName count="few">urugvajska pezosa</displayName>
 				<displayName count="other">urugvajskih pezosa</displayName>
+				<symbol draft="contributed">UYU</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="UZS">
@@ -7000,6 +7139,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">uzbekistanski som</displayName>
 				<displayName count="few">uzbekistanska soma</displayName>
 				<displayName count="other">uzbekistanskih soma</displayName>
+				<symbol draft="contributed">UZS</symbol>
 			</currency>
 			<currency type="VEB">
 				<displayName>Venecuelanski bolivar (1871–2008)</displayName>
@@ -7012,19 +7152,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">venecuelanski bolivar (2008–2018)</displayName>
 				<displayName count="few">venecuelanska bolivara (2008–2018)</displayName>
 				<displayName count="other">venecuelanskih bolivara (2008–2018)</displayName>
+				<symbol draft="contributed">VEF</symbol>
 				<symbol alt="narrow" draft="contributed">Bs</symbol>
 			</currency>
 			<currency type="VES">
-				<displayName>venecuelanski bolivar</displayName>
-				<displayName count="one">venecuelanskih bolivara</displayName>
+				<displayName>Venecuelanski bolivar</displayName>
+				<displayName count="one">venecuelanski bolivar</displayName>
 				<displayName count="few">venecuelanska bolivara</displayName>
 				<displayName count="other">venecuelanskih bolivara</displayName>
+				<symbol draft="contributed">VES</symbol>
 			</currency>
 			<currency type="VND">
 				<displayName>Vijetnamski dong</displayName>
 				<displayName count="one">vijetnamski dong</displayName>
 				<displayName count="few">vijetnamska donga</displayName>
 				<displayName count="other">vijetnamskih donga</displayName>
+				<symbol draft="contributed">₫</symbol>
 				<symbol alt="narrow" draft="contributed">₫</symbol>
 			</currency>
 			<currency type="VNN">
@@ -7038,18 +7181,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">vanuatski vatu</displayName>
 				<displayName count="few">vanuatska vatua</displayName>
 				<displayName count="other">vanuatskih vatua</displayName>
+				<symbol draft="contributed">VUV</symbol>
 			</currency>
 			<currency type="WST">
 				<displayName>Samoanska tala</displayName>
 				<displayName count="one">samoanska tala</displayName>
 				<displayName count="few">samoanske tale</displayName>
 				<displayName count="other">samoanskih tala</displayName>
+				<symbol draft="contributed">WST</symbol>
 			</currency>
 			<currency type="XAF">
 				<displayName>Centralnoafrički franak (CFA)</displayName>
 				<displayName count="one">centralnoafrički franak (CFA)</displayName>
 				<displayName count="few">centralnoafrička franka (CFA)</displayName>
 				<displayName count="other">centralnoafričkih franaka (CFA)</displayName>
+				<symbol draft="contributed">FCFA</symbol>
 			</currency>
 			<currency type="XAG">
 				<displayName>Srebro</displayName>
@@ -7124,6 +7270,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">zapadnoafrički franak (CFA)</displayName>
 				<displayName count="few">zapadnoafrička franka (CFA)</displayName>
 				<displayName count="other">zapadnoafričkih franaka (CFA)</displayName>
+				<symbol draft="contributed">CFA</symbol>
 			</currency>
 			<currency type="XPD">
 				<displayName>Paladijum</displayName>
@@ -7173,6 +7320,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">jemenski rijal</displayName>
 				<displayName count="few">jemenska rijala</displayName>
 				<displayName count="other">jemenskih rijala</displayName>
+				<symbol draft="contributed">YER</symbol>
 			</currency>
 			<currency type="YUD">
 				<displayName>Jugoslovenski tvrdi dinar</displayName>
@@ -7209,6 +7357,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">južnoafrički rand</displayName>
 				<displayName count="few">južnoafrička randa</displayName>
 				<displayName count="other">južnoafričkih randa</displayName>
+				<symbol draft="contributed">ZAR</symbol>
 				<symbol alt="narrow" draft="contributed">R</symbol>
 			</currency>
 			<currency type="ZMK">
@@ -7222,6 +7371,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">zambijska kvača</displayName>
 				<displayName count="few">zambijske kvače</displayName>
 				<displayName count="other">zambijskih kvača</displayName>
+				<symbol draft="contributed">ZMW</symbol>
 				<symbol alt="narrow" draft="contributed">ZK</symbol>
 			</currency>
 			<currency type="ZRN">
@@ -7262,9 +7412,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<pattern type="range">{0} – {1}</pattern>
 		</miscPatterns>
 		<minimalPairs>
-			<pluralMinimalPairs count="one" draft="contributed">{0} sat</pluralMinimalPairs>
-			<pluralMinimalPairs count="few" draft="contributed">{0} sata</pluralMinimalPairs>
-			<pluralMinimalPairs count="other" draft="contributed">{0} sati</pluralMinimalPairs>
+			<pluralMinimalPairs count="one">{0} sat</pluralMinimalPairs>
+			<pluralMinimalPairs count="few">{0} sata</pluralMinimalPairs>
+			<pluralMinimalPairs count="other">{0} sati</pluralMinimalPairs>
 			<ordinalMinimalPairs ordinal="other" draft="contributed">Skrenite na {0}. križanju desno.</ordinalMinimalPairs>
 		</minimalPairs>
 	</numbers>
@@ -7325,7 +7475,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="area-hectare">
 				<displayName>hektari</displayName>
 				<unitPattern count="one">{0} hektar</unitPattern>
-				<unitPattern count="few">{0} hektra</unitPattern>
+				<unitPattern count="few">{0} hektara</unitPattern>
 				<unitPattern count="other">{0} hektara</unitPattern>
 			</unit>
 			<unit type="area-square-meter">
@@ -7437,7 +7587,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="consumption-liter-per-100kilometers">
 				<displayName>litri na 100 kilometara</displayName>
 				<unitPattern count="one">{0} litar na 100 kilometara</unitPattern>
-				<unitPattern count="few">{0} litara na 100 kilometara</unitPattern>
+				<unitPattern count="few">{0} litra na 100 kilometara</unitPattern>
 				<unitPattern count="other">{0} litara na 100 kilometara</unitPattern>
 			</unit>
 			<unit type="consumption-mile-per-gallon">
@@ -7523,6 +7673,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} stoljeće</unitPattern>
 				<unitPattern count="few">{0} stoljeća</unitPattern>
 				<unitPattern count="other">{0} stoljeća</unitPattern>
+			</unit>
+			<unit type="duration-decade">
+				<displayName>decenije</displayName>
+				<unitPattern count="one">{0} decenija</unitPattern>
+				<unitPattern count="few">{0} decenije</unitPattern>
+				<unitPattern count="other">{0} decenija</unitPattern>
 			</unit>
 			<unit type="duration-year">
 				<displayName>godine</displayName>
@@ -7613,7 +7769,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>volti</displayName>
 				<unitPattern count="one">{0} volt</unitPattern>
 				<unitPattern count="few">{0} volta</unitPattern>
-				<unitPattern count="other">{0} volta</unitPattern>
+				<unitPattern count="other">{0} volti</unitPattern>
 			</unit>
 			<unit type="energy-kilocalorie">
 				<displayName>kilokalorije</displayName>
@@ -7698,6 +7854,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} herc</unitPattern>
 				<unitPattern count="few">{0} herca</unitPattern>
 				<unitPattern count="other">{0} herca</unitPattern>
+			</unit>
+			<unit type="graphics-pixel">
+				<displayName>pikseli</displayName>
+			</unit>
+			<unit type="graphics-megapixel">
+				<displayName>megapikseli</displayName>
 			</unit>
 			<unit type="length-kilometer">
 				<displayName>kilometri</displayName>
@@ -7934,7 +8096,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>vati</displayName>
 				<unitPattern count="one">{0} vat</unitPattern>
 				<unitPattern count="few">{0} vata</unitPattern>
-				<unitPattern count="other">{0} vata</unitPattern>
+				<unitPattern count="other">{0} vati</unitPattern>
 			</unit>
 			<unit type="power-milliwatt">
 				<displayName>milivati</displayName>
@@ -7947,12 +8109,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} konjska snaga</unitPattern>
 				<unitPattern count="few">{0} konjske snage</unitPattern>
 				<unitPattern count="other">{0} konjskih snaga</unitPattern>
-			</unit>
-			<unit type="pressure-hectopascal">
-				<displayName>hektopaskali</displayName>
-				<unitPattern count="one">{0} hektopaskal</unitPattern>
-				<unitPattern count="few">{0} hektopaskala</unitPattern>
-				<unitPattern count="other">{0} hektopaskala</unitPattern>
 			</unit>
 			<unit type="pressure-millimeter-of-mercury">
 				<displayName>milimetri živinog stuba</displayName>
@@ -7972,6 +8128,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few">{0} inča živinog stuba</unitPattern>
 				<unitPattern count="other">{0} inča žive</unitPattern>
 			</unit>
+			<unit type="pressure-bar">
+				<unitPattern count="one">{0} bar</unitPattern>
+				<unitPattern count="few">{0} bara</unitPattern>
+				<unitPattern count="other">{0} bara</unitPattern>
+			</unit>
 			<unit type="pressure-millibar">
 				<displayName>milibari</displayName>
 				<unitPattern count="one">{0} milibar</unitPattern>
@@ -7983,6 +8144,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} atmosfera</unitPattern>
 				<unitPattern count="few">{0} atmosfere</unitPattern>
 				<unitPattern count="other">{0} atmosfera</unitPattern>
+			</unit>
+			<unit type="pressure-pascal">
+				<displayName>paskali</displayName>
+				<unitPattern count="one">{0} paskal</unitPattern>
+				<unitPattern count="few">{0} paskala</unitPattern>
+				<unitPattern count="other">{0} paskala</unitPattern>
+			</unit>
+			<unit type="pressure-hectopascal">
+				<displayName>hektopaskali</displayName>
+				<unitPattern count="one">{0} hektopaskal</unitPattern>
+				<unitPattern count="few">{0} hektopaskala</unitPattern>
+				<unitPattern count="other">{0} hektopaskala</unitPattern>
 			</unit>
 			<unit type="pressure-kilopascal">
 				<displayName>kilopaskali</displayName>
@@ -8228,6 +8401,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<unitLength type="short">
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
+			</compoundUnit>
+			<compoundUnit type="times">
+				<compoundUnitPattern>{0}⋅{1}</compoundUnitPattern>
 			</compoundUnit>
 			<unit type="acceleration-g-force">
 				<displayName>G</displayName>
@@ -8480,6 +8656,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few">{0} st.</unitPattern>
 				<unitPattern count="other">{0} st.</unitPattern>
 			</unit>
+			<unit type="duration-decade">
+				<displayName>dec.</displayName>
+				<unitPattern count="one">{0} dec.</unitPattern>
+				<unitPattern count="few">{0} dec.</unitPattern>
+				<unitPattern count="other">{0} dec.</unitPattern>
+			</unit>
 			<unit type="duration-year">
 				<displayName>godine</displayName>
 				<unitPattern count="one">{0} god.</unitPattern>
@@ -8619,6 +8801,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few">{0} BTU</unitPattern>
 				<unitPattern count="other">{0} BTU</unitPattern>
 			</unit>
+			<unit type="energy-therm-us">
+				<displayName>US therm</displayName>
+				<unitPattern count="one">{0} US therm</unitPattern>
+				<unitPattern count="few">{0} US therm</unitPattern>
+				<unitPattern count="other">{0} US therm</unitPattern>
+			</unit>
 			<unit type="force-pound-force">
 				<displayName>lbf</displayName>
 				<unitPattern count="one">{0} lbf</unitPattern>
@@ -8654,6 +8842,48 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} Hz</unitPattern>
 				<unitPattern count="few">{0} Hz</unitPattern>
 				<unitPattern count="other">{0} Hz</unitPattern>
+			</unit>
+			<unit type="graphics-em">
+				<displayName>em</displayName>
+				<unitPattern count="one">{0} em</unitPattern>
+				<unitPattern count="few">{0} em</unitPattern>
+				<unitPattern count="other">{0} em</unitPattern>
+			</unit>
+			<unit type="graphics-pixel">
+				<displayName>px</displayName>
+				<unitPattern count="one">{0} px</unitPattern>
+				<unitPattern count="few">{0} px</unitPattern>
+				<unitPattern count="other">{0} px</unitPattern>
+			</unit>
+			<unit type="graphics-megapixel">
+				<displayName>MP</displayName>
+				<unitPattern count="one">{0} MP</unitPattern>
+				<unitPattern count="few">{0} MP</unitPattern>
+				<unitPattern count="other">{0} MP</unitPattern>
+			</unit>
+			<unit type="graphics-pixel-per-centimeter">
+				<displayName>ppcm</displayName>
+				<unitPattern count="one">{0} ppcm</unitPattern>
+				<unitPattern count="few">{0} ppcm</unitPattern>
+				<unitPattern count="other">{0} ppcm</unitPattern>
+			</unit>
+			<unit type="graphics-pixel-per-inch">
+				<displayName>ppi</displayName>
+				<unitPattern count="one">{0} ppi</unitPattern>
+				<unitPattern count="few">{0} ppi</unitPattern>
+				<unitPattern count="other">{0} ppi</unitPattern>
+			</unit>
+			<unit type="graphics-dot-per-centimeter">
+				<displayName>dpcm</displayName>
+				<unitPattern count="one">{0} dpcm</unitPattern>
+				<unitPattern count="few">{0} dpcm</unitPattern>
+				<unitPattern count="other">{0} dpcm</unitPattern>
+			</unit>
+			<unit type="graphics-dot-per-inch">
+				<displayName>dpi</displayName>
+				<unitPattern count="one">{0} dpi</unitPattern>
+				<unitPattern count="few">{0} dpi</unitPattern>
+				<unitPattern count="other">{0} dpi</unitPattern>
 			</unit>
 			<unit type="length-kilometer">
 				<displayName>km</displayName>
@@ -8904,12 +9134,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few">{0} ks</unitPattern>
 				<unitPattern count="other">{0} ks</unitPattern>
 			</unit>
-			<unit type="pressure-hectopascal">
-				<displayName>hPa</displayName>
-				<unitPattern count="one">{0} hPa</unitPattern>
-				<unitPattern count="few">{0} hPa</unitPattern>
-				<unitPattern count="other">{0} hPa</unitPattern>
-			</unit>
 			<unit type="pressure-millimeter-of-mercury">
 				<displayName>mm Hg</displayName>
 				<unitPattern count="one">{0} mm Hg</unitPattern>
@@ -8928,6 +9152,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few">{0} inHg</unitPattern>
 				<unitPattern count="other">{0} inHg</unitPattern>
 			</unit>
+			<unit type="pressure-bar">
+				<displayName>bar</displayName>
+				<unitPattern count="one">{0} bar</unitPattern>
+				<unitPattern count="few">{0} bar</unitPattern>
+				<unitPattern count="other">{0} bar</unitPattern>
+			</unit>
 			<unit type="pressure-millibar">
 				<displayName>mbar</displayName>
 				<unitPattern count="one">{0} mbar</unitPattern>
@@ -8939,6 +9169,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} atm</unitPattern>
 				<unitPattern count="few">{0} atm</unitPattern>
 				<unitPattern count="other">{0} atm</unitPattern>
+			</unit>
+			<unit type="pressure-pascal">
+				<displayName>Pa</displayName>
+				<unitPattern count="one">{0} Pa</unitPattern>
+				<unitPattern count="few">{0} Pa</unitPattern>
+				<unitPattern count="other">{0} Pa</unitPattern>
+			</unit>
+			<unit type="pressure-hectopascal">
+				<displayName>hPa</displayName>
+				<unitPattern count="one">{0} hPa</unitPattern>
+				<unitPattern count="few">{0} hPa</unitPattern>
+				<unitPattern count="other">{0} hPa</unitPattern>
 			</unit>
 			<unit type="pressure-kilopascal">
 				<displayName>kPa</displayName>
@@ -9386,11 +9628,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few" draft="provisional">{0} KS</unitPattern>
 				<unitPattern count="other" draft="provisional">{0} KS</unitPattern>
 			</unit>
-			<unit type="pressure-hectopascal">
-				<unitPattern count="one" draft="provisional">{0} hPa</unitPattern>
-				<unitPattern count="few" draft="provisional">{0} hPa</unitPattern>
-				<unitPattern count="other" draft="provisional">{0} hPa</unitPattern>
-			</unit>
 			<unit type="pressure-inch-hg">
 				<unitPattern count="one" draft="provisional">{0} inHg</unitPattern>
 				<unitPattern count="few" draft="provisional">{0} inHg</unitPattern>
@@ -9400,6 +9637,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" draft="provisional">{0} mb</unitPattern>
 				<unitPattern count="few" draft="provisional">{0} mb</unitPattern>
 				<unitPattern count="other" draft="provisional">{0} mb</unitPattern>
+			</unit>
+			<unit type="pressure-hectopascal">
+				<unitPattern count="one" draft="provisional">{0} hPa</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} hPa</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} hPa</unitPattern>
 			</unit>
 			<unit type="speed-kilometer-per-hour">
 				<displayName>km/h</displayName>

@@ -50,6 +50,7 @@ public final class ImagePluginConfiguration {
 
     static {
         CATEGORIES_ORDER.add(Category.FILTER);
+        CATEGORIES_ORDER.add(Category.ADDER);
         CATEGORIES_ORDER.add(Category.TRANSFORMER);
         CATEGORIES_ORDER.add(Category.MODULEINFO_TRANSFORMER);
         CATEGORIES_ORDER.add(Category.SORTER);

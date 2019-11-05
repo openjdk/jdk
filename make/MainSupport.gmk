@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -133,7 +133,7 @@ define DeclareRecipeForModuleMakefile
 	      $$(addprefix -I, $$(PHASE_MAKEDIRS) \
 	          $$(addsuffix /$$($1_MAKE_SUBDIR), $$(PHASE_MAKEDIRS)) \
 	      ) \
-	      MODULE=$2 MAKEFILE_PREFIX=$$($1_FILE_PREFIX))
+	      MODULE=$2 MAKEFILE_PREFIX=$$($1_FILE_PREFIX) $$($1_EXTRA_ARGS))
         else
 	  +($(CD) $$(dir $$(firstword $$(wildcard $$(addsuffix \
 	      /$$($1_MAKE_SUBDIR)/$$($1_FILE_PREFIX)-$2.gmk, $$(PHASE_MAKEDIRS))))) \
@@ -142,7 +142,7 @@ define DeclareRecipeForModuleMakefile
 	      $$(addprefix -I, $$(PHASE_MAKEDIRS) \
 	          $$(addsuffix /$$($1_MAKE_SUBDIR), $$(PHASE_MAKEDIRS)) \
 	      ) \
-	      MODULE=$2 \
+	      MODULE=$2 $$($1_EXTRA_ARGS) \
 	  )
         endif
 
@@ -182,12 +182,13 @@ endef
 # CHECK_MODULES : List of modules to try
 # MULTIPLE_MAKEFILES : Set to true to handle makefiles for the same module and
 #                      phase in multiple repos
+# EXTRA_ARGS : Add extra make args to each makefile call
 # Exported variables:
 # $1_MODULES : All modules that had rules generated
 # $1_TARGETS : All targets generated
 define DeclareRecipesForPhase
-  $(foreach i,2 3 4 5 6 7, $(if $(strip $($i)),$(strip $1)_$(strip $($i)))$(NEWLINE))
-  $(if $(8),$(error Internal makefile error: Too many arguments to \
+  $(foreach i,2 3 4 5 6 7 8, $(if $(strip $($i)),$(strip $1)_$(strip $($i)))$(NEWLINE))
+  $(if $(9),$(error Internal makefile error: Too many arguments to \
       DeclareRecipesForPhase, please update MakeHelper.gmk))
 
   $$(foreach m, $$($(strip $1)_CHECK_MODULES), \

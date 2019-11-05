@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -411,6 +411,36 @@ public final class Recording implements Closeable {
             throw new IllegalArgumentException("Max size of recording can't be negative");
         }
         internal.setMaxSize(maxSize);
+    }
+
+        /**
+         * Determines how often events are made available for streaming.
+         *
+         * @param interval the interval at which events are made available for streaming.
+         *
+         * @throws IllegalArgumentException if {@code interval} is negative
+         *
+         * @throws IllegalStateException if the recording is in the {@code CLOSED} state
+         *
+         * @since 14
+         */
+        public void setFlushInterval(Duration interval) {
+            Objects.nonNull(interval);
+            if (interval.isNegative()) {
+                throw new IllegalArgumentException("Stream interval can't be negative");
+            }
+            internal.setFlushInterval(interval);
+        }
+
+    /**
+     * Returns how often events are made available for streaming purposes.
+     *
+     * @return the flush interval, or {@code null} if no interval has been set
+     *
+     * @since 14
+     */
+    public Duration getFlushInterval() {
+        return internal.getFlushInterval();
     }
 
     /**

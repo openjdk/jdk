@@ -1090,6 +1090,8 @@ static oop create_initial_thread(Handle thread_group, JavaThread* thread,
 
 char java_runtime_name[128] = "";
 char java_runtime_version[128] = "";
+char java_runtime_vendor_version[128] = "";
+char java_runtime_vendor_vm_bug_url[128] = "";
 
 // extract the JRE name from java.lang.VersionProps.java_runtime_name
 static const char* get_java_runtime_name(TRAPS) {
@@ -1129,6 +1131,50 @@ static const char* get_java_runtime_version(TRAPS) {
     const char* name = java_lang_String::as_utf8_string(name_oop,
                                                         java_runtime_version,
                                                         sizeof(java_runtime_version));
+    return name;
+  } else {
+    return NULL;
+  }
+}
+
+// extract the JRE vendor version from java.lang.VersionProps.VENDOR_VERSION
+static const char* get_java_runtime_vendor_version(TRAPS) {
+  Klass* k = SystemDictionary::find(vmSymbols::java_lang_VersionProps(),
+                                    Handle(), Handle(), CHECK_AND_CLEAR_NULL);
+  fieldDescriptor fd;
+  bool found = k != NULL &&
+               InstanceKlass::cast(k)->find_local_field(vmSymbols::java_runtime_vendor_version_name(),
+                                                        vmSymbols::string_signature(), &fd);
+  if (found) {
+    oop name_oop = k->java_mirror()->obj_field(fd.offset());
+    if (name_oop == NULL) {
+      return NULL;
+    }
+    const char* name = java_lang_String::as_utf8_string(name_oop,
+                                                        java_runtime_vendor_version,
+                                                        sizeof(java_runtime_vendor_version));
+    return name;
+  } else {
+    return NULL;
+  }
+}
+
+// extract the JRE vendor VM bug URL from java.lang.VersionProps.VENDOR_URL_VM_BUG
+static const char* get_java_runtime_vendor_vm_bug_url(TRAPS) {
+  Klass* k = SystemDictionary::find(vmSymbols::java_lang_VersionProps(),
+                                    Handle(), Handle(), CHECK_AND_CLEAR_NULL);
+  fieldDescriptor fd;
+  bool found = k != NULL &&
+               InstanceKlass::cast(k)->find_local_field(vmSymbols::java_runtime_vendor_vm_bug_url_name(),
+                                                        vmSymbols::string_signature(), &fd);
+  if (found) {
+    oop name_oop = k->java_mirror()->obj_field(fd.offset());
+    if (name_oop == NULL) {
+      return NULL;
+    }
+    const char* name = java_lang_String::as_utf8_string(name_oop,
+                                                        java_runtime_vendor_vm_bug_url,
+                                                        sizeof(java_runtime_vendor_vm_bug_url));
     return name;
   } else {
     return NULL;
@@ -1679,19 +1725,13 @@ JavaThread::JavaThread(bool is_attaching_via_jni) :
 void JavaThread::interrupt() {
   debug_only(check_for_dangling_thread_pointer(this);)
 
-  if (!osthread()->interrupted()) {
-    osthread()->set_interrupted(true);
-    // More than one thread can get here with the same value of osthread,
-    // resulting in multiple notifications.  We do, however, want the store
-    // to interrupted() to be visible to other threads before we execute unpark().
-    OrderAccess::fence();
+  // For Windows _interrupt_event
+  osthread()->set_interrupted(true);
 
-    // For JavaThread::sleep. Historically we only unpark if changing to the interrupted
-    // state, in contrast to the other events below. Not clear exactly why.
-    _SleepEvent->unpark();
-  }
+  // For Thread.sleep
+  _SleepEvent->unpark();
 
-  // For JSR166. Unpark even if interrupt status already was set.
+  // For JSR166 LockSupport.park
   parker()->unpark();
 
   // For ObjectMonitor and JvmtiRawMonitor
@@ -1701,11 +1741,11 @@ void JavaThread::interrupt() {
 
 bool JavaThread::is_interrupted(bool clear_interrupted) {
   debug_only(check_for_dangling_thread_pointer(this);)
-  bool interrupted = osthread()->interrupted();
+  bool interrupted = java_lang_Thread::interrupted(threadObj());
 
   // NOTE that since there is no "lock" around the interrupt and
   // is_interrupted operations, there is the possibility that the
-  // interrupted flag (in osThread) will be "false" but that the
+  // interrupted flag will be "false" but that the
   // low-level events will be in the signaled state. This is
   // intentional. The effect of this is that Object.wait() and
   // LockSupport.park() will appear to have a spurious wakeup, which
@@ -1715,9 +1755,12 @@ bool JavaThread::is_interrupted(bool clear_interrupted) {
   // to JavaThread::sleep, so there is no early return. It has also been
   // recommended not to put the interrupted flag into the "event"
   // structure because it hides the issue.
+  // Also, because there is no lock, we must only clear the interrupt
+  // state if we are going to report that we were interrupted; otherwise
+  // an interrupt that happens just after we read the field would be lost.
   if (interrupted && clear_interrupted) {
+    java_lang_Thread::set_interrupted(threadObj(), false);
     osthread()->set_interrupted(false);
-    // consider thread->_SleepEvent->reset() ... optional optimization
   }
 
   return interrupted;
@@ -2371,6 +2414,7 @@ void JavaThread::send_thread_stop(oop java_throwable)  {
 
 
   // Interrupt thread so it will wake up from a potential wait()/sleep()/park()
+  java_lang_Thread::set_interrupted(threadObj(), true);
   this->interrupt();
 }
 
@@ -3656,9 +3700,11 @@ void Threads::initialize_java_lang_classes(JavaThread* main_thread, TRAPS) {
   // Phase 1 of the system initialization in the library, java.lang.System class initialization
   call_initPhase1(CHECK);
 
-  // get the Java runtime name after java.lang.System is initialized
+  // get the Java runtime name, version, and vendor info after java.lang.System is initialized
   JDK_Version::set_runtime_name(get_java_runtime_name(THREAD));
   JDK_Version::set_runtime_version(get_java_runtime_version(THREAD));
+  JDK_Version::set_runtime_vendor_version(get_java_runtime_vendor_version(THREAD));
+  JDK_Version::set_runtime_vendor_vm_bug_url(get_java_runtime_vendor_vm_bug_url(THREAD));
 
   // an instance of OutOfMemory exception has been allocated earlier
   initialize_class(vmSymbols::java_lang_OutOfMemoryError(), CHECK);

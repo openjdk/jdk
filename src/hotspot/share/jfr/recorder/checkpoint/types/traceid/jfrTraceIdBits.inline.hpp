@@ -38,7 +38,7 @@ static const int low_offset = 7;
 static const int meta_offset = low_offset - 1;
 #endif
 
-inline void set_bits(jbyte bits, jbyte* const dest) {
+inline void set_bits(jbyte bits, jbyte volatile* const dest) {
   assert(dest != NULL, "invariant");
   if (bits != (*dest & bits)) {
     *dest |= bits;

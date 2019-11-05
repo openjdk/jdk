@@ -115,7 +115,7 @@ public final class GraalOptions {
     public static final OptionKey<Boolean> PartialUnroll = new OptionKey<>(true);
 
     @Option(help = "", type = OptionType.Expert)
-    public static final OptionKey<Float> MinimumPeelProbability = new OptionKey<>(0.35f);
+    public static final OptionKey<Float> MinimumPeelFrequency = new OptionKey<>(0.35f);
 
     @Option(help = "", type = OptionType.Expert)
     public static final OptionKey<Integer> LoopMaxUnswitch = new OptionKey<>(3);
@@ -242,9 +242,6 @@ public final class GraalOptions {
     public static final OptionKey<Boolean> OptImplicitNullChecks = new OptionKey<>(true);
 
     @Option(help = "", type = OptionType.Debug)
-    public static final OptionKey<Boolean> OptLoopTransform = new OptionKey<>(true);
-
-    @Option(help = "", type = OptionType.Debug)
     public static final OptionKey<Boolean> OptFloatingReads = new OptionKey<>(true);
 
     @Option(help = "", type = OptionType.Debug)
@@ -291,4 +288,7 @@ public final class GraalOptions {
 
     @Option(help = "Alignment in bytes for loop header blocks.", type = OptionType.Expert)
     public static final OptionKey<Integer> LoopHeaderAlignment = new OptionKey<>(16);
+
+    @Option(help = "Do not include membars for volatile accesses until the end of optimizations.", type = OptionType.Expert)
+    public static final OptionKey<Boolean> LateMembars = new OptionKey<>(true);
 }

@@ -1162,7 +1162,7 @@ public class CLDRConverter {
     }
 
     // for debug
-    private static void dumpMap(Map<String, Object> map) {
+    static void dumpMap(Map<String, Object> map) {
         map.entrySet().stream()
             .sorted(Map.Entry.comparingByKey())
             .map(e -> {

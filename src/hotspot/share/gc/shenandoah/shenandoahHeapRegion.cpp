@@ -59,7 +59,6 @@ ShenandoahHeapRegion::ShenandoahHeapRegion(ShenandoahHeap* heap, HeapWord* start
   _reserved(MemRegion(start, size_words)),
   _region_number(index),
   _new_top(NULL),
-  _critical_pins(0),
   _empty_time(os::elapsedTime()),
   _state(committed ? _empty_committed : _empty_uncommitted),
   _tlab_allocs(0),
@@ -69,7 +68,8 @@ ShenandoahHeapRegion::ShenandoahHeapRegion(ShenandoahHeap* heap, HeapWord* start
   _seqnum_first_alloc_gc(0),
   _seqnum_last_alloc_mutator(0),
   _seqnum_last_alloc_gc(0),
-  _live_data(0) {
+  _live_data(0),
+  _critical_pins(0) {
 
   ContiguousSpace::initialize(_reserved, true, committed);
 }
@@ -187,25 +187,20 @@ void ShenandoahHeapRegion::make_humongous_cont_bypass() {
 
 void ShenandoahHeapRegion::make_pinned() {
   _heap->assert_heaplock_owned_by_current_thread();
+  assert(pin_count() > 0, "Should have pins: " SIZE_FORMAT, pin_count());
+
   switch (_state) {
     case _regular:
-      assert (_critical_pins == 0, "sanity");
       set_state(_pinned);
     case _pinned_cset:
     case _pinned:
-      _critical_pins++;
       return;
     case _humongous_start:
-      assert (_critical_pins == 0, "sanity");
       set_state(_pinned_humongous_start);
     case _pinned_humongous_start:
-      _critical_pins++;
       return;
     case _cset:
-      guarantee(_heap->cancelled_gc(), "only valid when evac has been cancelled");
-      assert (_critical_pins == 0, "sanity");
       _state = _pinned_cset;
-      _critical_pins++;
       return;
     default:
       report_illegal_transition("pinning");
@@ -214,32 +209,20 @@ void ShenandoahHeapRegion::make_pinned() {
 
 void ShenandoahHeapRegion::make_unpinned() {
   _heap->assert_heaplock_owned_by_current_thread();
+  assert(pin_count() == 0, "Should not have pins: " SIZE_FORMAT, pin_count());
+
   switch (_state) {
     case _pinned:
-      assert (_critical_pins > 0, "sanity");
-      _critical_pins--;
-      if (_critical_pins == 0) {
-        set_state(_regular);
-      }
+      set_state(_regular);
       return;
     case _regular:
     case _humongous_start:
-      assert (_critical_pins == 0, "sanity");
       return;
     case _pinned_cset:
-      guarantee(_heap->cancelled_gc(), "only valid when evac has been cancelled");
-      assert (_critical_pins > 0, "sanity");
-      _critical_pins--;
-      if (_critical_pins == 0) {
-        set_state(_cset);
-      }
+      set_state(_cset);
       return;
     case _pinned_humongous_start:
-      assert (_critical_pins > 0, "sanity");
-      _critical_pins--;
-      if (_critical_pins == 0) {
-        set_state(_humongous_start);
-      }
+      set_state(_humongous_start);
       return;
     default:
       report_illegal_transition("unpinning");
@@ -434,7 +417,7 @@ void ShenandoahHeapRegion::print_on(outputStream* st) const {
   st->print("|G " SIZE_FORMAT_W(5) "%1s", byte_size_in_proper_unit(get_gclab_allocs()),    proper_unit_for_byte_size(get_gclab_allocs()));
   st->print("|S " SIZE_FORMAT_W(5) "%1s", byte_size_in_proper_unit(get_shared_allocs()),   proper_unit_for_byte_size(get_shared_allocs()));
   st->print("|L " SIZE_FORMAT_W(5) "%1s", byte_size_in_proper_unit(get_live_data_bytes()), proper_unit_for_byte_size(get_live_data_bytes()));
-  st->print("|CP " SIZE_FORMAT_W(3), _critical_pins);
+  st->print("|CP " SIZE_FORMAT_W(3), pin_count());
   st->print("|SN " UINT64_FORMAT_X_W(12) ", " UINT64_FORMAT_X_W(8) ", " UINT64_FORMAT_X_W(8) ", " UINT64_FORMAT_X_W(8),
             seqnum_first_alloc_mutator(), seqnum_last_alloc_mutator(),
             seqnum_first_alloc_gc(), seqnum_last_alloc_gc());
@@ -701,4 +684,17 @@ void ShenandoahHeapRegion::set_state(RegionState to) {
     evt.commit();
   }
   _state = to;
+}
+
+void ShenandoahHeapRegion::record_pin() {
+  Atomic::add((size_t)1, &_critical_pins);
+}
+
+void ShenandoahHeapRegion::record_unpin() {
+  assert(pin_count() > 0, "Region " SIZE_FORMAT " should have non-zero pins", region_number());
+  Atomic::sub((size_t)1, &_critical_pins);
+}
+
+size_t ShenandoahHeapRegion::pin_count() const {
+  return Atomic::load(&_critical_pins);
 }

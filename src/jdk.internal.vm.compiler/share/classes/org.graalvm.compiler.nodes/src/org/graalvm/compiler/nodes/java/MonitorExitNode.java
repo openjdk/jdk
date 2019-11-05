@@ -70,7 +70,7 @@ public final class MonitorExitNode extends AccessMonitorNode implements Virtuali
     }
 
     @Override
-    public LocationIdentity getLocationIdentity() {
+    public LocationIdentity getKilledLocationIdentity() {
         return LocationIdentity.any();
     }
 

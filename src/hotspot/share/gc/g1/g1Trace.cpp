@@ -59,10 +59,10 @@ public:
 };
 
 static void register_jfr_type_constants() {
-  JfrSerializer::register_serializer(TYPE_G1HEAPREGIONTYPE, false, true,
+  JfrSerializer::register_serializer(TYPE_G1HEAPREGIONTYPE, true,
                                      new G1HeapRegionTypeConstant());
 
-  JfrSerializer::register_serializer(TYPE_G1YCTYPE, false, true,
+  JfrSerializer::register_serializer(TYPE_G1YCTYPE, true,
                                      new G1YCTypeConstant());
 }
 

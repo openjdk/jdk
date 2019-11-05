@@ -35,9 +35,11 @@ import java.util.List;
 
 import jdk.jfr.consumer.RecordingFile;
 import jdk.jfr.internal.Type;
-import jdk.jfr.internal.consumer.RecordingInternals;
+import jdk.jfr.internal.consumer.JdkJfrConsumer;
 
 final class Metadata extends Command {
+
+    private final static JdkJfrConsumer PRIVATE_ACCESS = JdkJfrConsumer.instance();
 
     private static class TypeComparator implements Comparator<Type> {
 
@@ -89,6 +91,7 @@ final class Metadata extends Command {
         }
     }
 
+
     @Override
     public String getName() {
         return "metadata";
@@ -125,7 +128,7 @@ final class Metadata extends Command {
             PrettyWriter prettyWriter = new PrettyWriter(pw);
             prettyWriter.setShowIds(showIds);
             try (RecordingFile rf = new RecordingFile(file)) {
-                List<Type> types = RecordingInternals.INSTANCE.readTypes(rf);
+                List<Type> types = PRIVATE_ACCESS.readTypes(rf);
                 Collections.sort(types, new TypeComparator());
                 for (Type type : types) {
                     prettyWriter.printType(type);

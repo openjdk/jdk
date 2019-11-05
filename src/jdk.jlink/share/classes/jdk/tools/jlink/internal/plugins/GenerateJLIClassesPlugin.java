@@ -36,7 +36,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.access.JavaLangInvokeAccess;
@@ -75,13 +74,13 @@ public final class GenerateJLIClassesPlugin implements Plugin {
     private static final JavaLangInvokeAccess JLIA
             = SharedSecrets.getJavaLangInvokeAccess();
 
-    Set<String> speciesTypes = Set.of();
+    private final TreeSet<String> speciesTypes = new TreeSet<>();
 
-    Set<String> invokerTypes = Set.of();
+    private final TreeSet<String> invokerTypes = new TreeSet<>();
 
-    Set<String> callSiteTypes = Set.of();
+    private final TreeSet<String> callSiteTypes = new TreeSet<>();
 
-    Map<String, Set<String>> dmhMethods = Map.of();
+    private final Map<String, Set<String>> dmhMethods = new TreeMap<>();
 
     String mainArgument;
 
@@ -187,21 +186,31 @@ public final class GenerateJLIClassesPlugin implements Plugin {
         mainArgument = config.get(NAME);
     }
 
+    private void addSpeciesType(String type) {
+        speciesTypes.add(expandSignature(type));
+    }
+
+    private void addInvokerType(String methodType) {
+        validateMethodType(methodType);
+        invokerTypes.add(methodType);
+    }
+
+    private void addCallSiteType(String csType) {
+        validateMethodType(csType);
+        callSiteTypes.add(csType);
+    }
+
     public void initialize(ResourcePool in) {
         // Start with the default configuration
-        speciesTypes = defaultSpecies().stream()
-                .map(type -> expandSignature(type))
-                .collect(Collectors.toSet());
+        defaultSpecies().stream().forEach(this::addSpeciesType);
 
-        invokerTypes = defaultInvokers();
-        validateMethodTypes(invokerTypes);
+        defaultInvokers().stream().forEach(this::validateMethodType);
 
-        callSiteTypes = defaultCallSiteTypes();
+        defaultCallSiteTypes().stream().forEach(this::addCallSiteType);
 
-        dmhMethods = defaultDMHMethods();
-        for (Set<String> dmhMethodTypes : dmhMethods.values()) {
-            validateMethodTypes(dmhMethodTypes);
-        }
+        defaultDMHMethods().entrySet().stream().forEach(e -> {
+            e.getValue().stream().forEach(type -> addDMHMethodType(e.getKey(), type));
+        });
 
         // Extend the default configuration with the contents in the supplied
         // input file - if none was supplied we look for the default file
@@ -225,18 +234,6 @@ public final class GenerateJLIClassesPlugin implements Plugin {
     }
 
     private void readTraceConfig(Stream<String> lines) {
-        // Use TreeSet/TreeMap to keep things sorted in a deterministic
-        // order to avoid scrambling the layout on small changes and to
-        // ease finding methods in the generated code
-        speciesTypes = new TreeSet<>(speciesTypes);
-        invokerTypes = new TreeSet<>(invokerTypes);
-        callSiteTypes = new TreeSet<>(callSiteTypes);
-
-        TreeMap<String, Set<String>> newDMHMethods = new TreeMap<>();
-        for (Map.Entry<String, Set<String>> entry : dmhMethods.entrySet()) {
-            newDMHMethods.put(entry.getKey(), new TreeSet<>(entry.getValue()));
-        }
-        dmhMethods = newDMHMethods;
         lines.map(line -> line.split(" "))
              .forEach(parts -> {
                 switch (parts[0]) {
@@ -245,19 +242,18 @@ public final class GenerateJLIClassesPlugin implements Plugin {
                         if (parts.length == 3 && parts[1].startsWith("java.lang.invoke.BoundMethodHandle$Species_")) {
                             String species = parts[1].substring("java.lang.invoke.BoundMethodHandle$Species_".length());
                             if (!"L".equals(species)) {
-                                speciesTypes.add(expandSignature(species));
+                                addSpeciesType(species);
                             }
                         }
                         break;
                     case "[LF_RESOLVE]":
                         String methodType = parts[3];
-                        validateMethodType(methodType);
                         if (parts[1].equals(INVOKERS_HOLDER_NAME)) {
                             if ("linkToTargetMethod".equals(parts[2]) ||
                                     "linkToCallSite".equals(parts[2])) {
-                                callSiteTypes.add(methodType);
+                                addCallSiteType(methodType);
                             } else {
-                                invokerTypes.add(methodType);
+                                addInvokerType(methodType);
                             }
                         } else if (parts[1].contains("DirectMethodHandle")) {
                             String dmh = parts[2];
@@ -288,12 +284,6 @@ public final class GenerateJLIClassesPlugin implements Plugin {
             return Files.lines(file.toPath());
         } catch (IOException io) {
             throw new PluginException("Couldn't read file");
-        }
-    }
-
-    private void validateMethodTypes(Set<String> dmhMethodTypes) {
-        for (String type : dmhMethodTypes) {
-            validateMethodType(type);
         }
     }
 
@@ -340,9 +330,10 @@ public final class GenerateJLIClassesPlugin implements Plugin {
         generateHolderClasses(out);
 
         // Let it go
-        speciesTypes = null;
-        invokerTypes = null;
-        dmhMethods = null;
+        speciesTypes.clear();
+        invokerTypes.clear();
+        callSiteTypes.clear();
+        dmhMethods.clear();
 
         return out.build();
     }

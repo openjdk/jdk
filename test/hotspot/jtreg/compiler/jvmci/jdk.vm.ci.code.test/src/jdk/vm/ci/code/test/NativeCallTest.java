@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,7 +77,8 @@ public class NativeCallTest extends CodeInstallationTest {
     @Test
     public void testF32SDILDS() {
         int sCount = 32;
-        Object[] remainingArgs = new Object[]{ // Pairs of <Object>, <Class>
+        // Pairs of <Object>, <Class>
+        Object[] remainingArgs = new Object[]{
                         1.2345678F, float.class,
                         3.212434D, double.class,
                         43921652, int.class,
@@ -101,7 +102,8 @@ public class NativeCallTest extends CodeInstallationTest {
     @Test
     public void testI32SDILDS() {
         int sCount = 32;
-        Object[] remainingArgs = new Object[]{ // Pairs of <Object>, <Class>
+        // Pairs of <Object>, <Class>
+        Object[] remainingArgs = new Object[]{
                         1.2345678F, float.class,
                         3.212434D, double.class,
                         43921652, int.class,
@@ -142,6 +144,8 @@ public class NativeCallTest extends CodeInstallationTest {
             throw e;
         }
     }
+
+    // Checkstyle: stop
 
     public static native long getFF();
 
@@ -187,6 +191,7 @@ public class NativeCallTest extends CodeInstallationTest {
                     double d18, double d19, double d1a, double d1b, double d1c, double d1d, double d1e, double d1f,
                     float a, double b, int c, long d, double e, float f);
 
+    @SuppressWarnings("unused")
     public static float D32SDILDS(double d00, double d01, double d02, double d03, double d04, double d05, double d06, double d07,
                     double d08, double d09, double d0a, double d0b, double d0c, double d0d, double d0e, double d0f,
                     double d10, double d11, double d12, double d13, double d14, double d15, double d16, double d17,

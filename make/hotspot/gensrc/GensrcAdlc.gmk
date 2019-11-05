@@ -75,7 +75,6 @@ ifeq ($(call check-jvm-feature, compiler2), true)
       OUTPUT_DIR := $(JVM_VARIANT_OUTPUTDIR)/tools/adlc, \
       DEBUG_SYMBOLS := false, \
       DISABLED_WARNINGS_clang := tautological-compare, \
-      DISABLED_WARNINGS_solstudio := notemsource, \
       DEFINE_THIS_FILE := false, \
   ))
 

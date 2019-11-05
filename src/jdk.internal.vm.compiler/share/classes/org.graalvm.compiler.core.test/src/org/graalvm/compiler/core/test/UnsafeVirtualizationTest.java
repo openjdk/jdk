@@ -147,7 +147,7 @@ public class UnsafeVirtualizationTest extends GraalCompilerTest {
         StructuredGraph graph = parseEager(snippet, AllowAssumptions.NO);
         OptionValues options = graph.getOptions();
         CoreProviders context = getDefaultHighTierContext();
-        CanonicalizerPhase canonicalizer = new CanonicalizerPhase();
+        CanonicalizerPhase canonicalizer = createCanonicalizerPhase();
         if (canonicalizeBefore) {
             canonicalizer.apply(graph, context);
         }

@@ -110,7 +110,7 @@ void ShenandoahMarkCompact::do_it(GCCause::Cause gc_cause) {
     // b. Cancel concurrent mark, if in progress
     if (heap->is_concurrent_mark_in_progress()) {
       heap->concurrent_mark()->cancel();
-      heap->stop_concurrent_marking();
+      heap->set_concurrent_mark_in_progress(false);
     }
     assert(!heap->is_concurrent_mark_in_progress(), "sanity");
 
@@ -127,6 +127,9 @@ void ShenandoahMarkCompact::do_it(GCCause::Cause gc_cause) {
 
     // e. Set back forwarded objects bit back, in case some steps above dropped it.
     heap->set_has_forwarded_objects(has_forwarded_objects);
+
+    // f. Sync pinned region status from the CP marks
+    heap->sync_pinned_region_status();
 
     // The rest of prologue:
     BiasedLocking::preserve_marks();
@@ -240,8 +243,8 @@ void ShenandoahMarkCompact::phase1_mark_heap() {
   cm->update_roots(ShenandoahPhaseTimings::full_gc_roots);
   cm->mark_roots(ShenandoahPhaseTimings::full_gc_roots);
   cm->finish_mark_from_roots(/* full_gc = */ true);
-
   heap->mark_complete_marking_context();
+  heap->parallel_cleaning(true /* full_gc */);
 }
 
 class ShenandoahPrepareForCompactionObjectClosure : public ObjectClosure {
@@ -504,6 +507,10 @@ void ShenandoahMarkCompact::phase2_calculate_target_addresses(ShenandoahHeapRegi
   ShenandoahGCPhase calculate_address_phase(ShenandoahPhaseTimings::full_gc_calculate_addresses);
 
   ShenandoahHeap* heap = ShenandoahHeap::heap();
+
+  // About to figure out which regions can be compacted, make sure pinning status
+  // had been updated in GC prologue.
+  heap->assert_pinned_region_status();
 
   {
     // Trash the immediately collectible regions before computing addresses

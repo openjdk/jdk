@@ -29,12 +29,21 @@
 #include "runtime/thread.hpp"
 
 template <typename T>
+inline ZFuture<T>::ZFuture() :
+    _value() {}
+
+template <typename T>
 inline void ZFuture<T>::set(T value) {
   // Set value
   _value = value;
 
   // Notify waiter
   _sema.signal();
+}
+
+template <typename T>
+inline T ZFuture<T>::peek() {
+  return _value;
 }
 
 template <typename T>

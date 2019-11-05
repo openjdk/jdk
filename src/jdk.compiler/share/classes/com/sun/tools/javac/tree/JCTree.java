@@ -47,7 +47,6 @@ import static com.sun.tools.javac.tree.JCTree.Tag.*;
 
 import javax.tools.JavaFileManager.Location;
 
-import com.sun.source.tree.CaseTree.CaseKind;
 import com.sun.source.tree.ModuleTree.ModuleKind;
 import com.sun.tools.javac.code.Directive.ExportsDirective;
 import com.sun.tools.javac.code.Directive.OpensDirective;
@@ -1250,17 +1249,17 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
     public static class JCCase extends JCStatement implements CaseTree {
         //as CaseKind is deprecated for removal (as it is part of a preview feature),
         //using indirection through these fields to avoid unnecessary @SuppressWarnings:
-        @SuppressWarnings("removal")
+        @SuppressWarnings("preview")
         public static final CaseKind STATEMENT = CaseKind.STATEMENT;
-        @SuppressWarnings("removal")
+        @SuppressWarnings("preview")
         public static final CaseKind RULE = CaseKind.RULE;
-        @SuppressWarnings("removal")
+        @SuppressWarnings("preview")
         public final CaseKind caseKind;
         public List<JCExpression> pats;
         public List<JCStatement> stats;
         public JCTree body;
         public boolean completesNormally;
-        protected JCCase(@SuppressWarnings("removal") CaseKind caseKind, List<JCExpression> pats,
+        protected JCCase(@SuppressWarnings("preview") CaseKind caseKind, List<JCExpression> pats,
                          List<JCStatement> stats, JCTree body) {
             Assert.checkNonNull(pats);
             Assert.check(pats.isEmpty() || pats.head != null);
@@ -1277,18 +1276,18 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         @Override @DefinedBy(Api.COMPILER_TREE)
         public JCExpression getExpression() { return pats.head; }
         @Override @DefinedBy(Api.COMPILER_TREE)
-        @SuppressWarnings("removal")
+        @SuppressWarnings("preview")
         public List<JCExpression> getExpressions() { return pats; }
         @Override @DefinedBy(Api.COMPILER_TREE)
-        @SuppressWarnings("removal")
+        @SuppressWarnings("preview")
         public List<JCStatement> getStatements() {
             return caseKind == CaseKind.STATEMENT ? stats : null;
         }
         @Override @DefinedBy(Api.COMPILER_TREE)
-        @SuppressWarnings("removal")
+        @SuppressWarnings("preview")
         public JCTree getBody() { return body; }
         @Override @DefinedBy(Api.COMPILER_TREE)
-        @SuppressWarnings("removal")
+        @SuppressWarnings("preview")
         public CaseKind getCaseKind() {
             return caseKind;
         }
@@ -1305,7 +1304,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
     /**
      * A "switch ( ) { }" construction.
      */
-    @SuppressWarnings("removal")
+    @SuppressWarnings("preview")
     public static class JCSwitchExpression extends JCPolyExpression implements SwitchExpressionTree {
         public JCExpression selector;
         public List<JCCase> cases;
@@ -1586,7 +1585,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
     /**
      * A break-with from a switch expression.
      */
-    @SuppressWarnings("removal")
+    @SuppressWarnings("preview")
     public static class JCYield extends JCStatement implements YieldTree {
         public JCExpression value;
         public JCTree target;
@@ -3105,7 +3104,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         JCLabeledStatement Labelled(Name label, JCStatement body);
         JCSwitch Switch(JCExpression selector, List<JCCase> cases);
         JCSwitchExpression SwitchExpression(JCExpression selector, List<JCCase> cases);
-        JCCase Case(@SuppressWarnings("removal") CaseKind caseKind, List<JCExpression> pat,
+        JCCase Case(@SuppressWarnings("preview") CaseTree.CaseKind caseKind, List<JCExpression> pat,
                     List<JCStatement> stats, JCTree body);
         JCSynchronized Synchronized(JCExpression lock, JCBlock body);
         JCTry Try(JCBlock body, List<JCCatch> catchers, JCBlock finalizer);

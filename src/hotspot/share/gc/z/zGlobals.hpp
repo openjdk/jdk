@@ -44,6 +44,23 @@ extern uint32_t   ZGlobalSeqNum;
 const size_t      ZGranuleSizeShift             = ZPlatformGranuleSizeShift;
 const size_t      ZGranuleSize                  = (size_t)1 << ZGranuleSizeShift;
 
+// Number of heap views
+const size_t      ZHeapViews                    = ZPlatformHeapViews;
+
+// Virtual memory to physical memory ratio
+const size_t      ZVirtualToPhysicalRatio       = 16; // 16:1
+
+//
+// Page Tiers (assuming ZGranuleSize=2M)
+// -------------------------------------
+//
+//                 Page Size        Object Size      Object Alignment
+//                 --------------------------------------------------
+//  Small          2M               <= 265K          MinObjAlignmentInBytes
+//  Medium         32M              <= 4M            4K
+//  Large          N x 2M           > 4M             2M
+//
+
 // Page types
 const uint8_t     ZPageTypeSmall                = 0;
 const uint8_t     ZPageTypeMedium               = 1;
@@ -113,6 +130,7 @@ const size_t      ZNMethodDisarmedOffset        = ZPlatformNMethodDisarmedOffset
 
 // Cache line size
 const size_t      ZCacheLineSize                = ZPlatformCacheLineSize;
+#define           ZCACHE_ALIGNED                ATTRIBUTE_ALIGNED(ZCacheLineSize)
 
 // Mark stack space
 extern uintptr_t  ZMarkStackSpaceStart;

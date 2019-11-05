@@ -3,7 +3,7 @@
 <!-- Copyright © 1991-2014 Unicode, Inc. CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/) For terms 
 	of use, see http://www.unicode.org/copyright.html -->
 <supplementalData>
-	<version number='$Revision: 14788 $'/>
+	<version number='$Revision$'/>
 	<metadata>
 		<validity>
 			<!-- BCP 47 contains many more language codes than we are interested in maintaining as a part of the CLDR -->

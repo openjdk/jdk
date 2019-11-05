@@ -2852,7 +2852,7 @@ void ClassVerifier::verify_invoke_instructions(
     }
   }
 
-  if (method_name->char_at(0) == '<') {
+  if (method_name->char_at(0) == JVM_SIGNATURE_SPECIAL) {
     // Make sure <init> can only be invoked by invokespecial
     if (opcode != Bytecodes::_invokespecial ||
         method_name != vmSymbols::object_initializer_name()) {
@@ -3028,21 +3028,23 @@ void ClassVerifier::verify_anewarray(
     // Check for more than MAX_ARRAY_DIMENSIONS
     length = (int)strlen(component_name);
     if (length > MAX_ARRAY_DIMENSIONS &&
-        component_name[MAX_ARRAY_DIMENSIONS - 1] == '[') {
+        component_name[MAX_ARRAY_DIMENSIONS - 1] == JVM_SIGNATURE_ARRAY) {
       verify_error(ErrorContext::bad_code(bci),
         "Illegal anewarray instruction, array has more than 255 dimensions");
     }
     // add one dimension to component
     length++;
     arr_sig_str = NEW_RESOURCE_ARRAY_IN_THREAD(THREAD, char, length + 1);
-    int n = os::snprintf(arr_sig_str, length + 1, "[%s", component_name);
+    int n = os::snprintf(arr_sig_str, length + 1, "%c%s",
+                         JVM_SIGNATURE_ARRAY, component_name);
     assert(n == length, "Unexpected number of characters in string");
   } else {         // it's an object or interface
     const char* component_name = component_type.name()->as_utf8();
     // add one dimension to component with 'L' prepended and ';' postpended.
     length = (int)strlen(component_name) + 3;
     arr_sig_str = NEW_RESOURCE_ARRAY_IN_THREAD(THREAD, char, length + 1);
-    int n = os::snprintf(arr_sig_str, length + 1, "[L%s;", component_name);
+    int n = os::snprintf(arr_sig_str, length + 1, "%c%c%s;",
+                         JVM_SIGNATURE_ARRAY, JVM_SIGNATURE_CLASS, component_name);
     assert(n == length, "Unexpected number of characters in string");
   }
   Symbol* arr_sig = create_temporary_symbol(arr_sig_str, length);

@@ -27,8 +27,6 @@
 #include "code/codeCache.hpp"
 #include "compiler/disassembler.hpp"
 #include "depChecker_ppc.hpp"
-#include "gc/cms/concurrentMarkSweepGeneration.inline.hpp"
-#include "gc/cms/parOopClosures.inline.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
 #include "gc/shared/genOopClosures.inline.hpp"

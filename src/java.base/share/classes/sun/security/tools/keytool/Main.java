@@ -58,6 +58,7 @@ import java.security.spec.ECParameterSpec;
 import java.text.Collator;
 import java.text.MessageFormat;
 import java.util.*;
+import java.util.function.BiFunction;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.math.BigInteger;
@@ -4109,15 +4110,51 @@ public final class Main {
     }
 
     /**
-     * Match a command (may be abbreviated) with a command set.
-     * @param s the command provided
+     * Match a command with a command set. The match can be exact, or
+     * partial, or case-insensitive.
+     *
+     * @param s the command provided by user
      * @param list the legal command set. If there is a null, commands after it
-     * are regarded experimental, which means they are supported but their
-     * existence should not be revealed to user.
+     *      are regarded experimental, which means they are supported but their
+     *      existence should not be revealed to user.
      * @return the position of a single match, or -1 if none matched
      * @throws Exception if s is ambiguous
      */
     private static int oneOf(String s, String... list) throws Exception {
+
+        // First, if there is an exact match, returns it.
+        int res = oneOfMatch((a,b) -> a.equals(b), s, list);
+        if (res >= 0) {
+            return res;
+        }
+
+        // Second, if there is one single camelCase or prefix match, returns it.
+        // This regex substitution removes all lowercase letters not at the
+        // beginning, so "keyCertSign" becomes "kCS".
+        res = oneOfMatch((a,b) -> a.equals(b.replaceAll("(?<!^)[a-z]", ""))
+                || b.startsWith(a), s, list);
+        if (res >= 0) {
+            return res;
+        }
+
+        // Finally, retry the 2nd step ignoring case
+        return oneOfMatch((a,b) -> a.equalsIgnoreCase(b.replaceAll("(?<!^)[a-z]", ""))
+                || b.toUpperCase(Locale.ROOT).startsWith(a.toUpperCase(Locale.ROOT)),
+                s, list);
+    }
+
+    /**
+     * Match a command with a command set.
+     *
+     * @param matcher a BiFunction which returns {@code true} if the 1st
+     *               argument (user input) matches the 2nd one (full command)
+     * @param s the command provided by user
+     * @param list the legal command set
+     * @return the position of a single match, or -1 if none matched
+     * @throws Exception if s is ambiguous
+     */
+    private static int oneOfMatch(BiFunction<String,String,Boolean> matcher,
+            String s, String... list) throws Exception {
         int[] match = new int[list.length];
         int nmatch = 0;
         int experiment = Integer.MAX_VALUE;
@@ -4127,25 +4164,8 @@ public final class Main {
                 experiment = i;
                 continue;
             }
-            if (one.toLowerCase(Locale.ENGLISH)
-                    .startsWith(s.toLowerCase(Locale.ENGLISH))) {
+            if (matcher.apply(s, one)) {
                 match[nmatch++] = i;
-            } else {
-                StringBuilder sb = new StringBuilder();
-                boolean first = true;
-                for (char c: one.toCharArray()) {
-                    if (first) {
-                        sb.append(c);
-                        first = false;
-                    } else {
-                        if (!Character.isLowerCase(c)) {
-                            sb.append(c);
-                        }
-                    }
-                }
-                if (sb.toString().equalsIgnoreCase(s)) {
-                    match[nmatch++] = i;
-                }
             }
         }
         if (nmatch == 0) {
@@ -4159,7 +4179,7 @@ public final class Main {
             }
             StringBuilder sb = new StringBuilder();
             MessageFormat form = new MessageFormat(rb.getString
-                ("command.{0}.is.ambiguous."));
+                    ("command.{0}.is.ambiguous."));
             Object[] source = {s};
             sb.append(form.format(source));
             sb.append("\n    ");

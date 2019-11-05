@@ -154,7 +154,7 @@
     <Field type="string" name="newValue" label="New Value" />
     <Field type="FlagValueOrigin" name="origin" label="Origin" />
   </Event>
- 
+
   <Type name="VirtualSpace">
     <Field type="ulong" contentType="address" name="start" label="Start Address" description="Start address of the virtual space" />
     <Field type="ulong" contentType="address" name="committedEnd" label="Committed End Address" description="End address of the committed memory for the virtual space" />
@@ -162,27 +162,27 @@
     <Field type="ulong" contentType="address" name="reservedEnd" label="Reserved End Address" description="End address of the reserved memory for the virtual space" />
     <Field type="ulong" contentType="bytes" name="reservedSize" label="Reserved Size" description="Size of the reserved memory for the virtual space" />
   </Type>
-  
+
   <Type name="ObjectSpace">
     <Field type="ulong" contentType="address" name="start" label="Start Address" description="Start address of the space" />
     <Field type="ulong" contentType="address" name="end" label="End Address" description="End address of the space" />
     <Field type="ulong" contentType="bytes" name="used" label="Used" description="Bytes allocated by objects in the space" />
     <Field type="ulong" contentType="bytes" name="size" label="Size" description="Size of the space" />
   </Type>
-  
+
   <Event name="GCHeapSummary" category="Java Virtual Machine, GC, Heap" label="Heap Summary" startTime="false">
     <Field type="uint" name="gcId" label="GC Identifier" relation="GcId" />
     <Field type="GCWhen" name="when" label="When" />
     <Field type="VirtualSpace" struct="true" name="heapSpace" label="Heap Space" />
     <Field type="ulong" contentType="bytes" name="heapUsed" label="Heap Used" description="Bytes allocated by objects in the heap" />
   </Event>
- 
+
   <Type name="MetaspaceSizes">
     <Field type="ulong" contentType="bytes" name="committed" label="Committed" description="Committed memory for this space" />
     <Field type="ulong" contentType="bytes" name="used" label="Used" description="Bytes allocated by objects in the space" />
     <Field type="ulong" contentType="bytes" name="reserved" label="Reserved" description="Reserved memory for this space" />
   </Type>
- 
+
   <Event name="MetaspaceSummary" category="Java Virtual Machine, GC, Heap" label="Metaspace Summary" startTime="false">
     <Field type="uint" name="gcId" label="GC Identifier" relation="GcId" />
     <Field type="GCWhen" name="when" label="When" />
@@ -442,7 +442,7 @@
     <Field type="uint" name="gcWorkerId" label="GC Worker Identifier" />
     <Field type="string" name="name" label="Name" />
   </Event>
-  
+
   <Event name="AllocationRequiringGC" category="Java Virtual Machine, GC, Detailed" label="Allocation Requiring GC" thread="true" stackTrace="true"
     startTime="false">
     <Field type="uint" name="gcId" label="Pending GC Identifier" relation="GcId" />
@@ -484,7 +484,7 @@
     <Field type="string" name="failureMessage" label="Failure Message" />
     <Field type="uint" name="compileId" label="Compilation Identifier" relation="CompileId" />
   </Event>
-  
+
   <Type name="CalleeMethod">
     <Field type="string" name="type" label="Class" />
     <Field type="string" name="name" label="Method Name" />
@@ -585,21 +585,21 @@
     <Field type="OldObjectGcRoot" name="root" label="GC Root" />
   </Event>
 
-  <Event name="DumpReason" category="Flight Recorder" label="Recording Reason" 
-         description="Who requested the recording and why" 
+  <Event name="DumpReason" category="Flight Recorder" label="Recording Reason"
+         description="Who requested the recording and why"
          startTime="false">
     <Field type="string" name="reason" label="Reason" description="Reason for writing recording data to disk" />
     <Field type="int" name="recordingId" label="Recording Id" description="Id of the recording that triggered the dump, or -1 if it was not related to a recording" />
   </Event>
 
-  <Event name="DataLoss" category="Flight Recorder" label="Data Loss" 
+  <Event name="DataLoss" category="Flight Recorder" label="Data Loss"
          description="Data could not be copied out from a buffer, typically because of contention"
          startTime="false">
     <Field type="ulong" contentType="bytes" name="amount" label="Amount" description="Amount lost data" />
     <Field type="ulong" contentType="bytes" name="total" label="Total" description="Total lost amount for thread" />
   </Event>
 
-  <Event name="JVMInformation" category="Java Virtual Machine" label="JVM Information" 
+  <Event name="JVMInformation" category="Java Virtual Machine" label="JVM Information"
          description="Description of JVM and the Java application"
          period="endChunk">
     <Field type="string" name="jvmName" label="JVM Name" />
@@ -810,8 +810,8 @@
     <Field type="int" name="standardCompileCount" label="Standard Compilations" />
     <Field type="ulong" contentType="bytes" name="osrBytesCompiled" label="OSR Bytes Compiled" />
     <Field type="ulong" contentType="bytes" name="standardBytesCompiled" label="Standard Bytes Compiled" />
-    <Field type="ulong" contentType="bytes" name="nmetodsSize" label="Compilation Resulting Size" />
-    <Field type="ulong" contentType="bytes" name="nmetodCodeSize" label="Compilation Resulting Code Size" />
+    <Field type="ulong" contentType="bytes" name="nmethodsSize" label="Compilation Resulting Size" />
+    <Field type="ulong" contentType="bytes" name="nmethodCodeSize" label="Compilation Resulting Code Size" />
     <Field type="long" contentType="millis" name="peakTimeSpent" label="Peak Time" />
     <Field type="long" contentType="millis" name="totalTimeSpent" label="Total time" />
   </Event>
@@ -1004,6 +1004,42 @@
     <Field type="string" name="state" label="State" />
   </Type>
 
+  <Event name="Flush" category="Flight Recorder" label="Flush" thread="false" experimental="true">
+    <Field type="ulong" name="flushId" label="Flush Identifier" relation="FlushId" />
+    <Field type="ulong" name="elements" label="Elements Written" />
+    <Field type="ulong" contentType="bytes" name="size" label="Size Written" />
+  </Event>
+
+  <Event name="FlushStorage" category="Flight Recorder" label="Flush Storage" thread="false" experimental="true">
+    <Field type="ulong" name="flushId" label="Flush Identifier" relation="FlushId" />
+    <Field type="ulong" name="elements" label="Elements Written" />
+    <Field type="ulong" contentType="bytes" name="size" label="Size Written" />
+  </Event>
+
+  <Event name="FlushStacktrace" category="Flight Recorder" label="Flush Stacktrace" thread="false" experimental="true">
+    <Field type="ulong" name="flushId" label="Flush Identifier" relation="FlushId" />
+    <Field type="ulong" name="elements" label="Elements Written" />
+    <Field type="ulong" contentType="bytes" name="size" label="Size Written" />
+  </Event>
+
+  <Event name="FlushStringPool" category="Flight Recorder" label="Flush String Pool" thread="false" experimental="true">
+    <Field type="ulong" name="flushId" label="Flush Identifier" relation="FlushId" />
+    <Field type="ulong" name="elements" label="Elements Written" />
+    <Field type="ulong" contentType="bytes" name="size" label="Size Written" />
+  </Event>
+
+  <Event name="FlushMetadata" category="Flight Recorder" label="Flush Metadata" thread="false" experimental="true">
+    <Field type="ulong" name="flushId" label="Flush Identifier" relation="FlushId" />
+    <Field type="ulong" name="elements" label="Elements Written" />
+    <Field type="ulong" contentType="bytes" name="size" label="Size Written" />
+  </Event>
+
+  <Event name="FlushTypeSet" category="Flight Recorder" label="Flush Type Set" thread="false" experimental="true">
+    <Field type="ulong" name="flushId" label="Flush Identifier" relation="FlushId" />
+    <Field type="ulong" name="elements" label="Elements Written" />
+    <Field type="ulong" contentType="bytes" name="size" label="Size Written" />
+  </Event>
+
   <Type name="ZStatisticsCounterType" label="Z Statistics Counter">
     <Field type="string" name="counter" label="Counter" />
   </Type>
@@ -1183,35 +1219,40 @@
     <Field type="int" name="bytecodeIndex" label="Bytecode Index" />
     <Field type="FrameType" name="type" label="Frame Type" />
   </Type>
- 
+
+  <Type name="ChunkHeader" label="Chunk Header">
+    <Field type="byte" array="true" name="payload" label="Payload" />
+  </Type>
+
   <Relation name="JavaMonitorAddress"/>
   <Relation name="SafepointId"/>
   <Relation name="GcId"/>
   <Relation name="CompileId" />
   <Relation name="SweepId"/>
- 
-  <XmlType name="Package" parameterType="const PackageEntry*" fieldType="const PackageEntry*"/> 
-  <XmlType name="Class" javaType="java.lang.Class" parameterType="const Klass*" fieldType="const Klass*"/> 
-  <XmlType name="Module"  parameterType="const ModuleEntry*" fieldType="const ModuleEntry*"/> 
-  <XmlType name="ClassLoader" parameterType="const ClassLoaderData*" fieldType="const ClassLoaderData*"/> 
-  <XmlType name="Method" parameterType="const Method*" fieldType="const Method*"/> 
-  <XmlType name="Thread" javaType="java.lang.Thread" parameterType="u8" fieldType="u8"/> 
-  <XmlType name="Tickspan" contentType="tickspan" javaType="long" parameterType="const Tickspan&amp;" fieldType="Tickspan"/> 
-  <XmlType name="Ticks" contentType="tickstamp" javaType="long" parameterType="const Ticks&amp;" fieldType="Ticks"/> 
-  <XmlType name="ulong" javaType="long" unsigned="true" parameterType="u8" fieldType="u8"/> 
-  <XmlType name="uint" javaType="int" unsigned="true" parameterType="unsigned" fieldType="unsigned"/> 
-  <XmlType name="ushort" javaType="short" unsigned="true" parameterType="u2" fieldType="u2"/> 
-  <XmlType name="ubyte" javaType="byte" unsigned="true" parameterType="u1" fieldType="u1"/> 
-  <XmlType name="long" javaType="long" parameterType="s8" fieldType="s8"/> 
-  <XmlType name="int" javaType="int" parameterType="s4" fieldType="s4"/> 
-  <XmlType name="short" javaType="short" parameterType="s2" fieldType="s2"/> 
-  <XmlType name="byte" javaType="byte"  parameterType="s1" fieldType="s1"/> 
-  <XmlType name="double" javaType="double" parameterType="double" fieldType="double"/> 
-  <XmlType name="float" javaType="float"  parameterType="float" fieldType="float"/> 
-  <XmlType name="boolean" javaType="boolean" parameterType="bool" fieldType="bool"/> 
-  <XmlType name="char" javaType="char" parameterType="char" fieldType="char"/> 
-  <XmlType name="string" javaType="java.lang.String" parameterType="const char*" fieldType="const char*"/> 
- 
+  <Relation name="FlushId"/>
+
+  <XmlType name="Package" parameterType="const PackageEntry*" fieldType="const PackageEntry*"/>
+  <XmlType name="Class" javaType="java.lang.Class" parameterType="const Klass*" fieldType="const Klass*"/>
+  <XmlType name="Module"  parameterType="const ModuleEntry*" fieldType="const ModuleEntry*"/>
+  <XmlType name="ClassLoader" parameterType="const ClassLoaderData*" fieldType="const ClassLoaderData*"/>
+  <XmlType name="Method" parameterType="const Method*" fieldType="const Method*"/>
+  <XmlType name="Thread" javaType="java.lang.Thread" parameterType="u8" fieldType="u8"/>
+  <XmlType name="Tickspan" contentType="tickspan" javaType="long" parameterType="const Tickspan&amp;" fieldType="Tickspan"/>
+  <XmlType name="Ticks" contentType="tickstamp" javaType="long" parameterType="const Ticks&amp;" fieldType="Ticks"/>
+  <XmlType name="ulong" javaType="long" unsigned="true" parameterType="u8" fieldType="u8"/>
+  <XmlType name="uint" javaType="int" unsigned="true" parameterType="unsigned" fieldType="unsigned"/>
+  <XmlType name="ushort" javaType="short" unsigned="true" parameterType="u2" fieldType="u2"/>
+  <XmlType name="ubyte" javaType="byte" unsigned="true" parameterType="u1" fieldType="u1"/>
+  <XmlType name="long" javaType="long" parameterType="s8" fieldType="s8"/>
+  <XmlType name="int" javaType="int" parameterType="s4" fieldType="s4"/>
+  <XmlType name="short" javaType="short" parameterType="s2" fieldType="s2"/>
+  <XmlType name="byte" javaType="byte"  parameterType="s1" fieldType="s1"/>
+  <XmlType name="double" javaType="double" parameterType="double" fieldType="double"/>
+  <XmlType name="float" javaType="float"  parameterType="float" fieldType="float"/>
+  <XmlType name="boolean" javaType="boolean" parameterType="bool" fieldType="bool"/>
+  <XmlType name="char" javaType="char" parameterType="char" fieldType="char"/>
+  <XmlType name="string" javaType="java.lang.String" parameterType="const char*" fieldType="const char*"/>
+
   <XmlContentType name="bytes" annotation="jdk.jfr.DataAmount(BYTES)" />
   <XmlContentType name="tickstamp" annotation="jdk.jfr.Timestamp(TICKS)" />
   <XmlContentType name="epochmillis" annotation="jdk.jfr.Timestamp(MILLISECONDS_SINCE_EPOCH)" />
@@ -1223,5 +1264,5 @@
   <XmlContentType name="hertz" annotation="jdk.jfr.Frequency" />
   <XmlContentType name="bytes-per-second" annotation="jdk.jfr.DataAmount(BYTES), jdk.jfr.Frequency" />
   <XmlContentType name="bits-per-second" annotation="jdk.jfr.DataAmount(BITS), jdk.jfr.Frequency" />
- 
+
 </Metadata>

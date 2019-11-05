@@ -349,12 +349,11 @@ public abstract class LoopFragment {
                         TriState isAnchorInLoop = isLoopNode(anchor, loopNodes, nonLoopNodes);
                         if (isAnchorInLoop != TriState.FALSE) {
                             if (!(anchor instanceof LoopExitNode && ((LoopExitNode) anchor).loopBegin() == loopBeginNode)) {
-                                /*
-                                 * (gd) this is wrong in general, it's completely avoidable while we
-                                 * are doing loop transforms using ValueProxies. If it happens after
-                                 * it could still cause problem.
-                                 */
-                                assert !((GuardNode) current).graph().hasValueProxies();
+                                // It is undecidable whether the node is in the loop or not. This is
+                                // not an issue for getting counted loop information,
+                                // but causes issues when using the information for actual loop
+                                // transformations. This is why a loop transformation must
+                                // not happen while guards are floating.
                                 isLoopNode = true;
                             }
                         } else if (AbstractControlFlowGraph.strictlyDominates(cfg.blockFor(anchor), cfg.blockFor(loopBeginNode))) {

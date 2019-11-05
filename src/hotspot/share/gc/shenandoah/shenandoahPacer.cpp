@@ -238,6 +238,15 @@ void ShenandoahPacer::pace_for_alloc(size_t words) {
     return;
   }
 
+  // Threads that are attaching should not block at all: they are not
+  // fully initialized yet. Calling sleep() on them would be awkward.
+  // This is probably the path that allocates the thread oop itself.
+  // Forcefully claim without waiting.
+  if (JavaThread::current()->is_attaching_via_jni()) {
+    claim_for_alloc(words, true);
+    return;
+  }
+
   size_t max = ShenandoahPacingMaxDelay;
   double start = os::elapsedTime();
 

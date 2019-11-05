@@ -7,7 +7,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 14843 $"/>
+		<version number="$Revision$"/>
 		<language type="ro"/>
 		<territory type="MD"/>
 	</identity>
@@ -167,7 +167,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 		</unitLength>
 		<unitLength type="narrow">
-			<!-- The parent locale uses spaces, so we must also use spaces. -->
 			<unit type="duration-year">
 				<unitPattern count="one" draft="contributed">{0} an</unitPattern>
 				<unitPattern count="few" draft="contributed">{0} ani</unitPattern>
@@ -178,11 +177,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one" draft="contributed">{0} lună</unitPattern>
 				<unitPattern count="few" draft="contributed">{0} luni</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} luni</unitPattern>
-			</unit>
-			<unit type="duration-week">
-				<unitPattern count="one" draft="contributed">{0} săpt.</unitPattern>
-				<unitPattern count="few" draft="contributed">{0} săpt.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} săpt.</unitPattern>
 			</unit>
 			<unit type="duration-day">
 				<unitPattern count="one" draft="contributed">{0} zi</unitPattern>
@@ -197,9 +191,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 			<unit type="duration-millisecond">
 				<displayName draft="contributed">msec</displayName>
-				<unitPattern count="one" draft="contributed">{0} ms</unitPattern>
-				<unitPattern count="few" draft="contributed">{0} ms</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} ms</unitPattern>
 			</unit>
 		</unitLength>
 	</units>

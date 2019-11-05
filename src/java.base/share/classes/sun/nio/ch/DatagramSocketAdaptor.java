@@ -26,6 +26,9 @@
 package sun.nio.ch;
 
 import java.io.IOException;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodHandles.Lookup;
+import java.lang.invoke.VarHandle;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.DatagramSocketImpl;
@@ -35,15 +38,16 @@ import java.net.NetworkInterface;
 import java.net.SocketAddress;
 import java.net.SocketException;
 import java.net.SocketOption;
-import java.net.SocketTimeoutException;
 import java.net.StandardSocketOptions;
 import java.nio.ByteBuffer;
+import java.nio.channels.AlreadyConnectedException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.DatagramChannel;
-import java.nio.channels.IllegalBlockingModeException;
-import java.util.Objects;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.Set;
 
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 // Make a datagram-socket channel look like a datagram socket.
 //
@@ -61,13 +65,9 @@ class DatagramSocketAdaptor
     // Timeout "option" value for receives
     private volatile int timeout;
 
-    // ## super will create a useless impl
+    // create DatagramSocket with useless impl
     private DatagramSocketAdaptor(DatagramChannelImpl dc) {
-        // Invoke the DatagramSocketAdaptor(SocketAddress) constructor,
-        // passing a dummy DatagramSocketImpl object to avoid any native
-        // resource allocation in super class and invoking our bind method
-        // before the dc field is initialized.
-        super(dummyDatagramSocket);
+        super(new DummyDatagramSocketImpl());
         this.dc = dc;
     }
 
@@ -75,17 +75,9 @@ class DatagramSocketAdaptor
         return new DatagramSocketAdaptor(dc);
     }
 
-    private void connectInternal(SocketAddress remote)
-        throws SocketException
-    {
-        InetSocketAddress isa = Net.asInetSocketAddress(remote);
-        int port = isa.getPort();
-        if (port < 0 || port > 0xFFFF)
-            throw new IllegalArgumentException("connect: " + port);
-        if (remote == null)
-            throw new IllegalArgumentException("connect: null address");
+    private void connectInternal(SocketAddress remote) throws SocketException {
         try {
-            dc.connect(remote);
+            dc.connect(remote, false); // skips check for already connected
         } catch (ClosedChannelException e) {
             // ignore
         } catch (Exception x) {
@@ -95,9 +87,12 @@ class DatagramSocketAdaptor
 
     @Override
     public void bind(SocketAddress local) throws SocketException {
+        if (local != null) {
+            local = Net.asInetSocketAddress(local);
+        } else {
+            local = new InetSocketAddress(0);
+        }
         try {
-            if (local == null)
-                local = new InetSocketAddress(0);
             dc.bind(local);
         } catch (Exception x) {
             Net.translateToSocketException(x);
@@ -106,17 +101,20 @@ class DatagramSocketAdaptor
 
     @Override
     public void connect(InetAddress address, int port) {
+        if (address == null)
+            throw new IllegalArgumentException("Address can't be null");
         try {
             connectInternal(new InetSocketAddress(address, port));
         } catch (SocketException x) {
-            // Yes, j.n.DatagramSocket really does this
+            throw new Error(x);
         }
     }
 
     @Override
     public void connect(SocketAddress remote) throws SocketException {
-        Objects.requireNonNull(remote, "Address can't be null");
-        connectInternal(remote);
+        if (remote == null)
+            throw new IllegalArgumentException("Address can't be null");
+        connectInternal(Net.asInetSocketAddress(remote));
     }
 
     @Override
@@ -157,80 +155,84 @@ class DatagramSocketAdaptor
 
     @Override
     public SocketAddress getLocalSocketAddress() {
-        return dc.localAddress();
+        try {
+            return dc.getLocalAddress();
+        } catch (ClosedChannelException e) {
+            return null;
+        } catch (Exception x) {
+            throw new Error(x);
+        }
     }
 
     @Override
     public void send(DatagramPacket p) throws IOException {
-        synchronized (dc.blockingLock()) {
-            if (!dc.isBlocking())
-                throw new IllegalBlockingModeException();
-            try {
-                synchronized (p) {
-                    ByteBuffer bb = ByteBuffer.wrap(p.getData(),
-                                                    p.getOffset(),
-                                                    p.getLength());
-                    if (dc.isConnected()) {
-                        if (p.getAddress() == null) {
-                            // Legacy DatagramSocket will send in this case
-                            // and set address and port of the packet
-                            InetSocketAddress isa = dc.remoteAddress();
-                            p.setPort(isa.getPort());
-                            p.setAddress(isa.getAddress());
-                            dc.write(bb);
-                        } else {
-                            // Target address may not match connected address
-                            dc.send(bb, p.getSocketAddress());
-                        }
-                    } else {
-                        // Not connected so address must be valid or throw
-                        dc.send(bb, p.getSocketAddress());
+        ByteBuffer bb = null;
+        try {
+            InetSocketAddress target;
+            synchronized (p) {
+                // copy bytes to temporary direct buffer
+                int len = p.getLength();
+                bb = Util.getTemporaryDirectBuffer(len);
+                bb.put(p.getData(), p.getOffset(), len);
+                bb.flip();
+
+                // target address
+                if (p.getAddress() == null) {
+                    InetSocketAddress remote = dc.remoteAddress();
+                    if (remote == null) {
+                        // not specified by DatagramSocket
+                        throw new IllegalArgumentException("Address not set");
                     }
+                    // set address/port to maintain compatibility with DatagramSocket
+                    p.setAddress(remote.getAddress());
+                    p.setPort(remote.getPort());
+                    target = remote;
+                } else {
+                    // throws IllegalArgumentException if port not set
+                    target = (InetSocketAddress) p.getSocketAddress();
                 }
-            } catch (IOException x) {
-                Net.translateException(x);
             }
-        }
-    }
-
-    private SocketAddress receive(ByteBuffer bb) throws IOException {
-        assert Thread.holdsLock(dc.blockingLock()) && dc.isBlocking();
-
-        long to = this.timeout;
-        if (to == 0) {
-            return dc.receive(bb);
-        } else {
-            for (;;) {
-                if (!dc.isOpen())
-                    throw new ClosedChannelException();
-                long st = System.currentTimeMillis();
-                if (dc.pollRead(to)) {
-                    return dc.receive(bb);
-                }
-                to -= System.currentTimeMillis() - st;
-                if (to <= 0)
-                    throw new SocketTimeoutException();
+            // send datagram
+            try {
+                dc.blockingSend(bb, target);
+            } catch (AlreadyConnectedException e) {
+                throw new IllegalArgumentException("Connected and packet address differ");
+            } catch (ClosedChannelException e) {
+                var exc = new SocketException("Socket closed");
+                exc.initCause(e);
+                throw exc;
+            }
+        } finally {
+            if (bb != null) {
+                Util.offerFirstTemporaryDirectBuffer(bb);
             }
         }
     }
 
     @Override
     public void receive(DatagramPacket p) throws IOException {
-        synchronized (dc.blockingLock()) {
-            if (!dc.isBlocking())
-                throw new IllegalBlockingModeException();
-            try {
-                synchronized (p) {
-                    ByteBuffer bb = ByteBuffer.wrap(p.getData(),
-                                                    p.getOffset(),
-                                                    p.getLength());
-                    SocketAddress sender = receive(bb);
-                    p.setSocketAddress(sender);
-                    p.setLength(bb.position() - p.getOffset());
-                }
-            } catch (IOException x) {
-                Net.translateException(x);
+        // get temporary direct buffer with a capacity of p.bufLength
+        int bufLength = DatagramPackets.getBufLength(p);
+        ByteBuffer bb = Util.getTemporaryDirectBuffer(bufLength);
+        try {
+            long nanos = MILLISECONDS.toNanos(timeout);
+            SocketAddress sender = dc.blockingReceive(bb, nanos);
+            bb.flip();
+            synchronized (p) {
+                // copy bytes to the DatagramPacket and set length
+                int len = Math.min(bb.limit(), DatagramPackets.getBufLength(p));
+                bb.get(p.getData(), p.getOffset(), len);
+                DatagramPackets.setLength(p, len);
+
+                // sender address
+                p.setSocketAddress(sender);
             }
+        } catch (ClosedChannelException e) {
+            var exc = new SocketException("Socket closed");
+            exc.initCause(e);
+            throw exc;
+        } finally {
+            Util.offerFirstTemporaryDirectBuffer(bb);
         }
     }
 
@@ -257,19 +259,16 @@ class DatagramSocketAdaptor
     public int getLocalPort() {
         if (isClosed())
             return -1;
-        try {
-            InetSocketAddress local = dc.localAddress();
-            if (local != null) {
-                return local.getPort();
-            }
-        } catch (Exception x) {
+        InetSocketAddress local = dc.localAddress();
+        if (local != null) {
+            return local.getPort();
         }
         return 0;
     }
 
     @Override
     public void setSoTimeout(int timeout) throws SocketException {
-        if (!dc.isOpen())
+        if (isClosed())
             throw new SocketException("Socket is closed");
         if (timeout < 0)
             throw new IllegalArgumentException("timeout < 0");
@@ -278,7 +277,7 @@ class DatagramSocketAdaptor
 
     @Override
     public int getSoTimeout() throws SocketException {
-        if (!dc.isOpen())
+        if (isClosed())
             throw new SocketException("Socket is closed");
         return timeout;
     }
@@ -353,7 +352,6 @@ class DatagramSocketAdaptor
     @Override
     public boolean getReuseAddress() throws SocketException {
         return getBooleanOption(StandardSocketOptions.SO_REUSEADDR);
-
     }
 
     @Override
@@ -411,50 +409,157 @@ class DatagramSocketAdaptor
         return dc.supportedOptions();
     }
 
-   /*
-    * A dummy implementation of DatagramSocketImpl that can be passed to the
-    * DatagramSocket constructor so that no native resources are allocated in
-    * super class.
-    */
-   private static final DatagramSocketImpl dummyDatagramSocket
-       = new DatagramSocketImpl()
-   {
-       protected void create() throws SocketException {}
 
-       protected void bind(int lport, InetAddress laddr) throws SocketException {}
+    /**
+     * DatagramSocketImpl implementation where all methods throw an error.
+     */
+    private static class DummyDatagramSocketImpl extends DatagramSocketImpl {
+        private static <T> T shouldNotGetHere() {
+            throw new InternalError("Should not get here");
+        }
 
-       protected void send(DatagramPacket p) throws IOException {}
+        @Override
+        protected void create() {
+            shouldNotGetHere();
+        }
 
-       protected int peek(InetAddress i) throws IOException { return 0; }
+        @Override
+        protected void bind(int lport, InetAddress laddr) {
+            shouldNotGetHere();
+        }
 
-       protected int peekData(DatagramPacket p) throws IOException { return 0; }
+        @Override
+        protected void send(DatagramPacket p) {
+            shouldNotGetHere();
+        }
 
-       protected void receive(DatagramPacket p) throws IOException {}
+        @Override
+        protected int peek(InetAddress address) {
+            return shouldNotGetHere();
+        }
 
-       @Deprecated
-       protected void setTTL(byte ttl) throws IOException {}
+        @Override
+        protected int peekData(DatagramPacket p) {
+            return shouldNotGetHere();
+        }
 
-       @Deprecated
-       protected byte getTTL() throws IOException { return 0; }
+        @Override
+        protected void receive(DatagramPacket p) {
+            shouldNotGetHere();
+        }
 
-       protected void setTimeToLive(int ttl) throws IOException {}
+        @Deprecated
+        protected void setTTL(byte ttl) {
+            shouldNotGetHere();
+        }
 
-       protected int getTimeToLive() throws IOException { return 0;}
+        @Deprecated
+        protected byte getTTL() {
+            return shouldNotGetHere();
+        }
 
-       protected void join(InetAddress inetaddr) throws IOException {}
+        @Override
+        protected void setTimeToLive(int ttl) {
+            shouldNotGetHere();
+        }
 
-       protected void leave(InetAddress inetaddr) throws IOException {}
+        @Override
+        protected int getTimeToLive() {
+            return shouldNotGetHere();
+        }
 
-       protected void joinGroup(SocketAddress mcastaddr,
-                                 NetworkInterface netIf) throws IOException {}
+        @Override
+        protected void join(InetAddress group) {
+            shouldNotGetHere();
+        }
 
-       protected void leaveGroup(SocketAddress mcastaddr,
-                                 NetworkInterface netIf) throws IOException {}
+        @Override
+        protected void leave(InetAddress inetaddr) {
+            shouldNotGetHere();
+        }
 
-       protected void close() {}
+        @Override
+        protected void joinGroup(SocketAddress group, NetworkInterface netIf) {
+            shouldNotGetHere();
+        }
 
-       public Object getOption(int optID) throws SocketException { return null;}
+        @Override
+        protected void leaveGroup(SocketAddress mcastaddr, NetworkInterface netIf) {
+            shouldNotGetHere();
+        }
 
-       public void setOption(int optID, Object value) throws SocketException {}
-   };
+        @Override
+        protected void close() {
+            shouldNotGetHere();
+        }
+
+        @Override
+        public Object getOption(int optID) {
+            return shouldNotGetHere();
+        }
+
+        @Override
+        public void setOption(int optID, Object value) {
+            shouldNotGetHere();
+        }
+
+        @Override
+        protected <T> void setOption(SocketOption<T> name, T value) {
+            shouldNotGetHere();
+        }
+
+        @Override
+        protected <T> T getOption(SocketOption<T> name) {
+            return shouldNotGetHere();
+        }
+
+        @Override
+        protected Set<SocketOption<?>> supportedOptions() {
+            return shouldNotGetHere();
+        }
+    }
+
+    /**
+     * Defines static methods to get/set DatagramPacket fields and workaround
+     * DatagramPacket deficiencies.
+     */
+    private static class DatagramPackets {
+        private static final VarHandle LENGTH;
+        private static final VarHandle BUF_LENGTH;
+        static {
+            try {
+                PrivilegedAction<Lookup> pa = () -> {
+                    try {
+                        return MethodHandles.privateLookupIn(DatagramPacket.class, MethodHandles.lookup());
+                    } catch (Exception e) {
+                        throw new ExceptionInInitializerError(e);
+                    }
+                };
+                MethodHandles.Lookup l = AccessController.doPrivileged(pa);
+                LENGTH = l.findVarHandle(DatagramPacket.class, "length", int.class);
+                BUF_LENGTH = l.findVarHandle(DatagramPacket.class, "bufLength", int.class);
+            } catch (Exception e) {
+                throw new ExceptionInInitializerError(e);
+            }
+        }
+
+        /**
+         * Sets the DatagramPacket.length field. DatagramPacket.setLength cannot be
+         * used at this time because it sets both the length and bufLength fields.
+         */
+        static void setLength(DatagramPacket p, int value) {
+            synchronized (p) {
+                LENGTH.set(p, value);
+            }
+        }
+
+        /**
+         * Returns the value of the DatagramPacket.bufLength field.
+         */
+        static int getBufLength(DatagramPacket p) {
+            synchronized (p) {
+                return (int) BUF_LENGTH.get(p);
+            }
+        }
+    }
 }

@@ -180,6 +180,7 @@
   nonstatic_field(JavaThread,                  _pending_transfer_to_interpreter,              bool)                                  \
   nonstatic_field(JavaThread,                  _jvmci_counters,                               jlong*)                                \
   nonstatic_field(JavaThread,                  _should_post_on_exceptions_flag,               int)                                   \
+  nonstatic_field(JavaThread,                  _jni_environment,                              JNIEnv)                                \
   nonstatic_field(JavaThread,                  _reserved_stack_activation,                    address)                               \
                                                                                                                                      \
   static_field(java_lang_Class,                _klass_offset,                                 int)                                   \
@@ -261,8 +262,6 @@
   volatile_nonstatic_field(oopDesc,            _metadata._klass,                              Klass*)                                \
                                                                                                                                      \
   static_field(os,                             _polling_page,                                 address)                               \
-                                                                                                                                     \
-  volatile_nonstatic_field(OSThread,           _interrupted,                                  jint)                                  \
                                                                                                                                      \
   static_field(StubRoutines,                _verify_oop_count,                                jint)                                  \
                                                                                                                                      \
@@ -538,6 +537,7 @@
   declare_constant(FieldInfo::field_slots)                                \
                                                                           \
   declare_constant(InstanceKlass::linked)                                 \
+  declare_constant(InstanceKlass::being_initialized)                      \
   declare_constant(InstanceKlass::fully_initialized)                      \
   declare_constant(InstanceKlass::_misc_is_unsafe_anonymous)              \
                                                                           \
@@ -639,7 +639,6 @@
   declare_function(JVMCIRuntime::dynamic_new_array_or_null) \
   declare_function(JVMCIRuntime::dynamic_new_instance_or_null) \
   \
-  declare_function(JVMCIRuntime::thread_is_interrupted) \
   declare_function(JVMCIRuntime::vm_message) \
   declare_function(JVMCIRuntime::identity_hash_code) \
   declare_function(JVMCIRuntime::exception_handler_for_pc) \

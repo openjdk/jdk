@@ -25,13 +25,14 @@
 #include "precompiled.hpp"
 #include "jfr/recorder/checkpoint/jfrCheckpointWriter.hpp"
 #include "jfr/recorder/checkpoint/types/jfrThreadGroup.hpp"
-#include "jfr/utilities/jfrResourceManager.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/semaphore.hpp"
 #include "utilities/growableArray.hpp"
+
+static const int initial_array_size = 30;
 
 class ThreadGroupExclusiveAccess : public StackObj {
  private:
@@ -257,12 +258,10 @@ void JfrThreadGroup::JfrThreadGroupEntry::set_thread_group(JfrThreadGroupPointer
   }
 }
 
-JfrThreadGroup::JfrThreadGroup() : _list(NULL) {
-  _list = new (ResourceObj::C_HEAP, mtTracing) GrowableArray<JfrThreadGroupEntry*>(30, true);
-}
+JfrThreadGroup::JfrThreadGroup() :
+  _list(new (ResourceObj::C_HEAP, mtTracing) GrowableArray<JfrThreadGroupEntry*>(initial_array_size, true, mtTracing)) {}
 
 JfrThreadGroup::~JfrThreadGroup() {
-  assert(SafepointSynchronize::is_at_safepoint(), "invariant");
   if (_list != NULL) {
     for (int i = 0; i < _list->length(); i++) {
       JfrThreadGroupEntry* e = _list->at(i);
@@ -281,14 +280,11 @@ void JfrThreadGroup::set_instance(JfrThreadGroup* new_instance) {
 }
 
 traceid JfrThreadGroup::thread_group_id(const JavaThread* jt, Thread* current) {
-  ResourceMark rm(current);
-  HandleMark hm(current);
   JfrThreadGroupsHelper helper(jt, current);
   return helper.is_valid() ? thread_group_id_internal(helper) : 0;
 }
 
 traceid JfrThreadGroup::thread_group_id(JavaThread* const jt) {
-  assert(!JfrStream_lock->owned_by_self(), "holding stream lock but should not hold it here");
   return thread_group_id(jt, jt);
 }
 
@@ -396,9 +392,7 @@ void JfrThreadGroup::serialize(JfrCheckpointWriter& writer) {
   ThreadGroupExclusiveAccess lock;
   JfrThreadGroup* tg_instance = instance();
   assert(tg_instance != NULL, "invariant");
-  ResourceManager<JfrThreadGroup> tg_handle(tg_instance);
-  set_instance(NULL);
-  tg_handle->write_thread_group_entries(writer);
+  tg_instance->write_thread_group_entries(writer);
 }
 
 // for writing a particular thread group

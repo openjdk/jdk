@@ -167,8 +167,15 @@ public final class IntegerStamp extends PrimitiveStamp {
     @Override
     public Stamp constant(Constant c, MetaAccessProvider meta) {
         if (c instanceof PrimitiveConstant) {
-            long value = ((PrimitiveConstant) c).asLong();
-            return StampFactory.forInteger(getBits(), value, value);
+            PrimitiveConstant primitiveConstant = (PrimitiveConstant) c;
+            long value = primitiveConstant.asLong();
+            if (primitiveConstant.getJavaKind() == JavaKind.Boolean && value == 1) {
+                // Need to special case booleans as integer stamps are always signed values.
+                value = -1;
+            }
+            Stamp returnedStamp = StampFactory.forInteger(getBits(), value, value);
+            assert returnedStamp.hasValues();
+            return returnedStamp;
         }
         return this;
     }
@@ -1605,7 +1612,10 @@ public final class IntegerStamp extends PrimitiveStamp {
                             long newUpMask = stamp.upMask() & defaultMask;
                             long newLowerBound = CodeUtil.signExtend((lowerBound | newDownMask) & newUpMask, resultBits);
                             long newUpperBound = CodeUtil.signExtend((upperBound | newDownMask) & newUpMask, resultBits);
-                            return new IntegerStamp(resultBits, newLowerBound, newUpperBound, newDownMask, newUpMask);
+
+                            IntegerStamp result = new IntegerStamp(resultBits, newLowerBound, newUpperBound, newDownMask, newUpMask);
+                            assert result.hasValues();
+                            return result;
                         }
                     },
 

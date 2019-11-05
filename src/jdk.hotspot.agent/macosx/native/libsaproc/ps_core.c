@@ -364,7 +364,8 @@ static bool get_real_path(struct ps_prochandle* ph, char *rpath) {
       strcpy(filepath, java_home);
     } else {
       char* dyldpath = getenv("DYLD_LIBRARY_PATH");
-      char* dypath = strtok(dyldpath, ":");
+      char* save_ptr;
+      char* dypath = strtok_r(dyldpath, ":", &save_ptr);
       while (dypath != NULL) {
         strcpy(filepath, dypath);
         strcat(filepath, filename);
@@ -372,7 +373,7 @@ static bool get_real_path(struct ps_prochandle* ph, char *rpath) {
            strcpy(rpath, filepath);
            return true;
         }
-        dypath = strtok(dyldpath, ":");
+        dypath = strtok_r(NULL, ":", &save_ptr);
       }
       // not found
       return false;

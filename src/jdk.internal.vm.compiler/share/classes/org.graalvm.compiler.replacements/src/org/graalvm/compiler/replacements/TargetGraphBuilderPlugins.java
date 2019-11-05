@@ -24,12 +24,12 @@
 
 package org.graalvm.compiler.replacements;
 
-import org.graalvm.compiler.bytecode.BytecodeProvider;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration.Plugins;
+import org.graalvm.compiler.nodes.spi.Replacements;
 
 import jdk.vm.ci.code.Architecture;
 
 public interface TargetGraphBuilderPlugins {
-    void register(Plugins plugins, BytecodeProvider replacementsBytecodeProvider, Architecture arch, boolean explicitUnsafeNullChecks, boolean registerMathPlugins, boolean emitJDK9StringSubstitutions,
+    void register(Plugins plugins, Replacements replacements, Architecture arch, boolean explicitUnsafeNullChecks, boolean registerMathPlugins, boolean emitJDK9StringSubstitutions,
                     boolean useFMAIntrinsics);
 }

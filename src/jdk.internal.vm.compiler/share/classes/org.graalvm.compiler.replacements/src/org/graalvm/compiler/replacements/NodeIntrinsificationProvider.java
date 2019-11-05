@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,22 +34,27 @@ import org.graalvm.compiler.nodes.graphbuilderconf.NodeIntrinsicPluginFactory.In
 import org.graalvm.compiler.replacements.arraycopy.ArrayCopyForeignCalls;
 import org.graalvm.compiler.word.WordTypes;
 
+import jdk.vm.ci.code.TargetDescription;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.ResolvedJavaType;
 
 public class NodeIntrinsificationProvider implements InjectionProvider {
 
+    public static final TargetDescription INJECTED_TARGET = null;
+
     private final MetaAccessProvider metaAccess;
     private final SnippetReflectionProvider snippetReflection;
     private final ForeignCallsProvider foreignCalls;
     private final WordTypes wordTypes;
+    private final TargetDescription target;
 
-    public NodeIntrinsificationProvider(MetaAccessProvider metaAccess, SnippetReflectionProvider snippetReflection, ForeignCallsProvider foreignCalls, WordTypes wordTypes) {
+    public NodeIntrinsificationProvider(MetaAccessProvider metaAccess, SnippetReflectionProvider snippetReflection, ForeignCallsProvider foreignCalls, WordTypes wordTypes, TargetDescription target) {
         this.metaAccess = metaAccess;
         this.snippetReflection = snippetReflection;
         this.foreignCalls = foreignCalls;
         this.wordTypes = wordTypes;
+        this.target = target;
     }
 
     @Override
@@ -78,6 +83,8 @@ public class NodeIntrinsificationProvider implements InjectionProvider {
             return type.cast(snippetReflection);
         } else if (type.equals(WordTypes.class)) {
             return type.cast(wordTypes);
+        } else if (type.equals(TargetDescription.class)) {
+            return type.cast(target);
         } else {
             throw new GraalError("Cannot handle injected argument of type %s.", type.getName());
         }

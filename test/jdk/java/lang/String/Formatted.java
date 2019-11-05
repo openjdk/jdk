@@ -25,7 +25,8 @@
  * @test
  * bug 8203444
  * @summary Unit tests for instance versions of String#format
- * @run main Formatted
+ * @compile --enable-preview -source 14 Formatted.java
+ * @run main/othervm --enable-preview Formatted
  */
 
 import java.util.Locale;

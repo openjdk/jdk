@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,8 @@ FindSrcDirsForComponent += \
       $(TOPDIR)/src/$(strip $1)/$(OPENJDK_TARGET_OS_TYPE)/native/$(strip $2) \
       $(TOPDIR)/src/$(strip $1)/share/native/$(strip $2)))
 
-# Find a library
+# Find a library. Used for declaring dependencies on libraries in different
+# modules.
 # Param 1 - module name
 # Param 2 - library name
 # Param 3 - optional subdir for library
@@ -66,6 +67,12 @@ FindStaticLib = \
 # If only generating compile_commands.json, make these return empty to avoid
 # declaring dependencies.
 ifeq ($(GENERATE_COMPILE_COMMANDS_ONLY), true)
+  FindLib =
+  FindStaticLib =
+endif
+# If building static versions of libraries, make these return empty to avoid
+# declaring dependencies.
+ifeq ($(STATIC_LIBS), true)
   FindLib =
   FindStaticLib =
 endif

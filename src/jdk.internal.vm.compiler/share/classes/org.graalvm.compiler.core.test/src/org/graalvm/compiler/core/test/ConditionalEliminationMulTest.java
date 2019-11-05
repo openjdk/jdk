@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,7 +78,7 @@ public class ConditionalEliminationMulTest extends GraalCompilerTest {
         StructuredGraph graph = parseEager(snippet, AllowAssumptions.NO);
         HighTierContext context = getDefaultHighTierContext();
         new ConditionalEliminationPhase(false).apply(graph, context);
-        CanonicalizerPhase c = new CanonicalizerPhase();
+        CanonicalizerPhase c = createCanonicalizerPhase();
         c.apply(graph, context);
         new ConditionalEliminationPhase(false).apply(graph, context);
         c.apply(graph, context);

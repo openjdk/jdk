@@ -7,7 +7,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 14782 $"/>
+		<version number="$Revision$"/>
 		<language type="hsb"/>
 	</identity>
 	<localeDisplayNames>
@@ -75,9 +75,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="en_AU">awstralska jendźelšćina</language>
 			<language type="en_CA">kanadiska jendźelšćina</language>
 			<language type="en_GB">britiska jendźelšćina</language>
-			<language type="en_GB" alt="short">jendźelšćina (UK)</language>
 			<language type="en_US">ameriska jendźelšćina</language>
-			<language type="en_US" alt="short">jendźelšćina (USA)</language>
 			<language type="eo">esperanto</language>
 			<language type="es">španišćina</language>
 			<language type="es_419">łaćonskoameriska španišćina</language>
@@ -513,8 +511,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="MF">St. Martin</territory>
 			<territory type="MG">Madagaskar</territory>
 			<territory type="MH">Marshallowe kupy</territory>
-			<territory type="MK">Makedonska</territory>
-			<territory type="MK" alt="variant">Makedonska (FYROM)</territory>
 			<territory type="ML">Mali</territory>
 			<territory type="MM">Myanmar</territory>
 			<territory type="MN">Mongolska</territory>
@@ -701,8 +697,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<exemplarCharacters>[a b c č ć d {dź} e ě f g h {ch} i j k ł l m n ń o ó p q r ř s š t u v w x y z ž]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[á à ă â å ä ã ą ā æ ç ď đ é è ĕ ê ë ė ę ē ğ í ì ĭ î ï İ ī ı ĺ ľ ň ñ ò ŏ ô ö ő ø ō œ ŕ ś ş ß ť ú ù ŭ û ů ü ű ū ý ÿ ż ź]</exemplarCharacters>
 		<exemplarCharacters type="index">[A B C Č Ć D {DŹ} E F G H {CH} I J K Ł L M N O P Q R S Š T U V W X Y Z Ž]</exemplarCharacters>
-		<exemplarCharacters type="numbers">[\- , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
-		<exemplarCharacters type="punctuation">[\- ‐ – — , ; \: ! ? . … ' ‘ ’ ‚ &quot; “ „ « » ( ) \[ \] \{ \} § @ * / \&amp; #]</exemplarCharacters>
+		<exemplarCharacters type="numbers">[\- ‑ , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‐ ‑ – — , ; \: ! ? . … ' ‘ ’ ‚ &quot; “ „ « » ( ) \[ \] \{ \} § @ * / \&amp; #]</exemplarCharacters>
 	</characters>
 	<delimiters>
 		<quotationStart>„</quotationStart>
@@ -5186,13 +5182,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="few">{0} konjace mocy</unitPattern>
 				<unitPattern count="other">{0} konjacych mocow</unitPattern>
 			</unit>
-			<unit type="pressure-hectopascal">
-				<displayName>hektopascale</displayName>
-				<unitPattern count="one">{0} hektopascal</unitPattern>
-				<unitPattern count="two">{0} hektopascalej</unitPattern>
-				<unitPattern count="few">{0} hektopascale</unitPattern>
-				<unitPattern count="other">{0} hektopascalow</unitPattern>
-			</unit>
 			<unit type="pressure-millimeter-of-mercury">
 				<displayName>milimetry žiwoslěbroweho stołpika</displayName>
 				<unitPattern count="one">{0} milimeter žiwoslěbroweho stołpika</unitPattern>
@@ -5220,6 +5209,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="two">{0} milibaraj</unitPattern>
 				<unitPattern count="few">{0} milibary</unitPattern>
 				<unitPattern count="other">{0} milibarow</unitPattern>
+			</unit>
+			<unit type="pressure-hectopascal">
+				<displayName>hektopascale</displayName>
+				<unitPattern count="one">{0} hektopascal</unitPattern>
+				<unitPattern count="two">{0} hektopascalej</unitPattern>
+				<unitPattern count="few">{0} hektopascale</unitPattern>
+				<unitPattern count="other">{0} hektopascalow</unitPattern>
 			</unit>
 			<unit type="speed-kilometer-per-hour">
 				<displayName>kilometry na hodźinu</displayName>
@@ -6009,13 +6005,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="few">{0} PS</unitPattern>
 				<unitPattern count="other">{0} PS</unitPattern>
 			</unit>
-			<unit type="pressure-hectopascal">
-				<displayName>hPa</displayName>
-				<unitPattern count="one">{0} hPa</unitPattern>
-				<unitPattern count="two">{0} hPa</unitPattern>
-				<unitPattern count="few">{0} hPa</unitPattern>
-				<unitPattern count="other">{0} hPa</unitPattern>
-			</unit>
 			<unit type="pressure-millimeter-of-mercury">
 				<displayName>mm Hg</displayName>
 				<unitPattern count="one">{0} mm Hg</unitPattern>
@@ -6043,6 +6032,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="two">{0} mbar</unitPattern>
 				<unitPattern count="few">{0} mbar</unitPattern>
 				<unitPattern count="other">{0} mbar</unitPattern>
+			</unit>
+			<unit type="pressure-hectopascal">
+				<displayName>hPa</displayName>
+				<unitPattern count="one">{0} hPa</unitPattern>
+				<unitPattern count="two">{0} hPa</unitPattern>
+				<unitPattern count="few">{0} hPa</unitPattern>
+				<unitPattern count="other">{0} hPa</unitPattern>
 			</unit>
 			<unit type="speed-kilometer-per-hour">
 				<displayName>km/h</displayName>
@@ -6459,12 +6455,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="few">{0} PS</unitPattern>
 				<unitPattern count="other">{0} PS</unitPattern>
 			</unit>
-			<unit type="pressure-hectopascal">
-				<unitPattern count="one">{0} hPa</unitPattern>
-				<unitPattern count="two">{0} hPa</unitPattern>
-				<unitPattern count="few">{0} hPa</unitPattern>
-				<unitPattern count="other">{0} hPa</unitPattern>
-			</unit>
 			<unit type="pressure-inch-hg">
 				<unitPattern count="one">{0} inHg</unitPattern>
 				<unitPattern count="two">{0} inHg</unitPattern>
@@ -6476,6 +6466,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="two">{0} mbar</unitPattern>
 				<unitPattern count="few">{0} mbar</unitPattern>
 				<unitPattern count="other">{0} mbar</unitPattern>
+			</unit>
+			<unit type="pressure-hectopascal">
+				<unitPattern count="one">{0} hPa</unitPattern>
+				<unitPattern count="two">{0} hPa</unitPattern>
+				<unitPattern count="few">{0} hPa</unitPattern>
+				<unitPattern count="other">{0} hPa</unitPattern>
 			</unit>
 			<unit type="speed-kilometer-per-hour">
 				<displayName>km/h</displayName>

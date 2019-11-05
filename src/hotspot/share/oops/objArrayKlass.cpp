@@ -106,14 +106,14 @@ Klass* ObjArrayKlass::allocate_objArray_klass(ClassLoaderData* loader_data,
     int len = element_klass->name()->utf8_length();
     char *new_str = NEW_RESOURCE_ARRAY(char, len + 4);
     int idx = 0;
-    new_str[idx++] = '[';
+    new_str[idx++] = JVM_SIGNATURE_ARRAY;
     if (element_klass->is_instance_klass()) { // it could be an array or simple type
-      new_str[idx++] = 'L';
+      new_str[idx++] = JVM_SIGNATURE_CLASS;
     }
     memcpy(&new_str[idx], name_str, len * sizeof(char));
     idx += len;
     if (element_klass->is_instance_klass()) {
-      new_str[idx++] = ';';
+      new_str[idx++] = JVM_SIGNATURE_ENDCLASS;
     }
     new_str[idx++] = '\0';
     name = SymbolTable::new_permanent_symbol(new_str);

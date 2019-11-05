@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@ import org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
 import org.graalvm.compiler.nodes.calc.AndNode;
 import org.graalvm.compiler.nodes.calc.NotNode;
 import org.graalvm.compiler.nodes.calc.OrNode;
-import org.graalvm.compiler.phases.common.CanonicalizerPhase;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -46,7 +45,7 @@ public class DeMorganCanonicalizationTest extends GraalCompilerTest {
     @Test
     public void testAnd() {
         StructuredGraph g = parseEager("and", AllowAssumptions.NO, getInitialOptions());
-        new CanonicalizerPhase().apply(g, getDefaultHighTierContext());
+        createCanonicalizerPhase().apply(g, getDefaultHighTierContext());
         Assert.assertEquals(1, g.getNodes().filter(OrNode.class).count());
         Assert.assertEquals(1, g.getNodes().filter(NotNode.class).count());
 
@@ -59,7 +58,7 @@ public class DeMorganCanonicalizationTest extends GraalCompilerTest {
     @Test
     public void testOr() {
         StructuredGraph g = parseEager("or", AllowAssumptions.NO, getInitialOptions());
-        new CanonicalizerPhase().apply(g, getDefaultHighTierContext());
+        createCanonicalizerPhase().apply(g, getDefaultHighTierContext());
         Assert.assertEquals(1, g.getNodes().filter(AndNode.class).count());
         Assert.assertEquals(1, g.getNodes().filter(NotNode.class).count());
 

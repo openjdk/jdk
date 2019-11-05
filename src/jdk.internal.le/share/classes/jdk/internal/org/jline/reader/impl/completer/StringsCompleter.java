@@ -4,7 +4,7 @@
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
  *
- * http://www.opensource.org/licenses/bsd-license.php
+ * https://opensource.org/licenses/BSD-3-Clause
  */
 package jdk.internal.org.jline.reader.impl.completer;
 
@@ -41,6 +41,11 @@ public class StringsCompleter implements Completer
         for (String string : strings) {
             candidates.add(new Candidate(AttributedString.stripAnsi(string), string, null, null, null, null, true));
         }
+    }
+
+    public StringsCompleter(Candidate ... candidates) {
+        assert candidates != null;
+        this.candidates.addAll(Arrays.asList(candidates));
     }
 
     public void complete(LineReader reader, final ParsedLine commandLine, final List<Candidate> candidates) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,8 @@ import static org.graalvm.compiler.microbenchmarks.graal.GraalBenchmark.Defaults
 import static org.graalvm.compiler.microbenchmarks.graal.GraalBenchmark.Defaults.MEASUREMENT_ITERATIONS;
 import static org.graalvm.compiler.microbenchmarks.graal.GraalBenchmark.Defaults.WARMUP_ITERATIONS;
 
+import org.graalvm.compiler.api.test.ModuleSupport;
+
 import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Warmup;
@@ -41,6 +43,9 @@ import org.openjdk.jmh.annotations.Warmup;
 @Measurement(iterations = MEASUREMENT_ITERATIONS)
 @Fork(FORKS)
 public class GraalBenchmark {
+    static {
+        ModuleSupport.exportAndOpenAllPackagesToUnnamed("jdk.internal.vm.compiler");
+    }
 
     public static class Defaults {
         public static final int MEASUREMENT_ITERATIONS = 5;

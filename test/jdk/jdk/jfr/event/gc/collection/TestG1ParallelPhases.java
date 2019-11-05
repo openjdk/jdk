@@ -59,7 +59,8 @@ import sun.hotspot.WhiteBox;
  * @library /test/lib /test/jdk
  * @build sun.hotspot.WhiteBox
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:MaxTenuringThreshold=1 -Xms20M -Xmx20M
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+AlwaysTenure
+ *      -Xms20M -Xmx20M -Xlog:gc=debug,gc+heap*=debug,gc+ergo*=debug,gc+start=debug
  *      -XX:G1MixedGCLiveThresholdPercent=100 -XX:G1HeapWastePercent=0 -XX:G1HeapRegionSize=1m
  *      -XX:+UseG1GC -XX:+UseStringDeduplication
  *      -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
@@ -75,7 +76,7 @@ public class TestG1ParallelPhases {
         recording.start();
 
         // create more weak garbage than can fit in this heap (-Xmx20m), will force collection of weak references
-        weakRefs = range(1, 100)
+        weakRefs = range(1, 30)
             .mapToObj(n -> new WeakReference<>(new byte[1_000_000]))
             .collect(toList()); // force evaluation of lazy stream (all weak refs must be created)
 
@@ -98,7 +99,6 @@ public class TestG1ParallelPhases {
             "CLDGRoots",
             "JVMTIRoots",
             "CMRefRoots",
-            "WaitForStrongRoots",
             "MergeER",
             "MergeHCC",
             "MergeRS",
@@ -151,8 +151,7 @@ class Provoker {
             toUnreachable.add(new byte[arraySize]);
         });
 
-        // Do two young collections, MaxTenuringThreshold=1 will force promotion.
-        getWhiteBox().youngGC();
+        // Do one young collection, AlwaysTenure will force promotion.
         getWhiteBox().youngGC();
 
         // Check it is promoted & keep alive
@@ -168,11 +167,10 @@ class Provoker {
 
     /**
     * The necessary condition for guaranteed mixed GC is running in VM with the following flags:
-    * -XX:+UnlockExperimentalVMOptions -XX:MaxTenuringThreshold=1 -Xms{HEAP_SIZE}M
+    * -XX:+UnlockExperimentalVMOptions -XX:+AlwaysTenure -Xms{HEAP_SIZE}M
     * -Xmx{HEAP_SIZE}M -XX:G1MixedGCLiveThresholdPercent=100 -XX:G1HeapWastePercent=0
     * -XX:G1HeapRegionSize={REGION_SIZE}m
     *
-    * @param provokeSize The size to allocate to provoke the start of a mixed gc (half heap size?)
     * @param g1HeapRegionSize The size of your regions in bytes
     */
     public static void provokeMixedGC(int g1HeapRegionSize) {

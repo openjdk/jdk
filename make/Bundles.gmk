@@ -50,6 +50,7 @@ $(eval $(call IncludeCustomExtension, Bundles-pre.gmk))
 #     files or directories may contain spaces.
 # BASE_DIRS : Base directories for the root dir in the bundle.
 # SUBDIR : Optional name of root dir in bundle.
+# OUTPUTDIR : Optionally override output dir
 SetupBundleFile = $(NamedParamsMacroTemplate)
 define SetupBundleFileBody
 
@@ -70,8 +71,11 @@ define SetupBundleFileBody
 
   $$(call SetIfEmpty, $1_UNZIP_DEBUGINFO, false)
 
-  $(BUNDLES_OUTPUTDIR)/$$($1_BUNDLE_NAME): $$($1_FILES)
+  $$(call SetIfEmpty, $1_OUTPUTDIR, $$(BUNDLES_OUTPUTDIR))
+
+  $$($1_OUTPUTDIR)/$$($1_BUNDLE_NAME): $$($1_FILES)
 	$$(call MakeTargetDir)
+	$$(call LogWarn, Creating $$($1_BUNDLE_NAME))
         # If any of the files contain a space in the file name, FindFiles
         # will have replaced it with ?. Tar does not accept that so need to
         # switch it back.
@@ -137,7 +141,7 @@ define SetupBundleFileBody
           endif
         endif
 
-  $1 += $(BUNDLES_OUTPUTDIR)/$$($1_BUNDLE_NAME)
+  $1 += $$($1_OUTPUTDIR)/$$($1_BUNDLE_NAME)
 
 endef
 
@@ -165,7 +169,7 @@ endif
 
 ################################################################################
 
-ifneq ($(filter product-bundles legacy-bundles, $(MAKECMDGOALS)), )
+ifneq ($(filter product-bundles% legacy-bundles, $(MAKECMDGOALS)), )
 
   SYMBOLS_EXCLUDE_PATTERN := %.debuginfo %.diz %.pdb %.map
 
@@ -310,6 +314,27 @@ endif
 
 ################################################################################
 
+ifneq ($(filter static-libs-bundles, $(MAKECMDGOALS)), )
+  STATIC_LIBS_BUNDLE_FILES := $(call FindFiles, $(STATIC_LIBS_IMAGE_DIR))
+
+  ifeq ($(OPENJDK_TARGET_OS)-$(DEBUG_LEVEL), macosx-release)
+    STATIC_LIBS_BUNDLE_SUBDIR := $(JDK_MACOSX_CONTENTS_SUBDIR)/Home
+  else
+    STATIC_LIBS_BUNDLE_SUBDIR := $(JDK_BUNDLE_SUBDIR)
+  endif
+
+  $(eval $(call SetupBundleFile, BUILD_STATIC_LIBS_BUNDLE, \
+      BUNDLE_NAME := $(STATIC_LIBS_BUNDLE_NAME), \
+      FILES := $(STATIC_LIBS_BUNDLE_FILES), \
+      BASE_DIRS := $(STATIC_LIBS_IMAGE_DIR), \
+      SUBDIR := $(STATIC_LIBS_BUNDLE_SUBDIR), \
+  ))
+
+  STATIC_LIBS_TARGETS += $(BUILD_STATIC_LIBS_BUNDLE)
+endif
+
+################################################################################
+
 # Hook to include the corresponding custom file, if present.
 $(eval $(call IncludeCustomExtension, Bundles.gmk))
 
@@ -319,6 +344,8 @@ product-bundles: $(PRODUCT_TARGETS)
 legacy-bundles: $(LEGACY_TARGETS)
 test-bundles: $(TEST_TARGETS)
 docs-bundles: $(DOCS_TARGETS)
+static-libs-bundles: $(STATIC_LIBS_TARGETS)
 jcov-bundles: $(JCOV_TARGETS)
 
-.PHONY: all default product-bundles test-bundles docs-bundles jcov-bundles
+.PHONY: all default product-bundles test-bundles docs-bundles \
+    static-libs-bundles jcov-bundles

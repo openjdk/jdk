@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,48 +25,60 @@
 
 package jdk.jfr.internal.consumer;
 
-import java.io.DataInput;
 import java.io.IOException;
 
 import jdk.jfr.internal.LogLevel;
 import jdk.jfr.internal.LogTag;
 import jdk.jfr.internal.Logger;
 import jdk.jfr.internal.MetadataDescriptor;
+import jdk.jfr.internal.Utils;
 
 public final class ChunkHeader {
+    private static final long HEADER_SIZE = 68;
+    private static final byte UPDATING_CHUNK_HEADER = (byte) 255;
+    private static final long CHUNK_SIZE_POSITION = 8;
+    private static final long DURATION_NANOS_POSITION = 40;
+    private static final long FILE_STATE_POSITION = 64;
     private static final long METADATA_TYPE_ID = 0;
     private static final byte[] FILE_MAGIC = { 'F', 'L', 'R', '\0' };
 
     private final short major;
     private final short minor;
-    private final long chunkSize;
     private final long chunkStartTicks;
     private final long ticksPerSecond;
     private final long chunkStartNanos;
-    private final long metadataPosition;
- //   private final long absoluteInitialConstantPoolPosition;
-    private final long absoluteChunkEnd;
-    private final long absoluteEventStart;
     private final long absoluteChunkStart;
-    private final boolean lastChunk;
     private final RecordingInput input;
-    private final long durationNanos;
     private final long id;
-    private long constantPoolPosition;
+    private long absoluteEventStart;
+    private long chunkSize = 0;
+    private long constantPoolPosition = 0;
+    private long metadataPosition = 0;
+    private long durationNanos;
+    private long absoluteChunkEnd;
+    private boolean isFinished;
+    private boolean finished;
 
     public ChunkHeader(RecordingInput input) throws IOException {
         this(input, 0, 0);
     }
 
     private ChunkHeader(RecordingInput input, long absoluteChunkStart, long id) throws IOException {
+        this.absoluteChunkStart = absoluteChunkStart;
+        this.absoluteEventStart = absoluteChunkStart + HEADER_SIZE;
+        if (input.getFileSize() < HEADER_SIZE) {
+            throw new IOException("Not a complete Chunk header");
+        }
+        input.setValidSize(absoluteChunkStart + HEADER_SIZE);
         input.position(absoluteChunkStart);
         if (input.position() >= input.size()) {
-            throw new IOException("Chunk contains no data");
+           throw new IOException("Chunk contains no data");
         }
         verifyMagic(input);
         this.input = input;
         this.id = id;
-        Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.INFO, "Chunk " + id);
+        Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.INFO, "Chunk: " + id);
+        Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.INFO, "Chunk: file=" + input.getFilename());
         Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.INFO, "Chunk: startPosition=" + absoluteChunkStart);
         major = input.readRawShort();
         Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.INFO, "Chunk: major=" + major);
@@ -75,11 +87,11 @@ public final class ChunkHeader {
         if (major != 1 && major != 2) {
             throw new IOException("File version " + major + "." + minor + ". Only Flight Recorder files of version 1.x and 2.x can be read by this JDK.");
         }
-        chunkSize = input.readRawLong();
+        input.readRawLong(); // chunk size
         Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.INFO, "Chunk: chunkSize=" + chunkSize);
-        this.constantPoolPosition = input.readRawLong();
+        input.readRawLong(); // constant pool position
         Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.INFO, "Chunk: constantPoolPosition=" + constantPoolPosition);
-        metadataPosition = input.readRawLong();
+        input.readRawLong(); // metadata position
         Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.INFO, "Chunk: metadataPosition=" + metadataPosition);
         chunkStartNanos = input.readRawLong(); // nanos since epoch
         Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.INFO, "Chunk: startNanos=" + chunkStartNanos);
@@ -91,21 +103,98 @@ public final class ChunkHeader {
         Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.INFO, "Chunk: ticksPerSecond=" + ticksPerSecond);
         input.readRawInt(); // features, not used
 
-        // set up boundaries
-        this.absoluteChunkStart = absoluteChunkStart;
-        absoluteChunkEnd = absoluteChunkStart + chunkSize;
-        lastChunk = input.size() == absoluteChunkEnd;
-        absoluteEventStart = input.position();
-
-        // read metadata
+        refresh();
         input.position(absoluteEventStart);
+    }
+
+    void refresh() throws IOException {
+        while (true) {
+            byte fileState1;
+            input.positionPhysical(absoluteChunkStart + FILE_STATE_POSITION);
+            while ((fileState1 = input.readPhysicalByte()) == UPDATING_CHUNK_HEADER) {
+                Utils.takeNap(1);
+                input.positionPhysical(absoluteChunkStart + FILE_STATE_POSITION);
+            }
+            input.positionPhysical(absoluteChunkStart + CHUNK_SIZE_POSITION);
+            long chunkSize = input.readPhysicalLong();
+            long constantPoolPosition = input.readPhysicalLong();
+            long metadataPosition = input.readPhysicalLong();
+            input.positionPhysical(absoluteChunkStart + DURATION_NANOS_POSITION);
+            long durationNanos = input.readPhysicalLong();
+            input.positionPhysical(absoluteChunkStart + FILE_STATE_POSITION);
+            byte fileState2 =  input.readPhysicalByte();
+            if (fileState1 == fileState2) { // valid header
+                finished = fileState1 == 0;
+                if (metadataPosition != 0) {
+                    Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.INFO, "Setting input size to " + (absoluteChunkStart + chunkSize));
+                    if (finished) {
+                        // This assumes that the whole recording
+                        // is finished if the first chunk is.
+                        // This is a limitation we may want to
+                        // remove, but greatly improves performance as
+                        // data can be read across chunk boundaries
+                        // of multi-chunk files and only once.
+                        input.setValidSize(input.getFileSize());
+                    } else {
+                        input.setValidSize(absoluteChunkStart + chunkSize);
+                    }
+                    this.chunkSize = chunkSize;
+                    Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.INFO, "Chunk: chunkSize=" + chunkSize);
+                    this.constantPoolPosition = constantPoolPosition;
+                    Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.INFO, "Chunk: constantPoolPosition=" + constantPoolPosition);
+                    this.metadataPosition = metadataPosition;
+                    Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.INFO, "Chunk: metadataPosition=" + metadataPosition);
+                    this.durationNanos = durationNanos;
+                    Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.INFO, "Chunk: durationNanos =" + durationNanos);
+                    isFinished = fileState2 == 0;
+                    Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.INFO, "Chunk: generation=" + fileState2);
+                    Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.INFO, "Chunk: finished=" + isFinished);
+                    Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.INFO, "Chunk: fileSize=" + input.size());
+                    absoluteChunkEnd = absoluteChunkStart + chunkSize;
+                    return;
+                }
+            }
+        }
+    }
+
+    public void awaitFinished() throws IOException {
+        if (finished) {
+            return;
+        }
+        long pos = input.position();
+        try {
+            input.positionPhysical(absoluteChunkStart + FILE_STATE_POSITION);
+            while (true) {
+                byte filestate = input.readPhysicalByte();
+                if (filestate == 0) {
+                    finished = true;
+                    return;
+                }
+                Utils.takeNap(1);
+            }
+        } finally {
+            input.position(pos);
+        }
+    }
+
+    public boolean isLastChunk() throws IOException {
+        awaitFinished();
+        // streaming files only have one chunk
+        return input.getFileSize() == absoluteChunkEnd;
+   }
+
+    public boolean isFinished() throws IOException {
+        return isFinished;
     }
 
     public ChunkHeader nextHeader() throws IOException {
         return new ChunkHeader(input, absoluteChunkEnd, id + 1);
     }
-
     public MetadataDescriptor readMetadata() throws IOException {
+        return readMetadata(null);
+    }
+
+    public MetadataDescriptor readMetadata(MetadataDescriptor previous) throws IOException {
         input.position(absoluteChunkStart + metadataPosition);
         input.readInt(); // size
         long id = input.readLong(); // event type id
@@ -115,15 +204,15 @@ public final class ChunkHeader {
         input.readLong(); // start time
         input.readLong(); // duration
         long metadataId = input.readLong();
-        Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.TRACE, "Metadata id=" + metadataId);
-        // No need to read if metadataId == lastMetadataId, but we
-        // do it for verification purposes.
-        return MetadataDescriptor.read(input);
+        if (previous != null && metadataId == previous.metadataId) {
+            return previous;
+        }
+        Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.TRACE, "New metadata id = " + metadataId);
+        MetadataDescriptor m =  MetadataDescriptor.read(input);
+        m.metadataId = metadataId;
+        return m;
     }
 
-    public boolean isLastChunk() {
-        return lastChunk;
-    }
 
     public short getMajor() {
         return major;
@@ -137,12 +226,21 @@ public final class ChunkHeader {
         return absoluteChunkStart;
     }
 
+    public long getAbsoluteEventStart() {
+        return absoluteEventStart;
+    }
     public long getConstantPoolPosition() {
         return constantPoolPosition;
     }
 
+    public long getMetataPosition() {
+        return metadataPosition;
+    }
     public long getStartTicks() {
         return chunkStartTicks;
+    }
+    public long getChunkSize() {
+        return chunkSize;
     }
 
     public double getTicksPerSecond() {
@@ -169,7 +267,7 @@ public final class ChunkHeader {
         return input;
     }
 
-    private static void verifyMagic(DataInput input) throws IOException {
+    private static void verifyMagic(RecordingInput input) throws IOException {
         for (byte c : FILE_MAGIC) {
             if (input.readByte() != c) {
                 throw new IOException("Not a Flight Recorder file");
@@ -181,4 +279,7 @@ public final class ChunkHeader {
         return absoluteEventStart;
     }
 
+    static long headerSize() {
+        return HEADER_SIZE;
+    }
 }

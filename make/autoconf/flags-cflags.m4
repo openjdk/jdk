@@ -170,11 +170,11 @@ AC_DEFUN([FLAGS_SETUP_WARNINGS],
       DISABLE_WARNING_PREFIX="-erroff="
       CFLAGS_WARNINGS_ARE_ERRORS="-errwarn=%all"
 
-      WARNINGS_ENABLE_ALL_CFLAGS="-v"
-      WARNINGS_ENABLE_ALL_CXXFLAGS="+w"
+      WARNINGS_ENABLE_ALL_CFLAGS="-v -fd -xtransition"
+      WARNINGS_ENABLE_ALL_CXXFLAGS="+w +w2"
 
-      DISABLED_WARNINGS_C=""
-      DISABLED_WARNINGS_CXX=""
+      DISABLED_WARNINGS_C="E_OLD_STYLE_FUNC_DECL E_OLD_STYLE_FUNC_DEF E_SEMANTICS_OF_OP_CHG_IN_ANSI_C E_NO_REPLACEMENT_IN_STRING E_DECLARATION_IN_CODE"
+      DISABLED_WARNINGS_CXX="inllargeuse inllargeint notused wemptydecl notemsource"
       ;;
 
     gcc)
@@ -597,7 +597,7 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
     LANGSTD_CFLAGS="-xc99=all,no_lib"
   elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
     # MSVC doesn't support C99/C11 explicitly, unless you compile as C++:
-    # LANGSTD_CFLAGS="/TP"
+    # LANGSTD_CFLAGS="-TP"
     # but that requires numerous changes to the sources files. So we are limited
     # to C89/C90 plus whatever extensions Visual Studio has decided to implement.
     # This is the lowest bar for shared code.
@@ -694,6 +694,20 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
       OS_CFLAGS_JVM="$OS_CFLAGS_JVM -DNEEDS_LIBRT"
     fi
   fi
+
+  # Extra flags needed when building optional static versions of certain
+  # JDK libraries.
+  STATIC_LIBS_CFLAGS="-DSTATIC_BUILD=1"
+  if test "x$TOOLCHAIN_TYPE" = xgcc || test "x$TOOLCHAIN_TYPE" = xclang; then
+    STATIC_LIBS_CFLAGS="$STATIC_LIBS_CFLAGS -ffunction-sections -fdata-sections"
+  fi
+  if test "x$TOOLCHAIN_TYPE" = xgcc; then
+    # Disable relax-relocation to enable compatibility with older linkers
+    RELAX_RELOCATIONS_FLAG="-Xassembler -mrelax-relocations=no"
+    FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [${RELAX_RELOCATIONS_FLAG}],
+        IF_TRUE: [STATIC_LIBS_CFLAGS="$STATIC_LIBS_CFLAGS ${RELAX_RELOCATIONS_FLAG}"])
+  fi
+  AC_SUBST(STATIC_LIBS_CFLAGS)
 ])
 
 ################################################################################

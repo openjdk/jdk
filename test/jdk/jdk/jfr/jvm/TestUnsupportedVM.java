@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +30,10 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.concurrent.Callable;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import jdk.jfr.AnnotationElement;
 import jdk.jfr.Configuration;
@@ -48,6 +50,7 @@ import jdk.jfr.Recording;
 import jdk.jfr.RecordingState;
 import jdk.jfr.SettingControl;
 import jdk.jfr.ValueDescriptor;
+import jdk.jfr.consumer.EventStream;
 import jdk.jfr.consumer.RecordedClass;
 import jdk.jfr.consumer.RecordedEvent;
 import jdk.jfr.consumer.RecordedFrame;
@@ -57,6 +60,7 @@ import jdk.jfr.consumer.RecordedStackTrace;
 import jdk.jfr.consumer.RecordedThread;
 import jdk.jfr.consumer.RecordedThreadGroup;
 import jdk.jfr.consumer.RecordingFile;
+import jdk.jfr.consumer.RecordingStream;
 import jdk.management.jfr.ConfigurationInfo;
 import jdk.management.jfr.EventTypeInfo;
 import jdk.management.jfr.FlightRecorderMXBean;
@@ -106,9 +110,11 @@ public class TestUnsupportedVM {
             RecordingState.class,
             SettingControl.class,
             SettingDescriptorInfo.class,
-            ValueDescriptor.class
+            ValueDescriptor.class,
+            EventStream.class,
+            RecordingStream.class
        };
-    // * @run main/othervm -Dprepare-recording=true jdk.jfr.jvm.TestUnsupportedVM
+
     @Label("My Event")
     @Description("My fine event")
     static class MyEvent extends Event {
@@ -125,7 +131,7 @@ public class TestUnsupportedVM {
             return;
         }
 
-        System.out.println("jdk.jfr.unsupportedvm=" + System.getProperty("jdk.jfr.unsupportedvm"));
+        System.out.println("jfr.unsupported.vm=" + System.getProperty("jfr.unsupported.vm"));
         // Class FlightRecorder
         if (FlightRecorder.isAvailable()) {
             throw new AssertionError("JFR should not be available on an unsupported VM");
@@ -136,6 +142,7 @@ public class TestUnsupportedVM {
         }
 
         assertIllegalStateException(() -> FlightRecorder.getFlightRecorder());
+        assertIllegalStateException(() -> new RecordingStream());
         assertSwallow(() -> FlightRecorder.addListener(new FlightRecorderListener() {}));
         assertSwallow(() -> FlightRecorder.removeListener(new FlightRecorderListener() {}));
         assertSwallow(() -> FlightRecorder.register(MyEvent.class));
@@ -174,8 +181,39 @@ public class TestUnsupportedVM {
         // Only run this part of tests if we are on VM
         // that can produce a recording file
         if (Files.exists(RECORDING_FILE)) {
+            boolean firstFileEvent = true;
             for(RecordedEvent re : RecordingFile.readAllEvents(RECORDING_FILE)) {
-                System.out.println(re);
+                // Print one event
+                if (firstFileEvent) {
+                    System.out.println(re);
+                    firstFileEvent = false;
+                }
+            }
+            AtomicBoolean firstStreamEvent = new AtomicBoolean(true);
+            try (EventStream es = EventStream.openFile(RECORDING_FILE)) {
+                es.onEvent(e -> {
+                    // Print one event
+                    if (firstStreamEvent.get()) {
+                        try {
+                            System.out.println(e);
+                            firstStreamEvent.set(false);
+                        } catch (Throwable t) {
+                            t.printStackTrace();
+                        }
+                    }
+                });
+                es.start();
+                if (firstStreamEvent.get()) {
+                    throw new AssertionError("Didn't print streaming event");
+                }
+            }
+
+            try (EventStream es = EventStream.openRepository()) {
+                es.onEvent(e -> {
+                    System.out.println(e);
+                });
+                es.startAsync();
+                es.awaitTermination(Duration.ofMillis(10));
             }
         }
     }

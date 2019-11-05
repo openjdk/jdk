@@ -50,12 +50,13 @@ class JfrThreadLocal {
   unsigned int _stack_trace_hash;
   mutable u4 _stackdepth;
   volatile jint _entering_suspend_flag;
+  bool _excluded;
   bool _dead;
 
   JfrBuffer* install_native_buffer() const;
   JfrBuffer* install_java_buffer() const;
   JfrStackFrame* install_stackframes() const;
-
+  void release(Thread* t);
   static void release(JfrThreadLocal* tl, Thread* t);
 
  public:
@@ -203,6 +204,10 @@ class JfrThreadLocal {
     _trace_id = id;
   }
 
+  bool is_excluded() const {
+    return _excluded;
+  }
+
   bool is_dead() const {
     return _dead;
   }
@@ -210,6 +215,9 @@ class JfrThreadLocal {
   bool has_thread_blob() const;
   void set_thread_blob(const JfrBlobHandle& handle);
   const JfrBlobHandle& thread_blob() const;
+
+  static void exclude(Thread* t);
+  static void include(Thread* t);
 
   static void on_start(Thread* t);
   static void on_exit(Thread* t);

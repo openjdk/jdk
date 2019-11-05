@@ -7,7 +7,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 14982 $"/>
+		<version number="$Revision$"/>
 		<language type="mt"/>
 	</identity>
 	<localeDisplayNames>
@@ -134,9 +134,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="en_AU">Ingliż Awstraljan</language>
 			<language type="en_CA">Ingliż Kanadiż</language>
 			<language type="en_GB">Ingliż Brittaniku</language>
-			<language type="en_GB" alt="short">Ingliż (UK)</language>
 			<language type="en_US">Ingliż Amerikan</language>
-			<language type="en_US" alt="short">Ingliż (US)</language>
 			<language type="enm">Ingliż Medjevali</language>
 			<language type="eo">Esperanto</language>
 			<language type="es">Spanjol</language>
@@ -882,8 +880,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<exemplarCharacters>[a à b ċ d e è f ġ g {għ} h ħ i ì j k l m n o ò p q r s t u ù v w x ż z]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[c y]</exemplarCharacters>
 		<exemplarCharacters type="index" draft="contributed">[A B Ċ C D E F Ġ G {GĦ} H Ħ I {IE*} J K L M N O P Q R S T U V W X Y Ż Z]</exemplarCharacters>
-		<exemplarCharacters type="numbers">[\- , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
-		<exemplarCharacters type="punctuation">[\- , ; \: ! ? . ' ‘ ’ &quot; “ ” ( ) \[ \] \{ \}]</exemplarCharacters>
+		<exemplarCharacters type="numbers">[\- ‑ , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‑ , ; \: ! ? . ' ‘ ’ &quot; “ ” ( ) \[ \] \{ \}]</exemplarCharacters>
 		<ellipsis type="final">{0}…</ellipsis>
 		<ellipsis type="initial">…{0}</ellipsis>
 		<ellipsis type="medial">{0}…{1}</ellipsis>

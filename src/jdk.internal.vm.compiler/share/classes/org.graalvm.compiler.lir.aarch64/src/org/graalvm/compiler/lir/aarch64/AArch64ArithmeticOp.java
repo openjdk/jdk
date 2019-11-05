@@ -58,6 +58,13 @@ public enum AArch64ArithmeticOp {
     DIV,
     SMULH,
     UMULH,
+    SMULL,
+    SMNEGL,
+    MADD,
+    MSUB,
+    FMADD,
+    SMADDL,
+    SMSUBL,
     REM,
     UDIV,
     UREM,
@@ -279,6 +286,12 @@ public enum AArch64ArithmeticOp {
                 case MNEG:
                     masm.mneg(size, dst, src1, src2);
                     break;
+                case SMULL:
+                    masm.smull(size, dst, src1, src2);
+                    break;
+                case SMNEGL:
+                    masm.smnegl(size, dst, src1, src2);
+                    break;
                 case DIV:
                     masm.sdiv(size, dst, src1, src2);
                     break;
@@ -477,11 +490,10 @@ public enum AArch64ArithmeticOp {
         @Use(REG) protected AllocatableValue src3;
 
         /**
-         * Computes <code>result = src3 <op> src1 * src2</code>.
+         * Computes <code>result = src3 +/- src1 * src2</code>.
          */
         public MultiplyAddSubOp(AArch64ArithmeticOp op, AllocatableValue result, AllocatableValue src1, AllocatableValue src2, AllocatableValue src3) {
             super(TYPE);
-            assert op == ADD || op == SUB || op == FADD;
             this.op = op;
             this.result = result;
             this.src1 = src1;
@@ -493,14 +505,22 @@ public enum AArch64ArithmeticOp {
         public void emitCode(CompilationResultBuilder crb, AArch64MacroAssembler masm) {
             int size = result.getPlatformKind().getSizeInBytes() * Byte.SIZE;
             switch (op) {
-                case ADD:
+                case MADD:
                     masm.madd(size, asRegister(result), asRegister(src1), asRegister(src2), asRegister(src3));
                     break;
-                case SUB:
+                case MSUB:
                     masm.msub(size, asRegister(result), asRegister(src1), asRegister(src2), asRegister(src3));
                     break;
-                case FADD:
+                case FMADD:
                     masm.fmadd(size, asRegister(result), asRegister(src1), asRegister(src2), asRegister(src3));
+                    break;
+                case SMADDL:
+                    assert size == 64;
+                    masm.smaddl(size, asRegister(result), asRegister(src1), asRegister(src2), asRegister(src3));
+                    break;
+                case SMSUBL:
+                    assert size == 64;
+                    masm.smsubl(size, asRegister(result), asRegister(src1), asRegister(src2), asRegister(src3));
                     break;
                 default:
                     throw GraalError.shouldNotReachHere();

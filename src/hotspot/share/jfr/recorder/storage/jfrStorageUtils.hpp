@@ -31,7 +31,21 @@
 #include "jfr/utilities/jfrTypes.hpp"
 #include "runtime/thread.hpp"
 
-template <typename Operation, typename NextOperation>
+class CompositeOperationOr {
+ public:
+  static bool evaluate(bool value) {
+    return !value;
+  }
+};
+
+class CompositeOperationAnd {
+ public:
+  static bool evaluate(bool value) {
+    return value;
+  }
+};
+
+template <typename Operation, typename NextOperation, typename TruthFunction = CompositeOperationAnd>
 class CompositeOperation {
  private:
   Operation* _op;
@@ -41,11 +55,15 @@ class CompositeOperation {
     assert(_op != NULL, "invariant");
   }
   typedef typename Operation::Type Type;
-  bool process(Type* t = NULL) {
-    return _next == NULL ? _op->process(t) : _op->process(t) && _next->process(t);
+  bool process(Type* t) {
+    const bool op_result = _op->process(t);
+    return _next == NULL ? op_result : TruthFunction::evaluate(op_result) ? _next->process(t) : op_result;
   }
-  size_t processed() const {
-    return _next == NULL ? _op->processed() : _op->processed() + _next->processed();
+  size_t elements() const {
+    return _next == NULL ? _op->elements() : _op->elements() + _next->elements();
+  }
+  size_t size() const {
+    return _next == NULL ? _op->size() : _op->size() + _next->size();
   }
 };
 
@@ -53,43 +71,47 @@ template <typename T>
 class UnBufferedWriteToChunk {
  private:
   JfrChunkWriter& _writer;
-  size_t _processed;
+  size_t _elements;
+  size_t _size;
  public:
   typedef T Type;
-  UnBufferedWriteToChunk(JfrChunkWriter& writer) : _writer(writer), _processed(0) {}
+  UnBufferedWriteToChunk(JfrChunkWriter& writer) : _writer(writer), _elements(0), _size(0) {}
   bool write(Type* t, const u1* data, size_t size);
-  size_t processed() { return _processed; }
+  size_t elements() const { return _elements; }
+  size_t size() const { return _size; }
 };
 
 template <typename T>
 class DefaultDiscarder {
  private:
-  size_t _processed;
+  size_t _elements;
+  size_t _size;
  public:
   typedef T Type;
-  DefaultDiscarder() : _processed() {}
+  DefaultDiscarder() : _elements(0), _size(0) {}
   bool discard(Type* t, const u1* data, size_t size);
-  size_t processed() const { return _processed; }
+  size_t elements() const { return _elements; }
+  size_t size() const { return _size; }
 };
 
-template <typename Operation>
-class ConcurrentWriteOp {
- private:
-  Operation& _operation;
+template <typename T, bool negation>
+class Retired {
  public:
-  typedef typename Operation::Type Type;
-  ConcurrentWriteOp(Operation& operation) : _operation(operation) {}
-  bool process(Type* t);
-  size_t processed() const { return _operation.processed(); }
+  typedef T Type;
+  bool process(Type* t) {
+    assert(t != NULL, "invariant");
+    return negation ? !t->retired() : t->retired();
+  }
 };
 
-template <typename Operation>
-class ConcurrentWriteOpExcludeRetired : private ConcurrentWriteOp<Operation> {
+template <typename T, bool negation>
+class Excluded {
  public:
-  typedef typename Operation::Type Type;
-  ConcurrentWriteOpExcludeRetired(Operation& operation) : ConcurrentWriteOp<Operation>(operation) {}
-  bool process(Type* t);
-  size_t processed() const { return ConcurrentWriteOp<Operation>::processed(); }
+  typedef T Type;
+  bool process(Type* t) {
+    assert(t != NULL, "invariant");
+    return negation ? !t->excluded() : t->excluded();
+  }
 };
 
 template <typename Operation>
@@ -100,7 +122,44 @@ class MutexedWriteOp {
   typedef typename Operation::Type Type;
   MutexedWriteOp(Operation& operation) : _operation(operation) {}
   bool process(Type* t);
-  size_t processed() const { return _operation.processed(); }
+  size_t elements() const { return _operation.elements(); }
+  size_t size() const { return _operation.size(); }
+};
+
+template <typename Operation, typename Predicate>
+class PredicatedMutexedWriteOp : public MutexedWriteOp<Operation> {
+ private:
+  Predicate& _predicate;
+ public:
+  PredicatedMutexedWriteOp(Operation& operation, Predicate& predicate) :
+    MutexedWriteOp<Operation>(operation), _predicate(predicate) {}
+  bool process(typename Operation::Type* t) {
+    return _predicate.process(t) ? MutexedWriteOp<Operation>::process(t) : true;
+  }
+};
+
+template <typename Operation>
+class ConcurrentWriteOp {
+ private:
+  Operation& _operation;
+ public:
+  typedef typename Operation::Type Type;
+  ConcurrentWriteOp(Operation& operation) : _operation(operation) {}
+  bool process(Type* t);
+  size_t elements() const { return _operation.elements(); }
+  size_t size() const { return _operation.size(); }
+};
+
+template <typename Operation, typename Predicate>
+class PredicatedConcurrentWriteOp : public ConcurrentWriteOp<Operation> {
+ private:
+  Predicate& _predicate;
+ public:
+  PredicatedConcurrentWriteOp(Operation& operation, Predicate& predicate) :
+    ConcurrentWriteOp<Operation>(operation), _predicate(predicate) {}
+  bool process(typename Operation::Type* t) {
+    return _predicate.process(t) ? ConcurrentWriteOp<Operation>::process(t) : true;
+  }
 };
 
 template <typename Operation>
@@ -126,7 +185,8 @@ class DiscardOp {
   typedef typename Operation::Type Type;
   DiscardOp(jfr_operation_mode mode = concurrent) : _operation(), _mode(mode) {}
   bool process(Type* t);
-  size_t processed() const { return _operation.processed(); }
+  size_t elements() const { return _operation.elements(); }
+  size_t size() const { return _operation.size(); }
 };
 
 #endif // SHARE_JFR_RECORDER_STORAGE_JFRSTORAGEUTILS_HPP

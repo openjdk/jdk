@@ -26,6 +26,8 @@
 
 #include "memory/allocation.hpp"
 
+class ZPageAllocator;
+
 class ZVerify : public AllStatic {
 private:
   template <typename RootsIterator> static void roots();
@@ -43,6 +45,15 @@ public:
   static void before_zoperation();
   static void after_mark();
   static void after_weak_processing();
+};
+
+class ZVerifyViewsFlip {
+private:
+  const ZPageAllocator* const _allocator;
+
+public:
+  ZVerifyViewsFlip(const ZPageAllocator* allocator);
+  ~ZVerifyViewsFlip();
 };
 
 #endif // SHARE_GC_Z_ZVERIFY_HPP

@@ -7,7 +7,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 14782 $"/>
+		<version number="$Revision$"/>
 		<language type="kl"/>
 	</identity>
 	<localeDisplayNames>
@@ -233,7 +233,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="ME" draft="unconfirmed">Montenegro</territory>
 			<territory type="MF" draft="unconfirmed">Frankrigi Saint Martin</territory>
 			<territory type="MG" draft="unconfirmed">Madagaskar</territory>
-			<territory type="MK" draft="unconfirmed">Makedonia</territory>
 			<territory type="ML" draft="unconfirmed">Mali</territory>
 			<territory type="MM" draft="unconfirmed">Burma</territory>
 			<territory type="MO" draft="unconfirmed">Macao</territory>
@@ -352,9 +351,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</codePatterns>
 	</localeDisplayNames>
 	<characters>
-		<exemplarCharacters>[a á â ã b c d e é ê f g h i í î ĩ j k l m n o ô p q r s t u ú û ũ v w x y z æ ø å]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary">[ĸ]</exemplarCharacters>
-		<exemplarCharacters type="index" draft="unconfirmed">[A B C D E F G H I J K L M N O P Q R S T U V W X Y Z Æ Ø Å]</exemplarCharacters>
+		<exemplarCharacters>[a b c d e f g h i j k l m n o p q r s t u v w x y z æ ø å]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[á â ã é ê ẽ í î ĩ ô õ ĸ ú û ũ]</exemplarCharacters>
+		<exemplarCharacters type="index" draft="contributed">[A B C D E F G H I J K L M N O P Q R S T U V W X Y Z Æ Ø Å]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[, . % ‰ + − 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
 		<ellipsis type="final" draft="unconfirmed">{0}…</ellipsis>
 		<ellipsis type="initial" draft="unconfirmed">…{0}</ellipsis>
@@ -383,7 +382,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
-							<pattern draft="unconfirmed">MMM dd, y G</pattern>
+							<pattern draft="unconfirmed">dd MMM y G</pattern>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
@@ -428,8 +427,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="yM" draft="unconfirmed">y-MM</dateFormatItem>
 						<dateFormatItem id="yMd" draft="unconfirmed">y-MM-dd</dateFormatItem>
 						<dateFormatItem id="yMEd" draft="unconfirmed">E, y-MM-dd</dateFormatItem>
-						<dateFormatItem id="yMMM" draft="unconfirmed">MMM y</dateFormatItem>
-						<dateFormatItem id="yMMMd" draft="unconfirmed">MMM d, y</dateFormatItem>
+						<dateFormatItem id="yMMM" draft="unconfirmed">LLL y</dateFormatItem>
+						<dateFormatItem id="yMMMd" draft="unconfirmed">dd MMM y</dateFormatItem>
 						<dateFormatItem id="yMMMEd" draft="unconfirmed">E, MMM d, y</dateFormatItem>
 						<dateFormatItem id="yQQQ" draft="unconfirmed">y QQQQ</dateFormatItem>
 						<dateFormatItem id="yQQQQ" draft="unconfirmed">y QQQQ</dateFormatItem>
@@ -536,14 +535,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<monthContext type="format">
 						<monthWidth type="abbreviated">
 							<month type="1">jan</month>
-							<month type="2">feb</month>
+							<month type="2">febr</month>
 							<month type="3">mar</month>
 							<month type="4">apr</month>
 							<month type="5">maj</month>
 							<month type="6">jun</month>
 							<month type="7">jul</month>
 							<month type="8">aug</month>
-							<month type="9">sep</month>
+							<month type="9">sept</month>
 							<month type="10">okt</month>
 							<month type="11">nov</month>
 							<month type="12">dec</month>
@@ -563,31 +562,31 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="12" draft="unconfirmed">D</month>
 						</monthWidth>
 						<monthWidth type="wide">
-							<month type="1">januari</month>
-							<month type="2">februari</month>
-							<month type="3">martsi</month>
-							<month type="4">aprili</month>
-							<month type="5">maji</month>
-							<month type="6">juni</month>
-							<month type="7">juli</month>
-							<month type="8">augustusi</month>
-							<month type="9">septemberi</month>
-							<month type="10">oktoberi</month>
-							<month type="11">novemberi</month>
-							<month type="12">decemberi</month>
+							<month type="1">januaarip</month>
+							<month type="2">februaarip</month>
+							<month type="3">marsip</month>
+							<month type="4">apriilip</month>
+							<month type="5">maajip</month>
+							<month type="6">juunip</month>
+							<month type="7">juulip</month>
+							<month type="8">aggustip</month>
+							<month type="9">septembarip</month>
+							<month type="10">oktobarip</month>
+							<month type="11">novembarip</month>
+							<month type="12">decembarip</month>
 						</monthWidth>
 					</monthContext>
 					<monthContext type="stand-alone">
 						<monthWidth type="abbreviated">
 							<month type="1">jan</month>
-							<month type="2">feb</month>
+							<month type="2">febr</month>
 							<month type="3">mar</month>
 							<month type="4">apr</month>
 							<month type="5">maj</month>
 							<month type="6">jun</month>
 							<month type="7">jul</month>
 							<month type="8">aug</month>
-							<month type="9">sep</month>
+							<month type="9">sept</month>
 							<month type="10">okt</month>
 							<month type="11">nov</month>
 							<month type="12">dec</month>
@@ -607,18 +606,18 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="12" draft="unconfirmed">D</month>
 						</monthWidth>
 						<monthWidth type="wide">
-							<month type="1">januari</month>
-							<month type="2">februari</month>
-							<month type="3">martsi</month>
-							<month type="4">aprili</month>
-							<month type="5">maji</month>
-							<month type="6">juni</month>
-							<month type="7">juli</month>
-							<month type="8">augustusi</month>
-							<month type="9">septemberi</month>
-							<month type="10">oktoberi</month>
-							<month type="11">novemberi</month>
-							<month type="12">decemberi</month>
+							<month type="1">januaari</month>
+							<month type="2">februaari</month>
+							<month type="3">marsi</month>
+							<month type="4">apriili</month>
+							<month type="5">maaji</month>
+							<month type="6">juuni</month>
+							<month type="7">juuli</month>
+							<month type="8">aggusti</month>
+							<month type="9">septembari</month>
+							<month type="10">oktobari</month>
+							<month type="11">novembari</month>
+							<month type="12">decembari</month>
 						</monthWidth>
 					</monthContext>
 				</months>
@@ -769,7 +768,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
-							<pattern draft="unconfirmed">MMM dd, y</pattern>
+							<pattern draft="unconfirmed">dd MMM y</pattern>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
@@ -836,9 +835,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="yM" draft="unconfirmed">y-MM</dateFormatItem>
 						<dateFormatItem id="yMd" draft="unconfirmed">y-MM-dd</dateFormatItem>
 						<dateFormatItem id="yMEd" draft="unconfirmed">E, y-MM-dd</dateFormatItem>
-						<dateFormatItem id="yMMM" draft="unconfirmed">MMM y</dateFormatItem>
-						<dateFormatItem id="yMMMd" draft="unconfirmed">MMM d, y</dateFormatItem>
-						<dateFormatItem id="yMMMEd" draft="unconfirmed">E, MMM d, y</dateFormatItem>
+						<dateFormatItem id="yMMM" draft="unconfirmed">LLL y</dateFormatItem>
+						<dateFormatItem id="yMMMd" draft="unconfirmed">dd MMM y</dateFormatItem>
+						<dateFormatItem id="yMMMEd" draft="unconfirmed">E, dd MMM y</dateFormatItem>
 						<dateFormatItem id="yQQQ" draft="unconfirmed">y QQQQ</dateFormatItem>
 						<dateFormatItem id="yQQQQ" draft="unconfirmed">y QQQQ</dateFormatItem>
 					</availableFormats>
@@ -1561,11 +1560,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one" draft="unconfirmed">{0} hestekraft</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0} hestekrafter</unitPattern>
 			</unit>
-			<unit type="pressure-hectopascal">
-				<displayName draft="provisional">hektopascali</displayName>
-				<unitPattern count="one" draft="unconfirmed">{0} hektopascali</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} hektopascali</unitPattern>
-			</unit>
 			<unit type="pressure-inch-hg">
 				<displayName draft="provisional">tommer kviksølv</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0} tomme kviksølv</unitPattern>
@@ -1575,6 +1569,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName draft="provisional">millibari</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0} millibari</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0} millibari</unitPattern>
+			</unit>
+			<unit type="pressure-hectopascal">
+				<displayName draft="provisional">hektopascali</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0} hektopascali</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} hektopascali</unitPattern>
 			</unit>
 			<unit type="speed-kilometer-per-hour">
 				<displayName draft="provisional">kilometeri per nalunaaquttap-akunnera</displayName>
@@ -1954,11 +1953,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one" draft="unconfirmed">{0} hk</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0} hk</unitPattern>
 			</unit>
-			<unit type="pressure-hectopascal">
-				<displayName draft="provisional">hektopascali</displayName>
-				<unitPattern count="one" draft="unconfirmed">{0} hPa</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} hPa</unitPattern>
-			</unit>
 			<unit type="pressure-inch-hg">
 				<displayName draft="provisional">tommer kviksølv</displayName>
 				<unitPattern count="one">{0} inHg</unitPattern>
@@ -1968,6 +1962,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName draft="provisional">millibari</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0} mbar</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0} mbar</unitPattern>
+			</unit>
+			<unit type="pressure-hectopascal">
+				<displayName draft="provisional">hektopascali</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0} hPa</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} hPa</unitPattern>
 			</unit>
 			<unit type="speed-kilometer-per-hour">
 				<displayName draft="provisional">kilometeri per nalunaaquttap-akunnera</displayName>
@@ -2309,10 +2308,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one" draft="unconfirmed">{0}hk</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}hk</unitPattern>
 			</unit>
-			<unit type="pressure-hectopascal">
-				<unitPattern count="one" draft="unconfirmed">{0}hPa</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0}hPa</unitPattern>
-			</unit>
 			<unit type="pressure-inch-hg">
 				<unitPattern count="one">{0} inHg</unitPattern>
 				<unitPattern count="other">{0} inHg</unitPattern>
@@ -2320,6 +2315,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="pressure-millibar">
 				<unitPattern count="one" draft="unconfirmed">{0}mbar</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}mbar</unitPattern>
+			</unit>
+			<unit type="pressure-hectopascal">
+				<unitPattern count="one" draft="unconfirmed">{0}hPa</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0}hPa</unitPattern>
 			</unit>
 			<unit type="speed-kilometer-per-hour">
 				<unitPattern count="one" draft="unconfirmed">{0}km/h</unitPattern>

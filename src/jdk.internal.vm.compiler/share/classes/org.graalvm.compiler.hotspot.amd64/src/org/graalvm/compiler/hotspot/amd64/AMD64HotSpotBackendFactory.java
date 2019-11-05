@@ -158,6 +158,7 @@ public class AMD64HotSpotBackendFactory extends HotSpotBackendFactory {
             providers = new HotSpotProviders(metaAccess, codeCache, constantReflection, constantFieldProvider, foreignCalls, lowerer, replacements, suites, registers,
                             snippetReflection, wordTypes, plugins, gc);
             replacements.setProviders(providers);
+            replacements.maybeInitializeEncoder(options);
         }
         try (InitTimer rt = timer("instantiate backend")) {
             return createBackend(config, graalRuntime, providers);
@@ -185,8 +186,9 @@ public class AMD64HotSpotBackendFactory extends HotSpotBackendFactory {
                         snippetReflection,
                         foreignCalls,
                         replacements,
-                        options);
-        AMD64GraphBuilderPlugins.register(plugins, replacements.getDefaultReplacementBytecodeProvider(), (AMD64) target.arch, false, JavaVersionUtil.JAVA_SPEC >= 9, config.useFMAIntrinsics);
+                        options,
+                        target);
+        AMD64GraphBuilderPlugins.register(plugins, replacements, (AMD64) target.arch, false, JavaVersionUtil.JAVA_SPEC >= 9, config.useFMAIntrinsics);
         return plugins;
     }
 

@@ -37,11 +37,6 @@ import nsk.jvmti.scenarios.bcinstr.BI04.bi04t002a;
  */
 public class Object {
 
-    private static native void registerNatives();
-    static {
-        registerNatives();
-    }
-
     /**
      * Returns the runtime class of an object. That <tt>Class</tt>
      * object is the object that is locked by <tt>static synchronized</tt>

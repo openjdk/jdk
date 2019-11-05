@@ -87,7 +87,7 @@ public class RedefineIntrinsicTest extends ReplacementsTest {
     @Override
     protected void registerInvocationPlugins(InvocationPlugins invocationPlugins) {
         BytecodeProvider replacementBytecodeProvider = getSystemClassLoaderBytecodeProvider();
-        Registration r = new Registration(invocationPlugins, Original.class, replacementBytecodeProvider);
+        Registration r = new Registration(invocationPlugins, Original.class, getReplacements(), replacementBytecodeProvider);
         r.registerMethodSubstitution(Intrinsic.class, "getValue");
         super.registerInvocationPlugins(invocationPlugins);
     }

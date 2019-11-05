@@ -9,7 +9,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 14982 $"/>
+		<version number="$Revision$"/>
 		<language type="ky"/>
 	</identity>
 	<localeDisplayNames>
@@ -66,6 +66,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="bug">бугийче</language>
 			<language type="byn">блинче</language>
 			<language type="ca">каталонча</language>
+			<language type="ccp" draft="contributed">Чакма</language>
 			<language type="ce">чеченче</language>
 			<language type="ceb">себуанча</language>
 			<language type="cgg">чигача</language>
@@ -102,9 +103,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="eka">экажукча</language>
 			<language type="el">грекче</language>
 			<language type="en">англисче</language>
-			<language type="en_GB" alt="short">англисче (УБ)</language>
 			<language type="en_US">англисче (Америка Кошмо Штаттары)</language>
-			<language type="en_US" alt="short">англисче (АКШ)</language>
 			<language type="eo">эсперанто</language>
 			<language type="es">испанча</language>
 			<language type="es_ES">испанча (Европа)</language>
@@ -299,6 +298,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="prg">пруссча</language>
 			<language type="ps">пуштуча</language>
 			<language type="pt">португалча</language>
+			<language type="pt_BR" draft="contributed">Бразилиялык Португал тили</language>
 			<language type="pt_PT">португалча (Европа)</language>
 			<language type="qu">кечуача</language>
 			<language type="quc">кичече</language>
@@ -409,8 +409,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="yi">идишче</language>
 			<language type="yo">йорубача</language>
 			<language type="yue">кантончо</language>
+			<language type="yue" alt="menu" draft="contributed">Кытайча, Кантондук</language>
 			<language type="zgh">марокко тамазигт адабий тилинде</language>
 			<language type="zh">кытайча</language>
+			<language type="zh" alt="menu" draft="contributed">Кытайча,Мандарин</language>
 			<language type="zh_Hans">кытайча (жөнөкөйлөштүрүлгөн)</language>
 			<language type="zh_Hant">кытайча (салттуу)</language>
 			<language type="zu">зулуча</language>
@@ -728,7 +730,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="SX">Синт-Мартен</territory>
 			<territory type="SY">Сирия</territory>
 			<territory type="SZ">Свазиленд</territory>
-			<territory type="SZ" alt="variant">SZ</territory>
 			<territory type="TA">Тристан-да-Кунья</territory>
 			<territory type="TC">Түркс жана Кайкос аралдары</territory>
 			<territory type="TD">Чад</territory>
@@ -764,6 +765,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="VU">Вануату</territory>
 			<territory type="WF">Уоллис жана Футуна</territory>
 			<territory type="WS">Самоа</territory>
+			<territory type="XA" draft="contributed">Жасалма- Акцент</territory>
+			<territory type="XB" draft="contributed">Жасалма - эки тараптуу</territory>
 			<territory type="XK">Косово</territory>
 			<territory type="YE">Йемен</territory>
 			<territory type="YT">Майотта</territory>
@@ -863,8 +866,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<exemplarCharacters>[а б г д е ё ж з и й к л м н ң о ө п р с т у ү х ч ш ъ ы э ю я]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[в ф ц щ ь]</exemplarCharacters>
 		<exemplarCharacters type="index">[А Б В Г Д Е Ё Ж З И Й К Л М Н Ң О Ө П Р С Т У Ү Ф Х Ц Ч Ш Щ Ъ Ы Ь Э Ю Я]</exemplarCharacters>
-		<exemplarCharacters type="numbers">[  \- , % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
-		<exemplarCharacters type="punctuation">[\- ‐ – — , ; \: ! ? . … ' ‘ ‚ &quot; “ „ « » ( ) \[ \] \{ \} § @ * / \&amp; #]</exemplarCharacters>
+		<exemplarCharacters type="numbers">[  \- ‑ , % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‐ ‑ – — , ; \: ! ? . … ' ‘ ‚ &quot; “ „ « » ( ) \[ \] \{ \} § @ * / \&amp; #]</exemplarCharacters>
 		<ellipsis type="final">{0}…</ellipsis>
 		<ellipsis type="initial">…{0}</ellipsis>
 		<ellipsis type="medial">{0}…{1}</ellipsis>
@@ -878,13 +881,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		</parseLenients>
 		<parseLenients scope="general" level="lenient">
 			<parseLenient sample="." draft="contributed">[.․。︒﹒．｡]</parseLenient>
-			<parseLenient sample="’" draft="contributed">['ʼ՚᾽᾿’＇]</parseLenient>
-			<parseLenient sample="%" draft="contributed">[%٪﹪％]</parseLenient>
-			<parseLenient sample="‰" draft="contributed">[؉‰]</parseLenient>
 			<parseLenient sample="$" draft="contributed">[\$﹩＄$]</parseLenient>
 			<parseLenient sample="£" draft="contributed">[£₤]</parseLenient>
-			<parseLenient sample="¥" draft="contributed">[¥￥]</parseLenient>
-			<parseLenient sample="₩" draft="contributed">[₩￦]</parseLenient>
 			<parseLenient sample="₹" draft="contributed">[₨₹{Rp}{Rs}]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="lenient">
@@ -1376,10 +1374,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<era type="0">биздин заманга чейин</era>
 						<era type="0" alt="variant">б.з.ч.</era>
 						<era type="1">биздин заман</era>
+						<era type="1" alt="variant">б.з.</era>
 					</eraNames>
 					<eraAbbr>
 						<era type="0">б.з.ч.</era>
+						<era type="0" alt="variant">б.з.ч.</era>
 						<era type="1">б.з.</era>
+						<era type="1" alt="variant">б.з.</era>
 					</eraAbbr>
 					<eraNarrow>
 						<era type="0" draft="unconfirmed">б.з.ч.</era>
@@ -2954,6 +2955,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Asia/Aqtobe">
 				<exemplarCity>Актобе</exemplarCity>
+			</zone>
+			<zone type="Asia/Qostanay">
+				<exemplarCity draft="contributed">Костанай</exemplarCity>
 			</zone>
 			<zone type="Asia/Qyzylorda">
 				<exemplarCity>Кызылорда</exemplarCity>
@@ -5879,6 +5883,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} кылым</unitPattern>
 				<unitPattern count="other">{0} кылым</unitPattern>
 			</unit>
+			<unit type="duration-decade">
+				<displayName draft="contributed">декадалар</displayName>
+				<unitPattern count="one" draft="contributed">{0} он жылдык</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} он жылдык</unitPattern>
+			</unit>
 			<unit type="duration-year">
 				<displayName>жыл</displayName>
 				<unitPattern count="one">{0} жыл</unitPattern>
@@ -5995,6 +6004,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Британдык жылуулук бирдиктери</displayName>
 				<unitPattern count="one">{0} Британдык жылуулук бирдиги</unitPattern>
 				<unitPattern count="other">{0} Британдык жылуулук бирдиги</unitPattern>
+			</unit>
+			<unit type="energy-therm-us">
+				<displayName draft="contributed">терм АКШ</displayName>
+				<unitPattern count="one" draft="contributed">{0} терм АКШ</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} терм АКШ</unitPattern>
 			</unit>
 			<unit type="force-pound-force">
 				<displayName>күч фунттары</displayName>
@@ -6235,11 +6249,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} аттын күчү</unitPattern>
 				<unitPattern count="other">{0} аттын күчү</unitPattern>
 			</unit>
-			<unit type="pressure-hectopascal">
-				<displayName>гектопаскаль</displayName>
-				<unitPattern count="one">{0} гектопаскаль</unitPattern>
-				<unitPattern count="other">{0} гектопаскаль</unitPattern>
-			</unit>
 			<unit type="pressure-millimeter-of-mercury">
 				<displayName>миллиметр сымап мамычасы</displayName>
 				<unitPattern count="one">{0} миллиметр сымап мамычасы</unitPattern>
@@ -6264,6 +6273,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>атмосфера</displayName>
 				<unitPattern count="one">{0} атмосфера</unitPattern>
 				<unitPattern count="other">{0} атм</unitPattern>
+			</unit>
+			<unit type="pressure-hectopascal">
+				<displayName>гектопаскаль</displayName>
+				<unitPattern count="one">{0} гектопаскаль</unitPattern>
+				<unitPattern count="other">{0} гектопаскаль</unitPattern>
 			</unit>
 			<unit type="pressure-kilopascal">
 				<displayName>kPa</displayName>
@@ -6682,6 +6696,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} к.</unitPattern>
 				<unitPattern count="other">{0} к.</unitPattern>
 			</unit>
+			<unit type="duration-decade">
+				<displayName draft="contributed">он жылдык</displayName>
+				<unitPattern count="one" draft="contributed">{0} он жылдык</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} он жылдык</unitPattern>
+			</unit>
 			<unit type="duration-year">
 				<displayName>жыл</displayName>
 				<unitPattern count="one">{0} ж.</unitPattern>
@@ -6798,6 +6817,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Btu</displayName>
 				<unitPattern count="one">{0} Btu</unitPattern>
 				<unitPattern count="other">{0} Btu</unitPattern>
+			</unit>
+			<unit type="energy-therm-us">
+				<displayName draft="contributed">Терм АКШ</displayName>
+				<unitPattern count="one" draft="contributed">{0} терм АКШ</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} терм АКШ</unitPattern>
 			</unit>
 			<unit type="force-pound-force">
 				<displayName>күч-фунттары</displayName>
@@ -7038,11 +7062,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} а.к.</unitPattern>
 				<unitPattern count="other">{0} а.к.</unitPattern>
 			</unit>
-			<unit type="pressure-hectopascal">
-				<displayName>гПа</displayName>
-				<unitPattern count="one">{0} гПа</unitPattern>
-				<unitPattern count="other">{0} гПа</unitPattern>
-			</unit>
 			<unit type="pressure-millimeter-of-mercury">
 				<displayName>мм.с.м.</displayName>
 				<unitPattern count="one">{0} мм.с. м.</unitPattern>
@@ -7067,6 +7086,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>атм</displayName>
 				<unitPattern count="one">{0} атм</unitPattern>
 				<unitPattern count="other">{0} атмс</unitPattern>
+			</unit>
+			<unit type="pressure-hectopascal">
+				<displayName>гПа</displayName>
+				<unitPattern count="one">{0} гПа</unitPattern>
+				<unitPattern count="other">{0} гПа</unitPattern>
 			</unit>
 			<unit type="pressure-kilopascal">
 				<displayName>kPa</displayName>
@@ -7439,10 +7463,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ат</unitPattern>
 				<unitPattern count="other">{0} ат</unitPattern>
 			</unit>
-			<unit type="pressure-hectopascal">
-				<unitPattern count="one">{0} гПа</unitPattern>
-				<unitPattern count="other">{0} гПа</unitPattern>
-			</unit>
 			<unit type="pressure-inch-hg">
 				<unitPattern count="one">{0} inHg</unitPattern>
 				<unitPattern count="other">{0} inHg</unitPattern>
@@ -7450,6 +7470,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="pressure-millibar">
 				<unitPattern count="one">{0} мб</unitPattern>
 				<unitPattern count="other">{0} мб</unitPattern>
+			</unit>
+			<unit type="pressure-hectopascal">
+				<unitPattern count="one">{0} гПа</unitPattern>
+				<unitPattern count="other">{0} гПа</unitPattern>
 			</unit>
 			<unit type="speed-kilometer-per-hour">
 				<displayName>км/саат</displayName>
@@ -7516,12 +7540,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<listPatternPart type="middle">{0}, {1}</listPatternPart>
 			<listPatternPart type="end">{0}, же {1}</listPatternPart>
 			<listPatternPart type="2">{0} же {1}</listPatternPart>
-		</listPattern>
-		<listPattern type="standard-narrow">
-			<listPatternPart type="start">{0}, {1}</listPatternPart>
-			<listPatternPart type="middle">{0}, {1}</listPatternPart>
-			<listPatternPart type="end">{0} жана {1}</listPatternPart>
-			<listPatternPart type="2">{0} жана {1}</listPatternPart>
 		</listPattern>
 		<listPattern type="standard-short">
 			<listPatternPart type="start">{0}, {1}</listPatternPart>

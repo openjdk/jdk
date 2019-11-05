@@ -109,7 +109,7 @@ public final class InvokeNode extends AbstractMemoryCheckpoint implements Invoke
         this.bci = invoke.bci;
         this.polymorphic = invoke.polymorphic;
         this.useForInlining = invoke.useForInlining;
-        this.identity = invoke.getLocationIdentity();
+        this.identity = invoke.getKilledLocationIdentity();
     }
 
     @Override
@@ -181,7 +181,7 @@ public final class InvokeNode extends AbstractMemoryCheckpoint implements Invoke
     }
 
     @Override
-    public LocationIdentity getLocationIdentity() {
+    public LocationIdentity getKilledLocationIdentity() {
         return identity;
     }
 

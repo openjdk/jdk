@@ -47,6 +47,7 @@ import com.sun.tools.javac.resources.CompilerProperties.Errors;
 import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticType;
 import com.sun.tools.javac.util.Log.DeferredDiagnosticHandler;
+import com.sun.tools.javac.util.Log.DiagnosticHandler;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -57,13 +58,14 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.WeakHashMap;
-import java.util.function.Function;
+import java.util.function.Supplier;
 
 import com.sun.source.tree.MemberReferenceTree;
 import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.tree.JCTree.JCMemberReference.OverloadKind;
 
 import static com.sun.tools.javac.code.TypeTag.*;
+import com.sun.tools.javac.comp.Annotate.Queues;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
 
 /**
@@ -80,6 +82,7 @@ import static com.sun.tools.javac.tree.JCTree.Tag.*;
 public class DeferredAttr extends JCTree.Visitor {
     protected static final Context.Key<DeferredAttr> deferredAttrKey = new Context.Key<>();
 
+    final Annotate annotate;
     final Attr attr;
     final ArgumentAttr argumentAttr;
     final Check chk;
@@ -107,6 +110,7 @@ public class DeferredAttr extends JCTree.Visitor {
 
     protected DeferredAttr(Context context) {
         context.put(deferredAttrKey, this);
+        annotate = Annotate.instance(context);
         attr = Attr.instance(context);
         argumentAttr = ArgumentAttr.instance(context);
         chk = Check.instance(context);
@@ -483,31 +487,44 @@ public class DeferredAttr extends JCTree.Visitor {
      */
     JCTree attribSpeculative(JCTree tree, Env<AttrContext> env, ResultInfo resultInfo) {
         return attribSpeculative(tree, env, resultInfo, treeCopier,
-                newTree->new DeferredDiagnosticHandler(log), AttributionMode.SPECULATIVE, null);
+                null, AttributionMode.SPECULATIVE, null);
     }
 
     JCTree attribSpeculative(JCTree tree, Env<AttrContext> env, ResultInfo resultInfo, LocalCacheContext localCache) {
         return attribSpeculative(tree, env, resultInfo, treeCopier,
-                newTree->new DeferredDiagnosticHandler(log), AttributionMode.SPECULATIVE, localCache);
+                null, AttributionMode.SPECULATIVE, localCache);
     }
 
     <Z> JCTree attribSpeculative(JCTree tree, Env<AttrContext> env, ResultInfo resultInfo, TreeCopier<Z> deferredCopier,
-                                 Function<JCTree, DeferredDiagnosticHandler> diagHandlerCreator, AttributionMode attributionMode,
+                                 Supplier<DiagnosticHandler> diagHandlerCreator, AttributionMode attributionMode,
                                  LocalCacheContext localCache) {
         final JCTree newTree = deferredCopier.copy(tree);
-        Env<AttrContext> speculativeEnv = env.dup(newTree, env.info.dup(env.info.scope.dupUnshared(env.info.scope.owner)));
+        return attribSpeculative(newTree, env, resultInfo, diagHandlerCreator, attributionMode, localCache);
+    }
+
+    /**
+     * Attribute the given tree, mostly reverting side-effects applied to shared
+     * compiler state. Exceptions include the ArgumentAttr.argumentTypeCache,
+     * changes to which may be preserved if localCache is null.
+     */
+    <Z> JCTree attribSpeculative(JCTree tree, Env<AttrContext> env, ResultInfo resultInfo,
+                              Supplier<DiagnosticHandler> diagHandlerCreator, AttributionMode attributionMode,
+                              LocalCacheContext localCache) {
+        Env<AttrContext> speculativeEnv = env.dup(tree, env.info.dup(env.info.scope.dupUnshared(env.info.scope.owner)));
         speculativeEnv.info.attributionMode = attributionMode;
-        Log.DeferredDiagnosticHandler deferredDiagnosticHandler = diagHandlerCreator.apply(newTree);
+        Log.DiagnosticHandler deferredDiagnosticHandler = diagHandlerCreator != null ? diagHandlerCreator.get() : new DeferredDiagnosticHandler(log);
         DeferredCompletionFailureHandler.Handler prevCFHandler = dcfh.setHandler(dcfh.speculativeCodeHandler);
+        Queues prevQueues = annotate.setQueues(new Queues());
         int nwarnings = log.nwarnings;
         log.nwarnings = 0;
         try {
-            attr.attribTree(newTree, speculativeEnv, resultInfo);
-            return newTree;
+            attr.attribTree(tree, speculativeEnv, resultInfo);
+            return tree;
         } finally {
+            annotate.setQueues(prevQueues);
             dcfh.setHandler(prevCFHandler);
             log.nwarnings += nwarnings;
-            enter.unenter(env.toplevel, newTree);
+            enter.unenter(env.toplevel, tree);
             log.popDiagnosticHandler(deferredDiagnosticHandler);
             if (localCache != null) {
                 localCache.leave();

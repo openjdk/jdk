@@ -26,14 +26,13 @@
 #include "jfr/recorder/storage/jfrStorageControl.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/mutexLocker.hpp"
-#include "runtime/orderAccess.hpp"
 
 // returns the updated value
 static jlong atomic_add(size_t value, size_t volatile* const dest) {
   size_t compare_value;
   size_t exchange_value;
   do {
-    compare_value = OrderAccess::load_acquire(dest);
+    compare_value = *dest;
     exchange_value = compare_value + value;
   } while (Atomic::cmpxchg(exchange_value, dest, compare_value) != compare_value);
   return exchange_value;
@@ -43,7 +42,7 @@ static jlong atomic_dec(size_t volatile* const dest) {
   size_t compare_value;
   size_t exchange_value;
   do {
-    compare_value = OrderAccess::load_acquire(dest);
+    compare_value = *dest;
     assert(compare_value >= 1, "invariant");
     exchange_value = compare_value - 1;
   } while (Atomic::cmpxchg(exchange_value, dest, compare_value) != compare_value);
@@ -102,7 +101,7 @@ bool JfrStorageControl::should_discard() const {
 // concurrent with accuracy requirement
 
 size_t JfrStorageControl::global_lease_count() const {
-  return OrderAccess::load_acquire(&_global_lease_count);
+  return Atomic::load(&_global_lease_count);
 }
 
 size_t JfrStorageControl::increment_leased() {

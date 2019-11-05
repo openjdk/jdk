@@ -173,6 +173,8 @@ class oopDesc {
 
   jboolean bool_field(int offset) const;
   void bool_field_put(int offset, jboolean contents);
+  jboolean bool_field_volatile(int offset) const;
+  void bool_field_put_volatile(int offset, jboolean contents);
 
   jint int_field(int offset) const;
   jint int_field_raw(int offset) const;

@@ -308,10 +308,13 @@ void OopMapSet::all_do(const frame *fr, const RegisterMap *reg_map,
 
   // handle derived pointers first (otherwise base pointer may be
   // changed before derived pointer offset has been collected)
-  OopMapValue omv;
   {
-    OopMapStream oms(map);
-    if (!oms.is_done()) {
+    for (OopMapStream oms(map); !oms.is_done(); oms.next()) {
+      OopMapValue omv = oms.current();
+      if (omv.type() != OopMapValue::derived_oop_value) {
+        continue;
+      }
+
 #ifndef TIERED
       COMPILER1_PRESENT(ShouldNotReachHere();)
 #if INCLUDE_JVMCI
@@ -320,31 +323,25 @@ void OopMapSet::all_do(const frame *fr, const RegisterMap *reg_map,
       }
 #endif
 #endif // !TIERED
-      do {
-        omv = oms.current();
-        if (omv.type() == OopMapValue::derived_oop_value) {
-          oop* loc = fr->oopmapreg_to_location(omv.reg(),reg_map);
-          guarantee(loc != NULL, "missing saved register");
-          oop *derived_loc = loc;
-          oop *base_loc    = fr->oopmapreg_to_location(omv.content_reg(), reg_map);
-          // Ignore NULL oops and decoded NULL narrow oops which
-          // equal to CompressedOops::base() when a narrow oop
-          // implicit null check is used in compiled code.
-          // The narrow_oop_base could be NULL or be the address
-          // of the page below heap depending on compressed oops mode.
-          if (base_loc != NULL && *base_loc != NULL && !CompressedOops::is_base(*base_loc)) {
-            derived_oop_fn(base_loc, derived_loc);
-          }
-        }
-        oms.next();
-      }  while (!oms.is_done());
+      oop* loc = fr->oopmapreg_to_location(omv.reg(),reg_map);
+      guarantee(loc != NULL, "missing saved register");
+      oop *derived_loc = loc;
+      oop *base_loc    = fr->oopmapreg_to_location(omv.content_reg(), reg_map);
+      // Ignore NULL oops and decoded NULL narrow oops which
+      // equal to CompressedOops::base() when a narrow oop
+      // implicit null check is used in compiled code.
+      // The narrow_oop_base could be NULL or be the address
+      // of the page below heap depending on compressed oops mode.
+      if (base_loc != NULL && *base_loc != NULL && !CompressedOops::is_base(*base_loc)) {
+        derived_oop_fn(base_loc, derived_loc);
+      }
     }
   }
 
   {
     // We want coop and oop oop_types
     for (OopMapStream oms(map); !oms.is_done(); oms.next()) {
-      omv = oms.current();
+      OopMapValue omv = oms.current();
       oop* loc = fr->oopmapreg_to_location(omv.reg(),reg_map);
       // It should be an error if no location can be found for a
       // register mentioned as contained an oop of some kind.  Maybe

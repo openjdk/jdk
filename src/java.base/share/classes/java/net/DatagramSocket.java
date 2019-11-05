@@ -606,7 +606,6 @@ class DatagramSocket implements java.io.Closeable {
      * @see #bind(SocketAddress)
      * @since 1.4
      */
-
     public SocketAddress getLocalSocketAddress() {
         if (isClosed())
             return null;
@@ -853,7 +852,7 @@ class DatagramSocket implements java.io.Closeable {
     public InetAddress getLocalAddress() {
         if (isClosed())
             return null;
-        InetAddress in = null;
+        InetAddress in;
         try {
             in = (InetAddress) getImpl().getOption(SocketOptions.SO_BINDADDR);
             if (in.isAnyLocalAddress()) {
@@ -874,8 +873,8 @@ class DatagramSocket implements java.io.Closeable {
      * is bound.
      *
      * @return  the port number on the local host to which this socket is bound,
-                {@code -1} if the socket is closed, or
-                {@code 0} if it is not bound yet.
+     *          {@code -1} if the socket is closed, or
+     *          {@code 0} if it is not bound yet.
      */
     public int getLocalPort() {
         if (isClosed())
@@ -887,15 +886,16 @@ class DatagramSocket implements java.io.Closeable {
         }
     }
 
-    /** Enable/disable SO_TIMEOUT with the specified timeout, in
-     *  milliseconds. With this option set to a non-zero timeout,
-     *  a call to receive() for this DatagramSocket
-     *  will block for only this amount of time.  If the timeout expires,
-     *  a <B>java.net.SocketTimeoutException</B> is raised, though the
-     *  DatagramSocket is still valid.  The option <B>must</B> be enabled
-     *  prior to entering the blocking operation to have effect.  The
-     *  timeout must be {@code > 0}.
-     *  A timeout of zero is interpreted as an infinite timeout.
+    /**
+     * Enable/disable SO_TIMEOUT with the specified timeout, in
+     * milliseconds. With this option set to a positive timeout value,
+     * a call to receive() for this DatagramSocket
+     * will block for only this amount of time.  If the timeout expires,
+     * a <B>java.net.SocketTimeoutException</B> is raised, though the
+     * DatagramSocket is still valid. A timeout of zero is interpreted
+     * as an infinite timeout.
+     * The option <B>must</B> be enabled prior to entering the blocking
+     * operation to have effect.
      *
      * @param timeout the specified timeout in milliseconds.
      * @throws SocketException if there is an error in the underlying protocol, such as an UDP error.
@@ -963,8 +963,7 @@ class DatagramSocket implements java.io.Closeable {
      * negative.
      * @see #getSendBufferSize()
      */
-    public synchronized void setSendBufferSize(int size)
-    throws SocketException{
+    public synchronized void setSendBufferSize(int size) throws SocketException {
         if (!(size > 0)) {
             throw new IllegalArgumentException("negative send size");
         }
@@ -1021,8 +1020,7 @@ class DatagramSocket implements java.io.Closeable {
      * negative.
      * @see #getReceiveBufferSize()
      */
-    public synchronized void setReceiveBufferSize(int size)
-    throws SocketException{
+    public synchronized void setReceiveBufferSize(int size) throws SocketException {
         if (size <= 0) {
             throw new IllegalArgumentException("invalid receive size");
         }
@@ -1039,8 +1037,7 @@ class DatagramSocket implements java.io.Closeable {
      * @throws    SocketException if there is an error in the underlying protocol, such as an UDP error.
      * @see #setReceiveBufferSize(int)
      */
-    public synchronized int getReceiveBufferSize()
-    throws SocketException{
+    public synchronized int getReceiveBufferSize() throws SocketException {
         if (isClosed())
             throw new SocketException("Socket is closed");
         int result = 0;

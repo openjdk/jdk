@@ -7,7 +7,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 14782 $"/>
+		<version number="$Revision$"/>
 		<language type="fy"/>
 	</identity>
 	<localeDisplayNames>
@@ -881,8 +881,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="MF" draft="contributed">Saint-Martin</territory>
 			<territory type="MG" draft="contributed">Madeiaskar</territory>
 			<territory type="MH" draft="contributed">Marshalleilannen</territory>
-			<territory type="MK" draft="contributed">Macedonië</territory>
-			<territory type="MK" alt="variant" draft="contributed">Macedonië (FYROM)</territory>
 			<territory type="ML" draft="contributed">Mali</territory>
 			<territory type="MM" draft="contributed">Myanmar (Birma)</territory>
 			<territory type="MN" draft="contributed">Mongolië</territory>
@@ -1206,8 +1204,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<exemplarCharacters>[a á à â ä b c d e é è ê ë f g h i í ï {ij} {íj\u0301} j k l m n o ó ô ö p r s t u ú û ü v w y ý z]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[æ ò ù]</exemplarCharacters>
 		<exemplarCharacters type="index">[A B C D E F G H I J K L M N O P R S T U V W X Z]</exemplarCharacters>
-		<exemplarCharacters type="numbers">[\- , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
-		<exemplarCharacters type="punctuation">[\- ‐ – — , ; \: ! ? . … ' ‘ ’ &quot; “ ” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
+		<exemplarCharacters type="numbers">[\- ‑ , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‐ ‑ – — , ; \: ! ? . … ' ‘ ’ &quot; “ ” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
 		<ellipsis type="final" draft="contributed">{0}…</ellipsis>
 		<ellipsis type="initial" draft="contributed">…{0}</ellipsis>
 		<ellipsis type="medial" draft="contributed">{0}…{1}</ellipsis>
@@ -2896,9 +2894,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</dateTimeFormats>
 			</calendar>
 			<calendar type="japanese">
-				<!-- need some non-empty element here to make inheritance work,
-					 this copy of generic dateFormats above is smaller than root japanese eras
-				-->
 				<dateFormats>
 					<dateFormatLength type="full">
 						<dateFormat>
@@ -6464,11 +6459,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one" draft="contributed">{0} hynstekrêft</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} hynstekrêften</unitPattern>
 			</unit>
-			<unit type="pressure-hectopascal">
-				<displayName draft="contributed">hektopaskal</displayName>
-				<unitPattern count="one" draft="contributed">{0} hektopaskal</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} hektopaskal</unitPattern>
-			</unit>
 			<unit type="pressure-inch-hg">
 				<displayName draft="contributed">inHg</displayName>
 				<unitPattern count="one" draft="contributed">{0} inHg</unitPattern>
@@ -6478,6 +6468,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName draft="contributed">millibar</displayName>
 				<unitPattern count="one" draft="contributed">{0} millibar</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} millibar</unitPattern>
+			</unit>
+			<unit type="pressure-hectopascal">
+				<displayName draft="contributed">hektopaskal</displayName>
+				<unitPattern count="one" draft="contributed">{0} hektopaskal</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} hektopaskal</unitPattern>
 			</unit>
 			<unit type="speed-kilometer-per-hour">
 				<displayName draft="contributed">kilometer de oere</displayName>
@@ -6699,11 +6694,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one" draft="contributed">{0} pk</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} pk</unitPattern>
 			</unit>
-			<unit type="pressure-hectopascal">
-				<displayName draft="contributed">hektopaskal</displayName>
-				<unitPattern count="one" draft="contributed">{0} hPa</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} hPa</unitPattern>
-			</unit>
 			<unit type="pressure-inch-hg">
 				<displayName draft="contributed">inHg</displayName>
 				<unitPattern count="one" draft="contributed">{0} inHg</unitPattern>
@@ -6713,6 +6703,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName draft="contributed">millibar</displayName>
 				<unitPattern count="one" draft="contributed">{0} mbar</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} mbar</unitPattern>
+			</unit>
+			<unit type="pressure-hectopascal">
+				<displayName draft="contributed">hektopaskal</displayName>
+				<unitPattern count="one" draft="contributed">{0} hPa</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} hPa</unitPattern>
 			</unit>
 			<unit type="speed-kilometer-per-hour">
 				<displayName draft="contributed">kilometer de oere</displayName>
@@ -6899,10 +6894,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one" draft="contributed">{0} pk</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} pk</unitPattern>
 			</unit>
-			<unit type="pressure-hectopascal">
-				<unitPattern count="one" draft="contributed">{0} hPa</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} hPa</unitPattern>
-			</unit>
 			<unit type="pressure-inch-hg">
 				<unitPattern count="one" draft="contributed">{0} inHg</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} inHg</unitPattern>
@@ -6910,6 +6901,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="pressure-millibar">
 				<unitPattern count="one" draft="contributed">{0} mbar</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} mbar</unitPattern>
+			</unit>
+			<unit type="pressure-hectopascal">
+				<unitPattern count="one" draft="contributed">{0} hPa</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} hPa</unitPattern>
 			</unit>
 			<unit type="speed-kilometer-per-hour">
 				<unitPattern count="one" draft="contributed">{0} km/h</unitPattern>

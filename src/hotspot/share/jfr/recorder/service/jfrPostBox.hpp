@@ -41,6 +41,7 @@ enum JFR_Msg {
   MSG_SHUTDOWN,
   MSG_VM_ERROR,
   MSG_DEADBUFFER,
+  MSG_FLUSHPOINT,
   MSG_NO_OF_MSGS
 };
 
@@ -53,15 +54,16 @@ enum JFR_Msg {
  *  MSG_START(1)            ; MSGBIT(MSG_START) == (1 << 0x1) == 0x2
  *  MSG_STOP (2)            ; MSGBIT(MSG_STOP) == (1 << 0x2) == 0x4
  *  MSG_ROTATE (3)          ; MSGBIT(MSG_ROTATE) == (1 << 0x3) == 0x8
- *  MSG_VM_ERROR (8)        ; MSGBIT(MSG_VM_ERROR) == (1 << 8) == 0x100
+ *  MSG_VM_ERROR (8)        ; MSGBIT(MSG_VM_ERROR) == (1 << 0x8) == 0x100
+ *  MSG_FLUSHPOINT (10)     ; MSGBIT(MSG_FLUSHPOINT) == (1 << 0xa) == 0x400
  *
  *  Asynchronous messages (posting thread returns immediately upon deposit):
  *
  *  MSG_FULLBUFFER (4)      ; MSGBIT(MSG_FULLBUFFER) == (1 << 0x4) == 0x10
- *  MSG_CHECKPOINT (5)      ; MSGBIT(CHECKPOINT) == (1 << 5) == 0x20
- *  MSG_WAKEUP (6)          ; MSGBIT(WAKEUP) == (1 << 6) == 0x40
- *  MSG_SHUTDOWN (7)        ; MSGBIT(MSG_SHUTDOWN) == (1 << 7) == 0x80
- *  MSG_DEADBUFFER (9)      ; MSGBIT(MSG_DEADBUFFER) == (1 << 9) == 0x200
+ *  MSG_CHECKPOINT (5)      ; MSGBIT(CHECKPOINT) == (1 << 0x5) == 0x20
+ *  MSG_WAKEUP (6)          ; MSGBIT(WAKEUP) == (1 << 0x6) == 0x40
+ *  MSG_SHUTDOWN (7)        ; MSGBIT(MSG_SHUTDOWN) == (1 << 0x7) == 0x80
+ *  MSG_DEADBUFFER (9)      ; MSGBIT(MSG_DEADBUFFER) == (1 << 0x9) == 0x200
  */
 
 class JfrPostBox : public JfrCHeapObj {

@@ -43,10 +43,7 @@
   void set_thread_handle(HANDLE handle)            { _thread_handle = handle; }
   HANDLE interrupt_event() const                   { return _interrupt_event; }
   void set_interrupt_event(HANDLE interrupt_event) { _interrupt_event = interrupt_event; }
-  // These are specialized on Windows to interact with the _interrupt_event.
-  // Also note that Windows does not skip these calls if we are interrupted - see
-  // LibraryCallKit::inline_native_isInterrupted
-  volatile bool interrupted();
+  // This is specialized on Windows to interact with the _interrupt_event.
   void set_interrupted(bool z);
 
 #ifndef PRODUCT

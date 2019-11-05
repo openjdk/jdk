@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -214,6 +214,23 @@ abstract class LIRIntrospection<T> extends FieldIntrospection<T> {
         }
     }
 
+    private static boolean verifyAssignment(LIRInstruction inst, Value newValue, EnumSet<OperandFlag> flags) {
+        Class<?> type = newValue.getClass();
+        if (!flags.contains(REG)) {
+            assert !type.isAssignableFrom(REGISTER_VALUE_CLASS) && !type.isAssignableFrom(VARIABLE_CLASS) : "Cannot assign RegisterValue / Variable to field without REG flag: " + inst + " newValue=" +
+                            newValue;
+        }
+        if (!flags.contains(STACK)) {
+            assert !type.isAssignableFrom(STACK_SLOT_CLASS) : "Cannot assign StackSlot to field without STACK flag: " + inst + " newValue=" +
+                            newValue;
+        }
+        if (!flags.contains(CONST)) {
+            assert !type.isAssignableFrom(CONSTANT_VALUE_CLASS) : "Cannot assign Constant to field without CONST flag: " + inst + " newValue=" +
+                            newValue;
+        }
+        return true;
+    }
+
     protected static void forEach(LIRInstruction inst, Values values, OperandMode mode, InstructionValueProcedure proc) {
         for (int i = 0; i < values.getCount(); i++) {
             assert LIRInstruction.ALLOWED_FLAGS.get(mode).containsAll(values.getFlags(i));
@@ -228,6 +245,9 @@ abstract class LIRIntrospection<T> extends FieldIntrospection<T> {
                     newValue = proc.doValue(inst, value, mode, values.getFlags(i));
                 }
                 if (!value.identityEquals(newValue)) {
+                    if (!(value instanceof CompositeValue)) {
+                        assert verifyAssignment(inst, newValue, values.getFlags(i));
+                    }
                     values.setValue(inst, i, newValue);
                 }
             } else {

@@ -130,10 +130,19 @@ public class PStack extends Tool {
                          if (c.contains(pc)) {
                             CodeBlob cb = c.findBlobUnsafe(pc);
                             if (cb.isNMethod()) {
-                               names = getJavaNames(th, f.localVariableBase());
-                               // just print compiled code, if can't determine method
-                               if (names == null || names.length == 0) {
-                                  out.println("<Unknown compiled code>");
+                               if (cb.isNativeMethod()) {
+                                  out.print(((CompiledMethod)cb).getMethod().externalNameAndSignature());
+                                  long diff = pc.minus(cb.codeBegin());
+                                  if (diff != 0L) {
+                                    out.print(" + 0x" + Long.toHexString(diff));
+                                  }
+                                  out.println(" (Native method)");
+                               } else {
+                                  names = getJavaNames(th, f.localVariableBase());
+                                  // just print compiled code, if can't determine method
+                                  if (names == null || names.length == 0) {
+                                    out.println("<Unknown compiled code>");
+                                  }
                                }
                             } else if (cb.isBufferBlob()) {
                                out.println("<StubRoutines>");

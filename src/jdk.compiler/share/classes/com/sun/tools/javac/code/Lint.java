@@ -122,6 +122,9 @@ public class Lint
             values.add(LintCategory.OPENS);
             values.add(LintCategory.MODULE);
             values.add(LintCategory.REMOVAL);
+            if (!options.isSet(Option.PREVIEW)) {
+                values.add(LintCategory.PREVIEW);
+            }
         }
 
         // Look for specific overrides

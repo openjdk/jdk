@@ -240,17 +240,20 @@ public interface Tree {
         SWITCH(SwitchTree.class),
 
         /**
+         * {@preview Associated with switch expressions, a preview feature of
+         *           the Java language.
+         *
+         *           This enum constant is associated with <i>switch expressions</i>, a preview
+         *           feature of the Java language. Preview features
+         *           may be removed in a future release, or upgraded to permanent
+         *           features of the Java language.}
+         *
          * Used for instances of {@link SwitchExpressionTree}.
          *
          * @since 12
-         *
-         * @deprecated
-         * This enum constant is modeling switch expressions,
-         * which are part of a preview feature and may be removed
-         * if the preview feature is removed.
          */
-        @Deprecated(forRemoval=true, since="12")
-        @SuppressWarnings("removal")
+        @jdk.internal.PreviewFeature(feature=jdk.internal.PreviewFeature.Feature.SWITCH_EXPRESSIONS)
+        @SuppressWarnings("preview")
         SWITCH_EXPRESSION(SwitchExpressionTree.class),
 
         /**
@@ -659,17 +662,20 @@ public interface Tree {
         OTHER(null),
 
         /**
+         * {@preview Associated with switch expressions, a preview feature of
+         *           the Java language.
+         *
+         *           This enum constant is associated with <i>switch expressions</i>, a preview
+         *           feature of the Java language. Preview features
+         *           may be removed in a future release, or upgraded to permanent
+         *           features of the Java language.}
+         *
          * Used for instances of {@link YieldTree}.
          *
          * @since 13
-         *
-         * @deprecated
-         * This enum constant is modeling yield statement,
-         * which are part of a preview feature and may be removed
-         * if the preview feature is removed.
          */
-        @Deprecated(forRemoval=true, since="13")
-        @SuppressWarnings("removal")
+        @jdk.internal.PreviewFeature(feature=jdk.internal.PreviewFeature.Feature.SWITCH_EXPRESSIONS)
+        @SuppressWarnings("preview")
         YIELD(YieldTree.class);
 
 

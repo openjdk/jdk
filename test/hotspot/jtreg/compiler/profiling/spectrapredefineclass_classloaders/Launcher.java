@@ -34,8 +34,7 @@
  *        compiler.profiling.spectrapredefineclass_classloaders.B
  * @run driver ClassFileInstaller compiler.profiling.spectrapredefineclass_classloaders.Agent
  * @run driver compiler.profiling.spectrapredefineclass_classloaders.Launcher
- * @run main/othervm -XX:-TieredCompilation -XX:-BackgroundCompilation
- *                   -XX:CompileThreshold=10000
+ * @run main/othervm -XX:CompilationMode=high-only -XX:-BackgroundCompilation -XX:CompileThreshold=10000
  *                   -XX:-UseOnStackReplacement -XX:TypeProfileLevel=222
  *                   -XX:ReservedCodeCacheSize=3M -Djdk.attach.allowAttachSelf
  *                   compiler.profiling.spectrapredefineclass_classloaders.Agent

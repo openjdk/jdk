@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.IntStream;
 
 class Bundle {
     static enum Type {
@@ -57,7 +58,8 @@ class Bundle {
 
     private final static String[] COMPACT_NUMBER_PATTERN_KEYS = {
             "short.CompactNumberPatterns",
-            "long.CompactNumberPatterns"};
+            "long.CompactNumberPatterns"
+    };
 
     private final static String[] NUMBER_ELEMENT_KEYS = {
         "NumberElements/decimal",
@@ -192,7 +194,6 @@ class Bundle {
         for (index = 0; index < cldrBundles.length; index++) {
             if (cldrBundles[index].equals(id)) {
                 myMap.putAll(CLDRConverter.getCLDRBundle(cldrBundles[index]));
-                CLDRConverter.handleAliases(myMap);
                 break;
             }
         }
@@ -202,7 +203,6 @@ class Bundle {
         for (int i = cldrBundles.length - 1; i > index; i--) {
             if (!("no".equals(cldrBundles[i]) || cldrBundles[i].startsWith("no_"))) {
                 parentsMap.putAll(CLDRConverter.getCLDRBundle(cldrBundles[i]));
-                CLDRConverter.handleAliases(parentsMap);
             }
         }
         // Duplicate myMap as parentsMap for "root" so that the
@@ -230,12 +230,38 @@ class Bundle {
         for (String k : COMPACT_NUMBER_PATTERN_KEYS) {
             List<String> patterns = (List<String>) myMap.remove(k);
             if (patterns != null) {
-                // Replace any null entry with empty strings.
-                String[] arrPatterns = patterns.stream()
-                        .map(s -> s == null ? "" : s).toArray(String[]::new);
+                // Convert the map value from List<String> to String[], replacing any missing
+                // entry from the parents map, if any.
+                final List<String> pList = (List<String>)parentsMap.get(k);
+                int size = patterns.size();
+                int psize = pList != null ? pList.size() : 0;
+                String[] arrPatterns = IntStream.range(0, Math.max(size, psize))
+                    .mapToObj(i -> {
+                        String pattern;
+                        // first try itself.
+                        if (i < size) {
+                            pattern = patterns.get(i);
+                            if (!pattern.isEmpty()) {
+                                return pattern;
+                            }
+                        }
+                        // if not found, try parent
+                        if (i < psize) {
+                            pattern = pList.get(i);
+                            if (!pattern.isEmpty()) {
+                                return pattern;
+                            }
+                        }
+                        // bail out with empty string
+                        return "";
+                    })
+                    .toArray(String[]::new);
                 myMap.put(k, arrPatterns);
             }
         }
+
+        // Processes aliases here
+        CLDRConverter.handleAliases(myMap);
 
         // another hack: parentsMap is not used for date-time resources.
         if ("root".equals(id)) {

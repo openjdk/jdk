@@ -331,7 +331,7 @@ void Modules::define_module(jobject module, jboolean is_open, jstring version,
     if (!h_loader.is_null() &&
         !SystemDictionary::is_platform_class_loader(h_loader()) &&
         (strncmp(package_name, JAVAPKG, JAVAPKG_LEN) == 0 &&
-          (package_name[JAVAPKG_LEN] == '/' || package_name[JAVAPKG_LEN] == '\0'))) {
+          (package_name[JAVAPKG_LEN] == JVM_SIGNATURE_SLASH || package_name[JAVAPKG_LEN] == '\0'))) {
       const char* class_loader_name = loader_data->loader_name_and_id();
       size_t pkg_len = strlen(package_name);
       char* pkg_name = NEW_RESOURCE_ARRAY_IN_THREAD(THREAD, char, pkg_len + 1);

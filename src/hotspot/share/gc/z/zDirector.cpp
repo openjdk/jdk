@@ -48,14 +48,6 @@ void ZDirector::sample_allocation_rate() const {
                        ZStatAllocRate::avg_sd() / M);
 }
 
-bool ZDirector::is_first() const {
-  return ZStatCycle::ncycles() == 0;
-}
-
-bool ZDirector::is_warm() const {
-  return ZStatCycle::ncycles() >= 3;
-}
-
 bool ZDirector::rule_timer() const {
   if (ZCollectionInterval == 0) {
     // Rule disabled
@@ -73,7 +65,7 @@ bool ZDirector::rule_timer() const {
 }
 
 bool ZDirector::rule_warmup() const {
-  if (is_warm()) {
+  if (ZStatCycle::is_warm()) {
     // Rule disabled
     return false;
   }
@@ -93,7 +85,7 @@ bool ZDirector::rule_warmup() const {
 }
 
 bool ZDirector::rule_allocation_rate() const {
-  if (is_first()) {
+  if (ZStatCycle::is_first()) {
     // Rule disabled
     return false;
   }
@@ -140,7 +132,7 @@ bool ZDirector::rule_allocation_rate() const {
 }
 
 bool ZDirector::rule_proactive() const {
-  if (!ZProactive || !is_warm()) {
+  if (!ZProactive || !ZStatCycle::is_warm()) {
     // Rule disabled
     return false;
   }

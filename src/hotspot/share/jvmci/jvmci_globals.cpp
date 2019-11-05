@@ -57,6 +57,7 @@ bool JVMCIGlobals::check_jvmci_flags_are_consistent() {
 
   JVMCI_FLAG_CHECKED(UseJVMCICompiler)
   JVMCI_FLAG_CHECKED(EnableJVMCI)
+  JVMCI_FLAG_CHECKED(EnableJVMCIProduct)
 
   CHECK_NOT_SET(BootstrapJVMCI,   UseJVMCICompiler)
   CHECK_NOT_SET(PrintBootstrap,   UseJVMCICompiler)
@@ -64,6 +65,14 @@ bool JVMCIGlobals::check_jvmci_flags_are_consistent() {
   CHECK_NOT_SET(JVMCIHostThreads, UseJVMCICompiler)
 
   if (UseJVMCICompiler) {
+    if (FLAG_IS_DEFAULT(UseJVMCINativeLibrary) && !UseJVMCINativeLibrary) {
+      char path[JVM_MAXPATHLEN];
+      if (os::dll_locate_lib(path, sizeof(path), Arguments::get_dll_dir(), JVMCI_SHARED_LIBRARY_NAME)) {
+        // If a JVMCI native library is present,
+        // we enable UseJVMCINativeLibrary by default.
+        FLAG_SET_DEFAULT(UseJVMCINativeLibrary, true);
+      }
+    }
     if (!FLAG_IS_DEFAULT(EnableJVMCI) && !EnableJVMCI) {
       jio_fprintf(defaultStream::error_stream(),
           "Improperly specified VM option UseJVMCICompiler: EnableJVMCI cannot be disabled\n");
@@ -117,6 +126,47 @@ bool JVMCIGlobals::check_jvmci_flags_are_consistent() {
           "Could not open file for dumping JVMCI shared library JNI config: %s\n", JVMCILibDumpJNIConfig);
       return false;
     }
+  }
+
+  return true;
+}
+
+// Convert JVMCI flags from experimental to product
+bool JVMCIGlobals::enable_jvmci_product_mode(JVMFlag::Flags origin) {
+  const char *JVMCIFlags[] = {
+    "EnableJVMCI",
+    "EnableJVMCIProduct",
+    "UseJVMCICompiler",
+    "JVMCIPrintProperties",
+    "EagerJVMCI",
+    "JVMCIThreads",
+    "JVMCICounterSize",
+    "JVMCICountersExcludeCompiler",
+    "JVMCINMethodSizeLimit",
+    "JVMCILibPath",
+    "JVMCILibDumpJNIConfig",
+    "UseJVMCINativeLibrary",
+    NULL
+  };
+
+  for (int i = 0; JVMCIFlags[i] != NULL; i++) {
+    JVMFlag *jvmciFlag = (JVMFlag *)JVMFlag::find_declared_flag(JVMCIFlags[i]);
+    if (jvmciFlag == NULL) {
+      return false;
+    }
+    jvmciFlag->clear_experimental();
+    jvmciFlag->set_product();
+  }
+
+  bool value = true;
+  JVMFlag *jvmciEnableFlag = JVMFlag::find_flag("EnableJVMCIProduct");
+  if (JVMFlag::boolAtPut(jvmciEnableFlag, &value, origin) != JVMFlag::SUCCESS) {
+    return false;
+  }
+  value = true;
+  JVMFlag *jvmciCompilerFlag = JVMFlag::find_flag("UseJVMCICompiler");
+  if (JVMFlag::boolAtPut(jvmciCompilerFlag, &value, origin) != JVMFlag::SUCCESS) {
+    return false;
   }
 
   return true;

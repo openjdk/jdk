@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,6 @@ import org.graalvm.compiler.nodes.ParameterNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
 import org.graalvm.compiler.nodes.java.MonitorExitNode;
-import org.graalvm.compiler.phases.common.CanonicalizerPhase;
 import org.graalvm.compiler.phases.common.DeadCodeEliminationPhase;
 import org.graalvm.compiler.phases.tiers.HighTierContext;
 import org.junit.Assert;
@@ -103,8 +102,8 @@ public class MonitorGraphTest extends GraalCompilerTest {
             hints.put(invoke, 1000d);
         }
         HighTierContext context = getDefaultHighTierContext();
-        createInliningPhase(hints, new CanonicalizerPhase()).apply(graph, context);
-        new CanonicalizerPhase().apply(graph, context);
+        createInliningPhase(hints, createCanonicalizerPhase()).apply(graph, context);
+        createCanonicalizerPhase().apply(graph, context);
         new DeadCodeEliminationPhase().apply(graph);
         return graph;
     }

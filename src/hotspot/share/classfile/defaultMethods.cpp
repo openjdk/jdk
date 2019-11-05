@@ -146,7 +146,7 @@ class HierarchyVisitor : StackObj {
       return interface_index() >= number_of_interfaces();
     }
     InstanceKlass* interface_at(int index) {
-      return InstanceKlass::cast(_class->local_interfaces()->at(index));
+      return _class->local_interfaces()->at(index);
     }
     InstanceKlass* next_super() { return _class->java_super(); }
     InstanceKlass* next_interface() {
@@ -1012,7 +1012,7 @@ static void merge_in_new_methods(InstanceKlass* klass,
       klass->class_loader_data(), new_size, NULL, CHECK);
 
   // original_ordering might be empty if this class has no methods of its own
-  if (JvmtiExport::can_maintain_original_method_order() || DumpSharedSpaces) {
+  if (JvmtiExport::can_maintain_original_method_order() || Arguments::is_dumping_archive()) {
     merged_ordering = MetadataFactory::new_array<int>(
         klass->class_loader_data(), new_size, CHECK);
   }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 
 /*
  * @test
+ * @key stress
  *
  * @summary converted from VM Testbase vm/mlvm/meth/stress/compiler/deoptimize.
  * VM Testbase keywords: [feature_mlvm, nonconcurrent, quarantine]
@@ -42,12 +43,37 @@
  * @build vm.mlvm.meth.stress.compiler.deoptimize.Test
  * @run driver vm.mlvm.share.IndifiedClassesBuilder
  *
+ * @requires vm.debug != true
+ *
  * @run main/othervm
  *      -XX:ReservedCodeCacheSize=100m
  *      vm.mlvm.meth.stress.compiler.deoptimize.Test
  *      -threadsPerCpu 4
  *      -threadsExtra 2
  */
+
+
+/*
+ * @test
+ * @key stress
+ *
+ * @library /vmTestbase
+ *          /test/lib
+ * @run driver jdk.test.lib.FileInstaller . .
+ *
+ * @comment build test class and indify classes
+ * @build vm.mlvm.meth.stress.compiler.deoptimize.Test
+ * @run driver vm.mlvm.share.IndifiedClassesBuilder
+ *
+ * @requires vm.debug == true
+ *
+ * @run main/othervm
+ *      -XX:ReservedCodeCacheSize=100m
+ *      vm.mlvm.meth.stress.compiler.deoptimize.Test
+ *      -threadsPerCpu 2
+ *      -threadsExtra 2
+ */
+
 
 package vm.mlvm.meth.stress.compiler.deoptimize;
 

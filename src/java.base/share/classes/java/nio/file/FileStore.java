@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,7 +84,9 @@ public abstract class FileStore {
     public abstract boolean isReadOnly();
 
     /**
-     * Returns the size, in bytes, of the file store.
+     * Returns the size, in bytes, of the file store. If the total number of
+     * bytes in the file store is greater than {@link Long#MAX_VALUE}, then
+     * {@code Long.MAX_VALUE} will be returned.
      *
      * @return  the size of the file store, in bytes
      *
@@ -95,7 +97,8 @@ public abstract class FileStore {
 
     /**
      * Returns the number of bytes available to this Java virtual machine on the
-     * file store.
+     * file store.  If the number of bytes available is greater than
+     * {@link Long#MAX_VALUE}, then {@code Long.MAX_VALUE} will be returned.
      *
      * <p> The returned number of available bytes is a hint, but not a
      * guarantee, that it is possible to use most or any of these bytes.  The
@@ -112,14 +115,33 @@ public abstract class FileStore {
     public abstract long getUsableSpace() throws IOException;
 
     /**
+     * Returns the number of unallocated bytes in the file store.
+     * If the number of unallocated bytes is greater than
+     * {@link Long#MAX_VALUE}, then {@code Long.MAX_VALUE} will be returned.
+     *
+     * <p> The returned number of unallocated bytes is a hint, but not a
+     * guarantee, that it is possible to use most or any of these bytes.  The
+     * number of unallocated bytes is most likely to be accurate immediately
+     * after the space attributes are obtained. It is likely to be
+     * made inaccurate by any external I/O operations including those made on
+     * the system outside of this virtual machine.
+     *
+     * @return  the number of unallocated bytes
+     *
+     * @throws  IOException
+     *          if an I/O error occurs
+     */
+    public abstract long getUnallocatedSpace() throws IOException;
+
+    /**
      * Returns the number of bytes per block in this file store.
      *
      * <p> File storage is typically organized into discrete sequences of bytes
      * called <i>blocks</i>. A block is the smallest storage unit of a file store.
      * Every read and write operation is performed on a multiple of blocks.
      *
-     * @implSpec The implementation in this class throws an
-     *         {@code UnsupportedOperationException}.
+     * @implSpec The implementation in this class throws
+     *           {@code UnsupportedOperationException}.
      *
      * @return  a positive value representing the block size of this file store,
      *          in bytes
@@ -135,23 +157,6 @@ public abstract class FileStore {
     public long getBlockSize() throws IOException {
         throw new UnsupportedOperationException();
     }
-
-    /**
-     * Returns the number of unallocated bytes in the file store.
-     *
-     * <p> The returned number of unallocated bytes is a hint, but not a
-     * guarantee, that it is possible to use most or any of these bytes.  The
-     * number of unallocated bytes is most likely to be accurate immediately
-     * after the space attributes are obtained. It is likely to be
-     * made inaccurate by any external I/O operations including those made on
-     * the system outside of this virtual machine.
-     *
-     * @return  the number of unallocated bytes
-     *
-     * @throws  IOException
-     *          if an I/O error occurs
-     */
-    public abstract long getUnallocatedSpace() throws IOException;
 
     /**
      * Tells whether or not this file store supports the file attributes

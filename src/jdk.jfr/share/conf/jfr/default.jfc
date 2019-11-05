@@ -406,7 +406,7 @@
       <setting name="enabled" control="gc-enabled-normal">true</setting>
       <setting name="threshold">0 ms</setting>
     </event>
- 
+
     <event name="jdk.G1BasicIHOP">
       <setting name="enabled" control="gc-enabled-normal">true</setting>
     </event>
@@ -670,6 +670,36 @@
       <setting name="enabled">true</setting>
     </event>
 
+    <event name="jdk.Flush">
+      <setting name="enabled">true</setting>
+      <setting name="threshold">0 ns</setting>
+    </event>
+
+    <event name="jdk.FlushStorage">
+      <setting name="enabled">true</setting>
+      <setting name="threshold">0 ns</setting>
+    </event>
+
+    <event name="jdk.FlushStacktrace">
+      <setting name="enabled">true</setting>
+      <setting name="threshold">0 ns</setting>
+    </event>
+
+    <event name="jdk.FlushStringPool">
+      <setting name="enabled">true</setting>
+      <setting name="threshold">0 ns</setting>
+    </event>
+
+    <event name="jdk.FlushMetadata">
+      <setting name="enabled">true</setting>
+      <setting name="threshold">0 ns</setting>
+    </event>
+
+    <event name="jdk.FlushTypeSet">
+      <setting name="enabled">true</setting>
+      <setting name="threshold">0 ns</setting>
+    </event>
+
     <event name="jdk.DataLoss">
       <setting name="enabled">true</setting>
     </event>
@@ -689,13 +719,13 @@
     </event>
 
     <event name="jdk.ZStatisticsCounter">
-      <setting name="enabled">true</setting>
-      <setting name="threshold">10 ms</setting>
+      <setting name="enabled">false</setting>
+      <setting name="threshold">0 ms</setting>
     </event>
 
     <event name="jdk.ZStatisticsSampler">
-      <setting name="enabled">true</setting>
-      <setting name="threshold">10 ms</setting>
+      <setting name="enabled">false</setting>
+      <setting name="threshold">0 ms</setting>
     </event>
 
 

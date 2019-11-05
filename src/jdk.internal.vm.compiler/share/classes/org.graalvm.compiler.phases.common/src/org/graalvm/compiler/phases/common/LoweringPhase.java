@@ -46,6 +46,7 @@ import org.graalvm.compiler.graph.Graph.Mark;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeBitMap;
 import org.graalvm.compiler.graph.NodeClass;
+import org.graalvm.compiler.graph.NodeMap;
 import org.graalvm.compiler.graph.NodeSourcePosition;
 import org.graalvm.compiler.graph.iterators.NodeIterable;
 import org.graalvm.compiler.nodeinfo.InputType;
@@ -131,12 +132,14 @@ public class LoweringPhase extends BasePhase<CoreProviders> {
         private final NodeBitMap activeGuards;
         private AnchoringNode guardAnchor;
         private FixedWithNextNode lastFixedNode;
+        private NodeMap<Block> nodeMap;
 
-        LoweringToolImpl(CoreProviders context, AnchoringNode guardAnchor, NodeBitMap activeGuards, FixedWithNextNode lastFixedNode) {
+        LoweringToolImpl(CoreProviders context, AnchoringNode guardAnchor, NodeBitMap activeGuards, FixedWithNextNode lastFixedNode, NodeMap<Block> nodeMap) {
             this.context = context;
             this.guardAnchor = guardAnchor;
             this.activeGuards = activeGuards;
             this.lastFixedNode = lastFixedNode;
+            this.nodeMap = nodeMap;
         }
 
         @Override
@@ -199,7 +202,8 @@ public class LoweringPhase extends BasePhase<CoreProviders> {
             StructuredGraph graph = before.graph();
             if (OptEliminateGuards.getValue(graph.getOptions())) {
                 for (Node usage : condition.usages()) {
-                    if (!activeGuards.isNew(usage) && activeGuards.isMarked(usage) && ((GuardNode) usage).isNegated() == negated) {
+                    if (!activeGuards.isNew(usage) && activeGuards.isMarked(usage) && ((GuardNode) usage).isNegated() == negated &&
+                                    (!before.graph().hasValueProxies() || nodeMap.get(((GuardNode) usage).getAnchor().asNode()).isInSameOrOuterLoopOf(nodeMap.get(before)))) {
                         return (GuardNode) usage;
                     }
                 }
@@ -310,9 +314,9 @@ public class LoweringPhase extends BasePhase<CoreProviders> {
                  */
                 boolean isAny = false;
                 if (n instanceof MemoryCheckpoint.Single) {
-                    isAny = ((MemoryCheckpoint.Single) n).getLocationIdentity().isAny();
+                    isAny = ((MemoryCheckpoint.Single) n).getKilledLocationIdentity().isAny();
                 } else {
-                    for (LocationIdentity ident : ((MemoryCheckpoint.Multi) n).getLocationIdentities()) {
+                    for (LocationIdentity ident : ((MemoryCheckpoint.Multi) n).getKilledLocationIdentities()) {
                         if (ident.isAny()) {
                             isAny = true;
                         }
@@ -447,7 +451,7 @@ public class LoweringPhase extends BasePhase<CoreProviders> {
         @SuppressWarnings("try")
         private AnchoringNode process(final Block b, final NodeBitMap activeGuards, final AnchoringNode startAnchor) {
 
-            final LoweringToolImpl loweringTool = new LoweringToolImpl(context, startAnchor, activeGuards, b.getBeginNode());
+            final LoweringToolImpl loweringTool = new LoweringToolImpl(context, startAnchor, activeGuards, b.getBeginNode(), this.schedule.getNodeToBlockMap());
 
             // Lower the instructions of this block.
             List<Node> nodes = schedule.nodesFor(b);
@@ -597,69 +601,6 @@ public class LoweringPhase extends BasePhase<CoreProviders> {
                     } else {
                         f = f.enter(n);
                         assert f.block.getDominator() == f.parent.block;
-                        nextState = ST_PROCESS;
-                    }
-                } else {
-                    nextState = ST_LEAVE;
-                }
-            } else if (state == ST_LEAVE) {
-                f.postprocess();
-                f = f.parent;
-                nextState = ST_ENTER;
-            } else {
-                throw GraalError.shouldNotReachHere();
-            }
-            state = nextState;
-        }
-    }
-
-    public static void processBlockBounded(final Frame<?> rootFrame) {
-        ProcessBlockState state = ST_PROCESS;
-        Frame<?> f = rootFrame;
-        while (f != null) {
-            ProcessBlockState nextState;
-            if (state == ST_PROCESS || state == ST_PROCESS_ALWAYS_REACHED) {
-                f.preprocess();
-                nextState = state == ST_PROCESS_ALWAYS_REACHED ? ST_ENTER : ST_ENTER_ALWAYS_REACHED;
-            } else if (state == ST_ENTER_ALWAYS_REACHED) {
-                if (f.alwaysReachedBlock != null && f.alwaysReachedBlock.getDominator() == f.block) {
-                    Frame<?> continueRecur = f.enterAlwaysReached(f.alwaysReachedBlock);
-                    if (continueRecur == null) {
-                        // stop recursion here
-                        f.postprocess();
-                        f = f.parent;
-                        state = ST_ENTER;
-                        continue;
-                    }
-                    f = continueRecur;
-                    nextState = ST_PROCESS;
-                } else {
-                    nextState = ST_ENTER;
-                }
-            } else if (state == ST_ENTER) {
-                if (f.dominated != null) {
-                    Block n = f.dominated;
-                    f.dominated = n.getDominatedSibling();
-                    if (n == f.alwaysReachedBlock) {
-                        if (f.dominated != null) {
-                            n = f.dominated;
-                            f.dominated = n.getDominatedSibling();
-                        } else {
-                            n = null;
-                        }
-                    }
-                    if (n == null) {
-                        nextState = ST_LEAVE;
-                    } else {
-                        Frame<?> continueRecur = f.enter(n);
-                        if (continueRecur == null) {
-                            // stop recursion here
-                            f.postprocess();
-                            f = f.parent;
-                            state = ST_ENTER;
-                            continue;
-                        }
-                        f = continueRecur;
                         nextState = ST_PROCESS;
                     }
                 } else {

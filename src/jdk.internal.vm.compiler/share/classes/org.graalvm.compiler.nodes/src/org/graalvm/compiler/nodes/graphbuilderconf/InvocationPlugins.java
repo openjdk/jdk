@@ -46,7 +46,6 @@ import jdk.internal.vm.compiler.collections.Pair;
 import jdk.internal.vm.compiler.collections.UnmodifiableEconomicMap;
 import jdk.internal.vm.compiler.collections.UnmodifiableMapCursor;
 import org.graalvm.compiler.api.replacements.MethodSubstitution;
-import org.graalvm.compiler.api.replacements.MethodSubstitutionRegistry;
 import org.graalvm.compiler.bytecode.BytecodeProvider;
 import org.graalvm.compiler.core.common.SuppressFBWarnings;
 import org.graalvm.compiler.debug.Assertions;
@@ -55,6 +54,7 @@ import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.iterators.NodeIterable;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugin.Receiver;
+import org.graalvm.compiler.nodes.spi.Replacements;
 
 import jdk.vm.ci.meta.MetaUtil;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
@@ -175,19 +175,23 @@ public class InvocationPlugins {
     }
 
     /**
-     * Utility for {@linkplain InvocationPlugins#register(InvocationPlugin, Class, String, Class...)
-     * registration} of invocation plugins.
+     * Utility for {@linkplain InvocationPlugins#register registration} of invocation plugins.
      */
-    public static class Registration implements MethodSubstitutionRegistry {
+    public static class Registration {
 
         private final InvocationPlugins plugins;
+
         private final Type declaringType;
-        private final BytecodeProvider methodSubstitutionBytecodeProvider;
+        private final Replacements replacements;
+        private final BytecodeProvider bytecodeProvider;
         private boolean allowOverwrite;
 
-        @Override
         public Class<?> getReceiverType() {
             return Receiver.class;
+        }
+
+        public Type getDeclaringType() {
+            return declaringType;
         }
 
         /**
@@ -201,7 +205,8 @@ public class InvocationPlugins {
         public Registration(InvocationPlugins plugins, Type declaringType) {
             this.plugins = plugins;
             this.declaringType = declaringType;
-            this.methodSubstitutionBytecodeProvider = null;
+            this.replacements = null;
+            this.bytecodeProvider = null;
         }
 
         /**
@@ -211,13 +216,29 @@ public class InvocationPlugins {
          * @param plugins where to register the plugins
          * @param declaringType the class declaring the methods for which plugins will be registered
          *            via this object
-         * @param methodSubstitutionBytecodeProvider provider used to get the bytecodes to parse for
-         *            method substitutions
+         * @param replacements the current Replacements provider
          */
-        public Registration(InvocationPlugins plugins, Type declaringType, BytecodeProvider methodSubstitutionBytecodeProvider) {
+        public Registration(InvocationPlugins plugins, Type declaringType, Replacements replacements) {
             this.plugins = plugins;
             this.declaringType = declaringType;
-            this.methodSubstitutionBytecodeProvider = methodSubstitutionBytecodeProvider;
+            this.replacements = replacements;
+            this.bytecodeProvider = replacements != null ? replacements.getDefaultReplacementBytecodeProvider() : null;
+        }
+
+        /**
+         * Creates an object for registering {@link InvocationPlugin}s for methods declared by a
+         * given class.
+         *
+         * @param plugins where to register the plugins
+         * @param declaringType the class declaring the methods for which plugins will be registered
+         *            via this object
+         * @param replacements the current Replacements provider
+         */
+        public Registration(InvocationPlugins plugins, Type declaringType, Replacements replacements, BytecodeProvider bytecodeProvider) {
+            this.plugins = plugins;
+            this.declaringType = declaringType;
+            this.replacements = replacements;
+            this.bytecodeProvider = bytecodeProvider;
         }
 
         /**
@@ -231,7 +252,8 @@ public class InvocationPlugins {
         public Registration(InvocationPlugins plugins, String declaringClassName) {
             this.plugins = plugins;
             this.declaringType = new OptionalLazySymbol(declaringClassName);
-            this.methodSubstitutionBytecodeProvider = null;
+            this.replacements = null;
+            this.bytecodeProvider = null;
         }
 
         /**
@@ -241,13 +263,13 @@ public class InvocationPlugins {
          * @param plugins where to register the plugins
          * @param declaringClassName the name of the class class declaring the methods for which
          *            plugins will be registered via this object
-         * @param methodSubstitutionBytecodeProvider provider used to get the bytecodes to parse for
-         *            method substitutions
+         * @param replacements the current Replacements provider
          */
-        public Registration(InvocationPlugins plugins, String declaringClassName, BytecodeProvider methodSubstitutionBytecodeProvider) {
+        public Registration(InvocationPlugins plugins, String declaringClassName, Replacements replacements) {
             this.plugins = plugins;
             this.declaringType = new OptionalLazySymbol(declaringClassName);
-            this.methodSubstitutionBytecodeProvider = methodSubstitutionBytecodeProvider;
+            this.replacements = replacements;
+            this.bytecodeProvider = replacements != null ? replacements.getDefaultReplacementBytecodeProvider() : null;
         }
 
         /**
@@ -339,6 +361,118 @@ public class InvocationPlugins {
         }
 
         /**
+         * Registers a plugin for a method with no arguments that is conditionally enabled. This
+         * ensures that {@code Replacements} is aware of this plugin.
+         *
+         * @param name the name of the method
+         * @param plugin the plugin to be registered
+         */
+        public void registerConditional0(boolean isEnabled, String name, InvocationPlugin plugin) {
+            replacements.registerConditionalPlugin(plugin);
+            if (isEnabled) {
+                plugins.register(plugin, false, allowOverwrite, declaringType, name);
+            }
+        }
+
+        /**
+         * Registers a plugin for a method with 1 argument that is conditionally enabled. This
+         * ensures that {@code Replacements} is aware of this plugin.
+         *
+         * @param name the name of the method
+         * @param plugin the plugin to be registered
+         */
+        public void registerConditional1(boolean isEnabled, String name, Type arg, InvocationPlugin plugin) {
+            replacements.registerConditionalPlugin(plugin);
+            if (isEnabled) {
+                plugins.register(plugin, false, allowOverwrite, declaringType, name, arg);
+            }
+        }
+
+        /**
+         * Registers a plugin for a method with 2 arguments that is conditionally enabled. This
+         * ensures that {@code Replacements} is aware of this plugin.
+         *
+         * @param name the name of the method
+         * @param plugin the plugin to be registered
+         */
+        public void registerConditional2(boolean isEnabled, String name, Type arg1, Type arg2, InvocationPlugin plugin) {
+            replacements.registerConditionalPlugin(plugin);
+            if (isEnabled) {
+                plugins.register(plugin, false, allowOverwrite, declaringType, name, arg1, arg2);
+            }
+        }
+
+        /**
+         * Registers a plugin for a method with 3 arguments that is conditionally enabled. This
+         * ensures that {@code Replacements} is aware of this plugin.
+         *
+         * @param name the name of the method
+         * @param plugin the plugin to be registered
+         */
+        public void registerConditional3(boolean isEnabled, String name, Type arg1, Type arg2, Type arg3, InvocationPlugin plugin) {
+            replacements.registerConditionalPlugin(plugin);
+            if (isEnabled) {
+                plugins.register(plugin, false, allowOverwrite, declaringType, name, arg1, arg2, arg3);
+            }
+        }
+
+        /**
+         * Registers a plugin for a method with 4 arguments that is conditionally enabled. This
+         * ensures that {@code Replacements} is aware of this plugin.
+         *
+         * @param name the name of the method
+         * @param plugin the plugin to be registered
+         */
+        public void registerConditional4(boolean isEnabled, String name, Type arg1, Type arg2, Type arg3, Type arg4, InvocationPlugin plugin) {
+            replacements.registerConditionalPlugin(plugin);
+            if (isEnabled) {
+                plugins.register(plugin, false, allowOverwrite, declaringType, name, arg1, arg2, arg3, arg4);
+            }
+        }
+
+        /**
+         * Registers a plugin for a method with 5 arguments that is conditionally enabled. This
+         * ensures that {@code Replacements} is aware of this plugin.
+         *
+         * @param name the name of the method
+         * @param plugin the plugin to be registered
+         */
+        public void registerConditional5(boolean isEnabled, String name, Type arg1, Type arg2, Type arg3, Type arg4, Type arg5, InvocationPlugin plugin) {
+            replacements.registerConditionalPlugin(plugin);
+            if (isEnabled) {
+                plugins.register(plugin, false, allowOverwrite, declaringType, name, arg1, arg2, arg3, arg4, arg5);
+            }
+        }
+
+        /**
+         * Registers a plugin for a method with 6 arguments that is conditionally enabled. This
+         * ensures that {@code Replacements} is aware of this plugin.
+         *
+         * @param name the name of the method
+         * @param plugin the plugin to be registered
+         */
+        public void registerConditional6(boolean isEnabled, String name, Type arg1, Type arg2, Type arg3, Type arg4, Type arg5, Type arg6, InvocationPlugin plugin) {
+            replacements.registerConditionalPlugin(plugin);
+            if (isEnabled) {
+                plugins.register(plugin, false, allowOverwrite, declaringType, name, arg1, arg2, arg3, arg4, arg5, arg6);
+            }
+        }
+
+        /**
+         * Registers a plugin for a method with 7 arguments that is conditionally enabled. This
+         * ensures that {@code Replacements} is aware of this plugin.
+         *
+         * @param name the name of the method
+         * @param plugin the plugin to be registered
+         */
+        public void registerConditional7(boolean isEnabled, String name, Type arg1, Type arg2, Type arg3, Type arg4, Type arg5, Type arg6, Type arg7, InvocationPlugin plugin) {
+            replacements.registerConditionalPlugin(plugin);
+            if (isEnabled) {
+                plugins.register(plugin, false, allowOverwrite, declaringType, name, arg1, arg2, arg3, arg4, arg5, arg6, arg7);
+            }
+        }
+
+        /**
          * Registers a plugin for an optional method with no arguments.
          *
          * @param name the name of the method
@@ -398,7 +532,6 @@ public class InvocationPlugins {
          *            is non-static. Upon returning, element 0 will have been rewritten to
          *            {@code declaringClass}
          */
-        @Override
         public void registerMethodSubstitution(Class<?> substituteDeclaringClass, String name, Type... argumentTypes) {
             registerMethodSubstitution(substituteDeclaringClass, name, name, argumentTypes);
         }
@@ -407,25 +540,63 @@ public class InvocationPlugins {
          * Registers a plugin that implements a method based on the bytecode of a substitute method.
          *
          * @param substituteDeclaringClass the class declaring the substitute method
-         * @param name the name of both the original method
+         * @param name the name of the original method
          * @param substituteName the name of the substitute method
          * @param argumentTypes the argument types of the method. Element 0 of this array must be
          *            the {@link Class} value for {@link InvocationPlugin.Receiver} iff the method
          *            is non-static. Upon returning, element 0 will have been rewritten to
          *            {@code declaringClass}
          */
-        @Override
         public void registerMethodSubstitution(Class<?> substituteDeclaringClass, String name, String substituteName, Type... argumentTypes) {
-            MethodSubstitutionPlugin plugin = createMethodSubstitution(substituteDeclaringClass, substituteName, argumentTypes);
-            plugins.register(plugin, false, allowOverwrite, declaringType, name, argumentTypes);
+            doMethodSubstitutionRegistration(false, true, substituteDeclaringClass, name, substituteName, argumentTypes);
         }
 
-        public MethodSubstitutionPlugin createMethodSubstitution(Class<?> substituteDeclaringClass, String substituteName, Type... argumentTypes) {
-            assert methodSubstitutionBytecodeProvider != null : "Registration used for method substitutions requires a non-null methodSubstitutionBytecodeProvider";
-            MethodSubstitutionPlugin plugin = new MethodSubstitutionPlugin(methodSubstitutionBytecodeProvider, substituteDeclaringClass, substituteName, argumentTypes);
-            return plugin;
+        /**
+         * Registers a plugin that implements a method based on the bytecode of a substitute method
+         * that is conditinally enabled. This ensures that {@code Replacements} is aware of this
+         * plugin.
+         *
+         * @param isEnabled whether the plugin is enabled in the current compiler
+         * @param substituteDeclaringClass the class declaring the substitute method
+         * @param name the name of both the original and substitute method
+         * @param argumentTypes the argument types of the method. Element 0 of this array must be
+         *            the {@link Class} value for {@link InvocationPlugin.Receiver} iff the method
+         *            is non-static. Upon returning, element 0 will have been rewritten to
+         *            {@code declaringClass}
+         */
+        public void registerConditionalMethodSubstitution(boolean isEnabled, Class<?> substituteDeclaringClass, String name, Type... argumentTypes) {
+            registerConditionalMethodSubstitution(isEnabled, substituteDeclaringClass, name, name, argumentTypes);
         }
 
+        /**
+         * Registers a plugin that implements a method based on the bytecode of a substitute method
+         * that is conditinally enabled. This ensures that {@code Replacements} is aware of this
+         * plugin.
+         *
+         * @param isEnabled whether the plugin is enabled in the current compiler
+         * @param substituteDeclaringClass the class declaring the substitute method
+         * @param name the name of the original method
+         * @param substituteName the name of the substitute method
+         * @param argumentTypes the argument types of the method. Element 0 of this array must be
+         *            the {@link Class} value for {@link InvocationPlugin.Receiver} iff the method
+         *            is non-static. Upon returning, element 0 will have been rewritten to
+         *            {@code declaringClass}
+         */
+        public void registerConditionalMethodSubstitution(boolean isEnabled, Class<?> substituteDeclaringClass, String name, String substituteName, Type... argumentTypes) {
+            doMethodSubstitutionRegistration(true, isEnabled, substituteDeclaringClass, name, substituteName, argumentTypes);
+        }
+
+        private void doMethodSubstitutionRegistration(boolean isConditional, boolean isEnabled, Class<?> substituteDeclaringClass, String name, String substituteName, Type[] argumentTypes) {
+            MethodSubstitutionPlugin plugin = new MethodSubstitutionPlugin(this, bytecodeProvider, name, substituteDeclaringClass, substituteName, argumentTypes);
+            replacements.registerMethodSubstitution(plugin);
+            if (isConditional) {
+                // Notify Replacements about the plugin even if it's not current enabled
+                replacements.registerConditionalPlugin(plugin);
+            }
+            if (isEnabled) {
+                plugins.register(plugin, false, allowOverwrite, declaringType, name, argumentTypes);
+            }
+        }
     }
 
     /**
@@ -519,13 +690,7 @@ public class InvocationPlugins {
             this.plugin = data;
             this.isStatic = isStatic;
             this.name = name;
-            StringBuilder buf = new StringBuilder();
-            buf.append('(');
-            for (int i = isStatic ? 0 : 1; i < argumentTypes.length; i++) {
-                buf.append(MetaUtil.toInternalName(argumentTypes[i].getTypeName()));
-            }
-            buf.append(')');
-            this.argumentsDescriptor = buf.toString();
+            this.argumentsDescriptor = toArgumentDescriptor(isStatic, argumentTypes);
             assert !name.equals("<init>") || !isStatic : this;
         }
 
@@ -544,6 +709,16 @@ public class InvocationPlugins {
         public String toString() {
             return name + argumentsDescriptor;
         }
+    }
+
+    static String toArgumentDescriptor(boolean isStatic, Type[] argumentTypes) {
+        StringBuilder buf = new StringBuilder();
+        buf.append('(');
+        for (int i = isStatic ? 0 : 1; i < argumentTypes.length; i++) {
+            buf.append(MetaUtil.toInternalName(argumentTypes[i].getTypeName()));
+        }
+        buf.append(')');
+        return buf.toString();
     }
 
     /**

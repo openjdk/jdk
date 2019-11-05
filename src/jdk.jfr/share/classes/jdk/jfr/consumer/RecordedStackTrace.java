@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,8 +29,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import jdk.jfr.ValueDescriptor;
-import jdk.jfr.internal.Type;
+import jdk.jfr.internal.consumer.ObjectContext;
 
 /**
  * A recorded stack trace.
@@ -38,18 +37,9 @@ import jdk.jfr.internal.Type;
  * @since 9
  */
 public final class RecordedStackTrace extends RecordedObject {
-
-    static ObjectFactory<RecordedStackTrace> createFactory(Type type, TimeConverter timeConverter) {
-        return new ObjectFactory<RecordedStackTrace>(type) {
-            @Override
-            RecordedStackTrace createTyped(List<ValueDescriptor> desc, long id, Object[] object) {
-                return new RecordedStackTrace(desc, object, timeConverter);
-            }
-        };
-    }
-
-    private RecordedStackTrace(List<ValueDescriptor> desc, Object[] values, TimeConverter timeConverter) {
-        super(desc, values, timeConverter);
+    // package private
+    RecordedStackTrace(ObjectContext objectContext, Object[] values) {
+        super(objectContext, values);
     }
 
     /**

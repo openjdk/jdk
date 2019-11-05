@@ -250,9 +250,15 @@ void ZDriver::collect(GCCause::Cause cause) {
   case GCCause::_z_allocation_stall:
   case GCCause::_z_proactive:
   case GCCause::_z_high_usage:
-  case GCCause::_metadata_GC_threshold:
     // Start asynchronous GC
     _gc_cycle_port.send_async(cause);
+    break;
+
+  case GCCause::_metadata_GC_threshold:
+    // Start asynchronous GC, but only if the GC is warm
+    if (ZStatCycle::is_warm()) {
+      _gc_cycle_port.send_async(cause);
+    }
     break;
 
   case GCCause::_gc_locker:

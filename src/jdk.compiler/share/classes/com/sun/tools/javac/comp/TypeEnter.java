@@ -1156,19 +1156,26 @@ public class TypeEnter implements Completer {
             JCAnnotation a = al.head;
             if (a.annotationType.type == syms.deprecatedType) {
                 sym.flags_field |= (Flags.DEPRECATED | Flags.DEPRECATED_ANNOTATION);
-                a.args.stream()
-                        .filter(e -> e.hasTag(ASSIGN))
-                        .map(e -> (JCAssign) e)
-                        .filter(assign -> TreeInfo.name(assign.lhs) == names.forRemoval)
-                        .findFirst()
-                        .ifPresent(assign -> {
-                            JCExpression rhs = TreeInfo.skipParens(assign.rhs);
-                            if (rhs.hasTag(LITERAL)
-                                    && Boolean.TRUE.equals(((JCLiteral) rhs).getValue())) {
-                                sym.flags_field |= DEPRECATED_REMOVAL;
-                            }
-                        });
+                setFlagIfAttributeTrue(a, sym, names.forRemoval, DEPRECATED_REMOVAL);
+            } else if (a.annotationType.type == syms.previewFeatureType) {
+                sym.flags_field |= Flags.PREVIEW_API;
+                setFlagIfAttributeTrue(a, sym, names.essentialAPI, PREVIEW_ESSENTIAL_API);
             }
         }
     }
+    //where:
+        private void setFlagIfAttributeTrue(JCAnnotation a, Symbol sym, Name attribute, long flag) {
+            a.args.stream()
+                    .filter(e -> e.hasTag(ASSIGN))
+                    .map(e -> (JCAssign) e)
+                    .filter(assign -> TreeInfo.name(assign.lhs) == attribute)
+                    .findFirst()
+                    .ifPresent(assign -> {
+                        JCExpression rhs = TreeInfo.skipParens(assign.rhs);
+                        if (rhs.hasTag(LITERAL)
+                                && Boolean.TRUE.equals(((JCLiteral) rhs).getValue())) {
+                            sym.flags_field |= flag;
+                        }
+                    });
+        }
 }

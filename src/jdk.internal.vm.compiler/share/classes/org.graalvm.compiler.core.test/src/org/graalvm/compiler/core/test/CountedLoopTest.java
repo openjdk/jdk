@@ -43,6 +43,7 @@ import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins.Registration;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
+import org.graalvm.compiler.nodes.util.GraphUtil;
 import org.graalvm.compiler.phases.OptimisticOptimizations;
 import org.graalvm.compiler.phases.tiers.HighTierContext;
 import org.junit.Test;
@@ -559,7 +560,7 @@ public class CountedLoopTest extends GraalCompilerTest {
         }
 
         public void rewrite(LoopsData loops) {
-            InductionVariable inductionVariable = loops.getInductionVariable(iv);
+            InductionVariable inductionVariable = loops.getInductionVariable(GraphUtil.unproxify(iv));
             ValueNode node = null;
             if (inductionVariable == null) {
                 assert loopCanBeRemoved;

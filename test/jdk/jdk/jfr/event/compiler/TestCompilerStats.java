@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,8 +59,8 @@ public class TestCompilerStats {
             Events.assertField(event, "standardCompileCount").atLeast(0);
             Events.assertField(event, "osrBytesCompiled").atLeast(0L);
             Events.assertField(event, "standardBytesCompiled").atLeast(0L);
-            Events.assertField(event, "nmetodsSize").atLeast(0L);
-            Events.assertField(event, "nmetodCodeSize").atLeast(0L);
+            Events.assertField(event, "nmethodsSize").atLeast(0L);
+            Events.assertField(event, "nmethodCodeSize").atLeast(0L);
             Events.assertField(event, "peakTimeSpent").atLeast(0L);
             Events.assertField(event, "totalTimeSpent").atLeast(0L);
         }

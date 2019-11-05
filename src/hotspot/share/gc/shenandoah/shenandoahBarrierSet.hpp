@@ -84,8 +84,6 @@ public:
 
   void write_ref_field_work(void* v, oop o, bool release = false);
 
-  oop oop_load_from_native_barrier(oop obj);
-
   virtual void on_thread_create(Thread* thread);
   virtual void on_thread_destroy(Thread* thread);
   virtual void on_thread_attach(Thread* thread);
@@ -106,6 +104,9 @@ public:
   template <class T>
   oop load_reference_barrier_mutator_work(oop obj, T* load_addr);
 
+  oop load_reference_barrier_native(oop obj, oop* load_addr);
+  oop load_reference_barrier_native(oop obj, narrowOop* load_addr);
+
   void enqueue(oop obj);
 
 private:
@@ -117,6 +118,9 @@ private:
   inline void arraycopy_update_impl(T* src, size_t count);
 
   oop load_reference_barrier_impl(oop obj);
+
+  template <class T>
+  oop load_reference_barrier_native_impl(oop obj, T* load_addr);
 
   static void keep_alive_if_weak(DecoratorSet decorators, oop value) {
     assert((decorators & ON_UNKNOWN_OOP_REF) == 0, "Reference strength must be known");

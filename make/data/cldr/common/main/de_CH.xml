@@ -7,7 +7,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 14786 $"/>
+		<version number="$Revision$"/>
 		<language type="de"/>
 		<territory type="CH"/>
 	</identity>
@@ -15,18 +15,23 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<languages>
 			<language type="ace">Aceh-Sprache</language>
 			<language type="ach">Acholi-Sprache</language>
+			<language type="ar_001">Modernes Hocharabisch</language>
 			<language type="ars">Nadschd-Arabisch</language>
 			<language type="bas">Basaa-Sprache</language>
 			<language type="be">Weissrussisch</language>
 			<language type="bik">Bikol-Sprache</language>
 			<language type="bin">Bini-Sprache</language>
 			<language type="chb">Chibcha-Sprache</language>
+			<language type="de_CH">Schweizer Hochdeutsch</language>
 			<language type="din">Dinka-Sprache</language>
 			<language type="fan">Pangwe-Sprache</language>
 			<language type="gba">Gbaya-Sprache</language>
 			<language type="kmb">Kimbundu-Sprache</language>
 			<language type="mus">Muskogee-Sprache</language>
+			<language type="nl_BE">Flämisch</language>
 			<language type="prg">Altpreussisch</language>
+			<language type="zh_Hans">Chinesisch (vereinfacht)</language>
+			<language type="zh_Hant">Chinesisch (traditionell)</language>
 		</languages>
 		<territories>
 			<territory type="BN">Brunei</territory>
@@ -40,8 +45,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="ZW">Zimbabwe</territory>
 		</territories>
 		<keys>
-			<key type="colCaseFirst" draft="contributed">Sortierung nach Gross- bzw. Kleinbuchstaben</key>
-			<key type="colCaseLevel" draft="contributed">Sortierung nach Gross- oder Kleinschreibung</key>
+			<key type="colCaseFirst">Sortierung nach Gross- bzw. Kleinbuchstaben</key>
+			<key type="colCaseLevel">Sortierung nach Gross- oder Kleinschreibung</key>
 			<key type="ms">Mass-System</key>
 		</keys>
 		<types>
@@ -54,7 +59,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</localeDisplayNames>
 	<characters>
 		<exemplarCharacters>[a ä b c d e f g h i j k l m n o ö p q r s t u ü v w x y z]</exemplarCharacters>
-		<exemplarCharacters type="numbers">[\- . ’ % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
+		<exemplarCharacters type="numbers">[\- ‑ . ’ % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
 		<parseLenients scope="general" level="lenient">
 			<parseLenient sample="’" draft="contributed">['ʼ՚᾽᾿’＇]</parseLenient>
 		</parseLenients>
@@ -80,10 +85,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<fields>
 			<field type="era-narrow">
 				<displayName>Epoche</displayName>
-			</field>
-			<field type="quarter">
-				<relative type="-1" draft="contributed">letztes Quartal</relative>
-				<relative type="0" draft="contributed">dieses Quartal</relative>
 			</field>
 			<field type="weekOfMonth">
 				<displayName>Woche im Monat</displayName>
@@ -162,27 +163,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="one">Weissrussischer Rubel (2000–2016)</displayName>
 				<displayName count="other">Weissrussische Rubel (2000–2016)</displayName>
 			</currency>
-			<currency type="CHF">
-				<symbol draft="contributed">CHF</symbol>
-			</currency>
 			<currency type="EUR">
-				<symbol>EUR</symbol>
+				<symbol draft="contributed">EUR</symbol>
 				<symbol alt="narrow" draft="contributed">EUR</symbol>
 			</currency>
 			<currency type="STN">
 				<displayName>São-toméischer Dobra (2018)</displayName>
 				<displayName count="one">São-toméischer Dobra (2018)</displayName>
 				<displayName count="other">São-toméischer Dobra (2018)</displayName>
-			</currency>
-			<currency type="VEF">
-				<displayName>Venezolanischer Bolívar</displayName>
-				<displayName count="one">Venezolanischer Bolívar</displayName>
-				<displayName count="other">Venezolanische Bolívares</displayName>
-			</currency>
-			<currency type="VES">
-				<displayName>VES</displayName>
-				<displayName count="one">VES</displayName>
-				<displayName count="other">VES</displayName>
 			</currency>
 		</currencies>
 	</numbers>
@@ -231,9 +219,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<styleName type="opsz" subtype="18">Schaugrösse</styleName>
 		<styleName type="opsz" subtype="72">Plakatgrösse</styleName>
 		<styleName type="opsz" subtype="144">Ferngrösse</styleName>
-		<styleName type="wght" subtype="200" alt="ultra">ultralight</styleName>
 		<styleName type="wght" subtype="500">medium</styleName>
-		<styleName type="wght" subtype="600" alt="demi">demibold</styleName>
-		<styleName type="wght" subtype="900" alt="heavy">heavy</styleName>
 	</typographicNames>
 </ldml>

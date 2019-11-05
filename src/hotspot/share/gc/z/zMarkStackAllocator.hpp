@@ -50,8 +50,8 @@ public:
 
 class ZMarkStackAllocator {
 private:
-  ZMarkStackMagazineList _freelist ATTRIBUTE_ALIGNED(ZCacheLineSize);
-  ZMarkStackSpace        _space    ATTRIBUTE_ALIGNED(ZCacheLineSize);
+  ZCACHE_ALIGNED ZMarkStackMagazineList _freelist;
+  ZCACHE_ALIGNED ZMarkStackSpace        _space;
 
   void prime_freelist();
   ZMarkStackMagazine* create_magazine_from_space(uintptr_t addr, size_t size);

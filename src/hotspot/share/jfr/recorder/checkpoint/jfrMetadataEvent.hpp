@@ -33,13 +33,10 @@ class JfrChunkWriter;
 //
 // Metadata is continuously updated in Java as event classes are loaded / unloaded.
 // Using update(), Java stores a binary representation back to native.
-// This is for easy access on chunk finalization as well as having it readily available in the case of fatal error.
 //
 class JfrMetadataEvent : AllStatic {
  public:
-  static void lock();
-  static void unlock();
-  static size_t write(JfrChunkWriter& writer, jlong metadata_offset);
+  static void write(JfrChunkWriter& writer);
   static void update(jbyteArray metadata);
 };
 

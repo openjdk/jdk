@@ -28,10 +28,24 @@
 #include "memory/allocation.hpp"
 
 class JfrCheckpointWriter;
+class Thread;
 
 class JfrThreadState : public AllStatic {
  public:
   static void serialize(JfrCheckpointWriter& writer);
+};
+
+class JfrThreadId : public AllStatic {
+public:
+  static traceid id(const Thread* t);
+  static traceid os_id(const Thread* t);
+  static traceid jfr_id(const Thread* t);
+};
+
+class JfrThreadName : public AllStatic {
+ public:
+  // Requires a ResourceMark for get_thread_name/as_utf8
+  static const char* name(const Thread* t);
 };
 
 #endif // SHARE_JFR_RECORDER_CHECKPOINT_TYPES_JFRTHREADSTATE_HPP

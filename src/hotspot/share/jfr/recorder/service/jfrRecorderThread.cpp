@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 #include "classfile/javaClasses.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
+#include "jfr/jfr.hpp"
 #include "jfr/jni/jfrJavaSupport.hpp"
 #include "jfr/recorder/jfrRecorder.hpp"
 #include "jfr/recorder/checkpoint/jfrCheckpointManager.hpp"
@@ -64,7 +65,6 @@ static Thread* start_thread(instanceHandle thread_oop, ThreadFunction proc, TRAP
   if (allocation_failed) {
     JfrJavaSupport::throw_out_of_memory_error("Unable to create native recording thread for JFR", CHECK_NULL);
   }
-
   Thread::start(new_thread);
   return new_thread;
 }
@@ -98,8 +98,9 @@ bool JfrRecorderThread::start(JfrCheckpointManager* cp_manager, JfrPostBox* post
   instanceHandle h_thread_oop(THREAD, (instanceOop)result.get_jobject());
   assert(h_thread_oop.not_null(), "invariant");
   // attempt thread start
-  const Thread* const t = start_thread(h_thread_oop, recorderthread_entry,THREAD);
+  Thread* const t = start_thread(h_thread_oop, recorderthread_entry,THREAD);
   if (!HAS_PENDING_EXCEPTION) {
+    Jfr::exclude_thread(t);
     cp_manager->register_service_thread(t);
     return true;
   }

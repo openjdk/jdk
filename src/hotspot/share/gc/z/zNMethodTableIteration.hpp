@@ -31,9 +31,9 @@ class ZNMethodTableEntry;
 
 class ZNMethodTableIteration {
 private:
-  ZNMethodTableEntry* _table;
-  size_t              _size;
-  volatile size_t     _claimed ATTRIBUTE_ALIGNED(ZCacheLineSize);
+  ZNMethodTableEntry*            _table;
+  size_t                         _size;
+  ZCACHE_ALIGNED volatile size_t _claimed;
 
 public:
   ZNMethodTableIteration();

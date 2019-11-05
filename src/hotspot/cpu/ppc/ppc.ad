@@ -972,6 +972,8 @@ source_hpp %{
   // To keep related declarations/definitions/uses close together,
   // we switch between source %{ }% and source_hpp %{ }% freely as needed.
 
+#include "opto/convertnode.hpp"
+
   // Returns true if Node n is followed by a MemBar node that
   // will do an acquire. If so, this node must not do the acquire
   // operation.
@@ -2272,6 +2274,7 @@ const bool Matcher::match_rule_supported(int opcode) {
   case Op_AddVL:
   case Op_SubVL:
   case Op_MulVI:
+  case Op_RoundDoubleModeV:
     return SuperwordUseVSX;
   case Op_PopCountVI:
     return (SuperwordUseVSX && UsePopCountInstruction);
@@ -14450,6 +14453,53 @@ instruct vabs2D_reg(vecX dst, vecX src) %{
   size(4);
   ins_encode %{
     __ xvabsdp($dst$$VectorSRegister, $src$$VectorSRegister);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+// Round Instructions
+instruct roundD_reg(regD dst, regD src, immI8 rmode) %{
+  match(Set dst (RoundDoubleMode src rmode));
+  format %{ "RoundDoubleMode $src,$rmode" %}
+  size(4);
+  ins_encode %{
+    switch ($rmode$$constant) {
+      case RoundDoubleModeNode::rmode_rint:
+        __ frin($dst$$FloatRegister, $src$$FloatRegister);
+        break;
+      case RoundDoubleModeNode::rmode_floor:
+        __ frim($dst$$FloatRegister, $src$$FloatRegister);
+        break;
+      case RoundDoubleModeNode::rmode_ceil:
+        __ frip($dst$$FloatRegister, $src$$FloatRegister);
+        break;
+      default:
+        ShouldNotReachHere();
+    }
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+// Vector Round Instructions
+instruct vround2D_reg(vecX dst, vecX src, immI8 rmode) %{
+  match(Set dst (RoundDoubleModeV src rmode));
+  predicate(n->as_Vector()->length() == 2);
+  format %{ "RoundDoubleModeV $src,$rmode" %}
+  size(4);
+  ins_encode %{
+    switch ($rmode$$constant) {
+      case RoundDoubleModeNode::rmode_rint:
+        __ xvrdpi($dst$$VectorSRegister, $src$$VectorSRegister);
+        break;
+      case RoundDoubleModeNode::rmode_floor:
+        __ xvrdpim($dst$$VectorSRegister, $src$$VectorSRegister);
+        break;
+      case RoundDoubleModeNode::rmode_ceil:
+        __ xvrdpip($dst$$VectorSRegister, $src$$VectorSRegister);
+        break;
+      default:
+        ShouldNotReachHere();
+    }
   %}
   ins_pipe(pipe_class_default);
 %}

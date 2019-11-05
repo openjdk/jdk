@@ -42,8 +42,6 @@
  * @library /vmTestbase
  *          /test/lib
  * @requires os.family != "aix"
- * @comment Test is incompatible with ZGC, due to ZGC's address space requirements.
- * @requires vm.gc != "Z"
  * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jvmti.Allocate.alloc001
  * @run shell alloc001.sh

@@ -7,7 +7,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 14783 $"/>
+		<version number="$Revision$"/>
 		<language type="ks"/>
 	</identity>
 	<localeDisplayNames>
@@ -745,7 +745,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="MF">سینٹ مارٹِن</territory>
 			<territory type="MG">میڑاگاسکار</territory>
 			<territory type="MH">مارشَل جٔزیٖرٕ</territory>
-			<territory type="MK">مؠسوڑونِیا</territory>
 			<territory type="ML">مالی</territory>
 			<territory type="MM">مَیَنما بٔرما</territory>
 			<territory type="MN">مَنگولِیا</territory>
@@ -914,7 +913,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	<characters>
 		<exemplarCharacters>[ء آ أ ٲ ؤ ا ب پ ت ث ٹ ج چ ح خ د ذ ڈ ر ز ڑ ژ س ش ص ض ط ظ ع غ ف ق ک گ ل م ن ں ھ ہ و ۄ ۆ ی ۍ ؠ ے]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[\u200E\u200F \u064E \u064F \u0650 \u0654 \u0655 \u065F \u0656 \u0657]</exemplarCharacters>
-		<exemplarCharacters type="numbers">[\u200E \- , . % ‰ + 0۰ 1۱ 2۲ 3۳ 4۴ 5۵ 6۶ 7۷ 8۸ 9۹]</exemplarCharacters>
+		<exemplarCharacters type="numbers">[\u200E \- ‑ , . % ‰ + 0۰ 1۱ 2۲ 3۳ 4۴ 5۵ 6۶ 7۷ 8۸ 9۹]</exemplarCharacters>
 	</characters>
 	<dates>
 		<calendars>
@@ -3294,8 +3293,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<group>,</group>
 			<list>;</list>
 			<percentSign>%</percentSign>
-			<plusSign>‎+</plusSign> <!-- includes LRM before sign -->
-			<minusSign>‎-</minusSign> <!-- includes LRM before sign (002D) -->
+			<plusSign>‎+</plusSign>
+			<minusSign>‎-</minusSign>
 			<exponential>E</exponential>
 			<perMille>‰</perMille>
 			<infinity>∞</infinity>

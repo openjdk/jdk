@@ -10,7 +10,7 @@ terms of use, see http://www.unicode.org/copyright.html
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 14782 $"/>
+		<version number="$Revision$"/>
 		<language type="dsb"/>
 	</identity>
 	<localeDisplayNames>
@@ -516,8 +516,6 @@ terms of use, see http://www.unicode.org/copyright.html
 			<territory type="MF">St. Martin</territory>
 			<territory type="MG">Madagaskar</territory>
 			<territory type="MH">Marshallowe kupy</territory>
-			<territory type="MK">Makedońska</territory>
-			<territory type="MK" alt="variant">Makedońska (PRJ)</territory>
 			<territory type="ML">Mali</territory>
 			<territory type="MM">Myanmar</territory>
 			<territory type="MN">Mongolska</territory>
@@ -710,8 +708,8 @@ terms of use, see http://www.unicode.org/copyright.html
 		<exemplarCharacters>[a b c č ć d e ě f g h {ch} i j k ł l m n ń o ó p q r ŕ s š ś t u v w x y z ž ź]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[á à ă â å ä ã ą ā æ ç ď đ é è ĕ ê ë ė ę ē ğ í ì ĭ î ï İ ī ı ĺ ľ ň ñ ò ŏ ô ö ő ø ō œ ř ş ß ť ú ù ŭ û ů ü ű ū ý ÿ ż]</exemplarCharacters>
 		<exemplarCharacters type="index">[A B C Č Ć D E F G H {Ch} I J K Ł L M N O P Q R S Š Ś T U V W X Y Z Ž Ź]</exemplarCharacters>
-		<exemplarCharacters type="numbers">[\- , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
-		<exemplarCharacters type="punctuation">[\- ‐ – — , ; \: ! ? . … ' ‘ ’ ‚ &quot; “ „ « » ( ) \[ \] \{ \} § @ * / \&amp; #]</exemplarCharacters>
+		<exemplarCharacters type="numbers">[\- ‑ , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‐ ‑ – — , ; \: ! ? . … ' ‘ ’ ‚ &quot; “ „ « » ( ) \[ \] \{ \} § @ * / \&amp; #]</exemplarCharacters>
 	</characters>
 	<delimiters>
 		<quotationStart>„</quotationStart>
@@ -5195,13 +5193,6 @@ terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="few">{0} kónjece mócy</unitPattern>
 				<unitPattern count="other">{0} kónjecych mócow</unitPattern>
 			</unit>
-			<unit type="pressure-hectopascal">
-				<displayName>hektopascale</displayName>
-				<unitPattern count="one">{0} hektopascal</unitPattern>
-				<unitPattern count="two">{0} hektopascala</unitPattern>
-				<unitPattern count="few">{0} hektopascale</unitPattern>
-				<unitPattern count="other">{0} hektopascalow</unitPattern>
-			</unit>
 			<unit type="pressure-millimeter-of-mercury">
 				<displayName>milimetry słupika žywego slobra</displayName>
 				<unitPattern count="one">{0} milimeter słupika žywego slobra</unitPattern>
@@ -5229,6 +5220,13 @@ terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="two">{0} milibara</unitPattern>
 				<unitPattern count="few">{0} milibary</unitPattern>
 				<unitPattern count="other">{0} milibarow</unitPattern>
+			</unit>
+			<unit type="pressure-hectopascal">
+				<displayName>hektopascale</displayName>
+				<unitPattern count="one">{0} hektopascal</unitPattern>
+				<unitPattern count="two">{0} hektopascala</unitPattern>
+				<unitPattern count="few">{0} hektopascale</unitPattern>
+				<unitPattern count="other">{0} hektopascalow</unitPattern>
 			</unit>
 			<unit type="speed-kilometer-per-hour">
 				<displayName>kilometry na góźinu</displayName>
@@ -6018,13 +6016,6 @@ terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="few">{0} PS</unitPattern>
 				<unitPattern count="other">{0} PS</unitPattern>
 			</unit>
-			<unit type="pressure-hectopascal">
-				<displayName>hPa</displayName>
-				<unitPattern count="one">{0} hPa</unitPattern>
-				<unitPattern count="two">{0} hPa</unitPattern>
-				<unitPattern count="few">{0} hPa</unitPattern>
-				<unitPattern count="other">{0} hPa</unitPattern>
-			</unit>
 			<unit type="pressure-millimeter-of-mercury">
 				<displayName>mm Hg</displayName>
 				<unitPattern count="one">{0} mm Hg</unitPattern>
@@ -6052,6 +6043,13 @@ terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="two">{0} mbar</unitPattern>
 				<unitPattern count="few">{0} mbar</unitPattern>
 				<unitPattern count="other">{0} mbar</unitPattern>
+			</unit>
+			<unit type="pressure-hectopascal">
+				<displayName>hPa</displayName>
+				<unitPattern count="one">{0} hPa</unitPattern>
+				<unitPattern count="two">{0} hPa</unitPattern>
+				<unitPattern count="few">{0} hPa</unitPattern>
+				<unitPattern count="other">{0} hPa</unitPattern>
 			</unit>
 			<unit type="speed-kilometer-per-hour">
 				<displayName>km/h</displayName>
@@ -6468,12 +6466,6 @@ terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="few">{0} PS</unitPattern>
 				<unitPattern count="other">{0} PS</unitPattern>
 			</unit>
-			<unit type="pressure-hectopascal">
-				<unitPattern count="one">{0} hPa</unitPattern>
-				<unitPattern count="two">{0} hPa</unitPattern>
-				<unitPattern count="few">{0} hPa</unitPattern>
-				<unitPattern count="other">{0} hPa</unitPattern>
-			</unit>
 			<unit type="pressure-inch-hg">
 				<unitPattern count="one">{0} inHg</unitPattern>
 				<unitPattern count="two">{0} inHg</unitPattern>
@@ -6485,6 +6477,12 @@ terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="two">{0} mbar</unitPattern>
 				<unitPattern count="few">{0} mbar</unitPattern>
 				<unitPattern count="other">{0} mbar</unitPattern>
+			</unit>
+			<unit type="pressure-hectopascal">
+				<unitPattern count="one">{0} hPa</unitPattern>
+				<unitPattern count="two">{0} hPa</unitPattern>
+				<unitPattern count="few">{0} hPa</unitPattern>
+				<unitPattern count="other">{0} hPa</unitPattern>
 			</unit>
 			<unit type="speed-kilometer-per-hour">
 				<displayName>km/h</displayName>

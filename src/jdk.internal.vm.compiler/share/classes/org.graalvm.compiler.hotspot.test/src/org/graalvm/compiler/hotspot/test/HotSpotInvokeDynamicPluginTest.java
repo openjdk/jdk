@@ -93,7 +93,7 @@ public class HotSpotInvokeDynamicPluginTest extends HotSpotGraalCompilerTest {
         StructuredGraph graph = parseEager(name, AllowAssumptions.NO, new OptionValues(getInitialOptions(), GraalOptions.GeneratePIC, true));
         MidTierContext midTierContext = new MidTierContext(getProviders(), getTargetProvider(), OptimisticOptimizations.ALL, graph.getProfilingInfo());
 
-        CanonicalizerPhase canonicalizer = new CanonicalizerPhase();
+        CanonicalizerPhase canonicalizer = createCanonicalizerPhase();
         Assert.assertEquals(expectedResolves, graph.getNodes().filter(ResolveDynamicConstantNode.class).count());
         Assert.assertEquals(0, graph.getNodes().filter(ResolveDynamicStubCall.class).count());
         CoreProviders context = getProviders();

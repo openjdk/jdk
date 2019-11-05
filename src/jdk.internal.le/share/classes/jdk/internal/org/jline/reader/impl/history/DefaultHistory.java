@@ -4,12 +4,13 @@
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
  *
- * http://www.opensource.org/licenses/bsd-license.php
+ * https://opensource.org/licenses/BSD-3-Clause
  */
 package jdk.internal.org.jline.reader.impl.history;
 
 import java.io.*;
 import java.nio.file.*;
+import java.time.DateTimeException;
 import java.time.Instant;
 import java.util.*;
 
@@ -36,8 +37,7 @@ public class DefaultHistory implements History {
 
     private LineReader reader;
 
-    private int lastLoaded = 0;
-    private int nbEntriesInFile = 0;
+    private Map<String, HistoryFileData> historyFiles = new HashMap<>();
     private int offset = 0;
     private int index = 0;
 
@@ -68,7 +68,7 @@ public class DefaultHistory implements History {
             try {
                 load();
             }
-            catch (IOException e) {
+            catch (IllegalArgumentException | IOException e) {
                 Log.warn("Failed to load history", e);
             }
         }
@@ -84,12 +84,11 @@ public class DefaultHistory implements History {
                     try (BufferedReader reader = Files.newBufferedReader(path)) {
                         internalClear();
                         reader.lines().forEach(line -> addHistoryLine(path, line));
-                        lastLoaded = items.size();
-                        nbEntriesInFile = lastLoaded;
+                        setHistoryFileData(path, new HistoryFileData(items.size(), items.size()));
                         maybeResize();
                     }
                 }
-            } catch (IOException e) {
+            } catch (IllegalArgumentException | IOException e) {
                 Log.debug("Failed to load history; clearing", e);
                 internalClear();
                 throw e;
@@ -97,20 +96,100 @@ public class DefaultHistory implements History {
         }
     }
 
+    @Override
+    public void read(Path file, boolean incremental) throws IOException {
+        Path path = file != null ? file : getPath();
+        if (path != null) {
+            try {
+                if (Files.exists(path)) {
+                    Log.trace("Reading history from: ", path);
+                    try (BufferedReader reader = Files.newBufferedReader(path)) {
+                        reader.lines().forEach(line -> addHistoryLine(path, line, incremental));
+                        setHistoryFileData(path, new HistoryFileData(items.size(), items.size()));
+                        maybeResize();
+                    }
+                }
+            } catch (IllegalArgumentException | IOException e) {
+                Log.debug("Failed to read history; clearing", e);
+                internalClear();
+                throw e;
+            }
+        }
+    }
+
+    private String doHistoryFileDataKey (Path path){
+        return path != null ? path.toAbsolutePath().toString() : null;
+    }
+
+    private HistoryFileData getHistoryFileData(Path path) {
+        String key = doHistoryFileDataKey(path);
+        if (!historyFiles.containsKey(key)){
+            historyFiles.put(key, new HistoryFileData());
+        }
+        return historyFiles.get(key);
+    }
+
+    private void setHistoryFileData(Path path, HistoryFileData historyFileData) {
+        historyFiles.put(doHistoryFileDataKey(path), historyFileData);
+    }
+
+    private boolean isLineReaderHistory (Path path) throws IOException {
+        Path lrp = getPath();
+        if (lrp == null) {
+            if (path != null) {
+                return false;
+            } else {
+                return true;
+            }
+        }
+        return Files.isSameFile(lrp, path);
+    }
+
+    private void setLastLoaded(Path path, int lastloaded){
+        getHistoryFileData(path).setLastLoaded(lastloaded);
+    }
+
+    private void setEntriesInFile(Path path, int entriesInFile){
+        getHistoryFileData(path).setEntriesInFile(entriesInFile);
+    }
+
+    private void incEntriesInFile(Path path, int amount){
+        getHistoryFileData(path).incEntriesInFile(amount);
+    }
+
+    private int getLastLoaded(Path path){
+        return getHistoryFileData(path).getLastLoaded();
+    }
+
+    private int getEntriesInFile(Path path){
+        return getHistoryFileData(path).getEntriesInFile();
+    }
+
     protected void addHistoryLine(Path path, String line) {
+        addHistoryLine(path, line, false);
+    }
+
+    protected void addHistoryLine(Path path, String line, boolean checkDuplicates) {
         if (reader.isSet(LineReader.Option.HISTORY_TIMESTAMPED)) {
             int idx = line.indexOf(':');
+            final String badHistoryFileSyntax = "Bad history file syntax! " +
+                "The history file `" + path + "` may be an older history: " +
+                "please remove it or use a different history file.";
             if (idx < 0) {
-                throw new IllegalArgumentException("Bad history file syntax! " +
-                        "The history file `" + path + "` may be an older history: " +
-                        "please remove it or use a different history file.");
+                throw new IllegalArgumentException(badHistoryFileSyntax);
             }
-            Instant time = Instant.ofEpochMilli(Long.parseLong(line.substring(0, idx)));
+            Instant time;
+            try {
+                time = Instant.ofEpochMilli(Long.parseLong(line.substring(0, idx)));
+            } catch (DateTimeException | NumberFormatException e) {
+                throw new IllegalArgumentException(badHistoryFileSyntax);
+            }
+
             String unescaped = unescape(line.substring(idx + 1));
-            internalAdd(time, unescaped);
+            internalAdd(time, unescaped, checkDuplicates);
         }
         else {
-            internalAdd(Instant.now(), unescape(line));
+            internalAdd(Instant.now(), unescape(line), checkDuplicates);
         }
     }
 
@@ -125,28 +204,45 @@ public class DefaultHistory implements History {
     }
 
     @Override
+    public void write(Path file, boolean incremental) throws IOException {
+        Path path = file != null ? file : getPath();
+        if (path != null && Files.exists(path)) {
+            path.toFile().delete();
+        }
+        internalWrite(path, incremental ? getLastLoaded(path) : 0);
+    }
+
+    @Override
+    public void append(Path file, boolean incremental) throws IOException {
+        internalWrite(file != null ? file : getPath(),
+                      incremental ? getLastLoaded(file) : 0);
+    }
+
+    @Override
     public void save() throws IOException {
-        Path path = getPath();
+        internalWrite(getPath(), getLastLoaded(getPath()));
+    }
+
+    private void internalWrite(Path path, int from) throws IOException {
         if (path != null) {
             Log.trace("Saving history to: ", path);
             Files.createDirectories(path.toAbsolutePath().getParent());
             // Append new items to the history file
             try (BufferedWriter writer = Files.newBufferedWriter(path.toAbsolutePath(),
               StandardOpenOption.WRITE, StandardOpenOption.APPEND, StandardOpenOption.CREATE)) {
-                for (Entry entry : items.subList(lastLoaded, items.size())) {
+                for (Entry entry : items.subList(from, items.size())) {
                     if (isPersistable(entry)) {
                         writer.append(format(entry));
                     }
                 }
             }
-            nbEntriesInFile += items.size() - lastLoaded;
-            // If we are over 25% max size, trim history file
+            incEntriesInFile(path, items.size() - from);
             int max = getInt(reader, LineReader.HISTORY_FILE_SIZE, DEFAULT_HISTORY_FILE_SIZE);
-            if (nbEntriesInFile > max + max / 4) {
+            if (getEntriesInFile(path) > max + max / 4) {
                 trimHistory(path, max);
             }
         }
-        lastLoaded = items.size();
+        setLastLoaded(path, items.size());
     }
 
     protected void trimHistory(Path path, int max) throws IOException {
@@ -172,11 +268,14 @@ public class DefaultHistory implements History {
         }
         Files.move(temp, path, StandardCopyOption.REPLACE_EXISTING);
         // Keep items in memory
-        internalClear();
-        offset = allItems.get(0).index();
-        items.addAll(allItems);
-        lastLoaded = items.size();
-        nbEntriesInFile = items.size();
+        if (isLineReaderHistory(path)) {
+            internalClear();
+            offset = allItems.get(0).index();
+            items.addAll(allItems);
+            setHistoryFileData(path, new HistoryFileData(items.size(), items.size()));
+        } else {
+            setEntriesInFile(path, allItems.size());
+        }
         maybeResize();
     }
 
@@ -194,8 +293,7 @@ public class DefaultHistory implements History {
     private void internalClear() {
         offset = 0;
         index = 0;
-        lastLoaded = 0;
-        nbEntriesInFile = 0;
+        historyFiles = new HashMap<>();
         items.clear();
     }
 
@@ -302,7 +400,18 @@ public class DefaultHistory implements History {
     }
 
     protected void internalAdd(Instant time, String line) {
+        internalAdd(time, line, false);
+    }
+
+    protected void internalAdd(Instant time, String line, boolean checkDuplicates) {
         Entry entry = new EntryImpl(offset + items.size(), time, line);
+        if (checkDuplicates) {
+            for (Entry e: items) {
+                if (e.line().trim().equals(line.trim())) {
+                    return;
+                }
+            }
+        }
         items.add(entry);
         maybeResize();
     }
@@ -310,7 +419,9 @@ public class DefaultHistory implements History {
     private void maybeResize() {
         while (size() > getInt(reader, LineReader.HISTORY_SIZE, DEFAULT_HISTORY_SIZE)) {
             items.removeFirst();
-            lastLoaded--;
+            for (HistoryFileData hfd: historyFiles.values()) {
+                hfd.decLastLoaded();
+            }
             offset++;
         }
         index = size();
@@ -501,6 +612,47 @@ public class DefaultHistory implements History {
             }
         }
         return sb.toString();
+    }
+
+    private class HistoryFileData {
+        private int lastLoaded = 0;
+        private int entriesInFile = 0;
+
+        public HistoryFileData() {
+        }
+
+        public HistoryFileData(int lastLoaded, int entriesInFile) {
+            this.lastLoaded = lastLoaded;
+            this.entriesInFile = entriesInFile;
+        }
+
+        public int getLastLoaded() {
+            return lastLoaded;
+        }
+
+        public void setLastLoaded(int lastLoaded) {
+            this.lastLoaded = lastLoaded;
+        }
+
+        public void decLastLoaded() {
+            lastLoaded = lastLoaded - 1;
+            if (lastLoaded < 0) {
+                lastLoaded = 0;
+            }
+        }
+
+        public int getEntriesInFile() {
+            return entriesInFile;
+        }
+
+        public void setEntriesInFile(int entriesInFile) {
+            this.entriesInFile = entriesInFile;
+        }
+
+        public void incEntriesInFile(int amount) {
+            entriesInFile = entriesInFile + amount;
+        }
+
     }
 
 }

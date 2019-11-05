@@ -27,7 +27,6 @@ package com.sun.tools.javac.tree;
 
 import java.io.*;
 
-import com.sun.source.tree.CaseTree.CaseKind;
 import com.sun.source.tree.MemberReferenceTree.ReferenceMode;
 import com.sun.source.tree.ModuleTree.ModuleKind;
 import com.sun.tools.javac.code.*;

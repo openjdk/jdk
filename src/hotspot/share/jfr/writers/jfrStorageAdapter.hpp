@@ -82,7 +82,7 @@ class Adapter {
     assert(_thread != NULL, "invariant");
     Flush f(_storage, used, requested, _thread);
     _storage = f.result();
-    return _storage != NULL;
+    return _storage != NULL && !_storage->excluded();
   }
 
   void release() {
@@ -236,7 +236,8 @@ class NoOwnershipAdapter {
   void release() {}
   bool flush(size_t used, size_t requested) {
     // don't flush/expand a buffer that is not our own
-    return false;
+    _pos = _start;
+    return true;
   }
 };
 

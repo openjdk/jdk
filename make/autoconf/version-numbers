@@ -23,7 +23,8 @@
 # questions.
 #
 
-# Default version numbers to use unless overridden by configure
+# Default version, product, and vendor information to use,
+# unless overridden by configure
 
 DEFAULT_VERSION_FEATURE=14
 DEFAULT_VERSION_INTERIM=0
@@ -47,6 +48,7 @@ COMPANY_NAME=N/A
 HOTSPOT_VM_DISTRO="OpenJDK"
 VENDOR_URL=https://openjdk.java.net/
 VENDOR_URL_BUG=https://bugreport.java.com/bugreport/
+VENDOR_URL_VM_BUG=https://bugreport.java.com/bugreport/crash.jsp
 
 # Might need better names for these
 MACOSX_BUNDLE_NAME_BASE="OpenJDK"

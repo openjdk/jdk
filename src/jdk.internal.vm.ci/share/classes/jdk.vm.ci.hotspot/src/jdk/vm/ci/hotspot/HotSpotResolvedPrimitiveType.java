@@ -150,6 +150,11 @@ public final class HotSpotResolvedPrimitiveType extends HotSpotResolvedJavaType 
     }
 
     @Override
+    public boolean isBeingInitialized() {
+        return false;
+    }
+
+    @Override
     public boolean isLinked() {
         return true;
     }

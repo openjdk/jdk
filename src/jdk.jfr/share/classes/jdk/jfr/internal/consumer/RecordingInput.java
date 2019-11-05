@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,61 +30,82 @@ import java.io.EOFException;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.nio.charset.Charset;
+import java.nio.file.Path;
 
 public final class RecordingInput implements DataInput, AutoCloseable {
 
-    public static final byte STRING_ENCODING_NULL = 0;
-    public static final byte STRING_ENCODING_EMPTY_STRING = 1;
-    public static final byte STRING_ENCODING_CONSTANT_POOL = 2;
-    public static final byte STRING_ENCODING_UTF8_BYTE_ARRAY = 3;
-    public static final byte STRING_ENCODING_CHAR_ARRAY = 4;
-    public static final byte STRING_ENCODING_LATIN1_BYTE_ARRAY = 5;
-
-    private final static int DEFAULT_BLOCK_SIZE = 16 * 1024 * 1024;
-    private final static Charset UTF8 = Charset.forName("UTF-8");
-    private final static Charset LATIN1 = Charset.forName("ISO-8859-1");
+    private final static int DEFAULT_BLOCK_SIZE = 64_000;
 
     private static final class Block {
         private byte[] bytes = new byte[0];
         private long blockPosition;
+        private long blockPositionEnd;
 
         boolean contains(long position) {
-            return position >= blockPosition && position < blockPosition + bytes.length;
+            return position >= blockPosition && position < blockPositionEnd;
         }
 
         public void read(RandomAccessFile file, int amount) throws IOException {
             blockPosition = file.getFilePointer();
             // reuse byte array, if possible
-            if (amount != bytes.length) {
+            if (amount > bytes.length) {
                 bytes = new byte[amount];
             }
-            file.readFully(bytes);
+            this.blockPositionEnd = blockPosition + amount;
+            file.readFully(bytes, 0, amount);
         }
 
         public byte get(long position) {
             return bytes[(int) (position - blockPosition)];
         }
-    }
 
-    private final RandomAccessFile file;
-    private final long size;
+        public void reset() {
+            blockPosition = 0;
+            blockPositionEnd = 0;
+        }
+    }
+    private final int blockSize;
+    private final FileAccess fileAccess;
+    private RandomAccessFile file;
+    private String filename;
     private Block currentBlock = new Block();
     private Block previousBlock = new Block();
     private long position;
-    private final int blockSize;
+    private long size = -1; // Fail fast if setSize(...) has not been called
+                            // before parsing
 
-    private RecordingInput(File f, int blockSize) throws IOException {
-        this.size = f.length();
+    RecordingInput(File f, FileAccess fileAccess, int blockSize) throws IOException {
         this.blockSize = blockSize;
-        this.file = new RandomAccessFile(f, "r");
-        if (size < 8) {
-            throw new IOException("Not a valid Flight Recorder file. File length is only " + size + " bytes.");
+        this.fileAccess = fileAccess;
+        initialize(f);
+    }
+
+    private void initialize(File f) throws IOException {
+        this.filename = fileAccess.getAbsolutePath(f);
+        this.file = fileAccess.openRAF(f, "r");
+        this.position = 0;
+        this.size = -1;
+        this.currentBlock.reset();
+        previousBlock.reset();
+        if (fileAccess.length(f) < 8) {
+            throw new IOException("Not a valid Flight Recorder file. File length is only " + fileAccess.length(f) + " bytes.");
         }
     }
 
-    public RecordingInput(File f) throws IOException {
-        this(f, DEFAULT_BLOCK_SIZE);
+    public RecordingInput(File f, FileAccess fileAccess) throws IOException {
+        this(f, fileAccess, DEFAULT_BLOCK_SIZE);
+    }
+
+    void positionPhysical(long position) throws IOException {
+        file.seek(position);
+    }
+
+    byte readPhysicalByte() throws IOException {
+        return file.readByte();
+    }
+
+    long readPhysicalLong() throws IOException {
+        return file.readLong();
     }
 
     @Override
@@ -109,7 +130,7 @@ public final class RecordingInput implements DataInput, AutoCloseable {
         readFully(dst, 0, dst.length);
     }
 
-    public final short readRawShort() throws IOException {
+    short readRawShort() throws IOException {
         // copied from java.io.Bits
         byte b0 = readByte();
         byte b1 = readByte();
@@ -117,18 +138,18 @@ public final class RecordingInput implements DataInput, AutoCloseable {
     }
 
     @Override
-    public final double readDouble() throws IOException {
+    public double readDouble() throws IOException {
         // copied from java.io.Bits
         return Double.longBitsToDouble(readRawLong());
     }
 
     @Override
-    public final float readFloat() throws IOException {
+    public float readFloat() throws IOException {
         // copied from java.io.Bits
         return Float.intBitsToFloat(readRawInt());
     }
 
-    public final int readRawInt() throws IOException {
+    int readRawInt() throws IOException {
         // copied from java.io.Bits
         byte b0 = readByte();
         byte b1 = readByte();
@@ -137,7 +158,7 @@ public final class RecordingInput implements DataInput, AutoCloseable {
         return ((b3 & 0xFF)) + ((b2 & 0xFF) << 8) + ((b1 & 0xFF) << 16) + ((b0) << 24);
     }
 
-    public final long readRawLong() throws IOException {
+    long readRawLong() throws IOException {
         // copied from java.io.Bits
         byte b0 = readByte();
         byte b1 = readByte();
@@ -150,20 +171,20 @@ public final class RecordingInput implements DataInput, AutoCloseable {
         return ((b7 & 0xFFL)) + ((b6 & 0xFFL) << 8) + ((b5 & 0xFFL) << 16) + ((b4 & 0xFFL) << 24) + ((b3 & 0xFFL) << 32) + ((b2 & 0xFFL) << 40) + ((b1 & 0xFFL) << 48) + (((long) b0) << 56);
     }
 
-    public final long position() throws IOException {
+    public final long position() {
         return position;
     }
 
     public final void position(long newPosition) throws IOException {
         if (!currentBlock.contains(newPosition)) {
             if (!previousBlock.contains(newPosition)) {
-                if (newPosition > size()) {
-                    throw new EOFException("Trying to read at " + newPosition + ", but file is only " + size() + " bytes.");
+                if (newPosition > size) {
+                    throw new EOFException("Trying to read at " + newPosition + ", but file is only " + size + " bytes.");
                 }
                 long blockStart = trimToFileSize(calculateBlockStart(newPosition));
                 file.seek(blockStart);
                 // trim amount to file size
-                long amount = Math.min(size() - blockStart, blockSize);
+                long amount = Math.min(size - blockStart, blockSize);
                 previousBlock.read(file, (int) amount);
             }
             // swap previous and current
@@ -191,11 +212,12 @@ public final class RecordingInput implements DataInput, AutoCloseable {
         return newPosition - blockSize / 2;
     }
 
-    public final long size() throws IOException {
+    long size() {
         return size;
     }
 
-    public final void close() throws IOException {
+    @Override
+    public void close() throws IOException {
         file.close();
     }
 
@@ -245,34 +267,7 @@ public final class RecordingInput implements DataInput, AutoCloseable {
     // 4, means ""
     @Override
     public String readUTF() throws IOException {
-        return readEncodedString(readByte());
-    }
-
-    public String readEncodedString(byte encoding) throws IOException {
-        if (encoding == STRING_ENCODING_NULL) {
-            return null;
-        }
-        if (encoding == STRING_ENCODING_EMPTY_STRING) {
-            return "";
-        }
-        int size = readInt();
-        if (encoding == STRING_ENCODING_CHAR_ARRAY) {
-            char[] c = new char[size];
-            for (int i = 0; i < size; i++) {
-                c[i] = readChar();
-            }
-            return new String(c);
-        }
-        byte[] bytes = new byte[size];
-        readFully(bytes); // TODO: optimize, check size, and copy only if needed
-        if (encoding == STRING_ENCODING_UTF8_BYTE_ARRAY) {
-            return new String(bytes, UTF8);
-        }
-
-        if (encoding == STRING_ENCODING_LATIN1_BYTE_ARRAY) {
-            return new String(bytes, LATIN1);
-        }
-        throw new IOException("Unknown string encoding " + encoding);
+        throw new UnsupportedOperationException("Use StringParser");
     }
 
     @Override
@@ -292,48 +287,152 @@ public final class RecordingInput implements DataInput, AutoCloseable {
 
     @Override
     public long readLong() throws IOException {
-        // can be optimized by branching checks, but will do for now
+        final byte[] bytes = currentBlock.bytes;
+        final int index = (int) (position - currentBlock.blockPosition);
+
+        if (index + 8 < bytes.length && index >= 0) {
+            byte b0 = bytes[index];
+            long ret = (b0 & 0x7FL);
+            if (b0 >= 0) {
+                position += 1;
+                return ret;
+            }
+            int b1 = bytes[index + 1];
+            ret += (b1 & 0x7FL) << 7;
+            if (b1 >= 0) {
+                position += 2;
+                return ret;
+            }
+            int b2 = bytes[index + 2];
+            ret += (b2 & 0x7FL) << 14;
+            if (b2 >= 0) {
+                position += 3;
+                return ret;
+            }
+            int b3 = bytes[index + 3];
+            ret += (b3 & 0x7FL) << 21;
+            if (b3 >= 0) {
+                position += 4;
+                return ret;
+            }
+            int b4 = bytes[index + 4];
+            ret += (b4 & 0x7FL) << 28;
+            if (b4 >= 0) {
+                position += 5;
+                return ret;
+            }
+            int b5 = bytes[index + 5];
+            ret += (b5 & 0x7FL) << 35;
+            if (b5 >= 0) {
+                position += 6;
+                return ret;
+            }
+            int b6 = bytes[index + 6];
+            ret += (b6 & 0x7FL) << 42;
+            if (b6 >= 0) {
+                position += 7;
+                return ret;
+            }
+            int b7 = bytes[index + 7];
+            ret += (b7 & 0x7FL) << 49;
+            if (b7 >= 0) {
+                position += 8;
+                return ret;
+            }
+            int b8 = bytes[index + 8];// read last byte raw
+            position += 9;
+            return ret + (((long) (b8 & 0XFF)) << 56);
+        } else {
+            return readLongSlow();
+        }
+    }
+
+    private long readLongSlow() throws IOException {
         byte b0 = readByte();
         long ret = (b0 & 0x7FL);
         if (b0 >= 0) {
             return ret;
         }
+
         int b1 = readByte();
         ret += (b1 & 0x7FL) << 7;
         if (b1 >= 0) {
             return ret;
         }
+
         int b2 = readByte();
         ret += (b2 & 0x7FL) << 14;
         if (b2 >= 0) {
             return ret;
         }
+
         int b3 = readByte();
         ret += (b3 & 0x7FL) << 21;
         if (b3 >= 0) {
             return ret;
         }
+
         int b4 = readByte();
         ret += (b4 & 0x7FL) << 28;
         if (b4 >= 0) {
             return ret;
         }
+
         int b5 = readByte();
         ret += (b5 & 0x7FL) << 35;
         if (b5 >= 0) {
             return ret;
         }
+
         int b6 = readByte();
         ret += (b6 & 0x7FL) << 42;
         if (b6 >= 0) {
             return ret;
         }
+
         int b7 = readByte();
         ret += (b7 & 0x7FL) << 49;
         if (b7 >= 0) {
             return ret;
+
         }
+
         int b8 = readByte(); // read last byte raw
         return ret + (((long) (b8 & 0XFF)) << 56);
     }
+
+    public void setValidSize(long size) {
+        if (size > this.size) {
+            this.size = size;
+        }
+    }
+
+    public long getFileSize() throws IOException {
+        return file.length();
+    }
+
+    public String getFilename() {
+        return filename;
+    }
+
+    // Purpose of this method is to reuse block cache from a
+    // previous RecordingInput
+    public void setFile(Path path) throws IOException {
+        try {
+            file.close();
+        } catch (IOException e) {
+            // perhaps deleted
+        }
+        file = null;
+        initialize(path.toFile());
+    }
+/*
+
+
+
+
+
+ *
+ *
+ */
 }

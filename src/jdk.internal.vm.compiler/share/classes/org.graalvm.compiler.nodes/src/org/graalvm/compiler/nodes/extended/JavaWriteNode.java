@@ -79,4 +79,9 @@ public final class JavaWriteNode extends AbstractWriteNode implements Lowerable,
     public Stamp getAccessStamp() {
         return StampFactory.forKind(writeKind);
     }
+
+    @Override
+    public LocationIdentity getKilledLocationIdentity() {
+        return getLocationIdentity();
+    }
 }

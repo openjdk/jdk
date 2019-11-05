@@ -69,6 +69,7 @@
 #include "prims/jvmtiThreadState.hpp"
 #include "prims/methodComparator.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/biasedLocking.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaCalls.hpp"
@@ -455,6 +456,12 @@ InstanceKlass::InstanceKlass(const ClassFileParser& parser, unsigned kind, Klass
 
   if (Arguments::is_dumping_archive()) {
     SystemDictionaryShared::init_dumptime_info(this);
+  }
+
+  // Set biased locking bit for all instances of this class; it will be
+  // cleared if revocation occurs too often for this type
+  if (UseBiasedLocking && BiasedLocking::enabled()) {
+    set_prototype_header(markWord::biased_locking_prototype());
   }
 }
 
@@ -2408,6 +2415,11 @@ void InstanceKlass::restore_unshareable_info(ClassLoaderData* loader_data, Handl
     // --> see ArrayKlass::complete_create_array_klass()
     array_klasses()->restore_unshareable_info(ClassLoaderData::the_null_class_loader_data(), Handle(), CHECK);
   }
+
+  // Initialize current biased locking state.
+  if (UseBiasedLocking && BiasedLocking::enabled()) {
+    set_prototype_header(markWord::biased_locking_prototype());
+  }
 }
 
 // returns true IFF is_in_error_state() has been changed as a result of this call.
@@ -2594,7 +2606,7 @@ const char* InstanceKlass::signature_name() const {
 
   // Add L as type indicator
   int dest_index = 0;
-  dest[dest_index++] = 'L';
+  dest[dest_index++] = JVM_SIGNATURE_CLASS;
 
   // Add the actual class name
   for (int src_index = 0; src_index < src_length; ) {
@@ -2607,7 +2619,7 @@ const char* InstanceKlass::signature_name() const {
   }
 
   // Add the semicolon and the NULL
-  dest[dest_index++] = ';';
+  dest[dest_index++] = JVM_SIGNATURE_ENDCLASS;
   dest[dest_index] = '\0';
   return dest;
 }
@@ -3614,7 +3626,7 @@ void InstanceKlass::verify_on(outputStream* st) {
     Array<int>* method_ordering = this->method_ordering();
     int length = method_ordering->length();
     if (JvmtiExport::can_maintain_original_method_order() ||
-        ((UseSharedSpaces || DumpSharedSpaces) && length != 0)) {
+        ((UseSharedSpaces || Arguments::is_dumping_archive()) && length != 0)) {
       guarantee(length == methods()->length(), "invalid method ordering length");
       jlong sum = 0;
       for (int j = 0; j < length; j++) {

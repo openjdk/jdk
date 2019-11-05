@@ -7,7 +7,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 14771 $"/>
+		<version number="$Revision$"/>
 		<language type="pt"/>
 		<territory type="CV"/>
 	</identity>
@@ -15,7 +15,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<timeZoneNames>
 			<metazone type="Azores">
 				<short>
-					<generic>∅∅∅</generic>
+					<generic>AZOT</generic>
 					<standard>∅∅∅</standard>
 					<daylight>∅∅∅</daylight>
 				</short>

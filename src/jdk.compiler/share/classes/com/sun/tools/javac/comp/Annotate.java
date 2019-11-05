@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -364,12 +364,17 @@ public class Annotate {
                     && (toAnnotate.kind == MDL || toAnnotate.owner.kind != MTH)
                     && types.isSameType(c.type, syms.deprecatedType)) {
                 toAnnotate.flags_field |= (Flags.DEPRECATED | Flags.DEPRECATED_ANNOTATION);
-                Attribute fr = c.member(names.forRemoval);
-                if (fr instanceof Attribute.Constant) {
-                    Attribute.Constant v = (Attribute.Constant) fr;
-                    if (v.type == syms.booleanType && ((Integer) v.value) != 0) {
-                        toAnnotate.flags_field |= Flags.DEPRECATED_REMOVAL;
-                    }
+                if (isAttributeTrue(c.member(names.forRemoval))) {
+                    toAnnotate.flags_field |= Flags.DEPRECATED_REMOVAL;
+                }
+            }
+
+            // Note: @Deprecated has no effect on local variables and parameters
+            if (!c.type.isErroneous()
+                    && types.isSameType(c.type, syms.previewFeatureType)) {
+                toAnnotate.flags_field |= Flags.PREVIEW_API;
+                if (isAttributeTrue(c.member(names.essentialAPI))) {
+                    toAnnotate.flags_field |= Flags.PREVIEW_ESSENTIAL_API;
                 }
             }
         }
@@ -397,6 +402,16 @@ public class Annotate {
             toAnnotate.setDeclarationAttributes(attrs);
         }
     }
+    //where:
+        private boolean isAttributeTrue(Attribute attr) {
+            if (attr instanceof Attribute.Constant) {
+                Attribute.Constant v = (Attribute.Constant) attr;
+                if (v.type == syms.booleanType && ((Integer) v.value) != 0) {
+                    return true;
+                }
+            }
+            return false;
+        }
 
     /**
      * Attribute and store a semantic representation of the annotation tree {@code tree} into the
@@ -1361,5 +1376,32 @@ public class Annotate {
 
     public void newRound() {
         blockCount = 1;
+    }
+
+    public Queues setQueues(Queues nue) {
+        Queues stored = new Queues(q, validateQ, typesQ, afterTypesQ);
+        this.q = nue.q;
+        this.typesQ = nue.typesQ;
+        this.afterTypesQ = nue.afterTypesQ;
+        this.validateQ = nue.validateQ;
+        return stored;
+    }
+
+    static class Queues {
+        private final ListBuffer<Runnable> q;
+        private final ListBuffer<Runnable> validateQ;
+        private final ListBuffer<Runnable> typesQ;
+        private final ListBuffer<Runnable> afterTypesQ;
+
+        public Queues() {
+            this(new ListBuffer<Runnable>(), new ListBuffer<Runnable>(), new ListBuffer<Runnable>(), new ListBuffer<Runnable>());
+        }
+
+        public Queues(ListBuffer<Runnable> q, ListBuffer<Runnable> validateQ, ListBuffer<Runnable> typesQ, ListBuffer<Runnable> afterTypesQ) {
+            this.q = q;
+            this.validateQ = validateQ;
+            this.typesQ = typesQ;
+            this.afterTypesQ = afterTypesQ;
+        }
     }
 }

@@ -379,15 +379,15 @@ class SignatureStream : public StackObj {
     _begin = _end;
     int t = sig->char_at(_begin);
     switch (t) {
-      case 'B': _type = T_BYTE;    break;
-      case 'C': _type = T_CHAR;    break;
-      case 'D': _type = T_DOUBLE;  break;
-      case 'F': _type = T_FLOAT;   break;
-      case 'I': _type = T_INT;     break;
-      case 'J': _type = T_LONG;    break;
-      case 'S': _type = T_SHORT;   break;
-      case 'Z': _type = T_BOOLEAN; break;
-      case 'V': _type = T_VOID;    break;
+      case JVM_SIGNATURE_BYTE:    _type = T_BYTE;    break;
+      case JVM_SIGNATURE_CHAR:    _type = T_CHAR;    break;
+      case JVM_SIGNATURE_DOUBLE:  _type = T_DOUBLE;  break;
+      case JVM_SIGNATURE_FLOAT:   _type = T_FLOAT;   break;
+      case JVM_SIGNATURE_INT:     _type = T_INT;     break;
+      case JVM_SIGNATURE_LONG:    _type = T_LONG;    break;
+      case JVM_SIGNATURE_SHORT:   _type = T_SHORT;   break;
+      case JVM_SIGNATURE_BOOLEAN: _type = T_BOOLEAN; break;
+      case JVM_SIGNATURE_VOID:    _type = T_VOID;    break;
       default : next_non_primitive(t);
                 return;
     }

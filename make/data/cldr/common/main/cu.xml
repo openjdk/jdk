@@ -7,7 +7,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 14782 $"/>
+		<version number="$Revision$"/>
 		<language type="cu"/>
 	</identity>
 	<localeDisplayNames>
@@ -114,8 +114,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<exemplarCharacters>[\u0487\uA67D \u0483 ҂ а б \u2DE0 в \u2DE1 г \u2DE2 д \u2DE3 е є ж \u2DE4 \u2DE5 ѕ з ꙁ и й і ї к \u2DE6 л \u2DE7 м \u2DE8 н \u2DE9 ѻ о \u2DEA п р \u2DEC с \u2DED т у ꙋ ф х \u2DEF ѡ ѿ ꙍ ѽ ц ч \u2DF1 ш щ ⸯ ꙿ ъ ы ь ѣ ю ѫ ꙗ ѧ ѯ ѱ ѳ ѵ ѷ \u2DF4]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[\u0488\u0489\u200C\u200D\uA670\uA671\uA672\uFE2F \u0484 \uFE2E \uA66F \u2DF6 ꙣ \u2DF7 \uA674 ꙃ ꙅ \uA675 \uA676 ꙇ ꙉ \u2DF8 ꙥ ꙧ ҥ ꙩꙫꙭꙮꚙꚛ \u2DEB ҁ \u2DF5 \u2DEE \uA677 \u2DF9 \uA69E \uA67B \u2DF0 ꙡ џ \u2DF2 \u2DF3 ꙏ \uA678 ꙑ \uA679 \uA67A \u2DFA ꙓ \u2DFB ꙕ \u2DFC ѥ \uA69F \u2DFD ꙙ \u2DFE ꙛ ѩ ꙝ ѭ \u2DFF ꙟ]</exemplarCharacters>
 		<exemplarCharacters type="index">[А Б В Г Д Є Ж Ѕ З И І К Л М Н Ѻ О П Р С Т Ꙋ Ф Х Ѡ Ѿ Ц Ч Ш Щ Ъ Ы Ь Ѣ Ю Ѫ Ꙗ Ѧ Ѯ Ѱ Ѳ Ѵ]</exemplarCharacters>
-		<exemplarCharacters type="numbers">[  \- , % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
-		<exemplarCharacters type="punctuation">[_ \- ‐ – — ⹃ , ; \: ! ? . ( ) ꙳ / ꙾]</exemplarCharacters>
+		<exemplarCharacters type="numbers">[  \- ‑ , % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[_ \- ‐ ‑ – — ⹃ , ; \: ! ? . ( ) ꙳ / ꙾]</exemplarCharacters>
 	</characters>
 	<delimiters>
 		<quotationStart draft="unconfirmed">«</quotationStart>

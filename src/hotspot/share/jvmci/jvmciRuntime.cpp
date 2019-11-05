@@ -620,21 +620,6 @@ JRT_ENTRY(jint, JVMCIRuntime::identity_hash_code(JavaThread* thread, oopDesc* ob
   return (jint) obj->identity_hash();
 JRT_END
 
-JRT_ENTRY(jboolean, JVMCIRuntime::thread_is_interrupted(JavaThread* thread, oopDesc* receiver, jboolean clear_interrupted))
-  Handle receiverHandle(thread, receiver);
-  // A nested ThreadsListHandle may require the Threads_lock which
-  // requires thread_in_vm which is why this method cannot be JRT_LEAF.
-  ThreadsListHandle tlh;
-
-  JavaThread* receiverThread = java_lang_Thread::thread(receiverHandle());
-  if (receiverThread == NULL || (EnableThreadSMRExtraValidityChecks && !tlh.includes(receiverThread))) {
-    // The other thread may exit during this process, which is ok so return false.
-    return JNI_FALSE;
-  } else {
-    return (jint) receiverThread->is_interrupted(clear_interrupted != 0);
-  }
-JRT_END
-
 JRT_ENTRY(jint, JVMCIRuntime::test_deoptimize_call_int(JavaThread* thread, int value))
   deopt_caller();
   return (jint) value;
@@ -980,8 +965,8 @@ Klass* JVMCIRuntime::get_klass_by_name_impl(Klass*& accessing_klass,
   JVMCI_EXCEPTION_CONTEXT;
 
   // Now we need to check the SystemDictionary
-  if (sym->char_at(0) == 'L' &&
-    sym->char_at(sym->utf8_length()-1) == ';') {
+  if (sym->char_at(0) == JVM_SIGNATURE_CLASS &&
+      sym->char_at(sym->utf8_length()-1) == JVM_SIGNATURE_ENDCLASS) {
     // This is a name from a signature.  Strip off the trimmings.
     // Call recursive to keep scope of strippedsym.
     TempNewSymbol strippedsym = SymbolTable::new_symbol(sym->as_utf8()+1,
@@ -1013,8 +998,8 @@ Klass* JVMCIRuntime::get_klass_by_name_impl(Klass*& accessing_klass,
   // we must build an array type around it.  The CI requires array klasses
   // to be loaded if their element klasses are loaded, except when memory
   // is exhausted.
-  if (sym->char_at(0) == '[' &&
-      (sym->char_at(1) == '[' || sym->char_at(1) == 'L')) {
+  if (sym->char_at(0) == JVM_SIGNATURE_ARRAY &&
+      (sym->char_at(1) == JVM_SIGNATURE_ARRAY || sym->char_at(1) == JVM_SIGNATURE_CLASS)) {
     // We have an unloaded array.
     // Build it on the fly if the element class exists.
     TempNewSymbol elem_sym = SymbolTable::new_symbol(sym->as_utf8()+1,
@@ -1271,7 +1256,7 @@ InstanceKlass* JVMCIRuntime::get_instance_klass_for_declared_method_holder(Klass
   if (method_holder->is_instance_klass()) {
     return InstanceKlass::cast(method_holder);
   } else if (method_holder->is_array_klass()) {
-    return InstanceKlass::cast(SystemDictionary::Object_klass());
+    return SystemDictionary::Object_klass();
   } else {
     ShouldNotReachHere();
   }

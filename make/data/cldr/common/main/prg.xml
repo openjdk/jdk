@@ -7,7 +7,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 14782 $"/>
+		<version number="$Revision$"/>
 		<language type="prg"/>
 	</identity>
 	<localeDisplayNames>
@@ -137,7 +137,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="MC" draft="unconfirmed">Mōnakō</territory>
 			<territory type="MD" draft="unconfirmed">Mōldawija</territory>
 			<territory type="ME" draft="unconfirmed">Mōntenegran</territory>
-			<territory type="MK" draft="unconfirmed">Macedōnija</territory>
 			<territory type="MT" draft="unconfirmed">Mālta</territory>
 			<territory type="MX" draft="unconfirmed">Meksiku</territory>
 			<territory type="NI" draft="unconfirmed">Nikarāgwa</territory>
@@ -192,8 +191,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<exemplarCharacters>[a ā b c d ḑ e ē f g ģ h i ī j k ķ l m n ņ o ō p q r ŗ s š t ț u ū v w x y z ž]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[]</exemplarCharacters>
 		<exemplarCharacters type="index">[A Ā B C D Ḑ E Ē F G Ģ H I Ī J K Ķ L M N Ņ O Ō P Q R Ŗ S Š T Ț U Ū V W X Y Z Ž]</exemplarCharacters>
-		<exemplarCharacters type="numbers">[  \- , % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
-		<exemplarCharacters type="punctuation">[\- ‐ – — , ; \: ! ? . … “ „ ( ) \[ \] \{ \}]</exemplarCharacters>
+		<exemplarCharacters type="numbers">[  \- ‑ , % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‐ ‑ – — , ; \: ! ? . … “ „ ( ) \[ \] \{ \}]</exemplarCharacters>
 	</characters>
 	<delimiters>
 		<quotationStart draft="unconfirmed">„</quotationStart>

@@ -177,6 +177,7 @@ public class NoPrivateTypesExported extends JavacTestingAbstractProcessor {
 
             if (annotationElement.getAnnotation(Documented.class) == null) {
                 note("Ignoring undocumented annotation: " + mirror.getAnnotationType());
+                continue;
             }
 
             verifyTypeAcceptable(mirror.getAnnotationType(), acceptable);

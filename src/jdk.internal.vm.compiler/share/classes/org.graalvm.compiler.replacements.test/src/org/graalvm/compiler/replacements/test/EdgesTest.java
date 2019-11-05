@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,6 @@ import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.FloatingNode;
 import org.graalvm.compiler.nodes.java.InstanceOfNode;
 import org.graalvm.compiler.options.OptionValues;
-import org.graalvm.compiler.phases.common.CanonicalizerPhase;
 import org.graalvm.compiler.phases.common.inlining.InliningPhase;
 import org.graalvm.compiler.phases.common.inlining.policy.InlineMethodSubstitutionsPolicy;
 import org.graalvm.compiler.phases.tiers.HighTierContext;
@@ -133,8 +132,8 @@ public class EdgesTest extends GraalCompilerTest {
         ResolvedJavaMethod javaMethod = getMetaAccess().lookupJavaMethod(method);
         StructuredGraph g = parseProfiled(javaMethod, AllowAssumptions.NO);
         HighTierContext context = getDefaultHighTierContext();
-        new InliningPhase(new InlineMethodSubstitutionsPolicy(), new CanonicalizerPhase()).apply(g, context);
-        new CanonicalizerPhase().apply(g, context);
+        new InliningPhase(new InlineMethodSubstitutionsPolicy(), createCanonicalizerPhase()).apply(g, context);
+        this.createCanonicalizerPhase().apply(g, context);
         Assert.assertTrue(g.getNodes().filter(InstanceOfNode.class).isEmpty());
     }
 

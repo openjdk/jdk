@@ -117,4 +117,12 @@ inline bool ZArrayIteratorImpl<T, parallel>::next(T* elem) {
   return false;
 }
 
+template <typename T>
+inline ZArrayIterator<T>::ZArrayIterator(ZArray<T>* array) :
+    ZArrayIteratorImpl<T, ZARRAY_SERIAL>(array) {}
+
+template <typename T>
+inline ZArrayParallelIterator<T>::ZArrayParallelIterator(ZArray<T>* array) :
+    ZArrayIteratorImpl<T, ZARRAY_PARALLEL>(array) {}
+
 #endif // SHARE_GC_Z_ZARRAY_INLINE_HPP

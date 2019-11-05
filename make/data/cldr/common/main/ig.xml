@@ -7,19 +7,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 14845 $"/>
+		<version number="$Revision$"/>
 		<language type="ig"/>
 	</identity>
 	<localeDisplayNames>
-		<localeDisplayPattern>
-			<localePattern>{0} ({1})</localePattern>
-			<localeSeparator>{0}, {1}</localeSeparator>
-			<localeKeyTypePattern>{0}: {1}</localeKeyTypePattern>
-		</localeDisplayPattern>
 		<languages>
 			<language type="ak">Akan</language>
 			<language type="am">Amariikị</language>
 			<language type="ar">Arabiikị</language>
+			<language type="ar_001">Ụdị Arabiikị nke oge a</language>
 			<language type="be">Belaruusu</language>
 			<language type="bg">Bọlụgarịa</language>
 			<language type="bn">Bengali</language>
@@ -31,7 +27,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="en">Asụsụ Bekee</language>
 			<language type="en_AU">Bekee ndị Australia</language>
 			<language type="en_CA">Bekee ndị Canada</language>
-			<language type="en_GB">Bekee ndị Britain</language>
 			<language type="en_GB" alt="short">Bekee ndị UK</language>
 			<language type="en_US">Bekee ndị America</language>
 			<language type="en_US" alt="short">Bekee ndị US</language>
@@ -87,39 +82,280 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<script type="Hans" alt="stand-alone">Han di mfe</script>
 			<script type="Hant">Izugbe</script>
 			<script type="Hant" alt="stand-alone">Han Izugbe</script>
+			<script type="Jpan">Japanese</script>
+			<script type="Kore">Korea</script>
 			<script type="Latn">Latin</script>
 			<script type="Zxxx">Edeghị ede</script>
 			<script type="Zzzz">Mkpụrụ okwu amaghị</script>
 		</scripts>
 		<territories>
+			<territory type="001">Uwa</territory>
+			<territory type="002">Afrika</territory>
+			<territory type="003">Mpaghara Ugwu Amerịka</territory>
+			<territory type="005">Mpaghara Mgbada Ugwu America</territory>
+			<territory type="009">Oceania</territory>
+			<territory type="011">Mpaghara Ọdịda Anyanwụ Afrịka</territory>
+			<territory type="013">Etiti America</territory>
+			<territory type="014">Mpaghara Ọwụwa Anyanwụ Afrịka</territory>
+			<territory type="015">Mpaghara Ugwu Afrịka</territory>
+			<territory type="017">Etiti Afrịka</territory>
+			<territory type="018">Mpaghara Mgbada Ugwu Afrịka</territory>
+			<territory type="019">Amerịka</territory>
+			<territory type="021">Mpaghara Ugwu America</territory>
+			<territory type="029">Onye Carrabean</territory>
+			<territory type="030">Mpaghara Ọwụwa Anyanwụ Asia</territory>
+			<territory type="034">Mpaghara Mgbada Ugwu Asia</territory>
+			<territory type="035">Mpaghara Mgbada Ugwu Asia dị na Ọwụwa Anyanwụ</territory>
+			<territory type="039">Mpaghara Mgbada Ugwu Europe</territory>
+			<territory type="053">Australasia</territory>
+			<territory type="054">Melanesia</territory>
+			<territory type="057">Mpaghara Micronesian</territory>
+			<territory type="061">Polynesia</territory>
+			<territory type="142">Asia</territory>
+			<territory type="143">Etiti Asia</territory>
+			<territory type="145">Mpaghara Ọdịda Anyanwụ Asia</territory>
+			<territory type="150">Europe</territory>
+			<territory type="151">Mpaghara Ọwụwa Anyanwụ Europe</territory>
+			<territory type="154">Mpaghara Ugwu Europe</territory>
+			<territory type="155">Mpaghara Ọdịda Anyanwụ Europe</territory>
+			<territory type="202">Sub-Saharan Afrịka</territory>
+			<territory type="419">Latin America</territory>
+			<territory type="AC">Ascension Island</territory>
+			<territory type="AD">Andorra</territory>
+			<territory type="AG">Antigua &amp; Barbuda</territory>
+			<territory type="AI">Anguilla</territory>
+			<territory type="AL">Albania</territory>
+			<territory type="AO">Angola</territory>
+			<territory type="AQ">Antarctica</territory>
+			<territory type="AR">Argentina</territory>
+			<territory type="AS">American Samoa</territory>
+			<territory type="AT">Austria</territory>
+			<territory type="AU">Australia</territory>
+			<territory type="AW">Aruba</territory>
+			<territory type="AX">Agwaetiti Aland</territory>
+			<territory type="BA">Bosnia &amp; Herzegovina</territory>
+			<territory type="BB">Barbados</territory>
+			<territory type="BE">Belgium</territory>
+			<territory type="BF">Burkina Faso</territory>
+			<territory type="BG">Bulgaria</territory>
+			<territory type="BI">Burundi</territory>
 			<territory type="BJ">Binin</territory>
+			<territory type="BL">St. Barthélemy</territory>
 			<territory type="BM">Bemuda</territory>
+			<territory type="BO">Bolivia</territory>
+			<territory type="BQ">Caribbean Netherlands</territory>
 			<territory type="BR">Mba Brazil</territory>
+			<territory type="BS">Bahamas</territory>
+			<territory type="BV">Agwaetiti Bouvet</territory>
+			<territory type="BW">Botswana</territory>
+			<territory type="BY">Belarus</territory>
+			<territory type="BZ">Belize</territory>
+			<territory type="CA">Kanada</territory>
+			<territory type="CC">Agwaetiti Cocos (Keeling)</territory>
+			<territory type="CD">Congo - Kinshasa</territory>
+			<territory type="CD" alt="variant">Congo (DRC)</territory>
+			<territory type="CF">Central African Republik</territory>
+			<territory type="CG">Congo</territory>
+			<territory type="CG" alt="variant">Congo (Republik)</territory>
+			<territory type="CH">Switzerland</territory>
+			<territory type="CI">Côte d’Ivoire</territory>
+			<territory type="CI" alt="variant">Ivory Coast</territory>
+			<territory type="CK">Agwaetiti Cook</territory>
+			<territory type="CL">Chile</territory>
+			<territory type="CM">Cameroon</territory>
 			<territory type="CN">Mba China</territory>
+			<territory type="CO">Colombia</territory>
+			<territory type="CP">Agwaetiti Clipperton</territory>
+			<territory type="CR">Kosta Rika</territory>
+			<territory type="CU">Cuba</territory>
+			<territory type="CV">Cape Verde</territory>
+			<territory type="CW">Kurakao</territory>
+			<territory type="CX">Agwaetiti Christmas</territory>
+			<territory type="CZ">Czechia</territory>
+			<territory type="CZ" alt="variant">Czech Republik</territory>
 			<territory type="DE">Mba Germany</territory>
+			<territory type="DG">Diego Garcia</territory>
+			<territory type="DJ">Djibouti</territory>
+			<territory type="DK">Denmark</territory>
+			<territory type="DM">Dominika</territory>
+			<territory type="DO">Dominican Republik</territory>
+			<territory type="DZ">Algeria</territory>
+			<territory type="EA">Ceuta &amp; Melilla</territory>
+			<territory type="EC">Ecuador</territory>
+			<territory type="EE">Estonia</territory>
+			<territory type="EG">Egypt</territory>
+			<territory type="EH">Ọdịda Anyanwụ Sahara</territory>
+			<territory type="ER">Eritrea</territory>
+			<territory type="ES">Spain</territory>
+			<territory type="ET">Ethiopia</territory>
+			<territory type="FI">Finland</territory>
+			<territory type="FJ">Fiji</territory>
+			<territory type="FK">Agwaetiti Falkland</territory>
+			<territory type="FK" alt="variant">Agwaetiti Falkland</territory>
+			<territory type="FM">Micronesia</territory>
+			<territory type="FO">Agwaetiti Faroe</territory>
 			<territory type="FR">Mba France</territory>
+			<territory type="GA">Gabon</territory>
 			<territory type="GB">Mba United Kingdom</territory>
+			<territory type="GB" alt="short">UK</territory>
+			<territory type="GD">Grenada</territory>
+			<territory type="GF">Frenchi Guiana</territory>
+			<territory type="GG">Guernsey</territory>
+			<territory type="GH">Ghana</territory>
+			<territory type="GI">Gibraltar</territory>
+			<territory type="GL">Greenland</territory>
+			<territory type="GM">Gambia</territory>
+			<territory type="GN">Guinea</territory>
+			<territory type="GP">Guadeloupe</territory>
+			<territory type="GQ">Equatorial Guinea</territory>
+			<territory type="GR">Greece</territory>
+			<territory type="GS">South Georgia na Agwaetiti South Sandwich</territory>
+			<territory type="GT">Guatemala</territory>
+			<territory type="GU">Guam</territory>
+			<territory type="GW">Guinea-Bissau</territory>
+			<territory type="GY">Guyana</territory>
+			<territory type="HM">Agwaetiti Heard na Agwaetiti McDonald</territory>
+			<territory type="HN">Honduras</territory>
+			<territory type="HR">Croatia</territory>
 			<territory type="HT">Hati</territory>
+			<territory type="HU">Hungary</territory>
+			<territory type="IC">Agwaetiti Kanarị</territory>
+			<territory type="IE">Ireland</territory>
+			<territory type="IM">Isle of Man</territory>
 			<territory type="IN">Mba India</territory>
+			<territory type="IO">British Indian Ocean Territory</territory>
+			<territory type="IS">Iceland</territory>
 			<territory type="IT">Mba Italy</territory>
+			<territory type="JE">Jersey</territory>
+			<territory type="JM">Jamaika</territory>
 			<territory type="JP">Mba Japan</territory>
+			<territory type="KE">Kenya</territory>
+			<territory type="KI">Kiribati</territory>
 			<territory type="KM">Comorosu</territory>
+			<territory type="KN">St. Kitts &amp; Nevis</territory>
+			<territory type="KY">Agwaetiti Cayman</territory>
+			<territory type="LC">St. Lucia</territory>
+			<territory type="LI">Liechtenstein</territory>
+			<territory type="LR">Liberia</territory>
+			<territory type="LS">Lesotho</territory>
+			<territory type="LT">Lithuania</territory>
+			<territory type="LU">Luxembourg</territory>
+			<territory type="LV">Latvia</territory>
 			<territory type="LY">Libyia</territory>
+			<territory type="MA">Morocco</territory>
+			<territory type="MC">Monaco</territory>
+			<territory type="MD">Moldova</territory>
+			<territory type="ME">Montenegro</territory>
+			<territory type="MF">St. Martin</territory>
+			<territory type="MG">Madagaskar</territory>
+			<territory type="MH">Agwaetiti Marshall</territory>
+			<territory type="MK">North Macedonia</territory>
+			<territory type="ML">Mali</territory>
+			<territory type="MP">Agwaetiti Northern Mariana</territory>
+			<territory type="MQ">Martinique</territory>
+			<territory type="MR">Mauritania</territory>
+			<territory type="MS">Montserrat</territory>
+			<territory type="MT">Malta</territory>
+			<territory type="MU">Mauritius</territory>
 			<territory type="MV">Maldivesa</territory>
+			<territory type="MW">Malawi</territory>
+			<territory type="MX">Mexico</territory>
+			<territory type="MZ">Mozambik</territory>
+			<territory type="NA">Namibia</territory>
+			<territory type="NC">New Caledonia</territory>
+			<territory type="NE">Niger</territory>
+			<territory type="NF">Agwaetiti Norfolk</territory>
 			<territory type="NG">Naịjịrịa</territory>
+			<territory type="NI">Nicaragua</territory>
+			<territory type="NL">Netherlands</territory>
+			<territory type="NO">Norway</territory>
+			<territory type="NR">Nauru</territory>
+			<territory type="NU">Niue</territory>
+			<territory type="NZ">New Zealand</territory>
+			<territory type="PA">Panama</territory>
+			<territory type="PE">Peru</territory>
+			<territory type="PF">Frenchi Polynesia</territory>
+			<territory type="PG">Papua New Guinea</territory>
+			<territory type="PH">Philippines</territory>
+			<territory type="PL">Poland</territory>
+			<territory type="PM">St. Pierre &amp; Miquelon</territory>
+			<territory type="PN">Agwaetiti Pitcairn</territory>
+			<territory type="PR">Puerto Rico</territory>
+			<territory type="PT">Portugal</territory>
+			<territory type="PW">Palau</territory>
+			<territory type="PY">Paraguay</territory>
+			<territory type="QO">Outlying Oceania</territory>
+			<territory type="RE">Réunion</territory>
+			<territory type="RO">Romania</territory>
+			<territory type="RS">Serbia</territory>
 			<territory type="RU">Mba Russia</territory>
+			<territory type="RW">Rwanda</territory>
+			<territory type="SB">Agwaetiti Solomon</territory>
+			<territory type="SC">Seychelles</territory>
+			<territory type="SD">Sudan</territory>
+			<territory type="SE">Sweden</territory>
+			<territory type="SG">Singapore</territory>
+			<territory type="SH">St. Helena</territory>
+			<territory type="SI">Slovenia</territory>
+			<territory type="SJ">Svalbard &amp; Jan Mayen</territory>
+			<territory type="SK">Slovakia</territory>
+			<territory type="SL">Sierra Leone</territory>
+			<territory type="SM">San Marino</territory>
+			<territory type="SN">Senegal</territory>
+			<territory type="SO">Somalia</territory>
+			<territory type="SR">Suriname</territory>
+			<territory type="SS">South Sudan</territory>
+			<territory type="ST">São Tomé &amp; Príncipe</territory>
+			<territory type="SV">El Salvador</territory>
+			<territory type="SX">Sint Maarten</territory>
+			<territory type="SZ">Eswatini</territory>
+			<territory type="SZ" alt="variant">Swaziland</territory>
+			<territory type="TA">Tristan da Cunha</territory>
+			<territory type="TC">Agwaetiti Turks na Caicos</territory>
+			<territory type="TD">Chad</territory>
+			<territory type="TF">Ụmụ ngalaba Frenchi Southern</territory>
+			<territory type="TG">Togo</territory>
+			<territory type="TH">Thailand</territory>
+			<territory type="TK">Tokelau</territory>
+			<territory type="TL">Timor-Leste</territory>
+			<territory type="TL" alt="variant">East Timor</territory>
+			<territory type="TN">Tunisia</territory>
+			<territory type="TO">Tonga</territory>
+			<territory type="TT">Trinidad &amp; Tobago</territory>
+			<territory type="TV">Tuvalu</territory>
+			<territory type="TZ">Tanzania</territory>
+			<territory type="UA">Ukraine</territory>
+			<territory type="UG">Uganda</territory>
+			<territory type="UM">Obere Agwaetiti Dị Na Mpụga U.S</territory>
+			<territory type="UN">Mba Ụwa Jikọrọ Ọnụ</territory>
 			<territory type="US">Mba United States</territory>
+			<territory type="UY">Uruguay</territory>
+			<territory type="VA">Vatican City</territory>
+			<territory type="VC">St. Vincent &amp; Grenadines</territory>
+			<territory type="VE">Venezuela</territory>
+			<territory type="VG">Agwaetiti British Virgin</territory>
+			<territory type="VI">Agwaetiti Virgin nke US</territory>
+			<territory type="VN">Vietnam</territory>
+			<territory type="VU">Vanuatu</territory>
+			<territory type="WF">Wallis &amp; Futuna</territory>
+			<territory type="WS">Samoa</territory>
+			<territory type="XA">Pseudo-Accents</territory>
+			<territory type="XB">Pseudo-Bidi</territory>
+			<territory type="XK">Kosovo</territory>
+			<territory type="YT">Mayotte</territory>
+			<territory type="ZA">South Africa</territory>
+			<territory type="ZM">Zambia</territory>
+			<territory type="ZW">Zimbabwe</territory>
 			<territory type="ZZ">Mpaghara Amaghị</territory>
 		</territories>
 		<types>
 			<type key="calendar" type="gregorian">Kalenda Gregory</type>
+			<type key="calendar" type="iso8601">Kalenda ISO-8601</type>
 			<type key="collation" type="standard">Usoro Nhazi</type>
 			<type key="numbers" type="latn">Ọnụ Ọgụgụ Mpaghara Ọdịda Anyanwụ</type>
 		</types>
 		<measurementSystemNames>
 			<measurementSystemName type="metric">Metriik</measurementSystemName>
-			<measurementSystemName type="UK">UK</measurementSystemName>
-			<measurementSystemName type="US">US</measurementSystemName>
 		</measurementSystemNames>
 		<codePatterns>
 			<codePattern type="language">Asụsụ: {0}</codePattern>
@@ -129,17 +365,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</localeDisplayNames>
 	<characters>
 		<exemplarCharacters>[a b {ch} d e ẹ f g {gb} {gh} {gw} h i ị j k {kp} {kw} l m n ṅ {nw} {ny} o ọ p r s {sh} t u ụ v w y z]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary">[áàā c éèē íìī{ị́}{ị̀} ḿ{m̀} ńǹ óòō{ọ́}{ọ̀} q úùū{ụ́}{ụ̀} x]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[á à ā c é è ē í ì ī {ị\u0301} {ị\u0300} ḿ {m\u0300} ń ǹ ó ò ō {ọ\u0301} {ọ\u0300} q ú ù ū {ụ\u0301} {ụ\u0300} x]</exemplarCharacters>
 		<exemplarCharacters type="index">[A B C D E F G H I J K L M N O P Q R S T U V W X Y Z]</exemplarCharacters>
-		<exemplarCharacters type="numbers" draft="contributed">[\- , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
-		<exemplarCharacters type="punctuation" draft="contributed">[\- , ; \: ! ? . ‘ ’ “ ” ( ) \[ \] \{ \}]</exemplarCharacters>
+		<exemplarCharacters type="punctuation" draft="contributed">[\- ‑ , ; \: ! ? . ‘ ’ “ ” ( ) \[ \] \{ \}]</exemplarCharacters>
 	</characters>
-	<delimiters>
-		<quotationStart>“</quotationStart>
-		<quotationEnd>”</quotationEnd>
-		<alternateQuotationStart>‘</alternateQuotationStart>
-		<alternateQuotationEnd>’</alternateQuotationEnd>
-	</delimiters>
 	<dates>
 		<calendars>
 			<calendar type="generic">
@@ -209,9 +438,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="yQQQ">QQQ y</dateFormatItem>
 						<dateFormatItem id="yQQQQ">QQQQ y</dateFormatItem>
 					</availableFormats>
-					<intervalFormats>
-						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
-					</intervalFormats>
 				</dateTimeFormats>
 			</calendar>
 			<calendar type="gregorian">
@@ -314,19 +540,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<day type="wed">Wen</day>
 							<day type="thu">Tọọ</day>
 							<day type="fri">Fraị</day>
-							<day type="sat">Satọdee</day>
-						</dayWidth>
-						<dayWidth type="narrow">
-							<day type="sun">S</day>
-							<day type="mon">M</day>
-							<day type="tue">T</day>
-							<day type="wed">W</day>
-							<day type="thu">T</day>
-							<day type="fri">F</day>
-							<day type="sat">S</day>
+							<day type="sat">Sat</day>
 						</dayWidth>
 						<dayWidth type="short">
-							<day type="sun">Ụka</day>
+							<day type="sun">Sọn</day>
 							<day type="mon">Mọn</day>
 							<day type="tue">Tiu</day>
 							<day type="wed">Wen</day>
@@ -335,7 +552,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<day type="sat">Sat</day>
 						</dayWidth>
 						<dayWidth type="wide">
-							<day type="sun">Ụbọchị Ụka</day>
+							<day type="sun">Sọndee</day>
 							<day type="mon">Mọnde</day>
 							<day type="tue">Tiuzdee</day>
 							<day type="wed">Wenezdee</day>
@@ -352,19 +569,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<day type="wed">Wen</day>
 							<day type="thu">Tọọ</day>
 							<day type="fri">Fraị</day>
-							<day type="sat">Satọdee</day>
-						</dayWidth>
-						<dayWidth type="narrow">
-							<day type="sun">S</day>
-							<day type="mon">M</day>
-							<day type="tue">T</day>
-							<day type="wed">W</day>
-							<day type="thu">T</day>
-							<day type="fri">F</day>
-							<day type="sat">S</day>
+							<day type="sat">Sat</day>
 						</dayWidth>
 						<dayWidth type="short">
-							<day type="sun">Ụka</day>
+							<day type="sun">Sọn</day>
 							<day type="mon">Mọn</day>
 							<day type="tue">Tiu</day>
 							<day type="wed">Wen</day>
@@ -373,7 +581,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<day type="sat">Sat</day>
 						</dayWidth>
 						<dayWidth type="wide">
-							<day type="sun">Ụbọchị Ụka</day>
+							<day type="sun">Sọndee</day>
 							<day type="mon">Mọnde</day>
 							<day type="tue">Tiuzdee</day>
 							<day type="wed">Wenezdee</day>
@@ -457,10 +665,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</dayPeriods>
 				<eras>
 					<eraNames>
-						<era type="0">Tupu Kristi</era>
-						<era type="0" alt="variant">BCE</era>
-						<era type="1">Afọ Kristi</era>
-						<era type="1" alt="variant">CE</era>
+						<era type="0">Tupu Kraist</era>
+						<era type="0" alt="variant">Tupu Oge Afọ</era>
+						<era type="1">Afọ Kraịst</era>
+						<era type="1" alt="variant">Oge Afọ</era>
 					</eraNames>
 					<eraAbbr>
 						<era type="0">T.K.</era>
@@ -541,42 +749,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
-						<dateFormatItem id="Bh">h B</dateFormatItem>
-						<dateFormatItem id="Bhm">h:mm B</dateFormatItem>
-						<dateFormatItem id="Bhms">h:mm:ss B</dateFormatItem>
-						<dateFormatItem id="d">d</dateFormatItem>
-						<dateFormatItem id="E">ccc</dateFormatItem>
-						<dateFormatItem id="EBhm">E h:mm B</dateFormatItem>
-						<dateFormatItem id="EBhms">E h:mm:ss B</dateFormatItem>
-						<dateFormatItem id="Ed">d, E</dateFormatItem>
-						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
-						<dateFormatItem id="EHm">E HH:mm</dateFormatItem>
-						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
-						<dateFormatItem id="EHms">E HH:mm:ss</dateFormatItem>
-						<dateFormatItem id="Gy">G y</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM G y</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d MMM, G y</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E, d MMM, G y</dateFormatItem>
-						<dateFormatItem id="h">h a</dateFormatItem>
-						<dateFormatItem id="H">HH</dateFormatItem>
-						<dateFormatItem id="hm">h:mm a</dateFormatItem>
-						<dateFormatItem id="Hm">HH:mm</dateFormatItem>
-						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
-						<dateFormatItem id="Hms">HH:mm:ss</dateFormatItem>
-						<dateFormatItem id="hmsv">h:mm:ss a v</dateFormatItem>
-						<dateFormatItem id="Hmsv">HH:mm:ss v</dateFormatItem>
-						<dateFormatItem id="hmv">h:mm a v</dateFormatItem>
-						<dateFormatItem id="Hmv">HH:mm v</dateFormatItem>
-						<dateFormatItem id="M">L</dateFormatItem>
 						<dateFormatItem id="Md">d/M</dateFormatItem>
 						<dateFormatItem id="MEd">E, d/M</dateFormatItem>
-						<dateFormatItem id="MMM">LLL</dateFormatItem>
 						<dateFormatItem id="MMMd">d MMM</dateFormatItem>
 						<dateFormatItem id="MMMEd">E, d MMM</dateFormatItem>
 						<dateFormatItem id="MMMMd">d MMMM</dateFormatItem>
 						<dateFormatItem id="MMMMEd">E, d MMMM</dateFormatItem>
-						<dateFormatItem id="ms">mm:ss</dateFormatItem>
-						<dateFormatItem id="y">y</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="other">'Izu' W 'n'‘'ime' MMMM</dateFormatItem>
 						<dateFormatItem id="yM">M/y</dateFormatItem>
 						<dateFormatItem id="yMd">d/M/y</dateFormatItem>
 						<dateFormatItem id="yMEd">E, d/M/y</dateFormatItem>
@@ -586,12 +768,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="yMMMM">MMMM y</dateFormatItem>
 						<dateFormatItem id="yQQQ">QQQ y</dateFormatItem>
 						<dateFormatItem id="yQQQQ">QQQQ y</dateFormatItem>
+						<dateFormatItem id="yw" count="other">'Izu' w 'n' 'ime' Y</dateFormatItem>
 					</availableFormats>
 					<appendItems>
 						<appendItem request="Timezone">{0} {1}</appendItem>
 					</appendItems>
 					<intervalFormats>
-						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
 						<intervalFormatItem id="d">
 							<greatestDifference id="d">d–d</greatestDifference>
 						</intervalFormatItem>
@@ -694,39 +876,63 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="year">
 				<displayName>Afọ</displayName>
+				<relative type="-1">Afọ gara aga</relative>
+				<relative type="0">Afọ a</relative>
+				<relative type="1">Afọ ọzọ</relative>
 			</field>
 			<field type="year-short">
-				<displayName>Afọ</displayName>
+				<relative type="-1">Afọ gara aga</relative>
+				<relative type="0">Afọ a</relative>
+				<relative type="1">Afọ ọzọ</relative>
 			</field>
 			<field type="year-narrow">
-				<displayName>Afọ</displayName>
+				<relative type="-1">Afọ gara aga</relative>
+				<relative type="0">Afọ a</relative>
+				<relative type="1">Afọ ọzọ</relative>
 			</field>
 			<field type="quarter">
-				<displayName>Nkeji Afọ</displayName>
+				<displayName>Ọnwa atọ n’afọ</displayName>
 			</field>
 			<field type="quarter-short">
-				<displayName>Nkeji Afọ</displayName>
+				<displayName>Ọnwa atọ n’afọ</displayName>
 			</field>
 			<field type="quarter-narrow">
-				<displayName>Nkeji Afọ</displayName>
+				<displayName>Ọnwa atọ n’afọ</displayName>
 			</field>
 			<field type="month">
 				<displayName>Ọnwa</displayName>
+				<relative type="-1">Ọnwa gara aga</relative>
+				<relative type="0">Ọnwa a</relative>
+				<relative type="1">Ọnwa ọzọ</relative>
 			</field>
 			<field type="month-short">
-				<displayName>Ọnwa</displayName>
+				<relative type="-1">Ọnwa gara aga</relative>
+				<relative type="0">Ọnwa a</relative>
+				<relative type="1">Ọnwa ọzọ</relative>
 			</field>
 			<field type="month-narrow">
-				<displayName>Ọnwa</displayName>
+				<relative type="-1">Ọnwa gara aga</relative>
+				<relative type="0">Ọnwa a</relative>
+				<relative type="1">Ọnwa ọzọ</relative>
 			</field>
 			<field type="week">
 				<displayName>Izu</displayName>
+				<relative type="-1">Izu gara aga</relative>
+				<relative type="0">Izu a</relative>
+				<relative type="1">Izu na-esote</relative>
+				<relativePeriod>Izu nke{0}</relativePeriod>
 			</field>
 			<field type="week-short">
-				<displayName>Izu</displayName>
+				<relative type="-1">Izu gara aga</relative>
+				<relative type="0">Izu a</relative>
+				<relative type="1">Izu na-esote</relative>
+				<relativePeriod>Izu nke{0}</relativePeriod>
 			</field>
 			<field type="week-narrow">
-				<displayName>Izu</displayName>
+				<relative type="-1">Izu gara aga</relative>
+				<relative type="0">Izu a</relative>
+				<relative type="1">Izu na-esote</relative>
+				<relativePeriod>Izu nke{0}</relativePeriod>
 			</field>
 			<field type="day">
 				<displayName>Ụbọchị</displayName>
@@ -735,14 +941,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="1">Echi</relative>
 			</field>
 			<field type="day-short">
-				<displayName>Ụbọchị</displayName>
-				<relative type="-1">Nnyaafụ</relative>
+				<relative type="-1">Ụnyaahụ</relative>
 				<relative type="0">Taata</relative>
 				<relative type="1">Echi</relative>
 			</field>
 			<field type="day-narrow">
-				<displayName>Ụbọchị</displayName>
-				<relative type="-1">Nnyaafụ</relative>
+				<relative type="-1">Ụnyaahụ</relative>
 				<relative type="0">Taata</relative>
 				<relative type="1">Echi</relative>
 			</field>
@@ -755,29 +959,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<field type="hour">
 				<displayName>Elekere</displayName>
 			</field>
-			<field type="hour-short">
-				<displayName>Elekere</displayName>
-			</field>
-			<field type="hour-narrow">
-				<displayName>Elekere</displayName>
-			</field>
 			<field type="minute">
 				<displayName>Nkeji</displayName>
 			</field>
-			<field type="minute-short">
-				<displayName>Nkeji</displayName>
-			</field>
-			<field type="minute-narrow">
-				<displayName>Nkeji</displayName>
-			</field>
 			<field type="second">
-				<displayName>Sekọnd</displayName>
+				<displayName>Tịm kọm</displayName>
 			</field>
 			<field type="second-short">
-				<displayName>Sekọnd</displayName>
+				<displayName>Tịm kọm</displayName>
 			</field>
 			<field type="second-narrow">
-				<displayName>Sekọnd</displayName>
+				<displayName>Tịm kọm</displayName>
 			</field>
 			<field type="zone">
 				<displayName>Mpaghara oge</displayName>
@@ -799,6 +991,60 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Etc/Unknown">
 				<exemplarCity>Obodo Amaghị</exemplarCity>
 			</zone>
+			<zone type="America/Araguaina">
+				<exemplarCity>Araguaina</exemplarCity>
+			</zone>
+			<zone type="Europe/London">
+				<long>
+					<daylight>Oge Okpomọkụ Britain</daylight>
+				</long>
+			</zone>
+			<zone type="Europe/Dublin">
+				<long>
+					<daylight>Oge Okpomọkụ Ireland</daylight>
+				</long>
+			</zone>
+			<metazone type="Afghanistan">
+				<long>
+					<standard>Oge Afghanistan</standard>
+				</long>
+			</metazone>
+			<metazone type="Africa_Central">
+				<long>
+					<standard>Oge Etiti Afrịka</standard>
+				</long>
+			</metazone>
+			<metazone type="Africa_Eastern">
+				<long>
+					<standard>Oge Mpaghara Ọwụwa Anyanwụ Afrịka</standard>
+				</long>
+			</metazone>
+			<metazone type="Africa_Southern">
+				<long>
+					<standard>Oge Izugbe Mpaghara Mgbada Ugwu Afrịka</standard>
+				</long>
+			</metazone>
+			<metazone type="Africa_Western">
+				<long>
+					<generic>Oge Mpaghara Ọdịda Anyanwụ Afrịka</generic>
+					<standard>Oge Izugbe Mpaghara Ọdịda Anyanwụ Afrịka</standard>
+					<daylight>Oge Okpomọkụ Mpaghara Ọdịda Anyanwụ Afrịka</daylight>
+				</long>
+			</metazone>
+			<metazone type="Alaska">
+				<long>
+					<generic>Oge Alaska</generic>
+					<standard>Oge Izugbe Alaska</standard>
+					<daylight>Oge Ihe Alaska</daylight>
+				</long>
+			</metazone>
+			<metazone type="Amazon">
+				<long>
+					<generic>Oge Amazon</generic>
+					<standard>Oge Izugbe Amazon</standard>
+					<daylight>Oge Okpomọkụ Amazon</daylight>
+				</long>
+			</metazone>
 			<metazone type="America_Central">
 				<long>
 					<generic>Oge Mpaghara Etiti</generic>
@@ -827,11 +1073,215 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>Oge Ihe Mpaghara Pacific</daylight>
 				</long>
 			</metazone>
+			<metazone type="Apia">
+				<long>
+					<generic>Oge Apia</generic>
+					<standard>Oge Izugbe Apia</standard>
+					<daylight>Oge Ihe Apia</daylight>
+				</long>
+			</metazone>
+			<metazone type="Arabian">
+				<long>
+					<generic>Oge Arab</generic>
+					<standard>Oge Izugbe Arab</standard>
+					<daylight>Oge Ihe Arab</daylight>
+				</long>
+			</metazone>
+			<metazone type="Argentina">
+				<long>
+					<generic>Oge Argentina</generic>
+					<standard>Oge Izugbe Argentina</standard>
+					<daylight>Oge Okpomọkụ Argentina</daylight>
+				</long>
+			</metazone>
+			<metazone type="Argentina_Western">
+				<long>
+					<generic>Oge Mpaghara Ọdịda Anyanwụ Argentina</generic>
+					<standard>Oge Izugbe Mpaghara Ọdịda Anyanwụ Argentina</standard>
+					<daylight>Oge Okpomọkụ Mpaghara Ọdịda Anyanwụ Argentina</daylight>
+				</long>
+			</metazone>
+			<metazone type="Armenia">
+				<long>
+					<generic>Oge Armenia</generic>
+					<standard>Oge Izugbe Armenia</standard>
+					<daylight>Oge Okpomọkụ Armenia</daylight>
+				</long>
+			</metazone>
 			<metazone type="Atlantic">
 				<long>
 					<generic>Oge Mpaghara Atlantic</generic>
 					<standard>Oge Izugbe Mpaghara Atlantic</standard>
 					<daylight>Oge Ihe Mpaghara Atlantic</daylight>
+				</long>
+			</metazone>
+			<metazone type="Australia_Central">
+				<long>
+					<generic>Oge Etiti Australia</generic>
+					<standard>Oge Izugbe Etiti Australia</standard>
+					<daylight>Oge Ihe Etiti Australia</daylight>
+				</long>
+			</metazone>
+			<metazone type="Australia_CentralWestern">
+				<long>
+					<generic>Oge Mpaghara Ọdịda Anyanwụ Etiti Australia</generic>
+					<standard>Oge Izugbe Mpaghara Ọdịda Anyanwụ Etiti Australia</standard>
+					<daylight>Oge Ihe Mpaghara Ọdịda Anyanwụ Etiti Australia</daylight>
+				</long>
+			</metazone>
+			<metazone type="Australia_Eastern">
+				<long>
+					<generic>Oge Mpaghara Ọwụwa Anyanwụ Australia</generic>
+					<standard>Oge Izugbe Mpaghara Ọwụwa Anyanwụ Australia</standard>
+					<daylight>Oge Ihe Mpaghara Ọwụwa Anyanwụ Australia</daylight>
+				</long>
+			</metazone>
+			<metazone type="Australia_Western">
+				<long>
+					<generic>Oge Mpaghara Ọdịda Anyanwụ Australia</generic>
+					<standard>Oge Izugbe Mpaghara Ọdịda Anyanwụ Australia</standard>
+					<daylight>Oge Ihe Mpaghara Ọdịda Anyanwụ Australia</daylight>
+				</long>
+			</metazone>
+			<metazone type="Azerbaijan">
+				<long>
+					<generic>Oge Azerbaijan</generic>
+					<standard>Oge Izugbe Azerbaijan</standard>
+					<daylight>Oge Okpomọkụ Azerbaijan</daylight>
+				</long>
+			</metazone>
+			<metazone type="Azores">
+				<long>
+					<generic>Oge Azores</generic>
+					<standard>Oge Izugbe Azores</standard>
+					<daylight>Oge Okpomọkụ Azores</daylight>
+				</long>
+			</metazone>
+			<metazone type="Bangladesh">
+				<long>
+					<generic>Oge Bangladesh</generic>
+					<standard>Oge Izugbe Bangladesh</standard>
+					<daylight>Oge Okpomọkụ Bangladesh</daylight>
+				</long>
+			</metazone>
+			<metazone type="Bhutan">
+				<long>
+					<standard>Oge Bhutan</standard>
+				</long>
+			</metazone>
+			<metazone type="Bolivia">
+				<long>
+					<standard>Oge Bolivia</standard>
+				</long>
+			</metazone>
+			<metazone type="Brasilia">
+				<long>
+					<generic>Oge Brasilia</generic>
+					<standard>Oge Izugbe Brasilia</standard>
+					<daylight>Oge Okpomọkụ Brasilia</daylight>
+				</long>
+			</metazone>
+			<metazone type="Brunei">
+				<long>
+					<standard>Oge Brunei Darussalam</standard>
+				</long>
+			</metazone>
+			<metazone type="Cape_Verde">
+				<long>
+					<generic>Oge Cape Verde</generic>
+					<standard>Oge Izugbe Cape Verde</standard>
+					<daylight>Oge Okpomọkụ Cape Verde</daylight>
+				</long>
+			</metazone>
+			<metazone type="Chamorro">
+				<long>
+					<standard>Oge Izugbe Chamorro</standard>
+				</long>
+			</metazone>
+			<metazone type="Chatham">
+				<long>
+					<generic>Oge Chatham</generic>
+					<standard>Oge Izugbe Chatham</standard>
+					<daylight>Oge Ihe Chatham</daylight>
+				</long>
+			</metazone>
+			<metazone type="Chile">
+				<long>
+					<generic>Oge Chile</generic>
+					<standard>Oge Izugbe Chile</standard>
+					<daylight>Oge Okpomọkụ Chile</daylight>
+				</long>
+			</metazone>
+			<metazone type="China">
+				<long>
+					<generic>Oge China</generic>
+					<standard>Oge Izugbe China</standard>
+					<daylight>Oge Ihe China</daylight>
+				</long>
+			</metazone>
+			<metazone type="Choibalsan">
+				<long>
+					<generic>Oge Choibals</generic>
+					<standard>Oge Izugbe Choibals</standard>
+					<daylight>Oge Okpomọkụ Choibals</daylight>
+				</long>
+			</metazone>
+			<metazone type="Christmas">
+				<long>
+					<standard>Oge Ekeresimesi Island</standard>
+				</long>
+			</metazone>
+			<metazone type="Cocos">
+				<long>
+					<standard>Oge Cocos Islands</standard>
+				</long>
+			</metazone>
+			<metazone type="Colombia">
+				<long>
+					<generic>Oge Columbia</generic>
+					<standard>Oge Izugbe Columbia</standard>
+					<daylight>Oge Okpomọkụ Columbia</daylight>
+				</long>
+			</metazone>
+			<metazone type="Cook">
+				<long>
+					<generic>Oge Cook Islands</generic>
+					<standard>Oge Izugbe Cook Islands</standard>
+					<daylight>Oge Ọkara Okpomọkụ Cook Islands</daylight>
+				</long>
+			</metazone>
+			<metazone type="Cuba">
+				<long>
+					<generic>Oge Cuba</generic>
+					<standard>Oge Izugbe Cuba</standard>
+					<daylight>Oge Ihe Mpaghara Cuba</daylight>
+				</long>
+			</metazone>
+			<metazone type="Davis">
+				<long>
+					<standard>Oge Davis</standard>
+				</long>
+			</metazone>
+			<metazone type="DumontDUrville">
+				<long>
+					<standard>Oge Dumont-d’Urville</standard>
+				</long>
+			</metazone>
+			<metazone type="East_Timor">
+				<long>
+					<standard>Oge Mpaghara Ọwụwa Anyanwụ Timor</standard>
+				</long>
+			</metazone>
+			<metazone type="Easter">
+				<long>
+					<generic>Oge Mpaghara Ọwụwa Anyanwụ Island</generic>
+					<standard>Oge Izugbe Mpaghara Ọwụwa Anyanwụ Island</standard>
+					<daylight>Oge Okpomọkụ Mpaghara Ọwụwa Anyanwụ Island</daylight>
+				</long>
+			</metazone>
+			<metazone type="Ecuador">
+				<long>
+					<standard>Oge Ecuador</standard>
 				</long>
 			</metazone>
 			<metazone type="Europe_Central">
@@ -855,18 +1305,582 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>Oge Okpomọkụ Mpaghara Ọdịda Anyanwụ Europe</daylight>
 				</long>
 			</metazone>
+			<metazone type="Falkland">
+				<long>
+					<generic>Oge Falkland Islands</generic>
+					<standard>Oge Izugbe Falkland Islands</standard>
+					<daylight>Oge Okpomọkụ Falkland Islands</daylight>
+				</long>
+			</metazone>
+			<metazone type="Fiji">
+				<long>
+					<generic>Oge Fiji</generic>
+					<standard>Oge Izugbe Fiji</standard>
+					<daylight>Oge Okpomọkụ Fiji</daylight>
+				</long>
+			</metazone>
+			<metazone type="French_Guiana">
+				<long>
+					<standard>Oge French Guiana</standard>
+				</long>
+			</metazone>
+			<metazone type="French_Southern">
+				<long>
+					<standard>Oge French Southern &amp; Antarctic</standard>
+				</long>
+			</metazone>
+			<metazone type="Galapagos">
+				<long>
+					<standard>Oge Galapagos</standard>
+				</long>
+			</metazone>
+			<metazone type="Gambier">
+				<long>
+					<standard>Oge Gambier</standard>
+				</long>
+			</metazone>
+			<metazone type="Georgia">
+				<long>
+					<generic>Oge Georgia</generic>
+					<standard>Oge Izugbe Georgia</standard>
+					<daylight>Oge Okpomọkụ Georgia</daylight>
+				</long>
+			</metazone>
+			<metazone type="Gilbert_Islands">
+				<long>
+					<standard>Oge Gilbert Islands</standard>
+				</long>
+			</metazone>
 			<metazone type="GMT">
 				<long>
 					<standard>Oge Mpaghara Greemwich Mean</standard>
 				</long>
 			</metazone>
+			<metazone type="Greenland_Eastern">
+				<long>
+					<generic>Oge Mpaghara Ọwụwa Anyanwụ Greenland</generic>
+					<standard>Oge Izugbe Mpaghara Ọwụwa Anyanwụ Greenland</standard>
+					<daylight>Oge Okpomọkụ Mpaghara Ọwụwa Anyanwụ Greenland</daylight>
+				</long>
+			</metazone>
+			<metazone type="Greenland_Western">
+				<long>
+					<generic>Oge Mpaghara Ọdịda Anyanwụ Greenland</generic>
+					<standard>Oge Izugbe Mpaghara Ọdịda Anyanwụ Greenland</standard>
+					<daylight>Oge Okpomọkụ Mpaghara Ọdịda Anyanwụ Greenland</daylight>
+				</long>
+			</metazone>
+			<metazone type="Gulf">
+				<long>
+					<standard>Oge Izugbe Gulf</standard>
+				</long>
+			</metazone>
+			<metazone type="Guyana">
+				<long>
+					<standard>Oge Guyana</standard>
+				</long>
+			</metazone>
+			<metazone type="Hawaii_Aleutian">
+				<long>
+					<generic>Oge Hawaii-Aleutian</generic>
+					<standard>Oge Izugbe Hawaii-Aleutian</standard>
+					<daylight>Oge Ihe Hawaii-Aleutian</daylight>
+				</long>
+			</metazone>
+			<metazone type="Hong_Kong">
+				<long>
+					<generic>Oge Hong Kong</generic>
+					<standard>Oge Izugbe Hong Kong</standard>
+					<daylight>Oge Okpomọkụ Hong Kong</daylight>
+				</long>
+			</metazone>
+			<metazone type="Hovd">
+				<long>
+					<generic>Oge Hovd</generic>
+					<standard>Oge Izugbe Hovd</standard>
+					<daylight>Oge Okpomọkụ Hovd</daylight>
+				</long>
+			</metazone>
+			<metazone type="India">
+				<long>
+					<standard>Oge Izugbe India</standard>
+				</long>
+			</metazone>
+			<metazone type="Indian_Ocean">
+				<long>
+					<standard>Oge Osimiri India</standard>
+				</long>
+			</metazone>
+			<metazone type="Indochina">
+				<long>
+					<standard>Oge Indochina</standard>
+				</long>
+			</metazone>
+			<metazone type="Indonesia_Central">
+				<long>
+					<standard>Oge Etiti Indonesia</standard>
+				</long>
+			</metazone>
+			<metazone type="Indonesia_Eastern">
+				<long>
+					<standard>Oge Mpaghara Ọwụwa Anyanwụ Indonesia</standard>
+				</long>
+			</metazone>
+			<metazone type="Indonesia_Western">
+				<long>
+					<standard>Oge Mpaghara Ọdịda Anyanwụ Indonesia</standard>
+				</long>
+			</metazone>
+			<metazone type="Iran">
+				<long>
+					<generic>Oge Iran</generic>
+					<standard>Oge Izugbe Iran</standard>
+					<daylight>Oge Ihe Iran</daylight>
+				</long>
+			</metazone>
+			<metazone type="Irkutsk">
+				<long>
+					<generic>Oge Irkutsk</generic>
+					<standard>Oge Izugbe Irkutsk</standard>
+					<daylight>Oge Okpomọkụ Irkutsk</daylight>
+				</long>
+			</metazone>
+			<metazone type="Israel">
+				<long>
+					<generic>Oge Israel</generic>
+					<standard>Oge Izugbe Israel</standard>
+					<daylight>Oge Ihe Israel</daylight>
+				</long>
+			</metazone>
+			<metazone type="Japan">
+				<long>
+					<generic>Oge Japan</generic>
+					<standard>Oge Izugbe Japan</standard>
+					<daylight>Oge Ihe Japan</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kazakhstan_Eastern">
+				<long>
+					<standard>Oge Mpaghara Ọwụwa Anyanwụ Kazakhstan</standard>
+				</long>
+			</metazone>
+			<metazone type="Kazakhstan_Western">
+				<long>
+					<standard>Oge Mpaghara Ọdịda Anyanwụ Kazakhstan</standard>
+				</long>
+			</metazone>
+			<metazone type="Korea">
+				<long>
+					<generic>Oge Korea</generic>
+					<standard>Oge Izugbe Korea</standard>
+					<daylight>Oge Ihe Korea</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kosrae">
+				<long>
+					<standard>Oge Kosrae</standard>
+				</long>
+			</metazone>
+			<metazone type="Krasnoyarsk">
+				<long>
+					<generic>Oge Krasnoyarsk</generic>
+					<standard>Oge Izugbe Krasnoyarsk</standard>
+					<daylight>Oge Okpomọkụ Krasnoyarsk</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kyrgystan">
+				<long>
+					<standard>Oge Kyrgyzstan</standard>
+				</long>
+			</metazone>
+			<metazone type="Line_Islands">
+				<long>
+					<standard>Oge Line Islands</standard>
+				</long>
+			</metazone>
+			<metazone type="Lord_Howe">
+				<long>
+					<generic>Oge Lord Howe</generic>
+					<standard>Oge Izugbe Lord Howe</standard>
+					<daylight>Oge Ihe Lord Howe</daylight>
+				</long>
+			</metazone>
+			<metazone type="Macquarie">
+				<long>
+					<standard>Oge Macquarie Island</standard>
+				</long>
+			</metazone>
+			<metazone type="Magadan">
+				<long>
+					<generic>Oge Magadan</generic>
+					<standard>Oge Izugbe Magadan</standard>
+					<daylight>Oge Okpomọkụ Magadan</daylight>
+				</long>
+			</metazone>
+			<metazone type="Malaysia">
+				<long>
+					<standard>Oge Malaysia</standard>
+				</long>
+			</metazone>
+			<metazone type="Maldives">
+				<long>
+					<standard>Oge Maldives</standard>
+				</long>
+			</metazone>
+			<metazone type="Marquesas">
+				<long>
+					<standard>Oge Marquesas</standard>
+				</long>
+			</metazone>
+			<metazone type="Marshall_Islands">
+				<long>
+					<standard>Oge Marshall Islands</standard>
+				</long>
+			</metazone>
+			<metazone type="Mauritius">
+				<long>
+					<generic>Oge Mauritius</generic>
+					<standard>Oge Izugbe Mauritius</standard>
+					<daylight>Oge Okpomọkụ Mauritius</daylight>
+				</long>
+			</metazone>
+			<metazone type="Mawson">
+				<long>
+					<standard>Oge Mawson</standard>
+				</long>
+			</metazone>
+			<metazone type="Mexico_Northwest">
+				<long>
+					<generic>Oge Northwest Mexico</generic>
+					<standard>Oge Izugbe Northwest Mexico</standard>
+					<daylight>Oge Ihe Northwest Mexico</daylight>
+				</long>
+			</metazone>
+			<metazone type="Mexico_Pacific">
+				<long>
+					<generic>Oge Mexican Pacific</generic>
+					<standard>Oge Izugbe Mexican Pacific</standard>
+					<daylight>Oge Ihe Mexican Pacific</daylight>
+				</long>
+			</metazone>
+			<metazone type="Mongolia">
+				<long>
+					<generic>Oge Ulaanbaatar</generic>
+					<standard>Oge Izugbe Ulaanbaatar</standard>
+					<daylight>Oge Okpomọkụ Ulaanbaatar</daylight>
+				</long>
+			</metazone>
+			<metazone type="Moscow">
+				<long>
+					<generic>Oge Moscow</generic>
+					<standard>Oge Izugbe Moscow</standard>
+					<daylight>Oge Okpomọkụ Moscow</daylight>
+				</long>
+			</metazone>
+			<metazone type="Myanmar">
+				<long>
+					<standard>Oge Myanmar</standard>
+				</long>
+			</metazone>
+			<metazone type="Nauru">
+				<long>
+					<standard>Oge Nauru</standard>
+				</long>
+			</metazone>
+			<metazone type="Nepal">
+				<long>
+					<standard>Oge Nepal</standard>
+				</long>
+			</metazone>
+			<metazone type="New_Caledonia">
+				<long>
+					<generic>Oge New Caledonia</generic>
+					<standard>Oge Izugbe New Caledonia</standard>
+					<daylight>Oge Okpomọkụ New Caledonia</daylight>
+				</long>
+			</metazone>
+			<metazone type="New_Zealand">
+				<long>
+					<generic>Oge New Zealand</generic>
+					<standard>Oge Izugbe New Zealand</standard>
+					<daylight>Oge Ihe New Zealand</daylight>
+				</long>
+			</metazone>
+			<metazone type="Newfoundland">
+				<long>
+					<generic>Oge Newfoundland</generic>
+					<standard>Oge Izugbe Newfoundland</standard>
+					<daylight>Oge Ihe Newfoundland</daylight>
+				</long>
+			</metazone>
+			<metazone type="Niue">
+				<long>
+					<standard>Oge Niue</standard>
+				</long>
+			</metazone>
+			<metazone type="Norfolk">
+				<long>
+					<standard>Oge Norfolk Island</standard>
+				</long>
+			</metazone>
+			<metazone type="Noronha">
+				<long>
+					<generic>Oge Fernando de Noronha</generic>
+					<standard>Oge Izugbe Fernando de Noronha</standard>
+					<daylight>Oge Okpomọkụ Fernando de Noronha</daylight>
+				</long>
+			</metazone>
+			<metazone type="Novosibirsk">
+				<long>
+					<generic>Oge Novosibirsk</generic>
+					<standard>Oge Izugbe Novosibirsk</standard>
+					<daylight>Oge Okpomọkụ Novosibirsk</daylight>
+				</long>
+			</metazone>
+			<metazone type="Omsk">
+				<long>
+					<generic>Oge Omsk</generic>
+					<standard>Oge Izugbe Omsk</standard>
+					<daylight>Oge Okpomọkụ Omsk</daylight>
+				</long>
+			</metazone>
+			<metazone type="Pakistan">
+				<long>
+					<generic>Oge Pakistan</generic>
+					<standard>Oge Izugbe Pakistan</standard>
+					<daylight>Oge Okpomọkụ Pakistan</daylight>
+				</long>
+			</metazone>
+			<metazone type="Palau">
+				<long>
+					<standard>Oge Palau</standard>
+				</long>
+			</metazone>
+			<metazone type="Papua_New_Guinea">
+				<long>
+					<standard>Oge Papua New Guinea</standard>
+				</long>
+			</metazone>
+			<metazone type="Paraguay">
+				<long>
+					<generic>Oge Paraguay</generic>
+					<standard>Oge Izugbe Paraguay</standard>
+					<daylight>Oge Okpomọkụ Paraguay</daylight>
+				</long>
+			</metazone>
+			<metazone type="Peru">
+				<long>
+					<generic>Oge Peru</generic>
+					<standard>Oge Izugbe Peru</standard>
+					<daylight>Oge Okpomọkụ Peru</daylight>
+				</long>
+			</metazone>
+			<metazone type="Philippines">
+				<long>
+					<generic>Oge Philippine</generic>
+					<standard>Oge Izugbe Philippine</standard>
+					<daylight>Oge Okpomọkụ Philippine</daylight>
+				</long>
+			</metazone>
+			<metazone type="Phoenix_Islands">
+				<long>
+					<standard>Oge Phoenix Islands</standard>
+				</long>
+			</metazone>
+			<metazone type="Pierre_Miquelon">
+				<long>
+					<generic>Oge St. Pierre &amp; Miquelon</generic>
+					<standard>Oge Izugbe St. Pierre &amp; Miquelon</standard>
+					<daylight>Oge Ihe St. Pierre &amp; Miquelon</daylight>
+				</long>
+			</metazone>
+			<metazone type="Pitcairn">
+				<long>
+					<standard>Oge Pitcairn</standard>
+				</long>
+			</metazone>
+			<metazone type="Ponape">
+				<long>
+					<standard>Oge Ponape</standard>
+				</long>
+			</metazone>
+			<metazone type="Pyongyang">
+				<long>
+					<standard>Oge Pyongyang</standard>
+				</long>
+			</metazone>
+			<metazone type="Reunion">
+				<long>
+					<standard>Oge Réunion</standard>
+				</long>
+			</metazone>
+			<metazone type="Rothera">
+				<long>
+					<standard>Oge Rothera</standard>
+				</long>
+			</metazone>
+			<metazone type="Sakhalin">
+				<long>
+					<generic>Oge Sakhalin</generic>
+					<standard>Oge Izugbe Sakhalin</standard>
+					<daylight>Oge Okpomọkụ Sakhalin</daylight>
+				</long>
+			</metazone>
+			<metazone type="Samoa">
+				<long>
+					<generic>Oge Samoa</generic>
+					<standard>Oge Izugbe Samoa</standard>
+					<daylight>Oge Ihe Samoa</daylight>
+				</long>
+			</metazone>
+			<metazone type="Seychelles">
+				<long>
+					<standard>Oge Seychelles</standard>
+				</long>
+			</metazone>
+			<metazone type="Singapore">
+				<long>
+					<standard>Oge Izugbe Singapore</standard>
+				</long>
+			</metazone>
+			<metazone type="Solomon">
+				<long>
+					<standard>Oge Solomon Islands</standard>
+				</long>
+			</metazone>
+			<metazone type="South_Georgia">
+				<long>
+					<standard>Oge South Georgia</standard>
+				</long>
+			</metazone>
+			<metazone type="Suriname">
+				<long>
+					<standard>Oge Suriname</standard>
+				</long>
+			</metazone>
+			<metazone type="Syowa">
+				<long>
+					<standard>Oge Syowa</standard>
+				</long>
+			</metazone>
+			<metazone type="Tahiti">
+				<long>
+					<standard>Oge Tahiti</standard>
+				</long>
+			</metazone>
+			<metazone type="Taipei">
+				<long>
+					<generic>Oge Taipei</generic>
+					<standard>Oge Izugbe Taipei</standard>
+					<daylight>Oge Ihe Taipei</daylight>
+				</long>
+			</metazone>
+			<metazone type="Tajikistan">
+				<long>
+					<standard>Oge Tajikistan</standard>
+				</long>
+			</metazone>
+			<metazone type="Tokelau">
+				<long>
+					<standard>Oge Tokelau</standard>
+				</long>
+			</metazone>
+			<metazone type="Tonga">
+				<long>
+					<generic>Oge Tonga</generic>
+					<standard>Oge Izugbe Tonga</standard>
+					<daylight>Oge Okpomọkụ Tonga</daylight>
+				</long>
+			</metazone>
+			<metazone type="Truk">
+				<long>
+					<standard>Oge Chuuk</standard>
+				</long>
+			</metazone>
+			<metazone type="Turkmenistan">
+				<long>
+					<generic>Oge Turkmenist</generic>
+					<standard>Oge Izugbe Turkmenist</standard>
+					<daylight>Oge Okpomọkụ Turkmenist</daylight>
+				</long>
+			</metazone>
+			<metazone type="Tuvalu">
+				<long>
+					<standard>Oge Tuvalu</standard>
+				</long>
+			</metazone>
+			<metazone type="Uruguay">
+				<long>
+					<generic>Oge Uruguay</generic>
+					<standard>Oge Izugbe Uruguay</standard>
+					<daylight>Oge Okpomọkụ Uruguay</daylight>
+				</long>
+			</metazone>
+			<metazone type="Uzbekistan">
+				<long>
+					<generic>Oge Uzbekist</generic>
+					<standard>Oge Izugbe Uzbekist</standard>
+					<daylight>Oge Okpomọkụ Uzbekist</daylight>
+				</long>
+			</metazone>
+			<metazone type="Vanuatu">
+				<long>
+					<generic>Oge Vanuatu</generic>
+					<standard>Oge Izugbe Vanuatu</standard>
+					<daylight>Oge Okpomọkụ Vanuatu</daylight>
+				</long>
+			</metazone>
+			<metazone type="Venezuela">
+				<long>
+					<standard>Oge Venezuela</standard>
+				</long>
+			</metazone>
+			<metazone type="Vladivostok">
+				<long>
+					<generic>Oge Vladivostok</generic>
+					<standard>Oge Izugbe Vladivostok</standard>
+					<daylight>Oge Okpomọkụ Vladivostok</daylight>
+				</long>
+			</metazone>
+			<metazone type="Volgograd">
+				<long>
+					<generic>Oge Volgograd</generic>
+					<standard>Oge Izugbe Volgograd</standard>
+					<daylight>Oge Okpomọkụ Volgograd</daylight>
+				</long>
+			</metazone>
+			<metazone type="Vostok">
+				<long>
+					<standard>Oge Vostok</standard>
+				</long>
+			</metazone>
+			<metazone type="Wake">
+				<long>
+					<standard>Oge Wake Island</standard>
+				</long>
+			</metazone>
+			<metazone type="Wallis">
+				<long>
+					<standard>Oge Wallis &amp; Futuna</standard>
+				</long>
+			</metazone>
+			<metazone type="Yakutsk">
+				<long>
+					<generic>Oge Yakutsk</generic>
+					<standard>Oge Izugbe Yakutsk</standard>
+					<daylight>Oge Okpomọkụ Yakutsk</daylight>
+				</long>
+			</metazone>
+			<metazone type="Yekaterinburg">
+				<long>
+					<generic>Oge Yekaterinburg</generic>
+					<standard>Oge Izugbe Yekaterinburg</standard>
+					<daylight>Oge Okpomọkụ Yekaterinburg</daylight>
+				</long>
+			</metazone>
 		</timeZoneNames>
 	</dates>
 	<numbers>
-		<defaultNumberingSystem draft="contributed">latn</defaultNumberingSystem>
-		<otherNumberingSystems>
-			<native draft="contributed">latn</native>
-		</otherNumberingSystems>
 		<minimumGroupingDigits draft="contributed">1</minimumGroupingDigits>
 		<symbols numberSystem="arab">
 			<decimal>٫</decimal>
@@ -920,31 +1934,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<nan>NaN</nan>
 			<timeSeparator draft="contributed">:</timeSeparator>
 		</symbols>
-		<decimalFormats numberSystem="latn">
-			<decimalFormatLength>
-				<decimalFormat>
-					<pattern>#,##0.###</pattern>
-				</decimalFormat>
-			</decimalFormatLength>
-		</decimalFormats>
-		<scientificFormats numberSystem="latn">
-			<scientificFormatLength>
-				<scientificFormat>
-					<pattern>#E0</pattern>
-				</scientificFormat>
-			</scientificFormatLength>
-		</scientificFormats>
 		<percentFormats numberSystem="arab">
 			<percentFormatLength>
 				<percentFormat>
 					<pattern>#,##0 %</pattern>
-				</percentFormat>
-			</percentFormatLength>
-		</percentFormats>
-		<percentFormats numberSystem="latn">
-			<percentFormatLength>
-				<percentFormat>
-					<pattern>#,##0%</pattern>
 				</percentFormat>
 			</percentFormatLength>
 		</percentFormats>
@@ -989,20 +1982,27 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<pattern type="100000000000000" count="other" draft="provisional">¤000T</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
-			<unitPattern count="other">{0} {1}</unitPattern>
 		</currencyFormats>
 		<currencies>
+			<currency type="BMD">
+				<displayName>Dollar Bermuda</displayName>
+				<displayName count="other">Dollars Bermuda</displayName>
+			</currency>
 			<currency type="BRL">
 				<displayName>Real Brazil</displayName>
 				<displayName count="other">Real Brazil</displayName>
-				<symbol draft="contributed">R$</symbol>
-				<symbol alt="narrow" draft="contributed">R$</symbol>
+			</currency>
+			<currency type="BZD">
+				<displayName>Dollar Belize</displayName>
+				<displayName count="other">Dollars Belize</displayName>
+			</currency>
+			<currency type="CAD">
+				<displayName>Dollar Canada</displayName>
+				<displayName count="other">Dollars Canada</displayName>
 			</currency>
 			<currency type="CNY">
 				<displayName>Yuan China</displayName>
 				<displayName count="other">Yuan China</displayName>
-				<symbol draft="contributed">CN¥</symbol>
-				<symbol alt="narrow" draft="contributed">¥</symbol>
 			</currency>
 			<currency type="CVE">
 				<displayName>Escudo Caboverdiano</displayName>
@@ -1010,26 +2010,19 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currency type="EUR">
 				<displayName>Euro</displayName>
 				<displayName count="other">euro</displayName>
-				<symbol draft="contributed">€</symbol>
-				<symbol alt="narrow" draft="contributed">€</symbol>
 			</currency>
 			<currency type="GBP">
 				<displayName>Pound British</displayName>
 				<displayName count="other">Pound British</displayName>
-				<symbol draft="contributed">£</symbol>
-				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
 			<currency type="INR">
 				<displayName>Rupee India</displayName>
 				<displayName count="other">Rupee India</displayName>
-				<symbol draft="contributed">₹</symbol>
-				<symbol alt="narrow" draft="contributed">₹</symbol>
 			</currency>
 			<currency type="JPY">
 				<displayName>Yen Japan</displayName>
 				<displayName count="other">Yen Japan</displayName>
 				<symbol draft="contributed">¥</symbol>
-				<symbol alt="narrow" draft="contributed">¥</symbol>
 			</currency>
 			<currency type="NGN">
 				<displayName>Naịra</displayName>
@@ -1038,14 +2031,19 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currency type="RUB">
 				<displayName>Ruble Russia</displayName>
 				<displayName count="other">Ruble Russia</displayName>
-				<symbol draft="contributed">RUB</symbol>
-				<symbol alt="narrow" draft="contributed">₽</symbol>
+			</currency>
+			<currency type="SRD">
+				<displayName>Dollar Surinamese</displayName>
+				<displayName count="other">Dollar Surinamese</displayName>
+			</currency>
+			<currency type="TTD">
+				<displayName>Dollar Trinidad &amp; Tobago</displayName>
+				<displayName count="other">Dollars Trinidad &amp; Tobago</displayName>
 			</currency>
 			<currency type="USD">
 				<displayName>Dollar US</displayName>
-				<displayName count="other">dollar US</displayName>
+				<displayName count="other">Dollars US</displayName>
 				<symbol draft="contributed">$</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="XXX">
 				<displayName>Ego Amaghị</displayName>
@@ -1053,26 +2051,45 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 		</currencies>
 		<miscPatterns numberSystem="latn">
+			<pattern type="atLeast">{0}+</pattern>
+			<pattern type="atMost">≤{0}</pattern>
 			<pattern type="range">{0}–{1}</pattern>
 		</miscPatterns>
+		<minimalPairs>
+			<pluralMinimalPairs count="other" draft="contributed">ubochi {0}</pluralMinimalPairs>
+			<ordinalMinimalPairs ordinal="other" draft="contributed">Si uzo aka nri {0}</ordinalMinimalPairs>
+		</minimalPairs>
 	</numbers>
 	<units>
-		<durationUnit type="hm">
-			<durationUnitPattern>h:mm</durationUnitPattern>
-		</durationUnit>
-		<durationUnit type="hms">
-			<durationUnitPattern>h:mm:ss</durationUnitPattern>
-		</durationUnit>
-		<durationUnit type="ms">
-			<durationUnitPattern>m:ss</durationUnitPattern>
-		</durationUnit>
+		<unitLength type="long">
+			<unit type="duration-century">
+				<displayName>Ọtụtụ nari afọ</displayName>
+			</unit>
+			<unit type="duration-decade">
+				<displayName>Ọtụtụ afọ iri</displayName>
+			</unit>
+			<unit type="duration-year">
+				<displayName>Ọtụtụ Afọ</displayName>
+			</unit>
+			<unit type="duration-month">
+				<displayName>Ọtụtụ Ọnwa</displayName>
+			</unit>
+			<unit type="duration-week">
+				<displayName>Ọtụtụ Izu</displayName>
+			</unit>
+			<unit type="duration-day">
+				<displayName>Ọtụtụ Ubochi</displayName>
+			</unit>
+		</unitLength>
 	</units>
 	<listPatterns>
 		<listPattern>
-			<listPatternPart type="start">{0}, {1}</listPatternPart>
 			<listPatternPart type="middle">{0}, {1}</listPatternPart>
 			<listPatternPart type="end">{0}, na {1}</listPatternPart>
 			<listPatternPart type="2">{0} na {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="standard-narrow">
+			<listPatternPart type="2">{0}, {1}</listPatternPart>
 		</listPattern>
 	</listPatterns>
 	<posix>

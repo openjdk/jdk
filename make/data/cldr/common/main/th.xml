@@ -9,7 +9,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 14982 $"/>
+		<version number="$Revision$"/>
 		<language type="th"/>
 	</identity>
 	<localeDisplayNames>
@@ -107,6 +107,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="car">คาริบ</language>
 			<language type="cay">คายูกา</language>
 			<language type="cch">แอตแซม</language>
+			<language type="ccp">จักม่า</language>
 			<language type="ce">เชเชน</language>
 			<language type="ceb">เซบู</language>
 			<language type="cgg">คีกา</language>
@@ -254,7 +255,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="id">อินโดนีเซีย</language>
 			<language type="ie">อินเตอร์ลิงกิว</language>
 			<language type="ig">อิกโบ</language>
-			<language type="ii">เสฉวนยิ</language>
+			<language type="ii">เสฉวนยี่</language>
 			<language type="ik">อีนูเปียก</language>
 			<language type="ilo">อีโลโก</language>
 			<language type="inh">อินกุช</language>
@@ -626,6 +627,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="yo">โยรูบา</language>
 			<language type="yrl">เหงงกาตุ</language>
 			<language type="yue">กวางตุ้ง</language>
+			<language type="yue" alt="menu">จีน (กวางตุ้ง)</language>
 			<language type="za">จ้วง</language>
 			<language type="zap">ซาโปเตก</language>
 			<language type="zbl">บลิสซิมโบลส์</language>
@@ -633,6 +635,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="zen">เซนากา</language>
 			<language type="zgh">ทามาไซต์โมร็อกโกมาตรฐาน</language>
 			<language type="zh">จีน</language>
+			<language type="zh" alt="menu">จีนกลาง</language>
 			<language type="zh_Hans">จีนประยุกต์</language>
 			<language type="zh_Hant">จีนดั้งเดิม</language>
 			<language type="zu">ซูลู</language>
@@ -810,7 +813,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Zsym">สัญลักษณ์</script>
 			<script type="Zxxx">ไม่มีภาษาเขียน</script>
 			<script type="Zyyy">สามัญ</script>
-			<script type="Zzzz">สคริปต์ที่ไม่รู้จัก</script>
+			<script type="Zzzz">ตัวอักษรที่ไม่รู้จัก</script>
 		</scripts>
 		<territories>
 			<territory type="001">โลก</territory>
@@ -878,7 +881,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="BR">บราซิล</territory>
 			<territory type="BS">บาฮามาส</territory>
 			<territory type="BT">ภูฏาน</territory>
-			<territory type="BV">เกาะบูเวต</territory>
+			<territory type="BV">เกาะบูเว</territory>
 			<territory type="BW">บอตสวานา</territory>
 			<territory type="BY">เบลารุส</territory>
 			<territory type="BZ">เบลีซ</territory>
@@ -1111,6 +1114,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="VU">วานูอาตู</territory>
 			<territory type="WF">วาลลิสและฟุตูนา</territory>
 			<territory type="WS">ซามัว</territory>
+			<territory type="XA">สำเนียงไม่จริง</territory>
+			<territory type="XB">Bidi ไม่จริง</territory>
 			<territory type="XK">โคโซโว</territory>
 			<territory type="YE">เยเมน</territory>
 			<territory type="YT">มายอต</territory>
@@ -1187,28 +1192,28 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<keys>
 			<key type="calendar">ปฏิทิน</key>
 			<key type="cf">รูปแบบสกุลเงิน</key>
-			<key type="colAlternate" draft="contributed">ละเว้นการจัดเรียงสัญลักษณ์</key>
-			<key type="colBackwards" draft="contributed">การจัดเรียงเสียงหนักเบาในลำดับถอยหลัง</key>
-			<key type="colCaseFirst" draft="contributed">การเรียงลำดับตัวพิมพ์ใหญ่/ตัวพิมพ์เล็ก</key>
+			<key type="colAlternate">ละเว้นการจัดเรียงสัญลักษณ์</key>
+			<key type="colBackwards">การจัดเรียงเสียงหนักเบาในลำดับถอยหลัง</key>
+			<key type="colCaseFirst">การเรียงลำดับตัวพิมพ์ใหญ่/ตัวพิมพ์เล็ก</key>
 			<key type="colCaseLevel">การจัดเรียงแบบตรงตามตัวพิมพ์ใหญ่-เล็ก</key>
 			<key type="collation">ลำดับการจัดเรียง</key>
-			<key type="colNormalization" draft="contributed">การจัดเรียงแบบที่เป็นปกติ</key>
-			<key type="colNumeric" draft="contributed">การจัดเรียงตัวเลข</key>
-			<key type="colStrength" draft="contributed">ความแม่นยำในการจัดเรียง</key>
+			<key type="colNormalization">การจัดเรียงแบบที่เป็นปกติ</key>
+			<key type="colNumeric">การจัดเรียงตัวเลข</key>
+			<key type="colStrength">ความแม่นยำในการจัดเรียง</key>
 			<key type="currency">สกุลเงิน</key>
 			<key type="hc">วงจรชั่วโมง (เทียบ 12 และ 24)</key>
 			<key type="lb">รูปแบบการขึ้นบรรทัดใหม่</key>
 			<key type="ms">ระบบการวัด</key>
 			<key type="numbers">ตัวเลข</key>
-			<key type="timezone" draft="contributed">เขตเวลา</key>
-			<key type="va" draft="contributed">ตัวแปรภาษาถิ่น</key>
+			<key type="timezone">เขตเวลา</key>
+			<key type="va">ตัวแปรภาษาถิ่น</key>
 			<key type="x">ใช้งานส่วนบุคคล</key>
 		</keys>
 		<types>
 			<type key="calendar" type="buddhist">ปฏิทินพุทธ</type>
 			<type key="calendar" type="chinese">ปฏิทินจีน</type>
 			<type key="calendar" type="coptic" draft="contributed">ปฏิทินคอปติก</type>
-			<type key="calendar" type="dangi">ปฏิทินทันกิ</type>
+			<type key="calendar" type="dangi">ปฏิทินเกาหลี</type>
 			<type key="calendar" type="ethiopic">ปฏิทินเอธิโอเปีย</type>
 			<type key="calendar" type="ethiopic-amete-alem" draft="contributed">ปฏิทินปีโลกเอธิโอเปีย</type>
 			<type key="calendar" type="gregorian">ปฏิทินเกรกอเรียน</type>
@@ -1343,7 +1348,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		</measurementSystemNames>
 		<codePatterns>
 			<codePattern type="language">ภาษา: {0}</codePattern>
-			<codePattern type="script">สคริปต์: {0}</codePattern>
+			<codePattern type="script">ตัวอักษร: {0}</codePattern>
 			<codePattern type="territory">ภูมิภาค: {0}</codePattern>
 		</codePatterns>
 	</localeDisplayNames>
@@ -1351,8 +1356,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<exemplarCharacters>[ฯ ๆ \u0E4E \u0E4C \u0E47 \u0E48 \u0E49 \u0E4A \u0E4B ก ข ฃ ค ฅ ฆ ง จ ฉ ช ซ ฌ ญ ฎ ฏ ฐ ฑ ฒ ณ ด ต ถ ท ธ น บ ป ผ ฝ พ ฟ ภ ม ย ร ฤ ล ฦ ว ศ ษ ส ห ฬ อ ฮ \u0E4D ะ \u0E31 า ๅ ำ \u0E34 \u0E35 \u0E36 \u0E37 \u0E38 \u0E39 เ แ โ ใ ไ \u0E3A]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[\u200B]</exemplarCharacters>
 		<exemplarCharacters type="index" draft="contributed">[ก ข ฃ ค ฅ ฆ ง จ ฉ ช ซ ฌ ญ ฎ ฏ ฐ ฑ ฒ ณ ด ต ถ ท ธ น บ ป ผ ฝ พ ฟ ภ ม ย ร ฤ ล ฦ ว ศ ษ ส ห ฬ อ ฮ]</exemplarCharacters>
-		<exemplarCharacters type="numbers">[% , \- . ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
-		<exemplarCharacters type="punctuation">[! &quot; # ' ( ) * , \- . / \: @ \[ \] ‐ – — ‘ ’ “ ” … ′ ″]</exemplarCharacters>
+		<exemplarCharacters type="numbers">[% , \- . ‑ ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[! &quot; # ' ( ) * , \- . / \: @ \[ \] ‐ ‑ – — ‘ ’ “ ” … ′ ″]</exemplarCharacters>
 		<ellipsis type="final">{0}…</ellipsis>
 		<ellipsis type="initial">…{0}</ellipsis>
 		<ellipsis type="medial">{0}…{1}</ellipsis>
@@ -1582,6 +1587,20 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<month type="11" draft="contributed">11</month>
 							<month type="12" draft="contributed">12</month>
 						</monthWidth>
+						<monthWidth type="narrow">
+							<month type="1" draft="contributed">1</month>
+							<month type="2" draft="contributed">2</month>
+							<month type="3" draft="contributed">3</month>
+							<month type="4" draft="contributed">4</month>
+							<month type="5" draft="contributed">5</month>
+							<month type="6" draft="contributed">6</month>
+							<month type="7" draft="contributed">7</month>
+							<month type="8" draft="contributed">8</month>
+							<month type="9" draft="contributed">9</month>
+							<month type="10" draft="contributed">10</month>
+							<month type="11" draft="contributed">11</month>
+							<month type="12" draft="contributed">12</month>
+						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1" draft="contributed">1</month>
 							<month type="2" draft="contributed">2</month>
@@ -1599,6 +1618,20 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					</monthContext>
 					<monthContext type="stand-alone">
 						<monthWidth type="abbreviated">
+							<month type="1" draft="contributed">1</month>
+							<month type="2" draft="contributed">2</month>
+							<month type="3" draft="contributed">3</month>
+							<month type="4" draft="contributed">4</month>
+							<month type="5" draft="contributed">5</month>
+							<month type="6" draft="contributed">6</month>
+							<month type="7" draft="contributed">7</month>
+							<month type="8" draft="contributed">8</month>
+							<month type="9" draft="contributed">9</month>
+							<month type="10" draft="contributed">10</month>
+							<month type="11" draft="contributed">11</month>
+							<month type="12" draft="contributed">12</month>
+						</monthWidth>
+						<monthWidth type="narrow">
 							<month type="1" draft="contributed">1</month>
 							<month type="2" draft="contributed">2</month>
 							<month type="3" draft="contributed">3</month>
@@ -1780,6 +1813,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<month type="12" draft="contributed">เมสรา</month>
 							<month type="13" draft="contributed">นาซี</month>
 						</monthWidth>
+						<monthWidth type="narrow">
+							<month type="1" draft="contributed">1</month>
+							<month type="2" draft="contributed">2</month>
+							<month type="3" draft="contributed">3</month>
+							<month type="4" draft="contributed">4</month>
+							<month type="5" draft="contributed">5</month>
+							<month type="6" draft="contributed">6</month>
+							<month type="7" draft="contributed">7</month>
+							<month type="8" draft="contributed">8</month>
+							<month type="9" draft="contributed">9</month>
+							<month type="10" draft="contributed">10</month>
+							<month type="11" draft="contributed">11</month>
+							<month type="12" draft="contributed">12</month>
+							<month type="13" draft="contributed">13</month>
+						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1" draft="contributed">เทาท์</month>
 							<month type="2" draft="contributed">บาบา</month>
@@ -1811,6 +1859,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<month type="11" draft="contributed">อีเปป</month>
 							<month type="12" draft="contributed">เมสรา</month>
 							<month type="13" draft="contributed">นาซี</month>
+						</monthWidth>
+						<monthWidth type="narrow">
+							<month type="1" draft="contributed">1</month>
+							<month type="2" draft="contributed">2</month>
+							<month type="3" draft="contributed">3</month>
+							<month type="4" draft="contributed">4</month>
+							<month type="5" draft="contributed">5</month>
+							<month type="6" draft="contributed">6</month>
+							<month type="7" draft="contributed">7</month>
+							<month type="8" draft="contributed">8</month>
+							<month type="9" draft="contributed">9</month>
+							<month type="10" draft="contributed">10</month>
+							<month type="11" draft="contributed">11</month>
+							<month type="12" draft="contributed">12</month>
+							<month type="13" draft="contributed">13</month>
 						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1" draft="contributed">เทาท์</month>
@@ -1847,6 +1910,20 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<month type="11" draft="contributed">11</month>
 							<month type="12" draft="contributed">12</month>
 						</monthWidth>
+						<monthWidth type="narrow">
+							<month type="1" draft="contributed">1</month>
+							<month type="2" draft="contributed">2</month>
+							<month type="3" draft="contributed">3</month>
+							<month type="4" draft="contributed">4</month>
+							<month type="5" draft="contributed">5</month>
+							<month type="6" draft="contributed">6</month>
+							<month type="7" draft="contributed">7</month>
+							<month type="8" draft="contributed">8</month>
+							<month type="9" draft="contributed">9</month>
+							<month type="10" draft="contributed">10</month>
+							<month type="11" draft="contributed">11</month>
+							<month type="12" draft="contributed">12</month>
+						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1" draft="contributed">1</month>
 							<month type="2" draft="contributed">2</month>
@@ -1864,6 +1941,20 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					</monthContext>
 					<monthContext type="stand-alone">
 						<monthWidth type="abbreviated">
+							<month type="1" draft="contributed">1</month>
+							<month type="2" draft="contributed">2</month>
+							<month type="3" draft="contributed">3</month>
+							<month type="4" draft="contributed">4</month>
+							<month type="5" draft="contributed">5</month>
+							<month type="6" draft="contributed">6</month>
+							<month type="7" draft="contributed">7</month>
+							<month type="8" draft="contributed">8</month>
+							<month type="9" draft="contributed">9</month>
+							<month type="10" draft="contributed">10</month>
+							<month type="11" draft="contributed">11</month>
+							<month type="12" draft="contributed">12</month>
+						</monthWidth>
+						<monthWidth type="narrow">
 							<month type="1" draft="contributed">1</month>
 							<month type="2" draft="contributed">2</month>
 							<month type="3" draft="contributed">3</month>
@@ -2038,6 +2129,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<month type="12" draft="contributed">เนแฮซ</month>
 							<month type="13" draft="contributed">พากูเมน</month>
 						</monthWidth>
+						<monthWidth type="narrow">
+							<month type="1" draft="contributed">1</month>
+							<month type="2" draft="contributed">2</month>
+							<month type="3" draft="contributed">3</month>
+							<month type="4" draft="contributed">4</month>
+							<month type="5" draft="contributed">5</month>
+							<month type="6" draft="contributed">6</month>
+							<month type="7" draft="contributed">7</month>
+							<month type="8" draft="contributed">8</month>
+							<month type="9" draft="contributed">9</month>
+							<month type="10" draft="contributed">10</month>
+							<month type="11" draft="contributed">11</month>
+							<month type="12" draft="contributed">12</month>
+							<month type="13" draft="contributed">13</month>
+						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1" draft="contributed">เมสเคอเรม</month>
 							<month type="2" draft="contributed">เตเกมท</month>
@@ -2069,6 +2175,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<month type="11" draft="contributed">ฮัมเล</month>
 							<month type="12" draft="contributed">เนแฮซ</month>
 							<month type="13" draft="contributed">พากูเมน</month>
+						</monthWidth>
+						<monthWidth type="narrow">
+							<month type="1" draft="contributed">1</month>
+							<month type="2" draft="contributed">2</month>
+							<month type="3" draft="contributed">3</month>
+							<month type="4" draft="contributed">4</month>
+							<month type="5" draft="contributed">5</month>
+							<month type="6" draft="contributed">6</month>
+							<month type="7" draft="contributed">7</month>
+							<month type="8" draft="contributed">8</month>
+							<month type="9" draft="contributed">9</month>
+							<month type="10" draft="contributed">10</month>
+							<month type="11" draft="contributed">11</month>
+							<month type="12" draft="contributed">12</month>
+							<month type="13" draft="contributed">13</month>
 						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1" draft="contributed">เมสเคอเรม</month>
@@ -2112,10 +2233,32 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					</dateFormatLength>
 				</dateFormats>
 				<dateTimeFormats>
+					<dateTimeFormatLength type="full">
+						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="long">
+						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="medium">
+						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="short">
+						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
 					<availableFormats>
 						<dateFormatItem id="Bh">h B</dateFormatItem>
 						<dateFormatItem id="Bhm">h:mm B</dateFormatItem>
 						<dateFormatItem id="Bhms">h:mm:ss B</dateFormatItem>
+						<dateFormatItem id="d">d</dateFormatItem>
+						<dateFormatItem id="E">ccc</dateFormatItem>
 						<dateFormatItem id="EBhm">E h:mm B</dateFormatItem>
 						<dateFormatItem id="EBhms">E h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="Ed">E d</dateFormatItem>
@@ -2123,16 +2266,28 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="EHm">E HH:mm</dateFormatItem>
 						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="EHms">E HH:mm:ss</dateFormatItem>
+						<dateFormatItem id="Gy">G y</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM G y</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d MMM G y</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E d MMM G y</dateFormatItem>
 						<dateFormatItem id="GyMMMEEEEd">EEEEที่ d MMM G y</dateFormatItem>
+						<dateFormatItem id="h">h a</dateFormatItem>
+						<dateFormatItem id="H">HH</dateFormatItem>
+						<dateFormatItem id="hm">h:mm a</dateFormatItem>
+						<dateFormatItem id="Hm">HH:mm</dateFormatItem>
+						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="Hms">HH:mm:ss</dateFormatItem>
+						<dateFormatItem id="M">L</dateFormatItem>
 						<dateFormatItem id="Md">d/M</dateFormatItem>
 						<dateFormatItem id="MEd">E d/M</dateFormatItem>
+						<dateFormatItem id="MMM">LLL</dateFormatItem>
 						<dateFormatItem id="MMMd">d MMM</dateFormatItem>
 						<dateFormatItem id="MMMEd">E d MMM</dateFormatItem>
 						<dateFormatItem id="MMMEEEEd">EEEEที่ d MMM</dateFormatItem>
 						<dateFormatItem id="MMMMd">d MMMM</dateFormatItem>
+						<dateFormatItem id="ms">mm:ss</dateFormatItem>
+						<dateFormatItem id="y">G y</dateFormatItem>
+						<dateFormatItem id="yyyy">G y</dateFormatItem>
 						<dateFormatItem id="yyyyM">M/y G</dateFormatItem>
 						<dateFormatItem id="yyyyMd">d/M/y GGGGG</dateFormatItem>
 						<dateFormatItem id="yyyyMEd">E d/M/y GGGGG</dateFormatItem>
@@ -2140,27 +2295,84 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="yyyyMMMd">d MMM G y</dateFormatItem>
 						<dateFormatItem id="yyyyMMMEd">E d MMM G y</dateFormatItem>
 						<dateFormatItem id="yyyyMMMEEEEd">EEEEที่ d MMM G y</dateFormatItem>
-						<dateFormatItem id="yyyyMMMM" draft="contributed">MMMM G y</dateFormatItem>
+						<dateFormatItem id="yyyyMMMM">MMMM G y</dateFormatItem>
 						<dateFormatItem id="yyyyQQQ">QQQ G y</dateFormatItem>
 						<dateFormatItem id="yyyyQQQQ">QQQQ G y</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
 						<intervalFormatFallback>{0} - {1}</intervalFormatFallback>
 						<intervalFormatItem id="Bh">
-							<greatestDifference id="B" draft="contributed">h B – h B</greatestDifference>
-							<greatestDifference id="h" draft="contributed">h – h B</greatestDifference>
+							<greatestDifference id="h">h – h B</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Bhm">
-							<greatestDifference id="B" draft="contributed">h:mm B – h:mm B</greatestDifference>
-							<greatestDifference id="h" draft="contributed">h:mm – h:mm B</greatestDifference>
-							<greatestDifference id="m" draft="contributed">h:mm – h:mm B</greatestDifference>
+							<greatestDifference id="h">h:mm – h:mm B</greatestDifference>
+							<greatestDifference id="m">h:mm – h:mm B</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="d">
+							<greatestDifference id="d">d–d</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyM">
+							<greatestDifference id="G">MM/GGGGG y – MM/GGGGG y</greatestDifference>
+							<greatestDifference id="M">M/y – M/y G</greatestDifference>
+							<greatestDifference id="y">M/y – M/y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMd">
+							<greatestDifference id="d">d/M/y – d/M/y G</greatestDifference>
+							<greatestDifference id="G">d/MM/GGGGG y – d/MM/GGGGG y</greatestDifference>
+							<greatestDifference id="M">d/M/y – d/M/y G</greatestDifference>
+							<greatestDifference id="y">d/M/y – d/M/y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMEd">
+							<greatestDifference id="d">E d/M/y – E d/M/y G</greatestDifference>
+							<greatestDifference id="G">E d/MM/GGGGG y – E d/MM/GGGGG y</greatestDifference>
+							<greatestDifference id="M">E d/M/y – E d/M/y G</greatestDifference>
+							<greatestDifference id="y">E d/M/y – E d/M/y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMM">
+							<greatestDifference id="G">MMM G y – MMM G y</greatestDifference>
+							<greatestDifference id="M">MMM – MMM G y</greatestDifference>
+							<greatestDifference id="y">MMM G y – MMM y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMd">
+							<greatestDifference id="d">d – d MMM G y</greatestDifference>
+							<greatestDifference id="G">d MMM G y – d MMM G y</greatestDifference>
+							<greatestDifference id="M">d MMM – d MMM G y</greatestDifference>
+							<greatestDifference id="y">d MMM G y – d MMM y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMEd">
+							<greatestDifference id="d">E d MMM – E d MMM G y</greatestDifference>
+							<greatestDifference id="G">E d MMM G y – E d MMM G y</greatestDifference>
+							<greatestDifference id="M">E d MMM – E d MMM G y</greatestDifference>
+							<greatestDifference id="y">E d MMM G y – E d MMM y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="h">
+							<greatestDifference id="a" draft="contributed">h a – h a</greatestDifference>
+							<greatestDifference id="h" draft="contributed">h–h a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="H">
 							<greatestDifference id="H">H–H</greatestDifference>
 						</intervalFormatItem>
+						<intervalFormatItem id="hm">
+							<greatestDifference id="a" draft="contributed">h:mm a – h:mm a</greatestDifference>
+							<greatestDifference id="h" draft="contributed">h:mm–h:mm a</greatestDifference>
+							<greatestDifference id="m" draft="contributed">h:mm–h:mm a</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Hm">
+							<greatestDifference id="H" draft="contributed">HH:mm–HH:mm</greatestDifference>
+							<greatestDifference id="m" draft="contributed">HH:mm–HH:mm</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="hmv">
+							<greatestDifference id="a" draft="contributed">h:mm a – h:mm a v</greatestDifference>
+							<greatestDifference id="h" draft="contributed">h:mm–h:mm a v</greatestDifference>
+							<greatestDifference id="m" draft="contributed">h:mm–h:mm a v</greatestDifference>
+						</intervalFormatItem>
 						<intervalFormatItem id="Hmv">
 							<greatestDifference id="H">H:mm–H:mm v</greatestDifference>
 							<greatestDifference id="m">H:mm–H:mm v</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="hv">
+							<greatestDifference id="a" draft="contributed">h a – h a v</greatestDifference>
+							<greatestDifference id="h" draft="contributed">h–h a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hv">
 							<greatestDifference id="H">H–H v</greatestDifference>
@@ -2176,6 +2388,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="d">E d/M – E d/M</greatestDifference>
 							<greatestDifference id="M">E d/M – E d/M</greatestDifference>
 						</intervalFormatItem>
+						<intervalFormatItem id="MMM">
+							<greatestDifference id="M">LLL–LLL</greatestDifference>
+						</intervalFormatItem>
 						<intervalFormatItem id="MMMd">
 							<greatestDifference id="d">d – d MMM</greatestDifference>
 							<greatestDifference id="M">d MMM – d MMM</greatestDifference>
@@ -2187,6 +2402,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<intervalFormatItem id="MMMEEEEd">
 							<greatestDifference id="d">EEEEที่ d – EEEEที่ d MMM</greatestDifference>
 							<greatestDifference id="M">EEEEที่ d MMM – EEEEที่ d MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="y">
+							<greatestDifference id="y">G y–y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yM">
 							<greatestDifference id="M">M/y – M/y G</greatestDifference>
@@ -2526,7 +2744,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					</eraNames>
 					<eraAbbr>
 						<era type="0">ก่อน ค.ศ.</era>
-						<era type="0" alt="variant">ก.ส.ศ.</era>
+						<era type="0" alt="variant">ก่อน ส.ศ.</era>
 						<era type="1">ค.ศ.</era>
 						<era type="1" alt="variant">ส.ศ.</era>
 					</eraAbbr>
@@ -2568,6 +2786,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<timeFormatLength type="long">
 						<timeFormat>
 							<pattern>H นาฬิกา mm นาที ss วินาที z</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="medium">
+						<timeFormat>
+							<pattern draft="contributed">HH:mm:ss</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="short">
+						<timeFormat>
+							<pattern draft="contributed">HH:mm</pattern>
 						</timeFormat>
 					</timeFormatLength>
 				</timeFormats>
@@ -2655,54 +2883,48 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<intervalFormats>
 						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
 						<intervalFormatItem id="Bh">
-							<greatestDifference id="B">h B – h B</greatestDifference>
 							<greatestDifference id="h">h – h B</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Bhm">
-							<greatestDifference id="B">h:mm B – h:mm B</greatestDifference>
 							<greatestDifference id="h">h:mm – h:mm B</greatestDifference>
 							<greatestDifference id="m">h:mm – h:mm B</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="d">
 							<greatestDifference id="d">d–d</greatestDifference>
 						</intervalFormatItem>
-						<intervalFormatItem id="Gy">
-							<greatestDifference id="G">G y – G y</greatestDifference>
-							<greatestDifference id="y">G y–y</greatestDifference>
-						</intervalFormatItem>
 						<intervalFormatItem id="GyM">
-							<greatestDifference id="G" draft="contributed">GGGGG y-MM – GGGGG y-MM</greatestDifference>
-							<greatestDifference id="M" draft="contributed">GGGGG y-MM – y-MM</greatestDifference>
-							<greatestDifference id="y" draft="contributed">GGGGG y-MM – y-MM</greatestDifference>
+							<greatestDifference id="G">MM/GGGGG y – MM/GGGGG y</greatestDifference>
+							<greatestDifference id="M">M/y – M/y</greatestDifference>
+							<greatestDifference id="y">M/y – M/y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMd">
-							<greatestDifference id="d" draft="provisional">GGGGG y-MM-dd – y-MM-dd</greatestDifference>
-							<greatestDifference id="G" draft="contributed">GGGGG y-MM-dd – GGGGG y-MM-dd</greatestDifference>
-							<greatestDifference id="M" draft="contributed">GGGGG y-MM-dd – y-MM-dd</greatestDifference>
-							<greatestDifference id="y" draft="contributed">GGGGG y-MM-dd – y-MM-dd</greatestDifference>
+							<greatestDifference id="d">d/M/y – d/M/y</greatestDifference>
+							<greatestDifference id="G">d/MM/GGGGG y – d/MM/GGGGG y</greatestDifference>
+							<greatestDifference id="M">d/M/y – d/M/y</greatestDifference>
+							<greatestDifference id="y">d/M/y – d/M/y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMEd">
-							<greatestDifference id="d" draft="contributed">GGGGG y-MM-dd, E – y-MM-dd, E</greatestDifference>
-							<greatestDifference id="G" draft="contributed">GGGGG y-MM-dd, E – GGGGG y-MM-dd, E</greatestDifference>
-							<greatestDifference id="M" draft="contributed">GGGGG y-MM-dd, E – y-MM-dd, E</greatestDifference>
-							<greatestDifference id="y" draft="contributed">GGGGG y-MM-dd, E – y-MM-dd, E</greatestDifference>
+							<greatestDifference id="d">E d/M/y – E d/M/y</greatestDifference>
+							<greatestDifference id="G">E d/MM/GGGGG y – E d/MM/GGGGG y</greatestDifference>
+							<greatestDifference id="M">E d/M/y – E d/M/y</greatestDifference>
+							<greatestDifference id="y">E d/M/y – E d/M/y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMMM">
-							<greatestDifference id="G" draft="contributed">G y MMM – G y MMM</greatestDifference>
-							<greatestDifference id="M" draft="contributed">G y MMM–MMM</greatestDifference>
-							<greatestDifference id="y" draft="contributed">G y MMM – y MMM</greatestDifference>
+							<greatestDifference id="G">MMM G y – MMM G y</greatestDifference>
+							<greatestDifference id="M">MMM – MMM G y</greatestDifference>
+							<greatestDifference id="y">MMM G y – MMM G y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMMMd">
-							<greatestDifference id="d" draft="contributed">G y MMM d–d</greatestDifference>
-							<greatestDifference id="G" draft="contributed">G y MMM d – G y MMM d</greatestDifference>
-							<greatestDifference id="M" draft="contributed">G y MMM d – MMM d</greatestDifference>
-							<greatestDifference id="y" draft="contributed">G y MMM d – y MMM d</greatestDifference>
+							<greatestDifference id="d">d – d MMM G y</greatestDifference>
+							<greatestDifference id="G">d MMM G y – d MMM G y</greatestDifference>
+							<greatestDifference id="M">d MMM – d MMM G y</greatestDifference>
+							<greatestDifference id="y">d MMM G y – d MMM y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMMMEd">
-							<greatestDifference id="d" draft="contributed">G y MMM d, E – MMM d, E</greatestDifference>
-							<greatestDifference id="G" draft="contributed">G y MMM d, E – G y MMM d, E</greatestDifference>
-							<greatestDifference id="M" draft="contributed">G y MMM d, E – MMM d, E</greatestDifference>
-							<greatestDifference id="y" draft="contributed">G y MMM d, E – y MMM d, E</greatestDifference>
+							<greatestDifference id="d">E d MMM – E d MMM G y</greatestDifference>
+							<greatestDifference id="G">E d MMM G y – E d MMM G y</greatestDifference>
+							<greatestDifference id="M">E d MMM – E d MMM G y</greatestDifference>
+							<greatestDifference id="y">E d MMM y – E d MMM y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="h">
 							<greatestDifference id="a">h a – h a</greatestDifference>
@@ -2839,6 +3061,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<month type="12">อัฟ</month>
 							<month type="13">เอลอุล</month>
 						</monthWidth>
+						<monthWidth type="narrow">
+							<month type="1" draft="contributed">1</month>
+							<month type="2" draft="contributed">2</month>
+							<month type="3" draft="contributed">3</month>
+							<month type="4" draft="contributed">4</month>
+							<month type="5" draft="contributed">5</month>
+							<month type="6" draft="contributed">6</month>
+							<month type="7" draft="contributed">7</month>
+							<month type="7" yeartype="leap" draft="contributed">7</month>
+							<month type="8" draft="contributed">8</month>
+							<month type="9" draft="contributed">9</month>
+							<month type="10" draft="contributed">10</month>
+							<month type="11" draft="contributed">11</month>
+							<month type="12" draft="contributed">12</month>
+							<month type="13" draft="contributed">13</month>
+						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1">ทิชรี</month>
 							<month type="2">เฮวาน</month>
@@ -2872,6 +3110,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<month type="11">ตามูซ</month>
 							<month type="12">อัฟ</month>
 							<month type="13">เอลอุล</month>
+						</monthWidth>
+						<monthWidth type="narrow">
+							<month type="1" draft="contributed">1</month>
+							<month type="2" draft="contributed">2</month>
+							<month type="3" draft="contributed">3</month>
+							<month type="4" draft="contributed">4</month>
+							<month type="5" draft="contributed">5</month>
+							<month type="6" draft="contributed">6</month>
+							<month type="7" draft="contributed">7</month>
+							<month type="7" yeartype="leap" draft="contributed">7</month>
+							<month type="8" draft="contributed">8</month>
+							<month type="9" draft="contributed">9</month>
+							<month type="10" draft="contributed">10</month>
+							<month type="11" draft="contributed">11</month>
+							<month type="12" draft="contributed">12</month>
+							<month type="13" draft="contributed">13</month>
 						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1">ทิชรี</month>
@@ -2936,6 +3190,20 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<month type="11" draft="contributed">มาฆะ</month>
 							<month type="12" draft="contributed">ผลคุณี</month>
 						</monthWidth>
+						<monthWidth type="narrow">
+							<month type="1" draft="contributed">1</month>
+							<month type="2" draft="contributed">2</month>
+							<month type="3" draft="contributed">3</month>
+							<month type="4" draft="contributed">4</month>
+							<month type="5" draft="contributed">5</month>
+							<month type="6" draft="contributed">6</month>
+							<month type="7" draft="contributed">7</month>
+							<month type="8" draft="contributed">8</month>
+							<month type="9" draft="contributed">9</month>
+							<month type="10" draft="contributed">10</month>
+							<month type="11" draft="contributed">11</month>
+							<month type="12" draft="contributed">12</month>
+						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1" draft="contributed">จิตรา</month>
 							<month type="2" draft="contributed">วิสาขา</month>
@@ -2965,6 +3233,20 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<month type="10" draft="contributed">ปุษยา</month>
 							<month type="11" draft="contributed">มาฆะ</month>
 							<month type="12" draft="contributed">ผลคุณี</month>
+						</monthWidth>
+						<monthWidth type="narrow">
+							<month type="1" draft="contributed">1</month>
+							<month type="2" draft="contributed">2</month>
+							<month type="3" draft="contributed">3</month>
+							<month type="4" draft="contributed">4</month>
+							<month type="5" draft="contributed">5</month>
+							<month type="6" draft="contributed">6</month>
+							<month type="7" draft="contributed">7</month>
+							<month type="8" draft="contributed">8</month>
+							<month type="9" draft="contributed">9</month>
+							<month type="10" draft="contributed">10</month>
+							<month type="11" draft="contributed">11</month>
+							<month type="12" draft="contributed">12</month>
 						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1" draft="contributed">จิตรา</month>
@@ -3005,6 +3287,20 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<month type="11" draft="contributed">ซุลกิอฺ.</month>
 							<month type="12" draft="contributed">ซุลหิจ.</month>
 						</monthWidth>
+						<monthWidth type="narrow">
+							<month type="1" draft="contributed">1</month>
+							<month type="2" draft="contributed">2</month>
+							<month type="3" draft="contributed">3</month>
+							<month type="4" draft="contributed">4</month>
+							<month type="5" draft="contributed">5</month>
+							<month type="6" draft="contributed">6</month>
+							<month type="7" draft="contributed">7</month>
+							<month type="8" draft="contributed">8</month>
+							<month type="9" draft="contributed">9</month>
+							<month type="10" draft="contributed">10</month>
+							<month type="11" draft="contributed">11</month>
+							<month type="12" draft="contributed">12</month>
+						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1">มุฮะร์รอม</month>
 							<month type="2">ซอฟาร์</month>
@@ -3034,6 +3330,20 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<month type="10" draft="contributed">เชาว.</month>
 							<month type="11" draft="contributed">ซุลกิอฺ.</month>
 							<month type="12" draft="contributed">ซุลหิจ.</month>
+						</monthWidth>
+						<monthWidth type="narrow">
+							<month type="1" draft="contributed">1</month>
+							<month type="2" draft="contributed">2</month>
+							<month type="3" draft="contributed">3</month>
+							<month type="4" draft="contributed">4</month>
+							<month type="5" draft="contributed">5</month>
+							<month type="6" draft="contributed">6</month>
+							<month type="7" draft="contributed">7</month>
+							<month type="8" draft="contributed">8</month>
+							<month type="9" draft="contributed">9</month>
+							<month type="10" draft="contributed">10</month>
+							<month type="11" draft="contributed">11</month>
+							<month type="12" draft="contributed">12</month>
 						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1">มุฮะร์รอม</month>
@@ -3083,14 +3393,20 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				</dateFormats>
 				<dateTimeFormats>
 					<availableFormats>
+						<dateFormatItem id="d" draft="contributed">d</dateFormatItem>
 						<dateFormatItem id="Ed">E d</dateFormatItem>
+						<dateFormatItem id="Gy" draft="contributed">G y</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM G y</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d MMM G y</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E d MMM G y</dateFormatItem>
+						<dateFormatItem id="M" draft="contributed">L</dateFormatItem>
 						<dateFormatItem id="Md">d/M</dateFormatItem>
 						<dateFormatItem id="MEd">E, d/M</dateFormatItem>
+						<dateFormatItem id="MMM" draft="contributed">LLL</dateFormatItem>
 						<dateFormatItem id="MMMd">d MMM</dateFormatItem>
 						<dateFormatItem id="MMMEd">E d MMM</dateFormatItem>
+						<dateFormatItem id="y" draft="contributed">G y</dateFormatItem>
+						<dateFormatItem id="yyyy" draft="contributed">G y</dateFormatItem>
 						<dateFormatItem id="yyyyM">M/y G</dateFormatItem>
 						<dateFormatItem id="yyyyMd">d/M/y GGGGG</dateFormatItem>
 						<dateFormatItem id="yyyyMEd">E d/M/y GGGGG</dateFormatItem>
@@ -3367,8 +3683,30 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					</dateFormatLength>
 				</dateFormats>
 				<dateTimeFormats>
+					<dateTimeFormatLength type="full">
+						<dateTimeFormat>
+							<pattern draft="contributed">{1} {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="long">
+						<dateTimeFormat>
+							<pattern draft="contributed">{1} {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="medium">
+						<dateTimeFormat>
+							<pattern draft="contributed">{1} {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="short">
+						<dateTimeFormat>
+							<pattern draft="contributed">{1} {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
 					<availableFormats>
+						<dateFormatItem id="d" draft="contributed">d</dateFormatItem>
 						<dateFormatItem id="Ed">E d</dateFormatItem>
+						<dateFormatItem id="Gy" draft="contributed">G y</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM G y</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d MMM G y</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E d MMM G y</dateFormatItem>
@@ -3378,11 +3716,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="Hm" draft="contributed">HH:mm</dateFormatItem>
 						<dateFormatItem id="hms" draft="contributed">h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="Hms" draft="contributed">HH:mm:ss</dateFormatItem>
+						<dateFormatItem id="M" draft="contributed">L</dateFormatItem>
 						<dateFormatItem id="Md">d/M</dateFormatItem>
 						<dateFormatItem id="MEd">E, d/M</dateFormatItem>
+						<dateFormatItem id="MMM" draft="contributed">LLL</dateFormatItem>
 						<dateFormatItem id="MMMd">d MMM</dateFormatItem>
 						<dateFormatItem id="MMMEd">E d MMM</dateFormatItem>
 						<dateFormatItem id="ms" draft="contributed">mm:ss</dateFormatItem>
+						<dateFormatItem id="y" draft="contributed">G y</dateFormatItem>
+						<dateFormatItem id="yyyy" draft="contributed">G y</dateFormatItem>
 						<dateFormatItem id="yyyyM">M/GGGGG y</dateFormatItem>
 						<dateFormatItem id="yyyyMd">d/M/GGGGG y</dateFormatItem>
 						<dateFormatItem id="yyyyMEd">E d/M/GGGGG y</dateFormatItem>
@@ -3410,6 +3752,20 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<month type="10" draft="contributed">เดย์</month>
 							<month type="11" draft="contributed">บาฮ์มาน</month>
 							<month type="12" draft="contributed">เอสฟานด์</month>
+						</monthWidth>
+						<monthWidth type="narrow">
+							<month type="1" draft="contributed">1</month>
+							<month type="2" draft="contributed">2</month>
+							<month type="3" draft="contributed">3</month>
+							<month type="4" draft="contributed">4</month>
+							<month type="5" draft="contributed">5</month>
+							<month type="6" draft="contributed">6</month>
+							<month type="7" draft="contributed">7</month>
+							<month type="8" draft="contributed">8</month>
+							<month type="9" draft="contributed">9</month>
+							<month type="10" draft="contributed">10</month>
+							<month type="11" draft="contributed">11</month>
+							<month type="12" draft="contributed">12</month>
 						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1" draft="contributed">ฟาร์วาร์ดิน</month>
@@ -3440,6 +3796,20 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<month type="10" draft="contributed">เดย์</month>
 							<month type="11" draft="contributed">บาฮ์มาน</month>
 							<month type="12" draft="contributed">เอสฟานด์</month>
+						</monthWidth>
+						<monthWidth type="narrow">
+							<month type="1" draft="contributed">1</month>
+							<month type="2" draft="contributed">2</month>
+							<month type="3" draft="contributed">3</month>
+							<month type="4" draft="contributed">4</month>
+							<month type="5" draft="contributed">5</month>
+							<month type="6" draft="contributed">6</month>
+							<month type="7" draft="contributed">7</month>
+							<month type="8" draft="contributed">8</month>
+							<month type="9" draft="contributed">9</month>
+							<month type="10" draft="contributed">10</month>
+							<month type="11" draft="contributed">11</month>
+							<month type="12" draft="contributed">12</month>
 						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1" draft="contributed">ฟาร์วาร์ดิน</month>
@@ -3494,6 +3864,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				</dateFormats>
 				<dateTimeFormats>
 					<availableFormats>
+						<dateFormatItem id="d" draft="contributed">d</dateFormatItem>
 						<dateFormatItem id="Ed">E d</dateFormatItem>
 						<dateFormatItem id="Gy" draft="contributed">ปีGที่ y</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM G y</dateFormatItem>
@@ -3505,8 +3876,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="Hm" draft="contributed">HH:mm</dateFormatItem>
 						<dateFormatItem id="hms" draft="contributed">h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="Hms" draft="contributed">HH:mm:ss</dateFormatItem>
+						<dateFormatItem id="M" draft="contributed">L</dateFormatItem>
 						<dateFormatItem id="Md">d/M</dateFormatItem>
 						<dateFormatItem id="MEd">E, d/M</dateFormatItem>
+						<dateFormatItem id="MMM" draft="contributed">LLL</dateFormatItem>
 						<dateFormatItem id="MMMd">d MMM</dateFormatItem>
 						<dateFormatItem id="MMMEd">E d MMM</dateFormatItem>
 						<dateFormatItem id="ms" draft="contributed">mm:ss</dateFormatItem>
@@ -4037,7 +4410,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				</relativeTime>
 			</field>
 			<field type="minute-short">
-				<displayName>น.</displayName>
 				<relativeTime type="future">
 					<relativeTimePattern count="other">ใน {0} นาที</relativeTimePattern>
 				</relativeTime>
@@ -4046,7 +4418,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				</relativeTime>
 			</field>
 			<field type="minute-narrow">
-				<displayName>น.</displayName>
+				<displayName>นาที</displayName>
 				<relativeTime type="future">
 					<relativeTimePattern count="other">ใน {0} นาที</relativeTimePattern>
 				</relativeTime>
@@ -4093,9 +4465,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</field>
 		</fields>
 		<timeZoneNames>
+			<hourFormat>+HH:mm;-HH:mm</hourFormat>
+			<gmtFormat>GMT{0}</gmtFormat>
+			<gmtZeroFormat>GMT</gmtZeroFormat>
 			<regionFormat>เวลา{0}</regionFormat>
 			<regionFormat type="daylight">เวลาออมแสง{0}</regionFormat>
 			<regionFormat type="standard">เวลามาตรฐาน{0}</regionFormat>
+			<fallbackFormat>{1} ({0})</fallbackFormat>
 			<zone type="America/Santa_Isabel">
 				<exemplarCity>ซานตาอิซาเบล</exemplarCity>
 			</zone>
@@ -4774,7 +5150,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>อัคโทบี</exemplarCity>
 			</zone>
 			<zone type="Asia/Qostanay">
-				<exemplarCity draft="contributed">คอสตาเนย์</exemplarCity>
+				<exemplarCity>คอสตาเนย์</exemplarCity>
 			</zone>
 			<zone type="Asia/Qyzylorda">
 				<exemplarCity>ไคซีลอร์ดา</exemplarCity>
@@ -5056,13 +5432,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>ซาราทอฟ</exemplarCity>
 			</zone>
 			<zone type="Europe/Astrakhan">
-				<exemplarCity draft="contributed">แอสตราคาน</exemplarCity>
+				<exemplarCity>แอสตราคาน</exemplarCity>
 			</zone>
 			<zone type="Europe/Ulyanovsk">
-				<exemplarCity draft="contributed">อะลิยานอฟ</exemplarCity>
+				<exemplarCity>อะลิยานอฟ</exemplarCity>
 			</zone>
 			<zone type="Europe/Kirov">
-				<exemplarCity draft="contributed">คิรอฟ</exemplarCity>
+				<exemplarCity>คิรอฟ</exemplarCity>
 			</zone>
 			<zone type="Europe/Samara">
 				<exemplarCity>ซามารา</exemplarCity>
@@ -5080,7 +5456,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>บาร์เนาว์</exemplarCity>
 			</zone>
 			<zone type="Asia/Tomsk">
-				<exemplarCity draft="contributed">ตอมสค์</exemplarCity>
+				<exemplarCity>ตอมสค์</exemplarCity>
 			</zone>
 			<zone type="Asia/Novokuznetsk">
 				<exemplarCity>โนโวคุซเนตสค์</exemplarCity>
@@ -6167,7 +6543,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Pyongyang">
 				<long>
-					<standard draft="contributed">เวลาเปียงยาง</standard>
+					<standard>เวลาเปียงยาง</standard>
 				</long>
 			</metazone>
 			<metazone type="Qyzylorda">
@@ -6356,19 +6732,31 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		</timeZoneNames>
 	</dates>
 	<numbers>
+		<defaultNumberingSystem draft="contributed">latn</defaultNumberingSystem>
 		<otherNumberingSystems>
 			<native>thai</native>
 		</otherNumberingSystems>
 		<minimumGroupingDigits draft="contributed">1</minimumGroupingDigits>
 		<symbols numberSystem="latn">
+			<decimal draft="contributed">.</decimal>
+			<group draft="contributed">,</group>
+			<list draft="contributed">;</list>
 			<percentSign>%</percentSign>
+			<plusSign draft="contributed">+</plusSign>
+			<minusSign draft="contributed">-</minusSign>
 			<exponential>E</exponential>
 			<superscriptingExponent>×</superscriptingExponent>
 			<perMille>‰</perMille>
 			<infinity>∞</infinity>
 			<nan>NaN</nan>
+			<timeSeparator draft="contributed">:</timeSeparator>
 		</symbols>
 		<decimalFormats numberSystem="latn">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="contributed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
 			<decimalFormatLength type="long">
 				<decimalFormat>
 					<pattern type="1000" count="other">0 พัน</pattern>
@@ -6446,233 +6834,305 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<currencies>
 			<currency type="ADP">
 				<displayName>เปเซตาอันดอร์รา</displayName>
+				<symbol draft="contributed">ADP</symbol>
 			</currency>
 			<currency type="AED">
 				<displayName>เดอร์แฮมสหรัฐอาหรับเอมิเรตส์</displayName>
 				<displayName count="other">เดอร์แฮมสหรัฐอาหรับเอมิเรตส์</displayName>
+				<symbol draft="contributed">AED</symbol>
 			</currency>
 			<currency type="AFA">
 				<displayName>อัฟกานีอัฟกานิสถาน (1927–2002)</displayName>
+				<symbol draft="contributed">AFA</symbol>
 			</currency>
 			<currency type="AFN">
 				<displayName>อัฟกานิอัฟกานิสถาน</displayName>
 				<displayName count="other">อัฟกานิอัฟกานิสถาน</displayName>
+				<symbol draft="contributed">AFN</symbol>
 			</currency>
 			<currency type="ALL">
 				<displayName>เลกแอลเบเนีย</displayName>
 				<displayName count="other">เลกแอลเบเนีย</displayName>
+				<symbol draft="contributed">ALL</symbol>
 			</currency>
 			<currency type="AMD">
 				<displayName>แดรมอาร์เมเนีย</displayName>
 				<displayName count="other">แดรมอาร์เมเนีย</displayName>
+				<symbol draft="contributed">AMD</symbol>
 			</currency>
 			<currency type="ANG">
 				<displayName>กิลเดอร์เนเธอร์แลนด์แอนทิลลิส</displayName>
 				<displayName count="other">กิลเดอร์เนเธอร์แลนด์แอนทิลลิส</displayName>
+				<symbol draft="contributed">ANG</symbol>
 			</currency>
 			<currency type="AOA">
 				<displayName>กวานซาแองโกลา</displayName>
 				<displayName count="other">กวานซาแองโกลา</displayName>
+				<symbol draft="contributed">AOA</symbol>
 				<symbol alt="narrow" draft="contributed">Kz</symbol>
 			</currency>
 			<currency type="AOK">
 				<displayName>กวานซาแองโกลา (1977–1990)</displayName>
+				<symbol draft="contributed">AOK</symbol>
 			</currency>
 			<currency type="AON">
 				<displayName>นิวกวานซาแองโกลา (1990–2000)</displayName>
+				<symbol draft="contributed">AON</symbol>
 			</currency>
 			<currency type="AOR">
 				<displayName>กวานซารีจัสทาโดแองโกลา (1995–1999)</displayName>
+				<symbol draft="contributed">AOR</symbol>
 			</currency>
 			<currency type="ARA">
 				<displayName>ออสตรัลอาร์เจนตินา</displayName>
+				<symbol draft="contributed">ARA</symbol>
 			</currency>
 			<currency type="ARL">
 				<displayName draft="contributed">เปโซเลย์อาร์เจนตินา (1970–1983)</displayName>
+				<symbol draft="contributed">ARL</symbol>
 			</currency>
 			<currency type="ARM">
 				<displayName draft="contributed">เปโซอาร์เจนตินา (1881–1970)</displayName>
+				<symbol draft="contributed">ARM</symbol>
 			</currency>
 			<currency type="ARP">
 				<displayName>เปโซอาร์เจนตินา (1983–1985)</displayName>
+				<symbol draft="contributed">ARP</symbol>
 			</currency>
 			<currency type="ARS">
 				<displayName>เปโซอาร์เจนตินา</displayName>
 				<displayName count="other">เปโซอาร์เจนตินา</displayName>
+				<symbol draft="contributed">ARS</symbol>
+				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="ATS">
 				<displayName>ชิลลิงออสเตรีย</displayName>
+				<symbol draft="contributed">ATS</symbol>
 			</currency>
 			<currency type="AUD">
 				<displayName>ดอลลาร์ออสเตรเลีย</displayName>
 				<displayName count="other">ดอลลาร์ออสเตรเลีย</displayName>
 				<symbol>AU$</symbol>
+				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="AWG">
 				<displayName>ฟลอรินอารูบา</displayName>
 				<displayName count="other">ฟลอรินอารูบา</displayName>
+				<symbol draft="contributed">AWG</symbol>
 			</currency>
 			<currency type="AZM">
 				<displayName>มานัตอาเซอร์ไบจาน (1993–2006)</displayName>
+				<symbol draft="contributed">AZM</symbol>
 			</currency>
 			<currency type="AZN">
 				<displayName>มานัตอาเซอร์ไบจาน</displayName>
 				<displayName count="other">มานัตอาเซอร์ไบจาน</displayName>
+				<symbol draft="contributed">AZN</symbol>
 			</currency>
 			<currency type="BAD">
 				<displayName>ดีนาร์บอสเนีย-เฮอร์เซโกวีนา</displayName>
+				<symbol draft="contributed">BAD</symbol>
 			</currency>
 			<currency type="BAM">
 				<displayName>มาร์กบอสเนีย-เฮอร์เซโกวีนา</displayName>
 				<displayName count="other">มาร์กบอสเนีย-เฮอร์เซโกวีนา</displayName>
+				<symbol draft="contributed">BAM</symbol>
 				<symbol alt="narrow" draft="contributed">KM</symbol>
 			</currency>
 			<currency type="BAN">
 				<displayName draft="contributed">ดีนาร์ใหม่บอสเนีย-เฮอร์เซโกวีนา (1994–1997)</displayName>
+				<symbol draft="contributed">BAN</symbol>
 			</currency>
 			<currency type="BBD">
 				<displayName>ดอลลาร์บาร์เบโดส</displayName>
 				<displayName count="other">ดอลลาร์บาร์เบโดส</displayName>
+				<symbol draft="contributed">BBD</symbol>
+				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="BDT">
 				<displayName>ตากาบังกลาเทศ</displayName>
 				<displayName count="other">ตากาบังกลาเทศ</displayName>
+				<symbol draft="contributed">BDT</symbol>
 				<symbol alt="narrow" draft="contributed">৳</symbol>
 			</currency>
 			<currency type="BEC">
 				<displayName>ฟรังก์เบลเยียม (เปลี่ยนแปลงได้)</displayName>
+				<symbol draft="contributed">BEC</symbol>
 			</currency>
 			<currency type="BEF">
 				<displayName>ฟรังก์เบลเยียม</displayName>
+				<symbol draft="contributed">BEF</symbol>
 			</currency>
 			<currency type="BEL">
 				<displayName>ฟรังก์เบลเยียม (การเงิน)</displayName>
+				<symbol draft="contributed">BEL</symbol>
 			</currency>
 			<currency type="BGL">
 				<displayName>ฮาร์ดเลฟบัลแกเรีย</displayName>
+				<symbol draft="contributed">BGL</symbol>
 			</currency>
 			<currency type="BGM">
 				<displayName draft="contributed">โซเชียลลิสต์เลฟบัลแกเรีย</displayName>
+				<symbol draft="contributed">BGM</symbol>
 			</currency>
 			<currency type="BGN">
 				<displayName>เลฟบัลแกเรีย</displayName>
 				<displayName count="other">เลฟบัลแกเรีย</displayName>
+				<symbol draft="contributed">BGN</symbol>
 			</currency>
 			<currency type="BGO">
 				<displayName draft="contributed">เลฟบัลเกเรีย (1879–1952)</displayName>
+				<symbol draft="contributed">BGO</symbol>
 			</currency>
 			<currency type="BHD">
 				<displayName>ดีนาร์บาห์เรน</displayName>
 				<displayName count="other">ดีนาร์บาห์เรน</displayName>
+				<symbol draft="contributed">BHD</symbol>
 			</currency>
 			<currency type="BIF">
 				<displayName>ฟรังก์บุรุนดี</displayName>
 				<displayName count="other">ฟรังก์บุรุนดี</displayName>
+				<symbol draft="contributed">BIF</symbol>
 			</currency>
 			<currency type="BMD">
 				<displayName>ดอลลาร์เบอร์มิวดา</displayName>
 				<displayName count="other">ดอลลาร์เบอร์มิวดา</displayName>
+				<symbol draft="contributed">BMD</symbol>
+				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="BND">
 				<displayName>ดอลลาร์บรูไน</displayName>
 				<displayName count="other">ดอลลาร์บรูไน</displayName>
+				<symbol draft="contributed">BND</symbol>
+				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="BOB">
 				<displayName>โบลิเวียโนโบลิเวีย</displayName>
 				<displayName count="other">โบลิเวียโนโบลิเวีย</displayName>
+				<symbol draft="contributed">BOB</symbol>
 				<symbol alt="narrow" draft="contributed">Bs</symbol>
 			</currency>
 			<currency type="BOL">
 				<displayName draft="contributed">โบลิเวียโนโบลิเวีย (1863–1963)</displayName>
+				<symbol draft="contributed">BOL</symbol>
 			</currency>
 			<currency type="BOP">
 				<displayName>เปโซโบลิเวีย</displayName>
+				<symbol draft="contributed">BOP</symbol>
 			</currency>
 			<currency type="BOV">
 				<displayName>มฟดอลโบลิเวีย</displayName>
+				<symbol draft="contributed">BOV</symbol>
 			</currency>
 			<currency type="BRB">
 				<displayName>ครูเซโรโนโวบราซิล (1967–1986)</displayName>
+				<symbol draft="contributed">BRB</symbol>
 			</currency>
 			<currency type="BRC">
 				<displayName>ครูซาโดบราซิล</displayName>
+				<symbol draft="contributed">BRC</symbol>
 			</currency>
 			<currency type="BRE">
 				<displayName>ครูเซโรบราซิล (1990–1993)</displayName>
+				<symbol draft="contributed">BRE</symbol>
 			</currency>
 			<currency type="BRL">
 				<displayName>เรียลบราซิล</displayName>
 				<displayName count="other">เรียลบราซิล</displayName>
+				<symbol draft="contributed">R$</symbol>
 				<symbol alt="narrow" draft="contributed">R$</symbol>
 			</currency>
 			<currency type="BRN">
 				<displayName>ครูซาโดโนโวบราซิล</displayName>
+				<symbol draft="contributed">BRN</symbol>
 			</currency>
 			<currency type="BRR">
 				<displayName>ครูเซโรบราซิล</displayName>
+				<symbol draft="contributed">BRR</symbol>
 			</currency>
 			<currency type="BRZ">
 				<displayName draft="contributed">ครูเซโรบราซิล (1942–1967)</displayName>
+				<symbol draft="contributed">BRZ</symbol>
 			</currency>
 			<currency type="BSD">
 				<displayName>ดอลลาร์บาฮามาส</displayName>
 				<displayName count="other">ดอลลาร์บาฮามาส</displayName>
+				<symbol draft="contributed">BSD</symbol>
+				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="BTN">
 				<displayName>เอ็งกุลตรัมภูฏาน</displayName>
 				<displayName count="other">เอ็งกุลตรัมภูฏาน</displayName>
+				<symbol draft="contributed">BTN</symbol>
 			</currency>
 			<currency type="BUK">
 				<displayName>จ๊าดพม่า</displayName>
+				<symbol draft="contributed">BUK</symbol>
 			</currency>
 			<currency type="BWP">
 				<displayName>ปูลาบอตสวานา</displayName>
 				<displayName count="other">ปูลาบอตสวานา</displayName>
+				<symbol draft="contributed">BWP</symbol>
 				<symbol alt="narrow" draft="contributed">P</symbol>
 			</currency>
 			<currency type="BYB">
 				<displayName>นิวรูเบิลเบลารุส (1994–1999)</displayName>
+				<symbol draft="contributed">BYB</symbol>
 			</currency>
 			<currency type="BYN">
 				<displayName>รูเบิลเบลารุส</displayName>
 				<displayName count="other">รูเบิลเบลารุส</displayName>
+				<symbol draft="contributed">BYN</symbol>
 				<symbol alt="narrow" draft="contributed">р.</symbol>
 			</currency>
 			<currency type="BYR">
 				<displayName>รูเบิลเบลารุส (2000–2016)</displayName>
 				<displayName count="other">รูเบิลเบลารุส (2000–2016)</displayName>
+				<symbol draft="contributed">BYR</symbol>
 			</currency>
 			<currency type="BZD">
 				<displayName>ดอลลาร์เบลีซ</displayName>
 				<displayName count="other">ดอลลาร์เบลีซ</displayName>
+				<symbol draft="contributed">BZD</symbol>
+				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="CAD">
 				<displayName>ดอลลาร์แคนาดา</displayName>
 				<displayName count="other">ดอลลาร์แคนาดา</displayName>
+				<symbol draft="contributed">CA$</symbol>
+				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="CDF">
 				<displayName>ฟรังก์คองโก</displayName>
 				<displayName count="other">ฟรังก์คองโก</displayName>
+				<symbol draft="contributed">CDF</symbol>
 			</currency>
 			<currency type="CHE">
 				<displayName>ยูโรดับเบิลยูไออาร์</displayName>
+				<symbol draft="contributed">CHE</symbol>
 			</currency>
 			<currency type="CHF">
 				<displayName>ฟรังก์สวิส</displayName>
 				<displayName count="other">ฟรังก์สวิส</displayName>
+				<symbol draft="contributed">CHF</symbol>
 			</currency>
 			<currency type="CHW">
 				<displayName>ฟรังก์ดับเบิลยูไออาร์</displayName>
+				<symbol draft="contributed">CHW</symbol>
 			</currency>
 			<currency type="CLE">
 				<displayName draft="contributed">เอสคูโดชิลี</displayName>
+				<symbol draft="contributed">CLE</symbol>
 			</currency>
 			<currency type="CLF">
 				<displayName>ฟูเมนโตชิลี</displayName>
+				<symbol draft="contributed">CLF</symbol>
 			</currency>
 			<currency type="CLP">
 				<displayName>เปโซชิลี</displayName>
 				<displayName count="other">เปโซชิลี</displayName>
+				<symbol draft="contributed">CLP</symbol>
+				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="CNH">
 				<displayName>หยวน</displayName>
@@ -6682,247 +7142,320 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="CNY">
 				<displayName>หยวนจีน</displayName>
 				<displayName count="other">หยวนจีน</displayName>
+				<symbol draft="contributed">CN¥</symbol>
+				<symbol alt="narrow" draft="contributed">¥</symbol>
 			</currency>
 			<currency type="COP">
 				<displayName>เปโซโคลอมเบีย</displayName>
 				<displayName count="other">เปโซโคลอมเบีย</displayName>
+				<symbol draft="contributed">COP</symbol>
+				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="COU">
 				<displayName>วาเลอร์เรียลโคลอมเบีย</displayName>
+				<symbol draft="contributed">COU</symbol>
 			</currency>
 			<currency type="CRC">
 				<displayName>โกลองคอสตาริกา</displayName>
 				<displayName count="other">โกลองคอสตาริกา</displayName>
+				<symbol draft="contributed">CRC</symbol>
 				<symbol alt="narrow" draft="contributed">₡</symbol>
 			</currency>
 			<currency type="CSD">
 				<displayName>ดีนาร์เซอร์เบียเก่า</displayName>
+				<symbol draft="contributed">CSD</symbol>
 			</currency>
 			<currency type="CSK">
 				<displayName>ฮาร์ดโครูนาเช็กโกสโลวัก</displayName>
+				<symbol draft="contributed">CSK</symbol>
 			</currency>
 			<currency type="CUC">
 				<displayName>เปโซคิวบา (แปลงสภาพ)</displayName>
 				<displayName count="other">เปโซคิวบา (แปลงสภาพ)</displayName>
+				<symbol draft="contributed">CUC</symbol>
+				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="CUP">
 				<displayName>เปโซคิวบา</displayName>
 				<displayName count="other">เปโซคิวบา</displayName>
+				<symbol draft="contributed">CUP</symbol>
+				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="CVE">
 				<displayName>เอสคูโดเคปเวิร์ด</displayName>
 				<displayName count="other">เอสคูโดเคปเวิร์ด</displayName>
+				<symbol draft="contributed">CVE</symbol>
 			</currency>
 			<currency type="CYP">
 				<displayName>ปอนด์ไซปรัส</displayName>
+				<symbol draft="contributed">CYP</symbol>
 			</currency>
 			<currency type="CZK">
 				<displayName>โครูนาสาธารณรัฐเช็ก</displayName>
 				<displayName count="other">โครูนาสาธารณรัฐเช็ก</displayName>
+				<symbol draft="contributed">CZK</symbol>
 				<symbol alt="narrow" draft="contributed">Kč</symbol>
 			</currency>
 			<currency type="DDM">
 				<displayName>มาร์กเยอรมันตะวันออก</displayName>
+				<symbol draft="contributed">DDM</symbol>
 			</currency>
 			<currency type="DEM">
 				<displayName>มาร์กเยอรมัน</displayName>
+				<symbol draft="contributed">DEM</symbol>
 			</currency>
 			<currency type="DJF">
 				<displayName>ฟรังก์จิบูตี</displayName>
 				<displayName count="other">ฟรังก์จิบูตี</displayName>
+				<symbol draft="contributed">DJF</symbol>
 			</currency>
 			<currency type="DKK">
 				<displayName>โครนเดนมาร์ก</displayName>
 				<displayName count="other">โครนเดนมาร์ก</displayName>
+				<symbol draft="contributed">DKK</symbol>
 				<symbol alt="narrow" draft="contributed">kr</symbol>
 			</currency>
 			<currency type="DOP">
 				<displayName>เปโซโดมินิกัน</displayName>
 				<displayName count="other">เปโซโดมินิกัน</displayName>
+				<symbol draft="contributed">DOP</symbol>
+				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="DZD">
 				<displayName>ดีนาร์แอลจีเรีย</displayName>
 				<displayName count="other">ดีนาร์แอลจีเรีย</displayName>
+				<symbol draft="contributed">DZD</symbol>
 			</currency>
 			<currency type="ECS">
 				<displayName>ซูเกรเอกวาดอร์</displayName>
+				<symbol draft="contributed">ECS</symbol>
 			</currency>
 			<currency type="ECV">
 				<displayName>วาเลอร์คอนสแตนต์เอกวาดอร์</displayName>
+				<symbol draft="contributed">ECV</symbol>
 			</currency>
 			<currency type="EEK">
 				<displayName>ครูนเอสโตเนีย</displayName>
+				<symbol draft="contributed">EEK</symbol>
 			</currency>
 			<currency type="EGP">
 				<displayName>ปอนด์อียิปต์</displayName>
 				<displayName count="other">ปอนด์อียิปต์</displayName>
+				<symbol draft="contributed">EGP</symbol>
 				<symbol alt="narrow" draft="contributed">E£</symbol>
 			</currency>
 			<currency type="ERN">
 				<displayName>แนกฟาเอริเทรีย</displayName>
 				<displayName count="other">แนกฟาเอริเทรีย</displayName>
+				<symbol draft="contributed">ERN</symbol>
 			</currency>
 			<currency type="ESA">
 				<displayName>เปเซตาสเปน (บัญชีเอ)</displayName>
+				<symbol draft="contributed">ESA</symbol>
 			</currency>
 			<currency type="ESB">
 				<displayName>เปเซตาสเปน (บัญชีที่เปลี่ยนแปลงได้)</displayName>
+				<symbol draft="contributed">ESB</symbol>
 			</currency>
 			<currency type="ESP">
 				<displayName>เปเซตาสเปน</displayName>
+				<symbol draft="contributed">ESP</symbol>
 			</currency>
 			<currency type="ETB">
 				<displayName>เบอรร์เอธิโอเปีย</displayName>
 				<displayName count="other">เบอรร์เอธิโอเปีย</displayName>
+				<symbol draft="contributed">ETB</symbol>
 			</currency>
 			<currency type="EUR">
 				<displayName>ยูโร</displayName>
 				<displayName count="other">ยูโร</displayName>
+				<symbol draft="contributed">€</symbol>
 				<symbol alt="narrow" draft="contributed">€</symbol>
 			</currency>
 			<currency type="FIM">
 				<displayName>มาร์กกาฟินแลนด์</displayName>
+				<symbol draft="contributed">FIM</symbol>
 			</currency>
 			<currency type="FJD">
 				<displayName>ดอลลาร์ฟิจิ</displayName>
 				<displayName count="other">ดอลลาร์ฟิจิ</displayName>
+				<symbol draft="contributed">FJD</symbol>
+				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="FKP">
 				<displayName>ปอนด์หมู่เกาะฟอล์กแลนด์</displayName>
 				<displayName count="other">ปอนด์หมู่เกาะฟอล์กแลนด์</displayName>
+				<symbol draft="contributed">FKP</symbol>
+				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
 			<currency type="FRF">
 				<displayName>ฟรังก์ฝรั่งเศส</displayName>
+				<symbol draft="contributed">FRF</symbol>
 			</currency>
 			<currency type="GBP">
 				<displayName>ปอนด์สเตอร์ลิง (สหราชอาณาจักร)</displayName>
 				<displayName count="other">ปอนด์สเตอร์ลิง (สหราชอาณาจักร)</displayName>
+				<symbol draft="contributed">£</symbol>
 				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
 			<currency type="GEK">
 				<displayName>คูปอนลาริตจอร์เจีย</displayName>
+				<symbol draft="contributed">GEK</symbol>
 			</currency>
 			<currency type="GEL">
 				<displayName>ลารีจอร์เจีย</displayName>
 				<displayName count="other">ลารีจอร์เจีย</displayName>
+				<symbol draft="contributed">GEL</symbol>
 				<symbol alt="narrow" draft="contributed">₾</symbol>
 				<symbol alt="variant" draft="contributed">₾</symbol>
 			</currency>
 			<currency type="GHC">
 				<displayName>เซดีกานา (1979–2007)</displayName>
+				<symbol draft="contributed">GHC</symbol>
 			</currency>
 			<currency type="GHS">
 				<displayName>เซดีกานา</displayName>
 				<displayName count="other">เซดีกานา</displayName>
+				<symbol draft="contributed">GHS</symbol>
 			</currency>
 			<currency type="GIP">
 				<displayName>ปอนด์ยิบรอลตาร์</displayName>
 				<displayName count="other">ปอนด์ยิบรอลตาร์</displayName>
+				<symbol draft="contributed">GIP</symbol>
 				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
 			<currency type="GMD">
 				<displayName>ดาลาซีแกมเบีย</displayName>
 				<displayName count="other">ดาลาซีแกมเบีย</displayName>
+				<symbol draft="contributed">GMD</symbol>
 			</currency>
 			<currency type="GNF">
 				<displayName>ฟรังก์กินี</displayName>
 				<displayName count="other">ฟรังก์กินี</displayName>
+				<symbol draft="contributed">GNF</symbol>
 				<symbol alt="narrow" draft="contributed">FG</symbol>
 			</currency>
 			<currency type="GNS">
 				<displayName>ไซลีกินี</displayName>
+				<symbol draft="contributed">GNS</symbol>
 			</currency>
 			<currency type="GQE">
 				<displayName>เอ็กเวเลอิเควทอเรียลกินี</displayName>
+				<symbol draft="contributed">GQE</symbol>
 			</currency>
 			<currency type="GRD">
 				<displayName>ดรัชมากรีก</displayName>
+				<symbol draft="contributed">GRD</symbol>
 			</currency>
 			<currency type="GTQ">
 				<displayName>เควตซัลกัวเตมาลา</displayName>
 				<displayName count="other">เควตซัลกัวเตมาลา</displayName>
+				<symbol draft="contributed">GTQ</symbol>
 				<symbol alt="narrow" draft="contributed">Q</symbol>
 			</currency>
 			<currency type="GWE">
 				<displayName>เอสคูโดกินีโปรตุเกส</displayName>
+				<symbol draft="contributed">GWE</symbol>
 			</currency>
 			<currency type="GWP">
 				<displayName>เปโซกินี-บิสเซา</displayName>
+				<symbol draft="contributed">GWP</symbol>
 			</currency>
 			<currency type="GYD">
 				<displayName>ดอลลาร์กายอานา</displayName>
 				<displayName count="other">ดอลลาร์กายอานา</displayName>
+				<symbol draft="contributed">GYD</symbol>
+				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="HKD">
 				<displayName>ดอลลาร์ฮ่องกง</displayName>
 				<displayName count="other">ดอลลาร์ฮ่องกง</displayName>
+				<symbol draft="contributed">HK$</symbol>
+				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="HNL">
 				<displayName>เลมปิราฮอนดูรัส</displayName>
 				<displayName count="other">เลมปิราฮอนดูรัส</displayName>
+				<symbol draft="contributed">HNL</symbol>
 				<symbol alt="narrow" draft="contributed">L</symbol>
 			</currency>
 			<currency type="HRD">
 				<displayName>ดีนาร์โครเอเชีย</displayName>
+				<symbol draft="contributed">HRD</symbol>
 			</currency>
 			<currency type="HRK">
 				<displayName>คูนาโครเอเชีย</displayName>
 				<displayName count="other">คูนาโครเอเชีย</displayName>
+				<symbol draft="contributed">HRK</symbol>
 				<symbol alt="narrow" draft="contributed">kn</symbol>
 			</currency>
 			<currency type="HTG">
 				<displayName>กูร์ดเฮติ</displayName>
 				<displayName count="other">กูร์ดเฮติ</displayName>
+				<symbol draft="contributed">HTG</symbol>
 			</currency>
 			<currency type="HUF">
 				<displayName>ฟอรินต์ฮังการี</displayName>
 				<displayName count="other">ฟอรินต์ฮังการี</displayName>
+				<symbol draft="contributed">HUF</symbol>
 				<symbol alt="narrow" draft="contributed">Ft</symbol>
 			</currency>
 			<currency type="IDR">
 				<displayName>รูเปียห์อินโดนีเซีย</displayName>
 				<displayName count="other">รูเปียห์อินโดนีเซีย</displayName>
+				<symbol draft="contributed">IDR</symbol>
 				<symbol alt="narrow" draft="contributed">Rp</symbol>
 			</currency>
 			<currency type="IEP">
 				<displayName>ปอนด์ไอริช</displayName>
+				<symbol draft="contributed">IEP</symbol>
 			</currency>
 			<currency type="ILP">
 				<displayName>ปอนด์อิสราเอล</displayName>
+				<symbol draft="contributed">ILP</symbol>
 			</currency>
 			<currency type="ILS">
 				<displayName>นิวเชเกลอิสราเอล</displayName>
 				<displayName count="other">นิวเชเกลอิสราเอล</displayName>
+				<symbol draft="contributed">₪</symbol>
 				<symbol alt="narrow" draft="contributed">₪</symbol>
 			</currency>
 			<currency type="INR">
 				<displayName>รูปีอินเดีย</displayName>
 				<displayName count="other">รูปีอินเดีย</displayName>
+				<symbol draft="contributed">₹</symbol>
 				<symbol alt="narrow" draft="contributed">₹</symbol>
 			</currency>
 			<currency type="IQD">
 				<displayName>ดีนาร์อิรัก</displayName>
 				<displayName count="other">ดีนาร์อิรัก</displayName>
+				<symbol draft="contributed">IQD</symbol>
 			</currency>
 			<currency type="IRR">
 				<displayName>เรียลอิหร่าน</displayName>
 				<displayName count="other">เรียลอิหร่าน</displayName>
+				<symbol draft="contributed">IRR</symbol>
 			</currency>
 			<currency type="ISK">
 				<displayName>โครนาไอซ์แลนด์</displayName>
 				<displayName count="other">โครนาไอซ์แลนด์</displayName>
+				<symbol draft="contributed">ISK</symbol>
 				<symbol alt="narrow" draft="contributed">kr</symbol>
 			</currency>
 			<currency type="ITL">
 				<displayName>ลีราอิตาลี</displayName>
+				<symbol draft="contributed">ITL</symbol>
 			</currency>
 			<currency type="JMD">
 				<displayName>ดอลลาร์จาเมกา</displayName>
 				<displayName count="other">ดอลลาร์จาเมกา</displayName>
+				<symbol draft="contributed">JMD</symbol>
+				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="JOD">
 				<displayName>ดีนาร์จอร์แดน</displayName>
 				<displayName count="other">ดีนาร์จอร์แดน</displayName>
+				<symbol draft="contributed">JOD</symbol>
 			</currency>
 			<currency type="JPY">
 				<displayName>เยนญี่ปุ่น</displayName>
@@ -6933,404 +7466,510 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="KES">
 				<displayName>ชิลลิงเคนยา</displayName>
 				<displayName count="other">ชิลลิงเคนยา</displayName>
+				<symbol draft="contributed">KES</symbol>
 			</currency>
 			<currency type="KGS">
 				<displayName>ซอมคีร์กีซสถาน</displayName>
 				<displayName count="other">ซอมคีร์กีซสถาน</displayName>
+				<symbol draft="contributed">KGS</symbol>
 			</currency>
 			<currency type="KHR">
 				<displayName>เรียลกัมพูชา</displayName>
 				<displayName count="other">เรียลกัมพูชา</displayName>
+				<symbol draft="contributed">KHR</symbol>
 				<symbol alt="narrow" draft="contributed">៛</symbol>
 			</currency>
 			<currency type="KMF">
 				<displayName>ฟรังก์คอโมโรส</displayName>
 				<displayName count="other">ฟรังก์คอโมโรส</displayName>
+				<symbol draft="contributed">KMF</symbol>
 				<symbol alt="narrow" draft="contributed">CF</symbol>
 			</currency>
 			<currency type="KPW">
 				<displayName>วอนเกาหลีเหนือ</displayName>
 				<displayName count="other">วอนเกาหลีเหนือ</displayName>
+				<symbol draft="contributed">KPW</symbol>
 				<symbol alt="narrow" draft="contributed">₩</symbol>
 			</currency>
 			<currency type="KRH">
 				<displayName draft="contributed">ฮวานเกาหลีใต้ (1953–1962)</displayName>
+				<symbol draft="contributed">KRH</symbol>
 			</currency>
 			<currency type="KRO">
 				<displayName draft="contributed">วอนเกาหลีใต้ (1945–1953)</displayName>
+				<symbol draft="contributed">KRO</symbol>
 			</currency>
 			<currency type="KRW">
 				<displayName>วอนเกาหลีใต้</displayName>
 				<displayName count="other">วอนเกาหลีใต้</displayName>
+				<symbol draft="contributed">₩</symbol>
 				<symbol alt="narrow" draft="contributed">₩</symbol>
 			</currency>
 			<currency type="KWD">
 				<displayName>ดีนาร์คูเวต</displayName>
 				<displayName count="other">ดีนาร์คูเวต</displayName>
+				<symbol draft="contributed">KWD</symbol>
 			</currency>
 			<currency type="KYD">
 				<displayName>ดอลลาร์หมู่เกาะเคย์แมน</displayName>
 				<displayName count="other">ดอลลาร์หมู่เกาะเคย์แมน</displayName>
+				<symbol draft="contributed">KYD</symbol>
+				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="KZT">
 				<displayName>เทงเจคาซัคสถาน</displayName>
 				<displayName count="other">เทงเจคาซัคสถาน</displayName>
+				<symbol draft="contributed">KZT</symbol>
 				<symbol alt="narrow" draft="contributed">₸</symbol>
 			</currency>
 			<currency type="LAK">
 				<displayName>กีบลาว</displayName>
 				<displayName count="other">กีบลาว</displayName>
+				<symbol draft="contributed">LAK</symbol>
 				<symbol alt="narrow" draft="contributed">₭</symbol>
 			</currency>
 			<currency type="LBP">
 				<displayName>ปอนด์เลบานอน</displayName>
 				<displayName count="other">ปอนด์เลบานอน</displayName>
+				<symbol draft="contributed">LBP</symbol>
 				<symbol alt="narrow" draft="contributed">L£</symbol>
 			</currency>
 			<currency type="LKR">
 				<displayName>รูปีศรีลังกา</displayName>
 				<displayName count="other">รูปีศรีลังกา</displayName>
+				<symbol draft="contributed">LKR</symbol>
 				<symbol alt="narrow" draft="contributed">Rs</symbol>
 			</currency>
 			<currency type="LRD">
 				<displayName>ดอลลาร์ไลบีเรีย</displayName>
 				<displayName count="other">ดอลลาร์ไลบีเรีย</displayName>
+				<symbol draft="contributed">LRD</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="LSL">
 				<displayName>โลตีเลโซโท</displayName>
+				<symbol draft="contributed">LSL</symbol>
 			</currency>
 			<currency type="LTL">
 				<displayName>ลีตัสลิทัวเนีย</displayName>
 				<displayName count="other">ลีตัสลิทัวเนีย</displayName>
+				<symbol draft="contributed">LTL</symbol>
 			</currency>
 			<currency type="LTT">
 				<displayName>ทาโลนัสลิทัวเนีย</displayName>
+				<symbol draft="contributed">LTT</symbol>
 			</currency>
 			<currency type="LUC">
 				<displayName>คอนเวอร์ทิเบิลฟรังก์ลักเซมเบิร์ก</displayName>
+				<symbol draft="contributed">LUC</symbol>
 			</currency>
 			<currency type="LUF">
 				<displayName>ฟรังก์ลักเซมเบิร์ก</displayName>
+				<symbol draft="contributed">LUF</symbol>
 			</currency>
 			<currency type="LUL">
 				<displayName>ไฟแนลเชียลฟรังก์ลักเซมเบิร์ก</displayName>
+				<symbol draft="contributed">LUL</symbol>
 			</currency>
 			<currency type="LVL">
 				<displayName>ลัตส์ลัตเวีย</displayName>
 				<displayName count="other">ลัตส์ลัตเวีย</displayName>
+				<symbol draft="contributed">LVL</symbol>
 			</currency>
 			<currency type="LVR">
 				<displayName>รูเบิลลัตเวีย</displayName>
+				<symbol draft="contributed">LVR</symbol>
 			</currency>
 			<currency type="LYD">
 				<displayName>ดีนาร์ลิเบีย</displayName>
 				<displayName count="other">ดีนาร์ลิเบีย</displayName>
+				<symbol draft="contributed">LYD</symbol>
 			</currency>
 			<currency type="MAD">
 				<displayName>ดีแรห์มโมร็อกโก</displayName>
 				<displayName count="other">ดีแรห์มโมร็อกโก</displayName>
+				<symbol draft="contributed">MAD</symbol>
 			</currency>
 			<currency type="MAF">
 				<displayName>ฟรังก์โมร็อกโก</displayName>
+				<symbol draft="contributed">MAF</symbol>
 			</currency>
 			<currency type="MCF">
 				<displayName draft="contributed">ฟรังก์โมนาโก</displayName>
+				<symbol draft="contributed">MCF</symbol>
 			</currency>
 			<currency type="MDC">
 				<displayName draft="contributed">บัตรปันส่วนมอลโดวา</displayName>
+				<symbol draft="contributed">MDC</symbol>
 			</currency>
 			<currency type="MDL">
 				<displayName>ลิวมอลโดวา</displayName>
 				<displayName count="other">ลิวมอลโดวา</displayName>
+				<symbol draft="contributed">MDL</symbol>
 			</currency>
 			<currency type="MGA">
 				<displayName>อาเรียรีมาลากาซี</displayName>
 				<displayName count="other">อาเรียรีมาลากาซี</displayName>
+				<symbol draft="contributed">MGA</symbol>
 				<symbol alt="narrow" draft="contributed">Ar</symbol>
 			</currency>
 			<currency type="MGF">
 				<displayName>ฟรังก์มาดากัสการ์</displayName>
+				<symbol draft="contributed">MGF</symbol>
 			</currency>
 			<currency type="MKD">
 				<displayName>ดีนาร์มาซิโดเนีย</displayName>
 				<displayName count="other">ดีนาร์มาซิโดเนีย</displayName>
+				<symbol draft="contributed">MKD</symbol>
 			</currency>
 			<currency type="MKN">
 				<displayName draft="contributed">ดีนาร์มาซิโดเนีย (1992–1993)</displayName>
+				<symbol draft="contributed">MKN</symbol>
 			</currency>
 			<currency type="MLF">
 				<displayName>ฟรังก์มาลี</displayName>
+				<symbol draft="contributed">MLF</symbol>
 			</currency>
 			<currency type="MMK">
 				<displayName>จ๊าตพม่า</displayName>
 				<displayName count="other">จ๊าตพม่า</displayName>
+				<symbol draft="contributed">MMK</symbol>
 				<symbol alt="narrow" draft="contributed">K</symbol>
 			</currency>
 			<currency type="MNT">
 				<displayName>ทูกริกมองโกเลีย</displayName>
 				<displayName count="other">ทูกริกมองโกเลีย</displayName>
+				<symbol draft="contributed">MNT</symbol>
 				<symbol alt="narrow" draft="contributed">₮</symbol>
 			</currency>
 			<currency type="MOP">
 				<displayName>ปาตากามาเก๊า</displayName>
 				<displayName count="other">ปาตากามาเก๊า</displayName>
+				<symbol draft="contributed">MOP</symbol>
 			</currency>
 			<currency type="MRO">
 				<displayName>อูกียามอริเตเนีย (1973–2017)</displayName>
 				<displayName count="other">อูกียามอริเตเนีย (1973–2017)</displayName>
+				<symbol draft="contributed">MRO</symbol>
 			</currency>
 			<currency type="MRU">
 				<displayName>อูกียามอริเตเนีย</displayName>
 				<displayName count="other">อูกียามอริเตเนีย</displayName>
+				<symbol draft="contributed">MRU</symbol>
 			</currency>
 			<currency type="MTL">
 				<displayName>ลีรามอลตา</displayName>
+				<symbol draft="contributed">MTL</symbol>
 			</currency>
 			<currency type="MTP">
 				<displayName>ปอนด์มอลตา</displayName>
+				<symbol draft="contributed">MTP</symbol>
 			</currency>
 			<currency type="MUR">
 				<displayName>รูปีมอริเชียส</displayName>
 				<displayName count="other">รูปีมอริเชียส</displayName>
+				<symbol draft="contributed">MUR</symbol>
 				<symbol alt="narrow" draft="contributed">Rs</symbol>
 			</currency>
 			<currency type="MVR">
 				<displayName>รูฟิยามัลดีฟส์</displayName>
 				<displayName count="other">รูฟิยามัลดีฟส์</displayName>
+				<symbol draft="contributed">MVR</symbol>
 			</currency>
 			<currency type="MWK">
 				<displayName>ควาชามาลาวี</displayName>
 				<displayName count="other">ควาชามาลาวี</displayName>
+				<symbol draft="contributed">MWK</symbol>
 			</currency>
 			<currency type="MXN">
 				<displayName>เปโซเม็กซิโก</displayName>
 				<displayName count="other">เปโซเม็กซิโก</displayName>
+				<symbol draft="contributed">MX$</symbol>
+				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="MXP">
 				<displayName>เงินเปโซเม็กซิโก (1861–1992)</displayName>
+				<symbol draft="contributed">MXP</symbol>
 			</currency>
 			<currency type="MXV">
 				<displayName>ยูนิแดด ดี อินเวอร์ชั่น เม็กซิโก</displayName>
+				<symbol draft="contributed">MXV</symbol>
 			</currency>
 			<currency type="MYR">
 				<displayName>ริงกิตมาเลเซีย</displayName>
 				<displayName count="other">ริงกิตมาเลเซีย</displayName>
+				<symbol draft="contributed">MYR</symbol>
 				<symbol alt="narrow" draft="contributed">RM</symbol>
 			</currency>
 			<currency type="MZE">
 				<displayName>เอสคูโดโมซัมบิก</displayName>
+				<symbol draft="contributed">MZE</symbol>
 			</currency>
 			<currency type="MZM">
 				<displayName>เมติคัลโมซัมบิกเก่า</displayName>
+				<symbol draft="contributed">MZM</symbol>
 			</currency>
 			<currency type="MZN">
 				<displayName>เมติคัลโมซัมบิก</displayName>
 				<displayName count="other">เมติคัลโมซัมบิก</displayName>
+				<symbol draft="contributed">MZN</symbol>
 			</currency>
 			<currency type="NAD">
 				<displayName>ดอลลาร์นามิเบีย</displayName>
 				<displayName count="other">ดอลลาร์นามิเบีย</displayName>
+				<symbol draft="contributed">NAD</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="NGN">
 				<displayName>ไนราไนจีเรีย</displayName>
 				<displayName count="other">ไนราไนจีเรีย</displayName>
+				<symbol draft="contributed">NGN</symbol>
 				<symbol alt="narrow" draft="contributed">₦</symbol>
 			</currency>
 			<currency type="NIC">
 				<displayName>คอร์โดบานิการากัว</displayName>
+				<symbol draft="contributed">NIC</symbol>
 			</currency>
 			<currency type="NIO">
 				<displayName>กอร์โดบานิการากัว</displayName>
 				<displayName count="other">กอร์โดบานิการากัว</displayName>
+				<symbol draft="contributed">NIO</symbol>
 				<symbol alt="narrow" draft="contributed">C$</symbol>
 			</currency>
 			<currency type="NLG">
 				<displayName>กิลเดอร์เนเธอร์แลนด์</displayName>
+				<symbol draft="contributed">NLG</symbol>
 			</currency>
 			<currency type="NOK">
 				<displayName>โครนนอร์เวย์</displayName>
 				<displayName count="other">โครนนอร์เวย์</displayName>
+				<symbol draft="contributed">NOK</symbol>
 				<symbol alt="narrow" draft="contributed">kr</symbol>
 			</currency>
 			<currency type="NPR">
 				<displayName>รูปีเนปาล</displayName>
 				<displayName count="other">รูปีเนปาล</displayName>
+				<symbol draft="contributed">NPR</symbol>
 				<symbol alt="narrow" draft="contributed">Rs</symbol>
 			</currency>
 			<currency type="NZD">
 				<displayName>ดอลลาร์นิวซีแลนด์</displayName>
 				<displayName count="other">ดอลลาร์นิวซีแลนด์</displayName>
+				<symbol draft="contributed">NZ$</symbol>
+				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="OMR">
 				<displayName>เรียลโอมาน</displayName>
 				<displayName count="other">เรียลโอมาน</displayName>
+				<symbol draft="contributed">OMR</symbol>
 			</currency>
 			<currency type="PAB">
 				<displayName>บัลบัวปานามา</displayName>
 				<displayName count="other">บัลบัวปานามา</displayName>
+				<symbol draft="contributed">PAB</symbol>
 			</currency>
 			<currency type="PEI">
 				<displayName>อินตีเปรู</displayName>
+				<symbol draft="contributed">PEI</symbol>
 			</currency>
 			<currency type="PEN">
 				<displayName>ซอลเปรู</displayName>
 				<displayName count="other">ซอลเปรู</displayName>
+				<symbol draft="contributed">PEN</symbol>
 			</currency>
 			<currency type="PES">
 				<displayName>ซอลเปรู (1863–1965)</displayName>
 				<displayName count="other">ซอลเปรู(1863–1965)</displayName>
+				<symbol draft="contributed">PES</symbol>
 			</currency>
 			<currency type="PGK">
 				<displayName>กีนาปาปัวนิวกินี</displayName>
 				<displayName count="other">กีนาปาปัวนิวกินี</displayName>
+				<symbol draft="contributed">PGK</symbol>
 			</currency>
 			<currency type="PHP">
 				<displayName>เปโซฟิลิปปินส์</displayName>
 				<displayName count="other">เปโซฟิลิปปินส์</displayName>
+				<symbol draft="contributed">PHP</symbol>
 				<symbol alt="narrow" draft="contributed">₱</symbol>
 			</currency>
 			<currency type="PKR">
 				<displayName>รูปีปากีสถาน</displayName>
 				<displayName count="other">รูปีปากีสถาน</displayName>
+				<symbol draft="contributed">PKR</symbol>
 				<symbol alt="narrow" draft="contributed">Rs</symbol>
 			</currency>
 			<currency type="PLN">
 				<displayName>ซลอตีโปแลนด์</displayName>
 				<displayName count="other">ซลอตีโปแลนด์</displayName>
+				<symbol draft="contributed">PLN</symbol>
 				<symbol alt="narrow" draft="contributed">zł</symbol>
 			</currency>
 			<currency type="PLZ">
 				<displayName>ซลอตีโปแลนด์ (1950–1995)</displayName>
+				<symbol draft="contributed">PLZ</symbol>
 			</currency>
 			<currency type="PTE">
 				<displayName>เอสคูโดโปรตุเกส</displayName>
+				<symbol draft="contributed">PTE</symbol>
 			</currency>
 			<currency type="PYG">
 				<displayName>กวารานีปารากวัย</displayName>
 				<displayName count="other">กวารานีปารากวัย</displayName>
+				<symbol draft="contributed">PYG</symbol>
 				<symbol alt="narrow" draft="contributed">₲</symbol>
 			</currency>
 			<currency type="QAR">
 				<displayName>เรียลกาตาร์</displayName>
 				<displayName count="other">เรียลกาตาร์</displayName>
+				<symbol draft="contributed">QAR</symbol>
 			</currency>
 			<currency type="RHD">
 				<displayName>ดอลลาร์โรดีเซีย</displayName>
+				<symbol draft="contributed">RHD</symbol>
 			</currency>
 			<currency type="ROL">
 				<displayName>ลิวโรมาเนียเก่า</displayName>
+				<symbol draft="contributed">ROL</symbol>
 			</currency>
 			<currency type="RON">
 				<displayName>ลิวโรมาเนีย</displayName>
 				<displayName count="other">ลิวโรมาเนีย</displayName>
+				<symbol draft="contributed">RON</symbol>
 				<symbol alt="narrow" draft="contributed">lei</symbol>
 			</currency>
 			<currency type="RSD">
 				<displayName>ดีนาร์เซอร์เบีย</displayName>
 				<displayName count="other">ดีนาร์เซอร์เบีย</displayName>
+				<symbol draft="contributed">RSD</symbol>
 			</currency>
 			<currency type="RUB">
 				<displayName>รูเบิลรัสเซีย</displayName>
 				<displayName count="other">รูเบิลรัสเซีย</displayName>
+				<symbol draft="contributed">RUB</symbol>
 				<symbol alt="narrow" draft="contributed">₽</symbol>
 				<symbol alt="variant">₽</symbol>
 			</currency>
 			<currency type="RUR">
 				<displayName>รูเบิลรัสเซีย (1991–1998)</displayName>
+				<symbol draft="contributed">RUR</symbol>
 			</currency>
 			<currency type="RWF">
 				<displayName>ฟรังก์รวันดา</displayName>
 				<displayName count="other">ฟรังก์รวันดา</displayName>
+				<symbol draft="contributed">RWF</symbol>
 				<symbol alt="narrow" draft="contributed">RF</symbol>
 			</currency>
 			<currency type="SAR">
 				<displayName>ริยัลซาอุดีอาระเบีย</displayName>
 				<displayName count="other">ริยัลซาอุดีอาระเบีย</displayName>
+				<symbol draft="contributed">SAR</symbol>
 			</currency>
 			<currency type="SBD">
 				<displayName>ดอลลาร์หมู่เกาะโซโลมอน</displayName>
 				<displayName count="other">ดอลลาร์หมู่เกาะโซโลมอน</displayName>
+				<symbol draft="contributed">SBD</symbol>
+				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="SCR">
 				<displayName>รูปีเซเชลส์</displayName>
 				<displayName count="other">รูปีเซเชลส์</displayName>
+				<symbol draft="contributed">SCR</symbol>
 			</currency>
 			<currency type="SDD">
 				<displayName>ดีนาร์ซูดานเก่า</displayName>
+				<symbol draft="contributed">SDD</symbol>
 			</currency>
 			<currency type="SDG">
 				<displayName>ปอนด์ซูดาน</displayName>
 				<displayName count="other">ปอนด์ซูดาน</displayName>
+				<symbol draft="contributed">SDG</symbol>
 			</currency>
 			<currency type="SDP">
 				<displayName>ปอนด์ซูดานเก่า</displayName>
+				<symbol draft="contributed">SDP</symbol>
 			</currency>
 			<currency type="SEK">
 				<displayName>โครนาสวีเดน</displayName>
 				<displayName count="other">โครนาสวีเดน</displayName>
+				<symbol draft="contributed">SEK</symbol>
 				<symbol alt="narrow" draft="contributed">kr</symbol>
 			</currency>
 			<currency type="SGD">
 				<displayName>ดอลลาร์สิงคโปร์</displayName>
 				<displayName count="other">ดอลลาร์สิงคโปร์</displayName>
+				<symbol draft="contributed">SGD</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="SHP">
 				<displayName>ปอนด์เซนต์เฮเลนา</displayName>
 				<displayName count="other">ปอนด์เซนต์เฮเลนา</displayName>
+				<symbol draft="contributed">SHP</symbol>
 				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
 			<currency type="SIT">
 				<displayName>ทอลาร์สโลวีเนีย</displayName>
+				<symbol draft="contributed">SIT</symbol>
 			</currency>
 			<currency type="SKK">
 				<displayName>โครูนาสโลวัก</displayName>
+				<symbol draft="contributed">SKK</symbol>
 			</currency>
 			<currency type="SLL">
 				<displayName>ลีโอนเซียร์ราลีโอน</displayName>
 				<displayName count="other">ลีโอนเซียร์ราลีโอน</displayName>
+				<symbol draft="contributed">SLL</symbol>
 			</currency>
 			<currency type="SOS">
 				<displayName>ชิลลิงโซมาเลีย</displayName>
 				<displayName count="other">ชิลลิงโซมาเลีย</displayName>
+				<symbol draft="contributed">SOS</symbol>
 			</currency>
 			<currency type="SRD">
 				<displayName>ดอลลาร์ซูรินาเม</displayName>
 				<displayName count="other">ดอลลาร์ซูรินาเม</displayName>
+				<symbol draft="contributed">SRD</symbol>
+				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="SRG">
 				<displayName>กิลเดอร์ซูรินาเม</displayName>
+				<symbol draft="contributed">SRG</symbol>
 			</currency>
 			<currency type="SSP">
 				<displayName>ปอนด์ซูดานใต้</displayName>
 				<displayName count="other">ปอนด์ซูดานใต้</displayName>
+				<symbol draft="contributed">SSP</symbol>
 				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
 			<currency type="STD">
 				<displayName>ดอบราเซาตูเมและปรินซิปี (1977–2017)</displayName>
 				<displayName count="other">ดอบราเซาตูเมและปรินซิปี (1977–2017)</displayName>
+				<symbol draft="contributed">STD</symbol>
 			</currency>
 			<currency type="STN">
 				<displayName>ดอบราเซาตูเมและปรินซิปี</displayName>
 				<displayName count="other">ดอบราเซาตูเมและปรินซิปี</displayName>
 				<symbol draft="contributed">STN</symbol>
+				<symbol alt="narrow" draft="contributed">Db</symbol>
 			</currency>
 			<currency type="SUR">
 				<displayName>รูเบิลโซเวียต</displayName>
+				<symbol draft="contributed">SUR</symbol>
 			</currency>
 			<currency type="SVC">
 				<displayName>โคลอนเอลซัลวาดอร์</displayName>
+				<symbol draft="contributed">SVC</symbol>
 			</currency>
 			<currency type="SYP">
 				<displayName>ปอนด์ซีเรีย</displayName>
 				<displayName count="other">ปอนด์ซีเรีย</displayName>
+				<symbol draft="contributed">SYP</symbol>
 				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
 			<currency type="SZL">
 				<displayName>ลิลันเจนีสวาซิ</displayName>
 				<displayName count="other">ลิลันเจนีสวาซิ</displayName>
+				<symbol draft="contributed">SZL</symbol>
 			</currency>
 			<currency type="THB">
 				<displayName>บาท</displayName>
@@ -7340,183 +7979,238 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="TJR">
 				<displayName>รูเบิลทาจิกิสถาน</displayName>
+				<symbol draft="contributed">TJR</symbol>
 			</currency>
 			<currency type="TJS">
 				<displayName>โซโมนิทาจิกิสถาน</displayName>
 				<displayName count="other">โซโมนิทาจิกิสถาน</displayName>
+				<symbol draft="contributed">TJS</symbol>
 			</currency>
 			<currency type="TMM">
 				<displayName>มานัตเติร์กเมนิสถาน (1993–2009)</displayName>
+				<symbol draft="contributed">TMM</symbol>
 			</currency>
 			<currency type="TMT">
 				<displayName>มานัตเติร์กเมนิสถาน</displayName>
 				<displayName count="other">มานัตเติร์กเมนิสถาน</displayName>
+				<symbol draft="contributed">TMT</symbol>
 			</currency>
 			<currency type="TND">
 				<displayName>ดีนาร์ตูนิเซีย</displayName>
 				<displayName count="other">ดีนาร์ตูนิเซีย</displayName>
+				<symbol draft="contributed">TND</symbol>
 			</currency>
 			<currency type="TOP">
 				<displayName>พาแองกาตองกา</displayName>
 				<displayName count="other">พาแองกาตองกา</displayName>
+				<symbol draft="contributed">TOP</symbol>
 				<symbol alt="narrow" draft="contributed">T$</symbol>
 			</currency>
 			<currency type="TPE">
 				<displayName>เอสคูโดติมอร์</displayName>
+				<symbol draft="contributed">TPE</symbol>
 			</currency>
 			<currency type="TRL">
 				<displayName>ลีราตุรกีเก่า</displayName>
+				<symbol draft="contributed">TRL</symbol>
 			</currency>
 			<currency type="TRY">
 				<displayName>ลีราตุรกี</displayName>
 				<displayName count="other">ลีราตุรกี</displayName>
+				<symbol draft="contributed">TRY</symbol>
+				<symbol alt="narrow" draft="contributed">₺</symbol>
+				<symbol alt="variant" draft="contributed">TL</symbol>
 			</currency>
 			<currency type="TTD">
 				<displayName>ดอลลาร์ตรินิแดดและโตเบโก</displayName>
 				<displayName count="other">ดอลลาร์ตรินิแดดและโตเบโก</displayName>
+				<symbol draft="contributed">TTD</symbol>
+				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="TWD">
 				<displayName>ดอลลาร์ไต้หวันใหม่</displayName>
 				<displayName count="other">ดอลลาร์ไต้หวันใหม่</displayName>
+				<symbol draft="contributed">NT$</symbol>
 				<symbol alt="narrow" draft="contributed">NT$</symbol>
 			</currency>
 			<currency type="TZS">
 				<displayName>ชิลลิงแทนซาเนีย</displayName>
 				<displayName count="other">ชิลลิงแทนซาเนีย</displayName>
+				<symbol draft="contributed">TZS</symbol>
 			</currency>
 			<currency type="UAH">
 				<displayName>ฮรีฟเนียยูเครน</displayName>
 				<displayName count="other">ฮรีฟเนียยูเครน</displayName>
+				<symbol draft="contributed">UAH</symbol>
 				<symbol alt="narrow" draft="contributed">₴</symbol>
 			</currency>
 			<currency type="UAK">
 				<displayName>คาร์โบวาเนตซ์ยูเครน</displayName>
+				<symbol draft="contributed">UAK</symbol>
 			</currency>
 			<currency type="UGS">
 				<displayName>ชิลลิงยูกันดา (1966–1987)</displayName>
+				<symbol draft="contributed">UGS</symbol>
 			</currency>
 			<currency type="UGX">
 				<displayName>ชิลลิงยูกันดา</displayName>
 				<displayName count="other">ชิลลิงยูกันดา</displayName>
+				<symbol draft="contributed">UGX</symbol>
 			</currency>
 			<currency type="USD">
 				<displayName>ดอลลาร์สหรัฐ</displayName>
 				<displayName count="other">ดอลลาร์สหรัฐ</displayName>
+				<symbol draft="contributed">US$</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="USN">
 				<displayName>ดอลลาร์สหรัฐ (วันถัดไป)</displayName>
 				<displayName count="other">ดอลลาร์สหรัฐ (วันถัดไป)</displayName>
+				<symbol draft="contributed">USN</symbol>
 			</currency>
 			<currency type="USS">
 				<displayName>ดอลลาร์สหรัฐ (วันเดียวกัน)</displayName>
 				<displayName count="other">ดอลลาร์สหรัฐ (วันเดียวกัน)</displayName>
+				<symbol draft="contributed">USS</symbol>
 			</currency>
 			<currency type="UYI">
 				<displayName>เปโซเอนยูนิแดดเซสอินเด็กซาแดสอุรุกวัย</displayName>
+				<symbol draft="contributed">UYI</symbol>
 			</currency>
 			<currency type="UYP">
 				<displayName>เปโซอุรุกวัย (1975–1993)</displayName>
+				<symbol draft="contributed">UYP</symbol>
 			</currency>
 			<currency type="UYU">
 				<displayName>เปโซอุรุกวัย</displayName>
 				<displayName count="other">เปโซอุรุกวัย</displayName>
+				<symbol draft="contributed">UYU</symbol>
+				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="UZS">
 				<displayName>ซอมอุซเบกิสถาน</displayName>
 				<displayName count="other">ซอมอุซเบกิสถาน</displayName>
+				<symbol draft="contributed">UZS</symbol>
 			</currency>
 			<currency type="VEB">
 				<displayName>โบลิวาร์เวเนซุเอลา (1871–2008)</displayName>
+				<symbol draft="contributed">VEB</symbol>
 			</currency>
 			<currency type="VEF">
 				<displayName>โบลิวาร์เวเนซุเอลา</displayName>
 				<displayName count="other">โบลิวาร์เวเนซุเอลา</displayName>
+				<symbol draft="contributed">VEF</symbol>
 				<symbol alt="narrow" draft="contributed">Bs</symbol>
 			</currency>
 			<currency type="VES">
 				<displayName>โบลีวาร์เวเนซุเอลา</displayName>
 				<displayName count="other">โบลีวาร์แห่งเวเนซุเอลา</displayName>
+				<symbol draft="contributed">VES</symbol>
 			</currency>
 			<currency type="VND">
 				<displayName>ดองเวียดนาม</displayName>
 				<displayName count="other">ดองเวียดนาม</displayName>
+				<symbol draft="contributed">₫</symbol>
 				<symbol alt="narrow" draft="contributed">₫</symbol>
 			</currency>
 			<currency type="VNN">
 				<displayName draft="contributed">ดองเวียดนาม (1978–1985)</displayName>
+				<symbol draft="contributed">VNN</symbol>
 			</currency>
 			<currency type="VUV">
 				<displayName>วาตูวานูอาตู</displayName>
 				<displayName count="other">วาตูวานูอาตู</displayName>
+				<symbol draft="contributed">VUV</symbol>
 			</currency>
 			<currency type="WST">
 				<displayName>ทาลาซามัว</displayName>
 				<displayName count="other">ทาลาซามัว</displayName>
+				<symbol draft="contributed">WST</symbol>
 			</currency>
 			<currency type="XAF">
 				<displayName>ฟรังก์เซฟาธนาคารรัฐแอฟริกากลาง</displayName>
 				<displayName count="other">ฟรังก์เซฟาธนาคารรัฐแอฟริกากลาง</displayName>
+				<symbol draft="contributed">FCFA</symbol>
 			</currency>
 			<currency type="XAG">
 				<displayName>เงิน</displayName>
+				<symbol draft="contributed">XAG</symbol>
 			</currency>
 			<currency type="XAU">
 				<displayName>ทอง</displayName>
+				<symbol draft="contributed">XAU</symbol>
 			</currency>
 			<currency type="XBA">
 				<displayName>หน่วยคอมโพสิตยุโรป</displayName>
+				<symbol draft="contributed">XBA</symbol>
 			</currency>
 			<currency type="XBB">
 				<displayName>หน่วยโมเนทารียุโรป</displayName>
+				<symbol draft="contributed">XBB</symbol>
 			</currency>
 			<currency type="XBC">
 				<displayName>หน่วยบัญชียุโรป [XBC]</displayName>
+				<symbol draft="contributed">XBC</symbol>
 			</currency>
 			<currency type="XBD">
 				<displayName>หน่วยบัญชียุโรป [XBD]</displayName>
+				<symbol draft="contributed">XBD</symbol>
 			</currency>
 			<currency type="XCD">
 				<displayName>ดอลลาร์แคริบเบียนตะวันออก</displayName>
 				<displayName count="other">ดอลลาร์แคริบเบียนตะวันออก</displayName>
+				<symbol draft="contributed">EC$</symbol>
+				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="XDR">
 				<displayName>สิทธิถอนเงินพิเศษ</displayName>
+				<symbol draft="contributed">XDR</symbol>
 			</currency>
 			<currency type="XEU">
 				<displayName>หน่วยสกุลเงินยุโรป</displayName>
+				<symbol draft="contributed">XEU</symbol>
 			</currency>
 			<currency type="XFO">
 				<displayName>ฟรังก์ทองฝรั่งเศส</displayName>
+				<symbol draft="contributed">XFO</symbol>
 			</currency>
 			<currency type="XFU">
 				<displayName>ฟรังก์ยูไอซีฝรั่งเศส</displayName>
+				<symbol draft="contributed">XFU</symbol>
 			</currency>
 			<currency type="XOF">
 				<displayName>ฟรังก์เซฟาธนาคารกลางรัฐแอฟริกาตะวันตก</displayName>
 				<displayName count="other">ฟรังก์เซฟาธนาคารกลางรัฐแอฟริกาตะวันตก</displayName>
+				<symbol draft="contributed">CFA</symbol>
 			</currency>
 			<currency type="XPD">
 				<displayName>พัลเลเดียม</displayName>
+				<symbol draft="contributed">XPD</symbol>
 			</currency>
 			<currency type="XPF">
 				<displayName>ฟรังก์ซีเอฟพี</displayName>
 				<displayName count="other">ฟรังก์ซีเอฟพี</displayName>
+				<symbol draft="contributed">CFPF</symbol>
 			</currency>
 			<currency type="XPT">
 				<displayName>แพลตินัม</displayName>
+				<symbol draft="contributed">XPT</symbol>
 			</currency>
 			<currency type="XRE">
 				<displayName>กองทุนไรเน็ต</displayName>
+				<symbol draft="contributed">XRE</symbol>
 			</currency>
 			<currency type="XSU">
 				<displayName draft="contributed">ซูเกร</displayName>
+				<symbol draft="contributed">XSU</symbol>
 			</currency>
 			<currency type="XTS">
 				<displayName>รหัสทดสอบสกุลเงิน</displayName>
+				<symbol draft="contributed">XTS</symbol>
 			</currency>
 			<currency type="XUA">
 				<displayName draft="contributed">หน่วยบัญชี เอดีบี</displayName>
+				<symbol draft="contributed">XUA</symbol>
 			</currency>
 			<currency type="XXX">
 				<displayName>ไม่ทราบชื่อสกุลเงิน</displayName>
@@ -7525,57 +8219,74 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="YDD">
 				<displayName>ดีนาร์เยเมน</displayName>
+				<symbol draft="contributed">YDD</symbol>
 			</currency>
 			<currency type="YER">
 				<displayName>เรียลเยเมน</displayName>
 				<displayName count="other">เรียลเยเมน</displayName>
+				<symbol draft="contributed">YER</symbol>
 			</currency>
 			<currency type="YUD">
 				<displayName>ฮาร์ดดีนาร์ยูโกสลาเวีย</displayName>
+				<symbol draft="contributed">YUD</symbol>
 			</currency>
 			<currency type="YUM">
 				<displayName>โนวิย์ดีนาร์ยูโกสลาเวีย</displayName>
+				<symbol draft="contributed">YUM</symbol>
 			</currency>
 			<currency type="YUN">
 				<displayName>คอนเวอร์ทิเบิลดีนาร์ยูโกสลาเวีย</displayName>
+				<symbol draft="contributed">YUN</symbol>
 			</currency>
 			<currency type="YUR">
 				<displayName draft="contributed">ดีนาร์ปฏิรูปยูโกสลาเวีย (1992–1993)</displayName>
+				<symbol draft="contributed">YUR</symbol>
 			</currency>
 			<currency type="ZAL">
 				<displayName>แรนด์แอฟริกาใต้ (การเงิน)</displayName>
+				<symbol draft="contributed">ZAL</symbol>
 			</currency>
 			<currency type="ZAR">
 				<displayName>แรนด์แอฟริกาใต้</displayName>
 				<displayName count="other">แรนด์แอฟริกาใต้</displayName>
+				<symbol draft="contributed">ZAR</symbol>
 				<symbol alt="narrow" draft="contributed">R</symbol>
 			</currency>
 			<currency type="ZMK">
 				<displayName>ควาชาแซมเบีย (1968–2012)</displayName>
+				<symbol draft="contributed">ZMK</symbol>
 			</currency>
 			<currency type="ZMW">
 				<displayName>ควาชาแซมเบีย</displayName>
 				<displayName count="other">ควาชาแซมเบีย</displayName>
+				<symbol draft="contributed">ZMW</symbol>
 				<symbol alt="narrow" draft="contributed">ZK</symbol>
 			</currency>
 			<currency type="ZRN">
 				<displayName>นิวแซร์คองโก</displayName>
+				<symbol draft="contributed">ZRN</symbol>
 			</currency>
 			<currency type="ZRZ">
 				<displayName>แซร์คองโก</displayName>
+				<symbol draft="contributed">ZRZ</symbol>
 			</currency>
 			<currency type="ZWD">
 				<displayName>ดอลลาร์ซิมบับเว</displayName>
+				<symbol draft="contributed">ZWD</symbol>
 			</currency>
 			<currency type="ZWL">
 				<displayName draft="contributed">ดอลลาร์ซิมบับเว (2009)</displayName>
+				<symbol draft="contributed">ZWL</symbol>
 			</currency>
 			<currency type="ZWR">
 				<displayName draft="contributed">ดอลลาร์ซิมบับเว (2008)</displayName>
+				<symbol draft="contributed">ZWR</symbol>
 			</currency>
 		</currencies>
 		<miscPatterns numberSystem="latn">
+			<pattern type="approximately">~{0}</pattern>
 			<pattern type="atLeast">{0}+</pattern>
+			<pattern type="atMost">≤{0}</pattern>
 			<pattern type="range">{0}-{1}</pattern>
 		</miscPatterns>
 		<minimalPairs>
@@ -7658,8 +8369,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<perUnitPattern>{0} ต่อตารางนิ้ว</perUnitPattern>
 			</unit>
 			<unit type="area-dunam">
-				<displayName draft="contributed">ดูนัม</displayName>
-				<unitPattern count="other" draft="contributed">{0} ดูนัม</unitPattern>
+				<displayName>ดูนัม</displayName>
+				<unitPattern count="other">{0} ดูนัม</unitPattern>
 			</unit>
 			<unit type="concentr-karat">
 				<displayName>กะรัต</displayName>
@@ -7678,20 +8389,20 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} ส่วนต่อล้าน</unitPattern>
 			</unit>
 			<unit type="concentr-percent">
-				<displayName draft="contributed">เปอร์เซ็นต์</displayName>
-				<unitPattern count="other" draft="contributed">{0} เปอร์เซ็นต์</unitPattern>
+				<displayName>เปอร์เซ็นต์</displayName>
+				<unitPattern count="other">{0} เปอร์เซ็นต์</unitPattern>
 			</unit>
 			<unit type="concentr-permille">
-				<displayName draft="contributed">เปอร์มิลล์</displayName>
-				<unitPattern count="other" draft="contributed">{0} เปอร์มิลล์</unitPattern>
+				<displayName>เปอร์มิลล์</displayName>
+				<unitPattern count="other">{0} เปอร์มิลล์</unitPattern>
 			</unit>
 			<unit type="concentr-permyriad">
-				<displayName draft="contributed">เปอร์มีเรียด</displayName>
-				<unitPattern count="other" draft="contributed">{0} เปอร์มีเรียด</unitPattern>
+				<displayName>เปอร์มีเรียด</displayName>
+				<unitPattern count="other">{0} เปอร์มีเรียด</unitPattern>
 			</unit>
 			<unit type="concentr-mole">
-				<displayName draft="contributed">โมล</displayName>
-				<unitPattern count="other" draft="contributed">{0} โมล</unitPattern>
+				<displayName>โมล</displayName>
+				<unitPattern count="other">{0} โมล</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>ลิตรต่อกิโลเมตร</displayName>
@@ -7710,8 +8421,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} ไมล์ต่อแกลลอนอังกฤษ</unitPattern>
 			</unit>
 			<unit type="digital-petabyte">
-				<displayName>เพตาไบต์</displayName>
-				<unitPattern count="other" draft="contributed">{0} เพตะไบต์</unitPattern>
+				<displayName>เพตะไบต์</displayName>
+				<unitPattern count="other">{0} เพตะไบต์</unitPattern>
 			</unit>
 			<unit type="digital-terabyte">
 				<displayName>เทราไบต์</displayName>
@@ -7756,6 +8467,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="duration-century">
 				<displayName>ศตวรรษ</displayName>
 				<unitPattern count="other">{0} ศตวรรษ</unitPattern>
+			</unit>
+			<unit type="duration-decade">
+				<displayName>ทศวรรษ</displayName>
+				<unitPattern count="other">{0} ทศวรรษ</unitPattern>
 			</unit>
 			<unit type="duration-year">
 				<displayName>ปี</displayName>
@@ -7845,20 +8560,24 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} กิโลวัตต์-ชั่วโมง</unitPattern>
 			</unit>
 			<unit type="energy-electronvolt">
-				<displayName draft="contributed">อิเล็กตรอนโวลต์</displayName>
-				<unitPattern count="other" draft="contributed">{0} อิเล็กตรอนโวลต์</unitPattern>
+				<displayName>อิเล็กตรอนโวลต์</displayName>
+				<unitPattern count="other">{0} อิเล็กตรอนโวลต์</unitPattern>
 			</unit>
 			<unit type="energy-british-thermal-unit">
-				<displayName draft="contributed">หน่วยความร้อนอังกฤษ</displayName>
-				<unitPattern count="other" draft="contributed">{0} หน่วยความร้อนอังกฤษ</unitPattern>
+				<displayName>หน่วยความร้อนอังกฤษ</displayName>
+				<unitPattern count="other">{0} หน่วยความร้อนอังกฤษ</unitPattern>
+			</unit>
+			<unit type="energy-therm-us">
+				<displayName>เธิร์มสหรัฐฯ</displayName>
+				<unitPattern count="other">{0} เธิร์มสหรัฐฯ</unitPattern>
 			</unit>
 			<unit type="force-pound-force">
-				<displayName draft="contributed">แรงปอนด์</displayName>
-				<unitPattern count="other" draft="contributed">{0} แรงปอนด์</unitPattern>
+				<displayName>แรงปอนด์</displayName>
+				<unitPattern count="other">{0} แรงปอนด์</unitPattern>
 			</unit>
 			<unit type="force-newton">
-				<displayName draft="contributed">นิวตัน</displayName>
-				<unitPattern count="other" draft="contributed">{0} นิวตัน</unitPattern>
+				<displayName>นิวตัน</displayName>
+				<unitPattern count="other">{0} นิวตัน</unitPattern>
 			</unit>
 			<unit type="frequency-gigahertz">
 				<displayName>กิกะเฮิรตซ์</displayName>
@@ -7875,6 +8594,30 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="frequency-hertz">
 				<displayName>เฮิรตซ์</displayName>
 				<unitPattern count="other">{0} เฮิรตซ์</unitPattern>
+			</unit>
+			<unit type="graphics-pixel">
+				<displayName>พิกเซล</displayName>
+				<unitPattern count="other">{0} พิกเซล</unitPattern>
+			</unit>
+			<unit type="graphics-megapixel">
+				<displayName>เมกะพิกเซล</displayName>
+				<unitPattern count="other">{0} เมกะพิกเซล</unitPattern>
+			</unit>
+			<unit type="graphics-pixel-per-centimeter">
+				<displayName>พิกเซลต่อเซนติเมตร</displayName>
+				<unitPattern count="other">{0} พิกเซลต่อเซนติเมตร</unitPattern>
+			</unit>
+			<unit type="graphics-pixel-per-inch">
+				<displayName>พิกเซลต่อนิ้ว</displayName>
+				<unitPattern count="other">{0} พิกเซลต่อนิ้ว</unitPattern>
+			</unit>
+			<unit type="graphics-dot-per-centimeter">
+				<displayName>จุดต่อเซนติเมตร</displayName>
+				<unitPattern count="other">{0} จุดต่อเซนติเมตร</unitPattern>
+			</unit>
+			<unit type="graphics-dot-per-inch">
+				<displayName>จุดต่อนิ้ว</displayName>
+				<unitPattern count="other">{0} จุดต่อนิ้ว</unitPattern>
 			</unit>
 			<unit type="length-kilometer">
 				<displayName>กิโลเมตร</displayName>
@@ -7954,16 +8697,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} จุด</unitPattern>
 			</unit>
 			<unit type="length-solar-radius">
-				<displayName draft="contributed">รัศมีวงกลมของดวงอาทิตย์</displayName>
-				<unitPattern count="other" draft="contributed">{0} รัศมีวงกลมของดวงอาทิตย์</unitPattern>
+				<displayName>รัศมีวงกลมของดวงอาทิตย์</displayName>
+				<unitPattern count="other">{0} รัศมีวงกลมของดวงอาทิตย์</unitPattern>
 			</unit>
 			<unit type="light-lux">
 				<displayName>ลักซ์</displayName>
 				<unitPattern count="other">{0} ลักซ์</unitPattern>
 			</unit>
 			<unit type="light-solar-luminosity">
-				<displayName draft="contributed">ความสว่างดวงอาทิตย์</displayName>
-				<unitPattern count="other" draft="contributed">{0} ความสว่างดวงอาทิตย์</unitPattern>
+				<displayName>ความสว่างดวงอาทิตย์</displayName>
+				<unitPattern count="other">{0} ความสว่างดวงอาทิตย์</unitPattern>
 			</unit>
 			<unit type="mass-metric-ton">
 				<displayName>เมตริกตัน</displayName>
@@ -8010,16 +8753,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} กะรัต</unitPattern>
 			</unit>
 			<unit type="mass-dalton">
-				<displayName draft="contributed">ดัลตัน</displayName>
-				<unitPattern count="other" draft="contributed">{0} ดัลตัน</unitPattern>
+				<displayName>ดัลตัน</displayName>
+				<unitPattern count="other">{0} ดัลตัน</unitPattern>
 			</unit>
 			<unit type="mass-earth-mass">
-				<displayName draft="contributed">มวลของโลก</displayName>
-				<unitPattern count="other" draft="contributed">{0} มวลของโลก</unitPattern>
+				<displayName>มวลของโลก</displayName>
+				<unitPattern count="other">{0} มวลของโลก</unitPattern>
 			</unit>
 			<unit type="mass-solar-mass">
-				<displayName draft="contributed">มวลดวงอาทิตย์</displayName>
-				<unitPattern count="other" draft="contributed">{0} มวลดวงอาทิตย์</unitPattern>
+				<displayName>มวลดวงอาทิตย์</displayName>
+				<unitPattern count="other">{0} มวลดวงอาทิตย์</unitPattern>
 			</unit>
 			<unit type="power-gigawatt">
 				<displayName>กิกะวัตต์</displayName>
@@ -8045,10 +8788,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>แรงม้า</displayName>
 				<unitPattern count="other">{0} แรงม้า</unitPattern>
 			</unit>
-			<unit type="pressure-hectopascal">
-				<displayName>เฮกโตปาสกาล</displayName>
-				<unitPattern count="other">{0} เฮกโตปาสกาล</unitPattern>
-			</unit>
 			<unit type="pressure-millimeter-of-mercury">
 				<displayName>มิลลิเมตรปรอท</displayName>
 				<unitPattern count="other">{0} มิลลิเมตรปรอท</unitPattern>
@@ -8061,6 +8800,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>นิ้วปรอท</displayName>
 				<unitPattern count="other">{0} นิ้วปรอท</unitPattern>
 			</unit>
+			<unit type="pressure-bar">
+				<displayName>บาร์</displayName>
+				<unitPattern count="other">{0} บาร์</unitPattern>
+			</unit>
 			<unit type="pressure-millibar">
 				<displayName>มิลลิบาร์</displayName>
 				<unitPattern count="other">{0} มิลลิบาร์</unitPattern>
@@ -8069,13 +8812,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>บรรยากาศ</displayName>
 				<unitPattern count="other">{0} บรรยากาศ</unitPattern>
 			</unit>
+			<unit type="pressure-pascal">
+				<displayName>ปาสกาล</displayName>
+				<unitPattern count="other">{0} ปาสกาล</unitPattern>
+			</unit>
+			<unit type="pressure-hectopascal">
+				<displayName>เฮกโตปาสกาล</displayName>
+				<unitPattern count="other">{0} เฮกโตปาสกาล</unitPattern>
+			</unit>
 			<unit type="pressure-kilopascal">
-				<displayName draft="contributed">กิโลปาสกาล</displayName>
-				<unitPattern count="other" draft="contributed">{0} กิโลปาสกาล</unitPattern>
+				<displayName>กิโลปาสกาล</displayName>
+				<unitPattern count="other">{0} กิโลปาสกาล</unitPattern>
 			</unit>
 			<unit type="pressure-megapascal">
-				<displayName draft="contributed">เมกะปาสคาล</displayName>
-				<unitPattern count="other" draft="contributed">{0} เมกะปาสคาล</unitPattern>
+				<displayName>เมกะปาสคาล</displayName>
+				<unitPattern count="other">{0} เมกะปาสคาล</unitPattern>
 			</unit>
 			<unit type="speed-kilometer-per-hour">
 				<displayName>กิโลเมตรต่อชั่วโมง</displayName>
@@ -8110,12 +8861,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} เคลวิน</unitPattern>
 			</unit>
 			<unit type="torque-pound-foot">
-				<displayName draft="contributed">ปอนด์-ฟุต</displayName>
-				<unitPattern count="other" draft="contributed">{0} ปอนด์-ฟุต</unitPattern>
+				<displayName>ปอนด์-ฟุต</displayName>
+				<unitPattern count="other">{0} ปอนด์-ฟุต</unitPattern>
 			</unit>
 			<unit type="torque-newton-meter">
-				<displayName draft="contributed">นิวตันเมตร</displayName>
-				<unitPattern count="other" draft="contributed">{0} นิวตันเมตร</unitPattern>
+				<displayName>นิวตันเมตร</displayName>
+				<unitPattern count="other">{0} นิวตันเมตร</unitPattern>
 			</unit>
 			<unit type="volume-cubic-kilometer">
 				<displayName>ลูกบาศก์กิโลเมตร</displayName>
@@ -8211,8 +8962,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} ฟลูอิดออนซ์</unitPattern>
 			</unit>
 			<unit type="volume-fluid-ounce-imperial">
-				<displayName draft="contributed">ออนซ์ของเหลวแบบอังกฤษ</displayName>
-				<unitPattern count="other" draft="contributed">{0} ออนซ์ของเหลวแบบอังกฤษ</unitPattern>
+				<displayName>ออนซ์ของเหลวแบบอังกฤษ</displayName>
+				<unitPattern count="other">{0} ออนซ์ของเหลวแบบอังกฤษ</unitPattern>
 			</unit>
 			<unit type="volume-tablespoon">
 				<displayName>ช้อนโต๊ะ</displayName>
@@ -8223,11 +8974,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} ช้อนชา</unitPattern>
 			</unit>
 			<unit type="volume-barrel">
-				<displayName draft="contributed">บาร์เรล</displayName>
-				<unitPattern count="other" draft="contributed">{0} บาร์เรล</unitPattern>
+				<displayName>บาร์เรล</displayName>
+				<unitPattern count="other">{0} บาร์เรล</unitPattern>
 			</unit>
 			<coordinateUnit>
-				<displayName draft="contributed">สี่ทิศหลัก</displayName>
+				<displayName>สี่ทิศหลัก</displayName>
 				<coordinateUnitPattern type="east">{0}ตะวันออก</coordinateUnitPattern>
 				<coordinateUnitPattern type="north">{0}เหนือ</coordinateUnitPattern>
 				<coordinateUnitPattern type="south">{0}ใต้</coordinateUnitPattern>
@@ -8308,8 +9059,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<perUnitPattern>{0}/ตร.นิ้ว</perUnitPattern>
 			</unit>
 			<unit type="area-dunam">
-				<displayName draft="contributed">ดูนัม</displayName>
-				<unitPattern count="other" draft="contributed">{0} ดูนัม</unitPattern>
+				<displayName>ดูนัม</displayName>
+				<unitPattern count="other">{0} ดูนัม</unitPattern>
 			</unit>
 			<unit type="concentr-karat">
 				<displayName>กะรัต</displayName>
@@ -8327,13 +9078,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ส่วน/ล้าน</displayName>
 				<unitPattern count="other">{0} สตล.</unitPattern>
 			</unit>
+			<unit type="concentr-percent">
+				<displayName>เปอร์เซ็นต์</displayName>
+			</unit>
+			<unit type="concentr-permille">
+				<displayName>เปอร์มิลล์</displayName>
+			</unit>
 			<unit type="concentr-permyriad">
-				<displayName draft="contributed">เปอร์มีเรียด</displayName>
-				<unitPattern count="other" draft="contributed">{0}‱</unitPattern>
+				<displayName>เปอร์มีเรียด</displayName>
 			</unit>
 			<unit type="concentr-mole">
-				<displayName draft="contributed">โมล</displayName>
-				<unitPattern count="other" draft="contributed">{0} mol</unitPattern>
+				<displayName>โมล</displayName>
+				<unitPattern count="other">{0} โมล</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>ลิตร/กม.</displayName>
@@ -8397,6 +9153,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="duration-century">
 				<displayName>ศตวรรษ</displayName>
 				<unitPattern count="other">{0} ศตวรรษ</unitPattern>
+			</unit>
+			<unit type="duration-decade">
+				<displayName>ทศวรรษ</displayName>
+				<unitPattern count="other">{0} ทศวรรษ</unitPattern>
 			</unit>
 			<unit type="duration-year">
 				<displayName>ปี</displayName>
@@ -8486,20 +9246,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} กว.-ชม.</unitPattern>
 			</unit>
 			<unit type="energy-electronvolt">
-				<displayName draft="contributed">อิเล็กตรอนโวลต์</displayName>
-				<unitPattern count="other" draft="contributed">{0} eV</unitPattern>
+				<displayName>อิเล็กตรอนโวลต์</displayName>
 			</unit>
 			<unit type="energy-british-thermal-unit">
-				<displayName draft="contributed">บีทียู</displayName>
-				<unitPattern count="other" draft="contributed">{0} BTU</unitPattern>
+				<displayName>บีทียู</displayName>
+				<unitPattern count="other">{0} BTU</unitPattern>
+			</unit>
+			<unit type="energy-therm-us">
+				<displayName>เธิร์ม</displayName>
+				<unitPattern count="other">{0} เธิร์ม</unitPattern>
 			</unit>
 			<unit type="force-pound-force">
-				<displayName draft="contributed">แรงปอนด์</displayName>
-				<unitPattern count="other" draft="contributed">{0} lbf</unitPattern>
+				<displayName>แรงปอนด์</displayName>
 			</unit>
 			<unit type="force-newton">
-				<displayName draft="contributed">นิวตัน</displayName>
-				<unitPattern count="other" draft="contributed">{0} N</unitPattern>
+				<displayName>นิวตัน</displayName>
 			</unit>
 			<unit type="frequency-gigahertz">
 				<displayName>GHz</displayName>
@@ -8595,16 +9356,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} จุด</unitPattern>
 			</unit>
 			<unit type="length-solar-radius">
-				<displayName draft="contributed">รัศมีวงกลมของดวงอาทิตย์</displayName>
-				<unitPattern count="other" draft="contributed">{0} R☉</unitPattern>
+				<displayName>รัศมีวงกลมของดวงอาทิตย์</displayName>
 			</unit>
 			<unit type="light-lux">
 				<displayName>ลักซ์</displayName>
 				<unitPattern count="other">{0} ลักซ์</unitPattern>
 			</unit>
 			<unit type="light-solar-luminosity">
-				<displayName draft="contributed">ความสว่างดวงอาทิตย์</displayName>
-				<unitPattern count="other" draft="contributed">{0} L☉</unitPattern>
+				<displayName>ความสว่างดวงอาทิตย์</displayName>
 			</unit>
 			<unit type="mass-metric-ton">
 				<displayName>ต.</displayName>
@@ -8651,16 +9410,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} กะรัต</unitPattern>
 			</unit>
 			<unit type="mass-dalton">
-				<displayName draft="contributed">ดัลตัน</displayName>
-				<unitPattern count="other" draft="contributed">{0} Da</unitPattern>
+				<displayName>ดัลตัน</displayName>
 			</unit>
 			<unit type="mass-earth-mass">
-				<displayName draft="contributed">มวลของโลก</displayName>
-				<unitPattern count="other" draft="contributed">{0} M⊕</unitPattern>
+				<displayName>มวลของโลก</displayName>
 			</unit>
 			<unit type="mass-solar-mass">
-				<displayName draft="contributed">มวลดวงอาทิตย์</displayName>
-				<unitPattern count="other" draft="contributed">{0} M☉</unitPattern>
+				<displayName>มวลดวงอาทิตย์</displayName>
 			</unit>
 			<unit type="power-gigawatt">
 				<displayName>กิกะวัตต์</displayName>
@@ -8686,10 +9442,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>แรงม้า</displayName>
 				<unitPattern count="other">{0} แรงม้า</unitPattern>
 			</unit>
-			<unit type="pressure-hectopascal">
-				<displayName>เฮกโตปาสกาล</displayName>
-				<unitPattern count="other">{0} เฮกโตปาสกาล</unitPattern>
-			</unit>
 			<unit type="pressure-millimeter-of-mercury">
 				<displayName>มม. ปรอท</displayName>
 				<unitPattern count="other">{0} มม. ปรอท</unitPattern>
@@ -8702,20 +9454,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>นิ้วปรอท</displayName>
 				<unitPattern count="other">{0} นิ้วปรอท</unitPattern>
 			</unit>
+			<unit type="pressure-bar">
+				<displayName>บาร์</displayName>
+				<unitPattern count="other">{0} บาร์</unitPattern>
+			</unit>
 			<unit type="pressure-millibar">
 				<displayName>มิลลิบาร์</displayName>
 				<unitPattern count="other">{0} มิลลิบาร์</unitPattern>
 			</unit>
 			<unit type="pressure-atmosphere">
-				<displayName draft="contributed">บรรยากาศ</displayName>
+				<displayName>บรรยากาศ</displayName>
+				<unitPattern count="other">{0} บรรยากาศ</unitPattern>
 			</unit>
-			<unit type="pressure-kilopascal">
-				<displayName draft="contributed">kPa</displayName>
-				<unitPattern count="other" draft="contributed">{0} kPa</unitPattern>
-			</unit>
-			<unit type="pressure-megapascal">
-				<displayName draft="contributed">MPa</displayName>
-				<unitPattern count="other" draft="contributed">{0} MPa</unitPattern>
+			<unit type="pressure-hectopascal">
+				<displayName>เฮกโตปาสกาล</displayName>
+				<unitPattern count="other">{0} เฮกโตปาสกาล</unitPattern>
 			</unit>
 			<unit type="speed-kilometer-per-hour">
 				<displayName>กม./ชั่วโมง</displayName>
@@ -8748,14 +9501,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="temperature-kelvin">
 				<displayName>K</displayName>
 				<unitPattern count="other">{0} K</unitPattern>
-			</unit>
-			<unit type="torque-pound-foot">
-				<displayName draft="contributed">lbf⋅ft</displayName>
-				<unitPattern count="other" draft="contributed">{0} lbf⋅ft</unitPattern>
-			</unit>
-			<unit type="torque-newton-meter">
-				<displayName draft="contributed">N⋅m</displayName>
-				<unitPattern count="other" draft="contributed">{0} N⋅m</unitPattern>
 			</unit>
 			<unit type="volume-cubic-kilometer">
 				<displayName>ลบ.กม.</displayName>
@@ -8850,10 +9595,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ฟลูอิดออนซ์</displayName>
 				<unitPattern count="other">{0} ฟลูอิดออนซ์</unitPattern>
 			</unit>
-			<unit type="volume-fluid-ounce-imperial">
-				<displayName draft="contributed">Imp. fl oz</displayName>
-				<unitPattern count="other" draft="contributed">{0} fl oz Imp.</unitPattern>
-			</unit>
 			<unit type="volume-tablespoon">
 				<displayName>ชต.</displayName>
 				<unitPattern count="other">{0} ชต.</unitPattern>
@@ -8863,11 +9604,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} ชช.</unitPattern>
 			</unit>
 			<unit type="volume-barrel">
-				<displayName draft="contributed">บาร์เรล</displayName>
-				<unitPattern count="other" draft="contributed">{0} bbl</unitPattern>
+				<displayName>บาร์เรล</displayName>
 			</unit>
 			<coordinateUnit>
-				<displayName draft="contributed">ทิศหลัก</displayName>
+				<displayName>ทิศหลัก</displayName>
 				<coordinateUnitPattern type="east">{0} ตอ</coordinateUnitPattern>
 				<coordinateUnitPattern type="north">{0} น</coordinateUnitPattern>
 				<coordinateUnitPattern type="south">{0} ต</coordinateUnitPattern>
@@ -8880,6 +9620,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</compoundUnit>
 			<unit type="acceleration-g-force">
 				<unitPattern count="other">{0}G</unitPattern>
+			</unit>
+			<unit type="angle-degree">
+				<unitPattern count="other" draft="contributed">{0}°</unitPattern>
 			</unit>
 			<unit type="angle-arc-minute">
 				<unitPattern count="other">{0}นาที</unitPattern>
@@ -9010,15 +9753,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="power-horsepower">
 				<unitPattern count="other">{0}แรงม้า</unitPattern>
 			</unit>
-			<unit type="pressure-hectopascal">
-				<displayName draft="contributed">เฮกโตปาสกาล</displayName>
-				<unitPattern count="other">{0}hPa</unitPattern>
-			</unit>
 			<unit type="pressure-inch-hg">
 				<unitPattern count="other">{0}&quot; Hg</unitPattern>
 			</unit>
 			<unit type="pressure-millibar">
 				<unitPattern count="other">{0}มิลลิบาร์</unitPattern>
+			</unit>
+			<unit type="pressure-hectopascal">
+				<displayName draft="contributed">เฮกโตปาสกาล</displayName>
+				<unitPattern count="other">{0}hPa</unitPattern>
 			</unit>
 			<unit type="speed-kilometer-per-hour">
 				<displayName>กม./ชม.</displayName>
@@ -9034,6 +9777,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>°C</displayName>
 				<unitPattern count="other">{0}°C</unitPattern>
 			</unit>
+			<unit type="temperature-fahrenheit">
+				<unitPattern count="other" draft="contributed">{0}°F</unitPattern>
+			</unit>
 			<unit type="volume-cubic-kilometer">
 				<unitPattern count="other">{0}ลบ.กม.</unitPattern>
 			</unit>
@@ -9045,7 +9791,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}ล.</unitPattern>
 			</unit>
 			<coordinateUnit>
-				<displayName draft="contributed">ทิศ</displayName>
+				<displayName>ทิศ</displayName>
 				<coordinateUnitPattern type="east">{0} ตอ</coordinateUnitPattern>
 				<coordinateUnitPattern type="north">{0} น</coordinateUnitPattern>
 				<coordinateUnitPattern type="south">{0}ต</coordinateUnitPattern>
@@ -9075,17 +9821,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<listPatternPart type="end">{0} หรือ {1}</listPatternPart>
 			<listPatternPart type="2">{0} หรือ {1}</listPatternPart>
 		</listPattern>
+		<listPattern type="or-narrow">
+			<listPatternPart type="2">{0}หรือ{1}</listPatternPart>
+		</listPattern>
+		<listPattern type="or-short">
+			<listPatternPart type="2">{0}หรือ{1}</listPatternPart>
+		</listPattern>
 		<listPattern type="standard-narrow">
-			<listPatternPart type="start" draft="contributed">{0} {1}</listPatternPart>
-			<listPatternPart type="middle" draft="contributed">{0} {1}</listPatternPart>
-			<listPatternPart type="end" draft="contributed">{0} และ{1}</listPatternPart>
-			<listPatternPart type="2" draft="contributed">{0}และ{1}</listPatternPart>
+			<listPatternPart type="2">{0}และ{1}</listPatternPart>
 		</listPattern>
 		<listPattern type="standard-short">
 			<listPatternPart type="start">{0} {1}</listPatternPart>
 			<listPatternPart type="middle">{0} {1}</listPatternPart>
 			<listPatternPart type="end">{0} และ{1}</listPatternPart>
-			<listPatternPart type="2">{0}และ{1}</listPatternPart>
 		</listPattern>
 		<listPattern type="unit">
 			<listPatternPart type="start">{0} {1}</listPatternPart>

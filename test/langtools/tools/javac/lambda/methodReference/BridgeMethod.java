@@ -26,11 +26,15 @@
  * @bug 8003280
  * @summary Add lambda tests
  *   Test bridge methods in certain SAM conversion
+ *   Tests that jdk.internal.lambda.disableEagerInitialization=true creates a
+ *   get$Lambda method for non-capturing lambdas
  * @compile BridgeMethod.java
  * @run main BridgeMethod
+ * @run main/othervm -Djdk.internal.lambda.disableEagerInitialization=true BridgeMethod
  */
 
 import java.lang.reflect.Method;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -68,19 +72,38 @@ public class BridgeMethod {
         return s;
     }
 
+    private static Set<String> allowedMethods() {
+        Set<String> s = new HashSet<>();
+        s.add("m");
+        if (Boolean.getBoolean("jdk.internal.lambda.disableEagerInitialization")) {
+            s.add("get$Lambda");
+        }
+        return s;
+    }
+
+    private static boolean matchingMethodNames(Method[] methods) {
+        Set<String> methodNames = new HashSet<>();
+        for (Method m : methods) {
+            methodNames.add(m.getName());
+        }
+        return methodNames.equals(allowedMethods());
+    }
+
     public static void main(String[] args) {
         L la = BridgeMethod::bar; //static reference
         la.m("hi");
         Class<? extends L> c1 = la.getClass();
         Method[] methods = c1.getDeclaredMethods();
+        assertTrue(matchingMethodNames(methods));
         Set<String> types = setOfStringObject();
         System.out.println("methods in SAM conversion of L:");
         for(Method m : methods) {
-            System.out.println(m.toGenericString());
-            assertTrue(m.getName().equals("m"));
-            Class[] parameterTypes = m.getParameterTypes();
-            assertTrue(parameterTypes.length == 1);
-            assertTrue(types.remove(parameterTypes[0].getName()));
+            if (m.getName().equals("m")) {
+                System.out.println(m.toGenericString());
+                Class[] parameterTypes = m.getParameterTypes();
+                assertTrue(parameterTypes.length == 1);
+                assertTrue(types.remove(parameterTypes[0].getName()));
+            }
         }
         assertTrue(types.isEmpty() || (types.size() == 1 && types.contains("java.lang.String")));
 
@@ -88,14 +111,16 @@ public class BridgeMethod {
         //km.m("hi"); //will be uncommented when CR7028808 fixed
         Class<? extends KM> c2 = km.getClass();
         methods = c2.getDeclaredMethods();
+        assertTrue(matchingMethodNames(methods));
         types = setOfStringObject();
         System.out.println("methods in SAM conversion of KM:");
         for(Method m : methods) {
-            System.out.println(m.toGenericString());
-            assertTrue(m.getName().equals("m"));
-            Class<?>[] parameterTypes = m.getParameterTypes();
-            assertTrue(parameterTypes.length == 1);
-            assertTrue(types.remove(parameterTypes[0].getName()));
+            if (m.getName().equals("m")) {
+                System.out.println(m.toGenericString());
+                Class<?>[] parameterTypes = m.getParameterTypes();
+                assertTrue(parameterTypes.length == 1);
+                assertTrue(types.remove(parameterTypes[0].getName()));
+            }
         }
         assertTrue(types.isEmpty());
 

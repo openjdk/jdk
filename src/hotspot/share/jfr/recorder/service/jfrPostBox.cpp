@@ -26,14 +26,14 @@
 #include "jfr/recorder/service/jfrPostBox.hpp"
 #include "jfr/utilities/jfrTryLock.hpp"
 #include "runtime/atomic.hpp"
-#include "runtime/orderAccess.hpp"
 #include "runtime/thread.inline.hpp"
 
 #define MSG_IS_SYNCHRONOUS ( (MSGBIT(MSG_ROTATE)) |          \
                              (MSGBIT(MSG_STOP))   |          \
                              (MSGBIT(MSG_START))  |          \
                              (MSGBIT(MSG_CLONE_IN_MEMORY)) | \
-                             (MSGBIT(MSG_VM_ERROR))          \
+                             (MSGBIT(MSG_VM_ERROR))        | \
+                             (MSGBIT(MSG_FLUSHPOINT))        \
                            )
 
 static JfrPostBox* _instance = NULL;
@@ -84,7 +84,7 @@ void JfrPostBox::post(JFR_Msg msg) {
 
 void JfrPostBox::deposit(int new_messages) {
   while (true) {
-    const int current_msgs = OrderAccess::load_acquire(&_messages);
+    const int current_msgs = Atomic::load(&_messages);
     // OR the new message
     const int exchange_value = current_msgs | new_messages;
     const int result = Atomic::cmpxchg(exchange_value, &_messages, current_msgs);
@@ -114,7 +114,7 @@ void JfrPostBox::synchronous_post(int msg) {
   deposit(msg);
   // serial_id is used to check when what we send in has been processed.
   // _msg_read_serial is read under JfrMsg_lock protection.
-  const uintptr_t serial_id = OrderAccess::load_acquire(&_msg_read_serial) + 1;
+  const uintptr_t serial_id = Atomic::load(&_msg_read_serial) + 1;
   msg_lock.notify_all();
   while (!is_message_processed(serial_id)) {
     msg_lock.wait();
@@ -129,12 +129,12 @@ void JfrPostBox::synchronous_post(int msg) {
  */
 bool JfrPostBox::is_message_processed(uintptr_t serial_id) const {
   assert(JfrMsg_lock->owned_by_self(), "_msg_handled_serial must be read under JfrMsg_lock protection");
-  return serial_id <= OrderAccess::load_acquire(&_msg_handled_serial);
+  return serial_id <= Atomic::load(&_msg_handled_serial);
 }
 
 bool JfrPostBox::is_empty() const {
   assert(JfrMsg_lock->owned_by_self(), "not holding JfrMsg_lock!");
-  return OrderAccess::load_acquire(&_messages) == 0;
+  return Atomic::load(&_messages) == 0;
 }
 
 int JfrPostBox::collect() {

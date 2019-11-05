@@ -81,10 +81,10 @@ public class FoldTest extends ReplacementsTest {
 
     @Override
     protected void registerInvocationPlugins(InvocationPlugins invocationPlugins) {
-        InjectionProvider injection = new NodeIntrinsificationProvider(getMetaAccess(), getSnippetReflection(), getProviders().getForeignCalls(), null);
+        InjectionProvider injection = new NodeIntrinsificationProvider(getMetaAccess(), getSnippetReflection(), getProviders().getForeignCalls(), null, getTarget());
         new PluginFactory_FoldTest().registerPlugins(invocationPlugins, injection);
         BytecodeProvider replacementBytecodeProvider = getSystemClassLoaderBytecodeProvider();
-        Registration r = new Registration(invocationPlugins, TestMethod.class, replacementBytecodeProvider);
+        Registration r = new Registration(invocationPlugins, TestMethod.class, getReplacements(), replacementBytecodeProvider);
         r.registerMethodSubstitution(TestMethodSubstitution.class, "test");
         super.registerInvocationPlugins(invocationPlugins);
     }

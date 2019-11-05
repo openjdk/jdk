@@ -407,6 +407,7 @@ public final class TypeLibrary {
     // Purpose of this method is to mark types that are reachable
     // from registered event types. Those types that are not reachable can
     // safely be removed
+    // Returns true if type was removed
     public boolean clearUnregistered() {
         Logger.log(LogTag.JFR_METADATA, LogLevel.TRACE, "Cleaning out obsolete metadata");
         List<Type> registered = new ArrayList<>();

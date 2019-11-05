@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -45,29 +45,13 @@ GLOBAL_SPECS_DEFAULT_CSS_FILE := $(TOPDIR)/make/data/docs-resources/resources/jd
 
 DOCS_DIR := $(TOPDIR)/doc
 
-$(eval $(call SetupProcessMarkdown, building, \
-  FILES := $(DOCS_DIR)/building.md, \
+$(eval $(call SetupProcessMarkdown, md_docs, \
+  FILES := $(call FindFiles, $(DOCS_DIR), *.md), \
   DEST := $(DOCS_DIR), \
   CSS := $(GLOBAL_SPECS_DEFAULT_CSS_FILE), \
   OPTIONS := --toc, \
 ))
-TARGETS += $(building)
-
-$(eval $(call SetupProcessMarkdown, testing, \
-  FILES := $(DOCS_DIR)/testing.md, \
-  DEST := $(DOCS_DIR), \
-  CSS := $(GLOBAL_SPECS_DEFAULT_CSS_FILE), \
-  OPTIONS := --toc, \
-))
-TARGETS += $(testing)
-
-$(eval $(call SetupProcessMarkdown, ide, \
-  FILES := $(DOCS_DIR)/ide.md, \
-  DEST := $(DOCS_DIR), \
-  CSS := $(GLOBAL_SPECS_DEFAULT_CSS_FILE), \
-  OPTIONS := --toc, \
-))
-TARGETS += $(ide)
+TARGETS += $(md_docs)
 
 ################################################################################
 

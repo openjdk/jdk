@@ -675,6 +675,10 @@ inline void Assembler::stfdx(FloatRegister s, Register a, Register b){ emit_int3
 inline void Assembler::fmr( FloatRegister d, FloatRegister b) { emit_int32( FMR_OPCODE | frt(d) | frb(b) | rc(0)); }
 inline void Assembler::fmr_(FloatRegister d, FloatRegister b) { emit_int32( FMR_OPCODE | frt(d) | frb(b) | rc(1)); }
 
+inline void Assembler::frin( FloatRegister d, FloatRegister b) { emit_int32( FRIN_OPCODE | frt(d) | frb(b) | rc(0)); }
+inline void Assembler::frip( FloatRegister d, FloatRegister b) { emit_int32( FRIP_OPCODE | frt(d) | frb(b) | rc(0)); }
+inline void Assembler::frim( FloatRegister d, FloatRegister b) { emit_int32( FRIM_OPCODE | frt(d) | frb(b) | rc(0)); }
+
 // These are special Power6 opcodes, reused for "lfdepx" and "stfdepx"
 // on Power7.  Do not use.
 //inline void Assembler::mffgpr( FloatRegister d, Register b)   { emit_int32( MFFGPR_OPCODE | frt(d) | rb(b) | rc(0)); }
@@ -796,6 +800,10 @@ inline void Assembler::xvmsubasp( VectorSRegister d, VectorSRegister a, VectorSR
 inline void Assembler::xvmsubadp( VectorSRegister d, VectorSRegister a, VectorSRegister b) { emit_int32( XVMSUBADP_OPCODE  | vsrt(d) | vsra(a) | vsrb(b)); }
 inline void Assembler::xvnmsubasp(VectorSRegister d, VectorSRegister a, VectorSRegister b) { emit_int32( XVNMSUBASP_OPCODE | vsrt(d) | vsra(a) | vsrb(b)); }
 inline void Assembler::xvnmsubadp(VectorSRegister d, VectorSRegister a, VectorSRegister b) { emit_int32( XVNMSUBADP_OPCODE | vsrt(d) | vsra(a) | vsrb(b)); }
+inline void Assembler::xvrdpi(    VectorSRegister d, VectorSRegister b)                  { emit_int32( XVRDPI_OPCODE  | vsrt(d) | vsrb(b)); }
+inline void Assembler::xvrdpim(   VectorSRegister d, VectorSRegister b)                  { emit_int32( XVRDPIM_OPCODE | vsrt(d) | vsrb(b)); }
+inline void Assembler::xvrdpip(   VectorSRegister d, VectorSRegister b)                  { emit_int32( XVRDPIP_OPCODE | vsrt(d) | vsrb(b)); }
+
 inline void Assembler::mtvrd(   VectorRegister d, Register a)               { emit_int32( MTVSRD_OPCODE  | vsrt(d->to_vsr()) | ra(a)); }
 inline void Assembler::mfvrd(   Register        a, VectorRegister d)         { emit_int32( MFVSRD_OPCODE  | vsrt(d->to_vsr()) | ra(a)); }
 inline void Assembler::mtvrwz(  VectorRegister  d, Register a)               { emit_int32( MTVSRWZ_OPCODE | vsrt(d->to_vsr()) | ra(a)); }

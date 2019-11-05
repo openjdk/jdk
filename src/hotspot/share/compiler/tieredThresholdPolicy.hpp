@@ -222,22 +222,18 @@ class TieredThresholdPolicy : public CompilationPolicy {
 
   enum EventType { CALL, LOOP, COMPILE, REMOVE_FROM_QUEUE, UPDATE_IN_QUEUE, REPROFILE, MAKE_NOT_ENTRANT };
   void print_event(EventType type, const methodHandle& mh, const methodHandle& imh, int bci, CompLevel level);
-  // Print policy-specific information if necessary
-  void print_specific(EventType type, const methodHandle& mh, const methodHandle& imh, int bci, CompLevel level);
   // Check if the method can be compiled, change level if necessary
   void compile(const methodHandle& mh, int bci, CompLevel level, JavaThread* thread);
-  // Submit a given method for compilation
-  void submit_compile(const methodHandle& mh, int bci, CompLevel level, JavaThread* thread);
   // Simple methods are as good being compiled with C1 as C2.
   // This function tells if it's such a function.
   inline static bool is_trivial(Method* method);
   // Force method to be compiled at CompLevel_simple?
-  inline static bool should_compile_at_level_simple(Method* method);
+  inline bool force_comp_at_level_simple(Method* method);
 
   // Predicate helpers are used by .*_predicate() methods as well as others.
   // They check the given counter values, multiplied by the scale against the thresholds.
-  template<CompLevel level> static inline bool call_predicate_helper(int i, int b, double scale, Method* method);
-  template<CompLevel level> static inline bool loop_predicate_helper(int i, int b, double scale, Method* method);
+  inline bool call_predicate_helper(Method* method, CompLevel cur_level, int i, int b, double scale);
+  inline bool loop_predicate_helper(Method* method, CompLevel cur_level, int i, int b, double scale);
 
   // Get a compilation level for a given method.
   static CompLevel comp_level(Method* method);

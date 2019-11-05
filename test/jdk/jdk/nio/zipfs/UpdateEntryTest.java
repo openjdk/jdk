@@ -33,6 +33,7 @@ import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.Map;
 import java.util.spi.ToolProvider;
 import java.util.zip.CRC32;
 import java.util.zip.ZipEntry;
@@ -116,14 +117,15 @@ public class UpdateEntryTest {
 
         // Create JAR file with a STORED(non-compressed) entry
         Files.writeString(Path.of(storedFileName), "foobar");
-        int rc = JAR_TOOL.run(System.out, System.err,
+        JAR_TOOL.run(System.out, System.err,
                 "cM0vf", jarFileName, storedFileName);
 
-        // Replace the STORED entry
+        // Replace the STORED entry using the default(DEFLATED) compression
+        // method.
         try (FileSystem fs = FileSystems.newFileSystem(zipFile)) {
             Files.writeString(fs.getPath(storedFileName), replacedValue);
         }
-        Entry e1 = Entry.of(storedFileName, ZipEntry.STORED, replacedValue);
+        Entry e1 = Entry.of(storedFileName, ZipEntry.DEFLATED, replacedValue);
         verify(zipFile, e1);
     }
 
@@ -159,8 +161,12 @@ public class UpdateEntryTest {
 
         String newContents = "hi";
 
+        // Set the required compression method
+        Map<String, Boolean> map = Map.of("noCompression",
+                e1.method != ZipEntry.DEFLATED);
+
         // replace contents of e1
-        try (FileSystem fs = FileSystems.newFileSystem(zipfile)) {
+        try (FileSystem fs = FileSystems.newFileSystem(zipfile, map)) {
             Path foo = fs.getPath(e1.name);
             Files.writeString(foo, newContents);
         }

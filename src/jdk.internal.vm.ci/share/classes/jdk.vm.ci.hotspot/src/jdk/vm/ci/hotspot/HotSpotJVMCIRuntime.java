@@ -31,24 +31,18 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.io.Serializable;
-
 import java.lang.invoke.CallSite;
 import java.lang.invoke.ConstantCallSite;
 import java.lang.invoke.MethodHandle;
-import java.lang.module.ModuleDescriptor.Requires;
 import java.lang.ref.WeakReference;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.ServiceLoader;
 import java.util.function.Predicate;
-
-import jdk.internal.misc.Unsafe;
 
 import jdk.vm.ci.code.Architecture;
 import jdk.vm.ci.code.CompilationRequestResult;
@@ -187,9 +181,15 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
                     // initialized.
                     JVMCI.getRuntime();
                 }
-                // Make sure all the primitive box caches are populated (required to properly materialize boxed primitives
+                // Make sure all the primitive box caches are populated (required to properly
+                // materialize boxed primitives
                 // during deoptimization).
-                Object[] boxCaches = { Boolean.valueOf(false), Byte.valueOf((byte)0), Short.valueOf((short) 0), Character.valueOf((char) 0), Integer.valueOf(0), Long.valueOf(0) };
+                Boolean.valueOf(false);
+                Byte.valueOf((byte) 0);
+                Short.valueOf((short) 0);
+                Character.valueOf((char) 0);
+                Integer.valueOf(0);
+                Long.valueOf(0);
             }
         }
         return result;
@@ -338,7 +338,7 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
 
     private static HotSpotJVMCIBackendFactory findFactory(String architecture) {
         Iterable<HotSpotJVMCIBackendFactory> factories = getHotSpotJVMCIBackendFactories();
-assert factories != null : "sanity";
+        assert factories != null : "sanity";
         for (HotSpotJVMCIBackendFactory factory : factories) {
             if (factory.getArchitecture().equalsIgnoreCase(architecture)) {
                 return factory;
@@ -391,32 +391,34 @@ assert factories != null : "sanity";
     @NativeImageReinitialize private volatile ClassValue<WeakReferenceHolder<HotSpotResolvedJavaType>> resolvedJavaType;
 
     /**
-     * To avoid calling ClassValue.remove to refresh the weak reference, which
-     * under certain circumstances can lead to an infinite loop, we use a
-     * permanent holder with a mutable field that we refresh.
+     * To avoid calling ClassValue.remove to refresh the weak reference, which under certain
+     * circumstances can lead to an infinite loop, we use a permanent holder with a mutable field
+     * that we refresh.
      */
     private static class WeakReferenceHolder<T> {
         private volatile WeakReference<T> ref;
+
         WeakReferenceHolder(T value) {
             set(value);
         }
+
         void set(T value) {
-            ref = new WeakReference<T>(value);
+            ref = new WeakReference<>(value);
         }
+
         T get() {
             return ref.get();
         }
-    };
+    }
 
     @NativeImageReinitialize private HashMap<Long, WeakReference<ResolvedJavaType>> resolvedJavaTypes;
 
     /**
-     * Stores the value set by {@link #excludeFromJVMCICompilation(Module...)} so that it can
-     * be read from the VM.
+     * Stores the value set by {@link #excludeFromJVMCICompilation(Module...)} so that it can be
+     * read from the VM.
      */
     @SuppressWarnings("unused")//
     @NativeImageReinitialize private Module[] excludeFromJVMCICompilation;
-
 
     private final Map<Class<? extends Architecture>, JVMCIBackend> backends = new HashMap<>();
 
@@ -508,7 +510,7 @@ assert factories != null : "sanity";
         if (resolvedJavaType == null) {
             synchronized (this) {
                 if (resolvedJavaType == null) {
-                    resolvedJavaType = new ClassValue<WeakReferenceHolder<HotSpotResolvedJavaType>>() {
+                    resolvedJavaType = new ClassValue<>() {
                         @Override
                         protected WeakReferenceHolder<HotSpotResolvedJavaType> computeValue(Class<?> type) {
                             return new WeakReferenceHolder<>(createClass(type));
@@ -522,8 +524,7 @@ assert factories != null : "sanity";
         HotSpotResolvedJavaType javaType = ref.get();
         if (javaType == null) {
             /*
-             * If the referent has become null, create a new value and
-             * update cached weak reference.
+             * If the referent has become null, create a new value and update cached weak reference.
              */
             javaType = createClass(javaClass);
             ref.set(javaType);
@@ -591,7 +592,7 @@ assert factories != null : "sanity";
      *            compiler.
      */
     public Predicate<ResolvedJavaType> getIntrinsificationTrustPredicate(Class<?>... compilerLeafClasses) {
-        return new Predicate<ResolvedJavaType>() {
+        return new Predicate<>() {
             @Override
             public boolean test(ResolvedJavaType type) {
                 if (type instanceof HotSpotResolvedObjectTypeImpl) {
@@ -996,6 +997,14 @@ assert factories != null : "sanity";
      */
     public boolean isCurrentThreadAttached() {
         return compilerToVm.isCurrentThreadAttached();
+    }
+
+    /**
+     * Gets the address of the HotSpot {@code JavaThread} C++ object for the current thread. This
+     * will return {@code 0} if called from an unattached JVMCI shared library thread.
+     */
+    public long getCurrentJavaThread() {
+        return compilerToVm.getCurrentJavaThread();
     }
 
     /**

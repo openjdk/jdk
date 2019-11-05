@@ -22,6 +22,7 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/z/zAddressSpaceLimit.hpp"
 #include "gc/z/zArguments.hpp"
 #include "gc/z/zCollectedHeap.hpp"
 #include "gc/z/zWorkers.hpp"
@@ -36,6 +37,15 @@ void ZArguments::initialize_alignments() {
 
 void ZArguments::initialize() {
   GCArguments::initialize();
+
+  // Check mark stack size
+  const size_t mark_stack_space_limit = ZAddressSpaceLimit::mark_stack();
+  if (ZMarkStackSpaceLimit > mark_stack_space_limit) {
+    if (!FLAG_IS_DEFAULT(ZMarkStackSpaceLimit)) {
+      vm_exit_during_initialization("ZMarkStackSpaceLimit too large for limited address space");
+    }
+    FLAG_SET_DEFAULT(ZMarkStackSpaceLimit, mark_stack_space_limit);
+  }
 
   // Enable NUMA by default
   if (FLAG_IS_DEFAULT(UseNUMA)) {

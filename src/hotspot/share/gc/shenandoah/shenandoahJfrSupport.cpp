@@ -47,7 +47,6 @@ public:
 
 void ShenandoahJFRSupport::register_jfr_type_serializers() {
   JfrSerializer::register_serializer(TYPE_SHENANDOAHHEAPREGIONSTATE,
-                                     false,
                                      true,
                                      new ShenandoahHeapRegionStateConstant());
 }

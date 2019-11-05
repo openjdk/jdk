@@ -31,8 +31,6 @@ import java.net.InetAddress;
 import java.net.SocketAddress;
 import java.net.SocketImpl;
 import java.net.SocketOption;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.Set;
 
 /**
@@ -41,12 +39,10 @@ import java.util.Set;
  */
 
 class DummySocketImpl extends SocketImpl {
-    private static final PrivilegedAction<SocketImpl> NEW = DummySocketImpl::new;
-
     private DummySocketImpl() { }
 
     static SocketImpl create() {
-        return AccessController.doPrivileged(NEW);
+        return new DummySocketImpl();
     }
 
     private static <T> T shouldNotGetHere() {

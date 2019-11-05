@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,18 +25,24 @@
 
 package jdk.jfr.consumer;
 
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.OffsetDateTime;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 
 import jdk.jfr.Timespan;
 import jdk.jfr.Timestamp;
 import jdk.jfr.ValueDescriptor;
+import jdk.jfr.internal.consumer.JdkJfrConsumer;
+import jdk.jfr.internal.consumer.ObjectFactory;
 import jdk.jfr.internal.PrivateAccess;
+import jdk.jfr.internal.Type;
+import jdk.jfr.internal.consumer.ObjectContext;
 import jdk.jfr.internal.tool.PrettyWriter;
 
 /**
@@ -51,6 +57,89 @@ import jdk.jfr.internal.tool.PrettyWriter;
  */
 public class RecordedObject {
 
+    static{
+        JdkJfrConsumer access = new JdkJfrConsumer() {
+            public List<Type> readTypes(RecordingFile file) throws IOException {
+                return file.readTypes();
+            }
+
+            public boolean isLastEventInChunk(RecordingFile file) {
+                return file.isLastEventInChunk();
+            }
+
+            @Override
+            public Object getOffsetDataTime(RecordedObject event, String name) {
+                return event.getOffsetDateTime(name);
+            }
+
+            @Override
+            public RecordedClass newRecordedClass(ObjectContext objectContext, long id, Object[] values) {
+                return new RecordedClass(objectContext, id, values);
+            }
+
+            @Override
+            public RecordedClassLoader newRecordedClassLoader(ObjectContext objectContext, long id, Object[] values) {
+                return new RecordedClassLoader(objectContext, id, values);
+            }
+
+            @Override
+            public Comparator<? super RecordedEvent> eventComparator() {
+                return new Comparator<RecordedEvent>()  {
+                    @Override
+                    public int compare(RecordedEvent e1, RecordedEvent e2) {
+                        return Long.compare(e1.endTimeTicks, e2.endTimeTicks);
+                    }
+                };
+            }
+
+            @Override
+            public RecordedStackTrace newRecordedStackTrace(ObjectContext objectContext, Object[] values) {
+                return new RecordedStackTrace(objectContext, values);
+            }
+
+            @Override
+            public RecordedThreadGroup newRecordedThreadGroup(ObjectContext objectContext, Object[] values) {
+                return new RecordedThreadGroup(objectContext, values);
+            }
+
+            @Override
+            public RecordedFrame newRecordedFrame(ObjectContext objectContext, Object[] values) {
+                return new RecordedFrame(objectContext, values);
+            }
+
+            @Override
+            public RecordedThread newRecordedThread(ObjectContext objectContext, long id, Object[] values) {
+                return new RecordedThread(objectContext, id, values);
+            }
+
+            @Override
+            public RecordedMethod newRecordedMethod(ObjectContext objectContext, Object[] values) {
+                return new RecordedMethod(objectContext, values);
+            }
+
+            @Override
+            public RecordedEvent newRecordedEvent(ObjectContext objectContext, Object[] values, long startTimeTicks, long endTimeTicks) {
+                return new RecordedEvent(objectContext, values, startTimeTicks, endTimeTicks);
+            }
+
+            @Override
+            public void setStartTicks(RecordedEvent event, long startTicks) {
+               event.startTimeTicks = startTicks;
+            }
+
+            @Override
+            public void setEndTicks(RecordedEvent event, long endTicks) {
+               event.endTimeTicks = endTicks;
+            }
+
+            @Override
+            public Object[] eventValues(RecordedEvent event) {
+                return event.objects;
+            }
+        };
+        JdkJfrConsumer.setAccess(access);
+    }
+
     private final static class UnsignedValue {
         private final Object o;
 
@@ -63,15 +152,13 @@ public class RecordedObject {
         }
     }
 
-    private final Object[] objects;
-    private final List<ValueDescriptor> descriptors;
-    private final TimeConverter timeConverter;
+    final Object[] objects;
+    final ObjectContext objectContext;
 
     // package private, not to be subclassed outside this package
-    RecordedObject(List<ValueDescriptor> descriptors, Object[] objects, TimeConverter timeConverter) {
-        this.descriptors = descriptors;
+    RecordedObject(ObjectContext objectContext, Object[] objects) {
+        this.objectContext = objectContext;
         this.objects = objects;
-        this.timeConverter = timeConverter;
     }
 
     // package private
@@ -101,7 +188,7 @@ public class RecordedObject {
      */
     public boolean hasField(String name) {
         Objects.requireNonNull(name);
-        for (ValueDescriptor v : descriptors) {
+        for (ValueDescriptor v : objectContext.fields) {
             if (v.getName().equals(name)) {
                 return true;
             }
@@ -109,7 +196,7 @@ public class RecordedObject {
         int dotIndex = name.indexOf(".");
         if (dotIndex > 0) {
             String structName = name.substring(0, dotIndex);
-            for (ValueDescriptor v : descriptors) {
+            for (ValueDescriptor v : objectContext.fields) {
                 if (!v.getFields().isEmpty() && v.getName().equals(structName)) {
                     RecordedObject child = getValue(structName);
                     if (child != null) {
@@ -169,12 +256,16 @@ public class RecordedObject {
         return t;
     }
 
+    protected Object objectAt(int index) {
+        return objects[index];
+    }
+
     private Object getValue(String name, boolean allowUnsigned) {
         Objects.requireNonNull(name);
         int index = 0;
-        for (ValueDescriptor v : descriptors) {
+        for (ValueDescriptor v : objectContext.fields) {
             if (name.equals(v.getName())) {
-                Object object = objects[index];
+                Object object = objectAt(index);
                 if (object == null) {
                     // error or missing
                     return null;
@@ -200,7 +291,7 @@ public class RecordedObject {
                         return structifyArray(v, array, 0);
                     }
                     // struct
-                    return new RecordedObject(v.getFields(), (Object[]) object, timeConverter);
+                    return new RecordedObject(objectContext.getInstance(v), (Object[]) object);
                 }
             }
             index++;
@@ -209,7 +300,7 @@ public class RecordedObject {
         int dotIndex = name.indexOf(".");
         if (dotIndex > 0) {
             String structName = name.substring(0, dotIndex);
-            for (ValueDescriptor v : descriptors) {
+            for (ValueDescriptor v : objectContext.fields) {
                 if (!v.getFields().isEmpty() && v.getName().equals(structName)) {
                     RecordedObject child = getValue(structName);
                     String subName = name.substring(dotIndex + 1);
@@ -261,7 +352,7 @@ public class RecordedObject {
     private <T> T getTypedValue(String name, String typeName) {
         Objects.requireNonNull(name);
         // Validate name and type first
-        getValueDescriptor(descriptors, name, typeName);
+        getValueDescriptor(objectContext.fields, name, typeName);
         return getValue(name);
     }
 
@@ -270,15 +361,16 @@ public class RecordedObject {
             return null;
         }
         Object[] structArray = new Object[array.length];
+        ObjectContext objContext = objectContext.getInstance(v);
         for (int i = 0; i < structArray.length; i++) {
             Object arrayElement = array[i];
             if (dimension == 0) {
                 // No general way to handle structarrays
                 // without invoking ObjectFactory for every instance (which may require id)
                 if (isStackFrameType(v.getTypeName())) {
-                    structArray[i] = new RecordedFrame(v.getFields(), (Object[]) arrayElement, timeConverter);
+                    structArray[i] = new RecordedFrame(objContext, (Object[]) arrayElement);
                 } else {
-                    structArray[i] = new RecordedObject(v.getFields(), (Object[]) arrayElement, timeConverter);
+                    structArray[i] = new RecordedObject(objContext, (Object[]) arrayElement);
                 }
             } else {
                 structArray[i] = structifyArray(v, (Object[]) arrayElement, dimension - 1);
@@ -303,7 +395,7 @@ public class RecordedObject {
      * @return the fields, not {@code null}
      */
     public List<ValueDescriptor> getFields() {
-        return descriptors;
+        return objectContext.fields;
     }
 
     /**
@@ -725,7 +817,7 @@ public class RecordedObject {
     }
 
     private Duration getDuration(long timespan, String name) throws InternalError {
-        ValueDescriptor v = getValueDescriptor(descriptors, name, null);
+        ValueDescriptor v = getValueDescriptor(objectContext.fields, name, null);
         if (timespan == Long.MIN_VALUE) {
             return Duration.ofSeconds(Long.MIN_VALUE, 0);
         }
@@ -741,7 +833,7 @@ public class RecordedObject {
             case Timespan.NANOSECONDS:
                 return Duration.ofNanos(timespan);
             case Timespan.TICKS:
-                return Duration.ofNanos(timeConverter.convertTimespan(timespan));
+                return Duration.ofNanos(objectContext.convertTimespan(timespan));
             }
             throw new IllegalArgumentException("Attempt to get " + v.getTypeName() + " field \"" + name + "\" with illegal timespan unit " + ts.value());
         }
@@ -804,7 +896,7 @@ public class RecordedObject {
     }
 
     private Instant getInstant(long timestamp, String name) {
-        ValueDescriptor v = getValueDescriptor(descriptors, name, null);
+        ValueDescriptor v = getValueDescriptor(objectContext.fields, name, null);
         Timestamp ts = v.getAnnotation(Timestamp.class);
         if (ts != null) {
             if (timestamp == Long.MIN_VALUE) {
@@ -814,7 +906,7 @@ public class RecordedObject {
             case Timestamp.MILLISECONDS_SINCE_EPOCH:
                 return Instant.ofEpochMilli(timestamp);
             case Timestamp.TICKS:
-                return Instant.ofEpochSecond(0, timeConverter.convertTimestamp(timestamp));
+                return Instant.ofEpochSecond(0, objectContext.convertTimestamp(timestamp));
             }
             throw new IllegalArgumentException("Attempt to get " + v.getTypeName() + " field \"" + name + "\" with illegal timestamp unit " + ts.value());
         }
@@ -889,12 +981,12 @@ public class RecordedObject {
     }
 
     // package private for now. Used by EventWriter
-    OffsetDateTime getOffsetDateTime(String name) {
+    private OffsetDateTime getOffsetDateTime(String name) {
         Instant instant = getInstant(name);
         if (instant.equals(Instant.MIN)) {
             return OffsetDateTime.MIN;
         }
-        return OffsetDateTime.ofInstant(getInstant(name), timeConverter.getZoneOffset());
+        return OffsetDateTime.ofInstant(getInstant(name), objectContext.getZoneOffset());
     }
 
     private static IllegalArgumentException newIllegalArgumentException(String name, String typeName) {

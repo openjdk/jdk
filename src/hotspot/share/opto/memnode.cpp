@@ -736,9 +736,7 @@ Node* MemNode::find_previous_store(PhaseTransform* phase) {
 // Also, asserts a cross-check of the type against the expected address type.
 const TypePtr* MemNode::calculate_adr_type(const Type* t, const TypePtr* cross_check) {
   if (t == Type::TOP)  return NULL; // does not touch memory any more?
-  #ifdef PRODUCT
-  cross_check = NULL;
-  #else
+  #ifdef ASSERT
   if (!VerifyAliases || VMError::is_error_reported() || Node::in_dump())  cross_check = NULL;
   #endif
   const TypePtr* tp = t->isa_ptr();
@@ -3534,37 +3532,51 @@ intptr_t InitializeNode::get_store_offset(Node* st, PhaseTransform* phase) {
 // within the initialization without creating a vicious cycle, such as:
 //     { Foo p = new Foo(); p.next = p; }
 // True for constants and parameters and small combinations thereof.
-bool InitializeNode::detect_init_independence(Node* n, int& count) {
-  if (n == NULL)      return true;   // (can this really happen?)
-  if (n->is_Proj())   n = n->in(0);
-  if (n == this)      return false;  // found a cycle
-  if (n->is_Con())    return true;
-  if (n->is_Start())  return true;   // params, etc., are OK
-  if (n->is_Root())   return true;   // even better
+bool InitializeNode::detect_init_independence(Node* value, PhaseGVN* phase) {
+  ResourceMark rm;
+  Unique_Node_List worklist;
+  worklist.push(value);
 
-  Node* ctl = n->in(0);
-  if (ctl != NULL && !ctl->is_top()) {
-    if (ctl->is_Proj())  ctl = ctl->in(0);
-    if (ctl == this)  return false;
+  uint complexity_limit = 20;
+  for (uint j = 0; j < worklist.size(); j++) {
+    if (j >= complexity_limit) {
+      return false;  // Bail out if processed too many nodes
+    }
 
-    // If we already know that the enclosing memory op is pinned right after
-    // the init, then any control flow that the store has picked up
-    // must have preceded the init, or else be equal to the init.
-    // Even after loop optimizations (which might change control edges)
-    // a store is never pinned *before* the availability of its inputs.
-    if (!MemNode::all_controls_dominate(n, this))
-      return false;                  // failed to prove a good control
-  }
+    Node* n = worklist.at(j);
+    if (n == NULL)      continue;   // (can this really happen?)
+    if (n->is_Proj())   n = n->in(0);
+    if (n == this)      return false;  // found a cycle
+    if (n->is_Con())    continue;
+    if (n->is_Start())  continue;   // params, etc., are OK
+    if (n->is_Root())   continue;   // even better
 
-  // Check data edges for possible dependencies on 'this'.
-  if ((count += 1) > 20)  return false;  // complexity limit
-  for (uint i = 1; i < n->req(); i++) {
-    Node* m = n->in(i);
-    if (m == NULL || m == n || m->is_top())  continue;
-    uint first_i = n->find_edge(m);
-    if (i != first_i)  continue;  // process duplicate edge just once
-    if (!detect_init_independence(m, count)) {
-      return false;
+    // There cannot be any dependency if 'n' is a CFG node that dominates the current allocation
+    if (n->is_CFG() && phase->is_dominator(n, allocation())) {
+      continue;
+    }
+
+    Node* ctl = n->in(0);
+    if (ctl != NULL && !ctl->is_top()) {
+      if (ctl->is_Proj())  ctl = ctl->in(0);
+      if (ctl == this)  return false;
+
+      // If we already know that the enclosing memory op is pinned right after
+      // the init, then any control flow that the store has picked up
+      // must have preceded the init, or else be equal to the init.
+      // Even after loop optimizations (which might change control edges)
+      // a store is never pinned *before* the availability of its inputs.
+      if (!MemNode::all_controls_dominate(n, this))
+        return false;                  // failed to prove a good control
+    }
+
+    // Check data edges for possible dependencies on 'this'.
+    for (uint i = 1; i < n->req(); i++) {
+      Node* m = n->in(i);
+      if (m == NULL || m == n || m->is_top())  continue;
+
+      // Only process data inputs once
+      worklist.push(m);
     }
   }
 
@@ -3575,7 +3587,7 @@ bool InitializeNode::detect_init_independence(Node* n, int& count) {
 // an initialization.  Returns zero if a check fails.
 // On success, returns the (constant) offset to which the store applies,
 // within the initialized memory.
-intptr_t InitializeNode::can_capture_store(StoreNode* st, PhaseTransform* phase, bool can_reshape) {
+intptr_t InitializeNode::can_capture_store(StoreNode* st, PhaseGVN* phase, bool can_reshape) {
   const int FAIL = 0;
   if (st->req() != MemNode::ValueIn + 1)
     return FAIL;                // an inscrutable StoreNode (card mark?)
@@ -3597,8 +3609,8 @@ intptr_t InitializeNode::can_capture_store(StoreNode* st, PhaseTransform* phase,
     return FAIL;                // mismatched access
   }
   Node* val = st->in(MemNode::ValueIn);
-  int complexity_count = 0;
-  if (!detect_init_independence(val, complexity_count))
+
+  if (!detect_init_independence(val, phase))
     return FAIL;                // stored value must be 'simple enough'
 
   // The Store can be captured only if nothing after the allocation
@@ -3796,7 +3808,7 @@ Node* InitializeNode::make_raw_address(intptr_t offset,
 //                      rawstore1 rawstore2)
 //
 Node* InitializeNode::capture_store(StoreNode* st, intptr_t start,
-                                    PhaseTransform* phase, bool can_reshape) {
+                                    PhaseGVN* phase, bool can_reshape) {
   assert(stores_are_sane(phase), "");
 
   if (start < 0)  return NULL;

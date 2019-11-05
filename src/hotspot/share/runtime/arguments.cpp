@@ -60,12 +60,6 @@
 #include "jfr/jfr.hpp"
 #endif
 
-// Note: This is a special bug reporting site for the JVM
-#ifdef VENDOR_URL_VM_BUG
-# define DEFAULT_VENDOR_URL_BUG VENDOR_URL_VM_BUG
-#else
-# define DEFAULT_VENDOR_URL_BUG "http://bugreport.java.com/bugreport/crash.jsp"
-#endif
 #define DEFAULT_JAVA_LAUNCHER  "generic"
 
 char*  Arguments::_jvm_flags_file               = NULL;
@@ -80,7 +74,7 @@ size_t Arguments::_conservative_max_heap_alignment = 0;
 Arguments::Mode Arguments::_mode                = _mixed;
 bool   Arguments::_java_compiler                = false;
 bool   Arguments::_xdebug_mode                  = false;
-const char*  Arguments::_java_vendor_url_bug    = DEFAULT_VENDOR_URL_BUG;
+const char*  Arguments::_java_vendor_url_bug    = NULL;
 const char*  Arguments::_sun_java_launcher      = DEFAULT_JAVA_LAUNCHER;
 bool   Arguments::_sun_java_launcher_is_altjvm  = false;
 
@@ -548,6 +542,7 @@ static SpecialFlag const special_jvm_flags[] = {
   { "SharedMiscDataSize",            JDK_Version::undefined(), JDK_Version::jdk(10), JDK_Version::undefined() },
   { "SharedMiscCodeSize",            JDK_Version::undefined(), JDK_Version::jdk(10), JDK_Version::undefined() },
   { "CompilationPolicyChoice",       JDK_Version::jdk(13),     JDK_Version::jdk(14), JDK_Version::jdk(15) },
+  { "TraceNMethodInstalls",          JDK_Version::jdk(13),     JDK_Version::jdk(14), JDK_Version::jdk(15) },
   { "FailOverToOldVerifier",         JDK_Version::undefined(), JDK_Version::jdk(14), JDK_Version::jdk(15) },
   { "BindGCTaskThreadsToCPUs",       JDK_Version::undefined(), JDK_Version::jdk(14), JDK_Version::jdk(16) },
   { "UseGCTaskAffinity",             JDK_Version::undefined(), JDK_Version::jdk(14), JDK_Version::jdk(16) },
@@ -593,7 +588,6 @@ static AliasedLoggingFlag const aliased_logging_flags[] = {
   { "TraceSafepointCleanupTime", LogLevel::Info,  true,  LOG_TAGS(safepoint, cleanup) },
   { "TraceJVMTIObjectTagging",   LogLevel::Debug, true,  LOG_TAGS(jvmti, objecttagging) },
   { "TraceRedefineClasses",      LogLevel::Info,  false, LOG_TAGS(redefine, class) },
-  { "TraceNMethodInstalls",      LogLevel::Info,  true,  LOG_TAGS(nmethod, install) },
   { NULL,                        LogLevel::Off,   false, LOG_TAGS(_NO_TAG) }
 };
 
@@ -1422,12 +1416,16 @@ bool Arguments::add_property(const char* prop, PropertyWriteable writeable, Prop
         os::free(old_java_command);
       }
     } else if (strcmp(key, "java.vendor.url.bug") == 0) {
+      // If this property is set on the command line then its value will be
+      // displayed in VM error logs as the URL at which to submit such logs.
+      // Normally the URL displayed in error logs is different from the value
+      // of this system property, so a different property should have been
+      // used here, but we leave this as-is in case someone depends upon it.
       const char* old_java_vendor_url_bug = _java_vendor_url_bug;
       // save it in _java_vendor_url_bug, so JVM fatal error handler can access
       // its value without going through the property list or making a Java call.
       _java_vendor_url_bug = os::strdup_check_oom(value, mtArguments);
-      if (old_java_vendor_url_bug != DEFAULT_VENDOR_URL_BUG) {
-        assert(old_java_vendor_url_bug != NULL, "_java_vendor_url_bug is NULL");
+      if (old_java_vendor_url_bug != NULL) {
         os::free((void *)old_java_vendor_url_bug);
       }
     }
@@ -2185,7 +2183,8 @@ Arguments::ArgsRange Arguments::parse_memory_size(const char* s,
 
 // Parse JavaVMInitArgs structure
 
-jint Arguments::parse_vm_init_args(const JavaVMInitArgs *java_tool_options_args,
+jint Arguments::parse_vm_init_args(const JavaVMInitArgs *vm_options_args,
+                                   const JavaVMInitArgs *java_tool_options_args,
                                    const JavaVMInitArgs *java_options_args,
                                    const JavaVMInitArgs *cmd_line_args) {
   bool patch_mod_javabase = false;
@@ -2203,9 +2202,15 @@ jint Arguments::parse_vm_init_args(const JavaVMInitArgs *java_tool_options_args,
   // Setup flags for mixed which is the default
   set_mode_flags(_mixed);
 
+  // Parse args structure generated from java.base vm options resource
+  jint result = parse_each_vm_init_arg(vm_options_args, &patch_mod_javabase, JVMFlag::JIMAGE_RESOURCE);
+  if (result != JNI_OK) {
+    return result;
+  }
+
   // Parse args structure generated from JAVA_TOOL_OPTIONS environment
   // variable (if present).
-  jint result = parse_each_vm_init_arg(java_tool_options_args, &patch_mod_javabase, JVMFlag::ENVIRON_VAR);
+  result = parse_each_vm_init_arg(java_tool_options_args, &patch_mod_javabase, JVMFlag::ENVIRON_VAR);
   if (result != JNI_OK) {
     return result;
   }
@@ -2711,7 +2716,6 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
         needs_module_property_warning = true;
         continue;
       }
-
       if (!add_property(tail)) {
         return JNI_ENOMEM;
       }
@@ -2959,6 +2963,22 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
           "ManagementServer is not supported in this VM.\n");
         return JNI_ERR;
 #endif // INCLUDE_MANAGEMENT
+#if INCLUDE_JVMCI
+    } else if (match_option(option, "-XX:+EnableJVMCIProduct")) {
+      JVMFlag *jvmciFlag = JVMFlag::find_flag("EnableJVMCIProduct");
+      // Allow this flag if it has been unlocked.
+      if (jvmciFlag != NULL && jvmciFlag->is_unlocked()) {
+        if (!JVMCIGlobals::enable_jvmci_product_mode(origin)) {
+          jio_fprintf(defaultStream::error_stream(),
+            "Unable to enable JVMCI in product mode");
+          return JNI_ERR;
+        }
+      }
+      // The flag was locked so process normally to report that error
+      else if (!process_argument("EnableJVMCIProduct", args->ignoreUnrecognized, origin)) {
+        return JNI_EINVAL;
+      }
+#endif // INCLUDE_JVMCI
 #if INCLUDE_JFR
     } else if (match_jfr_option(&option)) {
       return JNI_EINVAL;
@@ -3127,7 +3147,13 @@ jint Arguments::finalize_vm_init_args(bool patch_mod_javabase) {
   NOT_PRODUCT(UNSUPPORTED_OPTION(TraceProfileInterpreter));
 #endif
 
-#ifndef TIERED
+
+#ifdef TIERED
+  // Parse the CompilationMode flag
+  if (!CompilationModeFlag::initialize()) {
+    return JNI_ERR;
+  }
+#else
   // Tiered compilation is undefined.
   UNSUPPORTED_OPTION(TieredCompilation);
 #endif
@@ -3816,16 +3842,19 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
   const char* hotspotrc = ".hotspotrc";
   bool settings_file_specified = false;
   bool needs_hotspotrc_warning = false;
+  ScopedVMInitArgs initial_vm_options_args("");
   ScopedVMInitArgs initial_java_tool_options_args("env_var='JAVA_TOOL_OPTIONS'");
   ScopedVMInitArgs initial_java_options_args("env_var='_JAVA_OPTIONS'");
 
   // Pointers to current working set of containers
   JavaVMInitArgs* cur_cmd_args;
+  JavaVMInitArgs* cur_vm_options_args;
   JavaVMInitArgs* cur_java_options_args;
   JavaVMInitArgs* cur_java_tool_options_args;
 
   // Containers for modified/expanded options
   ScopedVMInitArgs mod_cmd_args("cmd_line_args");
+  ScopedVMInitArgs mod_vm_options_args("vm_options_args");
   ScopedVMInitArgs mod_java_tool_options_args("env_var='JAVA_TOOL_OPTIONS'");
   ScopedVMInitArgs mod_java_options_args("env_var='_JAVA_OPTIONS'");
 
@@ -3839,6 +3868,16 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
   code = parse_java_options_environment_variable(&initial_java_options_args);
   if (code != JNI_OK) {
     return code;
+  }
+
+  // Parse the options in the /java.base/jdk/internal/vm/options resource, if present
+  char *vmoptions = ClassLoader::lookup_vm_options();
+  if (vmoptions != NULL) {
+    code = parse_options_buffer("vm options resource", vmoptions, strlen(vmoptions), &initial_vm_options_args);
+    FREE_C_HEAP_ARRAY(char, vmoptions);
+    if (code != JNI_OK) {
+      return code;
+    }
   }
 
   code = expand_vm_options_as_needed(initial_java_tool_options_args.get(),
@@ -3858,6 +3897,13 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
   code = expand_vm_options_as_needed(initial_java_options_args.get(),
                                      &mod_java_options_args,
                                      &cur_java_options_args);
+  if (code != JNI_OK) {
+    return code;
+  }
+
+  code = expand_vm_options_as_needed(initial_vm_options_args.get(),
+                                     &mod_vm_options_args,
+                                     &cur_vm_options_args);
   if (code != JNI_OK) {
     return code;
   }
@@ -3899,7 +3945,8 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
   }
 
   // Parse JavaVMInitArgs structure passed in, as well as JAVA_TOOL_OPTIONS and _JAVA_OPTIONS
-  jint result = parse_vm_init_args(cur_java_tool_options_args,
+  jint result = parse_vm_init_args(cur_vm_options_args,
+                                   cur_java_tool_options_args,
                                    cur_java_options_args,
                                    cur_cmd_args);
 
@@ -3966,6 +4013,11 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
   if (DumpSharedSpaces || RequireSharedSpaces) {
     jio_fprintf(defaultStream::error_stream(),
       "Shared spaces are not supported in this VM\n");
+    return JNI_ERR;
+  }
+  if (DumpLoadedClassList != NULL) {
+    jio_fprintf(defaultStream::error_stream(),
+      "DumpLoadedClassList is not supported in this VM\n");
     return JNI_ERR;
   }
   if ((UseSharedSpaces && FLAG_IS_CMDLINE(UseSharedSpaces)) ||

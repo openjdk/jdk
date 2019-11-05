@@ -22,10 +22,13 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/z/zAddressSpaceLimit.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zVirtualMemory.inline.hpp"
 #include "logging/log.hpp"
 #include "services/memTracker.hpp"
+#include "utilities/debug.hpp"
+#include "utilities/align.hpp"
 
 ZVirtualMemoryManager::ZVirtualMemoryManager(size_t max_capacity) :
     _manager(),
@@ -38,33 +41,105 @@ ZVirtualMemoryManager::ZVirtualMemoryManager(size_t max_capacity) :
     return;
   }
 
-  log_info(gc, init)("Address Space: " SIZE_FORMAT "T", ZAddressOffsetMax / K / G);
-
   // Reserve address space
-  if (reserve(0, ZAddressOffsetMax) < max_capacity) {
-    log_error(gc)("Failed to reserve address space for Java heap");
+  if (!reserve(max_capacity)) {
+    log_error(gc)("Failed to reserve enough address space for Java heap");
     return;
   }
+
+  // Initialize OS specific parts
+  initialize_os();
 
   // Successfully initialized
   _initialized = true;
 }
 
-size_t ZVirtualMemoryManager::reserve(uintptr_t start, size_t size) {
-  if (size < ZGranuleSize) {
+size_t ZVirtualMemoryManager::reserve_discontiguous(uintptr_t start, size_t size, size_t min_range) {
+  if (size < min_range) {
     // Too small
     return 0;
   }
 
-  if (!reserve_platform(start, size)) {
-    const size_t half = size / 2;
-    return reserve(start, half) + reserve(start + half, half);
+  assert(is_aligned(size, ZGranuleSize), "Misaligned");
+
+  if (reserve_contiguous_platform(start, size)) {
+    // Make the address range free
+    _manager.free(start, size);
+    return size;
   }
 
-  // Make the address range free
-  _manager.free(start, size);
+  const size_t half = size / 2;
+  if (half < min_range) {
+    // Too small
+    return 0;
+  }
 
-  return size;
+  // Divide and conquer
+  const size_t first_part = align_down(half, ZGranuleSize);
+  const size_t second_part = size - first_part;
+  return reserve_discontiguous(start, first_part, min_range) +
+         reserve_discontiguous(start + first_part, second_part, min_range);
+}
+
+size_t ZVirtualMemoryManager::reserve_discontiguous(size_t size) {
+  // Don't try to reserve address ranges smaller than 1% of the requested size.
+  // This avoids an explosion of reservation attempts in case large parts of the
+  // address space is already occupied.
+  const size_t min_range = align_up(size / 100, ZGranuleSize);
+  size_t start = 0;
+  size_t reserved = 0;
+
+  // Reserve size somewhere between [0, ZAddressOffsetMax)
+  while (reserved < size && start < ZAddressOffsetMax) {
+    const size_t remaining = MIN2(size - reserved, ZAddressOffsetMax - start);
+    reserved += reserve_discontiguous(start, remaining, min_range);
+    start += remaining;
+  }
+
+  return reserved;
+}
+
+bool ZVirtualMemoryManager::reserve_contiguous(size_t size) {
+  // Allow at most 8192 attempts spread evenly across [0, ZAddressOffsetMax)
+  const size_t end = ZAddressOffsetMax - size;
+  const size_t increment = align_up(end / 8192, ZGranuleSize);
+
+  for (size_t start = 0; start <= end; start += increment) {
+    if (reserve_contiguous_platform(start, size)) {
+      // Make the address range free
+      _manager.free(start, size);
+
+      // Success
+      return true;
+    }
+  }
+
+  // Failed
+  return false;
+}
+
+bool ZVirtualMemoryManager::reserve(size_t max_capacity) {
+  const size_t limit = MIN2(ZAddressOffsetMax, ZAddressSpaceLimit::heap_view());
+  const size_t size = MIN2(max_capacity * ZVirtualToPhysicalRatio, limit);
+
+  size_t reserved = size;
+  bool contiguous = true;
+
+  // Prefer a contiguous address space
+  if (!reserve_contiguous(size)) {
+    // Fall back to a discontiguous address space
+    reserved = reserve_discontiguous(size);
+    contiguous = false;
+  }
+
+  log_info(gc, init)("Address Space Type: %s/%s/%s",
+                     (contiguous ? "Contiguous" : "Discontiguous"),
+                     (limit == ZAddressOffsetMax ? "Unrestricted" : "Restricted"),
+                     (reserved == size ? "Complete" : "Degraded"));
+  log_info(gc, init)("Address Space Size: " SIZE_FORMAT "M x " SIZE_FORMAT " = " SIZE_FORMAT "M",
+                     reserved / M, ZHeapViews, (reserved * ZHeapViews) / M);
+
+  return reserved >= max_capacity;
 }
 
 void ZVirtualMemoryManager::nmt_reserve(uintptr_t start, size_t size) {

@@ -24,7 +24,7 @@
 /*
  *
  * @test
- * @bug 8215181 8230284
+ * @bug 8215181 8230284 8231273
  * @summary Tests the "u-cf" extension
  * @modules jdk.localedata
  * @run testng/othervm -Djava.locale.providers=CLDR CurrencyFormatTests
@@ -62,10 +62,10 @@ public class CurrencyFormatTests {
             {Locale.forLanguageTag("en-AT-u-cf-bogus"), -100, "-\u20ac\u00a0100,00"},
 
             // Rupee
-            {Locale.forLanguageTag("en-IN"), -100, "-\u20b9\u00a0100.00"},
-            {Locale.forLanguageTag("en-IN-u-cf-standard"), -100, "-\u20b9\u00a0100.00"},
+            {Locale.forLanguageTag("en-IN"), -100, "-\u20b9100.00"},
+            {Locale.forLanguageTag("en-IN-u-cf-standard"), -100, "-\u20b9100.00"},
             {Locale.forLanguageTag("en-IN-u-cf-account"), -100, "(\u20b9100.00)"},
-            {Locale.forLanguageTag("en-IN-u-cf-bogus"), -100, "-\u20b9\u00a0100.00"},
+            {Locale.forLanguageTag("en-IN-u-cf-bogus"), -100, "-\u20b9100.00"},
 
             // Swiss franc
             {Locale.forLanguageTag("en-CH"), -100, "CHF-100.00"},
@@ -81,15 +81,15 @@ public class CurrencyFormatTests {
 
             // Numbering systems
             // explicit
-            {Locale.forLanguageTag("zh-CN-u-nu-arab"), -100, "\u061c-\uffe5\u0661\u0660\u0660\u066b\u0660\u0660"},
-            {Locale.forLanguageTag("zh-CN-u-nu-arab-cf-standard"), -100, "\u061c-\uffe5\u0661\u0660\u0660\u066b\u0660\u0660"},
-            {Locale.forLanguageTag("zh-CN-u-nu-arab-cf-account"), -100, "\u061c-\uffe5\u0661\u0660\u0660\u066b\u0660\u0660"},
-            {Locale.forLanguageTag("zh-CN-u-nu-arab-cf-bogus"), -100, "\u061c-\uffe5\u0661\u0660\u0660\u066b\u0660\u0660"},
+            {Locale.forLanguageTag("zh-CN-u-nu-arab"), -100, "\u061c-\u00a5\u0661\u0660\u0660\u066b\u0660\u0660"},
+            {Locale.forLanguageTag("zh-CN-u-nu-arab-cf-standard"), -100, "\u061c-\u00a5\u0661\u0660\u0660\u066b\u0660\u0660"},
+            {Locale.forLanguageTag("zh-CN-u-nu-arab-cf-account"), -100, "\u061c-\u00a5\u0661\u0660\u0660\u066b\u0660\u0660"},
+            {Locale.forLanguageTag("zh-CN-u-nu-arab-cf-bogus"), -100, "\u061c-\u00a5\u0661\u0660\u0660\u066b\u0660\u0660"},
             // implicit
-            {Locale.forLanguageTag("zh-CN"), -100, "-\uffe5100.00"},
-            {Locale.forLanguageTag("zh-CN-u-cf-standard"), -100, "-\uffe5100.00"},
-            {Locale.forLanguageTag("zh-CN-u-cf-account"), -100, "(\uffe5100.00)"},
-            {Locale.forLanguageTag("zh-CN-u-cf-bogus"), -100, "-\uffe5100.00"},
+            {Locale.forLanguageTag("zh-CN"), -100, "-\u00a5100.00"},
+            {Locale.forLanguageTag("zh-CN-u-cf-standard"), -100, "-\u00a5100.00"},
+            {Locale.forLanguageTag("zh-CN-u-cf-account"), -100, "(\u00a5100.00)"},
+            {Locale.forLanguageTag("zh-CN-u-cf-bogus"), -100, "-\u00a5100.00"},
             {Locale.forLanguageTag("ar-SA"), -100, "\u061c-\u0661\u0660\u0660\u066b\u0660\u0660\u00a0\u0631.\u0633.\u200f"},
             {Locale.forLanguageTag("ar-SA-u-cf-standard"), -100, "\u061c-\u0661\u0660\u0660\u066b\u0660\u0660\u00a0\u0631.\u0633.\u200f"},
             {Locale.forLanguageTag("ar-SA-u-cf-account"), -100, "\u061c-\u0661\u0660\u0660\u066b\u0660\u0660\u00a0\u0631.\u0633.\u200f"},

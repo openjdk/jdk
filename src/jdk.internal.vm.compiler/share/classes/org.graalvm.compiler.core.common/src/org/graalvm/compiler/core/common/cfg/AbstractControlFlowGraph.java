@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ public interface AbstractControlFlowGraph<T extends AbstractBlockBase<T>> {
     T getStartBlock();
 
     /**
-     * True if block {@code a} is dominated by block {@code b}.
+     * True if block {@code a} is dominated by block {@code b} or {@code a} is equal to {@code b}.
      */
     static boolean isDominatedBy(AbstractBlockBase<?> a, AbstractBlockBase<?> b) {
         int domNumberA = a.getDominatorNumber();
