@@ -576,7 +576,8 @@ class NativeMovConstReg: public NativeInstruction {
 // sethi and the add.  The nop is required to be in the delay slot of the call instruction
 // which overwrites the sethi during patching.
 class NativeMovConstRegPatching;
-inline NativeMovConstRegPatching* nativeMovConstRegPatching_at(address address);class NativeMovConstRegPatching: public NativeInstruction {
+inline NativeMovConstRegPatching* nativeMovConstRegPatching_at(address address);
+class NativeMovConstRegPatching: public NativeInstruction {
  public:
   enum Sparc_specific_constants {
     sethi_offset           = 0,
@@ -664,10 +665,13 @@ class NativeMovRegMem: public NativeInstruction {
     return (is_op(i0, Assembler::ldst_op));
   }
 
-  address instruction_address() const           { return addr_at(0); }
-  address next_instruction_address() const      {
-    return addr_at(is_immediate() ? 4 : (7 * BytesPerInstWord));
+  address instruction_address() const { return addr_at(0); }
+
+  int num_bytes_to_end_of_patch() const {
+    return is_immediate()? BytesPerInstWord :
+                           NativeMovConstReg::instruction_size;
   }
+
   intptr_t   offset() const                             {
      return is_immediate()? inv_simm(long_at(0), offset_width) :
                             nativeMovConstReg_at(addr_at(0))->data();
@@ -683,8 +687,6 @@ class NativeMovRegMem: public NativeInstruction {
   void  add_offset_in_bytes(intptr_t radd_offset)     {
       set_offset (offset() + radd_offset);
   }
-
-  void  copy_instruction_to(address new_instruction_address);
 
   void verify();
   void print ();

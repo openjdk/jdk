@@ -287,8 +287,6 @@ void NativeMovConstReg::print() {
 
 //-------------------------------------------------------------------
 
-address NativeMovRegMem::instruction_address() const      { return addr_at(instruction_offset); }
-
 int NativeMovRegMem::offset() const  {
   address pc = instruction_address();
   unsigned insn = *(unsigned*)pc;

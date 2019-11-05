@@ -361,7 +361,6 @@ class NativeMovRegMem: public NativeInstruction {
     instruction_VEX_prefix_3bytes       = Assembler::VEX_3bytes,
     instruction_EVEX_prefix_4bytes      = Assembler::EVEX_4bytes,
 
-    instruction_size                    = 4,
     instruction_offset                  = 0,
     data_offset                         = 2,
     next_instruction_offset             = 4
@@ -370,15 +369,26 @@ class NativeMovRegMem: public NativeInstruction {
   // helper
   int instruction_start() const;
 
-  address instruction_address() const;
+  address instruction_address() const {
+    return addr_at(instruction_start());
+  }
 
-  address next_instruction_address() const;
+  int num_bytes_to_end_of_patch() const {
+    return patch_offset() + sizeof(jint);
+  }
 
-  int   offset() const;
+  int offset() const {
+    return int_at(patch_offset());
+  }
 
-  void  set_offset(int x);
+  void set_offset(int x) {
+    set_int_at(patch_offset(), x);
+  }
 
-  void  add_offset_in_bytes(int add_offset)     { set_offset ( ( offset() + add_offset ) ); }
+  void add_offset_in_bytes(int add_offset) {
+    int patch_off = patch_offset();
+    set_int_at(patch_off, int_at(patch_off) + add_offset);
+  }
 
   void verify();
   void print ();
@@ -387,6 +397,7 @@ class NativeMovRegMem: public NativeInstruction {
   static void test() {}
 
  private:
+  int patch_offset() const;
   inline friend NativeMovRegMem* nativeMovRegMem_at (address address);
 };
 

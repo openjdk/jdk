@@ -355,60 +355,7 @@ int NativeMovRegMem::instruction_start() const {
   return off;
 }
 
-address NativeMovRegMem::instruction_address() const {
-  return addr_at(instruction_start());
-}
-
-address NativeMovRegMem::next_instruction_address() const {
-  address ret = instruction_address() + instruction_size;
-  u_char instr_0 =  *(u_char*) instruction_address();
-  switch (instr_0) {
-  case instruction_operandsize_prefix:
-
-    fatal("should have skipped instruction_operandsize_prefix");
-    break;
-
-  case instruction_extended_prefix:
-    fatal("should have skipped instruction_extended_prefix");
-    break;
-
-  case instruction_code_mem2reg_movslq: // 0x63
-  case instruction_code_mem2reg_movzxb: // 0xB6
-  case instruction_code_mem2reg_movsxb: // 0xBE
-  case instruction_code_mem2reg_movzxw: // 0xB7
-  case instruction_code_mem2reg_movsxw: // 0xBF
-  case instruction_code_reg2mem:        // 0x89 (q/l)
-  case instruction_code_mem2reg:        // 0x8B (q/l)
-  case instruction_code_reg2memb:       // 0x88
-  case instruction_code_mem2regb:       // 0x8a
-
-  case instruction_code_lea:            // 0x8d
-
-  case instruction_code_float_s:        // 0xd9 fld_s a
-  case instruction_code_float_d:        // 0xdd fld_d a
-
-  case instruction_code_xmm_load:       // 0x10
-  case instruction_code_xmm_store:      // 0x11
-  case instruction_code_xmm_lpd:        // 0x12
-    {
-      // If there is an SIB then instruction is longer than expected
-      u_char mod_rm = *(u_char*)(instruction_address() + 1);
-      if ((mod_rm & 7) == 0x4) {
-        ret++;
-      }
-    }
-  case instruction_code_xor:
-    fatal("should have skipped xor lead in");
-    break;
-
-  default:
-    fatal("not a NativeMovRegMem");
-  }
-  return ret;
-
-}
-
-int NativeMovRegMem::offset() const{
+int NativeMovRegMem::patch_offset() const {
   int off = data_offset + instruction_start();
   u_char mod_rm = *(u_char*)(instruction_address() + 1);
   // nnnn(r12|rsp) isn't coded as simple mod/rm since that is
@@ -417,19 +364,7 @@ int NativeMovRegMem::offset() const{
   if ((mod_rm & 7) == 0x4) {
     off++;
   }
-  return int_at(off);
-}
-
-void NativeMovRegMem::set_offset(int x) {
-  int off = data_offset + instruction_start();
-  u_char mod_rm = *(u_char*)(instruction_address() + 1);
-  // nnnn(r12|rsp) isn't coded as simple mod/rm since that is
-  // the encoding to use an SIB byte. Which will have the nnnn
-  // field off by one byte
-  if ((mod_rm & 7) == 0x4) {
-    off++;
-  }
-  set_int_at(off, x);
+  return off;
 }
 
 void NativeMovRegMem::verify() {

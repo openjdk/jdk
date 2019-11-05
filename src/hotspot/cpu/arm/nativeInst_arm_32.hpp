@@ -349,6 +349,11 @@ NativeCall* rawNativeCall_before(address return_address);
 // (field access patching is handled differently in that case)
 class NativeMovRegMem: public NativeInstruction {
  public:
+  enum arm_specific_constants {
+    instruction_size = 8
+  };
+
+  int num_bytes_to_end_of_patch() const { return instruction_size; }
 
   int offset() const;
   void set_offset(int x);
