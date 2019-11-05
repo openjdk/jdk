@@ -67,7 +67,7 @@ JVMFlag::Error CICompilerCountConstraintFunc(intx value, bool verbose) {
   int min_number_of_compiler_threads = 0;
 #if !defined(COMPILER1) && !defined(COMPILER2) && !INCLUDE_JVMCI
   // case 1
-#else
+#elif defined(TIERED)
   if (TieredCompilation) {
     if (TieredStopAtLevel < CompLevel_full_optimization || CompilationModeFlag::quick_only()) {
       min_number_of_compiler_threads = 1; // case 3
@@ -81,7 +81,9 @@ JVMFlag::Error CICompilerCountConstraintFunc(intx value, bool verbose) {
     } else {
       min_number_of_compiler_threads = 2;   // case 4 (tiered)
     }
-  } else {
+  } else
+#else
+  {
     min_number_of_compiler_threads = 1; // case 2
   }
 #endif

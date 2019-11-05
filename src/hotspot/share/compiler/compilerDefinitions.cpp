@@ -211,7 +211,6 @@ void select_compilation_mode_ergonomically() {
   }
 }
 
-#endif // TIERED
 
 void CompilerConfig::set_tiered_flags() {
   // Increase the code cache size - tiered compiles a lot more.
@@ -291,6 +290,8 @@ void CompilerConfig::set_tiered_flags() {
 #endif // INCLUDE_AOT
   }
 }
+
+#endif // TIERED
 
 #if INCLUDE_JVMCI
 void set_jvmci_specific_flags() {
@@ -474,9 +475,12 @@ void CompilerConfig::ergo_initialize() {
   set_jvmci_specific_flags();
 #endif
 
+#ifdef TIERED
   if (TieredCompilation) {
     set_tiered_flags();
-  } else {
+  } else
+#endif
+  {
     // Scale CompileThreshold
     // CompileThresholdScaling == 0.0 is equivalent to -Xint and leaves CompileThreshold unchanged.
     if (!FLAG_IS_DEFAULT(CompileThresholdScaling) && CompileThresholdScaling > 0.0) {
