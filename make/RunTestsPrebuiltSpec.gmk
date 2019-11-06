@@ -175,6 +175,7 @@ UNZIP := unzip
 EXPR := expr
 FILE := file
 HG := hg
+ULIMIT := ulimit
 
 # On Solaris gnu versions of some tools are required.
 ifeq ($(OPENJDK_BUILD_OS), solaris)
