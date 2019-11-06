@@ -44,6 +44,7 @@ import jdk.test.lib.Platform;
 import jdk.test.lib.process.OutputAnalyzer;
 
 import sun.hotspot.code.Compiler;
+import sun.hotspot.WhiteBox;
 
 public class CommandLineFlagCombo {
 
@@ -125,6 +126,12 @@ public class CommandLineFlagCombo {
         if (Compiler.isGraalEnabled() && testEntry.equals("-XX:+UseConcMarkSweepGC"))
         {
             System.out.println("Graal does not support CMS");
+            return true;
+        }
+
+        if (!WhiteBox.getWhiteBox().isJFRIncludedInVmBuild() && testEntry.equals("-XX:+FlightRecorder"))
+        {
+            System.out.println("JFR does not exist");
             return true;
         }
 
