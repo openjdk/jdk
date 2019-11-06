@@ -23,6 +23,7 @@
 
 #include "precompiled.hpp"
 #include "gc/shared/barrierSet.hpp"
+#include "gc/shenandoah/shenandoahConcurrentRoots.hpp"
 #include "gc/shenandoah/shenandoahForwarding.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahHeuristics.hpp"
@@ -534,66 +535,69 @@ Node* ShenandoahBarrierSetC2::store_at_resolved(C2Access& access, C2AccessValue&
 }
 
 Node* ShenandoahBarrierSetC2::load_at_resolved(C2Access& access, const Type* val_type) const {
+  // 1: non-reference load, no additional barrier is needed
+  if (!access.is_oop()) {
+    return BarrierSetC2::load_at_resolved(access, val_type);;
+  }
+
+  Node* load = BarrierSetC2::load_at_resolved(access, val_type);
   DecoratorSet decorators = access.decorators();
-
-  Node* adr = access.addr().node();
-  Node* obj = access.base();
-
-  bool mismatched = (decorators & C2_MISMATCHED) != 0;
-  bool unknown = (decorators & ON_UNKNOWN_OOP_REF) != 0;
-  bool on_heap = (decorators & IN_HEAP) != 0;
-  bool on_weak_ref = (decorators & (ON_WEAK_OOP_REF | ON_PHANTOM_OOP_REF)) != 0;
-  bool is_unordered = (decorators & MO_UNORDERED) != 0;
-  bool need_cpu_mem_bar = !is_unordered || mismatched || !on_heap;
-  bool is_traversal_mode = ShenandoahHeap::heap()->is_traversal_mode();
-  bool keep_alive = (decorators & AS_NO_KEEPALIVE) == 0 || is_traversal_mode;
   bool in_native = (decorators & IN_NATIVE) != 0;
 
-  Node* top = Compile::current()->top();
-
-  Node* offset = adr->is_AddP() ? adr->in(AddPNode::Offset) : top;
-  Node* load = BarrierSetC2::load_at_resolved(access, val_type);
-
-  if (access.is_oop()) {
-    if (ShenandoahLoadRefBarrier) {
-      load = new ShenandoahLoadReferenceBarrierNode(NULL, load, in_native && !is_traversal_mode);
-      if (access.is_parse_access()) {
-        load = static_cast<C2ParseAccess &>(access).kit()->gvn().transform(load);
-      } else {
-        load = static_cast<C2OptAccess &>(access).gvn().transform(load);
-      }
+  // 2: apply LRB if ShenandoahLoadRefBarrier is set
+  if (ShenandoahLoadRefBarrier) {
+    // Native barrier is for concurrent root processing
+    bool use_native_barrier = in_native && ShenandoahConcurrentRoots::can_do_concurrent_roots();
+    load = new ShenandoahLoadReferenceBarrierNode(NULL, load, use_native_barrier);
+    if (access.is_parse_access()) {
+      load = static_cast<C2ParseAccess &>(access).kit()->gvn().transform(load);
+    } else {
+      load = static_cast<C2OptAccess &>(access).gvn().transform(load);
     }
   }
 
-  // If we are reading the value of the referent field of a Reference
-  // object (either by using Unsafe directly or through reflection)
-  // then, if SATB is enabled, we need to record the referent in an
-  // SATB log buffer using the pre-barrier mechanism.
-  // Also we need to add memory barrier to prevent commoning reads
-  // from this field across safepoint since GC can change its value.
-  bool need_read_barrier = ShenandoahKeepAliveBarrier &&
-    (on_weak_ref || (unknown && offset != top && obj != top));
+  // 3: apply keep-alive barrier if ShenandoahKeepAliveBarrier is set
+  if (ShenandoahKeepAliveBarrier) {
+    Node* top = Compile::current()->top();
+    Node* adr = access.addr().node();
+    Node* offset = adr->is_AddP() ? adr->in(AddPNode::Offset) : top;
+    Node* obj = access.base();
 
-  if (!access.is_oop() || !need_read_barrier) {
-    return load;
-  }
+    bool unknown = (decorators & ON_UNKNOWN_OOP_REF) != 0;
+    bool on_weak_ref = (decorators & (ON_WEAK_OOP_REF | ON_PHANTOM_OOP_REF)) != 0;
+    bool is_traversal_mode = ShenandoahHeap::heap()->is_traversal_mode();
+    bool keep_alive = (decorators & AS_NO_KEEPALIVE) == 0 || is_traversal_mode;
 
-  assert(access.is_parse_access(), "entry not supported at optimization time");
-  C2ParseAccess& parse_access = static_cast<C2ParseAccess&>(access);
-  GraphKit* kit = parse_access.kit();
+    // If we are reading the value of the referent field of a Reference
+    // object (either by using Unsafe directly or through reflection)
+    // then, if SATB is enabled, we need to record the referent in an
+    // SATB log buffer using the pre-barrier mechanism.
+    // Also we need to add memory barrier to prevent commoning reads
+    // from this field across safepoint since GC can change its value.
+    if (!on_weak_ref || (unknown && (offset == top || obj == top)) || !keep_alive) {
+      return load;
+    }
 
-  if (on_weak_ref && keep_alive) {
-    // Use the pre-barrier to record the value in the referent field
-    satb_write_barrier_pre(kit, false /* do_load */,
-                           NULL /* obj */, NULL /* adr */, max_juint /* alias_idx */, NULL /* val */, NULL /* val_type */,
-                           load /* pre_val */, T_OBJECT);
-    // Add memory barrier to prevent commoning reads from this field
-    // across safepoint since GC can change its value.
-    kit->insert_mem_bar(Op_MemBarCPUOrder);
-  } else if (unknown) {
-    // We do not require a mem bar inside pre_barrier if need_mem_bar
-    // is set: the barriers would be emitted by us.
-    insert_pre_barrier(kit, obj, offset, load, !need_cpu_mem_bar);
+    assert(access.is_parse_access(), "entry not supported at optimization time");
+    C2ParseAccess& parse_access = static_cast<C2ParseAccess&>(access);
+    GraphKit* kit = parse_access.kit();
+    bool mismatched = (decorators & C2_MISMATCHED) != 0;
+    bool is_unordered = (decorators & MO_UNORDERED) != 0;
+    bool need_cpu_mem_bar = !is_unordered || mismatched || in_native;
+
+    if (on_weak_ref) {
+      // Use the pre-barrier to record the value in the referent field
+      satb_write_barrier_pre(kit, false /* do_load */,
+                             NULL /* obj */, NULL /* adr */, max_juint /* alias_idx */, NULL /* val */, NULL /* val_type */,
+                             load /* pre_val */, T_OBJECT);
+      // Add memory barrier to prevent commoning reads from this field
+      // across safepoint since GC can change its value.
+      kit->insert_mem_bar(Op_MemBarCPUOrder);
+    } else if (unknown) {
+      // We do not require a mem bar inside pre_barrier if need_mem_bar
+      // is set: the barriers would be emitted by us.
+      insert_pre_barrier(kit, obj, offset, load, !need_cpu_mem_bar);
+    }
   }
 
   return load;

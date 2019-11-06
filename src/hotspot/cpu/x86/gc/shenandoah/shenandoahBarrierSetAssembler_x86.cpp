@@ -23,6 +23,7 @@
 
 #include "precompiled.hpp"
 #include "gc/shenandoah/shenandoahBarrierSetAssembler.hpp"
+#include "gc/shenandoah/shenandoahConcurrentRoots.hpp"
 #include "gc/shenandoah/shenandoahForwarding.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
@@ -445,21 +446,33 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier(MacroAssembler* masm,
   }
 }
 
+//
+// Arguments:
+//
+// Inputs:
+//   src:        oop location, might be clobbered
+//   tmp1:       scratch register, might not be valid.
+//
+// Output:
+//   dst:        oop loaded from src location
+//
+// Kill:
+//   tmp1 (if it is valid)
+//
 void ShenandoahBarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
              Register dst, Address src, Register tmp1, Register tmp_thread) {
-  bool on_oop = is_reference_type(type);
-  bool on_weak = (decorators & ON_WEAK_OOP_REF) != 0;
-  bool on_phantom = (decorators & ON_PHANTOM_OOP_REF) != 0;
-  bool not_in_heap = (decorators & IN_NATIVE) != 0;
-  bool on_reference = on_weak || on_phantom;
-  bool is_traversal_mode = ShenandoahHeap::heap()->is_traversal_mode();
-  bool keep_alive = ((decorators & AS_NO_KEEPALIVE) == 0) || is_traversal_mode;
+  // 1: non-reference load, no additional barrier is needed
+  if (!is_reference_type(type)) {
+    BarrierSetAssembler::load_at(masm, decorators, type, dst, src, tmp1, tmp_thread);
+    return;
+  }
 
-  Register result_dst = dst;
-  bool use_tmp1_for_dst = false;
+  // 2: load a reference from src location and apply LRB if ShenandoahLoadRefBarrier is set
+  if (ShenandoahLoadRefBarrier) {
+    Register result_dst = dst;
+    bool use_tmp1_for_dst = false;
 
-  if (on_oop) {
-    // We want to preserve src
+    // Preserve src location for LRB
     if (dst == src.base() || dst == src.index()) {
       // Use tmp1 for dst if possible, as it is not used in BarrierAssembler::load_at()
       if (tmp1->is_valid() && tmp1 != src.base() && tmp1 != src.index()) {
@@ -469,19 +482,20 @@ void ShenandoahBarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet d
         dst = rdi;
         __ push(dst);
       }
+      assert_different_registers(dst, src.base(), src.index());
     }
-    assert_different_registers(dst, src.base(), src.index());
-  }
 
-  BarrierSetAssembler::load_at(masm, decorators, type, dst, src, tmp1, tmp_thread);
+    BarrierSetAssembler::load_at(masm, decorators, type, dst, src, tmp1, tmp_thread);
 
-  if (on_oop) {
-    if (not_in_heap && !is_traversal_mode) {
+    // Native barrier is for concurrent root processing
+    bool in_native = (decorators & IN_NATIVE) != 0;
+    if (in_native && ShenandoahConcurrentRoots::can_do_concurrent_roots()) {
       load_reference_barrier_native(masm, dst, src);
     } else {
       load_reference_barrier(masm, dst, src);
     }
 
+    // Move loaded oop to final destination
     if (dst != result_dst) {
       __ movptr(result_dst, dst);
 
@@ -491,8 +505,19 @@ void ShenandoahBarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet d
 
       dst = result_dst;
     }
+  } else {
+    BarrierSetAssembler::load_at(masm, decorators, type, dst, src, tmp1, tmp_thread);
+  }
 
-    if (ShenandoahKeepAliveBarrier && on_reference && keep_alive) {
+  // 3: apply keep-alive barrier if ShenandoahKeepAliveBarrier is set
+  if (ShenandoahKeepAliveBarrier) {
+    bool on_weak = (decorators & ON_WEAK_OOP_REF) != 0;
+    bool on_phantom = (decorators & ON_PHANTOM_OOP_REF) != 0;
+    bool on_reference = on_weak || on_phantom;
+    bool is_traversal_mode = ShenandoahHeap::heap()->is_traversal_mode();
+    bool keep_alive = ((decorators & AS_NO_KEEPALIVE) == 0) || is_traversal_mode;
+
+    if (on_reference && keep_alive) {
       const Register thread = NOT_LP64(tmp_thread) LP64_ONLY(r15_thread);
       assert_different_registers(dst, tmp1, tmp_thread);
       NOT_LP64(__ get_thread(thread));
