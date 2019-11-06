@@ -61,7 +61,9 @@ void VM_Version::initialize() {
 
   intx cache_line_size = Dcache_lineSize(0);
 
+#ifdef COMPILER2
   MaxVectorSize = 8;
+#endif
 
   if (has_PrefetchRaw()) {
     if (FLAG_IS_DEFAULT(AllocatePrefetchStyle)) {  // not preset
@@ -217,6 +219,7 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseSHA, false);
   }
 
+#ifdef COMPILER2
   if (FLAG_IS_DEFAULT(UseMultiplyToLenIntrinsic)) {
     FLAG_SET_DEFAULT(UseMultiplyToLenIntrinsic, true);
   }
@@ -226,6 +229,7 @@ void VM_Version::initialize() {
   if (FLAG_IS_DEFAULT(UseMontgomerySquareIntrinsic)) {
     FLAG_SET_DEFAULT(UseMontgomerySquareIntrinsic, true);
   }
+#endif
   if (FLAG_IS_DEFAULT(UsePopCountInstruction)) {
     FLAG_SET_DEFAULT(UsePopCountInstruction, true);
   }

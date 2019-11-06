@@ -850,6 +850,7 @@ class MacroAssembler: public Assembler {
   //   Kills:    tmp, Z_R0, Z_R1.
   //   Early clobber: result.
   //   Boolean precise controls accuracy of result value.
+#ifdef COMPILER2
   unsigned int string_compress(Register result, Register src, Register dst, Register cnt,
                                Register tmp,    bool precise);
 
@@ -885,6 +886,7 @@ class MacroAssembler: public Assembler {
 
   unsigned int string_indexof_char(Register result, Register haystack, Register haycnt,
                                    Register needle, jchar needleChar, Register odd_reg, Register even_reg, bool is_byte);
+#endif
 
   // Emit an oop const to the constant pool and set a relocation info
   // with address current_pc. Return the TOC offset of the constant.
@@ -917,13 +919,6 @@ class MacroAssembler: public Assembler {
   static int load_const_from_toc_call_size() { return load_const_from_toc_size() + call_byregister_size(); }
   // Offset is +/- 2**32 -> use long.
   static long get_load_const_from_toc_offset(address a);
-
-
-  void generate_type_profiling(const Register Rdata,
-                               const Register Rreceiver_klass,
-                               const Register Rwanted_receiver_klass,
-                               const Register Rmatching_row,
-                               bool is_virtual_call);
 
   // Bit operations for single register operands.
   inline void lshift(Register r, int places, bool doubl = true);   // <<
