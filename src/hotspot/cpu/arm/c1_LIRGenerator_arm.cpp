@@ -1310,9 +1310,16 @@ void LIRGenerator::volatile_field_store(LIR_Opr value, LIR_Address* address,
                                         CodeEmitInfo* info) {
   if (value->is_double_cpu()) {
     assert(address->index()->is_illegal(), "should have a constant displacement");
-    LIR_Opr tmp = new_pointer_register();
-    add_large_constant(address->base(), address->disp(), tmp);
-    __ volatile_store_mem_reg(value, new LIR_Address(tmp, (intx)0, address->type()), info);
+    LIR_Address* store_addr = NULL;
+    if (address->disp() != 0) {
+      LIR_Opr tmp = new_pointer_register();
+      add_large_constant(address->base(), address->disp(), tmp);
+      store_addr = new LIR_Address(tmp, (intx)0, address->type());
+    } else {
+      // address->disp() can be 0, if the address is referenced using the unsafe intrinsic
+      store_addr = address;
+    }
+    __ volatile_store_mem_reg(value, store_addr, info);
     return;
   }
   __ store(value, address, info, lir_patch_none);
@@ -1322,9 +1329,16 @@ void LIRGenerator::volatile_field_load(LIR_Address* address, LIR_Opr result,
                                        CodeEmitInfo* info) {
   if (result->is_double_cpu()) {
     assert(address->index()->is_illegal(), "should have a constant displacement");
-    LIR_Opr tmp = new_pointer_register();
-    add_large_constant(address->base(), address->disp(), tmp);
-    __ volatile_load_mem_reg(new LIR_Address(tmp, (intx)0, address->type()), result, info);
+    LIR_Address* load_addr = NULL;
+    if (address->disp() != 0) {
+      LIR_Opr tmp = new_pointer_register();
+      add_large_constant(address->base(), address->disp(), tmp);
+      load_addr = new LIR_Address(tmp, (intx)0, address->type());
+    } else {
+      // address->disp() can be 0, if the address is referenced using the unsafe intrinsic
+      load_addr = address;
+    }
+    __ volatile_load_mem_reg(load_addr, result, info);
     return;
   }
   __ load(address, result, info, lir_patch_none);
