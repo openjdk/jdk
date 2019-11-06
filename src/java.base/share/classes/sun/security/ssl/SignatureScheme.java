@@ -30,6 +30,7 @@ import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.ECParameterSpec;
 import java.security.spec.MGF1ParameterSpec;
 import java.security.spec.PSSParameterSpec;
+import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -37,6 +38,7 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import sun.security.ssl.NamedGroup.NamedGroupSpec;
 import sun.security.ssl.SupportedGroupsExtension.SupportedGroups;
@@ -425,7 +427,7 @@ enum SignatureScheme {
         return null;
     }
 
-    static SignatureScheme getPreferableAlgorithm(
+    static Map.Entry<SignatureScheme, Signature> getSignerOfPreferableAlgorithm(
             AlgorithmConstraints constraints,
             List<SignatureScheme> schemes,
             X509Possession x509Possession,
@@ -452,7 +454,10 @@ enum SignatureScheme {
                             x509Possession.getECParameterSpec();
                     if (params != null &&
                             ss.namedGroup == NamedGroup.valueOf(params)) {
-                        return ss;
+                        Signature signer = ss.getSigner(signingKey);
+                        if (signer != null) {
+                            return new SimpleImmutableEntry<>(ss, signer);
+                        }
                     }
 
                     if (SSLLogger.isOn &&
@@ -477,7 +482,10 @@ enum SignatureScheme {
                         NamedGroup keyGroup = NamedGroup.valueOf(params);
                         if (keyGroup != null &&
                                 SupportedGroups.isSupported(keyGroup)) {
-                            return ss;
+                            Signature signer = ss.getSigner(signingKey);
+                            if (signer != null) {
+                                return new SimpleImmutableEntry<>(ss, signer);
+                            }
                         }
                     }
 
@@ -488,7 +496,10 @@ enum SignatureScheme {
                             "), unsupported EC parameter spec: " + params);
                     }
                 } else {
-                    return ss;
+                    Signature signer = ss.getSigner(signingKey);
+                    if (signer != null) {
+                        return new SimpleImmutableEntry<>(ss, signer);
+                    }
                 }
             }
         }
@@ -509,24 +520,49 @@ enum SignatureScheme {
         return new String[0];
     }
 
-    Signature getSignature(Key key) throws NoSuchAlgorithmException,
+    // This method is used to get the signature instance of this signature
+    // scheme for the specific public key.  Unlike getSigner(), the exception
+    // is bubbled up.  If the public key does not support this signature
+    // scheme, it normally means the TLS handshaking cannot continue and
+    // the connection should be terminated.
+    Signature getVerifier(PublicKey publicKey) throws NoSuchAlgorithmException,
             InvalidAlgorithmParameterException, InvalidKeyException {
         if (!isAvailable) {
             return null;
         }
 
-        Signature signer = Signature.getInstance(algorithm);
-        if (key instanceof PublicKey) {
-            SignatureUtil.initVerifyWithParam(signer, (PublicKey)key,
-                    (signAlgParams != null ?
-                            signAlgParams.parameterSpec : null));
-        } else {
-            SignatureUtil.initSignWithParam(signer, (PrivateKey)key,
-                    (signAlgParams != null ?
-                            signAlgParams.parameterSpec : null),
-                    null);
+        Signature verifier = Signature.getInstance(algorithm);
+        SignatureUtil.initVerifyWithParam(verifier, publicKey,
+                (signAlgParams != null ? signAlgParams.parameterSpec : null));
+
+        return verifier;
+    }
+
+    // This method is also used to choose preferable signature scheme for the
+    // specific private key.  If the private key does not support the signature
+    // scheme, {@code null} is returned, and the caller may fail back to next
+    // available signature scheme.
+    private Signature getSigner(PrivateKey privateKey) {
+        if (!isAvailable) {
+            return null;
         }
 
-        return signer;
+        try {
+            Signature signer = Signature.getInstance(algorithm);
+            SignatureUtil.initSignWithParam(signer, privateKey,
+                (signAlgParams != null ? signAlgParams.parameterSpec : null),
+                null);
+            return signer;
+        } catch (NoSuchAlgorithmException | InvalidKeyException |
+                InvalidAlgorithmParameterException nsae) {
+            if (SSLLogger.isOn &&
+                    SSLLogger.isOn("ssl,handshake,verbose")) {
+                SSLLogger.finest(
+                    "Ignore unsupported signature algorithm (" +
+                    this.name + ")", nsae);
+            }
+        }
+
+        return null;
     }
 }
