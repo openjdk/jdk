@@ -332,11 +332,7 @@ void JfrEmergencyDump::on_vm_error(const char* repository_path) {
 
 /*
 * We are just about to exit the VM, so we will be very aggressive
-* at this point in order to increase overall success of dumping jfr data:
-*
-* 1. if the thread state is not "_thread_in_vm", we will quick transition
-*    it to "_thread_in_vm".
-* 2. if the thread is the owner of some critical lock(s), unlock them.
+* at this point in order to increase overall success of dumping jfr data.
 *
 * If we end up deadlocking in the attempt of dumping out jfr data,
 * we rely on the WatcherThread task "is_error_reported()",
@@ -344,19 +340,16 @@ void JfrEmergencyDump::on_vm_error(const char* repository_path) {
 * This "safety net" somewhat explains the aggressiveness in this attempt.
 *
 */
-static bool prepare_for_emergency_dump() {
-  if (JfrStream_lock->owned_by_self()) {
-    // crashed during jfr rotation, disallow recursion
-    return false;
-  }
-  Thread* const thread = Thread::current();
+static bool prepare_for_emergency_dump(Thread* thread) {
+  assert(thread != NULL, "invariant");
+
   if (thread->is_Watcher_thread()) {
     // need WatcherThread as a safeguard against potential deadlocks
     return false;
   }
-
-  if (thread->is_Java_thread()) {
-    ((JavaThread*)thread)->set_thread_state(_thread_in_vm);
+  if (JfrStream_lock->owned_by_self()) {
+    // crashed during jfr rotation, disallow recursion
+    return false;
   }
 
 #ifdef ASSERT
@@ -428,10 +421,43 @@ static bool guard_reentrancy() {
   return Atomic::cmpxchg(1, &jfr_shutdown_lock, 0) == 0;
 }
 
+class JavaThreadInVM : public StackObj {
+ private:
+  JavaThread* const _jt;
+  JavaThreadState _original_state;
+ public:
+
+  JavaThreadInVM(Thread* t) : _jt(t->is_Java_thread() ? (JavaThread*)t : NULL),
+                              _original_state(_thread_max_state) {
+    if ((_jt != NULL) && (_jt->thread_state() != _thread_in_vm)) {
+      _original_state = _jt->thread_state();
+      _jt->set_thread_state(_thread_in_vm);
+    }
+  }
+
+  ~JavaThreadInVM() {
+    if (_original_state != _thread_max_state) {
+      _jt->set_thread_state(_original_state);
+    }
+  }
+
+};
+
 void JfrEmergencyDump::on_vm_shutdown(bool exception_handler) {
-  if (!(guard_reentrancy() && prepare_for_emergency_dump())) {
+  if (!guard_reentrancy()) {
     return;
   }
+
+  Thread* thread = Thread::current_or_null_safe();
+  if (thread == NULL) {
+    return;
+  }
+  // Ensure a JavaThread is _thread_in_vm when we make this call
+  JavaThreadInVM jtivm(thread);
+  if (!prepare_for_emergency_dump(thread)) {
+    return;
+  }
+
   EventDumpReason event;
   if (event.should_commit()) {
     event.set_reason(exception_handler ? "Crash" : "Out of Memory");
