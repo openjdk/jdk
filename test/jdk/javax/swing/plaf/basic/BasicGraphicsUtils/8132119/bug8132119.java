@@ -26,6 +26,7 @@ import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics2D;
 import java.awt.GraphicsEnvironment;
+import java.awt.RenderingHints;
 import java.awt.font.FontRenderContext;
 import java.awt.font.NumericShaper;
 import java.awt.font.TextAttribute;
@@ -145,6 +146,8 @@ public class bug8132119 {
 
         g2.setColor(DRAW_COLOR);
         g2.setFont(comp.getFont());
+        g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,
+                            RenderingHints.VALUE_TEXT_ANTIALIAS_OFF);
 
         FontMetrics fontMetrices = comp.getFontMetrics(comp.getFont());
         float width = BasicGraphicsUtils.getStringWidth(comp, fontMetrices, str);
@@ -159,7 +162,7 @@ public class bug8132119 {
         g2.dispose();
 
         float xx = BasicGraphicsUtils.getStringWidth(comp, fontMetrices, "A") +
-                BasicGraphicsUtils.getStringWidth(comp, fontMetrices, "O")/2;
+                BasicGraphicsUtils.getStringWidth(comp, fontMetrices, "O")/2 -  10;
 
         checkImageContainsSymbol(buffImage, (int) xx, underlined ? 3 : 2);
     }
