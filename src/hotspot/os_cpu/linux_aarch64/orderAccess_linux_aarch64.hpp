@@ -55,14 +55,14 @@ template<size_t byte_size>
 struct OrderAccess::PlatformOrderedLoad<byte_size, X_ACQUIRE>
 {
   template <typename T>
-  T operator()(const volatile T* p) const { T data; __atomic_load(p, &data, __ATOMIC_ACQUIRE); return data; }
+  T operator()(const volatile T* p) const { T data; __atomic_load(const_cast<T*>(p), &data, __ATOMIC_ACQUIRE); return data; }
 };
 
 template<size_t byte_size>
 struct OrderAccess::PlatformOrderedStore<byte_size, RELEASE_X>
 {
   template <typename T>
-  void operator()(T v, volatile T* p) const { __atomic_store(p, &v, __ATOMIC_RELEASE); }
+  void operator()(T v, volatile T* p) const { __atomic_store(const_cast<T*>(p), &v, __ATOMIC_RELEASE); }
 };
 
 template<size_t byte_size>
