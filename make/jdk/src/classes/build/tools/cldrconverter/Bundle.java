@@ -391,26 +391,23 @@ class Bundle {
     }
 
     private void handleMultipleInheritance(Map<String, Object> map, Map<String, Object> parents, String key) {
-        String formatKey = key + "/format";
-        Object format = map.get(formatKey);
+        String formatMapKey = key + "/format";
+        Object format = map.get(formatMapKey);
         if (format != null) {
-            map.remove(formatKey);
+            map.remove(formatMapKey);
             map.put(key, format);
-            if (fillInElements(parents, formatKey, format)) {
+            if (fillInElements(parents, formatMapKey, format)) {
                 map.remove(key);
             }
         }
-        String standaloneKey = key + "/stand-alone";
-        Object standalone = map.get(standaloneKey);
+        String standaloneMapKey = key + "/stand-alone";
+        Object standalone = map.get(standaloneMapKey);
         if (standalone != null) {
-            map.remove(standaloneKey);
-            String realKey = key;
-            if (format != null) {
-                realKey = "standalone." + key;
-            }
-            map.put(realKey, standalone);
-            if (fillInElements(parents, standaloneKey, standalone)) {
-                map.remove(realKey);
+            map.remove(standaloneMapKey);
+            String standaloneResourceKey = "standalone." + key;
+            map.put(standaloneResourceKey, standalone);
+            if (fillInElements(parents, standaloneMapKey, standalone)) {
+                map.remove(standaloneResourceKey);
             }
         }
     }
