@@ -206,4 +206,16 @@ vmTestbase/vm/mlvm/indy/func/jvmti/mergeCP_indy2manySame_b/TestDescription.java 
 
 vmTestbase/nsk/jdwp/ThreadReference/ForceEarlyReturn/forceEarlyReturn001/forceEarlyReturn001.java 7199837 generic-all
 
+vmTestbase/nsk/jvmti/scenarios/allocation/AP01/ap01t001/TestDescription.java 8233549 generic-all
+vmTestbase/nsk/jvmti/scenarios/allocation/AP04/ap04t001/TestDescription.java 8233549 generic-all
+vmTestbase/nsk/jvmti/scenarios/allocation/AP04/ap04t002/TestDescription.java 8233549 generic-all
+vmTestbase/nsk/jvmti/scenarios/allocation/AP04/ap04t003/TestDescription.java 8233549 generic-all
+vmTestbase/nsk/jvmti/scenarios/allocation/AP10/ap10t001/TestDescription.java 8233549 generic-all
+vmTestbase/nsk/jvmti/scenarios/allocation/AP12/ap12t001/TestDescription.java 8233549 generic-all
+vmTestbase/nsk/jvmti/scenarios/capability/CM02/cm02t001/TestDescription.java 8233549 generic-all
+vmTestbase/nsk/jvmti/scenarios/events/EM02/em02t002/TestDescription.java 8233549 generic-all
+vmTestbase/nsk/jvmti/scenarios/events/EM02/em02t003/TestDescription.java 8233549 generic-all
+vmTestbase/nsk/jvmti/scenarios/events/EM02/em02t005/TestDescription.java 8233549 generic-all
+vmTestbase/nsk/jvmti/scenarios/events/EM02/em02t006/TestDescription.java 8233549 generic-all
+vmTestbase/nsk/jvmti/scenarios/events/EM07/em07t002/TestDescription.java 8233549 generic-all
 #############################################################################
