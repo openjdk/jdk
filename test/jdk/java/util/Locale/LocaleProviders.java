@@ -29,6 +29,7 @@ import sun.util.locale.provider.LocaleProviderAdapter;
 public class LocaleProviders {
 
     private static final boolean IS_WINDOWS = System.getProperty("os.name").startsWith("Windows");
+    private static final boolean IS_MAC = System.getProperty("os.name").startsWith("Mac");
 
     public static void main(String[] args) {
         String methodName = args[0];
@@ -80,6 +81,10 @@ public class LocaleProviders {
 
             case "bug8228465Test":
                 bug8228465Test();
+                break;
+
+            case "bug8232871Test":
+                bug8232871Test();
                 break;
 
             default:
@@ -284,6 +289,42 @@ public class LocaleProviders {
             } else {
                 System.out.println("bug8228465Test succeeded.");
             }
+        }
+    }
+
+    static void bug8232871Test() {
+        LocaleProviderAdapter lda = LocaleProviderAdapter.getAdapter(CalendarNameProvider.class, Locale.US);
+        LocaleProviderAdapter.Type type = lda.getAdapterType();
+        var lang = Locale.getDefault().getLanguage();
+        var cal = Calendar.getInstance();
+        var calType = cal.getCalendarType();
+        var expected = "\u4ee4\u548c1\u5e745\u67081\u65e5 \u6c34\u66dc\u65e5 \u5348\u524d0:00:00 \u30a2\u30e1\u30ea\u30ab\u592a\u5e73\u6d0b\u590f\u6642\u9593";
+
+        if (type == LocaleProviderAdapter.Type.HOST &&
+            IS_MAC &&
+            lang.equals("ja") &&
+            calType.equals("japanese")) {
+            cal.set(1, 4, 1, 0, 0, 0);
+            cal.setTimeZone(TimeZone.getTimeZone("America/Los_Angeles"));
+            DateFormat df = DateFormat.getDateTimeInstance(DateFormat.FULL, DateFormat.FULL,
+                            Locale.JAPAN);
+            df.setCalendar(cal);
+            var result = df.format(cal.getTime());
+            if (result.equals(expected)) {
+                System.out.println("bug8232871Test succeeded.");
+            } else {
+                throw new RuntimeException(
+                            "Japanese calendar names mismatch. result: " +
+                            result +
+                            ", expected: " +
+                            expected);
+            }
+        } else {
+            System.out.println("Test ignored. Either :-\n" +
+                "OS is not macOS, or\n" +
+                "provider is not HOST: " + type + ", or\n" +
+                "Language is not Japanese: " + lang + ", or\n" +
+                "native calendar is not JapaneseCalendar: " + calType);
         }
     }
 }
