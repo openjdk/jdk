@@ -42,7 +42,10 @@
 template <typename T>
 inline traceid set_used_and_get(const T* type) {
   assert(type != NULL, "invariant");
-  SET_USED_THIS_EPOCH(type);
+  if (SHOULD_TAG(type)) {
+    SET_USED_THIS_EPOCH(type);
+    JfrTraceIdEpoch::set_changed_tag_state();
+  }
   assert(USED_THIS_EPOCH(type), "invariant");
   return TRACE_ID(type);
 }
@@ -58,19 +61,10 @@ inline traceid JfrTraceId::get(const Thread* t) {
 }
 
 inline traceid JfrTraceId::use(const Klass* klass) {
-  assert(klass != NULL, "invariant");
-  if (SHOULD_TAG(klass)) {
-    SET_USED_THIS_EPOCH(klass);
-    assert(USED_THIS_EPOCH(klass), "invariant");
-    JfrTraceIdEpoch::set_changed_tag_state();
-    return get(klass);
-  }
-  assert(USED_THIS_EPOCH(klass), "invariant");
-  return TRACE_ID(klass);
+  return set_used_and_get(klass);
 }
 
 inline traceid JfrTraceId::use(const Method* method) {
-  assert(method != NULL, "invariant");
   return use(method->method_holder(), method);
 }
 
@@ -91,12 +85,10 @@ inline traceid JfrTraceId::use(const Klass* klass, const Method* method) {
 }
 
 inline traceid JfrTraceId::use(const ModuleEntry* module) {
-  assert(module != NULL, "invariant");
   return set_used_and_get(module);
 }
 
 inline traceid JfrTraceId::use(const PackageEntry* package) {
-  assert(package != NULL, "invariant");
   return set_used_and_get(package);
 }
 
