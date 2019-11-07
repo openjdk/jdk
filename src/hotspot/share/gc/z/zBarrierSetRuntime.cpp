@@ -42,8 +42,8 @@ JRT_LEAF(void, ZBarrierSetRuntime::load_barrier_on_oop_array(oop* p, size_t leng
   ZBarrier::load_barrier_on_oop_array(p, length);
 JRT_END
 
-JRT_LEAF(void, ZBarrierSetRuntime::clone_oop(oop src, oop dst, size_t length))
-  ZBarrier::clone_oop(src, dst, length);
+JRT_LEAF(void, ZBarrierSetRuntime::clone(oop src, oop dst, size_t size))
+  HeapAccess<>::clone(src, dst, size);
 JRT_END
 
 address ZBarrierSetRuntime::load_barrier_on_oop_field_preloaded_addr(DecoratorSet decorators) {
@@ -72,6 +72,6 @@ address ZBarrierSetRuntime::load_barrier_on_oop_array_addr() {
   return reinterpret_cast<address>(load_barrier_on_oop_array);
 }
 
-address ZBarrierSetRuntime::clone_oop_addr() {
-  return reinterpret_cast<address>(clone_oop);
+address ZBarrierSetRuntime::clone_addr() {
+  return reinterpret_cast<address>(clone);
 }
