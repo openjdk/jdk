@@ -42,11 +42,12 @@
  */
 
 import jdk.test.lib.net.SimpleSSLContext;
+import org.testng.ITestContext;
 import org.testng.annotations.AfterTest;
 import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import javax.net.ssl.SSLContext;
 import java.io.BufferedReader;
@@ -146,6 +147,17 @@ public abstract class AbstractThrowingPushPromises implements HttpServerAdapters
         }
     }
 
+    protected boolean stopAfterFirstFailure() {
+        return Boolean.getBoolean("jdk.internal.httpclient.debug");
+    }
+
+    @BeforeMethod
+    void beforeMethod(ITestContext context) {
+        if (stopAfterFirstFailure() && context.getFailedTests().size() > 0) {
+            throw new RuntimeException("some tests failed");
+        }
+    }
+
     @AfterClass
     static final void printFailedTests() {
         out.println("\n=========================");
@@ -208,27 +220,38 @@ public abstract class AbstractThrowingPushPromises implements HttpServerAdapters
 
     private Object[][] variants(List<Thrower> throwers) {
         String[] uris = uris();
-        Object[][] result = new Object[uris.length * 2 * throwers.size()][];
+        // reduce traces by always using the same client if
+        // stopAfterFirstFailure is requested.
+        List<Boolean> sameClients = stopAfterFirstFailure()
+                ? List.of(true)
+                : List.of(false, true);
+        Object[][] result = new Object[uris.length * sameClients.size() * throwers.size()][];
         int i = 0;
         for (Thrower thrower : throwers) {
-            for (boolean sameClient : List.of(false, true)) {
+            for (boolean sameClient : sameClients) {
                 for (String uri : uris()) {
                     result[i++] = new Object[]{uri, sameClient, thrower};
                 }
             }
         }
-        assert i == uris.length * 2 * throwers.size();
+        assert i == uris.length * sameClients.size() * throwers.size();
         return result;
     }
 
     @DataProvider(name = "ioVariants")
-    public Object[][] ioVariants() {
+    public Object[][] ioVariants(ITestContext context) {
+        if (stopAfterFirstFailure() && context.getFailedTests().size() > 0) {
+            return new Object[0][];
+        }
         return variants(List.of(
                 new UncheckedIOExceptionThrower()));
     }
 
     @DataProvider(name = "customVariants")
-    public Object[][] customVariants() {
+    public Object[][] customVariants(ITestContext context) {
+        if (stopAfterFirstFailure() && context.getFailedTests().size() > 0) {
+            return new Object[0][];
+        }
         return variants(List.of(
                 new UncheckedCustomExceptionThrower()));
     }

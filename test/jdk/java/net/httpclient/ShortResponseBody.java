@@ -57,6 +57,8 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Stream;
 import jdk.test.lib.net.SimpleSSLContext;
+import org.testng.ITestContext;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.DataProvider;
@@ -106,6 +108,13 @@ public class ShortResponseBody {
     };
     final ExecutorService service = Executors.newCachedThreadPool(factory);
 
+    @BeforeMethod
+    void beforeMethod(ITestContext context) {
+        if (context.getFailedTests().size() > 0) {
+            throw new RuntimeException("some tests failed");
+        }
+    }
+
     @DataProvider(name = "sanity")
     public Object[][] sanity() {
         return new Object[][]{
@@ -129,7 +138,7 @@ public class ShortResponseBody {
     }
 
     @DataProvider(name = "uris")
-    public Object[][] variants() {
+    public Object[][] variants(ITestContext context) {
         String[][] cases = new String[][] {
             // The length query string is the total number of bytes in the reply,
             // including headers, before the server closes the connection. The
@@ -187,6 +196,13 @@ public class ShortResponseBody {
             { httpURIClsImed,  "no bytes"},
             { httpsURIClsImed, "no bytes"},
         };
+
+        if (context.getFailedTests().size() > 0) {
+            // Shorten the log output by preventing useless
+            // skip traces to be printed for subsequent methods
+            // if one of the previous @Test method has failed.
+            return new Object[0][];
+        }
 
         List<Object[]> list = new ArrayList<>();
         Arrays.asList(cases).stream()
@@ -469,7 +485,9 @@ public class ShortResponseBody {
             try {
                 ss.close();
             } catch (IOException e) {
-                throw new UncheckedIOException("Unexpected", e);
+                out.println("Unexpected exception while closing server: " + e);
+                e.printStackTrace(out);
+                throw new UncheckedIOException("Unexpected: ", e);
             }
         }
     }
@@ -494,9 +512,12 @@ public class ShortResponseBody {
                         ((SSLSocket)s).startHandshake();
                     }
                     out.println("Server: got connection, closing immediately ");
-                } catch (IOException e) {
-                    if (!closed)
-                        throw new UncheckedIOException("Unexpected", e);
+                } catch (Throwable e) {
+                    if (!closed) {
+                        out.println("Unexpected exception in server: " + e);
+                        e.printStackTrace(out);
+                        throw new RuntimeException("Unexpected: ", e);
+                    }
                 }
             }
         }
@@ -565,9 +586,12 @@ public class ShortResponseBody {
                         os.write(responseBytes[i]);
                         os.flush();
                     }
-                } catch (IOException e) {
-                    if (!closed)
-                        throw new UncheckedIOException("Unexpected", e);
+                } catch (Throwable e) {
+                    if (!closed) {
+                        out.println("Unexpected exception in server: " + e);
+                        e.printStackTrace(out);
+                        throw new RuntimeException("Unexpected: " + e, e);
+                    }
                 }
             }
         }
