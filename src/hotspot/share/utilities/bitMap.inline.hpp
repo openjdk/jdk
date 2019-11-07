@@ -26,6 +26,7 @@
 #define SHARE_UTILITIES_BITMAP_INLINE_HPP
 
 #include "runtime/atomic.hpp"
+#include "runtime/orderAccess.hpp"
 #include "utilities/bitMap.hpp"
 #include "utilities/count_trailing_zeros.hpp"
 
@@ -39,18 +40,39 @@ inline void BitMap::clear_bit(idx_t bit) {
   *word_addr(bit) &= ~bit_mask(bit);
 }
 
-inline bool BitMap::par_set_bit(idx_t bit) {
+inline const BitMap::bm_word_t BitMap::load_word_ordered(const volatile bm_word_t* const addr, atomic_memory_order memory_order) {
+  if (memory_order == memory_order_relaxed || memory_order == memory_order_release) {
+    return Atomic::load(addr);
+  } else {
+    assert(memory_order == memory_order_acq_rel ||
+           memory_order == memory_order_acquire ||
+           memory_order == memory_order_conservative,
+           "unexpected memory ordering");
+    return OrderAccess::load_acquire(addr);
+  }
+}
+
+inline bool BitMap::par_at(idx_t index, atomic_memory_order memory_order) const {
+  verify_index(index);
+  assert(memory_order == memory_order_acquire ||
+         memory_order == memory_order_relaxed,
+         "unexpected memory ordering");
+  const volatile bm_word_t* const addr = word_addr(index);
+  return (load_word_ordered(addr, memory_order) & bit_mask(index)) != 0;
+}
+
+inline bool BitMap::par_set_bit(idx_t bit, atomic_memory_order memory_order) {
   verify_index(bit);
   volatile bm_word_t* const addr = word_addr(bit);
   const bm_word_t mask = bit_mask(bit);
-  bm_word_t old_val = *addr;
+  bm_word_t old_val = load_word_ordered(addr, memory_order);
 
   do {
     const bm_word_t new_val = old_val | mask;
     if (new_val == old_val) {
       return false;     // Someone else beat us to it.
     }
-    const bm_word_t cur_val = Atomic::cmpxchg(new_val, addr, old_val);
+    const bm_word_t cur_val = Atomic::cmpxchg(new_val, addr, old_val, memory_order);
     if (cur_val == old_val) {
       return true;      // Success.
     }
@@ -58,18 +80,18 @@ inline bool BitMap::par_set_bit(idx_t bit) {
   } while (true);
 }
 
-inline bool BitMap::par_clear_bit(idx_t bit) {
+inline bool BitMap::par_clear_bit(idx_t bit, atomic_memory_order memory_order) {
   verify_index(bit);
   volatile bm_word_t* const addr = word_addr(bit);
   const bm_word_t mask = ~bit_mask(bit);
-  bm_word_t old_val = *addr;
+  bm_word_t old_val = load_word_ordered(addr, memory_order);
 
   do {
     const bm_word_t new_val = old_val & mask;
     if (new_val == old_val) {
       return false;     // Someone else beat us to it.
     }
-    const bm_word_t cur_val = Atomic::cmpxchg(new_val, addr, old_val);
+    const bm_word_t cur_val = Atomic::cmpxchg(new_val, addr, old_val, memory_order);
     if (cur_val == old_val) {
       return true;      // Success.
     }

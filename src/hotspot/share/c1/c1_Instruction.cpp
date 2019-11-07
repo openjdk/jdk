@@ -29,6 +29,7 @@
 #include "c1/c1_ValueStack.hpp"
 #include "ci/ciObjArrayKlass.hpp"
 #include "ci/ciTypeArrayKlass.hpp"
+#include "utilities/bitMap.inline.hpp"
 
 
 // Implementation of Instruction

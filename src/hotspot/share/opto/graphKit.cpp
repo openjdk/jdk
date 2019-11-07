@@ -43,6 +43,7 @@
 #include "opto/runtime.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "utilities/bitMap.inline.hpp"
 
 //----------------------------GraphKit-----------------------------------------
 // Main utility constructor.
