@@ -1110,6 +1110,33 @@ JAVA_INTEGER_OP(*, java_multiply, jlong, julong)
 
 #undef JAVA_INTEGER_OP
 
+// Provide integer shift operations with Java semantics.  No overflow
+// issues - left shifts simply discard shifted out bits.  No undefined
+// behavior for large or negative shift quantities; instead the actual
+// shift distance is the argument modulo the lhs value's size in bits.
+// No undefined or implementation defined behavior for shifting negative
+// values; left shift discards bits, right shift sign extends.  We use
+// the same safe conversion technique as above for java_add and friends.
+#define JAVA_INTEGER_SHIFT_OP(OP, NAME, TYPE, XTYPE)    \
+inline TYPE NAME (TYPE lhs, jint rhs) {                 \
+  const uint rhs_mask = (sizeof(TYPE) * 8) - 1;         \
+  STATIC_ASSERT(rhs_mask == 31 || rhs_mask == 63);      \
+  XTYPE xres = static_cast<XTYPE>(lhs);                 \
+  xres OP ## = (rhs & rhs_mask);                        \
+  return reinterpret_cast<TYPE&>(xres);                 \
+}
+
+JAVA_INTEGER_SHIFT_OP(<<, java_shift_left, jint, juint)
+JAVA_INTEGER_SHIFT_OP(<<, java_shift_left, jlong, julong)
+// For signed shift right, assume C++ implementation >> sign extends.
+JAVA_INTEGER_SHIFT_OP(>>, java_shift_right, jint, jint)
+JAVA_INTEGER_SHIFT_OP(>>, java_shift_right, jlong, jlong)
+// For >>> use C++ unsigned >>.
+JAVA_INTEGER_SHIFT_OP(>>, java_shift_right_unsigned, jint, juint)
+JAVA_INTEGER_SHIFT_OP(>>, java_shift_right_unsigned, jlong, julong)
+
+#undef JAVA_INTEGER_SHIFT_OP
+
 //----------------------------------------------------------------------------------------------------
 // The goal of this code is to provide saturating operations for int/uint.
 // Checks overflow conditions and saturates the result to min_jint/max_jint.

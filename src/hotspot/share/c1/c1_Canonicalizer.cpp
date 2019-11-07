@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -354,25 +354,21 @@ void Canonicalizer::do_ShiftOp        (ShiftOp*         x) {
     }
     if (t2->is_constant()) {
       if (t->tag() == intTag) {
-        int value = t->as_IntConstant()->value();
-        int shift = t2->as_IntConstant()->value() & 31;
-        jint mask = ~(~0 << (32 - shift));
-        if (shift == 0) mask = ~0;
+        jint value = t->as_IntConstant()->value();
+        jint shift = t2->as_IntConstant()->value();
         switch (x->op()) {
-          case Bytecodes::_ishl:  set_constant(value << shift); return;
-          case Bytecodes::_ishr:  set_constant(value >> shift); return;
-          case Bytecodes::_iushr: set_constant((value >> shift) & mask); return;
+          case Bytecodes::_ishl:  set_constant(java_shift_left(value, shift)); return;
+          case Bytecodes::_ishr:  set_constant(java_shift_right(value, shift)); return;
+          case Bytecodes::_iushr: set_constant(java_shift_right_unsigned(value, shift)); return;
           default:                break;
         }
       } else if (t->tag() == longTag) {
         jlong value = t->as_LongConstant()->value();
-        int shift = t2->as_IntConstant()->value() & 63;
-        jlong mask = ~(~jlong_cast(0) << (64 - shift));
-        if (shift == 0) mask = ~jlong_cast(0);
+        jint shift = t2->as_IntConstant()->value();
         switch (x->op()) {
-          case Bytecodes::_lshl:  set_constant(value << shift); return;
-          case Bytecodes::_lshr:  set_constant(value >> shift); return;
-          case Bytecodes::_lushr: set_constant((value >> shift) & mask); return;
+          case Bytecodes::_lshl:  set_constant(java_shift_left(value, shift)); return;
+          case Bytecodes::_lshr:  set_constant(java_shift_right(value, shift)); return;
+          case Bytecodes::_lushr: set_constant(java_shift_right_unsigned(value, shift)); return;
           default:                break;
         }
       }
