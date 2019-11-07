@@ -951,8 +951,16 @@ JNF_CLASS_CACHE(jc_CInputMethod, "sun/lwawt/macosx/CInputMethod");
     NSUInteger utf16Length = [useString lengthOfBytesUsingEncoding:NSUTF16StringEncoding];
     NSUInteger utf8Length = [useString lengthOfBytesUsingEncoding:NSUTF8StringEncoding];
     BOOL aStringIsComplex = NO;
+
+    unichar codePoint = [useString characterAtIndex:0];
+
+#ifdef IM_DEBUG
+    NSLog(@"insertText kbdlayout %@ ",(NSString *)kbdLayout);
+#endif // IM_DEBUG
+
     if ((utf16Length > 2) ||
-        ((utf8Length > 1) && [self isCodePointInUnicodeBlockNeedingIMEvent:[useString characterAtIndex:0]])) {
+        ((utf8Length > 1) && [self isCodePointInUnicodeBlockNeedingIMEvent:codePoint]) ||
+        ((codePoint == 0x5c) && ([(NSString *)kbdLayout containsString:@"Kotoeri"]))) {
         aStringIsComplex = YES;
     }
 
@@ -988,6 +996,15 @@ JNF_CLASS_CACHE(jc_CInputMethod, "sun/lwawt/macosx/CInputMethod");
     // symbols
 
     [self abandonInput];
+}
+
+- (void)keyboardInputSourceChanged:(NSNotification *)notification
+{
+#ifdef IM_DEBUG
+    NSLog(@"keyboardInputSourceChangeNotification received");
+#endif
+    NSTextInputContext *curContxt = [NSTextInputContext currentInputContext];
+    kbdLayout = curContxt.selectedKeyboardInputSource;
 }
 
 - (void) doCommandBySelector:(SEL)aSelector
@@ -1315,6 +1332,13 @@ JNF_CLASS_CACHE(jc_CInputMethod, "sun/lwawt/macosx/CInputMethod");
         fInputMethodLOCKABLE = JNFNewGlobalRef(env, inputMethod);
     else
         fInputMethodLOCKABLE = NULL;
+
+    NSTextInputContext *curContxt = [NSTextInputContext currentInputContext];
+    kbdLayout = curContxt.selectedKeyboardInputSource;
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                           selector:@selector(keyboardInputSourceChanged:)
+                                               name:NSTextInputContextKeyboardSelectionDidChangeNotification
+                                             object:nil];
 }
 
 - (void)abandonInput
