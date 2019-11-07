@@ -141,10 +141,10 @@ IndexSet *PhaseIFG::remove_node( uint a ) {
 }
 
 // Re-insert a yanked Node.
-void PhaseIFG::re_insert( uint a ) {
+void PhaseIFG::re_insert(uint a) {
   assert( _is_square, "only on square" );
   assert( _yanked->test(a), "" );
-  (*_yanked) >>= a;
+  _yanked->remove(a);
 
   IndexSetIterator elements(&_adjs[a]);
   uint datum;
@@ -198,7 +198,7 @@ void PhaseIFG::dump() const {
                 _is_square ? "square" : "triangular" );
   if( _is_square ) {
     for( uint i = 0; i < _maxlrg; i++ ) {
-      tty->print( (*_yanked)[i] ? "XX " : "  ");
+      tty->print(_yanked->test(i) ? "XX " : "  ");
       tty->print("L%d: { ",i);
       IndexSetIterator elements(&_adjs[i]);
       uint datum;
@@ -214,7 +214,7 @@ void PhaseIFG::dump() const {
   // Triangular
   for( uint i = 0; i < _maxlrg; i++ ) {
     uint j;
-    tty->print( (*_yanked)[i] ? "XX " : "  ");
+    tty->print(_yanked->test(i) ? "XX " : "  ");
     tty->print("L%d: { ",i);
     for( j = _maxlrg; j > i; j-- )
       if( test_edge(j - 1,i) ) {
@@ -249,7 +249,7 @@ void PhaseIFG::stats() const {
 void PhaseIFG::verify( const PhaseChaitin *pc ) const {
   // IFG is square, sorted and no need for Find
   for( uint i = 0; i < _maxlrg; i++ ) {
-    assert(!((*_yanked)[i]) || !neighbor_cnt(i), "Is removed completely" );
+    assert(!_yanked->test(i) || !neighbor_cnt(i), "Is removed completely" );
     IndexSet *set = &_adjs[i];
     IndexSetIterator elements(set);
     uint idx;
@@ -258,7 +258,7 @@ void PhaseIFG::verify( const PhaseChaitin *pc ) const {
       assert(idx != i, "Must have empty diagonal");
       assert(pc->_lrg_map.find_const(idx) == idx, "Must not need Find");
       assert(_adjs[idx].member(i), "IFG not square");
-      assert(!(*_yanked)[idx], "No yanked neighbors");
+      assert(!_yanked->test(idx), "No yanked neighbors");
       assert(last < idx, "not sorted increasing");
       last = idx;
     }

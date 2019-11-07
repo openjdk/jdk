@@ -1521,9 +1521,9 @@ public:
 
   void remove( Node *n );
   bool member( Node *n ) { return _in_worklist.test(n->_idx) != 0; }
-  VectorSet &member_set(){ return _in_worklist; }
+  VectorSet& member_set(){ return _in_worklist; }
 
-  void push( Node *b ) {
+  void push(Node* b) {
     if( !_in_worklist.test_set(b->_idx) )
       Node_List::push(b);
   }
@@ -1532,24 +1532,27 @@ public:
     Node *b = at(_clock_index);
     map( _clock_index, Node_List::pop());
     if (size() != 0) _clock_index++; // Always start from 0
-    _in_worklist >>= b->_idx;
+    _in_worklist.remove(b->_idx);
     return b;
   }
-  Node *remove( uint i ) {
+  Node *remove(uint i) {
     Node *b = Node_List::at(i);
-    _in_worklist >>= b->_idx;
+    _in_worklist.remove(b->_idx);
     map(i,Node_List::pop());
     return b;
   }
-  void yank( Node *n ) { _in_worklist >>= n->_idx; Node_List::yank(n); }
+  void yank(Node *n) {
+    _in_worklist.remove(n->_idx);
+    Node_List::yank(n);
+  }
   void  clear() {
-    _in_worklist.Clear();        // Discards storage but grows automatically
+    _in_worklist.clear();        // Discards storage but grows automatically
     Node_List::clear();
     _clock_index = 0;
   }
 
   // Used after parsing to remove useless nodes before Iterative GVN
-  void remove_useless_nodes(VectorSet &useful);
+  void remove_useless_nodes(VectorSet& useful);
 
 #ifndef PRODUCT
   void print_set() const { _in_worklist.print(); }

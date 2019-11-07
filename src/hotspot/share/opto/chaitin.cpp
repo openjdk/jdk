@@ -1197,12 +1197,12 @@ void PhaseChaitin::Simplify( ) {
 
         // Check for just becoming of-low-degree just counting registers.
         // _must_spill live ranges are already on the low degree list.
-        if( n->just_lo_degree() && !n->_must_spill ) {
-          assert(!(*_ifg->_yanked)[neighbor],"Cannot move to lo degree twice");
+        if (n->just_lo_degree() && !n->_must_spill) {
+          assert(!_ifg->_yanked->test(neighbor), "Cannot move to lo degree twice");
           // Pull from hi-degree list
           uint prev = n->_prev;
           uint next = n->_next;
-          if( prev ) lrgs(prev)._next = next;
+          if (prev) lrgs(prev)._next = next;
           else _hi_degree = next;
           lrgs(next)._prev = prev;
           n->_next = _lo_degree;
@@ -1212,7 +1212,7 @@ void PhaseChaitin::Simplify( ) {
     } // End of while lo-degree/lo_stk_degree worklist not empty
 
     // Check for got everything: is hi-degree list empty?
-    if( !_hi_degree ) break;
+    if (!_hi_degree) break;
 
     // Time to pick a potential spill guy
     uint lo_score = _hi_degree;
@@ -1223,8 +1223,8 @@ void PhaseChaitin::Simplify( ) {
 
     // Find cheapest guy
     debug_only( int lo_no_simplify=0; );
-    for( uint i = _hi_degree; i; i = lrgs(i)._next ) {
-      assert( !(*_ifg->_yanked)[i], "" );
+    for (uint i = _hi_degree; i; i = lrgs(i)._next) {
+      assert(!_ifg->_yanked->test(i), "");
       // It's just vaguely possible to move hi-degree to lo-degree without
       // going through a just-lo-degree stage: If you remove a double from
       // a float live range it's degree will drop by 2 and you can skip the
@@ -1249,7 +1249,7 @@ void PhaseChaitin::Simplify( ) {
       // one block. In which case their area is 0 and score set to max.
       // In such case choose bound live range over unbound to free registers
       // or with smaller cost to spill.
-      if( iscore < score ||
+      if ( iscore < score ||
           (iscore == score && iarea > area && lrgs(lo_score)._was_spilled2) ||
           (iscore == score && iarea == area &&
            ( (ibound && !bound) || (ibound == bound && (icost < cost)) )) ) {
@@ -1332,7 +1332,7 @@ OptoReg::Name PhaseChaitin::bias_color( LRG &lrg, int chunk ) {
   uint copy_lrg = _lrg_map.find(lrg._copy_bias);
   if( copy_lrg != 0 ) {
     // If he has a color,
-    if( !(*(_ifg->_yanked))[copy_lrg] ) {
+    if(!_ifg->_yanked->test(copy_lrg)) {
       OptoReg::Name reg = lrgs(copy_lrg).reg();
       //  And it is legal for you,
       if (is_legal_reg(lrg, reg, chunk))

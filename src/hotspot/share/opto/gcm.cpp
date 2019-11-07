@@ -850,7 +850,7 @@ Node_Backward_Iterator::Node_Backward_Iterator( Node *root, VectorSet &visited, 
   stack.push(root, root->outcnt());
 
   // Clear the visited bits
-  visited.Clear();
+  visited.clear();
 }
 
 // Iterator for the Node_Backward_Iterator
@@ -1372,7 +1372,7 @@ void PhaseCFG::global_code_motion() {
   // Find the earliest Block any instruction can be placed in.  Some
   // instructions are pinned into Blocks.  Unpinned instructions can
   // appear in last block in which all their inputs occur.
-  visited.Clear();
+  visited.clear();
   Node_Stack stack(arena, (C->live_nodes() >> 2) + 16); // pre-grow
   if (!schedule_early(visited, stack)) {
     // Bailout without retry
@@ -1392,7 +1392,7 @@ void PhaseCFG::global_code_motion() {
   // Now schedule all codes as LATE as possible.  This is the LCA in the
   // dominator tree of all USES of a value.  Pick the block with the least
   // loop nesting depth that is lowest in the dominator tree.
-  // ( visited.Clear() called in schedule_late()->Node_Backward_Iterator() )
+  // ( visited.clear() called in schedule_late()->Node_Backward_Iterator() )
   schedule_late(visited, stack);
   if (C->failing()) {
     // schedule_late fails only when graph is incorrect.
@@ -1473,7 +1473,7 @@ void PhaseCFG::global_code_motion() {
   // Schedule locally.  Right now a simple topological sort.
   // Later, do a real latency aware scheduler.
   GrowableArray<int> ready_cnt(C->unique(), C->unique(), -1);
-  visited.Clear();
+  visited.reset();
   for (uint i = 0; i < number_of_blocks(); i++) {
     Block* block = get_block(i);
     if (!schedule_local(block, ready_cnt, visited, recalc_pressure_nodes)) {

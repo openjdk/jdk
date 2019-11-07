@@ -338,7 +338,7 @@ void Compile::update_dead_node_list(Unique_Node_List &useful) {
   for (uint node_idx = 0; node_idx < max_idx; node_idx++) {
     // If node with index node_idx is not in useful set,
     // mark it as dead in dead node list.
-    if (! useful_node_set.test(node_idx) ) {
+    if (!useful_node_set.test(node_idx)) {
       record_dead_node(node_idx);
     }
   }

@@ -2121,7 +2121,7 @@ bool IdealLoopTree::beautify_loops( PhaseIdealLoop *phase ) {
 void IdealLoopTree::allpaths_check_safepts(VectorSet &visited, Node_List &stack) {
   assert(stack.size() == 0, "empty stack");
   stack.push(_tail);
-  visited.Clear();
+  visited.clear();
   visited.set(_tail->_idx);
   while (stack.size() > 0) {
     Node* n = stack.pop();
@@ -2930,12 +2930,12 @@ void PhaseIdealLoop::build_and_optimize(LoopOptsMode mode) {
   int stack_size = (C->live_nodes() >> 1) + 16; // (live_nodes>>1)+16 from Java2D stats
   Node_Stack nstack( a, stack_size );
 
-  visited.Clear();
+  visited.clear();
   Node_List worklist(a);
   // Don't need C->root() on worklist since
   // it will be processed among C->top() inputs
-  worklist.push( C->top() );
-  visited.set( C->top()->_idx ); // Set C->top() as visited now
+  worklist.push(C->top());
+  visited.set(C->top()->_idx); // Set C->top() as visited now
   build_loop_early( visited, worklist, nstack );
 
   // Given early legal placement, try finding counted loops.  This placement
@@ -2945,12 +2945,12 @@ void PhaseIdealLoop::build_and_optimize(LoopOptsMode mode) {
   }
 
   // Find latest loop placement.  Find ideal loop placement.
-  visited.Clear();
+  visited.clear();
   init_dom_lca_tags();
   // Need C->root() on worklist when processing outs
-  worklist.push( C->root() );
+  worklist.push(C->root());
   NOT_PRODUCT( C->verify_graph_edges(); )
-  worklist.push( C->top() );
+  worklist.push(C->top());
   build_loop_late( visited, worklist, nstack );
 
   if (_verify_only) {
@@ -3046,7 +3046,7 @@ void PhaseIdealLoop::build_and_optimize(LoopOptsMode mode) {
   // Check for aggressive application of split-if and other transforms
   // that require basic-block info (like cloning through Phi's)
   if( SplitIfBlocks && do_split_ifs ) {
-    visited.Clear();
+    visited.clear();
     split_if_with_blocks( visited, nstack);
     NOT_PRODUCT( if( VerifyLoopOptimizations ) verify(); );
   }

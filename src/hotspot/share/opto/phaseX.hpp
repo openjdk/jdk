@@ -91,7 +91,7 @@ public:
     return _table[table_index];
   }
 
-  void   remove_useless_nodes(VectorSet &useful); // replace with sentinel
+  void   remove_useless_nodes(VectorSet& useful); // replace with sentinel
   void   replace_with(NodeHash* nh);
   void   check_no_speculative_types(); // Check no speculative part for type nodes in table
 

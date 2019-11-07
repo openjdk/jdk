@@ -2726,7 +2726,7 @@ void PhaseIdealLoop::clone_for_special_use_inside_loop( IdealLoopTree *loop, Nod
     _igvn.register_new_node_with_optimizer(n_clone);
     set_ctrl(n_clone, get_ctrl(n));
     sink_list.push(n_clone);
-    not_peel <<= n_clone->_idx;  // add n_clone to not_peel set.
+    not_peel.set(n_clone->_idx);
 #ifndef PRODUCT
     if (TracePartialPeeling) {
       tty->print_cr("special not_peeled cloning old: %d new: %d", n->_idx, n_clone->_idx);
@@ -3236,8 +3236,8 @@ bool PhaseIdealLoop::partial_peel( IdealLoopTree *loop, Node_List &old_new ) {
           if (n->in(0) == NULL && !n->is_Load() && !n->is_CMove()) {
             cloned_for_outside_use += clone_for_use_outside_loop(loop, n, worklist);
             sink_list.push(n);
-            peel     >>= n->_idx; // delete n from peel set.
-            not_peel <<= n->_idx; // add n to not_peel set.
+            peel.remove(n->_idx);
+            not_peel.set(n->_idx);
             peel_list.remove(i);
             incr = false;
 #ifndef PRODUCT

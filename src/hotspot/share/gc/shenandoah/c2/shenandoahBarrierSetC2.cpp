@@ -758,7 +758,7 @@ bool ShenandoahBarrierSetC2::optimize_loops(PhaseIdealLoop* phase, LoopOptsMode 
     return true;
   } else if (mode == LoopOptsShenandoahPostExpand) {
     assert(UseShenandoahGC, "only for shenandoah");
-    visited.Clear();
+    visited.clear();
     ShenandoahBarrierC2Support::optimize_after_expansion(visited, nstack, worklist, phase);
     return true;
   }

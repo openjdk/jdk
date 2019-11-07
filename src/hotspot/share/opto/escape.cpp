@@ -1414,7 +1414,7 @@ int ConnectionGraph::add_java_object_edges(JavaObjectNode* jobj, bool populate_w
     }
   }
   _worklist.clear();
-  _in_worklist.Reset();
+  _in_worklist.reset();
   return new_edges;
 }
 

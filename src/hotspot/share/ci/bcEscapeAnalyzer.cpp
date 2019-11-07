@@ -151,7 +151,7 @@ bool BCEscapeAnalyzer::returns_all(ArgumentMap vars) {
 void BCEscapeAnalyzer::clear_bits(ArgumentMap vars, VectorSet &bm) {
   for (int i = 0; i < _arg_size; i++) {
     if (vars.contains(i)) {
-      bm >>= i;
+      bm.remove(i);
     }
   }
 }
@@ -1280,9 +1280,9 @@ void BCEscapeAnalyzer::clear_escape_info() {
     set_modified(var, OFFSET_ANY, 4);
     set_global_escape(var);
   }
-  _arg_local.Clear();
-  _arg_stack.Clear();
-  _arg_returned.Clear();
+  _arg_local.clear();
+  _arg_stack.clear();
+  _arg_returned.clear();
   _return_local = false;
   _return_allocated = false;
   _allocated_escapes = true;
@@ -1334,7 +1334,7 @@ void BCEscapeAnalyzer::compute_escape_info() {
 
   // Do not scan method if it has no object parameters and
   // does not returns an object (_return_allocated is set in initialize()).
-  if (_arg_local.Size() == 0 && !_return_allocated) {
+  if (_arg_local.is_empty() && !_return_allocated) {
     // Clear all info since method's bytecode was not analysed and
     // set pessimistic escape information.
     clear_escape_info();
@@ -1457,10 +1457,10 @@ BCEscapeAnalyzer::BCEscapeAnalyzer(ciMethod* method, BCEscapeAnalyzer* parent)
     , _parent(parent)
     , _level(parent == NULL ? 0 : parent->level() + 1) {
   if (!_conservative) {
-    _arg_local.Clear();
-    _arg_stack.Clear();
-    _arg_returned.Clear();
-    _dirty.Clear();
+    _arg_local.clear();
+    _arg_stack.clear();
+    _arg_returned.clear();
+    _dirty.clear();
     Arena* arena = CURRENT_ENV->arena();
     _arg_modified = (uint *) arena->Amalloc(_arg_size * sizeof(uint));
     Copy::zero_to_bytes(_arg_modified, _arg_size * sizeof(uint));
