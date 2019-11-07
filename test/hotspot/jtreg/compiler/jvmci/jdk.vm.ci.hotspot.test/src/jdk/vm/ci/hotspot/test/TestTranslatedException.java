@@ -20,6 +20,18 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
+/*
+ * @test
+ * @requires vm.jvmci
+ * @modules jdk.internal.vm.ci/jdk.vm.ci.hotspot:open
+ * @library /compiler/jvmci/jdk.vm.ci.hotspot.test/src
+ * @ignore 8233745
+ * @run testng/othervm
+ *      -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI -XX:-UseJVMCICompiler
+ *      jdk.vm.ci.hotspot.test.TestTranslatedException
+ */
+
 package jdk.vm.ci.hotspot.test;
 
 import java.io.ByteArrayOutputStream;
@@ -27,8 +39,8 @@ import java.io.PrintStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.testng.Assert;
+import org.testng.annotations.Test;
 
 public class TestTranslatedException {
 
@@ -71,6 +83,6 @@ public class TestTranslatedException {
                         "jdk.vm.ci.hotspot.TranslatedException: [java.lang.ClassNotFoundException: jdk/vm/ci/hotspot/test/TestTranslatedException$Untranslatable]",
                         "jdk.vm.ci.hotspot.test.TestTranslatedException$Untranslatable: test exception");
 
-        Assert.assertEquals("before:\n" + before + "\nafter:\n" + after, before, after);
+        Assert.assertEquals(before, after);
     }
 }

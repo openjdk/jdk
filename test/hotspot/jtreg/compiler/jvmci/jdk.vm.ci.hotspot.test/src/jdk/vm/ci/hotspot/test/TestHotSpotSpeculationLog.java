@@ -20,13 +20,25 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
+/*
+ * @test
+ * @requires vm.jvmci
+ * @modules jdk.internal.vm.ci/jdk.vm.ci.hotspot
+ *          jdk.internal.vm.ci/jdk.vm.ci.meta
+ * @library /compiler/jvmci/jdk.vm.ci.hotspot.test/src
+ * @run testng/othervm
+ *      -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI -XX:-UseJVMCICompiler
+ *      jdk.vm.ci.hotspot.test.TestHotSpotSpeculationLog
+ */
+
 package jdk.vm.ci.hotspot.test;
 
 import java.util.function.Supplier;
 
-import org.junit.Assert;
-import org.junit.Assume;
-import org.junit.Test;
+import org.testng.Assert;
+import org.testng.SkipException;
+import org.testng.annotations.Test;
 
 import jdk.vm.ci.hotspot.HotSpotSpeculationLog;
 import jdk.vm.ci.meta.SpeculationLog;
@@ -87,16 +99,20 @@ public class TestHotSpotSpeculationLog {
         SpeculationLog.Speculation s2 = log.speculate(reason2);
 
         boolean added = log.addFailedSpeculation(s1);
-        Assume.assumeTrue(added);
+        if (!added) {
+            throw new SkipException("log.addFailedSpeculation(s1) is false");
+        }
+
         log.collectFailedSpeculations();
         Assert.assertFalse(log.maySpeculate(reason1));
         Assert.assertTrue(log.maySpeculate(reason2));
 
         added = log.addFailedSpeculation(s2);
-        Assume.assumeTrue(added);
+        if (!added) {
+            throw new SkipException("log.addFailedSpeculation(s2) is false");
+        }
         log.collectFailedSpeculations();
-        Assume.assumeTrue(added);
         Assert.assertFalse(log.maySpeculate(reason1));
-        Assert.assertFalse(log.toString(), log.maySpeculate(reason2));
+        Assert.assertFalse(log.maySpeculate(reason2), log.toString());
     }
 }

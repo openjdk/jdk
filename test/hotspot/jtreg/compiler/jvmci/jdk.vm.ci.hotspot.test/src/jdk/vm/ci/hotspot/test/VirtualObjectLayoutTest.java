@@ -20,10 +20,26 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
+/*
+ * @test
+ * @requires vm.jvmci
+ * @modules jdk.internal.vm.ci/jdk.vm.ci.hotspot
+ *          jdk.internal.vm.ci/jdk.vm.ci.runtime
+ *          jdk.internal.vm.ci/jdk.vm.ci.meta
+ *          jdk.internal.vm.ci/jdk.vm.ci.code
+ *          jdk.internal.vm.ci/jdk.vm.ci.common
+ * @library /compiler/jvmci/jdk.vm.ci.hotspot.test/src
+ *          /compiler/jvmci/jdk.vm.ci.code.test/src
+ * @run testng/othervm
+ *      -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI -XX:-UseJVMCICompiler
+ *      jdk.vm.ci.hotspot.test.VirtualObjectLayoutTest
+ */
+
 package jdk.vm.ci.hotspot.test;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.testng.Assert;
+import org.testng.annotations.Test;
 
 import jdk.vm.ci.code.VirtualObject;
 import jdk.vm.ci.code.test.VirtualObjectTestBase;
@@ -43,10 +59,10 @@ public class VirtualObjectLayoutTest extends VirtualObjectTestBase {
         try {
             HotSpotCompiledCode.verifyVirtualObject(virtual);
         } catch (JVMCIError e) {
-            Assert.assertTrue("Unexpected error verifying " + virtual, error);
+            Assert.assertTrue(error, "Unexpected error verifying " + virtual);
             return;
         }
-        Assert.assertFalse("Expected error but passed verifying " + virtual, error);
+        Assert.assertFalse(error, "Expected error but passed verifying " + virtual);
     }
 
     @Test

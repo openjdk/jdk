@@ -20,6 +20,22 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
+/*
+ * @test
+ * @requires vm.jvmci
+ * @modules jdk.internal.vm.ci/jdk.vm.ci.hotspot
+ *          jdk.internal.vm.ci/jdk.vm.ci.runtime
+ *          jdk.internal.vm.ci/jdk.vm.ci.meta
+ *          jdk.internal.vm.ci/jdk.vm.ci.code
+ *          jdk.internal.vm.ci/jdk.vm.ci.common
+ * @library /compiler/jvmci/jdk.vm.ci.hotspot.test/src
+ *          /compiler/jvmci/jdk.vm.ci.code.test/src
+ * @run testng/othervm
+ *      -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI -XX:-UseJVMCICompiler
+ *      jdk.vm.ci.hotspot.test.TestHotSpotJVMCIRuntime
+ */
+
 package jdk.vm.ci.hotspot.test;
 
 import java.util.ArrayList;
@@ -27,8 +43,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.function.Predicate;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.testng.Assert;
+import org.testng.annotations.Test;
 
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
 import jdk.vm.ci.meta.MetaAccessProvider;
@@ -74,7 +90,7 @@ public class TestHotSpotJVMCIRuntime {
             if (expect instanceof Integer) {
                 Assert.fail("expected " + expect + ", got " + e + " for bytes == " + Arrays.toString(bytes));
             } else {
-                Assert.assertTrue(e.toString(), ((Class<?>) expect).isInstance(e));
+                Assert.assertTrue(((Class<?>) expect).isInstance(e), e.toString());
             }
         }
     }
@@ -98,20 +114,12 @@ public class TestHotSpotJVMCIRuntime {
             // Extension classes not available
         }
         ClassLoader jvmciLoader = HotSpotJVMCIRuntime.class.getClassLoader();
-        ClassLoader extLoader = getExtensionLoader();
+        ClassLoader platformLoader = ClassLoader.getPlatformClassLoader();
         for (Class<?> c : classes) {
             ClassLoader cl = c.getClassLoader();
-            boolean expected = cl == null || cl == jvmciLoader || cl == extLoader;
+            boolean expected = cl == null || cl == jvmciLoader || cl == platformLoader;
             boolean actual = predicate.test(metaAccess.lookupJavaType(c));
-            Assert.assertEquals(c + ": cl=" + cl, expected, actual);
+            Assert.assertEquals(expected, actual, c + ": cl=" + cl);
         }
-    }
-
-    private static ClassLoader getExtensionLoader() throws Exception {
-        Object launcher = Class.forName("sun.misc.Launcher").getMethod("getLauncher").invoke(null);
-        ClassLoader appLoader = (ClassLoader) launcher.getClass().getMethod("getClassLoader").invoke(launcher);
-        ClassLoader extLoader = appLoader.getParent();
-        assert extLoader.getClass().getName().equals("sun.misc.Launcher$ExtClassLoader") : extLoader;
-        return extLoader;
     }
 }
