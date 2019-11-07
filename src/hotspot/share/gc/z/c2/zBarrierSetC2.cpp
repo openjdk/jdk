@@ -231,7 +231,7 @@ static const TypeFunc* clone_type() {
   const Type** domain_fields = TypeTuple::fields(3);
   domain_fields[TypeFunc::Parms + 0] = TypeInstPtr::NOTNULL;  // src
   domain_fields[TypeFunc::Parms + 1] = TypeInstPtr::NOTNULL;  // dst
-  domain_fields[TypeFunc::Parms + 2] = TypeLong::LONG;        // size
+  domain_fields[TypeFunc::Parms + 2] = TypeInt::INT;          // size
   const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms + 3, domain_fields);
 
   // Create result type (range)
