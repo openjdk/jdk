@@ -1681,13 +1681,6 @@ void java_lang_Thread::set_thread(oop java_thread, JavaThread* thread) {
 }
 
 bool java_lang_Thread::interrupted(oop java_thread) {
-#if INCLUDE_JFR
-  if (java_thread == NULL) {
-    // can happen from Jfr::on_vm_init leading to call of JavaThread::sleep
-    assert(!is_init_completed(), "should only happen during init");
-    return false;
-  }
-#endif
   return java_thread->bool_field_volatile(_interrupted_offset);
 }
 
