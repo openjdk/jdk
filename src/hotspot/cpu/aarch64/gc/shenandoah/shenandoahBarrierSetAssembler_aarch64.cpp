@@ -254,32 +254,16 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier_not_null(MacroAssembl
     dst = rscratch1;
   }
 
-  RegSet to_save_r1 = RegSet::of(r1);
-  // If outgoing register is r1, we can clobber it
-  if (result_dst != r1) {
-    __ push(to_save_r1, sp);
-  }
+  // Save r0 and r1, unless it is an output register
+  RegSet to_save = RegSet::of(r0, r1) - result_dst;
+  __ push(to_save, sp);
   __ lea(r1, load_addr);
-
-  RegSet to_save_r0 = RegSet::of(r0);
-  if (dst != r0) {
-    __ push(to_save_r0, sp);
-    __ mov(r0, dst);
-  }
+  __ mov(r0, dst);
 
   __ far_call(RuntimeAddress(CAST_FROM_FN_PTR(address, ShenandoahBarrierSetAssembler::shenandoah_lrb())));
 
-  if (result_dst != r0) {
-    __ mov(result_dst, r0);
-  }
-
-  if (dst != r0) {
-    __ pop(to_save_r0, sp);
-  }
-
-  if (result_dst != r1) {
-    __ pop(to_save_r1, sp);
-  }
+  __ mov(result_dst, r0);
+  __ pop(to_save, sp);
 
   __ bind(done);
   __ leave();
