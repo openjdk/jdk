@@ -53,7 +53,8 @@ import jdk.test.lib.Utils;
  * @modules java.instrument
  *
  * @build jdk.jfr.event.io.EvilInstrument
- * @run shell MakeJAR.sh EvilInstrument 'Can-Redefine-Classes: true'
+ * @run driver jdk.test.lib.util.JavaAgentBuilder
+ *             jdk.jfr.event.io.EvilInstrument EvilInstrument.jar
  * @run main/othervm -javaagent:EvilInstrument.jar jdk.jfr.event.io.EvilInstrument
  */
 

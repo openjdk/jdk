@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,30 +36,51 @@ import jdk.jfr.Recording;
 import jdk.jfr.consumer.RecordedEvent;
 import jdk.test.lib.jfr.EventNames;
 import jdk.test.lib.jfr.Events;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 
+/**
+ * @test
+ * @key jfr
+ * @requires vm.hasJFR
+ * @library /test/lib
+ * @run main jdk.jfr.event.os.TestInitialEnvironmentVariable
+ */
 public class TestInitialEnvironmentVariable {
     private final static String EVENT_NAME = EventNames.InitialEnvironmentVariable;
 
     public static void main(String[] args) throws Exception {
-        Map<String, String> env = new HashMap<>();
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(Test.class.getName());
+        setEnv(pb.environment());
+        (new OutputAnalyzer(pb.start())).shouldHaveExitValue(0);
+    }
+
+    static void setEnv(Map<String, String> env) {
         env.put("keytest1", "value1");
         env.put("keytest2", "value 2");
+    }
 
-        Recording recording = new Recording();
-        recording.enable(EVENT_NAME);
-        recording.start();
-        recording.stop();
-        List<RecordedEvent> events = Events.fromRecording(recording);
-        Events.hasEvents(events);
-        for (RecordedEvent event : events) {
-            System.out.println("Event: " + event);
-            String key = Events.assertField(event, "key").notNull().getValue();
-            String value = Events.assertField(event, "value").notNull().getValue();
-            if (env.containsKey(key)) {
-                assertEquals(value, env.get(key), "Wrong value for key: " + key);
-                env.remove(key);
+    static class Test {
+        public static void main(String[] args) throws Exception {
+            Map<String, String> env = new HashMap<>();
+            setEnv(env);
+
+            Recording recording = new Recording();
+            recording.enable(EVENT_NAME);
+            recording.start();
+            recording.stop();
+            List<RecordedEvent> events = Events.fromRecording(recording);
+            Events.hasEvents(events);
+            for (RecordedEvent event : events) {
+                System.out.println("Event: " + event);
+                String key = Events.assertField(event, "key").notNull().getValue();
+                String value = Events.assertField(event, "value").notNull().getValue();
+                if (env.containsKey(key)) {
+                    assertEquals(value, env.get(key), "Wrong value for key: " + key);
+                    env.remove(key);
+                }
             }
+            assertTrue(env.isEmpty(), "Missing env keys " + env.keySet());
         }
-        assertTrue(env.isEmpty(), "Missing env keys " + env.keySet());
     }
 }
