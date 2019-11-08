@@ -648,6 +648,7 @@ Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr
                   _has_reserved_stack_access(target->has_reserved_stack_access()),
 #ifndef PRODUCT
                   _trace_opto_output(directive->TraceOptoOutputOption),
+                  _print_ideal(directive->PrintIdealOption),
 #endif
                   _has_method_handle_invokes(false),
                   _clinit_barrier_on_entry(false),
@@ -873,7 +874,7 @@ Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr
   NOT_PRODUCT( verify_graph_edges(); )
 
 #ifndef PRODUCT
-  if (PrintIdeal) {
+  if (print_ideal()) {
     ttyLocker ttyl;  // keep the following output all in one block
     // This output goes directly to the tty, not the compiler log.
     // To enable tools to match it up with the compilation activity,
@@ -983,6 +984,7 @@ Compile::Compile( ciEnv* ci_env,
     _has_reserved_stack_access(false),
 #ifndef PRODUCT
     _trace_opto_output(directive->TraceOptoOutputOption),
+    _print_ideal(directive->PrintIdealOption),
 #endif
     _has_method_handle_invokes(false),
     _clinit_barrier_on_entry(false),
