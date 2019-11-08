@@ -29,22 +29,22 @@
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1ConcurrentMarkBitMap.inline.hpp"
 #include "gc/g1/heapRegion.hpp"
-#include "gc/shared/space.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/prefetch.inline.hpp"
 #include "utilities/align.hpp"
+#include "utilities/globalDefinitions.hpp"
 
-inline HeapWord* G1ContiguousSpace::allocate_impl(size_t min_word_size,
-                                                  size_t desired_word_size,
-                                                  size_t* actual_size) {
+inline HeapWord* HeapRegion::allocate_impl(size_t min_word_size,
+                                           size_t desired_word_size,
+                                           size_t* actual_size) {
   HeapWord* obj = top();
   size_t available = pointer_delta(end(), obj);
   size_t want_to_allocate = MIN2(available, desired_word_size);
   if (want_to_allocate >= min_word_size) {
     HeapWord* new_top = obj + want_to_allocate;
     set_top(new_top);
-    assert(is_aligned(obj) && is_aligned(new_top), "checking alignment");
+    assert(is_object_aligned(obj) && is_object_aligned(new_top), "checking alignment");
     *actual_size = want_to_allocate;
     return obj;
   } else {
@@ -52,21 +52,21 @@ inline HeapWord* G1ContiguousSpace::allocate_impl(size_t min_word_size,
   }
 }
 
-inline HeapWord* G1ContiguousSpace::par_allocate_impl(size_t min_word_size,
-                                                      size_t desired_word_size,
-                                                      size_t* actual_size) {
+inline HeapWord* HeapRegion::par_allocate_impl(size_t min_word_size,
+                                               size_t desired_word_size,
+                                               size_t* actual_size) {
   do {
     HeapWord* obj = top();
     size_t available = pointer_delta(end(), obj);
     size_t want_to_allocate = MIN2(available, desired_word_size);
     if (want_to_allocate >= min_word_size) {
       HeapWord* new_top = obj + want_to_allocate;
-      HeapWord* result = Atomic::cmpxchg(new_top, top_addr(), obj);
+      HeapWord* result = Atomic::cmpxchg(new_top, &_top, obj);
       // result can be one of two:
       //  the old top value: the exchange succeeded
       //  otherwise: the new value of the top is returned.
       if (result == obj) {
-        assert(is_aligned(obj) && is_aligned(new_top), "checking alignment");
+        assert(is_object_aligned(obj) && is_object_aligned(new_top), "checking alignment");
         *actual_size = want_to_allocate;
         return obj;
       }
@@ -76,9 +76,9 @@ inline HeapWord* G1ContiguousSpace::par_allocate_impl(size_t min_word_size,
   } while (true);
 }
 
-inline HeapWord* G1ContiguousSpace::allocate(size_t min_word_size,
-                                             size_t desired_word_size,
-                                             size_t* actual_size) {
+inline HeapWord* HeapRegion::allocate(size_t min_word_size,
+                                      size_t desired_word_size,
+                                      size_t* actual_size) {
   HeapWord* res = allocate_impl(min_word_size, desired_word_size, actual_size);
   if (res != NULL) {
     _bot_part.alloc_block(res, *actual_size);
@@ -86,12 +86,12 @@ inline HeapWord* G1ContiguousSpace::allocate(size_t min_word_size,
   return res;
 }
 
-inline HeapWord* G1ContiguousSpace::allocate(size_t word_size) {
+inline HeapWord* HeapRegion::allocate(size_t word_size) {
   size_t temp;
   return allocate(word_size, word_size, &temp);
 }
 
-inline HeapWord* G1ContiguousSpace::par_allocate(size_t word_size) {
+inline HeapWord* HeapRegion::par_allocate(size_t word_size) {
   size_t temp;
   return par_allocate(word_size, word_size, &temp);
 }
@@ -99,19 +99,18 @@ inline HeapWord* G1ContiguousSpace::par_allocate(size_t word_size) {
 // Because of the requirement of keeping "_offsets" up to date with the
 // allocations, we sequentialize these with a lock.  Therefore, best if
 // this is used for larger LAB allocations only.
-inline HeapWord* G1ContiguousSpace::par_allocate(size_t min_word_size,
-                                                 size_t desired_word_size,
-                                                 size_t* actual_size) {
+inline HeapWord* HeapRegion::par_allocate(size_t min_word_size,
+                                          size_t desired_word_size,
+                                          size_t* actual_size) {
   MutexLocker x(&_par_alloc_lock);
   return allocate(min_word_size, desired_word_size, actual_size);
 }
 
-inline HeapWord* G1ContiguousSpace::block_start(const void* p) {
+inline HeapWord* HeapRegion::block_start(const void* p) {
   return _bot_part.block_start(p);
 }
 
-inline HeapWord*
-G1ContiguousSpace::block_start_const(const void* p) const {
+inline HeapWord* HeapRegion::block_start_const(const void* p) const {
   return _bot_part.block_start_const(p);
 }
 
@@ -134,8 +133,7 @@ inline bool HeapRegion::is_obj_dead_with_size(const oop obj, const G1CMBitMap* c
   return obj_is_dead;
 }
 
-inline bool
-HeapRegion::block_is_obj(const HeapWord* p) const {
+inline bool HeapRegion::block_is_obj(const HeapWord* p) const {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
   if (!this->is_in(p)) {
@@ -185,7 +183,7 @@ inline size_t HeapRegion::block_size(const HeapWord *addr) const {
 inline void HeapRegion::complete_compaction() {
   // Reset space and bot after compaction is complete if needed.
   reset_after_compaction();
-  if (used_region().is_empty()) {
+  if (is_empty()) {
     reset_bot();
   }
 
@@ -202,7 +200,7 @@ inline void HeapRegion::complete_compaction() {
 
 template<typename ApplyToMarkedClosure>
 inline void HeapRegion::apply_to_marked_objects(G1CMBitMap* bitmap, ApplyToMarkedClosure* closure) {
-  HeapWord* limit = scan_limit();
+  HeapWord* limit = top();
   HeapWord* next_addr = bottom();
 
   while (next_addr < limit) {

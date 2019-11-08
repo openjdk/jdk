@@ -45,9 +45,12 @@ import sun.jvm.hotspot.types.TypeDataBase;
 // any of its fields but only iterate over it.
 
 public class HeapRegion extends CompactibleSpace implements LiveRegionsProvider {
-    // static int GrainBytes;
-    static private CIntegerField grainBytesField;
+    private static AddressField bottomField;
     static private AddressField topField;
+    private static AddressField endField;
+    private static AddressField compactionTopField;
+
+    static private CIntegerField grainBytesField;
     private static long typeFieldOffset;
     private static long pointerSize;
 
@@ -64,8 +67,12 @@ public class HeapRegion extends CompactibleSpace implements LiveRegionsProvider 
     static private synchronized void initialize(TypeDataBase db) {
         Type type = db.lookupType("HeapRegion");
 
-        grainBytesField = type.getCIntegerField("GrainBytes");
+        bottomField = type.getAddressField("_bottom");
         topField = type.getAddressField("_top");
+        endField = type.getAddressField("_end");
+        compactionTopField = type.getAddressField("_compaction_top");
+
+        grainBytesField = type.getCIntegerField("GrainBytes");
         typeFieldOffset = type.getField("_type").getOffset();
 
         pointerSize = db.lookupType("HeapRegion*").getSize();
@@ -82,9 +89,11 @@ public class HeapRegion extends CompactibleSpace implements LiveRegionsProvider 
         type = (HeapRegionType)VMObjectFactory.newObject(HeapRegionType.class, typeAddr);
     }
 
-    public Address top() {
-        return topField.getValue(addr);
-    }
+    public Address bottom()        { return bottomField.getValue(addr); }
+    public Address top()           { return topField.getValue(addr); }
+    public Address end()           { return endField.getValue(addr); }
+
+    public Address compactionTop() { return compactionTopField.getValue(addr); }
 
     @Override
     public List<MemRegion> getLiveRegions() {
@@ -93,12 +102,16 @@ public class HeapRegion extends CompactibleSpace implements LiveRegionsProvider 
         return res;
     }
 
-    @Override
+    /** Returns a subregion of the space containing all the objects in
+        the space. */
+    public MemRegion usedRegion() {
+        return new MemRegion(bottom(), end());
+    }
+
     public long used() {
         return top().minus(bottom());
     }
 
-    @Override
     public long free() {
         return end().minus(top());
     }

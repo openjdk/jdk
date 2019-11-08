@@ -25,8 +25,8 @@
 #ifndef SHARE_GC_SHARED_SPACEDECORATOR_HPP
 #define SHARE_GC_SHARED_SPACEDECORATOR_HPP
 
-#include "gc/parallel/mutableSpace.hpp"
-#include "gc/shared/space.hpp"
+#include "memory/allocation.hpp"
+#include "memory/memRegion.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 class SpaceDecorator: public AllStatic {
@@ -120,6 +120,7 @@ class SpaceMangler: public CHeapObj<mtGC> {
 };
 
 class ContiguousSpace;
+class MutableSpace;
 
 // For use with GenCollectedHeap's
 class GenSpaceMangler: public SpaceMangler {
@@ -127,8 +128,8 @@ class GenSpaceMangler: public SpaceMangler {
 
   ContiguousSpace* sp() { return _sp; }
 
-  HeapWord* top() const { return _sp->top(); }
-  HeapWord* end() const { return _sp->end(); }
+  HeapWord* top() const;
+  HeapWord* end() const;
 
  public:
   GenSpaceMangler(ContiguousSpace* sp) : SpaceMangler(), _sp(sp) {}
@@ -140,8 +141,8 @@ class MutableSpaceMangler: public SpaceMangler {
 
   MutableSpace* sp() { return _sp; }
 
-  HeapWord* top() const { return _sp->top(); }
-  HeapWord* end() const { return _sp->end(); }
+  HeapWord* top() const;
+  HeapWord* end() const;
 
  public:
   MutableSpaceMangler(MutableSpace* sp) : SpaceMangler(), _sp(sp) {}

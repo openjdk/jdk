@@ -664,8 +664,6 @@ bool G1CollectedHeap::alloc_archive_regions(MemRegion* ranges,
         next_region = NULL;
       }
       curr_region->set_top(top);
-      curr_region->set_first_dead(top);
-      curr_region->set_end_of_live(top);
       curr_region = next_region;
     }
 
@@ -3978,7 +3976,7 @@ private:
       }
 
       if (!r->evacuation_failed()) {
-        assert(r->not_empty(), "Region %u is an empty region in the collection set.", r->hrm_index());
+        assert(!r->is_empty(), "Region %u is an empty region in the collection set.", r->hrm_index());
         _before_used_bytes += r->used();
         g1h->free_region(r,
                          &_local_free_list,

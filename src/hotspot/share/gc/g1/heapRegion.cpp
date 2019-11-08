@@ -35,7 +35,6 @@
 #include "gc/g1/heapRegionRemSet.hpp"
 #include "gc/g1/heapRegionTracer.hpp"
 #include "gc/shared/genOopClosures.inline.hpp"
-#include "gc/shared/space.inline.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/iterator.inline.hpp"
@@ -45,7 +44,6 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/orderAccess.hpp"
-#include "utilities/growableArray.hpp"
 
 int    HeapRegion::LogOfHRGrainBytes = 0;
 int    HeapRegion::LogOfHRGrainWords = 0;
@@ -234,21 +232,27 @@ void HeapRegion::clear_humongous() {
 HeapRegion::HeapRegion(uint hrm_index,
                        G1BlockOffsetTable* bot,
                        MemRegion mr) :
-    G1ContiguousSpace(bot),
-    _rem_set(NULL),
-    _hrm_index(hrm_index),
-    _type(),
-    _humongous_start_region(NULL),
-    _evacuation_failed(false),
-    _next(NULL), _prev(NULL),
+  _bottom(NULL),
+  _end(NULL),
+  _top(NULL),
+  _compaction_top(NULL),
+  _bot_part(bot, this),
+  _par_alloc_lock(Mutex::leaf, "HeapRegion par alloc lock", true),
+  _pre_dummy_top(NULL),
+  _rem_set(NULL),
+  _hrm_index(hrm_index),
+  _type(),
+  _humongous_start_region(NULL),
+  _evacuation_failed(false),
+  _next(NULL), _prev(NULL),
 #ifdef ASSERT
-    _containing_set(NULL),
+  _containing_set(NULL),
 #endif
-    _prev_marked_bytes(0), _next_marked_bytes(0), _gc_efficiency(0.0),
-    _index_in_opt_cset(InvalidCSetIndex), _young_index_in_cset(-1),
-    _surv_rate_group(NULL), _age_index(-1),
-    _prev_top_at_mark_start(NULL), _next_top_at_mark_start(NULL),
-    _recorded_rs_length(0), _predicted_elapsed_time_ms(0)
+  _prev_marked_bytes(0), _next_marked_bytes(0), _gc_efficiency(0.0),
+  _index_in_opt_cset(InvalidCSetIndex), _young_index_in_cset(-1),
+  _surv_rate_group(NULL), _age_index(-1),
+  _prev_top_at_mark_start(NULL), _next_top_at_mark_start(NULL),
+  _recorded_rs_length(0), _predicted_elapsed_time_ms(0)
 {
   _rem_set = new HeapRegionRemSet(bot, this);
 
@@ -258,10 +262,20 @@ HeapRegion::HeapRegion(uint hrm_index,
 void HeapRegion::initialize(MemRegion mr, bool clear_space, bool mangle_space) {
   assert(_rem_set->is_empty(), "Remembered set must be empty");
 
-  G1ContiguousSpace::initialize(mr, clear_space, mangle_space);
+  assert(Universe::on_page_boundary(mr.start()) && Universe::on_page_boundary(mr.end()),
+         "invalid space boundaries");
+
+  set_bottom(mr.start());
+  set_end(mr.end());
+  if (clear_space) {
+    clear(mangle_space);
+  }
+
+  set_top(bottom());
+  set_compaction_top(bottom());
+  reset_bot();
 
   hr_clear(false /*par*/, false /*clear_space*/);
-  set_top(bottom());
 }
 
 void HeapRegion::report_region_type_change(G1HeapRegionTraceType::Type to) {
@@ -444,6 +458,7 @@ void HeapRegion::verify_strong_code_roots(VerifyOption vo, bool* failures) const
 }
 
 void HeapRegion::print() const { print_on(tty); }
+
 void HeapRegion::print_on(outputStream* st) const {
   st->print("|%4u", this->_hrm_index);
   st->print("|" PTR_FORMAT ", " PTR_FORMAT ", " PTR_FORMAT,
@@ -636,9 +651,6 @@ public:
   debug_only(virtual bool should_verify_oops() { return false; })
 };
 
-// This really ought to be commoned up into OffsetTableContigSpace somehow.
-// We would need a mechanism to make that code skip dead objects.
-
 void HeapRegion::verify(VerifyOption vo,
                         bool* failures) const {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
@@ -828,51 +840,32 @@ void HeapRegion::verify_rem_set() const {
   guarantee(!failures, "HeapRegion RemSet verification failed");
 }
 
-void HeapRegion::prepare_for_compaction(CompactPoint* cp) {
-  // Not used for G1 anymore, but pure virtual in Space.
-  ShouldNotReachHere();
-}
-
-// G1OffsetTableContigSpace code; copied from space.cpp.  Hope this can go
-// away eventually.
-
-void G1ContiguousSpace::clear(bool mangle_space) {
+void HeapRegion::clear(bool mangle_space) {
   set_top(bottom());
-  CompactibleSpace::clear(mangle_space);
+  set_compaction_top(bottom());
+
+  if (ZapUnusedHeapArea && mangle_space) {
+    mangle_unused_area();
+  }
   reset_bot();
 }
-#ifndef PRODUCT
-void G1ContiguousSpace::mangle_unused_area() {
-  mangle_unused_area_complete();
-}
 
-void G1ContiguousSpace::mangle_unused_area_complete() {
+#ifndef PRODUCT
+void HeapRegion::mangle_unused_area() {
   SpaceMangler::mangle_region(MemRegion(top(), end()));
 }
 #endif
 
-void G1ContiguousSpace::print() const {
-  print_short();
-  tty->print_cr(" [" INTPTR_FORMAT ", " INTPTR_FORMAT ", "
-                INTPTR_FORMAT ", " INTPTR_FORMAT ")",
-                p2i(bottom()), p2i(top()), p2i(_bot_part.threshold()), p2i(end()));
-}
-
-HeapWord* G1ContiguousSpace::initialize_threshold() {
+HeapWord* HeapRegion::initialize_threshold() {
   return _bot_part.initialize_threshold();
 }
 
-HeapWord* G1ContiguousSpace::cross_threshold(HeapWord* start,
-                                                    HeapWord* end) {
+HeapWord* HeapRegion::cross_threshold(HeapWord* start, HeapWord* end) {
   _bot_part.alloc_block(start, end);
   return _bot_part.threshold();
 }
 
-void G1ContiguousSpace::safe_object_iterate(ObjectClosure* blk) {
-  object_iterate(blk);
-}
-
-void G1ContiguousSpace::object_iterate(ObjectClosure* blk) {
+void HeapRegion::object_iterate(ObjectClosure* blk) {
   HeapWord* p = bottom();
   while (p < top()) {
     if (block_is_obj(p)) {
@@ -880,19 +873,4 @@ void G1ContiguousSpace::object_iterate(ObjectClosure* blk) {
     }
     p += block_size(p);
   }
-}
-
-G1ContiguousSpace::G1ContiguousSpace(G1BlockOffsetTable* bot) :
-  _top(NULL),
-  _bot_part(bot, this),
-  _par_alloc_lock(Mutex::leaf, "OffsetTableContigSpace par alloc lock", true),
-  _pre_dummy_top(NULL)
-{
-}
-
-void G1ContiguousSpace::initialize(MemRegion mr, bool clear_space, bool mangle_space) {
-  CompactibleSpace::initialize(mr, clear_space, mangle_space);
-  _top = bottom();
-  set_saved_mark_word(NULL);
-  reset_bot();
 }

@@ -28,6 +28,7 @@
 #include "gc/g1/g1YoungGenSizer.hpp"
 #include "gc/g1/heapRegion.hpp"
 #include "logging/log.hpp"
+#include "runtime/globals_extension.hpp"
 
 G1YoungGenSizer::G1YoungGenSizer() : _sizer_kind(SizerDefaults),
   _use_adaptive_sizing(true), _min_desired_young_length(0), _max_desired_young_length(0) {

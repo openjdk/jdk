@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,19 +22,18 @@
  *
  */
 
-package sun.jvm.hotspot.gc.shared;
+#ifndef SHARE_GC_SHARED_SPACEDECORATOR_INLINE_HPP
+#define SHARE_GC_SHARED_SPACEDECORATOR_INLINE_HPP
 
-import java.io.PrintStream;
-import sun.jvm.hotspot.gc.g1.HeapRegion;
+#include "gc/parallel/mutableSpace.hpp"
+#include "gc/shared/space.hpp"
+#include "gc/shared/spaceDecorator.hpp"
+#include "utilities/globalDefinitions.hpp"
 
-public class PrintRegionClosure implements SpaceClosure {
-  private PrintStream tty;
+inline HeapWord* GenSpaceMangler::top() const { return _sp->top(); }
+inline HeapWord* GenSpaceMangler::end() const { return _sp->end(); }
 
-  public PrintRegionClosure(PrintStream tty) {
-    this.tty = tty;
-  }
+inline HeapWord* MutableSpaceMangler::top() const { return _sp->top(); }
+inline HeapWord* MutableSpaceMangler::end() const { return _sp->end(); }
 
-  public void doSpace(Space hr) {
-    ((HeapRegion)hr).printOn(tty);
-  }
-}
+#endif // SHARE_GC_SHARED_SPACEDECORATOR_INLINE_HPP

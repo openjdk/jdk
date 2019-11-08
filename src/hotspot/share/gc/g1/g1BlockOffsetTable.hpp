@@ -33,14 +33,14 @@
 
 // Forward declarations
 class G1BlockOffsetTable;
-class G1ContiguousSpace;
+class HeapRegion;
 
 // This implementation of "G1BlockOffsetTable" divides the covered region
 // into "N"-word subregions (where "N" = 2^"LogN".  An array with an entry
 // for each such subregion indicates how far back one must go to find the
 // start of the chunk that includes the first word of the subregion.
 //
-// Each G1BlockOffsetTablePart is owned by a G1ContiguousSpace.
+// Each G1BlockOffsetTablePart is owned by a HeapRegion.
 
 class G1BlockOffsetTable: public CHeapObj<mtGC> {
   friend class G1BlockOffsetTablePart;
@@ -120,8 +120,8 @@ private:
   // This is the global BlockOffsetTable.
   G1BlockOffsetTable* _bot;
 
-  // The space that owns this subregion.
-  G1ContiguousSpace* _space;
+  // The region that owns this subregion.
+  HeapRegion* _hr;
 
   // Sets the entries
   // corresponding to the cards starting at "start" and ending at "end"
@@ -183,7 +183,7 @@ private:
 
 public:
   //  The elements of the array are initialized to zero.
-  G1BlockOffsetTablePart(G1BlockOffsetTable* array, G1ContiguousSpace* gsp);
+  G1BlockOffsetTablePart(G1BlockOffsetTable* array, HeapRegion* hr);
 
   void verify() const;
 

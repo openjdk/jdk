@@ -31,34 +31,13 @@
 #include "gc/g1/heapRegionType.hpp"
 #include "gc/g1/survRateGroup.hpp"
 #include "gc/shared/ageTable.hpp"
-#include "gc/shared/cardTable.hpp"
-#include "gc/shared/verifyOption.hpp"
 #include "gc/shared/spaceDecorator.hpp"
+#include "gc/shared/verifyOption.hpp"
+#include "runtime/mutex.hpp"
 #include "utilities/macros.hpp"
-
-// A HeapRegion is the smallest piece of a G1CollectedHeap that
-// can be collected independently.
-
-// NOTE: Although a HeapRegion is a Space, its
-// Space::initDirtyCardClosure method must not be called.
-// The problem is that the existence of this method breaks
-// the independence of barrier sets from remembered sets.
-// The solution is to remove this method from the definition
-// of a Space.
-
-// Each heap region is self contained. top() and end() can never
-// be set beyond the end of the region. For humongous objects,
-// the first region is a StartsHumongous region. If the humongous
-// object is larger than a heap region, the following regions will
-// be of type ContinuesHumongous. In this case the top() of the
-// StartHumongous region and all ContinuesHumongous regions except
-// the last will point to their own end. The last ContinuesHumongous
-// region may have top() equal the end of object if there isn't
-// room for filler objects to pad out to the end of the region.
 
 class G1CollectedHeap;
 class G1CMBitMap;
-class G1IsAliveAndApplyClosure;
 class HeapRegionRemSet;
 class HeapRegion;
 class HeapRegionSetBase;
@@ -73,31 +52,27 @@ class nmethod;
 // sentinel value for hrm_index
 #define G1_NO_HRM_INDEX ((uint) -1)
 
-// The complicating factor is that BlockOffsetTable diverged
-// significantly, and we need functionality that is only in the G1 version.
-// So I copied that code, which led to an alternate G1 version of
-// OffsetTableContigSpace.  If the two versions of BlockOffsetTable could
-// be reconciled, then G1OffsetTableContigSpace could go away.
+// A HeapRegion is the smallest piece of a G1CollectedHeap that
+// can be collected independently.
 
-// The idea behind time stamps is the following. We want to keep track of
-// the highest address where it's safe to scan objects for each region.
-// This is only relevant for current GC alloc regions so we keep a time stamp
-// per region to determine if the region has been allocated during the current
-// GC or not. If the time stamp is current we report a scan_top value which
-// was saved at the end of the previous GC for retained alloc regions and which is
-// equal to the bottom for all other regions.
-// There is a race between card scanners and allocating gc workers where we must ensure
-// that card scanners do not read the memory allocated by the gc workers.
-// In order to enforce that, we must not return a value of _top which is more recent than the
-// time stamp. This is due to the fact that a region may become a gc alloc region at
-// some point after we've read the timestamp value as being < the current time stamp.
-// The time stamps are re-initialized to zero at cleanup and at Full GCs.
-// The current scheme that uses sequential unsigned ints will fail only if we have 4b
-// evacuation pauses between two cleanups, which is _highly_ unlikely.
-class G1ContiguousSpace: public CompactibleSpace {
+// Each heap region is self contained. top() and end() can never
+// be set beyond the end of the region. For humongous objects,
+// the first region is a StartsHumongous region. If the humongous
+// object is larger than a heap region, the following regions will
+// be of type ContinuesHumongous. In this case the top() of the
+// StartHumongous region and all ContinuesHumongous regions except
+// the last will point to their own end. The last ContinuesHumongous
+// region may have top() equal the end of object if there isn't
+// room for filler objects to pad out to the end of the region.
+class HeapRegion : public CHeapObj<mtGC> {
   friend class VMStructs;
+
+  HeapWord* _bottom;
+  HeapWord* _end;
+
   HeapWord* volatile _top;
- protected:
+  HeapWord* _compaction_top;
+
   G1BlockOffsetTablePart _bot_part;
   Mutex _par_alloc_lock;
   // When we need to retire an allocation region, while other threads
@@ -108,43 +83,57 @@ class G1ContiguousSpace: public CompactibleSpace {
   // into the region was and this is what this keeps track.
   HeapWord* _pre_dummy_top;
 
- public:
-  G1ContiguousSpace(G1BlockOffsetTable* bot);
+public:
+  void set_bottom(HeapWord* value) { _bottom = value; }
+  HeapWord* bottom() const         { return _bottom; }
+
+  void set_end(HeapWord* value)    { _end = value; }
+  HeapWord* end() const            { return _end;    }
+
+  void set_compaction_top(HeapWord* compaction_top) { _compaction_top = compaction_top; }
+  HeapWord* compaction_top() const { return _compaction_top; }
 
   void set_top(HeapWord* value) { _top = value; }
   HeapWord* top() const { return _top; }
 
- protected:
-  // Reset the G1ContiguousSpace.
-  virtual void initialize(MemRegion mr, bool clear_space, bool mangle_space);
+  // Returns true iff the given the heap  region contains the
+  // given address as part of an allocated object. This may
+  // be a potentially, so we restrict its use to assertion checks only.
+  bool is_in(const void* p) const {
+    return is_in_reserved(p);
+  }
+  bool is_in(oop obj) const {
+    return is_in((void*)obj);
+  }
+  // Returns true iff the given reserved memory of the space contains the
+  // given address.
+  bool is_in_reserved(const void* p) const { return _bottom <= p && p < _end; }
 
-  HeapWord* volatile* top_addr() { return &_top; }
-  // Try to allocate at least min_word_size and up to desired_size from this Space.
+  size_t capacity()     const { return byte_size(bottom(), end()); }
+  size_t used() const { return byte_size(bottom(), top()); }
+  size_t free() const { return byte_size(top(), end()); }
+
+  bool is_empty() const { return used() == 0; }
+
+private:
+  void reset_after_compaction() { set_top(compaction_top()); }
+
+  // Try to allocate at least min_word_size and up to desired_size from this region.
   // Returns NULL if not possible, otherwise sets actual_word_size to the amount of
   // space allocated.
-  // This version assumes that all allocation requests to this Space are properly
+  // This version assumes that all allocation requests to this HeapRegion are properly
   // synchronized.
   inline HeapWord* allocate_impl(size_t min_word_size, size_t desired_word_size, size_t* actual_word_size);
-  // Try to allocate at least min_word_size and up to desired_size from this Space.
+  // Try to allocate at least min_word_size and up to desired_size from this HeapRegion.
   // Returns NULL if not possible, otherwise sets actual_word_size to the amount of
   // space allocated.
   // This version synchronizes with other calls to par_allocate_impl().
   inline HeapWord* par_allocate_impl(size_t min_word_size, size_t desired_word_size, size_t* actual_word_size);
 
- public:
-  void reset_after_compaction() { set_top(compaction_top()); }
-
-  size_t used() const { return byte_size(bottom(), top()); }
-  size_t free() const { return byte_size(top(), end()); }
-  bool is_free_block(const HeapWord* p) const { return p >= top(); }
-
-  MemRegion used_region() const { return MemRegion(bottom(), top()); }
-
-  void object_iterate(ObjectClosure* blk);
-  void safe_object_iterate(ObjectClosure* blk);
-
   void mangle_unused_area() PRODUCT_RETURN;
-  void mangle_unused_area_complete() PRODUCT_RETURN;
+
+public:
+  void object_iterate(ObjectClosure* blk);
 
   // See the comment above in the declaration of _pre_dummy_top for an
   // explanation of what it is.
@@ -152,32 +141,31 @@ class G1ContiguousSpace: public CompactibleSpace {
     assert(is_in(pre_dummy_top) && pre_dummy_top <= top(), "pre-condition");
     _pre_dummy_top = pre_dummy_top;
   }
+
   HeapWord* pre_dummy_top() {
     return (_pre_dummy_top == NULL) ? top() : _pre_dummy_top;
   }
   void reset_pre_dummy_top() { _pre_dummy_top = NULL; }
 
-  virtual void clear(bool mangle_space);
+  void clear(bool mangle_space);
 
   HeapWord* block_start(const void* p);
   HeapWord* block_start_const(const void* p) const;
 
   // Allocation (return NULL if full).  Assumes the caller has established
-  // mutually exclusive access to the space.
+  // mutually exclusive access to the HeapRegion.
   HeapWord* allocate(size_t min_word_size, size_t desired_word_size, size_t* actual_word_size);
   // Allocation (return NULL if full).  Enforces mutual exclusion internally.
   HeapWord* par_allocate(size_t min_word_size, size_t desired_word_size, size_t* actual_word_size);
 
-  virtual HeapWord* allocate(size_t word_size);
-  virtual HeapWord* par_allocate(size_t word_size);
+  HeapWord* allocate(size_t word_size);
+  HeapWord* par_allocate(size_t word_size);
 
   HeapWord* saved_mark_word() const { ShouldNotReachHere(); return NULL; }
 
   // MarkSweep support phase3
-  virtual HeapWord* initialize_threshold();
-  virtual HeapWord* cross_threshold(HeapWord* start, HeapWord* end);
-
-  virtual void print() const;
+  HeapWord* initialize_threshold();
+  HeapWord* cross_threshold(HeapWord* start, HeapWord* end);
 
   void reset_bot() {
     _bot_part.reset_bot();
@@ -186,33 +174,10 @@ class G1ContiguousSpace: public CompactibleSpace {
   void print_bot_on(outputStream* out) {
     _bot_part.print_on(out);
   }
-};
 
-class HeapRegion: public G1ContiguousSpace {
-  friend class VMStructs;
-  // Allow scan_and_forward to call (private) overrides for auxiliary functions on this class
-  template <typename SpaceType>
-  friend void CompactibleSpace::scan_and_forward(SpaceType* space, CompactPoint* cp);
- private:
-
+private:
   // The remembered set for this region.
-  // (Might want to make this "inline" later, to avoid some alloc failure
-  // issues.)
   HeapRegionRemSet* _rem_set;
-
-  // Auxiliary functions for scan_and_forward support.
-  // See comments for CompactibleSpace for more information.
-  inline HeapWord* scan_limit() const {
-    return top();
-  }
-
-  inline bool scanned_block_is_obj(const HeapWord* addr) const {
-    return true; // Always true, since scan_limit is top
-  }
-
-  inline size_t scanned_block_size(const HeapWord* addr) const {
-    return HeapRegion::block_size(addr); // Avoid virtual call
-  }
 
   void report_region_type_change(G1HeapRegionTraceType::Type to);
 
@@ -223,7 +188,6 @@ class HeapRegion: public G1ContiguousSpace {
   // - not called on humongous objects or archive regions
   inline bool is_obj_dead_with_size(const oop obj, const G1CMBitMap* const prev_bitmap, size_t* size) const;
 
- protected:
   // The index of this region in the heap region sequence.
   uint  _hrm_index;
 
@@ -269,8 +233,6 @@ class HeapRegion: public G1ContiguousSpace {
   // "next" is the top at the start of the in-progress marking (if any.)
   HeapWord* _prev_top_at_mark_start;
   HeapWord* _next_top_at_mark_start;
-  // If a collection pause is in progress, this is the top at the start
-  // of that pause.
 
   void init_top_at_mark_start() {
     assert(_prev_marked_bytes == 0 &&
@@ -306,16 +268,14 @@ class HeapRegion: public G1ContiguousSpace {
   // Returns the block size of the given (dead, potentially having its class unloaded) object
   // starting at p extending to at most the prev TAMS using the given mark bitmap.
   inline size_t block_size_using_bitmap(const HeapWord* p, const G1CMBitMap* const prev_bitmap) const;
- public:
-  HeapRegion(uint hrm_index,
-             G1BlockOffsetTable* bot,
-             MemRegion mr);
+public:
+  HeapRegion(uint hrm_index, G1BlockOffsetTable* bot, MemRegion mr);
 
   // Initializing the HeapRegion not only resets the data structure, but also
   // resets the BOT for that heap region.
   // The default values for clear_space means that we will do the clearing if
   // there's clearing to be done ourselves. We also always mangle the space.
-  virtual void initialize(MemRegion mr, bool clear_space = false, bool mangle_space = SpaceDecorator::Mangle);
+  void initialize(MemRegion mr, bool clear_space = false, bool mangle_space = SpaceDecorator::Mangle);
 
   static int    LogOfHRGrainBytes;
   static int    LogOfHRGrainWords;
@@ -364,8 +324,6 @@ class HeapRegion: public G1ContiguousSpace {
   // objects to call size_t ApplyToMarkedClosure::apply(oop) for.
   template<typename ApplyToMarkedClosure>
   inline void apply_to_marked_objects(G1CMBitMap* bitmap, ApplyToMarkedClosure* closure);
-  // Override for scan_and_forward support.
-  void prepare_for_compaction(CompactPoint* cp);
   // Update heap region to be consistent after compaction.
   void complete_compaction();
 
@@ -707,8 +665,8 @@ class HeapRegion: public G1ContiguousSpace {
   // full GC.
   void verify(VerifyOption vo, bool *failures) const;
 
-  // Override; it uses the "prev" marking information
-  virtual void verify() const;
+  // Verify using the "prev" marking information
+  void verify() const;
 
   void verify_rem_set(VerifyOption vo, bool *failures) const;
   void verify_rem_set() const;
@@ -724,7 +682,7 @@ class HeapRegionClosure : public StackObj {
   bool _is_complete;
   void set_incomplete() { _is_complete = false; }
 
- public:
+public:
   HeapRegionClosure(): _is_complete(true) {}
 
   // Typically called on each region until it returns true.

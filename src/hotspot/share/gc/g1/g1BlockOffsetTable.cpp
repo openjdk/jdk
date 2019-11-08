@@ -25,8 +25,7 @@
 #include "precompiled.hpp"
 #include "gc/g1/g1BlockOffsetTable.inline.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
-#include "gc/g1/heapRegion.hpp"
-#include "gc/shared/space.hpp"
+#include "gc/g1/heapRegion.inline.hpp"
 #include "logging/log.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/java.hpp"
@@ -74,12 +73,12 @@ void G1BlockOffsetTable::check_index(size_t index, const char* msg) const {
 // G1BlockOffsetTablePart
 //////////////////////////////////////////////////////////////////////
 
-G1BlockOffsetTablePart::G1BlockOffsetTablePart(G1BlockOffsetTable* array, G1ContiguousSpace* gsp) :
+G1BlockOffsetTablePart::G1BlockOffsetTablePart(G1BlockOffsetTable* array, HeapRegion* hr) :
   _next_offset_threshold(NULL),
   _next_offset_index(0),
   DEBUG_ONLY(_object_can_span(false) COMMA)
   _bot(array),
-  _space(gsp)
+  _hr(hr)
 {
 }
 
@@ -141,7 +140,7 @@ void G1BlockOffsetTablePart::set_remainder_to_point_to_start_incl(size_t start_c
   if (start_card > end_card) {
     return;
   }
-  assert(start_card > _bot->index_for(_space->bottom()), "Cannot be first card");
+  assert(start_card > _bot->index_for(_hr->bottom()), "Cannot be first card");
   assert(_bot->offset_array(start_card-1) <= BOTConstants::N_words,
          "Offset card has an unexpected value");
   size_t start_card_for_region = start_card;
@@ -224,7 +223,7 @@ HeapWord* G1BlockOffsetTablePart::forward_to_block_containing_addr_slow(HeapWord
          "next_boundary is beyond the end of the covered region "
          " next_boundary " PTR_FORMAT " _array->_end " PTR_FORMAT,
          p2i(next_boundary), p2i(_bot->_reserved.end()));
-  if (addr >= _space->top()) return _space->top();
+  if (addr >= _hr->top()) return _hr->top();
   while (next_boundary < addr) {
     while (n <= next_boundary) {
       q = n;
@@ -326,9 +325,9 @@ void G1BlockOffsetTablePart::alloc_block_work(HeapWord** threshold_, size_t* ind
 }
 
 void G1BlockOffsetTablePart::verify() const {
-  assert(_space->bottom() < _space->top(), "Only non-empty regions should be verified.");
-  size_t start_card = _bot->index_for(_space->bottom());
-  size_t end_card = _bot->index_for(_space->top() - 1);
+  assert(_hr->bottom() < _hr->top(), "Only non-empty regions should be verified.");
+  size_t start_card = _bot->index_for(_hr->bottom());
+  size_t end_card = _bot->index_for(_hr->top() - 1);
 
   for (size_t current_card = start_card; current_card < end_card; current_card++) {
     u_char entry = _bot->offset_array(current_card);
@@ -342,9 +341,9 @@ void G1BlockOffsetTablePart::verify() const {
         HeapWord* obj = obj_end;
         size_t obj_size = block_size(obj);
         obj_end = obj + obj_size;
-        guarantee(obj_end > obj && obj_end <= _space->top(),
+        guarantee(obj_end > obj && obj_end <= _hr->top(),
                   "Invalid object end. obj: " PTR_FORMAT " obj_size: " SIZE_FORMAT " obj_end: " PTR_FORMAT " top: " PTR_FORMAT,
-                  p2i(obj), obj_size, p2i(obj_end), p2i(_space->top()));
+                  p2i(obj), obj_size, p2i(obj_end), p2i(_hr->top()));
       }
     } else {
       // Because we refine the BOT based on which cards are dirty there is not much we can verify here.
@@ -359,9 +358,9 @@ void G1BlockOffsetTablePart::verify() const {
                 start_card, current_card, backskip);
 
       HeapWord* backskip_address = _bot->address_for_index(current_card - backskip);
-      guarantee(backskip_address >= _space->bottom(),
+      guarantee(backskip_address >= _hr->bottom(),
                 "Going backwards beyond bottom of the region: bottom: " PTR_FORMAT ", backskip_address: " PTR_FORMAT,
-                p2i(_space->bottom()), p2i(backskip_address));
+                p2i(_hr->bottom()), p2i(backskip_address));
     }
   }
 }
@@ -373,13 +372,12 @@ void G1BlockOffsetTablePart::set_object_can_span(bool can_span) {
 #endif
 
 #ifndef PRODUCT
-void
-G1BlockOffsetTablePart::print_on(outputStream* out) {
-  size_t from_index = _bot->index_for(_space->bottom());
-  size_t to_index = _bot->index_for(_space->end());
+void G1BlockOffsetTablePart::print_on(outputStream* out) {
+  size_t from_index = _bot->index_for(_hr->bottom());
+  size_t to_index = _bot->index_for(_hr->end());
   out->print_cr(">> BOT for area [" PTR_FORMAT "," PTR_FORMAT ") "
                 "cards [" SIZE_FORMAT "," SIZE_FORMAT ")",
-                p2i(_space->bottom()), p2i(_space->end()), from_index, to_index);
+                p2i(_hr->bottom()), p2i(_hr->end()), from_index, to_index);
   for (size_t i = from_index; i < to_index; ++i) {
     out->print_cr("  entry " SIZE_FORMAT_W(8) " | " PTR_FORMAT " : %3u",
                   i, p2i(_bot->address_for_index(i)),
@@ -391,7 +389,7 @@ G1BlockOffsetTablePart::print_on(outputStream* out) {
 #endif // !PRODUCT
 
 HeapWord* G1BlockOffsetTablePart::initialize_threshold_raw() {
-  _next_offset_index = _bot->index_for_raw(_space->bottom());
+  _next_offset_index = _bot->index_for_raw(_hr->bottom());
   _next_offset_index++;
   _next_offset_threshold =
     _bot->address_for_index_raw(_next_offset_index);
@@ -399,14 +397,14 @@ HeapWord* G1BlockOffsetTablePart::initialize_threshold_raw() {
 }
 
 void G1BlockOffsetTablePart::zero_bottom_entry_raw() {
-  size_t bottom_index = _bot->index_for_raw(_space->bottom());
-  assert(_bot->address_for_index_raw(bottom_index) == _space->bottom(),
+  size_t bottom_index = _bot->index_for_raw(_hr->bottom());
+  assert(_bot->address_for_index_raw(bottom_index) == _hr->bottom(),
          "Precondition of call");
   _bot->set_offset_array_raw(bottom_index, 0);
 }
 
 HeapWord* G1BlockOffsetTablePart::initialize_threshold() {
-  _next_offset_index = _bot->index_for(_space->bottom());
+  _next_offset_index = _bot->index_for(_hr->bottom());
   _next_offset_index++;
   _next_offset_threshold =
     _bot->address_for_index(_next_offset_index);
@@ -416,7 +414,7 @@ HeapWord* G1BlockOffsetTablePart::initialize_threshold() {
 void G1BlockOffsetTablePart::set_for_starts_humongous(HeapWord* obj_top, size_t fill_size) {
   // The first BOT entry should have offset 0.
   reset_bot();
-  alloc_block(_space->bottom(), obj_top);
+  alloc_block(_hr->bottom(), obj_top);
   if (fill_size > 0) {
     alloc_block(obj_top, fill_size);
   }
