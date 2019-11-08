@@ -154,6 +154,7 @@ class x86 {
   static address _k512_W_addr;
   // byte flip mask for sha512
   static address _pshuffle_byte_flip_mask_addr_sha512;
+  static address _counter_mask_addr;
   // Masks for base64
   static address _base64_charset;
   static address _bswap_mask;
@@ -258,6 +259,7 @@ class x86 {
   static address base64_right_shift_mask_addr() { return _right_shift_mask; }
   static address base64_left_shift_mask_addr() { return _left_shift_mask; }
   static address base64_and_mask_addr() { return _and_mask; }
+  static address counter_mask_addr() { return _counter_mask_addr; }
 #endif
   static address pshuffle_byte_flip_mask_addr() { return _pshuffle_byte_flip_mask_addr; }
   static void generate_CRC32C_table(bool is_pclmulqdq_supported);

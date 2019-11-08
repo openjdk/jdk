@@ -993,6 +993,8 @@ private:
 public:
   void aesecb_encrypt(Register source_addr, Register dest_addr, Register key, Register len);
   void aesecb_decrypt(Register source_addr, Register dest_addr, Register key, Register len);
+  void aesctr_encrypt(Register src_addr, Register dest_addr, Register key, Register counter,
+                      Register len_reg, Register used, Register used_addr, Register saved_encCounter_start);
 
 #endif
 
@@ -1237,6 +1239,10 @@ public:
 
   void vpaddw(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
   void vpaddw(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
+
+  void vpaddd(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len) { Assembler::vpaddd(dst, nds, src, vector_len); }
+  void vpaddd(XMMRegister dst, XMMRegister nds, Address src, int vector_len) { Assembler::vpaddd(dst, nds, src, vector_len); }
+  void vpaddd(XMMRegister dst, XMMRegister nds, AddressLiteral src, int vector_len, Register rscratch);
 
   void vpand(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len) { Assembler::vpand(dst, nds, src, vector_len); }
   void vpand(XMMRegister dst, XMMRegister nds, Address src, int vector_len) { Assembler::vpand(dst, nds, src, vector_len); }

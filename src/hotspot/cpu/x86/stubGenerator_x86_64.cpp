@@ -3982,6 +3982,123 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+  // This mask is used for incrementing counter value(linc0, linc4, etc.)
+  address counter_mask_addr() {
+    __ align(64);
+    StubCodeMark mark(this, "StubRoutines", "counter_mask_addr");
+    address start = __ pc();
+    __ emit_data64(0x08090a0b0c0d0e0f, relocInfo::none);//lbswapmask
+    __ emit_data64(0x0001020304050607, relocInfo::none);
+    __ emit_data64(0x08090a0b0c0d0e0f, relocInfo::none);
+    __ emit_data64(0x0001020304050607, relocInfo::none);
+    __ emit_data64(0x08090a0b0c0d0e0f, relocInfo::none);
+    __ emit_data64(0x0001020304050607, relocInfo::none);
+    __ emit_data64(0x08090a0b0c0d0e0f, relocInfo::none);
+    __ emit_data64(0x0001020304050607, relocInfo::none);
+    __ emit_data64(0x0000000000000000, relocInfo::none);//linc0 = counter_mask_addr+64
+    __ emit_data64(0x0000000000000000, relocInfo::none);
+    __ emit_data64(0x0000000000000001, relocInfo::none);//counter_mask_addr() + 80
+    __ emit_data64(0x0000000000000000, relocInfo::none);
+    __ emit_data64(0x0000000000000002, relocInfo::none);
+    __ emit_data64(0x0000000000000000, relocInfo::none);
+    __ emit_data64(0x0000000000000003, relocInfo::none);
+    __ emit_data64(0x0000000000000000, relocInfo::none);
+    __ emit_data64(0x0000000000000004, relocInfo::none);//linc4 = counter_mask_addr() + 128
+    __ emit_data64(0x0000000000000000, relocInfo::none);
+    __ emit_data64(0x0000000000000004, relocInfo::none);
+    __ emit_data64(0x0000000000000000, relocInfo::none);
+    __ emit_data64(0x0000000000000004, relocInfo::none);
+    __ emit_data64(0x0000000000000000, relocInfo::none);
+    __ emit_data64(0x0000000000000004, relocInfo::none);
+    __ emit_data64(0x0000000000000000, relocInfo::none);
+    __ emit_data64(0x0000000000000008, relocInfo::none);//linc8 = counter_mask_addr() + 192
+    __ emit_data64(0x0000000000000000, relocInfo::none);
+    __ emit_data64(0x0000000000000008, relocInfo::none);
+    __ emit_data64(0x0000000000000000, relocInfo::none);
+    __ emit_data64(0x0000000000000008, relocInfo::none);
+    __ emit_data64(0x0000000000000000, relocInfo::none);
+    __ emit_data64(0x0000000000000008, relocInfo::none);
+    __ emit_data64(0x0000000000000000, relocInfo::none);
+    __ emit_data64(0x0000000000000020, relocInfo::none);//linc32 = counter_mask_addr() + 256
+    __ emit_data64(0x0000000000000000, relocInfo::none);
+    __ emit_data64(0x0000000000000020, relocInfo::none);
+    __ emit_data64(0x0000000000000000, relocInfo::none);
+    __ emit_data64(0x0000000000000020, relocInfo::none);
+    __ emit_data64(0x0000000000000000, relocInfo::none);
+    __ emit_data64(0x0000000000000020, relocInfo::none);
+    __ emit_data64(0x0000000000000000, relocInfo::none);
+    __ emit_data64(0x0000000000000010, relocInfo::none);//linc16 = counter_mask_addr() + 320
+    __ emit_data64(0x0000000000000000, relocInfo::none);
+    __ emit_data64(0x0000000000000010, relocInfo::none);
+    __ emit_data64(0x0000000000000000, relocInfo::none);
+    __ emit_data64(0x0000000000000010, relocInfo::none);
+    __ emit_data64(0x0000000000000000, relocInfo::none);
+    __ emit_data64(0x0000000000000010, relocInfo::none);
+    __ emit_data64(0x0000000000000000, relocInfo::none);
+    return start;
+  }
+
+ // Vector AES Counter implementation
+  address generate_counterMode_VectorAESCrypt()  {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "counterMode_AESCrypt");
+    address start = __ pc();
+    const Register from = c_rarg0; // source array address
+    const Register to = c_rarg1; // destination array address
+    const Register key = c_rarg2; // key array address r8
+    const Register counter = c_rarg3; // counter byte array initialized from counter array address
+    // and updated with the incremented counter in the end
+#ifndef _WIN64
+    const Register len_reg = c_rarg4;
+    const Register saved_encCounter_start = c_rarg5;
+    const Register used_addr = r10;
+    const Address  used_mem(rbp, 2 * wordSize);
+    const Register used = r11;
+#else
+    const Address len_mem(rbp, 6 * wordSize); // length is on stack on Win64
+    const Address saved_encCounter_mem(rbp, 7 * wordSize); // saved encrypted counter is on stack on Win64
+    const Address used_mem(rbp, 8 * wordSize); // used length is on stack on Win64
+    const Register len_reg = r10; // pick the first volatile windows register
+    const Register saved_encCounter_start = r11;
+    const Register used_addr = r13;
+    const Register used = r14;
+#endif
+    __ enter();
+   // Save state before entering routine
+    __ push(r12);
+    __ push(r13);
+    __ push(r14);
+    __ push(r15);
+#ifdef _WIN64
+    // on win64, fill len_reg from stack position
+    __ movl(len_reg, len_mem);
+    __ movptr(saved_encCounter_start, saved_encCounter_mem);
+    __ movptr(used_addr, used_mem);
+    __ movl(used, Address(used_addr, 0));
+#else
+    __ push(len_reg); // Save
+    __ movptr(used_addr, used_mem);
+    __ movl(used, Address(used_addr, 0));
+#endif
+    __ push(rbx);
+    __ aesctr_encrypt(from, to, key, counter, len_reg, used, used_addr, saved_encCounter_start);
+    // Restore state before leaving routine
+    __ pop(rbx);
+#ifdef _WIN64
+    __ movl(rax, len_mem); // return length
+#else
+    __ pop(rax); // return length
+#endif
+    __ pop(r15);
+    __ pop(r14);
+    __ pop(r13);
+    __ pop(r12);
+
+    __ leave(); // required for proper stackwalking of RuntimeStub frame
+    __ ret(0);
+    return start;
+  }
+
   // This is a version of CTR/AES crypt which does 6 blocks in a loop at a time
   // to hide instruction latency
   //
@@ -6111,9 +6228,14 @@ address generate_avx_ghash_processBlocks() {
         StubRoutines::_cipherBlockChaining_decryptAESCrypt = generate_cipherBlockChaining_decryptAESCrypt_Parallel();
       }
     }
-    if (UseAESCTRIntrinsics){
-      StubRoutines::x86::_counter_shuffle_mask_addr = generate_counter_shuffle_mask();
-      StubRoutines::_counterMode_AESCrypt = generate_counterMode_AESCrypt_Parallel();
+    if (UseAESCTRIntrinsics) {
+      if (VM_Version::supports_vaes() && VM_Version::supports_avx512bw() && VM_Version::supports_avx512vl()) {
+        StubRoutines::x86::_counter_mask_addr = counter_mask_addr();
+        StubRoutines::_counterMode_AESCrypt = generate_counterMode_VectorAESCrypt();
+      } else {
+        StubRoutines::x86::_counter_shuffle_mask_addr = generate_counter_shuffle_mask();
+        StubRoutines::_counterMode_AESCrypt = generate_counterMode_AESCrypt_Parallel();
+      }
     }
 
     if (UseSHA1Intrinsics) {
