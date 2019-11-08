@@ -23,7 +23,7 @@
 
 #include "precompiled.hpp"
 #include "gc/shared/barrierSet.hpp"
-#include "gc/shenandoah/shenandoahConcurrentRoots.hpp"
+#include "gc/shenandoah/shenandoahBarrierSet.hpp"
 #include "gc/shenandoah/shenandoahForwarding.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahHeuristics.hpp"
@@ -542,13 +542,13 @@ Node* ShenandoahBarrierSetC2::load_at_resolved(C2Access& access, const Type* val
 
   Node* load = BarrierSetC2::load_at_resolved(access, val_type);
   DecoratorSet decorators = access.decorators();
-  bool in_native = (decorators & IN_NATIVE) != 0;
+  BasicType type = access.type();
 
-  // 2: apply LRB if ShenandoahLoadRefBarrier is set
-  if (ShenandoahLoadRefBarrier) {
-    // Native barrier is for concurrent root processing
-    bool use_native_barrier = in_native && ShenandoahConcurrentRoots::can_do_concurrent_roots();
-    load = new ShenandoahLoadReferenceBarrierNode(NULL, load, use_native_barrier);
+  // 2: apply LRB if needed
+  if (ShenandoahBarrierSet::need_load_reference_barrier(decorators, type)) {
+    load = new ShenandoahLoadReferenceBarrierNode(NULL,
+                                                  load,
+                                                  ShenandoahBarrierSet::use_load_reference_barrier_native(decorators, type));
     if (access.is_parse_access()) {
       load = static_cast<C2ParseAccess &>(access).kit()->gvn().transform(load);
     } else {
@@ -556,8 +556,8 @@ Node* ShenandoahBarrierSetC2::load_at_resolved(C2Access& access, const Type* val
     }
   }
 
-  // 3: apply keep-alive barrier if ShenandoahKeepAliveBarrier is set
-  if (ShenandoahKeepAliveBarrier) {
+  // 3: apply keep-alive barrier if needed
+  if (ShenandoahBarrierSet::need_keep_alive_barrier(decorators, type)) {
     Node* top = Compile::current()->top();
     Node* adr = access.addr().node();
     Node* offset = adr->is_AddP() ? adr->in(AddPNode::Offset) : top;
@@ -583,6 +583,7 @@ Node* ShenandoahBarrierSetC2::load_at_resolved(C2Access& access, const Type* val
     GraphKit* kit = parse_access.kit();
     bool mismatched = (decorators & C2_MISMATCHED) != 0;
     bool is_unordered = (decorators & MO_UNORDERED) != 0;
+    bool in_native = (decorators & IN_NATIVE) != 0;
     bool need_cpu_mem_bar = !is_unordered || mismatched || in_native;
 
     if (on_weak_ref) {

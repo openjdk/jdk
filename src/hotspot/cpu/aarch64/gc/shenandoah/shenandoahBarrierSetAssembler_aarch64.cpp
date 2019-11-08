@@ -22,8 +22,8 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/shenandoah/shenandoahBarrierSet.hpp"
 #include "gc/shenandoah/shenandoahBarrierSetAssembler.hpp"
-#include "gc/shenandoah/shenandoahConcurrentRoots.hpp"
 #include "gc/shenandoah/shenandoahForwarding.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
@@ -370,8 +370,8 @@ void ShenandoahBarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet d
     return;
   }
 
-  // 2: load a reference from src location and apply LRB if ShenandoahLoadRefBarrier is set
-  if (ShenandoahLoadRefBarrier) {
+  // 2: load a reference from src location and apply LRB if needed
+  if (ShenandoahBarrierSet::need_load_reference_barrier(decorators, type)) {
     Register result_dst = dst;
 
     // Preserve src location for LRB
@@ -382,9 +382,7 @@ void ShenandoahBarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet d
 
     BarrierSetAssembler::load_at(masm, decorators, type, dst, src, tmp1, tmp_thread);
 
-    // Native barrier is for concurrent root processing
-    bool in_native = (decorators & IN_NATIVE) != 0;
-    if (in_native && ShenandoahConcurrentRoots::can_do_concurrent_roots()) {
+    if (ShenandoahBarrierSet::use_load_reference_barrier_native(decorators, type)) {
       load_reference_barrier_native(masm, dst, src);
     } else {
       load_reference_barrier(masm, dst, src);
@@ -398,25 +396,17 @@ void ShenandoahBarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet d
     BarrierSetAssembler::load_at(masm, decorators, type, dst, src, tmp1, tmp_thread);
   }
 
-  // 3: apply keep-alive barrier if ShenandoahKeepAliveBarrier is set
-  if (ShenandoahKeepAliveBarrier) {
-    bool on_weak = (decorators & ON_WEAK_OOP_REF) != 0;
-    bool on_phantom = (decorators & ON_PHANTOM_OOP_REF) != 0;
-    bool on_reference = on_weak || on_phantom;
-    bool is_traversal_mode = ShenandoahHeap::heap()->is_traversal_mode();
-    bool keep_alive = (decorators & AS_NO_KEEPALIVE) == 0 || is_traversal_mode;
-
-    if (on_reference && keep_alive) {
-      __ enter();
-      satb_write_barrier_pre(masm /* masm */,
-                             noreg /* obj */,
-                             dst /* pre_val */,
-                             rthread /* thread */,
-                             tmp1 /* tmp */,
-                             true /* tosca_live */,
-                             true /* expand_call */);
-      __ leave();
-    }
+  // 3: apply keep-alive barrier if needed
+  if (ShenandoahBarrierSet::need_keep_alive_barrier(decorators, type)) {
+    __ enter();
+    satb_write_barrier_pre(masm /* masm */,
+                           noreg /* obj */,
+                           dst /* pre_val */,
+                           rthread /* thread */,
+                           tmp1 /* tmp */,
+                           true /* tosca_live */,
+                           true /* expand_call */);
+    __ leave();
   }
 }
 

@@ -24,8 +24,8 @@
 #include "precompiled.hpp"
 #include "c1/c1_IR.hpp"
 #include "gc/shared/satbMarkQueue.hpp"
+#include "gc/shenandoah/shenandoahBarrierSet.hpp"
 #include "gc/shenandoah/shenandoahBarrierSetAssembler.hpp"
-#include "gc/shenandoah/shenandoahConcurrentRoots.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
 #include "gc/shenandoah/shenandoahRuntime.hpp"
@@ -212,12 +212,11 @@ void ShenandoahBarrierSetC1::load_at_resolved(LIRAccess& access, LIR_Opr result)
 
   LIRGenerator* gen = access.gen();
   DecoratorSet decorators = access.decorators();
+  BasicType type = access.type();
 
   // 2: load a reference from src location and apply LRB if ShenandoahLoadRefBarrier is set
-  if (ShenandoahLoadRefBarrier) {
-    // Native barrier is for concurrent root processing
-    bool in_native = (decorators & IN_NATIVE) != 0;
-    if (in_native && ShenandoahConcurrentRoots::can_do_concurrent_roots()) {
+  if (ShenandoahBarrierSet::need_load_reference_barrier(decorators, type)) {
+    if (ShenandoahBarrierSet::use_load_reference_barrier_native(decorators, type)) {
       BarrierSetC1::load_at_resolved(access, result);
       LIR_OprList* args = new LIR_OprList();
       LIR_Opr addr = access.resolved_addr();
