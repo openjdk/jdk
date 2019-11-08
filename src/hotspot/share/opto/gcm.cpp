@@ -510,6 +510,7 @@ Block* PhaseCFG::insert_anti_dependences(Block* LCA, Node* load, bool verify) {
   // do not need anti-dependence edges.
   int load_alias_idx = C->get_alias_index(load->adr_type());
 #ifdef ASSERT
+  assert(Compile::AliasIdxTop <= load_alias_idx && load_alias_idx < C->num_alias_types(), "Invalid alias index");
   if (load_alias_idx == Compile::AliasIdxBot && C->AliasLevel() > 0 &&
       (PrintOpto || VerifyAliases ||
        (PrintMiscellaneous && (WizardMode || Verbose)))) {
@@ -522,18 +523,6 @@ Block* PhaseCFG::insert_anti_dependences(Block* LCA, Node* load, bool verify) {
     if (VerifyAliases)  assert(load_alias_idx != Compile::AliasIdxBot, "");
   }
 #endif
-  assert(load_alias_idx || (load->is_Mach() && load->as_Mach()->ideal_Opcode() == Op_StrComp),
-         "String compare is only known 'load' that does not conflict with any stores");
-  assert(load_alias_idx || (load->is_Mach() && load->as_Mach()->ideal_Opcode() == Op_StrEquals),
-         "String equals is a 'load' that does not conflict with any stores");
-  assert(load_alias_idx || (load->is_Mach() && load->as_Mach()->ideal_Opcode() == Op_StrIndexOf),
-         "String indexOf is a 'load' that does not conflict with any stores");
-  assert(load_alias_idx || (load->is_Mach() && load->as_Mach()->ideal_Opcode() == Op_StrIndexOfChar),
-         "String indexOfChar is a 'load' that does not conflict with any stores");
-  assert(load_alias_idx || (load->is_Mach() && load->as_Mach()->ideal_Opcode() == Op_AryEq),
-         "Arrays equals is a 'load' that does not conflict with any stores");
-  assert(load_alias_idx || (load->is_Mach() && load->as_Mach()->ideal_Opcode() == Op_HasNegatives),
-         "HasNegatives is a 'load' that does not conflict with any stores");
 
   if (!C->alias_type(load_alias_idx)->is_rewritable()) {
     // It is impossible to spoil this load by putting stores before it,

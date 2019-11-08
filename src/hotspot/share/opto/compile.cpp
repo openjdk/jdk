@@ -1653,6 +1653,7 @@ const TypePtr *Compile::flatten_alias_type( const TypePtr *tj ) const {
 }
 
 void Compile::AliasType::Init(int i, const TypePtr* at) {
+  assert(AliasIdxTop <= i && i < Compile::current()->_max_alias_types, "Invalid alias index");
   _index = i;
   _adr_type = at;
   _field = NULL;
