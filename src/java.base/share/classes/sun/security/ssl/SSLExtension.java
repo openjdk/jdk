@@ -696,8 +696,18 @@ enum SSLExtension implements SSLStringizer {
             }
 
             // To switch off the max_fragment_length extension.
+            //
+            // Note that "jsse.enableMFLNExtension" is the CSR approved
+            // property name.  However, "jsse.enableMFLExtension" was used
+            // in the original implementation.  Temporarily, if either of
+            // the two properties set to true, the extension is switch on.
+            // We may remove the "jsse.enableMFLExtension" property in the
+            // future.  Please don't continue to use the misspelling property.
             enableExtension =
-                Utilities.getBooleanProperty("jsse.enableMFLExtension", false);
+                Utilities.getBooleanProperty(
+                        "jsse.enableMFLNExtension", false) ||
+                Utilities.getBooleanProperty(
+                        "jsse.enableMFLExtension", false);
             if (!enableExtension) {
                 extensions.remove(CH_MAX_FRAGMENT_LENGTH);
             }
