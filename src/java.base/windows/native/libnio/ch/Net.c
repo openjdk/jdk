@@ -127,12 +127,21 @@ Java_sun_nio_ch_Net_isExclusiveBindAvailable(JNIEnv *env, jclass clazz) {
 JNIEXPORT jboolean JNICALL
 Java_sun_nio_ch_Net_canIPv6SocketJoinIPv4Group0(JNIEnv* env, jclass cl)
 {
-    return JNI_FALSE;
+    /* IPv6 sockets can join IPv4 multicast groups */
+    return JNI_TRUE;
 }
 
 JNIEXPORT jboolean JNICALL
 Java_sun_nio_ch_Net_canJoin6WithIPv4Group0(JNIEnv* env, jclass cl)
 {
+    /* IPV6_ADD_MEMBERSHIP cannot be used to join IPv4 multicast groups */
+    return JNI_FALSE;
+}
+
+JNIEXPORT jboolean JNICALL
+Java_sun_nio_ch_Net_canUseIPv6OptionsWithIPv4LocalAddress0(JNIEnv* env, jclass cl)
+{
+    /* IPV6_XXX socket options cannot be used on IPv6 sockets bound to IPv4 address */
     return JNI_FALSE;
 }
 
@@ -279,7 +288,7 @@ Java_sun_nio_ch_Net_localPort(JNIEnv *env, jclass clazz, jobject fdo)
     SOCKETADDRESS sa;
     int sa_len = sizeof(sa);
 
-    if (getsockname(fdval(env, fdo), &sa.sa, &sa_len) < 0) {
+    if (getsockname(fdval(env, fdo), &sa.sa, &sa_len) == SOCKET_ERROR) {
         int error = WSAGetLastError();
         if (error == WSAEINVAL) {
             return 0;
@@ -297,7 +306,7 @@ Java_sun_nio_ch_Net_localInetAddress(JNIEnv *env, jclass clazz, jobject fdo)
     int sa_len = sizeof(sa);
     int port;
 
-    if (getsockname(fdval(env, fdo), &sa.sa, &sa_len) < 0) {
+    if (getsockname(fdval(env, fdo), &sa.sa, &sa_len) == SOCKET_ERROR) {
         NET_ThrowNew(env, WSAGetLastError(), "getsockname");
         return NULL;
     }
@@ -310,7 +319,7 @@ Java_sun_nio_ch_Net_remotePort(JNIEnv *env, jclass clazz, jobject fdo)
     SOCKETADDRESS sa;
     int sa_len = sizeof(sa);
 
-    if (getpeername(fdval(env, fdo), &sa.sa, &sa_len) < 0) {
+    if (getpeername(fdval(env, fdo), &sa.sa, &sa_len) == SOCKET_ERROR) {
         int error = WSAGetLastError();
         if (error == WSAEINVAL) {
             return 0;
@@ -328,7 +337,7 @@ Java_sun_nio_ch_Net_remoteInetAddress(JNIEnv *env, jclass clazz, jobject fdo)
     int sa_len = sizeof(sa);
     int port;
 
-    if (getpeername(fdval(env, fdo), &sa.sa, &sa_len) < 0) {
+    if (getpeername(fdval(env, fdo), &sa.sa, &sa_len) == SOCKET_ERROR) {
         NET_ThrowNew(env, WSAGetLastError(), "getsockname");
         return NULL;
     }
@@ -366,7 +375,7 @@ Java_sun_nio_ch_Net_getIntOption0(JNIEnv *env, jclass clazz, jobject fdo,
     } else {
         n = getsockopt(fdval(env, fdo), level, opt, arg, &arglen);
     }
-    if (n < 0) {
+    if (n == SOCKET_ERROR) {
         handleSocketError(env, WSAGetLastError());
         return IOS_THROWN;
     }
@@ -410,7 +419,7 @@ Java_sun_nio_ch_Net_setIntOption0(JNIEnv *env, jclass clazz, jobject fdo,
     } else {
         n = setsockopt(fdval(env, fdo), level, opt, parg, arglen);
     }
-    if (n < 0)
+    if (n == SOCKET_ERROR)
         handleSocketError(env, WSAGetLastError());
 }
 
@@ -439,7 +448,7 @@ Java_sun_nio_ch_Net_joinOrDrop4(JNIEnv *env, jobject this, jboolean join, jobjec
     }
 
     n = setsockopt(fdval(env,fdo), IPPROTO_IP, opt, optval, optlen);
-    if (n < 0) {
+    if (n == SOCKET_ERROR) {
         if (join && (WSAGetLastError() == WSAENOPROTOOPT))
             return IOS_UNAVAILABLE;
         handleSocketError(env, WSAGetLastError());
@@ -461,7 +470,7 @@ Java_sun_nio_ch_Net_blockOrUnblock4(JNIEnv *env, jobject this, jboolean block, j
 
     n = setsockopt(fdval(env,fdo), IPPROTO_IP, opt,
                    (void*)&mreq_source, sizeof(mreq_source));
-    if (n < 0) {
+    if (n == SOCKET_ERROR) {
         if (block && (WSAGetLastError() == WSAENOPROTOOPT))
             return IOS_UNAVAILABLE;
         handleSocketError(env, WSAGetLastError());
@@ -516,8 +525,8 @@ Java_sun_nio_ch_Net_joinOrDrop6(JNIEnv *env, jobject this, jboolean join, jobjec
         n = setGroupSourceReqOption(env, fdo, opt, group, index, source);
     }
 
-    if (n < 0) {
-        handleSocketError(env, errno);
+    if (n == SOCKET_ERROR) {
+        handleSocketError(env, WSAGetLastError());
     }
     return 0;
 }
@@ -528,8 +537,8 @@ Java_sun_nio_ch_Net_blockOrUnblock6(JNIEnv *env, jobject this, jboolean block, j
 {
     int opt = (block) ? MCAST_BLOCK_SOURCE : MCAST_UNBLOCK_SOURCE;
     int n = setGroupSourceReqOption(env, fdo, opt, group, index, source);
-    if (n < 0) {
-        handleSocketError(env, errno);
+    if (n == SOCKET_ERROR) {
+        handleSocketError(env, WSAGetLastError());
     }
     return 0;
 }
@@ -545,7 +554,7 @@ Java_sun_nio_ch_Net_setInterface4(JNIEnv* env, jobject this, jobject fdo, jint i
 
     n = setsockopt(fdval(env, fdo), IPPROTO_IP, IP_MULTICAST_IF,
                    (void*)&(in.s_addr), arglen);
-    if (n < 0) {
+    if (n == SOCKET_ERROR) {
         handleSocketError(env, WSAGetLastError());
     }
 }
@@ -558,7 +567,7 @@ Java_sun_nio_ch_Net_getInterface4(JNIEnv* env, jobject this, jobject fdo)
     int n;
 
     n = getsockopt(fdval(env, fdo), IPPROTO_IP, IP_MULTICAST_IF, (void*)&in, &arglen);
-    if (n < 0) {
+    if (n == SOCKET_ERROR) {
         handleSocketError(env, WSAGetLastError());
         return IOS_THROWN;
     }
@@ -568,27 +577,27 @@ Java_sun_nio_ch_Net_getInterface4(JNIEnv* env, jobject this, jobject fdo)
 JNIEXPORT void JNICALL
 Java_sun_nio_ch_Net_setInterface6(JNIEnv* env, jobject this, jobject fdo, jint index)
 {
-    int value = (jint)index;
+    DWORD value = (jint)index;
     int arglen = sizeof(value);
     int n;
 
     n = setsockopt(fdval(env, fdo), IPPROTO_IPV6, IPV6_MULTICAST_IF,
                    (void*)&(index), arglen);
-    if (n < 0) {
-        handleSocketError(env, errno);
+    if (n == SOCKET_ERROR) {
+        handleSocketError(env, WSAGetLastError());
     }
 }
 
 JNIEXPORT jint JNICALL
 Java_sun_nio_ch_Net_getInterface6(JNIEnv* env, jobject this, jobject fdo)
 {
-    int index;
+    DWORD index;
     int arglen = sizeof(index);
     int n;
 
     n = getsockopt(fdval(env, fdo), IPPROTO_IPV6, IPV6_MULTICAST_IF, (void*)&index, &arglen);
-    if (n < 0) {
-        handleSocketError(env, errno);
+    if (n == SOCKET_ERROR) {
+        handleSocketError(env, WSAGetLastError());
         return -1;
     }
     return (jint)index;

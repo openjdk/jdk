@@ -121,6 +121,14 @@ public class Net {
         return canJoin6WithIPv4Group0();
     }
 
+    /**
+     * Tells whether IPV6_XXX socket options should be used on an IPv6 socket
+     * that is bound to an IPv4 address.
+     */
+    static boolean canUseIPv6OptionsWithIPv4LocalAddress() {
+        return canUseIPv6OptionsWithIPv4LocalAddress0();
+    }
+
     public static InetSocketAddress checkAddress(SocketAddress sa) {
         if (sa == null)
             throw new NullPointerException();
@@ -433,6 +441,8 @@ public class Net {
     private static native boolean canIPv6SocketJoinIPv4Group0();
 
     private static native boolean canJoin6WithIPv4Group0();
+
+    private static native boolean canUseIPv6OptionsWithIPv4LocalAddress0();
 
     static FileDescriptor socket(boolean stream) throws IOException {
         return socket(UNSPEC, stream);

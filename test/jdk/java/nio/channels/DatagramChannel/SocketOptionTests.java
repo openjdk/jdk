@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +22,15 @@
  */
 
 /* @test
- * @bug 4640544 8044773
+ * @bug 4640544 8044773 8233435
  * @summary Unit test for setOption/getOption/options methods
  * @requires !vm.graal.enabled
+ * @library /test/lib
+ * @build jdk.test.lib.net.IPSupport
+ *        jdk.test.lib.NetworkConfiguration
+ *        SocketOptionTests
  * @run main SocketOptionTests
+ * @run main/othervm -Djava.net.preferIPv4Stack=true SocketOptionTests
  * @run main/othervm --limit-modules=java.base SocketOptionTests
  */
 
@@ -34,23 +39,61 @@ import java.nio.channels.*;
 import java.net.*;
 import java.io.IOException;
 import java.util.*;
+import static java.net.StandardProtocolFamily.*;
 import static java.net.StandardSocketOptions.*;
+
+import jdk.test.lib.NetworkConfiguration;
+import jdk.test.lib.net.IPSupport;
 
 public class SocketOptionTests {
 
-    static <T> void checkOption(DatagramChannel dc,
-                                SocketOption<T> name,
-                                T expectedValue)
-        throws IOException
-    {
-        T value = dc.getOption(name);
-        if (!value.equals(expectedValue))
-            throw new RuntimeException("value not as expected");
+    public static void main(String[] args) throws IOException {
+        IPSupport.throwSkippedExceptionIfNonOperational();
+
+        NetworkConfiguration config = NetworkConfiguration.probe();
+        InetAddress ip4Address = config.ip4Addresses().findAny().orElse(null);
+        InetAddress ip6Address = config.ip6Addresses().findAny().orElse(null);
+
+        System.out.println("[UNSPEC, bound to wildcard address]");
+        try (DatagramChannel dc = DatagramChannel.open()) {
+            test(dc, new InetSocketAddress(0));
+        }
+
+        if (IPSupport.hasIPv4()) {
+            System.out.println("[INET, bound to wildcard address]");
+            try (DatagramChannel dc = DatagramChannel.open(INET)) {
+                test(dc, new InetSocketAddress(0));
+            }
+            System.out.println("[INET, bound to IPv4 address]");
+            try (DatagramChannel dc = DatagramChannel.open(INET)) {
+                test(dc, new InetSocketAddress(ip4Address, 0));
+            }
+        }
+
+        if (IPSupport.hasIPv6()) {
+            System.out.println("[INET6, bound to wildcard address]");
+            try (DatagramChannel dc = DatagramChannel.open(INET6)) {
+                test(dc, new InetSocketAddress(0));
+            }
+            System.out.println("[INET6, bound to IPv6 address]");
+            try (DatagramChannel dc = DatagramChannel.open(INET6)) {
+                test(dc, new InetSocketAddress(ip6Address, 0));
+            }
+        }
+
+        if (IPSupport.hasIPv4() && IPSupport.hasIPv6()) {
+            System.out.println("[UNSPEC, bound to IPv4 address]");
+            try (DatagramChannel dc = DatagramChannel.open()) {
+                test(dc, new InetSocketAddress(ip4Address, 0));
+            }
+            System.out.println("[INET6, bound to IPv4 address]");
+            try (DatagramChannel dc = DatagramChannel.open(INET6)) {
+                test(dc, new InetSocketAddress(ip4Address, 0));
+            }
+        }
     }
 
-    public static void main(String[] args) throws IOException {
-        DatagramChannel dc = DatagramChannel.open();
-
+    static void test(DatagramChannel dc, SocketAddress localAddress) throws IOException {
         // check supported options
         Set<SocketOption<?>> options = dc.supportedOptions();
         boolean reuseport = options.contains(SO_REUSEPORT);
@@ -101,7 +144,7 @@ public class SocketOptionTests {
             checkOption(dc, SO_REUSEPORT, false);
         }
         // bind socket
-        dc.bind(new InetSocketAddress(0));
+        dc.bind(localAddress);
 
         // allow to change when bound
         dc.setOption(SO_BROADCAST, true);
@@ -115,7 +158,6 @@ public class SocketOptionTests {
         checkOption(dc, IP_MULTICAST_LOOP, false);
         dc.setOption(IP_MULTICAST_LOOP, true);
         checkOption(dc, IP_MULTICAST_LOOP, true);
-
 
         // NullPointerException
         try {
@@ -136,5 +178,15 @@ public class SocketOptionTests {
             throw new RuntimeException("ClosedChannelException not thrown");
         } catch (ClosedChannelException x) {
         }
+    }
+
+    static <T> void checkOption(DatagramChannel dc,
+                                SocketOption<T> name,
+                                T expectedValue)
+        throws IOException
+    {
+        T value = dc.getOption(name);
+        if (!value.equals(expectedValue))
+            throw new RuntimeException("value not as expected");
     }
 }
