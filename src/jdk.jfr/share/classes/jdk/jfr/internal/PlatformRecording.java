@@ -484,7 +484,10 @@ public final class PlatformRecording implements AutoCloseable {
         }
         for (FlightRecorderListener cl : PlatformRecorder.getListeners()) {
             try {
-                cl.recordingStateChanged(getRecording());
+                // Skip internal recordings
+                if (recording != null) {
+                    cl.recordingStateChanged(recording);
+                }
             } catch (RuntimeException re) {
                 Logger.log(JFR, WARN, "Error notifying recorder listener:" + re.getMessage());
             }
