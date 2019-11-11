@@ -54,10 +54,13 @@ bool CompilationModeFlag::initialize() {
     } else if (strcmp(CompilationMode, "high-only-quick-internal") == 0) {
       _high_only_quick_internal = true;
     } else {
-        jio_fprintf(defaultStream::error_stream(), "Unsupported compilation mode '%s', supported modes are: quick-only, high-only, high-only-quick-internal\n", CompilationMode);
-        return false;
-      }
+      jio_fprintf(defaultStream::error_stream(), "Unsupported compilation mode '%s', supported modes are: quick-only, high-only, high-only-quick-internal\n", CompilationMode);
+      return false;
     }
+    if (disable_intermediate()) {
+      CompLevel_initial_compile = CompLevel_full_optimization;
+    }
+  }
   return true;
 }
 
