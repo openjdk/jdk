@@ -1969,12 +1969,12 @@ void VM_HeapDumper::dump_stack_traces() {
 }
 
 // dump the heap to given path.
-int HeapDumper::dump(const char* path) {
+int HeapDumper::dump(const char* path, outputStream* out) {
   assert(path != NULL && strlen(path) > 0, "path missing");
 
   // print message in interactive case
-  if (print_to_tty()) {
-    tty->print_cr("Dumping heap to %s ...", path);
+  if (out != NULL) {
+    out->print_cr("Dumping heap to %s ...", path);
     timer()->start();
   }
 
@@ -1982,8 +1982,8 @@ int HeapDumper::dump(const char* path) {
   DumpWriter writer(path);
   if (!writer.is_open()) {
     set_error(writer.error());
-    if (print_to_tty()) {
-      tty->print_cr("Unable to create %s: %s", path,
+    if (out != NULL) {
+      out->print_cr("Unable to create %s: %s", path,
         (error() != NULL) ? error() : "reason unknown");
     }
     return -1;
@@ -2003,13 +2003,13 @@ int HeapDumper::dump(const char* path) {
   set_error(writer.error());
 
   // print message in interactive case
-  if (print_to_tty()) {
+  if (out != NULL) {
     timer()->stop();
     if (error() == NULL) {
-      tty->print_cr("Heap dump file created [" JULONG_FORMAT " bytes in %3.3f secs]",
+      out->print_cr("Heap dump file created [" JULONG_FORMAT " bytes in %3.3f secs]",
                     writer.bytes_written(), timer()->seconds());
     } else {
-      tty->print_cr("Dump file is incomplete: %s", writer.error());
+      out->print_cr("Dump file is incomplete: %s", writer.error());
     }
   }
 
@@ -2137,8 +2137,7 @@ void HeapDumper::dump_heap(bool oome) {
   dump_file_seq++;   // increment seq number for next time we dump
 
   HeapDumper dumper(false /* no GC before heap dump */,
-                    true  /* send to tty */,
                     oome  /* pass along out-of-memory-error flag */);
-  dumper.dump(my_path);
+  dumper.dump(my_path, tty);
   os::free(my_path);
 }
