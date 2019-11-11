@@ -2313,7 +2313,7 @@ void InterpreterMacroAssembler::increment_invocation_counter(Register Rcounters,
 }
 
 void InterpreterMacroAssembler::verify_oop(Register reg, TosState state) {
-  if (state == atos) { MacroAssembler::verify_oop(reg); }
+  if (state == atos) { MacroAssembler::verify_oop(reg, FILE_AND_LINE); }
 }
 
 // Local helper function for the verify_oop_or_return_address macro.

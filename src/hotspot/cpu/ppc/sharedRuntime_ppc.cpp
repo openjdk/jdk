@@ -1742,9 +1742,9 @@ static void verify_oop_args(MacroAssembler* masm,
         assert(r->is_valid(), "bad oop arg");
         if (r->is_stack()) {
           __ ld(temp_reg, reg2offset(r), R1_SP);
-          __ verify_oop(temp_reg);
+          __ verify_oop(temp_reg, FILE_AND_LINE);
         } else {
-          __ verify_oop(r->as_Register());
+          __ verify_oop(r->as_Register(), FILE_AND_LINE);
         }
       }
     }
@@ -2107,7 +2107,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
 
   __ cmpdi(CCR0, R3_ARG1, 0);
   __ beq(CCR0, ic_miss);
-  __ verify_oop(R3_ARG1);
+  __ verify_oop(R3_ARG1, FILE_AND_LINE);
   __ load_klass(receiver_klass, R3_ARG1);
 
   __ cmpd(CCR0, receiver_klass, ic);

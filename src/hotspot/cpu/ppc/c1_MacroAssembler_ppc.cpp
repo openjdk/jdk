@@ -44,7 +44,7 @@ void C1_MacroAssembler::inline_cache_check(Register receiver, Register iCache) {
   const Register temp_reg = R12_scratch2;
   Label Lmiss;
 
-  verify_oop(receiver);
+  verify_oop(receiver, FILE_AND_LINE);
   MacroAssembler::null_check(receiver, oopDesc::klass_offset_in_bytes(), &Lmiss);
   load_klass(temp_reg, receiver);
 
@@ -100,7 +100,7 @@ void C1_MacroAssembler::lock_object(Register Rmark, Register Roop, Register Rbox
   // Load object header.
   ld(Rmark, oopDesc::mark_offset_in_bytes(), Roop);
 
-  verify_oop(Roop);
+  verify_oop(Roop, FILE_AND_LINE);
 
   // Save object being locked into the BasicObjectLock...
   std(Roop, BasicObjectLock::obj_offset_in_bytes(), Rbox);
@@ -157,7 +157,7 @@ void C1_MacroAssembler::unlock_object(Register Rmark, Register Roop, Register Rb
   if (UseBiasedLocking) {
     // Load the object out of the BasicObjectLock.
     ld(Roop, BasicObjectLock::obj_offset_in_bytes(), Rbox);
-    verify_oop(Roop);
+    verify_oop(Roop, FILE_AND_LINE);
     biased_locking_exit(CCR0, Roop, R0, done);
   }
   // Test first it it is a fast recursive unlock.
@@ -167,7 +167,7 @@ void C1_MacroAssembler::unlock_object(Register Rmark, Register Roop, Register Rb
   if (!UseBiasedLocking) {
     // Load object.
     ld(Roop, BasicObjectLock::obj_offset_in_bytes(), Rbox);
-    verify_oop(Roop);
+    verify_oop(Roop, FILE_AND_LINE);
   }
 
   // Check if it is still a light weight lock, this is is true if we see
@@ -316,7 +316,7 @@ void C1_MacroAssembler::initialize_object(
 //         relocInfo::runtime_call_type);
   }
 
-  verify_oop(obj);
+  verify_oop(obj, FILE_AND_LINE);
 }
 
 
@@ -383,7 +383,7 @@ void C1_MacroAssembler::allocate_array(
     //     relocInfo::runtime_call_type);
   }
 
-  verify_oop(obj);
+  verify_oop(obj, FILE_AND_LINE);
 }
 
 
@@ -399,8 +399,7 @@ void C1_MacroAssembler::verify_not_null_oop(Register r) {
   bne(CCR0, not_null);
   stop("non-null oop required");
   bind(not_null);
-  if (!VerifyOops) return;
-  verify_oop(r);
+  verify_oop(r, FILE_AND_LINE);
 }
 
 #endif // PRODUCT

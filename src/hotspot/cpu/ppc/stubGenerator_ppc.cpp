@@ -440,7 +440,6 @@ class StubGenerator: public StubCodeGenerator {
     StubCodeMark mark(this, "StubRoutines", "forward_exception");
     address start = __ pc();
 
-#if !defined(PRODUCT)
     if (VerifyOops) {
       // Get pending exception oop.
       __ ld(R3_ARG1,
@@ -456,7 +455,6 @@ class StubGenerator: public StubCodeGenerator {
       }
       __ verify_oop(R3_ARG1, "StubRoutines::forward exception: not an oop");
     }
-#endif
 
     // Save LR/CR and copy exception pc (LR) into R4_ARG2.
     __ save_LR_CR(R4_ARG2);
@@ -702,9 +700,9 @@ class StubGenerator: public StubCodeGenerator {
 #if !defined(PRODUCT)
   // Wrapper which calls oopDesc::is_oop_or_null()
   // Only called by MacroAssembler::verify_oop
-  static void verify_oop_helper(const char* message, oop o) {
+  static void verify_oop_helper(const char* message, oopDesc* o) {
     if (!oopDesc::is_oop_or_null(o)) {
-      fatal("%s", message);
+      fatal("%s. oop: " PTR_FORMAT, message, p2i(o));
     }
     ++ StubRoutines::_verify_oop_count;
   }
@@ -724,7 +722,6 @@ class StubGenerator: public StubCodeGenerator {
 
     return start;
   }
-
 
   // -XX:+OptimizeFill : convert fill/copy loops into intrinsic
   //
