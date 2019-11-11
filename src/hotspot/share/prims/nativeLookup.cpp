@@ -27,6 +27,8 @@
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
+#include "logging/log.hpp"
+#include "logging/logTag.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/instanceKlass.hpp"
@@ -413,11 +415,11 @@ address NativeLookup::lookup(const methodHandle& method, bool& in_base_library, 
     method->set_native_function(entry,
       Method::native_bind_event_is_interesting);
     // -verbose:jni printing
-    if (PrintJNIResolving) {
+    if (log_is_enabled(Debug, jni, resolve)) {
       ResourceMark rm(THREAD);
-      tty->print_cr("[Dynamic-linking native method %s.%s ... JNI]",
-        method->method_holder()->external_name(),
-        method->name()->as_C_string());
+      log_debug(jni, resolve)("[Dynamic-linking native method %s.%s ... JNI]",
+                              method->method_holder()->external_name(),
+                              method->name()->as_C_string());
     }
   }
   return method->native_function();

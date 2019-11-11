@@ -34,6 +34,8 @@
 #include "jvmci/jvmciCompilerToVM.hpp"
 #include "jvmci/jvmciCodeInstaller.hpp"
 #include "jvmci/jvmciRuntime.hpp"
+#include "logging/log.hpp"
+#include "logging/logTag.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/universe.hpp"
 #include "oops/constantPool.inline.hpp"
@@ -2296,11 +2298,9 @@ C2V_VMENTRY_NULL(jlongArray, registerNativeMethods, (JNIEnv* env, jobject, jclas
             method->name_and_sig_as_C_string(), p2i(method->native_function()), p2i(entry)));
       }
       method->set_native_function(entry, Method::native_bind_event_is_interesting);
-      if (PrintJNIResolving) {
-        tty->print_cr("[Dynamic-linking native method %s.%s ... JNI]",
-          method->method_holder()->external_name(),
-          method->name()->as_C_string());
-      }
+      log_debug(jni, resolve)("[Dynamic-linking native method %s.%s ... JNI]",
+                              method->method_holder()->external_name(),
+                              method->name()->as_C_string());
     }
   }
 

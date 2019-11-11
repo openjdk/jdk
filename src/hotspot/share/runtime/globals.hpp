@@ -305,9 +305,6 @@ const size_t minimumSymbolTableSize = 1024;
   notproduct(bool, TraceCodeBlobStacks, false,                              \
           "Trace stack-walk of codeblobs")                                  \
                                                                             \
-  product(bool, PrintJNIResolving, false,                                   \
-          "Used to implement -v:jni")                                       \
-                                                                            \
   notproduct(bool, PrintRewrites, false,                                    \
           "Print methods that are being rewritten")                         \
                                                                             \

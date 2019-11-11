@@ -4789,15 +4789,11 @@ void os::Linux::install_signal_handlers() {
     // Log that signal checking is off only if -verbose:jni is specified.
     if (CheckJNICalls) {
       if (libjsig_is_loaded) {
-        if (PrintJNIResolving) {
-          tty->print_cr("Info: libjsig is activated, all active signal checking is disabled");
-        }
+        log_debug(jni, resolve)("Info: libjsig is activated, all active signal checking is disabled");
         check_signals = false;
       }
       if (AllowUserSignalHandlers) {
-        if (PrintJNIResolving) {
-          tty->print_cr("Info: AllowUserSignalHandlers is activated, all active signal checking is disabled");
-        }
+        log_debug(jni, resolve)("Info: AllowUserSignalHandlers is activated, all active signal checking is disabled");
         check_signals = false;
       }
     }

@@ -36,6 +36,8 @@
 #include "interpreter/bytecodes.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/oopMapCache.hpp"
+#include "logging/log.hpp"
+#include "logging/logTag.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/heapInspection.hpp"
 #include "memory/metadataFactory.hpp"
@@ -448,11 +450,11 @@ bool Method::register_native(Klass* k, Symbol* name, Symbol* signature, address 
   } else {
     method->clear_native_function();
   }
-  if (PrintJNIResolving) {
+  if (log_is_enabled(Debug, jni, resolve)) {
     ResourceMark rm(THREAD);
-    tty->print_cr("[Registering JNI native method %s.%s]",
-      method->method_holder()->external_name(),
-      method->name()->as_C_string());
+    log_debug(jni, resolve)("[Registering JNI native method %s.%s]",
+                            method->method_holder()->external_name(),
+                            method->name()->as_C_string());
   }
   return true;
 }
