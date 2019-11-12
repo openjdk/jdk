@@ -349,12 +349,23 @@ public class TestHelper {
      * occurs then back off for a moment and try again. When a number of
      * attempts fail, give up and throw an exception.
      */
-    void createAFile(File aFile, List<String> contents) throws IOException {
+    void createAFile(File aFile, List<String> lines) throws IOException {
+        createAFile(aFile, lines, true);
+    }
+
+    void createAFile(File aFile, List<String> lines, boolean endWithNewline) throws IOException {
         IOException cause = null;
         for (int attempts = 0; attempts < 10; attempts++) {
             try {
-                Files.write(aFile.getAbsoluteFile().toPath(), contents,
-                    Charset.defaultCharset(), CREATE, TRUNCATE_EXISTING, WRITE);
+                if (endWithNewline) {
+                    Files.write(aFile.getAbsoluteFile().toPath(),
+                        lines, Charset.defaultCharset(),
+                        CREATE, TRUNCATE_EXISTING, WRITE);
+                } else {
+                    Files.write(aFile.getAbsoluteFile().toPath(),
+                        String.join(System.lineSeparator(), lines).getBytes(Charset.defaultCharset()),
+                        CREATE, TRUNCATE_EXISTING, WRITE);
+                }
                 if (cause != null) {
                     /*
                      * report attempts and errors that were encountered

@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8027634
+ * @bug 8027634 8231863
  * @summary Argument parsing from file
  * @modules jdk.compiler
  *          jdk.zipfs
@@ -61,11 +61,15 @@ public class ArgsFileTest extends TestHelper {
         env.put(JLDEBUG_KEY, "true");
     }
 
-    private File createArgFile(String fname, List<String> lines) throws IOException {
+    private File createArgFile(String fname, List<String> lines, boolean endWithNewline) throws IOException {
         File argFile = new File(fname);
         argFile.delete();
-        createAFile(argFile, lines);
+        createAFile(argFile, lines, endWithNewline);
         return argFile;
+    }
+
+    private File createArgFile(String fname, List<String> lines) throws IOException {
+        return createArgFile(fname, lines, true);
     }
 
     private void verifyOptions(List<String> args, TestResult tr) {
@@ -264,6 +268,23 @@ public class ArgsFileTest extends TestHelper {
         cpOpt.delete();
         jarArg.delete();
         userArgs.delete();
+    }
+
+    @Test
+    public void userApplicationWithoutEmptyLastLine() throws IOException {
+        File cpOpt = createArgFile("cpOpt", Arrays.asList("-classpath ."), false);
+        File vmArgs = createArgFile("vmArgs", Arrays.asList("-Xint"), false);
+
+        TestResult tr = doExec(env, javaCmd, "-cp", "test.jar", "@cpOpt", "Foo", "-test");
+        verifyOptions(Arrays.asList("-cp", "test.jar", "-classpath", ".", "Foo", "-test"), tr);
+        verifyUserArgs(Arrays.asList("-test"), tr, 6);
+
+        tr = doExec(env, javaCmd,  "-cp", "test.jar", "@vmArgs", "Foo", "-test");
+        verifyOptions(Arrays.asList("-cp", "test.jar", "-Xint", "Foo", "-test"), tr);
+        verifyUserArgs(Arrays.asList("-test"), tr, 5);
+
+        cpOpt.delete();
+        vmArgs.delete();
     }
 
     // test with missing file

@@ -337,7 +337,9 @@ static JLI_List readArgFile(FILE *file) {
     // remaining partial token
     if (ctx.state == IN_TOKEN || ctx.state == IN_QUOTE) {
         if (ctx.parts->size != 0) {
-            JLI_List_add(rv, JLI_List_combine(ctx.parts));
+            token = JLI_List_combine(ctx.parts);
+            checkArg(token);
+            JLI_List_add(rv, token);
         }
     }
     JLI_List_free(ctx.parts);
