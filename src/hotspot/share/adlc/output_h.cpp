@@ -758,10 +758,6 @@ void ArchDesc::declare_pipe_classes(FILE *fp_hpp) {
       fprintf(fp_hpp, "  Pipeline_Use_Cycle_Mask(uint mask1, uint mask2) : _mask((((uint64_t)mask1) << 32) | mask2) {}\n\n");
       fprintf(fp_hpp, "  Pipeline_Use_Cycle_Mask(uint64_t mask) : _mask(mask) {}\n\n");
     }
-    fprintf(fp_hpp, "  Pipeline_Use_Cycle_Mask& operator=(const Pipeline_Use_Cycle_Mask &in) {\n");
-    fprintf(fp_hpp, "    _mask = in._mask;\n");
-    fprintf(fp_hpp, "    return *this;\n");
-    fprintf(fp_hpp, "  }\n\n");
     fprintf(fp_hpp, "  bool overlaps(const Pipeline_Use_Cycle_Mask &in2) const {\n");
     fprintf(fp_hpp, "    return ((_mask & in2._mask) != 0);\n");
     fprintf(fp_hpp, "  }\n\n");
@@ -792,11 +788,6 @@ void ArchDesc::declare_pipe_classes(FILE *fp_hpp) {
     for (l = 1; l <= masklen; l++)
       fprintf(fp_hpp, "_mask%d(mask%d)%s", l, l, l < masklen ? ", " : " {}\n\n");
 
-    fprintf(fp_hpp, "  Pipeline_Use_Cycle_Mask& operator=(const Pipeline_Use_Cycle_Mask &in) {\n");
-    for (l = 1; l <= masklen; l++)
-      fprintf(fp_hpp, "    _mask%d = in._mask%d;\n", l, l);
-    fprintf(fp_hpp, "    return *this;\n");
-    fprintf(fp_hpp, "  }\n\n");
     fprintf(fp_hpp, "  Pipeline_Use_Cycle_Mask intersect(const Pipeline_Use_Cycle_Mask &in2) {\n");
     fprintf(fp_hpp, "    Pipeline_Use_Cycle_Mask out;\n");
     for (l = 1; l <= masklen; l++)
