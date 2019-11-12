@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,8 @@ import sun.security.krb5.KrbCryptoException;
 import sun.security.krb5.Confounder;
 import sun.security.krb5.internal.crypto.KeyUsage;
 import java.util.Arrays;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * This class provides the implementation of AES Encryption with
@@ -107,7 +109,7 @@ public class AesSha2DkCrypto extends DkCrypto {
 
         byte[] saltUtf8 = null;
         try {
-            saltUtf8 = salt.getBytes("UTF-8");
+            saltUtf8 = salt.getBytes(UTF_8);
             return stringToKey(password, saltUtf8, s2kparams);
         } catch (Exception e) {
             return null;

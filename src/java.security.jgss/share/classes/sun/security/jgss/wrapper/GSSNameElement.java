@@ -29,7 +29,6 @@ import org.ietf.jgss.*;
 import java.security.Provider;
 import java.security.Security;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import sun.security.krb5.Realm;
 import sun.security.jgss.GSSUtil;
 import sun.security.util.ObjectIdentifier;

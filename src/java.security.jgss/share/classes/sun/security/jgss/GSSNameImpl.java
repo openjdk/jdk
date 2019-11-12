@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,10 +32,11 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Arrays;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import sun.security.util.ObjectIdentifier;
 import sun.security.util.DerInputStream;
 import sun.security.util.DerOutputStream;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * This is the implementation class for GSSName. Conceptually the
@@ -227,13 +228,10 @@ public class GSSNameImpl implements GSSName {
         byte[] bytes = null;
 
         if (appName instanceof String) {
-            try {
-                bytes = ((String) appName).getBytes("UTF-8");
-            } catch (UnsupportedEncodingException e) {
-                // Won't happen
-            }
-        } else
+            bytes = ((String) appName).getBytes(UTF_8);
+        } else {
             bytes = (byte[]) appName;
+        }
 
         if ((bytes[pos++] != 0x04) ||
             (bytes[pos++] != 0x01))
@@ -320,21 +318,14 @@ public class GSSNameImpl implements GSSName {
             if (!this.appNameType.equals(that.appNameType)) {
                 return false;
             }
-            byte[] myBytes = null;
-            byte[] bytes = null;
-            try {
-                myBytes =
+            byte[] myBytes =
                     (this.appNameStr != null ?
-                     this.appNameStr.getBytes("UTF-8") :
+                     this.appNameStr.getBytes(UTF_8) :
                      this.appNameBytes);
-                bytes =
+            byte[] bytes =
                     (that.appNameStr != null ?
-                     that.appNameStr.getBytes("UTF-8") :
+                     that.appNameStr.getBytes(UTF_8) :
                      that.appNameBytes);
-            } catch (UnsupportedEncodingException e) {
-                // Won't happen
-            }
-
             return Arrays.equals(myBytes, bytes);
         }
 

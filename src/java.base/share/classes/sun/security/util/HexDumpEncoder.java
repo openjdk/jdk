@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,8 @@ import java.io.PrintStream;
 import java.io.OutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+
+import static java.nio.charset.StandardCharsets.ISO_8859_1;
 
 /**
  * This class encodes a buffer into the classic: "Hexadecimal Dump" format of
@@ -183,17 +185,15 @@ public class HexDumpEncoder {
      */
     public String encode(byte aBuffer[]) {
         ByteArrayOutputStream outStream = new ByteArrayOutputStream();
-        ByteArrayInputStream    inStream = new ByteArrayInputStream(aBuffer);
-        String retVal = null;
+        ByteArrayInputStream inStream = new ByteArrayInputStream(aBuffer);
         try {
             encode(inStream, outStream);
             // explicit ascii->unicode conversion
-            retVal = outStream.toString("ISO-8859-1");
-        } catch (Exception IOException) {
+            return outStream.toString(ISO_8859_1);
+        } catch (IOException ignore) {
             // This should never happen.
             throw new Error("CharacterEncoder.encode internal error");
         }
-        return (retVal);
     }
 
     /**

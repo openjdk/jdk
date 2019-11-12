@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,14 +26,16 @@
 package com.oracle.security.ucrypto;
 
 import java.io.*;
-import static java.io.StreamTokenizer.*;
 import java.math.BigInteger;
 import java.util.*;
-
 import java.security.*;
+
+import static java.io.StreamTokenizer.*;
+import static java.nio.charset.StandardCharsets.ISO_8859_1;
 
 import sun.security.action.GetPropertyAction;
 import sun.security.util.PropertyExpander;
+
 
 /**
  * Configuration container and file parsing.
@@ -66,8 +68,8 @@ final class Config {
 
     Config(String filename) throws IOException {
         FileInputStream in = new FileInputStream(expand(filename));
-        reader = new BufferedReader(new InputStreamReader(in, "ISO-8859-1"));
-        parsedKeywords = new HashSet<String>();
+        reader = new BufferedReader(new InputStreamReader(in, ISO_8859_1));
+        parsedKeywords = new HashSet<>();
         st = new StreamTokenizer(reader);
         setupTokenizer();
         parse();

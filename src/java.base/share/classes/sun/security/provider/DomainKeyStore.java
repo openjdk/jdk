@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,8 @@ import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
 import java.security.cert.CertificateException;
 import java.util.*;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 import sun.security.pkcs.EncryptedPrivateKeyInfo;
 import sun.security.util.PolicyUtil;
@@ -768,7 +770,7 @@ abstract class DomainKeyStore extends KeyStoreSpi {
 
         try (InputStreamReader configurationReader =
             new InputStreamReader(
-                PolicyUtil.getInputStream(configuration.toURL()), "UTF-8")) {
+                PolicyUtil.getInputStream(configuration.toURL()), UTF_8)) {
             parser.read(configurationReader);
             domains = parser.getDomainEntries();
 

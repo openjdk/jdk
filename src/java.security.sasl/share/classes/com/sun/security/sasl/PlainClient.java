@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
 package com.sun.security.sasl;
 
 import javax.security.sasl.*;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
   * Implements the PLAIN SASL client mechanism.
@@ -89,43 +91,37 @@ final class PlainClient implements SaslClient {
      *
      * @param challengeData Ignored
      * @return A non-null byte array containing the response to be sent to the server.
-     * @throws SaslException If cannot encode ids in UTF-8
-     * @throw IllegalStateException if authentication already completed
+     * @throws IllegalStateException if authentication already completed
      */
-    public byte[] evaluateChallenge(byte[] challengeData) throws SaslException {
+    public byte[] evaluateChallenge(byte[] challengeData) {
         if (completed) {
             throw new IllegalStateException(
                 "PLAIN authentication already completed");
         }
         completed = true;
+        byte[] authz = (authorizationID != null)
+            ? authorizationID.getBytes(UTF_8)
+            : null;
+        byte[] auth = authenticationID.getBytes(UTF_8);
 
-        try {
-            byte[] authz = (authorizationID != null)?
-                authorizationID.getBytes("UTF8") :
-                null;
-            byte[] auth = authenticationID.getBytes("UTF8");
-
-            byte[] answer = new byte[pw.length + auth.length + 2 +
+        byte[] answer = new byte[pw.length + auth.length + 2 +
                 (authz == null ? 0 : authz.length)];
 
-            int pos = 0;
-            if (authz != null) {
-                System.arraycopy(authz, 0, answer, 0, authz.length);
-                pos = authz.length;
-            }
-            answer[pos++] = SEP;
-            System.arraycopy(auth, 0, answer, pos, auth.length);
-
-            pos += auth.length;
-            answer[pos++] = SEP;
-
-            System.arraycopy(pw, 0, answer, pos, pw.length);
-
-            clearPassword();
-            return answer;
-        } catch (java.io.UnsupportedEncodingException e) {
-            throw new SaslException("Cannot get UTF-8 encoding of ids", e);
+        int pos = 0;
+        if (authz != null) {
+            System.arraycopy(authz, 0, answer, 0, authz.length);
+            pos = authz.length;
         }
+        answer[pos++] = SEP;
+        System.arraycopy(auth, 0, answer, pos, auth.length);
+
+        pos += auth.length;
+        answer[pos++] = SEP;
+
+        System.arraycopy(pw, 0, answer, pos, pw.length);
+
+        clearPassword();
+        return answer;
     }
 
     /**

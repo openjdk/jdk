@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,8 @@ import java.util.Arrays;
 
 import java.security.*;
 import java.security.spec.AlgorithmParameterSpec;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 import javax.crypto.*;
 import javax.crypto.spec.SecretKeySpec;
@@ -153,7 +155,7 @@ abstract class TlsPrfGenerator extends KeyGeneratorSpi {
         SecretKey key = spec.getSecret();
         byte[] secret = (key == null) ? null : key.getEncoded();
         try {
-            byte[] labelBytes = spec.getLabel().getBytes("UTF8");
+            byte[] labelBytes = spec.getLabel().getBytes(UTF_8);
             int n = spec.getOutputLength();
             byte[] prfBytes = (tls12 ?
                 doTLS12PRF(secret, labelBytes, spec.getSeed(), n,
@@ -162,8 +164,6 @@ abstract class TlsPrfGenerator extends KeyGeneratorSpi {
                 doTLS10PRF(secret, labelBytes, spec.getSeed(), n));
             return new SecretKeySpec(prfBytes, "TlsPrf");
         } catch (GeneralSecurityException e) {
-            throw new ProviderException("Could not generate PRF", e);
-        } catch (java.io.UnsupportedEncodingException e) {
             throw new ProviderException("Could not generate PRF", e);
         }
     }

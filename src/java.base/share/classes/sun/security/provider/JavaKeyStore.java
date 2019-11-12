@@ -32,6 +32,8 @@ import java.security.cert.CertificateFactory;
 import java.security.cert.CertificateException;
 import java.util.*;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import sun.security.pkcs.EncryptedPrivateKeyInfo;
 import sun.security.pkcs12.PKCS12KeyStore;
 import sun.security.util.Debug;
@@ -805,14 +807,14 @@ public abstract class JavaKeyStore extends KeyStoreSpi {
      * hash with a bit of whitener.
      */
     private MessageDigest getPreKeyedHash(char[] password)
-        throws NoSuchAlgorithmException, UnsupportedEncodingException
+        throws NoSuchAlgorithmException
     {
 
         MessageDigest md = MessageDigest.getInstance("SHA");
         byte[] passwdBytes = convertToBytes(password);
         md.update(passwdBytes);
         Arrays.fill(passwdBytes, (byte) 0x00);
-        md.update("Mighty Aphrodite".getBytes("UTF8"));
+        md.update("Mighty Aphrodite".getBytes(UTF_8));
         return md;
     }
 

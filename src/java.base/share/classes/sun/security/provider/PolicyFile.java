@@ -42,11 +42,13 @@ import java.net.SocketPermission;
 import java.net.NetPermission;
 import java.util.concurrent.ConcurrentHashMap;
 import jdk.internal.access.JavaSecurityAccess;
-import static jdk.internal.access.JavaSecurityAccess.ProtectionDomainCache;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.util.StaticProperty;
 import sun.security.util.*;
 import sun.net.www.ParseUtil;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static jdk.internal.access.JavaSecurityAccess.ProtectionDomainCache;
 
 /**
  * This class represents a default Policy implementation for the
@@ -559,8 +561,7 @@ public class PolicyFile extends java.security.Policy {
         return false;
     }
 
-    private InputStreamReader getInputStreamReader(InputStream is)
-                              throws IOException {
+    private InputStreamReader getInputStreamReader(InputStream is) {
         /*
          * Read in policy using UTF-8 by default.
          *
@@ -569,7 +570,7 @@ public class PolicyFile extends java.security.Policy {
          */
         return (notUtf8)
             ? new InputStreamReader(is)
-            : new InputStreamReader(is, "UTF-8");
+            : new InputStreamReader(is, UTF_8);
     }
 
     private void initStaticPolicy(final PolicyInfo newInfo) {

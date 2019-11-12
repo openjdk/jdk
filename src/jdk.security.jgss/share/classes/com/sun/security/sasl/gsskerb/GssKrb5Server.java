@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,8 @@ import javax.security.sasl.*;
 import java.io.*;
 import java.util.Map;
 import java.util.logging.Level;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 // JAAS
 import javax.security.auth.callback.*;
@@ -300,12 +302,8 @@ final class GssKrb5Server extends GssKrb5Base implements SaslServer {
 
             // Get authorization identity, if any
             if (gssOutToken.length > 4) {
-                try {
-                    authzid = new String(gssOutToken, 4,
-                        gssOutToken.length - 4, "UTF-8");
-                } catch (UnsupportedEncodingException uee) {
-                    throw new SaslException ("Cannot decode authzid", uee);
-                }
+                authzid = new String(gssOutToken, 4,
+                        gssOutToken.length - 4, UTF_8);
             } else {
                 authzid = peer;
             }

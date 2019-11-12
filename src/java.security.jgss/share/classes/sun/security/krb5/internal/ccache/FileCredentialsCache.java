@@ -51,6 +51,8 @@ import java.io.FileOutputStream;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 
+import static java.nio.charset.StandardCharsets.ISO_8859_1;
+
 /**
  * CredentialsCache stores credentials(tickets, session keys, etc) in a
  * semi-permanent store
@@ -594,7 +596,7 @@ public class FileCredentialsCache extends CredentialsCache
 
             BufferedReader commandResult =
                 new BufferedReader
-                    (new InputStreamReader(p.getInputStream(), "8859_1"));
+                    (new InputStreamReader(p.getInputStream(), ISO_8859_1));
             String s1 = null;
             if ((command.length == 1) &&
                 (command[0].equals("/usr/bin/env"))) {

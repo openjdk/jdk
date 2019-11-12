@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,8 @@ import javax.security.auth.login.ConfigurationSpi;
 import sun.security.util.Debug;
 import sun.security.util.PropertyExpander;
 import sun.security.util.ResourcesMgr;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * This class represents a default implementation for
@@ -325,7 +327,7 @@ public final class ConfigFile extends Configuration {
                           throws IOException {
 
             try (InputStreamReader isr
-                    = new InputStreamReader(getInputStream(config), "UTF-8")) {
+                    = new InputStreamReader(getInputStream(config), UTF_8)) {
                 readConfig(isr, newConfig);
             } catch (FileNotFoundException fnfe) {
                 if (debugConfig != null) {

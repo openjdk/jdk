@@ -27,7 +27,10 @@ package sun.security.util;
 
 import java.io.*;
 import java.math.BigInteger;
+import java.nio.charset.Charset;
 import java.util.Date;
+
+import static java.nio.charset.StandardCharsets.*;
 
 /**
  * Represents a single DER-encoded value.  DER encoding rules are a subset
@@ -204,7 +207,7 @@ public class DerValue {
     /**
      * Creates a PrintableString or UTF8string DER value from a string
      */
-    public DerValue(String value) throws IOException {
+    public DerValue(String value) {
         boolean isPrintableString = true;
         for (int i = 0; i < value.length(); i++) {
             if (!isPrintableStringChar(value.charAt(i))) {
@@ -221,7 +224,7 @@ public class DerValue {
      * @param stringTag the tag for the DER value to create
      * @param value the String object to use for the DER value
      */
-    public DerValue(byte stringTag, String value) throws IOException {
+    public DerValue(byte stringTag, String value) {
         data = init(stringTag, value);
     }
 
@@ -337,9 +340,8 @@ public class DerValue {
         this(in, true);
     }
 
-    private DerInputStream init(byte stringTag, String value)
-        throws IOException {
-        String enc = null;
+    private DerInputStream init(byte stringTag, String value) {
+        final Charset charset;
 
         tag = stringTag;
 
@@ -347,16 +349,16 @@ public class DerValue {
         case tag_PrintableString:
         case tag_IA5String:
         case tag_GeneralString:
-            enc = "ASCII";
+            charset = US_ASCII;
             break;
         case tag_T61String:
-            enc = "ISO-8859-1";
+            charset = ISO_8859_1;
             break;
         case tag_BMPString:
-            enc = "UnicodeBigUnmarked";
+            charset = UTF_16BE;
             break;
         case tag_UTF8String:
-            enc = "UTF8";
+            charset = UTF_8;
             break;
             // TBD: Need encoder for UniversalString before it can
             // be handled.
@@ -364,7 +366,7 @@ public class DerValue {
             throw new IllegalArgumentException("Unsupported DER string type");
         }
 
-        byte[] buf = value.getBytes(enc);
+        byte[] buf = value.getBytes(charset);
         length = buf.length;
         buffer = new DerInputBuffer(buf, true);
         DerInputStream result = new DerInputStream(buffer);
@@ -665,7 +667,7 @@ public class DerValue {
             throw new IOException(
                 "DerValue.getPrintableString, not a string " + tag);
 
-        return new String(getDataBytes(), "ASCII");
+        return new String(getDataBytes(), US_ASCII);
     }
 
     /**
@@ -678,7 +680,7 @@ public class DerValue {
             throw new IOException(
                 "DerValue.getT61String, not T61 " + tag);
 
-        return new String(getDataBytes(), "ISO-8859-1");
+        return new String(getDataBytes(), ISO_8859_1);
     }
 
     /**
@@ -691,7 +693,7 @@ public class DerValue {
             throw new IOException(
                 "DerValue.getIA5String, not IA5 " + tag);
 
-        return new String(getDataBytes(), "ASCII");
+        return new String(getDataBytes(), US_ASCII);
     }
 
     /**
@@ -707,7 +709,7 @@ public class DerValue {
 
         // BMPString is the same as Unicode in big endian, unmarked
         // format.
-        return new String(getDataBytes(), "UnicodeBigUnmarked");
+        return new String(getDataBytes(), UTF_16BE);
     }
 
     /**
@@ -721,7 +723,7 @@ public class DerValue {
             throw new IOException(
                 "DerValue.getUTF8String, not UTF-8 " + tag);
 
-        return new String(getDataBytes(), "UTF8");
+        return new String(getDataBytes(), UTF_8);
     }
 
     /**
@@ -735,7 +737,7 @@ public class DerValue {
             throw new IOException(
                 "DerValue.getGeneralString, not GeneralString " + tag);
 
-        return new String(getDataBytes(), "ASCII");
+        return new String(getDataBytes(), US_ASCII);
     }
 
     /**

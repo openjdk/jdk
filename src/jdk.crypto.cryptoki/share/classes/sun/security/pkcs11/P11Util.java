@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -141,14 +141,6 @@ public final class P11Util {
             b = newarray;
         }
         return b;
-    }
-
-    static byte[] getBytesUTF8(String s) {
-        try {
-            return s.getBytes("UTF8");
-        } catch (java.io.UnsupportedEncodingException e) {
-            throw new RuntimeException(e);
-        }
     }
 
     static byte[] sha1(byte[] data) {
