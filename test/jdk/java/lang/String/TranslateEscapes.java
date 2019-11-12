@@ -25,7 +25,7 @@
  * @test
  * @bug 8223780
  * @summary This exercises String#translateEscapes patterns and limits.
- * @compile --enable-preview -source 14 TranslateEscapes.java
+ * @compile --enable-preview -source ${jdk.version} TranslateEscapes.java
  * @run main/othervm --enable-preview TranslateEscapes
  */
 
