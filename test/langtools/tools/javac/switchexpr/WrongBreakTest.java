@@ -25,7 +25,7 @@
  * @test
  * @bug 8223305
  * @summary Ensure javac is not crashing for wrong breaks.
- * @compile/fail/ref=WrongBreakTest.out --enable-preview -source ${jdk.version} -XDrawDiagnostics -XDshould-stop.at=FLOW WrongBreakTest.java
+ * @compile/fail/ref=WrongBreakTest.out -XDrawDiagnostics -XDshould-stop.at=FLOW WrongBreakTest.java
  */
 
 public class WrongBreakTest {

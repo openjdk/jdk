@@ -25,7 +25,7 @@
  * @test
  * @bug 8223305 8226522
  * @summary Ensure proper errors are returned for yields.
- * @compile/fail/ref=WrongYieldTest.out --enable-preview -source ${jdk.version} -XDrawDiagnostics -XDshould-stop.at=ATTR WrongYieldTest.java
+ * @compile/fail/ref=WrongYieldTest.out -XDrawDiagnostics -XDshould-stop.at=ATTR WrongYieldTest.java
  */
 
 package t;

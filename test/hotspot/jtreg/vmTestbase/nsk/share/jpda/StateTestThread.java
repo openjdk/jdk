@@ -111,7 +111,7 @@ public class StateTestThread extends Thread {
             start();
 
             while (!isRunning)
-                yield();
+                Thread.yield();
 
             break;
         case 2:
@@ -119,7 +119,7 @@ public class StateTestThread extends Thread {
             isRunning = false;
 
             while (this.getState() != Thread.State.TIMED_WAITING)
-                yield();
+                Thread.yield();
 
             break;
         case 3:
@@ -129,7 +129,7 @@ public class StateTestThread extends Thread {
             interrupt();
 
             while (getState() != Thread.State.WAITING)
-                yield();
+                Thread.yield();
 
             break;
         case 4:
@@ -141,7 +141,7 @@ public class StateTestThread extends Thread {
             }
 
             while (!readyToBeBlocked || (getState() != Thread.State.BLOCKED))
-                yield();
+                Thread.yield();
 
             break;
         case 5:

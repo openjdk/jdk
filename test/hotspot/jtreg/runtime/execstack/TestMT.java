@@ -78,7 +78,7 @@ class TestMT {
         public void run() {
             for (int i = 0; i < 10; ++i) {
                 TestMT.run(getName());
-                yield();
+                Thread.yield();
             }
         }
     }

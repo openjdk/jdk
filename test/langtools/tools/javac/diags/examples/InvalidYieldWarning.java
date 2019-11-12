@@ -22,7 +22,7 @@
  */
 
 // key: compiler.warn.invalid.yield
-// options: --source ${jdk.version}
+// options: -Xlint:-options --source 13
 
 class BreakComplexValueNoSwitchExpressions {
     void t() {

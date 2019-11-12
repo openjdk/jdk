@@ -22,7 +22,6 @@
  */
 
 // key: compiler.err.no.switch.expression.qualify
-// options: --enable-preview --source ${jdk.version}
 
 class BreakComplexValueNoSwitchExpressions {
     void t() {

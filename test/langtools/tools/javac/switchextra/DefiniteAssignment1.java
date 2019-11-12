@@ -24,8 +24,8 @@
 /**
  * @test
  * @summary Verify that definite assignment works (legal code)
- * @compile --enable-preview -source ${jdk.version} DefiniteAssignment1.java
- * @run main/othervm --enable-preview DefiniteAssignment1
+ * @compile DefiniteAssignment1.java
+ * @run main DefiniteAssignment1
  */
 public class DefiniteAssignment1 {
     public static void main(String[] args) {

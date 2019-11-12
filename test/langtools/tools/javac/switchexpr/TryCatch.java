@@ -25,8 +25,8 @@
  * @test
  * @bug 8214114
  * @summary Verify try-catch inside a switch expression works properly.
- * @compile --enable-preview -source ${jdk.version} TryCatch.java
- * @run main/othervm --enable-preview TryCatch
+ * @compile TryCatch.java
+ * @run main TryCatch
  */
 public class TryCatch {
     public static void main(String[] args) {

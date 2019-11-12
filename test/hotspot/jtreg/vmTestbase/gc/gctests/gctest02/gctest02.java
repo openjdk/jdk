@@ -180,7 +180,7 @@ class Escaper extends Thread {
                 while ( ThreadCount.get() > 0 ) {
                         int buf[] = new int[32];
                         {
-                                                yield();
+                                                Thread.yield();
                         }
                 }
         }

@@ -160,7 +160,7 @@ public class thread005 extends Thread {
      */
     public void run() {
         while (!GO && !timeout())
-            yield();
+            Thread.yield();
         while (!STOP && !timeout())
             ;
     }

@@ -25,8 +25,8 @@
  * @test
  * @bug 8206986
  * @summary Verify rule cases with expression statements and throw statements work.
- * @compile --enable-preview -source ${jdk.version} BlockExpression.java
- * @run main/othervm --enable-preview BlockExpression
+ * @compile BlockExpression.java
+ * @run main BlockExpression
  */
 
 public class BlockExpression {

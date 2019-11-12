@@ -22,9 +22,6 @@
  */
 
 // key: compiler.err.continue.outside.switch.expression
-// key: compiler.note.preview.filename
-// key: compiler.note.preview.recompile
-// options: --enable-preview -source ${jdk.version}
 
 class ContinueOutsideSwitchExpression {
     int t(int i) {

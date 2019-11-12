@@ -7,6 +7,4 @@ ExpressionSwitchFlow.java:45:25: compiler.err.rule.completes.normally
 ExpressionSwitchFlow.java:53:9: compiler.err.switch.expression.completes.normally
 ExpressionSwitchFlow.java:61:9: compiler.err.switch.expression.completes.normally
 ExpressionSwitchFlow.java:69:9: compiler.err.switch.expression.completes.normally
-- compiler.note.preview.filename: ExpressionSwitchFlow.java
-- compiler.note.preview.recompile
 9 errors

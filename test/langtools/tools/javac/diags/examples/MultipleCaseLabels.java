@@ -22,8 +22,8 @@
  */
 
 // key: compiler.misc.feature.multiple.case.labels
-// key: compiler.warn.preview.feature.use.plural
-// options: --enable-preview -source ${jdk.version} -Xlint:preview
+// key: compiler.err.feature.not.supported.in.source.plural
+// options: -Xlint:-options -source 13
 
 class MultipleCaseLabels {
     void m(int i) {

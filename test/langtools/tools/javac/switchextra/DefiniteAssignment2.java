@@ -1,7 +1,7 @@
 /**
  * @test /nodynamiccopyright/
  * @summary Verify that definite assignment works (illegal code)
- * @compile/fail/ref=DefiniteAssignment2.out -XDrawDiagnostics --enable-preview -source ${jdk.version} DefiniteAssignment2.java
+ * @compile/fail/ref=DefiniteAssignment2.out -XDrawDiagnostics DefiniteAssignment2.java
  */
 public class DefiniteAssignment2 {
 

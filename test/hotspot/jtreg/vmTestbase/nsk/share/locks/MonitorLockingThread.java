@@ -78,7 +78,7 @@ public class MonitorLockingThread extends Thread {
              * should already occur) and then force MonitorLockingThread to release lock
              */
             while (blockedThread.getState() != Thread.State.BLOCKED)
-                yield();
+                Thread.yield();
 
             lockingThread.releaseLock();
         }
@@ -98,7 +98,7 @@ public class MonitorLockingThread extends Thread {
         synchronized (lockToHold) {
             holdsLock = true;
             while (isRunning)
-                yield();
+                Thread.yield();
         }
         holdsLock = false;
     }
@@ -106,12 +106,12 @@ public class MonitorLockingThread extends Thread {
     public void releaseLock() {
         isRunning = false;
         while (holdsLock)
-            yield();
+            Thread.yield();
     }
 
     public void acquireLock() {
         start();
         while (!holdsLock)
-            yield();
+            Thread.yield();
     }
 }

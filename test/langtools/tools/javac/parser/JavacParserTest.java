@@ -1096,7 +1096,7 @@ public class JavacParserTest extends TestCase {
         String expectedErrors = "Test.java:1:178: compiler.err.switch.case.unexpected.statement\n";
         StringWriter out = new StringWriter();
         JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(out, fm, null,
-                Arrays.asList("-XDrawDiagnostics", "--enable-preview", "-source", SOURCE_VERSION),
+                Arrays.asList("-XDrawDiagnostics"),
                 null, Arrays.asList(new MyFileObject(code)));
 
         CompilationUnitTree cut = ct.parse().iterator().next();

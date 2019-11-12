@@ -25,8 +25,8 @@
  * @test
  * @bug 8206986
  * @summary Verify behavior when an intersection type is inferred for switch expression.
- * @compile --enable-preview -source ${jdk.version} ExpressionSwitchIntersectionTypes.java
- * @run main/othervm --enable-preview ExpressionSwitchIntersectionTypes
+ * @compile ExpressionSwitchIntersectionTypes.java
+ * @run main ExpressionSwitchIntersectionTypes
  */
 
 public class ExpressionSwitchIntersectionTypes<X  extends java.io.Serializable & Runnable> {

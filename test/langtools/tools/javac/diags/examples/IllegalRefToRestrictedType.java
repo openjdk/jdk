@@ -22,7 +22,8 @@
  */
 
 // key: compiler.warn.illegal.ref.to.restricted.type
-// key: compiler.warn.restricted.type.not.allowed.preview
+// key: compiler.warn.restricted.type.not.allowed
+// options: -Xlint:-options -source 13
 
 class IllegalRefToVarType {
     yield list() { return null; }

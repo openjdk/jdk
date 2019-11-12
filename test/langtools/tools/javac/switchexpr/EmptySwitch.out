@@ -3,6 +3,4 @@ EmptySwitch.java:35:10: compiler.err.switch.expression.no.result.expressions
 EmptySwitch.java:38:10: compiler.err.switch.expression.no.result.expressions
 EmptySwitch.java:44:9: compiler.err.switch.expression.completes.normally
 EmptySwitch.java:47:26: compiler.err.rule.completes.normally
-- compiler.note.preview.filename: EmptySwitch.java
-- compiler.note.preview.recompile
 5 errors

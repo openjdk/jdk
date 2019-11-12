@@ -25,8 +25,8 @@
  * @test
  * @bug 8206986
  * @summary Check switch expressions
- * @compile --enable-preview -source ${jdk.version} ExpressionSwitchCodeFromJLS.java
- * @run main/othervm --enable-preview ExpressionSwitchCodeFromJLS
+ * @compile ExpressionSwitchCodeFromJLS.java
+ * @run main ExpressionSwitchCodeFromJLS
  */
 
 public class ExpressionSwitchCodeFromJLS {

@@ -334,14 +334,6 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
     }
 
     /**
-     * {@preview Associated with switch expressions, a preview feature of
-     *           the Java language.
-     *
-     *           This method is associated with <i>switch expressions</i>, a preview
-     *           feature of the Java language. Preview features
-     *           may be removed in a future release, or upgraded to permanent
-     *           features of the Java language.}
-     *
      * {@inheritDoc} This implementation scans the children in left to right order.
      *
      * @param node  {@inheritDoc}
@@ -349,8 +341,6 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
      * @return the result of scanning
      */
     @Override
-    @jdk.internal.PreviewFeature(feature=jdk.internal.PreviewFeature.Feature.SWITCH_EXPRESSIONS)
-    @SuppressWarnings("preview")
     public R visitSwitchExpression(SwitchExpressionTree node, P p) {
         R r = scan(node.getExpression(), p);
         r = scanAndReduce(node.getCases(), p, r);
@@ -365,7 +355,6 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
      * @return the result of scanning
      */
     @Override
-    @SuppressWarnings("preview")
     public R visitCase(CaseTree node, P p) {
         R r = scan(node.getExpressions(), p);
         if (node.getCaseKind() == CaseTree.CaseKind.RULE)
@@ -938,14 +927,6 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
     }
 
     /**
-     * {@preview Associated with switch expressions, a preview feature of
-     *           the Java language.
-     *
-     *           This method is associated with <i>switch expressions</i>, a preview
-     *           feature of the Java language. Preview features
-     *           may be removed in a future release, or upgraded to permanent
-     *           features of the Java language.}
-     *
      * {@inheritDoc} This implementation returns {@code null}.
      *
      * @param node  {@inheritDoc}
@@ -953,8 +934,6 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
      * @return the result of scanning
      */
     @Override
-    @jdk.internal.PreviewFeature(feature=jdk.internal.PreviewFeature.Feature.SWITCH_EXPRESSIONS)
-    @SuppressWarnings("preview")
     public R visitYield(YieldTree node, P p) {
         return scan(node.getValue(), p);
     }

@@ -71,7 +71,7 @@ class SimulResumerTarg extends Thread {
 
     public void bkpt1(int i) {
         synchronized(name1) {
-            yield();
+            Thread.yield();
         }
     }
 
@@ -85,7 +85,7 @@ class SimulResumerTarg extends Thread {
 
     public void bkpt2(int i) {
         synchronized(name2) {
-            yield();
+            Thread.yield();
         }
     }
 

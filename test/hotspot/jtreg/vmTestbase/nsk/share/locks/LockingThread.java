@@ -325,7 +325,7 @@ public class LockingThread extends Thread {
                 throw new TestBug("Locking thread can't reach required state (state: " + requiredState + " wasn't reached) in 1 minute");
             }
 
-            yield();
+            Thread.yield();
         }
 
         requiredState = null;

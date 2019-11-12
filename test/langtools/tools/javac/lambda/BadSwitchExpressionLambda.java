@@ -2,7 +2,7 @@
  * @test /nodynamiccopyright/
  * @bug 8206986
  * @summary Adding switch expressions
- * @compile/fail/ref=BadSwitchExpressionLambda.out -XDrawDiagnostics --enable-preview -source ${jdk.version} BadSwitchExpressionLambda.java
+ * @compile/fail/ref=BadSwitchExpressionLambda.out -XDrawDiagnostics BadSwitchExpressionLambda.java
  */
 
 class BadSwitchExpressionLambda {

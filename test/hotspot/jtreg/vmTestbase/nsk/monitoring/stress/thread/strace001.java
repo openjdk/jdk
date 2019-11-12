@@ -362,7 +362,7 @@ class RunningThread extends Thread {
 
         currentDepth++;
         if (maxDepth > currentDepth) {
-            yield();
+            Thread.yield();
             if (mixed) {
                 int result = recursionNative(maxDepth, currentDepth, true);
 

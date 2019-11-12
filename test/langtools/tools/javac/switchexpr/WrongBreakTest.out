@@ -4,6 +4,4 @@ WrongBreakTest.java:35:17: compiler.err.switch.expression.no.result.expressions
 WrongBreakTest.java:36:9: compiler.err.ref.ambiguous: test, kindname.method, test(int), WrongBreakTest, kindname.method, test(java.lang.Object), WrongBreakTest
 WrongBreakTest.java:38:13: compiler.err.no.switch.expression
 WrongBreakTest.java:41:13: compiler.err.no.switch.expression
-- compiler.note.preview.filename: WrongBreakTest.java
-- compiler.note.preview.recompile
 6 errors

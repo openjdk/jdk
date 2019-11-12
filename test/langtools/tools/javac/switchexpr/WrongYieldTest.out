@@ -26,6 +26,4 @@ WrongYieldTest.java:156:17: compiler.err.cant.deref: int
 WrongYieldTest.java:201:9: compiler.err.no.switch.expression
 WrongYieldTest.java:202:9: compiler.err.no.switch.expression
 WrongYieldTest.java:216:24: compiler.err.illegal.ref.to.restricted.type: yield
-- compiler.note.preview.filename: WrongYieldTest.java
-- compiler.note.preview.recompile
 28 errors

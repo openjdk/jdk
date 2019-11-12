@@ -232,7 +232,7 @@ abstract public class JDIEventsDebuggee extends AbstractJDIDebuggee {
 
         public void run() {
             while (!startExecution)
-                yield();
+                Thread.yield();
 
             for (int i = 0; (i < actionsNumber) && !stopExecution; i++)
                 executor.doEventAction();

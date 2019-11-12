@@ -295,7 +295,7 @@ class strace001Thread extends Thread {
         }
 
         if (strace001.DEPTH - currentDepth > 0) {
-            yield();
+            Thread.yield();
             recursiveMethod();
         }
 

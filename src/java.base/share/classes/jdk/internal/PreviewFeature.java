@@ -54,7 +54,6 @@ public @interface PreviewFeature {
     public boolean essentialAPI() default false;
 
     public enum Feature {
-        SWITCH_EXPRESSIONS,
         TEXT_BLOCKS;
     }
 }

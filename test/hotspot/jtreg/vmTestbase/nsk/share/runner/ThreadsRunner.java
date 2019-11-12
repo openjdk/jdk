@@ -81,7 +81,7 @@ public class ThreadsRunner implements MultiRunner, LogAware, RunParamsAware {
                 stresser.start(runParams.getIterations());
                 while (!this.isInterrupted() && stresser.iteration()) {
                     test.run();
-                    yield();
+                    Thread.yield();
                 }
                 waitForOtherThreads();
             } catch (OutOfMemoryError oom) {

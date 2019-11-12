@@ -107,7 +107,7 @@ public class SwitchExpressionSimpleVisitorTest {
 
         StringWriter out = new StringWriter();
         JavacTask ct = (JavacTask) tool.getTask(out, null, noErrors,
-            List.of("--enable-preview", "-source", Integer.toString(Runtime.version().feature())), null,
+            List.of(), null,
             Arrays.asList(new MyFileObject(code)));
         return ct.parse().iterator().next();
     }

@@ -76,7 +76,7 @@ public class b4446672 {
         System.out.println ("GCThread synchronized.");
               while (!done) {
                 gcing=true;
-                yield();
+                Thread.yield();
                 System.gc();
               }
             }

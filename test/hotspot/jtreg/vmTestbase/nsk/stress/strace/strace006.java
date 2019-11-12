@@ -331,7 +331,7 @@ class strace006Thread extends Thread {
 
         if (strace006.DEPTH - currentDepth > 0) {
             try {
-                yield();
+                Thread.yield();
                 recursiveMethod2();
             } catch (StackOverflowError e) {
                 // ignore this exception

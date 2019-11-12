@@ -1,4 +1,4 @@
-ExpressionSwitch.java:40:16: compiler.err.preview.feature.disabled.plural: (compiler.misc.feature.switch.expressions)
-ExpressionSwitch.java:41:20: compiler.err.preview.feature.disabled.plural: (compiler.misc.feature.switch.rules)
-ExpressionSwitch.java:93:31: compiler.err.preview.feature.disabled.plural: (compiler.misc.feature.multiple.case.labels)
+ExpressionSwitch.java:40:16: compiler.err.feature.not.supported.in.source.plural: (compiler.misc.feature.switch.expressions), 9, 14
+ExpressionSwitch.java:41:20: compiler.err.feature.not.supported.in.source.plural: (compiler.misc.feature.switch.rules), 9, 14
+ExpressionSwitch.java:93:31: compiler.err.feature.not.supported.in.source.plural: (compiler.misc.feature.multiple.case.labels), 9, 14
 3 errors

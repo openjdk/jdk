@@ -76,9 +76,6 @@ public class ExpSwitchNestingTest extends JavacTemplateTestBase {
         }
     }
 
-    private static String[] PREVIEW_OPTIONS = {"--enable-preview", "-source",
-                                               Integer.toString(Runtime.version().feature())};
-
     private void program(String... constructs) {
         String s = "class C { static boolean cond = false; static int x = 0; void m() { # } }";
         for (String c : constructs)
@@ -88,7 +85,7 @@ public class ExpSwitchNestingTest extends JavacTemplateTestBase {
 
     private void assertOK(String... constructs) {
         reset();
-        addCompileOptions(PREVIEW_OPTIONS);
+        addCompileOptions();
         program(constructs);
         try {
             compile();
@@ -101,7 +98,7 @@ public class ExpSwitchNestingTest extends JavacTemplateTestBase {
 
     private void assertOKWithWarning(String warning, String... constructs) {
         reset();
-        addCompileOptions(PREVIEW_OPTIONS);
+        addCompileOptions();
         program(constructs);
         try {
             compile();
@@ -114,7 +111,7 @@ public class ExpSwitchNestingTest extends JavacTemplateTestBase {
 
     private void assertFail(String expectedDiag, String... constructs) {
         reset();
-        addCompileOptions(PREVIEW_OPTIONS);
+        addCompileOptions();
         program(constructs);
         try {
             compile();
