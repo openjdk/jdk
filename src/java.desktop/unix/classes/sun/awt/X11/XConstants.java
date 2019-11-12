@@ -206,6 +206,11 @@ public final class XConstants {
 
     public static final int[] buttons  = new int [] {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24};
 
+    // those should probably be wrapped in a method or such
+    // as it may be possible to remap them via x11 configuration files
+    public static final int MouseWheelUp = buttons[4];
+    public static final int MouseWheelDown = buttons[5];
+
     /* Notify modes */
 
     public static final int NotifyNormal = 0 ;

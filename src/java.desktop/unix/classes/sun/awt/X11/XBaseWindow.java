@@ -1025,29 +1025,37 @@ public class XBaseWindow {
          * InputEvent.BUTTON_DOWN_MASK.
          * One more bit is reserved for FIRST_HIGH_BIT.
          */
-        if (xbe.get_button() > SunToolkit.MAX_BUTTONS_SUPPORTED) {
+        int theButton = xbe.get_button();
+        if (theButton > SunToolkit.MAX_BUTTONS_SUPPORTED) {
             return;
         }
         int buttonState = 0;
         buttonState = xbe.get_state() & XConstants.ALL_BUTTONS_MASK;
-        switch (xev.get_type()) {
-        case XConstants.ButtonPress:
-            if (buttonState == 0) {
-                XWindowPeer parent = getToplevelXWindow();
-                // See 6385277, 6981400.
-                if (parent != null && parent.isFocusableWindow()) {
-                    // A click in a client area drops the actual focused window retaining.
-                    parent.setActualFocusedWindow(null);
-                    parent.requestWindowFocus(xbe.get_time(), true);
-                }
-                XAwtState.setAutoGrabWindow(this);
+
+        boolean isWheel = (theButton != XConstants.MouseWheelUp ||
+                           theButton != XConstants.MouseWheelDown);
+
+        // don't give focus if it's just the mouse wheel turning
+        if (!isWheel) {
+            switch (xev.get_type()) {
+                case XConstants.ButtonPress:
+                    if (buttonState == 0) {
+                        XWindowPeer parent = getToplevelXWindow();
+                        // See 6385277, 6981400.
+                        if (parent != null && parent.isFocusableWindow()) {
+                            // A click in a client area drops the actual focused window retaining.
+                            parent.setActualFocusedWindow(null);
+                            parent.requestWindowFocus(xbe.get_time(), true);
+                        }
+                        XAwtState.setAutoGrabWindow(this);
+                    }
+                    break;
+                case XConstants.ButtonRelease:
+                    if (isFullRelease(buttonState, xbe.get_button())) {
+                        XAwtState.setAutoGrabWindow(null);
+                    }
+                    break;
             }
-            break;
-        case XConstants.ButtonRelease:
-            if (isFullRelease(buttonState, xbe.get_button())) {
-                XAwtState.setAutoGrabWindow(null);
-            }
-            break;
         }
     }
     public void handleMotionNotify(XEvent xev) {
