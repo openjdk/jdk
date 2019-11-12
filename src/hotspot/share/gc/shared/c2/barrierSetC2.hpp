@@ -103,6 +103,7 @@ protected:
   Node*             _base;
   C2AccessValuePtr& _addr;
   Node*             _raw_access;
+  uint8_t           _barrier_data;
 
   void fixup_decorators();
 
@@ -113,7 +114,8 @@ public:
     _type(type),
     _base(base),
     _addr(addr),
-    _raw_access(NULL)
+    _raw_access(NULL),
+    _barrier_data(0)
   {}
 
   DecoratorSet decorators() const { return _decorators; }
@@ -123,6 +125,9 @@ public:
   bool is_oop() const             { return is_reference_type(_type); }
   bool is_raw() const             { return (_decorators & AS_RAW) != 0; }
   Node* raw_access() const        { return _raw_access; }
+
+  uint8_t barrier_data() const        { return _barrier_data; }
+  void set_barrier_data(uint8_t data) { _barrier_data = data; }
 
   void set_raw_access(Node* raw_access) { _raw_access = raw_access; }
   virtual void set_memory() {} // no-op for normal accesses, but not for atomic accesses.
