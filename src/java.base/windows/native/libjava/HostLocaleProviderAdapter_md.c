@@ -910,7 +910,7 @@ void getNumberPart(const jchar * langtag, const jint numberStyle, WCHAR * number
     if (digits > 0) {
         int i;
         for(i = digits;  i > 0; i--) {
-            fractionPattern[i] = L'0';
+            fractionPattern[i] = L'#';
         }
         fractionPattern[0] = L'.';
         fractionPattern[digits+1] = L'\0';

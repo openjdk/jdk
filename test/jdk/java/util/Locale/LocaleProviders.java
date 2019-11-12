@@ -24,6 +24,7 @@ import java.text.*;
 import java.text.spi.*;
 import java.util.*;
 import java.util.spi.*;
+import java.util.stream.IntStream;
 import sun.util.locale.provider.LocaleProviderAdapter;
 
 public class LocaleProviders {
@@ -85,6 +86,10 @@ public class LocaleProviders {
 
             case "bug8232871Test":
                 bug8232871Test();
+                break;
+
+            case "bug8232860Test":
+                bug8232860Test();
                 break;
 
             default:
@@ -325,6 +330,44 @@ public class LocaleProviders {
                 "provider is not HOST: " + type + ", or\n" +
                 "Language is not Japanese: " + lang + ", or\n" +
                 "native calendar is not JapaneseCalendar: " + calType);
+        }
+    }
+
+    static void bug8232860Test() {
+        var inputList = List.of(123, 123.4);
+        var nfExpectedList = List.of("123", "123.4");
+        var ifExpectedList = List.of("123", "123");
+
+        var type = LocaleProviderAdapter.getAdapter(CalendarNameProvider.class, Locale.US)
+                                        .getAdapterType();
+        if (type == LocaleProviderAdapter.Type.HOST && (IS_WINDOWS || IS_MAC)) {
+            final var numf = NumberFormat.getNumberInstance(Locale.US);
+            final var intf = NumberFormat.getIntegerInstance(Locale.US);
+
+            IntStream.range(0, inputList.size())
+                .forEach(i -> {
+                    var input = inputList.get(i);
+                    var nfExpected = nfExpectedList.get(i);
+                    var result = numf.format(input);
+                    if (!result.equals(nfExpected)) {
+                        throw new RuntimeException("Incorrect number format. " +
+                            "input: " + input + ", expected: " +
+                            nfExpected + ", result: " + result);
+                    }
+
+                    var ifExpected = ifExpectedList.get(i);
+                    result = intf.format(input);
+                    if (!result.equals(ifExpected)) {
+                        throw new RuntimeException("Incorrect integer format. " +
+                            "input: " + input + ", expected: " +
+                            ifExpected + ", result: " + result);
+                    }
+                });
+            System.out.println("bug8232860Test succeeded.");
+        } else {
+            System.out.println("Test ignored. Either :-\n" +
+                "OS is neither macOS/Windows, or\n" +
+                "provider is not HOST: " + type);
         }
     }
 }

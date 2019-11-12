@@ -429,8 +429,9 @@ public class HostLocaleProviderAdapterImpl {
 
             @Override
             public NumberFormat getIntegerInstance(Locale locale) {
-                return new DecimalFormat(getNumberPattern(NF_INTEGER, locale),
+                DecimalFormat format = new DecimalFormat(getNumberPattern(NF_INTEGER, locale),
                     DecimalFormatSymbols.getInstance(locale));
+                return HostLocaleProviderAdapter.makeIntegerFormatter(format);
             }
 
             @Override

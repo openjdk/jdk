@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package sun.util.locale.provider;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.text.DecimalFormat;
 import java.util.spi.LocaleServiceProvider;
 
 /**
@@ -59,5 +60,20 @@ public class HostLocaleProviderAdapter extends AuxLocaleProviderAdapter {
             LocaleServiceProviderPool.config(HostLocaleProviderAdapter.class, ex.toString());
         }
         return null;
+    }
+
+    /**
+     * Utility to make the decimal format specific to integer, called
+     * by the platform dependent adapter implementations.
+     *
+     * @param df A DecimalFormat object
+     * @return The same DecimalFormat object in the argument, modified
+     *          to allow integer formatting/parsing only.
+     */
+    static DecimalFormat makeIntegerFormatter(DecimalFormat df) {
+        df.setMaximumFractionDigits(0);
+        df.setDecimalSeparatorAlwaysShown(false);
+        df.setParseIntegerOnly(true);
+        return df;
     }
 }
