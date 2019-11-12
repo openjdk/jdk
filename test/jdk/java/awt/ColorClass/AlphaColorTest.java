@@ -24,7 +24,7 @@
 /**
  * @test
  * @key headful
- * @bug 8204931 8227392 8224825
+ * @bug 8204931 8227392 8224825 8233910
  * @summary test alpha colors are blended with background.
  */
 
@@ -83,6 +83,8 @@ public class AlphaColorTest extends Component {
         };
         Color color = new Color(255, 255, 255, 127);
         frame.add("Center", new AlphaColorTest(color));
+        frame.setUndecorated(true);
+        frame.setLocationRelativeTo(null);
         frame.pack();
         frame.setVisible(true);
     }
