@@ -120,7 +120,7 @@ void ZLiveMap::reset_segment(BitMap::idx_t segment) {
   }
 
   // Set live bit
-  const bool success = set_segment_live_atomic(segment);
+  const bool success = set_segment_live(segment);
   assert(success, "Should never fail");
 }
 

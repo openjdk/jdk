@@ -72,7 +72,7 @@ inline bool ZLiveMap::is_segment_live(BitMap::idx_t segment) const {
   return segment_live_bits().par_at(segment);
 }
 
-inline bool ZLiveMap::set_segment_live_atomic(BitMap::idx_t segment) {
+inline bool ZLiveMap::set_segment_live(BitMap::idx_t segment) {
   return segment_live_bits().par_set_bit(segment, memory_order_release);
 }
 
@@ -103,7 +103,7 @@ inline bool ZLiveMap::get(size_t index) const {
          _bitmap.at(index);          // Object is marked
 }
 
-inline bool ZLiveMap::set_atomic(size_t index, bool finalizable, bool& inc_live) {
+inline bool ZLiveMap::set(size_t index, bool finalizable, bool& inc_live) {
   if (!is_marked()) {
     // First object to be marked during this
     // cycle, reset marking information.
@@ -120,7 +120,7 @@ inline bool ZLiveMap::set_atomic(size_t index, bool finalizable, bool& inc_live)
   return _bitmap.par_set_bit_pair(index, finalizable, inc_live);
 }
 
-inline void ZLiveMap::inc_live_atomic(uint32_t objects, size_t bytes) {
+inline void ZLiveMap::inc_live(uint32_t objects, size_t bytes) {
   Atomic::add(objects, &_live_objects);
   Atomic::add(bytes, &_live_bytes);
 }

@@ -35,7 +35,7 @@ protected:
     uintptr_t object = 0u;
 
     // Mark the object strong.
-    livemap.set_atomic(object, false /* finalizable */, inc_live);
+    livemap.set(object, false /* finalizable */, inc_live);
 
     // Check that both bits are in the same segment.
     ASSERT_EQ(livemap.index_to_segment(0), livemap.index_to_segment(1));

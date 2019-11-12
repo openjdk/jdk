@@ -96,7 +96,7 @@ public:
   bool is_object_strongly_live(uintptr_t addr) const;
   bool mark_object(uintptr_t addr, bool finalizable, bool& inc_live);
 
-  void inc_live_atomic(uint32_t objects, size_t bytes);
+  void inc_live(uint32_t objects, size_t bytes);
   uint32_t live_objects() const;
   size_t live_bytes() const;
 

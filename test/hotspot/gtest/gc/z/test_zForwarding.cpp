@@ -159,7 +159,7 @@ public:
 
     const uint32_t live_objects = size;
     const size_t live_bytes = live_objects * object_size;
-    page.inc_live_atomic(live_objects, live_bytes);
+    page.inc_live(live_objects, live_bytes);
 
     // Setup forwarding
     ZForwarding* const forwarding = ZForwarding::create(&page);
