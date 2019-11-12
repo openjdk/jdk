@@ -1066,6 +1066,16 @@ jdk.xml.dsig.secureValidationPolicy=\
 jceks.key.serialFilter = java.base/java.lang.Enum;java.base/java.security.KeyRep;\
   java.base/java.security.KeyRep$Type;java.base/javax.crypto.spec.SecretKeySpec;!*
 
+# The iteration count used for password-based encryption (PBE) in JCEKS
+# keystores. Values in the range 10000 to 5000000 are considered valid.
+# If the value is out of this range, or is not a number, or is unspecified;
+# a default of 200000 is used.
+#
+# If the system property jdk.jceks.iterationCount is also specified, it
+# supersedes the security property value defined here.
+#
+#jdk.jceks.iterationCount = 200000
+
 #
 # PKCS12 KeyStore properties
 #
