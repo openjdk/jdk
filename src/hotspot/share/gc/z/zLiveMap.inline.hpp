@@ -30,6 +30,7 @@
 #include "gc/z/zOop.inline.hpp"
 #include "gc/z/zUtils.inline.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/orderAccess.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/debug.hpp"
 
@@ -38,7 +39,7 @@ inline void ZLiveMap::reset() {
 }
 
 inline bool ZLiveMap::is_marked() const {
-  return _seqnum == ZGlobalSeqNum;
+  return OrderAccess::load_acquire(&_seqnum) == ZGlobalSeqNum;
 }
 
 inline uint32_t ZLiveMap::live_objects() const {
@@ -68,15 +69,15 @@ inline BitMapView ZLiveMap::segment_claim_bits() {
 }
 
 inline bool ZLiveMap::is_segment_live(BitMap::idx_t segment) const {
-  return segment_live_bits().at(segment);
+  return segment_live_bits().par_at(segment);
 }
 
 inline bool ZLiveMap::set_segment_live_atomic(BitMap::idx_t segment) {
-  return segment_live_bits().par_set_bit(segment);
+  return segment_live_bits().par_set_bit(segment, memory_order_release);
 }
 
 inline bool ZLiveMap::claim_segment(BitMap::idx_t segment) {
-  return segment_claim_bits().par_set_bit(segment);
+  return segment_claim_bits().par_set_bit(segment, memory_order_acq_rel);
 }
 
 inline BitMap::idx_t ZLiveMap::first_live_segment() const {

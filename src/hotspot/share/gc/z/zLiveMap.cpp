@@ -54,7 +54,9 @@ void ZLiveMap::reset(size_t index) {
 
   // Multiple threads can enter here, make sure only one of them
   // resets the marking information while the others busy wait.
-  for (uint32_t seqnum = _seqnum; seqnum != ZGlobalSeqNum; seqnum = _seqnum) {
+  for (uint32_t seqnum = OrderAccess::load_acquire(&_seqnum);
+       seqnum != ZGlobalSeqNum;
+       seqnum = OrderAccess::load_acquire(&_seqnum)) {
     if ((seqnum != seqnum_initializing) &&
         (Atomic::cmpxchg(seqnum_initializing, &_seqnum, seqnum) == seqnum)) {
       // Reset marking information
@@ -65,13 +67,13 @@ void ZLiveMap::reset(size_t index) {
       segment_live_bits().clear();
       segment_claim_bits().clear();
 
-      // Make sure the newly reset marking information is
-      // globally visible before updating the page seqnum.
-      OrderAccess::storestore();
-
-      // Update seqnum
       assert(_seqnum == seqnum_initializing, "Invalid");
-      _seqnum = ZGlobalSeqNum;
+
+      // Make sure the newly reset marking information is ordered
+      // before the update of the page seqnum, such that when the
+      // up-to-date seqnum is load acquired, the bit maps will not
+      // contain stale information.
+      OrderAccess::release_store(&_seqnum, ZGlobalSeqNum);
       break;
     }
 
@@ -93,10 +95,6 @@ void ZLiveMap::reset_segment(BitMap::idx_t segment) {
   if (!claim_segment(segment)) {
     // Already claimed, wait for live bit to be set
     while (!is_segment_live(segment)) {
-      // Busy wait. The loadload barrier is needed to make
-      // sure we re-read the live bit every time we loop.
-      OrderAccess::loadload();
-
       // Mark reset contention
       if (!contention) {
         // Count contention once
