@@ -785,6 +785,7 @@ public class Symtab {
         unnamedPackage.modle = module;
         //we cannot use a method reference below, as initialCompleter might be null now
         unnamedPackage.completer = s -> initialCompleter.complete(s);
+        unnamedPackage.flags_field |= EXISTS;
         module.unnamedPackage = unnamedPackage;
     }
 
