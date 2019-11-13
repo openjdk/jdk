@@ -2389,7 +2389,7 @@ public class Arrays {
      *                   first array to be tested
      * @param aToIndex the index (exclusive) of the last element in the
      *                 first array to be tested
-     * @param b the second array to be tested fro equality
+     * @param b the second array to be tested for equality
      * @param bFromIndex the index (inclusive) of the first element in the
      *                   second array to be tested
      * @param bToIndex the index (exclusive) of the last element in the
@@ -2461,7 +2461,7 @@ public class Arrays {
      *                   first array to be tested
      * @param aToIndex the index (exclusive) of the last element in the
      *                 first array to be tested
-     * @param b the second array to be tested fro equality
+     * @param b the second array to be tested for equality
      * @param bFromIndex the index (inclusive) of the first element in the
      *                   second array to be tested
      * @param bToIndex the index (exclusive) of the last element in the
@@ -2533,7 +2533,7 @@ public class Arrays {
      *                   first array to be tested
      * @param aToIndex the index (exclusive) of the last element in the
      *                 first array to be tested
-     * @param b the second array to be tested fro equality
+     * @param b the second array to be tested for equality
      * @param bFromIndex the index (inclusive) of the first element in the
      *                   second array to be tested
      * @param bToIndex the index (exclusive) of the last element in the
@@ -2606,7 +2606,7 @@ public class Arrays {
      *                   first array to be tested
      * @param aToIndex the index (exclusive) of the last element in the
      *                 first array to be tested
-     * @param b the second array to be tested fro equality
+     * @param b the second array to be tested for equality
      * @param bFromIndex the index (inclusive) of the first element in the
      *                   second array to be tested
      * @param bToIndex the index (exclusive) of the last element in the
@@ -2679,7 +2679,7 @@ public class Arrays {
      *                   first array to be tested
      * @param aToIndex the index (exclusive) of the last element in the
      *                 first array to be tested
-     * @param b the second array to be tested fro equality
+     * @param b the second array to be tested for equality
      * @param bFromIndex the index (inclusive) of the first element in the
      *                   second array to be tested
      * @param bToIndex the index (exclusive) of the last element in the
@@ -2751,7 +2751,7 @@ public class Arrays {
      *                   first array to be tested
      * @param aToIndex the index (exclusive) of the last element in the
      *                 first array to be tested
-     * @param b the second array to be tested fro equality
+     * @param b the second array to be tested for equality
      * @param bFromIndex the index (inclusive) of the first element in the
      *                   second array to be tested
      * @param bToIndex the index (exclusive) of the last element in the
@@ -2834,7 +2834,7 @@ public class Arrays {
      *                   first array to be tested
      * @param aToIndex the index (exclusive) of the last element in the
      *                 first array to be tested
-     * @param b the second array to be tested fro equality
+     * @param b the second array to be tested for equality
      * @param bFromIndex the index (inclusive) of the first element in the
      *                   second array to be tested
      * @param bToIndex the index (exclusive) of the last element in the
@@ -2917,7 +2917,7 @@ public class Arrays {
      *                   first array to be tested
      * @param aToIndex the index (exclusive) of the last element in the
      *                 first array to be tested
-     * @param b the second array to be tested fro equality
+     * @param b the second array to be tested for equality
      * @param bFromIndex the index (inclusive) of the first element in the
      *                   second array to be tested
      * @param bToIndex the index (exclusive) of the last element in the
@@ -3000,7 +3000,7 @@ public class Arrays {
      *                   first array to be tested
      * @param aToIndex the index (exclusive) of the last element in the
      *                 first array to be tested
-     * @param b the second array to be tested fro equality
+     * @param b the second array to be tested for equality
      * @param bFromIndex the index (inclusive) of the first element in the
      *                   second array to be tested
      * @param bToIndex the index (exclusive) of the last element in the
@@ -3093,7 +3093,7 @@ public class Arrays {
      *                   first array to be tested
      * @param aToIndex the index (exclusive) of the last element in the
      *                 first array to be tested
-     * @param b the second array to be tested fro equality
+     * @param b the second array to be tested for equality
      * @param bFromIndex the index (inclusive) of the first element in the
      *                   second array to be tested
      * @param bToIndex the index (exclusive) of the last element in the
