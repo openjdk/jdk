@@ -4605,7 +4605,7 @@ bool G1CollectedHeap::has_more_regions(G1HeapRegionAttr dest) {
   }
 }
 
-HeapRegion* G1CollectedHeap::new_gc_alloc_region(size_t word_size, G1HeapRegionAttr dest) {
+HeapRegion* G1CollectedHeap::new_gc_alloc_region(size_t word_size, G1HeapRegionAttr dest, uint node_index) {
   assert(FreeList_lock->owned_by_self(), "pre-condition");
 
   if (!has_more_regions(dest)) {
@@ -4621,7 +4621,8 @@ HeapRegion* G1CollectedHeap::new_gc_alloc_region(size_t word_size, G1HeapRegionA
 
   HeapRegion* new_alloc_region = new_region(word_size,
                                             type,
-                                            true /* do_expand */);
+                                            true /* do_expand */,
+                                            node_index);
 
   if (new_alloc_region != NULL) {
     if (type.is_survivor()) {

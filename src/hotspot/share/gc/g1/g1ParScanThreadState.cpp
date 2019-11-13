@@ -152,11 +152,11 @@ void G1ParScanThreadState::trim_queue() {
   } while (!_refs->is_empty());
 }
 
-HeapWord* G1ParScanThreadState::allocate_in_next_plab(G1HeapRegionAttr const region_attr,
-                                                      G1HeapRegionAttr* dest,
+HeapWord* G1ParScanThreadState::allocate_in_next_plab(G1HeapRegionAttr* dest,
                                                       size_t word_sz,
-                                                      bool previous_plab_refill_failed) {
-  assert(region_attr.is_in_cset_or_humongous(), "Unexpected region attr type: %s", region_attr.get_type_str());
+                                                      bool previous_plab_refill_failed,
+                                                      uint node_index) {
+
   assert(dest->is_in_cset_or_humongous(), "Unexpected dest: %s region attr", dest->get_type_str());
 
   // Right now we only have two types of regions (young / old) so
@@ -165,7 +165,8 @@ HeapWord* G1ParScanThreadState::allocate_in_next_plab(G1HeapRegionAttr const reg
     bool plab_refill_in_old_failed = false;
     HeapWord* const obj_ptr = _plab_allocator->allocate(G1HeapRegionAttr::Old,
                                                         word_sz,
-                                                        &plab_refill_in_old_failed);
+                                                        &plab_refill_in_old_failed,
+                                                        node_index);
     // Make sure that we won't attempt to copy any other objects out
     // of a survivor region (given that apparently we cannot allocate
     // any new ones) to avoid coming into this slow path again and again.
@@ -204,8 +205,8 @@ G1HeapRegionAttr G1ParScanThreadState::next_region_attr(G1HeapRegionAttr const r
 
 void G1ParScanThreadState::report_promotion_event(G1HeapRegionAttr const dest_attr,
                                                   oop const old, size_t word_sz, uint age,
-                                                  HeapWord * const obj_ptr) const {
-  PLAB* alloc_buf = _plab_allocator->alloc_buffer(dest_attr);
+                                                  HeapWord * const obj_ptr, uint node_index) const {
+  PLAB* alloc_buf = _plab_allocator->alloc_buffer(dest_attr, node_index);
   if (alloc_buf->contains(obj_ptr)) {
     _g1h->_gc_tracer_stw->report_promotion_in_new_plab_event(old->klass(), word_sz * HeapWordSize, age,
                                                              dest_attr.type() == G1HeapRegionAttr::Old,
@@ -228,15 +229,19 @@ oop G1ParScanThreadState::copy_to_survivor_space(G1HeapRegionAttr const region_a
   if (_old_gen_is_full && dest_attr.is_old()) {
     return handle_evacuation_failure_par(old, old_mark);
   }
-  HeapWord* obj_ptr = _plab_allocator->plab_allocate(dest_attr, word_sz);
+  HeapRegion* const from_region = _g1h->heap_region_containing(old);
+  uint node_index = from_region->node_index();
+
+  HeapWord* obj_ptr = _plab_allocator->plab_allocate(dest_attr, word_sz, node_index);
 
   // PLAB allocations should succeed most of the time, so we'll
   // normally check against NULL once and that's it.
   if (obj_ptr == NULL) {
     bool plab_refill_failed = false;
-    obj_ptr = _plab_allocator->allocate_direct_or_new_plab(dest_attr, word_sz, &plab_refill_failed);
+    obj_ptr = _plab_allocator->allocate_direct_or_new_plab(dest_attr, word_sz, &plab_refill_failed, node_index);
     if (obj_ptr == NULL) {
-      obj_ptr = allocate_in_next_plab(region_attr, &dest_attr, word_sz, plab_refill_failed);
+      assert(region_attr.is_in_cset(), "Unexpected region attr type: %s", region_attr.get_type_str());
+      obj_ptr = allocate_in_next_plab(&dest_attr, word_sz, plab_refill_failed, node_index);
       if (obj_ptr == NULL) {
         // This will either forward-to-self, or detect that someone else has
         // installed a forwarding pointer.
@@ -245,7 +250,7 @@ oop G1ParScanThreadState::copy_to_survivor_space(G1HeapRegionAttr const region_a
     }
     if (_g1h->_gc_tracer_stw->should_report_promotion_events()) {
       // The events are checked individually as part of the actual commit
-      report_promotion_event(dest_attr, old, word_sz, age, obj_ptr);
+      report_promotion_event(dest_attr, old, word_sz, age, obj_ptr, node_index);
     }
   }
 
@@ -257,7 +262,7 @@ oop G1ParScanThreadState::copy_to_survivor_space(G1HeapRegionAttr const region_a
   if (_g1h->evacuation_should_fail()) {
     // Doing this after all the allocation attempts also tests the
     // undo_allocation() method too.
-    _plab_allocator->undo_allocation(dest_attr, obj_ptr, word_sz);
+    _plab_allocator->undo_allocation(dest_attr, obj_ptr, word_sz, node_index);
     return handle_evacuation_failure_par(old, old_mark);
   }
 #endif // !PRODUCT
@@ -270,7 +275,6 @@ oop G1ParScanThreadState::copy_to_survivor_space(G1HeapRegionAttr const region_a
   if (forward_ptr == NULL) {
     Copy::aligned_disjoint_words((HeapWord*) old, obj_ptr, word_sz);
 
-    HeapRegion* const from_region = _g1h->heap_region_containing(old);
     const uint young_index = from_region->young_index_in_cset();
 
     assert((from_region->is_young() && young_index >  0) ||
@@ -323,7 +327,7 @@ oop G1ParScanThreadState::copy_to_survivor_space(G1HeapRegionAttr const region_a
     }
     return obj;
   } else {
-    _plab_allocator->undo_allocation(dest_attr, obj_ptr, word_sz);
+    _plab_allocator->undo_allocation(dest_attr, obj_ptr, word_sz, node_index);
     return forward_ptr;
   }
 }

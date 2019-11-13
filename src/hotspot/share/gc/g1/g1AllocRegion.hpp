@@ -270,8 +270,8 @@ protected:
 
 class SurvivorGCAllocRegion : public G1GCAllocRegion {
 public:
-  SurvivorGCAllocRegion(G1EvacStats* stats)
-  : G1GCAllocRegion("Survivor GC Alloc Region", false /* bot_updates */, stats, G1HeapRegionAttr::Young) { }
+  SurvivorGCAllocRegion(G1EvacStats* stats, uint node_index)
+  : G1GCAllocRegion("Survivor GC Alloc Region", false /* bot_updates */, stats, G1HeapRegionAttr::Young, node_index) { }
 };
 
 class OldGCAllocRegion : public G1GCAllocRegion {
