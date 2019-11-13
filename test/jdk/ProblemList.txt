@@ -837,6 +837,8 @@ sanity/client/SwingSet/src/ScrollPaneDemoTest.java 8225013 linux-all
 
 tools/pack200/CommandLineTests.java                             8059906 generic-all
 
+tools/jlink/JLinkReproducibleTest.java                          8217166 windows-all
+
 ############################################################################
 
 # jdk_jdi
