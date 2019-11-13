@@ -55,14 +55,6 @@ DEF_HANDLE_CONSTR(typeArray, is_typeArray_noinline)
 
 // Constructor for metadata handles
 #define DEF_METADATA_HANDLE_FN(name, type) \
-inline name##Handle::name##Handle(type* obj) : _value(obj), _thread(NULL) {       \
-  if (obj != NULL) {                                                   \
-    assert(((Metadata*)obj)->is_valid(), "obj is valid");              \
-    _thread = Thread::current();                                       \
-    assert (_thread->is_in_stack((address)this), "not on stack?");     \
-    _thread->metadata_handles()->push((Metadata*)obj);                 \
-  }                                                                    \
-}                                                                      \
 inline name##Handle::name##Handle(Thread* thread, type* obj) : _value(obj), _thread(thread) { \
   if (obj != NULL) {                                                   \
     assert(((Metadata*)obj)->is_valid(), "obj is valid");              \

@@ -1022,7 +1022,7 @@ Handle SharedRuntime::find_callee_info(JavaThread* thread, Bytecodes::Code& bc, 
   return find_callee_info_helper(thread, vfst, bc, callinfo, THREAD);
 }
 
-methodHandle SharedRuntime::extract_attached_method(vframeStream& vfst) {
+Method* SharedRuntime::extract_attached_method(vframeStream& vfst) {
   CompiledMethod* caller = vfst.nm();
 
   nmethodLocker caller_lock(caller);
@@ -1055,9 +1055,9 @@ Handle SharedRuntime::find_callee_info_helper(JavaThread* thread,
   int bytecode_index = bytecode.index();
   bc = bytecode.invoke_code();
 
-  methodHandle attached_method = extract_attached_method(vfst);
+  methodHandle attached_method(THREAD, extract_attached_method(vfst));
   if (attached_method.not_null()) {
-    methodHandle callee = bytecode.static_target(CHECK_NH);
+    Method* callee = bytecode.static_target(CHECK_NH);
     vmIntrinsics::ID id = callee->intrinsic_id();
     // When VM replaces MH.invokeBasic/linkTo* call with a direct/virtual call,
     // it attaches statically resolved method to the call site.
@@ -1105,8 +1105,8 @@ Handle SharedRuntime::find_callee_info_helper(JavaThread* thread,
     frame callerFrame = stubFrame.sender(&reg_map2);
 
     if (attached_method.is_null()) {
-      methodHandle callee = bytecode.static_target(CHECK_NH);
-      if (callee.is_null()) {
+      Method* callee = bytecode.static_target(CHECK_NH);
+      if (callee == NULL) {
         THROW_(vmSymbols::java_lang_NoSuchMethodException(), nullHandle);
       }
     }
@@ -1144,7 +1144,6 @@ Handle SharedRuntime::find_callee_info_helper(JavaThread* thread,
       rk = constants->klass_ref_at(bytecode_index, CHECK_NH);
     }
     Klass* static_receiver_klass = rk;
-    methodHandle callee = callinfo.selected_method();
     assert(receiver_klass->is_subtype_of(static_receiver_klass),
            "actual receiver must be subclass of static receiver klass");
     if (receiver_klass->is_instance_klass()) {
@@ -1182,7 +1181,7 @@ methodHandle SharedRuntime::find_callee_method(JavaThread* thread, TRAPS) {
     Bytecodes::Code bc;
     CallInfo callinfo;
     find_callee_info_helper(thread, vfst, bc, callinfo, CHECK_(methodHandle()));
-    callee_method = callinfo.selected_method();
+    callee_method = methodHandle(THREAD, callinfo.selected_method());
   }
   assert(callee_method()->is_method(), "must be");
   return callee_method;
@@ -1325,7 +1324,7 @@ methodHandle SharedRuntime::resolve_sub_helper(JavaThread *thread,
   Bytecodes::Code invoke_code = Bytecodes::_illegal;
   Handle receiver = find_callee_info(thread, invoke_code,
                                      call_info, CHECK_(methodHandle()));
-  methodHandle callee_method = call_info.selected_method();
+  methodHandle callee_method(THREAD, call_info.selected_method());
 
   assert((!is_virtual && invoke_code == Bytecodes::_invokestatic ) ||
          (!is_virtual && invoke_code == Bytecodes::_invokespecial) ||
@@ -1479,7 +1478,7 @@ JRT_BLOCK_ENTRY(address, SharedRuntime::handle_wrong_method_abstract(JavaThread*
   // Get the called method from the invoke bytecode.
   vframeStream vfst(thread, true);
   assert(!vfst.at_end(), "Java frame must exist");
-  methodHandle caller(vfst.method());
+  methodHandle caller(thread, vfst.method());
   Bytecode_invoke invoke(caller, vfst.bci());
   DEBUG_ONLY( invoke.verify(); )
 
@@ -1493,7 +1492,7 @@ JRT_BLOCK_ENTRY(address, SharedRuntime::handle_wrong_method_abstract(JavaThread*
   // Install exception and return forward entry.
   address res = StubRoutines::throw_AbstractMethodError_entry();
   JRT_BLOCK
-    methodHandle callee = invoke.static_target(thread);
+    methodHandle callee(thread, invoke.static_target(thread));
     if (!callee.is_null()) {
       oop recv = callerFrame.retrieve_receiver(&reg_map);
       Klass *recv_klass = (recv != NULL) ? recv->klass() : NULL;
@@ -1657,7 +1656,7 @@ methodHandle SharedRuntime::handle_ic_miss_helper(JavaThread *thread, TRAPS) {
     return callee_method;
   }
 
-  methodHandle callee_method = call_info.selected_method();
+  methodHandle callee_method(thread, call_info.selected_method());
 
 #ifndef PRODUCT
   Atomic::inc(&_ic_miss_ctr);

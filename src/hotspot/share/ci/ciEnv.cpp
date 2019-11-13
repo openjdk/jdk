@@ -760,7 +760,7 @@ Method* ciEnv::lookup_method(ciInstanceKlass* accessor,
 
   InstanceKlass* accessor_klass = accessor->get_instanceKlass();
   Klass* holder_klass = holder->get_Klass();
-  methodHandle dest_method;
+  Method* dest_method;
   LinkInfo link_info(holder_klass, name, sig, accessor_klass, LinkInfo::needs_access_check, tag);
   switch (bc) {
   case Bytecodes::_invokestatic:
@@ -782,7 +782,7 @@ Method* ciEnv::lookup_method(ciInstanceKlass* accessor,
   default: ShouldNotReachHere();
   }
 
-  return dest_method();
+  return dest_method;
 }
 
 

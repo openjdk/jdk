@@ -307,7 +307,7 @@ class MetaspaceShared : AllStatic {
   static void pack_dump_space(DumpRegion* current, DumpRegion* next,
                               ReservedSpace* rs);
 
-  static void rewrite_nofast_bytecodes_and_calculate_fingerprints(InstanceKlass* ik);
+  static void rewrite_nofast_bytecodes_and_calculate_fingerprints(Thread* thread, InstanceKlass* ik);
 #endif
 
   // Allocate a block of memory from the "mc", "ro", or "rw" regions.

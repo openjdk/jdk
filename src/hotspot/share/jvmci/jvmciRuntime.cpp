@@ -1150,16 +1150,16 @@ void JVMCIRuntime::get_field_by_index(InstanceKlass* accessor, fieldDescriptor& 
 // ------------------------------------------------------------------
 // Perform an appropriate method lookup based on accessor, holder,
 // name, signature, and bytecode.
-methodHandle JVMCIRuntime::lookup_method(InstanceKlass* accessor,
-                               Klass*        holder,
-                               Symbol*       name,
-                               Symbol*       sig,
-                               Bytecodes::Code bc,
-                               constantTag   tag) {
+Method* JVMCIRuntime::lookup_method(InstanceKlass* accessor,
+                                    Klass*        holder,
+                                    Symbol*       name,
+                                    Symbol*       sig,
+                                    Bytecodes::Code bc,
+                                    constantTag   tag) {
   // Accessibility checks are performed in JVMCIEnv::get_method_by_index_impl().
   assert(check_klass_accessibility(accessor, holder), "holder not accessible");
 
-  methodHandle dest_method;
+  Method* dest_method;
   LinkInfo link_info(holder, name, sig, accessor, LinkInfo::needs_access_check, tag);
   switch (bc) {
   case Bytecodes::_invokestatic:
@@ -1186,9 +1186,9 @@ methodHandle JVMCIRuntime::lookup_method(InstanceKlass* accessor,
 
 
 // ------------------------------------------------------------------
-methodHandle JVMCIRuntime::get_method_by_index_impl(const constantPoolHandle& cpool,
-                                          int index, Bytecodes::Code bc,
-                                          InstanceKlass* accessor) {
+Method* JVMCIRuntime::get_method_by_index_impl(const constantPoolHandle& cpool,
+                                               int index, Bytecodes::Code bc,
+                                               InstanceKlass* accessor) {
   if (bc == Bytecodes::_invokedynamic) {
     ConstantPoolCacheEntry* cpce = cpool->invokedynamic_cp_cache_entry_at(index);
     bool is_resolved = !cpce->is_f1_null();
@@ -1196,7 +1196,7 @@ methodHandle JVMCIRuntime::get_method_by_index_impl(const constantPoolHandle& cp
       // Get the invoker Method* from the constant pool.
       // (The appendix argument, if any, will be noted in the method's signature.)
       Method* adapter = cpce->f1_as_method();
-      return methodHandle(adapter);
+      return adapter;
     }
 
     return NULL;
@@ -1235,8 +1235,8 @@ methodHandle JVMCIRuntime::get_method_by_index_impl(const constantPoolHandle& cp
 
   if (holder_is_accessible) { // Our declared holder is loaded.
     constantTag tag = cpool->tag_ref_at(index);
-    methodHandle m = lookup_method(accessor, holder, name_sym, sig_sym, bc, tag);
-    if (!m.is_null()) {
+    Method* m = lookup_method(accessor, holder, name_sym, sig_sym, bc, tag);
+    if (m != NULL) {
       // We found the method.
       return m;
     }
@@ -1265,7 +1265,7 @@ InstanceKlass* JVMCIRuntime::get_instance_klass_for_declared_method_holder(Klass
 
 
 // ------------------------------------------------------------------
-methodHandle JVMCIRuntime::get_method_by_index(const constantPoolHandle& cpool,
+Method* JVMCIRuntime::get_method_by_index(const constantPoolHandle& cpool,
                                      int index, Bytecodes::Code bc,
                                      InstanceKlass* accessor) {
   ResourceMark rm;

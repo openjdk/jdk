@@ -3152,7 +3152,7 @@ JvmtiEnv::GetBytecodes(Method* method_oop, jint* bytecode_count_ptr, unsigned ch
   NULL_CHECK(method_oop, JVMTI_ERROR_INVALID_METHODID);
 
   HandleMark hm;
-  methodHandle method(method_oop);
+  methodHandle method(Thread::current(), method_oop);
   jint size = (jint)method->code_size();
   jvmtiError err = allocate(size, bytecodes_ptr);
   if (err != JVMTI_ERROR_NONE) {

@@ -806,7 +806,7 @@ void DynamicArchiveBuilder::make_klasses_shareable() {
       ik->set_class_loader_type(ClassLoader::APP_LOADER);
     }
 
-    MetaspaceShared::rewrite_nofast_bytecodes_and_calculate_fingerprints(ik);
+    MetaspaceShared::rewrite_nofast_bytecodes_and_calculate_fingerprints(Thread::current(), ik);
     ik->remove_unshareable_info();
 
     assert(ik->array_klasses() == NULL, "sanity");

@@ -401,7 +401,7 @@ void ConstantPoolCacheEntry::set_method_handle_common(const constantPoolHandle& 
     return;
   }
 
-  const methodHandle adapter = call_info.resolved_method();
+  Method* adapter            = call_info.resolved_method();
   const Handle appendix      = call_info.resolved_appendix();
   const bool has_appendix    = appendix.not_null();
 
@@ -419,7 +419,7 @@ void ConstantPoolCacheEntry::set_method_handle_common(const constantPoolHandle& 
                   invoke_code,
                   p2i(appendix()),
                   (has_appendix ? "" : " (unused)"),
-                  p2i(adapter()));
+                  p2i(adapter));
     adapter->print();
     if (has_appendix)  appendix()->print();
   }
@@ -451,7 +451,7 @@ void ConstantPoolCacheEntry::set_method_handle_common(const constantPoolHandle& 
     resolved_references->obj_at_put(appendix_index, appendix());
   }
 
-  release_set_f1(adapter());  // This must be the last one to set (see NOTE above)!
+  release_set_f1(adapter);  // This must be the last one to set (see NOTE above)!
 
   // The interpreter assembly code does not check byte_2,
   // but it is used by is_resolved, method_if_resolved, etc.
@@ -723,10 +723,12 @@ void ConstantPoolCache::walk_entries_for_initialization(bool check_only) {
   bool* f2_used = NEW_RESOURCE_ARRAY(bool, length());
   memset(f2_used, 0, sizeof(bool) * length());
 
+  Thread* THREAD = Thread::current();
+
   // Find all the slots that we need to preserve f2
   for (int i = 0; i < ik->methods()->length(); i++) {
     Method* m = ik->methods()->at(i);
-    RawBytecodeStream bcs(m);
+    RawBytecodeStream bcs(methodHandle(THREAD, m));
     while (!bcs.is_last_bytecode()) {
       Bytecodes::Code opcode = bcs.raw_next();
       switch (opcode) {

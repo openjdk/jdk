@@ -48,7 +48,7 @@
 #include "memory/universe.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/constantPool.hpp"
-#include "oops/fieldStreams.hpp"
+#include "oops/fieldStreams.inline.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/method.hpp"
 #include "oops/objArrayKlass.hpp"
@@ -1615,7 +1615,8 @@ JVM_ENTRY(jobjectArray, JVM_GetMethodParameters(JNIEnv *env, jobject method))
     for (int i = 0; i < num_params; i++) {
       MethodParametersElement* params = mh->method_parameters_start();
       int index = params[i].name_cp_index;
-      bounds_check(mh->constants(), index, CHECK_NULL);
+      constantPoolHandle cp(THREAD, mh->constants());
+      bounds_check(cp, index, CHECK_NULL);
 
       if (0 != index && !mh->constants()->tag_at(index).is_utf8()) {
         THROW_MSG_0(vmSymbols::java_lang_IllegalArgumentException(),

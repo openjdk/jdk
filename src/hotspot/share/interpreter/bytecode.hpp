@@ -209,7 +209,7 @@ class Bytecode_invoke: public Bytecode_member_ref {
   void verify() const;
 
   // Attributes
-  methodHandle static_target(TRAPS);             // "specified" method   (from constant pool)
+  Method* static_target(TRAPS);                  // "specified" method   (from constant pool)
   Handle       appendix(TRAPS);                  // if CPCE::has_appendix (from constant pool)
 
   // Testers

@@ -561,7 +561,7 @@ class java_lang_Throwable: AllStatic {
   static oop message(oop throwable);
   static void set_message(oop throwable, oop value);
   static Symbol* detail_message(oop throwable);
-  static void print_stack_element(outputStream *st, const methodHandle& method, int bci);
+  static void print_stack_element(outputStream *st, Method* method, int bci);
   static void print_stack_usage(Handle stream);
 
   static void compute_offsets();
@@ -1402,7 +1402,7 @@ class Backtrace: AllStatic {
   static int version_at(unsigned int merged);
   static int mid_at(unsigned int merged);
   static int cpref_at(unsigned int merged);
-  static int get_line_number(const methodHandle& method, int bci);
+  static int get_line_number(Method* method, int bci);
   static Symbol* get_source_file_name(InstanceKlass* holder, int version);
 
   // Debugging

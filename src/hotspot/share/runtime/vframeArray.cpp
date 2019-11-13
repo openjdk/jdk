@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -589,8 +589,8 @@ void vframeArray::unpack_to_stack(frame &unpack_frame, int exec_mode, int caller
     if (index == 0) {
       callee_parameters = callee_locals = 0;
     } else {
-      methodHandle caller = elem->method();
-      methodHandle callee = element(index - 1)->method();
+      methodHandle caller(THREAD, elem->method());
+      methodHandle callee(THREAD, element(index - 1)->method());
       Bytecode_invoke inv(caller, elem->bci());
       // invokedynamic instructions don't have a class but obviously don't have a MemberName appendix.
       // NOTE:  Use machinery here that avoids resolving of any kind.

@@ -160,8 +160,6 @@ void AOTCompiledMethod::do_unloading(bool unloading_occurred) {
 }
 
 bool AOTCompiledMethod::make_not_entrant_helper(int new_state) {
-  // Make sure the method is not flushed in case of a safepoint in code below.
-  methodHandle the_method(method());
   NoSafepointVerifier nsv;
 
   {
@@ -208,10 +206,7 @@ bool AOTCompiledMethod::make_not_entrant_helper(int new_state) {
 bool AOTCompiledMethod::make_entrant() {
   assert(!method()->is_old(), "reviving evolved method!");
 
-  // Make sure the method is not flushed in case of a safepoint in code below.
-  methodHandle the_method(method());
   NoSafepointVerifier nsv;
-
   {
     // Enter critical section.  Does not block for safepoint.
     MutexLocker pl(CompiledMethod_lock, Mutex::_no_safepoint_check_flag);

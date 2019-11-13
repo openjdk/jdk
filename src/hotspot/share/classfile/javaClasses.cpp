@@ -42,7 +42,7 @@
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
-#include "oops/fieldStreams.hpp"
+#include "oops/fieldStreams.inline.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/instanceMirrorKlass.hpp"
 #include "oops/klass.hpp"
@@ -2270,7 +2270,7 @@ static void print_stack_element_to_stream(outputStream* st, Handle mirror, int m
   st->print_cr("%s", buf);
 }
 
-void java_lang_Throwable::print_stack_element(outputStream *st, const methodHandle& method, int bci) {
+void java_lang_Throwable::print_stack_element(outputStream *st, Method* method, int bci) {
   Handle mirror (Thread::current(),  method->method_holder()->java_mirror());
   int method_id = method->orig_method_idnum();
   int version = method->constants()->version();
@@ -2376,7 +2376,6 @@ void java_lang_Throwable::fill_in_stack_trace(Handle throwable, const methodHand
   // trace as utilizing vframe.
 #ifdef ASSERT
   vframeStream st(thread);
-  methodHandle st_method(THREAD, st.method());
 #endif
   int total_count = 0;
   RegisterMap map(thread, false);
@@ -2426,14 +2425,9 @@ void java_lang_Throwable::fill_in_stack_trace(Handle throwable, const methodHand
       }
     }
 #ifdef ASSERT
-    assert(st_method() == method && st.bci() == bci,
+    assert(st.method() == method && st.bci() == bci,
            "Wrong stack trace");
     st.next();
-    // vframeStream::method isn't GC-safe so store off a copy
-    // of the Method* in case we GC.
-    if (!st.at_end()) {
-      st_method = st.method();
-    }
 #endif
 
     // the format of the stacktrace will be:
@@ -2696,7 +2690,7 @@ void java_lang_StackTraceElement::fill_in(Handle element,
     }
     java_lang_StackTraceElement::set_fileName(element(), source_file);
 
-    int line_number = Backtrace::get_line_number(method, bci);
+    int line_number = Backtrace::get_line_number(method(), bci);
     java_lang_StackTraceElement::set_lineNumber(element(), line_number);
   }
 }
@@ -2771,7 +2765,8 @@ void java_lang_StackFrameInfo::to_stack_trace_element(Handle stackFrame, Handle 
   short version = stackFrame->short_field(_version_offset);
   int bci = stackFrame->int_field(_bci_offset);
   Symbol* name = method->name();
-  java_lang_StackTraceElement::fill_in(stack_trace_element, holder, method, version, bci, name, CHECK);
+  java_lang_StackTraceElement::fill_in(stack_trace_element, holder, methodHandle(THREAD, method),
+                                       version, bci, name, CHECK);
 }
 
 #define STACKFRAMEINFO_FIELDS_DO(macro) \

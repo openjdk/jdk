@@ -31,11 +31,11 @@
 // must be put in this file, as they require runtime/handles.inline.hpp.
 
 inline Symbol* fieldDescriptor::name() const {
-  return field()->name(_cp);
+  return field()->name(_cp());
 }
 
 inline Symbol* fieldDescriptor::signature() const {
-  return field()->signature(_cp);
+  return field()->signature(_cp());
 }
 
 inline InstanceKlass* fieldDescriptor::field_holder() const {

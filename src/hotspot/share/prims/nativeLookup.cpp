@@ -380,7 +380,7 @@ address NativeLookup::lookup_entry_prefixed(const methodHandle& method, bool& in
       if (wrapper_method != NULL && !wrapper_method->is_native()) {
         // we found a wrapper method, use its native entry
         method->set_is_prefixed_native();
-        return lookup_entry(wrapper_method, in_base_library, THREAD);
+        return lookup_entry(methodHandle(THREAD, wrapper_method), in_base_library, THREAD);
       }
     }
   }

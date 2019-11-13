@@ -596,7 +596,7 @@ static void clear_basic_type_mirrors() {
   Universe::set_void_mirror(NULL);
 }
 
-static void rewrite_nofast_bytecode(Method* method) {
+static void rewrite_nofast_bytecode(const methodHandle& method) {
   BytecodeStream bcs(method);
   while (!bcs.is_last_bytecode()) {
     Bytecodes::Code opcode = bcs.next();
@@ -620,19 +620,19 @@ static void rewrite_nofast_bytecode(Method* method) {
 // [1] Rewrite all bytecodes as needed, so that the ConstMethod* will not be modified
 //     at run time by RewriteBytecodes/RewriteFrequentPairs
 // [2] Assign a fingerprint, so one doesn't need to be assigned at run-time.
-static void rewrite_nofast_bytecodes_and_calculate_fingerprints() {
+static void rewrite_nofast_bytecodes_and_calculate_fingerprints(Thread* thread) {
   for (int i = 0; i < _global_klass_objects->length(); i++) {
     Klass* k = _global_klass_objects->at(i);
     if (k->is_instance_klass()) {
       InstanceKlass* ik = InstanceKlass::cast(k);
-      MetaspaceShared::rewrite_nofast_bytecodes_and_calculate_fingerprints(ik);
+      MetaspaceShared::rewrite_nofast_bytecodes_and_calculate_fingerprints(thread, ik);
     }
   }
 }
 
-void MetaspaceShared::rewrite_nofast_bytecodes_and_calculate_fingerprints(InstanceKlass* ik) {
+void MetaspaceShared::rewrite_nofast_bytecodes_and_calculate_fingerprints(Thread* thread, InstanceKlass* ik) {
   for (int i = 0; i < ik->methods()->length(); i++) {
-    Method* m = ik->methods()->at(i);
+    methodHandle m(thread, ik->methods()->at(i));
     rewrite_nofast_bytecode(m);
     Fingerprinter fp(m);
     // The side effect of this call sets method's fingerprint field.
@@ -1493,7 +1493,7 @@ void VM_PopulateDumpSharedSpace::doit() {
 
   // Ensure the ConstMethods won't be modified at run-time
   tty->print("Updating ConstMethods ... ");
-  rewrite_nofast_bytecodes_and_calculate_fingerprints();
+  rewrite_nofast_bytecodes_and_calculate_fingerprints(THREAD);
   tty->print_cr("done. ");
 
   // Remove all references outside the metadata

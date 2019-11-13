@@ -465,8 +465,9 @@ CompileTask* CompileQueue::get() {
   if (task != NULL) {
     // Save method pointers across unlock safepoint.  The task is removed from
     // the compilation queue, which is walked during RedefineClasses.
-    save_method = methodHandle(task->method());
-    save_hot_method = methodHandle(task->hot_method());
+    Thread* thread = Thread::current();
+    save_method = methodHandle(thread, task->method());
+    save_hot_method = methodHandle(thread, task->hot_method());
 
     remove(task);
   }

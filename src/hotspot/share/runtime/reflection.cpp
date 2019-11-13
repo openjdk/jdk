@@ -978,7 +978,7 @@ static methodHandle resolve_interface_call(InstanceKlass* klass,
                                        LinkInfo(klass, name, signature),
                                        true,
                                        CHECK_(methodHandle()));
-  return info.selected_method();
+  return methodHandle(THREAD, info.selected_method());
 }
 
 // Conversion

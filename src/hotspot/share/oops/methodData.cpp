@@ -668,7 +668,7 @@ void ArgInfoData::print_data_on(outputStream* st, const char* extra) const {
 }
 
 int ParametersTypeData::compute_cell_count(Method* m) {
-  if (!MethodData::profile_parameters_for_method(m)) {
+  if (!MethodData::profile_parameters_for_method(methodHandle(Thread::current(), m))) {
     return 0;
   }
   int max = TypeProfileParmsLimit == -1 ? INT_MAX : TypeProfileParmsLimit;
@@ -709,7 +709,7 @@ MethodData* MethodData::allocate(ClassLoaderData* loader_data, const methodHandl
   int size = MethodData::compute_allocation_size_in_words(method);
 
   return new (loader_data, size, MetaspaceObj::MethodDataType, THREAD)
-    MethodData(method(), size, THREAD);
+    MethodData(method, size, THREAD);
 }
 
 int MethodData::bytecode_cell_count(Bytecodes::Code code) {
@@ -1220,8 +1220,9 @@ MethodData::MethodData(const methodHandle& method, int size, TRAPS)
 }
 
 void MethodData::initialize() {
+  Thread* thread = Thread::current();
   NoSafepointVerifier no_safepoint;  // init function atomic wrt GC
-  ResourceMark rm;
+  ResourceMark rm(thread);
 
   init();
   set_creation_mileage(mileage_of(method()));
@@ -1231,7 +1232,7 @@ void MethodData::initialize() {
   int data_size = 0;
   int empty_bc_count = 0;  // number of bytecodes lacking data
   _data[0] = 0;  // apparently not set below.
-  BytecodeStream stream(method());
+  BytecodeStream stream(methodHandle(thread, method()));
   Bytecodes::Code c;
   bool needs_speculative_traps = false;
   while ((c = stream.next()) >= 0) {
@@ -1284,7 +1285,7 @@ void MethodData::initialize() {
 
   post_initialize(&stream);
 
-  assert(object_size == compute_allocation_size_in_bytes(methodHandle(_method)), "MethodData: computed size != initialized size");
+  assert(object_size == compute_allocation_size_in_bytes(methodHandle(thread, _method)), "MethodData: computed size != initialized size");
   set_size(object_size);
 }
 
@@ -1296,7 +1297,8 @@ void MethodData::init() {
 
   // Set per-method invoke- and backedge mask.
   double scale = 1.0;
-  CompilerOracle::has_option_value(_method, "CompileThresholdScaling", scale);
+  methodHandle mh(Thread::current(), _method);
+  CompilerOracle::has_option_value(mh, "CompileThresholdScaling", scale);
   _invoke_mask = right_n_bits(CompilerConfig::scaled_freq_log(Tier0InvokeNotifyFreqLog, scale)) << InvocationCounter::count_shift;
   _backedge_mask = right_n_bits(CompilerConfig::scaled_freq_log(Tier0BackedgeNotifyFreqLog, scale)) << InvocationCounter::count_shift;
 
@@ -1313,8 +1315,8 @@ void MethodData::init() {
 #if INCLUDE_RTM_OPT
   _rtm_state = NoRTM; // No RTM lock eliding by default
   if (UseRTMLocking &&
-      !CompilerOracle::has_option_string(_method, "NoRTMLockEliding")) {
-    if (CompilerOracle::has_option_string(_method, "UseRTMLockEliding") || !UseRTMDeopt) {
+      !CompilerOracle::has_option_string(mh, "NoRTMLockEliding")) {
+    if (CompilerOracle::has_option_string(mh, "UseRTMLockEliding") || !UseRTMDeopt) {
       // Generate RTM lock eliding code without abort ratio calculation code.
       _rtm_state = UseRTM;
     } else if (UseRTMDeopt) {

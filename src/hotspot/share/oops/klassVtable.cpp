@@ -300,7 +300,7 @@ InstanceKlass* klassVtable::find_transitive_override(InstanceKlass* initialsuper
       Symbol* signature = target_method()->signature();
       assert(super_method->name() == name && super_method->signature() == signature, "vtable entry name/sig mismatch");
 #endif
-      if (supersuperklass->is_override(super_method, target_loader, target_classname, THREAD)) {
+      if (supersuperklass->is_override(methodHandle(THREAD, super_method), target_loader, target_classname, THREAD)) {
         if (log_develop_is_enabled(Trace, vtables)) {
           ResourceMark rm(THREAD);
           LogTarget(Trace, vtables) lt;
@@ -461,7 +461,7 @@ bool klassVtable::update_inherited_vtable(InstanceKlass* klass, const methodHand
       // private methods are also never overridden
       if (!super_method->is_private() &&
           (is_default
-          || ((super_klass->is_override(super_method, target_loader, target_classname, THREAD))
+          || ((super_klass->is_override(methodHandle(THREAD, super_method), target_loader, target_classname, THREAD))
           || ((klass->major_version() >= VTABLE_TRANSITIVE_OVERRIDE_VERSION)
           && ((super_klass = find_transitive_override(super_klass,
                              target_method, i, target_loader,
@@ -650,7 +650,7 @@ bool klassVtable::needs_new_vtable_entry(const methodHandle& target_method,
     // methods that have less accessibility
     if ((!super_method->is_static()) &&
        (!super_method->is_private())) {
-      if (superk->is_override(super_method, classloader, classname, THREAD)) {
+      if (superk->is_override(methodHandle(THREAD, super_method), classloader, classname, THREAD)) {
         return false;
       // else keep looking for transitive overrides
       }
@@ -1197,7 +1197,7 @@ void klassItable::initialize_itable_for_interface(int method_table_offset, Insta
   int ime_count = method_count_for_interface(interf);
   for (int i = 0; i < nof_methods; i++) {
     Method* m = methods->at(i);
-    methodHandle target;
+    Method* target = NULL;
     if (m->has_itable_index()) {
       // This search must match the runtime resolution, i.e. selection search for invokeinterface
       // to correctly enforce loader constraints for interface method inheritance.
@@ -1222,6 +1222,7 @@ void klassItable::initialize_itable_for_interface(int method_table_offset, Insta
       // if checkconstraints requested
       if (checkconstraints) {
         Handle method_holder_loader (THREAD, target->method_holder()->class_loader());
+        InstanceKlass* method_holder = target->method_holder();
         if (method_holder_loader() != interface_loader()) {
           ResourceMark rm(THREAD);
           Symbol* failed_type_symbol =
@@ -1240,12 +1241,12 @@ void klassItable::initialize_itable_for_interface(int method_table_offset, Insta
                      " different Class objects for the type %s used in the signature (%s; %s)",
                      interf->class_loader_data()->loader_name_and_id(),
                      interf->external_name(),
-                     target()->method_holder()->class_loader_data()->loader_name_and_id(),
-                     target()->method_holder()->external_kind(),
-                     target()->method_holder()->external_name(),
+                     method_holder->class_loader_data()->loader_name_and_id(),
+                     method_holder->external_kind(),
+                     method_holder->external_name(),
                      failed_type_symbol->as_klass_external_name(),
                      interf->class_in_module_of_loader(false, true),
-                     target()->method_holder()->class_in_module_of_loader(false, true));
+                     method_holder->class_in_module_of_loader(false, true));
             THROW_MSG(vmSymbols::java_lang_LinkageError(), ss.as_string());
           }
         }
@@ -1254,18 +1255,18 @@ void klassItable::initialize_itable_for_interface(int method_table_offset, Insta
       // ime may have moved during GC so recalculate address
       int ime_num = m->itable_index();
       assert(ime_num < ime_count, "oob");
-      itableOffsetEntry::method_entry(_klass, method_table_offset)[ime_num].initialize(target());
+      itableOffsetEntry::method_entry(_klass, method_table_offset)[ime_num].initialize(target);
       if (log_develop_is_enabled(Trace, itables)) {
         ResourceMark rm(THREAD);
-        if (target() != NULL) {
+        if (target != NULL) {
           LogTarget(Trace, itables) lt;
           LogStream ls(lt);
-          char* sig = target()->name_and_sig_as_C_string();
+          char* sig = target->name_and_sig_as_C_string();
           ls.print("interface: %s, ime_num: %d, target: %s, method_holder: %s ",
                        interf->internal_name(), ime_num, sig,
-                       target()->method_holder()->internal_name());
+                       target->method_holder()->internal_name());
           ls.print("target_method flags: ");
-          target()->print_linkage_flags(&ls);
+          target->print_linkage_flags(&ls);
           ls.cr();
         }
       }

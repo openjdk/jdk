@@ -5688,7 +5688,7 @@ static void call_wrapper_dummy() {}
 // up the offset from FS of the thread pointer.
 void os::win32::initialize_thread_ptr_offset() {
   os::os_exception_wrapper((java_call_t)call_wrapper_dummy,
-                           NULL, NULL, NULL, NULL);
+                           NULL, methodHandle(), NULL, NULL);
 }
 
 bool os::supports_map_sync() {

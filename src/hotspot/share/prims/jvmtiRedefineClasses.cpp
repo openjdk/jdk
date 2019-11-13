@@ -41,7 +41,7 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/constantPool.hpp"
-#include "oops/fieldStreams.hpp"
+#include "oops/fieldStreams.inline.hpp"
 #include "oops/klassVtable.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiImpl.hpp"
@@ -3492,12 +3492,11 @@ void VM_RedefineClasses::AdjustAndCleanMetadata::do_klass(Klass* k) {
     // cached references to old methods so it doesn't need to be
     // updated. We can simply start with the previous version(s) in
     // that case.
-    constantPoolHandle other_cp;
     ConstantPoolCache* cp_cache;
 
     if (!ik->is_being_redefined()) {
       // this klass' constant pool cache may need adjustment
-      other_cp = constantPoolHandle(ik->constants());
+      ConstantPool* other_cp = ik->constants();
       cp_cache = other_cp->cache();
       if (cp_cache != NULL) {
         cp_cache->adjust_method_entries(&trace_name_printed);
@@ -3516,13 +3515,13 @@ void VM_RedefineClasses::AdjustAndCleanMetadata::do_klass(Klass* k) {
   }
 }
 
-void VM_RedefineClasses::update_jmethod_ids() {
+void VM_RedefineClasses::update_jmethod_ids(Thread* thread) {
   for (int j = 0; j < _matching_methods_length; ++j) {
     Method* old_method = _matching_old_methods[j];
     jmethodID jmid = old_method->find_jmethod_id_or_null();
     if (jmid != NULL) {
       // There is a jmethodID, change it to point to the new method
-      methodHandle new_method_h(_matching_new_methods[j]);
+      methodHandle new_method_h(thread, _matching_new_methods[j]);
       Method::change_method_associated_with_jmethod_id(jmid, new_method_h());
       assert(Method::resolve_jmethod_id(jmid) == _matching_new_methods[j],
              "should be replaced");
@@ -3961,7 +3960,7 @@ void VM_RedefineClasses::redefine_single_class(jclass the_jclass,
   _new_methods = scratch_class->methods();
   _the_class = the_class;
   compute_added_deleted_matching_methods();
-  update_jmethod_ids();
+  update_jmethod_ids(THREAD);
 
   _any_class_has_resolved_methods = the_class->has_resolved_methods() || _any_class_has_resolved_methods;
 

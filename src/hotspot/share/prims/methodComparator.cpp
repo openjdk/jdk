@@ -52,8 +52,9 @@ bool MethodComparator::methods_EMCP(Method* old_method, Method* new_method) {
 
   _old_cp = old_method->constants();
   _new_cp = new_method->constants();
-  BytecodeStream s_old(old_method);
-  BytecodeStream s_new(new_method);
+  Thread* THREAD = Thread::current();
+  BytecodeStream s_old(methodHandle(THREAD, old_method));
+  BytecodeStream s_new(methodHandle(THREAD, new_method));
   _s_old = &s_old;
   _s_new = &s_new;
   Bytecodes::Code c_old, c_new;

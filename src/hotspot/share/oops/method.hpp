@@ -856,7 +856,7 @@ public:
   static void print_jmethod_ids(const ClassLoaderData* loader_data, outputStream* out) PRODUCT_RETURN;
 
   // Get this method's jmethodID -- allocate if it doesn't exist
-  jmethodID jmethod_id()                            { return method_holder()->get_jmethod_id(this); }
+  jmethodID jmethod_id();
 
   // Lookup the jmethodID for this method.  Return NULL if not found.
   // NOTE that this function can be called from a signal handler

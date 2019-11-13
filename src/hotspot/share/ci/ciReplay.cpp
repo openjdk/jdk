@@ -597,7 +597,7 @@ class CompileReplay : public StackObj {
       nm->make_not_entrant();
     }
     replay_state = this;
-    CompileBroker::compile_method(method, entry_bci, comp_level,
+    CompileBroker::compile_method(methodHandle(THREAD, method), entry_bci, comp_level,
                                   methodHandle(), 0, CompileTask::Reason_Replay, THREAD);
     replay_state = NULL;
     reset();
@@ -634,7 +634,7 @@ class CompileReplay : public StackObj {
       MutexLocker ml(MethodData_lock, THREAD);
       if (method->method_data() == NULL) {
         ClassLoaderData* loader_data = method->method_holder()->class_loader_data();
-        MethodData* method_data = MethodData::allocate(loader_data, method, CHECK);
+        MethodData* method_data = MethodData::allocate(loader_data, methodHandle(THREAD, method), CHECK);
         method->set_method_data(method_data);
       }
     }

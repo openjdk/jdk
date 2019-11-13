@@ -84,7 +84,7 @@ public:
   void bootstrap(TRAPS);
 
   // Should force compilation of method at CompLevel_simple?
-  bool force_comp_at_level_simple(Method* method);
+  bool force_comp_at_level_simple(const methodHandle& method);
 
   bool is_bootstrapping() const { return _bootstrapping; }
 

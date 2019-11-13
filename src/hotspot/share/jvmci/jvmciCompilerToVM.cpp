@@ -254,7 +254,7 @@ C2V_VMENTRY_NULL(jobject, getObjectAtAddress, (JNIEnv* env, jobject c2vm, jlong 
 C2V_END
 
 C2V_VMENTRY_NULL(jbyteArray, getBytecode, (JNIEnv* env, jobject, jobject jvmci_method))
-  methodHandle method = JVMCIENV->asMethod(jvmci_method);
+  methodHandle method(THREAD, JVMCIENV->asMethod(jvmci_method));
 
   int code_size = method->code_size();
   jbyte* reconstituted_code = NEW_RESOURCE_ARRAY(jbyte, code_size);
@@ -332,12 +332,12 @@ C2V_VMENTRY_NULL(jbyteArray, getBytecode, (JNIEnv* env, jobject, jobject jvmci_m
 C2V_END
 
 C2V_VMENTRY_0(jint, getExceptionTableLength, (JNIEnv* env, jobject, jobject jvmci_method))
-  methodHandle method = JVMCIENV->asMethod(jvmci_method);
+  Method* method = JVMCIENV->asMethod(jvmci_method);
   return method->exception_table_length();
 C2V_END
 
 C2V_VMENTRY_0(jlong, getExceptionTableStart, (JNIEnv* env, jobject, jobject jvmci_method))
-  methodHandle method = JVMCIENV->asMethod(jvmci_method);
+  Method* method = JVMCIENV->asMethod(jvmci_method);
   if (method->exception_table_length() == 0) {
     return 0L;
   }
@@ -359,13 +359,13 @@ C2V_VMENTRY_NULL(jobject, asResolvedJavaMethod, (JNIEnv* env, jobject, jobject e
     slot = java_lang_reflect_Method::slot(executable);
   }
   Klass* holder = java_lang_Class::as_Klass(mirror);
-  methodHandle method = InstanceKlass::cast(holder)->method_with_idnum(slot);
+  methodHandle method (THREAD, InstanceKlass::cast(holder)->method_with_idnum(slot));
   JVMCIObject result = JVMCIENV->get_jvmci_method(method, JVMCI_CHECK_NULL);
   return JVMCIENV->get_jobject(result);
 }
 
 C2V_VMENTRY_NULL(jobject, getResolvedJavaMethod, (JNIEnv* env, jobject, jobject base, jlong offset))
-  methodHandle method;
+  Method* method;
   JVMCIObject base_object = JVMCIENV->wrap(base);
   if (base_object.is_null()) {
     method = *((Method**)(offset));
@@ -379,16 +379,16 @@ C2V_VMENTRY_NULL(jobject, getResolvedJavaMethod, (JNIEnv* env, jobject, jobject 
   } else if (JVMCIENV->isa_HotSpotResolvedJavaMethodImpl(base_object)) {
     method = JVMCIENV->asMethod(base_object);
   }
-  if (method.is_null()) {
+  if (method == NULL) {
     JVMCI_THROW_MSG_NULL(IllegalArgumentException, err_msg("Unexpected type: %s", JVMCIENV->klass_name(base_object)));
   }
-  assert (method.is_null() || method->is_method(), "invalid read");
-  JVMCIObject result = JVMCIENV->get_jvmci_method(method, JVMCI_CHECK_NULL);
+  assert (method->is_method(), "invalid read");
+  JVMCIObject result = JVMCIENV->get_jvmci_method(methodHandle(THREAD, method), JVMCI_CHECK_NULL);
   return JVMCIENV->get_jobject(result);
 }
 
 C2V_VMENTRY_NULL(jobject, getConstantPool, (JNIEnv* env, jobject, jobject object_handle))
-  constantPoolHandle cp;
+  ConstantPool* cp = NULL;
   JVMCIObject object = JVMCIENV->wrap(object_handle);
   if (object.is_null()) {
     JVMCI_THROW_NULL(NullPointerException);
@@ -401,9 +401,9 @@ C2V_VMENTRY_NULL(jobject, getConstantPool, (JNIEnv* env, jobject, jobject object
     JVMCI_THROW_MSG_NULL(IllegalArgumentException,
                 err_msg("Unexpected type: %s", JVMCIENV->klass_name(object)));
   }
-  assert(!cp.is_null(), "npe");
+  assert(cp != NULL, "npe");
 
-  JVMCIObject result = JVMCIENV->get_jvmci_constant_pool(cp, JVMCI_CHECK_NULL);
+  JVMCIObject result = JVMCIENV->get_jvmci_constant_pool(constantPoolHandle(THREAD, cp), JVMCI_CHECK_NULL);
   return JVMCIENV->get_jobject(result);
 }
 
@@ -451,7 +451,7 @@ C2V_VMENTRY_NULL(jobject, getResolvedJavaType0, (JNIEnv* env, jobject, jobject b
 }
 
 C2V_VMENTRY_NULL(jobject, findUniqueConcreteMethod, (JNIEnv* env, jobject, jobject jvmci_type, jobject jvmci_method))
-  methodHandle method = JVMCIENV->asMethod(jvmci_method);
+  methodHandle method (THREAD, JVMCIENV->asMethod(jvmci_method));
   Klass* holder = JVMCIENV->asKlass(jvmci_type);
   if (holder->is_interface()) {
     JVMCI_THROW_MSG_NULL(InternalError, err_msg("Interface %s should be handled in Java code", holder->external_name()));
@@ -463,7 +463,7 @@ C2V_VMENTRY_NULL(jobject, findUniqueConcreteMethod, (JNIEnv* env, jobject, jobje
   methodHandle ucm;
   {
     MutexLocker locker(Compile_lock);
-    ucm = Dependencies::find_unique_concrete_method(holder, method());
+    ucm = methodHandle(THREAD, Dependencies::find_unique_concrete_method(holder, method()));
   }
   JVMCIObject result = JVMCIENV->get_jvmci_method(ucm, JVMCI_CHECK_NULL);
   return JVMCIENV->get_jobject(result);
@@ -487,25 +487,25 @@ C2V_VMENTRY_NULL(jobject, getImplementor, (JNIEnv* env, jobject, jobject jvmci_t
 C2V_END
 
 C2V_VMENTRY_0(jboolean, methodIsIgnoredBySecurityStackWalk,(JNIEnv* env, jobject, jobject jvmci_method))
-  methodHandle method = JVMCIENV->asMethod(jvmci_method);
+  Method* method = JVMCIENV->asMethod(jvmci_method);
   return method->is_ignored_by_security_stack_walk();
 C2V_END
 
 C2V_VMENTRY_0(jboolean, isCompilable,(JNIEnv* env, jobject, jobject jvmci_method))
-  methodHandle method = JVMCIENV->asMethod(jvmci_method);
-  constantPoolHandle cp = method->constMethod()->constants();
-  assert(!cp.is_null(), "npe");
+  Method* method = JVMCIENV->asMethod(jvmci_method);
+  ConstantPool* cp = method->constMethod()->constants();
+  assert(cp != NULL, "npe");
   // don't inline method when constant pool contains a CONSTANT_Dynamic
   return !method->is_not_compilable(CompLevel_full_optimization) && !cp->has_dynamic_constant();
 C2V_END
 
 C2V_VMENTRY_0(jboolean, hasNeverInlineDirective,(JNIEnv* env, jobject, jobject jvmci_method))
-  methodHandle method = JVMCIENV->asMethod(jvmci_method);
+  methodHandle method (THREAD, JVMCIENV->asMethod(jvmci_method));
   return !Inline || CompilerOracle::should_not_inline(method) || method->dont_inline();
 C2V_END
 
 C2V_VMENTRY_0(jboolean, shouldInlineMethod,(JNIEnv* env, jobject, jobject jvmci_method))
-  methodHandle method = JVMCIENV->asMethod(jvmci_method);
+  methodHandle method (THREAD, JVMCIENV->asMethod(jvmci_method));
   return CompilerOracle::should_inline(method) || method->force_inline();
 C2V_END
 
@@ -613,35 +613,35 @@ C2V_VMENTRY_NULL(jobject, lookupClass, (JNIEnv* env, jobject, jclass mirror))
 }
 
 C2V_VMENTRY_NULL(jobject, resolvePossiblyCachedConstantInPool, (JNIEnv* env, jobject, jobject jvmci_constant_pool, jint index))
-  constantPoolHandle cp = JVMCIENV->asConstantPool(jvmci_constant_pool);
+  constantPoolHandle cp(THREAD, JVMCIENV->asConstantPool(jvmci_constant_pool));
   oop result = cp->resolve_possibly_cached_constant_at(index, CHECK_NULL);
   return JVMCIENV->get_jobject(JVMCIENV->get_object_constant(result));
 C2V_END
 
 C2V_VMENTRY_0(jint, lookupNameAndTypeRefIndexInPool, (JNIEnv* env, jobject, jobject jvmci_constant_pool, jint index))
-  constantPoolHandle cp = JVMCIENV->asConstantPool(jvmci_constant_pool);
+  constantPoolHandle cp(THREAD, JVMCIENV->asConstantPool(jvmci_constant_pool));
   return cp->name_and_type_ref_index_at(index);
 C2V_END
 
 C2V_VMENTRY_NULL(jobject, lookupNameInPool, (JNIEnv* env, jobject, jobject jvmci_constant_pool, jint which))
-  constantPoolHandle cp = JVMCIENV->asConstantPool(jvmci_constant_pool);
+  constantPoolHandle cp(THREAD, JVMCIENV->asConstantPool(jvmci_constant_pool));
   JVMCIObject sym = JVMCIENV->create_string(cp->name_ref_at(which), JVMCI_CHECK_NULL);
   return JVMCIENV->get_jobject(sym);
 C2V_END
 
 C2V_VMENTRY_NULL(jobject, lookupSignatureInPool, (JNIEnv* env, jobject, jobject jvmci_constant_pool, jint which))
-  constantPoolHandle cp = JVMCIENV->asConstantPool(jvmci_constant_pool);
+  constantPoolHandle cp(THREAD, JVMCIENV->asConstantPool(jvmci_constant_pool));
   JVMCIObject sym = JVMCIENV->create_string(cp->signature_ref_at(which), JVMCI_CHECK_NULL);
   return JVMCIENV->get_jobject(sym);
 C2V_END
 
 C2V_VMENTRY_0(jint, lookupKlassRefIndexInPool, (JNIEnv* env, jobject, jobject jvmci_constant_pool, jint index))
-  constantPoolHandle cp = JVMCIENV->asConstantPool(jvmci_constant_pool);
+  constantPoolHandle cp(THREAD, JVMCIENV->asConstantPool(jvmci_constant_pool));
   return cp->klass_ref_index_at(index);
 C2V_END
 
 C2V_VMENTRY_NULL(jobject, resolveTypeInPool, (JNIEnv* env, jobject, jobject jvmci_constant_pool, jint index))
-  constantPoolHandle cp = JVMCIENV->asConstantPool(jvmci_constant_pool);
+  constantPoolHandle cp(THREAD, JVMCIENV->asConstantPool(jvmci_constant_pool));
   Klass* klass = cp->klass_at(index, CHECK_NULL);
   JVMCIKlassHandle resolved_klass(THREAD, klass);
   if (resolved_klass->is_instance_klass()) {
@@ -656,7 +656,7 @@ C2V_VMENTRY_NULL(jobject, resolveTypeInPool, (JNIEnv* env, jobject, jobject jvmc
 C2V_END
 
 C2V_VMENTRY_NULL(jobject, lookupKlassInPool, (JNIEnv* env, jobject, jobject jvmci_constant_pool, jint index, jbyte opcode))
-  constantPoolHandle cp = JVMCIENV->asConstantPool(jvmci_constant_pool);
+  constantPoolHandle cp(THREAD, JVMCIENV->asConstantPool(jvmci_constant_pool));
   Klass* loading_klass = cp->pool_holder();
   bool is_accessible = false;
   JVMCIKlassHandle klass(THREAD, JVMCIRuntime::get_klass_by_index(cp, index, is_accessible, loading_klass));
@@ -684,30 +684,31 @@ C2V_VMENTRY_NULL(jobject, lookupKlassInPool, (JNIEnv* env, jobject, jobject jvmc
 C2V_END
 
 C2V_VMENTRY_NULL(jobject, lookupAppendixInPool, (JNIEnv* env, jobject, jobject jvmci_constant_pool, jint index))
-  constantPoolHandle cp = JVMCIENV->asConstantPool(jvmci_constant_pool);
+  constantPoolHandle cp(THREAD, JVMCIENV->asConstantPool(jvmci_constant_pool));
   oop appendix_oop = ConstantPool::appendix_at_if_loaded(cp, index);
   return JVMCIENV->get_jobject(JVMCIENV->get_object_constant(appendix_oop));
 C2V_END
 
 C2V_VMENTRY_NULL(jobject, lookupMethodInPool, (JNIEnv* env, jobject, jobject jvmci_constant_pool, jint index, jbyte opcode))
-  constantPoolHandle cp = JVMCIENV->asConstantPool(jvmci_constant_pool);
+  constantPoolHandle cp(THREAD, JVMCIENV->asConstantPool(jvmci_constant_pool));
   InstanceKlass* pool_holder = cp->pool_holder();
   Bytecodes::Code bc = (Bytecodes::Code) (((int) opcode) & 0xFF);
-  methodHandle method = JVMCIRuntime::get_method_by_index(cp, index, bc, pool_holder);
+  methodHandle method(THREAD, JVMCIRuntime::get_method_by_index(cp, index, bc, pool_holder));
   JVMCIObject result = JVMCIENV->get_jvmci_method(method, JVMCI_CHECK_NULL);
   return JVMCIENV->get_jobject(result);
 C2V_END
 
 C2V_VMENTRY_0(jint, constantPoolRemapInstructionOperandFromCache, (JNIEnv* env, jobject, jobject jvmci_constant_pool, jint index))
-  constantPoolHandle cp = JVMCIENV->asConstantPool(jvmci_constant_pool);
+  constantPoolHandle cp(THREAD, JVMCIENV->asConstantPool(jvmci_constant_pool));
   return cp->remap_instruction_operand_from_cache(index);
 C2V_END
 
 C2V_VMENTRY_NULL(jobject, resolveFieldInPool, (JNIEnv* env, jobject, jobject jvmci_constant_pool, jint index, jobject jvmci_method, jbyte opcode, jintArray info_handle))
-  constantPoolHandle cp = JVMCIENV->asConstantPool(jvmci_constant_pool);
+  constantPoolHandle cp(THREAD, JVMCIENV->asConstantPool(jvmci_constant_pool));
   Bytecodes::Code code = (Bytecodes::Code)(((int) opcode) & 0xFF);
   fieldDescriptor fd;
-  LinkInfo link_info(cp, index, (jvmci_method != NULL) ? JVMCIENV->asMethod(jvmci_method) : NULL, CHECK_0);
+  methodHandle mh(THREAD, (jvmci_method != NULL) ? JVMCIENV->asMethod(jvmci_method) : NULL);
+  LinkInfo link_info(cp, index, mh, CHECK_0);
   LinkResolver::resolve_field(fd, link_info, Bytecodes::java_code(code), false, CHECK_0);
   JVMCIPrimitiveArray info = JVMCIENV->wrap(info_handle);
   if (info.is_null() || JVMCIENV->get_length(info) != 3) {
@@ -723,7 +724,7 @@ C2V_END
 
 C2V_VMENTRY_0(jint, getVtableIndexForInterfaceMethod, (JNIEnv* env, jobject, jobject jvmci_type, jobject jvmci_method))
   Klass* klass = JVMCIENV->asKlass(jvmci_type);
-  Method* method = JVMCIENV->asMethod(jvmci_method);
+  methodHandle method(THREAD, JVMCIENV->asMethod(jvmci_method));
   if (klass->is_interface()) {
     JVMCI_THROW_MSG_0(InternalError, err_msg("Interface %s should be handled in Java code", klass->external_name()));
   }
@@ -742,7 +743,7 @@ C2V_END
 C2V_VMENTRY_NULL(jobject, resolveMethod, (JNIEnv* env, jobject, jobject receiver_jvmci_type, jobject jvmci_method, jobject caller_jvmci_type))
   Klass* recv_klass = JVMCIENV->asKlass(receiver_jvmci_type);
   Klass* caller_klass = JVMCIENV->asKlass(caller_jvmci_type);
-  methodHandle method = JVMCIENV->asMethod(jvmci_method);
+  methodHandle method(THREAD, JVMCIENV->asMethod(jvmci_method));
 
   Klass* resolved     = method->method_holder();
   Symbol* h_name      = method->name();
@@ -765,7 +766,7 @@ C2V_VMENTRY_NULL(jobject, resolveMethod, (JNIEnv* env, jobject, jobject receiver
   }
 
   LinkInfo link_info(resolved, h_name, h_signature, caller_klass);
-  methodHandle m;
+  Method* m = NULL;
   // Only do exact lookup if receiver klass has been linked.  Otherwise,
   // the vtable has not been setup, and the LinkResolver will fail.
   if (recv_klass->is_array_klass() ||
@@ -777,12 +778,12 @@ C2V_VMENTRY_NULL(jobject, resolveMethod, (JNIEnv* env, jobject, jobject receiver
     }
   }
 
-  if (m.is_null()) {
+  if (m == NULL) {
     // Return NULL if there was a problem with lookup (uninitialized class, etc.)
     return NULL;
   }
 
-  JVMCIObject result = JVMCIENV->get_jvmci_method(m, JVMCI_CHECK_NULL);
+  JVMCIObject result = JVMCIENV->get_jvmci_method(methodHandle(THREAD, m), JVMCI_CHECK_NULL);
   return JVMCIENV->get_jobject(result);
 C2V_END
 
@@ -798,7 +799,8 @@ C2V_VMENTRY_NULL(jobject, getClassInitializer, (JNIEnv* env, jobject, jobject jv
     return NULL;
   }
   InstanceKlass* iklass = InstanceKlass::cast(klass);
-  JVMCIObject result = JVMCIENV->get_jvmci_method(iklass->class_initializer(), JVMCI_CHECK_NULL);
+  methodHandle clinit(THREAD, iklass->class_initializer());
+  JVMCIObject result = JVMCIENV->get_jvmci_method(clinit, JVMCI_CHECK_NULL);
   return JVMCIENV->get_jobject(result);
 C2V_END
 
@@ -813,7 +815,7 @@ C2V_VMENTRY_0(jlong, getMaxCallTargetOffset, (JNIEnv* env, jobject, jlong addr))
 C2V_END
 
 C2V_VMENTRY(void, setNotInlinableOrCompilable,(JNIEnv* env, jobject,  jobject jvmci_method))
-  methodHandle method = JVMCIENV->asMethod(jvmci_method);
+  methodHandle method(THREAD, JVMCIENV->asMethod(jvmci_method));
   method->set_not_c1_compilable();
   method->set_not_c2_compilable();
   method->set_dont_inline(true);
@@ -1009,7 +1011,7 @@ C2V_END
 C2V_VMENTRY_NULL(jobject, getStackTraceElement, (JNIEnv* env, jobject, jobject jvmci_method, int bci))
   HandleMark hm;
 
-  methodHandle method = JVMCIENV->asMethod(jvmci_method);
+  methodHandle method(THREAD, JVMCIENV->asMethod(jvmci_method));
   JVMCIObject element = JVMCIENV->new_StackTraceElement(method, bci, JVMCI_CHECK_NULL);
   return JVMCIENV->get_jobject(element);
 C2V_END
@@ -1026,7 +1028,7 @@ C2V_VMENTRY_NULL(jobject, executeHotSpotNmethod, (JNIEnv* env, jobject, jobject 
   if (nm == NULL) {
     JVMCI_THROW_NULL(InvalidInstalledCodeException);
   }
-  methodHandle mh = nm->method();
+  methodHandle mh(THREAD, nm->method());
   Symbol* signature = mh->signature();
   JavaCallArguments jca(mh->size_of_parameters());
 
@@ -1104,7 +1106,7 @@ C2V_VMENTRY_0(jint, getLocalVariableTableLength, (JNIEnv* env, jobject, jobject 
 C2V_END
 
 C2V_VMENTRY(void, reprofile, (JNIEnv* env, jobject, jobject jvmci_method))
-  Method* method = JVMCIENV->asMethod(jvmci_method);
+  methodHandle method(THREAD, JVMCIENV->asMethod(jvmci_method));
   MethodCounters* mcs = method->method_counters();
   if (mcs != NULL) {
     mcs->clear_counters();
@@ -1161,7 +1163,7 @@ C2V_VMENTRY_0(jint, allocateCompileId, (JNIEnv* env, jobject, jobject jvmci_meth
   if (jvmci_method == NULL) {
     JVMCI_THROW_0(NullPointerException);
   }
-  Method* method = JVMCIENV->asMethod(jvmci_method);
+  methodHandle method(THREAD, JVMCIENV->asMethod(jvmci_method));
   if (entry_bci >= method->code_size() || entry_bci < -1) {
     JVMCI_THROW_MSG_0(IllegalArgumentException, err_msg("Unexpected bci %d", entry_bci));
   }
@@ -1203,7 +1205,7 @@ void call_interface(JavaValue* result, Klass* spec_klass, Symbol* name, Symbol* 
   LinkInfo link_info(spec_klass, name, signature);
   LinkResolver::resolve_interface_call(
           callinfo, receiver, recvrKlass, link_info, true, CHECK);
-  methodHandle method = callinfo.selected_method();
+  methodHandle method(THREAD, callinfo.selected_method());
   assert(method.not_null(), "should have thrown exception");
 
   // Invoke the method
@@ -1277,7 +1279,8 @@ C2V_VMENTRY_NULL(jobject, iterateFrames, (JNIEnv* env, jobject compilerToVM, job
 
             locals = cvf->locals();
             HotSpotJVMCI::HotSpotStackFrameReference::set_bci(JVMCIENV, frame_reference(), cvf->bci());
-            JVMCIObject method = JVMCIENV->get_jvmci_method(cvf->method(), JVMCI_CHECK_NULL);
+            methodHandle mh(THREAD, cvf->method());
+            JVMCIObject method = JVMCIENV->get_jvmci_method(mh, JVMCI_CHECK_NULL);
             HotSpotJVMCI::HotSpotStackFrameReference::set_method(JVMCIENV, frame_reference(), JNIHandles::resolve(method.as_jobject()));
           }
         }
@@ -1290,7 +1293,8 @@ C2V_VMENTRY_NULL(jobject, iterateFrames, (JNIEnv* env, jobject compilerToVM, job
           } else {
             locals = ivf->locals();
             HotSpotJVMCI::HotSpotStackFrameReference::set_bci(JVMCIENV, frame_reference(), ivf->bci());
-            JVMCIObject method = JVMCIENV->get_jvmci_method(ivf->method(), JVMCI_CHECK_NULL);
+            methodHandle mh(THREAD, ivf->method());
+            JVMCIObject method = JVMCIENV->get_jvmci_method(mh, JVMCI_CHECK_NULL);
             HotSpotJVMCI::HotSpotStackFrameReference::set_method(JVMCIENV, frame_reference(), JNIHandles::resolve(method.as_jobject()));
             HotSpotJVMCI::HotSpotStackFrameReference::set_localIsVirtual(JVMCIENV, frame_reference(), NULL);
           }
@@ -1370,7 +1374,7 @@ C2V_VMENTRY_NULL(jobject, iterateFrames, (JNIEnv* env, jobject compilerToVM, job
 C2V_END
 
 C2V_VMENTRY(void, resolveInvokeDynamicInPool, (JNIEnv* env, jobject, jobject jvmci_constant_pool, jint index))
-  constantPoolHandle cp = JVMCIENV->asConstantPool(jvmci_constant_pool);
+  constantPoolHandle cp(THREAD, JVMCIENV->asConstantPool(jvmci_constant_pool));
   CallInfo callInfo;
   LinkResolver::resolve_invoke(callInfo, Handle(), cp, index, Bytecodes::_invokedynamic, CHECK);
   ConstantPoolCacheEntry* cp_cache_entry = cp->invokedynamic_cp_cache_entry_at(index);
@@ -1378,7 +1382,7 @@ C2V_VMENTRY(void, resolveInvokeDynamicInPool, (JNIEnv* env, jobject, jobject jvm
 C2V_END
 
 C2V_VMENTRY(void, resolveInvokeHandleInPool, (JNIEnv* env, jobject, jobject jvmci_constant_pool, jint index))
-  constantPoolHandle cp = JVMCIENV->asConstantPool(jvmci_constant_pool);
+  constantPoolHandle cp(THREAD, JVMCIENV->asConstantPool(jvmci_constant_pool));
   Klass* holder = cp->klass_ref_at(index, CHECK);
   Symbol* name = cp->name_ref_at(index);
   if (MethodHandles::is_signature_polymorphic_name(holder, name)) {
@@ -1390,7 +1394,7 @@ C2V_VMENTRY(void, resolveInvokeHandleInPool, (JNIEnv* env, jobject, jobject jvmc
 C2V_END
 
 C2V_VMENTRY_0(jint, isResolvedInvokeHandleInPool, (JNIEnv* env, jobject, jobject jvmci_constant_pool, jint index))
-  constantPoolHandle cp = JVMCIENV->asConstantPool(jvmci_constant_pool);
+  constantPoolHandle cp(THREAD, JVMCIENV->asConstantPool(jvmci_constant_pool));
   ConstantPoolCacheEntry* cp_cache_entry = cp->cache()->entry_at(cp->decode_cpcache_index(index));
   if (cp_cache_entry->is_resolved(Bytecodes::_invokehandle)) {
     // MethodHandle.invoke* --> LambdaForm?
@@ -1405,7 +1409,7 @@ C2V_VMENTRY_0(jint, isResolvedInvokeHandleInPool, (JNIEnv* env, jobject, jobject
     vmassert(MethodHandles::is_method_handle_invoke_name(resolved_klass, name_sym), "!");
     vmassert(MethodHandles::is_signature_polymorphic_name(resolved_klass, name_sym), "!");
 
-    methodHandle adapter_method(cp_cache_entry->f1_as_method());
+    methodHandle adapter_method(THREAD, cp_cache_entry->f1_as_method());
 
     methodHandle resolved_method(adapter_method);
 
@@ -1416,7 +1420,7 @@ C2V_VMENTRY_0(jint, isResolvedInvokeHandleInPool, (JNIEnv* env, jobject, jobject
       vmassert(!MethodHandles::is_signature_polymorphic_static(resolved_method->intrinsic_id()), "!");
       vmassert(cp_cache_entry->appendix_if_resolved(cp) == NULL, "!");
 
-      methodHandle m(LinkResolver::linktime_resolve_virtual_method_or_null(link_info));
+      methodHandle m(THREAD, LinkResolver::linktime_resolve_virtual_method_or_null(link_info));
       vmassert(m == resolved_method, "!!");
       return -1;
     }
@@ -1909,7 +1913,8 @@ C2V_VMENTRY_NULL(jobjectArray, getDeclaredConstructors, (JNIEnv* env, jobject, j
   }
   JVMCIObjectArray methods = JVMCIENV->new_ResolvedJavaMethod_array(constructors_array.length(), JVMCI_CHECK_NULL);
   for (int i = 0; i < constructors_array.length(); i++) {
-    JVMCIObject method = JVMCIENV->get_jvmci_method(constructors_array.at(i), JVMCI_CHECK_NULL);
+    methodHandle ctor(THREAD, constructors_array.at(i));
+    JVMCIObject method = JVMCIENV->get_jvmci_method(ctor, JVMCI_CHECK_NULL);
     JVMCIENV->put_object_at(methods, i, method);
   }
   return JVMCIENV->get_jobjectArray(methods);
@@ -1938,7 +1943,8 @@ C2V_VMENTRY_NULL(jobjectArray, getDeclaredMethods, (JNIEnv* env, jobject, jobjec
   }
   JVMCIObjectArray methods = JVMCIENV->new_ResolvedJavaMethod_array(methods_array.length(), JVMCI_CHECK_NULL);
   for (int i = 0; i < methods_array.length(); i++) {
-    JVMCIObject method = JVMCIENV->get_jvmci_method(methods_array.at(i), JVMCI_CHECK_NULL);
+    methodHandle mh(THREAD, methods_array.at(i));
+    JVMCIObject method = JVMCIENV->get_jvmci_method(mh, JVMCI_CHECK_NULL);
     JVMCIENV->put_object_at(methods, i, method);
   }
   return JVMCIENV->get_jobjectArray(methods);
@@ -2259,7 +2265,7 @@ C2V_VMENTRY_NULL(jlongArray, registerNativeMethods, (JNIEnv* env, jobject, jclas
 
   InstanceKlass* iklass = InstanceKlass::cast(klass);
   for (int i = 0; i < iklass->methods()->length(); i++) {
-    Method* method = iklass->methods()->at(i);
+    methodHandle method(THREAD, iklass->methods()->at(i));
     if (method->is_native()) {
 
       // Compute argument size
@@ -2425,7 +2431,7 @@ C2V_VMENTRY_0(jlong, translate, (JNIEnv* env, jobject, jobject obj_handle))
   JVMCIObject obj = thisEnv->wrap(obj_handle);
   JVMCIObject result;
   if (thisEnv->isa_HotSpotResolvedJavaMethodImpl(obj)) {
-    Method* method = thisEnv->asMethod(obj);
+    methodHandle method(THREAD, thisEnv->asMethod(obj));
     result = peerEnv->get_jvmci_method(method, JVMCI_CHECK_0);
   } else if (thisEnv->isa_HotSpotResolvedObjectTypeImpl(obj)) {
     Klass* klass = thisEnv->asKlass(obj);
@@ -2456,13 +2462,13 @@ C2V_VMENTRY_0(jlong, translate, (JNIEnv* env, jobject, jobject obj_handle))
     }
     if (result.is_null()) {
       JVMCIObject methodObject = thisEnv->get_HotSpotNmethod_method(obj);
-      methodHandle mh = thisEnv->asMethod(methodObject);
+      methodHandle mh(THREAD, thisEnv->asMethod(methodObject));
       jboolean isDefault = thisEnv->get_HotSpotNmethod_isDefault(obj);
       jlong compileIdSnapshot = thisEnv->get_HotSpotNmethod_compileIdSnapshot(obj);
       JVMCIObject name_string = thisEnv->get_InstalledCode_name(obj);
       const char* cstring = name_string.is_null() ? NULL : thisEnv->as_utf8_string(name_string);
       // Create a new HotSpotNmethod instance in the peer runtime
-      result = peerEnv->new_HotSpotNmethod(mh(), cstring, isDefault, compileIdSnapshot, JVMCI_CHECK_0);
+      result = peerEnv->new_HotSpotNmethod(mh, cstring, isDefault, compileIdSnapshot, JVMCI_CHECK_0);
       if (nm == NULL) {
         // nmethod must have been unloaded
       } else {
@@ -2522,7 +2528,7 @@ C2V_VMENTRY_NULL(jbyteArray, getCode, (JNIEnv* env, jobject, jobject code_handle
 
 C2V_VMENTRY_NULL(jobject, asReflectionExecutable, (JNIEnv* env, jobject, jobject jvmci_method))
   requireInHotSpot("asReflectionExecutable", JVMCI_CHECK_NULL);
-  methodHandle m = JVMCIENV->asMethod(jvmci_method);
+  methodHandle m(THREAD, JVMCIENV->asMethod(jvmci_method));
   oop executable;
   if (m->is_initializer()) {
     if (m->is_static_initializer()) {
@@ -2587,7 +2593,7 @@ C2V_VMENTRY_NULL(jobjectArray, getFailedSpeculations, (JNIEnv* env, jobject, jlo
 }
 
 C2V_VMENTRY_0(jlong, getFailedSpeculationsAddress, (JNIEnv* env, jobject, jobject jvmci_method))
-  methodHandle method = JVMCIENV->asMethod(jvmci_method);
+  methodHandle method(THREAD, JVMCIENV->asMethod(jvmci_method));
   MethodData* method_data = method->method_data();
   if (method_data == NULL) {
     ClassLoaderData* loader_data = method->method_holder()->class_loader_data();

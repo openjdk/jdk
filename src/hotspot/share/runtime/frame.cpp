@@ -1164,7 +1164,7 @@ void frame::describe(FrameValues& values, int frame_no) {
 
     // Compute the actual expression stack size
     InterpreterOopMap mask;
-    OopMapCache::compute_one_oop_map(m, bci, &mask);
+    OopMapCache::compute_one_oop_map(methodHandle(Thread::current(), m), bci, &mask);
     intptr_t* tos = NULL;
     // Report each stack element and mark as owned by this frame
     for (int e = 0; e < mask.expression_stack_size(); e++) {

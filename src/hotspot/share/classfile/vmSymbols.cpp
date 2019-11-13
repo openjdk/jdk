@@ -1069,19 +1069,18 @@ void vmIntrinsics::verify_method(ID actual_id, Method* m) {
 
   const char* declared_name = name_at(declared_id);
   const char* actual_name   = name_at(actual_id);
-  methodHandle mh = m;
   m = NULL;
   ttyLocker ttyl;
   if (xtty != NULL) {
     xtty->begin_elem("intrinsic_misdeclared actual='%s' declared='%s'",
                      actual_name, declared_name);
-    xtty->method(mh);
+    xtty->method(m);
     xtty->end_elem("%s", "");
   }
   if (PrintMiscellaneous && (WizardMode || Verbose)) {
     tty->print_cr("*** misidentified method; %s(%d) should be %s(%d):",
                   declared_name, declared_id, actual_name, actual_id);
-    mh()->print_short_name(tty);
+    m->print_short_name(tty);
     tty->cr();
   }
 }
