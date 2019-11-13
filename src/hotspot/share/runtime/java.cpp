@@ -733,6 +733,7 @@ int JDK_Version::compare(const JDK_Version& other) const {
   return (e > o) ? 1 : ((e == o) ? 0 : -1);
 }
 
+/* See JEP 223 */
 void JDK_Version::to_string(char* buffer, size_t buflen) const {
   assert(buffer && buflen > 0, "call with useful buffer");
   size_t index = 0;
@@ -744,13 +745,12 @@ void JDK_Version::to_string(char* buffer, size_t buflen) const {
         &buffer[index], buflen - index, "%d.%d", _major, _minor);
     if (rc == -1) return;
     index += rc;
-    if (_security > 0) {
-      rc = jio_snprintf(&buffer[index], buflen - index, ".%d", _security);
+    if (_patch > 0) {
+      rc = jio_snprintf(&buffer[index], buflen - index, ".%d.%d", _security, _patch);
       if (rc == -1) return;
       index += rc;
-    }
-    if (_patch > 0) {
-      rc = jio_snprintf(&buffer[index], buflen - index, ".%d", _patch);
+    } else if (_security > 0) {
+      rc = jio_snprintf(&buffer[index], buflen - index, ".%d", _security);
       if (rc == -1) return;
       index += rc;
     }
