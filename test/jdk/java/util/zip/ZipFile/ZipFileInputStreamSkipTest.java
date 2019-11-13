@@ -105,7 +105,7 @@ public class ZipFileInputStreamSkipTest {
      * @throws Exception If an error occurs during the test
      */
     @Test
-    private void testStoredSkip() throws Exception {
+    public void testStoredSkip() throws Exception {
 
         try (ZipFile zf = new ZipFile(STORED_ZIPFILE.toFile())) {
             var entries = zf.entries();
@@ -153,7 +153,7 @@ public class ZipFileInputStreamSkipTest {
      * @throws Exception If an error occurs during the test
      */
     @Test
-    private void testStoredNegativeSkip() throws Exception {
+    public void testStoredNegativeSkip() throws Exception {
 
         try (ZipFile zf = new ZipFile(STORED_ZIPFILE.toFile())) {
             var entries = zf.entries();
@@ -198,7 +198,7 @@ public class ZipFileInputStreamSkipTest {
      * @throws Exception If an error occurs during the test
      */
     @Test
-    private void testDeflatedSkip() throws Exception {
+    public void testDeflatedSkip() throws Exception {
         try (ZipFile zf = new ZipFile(DEFLATED_ZIPFILE.toFile())) {
             var toSkip = 5; // Bytes to Skip
             var entries = zf.entries();
@@ -225,7 +225,7 @@ public class ZipFileInputStreamSkipTest {
      * @throws Exception If an unexpected error occurs during the test
      */
     @Test
-    private void testDeflatedIOException() throws Exception {
+    public void testDeflatedIOException() throws Exception {
         try (ZipFile zf = new ZipFile(DEFLATED_ZIPFILE.toFile())) {
             var entries = zf.entries();
             while (entries.hasMoreElements()) {
