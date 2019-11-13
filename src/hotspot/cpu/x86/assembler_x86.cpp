@@ -9163,6 +9163,26 @@ void Assembler::notq(Register dst) {
   emit_int8((unsigned char)(0xD0 | encode));
 }
 
+void Assembler::btsq(Address dst, int imm8) {
+  assert(isByte(imm8), "not a byte");
+  InstructionMark im(this);
+  prefixq(dst);
+  emit_int8((unsigned char)0x0F);
+  emit_int8((unsigned char)0xBA);
+  emit_operand(rbp /* 5 */, dst, 1);
+  emit_int8(imm8);
+}
+
+void Assembler::btrq(Address dst, int imm8) {
+  assert(isByte(imm8), "not a byte");
+  InstructionMark im(this);
+  prefixq(dst);
+  emit_int8((unsigned char)0x0F);
+  emit_int8((unsigned char)0xBA);
+  emit_operand(rsi /* 6 */, dst, 1);
+  emit_int8(imm8);
+}
+
 void Assembler::orq(Address dst, int32_t imm32) {
   InstructionMark im(this);
   prefixq(dst);

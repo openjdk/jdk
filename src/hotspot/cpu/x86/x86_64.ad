@@ -3116,6 +3116,26 @@ operand immL32()
   interface(CONST_INTER);
 %}
 
+operand immL_Pow2()
+%{
+  predicate(is_power_of_2_long(n->get_long()));
+  match(ConL);
+
+  op_cost(15);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+operand immL_NotPow2()
+%{
+  predicate(is_power_of_2_long(~n->get_long()));
+  match(ConL);
+
+  op_cost(15);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
 // Long Immediate zero
 operand immL0()
 %{
@@ -9841,6 +9861,23 @@ instruct andL_mem_imm(memory dst, immL32 src, rFlagsReg cr)
   ins_pipe(ialu_mem_imm);
 %}
 
+instruct btrL_mem_imm(memory dst, immL_NotPow2 con, rFlagsReg cr)
+%{
+  // con should be a pure 64-bit immediate given that not(con) is a power of 2
+  // because AND/OR works well enough for 8/32-bit values.
+  predicate(log2_long(~n->in(3)->in(2)->get_long()) > 30);
+
+  match(Set dst (StoreL dst (AndL (LoadL dst) con)));
+  effect(KILL cr);
+
+  ins_cost(125);
+  format %{ "btrq    $dst, log2(not($con))\t# long" %}
+  ins_encode %{
+    __ btrq($dst$$Address, log2_long(~$con$$constant));
+  %}
+  ins_pipe(ialu_mem_imm);
+%}
+
 // BMI1 instructions
 instruct andnL_rReg_rReg_mem(rRegL dst, rRegL src1, memory src2, immL_M1 minus_1, rFlagsReg cr) %{
   match(Set dst (AndL (XorL src1 minus_1) (LoadL src2)));
@@ -10031,6 +10068,23 @@ instruct orL_mem_imm(memory dst, immL32 src, rFlagsReg cr)
   opcode(0x81, 0x1); /* Opcode 81 /1 id */
   ins_encode(REX_mem_wide(dst), OpcSE(src),
              RM_opc_mem(secondary, dst), Con8or32(src));
+  ins_pipe(ialu_mem_imm);
+%}
+
+instruct btsL_mem_imm(memory dst, immL_Pow2 con, rFlagsReg cr)
+%{
+  // con should be a pure 64-bit power of 2 immediate
+  // because AND/OR works well enough for 8/32-bit values.
+  predicate(log2_long(n->in(3)->in(2)->get_long()) > 31);
+
+  match(Set dst (StoreL dst (OrL (LoadL dst) con)));
+  effect(KILL cr);
+
+  ins_cost(125);
+  format %{ "btsq    $dst, log2($con)\t# long" %}
+  ins_encode %{
+    __ btsq($dst$$Address, log2_long($con$$constant));
+  %}
   ins_pipe(ialu_mem_imm);
 %}
 
