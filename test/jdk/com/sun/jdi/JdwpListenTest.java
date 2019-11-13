@@ -54,6 +54,10 @@ public class JdwpListenTest {
 
     private static final boolean IsWindows = System.getProperty("os.name").toLowerCase().contains("windows");
 
+    // Set to true to allow testing of attach from wrong address (expected to fail).
+    // It's off by default as it causes test time increase and test interference (see JDK-8231915).
+    private static boolean allowNegativeTesting = false;
+
     public static void main(String[] args) throws Exception {
         List<InetAddress> addresses = getAddresses();
 
@@ -87,6 +91,11 @@ public class JdwpListenTest {
             throws IOException {
         log("\nTest: listen at " + listenAddress + ", attaching from " + connectAddress
                 + ", expected: " + (expectedResult ? "SUCCESS" : "FAILURE"));
+        if (!expectedResult && !allowNegativeTesting) {
+            log("SKIPPED: negative testing is disabled");
+            return;
+        }
+
         log("Starting listening debuggee at " + listenAddress);
         try (Debuggee debuggee = Debuggee.launcher("HelloWorld").setAddress(listenAddress + ":0").launch()) {
             log("Debuggee is listening on " + listenAddress + ":" + debuggee.getAddress());
@@ -103,6 +112,7 @@ public class JdwpListenTest {
                 }
             }
         }
+        log("PASSED");
     }
 
     private static void addAddr(List<InetAddress> list, InetAddress addr) {
