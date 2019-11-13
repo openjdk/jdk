@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,8 +66,7 @@
 // Methods of protected closure types.
 
 DefNewGeneration::IsAliveClosure::IsAliveClosure(Generation* young_gen) : _young_gen(young_gen) {
-  assert(_young_gen->kind() == Generation::ParNew ||
-         _young_gen->kind() == Generation::DefNew, "Expected the young generation here");
+  assert(_young_gen->kind() == Generation::DefNew, "Expected the young generation here");
 }
 
 bool DefNewGeneration::IsAliveClosure::do_object_b(oop p) {
@@ -884,7 +883,6 @@ void DefNewGeneration::gc_epilogue(bool full) {
       log_trace(gc)("DefNewEpilogue: cause(%s), not full, seen_failed, will_clear_seen_failed",
                             GCCause::to_string(gch->gc_cause()));
       assert(gch->gc_cause() == GCCause::_scavenge_alot ||
-             (GCCause::is_user_requested_gc(gch->gc_cause()) && UseConcMarkSweepGC && ExplicitGCInvokesConcurrent) ||
              !gch->incremental_collection_failed(),
              "Twice in a row");
       seen_incremental_collection_failed = false;

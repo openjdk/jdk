@@ -395,13 +395,8 @@ void Universe::genesis(TRAPS) {
     // so we allocate wherever, and hope that the first collection
     // moves these objects to the bottom of the old generation.
     // We can allocate directly in the permanent generation, so we do.
-    int size;
-    if (UseConcMarkSweepGC) {
-      log_warning(gc)("Using +FullGCALot with concurrent mark sweep gc will not force all objects to relocate");
-      size = FullGCALotDummies;
-    } else {
-      size = FullGCALotDummies * 2;
-    }
+    int size = FullGCALotDummies * 2;
+
     objArrayOop    naked_array = oopFactory::new_objArray(SystemDictionary::Object_klass(), size, CHECK);
     objArrayHandle dummy_array(THREAD, naked_array);
     int i = 0;
@@ -1224,10 +1219,10 @@ bool Universe::release_fullgc_alot_dummy() {
       _fullgc_alot_dummy_array = NULL;
       return false;
     }
-    if (!UseConcMarkSweepGC) {
-      // Release dummy at bottom of old generation
-      _fullgc_alot_dummy_array->obj_at_put(_fullgc_alot_dummy_next++, NULL);
-    }
+
+    // Release dummy at bottom of old generation
+    _fullgc_alot_dummy_array->obj_at_put(_fullgc_alot_dummy_next++, NULL);
+
     // Release dummy at bottom of permanent generation
     _fullgc_alot_dummy_array->obj_at_put(_fullgc_alot_dummy_next++, NULL);
   }

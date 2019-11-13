@@ -425,8 +425,6 @@ class Arguments : AllStatic {
 
   static bool handle_deprecated_print_gc_flags();
 
-  static void handle_extra_cms_flags(const char* msg);
-
   static jint parse_vm_init_args(const JavaVMInitArgs *vm_options_args,
                                  const JavaVMInitArgs *java_tool_options_args,
                                  const JavaVMInitArgs *java_options_args,

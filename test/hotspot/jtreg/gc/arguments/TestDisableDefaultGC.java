@@ -36,7 +36,6 @@ package gc.arguments;
  * @run driver gc.arguments.TestDisableDefaultGC
  */
 
-import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 
 public class TestDisableDefaultGC {
@@ -45,7 +44,6 @@ public class TestDisableDefaultGC {
         ProcessBuilder pb = GCArguments.createJavaProcessBuilder("-XX:-UseSerialGC",
                                                                  "-XX:-UseParallelGC",
                                                                  "-XX:-UseG1GC",
-                                                                 "-XX:-UseConcMarkSweepGC",
                                                                  "-XX:+UnlockExperimentalVMOptions",
                                                                  "-XX:-UseShenandoahGC",
                                                                  "-XX:-UseZGC",

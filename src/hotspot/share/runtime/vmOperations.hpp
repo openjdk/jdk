@@ -63,8 +63,6 @@
   template(GenCollectForAllocation)               \
   template(ParallelGCFailedAllocation)            \
   template(ParallelGCSystemGC)                    \
-  template(CMS_Initial_Mark)                      \
-  template(CMS_Final_Remark)                      \
   template(G1CollectForAllocation)                \
   template(G1CollectFull)                         \
   template(G1Concurrent)                          \

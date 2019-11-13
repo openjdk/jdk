@@ -80,7 +80,7 @@ public class TestParallelGCThreads {
   }
 
   public static void testFlags() throws Exception {
-    // For each parallel collector (G1, Parallel, ParNew/CMS)
+    // For each parallel collector (G1, Parallel)
     List<String> supportedGC = new ArrayList<String>();
 
     if (GC.G1.isSupported()) {
@@ -89,12 +89,9 @@ public class TestParallelGCThreads {
     if (GC.Parallel.isSupported()) {
       supportedGC.add("Parallel");
     }
-    if (GC.ConcMarkSweep.isSupported()) {
-      supportedGC.add("ConcMarkSweep");
-    }
 
     if (supportedGC.isEmpty()) {
-      throw new SkippedException("Skipping test because none of G1/Parallel/ConcMarkSweep is supported.");
+      throw new SkippedException("Skipping test because none of G1/Parallel is supported.");
     }
 
     for (String gc : supportedGC) {

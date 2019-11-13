@@ -228,7 +228,6 @@ JVMCIObjectArray CompilerToVM::initialize_intrinsics(JVMCI_TRAPS) {
   do_bool_flag(UseCompressedOops)                                          \
   X86_ONLY(do_bool_flag(UseCountLeadingZerosInstruction))                  \
   X86_ONLY(do_bool_flag(UseCountTrailingZerosInstruction))                 \
-  do_bool_flag(UseConcMarkSweepGC)                                         \
   do_bool_flag(UseG1GC)                                                    \
   do_bool_flag(UseParallelGC)                                              \
   do_bool_flag(UseParallelOldGC)                                           \

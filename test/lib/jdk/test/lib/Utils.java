@@ -198,8 +198,7 @@ public final class Utils {
      * @return A copy of given opts with all GC options removed.
      */
     private static final Pattern useGcPattern = Pattern.compile(
-            "(?:\\-XX\\:[\\+\\-]Use.+GC)"
-            + "|(?:\\-Xconcgc)");
+            "(?:\\-XX\\:[\\+\\-]Use.+GC)");
     public static List<String> removeGcOpts(List<String> opts) {
         List<String> optsWithoutGC = new ArrayList<String>();
         for (String opt : opts) {

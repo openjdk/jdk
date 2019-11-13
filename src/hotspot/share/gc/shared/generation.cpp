@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,12 +66,6 @@ size_t Generation::initial_size() {
     return gch->young_gen_spec()->init_size();
   }
   return gch->old_gen_spec()->init_size();
-}
-
-// This is for CMS. It returns stable monotonic used space size.
-// Remove this when CMS is removed.
-size_t Generation::used_stable() const {
-  return used();
 }
 
 size_t Generation::max_capacity() const {

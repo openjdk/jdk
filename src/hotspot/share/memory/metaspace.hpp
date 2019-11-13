@@ -439,11 +439,6 @@ class MetaspaceGC : AllStatic {
   // When committed memory of all metaspaces reaches this value,
   // a GC is induced and the value is increased. Size is in bytes.
   static volatile size_t _capacity_until_GC;
-
-  // For a CMS collection, signal that a concurrent collection should
-  // be started.
-  static bool _should_concurrent_collect;
-
   static uint _shrink_factor;
 
   static size_t shrink_factor() { return _shrink_factor; }
@@ -460,11 +455,6 @@ class MetaspaceGC : AllStatic {
                                     size_t* old_cap_until_GC = NULL,
                                     bool* can_retry = NULL);
   static size_t dec_capacity_until_GC(size_t v);
-
-  static bool should_concurrent_collect() { return _should_concurrent_collect; }
-  static void set_should_concurrent_collect(bool v) {
-    _should_concurrent_collect = v;
-  }
 
   // The amount to increase the high-water-mark (_capacity_until_GC)
   static size_t delta_capacity_until_GC(size_t bytes);

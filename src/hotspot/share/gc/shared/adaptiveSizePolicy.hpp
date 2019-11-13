@@ -39,13 +39,11 @@ class elapsedTimer;
 class AdaptiveSizePolicy : public CHeapObj<mtGC> {
  friend class GCAdaptivePolicyCounters;
  friend class PSGCAdaptivePolicyCounters;
- friend class CMSGCAdaptivePolicyCounters;
  protected:
 
   enum GCPolicyKind {
     _gc_adaptive_size_policy,
-    _gc_ps_adaptive_size_policy,
-    _gc_cms_adaptive_size_policy
+    _gc_ps_adaptive_size_policy
   };
   virtual GCPolicyKind kind() const { return _gc_adaptive_size_policy; }
 
@@ -77,7 +75,7 @@ class AdaptiveSizePolicy : public CHeapObj<mtGC> {
 
   // Last calculated sizes, in bytes, and aligned
   size_t _eden_size;        // calculated eden free space in bytes
-  size_t _promo_size;       // calculated cms gen free space in bytes
+  size_t _promo_size;       // calculated promoted free space in bytes
 
   size_t _survivor_size;    // calculated survivor size in bytes
 
@@ -122,7 +120,7 @@ class AdaptiveSizePolicy : public CHeapObj<mtGC> {
   // Variables for estimating the major and minor collection costs
   //   minor collection time vs. young gen size
   LinearLeastSquareFit* _minor_collection_estimator;
-  //   major collection time vs. cms gen size
+  //   major collection time vs. old gen size
   LinearLeastSquareFit* _major_collection_estimator;
 
   // These record the most recent collection times.  They
@@ -326,9 +324,6 @@ class AdaptiveSizePolicy : public CHeapObj<mtGC> {
                      double gc_pause_goal_sec,
                      uint gc_cost_ratio);
 
-  bool is_gc_cms_adaptive_size_policy() {
-    return kind() == _gc_cms_adaptive_size_policy;
-  }
   bool is_gc_ps_adaptive_size_policy() {
     return kind() == _gc_ps_adaptive_size_policy;
   }

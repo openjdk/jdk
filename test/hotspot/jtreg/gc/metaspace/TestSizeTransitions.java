@@ -58,15 +58,6 @@ import java.util.List;
  * @run driver gc.metaspace.TestSizeTransitions true  -XX:+UseG1GC
  */
 
-/* @test TestSizeTransitionsCMS
- * @key gc
- * @requires vm.gc.ConcMarkSweep
- * @summary Tests that the metaspace size transition logging is done correctly.
- * @library /test/lib
- * @run driver gc.metaspace.TestSizeTransitions false -XX:+UseConcMarkSweepGC
- * @run driver gc.metaspace.TestSizeTransitions true  -XX:+UseConcMarkSweepGC
- */
-
 public class TestSizeTransitions {
   public static class Run {
     public static void main(String... args) throws Exception {

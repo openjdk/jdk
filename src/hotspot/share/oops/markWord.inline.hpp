@@ -68,11 +68,6 @@ inline bool markWord::must_be_preserved_for_promotion_failure(KlassProxy klass) 
   return (!is_unlocked() || !has_no_hash());
 }
 
-// Same as must_be_preserved_for_promotion_failure().
-inline bool markWord::must_be_preserved_for_cms_scavenge(Klass* klass_of_obj_containing_mark) const {
-  return must_be_preserved_for_promotion_failure(klass_of_obj_containing_mark);
-}
-
 inline markWord markWord::prototype_for_klass(const Klass* klass) {
   markWord prototype_header = klass->prototype_header();
   assert(prototype_header == prototype() || prototype_header.has_bias_pattern(), "corrupt prototype header");

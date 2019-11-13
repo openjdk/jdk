@@ -63,10 +63,6 @@ public class TestUniverse {
             expStrings.add("eden");
             break;
 
-        case ConcMarkSweep:
-            expStrings.add("Gen 1: concurrent mark-sweep generation");
-            break;
-
         case G1:
             expStrings.add("garbage-first heap");
             expStrings.add("region size");
@@ -112,7 +108,7 @@ public class TestUniverse {
         }
 
         if (Compiler.isGraalEnabled()) {
-            if (gc == GC.ConcMarkSweep || gc == GC.Epsilon || gc == GC.Z || gc == GC.Shenandoah) {
+            if (gc == GC.Epsilon || gc == GC.Z || gc == GC.Shenandoah) {
                 // Not supported
                 System.out.println ("Skipped testing of " + gc + "GC, not supported by Graal");
                 return false;

@@ -418,35 +418,6 @@ HeapWord* GenCollectedHeap::mem_allocate_work(size_t size,
   }
 }
 
-#ifndef PRODUCT
-// Override of memory state checking method in CollectedHeap:
-// Some collectors (CMS for example) can't have badHeapWordVal written
-// in the first two words of an object. (For instance , in the case of
-// CMS these words hold state used to synchronize between certain
-// (concurrent) GC steps and direct allocating mutators.)
-// The skip_header_HeapWords() method below, allows us to skip
-// over the requisite number of HeapWord's. Note that (for
-// generational collectors) this means that those many words are
-// skipped in each object, irrespective of the generation in which
-// that object lives. The resultant loss of precision seems to be
-// harmless and the pain of avoiding that imprecision appears somewhat
-// higher than we are prepared to pay for such rudimentary debugging
-// support.
-void GenCollectedHeap::check_for_non_bad_heap_word_value(HeapWord* addr,
-                                                         size_t size) {
-  if (CheckMemoryInitialization && ZapUnusedHeapArea) {
-    // We are asked to check a size in HeapWords,
-    // but the memory is mangled in juint words.
-    juint* start = (juint*) (addr + skip_header_HeapWords());
-    juint* end   = (juint*) (addr + size);
-    for (juint* slot = start; slot < end; slot += 1) {
-      assert(*slot == badHeapWordVal,
-             "Found non badHeapWordValue in pre-allocation check");
-    }
-  }
-}
-#endif
-
 HeapWord* GenCollectedHeap::attempt_allocation(size_t size,
                                                bool is_tlab,
                                                bool first_only) {
@@ -1229,8 +1200,7 @@ void GenCollectedHeap::save_marks() {
 GenCollectedHeap* GenCollectedHeap::heap() {
   CollectedHeap* heap = Universe::heap();
   assert(heap != NULL, "Uninitialized access to GenCollectedHeap::heap()");
-  assert(heap->kind() == CollectedHeap::Serial ||
-         heap->kind() == CollectedHeap::CMS, "Invalid name");
+  assert(heap->kind() == CollectedHeap::Serial, "Invalid name");
   return (GenCollectedHeap*) heap;
 }
 

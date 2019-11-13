@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,11 +73,6 @@ public class Mark extends VMObject {
     noHashInPlace       = db.lookupLongConstant("markWord::no_hash_in_place").longValue();
     noLockInPlace       = db.lookupLongConstant("markWord::no_lock_in_place").longValue();
     maxAge              = db.lookupLongConstant("markWord::max_age").longValue();
-
-    /* Constants in markWord used by CMS. */
-    cmsShift            = db.lookupLongConstant("markWord::cms_shift").longValue();
-    cmsMask             = db.lookupLongConstant("markWord::cms_mask").longValue();
-    sizeShift           = db.lookupLongConstant("markWord::size_shift").longValue();
   }
 
   // Field accessors

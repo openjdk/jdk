@@ -70,30 +70,4 @@ inline void BlockOffsetSharedArray::check_reducing_assertion(bool reducing) {
             ParGCRareEvent_lock->owned_by_self()), "Crack");
 }
 
-//////////////////////////////////////////////////////////////////////////
-// BlockOffsetArrayNonContigSpace inlines
-//////////////////////////////////////////////////////////////////////////
-inline void BlockOffsetArrayNonContigSpace::freed(HeapWord* blk,
-                                                  size_t size) {
-  freed(blk, blk + size);
-}
-
-inline void BlockOffsetArrayNonContigSpace::freed(HeapWord* blk_start,
-                                                  HeapWord* blk_end) {
-  // Verify that the BOT shows [blk_start, blk_end) to be one block.
-  verify_single_block(blk_start, blk_end);
-  // adjust _unallocated_block upward or downward
-  // as appropriate
-  if (BlockOffsetArrayUseUnallocatedBlock) {
-    assert(_unallocated_block <= _end,
-           "Inconsistent value for _unallocated_block");
-    if (blk_end >= _unallocated_block && blk_start <= _unallocated_block) {
-      // CMS-specific note: a block abutting _unallocated_block to
-      // its left is being freed, a new block is being added or
-      // we are resetting following a compaction
-      _unallocated_block = blk_start;
-    }
-  }
-}
-
 #endif // SHARE_GC_SHARED_BLOCKOFFSETTABLE_INLINE_HPP

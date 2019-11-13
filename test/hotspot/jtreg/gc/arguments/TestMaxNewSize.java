@@ -68,19 +68,6 @@ package gc.arguments;
  * @author thomas.schatzl@oracle.com, jesper.wilhelmsson@oracle.com
  */
 
-/*
- * @test TestMaxNewSizeCMS
- * @key gc
- * @bug 7057939
- * @comment Graal does not support CMS
- * @requires vm.gc.ConcMarkSweep & !vm.graal.enabled
- * @library /test/lib
- * @library /
- * @modules java.base/jdk.internal.misc
- *          java.management
- * @run main gc.arguments.TestMaxNewSize -XX:+UseConcMarkSweepGC
- */
-
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 

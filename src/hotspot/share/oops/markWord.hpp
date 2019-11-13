@@ -38,20 +38,11 @@
 //  --------
 //             hash:25 ------------>| age:4    biased_lock:1 lock:2 (normal object)
 //             JavaThread*:23 epoch:2 age:4    biased_lock:1 lock:2 (biased object)
-//             size:32 ------------------------------------------>| (CMS free block)
-//             PromotedObject*:29 ---------->| promo_bits:3 ----->| (CMS promoted object)
 //
 //  64 bits:
 //  --------
-//  unused:25 hash:31 -->| unused:1   age:4    biased_lock:1 lock:2 (normal object)
-//  JavaThread*:54 epoch:2 unused:1   age:4    biased_lock:1 lock:2 (biased object)
-//  PromotedObject*:61 --------------------->| promo_bits:3 ----->| (CMS promoted object)
-//  size:64 ----------------------------------------------------->| (CMS free block)
-//
-//  unused:25 hash:31 -->| cms_free:1 age:4    biased_lock:1 lock:2 (COOPs && normal object)
-//  JavaThread*:54 epoch:2 cms_free:1 age:4    biased_lock:1 lock:2 (COOPs && biased object)
-//  narrowOop:32 unused:24 cms_free:1 unused:4 promo_bits:3 ----->| (COOPs && CMS promoted object)
-//  unused:21 size:35 -->| cms_free:1 unused:7 ------------------>| (COOPs && CMS free block)
+//  unused:25 hash:31 -->| unused_gap:1   age:4    biased_lock:1 lock:2 (normal object)
+//  JavaThread*:54 epoch:2 unused_gap:1   age:4    biased_lock:1 lock:2 (biased object)
 //
 //  - hash contains the identity hash value: largest value is
 //    31 bits, see os::random().  Also, 64-bit vm's require
@@ -82,7 +73,7 @@
 //    performed. The runtime system aligns all JavaThread* pointers to
 //    a very large value (currently 128 bytes (32bVM) or 256 bytes (64bVM))
 //    to make room for the age bits & the epoch bits (used in support of
-//    biased locking), and for the CMS "freeness" bit in the 64bVM (+COOPs).
+//    biased locking).
 //
 //    [JavaThread* | epoch | age | 1 | 01]       lock is biased toward given thread
 //    [0           | epoch | age | 1 | 01]       lock is anonymously biased
@@ -136,7 +127,7 @@ class markWord {
   static const int biased_lock_bits               = 1;
   static const int max_hash_bits                  = BitsPerWord - age_bits - lock_bits - biased_lock_bits;
   static const int hash_bits                      = max_hash_bits > 31 ? 31 : max_hash_bits;
-  static const int cms_bits                       = LP64_ONLY(1) NOT_LP64(0);
+  static const int unused_gap_bits                = LP64_ONLY(1) NOT_LP64(0);
   static const int epoch_bits                     = 2;
 
   // The biased locking code currently requires that the age bits be
@@ -144,8 +135,8 @@ class markWord {
   static const int lock_shift                     = 0;
   static const int biased_lock_shift              = lock_bits;
   static const int age_shift                      = lock_bits + biased_lock_bits;
-  static const int cms_shift                      = age_shift + age_bits;
-  static const int hash_shift                     = cms_shift + cms_bits;
+  static const int unused_gap_shift               = age_shift + age_bits;
+  static const int hash_shift                     = unused_gap_shift + unused_gap_bits;
   static const int epoch_shift                    = hash_shift;
 
   static const uintptr_t lock_mask                = right_n_bits(lock_bits);
@@ -157,8 +148,6 @@ class markWord {
   static const uintptr_t age_mask_in_place        = age_mask << age_shift;
   static const uintptr_t epoch_mask               = right_n_bits(epoch_bits);
   static const uintptr_t epoch_mask_in_place      = epoch_mask << epoch_shift;
-  static const uintptr_t cms_mask                 = right_n_bits(cms_bits);
-  static const uintptr_t cms_mask_in_place        = cms_mask << cms_shift;
 
   static const uintptr_t hash_mask                = right_n_bits(hash_bits);
   static const uintptr_t hash_mask_in_place       = hash_mask << hash_shift;
@@ -269,12 +258,6 @@ class markWord {
   template <typename KlassProxy>
   inline bool must_be_preserved_for_promotion_failure(KlassProxy klass) const;
 
-  // Should this header be preserved during a scavenge where CMS is
-  // the old generation?
-  // (This is basically the same body as must_be_preserved_for_promotion_failure(),
-  // but takes the Klass* as argument instead)
-  inline bool must_be_preserved_for_cms_scavenge(Klass* klass_of_obj_containing_mark) const;
-
   // WARNING: The following routines are used EXCLUSIVELY by
   // synchronization functions. They are not really gc safe.
   // They must get updated if markWord layout get changed.
@@ -375,42 +358,6 @@ class markWord {
 
   // Recover address of oop from encoded form used in mark
   inline void* decode_pointer() { if (UseBiasedLocking && has_bias_pattern()) return NULL; return (void*)clear_lock_bits().value(); }
-
-  // These markWords indicate cms free chunk blocks and not objects.
-  // In 64 bit, the markWord is set to distinguish them from oops.
-  // These are defined in 32 bit mode for vmStructs.
-  const static uintptr_t cms_free_chunk_pattern  = 0x1;
-
-  // Constants for the size field.
-  enum { size_shift                = cms_shift + cms_bits,
-         size_bits                 = 35    // need for compressed oops 32G
-       };
-  // These values are too big for Win64
-  const static uintptr_t size_mask = LP64_ONLY(right_n_bits(size_bits))
-                                     NOT_LP64(0);
-  const static uintptr_t size_mask_in_place =
-                                     (address_word)size_mask << size_shift;
-
-#ifdef _LP64
-  static markWord cms_free_prototype() {
-    return markWord((prototype().value() & ~cms_mask_in_place) |
-                    ((cms_free_chunk_pattern & cms_mask) << cms_shift));
-  }
-  uintptr_t cms_encoding() const {
-    return mask_bits(value() >> cms_shift, cms_mask);
-  }
-  bool is_cms_free_chunk() const {
-    return is_neutral() &&
-           (cms_encoding() & cms_free_chunk_pattern) == cms_free_chunk_pattern;
-  }
-
-  size_t get_size() const       { return (size_t)(value() >> size_shift); }
-  static markWord set_size_and_free(size_t size) {
-    assert((size & ~size_mask) == 0, "shouldn't overflow size field");
-    return markWord((cms_free_prototype().value() & ~size_mask_in_place) |
-                    ((size & size_mask) << size_shift));
-  }
-#endif // _LP64
 };
 
 // Support atomic operations.

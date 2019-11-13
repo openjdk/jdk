@@ -1726,10 +1726,6 @@ WB_ENTRY(jlong, WB_MetaspaceCapacityUntilGC(JNIEnv* env, jobject wb))
   return (jlong) MetaspaceGC::capacity_until_GC();
 WB_END
 
-WB_ENTRY(jboolean, WB_MetaspaceShouldConcurrentCollect(JNIEnv* env, jobject wb))
-  return MetaspaceGC::should_concurrent_collect();
-WB_END
-
 WB_ENTRY(jlong, WB_MetaspaceReserveAlignment(JNIEnv* env, jobject wb))
   return (jlong)Metaspace::reserve_alignment();
 WB_END
@@ -2309,7 +2305,6 @@ static JNINativeMethod methods[] = {
      CC"(Ljava/lang/ClassLoader;JJ)V",                (void*)&WB_FreeMetaspace },
   {CC"incMetaspaceCapacityUntilGC", CC"(J)J",         (void*)&WB_IncMetaspaceCapacityUntilGC },
   {CC"metaspaceCapacityUntilGC", CC"()J",             (void*)&WB_MetaspaceCapacityUntilGC },
-  {CC"metaspaceShouldConcurrentCollect", CC"()Z",     (void*)&WB_MetaspaceShouldConcurrentCollect },
   {CC"metaspaceReserveAlignment", CC"()J",            (void*)&WB_MetaspaceReserveAlignment },
   {CC"getCPUFeatures",     CC"()Ljava/lang/String;",  (void*)&WB_GetCPUFeatures     },
   {CC"getNMethod0",         CC"(Ljava/lang/reflect/Executable;Z)[Ljava/lang/Object;",

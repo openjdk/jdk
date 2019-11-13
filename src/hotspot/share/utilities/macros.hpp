@@ -131,24 +131,6 @@
 #define NOT_MANAGEMENT_RETURN_(code) { return code; }
 #endif // INCLUDE_MANAGEMENT
 
-#ifndef INCLUDE_CMSGC
-#define INCLUDE_CMSGC 1
-#endif // INCLUDE_CMSGC
-
-#if INCLUDE_CMSGC
-#define CMSGC_ONLY(x) x
-#define CMSGC_ONLY_ARG(arg) arg,
-#define NOT_CMSGC(x)
-#define NOT_CMSGC_RETURN        /* next token must be ; */
-#define NOT_CMSGC_RETURN_(code) /* next token must be ; */
-#else
-#define CMSGC_ONLY(x)
-#define CMSGC_ONLY_ARG(x)
-#define NOT_CMSGC(x) x
-#define NOT_CMSGC_RETURN        {}
-#define NOT_CMSGC_RETURN_(code) { return code; }
-#endif // INCLUDE_CMSGC
-
 #ifndef INCLUDE_EPSILONGC
 #define INCLUDE_EPSILONGC 1
 #endif // INCLUDE_EPSILONGC

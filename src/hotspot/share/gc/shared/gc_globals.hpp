@@ -27,9 +27,6 @@
 
 #include "runtime/globals_shared.hpp"
 #include "utilities/macros.hpp"
-#if INCLUDE_CMSGC
-#include "gc/cms/cms_globals.hpp"
-#endif
 #if INCLUDE_EPSILONGC
 #include "gc/epsilon/epsilon_globals.hpp"
 #endif
@@ -63,22 +60,6 @@
                  range,                                                     \
                  constraint,                                                \
                  writeable)                                                 \
-                                                                            \
-  CMSGC_ONLY(GC_CMS_FLAGS(                                                  \
-    develop,                                                                \
-    develop_pd,                                                             \
-    product,                                                                \
-    product_pd,                                                             \
-    diagnostic,                                                             \
-    diagnostic_pd,                                                          \
-    experimental,                                                           \
-    notproduct,                                                             \
-    manageable,                                                             \
-    product_rw,                                                             \
-    lp64_product,                                                           \
-    range,                                                                  \
-    constraint,                                                             \
-    writeable))                                                             \
                                                                             \
   EPSILONGC_ONLY(GC_EPSILON_FLAGS(                                          \
     develop,                                                                \
@@ -177,9 +158,6 @@
     writeable))                                                             \
                                                                             \
   /* gc */                                                                  \
-                                                                            \
-  product(bool, UseConcMarkSweepGC, false,                                  \
-          "Use Concurrent Mark-Sweep GC in the old generation")             \
                                                                             \
   product(bool, UseSerialGC, false,                                         \
           "Use the Serial garbage collector")                               \
@@ -286,14 +264,6 @@
           "bigger than this")                                               \
           range(1, max_jint/3)                                              \
                                                                             \
-  product(uintx, OldPLABWeight, 50,                                         \
-          "Percentage (0-100) used to weight the current sample when "      \
-          "computing exponentially decaying average for resizing "          \
-          "OldPLABSize")                                                    \
-          range(0, 100)                                                     \
-                                                                            \
-  product(bool, ResizeOldPLAB, true,                                        \
-          "Dynamically resize (old gen) promotion LAB's")                   \
                                                                             \
   product(bool, AlwaysPreTouch, false,                                      \
           "Force all freshly committed pages to be pre-touched")            \
@@ -310,13 +280,6 @@
   product(size_t, MarkStackSize, NOT_LP64(32*K) LP64_ONLY(4*M),             \
           "Size of marking stack")                                          \
           constraint(MarkStackSizeConstraintFunc,AfterErgo)                 \
-                                                                            \
-  develop(bool, VerifyBlockOffsetArray, false,                              \
-          "Do (expensive) block offset array verification")                 \
-                                                                            \
-  diagnostic(bool, BlockOffsetArrayUseUnallocatedBlock, false,              \
-          "Maintain _unallocated_block in BlockOffsetArray "                \
-          "(currently applicable only to CMS collector)")                   \
                                                                             \
   product(intx, RefDiscoveryPolicy, 0,                                      \
           "Select type of reference discovery policy: "                     \
@@ -364,9 +327,8 @@
           "collection")                                                     \
                                                                             \
   develop(uintx, PromotionFailureALotCount, 1000,                           \
-          "Number of promotion failures occurring at PLAB "                 \
-          "refill attempts (ParNew) or promotion attempts "                 \
-          "(other young collectors)")                                       \
+          "Number of promotion failures occurring at PLAB promotion "       \
+          "attempts at young collectors")                                   \
                                                                             \
   develop(uintx, PromotionFailureALotInterval, 5,                           \
           "Total collections between promotion failures a lot")             \
@@ -759,8 +721,7 @@
           constraint(YoungPLABSizeConstraintFunc,AfterMemoryInit)           \
                                                                             \
   product(size_t, OldPLABSize, 1024,                                        \
-          "Size of old gen promotion LAB's (in HeapWords), or Number "      \
-          "of blocks to attempt to claim when refilling CMS LAB's")         \
+          "Size of old gen promotion LAB's (in HeapWords)")                 \
           constraint(OldPLABSizeConstraintFunc,AfterMemoryInit)             \
                                                                             \
   product(uintx, TLABAllocationWeight, 35,                                  \
@@ -827,7 +788,6 @@
           "Percentage (0-100) of the old gen allowed as dead wood. "        \
           "Serial mark sweep treats this as both the minimum and maximum "  \
           "value. "                                                         \
-          "CMS uses this value only if it falls back to mark sweep. "       \
           "Par compact uses a variable scale based on the density of the "  \
           "generation and treats this as the maximum value when the heap "  \
           "is either completely full or completely empty.  Par compact "    \

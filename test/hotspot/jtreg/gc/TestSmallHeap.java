@@ -91,12 +91,8 @@ public class TestSmallHeap {
             noneGCSupported = false;
             verifySmallHeapSize("-XX:+UseG1GC", expectedMaxHeap);
         }
-        if (GC.ConcMarkSweep.isSupported()) {
-            noneGCSupported = false;
-            verifySmallHeapSize("-XX:+UseConcMarkSweepGC", expectedMaxHeap);
-        }
         if (noneGCSupported) {
-            throw new SkippedException("Skipping test because none of Parallel/Serial/G1/ConcMarkSweep is supported.");
+            throw new SkippedException("Skipping test because none of Parallel/Serial/G1 is supported.");
         }
     }
 

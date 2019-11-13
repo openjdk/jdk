@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,9 +28,6 @@
 #include "runtime/java.hpp"
 #include "runtime/os.hpp"
 #include "utilities/macros.hpp"
-#if INCLUDE_CMSGC
-#include "gc/cms/cmsArguments.hpp"
-#endif
 #if INCLUDE_EPSILONGC
 #include "gc/epsilon/epsilonArguments.hpp"
 #endif
@@ -60,7 +57,6 @@ struct SupportedGC {
       _flag(flag), _name(name), _arguments(arguments), _hs_err_name(hs_err_name) {}
 };
 
-       CMSGC_ONLY(static CMSArguments      cmsArguments;)
    EPSILONGC_ONLY(static EpsilonArguments  epsilonArguments;)
         G1GC_ONLY(static G1Arguments       g1Arguments;)
   PARALLELGC_ONLY(static ParallelArguments parallelArguments;)
@@ -71,7 +67,6 @@ SHENANDOAHGC_ONLY(static ShenandoahArguments shenandoahArguments;)
 // Table of supported GCs, for translating between command
 // line flag, CollectedHeap::Name and GCArguments instance.
 static const SupportedGC SupportedGCs[] = {
-       CMSGC_ONLY_ARG(SupportedGC(UseConcMarkSweepGC, CollectedHeap::CMS,        cmsArguments,        "concurrent mark sweep gc"))
    EPSILONGC_ONLY_ARG(SupportedGC(UseEpsilonGC,       CollectedHeap::Epsilon,    epsilonArguments,    "epsilon gc"))
         G1GC_ONLY_ARG(SupportedGC(UseG1GC,            CollectedHeap::G1,         g1Arguments,         "g1 gc"))
   PARALLELGC_ONLY_ARG(SupportedGC(UseParallelGC,      CollectedHeap::Parallel,   parallelArguments,   "parallel gc"))
@@ -95,7 +90,6 @@ GCArguments* GCConfig::_arguments = NULL;
 bool GCConfig::_gc_selected_ergonomically = false;
 
 void GCConfig::fail_if_unsupported_gc_is_selected() {
-  NOT_CMSGC(       FAIL_IF_SELECTED(UseConcMarkSweepGC, true));
   NOT_EPSILONGC(   FAIL_IF_SELECTED(UseEpsilonGC,       true));
   NOT_G1GC(        FAIL_IF_SELECTED(UseG1GC,            true));
   NOT_PARALLELGC(  FAIL_IF_SELECTED(UseParallelGC,      true));

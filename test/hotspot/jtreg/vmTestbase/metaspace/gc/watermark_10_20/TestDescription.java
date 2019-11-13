@@ -32,7 +32,6 @@
  * @comment Don't run test in configurations where we can't reliably count number of metaspace triggered GCs
  * @requires vm.gc != null | !vm.opt.final.ClassUnloadingWithConcurrentMark
  * @requires vm.gc != "G1" | !vm.opt.final.ClassUnloadingWithConcurrentMark
- * @requires vm.gc != "ConcMarkSweep"
  * @requires vm.gc != "Z"
  * @library /vmTestbase /test/lib
  * @run driver jdk.test.lib.FileInstaller . .

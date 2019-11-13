@@ -79,12 +79,6 @@ ifeq ($(call check-jvm-feature, dtrace), true)
         vmThread.o \
     )
 
-    ifeq ($(call check-jvm-feature, cmsgc), true)
-      DTRACE_INSTRUMENTED_OBJS += $(addprefix $(JVM_OUTPUTDIR)/objs/, \
-          cmsVMOperations.o \
-      )
-    endif
-
     ifeq ($(call check-jvm-feature, parallelgc), true)
       DTRACE_INSTRUMENTED_OBJS += $(addprefix $(JVM_OUTPUTDIR)/objs/, \
           psVMOperations.o \

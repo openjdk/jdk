@@ -219,11 +219,6 @@ public class TestOptionsWithRanges {
         excludeTestMinRange("MallocMaxTestWords");
 
         /*
-         * Exclude CMSSamplingGrain as it can cause intermittent failures on Windows
-         */
-        excludeTestRange("CMSSamplingGrain");
-
-        /*
          * Exclude below options as their maximum value would consume too much memory
          * and would affect other tests that run in parallel.
          */

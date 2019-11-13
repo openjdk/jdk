@@ -4367,7 +4367,7 @@ void JavaThread::invoke_shutdown_hooks() {
 //   + Call before_exit(), prepare for VM exit
 //      > run VM level shutdown hooks (they are registered through JVM_OnExit(),
 //        currently the only user of this mechanism is File.deleteOnExit())
-//      > stop StatSampler, watcher thread, CMS threads,
+//      > stop StatSampler, watcher thread,
 //        post thread end and vm death events to JVMTI,
 //        stop signal thread
 //   + Call JavaThread::exit(), it will:

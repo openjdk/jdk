@@ -104,7 +104,6 @@ public class VM {
   private int          heapOopSize;
   private int          klassPtrSize;
   private int          oopSize;
-  private final int    IndexSetSize;
   /** -XX flags (value origin) */
   public static int    Flags_DEFAULT;
   public static int    Flags_COMMAND_LINE;
@@ -491,7 +490,6 @@ public class VM {
     Flags_VALUE_ORIGIN_MASK = db.lookupIntConstant("JVMFlag::VALUE_ORIGIN_MASK").intValue();
     Flags_ORIG_COMMAND_LINE = db.lookupIntConstant("JVMFlag::ORIG_COMMAND_LINE").intValue();
     oopSize  = db.lookupIntConstant("oopSize").intValue();
-    IndexSetSize = db.lookupIntConstant("CompactibleFreeListSpace::IndexSetSize").intValue();
 
     intType = db.lookupType("int");
     uintType = db.lookupType("uint");
@@ -709,10 +707,6 @@ public class VM {
 
   public int getHeapOopSize() {
     return heapOopSize;
-  }
-
-  public int getIndexSetSize() {
-    return IndexSetSize;
   }
 
   public int getKlassPtrSize() {

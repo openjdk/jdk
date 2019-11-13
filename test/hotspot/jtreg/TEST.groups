@@ -37,7 +37,7 @@ hotspot_compiler_xcomp = \
 
 hotspot_compiler_all_gcs = \
   :hotspot_compiler \
-  -:tier1_compiler_not_cms
+  -:tier1_compiler_aot_jvmci
 
 hotspot_gc = \
   gc \
@@ -152,7 +152,7 @@ tier1_compiler_not_xcomp = \
   compiler/aot \
   compiler/profiling
 
-tier1_compiler_not_cms = \
+tier1_compiler_aot_jvmci = \
   compiler/aot \
   compiler/jvmci
 
@@ -198,7 +198,6 @@ tier1_gc_2 = \
   -gc/logging/TestUnifiedLoggingSwitchStress.java \
   -gc/stress \
   -gc/survivorAlignment/TestPromotionFromSurvivorToTenuredAfterMinorGC.java \
-  -gc/cms/TestMBeanCMS.java \
   -gc/metaspace/CompressedClassSpaceSizeInJmapHeap.java \
   -gc/shenandoah \
   -gc/nvdimm
@@ -210,13 +209,11 @@ gc_epsilon = \
 
 tier1_gc_gcold = \
   gc/stress/gcold/TestGCOldWithG1.java \
-  gc/stress/gcold/TestGCOldWithCMS.java \
   gc/stress/gcold/TestGCOldWithSerial.java \
   gc/stress/gcold/TestGCOldWithParallel.java
 
 tier1_gc_gcbasher = \
   gc/stress/gcbasher/TestGCBasherWithG1.java \
-  gc/stress/gcbasher/TestGCBasherWithCMS.java \
   gc/stress/gcbasher/TestGCBasherWithSerial.java \
   gc/stress/gcbasher/TestGCBasherWithParallel.java
 

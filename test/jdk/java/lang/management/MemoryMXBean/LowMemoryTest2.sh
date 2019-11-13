@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2004, 2017, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2004, 2019, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -59,7 +59,6 @@ go() {
 
 go -noclassgc -XX:MaxMetaspaceSize=32m -XX:+UseSerialGC LowMemoryTest2
 go -noclassgc -XX:MaxMetaspaceSize=32m -XX:+UseParallelGC LowMemoryTest2
-go -noclassgc -XX:MaxMetaspaceSize=32m -XX:+UseConcMarkSweepGC LowMemoryTest2
 
 # Test class metaspace - might hit MaxMetaspaceSize instead if
 # UseCompressedClassPointers is off or if 32 bit.

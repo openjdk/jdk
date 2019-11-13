@@ -25,11 +25,11 @@
 
 # All valid JVM features, regardless of platform
 VALID_JVM_FEATURES="compiler1 compiler2 zero minimal dtrace jvmti jvmci \
-    graal vm-structs jni-check services management cmsgc epsilongc g1gc parallelgc serialgc shenandoahgc zgc nmt cds \
+    graal vm-structs jni-check services management epsilongc g1gc parallelgc serialgc shenandoahgc zgc nmt cds \
     static-build link-time-opt aot jfr"
 
 # Deprecated JVM features (these are ignored, but with a warning)
-DEPRECATED_JVM_FEATURES="trace"
+DEPRECATED_JVM_FEATURES="trace cmsgc"
 
 # All valid JVM variants
 VALID_JVM_VARIANTS="server client minimal core zero custom"
@@ -326,10 +326,6 @@ AC_DEFUN_ONCE([HOTSPOT_SETUP_JVM_FEATURES],
     AC_MSG_ERROR([Specified JVM feature 'jvmci' requires feature 'compiler2' or 'compiler1'])
   fi
 
-  if HOTSPOT_CHECK_JVM_FEATURE(cmsgc) && ! HOTSPOT_CHECK_JVM_FEATURE(serialgc); then
-    AC_MSG_ERROR([Specified JVM feature 'cmsgc' requires feature 'serialgc'])
-  fi
-
   # Enable JFR by default, except for Zero, linux-sparcv9 and on minimal.
   if ! HOTSPOT_CHECK_JVM_VARIANT(zero); then
     if test "x$OPENJDK_TARGET_OS" != xaix; then
@@ -491,7 +487,7 @@ AC_DEFUN_ONCE([HOTSPOT_SETUP_JVM_FEATURES],
   fi
 
   # All variants but minimal (and custom) get these features
-  NON_MINIMAL_FEATURES="$NON_MINIMAL_FEATURES cmsgc g1gc parallelgc serialgc epsilongc shenandoahgc jni-check jvmti management nmt services vm-structs zgc"
+  NON_MINIMAL_FEATURES="$NON_MINIMAL_FEATURES g1gc parallelgc serialgc epsilongc shenandoahgc jni-check jvmti management nmt services vm-structs zgc"
 
   # Disable CDS on AIX.
   if test "x$OPENJDK_TARGET_OS" = "xaix"; then

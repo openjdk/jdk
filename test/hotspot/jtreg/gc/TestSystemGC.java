@@ -52,15 +52,6 @@ package gc;
  */
 
 /*
- * @test TestSystemGCCMS
- * @key gc
- * @comment Graal does not support CMS
- * @requires vm.gc.ConcMarkSweep & !vm.graal.enabled
- * @run main/othervm -XX:+UseConcMarkSweepGC gc.TestSystemGC
- * @run main/othervm -XX:+UseConcMarkSweepGC -XX:+ExplicitGCInvokesConcurrent gc.TestSystemGC
- */
-
-/*
  * @test TestSystemGCShenandoah
  * @key gc
  * @requires vm.gc.Shenandoah & !vm.graal.enabled

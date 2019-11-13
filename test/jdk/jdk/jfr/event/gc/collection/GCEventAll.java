@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -125,7 +125,7 @@ public class GCEventAll {
         // recording.stop and getBeanCollectionCount().
         doSystemGc();
         // Add an extra System.gc() to make sure we get at least one full garbage_collection batch at
-        // the end of the test. This extra System.gc() is only necessary when using "UseConcMarkSweepGC" and "+ExplicitGCInvokesConcurrent".
+        // the end of the test. This extra System.gc() is only necessary when using "+ExplicitGCInvokesConcurrent".
         doSystemGc();
 
         recording.stop();
@@ -170,7 +170,6 @@ public class GCEventAll {
 
         // For some GC configurations, the JFR recording may have stopped before we received the last gc event.
         try {
-            events = filterIncompleteGcBatch(events);
             gcBatches = GCHelper.GcBatch.createFromEvents(events);
             eventCounts = GCHelper.CollectionSummary.createFromEvents(gcBatches);
 
@@ -189,41 +188,6 @@ public class GCEventAll {
             }
             throw t;
         }
-    }
-
-    /**
-     * When using collector ConcurrentMarkSweep with -XX:+ExplicitGCInvokesConcurrent, the JFR recording may
-     * stop before we have received the last garbage_collection event.
-     *
-     * This function does 3 things:
-     * 1. Check if the last batch is incomplete.
-     * 2. If it is incomplete, then asserts that incomplete batches are allowed for this configuration.
-     * 3. If incomplete batches are allowed, then the incomplete batch is removed.
-     *
-     * @param events All events
-     * @return All events with any incomplete batch removed.
-     * @throws Throwable
-     */
-    private List<RecordedEvent> filterIncompleteGcBatch(List<RecordedEvent> events) throws Throwable {
-        List<RecordedEvent> returnEvents = new ArrayList<RecordedEvent>(events);
-        int lastGcId = getLastGcId(events);
-        List<RecordedEvent> lastBatchEvents = getEventsWithGcId(events, lastGcId);
-        String[] endEvents = {GCHelper.event_garbage_collection, GCHelper.event_old_garbage_collection, GCHelper.event_young_garbage_collection};
-        boolean isComplete = containsAnyPath(lastBatchEvents, endEvents);
-        if (!isComplete) {
-            // The last GC batch does not contain an end event. The batch is incomplete.
-            // This is only allowed if we are using old_collector="ConcurrentMarkSweep" and "-XX:+ExplicitGCInvokesConcurrent"
-            boolean isExplicitGCInvokesConcurrent = hasInputArgument("-XX:+ExplicitGCInvokesConcurrent");
-            boolean isConcurrentMarkSweep = GCHelper.gcConcurrentMarkSweep.equals(oldCollector);
-            String msg = String.format(
-                    "Incomplete batch only allowed for '%s' with -XX:+ExplicitGCInvokesConcurrent",
-                    GCHelper.gcConcurrentMarkSweep);
-            Asserts.assertTrue(isConcurrentMarkSweep && isExplicitGCInvokesConcurrent, msg);
-
-            // Incomplete batch is allowed with the current settings. Remove incomplete batch.
-            returnEvents.removeAll(lastBatchEvents);
-        }
-        return returnEvents;
     }
 
     private boolean hasInputArgument(String arg) {
@@ -276,8 +240,7 @@ public class GCEventAll {
     }
 
     private void verifyCollectionCount(String collector, long eventCounts, long beanCounts) {
-        if (GCHelper.gcConcurrentMarkSweep.equals(collector) || GCHelper.gcG1Old.equals(oldCollector)) {
-            // ConcurrentMarkSweep mixes old and new collections. Not same values as in MXBean.
+        if (GCHelper.gcG1Old.equals(oldCollector)) {
             // MXBean does not report old collections for G1Old, so we have nothing to compare with.
             return;
         }
@@ -338,11 +301,8 @@ public class GCEventAll {
                         }
                     }
                 }
-                if (!GCHelper.gcConcurrentMarkSweep.equals(batch.getName())) {
-                    // We do not get heap_summary events for ConcurrentMarkSweep
-                    Asserts.assertEquals(1, countBeforeGc, "Unexpected number of heap_summary.before_gc");
-                    Asserts.assertEquals(1, countAfterGc, "Unexpected number of heap_summary.after_gc");
-                }
+                Asserts.assertEquals(1, countBeforeGc, "Unexpected number of heap_summary.before_gc");
+                Asserts.assertEquals(1, countAfterGc, "Unexpected number of heap_summary.after_gc");
             } catch (Throwable e) {
                 GCHelper.log("verifySingleGcBatch failed for gcEvent:");
                 GCHelper.log(batch.getLog());

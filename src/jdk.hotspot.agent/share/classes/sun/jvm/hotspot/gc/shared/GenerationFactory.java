@@ -27,7 +27,6 @@ package sun.jvm.hotspot.gc.shared;
 import java.util.*;
 
 import sun.jvm.hotspot.debugger.*;
-import sun.jvm.hotspot.gc.cms.*;
 import sun.jvm.hotspot.gc.serial.*;
 import sun.jvm.hotspot.runtime.*;
 import sun.jvm.hotspot.types.*;
@@ -50,9 +49,7 @@ public class GenerationFactory {
     ctor = new VirtualConstructor(db);
 
     ctor.addMapping("DefNewGeneration", DefNewGeneration.class);
-    ctor.addMapping("ParNewGeneration", ParNewGeneration.class);
     ctor.addMapping("TenuredGeneration", TenuredGeneration.class);
-    ctor.addMapping("ConcurrentMarkSweepGeneration", ConcurrentMarkSweepGeneration.class);
   }
 
   public static Generation newObject(Address addr) {

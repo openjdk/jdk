@@ -1947,9 +1947,6 @@ const size_t minimumSymbolTableSize = 1024;
   experimental(bool, UseCriticalCompilerThreadPriority, false,              \
           "Compiler thread(s) run at critical scheduling priority")         \
                                                                             \
-  experimental(bool, UseCriticalCMSThreadPriority, false,                   \
-          "ConcurrentMarkSweep thread runs at critical scheduling priority")\
-                                                                            \
   develop(intx, NewCodeParameter,      0,                                   \
           "Testing Only: Create a dedicated integer parameter before "      \
           "putback")                                                        \

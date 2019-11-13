@@ -217,8 +217,7 @@ private:
   // For collectors that do not keep GC liveness information
   // in the object header, this field holds a closure that
   // helps the reference processor determine the reachability
-  // of an oop. It is currently initialized to NULL for all
-  // collectors except for CMS and G1.
+  // of an oop.
   BoolObjectClosure* _is_alive_non_header;
 
   // Soft ref clearing policies

@@ -44,11 +44,6 @@ public class TestInitialGCThreadLogging {
   public static void main(String[] args) throws Exception {
     boolean noneGCSupported = true;
 
-    if (GC.ConcMarkSweep.isSupported()) {
-      noneGCSupported = false;
-      testInitialGCThreadLogging("UseConcMarkSweepGC", "GC Thread");
-    }
-
     if (GC.G1.isSupported()) {
       noneGCSupported = false;
       testInitialGCThreadLogging("UseG1GC", "GC Thread");
@@ -65,7 +60,7 @@ public class TestInitialGCThreadLogging {
     }
 
     if (noneGCSupported) {
-      throw new SkippedException("Skipping test because none of ConcMarkSweep/G1/Parallel/Shenandoah is supported.");
+      throw new SkippedException("Skipping test because none of G1/Parallel/Shenandoah is supported.");
     }
   }
 

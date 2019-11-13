@@ -6928,25 +6928,6 @@ instruct storeCM_CMS(memory mem, iRegLdst releaseFieldAddr, flagsReg crx) %{
   ins_pipe(pipe_class_memory);
 %}
 
-// Card-mark for CMS garbage collection.
-// This cardmark does an optimization so that it must not always
-// do a releasing store. For this, it needs the constant address of
-// CMSCollectorCardTableBarrierSetBSExt::_requires_release.
-// This constant address is split off here by expand so we can use
-// adlc / matcher functionality to load it from the constant section.
-instruct storeCM_CMS_ExEx(memory mem, immI_0 zero) %{
-  match(Set mem (StoreCM mem zero));
-  predicate(UseConcMarkSweepGC);
-
-  expand %{
-    immL baseImm %{ 0 /* TODO: PPC port (jlong)CMSCollectorCardTableBarrierSetBSExt::requires_release_address() */ %}
-    iRegLdst releaseFieldAddress;
-    flagsReg crx;
-    loadConL_Ex(releaseFieldAddress, baseImm);
-    storeCM_CMS(mem, releaseFieldAddress, crx);
-  %}
-%}
-
 instruct storeCM_G1(memory mem, immI_0 zero) %{
   match(Set mem (StoreCM mem zero));
   predicate(UseG1GC);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -447,11 +447,11 @@ void JVMFlag::print_on(outputStream* st, bool withComments, bool printRanges) {
     //  an eye-pleasing tabular output is created.
     //
     //  Sample output:
-    //       bool CMSScavengeBeforeRemark                  = false                                     {product} {default}
-    //      uintx CMSScheduleRemarkEdenPenetration         = 50                                        {product} {default}
-    //     size_t CMSScheduleRemarkEdenSizeThreshold       = 2097152                                   {product} {default}
-    //      uintx CMSScheduleRemarkSamplingRatio           = 5                                         {product} {default}
-    //     double CMSSmallCoalSurplusPercent               = 1.050000                                  {product} {default}
+    //       bool ThreadPriorityVerbose                    = false                                     {product} {default}
+    //      uintx ThresholdTolerance                       = 10                                        {product} {default}
+    //     size_t TLABSize                                 = 0                                         {product} {default}
+    //      uintx SurvivorRatio                            = 8                                         {product} {default}
+    //     double InitialRAMPercentage                     = 1.562500                                  {product} {default}
     //      ccstr CompileCommandFile                       = MyFile.cmd                                {product} {command line}
     //  ccstrlist CompileOnly                              = Method1
     //            CompileOnly                             += Method2                                   {product} {command line}

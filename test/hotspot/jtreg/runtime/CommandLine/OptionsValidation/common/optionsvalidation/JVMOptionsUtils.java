@@ -79,9 +79,6 @@ public class JVMOptionsUtils {
 
         for (GarbageCollectorMXBean gcMxBean : gcMxBeans) {
             switch (gcMxBean.getName()) {
-                case "ConcurrentMarkSweep":
-                    GCType = "-XX:+UseConcMarkSweepGC";
-                    break;
                 case "MarkSweepCompact":
                     GCType = "-XX:+UseSerialGC";
                     break;
@@ -186,10 +183,6 @@ public class JVMOptionsUtils {
             option.addPrepend("-XX:+UseG1GC");
         }
 
-        if (name.startsWith("CMS")) {
-            option.addPrepend("-XX:+UseConcMarkSweepGC");
-        }
-
         if (name.startsWith("NUMA")) {
             option.addPrepend("-XX:+UseNUMA");
         }
@@ -207,18 +200,6 @@ public class JVMOptionsUtils {
             case "MaxMetaspaceFreeRatio":
                 option.addPrepend("-XX:MinMetaspaceFreeRatio=0");
                 break;
-            case "CMSOldPLABMin":
-                option.addPrepend("-XX:CMSOldPLABMax=" + option.getMax());
-                break;
-            case "CMSOldPLABMax":
-                option.addPrepend("-XX:CMSOldPLABMin=" + option.getMin());
-                break;
-            case "CMSPrecleanNumerator":
-                option.addPrepend("-XX:CMSPrecleanDenominator=" + option.getMax());
-                break;
-            case "CMSPrecleanDenominator":
-                option.addPrepend("-XX:CMSPrecleanNumerator=" + ((new Integer(option.getMin())) - 1));
-                break;
             case "G1RefProcDrainInterval":
                 option.addPrepend("-XX:+ExplicitGCInvokesConcurrent");
                 break;
@@ -227,9 +208,6 @@ public class JVMOptionsUtils {
                 break;
             case "NUMAInterleaveGranularity":
                 option.addPrepend("-XX:+UseNUMAInterleaving");
-                break;
-            case "CPUForCMSThread":
-                option.addPrepend("-XX:+BindCMSThreadToCPU");
                 break;
             case "VerifyGCStartAt":
                 option.addPrepend("-XX:+VerifyBeforeGC");

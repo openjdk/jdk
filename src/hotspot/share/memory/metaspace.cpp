@@ -73,7 +73,6 @@ static const char* space_type_name(Metaspace::MetaspaceType t) {
 
 volatile size_t MetaspaceGC::_capacity_until_GC = 0;
 uint MetaspaceGC::_shrink_factor = 0;
-bool MetaspaceGC::_should_concurrent_collect = false;
 
 // BlockFreelist methods
 

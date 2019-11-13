@@ -263,10 +263,6 @@ void mutex_init() {
   def(PerfDataMemAlloc_lock        , PaddedMutex  , leaf,        true,  _safepoint_check_always); // used for allocating PerfData memory for performance data
   def(PerfDataManager_lock         , PaddedMutex  , leaf,        true,  _safepoint_check_always); // used for synchronized access to PerfDataManager resources
 
-  // CMS_modUnionTable_lock                   leaf
-  // CMS_bitMap_lock                          leaf 1
-  // CMS_freeList_lock                        leaf 2
-
   def(Threads_lock                 , PaddedMonitor, barrier,     true,  _safepoint_check_always);  // Used for safepoint protocol.
   def(NonJavaThreadsList_lock      , PaddedMutex,   leaf,        true,  _safepoint_check_never);
   def(NonJavaThreadsListSync_lock  , PaddedMutex,   leaf,        true,  _safepoint_check_never);

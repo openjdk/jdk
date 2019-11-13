@@ -66,9 +66,6 @@ define_pd_global(intx,  StackReservedPages,   DEFAULT_STACK_RESERVED_PAGES);
 define_pd_global(bool,  RewriteBytecodes,     true);
 define_pd_global(bool,  RewriteFrequentPairs, true);
 
-// GC Ergo Flags
-define_pd_global(size_t, CMSYoungGenPerWorker, 16*M);  // default max size of CMS young gen, per GC worker thread
-
 define_pd_global(uintx, TypeProfileLevel, 0);
 
 define_pd_global(bool, PreserveFramePointer, false);

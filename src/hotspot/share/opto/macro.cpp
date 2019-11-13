@@ -1399,7 +1399,7 @@ void PhaseMacroExpand::expand_allocate_common(
     // other threads.
     // Other threads include java threads and JVM internal threads
     // (for example concurrent GC threads). Current concurrent GC
-    // implementation: CMS and G1 will not scan newly created object,
+    // implementation: G1 will not scan newly created object,
     // so it's safe to skip storestore barrier when allocation does
     // not escape.
     if (!alloc->does_not_escape_thread() &&
