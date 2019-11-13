@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,6 @@ import sun.security.jca.GetInstance.Instance;
  * <p> Every implementation of the Java platform is required to support
  * the following standard {@code Mac} algorithms:
  * <ul>
- * <li>{@code HmacMD5}</li>
  * <li>{@code HmacSHA1}</li>
  * <li>{@code HmacSHA256}</li>
  * </ul>

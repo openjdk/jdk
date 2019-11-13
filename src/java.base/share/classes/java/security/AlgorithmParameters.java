@@ -51,7 +51,6 @@ import java.util.Objects;
  * following standard {@code AlgorithmParameters} algorithms:
  * <ul>
  * <li>{@code AES}</li>
- * <li>{@code DES}</li>
  * <li>{@code DESede}</li>
  * <li>{@code DiffieHellman}</li>
  * <li>{@code DSA}</li>

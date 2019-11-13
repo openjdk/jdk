@@ -84,7 +84,6 @@ import javax.crypto.SecretKey;
  * <p> Every implementation of the Java platform is required to support
  * the following standard {@code MessageDigest} algorithms:
  * <ul>
- * <li>{@code MD5}</li>
  * <li>{@code SHA-1}</li>
  * <li>{@code SHA-256}</li>
  * </ul>
