@@ -2072,7 +2072,7 @@ int os::Solaris::commit_memory_impl(char* addr, size_t bytes, bool exec) {
   char *res = Solaris::mmap_chunk(addr, size, MAP_PRIVATE|MAP_FIXED, prot);
   if (res != NULL) {
     if (UseNUMAInterleaving) {
-      numa_make_global(addr, bytes);
+        numa_make_global(addr, bytes);
     }
     return 0;
   }
@@ -2265,6 +2265,10 @@ int os::numa_get_group_id() {
     return 0;
   }
   return ids[os::random() % r];
+}
+
+int os::numa_get_group_id_for_address(const void* address) {
+  return 0;
 }
 
 // Request information about the page.

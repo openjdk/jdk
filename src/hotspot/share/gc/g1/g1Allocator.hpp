@@ -31,6 +31,7 @@
 #include "gc/shared/plab.hpp"
 
 class G1EvacuationInfo;
+class G1NUMA;
 
 // Interface to keep track of which regions G1 is currently allocating into. Provides
 // some accessors (e.g. allocating into them, or getting their occupancy).
@@ -40,12 +41,16 @@ class G1Allocator : public CHeapObj<mtGC> {
 
 private:
   G1CollectedHeap* _g1h;
+  G1NUMA* _numa;
 
   bool _survivor_is_full;
   bool _old_is_full;
 
+  // The number of MutatorAllocRegions used, one per memory node.
+  size_t _num_alloc_regions;
+
   // Alloc region used to satisfy mutator allocation requests.
-  MutatorAllocRegion _mutator_alloc_region;
+  MutatorAllocRegion* _mutator_alloc_regions;
 
   // Alloc region used to satisfy allocation requests by the GC for
   // survivor objects.
@@ -68,29 +73,34 @@ private:
                                  HeapRegion** retained);
 
   // Accessors to the allocation regions.
-  inline MutatorAllocRegion* mutator_alloc_region();
+  inline MutatorAllocRegion* mutator_alloc_region(uint node_index);
   inline SurvivorGCAllocRegion* survivor_gc_alloc_region();
   inline OldGCAllocRegion* old_gc_alloc_region();
 
   // Allocation attempt during GC for a survivor object / PLAB.
   HeapWord* survivor_attempt_allocation(size_t min_word_size,
-                                               size_t desired_word_size,
-                                               size_t* actual_word_size);
+                                        size_t desired_word_size,
+                                        size_t* actual_word_size);
 
   // Allocation attempt during GC for an old object / PLAB.
   HeapWord* old_attempt_allocation(size_t min_word_size,
-                                          size_t desired_word_size,
-                                          size_t* actual_word_size);
+                                   size_t desired_word_size,
+                                   size_t* actual_word_size);
+
+  // Node index of current thread.
+  inline uint current_node_index() const;
+
 public:
   G1Allocator(G1CollectedHeap* heap);
+  ~G1Allocator();
 
 #ifdef ASSERT
   // Do we currently have an active mutator region to allocate into?
-  bool has_mutator_alloc_region() { return mutator_alloc_region()->get() != NULL; }
+  bool has_mutator_alloc_region();
 #endif
 
-  void init_mutator_alloc_region();
-  void release_mutator_alloc_region();
+  void init_mutator_alloc_regions();
+  void release_mutator_alloc_regions();
 
   void init_gc_alloc_regions(G1EvacuationInfo& evacuation_info);
   void release_gc_alloc_regions(G1EvacuationInfo& evacuation_info);

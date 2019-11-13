@@ -2005,6 +2005,10 @@ size_t os::numa_get_leaf_groups(int *ids, size_t size) {
   return 0;
 }
 
+int os::numa_get_group_id_for_address(const void* address) {
+  return 0;
+}
+
 bool os::get_page_info(char *start, page_info* info) {
   return false;
 }

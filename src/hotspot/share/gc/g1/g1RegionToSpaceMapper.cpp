@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "gc/g1/g1BiasedArray.hpp"
+#include "gc/g1/g1NUMA.hpp"
 #include "gc/g1/g1RegionToSpaceMapper.hpp"
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
@@ -44,7 +45,8 @@ G1RegionToSpaceMapper::G1RegionToSpaceMapper(ReservedSpace rs,
   _listener(NULL),
   _storage(rs, used_size, page_size),
   _region_granularity(region_granularity),
-  _commit_map(rs.size() * commit_factor / region_granularity, mtGC) {
+  _commit_map(rs.size() * commit_factor / region_granularity, mtGC),
+  _memory_type(type) {
   guarantee(is_power_of_2(page_size), "must be");
   guarantee(is_power_of_2(region_granularity), "must be");
 
@@ -72,10 +74,18 @@ class G1RegionsLargerThanCommitSizeMapper : public G1RegionToSpaceMapper {
   }
 
   virtual void commit_regions(uint start_idx, size_t num_regions, WorkGang* pretouch_gang) {
-    size_t const start_page = (size_t)start_idx * _pages_per_region;
-    bool zero_filled = _storage.commit(start_page, num_regions * _pages_per_region);
+    const size_t start_page = (size_t)start_idx * _pages_per_region;
+    const size_t size_in_pages = num_regions * _pages_per_region;
+    bool zero_filled = _storage.commit(start_page, size_in_pages);
+    if (_memory_type == mtJavaHeap) {
+      for (uint region_index = start_idx; region_index < start_idx + num_regions; region_index++ ) {
+        void* address = _storage.page_start(region_index * _pages_per_region);
+        size_t size_in_bytes = _storage.page_size() * _pages_per_region;
+        G1NUMA::numa()->request_memory_on_node(address, size_in_bytes, region_index);
+      }
+    }
     if (AlwaysPreTouch) {
-      _storage.pretouch(start_page, num_regions * _pages_per_region, pretouch_gang);
+      _storage.pretouch(start_page, size_in_pages, pretouch_gang);
     }
     _commit_map.set_range(start_idx, start_idx + num_regions);
     fire_on_commit(start_idx, num_regions, zero_filled);
@@ -126,26 +136,32 @@ class G1RegionsSmallerThanCommitSizeMapper : public G1RegionToSpaceMapper {
     size_t num_committed = 0;
 
     bool all_zero_filled = true;
+    G1NUMA* numa = G1NUMA::numa();
 
-    for (uint i = start_idx; i < start_idx + num_regions; i++) {
-      assert(!_commit_map.at(i), "Trying to commit storage at region %u that is already committed", i);
-      size_t idx = region_idx_to_page_idx(i);
-      uint old_refcount = _refcounts.get_by_index(idx);
+    for (uint region_idx = start_idx; region_idx < start_idx + num_regions; region_idx++) {
+      assert(!_commit_map.at(region_idx), "Trying to commit storage at region %u that is already committed", region_idx);
+      size_t page_idx = region_idx_to_page_idx(region_idx);
+      uint old_refcount = _refcounts.get_by_index(page_idx);
 
       bool zero_filled = false;
       if (old_refcount == 0) {
         if (first_committed == NoPage) {
-          first_committed = idx;
+          first_committed = page_idx;
           num_committed = 1;
         } else {
           num_committed++;
         }
-        zero_filled = _storage.commit(idx, 1);
+        zero_filled = _storage.commit(page_idx, 1);
+        if (_memory_type == mtJavaHeap) {
+          void* address = _storage.page_start(page_idx);
+          size_t size_in_bytes = _storage.page_size();
+          numa->request_memory_on_node(address, size_in_bytes, region_idx);
+        }
       }
       all_zero_filled &= zero_filled;
 
-      _refcounts.set_by_index(idx, old_refcount + 1);
-      _commit_map.set_bit(i);
+      _refcounts.set_by_index(page_idx, old_refcount + 1);
+      _commit_map.set_bit(region_idx);
     }
     if (AlwaysPreTouch && num_committed > 0) {
       _storage.pretouch(first_committed, num_committed, pretouch_gang);

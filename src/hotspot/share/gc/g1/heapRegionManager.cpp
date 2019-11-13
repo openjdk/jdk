@@ -30,6 +30,7 @@
 #include "gc/g1/heapRegionManager.inline.hpp"
 #include "gc/g1/heapRegionSet.inline.hpp"
 #include "gc/g1/heterogeneousHeapRegionManager.hpp"
+#include "logging/logStream.hpp"
 #include "memory/allocation.hpp"
 #include "utilities/bitMap.inline.hpp"
 
@@ -103,6 +104,29 @@ bool HeapRegionManager::is_available(uint region) const {
   return _available_map.at(region);
 }
 
+HeapRegion* HeapRegionManager::allocate_free_region(HeapRegionType type, uint requested_node_index) {
+  HeapRegion* hr = NULL;
+  bool from_head = !type.is_young();
+
+  if (requested_node_index != G1NUMA::AnyNodeIndex && G1NUMA::numa()->is_enabled()) {
+    // Try to allocate with requested node index.
+    hr = _free_list.remove_region_with_node_index(from_head, requested_node_index, NULL);
+  }
+
+  if (hr == NULL) {
+    // If there's a single active node or we did not get a region from our requested node,
+    // try without requested node index.
+    hr = _free_list.remove_region(from_head);
+  }
+
+  if (hr != NULL) {
+    assert(hr->next() == NULL, "Single region should not have next");
+    assert(is_available(hr->hrm_index()), "Must be committed");
+  }
+
+  return hr;
+}
+
 #ifdef ASSERT
 bool HeapRegionManager::is_free(HeapRegion* hr) const {
   return _free_list.contains(hr);
@@ -138,6 +162,11 @@ void HeapRegionManager::commit_regions(uint index, size_t num_regions, WorkGang*
 void HeapRegionManager::uncommit_regions(uint start, size_t num_regions) {
   guarantee(num_regions >= 1, "Need to specify at least one region to uncommit, tried to uncommit zero regions at %u", start);
   guarantee(_num_committed >= num_regions, "pre-condition");
+
+  // Reset node index to distinguish with committed regions.
+  for (uint i = start; i < start + num_regions; i++) {
+    at(i)->set_node_index(G1NUMA::UnknownNodeIndex);
+  }
 
   // Print before uncommitting.
   if (G1CollectedHeap::heap()->hr_printer()->is_active()) {
@@ -186,6 +215,7 @@ void HeapRegionManager::make_regions_available(uint start, uint num_regions, Wor
     MemRegion mr(bottom, bottom + HeapRegion::GrainWords);
 
     hr->initialize(mr);
+    hr->set_node_index(G1NUMA::numa()->index_for_region(hr));
     insert_into_free_list(at(i));
   }
 }
@@ -233,6 +263,35 @@ uint HeapRegionManager::expand_at(uint start, uint num_regions, WorkGang* pretou
 
   verify_optional();
   return expanded;
+}
+
+uint HeapRegionManager::expand_on_preferred_node(uint preferred_index) {
+  uint expand_candidate = UINT_MAX;
+  for (uint i = 0; i < max_length(); i++) {
+    if (is_available(i)) {
+      // Already in use continue
+      continue;
+    }
+    // Always save the candidate so we can expand later on.
+    expand_candidate = i;
+    if (is_on_preferred_index(expand_candidate, preferred_index)) {
+      // We have found a candidate on the preffered node, break.
+      break;
+    }
+  }
+
+  if (expand_candidate == UINT_MAX) {
+     // No regions left, expand failed.
+    return 0;
+  }
+
+  make_regions_available(expand_candidate, 1, NULL);
+  return 1;
+}
+
+bool HeapRegionManager::is_on_preferred_index(uint region_index, uint preferred_node_index) {
+  uint region_node_index = G1NUMA::numa()->preferred_node_index_for_index(region_index);
+  return region_node_index == preferred_node_index;
 }
 
 uint HeapRegionManager::find_contiguous(size_t num, bool empty_only) {

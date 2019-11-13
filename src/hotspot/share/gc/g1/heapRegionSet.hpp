@@ -181,6 +181,10 @@ public:
   // Removes from head or tail based on the given argument.
   HeapRegion* remove_region(bool from_head);
 
+  HeapRegion* remove_region_with_node_index(bool from_head,
+                                            const uint requested_node_index,
+                                            uint* region_node_index);
+
   // Merge two ordered lists. The result is also ordered. The order is
   // determined by hrm_index.
   void add_ordered(FreeRegionList* from_list);

@@ -253,6 +253,8 @@ private:
   // for the collection set.
   double _predicted_elapsed_time_ms;
 
+  uint _node_index;
+
   // Iterate over the references covered by the given MemRegion in a humongous
   // object and apply the given closure to them.
   // Humongous objects are allocated directly in the old-gen. So we need special
@@ -642,6 +644,9 @@ public:
   // Applies blk->do_code_blob() to each of the entries in
   // the strong code roots list for this region
   void strong_code_roots_do(CodeBlobClosure* blk) const;
+
+  uint node_index() const { return _node_index; }
+  void set_node_index(uint node_index) { _node_index = node_index; }
 
   // Verify that the entries on the strong code root list for this
   // region are live and include at least one pointer into this region.

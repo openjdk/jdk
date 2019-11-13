@@ -124,6 +124,11 @@ char* G1PageBasedVirtualSpace::page_start(size_t index) const {
   return _low_boundary + index * _page_size;
 }
 
+size_t G1PageBasedVirtualSpace::page_size() const {
+  assert(_page_size > 0, "Page size is not yet initialized.");
+  return _page_size;
+}
+
 bool G1PageBasedVirtualSpace::is_after_last_page(size_t index) const {
   guarantee(index <= _committed.size(),
             "Given boundary page " SIZE_FORMAT " is beyond managed page count " SIZE_FORMAT, index, _committed.size());

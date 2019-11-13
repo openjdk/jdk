@@ -41,6 +41,7 @@
 #include "gc/g1/g1HRPrinter.hpp"
 #include "gc/g1/g1HeapRegionAttr.hpp"
 #include "gc/g1/g1MonitoringSupport.hpp"
+#include "gc/g1/g1NUMA.hpp"
 #include "gc/g1/g1RedirtyCardsQueue.hpp"
 #include "gc/g1/g1SurvivorRegions.hpp"
 #include "gc/g1/g1YCTypes.hpp"
@@ -190,6 +191,9 @@ private:
 
   // Callback for region mapping changed events.
   G1RegionMappingChangedListener _listener;
+
+  // Handle G1 NUMA support.
+  G1NUMA* _numa;
 
   // The sequence of all heap regions in the heap.
   HeapRegionManager* _hrm;
@@ -387,7 +391,10 @@ private:
   // attempt to expand the heap if necessary to satisfy the allocation
   // request. 'type' takes the type of region to be allocated. (Use constants
   // Old, Eden, Humongous, Survivor defined in HeapRegionType.)
-  HeapRegion* new_region(size_t word_size, HeapRegionType type, bool do_expand);
+  HeapRegion* new_region(size_t word_size,
+                         HeapRegionType type,
+                         bool do_expand,
+                         uint node_index = G1NUMA::AnyNodeIndex);
 
   // Initialize a contiguous set of free regions of length num_regions
   // and starting at index first so that they appear as a single
@@ -462,7 +469,7 @@ private:
   // These methods are the "callbacks" from the G1AllocRegion class.
 
   // For mutator alloc regions.
-  HeapRegion* new_mutator_alloc_region(size_t word_size, bool force);
+  HeapRegion* new_mutator_alloc_region(size_t word_size, bool force, uint node_index);
   void retire_mutator_alloc_region(HeapRegion* alloc_region,
                                    size_t allocated_bytes);
 
@@ -547,11 +554,14 @@ public:
 
   void resize_heap_if_necessary();
 
+  G1NUMA* numa() const { return _numa; }
+
   // Expand the garbage-first heap by at least the given size (in bytes!).
   // Returns true if the heap was expanded by the requested amount;
   // false otherwise.
   // (Rounds up to a HeapRegion boundary.)
   bool expand(size_t expand_bytes, WorkGang* pretouch_workers = NULL, double* expand_time_ms = NULL);
+  bool expand_single_region(uint node_index);
 
   // Returns the PLAB statistics for a given destination.
   inline G1EvacStats* alloc_buffer_stats(G1HeapRegionAttr dest);

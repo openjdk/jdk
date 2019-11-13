@@ -25,6 +25,7 @@
 #ifndef SHARE_GC_G1_HEAPREGIONSET_INLINE_HPP
 #define SHARE_GC_G1_HEAPREGIONSET_INLINE_HPP
 
+#include "gc/g1/g1NUMA.hpp"
 #include "gc/g1/heapRegionSet.hpp"
 
 inline void HeapRegionSetBase::add(HeapRegion* hr) {
@@ -145,6 +146,67 @@ inline HeapRegion* FreeRegionList::remove_region(bool from_head) {
   // remove() will verify the region and check mt safety.
   remove(hr);
   return hr;
+}
+
+inline HeapRegion* FreeRegionList::remove_region_with_node_index(bool from_head,
+                                                                 const uint requested_node_index,
+                                                                 uint* allocated_node_index) {
+  assert(UseNUMA, "Invariant");
+
+  const uint max_search_depth = G1NUMA::numa()->max_search_depth();
+  HeapRegion* cur;
+
+  // Find the region to use, searching from _head or _tail as requested.
+  size_t cur_depth = 0;
+  if (from_head) {
+    for (cur = _head;
+         cur != NULL && cur_depth < max_search_depth;
+         cur = cur->next(), ++cur_depth) {
+      if (requested_node_index == cur->node_index()) {
+        break;
+      }
+    }
+  } else {
+    for (cur = _tail;
+         cur != NULL && cur_depth < max_search_depth;
+         cur = cur->prev(), ++cur_depth) {
+      if (requested_node_index == cur->node_index()) {
+        break;
+      }
+    }
+  }
+
+  // Didn't find a region to use.
+  if (cur == NULL || cur_depth >= max_search_depth) {
+    return NULL;
+  }
+
+  // Splice the region out of the list.
+  HeapRegion* prev = cur->prev();
+  HeapRegion* next = cur->next();
+  if (prev == NULL) {
+    _head = next;
+  } else {
+    prev->set_next(next);
+  }
+  if (next == NULL) {
+    _tail = prev;
+  } else {
+    next->set_prev(prev);
+  }
+  cur->set_prev(NULL);
+  cur->set_next(NULL);
+
+  if (_last == cur) {
+    _last = NULL;
+  }
+
+  remove(cur);
+  if (allocated_node_index != NULL) {
+    *allocated_node_index = cur->node_index();
+  }
+
+  return cur;
 }
 
 #endif // SHARE_GC_G1_HEAPREGIONSET_INLINE_HPP

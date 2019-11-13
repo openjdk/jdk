@@ -3007,6 +3007,23 @@ int os::numa_get_group_id() {
   return 0;
 }
 
+int os::numa_get_group_id_for_address(const void* address) {
+#ifndef MPOL_F_NODE
+#define MPOL_F_NODE     (1<<0)  // Return next IL mode instead of node mask
+#endif
+
+#ifndef MPOL_F_ADDR
+#define MPOL_F_ADDR     (1<<1)  // Look up VMA using address
+#endif
+
+  int id = 0;
+
+  if (syscall(SYS_get_mempolicy, &id, NULL, 0, const_cast<void*>(address), MPOL_F_NODE | MPOL_F_ADDR) == -1) {
+    return -1;
+  }
+  return id;
+}
+
 int os::Linux::get_existing_num_nodes() {
   int node;
   int highest_node_number = Linux::numa_max_node();

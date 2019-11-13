@@ -28,6 +28,7 @@
 #include "gc/g1/g1EvacStats.inline.hpp"
 #include "gc/g1/g1EvacuationInfo.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
+#include "gc/g1/g1NUMA.hpp"
 #include "gc/g1/g1Policy.hpp"
 #include "gc/g1/heapRegion.inline.hpp"
 #include "gc/g1/heapRegionSet.inline.hpp"
@@ -36,22 +37,47 @@
 
 G1Allocator::G1Allocator(G1CollectedHeap* heap) :
   _g1h(heap),
+  _numa(heap->numa()),
   _survivor_is_full(false),
   _old_is_full(false),
-  _mutator_alloc_region(),
+  _num_alloc_regions(_numa->num_active_nodes()),
+  _mutator_alloc_regions(NULL),
   _survivor_gc_alloc_region(heap->alloc_buffer_stats(G1HeapRegionAttr::Young)),
   _old_gc_alloc_region(heap->alloc_buffer_stats(G1HeapRegionAttr::Old)),
   _retained_old_gc_alloc_region(NULL) {
+
+  _mutator_alloc_regions = NEW_C_HEAP_ARRAY(MutatorAllocRegion, _num_alloc_regions, mtGC);
+  for (uint i = 0; i < _num_alloc_regions; i++) {
+    ::new(_mutator_alloc_regions + i) MutatorAllocRegion(i);
+  }
 }
 
-void G1Allocator::init_mutator_alloc_region() {
-  assert(_mutator_alloc_region.get() == NULL, "pre-condition");
-  _mutator_alloc_region.init();
+G1Allocator::~G1Allocator() {
+  for (uint i = 0; i < _num_alloc_regions; i++) {
+    _mutator_alloc_regions[i].~MutatorAllocRegion();
+  }
+  FREE_C_HEAP_ARRAY(MutatorAllocRegion, _mutator_alloc_regions);
 }
 
-void G1Allocator::release_mutator_alloc_region() {
-  _mutator_alloc_region.release();
-  assert(_mutator_alloc_region.get() == NULL, "post-condition");
+#ifdef ASSERT
+bool G1Allocator::has_mutator_alloc_region() {
+  uint node_index = current_node_index();
+  return mutator_alloc_region(node_index)->get() != NULL;
+}
+#endif
+
+void G1Allocator::init_mutator_alloc_regions() {
+  for (uint i = 0; i < _num_alloc_regions; i++) {
+    assert(mutator_alloc_region(i)->get() == NULL, "pre-condition");
+    mutator_alloc_region(i)->init();
+  }
+}
+
+void G1Allocator::release_mutator_alloc_regions() {
+  for (uint i = 0; i < _num_alloc_regions; i++) {
+    mutator_alloc_region(i)->release();
+    assert(mutator_alloc_region(i)->get() == NULL, "post-condition");
+  }
 }
 
 bool G1Allocator::is_retained_old_region(HeapRegion* hr) {
@@ -146,7 +172,8 @@ size_t G1Allocator::unsafe_max_tlab_alloc() {
   // since we can't allow tlabs to grow big enough to accommodate
   // humongous objects.
 
-  HeapRegion* hr = mutator_alloc_region()->get();
+  uint node_index = current_node_index();
+  HeapRegion* hr = mutator_alloc_region(node_index)->get();
   size_t max_tlab = _g1h->max_tlab_size() * wordSize;
   if (hr == NULL) {
     return max_tlab;
@@ -157,7 +184,11 @@ size_t G1Allocator::unsafe_max_tlab_alloc() {
 
 size_t G1Allocator::used_in_alloc_regions() {
   assert(Heap_lock->owner() != NULL, "Should be owned on this thread's behalf.");
-  return mutator_alloc_region()->used_in_alloc_regions();
+  size_t used = 0;
+  for (uint i = 0; i < _num_alloc_regions; i++) {
+    used += mutator_alloc_region(i)->used_in_alloc_regions();
+  }
+  return used;
 }
 
 

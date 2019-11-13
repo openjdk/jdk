@@ -30,8 +30,13 @@
 #include "gc/shared/plab.inline.hpp"
 #include "memory/universe.hpp"
 
-inline MutatorAllocRegion* G1Allocator::mutator_alloc_region() {
-  return &_mutator_alloc_region;
+inline uint G1Allocator::current_node_index() const {
+  return _numa->index_of_current_thread();
+}
+
+inline MutatorAllocRegion* G1Allocator::mutator_alloc_region(uint node_index) {
+  assert(node_index < _num_alloc_regions, "Invalid index: %u", node_index);
+  return &_mutator_alloc_regions[node_index];
 }
 
 inline SurvivorGCAllocRegion* G1Allocator::survivor_gc_alloc_region() {
@@ -45,22 +50,25 @@ inline OldGCAllocRegion* G1Allocator::old_gc_alloc_region() {
 inline HeapWord* G1Allocator::attempt_allocation(size_t min_word_size,
                                                  size_t desired_word_size,
                                                  size_t* actual_word_size) {
-  HeapWord* result = mutator_alloc_region()->attempt_retained_allocation(min_word_size, desired_word_size, actual_word_size);
+  uint node_index = current_node_index();
+  HeapWord* result = mutator_alloc_region(node_index)->attempt_retained_allocation(min_word_size, desired_word_size, actual_word_size);
   if (result != NULL) {
     return result;
   }
-  return mutator_alloc_region()->attempt_allocation(min_word_size, desired_word_size, actual_word_size);
+  return mutator_alloc_region(node_index)->attempt_allocation(min_word_size, desired_word_size, actual_word_size);
 }
 
 inline HeapWord* G1Allocator::attempt_allocation_locked(size_t word_size) {
-  HeapWord* result = mutator_alloc_region()->attempt_allocation_locked(word_size);
-  assert(result != NULL || mutator_alloc_region()->get() == NULL,
-         "Must not have a mutator alloc region if there is no memory, but is " PTR_FORMAT, p2i(mutator_alloc_region()->get()));
+  uint node_index = current_node_index();
+  HeapWord* result = mutator_alloc_region(node_index)->attempt_allocation_locked(word_size);
+  assert(result != NULL || mutator_alloc_region(node_index)->get() == NULL,
+         "Must not have a mutator alloc region if there is no memory, but is " PTR_FORMAT, p2i(mutator_alloc_region(node_index)->get()));
   return result;
 }
 
 inline HeapWord* G1Allocator::attempt_allocation_force(size_t word_size) {
-  return mutator_alloc_region()->attempt_allocation_force(word_size);
+  uint node_index = current_node_index();
+  return mutator_alloc_region(node_index)->attempt_allocation_force(word_size);
 }
 
 inline PLAB* G1PLABAllocator::alloc_buffer(G1HeapRegionAttr dest) {

@@ -28,6 +28,7 @@
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectionSet.hpp"
 #include "gc/g1/g1HeapRegionTraceType.hpp"
+#include "gc/g1/g1NUMA.hpp"
 #include "gc/g1/g1OopClosures.inline.hpp"
 #include "gc/g1/heapRegion.inline.hpp"
 #include "gc/g1/heapRegionBounds.inline.hpp"
@@ -252,7 +253,8 @@ HeapRegion::HeapRegion(uint hrm_index,
   _index_in_opt_cset(InvalidCSetIndex), _young_index_in_cset(-1),
   _surv_rate_group(NULL), _age_index(-1),
   _prev_top_at_mark_start(NULL), _next_top_at_mark_start(NULL),
-  _recorded_rs_length(0), _predicted_elapsed_time_ms(0)
+  _recorded_rs_length(0), _predicted_elapsed_time_ms(0),
+  _node_index(G1NUMA::UnknownNodeIndex)
 {
   _rem_set = new HeapRegionRemSet(bot, this);
 
@@ -470,8 +472,17 @@ void HeapRegion::print_on(outputStream* st) const {
   } else {
     st->print("|  ");
   }
-  st->print_cr("|TAMS " PTR_FORMAT ", " PTR_FORMAT "| %s ",
+  st->print("|TAMS " PTR_FORMAT ", " PTR_FORMAT "| %s ",
                p2i(prev_top_at_mark_start()), p2i(next_top_at_mark_start()), rem_set()->get_state_str());
+  if (UseNUMA) {
+    G1NUMA* numa = G1NUMA::numa();
+    if (node_index() < numa->num_active_nodes()) {
+      st->print("|%02d", numa->numa_id(node_index()));
+    } else {
+      st->print("|--");
+    }
+  }
+  st->print_cr("");
 }
 
 class G1VerificationClosure : public BasicOopIterateClosure {
