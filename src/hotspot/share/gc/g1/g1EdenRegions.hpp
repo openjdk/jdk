@@ -25,6 +25,7 @@
 #ifndef SHARE_GC_G1_G1EDENREGIONS_HPP
 #define SHARE_GC_G1_G1EDENREGIONS_HPP
 
+#include "gc/g1/g1RegionsOnNodes.hpp"
 #include "gc/g1/heapRegion.hpp"
 #include "runtime/globals.hpp"
 #include "utilities/debug.hpp"
@@ -35,18 +36,25 @@ private:
   // Sum of used bytes from all retired eden regions.
   // I.e. updated when mutator regions are retired.
   volatile size_t _used_bytes;
+  G1RegionsOnNodes  _regions_on_node;
 
 public:
-  G1EdenRegions() : _length(0), _used_bytes(0) { }
+  G1EdenRegions() : _length(0), _used_bytes(0), _regions_on_node() { }
 
-  void add(HeapRegion* hr) {
+  virtual uint add(HeapRegion* hr) {
     assert(!hr->is_eden(), "should not already be set");
     _length++;
+    return _regions_on_node.add(hr);
   }
 
-  void clear() { _length = 0; _used_bytes = 0; }
+  void clear() {
+    _length = 0;
+    _used_bytes = 0;
+    _regions_on_node.clear();
+  }
 
   uint length() const { return _length; }
+  uint regions_on_node(uint node_index) const { return _regions_on_node.count(node_index); }
 
   size_t used_bytes() const { return _used_bytes; }
 

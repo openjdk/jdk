@@ -530,6 +530,9 @@ private:
   // Merges the information gathered on a per-thread basis for all worker threads
   // during GC into global variables.
   void merge_per_thread_state_info(G1ParScanThreadStateSet* per_thread_states);
+
+  void verify_numa_regions(const char* desc);
+
 public:
   G1YoungRemSetSamplingThread* sampling_thread() const { return _young_gen_sampling_thread; }
 
@@ -1284,7 +1287,9 @@ public:
   const G1SurvivorRegions* survivor() const { return &_survivor; }
 
   uint eden_regions_count() const { return _eden.length(); }
+  uint eden_regions_count(uint node_index) const { return _eden.regions_on_node(node_index); }
   uint survivor_regions_count() const { return _survivor.length(); }
+  uint survivor_regions_count(uint node_index) const { return _survivor.regions_on_node(node_index); }
   size_t eden_regions_used_bytes() const { return _eden.used_bytes(); }
   size_t survivor_regions_used_bytes() const { return _survivor.used_bytes(); }
   uint young_regions_count() const { return _eden.length() + _survivor.length(); }

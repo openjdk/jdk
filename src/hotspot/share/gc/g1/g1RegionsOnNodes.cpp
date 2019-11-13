@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,39 +22,38 @@
  *
  */
 
-#ifndef SHARE_GC_G1_G1HEAPTRANSITION_HPP
-#define SHARE_GC_G1_G1HEAPTRANSITION_HPP
+#include "precompiled.hpp"
+#include "gc/g1/g1NUMA.hpp"
+#include "gc/g1/g1RegionsOnNodes.hpp"
+#include "gc/g1/heapRegion.hpp"
 
-#include "gc/shared/plab.hpp"
-#include "memory/metaspace/metaspaceSizesSnapshot.hpp"
+G1RegionsOnNodes::G1RegionsOnNodes() : _count_per_node(NULL), _numa(G1NUMA::numa()) {
+  _count_per_node = NEW_C_HEAP_ARRAY(uint, _numa->num_active_nodes(), mtGC);
+  clear();
+}
 
-class G1CollectedHeap;
+G1RegionsOnNodes::~G1RegionsOnNodes() {
+  FREE_C_HEAP_ARRAY(uint, _count_per_node);
+}
 
-class G1HeapTransition {
-  struct Data {
-    size_t _eden_length;
-    size_t _survivor_length;
-    size_t _old_length;
-    size_t _archive_length;
-    size_t _humongous_length;
-    const metaspace::MetaspaceSizesSnapshot _meta_sizes;
+uint G1RegionsOnNodes::add(HeapRegion* hr) {
+  uint node_index = hr->node_index();
 
-    // Only includes current eden regions.
-    uint* _eden_length_per_node;
-    // Only includes current survivor regions.
-    uint* _survivor_length_per_node;
+  // Update only if the node index is valid.
+  if (node_index < _numa->num_active_nodes()) {
+    *(_count_per_node + node_index) += 1;
+    return node_index;
+  }
 
-    Data(G1CollectedHeap* g1_heap);
-    ~Data();
-  };
+  return G1NUMA::UnknownNodeIndex;
+}
 
-  G1CollectedHeap* _g1_heap;
-  Data _before;
+void G1RegionsOnNodes::clear() {
+  for (uint i = 0; i < _numa->num_active_nodes(); i++) {
+    _count_per_node[i] = 0;
+  }
+}
 
-public:
-  G1HeapTransition(G1CollectedHeap* g1_heap);
-
-  void print();
-};
-
-#endif // SHARE_GC_G1_G1HEAPTRANSITION_HPP
+uint G1RegionsOnNodes::count(uint node_index) const {
+  return _count_per_node[node_index];
+}

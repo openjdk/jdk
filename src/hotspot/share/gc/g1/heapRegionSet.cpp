@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
+#include "gc/g1/g1NUMA.hpp"
 #include "gc/g1/heapRegionRemSet.hpp"
 #include "gc/g1/heapRegionSet.inline.hpp"
 
@@ -101,6 +102,9 @@ void FreeRegionList::remove_all() {
     curr->set_next(NULL);
     curr->set_prev(NULL);
     curr->set_containing_set(NULL);
+
+    decrease_length(curr->node_index());
+
     curr = next;
   }
   clear();
@@ -117,6 +121,10 @@ void FreeRegionList::add_ordered(FreeRegionList* from_list) {
 
   if (from_list->is_empty()) {
     return;
+  }
+
+  if (_node_info != NULL && from_list->_node_info != NULL) {
+    _node_info->add(from_list->_node_info);
   }
 
   #ifdef ASSERT
@@ -220,6 +228,9 @@ void FreeRegionList::remove_starting_at(HeapRegion* first, uint num_regions) {
     remove(curr);
 
     count++;
+
+    decrease_length(curr->node_index());
+
     curr = next;
   }
 
@@ -267,6 +278,10 @@ void FreeRegionList::clear() {
   _head = NULL;
   _tail = NULL;
   _last = NULL;
+
+  if (_node_info!= NULL) {
+    _node_info->clear();
+  }
 }
 
 void FreeRegionList::verify_list() {
@@ -303,3 +318,41 @@ void FreeRegionList::verify_list() {
   guarantee(_tail == NULL || _tail->next() == NULL, "_tail should not have a next");
   guarantee(length() == count, "%s count mismatch. Expected %u, actual %u.", name(), length(), count);
 }
+
+
+FreeRegionList::FreeRegionList(const char* name, HeapRegionSetChecker* checker):
+  HeapRegionSetBase(name, checker),
+  _node_info(G1NUMA::numa()->is_enabled() ? new NodeInfo() : NULL) {
+
+  clear();
+}
+
+FreeRegionList::~FreeRegionList() {
+  if (_node_info != NULL) {
+    delete _node_info;
+  }
+}
+
+FreeRegionList::NodeInfo::NodeInfo() : _numa(G1NUMA::numa()), _length_of_node(NULL),
+                                       _num_nodes(_numa->num_active_nodes()) {
+  assert(UseNUMA, "Invariant");
+
+  _length_of_node = NEW_C_HEAP_ARRAY(uint, _num_nodes, mtGC);
+}
+
+FreeRegionList::NodeInfo::~NodeInfo() {
+  FREE_C_HEAP_ARRAY(uint, _length_of_node);
+}
+
+void FreeRegionList::NodeInfo::clear() {
+  for (uint i = 0; i < _num_nodes; ++i) {
+    _length_of_node[i] = 0;
+  }
+}
+
+void FreeRegionList::NodeInfo::add(NodeInfo* info) {
+  for (uint i = 0; i < _num_nodes; ++i) {
+    _length_of_node[i] += info->_length_of_node[i];
+  }
+}
+

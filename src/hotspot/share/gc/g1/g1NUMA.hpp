@@ -25,10 +25,12 @@
 #ifndef SHARE_VM_GC_G1_NUMA_HPP
 #define SHARE_VM_GC_G1_NUMA_HPP
 
+#include "gc/g1/g1NUMAStats.hpp"
+#include "gc/g1/heapRegion.hpp"
 #include "memory/allocation.hpp"
 #include "runtime/os.hpp"
 
-class HeapRegion;
+class LogStream;
 
 class G1NUMA: public CHeapObj<mtGC> {
   // Mapping of available node ids to  0-based index which can be used for
@@ -48,6 +50,9 @@ class G1NUMA: public CHeapObj<mtGC> {
   size_t _region_size;
   // Necessary when touching memory.
   size_t _page_size;
+
+  // Stores statistic data.
+  G1NUMAStats* _stats;
 
   size_t region_size() const;
   size_t page_size() const;
@@ -113,6 +118,35 @@ public:
   // Returns maximum search depth which is used to limit heap region search iterations.
   // The number of active nodes, page size and heap region size are considered.
   uint max_search_depth() const;
+
+  // Update the given phase of requested and allocated node index.
+  void update_statistics(G1NUMAStats::NodeDataItems phase, uint requested_node_index, uint allocated_node_index);
+
+  // Copy all allocated statistics of the given phase and requested node.
+  // Precondition: allocated_stat should have same length of active nodes.
+  void copy_statistics(G1NUMAStats::NodeDataItems phase, uint requested_node_index, size_t* allocated_stat);
+
+  // Print all statistics.
+  void print_statistics() const;
+};
+
+class G1NodeIndexCheckClosure : public HeapRegionClosure {
+  const char* _desc;
+  G1NUMA* _numa;
+  // Records matched count of each node.
+  uint* _matched;
+  // Records mismatched count of each node.
+  uint* _mismatched;
+  // Records total count of each node.
+  // Total = matched + mismatched + unknown.
+  uint* _total;
+  LogStream* _ls;
+
+public:
+  G1NodeIndexCheckClosure(const char* desc, G1NUMA* numa, LogStream* ls);
+  ~G1NodeIndexCheckClosure();
+
+  bool do_heap_region(HeapRegion* hr);
 };
 
 #endif // SHARE_VM_GC_G1_NUMA_HPP

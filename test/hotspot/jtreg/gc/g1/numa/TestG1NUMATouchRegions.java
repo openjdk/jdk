@@ -111,8 +111,8 @@ public class TestG1NUMATouchRegions {
     //    Each 'int' represents a numa id of single HeapRegion (bottom page).
     //    e.g. 1MB heap region, 2MB page size and 2 NUMA nodes system
     //         Check the first set(2 regions)
-    //         0| ...omitted..| 00
-    //         1| ...omitted..| 01
+    //         0| ...omitted..| 0
+    //         1| ...omitted..| 1
     static void checkCase1Pattern(OutputAnalyzer output, int index, long g1HeapRegionSize, long actualPageSize, int[] memoryNodeIds) throws Exception {
         StringBuilder sb = new StringBuilder();
 
@@ -121,7 +121,7 @@ public class TestG1NUMATouchRegions {
         sb.append("| .* | ");
 
         // Append page node id.
-        sb.append(String.format("%02d", memoryNodeIds[index]));
+        sb.append(memoryNodeIds[index]);
 
         output.shouldMatch(sb.toString());
     }
@@ -132,10 +132,10 @@ public class TestG1NUMATouchRegions {
     //    printed multiple times for same numa id.
     //    e.g. 1MB heap region, 2MB page size and 2 NUMA nodes system
     //         Check the first set(4 regions)
-    //         0| ...omitted..| 00
-    //         1| ...omitted..| 00
-    //         2| ...omitted..| 01
-    //         3| ...omitted..| 01
+    //         0| ...omitted..| 0
+    //         1| ...omitted..| 0
+    //         2| ...omitted..| 1
+    //         3| ...omitted..| 1
     static void checkCase2Pattern(OutputAnalyzer output, int index, long g1HeapRegionSize, long actualPageSize, int[] memoryNodeIds) throws Exception {
         StringBuilder sb = new StringBuilder();
 
@@ -147,7 +147,7 @@ public class TestG1NUMATouchRegions {
             sb.append("| .* | ");
 
             // Append page node id.
-            sb.append(String.format("%02d", memoryNodeIds[index]));
+            sb.append(memoryNodeIds[index]);
 
             output.shouldMatch(sb.toString());
             sb.setLength(0);

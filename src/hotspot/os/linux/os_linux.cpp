@@ -3008,17 +3008,13 @@ int os::numa_get_group_id() {
 }
 
 int os::numa_get_group_id_for_address(const void* address) {
-#ifndef MPOL_F_NODE
-#define MPOL_F_NODE     (1<<0)  // Return next IL mode instead of node mask
-#endif
+  void** pages = const_cast<void**>(&address);
+  int id = -1;
 
-#ifndef MPOL_F_ADDR
-#define MPOL_F_ADDR     (1<<1)  // Look up VMA using address
-#endif
-
-  int id = 0;
-
-  if (syscall(SYS_get_mempolicy, &id, NULL, 0, const_cast<void*>(address), MPOL_F_NODE | MPOL_F_ADDR) == -1) {
+  if (os::Linux::numa_move_pages(0, 1, pages, NULL, &id, 0) == -1) {
+    return -1;
+  }
+  if (id < 0) {
     return -1;
   }
   return id;
@@ -3152,6 +3148,8 @@ bool os::Linux::libnuma_init() {
                                           libnuma_v2_dlsym(handle, "numa_get_membind")));
       set_numa_get_interleave_mask(CAST_TO_FN_PTR(numa_get_interleave_mask_func_t,
                                                   libnuma_v2_dlsym(handle, "numa_get_interleave_mask")));
+      set_numa_move_pages(CAST_TO_FN_PTR(numa_move_pages_func_t,
+                                         libnuma_dlsym(handle, "numa_move_pages")));
 
       if (numa_available() != -1) {
         set_numa_all_nodes((unsigned long*)libnuma_dlsym(handle, "numa_all_nodes"));
@@ -3286,6 +3284,7 @@ os::Linux::numa_bitmask_isbitset_func_t os::Linux::_numa_bitmask_isbitset;
 os::Linux::numa_distance_func_t os::Linux::_numa_distance;
 os::Linux::numa_get_membind_func_t os::Linux::_numa_get_membind;
 os::Linux::numa_get_interleave_mask_func_t os::Linux::_numa_get_interleave_mask;
+os::Linux::numa_move_pages_func_t os::Linux::_numa_move_pages;
 os::Linux::NumaAllocationPolicy os::Linux::_current_numa_policy;
 unsigned long* os::Linux::_numa_all_nodes;
 struct bitmask* os::Linux::_numa_all_nodes_ptr;

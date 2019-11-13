@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,39 +22,30 @@
  *
  */
 
-#ifndef SHARE_GC_G1_G1HEAPTRANSITION_HPP
-#define SHARE_GC_G1_G1HEAPTRANSITION_HPP
+#ifndef SHARE_VM_GC_G1_G1REGIONS_HPP
+#define SHARE_VM_GC_G1_G1REGIONS_HPP
 
-#include "gc/shared/plab.hpp"
-#include "memory/metaspace/metaspaceSizesSnapshot.hpp"
+#include "memory/allocation.hpp"
 
-class G1CollectedHeap;
+class G1NUMA;
+class HeapRegion;
 
-class G1HeapTransition {
-  struct Data {
-    size_t _eden_length;
-    size_t _survivor_length;
-    size_t _old_length;
-    size_t _archive_length;
-    size_t _humongous_length;
-    const metaspace::MetaspaceSizesSnapshot _meta_sizes;
-
-    // Only includes current eden regions.
-    uint* _eden_length_per_node;
-    // Only includes current survivor regions.
-    uint* _survivor_length_per_node;
-
-    Data(G1CollectedHeap* g1_heap);
-    ~Data();
-  };
-
-  G1CollectedHeap* _g1_heap;
-  Data _before;
+// Contains per node index region count
+class G1RegionsOnNodes : public StackObj {
+  volatile uint* _count_per_node;
+  G1NUMA*        _numa;
 
 public:
-  G1HeapTransition(G1CollectedHeap* g1_heap);
+  G1RegionsOnNodes();
 
-  void print();
+  ~G1RegionsOnNodes();
+
+  // Increase _count_per_node for the node of given heap region and returns node index.
+  uint add(HeapRegion* hr);
+
+  void clear();
+
+  uint count(uint node_index) const;
 };
 
-#endif // SHARE_GC_G1_G1HEAPTRANSITION_HPP
+#endif // SHARE_VM_GC_G1_G1REGIONS_HPP

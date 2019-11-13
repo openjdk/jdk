@@ -2389,6 +2389,15 @@ void G1CollectedHeap::print_on(outputStream* st) const {
   st->print("%u survivors (" SIZE_FORMAT "K)", survivor_regions,
             (size_t) survivor_regions * HeapRegion::GrainBytes / K);
   st->cr();
+  if (_numa->is_enabled()) {
+    uint num_nodes = _numa->num_active_nodes();
+    st->print("  remaining free region(s) on each NUMA node: ");
+    const int* node_ids = _numa->node_ids();
+    for (uint node_index = 0; node_index < num_nodes; node_index++) {
+      st->print("%d=%u ", node_ids[node_index], _hrm->num_free_regions(node_index));
+    }
+    st->cr();
+  }
   MetaspaceUtils::print_on(st);
 }
 
@@ -2578,6 +2587,20 @@ void G1CollectedHeap::gc_epilogue(bool full) {
   // We have just completed a GC. Update the soft reference
   // policy with the new heap occupancy
   Universe::update_heap_info_at_gc();
+
+  // Print NUMA statistics.
+  _numa->print_statistics();
+}
+
+void G1CollectedHeap::verify_numa_regions(const char* desc) {
+  LogTarget(Trace, gc, heap, verify) lt;
+
+  if (lt.is_enabled()) {
+    LogStream ls(lt);
+    // Iterate all heap regions to print matching between preferred numa id and actual numa id.
+    G1NodeIndexCheckClosure cl(desc, _numa, &ls);
+    heap_region_iterate(&cl);
+  }
 }
 
 HeapWord* G1CollectedHeap::do_collection_pause(size_t word_size,
@@ -2887,6 +2910,7 @@ void G1CollectedHeap::verify_before_young_collection(G1HeapVerifier::G1VerifyTyp
   }
   _verifier->verify_before_gc(type);
   _verifier->check_bitmaps("GC Start");
+  verify_numa_regions("GC Start");
 }
 
 void G1CollectedHeap::verify_after_young_collection(G1HeapVerifier::G1VerifyType type) {
@@ -2897,6 +2921,7 @@ void G1CollectedHeap::verify_after_young_collection(G1HeapVerifier::G1VerifyType
   }
   _verifier->verify_after_gc(type);
   _verifier->check_bitmaps("GC End");
+  verify_numa_regions("GC End");
 }
 
 void G1CollectedHeap::expand_heap_after_young_collection(){

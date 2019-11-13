@@ -95,6 +95,8 @@ inline void FreeRegionList::add_ordered(HeapRegion* hr) {
     _head = hr;
   }
   _last = hr;
+
+  increase_length(hr->node_index());
 }
 
 inline HeapRegion* FreeRegionList::remove_from_head_impl() {
@@ -145,12 +147,14 @@ inline HeapRegion* FreeRegionList::remove_region(bool from_head) {
 
   // remove() will verify the region and check mt safety.
   remove(hr);
+
+  decrease_length(hr->node_index());
+
   return hr;
 }
 
 inline HeapRegion* FreeRegionList::remove_region_with_node_index(bool from_head,
-                                                                 const uint requested_node_index,
-                                                                 uint* allocated_node_index) {
+                                                                 uint requested_node_index) {
   assert(UseNUMA, "Invariant");
 
   const uint max_search_depth = G1NUMA::numa()->max_search_depth();
@@ -202,11 +206,48 @@ inline HeapRegion* FreeRegionList::remove_region_with_node_index(bool from_head,
   }
 
   remove(cur);
-  if (allocated_node_index != NULL) {
-    *allocated_node_index = cur->node_index();
-  }
+  decrease_length(cur->node_index());
 
   return cur;
+}
+
+inline void FreeRegionList::NodeInfo::increase_length(uint node_index) {
+  if (node_index < _num_nodes) {
+    _length_of_node[node_index] += 1;
+  }
+}
+
+inline void FreeRegionList::NodeInfo::decrease_length(uint node_index) {
+  if (node_index < _num_nodes) {
+    assert(_length_of_node[node_index] > 0,
+           "Current length %u should be greater than zero for node %u",
+           _length_of_node[node_index], node_index);
+    _length_of_node[node_index] -= 1;
+  }
+}
+
+inline uint FreeRegionList::NodeInfo::length(uint node_index) const {
+  return _length_of_node[node_index];
+}
+
+inline void FreeRegionList::increase_length(uint node_index) {
+  if (_node_info != NULL) {
+    return _node_info->increase_length(node_index);
+  }
+}
+
+inline void FreeRegionList::decrease_length(uint node_index) {
+  if (_node_info != NULL) {
+    return _node_info->decrease_length(node_index);
+  }
+}
+
+inline uint FreeRegionList::length(uint node_index) const {
+  if (_node_info != NULL) {
+    return _node_info->length(node_index);
+  } else {
+    return 0;
+  }
 }
 
 #endif // SHARE_GC_G1_HEAPREGIONSET_INLINE_HPP

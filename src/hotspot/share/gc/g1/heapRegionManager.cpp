@@ -26,6 +26,7 @@
 #include "gc/g1/g1Arguments.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1ConcurrentRefine.hpp"
+#include "gc/g1/g1NUMAStats.hpp"
 #include "gc/g1/heapRegion.hpp"
 #include "gc/g1/heapRegionManager.inline.hpp"
 #include "gc/g1/heapRegionSet.inline.hpp"
@@ -107,10 +108,11 @@ bool HeapRegionManager::is_available(uint region) const {
 HeapRegion* HeapRegionManager::allocate_free_region(HeapRegionType type, uint requested_node_index) {
   HeapRegion* hr = NULL;
   bool from_head = !type.is_young();
+  G1NUMA* numa = G1NUMA::numa();
 
-  if (requested_node_index != G1NUMA::AnyNodeIndex && G1NUMA::numa()->is_enabled()) {
+  if (requested_node_index != G1NUMA::AnyNodeIndex && numa->is_enabled()) {
     // Try to allocate with requested node index.
-    hr = _free_list.remove_region_with_node_index(from_head, requested_node_index, NULL);
+    hr = _free_list.remove_region_with_node_index(from_head, requested_node_index);
   }
 
   if (hr == NULL) {
@@ -122,6 +124,10 @@ HeapRegion* HeapRegionManager::allocate_free_region(HeapRegionType type, uint re
   if (hr != NULL) {
     assert(hr->next() == NULL, "Single region should not have next");
     assert(is_available(hr->hrm_index()), "Must be committed");
+
+    if (numa->is_enabled() && hr->node_index() < numa->num_active_nodes()) {
+      numa->update_statistics(G1NUMAStats::NewRegionAlloc, requested_node_index, hr->node_index());
+    }
   }
 
   return hr;

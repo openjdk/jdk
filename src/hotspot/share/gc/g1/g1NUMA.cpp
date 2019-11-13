@@ -24,8 +24,7 @@
 
 #include "precompiled.hpp"
 #include "gc/g1/g1NUMA.hpp"
-#include "gc/g1/heapRegion.hpp"
-#include "logging/log.hpp"
+#include "logging/logStream.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/os.hpp"
 
@@ -74,7 +73,7 @@ uint G1NUMA::index_of_node_id(int node_id) const {
 G1NUMA::G1NUMA() :
   _node_id_to_index_map(NULL), _len_node_id_to_index_map(0),
   _node_ids(NULL), _num_active_node_ids(0),
-  _region_size(0), _page_size(0) {
+  _region_size(0), _page_size(0), _stats(NULL) {
 }
 
 void G1NUMA::initialize_without_numa() {
@@ -119,9 +118,12 @@ void G1NUMA::initialize(bool use_numa) {
   for (uint i = 0; i < _num_active_node_ids; i++) {
     _node_id_to_index_map[_node_ids[i]] = i;
   }
+
+  _stats = new G1NUMAStats(_node_ids, _num_active_node_ids);
 }
 
 G1NUMA::~G1NUMA() {
+  delete _stats;
   FREE_C_HEAP_ARRAY(int, _node_id_to_index_map);
   FREE_C_HEAP_ARRAY(int, _node_ids);
 }
@@ -215,7 +217,7 @@ void G1NUMA::request_memory_on_node(void* aligned_address, size_t size_in_bytes,
   assert(is_aligned(aligned_address, page_size()), "Given address (" PTR_FORMAT ") should be aligned.", p2i(aligned_address));
   assert(is_aligned(size_in_bytes, page_size()), "Given size (" SIZE_FORMAT ") should be aligned.", size_in_bytes);
 
-  log_debug(gc, heap, numa)("Request memory [" PTR_FORMAT ", " PTR_FORMAT ") to be numa id (%d).",
+  log_trace(gc, heap, numa)("Request memory [" PTR_FORMAT ", " PTR_FORMAT ") to be NUMA id (%d)",
                             p2i(aligned_address), p2i((char*)aligned_address + size_in_bytes), _node_ids[node_index]);
   os::numa_make_local((char*)aligned_address, size_in_bytes, _node_ids[node_index]);
 }
@@ -224,4 +226,80 @@ uint G1NUMA::max_search_depth() const {
   // Multiple of 3 is just random number to limit iterations.
   // There would be some cases that 1 page may be consisted of multiple HeapRegions.
   return 3 * MAX2((uint)(page_size() / region_size()), (uint)1) * num_active_nodes();
+}
+
+void G1NUMA::update_statistics(G1NUMAStats::NodeDataItems phase,
+                               uint requested_node_index,
+                               uint allocated_node_index) {
+  if (_stats == NULL) {
+    return;
+  }
+
+  uint converted_req_index;
+  if(requested_node_index < _num_active_node_ids) {
+    converted_req_index = requested_node_index;
+  } else {
+    assert(requested_node_index == AnyNodeIndex,
+           "Requested node index %u should be AnyNodeIndex.", requested_node_index);
+    converted_req_index = _num_active_node_ids;
+  }
+  _stats->update(phase, converted_req_index, allocated_node_index);
+}
+
+void G1NUMA::copy_statistics(G1NUMAStats::NodeDataItems phase,
+                             uint requested_node_index,
+                             size_t* allocated_stat) {
+  if (_stats == NULL) {
+    return;
+  }
+
+  _stats->copy(phase, requested_node_index, allocated_stat);
+}
+
+void G1NUMA::print_statistics() const {
+  if (_stats == NULL) {
+    return;
+  }
+
+  _stats->print_statistics();
+}
+
+G1NodeIndexCheckClosure::G1NodeIndexCheckClosure(const char* desc, G1NUMA* numa, LogStream* ls) :
+  _desc(desc), _numa(numa), _ls(ls) {
+
+  uint num_nodes = _numa->num_active_nodes();
+  _matched = NEW_C_HEAP_ARRAY(uint, num_nodes, mtGC);
+  _mismatched = NEW_C_HEAP_ARRAY(uint, num_nodes, mtGC);
+  _total = NEW_C_HEAP_ARRAY(uint, num_nodes, mtGC);
+  memset(_matched, 0, sizeof(uint) * num_nodes);
+  memset(_mismatched, 0, sizeof(uint) * num_nodes);
+  memset(_total, 0, sizeof(uint) * num_nodes);
+}
+
+G1NodeIndexCheckClosure::~G1NodeIndexCheckClosure() {
+  _ls->print("%s: NUMA region verification (id: matched/mismatched/total): ", _desc);
+  const int* numa_ids = _numa->node_ids();
+  for (uint i = 0; i < _numa->num_active_nodes(); i++) {
+    _ls->print("%d: %u/%u/%u ", numa_ids[i], _matched[i], _mismatched[i], _total[i]);
+  }
+
+  FREE_C_HEAP_ARRAY(uint, _matched);
+  FREE_C_HEAP_ARRAY(uint, _mismatched);
+  FREE_C_HEAP_ARRAY(uint, _total);
+}
+
+bool G1NodeIndexCheckClosure::do_heap_region(HeapRegion* hr) {
+  // Preferred node index will only have valid node index.
+  uint preferred_node_index = _numa->preferred_node_index_for_index(hr->hrm_index());
+  // Active node index may have UnknownNodeIndex.
+  uint active_node_index = _numa->index_of_address(hr->bottom());
+
+  if (preferred_node_index == active_node_index) {
+    _matched[preferred_node_index]++;
+  } else if (active_node_index != G1NUMA::UnknownNodeIndex) {
+    _mismatched[preferred_node_index]++;
+  }
+  _total[preferred_node_index]++;
+
+  return false;
 }
