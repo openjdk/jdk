@@ -84,7 +84,7 @@ public enum Source {
     /** 1.11 local-variable syntax for lambda parameters */
     JDK11("11"),
 
-    /** 12, no language features; switch expression were in preview */
+    /** 12, no language features; switch expression in preview */
     JDK12("12"),
 
     /**
@@ -94,8 +94,7 @@ public enum Source {
     JDK13("13"),
 
     /**
-     * 14 covers the to be determined language features that will be
-     * added in JDK 14.
+     * 14, switch expressions
      */
     JDK14("14");
 
