@@ -45,29 +45,39 @@ public:
     _gc_succeeded(false) { }
   virtual VMOp_Type type() const { return VMOp_G1CollectFull; }
   virtual void doit();
-  bool gc_succeeded() { return _gc_succeeded; }
+  bool gc_succeeded() const { return _gc_succeeded; }
+};
+
+class VM_G1TryInitiateConcMark : public VM_GC_Operation {
+  double _target_pause_time_ms;
+  bool _transient_failure;
+  bool _cycle_already_in_progress;
+  bool _gc_succeeded;
+
+public:
+  VM_G1TryInitiateConcMark(uint gc_count_before,
+                           GCCause::Cause gc_cause,
+                           double target_pause_time_ms);
+  virtual VMOp_Type type() const { return VMOp_G1TryInitiateConcMark; }
+  virtual bool doit_prologue();
+  virtual void doit();
+  bool transient_failure() const { return _transient_failure; }
+  bool cycle_already_in_progress() const { return _cycle_already_in_progress; }
+  bool gc_succeeded() const { return _gc_succeeded; }
 };
 
 class VM_G1CollectForAllocation : public VM_CollectForAllocation {
   bool _gc_succeeded;
-
-  bool _should_initiate_conc_mark;
-  bool _should_retry_gc;
   double _target_pause_time_ms;
-  uint  _old_marking_cycles_completed_before;
 
 public:
   VM_G1CollectForAllocation(size_t         word_size,
                             uint           gc_count_before,
                             GCCause::Cause gc_cause,
-                            bool           should_initiate_conc_mark,
                             double         target_pause_time_ms);
   virtual VMOp_Type type() const { return VMOp_G1CollectForAllocation; }
-  virtual bool doit_prologue();
   virtual void doit();
-  virtual void doit_epilogue();
-  bool should_retry_gc() const { return _should_retry_gc; }
-  bool gc_succeeded() { return _gc_succeeded; }
+  bool gc_succeeded() const { return _gc_succeeded; }
 };
 
 // Concurrent G1 stop-the-world operations such as remark and cleanup.

@@ -2009,7 +2009,7 @@ bool G1CollectedHeap::should_do_concurrent_full_gc(GCCause::Cause cause) {
 }
 
 bool G1CollectedHeap::should_upgrade_to_full_gc(GCCause::Cause cause) {
-  if(policy()->force_upgrade_to_full()) {
+  if (policy()->force_upgrade_to_full()) {
     return true;
   } else if (should_do_concurrent_full_gc(_gc_cause)) {
     return false;
@@ -2056,7 +2056,7 @@ void G1CollectedHeap::increment_old_marking_cycles_started() {
 }
 
 void G1CollectedHeap::increment_old_marking_cycles_completed(bool concurrent) {
-  MonitorLocker x(FullGCCount_lock, Mutex::_no_safepoint_check_flag);
+  MonitorLocker ml(G1OldGCCount_lock, Mutex::_no_safepoint_check_flag);
 
   // We assume that if concurrent == true, then the caller is a
   // concurrent thread that was joined the Suspendible Thread
@@ -2096,91 +2096,211 @@ void G1CollectedHeap::increment_old_marking_cycles_completed(bool concurrent) {
     _cm_thread->set_idle();
   }
 
-  // This notify_all() will ensure that a thread that called
-  // System.gc() with (with ExplicitGCInvokesConcurrent set or not)
-  // and it's waiting for a full GC to finish will be woken up. It is
-  // waiting in VM_G1CollectForAllocation::doit_epilogue().
-  FullGCCount_lock->notify_all();
+  // Notify threads waiting in System.gc() (with ExplicitGCInvokesConcurrent)
+  // for a full GC to finish that their wait is over.
+  ml.notify_all();
 }
 
 void G1CollectedHeap::collect(GCCause::Cause cause) {
-  try_collect(cause, true);
+  try_collect(cause);
 }
 
-bool G1CollectedHeap::try_collect(GCCause::Cause cause, bool retry_on_gc_failure) {
+// Return true if (x < y) with allowance for wraparound.
+static bool gc_counter_less_than(uint x, uint y) {
+  return (x - y) > (UINT_MAX/2);
+}
+
+// LOG_COLLECT_CONCURRENTLY(cause, msg, args...)
+// Macro so msg printing is format-checked.
+#define LOG_COLLECT_CONCURRENTLY(cause, ...)                            \
+  do {                                                                  \
+    LogTarget(Trace, gc) LOG_COLLECT_CONCURRENTLY_lt;                   \
+    if (LOG_COLLECT_CONCURRENTLY_lt.is_enabled()) {                     \
+      ResourceMark rm; /* For thread name. */                           \
+      LogStream LOG_COLLECT_CONCURRENTLY_s(&LOG_COLLECT_CONCURRENTLY_lt); \
+      LOG_COLLECT_CONCURRENTLY_s.print("%s: Try Collect Concurrently (%s): ", \
+                                       Thread::current()->name(),       \
+                                       GCCause::to_string(cause));      \
+      LOG_COLLECT_CONCURRENTLY_s.print(__VA_ARGS__);                    \
+    }                                                                   \
+  } while (0)
+
+#define LOG_COLLECT_CONCURRENTLY_COMPLETE(cause, result) \
+  LOG_COLLECT_CONCURRENTLY(cause, "complete %s", BOOL_TO_STR(result))
+
+bool G1CollectedHeap::try_collect_concurrently(GCCause::Cause cause,
+                                               uint gc_counter,
+                                               uint old_marking_started_before) {
   assert_heap_not_locked();
+  assert(should_do_concurrent_full_gc(cause),
+         "Non-concurrent cause %s", GCCause::to_string(cause));
 
-  bool gc_succeeded;
-  bool should_retry_gc;
+  for (uint i = 1; true; ++i) {
+    // Try to schedule an initial-mark evacuation pause that will
+    // start a concurrent cycle.
+    LOG_COLLECT_CONCURRENTLY(cause, "attempt %u", i);
+    VM_G1TryInitiateConcMark op(gc_counter,
+                                cause,
+                                policy()->max_pause_time_ms());
+    VMThread::execute(&op);
 
-  do {
-    should_retry_gc = false;
+    // Request is trivially finished.
+    if (cause == GCCause::_g1_periodic_collection) {
+      LOG_COLLECT_CONCURRENTLY_COMPLETE(cause, op.gc_succeeded());
+      return op.gc_succeeded();
+    }
 
-    uint gc_count_before;
-    uint old_marking_count_before;
-    uint full_gc_count_before;
-
+    // Lock to get consistent set of values.
+    uint old_marking_started_after;
+    uint old_marking_completed_after;
     {
       MutexLocker ml(Heap_lock);
-
-      // Read the GC count while holding the Heap_lock
-      gc_count_before = total_collections();
-      full_gc_count_before = total_full_collections();
-      old_marking_count_before = _old_marking_cycles_started;
+      // Update gc_counter for retrying VMOp if needed. Captured here to be
+      // consistent with the values we use below for termination tests.  If
+      // a retry is needed after a possible wait, and another collection
+      // occurs in the meantime, it will cause our retry to be skipped and
+      // we'll recheck for termination with updated conditions from that
+      // more recent collection.  That's what we want, rather than having
+      // our retry possibly perform an unnecessary collection.
+      gc_counter = total_collections();
+      old_marking_started_after = _old_marking_cycles_started;
+      old_marking_completed_after = _old_marking_cycles_completed;
     }
 
-    if (should_do_concurrent_full_gc(cause)) {
-      // Schedule an initial-mark evacuation pause that will start a
-      // concurrent cycle. We're setting word_size to 0 which means that
-      // we are not requesting a post-GC allocation.
-      VM_G1CollectForAllocation op(0,     /* word_size */
-                                   gc_count_before,
-                                   cause,
-                                   true,  /* should_initiate_conc_mark */
-                                   policy()->max_pause_time_ms());
-      VMThread::execute(&op);
-      gc_succeeded = op.gc_succeeded();
-      if (!gc_succeeded && retry_on_gc_failure) {
-        if (old_marking_count_before == _old_marking_cycles_started) {
-          should_retry_gc = op.should_retry_gc();
-        } else {
-          // A Full GC happened while we were trying to schedule the
-          // concurrent cycle. No point in starting a new cycle given
-          // that the whole heap was collected anyway.
-        }
+    if (!GCCause::is_user_requested_gc(cause)) {
+      // For an "automatic" (not user-requested) collection, we just need to
+      // ensure that progress is made.
+      //
+      // Request is finished if any of
+      // (1) the VMOp successfully performed a GC,
+      // (2) a concurrent cycle was already in progress,
+      // (3) a new cycle was started (by this thread or some other), or
+      // (4) a Full GC was performed.
+      // Cases (3) and (4) are detected together by a change to
+      // _old_marking_cycles_started.
+      //
+      // Note that (1) does not imply (3).  If we're still in the mixed
+      // phase of an earlier concurrent collection, the request to make the
+      // collection an initial-mark won't be honored.  If we don't check for
+      // both conditions we'll spin doing back-to-back collections.
+      if (op.gc_succeeded() ||
+          op.cycle_already_in_progress() ||
+          (old_marking_started_before != old_marking_started_after)) {
+        LOG_COLLECT_CONCURRENTLY_COMPLETE(cause, true);
+        return true;
+      }
+    } else {                    // User-requested GC.
+      // For a user-requested collection, we want to ensure that a complete
+      // full collection has been performed before returning, but without
+      // waiting for more than needed.
 
-        if (should_retry_gc && GCLocker::is_active_and_needs_gc()) {
-          GCLocker::stall_until_clear();
+      // For user-requested GCs (unlike non-UR), a successful VMOp implies a
+      // new cycle was started.  That's good, because it's not clear what we
+      // should do otherwise.  Trying again just does back to back GCs.
+      // Can't wait for someone else to start a cycle.  And returning fails
+      // to meet the goal of ensuring a full collection was performed.
+      assert(!op.gc_succeeded() ||
+             (old_marking_started_before != old_marking_started_after),
+             "invariant: succeeded %s, started before %u, started after %u",
+             BOOL_TO_STR(op.gc_succeeded()),
+             old_marking_started_before, old_marking_started_after);
+
+      // Request is finished if a full collection (concurrent or stw)
+      // was started after this request and has completed, e.g.
+      // started_before < completed_after.
+      if (gc_counter_less_than(old_marking_started_before,
+                               old_marking_completed_after)) {
+        LOG_COLLECT_CONCURRENTLY_COMPLETE(cause, true);
+        return true;
+      }
+
+      if (old_marking_started_after != old_marking_completed_after) {
+        // If there is an in-progress cycle (possibly started by us), then
+        // wait for that cycle to complete, e.g.
+        // while completed_now < started_after.
+        LOG_COLLECT_CONCURRENTLY(cause, "wait");
+        MonitorLocker ml(G1OldGCCount_lock);
+        while (gc_counter_less_than(_old_marking_cycles_completed,
+                                    old_marking_started_after)) {
+          ml.wait();
+        }
+        // Request is finished if the collection we just waited for was
+        // started after this request.
+        if (old_marking_started_before != old_marking_started_after) {
+          LOG_COLLECT_CONCURRENTLY(cause, "complete after wait");
+          return true;
         }
       }
-    } else if (GCLocker::should_discard(cause, gc_count_before)) {
-      // Return false to be consistent with VMOp failure due to
-      // another collection slipping in after our gc_count but before
-      // our request is processed.  _gc_locker collections upgraded by
-      // GCLockerInvokesConcurrent are handled above and never discarded.
-      return false;
-    } else {
-      if (cause == GCCause::_gc_locker || cause == GCCause::_wb_young_gc
-          DEBUG_ONLY(|| cause == GCCause::_scavenge_alot)) {
 
-        // Schedule a standard evacuation pause. We're setting word_size
-        // to 0 which means that we are not requesting a post-GC allocation.
-        VM_G1CollectForAllocation op(0,     /* word_size */
-                                     gc_count_before,
-                                     cause,
-                                     false, /* should_initiate_conc_mark */
-                                     policy()->max_pause_time_ms());
-        VMThread::execute(&op);
-        gc_succeeded = op.gc_succeeded();
-      } else {
-        // Schedule a Full GC.
-        VM_G1CollectFull op(gc_count_before, full_gc_count_before, cause);
-        VMThread::execute(&op);
-        gc_succeeded = op.gc_succeeded();
+      // If VMOp was successful then it started a new cycle that the above
+      // wait &etc should have recognized as finishing this request.  This
+      // differs from a non-user-request, where gc_succeeded does not imply
+      // a new cycle was started.
+      assert(!op.gc_succeeded(), "invariant");
+
+      // If VMOp failed because a cycle was already in progress, it is now
+      // complete.  But it didn't finish this user-requested GC, so try
+      // again.
+      if (op.cycle_already_in_progress()) {
+        LOG_COLLECT_CONCURRENTLY(cause, "retry after in-progress");
+        continue;
       }
     }
-  } while (should_retry_gc);
-  return gc_succeeded;
+
+    // Collection failed and should be retried.
+    assert(op.transient_failure(), "invariant");
+
+    // If GCLocker is active, wait until clear before retrying.
+    if (GCLocker::is_active_and_needs_gc()) {
+      LOG_COLLECT_CONCURRENTLY(cause, "gc-locker stall");
+      GCLocker::stall_until_clear();
+    }
+
+    LOG_COLLECT_CONCURRENTLY(cause, "retry");
+  }
+}
+
+bool G1CollectedHeap::try_collect(GCCause::Cause cause) {
+  assert_heap_not_locked();
+
+  // Lock to get consistent set of values.
+  uint gc_count_before;
+  uint full_gc_count_before;
+  uint old_marking_started_before;
+  {
+    MutexLocker ml(Heap_lock);
+    gc_count_before = total_collections();
+    full_gc_count_before = total_full_collections();
+    old_marking_started_before = _old_marking_cycles_started;
+  }
+
+  if (should_do_concurrent_full_gc(cause)) {
+    return try_collect_concurrently(cause,
+                                    gc_count_before,
+                                    old_marking_started_before);
+  } else if (GCLocker::should_discard(cause, gc_count_before)) {
+    // Indicate failure to be consistent with VMOp failure due to
+    // another collection slipping in after our gc_count but before
+    // our request is processed.  _gc_locker collections upgraded by
+    // GCLockerInvokesConcurrent are handled above and never discarded.
+    return false;
+  } else if (cause == GCCause::_gc_locker || cause == GCCause::_wb_young_gc
+             DEBUG_ONLY(|| cause == GCCause::_scavenge_alot)) {
+
+    // Schedule a standard evacuation pause. We're setting word_size
+    // to 0 which means that we are not requesting a post-GC allocation.
+    VM_G1CollectForAllocation op(0,     /* word_size */
+                                 gc_count_before,
+                                 cause,
+                                 policy()->max_pause_time_ms());
+    VMThread::execute(&op);
+    return op.gc_succeeded();
+  } else {
+    // Schedule a Full GC.
+    VM_G1CollectFull op(gc_count_before, full_gc_count_before, cause);
+    VMThread::execute(&op);
+    return op.gc_succeeded();
+  }
 }
 
 bool G1CollectedHeap::is_in(const void* p) const {
@@ -2611,7 +2731,6 @@ HeapWord* G1CollectedHeap::do_collection_pause(size_t word_size,
   VM_G1CollectForAllocation op(word_size,
                                gc_count_before,
                                gc_cause,
-                               false, /* should_initiate_conc_mark */
                                policy()->max_pause_time_ms());
   VMThread::execute(&op);
 

@@ -90,8 +90,7 @@ void G1YoungRemSetSamplingThread::check_for_periodic_gc(){
   if ((os::elapsedTime() - _last_periodic_gc_attempt_s) > (G1PeriodicGCInterval / 1000.0)) {
     log_debug(gc, periodic)("Checking for periodic GC.");
     if (should_start_periodic_gc()) {
-      if (!G1CollectedHeap::heap()->try_collect(GCCause::_g1_periodic_collection,
-                                                    false /* retry_on_vmop_failure */)) {
+      if (!G1CollectedHeap::heap()->try_collect(GCCause::_g1_periodic_collection)) {
         log_debug(gc, periodic)("GC request denied. Skipping.");
       }
     }
