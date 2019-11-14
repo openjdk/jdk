@@ -33,7 +33,6 @@
 
 import java.net.*;
 import java.io.IOException;
-import java.util.Enumeration;
 import jdk.test.lib.NetworkConfiguration;
 
 public class SetLoopbackMode {
