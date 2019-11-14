@@ -24,8 +24,8 @@
  */
 
 /* @test
- * @bug 8139885 8150824 8150825 8194238
- * @run testng/othervm -ea -esa test.java.lang.invoke.TryFinallyTest
+ * @bug 8139885 8150824 8150825 8194238 8233920
+ * @run testng/othervm -ea -esa -Xverify:all test.java.lang.invoke.TryFinallyTest
  */
 
 package test.java.lang.invoke;
@@ -53,6 +53,41 @@ public class TryFinallyTest {
         MethodHandle hello = MethodHandles.tryFinally(TryFinally.MH_greet, TryFinally.MH_exclaim);
         assertEquals(TryFinally.MT_hello, hello.type());
         assertEquals("Hello, world!", hello.invoke("world"));
+    }
+
+    @DataProvider
+    static Object[][] tryFinallyArgs() {
+        return new Object[][] {
+                { boolean.class, true },
+                { byte.class, (byte) 2 },
+                { short.class, (short) 2 },
+                { char.class, (char) 2 },
+                { int.class, 2 },
+                { long.class, 2L },
+                { float.class, 2f },
+                { double.class, 2D },
+                { Object.class, new Object() }
+        };
+    }
+
+    @Test(dataProvider = "tryFinallyArgs")
+    public static void testTryFinally(Class<?> argType, Object arg) throws Throwable {
+        MethodHandle identity = MethodHandles.identity(argType);
+        MethodHandle tryFinally = MethodHandles.tryFinally(
+                identity,
+                MethodHandles.dropArguments(identity, 0, Throwable.class));
+        assertEquals(methodType(argType, argType), tryFinally.type());
+        assertEquals(arg, tryFinally.invoke(arg));
+    }
+
+    @Test(dataProvider = "tryFinallyArgs", expectedExceptions = TryFinally.T1.class)
+    public static void testTryFinallyException(Class<?> argType, Object arg) throws Throwable {
+        MethodHandle identity = TryFinally.MH_throwingTargetIdentity.asType(methodType(argType, argType));
+        MethodHandle tryFinally = MethodHandles.tryFinally(
+                identity,
+                MethodHandles.dropArguments(identity, 0, TryFinally.T1.class));
+        assertEquals(methodType(argType, argType), tryFinally.type());
+        tryFinally.invoke(arg); // should throw
     }
 
     @Test
@@ -175,6 +210,10 @@ public class TryFinallyTest {
             throw new T1();
         }
 
+        static Object throwingTargetIdentity(Object o) throws Throwable {
+            throw new T1();
+        }
+
         static void catchingCleanup(T2 t) throws Throwable {
         }
 
@@ -189,6 +228,7 @@ public class TryFinallyTest {
         static final MethodType MT_voidTarget = methodType(void.class);
         static final MethodType MT_voidCleanup = methodType(void.class, Throwable.class);
         static final MethodType MT_throwingTarget = methodType(void.class);
+        static final MethodType MT_throwingTargetIdentity = methodType(Object.class, Object.class);
         static final MethodType MT_catchingCleanup = methodType(void.class, T2.class);
 
         static final MethodHandle MH_greet;
@@ -200,6 +240,7 @@ public class TryFinallyTest {
         static final MethodHandle MH_voidTarget;
         static final MethodHandle MH_voidCleanup;
         static final MethodHandle MH_throwingTarget;
+        static final MethodHandle MH_throwingTargetIdentity;
         static final MethodHandle MH_catchingCleanup;
 
         static final MethodHandle MH_dummyTarget;
@@ -219,6 +260,7 @@ public class TryFinallyTest {
                 MH_voidTarget = LOOKUP.findStatic(TRY_FINALLY, "voidTarget", MT_voidTarget);
                 MH_voidCleanup = LOOKUP.findStatic(TRY_FINALLY, "voidCleanup", MT_voidCleanup);
                 MH_throwingTarget = LOOKUP.findStatic(TRY_FINALLY, "throwingTarget", MT_throwingTarget);
+                MH_throwingTargetIdentity = LOOKUP.findStatic(TRY_FINALLY, "throwingTargetIdentity", MT_throwingTargetIdentity);
                 MH_catchingCleanup = LOOKUP.findStatic(TRY_FINALLY, "catchingCleanup", MT_catchingCleanup);
                 MH_dummyTarget = MethodHandles.dropArguments(MH_voidTarget, 0, int.class, long.class, Object.class,
                         int.class, long.class, Object.class);
