@@ -1077,7 +1077,7 @@ void java_lang_Class::archive_basic_type_mirrors(TRAPS) {
       Klass *ak = (Klass*)(archived_m->metadata_field(_array_klass_offset));
       assert(ak != NULL || t == T_VOID, "should not be NULL");
       if (ak != NULL) {
-        Klass *reloc_ak = MetaspaceShared::get_relocated_klass(ak);
+        Klass *reloc_ak = MetaspaceShared::get_relocated_klass(ak, true);
         archived_m->metadata_field_put(_array_klass_offset, reloc_ak);
       }
 
@@ -1222,7 +1222,7 @@ oop java_lang_Class::process_archived_mirror(Klass* k, oop mirror,
   // The archived mirror's field at _klass_offset is still pointing to the original
   // klass. Updated the field in the archived mirror to point to the relocated
   // klass in the archive.
-  Klass *reloc_k = MetaspaceShared::get_relocated_klass(as_Klass(mirror));
+  Klass *reloc_k = MetaspaceShared::get_relocated_klass(as_Klass(mirror), true);
   log_debug(cds, heap, mirror)(
     "Relocate mirror metadata field at _klass_offset from " PTR_FORMAT " ==> " PTR_FORMAT,
     p2i(as_Klass(mirror)), p2i(reloc_k));
@@ -1232,7 +1232,7 @@ oop java_lang_Class::process_archived_mirror(Klass* k, oop mirror,
   // higher array klass if exists. Relocate the pointer.
   Klass *arr = array_klass_acquire(mirror);
   if (arr != NULL) {
-    Klass *reloc_arr = MetaspaceShared::get_relocated_klass(arr);
+    Klass *reloc_arr = MetaspaceShared::get_relocated_klass(arr, true);
     log_debug(cds, heap, mirror)(
       "Relocate mirror metadata field at _array_klass_offset from " PTR_FORMAT " ==> " PTR_FORMAT,
       p2i(arr), p2i(reloc_arr));
@@ -1240,6 +1240,33 @@ oop java_lang_Class::process_archived_mirror(Klass* k, oop mirror,
   }
   return archived_mirror;
 }
+
+void java_lang_Class::update_archived_primitive_mirror_native_pointers(oop archived_mirror) {
+  if (MetaspaceShared::relocation_delta() != 0) {
+    assert(archived_mirror->metadata_field(_klass_offset) == NULL, "must be for primitive class");
+
+    Klass* ak = ((Klass*)archived_mirror->metadata_field(_array_klass_offset));
+    if (ak != NULL) {
+      archived_mirror->metadata_field_put(_array_klass_offset,
+          (Klass*)(address(ak) + MetaspaceShared::relocation_delta()));
+    }
+  }
+}
+
+void java_lang_Class::update_archived_mirror_native_pointers(oop archived_mirror) {
+  if (MetaspaceShared::relocation_delta() != 0) {
+    Klass* k = ((Klass*)archived_mirror->metadata_field(_klass_offset));
+    archived_mirror->metadata_field_put(_klass_offset,
+        (Klass*)(address(k) + MetaspaceShared::relocation_delta()));
+
+    Klass* ak = ((Klass*)archived_mirror->metadata_field(_array_klass_offset));
+    if (ak != NULL) {
+      archived_mirror->metadata_field_put(_array_klass_offset,
+          (Klass*)(address(ak) + MetaspaceShared::relocation_delta()));
+    }
+  }
+}
+
 
 // Returns true if the mirror is updated, false if no archived mirror
 // data is present. After the archived mirror object is restored, the
@@ -1256,15 +1283,15 @@ bool java_lang_Class::restore_archived_mirror(Klass *k,
   }
 
   oop m = HeapShared::materialize_archived_object(k->archived_java_mirror_raw_narrow());
-
   if (m == NULL) {
     return false;
   }
 
-  log_debug(cds, mirror)("Archived mirror is: " PTR_FORMAT, p2i(m));
-
   // mirror is archived, restore
+  log_debug(cds, mirror)("Archived mirror is: " PTR_FORMAT, p2i(m));
   assert(HeapShared::is_archived_object(m), "must be archived mirror object");
+  update_archived_mirror_native_pointers(m);
+  assert(as_Klass(m) == k, "must be");
   Handle mirror(THREAD, m);
 
   if (!k->is_array_klass()) {
@@ -4649,6 +4676,28 @@ void JavaClasses::serialize_offsets(SerializeClosure* soc) {
 }
 #endif
 
+#if INCLUDE_CDS_JAVA_HEAP
+bool JavaClasses::is_supported_for_archiving(oop obj) {
+  Klass* klass = obj->klass();
+
+  if (klass == SystemDictionary::ClassLoader_klass() ||  // ClassLoader::loader_data is malloc'ed.
+      klass == SystemDictionary::Module_klass() ||       // Module::module_entry is malloc'ed
+      // The next 3 classes are used to implement java.lang.invoke, and are not used directly in
+      // regular Java code. The implementation of java.lang.invoke uses generated anonymoys classes
+      // (e.g., as referenced by ResolvedMethodName::vmholder) that are not yet supported by CDS.
+      // So for now we cannot not support these classes for archiving.
+      //
+      // These objects typically are not referenced by static fields, but rather by resolved
+      // constant pool entries, so excluding them shouldn't affect the archiving of static fields.
+      klass == SystemDictionary::ResolvedMethodName_klass() ||
+      klass == SystemDictionary::MemberName_klass() ||
+      klass == SystemDictionary::Context_klass()) {
+    return false;
+  }
+
+  return true;
+}
+#endif
 
 #ifndef PRODUCT
 

@@ -33,26 +33,29 @@
 //
 // Also, this is a C header file. Do not use C++ here.
 
-#define NUM_CDS_REGIONS 8 // this must be the same as MetaspaceShared::n_regions
+#define NUM_CDS_REGIONS 9 // this must be the same as MetaspaceShared::n_regions
 #define CDS_ARCHIVE_MAGIC 0xf00baba2
 #define CDS_DYNAMIC_ARCHIVE_MAGIC 0xf00baba8
-#define CURRENT_CDS_ARCHIVE_VERSION 8
+#define CURRENT_CDS_ARCHIVE_VERSION 9
 #define INVALID_CDS_ARCHIVE_VERSION -1
 
 struct CDSFileMapRegion {
-  int        _crc;            // crc checksum of the current space
-  size_t     _file_offset;    // sizeof(this) rounded to vm page size
-  union {
-    char*    _base;           // copy-on-write base address
-    size_t   _offset;         // offset from the compressed oop encoding base, only used
-                              // by archive heap space
-  } _addr;
-  size_t     _used;           // for setting space top on read
-  int        _read_only;      // read only space?
-  int        _allow_exec;     // executable code in space?
-  void*      _oopmap;         // bitmap for relocating embedded oops
-  size_t     _oopmap_size_in_bits;
-  int        _is_heap_region; // used in debug build only.
+  int     _crc;               // CRC checksum of this region.
+  int     _read_only;         // read only region?
+  int     _allow_exec;        // executable code in this region?
+  int     _is_heap_region;    // Used by SA and debug build.
+  int     _is_bitmap_region;  // Relocation bitmap for RO/RW/MC/MD regions (used by SA and debug build).
+  int     _mapped_from_file;  // Is this region mapped from a file?
+                              // If false, this region was initialized using os::read().
+  size_t  _file_offset;       // Data for this region starts at this offset in the archive file.
+  size_t  _mapping_offset;    // This region should be mapped at this offset from the base address
+                              // - for non-heap regions, the base address is SharedBaseAddress
+                              // - for heap regions, the base address is the compressed oop encoding base
+  size_t  _used;              // Number of bytes actually used by this region (excluding padding bytes added
+                              // for alignment purposed.
+  size_t  _oopmap_offset;     // Bitmap for relocating embedded oops (offset from SharedBaseAddress).
+  size_t  _oopmap_size_in_bits;
+  char*   _mapped_base;       // Actually mapped address (NULL if this region is not mapped).
 };
 
 struct CDSFileMapHeaderBase {

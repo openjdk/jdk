@@ -26,15 +26,18 @@
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
+#include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "logging/log.hpp"
 #include "logging/logMessage.hpp"
 #include "logging/logStream.hpp"
+#include "memory/archiveUtils.hpp"
 #include "memory/filemap.hpp"
 #include "memory/heapShared.inline.hpp"
 #include "memory/iterator.inline.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/metaspaceClosure.hpp"
+#include "memory/metaspaceShared.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/compressedOops.inline.hpp"
@@ -383,8 +386,13 @@ void ArchivedKlassSubGraphInfoRecord::init(KlassSubGraphInfo* info) {
           _k->external_name(), i, subgraph_k->external_name());
       }
       _subgraph_object_klasses->at_put(i, subgraph_k);
+      ArchivePtrMarker::mark_pointer(_subgraph_object_klasses->adr_at(i));
     }
   }
+
+  ArchivePtrMarker::mark_pointer(&_k);
+  ArchivePtrMarker::mark_pointer(&_entry_field_records);
+  ArchivePtrMarker::mark_pointer(&_subgraph_object_klasses);
 }
 
 struct CopyKlassSubGraphInfoToArchive : StackObj {
@@ -397,7 +405,7 @@ struct CopyKlassSubGraphInfoToArchive : StackObj {
         (ArchivedKlassSubGraphInfoRecord*)MetaspaceShared::read_only_space_alloc(sizeof(ArchivedKlassSubGraphInfoRecord));
       record->init(&info);
 
-      unsigned int hash = primitive_hash<Klass*>(klass);
+      unsigned int hash = SystemDictionaryShared::hash_for_shared_dictionary(klass);
       u4 delta = MetaspaceShared::object_delta_u4(record);
       _writer->add(hash, delta);
     }
@@ -436,7 +444,7 @@ void HeapShared::initialize_from_archived_subgraph(Klass* k) {
   }
   assert(!DumpSharedSpaces, "Should not be called with DumpSharedSpaces");
 
-  unsigned int hash = primitive_hash<Klass*>(k);
+  unsigned int hash = SystemDictionaryShared::hash_for_shared_dictionary(k);
   const ArchivedKlassSubGraphInfoRecord* record = _run_time_subgraph_info_table.lookup(k, hash, 0);
 
   // Initialize from archived data. Currently this is done only
@@ -606,8 +614,20 @@ oop HeapShared::archive_reachable_objects_from(int level,
   assert(orig_obj != NULL, "must be");
   assert(!is_archived_object(orig_obj), "sanity");
 
-  // java.lang.Class instances cannot be included in an archived
-  // object sub-graph.
+  if (!JavaClasses::is_supported_for_archiving(orig_obj)) {
+    // This object has injected fields that cannot be supported easily, so we disallow them for now.
+    // If you get an error here, you probably made a change in the JDK library that has added
+    // these objects that are referenced (directly or indirectly) by static fields.
+    ResourceMark rm;
+    log_error(cds, heap)("Cannot archive object of class %s", orig_obj->klass()->external_name());
+    vm_exit(1);
+  }
+
+  // java.lang.Class instances cannot be included in an archived object sub-graph. We only support
+  // them as Klass::_archived_mirror because they need to be specially restored at run time.
+  //
+  // If you get an error here, you probably made a change in the JDK library that has added a Class
+  // object that is referenced (directly or indirectly) by static fields.
   if (java_lang_Class::is_instance(orig_obj)) {
     log_error(cds, heap)("(%d) Unknown java.lang.Class object is in the archived sub-graph", level);
     vm_exit(1);

@@ -172,16 +172,13 @@ class Metaspace : public AllStatic {
     assert(!_frozen, "sanity");
   }
 #ifdef _LP64
-  static void allocate_metaspace_compressed_klass_ptrs(char* requested_addr, address cds_base);
+  static void allocate_metaspace_compressed_klass_ptrs(ReservedSpace metaspace_rs, char* requested_addr, address cds_base);
 #endif
 
  private:
 
 #ifdef _LP64
-  static void set_narrow_klass_base_and_shift(address metaspace_base, address cds_base);
-
-  // Returns true if can use CDS with metaspace allocated as specified address.
-  static bool can_use_cds_with_metaspace_addr(char* metaspace_base, address cds_base);
+  static void set_narrow_klass_base_and_shift(ReservedSpace metaspace_rs, address cds_base);
 
   static void initialize_class_space(ReservedSpace rs);
 #endif

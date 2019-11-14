@@ -85,6 +85,7 @@ bool   Arguments::_BackgroundCompilation        = BackgroundCompilation;
 bool   Arguments::_ClipInlining                 = ClipInlining;
 intx   Arguments::_Tier3InvokeNotifyFreqLog     = Tier3InvokeNotifyFreqLog;
 intx   Arguments::_Tier4InvocationThreshold     = Tier4InvocationThreshold;
+size_t Arguments::_SharedBaseAddress            = SharedBaseAddress;
 
 bool   Arguments::_enable_preview               = false;
 
@@ -2273,6 +2274,9 @@ jint Arguments::parse_vm_init_args(const JavaVMInitArgs *vm_options_args,
     Arguments::_Tier3InvokeNotifyFreqLog = Tier3InvokeNotifyFreqLog;
     Arguments::_Tier4InvocationThreshold = Tier4InvocationThreshold;
   }
+
+  // CDS dumping always write the archive to the default value of SharedBaseAddress.
+  Arguments::_SharedBaseAddress = SharedBaseAddress;
 
   // Setup flags for mixed which is the default
   set_mode_flags(_mixed);

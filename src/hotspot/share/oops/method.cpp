@@ -332,11 +332,9 @@ int Method::size(bool is_native) {
   return align_metadata_size(header_size() + extra_words);
 }
 
-
 Symbol* Method::klass_name() const {
   return method_holder()->name();
 }
-
 
 void Method::metaspace_pointers_do(MetaspaceClosure* it) {
   log_trace(cds)("Iter(Method): %p", this);
@@ -344,6 +342,11 @@ void Method::metaspace_pointers_do(MetaspaceClosure* it) {
   it->push(&_constMethod);
   it->push(&_method_data);
   it->push(&_method_counters);
+
+  Method* this_ptr = this;
+  it->push_method_entry(&this_ptr, (intptr_t*)&_i2i_entry);
+  it->push_method_entry(&this_ptr, (intptr_t*)&_from_compiled_entry);
+  it->push_method_entry(&this_ptr, (intptr_t*)&_from_interpreted_entry);
 }
 
 // Attempt to return method oop to original state.  Clear any pointers
@@ -1741,12 +1744,15 @@ static int method_comparator(Method* a, Method* b) {
 
 // This is only done during class loading, so it is OK to assume method_idnum matches the methods() array
 // default_methods also uses this without the ordering for fast find_method
-void Method::sort_methods(Array<Method*>* methods, bool set_idnums) {
+void Method::sort_methods(Array<Method*>* methods, bool set_idnums, method_comparator_func func) {
   int length = methods->length();
   if (length > 1) {
+    if (func == NULL) {
+      func = method_comparator;
+    }
     {
       NoSafepointVerifier nsv;
-      QuickSort::sort(methods->data(), length, method_comparator, /*idempotent=*/false);
+      QuickSort::sort(methods->data(), length, func, /*idempotent=*/false);
     }
     // Reset method ordering
     if (set_idnums) {

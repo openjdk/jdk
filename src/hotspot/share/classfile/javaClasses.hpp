@@ -281,6 +281,8 @@ class java_lang_Class : AllStatic {
                             Handle protection_domain, TRAPS);
   static void fixup_mirror(Klass* k, TRAPS);
   static oop  create_basic_type_mirror(const char* basic_type_name, BasicType type, TRAPS);
+  static void update_archived_primitive_mirror_native_pointers(oop archived_mirror) NOT_CDS_JAVA_HEAP_RETURN;
+  static void update_archived_mirror_native_pointers(oop archived_mirror) NOT_CDS_JAVA_HEAP_RETURN;
 
   // Archiving
   static void serialize_offsets(SerializeClosure* f) NOT_CDS_RETURN;
@@ -1662,6 +1664,7 @@ class JavaClasses : AllStatic {
   static void check_offsets() PRODUCT_RETURN;
   static void serialize_offsets(SerializeClosure* soc) NOT_CDS_RETURN;
   static InjectedField* get_injected(Symbol* class_name, int* field_count);
+  static bool is_supported_for_archiving(oop obj) NOT_CDS_JAVA_HEAP_RETURN_(false);
 };
 
 #undef DECLARE_INJECTED_FIELD_ENUM

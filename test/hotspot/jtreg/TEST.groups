@@ -322,6 +322,7 @@ hotspot_appcds_dynamic = \
  -runtime/cds/appcds/javaldr/GCSharedStringsDuringDump.java \
  -runtime/cds/appcds/javaldr/HumongousDuringDump.java \
  -runtime/cds/appcds/sharedStrings \
+ -runtime/cds/appcds/ArchiveRelocationTest.java \
  -runtime/cds/appcds/DumpClassList.java \
  -runtime/cds/appcds/ExtraSymbols.java \
  -runtime/cds/appcds/LongClassListPath.java \
@@ -331,6 +332,15 @@ hotspot_appcds_dynamic = \
  -runtime/cds/appcds/SharedArchiveConsistency.java \
  -runtime/cds/appcds/UnusedCPDuringDump.java \
  -runtime/cds/appcds/VerifierTest_1B.java
+
+hotspot_cds_relocation = \
+  gc/g1/TestSharedArchiveWithPreTouch.java \
+  runtime/cds \
+  runtime/modules/ModulesSymLink.java \
+  runtime/modules/PatchModule/PatchModuleCDS.java \
+  runtime/modules/PatchModule/PatchModuleClassList.java \
+  runtime/NMT \
+  serviceability/sa
 
 # A subset of AppCDS tests to be run in tier1
 tier1_runtime_appcds = \

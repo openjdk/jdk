@@ -134,7 +134,7 @@ class DynamicArchiveTestBase {
      * Dump the base archive. The JDK's default class list is used (unless otherwise specified
      * in cmdLineSuffix).
      */
-    public static void dumpBaseArchive(String baseArchiveName, String ... cmdLineSuffix)
+    public static OutputAnalyzer dumpBaseArchive(String baseArchiveName, String ... cmdLineSuffix)
         throws Exception
     {
         CDSOptions opts = new CDSOptions();
@@ -143,6 +143,7 @@ class DynamicArchiveTestBase {
         opts.addSuffix("-Djava.class.path=");
         OutputAnalyzer out = CDSTestUtils.createArchive(opts);
         CDSTestUtils.checkDump(out);
+        return out;
     }
 
     /**

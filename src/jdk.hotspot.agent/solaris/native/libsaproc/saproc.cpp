@@ -538,9 +538,11 @@ read_string(struct ps_prochandle* ph, psaddr_t addr, char* buf, size_t size) {
 }
 
 #define USE_SHARED_SPACES_SYM   "UseSharedSpaces"
+#define SHARED_BASE_ADDRESS_SYM "SharedBaseAddress"
 // mangled symbol name for Arguments::SharedArchivePath
 #define SHARED_ARCHIVE_PATH_SYM "__1cJArgumentsRSharedArchivePath_"
 
+static uintptr_t sharedBaseAddress = 0;
 static int
 init_classsharing_workaround(void *cd, const prmap_t* pmap, const char* obj_name) {
   Debugger* dbg = (Debugger*) cd;
@@ -575,6 +577,19 @@ init_classsharing_workaround(void *cd, const prmap_t* pmap, const char* obj_name
   } else if ((int)value == 0) {
     print_debug("UseSharedSpaces is false, assuming -Xshare:off!\n");
     return 1;
+  }
+
+  psaddr_t sharedBaseAddressAddr = 0;
+  ps_pglobal_lookup(ph, jvm_name, SHARED_ARCHIVE_PATH_SYM, &sharedBaseAddressAddr);
+  if (sharedBaseAddressAddr == 0) {
+    print_debug("can't find symbol 'SharedBaseAddress'\n");
+    THROW_NEW_DEBUGGER_EXCEPTION_("can't find 'SharedBaseAddress' flag\n", 1);
+  }
+
+  sharedBaseAddress = 0;
+  if (read_pointer(ph, sharedBaseAddressAddr, &sharedBaseAddress) != true) {
+    print_debug("can't read the value of 'SharedBaseAddress' flag\n");
+    THROW_NEW_DEBUGGER_EXCEPTION_("can't get SharedBaseAddress from debuggee", 1);
   }
 
   char classes_jsa[PATH_MAX];
@@ -648,9 +663,14 @@ init_classsharing_workaround(void *cd, const prmap_t* pmap, const char* obj_name
 
   if (_libsaproc_debug) {
     for (int m = 0; m < NUM_CDS_REGIONS; m++) {
-       print_debug("shared file offset %d mapped at 0x%lx, size = %ld, read only? = %d\n",
-          pheader->_space[m]._file_offset, pheader->_space[m]._addr._base,
-          pheader->_space[m]._used, pheader->_space[m]._read_only);
+      if (!pheader->_space[m]._is_heap_region &&
+          !pheader->_space[m]._is_bitmap_region) {
+        jlong mapping_offset = pheader->_space[m]._mapping_offset;
+        jlong baseAddress = mapping_offset + (jlong)sharedBaseAddress;
+        print_debug("shared file offset %d mapped at 0x%lx, size = %ld, read only? = %d\n",
+                    pheader->_space[m]._file_offset, baseAddress,
+                    pheader->_space[m]._used, pheader->_space[m]._read_only);
+      }
     }
   }
 
@@ -1052,11 +1072,14 @@ JNIEXPORT jbyteArray JNICALL Java_sun_jvm_hotspot_debugger_proc_ProcDebuggerLoca
         // We can skip the non-read-only maps. These are mapped as MAP_PRIVATE
         // and hence will be read by libproc. Besides, the file copy may be
         // stale because the process might have modified those pages.
-        if (pheader->_space[m]._read_only) {
-          jlong baseAddress = (jlong) (uintptr_t) pheader->_space[m]._addr._base;
-          size_t usedSize = pheader->_space[m]._used;
-          if (address >= baseAddress && address < (baseAddress + usedSize)) {
-            // the given address falls in this shared heap area
+        if (pheader->_space[m]._read_only &&
+            !pheader->_space[m]._is_heap_region &&
+            !pheader->_space[m]._is_bitmap_region) {
+         jlong mapping_offset = (jlong) (uintptr_t) pheader->_space[m]._mapping_offset;
+         jlong baseAddress = mapping_offset + (jlong)sharedBaseAddress;
+         size_t usedSize = pheader->_space[m]._used;
+         if (address >= baseAddress && address < (baseAddress + usedSize)) {
+            // the given address falls in this shared metadata area
             print_debug("found shared map at 0x%lx\n", (long) baseAddress);
 
 

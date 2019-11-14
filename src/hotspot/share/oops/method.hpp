@@ -1006,8 +1006,10 @@ public:
   void print_name(outputStream* st = tty)        PRODUCT_RETURN; // prints as "virtual void foo(int)"
 #endif
 
+  typedef int (*method_comparator_func)(Method* a, Method* b);
+
   // Helper routine used for method sorting
-  static void sort_methods(Array<Method*>* methods, bool set_idnums = true);
+  static void sort_methods(Array<Method*>* methods, bool set_idnums = true, method_comparator_func func = NULL);
 
   // Deallocation function for redefine classes or if an error occurs
   void deallocate_contents(ClassLoaderData* loader_data);

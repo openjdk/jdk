@@ -1577,11 +1577,30 @@ static int linear_search(const Array<Method*>* methods,
 }
 #endif
 
-static int binary_search(const Array<Method*>* methods, const Symbol* name) {
+bool InstanceKlass::_disable_method_binary_search = false;
+
+int InstanceKlass::quick_search(const Array<Method*>* methods, const Symbol* name) {
   int len = methods->length();
-  // methods are sorted, so do binary search
   int l = 0;
   int h = len - 1;
+
+  if (_disable_method_binary_search) {
+    // At the final stage of dynamic dumping, the methods array may not be sorted
+    // by ascending addresses of their names, so we can't use binary search anymore.
+    // However, methods with the same name are still laid out consecutively inside the
+    // methods array, so let's look for the first one that matches.
+    assert(DynamicDumpSharedSpaces, "must be");
+    while (l <= h) {
+      Method* m = methods->at(l);
+      if (m->name() == name) {
+        return l;
+      }
+      l ++;
+    }
+    return -1;
+  }
+
+  // methods are sorted by ascending addresses of their names, so do binary search
   while (l <= h) {
     int mid = (l + h) >> 1;
     Method* m = methods->at(mid);
@@ -1733,7 +1752,7 @@ int InstanceKlass::find_method_index(const Array<Method*>* methods,
   const bool skipping_overpass = (overpass_mode == skip_overpass);
   const bool skipping_static = (static_mode == skip_static);
   const bool skipping_private = (private_mode == skip_private);
-  const int hit = binary_search(methods, name);
+  const int hit = quick_search(methods, name);
   if (hit != -1) {
     const Method* const m = methods->at(hit);
 
@@ -1784,7 +1803,7 @@ int InstanceKlass::find_method_by_name(const Array<Method*>* methods,
                                        const Symbol* name,
                                        int* end_ptr) {
   assert(end_ptr != NULL, "just checking");
-  int start = binary_search(methods, name);
+  int start = quick_search(methods, name);
   int end = start + 1;
   if (start != -1) {
     while (start - 1 >= 0 && (methods->at(start - 1))->name() == name) --start;
@@ -2365,6 +2384,7 @@ void InstanceKlass::remove_unshareable_info() {
   _breakpoints = NULL;
   _previous_versions = NULL;
   _cached_class_file = NULL;
+  _jvmti_cached_class_field_map = NULL;
 #endif
 
   _init_thread = NULL;
@@ -2373,6 +2393,8 @@ void InstanceKlass::remove_unshareable_info() {
   _oop_map_cache = NULL;
   // clear _nest_host to ensure re-load at runtime
   _nest_host = NULL;
+  _package_entry = NULL;
+  _dep_context_last_cleaned = 0;
 }
 
 void InstanceKlass::remove_java_mirror() {

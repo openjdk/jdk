@@ -975,25 +975,18 @@ bool Metaspace::_initialized = false;
 #ifdef _LP64
 static const uint64_t UnscaledClassSpaceMax = (uint64_t(max_juint) + 1);
 
-void Metaspace::set_narrow_klass_base_and_shift(address metaspace_base, address cds_base) {
+void Metaspace::set_narrow_klass_base_and_shift(ReservedSpace metaspace_rs, address cds_base) {
   assert(!DumpSharedSpaces, "narrow_klass is set by MetaspaceShared class.");
   // Figure out the narrow_klass_base and the narrow_klass_shift.  The
   // narrow_klass_base is the lower of the metaspace base and the cds base
   // (if cds is enabled).  The narrow_klass_shift depends on the distance
   // between the lower base and higher address.
-  address lower_base;
-  address higher_address;
-#if INCLUDE_CDS
-  if (UseSharedSpaces) {
-    higher_address = MAX2((address)(cds_base + MetaspaceShared::core_spaces_size()),
-                          (address)(metaspace_base + compressed_class_space_size()));
-    lower_base = MIN2(metaspace_base, cds_base);
-  } else
-#endif
-  {
-    higher_address = metaspace_base + compressed_class_space_size();
-    lower_base = metaspace_base;
-
+  address lower_base = (address)metaspace_rs.base();
+  address higher_address = (address)metaspace_rs.end();
+  if (cds_base != NULL) {
+    assert(UseSharedSpaces, "must be");
+    lower_base = MIN2(lower_base, cds_base);
+  } else {
     uint64_t klass_encoding_max = UnscaledClassSpaceMax << LogKlassAlignmentInBytes;
     // If compressed class space fits in lower 32G, we don't need a base.
     if (higher_address <= (address)klass_encoding_max) {
@@ -1018,21 +1011,8 @@ void Metaspace::set_narrow_klass_base_and_shift(address metaspace_base, address 
   AOTLoader::set_narrow_klass_shift();
 }
 
-#if INCLUDE_CDS
-// Return TRUE if the specified metaspace_base and cds_base are close enough
-// to work with compressed klass pointers.
-bool Metaspace::can_use_cds_with_metaspace_addr(char* metaspace_base, address cds_base) {
-  assert(cds_base != 0 && UseSharedSpaces, "Only use with CDS");
-  assert(UseCompressedClassPointers, "Only use with CompressedKlassPtrs");
-  address lower_base = MIN2((address)metaspace_base, cds_base);
-  address higher_address = MAX2((address)(cds_base + MetaspaceShared::core_spaces_size()),
-                                (address)(metaspace_base + compressed_class_space_size()));
-  return ((uint64_t)(higher_address - lower_base) <= UnscaledClassSpaceMax);
-}
-#endif
-
 // Try to allocate the metaspace at the requested addr.
-void Metaspace::allocate_metaspace_compressed_klass_ptrs(char* requested_addr, address cds_base) {
+void Metaspace::allocate_metaspace_compressed_klass_ptrs(ReservedSpace metaspace_rs, char* requested_addr, address cds_base) {
   assert(!DumpSharedSpaces, "compress klass space is allocated by MetaspaceShared class.");
   assert(using_class_space(), "called improperly");
   assert(UseCompressedClassPointers, "Only use with CompressedKlassPtrs");
@@ -1045,14 +1025,16 @@ void Metaspace::allocate_metaspace_compressed_klass_ptrs(char* requested_addr, a
   // Don't use large pages for the class space.
   bool large_pages = false;
 
+ if (metaspace_rs.is_reserved()) {
+   // CDS should have already reserved the space.
+   assert(requested_addr == NULL, "not used");
+   assert(cds_base != NULL, "CDS should have already reserved the memory space");
+ } else {
+   assert(cds_base == NULL, "must be");
 #if !(defined(AARCH64) || defined(AIX))
-  ReservedSpace metaspace_rs = ReservedSpace(compressed_class_space_size(),
-                                             _reserve_alignment,
-                                             large_pages,
-                                             requested_addr);
+  metaspace_rs = ReservedSpace(compressed_class_space_size(), _reserve_alignment,
+                               large_pages, requested_addr);
 #else // AARCH64
-  ReservedSpace metaspace_rs;
-
   // Our compressed klass pointers may fit nicely into the lower 32
   // bits.
   if ((uint64_t)requested_addr + compressed_class_space_size() < 4*G) {
@@ -1077,19 +1059,6 @@ void Metaspace::allocate_metaspace_compressed_klass_ptrs(char* requested_addr, a
         increment = 4*G;
       }
 
-#if INCLUDE_CDS
-      if (UseSharedSpaces
-          && ! can_use_cds_with_metaspace_addr(a, cds_base)) {
-        // We failed to find an aligned base that will reach.  Fall
-        // back to using our requested addr.
-        metaspace_rs = ReservedSpace(compressed_class_space_size(),
-                                     _reserve_alignment,
-                                     large_pages,
-                                     requested_addr);
-        break;
-      }
-#endif
-
       metaspace_rs = ReservedSpace(compressed_class_space_size(),
                                    _reserve_alignment,
                                    large_pages,
@@ -1098,53 +1067,30 @@ void Metaspace::allocate_metaspace_compressed_klass_ptrs(char* requested_addr, a
         break;
     }
   }
-
 #endif // AARCH64
+ }
 
   if (!metaspace_rs.is_reserved()) {
-#if INCLUDE_CDS
-    if (UseSharedSpaces) {
-      size_t increment = align_up(1*G, _reserve_alignment);
-
-      // Keep trying to allocate the metaspace, increasing the requested_addr
-      // by 1GB each time, until we reach an address that will no longer allow
-      // use of CDS with compressed klass pointers.
-      char *addr = requested_addr;
-      while (!metaspace_rs.is_reserved() && (addr + increment > addr) &&
-             can_use_cds_with_metaspace_addr(addr + increment, cds_base)) {
-        addr = addr + increment;
-        metaspace_rs = ReservedSpace(compressed_class_space_size(),
-                                     _reserve_alignment, large_pages, addr);
-      }
-    }
-#endif
+    assert(cds_base == NULL, "CDS should have already reserved the memory space");
     // If no successful allocation then try to allocate the space anywhere.  If
     // that fails then OOM doom.  At this point we cannot try allocating the
     // metaspace as if UseCompressedClassPointers is off because too much
     // initialization has happened that depends on UseCompressedClassPointers.
     // So, UseCompressedClassPointers cannot be turned off at this point.
+    metaspace_rs = ReservedSpace(compressed_class_space_size(),
+                                 _reserve_alignment, large_pages);
     if (!metaspace_rs.is_reserved()) {
-      metaspace_rs = ReservedSpace(compressed_class_space_size(),
-                                   _reserve_alignment, large_pages);
-      if (!metaspace_rs.is_reserved()) {
-        vm_exit_during_initialization(err_msg("Could not allocate metaspace: " SIZE_FORMAT " bytes",
-                                              compressed_class_space_size()));
-      }
+      vm_exit_during_initialization(err_msg("Could not allocate metaspace: " SIZE_FORMAT " bytes",
+                                            compressed_class_space_size()));
     }
   }
 
-  // If we got here then the metaspace got allocated.
-  MemTracker::record_virtual_memory_type((address)metaspace_rs.base(), mtClass);
-
-#if INCLUDE_CDS
-  // Verify that we can use shared spaces.  Otherwise, turn off CDS.
-  if (UseSharedSpaces && !can_use_cds_with_metaspace_addr(metaspace_rs.base(), cds_base)) {
-    FileMapInfo::stop_sharing_and_unmap(
-        "Could not allocate metaspace at a compatible address");
+  if (cds_base == NULL) {
+    // If we got here then the metaspace got allocated.
+    MemTracker::record_virtual_memory_type((address)metaspace_rs.base(), mtClass);
   }
-#endif
-  set_narrow_klass_base_and_shift((address)metaspace_rs.base(),
-                                  UseSharedSpaces ? (address)cds_base : 0);
+
+  set_narrow_klass_base_and_shift(metaspace_rs, cds_base);
 
   initialize_class_space(metaspace_rs);
 
@@ -1247,31 +1193,30 @@ void Metaspace::ergo_initialize() {
 void Metaspace::global_initialize() {
   MetaspaceGC::initialize();
 
+  bool class_space_inited = false;
 #if INCLUDE_CDS
   if (DumpSharedSpaces) {
     MetaspaceShared::initialize_dumptime_shared_and_meta_spaces();
+    class_space_inited = true;
   } else if (UseSharedSpaces) {
     // If any of the archived space fails to map, UseSharedSpaces
-    // is reset to false. Fall through to the
-    // (!DumpSharedSpaces && !UseSharedSpaces) case to set up class
-    // metaspace.
+    // is reset to false.
     MetaspaceShared::initialize_runtime_shared_and_meta_spaces();
+    class_space_inited = UseSharedSpaces;
   }
 
   if (DynamicDumpSharedSpaces && !UseSharedSpaces) {
     vm_exit_during_initialization("DynamicDumpSharedSpaces is unsupported when base CDS archive is not loaded", NULL);
   }
-
-  if (!DumpSharedSpaces && !UseSharedSpaces)
 #endif // INCLUDE_CDS
-  {
+
 #ifdef _LP64
-    if (using_class_space()) {
-      char* base = (char*)align_up(CompressedOops::end(), _reserve_alignment);
-      allocate_metaspace_compressed_klass_ptrs(base, 0);
-    }
-#endif // _LP64
+  if (using_class_space() && !class_space_inited) {
+    char* base = (char*)align_up(CompressedOops::end(), _reserve_alignment);
+    ReservedSpace dummy;
+    allocate_metaspace_compressed_klass_ptrs(dummy, base, 0);
   }
+#endif
 
   // Initialize these before initializing the VirtualSpaceList
   _first_chunk_word_size = InitialBootClassLoaderMetaspaceSize / BytesPerWord;

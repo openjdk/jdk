@@ -2430,6 +2430,14 @@ const size_t minimumSymbolTableSize = 1024;
   product(ccstr, ExtraSharedClassListFile, NULL,                            \
           "Extra classlist for building the CDS archive file")              \
                                                                             \
+  diagnostic(intx, ArchiveRelocationMode, 0,                                \
+           "(0) first map at preferred address, and if "                    \
+           "unsuccessful, map at alternative address (default); "           \
+           "(1) always map at alternative address; "                        \
+           "(2) always map at preferred address, and if unsuccessful, "     \
+           "do not map the archive")                                        \
+           range(0, 2)                                                      \
+                                                                            \
   experimental(size_t, ArrayAllocatorMallocLimit,                           \
           SOLARIS_ONLY(64*K) NOT_SOLARIS((size_t)-1),                       \
           "Allocation less than this value will be allocated "              \
