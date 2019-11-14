@@ -842,7 +842,6 @@ javax/swing/text/StyledEditorKit/4506788/bug4506788.java 8233561 macosx-all
 javax/swing/text/JTextComponent/6361367/bug6361367.java 8233569 macosx-all
 javax/swing/text/html/HTMLEditorKit/5043626/bug5043626.java 233570 macosx-all
 javax/swing/text/GlyphPainter2/6427244/bug6427244.java 8208566 macosx-all
-javax/swing/text/DefaultEditorKit/4278839/bug4278839.java 8233634 macosx-all
 javax/swing/ProgressMonitor/ProgressMonitorEscapeKeyPress.java 8233635 macosx-all
 javax/swing/plaf/nimbus/TestNimbusOverride.java 8233559 macosx-all
 javax/swing/JTree/4927934/bug4927934.java 8233550 macosx-all
