@@ -47,12 +47,6 @@ import jdk.test.lib.jfr.TestClassLoader;
  * @run main/othervm -Xlog:class+unload -Xlog:gc -Xmx16m jdk.jfr.event.runtime.TestClassUnloadEvent
  */
 
-/**
- * System.gc() will trigger class unloading if -XX:+ExplicitGCInvokesConcurrent is NOT set.
- * If this flag is set G1 will never unload classes on System.gc().
- * As far as the "jfr" key guarantees no VM flags are set from the outside
- * it should be enough with System.gc().
- */
 public final class TestClassUnloadEvent {
     private final static String TEST_CLASS_NAME = "jdk.jfr.event.runtime.TestClasses";
     private final static String EVENT_PATH = EventNames.ClassUnload;
