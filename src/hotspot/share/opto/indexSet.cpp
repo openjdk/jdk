@@ -111,6 +111,9 @@ IndexSet::BitBlock *IndexSet::alloc_block() {
 IndexSet::BitBlock *IndexSet::alloc_block_containing(uint element) {
   BitBlock *block = alloc_block();
   uint bi = get_block_index(element);
+  if (bi >= _current_block_limit) {
+    _current_block_limit = bi + 1;
+  }
   _blocks[bi] = block;
   return block;
 }
@@ -125,7 +128,7 @@ void IndexSet::free_block(uint i) {
   assert(block != &_empty_block, "cannot free the empty block");
   block->set_next((IndexSet::BitBlock*)Compile::current()->indexSet_free_block_list());
   Compile::current()->set_indexSet_free_block_list(block);
-  set_block(i,&_empty_block);
+  set_block(i, &_empty_block);
 }
 
 //------------------------------lrg_union--------------------------------------
@@ -168,38 +171,43 @@ uint IndexSet::lrg_union(uint lr1, uint lr2,
   // other color.  (A variant of the Briggs assertion)
   uint reg_degree = 0;
 
-  uint element;
+  uint element = 0;
   // Load up the combined interference set with the neighbors of one
-  IndexSetIterator elements(one);
-  while ((element = elements.next()) != 0) {
-    LRG &lrg = ifg->lrgs(element);
-    if (mask.overlap(lrg.mask())) {
-      insert(element);
-      if( !lrg.mask().is_AllStack() ) {
-        reg_degree += lrg1.compute_degree(lrg);
-        if( reg_degree >= fail_degree ) return reg_degree;
-      } else {
-        // !!!!! Danger!  No update to reg_degree despite having a neighbor.
-        // A variant of the Briggs assertion.
-        // Not needed if I simplify during coalesce, ala George/Appel.
-        assert( lrg.lo_degree(), "" );
-      }
-    }
-  }
-  // Add neighbors of two as well
-  IndexSetIterator elements2(two);
-  while ((element = elements2.next()) != 0) {
-    LRG &lrg = ifg->lrgs(element);
-    if (mask.overlap(lrg.mask())) {
-      if (insert(element)) {
-        if( !lrg.mask().is_AllStack() ) {
-          reg_degree += lrg2.compute_degree(lrg);
-          if( reg_degree >= fail_degree ) return reg_degree;
+  if (!one->is_empty()) {
+    IndexSetIterator elements(one);
+    while ((element = elements.next()) != 0) {
+      LRG &lrg = ifg->lrgs(element);
+      if (mask.overlap(lrg.mask())) {
+        insert(element);
+        if (!lrg.mask().is_AllStack()) {
+          reg_degree += lrg1.compute_degree(lrg);
+          if (reg_degree >= fail_degree) return reg_degree;
         } else {
           // !!!!! Danger!  No update to reg_degree despite having a neighbor.
           // A variant of the Briggs assertion.
           // Not needed if I simplify during coalesce, ala George/Appel.
-          assert( lrg.lo_degree(), "" );
+          assert(lrg.lo_degree(), "");
+        }
+      }
+    }
+  }
+  // Add neighbors of two as well
+
+  if (!two->is_empty()) {
+    IndexSetIterator elements2(two);
+    while ((element = elements2.next()) != 0) {
+      LRG &lrg = ifg->lrgs(element);
+      if (mask.overlap(lrg.mask())) {
+        if (insert(element)) {
+          if (!lrg.mask().is_AllStack()) {
+            reg_degree += lrg2.compute_degree(lrg);
+            if (reg_degree >= fail_degree) return reg_degree;
+          } else {
+            // !!!!! Danger!  No update to reg_degree despite having a neighbor.
+            // A variant of the Briggs assertion.
+            // Not needed if I simplify during coalesce, ala George/Appel.
+            assert(lrg.lo_degree(), "");
+          }
         }
       }
     }
@@ -219,6 +227,7 @@ IndexSet::IndexSet (IndexSet *set) {
   _max_elements = set->_max_elements;
 #endif
   _count = set->_count;
+  _current_block_limit = set->_current_block_limit;
   _max_blocks = set->_max_blocks;
   if (_max_blocks <= preallocated_block_list_size) {
     _blocks = _preallocated_block_list;
@@ -248,6 +257,7 @@ void IndexSet::initialize(uint max_elements) {
   _max_elements = max_elements;
 #endif
   _count = 0;
+  _current_block_limit = 0;
   _max_blocks = (max_elements + bits_per_block - 1) / bits_per_block;
 
   if (_max_blocks <= preallocated_block_list_size) {
@@ -272,6 +282,7 @@ void IndexSet::initialize(uint max_elements, Arena *arena) {
   _max_elements = max_elements;
 #endif // ASSERT
   _count = 0;
+  _current_block_limit = 0;
   _max_blocks = (max_elements + bits_per_block - 1) / bits_per_block;
 
   if (_max_blocks <= preallocated_block_list_size) {
@@ -294,7 +305,8 @@ void IndexSet::swap(IndexSet *set) {
   set->check_watch("swap", _serial_number);
 #endif
 
-  for (uint i = 0; i < _max_blocks; i++) {
+  uint max = MAX2(_current_block_limit, set->_current_block_limit);
+  for (uint i = 0; i < max; i++) {
     BitBlock *temp = _blocks[i];
     set_block(i, set->_blocks[i]);
     set->set_block(i, temp);
@@ -302,6 +314,11 @@ void IndexSet::swap(IndexSet *set) {
   uint temp = _count;
   _count = set->_count;
   set->_count = temp;
+
+  temp = _current_block_limit;
+  _current_block_limit = set->_current_block_limit;
+  set->_current_block_limit = temp;
+
 }
 
 //---------------------------- IndexSet::dump() -----------------------------
@@ -383,78 +400,6 @@ void IndexSet::verify() const {
 // Create an iterator for a set.  If empty blocks are detected when iterating
 // over the set, these blocks are replaced.
 
-IndexSetIterator::IndexSetIterator(IndexSet *set) {
-#ifdef ASSERT
-  if (CollectIndexSetStatistics) {
-    set->tally_iteration_statistics();
-  }
-  set->check_watch("traversed", set->count());
-#endif
-  if (set->is_empty()) {
-    _current = 0;
-    _next_word = IndexSet::words_per_block;
-    _next_block = 1;
-    _max_blocks = 1;
-
-    // We don't need the following values when we iterate over an empty set.
-    // The commented out code is left here to document that the omission
-    // is intentional.
-    //
-    //_value = 0;
-    //_words = NULL;
-    //_blocks = NULL;
-    //_set = NULL;
-  } else {
-    _current = 0;
-    _value = 0;
-    _next_block = 0;
-    _next_word = IndexSet::words_per_block;
-
-    _max_blocks = set->_max_blocks;
-    _words = NULL;
-    _blocks = set->_blocks;
-    _set = set;
-  }
-}
-
-//---------------------------- IndexSetIterator(const) -----------------------------
-// Iterate over a constant IndexSet.
-
-IndexSetIterator::IndexSetIterator(const IndexSet *set) {
-#ifdef ASSERT
-  if (CollectIndexSetStatistics) {
-    set->tally_iteration_statistics();
-  }
-  // We don't call check_watch from here to avoid bad recursion.
-  //   set->check_watch("traversed const", set->count());
-#endif
-  if (set->is_empty()) {
-    _current = 0;
-    _next_word = IndexSet::words_per_block;
-    _next_block = 1;
-    _max_blocks = 1;
-
-    // We don't need the following values when we iterate over an empty set.
-    // The commented out code is left here to document that the omission
-    // is intentional.
-    //
-    //_value = 0;
-    //_words = NULL;
-    //_blocks = NULL;
-    //_set = NULL;
-  } else {
-    _current = 0;
-    _value = 0;
-    _next_block = 0;
-    _next_word = IndexSet::words_per_block;
-
-    _max_blocks = set->_max_blocks;
-    _words = NULL;
-    _blocks = set->_blocks;
-    _set = NULL;
-  }
-}
-
 //---------------------------- List16Iterator::advance_and_next() -----------------------------
 // Advance to the next non-empty word in the set being iterated over.  Return the next element
 // if there is one.  If we are done, return 0.  This method is called from the next() method
@@ -467,10 +412,8 @@ uint IndexSetIterator::advance_and_next() {
       // Found a non-empty word.
       _value = ((_next_block - 1) * IndexSet::bits_per_block) + (wi * IndexSet::bits_per_word);
       _current = _words[wi];
-
-      _next_word = wi+1;
-
-      return next();
+      _next_word = wi + 1;
+      return next_value();
     }
   }
 
@@ -488,8 +431,7 @@ uint IndexSetIterator::advance_and_next() {
 
           _next_block = bi+1;
           _next_word = wi+1;
-
-          return next();
+          return next_value();
         }
       }
 
@@ -500,11 +442,6 @@ uint IndexSetIterator::advance_and_next() {
       }
     }
   }
-
-  // These assignments make redundant calls to next on a finished iterator
-  // faster.  Probably not necessary.
-  _next_block = _max_blocks;
-  _next_word = IndexSet::words_per_block;
 
   // No more words.
   return 0;

@@ -1169,7 +1169,7 @@ void PhaseChaitin::Simplify( ) {
       lrgs(lo)._next = _simplified;
       _simplified = lo;
       // If this guy is "at risk" then mark his current neighbors
-      if( lrgs(lo)._at_risk ) {
+      if (lrgs(lo)._at_risk && !_ifg->neighbors(lo)->is_empty()) {
         IndexSetIterator elements(_ifg->neighbors(lo));
         uint datum;
         while ((datum = elements.next()) != 0) {
@@ -1178,7 +1178,10 @@ void PhaseChaitin::Simplify( ) {
       }
 
       // Yank this guy from the IFG.
-      IndexSet *adj = _ifg->remove_node( lo );
+      IndexSet *adj = _ifg->remove_node(lo);
+      if (adj->is_empty()) {
+        continue;
+      }
 
       // If any neighbors' degrees fall below their number of
       // allowed registers, then put that neighbor on the low degree
@@ -1202,8 +1205,11 @@ void PhaseChaitin::Simplify( ) {
           // Pull from hi-degree list
           uint prev = n->_prev;
           uint next = n->_next;
-          if (prev) lrgs(prev)._next = next;
-          else _hi_degree = next;
+          if (prev) {
+            lrgs(prev)._next = next;
+          } else {
+            _hi_degree = next;
+          }
           lrgs(next)._prev = prev;
           n->_next = _lo_degree;
           _lo_degree = neighbor;
@@ -1314,7 +1320,7 @@ OptoReg::Name PhaseChaitin::bias_color( LRG &lrg, int chunk ) {
 
   // Check for "at_risk" LRG's
   uint risk_lrg = _lrg_map.find(lrg._risk_bias);
-  if( risk_lrg != 0 ) {
+  if (risk_lrg != 0 && !_ifg->neighbors(risk_lrg)->is_empty()) {
     // Walk the colored neighbors of the "at_risk" candidate
     // Choose a color which is both legal and already taken by a neighbor
     // of the "at_risk" candidate in order to improve the chances of the
@@ -1330,7 +1336,7 @@ OptoReg::Name PhaseChaitin::bias_color( LRG &lrg, int chunk ) {
   }
 
   uint copy_lrg = _lrg_map.find(lrg._copy_bias);
-  if( copy_lrg != 0 ) {
+  if (copy_lrg != 0) {
     // If he has a color,
     if(!_ifg->_yanked->test(copy_lrg)) {
       OptoReg::Name reg = lrgs(copy_lrg).reg();
@@ -1432,41 +1438,43 @@ uint PhaseChaitin::Select( ) {
 
     // Remove neighbor colors
     IndexSet *s = _ifg->neighbors(lidx);
-
     debug_only(RegMask orig_mask = lrg->mask();)
-    IndexSetIterator elements(s);
-    uint neighbor;
-    while ((neighbor = elements.next()) != 0) {
-      // Note that neighbor might be a spill_reg.  In this case, exclusion
-      // of its color will be a no-op, since the spill_reg chunk is in outer
-      // space.  Also, if neighbor is in a different chunk, this exclusion
-      // will be a no-op.  (Later on, if lrg runs out of possible colors in
-      // its chunk, a new chunk of color may be tried, in which case
-      // examination of neighbors is started again, at retry_next_chunk.)
-      LRG &nlrg = lrgs(neighbor);
-      OptoReg::Name nreg = nlrg.reg();
-      // Only subtract masks in the same chunk
-      if( nreg >= chunk && nreg < chunk + RegMask::CHUNK_SIZE ) {
+
+    if (!s->is_empty()) {
+      IndexSetIterator elements(s);
+      uint neighbor;
+      while ((neighbor = elements.next()) != 0) {
+        // Note that neighbor might be a spill_reg.  In this case, exclusion
+        // of its color will be a no-op, since the spill_reg chunk is in outer
+        // space.  Also, if neighbor is in a different chunk, this exclusion
+        // will be a no-op.  (Later on, if lrg runs out of possible colors in
+        // its chunk, a new chunk of color may be tried, in which case
+        // examination of neighbors is started again, at retry_next_chunk.)
+        LRG &nlrg = lrgs(neighbor);
+        OptoReg::Name nreg = nlrg.reg();
+        // Only subtract masks in the same chunk
+        if (nreg >= chunk && nreg < chunk + RegMask::CHUNK_SIZE) {
 #ifndef PRODUCT
-        uint size = lrg->mask().Size();
-        RegMask rm = lrg->mask();
+          uint size = lrg->mask().Size();
+          RegMask rm = lrg->mask();
 #endif
-        lrg->SUBTRACT(nlrg.mask());
+          lrg->SUBTRACT(nlrg.mask());
 #ifndef PRODUCT
-        if (trace_spilling() && lrg->mask().Size() != size) {
-          ttyLocker ttyl;
-          tty->print("L%d ", lidx);
-          rm.dump();
-          tty->print(" intersected L%d ", neighbor);
-          nlrg.mask().dump();
-          tty->print(" removed ");
-          rm.SUBTRACT(lrg->mask());
-          rm.dump();
-          tty->print(" leaving ");
-          lrg->mask().dump();
-          tty->cr();
+          if (trace_spilling() && lrg->mask().Size() != size) {
+            ttyLocker ttyl;
+            tty->print("L%d ", lidx);
+            rm.dump();
+            tty->print(" intersected L%d ", neighbor);
+            nlrg.mask().dump();
+            tty->print(" removed ");
+            rm.SUBTRACT(lrg->mask());
+            rm.dump();
+            tty->print(" leaving ");
+            lrg->mask().dump();
+            tty->cr();
+          }
+#endif
         }
-#endif
       }
     }
     //assert(is_allstack == lrg->mask().is_AllStack(), "nbrs must not change AllStackedness");
@@ -1827,7 +1835,7 @@ bool PhaseChaitin::stretch_base_pointer_live_ranges(ResourceArea *a) {
 
       // Found a safepoint?
       JVMState *jvms = n->jvms();
-      if( jvms ) {
+      if (jvms && !liveout.is_empty()) {
         // Now scan for a live derived pointer
         IndexSetIterator elements(&liveout);
         uint neighbor;

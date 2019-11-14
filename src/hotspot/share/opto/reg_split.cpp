@@ -1271,10 +1271,12 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
         // it contains no members which compress to defidx.  Finding such an
         // instance may be a case to add liveout adjustment in compress_uf_map().
         // See 5063219.
-        uint member;
-        IndexSetIterator isi(liveout);
-        while ((member = isi.next()) != 0) {
-          assert(defidx != _lrg_map.find_const(member), "Live out member has not been compressed");
+        if (!liveout->is_empty()) {
+          uint member;
+          IndexSetIterator isi(liveout);
+          while ((member = isi.next()) != 0) {
+            assert(defidx != _lrg_map.find_const(member), "Live out member has not been compressed");
+          }
         }
 #endif
         Reachblock[slidx] = NULL;
