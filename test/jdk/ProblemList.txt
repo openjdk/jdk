@@ -733,7 +733,7 @@ javax/sound/midi/Sequencer/MetaCallback.java 8178698 linux-all,solaris-all
 # jdk_swing
 
 com/sun/java/swing/plaf/windows/Test8173145.java 8198334 windows-all
-javax/swing/plaf/basic/BasicTextUI/8001470/bug8001470.java 8233177 linux-all
+javax/swing/plaf/basic/BasicTextUI/8001470/bug8001470.java 8233177 linux-all,windows-all
 
 javax/swing/border/TestTitledBorderLeak.java 8213531 linux-all
 javax/swing/JComponent/7154030/bug7154030.java 7190978 generic-all
