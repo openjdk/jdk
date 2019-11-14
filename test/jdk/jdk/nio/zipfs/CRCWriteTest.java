@@ -57,10 +57,10 @@ public class CRCWriteTest {
      * can be used successfully with the OutputStream write methods
      */
     @Test
-    private void zipFsOsDeflatedWriteTest() throws Exception {
+    public void zipFsOsDeflatedWriteTest() throws Exception {
         Files.deleteIfExists(JAR_FILE);
         String[] msg = {"Hello ", "Tennis Anyone", "!!!!"};
-        Entry e0 = Entry.of("Entry-0", ZipEntry.DEFLATED, Arrays.toString(msg));
+        Entry e0 = Entry.of("Entry-0", ZipEntry.DEFLATED, String.join("",msg));
 
         try (FileSystem zipfs = FileSystems.newFileSystem(JAR_FILE,
                 Map.of("create", "true"))) {
