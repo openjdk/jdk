@@ -304,4 +304,9 @@ public class HotSpotForeignCallLinkageImpl extends HotSpotForeignCallTarget impl
     public String getSymbol() {
         return stub == null ? null : stub.toString();
     }
+
+    @Override
+    public boolean needsClearUpperVectorRegisters() {
+        return isCompiledStub() && mayContainFP();
+    }
 }

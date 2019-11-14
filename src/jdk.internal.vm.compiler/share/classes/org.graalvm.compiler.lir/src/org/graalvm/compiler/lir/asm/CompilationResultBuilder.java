@@ -692,4 +692,18 @@ public class CompilationResultBuilder {
     public void setConservativeLabelRanges() {
         this.conservativeLabelOffsets = true;
     }
+
+    public final boolean needsClearUpperVectorRegisters() {
+        for (AbstractBlockBase<?> block : lir.codeEmittingOrder()) {
+            if (block == null) {
+                continue;
+            }
+            for (LIRInstruction op : lir.getLIRforBlock(block)) {
+                if (op.needsClearUpperVectorRegisters()) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
 }

@@ -1107,11 +1107,20 @@ public class StandardGraphBuilderPlugins {
 
         @Override
         public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver unsafe, ValueNode object, ValueNode offset) {
+            // Opaque mode does not directly impose any ordering constraints with respect to other
+            // variables beyond Plain mode.
+            if (accessKind == AccessKind.OPAQUE && StampTool.isPointerAlwaysNull(object)) {
+                // OFF_HEAP_LOCATION accesses are not floatable => no membars needed for opaque.
+                return apply(b, targetMethod, unsafe, offset);
+            }
             // Emits a null-check for the otherwise unused receiver
             unsafe.get();
             if (accessKind.emitBarriers) {
                 b.add(new MembarNode(accessKind.preReadBarriers));
             }
+            // Raw accesses can be turned into floatable field accesses, the membars preserve the
+            // access mode. In the case of opaque access, and only for opaque, the location of the
+            // wrapping membars can be refined to the field location.
             createUnsafeAccess(object, b, (obj, loc) -> new RawLoadNode(obj, offset, unsafeAccessKind, loc));
             if (accessKind.emitBarriers) {
                 b.add(new MembarNode(accessKind.postReadBarriers));
@@ -1144,12 +1153,21 @@ public class StandardGraphBuilderPlugins {
 
         @Override
         public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver unsafe, ValueNode object, ValueNode offset, ValueNode value) {
+            // Opaque mode does not directly impose any ordering constraints with respect to other
+            // variables beyond Plain mode.
+            if (accessKind == AccessKind.OPAQUE && StampTool.isPointerAlwaysNull(object)) {
+                // OFF_HEAP_LOCATION accesses are not floatable => no membars needed for opaque.
+                return apply(b, targetMethod, unsafe, offset, value);
+            }
             // Emits a null-check for the otherwise unused receiver
             unsafe.get();
             if (accessKind.emitBarriers) {
                 b.add(new MembarNode(accessKind.preWriteBarriers));
             }
             ValueNode maskedValue = b.maskSubWordValue(value, unsafeAccessKind);
+            // Raw accesses can be turned into floatable field accesses, the membars preserve the
+            // access mode. In the case of opaque access, and only for opaque, the location of the
+            // wrapping membars can be refined to the field location.
             createUnsafeAccess(object, b, (obj, loc) -> new RawStoreNode(obj, offset, maskedValue, unsafeAccessKind, loc));
             if (accessKind.emitBarriers) {
                 b.add(new MembarNode(accessKind.postWriteBarriers));

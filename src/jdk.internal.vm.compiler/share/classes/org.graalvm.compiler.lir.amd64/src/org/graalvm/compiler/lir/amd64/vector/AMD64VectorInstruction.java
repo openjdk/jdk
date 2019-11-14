@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,11 +22,25 @@
  */
 
 
-package org.graalvm.compiler.hotspot.amd64;
+package org.graalvm.compiler.lir.amd64.vector;
 
-import jdk.vm.ci.meta.AllocatableValue;
+import org.graalvm.compiler.asm.amd64.AVXKind.AVXSize;
+import org.graalvm.compiler.lir.LIRInstructionClass;
+import org.graalvm.compiler.lir.amd64.AMD64LIRInstruction;
 
-public interface AMD64HotSpotRestoreRbpOp {
+public abstract class AMD64VectorInstruction extends AMD64LIRInstruction {
 
-    void setSavedRbp(AllocatableValue value);
+    public static final LIRInstructionClass<AMD64VectorInstruction> TYPE = LIRInstructionClass.create(AMD64VectorInstruction.class);
+    protected final AVXSize size;
+
+    public AMD64VectorInstruction(LIRInstructionClass<? extends AMD64VectorInstruction> c, AVXSize size) {
+        super(c);
+        this.size = size;
+    }
+
+    @Override
+    public boolean needsClearUpperVectorRegisters() {
+        return size == AVXSize.YMM || size == AVXSize.ZMM;
+    }
+
 }

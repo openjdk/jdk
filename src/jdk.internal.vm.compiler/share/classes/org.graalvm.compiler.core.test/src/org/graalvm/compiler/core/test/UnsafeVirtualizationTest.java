@@ -24,8 +24,7 @@
 
 package org.graalvm.compiler.core.test;
 
-import java.lang.reflect.Field;
-
+import org.graalvm.compiler.core.test.ea.EATestBase.TestClassInt;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
 import org.graalvm.compiler.nodes.spi.CoreProviders;
@@ -39,75 +38,45 @@ import jdk.vm.ci.meta.ResolvedJavaMethod;
 
 public class UnsafeVirtualizationTest extends GraalCompilerTest {
 
-    public static class Base {
-        /*
-         * This padding ensure that the size of the Base class ends up as a multiple of 8, which
-         * makes the first field of the subclass 8-byte aligned.
-         */
-        double padding;
-    }
-
-    public static class A extends Base {
-        int f1;
-        int f2;
-    }
-
-    private static final long AF1Offset;
-    private static final long AF2Offset;
-    static {
-        long o1 = -1;
-        long o2 = -1;
-        try {
-            Field f1 = A.class.getDeclaredField("f1");
-            Field f2 = A.class.getDeclaredField("f2");
-            o1 = UNSAFE.objectFieldOffset(f1);
-            o2 = UNSAFE.objectFieldOffset(f2);
-        } catch (NoSuchFieldException | SecurityException e) {
-            throw new AssertionError(e);
-        }
-        AF1Offset = o1;
-        AF2Offset = o2;
-    }
-
     public static int unsafeSnippet1(double i1) {
-        A a = new A();
-        UNSAFE.putDouble(a, AF1Offset, i1);
-        return UNSAFE.getInt(a, AF1Offset) + UNSAFE.getInt(a, AF2Offset);
+        TestClassInt a = new TestClassInt();
+        UNSAFE.putDouble(a, TestClassInt.fieldOffset1, i1);
+        return UNSAFE.getInt(a, TestClassInt.fieldOffset1) + UNSAFE.getInt(a, TestClassInt.fieldOffset2);
     }
 
     public static long unsafeSnippet2a(int i1) {
-        A a = new A();
-        UNSAFE.putDouble(a, AF1Offset, i1);
-        a.f1 = i1;
-        return UNSAFE.getLong(a, AF1Offset);
+        TestClassInt a = new TestClassInt();
+        UNSAFE.putDouble(a, TestClassInt.fieldOffset1, i1);
+        a.setFirstField(i1);
+        return UNSAFE.getLong(a, TestClassInt.fieldOffset1);
     }
 
     public static long unsafeSnippet2b(int i1) {
-        A a = new A();
-        UNSAFE.putDouble(a, AF1Offset, i1);
-        a.f2 = i1;
-        return UNSAFE.getLong(a, AF1Offset);
+        TestClassInt a = new TestClassInt();
+        UNSAFE.putDouble(a, TestClassInt.fieldOffset1, i1);
+        a.setSecondField(i1);
+        return UNSAFE.getLong(a, TestClassInt.fieldOffset1);
     }
 
     public static long unsafeSnippet3a(int i1) {
-        A a = new A();
-        UNSAFE.putDouble(a, AF1Offset, i1);
-        UNSAFE.putInt(a, AF1Offset, i1);
-        return UNSAFE.getLong(a, AF1Offset);
+        TestClassInt a = new TestClassInt();
+        UNSAFE.putDouble(a, TestClassInt.fieldOffset1, i1);
+        UNSAFE.putInt(a, TestClassInt.fieldOffset1, i1);
+        return UNSAFE.getLong(a, TestClassInt.fieldOffset1);
     }
 
     public static long unsafeSnippet3b(int i1) {
-        A a = new A();
-        UNSAFE.putDouble(a, AF1Offset, i1);
-        UNSAFE.putInt(a, AF2Offset, i1);
-        return UNSAFE.getLong(a, AF1Offset);
+        TestClassInt a = new TestClassInt();
+        UNSAFE.putDouble(a, TestClassInt.fieldOffset1, i1);
+        UNSAFE.putInt(a, TestClassInt.fieldOffset2, i1);
+        return UNSAFE.getLong(a, TestClassInt.fieldOffset1);
     }
 
     public static int unsafeSnippet4(double i1) {
-        A a = new A();
-        UNSAFE.putDouble(a, AF1Offset, i1);
-        UNSAFE.putDouble(a, AF1Offset, i1);
-        return UNSAFE.getInt(a, AF1Offset) + UNSAFE.getInt(a, AF2Offset);
+        TestClassInt a = new TestClassInt();
+        UNSAFE.putDouble(a, TestClassInt.fieldOffset1, i1);
+        UNSAFE.putDouble(a, TestClassInt.fieldOffset1, i1);
+        return UNSAFE.getInt(a, TestClassInt.fieldOffset1) + UNSAFE.getInt(a, TestClassInt.fieldOffset2);
     }
 
     @Test
@@ -141,7 +110,7 @@ public class UnsafeVirtualizationTest extends GraalCompilerTest {
     }
 
     public void testPartialEscapeReadElimination(String snippet, boolean canonicalizeBefore, Object... args) {
-        assert AF1Offset % 8 == 0 : "First of the two int-fields must be 8-byte aligned";
+        assert TestClassInt.fieldOffset1 % 8 == 0 : "First of the two int-fields must be 8-byte aligned";
 
         ResolvedJavaMethod method = getResolvedJavaMethod(snippet);
         StructuredGraph graph = parseEager(snippet, AllowAssumptions.NO);

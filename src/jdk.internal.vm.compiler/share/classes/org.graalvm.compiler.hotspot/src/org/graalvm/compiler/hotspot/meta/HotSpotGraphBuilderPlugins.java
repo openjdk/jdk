@@ -35,9 +35,11 @@ import java.lang.invoke.ConstantCallSite;
 import java.lang.invoke.MutableCallSite;
 import java.lang.invoke.VolatileCallSite;
 import java.lang.reflect.Array;
+import java.lang.reflect.Type;
 import java.math.BigInteger;
 import java.util.zip.CRC32;
 
+import jdk.internal.vm.compiler.collections.Pair;
 import org.graalvm.compiler.api.replacements.SnippetReflectionProvider;
 import org.graalvm.compiler.core.common.spi.ForeignCallsProvider;
 import org.graalvm.compiler.core.common.type.ObjectStamp;
@@ -115,6 +117,7 @@ import jdk.vm.ci.meta.DeoptimizationAction;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
+import jdk.vm.ci.services.Services;
 import sun.misc.Unsafe;
 
 /**
@@ -461,21 +464,29 @@ public class HotSpotGraphBuilderPlugins {
     }
 
     public static String lookupIntrinsicName(GraalHotSpotVMConfig config, String className, String name1, String name2) {
+        return selectIntrinsicName(config, className, name1, name2).getLeft();
+    }
+
+    /**
+     * Returns a pair of Strings where the left one represents the matched intrinsic name and the
+     * right one represents the mismatched intrinsic name.
+     */
+    public static Pair<String, String> selectIntrinsicName(GraalHotSpotVMConfig config, String className, String name1, String name2) {
         boolean foundName1 = false;
         boolean foundName2 = false;
-        String name = name1;
         for (VMIntrinsicMethod intrinsic : config.getStore().getIntrinsics()) {
             if (className.equals(intrinsic.declaringClass)) {
                 if (name1.equals(intrinsic.name)) {
                     foundName1 = true;
                 } else if (name2.equals(intrinsic.name)) {
                     foundName2 = true;
-                    name = name2;
                 }
             }
         }
-        if (foundName1 != foundName2) {
-            return name;
+        if (foundName1 && !foundName2) {
+            return Pair.create(name1, name2);
+        } else if (foundName2 && !foundName1) {
+            return Pair.create(name2, name1);
         }
         throw GraalError.shouldNotReachHere();
     }
@@ -500,19 +511,41 @@ public class HotSpotGraphBuilderPlugins {
             String arch = config.osArch;
             String decryptSuffix = arch.equals("sparc") ? "WithOriginalKey" : "";
 
-            String cbcEncryptName = lookupIntrinsicName(config, "com/sun/crypto/provider/CipherBlockChaining", "implEncrypt", "encrypt");
-            String cbcDecryptName = lookupIntrinsicName(config, "com/sun/crypto/provider/CipherBlockChaining", "implDecrypt", "decrypt");
             Registration r = new Registration(plugins, "com.sun.crypto.provider.CipherBlockChaining", replacements);
-            r.registerMethodSubstitution(CipherBlockChainingSubstitutions.class, cbcEncryptName, Receiver.class, byte[].class, int.class, int.class, byte[].class, int.class);
-            r.registerMethodSubstitution(CipherBlockChainingSubstitutions.class, cbcDecryptName, cbcDecryptName + decryptSuffix, Receiver.class, byte[].class, int.class, int.class, byte[].class,
-                            int.class);
 
-            String aesEncryptName = lookupIntrinsicName(config, "com/sun/crypto/provider/AESCrypt", "implEncryptBlock", "encryptBlock");
-            String aesDecryptName = lookupIntrinsicName(config, "com/sun/crypto/provider/AESCrypt", "implDecryptBlock", "decryptBlock");
+            Pair<String, String> cbcEncryptName = selectIntrinsicName(config, "com/sun/crypto/provider/CipherBlockChaining", "implEncrypt", "encrypt");
+            registerAndCheckMismatch(r, CipherBlockChainingSubstitutions.class, cbcEncryptName, Receiver.class, byte[].class, int.class, int.class,
+                            byte[].class, int.class);
+
+            Pair<String, String> cbcDecryptName = selectIntrinsicName(config, "com/sun/crypto/provider/CipherBlockChaining", "implDecrypt", "decrypt");
+            registerAndCheckMismatch(r, CipherBlockChainingSubstitutions.class, cbcDecryptName, cbcDecryptName.getLeft() + decryptSuffix, Receiver.class, byte[].class, int.class, int.class,
+                            byte[].class, int.class);
 
             r = new Registration(plugins, "com.sun.crypto.provider.AESCrypt", replacements);
-            r.registerMethodSubstitution(AESCryptSubstitutions.class, aesEncryptName, Receiver.class, byte[].class, int.class, byte[].class, int.class);
-            r.registerMethodSubstitution(AESCryptSubstitutions.class, aesDecryptName, aesDecryptName + decryptSuffix, Receiver.class, byte[].class, int.class, byte[].class, int.class);
+
+            Pair<String, String> aesEncryptName = selectIntrinsicName(config, "com/sun/crypto/provider/AESCrypt", "implEncryptBlock", "encryptBlock");
+            registerAndCheckMismatch(r, AESCryptSubstitutions.class, aesEncryptName, Receiver.class, byte[].class, int.class, byte[].class, int.class);
+
+            Pair<String, String> aesDecryptName = selectIntrinsicName(config, "com/sun/crypto/provider/AESCrypt", "implDecryptBlock", "decryptBlock");
+            registerAndCheckMismatch(r, AESCryptSubstitutions.class, aesDecryptName, aesDecryptName.getLeft() + decryptSuffix, Receiver.class, byte[].class, int.class, byte[].class, int.class);
+        }
+    }
+
+    private static void registerAndCheckMismatch(Registration r, Class<?> substitutionClass, Pair<String, String> intrinsicNames, Type... argumentTypes) {
+        try {
+            r.registerMethodSubstitution(substitutionClass, intrinsicNames.getLeft(), argumentTypes);
+        } catch (NoSuchMethodError e) {
+            throw new GraalError(e, "Found method named '%s' instead of '%s' in class '%s'. This is most likely because the JVMCI JDK in %s was built on an incompatible base JDK.",
+                            intrinsicNames.getRight(), intrinsicNames.getLeft(), r.getDeclaringType().getTypeName(), Services.getSavedProperties().get("java.home"));
+        }
+    }
+
+    private static void registerAndCheckMismatch(Registration r, Class<?> substitutionClass, Pair<String, String> intrinsicNames, String substituteName, Type... argumentTypes) {
+        try {
+            r.registerMethodSubstitution(substitutionClass, intrinsicNames.getLeft(), substituteName, argumentTypes);
+        } catch (NoSuchMethodError e) {
+            throw new GraalError(e, "Found method named '%s' instead of '%s' in class '%s'. This is most likely because the JVMCI JDK in %s was built on an incompatible base JDK.",
+                            intrinsicNames.getRight(), intrinsicNames.getLeft(), r.getDeclaringType().getTypeName(), Services.getSavedProperties().get("java.home"));
         }
     }
 
@@ -544,21 +577,21 @@ public class HotSpotGraphBuilderPlugins {
             r.registerMethodSubstitution(DigestBaseSubstitutions.class, "implCompressMultiBlock0", Receiver.class, byte[].class, int.class, int.class);
         }
 
-        String implCompressName = lookupIntrinsicName(config, "sun/security/provider/SHA", "implCompress", "implCompress0");
+        Pair<String, String> implCompressName = selectIntrinsicName(config, "sun/security/provider/SHA", "implCompress", "implCompress0");
         if (useSha1) {
             assert config.sha1ImplCompress != 0L;
             Registration r = new Registration(plugins, "sun.security.provider.SHA", replacements);
-            r.registerMethodSubstitution(SHASubstitutions.class, implCompressName, "implCompress0", Receiver.class, byte[].class, int.class);
+            registerAndCheckMismatch(r, SHASubstitutions.class, implCompressName, "implCompress0", Receiver.class, byte[].class, int.class);
         }
         if (useSha256) {
             assert config.sha256ImplCompress != 0L;
             Registration r = new Registration(plugins, "sun.security.provider.SHA2", replacements);
-            r.registerMethodSubstitution(SHA2Substitutions.class, implCompressName, "implCompress0", Receiver.class, byte[].class, int.class);
+            registerAndCheckMismatch(r, SHA2Substitutions.class, implCompressName, "implCompress0", Receiver.class, byte[].class, int.class);
         }
         if (useSha512) {
             assert config.sha512ImplCompress != 0L;
             Registration r = new Registration(plugins, "sun.security.provider.SHA5", replacements);
-            r.registerMethodSubstitution(SHA5Substitutions.class, implCompressName, "implCompress0", Receiver.class, byte[].class, int.class);
+            registerAndCheckMismatch(r, SHA5Substitutions.class, implCompressName, "implCompress0", Receiver.class, byte[].class, int.class);
         }
     }
 

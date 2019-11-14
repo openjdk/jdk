@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,4 +73,13 @@ public interface ForeignCallLinkage extends InvokeTarget {
      * the VM to be able to inspect the thread's execution state.
      */
     boolean needsDebugInfo();
+
+    /**
+     * Returns true if further cleanup on the float registers is needed after performing the foreign
+     * call. This is critical on AMD64 as there is a performance penalty switching between legacy
+     * SSE and AVX instruction while the upper halves of the xmm registers are not zero.
+     */
+    default boolean needsClearUpperVectorRegisters() {
+        return false;
+    }
 }

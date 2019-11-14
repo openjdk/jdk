@@ -132,12 +132,19 @@ public class OptionsParser {
             throw new IllegalArgumentException(msg.toString());
         }
 
+        Object value = parseOptionValue(desc, uncheckedValue);
+
+        desc.getOptionKey().update(values, value);
+    }
+
+    /** Parses a given option value with a known descriptor. */
+    public static Object parseOptionValue(OptionDescriptor desc, Object uncheckedValue) {
         Class<?> optionType = desc.getOptionValueType();
         Object value;
         if (!(uncheckedValue instanceof String)) {
             if (optionType != uncheckedValue.getClass()) {
                 String type = optionType.getSimpleName();
-                throw new IllegalArgumentException(type + " option '" + name + "' must have " + type + " value, not " + uncheckedValue.getClass() + " [toString: " + uncheckedValue + "]");
+                throw new IllegalArgumentException(type + " option '" + desc.getName() + "' must have " + type + " value, not " + uncheckedValue.getClass() + " [toString: " + uncheckedValue + "]");
             }
             value = uncheckedValue;
         } else {
@@ -148,7 +155,7 @@ public class OptionsParser {
                 } else if ("false".equals(valueString)) {
                     value = Boolean.FALSE;
                 } else {
-                    throw new IllegalArgumentException("Boolean option '" + name + "' must have value \"true\" or \"false\", not \"" + uncheckedValue + "\"");
+                    throw new IllegalArgumentException("Boolean option '" + desc.getName() + "' must have value \"true\" or \"false\", not \"" + uncheckedValue + "\"");
                 }
             } else if (optionType == String.class) {
                 value = valueString;
@@ -156,7 +163,7 @@ public class OptionsParser {
                 value = ((EnumOptionKey<?>) desc.getOptionKey()).valueOf(valueString);
             } else {
                 if (valueString.isEmpty()) {
-                    throw new IllegalArgumentException("Non empty value required for option '" + name + "'");
+                    throw new IllegalArgumentException("Non empty value required for option '" + desc.getName() + "'");
                 }
                 try {
                     if (optionType == Float.class) {
@@ -168,15 +175,14 @@ public class OptionsParser {
                     } else if (optionType == Long.class) {
                         value = Long.valueOf(parseLong(valueString));
                     } else {
-                        throw new IllegalArgumentException("Wrong value for option '" + name + "'");
+                        throw new IllegalArgumentException("Wrong value for option '" + desc.getName() + "'");
                     }
                 } catch (NumberFormatException nfe) {
-                    throw new IllegalArgumentException("Value for option '" + name + "' has invalid number format: " + valueString);
+                    throw new IllegalArgumentException("Value for option '" + desc.getName() + "' has invalid number format: " + valueString);
                 }
             }
         }
-
-        desc.getOptionKey().update(values, value);
+        return value;
     }
 
     private static long parseLong(String v) {

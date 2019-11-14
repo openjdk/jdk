@@ -340,4 +340,8 @@ public final class AMD64StringUTF16CompressOp extends AMD64LIRInstruction {
         masm.bind(labelDone);
     }
 
+    @Override
+    public boolean needsClearUpperVectorRegisters() {
+        return true;
+    }
 }

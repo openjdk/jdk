@@ -864,4 +864,9 @@ public final class AMD64ArrayEqualsOp extends AMD64LIRInstruction {
                 throw new IllegalStateException();
         }
     }
+
+    @Override
+    public boolean needsClearUpperVectorRegisters() {
+        return true;
+    }
 }

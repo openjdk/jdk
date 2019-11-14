@@ -259,7 +259,7 @@ public final class MethodHandleNode extends MacroStateSplitNode implements Simpl
 
         Assumptions assumptions = adder.getAssumptions();
         ResolvedJavaMethod realTarget = null;
-        if (target.canBeStaticallyBound()) {
+        if (target.canBeStaticallyBound() || intrinsicMethod == IntrinsicMethod.LINK_TO_SPECIAL) {
             realTarget = target;
         } else {
             ResolvedJavaType targetType = target.getDeclaringClass();

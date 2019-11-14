@@ -26,6 +26,7 @@ package org.graalvm.compiler.hotspot.amd64;
 
 import static jdk.vm.ci.amd64.AMD64.r10;
 import static jdk.vm.ci.amd64.AMD64.rax;
+import static jdk.vm.ci.amd64.AMD64.rbp;
 import static jdk.vm.ci.amd64.AMD64.rsp;
 import static jdk.vm.ci.code.ValueUtil.asRegister;
 import static org.graalvm.compiler.core.common.GraalOptions.CanOmitFrame;
@@ -93,7 +94,7 @@ public class AMD64HotSpotBackend extends HotSpotHostBackend implements LIRGenera
     @Override
     protected FrameMapBuilder newFrameMapBuilder(RegisterConfig registerConfig) {
         RegisterConfig registerConfigNonNull = registerConfig == null ? getCodeCache().getRegisterConfig() : registerConfig;
-        FrameMap frameMap = new AMD64FrameMap(getCodeCache(), registerConfigNonNull, this);
+        FrameMap frameMap = new AMD64FrameMap(getCodeCache(), registerConfigNonNull, this, config.preserveFramePointer);
         return new AMD64FrameMapBuilder(frameMap, getCodeCache(), registerConfigNonNull);
     }
 
@@ -130,10 +131,12 @@ public class AMD64HotSpotBackend extends HotSpotHostBackend implements LIRGenera
 
         final boolean isStub;
         final boolean omitFrame;
+        final boolean useStandardFrameProlog;
 
-        HotSpotFrameContext(boolean isStub, boolean omitFrame) {
+        HotSpotFrameContext(boolean isStub, boolean omitFrame, boolean useStandardFrameProlog) {
             this.isStub = isStub;
             this.omitFrame = omitFrame;
+            this.useStandardFrameProlog = useStandardFrameProlog;
         }
 
         @Override
@@ -156,6 +159,11 @@ public class AMD64HotSpotBackend extends HotSpotHostBackend implements LIRGenera
                     emitStackOverflowCheck(crb);
                     // assert asm.position() - verifiedEntryPointOffset >=
                     // PATCHED_VERIFIED_ENTRY_POINT_INSTRUCTION_SIZE;
+                }
+                if (useStandardFrameProlog) {
+                    // Stack-walking friendly instructions
+                    asm.push(rbp);
+                    asm.movq(rbp, rsp);
                 }
                 if (!isStub && asm.position() == verifiedEntryPointOffset) {
                     asm.subqWide(rsp, frameSize);
@@ -180,7 +188,12 @@ public class AMD64HotSpotBackend extends HotSpotHostBackend implements LIRGenera
                 assert crb.frameMap.getRegisterConfig().getCalleeSaveRegisters() == null;
 
                 int frameSize = crb.frameMap.frameSize();
-                asm.incrementq(rsp, frameSize);
+                if (useStandardFrameProlog) {
+                    asm.movq(rsp, rbp);
+                    asm.pop(rbp);
+                } else {
+                    asm.incrementq(rsp, frameSize);
+                }
             }
         }
     }
@@ -202,7 +215,7 @@ public class AMD64HotSpotBackend extends HotSpotHostBackend implements LIRGenera
 
         Stub stub = gen.getStub();
         Assembler masm = new AMD64MacroAssembler(getTarget());
-        HotSpotFrameContext frameContext = new HotSpotFrameContext(stub != null, omitFrame);
+        HotSpotFrameContext frameContext = new HotSpotFrameContext(stub != null, omitFrame, config.preserveFramePointer);
         DataBuilder dataBuilder = new HotSpotDataBuilder(getCodeCache().getTarget());
         CompilationResultBuilder crb = factory.createBuilder(getCodeCache(), getForeignCalls(), frameMap, masm, dataBuilder, frameContext, options, debug, compilationResult, Register.None);
         crb.setTotalFrameSize(frameMap.totalFrameSize());
@@ -330,7 +343,7 @@ public class AMD64HotSpotBackend extends HotSpotHostBackend implements LIRGenera
     @Override
     public RegisterAllocationConfig newRegisterAllocationConfig(RegisterConfig registerConfig, String[] allocationRestrictedTo) {
         RegisterConfig registerConfigNonNull = registerConfig == null ? getCodeCache().getRegisterConfig() : registerConfig;
-        return new AMD64HotSpotRegisterAllocationConfig(registerConfigNonNull, allocationRestrictedTo);
+        return new AMD64HotSpotRegisterAllocationConfig(registerConfigNonNull, allocationRestrictedTo, config.preserveFramePointer);
     }
 
     @Override

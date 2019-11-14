@@ -111,6 +111,8 @@ public class GraalHotSpotVMConfig extends GraalHotSpotVMConfigBase {
     public final boolean useVectorizedMismatchIntrinsic = getFlag("UseVectorizedMismatchIntrinsic", Boolean.class, false);
     public final boolean useFMAIntrinsics = getFlag("UseFMA", Boolean.class, false);
 
+    public final boolean preserveFramePointer = getFlag("PreserveFramePointer", Boolean.class, false);
+
     /*
      * These are methods because in some JDKs the flags are visible but the stubs themselves haven't
      * been exported so we have to check both if the flag is on and if we have the stub.

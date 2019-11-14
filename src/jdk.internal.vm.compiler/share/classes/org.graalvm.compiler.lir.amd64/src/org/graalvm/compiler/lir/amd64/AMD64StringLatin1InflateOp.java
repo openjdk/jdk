@@ -275,4 +275,8 @@ public final class AMD64StringLatin1InflateOp extends AMD64LIRInstruction {
         masm.bind(labelDone);
     }
 
+    @Override
+    public boolean needsClearUpperVectorRegisters() {
+        return true;
+    }
 }
