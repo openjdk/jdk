@@ -25,7 +25,8 @@
  * @test
  * @bug     8234025
  * @summary Elements.getPackageElement(ModuleElement,CharSequence) returns null for unnamed package
- * @modules jdk.compiler
+ * @modules jdk.compiler/com.sun.tools.javac.api
+ *          jdk.compiler/com.sun.tools.javac.main
  * @library /tools/lib /tools/javac/lib
  * @build toolbox.ModuleBuilder toolbox.ToolBox
  * @run main TestModuleUnnamedPackage
