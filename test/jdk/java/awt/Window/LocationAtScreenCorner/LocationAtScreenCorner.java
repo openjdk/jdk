@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,7 @@
  * questions.
  */
 
+import java.awt.AWTException;
 import java.awt.Frame;
 import java.awt.GraphicsDevice;
 import java.awt.GraphicsEnvironment;
@@ -31,15 +32,21 @@ import java.awt.Robot;
 /**
  * @test
  * @key headful
- * @bug 8201364
+ * @bug 8201364 8232433
  * @summary Component.getLocation() should returns correct location if
  *          Component.setBounds() was ignored by the OS
  */
 public final class LocationAtScreenCorner {
 
     public static void main(final String[] args) throws Exception {
+        test(true);
+        test(false);
+    }
+
+    private static void test(final boolean undecorated) throws AWTException {
         Robot robot = new Robot();
         Frame frame = new Frame();
+        frame.setUndecorated(undecorated);
         frame.setSize(200, 200);
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
