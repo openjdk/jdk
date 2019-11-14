@@ -1,6 +1,5 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -42,6 +41,7 @@ import com.sun.org.apache.xml.internal.serializer.NamespaceMappings;
 /**
  * @author Santiago Pericas-Geertsen
  * @author Sunitha Reddy
+ * @LastModified: Nov 2019
  */
 public class DOM2TO implements XMLReader, Locator2 {
 
@@ -171,7 +171,7 @@ public class DOM2TO implements XMLReader, Locator2 {
             }
 
             // Process all non-namespace attributes next
-            NamespaceMappings nm = new NamespaceMappings();
+            NamespaceMappings nm = null;
             for (int i = 0; i < length; i++) {
                 final Node attr = map.item(i);
                 final String qnameAttr = attr.getNodeName();
@@ -187,6 +187,7 @@ public class DOM2TO implements XMLReader, Locator2 {
                         // For attributes not given an prefix explictly
                         // but having a namespace uri we need
                         // to explicitly generate the prefix
+                        if (nm == null) nm = new NamespaceMappings();
                         String newPrefix = nm.lookupPrefix(uriAttr);
                         if (newPrefix == null)
                             newPrefix = nm.generateNextPrefix();
