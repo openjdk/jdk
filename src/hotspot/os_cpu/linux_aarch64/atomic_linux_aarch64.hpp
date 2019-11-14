@@ -29,6 +29,8 @@
 #include "vm_version_aarch64.hpp"
 
 // Implementation of class atomic
+// Note that memory_order_conservative requires a full barrier after atomic stores.
+// See https://patchwork.kernel.org/patch/3575821/
 
 #define FULL_MEM_BARRIER  __sync_synchronize()
 #define READ_MEM_BARRIER  __atomic_thread_fence(__ATOMIC_ACQUIRE);
@@ -52,7 +54,7 @@ inline T Atomic::PlatformXchg<byte_size>::operator()(T exchange_value,
                                                      T volatile* dest,
                                                      atomic_memory_order order) const {
   STATIC_ASSERT(byte_size == sizeof(T));
-  T res = __sync_lock_test_and_set(dest, exchange_value);
+  T res = __atomic_exchange_n(dest, exchange_value, __ATOMIC_RELEASE);
   FULL_MEM_BARRIER;
   return res;
 }
@@ -70,7 +72,12 @@ inline T Atomic::PlatformCmpxchg<byte_size>::operator()(T exchange_value,
                               __ATOMIC_RELAXED, __ATOMIC_RELAXED);
     return value;
   } else {
-    return __sync_val_compare_and_swap(dest, compare_value, exchange_value);
+    T value = compare_value;
+    FULL_MEM_BARRIER;
+    __atomic_compare_exchange(dest, &value, &exchange_value, /*weak*/false,
+                              __ATOMIC_RELAXED, __ATOMIC_RELAXED);
+    FULL_MEM_BARRIER;
+    return value;
   }
 }
 
