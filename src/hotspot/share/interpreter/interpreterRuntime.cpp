@@ -356,7 +356,7 @@ void InterpreterRuntime::note_trap(JavaThread* thread, int reason, TRAPS) {
 #ifdef CC_INTERP
 // As legacy note_trap, but we have more arguments.
 JRT_ENTRY(void, InterpreterRuntime::note_trap(JavaThread* thread, int reason, Method *method, int trap_bci))
-  methodHandle trap_method(method);
+  methodHandle trap_method(thread, method);
   note_trap_inner(thread, reason, trap_method, trap_bci, THREAD);
 JRT_END
 
