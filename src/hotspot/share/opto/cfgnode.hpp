@@ -308,6 +308,8 @@ protected:
   Node* Ideal_common(PhaseGVN *phase, bool can_reshape);
   Node* search_identical(int dist);
 
+  Node* simple_subsuming(PhaseIterGVN* igvn);
+
 public:
 
   // Degrees of branch prediction probability by order of magnitude:

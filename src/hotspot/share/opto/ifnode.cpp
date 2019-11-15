@@ -599,7 +599,7 @@ Node* IfNode::up_one_dom(Node *curr, bool linear_only) {
 
 //------------------------------filtered_int_type--------------------------------
 // Return a possibly more restrictive type for val based on condition control flow for an if
-const TypeInt* IfNode::filtered_int_type(PhaseGVN* gvn, Node *val, Node* if_proj) {
+const TypeInt* IfNode::filtered_int_type(PhaseGVN* gvn, Node* val, Node* if_proj) {
   assert(if_proj &&
          (if_proj->Opcode() == Op_IfTrue || if_proj->Opcode() == Op_IfFalse), "expecting an if projection");
   if (if_proj->in(0) && if_proj->in(0)->is_If()) {
@@ -1239,8 +1239,7 @@ Node* IfNode::fold_compares(PhaseIterGVN* igvn) {
 
   if (cmpi_folds(igvn)) {
     Node* ctrl = in(0);
-    if (is_ctrl_folds(ctrl, igvn) &&
-        ctrl->outcnt() == 1) {
+    if (is_ctrl_folds(ctrl, igvn) && ctrl->outcnt() == 1) {
       // A integer comparison immediately dominated by another integer
       // comparison
       ProjNode* success = NULL;
@@ -1392,41 +1391,36 @@ Node* IfNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // Check for people making a useless boolean: things like
   // if( (x < y ? true : false) ) { ... }
   // Replace with if( x < y ) { ... }
-  Node *bol2 = remove_useless_bool(this, phase);
-  if( bol2 ) return bol2;
+  Node* bol2 = remove_useless_bool(this, phase);
+  if (bol2) return bol2;
 
   if (in(0) == NULL) return NULL;     // Dead loop?
 
-  PhaseIterGVN *igvn = phase->is_IterGVN();
+  PhaseIterGVN* igvn = phase->is_IterGVN();
   Node* result = fold_compares(igvn);
   if (result != NULL) {
     return result;
   }
 
   // Scan for an equivalent test
-  Node *cmp;
-  int dist = 0;               // Cutoff limit for search
-  int op = Opcode();
-  if( op == Op_If &&
-      (cmp=in(1)->in(1))->Opcode() == Op_CmpP ) {
-    if( cmp->in(2) != NULL && // make sure cmp is not already dead
-        cmp->in(2)->bottom_type() == TypePtr::NULL_PTR ) {
+  int dist = 4;               // Cutoff limit for search
+  if (is_If() && in(1)->is_Bool()) {
+    Node* cmp = in(1)->in(1);
+    if (cmp->Opcode() == Op_CmpP &&
+        cmp->in(2) != NULL && // make sure cmp is not already dead
+        cmp->in(2)->bottom_type() == TypePtr::NULL_PTR) {
       dist = 64;              // Limit for null-pointer scans
-    } else {
-      dist = 4;               // Do not bother for random pointer tests
     }
-  } else {
-    dist = 4;                 // Limit for random junky scans
   }
 
   Node* prev_dom = search_identical(dist);
 
-  if (prev_dom == NULL) {
-    return NULL;
+  if (prev_dom != NULL) {
+    // Replace dominated IfNode
+    return dominated_by(prev_dom, igvn);
   }
 
-  // Replace dominated IfNode
-  return dominated_by(prev_dom, igvn);
+  return simple_subsuming(igvn);
 }
 
 //------------------------------dominated_by-----------------------------------
@@ -1521,6 +1515,114 @@ Node* IfNode::search_identical(int dist) {
 #endif
 
   return prev_dom;
+}
+
+
+static int subsuming_bool_test_encode(Node*);
+
+// Check if dominating test is subsuming 'this' one.
+//
+//              cmp
+//              / \
+//     (r1)  bool  \
+//            /    bool (r2)
+//    (dom) if       \
+//            \       )
+//    (pre)  if[TF]  /
+//               \  /
+//                if (this)
+//   \r1
+//  r2\  eqT  eqF  neT  neF  ltT  ltF  leT  leF  gtT  gtF  geT  geF
+//  eq    t    f    f    t    f    -    -    f    f    -    -    f
+//  ne    f    t    t    f    t    -    -    t    t    -    -    t
+//  lt    f    -    -    f    t    f    -    f    f    -    f    t
+//  le    t    -    -    t    t    -    t    f    f    t    -    t
+//  gt    f    -    -    f    f    -    f    t    t    f    -    f
+//  ge    t    -    -    t    f    t    -    t    t    -    t    f
+//
+Node* IfNode::simple_subsuming(PhaseIterGVN* igvn) {
+  // Table encoding: N/A (na), True-branch (tb), False-branch (fb).
+  static enum { na, tb, fb } s_short_circuit_map[6][12] = {
+  /*rel: eq+T eq+F ne+T ne+F lt+T lt+F le+T le+F gt+T gt+F ge+T ge+F*/
+  /*eq*/{ tb,  fb,  fb,  tb,  fb,  na,  na,  fb,  fb,  na,  na,  fb },
+  /*ne*/{ fb,  tb,  tb,  fb,  tb,  na,  na,  tb,  tb,  na,  na,  tb },
+  /*lt*/{ fb,  na,  na,  fb,  tb,  fb,  na,  fb,  fb,  na,  fb,  tb },
+  /*le*/{ tb,  na,  na,  tb,  tb,  na,  tb,  fb,  fb,  tb,  na,  tb },
+  /*gt*/{ fb,  na,  na,  fb,  fb,  na,  fb,  tb,  tb,  fb,  na,  fb },
+  /*ge*/{ tb,  na,  na,  tb,  fb,  tb,  na,  tb,  tb,  na,  tb,  fb }};
+
+  Node* pre = in(0);
+  if (!pre->is_IfTrue() && !pre->is_IfFalse()) {
+    return NULL;
+  }
+  Node* dom = pre->in(0);
+  if (!dom->is_If()) {
+    return NULL;
+  }
+  Node* bol = in(1);
+  if (!bol->is_Bool()) {
+    return NULL;
+  }
+  Node* cmp = in(1)->in(1);
+  if (!cmp->is_Cmp()) {
+    return NULL;
+  }
+
+  if (!dom->in(1)->is_Bool()) {
+    return NULL;
+  }
+  if (dom->in(1)->in(1) != cmp) {  // Not same cond?
+    return NULL;
+  }
+
+  int drel = subsuming_bool_test_encode(dom->in(1));
+  int trel = subsuming_bool_test_encode(bol);
+  int bout = pre->is_IfFalse() ? 1 : 0;
+
+  if (drel < 0 || trel < 0) {
+    return NULL;
+  }
+  int br = s_short_circuit_map[trel][2*drel+bout];
+  if (br == na) {
+    return NULL;
+  }
+#ifndef PRODUCT
+  if (TraceIterativeGVN) {
+    tty->print("   Subsumed IfNode: "); dump();
+  }
+#endif
+  // Replace condition with constant True(1)/False(0).
+  set_req(1, igvn->intcon(br == tb ? 1 : 0));
+
+  if (bol->outcnt() == 0) {
+    igvn->remove_dead_node(bol);    // Kill the BoolNode.
+  }
+  return this;
+}
+
+// Map BoolTest to local table ecoding. The BoolTest (e)numerals
+//   { eq = 0, ne = 4, le = 5, ge = 7, lt = 3, gt = 1 }
+// are mapped to table indices, while the remaining (e)numerals in BoolTest
+//   { overflow = 2, no_overflow = 6, never = 8, illegal = 9 }
+// are ignored (these are not modelled in the table).
+//
+static int subsuming_bool_test_encode(Node* node) {
+  precond(node->is_Bool());
+  BoolTest::mask x = node->as_Bool()->_test._test;
+  switch (x) {
+    case BoolTest::eq: return 0;
+    case BoolTest::ne: return 1;
+    case BoolTest::lt: return 2;
+    case BoolTest::le: return 3;
+    case BoolTest::gt: return 4;
+    case BoolTest::ge: return 5;
+    case BoolTest::overflow:
+    case BoolTest::no_overflow:
+    case BoolTest::never:
+    case BoolTest::illegal:
+    default:
+      return -1;
+  }
 }
 
 //------------------------------Identity---------------------------------------
@@ -1668,7 +1770,7 @@ Node* RangeCheckNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     // checks.
 
     // The top 3 range checks seen
-    const int NRC =3;
+    const int NRC = 3;
     RangeCheck prev_checks[NRC];
     int nb_checks = 0;
 
