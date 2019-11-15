@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,21 +22,32 @@
  */
 
 /*
- * @test Test8004741.java
+ * @test
  * @bug 8004741
  * @summary Missing compiled exception handle table entry for multidimensional array allocation
  *
  * @requires !vm.graal.enabled
+ * @library /test/lib
+ *
+ * @build sun.hotspot.WhiteBox
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ *                                sun.hotspot.WhiteBox$WhiteBoxPermission
+ *
  * @run main/othervm -Xmx128m -Xbatch -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions
  *    -XX:-TieredCompilation -XX:+StressCompiledExceptionHandlers
  *    -XX:+SafepointALot -XX:GuaranteedSafepointInterval=100
+ *    -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *    compiler.c2.Test8004741
+ *
  * @run main/othervm -Xmx128m -Xbatch -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions
  *    -XX:-TieredCompilation -XX:+StressCompiledExceptionHandlers
+ *    -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *    compiler.c2.Test8004741
  */
 
 package compiler.c2;
+
+import sun.hotspot.WhiteBox;
 
 public class Test8004741 extends Thread {
 
@@ -58,7 +69,7 @@ public class Test8004741 extends Thread {
     } catch (ThreadDeath e) {
       System.out.println("test got ThreadDeath");
       passed++;
-      throw(e);
+      throw e;
     }
     return ar;
   }
@@ -84,15 +95,11 @@ public class Test8004741 extends Thread {
         try {
           progressLock.wait();
         } catch (InterruptedException e) {
-          e.printStackTrace();
-          System.out.println("unexpected InterruptedException");
-          fail();
+          throw new Error("unexpected InterruptedException", e);
         }
       }
       if (progressState > state) {
-        System.out.println("unexpected test state change, expected " +
-                            state + " but saw " + progressState);
-        fail();
+        throw new Error("unexpected test state change, state = " + state + ", progressState = " + progressState);
       }
     }
   }
@@ -114,9 +121,7 @@ public class Test8004741 extends Thread {
     } catch (ThreadDeath e) {
       // nothing to say, passing was incremented by the test.
     } catch (Throwable e) {
-      e.printStackTrace();
-      System.out.println("unexpected Throwable " + e);
-      fail();
+      throw new Error("unexpected Throwable " + e, e);
     }
     toState(STOPPING);
   }
@@ -144,24 +149,22 @@ public class Test8004741 extends Thread {
       test(2, 100);
     }
 
-    // Will this sleep help ensure that the compiler is run?
-    Thread.sleep(500);
-    passed = 0;
+    var method = Test8004741.class.getDeclaredMethod("test", int.class, int.class);
+    if (!WhiteBox.getWhiteBox().isMethodCompiled(method)) {
+        throw new Error("test method didn't get compiled");
+    }
 
     try {
       test(-1, 100);
-      System.out.println("Missing NegativeArraySizeException #1");
-      fail();
-    } catch ( java.lang.NegativeArraySizeException e ) {
+      throw new AssertionError("Missing NegativeArraySizeException");
+    } catch (NegativeArraySizeException e) {
       System.out.println("Saw expected NegativeArraySizeException #1");
     }
 
     try {
       test(100, -1);
-      fail();
-      System.out.println("Missing NegativeArraySizeException #2");
-      fail();
-    } catch ( java.lang.NegativeArraySizeException e ) {
+      throw new AssertionError("Missing NegativeArraySizeException");
+    } catch (NegativeArraySizeException e) {
       System.out.println("Saw expected NegativeArraySizeException #2");
     }
 
@@ -169,23 +172,10 @@ public class Test8004741 extends Thread {
      * as long as it does not crash (the outcome if the exception range
      * table entry for the array allocation is missing).
      */
-    int N = 12;
-    for (int n = 0; n < N; n++) {
+    passed = 0;
+    int limit = 6;
+    while (passed != limit) {
       threadTest();
     }
-
-    if (passed > N/2) {
-      System.out.println("Saw " + passed + " out of " + N + " possible ThreadDeath hits");
-      System.out.println("PASSED");
-    } else {
-      System.out.println("Too few ThreadDeath hits; expected at least " + N/2 +
-                         " but saw only " + passed);
-      fail();
-    }
   }
-
-  static void fail() {
-    System.out.println("FAILED");
-    System.exit(97);
-  }
-};
+}
