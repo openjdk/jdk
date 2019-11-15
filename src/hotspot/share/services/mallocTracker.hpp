@@ -70,8 +70,9 @@ class MemoryCounter {
     }
   }
 
-  inline void resize(long sz) {
+  inline void resize(ssize_t sz) {
     if (sz != 0) {
+      assert(sz >= 0 || _size >= size_t(-sz), "Must be");
       Atomic::add(size_t(sz), &_size);
       DEBUG_ONLY(_peak_size = MAX2(_size, _peak_size);)
     }
@@ -113,7 +114,7 @@ class MallocMemory {
     _arena.deallocate(0);
   }
 
-  inline void record_arena_size_change(long sz) {
+  inline void record_arena_size_change(ssize_t sz) {
     _arena.resize(sz);
   }
 
@@ -361,7 +362,7 @@ class MallocTracker : AllStatic {
     MallocMemorySummary::record_arena_free(flags);
   }
 
-  static inline void record_arena_size_change(int size, MEMFLAGS flags) {
+  static inline void record_arena_size_change(ssize_t size, MEMFLAGS flags) {
     MallocMemorySummary::record_arena_size_change(size, flags);
   }
  private:
