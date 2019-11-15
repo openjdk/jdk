@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,36 +54,47 @@ public class ModalDialogEnterExitEventsTest {
     private static volatile AtomicInteger mouseExitCount = new AtomicInteger();
 
     private static JFrame frame;
+    private static JDialog dialog;
     private static JButton openButton;
     private static JButton closeButton;
 
-    public static void main(String[] args) {
-        Robot robot = Util.createRobot();
+    public static void main(String[] args) throws Exception {
+        try {
+            Robot robot = Util.createRobot();
 
-        SwingUtilities.invokeLater(new Runnable() {
-            @Override
-            public void run() {
-                createAndShowGUI();
+            SwingUtilities.invokeAndWait(new Runnable() {
+                @Override
+                public void run() {
+                    createAndShowGUI();
+                }
+            });
+            Util.waitForIdle(robot);
+
+            Util.clickOnComp(frame, robot, 500);
+            Util.waitForIdle(robot);
+
+            mouseEnterCount.set(0);
+            mouseExitCount.set(0);
+
+            Util.clickOnComp(openButton, robot, 500);
+            Util.waitForIdle(robot);
+            Util.waitTillShown(dialog);
+            if (mouseExitCount.get() != 1) {
+                throw new RuntimeException("Test FAILED. Wrong number of "
+                    + "MouseExited events = " + mouseExitCount.get());
             }
-        });
-        Util.waitForIdle(robot);
 
-        Util.clickOnComp(frame, robot, 500);
-        Util.waitForIdle(robot);
-
-        mouseEnterCount.set(0);
-        mouseExitCount.set(0);
-
-        Util.clickOnComp(openButton, robot, 500);
-        Util.waitForIdle(robot);
-        if (mouseExitCount.get() != 1) {
-            throw new RuntimeException("Test FAILED. Wrong number of MouseExited events = " + mouseExitCount.get());
-        }
-
-        Util.clickOnComp(closeButton, robot, 500);
-        Util.waitForIdle(robot);
-        if (mouseEnterCount.get() != 1) {
-            throw new RuntimeException("Test FAILED. Wrong number of MouseEntered events = "+ mouseEnterCount.get());
+            Util.clickOnComp(closeButton, robot, 500);
+            Util.waitForIdle(robot);
+            robot.delay(200);
+            if (mouseEnterCount.get() != 1) {
+                throw new RuntimeException("Test FAILED. Wrong number of "
+                    + "MouseEntered events = "+ mouseEnterCount.get());
+            }
+        } finally {
+            if (frame != null) {
+                SwingUtilities.invokeAndWait(() -> frame.dispose());
+            }
         }
     }
 
@@ -106,7 +117,7 @@ public class ModalDialogEnterExitEventsTest {
         openButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                JDialog dialog = new JDialog(frame, "Modal Dialog", true);
+                dialog = new JDialog(frame, "Modal Dialog", true);
                 dialog.setLayout(new FlowLayout());
                 closeButton = new JButton("Close");
                 closeButton.addActionListener(new ActionListener() {
