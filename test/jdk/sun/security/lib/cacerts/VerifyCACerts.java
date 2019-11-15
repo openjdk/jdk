@@ -26,7 +26,7 @@
  * @test
  * @bug 8189131 8198240 8191844 8189949 8191031 8196141 8204923 8195774 8199779
  *      8209452 8209506 8210432 8195793 8216577 8222089 8222133 8222137 8222136
- *      8223499 8225392
+ *      8223499 8225392 8232019
  * @summary Check root CA entries in cacerts file
  */
 import java.io.ByteArrayInputStream;
@@ -52,12 +52,12 @@ public class VerifyCACerts {
             + File.separator + "security" + File.separator + "cacerts";
 
     // The numbers of certs now.
-    private static final int COUNT = 88;
+    private static final int COUNT = 89;
 
     // SHA-256 of cacerts, can be generated with
     // shasum -a 256 cacerts | sed -e 's/../&:/g' | tr '[:lower:]' '[:upper:]' | cut -c1-95
     private static final String CHECKSUM
-            = "4E:21:94:7C:1D:49:28:BB:34:B0:40:DF:AE:19:B4:41:C6:B5:8A:EE:EB:D5:DE:B4:EF:07:AF:63:18:73:A6:FE";
+            = "C7:BE:67:B5:2E:35:17:5E:95:3E:61:68:F8:CF:D0:FB:7F:21:63:91:1E:C2:4D:A2:FE:1B:D4:D4:FA:86:52:7E";
 
     // map of cert alias to SHA-256 fingerprint
     @SuppressWarnings("serial")
@@ -239,6 +239,8 @@ public class VerifyCACerts {
                     "DD:69:36:FE:21:F8:F0:77:C1:23:A1:A5:21:C1:22:24:F7:22:55:B7:3E:03:A7:26:06:93:E8:A2:4B:0F:A3:89");
             put("globalsignrootcar6 [jdk]",
                     "2C:AB:EA:FE:37:D0:6C:A2:2A:BA:73:91:C0:03:3D:25:98:29:52:C4:53:64:73:49:76:3A:3A:B5:AD:6C:CF:69");
+            put("luxtrustglobalroot2ca [jdk]",
+                    "54:45:5F:71:29:C2:0B:14:47:C4:18:F9:97:16:8F:24:C5:8F:C5:02:3B:F5:DA:5B:E2:EB:6E:1D:D8:90:2E:D5");
         }
     };
 
@@ -268,6 +270,7 @@ public class VerifyCACerts {
         if (!checksum.equals(CHECKSUM)) {
             atLeastOneFailed = true;
             System.err.println("ERROR: wrong checksum\n" + checksum);
+            System.err.println("Expected checksum\n" + CHECKSUM);
         }
 
         KeyStore ks = KeyStore.getInstance("JKS");
