@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2006, 2014, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2006, 2019, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -75,7 +75,7 @@ echo "Test #1: 5->6, non-prompt. Please type <R>"
 echo "=========================================="
 echo
 rm $KS 2> /dev/null
-$J5/bin/keytool -keystore $KS -genkey -dname CN=olala -storepass $PASSW || exit 1
+$J5/bin/keytool -keystore $KS -genkey -keyalg DSA -dname CN=olala -storepass $PASSW || exit 1
 $JM/bin/keytool -keystore $KS -list -storepass $PASSW || exit 2
 
 echo "=========================================="
@@ -84,7 +84,7 @@ echo "=========================================="
 echo
 
 rm $KS 2> /dev/null
-$JM/bin/keytool -keystore $KS -genkey -dname CN=olala -storepass $PASSW || exit 3
+$JM/bin/keytool -keystore $KS -genkey -keyalg DSA -dname CN=olala -storepass $PASSW || exit 3
 $J5/bin/keytool -keystore $KS -list -storepass $PASSW || exit 4
 
 echo "============================================================"
@@ -93,7 +93,7 @@ echo "============================================================"
 echo
 
 rm $KS 2> /dev/null
-$J5/bin/keytool -keystore $KS -genkey -dname CN=olala || exit 5
+$J5/bin/keytool -keystore $KS -genkey -keyalg DSA -dname CN=olala || exit 5
 $JM/bin/keytool -keystore $KS -list || exit 6
 echo $PASSW| $J5/bin/keytool -keystore $KS -list || exit 7
 echo $PASSW| $JM/bin/keytool -keystore $KS -list || exit 8
@@ -104,7 +104,7 @@ echo "======================================================================="
 echo
 
 rm $KS 2> /dev/null
-$JM/bin/keytool -keystore $KS -genkey -dname CN=olala || exit 9
+$JM/bin/keytool -keystore $KS -genkey -keyalg DSA -dname CN=olala || exit 9
 $J5/bin/keytool -keystore $KS -list || exit 10
 echo $PASSW| $JM/bin/keytool -keystore $KS -list || exit 11
 echo $PASSW| $J5/bin/keytool -keystore $KS -list || exit 12
@@ -115,7 +115,7 @@ echo "==========================================="
 echo
 
 rm $KS 2> /dev/null
-echo $PASSW| $J5/bin/keytool -keystore $KS -genkey -dname CN=olala || exit 13
+echo $PASSW| $J5/bin/keytool -keystore $KS -genkey -keyalg DSA -dname CN=olala || exit 13
 $JM/bin/keytool -keystore $KS -list || exit 14
 echo $PASSW| $J5/bin/keytool -keystore $KS -list || exit 15
 echo $PASSW| $JM/bin/keytool -keystore $KS -list || exit 16

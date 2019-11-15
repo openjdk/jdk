@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,12 +26,12 @@ import jdk.test.lib.process.OutputAnalyzer;
 
 /**
  * @test
- * @bug 8212003 8214179
+ * @bug 8212003 8214024
  * @summary Deprecating the default keytool -keyalg option
  * @library /test/lib
  */
 
-public class DeprecateKeyalg {
+public class RemoveKeyAlgDefault {
 
     private static final String COMMON = "-keystore ks -storetype jceks "
             + "-storepass changeit -keypass changeit";
@@ -39,35 +39,25 @@ public class DeprecateKeyalg {
     public static void main(String[] args) throws Throwable {
 
         kt("-genkeypair -keyalg DSA -alias a -dname CN=A")
+                .shouldHaveExitValue(0)
                 .shouldContain("Generating")
                 .shouldNotContain("-keyalg option must be specified");
 
         kt("-genkeypair -alias b -dname CN=B")
-                .shouldContain("Generating")
-                .shouldContain("default key algorithm (DSA)")
+                .shouldHaveExitValue(1)
                 .shouldContain("-keyalg option must be specified");
 
         kt("-genseckey -keyalg DES -alias c")
+                .shouldHaveExitValue(0)
                 .shouldContain("Generated")
                 .shouldNotContain("-keyalg option must be specified");
 
         kt("-genseckey -alias d")
-                .shouldContain("Generated")
-                .shouldContain("default key algorithm (DES)")
+                .shouldHaveExitValue(1)
                 .shouldContain("-keyalg option must be specified");
-
-        kt("-genkeypair -alias e -dname CN=e -keyalg EC -groupname brainpoolP256r1")
-                .shouldContain("Generating 256 bit EC (brainpoolP256r1) key pair");
-
-        kt("-genkeypair -alias f -dname CN=f -keyalg EC")
-                .shouldContain("Generating 256 bit EC (secp256r1) key pair");
-
-        kt("-genkeypair -alias g -dname CN=g -keyalg EC -keysize 384")
-                .shouldContain("Generating 384 bit EC (secp384r1) key pair");
     }
 
     private static OutputAnalyzer kt(String cmd) throws Throwable {
-        return SecurityTools.keytool(COMMON + " " + cmd)
-                .shouldHaveExitValue(0);
+        return SecurityTools.keytool(COMMON + " " + cmd);
     }
 }

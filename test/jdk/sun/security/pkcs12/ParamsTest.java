@@ -114,7 +114,8 @@ public class ParamsTest  {
         check("ksnormal", "a", "wrongpass", "-", IOException.class, "-", "-");
 
         // Add a new entry with password-less settings, still has a storepass
-        keytool("-keystore ksnormal -genkeypair -storepass changeit -alias b -dname CN=b "
+        keytool("-keystore ksnormal -genkeypair -keyalg DSA "
+                + "-storepass changeit -alias b -dname CN=b "
                 + "-J-Dkeystore.pkcs12.certProtectionAlgorithm=NONE "
                 + "-J-Dkeystore.pkcs12.macAlgorithm=NONE");
         data = Files.readAllBytes(Path.of("ksnormal"));
@@ -146,7 +147,8 @@ public class ParamsTest  {
         check("ksnopass", "a", "wrongpass", "changeit", true, true, true);
 
         // Add a new entry with normal settings, still password-less
-        keytool("-keystore ksnopass -genkeypair -storepass changeit -alias b -dname CN=B");
+        keytool("-keystore ksnopass -genkeypair -keyalg DSA "
+                + "-storepass changeit -alias b -dname CN=B");
         data = Files.readAllBytes(Path.of("ksnopass"));
         shouldNotExist(data, "2"); // no Mac
         checkAlg(data, "110c010c01000", pbeWithSHA1AndRC4_128_oid);
@@ -171,13 +173,15 @@ public class ParamsTest  {
         checkInt(data, "110c1101111", 6666); // cert ic
 
         // keypbe alg cannot be NONE
-        keytool("-keystore ksnewic -genkeypair -storepass changeit -alias b -dname CN=B "
+        keytool("-keystore ksnewic -genkeypair -keyalg DSA "
+                + "-storepass changeit -alias b -dname CN=B "
                 + "-J-Dkeystore.pkcs12.keyProtectionAlgorithm=NONE")
                 .shouldContain("NONE AlgorithmParameters not available")
                 .shouldHaveExitValue(1);
 
         // new entry new keypbe alg (and default ic), else unchanged
-        keytool("-keystore ksnewic -genkeypair -storepass changeit -alias b -dname CN=B "
+        keytool("-keystore ksnewic -genkeypair -keyalg DSA "
+                + "-storepass changeit -alias b -dname CN=B "
                 + "-J-Dkeystore.pkcs12.keyProtectionAlgorithm=PBEWithSHA1AndRC4_128");
         data = Files.readAllBytes(Path.of("ksnewic"));
         checkInt(data, "22", 5555); // Mac ic
@@ -336,7 +340,8 @@ public class ParamsTest  {
 
         // still prompt for keypass for genkeypair and certreq
         SecurityTools.setResponse("changeit", "changeit");
-        keytool("-keystore ksnopassnew -genkeypair -alias a -dname CN=A "
+        keytool("-keystore ksnopassnew -genkeypair -keyalg DSA "
+                + "-alias a -dname CN=A "
                 + "-J-Dkeystore.pkcs12.certProtectionAlgorithm=NONE "
                 + "-J-Dkeystore.pkcs12.macAlgorithm=NONE")
                 .shouldNotContain("Enter keystore password:")
@@ -351,7 +356,8 @@ public class ParamsTest  {
         // params only read on demand
 
         // keyPbeIterationCount is used by -genkeypair
-        keytool("-keystore ksgenbadkeyic -genkeypair -alias a -dname CN=A "
+        keytool("-keystore ksgenbadkeyic -genkeypair -keyalg DSA "
+                + "-alias a -dname CN=A "
                 + "-storepass changeit "
                 + "-J-Dkeystore.pkcs12.keyPbeIterationCount=abc")
                 .shouldContain("keyPbeIterationCount is not a number: abc")

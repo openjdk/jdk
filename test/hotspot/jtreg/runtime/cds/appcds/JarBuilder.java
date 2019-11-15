@@ -232,7 +232,7 @@ public class JarBuilder {
 
         executeProcess(keyTool,
             "-genkey", "-keystore", "./keystore", "-alias", "mykey",
-            "-storepass", "abc123", "-keypass", "abc123",
+            "-storepass", "abc123", "-keypass", "abc123", "-keyalg", "dsa",
             "-dname", "CN=jvmtest")
             .shouldHaveExitValue(0);
 

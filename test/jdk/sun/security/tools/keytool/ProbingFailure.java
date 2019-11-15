@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,7 @@ public class ProbingFailure {
     public static void main(String[] args) throws Exception {
 
         // genkeypair
-        kt("-genkeypair -keystore mks -alias a -dname CN=A -storetype MYKS")
+        kt("-genkeypair -keystore mks -alias a -dname CN=A -keyalg DSA -storetype MYKS")
                 .shouldHaveExitValue(0);
 
         // list

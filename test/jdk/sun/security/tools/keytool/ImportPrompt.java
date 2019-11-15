@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,11 +50,11 @@ public class ImportPrompt {
 
     public static void main(String[] args) throws Throwable {
 
-        kt("-keystore ks1 -genkeypair -alias a -dname CN=A");
+        kt("-keystore ks1 -genkeypair -keyalg DSA -alias a -dname CN=A");
         kt("-keystore ks1 -exportcert -alias a -file a.cert");
 
         // Just create a keystore
-        kt("-keystore ks2 -genkeypair -alias b -dname CN=B");
+        kt("-keystore ks2 -genkeypair -keyalg DSA -alias b -dname CN=B");
 
         // no response text, assume no
         kt("-keystore ks2 -importcert -alias a -file a.cert");

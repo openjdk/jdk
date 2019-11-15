@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,7 +69,7 @@ public class AltProvider {
                 MOD_SRC_DIR.toString());
 
         // Create a keystore
-        tool("keytool", "-keystore x.jks -storetype jks -genkeypair" +
+        tool("keytool", "-keystore x.jks -storetype jks -genkeypair -keyalg dsa" +
                 " -storepass changeit -keypass changeit -alias x -dname CN=X")
                 .shouldHaveExitValue(0);
 

@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8029659
+ * @bug 8029659 8214179
  * @summary Keytool, print key algorithm of certificate or key entry
  * @library /test/lib
  */
@@ -33,22 +33,25 @@ import jdk.test.lib.process.OutputAnalyzer;
 
 public class KeyAlg {
     public static void main(String[] args) throws Exception {
-        keytool("-genkeypair -alias ca -dname CN=CA -keyalg EC")
-                .shouldHaveExitValue(0);
-        keytool("-genkeypair -alias user -dname CN=User -keyalg RSA -keysize 1024")
-                .shouldHaveExitValue(0);
-        keytool("-certreq -alias user -file user.req").shouldHaveExitValue(0);
+        keytool("-genkeypair -alias ca -dname CN=CA -keyalg EC");
+        keytool("-genkeypair -alias user -dname CN=User -keyalg RSA -keysize 1024");
+        keytool("-certreq -alias user -file user.req");
         keytool("-gencert -alias ca -rfc -sigalg SHA1withECDSA"
-                + " -infile user.req -outfile user.crt")
-                .shouldHaveExitValue(0);
+                + " -infile user.req -outfile user.crt");
         keytool("-printcert -file user.crt")
-                .shouldHaveExitValue(0)
                 .shouldMatch("Signature algorithm name:.*SHA1withECDSA")
                 .shouldMatch("Subject Public Key Algorithm:.*1024.*RSA");
+        keytool("-genkeypair -alias e -dname CN=e -keyalg EC -groupname brainpoolP256r1")
+                .shouldContain("Generating 256 bit EC (brainpoolP256r1) key pair");
+        keytool("-genkeypair -alias f -dname CN=f -keyalg EC")
+                .shouldContain("Generating 256 bit EC (secp256r1) key pair");
+        keytool("-genkeypair -alias g -dname CN=g -keyalg EC -keysize 384")
+                .shouldContain("Generating 384 bit EC (secp384r1) key pair");
     }
 
     static OutputAnalyzer keytool(String s) throws Exception {
         return SecurityTools.keytool(
-                "-keystore ks -storepass changeit -keypass changeit " + s);
+                "-keystore ks -storepass changeit -keypass changeit " + s)
+                .shouldHaveExitValue(0);
     }
 }
