@@ -97,9 +97,9 @@ public abstract class VirtualObjectTestBase {
         JavaValue[] values = getJavaValues(kinds);
         test(simple, values, kinds, false);
 
-        // Spread a long value across two int fields
+        // Spread a long value across two int fields starting at an aligned field
         kinds = Arrays.copyOf(fieldKinds, fieldKinds.length - 1);
-        kinds[1] = JavaKind.Long;
+        kinds[fields[0].getOffset() % 8 == 0 ? 0 : 1] = JavaKind.Long;
         test(simple, getJavaValues(kinds), kinds, false);
 
         // Produce a long value for the final int field so there is no matching int field for the
