@@ -2001,7 +2001,6 @@ bool  G1CollectedHeap::is_user_requested_concurrent_full_gc(GCCause::Cause cause
 
 bool G1CollectedHeap::should_do_concurrent_full_gc(GCCause::Cause cause) {
   switch (cause) {
-    case GCCause::_gc_locker:               return GCLockerInvokesConcurrent;
     case GCCause::_g1_humongous_allocation: return true;
     case GCCause::_g1_periodic_collection:  return G1PeriodicGCInvokesConcurrent;
     default:                                return is_user_requested_concurrent_full_gc(cause);
@@ -2281,8 +2280,7 @@ bool G1CollectedHeap::try_collect(GCCause::Cause cause) {
   } else if (GCLocker::should_discard(cause, gc_count_before)) {
     // Indicate failure to be consistent with VMOp failure due to
     // another collection slipping in after our gc_count but before
-    // our request is processed.  _gc_locker collections upgraded by
-    // GCLockerInvokesConcurrent are handled above and never discarded.
+    // our request is processed.
     return false;
   } else if (cause == GCCause::_gc_locker || cause == GCCause::_wb_young_gc
              DEBUG_ONLY(|| cause == GCCause::_scavenge_alot)) {

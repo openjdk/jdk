@@ -262,12 +262,11 @@ private:
 
   // Return true if an explicit GC should start a concurrent cycle instead
   // of doing a STW full GC. A concurrent cycle should be started if:
-  // (a) cause == _gc_locker and +GCLockerInvokesConcurrent,
-  // (b) cause == _g1_humongous_allocation,
-  // (c) cause == _java_lang_system_gc and +ExplicitGCInvokesConcurrent,
-  // (d) cause == _dcmd_gc_run and +ExplicitGCInvokesConcurrent,
-  // (e) cause == _wb_conc_mark,
-  // (f) cause == _g1_periodic_collection and +G1PeriodicGCInvokesConcurrent.
+  // (a) cause == _g1_humongous_allocation,
+  // (b) cause == _java_lang_system_gc and +ExplicitGCInvokesConcurrent,
+  // (c) cause == _dcmd_gc_run and +ExplicitGCInvokesConcurrent,
+  // (d) cause == _wb_conc_mark,
+  // (e) cause == _g1_periodic_collection and +G1PeriodicGCInvokesConcurrent.
   bool should_do_concurrent_full_gc(GCCause::Cause cause);
 
   // Attempt to start a concurrent cycle with the indicated cause.
