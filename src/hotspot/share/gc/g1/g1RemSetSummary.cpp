@@ -23,11 +23,11 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1ConcurrentRefine.hpp"
 #include "gc/g1/g1ConcurrentRefineThread.hpp"
 #include "gc/g1/g1DirtyCardQueue.hpp"
-#include "gc/g1/g1Policy.hpp"
 #include "gc/g1/g1RemSet.hpp"
 #include "gc/g1/g1RemSetSummary.hpp"
 #include "gc/g1/g1YoungRemSetSamplingThread.hpp"
@@ -36,36 +36,24 @@
 #include "memory/allocation.inline.hpp"
 #include "runtime/thread.inline.hpp"
 
-class GetRSThreadVTimeClosure : public ThreadClosure {
-private:
-  G1RemSetSummary* _summary;
-  uint _counter;
-
-public:
-  GetRSThreadVTimeClosure(G1RemSetSummary * summary) : ThreadClosure(), _summary(summary), _counter(0) {
-    assert(_summary != NULL, "just checking");
-  }
-
-  virtual void do_thread(Thread* t) {
-    G1ConcurrentRefineThread* crt = (G1ConcurrentRefineThread*) t;
-    _summary->set_rs_thread_vtime(_counter, crt->vtime_accum());
-    _counter++;
-  }
-};
-
 void G1RemSetSummary::update() {
+  class CollectData : public ThreadClosure {
+    G1RemSetSummary* _summary;
+    uint _counter;
+  public:
+    CollectData(G1RemSetSummary * summary) : _summary(summary),  _counter(0) {}
+    virtual void do_thread(Thread* t) {
+      G1ConcurrentRefineThread* crt = static_cast<G1ConcurrentRefineThread*>(t);
+      _summary->set_rs_thread_vtime(_counter, crt->vtime_accum());
+      _counter++;
+      _summary->_total_concurrent_refined_cards += crt->total_refined_cards();
+    }
+  } collector(this);
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
-
-  const G1Policy* policy = g1h->policy();
-  _total_mutator_refined_cards = policy->total_mutator_refined_cards();
-  _total_concurrent_refined_cards = policy->total_concurrent_refined_cards();
-
+  g1h->concurrent_refine()->threads_do(&collector);
+  _total_mutator_refined_cards = G1BarrierSet::dirty_card_queue_set().total_mutator_refined_cards();
   _num_coarsenings = HeapRegionRemSet::n_coarsenings();
 
-  if (_rs_threads_vtimes != NULL) {
-    GetRSThreadVTimeClosure p(this);
-    g1h->concurrent_refine()->threads_do(&p);
-  }
   set_sampling_thread_vtime(g1h->sampling_thread()->vtime_accum());
 }
 
