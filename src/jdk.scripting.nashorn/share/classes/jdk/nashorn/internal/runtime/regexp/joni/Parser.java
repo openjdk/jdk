@@ -452,7 +452,7 @@ class Parser extends Lexer {
     private Node parseExp(final TokenType term) {
         if (token.type == term)
          {
-            return StringNode.EMPTY; // goto end_of_token
+            return StringNode.createEmpty(); // goto end_of_token
         }
 
         Node node = null;
@@ -461,7 +461,7 @@ class Parser extends Lexer {
         switch(token.type) {
         case ALT:
         case EOT:
-            return StringNode.EMPTY; // end_of_token:, node_new_empty
+            return StringNode.createEmpty(); // end_of_token:, node_new_empty
 
         case SUBEXP_OPEN:
             node = parseEnclose(TokenType.SUBEXP_CLOSE);
@@ -569,7 +569,7 @@ class Parser extends Lexer {
                 if (syntax.contextInvalidRepeatOps()) {
                     throw new SyntaxException(ERR_TARGET_OF_REPEAT_OPERATOR_NOT_SPECIFIED);
                 }
-                node = StringNode.EMPTY; // node_new_empty
+                node = StringNode.createEmpty(); // node_new_empty
             } else {
                 return parseExpTkByte(group); // goto tk_byte
             }
