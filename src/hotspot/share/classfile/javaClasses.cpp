@@ -1708,10 +1708,20 @@ void java_lang_Thread::set_thread(oop java_thread, JavaThread* thread) {
 }
 
 bool java_lang_Thread::interrupted(oop java_thread) {
+  // Make sure the caller can safely access oops.
+  assert(Thread::current()->is_VM_thread() ||
+         (JavaThread::current()->thread_state() != _thread_blocked &&
+          JavaThread::current()->thread_state() != _thread_in_native),
+         "Unsafe access to oop");
   return java_thread->bool_field_volatile(_interrupted_offset);
 }
 
 void java_lang_Thread::set_interrupted(oop java_thread, bool val) {
+  // Make sure the caller can safely access oops.
+  assert(Thread::current()->is_VM_thread() ||
+         (JavaThread::current()->thread_state() != _thread_blocked &&
+          JavaThread::current()->thread_state() != _thread_in_native),
+         "Unsafe access to oop");
   java_thread->bool_field_put_volatile(_interrupted_offset, val);
 }
 

@@ -3333,35 +3333,8 @@ JvmtiEnv::RawMonitorExit(JvmtiRawMonitor * rmonitor) {
 // rmonitor - pre-checked for validity
 jvmtiError
 JvmtiEnv::RawMonitorWait(JvmtiRawMonitor * rmonitor, jlong millis) {
-  int r = 0;
   Thread* thread = Thread::current();
-
-  if (thread->is_Java_thread()) {
-    JavaThread* current_thread = (JavaThread*)thread;
-
-    /* Transition to thread_blocked without entering vm state          */
-    /* This is really evil. Normally you can't undo _thread_blocked    */
-    /* transitions like this because it would cause us to miss a       */
-    /* safepoint but since the thread was already in _thread_in_native */
-    /* the thread is not leaving a safepoint safe state and it will    */
-    /* block when it tries to return from native. We can't safepoint   */
-    /* block in here because we could deadlock the vmthread. Blech.    */
-
-    JavaThreadState state = current_thread->thread_state();
-    assert(state == _thread_in_native, "Must be _thread_in_native");
-    // frame should already be walkable since we are in native
-    assert(!current_thread->has_last_Java_frame() ||
-           current_thread->frame_anchor()->walkable(), "Must be walkable");
-    current_thread->set_thread_state(_thread_blocked);
-
-    r = rmonitor->raw_wait(millis, true, current_thread);
-    // restore state, still at a safepoint safe state
-    current_thread->set_thread_state(state);
-
-  } else {
-      r = rmonitor->raw_wait(millis, false, thread);
-      assert(r != JvmtiRawMonitor::M_INTERRUPTED, "non-JavaThread can't be interrupted");
-  }
+  int r = rmonitor->raw_wait(millis, thread);
 
   switch (r) {
   case JvmtiRawMonitor::M_INTERRUPTED:

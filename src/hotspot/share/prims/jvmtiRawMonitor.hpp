@@ -65,6 +65,11 @@ class JvmtiRawMonitor : public CHeapObj<mtSynchronizer>  {
   // JVMTI_RM_MAGIC is set in contructor and unset in destructor.
   enum { JVMTI_RM_MAGIC = (int)(('T' << 24) | ('I' << 16) | ('R' << 8) | 'M') };
 
+  // Helpers for queue management isolation
+  void enqueue_waiter(QNode& node);
+  void dequeue_waiter(QNode& node);
+
+  // Mostly low-level implementation routines
   void simple_enter(Thread* self);
   void simple_exit(Thread* self);
   int simple_wait(Thread* self, jlong millis);
@@ -92,7 +97,7 @@ class JvmtiRawMonitor : public CHeapObj<mtSynchronizer>  {
   int recursions() const { return _recursions; }
   void raw_enter(Thread* self);
   int raw_exit(Thread* self);
-  int raw_wait(jlong millis, bool interruptible, Thread* self);
+  int raw_wait(jlong millis, Thread* self);
   int raw_notify(Thread* self);
   int raw_notifyAll(Thread* self);
   int magic() const { return _magic; }

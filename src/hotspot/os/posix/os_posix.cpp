@@ -2075,10 +2075,12 @@ void Parker::park(bool isAbsolute, jlong time) {
   // the ThreadBlockInVM() CTOR and DTOR may grab Threads_lock.
   ThreadBlockInVM tbivm(jt);
 
+  // Can't access interrupt state now that we are _thread_blocked. If we've
+  // been interrupted since we checked above then _counter will be > 0.
+
   // Don't wait if cannot get lock since interference arises from
-  // unparking. Also re-check interrupt before trying wait.
-  if (jt->is_interrupted(false) ||
-      pthread_mutex_trylock(_mutex) != 0) {
+  // unparking.
+  if (pthread_mutex_trylock(_mutex) != 0) {
     return;
   }
 
