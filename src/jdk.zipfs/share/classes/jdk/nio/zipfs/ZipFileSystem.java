@@ -2089,7 +2089,7 @@ class ZipFileSystem extends FileSystem {
     // Releases the specified inflater to the list of available inflaters.
     private void releaseDeflater(Deflater def) {
         synchronized (deflaters) {
-            if (inflaters.size() < MAX_FLATER) {
+            if (deflaters.size() < MAX_FLATER) {
                def.reset();
                deflaters.add(def);
             } else {
