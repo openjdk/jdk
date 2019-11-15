@@ -208,8 +208,8 @@ public final class XConstants {
 
     // those should probably be wrapped in a method or such
     // as it may be possible to remap them via x11 configuration files
-    public static final int MouseWheelUp = buttons[4];
-    public static final int MouseWheelDown = buttons[5];
+    public static final int MouseWheelUp = buttons[3];
+    public static final int MouseWheelDown = buttons[4];
 
     /* Notify modes */
 

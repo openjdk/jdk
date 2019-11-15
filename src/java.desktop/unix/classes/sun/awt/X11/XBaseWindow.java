@@ -1032,8 +1032,8 @@ public class XBaseWindow {
         int buttonState = 0;
         buttonState = xbe.get_state() & XConstants.ALL_BUTTONS_MASK;
 
-        boolean isWheel = (theButton != XConstants.MouseWheelUp ||
-                           theButton != XConstants.MouseWheelDown);
+        boolean isWheel = (theButton == XConstants.MouseWheelUp ||
+                           theButton == XConstants.MouseWheelDown);
 
         // don't give focus if it's just the mouse wheel turning
         if (!isWheel) {
