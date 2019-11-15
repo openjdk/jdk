@@ -24,9 +24,17 @@
 /**
  * @test
  * @bug 8001183
- * @summary incorrect results of char vectors right shift operaiton
+ * @summary incorrect results of char vectors right shift operation
  *
  * @run main/othervm/timeout=400 -Xbatch -Xmx128m compiler.codegen.TestCharVect2
+ */
+
+/**
+ * @test
+ * @bug 8001183
+ * @summary incorrect results of char vectors right shift operation
+ * @requires vm.compiler2.enabled | vm.graal.enabled
+ *
  * @run main/othervm/timeout=400 -Xbatch -Xmx128m -XX:MaxVectorSize=8 compiler.codegen.TestCharVect2
  * @run main/othervm/timeout=400 -Xbatch -Xmx128m -XX:MaxVectorSize=16 compiler.codegen.TestCharVect2
  * @run main/othervm/timeout=400 -Xbatch -Xmx128m -XX:MaxVectorSize=32 compiler.codegen.TestCharVect2
