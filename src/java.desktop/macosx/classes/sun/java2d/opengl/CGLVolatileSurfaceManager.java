@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,23 +25,15 @@
 
 package sun.java2d.opengl;
 
-import java.awt.BufferCapabilities;
-import static java.awt.BufferCapabilities.FlipContents.*;
-import java.awt.Component;
 import java.awt.GraphicsConfiguration;
 import java.awt.Transparency;
 import java.awt.image.ColorModel;
-import java.awt.peer.ComponentPeer;
 
-import sun.awt.AWTAccessor;
-import sun.awt.AWTAccessor.ComponentAccessor;
 import sun.awt.image.SunVolatileImage;
 import sun.awt.image.VolatileSurfaceManager;
-import sun.java2d.BackBufferCapsProvider;
 import sun.java2d.SurfaceData;
-import static sun.java2d.opengl.OGLContext.OGLContextCaps.*;
-import sun.java2d.pipe.hw.ExtendedBufferCapabilities;
-import static sun.java2d.pipe.hw.ExtendedBufferCapabilities.VSyncType.*;
+
+import static sun.java2d.opengl.OGLContext.OGLContextCaps.CAPS_EXT_FBOBJECT;
 
 public class CGLVolatileSurfaceManager extends VolatileSurfaceManager {
 
@@ -71,64 +63,20 @@ public class CGLVolatileSurfaceManager extends VolatileSurfaceManager {
      * of an existing window if this is a double buffered GraphicsConfig)
      */
     protected SurfaceData initAcceleratedSurface() {
-        SurfaceData sData = null;
-        Component comp = vImg.getComponent();
-        final ComponentAccessor acc = AWTAccessor.getComponentAccessor();
-        final ComponentPeer peer = (comp != null) ? acc.getPeer(comp) : null;
-
         try {
-            boolean createVSynced = false;
-            boolean forceback = false;
-            if (context instanceof Boolean) {
-                forceback = ((Boolean)context).booleanValue();
-                if (forceback && peer instanceof BackBufferCapsProvider) {
-                    BackBufferCapsProvider provider =
-                        (BackBufferCapsProvider)peer;
-                    BufferCapabilities caps = provider.getBackBufferCaps();
-                    if (caps instanceof ExtendedBufferCapabilities) {
-                        ExtendedBufferCapabilities ebc =
-                            (ExtendedBufferCapabilities)caps;
-                        if (ebc.getVSync() == VSYNC_ON &&
-                            ebc.getFlipContents() == COPIED)
-                        {
-                            createVSynced = true;
-                            forceback = false;
-                        }
-                    }
-                }
+            CGLGraphicsConfig gc = (CGLGraphicsConfig)vImg.getGraphicsConfig();
+            ColorModel cm = gc.getColorModel(vImg.getTransparency());
+            int type = vImg.getForcedAccelSurfaceType();
+            // if acceleration type is forced (type != UNDEFINED) then
+            // use the forced type, otherwise choose FBOBJECT
+            if (type == OGLSurfaceData.UNDEFINED) {
+                type = OGLSurfaceData.FBOBJECT;
             }
-
-            if (forceback) {
-                // peer must be non-null in this case
-                // TODO: modify parameter to delegate
-                //                sData = CGLSurfaceData.createData(peer, vImg, FLIP_BACKBUFFER);
-            } else {
-                CGLGraphicsConfig gc =
-                    (CGLGraphicsConfig)vImg.getGraphicsConfig();
-                ColorModel cm = gc.getColorModel(vImg.getTransparency());
-                int type = vImg.getForcedAccelSurfaceType();
-                // if acceleration type is forced (type != UNDEFINED) then
-                // use the forced type, otherwise choose FBOBJECT
-                if (type == OGLSurfaceData.UNDEFINED) {
-                    type = OGLSurfaceData.FBOBJECT;
-                }
-                if (createVSynced) {
-                    // TODO: modify parameter to delegate
-//                  sData = CGLSurfaceData.createData(peer, vImg, type);
-                } else {
-                    sData = CGLSurfaceData.createData(gc,
-                                                      vImg.getWidth(),
-                                                      vImg.getHeight(),
-                                                      cm, vImg, type);
-                }
-            }
-        } catch (NullPointerException ex) {
-            sData = null;
-        } catch (OutOfMemoryError er) {
-            sData = null;
+            return CGLSurfaceData.createData(gc, vImg.getWidth(),
+                                             vImg.getHeight(), cm, vImg, type);
+        } catch (NullPointerException | OutOfMemoryError ignored) {
+            return null;
         }
-
-        return sData;
     }
 
     @Override

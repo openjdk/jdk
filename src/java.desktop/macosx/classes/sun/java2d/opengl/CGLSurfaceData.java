@@ -116,23 +116,6 @@ public abstract class CGLSurfaceData extends OGLSurfaceData {
     }
 
     /**
-     * Creates a SurfaceData object representing the back buffer of a
-     * double-buffered on-screen Window.
-     */
-    public static CGLOffScreenSurfaceData createData(CPlatformView pView,
-            Image image, int type) {
-        CGLGraphicsConfig gc = getGC(pView);
-        Rectangle r = pView.getBounds();
-        if (type == FLIP_BACKBUFFER) {
-            return new CGLOffScreenSurfaceData(pView, gc, r.width, r.height,
-                    image, gc.getColorModel(), FLIP_BACKBUFFER);
-        } else {
-            return new CGLVSyncOffScreenSurfaceData(pView, gc, r.width,
-                    r.height, image, gc.getColorModel(), type);
-        }
-    }
-
-    /**
      * Creates a SurfaceData object representing an off-screen buffer (either a
      * FBO or Texture).
      */
@@ -273,38 +256,6 @@ public abstract class CGLSurfaceData extends OGLSurfaceData {
         }
     }
 
-    /**
-     * A surface which implements a v-synced flip back-buffer with COPIED
-     * FlipContents.
-     *
-     * This surface serves as a back-buffer to the outside world, while it is
-     * actually an offscreen surface. When the BufferStrategy this surface
-     * belongs to is showed, it is first copied to the real private
-     * FLIP_BACKBUFFER, which is then flipped.
-     */
-    public static class CGLVSyncOffScreenSurfaceData extends
-            CGLOffScreenSurfaceData {
-        private CGLOffScreenSurfaceData flipSurface;
-
-        public CGLVSyncOffScreenSurfaceData(CPlatformView pView,
-                CGLGraphicsConfig gc, int width, int height, Image image,
-                ColorModel cm, int type) {
-            super(pView, gc, width, height, image, cm, type);
-            flipSurface = CGLSurfaceData.createData(pView, image,
-                    FLIP_BACKBUFFER);
-        }
-
-        public SurfaceData getFlipSurface() {
-            return flipSurface;
-        }
-
-        @Override
-        public void flush() {
-            flipSurface.flush();
-            super.flush();
-        }
-    }
-
     public static class CGLOffScreenSurfaceData extends CGLSurfaceData {
         private Image offscreenImage;
 
@@ -323,12 +274,7 @@ public abstract class CGLSurfaceData extends OGLSurfaceData {
 
         @Override
         public Rectangle getBounds() {
-            if (type == FLIP_BACKBUFFER) {
-                Rectangle r = pView.getBounds();
-                return new Rectangle(0, 0, r.width, r.height);
-            } else {
-                return new Rectangle(width, height);
-            }
+            return new Rectangle(width, height);
         }
 
         /**
