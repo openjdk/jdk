@@ -25,8 +25,8 @@
 #ifndef CPU_ARM_VM_VERSION_ARM_HPP
 #define CPU_ARM_VM_VERSION_ARM_HPP
 
+#include "runtime/abstract_vm_version.hpp"
 #include "runtime/globals_extension.hpp"
-#include "runtime/vm_version.hpp"
 
 class VM_Version: public Abstract_VM_Version {
   friend class JVMCIVMStructs;

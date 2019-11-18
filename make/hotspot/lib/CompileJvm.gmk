@@ -57,7 +57,7 @@ JVM_LIBS += \
 JVM_EXCLUDE_FILES += args.cc
 JVM_EXCLUDES += adlc
 
-# Needed by vm_version.cpp
+# Needed by abstract_vm_version.cpp
 ifeq ($(call isTargetCpu, x86_64), true)
   OPENJDK_TARGET_CPU_VM_VERSION := amd64
 else ifeq ($(call isTargetCpu, sparcv9), true)
@@ -183,7 +183,7 @@ $(eval $(call SetupNativeCompilation, BUILD_LIBJVM, \
     EXCLUDE_PATTERNS := $(JVM_EXCLUDE_PATTERNS), \
     EXTRA_OBJECT_FILES := $(DTRACE_EXTRA_OBJECT_FILES), \
     CFLAGS := $(JVM_CFLAGS), \
-    vm_version.cpp_CXXFLAGS := $(CFLAGS_VM_VERSION), \
+    abstract_vm_version.cpp_CXXFLAGS := $(CFLAGS_VM_VERSION), \
     arguments.cpp_CXXFLAGS := $(CFLAGS_VM_VERSION), \
     DISABLED_WARNINGS_gcc := $(DISABLED_WARNINGS_gcc), \
     DISABLED_WARNINGS_clang := $(DISABLED_WARNINGS_clang), \
@@ -206,11 +206,11 @@ $(eval $(call SetupNativeCompilation, BUILD_LIBJVM, \
     DEFINE_THIS_FILE := false, \
 ))
 
-# Always recompile vm_version.cpp if libjvm needs to be relinked. This ensures
+# Always recompile abstract_vm_version.cpp if libjvm needs to be relinked. This ensures
 # that the internal vm version is updated as it relies on __DATE__ and __TIME__
 # macros.
-VM_VERSION_OBJ := $(JVM_OUTPUTDIR)/objs/vm_version$(OBJ_SUFFIX)
-$(VM_VERSION_OBJ): $(filter-out $(VM_VERSION_OBJ) $(JVM_MAPFILE), \
+ABSTRACT_VM_VERSION_OBJ := $(JVM_OUTPUTDIR)/objs/abstract_vm_version$(OBJ_SUFFIX)
+$(ABSTRACT_VM_VERSION_OBJ): $(filter-out $(ABSTRACT_VM_VERSION_OBJ) $(JVM_MAPFILE), \
     $(BUILD_LIBJVM_TARGET_DEPS))
 
 ifneq ($(GENERATE_COMPILE_COMMANDS_ONLY), true)

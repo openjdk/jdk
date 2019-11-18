@@ -26,8 +26,8 @@
 #ifndef CPU_PPC_VM_VERSION_PPC_HPP
 #define CPU_PPC_VM_VERSION_PPC_HPP
 
+#include "runtime/abstract_vm_version.hpp"
 #include "runtime/globals_extension.hpp"
-#include "runtime/vm_version.hpp"
 
 class VM_Version: public Abstract_VM_Version {
 protected:

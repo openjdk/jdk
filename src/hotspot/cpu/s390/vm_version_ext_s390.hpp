@@ -25,8 +25,8 @@
 #ifndef CPU_S390_VM_VERSION_EXT_S390_HPP
 #define CPU_S390_VM_VERSION_EXT_S390_HPP
 
+#include "runtime/vm_version.hpp"
 #include "utilities/macros.hpp"
-#include "vm_version_s390.hpp"
 
 #define CPU_INFO        "cpu_info"
 #define CPU_TYPE        "fpu_type"

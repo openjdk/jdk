@@ -32,8 +32,8 @@
 #include "runtime/java.hpp"
 #include "runtime/os.hpp"
 #include "runtime/stubCodeGenerator.hpp"
+#include "runtime/vm_version.hpp"
 #include "utilities/virtualizationSupport.hpp"
-#include "vm_version_x86.hpp"
 
 #include OS_HEADER_INLINE(os)
 

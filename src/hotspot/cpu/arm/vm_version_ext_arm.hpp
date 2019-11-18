@@ -25,8 +25,8 @@
 #ifndef CPU_ARM_VM_VERSION_EXT_ARM_HPP
 #define CPU_ARM_VM_VERSION_EXT_ARM_HPP
 
+#include "runtime/vm_version.hpp"
 #include "utilities/macros.hpp"
-#include "vm_version_arm.hpp"
 
 class VM_Version_Ext : public VM_Version {
  private:
