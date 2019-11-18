@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.Set;
+import java.net.PortUnreachableException;
 
 /**
  * The multicast datagram socket class is useful for sending
@@ -643,11 +644,19 @@ class MulticastSocket extends DatagramSocket {
      * @param ttl optional time to live for multicast packet.
      * default ttl is 1.
      *
-     * @throws    IOException is raised if an error occurs i.e
-     * error while setting ttl.
+     * @throws     IOException is raised if an error occurs i.e
+     *             error while setting ttl.
      * @throws     SecurityException  if a security manager exists and its
      *             {@code checkMulticast} or {@code checkConnect}
      *             method doesn't allow the send.
+     * @throws     PortUnreachableException may be thrown if the socket is connected
+     *             to a currently unreachable destination. Note, there is no
+     *             guarantee that the exception will be thrown.
+     * @throws     IllegalArgumentException if the socket is connected,
+     *             and connected address and packet address differ, or
+     *             if the socket is not connected and the packet address
+     *             is not set.
+     *
      *
      * @deprecated Use the following code or its equivalent instead:
      *  ......
@@ -667,32 +676,34 @@ class MulticastSocket extends DatagramSocket {
         throws IOException {
             if (isClosed())
                 throw new SocketException("Socket is closed");
-            checkAddress(p.getAddress(), "send");
             synchronized(ttlLock) {
                 synchronized(p) {
+                    InetAddress packetAddress = p.getAddress();
+                    checkAddress(packetAddress, "send");
                     if (connectState == ST_NOT_CONNECTED) {
+                        if (packetAddress == null) {
+                            throw new IllegalArgumentException("Address not set");
+                        }
                         // Security manager makes sure that the multicast address
                         // is allowed one and that the ttl used is less
                         // than the allowed maxttl.
                         SecurityManager security = System.getSecurityManager();
                         if (security != null) {
-                            if (p.getAddress().isMulticastAddress()) {
-                                security.checkMulticast(p.getAddress(), ttl);
+                            if (packetAddress.isMulticastAddress()) {
+                                security.checkMulticast(packetAddress, ttl);
                             } else {
-                                security.checkConnect(p.getAddress().getHostAddress(),
+                                security.checkConnect(packetAddress.getHostAddress(),
                                                       p.getPort());
                             }
                         }
                     } else {
                         // we're connected
-                        InetAddress packetAddress = null;
-                        packetAddress = p.getAddress();
                         if (packetAddress == null) {
                             p.setAddress(connectedAddress);
                             p.setPort(connectedPort);
                         } else if ((!packetAddress.equals(connectedAddress)) ||
                                    p.getPort() != connectedPort) {
-                            throw new SecurityException("connected address and packet address" +
+                            throw new IllegalArgumentException("connected address and packet address" +
                                                         " differ");
                         }
                     }
