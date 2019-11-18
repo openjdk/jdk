@@ -1133,7 +1133,7 @@ void FileMapRegion::init(int region_index, char* base, size_t size, bool read_on
     assert((base - (char*)CompressedKlassPointers::base()) % HeapWordSize == 0, "Sanity");
     if (base != NULL) {
       _mapping_offset = (size_t)CompressedOops::encode_not_null((oop)base);
-      assert(_mapping_offset >> 32 == 0, "must be 32-bit only");
+      assert(_mapping_offset == (size_t)(uint32_t)_mapping_offset, "must be 32-bit only");
     }
   } else {
     if (base != NULL) {
@@ -1566,7 +1566,7 @@ size_t FileMapInfo::read_bytes(void* buffer, size_t count) {
 
 address FileMapInfo::decode_start_address(FileMapRegion* spc, bool with_current_oop_encoding_mode) {
   size_t offset = spc->mapping_offset();
-  assert((offset >> 32) == 0, "must be 32-bit only");
+  assert(offset == (size_t)(uint32_t)offset, "must be 32-bit only");
   uint n = (uint)offset;
   if (with_current_oop_encoding_mode) {
     return (address)CompressedOops::decode_not_null(n);
