@@ -26,6 +26,7 @@
 #define SHARE_LIBADT_VECTSET_HPP
 
 #include "memory/allocation.hpp"
+#include "utilities/copy.hpp"
 
 // Vector Sets
 
@@ -35,26 +36,33 @@
 //------------------------------VectorSet--------------------------------------
 class VectorSet : public ResourceObj {
 private:
-  uint size;                    // Size of data IN LONGWORDS (32bits)
-  uint32_t* data;               // The data, bit packed
-  Arena *_set_arena;
+
+  static const uint word_bits = 5;
+  static const uint bit_mask  = 31;
+
+  uint       _size;             // Size of data in 32-bit words
+  uint32_t*  _data;             // The data, bit packed
+  Arena*     _set_arena;
 
   void grow(uint newsize);      // Grow vector to required bitsize
-
+  void reset_memory();
 public:
   VectorSet(Arena *arena);
   ~VectorSet() {}
+
   void insert(uint elem);
-
-  void clear();
   bool is_empty() const;
-  int hash() const;
   void reset() {
-    memset(data, 0, size*sizeof(uint32_t));
+    Copy::zero_to_bytes(_data, _size * sizeof(uint32_t));
   }
-
-  // Expose internals for speed-critical fast iterators
-  uint word_size() const { return size; }
+  void clear() {
+    // Reclaim storage if huge
+    if (_size > 100) {
+      reset_memory();
+    } else {
+      reset();
+    }
+  }
 
   // Fast inlined "test and set".  Replaces the idiom:
   //     if (visited.test(idx)) return;
@@ -62,46 +70,46 @@ public:
   // With:
   //     if (visited.test_set(idx)) return;
   //
-  int test_set(uint elem) {
-    uint word = elem >> 5;           // Get the longword offset
-    if (word >= size) {
+  bool test_set(uint elem) {
+    uint32_t word = elem >> word_bits;
+    if (word >= _size) {
       // Then grow; set; return 0;
       this->insert(elem);
-      return 0;
+      return false;
     }
-    uint32_t mask = 1L << (elem & 31); // Get bit mask
-    uint32_t datum = data[word] & mask;// Get bit
-    data[word] |= mask;              // Set bit
-    return datum;                    // Return bit
+    uint32_t mask = 1U << (elem & bit_mask);
+    uint32_t data = _data[word];
+    _data[word] = data | mask;
+    return (data & mask) != 0;
   }
 
   // Fast inlined test
-  int test(uint elem) const {
-    uint word = elem >> 5;
-    if (word >= size) {
-      return 0;
+  bool test(uint elem) const {
+    uint32_t word = elem >> word_bits;
+    if (word >= _size) {
+      return false;
     }
-    uint32_t mask = 1L << (elem & 31);
-    return data[word] & mask;
+    uint32_t mask = 1U << (elem & bit_mask);
+    return (_data[word] & mask) != 0;
   }
 
   void remove(uint elem) {
-    uint word = elem >> 5;
-    if (word >= size) {
+    uint32_t word = elem >> word_bits;
+    if (word >= _size) {
       return;
     }
-    uint32_t mask = 1L << (elem & 31);
-    data[word] &= ~mask; // Clear bit
+    uint32_t mask = 1U << (elem & bit_mask);
+    _data[word] &= ~mask; // Clear bit
   }
 
   // Fast inlined set
   void set(uint elem) {
-    uint word = elem >> 5;
-    if (word >= size) {
+    uint32_t word = elem >> word_bits;
+    if (word >= _size) {
       this->insert(elem);
     } else {
-      uint32_t mask = 1L << (elem & 31);
-      data[word] |= mask;
+      uint32_t mask = 1U << (elem & bit_mask);
+      _data[word] |= mask;
     }
   }
 };

@@ -26,62 +26,50 @@
 #include "libadt/vectset.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/arena.hpp"
+#include "utilities/count_leading_zeros.hpp"
 
-VectorSet::VectorSet(Arena *arena) {
-  _set_arena = arena;
-  size = 2;                     // Small initial size
-  data = (uint32_t *)_set_arena->Amalloc(size*sizeof(uint32_t));
-  data[0] = 0;                  // No elements
-  data[1] = 0;
+VectorSet::VectorSet(Arena *arena) : _size(2),
+    _data(NEW_ARENA_ARRAY(arena, uint32_t, 2)),
+    _set_arena(arena) {
+  _data[0] = 0;
+  _data[1] = 0;
 }
 
 // Expand the existing set to a bigger size
-void VectorSet::grow(uint newsize) {
-  newsize = (newsize+31) >> 5;
-  uint x = size;
-  while (x < newsize) {
-    x <<= 1;
-  }
-  data = (uint32_t *)_set_arena->Arealloc(data, size*sizeof(uint32_t), x*sizeof(uint32_t));
-  memset((char*)(data + size), 0, (x - size) * sizeof(uint32_t));
-  size = x;
+void VectorSet::grow(uint new_size) {
+  new_size = (new_size + bit_mask) >> word_bits;
+  assert(new_size != 0 && new_size < (1U << 31), "");
+  uint x = (1U << 31) >> (count_leading_zeros(new_size) - 1);
+  _data = REALLOC_ARENA_ARRAY(_set_arena, uint32_t, _data, _size, x);
+  Copy::zero_to_bytes(_data + _size, (x - _size) * sizeof(uint32_t));
+  _size = x;
 }
 
 // Insert a member into an existing Set.
 void VectorSet::insert(uint elem) {
-  uint word = elem >> 5;
-  uint32_t mask = 1L << (elem & 31);
-  if (word >= size) {
+  uint32_t word = elem >> word_bits;
+  uint32_t mask = 1U << (elem & bit_mask);
+  if (word >= _size) {
     grow(elem + 1);
   }
-  data[word] |= mask;
+  _data[word] |= mask;
 }
 
-// Clear a set
-void VectorSet::clear() {
-  if( size > 100 ) {            // Reclaim storage only if huge
-    FREE_RESOURCE_ARRAY(uint32_t,data,size);
-    size = 2;                   // Small initial size
-    data = NEW_RESOURCE_ARRAY(uint32_t,size);
-  }
-  memset(data, 0, size*sizeof(uint32_t));
+// Resets the storage
+void VectorSet::reset_memory() {
+  assert(_size >= 2, "_size can never be less than 2");
+  _data = REALLOC_ARENA_ARRAY(_set_arena, uint32_t, _data, _size, 2);
+  _size = 2;
+  _data[0] = 0;
+  _data[1] = 0;
 }
 
 // Return true if the set is empty
 bool VectorSet::is_empty() const {
-  for (uint32_t i = 0; i < size; i++) {
-    if (data[i] != 0) {
+  for (uint32_t i = 0; i < _size; i++) {
+    if (_data[i] != 0) {
       return false;
     }
   }
   return true;
-}
-
-int VectorSet::hash() const {
-  uint32_t _xor = 0;
-  uint lim = ((size < 4) ? size : 4);
-  for (uint i = 0; i < lim; i++) {
-    _xor ^= data[i];
-  }
-  return (int)_xor;
 }
