@@ -28,7 +28,6 @@
  * @requires vm.cds
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
  * @modules jdk.jartool/sun.tools.jar
- * @compile ArrayTestHelper.java
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  * @run driver ArrayTest
@@ -41,7 +40,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 public class ArrayTest {
 
     static String arrayClasses[] = {
-        "ArrayTestHelper",
+        ArrayTestHelper.class.getName(),
         "[Ljava/lang/Comparable;",
         "[I",
         "[[[Ljava/lang/Object;",
@@ -70,7 +69,7 @@ public class ArrayTest {
         argsList.add("-cp");
         argsList.add(appJar);
         argsList.add(bootClassPath);
-        argsList.add("ArrayTestHelper");
+        argsList.add(ArrayTestHelper.class.getName());
         // the following are input args to the ArrayTestHelper.
         // skip checking array classes during run time
         for (int i = 0; i < 1; i++) {

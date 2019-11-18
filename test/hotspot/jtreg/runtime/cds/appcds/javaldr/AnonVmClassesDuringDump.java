@@ -32,16 +32,15 @@
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds /test/hotspot/jtreg/runtime/cds/appcds/test-classes
  * @requires vm.cds
  * @requires vm.flavor != "minimal"
- * @build AnonVmClassesDuringDumpTransformer Hello
- * @run main/othervm AnonVmClassesDuringDump
+ * @run driver AnonVmClassesDuringDump
  */
 
 public class AnonVmClassesDuringDump {
     public static String appClasses[] = {
-        "Hello",
+        Hello.class.getName(),
     };
     public static String agentClasses[] = {
-        "AnonVmClassesDuringDumpTransformer",
+        AnonVmClassesDuringDumpTransformer.class.getName(),
     };
 
     public static String cdsDiagnosticOption = "-XX:+AllowArchivingWithJavaAgent";
@@ -55,7 +54,7 @@ public class AnonVmClassesDuringDump {
         String appJar =
             ClassFileInstaller.writeJar("AnonVmClassesDuringDumpApp.jar", appClasses);
 
-        TestCommon.testDump(appJar, TestCommon.list("Hello"),
+        TestCommon.testDump(appJar, TestCommon.list(Hello.class.getName()),
                             "-javaagent:" + agentJar,
                             "-XX:+UnlockDiagnosticVMOptions", cdsDiagnosticOption,
                             // Set the following property to see logs for dynamically generated classes
@@ -71,13 +70,13 @@ public class AnonVmClassesDuringDump {
         String pattern = prefix + class_pattern + suffix;
         // during run time, anonymous classes shouldn't be loaded from the archive
         TestCommon.run("-cp", appJar,
-            "-XX:+UnlockDiagnosticVMOptions", cdsDiagnosticOption, "Hello")
+            "-XX:+UnlockDiagnosticVMOptions", cdsDiagnosticOption, Hello.class.getName())
             .assertNormalExit(output -> output.shouldNotMatch(pattern));
 
         // inspect the archive and make sure no anonymous class is in there
         TestCommon.run("-cp", appJar,
             "-XX:+UnlockDiagnosticVMOptions", cdsDiagnosticOption,
-            "-XX:+PrintSharedArchiveAndExit", "-XX:+PrintSharedDictionary", "Hello")
+            "-XX:+PrintSharedArchiveAndExit", "-XX:+PrintSharedDictionary", Hello.class.getName())
             .assertNormalExit(output -> output.shouldNotMatch(class_pattern));
     }
 }

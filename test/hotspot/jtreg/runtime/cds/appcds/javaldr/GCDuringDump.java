@@ -28,8 +28,7 @@
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds /test/hotspot/jtreg/runtime/cds/appcds/test-classes
  * @requires vm.cds
  * @requires vm.flavor != "minimal"
- * @build GCDuringDumpTransformer Hello
- * @run main/othervm GCDuringDump
+ * @run driver GCDuringDump
  */
 
 import jdk.test.lib.cds.CDSOptions;
@@ -38,10 +37,10 @@ import jdk.test.lib.process.ProcessTools;
 
 public class GCDuringDump {
     public static String appClasses[] = {
-        "Hello",
+        Hello.class.getName(),
     };
     public static String agentClasses[] = {
-        "GCDuringDumpTransformer",
+        GCDuringDumpTransformer.class.getName(),
     };
 
     public static void main(String[] args) throws Throwable {
@@ -63,7 +62,7 @@ public class GCDuringDump {
             String extraArg = (i == 0) ? "-showversion" : "-javaagent:" + agentJar;
             String extraOption = (i == 0) ? "-showversion" : "-XX:+AllowArchivingWithJavaAgent";
 
-            TestCommon.testDump(appJar, TestCommon.list("Hello"),
+            TestCommon.testDump(appJar, TestCommon.list(Hello.class.getName()),
                                 "-XX:+UnlockDiagnosticVMOptions", extraOption,
                                 extraArg, "-Xmx32m", gcLog);
 
@@ -73,7 +72,7 @@ public class GCDuringDump {
                 "-XX:+PrintSharedSpaces",
                 "-XX:+UnlockDiagnosticVMOptions", extraOption,
                 gcLog,
-                "Hello")
+                Hello.class.getName())
               .assertNormalExit();
         }
     }

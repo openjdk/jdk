@@ -29,9 +29,9 @@
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds /test/hotspot/jtreg/runtime/cds/appcds/test-classes
  * @requires vm.cds.archived.java.heap
  * @modules jdk.jartool/sun.tools.jar
- * @build sun.hotspot.WhiteBox GCDuringDumpTransformer GCSharedStringsDuringDumpWb
+ * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
- * @run main/othervm/timeout=480 GCSharedStringsDuringDump
+ * @run driver/timeout=480 GCSharedStringsDuringDump
  */
 
 import java.io.File;
@@ -41,14 +41,13 @@ import java.io.PrintWriter;
 import jdk.test.lib.cds.CDSOptions;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
-import sun.hotspot.WhiteBox;
 
 public class GCSharedStringsDuringDump {
     public static String appClasses[] = {
-        "GCSharedStringsDuringDumpWb",
+        GCSharedStringsDuringDumpWb.class.getName(),
     };
     public static String agentClasses[] = {
-        "GCDuringDumpTransformer",
+        GCDuringDumpTransformer.class.getName(),
     };
 
     public static void main(String[] args) throws Throwable {
@@ -88,7 +87,7 @@ public class GCSharedStringsDuringDump {
             String extraArg = (i == 0) ? "-showversion" : "-javaagent:" + agentJar;
             String extraOption = (i == 0) ? "-showversion" : "-XX:+AllowArchivingWithJavaAgent";
             OutputAnalyzer output = TestCommon.dump(
-                                appJar, TestCommon.list("GCSharedStringsDuringDumpWb"),
+                                appJar, TestCommon.list(GCSharedStringsDuringDumpWb.class.getName()),
                                 bootClassPath, extraArg, "-Xmx32m", gcLog,
                                 "-XX:SharedArchiveConfigFile=" + sharedArchiveCfgFile,
                                 "-XX:+UnlockDiagnosticVMOptions", extraOption);
@@ -101,7 +100,7 @@ public class GCSharedStringsDuringDump {
                 // Try again with larger heap and NewSize, this should increase the
                 // G1 heap region size to 2M
                 TestCommon.testDump(
-                    appJar, TestCommon.list("GCSharedStringsDuringDumpWb"),
+                    appJar, TestCommon.list(GCSharedStringsDuringDumpWb.class.getName()),
                     bootClassPath, extraArg, "-Xmx8g", "-XX:NewSize=8m", gcLog,
                     "-XX:SharedArchiveConfigFile=" + sharedArchiveCfgFile,
                     "-XX:+UnlockDiagnosticVMOptions", extraOption);
@@ -119,7 +118,7 @@ public class GCSharedStringsDuringDump {
                 "-XX:+WhiteBoxAPI",
                 "-XX:SharedReadOnlySize=30m",
                 gcLog,
-                "GCSharedStringsDuringDumpWb")
+                GCSharedStringsDuringDumpWb.class.getName())
               .assertNormalExit();
         }
     }
