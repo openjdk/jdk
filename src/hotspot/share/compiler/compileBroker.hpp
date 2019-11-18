@@ -226,11 +226,10 @@ class CompileBroker: AllStatic {
   static volatile int _print_compilation_warning;
 
   static Handle create_thread_oop(const char* name, TRAPS);
-  static JavaThread* make_thread(jobject thread_oop, CompileQueue* queue, AbstractCompiler* comp, TRAPS);
+  static JavaThread* make_thread(jobject thread_oop, CompileQueue* queue, AbstractCompiler* comp, Thread* THREAD);
   static void init_compiler_sweeper_threads();
-  static void possibly_add_compiler_threads();
+  static void possibly_add_compiler_threads(Thread* THREAD);
   static bool compilation_is_prohibited(const methodHandle& method, int osr_bci, int comp_level, bool excluded);
-  static void preload_classes          (const methodHandle& method, TRAPS);
 
   static CompileTask* create_compile_task(CompileQueue*       queue,
                                           int                 compile_id,
@@ -292,7 +291,7 @@ public:
     CompileQueue *q = compile_queue(comp_level);
     return q != NULL ? q->size() : 0;
   }
-  static void compilation_init_phase1(TRAPS);
+  static void compilation_init_phase1(Thread* THREAD);
   static void compilation_init_phase2();
   static void init_compiler_thread_log();
   static nmethod* compile_method(const methodHandle& method,
