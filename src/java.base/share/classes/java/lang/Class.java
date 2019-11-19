@@ -325,6 +325,10 @@ public final class Class<T> implements java.io.Serializable,
      * @throws    ExceptionInInitializerError if the initialization provoked
      *            by this method fails
      * @throws    ClassNotFoundException if the class cannot be located
+     *
+     * @jls 12.2 Loading of Classes and Interfaces
+     * @jls 12.3 Linking of Classes and Interfaces
+     * @jls 12.4 Initialization of Classes and Interfaces
      */
     @CallerSensitive
     public static Class<?> forName(String className)
@@ -339,7 +343,7 @@ public final class Class<T> implements java.io.Serializable,
      * interface with the given string name, using the given class loader.
      * Given the fully qualified name for a class or interface (in the same
      * format returned by {@code getName}) this method attempts to
-     * locate, load, and link the class or interface.  The specified class
+     * locate and load the class or interface.  The specified class
      * loader is used to load the class or interface.  If the parameter
      * {@code loader} is null, the class is loaded through the bootstrap
      * class loader.  The class is initialized only if the
@@ -374,7 +378,7 @@ public final class Class<T> implements java.io.Serializable,
      * is accessible to its caller.
      *
      * @param name       fully qualified name of the desired class
-     * @param initialize if {@code true} the class will be initialized.
+     * @param initialize if {@code true} the class will be initialized (which implies linking).
      *                   See Section 12.4 of <em>The Java Language Specification</em>.
      * @param loader     class loader from which the class must be loaded
      * @return           class object representing the desired class
@@ -392,6 +396,10 @@ public final class Class<T> implements java.io.Serializable,
      *
      * @see       java.lang.Class#forName(String)
      * @see       java.lang.ClassLoader
+     *
+     * @jls 12.2 Loading of Classes and Interfaces
+     * @jls 12.3 Linking of Classes and Interfaces
+     * @jls 12.4 Initialization of Classes and Interfaces
      * @since     1.2
      */
     @CallerSensitive
@@ -427,9 +435,9 @@ public final class Class<T> implements java.io.Serializable,
      * Returns the {@code Class} with the given <a href="ClassLoader.html#binary-name">
      * binary name</a> in the given module.
      *
-     * <p> This method attempts to locate, load, and link the class or interface.
-     * It does not run the class initializer.  If the class is not found, this
-     * method returns {@code null}. </p>
+     * <p> This method attempts to locate and load the class or interface.
+     * It does not link the class, and does not run the class initializer.
+     * If the class is not found, this method returns {@code null}. </p>
      *
      * <p> If the class loader of the given module defines other modules and
      * the given name is a class defined in a different module, this method
@@ -465,6 +473,8 @@ public final class Class<T> implements java.io.Serializable,
      *         in a module.</li>
      *         </ul>
      *
+     * @jls 12.2 Loading of Classes and Interfaces
+     * @jls 12.3 Linking of Classes and Interfaces
      * @since 9
      * @spec JPMS
      */
