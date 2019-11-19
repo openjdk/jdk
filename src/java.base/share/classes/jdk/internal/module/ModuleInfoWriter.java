@@ -34,6 +34,7 @@ import java.util.stream.Stream;
 import jdk.internal.org.objectweb.asm.ClassWriter;
 import jdk.internal.org.objectweb.asm.ModuleVisitor;
 import jdk.internal.org.objectweb.asm.Opcodes;
+import jdk.internal.org.objectweb.asm.commons.ModuleResolutionAttribute;
 import jdk.internal.org.objectweb.asm.commons.ModuleTargetAttribute;
 import static jdk.internal.org.objectweb.asm.Opcodes.*;
 
@@ -78,7 +79,9 @@ public final class ModuleInfoWriter {
      * Writes the given module descriptor to a module-info.class file,
      * returning it in a byte array.
      */
-    private static byte[] toModuleInfo(ModuleDescriptor md, ModuleTarget target) {
+    private static byte[] toModuleInfo(ModuleDescriptor md,
+                                       ModuleResolution mres,
+                                       ModuleTarget target) {
         ClassWriter cw = new ClassWriter(0);
         cw.visit(Opcodes.V10, ACC_MODULE, "module-info", null, null, null);
 
@@ -147,6 +150,11 @@ public final class ModuleInfoWriter {
 
         mv.visitEnd();
 
+        // write ModuleResolution attribute if specified
+        if (mres != null) {
+            cw.visitAttribute(new ModuleResolutionAttribute(mres.value()));
+        }
+
         // write ModuleTarget attribute if there is a target platform
         if (target != null && target.targetPlatform().length() > 0) {
             cw.visitAttribute(new ModuleTargetAttribute(target.targetPlatform()));
@@ -161,12 +169,37 @@ public final class ModuleInfoWriter {
      * module-info.class.
      */
     public static void write(ModuleDescriptor descriptor,
+                             ModuleResolution mres,
                              ModuleTarget target,
                              OutputStream out)
         throws IOException
     {
-        byte[] bytes = toModuleInfo(descriptor, target);
+        byte[] bytes = toModuleInfo(descriptor, mres, target);
         out.write(bytes);
+    }
+
+    /**
+     * Writes a module descriptor to the given output stream as a
+     * module-info.class.
+     */
+    public static void write(ModuleDescriptor descriptor,
+                             ModuleResolution mres,
+                             OutputStream out)
+        throws IOException
+    {
+        write(descriptor, mres, null, out);
+    }
+
+    /**
+     * Writes a module descriptor to the given output stream as a
+     * module-info.class.
+     */
+    public static void write(ModuleDescriptor descriptor,
+                             ModuleTarget target,
+                             OutputStream out)
+        throws IOException
+    {
+        write(descriptor, null, target, out);
     }
 
     /**
@@ -176,7 +209,7 @@ public final class ModuleInfoWriter {
     public static void write(ModuleDescriptor descriptor, OutputStream out)
         throws IOException
     {
-        write(descriptor, null, out);
+        write(descriptor, null, null, out);
     }
 
     /**
@@ -184,7 +217,7 @@ public final class ModuleInfoWriter {
      * in module-info.class format.
      */
     public static ByteBuffer toByteBuffer(ModuleDescriptor descriptor) {
-        byte[] bytes = toModuleInfo(descriptor, null);
+        byte[] bytes = toModuleInfo(descriptor, null, null);
         return ByteBuffer.wrap(bytes);
     }
 }

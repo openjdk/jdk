@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,10 +21,11 @@
  * questions.
  */
 
-
 import java.lang.module.ModuleDescriptor;
 import java.lang.module.ModuleFinder;
 import java.lang.module.ModuleReference;
+
+import jdk.internal.module.ModuleResolution;
 
 /**
  * Test the set of modules in the boot layer includes all modules that export
@@ -37,6 +38,7 @@ public class TestRootModules {
         // For now, this test ignores the ModuleResolution attribute
         ModuleLayer bootLayer = ModuleLayer.boot();
         ModuleFinder.ofSystem().findAll().stream()
+            .filter(mref -> !ModuleResolution.doNotResolveByDefault(mref))
             .map(ModuleReference::descriptor)
             .filter(descriptor -> descriptor.exports()
                     .stream()

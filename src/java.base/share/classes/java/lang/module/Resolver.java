@@ -28,7 +28,6 @@ package java.lang.module;
 import java.io.PrintStream;
 import java.lang.module.ModuleDescriptor.Provides;
 import java.lang.module.ModuleDescriptor.Requires.Modifier;
-import java.net.URI;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -45,6 +44,7 @@ import java.util.stream.Collectors;
 
 import jdk.internal.module.ModuleHashes;
 import jdk.internal.module.ModuleReferenceImpl;
+import jdk.internal.module.ModuleResolution;
 import jdk.internal.module.ModuleTarget;
 
 /**
@@ -215,15 +215,32 @@ final class Resolver {
      * service-use relation.
      */
     Resolver bind() {
+        return bind(/*bindIncubatorModules*/true);
+    }
 
+    /**
+     * Augments the set of resolved modules with modules induced by the
+     * service-use relation.
+     *
+     * @param bindIncubatorModules true if incubator modules are candidates to
+     *        add to the module graph
+     */
+    Resolver bind(boolean bindIncubatorModules) {
         // Scan the finders for all available service provider modules. As
         // java.base uses services then the module finders will be scanned
         // anyway.
         Map<String, Set<ModuleReference>> availableProviders = new HashMap<>();
         for (ModuleReference mref : findAll()) {
             ModuleDescriptor descriptor = mref.descriptor();
-            if (!descriptor.provides().isEmpty()) {
 
+            boolean candidate;
+            if (!bindIncubatorModules && (mref instanceof ModuleReferenceImpl)) {
+                ModuleResolution mres = ((ModuleReferenceImpl) mref).moduleResolution();
+                candidate = (mres == null) || (mres.hasIncubatingWarning() == false);
+            } else {
+                candidate = true;
+            }
+            if (candidate && !descriptor.provides().isEmpty()) {
                 for (Provides provides :  descriptor.provides()) {
                     String sn = provides.service();
 

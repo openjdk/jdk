@@ -59,8 +59,8 @@ public class DefaultModules {
         String testSrc = System.getProperty("test.src");
 
         // $JDK_HOME/bin/java TestModules.java
-        String source = Path.of(testSrc, "src", "TestRootModules.java").toString();
-        ProcessTools.executeTestJava(source)
+        String source = Path.of(testSrc, "TestRootModules.java").toString();
+        ProcessTools.executeTestJava("--add-exports", "java.base/jdk.internal.module=ALL-UNNAMED", source)
                 .outputTo(System.out)
                 .errorTo(System.err)
                 .shouldHaveExitValue(0);
@@ -89,15 +89,18 @@ public class DefaultModules {
                 javaLauncher += ".exe";
 
             // $CUSTOM_JDK/bin/java TestRootModules.java
-            source = Path.of(testSrc, "src", "TestRootModules.java").toString();
-            out.format("Command line: [%s %s]%n", javaLauncher, source);
-            ProcessTools.executeProcess(new ProcessBuilder(javaLauncher, source))
+            source = Path.of(testSrc, "TestRootModules.java").toString();
+            ProcessBuilder pb = new ProcessBuilder(javaLauncher,
+                    "--add-exports", "java.base/jdk.internal.module=ALL-UNNAMED",
+                    source);
+            out.format("Command line: [%s]%n", pb.command());
+            ProcessTools.executeProcess(pb)
                     .outputTo(System.out)
                     .errorTo(System.err)
                     .shouldHaveExitValue(0);
 
             // $CUSTOM_JDK/bin/java TestJson.java
-            source = Path.of(testSrc, "src", "TestJson.java").toString();
+            source = Path.of(testSrc, "TestJson.java").toString();
             out.format("Command line: [%s %s]%n", javaLauncher, source);
             ProcessTools.executeProcess(new ProcessBuilder(javaLauncher, source))
                     .outputTo(System.out)
