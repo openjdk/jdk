@@ -1768,6 +1768,10 @@ JNIEXPORT void JNICALL Java_sun_java2d_OSXOffScreenSurfaceData_initRaster(JNIEnv
 PRINT("Java_sun_java2d_OSXOffScreenSurfaceData_initRaster")
 
     ImageSDOps* isdo = (ImageSDOps*)SurfaceData_InitOps(env, bisd, sizeof(ImageSDOps));
+    if (isdo == NULL) {
+        JNU_ThrowOutOfMemoryError(env, "Initialization of SurfaceData failed.");
+        return;
+    }
 
     pthread_mutexattr_t attr;
     pthread_mutexattr_init(&attr);
