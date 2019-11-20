@@ -26,45 +26,8 @@
 #include "gc/z/zTask.hpp"
 #include "gc/z/zThread.hpp"
 #include "gc/z/zWorkers.inline.hpp"
-#include "runtime/os.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/safepoint.hpp"
-
-static uint calculate_nworkers_based_on_ncpus(double cpu_share_in_percent) {
-  return ceil(os::initial_active_processor_count() * cpu_share_in_percent / 100.0);
-}
-
-static uint calculate_nworkers_based_on_heap_size(double reserve_share_in_percent) {
-  const int nworkers = (MaxHeapSize * (reserve_share_in_percent / 100.0)) / ZPageSizeSmall;
-  return MAX2(nworkers, 1);
-}
-
-static uint calculate_nworkers(double cpu_share_in_percent) {
-  // Cap number of workers so that we don't use more than 2% of the max heap
-  // for the small page reserve. This is useful when using small heaps on
-  // large machines.
-  return MIN2(calculate_nworkers_based_on_ncpus(cpu_share_in_percent),
-              calculate_nworkers_based_on_heap_size(2.0));
-}
-
-uint ZWorkers::calculate_nparallel() {
-  // Use 60% of the CPUs, rounded up. We would like to use as many threads as
-  // possible to increase parallelism. However, using a thread count that is
-  // close to the number of processors tends to lead to over-provisioning and
-  // scheduling latency issues. Using 60% of the active processors appears to
-  // be a fairly good balance.
-  return calculate_nworkers(60.0);
-}
-
-uint ZWorkers::calculate_nconcurrent() {
-  // Use 12.5% of the CPUs, rounded up. The number of concurrent threads we
-  // would like to use heavily depends on the type of workload we are running.
-  // Using too many threads will have a negative impact on the application
-  // throughput, while using too few threads will prolong the GC-cycle and
-  // we then risk being out-run by the application. Using 12.5% of the active
-  // processors appears to be a fairly good balance.
-  return calculate_nworkers(12.5);
-}
 
 class ZWorkersInitializeTask : public ZTask {
 private:

@@ -31,6 +31,9 @@ public:
   static void set_medium_page_size();
 
   static bool use_per_cpu_shared_small_pages();
+
+  static uint nparallel_workers();
+  static uint nconcurrent_workers();
 };
 
 #endif // SHARE_GC_Z_ZHEURISTICS_HPP

@@ -37,9 +37,6 @@ private:
   void run(ZTask* task, uint nworkers);
 
 public:
-  static uint calculate_nparallel();
-  static uint calculate_nconcurrent();
-
   ZWorkers();
 
   uint nparallel() const;

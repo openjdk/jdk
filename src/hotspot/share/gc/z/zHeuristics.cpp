@@ -62,3 +62,39 @@ bool ZHeuristics::use_per_cpu_shared_small_pages() {
   const size_t per_cpu_share = (MaxHeapSize * 0.03125) / ZCPU::count();
   return per_cpu_share >= ZPageSizeSmall;
 }
+
+static uint nworkers_based_on_ncpus(double cpu_share_in_percent) {
+  return ceil(os::initial_active_processor_count() * cpu_share_in_percent / 100.0);
+}
+
+static uint nworkers_based_on_heap_size(double reserve_share_in_percent) {
+  const int nworkers = (MaxHeapSize * (reserve_share_in_percent / 100.0)) / ZPageSizeSmall;
+  return MAX2(nworkers, 1);
+}
+
+static uint nworkers(double cpu_share_in_percent) {
+  // Cap number of workers so that we don't use more than 2% of the max heap
+  // for the small page reserve. This is useful when using small heaps on
+  // large machines.
+  return MIN2(nworkers_based_on_ncpus(cpu_share_in_percent),
+              nworkers_based_on_heap_size(2.0));
+}
+
+uint ZHeuristics::nparallel_workers() {
+  // Use 60% of the CPUs, rounded up. We would like to use as many threads as
+  // possible to increase parallelism. However, using a thread count that is
+  // close to the number of processors tends to lead to over-provisioning and
+  // scheduling latency issues. Using 60% of the active processors appears to
+  // be a fairly good balance.
+  return nworkers(60.0);
+}
+
+uint ZHeuristics::nconcurrent_workers() {
+  // Use 12.5% of the CPUs, rounded up. The number of concurrent threads we
+  // would like to use heavily depends on the type of workload we are running.
+  // Using too many threads will have a negative impact on the application
+  // throughput, while using too few threads will prolong the GC-cycle and
+  // we then risk being out-run by the application. Using 12.5% of the active
+  // processors appears to be a fairly good balance.
+  return nworkers(12.5);
+}
