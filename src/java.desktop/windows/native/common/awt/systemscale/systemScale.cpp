@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,7 +93,10 @@ void GetScreenDpi(HMONITOR hmon, float *dpiX, float *dpiY)
                            __uuidof(ID2D1Factory), NULL,
                            &m_pDirect2dFactory);
             if (res == S_OK) {
+#pragma warning(push)
+#pragma warning(disable : 4996) // GetDesktopDpi is deprecated.
                 m_pDirect2dFactory->GetDesktopDpi(dpiX, dpiY);
+#pragma warning(pop)
                 m_pDirect2dFactory->Release();
             }
         }
