@@ -82,7 +82,6 @@ int NET_Read(int s, void* buf, size_t len);
 int NET_NonBlockingRead(int s, void* buf, size_t len);
 int NET_RecvFrom(int s, void *buf, int len, unsigned int flags,
                  struct sockaddr *from, socklen_t *fromlen);
-int NET_ReadV(int s, const struct iovec * vector, int count);
 int NET_Send(int s, void *msg, int len, unsigned int flags);
 int NET_SendTo(int s, const void *msg, int len,  unsigned  int
                flags, const struct sockaddr *to, int tolen);
