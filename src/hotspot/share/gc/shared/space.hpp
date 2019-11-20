@@ -94,10 +94,6 @@ class Space: public CHeapObj<mtGC> {
     return (HeapWord*)obj >= saved_mark_word();
   }
 
-  virtual MemRegionClosure* preconsumptionDirtyCardClosure() const {
-    return NULL;
-  }
-
   // Returns a subregion of the space containing only the allocated objects in
   // the space.
   virtual MemRegion used_region() const = 0;
@@ -353,7 +349,6 @@ public:
 // definition of scanned_block_size/scanned_block_is_obj respectively.
 class CompactibleSpace: public Space {
   friend class VMStructs;
-  friend class CompactibleFreeListSpace;
 private:
   HeapWord* _compaction_top;
   CompactibleSpace* _next_compaction_space;
@@ -458,9 +453,6 @@ protected:
   // Used during compaction.
   HeapWord* _first_dead;
   HeapWord* _end_of_live;
-
-  // Minimum size of a free block.
-  virtual size_t minimum_free_block_size() const { return 0; }
 
   // This the function is invoked when an allocation of an object covering
   // "start" to "end occurs crosses the threshold; returns the next
@@ -582,14 +574,6 @@ class ContiguousSpace: public CompactibleSpace {
   void oop_iterate(OopIterateClosure* cl);
   void object_iterate(ObjectClosure* blk);
 
-  // Iterate over as many initialized objects in the space as possible,
-  // calling "cl.do_object_careful" on each. Return NULL if all objects
-  // in the space (at the start of the iteration) were iterated over.
-  // Return an address indicating the extent of the iteration in the
-  // event that the iteration had to return because of finding an
-  // uninitialized object in the space, or if the closure "cl"
-  // signaled early termination.
-  HeapWord* object_iterate_careful(ObjectClosureCareful* cl);
   HeapWord* concurrent_iteration_safe_limit() {
     assert(_concurrent_iteration_safe_limit <= top(),
            "_concurrent_iteration_safe_limit update missed");
@@ -601,10 +585,6 @@ class ContiguousSpace: public CompactibleSpace {
     assert(new_limit <= top(), "uninitialized objects in the safe range");
     _concurrent_iteration_safe_limit = new_limit;
   }
-
-  // In support of parallel oop_iterate.
-  template <typename OopClosureType>
-  void par_oop_iterate(MemRegion mr, OopClosureType* blk);
 
   // Compaction support
   virtual void reset_after_compaction() {

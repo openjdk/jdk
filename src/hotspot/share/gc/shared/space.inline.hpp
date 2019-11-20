@@ -377,14 +377,4 @@ void ContiguousSpace::oop_since_save_marks_iterate(OopClosureType* blk) {
   set_saved_mark_word(p);
 }
 
-template <typename OopClosureType>
-void ContiguousSpace::par_oop_iterate(MemRegion mr, OopClosureType* blk) {
-  HeapWord* obj_addr = mr.start();
-  HeapWord* limit = mr.end();
-  while (obj_addr < limit) {
-    assert(oopDesc::is_oop(oop(obj_addr)), "Should be an oop");
-    obj_addr += oop(obj_addr)->oop_iterate_size(blk);
-  }
-}
-
 #endif // SHARE_GC_SHARED_SPACE_INLINE_HPP
