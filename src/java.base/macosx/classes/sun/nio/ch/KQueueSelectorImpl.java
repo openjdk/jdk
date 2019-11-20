@@ -156,6 +156,13 @@ class KQueueSelectorImpl extends SelectorImpl {
 
                     int newEvents = ski.translateInterestOps();
                     int registeredEvents = ski.registeredEvents();
+
+                    // DatagramChannelImpl::disconnect has reset socket
+                    if (ski.getAndClearReset() && registeredEvents != 0) {
+                        KQueue.register(kqfd, fd, EVFILT_READ, EV_DELETE);
+                        registeredEvents = 0;
+                    }
+
                     if (newEvents != registeredEvents) {
 
                         // add or delete interest in read events

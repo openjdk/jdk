@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,6 +108,10 @@ class FileDispatcherImpl extends FileDispatcher {
         preClose0(fd);
     }
 
+    void dup(FileDescriptor fd1, FileDescriptor fd2) throws IOException {
+        dup0(fd1, fd2);
+    }
+
     FileDescriptor duplicateForMapping(FileDescriptor fd) {
         // file descriptor not required for mapping operations; okay
         // to return invalid file descriptor.
@@ -175,6 +179,8 @@ class FileDispatcherImpl extends FileDispatcher {
     static native void close0(FileDescriptor fd) throws IOException;
 
     static native void preClose0(FileDescriptor fd) throws IOException;
+
+    static native void dup0(FileDescriptor fd1, FileDescriptor fd2) throws IOException;
 
     static native void closeIntFD(int fd) throws IOException;
 

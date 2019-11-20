@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,15 +25,15 @@
 
 package sun.nio.ch;
 
-import java.io.*;
+import java.io.FileDescriptor;
+import java.io.IOException;
 
 /**
  * Allows different platforms to call different native methods
  * for read and write operations.
  */
 
-abstract class NativeDispatcher
-{
+abstract class NativeDispatcher {
 
     abstract int read(FileDescriptor fd, long address, int len)
         throws IOException;
@@ -77,4 +77,13 @@ abstract class NativeDispatcher
         // Do nothing by default; this is only needed on Unix
     }
 
+    /**
+     * Duplicates a file descriptor.
+     * @param fd1 the file descriptor to duplicate
+     * @param fd2 the new file descriptor, the socket or file that it is connected
+     *            to will be closed by this method
+     */
+    void dup(FileDescriptor fd1, FileDescriptor fd2) throws IOException {
+        throw new UnsupportedOperationException();
+    }
 }

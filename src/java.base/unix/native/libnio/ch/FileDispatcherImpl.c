@@ -312,6 +312,14 @@ Java_sun_nio_ch_FileDispatcherImpl_preClose0(JNIEnv *env, jclass clazz, jobject 
 }
 
 JNIEXPORT void JNICALL
+Java_sun_nio_ch_FileDispatcherImpl_dup0(JNIEnv *env, jobject this, jobject fdo1, jobject fdo2)
+{
+    if (dup2(fdval(env, fdo1), fdval(env, fdo2)) < 0) {
+        JNU_ThrowIOExceptionWithLastError(env, "dup2 failed");
+    }
+}
+
+JNIEXPORT void JNICALL
 Java_sun_nio_ch_FileDispatcherImpl_closeIntFD(JNIEnv *env, jclass clazz, jint fd)
 {
     closeFileDescriptor(env, fd);
