@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8184732
- * @summary Ensure that special locks never safepoint check and are vm_block.
+ * @summary Ensure that special locks never safepoint check.
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -57,22 +57,18 @@ public class NoSafepointVerifier {
     }
 
     static String test1 = "Special locks or below should never safepoint";
-    static String test2 = "Special locks or below should allow the vm to block";
-    static String test3 = "Possible safepoint reached by thread that does not allow it";
+    static String test2 = "Possible safepoint reached by thread that does not allow it";
 
     public static void main(String args[]) throws Exception {
         if (args.length > 0) {
             if (args[0].equals(test1)) {
                 WhiteBox.getWhiteBox().assertSpecialLock(/*vm_block*/true, /*safepoint_check_always*/true);
             } else if (args[0].equals(test2)) {
-                WhiteBox.getWhiteBox().assertSpecialLock(/*vm_block*/false, /*safepoint_check_always*/false);
-            } else if (args[0].equals(test3)) {
                 WhiteBox.getWhiteBox().assertSpecialLock(/*vm_block*/true, /*safepoint_check_always*/false);
             }
         } else {
             runTest(test1);
             runTest(test2);
-            runTest(test3);
         }
     }
 }

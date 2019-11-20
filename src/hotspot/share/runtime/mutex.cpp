@@ -288,8 +288,6 @@ Mutex::Mutex(int Rank, const char * name, bool allow_vm_block,
   assert(_safepoint_check_required != _safepoint_check_sometimes || is_sometimes_ok(name),
          "Lock has _safepoint_check_sometimes %s", name);
 
-  assert(_rank > special || _allow_vm_block,
-         "Special locks or below should allow the vm to block");
   assert(_rank > special || _safepoint_check_required == _safepoint_check_never,
          "Special locks or below should never safepoint");
 #endif
