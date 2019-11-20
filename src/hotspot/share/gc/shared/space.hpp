@@ -175,9 +175,6 @@ class Space: public CHeapObj<mtGC> {
   // each.  Objects allocated by applications of the closure are not
   // included in the iteration.
   virtual void object_iterate(ObjectClosure* blk) = 0;
-  // Similar to object_iterate() except only iterates over
-  // objects whose internal references point to objects in the space.
-  virtual void safe_object_iterate(ObjectClosure* blk) = 0;
 
   // Create and return a new dirty card to oop closure. Can be
   // overridden to return the appropriate type of closure
@@ -584,9 +581,6 @@ class ContiguousSpace: public CompactibleSpace {
   // Iteration
   void oop_iterate(OopIterateClosure* cl);
   void object_iterate(ObjectClosure* blk);
-  // For contiguous spaces this method will iterate safely over objects
-  // in the space (i.e., between bottom and top) when at a safepoint.
-  void safe_object_iterate(ObjectClosure* blk);
 
   // Iterate over as many initialized objects in the space as possible,
   // calling "cl.do_object_careful" on each. Return NULL if all objects

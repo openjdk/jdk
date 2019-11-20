@@ -1882,7 +1882,7 @@ void VM_HeapDumper::doit() {
   // The HPROF_GC_CLASS_DUMP and HPROF_GC_INSTANCE_DUMP are the vast bulk
   // of the heap dump.
   HeapObjectDumper obj_dumper(this, writer());
-  Universe::heap()->safe_object_iterate(&obj_dumper);
+  Universe::heap()->object_iterate(&obj_dumper);
 
   // HPROF_GC_ROOT_THREAD_OBJ + frames + jni locals
   do_threads();

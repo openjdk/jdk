@@ -1324,11 +1324,6 @@ void ShenandoahHeap::object_iterate(ObjectClosure* cl) {
   }
 }
 
-void ShenandoahHeap::safe_object_iterate(ObjectClosure* cl) {
-  assert(SafepointSynchronize::is_at_safepoint(), "safe iteration is only available during safepoints");
-  object_iterate(cl);
-}
-
 void ShenandoahHeap::heap_region_iterate(ShenandoahHeapRegionClosure* blk) const {
   for (size_t i = 0; i < num_regions(); i++) {
     ShenandoahHeapRegion* current = get_region(i);

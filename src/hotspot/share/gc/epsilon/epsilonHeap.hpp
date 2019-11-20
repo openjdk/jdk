@@ -103,10 +103,7 @@ public:
   virtual void do_full_collection(bool clear_all_soft_refs);
 
   // Heap walking support
-  virtual void safe_object_iterate(ObjectClosure* cl);
-  virtual void object_iterate(ObjectClosure* cl) {
-    safe_object_iterate(cl);
-  }
+  virtual void object_iterate(ObjectClosure* cl);
 
   // Object pinning support: every object is implicitly pinned
   virtual bool supports_object_pinning() const           { return true; }

@@ -498,12 +498,6 @@ void ContiguousSpace::object_iterate(ObjectClosure* blk) {
   object_iterate_from(bottom(), blk);
 }
 
-// For a ContiguousSpace object_iterate() and safe_object_iterate()
-// are the same.
-void ContiguousSpace::safe_object_iterate(ObjectClosure* blk) {
-  object_iterate(blk);
-}
-
 void ContiguousSpace::object_iterate_from(HeapWord* mark, ObjectClosure* blk) {
   while (mark < top()) {
     blk->do_object(oop(mark));

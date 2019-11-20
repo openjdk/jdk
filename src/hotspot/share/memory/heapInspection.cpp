@@ -719,7 +719,7 @@ size_t HeapInspection::populate_table(KlassInfoTable* cit, BoolObjectClosure *fi
   ResourceMark rm;
 
   RecordInstanceClosure ric(cit, filter);
-  Universe::heap()->safe_object_iterate(&ric);
+  Universe::heap()->object_iterate(&ric);
   return ric.missed_count();
 }
 
@@ -792,5 +792,5 @@ void HeapInspection::find_instances_at_safepoint(Klass* k, GrowableArray<oop>* r
 
   // Iterate over objects in the heap
   FindInstanceClosure fic(k, result);
-  Universe::heap()->safe_object_iterate(&fic);
+  Universe::heap()->object_iterate(&fic);
 }

@@ -1034,11 +1034,6 @@ void GenCollectedHeap::object_iterate(ObjectClosure* cl) {
   _old_gen->object_iterate(cl);
 }
 
-void GenCollectedHeap::safe_object_iterate(ObjectClosure* cl) {
-  _young_gen->safe_object_iterate(cl);
-  _old_gen->safe_object_iterate(cl);
-}
-
 Space* GenCollectedHeap::space_containing(const void* addr) const {
   Space* res = _young_gen->space_containing(addr);
   if (res != NULL) {

@@ -470,11 +470,6 @@ class Generation: public CHeapObj<mtGC> {
   // each.
   virtual void object_iterate(ObjectClosure* cl);
 
-  // Iterate over all safe objects in the generation, calling "cl.do_object" on
-  // each.  An object is safe if its references point to other objects in
-  // the heap.  This defaults to object_iterate() unless overridden.
-  virtual void safe_object_iterate(ObjectClosure* cl);
-
   // Apply "cl->do_oop" to (the address of) all and only all the ref fields
   // in the current generation that contain pointers to objects in younger
   // generations. Objects allocated since the last "save_marks" call are
