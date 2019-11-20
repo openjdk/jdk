@@ -62,6 +62,7 @@ public class DisposeDialogNotActivateOwnerTest {
             throw new RuntimeException("Error: unable to create robot");
         }
 
+        robot.setAutoDelay(200);
         dialogInvisibleOwner = new Frame("Dialog Invisible Owner Frame");
         dialog = new Dialog(dialogInvisibleOwner, "Owned Dialog");
 
@@ -79,8 +80,10 @@ public class DisposeDialogNotActivateOwnerTest {
 
     public void performTest() {
         frame.setVisible(true);
+        robot.delay(200);
         robot.waitForIdle();
         clickOnTitle(frame);
+        robot.delay(200);
         robot.waitForIdle();
         robot.delay(200);
         if (!frame.isFocused()) {
@@ -89,6 +92,7 @@ public class DisposeDialogNotActivateOwnerTest {
         }
 
         dialog.setVisible(true);
+        robot.delay(200);
         robot.waitForIdle();
         robot.delay(200);
         if (!dialog.isFocused()) {
@@ -118,7 +122,6 @@ public class DisposeDialogNotActivateOwnerTest {
         robot.mouseMove(p.x + (int)(d.getWidth() / 2),
                         p.y + ((Frame)c).getInsets().top / 2);
         robot.mousePress(InputEvent.BUTTON1_MASK);
-        robot.delay(20);
         robot.mouseRelease(InputEvent.BUTTON1_MASK);
     }
 }
