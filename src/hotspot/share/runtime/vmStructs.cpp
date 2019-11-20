@@ -911,7 +911,7 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
   unchecked_nonstatic_field(ObjectMonitor,     _owner,                                        sizeof(void *)) /* NOTE: no type */    \
   volatile_nonstatic_field(ObjectMonitor,      _contentions,                                  jint)                                  \
   volatile_nonstatic_field(ObjectMonitor,      _waiters,                                      jint)                                  \
-  volatile_nonstatic_field(ObjectMonitor,      _recursions,                                   intptr_t)                              \
+  volatile_nonstatic_field(ObjectMonitor,      _recursions,                                   intx)                                  \
   nonstatic_field(ObjectMonitor,               _next_om,                                      ObjectMonitor*)                        \
   volatile_nonstatic_field(BasicLock,          _displaced_header,                             markWord)                              \
   nonstatic_field(BasicObjectLock,             _lock,                                         BasicLock)                             \

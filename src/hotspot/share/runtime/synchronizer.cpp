@@ -359,7 +359,7 @@ void ObjectSynchronizer::exit(oop object, BasicLock* lock, TRAPS) {
 //  4) reenter lock1 with original recursion count
 //  5) lock lock2
 // NOTE: must use heavy weight monitor to handle complete_exit/reenter()
-intptr_t ObjectSynchronizer::complete_exit(Handle obj, TRAPS) {
+intx ObjectSynchronizer::complete_exit(Handle obj, TRAPS) {
   if (UseBiasedLocking) {
     BiasedLocking::revoke(obj, THREAD);
     assert(!obj->mark().has_bias_pattern(), "biases should be revoked by now");
@@ -371,7 +371,7 @@ intptr_t ObjectSynchronizer::complete_exit(Handle obj, TRAPS) {
 }
 
 // NOTE: must use heavy weight monitor to handle complete_exit/reenter()
-void ObjectSynchronizer::reenter(Handle obj, intptr_t recursion, TRAPS) {
+void ObjectSynchronizer::reenter(Handle obj, intx recursions, TRAPS) {
   if (UseBiasedLocking) {
     BiasedLocking::revoke(obj, THREAD);
     assert(!obj->mark().has_bias_pattern(), "biases should be revoked by now");
@@ -379,7 +379,7 @@ void ObjectSynchronizer::reenter(Handle obj, intptr_t recursion, TRAPS) {
 
   ObjectMonitor* monitor = inflate(THREAD, obj(), inflate_cause_vm_internal);
 
-  monitor->reenter(recursion, THREAD);
+  monitor->reenter(recursions, THREAD);
 }
 // -----------------------------------------------------------------------------
 // JNI locks on java objects
@@ -1140,7 +1140,7 @@ void ObjectSynchronizer::om_release(Thread* self, ObjectMonitor* m,
   guarantee(m->object() == NULL, "invariant");
   stringStream ss;
   guarantee((m->is_busy() | m->_recursions) == 0, "freeing in-use monitor: "
-            "%s, recursions=" INTPTR_FORMAT, m->is_busy_to_string(&ss),
+            "%s, recursions=" INTX_FORMAT, m->is_busy_to_string(&ss),
             m->_recursions);
   // _next_om is used for both per-thread in-use and free lists so
   // we have to remove 'm' from the in-use list first (as needed).

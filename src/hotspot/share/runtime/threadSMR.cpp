@@ -601,8 +601,6 @@ ThreadsList *ThreadsList::add_thread(ThreadsList *list, JavaThread *java_thread)
 }
 
 void ThreadsList::dec_nested_handle_cnt() {
-  // The decrement only needs to be MO_ACQ_REL since the reference
-  // counter is volatile (and the hazard ptr is already NULL).
   Atomic::dec(&_nested_handle_cnt);
 }
 
@@ -646,8 +644,6 @@ JavaThread* ThreadsList::find_JavaThread_from_java_tid(jlong java_tid) const {
 }
 
 void ThreadsList::inc_nested_handle_cnt() {
-  // The increment needs to be MO_SEQ_CST so that the reference counter
-  // update is seen before the subsequent hazard ptr update.
   Atomic::inc(&_nested_handle_cnt);
 }
 

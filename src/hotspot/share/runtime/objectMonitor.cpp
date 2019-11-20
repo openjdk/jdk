@@ -26,6 +26,8 @@
 #include "classfile/vmSymbols.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "jfr/support/jfrThreadId.hpp"
+#include "logging/log.hpp"
+#include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/markWord.hpp"
@@ -255,7 +257,7 @@ void ObjectMonitor::enter(TRAPS) {
     return;
   }
 
-  if (Self->is_lock_owned ((address)cur)) {
+  if (Self->is_lock_owned((address)cur)) {
     assert(_recursions == 0, "internal state error");
     _recursions = 1;
     // Commute owner from a thread-specific on-stack BasicLockObject address to
@@ -275,8 +277,7 @@ void ObjectMonitor::enter(TRAPS) {
   // we forgo posting JVMTI events and firing DTRACE probes.
   if (TrySpin(Self) > 0) {
     assert(_owner == Self, "must be Self: owner=" INTPTR_FORMAT, p2i(_owner));
-    assert(_recursions == 0, "must be 0: recursions=" INTPTR_FORMAT,
-           _recursions);
+    assert(_recursions == 0, "must be 0: recursions=" INTX_FORMAT, _recursions);
     assert(((oop)object())->mark() == markWord::encode(this),
            "object mark must match encoded this: mark=" INTPTR_FORMAT
            ", encoded this=" INTPTR_FORMAT, ((oop)object())->mark().value(),
@@ -881,7 +882,14 @@ void ObjectMonitor::exit(bool not_suspended, TRAPS) {
       // way we should encounter this situation is in the presence of
       // unbalanced JNI locking. TODO: CheckJNICalls.
       // See also: CR4414101
-      assert(false, "Non-balanced monitor enter/exit! Likely JNI locking");
+#ifdef ASSERT
+      LogStreamHandle(Error, monitorinflation) lsh;
+      lsh.print_cr("ERROR: ObjectMonitor::exit(): thread=" INTPTR_FORMAT
+                    " is exiting an ObjectMonitor it does not own.", p2i(THREAD));
+      lsh.print_cr("The imbalance is possibly caused by JNI locking.");
+      print_debug_style_on(&lsh);
+#endif
+      assert(false, "Non-balanced monitor enter/exit!");
       return;
     }
   }
@@ -908,8 +916,6 @@ void ObjectMonitor::exit(bool not_suspended, TRAPS) {
 
     // release semantics: prior loads and stores from within the critical section
     // must not float (reorder) past the following store that drops the lock.
-    // On SPARC that requires MEMBAR #loadstore|#storestore.
-    // But of course in TSO #loadstore|#storestore is not required.
     OrderAccess::release_store(&_owner, (void*)NULL);   // drop the lock
     OrderAccess::storeload();                        // See if we need to wake a successor
     if ((intptr_t(_EntryList)|intptr_t(_cxq)) == 0 || _succ != NULL) {
@@ -1106,7 +1112,7 @@ void ObjectMonitor::ExitEpilog(Thread * Self, ObjectWaiter * Wakee) {
 // The _owner field is not always the Thread addr even with an
 // inflated monitor, e.g. the monitor can be inflated by a non-owning
 // thread due to contention.
-intptr_t ObjectMonitor::complete_exit(TRAPS) {
+intx ObjectMonitor::complete_exit(TRAPS) {
   Thread * const Self = THREAD;
   assert(Self->is_Java_thread(), "Must be Java thread!");
   JavaThread *jt = (JavaThread *)THREAD;
@@ -1122,7 +1128,7 @@ intptr_t ObjectMonitor::complete_exit(TRAPS) {
   }
 
   guarantee(Self == _owner, "complete_exit not owner");
-  intptr_t save = _recursions; // record the old recursion count
+  intx save = _recursions; // record the old recursion count
   _recursions = 0;        // set the recursion level to be 0
   exit(true, Self);           // exit the monitor
   guarantee(_owner != Self, "invariant");
@@ -1131,7 +1137,7 @@ intptr_t ObjectMonitor::complete_exit(TRAPS) {
 
 // reenter() enters a lock and sets recursion count
 // complete_exit/reenter operate as a wait without waiting
-void ObjectMonitor::reenter(intptr_t recursions, TRAPS) {
+void ObjectMonitor::reenter(intx recursions, TRAPS) {
   Thread * const Self = THREAD;
   assert(Self->is_Java_thread(), "Must be Java thread!");
   JavaThread *jt = (JavaThread *)THREAD;
@@ -1252,7 +1258,7 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
 
   _Responsible = NULL;
 
-  intptr_t save = _recursions; // record the old recursion count
+  intx save = _recursions;     // record the old recursion count
   _waiters++;                  // increment the number of waiters
   _recursions = 0;             // set the recursion level to be 1
   exit(true, Self);                    // exit the monitor
@@ -1941,8 +1947,62 @@ void ObjectMonitor::Initialize() {
 void ObjectMonitor::print_on(outputStream* st) const {
   // The minimal things to print for markWord printing, more can be added for debugging and logging.
   st->print("{contentions=0x%08x,waiters=0x%08x"
-            ",recursions=" INTPTR_FORMAT ",owner=" INTPTR_FORMAT "}",
+            ",recursions=" INTX_FORMAT ",owner=" INTPTR_FORMAT "}",
             contentions(), waiters(), recursions(),
             p2i(owner()));
 }
 void ObjectMonitor::print() const { print_on(tty); }
+
+#ifdef ASSERT
+// Print the ObjectMonitor like a debugger would:
+//
+// (ObjectMonitor) 0x00007fdfb6012e40 = {
+//   _header = 0x0000000000000001
+//   _object = 0x000000070ff45fd0
+//   _next_om = 0x0000000000000000
+//   _pad_buf0 = {
+//     [0] = '\0'
+//     ...
+//     [103] = '\0'
+//   }
+//   _owner = 0x0000000000000000
+//   _previous_owner_tid = 0
+//   _recursions = 0
+//   _EntryList = 0x0000000000000000
+//   _cxq = 0x0000000000000000
+//   _succ = 0x0000000000000000
+//   _Responsible = 0x0000000000000000
+//   _Spinner = 0
+//   _SpinDuration = 5000
+//   _contentions = 0
+//   _WaitSet = 0x0000700009756248
+//   _waiters = 1
+//   _WaitSetLock = 0
+// }
+//
+void ObjectMonitor::print_debug_style_on(outputStream* st) const {
+  st->print_cr("(ObjectMonitor*) " INTPTR_FORMAT " = {", p2i(this));
+  st->print_cr("  _header = " INTPTR_FORMAT, header().value());
+  st->print_cr("  _object = " INTPTR_FORMAT, p2i(_object));
+  st->print_cr("  _next_om = " INTPTR_FORMAT, p2i(_next_om));
+  st->print_cr("  _pad_buf0 = {");
+  st->print_cr("    [0] = '\\0'");
+  st->print_cr("    ...");
+  st->print_cr("    [%d] = '\\0'", (int)sizeof(_pad_buf0) - 1);
+  st->print_cr("  }");
+  st->print_cr("  _owner = " INTPTR_FORMAT, p2i(_owner));
+  st->print_cr("  _previous_owner_tid = " JLONG_FORMAT, _previous_owner_tid);
+  st->print_cr("  _recursions = " INTX_FORMAT, _recursions);
+  st->print_cr("  _EntryList = " INTPTR_FORMAT, p2i(_EntryList));
+  st->print_cr("  _cxq = " INTPTR_FORMAT, p2i(_cxq));
+  st->print_cr("  _succ = " INTPTR_FORMAT, p2i(_succ));
+  st->print_cr("  _Responsible = " INTPTR_FORMAT, p2i(_Responsible));
+  st->print_cr("  _Spinner = %d", _Spinner);
+  st->print_cr("  _SpinDuration = %d", _SpinDuration);
+  st->print_cr("  _contentions = %d", _contentions);
+  st->print_cr("  _WaitSet = " INTPTR_FORMAT, p2i(_WaitSet));
+  st->print_cr("  _waiters = %d", _waiters);
+  st->print_cr("  _WaitSetLock = %d", _WaitSetLock);
+  st->print_cr("}");
+}
+#endif
