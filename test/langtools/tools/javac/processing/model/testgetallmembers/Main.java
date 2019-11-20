@@ -27,7 +27,7 @@
  * @summary PackageElement.getEnclosedElements() throws ClassReader$BadClassFileException
  * @author  Peter von der Ah\u00e9
  * @modules jdk.compiler/com.sun.tools.javac.model
- * @run main/othervm -Xmx256m Main
+ * @run main/othervm -Xmx512m Main
  */
 
 import java.io.File;
