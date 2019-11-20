@@ -27,6 +27,7 @@
 #include "gc/shenandoah/shenandoahBarrierSetClone.inline.hpp"
 #include "gc/shenandoah/shenandoahBarrierSetAssembler.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
+#include "gc/shenandoah/shenandoahConcurrentRoots.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeuristics.hpp"
 #include "gc/shenandoah/shenandoahTraversalGC.hpp"
@@ -69,6 +70,35 @@ bool ShenandoahBarrierSet::is_a(BarrierSet::Name bsn) {
 
 bool ShenandoahBarrierSet::is_aligned(HeapWord* hw) {
   return true;
+}
+
+bool ShenandoahBarrierSet::need_load_reference_barrier(DecoratorSet decorators, BasicType type) {
+  if (!ShenandoahLoadRefBarrier) return false;
+  // Only needed for references
+  return is_reference_type(type);
+}
+
+bool ShenandoahBarrierSet::use_load_reference_barrier_native(DecoratorSet decorators, BasicType type) {
+  assert(need_load_reference_barrier(decorators, type), "Should be subset of LRB");
+  assert(is_reference_type(type), "Why we here?");
+  // Native load reference barrier is only needed for concurrent root processing
+  if (!ShenandoahConcurrentRoots::can_do_concurrent_roots()) {
+    return false;
+  }
+
+  return (decorators & IN_NATIVE) != 0;
+}
+
+bool ShenandoahBarrierSet::need_keep_alive_barrier(DecoratorSet decorators,BasicType type) {
+  if (!ShenandoahKeepAliveBarrier) return false;
+  // Only needed for references
+  if (!is_reference_type(type)) return false;
+
+  bool keep_alive = (decorators & AS_NO_KEEPALIVE) == 0;
+  bool unknown = (decorators & ON_UNKNOWN_OOP_REF) != 0;
+  bool is_traversal_mode = ShenandoahHeap::heap()->is_traversal_mode();
+  bool on_weak_ref = (decorators & (ON_WEAK_OOP_REF | ON_PHANTOM_OOP_REF)) != 0;
+  return (on_weak_ref || unknown) && (keep_alive || is_traversal_mode);
 }
 
 template <class T>

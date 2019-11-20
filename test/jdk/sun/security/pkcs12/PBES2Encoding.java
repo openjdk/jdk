@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ public class PBES2Encoding {
     // This is a PKCS 12 file using PBES2 to encrypt the cert and key. It is
     // generated with these commands:
     //
-    // keytool -keystore ks -genkeypair -storepass changeit -alias a -dname CN=A
+    // keytool -keystore ks -genkeypair -keyalg DSA -storepass changeit -alias a -dname CN=A
     // openssl pkcs12 -in ks -nodes -out kandc -passin pass:changeit
     // openssl pkcs12 -export -in kandc -out p12 -name a -passout pass:changeit
     //         -certpbe AES-128-CBC -keypbe AES-128-CBC

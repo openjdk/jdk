@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ public class RealType {
 
     public static void main(String[] args) throws Throwable {
 
-        kt("-genkeypair -alias a -dname CN=A -keypass changeit -storetype jks")
+        kt("-genkeypair -keyalg DSA -alias a -dname CN=A -keypass changeit -storetype jks")
                 .shouldHaveExitValue(0);
 
         // -keypasswd command should be allowed on JKS
@@ -54,7 +54,7 @@ public class RealType {
 
         Files.delete(Paths.get("ks"));
 
-        kt("-genkeypair -alias a -dname CN=A -keypass changeit -storetype pkcs12")
+        kt("-genkeypair -keyalg DSA -alias a -dname CN=A -keypass changeit -storetype pkcs12")
                 .shouldHaveExitValue(0);
 
         // A pkcs12 keystore cannot be loaded as a JCEKS keystore

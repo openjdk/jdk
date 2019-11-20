@@ -229,7 +229,7 @@ void Exceptions::throw_stack_overflow_exception(Thread* THREAD, const char* file
     exception = Handle(THREAD, e);  // fill_in_stack trace does gc
     assert(k->is_initialized(), "need to increase java_thread_min_stack_allowed calculation");
     if (StackTraceInThrowable) {
-      java_lang_Throwable::fill_in_stack_trace(exception, method());
+      java_lang_Throwable::fill_in_stack_trace(exception, method);
     }
     // Increment counter for hs_err file reporting
     Atomic::inc(&Exceptions::_stack_overflow_errors);

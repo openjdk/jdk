@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2019, Oracle and/or its affiliates. All rights reserved.
  */
 
 /*
@@ -33,7 +33,6 @@ package sun.security.krb5.internal.crypto.dk;
 import javax.crypto.Cipher;
 import javax.crypto.Mac;
 import java.security.GeneralSecurityException;
-import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -44,6 +43,8 @@ import sun.security.util.HexDumpEncoder;
 import sun.security.krb5.Confounder;
 import sun.security.krb5.internal.crypto.KeyUsage;
 import sun.security.krb5.KrbCryptoException;
+
+import static java.nio.charset.StandardCharsets.*;
 
 /**
  * Implements Derive Key cryptography functionality as defined in RFC 3961.
@@ -672,13 +673,11 @@ public abstract class DkCrypto {
         }
     }
 
-// String.getBytes("UTF-8");
+// String.getBytes(UTF_8);
 // Do this instead of using String to avoid making password immutable
     static byte[] charToUtf8(char[] chars) {
-        Charset utf8 = Charset.forName("UTF-8");
-
         CharBuffer cb = CharBuffer.wrap(chars);
-        ByteBuffer bb = utf8.encode(cb);
+        ByteBuffer bb = UTF_8.encode(cb);
         int len = bb.limit();
         byte[] answer = new byte[len];
         bb.get(answer, 0, len);
@@ -686,10 +685,8 @@ public abstract class DkCrypto {
     }
 
     static byte[] charToUtf16(char[] chars) {
-        Charset utf8 = Charset.forName("UTF-16LE");
-
         CharBuffer cb = CharBuffer.wrap(chars);
-        ByteBuffer bb = utf8.encode(cb);
+        ByteBuffer bb = UTF_16LE.encode(cb);
         int len = bb.limit();
         byte[] answer = new byte[len];
         bb.get(answer, 0, len);

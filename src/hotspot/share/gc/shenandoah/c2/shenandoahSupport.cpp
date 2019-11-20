@@ -383,7 +383,7 @@ void ShenandoahBarrierC2Support::verify(RootNode* root) {
             (!verify_helper(in1, phis, visited, ShenandoahValue, trace, barriers_used) ||
              !verify_helper(in2, phis, visited, ShenandoahValue, trace, barriers_used))) {
           phis.clear();
-          visited.Reset();
+          visited.reset();
         }
       }
     } else if (n->is_LoadStore()) {
@@ -635,7 +635,7 @@ void ShenandoahBarrierC2Support::verify(RootNode* root) {
         for (uint i = sfpt->jvms()->scloff(); i < sfpt->jvms()->endoff(); i++) {
           if (!verify_helper(sfpt->in(i), phis, visited, ShenandoahLoad, trace, barriers_used)) {
             phis.clear();
-            visited.Reset();
+            visited.reset();
           }
         }
       }
@@ -2368,7 +2368,7 @@ void MemoryGraphFixer::collect_memory_nodes() {
   // Iterate over CFG nodes in rpo and propagate memory state to
   // compute memory state at regions, creating new phis if needed.
   Node_List rpo_list;
-  visited.Clear();
+  visited.clear();
   _phase->rpo(_phase->C->root(), stack, visited, rpo_list);
   Node* root = rpo_list.pop();
   assert(root == _phase->C->root(), "");

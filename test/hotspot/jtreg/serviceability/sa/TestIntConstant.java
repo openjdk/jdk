@@ -64,11 +64,10 @@ public class TestIntConstant {
             // with names and the values derived from enums and #define preprocessor
             // macros in hotspot.
             expStrMap.put("intConstant", List.of(
-                 "CollectedHeap::G1 4",
+                 "CollectedHeap::G1 3",
                  "RUNNABLE 2",
                  "Deoptimization::Reason_class_check 4",
                  "InstanceKlass::_misc_is_unsafe_anonymous 32",
-                 "Generation::ParNew 1",
                  "_thread_uninitialized 0"));
             expStrMap.put("intConstant _temp_constant", List.of(
                  "intConstant _temp_constant 45"));

@@ -45,6 +45,8 @@ import javax.security.auth.x500.X500Principal;
 import sun.security.util.*;
 import sun.security.provider.X509Factory;
 
+import static java.nio.charset.StandardCharsets.US_ASCII;
+
 /**
  * The X509CertImpl class represents an X.509 certificate. These certificates
  * are widely used to support authentication and other functionality in
@@ -250,7 +252,7 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
         DerValue der = null;
         String line = null;
         BufferedReader certBufferedReader =
-            new BufferedReader(new InputStreamReader(in, "ASCII"));
+            new BufferedReader(new InputStreamReader(in, US_ASCII));
         try {
             line = certBufferedReader.readLine();
         } catch (IOException ioe1) {

@@ -250,14 +250,6 @@ private:
 public:
   size_t pending_cards_at_gc_start() const { return _pending_cards_at_gc_start; }
 
-  size_t total_concurrent_refined_cards() const {
-    return _total_concurrent_refined_cards;
-  }
-
-  size_t total_mutator_refined_cards() const {
-    return _total_mutator_refined_cards;
-  }
-
   // Calculate the minimum number of old regions we'll add to the CSet
   // during a mixed GC.
   uint calc_min_old_cset_length() const;

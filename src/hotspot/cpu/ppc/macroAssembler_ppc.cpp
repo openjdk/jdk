@@ -3120,7 +3120,7 @@ void MacroAssembler::get_vm_result(Register oop_result) {
   li(R0, 0);
   std(R0, in_bytes(JavaThread::vm_result_offset()), R16_thread);
 
-  verify_oop(oop_result);
+  verify_oop(oop_result, FILE_AND_LINE);
 }
 
 void MacroAssembler::get_vm_result_2(Register metadata_result) {
@@ -4917,6 +4917,13 @@ void MacroAssembler::verify_thread() {
   }
 }
 
+void MacroAssembler::verify_coop(Register coop, const char* msg) {
+  if (!VerifyOops) { return; }
+  if (UseCompressedOops) { decode_heap_oop(coop); }
+  verify_oop(coop, msg);
+  if (UseCompressedOops) { encode_heap_oop(coop, coop); }
+}
+
 // READ: oop. KILL: R0. Volatile floats perhaps.
 void MacroAssembler::verify_oop(Register oop, const char* msg) {
   if (!VerifyOops) {
@@ -4926,6 +4933,9 @@ void MacroAssembler::verify_oop(Register oop, const char* msg) {
   address/* FunctionDescriptor** */fd = StubRoutines::verify_oop_subroutine_entry_address();
   const Register tmp = R11; // Will be preserved.
   const int nbytes_save = MacroAssembler::num_volatile_regs * 8;
+
+  BLOCK_COMMENT("verify_oop {");
+
   save_volatile_gprs(R1_SP, -nbytes_save); // except R0
 
   mr_if_needed(R4_ARG2, oop);
@@ -4942,6 +4952,8 @@ void MacroAssembler::verify_oop(Register oop, const char* msg) {
   pop_frame();
   restore_LR_CR(tmp);
   restore_volatile_gprs(R1_SP, -nbytes_save); // except R0
+
+  BLOCK_COMMENT("} verify_oop");
 }
 
 void MacroAssembler::verify_oop_addr(RegisterOrConstant offs, Register base, const char* msg) {

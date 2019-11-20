@@ -30,11 +30,11 @@ import java.util.Observable;
 import java.util.Observer;
 
 import sun.jvm.hotspot.debugger.Address;
+import sun.jvm.hotspot.gc.g1.HeapRegionClosure;
+import sun.jvm.hotspot.gc.g1.PrintRegionClosure;
 import sun.jvm.hotspot.gc.shared.CollectedHeap;
 import sun.jvm.hotspot.gc.shared.CollectedHeapName;
 import sun.jvm.hotspot.gc.shared.LiveRegionsClosure;
-import sun.jvm.hotspot.gc.shared.PrintRegionClosure;
-import sun.jvm.hotspot.gc.shared.SpaceClosure;
 import sun.jvm.hotspot.memory.MemRegion;
 import sun.jvm.hotspot.runtime.VM;
 import sun.jvm.hotspot.runtime.VMObjectFactory;
@@ -126,11 +126,11 @@ public class G1CollectedHeap extends CollectedHeap {
         return hrm().heapRegionIterator();
     }
 
-    public void heapRegionIterate(SpaceClosure scl) {
+    public void heapRegionIterate(HeapRegionClosure hrcl) {
         Iterator<HeapRegion> iter = heapRegionIterator();
         while (iter.hasNext()) {
             HeapRegion hr = iter.next();
-            scl.doSpace(hr);
+            hrcl.doHeapRegion(hr);
         }
     }
 

@@ -25,7 +25,7 @@
  * @test
  * @bug 8206986 8226510
  * @summary Verify than a switch that does not yield a value is rejected.
- * @compile/fail/ref=EmptySwitch.out --enable-preview -source ${jdk.version} -XDrawDiagnostics -XDshould-stop.at=FLOW EmptySwitch.java
+ * @compile/fail/ref=EmptySwitch.out -XDrawDiagnostics -XDshould-stop.at=FLOW EmptySwitch.java
  */
 
 public class EmptySwitch {

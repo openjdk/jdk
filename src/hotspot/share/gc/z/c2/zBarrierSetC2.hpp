@@ -82,6 +82,8 @@ public:
                                                BasicType type,
                                                bool is_clone,
                                                ArrayCopyPhase phase) const;
+  virtual void clone_at_expansion(PhaseMacroExpand* phase,
+                                  ArrayCopyNode* ac) const;
 
   virtual void late_barrier_analysis() const;
   virtual int estimate_stub_size() const;

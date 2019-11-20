@@ -55,7 +55,7 @@ private:
   BitMap::idx_t segment_end(BitMap::idx_t segment) const;
 
   bool is_segment_live(BitMap::idx_t segment) const;
-  bool set_segment_live_atomic(BitMap::idx_t segment);
+  bool set_segment_live(BitMap::idx_t segment);
 
   BitMap::idx_t first_live_segment() const;
   BitMap::idx_t next_live_segment(BitMap::idx_t segment) const;
@@ -80,9 +80,9 @@ public:
   size_t live_bytes() const;
 
   bool get(size_t index) const;
-  bool set_atomic(size_t index, bool finalizable, bool& inc_live);
+  bool set(size_t index, bool finalizable, bool& inc_live);
 
-  void inc_live_atomic(uint32_t objects, size_t bytes);
+  void inc_live(uint32_t objects, size_t bytes);
 
   void iterate(ObjectClosure* cl, uintptr_t page_start, size_t page_object_alignment_shift);
 };

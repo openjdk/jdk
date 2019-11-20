@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,11 +32,46 @@
 #include "oops/oop.hpp"
 #include "runtime/atomic.hpp"
 
+inline void ZBarrier::self_heal(volatile oop* p, uintptr_t addr, uintptr_t heal_addr) {
+  if (heal_addr == 0) {
+    // Never heal with null since it interacts badly with reference processing.
+    // A mutator clearing an oop would be similar to calling Reference.clear(),
+    // which would make the reference non-discoverable or silently dropped
+    // by the reference processor.
+    return;
+  }
+
+  for (;;) {
+    if (addr == heal_addr) {
+      // Already healed
+      return;
+    }
+
+    // Heal
+    const uintptr_t prev_addr = Atomic::cmpxchg(heal_addr, (volatile uintptr_t*)p, addr);
+    if (prev_addr == addr) {
+      // Success
+      return;
+    }
+
+    if (ZAddress::is_good_or_null(prev_addr)) {
+      // No need to heal
+      return;
+    }
+
+    // The oop location was healed by another barrier, but it is still not
+    // good or null. Re-apply healing to make sure the oop is not left with
+    // weaker (remapped or finalizable) metadata bits than what this barrier
+    // tried to apply.
+    assert(ZAddress::offset(prev_addr) == ZAddress::offset(heal_addr), "Invalid offset");
+    addr = prev_addr;
+  }
+}
+
 template <ZBarrierFastPath fast_path, ZBarrierSlowPath slow_path>
 inline oop ZBarrier::barrier(volatile oop* p, oop o) {
   uintptr_t addr = ZOop::to_address(o);
 
-retry:
   // Fast path
   if (fast_path(addr)) {
     return ZOop::from_address(addr);
@@ -45,17 +80,8 @@ retry:
   // Slow path
   const uintptr_t good_addr = slow_path(addr);
 
-  // Self heal, but only if the address was actually updated by the slow path,
-  // which might not be the case, e.g. when marking through an already good oop.
-  if (p != NULL && good_addr != addr) {
-    const uintptr_t prev_addr = Atomic::cmpxchg(good_addr, (volatile uintptr_t*)p, addr);
-    if (prev_addr != addr) {
-      // Some other thread overwrote the oop. If this oop was updated by a
-      // weak barrier the new oop might not be good, in which case we need
-      // to re-apply this barrier.
-      addr = prev_addr;
-      goto retry;
-    }
+  if (p != NULL) {
+    self_heal(p, addr, good_addr);
   }
 
   return ZOop::from_address(good_addr);
@@ -73,28 +99,12 @@ inline oop ZBarrier::weak_barrier(volatile oop* p, oop o) {
   }
 
   // Slow path
-  uintptr_t good_addr = slow_path(addr);
+  const uintptr_t good_addr = slow_path(addr);
 
-  // Self heal unless the address returned from the slow path is null,
-  // in which case resurrection was blocked and we must let the reference
-  // processor clear the oop. Mutators are not allowed to clear oops in
-  // these cases, since that would be similar to calling Reference.clear(),
-  // which would make the reference non-discoverable or silently dropped
-  // by the reference processor.
-  if (p != NULL && good_addr != 0) {
-    // The slow path returns a good/marked address, but we never mark oops
-    // in a weak load barrier so we always self heal with the remapped address.
-    const uintptr_t weak_good_addr = ZAddress::remapped(good_addr);
-    const uintptr_t prev_addr = Atomic::cmpxchg(weak_good_addr, (volatile uintptr_t*)p, addr);
-    if (prev_addr != addr) {
-      // Some other thread overwrote the oop. The new
-      // oop is guaranteed to be weak good or null.
-      assert(ZAddress::is_weak_good_or_null(prev_addr), "Bad weak overwrite");
-
-      // Return the good address instead of the weak good address
-      // to ensure that the currently active heap view is used.
-      good_addr = ZAddress::good_or_null(prev_addr);
-    }
+  if (p != NULL) {
+    // The slow path returns a good/marked address or null, but we never mark
+    // oops in a weak load barrier so we always heal with the remapped address.
+    self_heal(p, addr, ZAddress::remapped_or_null(good_addr));
   }
 
   return ZOop::from_address(good_addr);
@@ -134,25 +144,6 @@ inline bool ZBarrier::is_weak_good_or_null_fast_path(uintptr_t addr) {
   return ZAddress::is_weak_good_or_null(addr);
 }
 
-inline bool ZBarrier::is_resurrection_blocked(volatile oop* p, oop* o) {
-  const bool is_blocked = ZResurrection::is_blocked();
-
-  // Reload oop after checking the resurrection blocked state. This is
-  // done to prevent a race where we first load an oop, which is logically
-  // null but not yet cleared, then this oop is cleared by the reference
-  // processor and resurrection is unblocked. At this point the mutator
-  // would see the unblocked state and pass this invalid oop through the
-  // normal barrier path, which would incorrectly try to mark this oop.
-  if (p != NULL) {
-    // First assign to reloaded_o to avoid compiler warning about
-    // implicit dereference of volatile oop.
-    const oop reloaded_o = *p;
-    *o = reloaded_o;
-  }
-
-  return is_blocked;
-}
-
 //
 // Load barrier
 //
@@ -190,16 +181,16 @@ inline void verify_on_weak(volatile oop* referent_addr) {
 inline oop ZBarrier::load_barrier_on_weak_oop_field_preloaded(volatile oop* p, oop o) {
   verify_on_weak(p);
 
-  if (is_resurrection_blocked(p, &o)) {
-    return weak_barrier<is_good_or_null_fast_path, weak_load_barrier_on_weak_oop_slow_path>(p, o);
+  if (ZResurrection::is_blocked()) {
+    return barrier<is_good_or_null_fast_path, weak_load_barrier_on_weak_oop_slow_path>(p, o);
   }
 
   return load_barrier_on_oop_field_preloaded(p, o);
 }
 
 inline oop ZBarrier::load_barrier_on_phantom_oop_field_preloaded(volatile oop* p, oop o) {
-  if (is_resurrection_blocked(p, &o)) {
-    return weak_barrier<is_good_or_null_fast_path, weak_load_barrier_on_phantom_oop_slow_path>(p, o);
+  if (ZResurrection::is_blocked()) {
+    return barrier<is_good_or_null_fast_path, weak_load_barrier_on_phantom_oop_slow_path>(p, o);
   }
 
   return load_barrier_on_oop_field_preloaded(p, o);
@@ -235,8 +226,8 @@ inline oop ZBarrier::weak_load_barrier_on_weak_oop_field(volatile oop* p) {
 inline oop ZBarrier::weak_load_barrier_on_weak_oop_field_preloaded(volatile oop* p, oop o) {
   verify_on_weak(p);
 
-  if (is_resurrection_blocked(p, &o)) {
-    return weak_barrier<is_good_or_null_fast_path, weak_load_barrier_on_weak_oop_slow_path>(p, o);
+  if (ZResurrection::is_blocked()) {
+    return barrier<is_good_or_null_fast_path, weak_load_barrier_on_weak_oop_slow_path>(p, o);
   }
 
   return weak_load_barrier_on_oop_field_preloaded(p, o);
@@ -252,8 +243,8 @@ inline oop ZBarrier::weak_load_barrier_on_phantom_oop_field(volatile oop* p) {
 }
 
 inline oop ZBarrier::weak_load_barrier_on_phantom_oop_field_preloaded(volatile oop* p, oop o) {
-  if (is_resurrection_blocked(p, &o)) {
-    return weak_barrier<is_good_or_null_fast_path, weak_load_barrier_on_phantom_oop_slow_path>(p, o);
+  if (ZResurrection::is_blocked()) {
+    return barrier<is_good_or_null_fast_path, weak_load_barrier_on_phantom_oop_slow_path>(p, o);
   }
 
   return weak_load_barrier_on_oop_field_preloaded(p, o);

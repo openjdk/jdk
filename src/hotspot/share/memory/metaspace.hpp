@@ -172,16 +172,13 @@ class Metaspace : public AllStatic {
     assert(!_frozen, "sanity");
   }
 #ifdef _LP64
-  static void allocate_metaspace_compressed_klass_ptrs(char* requested_addr, address cds_base);
+  static void allocate_metaspace_compressed_klass_ptrs(ReservedSpace metaspace_rs, char* requested_addr, address cds_base);
 #endif
 
  private:
 
 #ifdef _LP64
-  static void set_narrow_klass_base_and_shift(address metaspace_base, address cds_base);
-
-  // Returns true if can use CDS with metaspace allocated as specified address.
-  static bool can_use_cds_with_metaspace_addr(char* metaspace_base, address cds_base);
+  static void set_narrow_klass_base_and_shift(ReservedSpace metaspace_rs, address cds_base);
 
   static void initialize_class_space(ReservedSpace rs);
 #endif
@@ -439,11 +436,6 @@ class MetaspaceGC : AllStatic {
   // When committed memory of all metaspaces reaches this value,
   // a GC is induced and the value is increased. Size is in bytes.
   static volatile size_t _capacity_until_GC;
-
-  // For a CMS collection, signal that a concurrent collection should
-  // be started.
-  static bool _should_concurrent_collect;
-
   static uint _shrink_factor;
 
   static size_t shrink_factor() { return _shrink_factor; }
@@ -460,11 +452,6 @@ class MetaspaceGC : AllStatic {
                                     size_t* old_cap_until_GC = NULL,
                                     bool* can_retry = NULL);
   static size_t dec_capacity_until_GC(size_t v);
-
-  static bool should_concurrent_collect() { return _should_concurrent_collect; }
-  static void set_should_concurrent_collect(bool v) {
-    _should_concurrent_collect = v;
-  }
 
   // The amount to increase the high-water-mark (_capacity_until_GC)
   static size_t delta_capacity_until_GC(size_t bytes);

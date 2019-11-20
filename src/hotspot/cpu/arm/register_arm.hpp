@@ -26,7 +26,7 @@
 #define CPU_ARM_REGISTER_ARM_HPP
 
 #include "asm/register.hpp"
-#include "vm_version_arm.hpp"
+#include "runtime/vm_version.hpp"
 
 class VMRegImpl;
 typedef VMRegImpl* VMReg;

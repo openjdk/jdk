@@ -82,6 +82,8 @@ public final class KerberosPrincipal
 
     /**
      * Enterprise name (alias)
+     *
+     * @since 13
      */
     public static final int KRB_NT_ENTERPRISE = 10;
 

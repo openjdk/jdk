@@ -1130,9 +1130,6 @@ class PSParallelCompact : AllStatic {
   static inline HeapWord*         dense_prefix(SpaceId space_id);
   static inline ObjectStartArray* start_array(SpaceId space_id);
 
-  // Move and update the live objects in the specified space.
-  static void move_and_update(ParCompactionManager* cm, SpaceId space_id);
-
   // Process the end of the given region range in the dense prefix.
   // This includes saving any object not updated.
   static void dense_prefix_regions_epilogue(ParCompactionManager* cm,

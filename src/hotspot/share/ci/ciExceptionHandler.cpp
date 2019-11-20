@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@ ciInstanceKlass* ciExceptionHandler::catch_klass() {
   if (_catch_klass == NULL) {
     bool will_link;
     assert(_loading_klass->get_instanceKlass()->is_linked(), "must be linked before accessing constant pool");
-    constantPoolHandle cpool(_loading_klass->get_instanceKlass()->constants());
+    constantPoolHandle cpool(THREAD, _loading_klass->get_instanceKlass()->constants());
     ciKlass* k = CURRENT_ENV->get_klass_by_index(cpool,
                                                  _catch_klass_index,
                                                  will_link,

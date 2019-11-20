@@ -28,6 +28,7 @@
 #include "gc/g1/heapRegion.hpp"
 #include "gc/g1/g1EvacStats.hpp"
 #include "gc/g1/g1HeapRegionAttr.hpp"
+#include "gc/g1/g1NUMA.hpp"
 
 class G1CollectedHeap;
 
@@ -38,7 +39,7 @@ class G1CollectedHeap;
 // and a lock will need to be taken when the active region needs to be
 // replaced.
 
-class G1AllocRegion {
+class G1AllocRegion : public CHeapObj<mtGC> {
 
 private:
   // The active allocating region we are currently allocating out
@@ -91,6 +92,9 @@ private:
   HeapWord* new_alloc_region_and_allocate(size_t word_size, bool force);
 
 protected:
+  // The memory node index this allocation region belongs to.
+  uint _node_index;
+
   // Reset the alloc region to point a the dummy region.
   void reset_alloc_region();
 
@@ -131,7 +135,7 @@ protected:
   virtual void retire_region(HeapRegion* alloc_region,
                              size_t allocated_bytes) = 0;
 
-  G1AllocRegion(const char* name, bool bot_updates);
+  G1AllocRegion(const char* name, bool bot_updates, uint node_index);
 
 public:
   static void setup(G1CollectedHeap* g1h, HeapRegion* dummy_region);
@@ -220,8 +224,8 @@ protected:
   virtual void retire_region(HeapRegion* alloc_region, size_t allocated_bytes);
   virtual size_t retire(bool fill_up);
 public:
-  MutatorAllocRegion()
-    : G1AllocRegion("Mutator Alloc Region", false /* bot_updates */),
+  MutatorAllocRegion(uint node_index)
+    : G1AllocRegion("Mutator Alloc Region", false /* bot_updates */, node_index),
       _wasted_bytes(0),
       _retained_alloc_region(NULL) { }
 
@@ -245,6 +249,7 @@ public:
 
   virtual void init();
 };
+
 // Common base class for allocation regions used during GC.
 class G1GCAllocRegion : public G1AllocRegion {
 protected:
@@ -256,16 +261,17 @@ protected:
 
   virtual size_t retire(bool fill_up);
 
-  G1GCAllocRegion(const char* name, bool bot_updates, G1EvacStats* stats, G1HeapRegionAttr::region_type_t purpose)
-  : G1AllocRegion(name, bot_updates), _stats(stats), _purpose(purpose) {
+  G1GCAllocRegion(const char* name, bool bot_updates, G1EvacStats* stats,
+                  G1HeapRegionAttr::region_type_t purpose, uint node_index = G1NUMA::AnyNodeIndex)
+  : G1AllocRegion(name, bot_updates, node_index), _stats(stats), _purpose(purpose) {
     assert(stats != NULL, "Must pass non-NULL PLAB statistics");
   }
 };
 
 class SurvivorGCAllocRegion : public G1GCAllocRegion {
 public:
-  SurvivorGCAllocRegion(G1EvacStats* stats)
-  : G1GCAllocRegion("Survivor GC Alloc Region", false /* bot_updates */, stats, G1HeapRegionAttr::Young) { }
+  SurvivorGCAllocRegion(G1EvacStats* stats, uint node_index)
+  : G1GCAllocRegion("Survivor GC Alloc Region", false /* bot_updates */, stats, G1HeapRegionAttr::Young, node_index) { }
 };
 
 class OldGCAllocRegion : public G1GCAllocRegion {

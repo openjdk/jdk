@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,8 @@ import sun.security.krb5.internal.crypto.KeyUsage;
 import sun.security.krb5.internal.util.KerberosString;
 import sun.security.util.DerOutputStream;
 import sun.security.util.DerValue;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Implements the ASN.1 PA-FOR-USER type.
@@ -163,25 +165,20 @@ public class PAForUserEnc {
      * 4. the string value of auth-package field
      */
     public byte[] getS4UByteArray() {
-        try {
-            ByteArrayOutputStream ba = new ByteArrayOutputStream();
-            ba.write(new byte[4]);
-            for (String s: name.getNameStrings()) {
-                ba.write(s.getBytes("UTF-8"));
-            }
-            ba.write(name.getRealm().toString().getBytes("UTF-8"));
-            ba.write(AUTH_PACKAGE.getBytes("UTF-8"));
-            byte[] output = ba.toByteArray();
-            int pnType = name.getNameType();
-            output[0] = (byte)(pnType & 0xff);
-            output[1] = (byte)((pnType>>8) & 0xff);
-            output[2] = (byte)((pnType>>16) & 0xff);
-            output[3] = (byte)((pnType>>24) & 0xff);
-            return output;
-        } catch (IOException ioe) {
-            // not possible
-            throw new AssertionError("Cannot write ByteArrayOutputStream", ioe);
+        ByteArrayOutputStream ba = new ByteArrayOutputStream();
+        ba.writeBytes(new byte[4]);
+        for (String s: name.getNameStrings()) {
+            ba.writeBytes(s.getBytes(UTF_8));
         }
+        ba.writeBytes(name.getRealm().toString().getBytes(UTF_8));
+        ba.writeBytes(AUTH_PACKAGE.getBytes(UTF_8));
+        byte[] output = ba.toByteArray();
+        int pnType = name.getNameType();
+        output[0] = (byte)(pnType & 0xff);
+        output[1] = (byte)((pnType>>8) & 0xff);
+        output[2] = (byte)((pnType>>16) & 0xff);
+        output[3] = (byte)((pnType>>24) & 0xff);
+        return output;
     }
 
     public String toString() {

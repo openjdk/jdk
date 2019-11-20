@@ -27,16 +27,38 @@
  * @summary C2: LoopStripMining doesn't strip as expected
  * @requires vm.compiler2.enabled
  *
- * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+SafepointTimeout -XX:+SafepointALot
- *                   -XX:+AbortVMOnSafepointTimeout -XX:SafepointTimeoutDelay=500 -XX:GuaranteedSafepointInterval=500
- *                   -XX:-TieredCompilation -XX:+UseCountedLoopSafepoints -XX:LoopStripMiningIter=1000
- *                   -XX:LoopUnrollLimit=0 -XX:CompileCommand=compileonly,CheckLoopStripMining::test_loop -Xcomp CheckLoopStripMining
- *
+ * @library /test/lib
+ * @run driver compiler.loopstripmining.CheckLoopStripMining
  */
 
-public class CheckLoopStripMining {
+package compiler.loopstripmining;
 
-  public static int test_loop(int x) {
+import jdk.test.lib.Utils;
+import jdk.test.lib.process.ProcessTools;
+
+public class CheckLoopStripMining {
+  public static void main(String args[]) throws Exception {
+    ProcessTools.executeTestJvm(
+        "-XX:+UnlockDiagnosticVMOptions",
+        // to prevent biased locking handshakes from changing the timing of this test
+        "-XX:-UseBiasedLocking",
+        "-XX:+SafepointTimeout",
+        "-XX:+SafepointALot",
+        "-XX:+AbortVMOnSafepointTimeout",
+        "-XX:SafepointTimeoutDelay=" + Utils.adjustTimeout(500),
+        "-XX:GuaranteedSafepointInterval=" + Utils.adjustTimeout(500),
+        "-XX:-TieredCompilation",
+        "-XX:+UseCountedLoopSafepoints",
+        "-XX:LoopStripMiningIter=1000",
+        "-XX:LoopUnrollLimit=0",
+        "-XX:CompileCommand=compileonly,compiler.loopstripmining.CheckLoopStripMining$Test::test_loop",
+        "-Xcomp",
+        Test.class.getName()).shouldHaveExitValue(0)
+                             .stdoutShouldContain("sum: 715827882");
+  }
+
+  public static class Test {
+    public static int test_loop(int x) {
       int sum = 0;
       if (x != 0) {
           for (int y = 1; y < Integer.MAX_VALUE; ++y) {
@@ -44,10 +66,11 @@ public class CheckLoopStripMining {
           }
       }
       return sum;
-  }
+    }
 
-  public static void main(String args[]) {
-    int sum = test_loop(3);
-    System.out.println("sum: " + sum);
+    public static void main(String args[]) {
+      int sum = test_loop(3);
+      System.out.println("sum: " + sum);
+    }
   }
 }

@@ -38,6 +38,7 @@
 #include "classfile/vmSymbols.hpp"
 #include "logging/log.hpp"
 #include "memory/allocation.hpp"
+#include "memory/archiveUtils.hpp"
 #include "memory/filemap.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/metaspaceClosure.hpp"
@@ -294,6 +295,7 @@ public:
     if (DynamicDumpSharedSpaces) {
       _klass = DynamicArchive::original_to_target(info._klass);
     }
+    ArchivePtrMarker::mark_pointer(&_klass);
   }
 
   bool matches(int clsfile_size, int clsfile_crc32) const {
@@ -337,6 +339,8 @@ public:
     } else {
       *info_pointer_addr(klass) = record;
     }
+
+    ArchivePtrMarker::mark_pointer(info_pointer_addr(klass));
   }
 
   // Used by RunTimeSharedDictionary to implement OffsetCompactHashtable::EQUALS
@@ -1354,7 +1358,7 @@ public:
       if (DynamicDumpSharedSpaces) {
         name = DynamicArchive::original_to_target(name);
       }
-      hash = primitive_hash<Symbol*>(name);
+      hash = SystemDictionaryShared::hash_for_shared_dictionary(name);
       u4 delta;
       if (DynamicDumpSharedSpaces) {
         delta = MetaspaceShared::object_delta_u4(DynamicArchive::buffer_to_target(record));
@@ -1413,7 +1417,7 @@ SystemDictionaryShared::find_record(RunTimeSharedDictionary* static_dict, RunTim
     return NULL;
   }
 
-  unsigned int hash = primitive_hash<Symbol*>(name);
+  unsigned int hash = SystemDictionaryShared::hash_for_shared_dictionary(name);
   const RunTimeSharedClassInfo* record = NULL;
   if (!MetaspaceShared::is_shared_dynamic(name)) {
     // The names of all shared classes in the static dict must also be in the

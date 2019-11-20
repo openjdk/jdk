@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,11 +22,12 @@
  */
 
 /* @test
- * @bug 4527345 7026376 6633549
+ * @bug 4527345 7026376 6633549 8233435
  * @summary Unit test for DatagramChannel's multicast support
  * @library /test/lib
  * @build jdk.test.lib.NetworkConfiguration
  *        jdk.test.lib.Platform
+ *        jdk.test.lib.net.IPSupport
  *        MulticastSendReceiveTests
  * @run main MulticastSendReceiveTests
  * @run main/othervm -Djava.net.preferIPv4Stack=true MulticastSendReceiveTests
@@ -41,6 +42,7 @@ import java.util.*;
 import java.io.IOException;
 import java.util.stream.Collectors;
 
+import jdk.test.lib.Platform;
 import jdk.test.lib.NetworkConfiguration;
 import jdk.test.lib.net.IPSupport;
 
@@ -242,23 +244,37 @@ public class MulticastSendReceiveTests {
     public static void main(String[] args) throws IOException {
         IPSupport.throwSkippedExceptionIfNonOperational();
 
+        // IPv4 and IPv6 interfaces that support multicasting
         NetworkConfiguration config = NetworkConfiguration.probe();
+        List<NetworkInterface> ip4MulticastInterfaces = config.ip4MulticastInterfaces()
+                .collect(Collectors.toList());
+        List<NetworkInterface> ip6MulticastInterfaces = config.ip6MulticastInterfaces()
+                .collect(Collectors.toList());
 
         // multicast groups used for the test
         InetAddress ip4Group = InetAddress.getByName("225.4.5.6");
         InetAddress ip6Group = InetAddress.getByName("ff02::a");
-        for (NetworkInterface nif: config.ip4MulticastInterfaces()
-                                         .collect(Collectors.toList())) {
+
+        // Platforms that allow dual sockets join IPv4 multicast groups
+        boolean canIPv6JoinIPv4Group =
+                Platform.isLinux() ||
+                Platform.isOSX() ||
+                Platform.isSolaris() ||
+                Platform.isWindows();
+
+        for (NetworkInterface nif : ip4MulticastInterfaces) {
             InetAddress source = config.ip4Addresses(nif).iterator().next();
-            test(INET,   nif, ip4Group, source);
             test(UNSPEC, nif, ip4Group, source);
+            test(INET,   nif, ip4Group, source);
+            if (IPSupport.hasIPv6() && canIPv6JoinIPv4Group) {
+                test(INET6,  nif, ip4Group, source);
+            }
         }
 
-        for (NetworkInterface nif: config.ip6MulticastInterfaces()
-                                         .collect(Collectors.toList())) {
+        for (NetworkInterface nif : ip6MulticastInterfaces) {
             InetAddress source = config.ip6Addresses(nif).iterator().next();
-            test(INET6,  nif, ip6Group, source);
             test(UNSPEC, nif, ip6Group, source);
+            test(INET6,  nif, ip6Group, source);
         }
     }
 }

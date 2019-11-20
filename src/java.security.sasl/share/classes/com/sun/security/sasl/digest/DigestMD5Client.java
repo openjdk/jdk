@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,14 +28,14 @@ package com.sun.security.sasl.digest;
 import java.security.NoSuchAlgorithmException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.util.StringTokenizer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Arrays;
-
 import java.util.logging.Level;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 import javax.security.sasl.*;
 import javax.security.auth.callback.CallbackHandler;
@@ -155,13 +155,7 @@ final class DigestMD5Client extends DigestMD5Base implements SaslClient {
         // authzID can only be encoded in UTF8 - RFC 2222
         if (authzid != null) {
             this.authzid = authzid;
-            try {
-                authzidBytes = authzid.getBytes("UTF8");
-
-            } catch (UnsupportedEncodingException e) {
-                throw new SaslException(
-                    "DIGEST-MD5: Error encoding authzid value into UTF-8", e);
-            }
+            authzidBytes = authzid.getBytes(UTF_8);
         }
 
         if (props != null) {
@@ -272,7 +266,7 @@ final class DigestMD5Client extends DigestMD5Base implements SaslClient {
     * digest challenge format is detected.
     */
     private void processChallenge(byte[][] challengeVal, List<byte[]> realmChoices)
-        throws SaslException, UnsupportedEncodingException {
+        throws SaslException {
 
         /* CHARSET: optional atmost once */
         if (challengeVal[CHARSET] != null) {
@@ -281,7 +275,7 @@ final class DigestMD5Client extends DigestMD5Base implements SaslClient {
                     "violation. Unrecognised charset value: " +
                     new String(challengeVal[CHARSET]));
             } else {
-                encoding = "UTF8";
+                encoding = UTF_8;
                 useUTF8 = true;
             }
         }

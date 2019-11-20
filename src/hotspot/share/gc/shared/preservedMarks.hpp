@@ -128,7 +128,7 @@ public:
 
   // Iterate over all stacks, restore all preserved marks, and reclaim
   // the memory taken up by the stack segments.
-  // Supported executors: SharedRestorePreservedMarksTaskExecutor (Serial, CMS, G1),
+  // Supported executors: SharedRestorePreservedMarksTaskExecutor (Serial, G1),
   // PSRestorePreservedMarksTaskExecutor (PS).
   inline void restore(RestorePreservedMarksTaskExecutor* executor);
 

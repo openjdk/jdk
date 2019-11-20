@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,10 @@ import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.HttpsConfigurator;
 import com.sun.net.httpserver.HttpsServer;
 import jdk.test.lib.net.SimpleSSLContext;
+import org.testng.ITestContext;
 import org.testng.annotations.AfterTest;
 import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -131,6 +133,17 @@ public abstract class AbstractThrowingSubscribers implements HttpServerAdapters 
         }
     }
 
+    protected boolean stopAfterFirstFailure() {
+        return Boolean.getBoolean("jdk.internal.httpclient.debug");
+    }
+
+    @BeforeMethod
+    void beforeMethod(ITestContext context) {
+        if (stopAfterFirstFailure() && context.getFailedTests().size() > 0) {
+            throw new RuntimeException("some tests failed");
+        }
+    }
+
     @AfterClass
     static final void printFailedTests() {
         out.println("\n=========================");
@@ -182,7 +195,10 @@ public abstract class AbstractThrowingSubscribers implements HttpServerAdapters 
     }
 
     @DataProvider(name = "variants")
-    public Object[][] variants() {
+    public Object[][] variants(ITestContext context) {
+        if (stopAfterFirstFailure() && context.getFailedTests().size() > 0) {
+            return new Object[0][];
+        }
         String[] uris = uris();
         Object[][] result = new Object[uris.length * 2 * 2][];
         int i = 0;

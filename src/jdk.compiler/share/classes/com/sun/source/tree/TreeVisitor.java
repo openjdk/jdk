@@ -354,14 +354,6 @@ public interface TreeVisitor<R,P> {
     R visitSwitch(SwitchTree node, P p);
 
     /**
-     * {@preview Associated with switch expressions, a preview feature of
-     *           the Java language.
-     *
-     *           This method is associated with <i>switch expressions</i>, a preview
-     *           feature of the Java language. Preview features
-     *           may be removed in a future release, or upgraded to permanent
-     *           features of the Java language.}
-     *
      * Visits a SwitchExpressionTree node.
      *
      * @param node the node being visited
@@ -369,8 +361,6 @@ public interface TreeVisitor<R,P> {
      * @return a result value
      * @since 12
      */
-    @jdk.internal.PreviewFeature(feature=jdk.internal.PreviewFeature.Feature.SWITCH_EXPRESSIONS)
-    @SuppressWarnings("preview")
     R visitSwitchExpression(SwitchExpressionTree node, P p);
 
     /**
@@ -560,21 +550,11 @@ public interface TreeVisitor<R,P> {
     R visitOther(Tree node, P p);
 
     /**
-     * {@preview Associated with switch expressions, a preview feature of
-     *           the Java language.
-     *
-     *           This method is associated with <i>switch expressions</i>, a preview
-     *           feature of the Java language. Preview features
-     *           may be removed in a future release, or upgraded to permanent
-     *           features of the Java language.}
-     *
      * Visits a YieldTree node.
      * @param node the node being visited
      * @param p a parameter value
      * @return a result value
      * @since 13
      */
-    @jdk.internal.PreviewFeature(feature=jdk.internal.PreviewFeature.Feature.SWITCH_EXPRESSIONS)
-    @SuppressWarnings("preview")
     R visitYield(YieldTree node, P p);
 }

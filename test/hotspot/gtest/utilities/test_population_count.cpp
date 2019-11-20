@@ -23,11 +23,12 @@
  */
 
 #include "precompiled.hpp"
-#include "libadt/vectset.hpp"
 #include "runtime/os.hpp"
 #include "utilities/population_count.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "unittest.hpp"
+
+#define BITS_IN_BYTE_ARRAY_SIZE 256
 
 uint8_t test_popcnt_bitsInByte[BITS_IN_BYTE_ARRAY_SIZE] = {
         0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4,

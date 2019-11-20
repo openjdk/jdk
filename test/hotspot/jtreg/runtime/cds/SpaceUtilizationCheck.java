@@ -73,8 +73,8 @@ public class SpaceUtilizationCheck {
                 Matcher matcher = pattern.matcher(line);
                 if (matcher.find()) {
                     String name = matcher.group(1);
-                    if (name.equals("s0") || name.equals("s1")) {
-                      // String regions are listed at the end and they may not be fully occupied.
+                    if (name.equals("bm")) {
+                      // Bitmap space does not have a requested address.
                       break;
                     } else {
                       System.out.println("Checking " + name + " in : " + line);

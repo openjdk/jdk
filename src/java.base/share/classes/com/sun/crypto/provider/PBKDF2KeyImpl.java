@@ -29,7 +29,6 @@ import java.io.ObjectStreamException;
 import java.lang.ref.Reference;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
-import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Locale;
 import java.security.MessageDigest;
@@ -40,6 +39,8 @@ import java.security.spec.InvalidKeySpecException;
 import javax.crypto.Mac;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.PBEKeySpec;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 import jdk.internal.ref.CleanerFactory;
 
@@ -66,9 +67,8 @@ final class PBKDF2KeyImpl implements javax.crypto.interfaces.PBEKey {
     private Mac prf;
 
     private static byte[] getPasswordBytes(char[] passwd) {
-        Charset utf8 = Charset.forName("UTF-8");
         CharBuffer cb = CharBuffer.wrap(passwd);
-        ByteBuffer bb = utf8.encode(cb);
+        ByteBuffer bb = UTF_8.encode(cb);
 
         int len = bb.limit();
         byte[] passwdBytes = new byte[len];

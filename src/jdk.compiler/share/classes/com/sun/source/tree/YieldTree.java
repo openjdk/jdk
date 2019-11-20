@@ -26,14 +26,6 @@
 package com.sun.source.tree;
 
 /**
- * {@preview Associated with switch expressions, a preview feature of
- *           the Java language.
- *
- *           This method is associated with <i>switch expressions</i>, a preview
- *           feature of the Java language. Preview features
- *           may be removed in a future release, or upgraded to permanent
- *           features of the Java language.}
- *
  * A tree node for a {@code yield} statement.
  *
  * For example:
@@ -45,7 +37,6 @@ package com.sun.source.tree;
  *
  * @since 13
  */
-@jdk.internal.PreviewFeature(feature=jdk.internal.PreviewFeature.Feature.SWITCH_EXPRESSIONS)
 public interface YieldTree extends StatementTree {
 
     /**

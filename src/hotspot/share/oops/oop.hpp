@@ -45,7 +45,6 @@ class OopClosure;
 class ScanClosure;
 class FastScanClosure;
 class FilteringClosure;
-class CMSIsAliveClosure;
 
 class PSPromotionManager;
 class ParCompactionManager;
@@ -93,9 +92,6 @@ class oopDesc {
   inline int klass_gap() const;
   inline void set_klass_gap(int z);
   static inline void set_klass_gap(HeapWord* mem, int z);
-  // For when the klass pointer is being used as a linked list "next" field.
-  inline void set_klass_to_list_ptr(oop k);
-  inline oop list_ptr_from_klass();
 
   // size of object header, aligned to platform wordSize
   static int header_size() { return sizeof(oopDesc)/HeapWordSize; }

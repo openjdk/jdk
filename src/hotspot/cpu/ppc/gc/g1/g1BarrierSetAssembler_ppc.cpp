@@ -335,12 +335,12 @@ void G1BarrierSetAssembler::resolve_jobject(MacroAssembler* masm, Register value
   __ ld(value, 0, tmp1);      // Resolve (untagged) jobject.
 
   __ beq(CCR0, not_weak);     // Test for jweak tag.
-  __ verify_oop(value);
+  __ verify_oop(value, FILE_AND_LINE);
   g1_write_barrier_pre(masm, IN_NATIVE | ON_PHANTOM_OOP_REF,
                        noreg, noreg, value,
                        tmp1, tmp2, needs_frame);
   __ bind(not_weak);
-  __ verify_oop(value);
+  __ verify_oop(value, FILE_AND_LINE);
   __ bind(done);
 }
 

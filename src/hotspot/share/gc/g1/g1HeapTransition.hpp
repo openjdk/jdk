@@ -39,7 +39,13 @@ class G1HeapTransition {
     size_t _humongous_length;
     const metaspace::MetaspaceSizesSnapshot _meta_sizes;
 
+    // Only includes current eden regions.
+    uint* _eden_length_per_node;
+    // Only includes current survivor regions.
+    uint* _survivor_length_per_node;
+
     Data(G1CollectedHeap* g1_heap);
+    ~Data();
   };
 
   G1CollectedHeap* _g1_heap;

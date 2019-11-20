@@ -95,6 +95,13 @@ class G1ParScanThreadState : public CHeapObj<mtGC> {
   size_t _num_optional_regions;
   G1OopStarChunkedList* _oops_into_optional_regions;
 
+  G1NUMA* _numa;
+
+  // Records how many object allocations happened at each node during copy to survivor.
+  // Only starts recording when log of gc+heap+numa is enabled and its data is
+  // transferred when flushed.
+  size_t* _obj_alloc_stat;
+
 public:
   G1ParScanThreadState(G1CollectedHeap* g1h,
                        G1RedirtyCardsQueueSet* rdcqs,
@@ -187,27 +194,32 @@ private:
   inline void dispatch_reference(StarTask ref);
 
   // Tries to allocate word_sz in the PLAB of the next "generation" after trying to
-  // allocate into dest. State is the original (source) cset state for the object
-  // that is allocated for. Previous_plab_refill_failed indicates whether previously
-  // a PLAB refill into "state" failed.
+  // allocate into dest. Previous_plab_refill_failed indicates whether previous
+  // PLAB refill for the original (source) object failed.
   // Returns a non-NULL pointer if successful, and updates dest if required.
   // Also determines whether we should continue to try to allocate into the various
   // generations or just end trying to allocate.
-  HeapWord* allocate_in_next_plab(G1HeapRegionAttr const region_attr,
-                                  G1HeapRegionAttr* dest,
+  HeapWord* allocate_in_next_plab(G1HeapRegionAttr* dest,
                                   size_t word_sz,
-                                  bool previous_plab_refill_failed);
+                                  bool previous_plab_refill_failed,
+                                  uint node_index);
 
   inline G1HeapRegionAttr next_region_attr(G1HeapRegionAttr const region_attr, markWord const m, uint& age);
 
   void report_promotion_event(G1HeapRegionAttr const dest_attr,
                               oop const old, size_t word_sz, uint age,
-                              HeapWord * const obj_ptr) const;
+                              HeapWord * const obj_ptr, uint node_index) const;
 
   inline bool needs_partial_trimming() const;
   inline bool is_partially_trimmed() const;
 
   inline void trim_queue_to_threshold(uint threshold);
+
+  // NUMA statistics related methods.
+  inline void initialize_numa_stats();
+  inline void flush_numa_stats();
+  inline void update_numa_stats(uint node_index);
+
 public:
   oop copy_to_survivor_space(G1HeapRegionAttr const region_attr, oop const obj, markWord const old_mark);
 

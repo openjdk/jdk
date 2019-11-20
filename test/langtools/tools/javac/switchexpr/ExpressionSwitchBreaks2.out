@@ -7,6 +7,4 @@ ExpressionSwitchBreaks2.java:40:17: compiler.err.no.switch.expression
 ExpressionSwitchBreaks2.java:40:29: compiler.err.cant.resolve.location: kindname.variable, undef, , , (compiler.misc.location: kindname.class, ExpressionSwitchBreaks2, null)
 ExpressionSwitchBreaks2.java:45:22: compiler.err.break.outside.switch.expression
 ExpressionSwitchBreaks2.java:49:22: compiler.err.break.outside.switch.expression
-- compiler.note.preview.filename: ExpressionSwitchBreaks2.java
-- compiler.note.preview.recompile
 9 errors

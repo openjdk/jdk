@@ -176,7 +176,7 @@ class FieldInfo {
     return (_shorts[low_packed_offset] & FIELDINFO_TAG_MASK) == FIELDINFO_TAG_OFFSET;
   }
 
-  Symbol* name(const constantPoolHandle& cp) const {
+  Symbol* name(ConstantPool* cp) const {
     int index = name_index();
     if (is_internal()) {
       return lookup_symbol(index);
@@ -184,7 +184,7 @@ class FieldInfo {
     return cp->symbol_at(index);
   }
 
-  Symbol* signature(const constantPoolHandle& cp) const {
+  Symbol* signature(ConstantPool* cp) const {
     int index = signature_index();
     if (is_internal()) {
       return lookup_symbol(index);

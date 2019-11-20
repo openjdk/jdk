@@ -1168,7 +1168,7 @@ class InvokerBytecodeGenerator {
       *  } catch (Throwable e) {
       *      if (!a2.isInstance(e)) throw e;
       *      return a3.invokeBasic(ex, a6, a7);
-      *  }}
+      *  }}</pre></blockquote>
       */
     private Name emitGuardWithCatch(int pos) {
         Name args    = lambdaForm.names[pos];
@@ -1263,26 +1263,27 @@ class InvokerBytecodeGenerator {
      *                      load target                             (-- target)
      *                      load args                               (-- args... target)
      *                      INVOKEVIRTUAL MethodHandle.invokeBasic  (depends)
-     * FINALLY_NORMAL:      (-- r)
-     *                      load cleanup                            (-- cleanup r)
-     *                      SWAP                                    (-- r cleanup)
-     *                      ACONST_NULL                             (-- t r cleanup)
-     *                      SWAP                                    (-- r t cleanup)
-     *                      load args                               (-- args... r t cleanup)
-     *                      INVOKEVIRTUAL MethodHandle.invokeBasic  (-- r)
+     * FINALLY_NORMAL:      (-- r_2nd* r)
+     *                      store returned value                    (--)
+     *                      load cleanup                            (-- cleanup)
+     *                      ACONST_NULL                             (-- t cleanup)
+     *                      load returned value                     (-- r_2nd* r t cleanup)
+     *                      load args                               (-- args... r_2nd* r t cleanup)
+     *                      INVOKEVIRTUAL MethodHandle.invokeBasic  (-- r_2nd* r)
      *                      GOTO DONE
      * CATCH:               (-- t)
      *                      DUP                                     (-- t t)
      * FINALLY_EXCEPTIONAL: (-- t t)
      *                      load cleanup                            (-- cleanup t t)
      *                      SWAP                                    (-- t cleanup t)
-     *                      load default for r                      (-- r t cleanup t)
-     *                      load args                               (-- args... r t cleanup t)
-     *                      INVOKEVIRTUAL MethodHandle.invokeBasic  (-- r t)
-     *                      POP                                     (-- t)
+     *                      load default for r                      (-- r_2nd* r t cleanup t)
+     *                      load args                               (-- args... r_2nd* r t cleanup t)
+     *                      INVOKEVIRTUAL MethodHandle.invokeBasic  (-- r_2nd* r t)
+     *                      POP/POP2*                               (-- t)
      *                      ATHROW
      * DONE:                (-- r)
      * }</pre></blockquote>
+     * * = depends on whether the return type takes up 2 stack slots.
      */
     private Name emitTryFinally(int pos) {
         Name args    = lambdaForm.names[pos];
@@ -1295,7 +1296,9 @@ class InvokerBytecodeGenerator {
         Label lDone = new Label();
 
         Class<?> returnType = result.function.resolvedHandle().type().returnType();
+        BasicType basicReturnType = BasicType.basicType(returnType);
         boolean isNonVoid = returnType != void.class;
+
         MethodType type = args.function.resolvedHandle().type()
                 .dropParameterTypes(0,1)
                 .changeReturnType(returnType);
@@ -1316,13 +1319,14 @@ class InvokerBytecodeGenerator {
         mv.visitLabel(lTo);
 
         // FINALLY_NORMAL:
-        emitPushArgument(invoker, 1); // load cleanup
+        int index = extendLocalsMap(new Class<?>[]{ returnType });
         if (isNonVoid) {
-            mv.visitInsn(Opcodes.SWAP);
+            emitStoreInsn(basicReturnType, index);
         }
+        emitPushArgument(invoker, 1); // load cleanup
         mv.visitInsn(Opcodes.ACONST_NULL);
         if (isNonVoid) {
-            mv.visitInsn(Opcodes.SWAP);
+            emitLoadInsn(basicReturnType, index);
         }
         emitPushArguments(args, 1); // load args (skip 0: method handle)
         mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, MH, "invokeBasic", cleanupDesc, false);
@@ -1341,7 +1345,7 @@ class InvokerBytecodeGenerator {
         emitPushArguments(args, 1); // load args (skip 0: method handle)
         mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, MH, "invokeBasic", cleanupDesc, false);
         if (isNonVoid) {
-            mv.visitInsn(Opcodes.POP);
+            emitPopInsn(basicReturnType);
         }
         mv.visitInsn(Opcodes.ATHROW);
 
@@ -1349,6 +1353,24 @@ class InvokerBytecodeGenerator {
         mv.visitLabel(lDone);
 
         return result;
+    }
+
+    private void emitPopInsn(BasicType type) {
+        mv.visitInsn(popInsnOpcode(type));
+    }
+
+    private static int popInsnOpcode(BasicType type) {
+        switch (type) {
+            case I_TYPE:
+            case F_TYPE:
+            case L_TYPE:
+                return Opcodes.POP;
+            case J_TYPE:
+            case D_TYPE:
+                return Opcodes.POP2;
+            default:
+                throw new InternalError("unknown type: " + type);
+        }
     }
 
     /**

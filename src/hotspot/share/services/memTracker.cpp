@@ -147,7 +147,7 @@ void Tracker::record(address addr, size_t size) {
 // Shutdown can only be issued via JCmd, and NMT JCmd is serialized by lock
 void MemTracker::shutdown() {
   // We can only shutdown NMT to minimal tracking level if it is ever on.
-  if (tracking_level () > NMT_minimal) {
+  if (tracking_level() > NMT_minimal) {
     transition_to(NMT_minimal);
   }
 }

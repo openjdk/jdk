@@ -48,7 +48,7 @@
 #include "gc/shared/referencePolicy.hpp"
 #include "gc/shared/referenceProcessor.hpp"
 #include "gc/shared/referenceProcessorPhaseTimes.hpp"
-#include "gc/shared/spaceDecorator.hpp"
+#include "gc/shared/spaceDecorator.inline.hpp"
 #include "gc/shared/weakProcessor.hpp"
 #include "memory/universe.hpp"
 #include "logging/log.hpp"

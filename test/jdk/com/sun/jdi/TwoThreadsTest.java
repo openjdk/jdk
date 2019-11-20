@@ -70,7 +70,7 @@ class TwoThreadsTarg extends Thread {
     }
 
     public void bkpt1(int i) {
-        yield();
+        Thread.yield();
     }
 
     public void run1() {
@@ -82,7 +82,7 @@ class TwoThreadsTarg extends Thread {
     }
 
     public void bkpt2(int i) {
-        yield();
+        Thread.yield();
     }
 
     public void run2() {

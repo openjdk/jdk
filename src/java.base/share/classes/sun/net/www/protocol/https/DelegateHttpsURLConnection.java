@@ -72,13 +72,4 @@ public class DelegateHttpsURLConnection extends AbstractDelegateHttpsURLConnecti
     protected javax.net.ssl.HostnameVerifier getHostnameVerifier() {
         return httpsURLConnection.getHostnameVerifier();
     }
-
-    /*
-     * Called by layered delegator's finalize() method to handle closing
-     * the underlying object.
-     */
-    @SuppressWarnings("deprecation")
-    protected void dispose() throws Throwable {
-        super.finalize();
-    }
 }

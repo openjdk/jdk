@@ -420,6 +420,8 @@ void ConstMethod::metaspace_pointers_do(MetaspaceClosure* it) {
   if (has_default_annotations()) {
       it->push(default_annotations_addr());
   }
+  ConstMethod* this_ptr = this;
+  it->push_method_entry(&this_ptr, (intptr_t*)&_adapter_trampoline);
 }
 
 // Printing

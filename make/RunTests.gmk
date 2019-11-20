@@ -247,11 +247,29 @@ ifeq ($(TEST_JOBS), 0)
       CORES_DIVIDER := 4
     endif
   endif
+  # For some big multi-core machines with low ulimit -u setting we hit the max
+  # threads/process limit. In such a setup the memory/cores-only-guided
+  # TEST_JOBS config is insufficient. From experience a concurrency setting of
+  # 14 works reasonably well for low ulimit values (<= 4096). Thus, use
+  # divider 4096/14. For high ulimit -u values this shouldn't make a difference.
+  ULIMIT_DIVIDER := (4096/14)
+  PROC_ULIMIT := -1
+  ifneq ($(OPENJDK_TARGET_OS), windows)
+    PROC_ULIMIT := $(shell $(ULIMIT) -u)
+    ifeq ($(PROC_ULIMIT), unlimited)
+      PROC_ULIMIT := -1
+    endif
+  endif
   MEMORY_DIVIDER := 2048
   TEST_JOBS := $(shell $(AWK) \
     'BEGIN { \
       c = $(NUM_CORES) / $(CORES_DIVIDER); \
       m = $(MEMORY_SIZE) / $(MEMORY_DIVIDER); \
+      u = $(PROC_ULIMIT); \
+      if (u > -1) { \
+        u = u / $(ULIMIT_DIVIDER); \
+        if (u < c) c = u; \
+      } \
       if (c > m) c = m; \
       c = c * $(TEST_JOBS_FACTOR); \
       c = c * $(TEST_JOBS_FACTOR_JDL); \

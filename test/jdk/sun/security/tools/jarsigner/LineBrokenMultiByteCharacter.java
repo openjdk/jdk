@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,6 +77,7 @@ public class LineBrokenMultiByteCharacter {
 
     static void prepare() throws Exception {
         SecurityTools.keytool("-keystore", keystoreFileName, "-genkeypair",
+                "-keyalg", "dsa",
                 "-storepass", "changeit", "-keypass", "changeit", "-storetype",
                 "JKS", "-alias", alias, "-dname", "CN=X", "-validity", "366")
             .shouldHaveExitValue(0);

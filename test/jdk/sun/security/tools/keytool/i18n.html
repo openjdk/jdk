@@ -9,7 +9,7 @@ from keytool is correct (you can read everything in english fine).
         If you are on a Windows platform, delete the .keystore file in
         your home directory.
 <li>	keytool -help
-<li>	keytool -genkey -v -keysize 512
+<li>	keytool -genkey -keyalg DSA -v -keysize 512
 	Enter "a" for the keystore password.  Check error (password too short).
 	Enter "password" for the keystore password.
         Re-enter "password" to confirm.
@@ -21,10 +21,10 @@ from keytool is correct (you can read everything in english fine).
 <li>	keytool -list -v
 	Type "a" for the keystore password.
 	Check error (wrong keystore password).
-<li>	keytool -genkey -v -keysize 512
+<li>	keytool -genkey -keyalg DSA -v -keysize 512
 	Enter "password" as the password.
 	Check error (alias 'mykey' already exists).
-<li>	keytool -genkey -v -keysize 512 -alias mykey2 -storepass password
+<li>	keytool -genkey -keyalg DSA -v -keysize 512 -alias mykey2 -storepass password
 	Hit 'return' for "first and last name", "organizational unit",
 	"organization", "City", "State", and "Country Code".
 	Type "yes" when they ask you if everything is correct.

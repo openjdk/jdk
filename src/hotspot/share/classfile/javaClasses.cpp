@@ -42,7 +42,7 @@
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
-#include "oops/fieldStreams.hpp"
+#include "oops/fieldStreams.inline.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/instanceMirrorKlass.hpp"
 #include "oops/klass.hpp"
@@ -1077,7 +1077,7 @@ void java_lang_Class::archive_basic_type_mirrors(TRAPS) {
       Klass *ak = (Klass*)(archived_m->metadata_field(_array_klass_offset));
       assert(ak != NULL || t == T_VOID, "should not be NULL");
       if (ak != NULL) {
-        Klass *reloc_ak = MetaspaceShared::get_relocated_klass(ak);
+        Klass *reloc_ak = MetaspaceShared::get_relocated_klass(ak, true);
         archived_m->metadata_field_put(_array_klass_offset, reloc_ak);
       }
 
@@ -1222,7 +1222,7 @@ oop java_lang_Class::process_archived_mirror(Klass* k, oop mirror,
   // The archived mirror's field at _klass_offset is still pointing to the original
   // klass. Updated the field in the archived mirror to point to the relocated
   // klass in the archive.
-  Klass *reloc_k = MetaspaceShared::get_relocated_klass(as_Klass(mirror));
+  Klass *reloc_k = MetaspaceShared::get_relocated_klass(as_Klass(mirror), true);
   log_debug(cds, heap, mirror)(
     "Relocate mirror metadata field at _klass_offset from " PTR_FORMAT " ==> " PTR_FORMAT,
     p2i(as_Klass(mirror)), p2i(reloc_k));
@@ -1232,7 +1232,7 @@ oop java_lang_Class::process_archived_mirror(Klass* k, oop mirror,
   // higher array klass if exists. Relocate the pointer.
   Klass *arr = array_klass_acquire(mirror);
   if (arr != NULL) {
-    Klass *reloc_arr = MetaspaceShared::get_relocated_klass(arr);
+    Klass *reloc_arr = MetaspaceShared::get_relocated_klass(arr, true);
     log_debug(cds, heap, mirror)(
       "Relocate mirror metadata field at _array_klass_offset from " PTR_FORMAT " ==> " PTR_FORMAT,
       p2i(arr), p2i(reloc_arr));
@@ -1240,6 +1240,33 @@ oop java_lang_Class::process_archived_mirror(Klass* k, oop mirror,
   }
   return archived_mirror;
 }
+
+void java_lang_Class::update_archived_primitive_mirror_native_pointers(oop archived_mirror) {
+  if (MetaspaceShared::relocation_delta() != 0) {
+    assert(archived_mirror->metadata_field(_klass_offset) == NULL, "must be for primitive class");
+
+    Klass* ak = ((Klass*)archived_mirror->metadata_field(_array_klass_offset));
+    if (ak != NULL) {
+      archived_mirror->metadata_field_put(_array_klass_offset,
+          (Klass*)(address(ak) + MetaspaceShared::relocation_delta()));
+    }
+  }
+}
+
+void java_lang_Class::update_archived_mirror_native_pointers(oop archived_mirror) {
+  if (MetaspaceShared::relocation_delta() != 0) {
+    Klass* k = ((Klass*)archived_mirror->metadata_field(_klass_offset));
+    archived_mirror->metadata_field_put(_klass_offset,
+        (Klass*)(address(k) + MetaspaceShared::relocation_delta()));
+
+    Klass* ak = ((Klass*)archived_mirror->metadata_field(_array_klass_offset));
+    if (ak != NULL) {
+      archived_mirror->metadata_field_put(_array_klass_offset,
+          (Klass*)(address(ak) + MetaspaceShared::relocation_delta()));
+    }
+  }
+}
+
 
 // Returns true if the mirror is updated, false if no archived mirror
 // data is present. After the archived mirror object is restored, the
@@ -1256,15 +1283,15 @@ bool java_lang_Class::restore_archived_mirror(Klass *k,
   }
 
   oop m = HeapShared::materialize_archived_object(k->archived_java_mirror_raw_narrow());
-
   if (m == NULL) {
     return false;
   }
 
-  log_debug(cds, mirror)("Archived mirror is: " PTR_FORMAT, p2i(m));
-
   // mirror is archived, restore
+  log_debug(cds, mirror)("Archived mirror is: " PTR_FORMAT, p2i(m));
   assert(HeapShared::is_archived_object(m), "must be archived mirror object");
+  update_archived_mirror_native_pointers(m);
+  assert(as_Klass(m) == k, "must be");
   Handle mirror(THREAD, m);
 
   if (!k->is_array_klass()) {
@@ -1681,17 +1708,20 @@ void java_lang_Thread::set_thread(oop java_thread, JavaThread* thread) {
 }
 
 bool java_lang_Thread::interrupted(oop java_thread) {
-#if INCLUDE_JFR
-  if (java_thread == NULL) {
-    // can happen from Jfr::on_vm_init leading to call of JavaThread::sleep
-    assert(!is_init_completed(), "should only happen during init");
-    return false;
-  }
-#endif
+  // Make sure the caller can safely access oops.
+  assert(Thread::current()->is_VM_thread() ||
+         (JavaThread::current()->thread_state() != _thread_blocked &&
+          JavaThread::current()->thread_state() != _thread_in_native),
+         "Unsafe access to oop");
   return java_thread->bool_field_volatile(_interrupted_offset);
 }
 
 void java_lang_Thread::set_interrupted(oop java_thread, bool val) {
+  // Make sure the caller can safely access oops.
+  assert(Thread::current()->is_VM_thread() ||
+         (JavaThread::current()->thread_state() != _thread_blocked &&
+          JavaThread::current()->thread_state() != _thread_in_native),
+         "Unsafe access to oop");
   java_thread->bool_field_put_volatile(_interrupted_offset, val);
 }
 
@@ -2277,7 +2307,7 @@ static void print_stack_element_to_stream(outputStream* st, Handle mirror, int m
   st->print_cr("%s", buf);
 }
 
-void java_lang_Throwable::print_stack_element(outputStream *st, const methodHandle& method, int bci) {
+void java_lang_Throwable::print_stack_element(outputStream *st, Method* method, int bci) {
   Handle mirror (Thread::current(),  method->method_holder()->java_mirror());
   int method_id = method->orig_method_idnum();
   int version = method->constants()->version();
@@ -2383,7 +2413,6 @@ void java_lang_Throwable::fill_in_stack_trace(Handle throwable, const methodHand
   // trace as utilizing vframe.
 #ifdef ASSERT
   vframeStream st(thread);
-  methodHandle st_method(THREAD, st.method());
 #endif
   int total_count = 0;
   RegisterMap map(thread, false);
@@ -2433,14 +2462,9 @@ void java_lang_Throwable::fill_in_stack_trace(Handle throwable, const methodHand
       }
     }
 #ifdef ASSERT
-    assert(st_method() == method && st.bci() == bci,
+    assert(st.method() == method && st.bci() == bci,
            "Wrong stack trace");
     st.next();
-    // vframeStream::method isn't GC-safe so store off a copy
-    // of the Method* in case we GC.
-    if (!st.at_end()) {
-      st_method = st.method();
-    }
 #endif
 
     // the format of the stacktrace will be:
@@ -2703,7 +2727,7 @@ void java_lang_StackTraceElement::fill_in(Handle element,
     }
     java_lang_StackTraceElement::set_fileName(element(), source_file);
 
-    int line_number = Backtrace::get_line_number(method, bci);
+    int line_number = Backtrace::get_line_number(method(), bci);
     java_lang_StackTraceElement::set_lineNumber(element(), line_number);
   }
 }
@@ -2778,7 +2802,8 @@ void java_lang_StackFrameInfo::to_stack_trace_element(Handle stackFrame, Handle 
   short version = stackFrame->short_field(_version_offset);
   int bci = stackFrame->int_field(_bci_offset);
   Symbol* name = method->name();
-  java_lang_StackTraceElement::fill_in(stack_trace_element, holder, method, version, bci, name, CHECK);
+  java_lang_StackTraceElement::fill_in(stack_trace_element, holder, methodHandle(THREAD, method),
+                                       version, bci, name, CHECK);
 }
 
 #define STACKFRAMEINFO_FIELDS_DO(macro) \
@@ -4661,6 +4686,28 @@ void JavaClasses::serialize_offsets(SerializeClosure* soc) {
 }
 #endif
 
+#if INCLUDE_CDS_JAVA_HEAP
+bool JavaClasses::is_supported_for_archiving(oop obj) {
+  Klass* klass = obj->klass();
+
+  if (klass == SystemDictionary::ClassLoader_klass() ||  // ClassLoader::loader_data is malloc'ed.
+      klass == SystemDictionary::Module_klass() ||       // Module::module_entry is malloc'ed
+      // The next 3 classes are used to implement java.lang.invoke, and are not used directly in
+      // regular Java code. The implementation of java.lang.invoke uses generated anonymoys classes
+      // (e.g., as referenced by ResolvedMethodName::vmholder) that are not yet supported by CDS.
+      // So for now we cannot not support these classes for archiving.
+      //
+      // These objects typically are not referenced by static fields, but rather by resolved
+      // constant pool entries, so excluding them shouldn't affect the archiving of static fields.
+      klass == SystemDictionary::ResolvedMethodName_klass() ||
+      klass == SystemDictionary::MemberName_klass() ||
+      klass == SystemDictionary::Context_klass()) {
+    return false;
+  }
+
+  return true;
+}
+#endif
 
 #ifndef PRODUCT
 

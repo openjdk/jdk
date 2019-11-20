@@ -41,7 +41,7 @@ import static org.testng.Assert.*;
 
 /**
  * @test
- * @bug 8223771
+ * @bug 8231766
  * @summary Test Files::copy and Files::move with Zip FS
  * @modules jdk.zipfs
  * @run testng/othervm CopyMoveTests

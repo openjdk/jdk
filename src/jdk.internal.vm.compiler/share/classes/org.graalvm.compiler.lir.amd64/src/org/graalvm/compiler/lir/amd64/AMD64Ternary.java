@@ -37,6 +37,7 @@ import org.graalvm.compiler.asm.amd64.AMD64MacroAssembler;
 import org.graalvm.compiler.asm.amd64.AVXKind.AVXSize;
 import org.graalvm.compiler.lir.LIRInstructionClass;
 import org.graalvm.compiler.lir.Opcode;
+import org.graalvm.compiler.lir.amd64.vector.AMD64VectorInstruction;
 import org.graalvm.compiler.lir.asm.CompilationResultBuilder;
 
 import jdk.vm.ci.meta.AllocatableValue;
@@ -49,11 +50,10 @@ public class AMD64Ternary {
     /**
      * Instruction that has two {@link AllocatableValue} operands.
      */
-    public static class ThreeOp extends AMD64LIRInstruction {
+    public static class ThreeOp extends AMD64VectorInstruction {
         public static final LIRInstructionClass<ThreeOp> TYPE = LIRInstructionClass.create(ThreeOp.class);
 
         @Opcode private final VexRVMOp opcode;
-        private final AVXSize size;
 
         @Def({REG, HINT}) protected AllocatableValue result;
         @Use({REG}) protected AllocatableValue x;
@@ -65,10 +65,8 @@ public class AMD64Ternary {
         @Alive({REG, STACK}) protected AllocatableValue z;
 
         public ThreeOp(VexRVMOp opcode, AVXSize size, AllocatableValue result, AllocatableValue x, AllocatableValue y, AllocatableValue z) {
-            super(TYPE);
+            super(TYPE, size);
             this.opcode = opcode;
-            this.size = size;
-
             this.result = result;
             this.x = x;
             this.y = y;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,8 @@ package sun.security.krb5.internal.util;
 import java.io.IOException;
 import sun.security.action.GetPropertyAction;
 import sun.security.util.DerValue;
+
+import static java.nio.charset.StandardCharsets.*;
 
 /**
  * Implements the ASN.1 KerberosString type.
@@ -71,17 +73,17 @@ public final class KerberosString {
             throw new IOException(
                 "KerberosString's tag is incorrect: " + der.tag);
         }
-        s = new String(der.getDataBytes(), MSNAME?"UTF8":"ASCII");
+        s = new String(der.getDataBytes(), MSNAME ? UTF_8 : US_ASCII);
     }
 
     public String toString() {
         return s;
     }
 
-    public DerValue toDerValue() throws IOException {
+    public DerValue toDerValue() {
         // No need to cache the result since this method is
         // only called once.
         return new DerValue(DerValue.tag_GeneralString,
-                s.getBytes(MSNAME?"UTF8":"ASCII"));
+                s.getBytes(MSNAME ? UTF_8 : US_ASCII));
     }
 }

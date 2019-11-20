@@ -462,6 +462,8 @@ class NativeMovRegMem: public NativeInstruction {
 
   address instruction_address() const { return addr_at(0); }
 
+  int num_bytes_to_end_of_patch() const { return instruction_size; }
+
   intptr_t offset() const {
 #ifdef VM_LITTLE_ENDIAN
     short *hi_ptr = (short*)(addr_at(0));

@@ -21,10 +21,19 @@
  * questions.
  */
 
+// The test fails on sparc because there are errors in VerifyOops.
 /*
  * @test
  * @bug 8231058
- * @requires vm.debug & (os.arch != "sparc") & (os.arch != "sparcv9")
+ * @requires vm.debug & vm.bits == "64"
+ * @requires (os.arch != "sparcv9")
+ * @run main/othervm -XX:+VerifyOops -XX:+UseCompressedOops TestVerifyOops
+ * @run main/othervm -XX:+VerifyOops -XX:-UseCompressedOops TestVerifyOops
+ */
+/*
+ * @test
+ * @bug 8231058
+ * @requires vm.debug & vm.bits == "32"
  * @run main/othervm -XX:+VerifyOops TestVerifyOops
  */
 

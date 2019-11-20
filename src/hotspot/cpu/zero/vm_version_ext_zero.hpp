@@ -25,8 +25,8 @@
 #ifndef CPU_ZERO_VM_VERSION_EXT_ZERO_HPP
 #define CPU_ZERO_VM_VERSION_EXT_ZERO_HPP
 
+#include "runtime/vm_version.hpp"
 #include "utilities/macros.hpp"
-#include "vm_version_zero.hpp"
 
 class VM_Version_Ext : public VM_Version {
  private:

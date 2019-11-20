@@ -70,7 +70,6 @@ public final class GCTypes {
 
     public static enum YoungGCType implements GCType {
         DefNew("Copy"),
-        ParNew("ParNew"),
         PSNew("PS Scavenge"),
         G1("G1 Young Generation");
 
@@ -95,7 +94,6 @@ public final class GCTypes {
 
     public static enum OldGCType implements GCType {
         Serial("MarkSweepCompact"),
-        CMS("ConcurrentMarkSweep"),
         PSOld("PS MarkSweep"),
         G1("G1 Old Generation");
 

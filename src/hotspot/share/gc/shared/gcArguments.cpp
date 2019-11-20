@@ -101,7 +101,7 @@ bool GCArguments::check_args_consistency() {
       "AllocateHeapAt and AllocateOldGenAt cannot be used together.\n");
     status = false;
   }
-  if (!FLAG_IS_DEFAULT(AllocateOldGenAt) && (UseSerialGC || UseConcMarkSweepGC || UseEpsilonGC || UseZGC)) {
+  if (!FLAG_IS_DEFAULT(AllocateOldGenAt) && (UseSerialGC || UseEpsilonGC || UseZGC)) {
     jio_fprintf(defaultStream::error_stream(),
       "AllocateOldGenAt is not supported for selected GC.\n");
     status = false;

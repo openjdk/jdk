@@ -26,7 +26,7 @@
 #define OS_CPU_LINUX_ARM_ATOMIC_LINUX_ARM_HPP
 
 #include "runtime/os.hpp"
-#include "vm_version_arm.hpp"
+#include "runtime/vm_version.hpp"
 
 // Implementation of class atomic
 

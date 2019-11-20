@@ -602,29 +602,42 @@ void PhaseConservativeCoalesce::update_ifg(uint lr1, uint lr2, IndexSet *n_lr1, 
   // Some original neighbors of lr1 might have gone away
   // because the constrained register mask prevented them.
   // Remove lr1 from such neighbors.
-  IndexSetIterator one(n_lr1);
-  uint neighbor;
+  uint neighbor = 0;
   LRG &lrg1 = lrgs(lr1);
-  while ((neighbor = one.next()) != 0)
-    if( !_ulr.member(neighbor) )
-      if( _phc._ifg->neighbors(neighbor)->remove(lr1) )
-        lrgs(neighbor).inc_degree( -lrg1.compute_degree(lrgs(neighbor)) );
+  if (!n_lr1->is_empty()) {
+    IndexSetIterator one(n_lr1);
+    while ((neighbor = one.next()) != 0) {
+      if (!_ulr.member(neighbor)) {
+        if (_phc._ifg->neighbors(neighbor)->remove(lr1)) {
+          lrgs(neighbor).inc_degree(-lrg1.compute_degree(lrgs(neighbor)));
+        }
+      }
+    }
+  }
 
 
   // lr2 is now called (coalesced into) lr1.
   // Remove lr2 from the IFG.
-  IndexSetIterator two(n_lr2);
   LRG &lrg2 = lrgs(lr2);
-  while ((neighbor = two.next()) != 0)
-    if( _phc._ifg->neighbors(neighbor)->remove(lr2) )
-      lrgs(neighbor).inc_degree( -lrg2.compute_degree(lrgs(neighbor)) );
+  if (!n_lr2->is_empty()) {
+    IndexSetIterator two(n_lr2);
+    while ((neighbor = two.next()) != 0) {
+      if (_phc._ifg->neighbors(neighbor)->remove(lr2)) {
+        lrgs(neighbor).inc_degree(-lrg2.compute_degree(lrgs(neighbor)));
+      }
+    }
+  }
 
   // Some neighbors of intermediate copies now interfere with the
   // combined live range.
-  IndexSetIterator three(&_ulr);
-  while ((neighbor = three.next()) != 0)
-    if( _phc._ifg->neighbors(neighbor)->insert(lr1) )
-      lrgs(neighbor).inc_degree( lrg1.compute_degree(lrgs(neighbor)) );
+  if (!_ulr.is_empty()) {
+    IndexSetIterator three(&_ulr);
+    while ((neighbor = three.next()) != 0) {
+      if (_phc._ifg->neighbors(neighbor)->insert(lr1)) {
+        lrgs(neighbor).inc_degree(lrg1.compute_degree(lrgs(neighbor)));
+      }
+    }
+  }
 }
 
 static void record_bias( const PhaseIFG *ifg, int lr1, int lr2 ) {

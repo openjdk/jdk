@@ -2338,9 +2338,9 @@ Symbol* SystemDictionary::check_signature_loaders(Symbol* signature,
 }
 
 
-methodHandle SystemDictionary::find_method_handle_intrinsic(vmIntrinsics::ID iid,
-                                                            Symbol* signature,
-                                                            TRAPS) {
+Method* SystemDictionary::find_method_handle_intrinsic(vmIntrinsics::ID iid,
+                                                       Symbol* signature,
+                                                       TRAPS) {
   methodHandle empty;
   assert(MethodHandles::is_signature_polymorphic(iid) &&
          MethodHandles::is_signature_polymorphic_intrinsic(iid) &&
@@ -2354,14 +2354,14 @@ methodHandle SystemDictionary::find_method_handle_intrinsic(vmIntrinsics::ID iid
   if (spe == NULL || spe->method() == NULL) {
     spe = NULL;
     // Must create lots of stuff here, but outside of the SystemDictionary lock.
-    m = Method::make_method_handle_intrinsic(iid, signature, CHECK_(empty));
+    m = Method::make_method_handle_intrinsic(iid, signature, CHECK_NULL);
     if (!Arguments::is_interpreter_only()) {
       // Generate a compiled form of the MH intrinsic.
       AdapterHandlerLibrary::create_native_wrapper(m);
       // Check if have the compiled code.
       if (!m->has_compiled_code()) {
-        THROW_MSG_(vmSymbols::java_lang_VirtualMachineError(),
-                   "Out of space in CodeCache for method handle intrinsic", empty);
+        THROW_MSG_NULL(vmSymbols::java_lang_VirtualMachineError(),
+                       "Out of space in CodeCache for method handle intrinsic");
       }
     }
     // Now grab the lock.  We might have to throw away the new method,
@@ -2384,12 +2384,11 @@ methodHandle SystemDictionary::find_method_handle_intrinsic(vmIntrinsics::ID iid
 }
 
 // Helper for unpacking the return value from linkMethod and linkCallSite.
-static methodHandle unpack_method_and_appendix(Handle mname,
-                                               Klass* accessing_klass,
-                                               objArrayHandle appendix_box,
-                                               Handle* appendix_result,
-                                               TRAPS) {
-  methodHandle empty;
+static Method* unpack_method_and_appendix(Handle mname,
+                                          Klass* accessing_klass,
+                                          objArrayHandle appendix_box,
+                                          Handle* appendix_result,
+                                          TRAPS) {
   if (mname.not_null()) {
     Method* m = java_lang_invoke_MemberName::vmtarget(mname());
     if (m != NULL) {
@@ -2407,35 +2406,34 @@ static methodHandle unpack_method_and_appendix(Handle mname,
       // the target is stored in the cpCache and if a reference to this
       // MemberName is dropped we need a way to make sure the
       // class_loader containing this method is kept alive.
+      methodHandle mh(THREAD, m); // record_dependency can safepoint.
       ClassLoaderData* this_key = accessing_klass->class_loader_data();
       this_key->record_dependency(m->method_holder());
-      return methodHandle(THREAD, m);
+      return mh();
     }
   }
-  THROW_MSG_(vmSymbols::java_lang_LinkageError(), "bad value from MethodHandleNatives", empty);
-  return empty;
+  THROW_MSG_NULL(vmSymbols::java_lang_LinkageError(), "bad value from MethodHandleNatives");
 }
 
-methodHandle SystemDictionary::find_method_handle_invoker(Klass* klass,
-                                                          Symbol* name,
-                                                          Symbol* signature,
-                                                          Klass* accessing_klass,
-                                                          Handle *appendix_result,
-                                                          TRAPS) {
-  methodHandle empty;
+Method* SystemDictionary::find_method_handle_invoker(Klass* klass,
+                                                     Symbol* name,
+                                                     Symbol* signature,
+                                                     Klass* accessing_klass,
+                                                     Handle *appendix_result,
+                                                     TRAPS) {
   assert(THREAD->can_call_java() ,"");
   Handle method_type =
-    SystemDictionary::find_method_handle_type(signature, accessing_klass, CHECK_(empty));
+    SystemDictionary::find_method_handle_type(signature, accessing_klass, CHECK_NULL);
 
   int ref_kind = JVM_REF_invokeVirtual;
-  oop name_oop = StringTable::intern(name, CHECK_(empty));
+  oop name_oop = StringTable::intern(name, CHECK_NULL);
   Handle name_str (THREAD, name_oop);
-  objArrayHandle appendix_box = oopFactory::new_objArray_handle(SystemDictionary::Object_klass(), 1, CHECK_(empty));
+  objArrayHandle appendix_box = oopFactory::new_objArray_handle(SystemDictionary::Object_klass(), 1, CHECK_NULL);
   assert(appendix_box->obj_at(0) == NULL, "");
 
   // This should not happen.  JDK code should take care of that.
   if (accessing_klass == NULL || method_type.is_null()) {
-    THROW_MSG_(vmSymbols::java_lang_InternalError(), "bad invokehandle", empty);
+    THROW_MSG_NULL(vmSymbols::java_lang_InternalError(), "bad invokehandle");
   }
 
   // call java.lang.invoke.MethodHandleNatives::linkMethod(... String, MethodType) -> MemberName
@@ -2451,7 +2449,7 @@ methodHandle SystemDictionary::find_method_handle_invoker(Klass* klass,
                          SystemDictionary::MethodHandleNatives_klass(),
                          vmSymbols::linkMethod_name(),
                          vmSymbols::linkMethod_signature(),
-                         &args, CHECK_(empty));
+                         &args, CHECK_NULL);
   Handle mname(THREAD, (oop) result.get_jobject());
   return unpack_method_and_appendix(mname, accessing_klass, appendix_box, appendix_result, THREAD);
 }
@@ -2755,11 +2753,12 @@ void SystemDictionary::invoke_bootstrap_method(BootstrapInfo& bootstrap_specifie
   Handle value(THREAD, (oop) result.get_jobject());
   if (is_indy) {
     Handle appendix;
-    methodHandle method = unpack_method_and_appendix(value,
-                                                     bootstrap_specifier.caller(),
-                                                     appendix_box,
-                                                     &appendix, CHECK);
-    bootstrap_specifier.set_resolved_method(method, appendix);
+    Method* method = unpack_method_and_appendix(value,
+                                                bootstrap_specifier.caller(),
+                                                appendix_box,
+                                                &appendix, CHECK);
+    methodHandle mh(THREAD, method);
+    bootstrap_specifier.set_resolved_method(mh, appendix);
   } else {
     bootstrap_specifier.set_resolved_value(value);
   }

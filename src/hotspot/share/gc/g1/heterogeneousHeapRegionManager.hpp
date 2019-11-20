@@ -119,7 +119,7 @@ public:
   void prepare_for_full_collection_start();
   void prepare_for_full_collection_end();
 
-  virtual HeapRegion* allocate_free_region(HeapRegionType type);
+  virtual HeapRegion* allocate_free_region(HeapRegionType type, uint node_index);
 
   // Return maximum number of regions that heap can expand to.
   uint max_expandable_length() const;

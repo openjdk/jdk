@@ -258,8 +258,9 @@ public class HostLocaleProviderAdapterImpl {
             @Override
             public NumberFormat getIntegerInstance(Locale locale) {
                 AtomicReferenceArray<String> patterns = getNumberPatterns(locale);
-                return new DecimalFormat(patterns.get(NF_INTEGER),
+                DecimalFormat format = new DecimalFormat(patterns.get(NF_INTEGER),
                     DecimalFormatSymbols.getInstance(locale));
+                return HostLocaleProviderAdapter.makeIntegerFormatter(format);
             }
 
             @Override

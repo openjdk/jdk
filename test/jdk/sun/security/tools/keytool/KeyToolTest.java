@@ -197,7 +197,7 @@ public class KeyToolTest {
             // jarsigner and keytool algorithm for DSA keys". Unfortunately
             // SunPKCS11-NSS does not support SHA256withDSA yet.
             if (cmd.contains("p11-nss.txt") && cmd.contains("-genkey")
-                    && !cmd.contains("-keyalg")) {
+                    && cmd.contains("DSA")) {
                 cmd += " -sigalg SHA1withDSA -keysize 1024";
             }
             test(input, cmd);
@@ -352,7 +352,7 @@ public class KeyToolTest {
         remove("x.jks");
         remove("x.jks.p1.cert");
         testOK("", "-keystore x.jks -storetype JKS -storepass changeit " +
-                "-keypass changeit -genkeypair -alias p1 -dname CN=olala");
+                "-keypass changeit -genkeypair -keyalg DSA -alias p1 -dname CN=olala");
         testOK("", "-keystore x.jks -storetype JKS -storepass changeit " +
                 "-exportcert -alias p1 -file x.jks.p1.cert");
         ks = loadStore("x.jks", "changeit", "JKS");
@@ -377,7 +377,7 @@ public class KeyToolTest {
 
         // changealias and keyclone
         testOK("", "-keystore x.jks -storetype JKS -storepass changeit " +
-                "-keypass changeit -genkeypair -alias p1 -dname CN=olala");
+                "-keypass changeit -genkeypair -keyalg DSA -alias p1 -dname CN=olala");
         testOK("changeit\n", "-keystore x.jks -storetype JKS " +
                 "-changealias -alias p1 -destalias p11");
         testOK("changeit\n", "-keystore x.jks -storetype JKS " +
@@ -396,10 +396,10 @@ public class KeyToolTest {
         remove("x.jceks");
         // DES, no need keysize
         testOK("changeit\nchangeit\n\n", "-keystore x.jceks -storetype JCEKS " +
-                "-genseckey -alias s1");
+                "-genseckey -keyalg DES -alias s1");
         // DES, keysize cannot be 128
         testFail("changeit\n\n", "-keystore x.jceks -storetype JCEKS " +
-                "-genseckey -alias s11 -keysize 128");
+                "-genseckey -keyalg DES -alias s11 -keysize 128");
         // DESede. no need keysize
         testOK("changeit\n\n", "-keystore x.jceks -storetype JCEKS " +
                 "-genseckey -keyalg DESede -alias s2");
@@ -411,19 +411,20 @@ public class KeyToolTest {
         // about keypass
         // can accept storepass
         testOK("\n", "-keystore x.jceks -storetype JCEKS -storepass changeit " +
-                "-genseckey -alias s4");
+                "-genseckey -keyalg DES -alias s4");
         // or a new one
         testOK("keypass\nkeypass\n", "-keystore x.jceks -storetype JCEKS " +
-                "-storepass changeit -genseckey -alias s5");
+                "-storepass changeit -genseckey -keyalg DES -alias s5");
         // keypass must be valid (prompt 3 times)
         testOK("bad\n\bad\nkeypass\nkeypass\n", "-keystore x.jceks " +
-                "-storetype JCEKS -storepass changeit -genseckey -alias s6");
+                "-storetype JCEKS -storepass changeit -genseckey " +
+                "-keyalg DES -alias s6");
         // keypass must be valid (prompt 3 times)
         testFail("bad\n\bad\nbad\n", "-keystore x.jceks -storetype JCEKS " +
-                "-storepass changeit -genseckey -alias s7");
+                "-storepass changeit -genseckey -keyalg DES -alias s7");
         // keypass must be valid (prompt 3 times)
         testFail("bad\n\bad\nbad\nkeypass\n", "-keystore x.jceks " +
-                "-storetype JCEKS -storepass changeit -genseckey -alias s7");
+                "-storetype JCEKS -storepass changeit -genseckey -keyalg DES -alias s7");
         ks = loadStore("x.jceks", "changeit", "JCEKS");
         assertTrue(ks.getKey("s1", "changeit".toCharArray())
                 .getAlgorithm().equalsIgnoreCase("DES"), "s1 is DES");
@@ -452,7 +453,7 @@ public class KeyToolTest {
         remove("x.jceks");
         // create 2 entries...
         testOK("changeit\nchangeit\n\n", "-keystore x.jceks -storetype JCEKS " +
-                "-genkeypair -alias p1 -dname CN=Olala");
+                "-genkeypair -keyalg DSA -alias p1 -dname CN=Olala");
         testOK("", "-keystore x.jceks -storetype JCEKS -storepass changeit " +
                 "-importcert -alias c1 -file x.jks.p1.cert -noprompt");
         ks = loadStore("x.jceks", "changeit", "JCEKS");
@@ -532,7 +533,7 @@ public class KeyToolTest {
         remove("x.jks");
         // generate entry with different keypass
         testOK("changeit\nkeypass\nkeypass\n", "-keystore x.jceks " +
-                "-storetype JCEKS -genkeypair -alias p2 -dname CN=Olala");
+                "-storetype JCEKS -genkeypair -keyalg DSA -alias p2 -dname CN=Olala");
         // prompt
         testOK("changeit\nchangeit\nchangeit\nkeypass\n", "-importkeystore " +
                 "-srckeystore x.jceks -srcstoretype JCEKS " +
@@ -581,10 +582,10 @@ public class KeyToolTest {
         remove("x.jks");
         // create SecretKeyEntry
         testOK("changeit\n\n", "-keystore x.jceks -storetype JCEKS " +
-                "-genseckey -alias s1");
+                "-genseckey -keyalg DES -alias s1");
         // create SecretKeyEntry
         testOK("changeit\n\n", "-keystore x.jceks -storetype JCEKS " +
-                "-genseckey -alias s2");
+                "-genseckey -keyalg DES -alias s2");
         // remove the keypass!=storepass one
         testOK("changeit\n", "-keystore x.jceks -storetype JCEKS " +
                 "-delete -alias p2");
@@ -629,13 +630,13 @@ public class KeyToolTest {
         remove("x.jks");
         // just type ENTER means keypass=storepass
         testOK("changeit\nchangeit\n\n", "-keystore x.jks -storetype JKS " +
-                "-genkeypair -alias p1 -dname CN=olala");
+                "-genkeypair -keyalg DSA -alias p1 -dname CN=olala");
         remove("x.p12");
         // PKCS12 only need storepass
         testOK("", "-keystore x.p12 -storetype PKCS12 -storepass changeit " +
-                "-genkeypair -alias p0 -dname CN=olala");
+                "-genkeypair -keyalg DSA -alias p0 -dname CN=olala");
         testOK("changeit\n", "-keystore x.p12 -storetype PKCS12 " +
-                "-genkeypair -alias p1 -dname CN=olala");
+                "-genkeypair -keyalg DSA -alias p1 -dname CN=olala");
         // when specify keypass, make sure keypass==storepass...
         testOK("changeit\n", "-keystore x.p12 -keypass changeit " +
                 "-storetype PKCS12 -genkeypair -keyalg DSA -alias p3 -dname CN=olala");
@@ -658,9 +659,9 @@ public class KeyToolTest {
         remove("x.p12");
         // PKCS12 only need storepass
         testOK("", "-keystore x.p12 -storetype PKCS12 -storepass changeit " +
-                "-genkeypair -alias p0 -dname CN=olala");
+                "-genkeypair -keyalg DSA -alias p0 -dname CN=olala");
         testOK("", "-storepass changeit -keystore x.p12 -storetype PKCS12 " +
-                "-genkeypair -alias p1 -dname CN=olala");
+                "-genkeypair -keyalg DSA -alias p1 -dname CN=olala");
         // when specify keypass, make sure keypass==storepass...
         testOK("", "-storepass changeit -keystore x.p12 -keypass changeit " +
                 "-storetype PKCS12 -genkeypair -keyalg DSA -alias p3 -dname CN=olala");
@@ -696,14 +697,14 @@ public class KeyToolTest {
                         "BEFORE THIS TEST ***");
 
         testOK("", p11Arg +
-                "-storepass test12 -genkeypair -alias p1 -dname CN=olala");
-        testOK("test12\n", p11Arg + "-genkeypair -alias p2 -dname CN=olala2");
+                "-storepass test12 -genkeypair -keyalg DSA -alias p1 -dname CN=olala");
+        testOK("test12\n", p11Arg + "-genkeypair -keyalg DSA -alias p2 -dname CN=olala2");
         // cannot provide keypass for PKCS11
         testFail("test12\n", p11Arg +
-                "-keypass test12 -genkeypair -alias p3 -dname CN=olala3");
+                "-keypass test12 -genkeypair -keyalg DSA -alias p3 -dname CN=olala3");
         // cannot provide keypass for PKCS11
         testFail("test12\n", p11Arg +
-                "-keypass nonsense -genkeypair -alias p3 -dname CN=olala3");
+                "-keypass nonsense -genkeypair -keyalg DSA -alias p3 -dname CN=olala3");
 
         testOK("", p11Arg + "-storepass test12 -list");
         assertTrue(out.indexOf("Your keystore contains 2 entries") != -1,
@@ -738,8 +739,8 @@ public class KeyToolTest {
 
         KeyStore ks;
         testOK("", p11Arg +
-                "-storepass test12 -genkeypair -alias p1 -dname CN=olala");
-        testOK("test12\n", p11Arg + "-genkeypair -alias p2 -dname CN=olala2");
+                "-storepass test12 -genkeypair -keyalg DSA -alias p1 -dname CN=olala");
+        testOK("test12\n", p11Arg + "-genkeypair -keyalg DSA -alias p2 -dname CN=olala2");
         // test importkeystore for pkcs11
 
         remove("x.jks");
@@ -809,7 +810,7 @@ public class KeyToolTest {
         KeyStore ks;
         remove("x.jks");
         testOK("", "-keystore x.jks -storetype JKS -storepass changeit " +
-                "-keypass changeit -genkeypair -dname CN=olala");
+                "-keypass changeit -genkeypair -keyalg DSA -dname CN=olala");
         testOK("", "-keystore x.jks -storetype JKS -storepass changeit " +
                 "-exportcert -file x.jks.p1.cert");
         /* deleted */ testOK("", "-keystore x.jks -storetype JKS " +
@@ -842,7 +843,7 @@ public class KeyToolTest {
     void sqeKeyclonetest() throws Exception {
         remove("x.jks");
         testOK("", "-keystore x.jks -storetype JKS -storepass changeit " +
-                "-keypass changeit -genkeypair -dname CN=olala");
+                "-keypass changeit -genkeypair -keyalg DSA -dname CN=olala");
         // new pass
         testOK("", "-keystore x.jks -storetype JKS -storepass changeit " +
                 "-keypass changeit -new newpass -keyclone -dest p0");
@@ -871,7 +872,7 @@ public class KeyToolTest {
     void sqeKeypasswdTest() throws Exception {
         remove("x.jks");
         testOK("", "-keystore x.jks -storetype JKS -storepass changeit " +
-                "-keypass changeit -genkeypair -dname CN=olala");
+                "-keypass changeit -genkeypair -keyalg DSA -dname CN=olala");
         testOK("", "-keystore x.jks -storetype JKS -storepass changeit " +
                 "-keypass changeit -keypasswd -new newpass");
         /*change back*/ testOK("", "-keystore x.jks -storetype JKS " +
@@ -909,7 +910,7 @@ public class KeyToolTest {
         testOK("", "-keystore x.jks -storetype JKS -storepass changeit " +
                 "-delete -alias mykey");
         testOK("", "-keystore x.jks -storetype JKS -storepass changeit " +
-                "-keypass keypass -genkeypair -dname CN=olala");
+                "-keypass keypass -genkeypair -keyalg DSA -dname CN=olala");
         testFail("", "-keystore x.jks -storetype JKS -storepass changeit " +
                 "-keypasswd -new newpass");
         testOK("keypass\n", "-keystore x.jks -storetype JKS " +
@@ -922,7 +923,7 @@ public class KeyToolTest {
     void sqeListTest() throws Exception {
         remove("x.jks");
         testOK("", "-keystore x.jks -storetype JKS -storepass changeit " +
-                "-keypass changeit -genkeypair -dname CN=olala");
+                "-keypass changeit -genkeypair -keyalg DSA -dname CN=olala");
         testOK("", "-keystore x.jks -storetype JKS -storepass changeit -list");
         testOK("", "-keystore x.jks -storetype JKS -storepass changeit " +
                 "-list -alias mykey");
@@ -948,7 +949,7 @@ public class KeyToolTest {
     void sqeSelfCertTest() throws Exception {
         remove("x.jks");
         testOK("", "-keystore x.jks -storetype JKS -storepass changeit " +
-                "-keypass changeit -genkeypair -dname CN=olala");
+                "-keypass changeit -genkeypair -keyalg DSA -dname CN=olala");
         testOK("", "-keystore x.jks -storetype JKS -storepass changeit -selfcert");
         testOK("", "-keystore x.jks -storetype JKS -storepass changeit " +
                 "-keypass changeit -selfcert");
@@ -974,7 +975,7 @@ public class KeyToolTest {
         // diff pass
         remove("x.jks");
         testOK("", "-keystore x.jks -storetype JKS -storepass changeit " +
-                "-keypass keypass -genkeypair -dname CN=olala");
+                "-keypass keypass -genkeypair -keyalg DSA -dname CN=olala");
         testFail("", "-keystore x.jks -storetype JKS " +
                 "-storepass changeit -selfcert");
         testOK("keypass\n", "-keystore x.jks -storetype JKS " +
@@ -995,7 +996,7 @@ public class KeyToolTest {
     void sqeStorepassTest() throws Exception {
         remove("x.jks");
         testOK("", "-keystore x.jks -storetype JKS -storepass changeit " +
-                "-keypass changeit -genkeypair -dname CN=olala");
+                "-keypass changeit -genkeypair -keyalg DSA -dname CN=olala");
         // all in arg
         testOK("", "-storepasswd -keystore x.jks -storetype JKS " +
                 "-storepass changeit -new newstore");
@@ -1044,13 +1045,13 @@ public class KeyToolTest {
 
         remove("x.jks");
         testOK("", "-keystore x.jks -storetype JKS -storepass changeit " +
-                "-keypass changeit -genkeypair -dname CN=olala");
+                "-keypass changeit -genkeypair -keyalg DSA -dname CN=olala");
         testFail("", "-keystore x.jks -storetype JKS -storepass changeit " +
-                "-keypass changeit -genkeypair -dname CN=olala");
+                "-keypass changeit -genkeypair -keyalg DSA -dname CN=olala");
         testOK("", "-keystore x.jks -storetype JKS -storepass changeit " +
-                "-keypass changeit -genkeypair -dname CN=olala -alias newentry");
+                "-keypass changeit -genkeypair -keyalg DSA -dname CN=olala -alias newentry");
         testFail("", "-keystore x.jks -storetype JKS -storepass changeit " +
-                "-keypass changeit -genkeypair -dname CN=olala -alias newentry");
+                "-keypass changeit -genkeypair -keyalg DSA -dname CN=olala -alias newentry");
         testOK("", "-keystore x.jks -storetype JKS -storepass changeit " +
                 "-keypass changeit -genkeypair -dname CN=olala -keyalg DSA " +
                 "-alias n1");
@@ -1061,19 +1062,19 @@ public class KeyToolTest {
                 "-keypass changeit -genkeypair -dname CN=olala " +
                 "-keyalg NoSuchAlg -alias n3");
         testFail("", "-keystore x.jks -storetype JKS -storepass changeit " +
-                "-keypass changeit -genkeypair -dname CN=olala -keysize 56 " +
+                "-keypass changeit -genkeypair -keyalg DSA -dname CN=olala -keysize 56 " +
                 "-alias n4");
         testFail("", "-keystore x.jks -storetype JKS -storepass changeit " +
-                "-keypass changeit -genkeypair -dname CN=olala -keysize 999 " +
+                "-keypass changeit -genkeypair -keyalg DSA -dname CN=olala -keysize 999 " +
                 "-alias n5");
         testOK("", "-keystore x.jks -storetype JKS -storepass changeit " +
-                "-keypass changeit -genkeypair -dname CN=olala -keysize 512 " +
+                "-keypass changeit -genkeypair -keyalg DSA -dname CN=olala -keysize 512 " +
                 "-alias n6");
         testOK("", "-keystore x.jks -storetype JKS -storepass changeit " +
-                "-keypass changeit -genkeypair -dname CN=olala -keysize 1024 " +
+                "-keypass changeit -genkeypair -keyalg DSA -dname CN=olala -keysize 1024 " +
                 "-alias n7");
         testFail("", "-keystore x.jks -storetype JKS -storepass changeit " +
-                "-keypass changeit -genkeypair -dname CN=olala " +
+                "-keypass changeit -genkeypair -keyalg DSA -dname CN=olala " +
                 "-sigalg NoSuchAlg -alias n8");
         testOK("", "-keystore x.jks -storetype JKS -storepass changeit " +
                 "-keypass changeit -genkeypair -dname CN=olala -keyalg RSA " +
@@ -1088,12 +1089,12 @@ public class KeyToolTest {
                 "-keypass changeit -genkeypair -dname CN=olala -keyalg RSA " +
                 "-sigalg NoSuchAlg -alias n12");
         testFail("", "-keystore badkeystore -storepass changeit " +
-                "-keypass changeit -genkeypair -dname CN=olala " +
+                "-keypass changeit -genkeypair -keyalg DSA -dname CN=olala " +
                 "-alias n14");
         testFail("", "-keystore x.jks -storetype JKS -storepass badpass " +
-                "-keypass changeit -genkeypair -dname CN=olala -alias n16");
+                "-keypass changeit -genkeypair -keyalg DSA -dname CN=olala -alias n16");
         testFail("", "-keystore x.jks -storetype JKS -storepass changeit " +
-                "-keypass changeit -genkeypair -dname CNN=olala -alias n17");
+                "-keypass changeit -genkeypair -keyalg DSA -dname CNN=olala -alias n17");
         remove("x.jks");
     }
 
@@ -1103,7 +1104,7 @@ public class KeyToolTest {
         testFail("", "-keystore x.jks -storetype JKS -storepass changeit " +
                 "-export -file mykey.cert -alias mykey");
         testOK("", "-keystore x.jks -storetype JKS -storepass changeit " +
-                "-keypass changeit -genkeypair -dname CN=olala");
+                "-keypass changeit -genkeypair -keyalg DSA -dname CN=olala");
         testOK("", "-keystore x.jks -storetype JKS -storepass changeit " +
                 "-export -file mykey.cert -alias mykey");
         testOK("", "-keystore x.jks -storetype JKS -storepass changeit " +
@@ -1131,11 +1132,11 @@ public class KeyToolTest {
         testFail("", "-keystore x.jks -storetype JKS -storepass changeit " +
                 "-delete -alias mykey");
         testOK("", "-keystore x.jks -storetype JKS -storepass changeit " +
-                "-keypass changeit -genkeypair -dname CN=olala");
+                "-keypass changeit -genkeypair -keyalg DSA -dname CN=olala");
         testOK("", "-keystore x.jks -storetype JKS -storepass changeit " +
                 "-delete -alias mykey");
         testOK("", "-keystore x.jks -storetype JKS -storepass changeit " +
-                "-keypass changeit -genkeypair -dname CN=olala");
+                "-keypass changeit -genkeypair -keyalg DSA -dname CN=olala");
         // keystore name illegal
         testFail("", "-keystore aa\\bb//cc\\dd -storepass changeit " +
                 "-delete -alias mykey");
@@ -1157,7 +1158,7 @@ public class KeyToolTest {
         remove("csr1");
         // PrivateKeyEntry can do certreq
         testOK("", "-keystore x.jks -storetype JKS -storepass changeit " +
-                "-keypass changeit -genkeypair -dname CN=olala -keysize 1024");
+                "-keypass changeit -genkeypair -keyalg DSA -dname CN=olala -keysize 1024");
         testOK("", "-keystore x.jks -storetype JKS -storepass changeit " +
                 "-certreq -file csr1 -alias mykey");
         testOK("", "-keystore x.jks -storetype JKS -storepass changeit " +
@@ -1221,7 +1222,7 @@ public class KeyToolTest {
         remove("mykey.cert");
         remove("myweakkey.cert");
         testOK("", "-keystore x.jks -storetype JKS -storepass changeit " +
-                "-keypass changeit -genkeypair -dname CN=olala");
+                "-keypass changeit -genkeypair -keyalg DSA -dname CN=olala");
         testOK("", "-keystore x.jks -storetype JKS -storepass changeit " +
                 "-export -file mykey.cert -alias mykey");
         testOK("", "-keystore x.jks -storetype JKS -storepass changeit " +
@@ -1264,7 +1265,7 @@ public class KeyToolTest {
         remove("x.jks");
         String simple = "-keystore x.jks -storetype JKS -storepass changeit " +
                 "-keypass changeit -noprompt -keyalg " + keyAlg + " ";
-        String pre = simple + "-genkeypair -dname CN=Olala -alias ";
+        String pre = simple + "-genkeypair -keyalg DSA -dname CN=Olala -alias ";
 
         // Version and SKID
         testOK("", pre + "o1");
@@ -1678,30 +1679,30 @@ public class KeyToolTest {
         remove("x.jks");
         testOK("", "-help");
 
-        //   2. keytool -genkey -v -keysize 512 Enter "a" for the keystore
+        //   2. keytool -genkey -keyalg DSA -v -keysize 512 Enter "a" for the keystore
         // password. Check error (password too short). Enter "password" for
         // the keystore password. Hit 'return' for "first and last name",
         // "organizational unit", "City", "State", and "Country Code".
         // Type "yes" when they ask you if everything is correct.
         // Type 'return' for new key password.
         testOK("a\npassword\npassword\nMe\nHere\nNow\nPlace\nPlace\nUS\nyes\n\n",
-                "-genkey -v -keysize 512 -keystore x.jks -storetype JKS");
+                "-genkey -keyalg DSA -v -keysize 512 -keystore x.jks -storetype JKS");
         //   3. keytool -list -v -storepass password
         testOK("", "-list -v -storepass password -keystore x.jks -storetype JKS");
         //   4. keytool -list -v Type "a" for the keystore password.
         // Check error (wrong keystore password).
         testFail("a\n", "-list -v -keystore x.jks -storetype JKS");
         assertTrue(ex.indexOf("password was incorrect") != -1);
-        //   5. keytool -genkey -v -keysize 512 Enter "password" as the password.
+        //   5. keytool - -keyalg DSA -v -keysize 512 Enter "password" as the password.
         // Check error (alias 'mykey' already exists).
-        testFail("password\n", "-genkey -v -keysize 512" +
+        testFail("password\n", "-genkey -keyalg DSA -v -keysize 512" +
                 " -keystore x.jks -storetype JKS");
         assertTrue(ex.indexOf("alias <mykey> already exists") != -1);
-        //   6. keytool -genkey -v -keysize 512 -alias mykey2 -storepass password
+        //   6. keytool -genkey -keyalg DSA -v -keysize 512 -alias mykey2 -storepass password
         // Hit 'return' for "first and last name", "organizational unit", "City",
         // "State", and "Country Code". Type "yes" when they ask you if
         // everything is correct. Type 'return' for new key password.
-        testOK("\n\n\n\n\n\nyes\n\n", "-genkey -v -keysize 512 -alias mykey2" +
+        testOK("\n\n\n\n\n\nyes\n\n", "-genkey -keyalg DSA -v -keysize 512 -alias mykey2" +
                 " -storepass password -keystore x.jks -storetype JKS");
         //   7. keytool -list -v Type 'password' for the store password.
         testOK("password\n", "-list -v -keystore x.jks -storetype JKS");
@@ -1810,7 +1811,7 @@ public class KeyToolTest {
     void sszzTest() throws Exception {
         testAnyway("", NSS_P11_ARG+"-delete -alias nss -storepass test12");
         testAnyway("", NZZ_P11_ARG+"-delete -alias nss -storepass test12");
-        testOK("", NSS_P11_ARG+"-genkeypair -dname CN=NSS " +
+        testOK("", NSS_P11_ARG+"-genkeypair -keyalg DSA -dname CN=NSS " +
                 "-alias nss -storepass test12");
         testOK("", NSS_SRC_P11_ARG + NZZ_P11_ARG +
                 "-importkeystore -srcstorepass test12 -deststorepass test12");

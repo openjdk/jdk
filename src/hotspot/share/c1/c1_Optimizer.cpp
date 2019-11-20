@@ -366,6 +366,8 @@ class BlockMerger: public BlockClosure {
           assert(sux_value == end_state->stack_at(index), "stack not equal");
         }
         for_each_local_value(sux_state, index, sux_value) {
+          Phi* sux_phi = sux_value->as_Phi();
+          if (sux_phi != NULL && sux_phi->is_illegal()) continue;
           assert(sux_value == end_state->local_at(index), "locals not equal");
         }
         assert(sux_state->caller_state() == end_state->caller_state(), "caller not equal");

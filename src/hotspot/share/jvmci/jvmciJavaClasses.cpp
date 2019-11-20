@@ -87,7 +87,7 @@ void HotSpotJVMCI::compute_offset(int &dest_offset, Klass* klass, const char* na
 
 #ifndef PRODUCT
 static void check_resolve_method(const char* call_type, Klass* resolved_klass, Symbol* method_name, Symbol* method_signature, TRAPS) {
-  methodHandle method;
+  Method* method;
   LinkInfo link_info(resolved_klass, method_name, method_signature, NULL, LinkInfo::skip_access_check);
   if (strcmp(call_type, "call_static") == 0) {
     method = LinkResolver::resolve_static_call_or_null(link_info);
@@ -98,7 +98,7 @@ static void check_resolve_method(const char* call_type, Klass* resolved_klass, S
   } else {
     fatal("Unknown or unsupported call type: %s", call_type);
   }
-  if (method.is_null()) {
+  if (method == NULL) {
     fatal("Could not resolve %s.%s%s", resolved_klass->external_name(), method_name->as_C_string(), method_signature->as_C_string());
   }
 }

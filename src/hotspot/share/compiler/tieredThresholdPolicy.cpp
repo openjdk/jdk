@@ -43,7 +43,7 @@
 #include "c1/c1_Compiler.hpp"
 #include "opto/c2compiler.hpp"
 
-bool TieredThresholdPolicy::call_predicate_helper(Method* method, CompLevel cur_level, int i, int b, double scale) {
+bool TieredThresholdPolicy::call_predicate_helper(const methodHandle& method, CompLevel cur_level, int i, int b, double scale) {
   double threshold_scaling;
   if (CompilerOracle::has_option_value(method, "CompileThresholdScaling", threshold_scaling)) {
     scale *= threshold_scaling;
@@ -74,7 +74,7 @@ bool TieredThresholdPolicy::call_predicate_helper(Method* method, CompLevel cur_
   }
 }
 
-bool TieredThresholdPolicy::loop_predicate_helper(Method* method, CompLevel cur_level, int i, int b, double scale) {
+bool TieredThresholdPolicy::loop_predicate_helper(const methodHandle& method, CompLevel cur_level, int i, int b, double scale) {
   double threshold_scaling;
   if (CompilerOracle::has_option_value(method, "CompileThresholdScaling", threshold_scaling)) {
     scale *= threshold_scaling;
@@ -110,7 +110,7 @@ bool TieredThresholdPolicy::is_trivial(Method* method) {
   return false;
 }
 
-bool TieredThresholdPolicy::force_comp_at_level_simple(Method* method) {
+bool TieredThresholdPolicy::force_comp_at_level_simple(const methodHandle& method) {
   if (CompilationModeFlag::quick_internal()) {
 #if INCLUDE_JVMCI
     if (UseJVMCICompiler) {
@@ -132,10 +132,10 @@ CompLevel TieredThresholdPolicy::comp_level(Method* method) {
   return CompLevel_none;
 }
 
-void TieredThresholdPolicy::print_counters(const char* prefix, const methodHandle& mh) {
-  int invocation_count = mh->invocation_count();
-  int backedge_count = mh->backedge_count();
-  MethodData* mdh = mh->method_data();
+void TieredThresholdPolicy::print_counters(const char* prefix, Method* m) {
+  int invocation_count = m->invocation_count();
+  int backedge_count = m->backedge_count();
+  MethodData* mdh = m->method_data();
   int mdo_invocations = 0, mdo_backedges = 0;
   int mdo_invocations_start = 0, mdo_backedges_start = 0;
   if (mdh != NULL) {
@@ -149,13 +149,13 @@ void TieredThresholdPolicy::print_counters(const char* prefix, const methodHandl
       mdo_invocations, mdo_invocations_start,
       mdo_backedges, mdo_backedges_start);
   tty->print(" %smax levels=%d,%d", prefix,
-      mh->highest_comp_level(), mh->highest_osr_comp_level());
+      m->highest_comp_level(), m->highest_osr_comp_level());
 }
 
 // Print an event.
-void TieredThresholdPolicy::print_event(EventType type, const methodHandle& mh, const methodHandle& imh,
+void TieredThresholdPolicy::print_event(EventType type, Method* m, Method* im,
                                         int bci, CompLevel level) {
-  bool inlinee_event = mh() != imh();
+  bool inlinee_event = m != im;
 
   ttyLocker tty_lock;
   tty->print("%lf: [", os::elapsedTime());
@@ -189,10 +189,10 @@ void TieredThresholdPolicy::print_event(EventType type, const methodHandle& mh, 
   tty->print(" level=%d ", level);
 
   ResourceMark rm;
-  char *method_name = mh->name_and_sig_as_C_string();
+  char *method_name = m->name_and_sig_as_C_string();
   tty->print("[%s", method_name);
   if (inlinee_event) {
-    char *inlinee_name = imh->name_and_sig_as_C_string();
+    char *inlinee_name = im->name_and_sig_as_C_string();
     tty->print(" [%s]] ", inlinee_name);
   }
   else tty->print("] ");
@@ -200,39 +200,39 @@ void TieredThresholdPolicy::print_event(EventType type, const methodHandle& mh, 
                                       CompileBroker::queue_size(CompLevel_full_optimization));
 
   tty->print(" rate=");
-  if (mh->prev_time() == 0) tty->print("n/a");
-  else tty->print("%f", mh->rate());
+  if (m->prev_time() == 0) tty->print("n/a");
+  else tty->print("%f", m->rate());
 
   tty->print(" k=%.2lf,%.2lf", threshold_scale(CompLevel_full_profile, Tier3LoadFeedback),
                                threshold_scale(CompLevel_full_optimization, Tier4LoadFeedback));
 
   if (type != COMPILE) {
-    print_counters("", mh);
+    print_counters("", m);
     if (inlinee_event) {
-      print_counters("inlinee ", imh);
+      print_counters("inlinee ", im);
     }
     tty->print(" compilable=");
     bool need_comma = false;
-    if (!mh->is_not_compilable(CompLevel_full_profile)) {
+    if (!m->is_not_compilable(CompLevel_full_profile)) {
       tty->print("c1");
       need_comma = true;
     }
-    if (!mh->is_not_osr_compilable(CompLevel_full_profile)) {
+    if (!m->is_not_osr_compilable(CompLevel_full_profile)) {
       if (need_comma) tty->print(",");
       tty->print("c1-osr");
       need_comma = true;
     }
-    if (!mh->is_not_compilable(CompLevel_full_optimization)) {
+    if (!m->is_not_compilable(CompLevel_full_optimization)) {
       if (need_comma) tty->print(",");
       tty->print("c2");
       need_comma = true;
     }
-    if (!mh->is_not_osr_compilable(CompLevel_full_optimization)) {
+    if (!m->is_not_osr_compilable(CompLevel_full_optimization)) {
       if (need_comma) tty->print(",");
       tty->print("c2-osr");
     }
     tty->print(" status=");
-    if (mh->queued_for_compilation()) {
+    if (m->queued_for_compilation()) {
       tty->print("in-queue");
     } else tty->print("idle");
   }
@@ -376,12 +376,14 @@ CompileTask* TieredThresholdPolicy::select_task(CompileQueue* compile_queue) {
     max_method = max_task->method();
   }
 
+  methodHandle max_method_h(Thread::current(), max_method);
+
   if (max_task != NULL && max_task->comp_level() == CompLevel_full_profile &&
       TieredStopAtLevel > CompLevel_full_profile &&
-      max_method != NULL && is_method_profiled(max_method)) {
+      max_method != NULL && is_method_profiled(max_method_h)) {
     max_task->set_comp_level(CompLevel_limited_profile);
 
-    if (CompileBroker::compilation_is_complete(max_method, max_task->osr_bci(), CompLevel_limited_profile)) {
+    if (CompileBroker::compilation_is_complete(max_method_h, max_task->osr_bci(), CompLevel_limited_profile)) {
       if (PrintTieredEvents) {
         print_event(REMOVE_FROM_QUEUE, max_method, max_method, max_task->osr_bci(), (CompLevel)max_task->comp_level());
       }
@@ -401,8 +403,7 @@ CompileTask* TieredThresholdPolicy::select_task(CompileQueue* compile_queue) {
 void TieredThresholdPolicy::reprofile(ScopeDesc* trap_scope, bool is_osr) {
   for (ScopeDesc* sd = trap_scope;; sd = sd->sender()) {
     if (PrintTieredEvents) {
-      methodHandle mh(sd->method());
-      print_event(REPROFILE, mh, mh, InvocationEntryBci, CompLevel_none);
+      print_event(REPROFILE, sd->method(), sd->method(), InvocationEntryBci, CompLevel_none);
     }
     MethodData* mdo = sd->method()->method_data();
     if (mdo != NULL) {
@@ -430,7 +431,7 @@ nmethod* TieredThresholdPolicy::event(const methodHandle& method, const methodHa
   }
 
   if (PrintTieredEvents) {
-    print_event(bci == InvocationEntryBci ? CALL : LOOP, method, inlinee, bci, comp_level);
+    print_event(bci == InvocationEntryBci ? CALL : LOOP, method(), inlinee(), bci, comp_level);
   }
 
   if (bci == InvocationEntryBci) {
@@ -481,7 +482,7 @@ void TieredThresholdPolicy::compile(const methodHandle& mh, int bci, CompLevel l
   if (level == CompLevel_aot) {
     if (mh->has_aot_code()) {
       if (PrintTieredEvents) {
-        print_event(COMPILE, mh, mh, bci, level);
+        print_event(COMPILE, mh(), mh(), bci, level);
       }
       MutexLocker ml(Compile_lock);
       NoSafepointVerifier nsv;
@@ -525,7 +526,7 @@ void TieredThresholdPolicy::compile(const methodHandle& mh, int bci, CompLevel l
   }
   if (!CompileBroker::compilation_is_in_queue(mh)) {
     if (PrintTieredEvents) {
-      print_event(COMPILE, mh, mh, bci, level);
+      print_event(COMPILE, mh(), mh(), bci, level);
     }
     int hot_count = (bci == InvocationEntryBci) ? mh->invocation_count() : mh->backedge_count();
     update_rate(os::javaTimeMillis(), mh());
@@ -610,7 +611,7 @@ bool TieredThresholdPolicy::compare_methods(Method* x, Method* y) {
 }
 
 // Is method profiled enough?
-bool TieredThresholdPolicy::is_method_profiled(Method* method) {
+bool TieredThresholdPolicy::is_method_profiled(const methodHandle& method) {
   MethodData* mdo = method->method_data();
   if (mdo != NULL) {
     int i = mdo->invocation_count_delta();
@@ -647,7 +648,7 @@ double TieredThresholdPolicy::threshold_scale(CompLevel level, int feedback_k) {
 // Tier?LoadFeedback is basically a coefficient that determines of
 // how many methods per compiler thread can be in the queue before
 // the threshold values double.
-bool TieredThresholdPolicy::loop_predicate(int i, int b, CompLevel cur_level, Method* method) {
+bool TieredThresholdPolicy::loop_predicate(int i, int b, CompLevel cur_level, const methodHandle& method) {
   double k = 1;
   switch(cur_level) {
   case CompLevel_aot: {
@@ -672,10 +673,10 @@ bool TieredThresholdPolicy::loop_predicate(int i, int b, CompLevel cur_level, Me
   default:
     return true;
   }
- return loop_predicate_helper(method, cur_level, i, b, k);
+  return loop_predicate_helper(method, cur_level, i, b, k);
 }
 
-bool TieredThresholdPolicy::call_predicate(int i, int b, CompLevel cur_level, Method* method) {
+bool TieredThresholdPolicy::call_predicate(int i, int b, CompLevel cur_level, const methodHandle& method) {
   double k = 1;
   switch(cur_level) {
   case CompLevel_aot: {
@@ -705,14 +706,15 @@ bool TieredThresholdPolicy::call_predicate(int i, int b, CompLevel cur_level, Me
 
 // Determine is a method is mature.
 bool TieredThresholdPolicy::is_mature(Method* method) {
-  if (is_trivial(method) || force_comp_at_level_simple(method)) return true;
+  methodHandle mh(Thread::current(), method);
+  if (is_trivial(method) || force_comp_at_level_simple(mh)) return true;
   MethodData* mdo = method->method_data();
   if (mdo != NULL) {
     int i = mdo->invocation_count();
     int b = mdo->backedge_count();
     double k = ProfileMaturityPercentage / 100.0;
     CompLevel main_profile_level = CompilationModeFlag::disable_intermediate() ? CompLevel_none : CompLevel_full_profile;
-    return call_predicate_helper(method, main_profile_level, i, b, k) || loop_predicate_helper(method, main_profile_level, i, b, k);
+    return call_predicate_helper(mh, main_profile_level, i, b, k) || loop_predicate_helper(mh, main_profile_level, i, b, k);
   }
   return false;
 }
@@ -720,7 +722,7 @@ bool TieredThresholdPolicy::is_mature(Method* method) {
 // If a method is old enough and is still in the interpreter we would want to
 // start profiling without waiting for the compiled method to arrive.
 // We also take the load on compilers into the account.
-bool TieredThresholdPolicy::should_create_mdo(Method* method, CompLevel cur_level) {
+bool TieredThresholdPolicy::should_create_mdo(const methodHandle& method, CompLevel cur_level) {
   if (cur_level != CompLevel_none || force_comp_at_level_simple(method)) {
     return false;
   }
@@ -799,7 +801,7 @@ void TieredThresholdPolicy::create_mdo(const methodHandle& mh, JavaThread* THREA
  */
 
 // Common transition function. Given a predicate determines if a method should transition to another level.
-CompLevel TieredThresholdPolicy::common(Predicate p, Method* method, CompLevel cur_level, bool disable_feedback) {
+CompLevel TieredThresholdPolicy::common(Predicate p, const methodHandle& method, CompLevel cur_level, bool disable_feedback) {
   CompLevel next_level = cur_level;
   int i = method->invocation_count();
   int b = method->backedge_count();
@@ -807,7 +809,7 @@ CompLevel TieredThresholdPolicy::common(Predicate p, Method* method, CompLevel c
   if (force_comp_at_level_simple(method)) {
     next_level = CompLevel_simple;
   } else {
-    if (!CompilationModeFlag::disable_intermediate() && is_trivial(method)) {
+    if (!CompilationModeFlag::disable_intermediate() && is_trivial(method())) {
       next_level = CompLevel_simple;
     } else {
       switch(cur_level) {
@@ -926,7 +928,7 @@ CompLevel TieredThresholdPolicy::common(Predicate p, Method* method, CompLevel c
 }
 
 // Determine if a method should be compiled with a normal entry point at a different level.
-CompLevel TieredThresholdPolicy::call_event(Method* method, CompLevel cur_level, JavaThread* thread) {
+CompLevel TieredThresholdPolicy::call_event(const methodHandle& method, CompLevel cur_level, JavaThread* thread) {
   CompLevel osr_level = MIN2((CompLevel) method->highest_osr_comp_level(),
                              common(&TieredThresholdPolicy::loop_predicate, method, cur_level, true));
   CompLevel next_level = common(&TieredThresholdPolicy::call_predicate, method, cur_level);
@@ -947,7 +949,7 @@ CompLevel TieredThresholdPolicy::call_event(Method* method, CompLevel cur_level,
 }
 
 // Determine if we should do an OSR compilation of a given method.
-CompLevel TieredThresholdPolicy::loop_event(Method* method, CompLevel cur_level, JavaThread* thread) {
+CompLevel TieredThresholdPolicy::loop_event(const methodHandle& method, CompLevel cur_level, JavaThread* thread) {
   CompLevel next_level = common(&TieredThresholdPolicy::loop_predicate, method, cur_level, true);
   if (cur_level == CompLevel_none) {
     // If there is a live OSR method that means that we deopted to the interpreter
@@ -983,10 +985,10 @@ bool TieredThresholdPolicy::maybe_switch_to_aot(const methodHandle& mh, CompLeve
 // Handle the invocation event.
 void TieredThresholdPolicy::method_invocation_event(const methodHandle& mh, const methodHandle& imh,
                                                       CompLevel level, CompiledMethod* nm, JavaThread* thread) {
-  if (should_create_mdo(mh(), level)) {
+  if (should_create_mdo(mh, level)) {
     create_mdo(mh, thread);
   }
-  CompLevel next_level = call_event(mh(), level, thread);
+  CompLevel next_level = call_event(mh, level, thread);
   if (next_level != level) {
     if (maybe_switch_to_aot(mh, level, next_level, thread)) {
       // No JITting necessary
@@ -1002,16 +1004,16 @@ void TieredThresholdPolicy::method_invocation_event(const methodHandle& mh, cons
 // with a regular entry from here.
 void TieredThresholdPolicy::method_back_branch_event(const methodHandle& mh, const methodHandle& imh,
                                                      int bci, CompLevel level, CompiledMethod* nm, JavaThread* thread) {
-  if (should_create_mdo(mh(), level)) {
+  if (should_create_mdo(mh, level)) {
     create_mdo(mh, thread);
   }
   // Check if MDO should be created for the inlined method
-  if (should_create_mdo(imh(), level)) {
+  if (should_create_mdo(imh, level)) {
     create_mdo(imh, thread);
   }
 
   if (is_compilation_enabled()) {
-    CompLevel next_osr_level = loop_event(imh(), level, thread);
+    CompLevel next_osr_level = loop_event(imh, level, thread);
     CompLevel max_osr_level = (CompLevel)imh->highest_osr_comp_level();
     // At the very least compile the OSR version
     if (!CompileBroker::compilation_is_in_queue(imh) && (next_osr_level != level)) {
@@ -1032,7 +1034,7 @@ void TieredThresholdPolicy::method_back_branch_event(const methodHandle& mh, con
         // Current loop event level is not AOT
         guarantee(nm != NULL, "Should have nmethod here");
         cur_level = comp_level(mh());
-        next_level = call_event(mh(), cur_level, thread);
+        next_level = call_event(mh, cur_level, thread);
 
         if (max_osr_level == CompLevel_full_optimization) {
           // The inlinee OSRed to full opt, we need to modify the enclosing method to avoid deopts
@@ -1068,7 +1070,7 @@ void TieredThresholdPolicy::method_back_branch_event(const methodHandle& mh, con
       }
     } else {
       cur_level = comp_level(mh());
-      next_level = call_event(mh(), cur_level, thread);
+      next_level = call_event(mh, cur_level, thread);
       if (next_level != cur_level) {
         if (!maybe_switch_to_aot(mh, cur_level, next_level, thread) && !CompileBroker::compilation_is_in_queue(mh)) {
           compile(mh, InvocationEntryBci, next_level, thread);

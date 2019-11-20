@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2017, 2019, Red Hat, Inc. All rights reserved.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
@@ -39,6 +39,8 @@
  * @compile TestHeapDump.java
  * @run main/othervm/native/timeout=300 -agentlib:TestHeapDump -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -Xmx128m -XX:ShenandoahGCHeuristics=aggressive -XX:-UseCompressedOops TestHeapDump
  */
+
+import java.lang.ref.Reference;
 
 public class TestHeapDump {
 
@@ -86,6 +88,8 @@ public class TestHeapDump {
                 throw new RuntimeException("Expected " + EXPECTED_OBJECTS + " objects, but got " + numObjs);
             }
         }
+        Reference.reachabilityFence(array);
+        Reference.reachabilityFence(localRoot);
     }
 
     // We look for the instances of this class during the heap scan

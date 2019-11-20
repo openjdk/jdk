@@ -1817,6 +1817,11 @@ void LIR_Assembler::comp_op(LIR_Condition condition, LIR_Opr opr1, LIR_Opr opr2,
           assert(opr2->as_constant_ptr()->as_jobject() == NULL, "cannot handle otherwise");
           __ cmp(opr1->as_register(), 0);
           break;
+        case T_METADATA:
+          assert(condition == lir_cond_equal || condition == lir_cond_notEqual, "Only equality tests");
+          assert(opr2->as_constant_ptr()->as_metadata() == NULL, "cannot handle otherwise");
+          __ cmp(opr1->as_register(), 0);
+          break;
         default:
           ShouldNotReachHere();
       }

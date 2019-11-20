@@ -535,6 +535,12 @@ class NativeMovRegMem;
 inline NativeMovRegMem* nativeMovRegMem_at (address address);
 class NativeMovRegMem: public NativeInstruction {
  public:
+  enum z_specific_constants {
+    instruction_size = 12 // load_const used with access_field_id
+  };
+
+  int num_bytes_to_end_of_patch() const { return instruction_size; }
+
   intptr_t offset() const {
     return nativeMovConstReg_at(addr_at(0))->data();
   }

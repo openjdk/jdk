@@ -374,6 +374,7 @@ class os: AllStatic {
   static size_t numa_get_leaf_groups(int *ids, size_t size);
   static bool   numa_topology_changed();
   static int    numa_get_group_id();
+  static int    numa_get_group_id_for_address(const void* address);
 
   // Page manipulation
   struct page_info {

@@ -267,7 +267,8 @@ bool AbstractInterpreter::is_not_reached(const methodHandle& method, int bci) {
         }
         assert(!invoke_bc.has_index_u4(code), "sanity");
         int method_index = invoke_bc.get_index_u2_cpcache(code);
-        Method* resolved_method = ConstantPool::method_at_if_loaded(cpool, method_index);
+        constantPoolHandle cp(Thread::current(), cpool);
+        Method* resolved_method = ConstantPool::method_at_if_loaded(cp, method_index);
         return (resolved_method == NULL);
       }
       default: ShouldNotReachHere();

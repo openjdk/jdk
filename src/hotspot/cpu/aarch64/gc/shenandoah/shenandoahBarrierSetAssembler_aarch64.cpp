@@ -22,6 +22,7 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/shenandoah/shenandoahBarrierSet.hpp"
 #include "gc/shenandoah/shenandoahBarrierSetAssembler.hpp"
 #include "gc/shenandoah/shenandoahForwarding.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
@@ -253,32 +254,16 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier_not_null(MacroAssembl
     dst = rscratch1;
   }
 
-  RegSet to_save_r1 = RegSet::of(r1);
-  // If outgoing register is r1, we can clobber it
-  if (result_dst != r1) {
-    __ push(to_save_r1, sp);
-  }
+  // Save r0 and r1, unless it is an output register
+  RegSet to_save = RegSet::of(r0, r1) - result_dst;
+  __ push(to_save, sp);
   __ lea(r1, load_addr);
-
-  RegSet to_save_r0 = RegSet::of(r0);
-  if (dst != r0) {
-    __ push(to_save_r0, sp);
-    __ mov(r0, dst);
-  }
+  __ mov(r0, dst);
 
   __ far_call(RuntimeAddress(CAST_FROM_FN_PTR(address, ShenandoahBarrierSetAssembler::shenandoah_lrb())));
 
-  if (result_dst != r0) {
-    __ mov(result_dst, r0);
-  }
-
-  if (dst != r0) {
-    __ pop(to_save_r0, sp);
-  }
-
-  if (result_dst != r1) {
-    __ pop(to_save_r1, sp);
-  }
+  __ mov(result_dst, r0);
+  __ pop(to_save, sp);
 
   __ bind(done);
   __ leave();
@@ -346,29 +331,42 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier(MacroAssembler* masm,
   }
 }
 
+//
+// Arguments:
+//
+// Inputs:
+//   src:        oop location to load from, might be clobbered
+//
+// Output:
+//   dst:        oop loaded from src location
+//
+// Kill:
+//   rscratch1 (scratch reg)
+//
+// Alias:
+//   dst: rscratch1 (might use rscratch1 as temporary output register to avoid clobbering src)
+//
 void ShenandoahBarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
                                             Register dst, Address src, Register tmp1, Register tmp_thread) {
-  bool on_oop = is_reference_type(type);
-  bool not_in_heap = (decorators & IN_NATIVE) != 0;
-  bool on_weak = (decorators & ON_WEAK_OOP_REF) != 0;
-  bool on_phantom = (decorators & ON_PHANTOM_OOP_REF) != 0;
-  bool on_reference = on_weak || on_phantom;
-  bool is_traversal_mode = ShenandoahHeap::heap()->is_traversal_mode();
-  bool keep_alive = (decorators & AS_NO_KEEPALIVE) == 0 || is_traversal_mode;
+  // 1: non-reference load, no additional barrier is needed
+  if (!is_reference_type(type)) {
+    BarrierSetAssembler::load_at(masm, decorators, type, dst, src, tmp1, tmp_thread);
+    return;
+  }
 
-  Register result_dst = dst;
+  // 2: load a reference from src location and apply LRB if needed
+  if (ShenandoahBarrierSet::need_load_reference_barrier(decorators, type)) {
+    Register result_dst = dst;
 
-  if (on_oop) {
-    // We want to preserve src
+    // Preserve src location for LRB
     if (dst == src.base() || dst == src.index()) {
       dst = rscratch1;
     }
     assert_different_registers(dst, src.base(), src.index());
-  }
 
-  BarrierSetAssembler::load_at(masm, decorators, type, dst, src, tmp1, tmp_thread);
-  if (on_oop) {
-    if (not_in_heap && !is_traversal_mode) {
+    BarrierSetAssembler::load_at(masm, decorators, type, dst, src, tmp1, tmp_thread);
+
+    if (ShenandoahBarrierSet::use_load_reference_barrier_native(decorators, type)) {
       load_reference_barrier_native(masm, dst, src);
     } else {
       load_reference_barrier(masm, dst, src);
@@ -378,18 +376,21 @@ void ShenandoahBarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet d
       __ mov(result_dst, dst);
       dst = result_dst;
     }
+  } else {
+    BarrierSetAssembler::load_at(masm, decorators, type, dst, src, tmp1, tmp_thread);
+  }
 
-    if (ShenandoahKeepAliveBarrier && on_reference && keep_alive) {
-      __ enter();
-      satb_write_barrier_pre(masm /* masm */,
-                             noreg /* obj */,
-                             dst /* pre_val */,
-                             rthread /* thread */,
-                             tmp1 /* tmp */,
-                             true /* tosca_live */,
-                             true /* expand_call */);
-      __ leave();
-    }
+  // 3: apply keep-alive barrier if needed
+  if (ShenandoahBarrierSet::need_keep_alive_barrier(decorators, type)) {
+    __ enter();
+    satb_write_barrier_pre(masm /* masm */,
+                           noreg /* obj */,
+                           dst /* pre_val */,
+                           rthread /* thread */,
+                           tmp1 /* tmp */,
+                           true /* tosca_live */,
+                           true /* expand_call */);
+    __ leave();
   }
 }
 

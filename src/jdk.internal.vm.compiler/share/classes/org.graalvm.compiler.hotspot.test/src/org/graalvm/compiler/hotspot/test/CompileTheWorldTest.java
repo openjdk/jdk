@@ -66,7 +66,7 @@ public class CompileTheWorldTest extends GraalCompilerTest {
                         excludeMethodFilters,
                         verbose,
                         harnessOptions,
-                        new OptionValues(initialOptions, HighTier.Options.Inline, false));
+                        new OptionValues(initialOptions, HighTier.Options.Inline, false, CompilationFailureAction, ExceptionAction.Silent));
         ctw.compile();
         assert CompilationBailoutAsFailure.getValue(initialOptions) == originalBailoutAction;
         assert CompilationFailureAction.getValue(initialOptions) == originalFailureAction;

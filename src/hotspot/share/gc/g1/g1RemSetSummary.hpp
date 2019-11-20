@@ -34,8 +34,6 @@ class G1RemSet;
 
 class G1RemSetSummary {
 private:
-  friend class GetRSThreadVTimeClosure;
-
   size_t _total_mutator_refined_cards;
   size_t _total_concurrent_refined_cards;
 

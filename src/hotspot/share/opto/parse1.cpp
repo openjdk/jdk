@@ -41,6 +41,7 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "utilities/bitMap.inline.hpp"
 #include "utilities/copy.hpp"
 
 // Static array so we can figure out which bytecodes stop us from compiling

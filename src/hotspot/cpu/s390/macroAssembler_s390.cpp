@@ -37,9 +37,11 @@
 #include "oops/accessDecorators.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/klass.inline.hpp"
+#ifdef COMPILER2
 #include "opto/compile.hpp"
 #include "opto/intrinsicnode.hpp"
 #include "opto/matcher.hpp"
+#endif
 #include "prims/methodHandles.hpp"
 #include "registerSaver_s390.hpp"
 #include "runtime/biasedLocking.hpp"
@@ -2925,7 +2927,7 @@ unsigned int MacroAssembler::call_ic_miss_handler(Label& ICM, int trapMarker, in
 }
 
 void MacroAssembler::nmethod_UEP(Label& ic_miss) {
-  Register ic_reg       = as_Register(Matcher::inline_cache_reg_encode());
+  Register ic_reg       = Z_inline_cache;
   int      klass_offset = oopDesc::klass_offset_in_bytes();
   if (!ImplicitNullChecks || MacroAssembler::needs_explicit_null_check(klass_offset)) {
     if (VM_Version::has_CompareBranch()) {
@@ -4590,6 +4592,7 @@ unsigned int MacroAssembler::CopyRawMemory_AlignedDisjoint(Register src_reg, Reg
   return block_end - block_start;
 }
 
+#ifdef COMPILER2
 //------------------------------------------------------
 //   Special String Intrinsics. Implementation
 //------------------------------------------------------
@@ -5837,7 +5840,7 @@ unsigned int MacroAssembler::string_indexof_char(Register result, Register hayst
 
   return offset() - block_start;
 }
-
+#endif
 
 //-------------------------------------------------
 //   Constants (scalar and oop) in constant pool
@@ -6148,96 +6151,6 @@ void MacroAssembler::translate_tt(Register r1, Register r2, uint m3) {
   bind(retry);
   Assembler::z_trtt(r1, r2, m3);
   Assembler::z_brc(Assembler::bcondOverflow /* CC==3 (iterate) */, retry);
-}
-
-
-void MacroAssembler::generate_type_profiling(const Register Rdata,
-                                             const Register Rreceiver_klass,
-                                             const Register Rwanted_receiver_klass,
-                                             const Register Rmatching_row,
-                                             bool is_virtual_call) {
-  const int row_size = in_bytes(ReceiverTypeData::receiver_offset(1)) -
-                       in_bytes(ReceiverTypeData::receiver_offset(0));
-  const int num_rows = ReceiverTypeData::row_limit();
-  NearLabel found_free_row;
-  NearLabel do_increment;
-  NearLabel found_no_slot;
-
-  BLOCK_COMMENT("type profiling {");
-
-  // search for:
-  //    a) The type given in Rwanted_receiver_klass.
-  //    b) The *first* empty row.
-
-  // First search for a) only, just running over b) with no regard.
-  // This is possible because
-  //    wanted_receiver_class == receiver_class  &&  wanted_receiver_class == 0
-  // is never true (receiver_class can't be zero).
-  for (int row_num = 0; row_num < num_rows; row_num++) {
-    // Row_offset should be a well-behaved positive number. The generated code relies
-    // on that wrt constant code size. Add2reg can handle all row_offset values, but
-    // will have to vary generated code size.
-    int row_offset = in_bytes(ReceiverTypeData::receiver_offset(row_num));
-    assert(Displacement::is_shortDisp(row_offset), "Limitation of generated code");
-
-    // Is Rwanted_receiver_klass in this row?
-    if (VM_Version::has_CompareBranch()) {
-      z_lg(Rwanted_receiver_klass, row_offset, Z_R0, Rdata);
-      // Rmatching_row = Rdata + row_offset;
-      add2reg(Rmatching_row, row_offset, Rdata);
-      // if (*row_recv == (intptr_t) receiver_klass) goto fill_existing_slot;
-      compare64_and_branch(Rwanted_receiver_klass, Rreceiver_klass, Assembler::bcondEqual, do_increment);
-    } else {
-      add2reg(Rmatching_row, row_offset, Rdata);
-      z_cg(Rreceiver_klass, row_offset, Z_R0, Rdata);
-      z_bre(do_increment);
-    }
-  }
-
-  // Now that we did not find a match, let's search for b).
-
-  // We could save the first calculation of Rmatching_row if we woud search for a) in reverse order.
-  // We would then end up here with Rmatching_row containing the value for row_num == 0.
-  // We would not see much benefit, if any at all, because the CPU can schedule
-  // two instructions together with a branch anyway.
-  for (int row_num = 0; row_num < num_rows; row_num++) {
-    int row_offset = in_bytes(ReceiverTypeData::receiver_offset(row_num));
-
-    // Has this row a zero receiver_klass, i.e. is it empty?
-    if (VM_Version::has_CompareBranch()) {
-      z_lg(Rwanted_receiver_klass, row_offset, Z_R0, Rdata);
-      // Rmatching_row = Rdata + row_offset
-      add2reg(Rmatching_row, row_offset, Rdata);
-      // if (*row_recv == (intptr_t) 0) goto found_free_row
-      compare64_and_branch(Rwanted_receiver_klass, (intptr_t)0, Assembler::bcondEqual, found_free_row);
-    } else {
-      add2reg(Rmatching_row, row_offset, Rdata);
-      load_and_test_long(Rwanted_receiver_klass, Address(Rdata, row_offset));
-      z_bre(found_free_row);  // zero -> Found a free row.
-    }
-  }
-
-  // No match, no empty row found.
-  // Increment total counter to indicate polymorphic case.
-  if (is_virtual_call) {
-    add2mem_64(Address(Rdata, CounterData::count_offset()), 1, Rmatching_row);
-  }
-  z_bru(found_no_slot);
-
-  // Here we found an empty row, but we have not found Rwanted_receiver_klass.
-  // Rmatching_row holds the address to the first empty row.
-  bind(found_free_row);
-  // Store receiver_klass into empty slot.
-  z_stg(Rreceiver_klass, 0, Z_R0, Rmatching_row);
-
-  // Increment the counter of Rmatching_row.
-  bind(do_increment);
-  ByteSize counter_offset = ReceiverTypeData::receiver_count_offset(0) - ReceiverTypeData::receiver_offset(0);
-  add2mem_64(Address(Rmatching_row, counter_offset), 1, Rdata);
-
-  bind(found_no_slot);
-
-  BLOCK_COMMENT("} type profiling");
 }
 
 //---------------------------------------

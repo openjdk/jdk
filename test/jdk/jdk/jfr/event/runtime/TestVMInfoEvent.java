@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,10 @@
 
 package jdk.jfr.event.runtime;
 
-
-
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -39,13 +39,21 @@ import jdk.test.lib.jfr.EventNames;
 import jdk.test.lib.jfr.Events;
 
 /**
- * The test will verify that JVM Information event values are delivered
- * and compare them with the RuntimeMXBean's values.
+ * @test
+ * @key jfr
+ * @requires vm.hasJFR
+ * @library /test/lib
+ * @run driver jdk.jfr.event.runtime.TestVMInfoEvent generateFlagsFile
+ * @run main/othervm -XX:Flags=TestVMInfoEvent.flags -Xmx500m jdk.jfr.event.runtime.TestVMInfoEvent arg1 arg2
  */
 public class TestVMInfoEvent {
     private final static String EVENT_NAME = EventNames.JVMInformation;
 
     public static void main(String[] args) throws Exception {
+        if( (args.length > 0) && ("generateFlagsFile".equals(args[0])) ) {
+            generateFlagsFile();
+            return;
+        }
         RuntimeMXBean mbean = ManagementFactory.getRuntimeMXBean();
         Recording recording = new Recording();
         recording.enable(EVENT_NAME);
@@ -76,4 +84,7 @@ public class TestVMInfoEvent {
         }
     }
 
+    public static void generateFlagsFile() throws Exception {
+        Files.writeString(Paths.get("", "TestVMInfoEvent.flags"), "+UseSerialGC");
+    }
 }

@@ -261,6 +261,7 @@ bool read_string(struct ps_prochandle* ph, uintptr_t addr, char* buf, size_t siz
 // mangled name of Arguments::SharedArchivePath
 #define SHARED_ARCHIVE_PATH_SYM "_ZN9Arguments17SharedArchivePathE"
 #define USE_SHARED_SPACES_SYM "UseSharedSpaces"
+#define SHARED_BASE_ADDRESS_SYM "SharedBaseAddress"
 #define LIBJVM_NAME "/libjvm.so"
 #endif
 
@@ -268,6 +269,7 @@ bool read_string(struct ps_prochandle* ph, uintptr_t addr, char* buf, size_t siz
 // mangled name of Arguments::SharedArchivePath
 #define SHARED_ARCHIVE_PATH_SYM "__ZN9Arguments17SharedArchivePathE"
 #define USE_SHARED_SPACES_SYM "_UseSharedSpaces"
+#define SHARED_BASE_ADDRESS_SYM "_SharedBaseAddress"
 #define LIBJVM_NAME "/libjvm.dylib"
 #endif
 
@@ -281,7 +283,8 @@ bool init_classsharing_workaround(struct ps_prochandle* ph) {
       char classes_jsa[PATH_MAX];
       CDSFileMapHeaderBase header;
       int fd = -1;
-      uintptr_t base = 0, useSharedSpacesAddr = 0;
+      uintptr_t useSharedSpacesAddr = 0;
+      uintptr_t sharedBaseAddressAddr = 0, sharedBaseAddress = 0;
       uintptr_t sharedArchivePathAddrAddr = 0, sharedArchivePathAddr = 0;
       jboolean useSharedSpaces = 0;
       int m;
@@ -306,6 +309,17 @@ bool init_classsharing_workaround(struct ps_prochandle* ph) {
       if ((int)useSharedSpaces == 0) {
         print_debug("UseSharedSpaces is false, assuming -Xshare:off!\n");
         return true;
+      }
+
+      sharedBaseAddressAddr = lookup_symbol(ph, jvm_name, SHARED_BASE_ADDRESS_SYM);
+      if (sharedBaseAddressAddr == 0) {
+        print_debug("can't lookup 'SharedBaseAddress' flag\n");
+        return false;
+      }
+
+      if (read_pointer(ph, sharedBaseAddressAddr, &sharedBaseAddress) != true) {
+        print_debug("can't read the value of 'SharedBaseAddress' flag\n");
+        return false;
       }
 
       sharedArchivePathAddrAddr = lookup_symbol(ph, jvm_name, SHARED_ARCHIVE_PATH_SYM);
@@ -363,16 +377,19 @@ bool init_classsharing_workaround(struct ps_prochandle* ph) {
       ph->core->classes_jsa_fd = fd;
       // add read-only maps from classes.jsa to the list of maps
       for (m = 0; m < NUM_CDS_REGIONS; m++) {
-        if (header._space[m]._read_only) {
+        if (header._space[m]._read_only &&
+            !header._space[m]._is_heap_region &&
+            !header._space[m]._is_bitmap_region) {
           // With *some* linux versions, the core file doesn't include read-only mmap'ed
           // files regions, so let's add them here. This is harmless if the core file also
           // include these regions.
-          base = (uintptr_t) header._space[m]._addr._base;
+          uintptr_t base = sharedBaseAddress + (uintptr_t) header._space[m]._mapping_offset;
+          size_t size = header._space[m]._used;
           // no need to worry about the fractional pages at-the-end.
           // possible fractional pages are handled by core_read_data.
           add_class_share_map_info(ph, (off_t) header._space[m]._file_offset,
-                                   base, (size_t) header._space[m]._used);
-          print_debug("added a share archive map at 0x%lx\n", base);
+                                   base, size);
+          print_debug("added a share archive map [%d] at 0x%lx (size 0x%lx bytes)\n", m, base, size);
         }
       }
       return true;

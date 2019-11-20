@@ -699,24 +699,34 @@ void SuperWord::find_adjacent_refs() {
         // Put memory ops from remaining packs back on memops list for
         // the best alignment search.
         uint orig_msize = memops.size();
-        for (int i = 0; i < _packset.length(); i++) {
-          Node_List* p = _packset.at(i);
+        if (_packset.length() == 1 && orig_msize == 0) {
+          // If there are no remaining memory ops and only 1 pack we have only one choice
+          // for the alignment
+          Node_List* p = _packset.at(0);
+          assert(p->size() > 0, "sanity");
           MemNode* s = p->at(0)->as_Mem();
           assert(!same_velt_type(s, mem_ref), "sanity");
-          memops.push(s);
-        }
-        best_align_to_mem_ref = find_align_to_ref(memops);
-        if (best_align_to_mem_ref == NULL) {
-          if (TraceSuperWord) {
-            tty->print_cr("SuperWord::find_adjacent_refs(): best_align_to_mem_ref == NULL");
+          best_align_to_mem_ref = s;
+        } else {
+          for (int i = 0; i < _packset.length(); i++) {
+            Node_List* p = _packset.at(i);
+            MemNode* s = p->at(0)->as_Mem();
+            assert(!same_velt_type(s, mem_ref), "sanity");
+            memops.push(s);
           }
-          break;
+          best_align_to_mem_ref = find_align_to_ref(memops);
+          if (best_align_to_mem_ref == NULL) {
+            if (TraceSuperWord) {
+              tty->print_cr("SuperWord::find_adjacent_refs(): best_align_to_mem_ref == NULL");
+            }
+            break;
+          }
+          best_iv_adjustment = get_iv_adjustment(best_align_to_mem_ref);
+          NOT_PRODUCT(find_adjacent_refs_trace_1(best_align_to_mem_ref, best_iv_adjustment);)
+          // Restore list.
+          while (memops.size() > orig_msize)
+            (void)memops.pop();
         }
-        best_iv_adjustment = get_iv_adjustment(best_align_to_mem_ref);
-        NOT_PRODUCT(find_adjacent_refs_trace_1(best_align_to_mem_ref, best_iv_adjustment);)
-        // Restore list.
-        while (memops.size() > orig_msize)
-          (void)memops.pop();
       }
     } // unaligned memory accesses
 

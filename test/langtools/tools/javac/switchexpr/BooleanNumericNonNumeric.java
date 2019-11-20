@@ -2,7 +2,7 @@
  * @test /nodynamiccopyright/
  * @bug 8206986
  * @summary Verify the type of a conditional expression with nested switch expression is computed properly
- * @compile/fail/ref=BooleanNumericNonNumeric.out -XDrawDiagnostics --enable-preview -source ${jdk.version} BooleanNumericNonNumeric.java
+ * @compile/fail/ref=BooleanNumericNonNumeric.out -XDrawDiagnostics BooleanNumericNonNumeric.java
  */
 
 public class BooleanNumericNonNumeric {

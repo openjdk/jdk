@@ -44,11 +44,6 @@ public class TestDynamicNumberOfGCThreads {
   public static void main(String[] args) throws Exception {
     boolean noneGCSupported = true;
 
-    if (GC.ConcMarkSweep.isSupported()) {
-      noneGCSupported = false;
-      testDynamicNumberOfGCThreads("UseConcMarkSweepGC");
-    }
-
     if (GC.G1.isSupported()) {
       noneGCSupported = false;
       testDynamicNumberOfGCThreads("UseG1GC");
@@ -65,7 +60,7 @@ public class TestDynamicNumberOfGCThreads {
     }
 
     if (noneGCSupported) {
-      throw new SkippedException("Skipping test because none of ConcMarkSweep/G1/Parallel/Shenandoah is supported.");
+      throw new SkippedException("Skipping test because none of G1/Parallel/Shenandoah is supported.");
     }
   }
 

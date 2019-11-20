@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,13 @@
 
 package sun.security.krb5.internal;
 
-import sun.security.util.*;
-import sun.security.krb5.Asn1Exception;
 import java.io.IOException;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
+
+import sun.security.krb5.Asn1Exception;
 import sun.security.krb5.internal.util.KerberosString;
+import sun.security.util.*;
 
 /**
  * Implements the ASN.1 ETYPE-INFO-ENTRY type.
@@ -99,7 +102,7 @@ public class ETypeInfo {
                 // KerberosString in most implementations.
 
                 if (KerberosString.MSNAME) {
-                    this.salt = new String(saltBytes, "UTF8");
+                    this.salt = new String(saltBytes, UTF_8);
                 } else {
                     this.salt = new String(saltBytes);
                 }
@@ -129,7 +132,7 @@ public class ETypeInfo {
         if (salt != null) {
             temp = new DerOutputStream();
             if (KerberosString.MSNAME) {
-                temp.putOctetString(salt.getBytes("UTF8"));
+                temp.putOctetString(salt.getBytes(UTF_8));
             } else {
                 temp.putOctetString(salt.getBytes());
             }

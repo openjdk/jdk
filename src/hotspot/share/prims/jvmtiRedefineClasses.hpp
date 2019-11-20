@@ -407,7 +407,7 @@ class VM_RedefineClasses: public VM_Operation {
   void compute_added_deleted_matching_methods();
 
   // Change jmethodIDs to point to the new methods
-  void update_jmethod_ids();
+  void update_jmethod_ids(Thread* thread);
 
   // In addition to marking methods as old and/or obsolete, this routine
   // counts the number of methods that are EMCP (Equivalent Module Constant Pool).

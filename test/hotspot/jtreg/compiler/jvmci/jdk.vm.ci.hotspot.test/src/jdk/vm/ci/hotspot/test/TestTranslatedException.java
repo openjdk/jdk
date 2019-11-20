@@ -20,6 +20,17 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
+/*
+ * @test
+ * @requires vm.jvmci
+ * @modules jdk.internal.vm.ci/jdk.vm.ci.hotspot:open
+ * @library /compiler/jvmci/jdk.vm.ci.hotspot.test/src
+ * @run testng/othervm
+ *      -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI -XX:-UseJVMCICompiler
+ *      jdk.vm.ci.hotspot.test.TestTranslatedException
+ */
+
 package jdk.vm.ci.hotspot.test;
 
 import java.io.ByteArrayOutputStream;
@@ -27,19 +38,10 @@ import java.io.PrintStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.testng.Assert;
+import org.testng.annotations.Test;
 
 public class TestTranslatedException {
-
-    private static String printToString(Throwable throwable) {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        try (PrintStream ps = new PrintStream(baos)) {
-            throwable.printStackTrace(ps);
-        }
-        return baos.toString();
-    }
-
     @SuppressWarnings("serial")
     public static class Untranslatable extends RuntimeException {
         public Untranslatable(String message, Throwable cause) {
@@ -62,15 +64,47 @@ public class TestTranslatedException {
         for (int i = 0; i < 10; i++) {
             throwable = new ExceptionInInitializerError(new InvocationTargetException(new RuntimeException(String.valueOf(i), throwable), "invoke"));
         }
-        String before = printToString(throwable);
         String encoding = (String) encode.invoke(null, throwable);
         Throwable decoded = (Throwable) decode.invoke(null, encoding);
-        String after = printToString(decoded);
+        assertThrowableEquals(throwable, decoded);
+    }
 
-        after = after.replace(
-                        "jdk.vm.ci.hotspot.TranslatedException: [java.lang.ClassNotFoundException: jdk/vm/ci/hotspot/test/TestTranslatedException$Untranslatable]",
-                        "jdk.vm.ci.hotspot.test.TestTranslatedException$Untranslatable: test exception");
-
-        Assert.assertEquals("before:\n" + before + "\nafter:\n" + after, before, after);
+    private static void assertThrowableEquals(Throwable original, Throwable decoded) {
+        try {
+            Assert.assertEquals(original == null, decoded == null);
+            while (original != null) {
+                if (Untranslatable.class.equals(original.getClass())) {
+                    Assert.assertEquals("jdk.vm.ci.hotspot.TranslatedException", decoded.getClass().getName());
+                    Assert.assertEquals("[java.lang.ClassNotFoundException: jdk/vm/ci/hotspot/test/TestTranslatedException$Untranslatable]", decoded.getMessage());
+                    Assert.assertEquals("test exception", original.getMessage());
+                } else {
+                    Assert.assertEquals(original.getClass().getName(), decoded.getClass().getName());
+                    Assert.assertEquals(original.getMessage(), decoded.getMessage());
+                }
+                StackTraceElement[] originalStack = original.getStackTrace();
+                StackTraceElement[] decodedStack = decoded.getStackTrace();
+                Assert.assertEquals(originalStack.length, decodedStack.length);
+                for (int i = 0, n = originalStack.length; i < n; ++i) {
+                    StackTraceElement originalStackElement = originalStack[i];
+                    StackTraceElement decodedStackElement = decodedStack[i];
+                    Assert.assertEquals(originalStackElement.getClassLoaderName(), decodedStackElement.getClassLoaderName());
+                    Assert.assertEquals(originalStackElement.getModuleName(), decodedStackElement.getModuleName());
+                    Assert.assertEquals(originalStackElement.getClassName(), decodedStackElement.getClassName());
+                    Assert.assertEquals(originalStackElement.getMethodName(), decodedStackElement.getMethodName());
+                    Assert.assertEquals(originalStackElement.getFileName(), decodedStackElement.getFileName());
+                    Assert.assertEquals(originalStackElement.getLineNumber(), decodedStackElement.getLineNumber());
+                }
+                original = original.getCause();
+                decoded = decoded.getCause();
+            }
+        } catch (AssertionError e) {
+            System.err.println("original:[");
+            original.printStackTrace(System.err);
+            System.err.println("]");
+            System.err.println("decoded:[");
+            original.printStackTrace(System.err);
+            System.err.println("]");
+            throw e;
+        }
     }
 }

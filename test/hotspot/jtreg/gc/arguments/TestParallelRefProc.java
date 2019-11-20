@@ -51,10 +51,6 @@ public class TestParallelRefProc {
             noneGCSupported = false;
             testFlag(new String[] { "-XX:+UseSerialGC" }, false);
         }
-        if (GC.ConcMarkSweep.isSupported()) {
-            noneGCSupported = false;
-            testFlag(new String[] { "-XX:+UseConcMarkSweepGC" }, false);
-        }
         if (GC.Parallel.isSupported()) {
             noneGCSupported = false;
             testFlag(new String[] { "-XX:+UseParallelGC" }, false);
@@ -66,7 +62,7 @@ public class TestParallelRefProc {
             testFlag(new String[] { "-XX:+UseG1GC", "-XX:-ParallelRefProcEnabled", "-XX:ParallelGCThreads=2" }, false);
         }
         if (noneGCSupported) {
-            throw new SkippedException("Skipping test because none of Serial/ConcMarkSweep/Parallel/G1 is supported.");
+            throw new SkippedException("Skipping test because none of Serial/Parallel/G1 is supported.");
         }
     }
 

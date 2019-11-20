@@ -45,8 +45,8 @@ void VirtualMemorySummary::snapshot(VirtualMemorySnapshot* s) {
   if (ThreadStackTracker::track_as_vm()) {
     // Snapshot current thread stacks
     VirtualMemoryTracker::snapshot_thread_stacks();
-    as_snapshot()->copy_to(s);
   }
+  as_snapshot()->copy_to(s);
 }
 
 SortedLinkedList<ReservedMemoryRegion, compare_reserved_region_base>* VirtualMemoryTracker::_reserved_regions;

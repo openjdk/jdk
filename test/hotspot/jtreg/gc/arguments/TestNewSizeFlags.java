@@ -306,7 +306,6 @@ public class TestNewSizeFlags {
         public static long alignGenSize(long value) {
             switch (YOUNG_GC_TYPE) {
                 case DefNew:
-                case ParNew:
                     return HeapRegionUsageTool.alignDown(value, HEAP_SPACE_ALIGNMENT);
                 case PSNew:
                     return HeapRegionUsageTool.alignUp(HeapRegionUsageTool.alignDown(value,

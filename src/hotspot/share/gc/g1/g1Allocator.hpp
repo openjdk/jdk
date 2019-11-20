@@ -31,6 +31,7 @@
 #include "gc/shared/plab.hpp"
 
 class G1EvacuationInfo;
+class G1NUMA;
 
 // Interface to keep track of which regions G1 is currently allocating into. Provides
 // some accessors (e.g. allocating into them, or getting their occupancy).
@@ -40,16 +41,20 @@ class G1Allocator : public CHeapObj<mtGC> {
 
 private:
   G1CollectedHeap* _g1h;
+  G1NUMA* _numa;
 
   bool _survivor_is_full;
   bool _old_is_full;
 
+  // The number of MutatorAllocRegions used, one per memory node.
+  size_t _num_alloc_regions;
+
   // Alloc region used to satisfy mutator allocation requests.
-  MutatorAllocRegion _mutator_alloc_region;
+  MutatorAllocRegion* _mutator_alloc_regions;
 
   // Alloc region used to satisfy allocation requests by the GC for
   // survivor objects.
-  SurvivorGCAllocRegion _survivor_gc_alloc_region;
+  SurvivorGCAllocRegion* _survivor_gc_alloc_regions;
 
   // Alloc region used to satisfy allocation requests by the GC for
   // old objects.
@@ -68,29 +73,37 @@ private:
                                  HeapRegion** retained);
 
   // Accessors to the allocation regions.
-  inline MutatorAllocRegion* mutator_alloc_region();
-  inline SurvivorGCAllocRegion* survivor_gc_alloc_region();
+  inline MutatorAllocRegion* mutator_alloc_region(uint node_index);
+  inline SurvivorGCAllocRegion* survivor_gc_alloc_region(uint node_index);
   inline OldGCAllocRegion* old_gc_alloc_region();
 
   // Allocation attempt during GC for a survivor object / PLAB.
   HeapWord* survivor_attempt_allocation(size_t min_word_size,
-                                               size_t desired_word_size,
-                                               size_t* actual_word_size);
+                                        size_t desired_word_size,
+                                        size_t* actual_word_size,
+                                        uint node_index);
 
   // Allocation attempt during GC for an old object / PLAB.
   HeapWord* old_attempt_allocation(size_t min_word_size,
-                                          size_t desired_word_size,
-                                          size_t* actual_word_size);
+                                   size_t desired_word_size,
+                                   size_t* actual_word_size);
+
+  // Node index of current thread.
+  inline uint current_node_index() const;
+
 public:
   G1Allocator(G1CollectedHeap* heap);
+  ~G1Allocator();
+
+  uint num_nodes() { return (uint)_num_alloc_regions; }
 
 #ifdef ASSERT
   // Do we currently have an active mutator region to allocate into?
-  bool has_mutator_alloc_region() { return mutator_alloc_region()->get() != NULL; }
+  bool has_mutator_alloc_region();
 #endif
 
-  void init_mutator_alloc_region();
-  void release_mutator_alloc_region();
+  void init_mutator_alloc_regions();
+  void release_mutator_alloc_regions();
 
   void init_gc_alloc_regions(G1EvacuationInfo& evacuation_info);
   void release_gc_alloc_regions(G1EvacuationInfo& evacuation_info);
@@ -113,12 +126,14 @@ public:
   // heap, and then allocate a block of the given size. The block
   // may not be a humongous - it must fit into a single heap region.
   HeapWord* par_allocate_during_gc(G1HeapRegionAttr dest,
-                                   size_t word_size);
+                                   size_t word_size,
+                                   uint node_index);
 
   HeapWord* par_allocate_during_gc(G1HeapRegionAttr dest,
                                    size_t min_word_size,
                                    size_t desired_word_size,
-                                   size_t* actual_word_size);
+                                   size_t* actual_word_size,
+                                   uint node_index);
 };
 
 // Manages the PLABs used during garbage collection. Interface for allocation from PLABs.
@@ -127,12 +142,12 @@ public:
 class G1PLABAllocator : public CHeapObj<mtGC> {
   friend class G1ParScanThreadState;
 private:
+  typedef G1HeapRegionAttr::region_type_t region_type_t;
+
   G1CollectedHeap* _g1h;
   G1Allocator* _allocator;
 
-  PLAB  _surviving_alloc_buffer;
-  PLAB  _tenured_alloc_buffer;
-  PLAB* _alloc_buffers[G1HeapRegionAttr::Num];
+  PLAB** _alloc_buffers[G1HeapRegionAttr::Num];
 
   // The survivor alignment in effect in bytes.
   // == 0 : don't align survivors
@@ -145,7 +160,13 @@ private:
   size_t _direct_allocated[G1HeapRegionAttr::Num];
 
   void flush_and_retire_stats();
-  inline PLAB* alloc_buffer(G1HeapRegionAttr dest);
+  inline PLAB* alloc_buffer(G1HeapRegionAttr dest, uint node_index) const;
+  inline PLAB* alloc_buffer(region_type_t dest, uint node_index) const;
+
+  // Returns the number of allocation buffers for the given dest.
+  // There is only 1 buffer for Old while Young may have multiple buffers depending on
+  // active NUMA nodes.
+  inline uint alloc_buffers_length(region_type_t dest) const;
 
   // Calculate the survivor space object alignment in bytes. Returns that or 0 if
   // there are no restrictions on survivor alignment.
@@ -154,6 +175,7 @@ private:
   bool may_throw_away_buffer(size_t const allocation_word_sz, size_t const buffer_size) const;
 public:
   G1PLABAllocator(G1Allocator* allocator);
+  ~G1PLABAllocator();
 
   size_t waste() const;
   size_t undo_waste() const;
@@ -164,18 +186,21 @@ public:
   // PLAB failed or not.
   HeapWord* allocate_direct_or_new_plab(G1HeapRegionAttr dest,
                                         size_t word_sz,
-                                        bool* plab_refill_failed);
+                                        bool* plab_refill_failed,
+                                        uint node_index);
 
   // Allocate word_sz words in the PLAB of dest.  Returns the address of the
   // allocated memory, NULL if not successful.
   inline HeapWord* plab_allocate(G1HeapRegionAttr dest,
-                                 size_t word_sz);
+                                 size_t word_sz,
+                                 uint node_index);
 
   inline HeapWord* allocate(G1HeapRegionAttr dest,
                             size_t word_sz,
-                            bool* refill_failed);
+                            bool* refill_failed,
+                            uint node_index);
 
-  void undo_allocation(G1HeapRegionAttr dest, HeapWord* obj, size_t word_sz);
+  void undo_allocation(G1HeapRegionAttr dest, HeapWord* obj, size_t word_sz, uint node_index);
 };
 
 // G1ArchiveRegionMap is a boolean array used to mark G1 regions as

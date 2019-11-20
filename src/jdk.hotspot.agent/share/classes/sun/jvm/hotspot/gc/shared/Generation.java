@@ -81,9 +81,7 @@ public abstract class Generation extends VMObject {
 
     // constants from Generation::Name
     NAME_DEF_NEW = db.lookupIntConstant("Generation::DefNew").intValue();
-    NAME_PAR_NEW = db.lookupIntConstant("Generation::ParNew").intValue();
     NAME_MARK_SWEEP_COMPACT = db.lookupIntConstant("Generation::MarkSweepCompact").intValue();
-    NAME_CONCURRENT_MARK_SWEEP = db.lookupIntConstant("Generation::ConcurrentMarkSweep").intValue();
     NAME_OTHER = db.lookupIntConstant("Generation::Other").intValue();
   }
 
@@ -93,9 +91,7 @@ public abstract class Generation extends VMObject {
 
   public static class Name {
     public static final Name DEF_NEW = new Name("DefNew");
-    public static final Name PAR_NEW = new Name("ParNew");
     public static final Name MARK_SWEEP_COMPACT = new Name("MarkSweepCompact");
-    public static final Name CONCURRENT_MARK_SWEEP = new Name("ConcurrentMarkSweep");
     public static final Name OTHER = new Name("Other");
 
     private Name(String value) {
@@ -115,12 +111,8 @@ public abstract class Generation extends VMObject {
   static Generation.Name nameForEnum(int value) {
      if (value == NAME_DEF_NEW) {
         return Name.DEF_NEW;
-     } else if (value == NAME_PAR_NEW) {
-        return Name.PAR_NEW;
      } else if (value == NAME_MARK_SWEEP_COMPACT) {
         return Name.MARK_SWEEP_COMPACT;
-     } else if (value == NAME_CONCURRENT_MARK_SWEEP) {
-        return Name.CONCURRENT_MARK_SWEEP;
      } else if (value == NAME_OTHER) {
         return Name.OTHER;
      } else {

@@ -574,6 +574,26 @@ AC_DEFUN([BASIC_REQUIRE_SPECIAL],
 ])
 
 ###############################################################################
+# Like BASIC_REQUIRE_PROGS but also allows for bash built-ins
+# $1: variable to set
+# $2: executable name (or list of names) to look for
+# $3: [path]
+AC_DEFUN([BASIC_REQUIRE_BUILTIN_PROGS],
+[
+  BASIC_SETUP_TOOL($1, [AC_PATH_PROGS($1, $2, , $3)])
+  if test "x[$]$1" = x; then
+    AC_MSG_NOTICE([Required tool $2 not found in PATH, checking built-in])
+    if help $2 > /dev/null 2>&1; then
+      AC_MSG_NOTICE([Found $2 as shell built-in. Using it])
+      $1="$2"
+    else
+      AC_MSG_ERROR([Required tool $2 also not found as built-in.])
+    fi
+  fi
+  BASIC_CHECK_NONEMPTY($1)
+])
+
+###############################################################################
 # Setup the most fundamental tools that relies on not much else to set up,
 # but is used by much of the early bootstrap code.
 AC_DEFUN_ONCE([BASIC_SETUP_FUNDAMENTAL_TOOLS],
@@ -1283,6 +1303,9 @@ AC_DEFUN_ONCE([BASIC_SETUP_COMPLEX_TOOLS],
     BASIC_REQUIRE_PROGS(SETFILE, SetFile)
   elif test "x$OPENJDK_TARGET_OS" = "xsolaris"; then
     BASIC_REQUIRE_PROGS(ELFEDIT, elfedit)
+  fi
+  if ! test "x$OPENJDK_TARGET_OS" = "xwindows"; then
+    BASIC_REQUIRE_BUILTIN_PROGS(ULIMIT, ulimit)
   fi
 ])
 

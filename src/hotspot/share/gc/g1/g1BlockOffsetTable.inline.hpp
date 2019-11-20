@@ -28,11 +28,10 @@
 #include "gc/g1/g1BlockOffsetTable.hpp"
 #include "gc/g1/heapRegion.hpp"
 #include "gc/shared/memset_with_concurrent_readers.hpp"
-#include "gc/shared/space.hpp"
 #include "runtime/atomic.hpp"
 
 inline HeapWord* G1BlockOffsetTablePart::block_start(const void* addr) {
-  if (addr >= _space->bottom() && addr < _space->end()) {
+  if (addr >= _hr->bottom() && addr < _hr->end()) {
     HeapWord* q = block_at_or_preceding(addr, true, _next_offset_index-1);
     return forward_to_block_containing_addr(q, addr);
   } else {
@@ -41,7 +40,7 @@ inline HeapWord* G1BlockOffsetTablePart::block_start(const void* addr) {
 }
 
 inline HeapWord* G1BlockOffsetTablePart::block_start_const(const void* addr) const {
-  if (addr >= _space->bottom() && addr < _space->end()) {
+  if (addr >= _hr->bottom() && addr < _hr->end()) {
     HeapWord* q = block_at_or_preceding(addr, true, _next_offset_index-1);
     HeapWord* n = q + block_size(q);
     return forward_to_block_containing_addr_const(q, n, addr);
@@ -107,15 +106,15 @@ inline HeapWord* G1BlockOffsetTable::address_for_index(size_t index) const {
 }
 
 inline size_t G1BlockOffsetTablePart::block_size(const HeapWord* p) const {
-  return _space->block_size(p);
+  return _hr->block_size(p);
 }
 
 inline HeapWord* G1BlockOffsetTablePart::block_at_or_preceding(const void* addr,
                                                                bool has_max_index,
                                                                size_t max_index) const {
-  assert(_object_can_span || _bot->offset_array(_bot->index_for(_space->bottom())) == 0,
+  assert(_object_can_span || _bot->offset_array(_bot->index_for(_hr->bottom())) == 0,
          "Object crossed region boundary, found offset %u instead of 0",
-         (uint) _bot->offset_array(_bot->index_for(_space->bottom())));
+         (uint) _bot->offset_array(_bot->index_for(_hr->bottom())));
   size_t index = _bot->index_for(addr);
   // We must make sure that the offset table entry we use is valid.  If
   // "addr" is past the end, start at the last known one and go forward.
@@ -140,7 +139,7 @@ inline HeapWord* G1BlockOffsetTablePart::block_at_or_preceding(const void* addr,
 
 inline HeapWord* G1BlockOffsetTablePart::forward_to_block_containing_addr_const(HeapWord* q, HeapWord* n,
                                                                                 const void* addr) const {
-  if (addr >= _space->top()) return _space->top();
+  if (addr >= _hr->top()) return _hr->top();
   while (n <= addr) {
     q = n;
     oop obj = oop(q);

@@ -53,10 +53,6 @@ public class TestGCId {
       noneGCSupported = false;
       testGCId("UseG1GC");
     }
-    if (GC.ConcMarkSweep.isSupported()) {
-      noneGCSupported = false;
-      testGCId("UseConcMarkSweepGC");
-    }
     if (GC.Serial.isSupported()) {
       noneGCSupported = false;
       testGCId("UseSerialGC");
@@ -67,7 +63,7 @@ public class TestGCId {
     }
 
     if (noneGCSupported) {
-      throw new SkippedException("Skipping test because none of Parallel/G1/ConcMarkSweep/Serial/Shenandoah is supported.");
+      throw new SkippedException("Skipping test because none of Parallel/G1/Serial/Shenandoah is supported.");
     }
   }
 

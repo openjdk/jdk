@@ -253,7 +253,7 @@ void JvmtiCodeBlobEvents::build_jvmti_addr_location_map(nmethod *nm,
 
 
   // Generate line numbers using PcDesc and ScopeDesc info
-  methodHandle mh(nm->method());
+  methodHandle mh(Thread::current(), nm->method());
 
   if (!mh->is_native()) {
     PcDesc *pcd;

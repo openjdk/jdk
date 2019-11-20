@@ -203,17 +203,15 @@ public class AMD64VectorMove {
         }
     }
 
-    public abstract static class VectorMemOp extends AMD64LIRInstruction {
+    public abstract static class VectorMemOp extends AMD64VectorInstruction {
 
-        protected final AVXSize size;
         protected final VexMoveOp op;
 
         @Use({COMPOSITE}) protected AMD64AddressValue address;
         @State protected LIRFrameState state;
 
         protected VectorMemOp(LIRInstructionClass<? extends VectorMemOp> c, AVXSize size, VexMoveOp op, AMD64AddressValue address, LIRFrameState state) {
-            super(c);
-            this.size = size;
+            super(c, size);
             this.op = op;
             this.address = address;
             this.state = state;

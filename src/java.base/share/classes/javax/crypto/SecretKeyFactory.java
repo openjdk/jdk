@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,16 +52,13 @@ import sun.security.jca.GetInstance.Instance;
  * {@link #generateSecret(java.security.spec.KeySpec) generateSecret} and
  * {@link #getKeySpec(javax.crypto.SecretKey, java.lang.Class) getKeySpec}
  * methods.
- * For example, the DES secret-key factory supplied by the "SunJCE" provider
- * supports {@code DESKeySpec} as a transparent representation of DES
- * keys, and that provider's secret-key factory for Triple DES keys supports
- * {@code DESedeKeySpec} as a transparent representation of Triple DES
- * keys.
+ * For example, the DESede (Triple DES) secret-key factory supplied by the
+ * "SunJCE" provider supports {@code DESedeKeySpec} as a transparent
+ * representation of Triple DES keys.
  *
  * <p> Every implementation of the Java platform is required to support the
  * following standard {@code SecretKeyFactory} algorithms:
  * <ul>
- * <li>{@code DES}</li>
  * <li>{@code DESede}</li>
  * </ul>
  * These algorithms are described in the <a href=
@@ -74,7 +71,6 @@ import sun.security.jca.GetInstance.Instance;
  * @author Jan Luehe
  *
  * @see SecretKey
- * @see javax.crypto.spec.DESKeySpec
  * @see javax.crypto.spec.DESedeKeySpec
  * @see javax.crypto.spec.PBEKeySpec
  * @since 1.4

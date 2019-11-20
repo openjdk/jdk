@@ -39,6 +39,7 @@
 #include "jvm.h"
 #include "jni.h"
 #include "jni_util.h"
+#include "nio.h"
 #include "sun_nio_ch_WindowsSelectorImpl.h"
 #include "sun_nio_ch_PollArrayWrapper.h"
 
@@ -56,12 +57,14 @@ JNIEXPORT jint JNICALL
 Java_sun_nio_ch_WindowsSelectorImpl_00024SubSelector_poll0(JNIEnv *env, jobject this,
                                    jlong pollAddress, jint numfds,
                                    jintArray returnReadFds, jintArray returnWriteFds,
-                                   jintArray returnExceptFds, jlong timeout)
+                                   jintArray returnExceptFds, jlong timeout, jlong fdsBuffer)
 {
     DWORD result = 0;
     pollfd *fds = (pollfd *) pollAddress;
     int i;
-    FD_SET readfds, writefds, exceptfds;
+    FD_SET *readfds = (FD_SET *) jlong_to_ptr(fdsBuffer);
+    FD_SET *writefds = (FD_SET *) jlong_to_ptr(fdsBuffer + sizeof(FD_SET));
+    FD_SET *exceptfds = (FD_SET *) jlong_to_ptr(fdsBuffer + sizeof(FD_SET) * 2);
     struct timeval timevalue, *tv;
     static struct timeval zerotime = {0, 0};
     int read_count = 0, write_count = 0, except_count = 0;
@@ -93,103 +96,61 @@ Java_sun_nio_ch_WindowsSelectorImpl_00024SubSelector_poll0(JNIEnv *env, jobject 
     /* Set FD_SET structures required for select */
     for (i = 0; i < numfds; i++) {
         if (fds[i].events & POLLIN) {
-           readfds.fd_array[read_count] = fds[i].fd;
+           readfds->fd_array[read_count] = fds[i].fd;
            read_count++;
         }
         if (fds[i].events & (POLLOUT | POLLCONN))
         {
-           writefds.fd_array[write_count] = fds[i].fd;
+           writefds->fd_array[write_count] = fds[i].fd;
            write_count++;
         }
-        exceptfds.fd_array[except_count] = fds[i].fd;
+        exceptfds->fd_array[except_count] = fds[i].fd;
         except_count++;
     }
 
-    readfds.fd_count = read_count;
-    writefds.fd_count = write_count;
-    exceptfds.fd_count = except_count;
+    readfds->fd_count = read_count;
+    writefds->fd_count = write_count;
+    exceptfds->fd_count = except_count;
 
     /* Call select */
-    if ((result = select(0 , &readfds, &writefds, &exceptfds, tv))
+    if ((result = select(0 , readfds, writefds, exceptfds, tv))
                                                              == SOCKET_ERROR) {
-        /* Bad error - this should not happen frequently */
-        /* Iterate over sockets and call select() on each separately */
-        FD_SET errreadfds, errwritefds, errexceptfds;
-        readfds.fd_count = 0;
-        writefds.fd_count = 0;
-        exceptfds.fd_count = 0;
-        for (i = 0; i < numfds; i++) {
-            /* prepare select structures for the i-th socket */
-            errreadfds.fd_count = 0;
-            errwritefds.fd_count = 0;
-            if (fds[i].events & POLLIN) {
-               errreadfds.fd_array[0] = fds[i].fd;
-               errreadfds.fd_count = 1;
-            }
-            if (fds[i].events & (POLLOUT | POLLCONN))
-            {
-                errwritefds.fd_array[0] = fds[i].fd;
-                errwritefds.fd_count = 1;
-            }
-            errexceptfds.fd_array[0] = fds[i].fd;
-            errexceptfds.fd_count = 1;
-
-            /* call select on the i-th socket */
-            if (select(0, &errreadfds, &errwritefds, &errexceptfds, &zerotime)
-                                                             == SOCKET_ERROR) {
-                /* This socket causes an error. Add it to exceptfds set */
-                exceptfds.fd_array[exceptfds.fd_count] = fds[i].fd;
-                exceptfds.fd_count++;
-            } else {
-                /* This socket does not cause an error. Process result */
-                if (errreadfds.fd_count == 1) {
-                    readfds.fd_array[readfds.fd_count] = fds[i].fd;
-                    readfds.fd_count++;
-                }
-                if (errwritefds.fd_count == 1) {
-                    writefds.fd_array[writefds.fd_count] = fds[i].fd;
-                    writefds.fd_count++;
-                }
-                if (errexceptfds.fd_count == 1) {
-                    exceptfds.fd_array[exceptfds.fd_count] = fds[i].fd;
-                    exceptfds.fd_count++;
-                }
-            }
-        }
+        JNU_ThrowIOExceptionWithLastError(env, "Select failed");
+        return IOS_THROWN;
     }
 
     /* Return selected sockets. */
     /* Each Java array consists of sockets count followed by sockets list */
 
 #ifdef _WIN64
-    resultbuf[0] = readfds.fd_count;
-    for (i = 0; i < (int)readfds.fd_count; i++) {
-        resultbuf[i + 1] = (int)readfds.fd_array[i];
+    resultbuf[0] = readfds->fd_count;
+    for (i = 0; i < (int)readfds->fd_count; i++) {
+        resultbuf[i + 1] = (int)readfds->fd_array[i];
     }
     (*env)->SetIntArrayRegion(env, returnReadFds, 0,
-                              readfds.fd_count + 1, resultbuf);
+                              readfds->fd_count + 1, resultbuf);
 
-    resultbuf[0] = writefds.fd_count;
-    for (i = 0; i < (int)writefds.fd_count; i++) {
-        resultbuf[i + 1] = (int)writefds.fd_array[i];
+    resultbuf[0] = writefds->fd_count;
+    for (i = 0; i < (int)writefds->fd_count; i++) {
+        resultbuf[i + 1] = (int)writefds->fd_array[i];
     }
     (*env)->SetIntArrayRegion(env, returnWriteFds, 0,
-                              writefds.fd_count + 1, resultbuf);
+                              writefds->fd_count + 1, resultbuf);
 
-    resultbuf[0] = exceptfds.fd_count;
-    for (i = 0; i < (int)exceptfds.fd_count; i++) {
-        resultbuf[i + 1] = (int)exceptfds.fd_array[i];
+    resultbuf[0] = exceptfds->fd_count;
+    for (i = 0; i < (int)exceptfds->fd_count; i++) {
+        resultbuf[i + 1] = (int)exceptfds->fd_array[i];
     }
     (*env)->SetIntArrayRegion(env, returnExceptFds, 0,
-                              exceptfds.fd_count + 1, resultbuf);
+                              exceptfds->fd_count + 1, resultbuf);
 #else
     (*env)->SetIntArrayRegion(env, returnReadFds, 0,
-                              readfds.fd_count + 1, (jint *)&readfds);
+                              readfds->fd_count + 1, (jint *)readfds);
 
     (*env)->SetIntArrayRegion(env, returnWriteFds, 0,
-                              writefds.fd_count + 1, (jint *)&writefds);
+                              writefds->fd_count + 1, (jint *)writefds);
     (*env)->SetIntArrayRegion(env, returnExceptFds, 0,
-                              exceptfds.fd_count + 1, (jint *)&exceptfds);
+                              exceptfds->fd_count + 1, (jint *)exceptfds);
 #endif
     return 0;
 }

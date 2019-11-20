@@ -391,7 +391,7 @@ bool ciField::will_link(ciMethod* accessing_method,
 
   LinkInfo link_info(_holder->get_instanceKlass(),
                      _name->get_symbol(), _signature->get_symbol(),
-                     accessing_method->get_Method());
+                     methodHandle(THREAD, accessing_method->get_Method()));
   fieldDescriptor result;
   LinkResolver::resolve_field(result, link_info, bc, false, KILL_COMPILE_ON_FATAL_(false));
 

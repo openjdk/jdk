@@ -25,8 +25,8 @@
  * @test
  * @bug 8214031
  * @summary Verify various corner cases with nested switch expressions.
- * @compile --enable-preview -source ${jdk.version} ExpressionSwitchBugsInGen.java
- * @run main/othervm --enable-preview ExpressionSwitchBugsInGen
+ * @compile ExpressionSwitchBugsInGen.java
+ * @run main ExpressionSwitchBugsInGen
  */
 
 public class ExpressionSwitchBugsInGen {

@@ -352,7 +352,7 @@ public final class ModuleBootstrap {
 
         Configuration cf;
         if (needResolution) {
-            cf = JLMA.resolveAndBind(finder, roots, traceOutput);
+            cf = Modules.newBootLayerConfiguration(finder, roots, traceOutput);
         } else {
             if (archivedModuleGraph != null) {
                 cf = archivedModuleGraph.configuration();

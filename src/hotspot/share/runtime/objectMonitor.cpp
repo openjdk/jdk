@@ -1267,6 +1267,10 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
 
   int ret = OS_OK;
   int WasNotified = 0;
+
+  // Need to check interrupt state whilst still _thread_in_vm
+  bool interrupted = interruptible && jt->is_interrupted(false);
+
   { // State transition wrappers
     OSThread* osthread = Self->osthread();
     OSThreadWaitState osts(osthread, true);
@@ -1275,7 +1279,7 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
       // Thread is in thread_blocked state and oop access is unsafe.
       jt->set_suspend_equivalent();
 
-      if (interruptible && (jt->is_interrupted(false) || HAS_PENDING_EXCEPTION)) {
+      if (interrupted || HAS_PENDING_EXCEPTION) {
         // Intentionally empty
       } else if (node._notified == 0) {
         if (millis <= 0) {

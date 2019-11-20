@@ -25,7 +25,7 @@
  * @test
  * @bug 8223305 8226522
  * @summary Verify correct warnings w.r.t. yield
- * @compile/ref=WarnWrongYieldTest.out -source ${jdk.version} -XDrawDiagnostics -XDshould-stop.at=ATTR WarnWrongYieldTest.java
+ * @compile/ref=WarnWrongYieldTest.out -Xlint:-options -source 13 -XDrawDiagnostics -XDshould-stop.at=ATTR WarnWrongYieldTest.java
  */
 
 package t;

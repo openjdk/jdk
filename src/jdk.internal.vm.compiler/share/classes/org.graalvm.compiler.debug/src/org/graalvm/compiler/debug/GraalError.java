@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -166,6 +166,14 @@ public class GraalError extends Error {
      */
     public GraalError(Throwable cause) {
         super(cause);
+    }
+
+    /**
+     * This constructor creates a {@link GraalError} for a given causing Throwable instance with
+     * detailed error message.
+     */
+    public GraalError(Throwable cause, String msg, Object... args) {
+        super(format(msg, args), cause);
     }
 
     /**

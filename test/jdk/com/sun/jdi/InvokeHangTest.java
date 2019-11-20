@@ -64,7 +64,7 @@ class InvokeHangTarg extends Thread {
     // This is called from the debugger via invokeMethod
     public double invokeee() {
         System.out.println("Debuggee: invokeee in thread "+Thread.currentThread().toString());
-        yield();
+        Thread.yield();
         return longMethod(2);
     }
     public double longMethod(int n) {

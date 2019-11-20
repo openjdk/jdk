@@ -72,6 +72,7 @@ Mutex*   NonJavaThreadsListSync_lock  = NULL;
 Monitor* CGC_lock                     = NULL;
 Monitor* STS_lock                     = NULL;
 Monitor* FullGCCount_lock             = NULL;
+Monitor* G1OldGCCount_lock            = NULL;
 Monitor* DirtyCardQ_CBL_mon           = NULL;
 Mutex*   Shared_DirtyCardQ_lock       = NULL;
 Mutex*   MarkStackFreeList_lock       = NULL;
@@ -203,6 +204,8 @@ void mutex_init() {
 
   def(FullGCCount_lock             , PaddedMonitor, leaf,        true,  _safepoint_check_never);      // in support of ExplicitGCInvokesConcurrent
   if (UseG1GC) {
+    def(G1OldGCCount_lock          , PaddedMonitor, leaf,        true,  _safepoint_check_always);
+
     def(DirtyCardQ_CBL_mon         , PaddedMonitor, access,      true,  _safepoint_check_never);
     def(Shared_DirtyCardQ_lock     , PaddedMutex  , access + 1,  true,  _safepoint_check_never);
 
@@ -262,10 +265,6 @@ void mutex_init() {
   def(BeforeExit_lock              , PaddedMonitor, leaf,        true,  _safepoint_check_always);
   def(PerfDataMemAlloc_lock        , PaddedMutex  , leaf,        true,  _safepoint_check_always); // used for allocating PerfData memory for performance data
   def(PerfDataManager_lock         , PaddedMutex  , leaf,        true,  _safepoint_check_always); // used for synchronized access to PerfDataManager resources
-
-  // CMS_modUnionTable_lock                   leaf
-  // CMS_bitMap_lock                          leaf 1
-  // CMS_freeList_lock                        leaf 2
 
   def(Threads_lock                 , PaddedMonitor, barrier,     true,  _safepoint_check_always);  // Used for safepoint protocol.
   def(NonJavaThreadsList_lock      , PaddedMutex,   leaf,        true,  _safepoint_check_never);

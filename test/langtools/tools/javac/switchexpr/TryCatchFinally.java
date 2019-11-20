@@ -25,8 +25,8 @@
  * @test
  * @bug 8220018
  * @summary Verify that try-catch-finally inside a switch expression works properly.
- * @compile --enable-preview -source ${jdk.version} TryCatchFinally.java
- * @run main/othervm --enable-preview TryCatchFinally
+ * @compile TryCatchFinally.java
+ * @run main TryCatchFinally
  */
 public class TryCatchFinally {//TODO: yield <double>
     public static void main(String[] args) {

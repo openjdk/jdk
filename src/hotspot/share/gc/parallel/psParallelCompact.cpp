@@ -52,7 +52,7 @@
 #include "gc/shared/referencePolicy.hpp"
 #include "gc/shared/referenceProcessor.hpp"
 #include "gc/shared/referenceProcessorPhaseTimes.hpp"
-#include "gc/shared/spaceDecorator.hpp"
+#include "gc/shared/spaceDecorator.inline.hpp"
 #include "gc/shared/weakProcessor.hpp"
 #include "gc/shared/workerPolicy.hpp"
 #include "gc/shared/workgroup.hpp"
@@ -3198,46 +3198,6 @@ void PSParallelCompact::fill_blocks(size_t region_idx)
     } else {
       return;
     }
-  }
-}
-
-void
-PSParallelCompact::move_and_update(ParCompactionManager* cm, SpaceId space_id) {
-  const MutableSpace* sp = space(space_id);
-  if (sp->is_empty()) {
-    return;
-  }
-
-  ParallelCompactData& sd = PSParallelCompact::summary_data();
-  ParMarkBitMap* const bitmap = mark_bitmap();
-  HeapWord* const dp_addr = dense_prefix(space_id);
-  HeapWord* beg_addr = sp->bottom();
-  HeapWord* end_addr = sp->top();
-
-  assert(beg_addr <= dp_addr && dp_addr <= end_addr, "bad dense prefix");
-
-  const size_t beg_region = sd.addr_to_region_idx(beg_addr);
-  const size_t dp_region = sd.addr_to_region_idx(dp_addr);
-  if (beg_region < dp_region) {
-    update_and_deadwood_in_dense_prefix(cm, space_id, beg_region, dp_region);
-  }
-
-  // The destination of the first live object that starts in the region is one
-  // past the end of the partial object entering the region (if any).
-  HeapWord* const dest_addr = sd.partial_obj_end(dp_region);
-  HeapWord* const new_top = _space_info[space_id].new_top();
-  assert(new_top >= dest_addr, "bad new_top value");
-  const size_t words = pointer_delta(new_top, dest_addr);
-
-  if (words > 0) {
-    ObjectStartArray* start_array = _space_info[space_id].start_array();
-    MoveAndUpdateClosure closure(bitmap, cm, start_array, dest_addr, words);
-
-    ParMarkBitMap::IterationStatus status;
-    status = bitmap->iterate(&closure, dest_addr, end_addr);
-    assert(status == ParMarkBitMap::full, "iteration not complete");
-    assert(bitmap->find_obj_beg(closure.source(), end_addr) == end_addr,
-           "live objects skipped because closure is full");
   }
 }
 

@@ -173,7 +173,7 @@ void YoungGCTracer::send_promotion_failed_event(const PromotionFailedInfo& pf_in
   }
 }
 
-// Common to CMS and G1
+// G1
 void OldGCTracer::send_concurrent_mode_failure_event() {
   EventConcurrentModeFailure e;
   if (e.should_commit()) {

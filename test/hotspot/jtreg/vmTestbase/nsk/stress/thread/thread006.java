@@ -176,7 +176,7 @@ public class thread006 extends Thread {
      */
     public void run() {
         while (!GO && !timeout())
-            yield();
+            Thread.yield();
         while (!STOP && !timeout())
             ;
     }

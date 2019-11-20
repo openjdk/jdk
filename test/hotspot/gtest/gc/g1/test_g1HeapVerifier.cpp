@@ -26,6 +26,7 @@
 #include "gc/g1/g1Arguments.hpp"
 #include "gc/g1/g1HeapVerifier.hpp"
 #include "logging/logConfiguration.hpp"
+#include "logging/logTag.hpp"
 #include "logging/logTestFixture.hpp"
 #include "unittest.hpp"
 

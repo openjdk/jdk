@@ -81,24 +81,6 @@ package gc.class_unloading;
  */
 
 /*
- * @test TestClassUnloadingDisabledCMS
- * @key gc
- * @bug 8114823
- * @comment Graal does not support CMS
- * @requires vm.gc.ConcMarkSweep & !vm.graal.enabled
- * @requires vm.opt.ExplicitGCInvokesConcurrent != true
- * @requires vm.opt.ClassUnloading != true
- * @library /test/lib
- * @modules java.base/jdk.internal.misc
- *          java.management
- * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
- *                              sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *                   -XX:-ClassUnloading -XX:+UseConcMarkSweepGC gc.class_unloading.TestClassUnloadingDisabled
- */
-
-/*
  * @test TestClassUnloadingDisabledShenandoah
  * @key gc
  * @bug 8114823

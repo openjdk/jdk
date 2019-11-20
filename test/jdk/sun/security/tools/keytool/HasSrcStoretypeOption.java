@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ import sun.security.tools.keytool.Main;
 public class HasSrcStoretypeOption {
 
     public static void main(String[] args) throws Exception {
-        run("-genkeypair -alias a -dname CN=A -storetype jceks -keystore jce");
+        run("-genkeypair -keyalg DSA -alias a -dname CN=A -storetype jceks -keystore jce");
         // When there is no -srcstoretype, it should be probed from the file
         run("-importkeystore -srckeystore jce -destkeystore jks -deststoretype jks");
     }

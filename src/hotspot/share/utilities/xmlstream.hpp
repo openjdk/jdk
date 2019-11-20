@@ -137,14 +137,14 @@ class xmlStream : public outputStream {
 
   // commonly used XML attributes
   void          stamp();                 // stamp='1.234'
-  void          method(const methodHandle& m);  // method='k n s' ...
+  void          method(Method* m);       // method='k n s' ...
   void          klass(Klass* k);         // klass='name'
   void          name(const Symbol* s);   // name='name'
   void          object(const char* attr, Metadata* val);
   void          object(const char* attr, Handle val);
 
   // print the text alone (sans ''):
-  void          method_text(const methodHandle& m);
+  void          method_text(Method* m);
   void          klass_text(Klass* k);         // klass='name'
   void          name_text(const Symbol* s);   // name='name'
   void          object_text(Metadata* x);

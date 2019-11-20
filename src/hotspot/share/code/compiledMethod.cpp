@@ -355,7 +355,7 @@ void CompiledMethod::preserve_callee_argument_oops(frame fr, const RegisterMap *
   if (method() != NULL && !method()->is_native()) {
     address pc = fr.pc();
     SimpleScopeDesc ssd(this, pc);
-    Bytecode_invoke call(ssd.method(), ssd.bci());
+    Bytecode_invoke call(methodHandle(Thread::current(), ssd.method()), ssd.bci());
     bool has_receiver = call.has_receiver();
     bool has_appendix = call.has_appendix();
     Symbol* signature = call.signature();

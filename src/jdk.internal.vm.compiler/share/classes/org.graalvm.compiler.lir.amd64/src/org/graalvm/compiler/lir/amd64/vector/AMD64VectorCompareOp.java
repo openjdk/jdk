@@ -35,16 +35,14 @@ import org.graalvm.compiler.asm.amd64.AMD64MacroAssembler;
 import org.graalvm.compiler.asm.amd64.AVXKind.AVXSize;
 import org.graalvm.compiler.lir.LIRInstructionClass;
 import org.graalvm.compiler.lir.Opcode;
-import org.graalvm.compiler.lir.amd64.AMD64LIRInstruction;
 import org.graalvm.compiler.lir.asm.CompilationResultBuilder;
 
 import jdk.vm.ci.meta.AllocatableValue;
 
-public final class AMD64VectorCompareOp extends AMD64LIRInstruction {
+public final class AMD64VectorCompareOp extends AMD64VectorInstruction {
     public static final LIRInstructionClass<AMD64VectorCompareOp> TYPE = LIRInstructionClass.create(AMD64VectorCompareOp.class);
 
     @Opcode private final VexRMOp opcode;
-    private final AVXSize size;
     @Use({REG}) protected AllocatableValue x;
     @Use({REG, STACK}) protected AllocatableValue y;
 
@@ -53,9 +51,8 @@ public final class AMD64VectorCompareOp extends AMD64LIRInstruction {
     }
 
     public AMD64VectorCompareOp(VexRMOp opcode, AVXSize size, AllocatableValue x, AllocatableValue y) {
-        super(TYPE);
+        super(TYPE, size);
         this.opcode = opcode;
-        this.size = size;
         this.x = x;
         this.y = y;
     }

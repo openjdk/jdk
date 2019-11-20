@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -111,10 +111,14 @@ final class AMD64HotSpotReturnOp extends AMD64HotSpotEpilogueBlockEndOp implemen
              * live value at this point should be the return value in either rax, or in xmm0 with
              * the upper half of the register unused, so we don't destroy any value here.
              */
-            if (masm.supports(CPUFeature.AVX)) {
+            if (masm.supports(CPUFeature.AVX) && crb.needsClearUpperVectorRegisters()) {
+                // If we decide to perform vzeroupper also for stubs (like what JDK9+ C2 does for
+                // intrinsics that employ AVX2 instruction), we need to be careful that it kills all
+                // the xmm registers (at least the upper halves).
                 masm.vzeroupper();
             }
         }
         masm.ret(0);
     }
+
 }

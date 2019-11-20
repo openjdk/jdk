@@ -110,12 +110,17 @@ public class SendDatagramToBadAddress {
     }
 
     public void run() throws Exception {
-
         if (OSsupportsFeature()) {
             print ("running on OS that supports ICMP port unreachable");
         }
+        try (DatagramSocket sock = new DatagramSocket()) {
+            test(sock);
+        }
+    }
+
+    private void test(DatagramSocket sock) throws Exception {
+        print("Testing with " + sock.getClass());
         InetAddress addr = InetAddress.getLoopbackAddress();
-        DatagramSocket sock = new DatagramSocket();
         DatagramSocket serversock = new DatagramSocket(0);
         DatagramPacket p;
         byte[] buf;

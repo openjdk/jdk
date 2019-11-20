@@ -323,6 +323,12 @@ public:
   };
 #endif
 
+  template <typename T>
+  static unsigned int hash_for_shared_dictionary(T* ptr) {
+    assert(ptr > (T*)SharedBaseAddress, "must be");
+    address p = address(ptr) - SharedBaseAddress;
+    return primitive_hash<address>(p);
+  }
 };
 
 #endif // SHARE_CLASSFILE_SYSTEMDICTIONARYSHARED_HPP

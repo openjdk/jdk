@@ -64,8 +64,6 @@ public class TestSelectDefaultGC {
         assertVMOption(output, "UseG1GC",            isServer);
         // Serial is default for non-server class machines
         assertVMOption(output, "UseSerialGC",        !isServer);
-        // CMS is never default
-        assertVMOption(output, "UseConcMarkSweepGC", false);
     }
 
     public static void main(String[] args) throws Exception {

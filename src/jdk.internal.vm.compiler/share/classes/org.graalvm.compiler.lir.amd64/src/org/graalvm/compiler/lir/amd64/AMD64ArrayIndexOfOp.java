@@ -644,4 +644,9 @@ public final class AMD64ArrayIndexOfOp extends AMD64LIRInstruction {
     private static boolean supports(LIRGeneratorTool tool, CPUFeature cpuFeature) {
         return ((AMD64) tool.target().arch).getFeatures().contains(cpuFeature);
     }
+
+    @Override
+    public boolean needsClearUpperVectorRegisters() {
+        return true;
+    }
 }

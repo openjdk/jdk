@@ -178,7 +178,7 @@ public class WeakAlg {
         // no warning if all certs
         kt("-importcert -alias b -file a.crt -storetype jks -noprompt")
                 .shouldNotContain("Warning:");
-        kt("-genkeypair -alias a -dname CN=A")
+        kt("-genkeypair -keyalg DSA -alias a -dname CN=A")
                 .shouldContain("JKS keystore uses a proprietary format");
         kt("-list")
                 .shouldContain("JKS keystore uses a proprietary format");
@@ -202,7 +202,7 @@ public class WeakAlg {
 
         rm("ks");
 
-        kt("-genkeypair -alias a -dname CN=A -storetype jceks")
+        kt("-genkeypair -keyalg DSA -alias a -dname CN=A -storetype jceks")
                 .shouldContain("JCEKS keystore uses a proprietary format");
         kt("-list")
                 .shouldContain("JCEKS keystore uses a proprietary format");
@@ -239,7 +239,7 @@ public class WeakAlg {
     static void checkInplaceImportKeyStore() throws Exception {
 
         rm("ks");
-        genkeypair("a", "");
+        genkeypair("a", "-keyalg DSA");
 
         // Same type backup
         importkeystore("ks", "ks", "")

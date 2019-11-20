@@ -25,6 +25,7 @@
 #ifndef SHARE_GC_G1_G1SURVIVORREGIONS_HPP
 #define SHARE_GC_G1_G1SURVIVORREGIONS_HPP
 
+#include "gc/g1/g1RegionsOnNodes.hpp"
 #include "runtime/globals.hpp"
 
 template <typename T>
@@ -35,17 +36,19 @@ class G1SurvivorRegions {
 private:
   GrowableArray<HeapRegion*>* _regions;
   volatile size_t             _used_bytes;
+  G1RegionsOnNodes            _regions_on_node;
 
 public:
   G1SurvivorRegions();
 
-  void add(HeapRegion* hr);
+  virtual uint add(HeapRegion* hr);
 
   void convert_to_eden();
 
   void clear();
 
   uint length() const;
+  uint regions_on_node(uint node_index) const;
 
   const GrowableArray<HeapRegion*>* regions() const {
     return _regions;

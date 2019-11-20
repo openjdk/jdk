@@ -26,7 +26,7 @@
  * @bug 8220041
  * @summary Verify variable capture works inside switch expressions which are
  *          inside variable declarations
- * @compile --enable-preview -source ${jdk.version} LambdaCapture.java
+ * @compile LambdaCapture.java
  */
 
 import java.util.Objects;

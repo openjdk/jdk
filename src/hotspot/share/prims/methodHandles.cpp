@@ -222,7 +222,7 @@ oop MethodHandles::init_MemberName(Handle mname, Handle target, TRAPS) {
 
 oop MethodHandles::init_method_MemberName(Handle mname, CallInfo& info) {
   assert(info.resolved_appendix().is_null(), "only normal methods here");
-  methodHandle m = info.resolved_method();
+  methodHandle m(Thread::current(), info.resolved_method());
   assert(m.not_null(), "null method handle");
   InstanceKlass* m_klass = m->method_holder();
   assert(m_klass != NULL, "null holder for method handle");

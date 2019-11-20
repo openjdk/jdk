@@ -122,6 +122,12 @@ public class CompilationWrapperTest extends GraalCompilerTest {
     public void testVMCompilation3() throws IOException, InterruptedException {
         assumeManagementLibraryIsLoadable();
         final int maxProblems = 2;
+        Probe failurePatternProbe = new Probe("[[[Graal compilation failure]]]", maxProblems) {
+            @Override
+            String test() {
+                return actualOccurrences > 0 && actualOccurrences <= maxProblems ? null : String.format("expected occurrences to be in [1 .. %d]", maxProblems);
+            }
+        };
         Probe retryingProbe = new Probe("Retrying compilation of", maxProblems) {
             @Override
             String test() {
@@ -140,6 +146,7 @@ public class CompilationWrapperTest extends GraalCompilerTest {
             }
         };
         Probe[] probes = {
+                        failurePatternProbe,
                         retryingProbe,
                         adjustmentProbe
         };

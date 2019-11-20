@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,8 @@ import java.security.spec.AlgorithmParameterSpec;
 
 import javax.crypto.*;
 import javax.crypto.spec.*;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 import sun.security.internal.spec.TlsPrfParameterSpec;
 
@@ -167,7 +169,7 @@ final class P11TlsPrfGenerator extends KeyGeneratorSpi {
             }
         }
 
-        byte[] label = P11Util.getBytesUTF8(spec.getLabel());
+        byte[] label = spec.getLabel().getBytes(UTF_8);
 
         if (mechanism == CKM_NSS_TLS_PRF_GENERAL) {
             Session session = null;

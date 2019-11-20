@@ -107,7 +107,7 @@ public class TestThreadCpuTimeEvent {
             } catch (BrokenBarrierException e) {
                 // Another thread has been interrupted - wait for us to be interrupted as well
                 while (!interrupted()) {
-                    yield();
+                    Thread.yield();
                 }
             } catch (InterruptedException e) {
                 // Normal way of stopping the thread

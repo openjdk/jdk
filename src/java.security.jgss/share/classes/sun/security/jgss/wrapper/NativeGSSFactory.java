@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 
 package sun.security.jgss.wrapper;
 
-import java.io.UnsupportedEncodingException;
 import java.security.Provider;
 import java.util.Vector;
 import org.ietf.jgss.*;
@@ -33,6 +32,8 @@ import sun.security.jgss.GSSUtil;
 import sun.security.jgss.GSSCaller;
 import sun.security.jgss.GSSExceptionImpl;
 import sun.security.jgss.spi.*;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * JGSS plugin for generic mechanisms provided through native GSS framework.
@@ -80,14 +81,9 @@ public final class NativeGSSFactory implements MechanismFactory {
 
     public GSSNameSpi getNameElement(String nameStr, Oid nameType)
         throws GSSException {
-        try {
-            byte[] nameBytes =
-                (nameStr == null ? null : nameStr.getBytes("UTF-8"));
-            return new GSSNameElement(nameBytes, nameType, cStub);
-        } catch (UnsupportedEncodingException uee) {
-            // Shouldn't happen
-            throw new GSSExceptionImpl(GSSException.FAILURE, uee);
-        }
+        byte[] nameBytes =
+                (nameStr == null ? null : nameStr.getBytes(UTF_8));
+        return new GSSNameElement(nameBytes, nameType, cStub);
     }
 
     public GSSNameSpi getNameElement(byte[] name, Oid nameType)

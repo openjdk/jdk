@@ -285,7 +285,6 @@ void TemplateInterpreterGenerator::generate_transcendental_entry(AbstractInterpr
     }
     break;
   case Interpreter::java_lang_math_pow :
-    fpargs = 2;
     if (StubRoutines::dpow() == NULL) {
       fn = CAST_FROM_FN_PTR(address, SharedRuntime::dpow);
     } else {

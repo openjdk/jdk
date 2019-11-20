@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,14 +30,12 @@ class ZUnload {
 private:
   ZWorkers* const _workers;
 
-  void unlink();
-  void purge();
-
 public:
   ZUnload(ZWorkers* workers);
 
   void prepare();
-  void unload();
+  void unlink();
+  void purge();
   void finish();
 };
 

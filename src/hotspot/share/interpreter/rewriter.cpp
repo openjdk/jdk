@@ -80,13 +80,13 @@ void Rewriter::compute_index_maps() {
 }
 
 // Unrewrite the bytecodes if an error occurs.
-void Rewriter::restore_bytecodes() {
+void Rewriter::restore_bytecodes(Thread* thread) {
   int len = _methods->length();
   bool invokespecial_error = false;
 
   for (int i = len-1; i >= 0; i--) {
     Method* method = _methods->at(i);
-    scan_method(method, true, &invokespecial_error);
+    scan_method(thread, method, true, &invokespecial_error);
     assert(!invokespecial_error, "reversing should not get an invokespecial error");
   }
 }
@@ -365,7 +365,7 @@ void Rewriter::maybe_rewrite_ldc(address bcp, int offset, bool is_wide,
 
 
 // Rewrites a method given the index_map information
-void Rewriter::scan_method(Method* method, bool reverse, bool* invokespecial_error) {
+void Rewriter::scan_method(Thread* thread, Method* method, bool reverse, bool* invokespecial_error) {
 
   int nof_jsrs = 0;
   bool has_monitor_bytecodes = false;
@@ -439,7 +439,7 @@ void Rewriter::scan_method(Method* method, bool reverse, bool* invokespecial_err
           // succeeded. Therefore, the class is guaranteed to be well-formed.
           InstanceKlass* klass = method->method_holder();
           u2 bc_index = Bytes::get_Java_u2(bcp + prefix_length + 1);
-          constantPoolHandle cp(method->constants());
+          constantPoolHandle cp(thread, method->constants());
           Symbol* ref_class_name = cp->klass_name_at(cp->klass_ref_index_at(bc_index));
 
           if (klass->name() == ref_class_name) {
@@ -548,7 +548,7 @@ void Rewriter::rewrite_bytecodes(TRAPS) {
 
   for (int i = len-1; i >= 0; i--) {
     Method* method = _methods->at(i);
-    scan_method(method, false, &invokespecial_error);
+    scan_method(THREAD, method, false, &invokespecial_error);
     if (invokespecial_error) {
       // If you get an error here, there is no reversing bytecodes
       // This exception is stored for this class and no further attempt is
@@ -570,7 +570,8 @@ void Rewriter::rewrite(InstanceKlass* klass, TRAPS) {
     assert(!klass->is_shared(), "archive methods must not be rewritten at run time");
   }
   ResourceMark rm(THREAD);
-  Rewriter     rw(klass, klass->constants(), klass->methods(), CHECK);
+  constantPoolHandle cpool(THREAD, klass->constants());
+  Rewriter     rw(klass, cpool, klass->methods(), CHECK);
   // (That's all, folks.)
 }
 
@@ -592,7 +593,7 @@ Rewriter::Rewriter(InstanceKlass* klass, const constantPoolHandle& cpool, Array<
 
   // Stress restoring bytecodes
   if (StressRewriter) {
-    restore_bytecodes();
+    restore_bytecodes(THREAD);
     rewrite_bytecodes(CHECK);
   }
 
@@ -602,7 +603,7 @@ Rewriter::Rewriter(InstanceKlass* klass, const constantPoolHandle& cpool, Array<
   // Restore bytecodes to their unrewritten state if there are exceptions
   // rewriting bytecodes or allocating the cpCache
   if (HAS_PENDING_EXCEPTION) {
-    restore_bytecodes();
+    restore_bytecodes(THREAD);
     return;
   }
 
@@ -620,7 +621,7 @@ Rewriter::Rewriter(InstanceKlass* klass, const constantPoolHandle& cpool, Array<
       // relocating bytecodes.  If some are relocated, that is ok because that
       // doesn't affect constant pool to cpCache rewriting.
       if (HAS_PENDING_EXCEPTION) {
-        restore_bytecodes();
+        restore_bytecodes(THREAD);
         return;
       }
       // Method might have gotten rewritten.

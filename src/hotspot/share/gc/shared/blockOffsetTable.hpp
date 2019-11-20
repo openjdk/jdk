@@ -41,7 +41,6 @@
 //
 // BlockOffsetTable (abstract)
 //   - BlockOffsetArray (abstract)
-//     - BlockOffsetArrayNonContigSpace
 //     - BlockOffsetArrayContigSpace
 //
 
@@ -155,12 +154,6 @@ class BlockOffsetSharedArray: public CHeapObj<mtGC> {
     void* start_ptr = &_offset_array[start];
     // If collector is concurrent, special handling may be needed.
     G1GC_ONLY(assert(!UseG1GC, "Shouldn't be here when using G1");)
-#if INCLUDE_CMSGC
-    if (UseConcMarkSweepGC) {
-      memset_with_concurrent_readers(start_ptr, offset, num_cards);
-      return;
-    }
-#endif // INCLUDE_CMSGC
     memset(start_ptr, offset, num_cards);
   }
 
@@ -385,111 +378,6 @@ class BlockOffsetArray: public BlockOffsetTable {
   // Verify the block offset table
   void verify() const;
   void check_all_cards(size_t left_card, size_t right_card) const;
-};
-
-////////////////////////////////////////////////////////////////////////////
-// A subtype of BlockOffsetArray that takes advantage of the fact
-// that its underlying space is a NonContiguousSpace, so that some
-// specialized interfaces can be made available for spaces that
-// manipulate the table.
-////////////////////////////////////////////////////////////////////////////
-class BlockOffsetArrayNonContigSpace: public BlockOffsetArray {
-  friend class VMStructs;
- private:
-  // The portion [_unallocated_block, _sp.end()) of the space that
-  // is a single block known not to contain any objects.
-  // NOTE: See BlockOffsetArrayUseUnallocatedBlock flag.
-  HeapWord* _unallocated_block;
-
- public:
-  BlockOffsetArrayNonContigSpace(BlockOffsetSharedArray* array, MemRegion mr):
-    BlockOffsetArray(array, mr, false),
-    _unallocated_block(_bottom) { }
-
-  // Accessor
-  HeapWord* unallocated_block() const {
-    assert(BlockOffsetArrayUseUnallocatedBlock,
-           "_unallocated_block is not being maintained");
-    return _unallocated_block;
-  }
-
-  void set_unallocated_block(HeapWord* block) {
-    assert(BlockOffsetArrayUseUnallocatedBlock,
-           "_unallocated_block is not being maintained");
-    assert(block >= _bottom && block <= _end, "out of range");
-    _unallocated_block = block;
-  }
-
-  // These methods expect to be called with [blk_start, blk_end)
-  // representing a block of memory in the heap.
-  void alloc_block(HeapWord* blk_start, HeapWord* blk_end);
-  void alloc_block(HeapWord* blk, size_t size) {
-    alloc_block(blk, blk + size);
-  }
-
-  // The following methods are useful and optimized for a
-  // non-contiguous space.
-
-  // Given a block [blk_start, blk_start + full_blk_size), and
-  // a left_blk_size < full_blk_size, adjust the BOT to show two
-  // blocks [blk_start, blk_start + left_blk_size) and
-  // [blk_start + left_blk_size, blk_start + full_blk_size).
-  // It is assumed (and verified in the non-product VM) that the
-  // BOT was correct for the original block.
-  void split_block(HeapWord* blk_start, size_t full_blk_size,
-                           size_t left_blk_size);
-
-  // Adjust BOT to show that it has a block in the range
-  // [blk_start, blk_start + size). Only the first card
-  // of BOT is touched. It is assumed (and verified in the
-  // non-product VM) that the remaining cards of the block
-  // are correct.
-  void mark_block(HeapWord* blk_start, HeapWord* blk_end, bool reducing = false);
-  void mark_block(HeapWord* blk, size_t size, bool reducing = false) {
-    mark_block(blk, blk + size, reducing);
-  }
-
-  // Adjust _unallocated_block to indicate that a particular
-  // block has been newly allocated or freed. It is assumed (and
-  // verified in the non-product VM) that the BOT is correct for
-  // the given block.
-  void allocated(HeapWord* blk_start, HeapWord* blk_end, bool reducing = false) {
-    // Verify that the BOT shows [blk, blk + blk_size) to be one block.
-    verify_single_block(blk_start, blk_end);
-    if (BlockOffsetArrayUseUnallocatedBlock) {
-      _unallocated_block = MAX2(_unallocated_block, blk_end);
-    }
-  }
-
-  void allocated(HeapWord* blk, size_t size, bool reducing = false) {
-    allocated(blk, blk + size, reducing);
-  }
-
-  void freed(HeapWord* blk_start, HeapWord* blk_end);
-  void freed(HeapWord* blk, size_t size);
-
-  HeapWord* block_start_unsafe(const void* addr) const;
-
-  // Requires "addr" to be the start of a card and returns the
-  // start of the block that contains the given address.
-  HeapWord* block_start_careful(const void* addr) const;
-
-  // Verification & debugging: ensure that the offset table reflects
-  // the fact that the block [blk_start, blk_end) or [blk, blk + size)
-  // is a single block of storage. NOTE: can't const this because of
-  // call to non-const do_block_internal() below.
-  void verify_single_block(HeapWord* blk_start, HeapWord* blk_end)
-    PRODUCT_RETURN;
-  void verify_single_block(HeapWord* blk, size_t size) PRODUCT_RETURN;
-
-  // Verify that the given block is before _unallocated_block
-  void verify_not_unallocated(HeapWord* blk_start, HeapWord* blk_end)
-    const PRODUCT_RETURN;
-  void verify_not_unallocated(HeapWord* blk, size_t size)
-    const PRODUCT_RETURN;
-
-  // Debugging support
-  virtual size_t last_active_index() const;
 };
 
 ////////////////////////////////////////////////////////////////////////////

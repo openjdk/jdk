@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,10 +29,6 @@
 #include "memory/filemap.hpp"
 #include "runtime/java.hpp"
 #include "utilities/macros.hpp"
-#if INCLUDE_CMSGC
-#include "gc/cms/concurrentMarkSweepGeneration.hpp"
-#include "gc/cms/parNewGeneration.hpp"
-#endif
 #if INCLUDE_SERIALGC
 #include "gc/serial/defNewGeneration.hpp"
 #include "gc/serial/tenuredGeneration.hpp"
@@ -47,15 +43,6 @@ Generation* GenerationSpec::init(ReservedSpace rs, CardTableRS* remset) {
     case Generation::MarkSweepCompact:
       return new TenuredGeneration(rs, _init_size, _min_size, _max_size, remset);
 #endif
-
-#if INCLUDE_CMSGC
-    case Generation::ParNew:
-      return new ParNewGeneration(rs, _init_size, _min_size, _max_size);
-
-    case Generation::ConcurrentMarkSweep: {
-      return new ConcurrentMarkSweepGeneration(rs, _init_size, _min_size, _max_size, remset);
-    }
-#endif // INCLUDE_CMSGC
 
     default:
       guarantee(false, "unrecognized GenerationName");

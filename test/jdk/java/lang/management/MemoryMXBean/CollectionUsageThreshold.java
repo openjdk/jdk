@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,9 +76,6 @@ public class CollectionUsageThreshold {
         RunUtil.runTestClearGcOpts(main, "-XX:+UseSerialGC");
         RunUtil.runTestClearGcOpts(main, "-XX:+UseParallelGC");
         RunUtil.runTestClearGcOpts(main, "-XX:+UseG1GC");
-        if (!Compiler.isGraalEnabled()) { // Graal does not support CMS
-            RunUtil.runTestClearGcOpts(main, "-XX:+UseConcMarkSweepGC");
-        }
     }
 
     static class PoolRecord {

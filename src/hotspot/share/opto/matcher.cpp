@@ -157,7 +157,7 @@ void Matcher::verify_new_nodes_only(Node* xroot) {
   worklist.push(xroot);
   while (worklist.size() > 0) {
     Node* n = worklist.pop();
-    visited <<= n->_idx;
+    visited.set(n->_idx);
     assert(C->node_arena()->contains(n), "dead node");
     for (uint j = 0; j < n->req(); j++) {
       Node* in = n->in(j);
@@ -340,7 +340,7 @@ void Matcher::match( ) {
 
   // Recursively match trees from old space into new space.
   // Correct leaves of new-space Nodes; they point to old-space.
-  _visited.Clear();             // Clear visit bits for xform call
+  _visited.clear();
   C->set_cached_top_node(xform( C->top(), live_nodes ));
   if (!C->failing()) {
     Node* xroot =        xform( C->root(), 1 );

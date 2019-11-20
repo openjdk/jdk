@@ -63,19 +63,6 @@ import gc.testlibrary.PerfCounters;
  * @run main/othervm -XX:+UsePerfData -XX:+UseG1GC gc.TestGenerationPerfCounter
  */
 
-/* @test TestGenerationPerfCounterCMS
- * @bug 8080345
- * @comment Graal does not support CMS
- * @requires vm.gc.ConcMarkSweep & !vm.graal.enabled
- * @library /test/lib /
- * @summary Tests that the sun.gc.policy.generations returns 2 for all GCs.
- * @modules java.base/jdk.internal.misc
- *          java.compiler
- *          java.management/sun.management
- *          jdk.internal.jvmstat/sun.jvmstat.monitor
- * @run main/othervm -XX:+UsePerfData -XX:+UseConcMarkSweepGC gc.TestGenerationPerfCounter
- */
-
 public class TestGenerationPerfCounter {
     public static void main(String[] args) throws Exception {
         long numGenerations =

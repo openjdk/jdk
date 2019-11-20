@@ -203,8 +203,8 @@ int AOTOopRecorder::find_index(Metadata* h) {
     result = JVMCIENV->get_jvmci_type(klass, JVMCI_CATCH);
   } else if (h->is_method()) {
     Method* method = (Method*) h;
-    methodHandle mh(method);
-    result = JVMCIENV->get_jvmci_method(method, JVMCI_CATCH);
+    methodHandle mh(THREAD, method);
+    result = JVMCIENV->get_jvmci_method(mh, JVMCI_CATCH);
   }
   jobject ref = JVMCIENV->get_jobject(result);
   record_meta_ref(ref, index);
@@ -501,8 +501,8 @@ void CodeInstaller::initialize_dependencies(JVMCIObject compiled_code, OopRecord
       int length = JVMCIENV->get_length(methods);
       for (int i = 0; i < length; ++i) {
         JVMCIObject method_handle = JVMCIENV->get_object_at(methods, i);
-        methodHandle method = jvmci_env()->asMethod(method_handle);
-        _dependencies->assert_evol_method(method());
+        Method* method = jvmci_env()->asMethod(method_handle);
+        _dependencies->assert_evol_method(method);
       }
     }
   }
@@ -620,13 +620,15 @@ JVMCI::CodeInstallResult CodeInstaller::install(JVMCICompiler* compiler,
       jvmci_env()->set_compile_state(compile_state);
     }
 
-    methodHandle method = jvmci_env()->asMethod(jvmci_env()->get_HotSpotCompiledNmethod_method(compiled_code));
+    Thread* thread = Thread::current();
+
+    methodHandle method(thread, jvmci_env()->asMethod(jvmci_env()->get_HotSpotCompiledNmethod_method(compiled_code)));
     jint entry_bci = jvmci_env()->get_HotSpotCompiledNmethod_entryBCI(compiled_code);
     bool has_unsafe_access = jvmci_env()->get_HotSpotCompiledNmethod_hasUnsafeAccess(compiled_code) == JNI_TRUE;
     jint id = jvmci_env()->get_HotSpotCompiledNmethod_id(compiled_code);
     if (id == -1) {
       // Make sure a valid compile_id is associated with every compile
-      id = CompileBroker::assign_compile_id_unlocked(Thread::current(), method, entry_bci);
+      id = CompileBroker::assign_compile_id_unlocked(thread, method, entry_bci);
       jvmci_env()->set_HotSpotCompiledNmethod_id(compiled_code, id);
     }
     if (!jvmci_env()->isa_HotSpotNmethod(installed_code)) {
@@ -659,7 +661,8 @@ JVMCI::CodeInstallResult CodeInstaller::install(JVMCICompiler* compiler,
 void CodeInstaller::initialize_fields(JVMCIObject target, JVMCIObject compiled_code, JVMCI_TRAPS) {
   if (jvmci_env()->isa_HotSpotCompiledNmethod(compiled_code)) {
     JVMCIObject hotspotJavaMethod = jvmci_env()->get_HotSpotCompiledNmethod_method(compiled_code);
-    methodHandle method = jvmci_env()->asMethod(hotspotJavaMethod);
+    Thread* thread = Thread::current();
+    methodHandle method(thread, jvmci_env()->asMethod(hotspotJavaMethod));
     _parameter_count = method->size_of_parameters();
     TRACE_jvmci_2("installing code for %s", method->name_and_sig_as_C_string());
   } else {
@@ -937,10 +940,10 @@ void CodeInstaller::assumption_ConcreteMethod(JVMCIObject assumption) {
   JVMCIObject impl_handle = jvmci_env()->get_Assumptions_ConcreteMethod_impl(assumption);
   JVMCIObject context_handle = jvmci_env()->get_Assumptions_ConcreteMethod_context(assumption);
 
-  methodHandle impl = jvmci_env()->asMethod(impl_handle);
+  Method* impl = jvmci_env()->asMethod(impl_handle);
   Klass* context = jvmci_env()->asKlass(context_handle);
 
-  _dependencies->assert_unique_concrete_method(context, impl());
+  _dependencies->assert_unique_concrete_method(context, impl);
 }
 
 void CodeInstaller::assumption_CallSiteTargetValue(JVMCIObject assumption, JVMCI_TRAPS) {
@@ -1064,7 +1067,8 @@ void CodeInstaller::record_scope(jint pc_offset, JVMCIObject position, ScopeMode
   }
 
   JVMCIObject hotspot_method = jvmci_env()->get_BytecodePosition_method(position);
-  Method* method = jvmci_env()->asMethod(hotspot_method);
+  Thread* thread = Thread::current();
+  methodHandle method(thread, jvmci_env()->asMethod(hotspot_method));
   jint bci = map_jvmci_bci(jvmci_env()->get_BytecodePosition_bci(position));
   if (bci == jvmci_env()->get_BytecodeFrame_BEFORE_BCI()) {
     bci = SynchronizationEntryBCI;
@@ -1077,7 +1081,7 @@ void CodeInstaller::record_scope(jint pc_offset, JVMCIObject position, ScopeMode
     if (bci < 0){
        reexecute = false;
     } else {
-      Bytecodes::Code code = Bytecodes::java_code_at(method, method->bcp_from(bci));
+      Bytecodes::Code code = Bytecodes::java_code_at(method(), method->bcp_from(bci));
       reexecute = bytecode_should_reexecute(code);
       if (frame.is_non_null()) {
         reexecute = (jvmci_env()->get_BytecodeFrame_duringCall(frame) == JNI_FALSE);

@@ -896,7 +896,7 @@ public class Runtime {
      * <blockquote><pre>
      *     $VNUM(-$PRE)?\+$BUILD(-$OPT)?
      *     $VNUM-$PRE(-$OPT)?
-     *     $VNUM(+-$OPT)?
+     *     $VNUM(\+-$OPT)?
      * </pre></blockquote>
      *
      * <p> where: </p>

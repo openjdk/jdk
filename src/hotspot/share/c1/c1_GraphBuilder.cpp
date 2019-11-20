@@ -2590,7 +2590,7 @@ void PhiSimplifier::block_do(BlockBegin* b) {
 
 #ifdef ASSERT
   for_each_phi_fun(b, phi,
-                   assert(phi->operand_count() != 1 || phi->subst() != phi, "missed trivial simplification");
+                   assert(phi->operand_count() != 1 || phi->subst() != phi || phi->is_illegal(), "missed trivial simplification");
   );
 
   ValueStack* state = b->state()->caller_state();

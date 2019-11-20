@@ -2,7 +2,7 @@
  * @test /nodynamiccopyright/
  * @bug 8206986
  * @summary Verify that scopes in rule cases are isolated.
- * @compile/fail/ref=SwitchExpressionScopesIsolated.out -XDrawDiagnostics --enable-preview -source ${jdk.version} SwitchExpressionScopesIsolated.java
+ * @compile/fail/ref=SwitchExpressionScopesIsolated.out -XDrawDiagnostics SwitchExpressionScopesIsolated.java
  */
 
 public class SwitchExpressionScopesIsolated {

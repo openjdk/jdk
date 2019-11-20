@@ -38,7 +38,6 @@ import org.graalvm.compiler.core.common.calc.CanonicalCondition;
 import org.graalvm.compiler.core.gen.NodeMatchRules;
 import org.graalvm.compiler.core.match.ComplexMatchResult;
 import org.graalvm.compiler.core.match.MatchRule;
-import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.lir.LIRFrameState;
 import org.graalvm.compiler.lir.LabelRef;
 import org.graalvm.compiler.lir.Variable;
@@ -58,26 +57,33 @@ import org.graalvm.compiler.nodes.calc.BinaryNode;
 import org.graalvm.compiler.nodes.calc.IntegerLessThanNode;
 import org.graalvm.compiler.nodes.calc.LeftShiftNode;
 import org.graalvm.compiler.nodes.calc.MulNode;
+import org.graalvm.compiler.nodes.calc.NarrowNode;
+import org.graalvm.compiler.nodes.calc.NegateNode;
 import org.graalvm.compiler.nodes.calc.NotNode;
 import org.graalvm.compiler.nodes.calc.OrNode;
 import org.graalvm.compiler.nodes.calc.RightShiftNode;
 import org.graalvm.compiler.nodes.calc.SubNode;
+import org.graalvm.compiler.nodes.calc.UnaryNode;
 import org.graalvm.compiler.nodes.calc.UnsignedRightShiftNode;
 import org.graalvm.compiler.nodes.calc.XorNode;
 import org.graalvm.compiler.nodes.memory.Access;
 
 public class AArch64NodeMatchRules extends NodeMatchRules {
-    private static final EconomicMap<Class<? extends Node>, AArch64ArithmeticOp> nodeOpMap;
+    private static final EconomicMap<Class<? extends BinaryNode>, AArch64ArithmeticOp> binaryOpMap;
     private static final EconomicMap<Class<? extends BinaryNode>, AArch64BitFieldOp.BitFieldOpCode> bitFieldOpMap;
     private static final EconomicMap<Class<? extends BinaryNode>, AArch64MacroAssembler.ShiftType> shiftTypeMap;
 
     static {
-        nodeOpMap = EconomicMap.create(Equivalence.IDENTITY, 5);
-        nodeOpMap.put(AddNode.class, AArch64ArithmeticOp.ADD);
-        nodeOpMap.put(SubNode.class, AArch64ArithmeticOp.SUB);
-        nodeOpMap.put(AndNode.class, AArch64ArithmeticOp.AND);
-        nodeOpMap.put(OrNode.class, AArch64ArithmeticOp.OR);
-        nodeOpMap.put(XorNode.class, AArch64ArithmeticOp.XOR);
+        binaryOpMap = EconomicMap.create(Equivalence.IDENTITY, 9);
+        binaryOpMap.put(AddNode.class, AArch64ArithmeticOp.ADD);
+        binaryOpMap.put(SubNode.class, AArch64ArithmeticOp.SUB);
+        binaryOpMap.put(MulNode.class, AArch64ArithmeticOp.MUL);
+        binaryOpMap.put(AndNode.class, AArch64ArithmeticOp.AND);
+        binaryOpMap.put(OrNode.class, AArch64ArithmeticOp.OR);
+        binaryOpMap.put(XorNode.class, AArch64ArithmeticOp.XOR);
+        binaryOpMap.put(LeftShiftNode.class, AArch64ArithmeticOp.SHL);
+        binaryOpMap.put(RightShiftNode.class, AArch64ArithmeticOp.ASHR);
+        binaryOpMap.put(UnsignedRightShiftNode.class, AArch64ArithmeticOp.LSHR);
 
         bitFieldOpMap = EconomicMap.create(Equivalence.IDENTITY, 2);
         bitFieldOpMap.put(UnsignedRightShiftNode.class, AArch64BitFieldOp.BitFieldOpCode.UBFX);
@@ -153,6 +159,10 @@ public class AArch64NodeMatchRules extends NodeMatchRules {
         };
     }
 
+    private static boolean isNarrowingLongToInt(NarrowNode narrow) {
+        return narrow.getInputBits() == 64 && narrow.getResultBits() == 32;
+    }
+
     @MatchRule("(And (UnsignedRightShift=shift a Constant=b) Constant=c)")
     @MatchRule("(LeftShift=shift (And a Constant=c) Constant=b)")
     public ComplexMatchResult unsignedBitField(BinaryNode shift, ValueNode a, ConstantNode b, ConstantNode c) {
@@ -194,7 +204,7 @@ public class AArch64NodeMatchRules extends NodeMatchRules {
     @MatchRule("(Sub=binary a (RightShift=shift b Constant))")
     @MatchRule("(Sub=binary a (UnsignedRightShift=shift b Constant))")
     public ComplexMatchResult addSubShift(BinaryNode binary, ValueNode a, BinaryNode shift) {
-        AArch64ArithmeticOp op = nodeOpMap.get(binary.getClass());
+        AArch64ArithmeticOp op = binaryOpMap.get(binary.getClass());
         assert op != null;
         return emitBinaryShift(op, a, shift, false);
     }
@@ -218,7 +228,7 @@ public class AArch64NodeMatchRules extends NodeMatchRules {
     @MatchRule("(Xor=binary a (Not (RightShift=shift b Constant)))")
     @MatchRule("(Xor=binary a (Not (UnsignedRightShift=shift b Constant)))")
     public ComplexMatchResult logicShift(BinaryNode binary, ValueNode a, BinaryNode shift) {
-        AArch64ArithmeticOp op = nodeOpMap.get(binary.getClass());
+        AArch64ArithmeticOp op = binaryOpMap.get(binary.getClass());
         assert op != null;
         ValueNode operand = binary.getX() == a ? binary.getY() : binary.getX();
         boolean isShiftNot = operand instanceof NotNode;
@@ -250,6 +260,75 @@ public class AArch64NodeMatchRules extends NodeMatchRules {
         LIRKind resultKind = LIRKind.fromJavaKind(gen.target().arch, mul.getStackKind());
         return builder -> getArithmeticLIRGenerator().emitBinary(
                         resultKind, AArch64ArithmeticOp.SMULL, true, operand(a), operand(b));
+    }
+
+    @MatchRule("(Add=binary (Narrow=narrow a) (Narrow b))")
+    @MatchRule("(Sub=binary (Narrow=narrow a) (Narrow b))")
+    @MatchRule("(Mul=binary (Narrow=narrow a) (Narrow b))")
+    @MatchRule("(And=binary (Narrow=narrow a) (Narrow b))")
+    @MatchRule("(Or=binary (Narrow=narrow a) (Narrow b))")
+    @MatchRule("(Xor=binary (Narrow=narrow a) (Narrow b))")
+    @MatchRule("(LeftShift=binary (Narrow=narrow a) (Narrow b))")
+    @MatchRule("(RightShift=binary (Narrow=narrow a) (Narrow b))")
+    @MatchRule("(UnsignedRightShift=binary (Narrow=narrow a) (Narrow b))")
+    @MatchRule("(Add=binary a (Narrow=narrow b))")
+    @MatchRule("(Sub=binary a (Narrow=narrow b))")
+    @MatchRule("(Mul=binary a (Narrow=narrow b))")
+    @MatchRule("(And=binary a (Narrow=narrow b))")
+    @MatchRule("(Or=binary a (Narrow=narrow b))")
+    @MatchRule("(Xor=binary a (Narrow=narrow b))")
+    @MatchRule("(LeftShift=binary a (Narrow=narrow b))")
+    @MatchRule("(RightShift=binary a (Narrow=narrow b))")
+    @MatchRule("(UnsignedRightShift=binary a (Narrow=narrow b))")
+    @MatchRule("(Sub=binary (Narrow=narrow a) b)")
+    @MatchRule("(LeftShift=binary (Narrow=narrow a) b)")
+    @MatchRule("(RightShift=binary (Narrow=narrow a) b)")
+    @MatchRule("(UnsignedRightShift=binary (Narrow=narrow a) b)")
+    public ComplexMatchResult elideL2IForBinary(BinaryNode binary, NarrowNode narrow) {
+        assert binary.getStackKind().isNumericInteger();
+
+        ValueNode a = narrow;
+        ValueNode b = binary.getX() == narrow ? binary.getY() : binary.getX();
+        boolean isL2Ia = isNarrowingLongToInt((NarrowNode) a);
+        boolean isL2Ib = (b instanceof NarrowNode) && isNarrowingLongToInt((NarrowNode) b);
+        if (!isL2Ia && !isL2Ib) {
+            return null;
+        }
+        // Get the value of L2I NarrowNode as the src value.
+        ValueNode src1 = isL2Ia ? ((NarrowNode) a).getValue() : a;
+        ValueNode src2 = isL2Ib ? ((NarrowNode) b).getValue() : b;
+
+        AArch64ArithmeticOp op = binaryOpMap.get(binary.getClass());
+        assert op != null;
+        boolean commutative = binary.getNodeClass().isCommutative();
+        LIRKind resultKind = LIRKind.fromJavaKind(gen.target().arch, binary.getStackKind());
+
+        // Must keep the right operator order for un-commutative binary operations.
+        if (a == binary.getX()) {
+            return builder -> getArithmeticLIRGenerator().emitBinary(
+                            resultKind, op, commutative, operand(src1), operand(src2));
+        }
+        return builder -> getArithmeticLIRGenerator().emitBinary(
+                        resultKind, op, commutative, operand(src2), operand(src1));
+    }
+
+    @MatchRule("(Negate=unary (Narrow=narrow value))")
+    @MatchRule("(Not=unary (Narrow=narrow value))")
+    public ComplexMatchResult elideL2IForUnary(UnaryNode unary, NarrowNode narrow) {
+        assert unary.getStackKind().isNumericInteger();
+        if (!isNarrowingLongToInt(narrow)) {
+            return null;
+        }
+
+        AArch64ArithmeticOp op = unary instanceof NegateNode ? AArch64ArithmeticOp.NEG
+                        : AArch64ArithmeticOp.NOT;
+        return builder -> {
+            AllocatableValue input = gen.asAllocatable(operand(narrow.getValue()));
+            LIRKind resultKind = LIRKind.fromJavaKind(gen.target().arch, unary.getStackKind());
+            Variable result = gen.newVariable(resultKind);
+            gen.append(new AArch64ArithmeticOp.UnaryOp(op, result, moveSp(input)));
+            return result;
+        };
     }
 
     @MatchRule("(Mul (Negate a) b)")

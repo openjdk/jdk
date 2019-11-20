@@ -77,7 +77,7 @@ void MethodHandles::verify_klass(MacroAssembler* _masm,
   Klass* klass = SystemDictionary::well_known_klass(klass_id);
   Label L_ok, L_bad;
   BLOCK_COMMENT("verify_klass {");
-  __ verify_oop(obj_reg);
+  __ verify_oop(obj_reg, FILE_AND_LINE);
   __ cmpdi(CCR0, obj_reg, 0);
   __ beq(CCR0, L_bad);
   __ load_klass(temp_reg, obj_reg);
@@ -172,16 +172,16 @@ void MethodHandles::jump_to_lambda_form(MacroAssembler* _masm,
   assert(method_temp == R19_method, "required register for loading method");
 
   // Load the invoker, as MH -> MH.form -> LF.vmentry
-  __ verify_oop(recv);
+  __ verify_oop(recv, FILE_AND_LINE);
   __ load_heap_oop(method_temp, NONZERO(java_lang_invoke_MethodHandle::form_offset_in_bytes()), recv,
                    temp2, noreg, false, IS_NOT_NULL);
-  __ verify_oop(method_temp);
+  __ verify_oop(method_temp, FILE_AND_LINE);
   __ load_heap_oop(method_temp, NONZERO(java_lang_invoke_LambdaForm::vmentry_offset_in_bytes()), method_temp,
                    temp2, noreg, false, IS_NOT_NULL);
-  __ verify_oop(method_temp);
+  __ verify_oop(method_temp, FILE_AND_LINE);
   __ load_heap_oop(method_temp, NONZERO(java_lang_invoke_MemberName::method_offset_in_bytes()), method_temp,
                    temp2, noreg, false, IS_NOT_NULL);
-  __ verify_oop(method_temp);
+  __ verify_oop(method_temp, FILE_AND_LINE);
   __ ld(method_temp, NONZERO(java_lang_invoke_ResolvedMethodName::vmtarget_offset_in_bytes()), method_temp);
 
   if (VerifyMethodHandles && !for_compiler_entry) {
@@ -318,7 +318,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
 
     Register temp1_recv_klass = temp1;
     if (iid != vmIntrinsics::_linkToStatic) {
-      __ verify_oop(receiver_reg);
+      __ verify_oop(receiver_reg, FILE_AND_LINE);
       if (iid == vmIntrinsics::_linkToSpecial) {
         // Don't actually load the klass; just null-check the receiver.
         __ null_check_throw(receiver_reg, -1, temp1,

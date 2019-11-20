@@ -400,8 +400,7 @@ public abstract class JVMOption {
         }
 
         if (GCType != null &&
-            !(prepend.contains("-XX:+UseConcMarkSweepGC") ||
-              prepend.contains("-XX:+UseSerialGC") ||
+            !(prepend.contains("-XX:+UseSerialGC") ||
               prepend.contains("-XX:+UseParallelGC") ||
               prepend.contains("-XX:+UseG1GC"))) {
             explicitGC = GCType;

@@ -2641,6 +2641,15 @@ void LIR_Assembler::comp_op(LIR_Condition condition, LIR_Opr opr1, LIR_Opr opr2,
       LIR_Const* c = opr2->as_constant_ptr();
       if (c->type() == T_INT) {
         __ cmpl(reg1, c->as_jint());
+      } else if (c->type() == T_METADATA) {
+        // All we need for now is a comparison with NULL for equality.
+        assert(condition == lir_cond_equal || condition == lir_cond_notEqual, "oops");
+        Metadata* m = c->as_metadata();
+        if (m == NULL) {
+          __ cmpptr(reg1, (int32_t)0);
+        } else {
+          ShouldNotReachHere();
+        }
       } else if (is_reference_type(c->type())) {
         // In 64bit oops are single register
         jobject o = c->as_jobject();

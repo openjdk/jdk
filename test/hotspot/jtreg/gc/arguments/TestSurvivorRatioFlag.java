@@ -126,7 +126,6 @@ public class TestSurvivorRatioFlag {
             GCTypes.YoungGCType type = GCTypes.YoungGCType.getYoungGCType();
             switch (type) {
                 case DefNew:
-                case ParNew:
                     verifyDefNewSurvivorRatio(expectedRatio);
                     break;
                 case PSNew:

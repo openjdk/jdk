@@ -335,9 +335,9 @@ MemoryUsage CollectedHeap::memory_usage() {
 #ifndef PRODUCT
 void CollectedHeap::check_for_non_bad_heap_word_value(HeapWord* addr, size_t size) {
   if (CheckMemoryInitialization && ZapUnusedHeapArea) {
-    for (size_t slot = 0; slot < size; slot += 1) {
-      assert((*(intptr_t*) (addr + slot)) == ((intptr_t) badHeapWordVal),
-             "Found non badHeapWordValue in pre-allocation check");
+    // please note mismatch between size (in 32/64 bit words), and ju_addr that always point to a 32 bit word
+    for (juint* ju_addr = reinterpret_cast<juint*>(addr); ju_addr < reinterpret_cast<juint*>(addr + size); ++ju_addr) {
+      assert(*ju_addr == badHeapWordVal, "Found non badHeapWordValue in pre-allocation check");
     }
   }
 }

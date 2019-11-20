@@ -34,8 +34,10 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.net.DatagramSocket;
 import java.net.MulticastSocket;
+import java.net.NetworkInterface;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketException;
 import java.net.SocketOption;
 import java.nio.channels.DatagramChannel;
 import java.nio.channels.ServerSocketChannel;
@@ -45,6 +47,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import static java.lang.Boolean.*;
@@ -57,9 +60,26 @@ public class AfterClose {
 
     static Map<SocketOption<?>,List<Object>> OPTION_VALUES_MAP = optionValueMap();
 
+    static boolean supportsMulticast(NetworkInterface ni) {
+        try {
+            return ni.supportsMulticast();
+        } catch (SocketException e) {
+            return false;
+        }
+    }
+
+    static List<Object> listNetworkInterfaces() {
+        try {
+            return NetworkInterface.networkInterfaces()
+                    .filter(AfterClose::supportsMulticast)
+                    .collect(Collectors.toList());
+        } catch (Exception e) { }
+        return List.of();
+    }
+
     static Map<SocketOption<?>,List<Object>> optionValueMap() {
         Map<SocketOption<?>,List<Object>> map = new HashMap<>();
-        map.put(IP_MULTICAST_IF,   listOf(TRUE, FALSE) );
+        map.put(IP_MULTICAST_IF,   listNetworkInterfaces() );
         map.put(IP_MULTICAST_LOOP, listOf(TRUE, FALSE) );
         map.put(IP_MULTICAST_TTL,  listOf(0, 100, 255) );
         map.put(IP_TOS,            listOf(0, 101, 255) );

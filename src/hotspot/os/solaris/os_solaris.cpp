@@ -2072,7 +2072,7 @@ int os::Solaris::commit_memory_impl(char* addr, size_t bytes, bool exec) {
   char *res = Solaris::mmap_chunk(addr, size, MAP_PRIVATE|MAP_FIXED, prot);
   if (res != NULL) {
     if (UseNUMAInterleaving) {
-      numa_make_global(addr, bytes);
+        numa_make_global(addr, bytes);
     }
     return 0;
   }
@@ -2265,6 +2265,10 @@ int os::numa_get_group_id() {
     return 0;
   }
   return ids[os::random() % r];
+}
+
+int os::numa_get_group_id_for_address(const void* address) {
+  return 0;
 }
 
 // Request information about the page.
@@ -3684,15 +3688,11 @@ void os::Solaris::install_signal_handlers() {
   // Log that signal checking is off only if -verbose:jni is specified.
   if (CheckJNICalls) {
     if (libjsig_is_loaded) {
-      if (PrintJNIResolving) {
-        tty->print_cr("Info: libjsig is activated, all active signal checking is disabled");
-      }
+      log_debug(jni, resolve)("Info: libjsig is activated, all active signal checking is disabled");
       check_signals = false;
     }
     if (AllowUserSignalHandlers) {
-      if (PrintJNIResolving) {
-        tty->print_cr("Info: AllowUserSignalHandlers is activated, all active signal checking is disabled");
-      }
+      log_debug(jni, resolve)("Info: AllowUserSignalHandlers is activated, all active signal checking is disabled");
       check_signals = false;
     }
   }
@@ -4925,10 +4925,12 @@ void Parker::park(bool isAbsolute, jlong time) {
   // the ThreadBlockInVM() CTOR and DTOR may grab Threads_lock.
   ThreadBlockInVM tbivm(jt);
 
+  // Can't access interrupt state now that we are _thread_blocked. If we've
+  // been interrupted since we checked above then _counter will be > 0.
+
   // Don't wait if cannot get lock since interference arises from
-  // unblocking.  Also. check interrupt before trying wait
-  if (jt->is_interrupted(false) ||
-      os::Solaris::mutex_trylock(_mutex) != 0) {
+  // unblocking.
+  if (os::Solaris::mutex_trylock(_mutex) != 0) {
     return;
   }
 

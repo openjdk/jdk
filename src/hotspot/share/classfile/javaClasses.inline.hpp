@@ -264,7 +264,7 @@ inline int Backtrace::cpref_at(unsigned int merged) {
   return extract_low_short_from_int(merged);
 }
 
-inline int Backtrace::get_line_number(const methodHandle& method, int bci) {
+inline int Backtrace::get_line_number(Method* method, int bci) {
   int line_number = 0;
   if (method->is_native()) {
     // Negative value different from -1 below, enabling Java code in

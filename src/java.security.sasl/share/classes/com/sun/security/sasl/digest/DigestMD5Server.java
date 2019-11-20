@@ -25,10 +25,9 @@
 
 package com.sun.security.sasl.digest;
 
-import java.security.NoSuchAlgorithmException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
+import java.security.NoSuchAlgorithmException;
 import java.util.StringTokenizer;
 import java.util.ArrayList;
 import java.util.List;
@@ -39,6 +38,8 @@ import java.util.logging.Level;
 
 import javax.security.sasl.*;
 import javax.security.auth.callback.*;
+
+import static java.nio.charset.StandardCharsets.*;
 
 /**
   * An implementation of the DIGEST-MD5 server SASL mechanism.
@@ -171,7 +172,7 @@ final class DigestMD5Server extends DigestMD5Base implements SaslServer {
             }
         }
 
-        encoding = (useUTF8 ? "UTF8" : "8859_1");
+        encoding = (useUTF8 ? UTF_8 : ISO_8859_1);
 
         // By default, use server name as realm
         if (serverRealms.isEmpty()) {
@@ -229,9 +230,6 @@ final class DigestMD5Server extends DigestMD5Base implements SaslServer {
 
                 step = 3;
                 return challenge;
-            } catch (UnsupportedEncodingException e) {
-                throw new SaslException(
-                    "DIGEST-MD5: Error encoding challenge", e);
             } catch (IOException e) {
                 throw new SaslException(
                     "DIGEST-MD5: Error generating challenge", e);
@@ -247,11 +245,6 @@ final class DigestMD5Server extends DigestMD5Base implements SaslServer {
                 byte[][] responseVal = parseDirectives(response, DIRECTIVE_KEY,
                     null, REALM);
                 challenge = validateClientResponse(responseVal);
-            } catch (SaslException e) {
-                throw e;
-            } catch (UnsupportedEncodingException e) {
-                throw new SaslException(
-                    "DIGEST-MD5: Error validating client response", e);
             } finally {
                 step = 0;  // Set to invalid state
             }
@@ -298,7 +291,7 @@ final class DigestMD5Server extends DigestMD5Base implements SaslServer {
      *        auth-param        = token "=" ( token | quoted-string )
      */
     private byte[] generateChallenge(List<String> realms, String qopStr,
-        String cipherStr) throws UnsupportedEncodingException, IOException {
+        String cipherStr) throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
 
         // Realms (>= 0)
@@ -389,7 +382,7 @@ final class DigestMD5Server extends DigestMD5Base implements SaslServer {
      * @return response-value ('rspauth') for client to validate
      */
     private byte[] validateClientResponse(byte[][] responseVal)
-        throws SaslException, UnsupportedEncodingException {
+        throws SaslException {
 
         /* CHARSET: optional atmost once */
         if (responseVal[CHARSET] != null) {

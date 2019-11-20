@@ -2975,70 +2975,6 @@ By default, this option is disabled and all pages are committed as the
 application uses the heap space.
 .RS
 .RE
-.TP
-.B \f[CB]\-XX:+CMSClassUnloadingEnabled\f[R]
-Enables class unloading when using the concurrent mark\-sweep (CMS)
-garbage collector.
-This option is enabled by default.
-To disable class unloading for the CMS garbage collector, specify
-\f[CB]\-XX:\-CMSClassUnloadingEnabled\f[R].
-.RS
-.RE
-.TP
-.B \f[CB]\-XX:CMSExpAvgFactor=\f[R]\f[I]percent\f[R]
-Sets the percentage of time (0 to 100) used to weight the current sample
-when computing exponential averages for the concurrent collection
-statistics.
-By default, the exponential averages factor is set to 25%.
-The following example shows how to set the factor to 15%:
-.RS
-.RS
-.PP
-\f[CB]\-XX:CMSExpAvgFactor=15\f[R]
-.RE
-.RE
-.TP
-.B \f[CB]\-XX:CMSInitiatingOccupancyFraction=\f[R]\f[I]percent\f[R]
-Sets the percentage of the old generation occupancy (0 to 100) at which
-to start a CMS collection cycle.
-The default value is set to \-1.
-Any negative value (including the default) implies that the option
-\f[CB]\-XX:CMSTriggerRatio\f[R] is used to define the value of the
-initiating occupancy fraction.
-.RS
-.PP
-The following example shows how to set the factor to 20%:
-.RS
-.PP
-\f[CB]\-XX:CMSInitiatingOccupancyFraction=20\f[R]
-.RE
-.RE
-.TP
-.B \f[CB]\-XX:CMSIncrementalDutySafetyFactor=\f[R]\f[I]percent\f[R]
-Sets the percentage (0 to 100) used to add conservatism when computing
-the duty cycle.
-The default value is 10.
-.RS
-.RE
-.TP
-.B \f[CB]\-XX:+CMSScavengeBeforeRemark\f[R]
-Enables scavenging attempts before the CMS remark step.
-By default, this option is disabled.
-.RS
-.RE
-.TP
-.B \f[CB]\-XX:CMSTriggerRatio=percent\f[R]
-Sets the percentage (0 to 100) of the value specified by the option
-\f[CB]\-XX:MinHeapFreeRatio\f[R] that\[aq]s allocated before a CMS
-collection cycle commences.
-The default value is set to 80%.
-.RS
-.PP
-The following example shows how to set the occupancy fraction to 75%:
-.RS
-.PP
-\f[CB]\-XX:CMSTriggerRatio=75\f[R]
-.RE
 .RE
 .TP
 .B \f[CB]\-XX:ConcGCThreads=\f[R]\f[I]threads\f[R]
@@ -3070,7 +3006,6 @@ still performs GC when necessary.
 Enables invoking of concurrent GC by using the \f[CB]System.gc()\f[R]
 request.
 This option is disabled by default and can be enabled only with the
-deprecated \f[CB]\-XX:+UseConcMarkSweepGC\f[R] option and the
 \f[CB]\-XX:+UseG1GC\f[R] option.
 .RS
 .RE
@@ -3460,8 +3395,7 @@ amount of memory used for the Java heap for small heaps:
 .B \f[CB]\-XX:MaxTenuringThreshold=\f[R]\f[I]threshold\f[R]
 Sets the maximum tenuring threshold for use in adaptive GC sizing.
 The largest value is 15.
-The default value is 15 for the parallel (throughput) collector, and 6
-for the CMS collector.
+The default value is 15 for the parallel (throughput) collector.
 .RS
 .PP
 The following example shows how to set the maximum tenuring threshold to
@@ -3724,13 +3658,6 @@ See the \f[CB]\-XX:SurvivorRatio\f[R] option.
 .RS
 .RE
 .TP
-.B \f[CB]\-XX:+UseCMSInitiatingOccupancyOnly\f[R]
-Enables the use of the occupancy value as the only criterion for
-initiating the CMS collector.
-By default, this option is disabled and other criteria may be used.
-.RS
-.RE
-.TP
 .B \f[CB]\-XX:+UseG1GC\f[R]
 Enables the use of the garbage\-first (G1) garbage collector.
 It\[aq]s a server\-style garbage collector, targeted for multiprocessor
@@ -3974,21 +3901,6 @@ The replacement Unified Logging syntax is
 \f[CB]\-Xlog:class+loader+constraints=info\f[R].
 See \f[B]Enable Logging with the JVM Unified Logging Framework\f[R].
 .RE
-.TP
-.B \f[CB]\-XX:+UseConcMarkSweepGC\f[R]
-Enables the use of the CMS garbage collector for the old generation.
-CMS is an alternative to the default garbage collector (G1), which also
-focuses on meeting application latency requirements.
-By default, this option is disabled and the collector is selected
-automatically based on the configuration of the machine and type of the
-JVM.
-The CMS garbage collector is deprecated.
-.RS
-.RE
-.SH OBSOLETE JAVA OPTIONS
-.PP
-These \f[CB]java\f[R] options are still accepted but ignored, and a
-warning is issued when they\[aq]re used.
 .TP
 .B \f[CB]\-XX:+UseMembar\f[R]
 Enabled issuing membars on thread\-state transitions.

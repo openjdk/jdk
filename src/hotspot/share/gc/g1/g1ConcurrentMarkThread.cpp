@@ -393,7 +393,7 @@ void G1ConcurrentMarkThread::run_service() {
     }
 
     // Update the number of full collections that have been
-    // completed. This will also notify the FullGCCount_lock in case a
+    // completed. This will also notify the G1OldGCCount_lock in case a
     // Java thread is waiting for a full GC to happen (e.g., it
     // called System.gc() with +ExplicitGCInvokesConcurrent).
     {

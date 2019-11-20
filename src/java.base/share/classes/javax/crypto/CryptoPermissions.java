@@ -40,6 +40,8 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.IOException;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 /**
  * This class contains CryptoPermission objects, organized into
  * PermissionCollections according to algorithm names.
@@ -99,7 +101,7 @@ implements Serializable {
     void load(InputStream in)
         throws IOException, CryptoPolicyParser.ParsingException {
         CryptoPolicyParser parser = new CryptoPolicyParser();
-        parser.read(new BufferedReader(new InputStreamReader(in, "UTF-8")));
+        parser.read(new BufferedReader(new InputStreamReader(in, UTF_8)));
 
         CryptoPermission[] parsingResult = parser.getPermissions();
         for (int i = 0; i < parsingResult.length; i++) {

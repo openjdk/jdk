@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 7025809 8028543 6415644 8028544 8029942 8187951 8193291 8196551
+ * @bug 7025809 8028543 6415644 8028544 8029942 8187951 8193291 8196551 8233096
  * @summary Test latest, latestSupported, underscore as keyword, etc.
  * @author  Joseph D. Darcy
  * @modules java.compiler
@@ -31,11 +31,12 @@
  */
 
 import java.util.*;
+import java.util.function.Predicate;
 import javax.lang.model.SourceVersion;
 import static javax.lang.model.SourceVersion.*;
 
 /**
- * Verify latest[Supported] behavior.
+ * Verify behavior of latest[Supported] and other methods.
  */
 public class TestSourceVersion {
     public static void main(String... args) {
@@ -43,6 +44,7 @@ public class TestSourceVersion {
         testVersionVaryingKeywords();
         testRestrictedKeywords();
         testVar();
+        testYield();
     }
 
     private static void testLatestSupported() {
@@ -52,8 +54,10 @@ public class TestSourceVersion {
         SourceVersion latestSupported = SourceVersion.latestSupported();
 
         if (latest == last &&
-            latestSupported == SourceVersion.valueOf("RELEASE_" + Runtime.version().feature()) &&
-            (latest == latestSupported || (latest.ordinal() - latestSupported.ordinal() == 1)) )
+            latestSupported == SourceVersion.valueOf("RELEASE_" +
+                                                     Runtime.version().feature()) &&
+            (latest == latestSupported ||
+             (latest.ordinal() - latestSupported.ordinal() == 1)) )
             return;
         else {
             throw new RuntimeException("Unexpected release value(s) found:\n" +
@@ -73,14 +77,14 @@ public class TestSourceVersion {
             String key = entry.getKey();
             SourceVersion value = entry.getValue();
 
-            check(true, isKeyword(key), "keyword", latest());
-            check(false, isName(key),   "name",    latest());
+            check(true,  key, (String s) -> isKeyword(s), "keyword", latest());
+            check(false, key, (String s) -> isName(s),    "name",    latest());
 
             for(SourceVersion version : SourceVersion.values()) {
                 boolean isKeyword = version.compareTo(value) >= 0;
 
-                check(isKeyword,  isKeyword(key, version), "keyword", version);
-                check(!isKeyword, isName(key, version),    "name",    version);
+                check(isKeyword,  key, (String s) -> isKeyword(s, version), "keyword", version);
+                check(!isKeyword, key, (String s) -> isName(s, version),    "name",    version);
             }
         }
     }
@@ -98,31 +102,47 @@ public class TestSourceVersion {
             Set.of("open", "module", "requires", "transitive", "exports",
                    "opens", "to", "uses", "provides", "with");
 
-        for(String key : restrictedKeywords) {
-            for(SourceVersion version : SourceVersion.values()) {
-                check(false, isKeyword(key, version), "keyword", version);
-                check(true,  isName(key, version),    "name",    version);
+        for (String key : restrictedKeywords) {
+            for (SourceVersion version : SourceVersion.values()) {
+                check(false, key, (String s) -> isKeyword(s, version), "keyword", version);
+                check(true,  key, (String s) -> isName(s, version),    "name",    version);
             }
         }
     }
 
     private static void testVar() {
+        for (SourceVersion version : SourceVersion.values()) {
+            Predicate<String> isKeywordVersion = (String s) -> isKeyword(s, version);
+            Predicate<String> isNameVersion = (String s) -> isName(s, version);
 
-        for(SourceVersion version : SourceVersion.values()) {
-            check(false, isKeyword("var",     version), "keyword", version);
-            check(false, isKeyword("foo.var", version), "keyword", version);
-            check(false, isKeyword("var.foo", version), "keyword", version);
-
-            check(true, isName("var", version),     "name", version);
-            check(true, isName("foo.var", version), "name", version);
-            check(true, isName("var.foo", version), "name", version);
+            for (String name : List.of("var", "foo.var", "var.foo")) {
+                check(false, name, isKeywordVersion, "keyword", version);
+                check(true, name,  isNameVersion, "name", version);
+            }
         }
     }
 
-    private static void check(boolean result, boolean expected,
-                              String message, SourceVersion version) {
+    private static void testYield() {
+        for (SourceVersion version : SourceVersion.values()) {
+            Predicate<String> isKeywordVersion = (String s) -> isKeyword(s, version);
+            Predicate<String> isNameVersion = (String s) -> isName(s, version);
+
+            for  (String name : List.of("yield", "foo.yield", "yield.foo")) {
+                check(false, name, isKeywordVersion, "keyword", version);
+                check(true, name,  isNameVersion, "name", version);
+            }
+        }
+    }
+
+    private static void check(boolean expected,
+                              String input,
+                              Predicate<String> predicate,
+                              String message,
+                              SourceVersion version) {
+        boolean result  = predicate.test(input);
         if (result != expected) {
-            throw new RuntimeException("Unexpected " + message +  "-ness of _ on " + version);
+            throw new RuntimeException("Unexpected " + message +  "-ness of " + input +
+                                       " on " + version);
         }
     }
 }

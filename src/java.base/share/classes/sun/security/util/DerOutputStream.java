@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,14 +28,16 @@ package sun.security.util;
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
 import java.io.IOException;
+import java.math.BigInteger;
+import java.nio.charset.Charset;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.TimeZone;
 import java.util.Comparator;
 import java.util.Arrays;
-import java.math.BigInteger;
 import java.util.Locale;
 
+import static java.nio.charset.StandardCharsets.*;
 
 /**
  * Output stream marshaling DER-encoded data.  This is eventually provided
@@ -398,14 +400,14 @@ extends ByteArrayOutputStream implements DerEncoder {
      * Marshals a string as a DER encoded UTF8String.
      */
     public void putUTF8String(String s) throws IOException {
-        writeString(s, DerValue.tag_UTF8String, "UTF8");
+        writeString(s, DerValue.tag_UTF8String, UTF_8);
     }
 
     /**
      * Marshals a string as a DER encoded PrintableString.
      */
     public void putPrintableString(String s) throws IOException {
-        writeString(s, DerValue.tag_PrintableString, "ASCII");
+        writeString(s, DerValue.tag_PrintableString, US_ASCII);
     }
 
     /**
@@ -416,28 +418,28 @@ extends ByteArrayOutputStream implements DerEncoder {
          * Works for characters that are defined in both ASCII and
          * T61.
          */
-        writeString(s, DerValue.tag_T61String, "ISO-8859-1");
+        writeString(s, DerValue.tag_T61String, ISO_8859_1);
     }
 
     /**
      * Marshals a string as a DER encoded IA5String.
      */
     public void putIA5String(String s) throws IOException {
-        writeString(s, DerValue.tag_IA5String, "ASCII");
+        writeString(s, DerValue.tag_IA5String, US_ASCII);
     }
 
     /**
      * Marshals a string as a DER encoded BMPString.
      */
     public void putBMPString(String s) throws IOException {
-        writeString(s, DerValue.tag_BMPString, "UnicodeBigUnmarked");
+        writeString(s, DerValue.tag_BMPString, UTF_16BE);
     }
 
     /**
      * Marshals a string as a DER encoded GeneralString.
      */
     public void putGeneralString(String s) throws IOException {
-        writeString(s, DerValue.tag_GeneralString, "ASCII");
+        writeString(s, DerValue.tag_GeneralString, US_ASCII);
     }
 
     /**
@@ -448,10 +450,10 @@ extends ByteArrayOutputStream implements DerEncoder {
      * @param enc the name of the encoder that should be used corresponding
      * to the above tag.
      */
-    private void writeString(String s, byte stringTag, String enc)
+    private void writeString(String s, byte stringTag, Charset charset)
         throws IOException {
 
-        byte[] data = s.getBytes(enc);
+        byte[] data = s.getBytes(charset);
         write(stringTag);
         putLength(data.length);
         write(data);
@@ -502,7 +504,7 @@ extends ByteArrayOutputStream implements DerEncoder {
 
         SimpleDateFormat sdf = new SimpleDateFormat(pattern, Locale.US);
         sdf.setTimeZone(tz);
-        byte[] time = (sdf.format(d)).getBytes("ISO-8859-1");
+        byte[] time = (sdf.format(d)).getBytes(ISO_8859_1);
 
         /*
          * Write the formatted date.

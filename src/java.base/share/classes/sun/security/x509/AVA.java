@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,8 @@ import java.io.Reader;
 import java.security.AccessController;
 import java.text.Normalizer;
 import java.util.*;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 import sun.security.action.GetBooleanAction;
 import sun.security.util.*;
@@ -525,14 +527,13 @@ public class AVA implements DerEncoder {
         return null;
     }
 
-    private static String getEmbeddedHexString(List<Byte> hexList)
-                                                throws IOException {
+    private static String getEmbeddedHexString(List<Byte> hexList) {
         int n = hexList.size();
         byte[] hexBytes = new byte[n];
         for (int i = 0; i < n; i++) {
-                hexBytes[i] = hexList.get(i).byteValue();
+            hexBytes[i] = hexList.get(i).byteValue();
         }
-        return new String(hexBytes, "UTF8");
+        return new String(hexBytes, UTF_8);
     }
 
     private static boolean isTerminator(int ch, int format) {
@@ -752,7 +753,7 @@ public class AVA implements DerEncoder {
              */
             String valStr = null;
             try {
-                valStr = new String(value.getDataBytes(), "UTF8");
+                valStr = new String(value.getDataBytes(), UTF_8);
             } catch (IOException ie) {
                 throw new IllegalArgumentException("DER Value conversion");
             }
@@ -804,13 +805,7 @@ public class AVA implements DerEncoder {
 
                     // embed non-printable/non-escaped char
                     // as escaped hex pairs for debugging
-                    byte[] valueBytes = null;
-                    try {
-                        valueBytes = Character.toString(c).getBytes("UTF8");
-                    } catch (IOException ie) {
-                        throw new IllegalArgumentException
-                                        ("DER Value conversion");
-                    }
+                    byte[] valueBytes = Character.toString(c).getBytes(UTF_8);
                     for (int j = 0; j < valueBytes.length; j++) {
                         sbuffer.append('\\');
                         char hexChar = Character.forDigit
@@ -905,7 +900,7 @@ public class AVA implements DerEncoder {
              */
             String valStr = null;
             try {
-                valStr = new String(value.getDataBytes(), "UTF8");
+                valStr = new String(value.getDataBytes(), UTF_8);
             } catch (IOException ie) {
                 throw new IllegalArgumentException("DER Value conversion");
             }
@@ -966,13 +961,7 @@ public class AVA implements DerEncoder {
 
                     previousWhite = false;
 
-                    byte[] valueBytes = null;
-                    try {
-                        valueBytes = Character.toString(c).getBytes("UTF8");
-                    } catch (IOException ie) {
-                        throw new IllegalArgumentException
-                                        ("DER Value conversion");
-                    }
+                    byte[] valueBytes = Character.toString(c).getBytes(UTF_8);
                     for (int j = 0; j < valueBytes.length; j++) {
                         sbuffer.append('\\');
                         sbuffer.append(Character.forDigit
@@ -1116,7 +1105,7 @@ public class AVA implements DerEncoder {
 
                         // embed escaped hex pairs
                         byte[] valueBytes =
-                                Character.toString(c).getBytes("UTF8");
+                                Character.toString(c).getBytes(UTF_8);
                         for (int j = 0; j < valueBytes.length; j++) {
                             sbuffer.append('\\');
                             char hexChar = Character.forDigit

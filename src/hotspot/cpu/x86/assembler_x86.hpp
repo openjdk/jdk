@@ -26,7 +26,7 @@
 #define CPU_X86_ASSEMBLER_X86_HPP
 
 #include "asm/register.hpp"
-#include "vm_version_x86.hpp"
+#include "runtime/vm_version.hpp"
 
 class BiasedLockingCounters;
 
@@ -1592,6 +1592,9 @@ private:
 
 #ifdef _LP64
   void notq(Register dst);
+
+  void btsq(Address dst, int imm8);
+  void btrq(Address dst, int imm8);
 #endif
 
   void orl(Address dst, int32_t imm32);

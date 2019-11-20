@@ -63,19 +63,6 @@ import gc.testlibrary.PerfCounters;
  * @run main/othervm -XX:+UsePerfData -XX:+UseG1GC gc.TestPolicyNamePerfCounter GarbageFirst
  */
 
-/* @test TestPolicyNamePerfCounterCMS
- * @bug 8210192
- * @comment Graal does not support CMS
- * @requires vm.gc.ConcMarkSweep & !vm.graal.enabled
- * @library /test/lib /
- * @summary Tests that sun.gc.policy.name returns expected values for different GCs.
- * @modules java.base/jdk.internal.misc
- *          java.compiler
- *          java.management/sun.management
- *          jdk.internal.jvmstat/sun.jvmstat.monitor
- * @run main/othervm -XX:+UsePerfData -XX:+UseConcMarkSweepGC gc.TestPolicyNamePerfCounter ParNew:CMS
- */
-
 public class TestPolicyNamePerfCounter {
     public static void main(String[] args) throws Exception {
         if (args.length != 1) {

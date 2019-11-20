@@ -62,6 +62,7 @@ enum CompLevel {
   CompLevel_full_optimization = 4          // C2 or JVMCI
 };
 
+#ifdef TIERED
 class CompilationModeFlag : AllStatic {
   static bool _quick_only;
   static bool _high_only;
@@ -79,6 +80,7 @@ public:
 
   static void set_high_only_quick_internal(bool x) { _high_only_quick_internal = x; }
 };
+#endif
 
 extern CompLevel CompLevel_highest_tier;
 extern CompLevel CompLevel_initial_compile;
@@ -147,7 +149,7 @@ public:
   static void ergo_initialize();
 
 private:
-  static void set_tiered_flags();
+  TIERED_ONLY(static void set_tiered_flags();)
 };
 
 #endif // SHARE_COMPILER_COMPILERDEFINITIONS_HPP

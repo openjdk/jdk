@@ -25,7 +25,7 @@
  * @test
  * bug 8203444
  * @summary Unit tests for instance versions of String#format
- * @compile --enable-preview -source 14 Formatted.java
+ * @compile --enable-preview -source ${jdk.version} Formatted.java
  * @run main/othervm --enable-preview Formatted
  */
 

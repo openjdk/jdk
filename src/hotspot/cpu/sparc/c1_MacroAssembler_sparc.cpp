@@ -66,9 +66,9 @@ void C1_MacroAssembler::build_frame(int frame_size_in_bytes, int bang_size_in_by
 
 
 void C1_MacroAssembler::verified_entry() {
-  if (C1Breakpoint) breakpoint_trap();
-  // build frame
-  verify_FPU(0, "method_entry");
+  if (C1Breakpoint) {
+    breakpoint_trap();
+  }
 }
 
 

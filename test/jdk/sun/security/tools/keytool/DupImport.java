@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,9 +51,9 @@ public class DupImport {
         Files.deleteIfExists(Paths.get("dup.ks"));
 
         // Create chain: root -> int -> me
-        run("-genkeypair -alias me -dname CN=Me");
-        run("-genkeypair -alias int -dname CN=Int");
-        run("-genkeypair -alias root -dname CN=Root");
+        run("-genkeypair -keyalg DSA -alias me -dname CN=Me");
+        run("-genkeypair -keyalg DSA -alias int -dname CN=Int");
+        run("-genkeypair -keyalg DSA -alias root -dname CN=Root");
 
         run("-certreq -alias int -file int.req");
         run("-gencert -infile int.req -alias root -rfc -outfile int.resp");

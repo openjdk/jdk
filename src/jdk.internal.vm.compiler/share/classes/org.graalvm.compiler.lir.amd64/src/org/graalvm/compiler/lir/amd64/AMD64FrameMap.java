@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,17 +78,15 @@ import jdk.vm.ci.code.StackSlot;
  */
 public class AMD64FrameMap extends FrameMap {
 
+    private final boolean useStandardFrameProlog;
     private StackSlot rbpSpillSlot;
 
-    public AMD64FrameMap(CodeCacheProvider codeCache, RegisterConfig registerConfig, ReferenceMapBuilderFactory referenceMapFactory) {
-        this(codeCache, registerConfig, referenceMapFactory, false);
-    }
-
-    public AMD64FrameMap(CodeCacheProvider codeCache, RegisterConfig registerConfig, ReferenceMapBuilderFactory referenceMapFactory, boolean useBasePointer) {
+    public AMD64FrameMap(CodeCacheProvider codeCache, RegisterConfig registerConfig, ReferenceMapBuilderFactory referenceMapFactory, boolean useStandardFrameProlog) {
         super(codeCache, registerConfig, referenceMapFactory);
         // (negative) offset relative to sp + total frame size
-        initialSpillSize = returnAddressSize() + (useBasePointer ? getTarget().arch.getWordSize() : 0);
-        spillSize = initialSpillSize;
+        this.useStandardFrameProlog = useStandardFrameProlog;
+        this.initialSpillSize = returnAddressSize() + (useStandardFrameProlog ? getTarget().arch.getWordSize() : 0);
+        this.spillSize = initialSpillSize;
     }
 
     @Override
@@ -140,5 +138,9 @@ public class AMD64FrameMap extends FrameMap {
         assert spillSize == initialSpillSize || spillSize == initialSpillSize +
                         spillSlotSize(LIRKind.value(AMD64Kind.QWORD)) : "Deoptimization rescue slot must be the first or second (if there is an RBP spill slot) stack slot";
         return allocateSpillSlot(LIRKind.value(AMD64Kind.QWORD));
+    }
+
+    public boolean useStandardFrameProlog() {
+        return useStandardFrameProlog;
     }
 }

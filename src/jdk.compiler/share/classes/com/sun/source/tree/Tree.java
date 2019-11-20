@@ -240,20 +240,10 @@ public interface Tree {
         SWITCH(SwitchTree.class),
 
         /**
-         * {@preview Associated with switch expressions, a preview feature of
-         *           the Java language.
-         *
-         *           This enum constant is associated with <i>switch expressions</i>, a preview
-         *           feature of the Java language. Preview features
-         *           may be removed in a future release, or upgraded to permanent
-         *           features of the Java language.}
-         *
          * Used for instances of {@link SwitchExpressionTree}.
          *
          * @since 12
          */
-        @jdk.internal.PreviewFeature(feature=jdk.internal.PreviewFeature.Feature.SWITCH_EXPRESSIONS)
-        @SuppressWarnings("preview")
         SWITCH_EXPRESSION(SwitchExpressionTree.class),
 
         /**
@@ -662,20 +652,10 @@ public interface Tree {
         OTHER(null),
 
         /**
-         * {@preview Associated with switch expressions, a preview feature of
-         *           the Java language.
-         *
-         *           This enum constant is associated with <i>switch expressions</i>, a preview
-         *           feature of the Java language. Preview features
-         *           may be removed in a future release, or upgraded to permanent
-         *           features of the Java language.}
-         *
          * Used for instances of {@link YieldTree}.
          *
          * @since 13
          */
-        @jdk.internal.PreviewFeature(feature=jdk.internal.PreviewFeature.Feature.SWITCH_EXPRESSIONS)
-        @SuppressWarnings("preview")
         YIELD(YieldTree.class);
 
 

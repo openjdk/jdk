@@ -101,7 +101,6 @@ public class TestNewRatioFlag {
             int expectedRatio = Integer.valueOf(args[0]);
             switch (GCTypes.YoungGCType.getYoungGCType()) {
                 case DefNew:
-                case ParNew:
                     verifyDefNewNewRatio(expectedRatio);
                     break;
                 case PSNew:

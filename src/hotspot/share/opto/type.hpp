@@ -290,6 +290,7 @@ public:
   const TypeF      *isa_float_constant() const;  // Returns NULL if not a FloatCon
   const TypeTuple  *is_tuple() const;            // Collection of fields, NOT a pointer
   const TypeAry    *is_ary() const;              // Array, NOT array pointer
+  const TypeAry    *isa_ary() const;             // Returns NULL of not ary
   const TypeVect   *is_vect() const;             // Vector
   const TypeVect   *isa_vect() const;            // Returns NULL if not a Vector
   const TypePtr    *is_ptr() const;              // Asserts it is a ptr type
@@ -1613,6 +1614,10 @@ inline const TypeTuple *Type::is_tuple() const {
 inline const TypeAry *Type::is_ary() const {
   assert( _base == Array , "Not an Array" );
   return (TypeAry*)this;
+}
+
+inline const TypeAry *Type::isa_ary() const {
+  return ((_base == Array) ? (TypeAry*)this : NULL);
 }
 
 inline const TypeVect *Type::is_vect() const {

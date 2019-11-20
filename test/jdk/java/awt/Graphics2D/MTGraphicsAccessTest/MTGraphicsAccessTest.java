@@ -197,7 +197,7 @@ public class MTGraphicsAccessTest {
                 while (!done) {
                     try {
                         testRunnable.run();
-                        yield();
+                        Thread.yield();
                     } catch (Throwable t) {
                         numexceptions++;
                         t.printStackTrace();

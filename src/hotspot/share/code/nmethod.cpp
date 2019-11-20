@@ -964,15 +964,16 @@ void nmethod::print_nmethod(bool printmethod) {
 
 #if defined(SUPPORT_DATA_STRUCTS)
   if (AbstractDisassembler::show_structs()) {
-    if (printmethod || PrintDebugInfo || CompilerOracle::has_option_string(_method, "PrintDebugInfo")) {
+    methodHandle mh(Thread::current(), _method);
+    if (printmethod || PrintDebugInfo || CompilerOracle::has_option_string(mh, "PrintDebugInfo")) {
       print_scopes();
       tty->print_cr("- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ");
     }
-    if (printmethod || PrintRelocations || CompilerOracle::has_option_string(_method, "PrintRelocations")) {
+    if (printmethod || PrintRelocations || CompilerOracle::has_option_string(mh, "PrintRelocations")) {
       print_relocations();
       tty->print_cr("- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ");
     }
-    if (printmethod || PrintDependencies || CompilerOracle::has_option_string(_method, "PrintDependencies")) {
+    if (printmethod || PrintDependencies || CompilerOracle::has_option_string(mh, "PrintDependencies")) {
       print_dependencies();
       tty->print_cr("- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ");
     }
@@ -1302,9 +1303,8 @@ bool nmethod::make_not_entrant_or_zombie(int state) {
     return false;
   }
 
-  // Make sure neither the nmethod nor the method is flushed in case of a safepoint in code below.
+  // Make sure the nmethod is not flushed.
   nmethodLocker nml(this);
-  methodHandle the_method(method());
   // This can be called while the system is already at a safepoint which is ok
   NoSafepointVerifier nsv;
 
@@ -3079,13 +3079,13 @@ void nmethod::print_nmethod_labels(outputStream* stream, address block_begin, bo
   }
 
   if (block_begin == entry_point()) {
-    methodHandle m = method();
-    if (m.not_null()) {
+    Method* m = method();
+    if (m != NULL) {
       stream->print("  # ");
       m->print_value_on(stream);
       stream->cr();
     }
-    if (m.not_null() && !is_osr_method()) {
+    if (m != NULL && !is_osr_method()) {
       ResourceMark rm;
       int sizeargs = m->size_of_parameters();
       BasicType* sig_bt = NEW_RESOURCE_ARRAY(BasicType, sizeargs);
@@ -3237,6 +3237,8 @@ void nmethod::print_code_comment_on(outputStream* st, int column, address begin,
   }
   assert(!oop_map_required, "missed oopmap");
 
+  Thread* thread = Thread::current();
+
   // Print any debug info present at this pc.
   ScopeDesc* sd  = scope_desc_in(begin, end);
   if (sd != NULL) {
@@ -3267,7 +3269,7 @@ void nmethod::print_code_comment_on(outputStream* st, int column, address begin,
         case Bytecodes::_invokestatic:
         case Bytecodes::_invokeinterface:
           {
-            Bytecode_invoke invoke(sd->method(), sd->bci());
+            Bytecode_invoke invoke(methodHandle(thread, sd->method()), sd->bci());
             st->print(" ");
             if (invoke.name() != NULL)
               invoke.name()->print_symbol_on(st);
@@ -3280,7 +3282,7 @@ void nmethod::print_code_comment_on(outputStream* st, int column, address begin,
         case Bytecodes::_getstatic:
         case Bytecodes::_putstatic:
           {
-            Bytecode_field field(sd->method(), sd->bci());
+            Bytecode_field field(methodHandle(thread, sd->method()), sd->bci());
             st->print(" ");
             if (field.name() != NULL)
               field.name()->print_symbol_on(st);
@@ -3356,7 +3358,7 @@ public:
       if (cm != NULL && cm->is_far_code()) {
         // Temporary fix, see JDK-8143106
         CompiledDirectStaticCall* csc = CompiledDirectStaticCall::at(instruction_address());
-        csc->set_to_far(methodHandle(cm->method()), dest);
+        csc->set_to_far(methodHandle(Thread::current(), cm->method()), dest);
         return;
       }
     }

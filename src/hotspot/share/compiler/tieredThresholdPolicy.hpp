@@ -173,19 +173,19 @@ class TieredThresholdPolicy : public CompilationPolicy {
   // Call and loop predicates determine whether a transition to a higher compilation
   // level should be performed (pointers to predicate functions are passed to common_TF().
   // Predicates also take compiler load into account.
-  typedef bool (TieredThresholdPolicy::*Predicate)(int i, int b, CompLevel cur_level, Method* method);
-  bool call_predicate(int i, int b, CompLevel cur_level, Method* method);
-  bool loop_predicate(int i, int b, CompLevel cur_level, Method* method);
+  typedef bool (TieredThresholdPolicy::*Predicate)(int i, int b, CompLevel cur_level, const methodHandle& method);
+  bool call_predicate(int i, int b, CompLevel cur_level, const methodHandle& method);
+  bool loop_predicate(int i, int b, CompLevel cur_level, const methodHandle& method);
   // Common transition function. Given a predicate determines if a method should transition to another level.
-  CompLevel common(Predicate p, Method* method, CompLevel cur_level, bool disable_feedback = false);
+  CompLevel common(Predicate p, const methodHandle& method, CompLevel cur_level, bool disable_feedback = false);
   // Transition functions.
   // call_event determines if a method should be compiled at a different
   // level with a regular invocation entry.
-  CompLevel call_event(Method* method, CompLevel cur_level, JavaThread* thread);
+  CompLevel call_event(const methodHandle& method, CompLevel cur_level, JavaThread* thread);
   // loop_event checks if a method should be OSR compiled at a different
   // level.
-  CompLevel loop_event(Method* method, CompLevel cur_level, JavaThread* thread);
-  void print_counters(const char* prefix, const methodHandle& mh);
+  CompLevel loop_event(const methodHandle& method, CompLevel cur_level, JavaThread* thread);
+  void print_counters(const char* prefix, Method* m);
   // Has a method been long around?
   // We don't remove old methods from the compile queue even if they have
   // very low activity (see select_task()).
@@ -205,11 +205,11 @@ class TieredThresholdPolicy : public CompilationPolicy {
   // If a method is old enough and is still in the interpreter we would want to
   // start profiling without waiting for the compiled method to arrive. This function
   // determines whether we should do that.
-  inline bool should_create_mdo(Method* method, CompLevel cur_level);
+  inline bool should_create_mdo(const methodHandle& method, CompLevel cur_level);
   // Create MDO if necessary.
   void create_mdo(const methodHandle& mh, JavaThread* thread);
   // Is method profiled enough?
-  bool is_method_profiled(Method* method);
+  bool is_method_profiled(const methodHandle& method);
 
   double _increase_threshold_at_ratio;
 
@@ -221,19 +221,19 @@ class TieredThresholdPolicy : public CompilationPolicy {
   void set_c2_count(int x) { _c2_count = x;    }
 
   enum EventType { CALL, LOOP, COMPILE, REMOVE_FROM_QUEUE, UPDATE_IN_QUEUE, REPROFILE, MAKE_NOT_ENTRANT };
-  void print_event(EventType type, const methodHandle& mh, const methodHandle& imh, int bci, CompLevel level);
+  void print_event(EventType type, Method* m, Method* im, int bci, CompLevel level);
   // Check if the method can be compiled, change level if necessary
   void compile(const methodHandle& mh, int bci, CompLevel level, JavaThread* thread);
   // Simple methods are as good being compiled with C1 as C2.
   // This function tells if it's such a function.
   inline static bool is_trivial(Method* method);
   // Force method to be compiled at CompLevel_simple?
-  inline bool force_comp_at_level_simple(Method* method);
+  inline bool force_comp_at_level_simple(const methodHandle& method);
 
   // Predicate helpers are used by .*_predicate() methods as well as others.
   // They check the given counter values, multiplied by the scale against the thresholds.
-  inline bool call_predicate_helper(Method* method, CompLevel cur_level, int i, int b, double scale);
-  inline bool loop_predicate_helper(Method* method, CompLevel cur_level, int i, int b, double scale);
+  inline bool call_predicate_helper(const methodHandle& method, CompLevel cur_level, int i, int b, double scale);
+  inline bool loop_predicate_helper(const methodHandle& method, CompLevel cur_level, int i, int b, double scale);
 
   // Get a compilation level for a given method.
   static CompLevel comp_level(Method* method);

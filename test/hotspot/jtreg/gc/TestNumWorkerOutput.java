@@ -36,19 +36,6 @@ package gc;
  * @run main/othervm -XX:+UseG1GC gc.TestNumWorkerOutput UseG1GC
  */
 
-/*
- * @test TestNumWorkerOutputCMS
- * @bug 8165292
- * @key gc
- * @comment Graal does not support CMS
- * @requires vm.gc.ConcMarkSweep & !vm.graal.enabled
- * @modules java.base/jdk.internal.misc
- * @library /test/lib
- * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
- * @run main/othervm -XX:+UseConcMarkSweepGC gc.TestNumWorkerOutput UseConcMarkSweepGC
- */
-
 import sun.hotspot.WhiteBox;
 
 import java.util.regex.Matcher;

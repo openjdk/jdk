@@ -73,22 +73,6 @@ package gc.arguments;
  */
 
 /*
- * @test TestUseCompressedOopsErgoCMS
- * @key gc
- * @bug 8010722
- * @comment Graal does not support CMS
- * @requires vm.gc.ConcMarkSweep & !vm.graal.enabled
- * @library /test/lib
- * @library /
- * @modules java.base/jdk.internal.misc
- *          java.management/sun.management
- * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
- *                              sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run main/othervm gc.arguments.TestUseCompressedOopsErgo -XX:+UseConcMarkSweepGC
- */
-
-/*
  * @test TestUseCompressedOopsErgoShenandoah
  * @key gc
  * @bug 8010722

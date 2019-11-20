@@ -54,16 +54,6 @@ package gc.arguments;
  */
 
 /**
- * @test TestAlignmentToUseLargePagesCMS
- * @key gc regression
- * @bug 8024396
- * @comment Graal does not support CMS
- * @requires vm.gc.ConcMarkSweep & !vm.graal.enabled
- * @run main/othervm -Xms71M -Xmx91M -XX:+UseConcMarkSweepGC -XX:+UseLargePages gc.arguments.TestAlignmentToUseLargePages
- * @run main/othervm -Xms71M -Xmx91M -XX:+UseConcMarkSweepGC -XX:-UseLargePages gc.arguments.TestAlignmentToUseLargePages
- */
-
-/**
  * @test TestAlignmentToUseLargePagesShenandoah
  * @key gc
  * @bug 8024396

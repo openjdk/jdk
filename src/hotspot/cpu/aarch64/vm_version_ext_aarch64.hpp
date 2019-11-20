@@ -25,8 +25,8 @@
 #ifndef CPU_AARCH64_VM_VERSION_EXT_AARCH64_HPP
 #define CPU_AARCH64_VM_VERSION_EXT_AARCH64_HPP
 
+#include "runtime/vm_version.hpp"
 #include "utilities/macros.hpp"
-#include "vm_version_aarch64.hpp"
 
 class VM_Version_Ext : public VM_Version {
  private:

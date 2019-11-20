@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +36,8 @@ import sun.security.krb5.internal.util.KrbDataOutputStream;
 import java.io.IOException;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
-import java.io.UnsupportedEncodingException;
+
+import static java.nio.charset.StandardCharsets.ISO_8859_1;
 
 /**
  * This class implements a buffered input stream. It is used for parsing key table
@@ -68,21 +70,16 @@ public class KeyTabOutputStream extends KrbDataOutputStream implements KeyTabCon
         }
         else write16(comp_num);
 
-        byte[] realm = null;
-        try {
-            realm = entry.service.getRealmString().getBytes("8859_1");
-        } catch (UnsupportedEncodingException exc) {
-        }
-
+        byte[] realm = entry.service.getRealmString().getBytes(ISO_8859_1);
         write16(realm.length);
         write(realm);
+
         for (int i = 0; i < comp_num; i++) {
-            try {
-                write16(serviceNames[i].getBytes("8859_1").length);
-                write(serviceNames[i].getBytes("8859_1"));
-            } catch (UnsupportedEncodingException exc) {
-            }
+            byte[] serviceName = serviceNames[i].getBytes(ISO_8859_1);
+            write16(serviceName.length);
+            write(serviceName);
         }
+
         write32(entry.service.getNameType());
         //time is long, but we only use 4 bytes to store the data.
         write32((int)(entry.timestamp.getTime()/1000));

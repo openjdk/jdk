@@ -28,6 +28,8 @@
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
+#include "logging/log.hpp"
+#include "logging/logTag.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/guardedMemory.hpp"
 #include "oops/instanceKlass.hpp"
@@ -2303,10 +2305,7 @@ struct JNINativeInterface_* jni_functions_check() {
          "Mismatched JNINativeInterface tables, check for new entries");
 
   // with -verbose:jni this message will print
-  if (PrintJNIResolving) {
-    tty->print_cr("Checked JNI functions are being used to " \
-                  "validate JNI usage");
-  }
+  log_debug(jni, resolve)("Checked JNI functions are being used to validate JNI usage");
 
   return &checked_jni_NativeInterface;
 }

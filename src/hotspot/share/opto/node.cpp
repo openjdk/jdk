@@ -2399,14 +2399,15 @@ void Node_List::dump_simple() const {
 
 //=============================================================================
 //------------------------------remove-----------------------------------------
-void Unique_Node_List::remove( Node *n ) {
-  if( _in_worklist[n->_idx] ) {
-    for( uint i = 0; i < size(); i++ )
-      if( _nodes[i] == n ) {
-        map(i,Node_List::pop());
-        _in_worklist >>= n->_idx;
+void Unique_Node_List::remove(Node* n) {
+  if (_in_worklist.test(n->_idx)) {
+    for (uint i = 0; i < size(); i++) {
+      if (_nodes[i] == n) {
+        map(i, Node_List::pop());
+        _in_worklist.remove(n->_idx);
         return;
       }
+    }
     ShouldNotReachHere();
   }
 }
@@ -2415,11 +2416,11 @@ void Unique_Node_List::remove( Node *n ) {
 // Remove useless nodes from worklist
 void Unique_Node_List::remove_useless_nodes(VectorSet &useful) {
 
-  for( uint i = 0; i < size(); ++i ) {
+  for (uint i = 0; i < size(); ++i) {
     Node *n = at(i);
     assert( n != NULL, "Did not expect null entries in worklist");
-    if( ! useful.test(n->_idx) ) {
-      _in_worklist >>= n->_idx;
+    if (!useful.test(n->_idx)) {
+      _in_worklist.remove(n->_idx);
       map(i,Node_List::pop());
       // Node *replacement = Node_List::pop();
       // if( i != size() ) { // Check if removing last entry

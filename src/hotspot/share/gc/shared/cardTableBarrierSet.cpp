@@ -96,7 +96,7 @@ void CardTableBarrierSet::print_on(outputStream* st) const {
 // to a newly allocated object along the fast-path. We
 // compensate for such elided card-marks as follows:
 // (a) Generational, non-concurrent collectors, such as
-//     GenCollectedHeap(ParNew,DefNew,Tenured) and
+//     GenCollectedHeap(DefNew,Tenured) and
 //     ParallelScavengeHeap(ParallelGC, ParallelOldGC)
 //     need the card-mark if and only if the region is
 //     in the old gen, and do not care if the card-mark
@@ -105,17 +105,7 @@ void CardTableBarrierSet::print_on(outputStream* st) const {
 //     scavenge. For all these cases, we can do a card mark
 //     at the point at which we do a slow path allocation
 //     in the old gen, i.e. in this call.
-// (b) GenCollectedHeap(ConcurrentMarkSweepGeneration) requires
-//     in addition that the card-mark for an old gen allocated
-//     object strictly follow any associated initializing stores.
-//     In these cases, the memRegion remembered below is
-//     used to card-mark the entire region either just before the next
-//     slow-path allocation by this thread or just before the next scavenge or
-//     CMS-associated safepoint, whichever of these events happens first.
-//     (The implicit assumption is that the object has been fully
-//     initialized by this point, a fact that we assert when doing the
-//     card-mark.)
-// (c) G1CollectedHeap(G1) uses two kinds of write barriers. When a
+// (b) G1CollectedHeap(G1) uses two kinds of write barriers. When a
 //     G1 concurrent marking is in progress an SATB (pre-write-)barrier
 //     is used to remember the pre-value of any store. Initializing
 //     stores will not need this barrier, so we need not worry about
@@ -124,11 +114,8 @@ void CardTableBarrierSet::print_on(outputStream* st) const {
 //     which simply enqueues a (sequence of) dirty cards which may
 //     optionally be refined by the concurrent update threads. Note
 //     that this barrier need only be applied to a non-young write,
-//     but, like in CMS, because of the presence of concurrent refinement
-//     (much like CMS' precleaning), must strictly follow the oop-store.
-//     Thus, using the same protocol for maintaining the intended
-//     invariants turns out, serendepitously, to be the same for both
-//     G1 and CMS.
+//     but, because of the presence of concurrent refinement,
+//     must strictly follow the oop-store.
 //
 // For any future collector, this code should be reexamined with
 // that specific collector in mind, and the documentation above suitably

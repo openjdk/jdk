@@ -32,11 +32,12 @@ import sun.security.krb5.Realm;
 import sun.security.krb5.KrbException;
 
 import javax.security.auth.kerberos.ServicePermission;
-import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.security.Provider;
 import java.util.Locale;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Implements the GSSNameSpi for the krb5 mechanism.
@@ -50,9 +51,6 @@ public class Krb5NameElement
 
     private String gssNameStr = null;
     private Oid gssNameType = null;
-
-    // XXX Move this concept into PrincipalName's asn1Encode() sometime
-    private static String CHAR_ENCODING = "UTF-8";
 
     private Krb5NameElement(PrincipalName principalName,
                             String gssNameStr,
@@ -285,13 +283,7 @@ public class Krb5NameElement
      */
     public byte[] export() throws GSSException {
         // XXX Apply the above constraints.
-        byte[] retVal = null;
-        try {
-            retVal = krb5PrincipalName.getName().getBytes(CHAR_ENCODING);
-        } catch (UnsupportedEncodingException e) {
-            // Can't happen
-        }
-        return retVal;
+        return krb5PrincipalName.getName().getBytes(UTF_8);
     }
 
     /**

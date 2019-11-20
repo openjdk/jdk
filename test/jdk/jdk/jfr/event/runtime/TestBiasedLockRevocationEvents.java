@@ -101,8 +101,9 @@ public class TestBiasedLockRevocationEvents {
     }
 
     // Retrieve all biased lock revocation events related to the provided lock class, sorted by start time
-    static List<RecordedEvent> getRevocationEvents(Recording recording, String fieldName, Class<?> lockClass) throws Throwable {
+    static List<RecordedEvent> getRevocationEvents(Recording recording, String eventTypeName, String fieldName, Class<?> lockClass) throws Throwable {
         return Events.fromRecording(recording).stream()
+                .filter(e -> e.getEventType().getName().equals(eventTypeName))
                 .filter(e -> ((RecordedClass)e.getValue(fieldName)).getName().equals(lockClass.getName()))
                 .sorted(Comparator.comparing(RecordedEvent::getStartTime))
                 .collect(Collectors.toList());
@@ -119,7 +120,7 @@ public class TestBiasedLockRevocationEvents {
         Thread biasBreaker = triggerRevocation(1, MyLock.class);
 
         recording.stop();
-        List<RecordedEvent> events = getRevocationEvents(recording, "lockClass", MyLock.class);
+        List<RecordedEvent> events = getRevocationEvents(recording, EventNames.BiasedLockRevocation, "lockClass", MyLock.class);
         Asserts.assertEQ(events.size(), 1);
 
         RecordedEvent event = events.get(0);
@@ -143,7 +144,7 @@ public class TestBiasedLockRevocationEvents {
         Thread biasBreaker = triggerRevocation(BULK_REVOKE_THRESHOLD, MyLock.class);
 
         recording.stop();
-        List<RecordedEvent> events = getRevocationEvents(recording, "revokedClass", MyLock.class);
+        List<RecordedEvent> events = getRevocationEvents(recording, EventNames.BiasedLockClassRevocation, "revokedClass", MyLock.class);
         Asserts.assertEQ(events.size(), 1);
 
         RecordedEvent event = events.get(0);
@@ -169,7 +170,7 @@ public class TestBiasedLockRevocationEvents {
         Thread.holdsLock(l);
 
         recording.stop();
-        List<RecordedEvent> events = getRevocationEvents(recording, "lockClass", MyLock.class);
+        List<RecordedEvent> events = getRevocationEvents(recording, EventNames.BiasedLockSelfRevocation, "lockClass", MyLock.class);
         Asserts.assertEQ(events.size(), 1);
 
         RecordedEvent event = events.get(0);
@@ -211,7 +212,7 @@ public class TestBiasedLockRevocationEvents {
         touch(l);
 
         recording.stop();
-        List<RecordedEvent> events = getRevocationEvents(recording, "lockClass", MyLock.class);
+        List<RecordedEvent> events = getRevocationEvents(recording, EventNames.BiasedLockRevocation, "lockClass", MyLock.class);
         Asserts.assertEQ(events.size(), 1);
 
         RecordedEvent event = events.get(0);
@@ -237,7 +238,7 @@ public class TestBiasedLockRevocationEvents {
         Thread biasBreaker1 = triggerRevocation(BULK_REVOKE_THRESHOLD, MyLock.class);
 
         recording.stop();
-        List<RecordedEvent> events = getRevocationEvents(recording, "revokedClass", MyLock.class);
+        List<RecordedEvent> events = getRevocationEvents(recording, EventNames.BiasedLockClassRevocation, "revokedClass", MyLock.class);
         Asserts.assertEQ(events.size(), 2);
 
         // The rebias event should occur before the noRebias one

@@ -354,4 +354,24 @@ public abstract class CompareNode extends BinaryOpLogicNode implements Canonical
 
         return comparison;
     }
+
+    public static LogicNode createFloatCompareNode(StructuredGraph graph, CanonicalCondition condition, ValueNode x, ValueNode y, boolean unorderedIsTrue, NodeView view) {
+        LogicNode result = createFloatCompareNode(condition, x, y, unorderedIsTrue, view);
+        return (result.graph() == null ? graph.addOrUniqueWithInputs(result) : result);
+    }
+
+    public static LogicNode createFloatCompareNode(CanonicalCondition condition, ValueNode x, ValueNode y, boolean unorderedIsTrue, NodeView view) {
+        assert x.getStackKind() == y.getStackKind();
+        assert x.getStackKind().isNumericFloat();
+
+        LogicNode comparison;
+        if (condition == CanonicalCondition.EQ) {
+            comparison = FloatEqualsNode.create(x, y, view);
+        } else {
+            assert condition == CanonicalCondition.LT;
+            comparison = FloatLessThanNode.create(x, y, unorderedIsTrue, view);
+        }
+
+        return comparison;
+    }
 }

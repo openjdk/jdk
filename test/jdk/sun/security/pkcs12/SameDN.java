@@ -55,7 +55,7 @@ public class SameDN {
     }
 
     static void genkeypair(String alias, String dn) throws Exception {
-        keytool(COMMON + "-genkeypair -alias " + alias + " -dname " + dn)
+        keytool(COMMON + "-genkeypair -keyalg DSA -alias " + alias + " -dname " + dn)
                 .shouldHaveExitValue(0);
     }
 

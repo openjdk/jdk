@@ -25,8 +25,8 @@
 #ifndef CPU_PPC_VM_VERSION_EXT_PPC_HPP
 #define CPU_PPC_VM_VERSION_EXT_PPC_HPP
 
+#include "runtime/vm_version.hpp"
 #include "utilities/macros.hpp"
-#include "vm_version_ppc.hpp"
 
 #define CPU_INFO        "cpu_info"
 #define CPU_TYPE        "fpu_type"

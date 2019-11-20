@@ -50,7 +50,7 @@ public class JavaKeyStoreAliasCaseInsensitive {
     public void testAliasCase() throws Exception {
         final String KEYSTORE_OPTIONS = "-storetype JKS -keystore "
                 + "test-alias-case.jks -storepass changeit";
-        SecurityTools.keytool(KEYSTORE_OPTIONS + " -genkeypair"
+        SecurityTools.keytool(KEYSTORE_OPTIONS + " -genkeypair -keyalg DSA"
                 + " -keypass changeit -alias " + ALIAS + " -dname CN=" + ALIAS)
                 .shouldHaveExitValue(0);
         String jarFilename = "test-alias-case.jar";
@@ -88,10 +88,10 @@ public class JavaKeyStoreAliasCaseInsensitive {
         // signed by another certificate associated with ALIAS + "1".
         final String KEYSTORE_OPTIONS = "-storetype JKS -keystore"
                 + " test-alias-storeHash-case.jks -storepass changeit";
-        SecurityTools.keytool(KEYSTORE_OPTIONS + " -genkeypair"
+        SecurityTools.keytool(KEYSTORE_OPTIONS + " -genkeypair -keyalg DSA"
                 + " -keypass changeit -alias " + ALIAS + "1 -dname CN=" +
                 ALIAS + "1").shouldHaveExitValue(0);
-        SecurityTools.keytool(KEYSTORE_OPTIONS + " -genkeypair"
+        SecurityTools.keytool(KEYSTORE_OPTIONS + " -genkeypair -keyalg DSA"
                 + " -keypass changeit -alias " + ALIAS + "2 -dname CN="
                 + ALIAS + "2").shouldHaveExitValue(0);
         String certReq = SecurityTools.keytool(KEYSTORE_OPTIONS +

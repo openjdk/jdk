@@ -1192,9 +1192,6 @@ class HandlerImpl {
   // predicate controlling translation of CompareAndSwapX
   bool needs_acquiring_load_exclusive(const Node *load);
 
-  // predicate controlling translation of StoreCM
-  bool unnecessary_storestore(const Node *storecm);
-
   // predicate controlling addressing modes
   bool size_fits_all_mem_uses(AddPNode* addp, int shift);
 %}
@@ -1582,29 +1579,6 @@ bool needs_acquiring_load_exclusive(const Node *n)
   // so we can just return true here
   return true;
 }
-
-// predicate controlling translation of StoreCM
-//
-// returns true if a StoreStore must precede the card write otherwise
-// false
-
-bool unnecessary_storestore(const Node *storecm)
-{
-  assert(storecm->Opcode()  == Op_StoreCM, "expecting a StoreCM");
-
-  // we need to generate a dmb ishst between an object put and the
-  // associated card mark when we are using CMS without conditional
-  // card marking
-
-  if (UseConcMarkSweepGC && !UseCondCardMark) {
-    return false;
-  }
-
-  // a storestore is unnecesary in all other cases
-
-  return true;
-}
-
 
 #define __ _masm.
 
@@ -7220,7 +7194,6 @@ instruct loadConD(vRegD dst, immD con) %{
 instruct storeimmCM0(immI0 zero, memory mem)
 %{
   match(Set mem (StoreCM mem zero));
-  predicate(unnecessary_storestore(n));
 
   ins_cost(INSN_COST);
   format %{ "storestore (elided)\n\t"

@@ -160,12 +160,6 @@ public class HeapSummary extends Tool {
           System.out.println("using thread-local object allocation.");
        }
 
-       l = getFlagValue("UseConcMarkSweepGC", flagMap);
-       if (l == 1L) {
-          System.out.println("Concurrent Mark-Sweep GC");
-          return;
-       }
-
        l = getFlagValue("UseParallelGC", flagMap);
        if (l == 1L) {
           System.out.print("Parallel GC ");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,11 +30,20 @@
 
 #define BUFLEN 256
 
+// java.util.Calendar constants
+#define CALENDAR_FIELD_ERA              0           // Calendar.ERA
+#define CALENDAR_FIELD_DAY_OF_WEEK      7           // Calendar.DAY_OF_WEEK
+#define CALENDAR_FIELD_AM_PM            9           // Calendar.AM_PM
+#define JAPANESE_MEIJI_INDEX            232
+
 static CFDateFormatterStyle convertDateFormatterStyle(jint javaStyle);
 static CFNumberFormatterStyle convertNumberFormatterStyle(jint javaStyle);
 static void copyArrayElements(JNIEnv *env, CFArrayRef cfarray, jobjectArray jarray, CFIndex sindex, int dindex, int count);
 static jstring getNumberSymbolString(JNIEnv *env, jstring jlangtag, jstring jdefault, CFStringRef type);
 static jchar getNumberSymbolChar(JNIEnv *env, jstring jlangtag, jchar jdefault, CFStringRef type);
+jobjectArray getErasImpl(JNIEnv *env, jstring jlangtag, jint style, jobjectArray eras);
+jobjectArray getWeekdaysImpl(JNIEnv *env, jclass cls, jstring jlangtag, jint style, jobjectArray wdays);
+jobjectArray getAmPmImpl(JNIEnv *env, jclass cls, jstring jlangtag, jint style, jobjectArray ampms);
 
 // from java_props_macosx.c
 extern char * getMacOSXLocale(int cat);
@@ -131,41 +140,7 @@ JNIEXPORT jstring JNICALL Java_sun_util_locale_provider_HostLocaleProviderAdapte
  */
 JNIEXPORT jobjectArray JNICALL Java_sun_util_locale_provider_HostLocaleProviderAdapterImpl_getAmPmStrings
   (JNIEnv *env, jclass cls, jstring jlangtag, jobjectArray ampms) {
-    CFLocaleRef cflocale = CFLocaleCopyCurrent();
-    jstring tmp_string;
-    if (cflocale != NULL) {
-        CFDateFormatterRef df = CFDateFormatterCreate(kCFAllocatorDefault,
-                                                  cflocale,
-                                                  kCFDateFormatterFullStyle,
-                                                  kCFDateFormatterFullStyle);
-        if (df != NULL) {
-            char buf[BUFLEN];
-            CFStringRef amStr = CFDateFormatterCopyProperty(df, kCFDateFormatterAMSymbol);
-            if (amStr != NULL) {
-                CFStringGetCString(amStr, buf, BUFLEN, kCFStringEncodingUTF8);
-                CFRelease(amStr);
-                tmp_string = (*env)->NewStringUTF(env, buf);
-                if (tmp_string != NULL) {
-                    (*env)->SetObjectArrayElement(env, ampms, 0, tmp_string);
-                }
-            }
-            if (!(*env)->ExceptionCheck(env)){
-                CFStringRef pmStr = CFDateFormatterCopyProperty(df, kCFDateFormatterPMSymbol);
-                if (pmStr != NULL) {
-                    CFStringGetCString(pmStr, buf, BUFLEN, kCFStringEncodingUTF8);
-                    CFRelease(pmStr);
-                    tmp_string = (*env)->NewStringUTF(env, buf);
-                    if (tmp_string != NULL) {
-                        (*env)->SetObjectArrayElement(env, ampms, 1, tmp_string);
-                    }
-                }
-            }
-            CFRelease(df);
-        }
-        CFRelease(cflocale);
-    }
-
-    return ampms;
+      return getAmPmImpl(env, cls, jlangtag, 0, ampms);
 }
 
 /*
@@ -175,24 +150,7 @@ JNIEXPORT jobjectArray JNICALL Java_sun_util_locale_provider_HostLocaleProviderA
  */
 JNIEXPORT jobjectArray JNICALL Java_sun_util_locale_provider_HostLocaleProviderAdapterImpl_getEras
   (JNIEnv *env, jclass cls, jstring jlangtag, jobjectArray eras) {
-    CFLocaleRef cflocale = CFLocaleCopyCurrent();
-    if (cflocale != NULL) {
-        CFDateFormatterRef df = CFDateFormatterCreate(kCFAllocatorDefault,
-                                                  cflocale,
-                                                  kCFDateFormatterFullStyle,
-                                                  kCFDateFormatterFullStyle);
-        if (df != NULL) {
-            CFArrayRef cferas = CFDateFormatterCopyProperty(df, kCFDateFormatterEraSymbols);
-            if (cferas != NULL) {
-                copyArrayElements(env, cferas, eras, 0, 0, CFArrayGetCount(cferas));
-                CFRelease(cferas);
-            }
-            CFRelease(df);
-        }
-        CFRelease(cflocale);
-    }
-
-    return eras;
+    return getErasImpl(env, jlangtag, 0, eras);
 }
 
 /*
@@ -255,25 +213,8 @@ JNIEXPORT jobjectArray JNICALL Java_sun_util_locale_provider_HostLocaleProviderA
  * Signature: (Ljava/lang/String;[Ljava/lang/String;)[Ljava/lang/String;
  */
 JNIEXPORT jobjectArray JNICALL Java_sun_util_locale_provider_HostLocaleProviderAdapterImpl_getWeekdays
-  (JNIEnv *env, jclass cls, jstring jlangtag, jobjectArray wdays) {
-    CFLocaleRef cflocale = CFLocaleCopyCurrent();
-    if (cflocale != NULL) {
-        CFDateFormatterRef df = CFDateFormatterCreate(kCFAllocatorDefault,
-                                                  cflocale,
-                                                  kCFDateFormatterFullStyle,
-                                                  kCFDateFormatterFullStyle);
-        if (df != NULL) {
-            CFArrayRef cfwdays = CFDateFormatterCopyProperty(df, kCFDateFormatterWeekdaySymbols);
-            if (cfwdays != NULL) {
-                copyArrayElements(env, cfwdays, wdays, 0, 1, CFArrayGetCount(cfwdays));
-                CFRelease(cfwdays);
-            }
-            CFRelease(df);
-        }
-        CFRelease(cflocale);
-    }
-
-    return wdays;
+    (JNIEnv *env, jclass cls, jstring jlangtag, jobjectArray wdays) {
+    return getWeekdaysImpl(env, cls, jlangtag, 0, wdays);
 }
 
 /*
@@ -508,6 +449,29 @@ JNIEXPORT jint JNICALL Java_sun_util_locale_provider_HostLocaleProviderAdapterIm
 
 /*
  * Class:     sun_util_locale_provider_HostLocaleProviderAdapterImpl
+ * Method:    getCalendarDisplayStrings
+ * Signature: (Ljava/lang/String;III)[Ljava/lang/String;
+ */
+JNIEXPORT jobjectArray JNICALL Java_sun_util_locale_provider_HostLocaleProviderAdapterImpl_getCalendarDisplayStrings
+  (JNIEnv *env, jclass cls, jstring jlangtag, jint field, jint style) {
+    switch (field) {
+    case CALENDAR_FIELD_ERA:
+        return getErasImpl(env, jlangtag, style, NULL);
+
+    case CALENDAR_FIELD_DAY_OF_WEEK:
+        return getWeekdaysImpl(env, cls, jlangtag, style, NULL);
+
+    case CALENDAR_FIELD_AM_PM:
+        return getAmPmImpl(env, cls, jlangtag, style, NULL);
+
+    default:
+        // not supported
+        return NULL;
+    }
+}
+
+/*
+ * Class:     sun_util_locale_provider_HostLocaleProviderAdapterImpl
  * Method:    getDisplayString
  * Signature: (Ljava/lang/String;ILjava/lang/String;)Ljava/lang/String;
  */
@@ -724,4 +688,105 @@ static jchar getNumberSymbolChar(JNIEnv *env, jstring jlangtag, jchar jdefault, 
     }
 
     return ret;
+}
+
+jobjectArray getErasImpl(JNIEnv *env, jstring jlangtag, jint style, jobjectArray eras) {
+    jobjectArray ret = eras;
+    CFLocaleRef cflocale = CFLocaleCopyCurrent();
+    if (cflocale != NULL) {
+        CFDateFormatterRef df = CFDateFormatterCreate(kCFAllocatorDefault,
+                                                  cflocale,
+                                                  convertDateFormatterStyle(style),
+                                                  convertDateFormatterStyle(style));
+        if (df != NULL) {
+            CFArrayRef cferas = CFDateFormatterCopyProperty(df, kCFDateFormatterEraSymbols);
+            if (cferas != NULL) {
+                int eraCount = CFArrayGetCount(cferas);
+
+                if (eras == NULL) {
+                    ret = (*env)->NewObjectArray(env, (jsize)eraCount,
+                        (*env)->FindClass(env, "java/lang/String"), NULL);
+                }
+                CFTypeRef cal = CFLocaleGetValue(cflocale, kCFLocaleCalendarIdentifier);
+                int sindex = cal == kCFJapaneseCalendar ? JAPANESE_MEIJI_INDEX : 0;
+                int dindex = cal == kCFJapaneseCalendar ? 1 : 0; // 0 is "BeforeMeiji" in JCal
+                copyArrayElements(env, cferas, ret, sindex, dindex, eraCount - sindex);
+                CFRelease(cferas);
+            }
+            CFRelease(df);
+        }
+        CFRelease(cflocale);
+    }
+
+    return ret;
+}
+
+jobjectArray getWeekdaysImpl(JNIEnv *env, jclass cls, jstring jlangtag, jint style, jobjectArray wdays) {
+    jobjectArray ret = wdays;
+    CFLocaleRef cflocale = CFLocaleCopyCurrent();
+    if (cflocale != NULL) {
+        CFDateFormatterRef df = CFDateFormatterCreate(kCFAllocatorDefault,
+                                                  cflocale,
+                                                  convertDateFormatterStyle(style),
+                                                  convertDateFormatterStyle(style));
+        if (df != NULL) {
+            CFArrayRef cfwdays = CFDateFormatterCopyProperty(df, kCFDateFormatterWeekdaySymbols);
+            if (cfwdays != NULL) {
+                int dayCount = CFArrayGetCount(cfwdays);
+
+                if (wdays == NULL) {
+                    ret = (*env)->NewObjectArray(env, dayCount + 1,
+                        (*env)->FindClass(env, "java/lang/String"), NULL);
+                }
+                copyArrayElements(env, cfwdays, ret, 0, 1, dayCount);
+                CFRelease(cfwdays);
+            }
+            CFRelease(df);
+        }
+        CFRelease(cflocale);
+    }
+
+    return ret;
+}
+
+jobjectArray getAmPmImpl(JNIEnv *env, jclass cls, jstring jlangtag, jint style, jobjectArray ampms) {
+    CFLocaleRef cflocale = CFLocaleCopyCurrent();
+    jstring tmp_string;
+    if (cflocale != NULL) {
+        CFDateFormatterRef df = CFDateFormatterCreate(kCFAllocatorDefault,
+                                                  cflocale,
+                                                  convertDateFormatterStyle(style),
+                                                  convertDateFormatterStyle(style));
+        if (df != NULL) {
+            char buf[BUFLEN];
+            if (ampms == NULL) {
+                ampms = (*env)->NewObjectArray(env, 2,
+                    (*env)->FindClass(env, "java/lang/String"), NULL);
+            }
+            CFStringRef amStr = CFDateFormatterCopyProperty(df, kCFDateFormatterAMSymbol);
+            if (amStr != NULL) {
+                CFStringGetCString(amStr, buf, BUFLEN, kCFStringEncodingUTF8);
+                CFRelease(amStr);
+                tmp_string = (*env)->NewStringUTF(env, buf);
+                if (tmp_string != NULL) {
+                    (*env)->SetObjectArrayElement(env, ampms, 0, tmp_string);
+                }
+            }
+            if (!(*env)->ExceptionCheck(env)){
+                CFStringRef pmStr = CFDateFormatterCopyProperty(df, kCFDateFormatterPMSymbol);
+                if (pmStr != NULL) {
+                    CFStringGetCString(pmStr, buf, BUFLEN, kCFStringEncodingUTF8);
+                    CFRelease(pmStr);
+                    tmp_string = (*env)->NewStringUTF(env, buf);
+                    if (tmp_string != NULL) {
+                        (*env)->SetObjectArrayElement(env, ampms, 1, tmp_string);
+                    }
+                }
+            }
+            CFRelease(df);
+        }
+        CFRelease(cflocale);
+    }
+
+    return ampms;
 }

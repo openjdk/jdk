@@ -96,7 +96,6 @@ Node* BarrierSetC2::store_at_resolved(C2Access& access, C2AccessValue& val) cons
 
     store = kit->store_to_memory(kit->control(), access.addr().node(), val.node(), access.type(),
                                      access.addr().type(), mo, requires_atomic_access, unaligned, mismatched, unsafe);
-    access.set_raw_access(store);
   } else {
     assert(!requires_atomic_access, "not yet supported");
     assert(access.is_opt_access(), "either parse or opt access");
@@ -120,6 +119,8 @@ Node* BarrierSetC2::store_at_resolved(C2Access& access, C2AccessValue& val) cons
       mm->set_memory_at(alias, st);
     }
   }
+  access.set_raw_access(store);
+
   return store;
 }
 
@@ -148,12 +149,14 @@ Node* BarrierSetC2::load_at_resolved(C2Access& access, const Type* val_type) con
     Node* control = control_dependent ? kit->control() : NULL;
 
     if (in_native) {
-      load = kit->make_load(control, adr, val_type, access.type(), mo);
+      load = kit->make_load(control, adr, val_type, access.type(), mo, dep,
+                            requires_atomic_access, unaligned,
+                            mismatched, unsafe, access.barrier_data());
     } else {
       load = kit->make_load(control, adr, val_type, access.type(), adr_type, mo,
-                            dep, requires_atomic_access, unaligned, mismatched, unsafe);
+                            dep, requires_atomic_access, unaligned, mismatched, unsafe,
+                            access.barrier_data());
     }
-    access.set_raw_access(load);
   } else {
     assert(!requires_atomic_access, "not yet supported");
     assert(access.is_opt_access(), "either parse or opt access");
@@ -162,9 +165,11 @@ Node* BarrierSetC2::load_at_resolved(C2Access& access, const Type* val_type) con
     MergeMemNode* mm = opt_access.mem();
     PhaseGVN& gvn = opt_access.gvn();
     Node* mem = mm->memory_at(gvn.C->get_alias_index(adr_type));
-    load = LoadNode::make(gvn, control, mem, adr, adr_type, val_type, access.type(), mo, dep, unaligned, mismatched);
+    load = LoadNode::make(gvn, control, mem, adr, adr_type, val_type, access.type(), mo,
+                          dep, unaligned, mismatched, unsafe, access.barrier_data());
     load = gvn.transform(load);
   }
+  access.set_raw_access(load);
 
   return load;
 }
@@ -408,34 +413,37 @@ Node* BarrierSetC2::atomic_cmpxchg_val_at_resolved(C2AtomicParseAccess& access, 
     if (adr->bottom_type()->is_ptr_to_narrowoop()) {
       Node *newval_enc = kit->gvn().transform(new EncodePNode(new_val, new_val->bottom_type()->make_narrowoop()));
       Node *oldval_enc = kit->gvn().transform(new EncodePNode(expected_val, expected_val->bottom_type()->make_narrowoop()));
-      load_store = kit->gvn().transform(new CompareAndExchangeNNode(kit->control(), mem, adr, newval_enc, oldval_enc, adr_type, value_type->make_narrowoop(), mo));
+      load_store = new CompareAndExchangeNNode(kit->control(), mem, adr, newval_enc, oldval_enc, adr_type, value_type->make_narrowoop(), mo);
     } else
 #endif
     {
-      load_store = kit->gvn().transform(new CompareAndExchangePNode(kit->control(), mem, adr, new_val, expected_val, adr_type, value_type->is_oopptr(), mo));
+      load_store = new CompareAndExchangePNode(kit->control(), mem, adr, new_val, expected_val, adr_type, value_type->is_oopptr(), mo);
     }
   } else {
     switch (access.type()) {
       case T_BYTE: {
-        load_store = kit->gvn().transform(new CompareAndExchangeBNode(kit->control(), mem, adr, new_val, expected_val, adr_type, mo));
+        load_store = new CompareAndExchangeBNode(kit->control(), mem, adr, new_val, expected_val, adr_type, mo);
         break;
       }
       case T_SHORT: {
-        load_store = kit->gvn().transform(new CompareAndExchangeSNode(kit->control(), mem, adr, new_val, expected_val, adr_type, mo));
+        load_store = new CompareAndExchangeSNode(kit->control(), mem, adr, new_val, expected_val, adr_type, mo);
         break;
       }
       case T_INT: {
-        load_store = kit->gvn().transform(new CompareAndExchangeINode(kit->control(), mem, adr, new_val, expected_val, adr_type, mo));
+        load_store = new CompareAndExchangeINode(kit->control(), mem, adr, new_val, expected_val, adr_type, mo);
         break;
       }
       case T_LONG: {
-        load_store = kit->gvn().transform(new CompareAndExchangeLNode(kit->control(), mem, adr, new_val, expected_val, adr_type, mo));
+        load_store = new CompareAndExchangeLNode(kit->control(), mem, adr, new_val, expected_val, adr_type, mo);
         break;
       }
       default:
         ShouldNotReachHere();
     }
   }
+
+  load_store->as_LoadStore()->set_barrier_data(access.barrier_data());
+  load_store = kit->gvn().transform(load_store);
 
   access.set_raw_access(load_store);
   pin_atomic_op(access);
@@ -465,50 +473,50 @@ Node* BarrierSetC2::atomic_cmpxchg_bool_at_resolved(C2AtomicParseAccess& access,
       Node *newval_enc = kit->gvn().transform(new EncodePNode(new_val, new_val->bottom_type()->make_narrowoop()));
       Node *oldval_enc = kit->gvn().transform(new EncodePNode(expected_val, expected_val->bottom_type()->make_narrowoop()));
       if (is_weak_cas) {
-        load_store = kit->gvn().transform(new WeakCompareAndSwapNNode(kit->control(), mem, adr, newval_enc, oldval_enc, mo));
+        load_store = new WeakCompareAndSwapNNode(kit->control(), mem, adr, newval_enc, oldval_enc, mo);
       } else {
-        load_store = kit->gvn().transform(new CompareAndSwapNNode(kit->control(), mem, adr, newval_enc, oldval_enc, mo));
+        load_store = new CompareAndSwapNNode(kit->control(), mem, adr, newval_enc, oldval_enc, mo);
       }
     } else
 #endif
     {
       if (is_weak_cas) {
-        load_store = kit->gvn().transform(new WeakCompareAndSwapPNode(kit->control(), mem, adr, new_val, expected_val, mo));
+        load_store = new WeakCompareAndSwapPNode(kit->control(), mem, adr, new_val, expected_val, mo);
       } else {
-        load_store = kit->gvn().transform(new CompareAndSwapPNode(kit->control(), mem, adr, new_val, expected_val, mo));
+        load_store = new CompareAndSwapPNode(kit->control(), mem, adr, new_val, expected_val, mo);
       }
     }
   } else {
     switch(access.type()) {
       case T_BYTE: {
         if (is_weak_cas) {
-          load_store = kit->gvn().transform(new WeakCompareAndSwapBNode(kit->control(), mem, adr, new_val, expected_val, mo));
+          load_store = new WeakCompareAndSwapBNode(kit->control(), mem, adr, new_val, expected_val, mo);
         } else {
-          load_store = kit->gvn().transform(new CompareAndSwapBNode(kit->control(), mem, adr, new_val, expected_val, mo));
+          load_store = new CompareAndSwapBNode(kit->control(), mem, adr, new_val, expected_val, mo);
         }
         break;
       }
       case T_SHORT: {
         if (is_weak_cas) {
-          load_store = kit->gvn().transform(new WeakCompareAndSwapSNode(kit->control(), mem, adr, new_val, expected_val, mo));
+          load_store = new WeakCompareAndSwapSNode(kit->control(), mem, adr, new_val, expected_val, mo);
         } else {
-          load_store = kit->gvn().transform(new CompareAndSwapSNode(kit->control(), mem, adr, new_val, expected_val, mo));
+          load_store = new CompareAndSwapSNode(kit->control(), mem, adr, new_val, expected_val, mo);
         }
         break;
       }
       case T_INT: {
         if (is_weak_cas) {
-          load_store = kit->gvn().transform(new WeakCompareAndSwapINode(kit->control(), mem, adr, new_val, expected_val, mo));
+          load_store = new WeakCompareAndSwapINode(kit->control(), mem, adr, new_val, expected_val, mo);
         } else {
-          load_store = kit->gvn().transform(new CompareAndSwapINode(kit->control(), mem, adr, new_val, expected_val, mo));
+          load_store = new CompareAndSwapINode(kit->control(), mem, adr, new_val, expected_val, mo);
         }
         break;
       }
       case T_LONG: {
         if (is_weak_cas) {
-          load_store = kit->gvn().transform(new WeakCompareAndSwapLNode(kit->control(), mem, adr, new_val, expected_val, mo));
+          load_store = new WeakCompareAndSwapLNode(kit->control(), mem, adr, new_val, expected_val, mo);
         } else {
-          load_store = kit->gvn().transform(new CompareAndSwapLNode(kit->control(), mem, adr, new_val, expected_val, mo));
+          load_store = new CompareAndSwapLNode(kit->control(), mem, adr, new_val, expected_val, mo);
         }
         break;
       }
@@ -516,6 +524,9 @@ Node* BarrierSetC2::atomic_cmpxchg_bool_at_resolved(C2AtomicParseAccess& access,
         ShouldNotReachHere();
     }
   }
+
+  load_store->as_LoadStore()->set_barrier_data(access.barrier_data());
+  load_store = kit->gvn().transform(load_store);
 
   access.set_raw_access(load_store);
   pin_atomic_op(access);
@@ -538,26 +549,29 @@ Node* BarrierSetC2::atomic_xchg_at_resolved(C2AtomicParseAccess& access, Node* n
     } else
 #endif
     {
-      load_store = kit->gvn().transform(new GetAndSetPNode(kit->control(), mem, adr, new_val, adr_type, value_type->is_oopptr()));
+      load_store = new GetAndSetPNode(kit->control(), mem, adr, new_val, adr_type, value_type->is_oopptr());
     }
   } else  {
     switch (access.type()) {
       case T_BYTE:
-        load_store = kit->gvn().transform(new GetAndSetBNode(kit->control(), mem, adr, new_val, adr_type));
+        load_store = new GetAndSetBNode(kit->control(), mem, adr, new_val, adr_type);
         break;
       case T_SHORT:
-        load_store = kit->gvn().transform(new GetAndSetSNode(kit->control(), mem, adr, new_val, adr_type));
+        load_store = new GetAndSetSNode(kit->control(), mem, adr, new_val, adr_type);
         break;
       case T_INT:
-        load_store = kit->gvn().transform(new GetAndSetINode(kit->control(), mem, adr, new_val, adr_type));
+        load_store = new GetAndSetINode(kit->control(), mem, adr, new_val, adr_type);
         break;
       case T_LONG:
-        load_store = kit->gvn().transform(new GetAndSetLNode(kit->control(), mem, adr, new_val, adr_type));
+        load_store = new GetAndSetLNode(kit->control(), mem, adr, new_val, adr_type);
         break;
       default:
         ShouldNotReachHere();
     }
   }
+
+  load_store->as_LoadStore()->set_barrier_data(access.barrier_data());
+  load_store = kit->gvn().transform(load_store);
 
   access.set_raw_access(load_store);
   pin_atomic_op(access);
@@ -580,20 +594,23 @@ Node* BarrierSetC2::atomic_add_at_resolved(C2AtomicParseAccess& access, Node* ne
 
   switch(access.type()) {
     case T_BYTE:
-      load_store = kit->gvn().transform(new GetAndAddBNode(kit->control(), mem, adr, new_val, adr_type));
+      load_store = new GetAndAddBNode(kit->control(), mem, adr, new_val, adr_type);
       break;
     case T_SHORT:
-      load_store = kit->gvn().transform(new GetAndAddSNode(kit->control(), mem, adr, new_val, adr_type));
+      load_store = new GetAndAddSNode(kit->control(), mem, adr, new_val, adr_type);
       break;
     case T_INT:
-      load_store = kit->gvn().transform(new GetAndAddINode(kit->control(), mem, adr, new_val, adr_type));
+      load_store = new GetAndAddINode(kit->control(), mem, adr, new_val, adr_type);
       break;
     case T_LONG:
-      load_store = kit->gvn().transform(new GetAndAddLNode(kit->control(), mem, adr, new_val, adr_type));
+      load_store = new GetAndAddLNode(kit->control(), mem, adr, new_val, adr_type);
       break;
     default:
       ShouldNotReachHere();
   }
+
+  load_store->as_LoadStore()->set_barrier_data(access.barrier_data());
+  load_store = kit->gvn().transform(load_store);
 
   access.set_raw_access(load_store);
   pin_atomic_op(access);
@@ -806,7 +823,8 @@ void BarrierSetC2::clone_at_expansion(PhaseMacroExpand* phase, ArrayCopyNode* ac
   Node* dest_offset = ac->in(ArrayCopyNode::DestPos);
   Node* length = ac->in(ArrayCopyNode::Length);
 
-  assert (src_offset == NULL && dest_offset == NULL, "for clone offsets should be null");
+  assert (src_offset == NULL,  "for clone offsets should be null");
+  assert (dest_offset == NULL, "for clone offsets should be null");
 
   const char* copyfunc_name = "arraycopy";
   address     copyfunc_addr =

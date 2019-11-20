@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -76,6 +77,7 @@ public class ShortRequestBody {
                                                   BYTE_ARRAY_BODY.length,
                                                   fileSize(FILE_BODY) };
     static final int[] BODY_OFFSETS = new int[] { 0, +1, -1, +2, -2, +3, -3 };
+    static final String MARKER = "ShortRequestBody";
 
     // A delegating Body Publisher. Subtypes will have a concrete body type.
     static abstract class AbstractDelegateRequestBody
@@ -134,7 +136,7 @@ public class ShortRequestBody {
         try (Server server = new Server()) {
             for (Supplier<HttpClient> cs : clientSuppliers) {
                 err.println("\n---- next supplier ----\n");
-                URI uri = new URI("http://localhost:" + server.getPort() + "/");
+                URI uri = new URI("http://localhost:" + server.getPort() + "/" + MARKER);
 
                 // sanity ( 6 requests to keep client and server offsets easy to workout )
                 success(cs, uri, new StringRequestBody(STRING_BODY, 0));
@@ -248,44 +250,56 @@ public class ShortRequestBody {
             int offset = 0;
 
             while (!closed) {
+                err.println("Server: waiting for connection");
                 try (Socket s = ss.accept()) {
                     err.println("Server: got connection");
                     InputStream is = s.getInputStream();
-                    readRequestHeaders(is);
+                    try {
+                        String headers = readRequestHeaders(is);
+                        if (headers == null) continue;
+                    } catch (SocketException ex) {
+                        err.println("Ignoring unexpected exception while reading headers: " + ex);
+                        ex.printStackTrace(err);
+                        // proceed in order to update count etc..., even though
+                        // we know that read() will fail;
+                    }
                     byte[] ba = new byte[1024];
 
                     int length = BODY_LENGTHS[count % 3];
                     length += BODY_OFFSETS[offset];
                     err.println("Server: count=" + count + ", offset=" + offset);
                     err.println("Server: expecting " +length+ " bytes");
-                    int read = is.readNBytes(ba, 0, length);
-                    err.println("Server: actually read " + read + " bytes");
-
-                    // Update the counts before replying, to prevent the
-                    // client-side racing reset with this thread.
-                    count++;
-                    if (count % 6 == 0) // 6 is the number of failure requests per offset
-                        offset++;
-                    if (count % 42 == 0) {
-                        count = 0;  // reset, for second iteration
-                        offset = 0;
+                    int read = 0;
+                    try {
+                        read = is.readNBytes(ba, 0, length);
+                        err.println("Server: actually read " + read + " bytes");
+                    } finally {
+                        // Update the counts before replying, to prevent the
+                        // client-side racing reset with this thread.
+                        count++;
+                        if (count % 6 == 0) // 6 is the number of failure requests per offset
+                            offset++;
+                        if (count % 42 == 0) {
+                            count = 0;  // reset, for second iteration
+                            offset = 0;
+                        }
                     }
-
                     if (read < length) {
                         // no need to reply, client has already closed
                         // ensure closed
                         if (is.read() != -1)
-                            new AssertionError("Unexpected read");
+                            new AssertionError("Unexpected read: " + read);
                     } else {
                         OutputStream os = s.getOutputStream();
                         err.println("Server: writing "
                                 + RESPONSE.getBytes(US_ASCII).length + " bytes");
                         os.write(RESPONSE.getBytes(US_ASCII));
                     }
-
-                } catch (IOException e) {
-                    if (!closed)
-                        System.out.println("Unexpected" + e);
+                } catch (Throwable e) {
+                    if (!closed) {
+                        err.println("Unexpected: " + e);
+                        e.printStackTrace();
+                    }
                 }
             }
         }
@@ -306,9 +320,14 @@ public class ShortRequestBody {
     static final byte[] requestEnd = new byte[] {'\r', '\n', '\r', '\n' };
 
     // Read until the end of a HTTP request headers
-    static void readRequestHeaders(InputStream is) throws IOException {
-        int requestEndCount = 0, r;
+    static String readRequestHeaders(InputStream is) throws IOException {
+        int requestEndCount = 0, r, eol = -1;
+        StringBuilder headers = new StringBuilder();
         while ((r = is.read()) != -1) {
+            if (r == '\r' && eol < 0) {
+                eol = headers.length();
+            }
+            headers.append((char) r);
             if (r == requestEnd[requestEndCount]) {
                 requestEndCount++;
                 if (requestEndCount == 4) {
@@ -318,6 +337,11 @@ public class ShortRequestBody {
                 requestEndCount = 0;
             }
         }
+
+        if (eol <= 0) return null;
+        String requestLine = headers.toString().substring(0, eol);
+        if (!requestLine.contains(MARKER)) return null;
+        return headers.toString();
     }
 
     static int fileSize(Path p) {

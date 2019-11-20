@@ -117,18 +117,18 @@ class JVMCIRuntime: public CHeapObj<mtJVMCI> {
                                           Klass* loading_klass);
   static void   get_field_by_index_impl(InstanceKlass* loading_klass, fieldDescriptor& fd,
                                         int field_index);
-  static methodHandle  get_method_by_index_impl(const constantPoolHandle& cpool,
-                                                int method_index, Bytecodes::Code bc,
-                                                InstanceKlass* loading_klass);
+  static Method*  get_method_by_index_impl(const constantPoolHandle& cpool,
+                                           int method_index, Bytecodes::Code bc,
+                                           InstanceKlass* loading_klass);
 
   // Helper methods
   static bool       check_klass_accessibility(Klass* accessing_klass, Klass* resolved_klass);
-  static methodHandle  lookup_method(InstanceKlass*  accessor,
-                                     Klass*  holder,
-                                     Symbol*         name,
-                                     Symbol*         sig,
-                                     Bytecodes::Code bc,
-                                     constantTag     tag);
+  static Method*    lookup_method(InstanceKlass*  accessor,
+                                  Klass*  holder,
+                                  Symbol*         name,
+                                  Symbol*         sig,
+                                  Bytecodes::Code bc,
+                                  constantTag     tag);
 
  public:
   JVMCIRuntime() {
@@ -194,9 +194,9 @@ class JVMCIRuntime: public CHeapObj<mtJVMCI> {
                                      Klass* loading_klass);
   static void   get_field_by_index(InstanceKlass* loading_klass, fieldDescriptor& fd,
                                    int field_index);
-  static methodHandle  get_method_by_index(const constantPoolHandle& cpool,
-                                           int method_index, Bytecodes::Code bc,
-                                           InstanceKlass* loading_klass);
+  static Method*  get_method_by_index(const constantPoolHandle& cpool,
+                                      int method_index, Bytecodes::Code bc,
+                                      InstanceKlass* loading_klass);
 
   // converts the Klass* representing the holder of a method into a
   // InstanceKlass*.  This is needed since the holder of a method in

@@ -26,8 +26,8 @@
  * @bug 8214113
  * @summary Verify the switch expression's type does not have a constant attached,
  *          and so the switch expression is not elided.
- * @compile --enable-preview --source ${jdk.version} SwitchExpressionIsNotAConstant.java
- * @run main/othervm --enable-preview SwitchExpressionIsNotAConstant
+ * @compile SwitchExpressionIsNotAConstant.java
+ * @run main SwitchExpressionIsNotAConstant
  */
 public class SwitchExpressionIsNotAConstant {
 

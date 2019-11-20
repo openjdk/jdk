@@ -944,7 +944,7 @@ public abstract class AMD64BaseAssembler extends Assembler {
     }
 
     public final boolean vexPrefix(Register dst, Register nds, Register src, AVXSize size, int pp, int mmmmm, int w, int wEvex, boolean checkAVX) {
-        if (isAVX512Register(dst) || isAVX512Register(nds) || isAVX512Register(src)) {
+        if (isAVX512Register(dst) || isAVX512Register(nds) || isAVX512Register(src) || size == AVXSize.ZMM) {
             evexPrefix(dst, Register.None, nds, src, size, pp, mmmmm, wEvex, Z0, B0);
             return true;
         }
@@ -953,7 +953,7 @@ public abstract class AMD64BaseAssembler extends Assembler {
     }
 
     public final boolean vexPrefix(Register dst, Register nds, AMD64Address src, AVXSize size, int pp, int mmmmm, int w, int wEvex, boolean checkAVX) {
-        if (isAVX512Register(dst) || isAVX512Register(nds)) {
+        if (isAVX512Register(dst) || isAVX512Register(nds) || size == AVXSize.ZMM) {
             evexPrefix(dst, Register.None, nds, src, size, pp, mmmmm, wEvex, Z0, B0);
             return true;
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import java.text.spi.DecimalFormatSymbolsProvider;
 import java.text.spi.NumberFormatProvider;
 import java.util.Collections;
 import java.util.Calendar;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
@@ -428,8 +429,9 @@ public class HostLocaleProviderAdapterImpl {
 
             @Override
             public NumberFormat getIntegerInstance(Locale locale) {
-                return new DecimalFormat(getNumberPattern(NF_INTEGER, locale),
+                DecimalFormat format = new DecimalFormat(getNumberPattern(NF_INTEGER, locale),
                     DecimalFormatSymbols.getInstance(locale));
+                return HostLocaleProviderAdapter.makeIntegerFormatter(format);
             }
 
             @Override
@@ -550,15 +552,33 @@ public class HostLocaleProviderAdapterImpl {
             }
 
             @Override
-            public String getDisplayName(String calType, int field, int value,
-                                         int style, Locale locale) {
-                return null;
+            public String getDisplayName(String calendarType, int field,
+                                         int value, int style, Locale locale) {
+                String[] names = getCalendarDisplayStrings(locale.toLanguageTag(),
+                        field, style);
+                if (names != null && value >= 0 && value < names.length) {
+                    return names[value];
+                } else {
+                    return null;
+                }
             }
 
             @Override
-            public Map<String, Integer> getDisplayNames(String calType,
-                                         int field, int style, Locale locale) {
-                return null;
+            public Map<String, Integer> getDisplayNames(String calendarType,
+                                                        int field, int style, Locale locale) {
+                Map<String, Integer> map = null;
+                String[] names = getCalendarDisplayStrings(locale.toLanguageTag(),
+                        field, style);
+                if (names != null) {
+                    map = new HashMap<>((int)Math.ceil(names.length / 0.75));
+                    for (int value = 0; value < names.length; value++) {
+                        if (names[value] != null) {
+                            map.put(names[value], value);
+                        }
+                    }
+                    map = map.isEmpty() ? null : map;
+                }
+                return map;
             }
         };
     }
@@ -900,6 +920,9 @@ public class HostLocaleProviderAdapterImpl {
 
     // For CalendarDataProvider
     private static native int getCalendarInt(String langTag, int type);
+
+    // For CalendarNameProvider
+    private static native String[] getCalendarDisplayStrings(String langTag, int field, int style);
 
     // For Locale/CurrencyNameProvider
     private static native String getDisplayString(String langTag, int key, String value);

@@ -24,9 +24,6 @@
 // key: compiler.err.prob.found.req
 // key: compiler.misc.incompatible.type.in.switch.expression
 // key: compiler.misc.inconvertible.types
-// key: compiler.note.preview.filename
-// key: compiler.note.preview.recompile
-// options: --enable-preview -source ${jdk.version}
 
 
 class IncompatibleTypesInSwitchExpression {

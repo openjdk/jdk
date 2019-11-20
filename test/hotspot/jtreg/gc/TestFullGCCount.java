@@ -26,8 +26,7 @@ package gc;
 /**
  * @test TestFullGCCount.java
  * @bug 7072527
- * @summary CMS: JMM GC counters overcount in some cases
- * @requires !(vm.gc == "ConcMarkSweep" & vm.opt.ExplicitGCInvokesConcurrent == true)
+ * @summary JMM GC counters overcount in some cases
  * @comment Shenandoah has "ExplicitGCInvokesConcurrent" on by default
  * @requires !(vm.gc == "Shenandoah"    & vm.opt.ExplicitGCInvokesConcurrent != false)
  * @modules java.management
@@ -41,7 +40,7 @@ import java.util.HashMap;
 import java.util.List;
 
 /*
- * Originally for a specific failure in CMS, this test now monitors all
+ * Originally for a specific failure in CMS[[keep]], this test now monitors all
  * collectors for double-counting of collections.
  */
 public class TestFullGCCount {

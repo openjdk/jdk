@@ -408,6 +408,7 @@ class Compile : public Phase {
   bool                  _print_intrinsics;      // True if we should print intrinsics for this compilation
 #ifndef PRODUCT
   bool                  _trace_opto_output;
+  bool                  _print_ideal;
   bool                  _parsed_irreducible_loop; // True if ciTypeFlow detected irreducible loops during parsing
 #endif
   bool                  _has_irreducible_loop;  // Found irreducible loops
@@ -724,6 +725,7 @@ class Compile : public Phase {
 
 #ifndef PRODUCT
   bool          trace_opto_output() const       { return _trace_opto_output; }
+  bool          print_ideal() const             { return _print_ideal; }
   bool              parsed_irreducible_loop() const { return _parsed_irreducible_loop; }
   void          set_parsed_irreducible_loop(bool z) { _parsed_irreducible_loop = z; }
   int _in_dump_cnt;  // Required for dumping ir nodes.
@@ -915,9 +917,7 @@ class Compile : public Phase {
   void         record_dead_node(uint idx)  { if (_dead_node_list.test_set(idx)) return;
                                              _dead_node_count++;
                                            }
-  bool         is_dead_node(uint idx)      { return _dead_node_list.test(idx) != 0; }
-  uint         dead_node_count()           { return _dead_node_count; }
-  void         reset_dead_node_list()      { _dead_node_list.Reset();
+  void         reset_dead_node_list()      { _dead_node_list.reset();
                                              _dead_node_count = 0;
                                            }
   uint          live_nodes() const         {

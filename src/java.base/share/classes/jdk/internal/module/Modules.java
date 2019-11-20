@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package jdk.internal.module;
 
+import java.io.PrintStream;
 import java.lang.module.Configuration;
 import java.lang.module.ModuleDescriptor;
 import java.lang.module.ModuleFinder;
@@ -33,6 +34,7 @@ import java.lang.module.ResolvedModule;
 import java.net.URI;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -40,6 +42,7 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import jdk.internal.access.JavaLangModuleAccess;
 import jdk.internal.loader.BootLoader;
 import jdk.internal.loader.BuiltinClassLoader;
 import jdk.internal.loader.ClassLoaders;
@@ -61,6 +64,7 @@ public class Modules {
     private Modules() { }
 
     private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
+    private static final JavaLangModuleAccess JLMA = SharedSecrets.getJavaLangModuleAccess();
 
     /**
      * Creates a new Module. The module has the given ModuleDescriptor and
@@ -156,6 +160,20 @@ public class Modules {
             // update Layer catalog
             JLA.getServicesCatalog(layer).addProvider(m, service, impl);
         }
+    }
+
+    /**
+     * Resolves a collection of root modules, with service binding and the empty
+     * Configuration as the parent to create a Configuration for the boot layer.
+     *
+     * This method is intended to be used to create the Configuration for the
+     * boot layer during startup or at a link-time.
+     */
+    public static Configuration newBootLayerConfiguration(ModuleFinder finder,
+                                                          Collection<String> roots,
+                                                          PrintStream traceOutput)
+    {
+        return JLMA.resolveAndBind(finder, roots, traceOutput);
     }
 
     /**

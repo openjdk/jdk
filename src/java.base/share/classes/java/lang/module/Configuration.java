@@ -312,7 +312,7 @@ public final class Configuration {
     {
         List<Configuration> parents = List.of(empty());
         Resolver resolver = new Resolver(finder, parents, ModuleFinder.of(), traceOutput);
-        resolver.resolve(roots).bind();
+        resolver.resolve(roots).bind(/*bindIncubatorModules*/false);
         return new Configuration(parents, resolver);
     }
 

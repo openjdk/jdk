@@ -26,6 +26,7 @@
 #define SHARE_UTILITIES_BITMAP_HPP
 
 #include "memory/allocation.hpp"
+#include "runtime/atomic.hpp"
 #include "utilities/align.hpp"
 
 // Forward decl;
@@ -104,6 +105,8 @@ class BitMap {
   void set_word  (idx_t word, bm_word_t val) { _map[word] = val; }
   void set_word  (idx_t word)            { set_word(word, ~(bm_word_t)0); }
   void clear_word(idx_t word)            { _map[word] = 0; }
+
+  static inline const bm_word_t load_word_ordered(const volatile bm_word_t* const addr, atomic_memory_order memory_order);
 
   // Utilities for ranges of bits.  Ranges are half-open [beg, end).
 
@@ -204,6 +207,9 @@ class BitMap {
     return (*word_addr(index) & bit_mask(index)) != 0;
   }
 
+  // memory_order must be memory_order_relaxed or memory_order_acquire.
+  bool par_at(idx_t index, atomic_memory_order memory_order = memory_order_acquire) const;
+
   // Align bit index up or down to the next bitmap word boundary, or check
   // alignment.
   static idx_t word_align_up(idx_t bit) {
@@ -220,9 +226,14 @@ class BitMap {
   inline void set_bit(idx_t bit);
   inline void clear_bit(idx_t bit);
 
-  // Atomically set or clear the specified bit.
-  inline bool par_set_bit(idx_t bit);
-  inline bool par_clear_bit(idx_t bit);
+  // Attempts to change a bit to a desired value. The operation returns true if
+  // this thread changed the value of the bit. It was changed with a RMW operation
+  // using the specified memory_order. The operation returns false if the change
+  // could not be set due to the bit already being observed in the desired state.
+  // The atomic access that observed the bit in the desired state has acquire
+  // semantics, unless memory_order is memory_order_relaxed or memory_order_release.
+  inline bool par_set_bit(idx_t bit, atomic_memory_order memory_order = memory_order_conservative);
+  inline bool par_clear_bit(idx_t bit, atomic_memory_order memory_order = memory_order_conservative);
 
   // Put the given value at the given offset. The parallel version
   // will CAS the value into the bitmap and is quite a bit slower.

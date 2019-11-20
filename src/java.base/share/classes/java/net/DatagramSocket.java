@@ -646,7 +646,9 @@ class DatagramSocket implements java.io.Closeable {
      *             if this socket has an associated channel,
      *             and the channel is in non-blocking mode.
      * @throws     IllegalArgumentException if the socket is connected,
-     *             and connected address and packet address differ.
+     *             and connected address and packet address differ, or
+     *             if the socket is not connected and the packet address
+     *             is not set.
      *
      * @see        java.net.DatagramPacket
      * @see        SecurityManager#checkMulticast(InetAddress)
@@ -655,12 +657,15 @@ class DatagramSocket implements java.io.Closeable {
      * @spec JSR-51
      */
     public void send(DatagramPacket p) throws IOException  {
-        InetAddress packetAddress = null;
         synchronized (p) {
             if (isClosed())
                 throw new SocketException("Socket is closed");
-            checkAddress (p.getAddress(), "send");
+            InetAddress packetAddress = p.getAddress();
+            checkAddress (packetAddress, "send");
             if (connectState == ST_NOT_CONNECTED) {
+                if (packetAddress == null) {
+                    throw new IllegalArgumentException("Address not set");
+                }
                 // check the address is ok with the security manager on every send.
                 SecurityManager security = System.getSecurityManager();
 
@@ -669,16 +674,15 @@ class DatagramSocket implements java.io.Closeable {
                 // while you are trying to send the packet for example
                 // after the security check but before the send.
                 if (security != null) {
-                    if (p.getAddress().isMulticastAddress()) {
-                        security.checkMulticast(p.getAddress());
+                    if (packetAddress.isMulticastAddress()) {
+                        security.checkMulticast(packetAddress);
                     } else {
-                        security.checkConnect(p.getAddress().getHostAddress(),
+                        security.checkConnect(packetAddress.getHostAddress(),
                                               p.getPort());
                     }
                 }
             } else {
                 // we're connected
-                packetAddress = p.getAddress();
                 if (packetAddress == null) {
                     p.setAddress(connectedAddress);
                     p.setPort(connectedPort);

@@ -322,7 +322,7 @@ inline void compare_with_patch_site(address template_start, address pc_start, in
 void PatchingStub::emit_code(LIR_Assembler* ce) {
   // copy original code here
   assert(NativeGeneralJump::instruction_size <= _bytes_to_copy && _bytes_to_copy <= 0xFF,
-         "not enough room for call");
+         "not enough room for call, need %d", _bytes_to_copy);
   assert((_bytes_to_copy & 0x3) == 0, "must copy a multiple of four bytes");
 
   Label call_patch;
@@ -340,7 +340,7 @@ void PatchingStub::emit_code(LIR_Assembler* ce) {
     __ load_const(_obj, addrlit, R0);
     DEBUG_ONLY( compare_with_patch_site(__ code_section()->start() + being_initialized_entry, _pc_start, _bytes_to_copy); )
   } else {
-    // Make a copy the code which is going to be patched.
+    // Make a copy of the code which is going to be patched.
     for (int i = 0; i < _bytes_to_copy; i++) {
       address ptr = (address)(_pc_start + i);
       int a_byte = (*ptr) & 0xFF;

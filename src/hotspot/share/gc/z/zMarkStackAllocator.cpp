@@ -166,7 +166,7 @@ ZMarkStackMagazine* ZMarkStackAllocator::create_magazine_from_space(uintptr_t ad
 
 ZMarkStackMagazine* ZMarkStackAllocator::alloc_magazine() {
   // Try allocating from the free list first
-  ZMarkStackMagazine* const magazine = _freelist.pop_atomic();
+  ZMarkStackMagazine* const magazine = _freelist.pop();
   if (magazine != NULL) {
     return magazine;
   }
@@ -181,5 +181,5 @@ ZMarkStackMagazine* ZMarkStackAllocator::alloc_magazine() {
 }
 
 void ZMarkStackAllocator::free_magazine(ZMarkStackMagazine* magazine) {
-  _freelist.push_atomic(magazine);
+  _freelist.push(magazine);
 }

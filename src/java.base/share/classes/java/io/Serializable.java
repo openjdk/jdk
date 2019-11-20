@@ -134,6 +134,11 @@ package java.io;
  * This readResolve method follows the same invocation rules and
  * accessibility rules as writeReplace.<p>
  *
+ * Enum types are all serializable and receive treatment defined by
+ * the <cite>Java Object Serialization Specification</cite> during
+ * serialization and deserialization. Any declarations of the special
+ * handling methods discussed above are ignored for enum types.<p>
+ *
  * The serialization runtime associates with each serializable class a version
  * number, called a serialVersionUID, which is used during deserialization to
  * verify that the sender and receiver of a serialized object have loaded
@@ -152,8 +157,9 @@ package java.io;
  * If a serializable class does not explicitly declare a serialVersionUID, then
  * the serialization runtime will calculate a default serialVersionUID value
  * for that class based on various aspects of the class, as described in the
- * Java(TM) Object Serialization Specification.  However, it is <em>strongly
- * recommended</em> that all serializable classes explicitly declare
+ * Java Object Serialization Specification.  This specification defines the
+ * serialVersionUID of an enum type to be 0L. However, it is <em>strongly
+ * recommended</em> that all serializable classes other than enum types explicitly declare
  * serialVersionUID values, since the default serialVersionUID computation is
  * highly sensitive to class details that may vary depending on compiler
  * implementations, and can thus result in unexpected

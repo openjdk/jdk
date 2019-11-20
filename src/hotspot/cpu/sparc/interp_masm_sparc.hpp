@@ -321,7 +321,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
   // Debugging
   void interp_verify_oop(Register reg, TosState state, const char * file, int line);    // only if +VerifyOops && state == atos
   void verify_oop_or_return_address(Register reg, Register rtmp); // for astore
-  void verify_FPU(int stack_depth, TosState state = ftos); // only if +VerifyFPU  && (state == ftos || state == dtos)
+  void verify_FPU(int stack_depth, TosState state = ftos) {}      // No-op.
 
   // support for JVMTI/Dtrace
   typedef enum { NotifyJVMTI, SkipNotifyJVMTI } NotifyMethodExitMode;

@@ -45,7 +45,7 @@ Node* CardTableBarrierSetC2::byte_map_base_node(GraphKit* kit) const {
    }
 }
 
-// vanilla/CMS post barrier
+// vanilla post barrier
 // Insert a write-barrier store.  This is to let generational GC work; we have
 // to flag all oop-stores before the next GC point.
 void CardTableBarrierSetC2::post_barrier(GraphKit* kit,

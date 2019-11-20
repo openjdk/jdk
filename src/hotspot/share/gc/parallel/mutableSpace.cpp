@@ -24,7 +24,7 @@
 
 #include "precompiled.hpp"
 #include "gc/parallel/mutableSpace.hpp"
-#include "gc/shared/spaceDecorator.hpp"
+#include "gc/shared/spaceDecorator.inline.hpp"
 #include "memory/iterator.inline.hpp"
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"

@@ -343,6 +343,7 @@ public class TestCommon extends CDSTestUtils {
             newFile.renameTo(oldFile);
             System.out.println("firstJar = " + firstJar + " Modified");
         } else {
+            zipFile.close();
             System.out.println("firstJar = " + firstJar);
         }
     }

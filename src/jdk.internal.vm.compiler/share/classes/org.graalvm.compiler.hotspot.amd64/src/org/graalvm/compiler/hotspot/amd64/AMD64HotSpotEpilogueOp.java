@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,20 +24,23 @@
 
 package org.graalvm.compiler.hotspot.amd64;
 
-import static org.graalvm.compiler.lir.LIRInstruction.OperandFlag.REG;
-import static org.graalvm.compiler.lir.LIRInstruction.OperandFlag.STACK;
 import static jdk.vm.ci.amd64.AMD64.rbp;
 import static jdk.vm.ci.code.ValueUtil.asRegister;
 import static jdk.vm.ci.code.ValueUtil.isStackSlot;
+import static org.graalvm.compiler.lir.LIRInstruction.OperandFlag.ILLEGAL;
+import static org.graalvm.compiler.lir.LIRInstruction.OperandFlag.REG;
+import static org.graalvm.compiler.lir.LIRInstruction.OperandFlag.STACK;
 
 import org.graalvm.compiler.asm.amd64.AMD64Address;
 import org.graalvm.compiler.asm.amd64.AMD64MacroAssembler;
 import org.graalvm.compiler.lir.LIRInstructionClass;
+import org.graalvm.compiler.lir.amd64.AMD64FrameMap;
 import org.graalvm.compiler.lir.amd64.AMD64LIRInstruction;
 import org.graalvm.compiler.lir.asm.CompilationResultBuilder;
 
 import jdk.vm.ci.code.Register;
 import jdk.vm.ci.meta.AllocatableValue;
+import jdk.vm.ci.meta.Value;
 
 /**
  * Superclass for operations that use the value of RBP saved in a method's prologue.
@@ -48,14 +51,17 @@ abstract class AMD64HotSpotEpilogueOp extends AMD64LIRInstruction implements AMD
         super(c);
     }
 
-    @Use({REG, STACK}) private AllocatableValue savedRbp = PLACEHOLDER;
+    @Use({REG, STACK, ILLEGAL}) private AllocatableValue savedRbp = Value.ILLEGAL;
 
     protected void leaveFrameAndRestoreRbp(CompilationResultBuilder crb, AMD64MacroAssembler masm) {
         leaveFrameAndRestoreRbp(savedRbp, crb, masm);
     }
 
     static void leaveFrameAndRestoreRbp(AllocatableValue savedRbp, CompilationResultBuilder crb, AMD64MacroAssembler masm) {
-        if (isStackSlot(savedRbp)) {
+        if (Value.ILLEGAL.equals(savedRbp)) {
+            // RBP will be restored in FrameContext.leave(..). Nothing to do here.
+            assert ((AMD64FrameMap) crb.frameMap).useStandardFrameProlog() : "savedRbp is not initialized.";
+        } else if (isStackSlot(savedRbp)) {
             // Restoring RBP from the stack must be done before the frame is removed
             masm.movq(rbp, (AMD64Address) crb.asAddress(savedRbp));
         } else {

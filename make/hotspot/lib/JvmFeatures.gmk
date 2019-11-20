@@ -138,11 +138,6 @@ ifneq ($(call check-jvm-feature, aot), true)
       aotLoader.cpp compiledIC_aot.cpp
 endif
 
-ifneq ($(call check-jvm-feature, cmsgc), true)
-  JVM_CFLAGS_FEATURES += -DINCLUDE_CMSGC=0
-  JVM_EXCLUDE_PATTERNS += gc/cms
-endif
-
 ifneq ($(call check-jvm-feature, g1gc), true)
   JVM_CFLAGS_FEATURES += -DINCLUDE_G1GC=0
   JVM_EXCLUDE_PATTERNS += gc/g1

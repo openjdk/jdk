@@ -1130,21 +1130,6 @@ void RegistersForDebugging::restore_registers(MacroAssembler* a, Register r) {
   }
 }
 
-
-// pushes double TOS element of FPU stack on CPU stack; pops from FPU stack
-void MacroAssembler::push_fTOS() {
-  // %%%%%% need to implement this
-}
-
-// pops double TOS element from CPU stack and pushes on FPU stack
-void MacroAssembler::pop_fTOS() {
-  // %%%%%% need to implement this
-}
-
-void MacroAssembler::empty_FPU_stack() {
-  // %%%%%% need to implement this
-}
-
 void MacroAssembler::_verify_oop(Register reg, const char* msg, const char * file, int line) {
   // plausibility check for oops
   if (!VerifyOops) return;
@@ -2825,47 +2810,6 @@ void MacroAssembler::compiler_unlock_object(Register Roop, Register Rmark,
 
    bind(done);
 }
-
-
-
-void MacroAssembler::print_CPU_state() {
-  // %%%%% need to implement this
-}
-
-void MacroAssembler::verify_FPU(int stack_depth, const char* s) {
-  // %%%%% need to implement this
-}
-
-void MacroAssembler::push_IU_state() {
-  // %%%%% need to implement this
-}
-
-
-void MacroAssembler::pop_IU_state() {
-  // %%%%% need to implement this
-}
-
-
-void MacroAssembler::push_FPU_state() {
-  // %%%%% need to implement this
-}
-
-
-void MacroAssembler::pop_FPU_state() {
-  // %%%%% need to implement this
-}
-
-
-void MacroAssembler::push_CPU_state() {
-  // %%%%% need to implement this
-}
-
-
-void MacroAssembler::pop_CPU_state() {
-  // %%%%% need to implement this
-}
-
-
 
 void MacroAssembler::verify_tlab() {
 #ifdef ASSERT

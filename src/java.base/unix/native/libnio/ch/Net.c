@@ -158,22 +158,32 @@ Java_sun_nio_ch_Net_isExclusiveBindAvailable(JNIEnv *env, jclass clazz) {
 JNIEXPORT jboolean JNICALL
 Java_sun_nio_ch_Net_canIPv6SocketJoinIPv4Group0(JNIEnv* env, jclass cl)
 {
-#if defined(__APPLE__) || defined(_AIX)
-    /* for now IPv6 sockets cannot join IPv4 multicast groups */
-    return JNI_FALSE;
-#else
+#if defined(__linux__) || defined(__APPLE__) || defined(__solaris__)
+    /* IPv6 sockets can join IPv4 multicast groups */
     return JNI_TRUE;
+#else
+    /* IPv6 sockets cannot join IPv4 multicast groups */
+    return JNI_FALSE;
 #endif
 }
 
 JNIEXPORT jboolean JNICALL
 Java_sun_nio_ch_Net_canJoin6WithIPv4Group0(JNIEnv* env, jclass cl)
 {
-#ifdef __solaris__
+#if defined(__APPLE__) || defined(__solaris__)
+    /* IPV6_ADD_MEMBERSHIP can be used to join IPv4 multicast groups */
     return JNI_TRUE;
 #else
+    /* IPV6_ADD_MEMBERSHIP cannot be used to join IPv4 multicast groups */
     return JNI_FALSE;
 #endif
+}
+
+JNIEXPORT jboolean JNICALL
+Java_sun_nio_ch_Net_canUseIPv6OptionsWithIPv4LocalAddress0(JNIEnv* env, jclass cl)
+{
+    /* IPV6_XXX socket options can be used on IPv6 sockets bound to IPv4 address */
+    return JNI_TRUE;
 }
 
 JNIEXPORT jint JNICALL

@@ -27,14 +27,17 @@
 #include "gc/z/zBarrierSet.hpp"
 #include "gc/z/zBarrierSetAssembler.hpp"
 #include "gc/z/zBarrierSetRuntime.hpp"
+#include "opto/arraycopynode.hpp"
 #include "opto/block.hpp"
 #include "opto/compile.hpp"
 #include "opto/graphKit.hpp"
 #include "opto/machnode.hpp"
+#include "opto/macro.hpp"
 #include "opto/memnode.hpp"
 #include "opto/node.hpp"
 #include "opto/regalloc.hpp"
 #include "opto/rootnode.hpp"
+#include "opto/type.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
 
@@ -175,52 +178,91 @@ int ZBarrierSetC2::estimate_stub_size() const {
   return size;
 }
 
-static bool barrier_needed(C2Access& access) {
-  return ZBarrierSet::barrier_needed(access.decorators(), access.type());
+static void set_barrier_data(C2Access& access) {
+  if (ZBarrierSet::barrier_needed(access.decorators(), access.type())) {
+    if (access.decorators() & ON_WEAK_OOP_REF) {
+      access.set_barrier_data(ZLoadBarrierWeak);
+    } else {
+      access.set_barrier_data(ZLoadBarrierStrong);
+    }
+  }
 }
 
 Node* ZBarrierSetC2::load_at_resolved(C2Access& access, const Type* val_type) const {
-  Node* result = BarrierSetC2::load_at_resolved(access, val_type);
-  if (barrier_needed(access) && access.raw_access()->is_Mem()) {
-    if ((access.decorators() & ON_WEAK_OOP_REF) != 0) {
-      access.raw_access()->as_Load()->set_barrier_data(ZLoadBarrierWeak);
-    } else {
-      access.raw_access()->as_Load()->set_barrier_data(ZLoadBarrierStrong);
-    }
-  }
-
-  return result;
+  set_barrier_data(access);
+  return BarrierSetC2::load_at_resolved(access, val_type);
 }
 
 Node* ZBarrierSetC2::atomic_cmpxchg_val_at_resolved(C2AtomicParseAccess& access, Node* expected_val,
                                                     Node* new_val, const Type* val_type) const {
-  Node* result = BarrierSetC2::atomic_cmpxchg_val_at_resolved(access, expected_val, new_val, val_type);
-  if (barrier_needed(access)) {
-    access.raw_access()->as_LoadStore()->set_barrier_data(ZLoadBarrierStrong);
-  }
-  return result;
+  set_barrier_data(access);
+  return BarrierSetC2::atomic_cmpxchg_val_at_resolved(access, expected_val, new_val, val_type);
 }
 
 Node* ZBarrierSetC2::atomic_cmpxchg_bool_at_resolved(C2AtomicParseAccess& access, Node* expected_val,
                                                      Node* new_val, const Type* value_type) const {
-  Node* result = BarrierSetC2::atomic_cmpxchg_bool_at_resolved(access, expected_val, new_val, value_type);
-  if (barrier_needed(access)) {
-    access.raw_access()->as_LoadStore()->set_barrier_data(ZLoadBarrierStrong);
-  }
-  return result;
+  set_barrier_data(access);
+  return BarrierSetC2::atomic_cmpxchg_bool_at_resolved(access, expected_val, new_val, value_type);
 }
 
 Node* ZBarrierSetC2::atomic_xchg_at_resolved(C2AtomicParseAccess& access, Node* new_val, const Type* val_type) const {
-  Node* result = BarrierSetC2::atomic_xchg_at_resolved(access, new_val, val_type);
-  if (barrier_needed(access)) {
-    access.raw_access()->as_LoadStore()->set_barrier_data(ZLoadBarrierStrong);
-  }
-  return result;
+  set_barrier_data(access);
+  return BarrierSetC2::atomic_xchg_at_resolved(access, new_val, val_type);
 }
 
 bool ZBarrierSetC2::array_copy_requires_gc_barriers(bool tightly_coupled_alloc, BasicType type,
                                                     bool is_clone, ArrayCopyPhase phase) const {
   return type == T_OBJECT || type == T_ARRAY;
+}
+
+static const TypeFunc* clone_type() {
+  // Create input type (domain)
+  const Type** domain_fields = TypeTuple::fields(3);
+  domain_fields[TypeFunc::Parms + 0] = TypeInstPtr::NOTNULL;  // src
+  domain_fields[TypeFunc::Parms + 1] = TypeInstPtr::NOTNULL;  // dst
+  domain_fields[TypeFunc::Parms + 2] = TypeInt::INT;          // size
+  const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms + 3, domain_fields);
+
+  // Create result type (range)
+  const Type** range_fields = TypeTuple::fields(0);
+  const TypeTuple* range = TypeTuple::make(TypeFunc::Parms + 0, range_fields);
+
+  return TypeFunc::make(domain, range);
+}
+
+void ZBarrierSetC2::clone_at_expansion(PhaseMacroExpand* phase, ArrayCopyNode* ac) const {
+  Node* const src = ac->in(ArrayCopyNode::Src);
+
+  if (src->bottom_type()->isa_aryptr()) {
+    // Clone primitive array
+    BarrierSetC2::clone_at_expansion(phase, ac);
+    return;
+  }
+
+  // Clone instance
+  Node* const ctrl = ac->in(TypeFunc::Control);
+  Node* const mem = ac->in(TypeFunc::Memory);
+  Node* const dst = ac->in(ArrayCopyNode::Dest);
+  Node* const src_offset = ac->in(ArrayCopyNode::SrcPos);
+  Node* const dst_offset = ac->in(ArrayCopyNode::DestPos);
+  Node* const size = ac->in(ArrayCopyNode::Length);
+
+  assert(src->bottom_type()->isa_instptr(), "Should be an instance");
+  assert(dst->bottom_type()->isa_instptr(), "Should be an instance");
+  assert(src_offset == NULL, "Should be null");
+  assert(dst_offset == NULL, "Should be null");
+
+  Node* const call = phase->make_leaf_call(ctrl,
+                                           mem,
+                                           clone_type(),
+                                           ZBarrierSetRuntime::clone_addr(),
+                                           "ZBarrierSetRuntime::clone",
+                                           TypeRawPtr::BOTTOM,
+                                           src,
+                                           dst,
+                                           size);
+  phase->transform_later(call);
+  phase->igvn().replace_node(ac, call);
 }
 
 // == Dominating barrier elision ==

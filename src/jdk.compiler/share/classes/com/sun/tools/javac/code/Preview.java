@@ -165,10 +165,7 @@ public class Preview {
      * @return true, if given feature is a preview feature.
      */
     public boolean isPreview(Feature feature) {
-        if (feature == Feature.SWITCH_EXPRESSION ||
-            feature == Feature.SWITCH_MULTIPLE_CASE_LABELS ||
-            feature == Feature.SWITCH_RULE ||
-            feature == Feature.TEXT_BLOCKS)
+        if (feature == Feature.TEXT_BLOCKS)
             return true;
         //Note: this is a backdoor which allows to optionally treat all features as 'preview' (for testing).
         //When real preview features will be added, this method can be implemented to return 'true'

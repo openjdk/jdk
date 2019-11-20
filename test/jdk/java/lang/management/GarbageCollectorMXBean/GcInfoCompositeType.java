@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
  * @run     main/othervm -XX:-ExplicitGCInvokesConcurrent GcInfoCompositeType
  */
 // Passing "-XX:-ExplicitGCInvokesConcurrent" to force System.gc()
-// run on foreground when CMS is used and prevent situations when "GcInfo"
+// run on foreground when a concurrent collector is used and prevent situations when "GcInfo"
 // is missing even though System.gc() was successfuly processed.
 
 import java.util.*;

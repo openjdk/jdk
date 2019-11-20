@@ -1401,7 +1401,7 @@ public class InvocationPlugins {
             if (declaringType instanceof ResolvedJavaSymbol) {
                 return checkResolvable(isOptional, ((ResolvedJavaSymbol) declaringType).getResolved(), binding);
             }
-            Class<?> declaringClass = InvocationPlugins.resolveType(declaringType, isOptional);
+            Class<?> declaringClass = resolveType(declaringType, isOptional);
             if (declaringClass == null) {
                 return true;
             }
@@ -1411,7 +1411,7 @@ public class InvocationPlugins {
                 }
             } else {
                 if (resolveMethod(declaringClass, binding) == null && !isOptional) {
-                    throw new AssertionError(String.format("Method not found: %s.%s%s", declaringClass.getName(), binding.name, binding.argumentsDescriptor));
+                    throw new NoSuchMethodError(String.format("%s.%s%s", declaringClass.getName(), binding.name, binding.argumentsDescriptor));
                 }
             }
             return true;

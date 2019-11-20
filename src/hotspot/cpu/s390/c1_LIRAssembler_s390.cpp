@@ -1322,6 +1322,15 @@ void LIR_Assembler::comp_op(LIR_Condition condition, LIR_Opr opr1, LIR_Opr opr2,
         } else {
           __ z_cfi(reg1, c->as_jint());
         }
+      } else if (c->type() == T_METADATA) {
+        // We only need, for now, comparison with NULL for metadata.
+        assert(condition == lir_cond_equal || condition == lir_cond_notEqual, "oops");
+        Metadata* m = c->as_metadata();
+        if (m == NULL) {
+          __ z_cghi(reg1, 0);
+        } else {
+          ShouldNotReachHere();
+        }
       } else if (is_reference_type(c->type())) {
         // In 64bit oops are single register.
         jobject o = c->as_jobject();

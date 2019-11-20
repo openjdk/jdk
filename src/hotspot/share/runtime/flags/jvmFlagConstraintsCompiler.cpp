@@ -61,13 +61,13 @@ JVMFlag::Error AliasLevelConstraintFunc(intx value, bool verbose) {
  *    'TieredStopAtLevel = CompLevel_full_optimization' (the default value). As a result,
  *    the minimum number of compiler threads is 2.
  * 5) Non-tiered emulation mode is on. CompilationModeFlag::disable_intermediate() == true.
- *    The mininum number of threads is 2. But if CompilationModeFlag::quick_internal() == false, then it's 1.
+ *    The minimum number of threads is 2. But if CompilationModeFlag::quick_internal() == false, then it's 1.
  */
 JVMFlag::Error CICompilerCountConstraintFunc(intx value, bool verbose) {
   int min_number_of_compiler_threads = 0;
 #if !defined(COMPILER1) && !defined(COMPILER2) && !INCLUDE_JVMCI
   // case 1
-#else
+#elif defined(TIERED)
   if (TieredCompilation) {
     if (TieredStopAtLevel < CompLevel_full_optimization || CompilationModeFlag::quick_only()) {
       min_number_of_compiler_threads = 1; // case 3
@@ -84,6 +84,8 @@ JVMFlag::Error CICompilerCountConstraintFunc(intx value, bool verbose) {
   } else {
     min_number_of_compiler_threads = 1; // case 2
   }
+#else
+  min_number_of_compiler_threads = 1; // case 2
 #endif
 
   // The default CICompilerCount's value is CI_COMPILER_COUNT.

@@ -31,7 +31,7 @@
 #include "memory/resourceArea.hpp"
 #include "runtime/java.hpp"
 #include "runtime/stubCodeGenerator.hpp"
-#include "vm_version_s390.hpp"
+#include "runtime/vm_version.hpp"
 
 # include <sys/sysinfo.h>
 
@@ -44,8 +44,8 @@ unsigned long VM_Version::_msgdigest_features[_features_buffer_len] = {0, 0, 0, 
 unsigned int  VM_Version::_nfeatures                                = 0;
 unsigned int  VM_Version::_ncipher_features                         = 0;
 unsigned int  VM_Version::_nmsgdigest_features                      = 0;
-unsigned int  VM_Version::_Dcache_lineSize                          = 256;
-unsigned int  VM_Version::_Icache_lineSize                          = 256;
+unsigned int  VM_Version::_Dcache_lineSize                          = DEFAULT_CACHE_LINE_SIZE;
+unsigned int  VM_Version::_Icache_lineSize                          = DEFAULT_CACHE_LINE_SIZE;
 
 static const char* z_gen[]     = {"  ",   "G1",   "G2", "G3",    "G4",     "G5",      "G6",   "G7"   };
 static const char* z_machine[] = {"  ", "2064", "2084", "2094",  "2097",   "2817",    "  ",   "2964" };
@@ -61,7 +61,9 @@ void VM_Version::initialize() {
 
   intx cache_line_size = Dcache_lineSize(0);
 
+#ifdef COMPILER2
   MaxVectorSize = 8;
+#endif
 
   if (has_PrefetchRaw()) {
     if (FLAG_IS_DEFAULT(AllocatePrefetchStyle)) {  // not preset
@@ -217,6 +219,7 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseSHA, false);
   }
 
+#ifdef COMPILER2
   if (FLAG_IS_DEFAULT(UseMultiplyToLenIntrinsic)) {
     FLAG_SET_DEFAULT(UseMultiplyToLenIntrinsic, true);
   }
@@ -226,6 +229,7 @@ void VM_Version::initialize() {
   if (FLAG_IS_DEFAULT(UseMontgomerySquareIntrinsic)) {
     FLAG_SET_DEFAULT(UseMontgomerySquareIntrinsic, true);
   }
+#endif
   if (FLAG_IS_DEFAULT(UsePopCountInstruction)) {
     FLAG_SET_DEFAULT(UsePopCountInstruction, true);
   }

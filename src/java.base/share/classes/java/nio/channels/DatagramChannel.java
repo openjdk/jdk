@@ -255,8 +255,11 @@ public abstract class DatagramChannel
      * <p> The channel's socket is configured so that it only receives
      * datagrams from, and sends datagrams to, the given remote <i>peer</i>
      * address.  Once connected, datagrams may not be received from or sent to
-     * any other address.  A datagram socket remains connected until it is
-     * explicitly disconnected or until it is closed.
+     * any other address.  Datagrams in the channel's {@linkplain
+     * java.net.StandardSocketOptions#SO_RCVBUF socket receive buffer}, which
+     * have not been {@linkplain #receive(ByteBuffer) received} before invoking
+     * this method, may be discarded.  The channel's socket remains connected
+     * until it is explicitly disconnected or until it is closed.
      *
      * <p> This method performs exactly the same security checks as the {@link
      * java.net.DatagramSocket#connect connect} method of the {@link
@@ -270,12 +273,13 @@ public abstract class DatagramChannel
      * should be taken to ensure that a connected datagram channel is not shared
      * with untrusted code.
      *
-     * <p> This method may be invoked at any time.  It will not have any effect
-     * on read or write operations that are already in progress at the moment
-     * that it is invoked. If this channel's socket is not bound then this method
-     * will first cause the socket to be bound to an address that is assigned
+     * <p> This method may be invoked at any time.  If another thread has
+     * already initiated a read or write operation upon this channel, then an
+     * invocation of this method will block until any such operation is
+     * complete.  If this channel's socket is not bound then this method will
+     * first cause the socket to be bound to an address that is assigned
      * automatically, as if invoking the {@link #bind bind} method with a
-     * parameter of {@code null}. </p>
+     * parameter of {@code null}.  </p>
      *
      * @param  remote
      *         The remote address to which this channel is to be connected
@@ -323,9 +327,10 @@ public abstract class DatagramChannel
      * from, and sends datagrams to, any remote address so long as the security
      * manager, if installed, permits it.
      *
-     * <p> This method may be invoked at any time.  It will not have any effect
-     * on read or write operations that are already in progress at the moment
-     * that it is invoked.
+     * <p> This method may be invoked at any time.  If another thread has
+     * already initiated a read or write operation upon this channel, then an
+     * invocation of this method will block until any such operation is
+     * complete.
      *
      * <p> If this channel's socket is not connected, or if the channel is
      * closed, then invoking this method has no effect.  </p>

@@ -1875,7 +1875,7 @@ void GenerateOopMap::do_jsr(int targ_bci) {
 
 
 void GenerateOopMap::do_ldc(int bci) {
-  Bytecode_loadconstant ldc(method(), bci);
+  Bytecode_loadconstant ldc(methodHandle(Thread::current(), method()), bci);
   ConstantPool* cp  = method()->constants();
   constantTag tag = cp->tag_at(ldc.pool_index()); // idx is index in resolved_references
   BasicType       bt  = ldc.result_type();

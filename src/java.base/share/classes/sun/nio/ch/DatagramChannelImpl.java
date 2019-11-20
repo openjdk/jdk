@@ -239,6 +239,40 @@ class DatagramChannelImpl
         }
     }
 
+    /**
+     * Returns the protocol family to specify to set/getSocketOption for the
+     * given socket option.
+     */
+    private ProtocolFamily familyFor(SocketOption<?> name) {
+        assert Thread.holdsLock(stateLock);
+
+        // unspecified (most options)
+        if (SocketOptionRegistry.findOption(name, Net.UNSPEC) != null)
+            return Net.UNSPEC;
+
+        // IPv4 socket
+        if (family == StandardProtocolFamily.INET)
+            return StandardProtocolFamily.INET;
+
+        // IPv6 socket that is unbound
+        if (localAddress == null)
+            return StandardProtocolFamily.INET6;
+
+        // IPv6 socket bound to wildcard or IPv6 address
+        InetAddress address = localAddress.getAddress();
+        if (address.isAnyLocalAddress() || (address instanceof Inet6Address))
+            return StandardProtocolFamily.INET6;
+
+        // IPv6 socket bound to IPv4 address
+        if (Net.canUseIPv6OptionsWithIPv4LocalAddress()) {
+            // IPV6_XXX options can be used
+            return StandardProtocolFamily.INET6;
+        } else {
+            // IPV6_XXX options cannot be used
+            return StandardProtocolFamily.INET;
+        }
+    }
+
     @Override
     public <T> DatagramChannel setOption(SocketOption<T> name, T value)
         throws IOException
@@ -252,14 +286,7 @@ class DatagramChannelImpl
         synchronized (stateLock) {
             ensureOpen();
 
-            if (name == StandardSocketOptions.IP_TOS ||
-                name == StandardSocketOptions.IP_MULTICAST_TTL ||
-                name == StandardSocketOptions.IP_MULTICAST_LOOP)
-            {
-                // options are protocol dependent
-                Net.setSocketOption(fd, family, name, value);
-                return this;
-            }
+            ProtocolFamily family = familyFor(name);
 
             if (name == StandardSocketOptions.IP_MULTICAST_IF) {
                 NetworkInterface interf = (NetworkInterface)value;
@@ -285,7 +312,7 @@ class DatagramChannelImpl
             }
 
             // remaining options don't need any special handling
-            Net.setSocketOption(fd, Net.UNSPEC, name, value);
+            Net.setSocketOption(fd, family, name, value);
             return this;
         }
     }
@@ -302,12 +329,7 @@ class DatagramChannelImpl
         synchronized (stateLock) {
             ensureOpen();
 
-            if (name == StandardSocketOptions.IP_TOS ||
-                name == StandardSocketOptions.IP_MULTICAST_TTL ||
-                name == StandardSocketOptions.IP_MULTICAST_LOOP)
-            {
-                return (T) Net.getSocketOption(fd, family, name);
-            }
+            ProtocolFamily family = familyFor(name);
 
             if (name == StandardSocketOptions.IP_MULTICAST_IF) {
                 if (family == StandardProtocolFamily.INET) {
@@ -333,11 +355,11 @@ class DatagramChannelImpl
             }
 
             if (name == StandardSocketOptions.SO_REUSEADDR && reuseAddressEmulated) {
-                return (T)Boolean.valueOf(isReuseAddress);
+                return (T) Boolean.valueOf(isReuseAddress);
             }
 
             // no special handling
-            return (T) Net.getSocketOption(fd, Net.UNSPEC, name);
+            return (T) Net.getSocketOption(fd, family, name);
         }
     }
 

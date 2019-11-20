@@ -20,6 +20,17 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
+/*
+ * @test
+ * @requires vm.jvmci
+ * @modules jdk.internal.vm.ci/jdk.vm.ci.services:+open
+ * @library /compiler/jvmci/jdk.vm.ci.hotspot.test/src
+ * @run testng/othervm
+ *      -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI -XX:-UseJVMCICompiler
+ *      jdk.vm.ci.hotspot.test.TestServices
+ */
+
 package jdk.vm.ci.hotspot.test;
 
 import java.lang.reflect.Field;
@@ -27,8 +38,8 @@ import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.testng.Assert;
+import org.testng.annotations.Test;
 
 import jdk.vm.ci.services.Services;
 

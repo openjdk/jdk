@@ -1151,17 +1151,15 @@ public final class Main {
             }
         } else if (command == GENKEYPAIR) {
             if (keyAlgName == null) {
-                keyAlgName = "DSA";
-                weakWarnings.add(String.format(rb.getString(
-                        "keyalg.option.1.missing.warning"), keyAlgName));
+                throw new Exception(rb.getString(
+                        "keyalg.option.missing.error"));
             }
             doGenKeyPair(alias, dname, keyAlgName, keysize, groupName, sigAlgName);
             kssave = true;
         } else if (command == GENSECKEY) {
             if (keyAlgName == null) {
-                keyAlgName = "DES";
-                weakWarnings.add(String.format(rb.getString(
-                        "keyalg.option.1.missing.warning"), keyAlgName));
+                throw new Exception(rb.getString(
+                        "keyalg.option.missing.error"));
             }
             doGenSecretKey(alias, keyAlgName, keysize);
             kssave = true;

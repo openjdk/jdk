@@ -114,7 +114,7 @@ inline bool ZStackList<T>::is_empty() const {
 }
 
 template <typename T>
-inline void ZStackList<T>::push_atomic(T* stack) {
+inline void ZStackList<T>::push(T* stack) {
   T* vstack = _head;
   uint32_t version = 0;
 
@@ -133,7 +133,7 @@ inline void ZStackList<T>::push_atomic(T* stack) {
 }
 
 template <typename T>
-inline T* ZStackList<T>::pop_atomic() {
+inline T* ZStackList<T>::pop() {
   T* vstack = _head;
   T* stack = NULL;
   uint32_t version = 0;
@@ -168,20 +168,20 @@ inline void ZMarkStripe::publish_stack(ZMarkStack* stack, bool publish) {
   // contention between mutators and GC workers as much as possible, while
   // still allowing GC workers to help out and steal work from each other.
   if (publish) {
-    _published.push_atomic(stack);
+    _published.push(stack);
   } else {
-    _overflowed.push_atomic(stack);
+    _overflowed.push(stack);
   }
 }
 
 inline ZMarkStack* ZMarkStripe::steal_stack() {
   // Steal overflowed stacks first, then published stacks
-  ZMarkStack* const stack = _overflowed.pop_atomic();
+  ZMarkStack* const stack = _overflowed.pop();
   if (stack != NULL) {
     return stack;
   }
 
-  return _published.pop_atomic();
+  return _published.pop();
 }
 
 inline size_t ZMarkStripeSet::nstripes() const {

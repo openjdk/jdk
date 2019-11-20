@@ -207,11 +207,11 @@ inline bool ZPage::mark_object(uintptr_t addr, bool finalizable, bool& inc_live)
 
   // Set mark bit
   const size_t index = ((ZAddress::offset(addr) - start()) >> object_alignment_shift()) * 2;
-  return _livemap.set_atomic(index, finalizable, inc_live);
+  return _livemap.set(index, finalizable, inc_live);
 }
 
-inline void ZPage::inc_live_atomic(uint32_t objects, size_t bytes) {
-  _livemap.inc_live_atomic(objects, bytes);
+inline void ZPage::inc_live(uint32_t objects, size_t bytes) {
+  _livemap.inc_live(objects, bytes);
 }
 
 inline uint32_t ZPage::live_objects() const {

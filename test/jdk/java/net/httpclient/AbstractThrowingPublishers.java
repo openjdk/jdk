@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,10 @@ import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.HttpsConfigurator;
 import com.sun.net.httpserver.HttpsServer;
 import jdk.test.lib.net.SimpleSSLContext;
+import org.testng.ITestContext;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.AfterTest;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -132,6 +134,17 @@ public abstract class AbstractThrowingPublishers implements HttpServerAdapters {
         }
     }
 
+    protected boolean stopAfterFirstFailure() {
+        return Boolean.getBoolean("jdk.internal.httpclient.debug");
+    }
+
+    @BeforeMethod
+    void beforeMethod(ITestContext context) {
+        if (stopAfterFirstFailure() && context.getFailedTests().size() > 0) {
+            throw new RuntimeException("some tests failed");
+        }
+    }
+
     @AfterClass
     static final void printFailedTests() {
         out.println("\n=========================");
@@ -217,7 +230,10 @@ public abstract class AbstractThrowingPublishers implements HttpServerAdapters {
     }
 
     @DataProvider(name = "subscribeProvider")
-    public Object[][] subscribeProvider() {
+    public Object[][] subscribeProvider(ITestContext context) {
+        if (stopAfterFirstFailure() && context.getFailedTests().size() > 0) {
+            return new Object[0][];
+        }
         return  variants(List.of(
                 new UncheckedCustomExceptionThrower(),
                 new UncheckedIOExceptionThrower()),
@@ -225,7 +241,10 @@ public abstract class AbstractThrowingPublishers implements HttpServerAdapters {
     }
 
     @DataProvider(name = "requestProvider")
-    public Object[][] requestProvider() {
+    public Object[][] requestProvider(ITestContext context) {
+        if (stopAfterFirstFailure() && context.getFailedTests().size() > 0) {
+            return new Object[0][];
+        }
         return  variants(List.of(
                 new UncheckedCustomExceptionThrower(),
                 new UncheckedIOExceptionThrower()),
@@ -233,7 +252,10 @@ public abstract class AbstractThrowingPublishers implements HttpServerAdapters {
     }
 
     @DataProvider(name = "nextRequestProvider")
-    public Object[][] nextRequestProvider() {
+    public Object[][] nextRequestProvider(ITestContext context) {
+        if (stopAfterFirstFailure() && context.getFailedTests().size() > 0) {
+            return new Object[0][];
+        }
         return  variants(List.of(
                 new UncheckedCustomExceptionThrower(),
                 new UncheckedIOExceptionThrower()),
@@ -241,28 +263,40 @@ public abstract class AbstractThrowingPublishers implements HttpServerAdapters {
     }
 
     @DataProvider(name = "beforeCancelProviderIO")
-    public Object[][] beforeCancelProviderIO() {
+    public Object[][] beforeCancelProviderIO(ITestContext context) {
+        if (stopAfterFirstFailure() && context.getFailedTests().size() > 0) {
+            return new Object[0][];
+        }
         return  variants(List.of(
                 new UncheckedIOExceptionThrower()),
                 EnumSet.of(Where.BEFORE_CANCEL));
     }
 
     @DataProvider(name = "afterCancelProviderIO")
-    public Object[][] afterCancelProviderIO() {
+    public Object[][] afterCancelProviderIO(ITestContext context) {
+        if (stopAfterFirstFailure() && context.getFailedTests().size() > 0) {
+            return new Object[0][];
+        }
         return  variants(List.of(
                 new UncheckedIOExceptionThrower()),
                 EnumSet.of(Where.AFTER_CANCEL));
     }
 
     @DataProvider(name = "beforeCancelProviderCustom")
-    public Object[][] beforeCancelProviderCustom() {
+    public Object[][] beforeCancelProviderCustom(ITestContext context) {
+        if (stopAfterFirstFailure() && context.getFailedTests().size() > 0) {
+            return new Object[0][];
+        }
         return  variants(List.of(
                 new UncheckedCustomExceptionThrower()),
                 EnumSet.of(Where.BEFORE_CANCEL));
     }
 
     @DataProvider(name = "afterCancelProviderCustom")
-    public Object[][] afterCancelProvider() {
+    public Object[][] afterCancelProvider(ITestContext context) {
+        if (stopAfterFirstFailure() && context.getFailedTests().size() > 0) {
+            return new Object[0][];
+        }
         return  variants(List.of(
                 new UncheckedCustomExceptionThrower()),
                 EnumSet.of(Where.AFTER_CANCEL));

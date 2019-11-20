@@ -25,8 +25,8 @@
 #ifndef CPU_SPARC_VM_VERSION_EXT_SPARC_HPP
 #define CPU_SPARC_VM_VERSION_EXT_SPARC_HPP
 
+#include "runtime/vm_version.hpp"
 #include "utilities/macros.hpp"
-#include "vm_version_sparc.hpp"
 
 #if defined(SOLARIS)
 #include <kstat.h>

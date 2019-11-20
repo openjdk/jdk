@@ -62,8 +62,8 @@ public:
 
   bool is_empty() const;
 
-  void push_atomic(T* stack);
-  T* pop_atomic();
+  void push(T* stack);
+  T* pop();
 };
 
 typedef ZStack<ZMarkStackEntry, ZMarkStackSlots>     ZMarkStack;

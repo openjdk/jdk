@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@ import java.util.Observer;
 
 import sun.jvm.hotspot.debugger.Address;
 import sun.jvm.hotspot.debugger.OopHandle;
-import sun.jvm.hotspot.gc.cms.CMSHeap;
 import sun.jvm.hotspot.gc.epsilon.EpsilonHeap;
 import sun.jvm.hotspot.gc.g1.G1CollectedHeap;
 import sun.jvm.hotspot.gc.parallel.ParallelScavengeHeap;
@@ -84,7 +83,6 @@ public class Universe {
     collectedHeapField = type.getAddressField("_collectedHeap");
 
     heapConstructor = new VirtualConstructor(db);
-    addHeapTypeIfInDB(db, CMSHeap.class);
     addHeapTypeIfInDB(db, SerialHeap.class);
     addHeapTypeIfInDB(db, ParallelScavengeHeap.class);
     addHeapTypeIfInDB(db, G1CollectedHeap.class);

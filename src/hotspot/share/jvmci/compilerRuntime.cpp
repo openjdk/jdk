@@ -141,7 +141,7 @@ JRT_BLOCK_ENTRY(void, CompilerRuntime::resolve_dynamic_invoke(JavaThread *thread
 
     // Make sure it's resolved first
     CallInfo callInfo;
-    constantPoolHandle cp(holder->constants());
+    constantPoolHandle cp(THREAD, holder->constants());
     ConstantPoolCacheEntry* cp_cache_entry = cp->cache()->entry_at(cp->decode_cpcache_index(index, true));
     Bytecodes::Code invoke_code = bytecode.invoke_code();
     if (!cp_cache_entry->is_resolved(invoke_code)) {
@@ -157,7 +157,7 @@ JRT_BLOCK_ENTRY(void, CompilerRuntime::resolve_dynamic_invoke(JavaThread *thread
     Handle appendix(THREAD, cp_cache_entry->appendix_if_resolved(cp));
     Klass *appendix_klass = appendix.is_null() ? NULL : appendix->klass();
 
-    methodHandle adapter_method(cp_cache_entry->f1_as_method());
+    methodHandle adapter_method(THREAD, cp_cache_entry->f1_as_method());
     InstanceKlass *adapter_klass = adapter_method->method_holder();
 
     if (appendix_klass != NULL && appendix_klass->is_instance_klass()) {

@@ -109,7 +109,7 @@ public class MacVolumesTest {
 
     private static final void checkDataVolume() throws IOException {
         System.out.format("--- Checking data volume %s ---%n", DATA_VOLUME);
-        Path data = Path.of(DATA_VOLUME, "tmp");
+        Path data = Path.of(DATA_VOLUME, "private", "tmp");
         if (Files.getFileStore(data).isReadOnly()) {
             throw new RuntimeException("Data volume is read-only");
         }

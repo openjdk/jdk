@@ -207,14 +207,4 @@ class DefNewTracer : public YoungGCTracer {
   DefNewTracer() : YoungGCTracer(DefNew) {}
 };
 
-class ParNewTracer : public YoungGCTracer {
- public:
-  ParNewTracer() : YoungGCTracer(ParNew) {}
-};
-
-class CMSTracer : public OldGCTracer {
- public:
-  CMSTracer() : OldGCTracer(ConcurrentMarkSweep) {}
-};
-
 #endif // SHARE_GC_SHARED_GCTRACE_HPP

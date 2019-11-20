@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,7 +97,6 @@ import sun.security.util.Debug;
  * parentheses:
  * <ul>
  * <li>{@code AES} (128)</li>
- * <li>{@code DES} (56)</li>
  * <li>{@code DESede} (168)</li>
  * <li>{@code HmacSHA1}</li>
  * <li>{@code HmacSHA256}</li>

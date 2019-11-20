@@ -65,11 +65,6 @@ class GCCause : public AllStatic {
     _metadata_GC_threshold,
     _metadata_GC_clear_soft_refs,
 
-    _cms_generation_full,
-    _cms_initial_mark,
-    _cms_final_remark,
-    _cms_concurrent_mark,
-
     _old_generation_expanded_on_last_scavenge,
     _old_generation_too_full_to_scavenge,
     _adaptive_size_policy,
@@ -114,13 +109,12 @@ class GCCause : public AllStatic {
            cause != GCCause::_old_generation_expanded_on_last_scavenge,
            "This GCCause may be correct but is not expected yet: %s",
            to_string(cause));
-    // _tenured_generation_full or _cms_generation_full for full tenured generations
+    // _tenured_generation_full for full tenured generations
     // _adaptive_size_policy for a full collection after a young GC
     // _allocation_failure is the generic cause a collection which could result
     // in the collection of the tenured generation if there is not enough space
     // in the tenured generation to support a young GC.
     return (cause == GCCause::_tenured_generation_full ||
-            cause == GCCause::_cms_generation_full ||
             cause == GCCause::_adaptive_size_policy ||
             cause == GCCause::_allocation_failure);
   }

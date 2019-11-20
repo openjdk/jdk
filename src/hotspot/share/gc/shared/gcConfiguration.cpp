@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,10 +41,6 @@ GCName GCConfiguration::young_collector() const {
     return ParallelScavenge;
   }
 
-  if (UseConcMarkSweepGC) {
-    return ParNew;
-  }
-
   if (UseZGC || UseShenandoahGC) {
     return NA;
   }
@@ -55,10 +51,6 @@ GCName GCConfiguration::young_collector() const {
 GCName GCConfiguration::old_collector() const {
   if (UseG1GC) {
     return G1Old;
-  }
-
-  if (UseConcMarkSweepGC) {
-    return ConcurrentMarkSweep;
   }
 
   if (UseParallelOldGC) {

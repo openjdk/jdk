@@ -574,15 +574,6 @@ void NativeMovConstRegPatching::test() {
 //-------------------------------------------------------------------
 
 
-void NativeMovRegMem::copy_instruction_to(address new_instruction_address) {
-  Untested("copy_instruction_to");
-  int instruction_size = next_instruction_address() - instruction_address();
-  for (int i = 0; i < instruction_size; i += BytesPerInstWord) {
-    *(int*)(new_instruction_address + i) = *(int*)(address(this) + i);
-  }
-}
-
-
 void NativeMovRegMem::verify() {
   NativeInstruction::verify();
   // make sure code pattern is actually a "ld" or "st" of some sort.

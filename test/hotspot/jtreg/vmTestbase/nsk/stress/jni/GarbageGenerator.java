@@ -84,7 +84,7 @@ class GarbageGenerator extends Thread {
         while (!done) {
             for (g = 0; g < ringSize; g++) {
                 gr.add(allocSize);
-                yield();
+                Thread.yield();
             }
             gr.discard();
             try {

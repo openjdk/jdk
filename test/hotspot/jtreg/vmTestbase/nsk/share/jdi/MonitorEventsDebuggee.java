@@ -53,7 +53,7 @@ class MonitorWaitExecutor extends EventActionsExecutor {
         public void run() {
             // wait when interrupted thread switches state to 'TIMED_WAITING'
             while ((threadToInterrupt.getState() != Thread.State.WAITING) && !exitedFromWait) {
-                yield();
+                Thread.yield();
             }
 
             // threadToInterrupt 'spuriously' exited from wait()
@@ -236,7 +236,7 @@ class MonitorEnterExecutor extends EventActionsExecutor {
         public void run() {
             // wait when blocked thread switches state to 'BLOCKED'
             while (blockedThread.getState() != Thread.State.BLOCKED)
-                yield();
+                Thread.yield();
 
             lockingThread.releaseLock();
         }

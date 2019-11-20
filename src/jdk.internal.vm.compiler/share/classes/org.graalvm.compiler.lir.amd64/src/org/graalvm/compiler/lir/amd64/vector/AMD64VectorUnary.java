@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,19 +50,17 @@ import jdk.vm.ci.meta.Value;
 
 public class AMD64VectorUnary {
 
-    public static final class AVXUnaryOp extends AMD64LIRInstruction {
+    public static final class AVXUnaryOp extends AMD64VectorInstruction {
         public static final LIRInstructionClass<AVXUnaryOp> TYPE = LIRInstructionClass.create(AVXUnaryOp.class);
 
         @Opcode private final VexRMOp opcode;
-        private final AVXKind.AVXSize size;
 
         @Def({REG}) protected AllocatableValue result;
         @Use({REG, STACK}) protected AllocatableValue input;
 
         public AVXUnaryOp(VexRMOp opcode, AVXKind.AVXSize size, AllocatableValue result, AllocatableValue input) {
-            super(TYPE);
+            super(TYPE, size);
             this.opcode = opcode;
-            this.size = size;
             this.result = result;
             this.input = input;
         }
@@ -77,20 +75,18 @@ public class AMD64VectorUnary {
         }
     }
 
-    public static final class AVXUnaryMemoryOp extends AMD64LIRInstruction {
+    public static final class AVXUnaryMemoryOp extends AMD64VectorInstruction {
         public static final LIRInstructionClass<AVXUnaryMemoryOp> TYPE = LIRInstructionClass.create(AVXUnaryMemoryOp.class);
 
         @Opcode private final VexRMOp opcode;
-        private final AVXKind.AVXSize size;
 
         @Def({REG}) protected AllocatableValue result;
         @Use({COMPOSITE}) protected AMD64AddressValue input;
         @State protected LIRFrameState state;
 
         public AVXUnaryMemoryOp(VexRMOp opcode, AVXKind.AVXSize size, AllocatableValue result, AMD64AddressValue input, LIRFrameState state) {
-            super(TYPE);
+            super(TYPE, size);
             this.opcode = opcode;
-            this.size = size;
             this.result = result;
             this.input = input;
             this.state = state;
@@ -105,19 +101,17 @@ public class AMD64VectorUnary {
         }
     }
 
-    public static final class AVXBroadcastOp extends AMD64LIRInstruction {
+    public static final class AVXBroadcastOp extends AMD64VectorInstruction {
         public static final LIRInstructionClass<AVXBroadcastOp> TYPE = LIRInstructionClass.create(AVXBroadcastOp.class);
 
         @Opcode private final VexRMOp opcode;
-        private final AVXKind.AVXSize size;
 
         @Def({REG}) protected AllocatableValue result;
         @Use({REG, STACK, CONST}) protected Value input;
 
         public AVXBroadcastOp(VexRMOp opcode, AVXKind.AVXSize size, AllocatableValue result, Value input) {
-            super(TYPE);
+            super(TYPE, size);
             this.opcode = opcode;
-            this.size = size;
             this.result = result;
             this.input = input;
         }
@@ -136,20 +130,18 @@ public class AMD64VectorUnary {
         }
     }
 
-    public static final class AVXConvertMemoryOp extends AMD64LIRInstruction {
+    public static final class AVXConvertMemoryOp extends AMD64VectorInstruction {
         public static final LIRInstructionClass<AVXConvertMemoryOp> TYPE = LIRInstructionClass.create(AVXConvertMemoryOp.class);
 
         @Opcode private final VexRVMOp opcode;
-        private final AVXKind.AVXSize size;
 
         @Def({REG}) protected AllocatableValue result;
         @Use({COMPOSITE}) protected AMD64AddressValue input;
         @State protected LIRFrameState state;
 
         public AVXConvertMemoryOp(VexRVMOp opcode, AVXKind.AVXSize size, AllocatableValue result, AMD64AddressValue input, LIRFrameState state) {
-            super(TYPE);
+            super(TYPE, size);
             this.opcode = opcode;
-            this.size = size;
             this.result = result;
             this.input = input;
             this.state = state;
@@ -180,6 +172,8 @@ public class AMD64VectorUnary {
 
         @Override
         public void emitCode(CompilationResultBuilder crb, AMD64MacroAssembler masm) {
+            // Note that we assume only XMM-size instructions are emitted here. Loosening this
+            // restriction would require informing AMD64HotSpotReturnOp when emitting vzeroupper.
             if (isRegister(input)) {
                 if (!asRegister(input).equals(asRegister(result))) {
                     // clear result register to avoid unnecessary dependency

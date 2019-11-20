@@ -579,4 +579,9 @@ public final class AMD64ArrayCompareToOp extends AMD64LIRInstruction {
             masm.movzwl(elem2, new AMD64Address(str2, index, scale2, 0));
         }
     }
+
+    @Override
+    public boolean needsClearUpperVectorRegisters() {
+        return true;
+    }
 }

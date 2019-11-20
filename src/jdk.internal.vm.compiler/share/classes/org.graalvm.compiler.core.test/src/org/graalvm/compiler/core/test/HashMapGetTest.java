@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,7 @@ public class HashMapGetTest extends GraalCompilerTest {
         for (IfNode ifNode : lastCompiledGraph.getNodes(IfNode.TYPE)) {
             LogicNode condition = ifNode.condition();
             if (ifNode.getTrueSuccessorProbability() < 0.4 && condition instanceof ObjectEqualsNode) {
-                assertTrue(ifNode.trueSuccessor().next() instanceof ReturnNode, "Expected return.", ifNode.trueSuccessor(), ifNode.trueSuccessor().next());
+                assertTrue(ifNode.trueSuccessor().next() instanceof ReturnNode, "Expected return but got %s (trueSuccessor: %s)", ifNode.trueSuccessor().next(), ifNode.trueSuccessor());
             }
         }
     }

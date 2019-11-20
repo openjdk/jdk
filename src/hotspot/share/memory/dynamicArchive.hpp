@@ -99,13 +99,8 @@ public:
   // archive?
   static bool is_in_target_space(void *obj);
 
-  static address map();
-  static bool is_mapped();
+  static bool is_mapped() { return FileMapInfo::dynamic_info() != NULL; }
   static bool validate(FileMapInfo* dynamic_info);
-  static void disable();
-private:
-  static address map_impl(FileMapInfo* mapinfo);
-  static void map_failed(FileMapInfo* mapinfo);
 };
 #endif // INCLUDE_CDS
 #endif // SHARE_VM_MEMORY_DYNAMICARCHIVE_HPP

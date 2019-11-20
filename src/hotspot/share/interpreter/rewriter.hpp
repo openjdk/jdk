@@ -184,7 +184,7 @@ class Rewriter: public StackObj {
 
   void compute_index_maps();
   void make_constant_pool_cache(TRAPS);
-  void scan_method(Method* m, bool reverse, bool* invokespecial_error);
+  void scan_method(Thread* thread, Method* m, bool reverse, bool* invokespecial_error);
   void rewrite_Object_init(const methodHandle& m, TRAPS);
   void rewrite_member_reference(address bcp, int offset, bool reverse);
   void maybe_rewrite_invokehandle(address opc, int cp_index, int cache_index, bool reverse);
@@ -198,7 +198,7 @@ class Rewriter: public StackObj {
   void rewrite_bytecodes(TRAPS);
 
   // Revert bytecodes in case of an exception.
-  void restore_bytecodes();
+  void restore_bytecodes(Thread* thread);
 
   static methodHandle rewrite_jsrs(const methodHandle& m, TRAPS);
  public:

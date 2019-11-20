@@ -383,7 +383,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBLCMS, \
         libawt/java2d, \
     HEADERS_FROM_SRC := $(LIBLCMS_HEADERS_FROM_SRC), \
     DISABLED_WARNINGS_gcc := format-nonliteral type-limits \
-        misleading-indentation undef unused-function, \
+        misleading-indentation undef unused-function stringop-truncation, \
     DISABLED_WARNINGS_clang := tautological-compare format-nonliteral undef, \
     DISABLED_WARNINGS_solstudio := E_STATEMENT_NOT_REACHED, \
     DISABLED_WARNINGS_microsoft := 4819, \

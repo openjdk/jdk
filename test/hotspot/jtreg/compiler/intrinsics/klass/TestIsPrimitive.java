@@ -24,12 +24,13 @@
 /*
  * @test
  * @bug 8150669
+ * @bug 8233019
  * @summary C1 intrinsic for Class.isPrimitive
  * @modules java.base/jdk.internal.misc
  *
  * @run main/othervm -ea -Diters=200   -Xint
  *      compiler.intrinsics.klass.TestIsPrimitive
- * @run main/othervm -ea -Diters=30000 -XX:TieredStopAtLevel=1
+ * @run main/othervm -ea -XX:-UseSharedSpaces -Diters=30000 -XX:TieredStopAtLevel=1
  *      compiler.intrinsics.klass.TestIsPrimitive
  * @run main/othervm -ea -Diters=30000 -XX:TieredStopAtLevel=4
  *      compiler.intrinsics.klass.TestIsPrimitive
@@ -53,6 +54,7 @@ public class TestIsPrimitive {
         testOK(true,  InlineConstants::testDouble);
         testOK(false, InlineConstants::testObject);
         testOK(false, InlineConstants::testArray);
+        testOK(false, InlineConstants::testBooleanArray);
 
         testOK(true,  StaticConstants::testBoolean);
         testOK(true,  StaticConstants::testByte);
@@ -64,6 +66,7 @@ public class TestIsPrimitive {
         testOK(true,  StaticConstants::testDouble);
         testOK(false, StaticConstants::testObject);
         testOK(false, StaticConstants::testArray);
+        testOK(false, StaticConstants::testBooleanArray);
         testNPE(      StaticConstants::testNull);
 
         testOK(true,  NoConstants::testBoolean);
@@ -76,6 +79,7 @@ public class TestIsPrimitive {
         testOK(true,  NoConstants::testDouble);
         testOK(false, NoConstants::testObject);
         testOK(false, NoConstants::testArray);
+        testOK(false, NoConstants::testBooleanArray);
         testNPE(      NoConstants::testNull);
     }
 
@@ -112,6 +116,7 @@ public class TestIsPrimitive {
     static volatile Class<?> classObject  = Object.class;
     static volatile Class<?> classArray   = Object[].class;
     static volatile Class<?> classNull    = null;
+    static volatile Class<?> classBooleanArray = boolean[].class;
 
     static final Class<?> staticClassBoolean = boolean.class;
     static final Class<?> staticClassByte    = byte.class;
@@ -124,6 +129,7 @@ public class TestIsPrimitive {
     static final Class<?> staticClassObject  = Object.class;
     static final Class<?> staticClassArray   = Object[].class;
     static final Class<?> staticClassNull    = null;
+    static final Class<?> staticClassBooleanArray = boolean[].class;
 
     static class InlineConstants {
         static boolean testBoolean() { return boolean.class.isPrimitive();  }
@@ -136,6 +142,7 @@ public class TestIsPrimitive {
         static boolean testDouble()  { return double.class.isPrimitive();   }
         static boolean testObject()  { return Object.class.isPrimitive();   }
         static boolean testArray()   { return Object[].class.isPrimitive(); }
+        static boolean testBooleanArray() { return boolean[].class.isPrimitive(); }
     }
 
     static class StaticConstants {
@@ -150,6 +157,7 @@ public class TestIsPrimitive {
         static boolean testObject()  { return staticClassObject.isPrimitive();  }
         static boolean testArray()   { return staticClassArray.isPrimitive();   }
         static boolean testNull()    { return staticClassNull.isPrimitive();    }
+        static boolean testBooleanArray() { return staticClassBooleanArray.isPrimitive(); }
     }
 
     static class NoConstants {
@@ -164,7 +172,9 @@ public class TestIsPrimitive {
         static boolean testObject()  { return classObject.isPrimitive();  }
         static boolean testArray()   { return classArray.isPrimitive();   }
         static boolean testNull()    { return classNull.isPrimitive();    }
+        static boolean testBooleanArray() { return classBooleanArray.isPrimitive();    }
     }
+
 
 }
 

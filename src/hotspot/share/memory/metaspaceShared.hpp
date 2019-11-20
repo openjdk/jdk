@@ -37,6 +37,13 @@
 #define MAX_SHARED_DELTA                (0x7FFFFFFF)
 
 class FileMapInfo;
+class CHeapBitMap;
+
+enum MapArchiveResult {
+  MAP_ARCHIVE_SUCCESS,
+  MAP_ARCHIVE_MMAP_FAILURE,
+  MAP_ARCHIVE_OTHER_FAILURE
+};
 
 class MetaspaceSharedStats {
 public:
@@ -62,13 +69,7 @@ public:
   char* expand_top_to(char* newtop);
   char* allocate(size_t num_bytes, size_t alignment=BytesPerWord);
 
-  void append_intptr_t(intptr_t n) {
-    assert(is_aligned(_top, sizeof(intptr_t)), "bad alignment");
-    intptr_t *p = (intptr_t*)_top;
-    char* newtop = _top + sizeof(intptr_t);
-    expand_top_to(newtop);
-    *p = n;
-  }
+  void append_intptr_t(intptr_t n, bool need_to_mark = false);
 
   char* base()      const { return _base;        }
   char* top()       const { return _top;         }
@@ -117,17 +118,15 @@ public:
   }
 
   void do_ptr(void** p) {
-    _dump_region->append_intptr_t((intptr_t)*p);
+    _dump_region->append_intptr_t((intptr_t)*p, true);
   }
 
   void do_u4(u4* p) {
-    void* ptr = (void*)(uintx(*p));
-    do_ptr(&ptr);
+    _dump_region->append_intptr_t((intptr_t)(*p));
   }
 
   void do_bool(bool *p) {
-    void* ptr = (void*)(uintx(*p));
-    do_ptr(&ptr);
+    _dump_region->append_intptr_t((intptr_t)(*p));
   }
 
   void do_tag(int tag) {
@@ -170,7 +169,7 @@ public:
   bool reading() const { return true; }
 };
 
-#endif
+#endif // INCLUDE_CDS
 
 // Class Data Sharing Support
 class MetaspaceShared : AllStatic {
@@ -187,6 +186,7 @@ class MetaspaceShared : AllStatic {
   static size_t  _i2i_entry_code_buffers_size;
   static size_t  _core_spaces_size;
   static void* _shared_metaspace_static_top;
+  static intx _relocation_delta;
  public:
   enum {
     // core archive spaces
@@ -194,11 +194,12 @@ class MetaspaceShared : AllStatic {
     rw = 1,  // read-write shared space in the heap
     ro = 2,  // read-only shared space in the heap
     md = 3,  // miscellaneous data for initializing tables, etc.
-    num_core_spaces = 4, // number of non-string regions
-    num_non_heap_spaces = 4,
+    bm = 4,  // relocation bitmaps (freed after file mapping is finished)
+    num_core_region = 4,
+    num_non_heap_spaces = 5,
 
     // mapped java heap regions
-    first_closed_archive_heap_region = md + 1,
+    first_closed_archive_heap_region = bm + 1,
     max_closed_archive_heap_region = 2,
     last_closed_archive_heap_region = first_closed_archive_heap_region + max_closed_archive_heap_region - 1,
     first_open_archive_heap_region = last_closed_archive_heap_region + 1,
@@ -220,16 +221,14 @@ class MetaspaceShared : AllStatic {
     CDS_ONLY(return &_shared_rs);
     NOT_CDS(return NULL);
   }
-  static void commit_shared_space_to(char* newtop) NOT_CDS_RETURN;
-  static size_t core_spaces_size() {
-    assert(DumpSharedSpaces || UseSharedSpaces, "sanity");
-    assert(_core_spaces_size != 0, "sanity");
-    return _core_spaces_size;
+
+  static void set_shared_rs(ReservedSpace rs) {
+    CDS_ONLY(_shared_rs = rs);
   }
+
+  static void commit_shared_space_to(char* newtop) NOT_CDS_RETURN;
   static void initialize_dumptime_shared_and_meta_spaces() NOT_CDS_RETURN;
   static void initialize_runtime_shared_and_meta_spaces() NOT_CDS_RETURN;
-  static char* initialize_dynamic_runtime_shared_spaces(
-                     char* static_start, char* static_end) NOT_CDS_RETURN_(NULL);
   static void post_initialize(TRAPS) NOT_CDS_RETURN;
 
   // Delta of this object from SharedBaseAddress
@@ -245,22 +244,25 @@ class MetaspaceShared : AllStatic {
   static void set_archive_loading_failed() {
     _archive_loading_failed = true;
   }
+  static bool is_in_output_space(void* ptr) {
+    assert(DumpSharedSpaces, "must be");
+    return shared_rs()->contains(ptr);
+  }
+
   static bool map_shared_spaces(FileMapInfo* mapinfo) NOT_CDS_RETURN_(false);
   static void initialize_shared_spaces() NOT_CDS_RETURN;
 
   // Return true if given address is in the shared metaspace regions (i.e., excluding any
   // mapped shared heap regions.)
   static bool is_in_shared_metaspace(const void* p) {
-    // If no shared metaspace regions are mapped, MetaspceObj::_shared_metaspace_{base,top} will
-    // both be NULL and all values of p will be rejected quickly.
-    return (p < MetaspaceObj::shared_metaspace_top() && p >= MetaspaceObj::shared_metaspace_base());
+    return MetaspaceObj::is_shared((const MetaspaceObj*)p);
   }
 
   static address shared_metaspace_top() {
     return (address)MetaspaceObj::shared_metaspace_top();
   }
 
-  static void set_shared_metaspace_range(void* base, void* top) NOT_CDS_RETURN;
+  static void set_shared_metaspace_range(void* base, void *static_top, void* top) NOT_CDS_RETURN;
 
   // Return true if given address is in the shared region corresponding to the idx
   static bool is_in_shared_region(const void* p, int idx) NOT_CDS_RETURN_(false);
@@ -298,8 +300,8 @@ class MetaspaceShared : AllStatic {
   static void link_and_cleanup_shared_classes(TRAPS);
 
 #if INCLUDE_CDS
-  static ReservedSpace* reserve_shared_rs(size_t size, size_t alignment,
-                                          bool large, char* requested_address);
+  static ReservedSpace reserve_shared_space(size_t size, char* requested_address = NULL);
+  static size_t reserved_space_alignment();
   static void init_shared_dump_space(DumpRegion* first_space, address first_space_bottom = NULL);
   static DumpRegion* misc_code_dump_space();
   static DumpRegion* read_write_dump_space();
@@ -307,7 +309,7 @@ class MetaspaceShared : AllStatic {
   static void pack_dump_space(DumpRegion* current, DumpRegion* next,
                               ReservedSpace* rs);
 
-  static void rewrite_nofast_bytecodes_and_calculate_fingerprints(InstanceKlass* ik);
+  static void rewrite_nofast_bytecodes_and_calculate_fingerprints(Thread* thread, InstanceKlass* ik);
 #endif
 
   // Allocate a block of memory from the "mc", "ro", or "rw" regions.
@@ -342,11 +344,35 @@ class MetaspaceShared : AllStatic {
   }
   static void relocate_klass_ptr(oop o);
 
-  static Klass* get_relocated_klass(Klass *k);
+  static Klass* get_relocated_klass(Klass *k, bool is_final=false);
 
   static intptr_t* fix_cpp_vtable_for_dynamic_archive(MetaspaceObj::Type msotype, address obj);
+  static void initialize_ptr_marker(CHeapBitMap* ptrmap);
 
+  // Non-zero if the archive(s) need to be mapped a non-default location due to ASLR.
+  static intx relocation_delta() { return _relocation_delta; }
+  static intx final_delta();
+  static bool use_windows_memory_mapping() {
+    const bool is_windows = (NOT_WINDOWS(false) WINDOWS_ONLY(true));
+    //const bool is_windows = true; // enable this to allow testing the windows mmap semantics on Linux, etc.
+    return is_windows;
+  }
 private:
   static void read_extra_data(const char* filename, TRAPS) NOT_CDS_RETURN;
+  static FileMapInfo* open_static_archive();
+  static FileMapInfo* open_dynamic_archive();
+  static MapArchiveResult map_archives(FileMapInfo* static_mapinfo, FileMapInfo* dynamic_mapinfo,
+                                       bool use_requested_addr);
+  static char* reserve_address_space_for_archives(FileMapInfo* static_mapinfo,
+                                                  FileMapInfo* dynamic_mapinfo,
+                                                  bool use_requested_addr,
+                                                  ReservedSpace& main_rs,
+                                                  ReservedSpace& archive_space_rs,
+                                                  ReservedSpace& class_space_rs);
+  static void release_reserved_spaces(ReservedSpace& main_rs,
+                                      ReservedSpace& archive_space_rs,
+                                      ReservedSpace& class_space_rs);
+  static MapArchiveResult map_archive(FileMapInfo* mapinfo, char* mapped_base_address, ReservedSpace rs);
+  static void unmap_archive(FileMapInfo* mapinfo);
 };
 #endif // SHARE_MEMORY_METASPACESHARED_HPP

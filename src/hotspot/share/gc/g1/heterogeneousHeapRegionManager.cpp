@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -263,7 +263,7 @@ uint HeterogeneousHeapRegionManager::find_empty_in_range_reverse(uint start_idx,
   return num_regions_found;
 }
 
-HeapRegion* HeterogeneousHeapRegionManager::allocate_free_region(HeapRegionType type) {
+HeapRegion* HeterogeneousHeapRegionManager::allocate_free_region(HeapRegionType type, uint node_index) {
 
   // We want to prevent mutators from proceeding when we have borrowed regions from the last collection. This
   // will force a full collection to remedy the situation.

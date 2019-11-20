@@ -113,7 +113,7 @@ void BarrierSetAssembler::resolve_jobject(MacroAssembler* masm, Register value,
   __ clrrdi(tmp1, value, JNIHandles::weak_tag_size);
   __ ld(value, 0, tmp1);      // Resolve (untagged) jobject.
 
-  __ verify_oop(value);
+  __ verify_oop(value, FILE_AND_LINE);
   __ bind(done);
 }
 

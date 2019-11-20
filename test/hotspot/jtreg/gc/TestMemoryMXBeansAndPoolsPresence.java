@@ -58,16 +58,6 @@ import java.util.stream.*;
  * @run main/othervm -XX:+UseSerialGC gc.TestMemoryMXBeansAndPoolsPresence Serial
  */
 
-/* @test TestMemoryMXBeansAndPoolsPresenceCMS
- * @bug 8191564
- * @library /test/lib
- * @modules java.base/jdk.internal.misc
- *          java.management
- * @comment Graal does not support CMS
- * @requires vm.gc.ConcMarkSweep & !vm.graal.enabled
- * @run main/othervm -XX:+UseConcMarkSweepGC gc.TestMemoryMXBeansAndPoolsPresence CMS
- */
-
 class GCBeanDescription {
     public String name;
     public String[] poolNames;
@@ -107,10 +97,6 @@ public class TestMemoryMXBeansAndPoolsPresence {
             case "G1":
                 test(new GCBeanDescription("G1 Young Generation", new String[] {"G1 Eden Space", "G1 Survivor Space", "G1 Old Gen"}),
                      new GCBeanDescription("G1 Old Generation",   new String[] {"G1 Eden Space", "G1 Survivor Space", "G1 Old Gen"}));
-                break;
-            case "CMS":
-                test(new GCBeanDescription("ParNew",              new String[] {"Par Eden Space", "Par Survivor Space"}),
-                     new GCBeanDescription("ConcurrentMarkSweep", new String[] {"Par Eden Space", "Par Survivor Space", "CMS Old Gen"}));
                 break;
             case "Parallel":
                 test(new GCBeanDescription("PS Scavenge",         new String[] {"PS Eden Space", "PS Survivor Space"}),

@@ -91,7 +91,6 @@ void InterpreterMacroAssembler::dispatch_prolog(TosState state, int bcp_incr) {
 // dispatch.
 void InterpreterMacroAssembler::dispatch_epilog(TosState state, int bcp_incr) {
   assert_not_delayed();
-  verify_FPU(1, state);
   interp_verify_oop(Otos_i, state, __FILE__, __LINE__);
   jmp( IdispatchAddress, 0 );
   if (bcp_incr != 0)  delayed()->inc(Lbcp, bcp_incr);
@@ -264,7 +263,6 @@ void InterpreterMacroAssembler::dispatch_only(TosState state) {
 // dispatch value in Lbyte_code and increment Lbcp
 
 void InterpreterMacroAssembler::dispatch_Lbyte_code(TosState state, address* table, int bcp_incr, bool verify, bool generate_poll) {
-  verify_FPU(1, state);
   // %%%%% maybe implement +VerifyActivationFrameSize here
   //verify_thread(); //too slow; we will just verify on method entry & exit
   if (verify) interp_verify_oop(Otos_i, state, __FILE__, __LINE__);
@@ -2542,11 +2540,6 @@ void InterpreterMacroAssembler::verify_oop_or_return_address(Register reg, Regis
   bind(test);
   verify_oop(reg);
   bind(skip);
-}
-
-
-void InterpreterMacroAssembler::verify_FPU(int stack_depth, TosState state) {
-  if (state == ftos || state == dtos) MacroAssembler::verify_FPU(stack_depth);
 }
 
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,15 +22,11 @@
  */
 package common;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.StringReader;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.StringTokenizer;
-import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.process.ProcessTools;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Arrays;
+import java.time.Instant;
 
 /**
  * This class starts a process specified by the passed command line waits till
@@ -38,14 +34,10 @@ import jdk.test.lib.process.ProcessTools;
  * output as ToolResults
  */
 class ToolRunner {
-
-    private final List<String> cmdArgs = new LinkedList<>();
+    private final String[] cmdArgs;
 
     ToolRunner(String cmdLine) {
-        StringTokenizer st = new StringTokenizer(cmdLine);
-        while (st.hasMoreTokens()) {
-            cmdArgs.add(st.nextToken());
-        }
+        cmdArgs = cmdLine.split(" +");
     }
 
     /**
@@ -56,23 +48,18 @@ class ToolRunner {
      * @throws Exception if anything goes wrong
      */
     ToolResults runToCompletion() throws Exception {
-
         ProcessBuilder pb = new ProcessBuilder(cmdArgs);
-        OutputAnalyzer oa = ProcessTools.executeProcess(pb);
+        Path out = Files.createTempFile(Paths.get("."), "out.", ".txt");
+        Path err = out.resolveSibling(out.getFileName().toString().replaceFirst("out", "err"));
 
-        return new ToolResults(oa.getExitValue(),
-                stringToList(oa.getStdout()),
-                stringToList(oa.getStderr()));
-
-    }
-
-    private static List<String> stringToList(String s) throws IOException {
-        BufferedReader reader = new BufferedReader(new StringReader(s));
-        List<String> strings = new ArrayList<>();
-        for (String line = reader.readLine(); line != null; line = reader.readLine()) {
-            strings.add(line);
-        }
-        reader.close();
-        return strings;
+        Process p = pb.redirectOutput(ProcessBuilder.Redirect.to(out.toFile()))
+                      .redirectError(ProcessBuilder.Redirect.to(err.toFile()))
+                      .start();
+        System.out.printf("[%s] started process %d %s with out/err redirected to '%s' and '%s'%n",
+                Instant.now().toString(), p.pid(), pb.command(), out.toString(), err.toString());
+        int exitCode = p.waitFor();
+        System.out.printf("[%s] process %d finished with exit code = %d%n",
+                Instant.now().toString(), p.pid(), exitCode);
+        return new ToolResults(exitCode, Files.readAllLines(out), Files.readAllLines(err));
     }
 }

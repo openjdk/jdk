@@ -30,8 +30,8 @@
 #include "runtime/java.hpp"
 #include "runtime/os.hpp"
 #include "runtime/stubCodeGenerator.hpp"
+#include "runtime/vm_version.hpp"
 #include "utilities/macros.hpp"
-#include "vm_version_aarch64.hpp"
 
 #include OS_HEADER_INLINE(os)
 

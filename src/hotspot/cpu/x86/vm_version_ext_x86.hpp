@@ -25,8 +25,8 @@
 #ifndef CPU_X86_VM_VERSION_EXT_X86_HPP
 #define CPU_X86_VM_VERSION_EXT_X86_HPP
 
+#include "runtime/vm_version.hpp"
 #include "utilities/macros.hpp"
-#include "vm_version_x86.hpp"
 
 class VM_Version_Ext : public VM_Version {
 
