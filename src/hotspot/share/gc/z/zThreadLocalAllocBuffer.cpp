@@ -69,7 +69,9 @@ void ZThreadLocalAllocBuffer::retire(Thread* thread) {
     ThreadLocalAllocStats* const stats = _stats->addr();
     thread->tlab().addresses_do(fixup_address);
     thread->tlab().retire(stats);
-    thread->tlab().resize();
+    if (ResizeTLAB) {
+      thread->tlab().resize();
+    }
   }
 }
 
