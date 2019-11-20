@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -241,6 +241,10 @@ public class BitArray {
      *  Returns a string representation of this BitArray.
      */
     public String toString() {
+        if (length == 0) {
+            return "";
+        }
+
         ByteArrayOutputStream out = new ByteArrayOutputStream();
 
         for (int i = 0; i < repn.length - 1; i++) {
