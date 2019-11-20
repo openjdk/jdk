@@ -54,6 +54,7 @@ abstract class AbstractPlainDatagramSocketImpl extends DatagramSocketImpl
     private int trafficClass = 0;
     protected InetAddress connectedAddress = null;
     private int connectedPort = -1;
+    private final boolean isMulticast;
 
     private static final String os =
             GetPropertyAction.privilegedGetProperty("os.name");
@@ -82,6 +83,10 @@ abstract class AbstractPlainDatagramSocketImpl extends DatagramSocketImpl
             checkedReusePort = true;
         }
         return isReusePortAvailable;
+    }
+
+    AbstractPlainDatagramSocketImpl(boolean isMulticast) {
+        this.isMulticast = isMulticast;
     }
 
     /**
@@ -406,6 +411,7 @@ abstract class AbstractPlainDatagramSocketImpl extends DatagramSocketImpl
         options.add(StandardSocketOptions.SO_SNDBUF);
         options.add(StandardSocketOptions.SO_RCVBUF);
         options.add(StandardSocketOptions.SO_REUSEADDR);
+        options.add(StandardSocketOptions.SO_BROADCAST);
         options.add(StandardSocketOptions.IP_TOS);
         if (isReusePortAvailable())
             options.add(StandardSocketOptions.SO_REUSEPORT);
@@ -418,6 +424,7 @@ abstract class AbstractPlainDatagramSocketImpl extends DatagramSocketImpl
         options.add(StandardSocketOptions.SO_SNDBUF);
         options.add(StandardSocketOptions.SO_RCVBUF);
         options.add(StandardSocketOptions.SO_REUSEADDR);
+        options.add(StandardSocketOptions.SO_BROADCAST);
         options.add(StandardSocketOptions.IP_TOS);
         options.add(StandardSocketOptions.IP_MULTICAST_IF);
         options.add(StandardSocketOptions.IP_MULTICAST_TTL);
@@ -430,7 +437,7 @@ abstract class AbstractPlainDatagramSocketImpl extends DatagramSocketImpl
 
     @Override
     protected Set<SocketOption<?>> supportedOptions() {
-        if (getDatagramSocket() instanceof MulticastSocket)
+        if (isMulticast)
             return multicastSocketOptions;
         else
             return datagramSocketOptions;
@@ -460,6 +467,8 @@ abstract class AbstractPlainDatagramSocketImpl extends DatagramSocketImpl
             setOption(SocketOptions.SO_REUSEADDR, value);
         } else if (name == StandardSocketOptions.SO_REUSEPORT) {
             setOption(SocketOptions.SO_REUSEPORT, value);
+        } else if (name == StandardSocketOptions.SO_BROADCAST) {
+            setOption(SocketOptions.SO_BROADCAST, value);
         } else if (name == StandardSocketOptions.IP_TOS) {
             int i = ((Integer)value).intValue();
             if (i < 0 || i > 255)
@@ -499,6 +508,8 @@ abstract class AbstractPlainDatagramSocketImpl extends DatagramSocketImpl
             return (T) getOption(SocketOptions.SO_REUSEADDR);
         } else if (name == StandardSocketOptions.SO_REUSEPORT) {
             return (T) getOption(SocketOptions.SO_REUSEPORT);
+        } else if (name == StandardSocketOptions.SO_BROADCAST) {
+            return (T) getOption(SocketOptions.SO_BROADCAST);
         } else if (name == StandardSocketOptions.IP_TOS) {
             return (T) getOption(SocketOptions.IP_TOS);
         } else if (name == StandardSocketOptions.IP_MULTICAST_IF) {

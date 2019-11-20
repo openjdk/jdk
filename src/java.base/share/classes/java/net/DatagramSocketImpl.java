@@ -48,20 +48,6 @@ public abstract class DatagramSocketImpl implements SocketOptions {
      */
     protected FileDescriptor fd;
 
-    /**
-     * The DatagramSocket or MulticastSocket
-     * that owns this impl
-     */
-    DatagramSocket socket;
-
-    void setDatagramSocket(DatagramSocket socket) {
-        this.socket = socket;
-    }
-
-    DatagramSocket getDatagramSocket() {
-        return socket;
-    }
-
     int dataAvailable() {
         // default impl returns zero, which disables the calling
         // functionality

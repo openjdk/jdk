@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,7 +78,8 @@ final class TwoStacksPlainDatagramSocketImpl extends AbstractPlainDatagramSocket
     // emulates SO_REUSEADDR when exclusiveBind is true and socket is bound
     private boolean isReuseAddress;
 
-    TwoStacksPlainDatagramSocketImpl(boolean exclBind) {
+    TwoStacksPlainDatagramSocketImpl(boolean exclBind, boolean isMulticast) {
+        super(isMulticast);
         exclusiveBind = exclBind;
     }
 
