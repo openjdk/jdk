@@ -250,15 +250,9 @@ void ZDriver::collect(GCCause::Cause cause) {
   case GCCause::_z_allocation_stall:
   case GCCause::_z_proactive:
   case GCCause::_z_high_usage:
+  case GCCause::_metadata_GC_threshold:
     // Start asynchronous GC
     _gc_cycle_port.send_async(cause);
-    break;
-
-  case GCCause::_metadata_GC_threshold:
-    // Start asynchronous GC, but only if the GC is warm
-    if (ZStatCycle::is_warm()) {
-      _gc_cycle_port.send_async(cause);
-    }
     break;
 
   case GCCause::_gc_locker:
@@ -352,13 +346,15 @@ void ZDriver::check_out_of_memory() {
 
 class ZDriverGCScope : public StackObj {
 private:
-  GCIdMark      _gc_id;
-  GCCauseSetter _gc_cause_setter;
-  ZStatTimer    _timer;
+  GCIdMark       _gc_id;
+  GCCause::Cause _gc_cause;
+  GCCauseSetter  _gc_cause_setter;
+  ZStatTimer     _timer;
 
 public:
   ZDriverGCScope(GCCause::Cause cause) :
       _gc_id(),
+      _gc_cause(cause),
       _gc_cause_setter(ZCollectedHeap::heap(), cause),
       _timer(ZPhaseCycle) {
     // Update statistics
@@ -371,7 +367,7 @@ public:
                                 (double)ZHeap::heap()->nconcurrent_no_boost_worker_threads();
 
     // Update statistics
-    ZStatCycle::at_end(boost_factor);
+    ZStatCycle::at_end(_gc_cause, boost_factor);
 
     // Update data used by soft reference policy
     Universe::update_heap_info_at_gc();

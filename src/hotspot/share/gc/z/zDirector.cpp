@@ -75,7 +75,7 @@ bool ZDirector::rule_warmup() const {
   // duration, which is needed by the other rules.
   const size_t max_capacity = ZHeap::heap()->soft_max_capacity();
   const size_t used = ZHeap::heap()->used();
-  const double used_threshold_percent = (ZStatCycle::ncycles() + 1) * 0.1;
+  const double used_threshold_percent = (ZStatCycle::nwarmup_cycles() + 1) * 0.1;
   const size_t used_threshold = max_capacity * used_threshold_percent;
 
   log_debug(gc, director)("Rule: Warmup %.0f%%, Used: " SIZE_FORMAT "MB, UsedThreshold: " SIZE_FORMAT "MB",
@@ -85,7 +85,7 @@ bool ZDirector::rule_warmup() const {
 }
 
 bool ZDirector::rule_allocation_rate() const {
-  if (ZStatCycle::is_first()) {
+  if (!ZStatCycle::is_normalized_duration_trustable()) {
     // Rule disabled
     return false;
   }

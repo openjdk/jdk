@@ -25,6 +25,7 @@
 #define SHARE_GC_Z_ZSTAT_HPP
 
 #include "gc/shared/concurrentGCThread.hpp"
+#include "gc/shared/gcCause.hpp"
 #include "gc/shared/gcTimer.hpp"
 #include "gc/z/zMetronome.hpp"
 #include "logging/logHandle.hpp"
@@ -365,19 +366,21 @@ public:
 //
 class ZStatCycle : public AllStatic {
 private:
-  static uint64_t  _ncycles;
+  static uint64_t  _nwarmup_cycles;
   static Ticks     _start_of_last;
   static Ticks     _end_of_last;
   static NumberSeq _normalized_duration;
 
 public:
   static void at_start();
-  static void at_end(double boost_factor);
+  static void at_end(GCCause::Cause cause, double boost_factor);
 
-  static bool is_first();
   static bool is_warm();
-  static uint64_t ncycles();
+  static uint64_t nwarmup_cycles();
+
+  static bool is_normalized_duration_trustable();
   static const AbsSeq& normalized_duration();
+
   static double time_since_last();
 };
 
