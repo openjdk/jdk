@@ -31,11 +31,15 @@
 
 class ZObjectAllocator {
 private:
+  const bool         _use_per_cpu_shared_small_pages;
   ZPerCPU<size_t>    _used;
   ZPerCPU<size_t>    _undone;
   ZContended<ZPage*> _shared_medium_page;
   ZPerCPU<ZPage*>    _shared_small_page;
   ZPerWorker<ZPage*> _worker_small_page;
+
+  ZPage** shared_small_page_addr();
+  ZPage* const* shared_small_page_addr() const;
 
   ZPage* alloc_page(uint8_t type, size_t size, ZAllocationFlags flags);
   void undo_alloc_page(ZPage* page);

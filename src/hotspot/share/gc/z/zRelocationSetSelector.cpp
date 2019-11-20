@@ -97,6 +97,11 @@ void ZRelocationSetSelectorGroup::semi_sort() {
 }
 
 void ZRelocationSetSelectorGroup::select() {
+  if (_page_size == 0) {
+    // Page type disabled
+    return;
+  }
+
   // Calculate the number of pages to relocate by successively including pages in
   // a candidate relocation set and calculate the maximum space requirement for
   // their live objects.

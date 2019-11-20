@@ -39,14 +39,11 @@
 #include "utilities/debug.hpp"
 
 inline uint8_t ZPage::type_from_size(size_t size) const {
-  switch (size) {
-  case ZPageSizeSmall:
+  if (size == ZPageSizeSmall) {
     return ZPageTypeSmall;
-
-  case ZPageSizeMedium:
+  } else if (size == ZPageSizeMedium) {
     return ZPageTypeMedium;
-
-  default:
+  } else {
     return ZPageTypeLarge;
   }
 }

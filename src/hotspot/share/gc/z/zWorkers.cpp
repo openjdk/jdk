@@ -35,15 +35,16 @@ static uint calculate_nworkers_based_on_ncpus(double cpu_share_in_percent) {
 }
 
 static uint calculate_nworkers_based_on_heap_size(double reserve_share_in_percent) {
-  const int nworkers = ((MaxHeapSize * (reserve_share_in_percent / 100.0)) - ZPageSizeMedium) / ZPageSizeSmall;
+  const int nworkers = (MaxHeapSize * (reserve_share_in_percent / 100.0)) / ZPageSizeSmall;
   return MAX2(nworkers, 1);
 }
 
 static uint calculate_nworkers(double cpu_share_in_percent) {
-  // Cap number of workers so that we never use more than 10% of the max heap
-  // for the reserve. This is useful when using small heaps on large machines.
+  // Cap number of workers so that we don't use more than 2% of the max heap
+  // for the small page reserve. This is useful when using small heaps on
+  // large machines.
   return MIN2(calculate_nworkers_based_on_ncpus(cpu_share_in_percent),
-              calculate_nworkers_based_on_heap_size(10.0));
+              calculate_nworkers_based_on_heap_size(2.0));
 }
 
 uint ZWorkers::calculate_nparallel() {

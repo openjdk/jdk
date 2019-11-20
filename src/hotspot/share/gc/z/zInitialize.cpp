@@ -26,6 +26,7 @@
 #include "gc/z/zBarrierSet.hpp"
 #include "gc/z/zCPU.hpp"
 #include "gc/z/zGlobals.hpp"
+#include "gc/z/zHeuristics.hpp"
 #include "gc/z/zInitialize.hpp"
 #include "gc/z/zLargePages.hpp"
 #include "gc/z/zNUMA.hpp"
@@ -49,6 +50,7 @@ ZInitialize::ZInitialize(ZBarrierSet* barrier_set) {
   ZThreadLocalAllocBuffer::initialize();
   ZTracer::initialize();
   ZLargePages::initialize();
+  ZHeuristics::set_medium_page_size();
   ZBarrierSet::set_barrier_set(barrier_set);
 
   initialize_os();

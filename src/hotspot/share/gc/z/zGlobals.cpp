@@ -24,27 +24,35 @@
 #include "precompiled.hpp"
 #include "gc/z/zGlobals.hpp"
 
-uint32_t ZGlobalPhase                 = ZPhaseRelocate;
-uint32_t ZGlobalSeqNum                = 1;
+uint32_t   ZGlobalPhase                = ZPhaseRelocate;
+uint32_t   ZGlobalSeqNum               = 1;
 
-const int& ZObjectAlignmentSmallShift = LogMinObjAlignmentInBytes;
-const int& ZObjectAlignmentSmall      = MinObjAlignmentInBytes;
+size_t     ZPageSizeMediumShift;
+size_t     ZPageSizeMedium;
 
-uintptr_t ZAddressGoodMask;
-uintptr_t ZAddressBadMask;
-uintptr_t ZAddressWeakBadMask;
+size_t     ZObjectSizeLimitMedium;
 
-uintptr_t ZAddressBase;
+const int& ZObjectAlignmentSmallShift  = LogMinObjAlignmentInBytes;
+int        ZObjectAlignmentMediumShift;
 
-size_t    ZAddressOffsetBits;
-uintptr_t ZAddressOffsetMask;
-size_t    ZAddressOffsetMax;
+const int& ZObjectAlignmentSmall       = MinObjAlignmentInBytes;
+int        ZObjectAlignmentMedium;
 
-size_t    ZAddressMetadataShift;
-uintptr_t ZAddressMetadataMask;
+uintptr_t  ZAddressGoodMask;
+uintptr_t  ZAddressBadMask;
+uintptr_t  ZAddressWeakBadMask;
 
-uintptr_t ZAddressMetadataMarked;
-uintptr_t ZAddressMetadataMarked0;
-uintptr_t ZAddressMetadataMarked1;
-uintptr_t ZAddressMetadataRemapped;
-uintptr_t ZAddressMetadataFinalizable;
+uintptr_t  ZAddressBase;
+
+size_t     ZAddressOffsetBits;
+uintptr_t  ZAddressOffsetMask;
+size_t     ZAddressOffsetMax;
+
+size_t     ZAddressMetadataShift;
+uintptr_t  ZAddressMetadataMask;
+
+uintptr_t  ZAddressMetadataMarked;
+uintptr_t  ZAddressMetadataMarked0;
+uintptr_t  ZAddressMetadataMarked1;
+uintptr_t  ZAddressMetadataRemapped;
+uintptr_t  ZAddressMetadataFinalizable;
