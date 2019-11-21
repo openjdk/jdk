@@ -23,31 +23,109 @@
 
 /*
  * @test
- * @bug 8008949
- * @summary verify that doc-files get copied
- * @library ../../lib
+ * @bug 8008949 8234051
+ * @summary doclet crashes if HTML files in module doc-files directories
+ * @library /tools/lib ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build javadoc.tester.*
+ * @build toolbox.ToolBox javadoc.tester.*
  * @run main TestDocFiles
  */
 
+import java.io.IOException;
+import java.nio.file.Path;
+
+import toolbox.ToolBox;
 import javadoc.tester.JavadocTester;
 
 public class TestDocFiles extends JavadocTester {
 
     public static void main(String... args) throws Exception {
         TestDocFiles tester = new TestDocFiles();
-        tester.runTests();
+        tester.runTests(m -> new Object[] { Path.of(m.getName()) });
     }
 
+    ToolBox tb = new ToolBox();
+
+    /**
+     * Check doc-files support for a package that is not in a module.
+     * @param base the base directory for scratch files
+     * @throws IOException if an exception occurs
+     */
     @Test
-    public void test() {
-        javadoc("-d", "out",
-                "-sourcepath", testSrc,
-                "pkg");
+    public void testPackage(Path base) throws IOException {
+        Path src = base.resolve("src");
+
+        // write the skeletal Java files
+        tb.writeJavaFiles(src,
+                "package p; public class C { }\n");
+
+        // write the doc files for the package
+        Path pkgDocFiles = src.resolve("p").resolve("doc-files");
+        tb.writeFile(pkgDocFiles.resolve("pkg-file.txt"),
+                "package text file\n");
+        tb.writeFile(pkgDocFiles.resolve("pkg-file.html"),
+                "<html>\n"
+                + "<head><title>Package HTML file</title></head>\n"
+                + "<body><h1>Package HTML file</h1>File content</body>\n"
+                + "</html>\n");
+
+        javadoc("-d", base.resolve("out").toString(),
+                "--source-path", src.toString(),
+                "p");
         checkExit(Exit.OK);
 
-        checkOutput("pkg/doc-files/test.txt", true,
-                "test file");
+        checkOutput("p/doc-files/pkg-file.txt", true,
+                "package text file");
+        checkOutput("p/doc-files/pkg-file.html", true,
+                "Package HTML file");
+    }
+
+    /**
+     * Check doc-files support for a module and a package that is in a module.
+     * @param base the base directory for scratch files
+     * @throws IOException if an exception occurs
+     */
+    @Test
+    public void testModules(Path base) throws IOException {
+        Path src = base.resolve("src");
+
+        // write the skeletal Java files
+        tb.writeJavaFiles(src,
+                "module m { exports p; }\n",
+                "package p; public class C { }\n");
+
+        // write the doc files for the module
+        Path mdlDocFiles = src.resolve("doc-files");
+        tb.writeFile(mdlDocFiles.resolve("mdl-file.txt"),
+                "module text file\n");
+        tb.writeFile(mdlDocFiles.resolve("mdl-file.html"),
+                "<html>\n"
+                + "<head><title>Module HTML file</title></head>\n"
+                + "<body><h1>Module HTML file</h1>File content</body>\n"
+                + "</html>\n");
+
+        // write the doc files for a package in the module
+        Path pkgDocFiles = src.resolve("p").resolve("doc-files");
+        tb.writeFile(pkgDocFiles.resolve("pkg-file.txt"),
+                "package text file\n");
+        tb.writeFile(pkgDocFiles.resolve("pkg-file.html"),
+                "<html>\n"
+                + "<head><title>Package HTML file</title></head>\n"
+                + "<body><h1>Package HTML file</h1>File content</body>\n"
+                + "</html>\n");
+
+        javadoc("-d", base.resolve("out").toString(),
+                "--source-path", src.toString(),
+                "--module", "m");
+        checkExit(Exit.OK);
+
+        checkOutput("m/doc-files/mdl-file.txt", true,
+                "module text file");
+        checkOutput("m/doc-files/mdl-file.html", true,
+                "Module HTML file");
+        checkOutput("m/p/doc-files/pkg-file.txt", true,
+                "package text file");
+        checkOutput("m/p/doc-files/pkg-file.html", true,
+                "Package HTML file");
     }
 }

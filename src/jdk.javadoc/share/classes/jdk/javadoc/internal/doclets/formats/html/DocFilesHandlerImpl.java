@@ -169,7 +169,7 @@ public class DocFilesHandlerImpl implements DocFilesHandler {
     private void handleHtmlFile(DocFile srcfile, DocPath dstPath) throws DocFileIOException {
         Utils utils = configuration.utils;
         FileObject fileObject = srcfile.getFileObject();
-        DocFileElement dfElement = new DocFileElement(element, fileObject);
+        DocFileElement dfElement = new DocFileElement(utils, element, fileObject);
 
         DocPath dfilePath = dstPath.resolve(srcfile.getName());
         HtmlDocletWriter docletWriter = new DocFileWriter(configuration, dfilePath, element);
@@ -181,8 +181,8 @@ public class DocFilesHandlerImpl implements DocFilesHandler {
         String title = getWindowTitle(docletWriter, dfElement).trim();
         HtmlTree htmlContent = docletWriter.getBody(title);
         docletWriter.addTop(htmlContent);
-        PackageElement pkg = (PackageElement) element;
-        this.navBar = new Navigation(pkg, configuration, docletWriter.fixedNavDiv,
+        PackageElement pkg = dfElement.getPackageElement();
+        this.navBar = new Navigation(element, configuration, docletWriter.fixedNavDiv,
                 PageMode.DOCFILE, docletWriter.path);
         Content mdleLinkContent = docletWriter.getModuleLink(utils.elementUtils.getModuleOf(pkg),
                 docletWriter.contents.moduleLabel);
@@ -299,8 +299,6 @@ public class DocFilesHandlerImpl implements DocFilesHandler {
 
     private static class DocFileWriter extends HtmlDocletWriter {
 
-        final PackageElement pkg;
-
         /**
          * Constructor to construct the HtmlDocletWriter object.
          *
@@ -312,7 +310,7 @@ public class DocFilesHandlerImpl implements DocFilesHandler {
             super(configuration, path);
             switch (e.getKind()) {
                 case PACKAGE:
-                    pkg = (PackageElement)e;
+                case MODULE:
                     break;
                 default:
                     throw new AssertionError("unsupported element: " + e.getKind());
