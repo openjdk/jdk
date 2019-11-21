@@ -34,6 +34,7 @@ import java.util.Set;
 import java.util.HashSet;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import sun.net.util.IPAddressUtil;
 import sun.nio.ch.IOUtil;
 import sun.nio.ch.Net;
 import com.sun.nio.sctp.SctpSocketOption;
@@ -169,9 +170,13 @@ public class SctpNet {
             InetSocketAddress netAddr = (InetSocketAddress)addr;
 
             if (name.equals(SCTP_PRIMARY_ADDR)) {
+                InetAddress inetAddress = netAddr.getAddress();
+                if (inetAddress.isLinkLocalAddress()) {
+                    inetAddress = IPAddressUtil.toScopedAddress(inetAddress);
+                }
                 setPrimAddrOption0(fd,
                                    assocId,
-                                   netAddr.getAddress(),
+                                   inetAddress,
                                    netAddr.getPort());
             } else {
                 setPeerPrimAddrOption0(fd,

@@ -53,6 +53,7 @@ import com.sun.nio.sctp.MessageInfo;
 import com.sun.nio.sctp.NotificationHandler;
 import com.sun.nio.sctp.SctpChannel;
 import com.sun.nio.sctp.SctpSocketOption;
+import sun.net.util.IPAddressUtil;
 import sun.nio.ch.DirectBuffer;
 import sun.nio.ch.IOStatus;
 import sun.nio.ch.IOUtil;
@@ -1012,6 +1013,9 @@ public class SctpChannelImpl extends SctpChannel
         if (target != null) {
             InetSocketAddress isa = Net.checkAddress(target);
             addr = isa.getAddress();
+            if (addr.isLinkLocalAddress()) {
+                addr = IPAddressUtil.toScopedAddress(addr);
+            }
             port = isa.getPort();
         }
 
