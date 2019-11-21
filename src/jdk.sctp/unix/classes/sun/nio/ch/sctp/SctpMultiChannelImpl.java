@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -990,16 +990,5 @@ public class SctpMultiChannelImpl extends SctpMultiChannel
             throws IOException {
         return SctpChannelImpl.send0(fd, address, length, addr, port, assocId,
                 streamNumber, unordered, ppid);
-    }
-
-    static {
-        IOUtil.load();   /* loads nio & net native libraries */
-        java.security.AccessController.doPrivileged(
-            new java.security.PrivilegedAction<Void>() {
-                public Void run() {
-                    System.loadLibrary("sctp");
-                    return null;
-                }
-            });
     }
 }
