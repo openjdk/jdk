@@ -144,7 +144,7 @@ class ObjectMonitor {
                         sizeof(ObjectMonitor *));
   void* volatile _owner;            // pointer to owning thread OR BasicLock
   volatile jlong _previous_owner_tid;  // thread id of the previous owner of the monitor
-  volatile intptr_t _recursions;    // recursion count, 0 for first entry
+  volatile intx _recursions;        // recursion count, 0 for first entry
   ObjectWaiter* volatile _EntryList;  // Threads blocked on entry or reentry.
                                       // The list is actually composed of WaitNodes,
                                       // acting as proxies for Threads.
@@ -237,7 +237,7 @@ class ObjectMonitor {
   jint      waiters() const;
 
   jint      contentions() const;
-  intptr_t  recursions() const                                         { return _recursions; }
+  intx      recursions() const                                         { return _recursions; }
 
   // JVM/TI GetObjectMonitorUsage() needs this:
   ObjectWaiter* first_waiter()                                         { return _WaitSet; }
@@ -263,7 +263,7 @@ class ObjectMonitor {
     // _recursions == 0 _WaitSet == NULL
     DEBUG_ONLY(stringStream ss;)
     assert((is_busy() | _recursions) == 0, "freeing in-use monitor: %s, "
-           "recursions=" INTPTR_FORMAT, is_busy_to_string(&ss), _recursions);
+           "recursions=" INTX_FORMAT, is_busy_to_string(&ss), _recursions);
     _succ          = NULL;
     _EntryList     = NULL;
     _cxq           = NULL;
@@ -289,11 +289,14 @@ class ObjectMonitor {
   void      notifyAll(TRAPS);
 
   void      print() const;
+#ifdef ASSERT
+  void      print_debug_style_on(outputStream* st) const;
+#endif
   void      print_on(outputStream* st) const;
 
 // Use the following at your own risk
-  intptr_t  complete_exit(TRAPS);
-  void      reenter(intptr_t recursions, TRAPS);
+  intx      complete_exit(TRAPS);
+  void      reenter(intx recursions, TRAPS);
 
  private:
   void      AddWaiter(ObjectWaiter* waiter);

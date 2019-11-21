@@ -289,21 +289,6 @@ void Generation::object_iterate(ObjectClosure* cl) {
   space_iterate(&blk);
 }
 
-class GenerationSafeObjIterateClosure : public SpaceClosure {
- private:
-  ObjectClosure* _cl;
- public:
-  virtual void do_space(Space* s) {
-    s->safe_object_iterate(_cl);
-  }
-  GenerationSafeObjIterateClosure(ObjectClosure* cl) : _cl(cl) {}
-};
-
-void Generation::safe_object_iterate(ObjectClosure* cl) {
-  GenerationSafeObjIterateClosure blk(cl);
-  space_iterate(&blk);
-}
-
 #if INCLUDE_SERIALGC
 
 void Generation::prepare_for_compaction(CompactPoint* cp) {

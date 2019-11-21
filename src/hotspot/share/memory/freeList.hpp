@@ -39,7 +39,6 @@ class Mutex;
 
 template <class Chunk_t>
 class FreeList {
-  friend class CompactibleFreeListSpace;
   friend class VMStructs;
 
  private:

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,14 @@
 
 package sun.nio.ch;
 
-import java.nio.channels.*;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
-import java.util.*;
+import java.nio.channels.MembershipKey;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Simple registry of membership keys for a MulticastChannel.
@@ -38,8 +42,8 @@ import java.util.*;
 
 class MembershipRegistry {
 
-    // map multicast group to keys
-    private Map<InetAddress,List<MembershipKeyImpl>> groups = null;
+    // map multicast group to list of keys
+    private Map<InetAddress, List<MembershipKeyImpl>> groups;
 
     MembershipRegistry() {
     }
@@ -116,16 +120,29 @@ class MembershipRegistry {
         }
     }
 
+    @FunctionalInterface
+    interface ThrowingConsumer<T, X extends Throwable> {
+        void accept(T action) throws X;
+    }
+
+    /**
+     * Invoke an action for each key in the registry
+     */
+     <X extends Throwable>
+     void forEach(ThrowingConsumer<MembershipKeyImpl, X> action) throws X {
+        if (groups != null) {
+            for (List<MembershipKeyImpl> keys : groups.values()) {
+                for (MembershipKeyImpl key : keys) {
+                    action.accept(key);
+                }
+            }
+        }
+    }
+
     /**
      * Invalidate all keys in the registry
      */
     void invalidateAll() {
-        if (groups != null) {
-            for (InetAddress group: groups.keySet()) {
-                for (MembershipKeyImpl key: groups.get(group)) {
-                    key.invalidate();
-                }
-            }
-        }
+        forEach(MembershipKeyImpl::invalidate);
     }
 }

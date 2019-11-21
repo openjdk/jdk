@@ -110,18 +110,6 @@ void DirtyCardToOopClosure::walk_mem_region(MemRegion mr,
 // we (or another worker thread) may already have scanned
 // or planning to scan.
 void DirtyCardToOopClosure::do_MemRegion(MemRegion mr) {
-
-  // Some collectors need to do special things whenever their dirty
-  // cards are processed. For instance, CMS must remember mutator updates
-  // (i.e. dirty cards) so as to re-scan mutated objects.
-  // Such work can be piggy-backed here on dirty card scanning, so as to make
-  // it slightly more efficient than doing a complete non-destructive pre-scan
-  // of the card table.
-  MemRegionClosure* pCl = _sp->preconsumptionDirtyCardClosure();
-  if (pCl != NULL) {
-    pCl->do_MemRegion(mr);
-  }
-
   HeapWord* bottom = mr.start();
   HeapWord* last = mr.last();
   HeapWord* top = mr.end();
@@ -498,32 +486,11 @@ void ContiguousSpace::object_iterate(ObjectClosure* blk) {
   object_iterate_from(bottom(), blk);
 }
 
-// For a ContiguousSpace object_iterate() and safe_object_iterate()
-// are the same.
-void ContiguousSpace::safe_object_iterate(ObjectClosure* blk) {
-  object_iterate(blk);
-}
-
 void ContiguousSpace::object_iterate_from(HeapWord* mark, ObjectClosure* blk) {
   while (mark < top()) {
     blk->do_object(oop(mark));
     mark += oop(mark)->size();
   }
-}
-
-HeapWord*
-ContiguousSpace::object_iterate_careful(ObjectClosureCareful* blk) {
-  HeapWord * limit = concurrent_iteration_safe_limit();
-  assert(limit <= top(), "sanity check");
-  for (HeapWord* p = bottom(); p < limit;) {
-    size_t size = blk->do_object_careful(oop(p));
-    if (size == 0) {
-      return p;  // failed at p
-    } else {
-      p += size;
-    }
-  }
-  return NULL; // all done
 }
 
 // Very general, slow implementation.

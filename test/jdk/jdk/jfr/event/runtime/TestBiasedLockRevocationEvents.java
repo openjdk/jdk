@@ -43,7 +43,7 @@ import java.util.stream.Collectors;
  * @requires vm.hasJFR
  * @library /test/lib
  *
- * @run main/othervm jdk.jfr.event.runtime.TestBiasedLockRevocationEvents
+ * @run main/othervm -XX:+UseBiasedLocking jdk.jfr.event.runtime.TestBiasedLockRevocationEvents
  */
 public class TestBiasedLockRevocationEvents {
 

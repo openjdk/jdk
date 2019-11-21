@@ -246,10 +246,6 @@ void ZCollectedHeap::object_iterate(ObjectClosure* cl) {
   _heap.object_iterate(cl, true /* visit_weaks */);
 }
 
-void ZCollectedHeap::safe_object_iterate(ObjectClosure* cl) {
-  _heap.object_iterate(cl, true /* visit_weaks */);
-}
-
 void ZCollectedHeap::register_nmethod(nmethod* nm) {
   ZNMethod::register_nmethod(nm);
 }

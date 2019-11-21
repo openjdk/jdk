@@ -25,6 +25,7 @@
 
 
 #import "PrinterSurfaceData.h"
+#import "jni_util.h"
 #import <JavaNativeFoundation/JavaNativeFoundation.h>
 
 
@@ -87,6 +88,11 @@ JNF_COCOA_ENTER(env);
 PRINT("Java_sun_lwawt_macosx_CPrinterSurfaceData_initOps")
 
     PrintSDOps *psdo = (PrintSDOps*)SurfaceData_InitOps(env, jthis, sizeof(PrintSDOps));
+    if (psdo == NULL) {
+        JNU_ThrowOutOfMemoryError(env, "Initialization of SurfaceData failed.");
+        return;
+    }
+
     psdo->nsRef            = (NSGraphicsContext*)jlong_to_ptr(nsRef);
     psdo->width            = width;
     psdo->height        = height;

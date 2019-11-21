@@ -540,7 +540,7 @@ void SystemDictionary::double_lock_wait(Handle lockObject, TRAPS) {
   assert(calledholdinglock,"must hold lock for notify");
   assert((lockObject() != _system_loader_lock_obj && !is_parallelCapable(lockObject)), "unexpected double_lock_wait");
   ObjectSynchronizer::notifyall(lockObject, THREAD);
-  intptr_t recursions =  ObjectSynchronizer::complete_exit(lockObject, THREAD);
+  intx recursions =  ObjectSynchronizer::complete_exit(lockObject, THREAD);
   SystemDictionary_lock->wait();
   SystemDictionary_lock->unlock();
   ObjectSynchronizer::reenter(lockObject, recursions, THREAD);

@@ -48,6 +48,7 @@ import javax.security.auth.DestroyFailedException;
 
 import sun.security.x509.AlgorithmId;
 import sun.security.util.ObjectIdentifier;
+import sun.security.util.SecurityProperties;
 
 /**
  * This class implements a protection mechanism for private keys. In JCE, we
@@ -75,13 +76,38 @@ final class KeyProtector {
     private static final String KEY_PROTECTOR_OID = "1.3.6.1.4.1.42.2.17.1.1";
 
     private static final int MAX_ITERATION_COUNT = 5000000;
-    private static final int ITERATION_COUNT = 200000;
+    private static final int MIN_ITERATION_COUNT = 10000;
+    private static final int DEFAULT_ITERATION_COUNT = 200000;
     private static final int SALT_LEN = 20; // the salt length
     private static final int DIGEST_LEN = 20;
+    private static final int ITERATION_COUNT;
 
     // the password used for protecting/recovering keys passed through this
     // key protector
     private char[] password;
+
+    /**
+     * {@systemProperty jdk.jceks.iterationCount} property indicating the
+     * number of iterations for password-based encryption (PBE) in JCEKS
+     * keystores. Values in the range 10000 to 5000000 are considered valid.
+     * If the value is out of this range, or is not a number, or is
+     * unspecified; a default of 200000 is used.
+     */
+    static {
+        int iterationCount = DEFAULT_ITERATION_COUNT;
+        String ic = SecurityProperties.privilegedGetOverridable(
+                "jdk.jceks.iterationCount");
+        if (ic != null && !ic.isEmpty()) {
+            try {
+                iterationCount = Integer.parseInt(ic);
+                if (iterationCount < MIN_ITERATION_COUNT ||
+                        iterationCount > MAX_ITERATION_COUNT) {
+                    iterationCount = DEFAULT_ITERATION_COUNT;
+                }
+            } catch (NumberFormatException e) {}
+        }
+        ITERATION_COUNT = iterationCount;
+    }
 
     KeyProtector(char[] password) {
         if (password == null) {

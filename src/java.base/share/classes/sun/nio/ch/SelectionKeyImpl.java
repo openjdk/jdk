@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,6 +57,9 @@ public final class SelectionKeyImpl
 
     // registered events in kernel, used by some Selector implementations
     private int registeredEvents;
+
+    // registered events need to be reset, used by some Selector implementations
+    private volatile boolean reset;
 
     // index of key in pollfd array, used by some Selector implementations
     private int index;
@@ -182,6 +185,26 @@ public final class SelectionKeyImpl
 
     void setIndex(int i) {
         index = i;
+    }
+
+    /**
+     * Sets the reset flag, re-queues the key, and wakeups up the Selector
+     */
+    void reset() {
+        reset = true;
+        selector.setEventOps(this);
+        selector.wakeup();
+    }
+
+    /**
+     * Clears the reset flag, returning the previous value of the flag
+     */
+    boolean getAndClearReset() {
+        assert Thread.holdsLock(selector);
+        boolean r = reset;
+        if (r)
+            reset = false;
+        return r;
     }
 
     @Override

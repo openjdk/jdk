@@ -547,7 +547,6 @@ public:
 
   // Used for native heap walkers: heap dumpers, mostly
   void object_iterate(ObjectClosure* cl);
-  void safe_object_iterate(ObjectClosure* cl);
 
   // Used by RMI
   jlong millis_since_last_gc();

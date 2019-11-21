@@ -1024,7 +1024,7 @@ public:
 //
 // Stat cycle
 //
-uint64_t  ZStatCycle::_ncycles = 0;
+uint64_t  ZStatCycle::_nwarmup_cycles = 0;
 Ticks     ZStatCycle::_start_of_last;
 Ticks     ZStatCycle::_end_of_last;
 NumberSeq ZStatCycle::_normalized_duration(0.3 /* alpha */);
@@ -1033,9 +1033,12 @@ void ZStatCycle::at_start() {
   _start_of_last = Ticks::now();
 }
 
-void ZStatCycle::at_end(double boost_factor) {
+void ZStatCycle::at_end(GCCause::Cause cause, double boost_factor) {
   _end_of_last = Ticks::now();
-  _ncycles++;
+
+  if (cause == GCCause::_z_warmup) {
+    _nwarmup_cycles++;
+  }
 
   // Calculate normalized cycle duration. The measured duration is
   // normalized using the boost factor to avoid artificial deflation
@@ -1045,16 +1048,18 @@ void ZStatCycle::at_end(double boost_factor) {
   _normalized_duration.add(normalized_duration);
 }
 
-bool ZStatCycle::is_first() {
-  return _ncycles == 0;
-}
-
 bool ZStatCycle::is_warm() {
-  return _ncycles >= 3;
+  return _nwarmup_cycles >= 3;
 }
 
-uint64_t ZStatCycle::ncycles() {
-  return _ncycles;
+uint64_t ZStatCycle::nwarmup_cycles() {
+  return _nwarmup_cycles;
+}
+
+bool ZStatCycle::is_normalized_duration_trustable() {
+  // The normalized duration is considered trustable if we have
+  // completed at least one warmup cycle
+  return _nwarmup_cycles > 0;
 }
 
 const AbsSeq& ZStatCycle::normalized_duration() {
@@ -1062,8 +1067,8 @@ const AbsSeq& ZStatCycle::normalized_duration() {
 }
 
 double ZStatCycle::time_since_last() {
-  if (_ncycles == 0) {
-    // Return time since VM start-up
+  if (_end_of_last.value() == 0) {
+    // No end recorded yet, return time since VM start
     return os::elapsedTime();
   }
 

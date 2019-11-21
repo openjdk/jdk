@@ -25,7 +25,7 @@
 #include "gc/z/zAddressSpaceLimit.hpp"
 #include "gc/z/zArguments.hpp"
 #include "gc/z/zCollectedHeap.hpp"
-#include "gc/z/zWorkers.hpp"
+#include "gc/z/zHeuristics.hpp"
 #include "gc/shared/gcArguments.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
@@ -59,7 +59,7 @@ void ZArguments::initialize() {
 
   // Select number of parallel threads
   if (FLAG_IS_DEFAULT(ParallelGCThreads)) {
-    FLAG_SET_DEFAULT(ParallelGCThreads, ZWorkers::calculate_nparallel());
+    FLAG_SET_DEFAULT(ParallelGCThreads, ZHeuristics::nparallel_workers());
   }
 
   if (ParallelGCThreads == 0) {
@@ -68,7 +68,7 @@ void ZArguments::initialize() {
 
   // Select number of concurrent threads
   if (FLAG_IS_DEFAULT(ConcGCThreads)) {
-    FLAG_SET_DEFAULT(ConcGCThreads, ZWorkers::calculate_nconcurrent());
+    FLAG_SET_DEFAULT(ConcGCThreads, ZHeuristics::nconcurrent_workers());
   }
 
   if (ConcGCThreads == 0) {

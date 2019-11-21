@@ -59,7 +59,7 @@ inline void ObjectMonitor::clear() {
   assert(Atomic::load(&_header).value() != 0, "must be non-zero");
   assert(_contentions == 0, "must be 0: contentions=%d", _contentions);
   assert(_waiters == 0, "must be 0: waiters=%d", _waiters);
-  assert(_recursions == 0, "must be 0: recursions=" INTPTR_FORMAT, _recursions);
+  assert(_recursions == 0, "must be 0: recursions=" INTX_FORMAT, _recursions);
   assert(_object != NULL, "must be non-NULL");
   assert(_owner == NULL, "must be NULL: owner=" INTPTR_FORMAT, p2i(_owner));
 

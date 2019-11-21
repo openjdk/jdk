@@ -222,6 +222,7 @@ void AbstractInterpreter::update_cds_entry_table(AbstractInterpreter::MethodKind
     CodeBuffer buffer(trampoline, (int)(SharedRuntime::trampoline_size()));
     MacroAssembler _masm(&buffer);
     SharedRuntime::generate_trampoline(&_masm, _entry_table[kind]);
+    _masm.flush();
 
     if (PrintInterpreter) {
       Disassembler::decode(buffer.insts_begin(), buffer.insts_end());

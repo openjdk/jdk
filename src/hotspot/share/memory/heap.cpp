@@ -45,6 +45,7 @@ CodeHeap::CodeHeap(const char* name, const int code_blob_type)
   _log2_segment_size            = 0;
   _next_segment                 = 0;
   _freelist                     = NULL;
+  _last_insert_point            = NULL;
   _freelist_segments            = 0;
   _freelist_length              = 0;
   _max_allocated_capacity       = 0;
@@ -52,11 +53,24 @@ CodeHeap::CodeHeap(const char* name, const int code_blob_type)
   _nmethod_count                = 0;
   _adapter_count                = 0;
   _full_count                   = 0;
+  _fragmentation_count          = 0;
 }
 
+// Dummy initialization of template array.
+char CodeHeap::segmap_template[] = {0};
+
+// This template array is used to (re)initialize the segmap,
+// replacing a 1..254 loop.
+void CodeHeap::init_segmap_template() {
+  assert(free_sentinel == 255, "Segment map logic changed!");
+  for (int i = 0; i <= free_sentinel; i++) {
+    segmap_template[i] = i;
+  }
+}
 
 // The segmap is marked free for that part of the heap
 // which has not been allocated yet (beyond _next_segment).
+// The range of segments to be marked is given by [beg..end).
 // "Allocated" space in this context means there exists a
 // HeapBlock or a FreeBlock describing this space.
 // This method takes segment map indices as range boundaries
@@ -78,8 +92,9 @@ void CodeHeap::mark_segmap_as_free(size_t beg, size_t end) {
 // have their segmap marked as used. This allows to find the
 // block header (HeapBlock or FreeBlock) for any pointer
 // within the allocated range (upper limit: _next_segment).
-// This method takes segment map indices as range boundaries
-void CodeHeap::mark_segmap_as_used(size_t beg, size_t end) {
+// This method takes segment map indices as range boundaries.
+// The range of segments to be marked is given by [beg..end).
+void CodeHeap::mark_segmap_as_used(size_t beg, size_t end, bool is_FreeBlock_join) {
   assert(             beg <  _number_of_committed_segments, "interval begin out of bounds");
   assert(beg < end && end <= _number_of_committed_segments, "interval end   out of bounds");
   // Don't do unpredictable things in PRODUCT build
@@ -88,10 +103,63 @@ void CodeHeap::mark_segmap_as_used(size_t beg, size_t end) {
     address p = (address)_segmap.low() + beg;
     address q = (address)_segmap.low() + end;
     // initialize interval
-    int i = 0;
-    while (p < q) {
-      *p++ = i++;
-      if (i == free_sentinel) i = 1;
+    // If we are joining two free blocks, the segmap range for each
+    // block is consistent. To create a consistent segmap range for
+    // the blocks combined, we have three choices:
+    //  1 - Do a full init from beg to end. Not very efficient because
+    //      the segmap range for the left block is potentially initialized
+    //      over and over again.
+    //  2 - Carry over the last segmap element value of the left block
+    //      and initialize the segmap range of the right block starting
+    //      with that value. Saves initializing the left block's segmap
+    //      over and over again. Very efficient if FreeBlocks mostly
+    //      are appended to the right.
+    //  3 - Take full advantage of the segmap being almost correct with
+    //      the two blocks combined. Lets assume the left block consists
+    //      of m segments. The the segmap looks like
+    //        ... (m-2) (m-1) (m) 0  1  2  3 ...
+    //      By substituting the '0' by '1', we create a valid, but
+    //      suboptimal, segmap range covering the two blocks combined.
+    //      We introduced an extra hop for the find_block_for() iteration.
+    //
+    // When this method is called with is_FreeBlock_join == true, the
+    // segmap index beg must select the first segment of the right block.
+    // Otherwise, it has to select the first segment of the left block.
+    // Variant 3 is used for all FreeBlock joins.
+    if (is_FreeBlock_join && (beg > 0)) {
+#ifndef PRODUCT
+      FreeBlock* pBlock = (FreeBlock*)block_at(beg);
+      assert(beg + pBlock->length() == end, "Internal error: (%d - %d) != %d", (unsigned int)end, (unsigned int)beg, (unsigned int)(pBlock->length()));
+      assert(*p == 0, "Begin index does not select a block start segment, *p = %2.2x", *p);
+#endif
+      // If possible, extend the previous hop.
+      if (*(p-1) < (free_sentinel-1)) {
+        *p = *(p-1) + 1;
+      } else {
+        *p = 1;
+      }
+      if (_fragmentation_count++ >= fragmentation_limit) {
+        defrag_segmap(true);
+        _fragmentation_count = 0;
+      }
+    } else {
+      size_t n_bulk = free_sentinel-1; // bulk processing uses template indices [1..254].
+      // Use shortcut for blocks <= 255 segments.
+      // Special case bulk processing: [0..254].
+      if ((end - beg) <= n_bulk) {
+        memcpy(p, &segmap_template[0], end - beg);
+      } else {
+        *p++  = 0;  // block header marker
+        while (p < q) {
+          if ((p+n_bulk) <= q) {
+            memcpy(p, &segmap_template[1], n_bulk);
+            p += n_bulk;
+          } else {
+            memcpy(p, &segmap_template[1], q-p);
+            p = q;
+          }
+        }
+      }
     }
   }
 }
@@ -178,6 +246,7 @@ bool CodeHeap::reserve(ReservedSpace rs, size_t committed_size, size_t segment_s
 
   // initialize remaining instance variables, heap memory and segmap
   clear();
+  init_segmap_template();
   return true;
 }
 
@@ -220,14 +289,11 @@ void* CodeHeap::allocate(size_t instance_size) {
   NOT_PRODUCT(verify());
 
   if (block != NULL) {
-    assert(!block->free(), "must be marked free");
+    assert(!block->free(), "must not be marked free");
     guarantee((char*) block >= _memory.low_boundary() && (char*) block < _memory.high(),
               "The newly allocated block " INTPTR_FORMAT " is not within the heap "
               "starting with "  INTPTR_FORMAT " and ending with "  INTPTR_FORMAT,
               p2i(block), p2i(_memory.low_boundary()), p2i(_memory.high()));
-    // Invalidate the additional space that FreeBlock occupies. The rest of the block should already be invalidated.
-    // This is necessary due to a dubious assert in nmethod.cpp(PcDescCache::reset_to()).
-    DEBUG_ONLY(memset((void*)block->allocated_space(), badCodeHeapNewVal, sizeof(FreeBlock) - sizeof(HeapBlock)));
     _max_allocated_capacity = MAX2(_max_allocated_capacity, allocated_capacity());
     _blob_count++;
     return block->allocated_space();
@@ -237,17 +303,17 @@ void* CodeHeap::allocate(size_t instance_size) {
   number_of_segments = MAX2((int)CodeCacheMinBlockLength, (int)number_of_segments);
 
   if (_next_segment + number_of_segments <= _number_of_committed_segments) {
-    mark_segmap_as_used(_next_segment, _next_segment + number_of_segments);
-    HeapBlock* b =  block_at(_next_segment);
-    b->initialize(number_of_segments);
+    mark_segmap_as_used(_next_segment, _next_segment + number_of_segments, false);
+    block = block_at(_next_segment);
+    block->initialize(number_of_segments);
     _next_segment += number_of_segments;
-    guarantee((char*) b >= _memory.low_boundary() && (char*) block < _memory.high(),
+    guarantee((char*) block >= _memory.low_boundary() && (char*) block < _memory.high(),
               "The newly allocated block " INTPTR_FORMAT " is not within the heap "
               "starting with "  INTPTR_FORMAT " and ending with " INTPTR_FORMAT,
-              p2i(b), p2i(_memory.low_boundary()), p2i(_memory.high()));
+              p2i(block), p2i(_memory.low_boundary()), p2i(_memory.high()));
     _max_allocated_capacity = MAX2(_max_allocated_capacity, allocated_capacity());
     _blob_count++;
-    return b->allocated_space();
+    return block->allocated_space();
   } else {
     return NULL;
   }
@@ -273,7 +339,7 @@ HeapBlock* CodeHeap::split_block(HeapBlock *b, size_t split_at) {
 
   HeapBlock* newb = block_at(split_segment);
   newb->set_length(newb_size);
-  mark_segmap_as_used(segment_for(newb), segment_for(newb) + newb_size);
+  mark_segmap_as_used(segment_for(newb), segment_for(newb) + newb_size, false);
   b->set_length(split_at);
   return newb;
 }
@@ -308,61 +374,117 @@ void CodeHeap::deallocate(void* p) {
 }
 
 /**
- * Uses segment map to find the the start (header) of a nmethod. This works as follows:
- * The memory of the code cache is divided into 'segments'. The size of a segment is
- * determined by -XX:CodeCacheSegmentSize=XX. Allocation in the code cache can only
- * happen at segment boundaries. A pointer in the code cache can be mapped to a segment
- * by calling segment_for(addr). Each time memory is requested from the code cache,
- * the segmap is updated accordingly. See the following example, which illustrates the
- * state of code cache and the segment map: (seg -> segment, nm ->nmethod)
+ * The segment map is used to quickly find the the start (header) of a
+ * code block (e.g. nmethod) when only a pointer to a location inside the
+ * code block is known. This works as follows:
+ *  - The storage reserved for the code heap is divided into 'segments'.
+ *  - The size of a segment is determined by -XX:CodeCacheSegmentSize=<#bytes>.
+ *  - The size must be a power of two to allow the use of shift operations
+ *    to quickly convert between segment index and segment address.
+ *  - Segment start addresses should be aligned to be multiples of CodeCacheSegmentSize.
+ *  - It seems beneficial for CodeCacheSegmentSize to be equal to os::page_size().
+ *  - Allocation in the code cache can only happen at segment start addresses.
+ *  - Allocation in the code cache is in units of CodeCacheSegmentSize.
+ *  - A pointer in the code cache can be mapped to a segment by calling
+ *    segment_for(addr).
+ *  - The segment map is a byte array where array element [i] is related
+ *    to the i-th segment in the code heap.
+ *  - Each time memory is allocated/deallocated from the code cache,
+ *    the segment map is updated accordingly.
+ *    Note: deallocation does not cause the memory to become "free", as
+ *          indicated by the segment map state "free_sentinel". Deallocation
+ *          just changes the block state from "used" to "free".
+ *  - Elements of the segment map (byte) array are interpreted
+ *    as unsigned integer.
+ *  - Element values normally identify an offset backwards (in segment
+ *    size units) from the associated segment towards the start of
+ *    the block.
+ *  - Some values have a special meaning:
+ *       0 - This segment is the start of a block (HeapBlock or FreeBlock).
+ *     255 - The free_sentinel value. This is a free segment, i.e. it is
+ *           not yet allocated and thus does not belong to any block.
+ *  - The value of the current element has to be subtracted from the
+ *    current index to get closer to the start.
+ *  - If the value of the then current element is zero, the block start
+ *    segment is found and iteration stops. Otherwise, start over with the
+ *    previous step.
+ *
+ *    The following example illustrates a possible state of code cache
+ *    and the segment map: (seg -> segment, nm ->nmethod)
  *
  *          code cache          segmap
  *         -----------        ---------
  * seg 1   | nm 1    |   ->   | 0     |
  * seg 2   | nm 1    |   ->   | 1     |
  * ...     | nm 1    |   ->   | ..    |
+ * seg m-1 | nm 1    |   ->   | m-1   |
  * seg m   | nm 2    |   ->   | 0     |
  * seg m+1 | nm 2    |   ->   | 1     |
  * ...     | nm 2    |   ->   | 2     |
  * ...     | nm 2    |   ->   | ..    |
- * ...     | nm 2    |   ->   | 0xFE  |
- * seg m+n | nm 2    |   ->   | 1     |
+ * ...     | nm 2    |   ->   | 0xFE  | (free_sentinel-1)
+ * ...     | nm 2    |   ->   | 1     |
+ * seg m+n | nm 2    |   ->   | 2     |
  * ...     | nm 2    |   ->   |       |
  *
- * A value of '0' in the segmap indicates that this segment contains the beginning of
- * an nmethod. Let's walk through a simple example: If we want to find the start of
- * an nmethod that falls into seg 2, we read the value of the segmap[2]. The value
- * is an offset that points to the segment that contains the start of the nmethod.
- * Another example: If we want to get the start of nm 2, and we happen to get a pointer
- * that points to seg m+n, we first read seg[n+m], which returns '1'. So we have to
- * do one more read of the segmap[m+n-1] to finally get the segment header.
+ * How to read:
+ * A value of '0' in the segmap indicates that this segment contains the
+ * beginning of a CodeHeap block. Let's walk through a simple example:
+ *
+ * We want to find the start of the block that contains nm 1, and we are
+ * given a pointer that points into segment m-2. We then read the value
+ * of segmap[m-2]. The value is an offset that points to the segment
+ * which contains the start of the block.
+ *
+ * Another example: We want to locate the start of nm 2, and we happen to
+ * get a pointer that points into seg m+n. We first read seg[n+m], which
+ * returns '2'. So we have to update our segment map index (ix -= segmap[n+m])
+ * and start over.
  */
-void* CodeHeap::find_start(void* p) const {
+
+// Find block which contains the passed pointer,
+// regardless of the block being used or free.
+// NULL is returned if anything invalid is detected.
+void* CodeHeap::find_block_for(void* p) const {
+  // Check the pointer to be in committed range.
   if (!contains(p)) {
     return NULL;
   }
-  size_t seg_idx = segment_for(p);
+
   address seg_map = (address)_segmap.low();
+  size_t  seg_idx = segment_for(p);
+
+  // This may happen in special cases. Just ignore.
+  // Example: PPC ICache stub generation.
   if (is_segment_unused(seg_map[seg_idx])) {
     return NULL;
   }
+
+  // Iterate the segment map chain to find the start of the block.
   while (seg_map[seg_idx] > 0) {
+    // Don't check each segment index to refer to a used segment.
+    // This method is called extremely often. Therefore, any checking
+    // has a significant impact on performance. Rely on CodeHeap::verify()
+    // to do the job on request.
     seg_idx -= (int)seg_map[seg_idx];
   }
 
-  HeapBlock* h = block_at(seg_idx);
-  if (h->free()) {
-    return NULL;
-  }
-  return h->allocated_space();
+  return address_for(seg_idx);
 }
 
+// Find block which contains the passed pointer.
+// The block must be used, i.e. must not be a FreeBlock.
+// Return a pointer that points past the block header.
+void* CodeHeap::find_start(void* p) const {
+  HeapBlock* h = (HeapBlock*)find_block_for(p);
+  return ((h == NULL) || h->free()) ? NULL : h->allocated_space();
+}
+
+// Find block which contains the passed pointer.
+// Same as find_start(p), but with additional safety net.
 CodeBlob* CodeHeap::find_blob_unsafe(void* start) const {
   CodeBlob* result = (CodeBlob*)CodeHeap::find_start(start);
-  if (result != NULL && result->blob_contains((address)start)) {
-    return result;
-  }
-  return NULL;
+  return (result != NULL && result->blob_contains((address)start)) ? result : NULL;
 }
 
 size_t CodeHeap::alignment_unit() const {
@@ -382,6 +504,7 @@ size_t CodeHeap::alignment_offset() const {
 // Free blocks are merged, therefore there is at most one free block
 // between two used ones. As a result, the subsequent block (if available) is
 // guaranteed to be used.
+// The returned pointer points past the block header.
 void* CodeHeap::next_used(HeapBlock* b) const {
   if (b != NULL && b->free()) b = next_block(b);
   assert(b == NULL || !b->free(), "must be in use or at end of heap");
@@ -389,19 +512,22 @@ void* CodeHeap::next_used(HeapBlock* b) const {
 }
 
 // Returns the first used HeapBlock
+// The returned pointer points to the block header.
 HeapBlock* CodeHeap::first_block() const {
   if (_next_segment > 0)
     return block_at(0);
   return NULL;
 }
 
+// The returned pointer points to the block header.
 HeapBlock* CodeHeap::block_start(void* q) const {
   HeapBlock* b = (HeapBlock*)find_start(q);
   if (b == NULL) return NULL;
   return b - 1;
 }
 
-// Returns the next Heap block an offset into one
+// Returns the next Heap block.
+// The returned pointer points to the block header.
 HeapBlock* CodeHeap::next_block(HeapBlock *b) const {
   if (b == NULL) return NULL;
   size_t i = segment_for(b) + b->length();
@@ -459,13 +585,20 @@ bool CodeHeap::merge_right(FreeBlock* a) {
   assert(a->free(), "must be a free block");
   if (following_block(a) == a->link()) {
     assert(a->link() != NULL && a->link()->free(), "must be free too");
-    // Update block a to include the following block
+
+    // Remember linked (following) block. invalidate should only zap header of this block.
+    size_t follower = segment_for(a->link());
+    // Merge block a to include the following block.
     a->set_length(a->length() + a->link()->length());
     a->set_link(a->link()->link());
-    // Update find_start map
-    size_t beg = segment_for(a);
-    mark_segmap_as_used(beg, beg + a->length());
-    invalidate(beg, beg + a->length(), sizeof(FreeBlock));
+
+    // Update the segment map and invalidate block contents.
+    mark_segmap_as_used(follower, segment_for(a) + a->length(), true);
+    // Block contents has already been invalidated by add_to_freelist.
+    // What's left is the header of the following block which now is
+    // in the middle of the merged block. Just zap one segment.
+    invalidate(follower, follower + 1, 0);
+
     _freelist_length--;
     return true;
   }
@@ -503,10 +636,17 @@ void CodeHeap::add_to_freelist(HeapBlock* a) {
     return;
   }
 
-  // Scan for right place to put into list. List
-  // is sorted by increasing addresses
+  // Scan for right place to put into list.
+  // List is sorted by increasing addresses.
   FreeBlock* prev = _freelist;
   FreeBlock* cur  = _freelist->link();
+  if ((_freelist_length > freelist_limit) && (_last_insert_point != NULL)) {
+    _last_insert_point = (FreeBlock*)find_block_for(_last_insert_point);
+    if ((_last_insert_point != NULL) && _last_insert_point->free() && (_last_insert_point < b)) {
+      prev = _last_insert_point;
+      cur  = prev->link();
+    }
+  }
   while(cur != NULL && cur < b) {
     assert(prev < cur, "Freelist must be ordered");
     prev = cur;
@@ -514,6 +654,7 @@ void CodeHeap::add_to_freelist(HeapBlock* a) {
   }
   assert((prev < b) && (cur == NULL || b < cur), "free-list must be ordered");
   insert_after(prev, b);
+  _last_insert_point = prev;
 }
 
 /**
@@ -569,7 +710,13 @@ HeapBlock* CodeHeap::search_freelist(size_t length) {
       // Unmap element
       found_prev->set_link(found_block->link());
     }
-    res = found_block;
+    res = (HeapBlock*)found_block;
+    // sizeof(HeapBlock) < sizeof(FreeBlock).
+    // Invalidate the additional space that FreeBlock occupies.
+    // The rest of the block should already be invalidated.
+    // This is necessary due to a dubious assert in nmethod.cpp(PcDescCache::reset_to()).
+    // Can't use invalidate() here because it works on segment_size units (too coarse).
+    DEBUG_ONLY(memset((void*)res->allocated_space(), badCodeHeapNewVal, sizeof(FreeBlock) - sizeof(HeapBlock)));
   } else {
     // Truncate the free block and return the truncated part
     // as new HeapBlock. The remaining free block does not
@@ -581,6 +728,51 @@ HeapBlock* CodeHeap::search_freelist(size_t length) {
   res->set_used();
   _freelist_segments -= length;
   return res;
+}
+
+int CodeHeap::defrag_segmap(bool do_defrag) {
+  int extra_hops_used = 0;
+  int extra_hops_free = 0;
+  int blocks_used     = 0;
+  int blocks_free     = 0;
+  for(HeapBlock* h = first_block(); h != NULL; h = next_block(h)) {
+    size_t beg = segment_for(h);
+    size_t end = segment_for(h) + h->length();
+    int extra_hops = segmap_hops(beg, end);
+    if (h->free()) {
+      extra_hops_free += extra_hops;
+      blocks_free++;
+    } else {
+      extra_hops_used += extra_hops;
+      blocks_used++;
+    }
+    if (do_defrag && (extra_hops > 0)) {
+      mark_segmap_as_used(beg, end, false);
+    }
+  }
+  return extra_hops_used + extra_hops_free;
+}
+
+// Count the hops required to get from the last segment of a
+// heap block to the block header segment. For the optimal case,
+//   #hops = ((#segments-1)+(free_sentinel-2))/(free_sentinel-1)
+// The range of segments to be checked is given by [beg..end).
+// Return the number of extra hops required. There may be extra hops
+// due to the is_FreeBlock_join optimization in mark_segmap_as_used().
+int CodeHeap::segmap_hops(size_t beg, size_t end) {
+  if (beg < end) {
+    // setup _segmap pointers for faster indexing
+    address p = (address)_segmap.low() + beg;
+    int hops_expected = (int)(((end-beg-1)+(free_sentinel-2))/(free_sentinel-1));
+    int nhops = 0;
+    size_t ix = end-beg-1;
+    while (p[ix] > 0) {
+      ix -= p[ix];
+      nhops++;
+    }
+    return (nhops > hops_expected) ? nhops - hops_expected : 0;
+  }
+  return 0;
 }
 
 //----------------------------------------------------------------------------
@@ -619,20 +811,26 @@ void CodeHeap::verify() {
       }
     }
 
-    // Verify segment map marking.
-    // All allocated segments, no matter if in a free or used block,
-    // must be marked "in use".
     address seg_map = (address)_segmap.low();
-    size_t  nseg    = 0;
+    size_t  nseg       = 0;
+    int     extra_hops = 0;
+    count = 0;
     for(HeapBlock* b = first_block(); b != NULL; b = next_block(b)) {
       size_t seg1 = segment_for(b);
       size_t segn = seg1 + b->length();
+      extra_hops += segmap_hops(seg1, segn);
+      count++;
       for (size_t i = seg1; i < segn; i++) {
         nseg++;
-        assert(!is_segment_unused(seg_map[i]), "CodeHeap: unused segment. %d [%d..%d], %s block", (int)i, (int)seg1, (int)segn, b->free()? "free":"used");
+        //---<  Verify segment map marking  >---
+        // All allocated segments, no matter if in a free or used block,
+        // must be marked "in use".
+        assert(!is_segment_unused(seg_map[i]), "CodeHeap: unused segment. seg_map[%d]([%d..%d]) = %d, %s block",    (int)i, (int)seg1, (int)segn, seg_map[i], b->free()? "free":"used");
+        assert((unsigned char)seg_map[i] < free_sentinel, "CodeHeap: seg_map[%d]([%d..%d]) = %d (out of range)",    (int)i, (int)seg1, (int)segn, seg_map[i]);
       }
     }
     assert(nseg == _next_segment, "CodeHeap: segment count mismatch. found %d, expected %d.", (int)nseg, (int)_next_segment);
+    assert((count == 0) || (extra_hops < (16 + 2*count)), "CodeHeap: many extra hops due to optimization. blocks: %d, extra hops: %d.", count, extra_hops);
 
     // Verify that the number of free blocks is not out of hand.
     static int free_block_threshold = 10000;

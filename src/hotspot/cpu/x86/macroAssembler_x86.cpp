@@ -1532,7 +1532,7 @@ void MacroAssembler::rtm_inflated_locking(Register objReg, Register boxReg, Regi
   Label L_rtm_retry, L_decrement_retry, L_on_abort;
   int owner_offset = OM_OFFSET_NO_MONITOR_VALUE_TAG(owner);
 
-  // Without cast to int32_t a movptr will destroy r10 which is typically obj
+  // Without cast to int32_t this style of movptr will destroy r10 which is typically obj.
   movptr(Address(boxReg, 0), (int32_t)intptr_t(markWord::unused_mark().value()));
   movptr(boxReg, tmpReg); // Save ObjectMonitor address
 
@@ -1602,11 +1602,11 @@ void MacroAssembler::rtm_inflated_locking(Register objReg, Register boxReg, Regi
 
 #endif //  INCLUDE_RTM_OPT
 
-// Fast_Lock and Fast_Unlock used by C2
+// fast_lock and fast_unlock used by C2
 
 // Because the transitions from emitted code to the runtime
 // monitorenter/exit helper stubs are so slow it's critical that
-// we inline both the stack-locking fast-path and the inflated fast path.
+// we inline both the stack-locking fast path and the inflated fast path.
 //
 // See also: cmpFastLock and cmpFastUnlock.
 //
@@ -1615,7 +1615,7 @@ void MacroAssembler::rtm_inflated_locking(Register objReg, Register boxReg, Regi
 // option would be to emit TrySlowEnter and TrySlowExit methods
 // at startup-time.  These methods would accept arguments as
 // (rax,=Obj, rbx=Self, rcx=box, rdx=Scratch) and return success-failure
-// indications in the icc.ZFlag.  Fast_Lock and Fast_Unlock would simply
+// indications in the icc.ZFlag.  fast_lock and fast_unlock would simply
 // marshal the arguments and emit calls to TrySlowEnter and TrySlowExit.
 // In practice, however, the # of lock sites is bounded and is usually small.
 // Besides the call overhead, TrySlowEnter and TrySlowExit might suffer
@@ -1634,8 +1634,8 @@ void MacroAssembler::rtm_inflated_locking(Register objReg, Register boxReg, Regi
 //
 // TODO:
 //
-// *  Arrange for C2 to pass "Self" into Fast_Lock and Fast_Unlock in one of the registers (scr).
-//    This avoids manifesting the Self pointer in the Fast_Lock and Fast_Unlock terminals.
+// *  Arrange for C2 to pass "Self" into fast_lock and fast_unlock in one of the registers (scr).
+//    This avoids manifesting the Self pointer in the fast_lock and fast_unlock terminals.
 //    Given TLAB allocation, Self is usually manifested in a register, so passing it into
 //    the lock operators would typically be faster than reifying Self.
 //
@@ -1661,14 +1661,14 @@ void MacroAssembler::rtm_inflated_locking(Register objReg, Register boxReg, Regi
 // *  use jccb and jmpb instead of jcc and jmp to improve code density.
 //    But beware of excessive branch density on AMD Opterons.
 //
-// *  Both Fast_Lock and Fast_Unlock set the ICC.ZF to indicate success
-//    or failure of the fast-path.  If the fast-path fails then we pass
-//    control to the slow-path, typically in C.  In Fast_Lock and
-//    Fast_Unlock we often branch to DONE_LABEL, just to find that C2
+// *  Both fast_lock and fast_unlock set the ICC.ZF to indicate success
+//    or failure of the fast path.  If the fast path fails then we pass
+//    control to the slow path, typically in C.  In fast_lock and
+//    fast_unlock we often branch to DONE_LABEL, just to find that C2
 //    will emit a conditional branch immediately after the node.
 //    So we have branches to branches and lots of ICC.ZF games.
 //    Instead, it might be better to have C2 pass a "FailureLabel"
-//    into Fast_Lock and Fast_Unlock.  In the case of success, control
+//    into fast_lock and fast_unlock.  In the case of success, control
 //    will drop through the node.  ICC.ZF is undefined at exit.
 //    In the case of failure, the node will branch directly to the
 //    FailureLabel
@@ -1813,7 +1813,7 @@ void MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmpReg
   movptr(Address(boxReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)), scrReg);
   xorptr(boxReg, boxReg);                 // set icc.ZFlag = 1 to indicate success
 
-  // If the CAS fails we can either retry or pass control to the slow-path.
+  // If the CAS fails we can either retry or pass control to the slow path.
   // We use the latter tactic.
   // Pass the CAS result in the icc.ZFlag into DONE_LABEL
   // If the CAS was successful ...
@@ -1821,14 +1821,13 @@ void MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmpReg
   //   Invariant: m->_recursions should already be 0, so we don't need to explicitly set it.
   // Intentional fall-through into DONE_LABEL ...
 #else // _LP64
-  // It's inflated
+  // It's inflated and we use scrReg for ObjectMonitor* in this section.
   movq(scrReg, tmpReg);
   xorq(tmpReg, tmpReg);
-
   lock();
   cmpxchgptr(r15_thread, Address(scrReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));
   // Unconditionally set box->_displaced_header = markWord::unused_mark().
-  // Without cast to int32_t movptr will destroy r10 which is typically obj.
+  // Without cast to int32_t this style of movptr will destroy r10 which is typically obj.
   movptr(Address(boxReg, 0), (int32_t)intptr_t(markWord::unused_mark().value()));
   // Intentional fall-through into DONE_LABEL ...
   // Propagate ICC.ZF from CAS above into DONE_LABEL.
@@ -1844,9 +1843,9 @@ void MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmpReg
   bind(DONE_LABEL);
 
   // At DONE_LABEL the icc ZFlag is set as follows ...
-  // Fast_Unlock uses the same protocol.
+  // fast_unlock uses the same protocol.
   // ZFlag == 1 -> Success
-  // ZFlag == 0 -> Failure - force control through the slow-path
+  // ZFlag == 0 -> Failure - force control through the slow path
 }
 
 // obj: object to unlock
@@ -1855,7 +1854,7 @@ void MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmpReg
 //
 // Some commentary on balanced locking:
 //
-// Fast_Lock and Fast_Unlock are emitted only for provably balanced lock sites.
+// fast_lock and fast_unlock are emitted only for provably balanced lock sites.
 // Methods that don't have provably balanced locking are forced to run in the
 // interpreter - such methods won't be compiled to use fast_lock and fast_unlock.
 // The interpreter provides two properties:
@@ -1876,7 +1875,7 @@ void MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmpReg
 // should not be unlocked by "normal" java-level locking and vice-versa.  The specification
 // doesn't specify what will occur if a program engages in such mixed-mode locking, however.
 // Arguably given that the spec legislates the JNI case as undefined our implementation
-// could reasonably *avoid* checking owner in Fast_Unlock().
+// could reasonably *avoid* checking owner in fast_unlock().
 // In the interest of performance we elide m->Owner==Self check in unlock.
 // A perfectly viable alternative is to elide the owner check except when
 // Xcheck:jni is enabled.
@@ -1941,7 +1940,7 @@ void MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register tmpR
   // a costly MEMBAR or CAS.  See synchronizer.cpp for details on how
   // we detect and recover from the race that the 1-0 exit admits.
   //
-  // Conceptually Fast_Unlock() must execute a STST|LDST "release" barrier
+  // Conceptually fast_unlock() must execute a STST|LDST "release" barrier
   // before it STs null into _owner, releasing the lock.  Updates
   // to data protected by the critical section must be visible before
   // we drop the lock (and thus before any other thread could acquire
@@ -1990,6 +1989,7 @@ void MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register tmpR
   movptr(boxReg, Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(cxq)));
   orptr(boxReg, Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(EntryList)));
   jccb  (Assembler::notZero, CheckSucc);
+  // Without cast to int32_t this style of movptr will destroy r10 which is typically obj.
   movptr(Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)), (int32_t)NULL_WORD);
   jmpb  (DONE_LABEL);
 
@@ -1998,13 +1998,14 @@ void MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register tmpR
   bind  (CheckSucc);
 
   // The following optional optimization can be elided if necessary
-  // Effectively: if (succ == null) goto SlowPath
+  // Effectively: if (succ == null) goto slow path
   // The code reduces the window for a race, however,
   // and thus benefits performance.
   cmpptr(Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(succ)), (int32_t)NULL_WORD);
   jccb  (Assembler::zero, LGoSlowPath);
 
   xorptr(boxReg, boxReg);
+  // Without cast to int32_t this style of movptr will destroy r10 which is typically obj.
   movptr(Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)), (int32_t)NULL_WORD);
 
   // Memory barrier/fence
@@ -2039,7 +2040,7 @@ void MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register tmpR
   // If that didn't work, then another thread grabbed the
   // lock so we're done (and exit was a success).
   jccb  (Assembler::notEqual, LSuccess);
-  // Intentional fall-through into slow-path
+  // Intentional fall-through into slow path
 
   bind  (LGoSlowPath);
   orl   (boxReg, 1);                      // set ICC.ZF=0 to indicate failure

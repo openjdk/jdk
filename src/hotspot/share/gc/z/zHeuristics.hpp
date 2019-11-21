@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,37 +21,19 @@
  * questions.
  */
 
-#ifndef SHARE_GC_Z_ZWORKERS_HPP
-#define SHARE_GC_Z_ZWORKERS_HPP
+#ifndef SHARE_GC_Z_ZHEURISTICS_HPP
+#define SHARE_GC_Z_ZHEURISTICS_HPP
 
-#include "gc/shared/workgroup.hpp"
 #include "memory/allocation.hpp"
 
-class ZTask;
-
-class ZWorkers {
-private:
-  bool     _boost;
-  WorkGang _workers;
-
-  void run(ZTask* task, uint nworkers);
-
+class ZHeuristics : public AllStatic {
 public:
-  ZWorkers();
+  static void set_medium_page_size();
 
-  uint nparallel() const;
-  uint nparallel_no_boost() const;
-  uint nconcurrent() const;
-  uint nconcurrent_no_boost() const;
-  uint nworkers() const;
+  static bool use_per_cpu_shared_small_pages();
 
-  void set_boost(bool boost);
-
-  void run_parallel(ZTask* task);
-  void run_concurrent(ZTask* task);
-
-  void threads_do(ThreadClosure* tc) const;
-  void print_threads_on(outputStream* st) const;
+  static uint nparallel_workers();
+  static uint nconcurrent_workers();
 };
 
-#endif // SHARE_GC_Z_ZWORKERS_HPP
+#endif // SHARE_GC_Z_ZHEURISTICS_HPP

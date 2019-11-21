@@ -290,8 +290,8 @@ void EpsilonHeap::do_full_collection(bool clear_all_soft_refs) {
   collect(gc_cause());
 }
 
-void EpsilonHeap::safe_object_iterate(ObjectClosure *cl) {
-  _space->safe_object_iterate(cl);
+void EpsilonHeap::object_iterate(ObjectClosure *cl) {
+  _space->object_iterate(cl);
 }
 
 void EpsilonHeap::print_on(outputStream *st) const {
