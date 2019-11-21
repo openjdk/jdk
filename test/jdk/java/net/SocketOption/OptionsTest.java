@@ -84,12 +84,16 @@ public class OptionsTest {
         Test.create(StandardSocketOptions.SO_RCVBUF, Integer.valueOf(8 * 100)),
         Test.create(StandardSocketOptions.SO_REUSEADDR, Boolean.FALSE),
         Test.create(StandardSocketOptions.SO_REUSEPORT, Boolean.FALSE),
+        Test.create(StandardSocketOptions.SO_BROADCAST, Boolean.FALSE),
+        Test.create(StandardSocketOptions.SO_BROADCAST, Boolean.TRUE),
         Test.create(StandardSocketOptions.IP_TOS, Integer.valueOf(0)),  // lower-bound
         Test.create(StandardSocketOptions.IP_TOS, Integer.valueOf(100)),
         Test.create(StandardSocketOptions.IP_TOS, Integer.valueOf(255))  //upper-bound
     };
 
     static Test<?>[] multicastSocketTests = new Test<?>[] {
+        Test.create(StandardSocketOptions.SO_BROADCAST, Boolean.FALSE),
+        Test.create(StandardSocketOptions.SO_BROADCAST, Boolean.TRUE),
         Test.create(StandardSocketOptions.IP_MULTICAST_IF, getNetworkInterface()),
         Test.create(StandardSocketOptions.IP_MULTICAST_TTL, Integer.valueOf(0)),   // lower-bound
         Test.create(StandardSocketOptions.IP_MULTICAST_TTL, Integer.valueOf(10)),
@@ -285,6 +289,8 @@ public class OptionsTest {
                 return Integer.valueOf(socket.getReceiveBufferSize());
             } else if (option.equals(StandardSocketOptions.SO_REUSEADDR)) {
                 return Boolean.valueOf(socket.getReuseAddress());
+            } else if (option.equals(StandardSocketOptions.SO_BROADCAST)) {
+                return Boolean.valueOf(socket.getBroadcast());
             } else if (option.equals(StandardSocketOptions.SO_REUSEPORT) && reuseport) {
                 return Boolean.valueOf(socket.getOption(StandardSocketOptions.SO_REUSEPORT));
             } else if (option.equals(StandardSocketOptions.IP_TOS)) {
@@ -304,6 +310,8 @@ public class OptionsTest {
                 return Integer.valueOf(socket.getReceiveBufferSize());
             } else if (option.equals(StandardSocketOptions.SO_REUSEADDR)) {
                 return Boolean.valueOf(socket.getReuseAddress());
+            } else if (option.equals(StandardSocketOptions.SO_BROADCAST)) {
+                return Boolean.valueOf(socket.getBroadcast());
             } else if (option.equals(StandardSocketOptions.SO_REUSEPORT) && reuseport) {
                 return Boolean.valueOf(socket.getOption(StandardSocketOptions.SO_REUSEPORT));
             } else if (option.equals(StandardSocketOptions.IP_TOS)) {
