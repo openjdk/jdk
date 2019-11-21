@@ -63,7 +63,6 @@ public class bug6980209 implements ActionListener {
                 public void run() {
                     frame = new JFrame();
                     frame.setUndecorated(true);
-                    frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
                     setup(frame);
                 }
             });
