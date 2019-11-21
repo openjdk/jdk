@@ -46,8 +46,7 @@ package java.io;
  * @see     java.io.DataOutputStream
  * @since   1.0
  */
-public
-interface DataOutput {
+public interface DataOutput {
     /**
      * Writes to the output stream the eight
      * low-order bits of the argument {@code b}.

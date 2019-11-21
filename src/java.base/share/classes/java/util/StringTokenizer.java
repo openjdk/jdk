@@ -99,8 +99,7 @@ import java.lang.*;
  * @see     java.io.StreamTokenizer
  * @since   1.0
  */
-public
-class StringTokenizer implements Enumeration<Object> {
+public class StringTokenizer implements Enumeration<Object> {
     private int currentPosition;
     private int newPosition;
     private int maxPosition;

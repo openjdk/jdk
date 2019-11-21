@@ -33,8 +33,7 @@ package java.lang;
  * @author  unascribed
  * @since   1.0
  */
-public
-class ClassFormatError extends LinkageError {
+public class ClassFormatError extends LinkageError {
     @java.io.Serial
     private static final long serialVersionUID = -8420114879011949195L;
 

@@ -196,8 +196,7 @@ import sun.net.util.IPAddressUtil;
  * @see     java.net.InetAddress#getLocalHost()
  * @since 1.0
  */
-public
-class InetAddress implements java.io.Serializable {
+public class InetAddress implements java.io.Serializable {
 
     @Native static final int PREFER_IPV4_VALUE = 0;
     @Native static final int PREFER_IPV6_VALUE = 1;

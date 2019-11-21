@@ -33,8 +33,7 @@ package java.lang;
  * @author  unascribed
  * @since   1.0
  */
-public
-class VerifyError extends LinkageError {
+public class VerifyError extends LinkageError {
     @java.io.Serial
     private static final long serialVersionUID = 7001962396098498785L;
 

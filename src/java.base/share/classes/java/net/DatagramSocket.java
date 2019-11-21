@@ -66,8 +66,7 @@ import java.util.Collections;
  * @see     java.nio.channels.DatagramChannel
  * @since 1.0
  */
-public
-class DatagramSocket implements java.io.Closeable {
+public class DatagramSocket implements java.io.Closeable {
     /**
      * Various states of this socket.
      */

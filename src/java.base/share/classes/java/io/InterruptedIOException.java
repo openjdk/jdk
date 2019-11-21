@@ -39,8 +39,7 @@ package java.io;
  * @see     java.lang.Thread#interrupt()
  * @since   1.0
  */
-public
-class InterruptedIOException extends IOException {
+public class InterruptedIOException extends IOException {
     @java.io.Serial
     private static final long serialVersionUID = 4020568460727500567L;
 

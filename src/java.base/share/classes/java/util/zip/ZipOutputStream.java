@@ -43,8 +43,7 @@ import sun.security.action.GetPropertyAction;
  * @author      David Connelly
  * @since 1.1
  */
-public
-class ZipOutputStream extends DeflaterOutputStream implements ZipConstants {
+public class ZipOutputStream extends DeflaterOutputStream implements ZipConstants {
 
     /**
      * Whether to use ZIP64 for zip files with more than 64k entries.

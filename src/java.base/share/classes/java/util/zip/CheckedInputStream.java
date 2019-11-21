@@ -37,8 +37,7 @@ import java.io.IOException;
  * @author      David Connelly
  * @since 1.1
  */
-public
-class CheckedInputStream extends FilterInputStream {
+public class CheckedInputStream extends FilterInputStream {
     private Checksum cksum;
 
     /**

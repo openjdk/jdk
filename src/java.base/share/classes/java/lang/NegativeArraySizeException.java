@@ -31,8 +31,7 @@ package java.lang;
  * @author  unascribed
  * @since   1.0
  */
-public
-class NegativeArraySizeException extends RuntimeException {
+public class NegativeArraySizeException extends RuntimeException {
     @java.io.Serial
     private static final long serialVersionUID = -8960118058596991861L;
 

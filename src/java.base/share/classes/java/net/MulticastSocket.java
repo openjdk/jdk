@@ -83,8 +83,7 @@ import java.net.PortUnreachableException;
  * @author Pavani Diwanji
  * @since  1.1
  */
-public
-class MulticastSocket extends DatagramSocket {
+public class MulticastSocket extends DatagramSocket {
 
     /**
      * Used on some platforms to record if an outgoing interface

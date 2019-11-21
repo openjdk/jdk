@@ -52,8 +52,7 @@ import sun.net.PlatformSocketImpl;
  * @see     java.nio.channels.ServerSocketChannel
  * @since   1.0
  */
-public
-class ServerSocket implements java.io.Closeable {
+public class ServerSocket implements java.io.Closeable {
     /**
      * Various states of this socket.
      */

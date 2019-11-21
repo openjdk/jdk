@@ -39,8 +39,7 @@ import java.util.Arrays;
  * @author      Herb Jellinek
  * @since       1.1
  */
-public
-class CharArrayWriter extends Writer {
+public class CharArrayWriter extends Writer {
     /**
      * The buffer where data is stored.
      */

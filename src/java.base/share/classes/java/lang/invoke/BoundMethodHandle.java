@@ -48,9 +48,11 @@ import static java.lang.invoke.MethodHandleStatics.uncaughtException;
  *
  * All bound arguments are encapsulated in dedicated species.
  */
-/*non-public*/ abstract class BoundMethodHandle extends MethodHandle {
+/*non-public*/
+abstract class BoundMethodHandle extends MethodHandle {
 
-    /*non-public*/ BoundMethodHandle(MethodType type, LambdaForm form) {
+    /*non-public*/
+    BoundMethodHandle(MethodType type, LambdaForm form) {
         super(type, form);
         assert(speciesData() == speciesDataFor(form));
     }
@@ -141,9 +143,11 @@ import static java.lang.invoke.MethodHandleStatics.uncaughtException;
      * Return the {@link BoundMethodHandle.SpeciesData} instance representing this BMH species. All subclasses must provide a
      * static field containing this value, and they must accordingly implement this method.
      */
-    /*non-public*/ abstract BoundMethodHandle.SpeciesData speciesData();
+    /*non-public*/
+    abstract BoundMethodHandle.SpeciesData speciesData();
 
-    /*non-public*/ static BoundMethodHandle.SpeciesData speciesDataFor(LambdaForm form) {
+    /*non-public*/
+    static BoundMethodHandle.SpeciesData speciesDataFor(LambdaForm form) {
         Object c = form.names[0].constraint;
         if (c instanceof SpeciesData) {
             return (SpeciesData) c;
@@ -155,7 +159,8 @@ import static java.lang.invoke.MethodHandleStatics.uncaughtException;
     /**
      * Return the number of fields in this BMH.  Equivalent to speciesData().fieldCount().
      */
-    /*non-public*/ final int fieldCount() { return speciesData().fieldCount(); }
+    /*non-public*/
+    final int fieldCount() { return speciesData().fieldCount(); }
 
     @Override
     Object internalProperties() {
@@ -175,7 +180,8 @@ import static java.lang.invoke.MethodHandleStatics.uncaughtException;
         return sb.append("\n]").toString();
     }
 
-    /*non-public*/ final Object arg(int i) {
+    /*non-public*/
+    final Object arg(int i) {
         try {
             Class<?> fieldType = speciesData().fieldTypes().get(i);
             switch (BasicType.basicType(fieldType)) {
@@ -195,12 +201,18 @@ import static java.lang.invoke.MethodHandleStatics.uncaughtException;
     // cloning API
     //
 
-    /*non-public*/ abstract BoundMethodHandle copyWith(MethodType mt, LambdaForm lf);
-    /*non-public*/ abstract BoundMethodHandle copyWithExtendL(MethodType mt, LambdaForm lf, Object narg);
-    /*non-public*/ abstract BoundMethodHandle copyWithExtendI(MethodType mt, LambdaForm lf, int    narg);
-    /*non-public*/ abstract BoundMethodHandle copyWithExtendJ(MethodType mt, LambdaForm lf, long   narg);
-    /*non-public*/ abstract BoundMethodHandle copyWithExtendF(MethodType mt, LambdaForm lf, float  narg);
-    /*non-public*/ abstract BoundMethodHandle copyWithExtendD(MethodType mt, LambdaForm lf, double narg);
+    /*non-public*/
+    abstract BoundMethodHandle copyWith(MethodType mt, LambdaForm lf);
+    /*non-public*/
+    abstract BoundMethodHandle copyWithExtendL(MethodType mt, LambdaForm lf, Object narg);
+    /*non-public*/
+    abstract BoundMethodHandle copyWithExtendI(MethodType mt, LambdaForm lf, int    narg);
+    /*non-public*/
+    abstract BoundMethodHandle copyWithExtendJ(MethodType mt, LambdaForm lf, long   narg);
+    /*non-public*/
+    abstract BoundMethodHandle copyWithExtendF(MethodType mt, LambdaForm lf, float  narg);
+    /*non-public*/
+    abstract BoundMethodHandle copyWithExtendD(MethodType mt, LambdaForm lf, double narg);
 
     //
     // concrete BMH classes required to close bootstrap loops
@@ -217,21 +229,26 @@ import static java.lang.invoke.MethodHandleStatics.uncaughtException;
         }
 
         @Override
-        /*non-public*/ SpeciesData speciesData() {
+        /*non-public*/
+        SpeciesData speciesData() {
             return BMH_SPECIES;
         }
 
-        /*non-public*/ static @Stable SpeciesData BMH_SPECIES;
+        /*non-public*/
+        static @Stable SpeciesData BMH_SPECIES;
 
-        /*non-public*/ static BoundMethodHandle make(MethodType mt, LambdaForm lf, Object argL0) {
+        /*non-public*/
+        static BoundMethodHandle make(MethodType mt, LambdaForm lf, Object argL0) {
             return new Species_L(mt, lf, argL0);
         }
         @Override
-        /*non-public*/ final BoundMethodHandle copyWith(MethodType mt, LambdaForm lf) {
+        /*non-public*/
+        final BoundMethodHandle copyWith(MethodType mt, LambdaForm lf) {
             return new Species_L(mt, lf, argL0);
         }
         @Override
-        /*non-public*/ final BoundMethodHandle copyWithExtendL(MethodType mt, LambdaForm lf, Object narg) {
+        /*non-public*/
+        final BoundMethodHandle copyWithExtendL(MethodType mt, LambdaForm lf, Object narg) {
             try {
                 return (BoundMethodHandle) BMH_SPECIES.extendWith(L_TYPE_NUM).factory().invokeBasic(mt, lf, argL0, narg);
             } catch (Throwable ex) {
@@ -239,7 +256,8 @@ import static java.lang.invoke.MethodHandleStatics.uncaughtException;
             }
         }
         @Override
-        /*non-public*/ final BoundMethodHandle copyWithExtendI(MethodType mt, LambdaForm lf, int narg) {
+        /*non-public*/
+        final BoundMethodHandle copyWithExtendI(MethodType mt, LambdaForm lf, int narg) {
             try {
                 return (BoundMethodHandle) BMH_SPECIES.extendWith(I_TYPE_NUM).factory().invokeBasic(mt, lf, argL0, narg);
             } catch (Throwable ex) {
@@ -247,7 +265,8 @@ import static java.lang.invoke.MethodHandleStatics.uncaughtException;
             }
         }
         @Override
-        /*non-public*/ final BoundMethodHandle copyWithExtendJ(MethodType mt, LambdaForm lf, long narg) {
+        /*non-public*/
+        final BoundMethodHandle copyWithExtendJ(MethodType mt, LambdaForm lf, long narg) {
             try {
                 return (BoundMethodHandle) BMH_SPECIES.extendWith(J_TYPE_NUM).factory().invokeBasic(mt, lf, argL0, narg);
             } catch (Throwable ex) {
@@ -255,7 +274,8 @@ import static java.lang.invoke.MethodHandleStatics.uncaughtException;
             }
         }
         @Override
-        /*non-public*/ final BoundMethodHandle copyWithExtendF(MethodType mt, LambdaForm lf, float narg) {
+        /*non-public*/
+        final BoundMethodHandle copyWithExtendF(MethodType mt, LambdaForm lf, float narg) {
             try {
                 return (BoundMethodHandle) BMH_SPECIES.extendWith(F_TYPE_NUM).factory().invokeBasic(mt, lf, argL0, narg);
             } catch (Throwable ex) {
@@ -263,7 +283,8 @@ import static java.lang.invoke.MethodHandleStatics.uncaughtException;
             }
         }
         @Override
-        /*non-public*/ final BoundMethodHandle copyWithExtendD(MethodType mt, LambdaForm lf, double narg) {
+        /*non-public*/
+        final BoundMethodHandle copyWithExtendD(MethodType mt, LambdaForm lf, double narg) {
             try {
                 return (BoundMethodHandle) BMH_SPECIES.extendWith(D_TYPE_NUM).factory().invokeBasic(mt, lf, argL0, narg);
             } catch (Throwable ex) {
@@ -277,7 +298,8 @@ import static java.lang.invoke.MethodHandleStatics.uncaughtException;
     //
 
     /*non-public*/
-    static final class SpeciesData extends ClassSpecializer<BoundMethodHandle, String, SpeciesData>.SpeciesData {
+    static final class SpeciesData
+            extends ClassSpecializer<BoundMethodHandle, String, SpeciesData>.SpeciesData {
         // This array is filled in lazily, as new species come into being over time.
         @Stable final private SpeciesData[] extensions = new SpeciesData[ARG_TYPE_LIMIT];
 
@@ -346,7 +368,8 @@ import static java.lang.invoke.MethodHandleStatics.uncaughtException;
             return true;
         }
 
-        /*non-public*/ SpeciesData extendWith(byte typeNum) {
+        /*non-public*/
+        SpeciesData extendWith(byte typeNum) {
             SpeciesData sd = extensions[typeNum];
             if (sd != null)  return sd;
             sd = SPECIALIZER.findSpecies(key() + BasicType.basicType(typeNum).basicTypeChar());
@@ -363,7 +386,8 @@ import static java.lang.invoke.MethodHandleStatics.uncaughtException;
     }
 
     /*non-public*/
-    static final class Specializer extends ClassSpecializer<BoundMethodHandle, String, SpeciesData> {
+    static final class Specializer
+            extends ClassSpecializer<BoundMethodHandle, String, SpeciesData> {
 
         private static final MemberName SPECIES_DATA_ACCESSOR;
 

@@ -31,8 +31,7 @@ package java.lang;
  * @author     unascribed
  * @since      1.0
  */
-public
-class NoSuchMethodException extends ReflectiveOperationException {
+public class NoSuchMethodException extends ReflectiveOperationException {
     @java.io.Serial
     private static final long serialVersionUID = 5034388446362600923L;
 

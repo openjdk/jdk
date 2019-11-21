@@ -37,8 +37,7 @@ package java.lang.reflect;
  * @author Nakul Saraiya
  * @since 1.1
  */
-public
-interface Member {
+public interface Member {
 
     /**
      * Identifies the set of all public members of a class or interface,

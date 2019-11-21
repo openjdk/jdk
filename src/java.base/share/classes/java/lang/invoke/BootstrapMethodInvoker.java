@@ -460,8 +460,8 @@ final class BootstrapMethodInvoker {
         }
     }
 
-    /*non-public*/ static final
-    class PushAdapter {
+    /*non-public*/
+    static final class PushAdapter {
         // skeleton for push-mode BSM which wraps a pull-mode BSM:
         static Object pushToBootstrapMethod(MethodHandle pullModeBSM,
                                             MethodHandles.Lookup lookup, String name, Object type,
@@ -487,8 +487,8 @@ final class BootstrapMethodInvoker {
         }
     }
 
-    /*non-public*/ static final
-    class PullAdapter {
+    /*non-public*/
+    static final class PullAdapter {
         // skeleton for pull-mode BSM which wraps a push-mode BSM:
         static Object pullFromBootstrapMethod(MethodHandle pushModeBSM,
                                               MethodHandles.Lookup lookup,

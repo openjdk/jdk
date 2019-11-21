@@ -33,8 +33,7 @@ import java.io.IOException;
  * @author  Jonathan Payne
  * @since   1.0
  */
-public
-class SocketException extends IOException {
+public class SocketException extends IOException {
     @java.io.Serial
     private static final long serialVersionUID = -5935874303556886934L;
 

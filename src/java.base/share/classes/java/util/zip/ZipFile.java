@@ -87,8 +87,7 @@ import static java.util.zip.ZipUtils.*;
  * @author      David Connelly
  * @since 1.1
  */
-public
-class ZipFile implements ZipConstants, Closeable {
+public class ZipFile implements ZipConstants, Closeable {
 
     private final String name;     // zip file name
     private volatile boolean closeRequested;

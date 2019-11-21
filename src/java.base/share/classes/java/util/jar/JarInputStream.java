@@ -42,8 +42,7 @@ import jdk.internal.util.jar.JarIndex;
  * @see     java.util.zip.ZipInputStream
  * @since   1.2
  */
-public
-class JarInputStream extends ZipInputStream {
+public class JarInputStream extends ZipInputStream {
     private Manifest man;
     private JarEntry first;
     private JarVerifier jv;

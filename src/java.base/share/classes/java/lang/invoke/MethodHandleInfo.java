@@ -127,8 +127,7 @@ import static java.lang.invoke.MethodHandleStatics.*;
  * </table>
  * @since 1.8
  */
-public
-interface MethodHandleInfo {
+public interface MethodHandleInfo {
     /**
      * A direct method handle reference kind,
      * as defined in the <a href="MethodHandleInfo.html#refkinds">table above</a>.

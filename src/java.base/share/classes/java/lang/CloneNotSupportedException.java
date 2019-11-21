@@ -41,8 +41,7 @@ package java.lang;
  * @since   1.0
  */
 
-public
-class CloneNotSupportedException extends Exception {
+public class CloneNotSupportedException extends Exception {
     @java.io.Serial
     private static final long serialVersionUID = 5195511250079656443L;
 

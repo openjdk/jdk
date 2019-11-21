@@ -41,8 +41,7 @@ import static java.util.zip.ZipConstants64.*;
  * @author      David Connelly
  * @since 1.1
  */
-public
-class ZipEntry implements ZipConstants, Cloneable {
+public class ZipEntry implements ZipConstants, Cloneable {
 
     String name;        // entry name
     long xdostime = -1; // last modification time (in extended DOS time,

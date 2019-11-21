@@ -38,8 +38,7 @@ package java.lang;
  * @author  unascribed
  * @since   1.0
  */
-public
-class NoClassDefFoundError extends LinkageError {
+public class NoClassDefFoundError extends LinkageError {
     @java.io.Serial
     private static final long serialVersionUID = 9095859863287012458L;
 

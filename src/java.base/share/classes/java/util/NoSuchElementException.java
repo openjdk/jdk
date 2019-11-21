@@ -34,8 +34,7 @@ package java.util;
  * @see     java.util.Iterator#next()
  * @since   1.0
  */
-public
-class NoSuchElementException extends RuntimeException {
+public class NoSuchElementException extends RuntimeException {
     @java.io.Serial
     private static final long serialVersionUID = 6769829250639411880L;
 

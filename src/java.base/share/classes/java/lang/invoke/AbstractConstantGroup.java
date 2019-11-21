@@ -316,8 +316,7 @@ abstract class AbstractConstantGroup implements ConstantGroup {
     }
 
     /** Skeleton implementation of BootstrapCallInfo. */
-    static
-    class BSCIWithCache<T> extends WithCache implements BootstrapCallInfo<T> {
+    static class BSCIWithCache<T> extends WithCache implements BootstrapCallInfo<T> {
         private final MethodHandle bsm;
         private final String name;
         private final T type;

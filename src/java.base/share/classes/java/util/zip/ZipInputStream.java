@@ -42,8 +42,7 @@ import static java.util.zip.ZipUtils.*;
  * @author      David Connelly
  * @since 1.1
  */
-public
-class ZipInputStream extends InflaterInputStream implements ZipConstants {
+public class ZipInputStream extends InflaterInputStream implements ZipConstants {
     private ZipEntry entry;
     private int flag;
     private CRC32 crc = new CRC32();

@@ -154,8 +154,7 @@ package java.io;
  * @see     java.io.DataOutput
  * @since   1.0
  */
-public
-interface DataInput {
+public interface DataInput {
     /**
      * Reads some bytes from an input
      * stream and stores them into the buffer

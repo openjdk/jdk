@@ -49,8 +49,7 @@ package java.lang;
  * @author  unascribed
  * @since   1.0
  */
-public
-class NullPointerException extends RuntimeException {
+public class NullPointerException extends RuntimeException {
     @java.io.Serial
     private static final long serialVersionUID = 5162710183389028792L;
 
