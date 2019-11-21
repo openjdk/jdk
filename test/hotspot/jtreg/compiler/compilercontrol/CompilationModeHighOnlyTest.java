@@ -26,6 +26,7 @@
  * @bug 8233885
  * @summary CompLevel_initial_compile should be CompLevel_full_optimization for high-only mode
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -Xcomp -XX:CompilationMode=high-only
+ *                   -XX:CompileCommand=compileonly,java.lang.Object::<init>
  *                   compiler.compilercontrol.CompilationModeHighOnlyTest
  *
  */
