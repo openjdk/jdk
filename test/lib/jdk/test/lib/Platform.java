@@ -59,10 +59,6 @@ public class Platform {
         return vmName.endsWith(" Server VM");
     }
 
-    public static boolean isGraal() {
-        return vmName.endsWith(" Graal VM");
-    }
-
     public static boolean isZero() {
         return vmName.endsWith(" Zero VM");
     }

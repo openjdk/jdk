@@ -67,8 +67,6 @@ public class JVMOptionsUtils {
             VMType = "-client";
         } else if (Platform.isMinimal()) {
             VMType = "-minimal";
-        } else if (Platform.isGraal()) {
-            VMType = "-graal";
         } else {
             VMType = null;
         }
