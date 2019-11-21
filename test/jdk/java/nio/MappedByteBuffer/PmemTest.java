@@ -71,7 +71,7 @@
  * @summary Testing NVRAM mapped byte buffer support
  * @run main/manual PmemTest
  * @requires (os.family == "linux")
- * @requires ((os.arch == "x86_64")|(os.arch == "amd64")|(os.arch == "aarch64"))
+ * @requires ((os.arch == "x86_64")|(os.arch == "amd64")|(os.arch == "aarch64")|(os.arch == "ppc64le"))
  */
 
 import java.io.File;

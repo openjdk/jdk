@@ -112,9 +112,9 @@ Java_sun_nio_ch_FileChannelImpl_map0(JNIEnv *env, jobject this,
 
     if (map_sync) {
         // ensure
-        //  1) this is Linux on AArch64 or x86_64
-        //  2) the mmap APIs are available/ at compile time
-#if !defined(LINUX) || ! (defined(aarch64) || (defined(amd64) && defined(_LP64)))
+        //  1) this is Linux on AArch64, x86_64, or PPC64 LE
+        //  2) the mmap APIs are available at compile time
+#if !defined(LINUX) || ! (defined(aarch64) || (defined(amd64) && defined(_LP64)) || defined(ppc64le))
         // TODO - implement for solaris/AIX/BSD/WINDOWS and for 32 bit
         JNU_ThrowInternalError(env, "should never call map on platform where MAP_SYNC is unimplemented");
         return IOS_THROWN;
