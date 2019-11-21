@@ -118,6 +118,7 @@ public class TestGCLogMessages {
         new LogMessageWithLevel("Code Root Scan", Level.DEBUG),
         // Object Copy
         new LogMessageWithLevel("Object Copy", Level.DEBUG),
+        new LogMessageWithLevel("Copied Bytes", Level.DEBUG),
         new LogMessageWithLevel("LAB Waste", Level.DEBUG),
         new LogMessageWithLevel("LAB Undo Waste", Level.DEBUG),
         // Ext Root Scan

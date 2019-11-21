@@ -214,6 +214,10 @@ private:
 
   void set_used(size_t bytes);
 
+  // Number of bytes used in all regions during GC. Typically changed when
+  // retiring a GC alloc region.
+  size_t _bytes_used_during_gc;
+
   // Class that handles archive allocation ranges.
   G1ArchiveAllocator* _archive_allocator;
 

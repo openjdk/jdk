@@ -1516,6 +1516,7 @@ G1CollectedHeap::G1CollectedHeap() :
   _allocator(NULL),
   _verifier(NULL),
   _summary_bytes_used(0),
+  _bytes_used_during_gc(0),
   _archive_allocator(NULL),
   _survivor_evac_stats("Young", YoungPLABSize, PLABWeight),
   _old_evac_stats("Old", OldPLABSize, PLABWeight),
@@ -3138,7 +3139,6 @@ bool G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_
                          collector_state()->yc_type() == Mixed /* all_memory_pools_affected */);
 
     G1HeapTransition heap_transition(this);
-    size_t heap_used_bytes_before_gc = used();
 
     {
       IsGCActiveMark x;
@@ -3211,7 +3211,7 @@ bool G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_
 
         double sample_end_time_sec = os::elapsedTime();
         double pause_time_ms = (sample_end_time_sec - sample_start_time_sec) * MILLIUNITS;
-        policy()->record_collection_pause_end(pause_time_ms, heap_used_bytes_before_gc);
+        policy()->record_collection_pause_end(pause_time_ms);
       }
 
       verify_after_young_collection(verify_type);
@@ -3694,12 +3694,14 @@ void G1CollectedHeap::make_pending_list_reachable() {
 }
 
 void G1CollectedHeap::merge_per_thread_state_info(G1ParScanThreadStateSet* per_thread_states) {
-  double merge_pss_time_start = os::elapsedTime();
+  Ticks start = Ticks::now();
   per_thread_states->flush();
-  phase_times()->record_merge_pss_time_ms((os::elapsedTime() - merge_pss_time_start) * 1000.0);
+  phase_times()->record_or_add_time_secs(G1GCPhaseTimes::MergePSS, 0 /* worker_id */, (Ticks::now() - start).seconds());
 }
 
 void G1CollectedHeap::pre_evacuate_collection_set(G1EvacuationInfo& evacuation_info, G1ParScanThreadStateSet* per_thread_states) {
+  _bytes_used_during_gc = 0;
+
   _expand_heap_after_alloc_failure = true;
   _evacuation_failed = false;
 
@@ -3763,9 +3765,6 @@ protected:
 
     Tickspan evac_time = (Ticks::now() - start);
     p->record_or_add_time_secs(objcopy_phase, worker_id, evac_time.seconds() - cl.term_time());
-
-    p->record_or_add_thread_work_item(objcopy_phase, worker_id, pss->lab_waste_words() * HeapWordSize, G1GCPhaseTimes::ObjCopyLABWaste);
-    p->record_or_add_thread_work_item(objcopy_phase, worker_id, pss->lab_undo_waste_words() * HeapWordSize, G1GCPhaseTimes::ObjCopyLABUndoWaste);
 
     if (termination_phase == G1GCPhaseTimes::Termination) {
       p->record_time_secs(termination_phase, worker_id, cl.term_time());
@@ -3943,6 +3942,8 @@ void G1CollectedHeap::evacuate_optional_collection_set(G1ParScanThreadStateSet* 
 void G1CollectedHeap::post_evacuate_collection_set(G1EvacuationInfo& evacuation_info,
                                                    G1RedirtyCardsQueueSet* rdcqs,
                                                    G1ParScanThreadStateSet* per_thread_states) {
+  G1GCPhaseTimes* p = phase_times();
+
   rem_set()->cleanup_after_scan_heap_roots();
 
   // Process any discovered reference objects - we have
@@ -3955,16 +3956,15 @@ void G1CollectedHeap::post_evacuate_collection_set(G1EvacuationInfo& evacuation_
   G1STWIsAliveClosure is_alive(this);
   G1KeepAliveClosure keep_alive(this);
 
-  WeakProcessor::weak_oops_do(workers(), &is_alive, &keep_alive,
-                              phase_times()->weak_phase_times());
+  WeakProcessor::weak_oops_do(workers(), &is_alive, &keep_alive, p->weak_phase_times());
 
   if (G1StringDedup::is_enabled()) {
     double string_dedup_time_ms = os::elapsedTime();
 
-    string_dedup_cleaning(&is_alive, &keep_alive, phase_times());
+    string_dedup_cleaning(&is_alive, &keep_alive, p);
 
     double string_cleanup_time_ms = (os::elapsedTime() - string_dedup_time_ms) * 1000.0;
-    phase_times()->record_string_deduplication_time(string_cleanup_time_ms);
+    p->record_string_deduplication_time(string_cleanup_time_ms);
   }
 
   _allocator->release_gc_alloc_regions(evacuation_info);
@@ -3977,7 +3977,7 @@ void G1CollectedHeap::post_evacuate_collection_set(G1EvacuationInfo& evacuation_
 
     double recalculate_used_start = os::elapsedTime();
     set_used(recalculate_used());
-    phase_times()->record_evac_fail_recalc_used_time((os::elapsedTime() - recalculate_used_start) * 1000.0);
+    p->record_evac_fail_recalc_used_time((os::elapsedTime() - recalculate_used_start) * 1000.0);
 
     if (_archive_allocator != NULL) {
       _archive_allocator->clear_used();
@@ -3989,8 +3989,8 @@ void G1CollectedHeap::post_evacuate_collection_set(G1EvacuationInfo& evacuation_
     }
   } else {
     // The "used" of the the collection set have already been subtracted
-    // when they were freed.  Add in the bytes evacuated.
-    increase_used(policy()->bytes_copied_during_gc());
+    // when they were freed.  Add in the bytes used.
+    increase_used(_bytes_used_during_gc);
   }
 
   _preserved_marks_set.assert_empty();
@@ -4014,7 +4014,7 @@ void G1CollectedHeap::post_evacuate_collection_set(G1EvacuationInfo& evacuation_
   record_obj_copy_mem_stats();
 
   evacuation_info.set_collectionset_used_before(collection_set()->bytes_used_before());
-  evacuation_info.set_bytes_copied(policy()->bytes_copied_during_gc());
+  evacuation_info.set_bytes_used(_bytes_used_during_gc);
 
 #if COMPILER2_OR_JVMCI
   double start = os::elapsedTime();
@@ -4786,7 +4786,7 @@ HeapRegion* G1CollectedHeap::new_gc_alloc_region(size_t word_size, G1HeapRegionA
 void G1CollectedHeap::retire_gc_alloc_region(HeapRegion* alloc_region,
                                              size_t allocated_bytes,
                                              G1HeapRegionAttr dest) {
-  policy()->record_bytes_copied_during_gc(allocated_bytes);
+  _bytes_used_during_gc += allocated_bytes;
   if (dest.is_old()) {
     old_set_add(alloc_region);
   } else {

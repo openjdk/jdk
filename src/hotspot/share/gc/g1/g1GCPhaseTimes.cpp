@@ -128,15 +128,14 @@ G1GCPhaseTimes::G1GCPhaseTimes(STWGCTimer* gc_timer, uint max_gc_threads) :
   _merge_lb_skipped_cards = new WorkerDataArray<size_t>(max_gc_threads, "Skipped Cards:");
   _gc_par_phases[MergeLB]->link_thread_work_items(_merge_lb_skipped_cards, MergeLBSkippedCards);
 
-  _obj_copy_lab_waste = new WorkerDataArray<size_t>(max_gc_threads, "LAB Waste");
-  _gc_par_phases[ObjCopy]->link_thread_work_items(_obj_copy_lab_waste, ObjCopyLABWaste);
-  _obj_copy_lab_undo_waste = new WorkerDataArray<size_t>(max_gc_threads, "LAB Undo Waste");
-  _gc_par_phases[ObjCopy]->link_thread_work_items(_obj_copy_lab_undo_waste, ObjCopyLABUndoWaste);
+  _gc_par_phases[MergePSS] = new WorkerDataArray<double>(1, "Merge Per-Thread State", true /* is_serial */);
 
-  _opt_obj_copy_lab_waste = new WorkerDataArray<size_t>(max_gc_threads, "LAB Waste");
-  _gc_par_phases[OptObjCopy]->link_thread_work_items(_obj_copy_lab_waste, ObjCopyLABWaste);
-  _opt_obj_copy_lab_undo_waste  = new WorkerDataArray<size_t>(max_gc_threads, "LAB Undo Waste");
-  _gc_par_phases[OptObjCopy]->link_thread_work_items(_obj_copy_lab_undo_waste, ObjCopyLABUndoWaste);
+  _merge_pss_copied_bytes = new WorkerDataArray<size_t>(max_gc_threads, "Copied Bytes");
+  _gc_par_phases[MergePSS]->link_thread_work_items(_merge_pss_copied_bytes, MergePSSCopiedBytes);
+  _merge_pss_lab_waste_bytes = new WorkerDataArray<size_t>(max_gc_threads, "LAB Waste");
+  _gc_par_phases[MergePSS]->link_thread_work_items(_merge_pss_lab_waste_bytes, MergePSSLABWasteBytes);
+  _merge_pss_lab_undo_waste_bytes = new WorkerDataArray<size_t>(max_gc_threads, "LAB Undo Waste");
+  _gc_par_phases[MergePSS]->link_thread_work_items(_merge_pss_lab_undo_waste_bytes, MergePSSLABUndoWasteBytes);
 
   _termination_attempts = new WorkerDataArray<size_t>(max_gc_threads, "Termination Attempts:");
   _gc_par_phases[Termination]->link_thread_work_items(_termination_attempts);
@@ -189,7 +188,6 @@ void G1GCPhaseTimes::reset() {
   _recorded_non_young_cset_choice_time_ms = 0.0;
   _recorded_redirty_logged_cards_time_ms = 0.0;
   _recorded_preserve_cm_referents_time_ms = 0.0;
-  _recorded_merge_pss_time_ms = 0.0;
   _recorded_start_new_cset_time_ms = 0.0;
   _recorded_total_free_cset_time_ms = 0.0;
   _recorded_serial_free_cset_time_ms = 0.0;
@@ -464,13 +462,15 @@ double G1GCPhaseTimes::print_evacuate_initial_collection_set() const {
 double G1GCPhaseTimes::print_post_evacuate_collection_set() const {
   const double evac_fail_handling = _cur_evac_fail_recalc_used +
                                     _cur_evac_fail_remove_self_forwards;
+  assert(_gc_par_phases[MergePSS]->get(0) != WorkerDataArray<double>::uninitialized(), "must be set");
+  const double merge_pss = _gc_par_phases[MergePSS]->get(0) * MILLIUNITS;
   const double sum_ms = evac_fail_handling +
                         _cur_collection_code_root_fixup_time_ms +
                         _recorded_preserve_cm_referents_time_ms +
                         _cur_ref_proc_time_ms +
                         (_weak_phase_times.total_time_sec() * MILLIUNITS) +
                         _cur_clear_ct_time_ms +
-                        _recorded_merge_pss_time_ms +
+                        merge_pss +
                         _cur_strong_code_root_purge_time_ms +
                         _recorded_redirty_logged_cards_time_ms +
                         _recorded_total_free_cset_time_ms +
@@ -500,7 +500,7 @@ double G1GCPhaseTimes::print_post_evacuate_collection_set() const {
     trace_time("Remove Self Forwards",_cur_evac_fail_remove_self_forwards);
   }
 
-  debug_time("Merge Per-Thread State", _recorded_merge_pss_time_ms);
+  debug_phase(_gc_par_phases[MergePSS], 0);
   debug_time("Code Roots Purge", _cur_strong_code_root_purge_time_ms);
 
   debug_time("Redirty Cards", _recorded_redirty_logged_cards_time_ms);
@@ -585,7 +585,8 @@ const char* G1GCPhaseTimes::phase_name(GCParPhases phase) {
       "StringDedupTableFixup",
       "RedirtyCards",
       "YoungFreeCSet",
-      "NonYoungFreeCSet"
+      "NonYoungFreeCSet",
+      "MergePSS"
       //GCParPhasesSentinel only used to tell end of enum
       };
 

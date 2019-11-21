@@ -78,7 +78,6 @@ G1Policy::G1Policy(STWGCTimer* gc_timer) :
   _bytes_allocated_in_old_since_last_gc(0),
   _initial_mark_to_mixed(),
   _collection_set(NULL),
-  _bytes_copied_during_gc(0),
   _g1h(NULL),
   _phase_times(new G1GCPhaseTimes(gc_timer, ParallelGCThreads)),
   _mark_remark_start_sec(0),
@@ -553,7 +552,6 @@ void G1Policy::record_collection_pause_start(double start_time_sec) {
   record_concurrent_refinement_data(false /* is_full_collection */);
 
   _collection_set->reset_bytes_used_before();
-  _bytes_copied_during_gc = 0;
 
   // do that for any other surv rate groups
   _short_lived_surv_rate_group->stop_adding_regions();
@@ -647,13 +645,11 @@ double G1Policy::logged_cards_processing_time() const {
 // Anything below that is considered to be zero
 #define MIN_TIMER_GRANULARITY 0.0000001
 
-void G1Policy::record_collection_pause_end(double pause_time_ms, size_t heap_used_bytes_before_gc) {
+void G1Policy::record_collection_pause_end(double pause_time_ms) {
   G1GCPhaseTimes* p = phase_times();
 
   double end_time_sec = os::elapsedTime();
 
-  assert_used_and_recalculate_used_equal(_g1h);
-  size_t cur_used_bytes = _g1h->used();
   bool this_pause_included_initial_mark = false;
   bool this_pause_was_young_only = collector_state()->in_young_only_phase();
 
@@ -778,12 +774,10 @@ void G1Policy::record_collection_pause_end(double pause_time_ms, size_t heap_use
     }
     _analytics->report_rs_length_diff((double) rs_length_diff);
 
-    size_t freed_bytes = heap_used_bytes_before_gc - cur_used_bytes;
-    size_t copied_bytes = _collection_set->bytes_used_before() - freed_bytes;
-    double cost_per_byte_ms = 0.0;
+    size_t copied_bytes = p->sum_thread_work_items(G1GCPhaseTimes::MergePSS, G1GCPhaseTimes::MergePSSCopiedBytes);
 
     if (copied_bytes > 0) {
-      cost_per_byte_ms = (average_time_ms(G1GCPhaseTimes::ObjCopy) + average_time_ms(G1GCPhaseTimes::OptObjCopy)) / (double) copied_bytes;
+      double cost_per_byte_ms = (average_time_ms(G1GCPhaseTimes::ObjCopy) + average_time_ms(G1GCPhaseTimes::OptObjCopy)) / copied_bytes;
       _analytics->report_cost_per_byte_ms(cost_per_byte_ms, collector_state()->mark_or_rebuild_in_progress());
     }
 
