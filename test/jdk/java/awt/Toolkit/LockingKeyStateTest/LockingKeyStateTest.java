@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,21 +103,24 @@ public class LockingKeyStateTest {
     }
 
     void doTest() throws Exception{
-        robot.waitForIdle();
-        robot.mouseMove(frame.getLocationOnScreen().x + frame.getWidth() / 2,
-                frame.getLocationOnScreen().y + frame.getHeight() / 2);
-        robot.click();
+        try {
+            robot.waitForIdle();
+            robot.mouseMove(frame.getLocationOnScreen().x + frame.getWidth() / 2,
+                    frame.getLocationOnScreen().y + frame.getHeight() / 2);
+            robot.click();
 
-        EventQueue.invokeAndWait( this::toggleAllTrue );
-        robot.waitForIdle(2000);
-        EventQueue.invokeAndWait( this::checkAllTrue );
-        EventQueue.invokeAndWait( this::toggleAllFalse );
-        robot.waitForIdle(2000);
-        EventQueue.invokeAndWait( this::checkAllFalse );
-        EventQueue.invokeAndWait( this::restoreAll );
-        robot.waitForIdle();
+            EventQueue.invokeAndWait( this::toggleAllTrue );
+            robot.waitForIdle(2000);
+            EventQueue.invokeAndWait( this::checkAllTrue );
+            EventQueue.invokeAndWait( this::toggleAllFalse );
+            robot.waitForIdle(2000);
+            EventQueue.invokeAndWait( this::checkAllFalse );
+        } finally {
+            EventQueue.invokeAndWait( this::restoreAll );
+            robot.waitForIdle();
 
-        frame.dispose();
+            frame.dispose();
+        }
     }
 
     public static void main(String argv[]) throws Exception {

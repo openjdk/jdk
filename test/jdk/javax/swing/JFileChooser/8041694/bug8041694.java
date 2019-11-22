@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,9 +101,11 @@ public class bug8041694 {
                 "The selected directory is '%s'.", selectedDir.getAbsolutePath()));
             if (selectedDir.getName().equals("d")) {
                 throw new RuntimeException(
-                    "JFileChooser removed trailing spaces in the selected directory name.");
+                    "JFileChooser removed trailing spaces in the selected directory name. " +
+                    "Expected 'd ' got '" + selectedDir.getName() + "'.");
             } else if (!selectedDir.getName().equals("d ")) {
-                throw new RuntimeException("The selected directory name is not the expected 'd '.");
+                throw new RuntimeException("The selected directory name is not "
+                    + "the expected 'd ' but '" + selectedDir.getName() + "'.");
             }
         } catch (UnsupportedLookAndFeelException | AWTException | IOException | InterruptedException e) {
             throw new RuntimeException(e);

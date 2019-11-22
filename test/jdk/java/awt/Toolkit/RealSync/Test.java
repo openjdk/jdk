@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -219,7 +219,8 @@ public class Test {
         robot.keyPress(KeyEvent.VK_A);
         robot.keyRelease(KeyEvent.VK_A);
         realSync(f);
-        asser("a".equals(b.getText()), "Wrong text: " + b.getText());
+        asser("a".equals(b.getText()), "Expected 'a' got " + "'" +
+            b.getText() + "'.");
         f.dispose();
     }
 
@@ -242,7 +243,8 @@ public class Test {
         robot.keyPress(KeyEvent.VK_A);
         robot.keyRelease(KeyEvent.VK_A);
         realSync(f);
-        asser("a".equals(b.getText()), "Wrong text: " + b.getText());
+        asser("a".equals(b.getText()), "Expected 'a' got " + "'" +
+            b.getText() + "'.");
         f.dispose();
     }
 
