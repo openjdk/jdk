@@ -97,6 +97,20 @@ class LogOutputList {
     }
 
    public:
+    Iterator(const Iterator &itr) : _current(itr._current), _list(itr._list){
+      itr._list->increase_readers();
+    }
+
+    Iterator& operator=(const Iterator& rhs) {
+      _current = rhs._current;
+      if (_list != rhs._list) {
+        rhs._list->increase_readers();
+        _list->decrease_readers();
+        _list = rhs._list;
+      }
+      return *this;
+    }
+
     ~Iterator() {
       _list->decrease_readers();
     }
