@@ -304,7 +304,7 @@ HeapWord* HeapRegion::do_oops_on_memregion_in_humongous(MemRegion mr,
 
 template <bool is_gc_active, class Closure>
 HeapWord* HeapRegion::oops_on_memregion_seq_iterate_careful(MemRegion mr,
-                                                       Closure* cl) {
+                                                            Closure* cl) {
   assert(MemRegion(bottom(), end()).contains(mr), "Card region not in heap region");
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
 

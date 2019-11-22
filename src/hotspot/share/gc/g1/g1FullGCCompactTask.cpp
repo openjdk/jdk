@@ -53,7 +53,7 @@ public:
           assert(current->is_empty(), "Should have been cleared in phase 2.");
         }
       }
-      current->reset_during_compaction();
+      current->reset_humongous_during_compaction();
     }
     return false;
   }

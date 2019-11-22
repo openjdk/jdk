@@ -96,6 +96,15 @@ public:
   void set_top(HeapWord* value) { _top = value; }
   HeapWord* top() const { return _top; }
 
+  // See the comment above in the declaration of _pre_dummy_top for an
+  // explanation of what it is.
+  void set_pre_dummy_top(HeapWord* pre_dummy_top) {
+    assert(is_in(pre_dummy_top) && pre_dummy_top <= top(), "pre-condition");
+    _pre_dummy_top = pre_dummy_top;
+  }
+  HeapWord* pre_dummy_top() { return (_pre_dummy_top == NULL) ? top() : _pre_dummy_top; }
+  void reset_pre_dummy_top() { _pre_dummy_top = NULL; }
+
   // Returns true iff the given the heap  region contains the
   // given address as part of an allocated object. This may
   // be a potentially, so we restrict its use to assertion checks only.
@@ -118,6 +127,12 @@ public:
 private:
   void reset_after_compaction() { set_top(compaction_top()); }
 
+  void clear(bool mangle_space);
+
+  HeapWord* block_start_const(const void* p) const;
+
+  void mangle_unused_area() PRODUCT_RETURN;
+
   // Try to allocate at least min_word_size and up to desired_size from this region.
   // Returns NULL if not possible, otherwise sets actual_word_size to the amount of
   // space allocated.
@@ -130,27 +145,10 @@ private:
   // This version synchronizes with other calls to par_allocate_impl().
   inline HeapWord* par_allocate_impl(size_t min_word_size, size_t desired_word_size, size_t* actual_word_size);
 
-  void mangle_unused_area() PRODUCT_RETURN;
-
 public:
-  void object_iterate(ObjectClosure* blk);
-
-  // See the comment above in the declaration of _pre_dummy_top for an
-  // explanation of what it is.
-  void set_pre_dummy_top(HeapWord* pre_dummy_top) {
-    assert(is_in(pre_dummy_top) && pre_dummy_top <= top(), "pre-condition");
-    _pre_dummy_top = pre_dummy_top;
-  }
-
-  HeapWord* pre_dummy_top() {
-    return (_pre_dummy_top == NULL) ? top() : _pre_dummy_top;
-  }
-  void reset_pre_dummy_top() { _pre_dummy_top = NULL; }
-
-  void clear(bool mangle_space);
-
   HeapWord* block_start(const void* p);
-  HeapWord* block_start_const(const void* p) const;
+
+  void object_iterate(ObjectClosure* blk);
 
   // Allocation (return NULL if full).  Assumes the caller has established
   // mutually exclusive access to the HeapRegion.
@@ -161,34 +159,49 @@ public:
   HeapWord* allocate(size_t word_size);
   HeapWord* par_allocate(size_t word_size);
 
-  HeapWord* saved_mark_word() const { ShouldNotReachHere(); return NULL; }
+  inline HeapWord* par_allocate_no_bot_updates(size_t min_word_size, size_t desired_word_size, size_t* word_size);
+  inline HeapWord* allocate_no_bot_updates(size_t word_size);
+  inline HeapWord* allocate_no_bot_updates(size_t min_word_size, size_t desired_word_size, size_t* actual_size);
 
-  // MarkSweep support phase3
+  // Full GC support methods.
+
   HeapWord* initialize_threshold();
   HeapWord* cross_threshold(HeapWord* start, HeapWord* end);
+  // Update heap region to be consistent after Full GC compaction.
+  void reset_humongous_during_compaction() {
+    assert(is_humongous(),
+           "should only be called for humongous regions");
+
+    zero_marked_bytes();
+    init_top_at_mark_start();
+  }
+  // Update heap region to be consistent after Full GC compaction.
+  void complete_compaction();
+
+  // All allocated blocks are occupied by objects in a HeapRegion
+  bool block_is_obj(const HeapWord* p) const;
+
+  // Returns whether the given object is dead based on TAMS and bitmap.
+  bool is_obj_dead(const oop obj, const G1CMBitMap* const prev_bitmap) const;
+
+  // Returns the object size for all valid block starts
+  // and the amount of unallocated words if called on top()
+  size_t block_size(const HeapWord* p) const;
+
+  // Scans through the region using the bitmap to determine what
+  // objects to call size_t ApplyToMarkedClosure::apply(oop) for.
+  template<typename ApplyToMarkedClosure>
+  inline void apply_to_marked_objects(G1CMBitMap* bitmap, ApplyToMarkedClosure* closure);
 
   void reset_bot() {
     _bot_part.reset_bot();
-  }
-
-  void print_bot_on(outputStream* out) {
-    _bot_part.print_on(out);
   }
 
 private:
   // The remembered set for this region.
   HeapRegionRemSet* _rem_set;
 
-  void report_region_type_change(G1HeapRegionTraceType::Type to);
-
-  // Returns whether the given object address refers to a dead object, and either the
-  // size of the object (if live) or the size of the block (if dead) in size.
-  // May
-  // - only called with obj < top()
-  // - not called on humongous objects or archive regions
-  inline bool is_obj_dead_with_size(const oop obj, const G1CMBitMap* const prev_bitmap, size_t* size) const;
-
-  // The index of this region in the heap region sequence.
+  // Cached index of this region in the heap region sequence.
   uint  _hrm_index;
 
   HeapRegionType _type;
@@ -199,31 +212,18 @@ private:
   // True iff an attempt to evacuate an object in the region failed.
   bool _evacuation_failed;
 
-  // Fields used by the HeapRegionSetBase class and subclasses.
-  HeapRegion* _next;
-  HeapRegion* _prev;
-#ifdef ASSERT
-  HeapRegionSetBase* _containing_set;
-#endif // ASSERT
-
-  // We use concurrent marking to determine the amount of live data
-  // in each heap region.
-  size_t _prev_marked_bytes;    // Bytes known to be live via last completed marking.
-  size_t _next_marked_bytes;    // Bytes known to be live via in-progress marking.
-
-  // The calculated GC efficiency of the region.
-  double _gc_efficiency;
-
   static const uint InvalidCSetIndex = UINT_MAX;
 
   // The index in the optional regions array, if this region
   // is considered optional during a mixed collections.
   uint _index_in_opt_cset;
 
-  // Data for young region survivor prediction.
-  uint  _young_index_in_cset;
-  SurvRateGroup* _surv_rate_group;
-  int  _age_index;
+  // Fields used by the HeapRegionSetBase class and subclasses.
+  HeapRegion* _next;
+  HeapRegion* _prev;
+#ifdef ASSERT
+  HeapRegionSetBase* _containing_set;
+#endif // ASSERT
 
   // The start of the unmarked area. The unmarked area extends from this
   // word until the top and/or end of the region, and is the part
@@ -234,18 +234,29 @@ private:
   HeapWord* _prev_top_at_mark_start;
   HeapWord* _next_top_at_mark_start;
 
+  // We use concurrent marking to determine the amount of live data
+  // in each heap region.
+  size_t _prev_marked_bytes;    // Bytes known to be live via last completed marking.
+  size_t _next_marked_bytes;    // Bytes known to be live via in-progress marking.
+
   void init_top_at_mark_start() {
     assert(_prev_marked_bytes == 0 &&
            _next_marked_bytes == 0,
            "Must be called after zero_marked_bytes.");
-    HeapWord* bot = bottom();
-    _prev_top_at_mark_start = bot;
-    _next_top_at_mark_start = bot;
+    _prev_top_at_mark_start = _next_top_at_mark_start = bottom();
   }
+
+  // Data for young region survivor prediction.
+  uint  _young_index_in_cset;
+  SurvRateGroup* _surv_rate_group;
+  int  _age_index;
 
   // Cached attributes used in the collection set policy information
 
-  // The RSet length that was added to the total value
+  // The calculated GC efficiency of the region.
+  double _gc_efficiency;
+
+  // The remembered set length that was added to the total value
   // for the collection set.
   size_t _recorded_rs_length;
 
@@ -254,6 +265,15 @@ private:
   double _predicted_elapsed_time_ms;
 
   uint _node_index;
+
+  void report_region_type_change(G1HeapRegionTraceType::Type to);
+
+  // Returns whether the given object address refers to a dead object, and either the
+  // size of the object (if live) or the size of the block (if dead) in size.
+  // May
+  // - only called with obj < top()
+  // - not called on humongous objects or archive regions
+  inline bool is_obj_dead_with_size(const oop obj, const G1CMBitMap* const prev_bitmap, size_t* size) const;
 
   // Iterate over the references covered by the given MemRegion in a humongous
   // object and apply the given closure to them.
@@ -272,6 +292,10 @@ private:
   inline size_t block_size_using_bitmap(const HeapWord* p, const G1CMBitMap* const prev_bitmap) const;
 public:
   HeapRegion(uint hrm_index, G1BlockOffsetTable* bot, MemRegion mr);
+
+  // If this region is a member of a HeapRegionManager, the index in that
+  // sequence, otherwise -1.
+  uint hrm_index() const { return _hrm_index; }
 
   // Initializing the HeapRegion not only resets the data structure, but also
   // resets the BOT for that heap region.
@@ -292,7 +316,6 @@ public:
                                       ~((1 << (size_t) LogOfHRGrainBytes) - 1);
   }
 
-
   // Returns whether a field is in the same region as the obj it points to.
   template <typename T>
   static bool is_in_same_region(T* p, oop obj) {
@@ -311,31 +334,6 @@ public:
   // throughout the JVM's execution, therefore they should only be set
   // up once during initialization time.
   static void setup_heap_region_size(size_t initial_heap_size, size_t max_heap_size);
-
-  // All allocated blocks are occupied by objects in a HeapRegion
-  bool block_is_obj(const HeapWord* p) const;
-
-  // Returns whether the given object is dead based on TAMS and bitmap.
-  bool is_obj_dead(const oop obj, const G1CMBitMap* const prev_bitmap) const;
-
-  // Returns the object size for all valid block starts
-  // and the amount of unallocated words if called on top()
-  size_t block_size(const HeapWord* p) const;
-
-  // Scans through the region using the bitmap to determine what
-  // objects to call size_t ApplyToMarkedClosure::apply(oop) for.
-  template<typename ApplyToMarkedClosure>
-  inline void apply_to_marked_objects(G1CMBitMap* bitmap, ApplyToMarkedClosure* closure);
-  // Update heap region to be consistent after compaction.
-  void complete_compaction();
-
-  inline HeapWord* par_allocate_no_bot_updates(size_t min_word_size, size_t desired_word_size, size_t* word_size);
-  inline HeapWord* allocate_no_bot_updates(size_t word_size);
-  inline HeapWord* allocate_no_bot_updates(size_t min_word_size, size_t desired_word_size, size_t* actual_size);
-
-  // If this region is a member of a HeapRegionManager, the index in that
-  // sequence, otherwise -1.
-  uint hrm_index() const { return _hrm_index; }
 
   // The number of bytes marked live in the region in the last marking phase.
   size_t marked_bytes()    { return _prev_marked_bytes; }
@@ -378,6 +376,22 @@ public:
   void zero_marked_bytes()      {
     _prev_marked_bytes = _next_marked_bytes = 0;
   }
+  // Get the start of the unmarked area in this region.
+  HeapWord* prev_top_at_mark_start() const { return _prev_top_at_mark_start; }
+  HeapWord* next_top_at_mark_start() const { return _next_top_at_mark_start; }
+
+  // Note the start or end of marking. This tells the heap region
+  // that the collector is about to start or has finished (concurrently)
+  // marking the heap.
+
+  // Notify the region that concurrent marking is starting. Initialize
+  // all fields related to the next marking info.
+  inline void note_start_of_marking();
+
+  // Notify the region that concurrent marking has finished. Copy the
+  // (now finalized) next marking info fields into the prev marking
+  // info fields.
+  inline void note_end_of_marking();
 
   const char* get_type_str() const { return _type.get_str(); }
   const char* get_short_type_str() const { return _type.get_short_str(); }
@@ -409,6 +423,18 @@ public:
   bool is_archive()        const { return _type.is_archive(); }
   bool is_open_archive()   const { return _type.is_open_archive(); }
   bool is_closed_archive() const { return _type.is_closed_archive(); }
+
+  void set_free();
+
+  void set_eden();
+  void set_eden_pre_gc();
+  void set_survivor();
+
+  void move_to_old();
+  void set_old();
+
+  void set_open_archive();
+  void set_closed_archive();
 
   // For a humongous region, region in which it starts.
   HeapRegion* humongous_start_region() const {
@@ -442,11 +468,11 @@ public:
 
   // Getter and setter for the next and prev fields used to link regions into
   // linked lists.
-  HeapRegion* next()              { return _next; }
-  HeapRegion* prev()              { return _prev; }
-
   void set_next(HeapRegion* next) { _next = next; }
+  HeapRegion* next()              { return _next; }
+
   void set_prev(HeapRegion* prev) { _prev = prev; }
+  HeapRegion* prev()              { return _prev; }
 
   // Every region added to a set is tagged with a reference to that
   // set. This is used for doing consistency checking to make sure that
@@ -480,22 +506,17 @@ public:
   // Clear the card table corresponding to this region.
   void clear_cardtable();
 
-  // Get the start of the unmarked area in this region.
-  HeapWord* prev_top_at_mark_start() const { return _prev_top_at_mark_start; }
-  HeapWord* next_top_at_mark_start() const { return _next_top_at_mark_start; }
+  // Returns the "evacuation_failed" property of the region.
+  bool evacuation_failed() { return _evacuation_failed; }
 
-  // Note the start or end of marking. This tells the heap region
-  // that the collector is about to start or has finished (concurrently)
-  // marking the heap.
+  // Sets the "evacuation_failed" property of the region.
+  void set_evacuation_failed(bool b) {
+    _evacuation_failed = b;
 
-  // Notify the region that concurrent marking is starting. Initialize
-  // all fields related to the next marking info.
-  inline void note_start_of_marking();
-
-  // Notify the region that concurrent marking has finished. Copy the
-  // (now finalized) next marking info fields into the prev marking
-  // info fields.
-  inline void note_end_of_marking();
+    if (b) {
+      _next_marked_bytes = 0;
+    }
+  }
 
   // Notify the region that we are about to start processing
   // self-forwarded objects during evac failure handling.
@@ -506,17 +527,6 @@ public:
   // objects during evac failure handling.
   void note_self_forwarding_removal_end(size_t marked_bytes);
 
-  void reset_during_compaction() {
-    assert(is_humongous(),
-           "should only be called for humongous regions");
-
-    zero_marked_bytes();
-    init_top_at_mark_start();
-  }
-
-  void calc_gc_efficiency(void);
-  double gc_efficiency() const { return _gc_efficiency;}
-
   uint index_in_opt_cset() const {
     assert(has_index_in_opt_cset(), "Opt cset index not set.");
     return _index_in_opt_cset;
@@ -524,6 +534,9 @@ public:
   bool has_index_in_opt_cset() const { return _index_in_opt_cset != InvalidCSetIndex; }
   void set_index_in_opt_cset(uint index) { _index_in_opt_cset = index; }
   void clear_index_in_opt_cset() { _index_in_opt_cset = InvalidCSetIndex; }
+
+  void calc_gc_efficiency(void);
+  double gc_efficiency() const { return _gc_efficiency;}
 
   uint  young_index_in_cset() const { return _young_index_in_cset; }
   void clear_young_index_in_cset() { _young_index_in_cset = 0; }
@@ -579,18 +592,6 @@ public:
     }
   }
 
-  void set_free();
-
-  void set_eden();
-  void set_eden_pre_gc();
-  void set_survivor();
-
-  void move_to_old();
-  void set_old();
-
-  void set_open_archive();
-  void set_closed_archive();
-
   // Determine if an object has been allocated since the last
   // mark performed by the collector. This returns true iff the object
   // is within the unmarked area of the region.
@@ -599,18 +600,6 @@ public:
   }
   bool obj_allocated_since_next_marking(oop obj) const {
     return (HeapWord *) obj >= next_top_at_mark_start();
-  }
-
-  // Returns the "evacuation_failed" property of the region.
-  bool evacuation_failed() { return _evacuation_failed; }
-
-  // Sets the "evacuation_failed" property of the region.
-  void set_evacuation_failed(bool b) {
-    _evacuation_failed = b;
-
-    if (b) {
-      _next_marked_bytes = 0;
-    }
   }
 
   // Iterate over the objects overlapping the given memory region, applying cl
