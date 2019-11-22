@@ -4286,8 +4286,8 @@ assertEquals("yz", (String) d0.invokeExact(123, "x", "y", "z"));
      * {@link #dropArguments(MethodHandle,int,Class...) dropArguments}{@code (target, pos, valueTypes.toArray(new Class[0]))}
      * </pre></blockquote>
      * @param target the method handle to invoke after the arguments are dropped
-     * @param valueTypes the type(s) of the argument(s) to drop
      * @param pos position of first argument to drop (zero for the leftmost)
+     * @param valueTypes the type(s) of the argument(s) to drop
      * @return a method handle which drops arguments of the given types,
      *         before calling the original method handle
      * @throws NullPointerException if the target is null,
@@ -4366,8 +4366,8 @@ assertEquals("xz", (String) d12.invokeExact("x", 12, true, "z"));
      * {@link #dropArguments(MethodHandle,int,List) dropArguments}{@code (target, pos, Arrays.asList(valueTypes))}
      * </pre></blockquote>
      * @param target the method handle to invoke after the arguments are dropped
-     * @param valueTypes the type(s) of the argument(s) to drop
      * @param pos position of first argument to drop (zero for the leftmost)
+     * @param valueTypes the type(s) of the argument(s) to drop
      * @return a method handle which drops arguments of the given types,
      *         before calling the original method handle
      * @throws NullPointerException if the target is null,
