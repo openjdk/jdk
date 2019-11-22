@@ -52,12 +52,6 @@ import java.util.zip.ZipException;
  * @author Xueming Shen, Rajendra Gutupalli, Jaya Hangal
  */
 public class ZipFileSystemProvider extends FileSystemProvider {
-
-    // Property used to specify the entry version to use for a multi-release JAR
-    static final String PROPERTY_RELEASE_VERSION = "releaseVersion";
-    // Original property used to specify the entry version to use for a
-    // multi-release JAR which is kept for backwards compatibility.
-    static final String PROPERTY_MULTI_RELEASE = "multi-release";
     private final Map<Path, ZipFileSystem> filesystems = new HashMap<>();
 
     public ZipFileSystemProvider() {}
@@ -127,21 +121,14 @@ public class ZipFileSystemProvider extends FileSystemProvider {
     }
 
     private ZipFileSystem getZipFileSystem(Path path, Map<String, ?> env) throws IOException {
-        ZipFileSystem zipfs;
         try {
-            if (env.containsKey(PROPERTY_RELEASE_VERSION) ||
-                    env.containsKey(PROPERTY_MULTI_RELEASE)) {
-                zipfs = new JarFileSystem(this, path, env);
-            } else {
-                zipfs = new ZipFileSystem(this, path, env);
-            }
+            return new ZipFileSystem(this, path, env);
         } catch (ZipException ze) {
             String pname = path.toString();
             if (pname.endsWith(".zip") || pname.endsWith(".jar"))
                 throw ze;
             throw new UnsupportedOperationException();
         }
-        return zipfs;
     }
 
     @Override

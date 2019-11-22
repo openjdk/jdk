@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8164389 8222440
- * @summary walk entries in a jdk.nio.zipfs.JarFileSystem
+ * @summary walk entries in a multi-release jar file via jdk.zipfs
  * @library /lib/testlibrary/java/util/jar
  * @modules jdk.jartool
  *          jdk.zipfs
