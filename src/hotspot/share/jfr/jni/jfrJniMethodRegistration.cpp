@@ -36,7 +36,9 @@ JfrJniMethodRegistration::JfrJniMethodRegistration(JNIEnv* env) {
   if (jfr_clz != NULL) {
     JNINativeMethod method[] = {
       (char*)"beginRecording", (char*)"()V", (void*)jfr_begin_recording,
+      (char*)"isRecording", (char*)"()Z", (void*)jfr_is_recording,
       (char*)"endRecording", (char*)"()V", (void*)jfr_end_recording,
+      (char*)"markChunkFinal", (char*)"()V", (void*)jfr_mark_chunk_final,
       (char*)"counterTime", (char*)"()J", (void*)jfr_elapsed_counter,
       (char*)"createJFR", (char*)"(Z)Z", (void*)jfr_create_jfr,
       (char*)"destroyJFR", (char*)"()Z", (void*)jfr_destroy_jfr,

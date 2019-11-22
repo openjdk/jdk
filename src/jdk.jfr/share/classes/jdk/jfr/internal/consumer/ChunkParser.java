@@ -448,4 +448,8 @@ public final class ChunkParser {
         return chunkHeader.getStartNanos();
     }
 
+    public boolean isFinalChunk() {
+        return chunkHeader.isFinalChunk();
+    }
+
 }

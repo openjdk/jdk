@@ -210,6 +210,10 @@ JVM_ENTRY_NO_ENV(void, jfr_begin_recording(JNIEnv* env, jobject jvm))
   JfrRecorder::start_recording();
 JVM_END
 
+JVM_ENTRY_NO_ENV(jboolean, jfr_is_recording(JNIEnv * env, jobject jvm))
+  return JfrRecorder::is_recording() ? JNI_TRUE : JNI_FALSE;
+JVM_END
+
 JVM_ENTRY_NO_ENV(void, jfr_end_recording(JNIEnv* env, jobject jvm))
   if (!JfrRecorder::is_recording()) {
     return;
@@ -217,6 +221,9 @@ JVM_ENTRY_NO_ENV(void, jfr_end_recording(JNIEnv* env, jobject jvm))
   JfrRecorder::stop_recording();
 JVM_END
 
+JVM_ENTRY_NO_ENV(void, jfr_mark_chunk_final(JNIEnv * env, jobject jvm))
+  JfrRepository::mark_chunk_final();
+JVM_END
 
 JVM_ENTRY_NO_ENV(jboolean, jfr_emit_event(JNIEnv* env, jobject jvm, jlong eventTypeId, jlong timeStamp, jlong when))
   JfrPeriodicEventSet::requestEvent((JfrEventId)eventTypeId);

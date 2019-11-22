@@ -85,6 +85,7 @@ public final class PlatformRecording implements AutoCloseable {
     private AccessControlContext noDestinationDumpOnExitAccessControlContext;
     private boolean shuoldWriteActiveRecordingEvent = true;
     private Duration flushInterval = Duration.ofSeconds(1);
+    private long finalStartChunkNanos = Long.MIN_VALUE;
 
     PlatformRecording(PlatformRecorder recorder, long id) {
         // Typically the access control context is taken
@@ -810,5 +811,13 @@ public final class PlatformRecording implements AutoCloseable {
             }
             return Long.MAX_VALUE;
         }
+    }
+
+    public long getFinalChunkStartNanos() {
+        return finalStartChunkNanos;
+    }
+
+    public void setFinalStartnanos(long chunkStartNanos) {
+       this.finalStartChunkNanos = chunkStartNanos;
     }
 }

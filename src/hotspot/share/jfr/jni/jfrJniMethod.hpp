@@ -49,7 +49,11 @@ jboolean JNICALL jfr_destroy_jfr(JNIEnv* env, jobject jvm);
 
 void JNICALL jfr_begin_recording(JNIEnv* env, jobject jvm);
 
+jboolean JNICALL jfr_is_recording(JNIEnv* env, jobject jvm);
+
 void JNICALL jfr_end_recording(JNIEnv* env, jobject jvm);
+
+void JNICALL jfr_mark_chunk_final(JNIEnv* env, jobject jvm);
 
 jboolean JNICALL jfr_emit_event(JNIEnv* env, jobject jvm, jlong eventTypeId, jlong timeStamp, jlong when);
 
