@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8036979 8072384 8044773 8225214
+ * @bug 8036979 8072384 8044773 8225214 8233296
  * @library /test/lib
  * @requires !vm.graal.enabled
  * @run main/othervm -Xcheck:jni OptionsTest
@@ -321,7 +321,7 @@ public class OptionsTest {
             } else if (option.equals(StandardSocketOptions.IP_MULTICAST_TTL)) {
                 return Integer.valueOf(socket.getTimeToLive());
             } else if (option.equals(StandardSocketOptions.IP_MULTICAST_LOOP)) {
-                return Boolean.valueOf(socket.getLoopbackMode());
+                return !Boolean.valueOf(socket.getLoopbackMode());
             } else {
                 throw new RuntimeException("unexpected socket option");
             }

@@ -482,7 +482,9 @@ abstract class AbstractPlainDatagramSocketImpl extends DatagramSocketImpl
                 throw new IllegalArgumentException("Invalid TTL/hop value: " + value);
             setTimeToLive((Integer)value);
         } else if (name == StandardSocketOptions.IP_MULTICAST_LOOP) {
-            setOption(SocketOptions.IP_MULTICAST_LOOP, value);
+            boolean enable = (boolean) value;
+            // Legacy setOption expects true to mean 'disabled'
+            setOption(SocketOptions.IP_MULTICAST_LOOP, !enable);
         } else if (extendedOptions.isOptionSupported(name)) {
             extendedOptions.setOption(fd, name, value);
         } else {
@@ -517,7 +519,9 @@ abstract class AbstractPlainDatagramSocketImpl extends DatagramSocketImpl
         } else if (name == StandardSocketOptions.IP_MULTICAST_TTL) {
             return (T) ((Integer) getTimeToLive());
         } else if (name == StandardSocketOptions.IP_MULTICAST_LOOP) {
-            return (T) getOption(SocketOptions.IP_MULTICAST_LOOP);
+            boolean disabled = (boolean) getOption(SocketOptions.IP_MULTICAST_LOOP);
+            // Legacy getOption returns true when disabled
+            return (T) Boolean.valueOf(!disabled);
         } else if (extendedOptions.isOptionSupported(name)) {
             return (T) extendedOptions.getOption(fd, name);
         } else {
