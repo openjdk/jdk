@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -203,9 +203,11 @@ public class getlocal003 {
     public double meth01() {
         float f = 6.0f;
         double d = 7.0;
+        instMeth();
         return d + f;
     }
 
+    native void instMeth();
     native static void getMeth();
     native static void checkLoc(Thread thr);
     native static int getRes();

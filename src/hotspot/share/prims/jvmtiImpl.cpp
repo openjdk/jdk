@@ -724,13 +724,17 @@ bool VM_GetOrSetLocal::doit_prologue() {
   NULL_CHECK(_jvf, false);
 
   Method* method_oop = _jvf->method();
-  if (method_oop->is_native()) {
-    if (getting_receiver() && !method_oop->is_static()) {
-      return true;
-    } else {
-      _result = JVMTI_ERROR_OPAQUE_FRAME;
+  if (getting_receiver()) {
+    if (method_oop->is_static()) {
+      _result = JVMTI_ERROR_INVALID_SLOT;
       return false;
     }
+    return true;
+  }
+
+  if (method_oop->is_native()) {
+    _result = JVMTI_ERROR_OPAQUE_FRAME;
+    return false;
   }
 
   if (!check_slot_type_no_lvt(_jvf)) {
