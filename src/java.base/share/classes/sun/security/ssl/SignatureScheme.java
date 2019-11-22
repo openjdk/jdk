@@ -274,17 +274,28 @@ enum SignatureScheme {
                 Arrays.asList(handshakeSupportedProtocols);
 
         boolean mediator = true;
-        if (signAlgParams != null) {
-            mediator = signAlgParams.isAvailable;
-        } else {
-            try {
-                Signature.getInstance(algorithm);
-            } catch (Exception e) {
-                mediator = false;
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
-                    SSLLogger.warning(
-                        "Signature algorithm, " + algorithm +
-                        ", is not supported by the underlying providers");
+        // HACK CODE
+        //
+        // An EC provider, for example the SunEC provider, may support
+        // AlgorithmParameters but not KeyPairGenerator or Signature.
+        if ("EC".equals(keyAlgorithm)) {
+            mediator = JsseJce.isEcAvailable();
+        }
+
+        // Check the specific algorithm and parameters.
+        if (mediator) {
+            if (signAlgParams != null) {
+                mediator = signAlgParams.isAvailable;
+            } else {
+                try {
+                    Signature.getInstance(algorithm);
+                } catch (Exception e) {
+                    mediator = false;
+                    if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                        SSLLogger.warning(
+                            "Signature algorithm, " + algorithm +
+                            ", is not supported by the underlying providers");
+                    }
                 }
             }
         }
