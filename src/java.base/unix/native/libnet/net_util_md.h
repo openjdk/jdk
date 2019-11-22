@@ -98,10 +98,6 @@ void NET_ThrowByNameWithLastError(JNIEnv *env, const char *name,
                                   const char *defaultDetail);
 void NET_SetTrafficClass(SOCKETADDRESS *sa, int trafficClass);
 
-#ifdef __linux__
-int kernelIsV24();
-#endif
-
 #ifdef __solaris__
 int net_getParam(char *driver, char *param);
 #endif
