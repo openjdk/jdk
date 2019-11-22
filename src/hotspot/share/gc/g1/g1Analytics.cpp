@@ -28,6 +28,7 @@
 #include "runtime/globals.hpp"
 #include "runtime/os.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/numberSeq.hpp"
 
 // Different defaults for different number of GC threads
@@ -144,17 +145,9 @@ void G1Analytics::report_alloc_rate_ms(double alloc_rate) {
 
 void G1Analytics::compute_pause_time_ratio(double interval_ms, double pause_time_ms) {
   _recent_avg_pause_time_ratio = _recent_gc_times_ms->sum() / interval_ms;
-  if (_recent_avg_pause_time_ratio < 0.0 ||
-      (_recent_avg_pause_time_ratio - 1.0 > 0.0)) {
-    // Clip ratio between 0.0 and 1.0, and continue. This will be fixed in
-    // CR 6902692 by redoing the manner in which the ratio is incrementally computed.
-    if (_recent_avg_pause_time_ratio < 0.0) {
-      _recent_avg_pause_time_ratio = 0.0;
-    } else {
-      assert(_recent_avg_pause_time_ratio - 1.0 > 0.0, "Ctl-point invariant");
-      _recent_avg_pause_time_ratio = 1.0;
-    }
-  }
+
+  // Clamp the result to [0.0 ... 1.0] to filter out nonsensical results due to bad input.
+  _recent_avg_pause_time_ratio = clamp(_recent_avg_pause_time_ratio, 0.0, 1.0);
 
   // Compute the ratio of just this last pause time to the entire time range stored
   // in the vectors. Comparing this pause to the entire range, rather than only the
