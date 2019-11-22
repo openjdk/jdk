@@ -25,9 +25,11 @@
 
 package com.sun.tools.javac.file;
 
+import java.io.IOError;
 import java.io.IOException;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.spi.FileSystemProvider;
 import java.util.ArrayList;
@@ -109,10 +111,14 @@ public class FSInfo {
             for (StringTokenizer st = new StringTokenizer(path);
                  st.hasMoreTokens(); ) {
                 String elt = st.nextToken();
-                Path f = FileSystems.getDefault().getPath(elt);
-                if (!f.isAbsolute() && parent != null)
-                    f = parent.resolve(f).toAbsolutePath();
-                list.add(f);
+                try {
+                    Path f = FileSystems.getDefault().getPath(elt);
+                    if (!f.isAbsolute() && parent != null)
+                        f = parent.resolve(f).toAbsolutePath();
+                    list.add(f);
+                } catch (InvalidPathException | IOError e) {
+                    throw new IOException(e);
+                }
             }
 
             return list;
