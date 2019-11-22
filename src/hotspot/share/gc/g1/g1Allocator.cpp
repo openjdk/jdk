@@ -194,7 +194,7 @@ size_t G1Allocator::unsafe_max_tlab_alloc() {
   if (hr == NULL) {
     return max_tlab;
   } else {
-    return MIN2(MAX2(hr->free(), (size_t) MinTLABSize), max_tlab);
+    return clamp(hr->free(), MinTLABSize, max_tlab);
   }
 }
 

@@ -212,7 +212,7 @@ HeapWord* EpsilonHeap::allocate_new_tlab(size_t min_size,
   }
 
   // Always honor boundaries
-  size = MAX2(min_size, MIN2(_max_tlab_size, size));
+  size = clamp(size, min_size, _max_tlab_size);
 
   // Always honor alignment
   size = align_up(size, MinObjAlignment);

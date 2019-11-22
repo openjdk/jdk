@@ -57,7 +57,7 @@ void TaskQueueStats::print_header(unsigned int line, outputStream* const stream,
 {
   // Use a width w: 1 <= w <= max_width
   const unsigned int max_width = 40;
-  const unsigned int w = MAX2(MIN2(width, max_width), 1U);
+  const unsigned int w = clamp(width, 1u, max_width);
 
   if (line == 0) { // spaces equal in width to the header
     const unsigned int hdr_width = w * last_stat_id + last_stat_id - 1;

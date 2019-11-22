@@ -1611,7 +1611,7 @@ void G1ConcurrentMark::weak_refs_work(bool clear_all_soft_refs) {
     // we utilize all the worker threads we can.
     bool processing_is_mt = rp->processing_is_mt();
     uint active_workers = (processing_is_mt ? _g1h->workers()->active_workers() : 1U);
-    active_workers = MAX2(MIN2(active_workers, _max_num_tasks), 1U);
+    active_workers = clamp(active_workers, 1u, _max_num_tasks);
 
     // Parallel processing task executor.
     G1CMRefProcTaskExecutor par_task_executor(_g1h, this,
