@@ -136,6 +136,11 @@ void HeapRegion::hr_clear(bool keep_remset, bool clear_space, bool locked) {
 
   init_top_at_mark_start();
   if (clear_space) clear(SpaceDecorator::Mangle);
+
+  _evacuation_failed = false;
+  _gc_efficiency = 0.0;
+  _recorded_rs_length = 0;
+  _predicted_elapsed_time_ms = 0.0;
 }
 
 void HeapRegion::clear_cardtable() {
