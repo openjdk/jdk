@@ -1038,16 +1038,11 @@ bool FileMapInfo::open_for_read() {
   }
   int fd = os::open(_full_path, O_RDONLY | O_BINARY, 0);
   if (fd < 0) {
-    if (is_static()) {
-      if (errno == ENOENT) {
-        // Not locating the shared archive is ok.
-        fail_continue("Specified shared archive not found (%s).", _full_path);
-      } else {
-        fail_continue("Failed to open shared archive file (%s).",
-                      os::strerror(errno));
-      }
+    if (errno == ENOENT) {
+      fail_continue("Specified shared archive not found (%s).", _full_path);
     } else {
-      log_warning(cds, dynamic)("specified dynamic archive doesn't exist: %s", _full_path);
+      fail_continue("Failed to open shared archive file (%s).",
+                    os::strerror(errno));
     }
     return false;
   }
