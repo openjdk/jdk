@@ -238,8 +238,8 @@ void HeapRegion::clear_humongous() {
 HeapRegion::HeapRegion(uint hrm_index,
                        G1BlockOffsetTable* bot,
                        MemRegion mr) :
-  _bottom(NULL),
-  _end(NULL),
+  _bottom(mr.start()),
+  _end(mr.end()),
   _top(NULL),
   _compaction_top(NULL),
   _bot_part(bot, this),
@@ -262,19 +262,16 @@ HeapRegion::HeapRegion(uint hrm_index,
   _recorded_rs_length(0), _predicted_elapsed_time_ms(0),
   _node_index(G1NUMA::UnknownNodeIndex)
 {
-  _rem_set = new HeapRegionRemSet(bot, this);
-
-  initialize(mr);
-}
-
-void HeapRegion::initialize(MemRegion mr, bool clear_space, bool mangle_space) {
-  assert(_rem_set->is_empty(), "Remembered set must be empty");
-
   assert(Universe::on_page_boundary(mr.start()) && Universe::on_page_boundary(mr.end()),
          "invalid space boundaries");
 
-  set_bottom(mr.start());
-  set_end(mr.end());
+  _rem_set = new HeapRegionRemSet(bot, this);
+  initialize();
+}
+
+void HeapRegion::initialize(bool clear_space, bool mangle_space) {
+  assert(_rem_set->is_empty(), "Remembered set must be empty");
+
   if (clear_space) {
     clear(mangle_space);
   }

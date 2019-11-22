@@ -67,8 +67,8 @@ class nmethod;
 class HeapRegion : public CHeapObj<mtGC> {
   friend class VMStructs;
 
-  HeapWord* _bottom;
-  HeapWord* _end;
+  HeapWord* const _bottom;
+  HeapWord* const _end;
 
   HeapWord* volatile _top;
   HeapWord* _compaction_top;
@@ -84,10 +84,7 @@ class HeapRegion : public CHeapObj<mtGC> {
   HeapWord* _pre_dummy_top;
 
 public:
-  void set_bottom(HeapWord* value) { _bottom = value; }
   HeapWord* bottom() const         { return _bottom; }
-
-  void set_end(HeapWord* value)    { _end = value; }
   HeapWord* end() const            { return _end;    }
 
   void set_compaction_top(HeapWord* compaction_top) { _compaction_top = compaction_top; }
@@ -202,7 +199,7 @@ private:
   HeapRegionRemSet* _rem_set;
 
   // Cached index of this region in the heap region sequence.
-  uint  _hrm_index;
+  const uint _hrm_index;
 
   HeapRegionType _type;
 
@@ -301,7 +298,7 @@ public:
   // resets the BOT for that heap region.
   // The default values for clear_space means that we will do the clearing if
   // there's clearing to be done ourselves. We also always mangle the space.
-  void initialize(MemRegion mr, bool clear_space = false, bool mangle_space = SpaceDecorator::Mangle);
+  void initialize(bool clear_space = false, bool mangle_space = SpaceDecorator::Mangle);
 
   static int    LogOfHRGrainBytes;
   static int    LogOfHRGrainWords;

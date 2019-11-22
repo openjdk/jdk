@@ -217,10 +217,8 @@ void HeapRegionManager::make_regions_available(uint start, uint num_regions, Wor
     if (G1CollectedHeap::heap()->hr_printer()->is_active()) {
       G1CollectedHeap::heap()->hr_printer()->commit(hr);
     }
-    HeapWord* bottom = G1CollectedHeap::heap()->bottom_addr_for_region(i);
-    MemRegion mr(bottom, bottom + HeapRegion::GrainWords);
 
-    hr->initialize(mr);
+    hr->initialize();
     hr->set_node_index(G1NUMA::numa()->index_for_region(hr));
     insert_into_free_list(at(i));
   }
