@@ -51,6 +51,7 @@ import org.graalvm.compiler.hotspot.GraalHotSpotVMConfig;
 import org.graalvm.compiler.hotspot.HotSpotGraalCompilerFactory;
 import org.graalvm.compiler.hotspot.HotSpotGraalOptionValues;
 import org.graalvm.compiler.hotspot.HotSpotGraalRuntime;
+import org.graalvm.compiler.hotspot.HotSpotGraalRuntime.HotSpotGC;
 import org.graalvm.compiler.hotspot.HotSpotHostBackend;
 import org.graalvm.compiler.hotspot.meta.HotSpotInvokeDynamicPlugin;
 import org.graalvm.compiler.java.GraphBuilderPhase;
@@ -223,7 +224,11 @@ public final class Main {
                 System.gc();
             }
 
-            int gc = runtime.getGarbageCollector().ordinal() + 1;
+            HotSpotGC graal_gc = runtime.getGarbageCollector();
+            int def = graal_gc.ordinal() + 1;
+            String name = "CollectedHeap::" + graal_gc.name();
+            int gc = graalHotSpotVMConfig.getConstant(name, Integer.class, def);
+
             BinaryContainer binaryContainer = new BinaryContainer(graalOptions, graalHotSpotVMConfig, graphBuilderConfig, gc, JVM_VERSION);
             DataBuilder dataBuilder = new DataBuilder(this, backend, classes, binaryContainer);
 
