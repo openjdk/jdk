@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -126,9 +126,6 @@ public class AttributeWriter extends BasicWriter
 
     @Override
     public Void visitDefault(DefaultAttribute attr, Void ignore) {
-        if (attr.reason != null) {
-            report(attr.reason);
-        }
         byte[] data = attr.info;
         int i = 0;
         int j = 0;
@@ -140,7 +137,11 @@ public class AttributeWriter extends BasicWriter
             print("attribute name = #" + attr.attribute_name_index);
         }
         print(": ");
-        println("length = 0x" + toHex(attr.info.length));
+        print("length = 0x" + toHex(attr.info.length));
+        if (attr.reason != null) {
+            print(" (" + attr.reason + ")");
+        }
+        println();
 
         print("   ");
 
