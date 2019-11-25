@@ -203,6 +203,8 @@ public final class JVM {
      * Call to invoke event tagging and retransformation of the passed classes
      *
      * @param classes
+     *
+     * @throws IllegalStateException if wrong JVMTI phase.
      */
     public native synchronized void retransformClasses(Class<?>[] classes);
 
