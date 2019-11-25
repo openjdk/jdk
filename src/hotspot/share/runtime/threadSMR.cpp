@@ -170,7 +170,7 @@ inline void ThreadsSMRSupport::update_java_thread_list_max(uint new_value) {
 }
 
 inline ThreadsList* ThreadsSMRSupport::xchg_java_thread_list(ThreadsList* new_list) {
-  return (ThreadsList*)Atomic::xchg(new_list, &_java_thread_list);
+  return (ThreadsList*)Atomic::xchg(&_java_thread_list, new_list);
 }
 
 // Hash table of pointers found by a scan. Used for collecting hazard

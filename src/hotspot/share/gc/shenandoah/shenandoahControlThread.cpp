@@ -92,7 +92,7 @@ void ShenandoahControlThread::run_service() {
     bool implicit_gc_requested = _gc_requested.is_set() && !is_explicit_gc(_requested_gc_cause);
 
     // This control loop iteration have seen this much allocations.
-    size_t allocs_seen = Atomic::xchg<size_t>(0, &_allocs_seen);
+    size_t allocs_seen = Atomic::xchg(&_allocs_seen, (size_t)0);
 
     // Choose which GC mode to run in. The block below should select a single mode.
     GCMode mode = none;

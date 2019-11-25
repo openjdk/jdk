@@ -197,15 +197,15 @@ inline D Atomic::PlatformAdd<8>::add_and_fetch(D volatile* dest, I add_value,
 
 template<>
 template<typename T>
-inline T Atomic::PlatformXchg<4>::operator()(T exchange_value,
-                                             T volatile* dest,
+inline T Atomic::PlatformXchg<4>::operator()(T volatile* dest,
+                                             T exchange_value,
                                              atomic_memory_order order) const {
   STATIC_ASSERT(4 == sizeof(T));
 #ifdef ARM
-  return xchg_using_helper<int>(arm_lock_test_and_set, exchange_value, dest);
+  return xchg_using_helper<int>(arm_lock_test_and_set, dest, exchange_value);
 #else
 #ifdef M68K
-  return xchg_using_helper<int>(m68k_lock_test_and_set, exchange_value, dest);
+  return xchg_using_helper<int>(m68k_lock_test_and_set, dest, exchange_value);
 #else
   // __sync_lock_test_and_set is a bizarrely named atomic exchange
   // operation.  Note that some platforms only support this with the
@@ -224,8 +224,8 @@ inline T Atomic::PlatformXchg<4>::operator()(T exchange_value,
 
 template<>
 template<typename T>
-inline T Atomic::PlatformXchg<8>::operator()(T exchange_value,
-                                             T volatile* dest,
+inline T Atomic::PlatformXchg<8>::operator()(T volatile* dest,
+                                             T exchange_value,
                                              atomic_memory_order order) const {
   STATIC_ASSERT(8 == sizeof(T));
   T result = __sync_lock_test_and_set (dest, exchange_value);

@@ -145,7 +145,7 @@ public:
     static oop oop_atomic_cmpxchg_in_heap_impl(oop new_value, T* addr, oop compare_value);
 
     template <typename T>
-    static oop oop_atomic_xchg_in_heap_impl(oop new_value, T* addr);
+    static oop oop_atomic_xchg_in_heap_impl(T* addr, oop new_value);
 
   public:
     // Heap oop accesses. These accessors get resolved when
@@ -164,8 +164,8 @@ public:
     static oop oop_atomic_cmpxchg_in_heap_at(oop new_value, oop base, ptrdiff_t offset, oop compare_value);
 
     template <typename T>
-    static oop oop_atomic_xchg_in_heap(oop new_value, T* addr);
-    static oop oop_atomic_xchg_in_heap_at(oop new_value, oop base, ptrdiff_t offset);
+    static oop oop_atomic_xchg_in_heap(T* addr, oop new_value);
+    static oop oop_atomic_xchg_in_heap_at(oop base, ptrdiff_t offset, oop new_value);
 
     template <typename T>
     static bool oop_arraycopy_in_heap(arrayOop src_obj, size_t src_offset_in_bytes, T* src_raw,
@@ -187,7 +187,7 @@ public:
     static oop oop_atomic_cmpxchg_not_in_heap(oop new_value, T* addr, oop compare_value);
 
     template <typename T>
-    static oop oop_atomic_xchg_not_in_heap(oop new_value, T* addr);
+    static oop oop_atomic_xchg_not_in_heap(T* addr, oop new_value);
 
   };
 

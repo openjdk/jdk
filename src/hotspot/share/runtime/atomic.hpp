@@ -132,8 +132,8 @@ public:
   // The type T must be either a pointer type convertible to or equal
   // to D, an integral/enum type equal to D, or a type equal to D that
   // is primitive convertible using PrimitiveConversions.
-  template<typename T, typename D>
-  inline static D xchg(T exchange_value, volatile D* dest,
+  template<typename D, typename T>
+  inline static D xchg(volatile D* dest, T exchange_value,
                        atomic_memory_order order = memory_order_conservative);
 
   // Performs atomic compare of *dest and compare_value, and exchanges
@@ -341,7 +341,7 @@ private:
   // checking and limited conversions around calls to the
   // platform-specific implementation layer provided by
   // PlatformXchg.
-  template<typename T, typename D, typename Enable = void>
+  template<typename D, typename T, typename Enable = void>
   struct XchgImpl;
 
   // Platform-specific implementation of xchg.  Support for sizes
@@ -353,11 +353,11 @@ private:
   // - platform_xchg is an object of type PlatformXchg<sizeof(T)>.
   //
   // Then
-  //   platform_xchg(exchange_value, dest)
+  //   platform_xchg(dest, exchange_value)
   // must be a valid expression, returning a result convertible to T.
   //
   // A default definition is provided, which declares a function template
-  //   T operator()(T, T volatile*, T, atomic_memory_order) const
+  //   T operator()(T volatile*, T, atomic_memory_order) const
   //
   // For each required size, a platform must either provide an
   // appropriate definition of that function, or must entirely
@@ -373,8 +373,8 @@ private:
   // helper function.
   template<typename Type, typename Fn, typename T>
   static T xchg_using_helper(Fn fn,
-                             T exchange_value,
-                             T volatile* dest);
+                             T volatile* dest,
+                             T exchange_value);
 };
 
 template<typename From, typename To>
@@ -593,8 +593,8 @@ struct Atomic::CmpxchgByteUsingInt {
 template<size_t byte_size>
 struct Atomic::PlatformXchg {
   template<typename T>
-  T operator()(T exchange_value,
-               T volatile* dest,
+  T operator()(T volatile* dest,
+               T exchange_value,
                atomic_memory_order order) const;
 };
 
@@ -891,9 +891,9 @@ struct Atomic::XchgImpl<
   T, T,
   typename EnableIf<IsIntegral<T>::value || IsRegisteredEnum<T>::value>::type>
 {
-  T operator()(T exchange_value, T volatile* dest, atomic_memory_order order) const {
+  T operator()(T volatile* dest, T exchange_value, atomic_memory_order order) const {
     // Forward to the platform handler for the size of T.
-    return PlatformXchg<sizeof(T)>()(exchange_value, dest, order);
+    return PlatformXchg<sizeof(T)>()(dest, exchange_value, order);
   }
 };
 
@@ -902,15 +902,15 @@ struct Atomic::XchgImpl<
 // The exchange_value must be implicitly convertible to the
 // destination's type; it must be type-correct to store the
 // exchange_value in the destination.
-template<typename T, typename D>
+template<typename D, typename T>
 struct Atomic::XchgImpl<
-  T*, D*,
+  D*, T*,
   typename EnableIf<Atomic::IsPointerConvertible<T*, D*>::value>::type>
 {
-  D* operator()(T* exchange_value, D* volatile* dest, atomic_memory_order order) const {
+  D* operator()(D* volatile* dest, T* exchange_value, atomic_memory_order order) const {
     // Allow derived to base conversion, and adding cv-qualifiers.
     D* new_value = exchange_value;
-    return PlatformXchg<sizeof(D*)>()(new_value, dest, order);
+    return PlatformXchg<sizeof(D*)>()(dest, new_value, order);
   }
 };
 
@@ -926,30 +926,31 @@ struct Atomic::XchgImpl<
   T, T,
   typename EnableIf<PrimitiveConversions::Translate<T>::value>::type>
 {
-  T operator()(T exchange_value, T volatile* dest, atomic_memory_order order) const {
+  T operator()(T volatile* dest, T exchange_value, atomic_memory_order order) const {
     typedef PrimitiveConversions::Translate<T> Translator;
     typedef typename Translator::Decayed Decayed;
     STATIC_ASSERT(sizeof(T) == sizeof(Decayed));
     return Translator::recover(
-      xchg(Translator::decay(exchange_value),
-           reinterpret_cast<Decayed volatile*>(dest),
+      xchg(reinterpret_cast<Decayed volatile*>(dest),
+           Translator::decay(exchange_value),
            order));
   }
 };
 
 template<typename Type, typename Fn, typename T>
 inline T Atomic::xchg_using_helper(Fn fn,
-                                   T exchange_value,
-                                   T volatile* dest) {
+                                   T volatile* dest,
+                                   T exchange_value) {
   STATIC_ASSERT(sizeof(Type) == sizeof(T));
+  // Notice the swapped order of arguments. Change when/if stubs are rewritten.
   return PrimitiveConversions::cast<T>(
     fn(PrimitiveConversions::cast<Type>(exchange_value),
        reinterpret_cast<Type volatile*>(dest)));
 }
 
-template<typename T, typename D>
-inline D Atomic::xchg(T exchange_value, volatile D* dest, atomic_memory_order order) {
-  return XchgImpl<T, D>()(exchange_value, dest, order);
+template<typename D, typename T>
+inline D Atomic::xchg(volatile D* dest, T exchange_value, atomic_memory_order order) {
+  return XchgImpl<D, T>()(dest, exchange_value, order);
 }
 
 #endif // SHARE_RUNTIME_ATOMIC_HPP

@@ -81,7 +81,7 @@ public:
     template <typename T>
     static oop oop_atomic_cmpxchg_in_heap(oop new_value, T* addr, oop compare_value);
     template <typename T>
-    static oop oop_atomic_xchg_in_heap(oop new_value, T* addr);
+    static oop oop_atomic_xchg_in_heap(T* addr, oop new_value);
 
     template <typename T>
     static bool oop_arraycopy_in_heap(arrayOop src_obj, size_t src_offset_in_bytes, T* src_raw,
@@ -94,8 +94,8 @@ public:
       oop_store_in_heap(AccessInternal::oop_field_addr<decorators>(base, offset), value);
     }
 
-    static oop oop_atomic_xchg_in_heap_at(oop new_value, oop base, ptrdiff_t offset) {
-      return oop_atomic_xchg_in_heap(new_value, AccessInternal::oop_field_addr<decorators>(base, offset));
+    static oop oop_atomic_xchg_in_heap_at(oop base, ptrdiff_t offset, oop new_value) {
+      return oop_atomic_xchg_in_heap(AccessInternal::oop_field_addr<decorators>(base, offset), new_value);
     }
 
     static oop oop_atomic_cmpxchg_in_heap_at(oop new_value, oop base, ptrdiff_t offset, oop compare_value) {

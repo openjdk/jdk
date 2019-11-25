@@ -171,9 +171,9 @@ public:
   }
 
   template <typename T>
-  static inline T atomic_xchg_at(T new_value, oop base, ptrdiff_t offset) {
+  static inline T atomic_xchg_at(oop base, ptrdiff_t offset, T new_value) {
     verify_primitive_decorators<atomic_xchg_mo_decorators>();
-    return AccessInternal::atomic_xchg_at<decorators>(new_value, base, offset);
+    return AccessInternal::atomic_xchg_at<decorators>(base, offset, new_value);
   }
 
   // Oop heap accesses
@@ -200,11 +200,11 @@ public:
   }
 
   template <typename T>
-  static inline T oop_atomic_xchg_at(T new_value, oop base, ptrdiff_t offset) {
+  static inline T oop_atomic_xchg_at(oop base, ptrdiff_t offset, T new_value) {
     verify_heap_oop_decorators<atomic_xchg_mo_decorators>();
     typedef typename AccessInternal::OopOrNarrowOop<T>::type OopType;
     OopType new_oop_value = new_value;
-    return AccessInternal::atomic_xchg_at<decorators | INTERNAL_VALUE_IS_OOP>(new_oop_value, base, offset);
+    return AccessInternal::atomic_xchg_at<decorators | INTERNAL_VALUE_IS_OOP>(base, offset, new_oop_value);
   }
 
   // Clone an object from src to dst
@@ -233,9 +233,9 @@ public:
   }
 
   template <typename P, typename T>
-  static inline T atomic_xchg(T new_value, P* addr) {
+  static inline T atomic_xchg(P* addr, T new_value) {
     verify_primitive_decorators<atomic_xchg_mo_decorators>();
-    return AccessInternal::atomic_xchg<decorators>(new_value, addr);
+    return AccessInternal::atomic_xchg<decorators>(addr, new_value);
   }
 
   // Oop accesses
@@ -263,11 +263,11 @@ public:
   }
 
   template <typename P, typename T>
-  static inline T oop_atomic_xchg(T new_value, P* addr) {
+  static inline T oop_atomic_xchg(P* addr, T new_value) {
     verify_oop_decorators<atomic_xchg_mo_decorators>();
     typedef typename AccessInternal::OopOrNarrowOop<T>::type OopType;
     OopType new_oop_value = new_value;
-    return AccessInternal::atomic_xchg<decorators | INTERNAL_VALUE_IS_OOP>(new_oop_value, addr);
+    return AccessInternal::atomic_xchg<decorators | INTERNAL_VALUE_IS_OOP>(addr, new_oop_value);
   }
 
   static oop resolve(oop obj) {

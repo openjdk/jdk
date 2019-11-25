@@ -103,17 +103,17 @@ inline T RawAccessBarrier<decorators>::oop_atomic_cmpxchg_at(T new_value, oop ba
 
 template <DecoratorSet decorators>
 template <typename T>
-inline T RawAccessBarrier<decorators>::oop_atomic_xchg(T new_value, void* addr) {
+inline T RawAccessBarrier<decorators>::oop_atomic_xchg(void* addr, T new_value) {
   typedef typename AccessInternal::EncodedType<decorators, T>::type Encoded;
   Encoded encoded_new = encode(new_value);
-  Encoded encoded_result = atomic_xchg(encoded_new, reinterpret_cast<Encoded*>(addr));
+  Encoded encoded_result = atomic_xchg(reinterpret_cast<Encoded*>(addr), encoded_new);
   return decode<T>(encoded_result);
 }
 
 template <DecoratorSet decorators>
 template <typename T>
-inline T RawAccessBarrier<decorators>::oop_atomic_xchg_at(T new_value, oop base, ptrdiff_t offset) {
-  return oop_atomic_xchg(new_value, field_addr(base, offset));
+inline T RawAccessBarrier<decorators>::oop_atomic_xchg_at(oop base, ptrdiff_t offset, T new_value) {
+  return oop_atomic_xchg(field_addr(base, offset), new_value);
 }
 
 template <DecoratorSet decorators>
@@ -203,9 +203,9 @@ template <DecoratorSet decorators>
 template <DecoratorSet ds, typename T>
 inline typename EnableIf<
   HasDecorator<ds, MO_SEQ_CST>::value, T>::type
-RawAccessBarrier<decorators>::atomic_xchg_internal(T new_value, void* addr) {
-  return Atomic::xchg(new_value,
-                      reinterpret_cast<volatile T*>(addr));
+RawAccessBarrier<decorators>::atomic_xchg_internal(void* addr, T new_value) {
+  return Atomic::xchg(reinterpret_cast<volatile T*>(addr),
+                      new_value);
 }
 
 // For platforms that do not have native support for wide atomics,
@@ -216,9 +216,9 @@ template <DecoratorSet ds>
 template <DecoratorSet decorators, typename T>
 inline typename EnableIf<
   AccessInternal::PossiblyLockedAccess<T>::value, T>::type
-RawAccessBarrier<ds>::atomic_xchg_maybe_locked(T new_value, void* addr) {
+RawAccessBarrier<ds>::atomic_xchg_maybe_locked(void* addr, T new_value) {
   if (!AccessInternal::wide_atomic_needs_locking()) {
-    return atomic_xchg_internal<ds>(new_value, addr);
+    return atomic_xchg_internal<ds>(addr, new_value);
   } else {
     AccessInternal::AccessLocker access_lock;
     volatile T* p = reinterpret_cast<volatile T*>(addr);

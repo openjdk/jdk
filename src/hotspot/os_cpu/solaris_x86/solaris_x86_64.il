@@ -67,13 +67,15 @@
       addq     %rdi, %rax
       .end
 
-  // Support for jint Atomic::xchg(jint exchange_value, volatile jint* dest).
+  // Implementation of jint _Atomic_xchg(jint exchange_value, volatile jint* dest)
+  // used by Atomic::xchg(volatile jint* dest, jint exchange_value)
       .inline _Atomic_xchg,2
       xchgl    (%rsi), %edi
       movl     %edi, %eax
       .end
 
-  // Support for jlong Atomic::xchg(jlong exchange_value, volatile jlong* dest).
+  // Implementation of jlong _Atomic_xchg(jlong exchange_value, volatile jlong* dest)
+  // used by Atomic::xchg(volatile jlong* dest, jlong exchange_value)
       .inline _Atomic_xchg_long,2
       xchgq    (%rsi), %rdi
       movq     %rdi, %rax

@@ -103,7 +103,7 @@ public:
   // list of elements.  Acts as a full memory barrier.
   // postcondition: empty()
   T* pop_all() {
-    return Atomic::xchg((T*)NULL, &_top);
+    return Atomic::xchg(&_top, (T*)NULL);
   }
 
   // Atomically adds value to the top of this stack.  Acts as a full

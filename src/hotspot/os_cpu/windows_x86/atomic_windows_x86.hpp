@@ -79,11 +79,11 @@ inline D Atomic::PlatformAdd<8>::add_and_fetch(D volatile* dest, I add_value,
 #define DEFINE_STUB_XCHG(ByteSize, StubType, StubName)                  \
   template<>                                                            \
   template<typename T>                                                  \
-  inline T Atomic::PlatformXchg<ByteSize>::operator()(T exchange_value, \
-                                                      T volatile* dest, \
+  inline T Atomic::PlatformXchg<ByteSize>::operator()(T volatile* dest, \
+                                                      T exchange_value, \
                                                       atomic_memory_order order) const { \
     STATIC_ASSERT(ByteSize == sizeof(T));                               \
-    return xchg_using_helper<StubType>(StubName, exchange_value, dest); \
+    return xchg_using_helper<StubType>(StubName, dest, exchange_value); \
   }
 
 DEFINE_STUB_XCHG(4, int32_t, os::atomic_xchg_func)
@@ -127,8 +127,8 @@ inline D Atomic::PlatformAdd<4>::add_and_fetch(D volatile* dest, I add_value,
 
 template<>
 template<typename T>
-inline T Atomic::PlatformXchg<4>::operator()(T exchange_value,
-                                             T volatile* dest,
+inline T Atomic::PlatformXchg<4>::operator()(T volatile* dest,
+                                             T exchange_value,
                                              atomic_memory_order order) const {
   STATIC_ASSERT(4 == sizeof(T));
   // alternative for InterlockedExchange

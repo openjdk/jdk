@@ -552,7 +552,8 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
-  // Support for jint atomic::xchg(jint exchange_value, volatile jint* dest)
+  // Implementation of jint atomic_xchg(jint add_value, volatile jint* dest)
+  // used by Atomic::xchg(volatile jint* dest, jint exchange_value)
   //
   // Arguments :
   //    c_rarg0: exchange_value
@@ -571,7 +572,8 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
-  // Support for intptr_t atomic::xchg_long(jlong exchange_value, volatile jlong* dest)
+  // Implementation of intptr_t atomic_xchg(jlong add_value, volatile jlong* dest)
+  // used by Atomic::xchg(volatile jlong* dest, jlong exchange_value)
   //
   // Arguments :
   //    c_rarg0: exchange_value

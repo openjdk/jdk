@@ -1900,7 +1900,7 @@ nmethod* nmethod::oops_do_try_add_to_list_as_weak_done() {
          extract_state(_oops_do_mark_link) == claim_strong_request_tag,
          "must be but is nmethod " PTR_FORMAT " %u", p2i(extract_nmethod(_oops_do_mark_link)), extract_state(_oops_do_mark_link));
 
-  nmethod* old_head = Atomic::xchg(this, &_oops_do_mark_nmethods);
+  nmethod* old_head = Atomic::xchg(&_oops_do_mark_nmethods, this);
   // Self-loop if needed.
   if (old_head == NULL) {
     old_head = this;
@@ -1917,7 +1917,7 @@ nmethod* nmethod::oops_do_try_add_to_list_as_weak_done() {
 void nmethod::oops_do_add_to_list_as_strong_done() {
   assert(SafepointSynchronize::is_at_safepoint(), "only at safepoint");
 
-  nmethod* old_head = Atomic::xchg(this, &_oops_do_mark_nmethods);
+  nmethod* old_head = Atomic::xchg(&_oops_do_mark_nmethods, this);
   // Self-loop if needed.
   if (old_head == NULL) {
     old_head = this;

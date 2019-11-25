@@ -511,7 +511,7 @@ bool Universe::has_reference_pending_list() {
 
 oop Universe::swap_reference_pending_list(oop list) {
   assert_pll_locked(is_locked);
-  return Atomic::xchg(list, &_reference_pending_list);
+  return Atomic::xchg(&_reference_pending_list, list);
 }
 
 #undef assert_pll_locked

@@ -350,7 +350,7 @@ public:
   static void disable_compilation_forever() {
     UseCompiler               = false;
     AlwaysCompileLoopMethods  = false;
-    Atomic::xchg(jint(shutdown_compilation), &_should_compile_new_jobs);
+    Atomic::xchg(&_should_compile_new_jobs, jint(shutdown_compilation));
   }
 
   static bool is_compilation_disabled_forever() {

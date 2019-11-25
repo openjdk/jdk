@@ -90,16 +90,16 @@ namespace AccessInternal {
   template <class GCBarrierType, DecoratorSet decorators>
   struct PostRuntimeDispatch<GCBarrierType, BARRIER_ATOMIC_XCHG, decorators>: public AllStatic {
     template <typename T>
-    static T access_barrier(T new_value, void* addr) {
-      return GCBarrierType::atomic_xchg_in_heap(new_value, reinterpret_cast<T*>(addr));
+    static T access_barrier(void* addr, T new_value) {
+      return GCBarrierType::atomic_xchg_in_heap(reinterpret_cast<T*>(addr), new_value);
     }
 
-    static oop oop_access_barrier(oop new_value, void* addr) {
+    static oop oop_access_barrier(void* addr, oop new_value) {
       typedef typename HeapOopType<decorators>::type OopType;
       if (HasDecorator<decorators, IN_HEAP>::value) {
-        return GCBarrierType::oop_atomic_xchg_in_heap(new_value, reinterpret_cast<OopType*>(addr));
+        return GCBarrierType::oop_atomic_xchg_in_heap(reinterpret_cast<OopType*>(addr), new_value);
       } else {
-        return GCBarrierType::oop_atomic_xchg_not_in_heap(new_value, reinterpret_cast<OopType*>(addr));
+        return GCBarrierType::oop_atomic_xchg_not_in_heap(reinterpret_cast<OopType*>(addr), new_value);
       }
     }
   };
@@ -171,12 +171,12 @@ namespace AccessInternal {
   template <class GCBarrierType, DecoratorSet decorators>
   struct PostRuntimeDispatch<GCBarrierType, BARRIER_ATOMIC_XCHG_AT, decorators>: public AllStatic {
     template <typename T>
-    static T access_barrier(T new_value, oop base, ptrdiff_t offset) {
-      return GCBarrierType::atomic_xchg_in_heap_at(new_value, base, offset);
+    static T access_barrier(oop base, ptrdiff_t offset, T new_value) {
+      return GCBarrierType::atomic_xchg_in_heap_at(base, offset, new_value);
     }
 
-    static oop oop_access_barrier(oop new_value, oop base, ptrdiff_t offset) {
-      return GCBarrierType::oop_atomic_xchg_in_heap_at(new_value, base, offset);
+    static oop oop_access_barrier(oop base, ptrdiff_t offset, oop new_value) {
+      return GCBarrierType::oop_atomic_xchg_in_heap_at(base, offset, new_value);
     }
   };
 
@@ -323,17 +323,17 @@ namespace AccessInternal {
   }
 
   template <DecoratorSet decorators, typename T>
-  T RuntimeDispatch<decorators, T, BARRIER_ATOMIC_XCHG>::atomic_xchg_init(T new_value, void* addr) {
+  T RuntimeDispatch<decorators, T, BARRIER_ATOMIC_XCHG>::atomic_xchg_init(void* addr, T new_value) {
     func_t function = BarrierResolver<decorators, func_t, BARRIER_ATOMIC_XCHG>::resolve_barrier();
     _atomic_xchg_func = function;
-    return function(new_value, addr);
+    return function(addr, new_value);
   }
 
   template <DecoratorSet decorators, typename T>
-  T RuntimeDispatch<decorators, T, BARRIER_ATOMIC_XCHG_AT>::atomic_xchg_at_init(T new_value, oop base, ptrdiff_t offset) {
+  T RuntimeDispatch<decorators, T, BARRIER_ATOMIC_XCHG_AT>::atomic_xchg_at_init(oop base, ptrdiff_t offset, T new_value) {
     func_t function = BarrierResolver<decorators, func_t, BARRIER_ATOMIC_XCHG_AT>::resolve_barrier();
     _atomic_xchg_at_func = function;
-    return function(new_value, base, offset);
+    return function(base, offset, new_value);
   }
 
   template <DecoratorSet decorators, typename T>

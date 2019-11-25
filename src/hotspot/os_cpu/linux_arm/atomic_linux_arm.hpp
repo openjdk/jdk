@@ -86,11 +86,11 @@ inline D Atomic::PlatformAdd<4>::add_and_fetch(D volatile* dest, I add_value,
 
 template<>
 template<typename T>
-inline T Atomic::PlatformXchg<4>::operator()(T exchange_value,
-                                             T volatile* dest,
+inline T Atomic::PlatformXchg<4>::operator()(T volatile* dest,
+                                             T exchange_value,
                                              atomic_memory_order order) const {
   STATIC_ASSERT(4 == sizeof(T));
-  return xchg_using_helper<int32_t>(os::atomic_xchg_func, exchange_value, dest);
+  return xchg_using_helper<int32_t>(os::atomic_xchg_func, dest, exchange_value);
 }
 
 

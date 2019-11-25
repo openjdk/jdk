@@ -139,7 +139,7 @@ bool JfrPostBox::is_empty() const {
 
 int JfrPostBox::collect() {
   // get pending and reset to 0
-  const int messages = Atomic::xchg(0, &_messages);
+  const int messages = Atomic::xchg(&_messages, 0);
   if (check_waiters(messages)) {
     _has_waiters = true;
     assert(JfrMsg_lock->owned_by_self(), "incrementing _msg_read_serial is protected by JfrMsg_lock");

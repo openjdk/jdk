@@ -998,7 +998,7 @@ static void InduceScavenge(Thread* self, const char * Whence) {
   // of active monitors passes the specified threshold.
   // TODO: assert thread state is reasonable
 
-  if (ForceMonitorScavenge == 0 && Atomic::xchg (1, &ForceMonitorScavenge) == 0) {
+  if (ForceMonitorScavenge == 0 && Atomic::xchg(&ForceMonitorScavenge, 1) == 0) {
     // Induce a 'null' safepoint to scavenge monitors
     // Must VM_Operation instance be heap allocated as the op will be enqueue and posted
     // to the VMthread and have a lifespan longer than that of this activation record.
