@@ -23,7 +23,7 @@
 
 #include "precompiled.hpp"
 #include "gc/z/zResurrection.hpp"
-#include "runtime/orderAccess.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/safepoint.hpp"
 #include "utilities/debug.hpp"
 
@@ -35,8 +35,8 @@ void ZResurrection::block() {
 }
 
 void ZResurrection::unblock() {
-  // We use a storestore barrier to make sure all healed
-  // oops are visible before we unblock resurrection.
-  OrderAccess::storestore();
-  _blocked = false;
+  // No need for anything stronger than a relaxed store here.
+  // The preceeding handshake makes sure that all non-strong
+  // oops have already been healed at this point.
+  Atomic::store(&_blocked, false);
 }
