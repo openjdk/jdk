@@ -142,7 +142,7 @@ public:
     typedef BarrierSet::AccessBarrier<decorators, BarrierSetT> Raw;
 
     template <typename T>
-    static oop oop_atomic_cmpxchg_in_heap_impl(oop new_value, T* addr, oop compare_value);
+    static oop oop_atomic_cmpxchg_in_heap_impl(T* addr, oop compare_value, oop new_value);
 
     template <typename T>
     static oop oop_atomic_xchg_in_heap_impl(T* addr, oop new_value);
@@ -160,8 +160,8 @@ public:
     static void oop_store_in_heap_at(oop base, ptrdiff_t offset, oop value);
 
     template <typename T>
-    static oop oop_atomic_cmpxchg_in_heap(oop new_value, T* addr, oop compare_value);
-    static oop oop_atomic_cmpxchg_in_heap_at(oop new_value, oop base, ptrdiff_t offset, oop compare_value);
+    static oop oop_atomic_cmpxchg_in_heap(T* addr, oop compare_value, oop new_value);
+    static oop oop_atomic_cmpxchg_in_heap_at(oop base, ptrdiff_t offset, oop compare_value, oop new_value);
 
     template <typename T>
     static oop oop_atomic_xchg_in_heap(T* addr, oop new_value);
@@ -184,7 +184,7 @@ public:
     static void oop_store_not_in_heap(T* addr, oop value);
 
     template <typename T>
-    static oop oop_atomic_cmpxchg_not_in_heap(oop new_value, T* addr, oop compare_value);
+    static oop oop_atomic_cmpxchg_not_in_heap(T* addr, oop compare_value, oop new_value);
 
     template <typename T>
     static oop oop_atomic_xchg_not_in_heap(T* addr, oop new_value);

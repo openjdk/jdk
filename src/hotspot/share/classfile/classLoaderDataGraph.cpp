@@ -676,7 +676,7 @@ Klass* ClassLoaderDataGraphKlassIteratorAtomic::next_klass() {
   while (head != NULL) {
     Klass* next = next_klass_in_cldg(head);
 
-    Klass* old_head = Atomic::cmpxchg(next, &_next_klass, head);
+    Klass* old_head = Atomic::cmpxchg(&_next_klass, head, next);
 
     if (old_head == head) {
       return head; // Won the CAS.

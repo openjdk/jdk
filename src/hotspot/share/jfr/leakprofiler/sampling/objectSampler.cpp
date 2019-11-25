@@ -93,7 +93,7 @@ static volatile int _lock = 0;
 
 ObjectSampler* ObjectSampler::acquire() {
   assert(is_created(), "invariant");
-  while (Atomic::cmpxchg(1, &_lock, 0) == 1) {}
+  while (Atomic::cmpxchg(&_lock, 0, 1) == 1) {}
   return _instance;
 }
 

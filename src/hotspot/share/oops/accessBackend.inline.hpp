@@ -85,20 +85,20 @@ inline T RawAccessBarrier<decorators>::oop_load_at(oop base, ptrdiff_t offset) {
 
 template <DecoratorSet decorators>
 template <typename T>
-inline T RawAccessBarrier<decorators>::oop_atomic_cmpxchg(T new_value, void* addr, T compare_value) {
+inline T RawAccessBarrier<decorators>::oop_atomic_cmpxchg(void* addr, T compare_value, T new_value) {
   typedef typename AccessInternal::EncodedType<decorators, T>::type Encoded;
   Encoded encoded_new = encode(new_value);
   Encoded encoded_compare = encode(compare_value);
-  Encoded encoded_result = atomic_cmpxchg(encoded_new,
-                                          reinterpret_cast<Encoded*>(addr),
-                                          encoded_compare);
+  Encoded encoded_result = atomic_cmpxchg(reinterpret_cast<Encoded*>(addr),
+                                          encoded_compare,
+                                          encoded_new);
   return decode<T>(encoded_result);
 }
 
 template <DecoratorSet decorators>
 template <typename T>
-inline T RawAccessBarrier<decorators>::oop_atomic_cmpxchg_at(T new_value, oop base, ptrdiff_t offset, T compare_value) {
-  return oop_atomic_cmpxchg(new_value, field_addr(base, offset), compare_value);
+inline T RawAccessBarrier<decorators>::oop_atomic_cmpxchg_at(oop base, ptrdiff_t offset, T compare_value, T new_value) {
+  return oop_atomic_cmpxchg(field_addr(base, offset), compare_value, new_value);
 }
 
 template <DecoratorSet decorators>
@@ -181,10 +181,10 @@ template <DecoratorSet decorators>
 template <DecoratorSet ds, typename T>
 inline typename EnableIf<
   HasDecorator<ds, MO_RELAXED>::value, T>::type
-RawAccessBarrier<decorators>::atomic_cmpxchg_internal(T new_value, void* addr, T compare_value) {
-  return Atomic::cmpxchg(new_value,
-                         reinterpret_cast<volatile T*>(addr),
+RawAccessBarrier<decorators>::atomic_cmpxchg_internal(void* addr, T compare_value, T new_value) {
+  return Atomic::cmpxchg(reinterpret_cast<volatile T*>(addr),
                          compare_value,
+                         new_value,
                          memory_order_relaxed);
 }
 
@@ -192,10 +192,10 @@ template <DecoratorSet decorators>
 template <DecoratorSet ds, typename T>
 inline typename EnableIf<
   HasDecorator<ds, MO_SEQ_CST>::value, T>::type
-RawAccessBarrier<decorators>::atomic_cmpxchg_internal(T new_value, void* addr, T compare_value) {
-  return Atomic::cmpxchg(new_value,
-                         reinterpret_cast<volatile T*>(addr),
+RawAccessBarrier<decorators>::atomic_cmpxchg_internal(void* addr, T compare_value, T new_value) {
+  return Atomic::cmpxchg(reinterpret_cast<volatile T*>(addr),
                          compare_value,
+                         new_value,
                          memory_order_conservative);
 }
 
@@ -232,9 +232,9 @@ template <DecoratorSet ds>
 template <DecoratorSet decorators, typename T>
 inline typename EnableIf<
   AccessInternal::PossiblyLockedAccess<T>::value, T>::type
-RawAccessBarrier<ds>::atomic_cmpxchg_maybe_locked(T new_value, void* addr, T compare_value) {
+RawAccessBarrier<ds>::atomic_cmpxchg_maybe_locked(void* addr, T compare_value, T new_value) {
   if (!AccessInternal::wide_atomic_needs_locking()) {
-    return atomic_cmpxchg_internal<ds>(new_value, addr, compare_value);
+    return atomic_cmpxchg_internal<ds>(addr, compare_value, new_value);
   } else {
     AccessInternal::AccessLocker access_lock;
     volatile T* p = reinterpret_cast<volatile T*>(addr);

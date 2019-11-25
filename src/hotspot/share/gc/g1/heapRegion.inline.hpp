@@ -61,7 +61,7 @@ inline HeapWord* HeapRegion::par_allocate_impl(size_t min_word_size,
     size_t want_to_allocate = MIN2(available, desired_word_size);
     if (want_to_allocate >= min_word_size) {
       HeapWord* new_top = obj + want_to_allocate;
-      HeapWord* result = Atomic::cmpxchg(new_top, &_top, obj);
+      HeapWord* result = Atomic::cmpxchg(&_top, obj, new_top);
       // result can be one of two:
       //  the old top value: the exchange succeeded
       //  otherwise: the new value of the top is returned.

@@ -554,7 +554,7 @@ inline HeapWord* ContiguousSpace::par_allocate_impl(size_t size) {
     HeapWord* obj = top();
     if (pointer_delta(end(), obj) >= size) {
       HeapWord* new_top = obj + size;
-      HeapWord* result = Atomic::cmpxchg(new_top, top_addr(), obj);
+      HeapWord* result = Atomic::cmpxchg(top_addr(), obj, new_top);
       // result can be one of two:
       //  the old top value: the exchange succeeded
       //  otherwise: the new value of the top is returned.

@@ -73,12 +73,12 @@ void oopDesc::release_set_mark(markWord m) {
 }
 
 markWord oopDesc::cas_set_mark(markWord new_mark, markWord old_mark) {
-  uintptr_t v = HeapAccess<>::atomic_cmpxchg_at(new_mark.value(), as_oop(), mark_offset_in_bytes(), old_mark.value());
+  uintptr_t v = HeapAccess<>::atomic_cmpxchg_at(as_oop(), mark_offset_in_bytes(), old_mark.value(), new_mark.value());
   return markWord(v);
 }
 
 markWord oopDesc::cas_set_mark_raw(markWord new_mark, markWord old_mark, atomic_memory_order order) {
-  return Atomic::cmpxchg(new_mark, &_mark, old_mark, order);
+  return Atomic::cmpxchg(&_mark, old_mark, new_mark, order);
 }
 
 void oopDesc::init_mark() {

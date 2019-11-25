@@ -49,7 +49,7 @@ inline bool ZMarkTerminate::try_exit_stage(volatile uint* nworking_stage) {
     }
 
     const uint new_nworking = nworking + 1;
-    const uint prev_nworking = Atomic::cmpxchg(new_nworking, nworking_stage, nworking);
+    const uint prev_nworking = Atomic::cmpxchg(nworking_stage, nworking, new_nworking);
     if (prev_nworking == nworking) {
       // Success
       return true;

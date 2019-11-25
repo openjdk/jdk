@@ -452,7 +452,7 @@ OopMapCacheEntry* OopMapCache::entry_at(int i) const {
 }
 
 bool OopMapCache::put_at(int i, OopMapCacheEntry* entry, OopMapCacheEntry* old) {
-  return Atomic::cmpxchg(entry, &_array[i % _size], old) == old;
+  return Atomic::cmpxchg(&_array[i % _size], old, entry) == old;
 }
 
 void OopMapCache::flush() {
@@ -564,7 +564,7 @@ void OopMapCache::enqueue_for_cleanup(OopMapCacheEntry* entry) {
   do {
     head = _old_entries;
     entry->_next = head;
-    success = Atomic::cmpxchg(entry, &_old_entries, head) == head;
+    success = Atomic::cmpxchg(&_old_entries, head, entry) == head;
   } while (!success);
 
   if (log_is_enabled(Debug, interpreter, oopmap)) {

@@ -633,9 +633,9 @@ mmx_acs_CopyLeft:
         ret
 
 
-        # Support for int64_t Atomic::cmpxchg(int64_t exchange_value,
+        # Support for int64_t Atomic::cmpxchg(int64_t compare_value,
         #                                     volatile int64_t* dest,
-        #                                     int64_t compare_value)
+        #                                     int64_t exchange_value)
         #
         .p2align 4,,15
         ELF_TYPE(_Atomic_cmpxchg_long,@function)
@@ -665,4 +665,3 @@ SYMBOL(_Atomic_move_long):
         movl     8(%esp), %eax   # dest
         fistpll   (%eax)
         ret
-

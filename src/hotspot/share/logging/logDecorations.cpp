@@ -49,7 +49,7 @@ const char* LogDecorations::host_name() {
     char buffer[1024];
     if (os::get_host_name(buffer, sizeof(buffer))) {
       host_name = os::strdup_check_oom(buffer);
-      const char* old_value = Atomic::cmpxchg(host_name, &_host_name, (const char*)NULL);
+      const char* old_value = Atomic::cmpxchg(&_host_name, (const char*)NULL, host_name);
       if (old_value != NULL) {
         os::free((void *) host_name);
         host_name = old_value;
@@ -147,4 +147,3 @@ char* LogDecorations::create_hostname_decoration(char* pos) {
   int written = jio_snprintf(pos, DecorationsBufferSize - (pos - _decorations_buffer), "%s", host_name());
   ASSERT_AND_RETURN(written, pos)
 }
-

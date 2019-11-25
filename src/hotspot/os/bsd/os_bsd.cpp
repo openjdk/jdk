@@ -930,7 +930,7 @@ jlong os::javaTimeNanos() {
   if (now <= prev) {
     return prev;   // same or retrograde time;
   }
-  const uint64_t obsv = Atomic::cmpxchg(now, &Bsd::_max_abstime, prev);
+  const uint64_t obsv = Atomic::cmpxchg(&Bsd::_max_abstime, prev, now);
   assert(obsv >= prev, "invariant");   // Monotonicity
   // If the CAS succeeded then we're done and return "now".
   // If the CAS failed and the observed value "obsv" is >= now then
@@ -1833,7 +1833,7 @@ static int check_pending_signals() {
   for (;;) {
     for (int i = 0; i < NSIG + 1; i++) {
       jint n = pending_signals[i];
-      if (n > 0 && n == Atomic::cmpxchg(n - 1, &pending_signals[i], n)) {
+      if (n > 0 && n == Atomic::cmpxchg(&pending_signals[i], n, n - 1)) {
         return i;
       }
     }
@@ -3237,7 +3237,7 @@ static inline volatile int* get_apic_to_processor_mapping() {
       mapping[i] = -1;
     }
 
-    if (!Atomic::replace_if_null(mapping, &apic_to_processor_mapping)) {
+    if (!Atomic::replace_if_null(&apic_to_processor_mapping, mapping)) {
       FREE_C_HEAP_ARRAY(int, mapping);
       mapping = Atomic::load_acquire(&apic_to_processor_mapping);
     }
@@ -3263,7 +3263,7 @@ uint os::processor_id() {
   int processor_id = Atomic::load(&mapping[apic_id]);
 
   while (processor_id < 0) {
-    if (Atomic::cmpxchg(-2, &mapping[apic_id], -1) == -1) {
+    if (Atomic::cmpxchg(&mapping[apic_id], -1, -2) == -1) {
       Atomic::store(&mapping[apic_id], Atomic::add(&next_processor_id, 1) - 1);
     }
     processor_id = Atomic::load(&mapping[apic_id]);

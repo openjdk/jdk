@@ -64,7 +64,7 @@ void SingleWriterSynchronizer::synchronize() {
   do {
     old = value;
     *new_ptr = ++value;
-    value = Atomic::cmpxchg(value, &_enter, old);
+    value = Atomic::cmpxchg(&_enter, old, value);
   } while (old != value);
   // Critical sections entered before we changed the polarity will use
   // the old exit counter.  Critical sections entered after the change

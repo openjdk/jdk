@@ -37,14 +37,14 @@ inline void Thread::set_suspend_flag(SuspendFlags f) {
   do {
     flags = _suspend_flags;
   }
-  while (Atomic::cmpxchg((flags | f), &_suspend_flags, flags) != flags);
+  while (Atomic::cmpxchg(&_suspend_flags, flags, (flags | f)) != flags);
 }
 inline void Thread::clear_suspend_flag(SuspendFlags f) {
   uint32_t flags;
   do {
     flags = _suspend_flags;
   }
-  while (Atomic::cmpxchg((flags & ~f), &_suspend_flags, flags) != flags);
+  while (Atomic::cmpxchg(&_suspend_flags, flags, (flags & ~f)) != flags);
 }
 
 inline void Thread::set_has_async_exception() {
@@ -83,7 +83,7 @@ inline jlong Thread::cooked_allocated_bytes() {
 }
 
 inline ThreadsList* Thread::cmpxchg_threads_hazard_ptr(ThreadsList* exchange_value, ThreadsList* compare_value) {
-  return (ThreadsList*)Atomic::cmpxchg(exchange_value, &_threads_hazard_ptr, compare_value);
+  return (ThreadsList*)Atomic::cmpxchg(&_threads_hazard_ptr, compare_value, exchange_value);
 }
 
 inline ThreadsList* Thread::get_threads_hazard_ptr() {

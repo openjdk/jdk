@@ -64,9 +64,9 @@ inline T Atomic::PlatformXchg<4>::operator()(T volatile* dest,
 
 template<>
 template<typename T>
-inline T Atomic::PlatformCmpxchg<1>::operator()(T exchange_value,
-                                                T volatile* dest,
+inline T Atomic::PlatformCmpxchg<1>::operator()(T volatile* dest,
                                                 T compare_value,
+                                                T exchange_value,
                                                 atomic_memory_order /* order */) const {
   STATIC_ASSERT(1 == sizeof(T));
   __asm__ volatile (  "lock cmpxchgb %1,(%3)"
@@ -78,9 +78,9 @@ inline T Atomic::PlatformCmpxchg<1>::operator()(T exchange_value,
 
 template<>
 template<typename T>
-inline T Atomic::PlatformCmpxchg<4>::operator()(T exchange_value,
-                                                T volatile* dest,
+inline T Atomic::PlatformCmpxchg<4>::operator()(T volatile* dest,
                                                 T compare_value,
+                                                T exchange_value,
                                                 atomic_memory_order /* order */) const {
   STATIC_ASSERT(4 == sizeof(T));
   __asm__ volatile (  "lock cmpxchgl %1,(%3)"
@@ -120,9 +120,9 @@ inline T Atomic::PlatformXchg<8>::operator()(T volatile* dest,
 
 template<>
 template<typename T>
-inline T Atomic::PlatformCmpxchg<8>::operator()(T exchange_value,
-                                                T volatile* dest,
+inline T Atomic::PlatformCmpxchg<8>::operator()(T volatile* dest,
                                                 T compare_value,
+                                                T exchange_value,
                                                 atomic_memory_order /* order */) const {
   STATIC_ASSERT(8 == sizeof(T));
   __asm__ __volatile__ (  "lock cmpxchgq %1,(%3)"
@@ -142,12 +142,12 @@ extern "C" {
 
 template<>
 template<typename T>
-inline T Atomic::PlatformCmpxchg<8>::operator()(T exchange_value,
-                                                T volatile* dest,
+inline T Atomic::PlatformCmpxchg<8>::operator()(T volatile* dest,
                                                 T compare_value,
+                                                T exchange_value,
                                                 atomic_memory_order /* order */) const {
   STATIC_ASSERT(8 == sizeof(T));
-  return cmpxchg_using_helper<int64_t>(_Atomic_cmpxchg_long, exchange_value, dest, compare_value);
+  return cmpxchg_using_helper<int64_t>(_Atomic_cmpxchg_long, dest, compare_value, exchange_value);
 }
 
 template<>

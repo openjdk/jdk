@@ -58,7 +58,7 @@ void ZLiveMap::reset(size_t index) {
        seqnum != ZGlobalSeqNum;
        seqnum = Atomic::load_acquire(&_seqnum)) {
     if ((seqnum != seqnum_initializing) &&
-        (Atomic::cmpxchg(seqnum_initializing, &_seqnum, seqnum) == seqnum)) {
+        (Atomic::cmpxchg(&_seqnum, seqnum, seqnum_initializing) == seqnum)) {
       // Reset marking information
       _live_bytes = 0;
       _live_objects = 0;

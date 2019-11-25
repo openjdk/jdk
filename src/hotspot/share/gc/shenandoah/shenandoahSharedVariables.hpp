@@ -74,7 +74,7 @@ typedef struct ShenandoahSharedFlag {
     if (is_set()) {
       return false;
     }
-    ShenandoahSharedValue old = Atomic::cmpxchg((ShenandoahSharedValue)SET, &value, (ShenandoahSharedValue)UNSET);
+    ShenandoahSharedValue old = Atomic::cmpxchg(&value, (ShenandoahSharedValue)UNSET, (ShenandoahSharedValue)SET);
     return old == UNSET; // success
   }
 
@@ -82,7 +82,7 @@ typedef struct ShenandoahSharedFlag {
     if (!is_set()) {
       return false;
     }
-    ShenandoahSharedValue old = Atomic::cmpxchg((ShenandoahSharedValue)UNSET, &value, (ShenandoahSharedValue)SET);
+    ShenandoahSharedValue old = Atomic::cmpxchg(&value, (ShenandoahSharedValue)SET, (ShenandoahSharedValue)UNSET);
     return old == SET; // success
   }
 
@@ -125,7 +125,7 @@ typedef struct ShenandoahSharedBitmap {
       }
 
       ShenandoahSharedValue nv = ov | mask_val;
-      if (Atomic::cmpxchg(nv, &value, ov) == ov) {
+      if (Atomic::cmpxchg(&value, ov, nv) == ov) {
         // successfully set
         return;
       }
@@ -143,7 +143,7 @@ typedef struct ShenandoahSharedBitmap {
       }
 
       ShenandoahSharedValue nv = ov & ~mask_val;
-      if (Atomic::cmpxchg(nv, &value, ov) == ov) {
+      if (Atomic::cmpxchg(&value, ov, nv) == ov) {
         // successfully unset
         return;
       }
@@ -221,7 +221,7 @@ struct ShenandoahSharedEnumFlag {
   T cmpxchg(T new_value, T expected) {
     assert (new_value >= 0, "sanity");
     assert (new_value < (sizeof(ShenandoahSharedValue) * CHAR_MAX), "sanity");
-    return (T)Atomic::cmpxchg((ShenandoahSharedValue)new_value, &value, (ShenandoahSharedValue)expected);
+    return (T)Atomic::cmpxchg(&value, (ShenandoahSharedValue)expected, (ShenandoahSharedValue)new_value);
   }
 
   volatile ShenandoahSharedValue* addr_of() {

@@ -81,7 +81,7 @@ void ShenandoahParallelCodeHeapIterator::parallel_blobs_do(CodeBlobClosure* f) {
     int current = count++;
     if ((current & stride_mask) == 0) {
       process_block = (current >= _claimed_idx) &&
-                      (Atomic::cmpxchg(current + stride, &_claimed_idx, current) == current);
+                      (Atomic::cmpxchg(&_claimed_idx, current, current + stride) == current);
     }
     if (process_block) {
       if (cb->is_alive()) {

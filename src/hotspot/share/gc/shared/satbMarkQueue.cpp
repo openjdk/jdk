@@ -136,7 +136,7 @@ static void increment_count(volatile size_t* cfptr, size_t threshold) {
     value += 2;
     assert(value > old, "overflow");
     if (value > threshold) value |= 1;
-    value = Atomic::cmpxchg(value, cfptr, old);
+    value = Atomic::cmpxchg(cfptr, old, value);
   } while (value != old);
 }
 
@@ -149,7 +149,7 @@ static void decrement_count(volatile size_t* cfptr) {
     old = value;
     value -= 2;
     if (value <= 1) value = 0;
-    value = Atomic::cmpxchg(value, cfptr, old);
+    value = Atomic::cmpxchg(cfptr, old, value);
   } while (value != old);
 }
 

@@ -772,7 +772,7 @@ void ZStatSample(const ZStatSampler& sampler, uint64_t value) {
     }
 
     const uint64_t new_max = value;
-    const uint64_t prev_max = Atomic::cmpxchg(new_max, &cpu_data->_max, max);
+    const uint64_t prev_max = Atomic::cmpxchg(&cpu_data->_max, max, new_max);
     if (prev_max == max) {
       // Success
       break;

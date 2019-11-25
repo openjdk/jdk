@@ -70,7 +70,7 @@ uintptr_t ZMarkStackSpace::alloc_space(size_t size) {
       return 0;
     }
 
-    const uintptr_t prev_top = Atomic::cmpxchg(new_top, &_top, top);
+    const uintptr_t prev_top = Atomic::cmpxchg(&_top, top, new_top);
     if (prev_top == top) {
       // Success
       return top;

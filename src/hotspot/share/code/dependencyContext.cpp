@@ -101,7 +101,7 @@ void DependencyContext::add_dependent_nmethod(nmethod* nm) {
   for (;;) {
     nmethodBucket* head = Atomic::load(_dependency_context_addr);
     new_head->set_next(head);
-    if (Atomic::cmpxchg(new_head, _dependency_context_addr, head) == head) {
+    if (Atomic::cmpxchg(_dependency_context_addr, head, new_head) == head) {
       break;
     }
   }
@@ -124,7 +124,7 @@ void DependencyContext::release(nmethodBucket* b) {
     for (;;) {
       nmethodBucket* purge_list_head = Atomic::load(&_purge_list);
       b->set_purge_list_next(purge_list_head);
-      if (Atomic::cmpxchg(b, &_purge_list, purge_list_head) == purge_list_head) {
+      if (Atomic::cmpxchg(&_purge_list, purge_list_head, b) == purge_list_head) {
         break;
       }
     }
@@ -272,7 +272,7 @@ bool DependencyContext::claim_cleanup() {
   if (last_cleanup >= cleaning_epoch) {
     return false;
   }
-  return Atomic::cmpxchg(cleaning_epoch, _last_cleanup_addr, last_cleanup) == last_cleanup;
+  return Atomic::cmpxchg(_last_cleanup_addr, last_cleanup, cleaning_epoch) == last_cleanup;
 }
 
 // Retrieve the first nmethodBucket that has a dependent that does not correspond to
@@ -291,7 +291,7 @@ nmethodBucket* DependencyContext::dependencies_not_unloading() {
       // Unstable load of head w.r.t. head->next
       continue;
     }
-    if (Atomic::cmpxchg(head_next, _dependency_context_addr, head) == head) {
+    if (Atomic::cmpxchg(_dependency_context_addr, head, head_next) == head) {
       // Release is_unloading entries if unlinking was claimed
       DependencyContext::release(head);
     }
@@ -345,7 +345,7 @@ nmethodBucket* nmethodBucket::next_not_unloading() {
       // Unstable load of next w.r.t. next->next
       continue;
     }
-    if (Atomic::cmpxchg(next_next, &_next, next) == next) {
+    if (Atomic::cmpxchg(&_next, next, next_next) == next) {
       // Release is_unloading entries if unlinking was claimed
       DependencyContext::release(next);
     }

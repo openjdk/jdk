@@ -418,7 +418,7 @@ static bool prepare_for_emergency_dump(Thread* thread) {
 static volatile int jfr_shutdown_lock = 0;
 
 static bool guard_reentrancy() {
-  return Atomic::cmpxchg(1, &jfr_shutdown_lock, 0) == 0;
+  return Atomic::cmpxchg(&jfr_shutdown_lock, 0, 1) == 0;
 }
 
 class JavaThreadInVM : public StackObj {

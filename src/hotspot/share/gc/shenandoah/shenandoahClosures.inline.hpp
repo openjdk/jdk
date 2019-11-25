@@ -147,7 +147,7 @@ void ShenandoahEvacUpdateOopStorageRootsClosure::do_oop(oop* p) {
         resolved = _heap->evacuate_object(obj, _thread);
       }
 
-      Atomic::cmpxchg(resolved, p, obj);
+      Atomic::cmpxchg(p, obj, resolved);
     }
   }
 }

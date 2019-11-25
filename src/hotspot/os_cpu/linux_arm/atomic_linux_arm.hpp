@@ -119,22 +119,22 @@ inline int64_t reorder_cmpxchg_long_func(int64_t exchange_value,
 
 template<>
 template<typename T>
-inline T Atomic::PlatformCmpxchg<4>::operator()(T exchange_value,
-                                                T volatile* dest,
+inline T Atomic::PlatformCmpxchg<4>::operator()(T volatile* dest,
                                                 T compare_value,
+                                                T exchange_value,
                                                 atomic_memory_order order) const {
   STATIC_ASSERT(4 == sizeof(T));
-  return cmpxchg_using_helper<int32_t>(reorder_cmpxchg_func, exchange_value, dest, compare_value);
+  return cmpxchg_using_helper<int32_t>(reorder_cmpxchg_func, dest, compare_value, exchange_value);
 }
 
 template<>
 template<typename T>
-inline T Atomic::PlatformCmpxchg<8>::operator()(T exchange_value,
-                                                T volatile* dest,
+inline T Atomic::PlatformCmpxchg<8>::operator()(T volatile* dest,
                                                 T compare_value,
+                                                T exchange_value,
                                                 atomic_memory_order order) const {
   STATIC_ASSERT(8 == sizeof(T));
-  return cmpxchg_using_helper<int64_t>(reorder_cmpxchg_long_func, exchange_value, dest, compare_value);
+  return cmpxchg_using_helper<int64_t>(reorder_cmpxchg_long_func, dest, compare_value, exchange_value);
 }
 
 #endif // OS_CPU_LINUX_ARM_ATOMIC_LINUX_ARM_HPP

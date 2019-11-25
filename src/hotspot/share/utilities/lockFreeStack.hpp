@@ -65,7 +65,7 @@ class LockFreeStack {
     do {
       old = cur;
       set_next(*last, cur);
-      cur = Atomic::cmpxchg(first, &_top, cur);
+      cur = Atomic::cmpxchg(&_top, cur, first);
     } while (old != cur);
   }
 
@@ -91,7 +91,7 @@ public:
         new_top = next(*result);
       }
       // CAS even on empty pop, for consistent membar bahavior.
-      result = Atomic::cmpxchg(new_top, &_top, result);
+      result = Atomic::cmpxchg(&_top, result, new_top);
     } while (result != old);
     if (result != NULL) {
       set_next(*result, NULL);

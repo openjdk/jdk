@@ -57,9 +57,9 @@ inline T Atomic::PlatformXchg<byte_size>::operator()(T volatile* dest,
 
 template<size_t byte_size>
 template<typename T>
-inline T Atomic::PlatformCmpxchg<byte_size>::operator()(T exchange_value,
-                                                        T volatile* dest,
+inline T Atomic::PlatformCmpxchg<byte_size>::operator()(T volatile* dest,
                                                         T compare_value,
+                                                        T exchange_value,
                                                         atomic_memory_order order) const {
   STATIC_ASSERT(byte_size == sizeof(T));
   if (order == memory_order_relaxed) {

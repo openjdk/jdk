@@ -321,7 +321,7 @@ GenericTaskQueueSet<T, F>::steal(uint queue_num, E& t) {
 
 template <unsigned int N, MEMFLAGS F>
 inline typename TaskQueueSuper<N, F>::Age TaskQueueSuper<N, F>::Age::cmpxchg(const Age new_age, const Age old_age) volatile {
-  return Atomic::cmpxchg(new_age._data, &_data, old_age._data);
+  return Atomic::cmpxchg(&_data, old_age._data, new_age._data);
 }
 
 template<class E, MEMFLAGS F, unsigned int N>

@@ -141,7 +141,7 @@ void MetadataHandleBlock::do_unloading() {
           // but can't be put on the free list yet. The
           // HandleCleaner will set this to NULL and
           // put it on the free list.
-          jlong old_value = Atomic::cmpxchg((jlong) (ptr_tag), (jlong*)handle, (jlong) value);
+          jlong old_value = Atomic::cmpxchg((jlong*)handle, (jlong) value, (jlong) (ptr_tag));
           if (old_value == (jlong) value) {
             // Success
           } else {

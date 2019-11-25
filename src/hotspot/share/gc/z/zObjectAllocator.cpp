@@ -97,7 +97,7 @@ uintptr_t ZObjectAllocator::alloc_object_in_shared_page(ZPage** shared_page,
 
     retry:
       // Install new page
-      ZPage* const prev_page = Atomic::cmpxchg(new_page, shared_page, page);
+      ZPage* const prev_page = Atomic::cmpxchg(shared_page, page, new_page);
       if (prev_page != page) {
         if (prev_page == NULL) {
           // Previous page was retired, retry installing the new page

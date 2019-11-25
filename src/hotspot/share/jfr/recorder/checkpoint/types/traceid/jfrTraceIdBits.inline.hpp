@@ -62,7 +62,7 @@ inline void set_bits_cas_form(jbyte bits, jbyte* const dest) {
   do {
     const jbyte current = *dest;
     const jbyte new_value = op(current, bits);
-    if (Atomic::cmpxchg(new_value, dest, current) == current) {
+    if (Atomic::cmpxchg(dest, current, new_value) == current) {
       return;
     }
   } while (true);

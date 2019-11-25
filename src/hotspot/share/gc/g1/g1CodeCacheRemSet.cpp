@@ -170,7 +170,7 @@ void G1CodeRootSet::allocate_small_table() {
 void G1CodeRootSetTable::purge_list_append(G1CodeRootSetTable* table) {
   for (;;) {
     table->_purge_next = _purge_list;
-    G1CodeRootSetTable* old = Atomic::cmpxchg(table, &_purge_list, table->_purge_next);
+    G1CodeRootSetTable* old = Atomic::cmpxchg(&_purge_list, table->_purge_next, table);
     if (old == table->_purge_next) {
       break;
     }

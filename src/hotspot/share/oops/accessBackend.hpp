@@ -102,12 +102,12 @@ namespace AccessInternal {
   struct AccessFunctionTypes {
     typedef T (*load_at_func_t)(oop base, ptrdiff_t offset);
     typedef void (*store_at_func_t)(oop base, ptrdiff_t offset, T value);
-    typedef T (*atomic_cmpxchg_at_func_t)(T new_value, oop base, ptrdiff_t offset, T compare_value);
+    typedef T (*atomic_cmpxchg_at_func_t)(oop base, ptrdiff_t offset, T compare_value, T new_value);
     typedef T (*atomic_xchg_at_func_t)(oop base, ptrdiff_t offset, T new_value);
 
     typedef T (*load_func_t)(void* addr);
     typedef void (*store_func_t)(void* addr, T value);
-    typedef T (*atomic_cmpxchg_func_t)(T new_value, void* addr, T compare_value);
+    typedef T (*atomic_cmpxchg_func_t)(void* addr, T compare_value, T new_value);
     typedef T (*atomic_xchg_func_t)(void* addr, T new_value);
 
     typedef bool (*arraycopy_func_t)(arrayOop src_obj, size_t src_offset_in_bytes, T* src_raw,
@@ -293,12 +293,12 @@ protected:
   template <DecoratorSet ds, typename T>
   static typename EnableIf<
     HasDecorator<ds, MO_SEQ_CST>::value, T>::type
-  atomic_cmpxchg_internal(T new_value, void* addr, T compare_value);
+  atomic_cmpxchg_internal(void* addr, T compare_value, T new_value);
 
   template <DecoratorSet ds, typename T>
   static typename EnableIf<
     HasDecorator<ds, MO_RELAXED>::value, T>::type
-  atomic_cmpxchg_internal(T new_value, void* addr, T compare_value);
+  atomic_cmpxchg_internal(void* addr, T compare_value, T new_value);
 
   template <DecoratorSet ds, typename T>
   static typename EnableIf<
@@ -312,14 +312,14 @@ protected:
   template <DecoratorSet ds, typename T>
   static inline typename EnableIf<
     !AccessInternal::PossiblyLockedAccess<T>::value, T>::type
-  atomic_cmpxchg_maybe_locked(T new_value, void* addr, T compare_value) {
-    return atomic_cmpxchg_internal<ds>(new_value, addr, compare_value);
+  atomic_cmpxchg_maybe_locked(void* addr, T compare_value, T new_value) {
+    return atomic_cmpxchg_internal<ds>(addr, compare_value, new_value);
   }
 
   template <DecoratorSet ds, typename T>
   static typename EnableIf<
     AccessInternal::PossiblyLockedAccess<T>::value, T>::type
-  atomic_cmpxchg_maybe_locked(T new_value, void* addr, T compare_value);
+  atomic_cmpxchg_maybe_locked(void* addr, T compare_value, T new_value);
 
   template <DecoratorSet ds, typename T>
   static inline typename EnableIf<
@@ -345,8 +345,8 @@ public:
   }
 
   template <typename T>
-  static inline T atomic_cmpxchg(T new_value, void* addr, T compare_value) {
-    return atomic_cmpxchg_maybe_locked<decorators>(new_value, addr, compare_value);
+  static inline T atomic_cmpxchg(void* addr, T compare_value, T new_value) {
+    return atomic_cmpxchg_maybe_locked<decorators>(addr, compare_value, new_value);
   }
 
   template <typename T>
@@ -370,9 +370,9 @@ public:
   static T oop_load_at(oop base, ptrdiff_t offset);
 
   template <typename T>
-  static T oop_atomic_cmpxchg(T new_value, void* addr, T compare_value);
+  static T oop_atomic_cmpxchg(void* addr, T compare_value, T new_value);
   template <typename T>
-  static T oop_atomic_cmpxchg_at(T new_value, oop base, ptrdiff_t offset, T compare_value);
+  static T oop_atomic_cmpxchg_at(oop base, ptrdiff_t offset, T compare_value, T new_value);
 
   template <typename T>
   static T oop_atomic_xchg(void* addr, T new_value);
@@ -390,8 +390,8 @@ public:
   }
 
   template <typename T>
-  static T atomic_cmpxchg_at(T new_value, oop base, ptrdiff_t offset, T compare_value) {
-    return atomic_cmpxchg(new_value, field_addr(base, offset), compare_value);
+  static T atomic_cmpxchg_at(oop base, ptrdiff_t offset, T compare_value, T new_value) {
+    return atomic_cmpxchg(field_addr(base, offset), compare_value, new_value);
   }
 
   template <typename T>
@@ -515,10 +515,10 @@ namespace AccessInternal {
     typedef typename AccessFunction<decorators, T, BARRIER_ATOMIC_CMPXCHG>::type func_t;
     static func_t _atomic_cmpxchg_func;
 
-    static T atomic_cmpxchg_init(T new_value, void* addr, T compare_value);
+    static T atomic_cmpxchg_init(void* addr, T compare_value, T new_value);
 
-    static inline T atomic_cmpxchg(T new_value, void* addr, T compare_value) {
-      return _atomic_cmpxchg_func(new_value, addr, compare_value);
+    static inline T atomic_cmpxchg(void* addr, T compare_value, T new_value) {
+      return _atomic_cmpxchg_func(addr, compare_value, new_value);
     }
   };
 
@@ -527,10 +527,10 @@ namespace AccessInternal {
     typedef typename AccessFunction<decorators, T, BARRIER_ATOMIC_CMPXCHG_AT>::type func_t;
     static func_t _atomic_cmpxchg_at_func;
 
-    static T atomic_cmpxchg_at_init(T new_value, oop base, ptrdiff_t offset, T compare_value);
+    static T atomic_cmpxchg_at_init(oop base, ptrdiff_t offset, T compare_value, T new_value);
 
-    static inline T atomic_cmpxchg_at(T new_value, oop base, ptrdiff_t offset, T compare_value) {
-      return _atomic_cmpxchg_at_func(new_value, base, offset, compare_value);
+    static inline T atomic_cmpxchg_at(oop base, ptrdiff_t offset, T compare_value, T new_value) {
+      return _atomic_cmpxchg_at_func(base, offset, compare_value, new_value);
     }
   };
 
@@ -782,56 +782,56 @@ namespace AccessInternal {
     template <DecoratorSet decorators, typename T>
     inline static typename EnableIf<
       HasDecorator<decorators, AS_RAW>::value && CanHardwireRaw<decorators>::value, T>::type
-    atomic_cmpxchg(T new_value, void* addr, T compare_value) {
+    atomic_cmpxchg(void* addr, T compare_value, T new_value) {
       typedef RawAccessBarrier<decorators & RAW_DECORATOR_MASK> Raw;
       if (HasDecorator<decorators, INTERNAL_VALUE_IS_OOP>::value) {
-        return Raw::oop_atomic_cmpxchg(new_value, addr, compare_value);
+        return Raw::oop_atomic_cmpxchg(addr, compare_value, new_value);
       } else {
-        return Raw::atomic_cmpxchg(new_value, addr, compare_value);
+        return Raw::atomic_cmpxchg(addr, compare_value, new_value);
       }
     }
 
     template <DecoratorSet decorators, typename T>
     inline static typename EnableIf<
       HasDecorator<decorators, AS_RAW>::value && !CanHardwireRaw<decorators>::value, T>::type
-    atomic_cmpxchg(T new_value, void* addr, T compare_value) {
+    atomic_cmpxchg(void* addr, T compare_value, T new_value) {
       if (UseCompressedOops) {
         const DecoratorSet expanded_decorators = decorators | convert_compressed_oops;
-        return PreRuntimeDispatch::atomic_cmpxchg<expanded_decorators>(new_value, addr, compare_value);
+        return PreRuntimeDispatch::atomic_cmpxchg<expanded_decorators>(addr, compare_value, new_value);
       } else {
         const DecoratorSet expanded_decorators = decorators & ~convert_compressed_oops;
-        return PreRuntimeDispatch::atomic_cmpxchg<expanded_decorators>(new_value, addr, compare_value);
+        return PreRuntimeDispatch::atomic_cmpxchg<expanded_decorators>(addr, compare_value, new_value);
       }
     }
 
     template <DecoratorSet decorators, typename T>
     inline static typename EnableIf<
       !HasDecorator<decorators, AS_RAW>::value, T>::type
-    atomic_cmpxchg(T new_value, void* addr, T compare_value) {
+    atomic_cmpxchg(void* addr, T compare_value, T new_value) {
       if (is_hardwired_primitive<decorators>()) {
         const DecoratorSet expanded_decorators = decorators | AS_RAW;
-        return PreRuntimeDispatch::atomic_cmpxchg<expanded_decorators>(new_value, addr, compare_value);
+        return PreRuntimeDispatch::atomic_cmpxchg<expanded_decorators>(addr, compare_value, new_value);
       } else {
-        return RuntimeDispatch<decorators, T, BARRIER_ATOMIC_CMPXCHG>::atomic_cmpxchg(new_value, addr, compare_value);
+        return RuntimeDispatch<decorators, T, BARRIER_ATOMIC_CMPXCHG>::atomic_cmpxchg(addr, compare_value, new_value);
       }
     }
 
     template <DecoratorSet decorators, typename T>
     inline static typename EnableIf<
       HasDecorator<decorators, AS_RAW>::value, T>::type
-    atomic_cmpxchg_at(T new_value, oop base, ptrdiff_t offset, T compare_value) {
-      return atomic_cmpxchg<decorators>(new_value, field_addr(base, offset), compare_value);
+    atomic_cmpxchg_at(oop base, ptrdiff_t offset, T compare_value, T new_value) {
+      return atomic_cmpxchg<decorators>(field_addr(base, offset), compare_value, new_value);
     }
 
     template <DecoratorSet decorators, typename T>
     inline static typename EnableIf<
       !HasDecorator<decorators, AS_RAW>::value, T>::type
-    atomic_cmpxchg_at(T new_value, oop base, ptrdiff_t offset, T compare_value) {
+    atomic_cmpxchg_at(oop base, ptrdiff_t offset, T compare_value, T new_value) {
       if (is_hardwired_primitive<decorators>()) {
         const DecoratorSet expanded_decorators = decorators | AS_RAW;
-        return PreRuntimeDispatch::atomic_cmpxchg_at<expanded_decorators>(new_value, base, offset, compare_value);
+        return PreRuntimeDispatch::atomic_cmpxchg_at<expanded_decorators>(base, offset, compare_value, new_value);
       } else {
-        return RuntimeDispatch<decorators, T, BARRIER_ATOMIC_CMPXCHG_AT>::atomic_cmpxchg_at(new_value, base, offset, compare_value);
+        return RuntimeDispatch<decorators, T, BARRIER_ATOMIC_CMPXCHG_AT>::atomic_cmpxchg_at(base, offset, compare_value, new_value);
       }
     }
 
@@ -1018,30 +1018,30 @@ namespace AccessInternal {
   }
 
   template <DecoratorSet decorators, typename T>
-  inline T atomic_cmpxchg_reduce_types(T new_value, T* addr, T compare_value) {
-    return PreRuntimeDispatch::atomic_cmpxchg<decorators>(new_value, addr, compare_value);
+  inline T atomic_cmpxchg_reduce_types(T* addr, T compare_value, T new_value) {
+    return PreRuntimeDispatch::atomic_cmpxchg<decorators>(addr, compare_value, new_value);
   }
 
   template <DecoratorSet decorators>
-  inline oop atomic_cmpxchg_reduce_types(oop new_value, narrowOop* addr, oop compare_value) {
+  inline oop atomic_cmpxchg_reduce_types(narrowOop* addr, oop compare_value, oop new_value) {
     const DecoratorSet expanded_decorators = decorators | INTERNAL_CONVERT_COMPRESSED_OOP |
                                              INTERNAL_RT_USE_COMPRESSED_OOPS;
-    return PreRuntimeDispatch::atomic_cmpxchg<expanded_decorators>(new_value, addr, compare_value);
+    return PreRuntimeDispatch::atomic_cmpxchg<expanded_decorators>(addr, compare_value, new_value);
   }
 
   template <DecoratorSet decorators>
-  inline narrowOop atomic_cmpxchg_reduce_types(narrowOop new_value, narrowOop* addr, narrowOop compare_value) {
+  inline narrowOop atomic_cmpxchg_reduce_types(narrowOop* addr, narrowOop compare_value, narrowOop new_value) {
     const DecoratorSet expanded_decorators = decorators | INTERNAL_CONVERT_COMPRESSED_OOP |
                                              INTERNAL_RT_USE_COMPRESSED_OOPS;
-    return PreRuntimeDispatch::atomic_cmpxchg<expanded_decorators>(new_value, addr, compare_value);
+    return PreRuntimeDispatch::atomic_cmpxchg<expanded_decorators>(addr, compare_value, new_value);
   }
 
   template <DecoratorSet decorators>
-  inline oop atomic_cmpxchg_reduce_types(oop new_value,
-                                         HeapWord* addr,
-                                         oop compare_value) {
+  inline oop atomic_cmpxchg_reduce_types(HeapWord* addr,
+                                         oop compare_value,
+                                         oop new_value) {
     const DecoratorSet expanded_decorators = decorators | INTERNAL_CONVERT_COMPRESSED_OOP;
-    return PreRuntimeDispatch::atomic_cmpxchg<expanded_decorators>(new_value, addr, compare_value);
+    return PreRuntimeDispatch::atomic_cmpxchg<expanded_decorators>(addr, compare_value, new_value);
   }
 
   template <DecoratorSet decorators, typename T>
@@ -1191,7 +1191,7 @@ namespace AccessInternal {
   }
 
   template <DecoratorSet decorators, typename P, typename T>
-  inline T atomic_cmpxchg(T new_value, P* addr, T compare_value) {
+  inline T atomic_cmpxchg(P* addr, T compare_value, T new_value) {
     verify_types<decorators, T>();
     typedef typename Decay<P>::type DecayedP;
     typedef typename Decay<T>::type DecayedT;
@@ -1200,13 +1200,13 @@ namespace AccessInternal {
     const DecoratorSet expanded_decorators = DecoratorFixup<
       (!HasDecorator<decorators, MO_DECORATOR_MASK>::value) ?
       (MO_SEQ_CST | decorators) : decorators>::value;
-    return atomic_cmpxchg_reduce_types<expanded_decorators>(new_decayed_value,
-                                                            const_cast<DecayedP*>(addr),
-                                                            compare_decayed_value);
+    return atomic_cmpxchg_reduce_types<expanded_decorators>(const_cast<DecayedP*>(addr),
+                                                            compare_decayed_value,
+                                                            new_decayed_value);
   }
 
   template <DecoratorSet decorators, typename T>
-  inline T atomic_cmpxchg_at(T new_value, oop base, ptrdiff_t offset, T compare_value) {
+  inline T atomic_cmpxchg_at(oop base, ptrdiff_t offset, T compare_value, T new_value) {
     verify_types<decorators, T>();
     typedef typename Decay<T>::type DecayedT;
     DecayedT new_decayed_value = new_value;
@@ -1219,8 +1219,8 @@ namespace AccessInternal {
     const DecoratorSet final_decorators = expanded_decorators |
                                           (HasDecorator<decorators, INTERNAL_VALUE_IS_OOP>::value ?
                                            INTERNAL_CONVERT_COMPRESSED_OOP : DECORATORS_NONE);
-    return PreRuntimeDispatch::atomic_cmpxchg_at<final_decorators>(new_decayed_value, base,
-                                                                   offset, compare_decayed_value);
+    return PreRuntimeDispatch::atomic_cmpxchg_at<final_decorators>(base, offset, compare_decayed_value,
+                                                                   new_decayed_value);
   }
 
   template <DecoratorSet decorators, typename P, typename T>

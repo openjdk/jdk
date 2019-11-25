@@ -183,7 +183,7 @@ void MemTracker::final_report(outputStream* output) {
   // printing the final report during normal VM exit, it should not print
   // the final report again. In addition, it should be guarded from
   // recursive calls in case NMT reporting itself crashes.
-  if (Atomic::cmpxchg(true, &g_final_report_did_run, false) == false) {
+  if (Atomic::cmpxchg(&g_final_report_did_run, false, true) == false) {
     NMT_TrackingLevel level = tracking_level();
     if (level >= NMT_summary) {
       report(level == NMT_summary, output);

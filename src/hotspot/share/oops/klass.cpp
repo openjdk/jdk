@@ -436,7 +436,7 @@ void Klass::append_to_sibling_list() {
     // Note that the prev_first_subklass is always alive, meaning no sibling_next links
     // are ever created to not alive klasses. This is an important invariant of the lock-free
     // cleaning protocol, that allows us to safely unlink dead klasses from the sibling list.
-    if (Atomic::cmpxchg(this, &super->_subklass, prev_first_subklass) == prev_first_subklass) {
+    if (Atomic::cmpxchg(&super->_subklass, prev_first_subklass, this) == prev_first_subklass) {
       return;
     }
   }
@@ -451,7 +451,7 @@ void Klass::clean_subklass() {
       return;
     }
     // Try to fix _subklass until it points at something not dead.
-    Atomic::cmpxchg(subklass->next_sibling(), &_subklass, subklass);
+    Atomic::cmpxchg(&_subklass, subklass, subklass->next_sibling());
   }
 }
 

@@ -2096,7 +2096,7 @@ static int check_pending_signals() {
   while (true) {
     for (int i = 0; i < NSIG + 1; i++) {
       jint n = pending_signals[i];
-      if (n > 0 && n == Atomic::cmpxchg(n - 1, &pending_signals[i], n)) {
+      if (n > 0 && n == Atomic::cmpxchg(&pending_signals[i], n, n - 1)) {
         return i;
       }
     }
@@ -3751,7 +3751,7 @@ int os::win32::exit_process_or_thread(Ept what, int exit_code) {
       if (what != EPT_THREAD) {
         // Atomically set process_exiting before the critical section
         // to increase the visibility between racing threads.
-        Atomic::cmpxchg(GetCurrentThreadId(), &process_exiting, (DWORD)0);
+        Atomic::cmpxchg(&process_exiting, (DWORD)0, GetCurrentThreadId());
       }
       EnterCriticalSection(&crit_sect);
 
@@ -5136,7 +5136,7 @@ int os::PlatformEvent::park(jlong Millis) {
   int v;
   for (;;) {
     v = _Event;
-    if (Atomic::cmpxchg(v-1, &_Event, v) == v) break;
+    if (Atomic::cmpxchg(&_Event, v, v-1) == v) break;
   }
   guarantee((v == 0) || (v == 1), "invariant");
   if (v != 0) return OS_OK;
@@ -5198,7 +5198,7 @@ void os::PlatformEvent::park() {
   int v;
   for (;;) {
     v = _Event;
-    if (Atomic::cmpxchg(v-1, &_Event, v) == v) break;
+    if (Atomic::cmpxchg(&_Event, v, v-1) == v) break;
   }
   guarantee((v == 0) || (v == 1), "invariant");
   if (v != 0) return;

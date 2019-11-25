@@ -210,7 +210,7 @@ bool ShenandoahPacer::claim_for_alloc(size_t words, bool force) {
       return false;
     }
     new_val = cur - tax;
-  } while (Atomic::cmpxchg(new_val, &_budget, cur) != cur);
+  } while (Atomic::cmpxchg(&_budget, cur, new_val) != cur);
   return true;
 }
 

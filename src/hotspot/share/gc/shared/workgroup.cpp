@@ -426,7 +426,7 @@ bool SubTasksDone::try_claim_task(uint t) {
   assert(t < _n_tasks, "bad task id.");
   uint old = _tasks[t];
   if (old == 0) {
-    old = Atomic::cmpxchg(1u, &_tasks[t], 0u);
+    old = Atomic::cmpxchg(&_tasks[t], 0u, 1u);
   }
   bool res = old == 0;
 #ifdef ASSERT
@@ -443,7 +443,7 @@ void SubTasksDone::all_tasks_completed(uint n_threads) {
   uint old;
   do {
     old = observed;
-    observed = Atomic::cmpxchg(old+1, &_threads_completed, old);
+    observed = Atomic::cmpxchg(&_threads_completed, old, old+1);
   } while (observed != old);
   // If this was the last thread checking in, clear the tasks.
   uint adjusted_thread_count = (n_threads == 0 ? 1 : n_threads);
@@ -471,7 +471,7 @@ bool SequentialSubTasksDone::valid() {
 bool SequentialSubTasksDone::try_claim_task(uint& t) {
   t = _n_claimed;
   while (t < _n_tasks) {
-    uint res = Atomic::cmpxchg(t+1, &_n_claimed, t);
+    uint res = Atomic::cmpxchg(&_n_claimed, t, t+1);
     if (res == t) {
       return true;
     }
@@ -483,7 +483,7 @@ bool SequentialSubTasksDone::try_claim_task(uint& t) {
 bool SequentialSubTasksDone::all_tasks_completed() {
   uint complete = _n_completed;
   while (true) {
-    uint res = Atomic::cmpxchg(complete+1, &_n_completed, complete);
+    uint res = Atomic::cmpxchg(&_n_completed, complete, complete+1);
     if (res == complete) {
       break;
     }

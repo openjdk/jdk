@@ -233,7 +233,7 @@ void trace_class_resolution(Klass* to_class) {
     _name = elementName;
     uintx count = 0;
 
-    while (Atomic::cmpxchg(1, &JVMHistogram_lock, 0) != 0) {
+    while (Atomic::cmpxchg(&JVMHistogram_lock, 0, 1) != 0) {
       while (Atomic::load_acquire(&JVMHistogram_lock) != 0) {
         count +=1;
         if ( (WarnOnStalledSpinLock > 0)

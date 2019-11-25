@@ -177,7 +177,7 @@ private:
         return;
       }
 
-      bool marked_as_dirty = Atomic::cmpxchg(true, &_contains[region], false) == false;
+      bool marked_as_dirty = Atomic::cmpxchg(&_contains[region], false, true) == false;
       if (marked_as_dirty) {
         uint allocated = Atomic::add(&_cur_idx, 1u) - 1;
         _buffer[allocated] = region;
@@ -437,7 +437,7 @@ public:
     if (_collection_set_iter_state[region]) {
       return false;
     }
-    return !Atomic::cmpxchg(true, &_collection_set_iter_state[region], false);
+    return !Atomic::cmpxchg(&_collection_set_iter_state[region], false, true);
   }
 
   bool has_cards_to_scan(uint region) {
@@ -1137,7 +1137,7 @@ public:
     if (_initial_evacuation &&
         p->fast_reclaim_humongous_candidates() > 0 &&
         !_fast_reclaim_handled &&
-        !Atomic::cmpxchg(true, &_fast_reclaim_handled, false)) {
+        !Atomic::cmpxchg(&_fast_reclaim_handled, false, true)) {
 
       G1GCParPhaseTimesTracker x(p, G1GCPhaseTimes::MergeER, worker_id);
 

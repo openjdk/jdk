@@ -79,7 +79,7 @@ uint G1FreeIdSet::claim_par_id() {
     index = head_index(old_head);
     assert(index < _size, "invariant");
     uintx new_head = make_head(_next[index], old_head);
-    new_head = Atomic::cmpxchg(new_head, &_head, old_head);
+    new_head = Atomic::cmpxchg(&_head, old_head, new_head);
     if (new_head == old_head) break;
     old_head = new_head;
   }
@@ -95,7 +95,7 @@ void G1FreeIdSet::release_par_id(uint id) {
   while (true) {
     _next[index] = head_index(old_head);
     uintx new_head = make_head(index, old_head);
-    new_head = Atomic::cmpxchg(new_head, &_head, old_head);
+    new_head = Atomic::cmpxchg(&_head, old_head, new_head);
     if (new_head == old_head) break;
     old_head = new_head;
   }

@@ -162,7 +162,7 @@ bool MetaspaceGC::inc_capacity_until_GC(size_t v, size_t* new_cap_until_GC, size
   if (can_retry != NULL) {
     *can_retry = true;
   }
-  size_t prev_value = Atomic::cmpxchg(new_value, &_capacity_until_GC, old_capacity_until_GC);
+  size_t prev_value = Atomic::cmpxchg(&_capacity_until_GC, old_capacity_until_GC, new_value);
 
   if (old_capacity_until_GC != prev_value) {
     return false;

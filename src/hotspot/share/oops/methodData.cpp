@@ -896,7 +896,7 @@ bool FailedSpeculation::add_failed_speculation(nmethod* nm, FailedSpeculation** 
   FailedSpeculation** cursor = failed_speculations_address;
   do {
     if (*cursor == NULL) {
-      FailedSpeculation* old_fs = Atomic::cmpxchg(fs, cursor, (FailedSpeculation*) NULL);
+      FailedSpeculation* old_fs = Atomic::cmpxchg(cursor, (FailedSpeculation*) NULL, fs);
       if (old_fs == NULL) {
         // Successfully appended fs to end of the list
         return true;

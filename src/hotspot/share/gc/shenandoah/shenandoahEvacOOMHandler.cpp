@@ -59,7 +59,7 @@ void ShenandoahEvacOOMHandler::enter_evacuation() {
   }
 
   while (true) {
-    jint other = Atomic::cmpxchg(threads_in_evac + 1, &_threads_in_evac, threads_in_evac);
+    jint other = Atomic::cmpxchg(&_threads_in_evac, threads_in_evac, threads_in_evac + 1);
     if (other == threads_in_evac) {
       // Success: caller may safely enter evacuation
       DEBUG_ONLY(ShenandoahThreadLocalData::set_evac_allowed(Thread::current(), true));
@@ -98,8 +98,7 @@ void ShenandoahEvacOOMHandler::handle_out_of_memory_during_evacuation() {
 
   jint threads_in_evac = Atomic::load_acquire(&_threads_in_evac);
   while (true) {
-    jint other = Atomic::cmpxchg((threads_in_evac - 1) | OOM_MARKER_MASK,
-                                  &_threads_in_evac, threads_in_evac);
+    jint other = Atomic::cmpxchg(&_threads_in_evac, threads_in_evac, (threads_in_evac - 1) | OOM_MARKER_MASK);
     if (other == threads_in_evac) {
       // Success: wait for other threads to get out of the protocol and return.
       wait_for_no_evac_threads();

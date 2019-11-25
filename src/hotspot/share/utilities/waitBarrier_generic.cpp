@@ -48,7 +48,7 @@ int GenericWaitBarrier::wake_if_needed() {
   assert(w > 0, "Bad counting");
   // We need an exact count which never goes below zero,
   // otherwise the semaphore may be signalled too many times.
-  if (Atomic::cmpxchg(w - 1, &_waiters, w) == w) {
+  if (Atomic::cmpxchg(&_waiters, w, w - 1) == w) {
     _sem_barrier.signal();
     return w - 1;
   }

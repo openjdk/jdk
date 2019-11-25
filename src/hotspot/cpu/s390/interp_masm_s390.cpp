@@ -976,7 +976,7 @@ void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
   //
   // markWord displaced_header = obj->mark().set_unlocked();
   // monitor->lock()->set_displaced_header(displaced_header);
-  // if (Atomic::cmpxchg(/*ex=*/monitor, /*addr*/obj->mark_addr(), /*cmp*/displaced_header) == displaced_header) {
+  // if (Atomic::cmpxchg(/*addr*/obj->mark_addr(), /*cmp*/displaced_header, /*ex=*/monitor) == displaced_header) {
   //   // We stored the monitor address into the object's mark word.
   // } else if (THREAD->is_lock_owned((address)displaced_header))
   //   // Simple recursive case.
@@ -1011,7 +1011,7 @@ void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
   z_stg(displaced_header, BasicObjectLock::lock_offset_in_bytes() +
                           BasicLock::displaced_header_offset_in_bytes(), monitor);
 
-  // if (Atomic::cmpxchg(/*ex=*/monitor, /*addr*/obj->mark_addr(), /*cmp*/displaced_header) == displaced_header) {
+  // if (Atomic::cmpxchg(/*addr*/obj->mark_addr(), /*cmp*/displaced_header, /*ex=*/monitor) == displaced_header) {
 
   // Store stack address of the BasicObjectLock (this is monitor) into object.
   add2reg(object_mark_addr, oopDesc::mark_offset_in_bytes(), object);
@@ -1082,7 +1082,7 @@ void InterpreterMacroAssembler::unlock_object(Register monitor, Register object)
   // if ((displaced_header = monitor->displaced_header()) == NULL) {
   //   // Recursive unlock. Mark the monitor unlocked by setting the object field to NULL.
   //   monitor->set_obj(NULL);
-  // } else if (Atomic::cmpxchg(displaced_header, obj->mark_addr(), monitor) == monitor) {
+  // } else if (Atomic::cmpxchg(obj->mark_addr(), monitor, displaced_header) == monitor) {
   //   // We swapped the unlocked mark in displaced_header into the object's mark word.
   //   monitor->set_obj(NULL);
   // } else {
@@ -1123,7 +1123,7 @@ void InterpreterMacroAssembler::unlock_object(Register monitor, Register object)
                                                       BasicLock::displaced_header_offset_in_bytes()));
   z_bre(done); // displaced_header == 0 -> goto done
 
-  // } else if (Atomic::cmpxchg(displaced_header, obj->mark_addr(), monitor) == monitor) {
+  // } else if (Atomic::cmpxchg(obj->mark_addr(), monitor, displaced_header) == monitor) {
   //   // We swapped the unlocked mark in displaced_header into the object's mark word.
   //   monitor->set_obj(NULL);
 

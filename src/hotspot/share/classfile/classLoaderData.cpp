@@ -273,7 +273,7 @@ void ClassLoaderData::clear_claim(int claim) {
       return;
     }
     int new_claim = old_claim & ~claim;
-    if (Atomic::cmpxchg(new_claim, &_claim, old_claim) == old_claim) {
+    if (Atomic::cmpxchg(&_claim, old_claim, new_claim) == old_claim) {
       return;
     }
   }
@@ -286,7 +286,7 @@ bool ClassLoaderData::try_claim(int claim) {
       return false;
     }
     int new_claim = old_claim | claim;
-    if (Atomic::cmpxchg(new_claim, &_claim, old_claim) == old_claim) {
+    if (Atomic::cmpxchg(&_claim, old_claim, new_claim) == old_claim) {
       return true;
     }
   }

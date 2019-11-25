@@ -584,7 +584,7 @@ inline void ParallelCompactData::RegionData::set_highest_ref(HeapWord* addr)
 #ifdef ASSERT
   HeapWord* tmp = _highest_ref;
   while (addr > tmp) {
-    tmp = Atomic::cmpxchg(addr, &_highest_ref, tmp);
+    tmp = Atomic::cmpxchg(&_highest_ref, tmp, addr);
   }
 #endif  // #ifdef ASSERT
 }
@@ -592,7 +592,7 @@ inline void ParallelCompactData::RegionData::set_highest_ref(HeapWord* addr)
 inline bool ParallelCompactData::RegionData::claim()
 {
   const region_sz_t los = static_cast<region_sz_t>(live_obj_size());
-  const region_sz_t old = Atomic::cmpxchg(dc_claimed | los, &_dc_and_los, los);
+  const region_sz_t old = Atomic::cmpxchg(&_dc_and_los, los, dc_claimed | los);
   return old == los;
 }
 

@@ -229,7 +229,7 @@ public:
     while (true) {
       PerRegionTable* fl = _free_list;
       last->set_next(fl);
-      PerRegionTable* res = Atomic::cmpxchg(prt, &_free_list, fl);
+      PerRegionTable* res = Atomic::cmpxchg(&_free_list, fl, prt);
       if (res == fl) {
         return;
       }

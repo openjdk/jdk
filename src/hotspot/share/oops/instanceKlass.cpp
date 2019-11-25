@@ -2200,7 +2200,7 @@ void InstanceKlass::clean_implementors_list() {
       if (impl != NULL && !impl->is_loader_alive()) {
         // NULL this field, might be an unloaded klass or NULL
         Klass* volatile* klass = adr_implementor();
-        if (Atomic::cmpxchg((Klass*)NULL, klass, impl) == impl) {
+        if (Atomic::cmpxchg(klass, impl, (Klass*)NULL) == impl) {
           // Successfully unlinking implementor.
           if (log_is_enabled(Trace, class, unload)) {
             ResourceMark rm;

@@ -869,7 +869,7 @@ public:
   static BoxCache<PrimitiveType, CacheType, BoxType>* singleton(Thread* thread) {
     if (_singleton == NULL) {
       BoxCache<PrimitiveType, CacheType, BoxType>* s = new BoxCache<PrimitiveType, CacheType, BoxType>(thread);
-      if (!Atomic::replace_if_null(s, &_singleton)) {
+      if (!Atomic::replace_if_null(&_singleton, s)) {
         delete s;
       }
     }
@@ -923,7 +923,7 @@ public:
   static BooleanBoxCache* singleton(Thread* thread) {
     if (_singleton == NULL) {
       BooleanBoxCache* s = new BooleanBoxCache(thread);
-      if (!Atomic::replace_if_null(s, &_singleton)) {
+      if (!Atomic::replace_if_null(&_singleton, s)) {
         delete s;
       }
     }

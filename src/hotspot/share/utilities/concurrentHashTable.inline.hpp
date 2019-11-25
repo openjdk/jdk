@@ -145,7 +145,7 @@ inline bool ConcurrentHashTable<CONFIG, F>::
   if (is_locked()) {
     return false;
   }
-  if (Atomic::cmpxchg(node, &_first, expect) == expect) {
+  if (Atomic::cmpxchg(&_first, expect, node) == expect) {
     return true;
   }
   return false;
@@ -160,7 +160,7 @@ inline bool ConcurrentHashTable<CONFIG, F>::
   }
   // We will expect a clean first pointer.
   Node* tmp = first();
-  if (Atomic::cmpxchg(set_state(tmp, STATE_LOCK_BIT), &_first, tmp) == tmp) {
+  if (Atomic::cmpxchg(&_first, tmp, set_state(tmp, STATE_LOCK_BIT)) == tmp) {
     return true;
   }
   return false;

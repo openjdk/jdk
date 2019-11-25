@@ -289,9 +289,9 @@ struct Atomic::PlatformCmpxchg<1> : Atomic::CmpxchgByteUsingInt {};
 
 template<>
 template<typename T>
-inline T Atomic::PlatformCmpxchg<4>::operator()(T xchg_val,
-                                                T volatile* dest,
+inline T Atomic::PlatformCmpxchg<4>::operator()(T volatile* dest,
                                                 T cmp_val,
+                                                T xchg_val,
                                                 atomic_memory_order unused) const {
   STATIC_ASSERT(4 == sizeof(T));
   T old;
@@ -313,9 +313,9 @@ inline T Atomic::PlatformCmpxchg<4>::operator()(T xchg_val,
 
 template<>
 template<typename T>
-inline T Atomic::PlatformCmpxchg<8>::operator()(T xchg_val,
-                                                T volatile* dest,
+inline T Atomic::PlatformCmpxchg<8>::operator()(T volatile* dest,
                                                 T cmp_val,
+                                                T xchg_val,
                                                 atomic_memory_order unused) const {
   STATIC_ASSERT(8 == sizeof(T));
   T old;

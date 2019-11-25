@@ -217,7 +217,7 @@ void BitMap::par_put_range_within_word(idx_t beg, idx_t end, bool value) {
     bm_word_t  mr = inverted_bit_mask_for_range(beg, end);
     bm_word_t  nw = value ? (w | ~mr) : (w & mr);
     while (true) {
-      bm_word_t res = Atomic::cmpxchg(nw, pw, w);
+      bm_word_t res = Atomic::cmpxchg(pw, w, nw);
       if (res == w) break;
       w  = res;
       nw = value ? (w | ~mr) : (w & mr);
@@ -640,7 +640,7 @@ void BitMap::init_pop_count_table() {
       table[i] = num_set_bits(i);
     }
 
-    if (!Atomic::replace_if_null(table, &_pop_count_table)) {
+    if (!Atomic::replace_if_null(&_pop_count_table, table)) {
       guarantee(_pop_count_table != NULL, "invariant");
       FREE_C_HEAP_ARRAY(idx_t, table);
     }

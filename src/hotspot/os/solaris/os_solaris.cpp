@@ -1024,7 +1024,7 @@ inline hrtime_t getTimeNanos() {
   if (now <= prev) {
     return prev;   // same or retrograde time;
   }
-  const hrtime_t obsv = Atomic::cmpxchg(now, &max_hrtime, prev);
+  const hrtime_t obsv = Atomic::cmpxchg(&max_hrtime, prev, now);
   assert(obsv >= prev, "invariant");   // Monotonicity
   // If the CAS succeeded then we're done and return "now".
   // If the CAS failed and the observed value "obsv" is >= now then
@@ -1984,7 +1984,7 @@ static int check_pending_signals() {
   while (true) {
     for (int i = 0; i < Sigexit + 1; i++) {
       jint n = pending_signals[i];
-      if (n > 0 && n == Atomic::cmpxchg(n - 1, &pending_signals[i], n)) {
+      if (n > 0 && n == Atomic::cmpxchg(&pending_signals[i], n, n - 1)) {
         return i;
       }
     }
@@ -4710,7 +4710,7 @@ void os::PlatformEvent::park() {           // AKA: down()
   int v;
   for (;;) {
     v = _Event;
-    if (Atomic::cmpxchg(v-1, &_Event, v) == v) break;
+    if (Atomic::cmpxchg(&_Event, v, v-1) == v) break;
   }
   guarantee(v >= 0, "invariant");
   if (v == 0) {
@@ -4748,7 +4748,7 @@ int os::PlatformEvent::park(jlong millis) {
   int v;
   for (;;) {
     v = _Event;
-    if (Atomic::cmpxchg(v-1, &_Event, v) == v) break;
+    if (Atomic::cmpxchg(&_Event, v, v-1) == v) break;
   }
   guarantee(v >= 0, "invariant");
   if (v != 0) return OS_OK;

@@ -1900,7 +1900,7 @@ void os::PlatformEvent::park() {       // AKA "down()"
   // atomically decrement _event
   for (;;) {
     v = _event;
-    if (Atomic::cmpxchg(v - 1, &_event, v) == v) break;
+    if (Atomic::cmpxchg(&_event, v, v - 1) == v) break;
   }
   guarantee(v >= 0, "invariant");
 
@@ -1940,7 +1940,7 @@ int os::PlatformEvent::park(jlong millis) {
   // atomically decrement _event
   for (;;) {
     v = _event;
-    if (Atomic::cmpxchg(v - 1, &_event, v) == v) break;
+    if (Atomic::cmpxchg(&_event, v, v - 1) == v) break;
   }
   guarantee(v >= 0, "invariant");
 

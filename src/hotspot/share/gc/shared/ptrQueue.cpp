@@ -197,7 +197,7 @@ void BufferNode::Allocator::release(BufferNode* node) {
 bool BufferNode::Allocator::try_transfer_pending() {
   // Attempt to claim the lock.
   if (Atomic::load(&_transfer_lock) || // Skip CAS if likely to fail.
-      Atomic::cmpxchg(true, &_transfer_lock, false)) {
+      Atomic::cmpxchg(&_transfer_lock, false, true)) {
     return false;
   }
   // Have the lock; perform the transfer.

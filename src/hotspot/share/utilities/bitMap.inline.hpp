@@ -72,7 +72,7 @@ inline bool BitMap::par_set_bit(idx_t bit, atomic_memory_order memory_order) {
     if (new_val == old_val) {
       return false;     // Someone else beat us to it.
     }
-    const bm_word_t cur_val = Atomic::cmpxchg(new_val, addr, old_val, memory_order);
+    const bm_word_t cur_val = Atomic::cmpxchg(addr, old_val, new_val, memory_order);
     if (cur_val == old_val) {
       return true;      // Success.
     }
@@ -91,7 +91,7 @@ inline bool BitMap::par_clear_bit(idx_t bit, atomic_memory_order memory_order) {
     if (new_val == old_val) {
       return false;     // Someone else beat us to it.
     }
-    const bm_word_t cur_val = Atomic::cmpxchg(new_val, addr, old_val, memory_order);
+    const bm_word_t cur_val = Atomic::cmpxchg(addr, old_val, new_val, memory_order);
     if (cur_val == old_val) {
       return true;      // Success.
     }

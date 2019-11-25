@@ -609,6 +609,6 @@ bool HeapRegionClaimer::is_region_claimed(uint region_index) const {
 
 bool HeapRegionClaimer::claim_region(uint region_index) {
   assert(region_index < _n_regions, "Invalid index.");
-  uint old_val = Atomic::cmpxchg(Claimed, &_claims[region_index], Unclaimed);
+  uint old_val = Atomic::cmpxchg(&_claims[region_index], Unclaimed, Claimed);
   return old_val == Unclaimed;
 }

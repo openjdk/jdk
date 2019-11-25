@@ -121,7 +121,7 @@ JvmtiRawMonitor::is_valid() {
 
 void JvmtiRawMonitor::simple_enter(Thread* self) {
   for (;;) {
-    if (Atomic::replace_if_null(self, &_owner)) {
+    if (Atomic::replace_if_null(&_owner, self)) {
       return;
     }
 
@@ -133,7 +133,7 @@ void JvmtiRawMonitor::simple_enter(Thread* self) {
     node._next = _entry_list;
     _entry_list = &node;
     OrderAccess::fence();
-    if (_owner == NULL && Atomic::replace_if_null(self, &_owner)) {
+    if (_owner == NULL && Atomic::replace_if_null(&_owner, self)) {
       _entry_list = node._next;
       RawMonitor_lock->unlock();
       return;
@@ -322,10 +322,10 @@ void JvmtiRawMonitor::raw_enter(Thread* self) {
       jt->SR_lock()->lock_without_safepoint_check();
     }
     // guarded by SR_lock to avoid racing with new external suspend requests.
-    contended = Atomic::cmpxchg(jt, &_owner, (Thread*)NULL);
+    contended = Atomic::cmpxchg(&_owner, (Thread*)NULL, jt);
     jt->SR_lock()->unlock();
   } else {
-    contended = Atomic::cmpxchg(self, &_owner, (Thread*)NULL);
+    contended = Atomic::cmpxchg(&_owner, (Thread*)NULL, self);
   }
 
   if (contended == self) {

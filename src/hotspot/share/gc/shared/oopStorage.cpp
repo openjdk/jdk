@@ -307,7 +307,7 @@ oop* OopStorage::Block::allocate() {
     assert(!is_full_bitmask(allocated), "attempt to allocate from full block");
     unsigned index = count_trailing_zeros(~allocated);
     uintx new_value = allocated | bitmask_for_index(index);
-    uintx fetched = Atomic::cmpxchg(new_value, &_allocated_bitmask, allocated);
+    uintx fetched = Atomic::cmpxchg(&_allocated_bitmask, allocated, new_value);
     if (fetched == allocated) {
       return get_pointer(index); // CAS succeeded; return entry for index.
     }
@@ -595,7 +595,7 @@ void OopStorage::Block::release_entries(uintx releasing, OopStorage* owner) {
   while (true) {
     assert((releasing & ~old_allocated) == 0, "releasing unallocated entries");
     uintx new_value = old_allocated ^ releasing;
-    uintx fetched = Atomic::cmpxchg(new_value, &_allocated_bitmask, old_allocated);
+    uintx fetched = Atomic::cmpxchg(&_allocated_bitmask, old_allocated, new_value);
     if (fetched == old_allocated) break; // Successful update.
     old_allocated = fetched;             // Retry with updated bitmask.
   }
@@ -614,12 +614,12 @@ void OopStorage::Block::release_entries(uintx releasing, OopStorage* owner) {
     // then someone else has made such a claim and the deferred update has not
     // yet been processed and will include our change, so we don't need to do
     // anything further.
-    if (Atomic::replace_if_null(this, &_deferred_updates_next)) {
+    if (Atomic::replace_if_null(&_deferred_updates_next, this)) {
       // Successfully claimed.  Push, with self-loop for end-of-list.
       Block* head = owner->_deferred_updates;
       while (true) {
         _deferred_updates_next = (head == NULL) ? this : head;
-        Block* fetched = Atomic::cmpxchg(this, &owner->_deferred_updates, head);
+        Block* fetched = Atomic::cmpxchg(&owner->_deferred_updates, head, this);
         if (fetched == head) break; // Successful update.
         head = fetched;             // Retry with updated head.
       }
@@ -651,7 +651,7 @@ bool OopStorage::reduce_deferred_updates() {
     // Try atomic pop of block from list.
     Block* tail = block->deferred_updates_next();
     if (block == tail) tail = NULL; // Handle self-loop end marker.
-    Block* fetched = Atomic::cmpxchg(tail, &_deferred_updates, block);
+    Block* fetched = Atomic::cmpxchg(&_deferred_updates, block, tail);
     if (fetched == block) break; // Update successful.
     block = fetched;             // Retry with updated block.
   }
@@ -825,7 +825,7 @@ bool OopStorage::has_cleanup_work_and_reset() {
   // Set the request flag false and return its old value.
   // Needs to be atomic to avoid dropping a concurrent request.
   // Can't use Atomic::xchg, which may not support bool.
-  return Atomic::cmpxchg(false, &needs_cleanup_requested, true);
+  return Atomic::cmpxchg(&needs_cleanup_requested, true, false);
 }
 
 // Record that cleanup is needed, without notifying the Service thread.

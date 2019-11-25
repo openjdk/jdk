@@ -239,16 +239,16 @@ struct Atomic::PlatformCmpxchg<1> : Atomic::CmpxchgByteUsingInt {};
 
 template<>
 template<typename T>
-inline T Atomic::PlatformCmpxchg<4>::operator()(T exchange_value,
-                                                T volatile* dest,
+inline T Atomic::PlatformCmpxchg<4>::operator()(T volatile* dest,
                                                 T compare_value,
+                                                T exchange_value,
                                                 atomic_memory_order order) const {
   STATIC_ASSERT(4 == sizeof(T));
 #ifdef ARM
-  return cmpxchg_using_helper<int>(arm_compare_and_swap, exchange_value, dest, compare_value);
+  return cmpxchg_using_helper<int>(arm_compare_and_swap, dest, compare_value, exchange_value);
 #else
 #ifdef M68K
-  return cmpxchg_using_helper<int>(m68k_compare_and_swap, exchange_value, dest, compare_value);
+  return cmpxchg_using_helper<int>(m68k_compare_and_swap, dest, compare_value, exchange_value);
 #else
   return __sync_val_compare_and_swap(dest, compare_value, exchange_value);
 #endif // M68K
@@ -257,9 +257,9 @@ inline T Atomic::PlatformCmpxchg<4>::operator()(T exchange_value,
 
 template<>
 template<typename T>
-inline T Atomic::PlatformCmpxchg<8>::operator()(T exchange_value,
-                                                T volatile* dest,
+inline T Atomic::PlatformCmpxchg<8>::operator()(T volatile* dest,
                                                 T compare_value,
+                                                T exchange_value,
                                                 atomic_memory_order order) const {
   STATIC_ASSERT(8 == sizeof(T));
   return __sync_val_compare_and_swap(dest, compare_value, exchange_value);

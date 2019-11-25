@@ -1150,7 +1150,7 @@ bool nmethod::try_transition(int new_state_int) {
       // Ensure monotonicity of transitions.
       return false;
     }
-    if (Atomic::cmpxchg(new_state, &_state, old_state) == old_state) {
+    if (Atomic::cmpxchg(&_state, old_state, new_state) == old_state) {
       return true;
     }
   }
@@ -1849,7 +1849,7 @@ bool nmethod::oops_do_try_claim_weak_request() {
   assert(SafepointSynchronize::is_at_safepoint(), "only at safepoint");
 
   if ((_oops_do_mark_link == NULL) &&
-      (Atomic::replace_if_null(mark_link(this, claim_weak_request_tag), &_oops_do_mark_link))) {
+      (Atomic::replace_if_null(&_oops_do_mark_link, mark_link(this, claim_weak_request_tag)))) {
     oops_do_log_change("oops_do, mark weak request");
     return true;
   }
@@ -1863,7 +1863,7 @@ void nmethod::oops_do_set_strong_done(nmethod* old_head) {
 nmethod::oops_do_mark_link* nmethod::oops_do_try_claim_strong_done() {
   assert(SafepointSynchronize::is_at_safepoint(), "only at safepoint");
 
-  oops_do_mark_link* old_next = Atomic::cmpxchg(mark_link(this, claim_strong_done_tag), &_oops_do_mark_link, mark_link(NULL, claim_weak_request_tag));
+  oops_do_mark_link* old_next = Atomic::cmpxchg(&_oops_do_mark_link, mark_link(NULL, claim_weak_request_tag), mark_link(this, claim_strong_done_tag));
   if (old_next == NULL) {
     oops_do_log_change("oops_do, mark strong done");
   }
@@ -1874,7 +1874,7 @@ nmethod::oops_do_mark_link* nmethod::oops_do_try_add_strong_request(nmethod::oop
   assert(SafepointSynchronize::is_at_safepoint(), "only at safepoint");
   assert(next == mark_link(this, claim_weak_request_tag), "Should be claimed as weak");
 
-  oops_do_mark_link* old_next = Atomic::cmpxchg(mark_link(this, claim_strong_request_tag), &_oops_do_mark_link, next);
+  oops_do_mark_link* old_next = Atomic::cmpxchg(&_oops_do_mark_link, next, mark_link(this, claim_strong_request_tag));
   if (old_next == next) {
     oops_do_log_change("oops_do, mark strong request");
   }
@@ -1885,7 +1885,7 @@ bool nmethod::oops_do_try_claim_weak_done_as_strong_done(nmethod::oops_do_mark_l
   assert(SafepointSynchronize::is_at_safepoint(), "only at safepoint");
   assert(extract_state(next) == claim_weak_done_tag, "Should be claimed as weak done");
 
-  oops_do_mark_link* old_next = Atomic::cmpxchg(mark_link(extract_nmethod(next), claim_strong_done_tag), &_oops_do_mark_link, next);
+  oops_do_mark_link* old_next = Atomic::cmpxchg(&_oops_do_mark_link, next, mark_link(extract_nmethod(next), claim_strong_done_tag));
   if (old_next == next) {
     oops_do_log_change("oops_do, mark weak done -> mark strong done");
     return true;
@@ -1906,7 +1906,7 @@ nmethod* nmethod::oops_do_try_add_to_list_as_weak_done() {
     old_head = this;
   }
   // Try to install end of list and weak done tag.
-  if (Atomic::cmpxchg(mark_link(old_head, claim_weak_done_tag), &_oops_do_mark_link, mark_link(this, claim_weak_request_tag)) == mark_link(this, claim_weak_request_tag)) {
+  if (Atomic::cmpxchg(&_oops_do_mark_link, mark_link(this, claim_weak_request_tag), mark_link(old_head, claim_weak_done_tag)) == mark_link(this, claim_weak_request_tag)) {
     oops_do_log_change("oops_do, mark weak done");
     return NULL;
   } else {

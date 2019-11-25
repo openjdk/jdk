@@ -87,7 +87,7 @@ void JfrPostBox::deposit(int new_messages) {
     const int current_msgs = Atomic::load(&_messages);
     // OR the new message
     const int exchange_value = current_msgs | new_messages;
-    const int result = Atomic::cmpxchg(exchange_value, &_messages, current_msgs);
+    const int result = Atomic::cmpxchg(&_messages, current_msgs, exchange_value);
     if (result == current_msgs) {
       return;
     }

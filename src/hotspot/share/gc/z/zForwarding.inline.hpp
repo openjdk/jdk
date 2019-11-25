@@ -63,7 +63,7 @@ inline bool ZForwarding::inc_refcount() {
   while (refcount > 0) {
     const uint32_t old_refcount = refcount;
     const uint32_t new_refcount = old_refcount + 1;
-    const uint32_t prev_refcount = Atomic::cmpxchg(new_refcount, &_refcount, old_refcount);
+    const uint32_t prev_refcount = Atomic::cmpxchg(&_refcount, old_refcount, new_refcount);
     if (prev_refcount == old_refcount) {
       return true;
     }
@@ -139,7 +139,7 @@ inline uintptr_t ZForwarding::insert(uintptr_t from_index, uintptr_t to_offset, 
   const ZForwardingEntry old_entry; // Empty
 
   for (;;) {
-    const ZForwardingEntry prev_entry = Atomic::cmpxchg(new_entry, entries() + *cursor, old_entry);
+    const ZForwardingEntry prev_entry = Atomic::cmpxchg(entries() + *cursor, old_entry, new_entry);
     if (!prev_entry.populated()) {
       // Success
       return to_offset;

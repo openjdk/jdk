@@ -273,7 +273,7 @@ void jfieldIDWorkaround::verify_instance_jfieldID(Klass* k, jfieldID id) {
     _name = elementName;
     uintx count = 0;
 
-    while (Atomic::cmpxchg(1, &JNIHistogram_lock, 0) != 0) {
+    while (Atomic::cmpxchg(&JNIHistogram_lock, 0, 1) != 0) {
       while (Atomic::load_acquire(&JNIHistogram_lock) != 0) {
         count +=1;
         if ( (WarnOnStalledSpinLock > 0)
@@ -3233,7 +3233,7 @@ static bool initializeDirectBufferSupport(JNIEnv* env, JavaThread* thread) {
     return false;
   }
 
-  if (Atomic::cmpxchg(1, &directBufferSupportInitializeStarted, 0) == 0) {
+  if (Atomic::cmpxchg(&directBufferSupportInitializeStarted, 0, 1) == 0) {
     if (!lookupDirectBufferClasses(env)) {
       directBufferSupportInitializeFailed = 1;
       return false;

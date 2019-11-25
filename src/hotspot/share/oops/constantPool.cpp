@@ -808,8 +808,9 @@ void ConstantPool::save_and_throw_exception(const constantPoolHandle& this_cp, i
     // This doesn't deterministically get an error.   So why do we save this?
     // We save this because jvmti can add classes to the bootclass path after
     // this error, so it needs to get the same error if the error is first.
-    jbyte old_tag = Atomic::cmpxchg((jbyte)error_tag,
-                            (jbyte*)this_cp->tag_addr_at(which), (jbyte)tag.value());
+    jbyte old_tag = Atomic::cmpxchg((jbyte*)this_cp->tag_addr_at(which),
+                                    (jbyte)tag.value(),
+                                    (jbyte)error_tag);
     if (old_tag != error_tag && old_tag != tag.value()) {
       // MethodHandles and MethodType doesn't change to resolved version.
       assert(this_cp->tag_at(which).is_klass(), "Wrong tag value");

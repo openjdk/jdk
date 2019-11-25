@@ -569,7 +569,7 @@ MethodCounters* Method::build_method_counters(Method* m, TRAPS) {
 
 bool Method::init_method_counters(MethodCounters* counters) {
   // Try to install a pointer to MethodCounters, return true on success.
-  return Atomic::replace_if_null(counters, &_method_counters);
+  return Atomic::replace_if_null(&_method_counters, counters);
 }
 
 int Method::extra_stack_words() {

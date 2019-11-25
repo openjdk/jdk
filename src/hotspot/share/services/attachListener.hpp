@@ -95,7 +95,7 @@ class AttachListener: AllStatic {
 
   static AttachListenerState transit_state(AttachListenerState new_state,
                                            AttachListenerState cmp_state) {
-    return Atomic::cmpxchg(new_state, &_state, cmp_state);
+    return Atomic::cmpxchg(&_state, cmp_state, new_state);
   }
 
   static bool is_initialized() {

@@ -159,7 +159,7 @@ void ConstantPoolCacheEntry::set_parameter_size(int value) {
   // sure that the final parameter size agrees with what was passed.
   if (_flags == 0) {
     intx newflags = (value & parameter_size_mask);
-    Atomic::cmpxchg(newflags, &_flags, (intx)0);
+    Atomic::cmpxchg(&_flags, (intx)0, newflags);
   }
   guarantee(parameter_size() == value,
             "size must not change: parameter_size=%d, value=%d", parameter_size(), value);

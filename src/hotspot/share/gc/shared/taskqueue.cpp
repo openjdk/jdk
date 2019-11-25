@@ -244,7 +244,7 @@ bool ParallelTaskTerminator::complete_or_exit_termination() {
       return true;
     }
     expected_value = current_offered;
-  } while ((current_offered = Atomic::cmpxchg(current_offered - 1, &_offered_termination, current_offered)) != expected_value);
+  } while ((current_offered = Atomic::cmpxchg(&_offered_termination, current_offered, current_offered - 1)) != expected_value);
 
   assert(_offered_termination < _n_threads, "Invariant");
   return false;

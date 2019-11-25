@@ -3377,7 +3377,7 @@ class G1RedirtyLoggedCardsTask : public AbstractGangTask {
     BufferNode* next = Atomic::load(&_nodes);
     while (next != NULL) {
       BufferNode* node = next;
-      next = Atomic::cmpxchg(node->next(), &_nodes, node);
+      next = Atomic::cmpxchg(&_nodes, node, node->next());
       if (next == node) {
         cl->apply_to_buffer(node, buffer_size, worker_id);
         next = node->next();

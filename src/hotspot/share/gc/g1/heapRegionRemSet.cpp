@@ -46,7 +46,7 @@ PerRegionTable* PerRegionTable::alloc(HeapRegion* hr) {
   PerRegionTable* fl = _free_list;
   while (fl != NULL) {
     PerRegionTable* nxt = fl->next();
-    PerRegionTable* res = Atomic::cmpxchg(nxt, &_free_list, fl);
+    PerRegionTable* res = Atomic::cmpxchg(&_free_list, fl, nxt);
     if (res == fl) {
       fl->init(hr, true);
       return fl;

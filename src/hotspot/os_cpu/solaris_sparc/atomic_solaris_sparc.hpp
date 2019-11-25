@@ -35,7 +35,7 @@ struct Atomic::PlatformAdd {
     D old_value = *dest;
     while (true) {
       D new_value = old_value + add_value;
-      D result = cmpxchg(new_value, dest, old_value);
+      D result = cmpxchg(dest, old_value, new_value);
       if (result == old_value) break;
       old_value = result;
     }
@@ -64,7 +64,7 @@ inline T Atomic::PlatformXchg<8>::operator()(T volatile* dest,
   STATIC_ASSERT(8 == sizeof(T));
   T old_value = *dest;
   while (true) {
-    T result = cmpxchg(exchange_value, dest, old_value);
+    T result = cmpxchg(dest, old_value, exchange_value);
     if (result == old_value) break;
     old_value = result;
   }
@@ -77,9 +77,9 @@ struct Atomic::PlatformCmpxchg<1> : Atomic::CmpxchgByteUsingInt {};
 
 template<>
 template<typename T>
-inline T Atomic::PlatformCmpxchg<4>::operator()(T exchange_value,
-                                                T volatile* dest,
+inline T Atomic::PlatformCmpxchg<4>::operator()(T volatile* dest,
                                                 T compare_value,
+                                                T exchange_value,
                                                 atomic_memory_order order) const {
   STATIC_ASSERT(4 == sizeof(T));
   T rv;
@@ -93,9 +93,9 @@ inline T Atomic::PlatformCmpxchg<4>::operator()(T exchange_value,
 
 template<>
 template<typename T>
-inline T Atomic::PlatformCmpxchg<8>::operator()(T exchange_value,
-                                                T volatile* dest,
+inline T Atomic::PlatformCmpxchg<8>::operator()(T volatile* dest,
                                                 T compare_value,
+                                                T exchange_value,
                                                 atomic_memory_order order) const {
   STATIC_ASSERT(8 == sizeof(T));
   T rv;

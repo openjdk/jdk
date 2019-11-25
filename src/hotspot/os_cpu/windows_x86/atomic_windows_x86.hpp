@@ -91,15 +91,15 @@ DEFINE_STUB_XCHG(8, int64_t, os::atomic_xchg_long_func)
 
 #undef DEFINE_STUB_XCHG
 
-#define DEFINE_STUB_CMPXCHG(ByteSize, StubType, StubName)               \
-  template<>                                                            \
-  template<typename T>                                                  \
-  inline T Atomic::PlatformCmpxchg<ByteSize>::operator()(T exchange_value, \
-                                                         T volatile* dest, \
-                                                         T compare_value, \
+#define DEFINE_STUB_CMPXCHG(ByteSize, StubType, StubName)                  \
+  template<>                                                               \
+  template<typename T>                                                     \
+  inline T Atomic::PlatformCmpxchg<ByteSize>::operator()(T volatile* dest, \
+                                                         T compare_value,  \
+                                                         T exchange_value, \
                                                          atomic_memory_order order) const { \
-    STATIC_ASSERT(ByteSize == sizeof(T));                               \
-    return cmpxchg_using_helper<StubType>(StubName, exchange_value, dest, compare_value); \
+    STATIC_ASSERT(ByteSize == sizeof(T));                                  \
+    return cmpxchg_using_helper<StubType>(StubName, dest, compare_value, exchange_value); \
   }
 
 DEFINE_STUB_CMPXCHG(1, int8_t,  os::atomic_cmpxchg_byte_func)
@@ -141,9 +141,9 @@ inline T Atomic::PlatformXchg<4>::operator()(T volatile* dest,
 
 template<>
 template<typename T>
-inline T Atomic::PlatformCmpxchg<1>::operator()(T exchange_value,
-                                                T volatile* dest,
+inline T Atomic::PlatformCmpxchg<1>::operator()(T volatile* dest,
                                                 T compare_value,
+                                                T exchange_value,
                                                 atomic_memory_order order) const {
   STATIC_ASSERT(1 == sizeof(T));
   // alternative for InterlockedCompareExchange
@@ -157,9 +157,9 @@ inline T Atomic::PlatformCmpxchg<1>::operator()(T exchange_value,
 
 template<>
 template<typename T>
-inline T Atomic::PlatformCmpxchg<4>::operator()(T exchange_value,
-                                                T volatile* dest,
+inline T Atomic::PlatformCmpxchg<4>::operator()(T volatile* dest,
                                                 T compare_value,
+                                                T exchange_value,
                                                 atomic_memory_order order) const {
   STATIC_ASSERT(4 == sizeof(T));
   // alternative for InterlockedCompareExchange
@@ -173,9 +173,9 @@ inline T Atomic::PlatformCmpxchg<4>::operator()(T exchange_value,
 
 template<>
 template<typename T>
-inline T Atomic::PlatformCmpxchg<8>::operator()(T exchange_value,
-                                                T volatile* dest,
+inline T Atomic::PlatformCmpxchg<8>::operator()(T volatile* dest,
                                                 T compare_value,
+                                                T exchange_value,
                                                 atomic_memory_order order) const {
   STATIC_ASSERT(8 == sizeof(T));
   int32_t ex_lo  = (int32_t)exchange_value;

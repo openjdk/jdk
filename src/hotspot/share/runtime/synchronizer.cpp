@@ -240,7 +240,7 @@ bool ObjectSynchronizer::quick_enter(oop obj, Thread* self,
     // and last are the inflated Java Monitor (ObjectMonitor) checks.
     lock->set_displaced_header(markWord::unused_mark());
 
-    if (owner == NULL && Atomic::replace_if_null(self, &(m->_owner))) {
+    if (owner == NULL && Atomic::replace_if_null(&(m->_owner), self)) {
       assert(m->_recursions == 0, "invariant");
       return true;
     }
@@ -749,7 +749,7 @@ intptr_t ObjectSynchronizer::FastHashCode(Thread* self, oop obj) {
     hash = get_next_hash(self, obj);  // get a new hash
     temp = mark.copy_set_hash(hash);  // merge the hash into header
     assert(temp.is_neutral(), "invariant: header=" INTPTR_FORMAT, temp.value());
-    uintptr_t v = Atomic::cmpxchg(temp.value(), (volatile uintptr_t*)monitor->header_addr(), mark.value());
+    uintptr_t v = Atomic::cmpxchg((volatile uintptr_t*)monitor->header_addr(), mark.value(), temp.value());
     test = markWord(v);
     if (test != mark) {
       // The attempt to update the ObjectMonitor's header/dmw field

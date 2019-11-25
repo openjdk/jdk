@@ -141,10 +141,10 @@ public:
   // value of *dest. cmpxchg*() provide:
   // <fence> compare-and-exchange <membar StoreLoad|StoreStore>
 
-  template<typename T, typename D, typename U>
-  inline static D cmpxchg(T exchange_value,
-                          D volatile* dest,
+  template<typename D, typename U, typename T>
+  inline static D cmpxchg(D volatile* dest,
                           U compare_value,
+                          T exchange_value,
                           atomic_memory_order order = memory_order_conservative);
 
   // Performs atomic compare of *dest and NULL, and replaces *dest
@@ -152,8 +152,8 @@ public:
   // the comparison succeeded and the exchange occurred.  This is
   // often used as part of lazy initialization, as a lock-free
   // alternative to the Double-Checked Locking Pattern.
-  template<typename T, typename D>
-  inline static bool replace_if_null(T* value, D* volatile* dest,
+  template<typename D, typename T>
+  inline static bool replace_if_null(D* volatile* dest, T* value,
                                      atomic_memory_order order = memory_order_conservative);
 
 private:
@@ -293,7 +293,7 @@ private:
   // checking and limited conversions around calls to the
   // platform-specific implementation layer provided by
   // PlatformCmpxchg.
-  template<typename T, typename D, typename U, typename Enable = void>
+  template<typename D, typename U, typename T, typename Enable = void>
   struct CmpxchgImpl;
 
   // Platform-specific implementation of cmpxchg.  Support for sizes
@@ -306,11 +306,11 @@ private:
   // - platform_cmpxchg is an object of type PlatformCmpxchg<sizeof(T)>.
   //
   // Then
-  //   platform_cmpxchg(exchange_value, dest, compare_value, order)
+  //   platform_cmpxchg(dest, compare_value, exchange_value, order)
   // must be a valid expression, returning a result convertible to T.
   //
   // A default definition is provided, which declares a function template
-  //   T operator()(T, T volatile*, T, atomic_memory_order) const
+  //   T operator()(T volatile*, T, T, atomic_memory_order) const
   //
   // For each required size, a platform must either provide an
   // appropriate definition of that function, or must entirely
@@ -326,9 +326,9 @@ private:
   // helper function.
   template<typename Type, typename Fn, typename T>
   static T cmpxchg_using_helper(Fn fn,
-                                T exchange_value,
                                 T volatile* dest,
-                                T compare_value);
+                                T compare_value,
+                                T exchange_value);
 
   // Support platforms that do not provide Read-Modify-Write
   // byte-level atomic access. To use, derive PlatformCmpxchg<1> from
@@ -568,9 +568,9 @@ inline D Atomic::sub(D volatile* dest, I sub_value, atomic_memory_order order) {
 template<size_t byte_size>
 struct Atomic::PlatformCmpxchg {
   template<typename T>
-  T operator()(T exchange_value,
-               T volatile* dest,
+  T operator()(T volatile* dest,
                T compare_value,
+               T exchange_value,
                atomic_memory_order order) const;
 };
 
@@ -579,9 +579,9 @@ struct Atomic::PlatformCmpxchg {
 // in this file, near the other definitions related to cmpxchg.
 struct Atomic::CmpxchgByteUsingInt {
   template<typename T>
-  T operator()(T exchange_value,
-               T volatile* dest,
+  T operator()(T volatile* dest,
                T compare_value,
+               T exchange_value,
                atomic_memory_order order) const;
 };
 
@@ -745,22 +745,22 @@ inline D Atomic::add_using_helper(Fn fn, D volatile* dest, I add_value) {
        reinterpret_cast<Type volatile*>(dest)));
 }
 
-template<typename T, typename D, typename U>
-inline D Atomic::cmpxchg(T exchange_value,
-                         D volatile* dest,
+template<typename D, typename U, typename T>
+inline D Atomic::cmpxchg(D volatile* dest,
                          U compare_value,
+                         T exchange_value,
                          atomic_memory_order order) {
-  return CmpxchgImpl<T, D, U>()(exchange_value, dest, compare_value, order);
+  return CmpxchgImpl<D, U, T>()(dest, compare_value, exchange_value, order);
 }
 
-template<typename T, typename D>
-inline bool Atomic::replace_if_null(T* value, D* volatile* dest,
+template<typename D, typename T>
+inline bool Atomic::replace_if_null(D* volatile* dest, T* value,
                                     atomic_memory_order order) {
   // Presently using a trivial implementation in terms of cmpxchg.
   // Consider adding platform support, to permit the use of compiler
   // intrinsics like gcc's __sync_bool_compare_and_swap.
   D* expected_null = NULL;
-  return expected_null == cmpxchg(value, dest, expected_null, order);
+  return expected_null == cmpxchg(dest, expected_null, value, order);
 }
 
 // Handle cmpxchg for integral and enum types.
@@ -771,12 +771,12 @@ struct Atomic::CmpxchgImpl<
   T, T, T,
   typename EnableIf<IsIntegral<T>::value || IsRegisteredEnum<T>::value>::type>
 {
-  T operator()(T exchange_value, T volatile* dest, T compare_value,
+  T operator()(T volatile* dest, T compare_value, T exchange_value,
                atomic_memory_order order) const {
     // Forward to the platform handler for the size of T.
-    return PlatformCmpxchg<sizeof(T)>()(exchange_value,
-                                        dest,
+    return PlatformCmpxchg<sizeof(T)>()(dest,
                                         compare_value,
+                                        exchange_value,
                                         order);
   }
 };
@@ -790,21 +790,21 @@ struct Atomic::CmpxchgImpl<
 // The exchange_value must be implicitly convertible to the
 // destination's type; it must be type-correct to store the
 // exchange_value in the destination.
-template<typename T, typename D, typename U>
+template<typename D, typename U, typename T>
 struct Atomic::CmpxchgImpl<
-  T*, D*, U*,
+  D*, U*, T*,
   typename EnableIf<Atomic::IsPointerConvertible<T*, D*>::value &&
                     IsSame<typename RemoveCV<D>::type,
                            typename RemoveCV<U>::type>::value>::type>
 {
-  D* operator()(T* exchange_value, D* volatile* dest, U* compare_value,
+  D* operator()(D* volatile* dest, U* compare_value, T* exchange_value,
                atomic_memory_order order) const {
     // Allow derived to base conversion, and adding cv-qualifiers.
     D* new_value = exchange_value;
     // Don't care what the CV qualifiers for compare_value are,
     // but we need to match D* when calling platform support.
     D* old_value = const_cast<D*>(compare_value);
-    return PlatformCmpxchg<sizeof(D*)>()(new_value, dest, old_value, order);
+    return PlatformCmpxchg<sizeof(D*)>()(dest, old_value, new_value, order);
   }
 };
 
@@ -820,24 +820,24 @@ struct Atomic::CmpxchgImpl<
   T, T, T,
   typename EnableIf<PrimitiveConversions::Translate<T>::value>::type>
 {
-  T operator()(T exchange_value, T volatile* dest, T compare_value,
+  T operator()(T volatile* dest, T compare_value, T exchange_value,
                atomic_memory_order order) const {
     typedef PrimitiveConversions::Translate<T> Translator;
     typedef typename Translator::Decayed Decayed;
     STATIC_ASSERT(sizeof(T) == sizeof(Decayed));
     return Translator::recover(
-      cmpxchg(Translator::decay(exchange_value),
-              reinterpret_cast<Decayed volatile*>(dest),
+      cmpxchg(reinterpret_cast<Decayed volatile*>(dest),
               Translator::decay(compare_value),
+              Translator::decay(exchange_value),
               order));
   }
 };
 
 template<typename Type, typename Fn, typename T>
 inline T Atomic::cmpxchg_using_helper(Fn fn,
-                                      T exchange_value,
                                       T volatile* dest,
-                                      T compare_value) {
+                                      T compare_value,
+                                      T exchange_value) {
   STATIC_ASSERT(sizeof(Type) == sizeof(T));
   return PrimitiveConversions::cast<T>(
     fn(PrimitiveConversions::cast<Type>(exchange_value),
@@ -846,9 +846,9 @@ inline T Atomic::cmpxchg_using_helper(Fn fn,
 }
 
 template<typename T>
-inline T Atomic::CmpxchgByteUsingInt::operator()(T exchange_value,
-                                                 T volatile* dest,
+inline T Atomic::CmpxchgByteUsingInt::operator()(T volatile* dest,
                                                  T compare_value,
+                                                 T exchange_value,
                                                  atomic_memory_order order) const {
   STATIC_ASSERT(sizeof(T) == sizeof(uint8_t));
   uint8_t canon_exchange_value = exchange_value;
@@ -871,7 +871,7 @@ inline T Atomic::CmpxchgByteUsingInt::operator()(T exchange_value,
     // ... except for the one byte we want to update
     reinterpret_cast<uint8_t*>(&new_value)[offset] = canon_exchange_value;
 
-    uint32_t res = cmpxchg(new_value, aligned_dest, cur, order);
+    uint32_t res = cmpxchg(aligned_dest, cur, new_value, order);
     if (res == cur) break;      // success
 
     // at least one byte in the int changed value, so update
