@@ -352,11 +352,11 @@ void ZHeap::process_non_strong_references() {
   ZRendezvousClosure cl;
   Handshake::execute(&cl);
 
-  // Purge stale metadata and nmethods that were unlinked
-  _unload.purge();
-
   // Unblock resurrection of weak/phantom references
   ZResurrection::unblock();
+
+  // Purge stale metadata and nmethods that were unlinked
+  _unload.purge();
 
   // Enqueue Soft/Weak/Final/PhantomReferences. Note that this
   // must be done after unblocking resurrection. Otherwise the
