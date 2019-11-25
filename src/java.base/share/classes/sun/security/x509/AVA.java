@@ -599,7 +599,7 @@ public class AVA implements DerEncoder {
         if (derval.tag != DerValue.tag_Sequence) {
             throw new IOException("AVA not a sequence");
         }
-        oid = X500Name.intern(derval.data.getOID());
+        oid = derval.data.getOID();
         value = derval.data.getDerValue();
 
         if (derval.data.available() != 0) {
