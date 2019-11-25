@@ -43,10 +43,6 @@ class ClassLoaderDataGraph : public AllStatic {
   // All CLDs (except the null CLD) can be reached by walking _head->_next->...
   static ClassLoaderData* volatile _head;
   static ClassLoaderData* _unloading;
-  // CMS support.
-  static ClassLoaderData* _saved_head;
-  static ClassLoaderData* _saved_unloading;
-  static bool _should_purge;
 
   // Set if there's anything to purge in the deallocate lists or previous versions
   // during a safepoint after class unloading in a full GC.
@@ -114,18 +110,6 @@ class ClassLoaderDataGraph : public AllStatic {
   static void verify_dictionary();
   static void print_dictionary(outputStream* st);
   static void print_table_statistics(outputStream* st);
-
-  // CMS support.
-  static void remember_new_clds(bool remember) { _saved_head = (remember ? _head : NULL); }
-  static GrowableArray<ClassLoaderData*>* new_clds();
-
-  static void set_should_purge(bool b) { _should_purge = b; }
-  static bool should_purge_and_reset() {
-    bool res = _should_purge;
-    // reset for next time.
-    set_should_purge(false);
-    return res;
-  }
 
   static int resize_dictionaries();
 

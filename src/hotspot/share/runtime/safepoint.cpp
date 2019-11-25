@@ -620,19 +620,6 @@ public:
       }
     }
 
-    if (_subtasks.try_claim_task(SafepointSynchronize::SAFEPOINT_CLEANUP_CLD_PURGE)) {
-      if (ClassLoaderDataGraph::should_purge_and_reset()) {
-        // CMS delays purging the CLDG until the beginning of the next safepoint and to
-        // make sure concurrent sweep is done
-        const char* name = "purging class loader data graph";
-        EventSafepointCleanupTask event;
-        TraceTime timer(name, TRACETIME_LOG(Info, safepoint, cleanup));
-        ClassLoaderDataGraph::purge();
-
-        post_safepoint_cleanup_task_event(event, safepoint_id, name);
-      }
-    }
-
     if (_subtasks.try_claim_task(SafepointSynchronize::SAFEPOINT_CLEANUP_SYSTEM_DICTIONARY_RESIZE)) {
       if (Dictionary::does_any_dictionary_needs_resizing()) {
         const char* name = "resizing system dictionaries";
