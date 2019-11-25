@@ -210,10 +210,6 @@
           "Number of threads concurrent gc will use")                       \
           constraint(ConcGCThreadsConstraintFunc,AfterErgo)                 \
                                                                             \
-  product(uint, GCTaskTimeStampEntries, 200,                                \
-          "Number of time stamp entries per gc worker thread")              \
-          range(1, max_jint)                                                \
-                                                                            \
   product(bool, AlwaysTenure, false,                                        \
           "Always tenure objects in eden (ParallelGC only)")                \
                                                                             \
