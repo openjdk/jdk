@@ -153,7 +153,7 @@ class MallocSiteTable : AllStatic {
     // Acquire shared lock.
     // Return true if shared access is granted.
     inline bool sharedLock() {
-      jint res = Atomic::add(1, _lock);
+      jint res = Atomic::add(_lock, 1);
       if (res < 0) {
         Atomic::dec(_lock);
         return false;

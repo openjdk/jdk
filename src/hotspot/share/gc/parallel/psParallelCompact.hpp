@@ -536,7 +536,7 @@ inline void ParallelCompactData::RegionData::decrement_destination_count()
 {
   assert(_dc_and_los < dc_claimed, "already claimed");
   assert(_dc_and_los >= dc_one, "count would go negative");
-  Atomic::add(dc_mask, &_dc_and_los);
+  Atomic::add(&_dc_and_los, dc_mask);
 }
 
 inline HeapWord* ParallelCompactData::RegionData::data_location() const
@@ -576,7 +576,7 @@ inline bool ParallelCompactData::RegionData::claim_unsafe()
 inline void ParallelCompactData::RegionData::add_live_obj(size_t words)
 {
   assert(words <= (size_t)los_mask - live_obj_size(), "overflow");
-  Atomic::add(static_cast<region_sz_t>(words), &_dc_and_los);
+  Atomic::add(&_dc_and_los, static_cast<region_sz_t>(words));
 }
 
 inline void ParallelCompactData::RegionData::set_highest_ref(HeapWord* addr)

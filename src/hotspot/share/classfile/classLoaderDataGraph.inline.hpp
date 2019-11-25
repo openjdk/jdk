@@ -50,7 +50,7 @@ size_t ClassLoaderDataGraph::num_array_classes() {
 }
 
 void ClassLoaderDataGraph::inc_instance_classes(size_t count) {
-  Atomic::add(count, &_num_instance_classes);
+  Atomic::add(&_num_instance_classes, count);
 }
 
 void ClassLoaderDataGraph::dec_instance_classes(size_t count) {
@@ -59,7 +59,7 @@ void ClassLoaderDataGraph::dec_instance_classes(size_t count) {
 }
 
 void ClassLoaderDataGraph::inc_array_classes(size_t count) {
-  Atomic::add(count, &_num_array_classes);
+  Atomic::add(&_num_array_classes, count);
 }
 
 void ClassLoaderDataGraph::dec_array_classes(size_t count) {

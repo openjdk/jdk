@@ -2813,7 +2813,7 @@ void linux_wrap_code(char* base, size_t size) {
   }
 
   char buf[PATH_MAX+1];
-  int num = Atomic::add(1, &cnt);
+  int num = Atomic::add(&cnt, 1);
 
   snprintf(buf, sizeof(buf), "%s/hs-vm-%d-%d",
            os::get_temp_directory(), os::current_process_id(), num);

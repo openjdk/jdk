@@ -327,7 +327,7 @@ void ResolvedMethodTable::reset_dead_counter() {
 }
 
 void ResolvedMethodTable::inc_dead_counter(size_t ndead) {
-  size_t total = Atomic::add(ndead, &_uncleaned_items_count);
+  size_t total = Atomic::add(&_uncleaned_items_count, ndead);
   log_trace(membername, table)(
      "Uncleaned items:" SIZE_FORMAT " added: " SIZE_FORMAT " total:" SIZE_FORMAT,
      _uncleaned_items_count, ndead, total);

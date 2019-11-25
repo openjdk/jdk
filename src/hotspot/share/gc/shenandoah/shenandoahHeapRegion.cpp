@@ -687,7 +687,7 @@ void ShenandoahHeapRegion::set_state(RegionState to) {
 }
 
 void ShenandoahHeapRegion::record_pin() {
-  Atomic::add((size_t)1, &_critical_pins);
+  Atomic::add(&_critical_pins, (size_t)1);
 }
 
 void ShenandoahHeapRegion::record_unpin() {

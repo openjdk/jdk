@@ -437,7 +437,8 @@ class StubGenerator: public StubCodeGenerator {
   // for which we do not support MP and so membars are not necessary. This ARMv5 code will
   // be removed in the future.
 
-  // Support for jint Atomic::add(jint add_value, volatile jint *dest)
+  // Implementation of atomic_add(jint add_value, volatile jint* dest)
+  // used by Atomic::add(volatile jint* dest, jint add_value)
   //
   // Arguments :
   //

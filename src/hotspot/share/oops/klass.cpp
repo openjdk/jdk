@@ -710,7 +710,7 @@ jint Klass::compute_modifier_flags(TRAPS) const {
 }
 
 int Klass::atomic_incr_biased_lock_revocation_count() {
-  return (int) Atomic::add(1, &_biased_lock_revocation_count);
+  return (int) Atomic::add(&_biased_lock_revocation_count, 1);
 }
 
 // Unless overridden, jvmti_class_status has no flags set.

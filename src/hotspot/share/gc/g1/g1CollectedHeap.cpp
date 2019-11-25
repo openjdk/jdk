@@ -4226,7 +4226,7 @@ private:
     HeapRegion* r = g1h->region_at(region_idx);
     assert(!g1h->is_on_master_free_list(r), "sanity");
 
-    Atomic::add(r->rem_set()->occupied_locked(), &_rs_length);
+    Atomic::add(&_rs_length, r->rem_set()->occupied_locked());
 
     if (!is_young) {
       g1h->hot_card_cache()->reset_card_counts(r);
@@ -4290,7 +4290,7 @@ public:
 
     // Claim serial work.
     if (_serial_work_claim == 0) {
-      jint value = Atomic::add(1, &_serial_work_claim) - 1;
+      jint value = Atomic::add(&_serial_work_claim, 1) - 1;
       if (value == 0) {
         double serial_time = os::elapsedTime();
         do_serial_work();
@@ -4305,7 +4305,7 @@ public:
     bool has_non_young_time = false;
 
     while (true) {
-      size_t end = Atomic::add(chunk_size(), &_parallel_work_claim);
+      size_t end = Atomic::add(&_parallel_work_claim, chunk_size());
       size_t cur = end - chunk_size();
 
       if (cur >= _num_work_items) {

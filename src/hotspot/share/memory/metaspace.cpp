@@ -394,7 +394,7 @@ static void dec_stat_nonatomically(size_t* pstat, size_t words) {
 }
 
 static void inc_stat_atomically(volatile size_t* pstat, size_t words) {
-  Atomic::add(words, pstat);
+  Atomic::add(pstat, words);
 }
 
 static void dec_stat_atomically(volatile size_t* pstat, size_t words) {

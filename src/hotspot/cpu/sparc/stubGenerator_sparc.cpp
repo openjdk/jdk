@@ -679,7 +679,8 @@ class StubGenerator: public StubCodeGenerator {
   }
 
 
-  // Support for jint Atomic::add(jint add_value, volatile jint* dest).
+  // Implementation of jint atomic_add(jint add_value, volatile jint* dest)
+  // used by Atomic::add(volatile jint* dest, jint add_value)
   //
   // Arguments:
   //

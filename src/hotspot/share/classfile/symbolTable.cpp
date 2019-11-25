@@ -724,7 +724,7 @@ void SymbolTable::clean_dead_entries(JavaThread* jt) {
     bdt.done(jt);
   }
 
-  Atomic::add(stdc._processed, &_symbols_counted);
+  Atomic::add(&_symbols_counted, stdc._processed);
 
   log_debug(symboltable)("Cleaned " SIZE_FORMAT " of " SIZE_FORMAT,
                          stdd._deleted, stdc._processed);

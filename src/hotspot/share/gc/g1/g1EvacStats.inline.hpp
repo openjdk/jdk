@@ -29,17 +29,17 @@
 #include "runtime/atomic.hpp"
 
 inline void G1EvacStats::add_direct_allocated(size_t value) {
-  Atomic::add(value, &_direct_allocated);
+  Atomic::add(&_direct_allocated, value);
 }
 
 inline void G1EvacStats::add_region_end_waste(size_t value) {
-  Atomic::add(value, &_region_end_waste);
+  Atomic::add(&_region_end_waste, value);
   Atomic::inc(&_regions_filled);
 }
 
 inline void G1EvacStats::add_failure_used_and_waste(size_t used, size_t waste) {
-  Atomic::add(used, &_failure_used);
-  Atomic::add(waste, &_failure_waste);
+  Atomic::add(&_failure_used, used);
+  Atomic::add(&_failure_waste, waste);
 }
 
 #endif // SHARE_GC_G1_G1EVACSTATS_INLINE_HPP

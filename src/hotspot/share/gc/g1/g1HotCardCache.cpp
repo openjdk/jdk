@@ -68,7 +68,7 @@ CardTable::CardValue* G1HotCardCache::insert(CardValue* card_ptr) {
     return card_ptr;
   }
   // Otherwise, the card is hot.
-  size_t index = Atomic::add(1u, &_hot_cache_idx) - 1;
+  size_t index = Atomic::add(&_hot_cache_idx, 1u) - 1;
   size_t masked_index = index & (_hot_cache_size - 1);
   CardValue* current_ptr = _hot_cache[masked_index];
 
@@ -91,8 +91,8 @@ void G1HotCardCache::drain(G1CardTableEntryClosure* cl, uint worker_id) {
   assert(!use_cache(), "cache should be disabled");
 
   while (_hot_cache_par_claimed_idx < _hot_cache_size) {
-    size_t end_idx = Atomic::add(_hot_cache_par_chunk_size,
-                                 &_hot_cache_par_claimed_idx);
+    size_t end_idx = Atomic::add(&_hot_cache_par_claimed_idx,
+                                 _hot_cache_par_chunk_size);
     size_t start_idx = end_idx - _hot_cache_par_chunk_size;
     // The current worker has successfully claimed the chunk [start_idx..end_idx)
     end_idx = MIN2(end_idx, _hot_cache_size);

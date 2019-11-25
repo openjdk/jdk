@@ -55,7 +55,7 @@ class MemoryCounter {
   inline void allocate(size_t sz) {
     Atomic::inc(&_count);
     if (sz > 0) {
-      Atomic::add(sz, &_size);
+      Atomic::add(&_size, sz);
       DEBUG_ONLY(_peak_size = MAX2(_peak_size, _size));
     }
     DEBUG_ONLY(_peak_count = MAX2(_peak_count, _count);)
@@ -72,7 +72,7 @@ class MemoryCounter {
 
   inline void resize(long sz) {
     if (sz != 0) {
-      Atomic::add(size_t(sz), &_size);
+      Atomic::add(&_size, size_t(sz));
       DEBUG_ONLY(_peak_size = MAX2(_size, _peak_size);)
     }
   }

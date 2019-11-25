@@ -57,23 +57,23 @@ template<size_t byte_size>
 struct Atomic::PlatformAdd
   : Atomic::AddAndFetch<Atomic::PlatformAdd<byte_size> >
 {
-  template<typename I, typename D>
-  D add_and_fetch(I add_value, D volatile* dest, atomic_memory_order order) const;
+  template<typename D, typename I>
+  D add_and_fetch(D volatile* dest, I add_value, atomic_memory_order order) const;
 };
 
 #ifdef AMD64
 template<>
-template<typename I, typename D>
-inline D Atomic::PlatformAdd<4>::add_and_fetch(I add_value, D volatile* dest,
+template<typename D, typename I>
+inline D Atomic::PlatformAdd<4>::add_and_fetch(D volatile* dest, I add_value,
                                                atomic_memory_order order) const {
-  return add_using_helper<int32_t>(os::atomic_add_func, add_value, dest);
+  return add_using_helper<int32_t>(os::atomic_add_func, dest, add_value);
 }
 
 template<>
-template<typename I, typename D>
-inline D Atomic::PlatformAdd<8>::add_and_fetch(I add_value, D volatile* dest,
+template<typename D, typename I>
+inline D Atomic::PlatformAdd<8>::add_and_fetch(D volatile* dest, I add_value,
                                                atomic_memory_order order) const {
-  return add_using_helper<int64_t>(os::atomic_add_long_func, add_value, dest);
+  return add_using_helper<int64_t>(os::atomic_add_long_func, dest, add_value);
 }
 
 #define DEFINE_STUB_XCHG(ByteSize, StubType, StubName)                  \
@@ -111,8 +111,8 @@ DEFINE_STUB_CMPXCHG(8, int64_t, os::atomic_cmpxchg_long_func)
 #else // !AMD64
 
 template<>
-template<typename I, typename D>
-inline D Atomic::PlatformAdd<4>::add_and_fetch(I add_value, D volatile* dest,
+template<typename D, typename I>
+inline D Atomic::PlatformAdd<4>::add_and_fetch(D volatile* dest, I add_value,
                                                atomic_memory_order order) const {
   STATIC_ASSERT(4 == sizeof(I));
   STATIC_ASSERT(4 == sizeof(D));

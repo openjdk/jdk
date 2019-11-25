@@ -304,7 +304,7 @@ T* ParallelClaimableQueueSet<T, F>::claim_next() {
     return NULL;
   }
 
-  jint index = Atomic::add(1, &_claimed_index);
+  jint index = Atomic::add(&_claimed_index, 1);
 
   if (index <= size) {
     return GenericTaskQueueSet<T, F>::queue((uint)index - 1);

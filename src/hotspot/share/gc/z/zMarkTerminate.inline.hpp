@@ -37,7 +37,7 @@ inline bool ZMarkTerminate::enter_stage(volatile uint* nworking_stage) {
 }
 
 inline void ZMarkTerminate::exit_stage(volatile uint* nworking_stage) {
-  Atomic::add(1u, nworking_stage);
+  Atomic::add(nworking_stage, 1u);
 }
 
 inline bool ZMarkTerminate::try_exit_stage(volatile uint* nworking_stage) {

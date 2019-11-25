@@ -30,8 +30,8 @@
 // Implement ADD using a CAS loop.
 template<size_t byte_size>
 struct Atomic::PlatformAdd {
-  template<typename I, typename D>
-  inline D operator()(I add_value, D volatile* dest, atomic_memory_order order) const {
+  template<typename D, typename I>
+  inline D operator()(D volatile* dest, I add_value, atomic_memory_order order) const {
     D old_value = *dest;
     while (true) {
       D new_value = old_value + add_value;

@@ -36,8 +36,8 @@ template<size_t byte_size>
 struct Atomic::PlatformAdd
   : Atomic::AddAndFetch<Atomic::PlatformAdd<byte_size> >
 {
-  template<typename I, typename D>
-  D add_and_fetch(I add_value, D volatile* dest, atomic_memory_order order) const {
+  template<typename D, typename I>
+  D add_and_fetch(D volatile* dest, I add_value, atomic_memory_order order) const {
     D res = __atomic_add_fetch(dest, add_value, __ATOMIC_RELEASE);
     FULL_MEM_BARRIER;
     return res;

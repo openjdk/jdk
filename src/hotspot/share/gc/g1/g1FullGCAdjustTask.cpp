@@ -101,7 +101,7 @@ void G1FullGCAdjustTask::work(uint worker_id) {
 
   // Adjust the weak roots.
 
-  if (Atomic::add(1u, &_references_done) == 1u) { // First incr claims task.
+  if (Atomic::add(&_references_done, 1u) == 1u) { // First incr claims task.
     G1CollectedHeap::heap()->ref_processor_stw()->weak_oops_do(&_adjust);
   }
 

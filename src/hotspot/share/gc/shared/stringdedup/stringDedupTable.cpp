@@ -589,7 +589,7 @@ void StringDedupTable::finish_rehash(StringDedupTable* rehashed_table) {
 }
 
 size_t StringDedupTable::claim_table_partition(size_t partition_size) {
-  return Atomic::add(partition_size, &_claimed_index) - partition_size;
+  return Atomic::add(&_claimed_index, partition_size) - partition_size;
 }
 
 void StringDedupTable::verify() {

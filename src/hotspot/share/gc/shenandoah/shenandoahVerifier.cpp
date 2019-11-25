@@ -139,7 +139,7 @@ private:
           // skip
           break;
         case ShenandoahVerifier::_verify_liveness_complete:
-          Atomic::add((uint) obj->size(), &_ld[obj_reg->region_number()]);
+          Atomic::add(&_ld[obj_reg->region_number()], (uint) obj->size());
           // fallthrough for fast failure for un-live regions:
         case ShenandoahVerifier::_verify_liveness_conservative:
           check(ShenandoahAsserts::_safe_oop, obj, obj_reg->has_live(),
@@ -479,7 +479,7 @@ public:
       }
     }
 
-    Atomic::add(processed, &_processed);
+    Atomic::add(&_processed, processed);
   }
 };
 
@@ -518,7 +518,7 @@ public:
                                   _options);
 
     while (true) {
-      size_t v = Atomic::add(1u, &_claimed) - 1;
+      size_t v = Atomic::add(&_claimed, 1u) - 1;
       if (v < _heap->num_regions()) {
         ShenandoahHeapRegion* r = _heap->get_region(v);
         if (!r->is_humongous() && !r->is_trash()) {
@@ -538,7 +538,7 @@ public:
     if (_heap->complete_marking_context()->is_marked((oop)obj)) {
       verify_and_follow(obj, stack, cl, &processed);
     }
-    Atomic::add(processed, &_processed);
+    Atomic::add(&_processed, processed);
   }
 
   virtual void work_regular(ShenandoahHeapRegion *r, ShenandoahVerifierStack &stack, ShenandoahVerifyOopClosure &cl) {
@@ -571,7 +571,7 @@ public:
       }
     }
 
-    Atomic::add(processed, &_processed);
+    Atomic::add(&_processed, processed);
   }
 
   void verify_and_follow(HeapWord *addr, ShenandoahVerifierStack &stack, ShenandoahVerifyOopClosure &cl, size_t *processed) {

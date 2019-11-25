@@ -55,7 +55,7 @@ void PreservedMarks::restore_and_increment(volatile size_t* const total_size_add
   restore();
   // Only do the atomic add if the size is > 0.
   if (stack_size > 0) {
-    Atomic::add(stack_size, total_size_addr);
+    Atomic::add(total_size_addr, stack_size);
   }
 }
 

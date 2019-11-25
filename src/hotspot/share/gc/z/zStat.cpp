@@ -761,8 +761,8 @@ THREAD_LOCAL uint32_t ZStatTimerDisable::_active = 0;
 //
 void ZStatSample(const ZStatSampler& sampler, uint64_t value) {
   ZStatSamplerData* const cpu_data = sampler.get();
-  Atomic::add(1u, &cpu_data->_nsamples);
-  Atomic::add(value, &cpu_data->_sum);
+  Atomic::add(&cpu_data->_nsamples, 1u);
+  Atomic::add(&cpu_data->_sum, value);
 
   uint64_t max = cpu_data->_max;
   for (;;) {
@@ -787,14 +787,14 @@ void ZStatSample(const ZStatSampler& sampler, uint64_t value) {
 
 void ZStatInc(const ZStatCounter& counter, uint64_t increment) {
   ZStatCounterData* const cpu_data = counter.get();
-  const uint64_t value = Atomic::add(increment, &cpu_data->_counter);
+  const uint64_t value = Atomic::add(&cpu_data->_counter, increment);
 
   ZTracer::tracer()->report_stat_counter(counter, increment, value);
 }
 
 void ZStatInc(const ZStatUnsampledCounter& counter, uint64_t increment) {
   ZStatCounterData* const cpu_data = counter.get();
-  Atomic::add(increment, &cpu_data->_counter);
+  Atomic::add(&cpu_data->_counter, increment);
 }
 
 //

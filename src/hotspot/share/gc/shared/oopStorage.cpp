@@ -144,7 +144,7 @@ size_t OopStorage::ActiveArray::block_count_acquire() const {
 }
 
 void OopStorage::ActiveArray::increment_refcount() const {
-  int new_value = Atomic::add(1, &_refcount);
+  int new_value = Atomic::add(&_refcount, 1);
   assert(new_value >= 1, "negative refcount %d", new_value - 1);
 }
 
@@ -1010,7 +1010,7 @@ bool OopStorage::BasicParState::claim_next_segment(IterationData* data) {
   // than a CAS loop on some platforms when there is contention.
   // We can cope with the uncertainty by recomputing start/end from
   // the result of the add, and dealing with potential overshoot.
-  size_t end = Atomic::add(step, &_next_block);
+  size_t end = Atomic::add(&_next_block, step);
   // _next_block may have changed, so recompute start from result of add.
   start = end - step;
   // _next_block may have changed so much that end has overshot.

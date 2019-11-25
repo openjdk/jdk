@@ -56,7 +56,7 @@ inline void ThreadsList::threads_do(T *cl) const {
 // they are called by public inline update_tlh_stats() below:
 
 inline void ThreadsSMRSupport::add_tlh_times(uint add_value) {
-  Atomic::add(add_value, &_tlh_times);
+  Atomic::add(&_tlh_times, add_value);
 }
 
 inline void ThreadsSMRSupport::inc_tlh_cnt() {

@@ -44,7 +44,7 @@ SingleWriterSynchronizer::SingleWriterSynchronizer() :
 // synchronization have exited that critical section.
 void SingleWriterSynchronizer::synchronize() {
   // Side-effect in assert balanced by debug-only dec at end.
-  assert(Atomic::add(1u, &_writers) == 1u, "multiple writers");
+  assert(Atomic::add(&_writers, 1u) == 1u, "multiple writers");
   // We don't know anything about the muxing between this invocation
   // and invocations in other threads.  We must start with the latest
   // _enter polarity, else we could clobber the wrong _exit value on

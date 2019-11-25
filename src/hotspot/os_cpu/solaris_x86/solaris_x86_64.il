@@ -49,7 +49,8 @@
       orq      %rdx, %rax
       .end
 
-  // Support for jint Atomic::add(jint add_value, volatile jint* dest)
+  // Implementation of jint _Atomic_add(jint add_value, volatile jint* dest)
+  // used by Atomic::add(volatile jint* dest, jint add_value)
       .inline _Atomic_add,2
       movl     %edi, %eax      // save add_value for return
       lock
@@ -57,7 +58,8 @@
       addl     %edi, %eax
       .end
 
-  // Support for jlong Atomic::add(jlong add_value, volatile jlong* dest)
+  // Implementation of jlong _Atomic_add(jlong add_value, volatile jlong* dest)
+  // used by Atomic::add(volatile jlong* dest, jint add_value)
       .inline _Atomic_add_long,2
       movq     %rdi, %rax      // save add_value for return
       lock

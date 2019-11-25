@@ -1894,7 +1894,7 @@ void bsd_wrap_code(char* base, size_t size) {
   }
 
   char buf[PATH_MAX + 1];
-  int num = Atomic::add(1, &cnt);
+  int num = Atomic::add(&cnt, 1);
 
   snprintf(buf, PATH_MAX + 1, "%s/hs-vm-%d-%d",
            os::get_temp_directory(), os::current_process_id(), num);
@@ -3264,7 +3264,7 @@ uint os::processor_id() {
 
   while (processor_id < 0) {
     if (Atomic::cmpxchg(-2, &mapping[apic_id], -1) == -1) {
-      Atomic::store(&mapping[apic_id], Atomic::add(1, &next_processor_id) - 1);
+      Atomic::store(&mapping[apic_id], Atomic::add(&next_processor_id, 1) - 1);
     }
     processor_id = Atomic::load(&mapping[apic_id]);
   }

@@ -620,7 +620,7 @@ void ShenandoahHeap::decrease_committed(size_t bytes) {
 }
 
 void ShenandoahHeap::increase_used(size_t bytes) {
-  Atomic::add(bytes, &_used);
+  Atomic::add(&_used, bytes);
 }
 
 void ShenandoahHeap::set_used(size_t bytes) {
@@ -633,7 +633,7 @@ void ShenandoahHeap::decrease_used(size_t bytes) {
 }
 
 void ShenandoahHeap::increase_allocated(size_t bytes) {
-  Atomic::add(bytes, &_bytes_allocated_since_gc_start);
+  Atomic::add(&_bytes_allocated_since_gc_start, bytes);
 }
 
 void ShenandoahHeap::notify_mutator_alloc_words(size_t words, bool waste) {
@@ -1350,7 +1350,7 @@ public:
 
     size_t max = _heap->num_regions();
     while (_index < max) {
-      size_t cur = Atomic::add(stride, &_index) - stride;
+      size_t cur = Atomic::add(&_index, stride) - stride;
       size_t start = cur;
       size_t end = MIN2(cur + stride, max);
       if (start >= max) break;

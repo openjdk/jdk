@@ -63,7 +63,7 @@ ZPage* ZObjectAllocator::alloc_page(uint8_t type, size_t size, ZAllocationFlags 
   ZPage* const page = ZHeap::heap()->alloc_page(type, size, flags);
   if (page != NULL) {
     // Increment used bytes
-    Atomic::add(size, _used.addr());
+    Atomic::add(_used.addr(), size);
   }
 
   return page;
@@ -71,7 +71,7 @@ ZPage* ZObjectAllocator::alloc_page(uint8_t type, size_t size, ZAllocationFlags 
 
 void ZObjectAllocator::undo_alloc_page(ZPage* page) {
   // Increment undone bytes
-  Atomic::add(page->size(), _undone.addr());
+  Atomic::add(_undone.addr(), page->size());
 
   ZHeap::heap()->undo_alloc_page(page);
 }

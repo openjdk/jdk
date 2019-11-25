@@ -157,7 +157,7 @@ public:
       ThreadBlockInVM tbiv(this); // Safepoint check.
     }
     tty->print_cr("allocations: " SIZE_FORMAT, _allocations);
-    Atomic::add(_allocations, _total_allocations);
+    Atomic::add(_total_allocations, _allocations);
   }
 };
 

@@ -153,7 +153,7 @@ public:
     // Wait for the coordinator to dispatch a task.
     _start_semaphore->wait();
 
-    uint num_started = Atomic::add(1u, &_started);
+    uint num_started = Atomic::add(&_started, 1u);
 
     // Subtract one to get a zero-indexed worker id.
     uint worker_id = num_started - 1;

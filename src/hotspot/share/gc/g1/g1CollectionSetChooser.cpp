@@ -112,7 +112,7 @@ class G1BuildCandidateRegionsTask : public AbstractGangTask {
 
     // Claim a new chunk, returning its bounds [from, to[.
     void claim_chunk(uint& from, uint& to) {
-      uint result = Atomic::add(_chunk_size, &_cur_claim_idx);
+      uint result = Atomic::add(&_cur_claim_idx, _chunk_size);
       assert(_max_size > result - 1,
              "Array too small, is %u should be %u with chunk size %u.",
              _max_size, result, _chunk_size);
@@ -214,8 +214,8 @@ class G1BuildCandidateRegionsTask : public AbstractGangTask {
   void update_totals(uint num_regions, size_t reclaimable_bytes) {
     if (num_regions > 0) {
       assert(reclaimable_bytes > 0, "invariant");
-      Atomic::add(num_regions, &_num_regions_added);
-      Atomic::add(reclaimable_bytes, &_reclaimable_bytes_added);
+      Atomic::add(&_num_regions_added, num_regions);
+      Atomic::add(&_reclaimable_bytes_added, reclaimable_bytes);
     } else {
       assert(reclaimable_bytes == 0, "invariant");
     }

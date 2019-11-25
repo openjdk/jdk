@@ -593,7 +593,7 @@ void ShenandoahControlThread::notify_heap_changed() {
 
 void ShenandoahControlThread::pacing_notify_alloc(size_t words) {
   assert(ShenandoahPacing, "should only call when pacing is enabled");
-  Atomic::add(words, &_allocs_seen);
+  Atomic::add(&_allocs_seen, words);
 }
 
 void ShenandoahControlThread::set_forced_counters_update(bool value) {

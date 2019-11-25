@@ -668,7 +668,7 @@ static bool has_reached_max_malloc_test_peak(size_t alloc_size) {
     if ((cur_malloc_words + words) > MallocMaxTestWords) {
       return true;
     }
-    Atomic::add(words, &cur_malloc_words);
+    Atomic::add(&cur_malloc_words, words);
   }
   return false;
 }

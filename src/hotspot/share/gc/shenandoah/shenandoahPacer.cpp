@@ -223,7 +223,7 @@ void ShenandoahPacer::unpace_for_alloc(intptr_t epoch, size_t words) {
   }
 
   intptr_t tax = MAX2<intptr_t>(1, words * Atomic::load(&_tax_rate));
-  Atomic::add(tax, &_budget);
+  Atomic::add(&_budget, tax);
 }
 
 intptr_t ShenandoahPacer::epoch() {

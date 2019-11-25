@@ -134,7 +134,7 @@ uint                  ThreadsSMRSupport::_to_delete_list_max = 0;
 // 'inline' functions first so the definitions are before first use:
 
 inline void ThreadsSMRSupport::add_deleted_thread_times(uint add_value) {
-  Atomic::add(add_value, &_deleted_thread_times);
+  Atomic::add(&_deleted_thread_times, add_value);
 }
 
 inline void ThreadsSMRSupport::inc_deleted_thread_cnt() {

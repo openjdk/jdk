@@ -110,8 +110,8 @@ uintptr_t ZMarkStackSpace::expand_and_alloc_space(size_t size) {
 
   // Increment top before end to make sure another
   // thread can't steal out newly expanded space.
-  addr = Atomic::add(size, &_top) - size;
-  Atomic::add(expand_size, &_end);
+  addr = Atomic::add(&_top, size) - size;
+  Atomic::add(&_end, expand_size);
 
   return addr;
 }

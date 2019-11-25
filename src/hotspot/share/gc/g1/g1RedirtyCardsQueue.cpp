@@ -129,7 +129,7 @@ void G1RedirtyCardsQueueSet::update_tail(BufferNode* node) {
 
 void G1RedirtyCardsQueueSet::enqueue_completed_buffer(BufferNode* node) {
   assert(_collecting, "precondition");
-  Atomic::add(buffer_size() - node->index(), &_entry_count);
+  Atomic::add(&_entry_count, buffer_size() - node->index());
   _list.push(*node);
   update_tail(node);
 }
@@ -139,7 +139,7 @@ void G1RedirtyCardsQueueSet::merge_bufferlist(LocalQSet* src) {
   const G1BufferNodeList from = src->take_all_completed_buffers();
   if (from._head != NULL) {
     assert(from._tail != NULL, "invariant");
-    Atomic::add(from._entry_count, &_entry_count);
+    Atomic::add(&_entry_count, from._entry_count);
     _list.prepend(*from._head, *from._tail);
     update_tail(from._tail);
   }

@@ -47,13 +47,13 @@ inline void ShenandoahPacer::report_alloc(size_t words) {
 inline void ShenandoahPacer::report_internal(size_t words) {
   assert(ShenandoahPacing, "Only be here when pacing is enabled");
   STATIC_ASSERT(sizeof(size_t) <= sizeof(intptr_t));
-  Atomic::add((intptr_t)words, &_budget);
+  Atomic::add(&_budget, (intptr_t)words);
 }
 
 inline void ShenandoahPacer::report_progress_internal(size_t words) {
   assert(ShenandoahPacing, "Only be here when pacing is enabled");
   STATIC_ASSERT(sizeof(size_t) <= sizeof(intptr_t));
-  Atomic::add((intptr_t)words, &_progress);
+  Atomic::add(&_progress, (intptr_t)words);
 }
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHPACER_INLINE_HPP

@@ -100,8 +100,8 @@ public:
   // Atomically add to a location. Returns updated value. add*() provide:
   // <fence> add-value-to-dest <membar StoreLoad|StoreStore>
 
-  template<typename I, typename D>
-  inline static D add(I add_value, D volatile* dest,
+  template<typename D, typename I>
+  inline static D add(D volatile* dest, I add_value,
                       atomic_memory_order order = memory_order_conservative);
 
   template<typename I, typename D>
@@ -224,7 +224,7 @@ private:
   // Dispatch handler for add.  Provides type-based validity checking
   // and limited conversions around calls to the platform-specific
   // implementation layer provided by PlatformAdd.
-  template<typename I, typename D, typename Enable = void>
+  template<typename D, typename I, typename Enable = void>
   struct AddImpl;
 
   // Platform-specific implementation of add.  Support for sizes of 4
@@ -239,7 +239,7 @@ private:
   // - platform_add is an object of type PlatformAdd<sizeof(D)>.
   //
   // Then
-  //   platform_add(add_value, dest)
+  //   platform_add(dest, add_value)
   // must be a valid expression, returning a result convertible to D.
   //
   // No definition is provided; all platforms must explicitly define
@@ -259,12 +259,12 @@ private:
   // otherwise, addend is add_value.
   //
   // FetchAndAdd requires the derived class to provide
-  //   fetch_and_add(addend, dest)
+  //   fetch_and_add(dest, addend)
   // atomically adding addend to the value of dest, and returning the
   // old value.
   //
   // AddAndFetch requires the derived class to provide
-  //   add_and_fetch(addend, dest)
+  //   add_and_fetch(dest, addend)
   // atomically adding addend to the value of dest, and returning the
   // new value.
   //
@@ -286,8 +286,8 @@ private:
   // function.  No scaling of add_value is performed when D is a pointer
   // type, so this function can be used to implement the support function
   // required by AddAndFetch.
-  template<typename Type, typename Fn, typename I, typename D>
-  static D add_using_helper(Fn fn, I add_value, D volatile* dest);
+  template<typename Type, typename Fn, typename D, typename I>
+  static D add_using_helper(Fn fn, D volatile* dest, I add_value);
 
   // Dispatch handler for cmpxchg.  Provides type-based validity
   // checking and limited conversions around calls to the
@@ -517,21 +517,21 @@ struct Atomic::PlatformStore {
 
 template<typename Derived>
 struct Atomic::FetchAndAdd {
-  template<typename I, typename D>
-  D operator()(I add_value, D volatile* dest, atomic_memory_order order) const;
+  template<typename D, typename I>
+  D operator()(D volatile* dest, I add_value, atomic_memory_order order) const;
 };
 
 template<typename Derived>
 struct Atomic::AddAndFetch {
-  template<typename I, typename D>
-  D operator()(I add_value, D volatile* dest, atomic_memory_order order) const;
+  template<typename D, typename I>
+  D operator()(D volatile* dest, I add_value, atomic_memory_order order) const;
 };
 
 template<typename D>
 inline void Atomic::inc(D volatile* dest, atomic_memory_order order) {
   STATIC_ASSERT(IsPointer<D>::value || IsIntegral<D>::value);
   typedef typename Conditional<IsPointer<D>::value, ptrdiff_t, D>::type I;
-  Atomic::add(I(1), dest, order);
+  Atomic::add(dest, I(1), order);
 }
 
 template<typename D>
@@ -540,7 +540,7 @@ inline void Atomic::dec(D volatile* dest, atomic_memory_order order) {
   typedef typename Conditional<IsPointer<D>::value, ptrdiff_t, D>::type I;
   // Assumes two's complement integer representation.
   #pragma warning(suppress: 4146)
-  Atomic::add(I(-1), dest, order);
+  Atomic::add(dest, I(-1), order);
 }
 
 template<typename I, typename D>
@@ -557,7 +557,7 @@ inline D Atomic::sub(I sub_value, D volatile* dest, atomic_memory_order order) {
   AddendType addend = sub_value;
   // Assumes two's complement integer representation.
   #pragma warning(suppress: 4146) // In case AddendType is not signed.
-  return Atomic::add(-addend, dest, order);
+  return Atomic::add(dest, -addend, order);
 }
 
 // Define the class before including platform file, which may specialize
@@ -678,68 +678,68 @@ inline void Atomic::release_store_fence(volatile D* p, T v) {
   StoreImpl<D, T, PlatformOrderedStore<sizeof(D), RELEASE_X_FENCE> >()(p, v);
 }
 
-template<typename I, typename D>
-inline D Atomic::add(I add_value, D volatile* dest,
+template<typename D, typename I>
+inline D Atomic::add(D volatile* dest, I add_value,
                      atomic_memory_order order) {
-  return AddImpl<I, D>()(add_value, dest, order);
+  return AddImpl<D, I>()(dest, add_value, order);
 }
 
-template<typename I, typename D>
+template<typename D, typename I>
 struct Atomic::AddImpl<
-  I, D,
+  D, I,
   typename EnableIf<IsIntegral<I>::value &&
                     IsIntegral<D>::value &&
                     (sizeof(I) <= sizeof(D)) &&
                     (IsSigned<I>::value == IsSigned<D>::value)>::type>
 {
-  D operator()(I add_value, D volatile* dest, atomic_memory_order order) const {
+  D operator()(D volatile* dest, I add_value, atomic_memory_order order) const {
     D addend = add_value;
-    return PlatformAdd<sizeof(D)>()(addend, dest, order);
+    return PlatformAdd<sizeof(D)>()(dest, addend, order);
   }
 };
 
-template<typename I, typename P>
+template<typename P, typename I>
 struct Atomic::AddImpl<
-  I, P*,
+  P*, I,
   typename EnableIf<IsIntegral<I>::value && (sizeof(I) <= sizeof(P*))>::type>
 {
-  P* operator()(I add_value, P* volatile* dest, atomic_memory_order order) const {
+  P* operator()(P* volatile* dest, I add_value, atomic_memory_order order) const {
     STATIC_ASSERT(sizeof(intptr_t) == sizeof(P*));
     STATIC_ASSERT(sizeof(uintptr_t) == sizeof(P*));
     typedef typename Conditional<IsSigned<I>::value,
                                  intptr_t,
                                  uintptr_t>::type CI;
     CI addend = add_value;
-    return PlatformAdd<sizeof(P*)>()(addend, dest, order);
+    return PlatformAdd<sizeof(P*)>()(dest, addend, order);
   }
 };
 
 template<typename Derived>
-template<typename I, typename D>
-inline D Atomic::FetchAndAdd<Derived>::operator()(I add_value, D volatile* dest,
+template<typename D, typename I>
+inline D Atomic::FetchAndAdd<Derived>::operator()(D volatile* dest, I add_value,
                                                   atomic_memory_order order) const {
   I addend = add_value;
   // If D is a pointer type P*, scale by sizeof(P).
   if (IsPointer<D>::value) {
     addend *= sizeof(typename RemovePointer<D>::type);
   }
-  D old = static_cast<const Derived*>(this)->fetch_and_add(addend, dest, order);
+  D old = static_cast<const Derived*>(this)->fetch_and_add(dest, addend, order);
   return old + add_value;
 }
 
 template<typename Derived>
-template<typename I, typename D>
-inline D Atomic::AddAndFetch<Derived>::operator()(I add_value, D volatile* dest,
+template<typename D, typename I>
+inline D Atomic::AddAndFetch<Derived>::operator()(D volatile* dest, I add_value,
                                                   atomic_memory_order order) const {
   // If D is a pointer type P*, scale by sizeof(P).
   if (IsPointer<D>::value) {
     add_value *= sizeof(typename RemovePointer<D>::type);
   }
-  return static_cast<const Derived*>(this)->add_and_fetch(add_value, dest, order);
+  return static_cast<const Derived*>(this)->add_and_fetch(dest, add_value, order);
 }
 
-template<typename Type, typename Fn, typename I, typename D>
-inline D Atomic::add_using_helper(Fn fn, I add_value, D volatile* dest) {
+template<typename Type, typename Fn, typename D, typename I>
+inline D Atomic::add_using_helper(Fn fn, D volatile* dest, I add_value) {
   return PrimitiveConversions::cast<D>(
     fn(PrimitiveConversions::cast<Type>(add_value),
        reinterpret_cast<Type volatile*>(dest)));

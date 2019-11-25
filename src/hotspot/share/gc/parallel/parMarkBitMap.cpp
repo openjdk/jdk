@@ -90,7 +90,7 @@ ParMarkBitMap::mark_obj(HeapWord* addr, size_t size)
     bool end_bit_ok = _end_bits.par_set_bit(end_bit);
     assert(end_bit_ok, "concurrency problem");
     DEBUG_ONLY(Atomic::inc(&mark_bitmap_count));
-    DEBUG_ONLY(Atomic::add(size, &mark_bitmap_size));
+    DEBUG_ONLY(Atomic::add(&mark_bitmap_size, size));
     return true;
   }
   return false;

@@ -182,7 +182,7 @@ void BufferNode::Allocator::release(BufferNode* node) {
   const size_t trigger_transfer = 10;
 
   // Add to pending list. Update count first so no underflow in transfer.
-  size_t pending_count = Atomic::add(1u, &_pending_count);
+  size_t pending_count = Atomic::add(&_pending_count, 1u);
   _pending_list.push(*node);
   if (pending_count > trigger_transfer) {
     try_transfer_pending();
@@ -219,7 +219,7 @@ bool BufferNode::Allocator::try_transfer_pending() {
 
     // Add synchronized nodes to _free_list.
     // Update count first so no underflow in allocate().
-    Atomic::add(count, &_free_count);
+    Atomic::add(&_free_count, count);
     _free_list.prepend(*first, *last);
     log_trace(gc, ptrqueue, freelist)
              ("Transferred %s pending to free: " SIZE_FORMAT, name(), count);
@@ -258,4 +258,3 @@ void** PtrQueueSet::allocate_buffer() {
 void PtrQueueSet::deallocate_buffer(BufferNode* node) {
   _allocator->release(node);
 }
-
