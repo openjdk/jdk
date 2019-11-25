@@ -44,7 +44,7 @@ inline volatile markWord* ObjectMonitor::header_addr() {
 }
 
 inline void ObjectMonitor::set_header(markWord hdr) {
-  Atomic::store(hdr, &_header);
+  Atomic::store(&_header, hdr);
 }
 
 inline jint ObjectMonitor::waiters() const {
@@ -63,7 +63,7 @@ inline void ObjectMonitor::clear() {
   assert(_object != NULL, "must be non-NULL");
   assert(_owner == NULL, "must be NULL: owner=" INTPTR_FORMAT, p2i(_owner));
 
-  Atomic::store(markWord::zero(), &_header);
+  Atomic::store(&_header, markWord::zero());
   _object = NULL;
 }
 

@@ -615,7 +615,7 @@ bool CompiledMethod::cleanup_inline_caches_impl(bool unloading_occurred, bool cl
       if (md != NULL && md->is_method()) {
         Method* method = static_cast<Method*>(md);
         if (!method->method_holder()->is_loader_alive()) {
-          Atomic::store((Method*)NULL, r->metadata_addr());
+          Atomic::store(r->metadata_addr(), (Method*)NULL);
 
           if (!r->metadata_is_immediate()) {
             r->fix_metadata_relocation();

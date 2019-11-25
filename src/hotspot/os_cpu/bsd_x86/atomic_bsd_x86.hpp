@@ -161,8 +161,8 @@ inline T Atomic::PlatformLoad<8>::operator()(T const volatile* src) const {
 
 template<>
 template<typename T>
-inline void Atomic::PlatformStore<8>::operator()(T store_value,
-                                                 T volatile* dest) const {
+inline void Atomic::PlatformStore<8>::operator()(T volatile* dest,
+                                                 T store_value) const {
   STATIC_ASSERT(8 == sizeof(T));
   _Atomic_move_long(reinterpret_cast<const volatile int64_t*>(&store_value), reinterpret_cast<volatile int64_t*>(dest));
 }
@@ -173,7 +173,7 @@ template<>
 struct Atomic::PlatformOrderedStore<1, RELEASE_X_FENCE>
 {
   template <typename T>
-  void operator()(T v, volatile T* p) const {
+  void operator()(volatile T* p, T v) const {
     __asm__ volatile (  "xchgb (%2),%0"
                       : "=q" (v)
                       : "0" (v), "r" (p)
@@ -185,7 +185,7 @@ template<>
 struct Atomic::PlatformOrderedStore<2, RELEASE_X_FENCE>
 {
   template <typename T>
-  void operator()(T v, volatile T* p) const {
+  void operator()(volatile T* p, T v) const {
     __asm__ volatile (  "xchgw (%2),%0"
                       : "=r" (v)
                       : "0" (v), "r" (p)
@@ -197,7 +197,7 @@ template<>
 struct Atomic::PlatformOrderedStore<4, RELEASE_X_FENCE>
 {
   template <typename T>
-  void operator()(T v, volatile T* p) const {
+  void operator()(volatile T* p, T v) const {
     __asm__ volatile (  "xchgl (%2),%0"
                       : "=r" (v)
                       : "0" (v), "r" (p)
@@ -210,7 +210,7 @@ template<>
 struct Atomic::PlatformOrderedStore<8, RELEASE_X_FENCE>
 {
   template <typename T>
-  void operator()(T v, volatile T* p) const {
+  void operator()(volatile T* p, T v) const {
     __asm__ volatile (  "xchgq (%2), %0"
                       : "=r" (v)
                       : "0" (v), "r" (p)

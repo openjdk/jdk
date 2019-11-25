@@ -170,7 +170,7 @@ public:
   // if value is in an instance of this specialization of LockFreeStack,
   // there must be no concurrent push or pop operations on that stack.
   static void set_next(T& value, T* new_next) {
-    Atomic::store(new_next, next_ptr(value));
+    Atomic::store(next_ptr(value), new_next);
   }
 };
 

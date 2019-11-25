@@ -305,7 +305,7 @@ void ShenandoahHeapRegion::make_committed_bypass() {
 }
 
 void ShenandoahHeapRegion::clear_live_data() {
-  Atomic::release_store_fence<size_t>(&_live_data, 0);
+  Atomic::release_store_fence(&_live_data, (size_t)0);
 }
 
 void ShenandoahHeapRegion::reset_alloc_metadata() {

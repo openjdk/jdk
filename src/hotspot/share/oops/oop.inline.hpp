@@ -61,7 +61,7 @@ void oopDesc::set_mark(markWord m) {
 }
 
 void oopDesc::set_mark_raw(markWord m) {
-  Atomic::store(m, &_mark);
+  Atomic::store(&_mark, m);
 }
 
 void oopDesc::set_mark_raw(HeapWord* mem, markWord m) {

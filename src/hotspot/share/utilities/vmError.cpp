@@ -399,7 +399,7 @@ jlong VMError::get_current_timestamp() {
 
 void VMError::record_reporting_start_time() {
   const jlong now = get_current_timestamp();
-  Atomic::store(now, &_reporting_start_time);
+  Atomic::store(&_reporting_start_time, now);
 }
 
 jlong VMError::get_reporting_start_time() {
@@ -408,7 +408,7 @@ jlong VMError::get_reporting_start_time() {
 
 void VMError::record_step_start_time() {
   const jlong now = get_current_timestamp();
-  Atomic::store(now, &_step_start_time);
+  Atomic::store(&_step_start_time, now);
 }
 
 jlong VMError::get_step_start_time() {
@@ -416,7 +416,7 @@ jlong VMError::get_step_start_time() {
 }
 
 void VMError::clear_step_start_time() {
-  return Atomic::store((jlong)0, &_step_start_time);
+  return Atomic::store(&_step_start_time, (jlong)0);
 }
 
 void VMError::report(outputStream* st, bool _verbose) {

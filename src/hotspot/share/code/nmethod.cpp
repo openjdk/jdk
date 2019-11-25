@@ -315,7 +315,7 @@ ExceptionCache* ExceptionCache::next() {
 }
 
 void ExceptionCache::set_next(ExceptionCache *ec) {
-  Atomic::store(ec, &_next);
+  Atomic::store(&_next, ec);
 }
 
 //-----------------------------------------------------------------------------

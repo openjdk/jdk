@@ -213,8 +213,8 @@ inline T Atomic::PlatformLoad<8>::operator()(T const volatile* src) const {
 
 template<>
 template<typename T>
-inline void Atomic::PlatformStore<8>::operator()(T store_value,
-                                                 T volatile* dest) const {
+inline void Atomic::PlatformStore<8>::operator()(T volatile* dest,
+                                                 T store_value) const {
   STATIC_ASSERT(8 == sizeof(T));
   volatile T* src = &store_value;
   __asm {
@@ -234,7 +234,7 @@ template<>
 struct Atomic::PlatformOrderedStore<1, RELEASE_X_FENCE>
 {
   template <typename T>
-  void operator()(T v, volatile T* p) const {
+  void operator()(volatile T* p, T v) const {
     __asm {
       mov edx, p;
       mov al, v;
@@ -247,7 +247,7 @@ template<>
 struct Atomic::PlatformOrderedStore<2, RELEASE_X_FENCE>
 {
   template <typename T>
-  void operator()(T v, volatile T* p) const {
+  void operator()(volatile T* p, T v) const {
     __asm {
       mov edx, p;
       mov ax, v;
@@ -260,7 +260,7 @@ template<>
 struct Atomic::PlatformOrderedStore<4, RELEASE_X_FENCE>
 {
   template <typename T>
-  void operator()(T v, volatile T* p) const {
+  void operator()(volatile T* p, T v) const {
     __asm {
       mov edx, p;
       mov eax, v;

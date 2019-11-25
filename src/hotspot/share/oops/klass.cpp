@@ -410,7 +410,7 @@ void Klass::set_next_sibling(Klass* s) {
   // Does not need release semantics. If used by cleanup, it will link to
   // already safely published data, and if used by inserts, will be published
   // safely using cmpxchg.
-  Atomic::store(s, &_next_sibling);
+  Atomic::store(&_next_sibling, s);
 }
 
 void Klass::append_to_sibling_list() {

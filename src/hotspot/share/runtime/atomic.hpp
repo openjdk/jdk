@@ -79,13 +79,13 @@ public:
   // The type T must be either a pointer type convertible to or equal
   // to D, an integral/enum type equal to D, or a type equal to D that
   // is primitive convertible using PrimitiveConversions.
-  template<typename T, typename D>
-  inline static void store(T store_value, volatile D* dest);
+  template<typename D, typename T>
+  inline static void store(volatile D* dest, T store_value);
 
-  template <typename T, typename D>
+  template <typename D, typename T>
   inline static void release_store(volatile D* dest, T store_value);
 
-  template <typename T, typename D>
+  template <typename D, typename T>
   inline static void release_store_fence(volatile D* dest, T store_value);
 
   // Atomically load from a location
@@ -168,7 +168,7 @@ protected:
   // Dispatch handler for store.  Provides type-based validity
   // checking and limited conversions around calls to the platform-
   // specific implementation layer provided by PlatformOp.
-  template<typename T, typename D, typename PlatformOp, typename Enable = void>
+  template<typename D, typename T, typename PlatformOp, typename Enable = void>
   struct StoreImpl;
 
   // Platform-specific implementation of store.  Support for sizes
@@ -450,9 +450,9 @@ struct Atomic::StoreImpl<
   PlatformOp,
   typename EnableIf<IsIntegral<T>::value || IsRegisteredEnum<T>::value>::type>
 {
-  void operator()(T new_value, T volatile* dest) const {
+  void operator()(T volatile* dest, T new_value) const {
     // Forward to the platform handler for the size of T.
-    PlatformOp()(new_value, dest);
+    PlatformOp()(dest, new_value);
   }
 };
 
@@ -461,16 +461,16 @@ struct Atomic::StoreImpl<
 // The new_value must be implicitly convertible to the
 // destination's type; it must be type-correct to store the
 // new_value in the destination.
-template<typename T, typename D, typename PlatformOp>
+template<typename D, typename T, typename PlatformOp>
 struct Atomic::StoreImpl<
-  T*, D*,
+  D*, T*,
   PlatformOp,
   typename EnableIf<Atomic::IsPointerConvertible<T*, D*>::value>::type>
 {
-  void operator()(T* new_value, D* volatile* dest) const {
+  void operator()(D* volatile* dest, T* new_value) const {
     // Allow derived to base conversion, and adding cv-qualifiers.
     D* value = new_value;
-    PlatformOp()(value, dest);
+    PlatformOp()(dest, value);
   }
 };
 
@@ -486,12 +486,12 @@ struct Atomic::StoreImpl<
   PlatformOp,
   typename EnableIf<PrimitiveConversions::Translate<T>::value>::type>
 {
-  void operator()(T new_value, T volatile* dest) const {
+  void operator()(T volatile* dest, T new_value) const {
     typedef PrimitiveConversions::Translate<T> Translator;
     typedef typename Translator::Decayed Decayed;
     STATIC_ASSERT(sizeof(T) == sizeof(Decayed));
-    PlatformOp()(Translator::decay(new_value),
-                 reinterpret_cast<Decayed volatile*>(dest));
+    PlatformOp()(reinterpret_cast<Decayed volatile*>(dest),
+                 Translator::decay(new_value));
   }
 };
 
@@ -504,8 +504,8 @@ struct Atomic::StoreImpl<
 template<size_t byte_size>
 struct Atomic::PlatformStore {
   template<typename T>
-  void operator()(T new_value,
-                  T volatile* dest) const {
+  void operator()(T volatile* dest,
+                  T new_value) const {
     STATIC_ASSERT(sizeof(T) <= sizeof(void*)); // wide atomics need specialization
     (void)const_cast<T&>(*dest = new_value);
   }
@@ -654,28 +654,28 @@ inline T Atomic::load_acquire(const volatile T* p) {
   return LoadImpl<T, PlatformOrderedLoad<sizeof(T), X_ACQUIRE> >()(p);
 }
 
-template<typename T, typename D>
-inline void Atomic::store(T store_value, volatile D* dest) {
-  StoreImpl<T, D, PlatformStore<sizeof(D)> >()(store_value, dest);
+template<typename D, typename T>
+inline void Atomic::store(volatile D* dest, T store_value) {
+  StoreImpl<D, T, PlatformStore<sizeof(D)> >()(dest, store_value);
 }
 
 template<size_t byte_size, ScopedFenceType type>
 struct Atomic::PlatformOrderedStore {
   template <typename T>
-  void operator()(T v, volatile T* p) const {
+  void operator()(volatile T* p, T v) const {
     ScopedFence<type> f((void*)p);
-    Atomic::store(v, p);
+    Atomic::store(p, v);
   }
 };
 
-template <typename T, typename D>
+template <typename D, typename T>
 inline void Atomic::release_store(volatile D* p, T v) {
-  StoreImpl<T, D, PlatformOrderedStore<sizeof(D), RELEASE_X> >()(v, p);
+  StoreImpl<D, T, PlatformOrderedStore<sizeof(D), RELEASE_X> >()(p, v);
 }
 
-template <typename T, typename D>
+template <typename D, typename T>
 inline void Atomic::release_store_fence(volatile D* p, T v) {
-  StoreImpl<T, D, PlatformOrderedStore<sizeof(D), RELEASE_X_FENCE> >()(v, p);
+  StoreImpl<D, T, PlatformOrderedStore<sizeof(D), RELEASE_X_FENCE> >()(p, v);
 }
 
 template<typename I, typename D>

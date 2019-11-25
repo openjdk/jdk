@@ -54,7 +54,7 @@ inline bool ZForwarding::is_pinned() const {
 }
 
 inline void ZForwarding::set_pinned() {
-  Atomic::store(true, &_pinned);
+  Atomic::store(&_pinned, true);
 }
 
 inline bool ZForwarding::inc_refcount() {

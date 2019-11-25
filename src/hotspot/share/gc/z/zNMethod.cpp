@@ -258,7 +258,7 @@ private:
   volatile bool _failed;
 
   void set_failed() {
-    Atomic::store(true, &_failed);
+    Atomic::store(&_failed, true);
   }
 
   void unlink(nmethod* nm) {

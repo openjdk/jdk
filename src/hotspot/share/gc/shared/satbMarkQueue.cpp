@@ -329,7 +329,7 @@ void SATBMarkQueueSet::print_all(const char* msg) {
 #endif // PRODUCT
 
 void SATBMarkQueueSet::abandon_completed_buffers() {
-  Atomic::store(size_t(0), &_count_and_process_flag);
+  Atomic::store(&_count_and_process_flag, size_t(0));
   BufferNode* buffers_to_delete = _list.pop_all();
   while (buffers_to_delete != NULL) {
     BufferNode* bn = buffers_to_delete;

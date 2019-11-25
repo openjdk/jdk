@@ -300,7 +300,7 @@ nmethodBucket* DependencyContext::dependencies_not_unloading() {
 
 // Relaxed accessors
 void DependencyContext::set_dependencies(nmethodBucket* b) {
-  Atomic::store(b, _dependency_context_addr);
+  Atomic::store(_dependency_context_addr, b);
 }
 
 nmethodBucket* DependencyContext::dependencies() {
@@ -313,7 +313,7 @@ nmethodBucket* DependencyContext::dependencies() {
 void DependencyContext::cleaning_start() {
   assert(SafepointSynchronize::is_at_safepoint(), "must be");
   uint64_t epoch = ++_cleaning_epoch_monotonic;
-  Atomic::store(epoch, &_cleaning_epoch);
+  Atomic::store(&_cleaning_epoch, epoch);
 }
 
 // The epilogue marks the end of dependency context cleanup by the GC,
@@ -323,7 +323,7 @@ void DependencyContext::cleaning_start() {
 // was called. That allows dependency contexts to be cleaned concurrently.
 void DependencyContext::cleaning_end() {
   uint64_t epoch = 0;
-  Atomic::store(epoch, &_cleaning_epoch);
+  Atomic::store(&_cleaning_epoch, epoch);
 }
 
 // This function skips over nmethodBuckets in the list corresponding to
@@ -358,7 +358,7 @@ nmethodBucket* nmethodBucket::next() {
 }
 
 void nmethodBucket::set_next(nmethodBucket* b) {
-  Atomic::store(b, &_next);
+  Atomic::store(&_next, b);
 }
 
 nmethodBucket* nmethodBucket::purge_list_next() {
@@ -366,5 +366,5 @@ nmethodBucket* nmethodBucket::purge_list_next() {
 }
 
 void nmethodBucket::set_purge_list_next(nmethodBucket* b) {
-  Atomic::store(b, &_purge_list_next);
+  Atomic::store(&_purge_list_next, b);
 }

@@ -178,12 +178,12 @@ void ShenandoahPacer::setup_for_idle() {
 size_t ShenandoahPacer::update_and_get_progress_history() {
   if (_progress == -1) {
     // First initialization, report some prior
-    Atomic::store((intptr_t)PACING_PROGRESS_ZERO, &_progress);
+    Atomic::store(&_progress, (intptr_t)PACING_PROGRESS_ZERO);
     return (size_t) (_heap->max_capacity() * 0.1);
   } else {
     // Record history, and reply historical data
     _progress_history->add(_progress);
-    Atomic::store((intptr_t)PACING_PROGRESS_ZERO, &_progress);
+    Atomic::store(&_progress, (intptr_t)PACING_PROGRESS_ZERO);
     return (size_t) (_progress_history->avg() * HeapWordSize);
   }
 }
@@ -192,7 +192,7 @@ void ShenandoahPacer::restart_with(size_t non_taxable_bytes, double tax_rate) {
   size_t initial = (size_t)(non_taxable_bytes * tax_rate) >> LogHeapWordSize;
   STATIC_ASSERT(sizeof(size_t) <= sizeof(intptr_t));
   Atomic::xchg((intptr_t)initial, &_budget);
-  Atomic::store(tax_rate, &_tax_rate);
+  Atomic::store(&_tax_rate, tax_rate);
   Atomic::inc(&_epoch);
 }
 

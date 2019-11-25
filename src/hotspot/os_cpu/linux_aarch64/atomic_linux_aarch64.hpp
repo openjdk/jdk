@@ -88,14 +88,14 @@ template<size_t byte_size>
 struct Atomic::PlatformOrderedStore<byte_size, RELEASE_X>
 {
   template <typename T>
-  void operator()(T v, volatile T* p) const { __atomic_store(const_cast<T*>(p), &v, __ATOMIC_RELEASE); }
+  void operator()(volatile T* p, T v) const { __atomic_store(const_cast<T*>(p), &v, __ATOMIC_RELEASE); }
 };
 
 template<size_t byte_size>
 struct Atomic::PlatformOrderedStore<byte_size, RELEASE_X_FENCE>
 {
   template <typename T>
-  void operator()(T v, volatile T* p) const { release_store(p, v); OrderAccess::fence(); }
+  void operator()(volatile T* p, T v) const { release_store(p, v); OrderAccess::fence(); }
 };
 
 #endif // OS_CPU_LINUX_AARCH64_ATOMIC_LINUX_AARCH64_HPP

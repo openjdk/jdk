@@ -174,7 +174,7 @@ template <DecoratorSet ds, typename T>
 inline typename EnableIf<
   HasDecorator<ds, MO_RELAXED>::value>::type
 RawAccessBarrier<decorators>::store_internal(void* addr, T value) {
-  Atomic::store(value, reinterpret_cast<volatile T*>(addr));
+  Atomic::store(reinterpret_cast<volatile T*>(addr), value);
 }
 
 template <DecoratorSet decorators>
