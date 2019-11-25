@@ -3264,11 +3264,13 @@ uint os::processor_id() {
   int processor_id = Atomic::load(&mapping[apic_id]);
 
   while (processor_id < 0) {
-    if (Atomic::cmpxchg(-2, &mapping[apic_id], -1)) {
+    if (Atomic::cmpxchg(-2, &mapping[apic_id], -1) == -1) {
       Atomic::store(Atomic::add(1, &next_processor_id) - 1, &mapping[apic_id]);
     }
     processor_id = Atomic::load(&mapping[apic_id]);
   }
+
+  assert(processor_id >= 0 && processor_id < os::processor_count(), "invalid processor id");
 
   return (uint)processor_id;
 }
