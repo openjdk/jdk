@@ -702,7 +702,7 @@ void JVMCINMethodData::clear_nmethod_mirror(nmethod* nm) {
 }
 
 void JVMCINMethodData::invalidate_nmethod_mirror(nmethod* nm) {
-  oop nmethod_mirror = get_nmethod_mirror(nm, /* phantom_ref */ true);
+  oop nmethod_mirror = get_nmethod_mirror(nm, /* phantom_ref */ false);
   if (nmethod_mirror == NULL) {
     return;
   }
