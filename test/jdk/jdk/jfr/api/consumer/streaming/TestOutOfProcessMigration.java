@@ -33,7 +33,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import jdk.jfr.consumer.EventStream;
 import jdk.test.lib.dcmd.CommandExecutor;
 import jdk.test.lib.dcmd.PidJcmdExecutor;
-import jdk.test.lib.process.OutputAnalyzer;
 
 /**
  * @test
@@ -47,23 +46,25 @@ import jdk.test.lib.process.OutputAnalyzer;
  */
 public class TestOutOfProcessMigration {
     public static void main(String... args) throws Exception {
-        Path newRepo = Paths.get("new-repository").toAbsolutePath();
-
-        TestProcess process = new TestProcess("application");
-        AtomicInteger eventCounter = new AtomicInteger();
-        try (EventStream es = EventStream.openRepository(process.getRepository())) {
-            // Start from first event in repository
-            es.setStartTime(Instant.EPOCH);
-            es.onEvent(e -> {
-                if (eventCounter.incrementAndGet() == TestProcess.NUMBER_OF_EVENTS) {
-                    System.out.println("Changing repository to " + newRepo + " ...");
-                    CommandExecutor executor = new PidJcmdExecutor(String.valueOf(process.pid()));
-                    // This should close stream
-                    OutputAnalyzer oa = executor.execute("JFR.configure repositorypath=" + newRepo);
-                    System.out.println(oa);
-                }
-            });
-            es.start();
+        try (TestProcess process = new TestProcess("application"))  {
+            AtomicInteger eventCounter = new AtomicInteger();
+            Path newRepo = Paths.get("new-repository").toAbsolutePath();
+            try (EventStream es = EventStream.openRepository(process.getRepository())) {
+                // Start from first event in repository
+                es.setStartTime(Instant.EPOCH);
+                es.onEvent(e -> {
+                    if (eventCounter.incrementAndGet() == TestProcess.NUMBER_OF_EVENTS) {
+                        System.out.println("Changing repository to " + newRepo + " ...");
+                        CommandExecutor executor = new PidJcmdExecutor(String.valueOf(process.pid()));
+                        // This should close stream
+                        executor.execute("JFR.configure repositorypath=" + newRepo);
+                    }
+                });
+                es.start();
+                process.exit();
+                // Wait for process to die, so files are cleaned up
+                process.awaitDeath();
+            }
         }
     }
 }
