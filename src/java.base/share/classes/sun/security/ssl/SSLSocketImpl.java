@@ -360,7 +360,7 @@ public final class SSLSocketImpl
                 SSLLogger.severe("handshake failed", ioe);
             }
 
-            return SSLSessionImpl.nullSession;
+            return new SSLSessionImpl();
         }
 
         return conContext.conSession;

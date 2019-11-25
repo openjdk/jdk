@@ -130,7 +130,7 @@ final class TransportContext implements ConnectionContext {
         this.isUnsureMode = isUnsureMode;
 
         // initial security parameters
-        this.conSession = SSLSessionImpl.nullSession;
+        this.conSession = new SSLSessionImpl();
         this.protocolVersion = this.sslConfig.maximumProtocolVersion;
         this.clientVerifyData = emptyByteArray;
         this.serverVerifyData = emptyByteArray;
