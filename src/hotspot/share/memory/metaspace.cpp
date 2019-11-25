@@ -180,7 +180,7 @@ bool MetaspaceGC::inc_capacity_until_GC(size_t v, size_t* new_cap_until_GC, size
 size_t MetaspaceGC::dec_capacity_until_GC(size_t v) {
   assert_is_aligned(v, Metaspace::commit_alignment());
 
-  return Atomic::sub(v, &_capacity_until_GC);
+  return Atomic::sub(&_capacity_until_GC, v);
 }
 
 void MetaspaceGC::initialize() {
@@ -402,7 +402,7 @@ static void dec_stat_atomically(volatile size_t* pstat, size_t words) {
   assert(size_now >= words, "About to decrement counter below zero "
          "(current value: " SIZE_FORMAT ", decrement value: " SIZE_FORMAT ".",
          size_now, words);
-  Atomic::sub(words, pstat);
+  Atomic::sub(pstat, words);
 }
 
 void MetaspaceUtils::dec_capacity(Metaspace::MetadataType mdtype, size_t words) {

@@ -149,7 +149,7 @@ void OopStorage::ActiveArray::increment_refcount() const {
 }
 
 bool OopStorage::ActiveArray::decrement_refcount() const {
-  int new_value = Atomic::sub(1, &_refcount);
+  int new_value = Atomic::sub(&_refcount, 1);
   assert(new_value >= 0, "negative refcount %d", new_value);
   return new_value == 0;
 }
@@ -724,7 +724,7 @@ void OopStorage::release(const oop* const* ptrs, size_t size) {
     }
     // Release the contiguous entries that are in block.
     block->release_entries(releasing, this);
-    Atomic::sub(count, &_allocation_count);
+    Atomic::sub(&_allocation_count, count);
   }
 }
 

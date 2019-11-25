@@ -76,7 +76,7 @@ inline bool ZForwarding::inc_refcount() {
 
 inline bool ZForwarding::dec_refcount() {
   assert(_refcount > 0, "Invalid state");
-  return Atomic::sub(1u, &_refcount) == 0u;
+  return Atomic::sub(&_refcount, 1u) == 0u;
 }
 
 inline bool ZForwarding::retain_page() {

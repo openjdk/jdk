@@ -104,8 +104,8 @@ public:
   inline static D add(D volatile* dest, I add_value,
                       atomic_memory_order order = memory_order_conservative);
 
-  template<typename I, typename D>
-  inline static D sub(I sub_value, D volatile* dest,
+  template<typename D, typename I>
+  inline static D sub(D volatile* dest, I sub_value,
                       atomic_memory_order order = memory_order_conservative);
 
   // Atomically increment location. inc() provide:
@@ -543,8 +543,8 @@ inline void Atomic::dec(D volatile* dest, atomic_memory_order order) {
   Atomic::add(dest, I(-1), order);
 }
 
-template<typename I, typename D>
-inline D Atomic::sub(I sub_value, D volatile* dest, atomic_memory_order order) {
+template<typename D, typename I>
+inline D Atomic::sub(D volatile* dest, I sub_value, atomic_memory_order order) {
   STATIC_ASSERT(IsPointer<D>::value || IsIntegral<D>::value);
   STATIC_ASSERT(IsIntegral<I>::value);
   // If D is a pointer type, use [u]intptr_t as the addend type,

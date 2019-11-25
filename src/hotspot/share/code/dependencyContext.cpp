@@ -260,7 +260,7 @@ bool DependencyContext::is_dependent_nmethod(nmethod* nm) {
 #endif //PRODUCT
 
 int nmethodBucket::decrement() {
-  return Atomic::sub(1, &_count);
+  return Atomic::sub(&_count, 1);
 }
 
 // We use a monotonically increasing epoch counter to track the last epoch a given

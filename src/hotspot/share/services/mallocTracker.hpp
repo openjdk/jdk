@@ -66,7 +66,7 @@ class MemoryCounter {
     assert(_size >= sz, "deallocation > allocated");
     Atomic::dec(&_count);
     if (sz > 0) {
-      Atomic::sub(sz, &_size);
+      Atomic::sub(&_size, sz);
     }
   }
 

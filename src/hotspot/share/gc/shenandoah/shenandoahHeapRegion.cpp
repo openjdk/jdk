@@ -692,7 +692,7 @@ void ShenandoahHeapRegion::record_pin() {
 
 void ShenandoahHeapRegion::record_unpin() {
   assert(pin_count() > 0, "Region " SIZE_FORMAT " should have non-zero pins", region_number());
-  Atomic::sub((size_t)1, &_critical_pins);
+  Atomic::sub(&_critical_pins, (size_t)1);
 }
 
 size_t ShenandoahHeapRegion::pin_count() const {

@@ -150,7 +150,7 @@ BufferNode* BufferNode::Allocator::allocate() {
     // Decrement count after getting buffer from free list.  This, along
     // with incrementing count before adding to free list, ensures count
     // never underflows.
-    size_t count = Atomic::sub(1u, &_free_count);
+    size_t count = Atomic::sub(&_free_count, 1u);
     assert((count + 1) != 0, "_free_count underflow");
   }
   return node;
@@ -212,7 +212,7 @@ bool BufferNode::Allocator::try_transfer_pending() {
       last = next;
       ++count;
     }
-    Atomic::sub(count, &_pending_count);
+    Atomic::sub(&_pending_count, count);
 
     // Wait for any in-progress pops, to avoid ABA for them.
     GlobalCounter::write_synchronize();
@@ -236,7 +236,7 @@ size_t BufferNode::Allocator::reduce_free_list(size_t remove_goal) {
     if (node == NULL) break;
     BufferNode::deallocate(node);
   }
-  size_t new_count = Atomic::sub(removed, &_free_count);
+  size_t new_count = Atomic::sub(&_free_count, removed);
   log_debug(gc, ptrqueue, freelist)
            ("Reduced %s free list by " SIZE_FORMAT " to " SIZE_FORMAT,
             name(), removed, new_count);
