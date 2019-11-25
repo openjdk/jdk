@@ -1,4 +1,4 @@
-## The FreeType Project: Freetype v2.10.0
+## The FreeType Project: Freetype v2.10.1
 
 
 ### FreeType Notice
@@ -532,6 +532,109 @@ proprietary programs.  If your program is a subroutine library, you may
 consider it more useful to permit linking proprietary applications with the
 library.  If this is what you want to do, use the GNU Library General
 Public License instead of this License.
+
+#########################################################################
+
+--- fthash.c and fthash.h are covered by the following notices ---
+
+/*
+ * Copyright 2000 Computing Research Labs, New Mexico State University
+ * Copyright 2001-2015
+ *   Francesco Zappa Nardelli
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a
+ * copy of this software and associated documentation files (the "Software"),
+ * to deal in the Software without restriction, including without limitation
+ * the rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons to whom the
+ * Software is furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
+ * THE COMPUTING RESEARCH LAB OR NEW MEXICO STATE UNIVERSITY BE LIABLE FOR ANY
+ * CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT
+ * OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
+ * THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ */
+
+  /**************************************************************************
+   *
+   * This file is based on code from bdf.c,v 1.22 2000/03/16 20:08:50
+   *
+   * taken from Mark Leisher's xmbdfed package
+   *
+   */
+   
+--- FreeType 2 PSaux module is covered by the following notices ---
+
+Copyright 2006-2014 Adobe Systems Incorporated.
+
+This software, and all works of authorship, whether in source or
+object code form as indicated by the copyright notice(s) included
+herein (collectively, the "Work") is made available, and may only be
+used, modified, and distributed under the FreeType Project License,
+LICENSE.TXT.  Additionally, subject to the terms and conditions of the
+FreeType Project License, each contributor to the Work hereby grants
+to any individual or legal entity exercising permissions granted by
+the FreeType Project License and this section (hereafter, "You" or
+"Your") a perpetual, worldwide, non-exclusive, no-charge,
+royalty-free, irrevocable (except as stated in this section) patent
+license to make, have made, use, offer to sell, sell, import, and
+otherwise transfer the Work, where such license applies only to those
+patent claims licensable by such contributor that are necessarily
+infringed by their contribution(s) alone or by combination of their
+contribution(s) with the Work to which such contribution(s) was
+submitted.  If You institute patent litigation against any entity
+(including a cross-claim or counterclaim in a lawsuit) alleging that
+the Work or a contribution incorporated within the Work constitutes
+direct or contributory patent infringement, then any patent licenses
+granted to You under this License for that Work shall terminate as of
+the date such litigation is filed.
+
+By using, modifying, or distributing the Work you indicate that you
+have read and understood the terms and conditions of the
+FreeType Project License as well as those provided in this section,
+and you accept them fully.
+
+#########################################################################
+
+
+--- FreeType 2 PSaux module is covered by the following notices ---
+
+Copyright 2006-2014 Adobe Systems Incorporated.
+
+This software, and all works of authorship, whether in source or
+object code form as indicated by the copyright notice(s) included
+herein (collectively, the "Work") is made available, and may only be
+used, modified, and distributed under the FreeType Project License,
+LICENSE.TXT.  Additionally, subject to the terms and conditions of the
+FreeType Project License, each contributor to the Work hereby grants
+to any individual or legal entity exercising permissions granted by
+the FreeType Project License and this section (hereafter, "You" or
+"Your") a perpetual, worldwide, non-exclusive, no-charge,
+royalty-free, irrevocable (except as stated in this section) patent
+license to make, have made, use, offer to sell, sell, import, and
+otherwise transfer the Work, where such license applies only to those
+patent claims licensable by such contributor that are necessarily
+infringed by their contribution(s) alone or by combination of their
+contribution(s) with the Work to which such contribution(s) was
+submitted.  If You institute patent litigation against any entity
+(including a cross-claim or counterclaim in a lawsuit) alleging that
+the Work or a contribution incorporated within the Work constitutes
+direct or contributory patent infringement, then any patent licenses
+granted to You under this License for that Work shall terminate as of
+the date such litigation is filed.
+
+By using, modifying, or distributing the Work you indicate that you
+have read and understood the terms and conditions of the
+FreeType Project License as well as those provided in this section,
+and you accept them fully.
+
+#########################################################################
 
 ```
 
