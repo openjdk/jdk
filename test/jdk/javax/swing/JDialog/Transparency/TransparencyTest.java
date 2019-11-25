@@ -59,6 +59,7 @@ public class TransparencyTest {
         dlgPos = dialog.getLocation();
         backgroundDialog = new JDialog(frame, false);
         backgroundDialog.setSize(250, 250);
+        backgroundDialog.setUndecorated(true);
         backgroundDialog.getContentPane().setBackground(Color.red);
         backgroundDialog.setLocation(dlgPos.x, dlgPos.y);
 
@@ -75,7 +76,7 @@ public class TransparencyTest {
         boolean translucencyCheck = gd.isWindowTranslucencySupported(mode);
         if(!translucencyCheck) {
             return;
-    }
+        }
 
         Robot robot = new Robot();
         // create a GUI
@@ -87,7 +88,11 @@ public class TransparencyTest {
             }
         });
         robot.waitForIdle();
-        Color opaque = robot.getPixelColor(dlgPos.x + 100, dlgPos.y + 100);
+        robot.delay(200);
+
+        int x = dlgPos.x + 100;
+        int y = dlgPos.y + 100;
+        Color opaque = robot.getPixelColor(x, y);
 
         // set Dialog Opacity
         SwingUtilities.invokeAndWait(new Runnable() {
@@ -98,6 +103,7 @@ public class TransparencyTest {
             }
         });
         robot.waitForIdle();
+        robot.delay(200);
 
         // iconify frame
         SwingUtilities.invokeAndWait(new Runnable() {
@@ -108,6 +114,7 @@ public class TransparencyTest {
             }
         });
         robot.waitForIdle();
+        robot.delay(500);
 
         // deiconify frame
         SwingUtilities.invokeAndWait(new Runnable() {
@@ -118,8 +125,9 @@ public class TransparencyTest {
             }
         });
         robot.waitForIdle();
+        robot.delay(500);
 
-        Color transparent = robot.getPixelColor(dlgPos.x + 100, dlgPos.y + 100);
+        Color transparent = robot.getPixelColor(x, y);
         if (transparent.equals(opaque)) {
             frame.dispose();
             throw new RuntimeException("JDialog transparency lost "
