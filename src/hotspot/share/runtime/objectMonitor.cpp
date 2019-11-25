@@ -916,8 +916,8 @@ void ObjectMonitor::exit(bool not_suspended, TRAPS) {
 
     // release semantics: prior loads and stores from within the critical section
     // must not float (reorder) past the following store that drops the lock.
-    OrderAccess::release_store(&_owner, (void*)NULL);   // drop the lock
-    OrderAccess::storeload();                        // See if we need to wake a successor
+    Atomic::release_store(&_owner, (void*)NULL);   // drop the lock
+    OrderAccess::storeload();                      // See if we need to wake a successor
     if ((intptr_t(_EntryList)|intptr_t(_cxq)) == 0 || _succ != NULL) {
       return;
     }
@@ -1092,7 +1092,7 @@ void ObjectMonitor::ExitEpilog(Thread * Self, ObjectWaiter * Wakee) {
   Wakee  = NULL;
 
   // Drop the lock
-  OrderAccess::release_store(&_owner, (void*)NULL);
+  Atomic::release_store(&_owner, (void*)NULL);
   OrderAccess::fence();                               // ST _owner vs LD in unpark()
 
   DTRACE_MONITOR_PROBE(contended__exit, this, object(), Self);

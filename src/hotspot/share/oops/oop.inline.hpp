@@ -110,9 +110,9 @@ Klass* oopDesc::klass_or_null_acquire() const volatile {
     // Workaround for non-const load_acquire parameter.
     const volatile narrowKlass* addr = &_metadata._compressed_klass;
     volatile narrowKlass* xaddr = const_cast<volatile narrowKlass*>(addr);
-    return CompressedKlassPointers::decode(OrderAccess::load_acquire(xaddr));
+    return CompressedKlassPointers::decode(Atomic::load_acquire(xaddr));
   } else {
-    return OrderAccess::load_acquire(&_metadata._klass);
+    return Atomic::load_acquire(&_metadata._klass);
   }
 }
 
@@ -156,10 +156,10 @@ void oopDesc::set_klass(Klass* k) {
 void oopDesc::release_set_klass(HeapWord* mem, Klass* klass) {
   CHECK_SET_KLASS(klass);
   if (UseCompressedClassPointers) {
-    OrderAccess::release_store(compressed_klass_addr(mem),
-                               CompressedKlassPointers::encode_not_null(klass));
+    Atomic::release_store(compressed_klass_addr(mem),
+                          CompressedKlassPointers::encode_not_null(klass));
   } else {
-    OrderAccess::release_store(klass_addr(mem), klass);
+    Atomic::release_store(klass_addr(mem), klass);
   }
 }
 
@@ -356,7 +356,7 @@ oop oopDesc::forwardee() const {
 // The forwardee is used when copying during scavenge and mark-sweep.
 // It does need to clear the low two locking- and GC-related bits.
 oop oopDesc::forwardee_acquire() const {
-  return (oop) OrderAccess::load_acquire(&_mark).decode_pointer();
+  return (oop) Atomic::load_acquire(&_mark).decode_pointer();
 }
 
 // The following method needs to be MT safe.

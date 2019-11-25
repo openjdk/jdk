@@ -26,7 +26,6 @@
 #define SHARE_RUNTIME_ORDERACCESS_HPP
 
 #include "memory/allocation.hpp"
-#include "runtime/atomic.hpp"
 #include "utilities/macros.hpp"
 
 //                Memory Access Ordering Model
@@ -231,30 +230,7 @@
 // order.  If their implementations change such that these assumptions
 // are violated, a whole lot of code will break.
 
-enum ScopedFenceType {
-    X_ACQUIRE
-  , RELEASE_X
-  , RELEASE_X_FENCE
-};
-
-template <ScopedFenceType T>
-class ScopedFenceGeneral: public StackObj {
- public:
-  void prefix() {}
-  void postfix() {}
-};
-
-template <ScopedFenceType T>
-class ScopedFence : public ScopedFenceGeneral<T> {
-  void *const _field;
- public:
-  ScopedFence(void *const field) : _field(field) { prefix(); }
-  ~ScopedFence() { postfix(); }
-  void prefix() { ScopedFenceGeneral<T>::prefix(); }
-  void postfix() { ScopedFenceGeneral<T>::postfix(); }
-};
-
-class OrderAccess : private Atomic {
+class OrderAccess : public AllStatic {
  public:
   // barriers
   static void     loadload();
@@ -267,85 +243,13 @@ class OrderAccess : private Atomic {
   static void     fence();
 
   static void     cross_modify_fence();
-
-  template <typename T>
-  static T        load_acquire(const volatile T* p);
-
-  template <typename T, typename D>
-  static void     release_store(volatile D* p, T v);
-
-  template <typename T, typename D>
-  static void     release_store_fence(volatile D* p, T v);
-
- private:
+private:
   // This is a helper that invokes the StubRoutines::fence_entry()
   // routine if it exists, It should only be used by platforms that
   // don't have another way to do the inline assembly.
   static void StubRoutines_fence();
-
-  // Give platforms a variation point to specialize.
-  template<size_t byte_size, ScopedFenceType type> struct PlatformOrderedStore;
-  template<size_t byte_size, ScopedFenceType type> struct PlatformOrderedLoad;
-
-  template<typename FieldType, ScopedFenceType FenceType>
-  static void ordered_store(volatile FieldType* p, FieldType v);
-
-  template<typename FieldType, ScopedFenceType FenceType>
-  static FieldType ordered_load(const volatile FieldType* p);
-};
-
-// The following methods can be specialized using simple template specialization
-// in the platform specific files for optimization purposes. Otherwise the
-// generalized variant is used.
-
-template<size_t byte_size, ScopedFenceType type>
-struct OrderAccess::PlatformOrderedStore {
-  template <typename T>
-  void operator()(T v, volatile T* p) const {
-    ordered_store<T, type>(p, v);
-  }
-};
-
-template<size_t byte_size, ScopedFenceType type>
-struct OrderAccess::PlatformOrderedLoad {
-  template <typename T>
-  T operator()(const volatile T* p) const {
-    return ordered_load<T, type>(p);
-  }
 };
 
 #include OS_CPU_HEADER(orderAccess)
 
-template<> inline void ScopedFenceGeneral<X_ACQUIRE>::postfix()       { OrderAccess::acquire(); }
-template<> inline void ScopedFenceGeneral<RELEASE_X>::prefix()        { OrderAccess::release(); }
-template<> inline void ScopedFenceGeneral<RELEASE_X_FENCE>::prefix()  { OrderAccess::release(); }
-template<> inline void ScopedFenceGeneral<RELEASE_X_FENCE>::postfix() { OrderAccess::fence();   }
-
-
-template <typename FieldType, ScopedFenceType FenceType>
-inline void OrderAccess::ordered_store(volatile FieldType* p, FieldType v) {
-  ScopedFence<FenceType> f((void*)p);
-  Atomic::store(v, p);
-}
-
-template <typename FieldType, ScopedFenceType FenceType>
-inline FieldType OrderAccess::ordered_load(const volatile FieldType* p) {
-  ScopedFence<FenceType> f((void*)p);
-  return Atomic::load(p);
-}
-
-template <typename T>
-inline T OrderAccess::load_acquire(const volatile T* p) {
-  return LoadImpl<T, PlatformOrderedLoad<sizeof(T), X_ACQUIRE> >()(p);
-}
-
-template <typename T, typename D>
-inline void OrderAccess::release_store(volatile D* p, T v) {
-  StoreImpl<T, D, PlatformOrderedStore<sizeof(D), RELEASE_X> >()(v, p);
-}
-
-template <typename T, typename D>
-inline void OrderAccess::release_store_fence(volatile D* p, T v) {
-  StoreImpl<T, D, PlatformOrderedStore<sizeof(D), RELEASE_X_FENCE> >()(v, p);
-}
 #endif // SHARE_RUNTIME_ORDERACCESS_HPP

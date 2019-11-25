@@ -49,9 +49,9 @@ public:
     // Similar to how a JavaThread would stop in a safepoint.
     while (!_exit) {
       // Load the published tag.
-      tag = OrderAccess::load_acquire(&wait_tag);
+      tag = Atomic::load_acquire(&wait_tag);
       // Publish the tag this thread is going to wait for.
-      OrderAccess::release_store(&_on_barrier, tag);
+      Atomic::release_store(&_on_barrier, tag);
       if (_on_barrier == 0) {
         SpinPause();
         continue;
@@ -60,9 +60,9 @@ public:
       // Wait until we are woken.
       _wait_barrier->wait(tag);
       // Verify that we do not see an invalid value.
-      vv = OrderAccess::load_acquire(&valid_value);
+      vv = Atomic::load_acquire(&valid_value);
       ASSERT_EQ((vv & 0x1), 0);
-      OrderAccess::release_store(&_on_barrier, 0);
+      Atomic::release_store(&_on_barrier, 0);
     }
   }
 };
@@ -104,7 +104,7 @@ public:
       // Arm next tag.
       wb.arm(next_tag);
       // Publish tag.
-      OrderAccess::release_store_fence(&wait_tag, next_tag);
+      Atomic::release_store_fence(&wait_tag, next_tag);
 
       // Wait until threads picked up new tag.
       while (reader1->_on_barrier != wait_tag ||
@@ -115,12 +115,12 @@ public:
       }
 
       // Set an invalid value.
-      OrderAccess::release_store(&valid_value, valid_value + 1); // odd
+      Atomic::release_store(&valid_value, valid_value + 1); // odd
       os::naked_yield();
       // Set a valid value.
-      OrderAccess::release_store(&valid_value, valid_value + 1); // even
+      Atomic::release_store(&valid_value, valid_value + 1); // even
       // Publish inactive tag.
-      OrderAccess::release_store_fence(&wait_tag, 0); // Stores in WB must not float up.
+      Atomic::release_store_fence(&wait_tag, 0); // Stores in WB must not float up.
       wb.disarm();
 
       // Wait until threads done valid_value verification.

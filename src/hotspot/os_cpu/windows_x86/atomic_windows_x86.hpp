@@ -27,6 +27,17 @@
 
 #include "runtime/os.hpp"
 
+// Note that in MSVC, volatile memory accesses are explicitly
+// guaranteed to have acquire release semantics (w.r.t. compiler
+// reordering) and therefore does not even need a compiler barrier
+// for normal acquire release accesses. And all generalized
+// bound calls like release_store go through Atomic::load
+// and Atomic::store which do volatile memory accesses.
+template<> inline void ScopedFence<X_ACQUIRE>::postfix()       { }
+template<> inline void ScopedFence<RELEASE_X>::prefix()        { }
+template<> inline void ScopedFence<RELEASE_X_FENCE>::prefix()  { }
+template<> inline void ScopedFence<RELEASE_X_FENCE>::postfix() { OrderAccess::fence(); }
+
 // The following alternative implementations are needed because
 // Windows 95 doesn't support (some of) the corresponding Windows NT
 // calls. Furthermore, these versions allow inlining in the caller.
@@ -217,5 +228,46 @@ inline void Atomic::PlatformStore<8>::operator()(T store_value,
 #endif // AMD64
 
 #pragma warning(default: 4035) // Enables warnings reporting missing return statement
+
+#ifndef AMD64
+template<>
+struct Atomic::PlatformOrderedStore<1, RELEASE_X_FENCE>
+{
+  template <typename T>
+  void operator()(T v, volatile T* p) const {
+    __asm {
+      mov edx, p;
+      mov al, v;
+      xchg al, byte ptr [edx];
+    }
+  }
+};
+
+template<>
+struct Atomic::PlatformOrderedStore<2, RELEASE_X_FENCE>
+{
+  template <typename T>
+  void operator()(T v, volatile T* p) const {
+    __asm {
+      mov edx, p;
+      mov ax, v;
+      xchg ax, word ptr [edx];
+    }
+  }
+};
+
+template<>
+struct Atomic::PlatformOrderedStore<4, RELEASE_X_FENCE>
+{
+  template <typename T>
+  void operator()(T v, volatile T* p) const {
+    __asm {
+      mov edx, p;
+      mov eax, v;
+      xchg eax, dword ptr [edx];
+    }
+  }
+};
+#endif // AMD64
 
 #endif // OS_CPU_WINDOWS_X86_ATOMIC_WINDOWS_X86_HPP

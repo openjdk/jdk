@@ -24,7 +24,6 @@
 #include "precompiled.hpp"
 #include "metaprogramming/isRegisteredEnum.hpp"
 #include "runtime/atomic.hpp"
-#include "runtime/orderAccess.hpp"
 #include "runtime/os.hpp"
 #include "utilities/globalCounter.hpp"
 #include "utilities/globalCounter.inline.hpp"
@@ -57,21 +56,21 @@ protected:
   ~RCUNestedThread() {}
 
   void set_state(NestedTestState new_state) {
-    OrderAccess::release_store(&_state, new_state);
+    Atomic::release_store(&_state, new_state);
   }
 
   void wait_with_state(NestedTestState new_state) {
     SpinYield spinner;
-    OrderAccess::release_store(&_state, new_state);
-    while (!OrderAccess::load_acquire(&_proceed)) {
+    Atomic::release_store(&_state, new_state);
+    while (!Atomic::load_acquire(&_proceed)) {
       spinner.wait();
     }
-    OrderAccess::release_store(&_proceed, false);
+    Atomic::release_store(&_proceed, false);
   }
 
 public:
   NestedTestState state() const {
-    return OrderAccess::load_acquire(&_state);
+    return Atomic::load_acquire(&_state);
   }
 
   void wait_for_state(NestedTestState goal) {
@@ -82,7 +81,7 @@ public:
   }
 
   void proceed() {
-    OrderAccess::release_store(&_proceed, true);
+    Atomic::release_store(&_proceed, true);
   }
 };
 

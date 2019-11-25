@@ -85,7 +85,7 @@ void SingleWriterSynchronizer::synchronize() {
   // to complete, e.g. for the value of old_ptr to catch up with old.
   // Loop because there could be pending wakeups unrelated to this
   // synchronize request.
-  while (old != OrderAccess::load_acquire(old_ptr)) {
+  while (old != Atomic::load_acquire(old_ptr)) {
     _wakeup.wait();
   }
   // (5) Drain any pending wakeups. A critical section exit may have

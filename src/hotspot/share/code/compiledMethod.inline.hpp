@@ -61,7 +61,7 @@ inline address CompiledMethod::get_deopt_original_pc(const frame* fr) {
 
 // class ExceptionCache methods
 
-inline int ExceptionCache::count() { return OrderAccess::load_acquire(&_count); }
+inline int ExceptionCache::count() { return Atomic::load_acquire(&_count); }
 
 address ExceptionCache::pc_at(int index) {
   assert(index >= 0 && index < count(),"");
@@ -74,7 +74,7 @@ address ExceptionCache::handler_at(int index) {
 }
 
 // increment_count is only called under lock, but there may be concurrent readers.
-inline void ExceptionCache::increment_count() { OrderAccess::release_store(&_count, _count + 1); }
+inline void ExceptionCache::increment_count() { Atomic::release_store(&_count, _count + 1); }
 
 
 #endif // SHARE_CODE_COMPILEDMETHOD_INLINE_HPP

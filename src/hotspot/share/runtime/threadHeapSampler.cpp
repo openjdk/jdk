@@ -139,9 +139,9 @@ void ThreadHeapSampler::check_for_sampling(oop obj, size_t allocation_size, size
 }
 
 int ThreadHeapSampler::get_sampling_interval() {
-  return OrderAccess::load_acquire(&_sampling_interval);
+  return Atomic::load_acquire(&_sampling_interval);
 }
 
 void ThreadHeapSampler::set_sampling_interval(int sampling_interval) {
-  OrderAccess::release_store(&_sampling_interval, sampling_interval);
+  Atomic::release_store(&_sampling_interval, sampling_interval);
 }

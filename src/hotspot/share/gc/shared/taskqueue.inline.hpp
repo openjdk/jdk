@@ -68,7 +68,7 @@ bool GenericTaskQueue<E, F, N>::push_slow(E t, uint dirty_n_elems) {
     // assignment.  However, casting to E& means that we trigger an
     // unused-value warning.  So, we cast the E& to void.
     (void)const_cast<E&>(_elems[localBot] = t);
-    OrderAccess::release_store(&_bottom, increment_index(localBot));
+    Atomic::release_store(&_bottom, increment_index(localBot));
     TASKQUEUE_STATS_ONLY(stats.record_push());
     return true;
   }
@@ -89,7 +89,7 @@ GenericTaskQueue<E, F, N>::push(E t) {
     // assignment.  However, casting to E& means that we trigger an
     // unused-value warning.  So, we cast the E& to void.
     (void) const_cast<E&>(_elems[localBot] = t);
-    OrderAccess::release_store(&_bottom, increment_index(localBot));
+    Atomic::release_store(&_bottom, increment_index(localBot));
     TASKQUEUE_STATS_ONLY(stats.record_push());
     return true;
   } else {
@@ -210,7 +210,7 @@ bool GenericTaskQueue<E, F, N>::pop_global(volatile E& t) {
 #ifndef CPU_MULTI_COPY_ATOMIC
   OrderAccess::fence();
 #endif
-  uint localBot = OrderAccess::load_acquire(&_bottom);
+  uint localBot = Atomic::load_acquire(&_bottom);
   uint n_elems = size(localBot, oldAge.top());
   if (n_elems == 0) {
     return false;

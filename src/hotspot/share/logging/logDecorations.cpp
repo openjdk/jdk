@@ -44,7 +44,7 @@ void LogDecorations::initialize(jlong vm_start_time) {
 }
 
 const char* LogDecorations::host_name() {
-  const char* host_name = OrderAccess::load_acquire(&_host_name);
+  const char* host_name = Atomic::load_acquire(&_host_name);
   if (host_name == NULL) {
     char buffer[1024];
     if (os::get_host_name(buffer, sizeof(buffer))) {

@@ -48,7 +48,7 @@ inline const BitMap::bm_word_t BitMap::load_word_ordered(const volatile bm_word_
            memory_order == memory_order_acquire ||
            memory_order == memory_order_conservative,
            "unexpected memory ordering");
-    return OrderAccess::load_acquire(addr);
+    return Atomic::load_acquire(addr);
   }
 }
 

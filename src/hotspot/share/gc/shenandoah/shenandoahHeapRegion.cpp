@@ -305,7 +305,7 @@ void ShenandoahHeapRegion::make_committed_bypass() {
 }
 
 void ShenandoahHeapRegion::clear_live_data() {
-  OrderAccess::release_store_fence<size_t>(&_live_data, 0);
+  Atomic::release_store_fence<size_t>(&_live_data, 0);
 }
 
 void ShenandoahHeapRegion::reset_alloc_metadata() {
@@ -351,7 +351,7 @@ void ShenandoahHeapRegion::set_live_data(size_t s) {
 }
 
 size_t ShenandoahHeapRegion::get_live_data_words() const {
-  return OrderAccess::load_acquire(&_live_data);
+  return Atomic::load_acquire(&_live_data);
 }
 
 size_t ShenandoahHeapRegion::get_live_data_bytes() const {

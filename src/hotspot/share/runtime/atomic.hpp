@@ -34,6 +34,7 @@
 #include "metaprogramming/primitiveConversions.hpp"
 #include "metaprogramming/removeCV.hpp"
 #include "metaprogramming/removePointer.hpp"
+#include "runtime/orderAccess.hpp"
 #include "utilities/align.hpp"
 #include "utilities/macros.hpp"
 
@@ -46,6 +47,12 @@ enum atomic_memory_order {
   memory_order_acq_rel = 4,
   // Strong two-way memory barrier.
   memory_order_conservative = 8
+};
+
+enum ScopedFenceType {
+    X_ACQUIRE
+  , RELEASE_X
+  , RELEASE_X_FENCE
 };
 
 class Atomic : AllStatic {
@@ -75,11 +82,20 @@ public:
   template<typename T, typename D>
   inline static void store(T store_value, volatile D* dest);
 
+  template <typename T, typename D>
+  inline static void release_store(volatile D* dest, T store_value);
+
+  template <typename T, typename D>
+  inline static void release_store_fence(volatile D* dest, T store_value);
+
   // Atomically load from a location
   // The type T must be either a pointer type, an integral/enum type,
   // or a type that is primitive convertible using PrimitiveConversions.
   template<typename T>
   inline static T load(const volatile T* dest);
+
+  template <typename T>
+  inline static T load_acquire(const volatile T* dest);
 
   // Atomically add to a location. Returns updated value. add*() provide:
   // <fence> add-value-to-dest <membar StoreLoad|StoreStore>
@@ -199,6 +215,10 @@ protected:
   // The default implementation is a volatile load. If a platform
   // requires more for e.g. 64 bit loads, a specialization is required
   template<size_t byte_size> struct PlatformLoad;
+
+  // Give platforms a variation point to specialize.
+  template<size_t byte_size, ScopedFenceType type> struct PlatformOrderedStore;
+  template<size_t byte_size, ScopedFenceType type> struct PlatformOrderedLoad;
 
 private:
   // Dispatch handler for add.  Provides type-based validity checking
@@ -578,6 +598,32 @@ struct Atomic::PlatformXchg {
                atomic_memory_order order) const;
 };
 
+template <ScopedFenceType T>
+class ScopedFenceGeneral: public StackObj {
+ public:
+  void prefix() {}
+  void postfix() {}
+};
+
+// The following methods can be specialized using simple template specialization
+// in the platform specific files for optimization purposes. Otherwise the
+// generalized variant is used.
+
+template<> inline void ScopedFenceGeneral<X_ACQUIRE>::postfix()       { OrderAccess::acquire(); }
+template<> inline void ScopedFenceGeneral<RELEASE_X>::prefix()        { OrderAccess::release(); }
+template<> inline void ScopedFenceGeneral<RELEASE_X_FENCE>::prefix()  { OrderAccess::release(); }
+template<> inline void ScopedFenceGeneral<RELEASE_X_FENCE>::postfix() { OrderAccess::fence();   }
+
+template <ScopedFenceType T>
+class ScopedFence : public ScopedFenceGeneral<T> {
+  void *const _field;
+ public:
+  ScopedFence(void *const field) : _field(field) { prefix(); }
+  ~ScopedFence() { postfix(); }
+  void prefix() { ScopedFenceGeneral<T>::prefix(); }
+  void postfix() { ScopedFenceGeneral<T>::postfix(); }
+};
+
 // platform specific in-line definitions - must come before shared definitions
 
 #include OS_CPU_HEADER(atomic)
@@ -594,9 +640,42 @@ inline T Atomic::load(const volatile T* dest) {
   return LoadImpl<T, PlatformLoad<sizeof(T)> >()(dest);
 }
 
+template<size_t byte_size, ScopedFenceType type>
+struct Atomic::PlatformOrderedLoad {
+  template <typename T>
+  T operator()(const volatile T* p) const {
+    ScopedFence<type> f((void*)p);
+    return Atomic::load(p);
+  }
+};
+
+template <typename T>
+inline T Atomic::load_acquire(const volatile T* p) {
+  return LoadImpl<T, PlatformOrderedLoad<sizeof(T), X_ACQUIRE> >()(p);
+}
+
 template<typename T, typename D>
 inline void Atomic::store(T store_value, volatile D* dest) {
   StoreImpl<T, D, PlatformStore<sizeof(D)> >()(store_value, dest);
+}
+
+template<size_t byte_size, ScopedFenceType type>
+struct Atomic::PlatformOrderedStore {
+  template <typename T>
+  void operator()(T v, volatile T* p) const {
+    ScopedFence<type> f((void*)p);
+    Atomic::store(v, p);
+  }
+};
+
+template <typename T, typename D>
+inline void Atomic::release_store(volatile D* p, T v) {
+  StoreImpl<T, D, PlatformOrderedStore<sizeof(D), RELEASE_X> >()(v, p);
+}
+
+template <typename T, typename D>
+inline void Atomic::release_store_fence(volatile D* p, T v) {
+  StoreImpl<T, D, PlatformOrderedStore<sizeof(D), RELEASE_X_FENCE> >()(v, p);
 }
 
 template<typename I, typename D>

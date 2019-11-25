@@ -335,4 +335,11 @@ inline T Atomic::PlatformCmpxchg<8>::operator()(T xchg_val,
   return old;
 }
 
+template<size_t byte_size>
+struct Atomic::PlatformOrderedLoad<byte_size, X_ACQUIRE>
+{
+  template <typename T>
+  T operator()(const volatile T* p) const { T t = *p; OrderAccess::acquire(); return t; }
+};
+
 #endif // OS_CPU_LINUX_S390_ATOMIC_LINUX_S390_HPP

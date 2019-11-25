@@ -328,7 +328,7 @@ void SafepointSynchronize::arm_safepoint() {
 
   assert((_safepoint_counter & 0x1) == 0, "must be even");
   // The store to _safepoint_counter must happen after any stores in arming.
-  OrderAccess::release_store(&_safepoint_counter, _safepoint_counter + 1);
+  Atomic::release_store(&_safepoint_counter, _safepoint_counter + 1);
 
   // We are synchronizing
   OrderAccess::storestore(); // Ordered with _safepoint_counter
@@ -482,7 +482,7 @@ void SafepointSynchronize::disarm_safepoint() {
 
     // Set the next dormant (even) safepoint id.
     assert((_safepoint_counter & 0x1) == 1, "must be odd");
-    OrderAccess::release_store(&_safepoint_counter, _safepoint_counter + 1);
+    Atomic::release_store(&_safepoint_counter, _safepoint_counter + 1);
 
     OrderAccess::fence(); // Keep the local state from floating up.
 
@@ -968,15 +968,15 @@ void ThreadSafepointState::destroy(JavaThread *thread) {
 }
 
 uint64_t ThreadSafepointState::get_safepoint_id() const {
-  return OrderAccess::load_acquire(&_safepoint_id);
+  return Atomic::load_acquire(&_safepoint_id);
 }
 
 void ThreadSafepointState::reset_safepoint_id() {
-  OrderAccess::release_store(&_safepoint_id, SafepointSynchronize::InactiveSafepointCounter);
+  Atomic::release_store(&_safepoint_id, SafepointSynchronize::InactiveSafepointCounter);
 }
 
 void ThreadSafepointState::set_safepoint_id(uint64_t safepoint_id) {
-  OrderAccess::release_store(&_safepoint_id, safepoint_id);
+  Atomic::release_store(&_safepoint_id, safepoint_id);
 }
 
 void ThreadSafepointState::examine_state_of_thread(uint64_t safepoint_count) {

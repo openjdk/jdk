@@ -41,7 +41,7 @@ class GlobalCounter::CounterThreadCheck : public ThreadClosure {
     SpinYield yield;
     // Loops on this thread until it has exited the critical read section.
     while(true) {
-      uintx cnt = OrderAccess::load_acquire(thread->get_rcu_counter());
+      uintx cnt = Atomic::load_acquire(thread->get_rcu_counter());
       // This checks if the thread's counter is active. And if so is the counter
       // for a pre-existing reader (belongs to this grace period). A pre-existing
       // reader will have a lower counter than the global counter version for this

@@ -3747,7 +3747,7 @@ int os::win32::exit_process_or_thread(Ept what, int exit_code) {
     // The first thread that reached this point, initializes the critical section.
     if (!InitOnceExecuteOnce(&init_once_crit_sect, init_crit_sect_call, &crit_sect, NULL)) {
       warning("crit_sect initialization failed in %s: %d\n", __FILE__, __LINE__);
-    } else if (OrderAccess::load_acquire(&process_exiting) == 0) {
+    } else if (Atomic::load_acquire(&process_exiting) == 0) {
       if (what != EPT_THREAD) {
         // Atomically set process_exiting before the critical section
         // to increase the visibility between racing threads.
@@ -3755,7 +3755,7 @@ int os::win32::exit_process_or_thread(Ept what, int exit_code) {
       }
       EnterCriticalSection(&crit_sect);
 
-      if (what == EPT_THREAD && OrderAccess::load_acquire(&process_exiting) == 0) {
+      if (what == EPT_THREAD && Atomic::load_acquire(&process_exiting) == 0) {
         // Remove from the array those handles of the threads that have completed exiting.
         for (i = 0, j = 0; i < handle_count; ++i) {
           res = WaitForSingleObject(handles[i], 0 /* don't wait */);
@@ -3868,7 +3868,7 @@ int os::win32::exit_process_or_thread(Ept what, int exit_code) {
     }
 
     if (!registered &&
-        OrderAccess::load_acquire(&process_exiting) != 0 &&
+        Atomic::load_acquire(&process_exiting) != 0 &&
         process_exiting != GetCurrentThreadId()) {
       // Some other thread is about to call exit(), so we don't let
       // the current unregistered thread proceed to exit() or _endthreadex()

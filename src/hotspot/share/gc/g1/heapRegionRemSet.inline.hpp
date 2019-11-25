@@ -65,7 +65,7 @@ inline void PerRegionTable::init(HeapRegion* hr, bool clear_links_to_all_list) {
   _bm.clear();
   // Make sure that the bitmap clearing above has been finished before publishing
   // this PRT to concurrent threads.
-  OrderAccess::release_store(&_hr, hr);
+  Atomic::release_store(&_hr, hr);
 }
 
 template <class Closure>

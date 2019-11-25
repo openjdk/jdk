@@ -601,7 +601,7 @@ void ShenandoahHeap::post_initialize() {
 }
 
 size_t ShenandoahHeap::used() const {
-  return OrderAccess::load_acquire(&_used);
+  return Atomic::load_acquire(&_used);
 }
 
 size_t ShenandoahHeap::committed() const {
@@ -624,7 +624,7 @@ void ShenandoahHeap::increase_used(size_t bytes) {
 }
 
 void ShenandoahHeap::set_used(size_t bytes) {
-  OrderAccess::release_store_fence(&_used, bytes);
+  Atomic::release_store_fence(&_used, bytes);
 }
 
 void ShenandoahHeap::decrease_used(size_t bytes) {
@@ -2114,11 +2114,11 @@ address ShenandoahHeap::gc_state_addr() {
 }
 
 size_t ShenandoahHeap::bytes_allocated_since_gc_start() {
-  return OrderAccess::load_acquire(&_bytes_allocated_since_gc_start);
+  return Atomic::load_acquire(&_bytes_allocated_since_gc_start);
 }
 
 void ShenandoahHeap::reset_bytes_allocated_since_gc_start() {
-  OrderAccess::release_store_fence(&_bytes_allocated_since_gc_start, (size_t)0);
+  Atomic::release_store_fence(&_bytes_allocated_since_gc_start, (size_t)0);
 }
 
 void ShenandoahHeap::set_degenerated_gc_in_progress(bool in_progress) {

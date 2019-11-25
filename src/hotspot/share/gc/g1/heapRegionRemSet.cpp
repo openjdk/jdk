@@ -219,7 +219,7 @@ void OtherRegionsTable::add_reference(OopOrNarrowOopStar from, uint tid) {
       // some mark bits may not yet seem cleared or a 'later' update
       // performed by a concurrent thread could be undone when the
       // zeroing becomes visible). This requires store ordering.
-      OrderAccess::release_store(&_fine_grain_regions[ind], prt);
+      Atomic::release_store(&_fine_grain_regions[ind], prt);
       _n_fine_entries++;
 
       // Transfer from sparse to fine-grain.

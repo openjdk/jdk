@@ -51,7 +51,6 @@
 #include "runtime/javaCalls.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/objectMonitor.hpp"
-#include "runtime/orderAccess.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/perfMemory.hpp"
 #include "runtime/semaphore.hpp"
@@ -3209,7 +3208,7 @@ static volatile int* volatile apic_to_processor_mapping = NULL;
 static volatile int next_processor_id = 0;
 
 static inline volatile int* get_apic_to_processor_mapping() {
-  volatile int* mapping = OrderAccess::load_acquire(&apic_to_processor_mapping);
+  volatile int* mapping = Atomic::load_acquire(&apic_to_processor_mapping);
   if (mapping == NULL) {
     // Calculate possible number space for APIC ids. This space is not necessarily
     // in the range [0, number_of_processors).
@@ -3240,7 +3239,7 @@ static inline volatile int* get_apic_to_processor_mapping() {
 
     if (!Atomic::replace_if_null(mapping, &apic_to_processor_mapping)) {
       FREE_C_HEAP_ARRAY(int, mapping);
-      mapping = OrderAccess::load_acquire(&apic_to_processor_mapping);
+      mapping = Atomic::load_acquire(&apic_to_processor_mapping);
     }
   }
 

@@ -78,7 +78,7 @@ inline void ThreadsSMRSupport::update_tlh_time_max(uint new_value) {
 }
 
 inline ThreadsList* ThreadsSMRSupport::get_java_thread_list() {
-  return (ThreadsList*)OrderAccess::load_acquire(&_java_thread_list);
+  return (ThreadsList*)Atomic::load_acquire(&_java_thread_list);
 }
 
 inline bool ThreadsSMRSupport::is_a_protected_JavaThread_with_lock(JavaThread *thread) {

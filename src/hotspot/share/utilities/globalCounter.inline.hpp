@@ -40,7 +40,7 @@ GlobalCounter::critical_section_begin(Thread *thread) {
   if ((new_cnt & COUNTER_ACTIVE) == 0) {
     new_cnt = Atomic::load(&_global_counter._counter) | COUNTER_ACTIVE;
   }
-  OrderAccess::release_store_fence(thread->get_rcu_counter(), new_cnt);
+  Atomic::release_store_fence(thread->get_rcu_counter(), new_cnt);
   return static_cast<CSContext>(old_cnt);
 }
 
@@ -49,8 +49,8 @@ GlobalCounter::critical_section_end(Thread *thread, CSContext context) {
   assert(thread == Thread::current(), "must be current thread");
   assert((*thread->get_rcu_counter() & COUNTER_ACTIVE) == COUNTER_ACTIVE, "must be in critical section");
   // Restore the counter value from before the associated begin.
-  OrderAccess::release_store(thread->get_rcu_counter(),
-                             static_cast<uintx>(context));
+  Atomic::release_store(thread->get_rcu_counter(),
+                        static_cast<uintx>(context));
 }
 
 class GlobalCounter::CriticalSection {

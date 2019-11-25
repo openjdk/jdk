@@ -195,7 +195,7 @@ void exit_globals() {
 static volatile bool _init_completed = false;
 
 bool is_init_completed() {
-  return OrderAccess::load_acquire(&_init_completed);
+  return Atomic::load_acquire(&_init_completed);
 }
 
 void wait_init_completed() {
@@ -208,6 +208,6 @@ void wait_init_completed() {
 void set_init_completed() {
   assert(Universe::is_fully_initialized(), "Should have completed initialization");
   MonitorLocker ml(InitCompleted_lock, Monitor::_no_safepoint_check_flag);
-  OrderAccess::release_store(&_init_completed, true);
+  Atomic::release_store(&_init_completed, true);
   ml.notify_all();
 }

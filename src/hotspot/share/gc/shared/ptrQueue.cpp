@@ -224,7 +224,7 @@ bool BufferNode::Allocator::try_transfer_pending() {
     log_trace(gc, ptrqueue, freelist)
              ("Transferred %s pending to free: " SIZE_FORMAT, name(), count);
   }
-  OrderAccess::release_store(&_transfer_lock, false);
+  Atomic::release_store(&_transfer_lock, false);
   return true;
 }
 

@@ -30,6 +30,7 @@
 #error "Atomic currently only implemented for PPC64"
 #endif
 
+#include "orderAccess_aix_ppc.hpp"
 #include "utilities/debug.hpp"
 
 // Implementation of class atomic
@@ -398,5 +399,16 @@ inline T Atomic::PlatformCmpxchg<8>::operator()(T exchange_value,
 
   return old_value;
 }
+
+template<size_t byte_size>
+struct Atomic::PlatformOrderedLoad<byte_size, X_ACQUIRE> {
+  template <typename T>
+  T operator()(const volatile T* p) const {
+    T t = Atomic::load(p);
+    // Use twi-isync for load_acquire (faster than lwsync).
+    __asm__ __volatile__ ("twi 0,%0,0\n isync\n" : : "r" (t) : "memory");
+    return t;
+  }
+};
 
 #endif // OS_CPU_AIX_PPC_ATOMIC_AIX_PPC_HPP

@@ -38,7 +38,7 @@ ShenandoahEvacOOMHandler::ShenandoahEvacOOMHandler() :
 }
 
 void ShenandoahEvacOOMHandler::wait_for_no_evac_threads() {
-  while ((OrderAccess::load_acquire(&_threads_in_evac) & ~OOM_MARKER_MASK) != 0) {
+  while ((Atomic::load_acquire(&_threads_in_evac) & ~OOM_MARKER_MASK) != 0) {
     os::naked_short_sleep(1);
   }
   // At this point we are sure that no threads can evacuate anything. Raise
@@ -48,7 +48,7 @@ void ShenandoahEvacOOMHandler::wait_for_no_evac_threads() {
 }
 
 void ShenandoahEvacOOMHandler::enter_evacuation() {
-  jint threads_in_evac = OrderAccess::load_acquire(&_threads_in_evac);
+  jint threads_in_evac = Atomic::load_acquire(&_threads_in_evac);
 
   assert(!ShenandoahThreadLocalData::is_evac_allowed(Thread::current()), "sanity");
   assert(!ShenandoahThreadLocalData::is_oom_during_evac(Thread::current()), "TL oom-during-evac must not be set");
@@ -79,7 +79,7 @@ void ShenandoahEvacOOMHandler::enter_evacuation() {
 
 void ShenandoahEvacOOMHandler::leave_evacuation() {
   if (!ShenandoahThreadLocalData::is_oom_during_evac(Thread::current())) {
-    assert((OrderAccess::load_acquire(&_threads_in_evac) & ~OOM_MARKER_MASK) > 0, "sanity");
+    assert((Atomic::load_acquire(&_threads_in_evac) & ~OOM_MARKER_MASK) > 0, "sanity");
     // NOTE: It's ok to simply decrement, even with mask set, because unmasked value is positive.
     Atomic::dec(&_threads_in_evac);
   } else {
@@ -96,7 +96,7 @@ void ShenandoahEvacOOMHandler::handle_out_of_memory_during_evacuation() {
   assert(ShenandoahThreadLocalData::is_evac_allowed(Thread::current()), "sanity");
   assert(!ShenandoahThreadLocalData::is_oom_during_evac(Thread::current()), "TL oom-during-evac must not be set");
 
-  jint threads_in_evac = OrderAccess::load_acquire(&_threads_in_evac);
+  jint threads_in_evac = Atomic::load_acquire(&_threads_in_evac);
   while (true) {
     jint other = Atomic::cmpxchg((threads_in_evac - 1) | OOM_MARKER_MASK,
                                   &_threads_in_evac, threads_in_evac);
@@ -113,8 +113,8 @@ void ShenandoahEvacOOMHandler::handle_out_of_memory_during_evacuation() {
 
 void ShenandoahEvacOOMHandler::clear() {
   assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "must be at a safepoint");
-  assert((OrderAccess::load_acquire(&_threads_in_evac) & ~OOM_MARKER_MASK) == 0, "sanity");
-  OrderAccess::release_store_fence<jint>(&_threads_in_evac, 0);
+  assert((Atomic::load_acquire(&_threads_in_evac) & ~OOM_MARKER_MASK) == 0, "sanity");
+  Atomic::release_store_fence<jint>(&_threads_in_evac, 0);
 }
 
 ShenandoahEvacOOMScope::ShenandoahEvacOOMScope() {

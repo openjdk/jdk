@@ -113,7 +113,7 @@ void CompiledMethod::mark_for_deoptimization(bool inc_recompile_counts) {
 //-----------------------------------------------------------------------------
 
 ExceptionCache* CompiledMethod::exception_cache_acquire() const {
-  return OrderAccess::load_acquire(&_exception_cache);
+  return Atomic::load_acquire(&_exception_cache);
 }
 
 void CompiledMethod::add_exception_cache_entry(ExceptionCache* new_entry) {

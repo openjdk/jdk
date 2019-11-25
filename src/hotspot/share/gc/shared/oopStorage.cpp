@@ -140,7 +140,7 @@ size_t OopStorage::ActiveArray::block_count() const {
 }
 
 size_t OopStorage::ActiveArray::block_count_acquire() const {
-  return OrderAccess::load_acquire(&_block_count);
+  return Atomic::load_acquire(&_block_count);
 }
 
 void OopStorage::ActiveArray::increment_refcount() const {
@@ -161,7 +161,7 @@ bool OopStorage::ActiveArray::push(Block* block) {
     *block_ptr(index) = block;
     // Use a release_store to ensure all the setup is complete before
     // making the block visible.
-    OrderAccess::release_store(&_block_count, index + 1);
+    Atomic::release_store(&_block_count, index + 1);
     return true;
   } else {
     return false;
@@ -264,8 +264,8 @@ uintx OopStorage::Block::bitmask_for_entry(const oop* ptr) const {
 bool OopStorage::Block::is_safe_to_delete() const {
   assert(is_empty(), "precondition");
   OrderAccess::loadload();
-  return (OrderAccess::load_acquire(&_release_refcount) == 0) &&
-         (OrderAccess::load_acquire(&_deferred_updates_next) == NULL);
+  return (Atomic::load_acquire(&_release_refcount) == 0) &&
+         (Atomic::load_acquire(&_deferred_updates_next) == NULL);
 }
 
 OopStorage::Block* OopStorage::Block::deferred_updates_next() const {
@@ -514,7 +514,7 @@ void OopStorage::replace_active_array(ActiveArray* new_array) {
   // Update new_array refcount to account for the new reference.
   new_array->increment_refcount();
   // Install new_array, ensuring its initialization is complete first.
-  OrderAccess::release_store(&_active_array, new_array);
+  Atomic::release_store(&_active_array, new_array);
   // Wait for any readers that could read the old array from _active_array.
   // Can't use GlobalCounter here, because this is called from allocate(),
   // which may be called in the scope of a GlobalCounter critical section
@@ -532,7 +532,7 @@ void OopStorage::replace_active_array(ActiveArray* new_array) {
 // using it.
 OopStorage::ActiveArray* OopStorage::obtain_active_array() const {
   SingleWriterSynchronizer::CriticalSection cs(&_protect_active);
-  ActiveArray* result = OrderAccess::load_acquire(&_active_array);
+  ActiveArray* result = Atomic::load_acquire(&_active_array);
   result->increment_refcount();
   return result;
 }
@@ -645,7 +645,7 @@ bool OopStorage::reduce_deferred_updates() {
   // Atomically pop a block off the list, if any available.
   // No ABA issue because this is only called by one thread at a time.
   // The atomicity is wrto pushes by release().
-  Block* block = OrderAccess::load_acquire(&_deferred_updates);
+  Block* block = Atomic::load_acquire(&_deferred_updates);
   while (true) {
     if (block == NULL) return false;
     // Try atomic pop of block from list.
@@ -833,23 +833,23 @@ bool OopStorage::has_cleanup_work_and_reset() {
 void OopStorage::record_needs_cleanup() {
   // Set local flag first, else service thread could wake up and miss
   // the request.  This order may instead (rarely) unnecessarily notify.
-  OrderAccess::release_store(&_needs_cleanup, true);
-  OrderAccess::release_store_fence(&needs_cleanup_requested, true);
+  Atomic::release_store(&_needs_cleanup, true);
+  Atomic::release_store_fence(&needs_cleanup_requested, true);
 }
 
 bool OopStorage::delete_empty_blocks() {
   // Service thread might have oopstorage work, but not for this object.
   // Check for deferred updates even though that's not a service thread
   // trigger; since we're here, we might as well process them.
-  if (!OrderAccess::load_acquire(&_needs_cleanup) &&
-      (OrderAccess::load_acquire(&_deferred_updates) == NULL)) {
+  if (!Atomic::load_acquire(&_needs_cleanup) &&
+      (Atomic::load_acquire(&_deferred_updates) == NULL)) {
     return false;
   }
 
   MutexLocker ml(_allocation_mutex, Mutex::_no_safepoint_check_flag);
 
   // Clear the request before processing.
-  OrderAccess::release_store_fence(&_needs_cleanup, false);
+  Atomic::release_store_fence(&_needs_cleanup, false);
 
   // Other threads could be adding to the empty block count or the
   // deferred update list while we're working.  Set an upper bound on
@@ -993,7 +993,7 @@ void OopStorage::BasicParState::update_concurrent_iteration_count(int value) {
 
 bool OopStorage::BasicParState::claim_next_segment(IterationData* data) {
   data->_processed += data->_segment_end - data->_segment_start;
-  size_t start = OrderAccess::load_acquire(&_next_block);
+  size_t start = Atomic::load_acquire(&_next_block);
   if (start >= _block_count) {
     return finish_iteration(data); // No more blocks available.
   }

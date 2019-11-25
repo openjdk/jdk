@@ -39,7 +39,7 @@ inline void ZLiveMap::reset() {
 }
 
 inline bool ZLiveMap::is_marked() const {
-  return OrderAccess::load_acquire(&_seqnum) == ZGlobalSeqNum;
+  return Atomic::load_acquire(&_seqnum) == ZGlobalSeqNum;
 }
 
 inline uint32_t ZLiveMap::live_objects() const {

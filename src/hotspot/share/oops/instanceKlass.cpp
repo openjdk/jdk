@@ -1097,7 +1097,7 @@ Klass* InstanceKlass::implementor() const {
     return NULL;
   } else {
     // This load races with inserts, and therefore needs acquire.
-    Klass* kls = OrderAccess::load_acquire(k);
+    Klass* kls = Atomic::load_acquire(k);
     if (kls != NULL && !kls->is_loader_alive()) {
       return NULL;  // don't return unloaded class
     } else {
@@ -1113,7 +1113,7 @@ void InstanceKlass::set_implementor(Klass* k) {
   Klass* volatile* addr = adr_implementor();
   assert(addr != NULL, "null addr");
   if (addr != NULL) {
-    OrderAccess::release_store(addr, k);
+    Atomic::release_store(addr, k);
   }
 }
 
@@ -1370,14 +1370,14 @@ void InstanceKlass::mask_for(const methodHandle& method, int bci,
   InterpreterOopMap* entry_for) {
   // Lazily create the _oop_map_cache at first request
   // Lock-free access requires load_acquire.
-  OopMapCache* oop_map_cache = OrderAccess::load_acquire(&_oop_map_cache);
+  OopMapCache* oop_map_cache = Atomic::load_acquire(&_oop_map_cache);
   if (oop_map_cache == NULL) {
     MutexLocker x(OopMapCacheAlloc_lock);
     // Check if _oop_map_cache was allocated while we were waiting for this lock
     if ((oop_map_cache = _oop_map_cache) == NULL) {
       oop_map_cache = new OopMapCache();
       // Ensure _oop_map_cache is stable, since it is examined without a lock
-      OrderAccess::release_store(&_oop_map_cache, oop_map_cache);
+      Atomic::release_store(&_oop_map_cache, oop_map_cache);
     }
   }
   // _oop_map_cache is constant after init; lookup below does its own locking.
@@ -2114,7 +2114,7 @@ jmethodID InstanceKlass::get_jmethod_id_fetch_or_update(
     // The jmethodID cache can be read while unlocked so we have to
     // make sure the new jmethodID is complete before installing it
     // in the cache.
-    OrderAccess::release_store(&jmeths[idnum+1], id);
+    Atomic::release_store(&jmeths[idnum+1], id);
   } else {
     *to_dealloc_id_p = new_id; // save new id for later delete
   }
@@ -2196,7 +2196,7 @@ void InstanceKlass::clean_implementors_list() {
     assert (ClassUnloading, "only called for ClassUnloading");
     for (;;) {
       // Use load_acquire due to competing with inserts
-      Klass* impl = OrderAccess::load_acquire(adr_implementor());
+      Klass* impl = Atomic::load_acquire(adr_implementor());
       if (impl != NULL && !impl->is_loader_alive()) {
         // NULL this field, might be an unloaded klass or NULL
         Klass* volatile* klass = adr_implementor();

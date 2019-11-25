@@ -889,7 +889,7 @@ JavaThread* ObjectSynchronizer::get_lock_owner(ThreadsList * t_list, Handle h_ob
 // Visitors ...
 
 void ObjectSynchronizer::monitors_iterate(MonitorClosure* closure) {
-  PaddedObjectMonitor* block = OrderAccess::load_acquire(&g_block_list);
+  PaddedObjectMonitor* block = Atomic::load_acquire(&g_block_list);
   while (block != NULL) {
     assert(block->object() == CHAINMARKER, "must be a block header");
     for (int i = _BLOCKSIZE - 1; i > 0; i--) {
@@ -1118,7 +1118,7 @@ ObjectMonitor* ObjectSynchronizer::om_alloc(Thread* self) {
     temp[0]._next_om = g_block_list;
     // There are lock-free uses of g_block_list so make sure that
     // the previous stores happen before we update g_block_list.
-    OrderAccess::release_store(&g_block_list, temp);
+    Atomic::release_store(&g_block_list, temp);
 
     // Add the new string of ObjectMonitors to the global free list
     temp[_BLOCKSIZE - 1]._next_om = g_free_list;
@@ -2169,7 +2169,7 @@ int ObjectSynchronizer::log_monitor_list_counts(outputStream * out) {
 // the list of extant blocks without taking a lock.
 
 int ObjectSynchronizer::verify_objmon_isinpool(ObjectMonitor *monitor) {
-  PaddedObjectMonitor* block = OrderAccess::load_acquire(&g_block_list);
+  PaddedObjectMonitor* block = Atomic::load_acquire(&g_block_list);
   while (block != NULL) {
     assert(block->object() == CHAINMARKER, "must be a block header");
     if (monitor > &block[0] && monitor < &block[_BLOCKSIZE]) {

@@ -756,12 +756,12 @@ void ShenandoahVerifier::verify_at_safepoint(const char *label,
       if (r->is_humongous()) {
         // For humongous objects, test if start region is marked live, and if so,
         // all humongous regions in that chain have live data equal to their "used".
-        juint start_live = OrderAccess::load_acquire(&ld[r->humongous_start_region()->region_number()]);
+        juint start_live = Atomic::load_acquire(&ld[r->humongous_start_region()->region_number()]);
         if (start_live > 0) {
           verf_live = (juint)(r->used() / HeapWordSize);
         }
       } else {
-        verf_live = OrderAccess::load_acquire(&ld[r->region_number()]);
+        verf_live = Atomic::load_acquire(&ld[r->region_number()]);
       }
 
       size_t reg_live = r->get_live_data_words();

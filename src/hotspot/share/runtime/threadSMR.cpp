@@ -779,7 +779,7 @@ void ThreadsSMRSupport::clear_delete_notify() {
 bool ThreadsSMRSupport::delete_notify() {
   // Use load_acquire() in order to see any updates to _delete_notify
   // earlier than when delete_lock is grabbed.
-  return (OrderAccess::load_acquire(&_delete_notify) != 0);
+  return (Atomic::load_acquire(&_delete_notify) != 0);
 }
 
 // Safely free a ThreadsList after a Threads::add() or Threads::remove().

@@ -158,13 +158,13 @@ G1CodeRootSet::~G1CodeRootSet() {
 }
 
 G1CodeRootSetTable* G1CodeRootSet::load_acquire_table() {
-  return OrderAccess::load_acquire(&_table);
+  return Atomic::load_acquire(&_table);
 }
 
 void G1CodeRootSet::allocate_small_table() {
   G1CodeRootSetTable* temp = new G1CodeRootSetTable(SmallSize);
 
-  OrderAccess::release_store(&_table, temp);
+  Atomic::release_store(&_table, temp);
 }
 
 void G1CodeRootSetTable::purge_list_append(G1CodeRootSetTable* table) {
@@ -194,7 +194,7 @@ void G1CodeRootSet::move_to_large() {
 
   G1CodeRootSetTable::purge_list_append(_table);
 
-  OrderAccess::release_store(&_table, temp);
+  Atomic::release_store(&_table, temp);
 }
 
 void G1CodeRootSet::purge() {

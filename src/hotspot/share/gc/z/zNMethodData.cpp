@@ -78,7 +78,7 @@ ZReentrantLock* ZNMethodData::lock() {
 }
 
 ZNMethodDataOops* ZNMethodData::oops() const {
-  return OrderAccess::load_acquire(&_oops);
+  return Atomic::load_acquire(&_oops);
 }
 
 ZNMethodDataOops* ZNMethodData::swap_oops(ZNMethodDataOops* new_oops) {

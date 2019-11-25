@@ -35,19 +35,19 @@
 #include "utilities/macros.hpp"
 
 inline Klass* InstanceKlass::array_klasses_acquire() const {
-  return OrderAccess::load_acquire(&_array_klasses);
+  return Atomic::load_acquire(&_array_klasses);
 }
 
 inline void InstanceKlass::release_set_array_klasses(Klass* k) {
-  OrderAccess::release_store(&_array_klasses, k);
+  Atomic::release_store(&_array_klasses, k);
 }
 
 inline jmethodID* InstanceKlass::methods_jmethod_ids_acquire() const {
-  return OrderAccess::load_acquire(&_methods_jmethod_ids);
+  return Atomic::load_acquire(&_methods_jmethod_ids);
 }
 
 inline void InstanceKlass::release_set_methods_jmethod_ids(jmethodID* jmeths) {
-  OrderAccess::release_store(&_methods_jmethod_ids, jmeths);
+  Atomic::release_store(&_methods_jmethod_ids, jmeths);
 }
 
 // The iteration over the oops in objects is a hot path in the GC code.

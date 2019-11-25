@@ -147,7 +147,7 @@ void JvmtiRawMonitor::simple_enter(Thread* self) {
 
 void JvmtiRawMonitor::simple_exit(Thread* self) {
   guarantee(_owner == self, "invariant");
-  OrderAccess::release_store(&_owner, (Thread*)NULL);
+  Atomic::release_store(&_owner, (Thread*)NULL);
   OrderAccess::fence();
   if (_entry_list == NULL) {
     return;

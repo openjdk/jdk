@@ -46,19 +46,19 @@ static uint64_t serialized_generation = 0;
 
 inline void set_generation(uint64_t value, uint64_t* const dest) {
   assert(dest != NULL, "invariant");
-  OrderAccess::release_store(dest, value);
+  Atomic::release_store(dest, value);
 }
 static void increment_store_generation() {
-  const uint64_t current_serialized = OrderAccess::load_acquire(&serialized_generation);
-  const uint64_t current_stored = OrderAccess::load_acquire(&store_generation);
+  const uint64_t current_serialized = Atomic::load_acquire(&serialized_generation);
+  const uint64_t current_stored = Atomic::load_acquire(&store_generation);
   if (current_serialized == current_stored) {
     set_generation(current_serialized + 1, &store_generation);
   }
 }
 
 static bool increment_serialized_generation() {
-  const uint64_t current_stored = OrderAccess::load_acquire(&store_generation);
-  const uint64_t current_serialized = OrderAccess::load_acquire(&serialized_generation);
+  const uint64_t current_stored = Atomic::load_acquire(&store_generation);
+  const uint64_t current_serialized = Atomic::load_acquire(&serialized_generation);
   if (current_stored != current_serialized) {
     set_generation(current_stored, &serialized_generation);
     return true;

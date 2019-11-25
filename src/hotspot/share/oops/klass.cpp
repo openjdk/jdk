@@ -362,7 +362,7 @@ InstanceKlass* Klass::superklass() const {
 Klass* Klass::subklass(bool log) const {
   // Need load_acquire on the _subklass, because it races with inserts that
   // publishes freshly initialized data.
-  for (Klass* chain = OrderAccess::load_acquire(&_subklass);
+  for (Klass* chain = Atomic::load_acquire(&_subklass);
        chain != NULL;
        // Do not need load_acquire on _next_sibling, because inserts never
        // create _next_sibling edges to dead data.
@@ -402,7 +402,7 @@ Klass* Klass::next_sibling(bool log) const {
 
 void Klass::set_subklass(Klass* s) {
   assert(s != this, "sanity check");
-  OrderAccess::release_store(&_subklass, s);
+  Atomic::release_store(&_subklass, s);
 }
 
 void Klass::set_next_sibling(Klass* s) {
@@ -427,7 +427,7 @@ void Klass::append_to_sibling_list() {
   super->clean_subklass();
 
   for (;;) {
-    Klass* prev_first_subklass = OrderAccess::load_acquire(&_super->_subklass);
+    Klass* prev_first_subklass = Atomic::load_acquire(&_super->_subklass);
     if (prev_first_subklass != NULL) {
       // set our sibling to be the superklass' previous first subklass
       assert(prev_first_subklass->is_loader_alive(), "May not attach not alive klasses");
@@ -446,7 +446,7 @@ void Klass::append_to_sibling_list() {
 void Klass::clean_subklass() {
   for (;;) {
     // Need load_acquire, due to contending with concurrent inserts
-    Klass* subklass = OrderAccess::load_acquire(&_subklass);
+    Klass* subklass = Atomic::load_acquire(&_subklass);
     if (subklass == NULL || subklass->is_loader_alive()) {
       return;
     }

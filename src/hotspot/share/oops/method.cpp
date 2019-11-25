@@ -1247,7 +1247,7 @@ void Method::restore_unshareable_info(TRAPS) {
 }
 
 address Method::from_compiled_entry_no_trampoline() const {
-  CompiledMethod *code = OrderAccess::load_acquire(&_code);
+  CompiledMethod *code = Atomic::load_acquire(&_code);
   if (code) {
     return code->verified_entry_point();
   } else {
@@ -1273,7 +1273,7 @@ address Method::verified_code_entry() {
 // Not inline to avoid circular ref.
 bool Method::check_code() const {
   // cached in a register or local.  There's a race on the value of the field.
-  CompiledMethod *code = OrderAccess::load_acquire(&_code);
+  CompiledMethod *code = Atomic::load_acquire(&_code);
   return code == NULL || (code->method() == NULL) || (code->method() == (Method*)this && !code->is_osr_method());
 }
 

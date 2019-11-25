@@ -232,7 +232,7 @@ void ConstantPool::klass_at_put(int class_index, int name_index, int resolved_kl
   symbol_at_put(name_index, name);
   name->increment_refcount();
   Klass** adr = resolved_klasses()->adr_at(resolved_klass_index);
-  OrderAccess::release_store(adr, k);
+  Atomic::release_store(adr, k);
 
   // The interpreter assumes when the tag is stored, the klass is resolved
   // and the Klass* non-NULL, so we need hardware store ordering here.
@@ -249,7 +249,7 @@ void ConstantPool::klass_at_put(int class_index, Klass* k) {
   CPKlassSlot kslot = klass_slot_at(class_index);
   int resolved_klass_index = kslot.resolved_klass_index();
   Klass** adr = resolved_klasses()->adr_at(resolved_klass_index);
-  OrderAccess::release_store(adr, k);
+  Atomic::release_store(adr, k);
 
   // The interpreter assumes when the tag is stored, the klass is resolved
   // and the Klass* non-NULL, so we need hardware store ordering here.
@@ -525,7 +525,7 @@ Klass* ConstantPool::klass_at_impl(const constantPoolHandle& this_cp, int which,
     trace_class_resolution(this_cp, k);
   }
   Klass** adr = this_cp->resolved_klasses()->adr_at(resolved_klass_index);
-  OrderAccess::release_store(adr, k);
+  Atomic::release_store(adr, k);
   // The interpreter assumes when the tag is stored, the klass is resolved
   // and the Klass* stored in _resolved_klasses is non-NULL, so we need
   // hardware store ordering here.

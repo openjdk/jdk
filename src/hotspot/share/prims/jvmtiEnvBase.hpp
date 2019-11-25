@@ -255,11 +255,11 @@ class JvmtiEnvBase : public CHeapObj<mtInternal> {
   }
 
   JvmtiTagMap* tag_map_acquire() {
-    return OrderAccess::load_acquire(&_tag_map);
+    return Atomic::load_acquire(&_tag_map);
   }
 
   void release_set_tag_map(JvmtiTagMap* tag_map) {
-    OrderAccess::release_store(&_tag_map, tag_map);
+    Atomic::release_store(&_tag_map, tag_map);
   }
 
   // return true if event is enabled globally or for any thread

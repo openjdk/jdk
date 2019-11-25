@@ -448,7 +448,7 @@ OopMapCache::~OopMapCache() {
 }
 
 OopMapCacheEntry* OopMapCache::entry_at(int i) const {
-  return OrderAccess::load_acquire(&(_array[i % _size]));
+  return Atomic::load_acquire(&(_array[i % _size]));
 }
 
 bool OopMapCache::put_at(int i, OopMapCacheEntry* entry, OopMapCacheEntry* old) {

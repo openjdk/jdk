@@ -29,11 +29,11 @@
 #include "runtime/orderAccess.hpp"
 
 // Next entry in class path
-inline ClassPathEntry* ClassPathEntry::next() const { return OrderAccess::load_acquire(&_next); }
+inline ClassPathEntry* ClassPathEntry::next() const { return Atomic::load_acquire(&_next); }
 
 inline void ClassPathEntry::set_next(ClassPathEntry* next) {
   // may have unlocked readers, so ensure visibility.
-  OrderAccess::release_store(&_next, next);
+  Atomic::release_store(&_next, next);
 }
 
 inline ClassPathEntry* ClassLoader::classpath_entry(int n) {

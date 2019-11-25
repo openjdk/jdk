@@ -74,7 +74,7 @@ class ConcurrentHashTable<CONFIG, F>::BucketsOperation {
 
   // Returns false if all ranges are claimed.
   bool have_more_work() {
-    return OrderAccess::load_acquire(&_next_to_claim) >= _stop_task;
+    return Atomic::load_acquire(&_next_to_claim) >= _stop_task;
   }
 
   void thread_owns_resize_lock(Thread* thread) {
