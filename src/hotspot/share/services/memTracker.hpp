@@ -63,7 +63,7 @@ class MemTracker : AllStatic {
 
   static inline void record_new_arena(MEMFLAGS flag) { }
   static inline void record_arena_free(MEMFLAGS flag) { }
-  static inline void record_arena_size_change(int diff, MEMFLAGS flag) { }
+  static inline void record_arena_size_change(ssize_t diff, MEMFLAGS flag) { }
   static inline void record_virtual_memory_reserve(void* addr, size_t size, const NativeCallStack& stack,
                        MEMFLAGS flag = mtNone) { }
   static inline void record_virtual_memory_reserve_and_commit(void* addr, size_t size,
@@ -203,7 +203,7 @@ class MemTracker : AllStatic {
 
   // Record arena size change. Arena size is the size of all arena
   // chuncks that backing up the arena.
-  static inline void record_arena_size_change(int diff, MEMFLAGS flag) {
+  static inline void record_arena_size_change(ssize_t diff, MEMFLAGS flag) {
     if (tracking_level() < NMT_summary) return;
     MallocTracker::record_arena_size_change(diff, flag);
   }
