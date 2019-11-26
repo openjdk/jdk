@@ -808,6 +808,8 @@ static const char *getRegMask(const char *reg_class_name) {
     return "RegMask::Empty";
   } else if (strcmp(reg_class_name,"stack_slots")==0) {
     return "(Compile::current()->FIRST_STACK_mask())";
+  } else if (strcmp(reg_class_name, "dynamic")==0) {
+    return "*_opnds[0]->in_RegMask(0)";
   } else {
     char       *rc_name = toUpper(reg_class_name);
     const char *mask    = "_mask";
@@ -870,7 +872,7 @@ const char *ArchDesc::reg_mask(InstructForm &inForm) {
   }
 
   // Instructions producing 'Universe' use RegMask::Empty
-  if( strcmp(result,"Universe")==0 ) {
+  if (strcmp(result,"Universe") == 0) {
     return "RegMask::Empty";
   }
 

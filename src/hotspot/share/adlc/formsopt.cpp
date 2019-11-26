@@ -80,6 +80,15 @@ void RegisterForm::addSpillRegClass() {
   _regClass.Insert(rc_name,reg_class);
 }
 
+// Called after parsing the Register block.  Record the register class
+// for operands which are overwritten after matching.
+void RegisterForm::addDynamicRegClass() {
+  const char *rc_name = "dynamic";
+  RegClass* reg_class = new RegClass(rc_name);
+  reg_class->set_stack_version(false);
+  _rclasses.addName(rc_name);
+  _regClass.Insert(rc_name,reg_class);
+}
 
 // Provide iteration over all register definitions
 // in the order used by the register allocator

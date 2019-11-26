@@ -123,6 +123,7 @@ void ADLParser::parse() {
     parse_err(SEMERR, "Did not declare 'register' definitions");
   }
   regBlock->addSpillRegClass();
+  regBlock->addDynamicRegClass();
 
   // Done with parsing, check consistency.
 

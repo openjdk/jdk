@@ -104,6 +104,7 @@ public:
 
   AllocClass *addAllocClass(char *allocName);
   void        addSpillRegClass();
+  void        addDynamicRegClass();
 
   // Provide iteration over all register definitions
   // in the order used by the register allocator
