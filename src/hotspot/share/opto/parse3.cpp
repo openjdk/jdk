@@ -55,8 +55,9 @@ void Parse::do_field_access(bool is_get, bool is_field) {
     return;
   }
 
-  // Deoptimize on putfield writes to call site target field.
-  if (!is_get && field->is_call_site_target()) {
+  // Deoptimize on putfield writes to call site target field outside of CallSite ctor.
+  if (!is_get && field->is_call_site_target() &&
+      !(method()->holder() == field_holder && method()->is_object_initializer())) {
     uncommon_trap(Deoptimization::Reason_unhandled,
                   Deoptimization::Action_reinterpret,
                   NULL, "put to call site target field");
