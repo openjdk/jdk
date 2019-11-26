@@ -289,20 +289,24 @@ void HandshakeState::clear_handshake(JavaThread* target) {
 void HandshakeState::process_self_inner(JavaThread* thread) {
   assert(Thread::current() == thread, "should call from thread");
   assert(!thread->is_terminated(), "should not be a terminated thread");
+  assert(thread->thread_state() != _thread_blocked, "should not be in a blocked state");
+  assert(thread->thread_state() != _thread_in_native, "should not be in native");
 
-  ThreadInVMForHandshake tivm(thread);
-  if (!_semaphore.trywait()) {
-    _semaphore.wait_with_safepoint_check(thread);
-  }
-  HandshakeOperation* op = Atomic::load_acquire(&_operation);
-  if (op != NULL) {
-    HandleMark hm(thread);
-    CautiouslyPreserveExceptionMark pem(thread);
-    // Disarm before execute the operation
-    clear_handshake(thread);
-    op->do_handshake(thread);
-  }
-  _semaphore.signal();
+  do {
+    ThreadInVMForHandshake tivm(thread);
+    if (!_semaphore.trywait()) {
+      _semaphore.wait_with_safepoint_check(thread);
+    }
+    HandshakeOperation* op = Atomic::load_acquire(&_operation);
+    if (op != NULL) {
+      HandleMark hm(thread);
+      CautiouslyPreserveExceptionMark pem(thread);
+      // Disarm before execute the operation
+      clear_handshake(thread);
+      op->do_handshake(thread);
+    }
+    _semaphore.signal();
+  } while (has_operation());
 }
 
 bool HandshakeState::vmthread_can_process_handshake(JavaThread* target) {
