@@ -26,6 +26,7 @@
 #define SHARE_SERVICES_LOWMEMORYDETECTOR_HPP
 
 #include "memory/allocation.hpp"
+#include "runtime/atomic.hpp"
 #include "services/memoryPool.hpp"
 #include "services/memoryService.hpp"
 #include "services/memoryUsage.hpp"

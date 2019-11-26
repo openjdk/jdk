@@ -34,7 +34,6 @@
 #include "gc/shared/stringdedup/stringDedupTable.hpp"
 #include "gc/shared/stringdedup/stringDedupThread.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomic.hpp"
 
 void G1StringDedup::initialize() {
   assert(UseG1GC, "String deduplication available with G1");
@@ -88,4 +87,3 @@ void G1StringDedup::enqueue_from_evacuation(bool from_young, bool to_young, uint
     G1StringDedupQueue::push(worker_id, java_string);
   }
 }
-

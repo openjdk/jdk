@@ -32,6 +32,8 @@
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/collectorCounters.hpp"
 #include "oops/oop.hpp"
+#include "runtime/atomic.hpp"
+#include "runtime/orderAccess.hpp"
 
 class ParallelScavengeHeap;
 class PSAdaptiveSizePolicy;

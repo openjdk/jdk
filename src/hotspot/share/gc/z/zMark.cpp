@@ -44,7 +44,6 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/handshake.hpp"
-#include "runtime/orderAccess.hpp"
 #include "runtime/prefetch.inline.hpp"
 #include "runtime/thread.hpp"
 #include "utilities/align.hpp"

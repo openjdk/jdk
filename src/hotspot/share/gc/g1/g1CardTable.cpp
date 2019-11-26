@@ -28,7 +28,6 @@
 #include "gc/shared/memset_with_concurrent_readers.hpp"
 #include "logging/log.hpp"
 #include "runtime/atomic.hpp"
-#include "runtime/orderAccess.hpp"
 
 void G1CardTable::g1_mark_as_young(const MemRegion& mr) {
   CardValue *const first = byte_for(mr.start());

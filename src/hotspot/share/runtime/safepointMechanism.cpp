@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "logging/log.hpp"
 #include "runtime/globals.hpp"
+#include "runtime/orderAccess.hpp"
 #include "runtime/os.hpp"
 #include "runtime/safepointMechanism.inline.hpp"
 #include "services/memTracker.hpp"

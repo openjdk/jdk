@@ -35,6 +35,7 @@
 #include "oops/oop.inline.hpp"
 #include "oops/weakHandle.inline.hpp"
 #include "prims/resolvedMethodTable.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/mutexLocker.hpp"

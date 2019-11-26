@@ -26,7 +26,7 @@
 #define SHARE_CLASSFILE_CLASSLOADER_INLINE_HPP
 
 #include "classfile/classLoader.hpp"
-#include "runtime/orderAccess.hpp"
+#include "runtime/atomic.hpp"
 
 // Next entry in class path
 inline ClassPathEntry* ClassPathEntry::next() const { return Atomic::load_acquire(&_next); }

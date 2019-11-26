@@ -30,6 +30,7 @@
 #include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
 #include "logging/log.hpp"
+#include "runtime/atomic.hpp"
 
 StringDedupCleaningTask::StringDedupCleaningTask(BoolObjectClosure* is_alive,
                                                  OopClosure* keep_alive,

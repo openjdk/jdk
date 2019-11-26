@@ -27,7 +27,6 @@
 #include "memory/allocation.inline.hpp"
 #include "memory/metaspaceShared.hpp"
 #include "memory/resourceArea.hpp"
-#include "runtime/atomic.hpp"
 #include "runtime/os.hpp"
 #include "runtime/task.hpp"
 #include "runtime/threadCritical.hpp"

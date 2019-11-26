@@ -28,6 +28,7 @@
 #include "code/dependencyContext.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/orderAccess.hpp"
 #include "runtime/perfData.hpp"
 #include "utilities/exceptions.hpp"
 

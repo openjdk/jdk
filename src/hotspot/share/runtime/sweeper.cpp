@@ -37,7 +37,6 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/method.hpp"
-#include "runtime/atomic.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/handshake.hpp"
 #include "runtime/mutexLocker.hpp"

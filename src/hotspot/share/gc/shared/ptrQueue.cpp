@@ -30,7 +30,6 @@
 #include "runtime/atomic.hpp"
 #include "runtime/mutex.hpp"
 #include "runtime/mutexLocker.hpp"
-#include "runtime/orderAccess.hpp"
 #include "runtime/thread.inline.hpp"
 #include "utilities/globalCounter.inline.hpp"
 

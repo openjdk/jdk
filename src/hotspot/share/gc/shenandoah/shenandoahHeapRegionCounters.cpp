@@ -27,6 +27,7 @@
 #include "gc/shenandoah/shenandoahHeapRegionSet.hpp"
 #include "gc/shenandoah/shenandoahHeapRegionCounters.hpp"
 #include "memory/resourceArea.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/perfData.inline.hpp"
 
 ShenandoahHeapRegionCounters::ShenandoahHeapRegionCounters() :

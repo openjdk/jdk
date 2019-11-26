@@ -33,6 +33,8 @@
 #include "gc/g1/heterogeneousHeapRegionManager.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allocation.hpp"
+#include "runtime/atomic.hpp"
+#include "runtime/orderAccess.hpp"
 #include "utilities/bitMap.inline.hpp"
 
 class MasterFreeRegionListChecker : public HeapRegionSetChecker {

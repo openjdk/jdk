@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 
 #include "gc/g1/g1ParallelCleaning.hpp"
+#include "runtime/atomic.hpp"
 #if INCLUDE_JVMCI
 #include "jvmci/jvmci.hpp"
 #endif

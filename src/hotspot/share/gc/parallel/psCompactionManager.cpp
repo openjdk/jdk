@@ -39,7 +39,6 @@
 #include "oops/instanceMirrorKlass.inline.hpp"
 #include "oops/objArrayKlass.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomic.hpp"
 
 PSOldGen*            ParCompactionManager::_old_gen = NULL;
 ParCompactionManager**  ParCompactionManager::_manager_array = NULL;

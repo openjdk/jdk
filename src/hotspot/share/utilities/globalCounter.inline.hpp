@@ -26,7 +26,6 @@
 #define SHARE_UTILITIES_GLOBALCOUNTER_INLINE_HPP
 
 #include "runtime/atomic.hpp"
-#include "runtime/orderAccess.hpp"
 #include "runtime/thread.inline.hpp"
 #include "utilities/globalCounter.hpp"
 

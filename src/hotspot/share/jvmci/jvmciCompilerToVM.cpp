@@ -42,6 +42,7 @@
 #include "oops/method.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "prims/nativeLookup.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/frame.inline.hpp"

@@ -28,6 +28,7 @@
 #include "gc/g1/g1CodeCacheRemSet.hpp"
 #include "gc/g1/g1FromCardCache.hpp"
 #include "gc/g1/sparsePRT.hpp"
+#include "runtime/atomic.hpp"
 #include "utilities/bitMap.hpp"
 
 // Remembered set for a heap region.  Represent a set of "cards" that

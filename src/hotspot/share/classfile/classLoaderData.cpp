@@ -67,7 +67,6 @@
 #include "runtime/atomic.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/mutex.hpp"
-#include "runtime/orderAccess.hpp"
 #include "runtime/safepoint.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"

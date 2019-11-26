@@ -29,6 +29,7 @@
 #include "compiler/abstractCompiler.hpp"
 #include "compiler/compileTask.hpp"
 #include "compiler/compilerDirectives.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/perfData.hpp"
 #include "utilities/stack.hpp"
 #if INCLUDE_JVMCI

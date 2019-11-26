@@ -28,6 +28,7 @@
 #include "gc/g1/heapRegion.inline.hpp"
 #include "gc/g1/heapRegionRemSet.hpp"
 #include "gc/g1/sparsePRT.hpp"
+#include "runtime/atomic.hpp"
 #include "utilities/bitMap.inline.hpp"
 
 template <class Closure>

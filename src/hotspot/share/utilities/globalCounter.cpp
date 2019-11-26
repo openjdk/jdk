@@ -24,7 +24,7 @@
 
 #include "precompiled.hpp"
 #include "utilities/globalCounter.hpp"
-#include "runtime/orderAccess.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/thread.hpp"
 #include "runtime/threadSMR.inline.hpp"
 #include "runtime/vmThread.hpp"

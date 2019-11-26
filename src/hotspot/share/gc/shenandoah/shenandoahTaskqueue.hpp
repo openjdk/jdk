@@ -26,6 +26,7 @@
 #include "gc/shared/owstTaskTerminator.hpp"
 #include "gc/shared/taskqueue.hpp"
 #include "memory/allocation.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/mutex.hpp"
 #include "runtime/thread.hpp"
 

@@ -28,6 +28,7 @@
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahTraversalGC.hpp"
 #include "oops/compressedOops.inline.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/thread.hpp"
 
 ShenandoahForwardedIsAliveClosure::ShenandoahForwardedIsAliveClosure() :

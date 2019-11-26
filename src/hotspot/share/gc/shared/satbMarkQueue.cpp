@@ -30,7 +30,6 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/mutexLocker.hpp"
-#include "runtime/orderAccess.hpp"
 #include "runtime/os.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/thread.hpp"

@@ -34,6 +34,7 @@
 #include "gc/z/zUtils.inline.hpp"
 #include "gc/z/zValue.inline.hpp"
 #include "memory/universe.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
 

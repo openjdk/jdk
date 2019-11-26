@@ -51,7 +51,6 @@
 #include "memory/resourceArea.hpp"
 #include "oops/instanceRefKlass.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomic.hpp"
 #include "runtime/java.hpp"
 #include "runtime/prefetch.inline.hpp"
 #include "runtime/thread.inline.hpp"

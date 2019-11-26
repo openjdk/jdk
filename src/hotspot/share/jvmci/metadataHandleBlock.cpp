@@ -23,6 +23,7 @@
 
 #include "precompiled.hpp"
 #include "jvmci/metadataHandleBlock.hpp"
+#include "runtime/atomic.hpp"
 
 MetadataHandleBlock* MetadataHandleBlock::_last = NULL;
 intptr_t             MetadataHandleBlock::_free_list = 0;

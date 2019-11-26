@@ -28,7 +28,6 @@
 #include "gc/z/zThread.inline.hpp"
 #include "logging/log.hpp"
 #include "runtime/atomic.hpp"
-#include "runtime/orderAccess.hpp"
 #include "utilities/debug.hpp"
 
 static const ZStatCounter ZCounterMarkSeqNumResetContention("Contention", "Mark SeqNum Reset Contention", ZStatUnitOpsPerSecond);

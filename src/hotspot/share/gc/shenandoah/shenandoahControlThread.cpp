@@ -37,6 +37,7 @@
 #include "gc/shenandoah/shenandoahWorkerPolicy.hpp"
 #include "memory/iterator.hpp"
 #include "memory/universe.hpp"
+#include "runtime/atomic.hpp"
 
 ShenandoahControlThread::ShenandoahControlThread() :
   ConcurrentGCThread(),

@@ -29,7 +29,7 @@
 #include "oops/instanceKlass.hpp"
 #include "oops/klass.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/orderAccess.hpp"
+#include "runtime/atomic.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"

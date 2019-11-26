@@ -44,7 +44,6 @@
 #include "prims/methodHandles.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/handles.inline.hpp"
-#include "runtime/orderAccess.hpp"
 #include "utilities/macros.hpp"
 
 // Implementation of ConstantPoolCacheEntry

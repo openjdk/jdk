@@ -38,6 +38,7 @@
 #include "oops/methodData.hpp"
 #include "oops/method.inline.hpp"
 #include "prims/methodHandles.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/mutexLocker.hpp"

@@ -25,7 +25,7 @@
 #define SHARE_GC_SHENANDOAH_SHENANDOAHSHAREDVARIABLES_HPP
 
 #include "memory/allocation.hpp"
-#include "runtime/orderAccess.hpp"
+#include "runtime/atomic.hpp"
 
 typedef jbyte ShenandoahSharedValue;
 

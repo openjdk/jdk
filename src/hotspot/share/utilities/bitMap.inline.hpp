@@ -26,7 +26,6 @@
 #define SHARE_UTILITIES_BITMAP_INLINE_HPP
 
 #include "runtime/atomic.hpp"
-#include "runtime/orderAccess.hpp"
 #include "utilities/bitMap.hpp"
 #include "utilities/count_trailing_zeros.hpp"
 

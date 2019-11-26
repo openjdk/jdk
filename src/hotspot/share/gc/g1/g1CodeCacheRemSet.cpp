@@ -32,6 +32,7 @@
 #include "memory/iterator.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "runtime/atomic.hpp"
 #include "utilities/hashtable.inline.hpp"
 #include "utilities/stack.inline.hpp"
 

@@ -26,7 +26,7 @@
 #define SHARE_UTILITIES_HASHTABLE_INLINE_HPP
 
 #include "memory/allocation.inline.hpp"
-#include "runtime/orderAccess.hpp"
+#include "runtime/atomic.hpp"
 #include "utilities/hashtable.hpp"
 #include "utilities/dtrace.hpp"
 

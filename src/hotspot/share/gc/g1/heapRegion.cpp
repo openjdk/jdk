@@ -43,8 +43,6 @@
 #include "oops/access.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomic.hpp"
-#include "runtime/orderAccess.hpp"
 
 int    HeapRegion::LogOfHRGrainBytes = 0;
 int    HeapRegion::LogOfHRGrainWords = 0;

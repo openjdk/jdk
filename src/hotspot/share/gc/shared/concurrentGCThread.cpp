@@ -24,9 +24,9 @@
 
 #include "precompiled.hpp"
 #include "gc/shared/concurrentGCThread.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/init.hpp"
 #include "runtime/mutexLocker.hpp"
-#include "runtime/orderAccess.hpp"
 #include "runtime/os.hpp"
 
 ConcurrentGCThread::ConcurrentGCThread() :

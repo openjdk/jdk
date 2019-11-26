@@ -71,8 +71,10 @@
 
 #include "memory/metaspace.hpp"
 #include "oops/compressedOops.inline.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/orderAccess.hpp"
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/vmThread.hpp"
 #include "services/mallocTracker.hpp"

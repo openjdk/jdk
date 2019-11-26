@@ -47,7 +47,6 @@
 #include "oops/oopHandle.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/handles.inline.hpp"
-#include "runtime/orderAccess.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/stack.inline.hpp"
 

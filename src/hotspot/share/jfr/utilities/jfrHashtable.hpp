@@ -26,7 +26,7 @@
 #define SHARE_JFR_UTILITIES_JFRHASHTABLE_HPP
 
 #include "jfr/utilities/jfrAllocation.hpp"
-#include "runtime/orderAccess.hpp"
+#include "runtime/atomic.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/macros.hpp"
 

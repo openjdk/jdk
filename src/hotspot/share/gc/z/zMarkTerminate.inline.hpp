@@ -25,7 +25,6 @@
 #define SHARE_GC_Z_ZMARKTERMINATE_INLINE_HPP
 
 #include "runtime/atomic.hpp"
-#include "runtime/orderAccess.hpp"
 
 inline ZMarkTerminate::ZMarkTerminate() :
     _nworkers(0),

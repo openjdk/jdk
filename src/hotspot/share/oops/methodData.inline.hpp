@@ -26,7 +26,7 @@
 #define SHARE_OOPS_METHODDATA_INLINE_HPP
 
 #include "oops/methodData.hpp"
-#include "runtime/orderAccess.hpp"
+#include "runtime/atomic.hpp"
 
 inline void DataLayout::release_set_cell_at(int index, intptr_t value) {
   Atomic::release_store(&_cells[index], value);

@@ -25,6 +25,8 @@
 #ifndef SHARE_SERVICES_MALLOCSITETABLE_HPP
 #define SHARE_SERVICES_MALLOCSITETABLE_HPP
 
+#include "utilities/macros.hpp"
+
 #if INCLUDE_NMT
 
 #include "memory/allocation.hpp"

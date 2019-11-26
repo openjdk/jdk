@@ -24,6 +24,7 @@
 #include "precompiled.hpp"
 #include "jvm.h"
 
+#include "runtime/atomic.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/vmThread.hpp"
 #include "runtime/vmOperations.hpp"

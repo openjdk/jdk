@@ -35,6 +35,7 @@
 #include "memory/iterator.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/compressedOops.inline.hpp"
+#include "runtime/atomic.hpp"
 #include "utilities/align.hpp"
 
 // Avoid name collision on verify_oop (defined in macroAssembler_arm.hpp)

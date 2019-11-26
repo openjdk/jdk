@@ -29,7 +29,6 @@
 #include "gc/shared/collectedHeap.hpp"
 #include "memory/universe.hpp"
 #include "oops/compressedOops.hpp"
-#include "runtime/atomic.hpp"
 #include "runtime/icache.hpp"
 #include "runtime/os.hpp"
 #include "runtime/thread.hpp"

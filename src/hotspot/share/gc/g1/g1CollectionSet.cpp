@@ -33,6 +33,7 @@
 #include "gc/g1/heapRegionRemSet.hpp"
 #include "gc/g1/heapRegionSet.hpp"
 #include "logging/logStream.hpp"
+#include "runtime/orderAccess.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/quickSort.hpp"

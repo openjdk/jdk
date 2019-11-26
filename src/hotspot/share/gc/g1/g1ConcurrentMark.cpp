@@ -62,6 +62,7 @@
 #include "runtime/atomic.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
+#include "runtime/orderAccess.hpp"
 #include "runtime/prefetch.inline.hpp"
 #include "services/memTracker.hpp"
 #include "utilities/align.hpp"

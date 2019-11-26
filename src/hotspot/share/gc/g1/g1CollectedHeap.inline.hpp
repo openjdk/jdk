@@ -34,7 +34,6 @@
 #include "gc/g1/heapRegionRemSet.hpp"
 #include "gc/g1/heapRegionSet.inline.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
-#include "runtime/orderAccess.hpp"
 
 G1GCPhaseTimes* G1CollectedHeap::phase_times() const {
   return _policy->phase_times();

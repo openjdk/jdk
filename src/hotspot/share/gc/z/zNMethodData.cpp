@@ -27,7 +27,6 @@
 #include "gc/z/zNMethodData.hpp"
 #include "memory/allocation.hpp"
 #include "runtime/atomic.hpp"
-#include "runtime/orderAccess.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/growableArray.hpp"

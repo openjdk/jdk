@@ -25,7 +25,7 @@
 #ifndef SHARE_OOPS_ARRAYKLASS_INLINE_HPP
 #define SHARE_OOPS_ARRAYKLASS_INLINE_HPP
 
-#include "runtime/orderAccess.hpp"
+#include "runtime/atomic.hpp"
 #include "oops/arrayKlass.hpp"
 
 inline Klass* ArrayKlass::higher_dimension_acquire() const {

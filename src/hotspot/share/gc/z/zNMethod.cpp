@@ -41,7 +41,6 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "runtime/atomic.hpp"
-#include "runtime/orderAccess.hpp"
 #include "utilities/debug.hpp"
 
 static ZNMethodData* gc_data(const nmethod* nm) {

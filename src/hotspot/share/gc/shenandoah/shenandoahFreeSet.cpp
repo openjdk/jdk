@@ -29,6 +29,7 @@
 #include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
 #include "gc/shenandoah/shenandoahTraversalGC.hpp"
 #include "logging/logStream.hpp"
+#include "runtime/orderAccess.hpp"
 
 ShenandoahFreeSet::ShenandoahFreeSet(ShenandoahHeap* heap, size_t max_regions) :
   _heap(heap),

@@ -29,6 +29,8 @@
 #include "oops/accessBackend.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/oopsHierarchy.hpp"
+#include "runtime/atomic.hpp"
+#include "runtime/orderAccess.hpp"
 
 template <DecoratorSet decorators>
 template <DecoratorSet idecorators, typename T>
