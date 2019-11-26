@@ -267,6 +267,9 @@ reg_class ptr_rbx_reg(RBX, RBX_H);
 // Singleton class for RSI pointer register
 reg_class ptr_rsi_reg(RSI, RSI_H);
 
+// Singleton class for RBP pointer register
+reg_class ptr_rbp_reg(RBP, RBP_H);
+
 // Singleton class for RDI pointer register
 reg_class ptr_rdi_reg(RDI, RDI_H);
 
@@ -3523,6 +3526,16 @@ operand rbx_RegP()
 operand rsi_RegP()
 %{
   constraint(ALLOC_IN_RC(ptr_rsi_reg));
+  match(RegP);
+  match(rRegP);
+
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand rbp_RegP()
+%{
+  constraint(ALLOC_IN_RC(ptr_rbp_reg));
   match(RegP);
   match(rRegP);
 

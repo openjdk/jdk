@@ -245,12 +245,12 @@ void ArchDesc::inspectOperands() {
     // Construct chain rules
     build_chain_rule(op);
 
-    MatchRule &mrule = *op->_matrule;
-    Predicate *pred  =  op->_predicate;
+    MatchRule *mrule = op->_matrule;
+    Predicate *pred  = op->_predicate;
 
     // Grab the machine type of the operand
     const char  *rootOp    = op->_ident;
-    mrule._machType  = rootOp;
+    mrule->_machType  = rootOp;
 
     // Check for special cases
     if (strcmp(rootOp,"Universe")==0) continue;
@@ -271,10 +271,13 @@ void ArchDesc::inspectOperands() {
 
     // Find result type for match.
     const char *result      = op->reduce_result();
-    bool        has_root    = false;
 
-    // Construct a MatchList for this entry
-    buildMatchList(op->_matrule, result, rootOp, pred, cost);
+    // Construct a MatchList for this entry.
+    // Iterate over the list to enumerate all match cases for operands with multiple match rules.
+    for (; mrule != NULL; mrule = mrule->_next) {
+      mrule->_machType = rootOp;
+      buildMatchList(mrule, result, rootOp, pred, cost);
+    }
   }
 }
 
