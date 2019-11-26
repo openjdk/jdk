@@ -96,7 +96,6 @@ public class VolatileCallSite extends CallSite {
      * @see #getTarget
      */
     @Override public void setTarget(MethodHandle newTarget) {
-        checkTargetChange(getTargetVolatile(), newTarget);
         setTargetVolatile(newTarget);
     }
 
