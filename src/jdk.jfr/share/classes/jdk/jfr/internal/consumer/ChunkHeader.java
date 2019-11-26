@@ -292,4 +292,8 @@ public final class ChunkHeader {
     static long headerSize() {
         return HEADER_SIZE;
     }
+
+    public long getLastNanos() {
+        return getStartNanos() + getDurationNanos();
+    }
 }
