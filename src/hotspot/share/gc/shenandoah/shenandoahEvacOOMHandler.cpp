@@ -113,7 +113,7 @@ void ShenandoahEvacOOMHandler::handle_out_of_memory_during_evacuation() {
 void ShenandoahEvacOOMHandler::clear() {
   assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "must be at a safepoint");
   assert((Atomic::load_acquire(&_threads_in_evac) & ~OOM_MARKER_MASK) == 0, "sanity");
-  Atomic::release_store_fence<jint>(&_threads_in_evac, 0);
+  Atomic::release_store_fence(&_threads_in_evac, (jint)0);
 }
 
 ShenandoahEvacOOMScope::ShenandoahEvacOOMScope() {
