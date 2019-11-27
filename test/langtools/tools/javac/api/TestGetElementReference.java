@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,6 +51,9 @@ import javax.tools.ToolProvider;
 
 public class TestGetElementReference {
 
+    private static final String JDK_VERSION =
+            Integer.toString(Runtime.getRuntime().version().feature());
+
     public static void main(String... args) throws IOException {
         analyze("TestGetElementReferenceData.java");
         analyze("mod/module-info.java", "mod/api/pkg/Api.java");
@@ -66,7 +69,10 @@ public class TestGetElementReference {
                 }
             }
             DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<>();
-            JavacTask ct = (JavacTask) ToolProvider.getSystemJavaCompiler().getTask(null, null, diagnostics, Arrays.asList("-Xjcov"), null, files);
+            List<String> options = List.of("-Xjcov",
+                                           "--enable-preview",
+                                           "-source", JDK_VERSION);
+            JavacTask ct = (JavacTask) ToolProvider.getSystemJavaCompiler().getTask(null, null, diagnostics, options, null, files);
             Trees trees = Trees.instance(ct);
             CompilationUnitTree cut = ct.parse().iterator().next();
 

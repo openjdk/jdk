@@ -880,7 +880,7 @@ public class DPrinter {
         @Override
         public void visitTypeTest(JCInstanceOf tree) {
             printTree("expr", tree.expr);
-            printTree("clazz", tree.clazz);
+            printTree("pattern", tree.pattern);
         }
 
         @Override
