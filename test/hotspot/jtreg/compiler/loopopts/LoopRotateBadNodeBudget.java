@@ -27,7 +27,7 @@
  * @summary Node estimate for loop rotate is not correct/sufficient:
  *          assert(delta <= 2 * required) failed: Bad node estimate ...
  *
- * @requires !vm.graal.enabled
+ * @requires vm.compiler2.enabled & !vm.graal.enabled
  *
  * @run main/othervm -XX:PartialPeelNewPhiDelta=5 LoopRotateBadNodeBudget
  * @run main/othervm -Xbatch -XX:PartialPeelNewPhiDelta=5 LoopRotateBadNodeBudget
