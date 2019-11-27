@@ -166,10 +166,11 @@
           "Use the Garbage-First garbage collector")                        \
                                                                             \
   product(bool, UseParallelGC, false,                                       \
-          "Use the Parallel Scavenge garbage collector")                    \
+          "Use the Parallel garbage collector.")                            \
                                                                             \
   product(bool, UseParallelOldGC, false,                                    \
-          "Use the Parallel Old garbage collector")                         \
+          "Use the Parallel or Serial garbage collector when collecting "   \
+          "the old generation. Deprecated.")                                \
                                                                             \
   experimental(bool, UseEpsilonGC, false,                                   \
           "Use the Epsilon (no-op) garbage collector")                      \
