@@ -472,17 +472,41 @@ Java_sun_font_FreetypeFontScaler_createScalerContextNative(
     return ptr_to_jlong(context);
 }
 
+// values used by FreeType (as of version 2.10.1) for italics transformation matrix in FT_GlyphSlot_Oblique
+#define FT_MATRIX_ONE 0x10000
+#define FT_MATRIX_OBLIQUE_XY 0x0366A
+
+static void setupTransform(FT_Matrix* target, FTScalerContext *context) {
+    FT_Matrix* transform = &context->transform;
+    if (context->doItalize) {
+        // we cannot use FT_GlyphSlot_Oblique as it doesn't work well with arbitrary transforms,
+        // so we add corresponding shear transform to the requested glyph transformation
+        target->xx = FT_MATRIX_ONE;
+        target->xy = FT_MATRIX_OBLIQUE_XY;
+        target->yx = 0;
+        target->yy = FT_MATRIX_ONE;
+        FT_Matrix_Multiply(transform, target);
+    } else {
+        target->xx = transform->xx;
+        target->xy = transform->xy;
+        target->yx = transform->yx;
+        target->yy = transform->yy;
+    }
+}
+
 static int setupFTContext(JNIEnv *env,
                           jobject font2D,
                           FTScalerInfo *scalerInfo,
                           FTScalerContext *context) {
+    FT_Matrix matrix;
     int errCode = 0;
 
     scalerInfo->env = env;
     scalerInfo->font2D = font2D;
 
     if (context != NULL) {
-        FT_Set_Transform(scalerInfo->face, &context->transform, NULL);
+        setupTransform(&matrix, context);
+        FT_Set_Transform(scalerInfo->face, &matrix, NULL);
 
         errCode = FT_Set_Char_Size(scalerInfo->face, 0, context->ptsz, 72, 72);
 
@@ -496,11 +520,8 @@ static int setupFTContext(JNIEnv *env,
     return errCode;
 }
 
-/* ftsynth.c uses (0x10000, 0x0366A, 0x0, 0x10000) matrix to get oblique
-   outline.  Therefore x coordinate will change by 0x0366A*y.
-   Note that y coordinate does not change. These values are based on
-   libfreetype version 2.9.1. */
-#define OBLIQUE_MODIFIER(y)  (context->doItalize ? ((y)*0x366A/0x10000) : 0)
+// using same values as for the transformation matrix
+#define OBLIQUE_MODIFIER(y)  (context->doItalize ? ((y)*FT_MATRIX_OBLIQUE_XY/FT_MATRIX_ONE) : 0)
 
 /* FT_GlyphSlot_Embolden (ftsynth.c) uses FT_MulFix(units_per_EM, y_scale) / 24
  * strength value when glyph format is FT_GLYPH_FORMAT_OUTLINE. This value has
@@ -871,9 +892,6 @@ static jlong
     if (context->doBold) { /* if bold style */
         FT_GlyphSlot_Embolden(ftglyph);
     }
-    if (context->doItalize) { /* if oblique */
-        FT_GlyphSlot_Oblique(ftglyph);
-    }
 
     /* generate bitmap if it is not done yet
      e.g. if algorithmic styling is performed and style was added to outline */
@@ -1117,9 +1135,6 @@ static FT_Outline* getFTOutline(JNIEnv* env, jobject font2D,
     /* apply styles */
     if (context->doBold) { /* if bold style */
         FT_GlyphSlot_Embolden(ftglyph);
-    }
-    if (context->doItalize) { /* if oblique */
-        FT_GlyphSlot_Oblique(ftglyph);
     }
 
     FT_Outline_Translate(&ftglyph->outline,
