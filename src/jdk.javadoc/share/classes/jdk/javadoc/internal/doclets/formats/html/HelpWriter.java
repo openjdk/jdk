@@ -25,6 +25,8 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
+import jdk.javadoc.internal.doclets.formats.html.markup.BodyContents;
+import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
@@ -50,8 +52,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
  */
 public class HelpWriter extends HtmlDocletWriter {
 
-    HtmlTree mainTree = HtmlTree.MAIN();
-
     private final Navigation navBar;
 
     /**
@@ -62,7 +62,7 @@ public class HelpWriter extends HtmlDocletWriter {
     public HelpWriter(HtmlConfiguration configuration,
                       DocPath filename) {
         super(configuration, filename);
-        this.navBar = new Navigation(null, configuration, fixedNavDiv, PageMode.HELP, path);
+        this.navBar = new Navigation(null, configuration, PageMode.HELP, path);
     }
 
     /**
@@ -88,17 +88,21 @@ public class HelpWriter extends HtmlDocletWriter {
     protected void generateHelpFile() throws DocFileIOException {
         String title = resources.getText("doclet.Window_Help_title");
         HtmlTree body = getBody(getWindowTitle(title));
-        HtmlTree htmlTree = HtmlTree.HEADER();
-        addTop(htmlTree);
+        Content headerContent = new ContentBuilder();
+        addTop(headerContent);
         navBar.setUserHeader(getUserHeaderFooter(true));
-        htmlTree.add(navBar.getContent(true));
-        body.add(htmlTree);
-        addHelpFileContents(body);
-        htmlTree = HtmlTree.FOOTER();
+        headerContent.add(navBar.getContent(true));
+        ContentBuilder helpFileContent = new ContentBuilder();
+        addHelpFileContents(helpFileContent);
+        HtmlTree footer = HtmlTree.FOOTER();
         navBar.setUserFooter(getUserHeaderFooter(false));
-        htmlTree.add(navBar.getContent(false));
-        addBottom(htmlTree);
-        body.add(htmlTree);
+        footer.add(navBar.getContent(false));
+        addBottom(footer);
+        body.add(new BodyContents()
+                .setHeader(headerContent)
+                .addMainContent(helpFileContent)
+                .setFooter(footer)
+                .toContent());
         printHtmlDocument(null, "help", body);
     }
 
@@ -118,7 +122,7 @@ public class HelpWriter extends HtmlDocletWriter {
         Content intro = HtmlTree.DIV(HtmlStyle.subTitle,
                 contents.getContent("doclet.help.intro"));
         div.add(intro);
-        mainTree.add(div);
+        contentTree.add(div);
         HtmlTree htmlTree;
         HtmlTree ul = new HtmlTree(HtmlTag.UL);
         ul.setStyle(HtmlStyle.blockList);
@@ -332,7 +336,6 @@ public class HelpWriter extends HtmlDocletWriter {
         Content footnote = HtmlTree.SPAN(HtmlStyle.emphasizedPhrase,
                 contents.getContent("doclet.help.footnote"));
         divContent.add(footnote);
-        mainTree.add(divContent);
-        contentTree.add(mainTree);
+        contentTree.add(divContent);
     }
 }

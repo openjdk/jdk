@@ -222,7 +222,7 @@ public class DeprecatedListWriter extends SubWriterHolderWriter {
     public DeprecatedListWriter(HtmlConfiguration configuration, DocPath filename) {
         super(configuration, filename);
         this.configuration = configuration;
-        this.navBar = new Navigation(null, configuration, fixedNavDiv, PageMode.DEPRECATED, path);
+        this.navBar = new Navigation(null, configuration, PageMode.DEPRECATED, path);
         NestedClassWriterImpl classW = new NestedClassWriterImpl(this);
         writerMap = new EnumMap<>(DeprElementKind.class);
         for (DeprElementKind kind : DeprElementKind.values()) {
@@ -283,8 +283,7 @@ public class DeprecatedListWriter extends SubWriterHolderWriter {
     protected void generateDeprecatedListFile(DeprecatedAPIListBuilder deprapi)
             throws DocFileIOException {
         HtmlTree body = getHeader();
-        HtmlTree htmlTree = HtmlTree.MAIN();
-        htmlTree.add(getContentsList(deprapi));
+        bodyContents.addMainContent(getContentsList(deprapi));
         String memberTableSummary;
         HtmlTree div = new HtmlTree(HtmlTag.DIV);
         div.setStyle(HtmlStyle.contentContainer);
@@ -300,14 +299,14 @@ public class DeprecatedListWriter extends SubWriterHolderWriter {
                             getHeadingKey(kind), memberTableSummary, memberTableHeader, div);
             }
         }
-        htmlTree.add(div);
-        body.add(htmlTree);
-        htmlTree = HtmlTree.FOOTER();
+        bodyContents.addMainContent(div);
+        HtmlTree htmlTree = HtmlTree.FOOTER();
         navBar.setUserFooter(getUserHeaderFooter(false));
         htmlTree.add(navBar.getContent(false));
         addBottom(htmlTree);
-        body.add(htmlTree);
+        bodyContents.setFooter(htmlTree);
         String description = "deprecated elements";
+        body.add(bodyContents.toContent());
         printHtmlDocument(null, description, body);
     }
 
@@ -315,7 +314,7 @@ public class DeprecatedListWriter extends SubWriterHolderWriter {
      * Add the index link.
      *
      * @param builder the deprecated list builder
-     * @param type the type of list being documented
+     * @param kind the kind of list being documented
      * @param contentTree the content tree to which the index link will be added
      */
     private void addIndexLink(DeprecatedAPIListBuilder builder,
@@ -353,7 +352,7 @@ public class DeprecatedListWriter extends SubWriterHolderWriter {
      * Add the anchor.
      *
      * @param builder the deprecated list builder
-     * @param type the type of list being documented
+     * @param kind the kind of list being documented
      * @param htmlTree the content tree to which the anchor will be added
      */
     private void addAnchor(DeprecatedAPIListBuilder builder, DeprElementKind kind, Content htmlTree) {
@@ -370,11 +369,11 @@ public class DeprecatedListWriter extends SubWriterHolderWriter {
     public HtmlTree getHeader() {
         String title = resources.getText("doclet.Window_Deprecated_List");
         HtmlTree bodyTree = getBody(getWindowTitle(title));
-        HtmlTree htmlTree = HtmlTree.HEADER();
-        addTop(htmlTree);
+        Content headerContent = new ContentBuilder();
+        addTop(headerContent);
         navBar.setUserHeader(getUserHeaderFooter(true));
-        htmlTree.add(navBar.getContent(true));
-        bodyTree.add(htmlTree);
+        headerContent.add(navBar.getContent(true));
+        bodyContents.setHeader(headerContent);
         return bodyTree;
     }
 

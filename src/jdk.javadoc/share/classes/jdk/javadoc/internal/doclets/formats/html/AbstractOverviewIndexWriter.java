@@ -25,6 +25,8 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
+import jdk.javadoc.internal.doclets.formats.html.markup.BodyContents;
+import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
@@ -57,12 +59,12 @@ public abstract class AbstractOverviewIndexWriter extends HtmlDocletWriter {
     public AbstractOverviewIndexWriter(HtmlConfiguration configuration,
                                       DocPath filename) {
         super(configuration, filename);
-        this.navBar = new Navigation(null, configuration, fixedNavDiv, PageMode.OVERVIEW, path);
+        this.navBar = new Navigation(null, configuration, PageMode.OVERVIEW, path);
     }
 
     /**
      * Adds the top text (from the -top option), the upper
-     * navigation bar, and then the title (from the"-title"
+     * navigation bar, and then the title (from the"-header"
      * option), at the top of page.
      *
      * @param header the documentation tree to which the navigation bar header will be added
@@ -126,16 +128,18 @@ public abstract class AbstractOverviewIndexWriter extends HtmlDocletWriter {
             throws DocFileIOException {
         String windowOverview = resources.getText(title);
         Content body = getBody(getWindowTitle(windowOverview));
-        Content header = HtmlTree.HEADER();
+        Content header = new ContentBuilder();
         addNavigationBarHeader(header);
-        Content main = HtmlTree.MAIN();
+        Content main = new ContentBuilder();
         addOverviewHeader(main);
         addIndex(main);
         Content footer = HtmlTree.FOOTER();
         addNavigationBarFooter(footer);
-        body.add(header);
-        body.add(main);
-        body.add(footer);
+        body.add(new BodyContents()
+                .setHeader(header)
+                .addMainContent(main)
+                .setFooter(footer)
+                .toContent());
         printHtmlDocument(
                 configuration.metakeywords.getOverviewMetaKeywords(title, configuration.doctitle),
                 description, body);

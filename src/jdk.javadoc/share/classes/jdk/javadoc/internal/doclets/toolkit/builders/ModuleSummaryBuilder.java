@@ -56,11 +56,6 @@ public class ModuleSummaryBuilder extends AbstractBuilder {
     private final ModuleSummaryWriter moduleWriter;
 
     /**
-     * The content that will be added to the module summary documentation tree.
-     */
-    private Content contentTree;
-
-    /**
      * Construct a new ModuleSummaryBuilder.
      *
      * @param context  the build context.
@@ -101,21 +96,20 @@ public class ModuleSummaryBuilder extends AbstractBuilder {
             //Doclet does not support this output.
             return;
         }
-        buildModuleDoc(contentTree);
+        buildModuleDoc();
     }
 
     /**
      * Build the module documentation.
      *
-     * @param contentTree the content tree to which the documentation will be added
      * @throws DocletException if there is a problem while building the documentation
      */
-    protected void buildModuleDoc(Content contentTree) throws DocletException {
-        contentTree = moduleWriter.getModuleHeader(mdle.getQualifiedName().toString());
+    protected void buildModuleDoc() throws DocletException {
+        Content contentTree = moduleWriter.getModuleHeader(mdle.getQualifiedName().toString());
 
-        buildContent(contentTree);
+        buildContent();
 
-        moduleWriter.addModuleFooter(contentTree);
+        moduleWriter.addModuleFooter();
         moduleWriter.printDocument(contentTree);
         DocFilesHandler docFilesHandler = configuration.getWriterFactory().getDocFilesHandler(mdle);
         docFilesHandler.copyDocFiles();
@@ -124,18 +118,16 @@ public class ModuleSummaryBuilder extends AbstractBuilder {
     /**
      * Build the content for the module doc.
      *
-     * @param contentTree the content tree to which the module contents
-     *                    will be added
      * @throws DocletException if there is a problem while building the documentation
      */
-    protected void buildContent(Content contentTree) throws DocletException {
+    protected void buildContent() throws DocletException {
         Content moduleContentTree = moduleWriter.getContentHeader();
 
         buildModuleDescription(moduleContentTree);
         buildModuleTags(moduleContentTree);
         buildSummary(moduleContentTree);
 
-        moduleWriter.addModuleContent(contentTree, moduleContentTree);
+        moduleWriter.addModuleContent(moduleContentTree);
     }
 
     /**

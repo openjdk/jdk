@@ -33,6 +33,7 @@ import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 
 import com.sun.source.doctree.DocTree;
+import jdk.javadoc.internal.doclets.formats.html.markup.BodyContents;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
@@ -72,16 +73,13 @@ public class PackageWriterImpl extends HtmlDocletWriter
     protected PackageElement packageElement;
 
     /**
-     * The HTML tree for main tag.
-     */
-    protected HtmlTree mainTree = HtmlTree.MAIN();
-
-    /**
      * The HTML tree for section tag.
      */
     protected HtmlTree sectionTree = HtmlTree.SECTION(HtmlStyle.packageDescription, new ContentBuilder());
 
     private final Navigation navBar;
+
+    private final BodyContents bodyContents = new BodyContents();
 
     /**
      * Constructor to construct PackageWriter object and to generate
@@ -99,7 +97,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
                 configuration.docPaths.forPackage(packageElement)
                 .resolve(DocPaths.PACKAGE_SUMMARY));
         this.packageElement = packageElement;
-        this.navBar = new Navigation(packageElement, configuration, fixedNavDiv, PageMode.PACKAGE, path);
+        this.navBar = new Navigation(packageElement, configuration, PageMode.PACKAGE, path);
     }
 
     /**
@@ -108,14 +106,13 @@ public class PackageWriterImpl extends HtmlDocletWriter
     @Override
     public Content getPackageHeader(String heading) {
         HtmlTree bodyTree = getBody(getWindowTitle(utils.getPackageName(packageElement)));
-        HtmlTree htmlTree = HtmlTree.HEADER();
-        addTop(htmlTree);
+        Content headerContent = new ContentBuilder();
+        addTop(headerContent);
         Content linkContent = getModuleLink(utils.elementUtils.getModuleOf(packageElement),
                 contents.moduleLabel);
         navBar.setNavLinkModule(linkContent);
         navBar.setUserHeader(getUserHeaderFooter(true));
-        htmlTree.add(navBar.getContent(true));
-        bodyTree.add(htmlTree);
+        headerContent.add(navBar.getContent(true));
         HtmlTree div = new HtmlTree(HtmlTag.DIV);
         div.setStyle(HtmlStyle.header);
         if (configuration.showModules) {
@@ -136,7 +133,8 @@ public class PackageWriterImpl extends HtmlDocletWriter
         Content packageHead = new StringContent(heading);
         tHeading.add(packageHead);
         div.add(tHeading);
-        mainTree.add(div);
+        bodyContents.setHeader(headerContent)
+                .addMainContent(div);
         return bodyTree;
     }
 
@@ -295,21 +293,20 @@ public class PackageWriterImpl extends HtmlDocletWriter
      * {@inheritDoc}
      */
     @Override
-    public void addPackageContent(Content contentTree, Content packageContentTree) {
-        mainTree.add(packageContentTree);
-        contentTree.add(mainTree);
+    public void addPackageContent(Content packageContentTree) {
+        bodyContents.addMainContent(packageContentTree);
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public void addPackageFooter(Content contentTree) {
+    public void addPackageFooter() {
         Content htmlTree = HtmlTree.FOOTER();
         navBar.setUserFooter(getUserHeaderFooter(false));
         htmlTree.add(navBar.getContent(false));
         addBottom(htmlTree);
-        contentTree.add(htmlTree);
+        bodyContents.setFooter(htmlTree);
     }
 
     /**
@@ -319,6 +316,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
     public void printDocument(Content contentTree) throws DocFileIOException {
         String description = getDescription("declaration", packageElement);
         List<DocPath> localStylesheets = getLocalStylesheets(packageElement);
+        contentTree.add(bodyContents.toContent());
         printHtmlDocument(configuration.metakeywords.getMetaKeywords(packageElement),
                 description, localStylesheets, contentTree);
     }

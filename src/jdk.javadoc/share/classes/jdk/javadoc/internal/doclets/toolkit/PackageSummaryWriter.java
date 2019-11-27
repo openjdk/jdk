@@ -143,17 +143,14 @@ public interface PackageSummaryWriter {
      * Adds the tag information from the "packages.html" or "package-info.java" file to the
      * documentation tree.
      *
-     * @param contentTree the content tree to which the package content tree will be added
      * @param packageContentTree the package content tree to be added
      */
-    public abstract void addPackageContent(Content contentTree, Content packageContentTree);
+    public abstract void addPackageContent(Content packageContentTree);
 
     /**
      * Adds the footer to the documentation tree.
-     *
-     * @param contentTree the tree to which the footer will be added
      */
-    public abstract void addPackageFooter(Content contentTree);
+    public abstract void addPackageFooter();
 
     /**
      * Print the package summary document.

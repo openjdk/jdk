@@ -92,7 +92,7 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
                                   IndexBuilder indexbuilder) {
         super(configuration, path);
         this.indexbuilder = indexbuilder;
-        this.navBar = new Navigation(null, configuration, fixedNavDiv, PageMode.INDEX, path);
+        this.navBar = new Navigation(null, configuration, PageMode.INDEX, path);
     }
 
     /**
@@ -419,7 +419,7 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
      * @return a content tree for the marker anchor
      */
     public Content getMarkerAnchorForIndex(String anchorNameForIndex) {
-        return links.createAnchor(getNameForIndex(anchorNameForIndex), null);
+        return links.createAnchor(getNameForIndex(anchorNameForIndex));
     }
 
     /**

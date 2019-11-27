@@ -75,10 +75,9 @@ public interface ConstantsSummaryWriter {
     /**
      * Add the content list to the documentation tree.
      *
-     * @param contentTree the tree to which the contents list will be added
      * @param contentListTree the content that will be added to the list
      */
-    public abstract void addContentsList(Content contentTree, Content contentListTree);
+    public abstract void addContentsList(Content contentListTree);
 
     /**
      * Get the constant summaries for the document.
@@ -129,17 +128,14 @@ public interface ConstantsSummaryWriter {
     /**
      * Add the summaries list to the content tree.
      *
-     * @param contentTree the tree to which the summaries list will be added
      * @param summariesTree the summaries content tree that will be added to the list
      */
-    public abstract void addConstantSummaries(Content contentTree, Content summariesTree);
+    public abstract void addConstantSummaries(Content summariesTree);
 
     /**
      * Adds the footer for the summary documentation.
-     *
-     * @param contentTree content tree to which the footer will be added
      */
-    public abstract void addFooter(Content contentTree);
+    public abstract void addFooter();
 
     /**
      * Print the constants summary document.

@@ -25,7 +25,7 @@
  * @test
  * @bug 8141492 8071982 8141636 8147890 8166175 8168965 8176794 8175218 8147881
  *      8181622 8182263 8074407 8187521 8198522 8182765 8199278 8196201 8196202
- *      8184205 8214468 8222548
+ *      8184205 8214468 8222548 8223378
  * @summary Test the search feature of javadoc.
  * @author bpatel
  * @library ../../lib
@@ -385,7 +385,7 @@ public class TestSearch extends JavadocTester {
                 + "<input type=\"text\" id=\"search\" value=\"search\" disabled=\"disabled\">\n"
                 + "<input type=\"reset\" id=\"reset\" value=\"reset\" disabled=\"disabled\">\n");
         checkOutput(fileName, true,
-                "<div class=\"fixedNav\">");
+                "<div class=\"flexBox\">");
     }
 
     void checkSingleIndex(boolean expectedOutput, boolean html5) {

@@ -105,7 +105,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
         this.typeElement = typeElement;
         configuration.currentTypeElement = typeElement;
         this.classtree = classTree;
-        this.navBar = new Navigation(typeElement, configuration, fixedNavDiv, PageMode.CLASS, path);
+        this.navBar = new Navigation(typeElement, configuration, PageMode.CLASS, path);
     }
 
     /**
@@ -114,16 +114,14 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
     @Override
     public Content getHeader(String header) {
         HtmlTree bodyTree = getBody(getWindowTitle(utils.getSimpleName(typeElement)));
-        HtmlTree htmlTree = HtmlTree.HEADER();
-        addTop(htmlTree);
+        Content headerContent = new ContentBuilder();
+        addTop(headerContent);
         Content linkContent = getModuleLink(utils.elementUtils.getModuleOf(typeElement),
                 contents.moduleLabel);
         navBar.setNavLinkModule(linkContent);
         navBar.setMemberSummaryBuilder(configuration.getBuilderFactory().getMemberSummaryBuilder(this));
         navBar.setUserHeader(getUserHeaderFooter(true));
-        htmlTree.add(navBar.getContent(true));
-        bodyTree.add(htmlTree);
-        bodyTree.add(MarkerComments.START_OF_CLASS_DATA);
+        headerContent.add(navBar.getContent(true));
         HtmlTree div = new HtmlTree(HtmlTag.DIV);
         div.setStyle(HtmlStyle.header);
         if (configuration.showModules) {
@@ -149,12 +147,13 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
                 LinkInfoImpl.Kind.CLASS_HEADER, typeElement);
         //Let's not link to ourselves in the header.
         linkInfo.linkToSelf = false;
-        Content headerContent = new StringContent(header);
         Content heading = HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING, true,
-                HtmlStyle.title, headerContent);
+                HtmlStyle.title, new StringContent(header));
         heading.add(getTypeParameterLinks(linkInfo));
         div.add(heading);
-        mainTree.add(div);
+        bodyContents.setHeader(headerContent)
+                .addMainContent(MarkerComments.START_OF_CLASS_DATA)
+                .addMainContent(div);
         return bodyTree;
     }
 
@@ -170,13 +169,13 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
      * {@inheritDoc}
      */
     @Override
-    public void addFooter(Content contentTree) {
-        contentTree.add(MarkerComments.END_OF_CLASS_DATA);
+    public void addFooter() {
+        bodyContents.addMainContent(MarkerComments.END_OF_CLASS_DATA);
         Content htmlTree = HtmlTree.FOOTER();
         navBar.setUserFooter(getUserHeaderFooter(false));
         htmlTree.add(navBar.getContent(false));
         addBottom(htmlTree);
-        contentTree.add(htmlTree);
+        bodyContents.setFooter(htmlTree);
     }
 
     /**
@@ -187,6 +186,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
         String description = getDescription("declaration", typeElement);
         PackageElement pkg = utils.containingPackage(typeElement);
         List<DocPath> localStylesheets = getLocalStylesheets(pkg);
+        contentTree.add(bodyContents.toContent());
         printHtmlDocument(configuration.metakeywords.getMetaKeywords(typeElement),
                 description, localStylesheets, contentTree);
     }

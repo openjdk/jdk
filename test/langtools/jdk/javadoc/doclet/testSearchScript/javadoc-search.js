@@ -52,29 +52,29 @@ var $ = function(f) {
         f();
     } else {
         return {
-            val: function() { 
-                return this; 
+            val: function() {
+                return this;
             },
-            prop: function() { 
-                return this; 
+            prop: function() {
+                return this;
             },
-            addClass: function() { 
-                return this; 
-            },    
-            removeClass: function() { 
-                return this; 
+            addClass: function() {
+                return this;
             },
-            on: function() { 
-                return this; 
+            removeClass: function() {
+                return this;
             },
-            focus: function() { 
-                return this; 
+            on: function() {
+                return this;
             },
-            blur: function() { 
-                return this; 
+            focus: function() {
+                return this;
             },
-            click: function() { 
-                return this; 
+            blur: function() {
+                return this;
+            },
+            click: function() {
+                return this;
             },
             catcomplete: function(o) {
                 o.close = function() {};
@@ -90,11 +90,11 @@ var $ = function(f) {
                     return resultList;
                 };
                 for (var i = 0; i < clargs.length; i++) {
-                    search(clargs[i]);  
+                    search(clargs[i]);
                 }
             },
             "0": {
-                setSelectionRange: function() { 
+                setSelectionRange: function() {
                     return this;
                 }
             }

@@ -111,17 +111,14 @@ public interface ModuleSummaryWriter {
     /**
      * Adds the module content tree to the documentation tree.
      *
-     * @param contentTree the tree to which the module content tree will be added
      * @param moduleContentTree the content tree that will be added
      */
-    public abstract void addModuleContent(Content contentTree, Content moduleContentTree);
+    public abstract void addModuleContent(Content moduleContentTree);
 
     /**
      * Adds the footer to the documentation tree.
-     *
-     * @param contentTree the tree to which the footer will be added
      */
-    public abstract void addModuleFooter(Content contentTree);
+    public abstract void addModuleFooter();
 
     /**
      * Print the module summary document.
