@@ -21,32 +21,29 @@
  *
  */
 
-#include "precompiled.hpp"
+#ifndef SHARE_GC_SHENANDOAH_SHENANDOAHBARRIERSETNMETHOD_HPP
+#define SHARE_GC_SHENANDOAH_SHENANDOAHBARRIERSETNMETHOD_HPP
 
-#include "gc/shenandoah/shenandoahConcurrentRoots.hpp"
-#include "gc/shenandoah/shenandoahHeap.inline.hpp"
+#include "gc/shared/barrierSetNMethod.hpp"
+#include "memory/allocation.hpp"
 
-bool ShenandoahConcurrentRoots::can_do_concurrent_roots() {
-  // Don't support traversal GC at this moment
-  return !ShenandoahHeap::heap()->is_traversal_mode();
-}
+class nmethod;
+class ShenandoahHeap;
 
-bool ShenandoahConcurrentRoots::should_do_concurrent_roots() {
-  return can_do_concurrent_roots() &&
-         !ShenandoahHeap::heap()->is_stw_gc_in_progress();
-}
+class ShenandoahBarrierSetNMethod : public BarrierSetNMethod {
+private:
+  ShenandoahHeap* _heap;
 
-bool ShenandoahConcurrentRoots::can_do_concurrent_class_unloading() {
-#if defined(X86) && !defined(SOLARIS)
-  return ShenandoahCodeRootsStyle == 2 &&
-         ClassUnloading &&
-         strcmp(ShenandoahGCMode, "traversal") != 0;
-#else
-  return false;
-#endif
-}
+protected:
+  virtual int disarmed_value() const;
+  virtual bool nmethod_entry_barrier(nmethod* nm);
 
-bool ShenandoahConcurrentRoots::should_do_concurrent_class_unloading() {
-  return can_do_concurrent_class_unloading() &&
-         !ShenandoahHeap::heap()->is_stw_gc_in_progress();
-}
+public:
+  ShenandoahBarrierSetNMethod(ShenandoahHeap* heap) : _heap(heap) {
+  }
+
+  virtual ByteSize thread_disarmed_offset() const;
+  virtual int* disarmed_value_address() const;
+};
+
+#endif // SHARE_GC_SHENANDOAH_SHENANDOAHBARRIERSETNMETHOD_HPP

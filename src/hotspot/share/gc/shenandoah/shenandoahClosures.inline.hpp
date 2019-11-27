@@ -23,9 +23,11 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHCLOSURES_INLINE_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHCLOSURES_INLINE_HPP
 
+#include "gc/shared/barrierSetNMethod.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahClosures.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
+#include "gc/shenandoah/shenandoahNMethod.inline.hpp"
 #include "gc/shenandoah/shenandoahTraversalGC.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "runtime/atomic.hpp"
@@ -155,6 +157,20 @@ void ShenandoahEvacUpdateOopStorageRootsClosure::do_oop(oop* p) {
 
 void ShenandoahEvacUpdateOopStorageRootsClosure::do_oop(narrowOop* p) {
   ShouldNotReachHere();
+}
+
+ShenandoahCodeBlobAndDisarmClosure::ShenandoahCodeBlobAndDisarmClosure(OopClosure* cl) :
+  CodeBlobToOopClosure(cl, true /* fix_relocations */),
+   _bs(BarrierSet::barrier_set()->barrier_set_nmethod()) {
+}
+
+void ShenandoahCodeBlobAndDisarmClosure::do_code_blob(CodeBlob* cb) {
+  nmethod* const nm = cb->as_nmethod_or_null();
+  if (nm != NULL && nm->oops_do_try_claim()) {
+    assert(!ShenandoahNMethod::gc_data(nm)->is_unregistered(), "Should not be here");
+    CodeBlobToOopClosure::do_code_blob(cb);
+    _bs->disarm(nm);
+  }
 }
 
 #ifdef ASSERT

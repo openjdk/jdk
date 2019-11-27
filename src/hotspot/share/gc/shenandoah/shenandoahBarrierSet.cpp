@@ -26,6 +26,7 @@
 #include "gc/shenandoah/shenandoahBarrierSet.hpp"
 #include "gc/shenandoah/shenandoahBarrierSetClone.inline.hpp"
 #include "gc/shenandoah/shenandoahBarrierSetAssembler.hpp"
+#include "gc/shenandoah/shenandoahBarrierSetNMethod.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahConcurrentRoots.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
@@ -43,11 +44,19 @@
 class ShenandoahBarrierSetC1;
 class ShenandoahBarrierSetC2;
 
+static BarrierSetNMethod* make_barrier_set_nmethod(ShenandoahHeap* heap) {
+  // NMethod barriers are only used when concurrent nmethod unloading is enabled
+  if (!ShenandoahConcurrentRoots::can_do_concurrent_class_unloading()) {
+    return NULL;
+  }
+  return new ShenandoahBarrierSetNMethod(heap);
+}
+
 ShenandoahBarrierSet::ShenandoahBarrierSet(ShenandoahHeap* heap) :
   BarrierSet(make_barrier_set_assembler<ShenandoahBarrierSetAssembler>(),
              make_barrier_set_c1<ShenandoahBarrierSetC1>(),
              make_barrier_set_c2<ShenandoahBarrierSetC2>(),
-             NULL /* barrier_set_nmethod */,
+             make_barrier_set_nmethod(heap),
              BarrierSet::FakeRtti(BarrierSet::ShenandoahBarrierSet)),
   _heap(heap),
   _satb_mark_queue_buffer_allocator("SATB Buffer Allocator", ShenandoahSATBBufferSize),

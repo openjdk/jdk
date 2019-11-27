@@ -21,32 +21,22 @@
  *
  */
 
-#include "precompiled.hpp"
+#ifndef SHARE_GC_SHENANDOAH_SHENANDOAHCLASSUNLOAD_HPP
+#define SHARE_GC_SHENANDOAH_SHENANDOAHCLASSUNLOAD_HPP
 
-#include "gc/shenandoah/shenandoahConcurrentRoots.hpp"
-#include "gc/shenandoah/shenandoahHeap.inline.hpp"
+#include "memory/allocation.hpp"
 
-bool ShenandoahConcurrentRoots::can_do_concurrent_roots() {
-  // Don't support traversal GC at this moment
-  return !ShenandoahHeap::heap()->is_traversal_mode();
-}
+class ShenandoahHeap;
 
-bool ShenandoahConcurrentRoots::should_do_concurrent_roots() {
-  return can_do_concurrent_roots() &&
-         !ShenandoahHeap::heap()->is_stw_gc_in_progress();
-}
+class ShenandoahUnload {
+public:
+  ShenandoahUnload();
+  void prepare();
+  void unload();
+  void finish();
+private:
+  void unlink();
+  void purge();
+};
 
-bool ShenandoahConcurrentRoots::can_do_concurrent_class_unloading() {
-#if defined(X86) && !defined(SOLARIS)
-  return ShenandoahCodeRootsStyle == 2 &&
-         ClassUnloading &&
-         strcmp(ShenandoahGCMode, "traversal") != 0;
-#else
-  return false;
-#endif
-}
-
-bool ShenandoahConcurrentRoots::should_do_concurrent_class_unloading() {
-  return can_do_concurrent_class_unloading() &&
-         !ShenandoahHeap::heap()->is_stw_gc_in_progress();
-}
+#endif // SHARE_GC_SHENANDOAH_SHENANDOAHCLASSUNLOAD_HPP

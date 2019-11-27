@@ -1009,6 +1009,13 @@ void ShenandoahVerifier::verify_roots_in_to_space() {
   verifier.oops_do(&cl);
 }
 
+void ShenandoahVerifier::verify_roots_in_to_space_except(ShenandoahRootVerifier::RootTypes types) {
+  ShenandoahRootVerifier verifier;
+  verifier.excludes(types);
+  ShenandoahVerifyInToSpaceClosure cl;
+  verifier.oops_do(&cl);
+}
+
 void ShenandoahVerifier::verify_roots_no_forwarded() {
   ShenandoahRootVerifier verifier;
   ShenandoahVerifyNoForwared cl;

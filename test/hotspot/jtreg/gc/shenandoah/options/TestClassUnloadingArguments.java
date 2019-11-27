@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2018, 2019, Red Hat, Inc. All rights reserved.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
@@ -81,7 +81,7 @@ public class TestClassUnloadingArguments {
 
     public static void testShenandoah() throws Exception {
         testWith("Shenandoah GC should have class unloading enabled",
-                true, false,
+                true, true,
                 "-XX:+UnlockExperimentalVMOptions",
                 "-XX:+UseShenandoahGC");
 

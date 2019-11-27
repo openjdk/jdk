@@ -372,6 +372,14 @@ inline bool ShenandoahHeap::is_update_refs_in_progress() const {
   return _gc_state.is_set(UPDATEREFS);
 }
 
+inline bool ShenandoahHeap::is_stw_gc_in_progress() const {
+  return is_full_gc_in_progress() || is_degenerated_gc_in_progress();
+}
+
+inline bool ShenandoahHeap::is_concurrent_root_in_progress() const {
+  return _concurrent_root_in_progress.is_set();
+}
+
 template<class T>
 inline void ShenandoahHeap::marked_object_iterate(ShenandoahHeapRegion* region, T* cl) {
   marked_object_iterate(region, cl, region->top());
