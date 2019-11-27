@@ -102,8 +102,11 @@ public:
   void prepare_for_scan_heap_roots();
   // Cleans the card table from temporary duplicate detection information.
   void cleanup_after_scan_heap_roots();
-  // Prepares the given region for heap root scanning.
-  void prepare_for_scan_heap_roots(uint region_idx);
+  // Excludes the given region from heap root scanning.
+  void exclude_region_from_scan(uint region_idx);
+  // Creates a snapshot of the current _top values at the start of collection to
+  // filter out card marks that we do not want to scan.
+  void prepare_region_for_scan(HeapRegion* region);
 
   // Do work for regions in the current increment of the collection set, scanning
   // non-card based (heap) roots.

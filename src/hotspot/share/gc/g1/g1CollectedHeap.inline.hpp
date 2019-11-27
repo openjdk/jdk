@@ -180,7 +180,7 @@ void G1CollectedHeap::register_region_with_region_attr(HeapRegion* r) {
 
 void G1CollectedHeap::register_old_region_with_region_attr(HeapRegion* r) {
   _region_attr.set_in_old(r->hrm_index(), r->rem_set()->is_tracked());
-  _rem_set->prepare_for_scan_heap_roots(r->hrm_index());
+  _rem_set->exclude_region_from_scan(r->hrm_index());
 }
 
 void G1CollectedHeap::register_optional_region_with_region_attr(HeapRegion* r) {
@@ -296,6 +296,10 @@ inline void G1CollectedHeap::set_humongous_reclaim_candidate(uint region, bool v
 inline bool G1CollectedHeap::is_humongous_reclaim_candidate(uint region) {
   assert(_hrm->at(region)->is_starts_humongous(), "Must start a humongous object");
   return _humongous_reclaim_candidates.is_candidate(region);
+}
+
+inline void G1CollectedHeap::set_has_humongous_reclaim_candidate(bool value) {
+  _has_humongous_reclaim_candidates = value;
 }
 
 inline void G1CollectedHeap::set_humongous_is_live(oop obj) {
