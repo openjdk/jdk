@@ -38,7 +38,7 @@
     // TODO: NSMenu *contextualMenu;
 
     // Keyboard layout
-    NSTextInputSourceIdentifier kbdLayout;
+    NSString *kbdLayout;
 
     // dnd support (see AppKit/NSDragging.h, NSDraggingSource/Destination):
     CDragSource *_dragSource;
