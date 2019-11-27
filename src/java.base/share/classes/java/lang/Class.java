@@ -3503,7 +3503,9 @@ public final class Class<T> implements java.io.Serializable,
      * Returns true if and only if this class was declared as an enum in the
      * source code.
      *
-     * Note that if an enum constant is declared with a class body,
+     * Note that {@link java.lang.Enum} is not itself an enum type.
+     *
+     * Also note that if an enum constant is declared with a class body,
      * the class of that enum constant object is an anonymous class
      * and <em>not</em> the class of the declaring enum type. The
      * {@link Enum#getDeclaringClass} method of an enum constant can
