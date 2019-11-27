@@ -790,11 +790,18 @@ public class ImageView extends View {
             appropriately.
             */
             if (getLoadsSynchronously()) {
-                Dimension d = adjustWidthHeight(image.getWidth(imageObserver),
-                                                image.getHeight(imageObserver));
-                newWidth = d.width;
-                newHeight = d.height;
-                newState |= (WIDTH_FLAG | HEIGHT_FLAG);
+                Image img;
+                synchronized(this) {
+                    img = image;
+                }
+                int w = img.getWidth(imageObserver);
+                int h = img.getHeight(imageObserver);
+                if (w > 0 && h > 0) {
+                    Dimension d = adjustWidthHeight(w, h);
+                    newWidth = d.width;
+                    newHeight = d.height;
+                    newState |= (WIDTH_FLAG | HEIGHT_FLAG);
+                }
             }
 
             // Make sure the image starts loading:
