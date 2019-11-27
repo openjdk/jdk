@@ -72,6 +72,11 @@ AC_DEFUN([FLAGS_SETUP_LDFLAGS_HELPER],
     # Add -z defs, to forbid undefined symbols in object files.
     # add relro (mark relocations read only) for all libs
     BASIC_LDFLAGS="$BASIC_LDFLAGS -Wl,-z,defs -Wl,-z,relro"
+    # s390x : remove unused code+data in link step
+    if test "x$OPENJDK_TARGET_CPU" = xs390x; then
+      BASIC_LDFLAGS="$BASIC_LDFLAGS -Wl,--gc-sections -Wl,--print-gc-sections"
+    fi
+
     BASIC_LDFLAGS_JVM_ONLY="-Wl,-O1"
 
   elif test "x$TOOLCHAIN_TYPE" = xclang; then
