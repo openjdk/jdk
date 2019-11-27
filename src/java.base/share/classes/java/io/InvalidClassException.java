@@ -33,6 +33,10 @@ package java.io;
  *      descriptor read from the stream
  * <LI> The class contains unknown datatypes
  * <LI> The class does not have an accessible no-arg constructor
+ * <LI> The ObjectStreamClass of an enum constant does not represent
+ *      an enum type
+ * <LI> Other conditions given in the <cite>Java Object Serialization
+ *      Specification</cite>
  * </UL>
  *
  * @author  unascribed
