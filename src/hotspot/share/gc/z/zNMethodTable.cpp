@@ -42,7 +42,6 @@
 #include "memory/allocation.hpp"
 #include "memory/iterator.hpp"
 #include "memory/resourceArea.hpp"
-#include "runtime/atomic.hpp"
 #include "utilities/debug.hpp"
 
 ZNMethodTableEntry* ZNMethodTable::_table = NULL;

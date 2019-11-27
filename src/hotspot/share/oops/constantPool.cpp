@@ -49,6 +49,7 @@
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/fieldType.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"

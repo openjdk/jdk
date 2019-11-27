@@ -30,7 +30,6 @@
 #include "gc/z/zOop.inline.hpp"
 #include "gc/z/zUtils.inline.hpp"
 #include "runtime/atomic.hpp"
-#include "runtime/orderAccess.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/debug.hpp"
 
