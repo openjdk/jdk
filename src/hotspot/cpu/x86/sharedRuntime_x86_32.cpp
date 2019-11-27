@@ -975,6 +975,9 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm
 
   address c2i_entry = __ pc();
 
+  BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
+  bs->c2i_entry_barrier(masm);
+
   gen_c2i_adapter(masm, total_args_passed, comp_args_on_stack, sig_bt, regs, skip_fixup);
 
   __ flush();
@@ -1886,6 +1889,10 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   // -2 because return address is already present and so is saved rbp
   __ subptr(rsp, stack_size - 2*wordSize);
 
+
+  BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
+  bs->nmethod_entry_barrier(masm);
+
   // Frame is now completed as far as size and linkage.
   int frame_complete = ((intptr_t)__ pc()) - start;
 
@@ -1921,12 +1928,12 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   // if we load it once it is usable thru the entire wrapper
   const Register thread = rdi;
 
-  // We use rsi as the oop handle for the receiver/klass
-  // It is callee save so it survives the call to native
+   // We use rsi as the oop handle for the receiver/klass
+   // It is callee save so it survives the call to native
 
-  const Register oop_handle_reg = rsi;
+   const Register oop_handle_reg = rsi;
 
-  __ get_thread(thread);
+   __ get_thread(thread);
 
   if (is_critical_native && !Universe::heap()->supports_object_pinning()) {
     check_needs_gc_for_critical_native(masm, thread, stack_slots, total_c_args, total_in_args,

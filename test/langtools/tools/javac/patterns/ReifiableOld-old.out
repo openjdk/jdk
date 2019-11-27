@@ -1,0 +1,7 @@
+ReifiableOld.java:12:37: compiler.err.illegal.generic.type.for.instof
+ReifiableOld.java:13:38: compiler.err.illegal.generic.type.for.instof
+ReifiableOld.java:14:38: compiler.err.illegal.generic.type.for.instof
+ReifiableOld.java:15:38: compiler.err.illegal.generic.type.for.instof
+ReifiableOld.java:15:39: compiler.err.not.within.bounds: java.lang.String, T
+ReifiableOld.java:16:39: compiler.err.illegal.generic.type.for.instof
+6 errors

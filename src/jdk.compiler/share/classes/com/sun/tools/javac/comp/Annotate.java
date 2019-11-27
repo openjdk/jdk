@@ -1122,6 +1122,13 @@ public class Annotate {
         }
 
         @Override
+        public void visitBindingPattern(JCTree.JCBindingPattern tree) {
+            //type binding pattern's type will be annotated separatelly, avoid
+            //adding its annotations into the owning method here (would clash
+            //with repeatable annotations).
+        }
+
+        @Override
         public void visitClassDef(JCClassDecl tree) {
             // We can only hit a classdef if it is declared within
             // a method. Ignore it - the class will be visited

@@ -190,20 +190,7 @@ AC_DEFUN([FLAGS_SETUP_WARNINGS],
       WARNINGS_ENABLE_ALL_CXXFLAGS="$WARNINGS_ENABLE_ALL_CFLAGS $WARNINGS_ENABLE_ADDITIONAL_CXX"
 
       DISABLED_WARNINGS="unused-parameter unused"
-
-      # Repeate the check for the BUILD_CC and BUILD_CXX. Need to also reset
-      # CFLAGS since any target specific flags will likely not work with the
-      # build compiler
-      CC_OLD="$CC"
-      CXX_OLD="$CXX"
-      CC="$BUILD_CC"
-      CXX="$BUILD_CXX"
-      CFLAGS_OLD="$CFLAGS"
-      CFLAGS=""
       BUILD_CC_DISABLE_WARNING_PREFIX="-Wno-"
-      CC="$CC_OLD"
-      CXX="$CXX_OLD"
-      CFLAGS="$CFLAGS_OLD"
       ;;
 
     clang)
@@ -420,6 +407,17 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS],
 
   FLAGS_SETUP_CFLAGS_CPU_DEP([TARGET])
 
+  # Repeat the check for the BUILD_CC and BUILD_CXX. Need to also reset CFLAGS
+  # since any target specific flags will likely not work with the build compiler.
+  CC_OLD="$CC"
+  CXX_OLD="$CXX"
+  CFLAGS_OLD="$CFLAGS"
+  CXXFLAGS_OLD="$CXXFLAGS"
+  CC="$BUILD_CC"
+  CXX="$BUILD_CXX"
+  CFLAGS=""
+  CXXFLAGS=""
+
   FLAGS_OS=$OPENJDK_BUILD_OS
   FLAGS_OS_TYPE=$OPENJDK_BUILD_OS_TYPE
   FLAGS_CPU=$OPENJDK_BUILD_CPU
@@ -430,6 +428,11 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS],
   FLAGS_CPU_LEGACY_LIB=$OPENJDK_BUILD_CPU_LEGACY_LIB
 
   FLAGS_SETUP_CFLAGS_CPU_DEP([BUILD], [OPENJDK_BUILD_], [BUILD_])
+
+  CC="$CC_OLD"
+  CXX="$CXX_OLD"
+  CFLAGS="$CFLAGS_OLD"
+  CXXFLAGS="$CXXFLAGS_OLD"
 ])
 
 ################################################################################
@@ -529,6 +532,11 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
   if test "x$TOOLCHAIN_TYPE" = xgcc; then
     TOOLCHAIN_CFLAGS_JVM="$TOOLCHAIN_CFLAGS_JVM -fcheck-new -fstack-protector"
     TOOLCHAIN_CFLAGS_JDK="-pipe -fstack-protector"
+    # reduce lib size on s390x in link step, this needs also special compile flags
+    if test "x$OPENJDK_TARGET_CPU" = xs390x; then
+      TOOLCHAIN_CFLAGS_JVM="$TOOLCHAIN_CFLAGS_JVM -ffunction-sections -fdata-sections"
+      TOOLCHAIN_CFLAGS_JDK="$TOOLCHAIN_CFLAGS_JDK -ffunction-sections -fdata-sections"
+    fi
     # technically NOT for CXX (but since this gives *worse* performance, use
     # no-strict-aliasing everywhere!)
     TOOLCHAIN_CFLAGS_JDK_CONLY="-fno-strict-aliasing"

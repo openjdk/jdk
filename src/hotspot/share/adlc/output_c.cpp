@@ -2781,6 +2781,8 @@ static void defineIn_RegMask(FILE *fp, FormDict &globals, OperandForm &oper) {
       // Return the sole RegMask.
       if (strcmp(first_reg_class, "stack_slots") == 0) {
         fprintf(fp,"  return &(Compile::current()->FIRST_STACK_mask());\n");
+      } else if (strcmp(first_reg_class, "dynamic") == 0) {
+        fprintf(fp,"  return &RegMask::Empty;\n");
       } else {
         const char* first_reg_class_to_upper = toUpper(first_reg_class);
         fprintf(fp,"  return &%s_mask();\n", first_reg_class_to_upper);

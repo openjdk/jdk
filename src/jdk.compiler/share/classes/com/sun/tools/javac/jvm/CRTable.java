@@ -473,7 +473,7 @@ implements CRTFlags {
         public void visitTypeTest(JCInstanceOf tree) {
             SourceRange sr = new SourceRange(startPos(tree), endPos(tree));
             sr.mergeWith(csp(tree.expr));
-            sr.mergeWith(csp(tree.clazz));
+            sr.mergeWith(csp(tree.pattern));
             result = sr;
         }
 

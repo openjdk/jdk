@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,8 @@ public class TestGetElementReferenceData {
         java.util.List< /*getElement:INTERFACE:java.util.List*/ String> l;
         utility/*getElement:METHOD:test.TestGetElementReferenceData.Base.utility()*/();
         target(TestGetElementReferenceData :: test/*getElement:METHOD:test.TestGetElementReferenceData.test()*/);
+        Object/*getElement:CLASS:java.lang.Object*/ o = null;
+        if (o/*getElement:LOCAL_VARIABLE:o*/ instanceof String/*getElement:CLASS:java.lang.String*/ str/*getElement:LOCAL_VARIABLE:str*/) ;
     }
     private static void target(Runnable r) { r.run(); }
     public static class Base {

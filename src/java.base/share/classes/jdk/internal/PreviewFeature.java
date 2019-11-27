@@ -54,6 +54,8 @@ public @interface PreviewFeature {
     public boolean essentialAPI() default false;
 
     public enum Feature {
-        TEXT_BLOCKS;
+        PATTERN_MATCHING_IN_INSTANCEOF,
+        TEXT_BLOCKS,
+        ;
     }
 }
