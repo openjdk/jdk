@@ -1494,25 +1494,7 @@ jobject getMulticastInterface(JNIEnv *env, jobject this, int fd, jint opt) {
         if (ni) {
             return ni;
         }
-
-        /*
-         * The address doesn't appear to be bound at any known
-         * NetworkInterface. Therefore we construct a NetworkInterface
-         * with this address.
-         */
-        ni = (*env)->NewObject(env, ni_class, ni_ctrID, 0);
-        CHECK_NULL_RETURN(ni, NULL);
-
-        (*env)->SetIntField(env, ni, ni_indexID, -1);
-        addrArray = (*env)->NewObjectArray(env, 1, inet4_class, NULL);
-        CHECK_NULL_RETURN(addrArray, NULL);
-        (*env)->SetObjectArrayElement(env, addrArray, 0, addr);
-        (*env)->SetObjectField(env, ni, ni_addrsID, addrArray);
-        ni_name = (*env)->NewStringUTF(env, "");
-        if (ni_name != NULL) {
-            (*env)->SetObjectField(env, ni, ni_nameID, ni_name);
-        }
-        return ni;
+        return NULL;
     }
 
 
@@ -1619,19 +1601,6 @@ jobject getMulticastInterface(JNIEnv *env, jobject this, int fd, jint opt) {
         if (opt == java_net_SocketOptions_IP_MULTICAST_IF) {
             return addr;
         }
-
-        ni = (*env)->NewObject(env, ni_class, ni_ctrID, 0);
-        CHECK_NULL_RETURN(ni, NULL);
-        (*env)->SetIntField(env, ni, ni_indexID, -1);
-        addrArray = (*env)->NewObjectArray(env, 1, ia_class, NULL);
-        CHECK_NULL_RETURN(addrArray, NULL);
-        (*env)->SetObjectArrayElement(env, addrArray, 0, addr);
-        (*env)->SetObjectField(env, ni, ni_addrsID, addrArray);
-        ni_name = (*env)->NewStringUTF(env, "");
-        if (ni_name != NULL) {
-            (*env)->SetObjectField(env, ni, ni_nameID, ni_name);
-        }
-        return ni;
     }
     return NULL;
 }
