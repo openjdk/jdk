@@ -209,7 +209,10 @@ public class TCPConnection implements Connection {
      * Close the connection.  */
     public void close() throws IOException
     {
-        TCPTransport.tcpLog.log(Log.BRIEF, "close connection");
+        if (TCPTransport.tcpLog.isLoggable(Log.BRIEF)) {
+            TCPTransport.tcpLog.log(Log.BRIEF,
+                    "close connection, socket: " + socket);
+        }
 
         if (socket != null)
             socket.close();
