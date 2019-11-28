@@ -414,15 +414,18 @@ void decode_env::process_options(outputStream* ost) {
   _bytes_per_line  = Disassembler::pd_instruction_alignment();
   _print_file_name = true;
 
-  if (_optionsParsed) return;  // parse only once
-
-  // parse the global option string:
+  // parse the global option string
+  // We need to fill the options buffer for each newly created
+  // decode_env instance. The hsdis_* library looks for options
+  // in that buffer.
   collect_options(Disassembler::pd_cpu_opts());
   collect_options(PrintAssemblyOptions);
 
   if (strstr(options(), "print-raw")) {
     _print_raw = (strstr(options(), "xml") ? 2 : 1);
   }
+
+  if (_optionsParsed) return;  // parse only once
 
   if (strstr(options(), "help")) {
     _print_help = true;
