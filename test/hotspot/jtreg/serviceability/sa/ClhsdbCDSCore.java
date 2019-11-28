@@ -111,8 +111,20 @@ public class ClhsdbCDSCore {
             if (coreFileLocation == null) {
                 if (Platform.isOSX()) {
                     File coresDir = new File("/cores");
-                    if (!coresDir.isDirectory() || !coresDir.canWrite()) {
-                        throw new Error("cores is not a directory or does not have write permissions");
+                    if (!coresDir.isDirectory()) {
+                        throw new Error("cores is not a directory");
+                    }
+                    // the /cores directory is usually not writable on macOS 10.15
+                    final String osVersion = System.getProperty("os.version");
+                    if (osVersion == null) {
+                        throw new Error("Cannot query the 'os.version' property!");
+                    }
+                    if (!coresDir.canWrite()) {
+                        if (osVersion.startsWith("10.15")) {
+                            throw new SkippedException("/cores is not writable");
+                        } else {
+                            throw new Error("cores does not have write permissions");
+                        }
                     }
                 } else if (Platform.isLinux()) {
                     // Check if a crash report tool is installed.
