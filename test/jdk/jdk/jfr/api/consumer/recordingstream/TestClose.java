@@ -25,11 +25,15 @@
 
 package jdk.jfr.api.consumer.recordingstream;
 
+import java.time.Instant;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 
 import jdk.jfr.Event;
+import jdk.jfr.Recording;
+import jdk.jfr.consumer.EventStream;
 import jdk.jfr.consumer.RecordingStream;
 
 /**
@@ -51,6 +55,7 @@ public class TestClose {
         testCloseTwice();
         testCloseStreaming();
         testCloseMySelf();
+        testCloseNoEvents();
     }
 
     private static void testCloseMySelf() throws Exception {
@@ -120,6 +125,26 @@ public class TestClose {
         r.close();
         r.close();
         log("Leaving testCloseTwice()");
+    }
+
+    private static void testCloseNoEvents() throws Exception {
+        try (Recording r = new Recording()) {
+            r.start();
+            CountDownLatch finished = new CountDownLatch(2);
+            AtomicReference<Thread> streamingThread = new AtomicReference<>();
+            try (EventStream es = EventStream.openRepository()) {
+                es.setStartTime(Instant.EPOCH);
+                es.onFlush( () -> {
+                    streamingThread.set(Thread.currentThread());
+                    finished.countDown();;
+                });
+                es.startAsync();
+                finished.await();
+            } // <- EventStream::close should terminate thread
+            while (streamingThread.get().isAlive()) {
+                Thread.sleep(10);
+            }
+        }
     }
 
     private static void log(String msg) {

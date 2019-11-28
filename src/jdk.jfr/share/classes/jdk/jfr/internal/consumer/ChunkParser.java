@@ -106,6 +106,7 @@ public final class ChunkParser {
 
     private Runnable flushOperation;
     private ParserConfiguration configuration;
+    private volatile boolean closed;
 
     public ChunkParser(RecordingInput input) throws IOException {
         this(input, new ParserConfiguration());
@@ -284,6 +285,9 @@ public final class ChunkParser {
             Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.INFO, "Waiting for more data (streaming). Read so far: " + chunkHeader.getChunkSize() + " bytes");
         }
         while (true) {
+            if (closed) {
+                return true;
+            }
             if (chunkHeader.getLastNanos() > filterEnd)  {
               return true;
             }
@@ -453,6 +457,11 @@ public final class ChunkParser {
 
     public boolean isFinalChunk() {
         return chunkHeader.isFinalChunk();
+    }
+
+    public void close() {
+        this.closed = true;
+        Utils.notifyFlush();
     }
 
 }
