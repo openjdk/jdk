@@ -532,6 +532,10 @@ bool SafepointSynchronize::is_cleanup_needed() {
   return false;
 }
 
+bool SafepointSynchronize::is_forced_cleanup_needed() {
+  return ObjectSynchronizer::needs_monitor_scavenge();
+}
+
 class ParallelSPCleanupThreadClosure : public ThreadClosure {
 private:
   CodeBlobClosure* _nmethod_cl;

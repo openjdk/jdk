@@ -524,10 +524,9 @@ void Thread::start(Thread* thread) {
   }
 }
 
-// Enqueue a VM_Operation to do the job for us - sometime later
 void Thread::send_async_exception(oop java_thread, oop java_throwable) {
-  VM_ThreadStop* vm_stop = new VM_ThreadStop(java_thread, java_throwable);
-  VMThread::execute(vm_stop);
+  VM_ThreadStop vm_stop(java_thread, java_throwable);
+  VMThread::execute(&vm_stop);
 }
 
 

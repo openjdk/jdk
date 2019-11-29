@@ -337,7 +337,6 @@ class JfrVMOperation : public VM_Operation {
   JfrVMOperation(Instance& instance) : _instance(instance) {}
   void doit() { (_instance.*func)(); }
   VMOp_Type type() const { return VMOp_JFRCheckpoint; }
-  Mode evaluation_mode() const { return _safepoint; } // default
 };
 
 JfrRecorderService::JfrRecorderService() :

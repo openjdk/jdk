@@ -529,8 +529,7 @@ struct SharedGlobals {
 };
 
 static SharedGlobals GVars;
-static int MonitorScavengeThreshold = 1000000;
-static volatile int ForceMonitorScavenge = 0; // Scavenge required and pending
+static int _forceMonitorScavenge = 0; // Scavenge required and pending
 
 static markWord read_stable_mark(oop obj) {
   markWord mark = obj->mark();
@@ -915,7 +914,17 @@ static bool monitors_used_above_threshold() {
 
 bool ObjectSynchronizer::is_cleanup_needed() {
   if (MonitorUsedDeflationThreshold > 0) {
-    return monitors_used_above_threshold();
+    if (monitors_used_above_threshold()) {
+      return true;
+    }
+  }
+  return needs_monitor_scavenge();
+}
+
+bool ObjectSynchronizer::needs_monitor_scavenge() {
+  if (Atomic::load(&_forceMonitorScavenge) == 1) {
+    log_info(monitorinflation)("Monitor scavenge needed, triggering safepoint cleanup.");
+    return true;
   }
   return false;
 }
@@ -983,8 +992,6 @@ void ObjectSynchronizer::list_oops_do(ObjectMonitor* list, OopClosure* f) {
 // we'll incur more safepoints, which are harmful to performance.
 // See also: GuaranteedSafepointInterval
 //
-// The current implementation uses asynchronous VM operations.
-//
 // If MonitorBound is set, the boundry applies to
 //     (g_om_population - g_om_free_count)
 // i.e., if there are not enough ObjectMonitors on the global free list,
@@ -994,16 +1001,12 @@ void ObjectSynchronizer::list_oops_do(ObjectMonitor* list, OopClosure* f) {
 static void InduceScavenge(Thread* self, const char * Whence) {
   // Induce STW safepoint to trim monitors
   // Ultimately, this results in a call to deflate_idle_monitors() in the near future.
-  // More precisely, trigger an asynchronous STW safepoint as the number
+  // More precisely, trigger a cleanup safepoint as the number
   // of active monitors passes the specified threshold.
   // TODO: assert thread state is reasonable
 
-  if (ForceMonitorScavenge == 0 && Atomic::xchg(&ForceMonitorScavenge, 1) == 0) {
-    // Induce a 'null' safepoint to scavenge monitors
-    // Must VM_Operation instance be heap allocated as the op will be enqueue and posted
-    // to the VMthread and have a lifespan longer than that of this activation record.
-    // The VMThread will delete the op when completed.
-    VMThread::execute(new VM_ScavengeMonitors());
+  if (Atomic::xchg (&_forceMonitorScavenge, 1) == 0) {
+    VMThread::check_for_forced_cleanup();
   }
 }
 
@@ -1681,7 +1684,7 @@ void ObjectSynchronizer::finish_deflate_idle_monitors(DeflateMonitorCounters* co
     Thread::muxRelease(&gListLock);
   }
 
-  ForceMonitorScavenge = 0;    // Reset
+  Atomic::store(&_forceMonitorScavenge, 0);    // Reset
 
   OM_PERFDATA_OP(Deflations, inc(counters->n_scavenged));
   OM_PERFDATA_OP(MonExtant, set_value(counters->n_in_circulation));

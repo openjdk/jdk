@@ -128,15 +128,8 @@
   template(GTestExecuteAtSafepoint)               \
   template(JFROldObject)                          \
 
-class VM_Operation: public CHeapObj<mtInternal> {
+class VM_Operation : public StackObj {
  public:
-  enum Mode {
-    _safepoint,       // blocking,        safepoint, vm_op C-heap allocated
-    _no_safepoint,    // blocking,     no safepoint, vm_op C-Heap allocated
-    _concurrent,      // non-blocking, no safepoint, vm_op C-Heap allocated
-    _async_safepoint  // non-blocking,    safepoint, vm_op C-Heap allocated
-  };
-
   enum VMOp_Type {
     VM_OPS_DO(VM_OP_ENUM)
     VMOp_Terminating
@@ -152,8 +145,7 @@ class VM_Operation: public CHeapObj<mtInternal> {
   static const char* _names[];
 
  public:
-  VM_Operation()  { _calling_thread = NULL; _next = NULL; _prev = NULL; }
-  virtual ~VM_Operation() {}
+  VM_Operation() : _calling_thread(NULL), _timestamp(0),  _next(NULL), _prev(NULL) {}
 
   // VM operation support (used by VM thread)
   Thread* calling_thread() const                 { return _calling_thread; }
@@ -174,10 +166,7 @@ class VM_Operation: public CHeapObj<mtInternal> {
   // completes. If doit_prologue() returns false the VM operation is cancelled.
   virtual void doit()                            = 0;
   virtual bool doit_prologue()                   { return true; };
-  virtual void doit_epilogue()                   {}; // Note: Not called if mode is: _concurrent
-
-  // Type test
-  virtual bool is_methodCompiler() const         { return false; }
+  virtual void doit_epilogue()                   {};
 
   // Linking
   VM_Operation *next() const                     { return _next; }
@@ -187,28 +176,12 @@ class VM_Operation: public CHeapObj<mtInternal> {
 
   // Configuration. Override these appropriately in subclasses.
   virtual VMOp_Type type() const = 0;
-  virtual Mode evaluation_mode() const            { return _safepoint; }
   virtual bool allow_nested_vm_operations() const { return false; }
-  virtual bool is_cheap_allocated() const         { return false; }
   virtual void oops_do(OopClosure* f)              { /* do nothing */ };
 
-  // CAUTION: <don't hang yourself with following rope>
-  // If you override these methods, make sure that the evaluation
-  // of these methods is race-free and non-blocking, since these
-  // methods may be evaluated either by the mutators or by the
-  // vm thread, either concurrently with mutators or with the mutators
-  // stopped. In other words, taking locks is verboten, and if there
-  // are any races in evaluating the conditions, they'd better be benign.
-  virtual bool evaluate_at_safepoint() const {
-    return evaluation_mode() == _safepoint  ||
-           evaluation_mode() == _async_safepoint;
-  }
-  virtual bool evaluate_concurrently() const {
-    return evaluation_mode() == _concurrent ||
-           evaluation_mode() == _async_safepoint;
-  }
-
-  static const char* mode_to_string(Mode mode);
+  // An operation can either be done inside a safepoint
+  // or concurrently with Java threads running.
+  virtual bool evaluate_at_safepoint() const { return true; }
 
   // Debugging
   virtual void print_on_error(outputStream* st) const;
@@ -254,8 +227,6 @@ class VM_ThreadStop: public VM_Operation {
   void doit();
   // We deoptimize if top-most frame is compiled - this might require a C2I adapter to be generated
   bool allow_nested_vm_operations() const        { return true; }
-  Mode evaluation_mode() const                   { return _async_safepoint; }
-  bool is_cheap_allocated() const                { return true; }
 
   // GC support
   void oops_do(OopClosure* f) {
@@ -295,14 +266,6 @@ class VM_ThreadsSuspendJVMTI: public VM_ForceSafepoint {
 class VM_ICBufferFull: public VM_ForceSafepoint {
  public:
   VMOp_Type type() const { return VMOp_ICBufferFull; }
-};
-
-// empty asynchronous vm op, when forcing a safepoint to scavenge monitors
-class VM_ScavengeMonitors: public VM_ForceSafepoint {
- public:
-  VMOp_Type type() const                         { return VMOp_ScavengeMonitors; }
-  Mode evaluation_mode() const                   { return _async_safepoint; }
-  bool is_cheap_allocated() const                { return true; }
 };
 
 // Base class for invoking parts of a gtest in a safepoint.
@@ -498,7 +461,6 @@ class VM_PrintCompileQueue: public VM_Operation {
  public:
   VM_PrintCompileQueue(outputStream* st) : _out(st) {}
   VMOp_Type type() const { return VMOp_PrintCompileQueue; }
-  Mode evaluation_mode() const { return _safepoint; }
   void doit();
 };
 

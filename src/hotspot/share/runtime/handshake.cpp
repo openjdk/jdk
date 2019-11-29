@@ -67,8 +67,6 @@ class VM_Handshake: public VM_Operation {
  public:
   bool evaluate_at_safepoint() const { return false; }
 
-  bool evaluate_concurrently() const { return false; }
-
  protected:
   HandshakeThreadsOperation* const _op;
 

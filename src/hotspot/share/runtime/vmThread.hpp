@@ -30,6 +30,11 @@
 #include "runtime/task.hpp"
 #include "runtime/vmOperations.hpp"
 
+class VM_QueueHead : public VM_None {
+ public:
+  VM_QueueHead() : VM_None("QueueHead") {}
+};
+
 //
 // Prioritized queue of VM operations.
 //
@@ -52,14 +57,15 @@ class VMOperationQueue : public CHeapObj<mtInternal> {
   // can scan them from oops_do
   VM_Operation* _drain_list;
 
+  static VM_QueueHead _queue_head[nof_priorities];
+
   // Double-linked non-empty list insert.
   void insert(VM_Operation* q,VM_Operation* n);
   void unlink(VM_Operation* q);
 
   // Basic queue manipulation
   bool queue_empty                (int prio);
-  void queue_add_front            (int prio, VM_Operation *op);
-  void queue_add_back             (int prio, VM_Operation *op);
+  void queue_add                  (int prio, VM_Operation *op);
   VM_Operation* queue_remove_front(int prio);
   void queue_oops_do(int queue, OopClosure* f);
   void drain_list_oops_do(OopClosure* f);
@@ -73,7 +79,6 @@ class VMOperationQueue : public CHeapObj<mtInternal> {
   // Highlevel operations. Encapsulates policy
   void add(VM_Operation *op);
   VM_Operation* remove_next();                        // Returns next or null
-  VM_Operation* remove_next_at_safepoint_priority()   { return queue_remove_front(SafepointPriority); }
   VM_Operation* drain_at_safepoint_priority() { return queue_drain(SafepointPriority); }
   void set_drain_list(VM_Operation* list) { _drain_list = list; }
   bool peek_at_safepoint_priority() { return queue_peek(SafepointPriority); }
@@ -139,10 +144,10 @@ class VMThread: public NamedThread {
 
   // Tester
   bool is_VM_thread() const                      { return true; }
-  bool is_GC_thread() const                      { return true; }
 
   // The ever running loop for the VMThread
   void loop();
+  static void check_for_forced_cleanup();
 
   // Called to stop the VM thread
   static void wait_for_vm_thread_exit();

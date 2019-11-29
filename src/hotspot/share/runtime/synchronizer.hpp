@@ -138,6 +138,7 @@ class ObjectSynchronizer : AllStatic {
                               ObjectMonitor** free_head_p,
                               ObjectMonitor** free_tail_p);
   static bool is_cleanup_needed();
+  static bool needs_monitor_scavenge();
   static void oops_do(OopClosure* f);
   // Process oops in thread local used monitors
   static void thread_local_used_oops_do(Thread* thread, OopClosure* f);
