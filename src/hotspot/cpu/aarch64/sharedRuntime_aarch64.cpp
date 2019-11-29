@@ -33,6 +33,7 @@
 #include "interpreter/interp_masm.hpp"
 #include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
+#include "nativeInst_aarch64.hpp"
 #include "oops/compiledICHolder.hpp"
 #include "oops/klass.inline.hpp"
 #include "runtime/safepointMechanism.hpp"
