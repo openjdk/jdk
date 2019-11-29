@@ -37,8 +37,10 @@ private:
   enum {
     None,            // not set yet
     ArrayCopy,       // System.arraycopy()
-    CloneBasic,      // A clone that can be copied by 64 bit chunks
-    CloneOopArray,   // An oop array clone
+    CloneInst,       // A clone of instances
+    CloneArray,      // A clone of arrays that don't require a barrier
+                     // - depends on GC - some need to treat oop arrays separately
+    CloneOopArray,   // An oop array clone that requires GC barriers
     CopyOf,          // Arrays.copyOf()
     CopyOfRange      // Arrays.copyOfRange()
   } _kind;
@@ -146,15 +148,21 @@ public:
 
   bool is_arraycopy()             const  { assert(_kind != None, "should bet set"); return _kind == ArrayCopy; }
   bool is_arraycopy_validated()   const  { assert(_kind != None, "should bet set"); return _kind == ArrayCopy && _arguments_validated; }
-  bool is_clonebasic()            const  { assert(_kind != None, "should bet set"); return _kind == CloneBasic; }
+  bool is_clone_inst()            const  { assert(_kind != None, "should bet set"); return _kind == CloneInst; }
+  // is_clone_array - true for all arrays when using GCs that has no barriers
+  bool is_clone_array()           const  { assert(_kind != None, "should bet set"); return _kind == CloneArray; }
+  // is_clone_oop_array is used when oop arrays need GC barriers
   bool is_clone_oop_array()       const  { assert(_kind != None, "should bet set"); return _kind == CloneOopArray; }
+  // is_clonebasic - is true for any type of clone that doesn't need a barrier.
+  bool is_clonebasic()            const  { assert(_kind != None, "should bet set"); return _kind == CloneInst || _kind == CloneArray; }
   bool is_copyof()                const  { assert(_kind != None, "should bet set"); return _kind == CopyOf; }
   bool is_copyof_validated()      const  { assert(_kind != None, "should bet set"); return _kind == CopyOf && _arguments_validated; }
   bool is_copyofrange()           const  { assert(_kind != None, "should bet set"); return _kind == CopyOfRange; }
   bool is_copyofrange_validated() const  { assert(_kind != None, "should bet set"); return _kind == CopyOfRange && _arguments_validated; }
 
   void set_arraycopy(bool validated)   { assert(_kind == None, "shouldn't bet set yet"); _kind = ArrayCopy; _arguments_validated = validated; }
-  void set_clonebasic()                { assert(_kind == None, "shouldn't bet set yet"); _kind = CloneBasic; }
+  void set_clone_inst()                { assert(_kind == None, "shouldn't bet set yet"); _kind = CloneInst; }
+  void set_clone_array()               { assert(_kind == None, "shouldn't bet set yet"); _kind = CloneArray; }
   void set_clone_oop_array()           { assert(_kind == None, "shouldn't bet set yet"); _kind = CloneOopArray; }
   void set_copyof(bool validated)      { assert(_kind == None, "shouldn't bet set yet"); _kind = CopyOf; _arguments_validated = validated; }
   void set_copyofrange(bool validated) { assert(_kind == None, "shouldn't bet set yet"); _kind = CopyOfRange; _arguments_validated = validated; }

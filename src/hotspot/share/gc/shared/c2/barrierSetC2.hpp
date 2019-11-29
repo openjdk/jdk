@@ -325,6 +325,8 @@ public:
   virtual void late_barrier_analysis() const { }
   virtual int estimate_stub_size() const { return 0; }
   virtual void emit_stubs(CodeBuffer& cb) const { }
+
+  static int arraycopy_payload_base_offset(bool is_array);
 };
 
 #endif // SHARE_GC_SHARED_C2_BARRIERSETC2_HPP

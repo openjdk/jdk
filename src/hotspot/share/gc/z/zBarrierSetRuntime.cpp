@@ -42,7 +42,7 @@ JRT_LEAF(void, ZBarrierSetRuntime::load_barrier_on_oop_array(oop* p, size_t leng
   ZBarrier::load_barrier_on_oop_array(p, length);
 JRT_END
 
-JRT_LEAF(void, ZBarrierSetRuntime::clone(oop src, oop dst, size_t size))
+JRT_LEAF(void, ZBarrierSetRuntime::clone(oopDesc* src, oopDesc* dst, size_t size))
   HeapAccess<>::clone(src, dst, size);
 JRT_END
 
