@@ -914,11 +914,7 @@ void G1Policy::print_phases() {
 double G1Policy::predict_yg_surv_rate(int age, SurvRateGroup* surv_rate_group) const {
   TruncatedSeq* seq = surv_rate_group->get_seq(age);
   guarantee(seq->num() > 0, "There should be some young gen survivor samples available. Tried to access with age %d", age);
-  double pred = _predictor.get_new_prediction(seq);
-  if (pred > 1.0) {
-    pred = 1.0;
-  }
-  return pred;
+  return _predictor.get_new_unit_prediction(seq);
 }
 
 double G1Policy::accum_yg_surv_rate_pred(int age) const {

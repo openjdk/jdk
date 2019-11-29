@@ -2588,7 +2588,8 @@ void G1CMTask::do_marking_step(double time_target_ms,
   // and do_marking_step() is not being called serially.
   bool do_stealing = do_termination && !is_serial;
 
-  double diff_prediction_ms = _g1h->policy()->predictor().get_new_prediction(&_marking_step_diff_ms);
+  G1Predictions const& predictor = _g1h->policy()->predictor();
+  double diff_prediction_ms = predictor.get_new_lower_zero_bound_prediction(&_marking_step_diff_ms);
   _time_target_ms = time_target_ms - diff_prediction_ms;
 
   // set up the variables that are used in the work-based scheme to

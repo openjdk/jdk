@@ -84,8 +84,9 @@ class G1Analytics: public CHeapObj<mtGC> {
   // The constant used is random but "small".
   bool enough_samples_available(TruncatedSeq const* seq) const;
 
-  double get_new_prediction(TruncatedSeq const* seq) const;
+  double get_new_unit_prediction(TruncatedSeq const* seq) const;
   size_t get_new_size_prediction(TruncatedSeq const* seq) const;
+  double get_new_lower_zero_bound_prediction(TruncatedSeq const* seq) const;
 
 public:
   G1Analytics(const G1Predictions* predictor);
