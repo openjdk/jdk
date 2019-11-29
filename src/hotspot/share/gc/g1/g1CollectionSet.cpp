@@ -278,19 +278,6 @@ void G1CollectionSet::add_young_region_common(HeapRegion* hr) {
   assert(hr->is_young(), "invariant");
   assert(_inc_build_state == Active, "Precondition");
 
-  size_t collection_set_length = _collection_set_cur_length;
-  // We use UINT_MAX as "invalid" marker in verification.
-  assert(collection_set_length < (UINT_MAX - 1),
-         "Collection set is too large with " SIZE_FORMAT " entries", collection_set_length);
-  hr->set_young_index_in_cset((uint)collection_set_length + 1);
-
-  _collection_set_regions[collection_set_length] = hr->hrm_index();
-  // Concurrent readers must observe the store of the value in the array before an
-  // update to the length field.
-  OrderAccess::storestore();
-  _collection_set_cur_length++;
-  assert(_collection_set_cur_length <= _collection_set_max_length, "Collection set larger than maximum allowed.");
-
   // This routine is used when:
   // * adding survivor regions to the incremental cset at the end of an
   //   evacuation pause or
@@ -325,6 +312,19 @@ void G1CollectionSet::add_young_region_common(HeapRegion* hr) {
 
   assert(!hr->in_collection_set(), "invariant");
   _g1h->register_young_region_with_region_attr(hr);
+
+  size_t collection_set_length = _collection_set_cur_length;
+  // We use UINT_MAX as "invalid" marker in verification.
+  assert(collection_set_length < (UINT_MAX - 1),
+         "Collection set is too large with " SIZE_FORMAT " entries", collection_set_length);
+  hr->set_young_index_in_cset((uint)collection_set_length + 1);
+
+  _collection_set_regions[collection_set_length] = hr->hrm_index();
+  // Concurrent readers must observe the store of the value in the array before an
+  // update to the length field.
+  OrderAccess::storestore();
+  _collection_set_cur_length++;
+  assert(_collection_set_cur_length <= _collection_set_max_length, "Collection set larger than maximum allowed.");
 }
 
 void G1CollectionSet::add_survivor_regions(HeapRegion* hr) {
