@@ -190,44 +190,40 @@ public final class ChunkParser {
      *
      * @param awaitNewEvents wait for new data.
      */
-    RecordedEvent readStreamingEvent(boolean awaitNewEvents) throws IOException {
+    RecordedEvent readStreamingEvent() throws IOException {
         long absoluteChunkEnd = chunkHeader.getEnd();
-        while (true) {
-            RecordedEvent event = readEvent();
-            if (event != null) {
-                return event;
-            }
-            if (!awaitNewEvents) {
-                return null;
-            }
-            long lastValid = absoluteChunkEnd;
-            long metadataPoistion = chunkHeader.getMetataPosition();
-            long contantPosition = chunkHeader.getConstantPoolPosition();
-            chunkFinished = awaitUpdatedHeader(absoluteChunkEnd, configuration.filterEnd);
-            if (chunkFinished) {
-                Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.INFO, "At chunk end");
-                return null;
-            }
-            absoluteChunkEnd = chunkHeader.getEnd();
-            // Read metadata and constant pools for the next segment
-            if (chunkHeader.getMetataPosition() != metadataPoistion) {
-                Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.INFO, "Found new metadata in chunk. Rebuilding types and parsers");
-                MetadataDescriptor metadata = chunkHeader.readMetadata(previousMetadata);
-                ParserFactory factory = new ParserFactory(metadata, constantLookups, timeConverter);
-                parsers = factory.getParsers();
-                typeMap = factory.getTypeMap();
-                updateConfiguration();;
-            }
-            if (contantPosition != chunkHeader.getConstantPoolPosition()) {
-                Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.INFO, "Found new constant pool data. Filling up pools with new values");
-                constantLookups.forEach(c -> c.getLatestPool().setAllResolved(false));
-                fillConstantPools(contantPosition + chunkHeader.getAbsoluteChunkStart());
-                constantLookups.forEach(c -> c.getLatestPool().setResolving());
-                constantLookups.forEach(c -> c.getLatestPool().resolve());
-                constantLookups.forEach(c -> c.getLatestPool().setResolved());
-            }
-            input.position(lastValid);
+        RecordedEvent event = readEvent();
+        if (event != null) {
+            return event;
         }
+        long lastValid = absoluteChunkEnd;
+        long metadataPosition = chunkHeader.getMetataPosition();
+        long contantPosition = chunkHeader.getConstantPoolPosition();
+        chunkFinished = awaitUpdatedHeader(absoluteChunkEnd, configuration.filterEnd);
+        if (chunkFinished) {
+            Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.INFO, "At chunk end");
+            return null;
+        }
+        absoluteChunkEnd = chunkHeader.getEnd();
+        // Read metadata and constant pools for the next segment
+        if (chunkHeader.getMetataPosition() != metadataPosition) {
+            Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.INFO, "Found new metadata in chunk. Rebuilding types and parsers");
+            MetadataDescriptor metadata = chunkHeader.readMetadata(previousMetadata);
+            ParserFactory factory = new ParserFactory(metadata, constantLookups, timeConverter);
+            parsers = factory.getParsers();
+            typeMap = factory.getTypeMap();
+            updateConfiguration();
+        }
+        if (contantPosition != chunkHeader.getConstantPoolPosition()) {
+            Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.INFO, "Found new constant pool data. Filling up pools with new values");
+            constantLookups.forEach(c -> c.getLatestPool().setAllResolved(false));
+            fillConstantPools(contantPosition + chunkHeader.getAbsoluteChunkStart());
+            constantLookups.forEach(c -> c.getLatestPool().setResolving());
+            constantLookups.forEach(c -> c.getLatestPool().resolve());
+            constantLookups.forEach(c -> c.getLatestPool().setResolved());
+        }
+        input.position(lastValid);
+        return null;
     }
 
     /**
