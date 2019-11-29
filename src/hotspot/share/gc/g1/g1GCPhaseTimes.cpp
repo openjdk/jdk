@@ -72,6 +72,8 @@ G1GCPhaseTimes::G1GCPhaseTimes(STWGCTimer* gc_timer, uint max_gc_threads) :
   _gc_par_phases[MergeRS]->link_thread_work_items(_merge_rs_merged_fine, MergeRSMergedFine);
   _merge_rs_merged_coarse = new WorkerDataArray<size_t>(max_gc_threads, "Merged Coarse:");
   _gc_par_phases[MergeRS]->link_thread_work_items(_merge_rs_merged_coarse, MergeRSMergedCoarse);
+  _merge_rs_dirty_cards = new WorkerDataArray<size_t>(max_gc_threads, "Dirty Cards:");
+  _gc_par_phases[MergeRS]->link_thread_work_items(_merge_rs_dirty_cards, MergeRSDirtyCards);
 
   _gc_par_phases[OptMergeRS] = new WorkerDataArray<double>(max_gc_threads, "Optional Remembered Sets (ms):");
   _opt_merge_rs_merged_sparse = new WorkerDataArray<size_t>(max_gc_threads, "Merged Sparse:");
@@ -80,6 +82,8 @@ G1GCPhaseTimes::G1GCPhaseTimes(STWGCTimer* gc_timer, uint max_gc_threads) :
   _gc_par_phases[OptMergeRS]->link_thread_work_items(_opt_merge_rs_merged_fine, MergeRSMergedFine);
   _opt_merge_rs_merged_coarse = new WorkerDataArray<size_t>(max_gc_threads, "Merged Coarse:");
   _gc_par_phases[OptMergeRS]->link_thread_work_items(_opt_merge_rs_merged_coarse, MergeRSMergedCoarse);
+  _opt_merge_rs_dirty_cards = new WorkerDataArray<size_t>(max_gc_threads, "Dirty Cards:");
+  _gc_par_phases[OptMergeRS]->link_thread_work_items(_opt_merge_rs_dirty_cards, MergeRSDirtyCards);
 
   _gc_par_phases[MergeLB] = new WorkerDataArray<double>(max_gc_threads, "Log Buffers (ms):");
   if (G1HotCardCache::default_use_cache()) {
@@ -304,10 +308,16 @@ size_t G1GCPhaseTimes::get_thread_work_item(GCParPhases phase, uint worker_id, u
 
 // return the average time for a phase in milliseconds
 double G1GCPhaseTimes::average_time_ms(GCParPhases phase) {
+  if (_gc_par_phases[phase] == NULL) {
+    return 0.0;
+  }
   return _gc_par_phases[phase]->average() * 1000.0;
 }
 
 size_t G1GCPhaseTimes::sum_thread_work_items(GCParPhases phase, uint index) {
+  if (_gc_par_phases[phase] == NULL) {
+    return 0;
+  }
   assert(_gc_par_phases[phase]->thread_work_items(index) != NULL, "No sub count");
   return _gc_par_phases[phase]->thread_work_items(index)->sum();
 }

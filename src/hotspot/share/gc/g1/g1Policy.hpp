@@ -140,9 +140,9 @@ public:
     _rs_length = rs_length;
   }
 
-  double predict_base_elapsed_time_ms(size_t pending_cards) const;
-  double predict_base_elapsed_time_ms(size_t pending_cards,
-                                      size_t scanned_cards) const;
+  double predict_base_elapsed_time_ms(size_t num_pending_cards) const;
+  double predict_base_elapsed_time_ms(size_t num_pending_cards,
+                                      size_t rs_length) const;
   size_t predict_bytes_to_copy(HeapRegion* hr) const;
   double predict_region_elapsed_time_ms(HeapRegion* hr, bool for_young_gc) const;
 

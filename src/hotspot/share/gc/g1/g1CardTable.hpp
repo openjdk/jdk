@@ -92,12 +92,16 @@ public:
     return pointer_delta(p, _byte_map, sizeof(CardValue));
   }
 
-  // Mark the given card as Dirty if it is Clean.
-  inline void mark_clean_as_dirty(size_t card_index);
+  // Mark the given card as Dirty if it is Clean. Returns the number of dirtied
+  // cards that were not yet dirty. This result may be inaccurate as it does not
+  // perform the dirtying atomically.
+  inline size_t mark_clean_as_dirty(size_t card_index);
 
   // Change Clean cards in a (large) area on the card table as Dirty, preserving
   // already scanned cards. Assumes that most cards in that area are Clean.
-  inline void mark_region_dirty(size_t start_card_index, size_t num_cards);
+  // Returns the number of dirtied cards that were not yet dirty. This result may
+  // be inaccurate as it does not perform the dirtying atomically.
+  inline size_t mark_region_dirty(size_t start_card_index, size_t num_cards);
 
   // Mark the given range of cards as Scanned. All of these cards must be Dirty.
   inline void mark_as_scanned(size_t start_card_index, size_t num_cards);

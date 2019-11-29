@@ -88,7 +88,8 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
   enum GCMergeRSWorkTimes {
     MergeRSMergedSparse,
     MergeRSMergedFine,
-    MergeRSMergedCoarse
+    MergeRSMergedCoarse,
+    MergeRSDirtyCards
   };
 
   enum GCScanHRWorkItems {
@@ -124,6 +125,7 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
   WorkerDataArray<size_t>* _merge_rs_merged_sparse;
   WorkerDataArray<size_t>* _merge_rs_merged_fine;
   WorkerDataArray<size_t>* _merge_rs_merged_coarse;
+  WorkerDataArray<size_t>* _merge_rs_dirty_cards;
 
   WorkerDataArray<size_t>* _merge_hcc_dirty_cards;
   WorkerDataArray<size_t>* _merge_hcc_skipped_cards;
@@ -138,6 +140,7 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
   WorkerDataArray<size_t>* _opt_merge_rs_merged_sparse;
   WorkerDataArray<size_t>* _opt_merge_rs_merged_fine;
   WorkerDataArray<size_t>* _opt_merge_rs_merged_coarse;
+  WorkerDataArray<size_t>* _opt_merge_rs_dirty_cards;
 
   WorkerDataArray<size_t>* _opt_scan_hr_scanned_cards;
   WorkerDataArray<size_t>* _opt_scan_hr_scanned_blocks;

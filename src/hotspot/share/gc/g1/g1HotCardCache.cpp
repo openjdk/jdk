@@ -32,7 +32,7 @@
 G1HotCardCache::G1HotCardCache(G1CollectedHeap *g1h):
   _g1h(g1h), _use_cache(false), _card_counts(g1h),
   _hot_cache(NULL), _hot_cache_size(0), _hot_cache_par_chunk_size(0),
-  _hot_cache_idx(0), _hot_cache_par_claimed_idx(0)
+  _hot_cache_idx(0), _hot_cache_par_claimed_idx(0), _cache_wrapped_around(false)
 {}
 
 void G1HotCardCache::initialize(G1RegionToSpaceMapper* card_counts_storage) {
@@ -47,6 +47,8 @@ void G1HotCardCache::initialize(G1RegionToSpaceMapper* card_counts_storage) {
     // For refining the cards in the hot cache in parallel
     _hot_cache_par_chunk_size = ClaimChunkSize;
     _hot_cache_par_claimed_idx = 0;
+
+    _cache_wrapped_around = false;
 
     _card_counts.initialize(card_counts_storage);
   }
@@ -69,6 +71,11 @@ CardTable::CardValue* G1HotCardCache::insert(CardValue* card_ptr) {
   }
   // Otherwise, the card is hot.
   size_t index = Atomic::add(&_hot_cache_idx, 1u) - 1;
+  if (index == _hot_cache_size) {
+    // Can use relaxed store because all racing threads are writing the same
+    // value and there aren't any concurrent readers.
+    Atomic::store(&_cache_wrapped_around, true);
+  }
   size_t masked_index = index & (_hot_cache_size - 1);
   CardValue* current_ptr = _hot_cache[masked_index];
 
