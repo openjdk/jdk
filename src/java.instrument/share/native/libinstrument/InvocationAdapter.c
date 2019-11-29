@@ -710,6 +710,10 @@ char *decodePath(const char *s, int* decodedLen) {
     }
 
     resultp = result = calloc(n+1, 1);
+    if (result == NULL) {
+        *decodedLen = 0;
+        return NULL;
+    }
     c = s[0];
     for (i = 0; i < n;) {
         if (c != '%') {
