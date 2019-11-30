@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,51 +23,16 @@
  * questions.
  */
 
-#include "jni.h"
-#include "jni_util.h"
-#include "jvm.h"
-#include "jlong.h"
-#include <io.h>
-#include "sun_nio_ch_DatagramChannelImpl.h"
-#include "nio.h"
-#include "nio_util.h"
-#include "net_util.h"
 #include <winsock2.h>
 
-static jfieldID dci_senderID;   /* sender in sun.nio.ch.DatagramChannelImpl */
-static jfieldID dci_senderAddrID; /* sender InetAddress in sun.nio.ch.DatagramChannelImpl */
-static jfieldID dci_senderPortID; /* sender port in sun.nio.ch.DatagramChannelImpl */
-static jclass isa_class;        /* java.net.InetSocketAddress */
-static jmethodID isa_ctorID;    /* java.net.InetSocketAddress(InetAddress, int) */
+#include "jni.h"
+#include "jni_util.h"
+#include "jlong.h"
+#include "net_util.h"
+#include "nio.h"
+#include "nio_util.h"
 
-
-JNIEXPORT void JNICALL
-Java_sun_nio_ch_DatagramChannelImpl_initIDs(JNIEnv *env, jclass clazz)
-{
-    clazz = (*env)->FindClass(env, "java/net/InetSocketAddress");
-    CHECK_NULL(clazz);
-    isa_class = (*env)->NewGlobalRef(env, clazz);
-    if (isa_class == NULL) {
-        JNU_ThrowOutOfMemoryError(env, NULL);
-        return;
-    }
-    isa_ctorID = (*env)->GetMethodID(env, clazz, "<init>",
-                                     "(Ljava/net/InetAddress;I)V");
-    CHECK_NULL(isa_ctorID);
-
-    clazz = (*env)->FindClass(env, "sun/nio/ch/DatagramChannelImpl");
-    CHECK_NULL(clazz);
-    dci_senderID = (*env)->GetFieldID(env, clazz, "sender",
-                                      "Ljava/net/SocketAddress;");
-    CHECK_NULL(dci_senderID);
-    dci_senderAddrID = (*env)->GetFieldID(env, clazz,
-                                          "cachedSenderInetAddress",
-                                          "Ljava/net/InetAddress;");
-    CHECK_NULL(dci_senderAddrID);
-    dci_senderPortID = (*env)->GetFieldID(env, clazz,
-                                          "cachedSenderPort", "I");
-    CHECK_NULL(dci_senderPortID);
-}
+#include "sun_nio_ch_DatagramChannelImpl.h"
 
 /*
  * This function "purges" all outstanding ICMP port unreachable packets
@@ -112,7 +77,7 @@ jboolean purgeOutstandingICMP(JNIEnv *env, jclass clazz, jint fd)
 }
 
 JNIEXPORT void JNICALL
-Java_sun_nio_ch_DatagramChannelImpl_disconnect0(JNIEnv *env, jobject this,
+Java_sun_nio_ch_DatagramChannelImpl_disconnect0(JNIEnv *env, jclass clazz,
                                                 jobject fdo, jboolean isIPv6)
 {
     jint fd = fdval(env, fdo);
@@ -135,17 +100,17 @@ Java_sun_nio_ch_DatagramChannelImpl_disconnect0(JNIEnv *env, jobject this,
 }
 
 JNIEXPORT jint JNICALL
-Java_sun_nio_ch_DatagramChannelImpl_receive0(JNIEnv *env, jobject this,
-                                            jobject fdo, jlong address,
-                                            jint len, jboolean connected)
+Java_sun_nio_ch_DatagramChannelImpl_receive0(JNIEnv *env, jclass clazz,
+                                             jobject fdo, jlong bufAddress,
+                                             jint len, jlong senderAddress,
+                                             jboolean connected)
 {
     jint fd = fdval(env, fdo);
-    void *buf = (void *)jlong_to_ptr(address);
-    SOCKETADDRESS sa;
-    int sa_len = sizeof(sa);
+    void *buf = (void *)jlong_to_ptr(bufAddress);
+    SOCKETADDRESS *sa = (SOCKETADDRESS *)jlong_to_ptr(senderAddress);
+    int sa_len = sizeof(SOCKETADDRESS);
     BOOL retry = FALSE;
     jint n;
-    jobject senderAddr;
 
     do {
         retry = FALSE;
@@ -153,7 +118,7 @@ Java_sun_nio_ch_DatagramChannelImpl_receive0(JNIEnv *env, jobject this,
                      (char *)buf,
                      len,
                      0,
-                     &sa.sa,
+                     (struct sockaddr *)sa,
                      &sa_len);
 
         if (n == SOCKET_ERROR) {
@@ -162,7 +127,7 @@ Java_sun_nio_ch_DatagramChannelImpl_receive0(JNIEnv *env, jobject this,
                 /* Spec says the rest of the data will be discarded... */
                 n = len;
             } else if (theErr == WSAECONNRESET) {
-                purgeOutstandingICMP(env, this, fd);
+                purgeOutstandingICMP(env, clazz, fd);
                 if (connected == JNI_FALSE) {
                     retry = TRUE;
                 } else {
@@ -175,42 +140,11 @@ Java_sun_nio_ch_DatagramChannelImpl_receive0(JNIEnv *env, jobject this,
         }
     } while (retry);
 
-    /*
-     * If the source address and port match the cached address
-     * and port in DatagramChannelImpl then we don't need to
-     * create InetAddress and InetSocketAddress objects.
-     */
-    senderAddr = (*env)->GetObjectField(env, this, dci_senderAddrID);
-    if (senderAddr != NULL) {
-        if (!NET_SockaddrEqualsInetAddress(env, &sa, senderAddr)) {
-            senderAddr = NULL;
-        } else {
-            jint port = (*env)->GetIntField(env, this, dci_senderPortID);
-            if (port != NET_GetPortFromSockaddr(&sa)) {
-                senderAddr = NULL;
-            }
-        }
-    }
-    if (senderAddr == NULL) {
-        jobject isa = NULL;
-        int port;
-        jobject ia = NET_SockaddrToInetAddress(env, &sa, &port);
-        if (ia != NULL) {
-            isa = (*env)->NewObject(env, isa_class, isa_ctorID, ia, port);
-        }
-        CHECK_NULL_RETURN(isa, IOS_THROWN);
-
-        // update cachedSenderInetAddress/cachedSenderPort
-        (*env)->SetObjectField(env, this, dci_senderAddrID, ia);
-        (*env)->SetIntField(env, this, dci_senderPortID,
-                            NET_GetPortFromSockaddr(&sa));
-        (*env)->SetObjectField(env, this, dci_senderID, isa);
-    }
     return n;
 }
 
 JNIEXPORT jint JNICALL
-Java_sun_nio_ch_DatagramChannelImpl_send0(JNIEnv *env, jobject this,
+Java_sun_nio_ch_DatagramChannelImpl_send0(JNIEnv *env, jclass clazz,
                                           jboolean preferIPv6, jobject fdo,
                                           jlong address, jint len,
                                           jobject destAddress, jint destPort)
