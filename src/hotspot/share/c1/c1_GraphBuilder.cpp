@@ -3793,7 +3793,7 @@ bool GraphBuilder::try_inline_full(ciMethod* callee, bool holder_known, bool ign
       INLINE_BAILOUT("total inlining greater than DesiredMethodLimit");
     }
     // printing
-    print_inlining(callee);
+    print_inlining(callee, "inline", /*success*/ true);
   }
 
   // NOTE: Bailouts from this point on, which occur at the
@@ -4315,16 +4315,11 @@ static void post_inlining_event(EventCompilerInlining* event,
 void GraphBuilder::print_inlining(ciMethod* callee, const char* msg, bool success) {
   CompileLog* log = compilation()->log();
   if (log != NULL) {
+    assert(msg != NULL, "inlining msg should not be null!");
     if (success) {
-      if (msg != NULL)
-        log->inline_success(msg);
-      else
-        log->inline_success("receiver is statically known");
+      log->inline_success(msg);
     } else {
-      if (msg != NULL)
-        log->inline_fail(msg);
-      else
-        log->inline_fail("reason unknown");
+      log->inline_fail(msg);
     }
   }
   EventCompilerInlining event;
