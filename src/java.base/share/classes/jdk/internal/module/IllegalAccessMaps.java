@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@
  */
 package jdk.internal.module;
 
+import sun.nio.cs.UTF_8;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -36,8 +38,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-
-import static java.nio.charset.StandardCharsets.*;
 
 /**
  * Generates the maps of concealed and exported packages to open at run-time.
@@ -90,7 +90,9 @@ public class IllegalAccessMaps {
         if (in == null) {
             throw new InternalError(rn + " not found");
         }
-        try (BufferedReader br = new BufferedReader(new InputStreamReader(in, UTF_8))) {
+        try (BufferedReader br = new BufferedReader(
+                new InputStreamReader(in, UTF_8.INSTANCE)))
+        {
             br.lines()
                 .filter(line -> !line.isEmpty() && !line.startsWith("#"))
                 .forEach(pn -> {

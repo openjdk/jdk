@@ -45,6 +45,8 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import sun.nio.cs.UTF_8;
+
 import jdk.internal.loader.BootLoader;
 import jdk.internal.loader.ClassLoaders;
 import jdk.internal.access.JavaLangAccess;
@@ -54,7 +56,6 @@ import jdk.internal.module.ServicesCatalog;
 import jdk.internal.module.ServicesCatalog.ServiceProvider;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
-
 
 /**
  * A facility to load implementations of a service.
@@ -1164,7 +1165,7 @@ public final class ServiceLoader<S>
                 uc.setUseCaches(false);
                 try (InputStream in = uc.getInputStream();
                      BufferedReader r
-                         = new BufferedReader(new InputStreamReader(in, "utf-8")))
+                         = new BufferedReader(new InputStreamReader(in, UTF_8.INSTANCE)))
                 {
                     int lc = 1;
                     while ((lc = parseLine(u, r, lc, names)) >= 0);

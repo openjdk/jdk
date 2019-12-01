@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,10 @@
  */
 package java.nio.file;
 
+import sun.nio.cs.ISO_8859_1;
+import sun.nio.cs.UTF_8;
+import sun.nio.cs.US_ASCII;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -32,7 +36,6 @@ import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.Spliterator;
@@ -66,9 +69,9 @@ final class FileChannelLinesSpliterator implements Spliterator<String> {
     static final Set<String> SUPPORTED_CHARSET_NAMES;
     static {
         SUPPORTED_CHARSET_NAMES = new HashSet<>();
-        SUPPORTED_CHARSET_NAMES.add(StandardCharsets.UTF_8.name());
-        SUPPORTED_CHARSET_NAMES.add(StandardCharsets.ISO_8859_1.name());
-        SUPPORTED_CHARSET_NAMES.add(StandardCharsets.US_ASCII.name());
+        SUPPORTED_CHARSET_NAMES.add(UTF_8.INSTANCE.name());
+        SUPPORTED_CHARSET_NAMES.add(ISO_8859_1.INSTANCE.name());
+        SUPPORTED_CHARSET_NAMES.add(US_ASCII.INSTANCE.name());
     }
 
     private final FileChannel fc;

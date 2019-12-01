@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,8 @@ import javax.sql.rowset.serial.*;
 import com.sun.rowset.internal.*;
 import com.sun.rowset.providers.*;
 import sun.reflect.misc.ReflectUtil;
+
+import static java.nio.charset.StandardCharsets.US_ASCII;
 
 /**
  * The standard implementation of the <code>CachedRowSet</code> interface.
@@ -2348,14 +2350,10 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
             return null;
         }
 
-        try {
-            if (isString(RowSetMD.getColumnType(columnIndex))) {
-                asciiStream = new ByteArrayInputStream(((String)value).getBytes("ASCII"));
-            } else {
-                throw new SQLException(resBundle.handleGetObject("cachedrowsetimpl.dtypemismt").toString());
-            }
-        } catch (java.io.UnsupportedEncodingException ex) {
-            throw new SQLException(ex.getMessage());
+        if (isString(RowSetMD.getColumnType(columnIndex))) {
+            asciiStream = new ByteArrayInputStream(((String)value).getBytes(US_ASCII));
+        } else {
+            throw new SQLException(resBundle.handleGetObject("cachedrowsetimpl.dtypemismt").toString());
         }
 
         return asciiStream;

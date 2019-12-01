@@ -44,8 +44,8 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.IOException;
 import java.nio.charset.MalformedInputException;
-import java.nio.charset.StandardCharsets;
 import java.nio.charset.UnmappableCharacterException;
+import sun.nio.cs.ISO_8859_1;
 import sun.security.action.GetPropertyAction;
 import sun.util.PropertyResourceBundleCharset;
 import sun.util.ResourceBundleEnumeration;
@@ -176,7 +176,7 @@ public class PropertyResourceBundle extends ResourceBundle {
     public PropertyResourceBundle (InputStream stream) throws IOException {
         this(new InputStreamReader(stream,
             "ISO-8859-1".equals(encoding) ?
-                StandardCharsets.ISO_8859_1.newDecoder() :
+                ISO_8859_1.INSTANCE.newDecoder() :
                 new PropertyResourceBundleCharset("UTF-8".equals(encoding)).newDecoder()));
     }
 

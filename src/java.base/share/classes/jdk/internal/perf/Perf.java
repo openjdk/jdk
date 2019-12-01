@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,9 @@ import java.nio.ByteBuffer;
 import java.security.Permission;
 import java.security.PrivilegedAction;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
+
+import sun.nio.cs.UTF_8;
+
 import jdk.internal.ref.CleanerFactory;
 
 /**
@@ -413,7 +415,7 @@ public final class Perf {
     public ByteBuffer createString(String name, int variability,
                                    int units, String value, int maxLength)
     {
-        byte[] v = getBytes(value);
+        byte[] v = value.getBytes(UTF_8.INSTANCE);
         byte[] v1 = new byte[v.length+1];
         System.arraycopy(v, 0, v1, 0, v.length);
         v1[v.length] = '\0';
@@ -452,7 +454,7 @@ public final class Perf {
     public ByteBuffer createString(String name, int variability,
                                    int units, String value)
     {
-        byte[] v = getBytes(value);
+        byte[] v = value.getBytes(UTF_8.INSTANCE);
         byte[] v1 = new byte[v.length+1];
         System.arraycopy(v, 0, v1, 0, v.length);
         v1[v.length] = '\0';
@@ -490,24 +492,6 @@ public final class Perf {
     public native ByteBuffer createByteArray(String name, int variability,
                                              int units, byte[] value,
                                              int maxLength);
-
-
-    /**
-     * convert string to an array of UTF-8 bytes
-     */
-    private static byte[] getBytes(String s)
-    {
-        byte[] bytes = null;
-
-        try {
-            bytes = s.getBytes("UTF-8");
-        }
-        catch (UnsupportedEncodingException e) {
-            // ignore, UTF-8 encoding is always known
-        }
-
-        return bytes;
-    }
 
     /**
      * Return the value of the High Resolution Counter.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,18 +26,19 @@
 package sun.net.www;
 
 import java.io.File;
-import java.net.URL;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.CharacterCodingException;
-
-import sun.nio.cs.ThreadLocalCoders;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CoderResult;
 import java.nio.charset.CodingErrorAction;
+
+import sun.nio.cs.ThreadLocalCoders;
+import sun.nio.cs.UTF_8;
 
 /**
  * A class that contains useful routines common to sun.net.www
@@ -176,7 +177,7 @@ public final class ParseUtil {
         StringBuilder sb = new StringBuilder(n);
         ByteBuffer bb = ByteBuffer.allocate(n);
         CharBuffer cb = CharBuffer.allocate(n);
-        CharsetDecoder dec = ThreadLocalCoders.decoderFor("UTF-8")
+        CharsetDecoder dec = ThreadLocalCoders.decoderFor(UTF_8.INSTANCE)
             .onMalformedInput(CodingErrorAction.REPORT)
             .onUnmappableCharacter(CodingErrorAction.REPORT);
 
@@ -496,7 +497,7 @@ public final class ParseUtil {
     private static void appendEncoded(StringBuilder sb, char c) {
         ByteBuffer bb = null;
         try {
-            bb = ThreadLocalCoders.encoderFor("UTF-8")
+            bb = ThreadLocalCoders.encoderFor(UTF_8.INSTANCE)
                 .encode(CharBuffer.wrap("" + c));
         } catch (CharacterCodingException x) {
             assert false;
