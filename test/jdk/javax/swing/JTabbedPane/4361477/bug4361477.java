@@ -39,44 +39,49 @@ public class bug4361477 {
     static JTabbedPane tabbedPane;
     volatile static boolean bStateChanged = false;
     volatile static Rectangle bounds;
+    static JFrame frame;
 
     public static void main(String args[]) throws Exception {
+        try {
 
-        Robot robot = new Robot();
-        robot.setAutoDelay(50);
+            Robot robot = new Robot();
+            robot.setAutoDelay(50);
 
-        SwingUtilities.invokeAndWait(new Runnable() {
+            SwingUtilities.invokeAndWait(new Runnable() {
 
-            @Override
-            public void run() {
-                createAndShowUI();
+                @Override
+                public void run() {
+                    createAndShowUI();
+                }
+            });
+
+            robot.waitForIdle();
+
+            SwingUtilities.invokeAndWait(new Runnable() {
+
+                @Override
+                public void run() {
+                    bounds = tabbedPane.getUI().getTabBounds(tabbedPane, 0);
+                }
+            });
+
+            Point location = bounds.getLocation();
+            SwingUtilities.convertPointToScreen(location, tabbedPane);
+            robot.mouseMove(location.x + 1, location.y + 1);
+            robot.mousePress(InputEvent.BUTTON1_MASK);
+            robot.mouseRelease(InputEvent.BUTTON1_MASK);
+
+            if (!bStateChanged) {
+                throw new RuntimeException("Tabbed pane state is not changed");
             }
-        });
-
-        robot.waitForIdle();
-
-        SwingUtilities.invokeAndWait(new Runnable() {
-
-            @Override
-            public void run() {
-                bounds = tabbedPane.getUI().getTabBounds(tabbedPane, 0);
-            }
-        });
-
-        Point location = bounds.getLocation();
-        SwingUtilities.convertPointToScreen(location, tabbedPane);
-        robot.mouseMove(location.x + 1, location.y + 1);
-        robot.mousePress(InputEvent.BUTTON1_MASK);
-        robot.mouseRelease(InputEvent.BUTTON1_MASK);
-
-        if (!bStateChanged) {
-            throw new RuntimeException("Tabbed pane state is not changed");
+        } finally {
+            if (frame != null) SwingUtilities.invokeAndWait(() -> frame.dispose());
         }
     }
 
     static void createAndShowUI() {
 
-        final JFrame frame = new JFrame();
+        frame = new JFrame();
         tabbedPane = new JTabbedPane();
         tabbedPane.add("Tab0", new JPanel());
         tabbedPane.add("Tab1", new JPanel());

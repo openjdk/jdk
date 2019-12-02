@@ -42,33 +42,38 @@ public class bug6462008 {
     private static int controlKey;
     private static JList list;
     private static Robot robot;
+    private static JFrame frame;
 
     public static void main(String[] args) throws Exception {
-        robot = new Robot();
-        robot.setAutoDelay(100);
+        try {
+            robot = new Robot();
+            robot.setAutoDelay(100);
 
-        isAquaLAF = "Aqua".equals(UIManager.getLookAndFeel().getID());
-        controlKey = isAquaLAF ? KeyEvent.VK_META : KeyEvent.VK_CONTROL;
+            isAquaLAF = "Aqua".equals(UIManager.getLookAndFeel().getID());
+            controlKey = isAquaLAF ? KeyEvent.VK_META : KeyEvent.VK_CONTROL;
 
-        SwingUtilities.invokeAndWait(new Runnable() {
+            SwingUtilities.invokeAndWait(new Runnable() {
 
-            @Override
-            public void run() {
-                createAndShowGUI();
-            }
-        });
+                @Override
+                public void run() {
+                    createAndShowGUI();
+                }
+            });
 
-        robot.waitForIdle();
+            robot.waitForIdle();
 
-        setAnchorLead(-1);
-        robot.waitForIdle();
+            setAnchorLead(-1);
+            robot.waitForIdle();
 
-        testListSelection();
+            testListSelection();
 
-        setAnchorLead(100);
-        robot.waitForIdle();
+            setAnchorLead(100);
+            robot.waitForIdle();
 
-        testListSelection();
+            testListSelection();
+        } finally {
+            if (frame != null) SwingUtilities.invokeAndWait(() -> frame.dispose());
+        }
     }
 
     public static void testListSelection() throws Exception {
@@ -351,7 +356,7 @@ public class bug6462008 {
     }
 
     private static void createAndShowGUI() {
-        JFrame frame = new JFrame("bug6462008");
+        frame = new JFrame("bug6462008");
         frame.setSize(200, 500);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 

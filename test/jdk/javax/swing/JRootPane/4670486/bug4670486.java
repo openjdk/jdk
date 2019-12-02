@@ -39,6 +39,7 @@ public class bug4670486 {
 
     public static volatile boolean actionExpected = false;
     public static volatile boolean actionRecieved = false;
+    public static JFrame frame;
 
     private static JMenuBar createMenuBar() {
         JMenuBar menubar = new JMenuBar();
@@ -101,44 +102,48 @@ public class bug4670486 {
     }
 
     public static void main(String[] args) throws Throwable {
-        Robot robot = new Robot();
-        robot.setAutoDelay(250);
+        try {
+            Robot robot = new Robot();
+            robot.setAutoDelay(250);
 
-        UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
 
-        SwingUtilities.invokeAndWait(new Runnable() {
+            SwingUtilities.invokeAndWait(new Runnable() {
 
-            @Override
-            public void run() {
-                JFrame frame = new JFrame("Test");
-                frame.setContentPane(createPanel(frame));
-                frame.setJMenuBar(createMenuBar());
-                frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-                frame.pack();
-                frame.setVisible(true);
-            }
-        });
+                @Override
+                public void run() {
+                    frame = new JFrame("Test");
+                    frame.setContentPane(createPanel(frame));
+                    frame.setJMenuBar(createMenuBar());
+                    frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+                    frame.pack();
+                    frame.setVisible(true);
+                }
+            });
 
-        robot.waitForIdle();
+            robot.waitForIdle();
 
-        // Change the default button to
-        // force a call to BasicRootPaneUI.updateDefaultButtonBindings()
-        Util.hitKeys(robot, KeyEvent.VK_TAB);
+            // Change the default button to
+            // force a call to BasicRootPaneUI.updateDefaultButtonBindings()
+            Util.hitKeys(robot, KeyEvent.VK_TAB);
 
-        // If the bug exists, then as soon as the menu appears,
-        // the VK_ENTER, VK_DOWN, VK_UP and VK_ESC will have no
-        // effect.
-        Util.hitMnemonics(robot, KeyEvent.VK_U);
-        Util.hitKeys(robot, KeyEvent.VK_ENTER);
-        robot.waitForIdle();
+            // If the bug exists, then as soon as the menu appears,
+            // the VK_ENTER, VK_DOWN, VK_UP and VK_ESC will have no
+            // effect.
+            Util.hitMnemonics(robot, KeyEvent.VK_U);
+            Util.hitKeys(robot, KeyEvent.VK_ENTER);
+            robot.waitForIdle();
 
-        checkAction();
+            checkAction();
 
-        Util.hitMnemonics(robot, KeyEvent.VK_U);
-        Util.hitKeys(robot, KeyEvent.VK_DOWN);
-        Util.hitKeys(robot, KeyEvent.VK_ENTER);
-        robot.waitForIdle();
+            Util.hitMnemonics(robot, KeyEvent.VK_U);
+            Util.hitKeys(robot, KeyEvent.VK_DOWN);
+            Util.hitKeys(robot, KeyEvent.VK_ENTER);
+            robot.waitForIdle();
 
-        checkAction();
+            checkAction();
+        } finally {
+            if (frame != null) SwingUtilities.invokeAndWait(() -> frame.dispose());
+        }
     }
 }

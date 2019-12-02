@@ -39,20 +39,24 @@ public class bug5066752
     private static JFrame frame;
 
     public static void main(String[] args) throws Exception {
-        Robot r = new Robot();
-        SwingUtilities.invokeAndWait(new Runnable() {
-            public void run() {
-                createAndShowGUI();
+        try {
+            Robot r = new Robot();
+            SwingUtilities.invokeAndWait(new Runnable() {
+                public void run() {
+                    createAndShowGUI();
+                }
+            });
+            r.waitForIdle();
+
+            r.delay(600);
+
+            Point p = Util.getCenterPoint(frame);
+            Color color =  r.getPixelColor((int) p.getX(), (int) p.getY());
+            if (!color.equals(Color.RED)) {
+                throw new Exception("Test failed: JDesktopPane isn't transparent. Expected color is (red color): " + Color.RED + ", actual color is: " + color);
             }
-        });
-        r.waitForIdle();
-
-        r.delay(600);
-
-        Point p = Util.getCenterPoint(frame);
-        Color color =  r.getPixelColor((int) p.getX(), (int) p.getY());
-        if (!color.equals(Color.RED)) {
-            throw new Exception("Test failed: JDesktopPane isn't transparent. Expected color is (red color): " + Color.RED + ", actual color is: " + color);
+        } finally {
+            if (frame != null) SwingUtilities.invokeAndWait(() -> frame.dispose());
         }
     }
 

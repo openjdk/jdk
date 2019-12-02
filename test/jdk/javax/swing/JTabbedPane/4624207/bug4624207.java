@@ -49,6 +49,7 @@ public class bug4624207 implements ChangeListener, FocusListener {
     private static JTextField txtField;
     private static JTabbedPane tab;
     private static Object listener;
+    private static JFrame frame;
 
     public void stateChanged(ChangeEvent e) {
         System.out.println("stateChanged called");
@@ -66,51 +67,55 @@ public class bug4624207 implements ChangeListener, FocusListener {
     }
 
     public static void main(String[] args) throws Exception {
-        Robot robot = new Robot();
-        robot.setAutoDelay(50);
+        try {
+            Robot robot = new Robot();
+            robot.setAutoDelay(50);
 
-        SwingUtilities.invokeAndWait(new Runnable() {
+            SwingUtilities.invokeAndWait(new Runnable() {
 
-            public void run() {
-                createAndShowGUI();
+                public void run() {
+                    createAndShowGUI();
+                }
+            });
+
+            robot.waitForIdle();
+
+            SwingUtilities.invokeAndWait(new Runnable() {
+
+                public void run() {
+                    txtField.requestFocus();
+                }
+            });
+
+            robot.waitForIdle();
+
+            if (!focusGained) {
+                throw new RuntimeException("Couldn't gain focus for text field");
             }
-        });
 
-        robot.waitForIdle();
+            SwingUtilities.invokeAndWait(new Runnable() {
 
-        SwingUtilities.invokeAndWait(new Runnable() {
+                public void run() {
+                    tab.addChangeListener((ChangeListener) listener);
+                    txtField.removeFocusListener((FocusListener) listener);
+                }
+            });
 
-            public void run() {
-                txtField.requestFocus();
+            robot.waitForIdle();
+
+            if (Platform.isOSX()) {
+                Util.hitKeys(robot, KeyEvent.VK_CONTROL, KeyEvent.VK_ALT, KeyEvent.VK_B);
+            } else {
+                Util.hitKeys(robot, KeyEvent.VK_ALT, KeyEvent.VK_B);
             }
-        });
 
-        robot.waitForIdle();
+            robot.waitForIdle();
 
-        if (!focusGained) {
-            throw new RuntimeException("Couldn't gain focus for text field");
-        }
-
-        SwingUtilities.invokeAndWait(new Runnable() {
-
-            public void run() {
-                tab.addChangeListener((ChangeListener) listener);
-                txtField.removeFocusListener((FocusListener) listener);
+            if (!stateChanged || tab.getSelectedIndex() != 1) {
+                throw new RuntimeException("JTabbedPane mnemonics don't work from outside the tabbed pane");
             }
-        });
-
-        robot.waitForIdle();
-
-        if (Platform.isOSX()) {
-            Util.hitKeys(robot, KeyEvent.VK_CONTROL, KeyEvent.VK_ALT, KeyEvent.VK_B);
-        } else {
-            Util.hitKeys(robot, KeyEvent.VK_ALT, KeyEvent.VK_B);
-        }
-
-        robot.waitForIdle();
-
-        if (!stateChanged || tab.getSelectedIndex() != 1) {
-            throw new RuntimeException("JTabbedPane mnemonics don't work from outside the tabbed pane");
+        } finally {
+            if (frame != null) SwingUtilities.invokeAndWait(() ->  frame.dispose());
         }
     }
 
@@ -121,7 +126,7 @@ public class bug4624207 implements ChangeListener, FocusListener {
         tab.setMnemonicAt(0, KeyEvent.VK_T);
         tab.setMnemonicAt(1, KeyEvent.VK_B);
 
-        JFrame frame = new JFrame();
+        frame = new JFrame();
         frame.getContentPane().add(tab, BorderLayout.CENTER);
         txtField = new JTextField();
         frame.getContentPane().add(txtField, BorderLayout.NORTH);

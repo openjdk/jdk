@@ -45,49 +45,53 @@ import javax.swing.plaf.metal.MetalLookAndFeel;
 public class bug8041561 {
 
     private static JRadioButton radioButton;
+    private static JFrame frame;
 
     public static void main(String[] args) throws Exception {
-        SwingUtilities.invokeAndWait(new Runnable() {
+        try {
+            SwingUtilities.invokeAndWait(new Runnable() {
 
-            @Override
-            public void run() {
-                try {
-                    MetalLookAndFeel.setCurrentTheme(new DefaultMetalTheme());
-                    UIManager.setLookAndFeel(new MetalLookAndFeel());
-                    createAndShowGUI();
-                } catch (UnsupportedLookAndFeelException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-        });
-
-        new Robot().waitForIdle();
-        Thread.sleep(500);
-
-        SwingUtilities.invokeAndWait(new Runnable() {
-
-            @Override
-            public void run() {
-                try {
-                    Point point = radioButton.getLocationOnScreen();
-                    int x = (int) point.getX() + radioButton.getWidth() / 2;
-                    int y = (int) point.getY() + radioButton.getHeight() / 2;
-
-                    Robot robot = new Robot();
-                    Color color = robot.getPixelColor(x, y);
-                    if (!Color.BLUE.equals(color)) {
-                        throw new RuntimeException("JRadioButton is opaque");
+                @Override
+                public void run() {
+                    try {
+                        MetalLookAndFeel.setCurrentTheme(new DefaultMetalTheme());
+                        UIManager.setLookAndFeel(new MetalLookAndFeel());
+                        createAndShowGUI();
+                    } catch (UnsupportedLookAndFeelException e) {
+                        throw new RuntimeException(e);
                     }
-                } catch (AWTException e) {
-                    throw new RuntimeException(e);
                 }
-            }
-        });
+            });
 
+            new Robot().waitForIdle();
+            Thread.sleep(500);
+
+            SwingUtilities.invokeAndWait(new Runnable() {
+
+                @Override
+                public void run() {
+                    try {
+                        Point point = radioButton.getLocationOnScreen();
+                        int x = (int) point.getX() + radioButton.getWidth() / 2;
+                        int y = (int) point.getY() + radioButton.getHeight() / 2;
+
+                        Robot robot = new Robot();
+                        Color color = robot.getPixelColor(x, y);
+                        if (!Color.BLUE.equals(color)) {
+                            throw new RuntimeException("JRadioButton is opaque");
+                        }
+                    } catch (AWTException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+            });
+        } finally {
+            if (frame != null) SwingUtilities.invokeAndWait(() -> frame.dispose());
+        }
     }
 
     private static void createAndShowGUI() {
-        JFrame frame = new JFrame();
+        frame = new JFrame();
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setBackground(Color.BLUE);
         radioButton = new JRadioButton();

@@ -40,25 +40,30 @@ import java.awt.*;
 public class bug8075609 {
     private static Robot robot;
     private static JTextField textField;
+    private static JFrame mainFrame;
 
     public static void main(String args[]) throws Throwable {
-        SwingUtilities.invokeAndWait(new Runnable() {
-            public void run() {
-                createAndShowGUI();
-            }
-        });
+        try {
+            SwingUtilities.invokeAndWait(new Runnable() {
+                public void run() {
+                    createAndShowGUI();
+                }
+            });
 
-        robot = new Robot();
-        Thread.sleep(100);
+            robot = new Robot();
+            Thread.sleep(100);
 
-        robot.setAutoDelay(100);
+            robot.setAutoDelay(100);
 
-        // Radio button group tab key test
-        runTest1();
+            // Radio button group tab key test
+            runTest1();
+        } finally {
+            if (mainFrame != null) SwingUtilities.invokeAndWait(() -> mainFrame.dispose());
+        }
     }
 
     private static void createAndShowGUI() {
-        JFrame mainFrame = new JFrame("Bug 8075609 - 1 test");
+        mainFrame = new JFrame("Bug 8075609 - 1 test");
 
         JPanel rootPanel = new JPanel();
         rootPanel.setLayout(new BorderLayout());

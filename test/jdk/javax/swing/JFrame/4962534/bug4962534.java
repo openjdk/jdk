@@ -39,17 +39,21 @@ public class bug4962534 {
     Robot robot;
     volatile Point framePosition;
     volatile Point newFrameLocation;
-    JFrame frame;
+    static JFrame frame;
     Rectangle gcBounds;
     Component titleComponent;
     JLayeredPane lPane;
     volatile boolean titleFound = false;
     public static Object LOCK = new Object();
 
-    public static void main(final String[] args) {
-        bug4962534 app = new bug4962534();
-        app.init();
-        app.start();
+    public static void main(final String[] args) throws Exception {
+        try {
+            bug4962534 app = new bug4962534();
+            app.init();
+            app.start();
+        } finally {
+            if (frame != null) SwingUtilities.invokeAndWait(() -> frame.dispose());
+        }
     }
 
     public void init() {

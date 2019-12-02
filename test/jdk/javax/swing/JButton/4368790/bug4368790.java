@@ -36,9 +36,10 @@ import java.awt.event.KeyEvent;
 
 public class bug4368790 {
     private static JButton b1;
+    private static JFrame frame;
 
     private static void createGui() {
-        final JFrame frame = new JFrame();
+        frame = new JFrame();
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setLayout(new FlowLayout());
 
@@ -53,21 +54,25 @@ public class bug4368790 {
     }
 
     public static void main(String[] args) throws Exception {
-        Robot robot = new Robot();
-        robot.setAutoDelay(50);
-        SwingUtilities.invokeAndWait(new Runnable() {
-            public void run() {
-                bug4368790.createGui();
+        try {
+            Robot robot = new Robot();
+            robot.setAutoDelay(50);
+            SwingUtilities.invokeAndWait(new Runnable() {
+                public void run() {
+                    bug4368790.createGui();
+                }
+            });
+            robot.waitForIdle();
+            robot.keyPress(KeyEvent.VK_SPACE);
+            robot.keyPress(KeyEvent.VK_TAB);
+            robot.keyRelease(KeyEvent.VK_TAB);
+            robot.keyRelease(KeyEvent.VK_SPACE);
+            robot.waitForIdle();
+            if (b1.getModel().isPressed()) {
+                throw new RuntimeException("The button is unexpectedly pressed");
             }
-        });
-        robot.waitForIdle();
-        robot.keyPress(KeyEvent.VK_SPACE);
-        robot.keyPress(KeyEvent.VK_TAB);
-        robot.keyRelease(KeyEvent.VK_TAB);
-        robot.keyRelease(KeyEvent.VK_SPACE);
-        robot.waitForIdle();
-        if (b1.getModel().isPressed()) {
-            throw new RuntimeException("The button is unexpectedly pressed");
+        } finally {
+            if (frame != null) SwingUtilities.invokeAndWait(() -> frame.dispose());
         }
     }
 }

@@ -56,11 +56,16 @@ public class Test8051548 {
     private static JColorChooser colorChooser;
     private static boolean propertyChangeListenerInvoked;
     private static volatile Color color;
+    private static JFrame frame;
 
     public static void main(String[] args) throws Exception {
-        testColorPanels();
-        testShowDialog(true);
-        testShowDialog(false);
+        try {
+            testColorPanels();
+            testShowDialog(true);
+            testShowDialog(false);
+        } finally {
+            if(frame != null) SwingUtilities.invokeAndWait(() -> frame.dispose());
+        }
     }
 
     private static void testColorPanels() throws Exception {
@@ -182,7 +187,7 @@ public class Test8051548 {
     }
 
     private static void createAndShowGUI() {
-        JFrame frame = new JFrame();
+        frame = new JFrame();
         frame.setSize(700, 500);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         colorChooser = new JColorChooser();

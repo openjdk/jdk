@@ -40,26 +40,31 @@ import javax.swing.event.*;
 public class bug4171437 {
     static volatile boolean closeActivated = false;
     static volatile boolean customActivated = false;
+    static JFrame frame;
 
     public static void main(String[] args) throws Exception {
-        SwingUtilities.invokeAndWait(new Runnable() {
-            public void run() {
-                createAndShowGUI();
+        try {
+            SwingUtilities.invokeAndWait(new Runnable() {
+                public void run() {
+                    createAndShowGUI();
+                }
+            });
+
+            Robot robot = new Robot();
+            robot.setAutoDelay(50);
+            robot.waitForIdle();
+
+            Util.hitMnemonics(robot, KeyEvent.VK_F);
+            Util.hitKeys(robot, KeyEvent.VK_C);
+
+            robot.waitForIdle();
+            Thread.sleep(1000);
+
+            if (!closeActivated || customActivated) {
+                throw new RuntimeException("Didn't pass the muster");
             }
-        });
-
-        Robot robot = new Robot();
-        robot.setAutoDelay(50);
-        robot.waitForIdle();
-
-        Util.hitMnemonics(robot, KeyEvent.VK_F);
-        Util.hitKeys(robot, KeyEvent.VK_C);
-
-        robot.waitForIdle();
-        Thread.sleep(1000);
-
-        if (!closeActivated || customActivated) {
-            throw new RuntimeException("Didn't pass the muster");
+        } finally {
+            if (frame != null) SwingUtilities.invokeAndWait(() -> frame.dispose());
         }
     }
     public static void createAndShowGUI() {
@@ -99,7 +104,7 @@ public class bug4171437 {
         });
         menubar.add( custom);
 
-        JFrame frame = new JFrame();
+        frame = new JFrame();
         frame.setJMenuBar( menubar);
         frame.setSize(300, 300);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);

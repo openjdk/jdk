@@ -40,35 +40,40 @@ public class InternalFrameIsNotCollectedTest {
     public static final int waitTime = 5000;
     private static Robot robot;
     private static CustomInternalFrame iFrame;
+    private static JFrame frame;
 
     public static void main(String[] args) throws Exception {
-        initRobot();
-        SwingUtilities.invokeAndWait(new Runnable() {
-            @Override
-            public void run() {
-                initUI();
-                try {
-                    closeInternalFrame();
-                } catch (PropertyVetoException e) {
-                    throw new RuntimeException(e);
+        try {
+            initRobot();
+            SwingUtilities.invokeAndWait(new Runnable() {
+                @Override
+                public void run() {
+                    initUI();
+                    try {
+                        closeInternalFrame();
+                    } catch (PropertyVetoException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+            });
+            robot.waitForIdle();
+            invokeGC();
+            System.runFinalization();
+            Thread.sleep(1000); // it's better to wait 1 sec now then 10 sec later
+            Date startWaiting = new Date();
+            synchronized (CustomInternalFrame.waiter) {
+                // Sync with finalization thread.
+                Date now = new Date();
+                while (now.getTime() - startWaiting.getTime() < maxWaitTime && !CustomInternalFrame.finalized) {
+                    CustomInternalFrame.waiter.wait(waitTime);
+                    now = new Date();
                 }
             }
-        });
-        robot.waitForIdle();
-        invokeGC();
-        System.runFinalization();
-        Thread.sleep(1000); // it's better to wait 1 sec now then 10 sec later
-        Date startWaiting = new Date();
-        synchronized (CustomInternalFrame.waiter) {
-            // Sync with finalization thread.
-            Date now = new Date();
-            while (now.getTime() - startWaiting.getTime() < maxWaitTime && !CustomInternalFrame.finalized) {
-                CustomInternalFrame.waiter.wait(waitTime);
-                now = new Date();
+            if (!CustomInternalFrame.finalized) {
+                throw new RuntimeException("Closed internal frame wasn't collected");
             }
-        }
-        if (!CustomInternalFrame.finalized) {
-            throw new RuntimeException("Closed internal frame wasn't collected");
+        } finally {
+            if (frame != null) SwingUtilities.invokeAndWait(() -> frame.dispose());
         }
     }
 
@@ -83,7 +88,7 @@ public class InternalFrameIsNotCollectedTest {
     }
 
     private static void initUI() {
-        JFrame frame = new JFrame("Internal Frame Test");
+        frame = new JFrame("Internal Frame Test");
         frame.getContentPane().setLayout(new BorderLayout());
         JDesktopPane desktopPane = new JDesktopPane();
         desktopPane.setDesktopManager(new DefaultDesktopManager());

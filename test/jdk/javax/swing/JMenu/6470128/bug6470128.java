@@ -43,47 +43,51 @@ public class bug6470128 {
     static JMenu subMenu;
 
     public static void main(String[] args) throws Exception {
-        SwingUtilities.invokeAndWait(new Runnable() {
-            public void run() {
-                frame = new JFrame();
-                frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        try {
+            SwingUtilities.invokeAndWait(new Runnable() {
+                public void run() {
+                    frame = new JFrame();
+                    frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-                JMenuBar bar = new JMenuBar();
-                JMenu menu = new JMenu("Menu");
-                menu.setMnemonic('m');
-                subMenu = new JMenu("SubMenu");
-                JMenuItem item = new JMenuItem("Item");
+                    JMenuBar bar = new JMenuBar();
+                    JMenu menu = new JMenu("Menu");
+                    menu.setMnemonic('m');
+                    subMenu = new JMenu("SubMenu");
+                    JMenuItem item = new JMenuItem("Item");
 
-                frame.setJMenuBar(bar);
-                bar.add(menu);
-                menu.add(subMenu);
-                subMenu.add(item);
+                    frame.setJMenuBar(bar);
+                    bar.add(menu);
+                    menu.add(subMenu);
+                    subMenu.add(item);
 
-                frame.setSize(200, 200);
-                frame.setLocationRelativeTo(null);
-                frame.setVisible(true);
+                    frame.setSize(200, 200);
+                    frame.setLocationRelativeTo(null);
+                    frame.setVisible(true);
+                }
+            });
+            Robot robot = new Robot();
+            robot.setAutoDelay(10);
+            robot.waitForIdle();
+            if (Platform.isOSX()) {
+                robot.keyPress(KeyEvent.VK_CONTROL);
             }
-        });
-        Robot robot = new Robot();
-        robot.setAutoDelay(10);
-        robot.waitForIdle();
-        if (Platform.isOSX()) {
-            robot.keyPress(KeyEvent.VK_CONTROL);
-        }
-        robot.keyPress(KeyEvent.VK_ALT);
-        robot.keyPress(KeyEvent.VK_M);
-        robot.keyRelease(KeyEvent.VK_M);
-        robot.keyRelease(KeyEvent.VK_ALT);
-        if (Platform.isOSX()) {
-            robot.keyRelease(KeyEvent.VK_CONTROL);
-        }
-        robot.keyPress(KeyEvent.VK_ENTER);
-        robot.keyRelease(KeyEvent.VK_ENTER);
-        robot.keyPress(KeyEvent.VK_ESCAPE);
-        robot.keyRelease(KeyEvent.VK_ESCAPE);
-        robot.waitForIdle();
-        if (!subMenu.isSelected()) {
-            throw new RuntimeException("Submenu is unexpectedly unselected");
+            robot.keyPress(KeyEvent.VK_ALT);
+            robot.keyPress(KeyEvent.VK_M);
+            robot.keyRelease(KeyEvent.VK_M);
+            robot.keyRelease(KeyEvent.VK_ALT);
+            if (Platform.isOSX()) {
+                robot.keyRelease(KeyEvent.VK_CONTROL);
+            }
+            robot.keyPress(KeyEvent.VK_ENTER);
+            robot.keyRelease(KeyEvent.VK_ENTER);
+            robot.keyPress(KeyEvent.VK_ESCAPE);
+            robot.keyRelease(KeyEvent.VK_ESCAPE);
+            robot.waitForIdle();
+            if (!subMenu.isSelected()) {
+                throw new RuntimeException("Submenu is unexpectedly unselected");
+            }
+        } finally {
+            if (frame != null) SwingUtilities.invokeAndWait(() -> frame.dispose());
         }
     }
 }

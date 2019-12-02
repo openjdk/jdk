@@ -48,7 +48,7 @@ public class bug4337267 {
     TestJPanel p1, p2;
     TestBufferedImage i1, i2;
     JComponent[] printq;
-    JFrame window;
+    static JFrame window;
     static boolean testFailed = false;
     static boolean done = false;
 
@@ -246,33 +246,36 @@ public class bug4337267 {
             Graphics g0 = image.getGraphics();
             super.paint(g0);
             g.drawImage(image, 0, 0, this);
-        }
-    }
+        } }
 
 
 
     public static void main(String[] args) throws Throwable {
-        final bug4337267 test = new bug4337267();
-        SwingUtilities.invokeLater(new Runnable() {
-            public void run() {
-                test.run();
-            }
-        });
+        try {
+            final bug4337267 test = new bug4337267();
+            SwingUtilities.invokeLater(new Runnable() {
+                public void run() {
+                    test.run();
+                }
+            });
 
-         synchronized(test) {
-            while (!done) {
-                try {
-                    test.wait();
-                } catch (InterruptedException ex) {
-                    // do nothing
+             synchronized(test) {
+                while (!done) {
+                    try {
+                        test.wait();
+                    } catch (InterruptedException ex) {
+                        // do nothing
+                    }
                 }
             }
-        }
 
-        if (testFailed) {
-            throw new RuntimeException("FAIL");
-        }
+            if (testFailed) {
+                throw new RuntimeException("FAIL");
+            }
 
-        System.out.println("OK");
+            System.out.println("OK");
+        } finally {
+            if (window != null) SwingUtilities.invokeAndWait(() -> window.dispose());
+        }
     }
 }

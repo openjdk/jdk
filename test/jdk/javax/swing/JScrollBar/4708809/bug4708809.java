@@ -40,62 +40,67 @@ public class bug4708809 {
     private static volatile boolean passed = true;
     private static JScrollPane spane;
     private static JScrollBar sbar;
+    private static JFrame fr;
 
     public static void main(String[] args) throws Exception {
-        Robot robot = new Robot();
-        robot.setAutoDelay(350);
+        try {
+            Robot robot = new Robot();
+            robot.setAutoDelay(350);
 
-        SwingUtilities.invokeAndWait(new Runnable() {
+            SwingUtilities.invokeAndWait(new Runnable() {
 
-            public void run() {
-                createAndShowGUI();
-            }
-        });
+                public void run() {
+                    createAndShowGUI();
+                }
+            });
 
-        robot.waitForIdle();
+            robot.waitForIdle();
 
-        SwingUtilities.invokeAndWait(new Runnable() {
+            SwingUtilities.invokeAndWait(new Runnable() {
 
-            public void run() {
-                spane.requestFocus();
-                sbar.setValue(sbar.getMaximum());
-            }
-        });
+                public void run() {
+                    spane.requestFocus();
+                    sbar.setValue(sbar.getMaximum());
+                }
+            });
 
-        robot.waitForIdle();
+            robot.waitForIdle();
 
-        Point point = getClickPoint(0.5, 0.5);
-        robot.mouseMove(point.x, point.y);
-        robot.mousePress(InputEvent.BUTTON1_MASK);
+            Point point = getClickPoint(0.5, 0.5);
+            robot.mouseMove(point.x, point.y);
+            robot.mousePress(InputEvent.BUTTON1_MASK);
 
-        robot.waitForIdle();
+            robot.waitForIdle();
 
-        SwingUtilities.invokeAndWait(new Runnable() {
+            SwingUtilities.invokeAndWait(new Runnable() {
 
-            public void run() {
-                final int oldValue = sbar.getValue();
-                sbar.addAdjustmentListener(new AdjustmentListener() {
+                public void run() {
+                    final int oldValue = sbar.getValue();
+                    sbar.addAdjustmentListener(new AdjustmentListener() {
 
-                    public void adjustmentValueChanged(AdjustmentEvent e) {
-                        if (e.getValue() >= oldValue) {
-                            passed = false;
+                        public void adjustmentValueChanged(AdjustmentEvent e) {
+                            if (e.getValue() >= oldValue) {
+                                passed = false;
+                            }
+                            do_test = true;
                         }
-                        do_test = true;
-                    }
-                });
+                    });
 
+                }
+            });
+
+            robot.waitForIdle();
+
+            point = getClickPoint(0.5, 0.2);
+            robot.mouseMove(point.x, point.y);
+            robot.mouseRelease(InputEvent.BUTTON1_MASK);
+            robot.waitForIdle();
+
+            if (!do_test || !passed) {
+                throw new Exception("The scrollbar moved with incorrect direction");
             }
-        });
-
-        robot.waitForIdle();
-
-        point = getClickPoint(0.5, 0.2);
-        robot.mouseMove(point.x, point.y);
-        robot.mouseRelease(InputEvent.BUTTON1_MASK);
-        robot.waitForIdle();
-
-        if (!do_test || !passed) {
-            throw new Exception("The scrollbar moved with incorrect direction");
+        } finally {
+            if (fr != null) SwingUtilities.invokeAndWait(() -> fr.dispose());
         }
 
     }
@@ -119,7 +124,7 @@ public class bug4708809 {
     }
 
     private static void createAndShowGUI() {
-        JFrame fr = new JFrame("Test");
+        fr = new JFrame("Test");
 
         JLabel label = new JLabel("picture");
         label.setPreferredSize(new Dimension(500, 500));

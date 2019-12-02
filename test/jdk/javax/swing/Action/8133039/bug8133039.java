@@ -45,10 +45,15 @@ public class bug8133039 {
 
     private static volatile int ACTION_PERFORMED_CALLS = 0;
     private static volatile int ACTION_ACCEPTED_CALLS = 0;
+    private static JFrame frame;
 
     public static void main(String[] args) throws Exception {
-        testActionNotification();
-        testPopupAction();
+        try {
+            testActionNotification();
+            testPopupAction();
+        } finally {
+            if (frame != null) SwingUtilities.invokeAndWait(() -> frame.dispose());
+        }
     }
 
     private static void testActionNotification() {
@@ -114,7 +119,7 @@ public class bug8133039 {
 
     private static void createAndShowGUI() {
 
-        JFrame frame = new JFrame();
+        frame = new JFrame();
         frame.setSize(300, 300);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 

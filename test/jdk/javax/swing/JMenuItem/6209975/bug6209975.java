@@ -40,37 +40,41 @@ public class bug6209975 {
 
     private static JMenu menu;
     private static JButton button;
+    private static JFrame frame;
 
     public static void main(String[] args) throws Exception {
+        try {
+            Robot robot = new Robot();
+            robot.setAutoDelay(500);
 
-        Robot robot = new Robot();
-        robot.setAutoDelay(500);
 
+            SwingUtilities.invokeAndWait(new Runnable() {
 
-        SwingUtilities.invokeAndWait(new Runnable() {
+                @Override
+                public void run() {
+                    createAndShowGUI();
+                }
+            });
 
-            @Override
-            public void run() {
-                createAndShowGUI();
+            robot.waitForIdle();
+
+            Point clickPoint = getButtonClickPoint();
+            robot.mouseMove(clickPoint.x, clickPoint.y);
+            robot.mousePress(InputEvent.BUTTON1_MASK);
+            robot.mouseRelease(InputEvent.BUTTON1_MASK);
+            robot.waitForIdle();
+
+            clickPoint = getMenuClickPoint();
+            robot.mouseMove(clickPoint.x, clickPoint.y);
+            robot.mousePress(InputEvent.BUTTON1_MASK);
+            robot.mouseRelease(InputEvent.BUTTON1_MASK);
+            robot.waitForIdle();
+
+            if (RO1.itsValue <= RO2.itsValue) {
+                throw new RuntimeException("Offset if the second icon is invalid.");
             }
-        });
-
-        robot.waitForIdle();
-
-        Point clickPoint = getButtonClickPoint();
-        robot.mouseMove(clickPoint.x, clickPoint.y);
-        robot.mousePress(InputEvent.BUTTON1_MASK);
-        robot.mouseRelease(InputEvent.BUTTON1_MASK);
-        robot.waitForIdle();
-
-        clickPoint = getMenuClickPoint();
-        robot.mouseMove(clickPoint.x, clickPoint.y);
-        robot.mousePress(InputEvent.BUTTON1_MASK);
-        robot.mouseRelease(InputEvent.BUTTON1_MASK);
-        robot.waitForIdle();
-
-        if (RO1.itsValue <= RO2.itsValue) {
-            throw new RuntimeException("Offset if the second icon is invalid.");
+        } finally {
+            if (frame != null) SwingUtilities.invokeAndWait(() -> frame.dispose());
         }
     }
 
@@ -105,7 +109,7 @@ public class bug6209975 {
     }
 
     private static void createAndShowGUI() {
-        JFrame frame = new JFrame("Test6209975");
+        frame = new JFrame("Test6209975");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.applyComponentOrientation(ComponentOrientation.LEFT_TO_RIGHT);
         frame.setLayout(new BorderLayout());

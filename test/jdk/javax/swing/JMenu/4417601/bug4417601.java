@@ -39,6 +39,7 @@ import java.awt.*;
 public class bug4417601 {
     static JMenu menu;
     static volatile boolean flag;
+    static JFrame frame;
 
     public static void main(String[] args) throws Exception {
 
@@ -47,7 +48,7 @@ public class bug4417601 {
 
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
-                JFrame frame = new JFrame();
+                frame = new JFrame();
                 frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
                 menu = new JMenu("Menu");
                 JMenuBar bar = new JMenuBar();
@@ -75,6 +76,7 @@ public class bug4417601 {
         robot.mousePress(InputEvent.BUTTON1_MASK);
         robot.mouseRelease(InputEvent.BUTTON1_MASK);
         robot.waitForIdle();
+        if (frame != null) SwingUtilities.invokeAndWait(() -> frame.dispose());
         if (flag) {
             throw new RuntimeException("Empty popup was shown");
         }

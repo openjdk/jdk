@@ -40,50 +40,55 @@ import jdk.test.lib.Platform;
 public class bug4202954 {
     static JScrollPane buttonScrollPane;
     static Robot robot;
+    static JFrame testFrame;
     public static void main(String[] args) throws Exception {
-        if (Platform.isOSX()) {
-            UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
-        }
-
-        SwingUtilities.invokeAndWait(new Runnable() {
-            public void run() {
-                createAndShowGUI();
+        try {
+            if (Platform.isOSX()) {
+                UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
             }
-        });
-        Point centerOfScrollPane = Util.getCenterPoint(buttonScrollPane);
-        JButton rightScrollButton = findJButton(buttonScrollPane.getHorizontalScrollBar(), centerOfScrollPane.x, centerOfScrollPane.y);
-        JButton bottomScrollButton = findJButton(buttonScrollPane.getVerticalScrollBar(), centerOfScrollPane.x, centerOfScrollPane.y);
 
-        if (rightScrollButton == null || bottomScrollButton == null) {
-            String errMessage = "Test can't be executed: ";
-            errMessage = errMessage + (rightScrollButton == null ? "can't find right button for horizontal scroll bar; " : ""
+            SwingUtilities.invokeAndWait(new Runnable() {
+                public void run() {
+                    createAndShowGUI();
+                }
+            });
+            Point centerOfScrollPane = Util.getCenterPoint(buttonScrollPane);
+            JButton rightScrollButton = findJButton(buttonScrollPane.getHorizontalScrollBar(), centerOfScrollPane.x, centerOfScrollPane.y);
+            JButton bottomScrollButton = findJButton(buttonScrollPane.getVerticalScrollBar(), centerOfScrollPane.x, centerOfScrollPane.y);
+
+            if (rightScrollButton == null || bottomScrollButton == null) {
+                String errMessage = "Test can't be executed: ";
+                errMessage = errMessage + (rightScrollButton == null ? "can't find right button for horizontal scroll bar; " : ""
                     + (bottomScrollButton == null ? "can't find bottom scroll button for vertical scroll bar" : ""));
-            throw new RuntimeException(errMessage);
-        }
+                throw new RuntimeException(errMessage);
+            }
 
-        robot = new Robot();
-        robot.setAutoDelay(50);
+            robot = new Robot();
+            robot.setAutoDelay(50);
 
-        // test right, left and middle mouse buttons for horizontal scroll bar
-        if (!doTest(rightScrollButton, InputEvent.BUTTON1_DOWN_MASK, true)) {
-            throw new RuntimeException("Test failed: right arrow button didn't respond on left mouse button.");
-        }
-        if (!doTest(rightScrollButton, InputEvent.BUTTON2_DOWN_MASK, false)) {
-            throw new RuntimeException("Test failed: right arrow button respond on right mouse button.");
-        }
-        if (!doTest(rightScrollButton, InputEvent.BUTTON3_DOWN_MASK, false)) {
-            throw new RuntimeException("Test failed: right arrow button respond on middle mouse button.");
-        }
+            // test right, left and middle mouse buttons for horizontal scroll bar
+            if (!doTest(rightScrollButton, InputEvent.BUTTON1_DOWN_MASK, true)) {
+                throw new RuntimeException("Test failed: right arrow button didn't respond on left mouse button.");
+            }
+            if (!doTest(rightScrollButton, InputEvent.BUTTON2_DOWN_MASK, false)) {
+                throw new RuntimeException("Test failed: right arrow button respond on right mouse button.");
+            }
+            if (!doTest(rightScrollButton, InputEvent.BUTTON3_DOWN_MASK, false)) {
+                throw new RuntimeException("Test failed: right arrow button respond on middle mouse button.");
+            }
 
-        // test right, left and middle mouse buttons for vertical scroll bar
-        if (!doTest(bottomScrollButton, InputEvent.BUTTON1_DOWN_MASK, true)) {
-            throw new RuntimeException("Test failed: bottom arrow button didn't respond on left mouse button.");
-        }
-        if (!doTest(bottomScrollButton, InputEvent.BUTTON2_DOWN_MASK, false)) {
-            throw new RuntimeException("Test failed: bottom arrow button respond on right mouse button.");
-        }
-        if (!doTest(bottomScrollButton, InputEvent.BUTTON3_DOWN_MASK, false)) {
-            throw new RuntimeException("Test failed: bottom arrow button respond on middle mouse button.");
+            // test right, left and middle mouse buttons for vertical scroll bar
+            if (!doTest(bottomScrollButton, InputEvent.BUTTON1_DOWN_MASK, true)) {
+                throw new RuntimeException("Test failed: bottom arrow button didn't respond on left mouse button.");
+            }
+            if (!doTest(bottomScrollButton, InputEvent.BUTTON2_DOWN_MASK, false)) {
+                throw new RuntimeException("Test failed: bottom arrow button respond on right mouse button.");
+            }
+            if (!doTest(bottomScrollButton, InputEvent.BUTTON3_DOWN_MASK, false)) {
+                throw new RuntimeException("Test failed: bottom arrow button respond on middle mouse button.");
+            }
+        } finally {
+                if (testFrame != null) SwingUtilities.invokeAndWait(() -> testFrame.dispose());
         }
     }
     public static void createAndShowGUI() {
@@ -97,7 +102,7 @@ public class bug4202954 {
         buttonScrollPane = new JScrollPane();
         buttonScrollPane.setViewportView(buttonPanel);
 
-        JFrame testFrame = new JFrame("bug4202954");
+        testFrame = new JFrame("bug4202954");
         testFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         testFrame.setLayout(new BorderLayout());
         testFrame.add(BorderLayout.CENTER, buttonScrollPane);

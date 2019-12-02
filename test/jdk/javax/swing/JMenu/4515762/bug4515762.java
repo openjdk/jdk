@@ -39,6 +39,7 @@ public class bug4515762 {
 
     private static volatile boolean actionExpected = false;
     private static volatile boolean actionRecieved = false;
+    private static JFrame frame;
 
     /**
      * @param str name of Menu
@@ -107,65 +108,69 @@ public class bug4515762 {
     }
 
     public static void main(String[] args) throws Throwable {
-        Robot robot = new Robot();
-        robot.setAutoDelay(250);
+        try {
+            Robot robot = new Robot();
+            robot.setAutoDelay(250);
 
-        SwingUtilities.invokeAndWait(new Runnable() {
+            SwingUtilities.invokeAndWait(new Runnable() {
 
-            @Override
-            public void run() {
-                JFrame frame = new JFrame("Test");
-                frame.setJMenuBar(createMenuBar());
-                frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-                frame.pack();
-                frame.setVisible(true);
+                @Override
+                public void run() {
+                    frame = new JFrame("Test");
+                    frame.setJMenuBar(createMenuBar());
+                    frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+                    frame.pack();
+                    frame.setVisible(true);
+                }
+            });
+
+            robot.waitForIdle();
+
+            Util.hitMnemonics(robot, KeyEvent.VK_D);
+            robot.waitForIdle();
+
+            // Press the S key many times (should not cause an action peformed)
+            int TIMES = 5;
+            for (int i = 0; i < TIMES; i++) {
+                Util.hitKeys(robot, KeyEvent.VK_S);
             }
-        });
+            robot.waitForIdle();
 
-        robot.waitForIdle();
+            // Unique menu items.
+            actionExpected = true;
+            Util.hitMnemonics(robot, KeyEvent.VK_U);
 
-        Util.hitMnemonics(robot, KeyEvent.VK_D);
-        robot.waitForIdle();
+            robot.keyPress(KeyEvent.VK_S);
+            robot.keyRelease(KeyEvent.VK_S);
+            robot.waitForIdle();
 
-        // Press the S key many times (should not cause an action peformed)
-        int TIMES = 5;
-        for (int i = 0; i < TIMES; i++) {
-            Util.hitKeys(robot, KeyEvent.VK_S);
+            checkAction();
+
+            Util.hitMnemonics(robot, KeyEvent.VK_U);
+            robot.keyPress(KeyEvent.VK_M);
+            robot.keyRelease(KeyEvent.VK_M);
+            robot.waitForIdle();
+
+            checkAction();
+
+            Util.hitMnemonics(robot, KeyEvent.VK_U);
+            Util.hitKeys(robot, KeyEvent.VK_T);
+            robot.waitForIdle();
+
+            checkAction();
+            Util.hitMnemonics(robot, KeyEvent.VK_U);
+            Util.hitKeys(robot, KeyEvent.VK_W);
+            robot.waitForIdle();
+
+            checkAction();
+
+            Util.hitMnemonics(robot, KeyEvent.VK_U);
+            Util.hitKeys(robot, KeyEvent.VK_U);
+            robot.waitForIdle();
+
+            checkAction();
+        } finally {
+            if (frame != null) SwingUtilities.invokeAndWait(() -> frame.dispose());
         }
-        robot.waitForIdle();
-
-        // Unique menu items.
-        actionExpected = true;
-        Util.hitMnemonics(robot, KeyEvent.VK_U);
-
-        robot.keyPress(KeyEvent.VK_S);
-        robot.keyRelease(KeyEvent.VK_S);
-        robot.waitForIdle();
-
-        checkAction();
-
-        Util.hitMnemonics(robot, KeyEvent.VK_U);
-        robot.keyPress(KeyEvent.VK_M);
-        robot.keyRelease(KeyEvent.VK_M);
-        robot.waitForIdle();
-
-        checkAction();
-
-        Util.hitMnemonics(robot, KeyEvent.VK_U);
-        Util.hitKeys(robot, KeyEvent.VK_T);
-        robot.waitForIdle();
-
-        checkAction();
-        Util.hitMnemonics(robot, KeyEvent.VK_U);
-        Util.hitKeys(robot, KeyEvent.VK_W);
-        robot.waitForIdle();
-
-        checkAction();
-
-        Util.hitMnemonics(robot, KeyEvent.VK_U);
-        Util.hitKeys(robot, KeyEvent.VK_U);
-        robot.waitForIdle();
-
-        checkAction();
     }
 }

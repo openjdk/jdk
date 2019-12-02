@@ -56,115 +56,119 @@ import java.awt.image.BufferedImage;
 public class bug7154030 {
 
     private static JButton button = null;
+    private static JFrame frame;
 
     public static void main(String[] args) throws Exception {
-        BufferedImage imageInit = null;
+        try {
+            BufferedImage imageInit = null;
 
-        BufferedImage imageShow = null;
+            BufferedImage imageShow = null;
 
-        BufferedImage imageHide = null;
+            BufferedImage imageHide = null;
 
-        ExtendedRobot robot = new ExtendedRobot();
+            ExtendedRobot robot = new ExtendedRobot();
 
-        SwingUtilities.invokeAndWait(new Runnable() {
+            SwingUtilities.invokeAndWait(new Runnable() {
 
-            @Override
-            public void run() {
-                JDesktopPane desktop = new JDesktopPane();
-                button = new JButton("button");
-                JFrame frame = new JFrame();
+                @Override
+                public void run() {
+                    JDesktopPane desktop = new JDesktopPane();
+                    button = new JButton("button");
+                    frame = new JFrame();
 
-                button.setSize(200, 200);
-                button.setLocation(100, 100);
-                button.setForeground(Color.RED);
-                button.setBackground(Color.RED);
-                button.setOpaque(true);
-                button.setVisible(false);
-                desktop.add(button);
+                    button.setSize(200, 200);
+                    button.setLocation(100, 100);
+                    button.setForeground(Color.RED);
+                    button.setBackground(Color.RED);
+                    button.setOpaque(true);
+                    button.setVisible(false);
+                    desktop.add(button);
 
-                frame.setContentPane(desktop);
-                frame.setSize(300, 300);
-                frame.setLocation(0, 0);
-                frame.setVisible(true);
-                frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+                    frame.setContentPane(desktop);
+                    frame.setSize(300, 300);
+                    frame.setLocation(0, 0);
+                    frame.setVisible(true);
+                    frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+                }
+            });
+
+            robot.waitForIdle(500);
+            imageInit = robot.createScreenCapture(new Rectangle(0, 0, 300, 300));
+
+            SwingUtilities.invokeAndWait(new Runnable() {
+
+                @Override
+                public void run() {
+                    button.show();
+                }
+            });
+
+            robot.waitForIdle(500);
+            imageShow = robot.createScreenCapture(new Rectangle(0, 0, 300, 300));
+            if (Util.compareBufferedImages(imageInit, imageShow)) {
+                throw new Exception("Failed to show opaque button");
             }
-        });
 
-        robot.waitForIdle(500);
-        imageInit = robot.createScreenCapture(new Rectangle(0, 0, 300, 300));
+            robot.waitForIdle();
 
-        SwingUtilities.invokeAndWait(new Runnable() {
+            SwingUtilities.invokeAndWait(new Runnable() {
+                @Override
+                public void run() {
+                    button.hide();
+                }
+            });
 
-            @Override
-            public void run() {
-                button.show();
+            robot.waitForIdle(500);
+            imageHide = robot.createScreenCapture(new Rectangle(0, 0, 300, 300));
+
+            if (!Util.compareBufferedImages(imageInit, imageHide)) {
+                throw new Exception("Failed to hide opaque button");
             }
-        });
 
-        robot.waitForIdle(500);
-        imageShow = robot.createScreenCapture(new Rectangle(0, 0, 300, 300));
-        if (Util.compareBufferedImages(imageInit, imageShow)) {
-            throw new Exception("Failed to show opaque button");
-        }
+            SwingUtilities.invokeAndWait(new Runnable() {
 
-        robot.waitForIdle();
+                @Override
+                public void run() {
+                    button.setOpaque(false);
+                    button.setBackground(new Color(128, 128, 0));
+                    button.setVisible(false);
+                }
+            });
 
-        SwingUtilities.invokeAndWait(new Runnable() {
+            robot.waitForIdle(500);
+            imageInit = robot.createScreenCapture(new Rectangle(0, 0, 300, 300));
 
-            @Override
-            public void run() {
-                button.hide();
+            SwingUtilities.invokeAndWait(new Runnable() {
+
+                @Override
+                public void run() {
+                    button.show();
+                }
+            });
+
+            robot.waitForIdle(500);
+            imageShow = robot.createScreenCapture(new Rectangle(0, 0, 300, 300));
+
+            SwingUtilities.invokeAndWait(new Runnable() {
+
+                @Override
+                public void run() {
+                    button.hide();
+                }
+            });
+
+            if (Util.compareBufferedImages(imageInit, imageShow)) {
+                throw new Exception("Failed to show non-opaque button");
             }
-        });
 
-        robot.waitForIdle(500);
-        imageHide = robot.createScreenCapture(new Rectangle(0, 0, 300, 300));
+            robot.waitForIdle(500);
+            imageHide = robot.createScreenCapture(new Rectangle(0, 0, 300, 300));
 
-        if (!Util.compareBufferedImages(imageInit, imageHide)) {
-            throw new Exception("Failed to hide opaque button");
-        }
-
-        SwingUtilities.invokeAndWait(new Runnable() {
-
-            @Override
-            public void run() {
-                button.setOpaque(false);
-                button.setBackground(new Color(128, 128, 0));
-                button.setVisible(false);
+            if (!Util.compareBufferedImages(imageInit, imageHide)) {
+                throw new Exception("Failed to hide non-opaque button");
             }
-        });
-
-        robot.waitForIdle(500);
-        imageInit = robot.createScreenCapture(new Rectangle(0, 0, 300, 300));
-
-        SwingUtilities.invokeAndWait(new Runnable() {
-
-            @Override
-            public void run() {
-                button.show();
-            }
-        });
-
-        robot.waitForIdle(500);
-        imageShow = robot.createScreenCapture(new Rectangle(0, 0, 300, 300));
-
-        SwingUtilities.invokeAndWait(new Runnable() {
-
-            @Override
-            public void run() {
-                button.hide();
-            }
-        });
-
-        if (Util.compareBufferedImages(imageInit, imageShow)) {
-            throw new Exception("Failed to show non-opaque button");
-        }
-
-        robot.waitForIdle(500);
-        imageHide = robot.createScreenCapture(new Rectangle(0, 0, 300, 300));
-
-        if (!Util.compareBufferedImages(imageInit, imageHide)) {
-            throw new Exception("Failed to hide non-opaque button");
+        } finally {
+            if (frame != null) SwingUtilities.invokeAndWait(() -> frame.dispose());
         }
     }
 }

@@ -38,55 +38,60 @@ import java.awt.*;
 public class bug6515446 {
     private static JPanel panel;
     private static volatile boolean flag;
+    private static JFrame frame;
 
     public static void main(String[] args) throws Exception {
-        SwingUtilities.invokeLater(new Runnable() {
-            public void run() {
-                final JFrame frame = new JFrame();
-                frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        try {
+            SwingUtilities.invokeLater(new Runnable() {
+                public void run() {
+                    frame = new JFrame();
+                    frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-                final JPopupMenu popup = new JPopupMenu("Menu");
-                JMenuItem item = new JMenuItem("MenuItem");
-                item.addActionListener(new ActionListener() {
-                    public void actionPerformed(ActionEvent e) {
-                        flag = true;
-                    }
-                });
-                popup.add(item);
+                    final JPopupMenu popup = new JPopupMenu("Menu");
+                    JMenuItem item = new JMenuItem("MenuItem");
+                    item.addActionListener(new ActionListener() {
+                        public void actionPerformed(ActionEvent e) {
+                            flag = true;
+                        }
+                    });
+                    popup.add(item);
 
-                panel = new JPanel();
-                panel.addMouseListener(new MouseAdapter() {
-                    public void mousePressed(MouseEvent e) {
-                        popup.show(panel, e.getX(), e.getY());
-                    }
+                    panel = new JPanel();
+                    panel.addMouseListener(new MouseAdapter() {
+                        public void mousePressed(MouseEvent e) {
+                            popup.show(panel, e.getX(), e.getY());
+                        }
 
-                    public void mouseReleased(MouseEvent e) {
-                        popup.setVisible(false);
-                    }
-                });
-                frame.add(panel);
-                frame.setSize(200, 200);
-                frame.setLocationRelativeTo(null);
-                frame.setVisible(true);
+                        public void mouseReleased(MouseEvent e) {
+                            popup.setVisible(false);
+                        }
+                    });
+                    frame.add(panel);
+                    frame.setSize(200, 200);
+                    frame.setLocationRelativeTo(null);
+                    frame.setVisible(true);
+                }
+            });
+
+            ExtendedRobot robot = new ExtendedRobot();
+            robot.setAutoDelay(10);
+            robot.waitForIdle();
+
+            Point l = panel.getLocationOnScreen();
+
+            int x = l.x + panel.getWidth() / 2;
+            int y = l.y + panel.getHeight() / 2;
+            robot.mouseMove(x, y);
+            robot.mousePress(InputEvent.BUTTON1_MASK);
+            robot.glide(x, y, x + 10, y + 10);
+            robot.mouseRelease(InputEvent.BUTTON1_MASK);
+            robot.waitForIdle();
+
+            if (!flag) {
+                throw new RuntimeException("ActionEvent wasn't fired");
             }
-        });
-
-        ExtendedRobot robot = new ExtendedRobot();
-        robot.setAutoDelay(10);
-        robot.waitForIdle();
-
-        Point l = panel.getLocationOnScreen();
-
-        int x = l.x + panel.getWidth() / 2;
-        int y = l.y + panel.getHeight() / 2;
-        robot.mouseMove(x, y);
-        robot.mousePress(InputEvent.BUTTON1_MASK);
-        robot.glide(x, y, x + 10, y + 10);
-        robot.mouseRelease(InputEvent.BUTTON1_MASK);
-        robot.waitForIdle();
-
-        if (!flag) {
-            throw new RuntimeException("ActionEvent wasn't fired");
+        } finally {
+            if (frame != null) SwingUtilities.invokeAndWait(() -> frame.dispose());
         }
     }
 }

@@ -43,53 +43,58 @@ public class bug6711682 {
     private static JCheckBox editorCb;
     private static JCheckBox rendererCb;
     private static JTable table;
+    private static JFrame f;
 
     public static void main(String[] args) throws Exception {
-        Robot robot = new Robot();
-        robot.setAutoDelay(50);
-        SwingUtilities.invokeAndWait(new Runnable() {
-            public void run() {
-                createAndShowGUI();
+        try {
+            Robot robot = new Robot();
+            robot.setAutoDelay(50);
+            SwingUtilities.invokeAndWait(new Runnable() {
+                public void run() {
+                    createAndShowGUI();
+                }
+            });
+            robot.waitForIdle();
+            Point l = table.getLocationOnScreen();
+            int h = table.getRowHeight();
+            for (int i = 0; i < 3; i++) {
+                robot.mouseMove(l.x + 5, l.y + 5 + i * h);
+                robot.mousePress(InputEvent.BUTTON1_MASK);
+                robot.mouseRelease(InputEvent.BUTTON1_MASK);
             }
-        });
-        robot.waitForIdle();
-        Point l = table.getLocationOnScreen();
-        int h = table.getRowHeight();
-        for (int i = 0; i < 3; i++) {
-            robot.mouseMove(l.x + 5, l.y + 5 + i * h);
-            robot.mousePress(InputEvent.BUTTON1_MASK);
-            robot.mouseRelease(InputEvent.BUTTON1_MASK);
-        }
-        // Without pressing F2 the last table's cell
-        // reported <code>false</code> value
-        // note that I can't press it inside the for loop
-        // because it doesn't reproduce the bug
-        robot.keyPress(KeyEvent.VK_F2);
-        robot.keyRelease(KeyEvent.VK_F2);
+            // Without pressing F2 the last table's cell
+            // reported <code>false</code> value
+            // note that I can't press it inside the for loop
+            // because it doesn't reproduce the bug
+            robot.keyPress(KeyEvent.VK_F2);
+            robot.keyRelease(KeyEvent.VK_F2);
 
-        for (int i = 0; i < 3; i++) {
-            if (!Boolean.TRUE.equals(table.getValueAt(i, 0))) {
-                throw new RuntimeException("Row #" + i + " checkbox is not selected");
+            for (int i = 0; i < 3; i++) {
+                if (!Boolean.TRUE.equals(table.getValueAt(i, 0))) {
+                    throw new RuntimeException("Row #" + i + " checkbox is not selected");
+                }
             }
-        }
-        for (int i = 2; i >= 0; i--) {
-            robot.mouseMove(l.x + 5, l.y + 5 + i * h);
-            robot.mousePress(InputEvent.BUTTON1_MASK);
-            robot.mouseRelease(InputEvent.BUTTON1_MASK);
-        }
-        robot.keyPress(KeyEvent.VK_F2);
-        robot.keyRelease(KeyEvent.VK_F2);
-        for (int i = 0; i < 3; i++) {
-            if (Boolean.TRUE.equals(table.getValueAt(i, 0))) {
-                throw new RuntimeException("Row #" + i + " checkbox is selected");
+            for (int i = 2; i >= 0; i--) {
+                robot.mouseMove(l.x + 5, l.y + 5 + i * h);
+                robot.mousePress(InputEvent.BUTTON1_MASK);
+                robot.mouseRelease(InputEvent.BUTTON1_MASK);
             }
+            robot.keyPress(KeyEvent.VK_F2);
+            robot.keyRelease(KeyEvent.VK_F2);
+            for (int i = 0; i < 3; i++) {
+                if (Boolean.TRUE.equals(table.getValueAt(i, 0))) {
+                    throw new RuntimeException("Row #" + i + " checkbox is selected");
+                }
+            }
+        } finally {
+            if (f != null) SwingUtilities.invokeAndWait(() -> f.dispose());
         }
     }
 
     private static void createAndShowGUI() {
         editorCb = new JCheckBox();
         rendererCb = new JCheckBox();
-        JFrame f = new JFrame("Table with CheckBox");
+        f = new JFrame("Table with CheckBox");
         Container p = f.getContentPane();
         p.setLayout(new BorderLayout());
         table = new JTable(new Object[][]{{false}, {false}, {false}}, new Object[]{"CheckBox"});

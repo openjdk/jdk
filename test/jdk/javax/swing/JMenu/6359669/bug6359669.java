@@ -39,48 +39,52 @@ import java.awt.event.InputEvent;
 
 public class bug6359669 {
     static JMenu menu;
+    static JFrame f;
 
     public static void main(String[] args) throws Exception {
+        try {
+            ExtendedRobot robot = new ExtendedRobot();
+            robot.setAutoDelay(10);
 
-        ExtendedRobot robot = new ExtendedRobot();
-        robot.setAutoDelay(10);
+            SwingUtilities.invokeLater(new Runnable() {
+                public void run() {
+                    f = new JFrame();
+                    JMenuBar menuBar = new JMenuBar();
+                    menu = new JMenu("Test");
+                    menu.getPopupMenu().addPopupMenuListener(new PopupMenuListener() {
+                        public void popupMenuCanceled(PopupMenuEvent e) {
+                        }
 
-        SwingUtilities.invokeLater(new Runnable() {
-            public void run() {
-                JFrame f = new JFrame();
-                JMenuBar menuBar = new JMenuBar();
-                menu = new JMenu("Test");
-                menu.getPopupMenu().addPopupMenuListener(new PopupMenuListener() {
-                    public void popupMenuCanceled(PopupMenuEvent e) {
-                    }
+                        public void popupMenuWillBecomeInvisible(PopupMenuEvent e) {
+                        }
 
-                    public void popupMenuWillBecomeInvisible(PopupMenuEvent e) {
-                    }
+                        public void popupMenuWillBecomeVisible(PopupMenuEvent e) {
+                            menu.add(new JMenuItem("An item"));
+                        }
+                    });
 
-                    public void popupMenuWillBecomeVisible(PopupMenuEvent e) {
-                        menu.add(new JMenuItem("An item"));
-                    }
-                });
+                    menuBar.add(menu);
+                    f.setJMenuBar(menuBar);
 
-                menuBar.add(menu);
-                f.setJMenuBar(menuBar);
-
-                f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-                f.setSize(200, 200);
-                f.setVisible(true);
+                    f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+                    f.setSize(200, 200);
+                    f.setVisible(true);
+                }
+            });
+            robot.waitForIdle();
+            Point p = menu.getLocationOnScreen();
+            Dimension size = menu.getSize();
+            p.x += size.width / 2;
+            p.y += size.height / 2;
+            robot.mouseMove(p.x, p.y);
+            robot.mousePress(InputEvent.BUTTON1_MASK);
+            robot.mouseRelease(InputEvent.BUTTON1_MASK);
+            robot.waitForIdle();
+            if (menu.getPopupMenu().getComponentCount() == 0) {
+                throw new RuntimeException("Where is a menuItem ?");
             }
-        });
-        robot.waitForIdle();
-        Point p = menu.getLocationOnScreen();
-        Dimension size = menu.getSize();
-        p.x += size.width / 2;
-        p.y += size.height / 2;
-        robot.mouseMove(p.x, p.y);
-        robot.mousePress(InputEvent.BUTTON1_MASK);
-        robot.mouseRelease(InputEvent.BUTTON1_MASK);
-        robot.waitForIdle();
-        if (menu.getPopupMenu().getComponentCount() == 0) {
-            throw new RuntimeException("Where is a menuItem ?");
+        } finally {
+            if (f != null) SwingUtilities.invokeAndWait(() -> f.dispose());
         }
     }
 }

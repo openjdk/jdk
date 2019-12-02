@@ -53,32 +53,35 @@ public class JInternalFrameDraggingTest {
     private static Color BACKGROUND_COLOR = Color.ORANGE;
 
     public static void main(String[] args) throws Exception {
+        try {
+            Robot robot = new Robot();
+            robot.setAutoDelay(20);
+            SwingUtilities.invokeAndWait(JInternalFrameDraggingTest::createAndShowGUI);
+            robot.waitForIdle();
 
-        Robot robot = new Robot();
-        robot.setAutoDelay(20);
-        SwingUtilities.invokeAndWait(JInternalFrameDraggingTest::createAndShowGUI);
-        robot.waitForIdle();
+            final int translate = FRAME_SIZE / 4;
+            moveFrame(robot, translate, translate / 2, translate / 2);
+            robot.waitForIdle();
 
-        final int translate = FRAME_SIZE / 4;
-        moveFrame(robot, translate, translate / 2, translate / 2);
-        robot.waitForIdle();
+            Point p = getDesktopPaneLocation();
+            int size = translate / 2;
+            Rectangle rect = new Rectangle(p.x, p.y, size, size);
+            BufferedImage img = robot.createScreenCapture(rect);
 
-        Point p = getDesktopPaneLocation();
-        int size = translate / 2;
-        Rectangle rect = new Rectangle(p.x, p.y, size, size);
-        BufferedImage img = robot.createScreenCapture(rect);
-
-        int testRGB = BACKGROUND_COLOR.getRGB();
-        for (int i = 1; i < size; i++) {
-            int rgbCW = img.getRGB(i, size / 2);
-            int rgbCH = img.getRGB(size / 2, i);
-            if (rgbCW != testRGB || rgbCH != testRGB) {
-                System.out.println("i " + i + " rgbCW " +
-                                   Integer.toHexString(rgbCW) +
-                                   " testRGB " + Integer.toHexString(testRGB) +
-                                   " rgbCH " + Integer.toHexString(rgbCH));
-                throw new RuntimeException("Background color is wrong!");
+            int testRGB = BACKGROUND_COLOR.getRGB();
+            for (int i = 1; i < size; i++) {
+                int rgbCW = img.getRGB(i, size / 2);
+                int rgbCH = img.getRGB(size / 2, i);
+                if (rgbCW != testRGB || rgbCH != testRGB) {
+                    System.out.println("i " + i + " rgbCW " +
+                                       Integer.toHexString(rgbCW) +
+                                       " testRGB " + Integer.toHexString(testRGB) +
+                                       " rgbCH " + Integer.toHexString(rgbCH));
+                    throw new RuntimeException("Background color is wrong!");
+                }
             }
+        } finally {
+            if (frame != null) SwingUtilities.invokeAndWait(() -> frame.dispose());
         }
     }
 

@@ -43,40 +43,45 @@ import javax.swing.border.LineBorder;
 public class bug4220171 {
 
     private static JTable table;
+    private static JFrame frame;
 
     public static void main(String args[]) throws Exception {
+        try {
 
-        Robot robot = new Robot();
-        robot.setAutoDelay(50);
+            Robot robot = new Robot();
+            robot.setAutoDelay(50);
 
-        javax.swing.SwingUtilities.invokeAndWait(new Runnable() {
+            javax.swing.SwingUtilities.invokeAndWait(new Runnable() {
 
-            public void run() {
-                createAndShowGUI();
-            }
-        });
+                public void run() {
+                    createAndShowGUI();
+                }
+            });
 
-        robot.waitForIdle();
+            robot.waitForIdle();
 
-        clickMouse(robot, 0, 0);
-        Util.hitKeys(robot, KeyEvent.VK_A, KeyEvent.VK_B, KeyEvent.VK_ENTER);
-        robot.waitForIdle();
-        checkCell(0, 0);
+            clickMouse(robot, 0, 0);
+            Util.hitKeys(robot, KeyEvent.VK_A, KeyEvent.VK_B, KeyEvent.VK_ENTER);
+            robot.waitForIdle();
+            checkCell(0, 0);
 
-        clickMouse(robot, 0, 1);
-        Util.hitKeys(robot, KeyEvent.VK_D, KeyEvent.VK_E, KeyEvent.VK_ENTER);
-        robot.waitForIdle();
-        checkCell(0, 1);
+            clickMouse(robot, 0, 1);
+            Util.hitKeys(robot, KeyEvent.VK_D, KeyEvent.VK_E, KeyEvent.VK_ENTER);
+            robot.waitForIdle();
+            checkCell(0, 1);
 
-        clickMouse(robot, 1, 0);
-        Util.hitKeys(robot, KeyEvent.VK_1, KeyEvent.VK_2, KeyEvent.VK_ENTER);
-        robot.waitForIdle();
-        checkCell(1, 0);
+            clickMouse(robot, 1, 0);
+            Util.hitKeys(robot, KeyEvent.VK_1, KeyEvent.VK_2, KeyEvent.VK_ENTER);
+            robot.waitForIdle();
+            checkCell(1, 0);
 
-        clickMouse(robot, 1, 1);
-        Util.hitKeys(robot, KeyEvent.VK_4, KeyEvent.VK_5, KeyEvent.VK_ENTER);
-        robot.waitForIdle();
-        checkCell(1, 1);
+            clickMouse(robot, 1, 1);
+            Util.hitKeys(robot, KeyEvent.VK_4, KeyEvent.VK_5, KeyEvent.VK_ENTER);
+            robot.waitForIdle();
+            checkCell(1, 1);
+        } finally {
+            if (frame != null) SwingUtilities.invokeAndWait(() -> frame.dispose());
+        }
     }
 
     static void checkCell(final int row, final int column) throws Exception {
@@ -116,7 +121,7 @@ public class bug4220171 {
     }
 
     private static void createAndShowGUI() {
-        JFrame frame = new JFrame("Test");
+        frame = new JFrame("Test");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setSize(200, 200);
 

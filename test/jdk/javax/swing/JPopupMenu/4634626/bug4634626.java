@@ -40,7 +40,7 @@ public class bug4634626 {
     public boolean passed = true;
     public boolean done = false;
 
-    public JFrame mainFrame = new JFrame("Bug4634626");
+    public static JFrame mainFrame = new JFrame("Bug4634626");
     public JRootPane rootPane = mainFrame.getRootPane();
     public JPanel contentPane = new JPanel();
     public JButton nopButton = new JButton("No popup button");
@@ -83,10 +83,14 @@ public class bug4634626 {
 
     public static MouseWatcher mouser = new MouseWatcher();
 
-    public static void main(final String[] args) {
-        bug4634626 app = new bug4634626();
-        app.init();
-        app.destroy();
+    public static void main(final String[] args) throws Exception {
+        try {
+            bug4634626 app = new bug4634626();
+            app.init();
+            app.destroy();
+        } finally {
+            if (mainFrame != null) SwingUtilities.invokeAndWait(() -> mainFrame.dispose());
+        }
     }
 
     public void init() {

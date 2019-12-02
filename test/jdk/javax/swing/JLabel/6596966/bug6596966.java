@@ -49,65 +49,69 @@ public class bug6596966 {
     private static JComboBox comboBox;
 
     public static void main(String[] args) throws Exception {
-        Robot robot = new Robot();
-
-        SwingUtilities.invokeAndWait(new Runnable() {
-            public void run() {
-                button = new JButton("Button");
-                comboBox = new JComboBox();
-
-                label = new JLabel("Label");
-                label.setDisplayedMnemonic('L');
-                label.setLabelFor(comboBox);
-
-                JPanel pnContent = new JPanel();
-
-                pnContent.add(button);
-                pnContent.add(label);
-                pnContent.add(comboBox);
-
-                frame = new JFrame();
-
-                frame.add(pnContent);
-                frame.pack();
-                frame.setVisible(true);
-            }
-        });
-
-        robot.waitForIdle();
-
-
-        int keyMask = InputEvent.ALT_MASK;
-        if (Platform.isOSX()) {
-            keyMask = InputEvent.CTRL_MASK | InputEvent.ALT_MASK;
-        }
-        ArrayList<Integer> keys = Util.getKeyCodesFromKeyMask(keyMask);
-        for (int i = 0; i < keys.size(); ++i) {
-            robot.keyPress(keys.get(i));
-        }
-
-        robot.keyPress(KeyEvent.VK_L);
-
-        robot.waitForIdle();
-        Toolkit.getDefaultToolkit().getSystemEventQueue().postEvent(new KeyEvent(label, KeyEvent.KEY_RELEASED,
-                EventQueue.getMostRecentEventTime(), 0, KeyEvent.VK_L, 'L'));
-
-        robot.waitForIdle();
-
         try {
+            Robot robot = new Robot();
+
             SwingUtilities.invokeAndWait(new Runnable() {
                 public void run() {
-                    if (!comboBox.isFocusOwner()) {
-                        throw new RuntimeException("comboBox isn't focus owner");
-                    }
+                    button = new JButton("Button");
+                    comboBox = new JComboBox();
+
+                    label = new JLabel("Label");
+                    label.setDisplayedMnemonic('L');
+                    label.setLabelFor(comboBox);
+
+                    JPanel pnContent = new JPanel();
+
+                    pnContent.add(button);
+                    pnContent.add(label);
+                    pnContent.add(comboBox);
+
+                    frame = new JFrame();
+
+                    frame.add(pnContent);
+                    frame.pack();
+                    frame.setVisible(true);
                 }
             });
-        } finally {
-            robot.keyRelease(KeyEvent.VK_L);
-            for (int i = 0; i < keys.size(); ++i) {
-                robot.keyRelease(keys.get(i));
-            }
+
             robot.waitForIdle();
+
+
+            int keyMask = InputEvent.ALT_MASK;
+            if (Platform.isOSX()) {
+                keyMask = InputEvent.CTRL_MASK | InputEvent.ALT_MASK;
+            }
+            ArrayList<Integer> keys = Util.getKeyCodesFromKeyMask(keyMask);
+            for (int i = 0; i < keys.size(); ++i) {
+                robot.keyPress(keys.get(i));
+            }
+
+            robot.keyPress(KeyEvent.VK_L);
+
+            robot.waitForIdle();
+            Toolkit.getDefaultToolkit().getSystemEventQueue().postEvent(new KeyEvent(label, KeyEvent.KEY_RELEASED,
+                    EventQueue.getMostRecentEventTime(), 0, KeyEvent.VK_L, 'L'));
+
+            robot.waitForIdle();
+
+            try {
+                SwingUtilities.invokeAndWait(new Runnable() {
+                    public void run() {
+                        if (!comboBox.isFocusOwner()) {
+                            throw new RuntimeException("comboBox isn't focus owner");
+                        }
+                    }
+                });
+            } finally {
+                robot.keyRelease(KeyEvent.VK_L);
+                for (int i = 0; i < keys.size(); ++i) {
+                    robot.keyRelease(keys.get(i));
+                }
+                robot.waitForIdle();
+            }
+        } finally {
+            if (frame != null) SwingUtilities.invokeAndWait(() -> frame.dispose());
         }
     }
 }

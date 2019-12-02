@@ -46,14 +46,18 @@ public class bug6236162 {
     private static MyComboUI comboUI;
 
     public static void main(String[] args) throws Exception {
-        UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
-        SwingUtilities.invokeAndWait(new Runnable() {
-            public void run() {
-                createAndShowGUI();
-            }
-        });
-        test();
-        System.out.println("Test passed");
+        try {
+            UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
+            SwingUtilities.invokeAndWait(new Runnable() {
+                public void run() {
+                    createAndShowGUI();
+                }
+            });
+            test();
+            System.out.println("Test passed");
+        } finally {
+            if (frame != null) SwingUtilities.invokeAndWait(() -> frame.dispose());
+        }
     }
 
     private static void createAndShowGUI() {

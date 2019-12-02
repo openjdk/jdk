@@ -43,13 +43,14 @@ import javax.swing.WindowConstants;
 public class bug8057893 {
 
     private static volatile boolean isComboBoxEdited = false;
+    private static JFrame frame;
 
     public static void main(String[] args) throws Exception {
         Robot robot = new Robot();
         robot.setAutoDelay(50);
 
         EventQueue.invokeAndWait(() -> {
-            JFrame frame = new JFrame();
+            frame = new JFrame();
             frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
             JComboBox<String> comboBox = new JComboBox<>(new String[]{"one", "two"});
             comboBox.setEditable(true);
@@ -76,6 +77,7 @@ public class bug8057893 {
         robot.keyRelease(KeyEvent.VK_ENTER);
         robot.waitForIdle();
 
+        if (frame != null) EventQueue.invokeAndWait(() -> frame.dispose());
         if(!isComboBoxEdited){
             throw new RuntimeException("ComboBoxEdited event is not fired!");
         }

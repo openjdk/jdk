@@ -38,33 +38,37 @@ import java.util.*;
 public class bug4865918 {
 
     private static TestScrollBar sbar;
+    private static JFrame frame;
 
     public static void main(String[] argv) throws Exception {
+        try {
+            Robot robot = new Robot();
+            SwingUtilities.invokeAndWait(new Runnable() {
 
-        Robot robot = new Robot();
-        SwingUtilities.invokeAndWait(new Runnable() {
+                public void run() {
+                    createAndShowGUI();
+                }
+            });
 
-            public void run() {
-                createAndShowGUI();
+            robot.waitForIdle();
+
+            SwingUtilities.invokeAndWait(new Runnable() {
+
+                @Override
+                public void run() {
+                    sbar.pressMouse();
+                }
+            });
+
+            robot.waitForIdle();
+
+            int value = getValue();
+
+            if (value != 9) {
+                throw new Error("The scrollbar block increment is incorect");
             }
-        });
-
-        robot.waitForIdle();
-
-        SwingUtilities.invokeAndWait(new Runnable() {
-
-            @Override
-            public void run() {
-                sbar.pressMouse();
-            }
-        });
-
-        robot.waitForIdle();
-
-        int value = getValue();
-
-        if (value != 9) {
-            throw new Error("The scrollbar block increment is incorect");
+        } finally {
+            if (frame != null) SwingUtilities.invokeAndWait(() -> frame.dispose());
         }
     }
 
@@ -82,7 +86,7 @@ public class bug4865918 {
     }
 
     private static void createAndShowGUI() {
-        JFrame frame = new JFrame("bug4865918");
+        frame = new JFrame("bug4865918");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
         sbar = new TestScrollBar(JScrollBar.HORIZONTAL, -1, 10, -100, 100);

@@ -36,68 +36,73 @@ import java.awt.*;
 public class bug6989617 {
     private static MyPanel panel;
     private static JButton button;
+    private static JFrame frame;
 
     public static void main(String... args) throws Exception {
-        Robot robot = new Robot();
-        SwingUtilities.invokeAndWait(new Runnable() {
-            public void run() {
-                JFrame frame = new JFrame();
-                frame. setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-                panel = new MyPanel();
+        try {
+            Robot robot = new Robot();
+            SwingUtilities.invokeAndWait(new Runnable() {
+                public void run() {
+                    frame = new JFrame();
+                    frame. setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+                    panel = new MyPanel();
 
-                button = new JButton("Hello");
-                panel.add(button);
-                frame.add(panel);
+                    button = new JButton("Hello");
+                    panel.add(button);
+                    frame.add(panel);
 
-                frame.setSize(200, 300);
-                frame.setVisible(true);
-            }
-        });
-        // Testing the panel as a painting origin,
-        // the panel.paintImmediately() must be triggered
-        // when button.repaint() is called
-        robot.waitForIdle();
-        SwingUtilities.invokeAndWait(new Runnable() {
-            public void run() {
-                panel.resetPaintRectangle();
-                button.repaint();
-            }
-        });
-        robot.waitForIdle();
-        SwingUtilities.invokeAndWait(new Runnable() {
-            public void run() {
-                Rectangle pr = panel.getPaintRectangle();
-                if (!pr.getSize().equals(button.getSize())) {
-                    throw new RuntimeException("wrong size of the dirty area");
+                    frame.setSize(200, 300);
+                    frame.setVisible(true);
                 }
-                if (!pr.getLocation().equals(button.getLocation())) {
-                    throw new RuntimeException("wrong location of the dirty area");
+            });
+            // Testing the panel as a painting origin,
+            // the panel.paintImmediately() must be triggered
+            // when button.repaint() is called
+            robot.waitForIdle();
+            SwingUtilities.invokeAndWait(new Runnable() {
+                public void run() {
+                    panel.resetPaintRectangle();
+                    button.repaint();
                 }
-            }
-        });
-        // Testing the panel as NOT a painting origin
-        // the panel.paintImmediately() must NOT be triggered
-        // when button.repaint() is called
-        robot.waitForIdle();
-        SwingUtilities.invokeAndWait(new Runnable() {
-            public void run() {
-                panel.resetPaintRectangle();
-                panel.setPaintingOrigin(false);
-                if (panel.getPaintRectangle() != null) {
-                    throw new RuntimeException("paint rectangle is not null");
+            });
+            robot.waitForIdle();
+            SwingUtilities.invokeAndWait(new Runnable() {
+                public void run() {
+                    Rectangle pr = panel.getPaintRectangle();
+                    if (!pr.getSize().equals(button.getSize())) {
+                        throw new RuntimeException("wrong size of the dirty area");
+                    }
+                    if (!pr.getLocation().equals(button.getLocation())) {
+                        throw new RuntimeException("wrong location of the dirty area");
+                    }
                 }
-                button.repaint();
-            }
-        });
-        robot.waitForIdle();
-        SwingUtilities.invokeAndWait(new Runnable() {
-            public void run() {
-                if(panel.getPaintRectangle() != null) {
-                    throw new RuntimeException("paint rectangle is not null");
+            });
+            // Testing the panel as NOT a painting origin
+            // the panel.paintImmediately() must NOT be triggered
+            // when button.repaint() is called
+            robot.waitForIdle();
+            SwingUtilities.invokeAndWait(new Runnable() {
+                public void run() {
+                    panel.resetPaintRectangle();
+                    panel.setPaintingOrigin(false);
+                    if (panel.getPaintRectangle() != null) {
+                        throw new RuntimeException("paint rectangle is not null");
+                    }
+                    button.repaint();
                 }
-                System.out.println("Test passed...");
-            }
-        });
+            });
+            robot.waitForIdle();
+            SwingUtilities.invokeAndWait(new Runnable() {
+                public void run() {
+                    if(panel.getPaintRectangle() != null) {
+                        throw new RuntimeException("paint rectangle is not null");
+                    }
+                    System.out.println("Test passed...");
+                }
+            });
+        } finally {
+            if (frame != null) SwingUtilities.invokeAndWait(() -> frame.dispose());
+        }
     }
 
     static class MyPanel extends JPanel {

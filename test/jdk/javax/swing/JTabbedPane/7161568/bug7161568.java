@@ -36,42 +36,47 @@ public class bug7161568 {
 
     private static final int N = 50;
     private static JTabbedPane tabbedPane;
+    private static JFrame frame;
 
     public static void main(String[] args) throws Exception {
         UIManager.put("TabbedPane.selectionFollowsFocus", Boolean.FALSE);
 
-        Robot robot = new Robot();
-        robot.setAutoDelay(50);
+        try {
+            Robot robot = new Robot();
+            robot.setAutoDelay(50);
 
-        SwingUtilities.invokeAndWait(new Runnable() {
+            SwingUtilities.invokeAndWait(new Runnable() {
 
-            @Override
-            public void run() {
-                createAndShowUI();
-            }
-        });
+                @Override
+                public void run() {
+                    createAndShowUI();
+                }
+            });
 
-        robot.waitForIdle();
-
-        SwingUtilities.invokeAndWait(new Runnable() {
-
-            @Override
-            public void run() {
-                tabbedPane.requestFocus();
-            }
-        });
-
-        robot.waitForIdle();
-
-        for (int i = 0; i < N; i++) {
-            robot.keyPress(KeyEvent.VK_LEFT);
-            robot.keyRelease(KeyEvent.VK_LEFT);
             robot.waitForIdle();
+
+            SwingUtilities.invokeAndWait(new Runnable() {
+
+                @Override
+                public void run() {
+                    tabbedPane.requestFocus();
+                }
+            });
+
+            robot.waitForIdle();
+
+            for (int i = 0; i < N; i++) {
+                robot.keyPress(KeyEvent.VK_LEFT);
+                robot.keyRelease(KeyEvent.VK_LEFT);
+                robot.waitForIdle();
+            }
+        } finally {
+            if (frame != null) SwingUtilities.invokeAndWait(() -> frame.dispose());
         }
     }
 
     static void createAndShowUI() {
-        JFrame frame = new JFrame("Test");
+        frame = new JFrame("Test");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setSize(100, 100);
 

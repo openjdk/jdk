@@ -42,79 +42,84 @@ public class bug4654927 {
 
     private static volatile JMenu menu;
     private static volatile JMenuItem menuItem;
+    private static JFrame frame;
 
     public static void main(String[] args) throws Exception {
-        String systemLAF = UIManager.getSystemLookAndFeelClassName();
-        // the test is not applicable to Motif L&F
-        if(systemLAF.endsWith("MotifLookAndFeel")){
-            return;
-        }
-
-        UIManager.setLookAndFeel(systemLAF);
-        Robot robot = new Robot();
-        robot.setAutoDelay(10);
-
-        SwingUtilities.invokeAndWait(new Runnable() {
-
-            public void run() {
-                createAndShowUI();
+        try {
+            String systemLAF = UIManager.getSystemLookAndFeelClassName();
+            // the test is not applicable to Motif L&F
+            if(systemLAF.endsWith("MotifLookAndFeel")){
+                return;
             }
-        });
-        robot.waitForIdle();
 
-        // test mouse press
-        Point point = Util.getCenterPoint(menu);
-        robot.mouseMove(point.x, point.y);
-        robot.mousePress(InputEvent.BUTTON1_MASK);
-        robot.mouseRelease(InputEvent.BUTTON1_MASK);
-        robot.waitForIdle();
+            UIManager.setLookAndFeel(systemLAF);
+            Robot robot = new Robot();
+            robot.setAutoDelay(10);
 
-        point = Util.getCenterPoint(menuItem);
-        robot.mouseMove(point.x, point.y);
-        robot.mousePress(InputEvent.BUTTON1_MASK);
-        robot.mouseRelease(InputEvent.BUTTON1_MASK);
-        robot.waitForIdle();
+            SwingUtilities.invokeAndWait(new Runnable() {
 
-        if (!isMenuItemShowing()) {
-            throw new RuntimeException("Popup is unexpectedly closed");
-        }
+                public void run() {
+                    createAndShowUI();
+                }
+            });
+            robot.waitForIdle();
 
-        // test mouse drag
-        point = Util.getCenterPoint(menu);
-        robot.mouseMove(point.x, point.y);
-        Point menuLocation = Util.invokeOnEDT(new Callable<Point>() {
+            // test mouse press
+            Point point = Util.getCenterPoint(menu);
+            robot.mouseMove(point.x, point.y);
+            robot.mousePress(InputEvent.BUTTON1_MASK);
+            robot.mouseRelease(InputEvent.BUTTON1_MASK);
+            robot.waitForIdle();
 
-            @Override
-            public Point call() throws Exception {
-                return menu.getLocationOnScreen();
+            point = Util.getCenterPoint(menuItem);
+            robot.mouseMove(point.x, point.y);
+            robot.mousePress(InputEvent.BUTTON1_MASK);
+            robot.mouseRelease(InputEvent.BUTTON1_MASK);
+            robot.waitForIdle();
+
+            if (!isMenuItemShowing()) {
+                throw new RuntimeException("Popup is unexpectedly closed");
             }
-        });
 
-        Point itemLocation = Util.invokeOnEDT(new Callable<Point>() {
+            // test mouse drag
+            point = Util.getCenterPoint(menu);
+            robot.mouseMove(point.x, point.y);
+            Point menuLocation = Util.invokeOnEDT(new Callable<Point>() {
 
-            @Override
-            public Point call() throws Exception {
-                return menuItem.getLocationOnScreen();
+                @Override
+                public Point call() throws Exception {
+                    return menu.getLocationOnScreen();
+                }
+            });
+
+            Point itemLocation = Util.invokeOnEDT(new Callable<Point>() {
+
+                @Override
+                public Point call() throws Exception {
+                    return menuItem.getLocationOnScreen();
+                }
+            });
+
+            int x0 = menuLocation.x + 10;
+            int y0 = menuLocation.y + 10;
+            int x1 = itemLocation.x + 10;
+            int y1 = itemLocation.y + 10;
+
+            // close menu
+            robot.mousePress(InputEvent.BUTTON1_MASK);
+            robot.mouseRelease(InputEvent.BUTTON1_MASK);
+            robot.waitForIdle();
+
+            robot.mousePress(InputEvent.BUTTON1_MASK);
+            Util.glide(robot, x0, y0, x1, y1);
+            robot.mouseRelease(InputEvent.BUTTON1_MASK);
+            robot.waitForIdle();
+
+            if (!isMenuItemShowing()) {
+                throw new RuntimeException("Popup is unexpectedly closed");
             }
-        });
-
-        int x0 = menuLocation.x + 10;
-        int y0 = menuLocation.y + 10;
-        int x1 = itemLocation.x + 10;
-        int y1 = itemLocation.y + 10;
-
-        // close menu
-        robot.mousePress(InputEvent.BUTTON1_MASK);
-        robot.mouseRelease(InputEvent.BUTTON1_MASK);
-        robot.waitForIdle();
-
-        robot.mousePress(InputEvent.BUTTON1_MASK);
-        Util.glide(robot, x0, y0, x1, y1);
-        robot.mouseRelease(InputEvent.BUTTON1_MASK);
-        robot.waitForIdle();
-
-        if (!isMenuItemShowing()) {
-            throw new RuntimeException("Popup is unexpectedly closed");
+        } finally {
+            if (frame != null) SwingUtilities.invokeAndWait(() -> frame.dispose());
         }
     }
 
@@ -129,7 +134,7 @@ public class bug4654927 {
     }
 
     private static void createAndShowUI() {
-        JFrame frame = new JFrame();
+        frame = new JFrame();
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
         menu = new JMenu("Menu");

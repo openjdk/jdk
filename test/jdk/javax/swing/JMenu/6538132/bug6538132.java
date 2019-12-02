@@ -42,6 +42,7 @@ public class bug6538132 {
     private static JMenu menu1;
     private static JMenu menu2;
     private static volatile boolean isWinLaf;
+    private static JFrame frame;
 
     private static void createGui() {
         try {
@@ -53,7 +54,7 @@ public class bug6538132 {
             isWinLaf = false;
             return;
         }
-        JFrame frame = new JFrame();
+        frame = new JFrame();
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
         JMenuBar menuBar = new JMenuBar();
@@ -76,35 +77,39 @@ public class bug6538132 {
     }
 
     public static void main(String[] args) throws Exception {
-        SwingUtilities.invokeAndWait(new Runnable() {
-            public void run() {
-                bug6538132.createGui();
+        try {
+            SwingUtilities.invokeAndWait(new Runnable() {
+                public void run() {
+                    bug6538132.createGui();
+                }
+            });
+            if(isWinLaf) {
+                ExtendedRobot robot = new ExtendedRobot();
+                robot.setAutoDelay(10);
+                robot.waitForIdle();
+                Point p1 = menu1.getLocationOnScreen();
+                final int x1 = p1.x + menu1.getWidth() / 2;
+                final int y1 = p1.y + menu1.getHeight() / 2;
+                robot.glide(0, 0, x1, y1);
+                robot.mousePress(InputEvent.BUTTON1_MASK);
+                robot.mouseRelease(InputEvent.BUTTON1_MASK);
+                assertPopupOpen();
+                Point p2 = menu2.getLocationOnScreen();
+                final int x2 = p2.x + menu2.getWidth() / 2;
+                final int y2 = p2.y + menu2.getHeight() / 2;
+                robot.glide(x1, y1, x2, y2);
+                assertPopupOpen();
+                robot.keyPress(KeyEvent.VK_ESCAPE);
+                robot.keyRelease(KeyEvent.VK_ESCAPE);
+                assertPopupNotOpen();
+                robot.glide(x2, y2, x1, y1);
+                assertPopupNotOpen();
+                robot.mousePress(InputEvent.BUTTON1_MASK);
+                robot.mouseRelease(InputEvent.BUTTON1_MASK);
+                assertPopupOpen();
             }
-        });
-        if(isWinLaf) {
-            ExtendedRobot robot = new ExtendedRobot();
-            robot.setAutoDelay(10);
-            robot.waitForIdle();
-            Point p1 = menu1.getLocationOnScreen();
-            final int x1 = p1.x + menu1.getWidth() / 2;
-            final int y1 = p1.y + menu1.getHeight() / 2;
-            robot.glide(0, 0, x1, y1);
-            robot.mousePress(InputEvent.BUTTON1_MASK);
-            robot.mouseRelease(InputEvent.BUTTON1_MASK);
-            assertPopupOpen();
-            Point p2 = menu2.getLocationOnScreen();
-            final int x2 = p2.x + menu2.getWidth() / 2;
-            final int y2 = p2.y + menu2.getHeight() / 2;
-            robot.glide(x1, y1, x2, y2);
-            assertPopupOpen();
-            robot.keyPress(KeyEvent.VK_ESCAPE);
-            robot.keyRelease(KeyEvent.VK_ESCAPE);
-            assertPopupNotOpen();
-            robot.glide(x2, y2, x1, y1);
-            assertPopupNotOpen();
-            robot.mousePress(InputEvent.BUTTON1_MASK);
-            robot.mouseRelease(InputEvent.BUTTON1_MASK);
-            assertPopupOpen();
+        } finally {
+            if (frame != null) SwingUtilities.invokeAndWait(() -> frame.dispose());
         }
     }
 

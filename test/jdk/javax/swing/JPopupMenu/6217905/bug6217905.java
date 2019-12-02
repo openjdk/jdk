@@ -42,9 +42,10 @@ public class bug6217905 {
     private static JPanel popupPanel;
     private static JMenuItem firstItem;
     private static JMenuItem lastItem;
+    private static JFrame frame;
 
     private static void createGui() {
-        final JFrame frame = new JFrame();
+        frame = new JFrame();
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
         JPopupMenu popup = new JPopupMenu("Menu");
@@ -70,44 +71,48 @@ public class bug6217905 {
             return;
         }
 
-        ExtendedRobot robot = new ExtendedRobot();
-        robot.setAutoDelay(10);
-        SwingUtilities.invokeLater(new Runnable() {
-            public void run() {
-                bug6217905.createGui();
+        try {
+            ExtendedRobot robot = new ExtendedRobot();
+            robot.setAutoDelay(10);
+            SwingUtilities.invokeLater(new Runnable() {
+                public void run() {
+                    bug6217905.createGui();
+                }
+            });
+            robot.waitForIdle();
+            Point loc = popupPanel.getLocationOnScreen();
+            int x = loc.x + popupPanel.getWidth()/2;
+            int y = loc.y + popupPanel.getHeight()/2;
+            robot.glide(0, 0, x, y);
+            robot.mousePress(InputEvent.BUTTON3_MASK);
+            robot.mouseRelease(InputEvent.BUTTON3_MASK);
+            robot.waitForIdle();
+            if (getSelectedPathLength() != 1) {
+                throw new RuntimeException("Only popup must be selected");
             }
-        });
-        robot.waitForIdle();
-        Point loc = popupPanel.getLocationOnScreen();
-        int x = loc.x + popupPanel.getWidth()/2;
-        int y = loc.y + popupPanel.getHeight()/2;
-        robot.glide(0, 0, x, y);
-        robot.mousePress(InputEvent.BUTTON3_MASK);
-        robot.mouseRelease(InputEvent.BUTTON3_MASK);
-        robot.waitForIdle();
-        if (getSelectedPathLength() != 1) {
-            throw new RuntimeException("Only popup must be selected");
-        }
-        robot.glide(x, y, 0, 0);
-        robot.type(KeyEvent.VK_DOWN);
-        robot.waitForIdle();
-        if (getSelectedPathLength() != 2 || !firstItem.isArmed()) {
-            throw new RuntimeException("First item must be selected");
-        }
-        robot.type(KeyEvent.VK_ESCAPE);
-        robot.waitForIdle();
-        if (getSelectedPathLength() != 0) {
-            throw new RuntimeException("There must be no selected items");
-        }
-        robot.glide(0, 0, x, y);
-        robot.mousePress(InputEvent.BUTTON3_MASK);
-        robot.mouseRelease(InputEvent.BUTTON3_MASK);
-        robot.waitForIdle();
-        robot.glide(x, y, 0, 0);
-        robot.type(KeyEvent.VK_UP);
-        robot.waitForIdle();
-        if (getSelectedPathLength() != 2 || !lastItem.isArmed()) {
-            throw new RuntimeException("Last item must be selected");
+            robot.glide(x, y, 0, 0);
+            robot.type(KeyEvent.VK_DOWN);
+            robot.waitForIdle();
+            if (getSelectedPathLength() != 2 || !firstItem.isArmed()) {
+                throw new RuntimeException("First item must be selected");
+            }
+            robot.type(KeyEvent.VK_ESCAPE);
+            robot.waitForIdle();
+            if (getSelectedPathLength() != 0) {
+                throw new RuntimeException("There must be no selected items");
+            }
+            robot.glide(0, 0, x, y);
+            robot.mousePress(InputEvent.BUTTON3_MASK);
+            robot.mouseRelease(InputEvent.BUTTON3_MASK);
+            robot.waitForIdle();
+            robot.glide(x, y, 0, 0);
+            robot.type(KeyEvent.VK_UP);
+            robot.waitForIdle();
+            if (getSelectedPathLength() != 2 || !lastItem.isArmed()) {
+                throw new RuntimeException("Last item must be selected");
+            }
+        } finally {
+             if (frame != null) SwingUtilities.invokeAndWait(() -> frame.dispose());
         }
     }
 

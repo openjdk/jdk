@@ -40,35 +40,39 @@ public class bug4750590 {
 
     public static PassedListener pass = new PassedListener();
     public static volatile boolean passed = false;
+    private static JFrame mainFrame;
 
     public static void main(String args[]) throws Throwable {
+        try {
+            SwingUtilities.invokeAndWait(new Runnable() {
+                @Override
+                public void run() {
+                    createAndShowGUI();
+                }
+            });
 
-        SwingUtilities.invokeAndWait(new Runnable() {
-            @Override
-            public void run() {
-                createAndShowGUI();
+            Robot robo = new Robot();
+            robo.setAutoDelay(500);
+            robo.waitForIdle();
+
+            Util.hitMnemonics(robo, KeyEvent.VK_F);
+            robo.keyPress(KeyEvent.VK_M);
+            robo.keyRelease(KeyEvent.VK_M);
+
+            robo.waitForIdle();
+
+            if (passed) {
+                System.out.println("Test passed!");
+            } else {
+                throw new RuntimeException("Test FAILED!");
             }
-        });
-
-        Robot robo = new Robot();
-        robo.setAutoDelay(500);
-        robo.waitForIdle();
-
-        Util.hitMnemonics(robo, KeyEvent.VK_F);
-        robo.keyPress(KeyEvent.VK_M);
-        robo.keyRelease(KeyEvent.VK_M);
-
-        robo.waitForIdle();
-
-        if (passed) {
-            System.out.println("Test passed!");
-        } else {
-            throw new RuntimeException("Test FAILED!");
+        } finally {
+            if (mainFrame != null) SwingUtilities.invokeAndWait(() -> mainFrame.dispose());
         }
     }
 
     private static void createAndShowGUI() {
-        JFrame mainFrame = new JFrame("Bug 4750590");
+        mainFrame = new JFrame("Bug 4750590");
         JMenuBar mbar = new JMenuBar();
         JMenu menu = new JMenu("File");
         menu.setMnemonic('F');

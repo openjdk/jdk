@@ -35,9 +35,10 @@ import java.awt.event.KeyEvent;
 
 public class bug6510999 {
     private static JScrollPane s;
+    static JFrame frame;
 
     private static void createGui() {
-        final JFrame frame = new JFrame();
+        frame = new JFrame();
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
         DefaultListModel dlm = new DefaultListModel();
@@ -57,20 +58,24 @@ public class bug6510999 {
     }
 
     public static void main(String[] args) throws Exception {
-        Robot robot = new Robot();
-        robot.setAutoDelay(10);
-        SwingUtilities.invokeAndWait(new Runnable() {
-            public void run() {
-                bug6510999.createGui();
+        try {
+            Robot robot = new Robot();
+            robot.setAutoDelay(10);
+            SwingUtilities.invokeAndWait(new Runnable() {
+                public void run() {
+                    bug6510999.createGui();
+                }
+            });
+            robot.waitForIdle();
+            Point viewPosition = s.getViewport().getViewPosition();
+            robot.keyPress(KeyEvent.VK_DOWN);
+            robot.keyRelease(KeyEvent.VK_DOWN);
+            robot.waitForIdle();
+            if (!s.getViewport().getViewPosition().equals(viewPosition)) {
+                throw new RuntimeException("JScrollPane was unexpectedly scrolled");
             }
-        });
-        robot.waitForIdle();
-        Point viewPosition = s.getViewport().getViewPosition();
-        robot.keyPress(KeyEvent.VK_DOWN);
-        robot.keyRelease(KeyEvent.VK_DOWN);
-        robot.waitForIdle();
-        if (!s.getViewport().getViewPosition().equals(viewPosition)) {
-            throw new RuntimeException("JScrollPane was unexpectedly scrolled");
+        } finally {
+            if (frame != null) SwingUtilities.invokeAndWait(() -> frame.dispose());
         }
     }
 }

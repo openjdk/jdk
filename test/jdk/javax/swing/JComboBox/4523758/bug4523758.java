@@ -43,7 +43,7 @@ import java.awt.event.*;
 
 public class bug4523758 {
 
-    private JFrame frame;
+    private static JFrame frame;
     private JToolBar tools;
     private JComboBox combo;
 
@@ -153,13 +153,15 @@ public class bug4523758 {
         }
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         try {
             bug4523758 test = new bug4523758();
             test.doTest();
         } catch (Exception e) {
             e.printStackTrace();
             throw new RuntimeException("FAIL");
+        } finally {
+            if (frame != null) SwingUtilities.invokeAndWait(() -> frame.dispose());
         }
     }
 
