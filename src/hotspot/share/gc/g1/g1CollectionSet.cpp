@@ -66,6 +66,7 @@ G1CollectionSet::G1CollectionSet(G1CollectedHeap* g1h, G1Policy* policy) :
   _recorded_rs_length(0),
   _inc_build_state(Inactive),
   _inc_part_start(0),
+  _inc_collection_set_stats(NULL),
   _inc_bytes_used_before(0),
   _inc_recorded_rs_length(0),
   _inc_recorded_rs_length_diff(0),
@@ -75,6 +76,7 @@ G1CollectionSet::G1CollectionSet(G1CollectedHeap* g1h, G1Policy* policy) :
 
 G1CollectionSet::~G1CollectionSet() {
   FREE_C_HEAP_ARRAY(uint, _collection_set_regions);
+  FREE_C_HEAP_ARRAY(IncCollectionSetRegionStat, _inc_collection_set_stats);
   free_optional_regions();
   clear_candidates();
 }
@@ -97,6 +99,7 @@ void G1CollectionSet::initialize(uint max_region_length) {
   guarantee(_collection_set_regions == NULL, "Must only initialize once.");
   _collection_set_max_length = max_region_length;
   _collection_set_regions = NEW_C_HEAP_ARRAY(uint, max_region_length, mtGC);
+  _inc_collection_set_stats = NEW_C_HEAP_ARRAY(IncCollectionSetRegionStat, max_region_length, mtGC);
 }
 
 void G1CollectionSet::free_optional_regions() {
@@ -145,6 +148,11 @@ void G1CollectionSet::add_optional_region(HeapRegion* hr) {
 void G1CollectionSet::start_incremental_building() {
   assert(_collection_set_cur_length == 0, "Collection set must be empty before starting a new collection set.");
   assert(_inc_build_state == Inactive, "Precondition");
+#ifdef ASSERT
+  for (size_t i = 0; i < _collection_set_max_length; i++) {
+    _inc_collection_set_stats[i].reset();
+  }
+#endif
 
   _inc_bytes_used_before = 0;
 
@@ -238,18 +246,22 @@ void G1CollectionSet::update_young_region_prediction(HeapRegion* hr,
   assert(hr->is_young(), "Precondition");
   assert(!SafepointSynchronize::is_at_safepoint(), "should not be at a safepoint");
 
-  size_t old_rs_length = hr->recorded_rs_length();
+  IncCollectionSetRegionStat* stat = &_inc_collection_set_stats[hr->hrm_index()];
+
+  size_t old_rs_length = stat->_rs_length;
   assert(old_rs_length <= new_rs_length,
          "Remembered set decreased (changed from " SIZE_FORMAT " to " SIZE_FORMAT " region %u type %s)",
          old_rs_length, new_rs_length, hr->hrm_index(), hr->get_short_type_str());
   size_t rs_length_diff = new_rs_length - old_rs_length;
-  hr->set_recorded_rs_length(new_rs_length);
+  stat->_rs_length = new_rs_length;
   _inc_recorded_rs_length_diff += rs_length_diff;
 
-  double old_non_copy_time = hr->predicted_non_copy_time_ms();
+  double old_non_copy_time = stat->_non_copy_time_ms;
+  assert(old_non_copy_time >= 0.0, "Non copy time for region %u not initialized yet, is %.3f", hr->hrm_index(), old_non_copy_time);
   double new_non_copy_time = predict_region_non_copy_time_ms(hr);
   double non_copy_time_ms_diff = new_non_copy_time - old_non_copy_time;
-  hr->set_predicted_non_copy_time_ms(new_non_copy_time);
+
+  stat->_non_copy_time_ms = new_non_copy_time;
   _inc_predicted_non_copy_time_ms_diff += non_copy_time_ms_diff;
 }
 
@@ -275,30 +287,31 @@ void G1CollectionSet::add_young_region_common(HeapRegion* hr) {
 
   if (!_g1h->collector_state()->in_full_gc()) {
     size_t rs_length = hr->rem_set()->occupied();
-    double region_non_copy_time = predict_region_non_copy_time_ms(hr);
+    double non_copy_time = predict_region_non_copy_time_ms(hr);
 
     // Cache the values we have added to the aggregated information
     // in the heap region in case we have to remove this region from
     // the incremental collection set, or it is updated by the
     // rset sampling code
-    hr->set_recorded_rs_length(rs_length);
-    hr->set_predicted_non_copy_time_ms(region_non_copy_time);
+
+    IncCollectionSetRegionStat* stat = &_inc_collection_set_stats[hr->hrm_index()];
+    stat->_rs_length = rs_length;
+    stat->_non_copy_time_ms = non_copy_time;
 
     _inc_recorded_rs_length += rs_length;
-    _inc_predicted_non_copy_time_ms += region_non_copy_time;
+    _inc_predicted_non_copy_time_ms += non_copy_time;
     _inc_bytes_used_before += hr->used();
   }
 
   assert(!hr->in_collection_set(), "invariant");
   _g1h->register_young_region_with_region_attr(hr);
 
-  size_t collection_set_length = _collection_set_cur_length;
   // We use UINT_MAX as "invalid" marker in verification.
-  assert(collection_set_length < (UINT_MAX - 1),
-         "Collection set is too large with " SIZE_FORMAT " entries", collection_set_length);
-  hr->set_young_index_in_cset((uint)collection_set_length + 1);
+  assert(_collection_set_cur_length < (UINT_MAX - 1),
+         "Collection set is too large with " SIZE_FORMAT " entries", _collection_set_cur_length);
+  hr->set_young_index_in_cset((uint)_collection_set_cur_length + 1);
 
-  _collection_set_regions[collection_set_length] = hr->hrm_index();
+  _collection_set_regions[_collection_set_cur_length] = hr->hrm_index();
   // Concurrent readers must observe the store of the value in the array before an
   // update to the length field.
   OrderAccess::storestore();

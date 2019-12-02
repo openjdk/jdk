@@ -137,8 +137,6 @@ void HeapRegion::hr_clear(bool keep_remset, bool clear_space, bool locked) {
 
   _evacuation_failed = false;
   _gc_efficiency = 0.0;
-  _recorded_rs_length = 0;
-  _predicted_non_copy_time_ms = 0.0;
 }
 
 void HeapRegion::clear_cardtable() {
@@ -255,7 +253,6 @@ HeapRegion::HeapRegion(uint hrm_index,
   _prev_marked_bytes(0), _next_marked_bytes(0),
   _young_index_in_cset(-1),
   _surv_rate_group(NULL), _age_index(SurvRateGroup::InvalidAgeIndex), _gc_efficiency(0.0),
-  _recorded_rs_length(0), _predicted_non_copy_time_ms(0),
   _node_index(G1NUMA::UnknownNodeIndex)
 {
   assert(Universe::on_page_boundary(mr.start()) && Universe::on_page_boundary(mr.end()),

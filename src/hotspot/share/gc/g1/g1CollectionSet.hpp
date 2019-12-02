@@ -174,6 +174,22 @@ class G1CollectionSet {
   CSetBuildType _inc_build_state;
   size_t _inc_part_start;
 
+  // Information about eden regions in the incremental collection set.
+  struct IncCollectionSetRegionStat {
+    // The predicted non-copy time that was added to the total incremental value
+    // for the collection set.
+    double _non_copy_time_ms;
+    // The remembered set length that was added to the total incremental value
+    // for the collection set.
+    size_t _rs_length;
+
+#ifdef ASSERT
+    // Resets members to "uninitialized" values.
+    void reset() { _rs_length = ~(size_t)0; _non_copy_time_ms = -1.0; }
+#endif
+  };
+
+  IncCollectionSetRegionStat* _inc_collection_set_stats;
   // The associated information that is maintained while the incremental
   // collection set is being built with *young* regions. Used to populate
   // the recorded info for the evacuation pause.
