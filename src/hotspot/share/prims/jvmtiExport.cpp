@@ -2155,7 +2155,7 @@ jvmtiCompiledMethodLoadInlineRecord* create_inline_record(nmethod* nm) {
     int stackframe = 0;
     for(ScopeDesc* sd = nm->scope_desc_at(p->real_pc(nm));sd != NULL;sd = sd->sender()) {
       // sd->method() can be NULL for stubs but not for nmethods. To be completely robust, include an assert that we should never see a null sd->method()
-      assert(sd->method() != NULL, "sd->method() cannot be null.");
+      guarantee(sd->method() != NULL, "sd->method() cannot be null.");
       record->pcinfo[scope].methods[stackframe] = sd->method()->jmethod_id();
       record->pcinfo[scope].bcis[stackframe] = sd->bci();
       stackframe++;
@@ -2166,6 +2166,7 @@ jvmtiCompiledMethodLoadInlineRecord* create_inline_record(nmethod* nm) {
 }
 
 void JvmtiExport::post_compiled_method_load(nmethod *nm) {
+  guarantee(!nm->is_unloading(), "nmethod isn't unloaded or unloading");
   if (JvmtiEnv::get_phase() < JVMTI_PHASE_PRIMORDIAL) {
     return;
   }

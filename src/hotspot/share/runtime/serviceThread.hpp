@@ -30,12 +30,13 @@
 // A hidden from external view JavaThread for JVMTI compiled-method-load
 // events, oop storage cleanup, and the maintainance of string, symbol,
 // protection domain, and resolved method tables.
+class JvmtiDeferredEvent;
 
 class ServiceThread : public JavaThread {
   friend class VMStructs;
  private:
-
   static ServiceThread* _instance;
+  static JvmtiDeferredEvent* _jvmti_event;
 
   static void service_thread_entry(JavaThread* thread, TRAPS);
   ServiceThread(ThreadFunction entry_point) : JavaThread(entry_point) {};
@@ -45,9 +46,11 @@ class ServiceThread : public JavaThread {
 
   // Hide this thread from external view.
   bool is_hidden_from_external_view() const      { return true; }
+  bool is_service_thread() const                 { return true; }
 
-  // Returns true if the passed thread is the service thread.
-  static bool is_service_thread(Thread* thread);
+  // GC support
+  void oops_do(OopClosure* f, CodeBlobClosure* cf);
+  void nmethods_do(CodeBlobClosure* cf);
 };
 
 #endif // SHARE_RUNTIME_SERVICETHREAD_HPP

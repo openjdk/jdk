@@ -908,9 +908,6 @@ JvmtiDeferredEvent JvmtiDeferredEvent::compiled_method_load_event(
     nmethod* nm) {
   JvmtiDeferredEvent event = JvmtiDeferredEvent(TYPE_COMPILED_METHOD_LOAD);
   event._event_data.compiled_method_load = nm;
-  // Keep the nmethod alive until the ServiceThread can process
-  // this deferred event.
-  nmethodLocker::lock_nmethod(nm);
   return event;
 }
 
@@ -943,14 +940,12 @@ JvmtiDeferredEvent JvmtiDeferredEvent::dynamic_code_generated_event(
 }
 
 void JvmtiDeferredEvent::post() {
-  assert(ServiceThread::is_service_thread(Thread::current()),
+  assert(Thread::current()->is_service_thread(),
          "Service thread must post enqueued events");
   switch(_type) {
     case TYPE_COMPILED_METHOD_LOAD: {
       nmethod* nm = _event_data.compiled_method_load;
       JvmtiExport::post_compiled_method_load(nm);
-      // done with the deferred event so unlock the nmethod
-      nmethodLocker::unlock_nmethod(nm);
       break;
     }
     case TYPE_COMPILED_METHOD_UNLOAD: {
@@ -978,6 +973,21 @@ void JvmtiDeferredEvent::post() {
     default:
       ShouldNotReachHere();
   }
+}
+
+// Keep the nmethod for compiled_method_load from being unloaded.
+void JvmtiDeferredEvent::oops_do(OopClosure* f, CodeBlobClosure* cf) {
+  if (cf != NULL && _type == TYPE_COMPILED_METHOD_LOAD) {
+    cf->do_code_blob(_event_data.compiled_method_load);
+  }
+}
+
+// The sweeper calls this and marks the nmethods here on the stack so that
+// they cannot be turned into zombies while in the queue.
+void JvmtiDeferredEvent::nmethods_do(CodeBlobClosure* cf) {
+  if (cf != NULL && _type == TYPE_COMPILED_METHOD_LOAD) {
+    cf->do_code_blob(_event_data.compiled_method_load);
+  }  // May add UNLOAD event but it doesn't work yet.
 }
 
 JvmtiDeferredEventQueue::QueueNode* JvmtiDeferredEventQueue::_queue_tail = NULL;
@@ -1028,4 +1038,16 @@ JvmtiDeferredEvent JvmtiDeferredEventQueue::dequeue() {
   JvmtiDeferredEvent event = node->event();
   delete node;
   return event;
+}
+
+void JvmtiDeferredEventQueue::oops_do(OopClosure* f, CodeBlobClosure* cf) {
+  for(QueueNode* node = _queue_head; node != NULL; node = node->next()) {
+     node->event().oops_do(f, cf);
+  }
+}
+
+void JvmtiDeferredEventQueue::nmethods_do(CodeBlobClosure* cf) {
+  for(QueueNode* node = _queue_head; node != NULL; node = node->next()) {
+     node->event().nmethods_do(cf);
+  }
 }
