@@ -252,7 +252,7 @@ HeapRegion::HeapRegion(uint hrm_index,
   _prev_top_at_mark_start(NULL), _next_top_at_mark_start(NULL),
   _prev_marked_bytes(0), _next_marked_bytes(0),
   _young_index_in_cset(-1),
-  _surv_rate_group(NULL), _age_index(SurvRateGroup::InvalidAgeIndex), _gc_efficiency(0.0),
+  _surv_rate_group(NULL), _age_index(G1SurvRateGroup::InvalidAgeIndex), _gc_efficiency(0.0),
   _node_index(G1NUMA::UnknownNodeIndex)
 {
   assert(Universe::on_page_boundary(mr.start()) && Universe::on_page_boundary(mr.end()),

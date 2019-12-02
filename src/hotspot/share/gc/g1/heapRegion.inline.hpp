@@ -378,7 +378,7 @@ inline int HeapRegion::age_in_surv_rate_group() const {
 }
 
 inline bool HeapRegion::has_valid_age_in_surv_rate() const {
-  return SurvRateGroup::is_valid_age_index(_age_index);
+  return G1SurvRateGroup::is_valid_age_index(_age_index);
 }
 
 inline bool HeapRegion::has_surv_rate_group() const {
@@ -390,7 +390,7 @@ inline double HeapRegion::surv_rate_prediction(G1Predictions const& predictor) c
   return _surv_rate_group->surv_rate_pred(predictor, age_in_surv_rate_group());
 }
 
-inline void HeapRegion::install_surv_rate_group(SurvRateGroup* surv_rate_group) {
+inline void HeapRegion::install_surv_rate_group(G1SurvRateGroup* surv_rate_group) {
   assert(surv_rate_group != NULL, "pre-condition");
   assert(!has_surv_rate_group(), "pre-condition");
   assert(is_young(), "pre-condition");
@@ -405,7 +405,7 @@ inline void HeapRegion::uninstall_surv_rate_group() {
     assert(is_young(), "pre-condition");
 
     _surv_rate_group = NULL;
-    _age_index = SurvRateGroup::InvalidAgeIndex;
+    _age_index = G1SurvRateGroup::InvalidAgeIndex;
   } else {
     assert(!has_valid_age_in_surv_rate(), "pre-condition");
   }

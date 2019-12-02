@@ -28,13 +28,33 @@
 #include "gc/g1/g1Predictions.hpp"
 #include "utilities/numberSeq.hpp"
 
-class SurvRateGroup : public CHeapObj<mtGC> {
+// A survivor rate group tracks survival ratios of objects allocated in the
+// heap regions associated to a set of regions (a "space", i.e. eden or survivor)
+// on a time basis to predict future survival rates of regions of the same "age".
+//
+// Every time a new heap region associated with a survivor rate group is retired
+// (i.e. the time basis), it gets associated the next "age" entry in that group.
+//
+// During garbage collection G1 keeps track how much of total data is copied out
+// of a heap region (i.e. survives), to update the survivor rate predictor of that age.
+//
+// This information is used to predict, given a particular age of a heap region,
+// how much of its contents will likely survive to determine young generation sizes.
+//
+// The age index associated with a heap region is incremented from 0 (retired first)
+// to N (retired just before the GC).
+//
+// To avoid copying around data all the time when the total amount of regions in
+// a survivor rate group changes, this class organizes the arrays containing the
+// predictors in reverse chronological order as returned by age_in_group(). I.e.
+// index 0 contains the rate information for the region retired most recently.
+class G1SurvRateGroup : public CHeapObj<mtGC> {
   size_t  _stats_arrays_length;
   double* _accum_surv_rate_pred;
   double  _last_pred;
   TruncatedSeq** _surv_rate_predictors;
 
-  size_t _num_added_regions;   // The number of regions in this SurvRateGroup
+  size_t _num_added_regions;   // The number of regions in this survivor rate group.
 
   void fill_in_last_surv_rates();
   void finalize_predictions(const G1Predictions& predictor);
@@ -43,7 +63,7 @@ public:
   static const int InvalidAgeIndex = -1;
   static bool is_valid_age_index(int age) { return age >= 0; }
 
-  SurvRateGroup();
+  G1SurvRateGroup();
   void reset();
   void start_adding_regions();
   void stop_adding_regions();

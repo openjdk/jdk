@@ -246,7 +246,7 @@ private:
 
   // Data for young region survivor prediction.
   uint  _young_index_in_cset;
-  SurvRateGroup* _surv_rate_group;
+  G1SurvRateGroup* _surv_rate_group;
   int  _age_index;
 
   // Cached attributes used in the collection set policy information
@@ -544,7 +544,7 @@ public:
 
   double surv_rate_prediction(G1Predictions const& predictor) const;
 
-  void install_surv_rate_group(SurvRateGroup* surv_rate_group);
+  void install_surv_rate_group(G1SurvRateGroup* surv_rate_group);
   void uninstall_surv_rate_group();
 
   void record_surv_words_in_group(size_t words_survived);

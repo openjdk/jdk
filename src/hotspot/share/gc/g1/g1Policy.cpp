@@ -62,8 +62,8 @@ G1Policy::G1Policy(STWGCTimer* gc_timer) :
   _young_list_target_length(0),
   _young_list_fixed_length(0),
   _young_list_max_length(0),
-  _eden_surv_rate_group(new SurvRateGroup()),
-  _survivor_surv_rate_group(new SurvRateGroup()),
+  _eden_surv_rate_group(new G1SurvRateGroup()),
+  _survivor_surv_rate_group(new G1SurvRateGroup()),
   _reserve_factor((double) G1ReservePercent / 100.0),
   _reserve_regions(0),
   _young_gen_sizer(G1YoungGenSizer::create_gen_sizer()),
@@ -458,7 +458,6 @@ void G1Policy::record_full_collection_end() {
   // also call this on any additional surv rate groups
 
   _free_regions_at_end_of_collection = _g1h->num_free_regions();
-  // Reset survivors SurvRateGroup.
   _survivor_surv_rate_group->reset();
   update_young_list_max_and_target_length();
   update_rs_length_prediction();
@@ -1389,8 +1388,6 @@ void G1Policy::calculate_optional_collection_set_regions(G1CollectionSetCandidat
 }
 
 void G1Policy::transfer_survivors_to_cset(const G1SurvivorRegions* survivors) {
-
-  // Add survivor regions to SurvRateGroup.
   note_start_adding_survivor_regions();
 
   HeapRegion* last = NULL;

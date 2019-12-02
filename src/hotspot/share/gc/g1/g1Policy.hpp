@@ -82,10 +82,10 @@ class G1Policy: public CHeapObj<mtGC> {
   // locker is active. This should be >= _young_list_target_length;
   uint _young_list_max_length;
 
-  // SurvRateGroups below must be initialized after the predictor because they
-  // indirectly use it through this object passed to their constructor.
-  SurvRateGroup* _eden_surv_rate_group;
-  SurvRateGroup* _survivor_surv_rate_group;
+  // The survivor rate groups below must be initialized after the predictor because they
+  // indirectly use it through the "this" object passed to their constructor.
+  G1SurvRateGroup* _eden_surv_rate_group;
+  G1SurvRateGroup* _survivor_surv_rate_group;
 
   double _reserve_factor;
   // This will be set when the heap is expanded

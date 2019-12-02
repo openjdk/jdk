@@ -30,7 +30,7 @@
 #include "logging/log.hpp"
 #include "memory/allocation.hpp"
 
-SurvRateGroup::SurvRateGroup() :
+G1SurvRateGroup::G1SurvRateGroup() :
   _stats_arrays_length(0),
   _accum_surv_rate_pred(NULL),
   _last_pred(0.0),
@@ -40,7 +40,7 @@ SurvRateGroup::SurvRateGroup() :
   start_adding_regions();
 }
 
-void SurvRateGroup::reset() {
+void G1SurvRateGroup::reset() {
   _last_pred = 0.0;
   // the following will set up the arrays with length 1
   _num_added_regions = 1;
@@ -65,11 +65,11 @@ void SurvRateGroup::reset() {
   _num_added_regions = 0;
 }
 
-void SurvRateGroup::start_adding_regions() {
+void G1SurvRateGroup::start_adding_regions() {
   _num_added_regions = 0;
 }
 
-void SurvRateGroup::stop_adding_regions() {
+void G1SurvRateGroup::stop_adding_regions() {
   if (_num_added_regions > _stats_arrays_length) {
     _accum_surv_rate_pred = REALLOC_C_HEAP_ARRAY(double, _accum_surv_rate_pred, _num_added_regions, mtGC);
     _surv_rate_predictors = REALLOC_C_HEAP_ARRAY(TruncatedSeq*, _surv_rate_predictors, _num_added_regions, mtGC);
@@ -82,7 +82,7 @@ void SurvRateGroup::stop_adding_regions() {
   }
 }
 
-void SurvRateGroup::record_surviving_words(int age_in_group, size_t surv_words) {
+void G1SurvRateGroup::record_surviving_words(int age_in_group, size_t surv_words) {
   guarantee(0 <= age_in_group && (size_t)age_in_group < _num_added_regions,
             "age_in_group is %d not between 0 and " SIZE_FORMAT, age_in_group, _num_added_regions);
 
@@ -90,14 +90,14 @@ void SurvRateGroup::record_surviving_words(int age_in_group, size_t surv_words) 
   _surv_rate_predictors[age_in_group]->add(surv_rate);
 }
 
-void SurvRateGroup::all_surviving_words_recorded(const G1Predictions& predictor, bool update_predictors) {
+void G1SurvRateGroup::all_surviving_words_recorded(const G1Predictions& predictor, bool update_predictors) {
   if (update_predictors) {
     fill_in_last_surv_rates();
   }
   finalize_predictions(predictor);
 }
 
-void SurvRateGroup::fill_in_last_surv_rates() {
+void G1SurvRateGroup::fill_in_last_surv_rates() {
   if (_num_added_regions > 0) { // conservative
     double surv_rate = _surv_rate_predictors[_num_added_regions-1]->last();
     for (size_t i = _num_added_regions; i < _stats_arrays_length; ++i) {
@@ -106,7 +106,7 @@ void SurvRateGroup::fill_in_last_surv_rates() {
   }
 }
 
-void SurvRateGroup::finalize_predictions(const G1Predictions& predictor) {
+void G1SurvRateGroup::finalize_predictions(const G1Predictions& predictor) {
   double accum = 0.0;
   double pred = 0.0;
   for (size_t i = 0; i < _stats_arrays_length; ++i) {
