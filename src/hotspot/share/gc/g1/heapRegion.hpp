@@ -38,6 +38,7 @@
 
 class G1CollectedHeap;
 class G1CMBitMap;
+class G1Predictions;
 class HeapRegionRemSet;
 class HeapRegion;
 class HeapRegionSetBase;
@@ -544,50 +545,17 @@ public:
     _young_index_in_cset = index;
   }
 
-  int age_in_surv_rate_group() {
-    assert(_surv_rate_group != NULL, "pre-condition");
-    assert(_age_index > -1, "pre-condition");
-    return _surv_rate_group->age_in_group(_age_index);
-  }
+  int age_in_surv_rate_group() const;
+  bool has_valid_age_in_surv_rate() const;
 
-  void record_surv_words_in_group(size_t words_survived) {
-    assert(_surv_rate_group != NULL, "pre-condition");
-    assert(_age_index > -1, "pre-condition");
-    int age_in_group = age_in_surv_rate_group();
-    _surv_rate_group->record_surviving_words(age_in_group, words_survived);
-  }
+  bool has_surv_rate_group() const;
 
-  int age_in_surv_rate_group_cond() {
-    if (_surv_rate_group != NULL)
-      return age_in_surv_rate_group();
-    else
-      return -1;
-  }
+  double surv_rate_prediction(G1Predictions const& predictor) const;
 
-  SurvRateGroup* surv_rate_group() {
-    return _surv_rate_group;
-  }
+  void install_surv_rate_group(SurvRateGroup* surv_rate_group);
+  void uninstall_surv_rate_group();
 
-  void install_surv_rate_group(SurvRateGroup* surv_rate_group) {
-    assert(surv_rate_group != NULL, "pre-condition");
-    assert(_surv_rate_group == NULL, "pre-condition");
-    assert(is_young(), "pre-condition");
-
-    _surv_rate_group = surv_rate_group;
-    _age_index = surv_rate_group->next_age_index();
-  }
-
-  void uninstall_surv_rate_group() {
-    if (_surv_rate_group != NULL) {
-      assert(_age_index > -1, "pre-condition");
-      assert(is_young(), "pre-condition");
-
-      _surv_rate_group = NULL;
-      _age_index = -1;
-    } else {
-      assert(_age_index == -1, "pre-condition");
-    }
-  }
+  void record_surv_words_in_group(size_t words_survived);
 
   // Determine if an object has been allocated since the last
   // mark performed by the collector. This returns true iff the object

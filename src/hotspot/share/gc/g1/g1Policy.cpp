@@ -911,12 +911,6 @@ void G1Policy::print_phases() {
   phase_times()->print();
 }
 
-double G1Policy::predict_yg_surv_rate(int age, SurvRateGroup* surv_rate_group) const {
-  TruncatedSeq* seq = surv_rate_group->get_seq(age);
-  guarantee(seq->num() > 0, "There should be some young gen survivor samples available. Tried to access with age %d", age);
-  return _predictor.get_new_unit_prediction(seq);
-}
-
 double G1Policy::accum_yg_surv_rate_pred(int age) const {
   return _short_lived_surv_rate_group->accum_surv_rate_pred(age);
 }
@@ -940,10 +934,7 @@ size_t G1Policy::predict_bytes_to_copy(HeapRegion* hr) const {
   if (!hr->is_young()) {
     bytes_to_copy = hr->max_live_bytes();
   } else {
-    assert(hr->age_in_surv_rate_group() != -1, "invariant");
-    int age = hr->age_in_surv_rate_group();
-    double yg_surv_rate = predict_yg_surv_rate(age, hr->surv_rate_group());
-    bytes_to_copy = (size_t) (hr->used() * yg_surv_rate);
+    bytes_to_copy = (size_t) (hr->used() * hr->surv_rate_prediction(_predictor));
   }
   return bytes_to_copy;
 }
@@ -1399,7 +1390,6 @@ void G1Policy::transfer_survivors_to_cset(const G1SurvivorRegions* survivors) {
 
   // Add survivor regions to SurvRateGroup.
   note_start_adding_survivor_regions();
-  finished_recalculating_age_indexes(true /* is_survivors */);
 
   HeapRegion* last = NULL;
   for (GrowableArrayIterator<HeapRegion*> it = survivors->regions()->begin();
@@ -1421,6 +1411,4 @@ void G1Policy::transfer_survivors_to_cset(const G1SurvivorRegions* survivors) {
   // the next evacuation pause - we need it in order to re-tag
   // the survivor regions from this evacuation pause as 'young'
   // at the start of the next.
-
-  finished_recalculating_age_indexes(false /* is_survivors */);
 }

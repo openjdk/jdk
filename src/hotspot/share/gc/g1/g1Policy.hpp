@@ -167,10 +167,6 @@ public:
     return _mmu_tracker->max_gc_time() * 1000.0;
   }
 
-  double predict_yg_surv_rate(int age, SurvRateGroup* surv_rate_group) const;
-
-  double predict_yg_surv_rate(int age) const;
-
   double accum_yg_surv_rate_pred(int age) const;
 
 private:
@@ -374,14 +370,6 @@ public:
   // it will set in_initial_mark_gc() to so that the pause does
   // the initial-mark work and start a marking cycle.
   void decide_on_conc_mark_initiation();
-
-  void finished_recalculating_age_indexes(bool is_survivors) {
-    if (is_survivors) {
-      _survivor_surv_rate_group->finished_recalculating_age_indexes();
-    } else {
-      _short_lived_surv_rate_group->finished_recalculating_age_indexes();
-    }
-  }
 
   size_t young_list_target_length() const { return _young_list_target_length; }
 

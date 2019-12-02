@@ -330,21 +330,19 @@ void G1CollectionSet::add_eden_region(HeapRegion* hr) {
 class G1VerifyYoungAgesClosure : public HeapRegionClosure {
 public:
   bool _valid;
-public:
+
   G1VerifyYoungAgesClosure() : HeapRegionClosure(), _valid(true) { }
 
   virtual bool do_heap_region(HeapRegion* r) {
     guarantee(r->is_young(), "Region must be young but is %s", r->get_type_str());
 
-    SurvRateGroup* group = r->surv_rate_group();
-
-    if (group == NULL) {
-      log_error(gc, verify)("## encountered NULL surv_rate_group in young region");
+    if (!r->has_surv_rate_group()) {
+      log_error(gc, verify)("## encountered young region without surv_rate_group");
       _valid = false;
     }
 
-    if (r->age_in_surv_rate_group() < 0) {
-      log_error(gc, verify)("## encountered negative age in young region");
+    if (!r->has_valid_age_in_surv_rate()) {
+      log_error(gc, verify)("## encountered invalid age in young region");
       _valid = false;
     }
 
@@ -379,7 +377,7 @@ public:
                   HR_FORMAT_PARAMS(r),
                   p2i(r->prev_top_at_mark_start()),
                   p2i(r->next_top_at_mark_start()),
-                  r->age_in_surv_rate_group_cond());
+                  r->has_surv_rate_group() ? r->age_in_surv_rate_group() : -1);
     return false;
   }
 };

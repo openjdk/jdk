@@ -28,6 +28,7 @@
 #include "gc/g1/g1BlockOffsetTable.inline.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1ConcurrentMarkBitMap.inline.hpp"
+#include "gc/g1/g1Predictions.hpp"
 #include "gc/g1/heapRegion.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
@@ -368,6 +369,53 @@ HeapWord* HeapRegion::oops_on_memregion_seq_iterate_careful(MemRegion mr,
       return is_precise ? end : cur;
     }
   }
+}
+
+inline int HeapRegion::age_in_surv_rate_group() const {
+  assert(has_surv_rate_group(), "pre-condition");
+  assert(has_valid_age_in_surv_rate(), "pre-condition");
+  return _surv_rate_group->age_in_group(_age_index);
+}
+
+inline bool HeapRegion::has_valid_age_in_surv_rate() const {
+  return SurvRateGroup::is_valid_age_index(_age_index);
+}
+
+inline bool HeapRegion::has_surv_rate_group() const {
+  return _surv_rate_group != NULL;
+}
+
+inline double HeapRegion::surv_rate_prediction(G1Predictions const& predictor) const {
+  assert(has_surv_rate_group(), "pre-condition");
+  return _surv_rate_group->surv_rate_pred(predictor, age_in_surv_rate_group());
+}
+
+inline void HeapRegion::install_surv_rate_group(SurvRateGroup* surv_rate_group) {
+  assert(surv_rate_group != NULL, "pre-condition");
+  assert(!has_surv_rate_group(), "pre-condition");
+  assert(is_young(), "pre-condition");
+
+  _surv_rate_group = surv_rate_group;
+  _age_index = surv_rate_group->next_age_index();
+}
+
+inline void HeapRegion::uninstall_surv_rate_group() {
+  if (has_surv_rate_group()) {
+    assert(has_valid_age_in_surv_rate(), "pre-condition");
+    assert(is_young(), "pre-condition");
+
+    _surv_rate_group = NULL;
+    _age_index = SurvRateGroup::InvalidAgeIndex;
+  } else {
+    assert(!has_valid_age_in_surv_rate(), "pre-condition");
+  }
+}
+
+inline void HeapRegion::record_surv_words_in_group(size_t words_survived) {
+  assert(has_surv_rate_group(), "pre-condition");
+  assert(has_valid_age_in_surv_rate(), "pre-condition");
+  int age_in_group = age_in_surv_rate_group();
+  _surv_rate_group->record_surviving_words(age_in_group, words_survived);
 }
 
 #endif // SHARE_GC_G1_HEAPREGION_INLINE_HPP
