@@ -113,8 +113,8 @@ size_t G1AdaptiveIHOPControl::actual_target_threshold() const {
     );
 }
 
-double G1AdaptiveIHOPControl::get_new_prediction(TruncatedSeq const* seq) const {
-  return _predictor->get_new_lower_zero_bound_prediction(seq);
+double G1AdaptiveIHOPControl::predict(TruncatedSeq const* seq) const {
+  return _predictor->predict_zero_bounded(seq);
 }
 
 bool G1AdaptiveIHOPControl::have_enough_data_for_prediction() const {
@@ -124,8 +124,8 @@ bool G1AdaptiveIHOPControl::have_enough_data_for_prediction() const {
 
 size_t G1AdaptiveIHOPControl::get_conc_mark_start_threshold() {
   if (have_enough_data_for_prediction()) {
-    double pred_marking_time = get_new_prediction(&_marking_times_s);
-    double pred_promotion_rate = get_new_prediction(&_allocation_rate_s);
+    double pred_marking_time = predict(&_marking_times_s);
+    double pred_promotion_rate = predict(&_allocation_rate_s);
     size_t pred_promotion_size = (size_t)(pred_marking_time * pred_promotion_rate);
 
     size_t predicted_needed_bytes_during_marking =
@@ -172,8 +172,8 @@ void G1AdaptiveIHOPControl::print() {
                       actual_target,
                       G1CollectedHeap::heap()->used(),
                       _last_unrestrained_young_size,
-                      get_new_prediction(&_allocation_rate_s),
-                      get_new_prediction(&_marking_times_s) * 1000.0,
+                      predict(&_allocation_rate_s),
+                      predict(&_marking_times_s) * 1000.0,
                       have_enough_data_for_prediction() ? "true" : "false");
 }
 
@@ -183,7 +183,7 @@ void G1AdaptiveIHOPControl::send_trace_event(G1NewTracer* tracer) {
                                           actual_target_threshold(),
                                           G1CollectedHeap::heap()->used(),
                                           _last_unrestrained_young_size,
-                                          get_new_prediction(&_allocation_rate_s),
-                                          get_new_prediction(&_marking_times_s),
+                                          predict(&_allocation_rate_s),
+                                          predict(&_marking_times_s),
                                           have_enough_data_for_prediction());
 }

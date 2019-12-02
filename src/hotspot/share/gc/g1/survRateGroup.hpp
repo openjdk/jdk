@@ -66,7 +66,7 @@ public:
 
     age = MIN2(age, (int)_stats_arrays_length - 1);
 
-    return predictor.get_new_unit_prediction(_surv_rate_predictors[age]);
+    return predictor.predict_in_unit_interval(_surv_rate_predictors[age]);
   }
 
   int next_age_index() {

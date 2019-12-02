@@ -2589,7 +2589,7 @@ void G1CMTask::do_marking_step(double time_target_ms,
   bool do_stealing = do_termination && !is_serial;
 
   G1Predictions const& predictor = _g1h->policy()->predictor();
-  double diff_prediction_ms = predictor.get_new_lower_zero_bound_prediction(&_marking_step_diff_ms);
+  double diff_prediction_ms = predictor.predict_zero_bounded(&_marking_step_diff_ms);
   _time_target_ms = time_target_ms - diff_prediction_ms;
 
   // set up the variables that are used in the work-based scheme to
