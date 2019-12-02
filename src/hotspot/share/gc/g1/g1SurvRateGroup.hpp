@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_GC_G1_SURVRATEGROUP_HPP
-#define SHARE_GC_G1_SURVRATEGROUP_HPP
+#ifndef SHARE_GC_G1_G1SURVRATEGROUP_HPP
+#define SHARE_GC_G1_G1SURVRATEGROUP_HPP
 
 #include "gc/g1/g1Predictions.hpp"
 #include "utilities/numberSeq.hpp"
@@ -80,4 +80,4 @@ public:
   }
 };
 
-#endif // SHARE_GC_G1_SURVRATEGROUP_HPP
+#endif // SHARE_GC_G1_G1SURVRATEGROUP_HPP
