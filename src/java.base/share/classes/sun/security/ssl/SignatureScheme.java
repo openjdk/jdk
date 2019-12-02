@@ -274,10 +274,10 @@ enum SignatureScheme {
                 Arrays.asList(handshakeSupportedProtocols);
 
         boolean mediator = true;
-        // HACK CODE
-        //
         // An EC provider, for example the SunEC provider, may support
         // AlgorithmParameters but not KeyPairGenerator or Signature.
+        //
+        // Note: Please be careful if removing this block!
         if ("EC".equals(keyAlgorithm)) {
             mediator = JsseJce.isEcAvailable();
         }
