@@ -258,9 +258,9 @@ private:
   // for the collection set.
   size_t _recorded_rs_length;
 
-  // The predicted elapsed time that was added to total value
+  // The predicted time without copy time that was added to total value
   // for the collection set.
-  double _predicted_elapsed_time_ms;
+  double _predicted_non_copy_time_ms;
 
   uint _node_index;
 
@@ -578,15 +578,15 @@ public:
   template <bool is_gc_active, class Closure>
   inline HeapWord* oops_on_memregion_seq_iterate_careful(MemRegion mr, Closure* cl);
 
-  size_t recorded_rs_length() const        { return _recorded_rs_length; }
-  double predicted_elapsed_time_ms() const { return _predicted_elapsed_time_ms; }
+  size_t recorded_rs_length() const         { return _recorded_rs_length; }
+  double predicted_non_copy_time_ms() const { return _predicted_non_copy_time_ms; }
 
   void set_recorded_rs_length(size_t rs_length) {
     _recorded_rs_length = rs_length;
   }
 
-  void set_predicted_elapsed_time_ms(double ms) {
-    _predicted_elapsed_time_ms = ms;
+  void set_predicted_non_copy_time_ms(double ms) {
+    _predicted_non_copy_time_ms = ms;
   }
 
   // Routines for managing a list of code roots (attached to the

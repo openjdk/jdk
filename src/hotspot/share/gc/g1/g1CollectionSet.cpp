@@ -39,7 +39,7 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/quickSort.hpp"
 
-G1CollectorState* G1CollectionSet::collector_state() {
+G1CollectorState* G1CollectionSet::collector_state() const {
   return _g1h->collector_state();
 }
 
@@ -47,8 +47,8 @@ G1GCPhaseTimes* G1CollectionSet::phase_times() {
   return _policy->phase_times();
 }
 
-double G1CollectionSet::predict_region_elapsed_time_ms(HeapRegion* hr) {
-  return _policy->predict_region_elapsed_time_ms(hr, collector_state()->in_young_only_phase());
+double G1CollectionSet::predict_region_non_copy_time_ms(HeapRegion* hr) const {
+  return _policy->predict_region_non_copy_time_ms(hr, collector_state()->in_young_only_phase());
 }
 
 G1CollectionSet::G1CollectionSet(G1CollectedHeap* g1h, G1Policy* policy) :
@@ -69,8 +69,8 @@ G1CollectionSet::G1CollectionSet(G1CollectedHeap* g1h, G1Policy* policy) :
   _inc_bytes_used_before(0),
   _inc_recorded_rs_length(0),
   _inc_recorded_rs_length_diff(0),
-  _inc_predicted_elapsed_time_ms(0.0),
-  _inc_predicted_elapsed_time_ms_diff(0.0) {
+  _inc_predicted_non_copy_time_ms(0.0),
+  _inc_predicted_non_copy_time_ms_diff(0.0) {
 }
 
 G1CollectionSet::~G1CollectionSet() {
@@ -150,8 +150,8 @@ void G1CollectionSet::start_incremental_building() {
 
   _inc_recorded_rs_length = 0;
   _inc_recorded_rs_length_diff = 0;
-  _inc_predicted_elapsed_time_ms = 0.0;
-  _inc_predicted_elapsed_time_ms_diff = 0.0;
+  _inc_predicted_non_copy_time_ms = 0.0;
+  _inc_predicted_non_copy_time_ms_diff = 0.0;
 
   update_incremental_marker();
 }
@@ -161,17 +161,17 @@ void G1CollectionSet::finalize_incremental_building() {
   assert(SafepointSynchronize::is_at_safepoint(), "should be at a safepoint");
 
   // The two "main" fields, _inc_recorded_rs_length and
-  // _inc_predicted_elapsed_time_ms, are updated by the thread
+  // _inc_predicted_non_copy_time_ms, are updated by the thread
   // that adds a new region to the CSet. Further updates by the
   // concurrent refinement thread that samples the young RSet lengths
   // are accumulated in the *_diff fields. Here we add the diffs to
   // the "main" fields.
 
   _inc_recorded_rs_length += _inc_recorded_rs_length_diff;
-  _inc_predicted_elapsed_time_ms += _inc_predicted_elapsed_time_ms_diff;
+  _inc_predicted_non_copy_time_ms += _inc_predicted_non_copy_time_ms_diff;
 
   _inc_recorded_rs_length_diff = 0;
-  _inc_predicted_elapsed_time_ms_diff = 0.0;
+  _inc_predicted_non_copy_time_ms_diff = 0.0;
 }
 
 void G1CollectionSet::clear() {
@@ -238,29 +238,19 @@ void G1CollectionSet::update_young_region_prediction(HeapRegion* hr,
   assert(hr->is_young(), "Precondition");
   assert(!SafepointSynchronize::is_at_safepoint(), "should not be at a safepoint");
 
-  // We could have updated _inc_recorded_rs_length and
-  // _inc_predicted_elapsed_time_ms directly but we'd need to do
-  // that atomically, as this code is executed by a concurrent
-  // refinement thread, potentially concurrently with a mutator thread
-  // allocating a new region and also updating the same fields. To
-  // avoid the atomic operations we accumulate these updates on two
-  // separate fields (*_diff) and we'll just add them to the "main"
-  // fields at the start of a GC.
-
   size_t old_rs_length = hr->recorded_rs_length();
   assert(old_rs_length <= new_rs_length,
          "Remembered set decreased (changed from " SIZE_FORMAT " to " SIZE_FORMAT " region %u type %s)",
          old_rs_length, new_rs_length, hr->hrm_index(), hr->get_short_type_str());
   size_t rs_length_diff = new_rs_length - old_rs_length;
+  hr->set_recorded_rs_length(new_rs_length);
   _inc_recorded_rs_length_diff += rs_length_diff;
 
-  double old_elapsed_time_ms = hr->predicted_elapsed_time_ms();
-  double new_region_elapsed_time_ms = predict_region_elapsed_time_ms(hr);
-  double elapsed_ms_diff = new_region_elapsed_time_ms - old_elapsed_time_ms;
-  _inc_predicted_elapsed_time_ms_diff += elapsed_ms_diff;
-
-  hr->set_recorded_rs_length(new_rs_length);
-  hr->set_predicted_elapsed_time_ms(new_region_elapsed_time_ms);
+  double old_non_copy_time = hr->predicted_non_copy_time_ms();
+  double new_non_copy_time = predict_region_non_copy_time_ms(hr);
+  double non_copy_time_ms_diff = new_non_copy_time - old_non_copy_time;
+  hr->set_predicted_non_copy_time_ms(new_non_copy_time);
+  _inc_predicted_non_copy_time_ms_diff += non_copy_time_ms_diff;
 }
 
 void G1CollectionSet::add_young_region_common(HeapRegion* hr) {
@@ -285,17 +275,17 @@ void G1CollectionSet::add_young_region_common(HeapRegion* hr) {
 
   if (!_g1h->collector_state()->in_full_gc()) {
     size_t rs_length = hr->rem_set()->occupied();
-    double region_elapsed_time_ms = predict_region_elapsed_time_ms(hr);
+    double region_non_copy_time = predict_region_non_copy_time_ms(hr);
 
     // Cache the values we have added to the aggregated information
     // in the heap region in case we have to remove this region from
     // the incremental collection set, or it is updated by the
     // rset sampling code
     hr->set_recorded_rs_length(rs_length);
-    hr->set_predicted_elapsed_time_ms(region_elapsed_time_ms);
+    hr->set_predicted_non_copy_time_ms(region_non_copy_time);
 
     _inc_recorded_rs_length += rs_length;
-    _inc_predicted_elapsed_time_ms += region_elapsed_time_ms;
+    _inc_predicted_non_copy_time_ms += region_non_copy_time;
     _inc_bytes_used_before += hr->used();
   }
 
@@ -391,7 +381,7 @@ void G1CollectionSet::print(outputStream* st) {
 #endif // !PRODUCT
 
 double G1CollectionSet::finalize_young_part(double target_pause_time_ms, G1SurvivorRegions* survivors) {
-  double young_start_time_sec = os::elapsedTime();
+  Ticks start_time = Ticks::now();
 
   finalize_incremental_building();
 
@@ -399,18 +389,16 @@ double G1CollectionSet::finalize_young_part(double target_pause_time_ms, G1Survi
             "target_pause_time_ms = %1.6lf should be positive", target_pause_time_ms);
 
   size_t pending_cards = _policy->pending_cards_at_gc_start() + _g1h->hot_card_cache()->num_entries();
-  double base_time_ms = _policy->predict_base_elapsed_time_ms(pending_cards);
-  double time_remaining_ms = MAX2(target_pause_time_ms - base_time_ms, 0.0);
 
-  log_trace(gc, ergo, cset)("Start choosing CSet. pending cards: " SIZE_FORMAT " predicted base time: %1.2fms remaining time: %1.2fms target pause time: %1.2fms",
-                            pending_cards, base_time_ms, time_remaining_ms, target_pause_time_ms);
+  log_trace(gc, ergo, cset)("Start choosing CSet. Pending cards: " SIZE_FORMAT " target pause time: %1.2fms",
+                            pending_cards, target_pause_time_ms);
 
   // The young list is laid with the survivor regions from the previous
   // pause are appended to the RHS of the young list, i.e.
   //   [Newly Young Regions ++ Survivors from last pause].
 
-  uint survivor_region_length = survivors->length();
   uint eden_region_length = _g1h->eden_regions_count();
+  uint survivor_region_length = survivors->length();
   init_region_lengths(eden_region_length, survivor_region_length);
 
   verify_young_cset_indices();
@@ -419,19 +407,23 @@ double G1CollectionSet::finalize_young_part(double target_pause_time_ms, G1Survi
   survivors->convert_to_eden();
 
   _bytes_used_before = _inc_bytes_used_before;
-  time_remaining_ms = MAX2(time_remaining_ms - _inc_predicted_elapsed_time_ms, 0.0);
-
-  log_trace(gc, ergo, cset)("Add young regions to CSet. eden: %u regions, survivors: %u regions, predicted young region time: %1.2fms, target pause time: %1.2fms",
-                            eden_region_length, survivor_region_length, _inc_predicted_elapsed_time_ms, target_pause_time_ms);
 
   // The number of recorded young regions is the incremental
   // collection set's current size
   set_recorded_rs_length(_inc_recorded_rs_length);
 
-  double young_end_time_sec = os::elapsedTime();
-  phase_times()->record_young_cset_choice_time_ms((young_end_time_sec - young_start_time_sec) * 1000.0);
+  double predicted_base_time_ms = _policy->predict_base_elapsed_time_ms(pending_cards);
+  double predicted_eden_time = _inc_predicted_non_copy_time_ms + _policy->predict_eden_copy_time_ms(eden_region_length);
+  double remaining_time_ms = MAX2(target_pause_time_ms - (predicted_base_time_ms + predicted_eden_time), 0.0);
 
-  return time_remaining_ms;
+  log_trace(gc, ergo, cset)("Added young regions to CSet. Eden: %u regions, Survivors: %u regions, "
+                            "predicted eden time: %1.2fms, predicted base time: %1.2fms, target pause time: %1.2fms, remaining time: %1.2fms",
+                            eden_region_length, survivor_region_length,
+                            predicted_eden_time, predicted_base_time_ms, target_pause_time_ms, remaining_time_ms);
+
+  phase_times()->record_young_cset_choice_time_ms((Ticks::now() - start_time).seconds() * 1000.0);
+
+  return remaining_time_ms;
 }
 
 static int compare_region_idx(const uint a, const uint b) {

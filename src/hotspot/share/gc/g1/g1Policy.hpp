@@ -84,7 +84,7 @@ class G1Policy: public CHeapObj<mtGC> {
 
   // SurvRateGroups below must be initialized after the predictor because they
   // indirectly use it through this object passed to their constructor.
-  SurvRateGroup* _short_lived_surv_rate_group;
+  SurvRateGroup* _eden_surv_rate_group;
   SurvRateGroup* _survivor_surv_rate_group;
 
   double _reserve_factor;
@@ -128,7 +128,7 @@ public:
 
   void set_region_eden(HeapRegion* hr) {
     hr->set_eden();
-    hr->install_surv_rate_group(_short_lived_surv_rate_group);
+    hr->install_surv_rate_group(_eden_surv_rate_group);
   }
 
   void set_region_survivor(HeapRegion* hr) {
@@ -141,17 +141,22 @@ public:
   }
 
   double predict_base_elapsed_time_ms(size_t num_pending_cards) const;
-  double predict_base_elapsed_time_ms(size_t num_pending_cards,
-                                      size_t rs_length) const;
-  size_t predict_bytes_to_copy(HeapRegion* hr) const;
-  double predict_region_elapsed_time_ms(HeapRegion* hr, bool for_young_gc) const;
 
-  double predict_survivor_regions_evac_time() const;
+private:
+  double predict_base_elapsed_time_ms(size_t num_pending_cards, size_t rs_length) const;
+
+  double predict_region_copy_time_ms(HeapRegion* hr) const;
+
+public:
+
+  double predict_eden_copy_time_ms(uint count, size_t* bytes_to_copy = NULL) const;
+  double predict_region_non_copy_time_ms(HeapRegion* hr, bool for_young_gc) const;
+  double predict_region_total_time_ms(HeapRegion* hr, bool for_young_gc) const;
 
   void cset_regions_freed() {
     bool update = should_update_surv_rate_group_predictors();
 
-    _short_lived_surv_rate_group->all_surviving_words_recorded(predictor(), update);
+    _eden_surv_rate_group->all_surviving_words_recorded(predictor(), update);
     _survivor_surv_rate_group->all_surviving_words_recorded(predictor(), update);
   }
 
@@ -166,8 +171,6 @@ public:
   double max_pause_time_ms() const {
     return _mmu_tracker->max_gc_time() * 1000.0;
   }
-
-  double accum_yg_surv_rate_pred(int age) const;
 
 private:
   G1CollectionSet* _collection_set;
@@ -231,6 +234,9 @@ private:
 
   void update_rs_length_prediction();
   void update_rs_length_prediction(size_t prediction);
+
+  size_t predict_bytes_to_copy(HeapRegion* hr) const;
+  double predict_survivor_regions_evac_time() const;
 
   // Check whether a given young length (young_length) fits into the
   // given target pause time and whether the prediction for the amount

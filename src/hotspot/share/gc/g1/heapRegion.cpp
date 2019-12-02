@@ -138,7 +138,7 @@ void HeapRegion::hr_clear(bool keep_remset, bool clear_space, bool locked) {
   _evacuation_failed = false;
   _gc_efficiency = 0.0;
   _recorded_rs_length = 0;
-  _predicted_elapsed_time_ms = 0.0;
+  _predicted_non_copy_time_ms = 0.0;
 }
 
 void HeapRegion::clear_cardtable() {
@@ -149,14 +149,12 @@ void HeapRegion::clear_cardtable() {
 void HeapRegion::calc_gc_efficiency() {
   // GC efficiency is the ratio of how much space would be
   // reclaimed over how long we predict it would take to reclaim it.
-  G1CollectedHeap* g1h = G1CollectedHeap::heap();
-  G1Policy* policy = g1h->policy();
+  G1Policy* policy = G1CollectedHeap::heap()->policy();
 
   // Retrieve a prediction of the elapsed time for this region for
   // a mixed gc because the region will only be evacuated during a
   // mixed gc.
-  double region_elapsed_time_ms =
-    policy->predict_region_elapsed_time_ms(this, false /* for_young_gc */);
+  double region_elapsed_time_ms = policy->predict_region_total_time_ms(this, false /* for_young_gc */);
   _gc_efficiency = (double) reclaimable_bytes() / region_elapsed_time_ms;
 }
 
@@ -257,7 +255,7 @@ HeapRegion::HeapRegion(uint hrm_index,
   _prev_marked_bytes(0), _next_marked_bytes(0),
   _young_index_in_cset(-1),
   _surv_rate_group(NULL), _age_index(SurvRateGroup::InvalidAgeIndex), _gc_efficiency(0.0),
-  _recorded_rs_length(0), _predicted_elapsed_time_ms(0),
+  _recorded_rs_length(0), _predicted_non_copy_time_ms(0),
   _node_index(G1NUMA::UnknownNodeIndex)
 {
   assert(Universe::on_page_boundary(mr.start()) && Universe::on_page_boundary(mr.end()),

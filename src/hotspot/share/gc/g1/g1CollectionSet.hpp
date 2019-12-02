@@ -201,19 +201,19 @@ class G1CollectionSet {
   // the CSet. This is updated by the thread that adds a new region to
   // the CSet. See the comment for _inc_recorded_rs_length about
   // MT-safety assumptions.
-  double _inc_predicted_elapsed_time_ms;
+  double _inc_predicted_non_copy_time_ms;
 
   // See the comment for _inc_recorded_rs_length_diff.
-  double _inc_predicted_elapsed_time_ms_diff;
+  double _inc_predicted_non_copy_time_ms_diff;
 
   void set_recorded_rs_length(size_t rs_length);
 
-  G1CollectorState* collector_state();
+  G1CollectorState* collector_state() const;
   G1GCPhaseTimes* phase_times();
 
   void verify_young_cset_indices() const NOT_DEBUG_RETURN;
 
-  double predict_region_elapsed_time_ms(HeapRegion* hr);
+  double predict_region_non_copy_time_ms(HeapRegion* hr) const;
 
   // Update the incremental collection set information when adding a region.
   void add_young_region_common(HeapRegion* hr);
