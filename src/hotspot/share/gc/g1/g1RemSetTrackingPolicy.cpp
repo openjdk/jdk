@@ -172,7 +172,7 @@ void G1RemSetTrackingPolicy::update_after_rebuild(HeapRegion* r) {
                                     p2i(r->next_top_at_mark_start()),
                                     cm->liveness(r->hrm_index()) * HeapWordSize,
                                     r->next_marked_bytes(),
-                                    r->rem_set()->occupied_locked(),
+                                    r->rem_set()->occupied(),
                                     r->rem_set()->mem_size());
   }
 }

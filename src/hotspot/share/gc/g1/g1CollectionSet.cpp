@@ -167,21 +167,7 @@ void G1CollectionSet::finalize_incremental_building() {
   // are accumulated in the *_diff fields. Here we add the diffs to
   // the "main" fields.
 
-  if (_inc_recorded_rs_length_diff >= 0) {
-    _inc_recorded_rs_length += _inc_recorded_rs_length_diff;
-  } else {
-    // This is defensive. The diff should in theory be always positive
-    // as RSets can only grow between GCs. However, given that we
-    // sample their size concurrently with other threads updating them
-    // it's possible that we might get the wrong size back, which
-    // could make the calculations somewhat inaccurate.
-    size_t diffs = (size_t) (-_inc_recorded_rs_length_diff);
-    if (_inc_recorded_rs_length >= diffs) {
-      _inc_recorded_rs_length -= diffs;
-    } else {
-      _inc_recorded_rs_length = 0;
-    }
-  }
+  _inc_recorded_rs_length += _inc_recorded_rs_length_diff;
   _inc_predicted_elapsed_time_ms += _inc_predicted_elapsed_time_ms_diff;
 
   _inc_recorded_rs_length_diff = 0;
@@ -261,8 +247,11 @@ void G1CollectionSet::update_young_region_prediction(HeapRegion* hr,
   // separate fields (*_diff) and we'll just add them to the "main"
   // fields at the start of a GC.
 
-  ssize_t old_rs_length = (ssize_t) hr->recorded_rs_length();
-  ssize_t rs_length_diff = (ssize_t) new_rs_length - old_rs_length;
+  size_t old_rs_length = hr->recorded_rs_length();
+  assert(old_rs_length <= new_rs_length,
+         "Remembered set decreased (changed from " SIZE_FORMAT " to " SIZE_FORMAT " region %u type %s)",
+         old_rs_length, new_rs_length, hr->hrm_index(), hr->get_short_type_str());
+  size_t rs_length_diff = new_rs_length - old_rs_length;
   _inc_recorded_rs_length_diff += rs_length_diff;
 
   double old_elapsed_time_ms = hr->predicted_elapsed_time_ms();

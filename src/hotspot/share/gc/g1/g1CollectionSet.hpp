@@ -195,7 +195,7 @@ class G1CollectionSet {
   // the RSets grow. Instead of having to synchronize updates to that
   // field we accumulate them in this field and add it to
   // _inc_recorded_rs_length_diff at the start of a GC.
-  ssize_t _inc_recorded_rs_length_diff;
+  size_t _inc_recorded_rs_length_diff;
 
   // The predicted elapsed time it will take to collect the regions in
   // the CSet. This is updated by the thread that adds a new region to

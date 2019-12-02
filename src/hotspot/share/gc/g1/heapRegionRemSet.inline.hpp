@@ -36,13 +36,15 @@ inline void HeapRegionRemSet::iterate_prts(Closure& cl) {
   _other_regions.iterate(cl);
 }
 
-inline void PerRegionTable::add_card(CardIdx_t from_card_index) {
+inline bool PerRegionTable::add_card(CardIdx_t from_card_index) {
   if (_bm.par_set_bit(from_card_index)) {
-    Atomic::inc(&_occupied);
+    Atomic::inc(&_occupied, memory_order_relaxed);
+    return true;
   }
+  return false;
 }
 
-inline void PerRegionTable::add_reference(OopOrNarrowOopStar from) {
+inline bool PerRegionTable::add_reference(OopOrNarrowOopStar from) {
   // Must make this robust in case "from" is not in "_hr", because of
   // concurrency.
 
@@ -52,8 +54,9 @@ inline void PerRegionTable::add_reference(OopOrNarrowOopStar from) {
   // and adding a bit to the new table is never incorrect.
   if (loc_hr->is_in_reserved(from)) {
     CardIdx_t from_card = OtherRegionsTable::card_within_region(from, loc_hr);
-    add_card(from_card);
+    return add_card(from_card);
   }
+  return false;
 }
 
 inline void PerRegionTable::init(HeapRegion* hr, bool clear_links_to_all_list) {
