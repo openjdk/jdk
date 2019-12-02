@@ -644,11 +644,11 @@ Node* BarrierSetC2::atomic_add_at(C2AtomicParseAccess& access, Node* new_val, co
   return atomic_add_at_resolved(access, new_val, value_type);
 }
 
-void BarrierSetC2::clone(GraphKit* kit, Node* src, Node* dst, Node* size, bool is_array) const {
+int BarrierSetC2::arraycopy_payload_base_offset(bool is_array) {
   // Exclude the header but include array length to copy by 8 bytes words.
   // Can't use base_offset_in_bytes(bt) since basic type is unknown.
   int base_off = is_array ? arrayOopDesc::length_offset_in_bytes() :
-                            instanceOopDesc::base_offset_in_bytes();
+                 instanceOopDesc::base_offset_in_bytes();
   // base_off:
   // 8  - 32-bit VM
   // 12 - 64-bit VM, compressed klass
@@ -664,18 +664,27 @@ void BarrierSetC2::clone(GraphKit* kit, Node* src, Node* dst, Node* size, bool i
     }
     assert(base_off % BytesPerLong == 0, "expect 8 bytes alignment");
   }
-  Node* src_base  = kit->basic_plus_adr(src,  base_off);
-  Node* dst_base = kit->basic_plus_adr(dst, base_off);
+  return base_off;
+}
+
+void BarrierSetC2::clone(GraphKit* kit, Node* src_base, Node* dst_base, Node* size, bool is_array) const {
+  int base_off = arraycopy_payload_base_offset(is_array);
+  Node* payload_src = kit->basic_plus_adr(src_base,  base_off);
+  Node* payload_dst = kit->basic_plus_adr(dst_base, base_off);
 
   // Compute the length also, if needed:
-  Node* countx = size;
-  countx = kit->gvn().transform(new SubXNode(countx, kit->MakeConX(base_off)));
-  countx = kit->gvn().transform(new URShiftXNode(countx, kit->intcon(LogBytesPerLong) ));
+  Node* payload_size = size;
+  payload_size = kit->gvn().transform(new SubXNode(payload_size, kit->MakeConX(base_off)));
+  payload_size = kit->gvn().transform(new URShiftXNode(payload_size, kit->intcon(LogBytesPerLong) ));
 
   const TypePtr* raw_adr_type = TypeRawPtr::BOTTOM;
 
-  ArrayCopyNode* ac = ArrayCopyNode::make(kit, false, src_base, NULL, dst_base, NULL, countx, true, false);
-  ac->set_clonebasic();
+  ArrayCopyNode* ac = ArrayCopyNode::make(kit, false, payload_src, NULL, payload_dst, NULL, payload_size, true, false);
+  if (is_array) {
+    ac->set_clone_array();
+  } else {
+    ac->set_clone_inst();
+  }
   Node* n = kit->gvn().transform(ac);
   if (n == ac) {
     ac->_adr_type = TypeRawPtr::BOTTOM;

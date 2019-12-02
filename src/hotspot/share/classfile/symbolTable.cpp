@@ -189,8 +189,8 @@ void SymbolTable::delete_symbol(Symbol* sym) {
   }
 }
 
-void SymbolTable::reset_has_items_to_clean() { Atomic::store(false, &_has_items_to_clean); }
-void SymbolTable::mark_has_items_to_clean()  { Atomic::store(true, &_has_items_to_clean); }
+void SymbolTable::reset_has_items_to_clean() { Atomic::store(&_has_items_to_clean, false); }
+void SymbolTable::mark_has_items_to_clean()  { Atomic::store(&_has_items_to_clean, true); }
 bool SymbolTable::has_items_to_clean()       { return Atomic::load(&_has_items_to_clean); }
 
 void SymbolTable::item_added() {
@@ -724,7 +724,7 @@ void SymbolTable::clean_dead_entries(JavaThread* jt) {
     bdt.done(jt);
   }
 
-  Atomic::add(stdc._processed, &_symbols_counted);
+  Atomic::add(&_symbols_counted, stdc._processed);
 
   log_debug(symboltable)("Cleaned " SIZE_FORMAT " of " SIZE_FORMAT,
                          stdd._deleted, stdc._processed);

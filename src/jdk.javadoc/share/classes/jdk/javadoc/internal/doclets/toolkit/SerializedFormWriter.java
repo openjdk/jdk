@@ -140,19 +140,16 @@ public interface SerializedFormWriter {
     public SerialMethodWriter getSerialMethodWriter(TypeElement typeElement);
 
     /**
-     * Get the serialized content.
+     * Add the serialized content to the body content.
      *
      * @param serializedTreeContent content for serialized data
-     * @return a content tree for serialized information
      */
-    public Content getSerializedContent(Content serializedTreeContent);
+    public void addSerializedContent(Content serializedTreeContent);
 
     /**
      * Add the footer.
-     *
-     * @param serializedTree the serialized tree to be added
      */
-    public void addFooter(Content serializedTree);
+    public void addFooter();
 
     /**
      * Print the serialized form document.

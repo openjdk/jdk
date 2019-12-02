@@ -24,6 +24,7 @@
 */
 
 #include "precompiled.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/thread.hpp"
 #include "runtime/threadSMR.hpp"
@@ -31,7 +32,6 @@
 #include "services/threadIdTable.hpp"
 #include "utilities/concurrentHashTable.inline.hpp"
 #include "utilities/concurrentHashTableTasks.inline.hpp"
-
 
 typedef ConcurrentHashTable<ThreadIdTableConfig, mtInternal> ThreadIdTableHash;
 

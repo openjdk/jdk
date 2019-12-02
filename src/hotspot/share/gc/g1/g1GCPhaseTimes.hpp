@@ -78,6 +78,7 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     RedirtyCards,
     YoungFreeCSet,
     NonYoungFreeCSet,
+    MergePSS,
     GCParPhasesSentinel
   };
 
@@ -87,7 +88,8 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
   enum GCMergeRSWorkTimes {
     MergeRSMergedSparse,
     MergeRSMergedFine,
-    MergeRSMergedCoarse
+    MergeRSMergedCoarse,
+    MergeRSDirtyCards
   };
 
   enum GCScanHRWorkItems {
@@ -108,9 +110,10 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     MergeLBSkippedCards
   };
 
-  enum GCObjCopyWorkItems {
-    ObjCopyLABWaste,
-    ObjCopyLABUndoWaste
+  enum GCMergePSSWorkItems {
+    MergePSSCopiedBytes,
+    MergePSSLABWasteBytes,
+    MergePSSLABUndoWasteBytes
   };
 
  private:
@@ -122,6 +125,7 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
   WorkerDataArray<size_t>* _merge_rs_merged_sparse;
   WorkerDataArray<size_t>* _merge_rs_merged_fine;
   WorkerDataArray<size_t>* _merge_rs_merged_coarse;
+  WorkerDataArray<size_t>* _merge_rs_dirty_cards;
 
   WorkerDataArray<size_t>* _merge_hcc_dirty_cards;
   WorkerDataArray<size_t>* _merge_hcc_skipped_cards;
@@ -136,6 +140,7 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
   WorkerDataArray<size_t>* _opt_merge_rs_merged_sparse;
   WorkerDataArray<size_t>* _opt_merge_rs_merged_fine;
   WorkerDataArray<size_t>* _opt_merge_rs_merged_coarse;
+  WorkerDataArray<size_t>* _opt_merge_rs_dirty_cards;
 
   WorkerDataArray<size_t>* _opt_scan_hr_scanned_cards;
   WorkerDataArray<size_t>* _opt_scan_hr_scanned_blocks;
@@ -143,11 +148,9 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
   WorkerDataArray<size_t>* _opt_scan_hr_scanned_opt_refs;
   WorkerDataArray<size_t>* _opt_scan_hr_used_memory;
 
-  WorkerDataArray<size_t>* _obj_copy_lab_waste;
-  WorkerDataArray<size_t>* _obj_copy_lab_undo_waste;
-
-  WorkerDataArray<size_t>* _opt_obj_copy_lab_waste;
-  WorkerDataArray<size_t>* _opt_obj_copy_lab_undo_waste;
+  WorkerDataArray<size_t>* _merge_pss_copied_bytes;
+  WorkerDataArray<size_t>* _merge_pss_lab_waste_bytes;
+  WorkerDataArray<size_t>* _merge_pss_lab_undo_waste_bytes;
 
   WorkerDataArray<size_t>* _termination_attempts;
 
@@ -224,7 +227,9 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
   template <class T>
   void details(T* phase, const char* indent) const;
 
+  void log_work_items(WorkerDataArray<double>* phase, uint indent, outputStream* out) const;
   void log_phase(WorkerDataArray<double>* phase, uint indent, outputStream* out, bool print_sum) const;
+  void debug_serial_phase(WorkerDataArray<double>* phase, uint extra_indent = 0) const;
   void debug_phase(WorkerDataArray<double>* phase, uint extra_indent = 0) const;
   void trace_phase(WorkerDataArray<double>* phase, bool print_sum = true) const;
 
@@ -268,8 +273,6 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
   double average_time_ms(GCParPhases phase);
 
   size_t sum_thread_work_items(GCParPhases phase, uint index = 0);
-
- public:
 
   void record_prepare_tlab_time_ms(double ms) {
     _cur_prepare_tlab_time_ms = ms;
@@ -376,10 +379,6 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
 
   void record_preserve_cm_referents_time_ms(double time_ms) {
     _recorded_preserve_cm_referents_time_ms = time_ms;
-  }
-
-  void record_merge_pss_time_ms(double time_ms) {
-    _recorded_merge_pss_time_ms = time_ms;
   }
 
   void record_start_new_cset_time_ms(double time_ms) {

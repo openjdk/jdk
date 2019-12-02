@@ -188,8 +188,6 @@ public class HtmlDocletWriter {
      */
     private boolean isContainerDocumented = false;
 
-    HtmlTree fixedNavDiv = new HtmlTree(HtmlTag.DIV);
-
     /**
      * The window title of this file.
      */
@@ -509,7 +507,7 @@ public class HtmlDocletWriter {
      */
     public void addTop(Content htmlTree) {
         Content top = new RawHtml(replaceDocRootDir(configuration.top));
-        fixedNavDiv.add(top);
+        htmlTree.add(top);
     }
 
     /**
@@ -2109,29 +2107,6 @@ public class HtmlDocletWriter {
 
     static String getGenerator(Class<?> clazz) {
         return "javadoc/" + clazz.getSimpleName();
-    }
-
-    /**
-     * Returns an HtmlTree for the SCRIPT tag.
-     *
-     * @return an HtmlTree for the SCRIPT tag
-     */
-    protected Script getWinTitleScript() {
-        Script script = new Script();
-        if (winTitle != null && winTitle.length() > 0) {
-            script.append("<!--\n" +
-                    "    try {\n" +
-                    "        if (location.href.indexOf('is-external=true') == -1) {\n" +
-                    "            parent.document.title=")
-                    .appendStringLiteral(winTitle)
-                    .append(";\n" +
-                    "        }\n" +
-                    "    }\n" +
-                    "    catch(err) {\n" +
-                    "    }\n" +
-                    "//-->\n");
-        }
-        return script;
     }
 
     /**

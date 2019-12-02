@@ -73,50 +73,6 @@
 #define UDP_EXCLBIND            0x0101
 #endif
 
-void setDefaultScopeID(JNIEnv *env, struct sockaddr *him)
-{
-#ifdef MACOSX
-    static jclass ni_class = NULL;
-    static jfieldID ni_defaultIndexID;
-    if (ni_class == NULL) {
-        jclass c = (*env)->FindClass(env, "java/net/NetworkInterface");
-        CHECK_NULL(c);
-        c = (*env)->NewGlobalRef(env, c);
-        CHECK_NULL(c);
-        ni_defaultIndexID = (*env)->GetStaticFieldID(env, c, "defaultIndex", "I");
-        CHECK_NULL(ni_defaultIndexID);
-        ni_class = c;
-    }
-    int defaultIndex;
-    struct sockaddr_in6 *sin6 = (struct sockaddr_in6 *)him;
-    if (sin6->sin6_family == AF_INET6 && (sin6->sin6_scope_id == 0) &&
-        (IN6_IS_ADDR_LINKLOCAL(&sin6->sin6_addr) ||
-         IN6_IS_ADDR_MULTICAST(&sin6->sin6_addr))) {
-        defaultIndex = (*env)->GetStaticIntField(env, ni_class,
-                                                 ni_defaultIndexID);
-        sin6->sin6_scope_id = defaultIndex;
-    }
-#endif
-}
-
-int getDefaultScopeID(JNIEnv *env) {
-    int defaultIndex = 0;
-    static jclass ni_class = NULL;
-    static jfieldID ni_defaultIndexID;
-    if (ni_class == NULL) {
-        jclass c = (*env)->FindClass(env, "java/net/NetworkInterface");
-        CHECK_NULL_RETURN(c, 0);
-        c = (*env)->NewGlobalRef(env, c);
-        CHECK_NULL_RETURN(c, 0);
-        ni_defaultIndexID = (*env)->GetStaticFieldID(env, c, "defaultIndex", "I");
-        CHECK_NULL_RETURN(ni_defaultIndexID, 0);
-        ni_class = c;
-    }
-    defaultIndex = (*env)->GetStaticIntField(env, ni_class,
-                                             ni_defaultIndexID);
-    return defaultIndex;
-}
-
 #define RESTARTABLE(_cmd, _result) do { \
     do { \
         _result = _cmd; \
@@ -214,26 +170,6 @@ static int findMaxBuf(int fd, int opt, int sotype) {
     } while (b >= a);
 
     return limit;
-}
-#endif
-
-#ifdef __linux__
-static int vinit = 0;
-static int kernelV24 = 0;
-static int vinit24 = 0;
-
-int kernelIsV24 () {
-    if (!vinit24) {
-        struct utsname sysinfo;
-        if (uname(&sysinfo) == 0) {
-            sysinfo.release[3] = '\0';
-            if (strcmp(sysinfo.release, "2.4") == 0) {
-                kernelV24 = JNI_TRUE;
-            }
-        }
-        vinit24 = 1;
-    }
-    return kernelV24;
 }
 #endif
 

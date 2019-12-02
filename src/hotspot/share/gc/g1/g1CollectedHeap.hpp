@@ -214,6 +214,10 @@ private:
 
   void set_used(size_t bytes);
 
+  // Number of bytes used in all regions during GC. Typically changed when
+  // retiring a GC alloc region.
+  size_t _bytes_used_during_gc;
+
   // Class that handles archive allocation ranges.
   G1ArchiveAllocator* _archive_allocator;
 
@@ -589,6 +593,7 @@ public:
   // These are only valid for starts_humongous regions.
   inline void set_humongous_reclaim_candidate(uint region, bool value);
   inline bool is_humongous_reclaim_candidate(uint region);
+  inline void set_has_humongous_reclaim_candidate(bool value);
 
   // Remove from the reclaim candidate set.  Also remove from the
   // collection set so that later encounters avoid the slow path.
@@ -596,8 +601,7 @@ public:
 
   // Register the given region to be part of the collection set.
   inline void register_humongous_region_with_region_attr(uint index);
-  // Update region attributes table with information about all regions.
-  void register_regions_with_region_attr();
+
   // We register a region with the fast "in collection set" test. We
   // simply set to true the array slot corresponding to this region.
   void register_young_region_with_region_attr(HeapRegion* r) {

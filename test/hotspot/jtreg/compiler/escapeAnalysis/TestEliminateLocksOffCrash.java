@@ -25,6 +25,7 @@
  * @test
  * @bug 8227384
  * @summary C2 compilation fails with "graph should be schedulable" when running with -XX:-EliminateLocks
+ * @requires vm.compiler2.enabled & !vm.graal.enabled
  *
  * @run main/othervm -XX:-EliminateLocks TestEliminateLocksOffCrash
  */

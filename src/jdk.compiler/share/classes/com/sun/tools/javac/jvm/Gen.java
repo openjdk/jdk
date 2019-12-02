@@ -2216,7 +2216,7 @@ public class Gen extends JCTree.Visitor {
     public void visitTypeTest(JCInstanceOf tree) {
         genExpr(tree.expr, tree.expr.type).load();
         setTypeAnnotationPositions(tree.pos);
-        code.emitop2(instanceof_, makeRef(tree.pos(), tree.clazz.type));
+        code.emitop2(instanceof_, makeRef(tree.pos(), tree.pattern.type));
         result = items.makeStackItem(syms.booleanType);
     }
 

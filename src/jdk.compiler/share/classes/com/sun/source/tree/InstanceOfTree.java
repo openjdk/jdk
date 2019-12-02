@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,4 +51,33 @@ public interface InstanceOfTree extends ExpressionTree {
      * @return the type
      */
     Tree getType();
+
+    /**
+     * {@preview Associated with pattern matching for instanceof, a preview feature of
+     *           the Java language.
+     *
+     *           This method is associated with <i>pattern matching for instanceof</i>, a preview
+     *           feature of the Java language. Preview features
+     *           may be removed in a future release, or upgraded to permanent
+     *           features of the Java language.}
+     *
+     * Returns the tested pattern, or null if this instanceof does not use
+     * a pattern.
+     *
+     * <p>For instanceof with a pattern, i.e. in the following form:
+     * <pre>
+     *   <em>expression</em> instanceof <em>type</em> <em>variable name</em>
+     * </pre>
+     * returns the pattern.
+     *
+     * <p>For instanceof without a pattern, i.e. in the following form:
+     * <pre>
+     *   <em>expression</em> instanceof <em>type</em>
+     * </pre>
+     * returns null.
+     *
+     * @return the tested pattern, or null if this instanceof does not use a pattern.
+     * @since 14
+     */
+    PatternTree getPattern();
 }

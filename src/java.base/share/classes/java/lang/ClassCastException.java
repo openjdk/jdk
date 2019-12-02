@@ -37,8 +37,7 @@ package java.lang;
  * @author  unascribed
  * @since   1.0
  */
-public
-class ClassCastException extends RuntimeException {
+public class ClassCastException extends RuntimeException {
     @java.io.Serial
     private static final long serialVersionUID = -9223365651070458532L;
 

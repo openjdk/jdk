@@ -61,7 +61,7 @@ inline HeapWord* HeapRegion::par_allocate_impl(size_t min_word_size,
     size_t want_to_allocate = MIN2(available, desired_word_size);
     if (want_to_allocate >= min_word_size) {
       HeapWord* new_top = obj + want_to_allocate;
-      HeapWord* result = Atomic::cmpxchg(new_top, &_top, obj);
+      HeapWord* result = Atomic::cmpxchg(&_top, obj, new_top);
       // result can be one of two:
       //  the old top value: the exchange succeeded
       //  otherwise: the new value of the top is returned.
@@ -304,7 +304,7 @@ HeapWord* HeapRegion::do_oops_on_memregion_in_humongous(MemRegion mr,
 
 template <bool is_gc_active, class Closure>
 HeapWord* HeapRegion::oops_on_memregion_seq_iterate_careful(MemRegion mr,
-                                                       Closure* cl) {
+                                                            Closure* cl) {
   assert(MemRegion(bottom(), end()).contains(mr), "Card region not in heap region");
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
 

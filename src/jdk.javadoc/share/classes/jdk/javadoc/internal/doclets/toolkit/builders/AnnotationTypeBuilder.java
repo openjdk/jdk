@@ -59,11 +59,6 @@ public class AnnotationTypeBuilder extends AbstractBuilder {
     private final AnnotationTypeWriter writer;
 
     /**
-     * The content tree for the annotation documentation.
-     */
-    private Content contentTree;
-
-    /**
      * Construct a new ClassBuilder.
      *
      * @param context           the build context.
@@ -97,17 +92,16 @@ public class AnnotationTypeBuilder extends AbstractBuilder {
      */
     @Override
     public void build() throws DocletException {
-        buildAnnotationTypeDoc(contentTree);
+        buildAnnotationTypeDoc();
     }
 
     /**
      * Build the annotation type documentation.
      *
-     * @param contentTree the content tree to which the documentation will be added
      * @throws DocletException if there is a problem building the documentation
      */
-    protected void buildAnnotationTypeDoc(Content contentTree) throws DocletException {
-        contentTree = writer.getHeader(resources.getText("doclet.AnnotationType") +
+    protected void buildAnnotationTypeDoc() throws DocletException {
+        Content contentTree = writer.getHeader(resources.getText("doclet.AnnotationType") +
                " " + utils.getSimpleName(annotationType));
         Content annotationContentTree = writer.getAnnotationContentHeader();
 
@@ -115,8 +109,8 @@ public class AnnotationTypeBuilder extends AbstractBuilder {
         buildMemberSummary(annotationContentTree);
         buildAnnotationTypeMemberDetails(annotationContentTree);
 
-        writer.addAnnotationContentTree(contentTree, annotationContentTree);
-        writer.addFooter(contentTree);
+        writer.addAnnotationContentTree(annotationContentTree);
+        writer.addFooter();
         writer.printDocument(contentTree);
         copyDocFiles();
     }

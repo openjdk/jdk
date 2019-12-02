@@ -31,6 +31,7 @@
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/globals.hpp"
 
 jint EpsilonHeap::initialize() {
@@ -156,7 +157,7 @@ HeapWord* EpsilonHeap::allocate_work(size_t size) {
   // Allocation successful, update counters
   {
     size_t last = _last_counter_update;
-    if ((used - last >= _step_counter_update) && Atomic::cmpxchg(used, &_last_counter_update, last) == last) {
+    if ((used - last >= _step_counter_update) && Atomic::cmpxchg(&_last_counter_update, last, used) == last) {
       _monitoring_support->update_counters();
     }
   }
@@ -164,7 +165,7 @@ HeapWord* EpsilonHeap::allocate_work(size_t size) {
   // ...and print the occupancy line, if needed
   {
     size_t last = _last_heap_print;
-    if ((used - last >= _step_heap_print) && Atomic::cmpxchg(used, &_last_heap_print, last) == last) {
+    if ((used - last >= _step_heap_print) && Atomic::cmpxchg(&_last_heap_print, last, used) == last) {
       print_heap_info(used);
       print_metaspace_info();
     }
@@ -212,7 +213,7 @@ HeapWord* EpsilonHeap::allocate_new_tlab(size_t min_size,
   }
 
   // Always honor boundaries
-  size = MAX2(min_size, MIN2(_max_tlab_size, size));
+  size = clamp(size, min_size, _max_tlab_size);
 
   // Always honor alignment
   size = align_up(size, MinObjAlignment);

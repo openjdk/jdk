@@ -83,8 +83,7 @@ import java.net.PortUnreachableException;
  * @author Pavani Diwanji
  * @since  1.1
  */
-public
-class MulticastSocket extends DatagramSocket {
+public class MulticastSocket extends DatagramSocket {
 
     /**
      * Used on some platforms to record if an outgoing interface
@@ -577,7 +576,7 @@ class MulticastSocket extends DatagramSocket {
     public NetworkInterface getNetworkInterface() throws SocketException {
         NetworkInterface ni
             = (NetworkInterface)getImpl().getOption(SocketOptions.IP_MULTICAST_IF2);
-        if ((ni.getIndex() == 0) || (ni.getIndex() == -1)) {
+        if (ni == null) {
             InetAddress[] addrs = new InetAddress[1];
             addrs[0] = InetAddress.anyLocalAddress();
             return new NetworkInterface(addrs[0].getHostName(), 0, addrs);

@@ -45,6 +45,7 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -76,6 +77,17 @@ public final class Utils {
     private final static String LEGACY_EVENT_NAME_PREFIX = "com.oracle.jdk.";
 
     private static Boolean SAVE_GENERATED;
+
+
+    private static final Duration MICRO_SECOND = Duration.ofNanos(1_000);
+    private static final Duration SECOND = Duration.ofSeconds(1);
+    private static final Duration MINUTE = Duration.ofMinutes(1);
+    private static final Duration HOUR = Duration.ofHours(1);
+    private static final Duration DAY = Duration.ofDays(1);
+    private static final int NANO_SIGNIFICANT_FIGURES = 9;
+    private static final int MILL_SIGNIFICANT_FIGURES = 3;
+    private static final int DISPLAY_NANO_DIGIT = 3;
+    private static final int BASE = 10;
 
 
     public static void checkAccessFlightRecorder() throws SecurityException {
@@ -596,6 +608,90 @@ public final class Utils {
         String idText = recording == null ? "" :  "-id-" + Long.toString(recording.getId());
         return "hotspot-" + "pid-" + pid + idText + "-" + date + ".jfr";
     }
+
+    public static String formatDuration(Duration d) {
+        Duration roundedDuration = roundDuration(d);
+        if (roundedDuration.equals(Duration.ZERO)) {
+            return "0 s";
+        } else if(roundedDuration.isNegative()){
+            return "-" + formatPositiveDuration(roundedDuration.abs());
+        } else {
+            return formatPositiveDuration(roundedDuration);
+        }
+    }
+
+    private static String formatPositiveDuration(Duration d){
+        if (d.compareTo(MICRO_SECOND) < 0) {
+            // 0.000001 ms - 0.000999 ms
+            double outputMs = (double) d.toNanosPart() / 1_000_000;
+            return String.format("%.6f ms",  outputMs);
+        } else if (d.compareTo(SECOND) < 0) {
+            // 0.001 ms - 999 ms
+            int valueLength = countLength(d.toNanosPart());
+            int outputDigit = NANO_SIGNIFICANT_FIGURES - valueLength;
+            double outputMs = (double) d.toNanosPart() / 1_000_000;
+            return String.format("%." + outputDigit + "f ms",  outputMs);
+        } else if (d.compareTo(MINUTE) < 0) {
+            // 1.00 s - 59.9 s
+            int valueLength = countLength(d.toSecondsPart());
+            int outputDigit = MILL_SIGNIFICANT_FIGURES - valueLength;
+            double outputSecond = d.toSecondsPart() + (double) d.toMillisPart() / 1_000;
+            return String.format("%." + outputDigit + "f s",  outputSecond);
+        } else if (d.compareTo(HOUR) < 0) {
+            // 1 m 0 s - 59 m 59 s
+            return String.format("%d m %d s",  d.toMinutesPart(), d.toSecondsPart());
+        } else if (d.compareTo(DAY) < 0) {
+            // 1 h 0 m - 23 h 59 m
+            return String.format("%d h %d m",  d.toHoursPart(), d.toMinutesPart());
+        } else {
+            // 1 d 0 h -
+            return String.format("%d d %d h",  d.toDaysPart(), d.toHoursPart());
+        }
+    }
+
+    private static int countLength(long value){
+        return (int) Math.log10(value) + 1;
+    }
+
+    private static Duration roundDuration(Duration d) {
+        if (d.equals(Duration.ZERO)) {
+            return d;
+        } else if(d.isNegative()){
+            Duration roundedPositiveDuration = roundPositiveDuration(d.abs());
+            return roundedPositiveDuration.negated();
+        } else {
+            return roundPositiveDuration(d);
+        }
+    }
+
+    private static Duration roundPositiveDuration(Duration d){
+        if (d.compareTo(MICRO_SECOND) < 0) {
+            // No round
+            return d;
+        } else if (d.compareTo(SECOND) < 0) {
+            // Round significant figures to three digits
+            int valueLength = countLength(d.toNanosPart());
+            int roundValue = (int) Math.pow(BASE, valueLength - DISPLAY_NANO_DIGIT);
+            long roundedNanos = Math.round((double) d.toNanosPart() / roundValue) * roundValue;
+            return d.truncatedTo(ChronoUnit.SECONDS).plusNanos(roundedNanos);
+        } else if (d.compareTo(MINUTE) < 0) {
+            // Round significant figures to three digits
+            int valueLength = countLength(d.toSecondsPart());
+            int roundValue = (int) Math.pow(BASE, valueLength);
+            long roundedMills = Math.round((double) d.toMillisPart() / roundValue) * roundValue;
+            return d.truncatedTo(ChronoUnit.SECONDS).plusMillis(roundedMills);
+        } else if (d.compareTo(HOUR) < 0) {
+            // Round for more than 500 ms or less
+            return d.plusMillis(SECOND.dividedBy(2).toMillisPart()).truncatedTo(ChronoUnit.SECONDS);
+        } else if (d.compareTo(DAY) < 0) {
+            // Round for more than 30 seconds or less
+            return d.plusSeconds(MINUTE.dividedBy(2).toSecondsPart()).truncatedTo(ChronoUnit.MINUTES);
+        } else {
+            // Round for more than 30 minutes or less
+            return d.plusMinutes(HOUR.dividedBy(2).toMinutesPart()).truncatedTo(ChronoUnit.HOURS);
+        }
+    }
+
 
     public static void takeNap(long millis) {
         try {

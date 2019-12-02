@@ -31,6 +31,7 @@ import static jdk.jfr.internal.LogLevel.WARN;
 import static jdk.jfr.internal.LogTag.JFR;
 import static jdk.jfr.internal.LogTag.JFR_SYSTEM;
 
+import java.io.IOException;
 import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.time.Duration;
@@ -53,6 +54,7 @@ import jdk.jfr.Recording;
 import jdk.jfr.RecordingState;
 import jdk.jfr.events.ActiveRecordingEvent;
 import jdk.jfr.events.ActiveSettingEvent;
+import jdk.jfr.internal.SecuritySupport.SafePath;
 import jdk.jfr.internal.SecuritySupport.SecureRecorderListener;
 import jdk.jfr.internal.instrument.JDKEvents;
 
@@ -70,6 +72,7 @@ public final class PlatformRecorder {
 
     private long recordingCounter = 0;
     private RepositoryChunk currentChunk;
+    private boolean inShutdown;
 
     public PlatformRecorder() throws Exception {
         repository = Repository.getRepository();
@@ -176,6 +179,10 @@ public final class PlatformRecorder {
         }
     }
 
+    synchronized void setInShutDown() {
+        this.inShutdown = true;
+    }
+
     // called by shutdown hook
     synchronized void destroy() {
         try {
@@ -198,7 +205,7 @@ public final class PlatformRecorder {
 
         if (jvm.hasNativeJFR()) {
             if (jvm.isRecording()) {
-                jvm.endRecording_();
+                jvm.endRecording();
             }
             jvm.destroyNativeJFR();
         }
@@ -236,7 +243,7 @@ public final class PlatformRecorder {
                 MetadataRepository.getInstance().setOutput(null);
             }
             currentChunk = newChunk;
-            jvm.beginRecording_();
+            jvm.beginRecording();
             startNanos = jvm.getChunkStartNanos();
             recording.setState(RecordingState.RUNNING);
             updateSettings();
@@ -289,11 +296,15 @@ public final class PlatformRecorder {
             }
         }
         OldObjectSample.emit(recording);
+        recording.setFinalStartnanos(jvm.getChunkStartNanos());
 
         if (endPhysical) {
             RequestEngine.doChunkEnd();
             if (recording.isToDisk()) {
                 if (currentChunk != null) {
+                    if (inShutdown) {
+                        jvm.markChunkFinal();
+                    }
                     MetadataRepository.getInstance().setOutput(null);
                     finishChunk(currentChunk, now, null);
                     currentChunk = null;
@@ -302,7 +313,7 @@ public final class PlatformRecorder {
                 // last memory
                 dumpMemoryToDestination(recording);
             }
-            jvm.endRecording_();
+            jvm.endRecording();
             disableEvents();
         } else {
             RepositoryChunk newChunk = null;
@@ -327,7 +338,6 @@ public final class PlatformRecorder {
         } else {
             RequestEngine.setFlushInterval(Long.MAX_VALUE);
         }
-
         recording.setState(RecordingState.STOPPED);
     }
 
@@ -357,17 +367,7 @@ public final class PlatformRecorder {
         MetadataRepository.getInstance().setSettings(list);
     }
 
-    public synchronized void rotateIfRecordingToDisk() {
-        boolean disk = false;
-        for (PlatformRecording s : getRecordings()) {
-            if (RecordingState.RUNNING == s.getState() && s.isToDisk()) {
-                disk = true;
-            }
-        }
-        if (disk) {
-            rotateDisk();
-        }
-    }
+
 
     synchronized void rotateDisk() {
         Instant now = Instant.now();
@@ -584,6 +584,19 @@ public final class PlatformRecorder {
         target.setInternalDuration(Duration.between(startTime, endTime));
     }
 
-
-
+    public synchronized void migrate(SafePath repo) throws IOException {
+        // Must set repository while holding recorder lock so
+        // the final chunk in repository gets marked correctly
+        Repository.getRepository().setBasePath(repo);
+        boolean disk = false;
+        for (PlatformRecording s : getRecordings()) {
+            if (RecordingState.RUNNING == s.getState() && s.isToDisk()) {
+                disk = true;
+            }
+        }
+        if (disk) {
+            jvm.markChunkFinal();
+            rotateDisk();
+        }
+    }
 }

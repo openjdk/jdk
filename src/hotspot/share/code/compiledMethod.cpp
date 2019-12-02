@@ -38,6 +38,7 @@
 #include "oops/methodData.hpp"
 #include "oops/method.inline.hpp"
 #include "prims/methodHandles.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/mutexLocker.hpp"
@@ -113,7 +114,7 @@ void CompiledMethod::mark_for_deoptimization(bool inc_recompile_counts) {
 //-----------------------------------------------------------------------------
 
 ExceptionCache* CompiledMethod::exception_cache_acquire() const {
-  return OrderAccess::load_acquire(&_exception_cache);
+  return Atomic::load_acquire(&_exception_cache);
 }
 
 void CompiledMethod::add_exception_cache_entry(ExceptionCache* new_entry) {
@@ -133,7 +134,7 @@ void CompiledMethod::add_exception_cache_entry(ExceptionCache* new_entry) {
         // next pointers always point at live ExceptionCaches, that are not removed due
         // to concurrent ExceptionCache cleanup.
         ExceptionCache* next = ec->next();
-        if (Atomic::cmpxchg(next, &_exception_cache, ec) == ec) {
+        if (Atomic::cmpxchg(&_exception_cache, ec, next) == ec) {
           CodeCache::release_exception_cache(ec);
         }
         continue;
@@ -143,7 +144,7 @@ void CompiledMethod::add_exception_cache_entry(ExceptionCache* new_entry) {
         new_entry->set_next(ec);
       }
     }
-    if (Atomic::cmpxchg(new_entry, &_exception_cache, ec) == ec) {
+    if (Atomic::cmpxchg(&_exception_cache, ec, new_entry) == ec) {
       return;
     }
   }
@@ -176,7 +177,7 @@ void CompiledMethod::clean_exception_cache() {
         // Try to clean head; this is contended by concurrent inserts, that
         // both lazily clean the head, and insert entries at the head. If
         // the CAS fails, the operation is restarted.
-        if (Atomic::cmpxchg(next, &_exception_cache, curr) != curr) {
+        if (Atomic::cmpxchg(&_exception_cache, curr, next) != curr) {
           prev = NULL;
           curr = exception_cache_acquire();
           continue;
@@ -615,7 +616,7 @@ bool CompiledMethod::cleanup_inline_caches_impl(bool unloading_occurred, bool cl
       if (md != NULL && md->is_method()) {
         Method* method = static_cast<Method*>(md);
         if (!method->method_holder()->is_loader_alive()) {
-          Atomic::store((Method*)NULL, r->metadata_addr());
+          Atomic::store(r->metadata_addr(), (Method*)NULL);
 
           if (!r->metadata_is_immediate()) {
             r->fix_metadata_relocation();

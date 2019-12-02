@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,13 @@
  * questions.
  */
 
-package pkg;
+// key: compiler.err.match.binding.exists
+// key: compiler.note.preview.filename
+// key: compiler.note.preview.recompile
+// options: --enable-preview -source ${jdk.version}
 
-public class Test { }
-
+class MatchBindingExists {
+    public void test(Object o1, Object o2) {
+        if (o1 instanceof String k && o2 instanceof Integer k) {}
+    }
+}

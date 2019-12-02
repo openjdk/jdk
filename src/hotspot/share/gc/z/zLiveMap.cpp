@@ -28,7 +28,6 @@
 #include "gc/z/zThread.inline.hpp"
 #include "logging/log.hpp"
 #include "runtime/atomic.hpp"
-#include "runtime/orderAccess.hpp"
 #include "utilities/debug.hpp"
 
 static const ZStatCounter ZCounterMarkSeqNumResetContention("Contention", "Mark SeqNum Reset Contention", ZStatUnitOpsPerSecond);
@@ -54,11 +53,11 @@ void ZLiveMap::reset(size_t index) {
 
   // Multiple threads can enter here, make sure only one of them
   // resets the marking information while the others busy wait.
-  for (uint32_t seqnum = OrderAccess::load_acquire(&_seqnum);
+  for (uint32_t seqnum = Atomic::load_acquire(&_seqnum);
        seqnum != ZGlobalSeqNum;
-       seqnum = OrderAccess::load_acquire(&_seqnum)) {
+       seqnum = Atomic::load_acquire(&_seqnum)) {
     if ((seqnum != seqnum_initializing) &&
-        (Atomic::cmpxchg(seqnum_initializing, &_seqnum, seqnum) == seqnum)) {
+        (Atomic::cmpxchg(&_seqnum, seqnum, seqnum_initializing) == seqnum)) {
       // Reset marking information
       _live_bytes = 0;
       _live_objects = 0;
@@ -73,7 +72,7 @@ void ZLiveMap::reset(size_t index) {
       // before the update of the page seqnum, such that when the
       // up-to-date seqnum is load acquired, the bit maps will not
       // contain stale information.
-      OrderAccess::release_store(&_seqnum, ZGlobalSeqNum);
+      Atomic::release_store(&_seqnum, ZGlobalSeqNum);
       break;
     }
 

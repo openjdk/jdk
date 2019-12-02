@@ -25,6 +25,9 @@
 
 package java.lang.invoke;
 
+import jdk.internal.misc.Unsafe;
+import jdk.internal.vm.annotation.Stable;
+
 /**
  * A {@code ConstantCallSite} is a {@link CallSite} whose target is permanent, and can never be changed.
  * An {@code invokedynamic} instruction linked to a {@code ConstantCallSite} is permanently
@@ -33,7 +36,10 @@ package java.lang.invoke;
  * @since 1.7
  */
 public class ConstantCallSite extends CallSite {
-    private final boolean isFrozen;
+    private static final Unsafe UNSAFE = Unsafe.getUnsafe();
+
+    @Stable // should NOT be constant folded during instance initialization (isFrozen == false)
+    /*final*/ private boolean isFrozen;
 
     /**
      * Creates a call site with a permanent target.
@@ -43,6 +49,7 @@ public class ConstantCallSite extends CallSite {
     public ConstantCallSite(MethodHandle target) {
         super(target);
         isFrozen = true;
+        UNSAFE.storeStoreFence(); // properly publish isFrozen update
     }
 
     /**
@@ -79,8 +86,9 @@ public class ConstantCallSite extends CallSite {
      * @throws Throwable anything else thrown by the hook function
      */
     protected ConstantCallSite(MethodType targetType, MethodHandle createTargetHook) throws Throwable {
-        super(targetType, createTargetHook);
+        super(targetType, createTargetHook); // "this" instance leaks into createTargetHook
         isFrozen = true;
+        UNSAFE.storeStoreFence(); // properly publish isFrozen
     }
 
     /**

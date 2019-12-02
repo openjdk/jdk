@@ -306,21 +306,23 @@ class DirectMethodHandle extends MethodHandle {
 
     /** Static wrapper for DirectMethodHandle.internalMemberName. */
     @ForceInline
-    /*non-public*/ static Object internalMemberName(Object mh) {
+    /*non-public*/
+    static Object internalMemberName(Object mh) {
         return ((DirectMethodHandle)mh).member;
     }
 
     /** Static wrapper for DirectMethodHandle.internalMemberName.
      * This one also forces initialization.
      */
-    /*non-public*/ static Object internalMemberNameEnsureInit(Object mh) {
+    /*non-public*/
+    static Object internalMemberNameEnsureInit(Object mh) {
         DirectMethodHandle dmh = (DirectMethodHandle)mh;
         dmh.ensureInitialized();
         return dmh.member;
     }
 
-    /*non-public*/ static
-    boolean shouldBeInitialized(MemberName member) {
+    /*non-public*/
+    static boolean shouldBeInitialized(MemberName member) {
         switch (member.getReferenceKind()) {
         case REF_invokeStatic:
         case REF_getStatic:
@@ -396,7 +398,8 @@ class DirectMethodHandle extends MethodHandle {
         return true;
     }
 
-    /*non-public*/ static void ensureInitialized(Object mh) {
+    /*non-public*/
+    static void ensureInitialized(Object mh) {
         ((DirectMethodHandle)mh).ensureInitialized();
     }
 
@@ -472,12 +475,14 @@ class DirectMethodHandle extends MethodHandle {
         }
     }
 
-    /*non-public*/ static Object constructorMethod(Object mh) {
+    /*non-public*/
+    static Object constructorMethod(Object mh) {
         Constructor dmh = (Constructor)mh;
         return dmh.initMethod;
     }
 
-    /*non-public*/ static Object allocateInstance(Object mh) throws InstantiationException {
+    /*non-public*/
+    static Object allocateInstance(Object mh) throws InstantiationException {
         Constructor dmh = (Constructor)mh;
         return UNSAFE.allocateInstance(dmh.instanceClass);
     }
@@ -503,14 +508,16 @@ class DirectMethodHandle extends MethodHandle {
     }
 
     @ForceInline
-    /*non-public*/ static long fieldOffset(Object accessorObj) {
+    /*non-public*/
+    static long fieldOffset(Object accessorObj) {
         // Note: We return a long because that is what Unsafe.getObject likes.
         // We store a plain int because it is more compact.
         return ((Accessor)accessorObj).fieldOffset;
     }
 
     @ForceInline
-    /*non-public*/ static Object checkBase(Object obj) {
+    /*non-public*/
+    static Object checkBase(Object obj) {
         // Note that the object's class has already been verified,
         // since the parameter type of the Accessor method handle
         // is either member.getDeclaringClass or a subclass.
@@ -545,22 +552,26 @@ class DirectMethodHandle extends MethodHandle {
     }
 
     @ForceInline
-    /*non-public*/ static Object nullCheck(Object obj) {
+    /*non-public*/
+    static Object nullCheck(Object obj) {
         return Objects.requireNonNull(obj);
     }
 
     @ForceInline
-    /*non-public*/ static Object staticBase(Object accessorObj) {
+    /*non-public*/
+    static Object staticBase(Object accessorObj) {
         return ((StaticAccessor)accessorObj).staticBase;
     }
 
     @ForceInline
-    /*non-public*/ static long staticOffset(Object accessorObj) {
+    /*non-public*/
+    static long staticOffset(Object accessorObj) {
         return ((StaticAccessor)accessorObj).staticOffset;
     }
 
     @ForceInline
-    /*non-public*/ static Object checkCast(Object mh, Object obj) {
+    /*non-public*/
+    static Object checkCast(Object mh, Object obj) {
         return ((DirectMethodHandle) mh).checkCast(obj);
     }
 

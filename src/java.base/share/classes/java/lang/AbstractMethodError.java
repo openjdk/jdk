@@ -35,8 +35,7 @@ package java.lang;
  * @author  unascribed
  * @since   1.0
  */
-public
-class AbstractMethodError extends IncompatibleClassChangeError {
+public class AbstractMethodError extends IncompatibleClassChangeError {
     @java.io.Serial
     private static final long serialVersionUID = -1654391082989018462L;
 

@@ -81,6 +81,11 @@ private:
 
   char _pad_after[DEFAULT_CACHE_LINE_SIZE];
 
+  // Records whether insertion overflowed the hot card cache at least once. This
+  // avoids the need for a separate atomic counter of how many valid entries are
+  // in the HCC.
+  volatile bool _cache_wrapped_around;
+
   // The number of cached cards a thread claims when flushing the cache
   static const int ClaimChunkSize = 32;
 
@@ -125,13 +130,17 @@ private:
     assert(SafepointSynchronize::is_at_safepoint(), "Should be at a safepoint");
     assert(Thread::current()->is_VM_thread(), "Current thread should be the VMthread");
     if (default_use_cache()) {
-        reset_hot_cache_internal();
+      reset_hot_cache_internal();
     }
   }
 
   // Zeros the values in the card counts table for the given region
   void reset_card_counts(HeapRegion* hr);
 
+  // Number of entries in the HCC.
+  size_t num_entries() const {
+    return _cache_wrapped_around ? _hot_cache_size : _hot_cache_idx + 1;
+  }
  private:
   void reset_hot_cache_internal() {
     assert(_hot_cache != NULL, "Logic");
@@ -139,6 +148,7 @@ private:
     for (size_t i = 0; i < _hot_cache_size; i++) {
       _hot_cache[i] = NULL;
     }
+    _cache_wrapped_around = false;
   }
 };
 

@@ -35,6 +35,7 @@ import com.sun.tools.javac.tree.JCTree.JCAssert;
 import com.sun.tools.javac.tree.JCTree.JCAssign;
 import com.sun.tools.javac.tree.JCTree.JCAssignOp;
 import com.sun.tools.javac.tree.JCTree.JCBinary;
+import com.sun.tools.javac.tree.JCTree.JCBindingPattern;
 import com.sun.tools.javac.tree.JCTree.JCBlock;
 import com.sun.tools.javac.tree.JCTree.JCBreak;
 import com.sun.tools.javac.tree.JCTree.JCCase;
@@ -250,6 +251,18 @@ public class TreeDiffer extends TreeScanner {
                 scan(tree.lhs, that.lhs)
                         && scan(tree.rhs, that.rhs)
                         && tree.operator == that.operator;
+    }
+
+    @Override
+    public void visitBindingPattern(JCBindingPattern tree) {
+        JCBindingPattern that = (JCBindingPattern) parameter;
+        result =
+                scan(tree.vartype, that.vartype)
+                        && tree.name == that.name;
+        if (!result) {
+            return;
+        }
+        equiv.put(tree.symbol, that.symbol);
     }
 
     @Override
@@ -591,7 +604,7 @@ public class TreeDiffer extends TreeScanner {
     @Override
     public void visitTypeTest(JCInstanceOf tree) {
         JCInstanceOf that = (JCInstanceOf) parameter;
-        result = scan(tree.expr, that.expr) && scan(tree.clazz, that.clazz);
+        result = scan(tree.expr, that.expr) && scan(tree.pattern, that.pattern);
     }
 
     @Override

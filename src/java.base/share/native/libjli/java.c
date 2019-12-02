@@ -102,6 +102,9 @@ static int numOptions, maxOptions;
 /*
  * Prototypes for functions internal to launcher.
  */
+static const char* GetFullVersion();
+static jboolean IsJavaArgs();
+static void SetJavaLauncherProp();
 static void SetClassPath(const char *s);
 static void SetMainModule(const char *s);
 static void SelectVersion(int argc, char **argv, char **main_class);
@@ -643,8 +646,7 @@ checkMode(int mode, int newMode, const char *arg) {
 /*
  * Test if an arg identifies a source file.
  */
-jboolean
-IsSourceFile(const char *arg) {
+static jboolean IsSourceFile(const char *arg) {
     struct stat st;
     return (JLI_HasSuffix(arg, ".java") && stat(arg, &st) == 0);
 }
@@ -1871,8 +1873,7 @@ SetJavaCommandLineProp(char *what, int argc, char **argv)
  * JVM would like to know if it's created by a standard Sun launcher, or by
  * user native application, the following property indicates the former.
  */
-void
-SetJavaLauncherProp() {
+static void SetJavaLauncherProp() {
   AddOption("-Dsun.java.launcher=SUN_STANDARD", NULL);
 }
 
@@ -2300,26 +2301,22 @@ ShowSplashScreen()
 
 }
 
-const char*
-GetFullVersion()
+static const char* GetFullVersion()
 {
     return _fVersion;
 }
 
-const char*
-GetProgramName()
+static const char* GetProgramName()
 {
     return _program_name;
 }
 
-const char*
-GetLauncherName()
+static const char* GetLauncherName()
 {
     return _launcher_name;
 }
 
-jboolean
-IsJavaArgs()
+static jboolean IsJavaArgs()
 {
     return _is_java_args;
 }

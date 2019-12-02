@@ -34,13 +34,14 @@ class nmethod;
 class BarrierSetNMethod: public CHeapObj<mtGC> {
   bool supports_entry_barrier(nmethod* nm);
   void deoptimize(nmethod* nm, address* return_addr_ptr);
+  int disarmed_value() const;
 
 protected:
-  virtual int disarmed_value() const;
   virtual bool nmethod_entry_barrier(nmethod* nm) = 0;
 
 public:
   virtual ByteSize thread_disarmed_offset() const = 0;
+  virtual int* disarmed_value_address() const = 0;
 
   static int nmethod_stub_entry_barrier(address* return_address_ptr);
   bool nmethod_osr_entry_barrier(nmethod* nm);

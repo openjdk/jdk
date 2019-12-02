@@ -102,8 +102,11 @@ public:
   void prepare_for_scan_heap_roots();
   // Cleans the card table from temporary duplicate detection information.
   void cleanup_after_scan_heap_roots();
-  // Prepares the given region for heap root scanning.
-  void prepare_for_scan_heap_roots(uint region_idx);
+  // Excludes the given region from heap root scanning.
+  void exclude_region_from_scan(uint region_idx);
+  // Creates a snapshot of the current _top values at the start of collection to
+  // filter out card marks that we do not want to scan.
+  void prepare_region_for_scan(HeapRegion* region);
 
   // Do work for regions in the current increment of the collection set, scanning
   // non-card based (heap) roots.
@@ -113,10 +116,17 @@ public:
                                    G1GCPhaseTimes::GCParPhases coderoots_phase,
                                    G1GCPhaseTimes::GCParPhases objcopy_phase);
 
-  // Refine the card corresponding to "card_ptr". Safe to be called concurrently
-  // to the mutator.
-  void refine_card_concurrently(CardValue* card_ptr,
-                                uint worker_id);
+  // Two methods for concurrent refinement support, executed concurrently to
+  // the mutator:
+  // Cleans the card at "*card_ptr_addr" before refinement, returns true iff the
+  // card needs later refinement. Note that "*card_ptr_addr" could be updated to
+  // a different card due to use of hot card cache.
+  bool clean_card_before_refine(CardValue** const card_ptr_addr);
+  // Refine the region corresponding to "card_ptr". Must be called after
+  // being filtered by clean_card_before_refine(), and after proper
+  // fence/synchronization.
+  void refine_card_concurrently(CardValue* const card_ptr,
+                                const uint worker_id);
 
   // Print accumulated summary info from the start of the VM.
   void print_summary_info();

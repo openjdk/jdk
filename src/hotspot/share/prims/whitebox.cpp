@@ -59,6 +59,7 @@
 #include "prims/wbtestmethods/parserTests.hpp"
 #include "prims/whitebox.inline.hpp"
 #include "runtime/arguments.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/flags/jvmFlag.hpp"
@@ -796,6 +797,21 @@ WB_ENTRY(jint, WB_NMTGetHashSize(JNIEnv* env, jobject o))
   int hash_size = MallocSiteTable::hash_buckets();
   assert(hash_size > 0, "NMT hash_size should be > 0");
   return (jint)hash_size;
+WB_END
+
+WB_ENTRY(jlong, WB_NMTNewArena(JNIEnv* env, jobject o, jlong init_size))
+  Arena* arena =  new (mtTest) Arena(mtTest, size_t(init_size));
+  return (jlong)arena;
+WB_END
+
+WB_ENTRY(void, WB_NMTFreeArena(JNIEnv* env, jobject o, jlong arena))
+  Arena* a = (Arena*)arena;
+  delete a;
+WB_END
+
+WB_ENTRY(void, WB_NMTArenaMalloc(JNIEnv* env, jobject o, jlong arena, jlong size))
+  Arena* a = (Arena*)arena;
+  a->Amalloc(size_t(size));
 WB_END
 #endif // INCLUDE_NMT
 
@@ -2244,6 +2260,9 @@ static JNINativeMethod methods[] = {
   {CC"NMTReleaseMemory",    CC"(JJ)V",                (void*)&WB_NMTReleaseMemory   },
   {CC"NMTChangeTrackingLevel", CC"()Z",               (void*)&WB_NMTChangeTrackingLevel},
   {CC"NMTGetHashSize",      CC"()I",                  (void*)&WB_NMTGetHashSize     },
+  {CC"NMTNewArena",         CC"(J)J",                 (void*)&WB_NMTNewArena        },
+  {CC"NMTFreeArena",        CC"(J)V",                 (void*)&WB_NMTFreeArena       },
+  {CC"NMTArenaMalloc",      CC"(JJ)V",                (void*)&WB_NMTArenaMalloc     },
 #endif // INCLUDE_NMT
   {CC"deoptimizeFrames",   CC"(Z)I",                  (void*)&WB_DeoptimizeFrames  },
   {CC"deoptimizeAll",      CC"()V",                   (void*)&WB_DeoptimizeAll     },

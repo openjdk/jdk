@@ -46,6 +46,9 @@ import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
+import sun.nio.cs.ISO_8859_1;
+import sun.nio.cs.UTF_8;
+
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.util.ArraysSupport;
@@ -137,8 +140,7 @@ import jdk.internal.util.xml.PropertiesDefaultHandler;
  * @author  Xueming Shen
  * @since   1.0
  */
-public
-class Properties extends Hashtable<Object,Object> {
+public class Properties extends Hashtable<Object,Object> {
     /**
      * use serialVersionUID from JDK 1.1.X for interoperability
      */
@@ -910,7 +912,7 @@ class Properties extends Hashtable<Object,Object> {
     public void store(OutputStream out, String comments)
         throws IOException
     {
-        store0(new BufferedWriter(new OutputStreamWriter(out, "8859_1")),
+        store0(new BufferedWriter(new OutputStreamWriter(out, ISO_8859_1.INSTANCE)),
                comments,
                true);
     }
@@ -1002,7 +1004,7 @@ class Properties extends Hashtable<Object,Object> {
     public void storeToXML(OutputStream os, String comment)
         throws IOException
     {
-        storeToXML(os, comment, "UTF-8");
+        storeToXML(os, comment, UTF_8.INSTANCE);
     }
 
     /**

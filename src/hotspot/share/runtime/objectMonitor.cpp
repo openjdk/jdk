@@ -245,7 +245,7 @@ void ObjectMonitor::enter(TRAPS) {
   // and to reduce RTS->RTO cache line upgrades on SPARC and IA32 processors.
   Thread * const Self = THREAD;
 
-  void * cur = Atomic::cmpxchg(Self, &_owner, (void*)NULL);
+  void * cur = Atomic::cmpxchg(&_owner, (void*)NULL, Self);
   if (cur == NULL) {
     assert(_recursions == 0, "invariant");
     return;
@@ -403,7 +403,7 @@ void ObjectMonitor::enter(TRAPS) {
 int ObjectMonitor::TryLock(Thread * Self) {
   void * own = _owner;
   if (own != NULL) return 0;
-  if (Atomic::replace_if_null(Self, &_owner)) {
+  if (Atomic::replace_if_null(&_owner, Self)) {
     assert(_recursions == 0, "invariant");
     return 1;
   }
@@ -480,7 +480,7 @@ void ObjectMonitor::EnterI(TRAPS) {
   ObjectWaiter * nxt;
   for (;;) {
     node._next = nxt = _cxq;
-    if (Atomic::cmpxchg(&node, &_cxq, nxt) == nxt) break;
+    if (Atomic::cmpxchg(&_cxq, nxt, &node) == nxt) break;
 
     // Interference - the CAS failed because _cxq changed.  Just retry.
     // As an optional optimization we retry the lock.
@@ -518,7 +518,7 @@ void ObjectMonitor::EnterI(TRAPS) {
   if (nxt == NULL && _EntryList == NULL) {
     // Try to assume the role of responsible thread for the monitor.
     // CONSIDER:  ST vs CAS vs { if (Responsible==null) Responsible=Self }
-    Atomic::replace_if_null(Self, &_Responsible);
+    Atomic::replace_if_null(&_Responsible, Self);
   }
 
   // The lock might have been released while this thread was occupied queueing
@@ -773,7 +773,7 @@ void ObjectMonitor::UnlinkAfterAcquire(Thread *Self, ObjectWaiter *SelfNode) {
 
     ObjectWaiter * v = _cxq;
     assert(v != NULL, "invariant");
-    if (v != SelfNode || Atomic::cmpxchg(SelfNode->_next, &_cxq, v) != v) {
+    if (v != SelfNode || Atomic::cmpxchg(&_cxq, v, SelfNode->_next) != v) {
       // The CAS above can fail from interference IFF a "RAT" arrived.
       // In that case Self must be in the interior and can no longer be
       // at the head of cxq.
@@ -916,8 +916,8 @@ void ObjectMonitor::exit(bool not_suspended, TRAPS) {
 
     // release semantics: prior loads and stores from within the critical section
     // must not float (reorder) past the following store that drops the lock.
-    OrderAccess::release_store(&_owner, (void*)NULL);   // drop the lock
-    OrderAccess::storeload();                        // See if we need to wake a successor
+    Atomic::release_store(&_owner, (void*)NULL);   // drop the lock
+    OrderAccess::storeload();                      // See if we need to wake a successor
     if ((intptr_t(_EntryList)|intptr_t(_cxq)) == 0 || _succ != NULL) {
       return;
     }
@@ -959,7 +959,7 @@ void ObjectMonitor::exit(bool not_suspended, TRAPS) {
     // to reacquire the lock the responsibility for ensuring succession
     // falls to the new owner.
     //
-    if (!Atomic::replace_if_null(THREAD, &_owner)) {
+    if (!Atomic::replace_if_null(&_owner, THREAD)) {
       return;
     }
 
@@ -995,7 +995,7 @@ void ObjectMonitor::exit(bool not_suspended, TRAPS) {
     // The following loop is tantamount to: w = swap(&cxq, NULL)
     for (;;) {
       assert(w != NULL, "Invariant");
-      ObjectWaiter * u = Atomic::cmpxchg((ObjectWaiter*)NULL, &_cxq, w);
+      ObjectWaiter * u = Atomic::cmpxchg(&_cxq, w, (ObjectWaiter*)NULL);
       if (u == w) break;
       w = u;
     }
@@ -1092,7 +1092,7 @@ void ObjectMonitor::ExitEpilog(Thread * Self, ObjectWaiter * Wakee) {
   Wakee  = NULL;
 
   // Drop the lock
-  OrderAccess::release_store(&_owner, (void*)NULL);
+  Atomic::release_store(&_owner, (void*)NULL);
   OrderAccess::fence();                               // ST _owner vs LD in unpark()
 
   DTRACE_MONITOR_PROBE(contended__exit, this, object(), Self);
@@ -1459,7 +1459,7 @@ void ObjectMonitor::INotify(Thread * Self) {
       for (;;) {
         ObjectWaiter * front = _cxq;
         iterator->_next = front;
-        if (Atomic::cmpxchg(iterator, &_cxq, front) == front) {
+        if (Atomic::cmpxchg(&_cxq, front, iterator) == front) {
           break;
         }
       }
@@ -1680,7 +1680,7 @@ int ObjectMonitor::TrySpin(Thread * Self) {
 
     Thread * ox = (Thread *) _owner;
     if (ox == NULL) {
-      ox = (Thread*)Atomic::cmpxchg(Self, &_owner, (void*)NULL);
+      ox = (Thread*)Atomic::cmpxchg(&_owner, (void*)NULL, Self);
       if (ox == NULL) {
         // The CAS succeeded -- this thread acquired ownership
         // Take care of some bookkeeping to exit spin state.

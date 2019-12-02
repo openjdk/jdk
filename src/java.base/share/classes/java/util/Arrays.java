@@ -7117,10 +7117,10 @@ public class Arrays {
      * and proper prefix.)
      *
      * <p>A {@code null} array reference is considered lexicographically less
-     * than a non-{@code null} array reference.  Two {@code null} array
+     * than a non-{@code null} array reference. Two {@code null} array
      * references are considered equal.
-     * A {@code null} array element is considered lexicographically than a
-     * non-{@code null} array element.  Two {@code null} array elements are
+     * A {@code null} array element is considered lexicographically less than a
+     * non-{@code null} array element. Two {@code null} array elements are
      * considered equal.
      *
      * <p>The comparison is consistent with {@link #equals(Object[], Object[]) equals},

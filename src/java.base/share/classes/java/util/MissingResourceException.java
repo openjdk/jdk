@@ -47,8 +47,7 @@ package java.util;
  * @author      Mark Davis
  * @since       1.1
  */
-public
-class MissingResourceException extends RuntimeException {
+public class MissingResourceException extends RuntimeException {
 
     /**
      * Constructs a MissingResourceException with the specified information.

@@ -210,7 +210,8 @@ public class Branch {
                 /* echo the message */
                 debug("Server: echoing first message");
                 buffer.flip();
-                int bytes = serverChannel.send(buffer, info);
+                MessageInfo sendInfo = MessageInfo.createOutgoing(info.association(), null, 0);
+                int bytes = serverChannel.send(buffer, sendInfo);
                 debug("Server: sent " + bytes + "bytes");
 
                 clientFinishedLatch.await(10L, TimeUnit.SECONDS);

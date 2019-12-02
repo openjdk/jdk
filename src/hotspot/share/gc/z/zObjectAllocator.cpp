@@ -63,7 +63,7 @@ ZPage* ZObjectAllocator::alloc_page(uint8_t type, size_t size, ZAllocationFlags 
   ZPage* const page = ZHeap::heap()->alloc_page(type, size, flags);
   if (page != NULL) {
     // Increment used bytes
-    Atomic::add(size, _used.addr());
+    Atomic::add(_used.addr(), size);
   }
 
   return page;
@@ -71,7 +71,7 @@ ZPage* ZObjectAllocator::alloc_page(uint8_t type, size_t size, ZAllocationFlags 
 
 void ZObjectAllocator::undo_alloc_page(ZPage* page) {
   // Increment undone bytes
-  Atomic::add(page->size(), _undone.addr());
+  Atomic::add(_undone.addr(), page->size());
 
   ZHeap::heap()->undo_alloc_page(page);
 }
@@ -82,7 +82,7 @@ uintptr_t ZObjectAllocator::alloc_object_in_shared_page(ZPage** shared_page,
                                                         size_t size,
                                                         ZAllocationFlags flags) {
   uintptr_t addr = 0;
-  ZPage* page = OrderAccess::load_acquire(shared_page);
+  ZPage* page = Atomic::load_acquire(shared_page);
 
   if (page != NULL) {
     addr = page->alloc_object_atomic(size);
@@ -97,7 +97,7 @@ uintptr_t ZObjectAllocator::alloc_object_in_shared_page(ZPage** shared_page,
 
     retry:
       // Install new page
-      ZPage* const prev_page = Atomic::cmpxchg(new_page, shared_page, page);
+      ZPage* const prev_page = Atomic::cmpxchg(shared_page, page, new_page);
       if (prev_page != page) {
         if (prev_page == NULL) {
           // Previous page was retired, retry installing the new page
@@ -304,7 +304,7 @@ size_t ZObjectAllocator::used() const {
 size_t ZObjectAllocator::remaining() const {
   assert(ZThread::is_java(), "Should be a Java thread");
 
-  const ZPage* const page = OrderAccess::load_acquire(shared_small_page_addr());
+  const ZPage* const page = Atomic::load_acquire(shared_small_page_addr());
   if (page != NULL) {
     return page->remaining();
   }

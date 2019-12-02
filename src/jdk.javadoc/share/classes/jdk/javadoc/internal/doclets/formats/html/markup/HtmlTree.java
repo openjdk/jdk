@@ -584,21 +584,6 @@ public class HtmlTree extends Content {
     }
 
     /**
-     * Generates a MAIN tag with role attribute, style attribute and some content.
-     *
-     * @param styleClass style of the MAIN tag
-     * @param body content of the MAIN tag
-     * @return an HtmlTree object for the MAIN tag
-     */
-    public static HtmlTree MAIN(HtmlStyle styleClass, Content body) {
-        HtmlTree htmltree = HtmlTree.MAIN(body);
-        if (styleClass != null) {
-            htmltree.setStyle(styleClass);
-        }
-        return htmltree;
-    }
-
-    /**
      * Generates a META tag with the http-equiv, content and charset attributes.
      *
      * @param httpEquiv http equiv attribute for the META tag

@@ -25,11 +25,13 @@
 
 package jdk.jfr.api.consumer.recordingstream;
 
-import java.util.concurrent.CompletableFuture;
+import java.time.Instant;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 
 import jdk.jfr.Event;
+import jdk.jfr.Recording;
+import jdk.jfr.consumer.EventStream;
 import jdk.jfr.consumer.RecordingStream;
 
 /**
@@ -37,7 +39,7 @@ import jdk.jfr.consumer.RecordingStream;
  * @summary Tests RecordingStream::close()
  * @key jfr
  * @requires vm.hasJFR
- * @library /test/lib
+ * @library /test/lib /test/jdk
  * @run main/othervm jdk.jfr.api.consumer.recordingstream.TestClose
  */
 public class TestClose {
@@ -51,78 +53,85 @@ public class TestClose {
         testCloseTwice();
         testCloseStreaming();
         testCloseMySelf();
-    }
-
-    private static void testCloseMySelf() throws Exception {
-        log("Entering testCloseMySelf()");
-        CountDownLatch l1 = new CountDownLatch(1);
-        CountDownLatch l2 = new CountDownLatch(1);
-        RecordingStream r = new RecordingStream();
-        r.onEvent(e -> {
-            try {
-                l1.await();
-                r.close();
-                l2.countDown();
-            } catch (InterruptedException ie) {
-                throw new Error(ie);
-            }
-        });
-        r.startAsync();
-        CloseEvent c = new CloseEvent();
-        c.commit();
-        l1.countDown();
-        l2.await();
-        log("Leaving testCloseMySelf()");
-    }
-
-    private static void testCloseStreaming() throws Exception {
-        log("Entering testCloseStreaming()");
-        CountDownLatch streaming = new CountDownLatch(1);
-        RecordingStream r = new RecordingStream();
-        AtomicLong count = new AtomicLong();
-        r.onEvent(e -> {
-            if (count.incrementAndGet() > 100) {
-                streaming.countDown();
-            }
-        });
-        r.startAsync();
-        var streamingLoop = CompletableFuture.runAsync(() -> {
-            while (true) {
-                CloseEvent c = new CloseEvent();
-                c.commit();
-            }
-        });
-        streaming.await();
-        r.close();
-        streamingLoop.cancel(true);
-        log("Leaving testCloseStreaming()");
-    }
-
-    private static void testCloseStarted() {
-        log("Entering testCloseStarted()");
-        RecordingStream r = new RecordingStream();
-        r.startAsync();
-        r.close();
-        log("Leaving testCloseStarted()");
+        testCloseNoEvents();
     }
 
     private static void testCloseUnstarted() {
-        log("Entering testCloseUnstarted()");
-        RecordingStream r = new RecordingStream();
-        r.close();
-        log("Leaving testCloseUnstarted()");
+        System.out.println("testCloseUnstarted()");
+
+        try (RecordingStream r = new RecordingStream()) {
+            r.close();
+        }
+    }
+
+    private static void testCloseStarted() {
+        System.out.println("testCloseStarted()");
+
+        try (RecordingStream r = new RecordingStream()) {
+            r.startAsync();
+        } // <- Close
     }
 
     private static void testCloseTwice() {
-        log("Entering testCloseTwice()");
-        RecordingStream r = new RecordingStream();
-        r.startAsync();
-        r.close();
-        r.close();
-        log("Leaving testCloseTwice()");
+        System.out.println("Entering testCloseTwice()");
+
+        try (RecordingStream r = new RecordingStream()) {
+            r.startAsync();
+            r.close();
+        } // <- Second close
     }
 
-    private static void log(String msg) {
-        System.out.println(msg);
+    private static void testCloseStreaming() throws Exception {
+        System.out.println("Entering testCloseStreaming()");
+
+        EventProducer p = new EventProducer();
+        p.start();
+        CountDownLatch streaming = new CountDownLatch(1);
+        try (RecordingStream r = new RecordingStream()) {
+            r.onEvent(e -> {
+                streaming.countDown();
+            });
+            r.startAsync();
+            streaming.await();
+        } // <- Close
+        p.kill();
+    }
+
+    private static void testCloseMySelf() throws Exception {
+        System.out.println("testCloseMySelf()");
+
+        CountDownLatch closed = new CountDownLatch(1);
+        try (RecordingStream r = new RecordingStream()) {
+            r.onEvent(e -> {
+                r.close();  // <- Close
+                closed.countDown();
+            });
+            r.startAsync();
+            CloseEvent c = new CloseEvent();
+            c.commit();
+            closed.await();
+        }
+    }
+
+    private static void testCloseNoEvents() throws Exception {
+        System.out.println("testCloseNoEvents()");
+
+        try (Recording r = new Recording()) {
+            r.start();
+            CountDownLatch finished = new CountDownLatch(2);
+            AtomicReference<Thread> streamingThread = new AtomicReference<>();
+            try (EventStream es = EventStream.openRepository()) {
+                es.setStartTime(Instant.EPOCH);
+                es.onFlush(() -> {
+                    streamingThread.set(Thread.currentThread());
+                    finished.countDown();
+                });
+                es.startAsync();
+                finished.await();
+            } // <- Close should terminate thread
+            while (streamingThread.get().isAlive()) {
+                Thread.sleep(10);
+            }
+        }
     }
 }

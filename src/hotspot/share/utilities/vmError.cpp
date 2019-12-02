@@ -399,7 +399,7 @@ jlong VMError::get_current_timestamp() {
 
 void VMError::record_reporting_start_time() {
   const jlong now = get_current_timestamp();
-  Atomic::store(now, &_reporting_start_time);
+  Atomic::store(&_reporting_start_time, now);
 }
 
 jlong VMError::get_reporting_start_time() {
@@ -408,7 +408,7 @@ jlong VMError::get_reporting_start_time() {
 
 void VMError::record_step_start_time() {
   const jlong now = get_current_timestamp();
-  Atomic::store(now, &_step_start_time);
+  Atomic::store(&_step_start_time, now);
 }
 
 jlong VMError::get_step_start_time() {
@@ -416,7 +416,7 @@ jlong VMError::get_step_start_time() {
 }
 
 void VMError::clear_step_start_time() {
-  return Atomic::store((jlong)0, &_step_start_time);
+  return Atomic::store(&_step_start_time, (jlong)0);
 }
 
 void VMError::report(outputStream* st, bool _verbose) {
@@ -1365,7 +1365,7 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
   }
   intptr_t mytid = os::current_thread_id();
   if (_first_error_tid == -1 &&
-      Atomic::cmpxchg(mytid, &_first_error_tid, (intptr_t)-1) == -1) {
+      Atomic::cmpxchg(&_first_error_tid, (intptr_t)-1, mytid) == -1) {
 
     // Initialize time stamps to use the same base.
     out.time_stamp().update_to(1);

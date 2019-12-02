@@ -67,10 +67,10 @@ oop_store_in_heap(T* addr, oop value) {
 template <DecoratorSet decorators, typename BarrierSetT>
 template <typename T>
 inline oop ModRefBarrierSet::AccessBarrier<decorators, BarrierSetT>::
-oop_atomic_cmpxchg_in_heap(oop new_value, T* addr, oop compare_value) {
+oop_atomic_cmpxchg_in_heap(T* addr, oop compare_value, oop new_value) {
   BarrierSetT *bs = barrier_set_cast<BarrierSetT>(barrier_set());
   bs->template write_ref_field_pre<decorators>(addr);
-  oop result = Raw::oop_atomic_cmpxchg(new_value, addr, compare_value);
+  oop result = Raw::oop_atomic_cmpxchg(addr, compare_value, new_value);
   if (result == compare_value) {
     bs->template write_ref_field_post<decorators>(addr, new_value);
   }
@@ -80,10 +80,10 @@ oop_atomic_cmpxchg_in_heap(oop new_value, T* addr, oop compare_value) {
 template <DecoratorSet decorators, typename BarrierSetT>
 template <typename T>
 inline oop ModRefBarrierSet::AccessBarrier<decorators, BarrierSetT>::
-oop_atomic_xchg_in_heap(oop new_value, T* addr) {
+oop_atomic_xchg_in_heap(T* addr, oop new_value) {
   BarrierSetT *bs = barrier_set_cast<BarrierSetT>(barrier_set());
   bs->template write_ref_field_pre<decorators>(addr);
-  oop result = Raw::oop_atomic_xchg(new_value, addr);
+  oop result = Raw::oop_atomic_xchg(addr, new_value);
   bs->template write_ref_field_post<decorators>(addr, new_value);
   return result;
 }

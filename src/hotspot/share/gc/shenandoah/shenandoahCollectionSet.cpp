@@ -146,7 +146,7 @@ ShenandoahHeapRegion* ShenandoahCollectionSet::claim_next() {
 
   while(index < num_regions) {
     if (is_in(index)) {
-      jint cur = Atomic::cmpxchg((jint)(index + 1), &_current_index, saved_current);
+      jint cur = Atomic::cmpxchg(&_current_index, saved_current, (jint)(index + 1));
       assert(cur >= (jint)saved_current, "Must move forward");
       if (cur == saved_current) {
         assert(is_in(index), "Invariant");

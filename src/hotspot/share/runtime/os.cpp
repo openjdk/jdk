@@ -668,7 +668,7 @@ static bool has_reached_max_malloc_test_peak(size_t alloc_size) {
     if ((cur_malloc_words + words) > MallocMaxTestWords) {
       return true;
     }
-    Atomic::add(words, &cur_malloc_words);
+    Atomic::add(&cur_malloc_words, words);
   }
   return false;
 }
@@ -855,7 +855,7 @@ int os::random() {
   while (true) {
     unsigned int seed = _rand_seed;
     unsigned int rand = random_helper(seed);
-    if (Atomic::cmpxchg(rand, &_rand_seed, seed) == seed) {
+    if (Atomic::cmpxchg(&_rand_seed, seed, rand) == seed) {
       return static_cast<int>(rand);
     }
   }
@@ -1804,7 +1804,7 @@ void os::realign_memory(char *addr, size_t bytes, size_t alignment_hint) {
 os::SuspendResume::State os::SuspendResume::switch_state(os::SuspendResume::State from,
                                                          os::SuspendResume::State to)
 {
-  os::SuspendResume::State result = Atomic::cmpxchg(to, &_state, from);
+  os::SuspendResume::State result = Atomic::cmpxchg(&_state, from, to);
   if (result == from) {
     // success
     return to;

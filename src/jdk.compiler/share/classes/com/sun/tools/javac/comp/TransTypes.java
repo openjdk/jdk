@@ -567,6 +567,13 @@ public class TransTypes extends TreeTranslator {
         result = tree;
     }
 
+    public void visitBindingPattern(JCBindingPattern tree) {
+        if (tree.vartype != null) {
+            tree.vartype = translate(tree.vartype, null);
+        }
+        result = tree;
+    }
+
     public void visitSwitchExpression(JCSwitchExpression tree) {
         Type selsuper = types.supertype(tree.selector.type);
         boolean enumSwitch = selsuper != null &&
@@ -780,7 +787,7 @@ public class TransTypes extends TreeTranslator {
 
     public void visitTypeTest(JCInstanceOf tree) {
         tree.expr = translate(tree.expr, null);
-        tree.clazz = translate(tree.clazz, null);
+        tree.pattern = translate(tree.pattern, null);
         result = tree;
     }
 

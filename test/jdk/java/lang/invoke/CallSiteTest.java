@@ -24,10 +24,11 @@
 /**
  * @test
  * @summary smoke tests for CallSite
+ * @library /test/lib
  *
  * @build indify.Indify
  * @compile CallSiteTest.java
- * @run main/othervm/timeout=3600 -XX:+IgnoreUnrecognizedVMOptions -XX:-VerifyDependencies
+ * @run main/othervm/timeout=3600 -XX:+IgnoreUnrecognizedVMOptions -XX:-VerifyDependencies -Xbatch
  *      indify.Indify
  *      --expand-properties --classpath ${test.classes}
  *      --java test.java.lang.invoke.CallSiteTest
@@ -40,6 +41,7 @@ import java.io.*;
 import java.lang.invoke.*;
 import static java.lang.invoke.MethodHandles.*;
 import static java.lang.invoke.MethodType.*;
+import static jdk.test.lib.Asserts.*;
 
 public class CallSiteTest {
     private static final Class<?> CLASS = CallSiteTest.class;
@@ -51,16 +53,19 @@ public class CallSiteTest {
 
     static {
         try {
+
             mh_foo = lookup().findStatic(CLASS, "foo", methodType(int.class, int.class, int.class));
             mh_bar = lookup().findStatic(CLASS, "bar", methodType(int.class, int.class, int.class));
             mcs = new MutableCallSite(mh_foo);
             vcs = new VolatileCallSite(mh_foo);
         } catch (Exception e) {
             e.printStackTrace();
+            throw new Error(e);
         }
     }
 
     public static void main(String... av) throws Throwable {
+        testConstantCallSite();
         testMutableCallSite();
         testVolatileCallSite();
     }
@@ -69,9 +74,61 @@ public class CallSiteTest {
     private static final int RESULT1 = 762786192;
     private static final int RESULT2 = -21474836;
 
-    private static void assertEquals(int expected, int actual) {
-        if (expected != actual)
-            throw new AssertionError("expected: " + expected + ", actual: " + actual);
+    static final CallSite     MCS         = new MutableCallSite(methodType(void.class));
+    static final MethodHandle MCS_INVOKER = MCS.dynamicInvoker();
+
+    static void test(boolean shouldThrow) {
+        try {
+            MCS_INVOKER.invokeExact();
+            if (shouldThrow) {
+                throw new AssertionError("should throw");
+            }
+        } catch (IllegalStateException ise) {
+            if (!shouldThrow) {
+                throw new AssertionError("should not throw", ise);
+            }
+        } catch (Throwable e) {
+            throw new Error(e);
+        }
+    }
+
+    static class MyCCS extends ConstantCallSite {
+        public MyCCS(MethodType targetType, MethodHandle createTargetHook) throws Throwable {
+            super(targetType, createTargetHook);
+        }
+    }
+
+    private static MethodHandle testConstantCallSiteHandler(CallSite cs, CallSite[] holder) throws Throwable {
+        holder[0] = cs; // capture call site instance for subsequent checks
+
+        MethodType csType = cs.type(); // should not throw on partially constructed instance
+
+        // Truly dynamic invoker for constant call site
+        MethodHandle getTarget = lookup().findVirtual(CallSite.class, "getTarget", MethodType.methodType(MethodHandle.class))
+                                         .bindTo(cs);
+        MethodHandle invoker = MethodHandles.exactInvoker(csType);
+        MethodHandle target = MethodHandles.foldArguments(invoker, getTarget);
+
+        MCS.setTarget(target);
+        // warmup
+        for (int i = 0; i < 20_000; i++) {
+            test(true); // should throw IllegalStateException
+        }
+
+        return MethodHandles.empty(csType); // initialize cs with an empty method handle
+    }
+
+    private static void testConstantCallSite() throws Throwable {
+        CallSite[] holder = new CallSite[1];
+        MethodHandle handler = lookup().findStatic(CLASS, "testConstantCallSiteHandler", MethodType.methodType(MethodHandle.class, CallSite.class, CallSite[].class));
+        handler = MethodHandles.insertArguments(handler, 1, new Object[] { holder } );
+
+        CallSite ccs = new MyCCS(MCS.type(), handler); // trigger call to handler
+
+        if (ccs != holder[0]) {
+            throw new AssertionError("different call site instances");
+        }
+        test(false); // should not throw
     }
 
     private static void testMutableCallSite() throws Throwable {
@@ -83,11 +140,11 @@ public class CallSiteTest {
         for (int n = 0; n < 2; n++) {
             mcs.setTarget(mh_foo);
             for (int i = 0; i < 5; i++) {
-                assertEquals(RESULT1, runMutableCallSite());
+                assertEQ(RESULT1, runMutableCallSite());
             }
             mcs.setTarget(mh_bar);
             for (int i = 0; i < 5; i++) {
-                assertEquals(RESULT2, runMutableCallSite());
+                assertEQ(RESULT2, runMutableCallSite());
             }
         }
     }
@@ -100,11 +157,11 @@ public class CallSiteTest {
         for (int n = 0; n < 2; n++) {
             vcs.setTarget(mh_foo);
             for (int i = 0; i < 5; i++) {
-                assertEquals(RESULT1, runVolatileCallSite());
+                assertEQ(RESULT1, runVolatileCallSite());
             }
             vcs.setTarget(mh_bar);
             for (int i = 0; i < 5; i++) {
-                assertEquals(RESULT2, runVolatileCallSite());
+                assertEQ(RESULT2, runVolatileCallSite());
             }
         }
     }

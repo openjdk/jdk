@@ -31,6 +31,7 @@ import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
 
 import com.sun.source.doctree.DocTree;
+import jdk.javadoc.internal.doclets.formats.html.markup.BodyContents;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
@@ -60,9 +61,9 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
 
     /**
-     * The HTML tree for main tag.
+     * The HTML builder for the body contents.
      */
-    protected HtmlTree mainTree = HtmlTree.MAIN();
+    protected BodyContents bodyContents = new BodyContents();
 
     public SubWriterHolderWriter(HtmlConfiguration configuration, DocPath filename) {
         super(configuration, filename);
@@ -191,22 +192,19 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
     /**
      * Add the class content tree.
      *
-     * @param contentTree content tree to which the class content will be added
      * @param classContentTree class content tree which will be added to the content tree
      */
-    public void addClassContentTree(Content contentTree, Content classContentTree) {
-        mainTree.add(classContentTree);
-        contentTree.add(mainTree);
+    public void addClassContentTree(Content classContentTree) {
+        bodyContents.addMainContent(classContentTree);
     }
 
     /**
      * Add the annotation content tree.
      *
-     * @param contentTree content tree to which the annotation content will be added
      * @param annotationContentTree annotation content tree which will be added to the content tree
      */
-    public void addAnnotationContentTree(Content contentTree, Content annotationContentTree) {
-        addClassContentTree(contentTree, annotationContentTree);
+    public void addAnnotationContentTree(Content annotationContentTree) {
+        addClassContentTree(annotationContentTree);
     }
 
     /**

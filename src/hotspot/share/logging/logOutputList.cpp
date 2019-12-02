@@ -30,13 +30,13 @@
 #include "utilities/globalDefinitions.hpp"
 
 jint LogOutputList::increase_readers() {
-  jint result = Atomic::add(1, &_active_readers);
+  jint result = Atomic::add(&_active_readers, 1);
   assert(_active_readers > 0, "Ensure we have consistent state");
   return result;
 }
 
 jint LogOutputList::decrease_readers() {
-  jint result = Atomic::add(-1, &_active_readers);
+  jint result = Atomic::add(&_active_readers, -1);
   assert(result >= 0, "Ensure we have consistent state");
   return result;
 }

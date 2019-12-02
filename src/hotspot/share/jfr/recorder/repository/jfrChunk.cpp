@@ -59,7 +59,8 @@ JfrChunk::JfrChunk() :
   _last_update_nanos(0),
   _last_checkpoint_offset(0),
   _last_metadata_offset(0),
-  _generation(1) {}
+  _generation(1),
+  _final(false) {}
 
 JfrChunk::~JfrChunk() {
   reset();
@@ -86,10 +87,20 @@ u2 JfrChunk::minor_version() const {
   return JFR_VERSION_MINOR;
 }
 
-u2 JfrChunk::capabilities() const {
+void JfrChunk::mark_final() {
+  _final = true;
+}
+
+u2 JfrChunk::flags() const {
   // chunk capabilities, CompressedIntegers etc
-  static bool compressed_integers = JfrOptionSet::compressed_integers();
-  return compressed_integers;
+  u2 flags = 0;
+  if (JfrOptionSet::compressed_integers()) {
+    flags |= 1 << 0;
+  }
+  if (_final) {
+    flags |= 1 << 1;
+  }
+  return flags;
 }
 
 int64_t JfrChunk::cpu_frequency() const {

@@ -79,7 +79,7 @@
   diagnostic(bool, ZVerifyObjects, false,                                   \
           "Verify objects")                                                 \
                                                                             \
-  diagnostic(bool, ZVerifyMarking, false,                                   \
+  diagnostic(bool, ZVerifyMarking, trueInDebug,                             \
           "Verify marking stacks")                                          \
                                                                             \
   diagnostic(bool, ZVerifyForwarding, false,                                \

@@ -28,7 +28,7 @@ package gc.startup_warnings;
 * @key gc
 * @bug 8006398
 * @requires vm.gc.Parallel
-* @summary Test that the ParallelScavenge+SerialOld combination does not print a warning message
+* @summary Test that the ParallelScavenge+SerialOld combination prints a deprecation message
 * @library /test/lib
 * @modules java.base/jdk.internal.misc
 *          java.management
@@ -44,7 +44,7 @@ public class TestParallelScavengeSerialOld {
   public static void main(String args[]) throws Exception {
     ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:+UseParallelGC", "-XX:-UseParallelOldGC", "-version");
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
-    output.shouldNotContain("deprecated");
+    output.shouldContain("deprecated");
     output.shouldNotContain("error");
     output.shouldHaveExitValue(0);
   }

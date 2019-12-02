@@ -704,13 +704,6 @@ void* SplashProcAddress(const char* name) {
     }
 }
 
-void SplashFreeLibrary() {
-    if (hSplashLib) {
-        FreeLibrary(hSplashLib);
-        hSplashLib = NULL;
-    }
-}
-
 /*
  * Signature adapter for _beginthreadex().
  */

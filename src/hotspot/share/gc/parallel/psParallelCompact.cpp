@@ -532,7 +532,7 @@ void ParallelCompactData::add_obj(HeapWord* addr, size_t len)
   const size_t end_region = (obj_ofs + len - 1) >> Log2RegionSize;
 
   DEBUG_ONLY(Atomic::inc(&add_obj_count);)
-  DEBUG_ONLY(Atomic::add(len, &add_obj_size);)
+  DEBUG_ONLY(Atomic::add(&add_obj_size, len);)
 
   if (beg_region == end_region) {
     // All in one region.
@@ -2449,7 +2449,7 @@ public:
   }
 
   bool try_claim(PSParallelCompact::UpdateDensePrefixTask& reference) {
-    uint claimed = Atomic::add(1u, &_counter) - 1; // -1 is so that we start with zero
+    uint claimed = Atomic::add(&_counter, 1u) - 1; // -1 is so that we start with zero
     if (claimed < _insert_index) {
       reference = _backing_array[claimed];
       return true;

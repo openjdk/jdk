@@ -56,7 +56,7 @@ ThreadCritical::ThreadCritical() {
 
   if (lock_owner != current_thread) {
     // Grab the lock before doing anything.
-    while (Atomic::cmpxchg(0, &lock_count, -1) != -1) {
+    while (Atomic::cmpxchg(&lock_count, -1, 0) != -1) {
       if (initialized) {
         DWORD ret = WaitForSingleObject(lock_event,  INFINITE);
         assert(ret == WAIT_OBJECT_0, "unexpected return value from WaitForSingleObject");

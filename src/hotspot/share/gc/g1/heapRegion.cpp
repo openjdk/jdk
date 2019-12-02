@@ -43,8 +43,6 @@
 #include "oops/access.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomic.hpp"
-#include "runtime/orderAccess.hpp"
 
 int    HeapRegion::LogOfHRGrainBytes = 0;
 int    HeapRegion::LogOfHRGrainWords = 0;
@@ -136,6 +134,11 @@ void HeapRegion::hr_clear(bool keep_remset, bool clear_space, bool locked) {
 
   init_top_at_mark_start();
   if (clear_space) clear(SpaceDecorator::Mangle);
+
+  _evacuation_failed = false;
+  _gc_efficiency = 0.0;
+  _recorded_rs_length = 0;
+  _predicted_elapsed_time_ms = 0.0;
 }
 
 void HeapRegion::clear_cardtable() {
@@ -233,8 +236,8 @@ void HeapRegion::clear_humongous() {
 HeapRegion::HeapRegion(uint hrm_index,
                        G1BlockOffsetTable* bot,
                        MemRegion mr) :
-  _bottom(NULL),
-  _end(NULL),
+  _bottom(mr.start()),
+  _end(mr.end()),
   _top(NULL),
   _compaction_top(NULL),
   _bot_part(bot, this),
@@ -245,30 +248,28 @@ HeapRegion::HeapRegion(uint hrm_index,
   _type(),
   _humongous_start_region(NULL),
   _evacuation_failed(false),
+  _index_in_opt_cset(InvalidCSetIndex),
   _next(NULL), _prev(NULL),
 #ifdef ASSERT
   _containing_set(NULL),
 #endif
-  _prev_marked_bytes(0), _next_marked_bytes(0), _gc_efficiency(0.0),
-  _index_in_opt_cset(InvalidCSetIndex), _young_index_in_cset(-1),
-  _surv_rate_group(NULL), _age_index(-1),
   _prev_top_at_mark_start(NULL), _next_top_at_mark_start(NULL),
+  _prev_marked_bytes(0), _next_marked_bytes(0),
+  _young_index_in_cset(-1),
+  _surv_rate_group(NULL), _age_index(-1), _gc_efficiency(0.0),
   _recorded_rs_length(0), _predicted_elapsed_time_ms(0),
   _node_index(G1NUMA::UnknownNodeIndex)
 {
-  _rem_set = new HeapRegionRemSet(bot, this);
-
-  initialize(mr);
-}
-
-void HeapRegion::initialize(MemRegion mr, bool clear_space, bool mangle_space) {
-  assert(_rem_set->is_empty(), "Remembered set must be empty");
-
   assert(Universe::on_page_boundary(mr.start()) && Universe::on_page_boundary(mr.end()),
          "invalid space boundaries");
 
-  set_bottom(mr.start());
-  set_end(mr.end());
+  _rem_set = new HeapRegionRemSet(bot, this);
+  initialize();
+}
+
+void HeapRegion::initialize(bool clear_space, bool mangle_space) {
+  assert(_rem_set->is_empty(), "Remembered set must be empty");
+
   if (clear_space) {
     clear(mangle_space);
   }
@@ -755,7 +756,7 @@ void HeapRegion::verify(VerifyOption vo,
   if (p < the_end) {
     // Look up top
     HeapWord* addr_1 = p;
-    HeapWord* b_start_1 = _bot_part.block_start_const(addr_1);
+    HeapWord* b_start_1 = block_start_const(addr_1);
     if (b_start_1 != p) {
       log_error(gc, verify)("BOT look up for top: " PTR_FORMAT " "
                             " yielded " PTR_FORMAT ", expecting " PTR_FORMAT,
@@ -767,7 +768,7 @@ void HeapRegion::verify(VerifyOption vo,
     // Look up top + 1
     HeapWord* addr_2 = p + 1;
     if (addr_2 < the_end) {
-      HeapWord* b_start_2 = _bot_part.block_start_const(addr_2);
+      HeapWord* b_start_2 = block_start_const(addr_2);
       if (b_start_2 != p) {
         log_error(gc, verify)("BOT look up for top + 1: " PTR_FORMAT " "
                               " yielded " PTR_FORMAT ", expecting " PTR_FORMAT,
@@ -781,7 +782,7 @@ void HeapRegion::verify(VerifyOption vo,
     size_t diff = pointer_delta(the_end, p) / 2;
     HeapWord* addr_3 = p + diff;
     if (addr_3 < the_end) {
-      HeapWord* b_start_3 = _bot_part.block_start_const(addr_3);
+      HeapWord* b_start_3 = block_start_const(addr_3);
       if (b_start_3 != p) {
         log_error(gc, verify)("BOT look up for top + diff: " PTR_FORMAT " "
                               " yielded " PTR_FORMAT ", expecting " PTR_FORMAT,
@@ -793,7 +794,7 @@ void HeapRegion::verify(VerifyOption vo,
 
     // Look up end - 1
     HeapWord* addr_4 = the_end - 1;
-    HeapWord* b_start_4 = _bot_part.block_start_const(addr_4);
+    HeapWord* b_start_4 = block_start_const(addr_4);
     if (b_start_4 != p) {
       log_error(gc, verify)("BOT look up for end - 1: " PTR_FORMAT " "
                             " yielded " PTR_FORMAT ", expecting " PTR_FORMAT,

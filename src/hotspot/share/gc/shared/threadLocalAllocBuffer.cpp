@@ -132,7 +132,7 @@ void ThreadLocalAllocBuffer::resize() {
                           (Universe::heap()->tlab_capacity(thread()) / HeapWordSize));
   size_t new_size = alloc / _target_refills;
 
-  new_size = MIN2(MAX2(new_size, min_size()), max_size());
+  new_size = clamp(new_size, min_size(), max_size());
 
   size_t aligned_new_size = align_object_size(new_size);
 
@@ -251,6 +251,10 @@ size_t ThreadLocalAllocBuffer::initial_desired_size() {
                       (nof_threads * target_refills());
     init_sz = align_object_size(init_sz);
   }
+  // We can't use clamp() between min_size() and max_size() here because some
+  // options based on them may still be inconsistent and so it may assert;
+  // inconsistencies between those will be caught by following AfterMemoryInit
+  // constraint checking.
   init_sz = MIN2(MAX2(init_sz, min_size()), max_size());
   return init_sz;
 }

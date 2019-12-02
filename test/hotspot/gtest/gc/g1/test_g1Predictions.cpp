@@ -26,6 +26,8 @@
 #include "gc/g1/g1Predictions.hpp"
 #include "unittest.hpp"
 
+#include "utilities/ostream.hpp"
+
 static const double epsilon = 1e-6;
 
 // Some basic formula tests with confidence = 0.0
@@ -95,4 +97,52 @@ TEST_VM(G1Predictions, average_stdev_predictions) {
   s.add(2.0);
   double p4 = predictor.get_new_prediction(&s);
   ASSERT_GT(p4, p3) << "Fourth prediction must be greater than third";
+}
+
+// Some tests to verify bounding between [0 .. 1]
+TEST_VM(G1Predictions, unit_predictions) {
+  G1Predictions predictor(0.5);
+  TruncatedSeq s;
+
+  double p0 = predictor.get_new_unit_prediction(&s);
+  ASSERT_LT(p0, epsilon) << "Initial prediction of empty sequence must be 0.0";
+
+  s.add(100.0);
+  double p1 = predictor.get_new_unit_prediction(&s);
+  ASSERT_NEAR(p1, 1.0, epsilon);
+
+  // Feed the sequence additional positive values to test the high bound.
+  for (int i = 0; i < 3; i++) {
+    s.add(2.0);
+  }
+  ASSERT_NEAR(predictor.get_new_unit_prediction(&s), 1.0, epsilon);
+
+  // Feed the sequence additional large negative value to test the low bound.
+  for (int i = 0; i < 4; i++) {
+    s.add(-200.0);
+  }
+  ASSERT_NEAR(predictor.get_new_unit_prediction(&s), 0.0, epsilon);
+}
+
+// Some tests to verify bounding between [0 .. +inf]
+TEST_VM(G1Predictions, lower_bound_zero_predictions) {
+  G1Predictions predictor(0.5);
+  TruncatedSeq s;
+
+  double p0 = predictor.get_new_lower_zero_bound_prediction(&s);
+  ASSERT_LT(p0, epsilon) << "Initial prediction of empty sequence must be 0.0";
+
+  s.add(100.0);
+  // Feed the sequence additional positive values to see that the high bound is not
+  // bounded by e.g. 1.0
+  for (int i = 0; i < 3; i++) {
+    s.add(2.0);
+  }
+  ASSERT_GT(predictor.get_new_lower_zero_bound_prediction(&s), 1.0);
+
+  // Feed the sequence additional large negative value to test the low bound.
+  for (int i = 0; i < 4; i++) {
+    s.add(-200.0);
+  }
+  ASSERT_NEAR(predictor.get_new_lower_zero_bound_prediction(&s), 0.0, epsilon);
 }

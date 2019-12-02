@@ -39,8 +39,7 @@ import java.io.EOFException;
  * @author      David Connelly
  * @since 1.1
  */
-public
-class InflaterInputStream extends FilterInputStream {
+public class InflaterInputStream extends FilterInputStream {
     /**
      * Decompressor for this stream.
      */

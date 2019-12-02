@@ -198,7 +198,10 @@ public enum Source {
         SWITCH_MULTIPLE_CASE_LABELS(JDK14, Fragments.FeatureMultipleCaseLabels, DiagKind.PLURAL),
         SWITCH_RULE(JDK14, Fragments.FeatureSwitchRules, DiagKind.PLURAL),
         SWITCH_EXPRESSION(JDK14, Fragments.FeatureSwitchExpressions, DiagKind.PLURAL),
-        TEXT_BLOCKS(JDK14, Fragments.FeatureTextBlocks, DiagKind.PLURAL);
+        TEXT_BLOCKS(JDK14, Fragments.FeatureTextBlocks, DiagKind.PLURAL),
+        PATTERN_MATCHING_IN_INSTANCEOF(JDK14, Fragments.FeaturePatternMatchingInstanceof, DiagKind.NORMAL),
+        REIFIABLE_TYPES_INSTANCEOF(JDK14, Fragments.FeatureReifiableTypesInstanceof, DiagKind.PLURAL),
+        ;
 
         enum DiagKind {
             NORMAL,

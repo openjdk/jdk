@@ -53,7 +53,6 @@
 #include "runtime/javaCalls.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/objectMonitor.hpp"
-#include "runtime/orderAccess.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/perfMemory.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -2752,7 +2751,7 @@ static int check_pending_signals() {
   for (;;) {
     for (int i = 0; i < NSIG + 1; i++) {
       jint n = pending_signals[i];
-      if (n > 0 && n == Atomic::cmpxchg(n - 1, &pending_signals[i], n)) {
+      if (n > 0 && n == Atomic::cmpxchg(&pending_signals[i], n, n - 1)) {
         return i;
       }
     }
@@ -2813,7 +2812,7 @@ void linux_wrap_code(char* base, size_t size) {
   }
 
   char buf[PATH_MAX+1];
-  int num = Atomic::add(1, &cnt);
+  int num = Atomic::add(&cnt, 1);
 
   snprintf(buf, sizeof(buf), "%s/hs-vm-%d-%d",
            os::get_temp_directory(), os::current_process_id(), num);

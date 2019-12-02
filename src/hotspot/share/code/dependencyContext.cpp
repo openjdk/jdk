@@ -28,6 +28,7 @@
 #include "code/dependencyContext.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/orderAccess.hpp"
 #include "runtime/perfData.hpp"
 #include "utilities/exceptions.hpp"
 
@@ -101,7 +102,7 @@ void DependencyContext::add_dependent_nmethod(nmethod* nm) {
   for (;;) {
     nmethodBucket* head = Atomic::load(_dependency_context_addr);
     new_head->set_next(head);
-    if (Atomic::cmpxchg(new_head, _dependency_context_addr, head) == head) {
+    if (Atomic::cmpxchg(_dependency_context_addr, head, new_head) == head) {
       break;
     }
   }
@@ -124,7 +125,7 @@ void DependencyContext::release(nmethodBucket* b) {
     for (;;) {
       nmethodBucket* purge_list_head = Atomic::load(&_purge_list);
       b->set_purge_list_next(purge_list_head);
-      if (Atomic::cmpxchg(b, &_purge_list, purge_list_head) == purge_list_head) {
+      if (Atomic::cmpxchg(&_purge_list, purge_list_head, b) == purge_list_head) {
         break;
       }
     }
@@ -260,7 +261,7 @@ bool DependencyContext::is_dependent_nmethod(nmethod* nm) {
 #endif //PRODUCT
 
 int nmethodBucket::decrement() {
-  return Atomic::sub(1, &_count);
+  return Atomic::sub(&_count, 1);
 }
 
 // We use a monotonically increasing epoch counter to track the last epoch a given
@@ -272,7 +273,7 @@ bool DependencyContext::claim_cleanup() {
   if (last_cleanup >= cleaning_epoch) {
     return false;
   }
-  return Atomic::cmpxchg(cleaning_epoch, _last_cleanup_addr, last_cleanup) == last_cleanup;
+  return Atomic::cmpxchg(_last_cleanup_addr, last_cleanup, cleaning_epoch) == last_cleanup;
 }
 
 // Retrieve the first nmethodBucket that has a dependent that does not correspond to
@@ -281,7 +282,7 @@ bool DependencyContext::claim_cleanup() {
 nmethodBucket* DependencyContext::dependencies_not_unloading() {
   for (;;) {
     // Need acquire becase the read value could come from a concurrent insert.
-    nmethodBucket* head = OrderAccess::load_acquire(_dependency_context_addr);
+    nmethodBucket* head = Atomic::load_acquire(_dependency_context_addr);
     if (head == NULL || !head->get_nmethod()->is_unloading()) {
       return head;
     }
@@ -291,7 +292,7 @@ nmethodBucket* DependencyContext::dependencies_not_unloading() {
       // Unstable load of head w.r.t. head->next
       continue;
     }
-    if (Atomic::cmpxchg(head_next, _dependency_context_addr, head) == head) {
+    if (Atomic::cmpxchg(_dependency_context_addr, head, head_next) == head) {
       // Release is_unloading entries if unlinking was claimed
       DependencyContext::release(head);
     }
@@ -300,7 +301,7 @@ nmethodBucket* DependencyContext::dependencies_not_unloading() {
 
 // Relaxed accessors
 void DependencyContext::set_dependencies(nmethodBucket* b) {
-  Atomic::store(b, _dependency_context_addr);
+  Atomic::store(_dependency_context_addr, b);
 }
 
 nmethodBucket* DependencyContext::dependencies() {
@@ -313,7 +314,7 @@ nmethodBucket* DependencyContext::dependencies() {
 void DependencyContext::cleaning_start() {
   assert(SafepointSynchronize::is_at_safepoint(), "must be");
   uint64_t epoch = ++_cleaning_epoch_monotonic;
-  Atomic::store(epoch, &_cleaning_epoch);
+  Atomic::store(&_cleaning_epoch, epoch);
 }
 
 // The epilogue marks the end of dependency context cleanup by the GC,
@@ -323,7 +324,7 @@ void DependencyContext::cleaning_start() {
 // was called. That allows dependency contexts to be cleaned concurrently.
 void DependencyContext::cleaning_end() {
   uint64_t epoch = 0;
-  Atomic::store(epoch, &_cleaning_epoch);
+  Atomic::store(&_cleaning_epoch, epoch);
 }
 
 // This function skips over nmethodBuckets in the list corresponding to
@@ -345,7 +346,7 @@ nmethodBucket* nmethodBucket::next_not_unloading() {
       // Unstable load of next w.r.t. next->next
       continue;
     }
-    if (Atomic::cmpxchg(next_next, &_next, next) == next) {
+    if (Atomic::cmpxchg(&_next, next, next_next) == next) {
       // Release is_unloading entries if unlinking was claimed
       DependencyContext::release(next);
     }
@@ -358,7 +359,7 @@ nmethodBucket* nmethodBucket::next() {
 }
 
 void nmethodBucket::set_next(nmethodBucket* b) {
-  Atomic::store(b, &_next);
+  Atomic::store(&_next, b);
 }
 
 nmethodBucket* nmethodBucket::purge_list_next() {
@@ -366,5 +367,5 @@ nmethodBucket* nmethodBucket::purge_list_next() {
 }
 
 void nmethodBucket::set_purge_list_next(nmethodBucket* b) {
-  Atomic::store(b, &_purge_list_next);
+  Atomic::store(&_purge_list_next, b);
 }

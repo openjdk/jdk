@@ -1,3 +1,4 @@
+
 /*
  * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -91,7 +92,7 @@ public class Launcher {
      */
     public static SocketChannel launchWithSocketChannel(String className, String options[], String args[]) throws IOException {
         ServerSocketChannel ssc = ServerSocketChannel.open();
-        ssc.socket().bind(new InetSocketAddress(0));
+        ssc.socket().bind(new InetSocketAddress(InetAddress.getLocalHost(), 0));
         InetSocketAddress isa = new InetSocketAddress(InetAddress.getLocalHost(),
                                                       ssc.socket().getLocalPort());
         SocketChannel sc1 = SocketChannel.open(isa);
@@ -120,7 +121,7 @@ public class Launcher {
         throws IOException
     {
         ServerSocketChannel ssc = ServerSocketChannel.open();
-        ssc.socket().bind(new InetSocketAddress(0));
+        ssc.socket().bind(new InetSocketAddress(InetAddress.getLocalHost(), 0));
         int port = ssc.socket().getLocalPort();
         launch(className, options, args, Util.getFD(ssc));
         ssc.close();
@@ -147,18 +148,18 @@ public class Launcher {
     public static DatagramChannel launchWithDatagramChannel(String className, String options[], String args[])
         throws IOException
     {
+        InetAddress address = InetAddress.getLocalHost();
+        if (address.isLoopbackAddress()) {
+            address = InetAddress.getLoopbackAddress();
+        }
         DatagramChannel dc = DatagramChannel.open();
-        dc.socket().bind(new InetSocketAddress(0));
+        dc.socket().bind(new InetSocketAddress(address, 0));
 
         int port = dc.socket().getLocalPort();
         launch(className, options, args, Util.getFD(dc));
         dc.close();
 
         dc = DatagramChannel.open();
-        InetAddress address = InetAddress.getLocalHost();
-        if (address.isLoopbackAddress()) {
-            address = InetAddress.getLoopbackAddress();
-        }
         InetSocketAddress isa = new InetSocketAddress(address, port);
 
         dc.connect(isa);

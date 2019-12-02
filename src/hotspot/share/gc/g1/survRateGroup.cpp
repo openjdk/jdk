@@ -116,8 +116,7 @@ void SurvRateGroup::finalize_predictions(const G1Predictions& predictor) {
   double accum = 0.0;
   double pred = 0.0;
   for (size_t i = 0; i < _stats_arrays_length; ++i) {
-    pred = predictor.get_new_prediction(_surv_rate_pred[i]);
-    if (pred > 1.0) pred = 1.0;
+    pred = predictor.get_new_unit_prediction(_surv_rate_pred[i]);
     accum += pred;
     _accum_surv_rate_pred[i] = accum;
   }

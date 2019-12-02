@@ -31,13 +31,13 @@ template<size_t byte_size>
 struct Atomic::PlatformAdd
   : Atomic::FetchAndAdd<Atomic::PlatformAdd<byte_size> >
 {
-  template<typename I, typename D>
-  D fetch_and_add(I add_value, D volatile* dest, atomic_memory_order order) const;
+  template<typename D, typename I>
+  D fetch_and_add(D volatile* dest, I add_value, atomic_memory_order order) const;
 };
 
 template<>
-template<typename I, typename D>
-inline D Atomic::PlatformAdd<4>::fetch_and_add(I add_value, D volatile* dest,
+template<typename D, typename I>
+inline D Atomic::PlatformAdd<4>::fetch_and_add(D volatile* dest, I add_value,
                                                atomic_memory_order order) const {
   STATIC_ASSERT(4 == sizeof(I));
   STATIC_ASSERT(4 == sizeof(D));
@@ -51,8 +51,8 @@ inline D Atomic::PlatformAdd<4>::fetch_and_add(I add_value, D volatile* dest,
 
 template<>
 template<typename T>
-inline T Atomic::PlatformXchg<4>::operator()(T exchange_value,
-                                             T volatile* dest,
+inline T Atomic::PlatformXchg<4>::operator()(T volatile* dest,
+                                             T exchange_value,
                                              atomic_memory_order order) const {
   STATIC_ASSERT(4 == sizeof(T));
   __asm__ volatile (  "xchgl (%2),%0"
@@ -64,9 +64,9 @@ inline T Atomic::PlatformXchg<4>::operator()(T exchange_value,
 
 template<>
 template<typename T>
-inline T Atomic::PlatformCmpxchg<1>::operator()(T exchange_value,
-                                                T volatile* dest,
+inline T Atomic::PlatformCmpxchg<1>::operator()(T volatile* dest,
                                                 T compare_value,
+                                                T exchange_value,
                                                 atomic_memory_order /* order */) const {
   STATIC_ASSERT(1 == sizeof(T));
   __asm__ volatile ("lock cmpxchgb %1,(%3)"
@@ -78,9 +78,9 @@ inline T Atomic::PlatformCmpxchg<1>::operator()(T exchange_value,
 
 template<>
 template<typename T>
-inline T Atomic::PlatformCmpxchg<4>::operator()(T exchange_value,
-                                                T volatile* dest,
+inline T Atomic::PlatformCmpxchg<4>::operator()(T volatile* dest,
                                                 T compare_value,
+                                                T exchange_value,
                                                 atomic_memory_order /* order */) const {
   STATIC_ASSERT(4 == sizeof(T));
   __asm__ volatile ("lock cmpxchgl %1,(%3)"
@@ -93,8 +93,8 @@ inline T Atomic::PlatformCmpxchg<4>::operator()(T exchange_value,
 #ifdef AMD64
 
 template<>
-template<typename I, typename D>
-inline D Atomic::PlatformAdd<8>::fetch_and_add(I add_value, D volatile* dest,
+template<typename D, typename I>
+inline D Atomic::PlatformAdd<8>::fetch_and_add(D volatile* dest, I add_value,
                                                atomic_memory_order order) const {
   STATIC_ASSERT(8 == sizeof(I));
   STATIC_ASSERT(8 == sizeof(D));
@@ -108,7 +108,7 @@ inline D Atomic::PlatformAdd<8>::fetch_and_add(I add_value, D volatile* dest,
 
 template<>
 template<typename T>
-inline T Atomic::PlatformXchg<8>::operator()(T exchange_value, T volatile* dest,
+inline T Atomic::PlatformXchg<8>::operator()(T volatile* dest, T exchange_value,
                                              atomic_memory_order order) const {
   STATIC_ASSERT(8 == sizeof(T));
   __asm__ __volatile__ ("xchgq (%2),%0"
@@ -120,9 +120,9 @@ inline T Atomic::PlatformXchg<8>::operator()(T exchange_value, T volatile* dest,
 
 template<>
 template<typename T>
-inline T Atomic::PlatformCmpxchg<8>::operator()(T exchange_value,
-                                                T volatile* dest,
+inline T Atomic::PlatformCmpxchg<8>::operator()(T volatile* dest,
                                                 T compare_value,
+                                                T exchange_value,
                                                 atomic_memory_order /* order */) const {
   STATIC_ASSERT(8 == sizeof(T));
   __asm__ __volatile__ ("lock cmpxchgq %1,(%3)"
@@ -142,12 +142,12 @@ extern "C" {
 
 template<>
 template<typename T>
-inline T Atomic::PlatformCmpxchg<8>::operator()(T exchange_value,
-                                                T volatile* dest,
+inline T Atomic::PlatformCmpxchg<8>::operator()(T volatile* dest,
                                                 T compare_value,
+                                                T exchange_value,
                                                 atomic_memory_order order) const {
   STATIC_ASSERT(8 == sizeof(T));
-  return cmpxchg_using_helper<int64_t>(_Atomic_cmpxchg_long, exchange_value, dest, compare_value);
+  return cmpxchg_using_helper<int64_t>(_Atomic_cmpxchg_long, dest, compare_value, exchange_value);
 }
 
 template<>
@@ -161,12 +161,62 @@ inline T Atomic::PlatformLoad<8>::operator()(T const volatile* src) const {
 
 template<>
 template<typename T>
-inline void Atomic::PlatformStore<8>::operator()(T store_value,
-                                                 T volatile* dest) const {
+inline void Atomic::PlatformStore<8>::operator()(T volatile* dest,
+                                                 T store_value) const {
   STATIC_ASSERT(8 == sizeof(T));
   _Atomic_move_long(reinterpret_cast<const volatile int64_t*>(&store_value), reinterpret_cast<volatile int64_t*>(dest));
 }
 
+#endif // AMD64
+
+template<>
+struct Atomic::PlatformOrderedStore<1, RELEASE_X_FENCE>
+{
+  template <typename T>
+  void operator()(volatile T* p, T v) const {
+    __asm__ volatile (  "xchgb (%2),%0"
+                      : "=q" (v)
+                      : "0" (v), "r" (p)
+                      : "memory");
+  }
+};
+
+template<>
+struct Atomic::PlatformOrderedStore<2, RELEASE_X_FENCE>
+{
+  template <typename T>
+  void operator()(volatile T* p, T v) const {
+    __asm__ volatile (  "xchgw (%2),%0"
+                      : "=r" (v)
+                      : "0" (v), "r" (p)
+                      : "memory");
+  }
+};
+
+template<>
+struct Atomic::PlatformOrderedStore<4, RELEASE_X_FENCE>
+{
+  template <typename T>
+  void operator()(volatile T* p, T v) const {
+    __asm__ volatile (  "xchgl (%2),%0"
+                      : "=r" (v)
+                      : "0" (v), "r" (p)
+                      : "memory");
+  }
+};
+
+#ifdef AMD64
+template<>
+struct Atomic::PlatformOrderedStore<8, RELEASE_X_FENCE>
+{
+  template <typename T>
+  void operator()(volatile T* p, T v) const {
+    __asm__ volatile (  "xchgq (%2), %0"
+                      : "=r" (v)
+                      : "0" (v), "r" (p)
+                      : "memory");
+  }
+};
 #endif // AMD64
 
 #endif // OS_CPU_LINUX_X86_ATOMIC_LINUX_X86_HPP

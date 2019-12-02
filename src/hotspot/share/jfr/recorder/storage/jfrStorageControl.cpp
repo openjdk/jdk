@@ -34,7 +34,7 @@ static jlong atomic_add(size_t value, size_t volatile* const dest) {
   do {
     compare_value = *dest;
     exchange_value = compare_value + value;
-  } while (Atomic::cmpxchg(exchange_value, dest, compare_value) != compare_value);
+  } while (Atomic::cmpxchg(dest, compare_value, exchange_value) != compare_value);
   return exchange_value;
 }
 
@@ -45,7 +45,7 @@ static jlong atomic_dec(size_t volatile* const dest) {
     compare_value = *dest;
     assert(compare_value >= 1, "invariant");
     exchange_value = compare_value - 1;
-  } while (Atomic::cmpxchg(exchange_value, dest, compare_value) != compare_value);
+  } while (Atomic::cmpxchg(dest, compare_value, exchange_value) != compare_value);
   return exchange_value;
 }
 
@@ -137,4 +137,3 @@ bool JfrStorageControl::should_scavenge() const {
 void JfrStorageControl::set_scavenge_threshold(size_t number_of_dead_buffers) {
   _scavenge_threshold = number_of_dead_buffers;
 }
-

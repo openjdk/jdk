@@ -154,7 +154,6 @@ public class SocketOptionTests {
 
     /* SCTP_PRIMARY_ADDR */
     void sctpPrimaryAddr() throws IOException {
-        SocketAddress addrToSet = null;
         ByteBuffer buffer = ByteBuffer.allocate(Util.SMALL_BUFFER);
 
         System.out.println("TESTING SCTP_PRIMARY_ADDR");
@@ -189,12 +188,11 @@ public class SocketOptionTests {
 
         SctpChannel peerChannel = ssc.accept();
         ssc.close();
-        Set<SocketAddress> peerAddrs = peerChannel.getAllLocalAddresses();
-        debug("Peer local Addresses: ");
-        for (Iterator<SocketAddress> it = peerAddrs.iterator(); it.hasNext(); ) {
+        Set<SocketAddress> remoteAddresses = smc.getRemoteAddresses(assoc);
+        debug("Remote Addresses: ");
+        for (Iterator<SocketAddress> it = remoteAddresses.iterator(); it.hasNext(); ) {
             InetSocketAddress addr = (InetSocketAddress)it.next();
             debug("\t" + addr);
-            addrToSet = addr;   // any of the peer addresses will do!
         }
 
         /* retrieval of SCTP_PRIMARY_ADDR is not supported on Solaris */
@@ -207,25 +205,21 @@ public class SocketOptionTests {
         } else { /* Linux */
             SocketAddress primaryAddr = smc.getOption(SCTP_PRIMARY_ADDR, assoc);
             System.out.println("SCTP_PRIMARY_ADDR returned: " + primaryAddr);
-            /* Verify that this is one of the peer addresses */
-            boolean found = false;
-            addrToSet = primaryAddr; // may not have more than one addr
-            for (Iterator<SocketAddress> it = peerAddrs.iterator(); it.hasNext(); ) {
-                InetSocketAddress addr = (InetSocketAddress)it.next();
-                if (addr.equals(primaryAddr)) {
-                    found = true;
-                }
-                addrToSet = addr;
-            }
-            check(found, "SCTP_PRIMARY_ADDR returned bogus address!");
+            /* Verify that this is one of the remote addresses */
+            check(remoteAddresses.contains(primaryAddr), "SCTP_PRIMARY_ADDR returned bogus address!");
 
-            System.out.println("Try SCTP_PRIMARY_ADDR set to: " + addrToSet);
-            smc.setOption(SCTP_PRIMARY_ADDR, addrToSet, assoc);
-            System.out.println("SCTP_PRIMARY_ADDR set to: " + addrToSet);
-            primaryAddr = smc.getOption(SCTP_PRIMARY_ADDR, assoc);
-            System.out.println("SCTP_PRIMARY_ADDR returned: " + primaryAddr);
-            check(addrToSet.equals(primaryAddr),"SCTP_PRIMARY_ADDR not set correctly");
+            for (Iterator<SocketAddress> it = remoteAddresses.iterator(); it.hasNext(); ) {
+                InetSocketAddress addrToSet = (InetSocketAddress) it.next();
+                System.out.println("SCTP_PRIMARY_ADDR try set to: " + addrToSet);
+                smc.setOption(SCTP_PRIMARY_ADDR, addrToSet, assoc);
+                System.out.println("SCTP_PRIMARY_ADDR set to    : " + addrToSet);
+                primaryAddr = smc.getOption(SCTP_PRIMARY_ADDR, assoc);
+                System.out.println("SCTP_PRIMARY_ADDR returned  : " + primaryAddr);
+                check(addrToSet.equals(primaryAddr), "SCTP_PRIMARY_ADDR not set correctly");
+            }
         }
+        smc.close();
+        peerChannel.close();
     }
 
     class SOTNotificationHandler extends AbstractNotificationHandler<Object>

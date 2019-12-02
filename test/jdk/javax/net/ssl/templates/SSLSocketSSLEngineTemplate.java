@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -124,7 +124,6 @@ public class SSLSocketSSLEngineTemplate {
     private static final String pathToStores = "../etc";
     private static final String keyStoreFile = "keystore";
     private static final String trustStoreFile = "truststore";
-    private static final String passwd = "passphrase";
     private static final String keyFilename =
             System.getProperty("test.src", ".") + "/" + pathToStores
             + "/" + keyStoreFile;
@@ -146,7 +145,7 @@ public class SSLSocketSSLEngineTemplate {
         }
 
         String [] protocols = new String [] {
-            "SSLv3", "TLSv1", "TLSv1.1", "TLSv1.2" };
+            "SSLv3", "TLSv1", "TLSv1.1", "TLSv1.2", "TLSv1.3" };
 
         for (String protocol : protocols) {
             log("Testing " + protocol);

@@ -377,10 +377,6 @@ int NET_NonBlockingRead(int s, void* buf, size_t len) {
     BLOCKING_IO_RETURN_INT( s, recv(s, buf, len, MSG_DONTWAIT));
 }
 
-int NET_ReadV(int s, const struct iovec * vector, int count) {
-    BLOCKING_IO_RETURN_INT( s, readv(s, vector, count) );
-}
-
 int NET_RecvFrom(int s, void *buf, int len, unsigned int flags,
        struct sockaddr *from, socklen_t *fromlen) {
     BLOCKING_IO_RETURN_INT( s, recvfrom(s, buf, len, flags, from, fromlen) );

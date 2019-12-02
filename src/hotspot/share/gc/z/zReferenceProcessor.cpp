@@ -34,6 +34,7 @@
 #include "gc/z/zUtils.inline.hpp"
 #include "gc/z/zValue.inline.hpp"
 #include "memory/universe.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
 
@@ -316,7 +317,7 @@ void ZReferenceProcessor::work() {
 
   // Prepend discovered references to internal pending list
   if (*list != NULL) {
-    *p = Atomic::xchg(*list, _pending_list.addr());
+    *p = Atomic::xchg(_pending_list.addr(), *list);
     if (*p == NULL) {
       // First to prepend to list, record tail
       _pending_list_tail = p;

@@ -37,6 +37,7 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/mutexLocker.hpp"
+#include "runtime/orderAccess.hpp"
 #include "runtime/thread.inline.hpp"
 #include "utilities/macros.hpp"
 #ifdef COMPILER1

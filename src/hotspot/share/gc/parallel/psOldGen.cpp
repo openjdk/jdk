@@ -355,7 +355,7 @@ void PSOldGen::resize(size_t desired_free_space) {
     new_size = gen_size_limit();
   }
   // Adjust according to our min and max
-  new_size = MAX2(MIN2(new_size, gen_size_limit()), min_gen_size());
+  new_size = clamp(new_size, min_gen_size(), gen_size_limit());
 
   assert(gen_size_limit() >= reserved().byte_size(), "max new size problem?");
   new_size = align_up(new_size, alignment);

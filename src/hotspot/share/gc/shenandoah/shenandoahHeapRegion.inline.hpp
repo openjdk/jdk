@@ -103,7 +103,7 @@ inline void ShenandoahHeapRegion::increase_live_data_gc_words(size_t s) {
 }
 
 inline void ShenandoahHeapRegion::internal_increase_live_data(size_t s) {
-  size_t new_live_data = Atomic::add(s, &_live_data);
+  size_t new_live_data = Atomic::add(&_live_data, s);
 #ifdef ASSERT
   size_t live_bytes = new_live_data * HeapWordSize;
   size_t used_bytes = used();

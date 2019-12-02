@@ -58,25 +58,29 @@ class Invokers {
     /** Compute and cache information common to all collecting adapters
      *  that implement members of the erasure-family of the given erased type.
      */
-    /*non-public*/ Invokers(MethodType targetType) {
+    /*non-public*/
+    Invokers(MethodType targetType) {
         this.targetType = targetType;
     }
 
-    /*non-public*/ MethodHandle exactInvoker() {
+    /*non-public*/
+    MethodHandle exactInvoker() {
         MethodHandle invoker = cachedInvoker(INV_EXACT);
         if (invoker != null)  return invoker;
         invoker = makeExactOrGeneralInvoker(true);
         return setCachedInvoker(INV_EXACT, invoker);
     }
 
-    /*non-public*/ MethodHandle genericInvoker() {
+    /*non-public*/
+    MethodHandle genericInvoker() {
         MethodHandle invoker = cachedInvoker(INV_GENERIC);
         if (invoker != null)  return invoker;
         invoker = makeExactOrGeneralInvoker(false);
         return setCachedInvoker(INV_GENERIC, invoker);
     }
 
-    /*non-public*/ MethodHandle basicInvoker() {
+    /*non-public*/
+    MethodHandle basicInvoker() {
         MethodHandle invoker = cachedInvoker(INV_BASIC);
         if (invoker != null)  return invoker;
         MethodType basicType = targetType.basicType();
@@ -94,12 +98,14 @@ class Invokers {
         return setCachedInvoker(INV_BASIC, invoker);
     }
 
-    /*non-public*/ MethodHandle varHandleMethodInvoker(VarHandle.AccessMode ak) {
+    /*non-public*/
+    MethodHandle varHandleMethodInvoker(VarHandle.AccessMode ak) {
         // TODO cache invoker
         return makeVarHandleMethodInvoker(ak, false);
     }
 
-    /*non-public*/ MethodHandle varHandleMethodExactInvoker(VarHandle.AccessMode ak) {
+    /*non-public*/
+    MethodHandle varHandleMethodExactInvoker(VarHandle.AccessMode ak) {
         // TODO cache invoker
         return makeVarHandleMethodInvoker(ak, true);
     }
@@ -153,7 +159,8 @@ class Invokers {
     }
 
     // This next one is called from LambdaForm.NamedFunction.<init>.
-    /*non-public*/ static MemberName invokeBasicMethod(MethodType basicType) {
+    /*non-public*/
+    static MemberName invokeBasicMethod(MethodType basicType) {
         assert(basicType == basicType.basicType());
         try {
             //Lookup.findVirtual(MethodHandle.class, name, type);
@@ -190,7 +197,8 @@ class Invokers {
      * @param leadingArgCount the number of unchanged (non-spread) arguments
      * @return {@code invoker.invokeExact(mh, uarg*, C[]{sarg*}) := (RT)mh.invoke(uarg*, sarg*)}
      */
-    /*non-public*/ MethodHandle spreadInvoker(int leadingArgCount) {
+    /*non-public*/
+    MethodHandle spreadInvoker(int leadingArgCount) {
         int spreadArgCount = targetType.parameterCount() - leadingArgCount;
         MethodType postSpreadType = targetType;
         Class<?> argArrayType = impliedRestargType(postSpreadType, leadingArgCount);
@@ -445,9 +453,9 @@ class Invokers {
         return lform;
     }
 
-    /*non-public*/ static
     @ForceInline
-    MethodHandle checkVarHandleGenericType(VarHandle handle, VarHandle.AccessDescriptor ad) {
+    /*non-public*/
+    static MethodHandle checkVarHandleGenericType(VarHandle handle, VarHandle.AccessDescriptor ad) {
         // Test for exact match on invoker types
         // TODO match with erased types and add cast of return value to lambda form
         MethodHandle mh = handle.getMethodHandle(ad.mode);
@@ -459,9 +467,9 @@ class Invokers {
         }
     }
 
-    /*non-public*/ static
     @ForceInline
-    MethodHandle checkVarHandleExactType(VarHandle handle, VarHandle.AccessDescriptor ad) {
+    /*non-public*/
+    static MethodHandle checkVarHandleExactType(VarHandle handle, VarHandle.AccessDescriptor ad) {
         MethodHandle mh = handle.getMethodHandle(ad.mode);
         MethodType mt = mh.type();
         if (mt != ad.symbolicMethodTypeInvoker) {
@@ -470,16 +478,16 @@ class Invokers {
         return mh;
     }
 
-    /*non-public*/ static
-    WrongMethodTypeException newWrongMethodTypeException(MethodType actual, MethodType expected) {
+    /*non-public*/
+    static WrongMethodTypeException newWrongMethodTypeException(MethodType actual, MethodType expected) {
         // FIXME: merge with JVM logic for throwing WMTE
         return new WrongMethodTypeException("expected "+expected+" but found "+actual);
     }
 
     /** Static definition of MethodHandle.invokeExact checking code. */
-    /*non-public*/ static
     @ForceInline
-    void checkExactType(MethodHandle mh, MethodType expected) {
+    /*non-public*/
+    static void checkExactType(MethodHandle mh, MethodType expected) {
         MethodType actual = mh.type();
         if (actual != expected)
             throw newWrongMethodTypeException(expected, actual);
@@ -489,9 +497,9 @@ class Invokers {
      * Directly returns the type-adjusted MH to invoke, as follows:
      * {@code (R)MH.invoke(a*) => MH.asType(TYPEOF(a*:R)).invokeBasic(a*)}
      */
-    /*non-public*/ static
     @ForceInline
-    MethodHandle checkGenericType(MethodHandle mh,  MethodType expected) {
+    /*non-public*/
+    static MethodHandle checkGenericType(MethodHandle mh,  MethodType expected) {
         return mh.asType(expected);
         /* Maybe add more paths here.  Possible optimizations:
          * for (R)MH.invoke(a*),
@@ -559,24 +567,24 @@ class Invokers {
     }
 
     /** Static definition of MethodHandle.invokeGeneric checking code. */
-    /*non-public*/ static
     @ForceInline
-    MethodHandle getCallSiteTarget(CallSite site) {
+    /*non-public*/
+    static MethodHandle getCallSiteTarget(CallSite site) {
         return site.getTarget();
     }
 
-    /*non-public*/ static
     @ForceInline
-    void checkCustomized(MethodHandle mh) {
+    /*non-public*/
+    static void checkCustomized(MethodHandle mh) {
         if (MethodHandleImpl.isCompileConstant(mh)) return;
         if (mh.form.customized == null) {
             maybeCustomize(mh);
         }
     }
 
-    /*non-public*/ static
     @DontInline
-    void maybeCustomize(MethodHandle mh) {
+    /*non-public*/
+    static void maybeCustomize(MethodHandle mh) {
         byte count = mh.customizationCount;
         if (count >= CUSTOMIZE_THRESHOLD) {
             mh.customize();

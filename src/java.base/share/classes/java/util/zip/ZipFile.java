@@ -34,7 +34,6 @@ import java.io.RandomAccessFile;
 import java.io.UncheckedIOException;
 import java.lang.ref.Cleaner.Cleanable;
 import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.InvalidPathException;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.Files;
@@ -65,6 +64,7 @@ import jdk.internal.misc.VM;
 import jdk.internal.perf.PerfCounter;
 import jdk.internal.ref.CleanerFactory;
 import jdk.internal.vm.annotation.Stable;
+import sun.nio.cs.UTF_8;
 
 import static java.util.zip.ZipConstants64.*;
 import static java.util.zip.ZipUtils.*;
@@ -87,8 +87,7 @@ import static java.util.zip.ZipUtils.*;
  * @author      David Connelly
  * @since 1.1
  */
-public
-class ZipFile implements ZipConstants, Closeable {
+public class ZipFile implements ZipConstants, Closeable {
 
     private final String name;     // zip file name
     private volatile boolean closeRequested;
@@ -166,7 +165,7 @@ class ZipFile implements ZipConstants, Closeable {
      * @since 1.3
      */
     public ZipFile(File file, int mode) throws IOException {
-        this(file, mode, StandardCharsets.UTF_8);
+        this(file, mode, UTF_8.INSTANCE);
     }
 
     /**
@@ -1043,7 +1042,7 @@ class ZipFile implements ZipConstants, Closeable {
             for (int i = 0; i < names.length; i++) {
                 int pos = zsrc.metanames[i];
                 names[i] = new String(cen, pos + CENHDR, CENNAM(cen, pos),
-                                      StandardCharsets.UTF_8);
+                                      UTF_8.INSTANCE);
             }
             return names;
         }

@@ -395,6 +395,52 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier_native(MacroAssembler
   __ block_comment("load_reference_barrier_native { ");
 }
 
+#ifdef _LP64
+void ShenandoahBarrierSetAssembler::c2i_entry_barrier(MacroAssembler* masm) {
+  // Use default version
+  BarrierSetAssembler::c2i_entry_barrier(masm);
+}
+#else
+void ShenandoahBarrierSetAssembler::c2i_entry_barrier(MacroAssembler* masm) {
+  BarrierSetNMethod* bs = BarrierSet::barrier_set()->barrier_set_nmethod();
+  if (bs == NULL) {
+    return;
+  }
+
+  Label bad_call;
+  __ cmpptr(rbx, 0); // rbx contains the incoming method for c2i adapters.
+  __ jcc(Assembler::equal, bad_call);
+
+  Register tmp1 = rax;
+  Register tmp2 = rcx;
+
+  __ push(tmp1);
+  __ push(tmp2);
+
+  // Pointer chase to the method holder to find out if the method is concurrently unloading.
+  Label method_live;
+  __ load_method_holder_cld(tmp1, rbx);
+
+   // Is it a strong CLD?
+  __ cmpl(Address(tmp1, ClassLoaderData::keep_alive_offset()), 0);
+  __ jcc(Assembler::greater, method_live);
+
+   // Is it a weak but alive CLD?
+  __ movptr(tmp1, Address(tmp1, ClassLoaderData::holder_offset()));
+  __ resolve_weak_handle(tmp1, tmp2);
+  __ cmpptr(tmp1, 0);
+  __ jcc(Assembler::notEqual, method_live);
+  __ pop(tmp2);
+  __ pop(tmp1);
+
+  __ bind(bad_call);
+  __ jump(RuntimeAddress(SharedRuntime::get_handle_wrong_method_stub()));
+  __ bind(method_live);
+  __ pop(tmp2);
+  __ pop(tmp1);
+}
+#endif
+
 void ShenandoahBarrierSetAssembler::storeval_barrier(MacroAssembler* masm, Register dst, Register tmp) {
   if (ShenandoahStoreValEnqueueBarrier) {
     storeval_barrier_impl(masm, dst, tmp);
@@ -511,8 +557,12 @@ void ShenandoahBarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet d
 
   // 3: apply keep-alive barrier if needed
   if (ShenandoahBarrierSet::need_keep_alive_barrier(decorators, type)) {
-    const Register thread = NOT_LP64(tmp_thread) LP64_ONLY(r15_thread);
+    __ push_IU_state();
+    Register thread = NOT_LP64(tmp_thread) LP64_ONLY(r15_thread);
     assert_different_registers(dst, tmp1, tmp_thread);
+    if (!thread->is_valid()) {
+      thread = rdx;
+    }
     NOT_LP64(__ get_thread(thread));
     // Generate the SATB pre-barrier code to log the value of
     // the referent field in an SATB buffer.
@@ -523,6 +573,7 @@ void ShenandoahBarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet d
                                  tmp1 /* tmp */,
                                  true /* tosca_live */,
                                  true /* expand_call */);
+    __ pop_IU_state();
   }
 }
 

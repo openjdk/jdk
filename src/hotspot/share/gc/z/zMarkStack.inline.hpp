@@ -121,7 +121,7 @@ inline void ZStackList<T>::push(T* stack) {
   for (;;) {
     decode_versioned_pointer(vstack, stack->next_addr(), &version);
     T* const new_vstack = encode_versioned_pointer(stack, version + 1);
-    T* const prev_vstack = Atomic::cmpxchg(new_vstack, &_head, vstack);
+    T* const prev_vstack = Atomic::cmpxchg(&_head, vstack, new_vstack);
     if (prev_vstack == vstack) {
       // Success
       break;
@@ -145,7 +145,7 @@ inline T* ZStackList<T>::pop() {
     }
 
     T* const new_vstack = encode_versioned_pointer(stack->next(), version + 1);
-    T* const prev_vstack = Atomic::cmpxchg(new_vstack, &_head, vstack);
+    T* const prev_vstack = Atomic::cmpxchg(&_head, vstack, new_vstack);
     if (prev_vstack == vstack) {
       // Success
       return stack;

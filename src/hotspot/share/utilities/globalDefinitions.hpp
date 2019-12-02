@@ -949,6 +949,13 @@ template<class T> inline T MIN4(T a, T b, T c, T d) { return MIN2(MIN3(a, b, c),
 
 template<class T> inline T ABS(T x)                 { return (x > 0) ? x : -x; }
 
+// Return the given value clamped to the range [min ... max]
+template<typename T>
+inline T clamp(T value, T min, T max) {
+  assert(min <= max, "must be");
+  return MIN2(MAX2(value, min), max);
+}
+
 // true if x is a power of 2, false otherwise
 inline bool is_power_of_2(intptr_t x) {
   return ((x != NoBits) && (mask_bits(x, x - 1) == NoBits));

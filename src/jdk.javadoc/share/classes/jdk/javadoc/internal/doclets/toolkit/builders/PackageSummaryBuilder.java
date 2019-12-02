@@ -61,11 +61,6 @@ public class PackageSummaryBuilder extends AbstractBuilder {
     private final PackageSummaryWriter packageWriter;
 
     /**
-     * The content that will be added to the package summary documentation tree.
-     */
-    private Content contentTree;
-
-    /**
      * Construct a new PackageSummaryBuilder.
      *
      * @param context  the build context.
@@ -107,21 +102,20 @@ public class PackageSummaryBuilder extends AbstractBuilder {
             //Doclet does not support this output.
             return;
         }
-        buildPackageDoc(contentTree);
+        buildPackageDoc();
     }
 
     /**
      * Build the package documentation.
      *
-     * @param contentTree the content tree to which the documentation will be added
      * @throws DocletException if there is a problem while building the documentation
      */
-    protected void buildPackageDoc(Content contentTree) throws DocletException {
-        contentTree = packageWriter.getPackageHeader(utils.getPackageName(packageElement));
+    protected void buildPackageDoc() throws DocletException {
+        Content contentTree = packageWriter.getPackageHeader(utils.getPackageName(packageElement));
 
-        buildContent(contentTree);
+        buildContent();
 
-        packageWriter.addPackageFooter(contentTree);
+        packageWriter.addPackageFooter();
         packageWriter.printDocument(contentTree);
         DocFilesHandler docFilesHandler = configuration
                 .getWriterFactory()
@@ -132,18 +126,16 @@ public class PackageSummaryBuilder extends AbstractBuilder {
     /**
      * Build the content for the package.
      *
-     * @param contentTree the content tree to which the package contents
-     *                    will be added
      * @throws DocletException if there is a problem while building the documentation
      */
-    protected void buildContent(Content contentTree) throws DocletException {
+    protected void buildContent() throws DocletException {
         Content packageContentTree = packageWriter.getContentHeader();
 
         buildPackageDescription(packageContentTree);
         buildPackageTags(packageContentTree);
         buildSummary(packageContentTree);
 
-        packageWriter.addPackageContent(contentTree, packageContentTree);
+        packageWriter.addPackageContent(packageContentTree);
     }
 
     /**

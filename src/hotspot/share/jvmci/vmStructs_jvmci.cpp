@@ -465,6 +465,13 @@
   declare_constant(CodeInstaller::INLINE_CONTIGUOUS_ALLOCATION_SUPPORTED) \
   declare_constant(CodeInstaller::INVOKE_INVALID)                         \
                                                                           \
+  declare_constant(CollectedHeap::Serial)                                 \
+  declare_constant(CollectedHeap::Parallel)                               \
+  declare_constant(CollectedHeap::G1)                                     \
+  declare_constant(CollectedHeap::Epsilon)                                \
+  declare_constant(CollectedHeap::Z)                                      \
+  declare_constant(CollectedHeap::Shenandoah)                             \
+                                                                          \
   declare_constant(ConstantPool::CPCACHE_INDEX_TAG)                       \
   declare_constant(ConstantPool::_has_dynamic_constant)                   \
                                                                           \

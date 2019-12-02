@@ -25,6 +25,7 @@
 #define SHARE_JVMCI_JVMCICOMPILER_HPP
 
 #include "compiler/abstractCompiler.hpp"
+#include "runtime/atomic.hpp"
 
 class JVMCICompiler : public AbstractCompiler {
 private:

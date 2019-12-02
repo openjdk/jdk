@@ -2244,7 +2244,7 @@ public:
     _rtm_state = (int)rstate;
   }
   void atomic_set_rtm_state(RTMState rstate) {
-    Atomic::store((int)rstate, &_rtm_state);
+    Atomic::store(&_rtm_state, (int)rstate);
   }
 
   static int rtm_state_offset_in_bytes() {

@@ -92,11 +92,11 @@ class MultiThreadedRefCounter {
   MultiThreadedRefCounter() : _refs(0) {}
 
   void inc() const {
-    Atomic::add(1, &_refs);
+    Atomic::add(&_refs, 1);
   }
 
   bool dec() const {
-    return 0 == Atomic::add((-1), &_refs);
+    return 0 == Atomic::add(&_refs, (-1));
   }
 
   int current() const {

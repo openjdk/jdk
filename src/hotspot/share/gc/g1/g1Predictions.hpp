@@ -57,6 +57,14 @@ class G1Predictions {
   double get_new_prediction(TruncatedSeq const* seq) const {
     return seq->davg() + _sigma * stddev_estimate(seq);
   }
+
+  double get_new_unit_prediction(TruncatedSeq const* seq) const {
+    return clamp(get_new_prediction(seq), 0.0, 1.0);
+  }
+
+  double get_new_lower_zero_bound_prediction(TruncatedSeq const* seq) const {
+    return MAX2(get_new_prediction(seq), 0.0);
+  }
 };
 
 #endif // SHARE_GC_G1_G1PREDICTIONS_HPP

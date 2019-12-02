@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8210047 8199892 8215599
+ * @bug 8210047 8199892 8215599 8223378
  * @summary some pages contains content outside of landmark region
  * @library /tools/lib ../../lib
  * @modules
@@ -74,7 +74,7 @@ public class TestHtmlLandmarkRegions extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOrder("index.html",
-                "<header role=\"banner\">\n"
+                "<header role=\"banner\" class=\"flexHeader\">\n"
                 + "<nav role=\"navigation\">",
                 "<main role=\"main\">\n"
                 + "<div class=\"header\">\n"
@@ -98,7 +98,7 @@ public class TestHtmlLandmarkRegions extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOrder("index.html",
-                "<header role=\"banner\">\n"
+                "<header role=\"banner\" class=\"flexHeader\">\n"
                 + "<nav role=\"navigation\">",
                 "<main role=\"main\">\n"
                 + "<div class=\"header\">\n"
@@ -130,9 +130,10 @@ public class TestHtmlLandmarkRegions extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOrder("pkg1/doc-files/s.html",
-                "<header role=\"banner\">\n"
+                "<header role=\"banner\" class=\"flexHeader\">\n"
                 + "<nav role=\"navigation\">\n",
-                "<main role=\"main\">A sample doc file",
+                "<main role=\"main\">\n"
+                + "<div class=\"contentContainer\">A sample doc file",
                 "<footer role=\"contentinfo\">\n"
                 + "<nav role=\"navigation\">"
                 );

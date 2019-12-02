@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,6 +50,7 @@ import static com.sun.tools.javac.jvm.ClassFile.CONSTANT_Methodref;
 import static com.sun.tools.javac.jvm.ClassFile.CONSTANT_String;
 import static com.sun.tools.javac.jvm.UninitializedType.*;
 import static com.sun.tools.javac.jvm.ClassWriter.StackMapTableFrame;
+import java.util.Arrays;
 
 /** An internal structure that corresponds to the code attribute of
  *  methods in a classfile. The class also provides some utility operations to
@@ -2075,6 +2076,7 @@ public class Code {
                 lvar[adr] = v.dup();
                 v.closeRange(length);
                 putVar(v);
+                fillLocalVarPosition(v);
             } else {
                 v.removeLastRange();
             }
@@ -2106,18 +2108,29 @@ public class Code {
     private void fillLocalVarPosition(LocalVar lv) {
         if (lv == null || lv.sym == null || lv.sym.isExceptionParameter()|| !lv.sym.hasTypeAnnotations())
             return;
-        LocalVar.Range widestRange = lv.getWidestRange();
+        LocalVar.Range[] validRanges = lv.aliveRanges.stream().filter(r -> r.closed() && r.length > 0).toArray(s -> new LocalVar.Range[s]);
+        if (validRanges.length == 0)
+            return ;
+        int[] lvarOffset = Arrays.stream(validRanges).mapToInt(r -> r.start_pc).toArray();
+        int[] lvarLength = Arrays.stream(validRanges).mapToInt(r -> r.length).toArray();
+        int[] lvarIndex = Arrays.stream(validRanges).mapToInt(r -> lv.reg).toArray();
         for (Attribute.TypeCompound ta : lv.sym.getRawTypeAttributes()) {
             TypeAnnotationPosition p = ta.position;
-            if (widestRange.closed() && widestRange.length > 0) {
-                p.lvarOffset = new int[] { (int)widestRange.start_pc };
-                p.lvarLength = new int[] { (int)widestRange.length };
-                p.lvarIndex = new int[] { (int)lv.reg };
-                p.isValidOffset = true;
-            } else {
-                p.isValidOffset = false;
-            }
+            p.lvarOffset = appendArray(p.lvarOffset, lvarOffset);
+            p.lvarLength = appendArray(p.lvarLength, lvarLength);
+            p.lvarIndex = appendArray(p.lvarIndex, lvarIndex);
+            p.isValidOffset = true;
         }
+    }
+
+    private int[] appendArray(int[] source, int[] append) {
+        if (source == null || source.length == 0) return append;
+
+        int[] result = new int[source.length + append.length];
+
+        System.arraycopy(source, 0, result, 0, source.length);
+        System.arraycopy(append, 0, result, source.length, append.length);
+        return result;
     }
 
     // Method to be called after compressCatchTable to

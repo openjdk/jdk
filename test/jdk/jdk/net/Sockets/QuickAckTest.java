@@ -26,7 +26,7 @@
  * @bug 8145635
  * @summary Add TCP_QUICKACK socket option
  * @modules jdk.net
- * @run main QuickAckTest
+ * @run main/othervm QuickAckTest
  */
 import java.io.IOException;
 import java.net.DatagramSocket;

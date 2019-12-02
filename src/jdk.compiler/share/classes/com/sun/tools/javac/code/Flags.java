@@ -334,6 +334,16 @@ public class Flags {
      */
     public static final long PREVIEW_ESSENTIAL_API = 1L<<58; //any Symbol kind
 
+    /**
+     * Flag to indicate the given variable is a match binding variable.
+     */
+    public static final long MATCH_BINDING = 1L<<59;
+
+    /**
+     * A flag to indicate a match binding variable whose scope extends after the current statement.
+     */
+    public static final long MATCH_BINDING_TO_OUTER = 1L<<60;
+
     /** Modifier masks.
      */
     public static final int
@@ -453,7 +463,9 @@ public class Flags {
         ANONCONSTR_BASED(Flags.ANONCONSTR_BASED),
         NAME_FILLED(Flags.NAME_FILLED),
         PREVIEW_API(Flags.PREVIEW_API),
-        PREVIEW_ESSENTIAL_API(Flags.PREVIEW_ESSENTIAL_API);
+        PREVIEW_ESSENTIAL_API(Flags.PREVIEW_ESSENTIAL_API),
+        MATCH_BINDING(Flags.MATCH_BINDING),
+        MATCH_BINDING_TO_OUTER(Flags.MATCH_BINDING_TO_OUTER);
 
         Flag(long flag) {
             this.value = flag;

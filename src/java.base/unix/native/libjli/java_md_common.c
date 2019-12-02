@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
 /*
  * Find the last occurrence of a string
  */
-char* findLastPathComponent(char *buffer, const char *comp) {
+static char* findLastPathComponent(char *buffer, const char *comp) {
     char* t = buffer;
     char* p = NULL;
     size_t l = JLI_StrLen(comp);
@@ -47,7 +47,7 @@ char* findLastPathComponent(char *buffer, const char *comp) {
  * Ex: if a buffer contains "/foo/bin/javac" or "/foo/bin/x64/javac", the
  * truncated resulting buffer will contain "/foo".
  */
-jboolean
+static jboolean
 TruncatePath(char *buf)
 {
     // try bin directory, maybe an executable

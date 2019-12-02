@@ -494,6 +494,7 @@ private:
   size_t estimate_class_file_size();
   address reserve_space_and_init_buffer_to_target_delta();
   void init_header(address addr);
+  void release_header();
   void make_trampolines();
   void make_klasses_shareable();
   void sort_methods(InstanceKlass* ik) const;
@@ -664,6 +665,7 @@ public:
     }
 
     write_archive(serialized_data_start);
+    release_header();
 
     assert(_num_dump_regions_used == _total_dump_regions, "must be");
     verify_universe("After CDS dynamic dump");
@@ -755,6 +757,7 @@ void DynamicArchiveBuilder::init_header(address reserved_bottom) {
   init_first_dump_space(reserved_bottom);
 
   FileMapInfo* mapinfo = new FileMapInfo(false);
+  assert(FileMapInfo::dynamic_info() == mapinfo, "must be");
   _header = mapinfo->dynamic_header();
 
   Thread* THREAD = Thread::current();
@@ -764,6 +767,19 @@ void DynamicArchiveBuilder::init_header(address reserved_bottom) {
     _header->set_base_region_crc(i, base_info->space_crc(i));
   }
   _header->populate(base_info, os::vm_allocation_granularity());
+}
+
+void DynamicArchiveBuilder::release_header() {
+  // We temporarily allocated a dynamic FileMapInfo for dumping, which makes it appear we
+  // have mapped a dynamic archive, but we actually have not. We are in a safepoint now.
+  // Let's free it so that if class loading happens after we leave the safepoint, nothing
+  // bad will happen.
+  assert(SafepointSynchronize::is_at_safepoint(), "must be");
+  FileMapInfo *mapinfo = FileMapInfo::dynamic_info();
+  assert(mapinfo != NULL && _header == mapinfo->dynamic_header(), "must be");
+  delete mapinfo;
+  assert(!DynamicArchive::is_mapped(), "must be");
+  _header = NULL;
 }
 
 size_t DynamicArchiveBuilder::estimate_trampoline_size() {

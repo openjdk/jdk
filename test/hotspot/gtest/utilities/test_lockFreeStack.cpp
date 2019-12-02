@@ -24,7 +24,6 @@
 #include "precompiled.hpp"
 #include "memory/allocation.inline.hpp"
 #include "runtime/atomic.hpp"
-#include "runtime/orderAccess.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/lockFreeStack.hpp"
 #include "threadHelper.inline.hpp"
@@ -226,21 +225,21 @@ public:
   {}
 
   virtual void main_run() {
-    OrderAccess::release_store_fence(&_ready, true);
+    Atomic::release_store_fence(&_ready, true);
     while (true) {
       Element* e = _from->pop();
       if (e != NULL) {
         _to->push(*e);
         Atomic::inc(_processed);
         ++_local_processed;
-      } else if (OrderAccess::load_acquire(_processed) == _process_limit) {
+      } else if (Atomic::load_acquire(_processed) == _process_limit) {
         tty->print_cr("thread %u processed " SIZE_FORMAT, _id, _local_processed);
         return;
       }
     }
   }
 
-  bool ready() const { return OrderAccess::load_acquire(&_ready); }
+  bool ready() const { return Atomic::load_acquire(&_ready); }
 };
 
 TEST_VM(LockFreeStackTest, stress) {

@@ -40,8 +40,8 @@
 #include "memory/metaspaceTracer.hpp"
 #include "memory/universe.hpp"
 #include "oops/compressedOops.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/init.hpp"
-#include "runtime/orderAccess.hpp"
 #include "services/memTracker.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/debug.hpp"
@@ -128,7 +128,7 @@ size_t MetaspaceGC::delta_capacity_until_GC(size_t bytes) {
 }
 
 size_t MetaspaceGC::capacity_until_GC() {
-  size_t value = OrderAccess::load_acquire(&_capacity_until_GC);
+  size_t value = Atomic::load_acquire(&_capacity_until_GC);
   assert(value >= MetaspaceSize, "Not initialized properly?");
   return value;
 }
@@ -162,7 +162,7 @@ bool MetaspaceGC::inc_capacity_until_GC(size_t v, size_t* new_cap_until_GC, size
   if (can_retry != NULL) {
     *can_retry = true;
   }
-  size_t prev_value = Atomic::cmpxchg(new_value, &_capacity_until_GC, old_capacity_until_GC);
+  size_t prev_value = Atomic::cmpxchg(&_capacity_until_GC, old_capacity_until_GC, new_value);
 
   if (old_capacity_until_GC != prev_value) {
     return false;
@@ -180,7 +180,7 @@ bool MetaspaceGC::inc_capacity_until_GC(size_t v, size_t* new_cap_until_GC, size
 size_t MetaspaceGC::dec_capacity_until_GC(size_t v) {
   assert_is_aligned(v, Metaspace::commit_alignment());
 
-  return Atomic::sub(v, &_capacity_until_GC);
+  return Atomic::sub(&_capacity_until_GC, v);
 }
 
 void MetaspaceGC::initialize() {
@@ -394,7 +394,7 @@ static void dec_stat_nonatomically(size_t* pstat, size_t words) {
 }
 
 static void inc_stat_atomically(volatile size_t* pstat, size_t words) {
-  Atomic::add(words, pstat);
+  Atomic::add(pstat, words);
 }
 
 static void dec_stat_atomically(volatile size_t* pstat, size_t words) {
@@ -402,7 +402,7 @@ static void dec_stat_atomically(volatile size_t* pstat, size_t words) {
   assert(size_now >= words, "About to decrement counter below zero "
          "(current value: " SIZE_FORMAT ", decrement value: " SIZE_FORMAT ".",
          size_now, words);
-  Atomic::sub(words, pstat);
+  Atomic::sub(pstat, words);
 }
 
 void MetaspaceUtils::dec_capacity(Metaspace::MetadataType mdtype, size_t words) {

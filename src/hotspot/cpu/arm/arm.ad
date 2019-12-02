@@ -2204,6 +2204,30 @@ operand R1RegP() %{
   interface(REG_INTER);
 %}
 
+operand R8RegP() %{
+  constraint(ALLOC_IN_RC(R8_regP));
+  match(iRegP);
+
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand R9RegP() %{
+  constraint(ALLOC_IN_RC(R9_regP));
+  match(iRegP);
+
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand R12RegP() %{
+  constraint(ALLOC_IN_RC(R12_regP));
+  match(iRegP);
+
+  format %{ %}
+  interface(REG_INTER);
+%}
+
 operand R2RegP() %{
   constraint(ALLOC_IN_RC(R2_regP));
   match(iRegP);
@@ -2230,6 +2254,14 @@ operand RthreadRegP() %{
 
 operand IPRegP() %{
   constraint(ALLOC_IN_RC(IP_regP));
+  match(iRegP);
+
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand SPRegP() %{
+  constraint(ALLOC_IN_RC(SP_regP));
   match(iRegP);
 
   format %{ %}

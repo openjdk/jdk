@@ -27,12 +27,14 @@
 #include "gc/g1/g1CollectionSet.hpp"
 #include "gc/g1/g1CollectionSetCandidates.hpp"
 #include "gc/g1/g1CollectorState.hpp"
+#include "gc/g1/g1HotCardCache.hpp"
 #include "gc/g1/g1ParScanThreadState.hpp"
 #include "gc/g1/g1Policy.hpp"
 #include "gc/g1/heapRegion.inline.hpp"
 #include "gc/g1/heapRegionRemSet.hpp"
 #include "gc/g1/heapRegionSet.hpp"
 #include "logging/logStream.hpp"
+#include "runtime/orderAccess.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/quickSort.hpp"
@@ -276,19 +278,6 @@ void G1CollectionSet::add_young_region_common(HeapRegion* hr) {
   assert(hr->is_young(), "invariant");
   assert(_inc_build_state == Active, "Precondition");
 
-  size_t collection_set_length = _collection_set_cur_length;
-  // We use UINT_MAX as "invalid" marker in verification.
-  assert(collection_set_length < (UINT_MAX - 1),
-         "Collection set is too large with " SIZE_FORMAT " entries", collection_set_length);
-  hr->set_young_index_in_cset((uint)collection_set_length + 1);
-
-  _collection_set_regions[collection_set_length] = hr->hrm_index();
-  // Concurrent readers must observe the store of the value in the array before an
-  // update to the length field.
-  OrderAccess::storestore();
-  _collection_set_cur_length++;
-  assert(_collection_set_cur_length <= _collection_set_max_length, "Collection set larger than maximum allowed.");
-
   // This routine is used when:
   // * adding survivor regions to the incremental cset at the end of an
   //   evacuation pause or
@@ -323,6 +312,19 @@ void G1CollectionSet::add_young_region_common(HeapRegion* hr) {
 
   assert(!hr->in_collection_set(), "invariant");
   _g1h->register_young_region_with_region_attr(hr);
+
+  size_t collection_set_length = _collection_set_cur_length;
+  // We use UINT_MAX as "invalid" marker in verification.
+  assert(collection_set_length < (UINT_MAX - 1),
+         "Collection set is too large with " SIZE_FORMAT " entries", collection_set_length);
+  hr->set_young_index_in_cset((uint)collection_set_length + 1);
+
+  _collection_set_regions[collection_set_length] = hr->hrm_index();
+  // Concurrent readers must observe the store of the value in the array before an
+  // update to the length field.
+  OrderAccess::storestore();
+  _collection_set_cur_length++;
+  assert(_collection_set_cur_length <= _collection_set_max_length, "Collection set larger than maximum allowed.");
 }
 
 void G1CollectionSet::add_survivor_regions(HeapRegion* hr) {
@@ -409,7 +411,7 @@ double G1CollectionSet::finalize_young_part(double target_pause_time_ms, G1Survi
   guarantee(target_pause_time_ms > 0.0,
             "target_pause_time_ms = %1.6lf should be positive", target_pause_time_ms);
 
-  size_t pending_cards = _policy->pending_cards_at_gc_start();
+  size_t pending_cards = _policy->pending_cards_at_gc_start() + _g1h->hot_card_cache()->num_entries();
   double base_time_ms = _policy->predict_base_elapsed_time_ms(pending_cards);
   double time_remaining_ms = MAX2(target_pause_time_ms - base_time_ms, 0.0);
 

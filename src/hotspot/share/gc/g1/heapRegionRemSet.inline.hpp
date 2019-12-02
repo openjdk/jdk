@@ -28,6 +28,7 @@
 #include "gc/g1/heapRegion.inline.hpp"
 #include "gc/g1/heapRegionRemSet.hpp"
 #include "gc/g1/sparsePRT.hpp"
+#include "runtime/atomic.hpp"
 #include "utilities/bitMap.inline.hpp"
 
 template <class Closure>
@@ -65,7 +66,7 @@ inline void PerRegionTable::init(HeapRegion* hr, bool clear_links_to_all_list) {
   _bm.clear();
   // Make sure that the bitmap clearing above has been finished before publishing
   // this PRT to concurrent threads.
-  OrderAccess::release_store(&_hr, hr);
+  Atomic::release_store(&_hr, hr);
 }
 
 template <class Closure>

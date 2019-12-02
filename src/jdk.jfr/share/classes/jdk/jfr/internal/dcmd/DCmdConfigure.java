@@ -32,6 +32,7 @@ import jdk.jfr.internal.LogLevel;
 import jdk.jfr.internal.LogTag;
 import jdk.jfr.internal.Logger;
 import jdk.jfr.internal.Options;
+import jdk.jfr.internal.PlatformRecorder;
 import jdk.jfr.internal.PrivateAccess;
 import jdk.jfr.internal.Repository;
 import jdk.jfr.internal.SecuritySupport.SafePath;
@@ -89,11 +90,12 @@ final class DCmdConfigure extends AbstractDCmd {
         if (repositoryPath != null) {
             try {
                 SafePath s = new SafePath(repositoryPath);
-                Repository.getRepository().setBasePath(s);
-                Logger.log(LogTag.JFR, LogLevel.INFO, "Base repository path set to " + repositoryPath);
                 if (FlightRecorder.isInitialized()) {
-                    PrivateAccess.getInstance().getPlatformRecorder().rotateIfRecordingToDisk();;
+                    PrivateAccess.getInstance().getPlatformRecorder().migrate(s);
+                } else {
+                    Repository.getRepository().setBasePath(s);
                 }
+                Logger.log(LogTag.JFR, LogLevel.INFO, "Base repository path set to " + repositoryPath);
             } catch (Exception e) {
                 throw new DCmdException("Could not use " + repositoryPath + " as repository. " + e.getMessage(), e);
             }

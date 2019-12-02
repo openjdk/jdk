@@ -37,7 +37,6 @@ import java.util.ServiceLoader;
 import java.util.Set;
 
 import jdk.internal.misc.VM;
-import jdk.internal.reflect.Reflection;
 
 /**
  * Provides utilities needed by JVMCI clients.
@@ -136,29 +135,6 @@ public final class Services {
         }
     }
 
-    private static boolean jvmciEnabled = true;
-
-    /**
-     * When {@code -XX:-UseJVMCIClassLoader} is in use, JVMCI classes are loaded via the boot class
-     * loader. When {@code null} is the second argument to
-     * {@link ServiceLoader#load(Class, ClassLoader)}, service lookup will use the system class
-     * loader and thus find application classes which violates the API of {@link #load} and
-     * {@link #loadSingle}. To avoid this, a class loader that simply delegates to the boot class
-     * loader is used.
-     */
-    static class LazyBootClassPath {
-        static final ClassLoader bootClassPath = new ClassLoader(null) {
-        };
-    }
-
-    private static ClassLoader findBootClassLoaderChild(ClassLoader start) {
-        ClassLoader cl = start;
-        while (cl.getParent() != null) {
-            cl = cl.getParent();
-        }
-        return cl;
-    }
-
     private static final Map<Class<?>, List<?>> servicesCache = IS_BUILDING_NATIVE_IMAGE ? new HashMap<>() : null;
 
     @SuppressWarnings("unchecked")
@@ -173,33 +149,7 @@ public final class Services {
             }
         }
 
-        Iterable<S> providers = Collections.emptyList();
-        if (jvmciEnabled) {
-            ClassLoader cl = null;
-            try {
-                cl = getJVMCIClassLoader();
-                if (cl == null) {
-                    cl = LazyBootClassPath.bootClassPath;
-                    // JVMCI classes are loaded via the boot class loader.
-                    // If we use null as the second argument to ServiceLoader.load,
-                    // service loading will use the system class loader
-                    // and find classes on the application class path. Since we
-                    // don't want this, we use a loader that is as close to the
-                    // boot class loader as possible (since it is impossible
-                    // to force service loading to use only the boot class loader).
-                    cl = findBootClassLoaderChild(ClassLoader.getSystemClassLoader());
-                }
-                providers = ServiceLoader.load(service, cl);
-            } catch (UnsatisfiedLinkError e) {
-                jvmciEnabled = false;
-            } catch (InternalError e) {
-                if (e.getMessage().equals("JVMCI is not enabled")) {
-                    jvmciEnabled = false;
-                } else {
-                    throw e;
-                }
-            }
-        }
+        Iterable<S> providers = ServiceLoader.load(service, ClassLoader.getSystemClassLoader());
         if (IS_BUILDING_NATIVE_IMAGE) {
             synchronized (servicesCache) {
                 ArrayList<S> providersList = new ArrayList<>();
@@ -276,23 +226,6 @@ public final class Services {
             throw new UnsupportedOperationException(errorMessage.toString());
         }
         return singleProvider;
-    }
-
-    static {
-        Reflection.registerMethodsToFilter(Services.class, Set.of("getJVMCIClassLoader"));
-    }
-
-    /**
-     * Gets the JVMCI class loader.
-     *
-     * @throws InternalError with the {@linkplain Throwable#getMessage() message}
-     *             {@code "JVMCI is not enabled"} iff JVMCI is not enabled
-     */
-    private static ClassLoader getJVMCIClassLoader() {
-        if (IS_IN_NATIVE_IMAGE) {
-            return null;
-        }
-        return ClassLoader.getSystemClassLoader();
     }
 
     /**

@@ -41,7 +41,7 @@ static jlong atomic_add_jlong(jlong value, jlong volatile* const dest) {
   do {
     compare_value = *dest;
     exchange_value = compare_value + value;
-  } while (Atomic::cmpxchg(exchange_value, dest, compare_value) != compare_value);
+  } while (Atomic::cmpxchg(dest, compare_value, exchange_value) != compare_value);
   return exchange_value;
 }
 

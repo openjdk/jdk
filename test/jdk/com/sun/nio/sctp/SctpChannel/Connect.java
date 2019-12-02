@@ -61,11 +61,10 @@ public class Connect {
 
     void doTest() {
         SctpChannel channel = null;
-        SctpServerChannel ssc = null;
 
-        try {
+        try (SctpServerChannel ssc = SctpServerChannel.open()) {
             /* Create a server channel to connect to */
-            ssc = SctpServerChannel.open().bind(null);
+            ssc.bind(null);
             Set<SocketAddress> addrs = ssc.getAllLocalAddresses();
             if (addrs.isEmpty())
                 debug("addrs should not be empty");
@@ -208,8 +207,6 @@ public class Connect {
             unexpected(ioe);
         } finally {
             try { if (channel != null) channel.close(); }
-            catch (IOException unused) {}
-            try { if (ssc != null) ssc.close(); }
             catch (IOException unused) {}
         }
     }

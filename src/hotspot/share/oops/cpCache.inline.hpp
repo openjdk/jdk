@@ -27,9 +27,9 @@
 
 #include "oops/cpCache.hpp"
 #include "oops/oopHandle.inline.hpp"
-#include "runtime/orderAccess.hpp"
+#include "runtime/atomic.hpp"
 
-inline int ConstantPoolCacheEntry::indices_ord() const { return OrderAccess::load_acquire(&_indices); }
+inline int ConstantPoolCacheEntry::indices_ord() const { return Atomic::load_acquire(&_indices); }
 
 inline Bytecodes::Code ConstantPoolCacheEntry::bytecode_1() const {
   return Bytecodes::cast((indices_ord() >> bytecode_1_shift) & bytecode_1_mask);
@@ -53,7 +53,7 @@ inline Method* ConstantPoolCacheEntry::f2_as_interface_method() const {
   return (Method*)_f2;
 }
 
-inline Metadata* ConstantPoolCacheEntry::f1_ord() const { return (Metadata *)OrderAccess::load_acquire(&_f1); }
+inline Metadata* ConstantPoolCacheEntry::f1_ord() const { return (Metadata *)Atomic::load_acquire(&_f1); }
 
 inline Method* ConstantPoolCacheEntry::f1_as_method() const {
   Metadata* f1 = f1_ord(); assert(f1 == NULL || f1->is_method(), "");
@@ -75,7 +75,7 @@ inline bool ConstantPoolCacheEntry::has_local_signature() const {
   return (!is_f1_null()) && (_flags & (1 << has_local_signature_shift)) != 0;
 }
 
-inline intx ConstantPoolCacheEntry::flags_ord() const   { return (intx)OrderAccess::load_acquire(&_flags); }
+inline intx ConstantPoolCacheEntry::flags_ord() const   { return (intx)Atomic::load_acquire(&_flags); }
 
 inline bool ConstantPoolCacheEntry::indy_resolution_failed() const {
   intx flags = flags_ord();

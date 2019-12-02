@@ -26,8 +26,6 @@ import java.io.ByteArrayInputStream;
 import java.io.OutputStream;
 import java.util.Set;
 
-import javax.xml.parsers.DocumentBuilder;
-
 import com.sun.org.apache.xml.internal.security.utils.XMLUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
@@ -63,9 +61,7 @@ public abstract class CanonicalizerSpi {
         try (java.io.InputStream bais = new ByteArrayInputStream(inputBytes)) {
             InputSource in = new InputSource(bais);
 
-            DocumentBuilder db = XMLUtils.createDocumentBuilder(false, secureValidation);
-
-            document = db.parse(in);
+            document = XMLUtils.read(in, secureValidation);
         }
         return this.engineCanonicalizeSubTree(document);
     }

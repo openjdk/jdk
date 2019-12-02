@@ -23,7 +23,6 @@
  */
 #include "precompiled.hpp"
 
-#include "runtime/atomic.hpp"
 #include "services/mallocSiteTable.hpp"
 #include "services/mallocTracker.hpp"
 #include "services/mallocTracker.inline.hpp"
@@ -153,5 +152,3 @@ void* MallocTracker::record_free(void* memblock) {
   header->release();
   return (void*)header;
 }
-
-

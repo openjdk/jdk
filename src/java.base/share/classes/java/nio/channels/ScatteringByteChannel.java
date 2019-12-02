@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,6 +101,9 @@ public interface ScatteringByteChannel
      *          If the preconditions on the {@code offset} and {@code length}
      *          parameters do not hold
      *
+     * @throws  IllegalArgumentException
+     *          If any of the buffers is read-only
+     *
      * @throws  NonReadableChannelException
      *          If this channel was not opened for reading
      *
@@ -137,6 +140,9 @@ public interface ScatteringByteChannel
      *
      * @return The number of bytes read, possibly zero,
      *         or {@code -1} if the channel has reached end-of-stream
+     *
+     * @throws  IllegalArgumentException
+     *          If any of the buffers is read-only
      *
      * @throws  NonReadableChannelException
      *          If this channel was not opened for reading

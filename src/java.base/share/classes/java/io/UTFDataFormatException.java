@@ -42,8 +42,7 @@ package java.io;
  * @see     java.io.IOException
  * @since   1.0
  */
-public
-class UTFDataFormatException extends IOException {
+public class UTFDataFormatException extends IOException {
     @java.io.Serial
     private static final long serialVersionUID = 420743449228280612L;
 

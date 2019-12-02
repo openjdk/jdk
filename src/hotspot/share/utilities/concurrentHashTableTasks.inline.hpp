@@ -25,6 +25,7 @@
 #ifndef SHARE_UTILITIES_CONCURRENTHASHTABLETASKS_INLINE_HPP
 #define SHARE_UTILITIES_CONCURRENTHASHTABLETASKS_INLINE_HPP
 
+#include "runtime/atomic.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/concurrentHashTable.inline.hpp"
 
@@ -53,7 +54,7 @@ class ConcurrentHashTable<CONFIG, F>::BucketsOperation {
 
   // Returns true if you succeeded to claim the range start -> (stop-1).
   bool claim(size_t* start, size_t* stop) {
-    size_t claimed = Atomic::add((size_t)1, &_next_to_claim) - 1;
+    size_t claimed = Atomic::add(&_next_to_claim, (size_t)1) - 1;
     if (claimed >= _stop_task) {
       return false;
     }
@@ -74,7 +75,7 @@ class ConcurrentHashTable<CONFIG, F>::BucketsOperation {
 
   // Returns false if all ranges are claimed.
   bool have_more_work() {
-    return OrderAccess::load_acquire(&_next_to_claim) >= _stop_task;
+    return Atomic::load_acquire(&_next_to_claim) >= _stop_task;
   }
 
   void thread_owns_resize_lock(Thread* thread) {

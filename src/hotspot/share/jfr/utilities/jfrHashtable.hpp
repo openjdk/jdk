@@ -26,7 +26,7 @@
 #define SHARE_JFR_UTILITIES_JFRHASHTABLE_HPP
 
 #include "jfr/utilities/jfrAllocation.hpp"
-#include "runtime/orderAccess.hpp"
+#include "runtime/atomic.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/macros.hpp"
 
@@ -58,9 +58,9 @@ class JfrHashtableBucket : public CHeapObj<mtTracing> {
   TableEntry* _entry;
 
   TableEntry* get_entry() const {
-    return (TableEntry*)OrderAccess::load_acquire(&_entry);
+    return (TableEntry*)Atomic::load_acquire(&_entry);
   }
-  void set_entry(TableEntry* entry) { OrderAccess::release_store(&_entry, entry);}
+  void set_entry(TableEntry* entry) { Atomic::release_store(&_entry, entry);}
   TableEntry** entry_addr() { return &_entry; }
 };
 

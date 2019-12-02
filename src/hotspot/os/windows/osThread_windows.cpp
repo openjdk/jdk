@@ -23,7 +23,6 @@
  */
 
 // no precompiled headers
-#include "runtime/orderAccess.hpp"
 #include "runtime/os.hpp"
 #include "runtime/osThread.hpp"
 

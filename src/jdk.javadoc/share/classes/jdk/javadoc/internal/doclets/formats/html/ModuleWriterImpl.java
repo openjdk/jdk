@@ -42,6 +42,7 @@ import javax.lang.model.util.ElementFilter;
 
 import com.sun.source.doctree.DocTree;
 import jdk.javadoc.doclet.DocletEnvironment.ModuleMode;
+import jdk.javadoc.internal.doclets.formats.html.markup.BodyContents;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
@@ -161,12 +162,9 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
     private final Map<TypeElement, Content> providesTrees
             = new TreeMap<>(utils.makeAllClassesComparator());
 
-    /**
-     * The HTML tree for main tag.
-     */
-    protected HtmlTree mainTree = HtmlTree.MAIN();
-
     private final Navigation navBar;
+
+    private final BodyContents bodyContents = new BodyContents();
 
     /**
      * Constructor to construct ModuleWriter object and to generate "moduleName-summary.html" file.
@@ -178,7 +176,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
         super(configuration, configuration.docPaths.moduleSummary(mdle));
         this.mdle = mdle;
         this.moduleMode = configuration.docEnv.getModuleMode();
-        this.navBar = new Navigation(mdle, configuration, fixedNavDiv, PageMode.MODULE, path);
+        this.navBar = new Navigation(mdle, configuration, PageMode.MODULE, path);
         computeModulesData();
     }
 
@@ -190,16 +188,15 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
     @Override
     public Content getModuleHeader(String heading) {
         HtmlTree bodyTree = getBody(getWindowTitle(mdle.getQualifiedName().toString()));
-        HtmlTree htmlTree = HtmlTree.HEADER();
-        addTop(htmlTree);
+        Content headerContent = new ContentBuilder();
+        addTop(headerContent);
         navBar.setDisplaySummaryModuleDescLink(!utils.getFullBody(mdle).isEmpty() && !configuration.nocomment);
         navBar.setDisplaySummaryModulesLink(display(requires) || display(indirectModules));
         navBar.setDisplaySummaryPackagesLink(display(packages) || display(indirectPackages)
                 || display(indirectOpenPackages));
         navBar.setDisplaySummaryServicesLink(displayServices(uses, usesTrees) || displayServices(provides.keySet(), providesTrees));
         navBar.setUserHeader(getUserHeaderFooter(true));
-        htmlTree.add(navBar.getContent(true));
-        bodyTree.add(htmlTree);
+        headerContent.add(navBar.getContent(true));
         HtmlTree div = new HtmlTree(HtmlTag.DIV);
         div.setStyle(HtmlStyle.header);
         Content annotationContent = new HtmlTree(HtmlTag.P);
@@ -213,7 +210,8 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
         Content moduleHead = new RawHtml(heading);
         tHeading.add(moduleHead);
         div.add(tHeading);
-        mainTree.add(div);
+        bodyContents.setHeader(headerContent)
+                .addMainContent(div);
         return bodyTree;
     }
 
@@ -877,21 +875,20 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
      * {@inheritDoc}
      */
     @Override
-    public void addModuleContent(Content contentTree, Content moduleContentTree) {
-        mainTree.add(moduleContentTree);
-        contentTree.add(mainTree);
+    public void addModuleContent(Content moduleContentTree) {
+        bodyContents.addMainContent(moduleContentTree);
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public void addModuleFooter(Content contentTree) {
+    public void addModuleFooter() {
         Content htmlTree = HtmlTree.FOOTER();
         navBar.setUserFooter(getUserHeaderFooter(false));
         htmlTree.add(navBar.getContent(false));
         addBottom(htmlTree);
-        contentTree.add(htmlTree);
+        bodyContents.setFooter(htmlTree);
     }
 
     /**
@@ -901,6 +898,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
      */
     @Override
     public void printDocument(Content contentTree) throws DocFileIOException {
+        contentTree.add(bodyContents.toContent());
         printHtmlDocument(configuration.metakeywords.getMetaKeywordsForModule(mdle),
                 getDescription("declaration", mdle), getLocalStylesheets(mdle), contentTree);
     }

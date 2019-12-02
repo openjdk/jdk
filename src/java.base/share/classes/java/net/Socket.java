@@ -56,8 +56,7 @@ import java.util.Collections;
  * @see     java.nio.channels.SocketChannel
  * @since   1.0
  */
-public
-class Socket implements java.io.Closeable {
+public class Socket implements java.io.Closeable {
     /**
      * Various states of this socket.
      */

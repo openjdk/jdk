@@ -39,7 +39,10 @@ import java.util.concurrent.LinkedBlockingDeque;
  *
  * Internally, the pool is stored in a java.util.concurrent.LinkedBlockingDeque
  * instance.
+ *
+ * @deprecated This class is no longer in use in Santuario 2.1.4
  */
+@Deprecated
 public abstract class WeakObjectPool<T, E extends Throwable> {
 
     private static final Integer MARKER_VALUE = Integer.MAX_VALUE;//once here rather than auto-box it?

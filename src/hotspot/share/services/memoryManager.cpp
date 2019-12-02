@@ -27,9 +27,9 @@
 #include "classfile/vmSymbols.hpp"
 #include "memory/allocation.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaCalls.hpp"
-#include "runtime/orderAccess.hpp"
 #include "services/lowMemoryDetector.hpp"
 #include "services/management.hpp"
 #include "services/memoryManager.hpp"
@@ -65,7 +65,7 @@ MemoryManager* MemoryManager::get_metaspace_memory_manager() {
 instanceOop MemoryManager::get_memory_manager_instance(TRAPS) {
   // Must do an acquire so as to force ordering of subsequent
   // loads from anything _memory_mgr_obj points to or implies.
-  instanceOop mgr_obj = OrderAccess::load_acquire(&_memory_mgr_obj);
+  instanceOop mgr_obj = Atomic::load_acquire(&_memory_mgr_obj);
   if (mgr_obj == NULL) {
     // It's ok for more than one thread to execute the code up to the locked region.
     // Extra manager instances will just be gc'ed.
@@ -118,7 +118,7 @@ instanceOop MemoryManager::get_memory_manager_instance(TRAPS) {
       //
       // The lock has done an acquire, so the load can't float above it, but
       // we need to do a load_acquire as above.
-      mgr_obj = OrderAccess::load_acquire(&_memory_mgr_obj);
+      mgr_obj = Atomic::load_acquire(&_memory_mgr_obj);
       if (mgr_obj != NULL) {
          return mgr_obj;
       }
@@ -130,7 +130,7 @@ instanceOop MemoryManager::get_memory_manager_instance(TRAPS) {
       // with creating the management object are visible before publishing
       // its address.  The unlock will publish the store to _memory_mgr_obj
       // because it does a release first.
-      OrderAccess::release_store(&_memory_mgr_obj, mgr_obj);
+      Atomic::release_store(&_memory_mgr_obj, mgr_obj);
     }
   }
 

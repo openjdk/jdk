@@ -316,14 +316,18 @@ public class TestVolatiles {
             case "G1":
                 // a card mark volatile barrier should be generated
                 // before the card mark strb
+                //
+                // following the fix for 8225776 the G1 barrier is now
+                // scheduled out of line after the membar volatile and
+                // and subsequent return
                 matches = new String[] {
                     "membar_release \\(elided\\)",
                     useCompressedOops ? "stlrw?" : "stlr",
+                    "membar_volatile \\(elided\\)",
+                    "ret",
                     "membar_volatile",
                     "dmb ish",
-                    "strb",
-                    "membar_volatile \\(elided\\)",
-                    "ret"
+                    "strb"
                 };
                 break;
             case "Shenandoah":
@@ -354,16 +358,20 @@ public class TestVolatiles {
             case "G1":
                 // a card mark volatile barrier should be generated
                 // before the card mark strb
+                //
+                // following the fix for 8225776 the G1 barrier is now
+                // scheduled out of line after the membar volatile and
+                // and subsequent return
                 matches = new String[] {
                     "membar_release",
                     "dmb ish",
                     useCompressedOops ? "strw?" : "str",
                     "membar_volatile",
                     "dmb ish",
-                    "strb",
+                    "ret",
                     "membar_volatile",
                     "dmb ish",
-                    "ret"
+                    "strb"
                 };
                 break;
             case "CMSCondMark":
@@ -477,14 +485,18 @@ public class TestVolatiles {
             case "G1":
                 // a card mark volatile barrier should be generated
                 // before the card mark strb
+                //
+                // following the fix for 8225776 the G1 barrier is now
+                // scheduled out of line after the membar acquire and
+                // and subsequent return
                 matches = new String[] {
                     "membar_release \\(elided\\)",
                     useCompressedOops ? "cmpxchgw?_acq" : "cmpxchg_acq",
+                    "membar_acquire \\(elided\\)",
+                    "ret",
                     "membar_volatile",
                     "dmb ish",
-                    "strb",
-                    "membar_acquire \\(elided\\)",
-                    "ret"
+                    "strb"
                 };
                 break;
             case "Shenandoah":
@@ -515,16 +527,20 @@ public class TestVolatiles {
             case "G1":
                 // a card mark volatile barrier should be generated
                 // before the card mark strb
+                //
+                // following the fix for 8225776 the G1 barrier is now
+                // scheduled out of line after the membar acquire and
+                // and subsequent return
                 matches = new String[] {
                     "membar_release",
                     "dmb ish",
                     useCompressedOops ? "cmpxchgw? " : "cmpxchg ",
-                    "membar_volatile",
-                    "dmb ish",
-                    "strb",
                     "membar_acquire",
                     "dmb ish",
-                    "ret"
+                    "ret",
+                    "membar_volatile",
+                    "dmb ish",
+                    "strb"
                 };
                 break;
             case "CMSCondMark":
@@ -653,14 +669,18 @@ public class TestVolatiles {
             case "G1":
                 // a card mark volatile barrier should be generated
                 // before the card mark strb
+                //
+                // following the fix for 8225776 the G1 barrier is now
+                // scheduled out of line after the membar acquire and
+                // and subsequent return
                 matches = new String[] {
                     "membar_release \\(elided\\)",
                     useCompressedOops ? "cmpxchgw?_acq" : "cmpxchg_acq",
+                    "membar_acquire \\(elided\\)",
+                    "ret",
                     "membar_volatile",
                     "dmb ish",
-                    "strb",
-                    "membar_acquire \\(elided\\)",
-                    "ret"
+                    "strb"
                 };
                 break;
             case "Shenandoah":
@@ -691,16 +711,20 @@ public class TestVolatiles {
             case "G1":
                 // a card mark volatile barrier should be generated
                 // before the card mark strb
+                //
+                // following the fix for 8225776 the G1 barrier is now
+                // scheduled out of line after the membar acquire and
+                // and subsequent return
                 matches = new String[] {
                     "membar_release",
                     "dmb ish",
                     useCompressedOops ? "cmpxchgw? " : "cmpxchg ",
-                    "membar_volatile",
-                    "dmb ish",
-                    "strb",
                     "membar_acquire",
                     "dmb ish",
-                    "ret"
+                    "ret",
+                    "membar_volatile",
+                    "dmb ish",
+                    "strb"
                 };
                 break;
             case "CMSCondMark":
@@ -809,14 +833,18 @@ public class TestVolatiles {
             case "G1":
                 // a card mark volatile barrier should be generated
                 // before the card mark strb
+                //
+                // following the fix for 8225776 the G1 barrier is now
+                // scheduled out of line after the membar acquire and
+                // and subsequent return
                 matches = new String[] {
                     "membar_release \\(elided\\)",
                     useCompressedOops ? "atomic_xchgw?_acq" : "atomic_xchg_acq",
+                    "membar_acquire \\(elided\\)",
+                    "ret",
                     "membar_volatile",
                     "dmb ish",
-                    "strb",
-                    "membar_acquire \\(elided\\)",
-                    "ret"
+                    "strb"
                 };
                 break;
             case "Shenandoah":
@@ -845,16 +873,20 @@ public class TestVolatiles {
             case "G1":
                 // a card mark volatile barrier should be generated
                 // before the card mark strb
+                //
+                // following the fix for 8225776 the G1 barrier is now
+                // scheduled out of line after the membar acquire and
+                // and subsequent return
                 matches = new String[] {
                     "membar_release",
                     "dmb ish",
                     useCompressedOops ? "atomic_xchgw? " : "atomic_xchg ",
-                    "membar_volatile",
-                    "dmb ish",
-                    "strb",
                     "membar_acquire",
                     "dmb ish",
-                    "ret"
+                    "ret",
+                    "membar_volatile",
+                    "dmb ish",
+                    "strb"
                 };
                 break;
             case "CMSCondMark":

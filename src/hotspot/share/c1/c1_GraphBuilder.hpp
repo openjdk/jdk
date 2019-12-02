@@ -381,7 +381,7 @@ class GraphBuilder {
   void append_unsafe_get_and_set_obj(ciMethod* callee, bool is_add);
   void append_char_access(ciMethod* callee, bool is_store);
 
-  void print_inlining(ciMethod* callee, const char* msg = NULL, bool success = true);
+  void print_inlining(ciMethod* callee, const char* msg, bool success = true);
 
   void profile_call(ciMethod* callee, Value recv, ciKlass* predicted_holder, Values* obj_args, bool inlined);
   void profile_return_type(Value ret, ciMethod* callee, ciMethod* m = NULL, int bci = -1);

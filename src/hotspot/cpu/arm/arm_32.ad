@@ -232,11 +232,15 @@ reg_class R0_regP(R_R0);
 reg_class R1_regP(R_R1);
 reg_class R2_regP(R_R2);
 reg_class R4_regP(R_R4);
+reg_class R8_regP(R_R8);
+reg_class R9_regP(R_R9);
+reg_class R12_regP(R_R12);
 reg_class Rexception_regP(R_Rexception_obj);
 reg_class Ricklass_regP(R_Ricklass);
 reg_class Rmethod_regP(R_Rmethod);
 reg_class Rthread_regP(R_Rthread);
 reg_class IP_regP(R_R12);
+reg_class SP_regP(R_R13);
 reg_class LR_regP(R_R14);
 
 reg_class FP_regP(R_R11);

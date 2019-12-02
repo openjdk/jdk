@@ -26,9 +26,9 @@
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/handshake.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
-#include "runtime/orderAccess.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/semaphore.inline.hpp"
 #include "runtime/task.hpp"
@@ -66,8 +66,6 @@ class VM_Handshake: public VM_Operation {
   const jlong _handshake_timeout;
  public:
   bool evaluate_at_safepoint() const { return false; }
-
-  bool evaluate_concurrently() const { return false; }
 
  protected:
   HandshakeThreadsOperation* const _op;
@@ -289,20 +287,24 @@ void HandshakeState::clear_handshake(JavaThread* target) {
 void HandshakeState::process_self_inner(JavaThread* thread) {
   assert(Thread::current() == thread, "should call from thread");
   assert(!thread->is_terminated(), "should not be a terminated thread");
+  assert(thread->thread_state() != _thread_blocked, "should not be in a blocked state");
+  assert(thread->thread_state() != _thread_in_native, "should not be in native");
 
-  ThreadInVMForHandshake tivm(thread);
-  if (!_semaphore.trywait()) {
-    _semaphore.wait_with_safepoint_check(thread);
-  }
-  HandshakeOperation* op = OrderAccess::load_acquire(&_operation);
-  if (op != NULL) {
-    HandleMark hm(thread);
-    CautiouslyPreserveExceptionMark pem(thread);
-    // Disarm before execute the operation
-    clear_handshake(thread);
-    op->do_handshake(thread);
-  }
-  _semaphore.signal();
+  do {
+    ThreadInVMForHandshake tivm(thread);
+    if (!_semaphore.trywait()) {
+      _semaphore.wait_with_safepoint_check(thread);
+    }
+    HandshakeOperation* op = Atomic::load_acquire(&_operation);
+    if (op != NULL) {
+      HandleMark hm(thread);
+      CautiouslyPreserveExceptionMark pem(thread);
+      // Disarm before execute the operation
+      clear_handshake(thread);
+      op->do_handshake(thread);
+    }
+    _semaphore.signal();
+  } while (has_operation());
 }
 
 bool HandshakeState::vmthread_can_process_handshake(JavaThread* target) {

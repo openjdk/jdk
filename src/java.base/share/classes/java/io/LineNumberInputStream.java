@@ -47,8 +47,7 @@ package java.io;
  *             include a class for counting line numbers.
  */
 @Deprecated
-public
-class LineNumberInputStream extends FilterInputStream {
+public class LineNumberInputStream extends FilterInputStream {
     int pushBack = -1;
     int lineNumber;
     int markLineNumber;

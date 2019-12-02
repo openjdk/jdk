@@ -145,8 +145,7 @@ import java.util.zip.ZipFile;
  * @see     java.util.jar.JarEntry
  * @since   1.2
  */
-public
-class JarFile extends ZipFile {
+public class JarFile extends ZipFile {
     private final static Runtime.Version BASE_VERSION;
     private final static int BASE_VERSION_FEATURE;
     private final static Runtime.Version RUNTIME_VERSION;

@@ -36,7 +36,7 @@ class JfrTryLock {
   bool _has_lock;
 
  public:
-  JfrTryLock(volatile int* lock) : _lock(lock), _has_lock(Atomic::cmpxchg(1, lock, 0) == 0) {}
+  JfrTryLock(volatile int* lock) : _lock(lock), _has_lock(Atomic::cmpxchg(lock, 0, 1) == 0) {}
 
   ~JfrTryLock() {
     if (_has_lock) {

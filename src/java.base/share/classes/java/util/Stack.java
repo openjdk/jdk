@@ -45,8 +45,7 @@ package java.util;
  * @author  Jonathan Payne
  * @since   1.0
  */
-public
-class Stack<E> extends Vector<E> {
+public class Stack<E> extends Vector<E> {
     /**
      * Creates an empty Stack.
      */

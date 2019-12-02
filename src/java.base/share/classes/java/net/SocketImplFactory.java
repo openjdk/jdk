@@ -36,8 +36,7 @@ package java.net;
  * @see     java.net.ServerSocket
  * @since   1.0
  */
-public
-interface SocketImplFactory {
+public interface SocketImplFactory {
     /**
      * Creates a new {@code SocketImpl} instance.
      *

@@ -152,8 +152,7 @@ public class MethodHandleProxies {
     // generated adapter classes.
     //
     @CallerSensitive
-    public static
-    <T> T asInterfaceInstance(final Class<T> intfc, final MethodHandle target) {
+    public static <T> T asInterfaceInstance(final Class<T> intfc, final MethodHandle target) {
         if (!intfc.isInterface() || !Modifier.isPublic(intfc.getModifiers()))
             throw newIllegalArgumentException("not a public interface", intfc.getName());
         final MethodHandle mh;
@@ -235,8 +234,7 @@ public class MethodHandleProxies {
      * @param x any reference
      * @return true if the reference is not null and points to an object produced by {@code asInterfaceInstance}
      */
-    public static
-    boolean isWrapperInstance(Object x) {
+    public static boolean isWrapperInstance(Object x) {
         return x instanceof WrapperInstance;
     }
 
@@ -258,8 +256,7 @@ public class MethodHandleProxies {
      * @return a method handle implementing the unique method
      * @throws IllegalArgumentException if the reference x is not to a wrapper instance
      */
-    public static
-    MethodHandle wrapperInstanceTarget(Object x) {
+    public static MethodHandle wrapperInstanceTarget(Object x) {
         return asWrapperInstance(x).getWrapperInstanceTarget();
     }
 
@@ -271,13 +268,11 @@ public class MethodHandleProxies {
      * @return the single-method interface type for which the wrapper was created
      * @throws IllegalArgumentException if the reference x is not to a wrapper instance
      */
-    public static
-    Class<?> wrapperInstanceType(Object x) {
+    public static Class<?> wrapperInstanceType(Object x) {
         return asWrapperInstance(x).getWrapperInstanceType();
     }
 
-    private static
-    boolean isObjectMethod(Method m) {
+    private static boolean isObjectMethod(Method m) {
         switch (m.getName()) {
         case "toString":
             return (m.getReturnType() == String.class
@@ -293,8 +288,7 @@ public class MethodHandleProxies {
         return false;
     }
 
-    private static
-    Object callObjectMethod(Object self, Method m, Object[] args) {
+    private static Object callObjectMethod(Object self, Method m, Object[] args) {
         assert(isObjectMethod(m)) : m;
         switch (m.getName()) {
         case "toString":
@@ -307,8 +301,7 @@ public class MethodHandleProxies {
         return null;
     }
 
-    private static
-    Method[] getSingleNameMethods(Class<?> intfc) {
+    private static Method[] getSingleNameMethods(Class<?> intfc) {
         ArrayList<Method> methods = new ArrayList<>();
         String uniqueName = null;
         for (Method m : intfc.getMethods()) {
@@ -325,13 +318,11 @@ public class MethodHandleProxies {
         return methods.toArray(new Method[methods.size()]);
     }
 
-    private static
-    boolean isDefaultMethod(Method m) {
+    private static boolean isDefaultMethod(Method m) {
         return !Modifier.isAbstract(m.getModifiers());
     }
 
-    private static
-    boolean hasDefaultMethods(Class<?> intfc) {
+    private static boolean hasDefaultMethods(Class<?> intfc) {
         for (Method m : intfc.getMethods()) {
             if (!isObjectMethod(m) &&
                 !Modifier.isAbstract(m.getModifiers())) {
@@ -341,8 +332,7 @@ public class MethodHandleProxies {
         return false;
     }
 
-    private static
-    Object callDefaultMethod(ConcurrentHashMap<Method, MethodHandle> defaultMethodMap,
+    private static Object callDefaultMethod(ConcurrentHashMap<Method, MethodHandle> defaultMethodMap,
                              Object self, Class<?> intfc, Method m, Object[] args) throws Throwable {
         assert(isDefaultMethod(m) && !isObjectMethod(m)) : m;
 

@@ -43,8 +43,9 @@ class Jfr : AllStatic {
   static bool is_enabled();
   static bool is_disabled();
   static bool is_recording();
-  static void on_vm_init();
-  static void on_vm_start();
+  static void on_create_vm_1();
+  static void on_create_vm_2();
+  static void on_create_vm_3();
   static void on_unloading_classes();
   static void on_thread_start(Thread* thread);
   static void on_thread_exit(Thread* thread);

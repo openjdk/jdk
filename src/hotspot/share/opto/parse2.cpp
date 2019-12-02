@@ -605,7 +605,7 @@ static float if_prob(float taken_cnt, float total_cnt) {
     return PROB_FAIR;
   }
   float p = taken_cnt / total_cnt;
-  return MIN2(MAX2(p, PROB_MIN), PROB_MAX);
+  return clamp(p, PROB_MIN, PROB_MAX);
 }
 
 static float if_cnt(float cnt) {

@@ -104,6 +104,15 @@ public:
   inline void do_oop(narrowOop* p);
 };
 
+class ShenandoahCodeBlobAndDisarmClosure: public CodeBlobToOopClosure {
+private:
+  BarrierSetNMethod* const _bs;
+
+public:
+  inline ShenandoahCodeBlobAndDisarmClosure(OopClosure* cl);
+  inline void do_code_blob(CodeBlob* cb);
+};
+
 #ifdef ASSERT
 class ShenandoahAssertNotForwardedClosure : public OopClosure {
 private:

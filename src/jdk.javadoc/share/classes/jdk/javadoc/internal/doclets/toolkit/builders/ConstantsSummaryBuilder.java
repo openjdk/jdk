@@ -84,11 +84,6 @@ public class ConstantsSummaryBuilder extends AbstractBuilder {
     private TypeElement currentClass;
 
     /**
-     * The content tree for the constant summary documentation.
-     */
-    private Content contentTree;
-
-    /**
      * True if first package is listed.
      */
     private boolean first = true;
@@ -129,31 +124,28 @@ public class ConstantsSummaryBuilder extends AbstractBuilder {
             //Doclet does not support this output.
             return;
         }
-        buildConstantSummary(contentTree);
+        buildConstantSummary();
     }
 
     /**
      * Build the constant summary.
      *
-     * @param contentTree the content tree to which the documentation will be added
      * @throws DocletException if there is a problem while building the documentation
      */
-    protected void buildConstantSummary(Content contentTree) throws DocletException {
-        contentTree = writer.getHeader();
+    protected void buildConstantSummary() throws DocletException {
+        Content contentTree = writer.getHeader();
 
-        buildContents(contentTree);
-        buildConstantSummaries(contentTree);
+        buildContents();
+        buildConstantSummaries();
 
-        writer.addFooter(contentTree);
+        writer.addFooter();
         writer.printDocument(contentTree);
     }
 
     /**
      * Build the list of packages.
-     *
-     * @param contentTree the content tree to which the content list will be added
      */
-    protected void buildContents(Content contentTree) {
+    protected void buildContents() {
         Content contentListTree = writer.getContentsHeader();
         printedPackageHeaders.clear();
         for (PackageElement pkg : configuration.packages) {
@@ -161,16 +153,15 @@ public class ConstantsSummaryBuilder extends AbstractBuilder {
                 writer.addLinkToPackageContent(pkg, printedPackageHeaders, contentListTree);
             }
         }
-        writer.addContentsList(contentTree, contentListTree);
+        writer.addContentsList(contentListTree);
     }
 
     /**
      * Build the summary for each documented package.
      *
-     * @param contentTree the tree to which the summaries will be added
      * @throws DocletException if there is a problem while building the documentation
      */
-    protected void buildConstantSummaries(Content contentTree) throws DocletException {
+    protected void buildConstantSummaries() throws DocletException {
         printedPackageHeaders.clear();
         Content summariesTree = writer.getConstantSummaries();
         for (PackageElement aPackage : configuration.packages) {
@@ -184,7 +175,7 @@ public class ConstantsSummaryBuilder extends AbstractBuilder {
                 first = false;
             }
         }
-        writer.addConstantSummaries(contentTree, summariesTree);
+        writer.addConstantSummaries(summariesTree);
     }
 
     /**

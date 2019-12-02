@@ -2147,6 +2147,19 @@ MapArchiveResult MetaspaceShared::map_archives(FileMapInfo* static_mapinfo, File
     MapArchiveResult dynamic_result = (static_result == MAP_ARCHIVE_SUCCESS) ?
                                      map_archive(dynamic_mapinfo, mapped_base_address, archive_space_rs) : MAP_ARCHIVE_OTHER_FAILURE;
 
+    DEBUG_ONLY(if (ArchiveRelocationMode == 1 && use_requested_addr) {
+      // This is for simulating mmap failures at the requested address. In debug builds, we do it
+      // here (after all archives have possibly been mapped), so we can thoroughly test the code for
+      // failure handling (releasing all allocated resource, etc).
+      log_info(cds)("ArchiveRelocationMode == 1: always map archive(s) at an alternative address");
+      if (static_result == MAP_ARCHIVE_SUCCESS) {
+        static_result = MAP_ARCHIVE_MMAP_FAILURE;
+      }
+      if (dynamic_result == MAP_ARCHIVE_SUCCESS) {
+        dynamic_result = MAP_ARCHIVE_MMAP_FAILURE;
+      }
+    });
+
     if (static_result == MAP_ARCHIVE_SUCCESS) {
       if (dynamic_result == MAP_ARCHIVE_SUCCESS) {
         result = MAP_ARCHIVE_SUCCESS;
@@ -2298,7 +2311,7 @@ static int dynamic_regions_count = 3;
 MapArchiveResult MetaspaceShared::map_archive(FileMapInfo* mapinfo, char* mapped_base_address, ReservedSpace rs) {
   assert(UseSharedSpaces, "must be runtime");
   if (mapinfo == NULL) {
-    return MAP_ARCHIVE_SUCCESS; // no error has happeed -- trivially succeeded.
+    return MAP_ARCHIVE_SUCCESS; // The dynamic archive has not been specified. No error has happened -- trivially succeeded.
   }
 
   mapinfo->set_is_mapped(false);

@@ -38,8 +38,7 @@ package java.io;
  * @see     java.io.IOException
  * @since   1.0
  */
-public
-class EOFException extends IOException {
+public class EOFException extends IOException {
     @java.io.Serial
     private static final long serialVersionUID = 6433858223774886977L;
 

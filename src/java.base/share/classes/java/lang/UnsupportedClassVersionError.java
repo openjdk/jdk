@@ -32,8 +32,7 @@ package java.lang;
  *
  * @since   1.2
  */
-public
-class UnsupportedClassVersionError extends ClassFormatError {
+public class UnsupportedClassVersionError extends ClassFormatError {
     @java.io.Serial
     private static final long serialVersionUID = -7123279212883497373L;
 

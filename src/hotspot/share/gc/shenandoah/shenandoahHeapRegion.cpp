@@ -34,6 +34,7 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/java.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
@@ -305,7 +306,7 @@ void ShenandoahHeapRegion::make_committed_bypass() {
 }
 
 void ShenandoahHeapRegion::clear_live_data() {
-  OrderAccess::release_store_fence<size_t>(&_live_data, 0);
+  Atomic::release_store_fence(&_live_data, (size_t)0);
 }
 
 void ShenandoahHeapRegion::reset_alloc_metadata() {
@@ -351,7 +352,7 @@ void ShenandoahHeapRegion::set_live_data(size_t s) {
 }
 
 size_t ShenandoahHeapRegion::get_live_data_words() const {
-  return OrderAccess::load_acquire(&_live_data);
+  return Atomic::load_acquire(&_live_data);
 }
 
 size_t ShenandoahHeapRegion::get_live_data_bytes() const {
@@ -687,12 +688,12 @@ void ShenandoahHeapRegion::set_state(RegionState to) {
 }
 
 void ShenandoahHeapRegion::record_pin() {
-  Atomic::add((size_t)1, &_critical_pins);
+  Atomic::add(&_critical_pins, (size_t)1);
 }
 
 void ShenandoahHeapRegion::record_unpin() {
   assert(pin_count() > 0, "Region " SIZE_FORMAT " should have non-zero pins", region_number());
-  Atomic::sub((size_t)1, &_critical_pins);
+  Atomic::sub(&_critical_pins, (size_t)1);
 }
 
 size_t ShenandoahHeapRegion::pin_count() const {

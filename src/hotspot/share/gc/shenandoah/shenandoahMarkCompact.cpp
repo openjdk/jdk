@@ -48,6 +48,7 @@
 #include "oops/compressedOops.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/biasedLocking.hpp"
+#include "runtime/orderAccess.hpp"
 #include "runtime/thread.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/growableArray.hpp"

@@ -40,7 +40,7 @@ class BasicLock {
   }
 
   void set_displaced_header(markWord header) {
-    Atomic::store(header, &_displaced_header);
+    Atomic::store(&_displaced_header, header);
   }
 
   void print_on(outputStream* st) const;

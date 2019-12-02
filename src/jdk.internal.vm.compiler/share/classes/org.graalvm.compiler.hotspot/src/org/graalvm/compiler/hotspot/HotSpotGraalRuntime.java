@@ -232,6 +232,7 @@ public final class HotSpotGraalRuntime implements HotSpotGraalRuntimeProvider {
         // Supported GCs
         Serial(true, "UseSerialGC"),
         Parallel(true, "UseParallelGC", "UseParallelOldGC"),
+        CMS(true, "UseConcMarkSweepGC"),
         G1(true, "UseG1GC"),
 
         // Unsupported GCs

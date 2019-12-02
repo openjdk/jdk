@@ -98,14 +98,19 @@ public class SendFailed {
                     new SendFailedNotificationHandler();
             ByteBuffer recvBuffer = direct ? allocateDirect(recvBufferSize)
                                            : allocate((recvBufferSize));
-            channel.receive(recvBuffer, null, handler);
+            MessageInfo info = channel.receive(recvBuffer, null, handler);
+            debug("receive returned info:" + info);
 
-            // verify sent buffer received by send failed notification
-            ByteBuffer buffer = handler.getSendFailedByteBuffer();
-            check(buffer.remaining() == sent);
-            check(buffer.position() == 0);
-            check(buffer.limit() == sent);
-            assertSameContent(sendBuffer, handler.getSendFailedByteBuffer());
+            if (handler.receivedSendFailed) {
+                // verify sent buffer received by send failed notification
+                ByteBuffer buffer = handler.getSendFailedByteBuffer();
+                check(buffer.remaining() == sent);
+                check(buffer.position() == 0);
+                check(buffer.limit() == sent);
+                assertSameContent(sendBuffer, handler.getSendFailedByteBuffer());
+            } else {
+                debug("Unexpected event or received data. Check output.");
+            }
         }
     }
 
@@ -113,6 +118,7 @@ public class SendFailed {
     {
         /** Reference to the buffer captured in send failed notification */
         private ByteBuffer sentBuffer;
+        boolean receivedSendFailed;
 
         @Override
         public HandlerResult handleNotification(
@@ -135,6 +141,7 @@ public class SendFailed {
         public HandlerResult handleNotification(
                 SendFailedNotification notification, Object attachment) {
             debug("%nSendFailedNotification: %s. ", notification);
+            receivedSendFailed = true;
             sentBuffer = notification.buffer();
             return HandlerResult.RETURN;
         }

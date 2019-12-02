@@ -35,6 +35,7 @@
 #include "oops/arrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/typeArrayOop.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/safepointVerifiers.hpp"
 
@@ -589,7 +590,7 @@ void StringDedupTable::finish_rehash(StringDedupTable* rehashed_table) {
 }
 
 size_t StringDedupTable::claim_table_partition(size_t partition_size) {
-  return Atomic::add(partition_size, &_claimed_index) - partition_size;
+  return Atomic::add(&_claimed_index, partition_size) - partition_size;
 }
 
 void StringDedupTable::verify() {

@@ -581,6 +581,7 @@ void LIR_Assembler::reg2mem(LIR_Opr src, LIR_Opr dest, BasicType type,
         base_reg = Rtemp;
         __ str(from_lo, Address(Rtemp));
         if (patch != NULL) {
+          __ nop(); // see comment before patching_epilog for 2nd str
           patching_epilog(patch, lir_patch_low, base_reg, info);
           patch = new PatchingStub(_masm, PatchingStub::access_field_id);
           patch_code = lir_patch_high;
@@ -589,6 +590,7 @@ void LIR_Assembler::reg2mem(LIR_Opr src, LIR_Opr dest, BasicType type,
       } else if (base_reg == from_lo) {
         __ str(from_hi, as_Address_hi(to_addr));
         if (patch != NULL) {
+          __ nop(); // see comment before patching_epilog for 2nd str
           patching_epilog(patch, lir_patch_high, base_reg, info);
           patch = new PatchingStub(_masm, PatchingStub::access_field_id);
           patch_code = lir_patch_low;
@@ -597,6 +599,7 @@ void LIR_Assembler::reg2mem(LIR_Opr src, LIR_Opr dest, BasicType type,
       } else {
         __ str(from_lo, as_Address_lo(to_addr));
         if (patch != NULL) {
+          __ nop(); // see comment before patching_epilog for 2nd str
           patching_epilog(patch, lir_patch_low, base_reg, info);
           patch = new PatchingStub(_masm, PatchingStub::access_field_id);
           patch_code = lir_patch_high;
@@ -640,7 +643,7 @@ void LIR_Assembler::reg2mem(LIR_Opr src, LIR_Opr dest, BasicType type,
   }
 
   if (patch != NULL) {
-    // Offset embeedded into LDR/STR instruction may appear not enough
+    // Offset embedded into LDR/STR instruction may appear not enough
     // to address a field. So, provide a space for one more instruction
     // that will deal with larger offsets.
     __ nop();
@@ -791,6 +794,7 @@ void LIR_Assembler::mem2reg(LIR_Opr src, LIR_Opr dest, BasicType type,
         base_reg = Rtemp;
         __ ldr(to_lo, Address(Rtemp));
         if (patch != NULL) {
+          __ nop(); // see comment before patching_epilog for 2nd ldr
           patching_epilog(patch, lir_patch_low, base_reg, info);
           patch = new PatchingStub(_masm, PatchingStub::access_field_id);
           patch_code = lir_patch_high;
@@ -799,6 +803,7 @@ void LIR_Assembler::mem2reg(LIR_Opr src, LIR_Opr dest, BasicType type,
       } else if (base_reg == to_lo) {
         __ ldr(to_hi, as_Address_hi(addr));
         if (patch != NULL) {
+          __ nop(); // see comment before patching_epilog for 2nd ldr
           patching_epilog(patch, lir_patch_high, base_reg, info);
           patch = new PatchingStub(_masm, PatchingStub::access_field_id);
           patch_code = lir_patch_low;
@@ -807,6 +812,7 @@ void LIR_Assembler::mem2reg(LIR_Opr src, LIR_Opr dest, BasicType type,
       } else {
         __ ldr(to_lo, as_Address_lo(addr));
         if (patch != NULL) {
+          __ nop(); // see comment before patching_epilog for 2nd ldr
           patching_epilog(patch, lir_patch_low, base_reg, info);
           patch = new PatchingStub(_masm, PatchingStub::access_field_id);
           patch_code = lir_patch_high;
@@ -846,7 +852,7 @@ void LIR_Assembler::mem2reg(LIR_Opr src, LIR_Opr dest, BasicType type,
   }
 
   if (patch != NULL) {
-    // Offset embeedded into LDR/STR instruction may appear not enough
+    // Offset embedded into LDR/STR instruction may appear not enough
     // to address a field. So, provide a space for one more instruction
     // that will deal with larger offsets.
     __ nop();

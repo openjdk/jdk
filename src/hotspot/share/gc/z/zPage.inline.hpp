@@ -255,7 +255,7 @@ inline uintptr_t ZPage::alloc_object_atomic(size_t size) {
       return 0;
     }
 
-    const uintptr_t prev_top = Atomic::cmpxchg(new_top, &_top, addr);
+    const uintptr_t prev_top = Atomic::cmpxchg(&_top, addr, new_top);
     if (prev_top == addr) {
       // Success
       return ZAddress::good(addr);
@@ -299,7 +299,7 @@ inline bool ZPage::undo_alloc_object_atomic(uintptr_t addr, size_t size) {
       return false;
     }
 
-    const uintptr_t prev_top = Atomic::cmpxchg(new_top, &_top, old_top);
+    const uintptr_t prev_top = Atomic::cmpxchg(&_top, old_top, new_top);
     if (prev_top == old_top) {
       // Success
       return true;

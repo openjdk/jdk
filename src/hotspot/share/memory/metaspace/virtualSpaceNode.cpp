@@ -34,6 +34,7 @@
 #include "memory/metaspace/occupancyMap.hpp"
 #include "memory/metaspace/virtualSpaceNode.hpp"
 #include "memory/virtualspace.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/os.hpp"
 #include "services/memTracker.hpp"
 #include "utilities/copy.hpp"
@@ -585,4 +586,3 @@ void VirtualSpaceNode::retire(ChunkManager* chunk_manager) {
 }
 
 } // namespace metaspace
-

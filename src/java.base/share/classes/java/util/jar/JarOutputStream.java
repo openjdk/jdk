@@ -41,8 +41,7 @@ import java.io.*;
  * @see     java.util.zip.ZipOutputStream
  * @since   1.2
  */
-public
-class JarOutputStream extends ZipOutputStream {
+public class JarOutputStream extends ZipOutputStream {
     private static final int JAR_MAGIC = 0xCAFE;
 
     /**

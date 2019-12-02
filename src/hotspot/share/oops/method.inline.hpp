@@ -26,26 +26,26 @@
 #define SHARE_OOPS_METHOD_INLINE_HPP
 
 #include "oops/method.hpp"
-#include "runtime/orderAccess.hpp"
+#include "runtime/atomic.hpp"
 
 inline address Method::from_compiled_entry() const {
-  return OrderAccess::load_acquire(&_from_compiled_entry);
+  return Atomic::load_acquire(&_from_compiled_entry);
 }
 
 inline address Method::from_interpreted_entry() const {
-  return OrderAccess::load_acquire(&_from_interpreted_entry);
+  return Atomic::load_acquire(&_from_interpreted_entry);
 }
 
 inline void Method::set_method_data(MethodData* data) {
   // The store into method must be released. On platforms without
   // total store order (TSO) the reference may become visible before
   // the initialization of data otherwise.
-  OrderAccess::release_store(&_method_data, data);
+  Atomic::release_store(&_method_data, data);
 }
 
 inline CompiledMethod* volatile Method::code() const {
   assert( check_code(), "" );
-  return OrderAccess::load_acquire(&_code);
+  return Atomic::load_acquire(&_code);
 }
 
 // Write (bci, line number) pair to stream

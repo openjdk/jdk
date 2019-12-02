@@ -29,6 +29,7 @@ import java.util.Set;
 
 import javax.lang.model.element.TypeElement;
 
+import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
@@ -56,11 +57,6 @@ public class SerializedFormWriterImpl extends SubWriterHolderWriter
 
     Set<TypeElement> visibleClasses;
 
-    /**
-     * HTML tree for main tag.
-     */
-    private HtmlTree mainTree = HtmlTree.MAIN();
-
     private final Navigation navBar;
 
     /**
@@ -69,7 +65,7 @@ public class SerializedFormWriterImpl extends SubWriterHolderWriter
     public SerializedFormWriterImpl(HtmlConfiguration configuration) {
         super(configuration, DocPaths.SERIALIZED_FORM);
         visibleClasses = configuration.getIncludedTypeElements();
-        this.navBar = new Navigation(null, configuration, fixedNavDiv, PageMode.SERIALIZEDFORM, path);
+        this.navBar = new Navigation(null, configuration, PageMode.SERIALIZEDFORM, path);
     }
 
     /**
@@ -80,16 +76,16 @@ public class SerializedFormWriterImpl extends SubWriterHolderWriter
      */
     public Content getHeader(String header) {
         HtmlTree bodyTree = getBody(getWindowTitle(header));
-        HtmlTree htmlTree = HtmlTree.HEADER();
-        addTop(htmlTree);
+        Content headerContent = new ContentBuilder();
+        addTop(headerContent);
         navBar.setUserHeader(getUserHeaderFooter(true));
-        htmlTree.add(navBar.getContent(true));
-        bodyTree.add(htmlTree);
+        headerContent.add(navBar.getContent(true));
         Content h1Content = new StringContent(header);
         Content heading = HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING, true,
                 HtmlStyle.title, h1Content);
         Content div = HtmlTree.DIV(HtmlStyle.header, heading);
-        mainTree.add(div);
+        bodyContents.setHeader(headerContent)
+                .addMainContent(div);
         return bodyTree;
     }
 
@@ -216,16 +212,14 @@ public class SerializedFormWriterImpl extends SubWriterHolderWriter
     }
 
     /**
-     * Get the serialized content tree section.
+     * Add the serialized content tree section.
      *
      * @param serializedTreeContent the serialized content tree to be added
-     * @return a div content tree
      */
-    public Content getSerializedContent(Content serializedTreeContent) {
+    public void addSerializedContent(Content serializedTreeContent) {
         HtmlTree divContent = HtmlTree.DIV(HtmlStyle.serializedFormContainer,
                 serializedTreeContent);
-        mainTree.add(divContent);
-        return mainTree;
+        bodyContents.addMainContent(divContent);
     }
 
     /**
@@ -238,15 +232,13 @@ public class SerializedFormWriterImpl extends SubWriterHolderWriter
 
     /**
      * Add the footer.
-     *
-     * @param serializedTree the serialized tree to be added
      */
-    public void addFooter(Content serializedTree) {
+    public void addFooter() {
         Content htmlTree = HtmlTree.FOOTER();
         navBar.setUserFooter(getUserHeaderFooter(false));
         htmlTree.add(navBar.getContent(false));
         addBottom(htmlTree);
-        serializedTree.add(htmlTree);
+        bodyContents.setFooter(htmlTree);
     }
 
     /**
@@ -254,6 +246,7 @@ public class SerializedFormWriterImpl extends SubWriterHolderWriter
      */
     @Override
     public void printDocument(Content serializedTree) throws DocFileIOException {
+        serializedTree.add(bodyContents.toContent());
         printHtmlDocument(null, "serialized forms", serializedTree);
     }
 

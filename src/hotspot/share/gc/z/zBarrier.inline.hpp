@@ -48,7 +48,7 @@ inline void ZBarrier::self_heal(volatile oop* p, uintptr_t addr, uintptr_t heal_
     }
 
     // Heal
-    const uintptr_t prev_addr = Atomic::cmpxchg(heal_addr, (volatile uintptr_t*)p, addr);
+    const uintptr_t prev_addr = Atomic::cmpxchg((volatile uintptr_t*)p, addr, heal_addr);
     if (prev_addr == addr) {
       // Success
       return;

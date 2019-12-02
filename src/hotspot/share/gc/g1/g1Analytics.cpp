@@ -28,6 +28,7 @@
 #include "runtime/globals.hpp"
 #include "runtime/os.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/numberSeq.hpp"
 
 // Different defaults for different number of GC threads
@@ -44,11 +45,11 @@ static double cost_per_logged_card_ms_defaults[] = {
 };
 
 // all the same
-static double young_cards_per_entry_ratio_defaults[] = {
+static double young_card_merge_to_scan_ratio_defaults[] = {
   1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0
 };
 
-static double young_only_cost_per_remset_card_ms_defaults[] = {
+static double young_only_cost_per_card_scan_ms_defaults[] = {
   0.015, 0.01, 0.01, 0.008, 0.008, 0.0055, 0.0055, 0.005
 };
 
@@ -60,7 +61,6 @@ static double cost_per_byte_ms_defaults[] = {
 static double constant_other_time_ms_defaults[] = {
   5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0
 };
-
 
 static double young_other_cost_per_region_ms_defaults[] = {
   0.3, 0.2, 0.2, 0.15, 0.15, 0.12, 0.12, 0.1
@@ -80,13 +80,13 @@ G1Analytics::G1Analytics(const G1Predictions* predictor) :
     _rs_length_diff_seq(new TruncatedSeq(TruncatedSeqLength)),
     _concurrent_refine_rate_ms_seq(new TruncatedSeq(TruncatedSeqLength)),
     _logged_cards_rate_ms_seq(new TruncatedSeq(TruncatedSeqLength)),
-    _cost_per_logged_card_ms_seq(new TruncatedSeq(TruncatedSeqLength)),
-    _cost_scan_hcc_seq(new TruncatedSeq(TruncatedSeqLength)),
-    _young_cards_per_entry_ratio_seq(new TruncatedSeq(TruncatedSeqLength)),
-    _mixed_cards_per_entry_ratio_seq(new TruncatedSeq(TruncatedSeqLength)),
-    _young_only_cost_per_remset_card_ms_seq(new TruncatedSeq(TruncatedSeqLength)),
-    _mixed_cost_per_remset_card_ms_seq(new TruncatedSeq(TruncatedSeqLength)),
-    _cost_per_byte_ms_seq(new TruncatedSeq(TruncatedSeqLength)),
+    _young_card_merge_to_scan_ratio_seq(new TruncatedSeq(TruncatedSeqLength)),
+    _mixed_card_merge_to_scan_ratio_seq(new TruncatedSeq(TruncatedSeqLength)),
+    _young_cost_per_card_scan_ms_seq(new TruncatedSeq(TruncatedSeqLength)),
+    _mixed_cost_per_card_scan_ms_seq(new TruncatedSeq(TruncatedSeqLength)),
+    _young_cost_per_card_merge_ms_seq(new TruncatedSeq(TruncatedSeqLength)),
+    _mixed_cost_per_card_merge_ms_seq(new TruncatedSeq(TruncatedSeqLength)),
+    _copy_cost_per_byte_ms_seq(new TruncatedSeq(TruncatedSeqLength)),
     _constant_other_time_ms_seq(new TruncatedSeq(TruncatedSeqLength)),
     _young_other_cost_per_region_ms_seq(new TruncatedSeq(TruncatedSeqLength)),
     _non_young_other_cost_per_region_ms_seq(new TruncatedSeq(TruncatedSeqLength)),
@@ -108,11 +108,10 @@ G1Analytics::G1Analytics(const G1Predictions* predictor) :
   _concurrent_refine_rate_ms_seq->add(1/cost_per_logged_card_ms_defaults[0]);
   // Some applications have very low rates for logging cards.
   _logged_cards_rate_ms_seq->add(0.0);
-  _cost_per_logged_card_ms_seq->add(cost_per_logged_card_ms_defaults[index]);
-  _cost_scan_hcc_seq->add(0.0);
-  _young_cards_per_entry_ratio_seq->add(young_cards_per_entry_ratio_defaults[index]);
-  _young_only_cost_per_remset_card_ms_seq->add(young_only_cost_per_remset_card_ms_defaults[index]);
-  _cost_per_byte_ms_seq->add(cost_per_byte_ms_defaults[index]);
+  _young_card_merge_to_scan_ratio_seq->add(young_card_merge_to_scan_ratio_defaults[index]);
+  _young_cost_per_card_scan_ms_seq->add(young_only_cost_per_card_scan_ms_defaults[index]);
+
+  _copy_cost_per_byte_ms_seq->add(cost_per_byte_ms_defaults[index]);
   _constant_other_time_ms_seq->add(constant_other_time_ms_defaults[index]);
   _young_other_cost_per_region_ms_seq->add(young_other_cost_per_region_ms_defaults[index]);
   _non_young_other_cost_per_region_ms_seq->add(non_young_other_cost_per_region_ms_defaults[index]);
@@ -122,12 +121,20 @@ G1Analytics::G1Analytics(const G1Predictions* predictor) :
   _concurrent_mark_cleanup_times_ms->add(0.20);
 }
 
-double G1Analytics::get_new_prediction(TruncatedSeq const* seq) const {
-  return _predictor->get_new_prediction(seq);
+bool G1Analytics::enough_samples_available(TruncatedSeq const* seq) const {
+  return seq->num() >= 3;
+}
+
+double G1Analytics::get_new_unit_prediction(TruncatedSeq const* seq) const {
+  return _predictor->get_new_unit_prediction(seq);
 }
 
 size_t G1Analytics::get_new_size_prediction(TruncatedSeq const* seq) const {
-  return (size_t)get_new_prediction(seq);
+  return (size_t)get_new_lower_zero_bound_prediction(seq);
+}
+
+double G1Analytics::get_new_lower_zero_bound_prediction(TruncatedSeq const* seq) const {
+  return _predictor->get_new_lower_zero_bound_prediction(seq);
 }
 
 int G1Analytics::num_alloc_rate_ms() const {
@@ -144,17 +151,9 @@ void G1Analytics::report_alloc_rate_ms(double alloc_rate) {
 
 void G1Analytics::compute_pause_time_ratio(double interval_ms, double pause_time_ms) {
   _recent_avg_pause_time_ratio = _recent_gc_times_ms->sum() / interval_ms;
-  if (_recent_avg_pause_time_ratio < 0.0 ||
-      (_recent_avg_pause_time_ratio - 1.0 > 0.0)) {
-    // Clip ratio between 0.0 and 1.0, and continue. This will be fixed in
-    // CR 6902692 by redoing the manner in which the ratio is incrementally computed.
-    if (_recent_avg_pause_time_ratio < 0.0) {
-      _recent_avg_pause_time_ratio = 0.0;
-    } else {
-      assert(_recent_avg_pause_time_ratio - 1.0 > 0.0, "Ctl-point invariant");
-      _recent_avg_pause_time_ratio = 1.0;
-    }
-  }
+
+  // Clamp the result to [0.0 ... 1.0] to filter out nonsensical results due to bad input.
+  _recent_avg_pause_time_ratio = clamp(_recent_avg_pause_time_ratio, 0.0, 1.0);
 
   // Compute the ratio of just this last pause time to the entire time range stored
   // in the vectors. Comparing this pause to the entire range, rather than only the
@@ -173,27 +172,27 @@ void G1Analytics::report_logged_cards_rate_ms(double cards_per_ms) {
   _logged_cards_rate_ms_seq->add(cards_per_ms);
 }
 
-void G1Analytics::report_cost_per_logged_card_ms(double cost_per_logged_card_ms) {
-  _cost_per_logged_card_ms_seq->add(cost_per_logged_card_ms);
-}
-
-void G1Analytics::report_cost_scan_hcc(double cost_scan_hcc) {
-  _cost_scan_hcc_seq->add(cost_scan_hcc);
-}
-
-void G1Analytics::report_cost_per_remset_card_ms(double cost_per_remset_card_ms, bool for_young_gc) {
+void G1Analytics::report_cost_per_card_scan_ms(double cost_per_card_ms, bool for_young_gc) {
   if (for_young_gc) {
-    _young_only_cost_per_remset_card_ms_seq->add(cost_per_remset_card_ms);
+    _young_cost_per_card_scan_ms_seq->add(cost_per_card_ms);
   } else {
-    _mixed_cost_per_remset_card_ms_seq->add(cost_per_remset_card_ms);
+    _mixed_cost_per_card_scan_ms_seq->add(cost_per_card_ms);
   }
 }
 
-void G1Analytics::report_cards_per_entry_ratio(double cards_per_entry_ratio, bool for_young_gc) {
+void G1Analytics::report_cost_per_card_merge_ms(double cost_per_card_ms, bool for_young_gc) {
   if (for_young_gc) {
-    _young_cards_per_entry_ratio_seq->add(cards_per_entry_ratio);
+    _young_cost_per_card_merge_ms_seq->add(cost_per_card_ms);
   } else {
-    _mixed_cards_per_entry_ratio_seq->add(cards_per_entry_ratio);
+    _mixed_cost_per_card_merge_ms_seq->add(cost_per_card_ms);
+  }
+}
+
+void G1Analytics::report_card_merge_to_scan_ratio(double merge_to_scan_ratio, bool for_young_gc) {
+  if (for_young_gc) {
+    _young_card_merge_to_scan_ratio_seq->add(merge_to_scan_ratio);
+  } else {
+    _mixed_card_merge_to_scan_ratio_seq->add(merge_to_scan_ratio);
   }
 }
 
@@ -205,7 +204,7 @@ void G1Analytics::report_cost_per_byte_ms(double cost_per_byte_ms, bool mark_or_
   if (mark_or_rebuild_in_progress) {
     _cost_per_byte_ms_during_cm_seq->add(cost_per_byte_ms);
   } else {
-    _cost_per_byte_ms_seq->add(cost_per_byte_ms);
+    _copy_cost_per_byte_ms_seq->add(cost_per_byte_ms);
   }
 }
 
@@ -230,70 +229,50 @@ void G1Analytics::report_rs_length(double rs_length) {
 }
 
 double G1Analytics::predict_alloc_rate_ms() const {
-  return get_new_prediction(_alloc_rate_ms_seq);
+  return get_new_lower_zero_bound_prediction(_alloc_rate_ms_seq);
 }
 
 double G1Analytics::predict_concurrent_refine_rate_ms() const {
-  return get_new_prediction(_concurrent_refine_rate_ms_seq);
+  return get_new_lower_zero_bound_prediction(_concurrent_refine_rate_ms_seq);
 }
 
 double G1Analytics::predict_logged_cards_rate_ms() const {
-  return get_new_prediction(_logged_cards_rate_ms_seq);
+  return get_new_lower_zero_bound_prediction(_logged_cards_rate_ms_seq);
 }
 
-double G1Analytics::predict_cost_per_logged_card_ms() const {
-  return get_new_prediction(_cost_per_logged_card_ms_seq);
+double G1Analytics::predict_young_card_merge_to_scan_ratio() const {
+  return get_new_unit_prediction(_young_card_merge_to_scan_ratio_seq);
 }
 
-double G1Analytics::predict_scan_hcc_ms() const {
-  return get_new_prediction(_cost_scan_hcc_seq);
-}
-
-double G1Analytics::predict_rs_update_time_ms(size_t pending_cards) const {
-  return pending_cards * predict_cost_per_logged_card_ms() + predict_scan_hcc_ms();
-}
-
-double G1Analytics::predict_young_cards_per_entry_ratio() const {
-  return get_new_prediction(_young_cards_per_entry_ratio_seq);
-}
-
-double G1Analytics::predict_mixed_cards_per_entry_ratio() const {
-  if (_mixed_cards_per_entry_ratio_seq->num() < 2) {
-    return predict_young_cards_per_entry_ratio();
+size_t G1Analytics::predict_scan_card_num(size_t rs_length, bool for_young_gc) const {
+  if (for_young_gc || !enough_samples_available(_mixed_card_merge_to_scan_ratio_seq)) {
+    return (size_t)(rs_length * predict_young_card_merge_to_scan_ratio());
   } else {
-    return get_new_prediction(_mixed_cards_per_entry_ratio_seq);
+    return (size_t)(rs_length * get_new_unit_prediction(_mixed_card_merge_to_scan_ratio_seq));
   }
 }
 
-size_t G1Analytics::predict_card_num(size_t rs_length, bool for_young_gc) const {
-  if (for_young_gc) {
-    return (size_t) (rs_length * predict_young_cards_per_entry_ratio());
+double G1Analytics::predict_card_merge_time_ms(size_t card_num, bool for_young_gc) const {
+  if (for_young_gc || !enough_samples_available(_mixed_cost_per_card_merge_ms_seq)) {
+    return card_num * get_new_lower_zero_bound_prediction(_young_cost_per_card_merge_ms_seq);
   } else {
-    return (size_t) (rs_length * predict_mixed_cards_per_entry_ratio());
+    return card_num * get_new_lower_zero_bound_prediction(_mixed_cost_per_card_merge_ms_seq);
   }
 }
 
-double G1Analytics::predict_rs_scan_time_ms(size_t card_num, bool for_young_gc) const {
-  if (for_young_gc) {
-    return card_num * get_new_prediction(_young_only_cost_per_remset_card_ms_seq);
+double G1Analytics::predict_card_scan_time_ms(size_t card_num, bool for_young_gc) const {
+  if (for_young_gc || !enough_samples_available(_mixed_cost_per_card_scan_ms_seq)) {
+    return card_num * get_new_lower_zero_bound_prediction(_young_cost_per_card_scan_ms_seq);
   } else {
-    return predict_mixed_rs_scan_time_ms(card_num);
-  }
-}
-
-double G1Analytics::predict_mixed_rs_scan_time_ms(size_t card_num) const {
-  if (_mixed_cost_per_remset_card_ms_seq->num() < 3) {
-    return card_num * get_new_prediction(_young_only_cost_per_remset_card_ms_seq);
-  } else {
-    return card_num * get_new_prediction(_mixed_cost_per_remset_card_ms_seq);
+    return card_num * get_new_lower_zero_bound_prediction(_mixed_cost_per_card_scan_ms_seq);
   }
 }
 
 double G1Analytics::predict_object_copy_time_ms_during_cm(size_t bytes_to_copy) const {
-  if (_cost_per_byte_ms_during_cm_seq->num() < 3) {
-    return (1.1 * bytes_to_copy) * get_new_prediction(_cost_per_byte_ms_seq);
+  if (!enough_samples_available(_cost_per_byte_ms_during_cm_seq)) {
+    return (1.1 * bytes_to_copy) * get_new_lower_zero_bound_prediction(_copy_cost_per_byte_ms_seq);
   } else {
-    return bytes_to_copy * get_new_prediction(_cost_per_byte_ms_during_cm_seq);
+    return bytes_to_copy * get_new_lower_zero_bound_prediction(_cost_per_byte_ms_during_cm_seq);
   }
 }
 
@@ -301,36 +280,32 @@ double G1Analytics::predict_object_copy_time_ms(size_t bytes_to_copy, bool durin
   if (during_concurrent_mark) {
     return predict_object_copy_time_ms_during_cm(bytes_to_copy);
   } else {
-    return bytes_to_copy * get_new_prediction(_cost_per_byte_ms_seq);
+    return bytes_to_copy * get_new_lower_zero_bound_prediction(_copy_cost_per_byte_ms_seq);
   }
 }
 
-double G1Analytics::predict_cost_per_byte_ms() const {
-  return get_new_prediction(_cost_per_byte_ms_seq);
-}
-
 double G1Analytics::predict_constant_other_time_ms() const {
-  return get_new_prediction(_constant_other_time_ms_seq);
+  return get_new_lower_zero_bound_prediction(_constant_other_time_ms_seq);
 }
 
 double G1Analytics::predict_young_other_time_ms(size_t young_num) const {
-  return young_num * get_new_prediction(_young_other_cost_per_region_ms_seq);
+  return young_num * get_new_lower_zero_bound_prediction(_young_other_cost_per_region_ms_seq);
 }
 
 double G1Analytics::predict_non_young_other_time_ms(size_t non_young_num) const {
-  return non_young_num * get_new_prediction(_non_young_other_cost_per_region_ms_seq);
+  return non_young_num * get_new_lower_zero_bound_prediction(_non_young_other_cost_per_region_ms_seq);
 }
 
 double G1Analytics::predict_remark_time_ms() const {
-  return get_new_prediction(_concurrent_mark_remark_times_ms);
+  return get_new_lower_zero_bound_prediction(_concurrent_mark_remark_times_ms);
 }
 
 double G1Analytics::predict_cleanup_time_ms() const {
-  return get_new_prediction(_concurrent_mark_cleanup_times_ms);
+  return get_new_lower_zero_bound_prediction(_concurrent_mark_cleanup_times_ms);
 }
 
 size_t G1Analytics::predict_rs_length() const {
-  return get_new_size_prediction(_rs_length_seq) + get_new_prediction(_rs_length_diff_seq);
+  return get_new_size_prediction(_rs_length_seq) + get_new_size_prediction(_rs_length_diff_seq);
 }
 
 size_t G1Analytics::predict_pending_cards() const {

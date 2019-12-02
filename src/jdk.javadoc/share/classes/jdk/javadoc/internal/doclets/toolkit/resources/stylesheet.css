@@ -40,13 +40,6 @@ a[href]:hover, a[href]:focus {
 a[name] {
     color:#353833;
 }
-a[name]:before, a[name]:target, a[id]:before, a[id]:target {
-    content:"";
-    display:inline-block;
-    position:relative;
-    padding-top:129px;
-    margin-top:-129px;
-}
 pre {
     font-family:'DejaVu Sans Mono', monospace;
     font-size:14px;
@@ -131,14 +124,19 @@ button {
 /*
  * Styles for navigation bar.
  */
-.navPadding {
-    padding-top: 107px;
-}
-.fixedNav {
+.flexBox {
     position:fixed;
-    width:100%;
-    z-index:999;
-    background-color:#ffffff;
+    display:flex;
+    flex-direction:column;
+    height: 100%;
+    width: 100%;
+}
+.flexHeader {
+    flex: 0 0 auto;
+}
+.flexContent {
+    flex: 1 1 auto;
+    overflow-y: auto;
 }
 .topNav {
     background-color:#4D7A97;
@@ -632,7 +630,7 @@ ul.ui-autocomplete  li {
     background-size:12px;
     border:0 none;
     width:16px;
-    height:17px;
+    height:16px;
     position:relative;
     left:-4px;
     top:-4px;
@@ -649,8 +647,8 @@ ul.ui-autocomplete  li {
     font-style:italic;
     font-size:12px;
 }
-.searchTagResult:before, .searchTagResult:target {
-    color:red;
+.searchTagResult:target {
+    background-color:yellow;
 }
 .moduleGraph span {
     display:none;

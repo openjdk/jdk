@@ -54,7 +54,7 @@ inline bool ZForwarding::is_pinned() const {
 }
 
 inline void ZForwarding::set_pinned() {
-  Atomic::store(true, &_pinned);
+  Atomic::store(&_pinned, true);
 }
 
 inline bool ZForwarding::inc_refcount() {
@@ -63,7 +63,7 @@ inline bool ZForwarding::inc_refcount() {
   while (refcount > 0) {
     const uint32_t old_refcount = refcount;
     const uint32_t new_refcount = old_refcount + 1;
-    const uint32_t prev_refcount = Atomic::cmpxchg(new_refcount, &_refcount, old_refcount);
+    const uint32_t prev_refcount = Atomic::cmpxchg(&_refcount, old_refcount, new_refcount);
     if (prev_refcount == old_refcount) {
       return true;
     }
@@ -76,7 +76,7 @@ inline bool ZForwarding::inc_refcount() {
 
 inline bool ZForwarding::dec_refcount() {
   assert(_refcount > 0, "Invalid state");
-  return Atomic::sub(1u, &_refcount) == 0u;
+  return Atomic::sub(&_refcount, 1u) == 0u;
 }
 
 inline bool ZForwarding::retain_page() {
@@ -139,7 +139,7 @@ inline uintptr_t ZForwarding::insert(uintptr_t from_index, uintptr_t to_offset, 
   const ZForwardingEntry old_entry; // Empty
 
   for (;;) {
-    const ZForwardingEntry prev_entry = Atomic::cmpxchg(new_entry, entries() + *cursor, old_entry);
+    const ZForwardingEntry prev_entry = Atomic::cmpxchg(entries() + *cursor, old_entry, new_entry);
     if (!prev_entry.populated()) {
       // Success
       return to_offset;

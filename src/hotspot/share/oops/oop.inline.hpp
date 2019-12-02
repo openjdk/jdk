@@ -35,7 +35,6 @@
 #include "oops/markWord.inline.hpp"
 #include "oops/oop.hpp"
 #include "runtime/atomic.hpp"
-#include "runtime/orderAccess.hpp"
 #include "runtime/os.hpp"
 #include "utilities/align.hpp"
 #include "utilities/macros.hpp"
@@ -61,7 +60,7 @@ void oopDesc::set_mark(markWord m) {
 }
 
 void oopDesc::set_mark_raw(markWord m) {
-  Atomic::store(m, &_mark);
+  Atomic::store(&_mark, m);
 }
 
 void oopDesc::set_mark_raw(HeapWord* mem, markWord m) {
@@ -73,12 +72,12 @@ void oopDesc::release_set_mark(markWord m) {
 }
 
 markWord oopDesc::cas_set_mark(markWord new_mark, markWord old_mark) {
-  uintptr_t v = HeapAccess<>::atomic_cmpxchg_at(new_mark.value(), as_oop(), mark_offset_in_bytes(), old_mark.value());
+  uintptr_t v = HeapAccess<>::atomic_cmpxchg_at(as_oop(), mark_offset_in_bytes(), old_mark.value(), new_mark.value());
   return markWord(v);
 }
 
 markWord oopDesc::cas_set_mark_raw(markWord new_mark, markWord old_mark, atomic_memory_order order) {
-  return Atomic::cmpxchg(new_mark, &_mark, old_mark, order);
+  return Atomic::cmpxchg(&_mark, old_mark, new_mark, order);
 }
 
 void oopDesc::init_mark() {
@@ -110,9 +109,9 @@ Klass* oopDesc::klass_or_null_acquire() const volatile {
     // Workaround for non-const load_acquire parameter.
     const volatile narrowKlass* addr = &_metadata._compressed_klass;
     volatile narrowKlass* xaddr = const_cast<volatile narrowKlass*>(addr);
-    return CompressedKlassPointers::decode(OrderAccess::load_acquire(xaddr));
+    return CompressedKlassPointers::decode(Atomic::load_acquire(xaddr));
   } else {
-    return OrderAccess::load_acquire(&_metadata._klass);
+    return Atomic::load_acquire(&_metadata._klass);
   }
 }
 
@@ -156,10 +155,10 @@ void oopDesc::set_klass(Klass* k) {
 void oopDesc::release_set_klass(HeapWord* mem, Klass* klass) {
   CHECK_SET_KLASS(klass);
   if (UseCompressedClassPointers) {
-    OrderAccess::release_store(compressed_klass_addr(mem),
-                               CompressedKlassPointers::encode_not_null(klass));
+    Atomic::release_store(compressed_klass_addr(mem),
+                          CompressedKlassPointers::encode_not_null(klass));
   } else {
-    OrderAccess::release_store(klass_addr(mem), klass);
+    Atomic::release_store(klass_addr(mem), klass);
   }
 }
 
@@ -356,7 +355,7 @@ oop oopDesc::forwardee() const {
 // The forwardee is used when copying during scavenge and mark-sweep.
 // It does need to clear the low two locking- and GC-related bits.
 oop oopDesc::forwardee_acquire() const {
-  return (oop) OrderAccess::load_acquire(&_mark).decode_pointer();
+  return (oop) Atomic::load_acquire(&_mark).decode_pointer();
 }
 
 // The following method needs to be MT safe.

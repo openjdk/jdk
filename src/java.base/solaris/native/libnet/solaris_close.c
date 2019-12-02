@@ -55,10 +55,6 @@ int NET_RecvFrom(int s, void *buf, int len, unsigned int flags,
     RESTARTABLE_RETURN_INT(recvfrom(s, buf, len, flags, from, fromlen));
 }
 
-int NET_ReadV(int s, const struct iovec * vector, int count) {
-    RESTARTABLE_RETURN_INT(readv(s, vector, count));
-}
-
 int NET_Send(int s, void *msg, int len, unsigned int flags) {
     RESTARTABLE_RETURN_INT(send(s, msg, len, flags));
 }

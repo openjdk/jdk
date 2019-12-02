@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8049432 8069038
+ * @bug 8049432 8069038 8234723
  * @summary New tests for TLS property jdk.tls.client.protocols
  * @summary javax/net/ssl/TLS/TLSClientPropertyTest.java needs to be
  *     updated for JDK-8061210
@@ -40,6 +40,8 @@
  * @run main/othervm TLSClientPropertyTest TLSv1
  * @run main/othervm TLSClientPropertyTest TLSv11
  * @run main/othervm TLSClientPropertyTest TLSv12
+ * @run main/othervm TLSClientPropertyTest TLSv13
+ * @run main/othervm TLSClientPropertyTest TLS
  * @run main/othervm TLSClientPropertyTest WrongProperty
  */
 
@@ -57,7 +59,7 @@ import javax.net.ssl.SSLContext;
  */
 public class TLSClientPropertyTest {
     private final String[] expectedSupportedProtos = new String[] {
-            "SSLv2Hello", "SSLv3", "TLSv1", "TLSv1.1", "TLSv1.2"
+            "SSLv2Hello", "SSLv3", "TLSv1", "TLSv1.1", "TLSv1.2", "TLSv1.3"
     };
 
     public static void main(String[] args) throws Exception {
@@ -77,7 +79,7 @@ public class TLSClientPropertyTest {
             }
             contextProtocol = null;
             expectedDefaultProtos = new String[] {
-                    "TLSv1", "TLSv1.1", "TLSv1.2"
+                    "TLSv1", "TLSv1.1", "TLSv1.2", "TLSv1.3"
             };
             break;
         case "SSLv3":
@@ -101,6 +103,13 @@ public class TLSClientPropertyTest {
             contextProtocol = "TLSv1.2";
             expectedDefaultProtos = new String[] {
                     "TLSv1", "TLSv1.1", "TLSv1.2"
+            };
+            break;
+        case "TLSv13":
+        case "TLS":
+            contextProtocol = "TLSv1.3";
+            expectedDefaultProtos = new String[] {
+                    "TLSv1", "TLSv1.1", "TLSv1.2", "TLSv1.3"
             };
             break;
         case "WrongProperty":

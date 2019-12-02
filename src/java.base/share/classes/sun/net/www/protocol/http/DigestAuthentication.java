@@ -26,19 +26,21 @@
 package sun.net.www.protocol.http;
 
 import java.io.*;
-import java.net.URL;
-import java.net.ProtocolException;
 import java.net.PasswordAuthentication;
-import java.util.Arrays;
-import java.util.Random;
-
-import sun.net.www.HeaderParser;
-import sun.net.NetProperties;
+import java.net.ProtocolException;
+import java.net.URL;
+import java.security.AccessController;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivilegedAction;
-import java.security.AccessController;
+import java.util.Arrays;
 import java.util.Objects;
+import java.util.Random;
+
+import sun.net.NetProperties;
+import sun.net.www.HeaderParser;
+import sun.nio.cs.ISO_8859_1;
+
 import static sun.net.www.protocol.http.HttpURLConnection.HTTP_CONNECT;
 
 /**
@@ -521,11 +523,7 @@ class DigestAuthentication extends AuthenticationInfo {
     };
 
     private String encode(String src, char[] passwd, MessageDigest md) {
-        try {
-            md.update(src.getBytes("ISO-8859-1"));
-        } catch (java.io.UnsupportedEncodingException uee) {
-            assert false;
-        }
+        md.update(src.getBytes(ISO_8859_1.INSTANCE));
         if (passwd != null) {
             byte[] passwdBytes = new byte[passwd.length];
             for (int i=0; i<passwd.length; i++)

@@ -233,6 +233,7 @@ class TimeInstant : public Rep<TimeSource> {
   TimeInstant(jlong ticks) : Rep<TimeSource>(ticks) {}
   friend class GranularTimer;
   friend class ObjectSample;
+  friend class EventEmitter;
   // GC unit tests
   friend class TimePartitionPhasesIteratorTest;
   friend class GCTimerTest;

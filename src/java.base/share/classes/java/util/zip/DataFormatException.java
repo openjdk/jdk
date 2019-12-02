@@ -31,8 +31,7 @@ package java.util.zip;
  * @author      David Connelly
  * @since 1.1
  */
-public
-class DataFormatException extends Exception {
+public class DataFormatException extends Exception {
     @java.io.Serial
     private static final long serialVersionUID = 2219632870893641452L;
 

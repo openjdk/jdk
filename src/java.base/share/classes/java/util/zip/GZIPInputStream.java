@@ -41,8 +41,7 @@ import java.io.EOFException;
  * @since 1.1
  *
  */
-public
-class GZIPInputStream extends InflaterInputStream {
+public class GZIPInputStream extends InflaterInputStream {
     /**
      * CRC-32 for uncompressed data.
      */

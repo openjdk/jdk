@@ -47,6 +47,7 @@
 #include "oops/oop.inline.hpp"
 #include "oops/verifyOopClosure.hpp"
 #include "runtime/arguments.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/icache.hpp"
@@ -749,7 +750,7 @@ void CodeCache::release_exception_cache(ExceptionCache* entry) {
     for (;;) {
       ExceptionCache* purge_list_head = Atomic::load(&_exception_cache_purge_list);
       entry->set_purge_list_next(purge_list_head);
-      if (Atomic::cmpxchg(entry, &_exception_cache_purge_list, purge_list_head) == purge_list_head) {
+      if (Atomic::cmpxchg(&_exception_cache_purge_list, purge_list_head, entry) == purge_list_head) {
         break;
       }
     }

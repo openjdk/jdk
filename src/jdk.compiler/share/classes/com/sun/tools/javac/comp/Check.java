@@ -3486,6 +3486,11 @@ public class Check {
                     duplicateErasureError(pos, sym, byName);
                     sym.flags_field |= CLASH;
                     return true;
+                } else if ((sym.flags() & MATCH_BINDING) != 0 &&
+                           (byName.flags() & MATCH_BINDING) != 0 &&
+                           (byName.flags() & MATCH_BINDING_TO_OUTER) == 0) {
+                    //this error will be reported separatelly in MatchBindingsComputer
+                    return false;
                 } else {
                     duplicateError(pos, byName);
                     return false;
