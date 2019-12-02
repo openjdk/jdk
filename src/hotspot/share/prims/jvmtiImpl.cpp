@@ -939,6 +939,16 @@ JvmtiDeferredEvent JvmtiDeferredEvent::dynamic_code_generated_event(
   return event;
 }
 
+JvmtiDeferredEvent JvmtiDeferredEvent::class_unload_event(const char* name) {
+  JvmtiDeferredEvent event = JvmtiDeferredEvent(TYPE_CLASS_UNLOAD);
+  // Need to make a copy of the name since we don't know how long
+  // the event poster will keep it around after we enqueue the
+  // deferred event and return. strdup() failure is handled in
+  // the post() routine below.
+  event._event_data.class_unload.name = os::strdup(name);
+  return event;
+}
+
 void JvmtiDeferredEvent::post() {
   assert(Thread::current()->is_service_thread(),
          "Service thread must post enqueued events");
@@ -967,6 +977,17 @@ void JvmtiDeferredEvent::post() {
       if (_event_data.dynamic_code_generated.name != NULL) {
         // release our copy
         os::free((void *)_event_data.dynamic_code_generated.name);
+      }
+      break;
+    }
+    case TYPE_CLASS_UNLOAD: {
+      JvmtiExport::post_class_unload_internal(
+        // if strdup failed give the event a default name
+        (_event_data.class_unload.name == NULL)
+          ? "unknown_class" : _event_data.class_unload.name);
+      if (_event_data.class_unload.name != NULL) {
+        // release our copy
+        os::free((void *)_event_data.class_unload.name);
       }
       break;
     }

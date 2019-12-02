@@ -1349,20 +1349,27 @@ void JvmtiExport::post_class_unload(Klass* klass) {
   if (JvmtiEnv::get_phase() < JVMTI_PHASE_PRIMORDIAL) {
     return;
   }
-  Thread *thread = Thread::current();
+
+  // postings to the service thread so that it can perform them in a safe
+  // context and in-order.
+  MutexLocker ml(Service_lock, Mutex::_no_safepoint_check_flag);
+  ResourceMark rm;
+  // JvmtiDeferredEvent copies the string.
+  JvmtiDeferredEvent event = JvmtiDeferredEvent::class_unload_event(klass->name()->as_C_string());
+  JvmtiDeferredEventQueue::enqueue(event);
+}
+
+
+void JvmtiExport::post_class_unload_internal(const char* name) {
+  if (JvmtiEnv::get_phase() < JVMTI_PHASE_PRIMORDIAL) {
+    return;
+  }
+  assert(Thread::current()->is_service_thread(), "must be called from ServiceThread");
+  JavaThread *thread = JavaThread::current();
   HandleMark hm(thread);
 
   EVT_TRIG_TRACE(EXT_EVENT_CLASS_UNLOAD, ("[?] Trg Class Unload triggered" ));
   if (JvmtiEventController::is_enabled((jvmtiEvent)EXT_EVENT_CLASS_UNLOAD)) {
-    assert(thread->is_VM_thread(), "wrong thread");
-
-    // get JavaThread for whom we are proxy
-    Thread *calling_thread = ((VMThread *)thread)->vm_operation()->calling_thread();
-    if (!calling_thread->is_Java_thread()) {
-      // cannot post an event to a non-JavaThread
-      return;
-    }
-    JavaThread *real_thread = (JavaThread *)calling_thread;
 
     JvmtiEnvIterator it;
     for (JvmtiEnv* env = it.first(); env != NULL; env = it.next(env)) {
@@ -1370,33 +1377,14 @@ void JvmtiExport::post_class_unload(Klass* klass) {
         continue;
       }
       if (env->is_enabled((jvmtiEvent)EXT_EVENT_CLASS_UNLOAD)) {
-        EVT_TRACE(EXT_EVENT_CLASS_UNLOAD, ("[?] Evt Class Unload sent %s",
-                  klass==NULL? "NULL" : klass->external_name() ));
+        EVT_TRACE(EXT_EVENT_CLASS_UNLOAD, ("[?] Evt Class Unload sent %s", name));
 
-        // do everything manually, since this is a proxy - needs special care
-        JNIEnv* jni_env = real_thread->jni_environment();
-        jthread jt = (jthread)JNIHandles::make_local(real_thread, real_thread->threadObj());
-        jclass jk = (jclass)JNIHandles::make_local(real_thread, klass->java_mirror());
-
-        // Before we call the JVMTI agent, we have to set the state in the
-        // thread for which we are proxying.
-        JavaThreadState prev_state = real_thread->thread_state();
-        assert(((Thread *)real_thread)->is_ConcurrentGC_thread() ||
-               (real_thread->is_Java_thread() && prev_state == _thread_blocked),
-               "should be ConcurrentGCThread or JavaThread at safepoint");
-        real_thread->set_thread_state(_thread_in_native);
-
+        JvmtiEventMark jem(thread);
+        JvmtiJavaThreadEventTransition jet(thread);
         jvmtiExtensionEvent callback = env->ext_callbacks()->ClassUnload;
         if (callback != NULL) {
-          (*callback)(env->jvmti_external(), jni_env, jt, jk);
+          (*callback)(env->jvmti_external(), jem.jni_env(), name);
         }
-
-        assert(real_thread->thread_state() == _thread_in_native,
-               "JavaThread should be in native");
-        real_thread->set_thread_state(prev_state);
-
-        JNIHandles::destroy_local(jk);
-        JNIHandles::destroy_local(jt);
       }
     }
   }
