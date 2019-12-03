@@ -32,6 +32,8 @@
 public class TextBlockLang {
     public static void main(String... args) {
         test1();
+        test2();
+        test3();
     }
 
     /*
@@ -75,6 +77,30 @@ public class TextBlockLang {
             """, 4);
     }
 
+    /*
+     * Test escape-S.
+     */
+    static void test2() {
+        if ('\s' != ' ') {
+            throw new RuntimeException("Failed character escape-S");
+        }
+        EQ("\s", " ");
+        EQ("""
+           \s
+           """, " \n");
+    }
+
+    /*
+     * Test escape line terminator.
+     */
+    static void test3() {
+        EQ("""
+           abc \
+           """, "abc ");
+        EQ("\\\n".translateEscapes(), "");
+        EQ("\\\r\n".translateEscapes(), "");
+        EQ("\\\r".translateEscapes(), "");
+    }
 
     /*
      * Raise an exception if the string is not the expected length.

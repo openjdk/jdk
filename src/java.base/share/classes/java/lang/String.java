@@ -3062,6 +3062,11 @@ public final class String
      *     <td>{@code U+000D}</td>
      *   </tr>
      *   <tr>
+     *     <th scope="row">{@code \u005Cs}</th>
+     *     <td>space</td>
+     *     <td>{@code U+0020}</td>
+     *   </tr>
+     *   <tr>
      *     <th scope="row">{@code \u005C"}</th>
      *     <td>double quote</td>
      *     <td>{@code U+0022}</td>
@@ -3080,6 +3085,11 @@ public final class String
      *     <th scope="row">{@code \u005C0 - \u005C377}</th>
      *     <td>octal escape</td>
      *     <td>code point equivalents</td>
+     *   </tr>
+     *   <tr>
+     *     <th scope="row">{@code \u005C<line-terminator>}</th>
+     *     <td>continuation</td>
+     *     <td>discard</td>
      *   </tr>
      *   </tbody>
      * </table>
@@ -3124,6 +3134,9 @@ public final class String
                 case 'r':
                     ch = '\r';
                     break;
+                case 's':
+                    ch = ' ';
+                    break;
                 case 't':
                     ch = '\t';
                     break;
@@ -3146,6 +3159,13 @@ public final class String
                     }
                     ch = (char)code;
                     break;
+                case '\n':
+                    continue;
+                case '\r':
+                    if (from < length && chars[from] == '\n') {
+                        from++;
+                    }
+                    continue;
                 default: {
                     String msg = String.format(
                         "Invalid escape sequence: \\%c \\\\u%04X",

@@ -146,6 +146,15 @@ public class UnicodeReader {
         putChar(ch, scan);
     }
 
+    protected void nextChar(boolean skip) {
+        if (!skip) {
+            sbuf = ArrayUtils.ensureCapacity(sbuf, sp);
+            sbuf[sp++] = ch;
+        }
+
+        scanChar();
+    }
+
     Name name() {
         return names.fromChars(sbuf, 0, sp);
     }

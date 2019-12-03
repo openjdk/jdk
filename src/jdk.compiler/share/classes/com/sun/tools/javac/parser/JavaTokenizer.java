@@ -91,17 +91,13 @@ public class JavaTokenizer {
      */
     protected UnicodeReader reader;
 
-    /** Should the string stripped of indentation?
+    /** If is a text block
      */
-    protected boolean shouldStripIndent;
+    protected boolean isTextBlock;
 
-    /** Should the string's escapes be translated?
+    /** If contains escape sequences
      */
-    protected boolean shouldTranslateEscapes;
-
-    /** Has the string broken escapes?
-     */
-    protected boolean hasBrokenEscapes;
+    protected boolean hasEscapeSequences;
 
     protected ScannerFactory fac;
 
@@ -181,91 +177,72 @@ public class JavaTokenizer {
     }
 
     /** Read next character in character or string literal and copy into sbuf.
+     *      pos - start of literal offset
+     *      translateEscapesNow - true if String::translateEscapes is not available
+     *                            in the java.base libs. Occurs during bootstrapping.
+     *      multiline - true if scanning a text block. Allows newlines to be embedded
+     *                  in the result.
      */
-    private void scanLitChar(int pos) {
-        if (reader.ch == '\\') {
+    private void scanLitChar(int pos, boolean translateEscapesNow, boolean multiline) {
+         if (reader.ch == '\\') {
             if (reader.peekChar() == '\\' && !reader.isUnicode()) {
                 reader.skipChar();
-                reader.putChar('\\', true);
+                if (!translateEscapesNow) {
+                    reader.putChar(false);
+                }
+                reader.putChar(true);
             } else {
-                reader.scanChar();
+                reader.nextChar(translateEscapesNow);
                 switch (reader.ch) {
                 case '0': case '1': case '2': case '3':
                 case '4': case '5': case '6': case '7':
                     char leadch = reader.ch;
                     int oct = reader.digit(pos, 8);
-                    reader.scanChar();
+                    reader.nextChar(translateEscapesNow);
                     if ('0' <= reader.ch && reader.ch <= '7') {
                         oct = oct * 8 + reader.digit(pos, 8);
-                        reader.scanChar();
+                        reader.nextChar(translateEscapesNow);
                         if (leadch <= '3' && '0' <= reader.ch && reader.ch <= '7') {
                             oct = oct * 8 + reader.digit(pos, 8);
-                            reader.scanChar();
+                            reader.nextChar(translateEscapesNow);
                         }
                     }
-                    reader.putChar((char)oct);
-                    break;
-                case 'b':
-                    reader.putChar('\b', true); break;
-                case 't':
-                    reader.putChar('\t', true); break;
-                case 'n':
-                    reader.putChar('\n', true); break;
-                case 'f':
-                    reader.putChar('\f', true); break;
-                case 'r':
-                    reader.putChar('\r', true); break;
-                case '\'':
-                    reader.putChar('\'', true); break;
-                case '\"':
-                    reader.putChar('\"', true); break;
-                case '\\':
-                    reader.putChar('\\', true); break;
-                default:
-                    lexError(reader.bp, Errors.IllegalEscChar);
-                }
-            }
-        } else if (reader.bp != reader.buflen) {
-            reader.putChar(true);
-        }
-    }
-
-    /** Read next character in character or string literal and copy into sbuf
-     *  without translating escapes. Used by text blocks to preflight verify
-     *  escapes sequences.
-     */
-    private void scanLitCharRaw(int pos) {
-        if (reader.ch == '\\') {
-            if (reader.peekChar() == '\\' && !reader.isUnicode()) {
-                reader.skipChar();
-                reader.putChar('\\', false);
-                reader.putChar('\\', true);
-            } else {
-                reader.putChar('\\', true);
-                switch (reader.ch) {
-                case '0': case '1': case '2': case '3':
-                case '4': case '5': case '6': case '7':
-                    char leadch = reader.ch;
-                    reader.putChar(true);
-                    if ('0' <= reader.ch && reader.ch <= '7') {
-                        reader.putChar(true);
-                        if (leadch <= '3' && '0' <= reader.ch && reader.ch <= '7') {
-                            reader.putChar(true);
-                        }
+                    if (translateEscapesNow) {
+                        reader.putChar((char)oct);
                     }
                     break;
-                // Effectively list of valid escape sequences.
                 case 'b':
+                    reader.putChar(translateEscapesNow ? '\b' : 'b', true); break;
                 case 't':
+                    reader.putChar(translateEscapesNow ? '\t' : 't', true); break;
                 case 'n':
+                    reader.putChar(translateEscapesNow ? '\n' : 'n', true); break;
                 case 'f':
+                    reader.putChar(translateEscapesNow ? '\f' : 'f', true); break;
                 case 'r':
+                    reader.putChar(translateEscapesNow ? '\r' : 'r', true); break;
                 case '\'':
                 case '\"':
                 case '\\':
                     reader.putChar(true); break;
+                case 's':
+                    checkSourceLevel(reader.bp, Feature.TEXT_BLOCKS);
+                    reader.putChar(translateEscapesNow ? ' ' : 's', true); break;
+                case '\n':
+                case '\r':
+                    if (!multiline) {
+                        lexError(reader.bp, Errors.IllegalEscChar);
+                    } else {
+                        int start = reader.bp;
+                        checkSourceLevel(reader.bp, Feature.TEXT_BLOCKS);
+                        if (reader.ch == '\r' && reader.peekChar() == '\n') {
+                           reader.nextChar(translateEscapesNow);
+                        }
+                        reader.nextChar(translateEscapesNow);
+                        processLineTerminator(start, reader.bp);
+                    }
+                    break;
                 default:
-                    hasBrokenEscapes = true;
                     lexError(reader.bp, Errors.IllegalEscChar);
                 }
             }
@@ -276,7 +253,7 @@ public class JavaTokenizer {
 
     /** Interim access to String methods used to support text blocks.
      *  Required to handle bootstrapping with pre-text block jdks.
-     *  Could be reworked in the 'next' jdk.
+     *  Should be replaced with direct calls in the 'next' jdk.
      */
     static class TextBlockSupport {
         /** Reflection method to remove incidental indentation.
@@ -429,11 +406,8 @@ public class JavaTokenizer {
      */
     private void scanString(int pos) {
         // Clear flags.
-        shouldStripIndent = false;
-        shouldTranslateEscapes = false;
-        hasBrokenEscapes = false;
-        // Check if text block string methods are present.
-        boolean hasTextBlockSupport = TextBlockSupport.hasSupport();
+        isTextBlock = false;
+        hasEscapeSequences = false;
         // Track the end of first line for error recovery.
         int firstEOLN = -1;
         // Attempt to scan for up to 3 double quotes.
@@ -449,36 +423,28 @@ public class JavaTokenizer {
         case 3: // Starting a text block.
             // Check if preview feature is enabled for text blocks.
             checkSourceLevel(pos, Feature.TEXT_BLOCKS);
-            // Only proceed if text block string methods are present.
-            if (hasTextBlockSupport) {
-                // Indicate that the final string should have incidental indentation removed.
-                shouldStripIndent = true;
-                // Verify the open delimiter sequence.
-                boolean hasOpenEOLN = false;
-                while (reader.bp < reader.buflen && Character.isWhitespace(reader.ch)) {
-                    hasOpenEOLN = isEOLN();
-                    if (hasOpenEOLN) {
-                        break;
-                    }
-                    reader.scanChar();
-                }
-                // Error if the open delimiter sequence not is """<Whitespace>*<LineTerminator>.
-                if (!hasOpenEOLN) {
-                    lexError(reader.bp, Errors.IllegalTextBlockOpen);
-                    return;
-                }
-                // Skip line terminator.
-                int start = reader.bp;
-                if (isCRLF()) {
-                    reader.scanChar();
+            isTextBlock = true;
+            // Verify the open delimiter sequence.
+            boolean hasOpenEOLN = false;
+            while (reader.bp < reader.buflen && Character.isWhitespace(reader.ch)) {
+                hasOpenEOLN = isEOLN();
+                if (hasOpenEOLN) {
+                    break;
                 }
                 reader.scanChar();
-                processLineTerminator(start, reader.bp);
-            } else {
-                // No text block string methods are present, so reset and treat like string literal.
-                reader.reset(pos);
-                openCount = countChar('\"', 1);
             }
+            // Error if the open delimiter sequence not is """<Whitespace>*<LineTerminator>.
+            if (!hasOpenEOLN) {
+                lexError(reader.bp, Errors.IllegalTextBlockOpen);
+                return;
+            }
+            // Skip line terminator.
+            int start = reader.bp;
+            if (isCRLF()) {
+                reader.scanChar();
+            }
+            reader.scanChar();
+            processLineTerminator(start, reader.bp);
             break;
         }
         // While characters are available.
@@ -513,15 +479,11 @@ public class JavaTokenizer {
                 }
             } else if (reader.ch == '\\') {
                 // Handle escape sequences.
-                if (hasTextBlockSupport) {
-                    // Indicate that the final string should have escapes translated.
-                    shouldTranslateEscapes = true;
-                    // Validate escape sequence and add to string buffer.
-                    scanLitCharRaw(pos);
-                } else {
-                    // Translate escape sequence and add result to string buffer.
-                    scanLitChar(pos);
-                }
+                hasEscapeSequences = true;
+                // Translate escapes immediately if TextBlockSupport is not available
+                // during bootstrapping.
+                boolean translateEscapesNow = !TextBlockSupport.hasSupport();
+                scanLitChar(pos, translateEscapesNow, openCount != 1);
             } else {
                 // Add character to string buffer.
                 reader.putChar(true);
@@ -961,7 +923,7 @@ public class JavaTokenizer {
                     } else {
                         if (isEOLN())
                             lexError(pos, Errors.IllegalLineEndInCharLit);
-                        scanLitChar(pos);
+                        scanLitChar(pos, true, false);
                         if (reader.ch == '\'') {
                             reader.scanChar();
                             tk = TokenKind.CHARLITERAL;
@@ -1026,7 +988,7 @@ public class JavaTokenizer {
                     // Get characters from string buffer.
                     String string = reader.chars();
                     // If a text block.
-                    if (shouldStripIndent) {
+                    if (isTextBlock && TextBlockSupport.hasSupport()) {
                         // Verify that the incidental indentation is consistent.
                         if (lint.isEnabled(LintCategory.TEXT_BLOCKS)) {
                             Set<TextBlockSupport.WhitespaceChecks> checks =
@@ -1041,11 +1003,19 @@ public class JavaTokenizer {
                             }
                         }
                         // Remove incidental indentation.
-                        string = TextBlockSupport.stripIndent(string);
+                        try {
+                            string = TextBlockSupport.stripIndent(string);
+                        } catch (Exception ex) {
+                            // Error already reported, just use unstripped string.
+                        }
                     }
                     // Translate escape sequences if present.
-                    if (shouldTranslateEscapes && !hasBrokenEscapes) {
-                        string = TextBlockSupport.translateEscapes(string);
+                    if (hasEscapeSequences && TextBlockSupport.hasSupport()) {
+                        try {
+                            string = TextBlockSupport.translateEscapes(string);
+                        } catch (Exception ex) {
+                            // Error already reported, just use untranslated string.
+                        }
                     }
                     // Build string token.
                     return new StringToken(tk, pos, endPos, string, comments);
