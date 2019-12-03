@@ -1725,6 +1725,23 @@ void GraphBuilder::access_field(Bytecodes::Code code) {
         Value replacement = !needs_patching ? _memory->load(load) : load;
         if (replacement != load) {
           assert(replacement->is_linked() || !replacement->can_be_linked(), "should already by linked");
+          // Writing an (integer) value to a boolean, byte, char or short field includes an implicit narrowing
+          // conversion. Emit an explicit conversion here to get the correct field value after the write.
+          BasicType bt = field->type()->basic_type();
+          switch (bt) {
+          case T_BOOLEAN:
+          case T_BYTE:
+            replacement = append(new Convert(Bytecodes::_i2b, replacement, as_ValueType(bt)));
+            break;
+          case T_CHAR:
+            replacement = append(new Convert(Bytecodes::_i2c, replacement, as_ValueType(bt)));
+            break;
+          case T_SHORT:
+            replacement = append(new Convert(Bytecodes::_i2s, replacement, as_ValueType(bt)));
+            break;
+          default:
+            break;
+          }
           push(type, replacement);
         } else {
           push(type, append(load));
