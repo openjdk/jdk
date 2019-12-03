@@ -74,7 +74,7 @@ public class Timeouts {
         try (Socket s = new Socket()) {
             SocketAddress remote = Utils.refusingEndpoint();
             try {
-                s.connect(remote, 2000);
+                s.connect(remote, 10000);
             } catch (ConnectException expected) { }
         }
     }
