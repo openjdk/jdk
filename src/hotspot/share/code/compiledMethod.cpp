@@ -489,7 +489,20 @@ static bool clean_if_nmethod_is_unloaded(CompiledICorStaticCall *ic, address add
   if (nm != NULL) {
     // Clean inline caches pointing to both zombie and not_entrant methods
     if (clean_all || !nm->is_in_use() || nm->is_unloading() || (nm->method()->code() != nm)) {
-      if (!ic->set_to_clean(from->is_alive())) {
+      // Inline cache cleaning should only be initiated on CompiledMethods that have been
+      // observed to be is_alive(). However, with concurrent code cache unloading, it is
+      // possible that by now, the state has been racingly flipped to unloaded if the nmethod
+      // being cleaned is_unloading(). This is fine, because if that happens, then the inline
+      // caches have already been cleaned under the same CompiledICLocker that we now hold during
+      // inline cache cleaning, and we will simply walk the inline caches again, and likely not
+      // find much of interest to clean. However, this race prevents us from asserting that the
+      // nmethod is_alive(). The is_unloading() function is completely monotonic; once set due
+      // to an oop dying, it remains set forever until freed. Because of that, all unloaded
+      // nmethods are is_unloading(), but notably, an unloaded nmethod may also subsequently
+      // become zombie (when the sweeper converts it to zombie). Therefore, the most precise
+      // sanity check we can check for in this context is to not allow zombies.
+      assert(!from->is_zombie(), "should not clean inline caches on zombies");
+      if (!ic->set_to_clean(!from->is_unloading())) {
         return false;
       }
       assert(ic->is_clean(), "nmethod " PTR_FORMAT "not clean %s", p2i(from), from->method()->name_and_sig_as_C_string());
