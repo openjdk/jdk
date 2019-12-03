@@ -43,7 +43,7 @@ private:
 
   void advise_view(uintptr_t addr, size_t size, int advice) const;
   void pretouch_view(uintptr_t addr, size_t size) const;
-  void map_view(const ZPhysicalMemory& pmem, uintptr_t addr, bool pretouch) const;
+  void map_view(const ZPhysicalMemory& pmem, uintptr_t addr) const;
   void unmap_view(const ZPhysicalMemory& pmem, uintptr_t addr) const;
 
 public:
@@ -59,6 +59,8 @@ public:
   void free(const ZPhysicalMemory& pmem);
 
   uintptr_t nmt_address(uintptr_t offset) const;
+
+  void pretouch(uintptr_t offset, size_t size) const;
 
   void map(const ZPhysicalMemory& pmem, uintptr_t offset) const;
   void unmap(const ZPhysicalMemory& pmem, uintptr_t offset) const;

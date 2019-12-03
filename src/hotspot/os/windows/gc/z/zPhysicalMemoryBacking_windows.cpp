@@ -149,7 +149,7 @@ void ZPhysicalMemoryBacking::pretouch_view(uintptr_t addr, size_t size) const {
   os::pretouch_memory((void*)addr, (void*)(addr + size), page_size);
 }
 
-void ZPhysicalMemoryBacking::map_view(const ZPhysicalMemory& pmem, uintptr_t addr, bool pretouch) const {
+void ZPhysicalMemoryBacking::map_view(const ZPhysicalMemory& pmem, uintptr_t addr) const {
   const size_t nsegments = pmem.nsegments();
   size_t size = 0;
 
@@ -158,11 +158,6 @@ void ZPhysicalMemoryBacking::map_view(const ZPhysicalMemory& pmem, uintptr_t add
     const ZPhysicalMemorySegment& segment = pmem.segment(i);
     _file.map(addr + size, segment.size(), segment.start());
     size += segment.size();
-  }
-
-  // Pre-touch memory
-  if (pretouch) {
-    pretouch_view(addr, size);
   }
 }
 
@@ -175,15 +170,27 @@ uintptr_t ZPhysicalMemoryBacking::nmt_address(uintptr_t offset) const {
   return ZAddress::marked0(offset);
 }
 
+void ZPhysicalMemoryBacking::pretouch(uintptr_t offset, size_t size) const {
+  if (ZVerifyViews) {
+    // Pre-touch good view
+    pretouch_view(ZAddress::good(offset), size);
+  } else {
+    // Pre-touch all views
+    pretouch_view(ZAddress::marked0(offset), size);
+    pretouch_view(ZAddress::marked1(offset), size);
+    pretouch_view(ZAddress::remapped(offset), size);
+  }
+}
+
 void ZPhysicalMemoryBacking::map(const ZPhysicalMemory& pmem, uintptr_t offset) const {
   if (ZVerifyViews) {
     // Map good view
-    map_view(pmem, ZAddress::good(offset), AlwaysPreTouch);
+    map_view(pmem, ZAddress::good(offset));
   } else {
     // Map all views
-    map_view(pmem, ZAddress::marked0(offset), AlwaysPreTouch);
-    map_view(pmem, ZAddress::marked1(offset), AlwaysPreTouch);
-    map_view(pmem, ZAddress::remapped(offset), AlwaysPreTouch);
+    map_view(pmem, ZAddress::marked0(offset));
+    map_view(pmem, ZAddress::marked1(offset));
+    map_view(pmem, ZAddress::remapped(offset));
   }
 }
 
@@ -202,7 +209,7 @@ void ZPhysicalMemoryBacking::unmap(const ZPhysicalMemory& pmem, uintptr_t offset
 void ZPhysicalMemoryBacking::debug_map(const ZPhysicalMemory& pmem, uintptr_t offset) const {
   // Map good view
   assert(ZVerifyViews, "Should be enabled");
-  map_view(pmem, ZAddress::good(offset), false /* pretouch */);
+  map_view(pmem, ZAddress::good(offset));
 }
 
 void ZPhysicalMemoryBacking::debug_unmap(const ZPhysicalMemory& pmem, uintptr_t offset) const {

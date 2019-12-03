@@ -57,7 +57,7 @@ ZHeap* ZHeap::_heap = NULL;
 ZHeap::ZHeap() :
     _workers(),
     _object_allocator(),
-    _page_allocator(heap_min_size(), heap_initial_size(), heap_max_size(), heap_max_reserve_size()),
+    _page_allocator(&_workers, heap_min_size(), heap_initial_size(), heap_max_size(), heap_max_reserve_size()),
     _page_table(),
     _forwarding_table(),
     _mark(&_workers, &_page_table),

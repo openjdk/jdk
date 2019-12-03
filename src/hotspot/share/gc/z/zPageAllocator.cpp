@@ -33,7 +33,9 @@
 #include "gc/z/zPageCache.inline.hpp"
 #include "gc/z/zSafeDelete.inline.hpp"
 #include "gc/z/zStat.hpp"
+#include "gc/z/zTask.hpp"
 #include "gc/z/zTracer.inline.hpp"
+#include "gc/z/zWorkers.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/init.hpp"
 #include "runtime/java.hpp"
@@ -95,7 +97,8 @@ public:
 
 ZPage* const ZPageAllocator::gc_marker = (ZPage*)-1;
 
-ZPageAllocator::ZPageAllocator(size_t min_capacity,
+ZPageAllocator::ZPageAllocator(ZWorkers* workers,
+                               size_t min_capacity,
                                size_t initial_capacity,
                                size_t max_capacity,
                                size_t max_reserve) :
@@ -150,13 +153,42 @@ ZPageAllocator::ZPageAllocator(size_t min_capacity,
   }
 
   // Pre-map initial capacity
-  prime_cache(initial_capacity);
+  prime_cache(workers, initial_capacity);
 
   // Successfully initialized
   _initialized = true;
 }
 
-void ZPageAllocator::prime_cache(size_t size) {
+class ZPreTouchTask : public ZTask {
+private:
+  const ZPhysicalMemoryManager* const _physical;
+  volatile uintptr_t                  _start;
+  const uintptr_t                     _end;
+
+public:
+  ZPreTouchTask(const ZPhysicalMemoryManager* physical, uintptr_t start, uintptr_t end) :
+      ZTask("ZPreTouchTask"),
+      _physical(physical),
+      _start(start),
+      _end(end) {}
+
+  virtual void work() {
+    for (;;) {
+      // Get granule offset
+      const size_t size = ZGranuleSize;
+      const uintptr_t offset = Atomic::add(&_start, size) - size;
+      if (offset >= _end) {
+        // Done
+        break;
+      }
+
+      // Pre-touch granule
+      _physical->pretouch(offset, size);
+    }
+  }
+};
+
+void ZPageAllocator::prime_cache(ZWorkers* workers, size_t size) {
   // Allocate physical memory
   const ZPhysicalMemory pmem = _physical.alloc(size);
   guarantee(!pmem.is_null(), "Invalid size");
@@ -171,6 +203,12 @@ void ZPageAllocator::prime_cache(size_t size) {
   // Map page
   map_page(page);
   page->set_pre_mapped();
+
+  if (AlwaysPreTouch) {
+    // Pre-touch page
+    ZPreTouchTask task(&_physical, page->start(), page->end());
+    workers->run_parallel(&task);
+  }
 
   // Add page to cache
   page->set_last_used();

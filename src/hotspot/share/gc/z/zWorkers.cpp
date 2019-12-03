@@ -100,7 +100,6 @@ void ZWorkers::run(ZTask* task, uint nworkers) {
 }
 
 void ZWorkers::run_parallel(ZTask* task) {
-  assert(SafepointSynchronize::is_at_safepoint(), "Should be at a safepoint");
   run(task, nparallel());
 }
 
