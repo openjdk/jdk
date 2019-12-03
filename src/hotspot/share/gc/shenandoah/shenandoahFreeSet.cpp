@@ -115,7 +115,7 @@ HeapWord* ShenandoahFreeSet::allocate_single(ShenandoahAllocRequest& req, bool& 
         size_t idx = c - 1;
         if (is_mutator_free(idx)) {
           ShenandoahHeapRegion* r = _heap->get_region(idx);
-          if (is_empty_or_trash(r)) {
+          if (can_allocate_from(r)) {
             flip_to_gc(r);
             HeapWord *result = try_allocate_in(r, req, in_new_region);
             if (result != NULL) {
@@ -279,7 +279,7 @@ HeapWord* ShenandoahFreeSet::allocate_contiguous(ShenandoahAllocRequest& req) {
 
     // If regions are not adjacent, then current [beg; end] is useless, and we may fast-forward.
     // If region is not completely free, the current [beg; end] is useless, and we may fast-forward.
-    if (!is_mutator_free(end) || !is_empty_or_trash(_heap->get_region(end))) {
+    if (!is_mutator_free(end) || !can_allocate_from(_heap->get_region(end))) {
       end++;
       beg = end;
       continue;
@@ -342,8 +342,8 @@ HeapWord* ShenandoahFreeSet::allocate_contiguous(ShenandoahAllocRequest& req) {
   return _heap->get_region(beg)->bottom();
 }
 
-bool ShenandoahFreeSet::is_empty_or_trash(ShenandoahHeapRegion *r) {
-  return r->is_empty() || r->is_trash();
+bool ShenandoahFreeSet::can_allocate_from(ShenandoahHeapRegion *r) {
+  return r->is_empty() || (r->is_trash() && !_heap->is_concurrent_root_in_progress());
 }
 
 size_t ShenandoahFreeSet::alloc_capacity(ShenandoahHeapRegion *r) {
@@ -384,7 +384,7 @@ void ShenandoahFreeSet::flip_to_gc(ShenandoahHeapRegion* r) {
   size_t idx = r->region_number();
 
   assert(_mutator_free_bitmap.at(idx), "Should be in mutator view");
-  assert(is_empty_or_trash(r), "Should not be allocated");
+  assert(can_allocate_from(r), "Should not be allocated");
 
   _mutator_free_bitmap.clear_bit(idx);
   _collector_free_bitmap.set_bit(idx);
@@ -443,7 +443,7 @@ void ShenandoahFreeSet::rebuild() {
     if (reserved >= to_reserve) break;
 
     ShenandoahHeapRegion* region = _heap->get_region(idx);
-    if (_mutator_free_bitmap.at(idx) && is_empty_or_trash(region)) {
+    if (_mutator_free_bitmap.at(idx) && can_allocate_from(region)) {
       _mutator_free_bitmap.clear_bit(idx);
       _collector_free_bitmap.set_bit(idx);
       size_t ac = alloc_capacity(region);
