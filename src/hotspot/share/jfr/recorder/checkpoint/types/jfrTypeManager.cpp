@@ -222,6 +222,8 @@ bool JfrTypeManager::initialize() {
   register_static_type(TYPE_CODEBLOBTYPE, true, new CodeBlobTypeConstant());
   register_static_type(TYPE_VMOPERATIONTYPE, true, new VMOperationTypeConstant());
   register_static_type(TYPE_THREADSTATE, true, new ThreadStateConstant());
+  register_static_type(TYPE_BYTECODE, true, new BytecodeConstant());
+  register_static_type(TYPE_COMPILERTYPE, true, new CompilerTypeConstant());
   return true;
 }
 

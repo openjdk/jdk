@@ -2019,8 +2019,10 @@ void CompileBroker::post_compile(CompilerThread* thread, CompileTask* task, bool
 static void post_compilation_event(EventCompilation* event, CompileTask* task) {
   assert(event != NULL, "invariant");
   assert(event->should_commit(), "invariant");
-  event->set_method(task->method());
+  assert(task != NULL, "invariant");
   event->set_compileId(task->compile_id());
+  event->set_compiler(task->compiler()->type());
+  event->set_method(task->method());
   event->set_compileLevel(task->comp_level());
   event->set_succeded(task->is_success());
   event->set_isOsr(task->osr_bci() != CompileBroker::standard_entry_bci);

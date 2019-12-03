@@ -465,8 +465,9 @@
   </Event>
 
   <Event name="Compilation" category="Java Virtual Machine, Compiler" label="Compilation" thread="true">
-    <Field type="Method" name="method" label="Java Method" />
     <Field type="uint" name="compileId" label="Compilation Identifier" relation="CompileId" />
+    <Field type="CompilerType" name="compiler" label="Compiler" />
+    <Field type="Method" name="method" label="Method" />
     <Field type="ushort" name="compileLevel" label="Compilation Level" />
     <Field type="boolean" name="succeded" label="Succeeded" />
     <Field type="boolean" name="isOsr" label="On Stack Replacement" />
@@ -497,7 +498,7 @@
     <Field type="CalleeMethod" name="callee" struct="true" label="Callee Method" />
     <Field type="boolean" name="succeeded" label="Succeeded" />
     <Field type="string" name="message" label="Message" />
-    <Field type="int" name="bci" label="Byte Code Index" />
+    <Field type="int" name="bci" label="Bytecode Index" />
   </Event>
 
   <Event name="SweepCodeCache" category="Java Virtual Machine, Code Sweeper" label="Sweep Code Cache" thread="true" >
@@ -517,6 +518,17 @@
     <Field type="int" name="adaptorCount" label="Adaptors" />
     <Field type="ulong" contentType="bytes" name="unallocatedCapacity" label="Unallocated" />
     <Field type="int" name="fullCount" label="Full Count" />
+  </Event>
+
+  <Event name="Deoptimization" category="Java Virtual Machine, Compiler" label="Deoptimization" thread="true" stackTrace="true" startTime="false">
+    <Field type="uint" name="compileId" label="Compilation Identifier" relation="CompileId" />
+    <Field type="CompilerType" name="compiler" label="Compiler" />
+    <Field type="Method" name="method" label="Method" />
+    <Field type="int" name="lineNumber" label="Line Number" />
+    <Field type="int" name="bci" label="Bytecode Index" />
+    <Field type="Bytecode" name="instruction" label="Instruction" />
+    <Field type="DeoptimizationReason" name="reason" label="Reason"/>
+    <Field type="DeoptimizationAction" name="action" label="Action"/>
   </Event>
 
   <Event name="SafepointBegin" category="Java Virtual Machine, Runtime, Safepoint" label="Safepoint Begin" description="Safepointing begin" thread="true">
@@ -1040,6 +1052,22 @@
     <Field type="ulong" name="elements" label="Elements Written" />
     <Field type="ulong" contentType="bytes" name="size" label="Size Written" />
   </Event>
+
+  <Type name="DeoptimizationReason" label="Deoptimization Reason">
+    <Field type="string" name="reason" label="Reason" />
+  </Type>
+
+  <Type name="DeoptimizationAction" label="Deoptimization Action">
+    <Field type="string" name="action" label="Action" />
+  </Type>
+
+  <Type name="Bytecode" label="Bytecode Instruction">
+    <Field type="string" name="bytecode" label="Instruction" />
+  </Type>
+
+  <Type name="CompilerType" label="Compiler Type">
+    <Field type="string" name="compiler" label="Compiler" />
+  </Type>
 
   <Type name="ZStatisticsCounterType" label="Z Statistics Counter">
     <Field type="string" name="counter" label="Counter" />
