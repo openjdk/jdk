@@ -48,7 +48,7 @@ int GenericWaitBarrier::wake_if_needed() {
   assert(w > 0, "Bad counting");
   // We need an exact count which never goes below zero,
   // otherwise the semaphore may be signalled too many times.
-  if (Atomic::cmpxchg(w - 1, &_waiters, w) == w) {
+  if (Atomic::cmpxchg(&_waiters, w, w - 1) == w) {
     _sem_barrier.signal();
     return w - 1;
   }
@@ -82,13 +82,13 @@ void GenericWaitBarrier::wait(int barrier_tag) {
     OrderAccess::fence();
     return;
   }
-  Atomic::add(1, &_barrier_threads);
+  Atomic::add(&_barrier_threads, 1);
   if (barrier_tag != 0 && barrier_tag == _barrier_tag) {
-    Atomic::add(1, &_waiters);
+    Atomic::add(&_waiters, 1);
     _sem_barrier.wait();
     // We help out with posting, but we need to do so before we decrement the
     // _barrier_threads otherwise we might wake threads up in next wait.
     GenericWaitBarrier::wake_if_needed();
   }
-  Atomic::add(-1, &_barrier_threads);
+  Atomic::add(&_barrier_threads, -1);
 }

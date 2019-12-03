@@ -43,19 +43,19 @@ inline HeapWord* PLAB::allocate_aligned(size_t word_sz, unsigned short alignment
 }
 
 void PLABStats::add_allocated(size_t v) {
-  Atomic::add(v, &_allocated);
+  Atomic::add(&_allocated, v);
 }
 
 void PLABStats::add_unused(size_t v) {
-  Atomic::add(v, &_unused);
+  Atomic::add(&_unused, v);
 }
 
 void PLABStats::add_wasted(size_t v) {
-  Atomic::add(v, &_wasted);
+  Atomic::add(&_wasted, v);
 }
 
 void PLABStats::add_undo_wasted(size_t v) {
-  Atomic::add(v, &_undo_wasted);
+  Atomic::add(&_undo_wasted, v);
 }
 
 #endif // SHARE_GC_SHARED_PLAB_INLINE_HPP

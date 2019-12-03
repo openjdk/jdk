@@ -250,8 +250,19 @@ enum NamedGroup {
         this.supportedProtocols = supportedProtocols;
         this.keAlgParamSpec = keAlgParamSpec;
 
+        // Check if it is a supported named group.
         AlgorithmParameters algParams = null;
         boolean mediator = (keAlgParamSpec != null);
+
+        // An EC provider, for example the SunEC provider, may support
+        // AlgorithmParameters but not KeyPairGenerator or KeyAgreement.
+        //
+        // Note: Please be careful if removing this block!
+        if (mediator && (namedGroupSpec == NamedGroupSpec.NAMED_GROUP_ECDHE)) {
+            mediator = JsseJce.isEcAvailable();
+        }
+
+        // Check the specific algorithm parameters.
         if (mediator) {
             try {
                 algParams =
@@ -266,10 +277,10 @@ enum NamedGroup {
                             "No AlgorithmParameters for " + name, exp);
                     }
                 } else {
-                    // HACK CODE
-                    //
                     // Please remove the following code if the XDH/X25519/X448
                     // AlgorithmParameters algorithms are supported in JDK.
+                    //
+                    // Note: Please be careful if removing this block!
                     algParams = null;
                     try {
                         KeyAgreement.getInstance(name);

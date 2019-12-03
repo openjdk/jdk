@@ -177,17 +177,14 @@ public interface ClassWriter {
     /**
      * Add the class content tree.
      *
-     * @param contentTree content tree to which the class content will be added
      * @param classContentTree class content tree which will be added to the content tree
      */
-    public void addClassContentTree(Content contentTree, Content classContentTree);
+    public void addClassContentTree(Content classContentTree);
 
     /**
      * Add the footer of the page.
-     *
-     * @param contentTree content tree to which the footer will be added
      */
-    public void addFooter(Content contentTree);
+    public void addFooter();
 
     /**
      * Print the document.

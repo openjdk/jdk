@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,7 +74,6 @@ gconf_client_get_default_func* my_get_default_func = NULL;
 gconf_client_get_string_func* my_get_string_func = NULL;
 gconf_client_get_int_func* my_get_int_func = NULL;
 gconf_client_get_bool_func* my_get_bool_func = NULL;
-gconf_init_func* my_gconf_init_func = NULL;
 g_type_init_func* my_g_type_init_func = NULL;
 
 

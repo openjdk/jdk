@@ -36,7 +36,8 @@ import java.util.Properties;
  * Usage:  {@code import static java.lang.invoke.MethodHandleStatics.*}
  * @author John Rose, JSR 292 EG
  */
-/*non-public*/ class MethodHandleStatics {
+/*non-public*/
+class MethodHandleStatics {
 
     private MethodHandleStatics() { }  // do not instantiate
 
@@ -95,7 +96,8 @@ import java.util.Properties;
     /** Tell if any of the debugging switches are turned on.
      *  If this is the case, it is reasonable to perform extra checks or save extra information.
      */
-    /*non-public*/ static boolean debugEnabled() {
+    /*non-public*/
+    static boolean debugEnabled() {
         return (DEBUG_METHOD_HANDLE_NAMES |
                 DUMP_CLASS_FILES |
                 TRACE_INTERPRETER |
@@ -104,32 +106,41 @@ import java.util.Properties;
     }
 
     // handy shared exception makers (they simplify the common case code)
-    /*non-public*/ static InternalError newInternalError(String message) {
+    /*non-public*/
+    static InternalError newInternalError(String message) {
         return new InternalError(message);
     }
-    /*non-public*/ static InternalError newInternalError(String message, Exception cause) {
+    /*non-public*/
+    static InternalError newInternalError(String message, Exception cause) {
         return new InternalError(message, cause);
     }
-    /*non-public*/ static InternalError newInternalError(Exception cause) {
+    /*non-public*/
+    static InternalError newInternalError(Exception cause) {
         return new InternalError(cause);
     }
-    /*non-public*/ static RuntimeException newIllegalStateException(String message) {
+    /*non-public*/
+    static RuntimeException newIllegalStateException(String message) {
         return new IllegalStateException(message);
     }
-    /*non-public*/ static RuntimeException newIllegalStateException(String message, Object obj) {
+    /*non-public*/
+    static RuntimeException newIllegalStateException(String message, Object obj) {
         return new IllegalStateException(message(message, obj));
     }
-    /*non-public*/ static RuntimeException newIllegalArgumentException(String message) {
+    /*non-public*/
+    static RuntimeException newIllegalArgumentException(String message) {
         return new IllegalArgumentException(message);
     }
-    /*non-public*/ static RuntimeException newIllegalArgumentException(String message, Object obj) {
+    /*non-public*/
+    static RuntimeException newIllegalArgumentException(String message, Object obj) {
         return new IllegalArgumentException(message(message, obj));
     }
-    /*non-public*/ static RuntimeException newIllegalArgumentException(String message, Object obj, Object obj2) {
+    /*non-public*/
+    static RuntimeException newIllegalArgumentException(String message, Object obj, Object obj2) {
         return new IllegalArgumentException(message(message, obj, obj2));
     }
     /** Propagate unchecked exceptions and errors, but wrap anything checked and throw that instead. */
-    /*non-public*/ static Error uncaughtException(Throwable ex) {
+    /*non-public*/
+    static Error uncaughtException(Throwable ex) {
         if (ex instanceof Error)  throw (Error) ex;
         if (ex instanceof RuntimeException)  throw (RuntimeException) ex;
         throw new InternalError("uncaught exception", ex);
@@ -142,11 +153,13 @@ import java.util.Properties;
         if (obj != null || obj2 != null)  message = message + ": " + obj + ", " + obj2;
         return message;
     }
-    /*non-public*/ static void rangeCheck2(int start, int end, int size) {
+    /*non-public*/
+    static void rangeCheck2(int start, int end, int size) {
         if (0 > start || start > end || end > size)
             throw new IndexOutOfBoundsException(start+".."+end);
     }
-    /*non-public*/ static int rangeCheck1(int index, int size) {
+    /*non-public*/
+    static int rangeCheck1(int index, int size) {
         if (0 > index || index >= size)
             throw new IndexOutOfBoundsException(index);
         return index;

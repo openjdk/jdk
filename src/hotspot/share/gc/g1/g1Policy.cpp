@@ -62,8 +62,8 @@ G1Policy::G1Policy(STWGCTimer* gc_timer) :
   _young_list_target_length(0),
   _young_list_fixed_length(0),
   _young_list_max_length(0),
-  _short_lived_surv_rate_group(new SurvRateGroup()),
-  _survivor_surv_rate_group(new SurvRateGroup()),
+  _eden_surv_rate_group(new G1SurvRateGroup()),
+  _survivor_surv_rate_group(new G1SurvRateGroup()),
   _reserve_factor((double) G1ReservePercent / 100.0),
   _reserve_regions(0),
   _young_gen_sizer(G1YoungGenSizer::create_gen_sizer()),
@@ -78,7 +78,6 @@ G1Policy::G1Policy(STWGCTimer* gc_timer) :
   _bytes_allocated_in_old_since_last_gc(0),
   _initial_mark_to_mixed(),
   _collection_set(NULL),
-  _bytes_copied_during_gc(0),
   _g1h(NULL),
   _phase_times(new G1GCPhaseTimes(gc_timer, ParallelGCThreads)),
   _mark_remark_start_sec(0),
@@ -128,19 +127,16 @@ void G1Policy::note_gc_start() {
 }
 
 class G1YoungLengthPredictor {
-  const bool _during_cm;
   const double _base_time_ms;
   const double _base_free_regions;
   const double _target_pause_time_ms;
   const G1Policy* const _policy;
 
  public:
-  G1YoungLengthPredictor(bool during_cm,
-                         double base_time_ms,
+  G1YoungLengthPredictor(double base_time_ms,
                          double base_free_regions,
                          double target_pause_time_ms,
                          const G1Policy* policy) :
-    _during_cm(during_cm),
     _base_time_ms(base_time_ms),
     _base_free_regions(base_free_regions),
     _target_pause_time_ms(target_pause_time_ms),
@@ -152,11 +148,8 @@ class G1YoungLengthPredictor {
       return false;
     }
 
-    const double accum_surv_rate = _policy->accum_yg_surv_rate_pred((int) young_length - 1);
-    const size_t bytes_to_copy =
-                 (size_t) (accum_surv_rate * (double) HeapRegion::GrainBytes);
-    const double copy_time_ms =
-      _policy->analytics()->predict_object_copy_time_ms(bytes_to_copy, _during_cm);
+    size_t bytes_to_copy = 0;
+    const double copy_time_ms = _policy->predict_eden_copy_time_ms(young_length, &bytes_to_copy);
     const double young_other_time_ms = _policy->analytics()->predict_young_other_time_ms(young_length);
     const double pause_time_ms = _base_time_ms + copy_time_ms + young_other_time_ms;
     if (pause_time_ms > _target_pause_time_ms) {
@@ -304,11 +297,10 @@ G1Policy::YoungTargetLengths G1Policy::young_list_target_lengths(size_t rs_lengt
   return result;
 }
 
-uint
-G1Policy::calculate_young_list_target_length(size_t rs_length,
-                                                    uint base_min_length,
-                                                    uint desired_min_length,
-                                                    uint desired_max_length) const {
+uint G1Policy::calculate_young_list_target_length(size_t rs_length,
+                                                  uint base_min_length,
+                                                  uint desired_min_length,
+                                                  uint desired_max_length) const {
   assert(use_adaptive_young_list_length(), "pre-condition");
   assert(collector_state()->in_young_only_phase(), "only call this for young GCs");
 
@@ -328,12 +320,8 @@ G1Policy::calculate_young_list_target_length(size_t rs_length,
   uint max_young_length = desired_max_length - base_min_length;
 
   const double target_pause_time_ms = _mmu_tracker->max_gc_time() * 1000.0;
-  const double survivor_regions_evac_time = predict_survivor_regions_evac_time();
   const size_t pending_cards = _analytics->predict_pending_cards();
-  const size_t scanned_cards = _analytics->predict_card_num(rs_length, true /* for_young_gc */);
-  const double base_time_ms =
-    predict_base_elapsed_time_ms(pending_cards, scanned_cards) +
-    survivor_regions_evac_time;
+  const double base_time_ms = predict_base_elapsed_time_ms(pending_cards, rs_length);
   const uint available_free_regions = _free_regions_at_end_of_collection;
   const uint base_free_regions =
     available_free_regions > _reserve_regions ? available_free_regions - _reserve_regions : 0;
@@ -341,8 +329,7 @@ G1Policy::calculate_young_list_target_length(size_t rs_length,
   // Here, we will make sure that the shortest young length that
   // makes sense fits within the target pause time.
 
-  G1YoungLengthPredictor p(collector_state()->mark_or_rebuild_in_progress(),
-                           base_time_ms,
+  G1YoungLengthPredictor p(base_time_ms,
                            base_free_regions,
                            target_pause_time_ms,
                            this);
@@ -408,11 +395,10 @@ G1Policy::calculate_young_list_target_length(size_t rs_length,
 double G1Policy::predict_survivor_regions_evac_time() const {
   double survivor_regions_evac_time = 0.0;
   const GrowableArray<HeapRegion*>* survivor_regions = _g1h->survivor()->regions();
-
   for (GrowableArrayIterator<HeapRegion*> it = survivor_regions->begin();
        it != survivor_regions->end();
        ++it) {
-    survivor_regions_evac_time += predict_region_elapsed_time_ms(*it, collector_state()->in_young_only_phase());
+    survivor_regions_evac_time += predict_region_total_time_ms(*it, collector_state()->in_young_only_phase());
   }
   return survivor_regions_evac_time;
 }
@@ -468,11 +454,10 @@ void G1Policy::record_full_collection_end() {
   collector_state()->set_mark_or_rebuild_in_progress(false);
   collector_state()->set_clearing_next_bitmap(false);
 
-  _short_lived_surv_rate_group->start_adding_regions();
+  _eden_surv_rate_group->start_adding_regions();
   // also call this on any additional surv rate groups
 
   _free_regions_at_end_of_collection = _g1h->num_free_regions();
-  // Reset survivors SurvRateGroup.
   _survivor_surv_rate_group->reset();
   update_young_list_max_and_target_length();
   update_rs_length_prediction();
@@ -553,10 +538,9 @@ void G1Policy::record_collection_pause_start(double start_time_sec) {
   record_concurrent_refinement_data(false /* is_full_collection */);
 
   _collection_set->reset_bytes_used_before();
-  _bytes_copied_during_gc = 0;
 
   // do that for any other surv rate groups
-  _short_lived_surv_rate_group->stop_adding_regions();
+  _eden_surv_rate_group->stop_adding_regions();
   _survivors_age_table.clear();
 
   assert(_g1h->collection_set()->verify_young_ages(), "region age verification failed");
@@ -647,13 +631,11 @@ double G1Policy::logged_cards_processing_time() const {
 // Anything below that is considered to be zero
 #define MIN_TIMER_GRANULARITY 0.0000001
 
-void G1Policy::record_collection_pause_end(double pause_time_ms, size_t heap_used_bytes_before_gc) {
+void G1Policy::record_collection_pause_end(double pause_time_ms) {
   G1GCPhaseTimes* p = phase_times();
 
   double end_time_sec = os::elapsedTime();
 
-  assert_used_and_recalculate_used_equal(_g1h);
-  size_t cur_used_bytes = _g1h->used();
   bool this_pause_included_initial_mark = false;
   bool this_pause_was_young_only = collector_state()->in_young_only_phase();
 
@@ -716,74 +698,63 @@ void G1Policy::record_collection_pause_end(double pause_time_ms, size_t heap_use
     }
   }
 
-  _short_lived_surv_rate_group->start_adding_regions();
-  // Do that for any other surv rate groups
+  _eden_surv_rate_group->start_adding_regions();
 
-  double scan_hcc_time_ms = G1HotCardCache::default_use_cache() ? average_time_ms(G1GCPhaseTimes::MergeHCC) : 0.0;
-
+  double merge_hcc_time_ms = average_time_ms(G1GCPhaseTimes::MergeHCC);
   if (update_stats) {
-    double cost_per_logged_card = 0.0;
-    size_t const pending_logged_cards = p->sum_thread_work_items(G1GCPhaseTimes::MergeLB, G1GCPhaseTimes::MergeLBDirtyCards);
-    if (pending_logged_cards > 0) {
-      cost_per_logged_card = logged_cards_processing_time() / pending_logged_cards;
-      _analytics->report_cost_per_logged_card_ms(cost_per_logged_card);
-    }
-    _analytics->report_cost_scan_hcc(scan_hcc_time_ms);
+    size_t const total_log_buffer_cards = p->sum_thread_work_items(G1GCPhaseTimes::MergeHCC, G1GCPhaseTimes::MergeHCCDirtyCards) +
+                                          p->sum_thread_work_items(G1GCPhaseTimes::MergeLB, G1GCPhaseTimes::MergeLBDirtyCards);
+    // Update prediction for card merge; MergeRSDirtyCards includes the cards from the Eager Reclaim phase.
+    size_t const total_cards_merged = p->sum_thread_work_items(G1GCPhaseTimes::MergeRS, G1GCPhaseTimes::MergeRSDirtyCards) +
+                                      p->sum_thread_work_items(G1GCPhaseTimes::OptMergeRS, G1GCPhaseTimes::MergeRSDirtyCards) +
+                                      total_log_buffer_cards;
 
+    // The threshold for the number of cards in a given sampling which we consider
+    // large enough so that the impact from setup and other costs is negligible.
+    size_t const CardsNumSamplingThreshold = 10;
+
+    if (total_cards_merged > CardsNumSamplingThreshold) {
+      double avg_time_merge_cards = average_time_ms(G1GCPhaseTimes::MergeER) +
+                                    average_time_ms(G1GCPhaseTimes::MergeRS) +
+                                    average_time_ms(G1GCPhaseTimes::MergeHCC) +
+                                    average_time_ms(G1GCPhaseTimes::MergeLB) +
+                                    average_time_ms(G1GCPhaseTimes::OptMergeRS);
+      _analytics->report_cost_per_card_merge_ms(avg_time_merge_cards / total_cards_merged, this_pause_was_young_only);
+    }
+
+    // Update prediction for card scan
     size_t const total_cards_scanned = p->sum_thread_work_items(G1GCPhaseTimes::ScanHR, G1GCPhaseTimes::ScanHRScannedCards) +
                                        p->sum_thread_work_items(G1GCPhaseTimes::OptScanHR, G1GCPhaseTimes::ScanHRScannedCards);
-    size_t remset_cards_scanned = 0;
-    // There might have been duplicate log buffer entries in the queues which could
-    // increase this value beyond the cards scanned. In this case attribute all cards
-    // to the log buffers.
-    if (pending_logged_cards <= total_cards_scanned) {
-      remset_cards_scanned = total_cards_scanned - pending_logged_cards;
+
+    if (total_cards_scanned > CardsNumSamplingThreshold) {
+      double avg_time_dirty_card_scan = average_time_ms(G1GCPhaseTimes::ScanHR) +
+                                        average_time_ms(G1GCPhaseTimes::OptScanHR);
+
+      _analytics->report_cost_per_card_scan_ms(avg_time_dirty_card_scan / total_cards_scanned, this_pause_was_young_only);
     }
 
-    double cost_per_remset_card_ms = 0.0;
-    if (remset_cards_scanned > 10) {
-      double avg_time_remset_scan = ((average_time_ms(G1GCPhaseTimes::ScanHR) + average_time_ms(G1GCPhaseTimes::OptScanHR)) *
-                                     remset_cards_scanned / total_cards_scanned) +
-                                     average_time_ms(G1GCPhaseTimes::MergeER) +
-                                     average_time_ms(G1GCPhaseTimes::MergeRS) +
-                                     average_time_ms(G1GCPhaseTimes::OptMergeRS);
-
-      cost_per_remset_card_ms = avg_time_remset_scan / remset_cards_scanned;
-      _analytics->report_cost_per_remset_card_ms(cost_per_remset_card_ms, this_pause_was_young_only);
+    // Update prediction for the ratio between cards from the remembered
+    // sets and actually scanned cards from the remembered sets.
+    // Cards from the remembered sets are all cards not duplicated by cards from
+    // the logs.
+    // Due to duplicates in the log buffers, the number of actually scanned cards
+    // can be smaller than the cards in the log buffers.
+    const size_t from_rs_length_cards = (total_cards_scanned > total_log_buffer_cards) ? total_cards_scanned - total_log_buffer_cards : 0;
+    double merge_to_scan_ratio = 0.0;
+    if (total_cards_scanned > 0) {
+      merge_to_scan_ratio = (double) from_rs_length_cards / total_cards_scanned;
     }
+    _analytics->report_card_merge_to_scan_ratio(merge_to_scan_ratio, this_pause_was_young_only);
 
-    if (_rs_length > 0) {
-      double cards_per_entry_ratio =
-        (double) remset_cards_scanned / (double) _rs_length;
-      _analytics->report_cards_per_entry_ratio(cards_per_entry_ratio, this_pause_was_young_only);
-    }
+    const size_t recorded_rs_length = _collection_set->recorded_rs_length();
+    const size_t rs_length_diff = _rs_length > recorded_rs_length ? _rs_length - recorded_rs_length : 0;
+    _analytics->report_rs_length_diff(rs_length_diff);
 
-    // This is defensive. For a while _rs_length could get
-    // smaller than _recorded_rs_length which was causing
-    // rs_length_diff to get very large and mess up the RSet length
-    // predictions. The reason was unsafe concurrent updates to the
-    // _inc_cset_recorded_rs_length field which the code below guards
-    // against (see CR 7118202). This bug has now been fixed (see CR
-    // 7119027). However, I'm still worried that
-    // _inc_cset_recorded_rs_length might still end up somewhat
-    // inaccurate. The concurrent refinement thread calculates an
-    // RSet's length concurrently with other CR threads updating it
-    // which might cause it to calculate the length incorrectly (if,
-    // say, it's in mid-coarsening). So I'll leave in the defensive
-    // conditional below just in case.
-    size_t rs_length_diff = 0;
-    size_t recorded_rs_length = _collection_set->recorded_rs_length();
-    if (_rs_length > recorded_rs_length) {
-      rs_length_diff = _rs_length - recorded_rs_length;
-    }
-    _analytics->report_rs_length_diff((double) rs_length_diff);
-
-    size_t freed_bytes = heap_used_bytes_before_gc - cur_used_bytes;
-    size_t copied_bytes = _collection_set->bytes_used_before() - freed_bytes;
-    double cost_per_byte_ms = 0.0;
+    // Update prediction for copy cost per byte
+    size_t copied_bytes = p->sum_thread_work_items(G1GCPhaseTimes::MergePSS, G1GCPhaseTimes::MergePSSCopiedBytes);
 
     if (copied_bytes > 0) {
-      cost_per_byte_ms = (average_time_ms(G1GCPhaseTimes::ObjCopy) + average_time_ms(G1GCPhaseTimes::OptObjCopy)) / (double) copied_bytes;
+      double cost_per_byte_ms = (average_time_ms(G1GCPhaseTimes::ObjCopy) + average_time_ms(G1GCPhaseTimes::OptObjCopy)) / copied_bytes;
       _analytics->report_cost_per_byte_ms(cost_per_byte_ms, collector_state()->mark_or_rebuild_in_progress());
     }
 
@@ -848,21 +819,21 @@ void G1Policy::record_collection_pause_end(double pause_time_ms, size_t heap_use
   // Note that _mmu_tracker->max_gc_time() returns the time in seconds.
   double scan_logged_cards_time_goal_ms = _mmu_tracker->max_gc_time() * MILLIUNITS * G1RSetUpdatingPauseTimePercent / 100.0;
 
-  if (scan_logged_cards_time_goal_ms < scan_hcc_time_ms) {
+  if (scan_logged_cards_time_goal_ms < merge_hcc_time_ms) {
     log_debug(gc, ergo, refine)("Adjust concurrent refinement thresholds (scanning the HCC expected to take longer than Update RS time goal)."
                                 "Logged Cards Scan time goal: %1.2fms Scan HCC time: %1.2fms",
-                                scan_logged_cards_time_goal_ms, scan_hcc_time_ms);
+                                scan_logged_cards_time_goal_ms, merge_hcc_time_ms);
 
     scan_logged_cards_time_goal_ms = 0;
   } else {
-    scan_logged_cards_time_goal_ms -= scan_hcc_time_ms;
+    scan_logged_cards_time_goal_ms -= merge_hcc_time_ms;
   }
 
   _pending_cards_at_prev_gc_end = _g1h->pending_card_num();
   double const logged_cards_time = logged_cards_processing_time();
 
   log_debug(gc, ergo, refine)("Concurrent refinement times: Logged Cards Scan time goal: %1.2fms Logged Cards Scan time: %1.2fms HCC time: %1.2fms",
-                              scan_logged_cards_time_goal_ms, logged_cards_time, scan_hcc_time_ms);
+                              scan_logged_cards_time_goal_ms, logged_cards_time, merge_hcc_time_ms);
 
   _g1h->concurrent_refine()->adjust(logged_cards_time,
                                     phase_times()->sum_thread_work_items(G1GCPhaseTimes::MergeLB, G1GCPhaseTimes::MergeLBDirtyCards),
@@ -927,32 +898,19 @@ void G1Policy::print_phases() {
   phase_times()->print();
 }
 
-double G1Policy::predict_yg_surv_rate(int age, SurvRateGroup* surv_rate_group) const {
-  TruncatedSeq* seq = surv_rate_group->get_seq(age);
-  guarantee(seq->num() > 0, "There should be some young gen survivor samples available. Tried to access with age %d", age);
-  double pred = _predictor.get_new_prediction(seq);
-  if (pred > 1.0) {
-    pred = 1.0;
-  }
-  return pred;
-}
-
-double G1Policy::accum_yg_surv_rate_pred(int age) const {
-  return _short_lived_surv_rate_group->accum_surv_rate_pred(age);
-}
-
 double G1Policy::predict_base_elapsed_time_ms(size_t pending_cards,
-                                              size_t scanned_cards) const {
+                                              size_t rs_length) const {
+  size_t effective_scanned_cards = _analytics->predict_scan_card_num(rs_length, collector_state()->in_young_only_phase());
   return
-    _analytics->predict_rs_update_time_ms(pending_cards) +
-    _analytics->predict_rs_scan_time_ms(scanned_cards, collector_state()->in_young_only_phase()) +
-    _analytics->predict_constant_other_time_ms();
+    _analytics->predict_card_merge_time_ms(pending_cards + rs_length, collector_state()->in_young_only_phase()) +
+    _analytics->predict_card_scan_time_ms(effective_scanned_cards, collector_state()->in_young_only_phase()) +
+    _analytics->predict_constant_other_time_ms() +
+    predict_survivor_regions_evac_time();
 }
 
 double G1Policy::predict_base_elapsed_time_ms(size_t pending_cards) const {
   size_t rs_length = _analytics->predict_rs_length();
-  size_t card_num = _analytics->predict_card_num(rs_length, collector_state()->in_young_only_phase());
-  return predict_base_elapsed_time_ms(pending_cards, card_num);
+  return predict_base_elapsed_time_ms(pending_cards, rs_length);
 }
 
 size_t G1Policy::predict_bytes_to_copy(HeapRegion* hr) const {
@@ -960,25 +918,35 @@ size_t G1Policy::predict_bytes_to_copy(HeapRegion* hr) const {
   if (!hr->is_young()) {
     bytes_to_copy = hr->max_live_bytes();
   } else {
-    assert(hr->age_in_surv_rate_group() != -1, "invariant");
-    int age = hr->age_in_surv_rate_group();
-    double yg_surv_rate = predict_yg_surv_rate(age, hr->surv_rate_group());
-    bytes_to_copy = (size_t) (hr->used() * yg_surv_rate);
+    bytes_to_copy = (size_t) (hr->used() * hr->surv_rate_prediction(_predictor));
   }
   return bytes_to_copy;
 }
 
-double G1Policy::predict_region_elapsed_time_ms(HeapRegion* hr,
-                                                bool for_young_gc) const {
+double G1Policy::predict_eden_copy_time_ms(uint count, size_t* bytes_to_copy) const {
+  if (count == 0) {
+    return 0.0;
+  }
+  size_t const expected_bytes = _eden_surv_rate_group->accum_surv_rate_pred(count) * HeapRegion::GrainBytes;
+  if (bytes_to_copy != NULL) {
+    *bytes_to_copy = expected_bytes;
+  }
+  return _analytics->predict_object_copy_time_ms(expected_bytes, collector_state()->mark_or_rebuild_in_progress());
+}
+
+double G1Policy::predict_region_copy_time_ms(HeapRegion* hr) const {
+  size_t const bytes_to_copy = predict_bytes_to_copy(hr);
+  return _analytics->predict_object_copy_time_ms(bytes_to_copy, collector_state()->mark_or_rebuild_in_progress());
+}
+
+double G1Policy::predict_region_non_copy_time_ms(HeapRegion* hr,
+                                                 bool for_young_gc) const {
   size_t rs_length = hr->rem_set()->occupied();
-  // Predicting the number of cards is based on which type of GC
-  // we're predicting for.
-  size_t card_num = _analytics->predict_card_num(rs_length, for_young_gc);
-  size_t bytes_to_copy = predict_bytes_to_copy(hr);
+  size_t scan_card_num = _analytics->predict_scan_card_num(rs_length, for_young_gc);
 
   double region_elapsed_time_ms =
-    _analytics->predict_rs_scan_time_ms(card_num, collector_state()->in_young_only_phase()) +
-    _analytics->predict_object_copy_time_ms(bytes_to_copy, collector_state()->mark_or_rebuild_in_progress());
+    _analytics->predict_card_merge_time_ms(rs_length, collector_state()->in_young_only_phase()) +
+    _analytics->predict_card_scan_time_ms(scan_card_num, collector_state()->in_young_only_phase());
 
   // The prediction of the "other" time for this region is based
   // upon the region type and NOT the GC type.
@@ -988,6 +956,10 @@ double G1Policy::predict_region_elapsed_time_ms(HeapRegion* hr,
     region_elapsed_time_ms += _analytics->predict_non_young_other_time_ms(1);
   }
   return region_elapsed_time_ms;
+}
+
+double G1Policy::predict_region_total_time_ms(HeapRegion* hr, bool for_young_gc) const {
+  return predict_region_non_copy_time_ms(hr, for_young_gc) + predict_region_copy_time_ms(hr);
 }
 
 bool G1Policy::should_allocate_mutator_region() const {
@@ -1337,7 +1309,7 @@ void G1Policy::calculate_old_collection_set_regions(G1CollectionSetCandidates* c
       break;
     }
 
-    double predicted_time_ms = predict_region_elapsed_time_ms(hr, false);
+    double predicted_time_ms = predict_region_total_time_ms(hr, false);
     time_remaining_ms = MAX2(time_remaining_ms - predicted_time_ms, 0.0);
     // Add regions to old set until we reach the minimum amount
     if (num_initial_regions < min_old_cset_length) {
@@ -1397,7 +1369,7 @@ void G1Policy::calculate_optional_collection_set_regions(G1CollectionSetCandidat
   HeapRegion* r = candidates->at(candidate_idx);
   while (num_optional_regions < max_optional_regions) {
     assert(r != NULL, "Region must exist");
-    prediction_ms += predict_region_elapsed_time_ms(r, false);
+    prediction_ms += predict_region_total_time_ms(r, false);
 
     if (prediction_ms > time_remaining_ms) {
       log_debug(gc, ergo, cset)("Prediction %.3fms for region %u does not fit remaining time: %.3fms.",
@@ -1416,10 +1388,7 @@ void G1Policy::calculate_optional_collection_set_regions(G1CollectionSetCandidat
 }
 
 void G1Policy::transfer_survivors_to_cset(const G1SurvivorRegions* survivors) {
-
-  // Add survivor regions to SurvRateGroup.
   note_start_adding_survivor_regions();
-  finished_recalculating_age_indexes(true /* is_survivors */);
 
   HeapRegion* last = NULL;
   for (GrowableArrayIterator<HeapRegion*> it = survivors->regions()->begin();
@@ -1441,6 +1410,4 @@ void G1Policy::transfer_survivors_to_cset(const G1SurvivorRegions* survivors) {
   // the next evacuation pause - we need it in order to re-tag
   // the survivor regions from this evacuation pause as 'young'
   // at the start of the next.
-
-  finished_recalculating_age_indexes(false /* is_survivors */);
 }

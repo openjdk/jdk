@@ -26,6 +26,7 @@
 
 #include "gc/shared/plab.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.hpp"
+#include "gc/shenandoah/shenandoahCodeRoots.hpp"
 #include "gc/shenandoah/shenandoahSATBMarkQueueSet.hpp"
 #include "runtime/thread.hpp"
 #include "utilities/debug.hpp"
@@ -43,6 +44,7 @@ private:
   size_t _gclab_size;
   uint  _worker_id;
   bool _force_satb_flush;
+  int  _disarmed_value;
 
   ShenandoahThreadLocalData() :
     _gc_state(0),
@@ -125,6 +127,7 @@ public:
     assert(data(thread)->_gclab == NULL, "Only initialize once");
     data(thread)->_gclab = new PLAB(PLAB::min_size());
     data(thread)->_gclab_size = 0;
+    data(thread)->_disarmed_value = ShenandoahCodeRoots::disarmed_value();
   }
 
   static PLAB* gclab(Thread* thread) {
@@ -137,6 +140,10 @@ public:
 
   static void set_gclab_size(Thread* thread, size_t v) {
     data(thread)->_gclab_size = v;
+  }
+
+  static void set_disarmed_value(Thread* thread, int value) {
+    data(thread)->_disarmed_value = value;
   }
 
 #ifdef ASSERT
@@ -170,6 +177,9 @@ public:
     return Thread::gc_data_offset() + byte_offset_of(ShenandoahThreadLocalData, _gc_state);
   }
 
+  static ByteSize disarmed_value_offset() {
+    return Thread::gc_data_offset() + byte_offset_of(ShenandoahThreadLocalData, _disarmed_value);
+  }
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHTHREADLOCALDATA_HPP

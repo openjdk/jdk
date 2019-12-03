@@ -35,8 +35,7 @@ import java.io.IOException;
  * @since 1.1
  *
  */
-public
-class GZIPOutputStream extends DeflaterOutputStream {
+public class GZIPOutputStream extends DeflaterOutputStream {
     /**
      * CRC-32 of uncompressed data.
      */

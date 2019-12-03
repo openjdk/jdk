@@ -32,9 +32,7 @@
 #include "utilities/debug.hpp"
 
 int BarrierSetNMethod::disarmed_value() const {
-  char* disarmed_addr = reinterpret_cast<char*>(Thread::current());
-  disarmed_addr += in_bytes(thread_disarmed_offset());
-  return *reinterpret_cast<int*>(disarmed_addr);
+  return *disarmed_value_address();
 }
 
 bool BarrierSetNMethod::supports_entry_barrier(nmethod* nm) {

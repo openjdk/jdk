@@ -36,7 +36,7 @@ private:
   static oopDesc* load_barrier_on_weak_oop_field_preloaded(oopDesc* o, oop* p);
   static oopDesc* load_barrier_on_phantom_oop_field_preloaded(oopDesc* o, oop* p);
   static void load_barrier_on_oop_array(oop* p, size_t length);
-  static void clone(oop src, oop dst, size_t size);
+  static void clone(oopDesc* src, oopDesc* dst, size_t size);
 
 public:
   static address load_barrier_on_oop_field_preloaded_addr(DecoratorSet decorators);

@@ -160,6 +160,7 @@ class JvmtiExport : public AllStatic {
   // internal implementation.  Also called from JvmtiDeferredEvent::post()
   static void post_dynamic_code_generated_internal(const char *name, const void *code_begin, const void *code_end) NOT_JVMTI_RETURN;
 
+  static void post_class_unload_internal(const char *name) NOT_JVMTI_RETURN;
  private:
 
   // GenerateEvents support to allow posting of CompiledMethodLoad and

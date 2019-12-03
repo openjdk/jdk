@@ -2163,7 +2163,7 @@ run:
               HeapWord* compare_to = *Universe::heap()->top_addr();
               HeapWord* new_top = compare_to + obj_size;
               if (new_top <= *Universe::heap()->end_addr()) {
-                if (Atomic::cmpxchg(new_top, Universe::heap()->top_addr(), compare_to) != compare_to) {
+                if (Atomic::cmpxchg(Universe::heap()->top_addr(), compare_to, new_top) != compare_to) {
                   goto retry;
                 }
                 result = (oop) compare_to;

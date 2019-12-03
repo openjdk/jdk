@@ -31,6 +31,7 @@ import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
 
 import com.sun.source.doctree.DocTree;
+import jdk.javadoc.internal.doclets.formats.html.markup.BodyContents;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
@@ -56,13 +57,6 @@ public class AllClassesIndexWriter extends HtmlDocletWriter {
     protected IndexBuilder indexbuilder;
 
     /**
-     * The HTML tree for main tag.
-     */
-    protected HtmlTree mainTree = HtmlTree.MAIN();
-
-    private final Navigation navBar;
-
-    /**
      * Construct AllClassesIndexWriter object. Also initializes the indexbuilder variable in this
      * class.
      *
@@ -74,7 +68,6 @@ public class AllClassesIndexWriter extends HtmlDocletWriter {
             DocPath filename, IndexBuilder indexbuilder) {
         super(configuration, filename);
         this.indexbuilder = indexbuilder;
-        this.navBar = new Navigation(null, configuration, fixedNavDiv, PageMode.ALLCLASSES, path);
     }
 
     /**
@@ -101,21 +94,25 @@ public class AllClassesIndexWriter extends HtmlDocletWriter {
      */
     protected void buildAllClassesFile() throws DocFileIOException {
         String label = resources.getText("doclet.All_Classes");
-        HtmlTree bodyTree = getBody(getWindowTitle(label));
-        HtmlTree header = HtmlTree.HEADER();
+        Content header = new ContentBuilder();
         addTop(header);
+        Navigation navBar = new Navigation(null, configuration, PageMode.ALLCLASSES, path);
         navBar.setUserHeader(getUserHeaderFooter(true));
         header.add(navBar.getContent(true));
-        bodyTree.add(header);
         Content allClassesContent = new ContentBuilder();
         addContents(allClassesContent);
-        mainTree.add(allClassesContent);
-        bodyTree.add(mainTree);
+        Content mainContent = new ContentBuilder();
+        mainContent.add(allClassesContent);
         Content footer = HtmlTree.FOOTER();
         navBar.setUserFooter(getUserHeaderFooter(false));
         footer.add(navBar.getContent(false));
         addBottom(footer);
-        bodyTree.add(footer);
+        HtmlTree bodyTree = getBody(getWindowTitle(label));
+        bodyTree.add(new BodyContents()
+                .setHeader(header)
+                .addMainContent(mainContent)
+                .setFooter(footer)
+                .toContent());
         printHtmlDocument(null, "class index", bodyTree);
     }
 

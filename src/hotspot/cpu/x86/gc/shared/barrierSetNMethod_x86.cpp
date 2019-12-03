@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@
 
 class NativeNMethodCmpBarrier: public NativeInstruction {
 public:
+#ifdef _LP64
   enum Intel_specific_constants {
     instruction_code        = 0x81,
     instruction_size        = 8,
@@ -42,6 +43,14 @@ public:
     instruction_rex_prefix  = Assembler::REX | Assembler::REX_B,
     instruction_modrm       = 0x7f  // [r15 + offset]
   };
+#else
+  enum Intel_specific_constants {
+    instruction_code        = 0x81,
+    instruction_size        = 7,
+    imm_offset              = 2,
+    instruction_modrm       = 0x3f  // [rdi]
+  };
+#endif
 
   address instruction_address() const { return addr_at(0); }
   address immediate_address() const { return addr_at(imm_offset); }
@@ -51,6 +60,7 @@ public:
   void verify() const;
 };
 
+#ifdef _LP64
 void NativeNMethodCmpBarrier::verify() const {
   if (((uintptr_t) instruction_address()) & 0x7) {
     fatal("Not properly aligned");
@@ -77,6 +87,27 @@ void NativeNMethodCmpBarrier::verify() const {
     fatal("not a cmp barrier");
   }
 }
+#else
+void NativeNMethodCmpBarrier::verify() const {
+  if (((uintptr_t) instruction_address()) & 0x3) {
+    fatal("Not properly aligned");
+  }
+
+  int inst = ubyte_at(0);
+  if (inst != instruction_code) {
+    tty->print_cr("Addr: " INTPTR_FORMAT " Code: 0x%x", p2i(instruction_address()),
+        inst);
+    fatal("not a cmp barrier");
+  }
+
+  int modrm = ubyte_at(1);
+  if (modrm != instruction_modrm) {
+    tty->print_cr("Addr: " INTPTR_FORMAT " mod/rm: 0x%x", p2i(instruction_address()),
+        modrm);
+    fatal("not a cmp barrier");
+  }
+}
+#endif // _LP64
 
 void BarrierSetNMethod::deoptimize(nmethod* nm, address* return_address_ptr) {
   /*
@@ -127,7 +158,7 @@ void BarrierSetNMethod::deoptimize(nmethod* nm, address* return_address_ptr) {
 // NativeNMethodCmpBarrier::verify() will immediately complain when it does
 // not find the expected native instruction at this offset, which needs updating.
 // Note that this offset is invariant of PreserveFramePointer.
-static const int entry_barrier_offset = -19;
+static const int entry_barrier_offset = LP64_ONLY(-19) NOT_LP64(-18);
 
 static NativeNMethodCmpBarrier* native_nmethod_barrier(nmethod* nm) {
   address barrier_address = nm->code_begin() + nm->frame_complete_offset() + entry_barrier_offset;

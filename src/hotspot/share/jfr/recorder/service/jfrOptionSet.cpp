@@ -677,7 +677,7 @@ bool JfrOptionSet::parse_flight_recorder_option(const JavaVMOption** option, cha
   return false;
 }
 
-static GrowableArray<const char*>* startup_recording_options_array = NULL;
+static GrowableArray<const char*>* start_flight_recording_options_array = NULL;
 
 bool JfrOptionSet::parse_start_flight_recording_option(const JavaVMOption** option, char* delimiter) {
   assert(option != NULL, "invariant");
@@ -700,28 +700,28 @@ bool JfrOptionSet::parse_start_flight_recording_option(const JavaVMOption** opti
   assert(value != NULL, "invariant");
   const size_t value_length = strlen(value);
 
-  if (startup_recording_options_array == NULL) {
-    startup_recording_options_array = new (ResourceObj::C_HEAP, mtTracing) GrowableArray<const char*>(8, true, mtTracing);
+  if (start_flight_recording_options_array == NULL) {
+    start_flight_recording_options_array = new (ResourceObj::C_HEAP, mtTracing) GrowableArray<const char*>(8, true, mtTracing);
   }
-  assert(startup_recording_options_array != NULL, "invariant");
+  assert(start_flight_recording_options_array != NULL, "invariant");
   char* const startup_value = NEW_C_HEAP_ARRAY(char, value_length + 1, mtTracing);
   strncpy(startup_value, value, value_length + 1);
   assert(strncmp(startup_value, value, value_length) == 0, "invariant");
-  startup_recording_options_array->append(startup_value);
+  start_flight_recording_options_array->append(startup_value);
   return false;
 }
 
-const GrowableArray<const char*>* JfrOptionSet::startup_recording_options() {
-  return startup_recording_options_array;
+const GrowableArray<const char*>* JfrOptionSet::start_flight_recording_options() {
+  return start_flight_recording_options_array;
 }
 
-void JfrOptionSet::release_startup_recording_options() {
-  if (startup_recording_options_array != NULL) {
-    const int length = startup_recording_options_array->length();
+void JfrOptionSet::release_start_flight_recording_options() {
+  if (start_flight_recording_options_array != NULL) {
+    const int length = start_flight_recording_options_array->length();
     for (int i = 0; i < length; ++i) {
-      FREE_C_HEAP_ARRAY(char, startup_recording_options_array->at(i));
+      FREE_C_HEAP_ARRAY(char, start_flight_recording_options_array->at(i));
     }
-    delete startup_recording_options_array;
-    startup_recording_options_array = NULL;
+    delete start_flight_recording_options_array;
+    start_flight_recording_options_array = NULL;
   }
 }

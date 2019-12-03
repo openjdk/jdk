@@ -27,7 +27,6 @@
 #include "gc/z/zNMethodData.hpp"
 #include "memory/allocation.hpp"
 #include "runtime/atomic.hpp"
-#include "runtime/orderAccess.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/growableArray.hpp"
@@ -78,7 +77,7 @@ ZReentrantLock* ZNMethodData::lock() {
 }
 
 ZNMethodDataOops* ZNMethodData::oops() const {
-  return OrderAccess::load_acquire(&_oops);
+  return Atomic::load_acquire(&_oops);
 }
 
 ZNMethodDataOops* ZNMethodData::swap_oops(ZNMethodDataOops* new_oops) {

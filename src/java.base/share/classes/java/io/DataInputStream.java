@@ -39,8 +39,7 @@ package java.io;
  * @see     java.io.DataOutputStream
  * @since   1.0
  */
-public
-class DataInputStream extends FilterInputStream implements DataInput {
+public class DataInputStream extends FilterInputStream implements DataInput {
 
     /**
      * Creates a DataInputStream that uses the specified

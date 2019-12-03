@@ -54,8 +54,16 @@ class G1Predictions {
   // Confidence factor.
   double sigma() const { return _sigma; }
 
-  double get_new_prediction(TruncatedSeq const* seq) const {
+  double predict(TruncatedSeq const* seq) const {
     return seq->davg() + _sigma * stddev_estimate(seq);
+  }
+
+  double predict_in_unit_interval(TruncatedSeq const* seq) const {
+    return clamp(predict(seq), 0.0, 1.0);
+  }
+
+  double predict_zero_bounded(TruncatedSeq const* seq) const {
+    return MAX2(predict(seq), 0.0);
   }
 };
 

@@ -44,7 +44,6 @@
 #include "prims/methodHandles.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/handles.inline.hpp"
-#include "runtime/orderAccess.hpp"
 #include "utilities/macros.hpp"
 
 // Implementation of ConstantPoolCacheEntry
@@ -97,7 +96,7 @@ void ConstantPoolCacheEntry::set_bytecode_1(Bytecodes::Code code) {
   assert(c == 0 || c == code || code == 0, "update must be consistent");
 #endif
   // Need to flush pending stores here before bytecode is written.
-  OrderAccess::release_store(&_indices, _indices | ((u_char)code << bytecode_1_shift));
+  Atomic::release_store(&_indices, _indices | ((u_char)code << bytecode_1_shift));
 }
 
 void ConstantPoolCacheEntry::set_bytecode_2(Bytecodes::Code code) {
@@ -107,17 +106,17 @@ void ConstantPoolCacheEntry::set_bytecode_2(Bytecodes::Code code) {
   assert(c == 0 || c == code || code == 0, "update must be consistent");
 #endif
   // Need to flush pending stores here before bytecode is written.
-  OrderAccess::release_store(&_indices, _indices | ((u_char)code << bytecode_2_shift));
+  Atomic::release_store(&_indices, _indices | ((u_char)code << bytecode_2_shift));
 }
 
 // Sets f1, ordering with previous writes.
 void ConstantPoolCacheEntry::release_set_f1(Metadata* f1) {
   assert(f1 != NULL, "");
-  OrderAccess::release_store(&_f1, f1);
+  Atomic::release_store(&_f1, f1);
 }
 
 void ConstantPoolCacheEntry::set_indy_resolution_failed() {
-  OrderAccess::release_store(&_flags, _flags | (1 << indy_resolution_failed_shift));
+  Atomic::release_store(&_flags, _flags | (1 << indy_resolution_failed_shift));
 }
 
 // Note that concurrent update of both bytecodes can leave one of them
@@ -159,7 +158,7 @@ void ConstantPoolCacheEntry::set_parameter_size(int value) {
   // sure that the final parameter size agrees with what was passed.
   if (_flags == 0) {
     intx newflags = (value & parameter_size_mask);
-    Atomic::cmpxchg(newflags, &_flags, (intx)0);
+    Atomic::cmpxchg(&_flags, (intx)0, newflags);
   }
   guarantee(parameter_size() == value,
             "size must not change: parameter_size=%d, value=%d", parameter_size(), value);

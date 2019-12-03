@@ -142,7 +142,8 @@ class MethodType
      *  {@code staticMethod(arg1, arg2, ..., arg255)} or
      *  {@code x.virtualMethod(arg1, arg2, ..., arg254)}.
      */
-    /*non-public*/ static final int MAX_JVM_ARITY = 255;  // this is mandated by the JVM spec.
+    /*non-public*/
+    static final int MAX_JVM_ARITY = 255;  // this is mandated by the JVM spec.
 
     /** This number is the maximum arity of a method handle, 254.
      *  It is derived from the absolute JVM-imposed arity by subtracting one,
@@ -152,7 +153,8 @@ class MethodType
      *  {@code mh.invoke(arg1, arg2, ..., arg254)}.
      */
     // Issue:  Should we allow MH.invokeWithArguments to go to the full 255?
-    /*non-public*/ static final int MAX_MH_ARITY = MAX_JVM_ARITY-1;  // deduct one for mh receiver
+    /*non-public*/
+    static final int MAX_MH_ARITY = MAX_JVM_ARITY-1;  // deduct one for mh receiver
 
     /** This number is the maximum arity of a method handle invoker, 253.
      *  It is derived from the absolute JVM-imposed arity by subtracting two,
@@ -162,7 +164,8 @@ class MethodType
      *  The longest possible invocation will look like
      *  {@code invokermh.invoke(targetmh, arg1, arg2, ..., arg253)}.
      */
-    /*non-public*/ static final int MAX_MH_INVOKER_ARITY = MAX_MH_ARITY-1;  // deduct one more for invoker
+    /*non-public*/
+    static final int MAX_MH_INVOKER_ARITY = MAX_MH_ARITY-1;  // deduct one more for invoker
 
     private static void checkRtype(Class<?> rtype) {
         Objects.requireNonNull(rtype);
@@ -210,8 +213,7 @@ class MethodType
      * @throws NullPointerException if {@code rtype} or {@code ptypes} or any element of {@code ptypes} is null
      * @throws IllegalArgumentException if any element of {@code ptypes} is {@code void.class}
      */
-    public static
-    MethodType methodType(Class<?> rtype, Class<?>[] ptypes) {
+    public static MethodType methodType(Class<?> rtype, Class<?>[] ptypes) {
         return makeImpl(rtype, ptypes, false);
     }
 
@@ -224,8 +226,7 @@ class MethodType
      * @throws NullPointerException if {@code rtype} or {@code ptypes} or any element of {@code ptypes} is null
      * @throws IllegalArgumentException if any element of {@code ptypes} is {@code void.class}
      */
-    public static
-    MethodType methodType(Class<?> rtype, List<Class<?>> ptypes) {
+    public static MethodType methodType(Class<?> rtype, List<Class<?>> ptypes) {
         boolean notrust = false;  // random List impl. could return evil ptypes array
         return makeImpl(rtype, listToArray(ptypes), notrust);
     }
@@ -247,8 +248,7 @@ class MethodType
      * @throws NullPointerException if {@code rtype} or {@code ptype0} or {@code ptypes} or any element of {@code ptypes} is null
      * @throws IllegalArgumentException if {@code ptype0} or {@code ptypes} or any element of {@code ptypes} is {@code void.class}
      */
-    public static
-    MethodType methodType(Class<?> rtype, Class<?> ptype0, Class<?>... ptypes) {
+    public static MethodType methodType(Class<?> rtype, Class<?> ptype0, Class<?>... ptypes) {
         Class<?>[] ptypes1 = new Class<?>[1+ptypes.length];
         ptypes1[0] = ptype0;
         System.arraycopy(ptypes, 0, ptypes1, 1, ptypes.length);
@@ -263,8 +263,7 @@ class MethodType
      * @return a method type with the given return value
      * @throws NullPointerException if {@code rtype} is null
      */
-    public static
-    MethodType methodType(Class<?> rtype) {
+    public static MethodType methodType(Class<?> rtype) {
         return makeImpl(rtype, NO_PTYPES, true);
     }
 
@@ -278,8 +277,7 @@ class MethodType
      * @throws NullPointerException if {@code rtype} or {@code ptype0} is null
      * @throws IllegalArgumentException if {@code ptype0} is {@code void.class}
      */
-    public static
-    MethodType methodType(Class<?> rtype, Class<?> ptype0) {
+    public static MethodType methodType(Class<?> rtype, Class<?> ptype0) {
         return makeImpl(rtype, new Class<?>[]{ ptype0 }, true);
     }
 
@@ -293,8 +291,7 @@ class MethodType
      * @return a method type with the given components
      * @throws NullPointerException if {@code rtype} or {@code ptypes} is null
      */
-    public static
-    MethodType methodType(Class<?> rtype, MethodType ptypes) {
+    public static MethodType methodType(Class<?> rtype, MethodType ptypes) {
         return makeImpl(rtype, ptypes.ptypes, true);
     }
 
@@ -305,8 +302,8 @@ class MethodType
      * @param trusted whether the ptypes can be used without cloning
      * @return the unique method type of the desired structure
      */
-    /*trusted*/ static
-    MethodType makeImpl(Class<?> rtype, Class<?>[] ptypes, boolean trusted) {
+    /*trusted*/
+    static MethodType makeImpl(Class<?> rtype, Class<?>[] ptypes, boolean trusted) {
         if (ptypes.length == 0) {
             ptypes = NO_PTYPES; trusted = true;
         }
@@ -342,8 +339,7 @@ class MethodType
      * @throws IllegalArgumentException if {@code objectArgCount} is negative or greater than 255 (or 254, if {@code finalArray} is true)
      * @see #genericMethodType(int)
      */
-    public static
-    MethodType genericMethodType(int objectArgCount, boolean finalArray) {
+    public static MethodType genericMethodType(int objectArgCount, boolean finalArray) {
         MethodType mt;
         checkSlotCount(objectArgCount);
         int ivarargs = (!finalArray ? 0 : 1);
@@ -371,8 +367,7 @@ class MethodType
      * @throws IllegalArgumentException if {@code objectArgCount} is negative or greater than 255
      * @see #genericMethodType(int, boolean)
      */
-    public static
-    MethodType genericMethodType(int objectArgCount) {
+    public static MethodType genericMethodType(int objectArgCount) {
         return genericMethodType(objectArgCount, false);
     }
 
@@ -479,7 +474,8 @@ class MethodType
      *                                  or if the resulting method type would have more than 255 parameter slots
      * @throws NullPointerException if {@code ptypesToInsert} or any of its elements is null
      */
-    /*non-public*/ MethodType replaceParameterTypes(int start, int end, Class<?>... ptypesToInsert) {
+    /*non-public*/
+    MethodType replaceParameterTypes(int start, int end, Class<?>... ptypesToInsert) {
         if (start == end)
             return insertParameterTypes(start, ptypesToInsert);
         int len = ptypes.length;
@@ -497,7 +493,8 @@ class MethodType
      * @param arrayLength the number of parameter types to change
      * @return the resulting type
      */
-    /*non-public*/ MethodType asSpreaderType(Class<?> arrayType, int pos, int arrayLength) {
+    /*non-public*/
+    MethodType asSpreaderType(Class<?> arrayType, int pos, int arrayLength) {
         assert(parameterCount() >= arrayLength);
         int spreadPos = pos;
         if (arrayLength == 0)  return this;  // nothing to change
@@ -527,7 +524,8 @@ class MethodType
     /** Return the leading parameter type, which must exist and be a reference.
      *  @return the leading parameter type, after error checks
      */
-    /*non-public*/ Class<?> leadingReferenceParameter() {
+    /*non-public*/
+    Class<?> leadingReferenceParameter() {
         Class<?> ptype;
         if (ptypes.length == 0 ||
             (ptype = ptypes[0]).isPrimitive())
@@ -541,7 +539,8 @@ class MethodType
      * @param arrayLength the number of parameter types to insert
      * @return the resulting type
      */
-    /*non-public*/ MethodType asCollectorType(Class<?> arrayType, int pos, int arrayLength) {
+    /*non-public*/
+    MethodType asCollectorType(Class<?> arrayType, int pos, int arrayLength) {
         assert(parameterCount() >= 1);
         assert(pos < ptypes.length);
         assert(ptypes[pos].isAssignableFrom(arrayType));
@@ -652,7 +651,8 @@ class MethodType
      * such as {@link MethodHandle#invokeBasic invokeBasic}.
      * @return a version of the original type with all reference and subword types replaced
      */
-    /*non-public*/ MethodType basicType() {
+    /*non-public*/
+    MethodType basicType() {
         return form.basicType();
     }
 
@@ -662,7 +662,8 @@ class MethodType
     /**
      * @return a version of the original type with MethodHandle prepended as the first argument
      */
-    /*non-public*/ MethodType invokerType() {
+    /*non-public*/
+    MethodType invokerType() {
         return insertParameterTypes(0, METHOD_HANDLE_ARRAY);
     }
 
@@ -677,7 +678,8 @@ class MethodType
         return genericMethodType(parameterCount());
     }
 
-    /*non-public*/ boolean isGeneric() {
+    /*non-public*/
+    boolean isGeneric() {
         return this == erase() && !hasPrimitives();
     }
 
@@ -1064,11 +1066,13 @@ class MethodType
      * generate bytecodes that process method handles and invokedynamic.
      * @return the number of JVM stack slots for this type's parameters
      */
-    /*non-public*/ int parameterSlotCount() {
+    /*non-public*/
+    int parameterSlotCount() {
         return form.parameterSlotCount();
     }
 
-    /*non-public*/ Invokers invokers() {
+    /*non-public*/
+    Invokers invokers() {
         Invokers inv = invokers;
         if (inv != null)  return inv;
         invokers = inv = new Invokers(this);
@@ -1167,7 +1171,8 @@ class MethodType
         return toMethodDescriptorString();
     }
 
-    /*non-public*/ static String toFieldDescriptorString(Class<?> cls) {
+    /*non-public*/
+    static String toFieldDescriptorString(Class<?> cls) {
         return BytecodeDescriptor.unparse(cls);
     }
 

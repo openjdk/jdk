@@ -26,6 +26,7 @@
 #include "gc/shenandoah/shenandoahBarrierSet.hpp"
 #include "gc/shenandoah/shenandoahBarrierSetClone.inline.hpp"
 #include "gc/shenandoah/shenandoahBarrierSetAssembler.hpp"
+#include "gc/shenandoah/shenandoahBarrierSetNMethod.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahConcurrentRoots.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
@@ -43,11 +44,19 @@
 class ShenandoahBarrierSetC1;
 class ShenandoahBarrierSetC2;
 
+static BarrierSetNMethod* make_barrier_set_nmethod(ShenandoahHeap* heap) {
+  // NMethod barriers are only used when concurrent nmethod unloading is enabled
+  if (!ShenandoahConcurrentRoots::can_do_concurrent_class_unloading()) {
+    return NULL;
+  }
+  return new ShenandoahBarrierSetNMethod(heap);
+}
+
 ShenandoahBarrierSet::ShenandoahBarrierSet(ShenandoahHeap* heap) :
   BarrierSet(make_barrier_set_assembler<ShenandoahBarrierSetAssembler>(),
              make_barrier_set_c1<ShenandoahBarrierSetC1>(),
              make_barrier_set_c2<ShenandoahBarrierSetC2>(),
-             NULL /* barrier_set_nmethod */,
+             make_barrier_set_nmethod(heap),
              BarrierSet::FakeRtti(BarrierSet::ShenandoahBarrierSet)),
   _heap(heap),
   _satb_mark_queue_buffer_allocator("SATB Buffer Allocator", ShenandoahSATBBufferSize),
@@ -99,36 +108,6 @@ bool ShenandoahBarrierSet::need_keep_alive_barrier(DecoratorSet decorators,Basic
   bool is_traversal_mode = ShenandoahHeap::heap()->is_traversal_mode();
   bool on_weak_ref = (decorators & (ON_WEAK_OOP_REF | ON_PHANTOM_OOP_REF)) != 0;
   return (on_weak_ref || unknown) && (keep_alive || is_traversal_mode);
-}
-
-template <class T>
-inline void ShenandoahBarrierSet::inline_write_ref_field_pre(T* field, oop new_val) {
-  shenandoah_assert_not_in_cset_loc_except(field, _heap->cancelled_gc());
-  if (_heap->is_concurrent_mark_in_progress()) {
-    T heap_oop = RawAccess<>::oop_load(field);
-    if (!CompressedOops::is_null(heap_oop)) {
-      enqueue(CompressedOops::decode(heap_oop));
-    }
-  }
-}
-
-// These are the more general virtual versions.
-void ShenandoahBarrierSet::write_ref_field_pre_work(oop* field, oop new_val) {
-  inline_write_ref_field_pre(field, new_val);
-}
-
-void ShenandoahBarrierSet::write_ref_field_pre_work(narrowOop* field, oop new_val) {
-  inline_write_ref_field_pre(field, new_val);
-}
-
-void ShenandoahBarrierSet::write_ref_field_pre_work(void* field, oop new_val) {
-  guarantee(false, "Not needed");
-}
-
-void ShenandoahBarrierSet::write_ref_field_work(void* v, oop o, bool release) {
-  shenandoah_assert_not_in_cset_loc_except(v, _heap->cancelled_gc());
-  shenandoah_assert_not_forwarded_except  (v, o, o == NULL || _heap->cancelled_gc() || !_heap->is_concurrent_mark_in_progress());
-  shenandoah_assert_not_in_cset_except    (v, o, o == NULL || _heap->cancelled_gc() || !_heap->is_concurrent_mark_in_progress());
 }
 
 oop ShenandoahBarrierSet::load_reference_barrier_not_null(oop obj) {
@@ -232,30 +211,6 @@ oop ShenandoahBarrierSet::load_reference_barrier_impl(oop obj) {
   } else {
     return obj;
   }
-}
-
-void ShenandoahBarrierSet::storeval_barrier(oop obj) {
-  if (ShenandoahStoreValEnqueueBarrier && !CompressedOops::is_null(obj) && _heap->is_concurrent_traversal_in_progress()) {
-    enqueue(obj);
-  }
-}
-
-void ShenandoahBarrierSet::keep_alive_barrier(oop obj) {
-  if (ShenandoahKeepAliveBarrier && _heap->is_concurrent_mark_in_progress()) {
-    enqueue(obj);
-  }
-}
-
-void ShenandoahBarrierSet::enqueue(oop obj) {
-  shenandoah_assert_not_forwarded_if(NULL, obj, _heap->is_concurrent_traversal_in_progress());
-  assert(_satb_mark_queue_set.is_active(), "only get here when SATB active");
-
-  // Filter marked objects before hitting the SATB queues. The same predicate would
-  // be used by SATBMQ::filter to eliminate already marked objects downstream, but
-  // filtering here helps to avoid wasteful SATB queueing work to begin with.
-  if (!_heap->requires_marking<false>(obj)) return;
-
-  ShenandoahThreadLocalData::satb_mark_queue(Thread::current()).enqueue_known_active(obj);
 }
 
 void ShenandoahBarrierSet::on_thread_create(Thread* thread) {

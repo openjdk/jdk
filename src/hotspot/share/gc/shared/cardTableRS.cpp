@@ -139,7 +139,7 @@ inline bool ClearNoncleanCardWrapper::clear_card_parallel(CardValue* entry) {
     if (CardTableRS::card_is_dirty_wrt_gen_iter(entry_val)
         || _ct->is_prev_youngergen_card_val(entry_val)) {
       CardValue res =
-        Atomic::cmpxchg(CardTableRS::clean_card_val(), entry, entry_val);
+        Atomic::cmpxchg(entry, entry_val, CardTableRS::clean_card_val());
       if (res == entry_val) {
         break;
       } else {
@@ -264,7 +264,7 @@ void CardTableRS::write_ref_field_gc_par(void* field, oop new_val) {
       // Mark it as both cur and prev youngergen; card cleaning thread will
       // eventually remove the previous stuff.
       CardValue new_val = cur_youngergen_and_prev_nonclean_card;
-      CardValue res = Atomic::cmpxchg(new_val, entry, entry_val);
+      CardValue res = Atomic::cmpxchg(entry, entry_val, new_val);
       // Did the CAS succeed?
       if (res == entry_val) return;
       // Otherwise, retry, to see the new value.

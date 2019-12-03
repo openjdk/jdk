@@ -30,7 +30,6 @@
 #include "gc/shared/cardTableBarrierSet.hpp"
 #include "gc/shared/space.inline.hpp"
 #include "memory/allocation.inline.hpp"
-#include "runtime/atomic.hpp"
 #include "runtime/mutexLocker.hpp"
 
 // Check that the size of the SparsePRTEntry is evenly divisible by the maximum
@@ -57,19 +56,19 @@ bool SparsePRTEntry::contains_card(CardIdx_t card_index) const {
   return false;
 }
 
-SparsePRTEntry::AddCardResult SparsePRTEntry::add_card(CardIdx_t card_index) {
+SparsePRT::AddCardResult SparsePRTEntry::add_card(CardIdx_t card_index) {
   for (int i = 0; i < num_valid_cards(); i++) {
     if (card(i) == card_index) {
-      return found;
+      return SparsePRT::found;
     }
   }
   if (num_valid_cards() < cards_num() - 1) {
     _cards[_next_null] = (card_elem_t)card_index;
     _next_null++;
-    return added;
+    return SparsePRT::added;
    }
   // Otherwise, we're full.
-  return overflow;
+  return SparsePRT::overflow;
 }
 
 void SparsePRTEntry::copy_cards(card_elem_t* cards) const {
@@ -92,7 +91,6 @@ RSHashTable::RSHashTable(size_t capacity) :
   _capacity(capacity),
   _capacity_mask(capacity-1),
   _occupied_entries(0),
-  _occupied_cards(0),
   _entries(NULL),
   _buckets(NEW_C_HEAP_ARRAY(int, capacity, mtGC)),
   _free_region(0),
@@ -110,7 +108,6 @@ RSHashTable::~RSHashTable() {
 
 void RSHashTable::clear() {
   _occupied_entries = 0;
-  _occupied_cards = 0;
   guarantee(_entries != NULL, "INV");
   guarantee(_buckets != NULL, "INV");
 
@@ -124,14 +121,13 @@ void RSHashTable::clear() {
   _free_region = 0;
 }
 
-bool RSHashTable::add_card(RegionIdx_t region_ind, CardIdx_t card_index) {
+SparsePRT::AddCardResult RSHashTable::add_card(RegionIdx_t region_ind, CardIdx_t card_index) {
   SparsePRTEntry* e = entry_for_region_ind_create(region_ind);
   assert(e != NULL && e->r_ind() == region_ind,
          "Postcondition of call above.");
-  SparsePRTEntry::AddCardResult res = e->add_card(card_index);
-  if (res == SparsePRTEntry::added) _occupied_cards++;
+  SparsePRT::AddCardResult res = e->add_card(card_index);
   assert(e->num_valid_cards() > 0, "Postcondition");
-  return res != SparsePRTEntry::overflow;
+  return res;
 }
 
 SparsePRTEntry* RSHashTable::get_entry(RegionIdx_t region_ind) const {
@@ -164,7 +160,6 @@ bool RSHashTable::delete_entry(RegionIdx_t region_ind) {
   if (cur_ind == NullEntry) return false;
   // Otherwise, splice out "cur".
   *prev_loc = cur->next_index();
-  _occupied_cards -= cur->num_valid_cards();
   free_entry(cur_ind);
   _occupied_entries--;
   return true;
@@ -210,7 +205,6 @@ void RSHashTable::add_entry(SparsePRTEntry* e) {
   assert(e->num_valid_cards() > 0, "Precondition.");
   SparsePRTEntry* e2 = entry_for_region_ind_create(e->r_ind());
   e->copy_cards(e2);
-  _occupied_cards += e2->num_valid_cards();
   assert(e2->num_valid_cards() > 0, "Postcondition.");
 }
 
@@ -310,7 +304,7 @@ size_t SparsePRT::mem_size() const {
   return sizeof(SparsePRT) + _table->mem_size();
 }
 
-bool SparsePRT::add_card(RegionIdx_t region_id, CardIdx_t card_index) {
+SparsePRT::AddCardResult SparsePRT::add_card(RegionIdx_t region_id, CardIdx_t card_index) {
   if (_table->should_expand()) {
     expand();
   }

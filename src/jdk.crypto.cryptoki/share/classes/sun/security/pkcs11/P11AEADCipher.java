@@ -324,6 +324,9 @@ final class P11AEADCipher extends CipherSpi {
         try {
             initialize();
         } catch (PKCS11Exception e) {
+            if (e.getErrorCode() == CKR_MECHANISM_PARAM_INVALID) {
+                throw new InvalidAlgorithmParameterException("Bad params", e);
+            }
             throw new InvalidKeyException("Could not initialize cipher", e);
         }
     }

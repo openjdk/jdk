@@ -26,7 +26,7 @@
 #include "gc/shared/ptrQueue.hpp"
 #include "memory/allocation.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
-#include "runtime/orderAccess.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/semaphore.inline.hpp"
 #include "runtime/thread.hpp"
 #include "utilities/globalCounter.inline.hpp"
@@ -150,14 +150,14 @@ public:
   {}
 
   virtual void main_run() {
-    while (OrderAccess::load_acquire(_continue_running)) {
+    while (Atomic::load_acquire(_continue_running)) {
       BufferNode* node = _allocator->allocate();
       _cbl->push(node);
       ++_allocations;
       ThreadBlockInVM tbiv(this); // Safepoint check.
     }
     tty->print_cr("allocations: " SIZE_FORMAT, _allocations);
-    Atomic::add(_allocations, _total_allocations);
+    Atomic::add(_total_allocations, _allocations);
   }
 };
 
@@ -184,7 +184,7 @@ public:
       BufferNode* node = _cbl->pop();
       if (node != NULL) {
         _allocator->release(node);
-      } else if (!OrderAccess::load_acquire(_continue_running)) {
+      } else if (!Atomic::load_acquire(_continue_running)) {
         return;
       }
       ThreadBlockInVM tbiv(this); // Safepoint check.
@@ -226,12 +226,12 @@ static void run_test(BufferNode::Allocator* allocator, CompletedList* cbl) {
     ThreadInVMfromNative invm(this_thread);
     this_thread->sleep(milliseconds_to_run);
   }
-  OrderAccess::release_store(&allocator_running, false);
+  Atomic::release_store(&allocator_running, false);
   for (uint i = 0; i < nthreads; ++i) {
     ThreadInVMfromNative invm(this_thread);
     post.wait_with_safepoint_check(this_thread);
   }
-  OrderAccess::release_store(&processor_running, false);
+  Atomic::release_store(&processor_running, false);
   for (uint i = 0; i < nthreads; ++i) {
     ThreadInVMfromNative invm(this_thread);
     post.wait_with_safepoint_check(this_thread);

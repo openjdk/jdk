@@ -35,6 +35,7 @@
  */
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.net.InetAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.DatagramChannel;
 import java.nio.channels.SelectionKey;
@@ -66,6 +67,7 @@ public class StateTest {
         /*
          * Wait for service to connect
          */
+        System.err.println("Waiting for the service to connect");
         ssc.configureBlocking(false);
         sk = ssc.register(sel, SelectionKey.OP_ACCEPT);
         long to = Utils.adjustTimeout(15*1000);
@@ -89,6 +91,7 @@ public class StateTest {
         /*
          * Wait for service to report test result
          */
+        System.err.println("Waiting for the service to report test result");
         sc.configureBlocking(false);
         sk = sc.register(sel, SelectionKey.OP_READ);
         to = Utils.adjustTimeout(5000);
@@ -111,6 +114,7 @@ public class StateTest {
                 throw new IOException("Timed out waiting for service to report test result");
             }
         }
+        System.err.println("Cleaning up");
         sk.cancel();
         sc.close();
         sel.close();
@@ -118,6 +122,7 @@ public class StateTest {
         /*
          * Examine the test result
          */
+        System.err.println("Examine test result");
         bb.flip();
         byte b = bb.get();
 
@@ -152,7 +157,8 @@ public class StateTest {
          * from the service.
          */
         ServerSocketChannel ssc = ServerSocketChannel.open();
-        ssc.socket().bind(new InetSocketAddress(0));
+        ssc.socket().bind(new InetSocketAddress(InetAddress.getLocalHost(), 0));
+        System.err.println("Listener bound to: " + ssc.socket().getLocalSocketAddress());
 
         /*
          * The port is passed to the service as an argument.
@@ -164,7 +170,9 @@ public class StateTest {
         /*
          * Launch service with a SocketChannel (tcp nowait)
          */
+        System.err.println("launchWithSocketChannel");
         SocketChannel sc = Launcher.launchWithSocketChannel(TEST_SERVICE, options, arg);
+        System.err.println("Waiting for test results");
         waitForTestResult(ssc, expectFail);
         sc.close();
 
@@ -173,6 +181,7 @@ public class StateTest {
          * launchWithServerSocketChannel establishes a connection to the service
          * and the returned SocketChannel is connected to the service.
          */
+        System.err.println("launchWithServerSocketChannel");
         sc = Launcher.launchWithServerSocketChannel(TEST_SERVICE, options, arg);
         waitForTestResult(ssc, expectFail);
         sc.close();
@@ -180,10 +189,12 @@ public class StateTest {
         /*
          * Launch service with a DatagramChannel (udp wait)
          */
+        System.err.println("launchWithDatagramChannel");
         DatagramChannel dc = Launcher.launchWithDatagramChannel(TEST_SERVICE, options, arg);
         waitForTestResult(ssc, expectFail);
         dc.close();
 
+        System.err.println("done");
         if (failures > 0) {
             throw new RuntimeException("Test failed - see log for details");
         } else {

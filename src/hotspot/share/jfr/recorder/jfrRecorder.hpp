@@ -38,6 +38,9 @@ class JfrRecorder : public JfrCHeapObj {
   friend class Jfr;
   friend void recorderthread_entry(JavaThread*, Thread*);
  private:
+  static bool on_create_vm_1();
+  static bool on_create_vm_2();
+  static bool on_create_vm_3();
   static bool create_checkpoint_manager();
   static bool create_chunk_repository();
   static bool create_java_event_writer();
@@ -52,8 +55,6 @@ class JfrRecorder : public JfrCHeapObj {
   static bool create_components();
   static void destroy_components();
   static void on_recorder_thread_exit();
-  static bool on_vm_start();
-  static bool on_vm_init();
 
  public:
   static bool is_enabled();

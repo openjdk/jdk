@@ -30,6 +30,7 @@
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
+#include "runtime/atomic.hpp"
 
 #define ASSERT_REF_TYPE(ref_type) assert((ref_type) >= REF_SOFT && (ref_type) <= REF_PHANTOM, \
                                          "Invariant (%d)", (int)ref_type)
@@ -246,7 +247,7 @@ void ReferenceProcessorPhaseTimes::set_sub_phase_total_phase_time_ms(ReferencePr
 
 void ReferenceProcessorPhaseTimes::add_ref_cleared(ReferenceType ref_type, size_t count) {
   ASSERT_REF_TYPE(ref_type);
-  Atomic::add(count, &_ref_cleared[ref_type_2_index(ref_type)]);
+  Atomic::add(&_ref_cleared[ref_type_2_index(ref_type)], count);
 }
 
 void ReferenceProcessorPhaseTimes::set_ref_discovered(ReferenceType ref_type, size_t count) {

@@ -28,11 +28,11 @@ package java.util.zip;
 import java.io.OutputStream;
 import java.io.IOException;
 import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.util.Vector;
 import java.util.HashSet;
 import static java.util.zip.ZipConstants64.*;
 import static java.util.zip.ZipUtils.*;
+import sun.nio.cs.UTF_8;
 import sun.security.action.GetPropertyAction;
 
 /**
@@ -43,8 +43,7 @@ import sun.security.action.GetPropertyAction;
  * @author      David Connelly
  * @since 1.1
  */
-public
-class ZipOutputStream extends DeflaterOutputStream implements ZipConstants {
+public class ZipOutputStream extends DeflaterOutputStream implements ZipConstants {
 
     /**
      * Whether to use ZIP64 for zip files with more than 64k entries.
@@ -117,7 +116,7 @@ class ZipOutputStream extends DeflaterOutputStream implements ZipConstants {
      * @param out the actual output stream
      */
     public ZipOutputStream(OutputStream out) {
-        this(out, StandardCharsets.UTF_8);
+        this(out, UTF_8.INSTANCE);
     }
 
     /**

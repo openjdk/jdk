@@ -28,6 +28,8 @@
 #include "classfile/stringTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "gc/shared/oopStorageParState.inline.hpp"
+#include "gc/shenandoah/shenandoahClosures.inline.hpp"
+#include "gc/shenandoah/shenandoahConcurrentRoots.hpp"
 #include "gc/shenandoah/shenandoahHeuristics.hpp"
 #include "gc/shenandoah/shenandoahRootProcessor.hpp"
 #include "gc/shenandoah/shenandoahTimingTracker.hpp"
@@ -265,14 +267,19 @@ void ShenandoahRootScanner<ITR>::strong_roots_do(uint worker_id, OopClosure* oop
 template <typename IsAlive, typename KeepAlive>
 void ShenandoahRootUpdater::roots_do(uint worker_id, IsAlive* is_alive, KeepAlive* keep_alive) {
   CodeBlobToOopClosure update_blobs(keep_alive, CodeBlobToOopClosure::FixRelocations);
+  ShenandoahCodeBlobAndDisarmClosure blobs_and_disarm_Cl(keep_alive);
+  CodeBlobToOopClosure* codes_cl = ShenandoahConcurrentRoots::can_do_concurrent_class_unloading() ?
+                                  static_cast<CodeBlobToOopClosure*>(&blobs_and_disarm_Cl) :
+                                  static_cast<CodeBlobToOopClosure*>(&update_blobs);
+
   CLDToOopClosure clds(keep_alive, ClassLoaderData::_claim_strong);
 
   _serial_roots.oops_do(keep_alive, worker_id);
   _vm_roots.oops_do(keep_alive, worker_id);
 
-  _thread_roots.oops_do(keep_alive, NULL, worker_id);
   _cld_roots.cld_do(&clds, worker_id);
   _code_roots.code_blobs_do(&update_blobs, worker_id);
+  _thread_roots.oops_do(keep_alive, NULL, worker_id);
 
   _serial_weak_roots.weak_oops_do(is_alive, keep_alive, worker_id);
   _weak_roots.weak_oops_do(is_alive, keep_alive, worker_id);

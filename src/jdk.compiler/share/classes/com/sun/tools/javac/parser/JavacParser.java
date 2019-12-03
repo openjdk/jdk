@@ -893,6 +893,7 @@ public class JavacParser implements Parser {
 
     /*  Expression2Rest = {infixop Expression3}
      *                  | Expression3 instanceof Type
+     *                  | Expression3 instanceof Pattern
      *  infixop         = "||"
      *                  | "&&"
      *                  | "|"
@@ -915,13 +916,24 @@ public class JavacParser implements Parser {
         Token topOp = Tokens.DUMMY;
         while (prec(token.kind) >= minprec) {
             opStack[top] = topOp;
-            top++;
-            topOp = token;
-            nextToken();
-            odStack[top] = (topOp.kind == INSTANCEOF) ? parseType() : term3();
+
+            if (token.kind == INSTANCEOF) {
+                int pos = token.pos;
+                nextToken();
+                JCTree pattern = parseType();
+                if (token.kind == IDENTIFIER) {
+                    checkSourceLevel(token.pos, Feature.PATTERN_MATCHING_IN_INSTANCEOF);
+                    pattern = toP(F.at(token.pos).BindingPattern(ident(), pattern));
+                }
+                odStack[top] = F.at(pos).TypeTest(odStack[top], pattern);
+            } else {
+                topOp = token;
+                nextToken();
+                top++;
+                odStack[top] = term3();
+            }
             while (top > 0 && prec(topOp.kind) >= prec(token.kind)) {
-                odStack[top-1] = makeOp(topOp.pos, topOp.kind, odStack[top-1],
-                                        odStack[top]);
+                odStack[top - 1] = F.at(topOp.pos).Binary(optag(topOp.kind), odStack[top - 1], odStack[top]);
                 top--;
                 topOp = opStack[top];
             }
@@ -938,19 +950,6 @@ public class JavacParser implements Parser {
         return t;
     }
     //where
-        /** Construct a binary or type test node.
-         */
-        private JCExpression makeOp(int pos,
-                                    TokenKind topOp,
-                                    JCExpression od1,
-                                    JCExpression od2)
-        {
-            if (topOp == INSTANCEOF) {
-                return F.at(pos).TypeTest(od1, od2);
-            } else {
-                return F.at(pos).Binary(optag(topOp), od1, od2);
-            }
-        }
         /** If tree is a concatenation of string literals, replace it
          *  by a single literal representing the concatenated string.
          */

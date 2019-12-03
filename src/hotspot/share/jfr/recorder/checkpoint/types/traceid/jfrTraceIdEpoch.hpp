@@ -27,7 +27,7 @@
 
 #include "jfr/utilities/jfrTypes.hpp"
 #include "memory/allocation.hpp"
-#include "runtime/orderAccess.hpp"
+#include "runtime/atomic.hpp"
 
 #define USED_BIT                             1
 #define METHOD_USED_BIT                      (USED_BIT << 2)
@@ -91,16 +91,16 @@ class JfrTraceIdEpoch : AllStatic {
   }
 
   static bool has_changed_tag_state() {
-    if (OrderAccess::load_acquire(&_tag_state)) {
-      OrderAccess::release_store(&_tag_state, false);
+    if (Atomic::load_acquire(&_tag_state)) {
+      Atomic::release_store(&_tag_state, false);
       return true;
     }
     return false;
   }
 
   static void set_changed_tag_state() {
-    if (!OrderAccess::load_acquire(&_tag_state)) {
-      OrderAccess::release_store(&_tag_state, true);
+    if (!Atomic::load_acquire(&_tag_state)) {
+      Atomic::release_store(&_tag_state, true);
     }
   }
 };

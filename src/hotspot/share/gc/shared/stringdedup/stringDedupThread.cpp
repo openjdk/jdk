@@ -33,7 +33,6 @@
 #include "logging/log.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomic.hpp"
 
 StringDedupThread* StringDedupThread::_thread = NULL;
 

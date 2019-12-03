@@ -96,7 +96,7 @@ inline void ZPhantomCleanOopClosure::do_oop(oop* p) {
     // oop here again (the object would be strongly live and we would
     // not consider clearing such oops), so therefore we don't have an
     // ABA problem here.
-    Atomic::cmpxchg(oop(NULL), p, obj);
+    Atomic::cmpxchg(p, obj, oop(NULL));
   }
 }
 

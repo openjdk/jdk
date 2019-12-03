@@ -29,10 +29,6 @@
 
 class OldObjectVMOperation : public VM_Operation {
  public:
-  Mode evaluation_mode() const {
-    return _safepoint;
-  }
-
   VMOp_Type type() const {
     return VMOp_JFROldObject;
   }

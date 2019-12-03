@@ -1024,7 +1024,7 @@ inline hrtime_t getTimeNanos() {
   if (now <= prev) {
     return prev;   // same or retrograde time;
   }
-  const hrtime_t obsv = Atomic::cmpxchg(now, &max_hrtime, prev);
+  const hrtime_t obsv = Atomic::cmpxchg(&max_hrtime, prev, now);
   assert(obsv >= prev, "invariant");   // Monotonicity
   // If the CAS succeeded then we're done and return "now".
   // If the CAS failed and the observed value "obsv" is >= now then
@@ -1984,7 +1984,7 @@ static int check_pending_signals() {
   while (true) {
     for (int i = 0; i < Sigexit + 1; i++) {
       jint n = pending_signals[i];
-      if (n > 0 && n == Atomic::cmpxchg(n - 1, &pending_signals[i], n)) {
+      if (n > 0 && n == Atomic::cmpxchg(&pending_signals[i], n, n - 1)) {
         return i;
       }
     }
@@ -4710,7 +4710,7 @@ void os::PlatformEvent::park() {           // AKA: down()
   int v;
   for (;;) {
     v = _Event;
-    if (Atomic::cmpxchg(v-1, &_Event, v) == v) break;
+    if (Atomic::cmpxchg(&_Event, v, v-1) == v) break;
   }
   guarantee(v >= 0, "invariant");
   if (v == 0) {
@@ -4748,7 +4748,7 @@ int os::PlatformEvent::park(jlong millis) {
   int v;
   for (;;) {
     v = _Event;
-    if (Atomic::cmpxchg(v-1, &_Event, v) == v) break;
+    if (Atomic::cmpxchg(&_Event, v, v-1) == v) break;
   }
   guarantee(v >= 0, "invariant");
   if (v != 0) return OS_OK;
@@ -4797,7 +4797,7 @@ void os::PlatformEvent::unpark() {
   // from the first park() call after an unpark() call which will help
   // shake out uses of park() and unpark() without condition variables.
 
-  if (Atomic::xchg(1, &_Event) >= 0) return;
+  if (Atomic::xchg(&_Event, 1) >= 0) return;
 
   // If the thread associated with the event was parked, wake it.
   // Wait for the thread assoc with the PlatformEvent to vacate.
@@ -4896,7 +4896,7 @@ void Parker::park(bool isAbsolute, jlong time) {
   // Return immediately if a permit is available.
   // We depend on Atomic::xchg() having full barrier semantics
   // since we are doing a lock-free update to _counter.
-  if (Atomic::xchg(0, &_counter) > 0) return;
+  if (Atomic::xchg(&_counter, 0) > 0) return;
 
   // Optional fast-exit: Check interrupt before trying to wait
   Thread* thread = Thread::current();

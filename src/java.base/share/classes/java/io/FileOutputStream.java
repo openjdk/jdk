@@ -66,8 +66,7 @@ import sun.nio.ch.FileChannelImpl;
  * @see     java.nio.file.Files#newOutputStream
  * @since   1.0
  */
-public
-class FileOutputStream extends OutputStream
+public class FileOutputStream extends OutputStream
 {
     /**
      * Access to FileDescriptor internals.

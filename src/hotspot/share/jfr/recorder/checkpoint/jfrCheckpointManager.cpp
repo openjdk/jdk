@@ -461,7 +461,6 @@ bool JfrCheckpointManager::is_type_set_required() {
 }
 
 size_t JfrCheckpointManager::flush_type_set() {
-  assert(!SafepointSynchronize::is_at_safepoint(), "invariant");
   size_t elements = 0;
   {
     JfrCheckpointWriter writer(Thread::current());

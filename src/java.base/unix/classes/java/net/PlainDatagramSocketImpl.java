@@ -37,6 +37,10 @@ import sun.net.ext.ExtendedSocketOptions;
 
 class PlainDatagramSocketImpl extends AbstractPlainDatagramSocketImpl
 {
+    PlainDatagramSocketImpl(boolean isMulticast) {
+        super(isMulticast);
+    }
+
     static {
         init();
     }

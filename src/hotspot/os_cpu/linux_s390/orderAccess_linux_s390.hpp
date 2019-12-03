@@ -76,13 +76,6 @@ inline void OrderAccess::release()    { inlasm_zarch_release(); }
 inline void OrderAccess::fence()      { inlasm_zarch_sync(); }
 inline void OrderAccess::cross_modify_fence() { inlasm_zarch_sync(); }
 
-template<size_t byte_size>
-struct OrderAccess::PlatformOrderedLoad<byte_size, X_ACQUIRE>
-{
-  template <typename T>
-  T operator()(const volatile T* p) const { T t = *p; inlasm_zarch_acquire(); return t; }
-};
-
 #undef inlasm_compiler_barrier
 #undef inlasm_zarch_sync
 #undef inlasm_zarch_release

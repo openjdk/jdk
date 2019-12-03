@@ -29,6 +29,7 @@ import java.net.URI;
 import java.net.URL;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
+import java.nio.file.FileStore;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.security.SecureRandom;
@@ -1798,10 +1799,13 @@ public class File
 
     /**
      * Returns the size of the partition <a href="#partName">named</a> by this
-     * abstract pathname.
+     * abstract pathname. If the total number of bytes in the partition is
+     * greater than {@link Long#MAX_VALUE}, then {@code Long.MAX_VALUE} will be
+     * returned.
      *
      * @return  The size, in bytes, of the partition or {@code 0L} if this
-     *          abstract pathname does not name a partition
+     *          abstract pathname does not name a partition or if the size
+     *          cannot be obtained
      *
      * @throws  SecurityException
      *          If a security manager has been installed and it denies
@@ -1810,6 +1814,7 @@ public class File
      *          read access to the file named by this abstract pathname
      *
      * @since  1.6
+     * @see FileStore#getTotalSpace
      */
     public long getTotalSpace() {
         SecurityManager sm = System.getSecurityManager();
@@ -1820,12 +1825,15 @@ public class File
         if (isInvalid()) {
             return 0L;
         }
-        return fs.getSpace(this, FileSystem.SPACE_TOTAL);
+        long space = fs.getSpace(this, FileSystem.SPACE_TOTAL);
+        return space >= 0L ? space : Long.MAX_VALUE;
     }
 
     /**
      * Returns the number of unallocated bytes in the partition <a
-     * href="#partName">named</a> by this abstract path name.
+     * href="#partName">named</a> by this abstract path name.  If the
+     * number of unallocated bytes in the partition is greater than
+     * {@link Long#MAX_VALUE}, then {@code Long.MAX_VALUE} will be returned.
      *
      * <p> The returned number of unallocated bytes is a hint, but not
      * a guarantee, that it is possible to use most or any of these
@@ -1837,9 +1845,10 @@ public class File
      * will succeed.
      *
      * @return  The number of unallocated bytes on the partition or {@code 0L}
-     *          if the abstract pathname does not name a partition.  This
-     *          value will be less than or equal to the total file system size
-     *          returned by {@link #getTotalSpace}.
+     *          if the abstract pathname does not name a partition or if this
+     *          number cannot be obtained.  This value will be less than or
+     *          equal to the total file system size returned by
+     *          {@link #getTotalSpace}.
      *
      * @throws  SecurityException
      *          If a security manager has been installed and it denies
@@ -1848,6 +1857,7 @@ public class File
      *          read access to the file named by this abstract pathname
      *
      * @since  1.6
+     * @see FileStore#getUnallocatedSpace
      */
     public long getFreeSpace() {
         SecurityManager sm = System.getSecurityManager();
@@ -1858,16 +1868,19 @@ public class File
         if (isInvalid()) {
             return 0L;
         }
-        return fs.getSpace(this, FileSystem.SPACE_FREE);
+        long space = fs.getSpace(this, FileSystem.SPACE_FREE);
+        return space >= 0L ? space : Long.MAX_VALUE;
     }
 
     /**
      * Returns the number of bytes available to this virtual machine on the
-     * partition <a href="#partName">named</a> by this abstract pathname.  When
-     * possible, this method checks for write permissions and other operating
-     * system restrictions and will therefore usually provide a more accurate
-     * estimate of how much new data can actually be written than {@link
-     * #getFreeSpace}.
+     * partition <a href="#partName">named</a> by this abstract pathname.  If
+     * the number of available bytes in the partition is greater than
+     * {@link Long#MAX_VALUE}, then {@code Long.MAX_VALUE} will be returned.
+     * When possible, this method checks for write permissions and other
+     * operating system restrictions and will therefore usually provide a more
+     * accurate estimate of how much new data can actually be written than
+     * {@link #getFreeSpace}.
      *
      * <p> The returned number of available bytes is a hint, but not a
      * guarantee, that it is possible to use most or any of these bytes.  The
@@ -1878,9 +1891,10 @@ public class File
      * to this file system will succeed.
      *
      * @return  The number of available bytes on the partition or {@code 0L}
-     *          if the abstract pathname does not name a partition.  On
-     *          systems where this information is not available, this method
-     *          will be equivalent to a call to {@link #getFreeSpace}.
+     *          if the abstract pathname does not name a partition or if this
+     *          number cannot be obtained.  On systems where this information
+     *          is not available, this method will be equivalent to a call to
+     *          {@link #getFreeSpace}.
      *
      * @throws  SecurityException
      *          If a security manager has been installed and it denies
@@ -1889,6 +1903,7 @@ public class File
      *          read access to the file named by this abstract pathname
      *
      * @since  1.6
+     * @see FileStore#getUsableSpace
      */
     public long getUsableSpace() {
         SecurityManager sm = System.getSecurityManager();
@@ -1899,7 +1914,8 @@ public class File
         if (isInvalid()) {
             return 0L;
         }
-        return fs.getSpace(this, FileSystem.SPACE_USABLE);
+        long space = fs.getSpace(this, FileSystem.SPACE_USABLE);
+        return space >= 0L ? space : Long.MAX_VALUE;
     }
 
     /* -- Temporary files -- */

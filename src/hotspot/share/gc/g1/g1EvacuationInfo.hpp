@@ -33,13 +33,14 @@ class G1EvacuationInfo : public StackObj {
   size_t _collectionset_used_before;
   size_t _collectionset_used_after;
   size_t _alloc_regions_used_before;
-  size_t _bytes_copied;
+  size_t _bytes_used;
   uint   _regions_freed;
 
 public:
-  G1EvacuationInfo() : _collectionset_regions(0), _allocation_regions(0), _collectionset_used_before(0),
-                     _collectionset_used_after(0), _alloc_regions_used_before(0),
-                     _bytes_copied(0), _regions_freed(0) { }
+  G1EvacuationInfo() :
+    _collectionset_regions(0), _allocation_regions(0), _collectionset_used_before(0),
+    _collectionset_used_after(0), _alloc_regions_used_before(0),
+    _bytes_used(0), _regions_freed(0) { }
 
   void set_collectionset_regions(uint collectionset_regions) {
     _collectionset_regions = collectionset_regions;
@@ -61,8 +62,8 @@ public:
     _alloc_regions_used_before = used;
   }
 
-  void set_bytes_copied(size_t copied) {
-    _bytes_copied = copied;
+  void set_bytes_used(size_t used) {
+    _bytes_used = used;
   }
 
   void set_regions_freed(uint freed) {
@@ -74,7 +75,7 @@ public:
   size_t collectionset_used_before() { return _collectionset_used_before; }
   size_t collectionset_used_after()  { return _collectionset_used_after; }
   size_t alloc_regions_used_before() { return _alloc_regions_used_before; }
-  size_t bytes_copied()              { return _bytes_copied; }
+  size_t bytes_used()                { return _bytes_used; }
   uint   regions_freed()             { return _regions_freed; }
 };
 

@@ -55,7 +55,7 @@ class MemoryCounter {
   inline void allocate(size_t sz) {
     Atomic::inc(&_count);
     if (sz > 0) {
-      Atomic::add(sz, &_size);
+      Atomic::add(&_size, sz);
       DEBUG_ONLY(_peak_size = MAX2(_peak_size, _size));
     }
     DEBUG_ONLY(_peak_count = MAX2(_peak_count, _count);)
@@ -66,13 +66,14 @@ class MemoryCounter {
     assert(_size >= sz, "deallocation > allocated");
     Atomic::dec(&_count);
     if (sz > 0) {
-      Atomic::sub(sz, &_size);
+      Atomic::sub(&_size, sz);
     }
   }
 
-  inline void resize(long sz) {
+  inline void resize(ssize_t sz) {
     if (sz != 0) {
-      Atomic::add(size_t(sz), &_size);
+      assert(sz >= 0 || _size >= size_t(-sz), "Must be");
+      Atomic::add(&_size, size_t(sz));
       DEBUG_ONLY(_peak_size = MAX2(_size, _peak_size);)
     }
   }
@@ -113,7 +114,7 @@ class MallocMemory {
     _arena.deallocate(0);
   }
 
-  inline void record_arena_size_change(long sz) {
+  inline void record_arena_size_change(ssize_t sz) {
     _arena.resize(sz);
   }
 
@@ -207,7 +208,7 @@ class MallocMemorySummary : AllStatic {
      as_snapshot()->by_type(flag)->record_arena_free();
    }
 
-   static inline void record_arena_size_change(long size, MEMFLAGS flag) {
+   static inline void record_arena_size_change(ssize_t size, MEMFLAGS flag) {
      as_snapshot()->by_type(flag)->record_arena_size_change(size);
    }
 
@@ -361,7 +362,7 @@ class MallocTracker : AllStatic {
     MallocMemorySummary::record_arena_free(flags);
   }
 
-  static inline void record_arena_size_change(int size, MEMFLAGS flags) {
+  static inline void record_arena_size_change(ssize_t size, MEMFLAGS flags) {
     MallocMemorySummary::record_arena_size_change(size, flags);
   }
  private:

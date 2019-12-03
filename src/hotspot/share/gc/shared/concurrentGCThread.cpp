@@ -24,9 +24,9 @@
 
 #include "precompiled.hpp"
 #include "gc/shared/concurrentGCThread.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/init.hpp"
 #include "runtime/mutexLocker.hpp"
-#include "runtime/orderAccess.hpp"
 #include "runtime/os.hpp"
 
 ConcurrentGCThread::ConcurrentGCThread() :
@@ -51,7 +51,7 @@ void ConcurrentGCThread::run() {
 
   // Signal thread has terminated
   MonitorLocker ml(Terminator_lock);
-  OrderAccess::release_store(&_has_terminated, true);
+  Atomic::release_store(&_has_terminated, true);
   ml.notify_all();
 }
 
@@ -60,7 +60,7 @@ void ConcurrentGCThread::stop() {
   assert(!has_terminated(), "Invalid state");
 
   // Signal thread to terminate
-  OrderAccess::release_store_fence(&_should_terminate, true);
+  Atomic::release_store_fence(&_should_terminate, true);
 
   stop_service();
 
@@ -72,9 +72,9 @@ void ConcurrentGCThread::stop() {
 }
 
 bool ConcurrentGCThread::should_terminate() const {
-  return OrderAccess::load_acquire(&_should_terminate);
+  return Atomic::load_acquire(&_should_terminate);
 }
 
 bool ConcurrentGCThread::has_terminated() const {
-  return OrderAccess::load_acquire(&_has_terminated);
+  return Atomic::load_acquire(&_has_terminated);
 }

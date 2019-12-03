@@ -33,9 +33,56 @@
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
 
+class RSHashTable;
+class SparsePRTEntry;
+class SparsePRTIter;
+
 // Sparse remembered set for a heap region (the "owning" region).  Maps
 // indices of other regions to short sequences of cards in the other region
 // that might contain pointers into the owner region.
+// Concurrent access to a SparsePRT must be serialized by some external mutex.
+class SparsePRT {
+  friend class SparsePRTIter;
+  friend class SparsePRTBucketIter;
+
+  RSHashTable* _table;
+
+  static const size_t InitialCapacity = 8;
+
+  void expand();
+
+public:
+  SparsePRT();
+  ~SparsePRT();
+
+  size_t mem_size() const;
+
+  enum AddCardResult {
+    overflow, // The table is full, could not add the card to the table.
+    found,    // The card is already in the PRT.
+    added     // The card has been added.
+  };
+
+  // Attempts to ensure that the given card_index in the given region is in
+  // the sparse table.  If successful (because the card was already
+  // present, or because it was successfully added) returns "true".
+  // Otherwise, returns "false" to indicate that the addition would
+  // overflow the entry for the region.  The caller must transfer these
+  // entries to a larger-capacity representation.
+  AddCardResult add_card(RegionIdx_t region_id, CardIdx_t card_index);
+
+  // Return the pointer to the entry associated with the given region.
+  SparsePRTEntry* get_entry(RegionIdx_t region_ind);
+
+  // If there is an entry for "region_ind", removes it and return "true";
+  // otherwise returns "false."
+  bool delete_entry(RegionIdx_t region_ind);
+
+  // Clear the table, and reinitialize to initial capacity.
+  void clear();
+
+  bool contains_card(RegionIdx_t region_id, CardIdx_t card_index) const;
+};
 
 class SparsePRTEntry: public CHeapObj<mtGC> {
 public:
@@ -84,15 +131,7 @@ public:
   // Returns the number of non-NULL card entries.
   inline int num_valid_cards() const { return _next_null; }
 
-  // Requires that the entry not contain the given card index.  If there is
-  // space available, add the given card index to the entry and return
-  // "true"; otherwise, return "false" to indicate that the entry is full.
-  enum AddCardResult {
-    overflow,
-    found,
-    added
-  };
-  inline AddCardResult add_card(CardIdx_t card_index);
+  inline SparsePRT::AddCardResult add_card(CardIdx_t card_index);
 
   // Copy the current entry's cards into the "_card" array of "e."
   inline void copy_cards(SparsePRTEntry* e) const;
@@ -153,7 +192,7 @@ public:
   // Otherwise, returns "false" to indicate that the addition would
   // overflow the entry for the region.  The caller must transfer these
   // entries to a larger-capacity representation.
-  bool add_card(RegionIdx_t region_id, CardIdx_t card_index);
+  SparsePRT::AddCardResult add_card(RegionIdx_t region_id, CardIdx_t card_index);
 
   bool delete_entry(RegionIdx_t region_id);
 
@@ -168,7 +207,6 @@ public:
   size_t capacity() const      { return _capacity; }
   size_t capacity_mask() const { return _capacity_mask;  }
   size_t occupied_entries() const { return _occupied_entries; }
-  size_t occupied_cards() const   { return _occupied_cards; }
   size_t mem_size() const;
   // The number of SparsePRTEntry instances available.
   size_t num_entries() const { return _num_entries; }
@@ -226,50 +264,6 @@ public:
     _rsht(rsht) { }
 
   bool has_next(SparsePRTEntry*& entry);
-};
-
-// Concurrent access to a SparsePRT must be serialized by some external mutex.
-
-class SparsePRTIter;
-
-class SparsePRT {
-  friend class SparsePRTIter;
-  friend class SparsePRTBucketIter;
-
-  RSHashTable* _table;
-
-  static const size_t InitialCapacity = 8;
-
-  void expand();
-
-public:
-  SparsePRT();
-  ~SparsePRT();
-
-  size_t occupied() const { return _table->occupied_cards(); }
-  size_t mem_size() const;
-
-  // Attempts to ensure that the given card_index in the given region is in
-  // the sparse table.  If successful (because the card was already
-  // present, or because it was successfully added) returns "true".
-  // Otherwise, returns "false" to indicate that the addition would
-  // overflow the entry for the region.  The caller must transfer these
-  // entries to a larger-capacity representation.
-  bool add_card(RegionIdx_t region_id, CardIdx_t card_index);
-
-  // Return the pointer to the entry associated with the given region.
-  SparsePRTEntry* get_entry(RegionIdx_t region_ind);
-
-  // If there is an entry for "region_ind", removes it and return "true";
-  // otherwise returns "false."
-  bool delete_entry(RegionIdx_t region_ind);
-
-  // Clear the table, and reinitialize to initial capacity.
-  void clear();
-
-  bool contains_card(RegionIdx_t region_id, CardIdx_t card_index) const {
-    return _table->contains_card(region_id, card_index);
-  }
 };
 
 class SparsePRTIter: public RSHashTableIter {

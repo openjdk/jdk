@@ -104,7 +104,7 @@ void JfrBuffer::set_top(const u1* new_top) {
 const u1* JfrBuffer::concurrent_top() const {
   do {
     const u1* current_top = stable_top();
-    if (Atomic::cmpxchg(MUTEX_CLAIM, &_top, current_top) == current_top) {
+    if (Atomic::cmpxchg(&_top, current_top, MUTEX_CLAIM) == current_top) {
       return current_top;
     }
   } while (true);
@@ -128,13 +128,13 @@ void JfrBuffer::acquire(const void* id) {
   const void* current_id;
   do {
     current_id = Atomic::load(&_identity);
-  } while (current_id != NULL || Atomic::cmpxchg(id, &_identity, current_id) != current_id);
+  } while (current_id != NULL || Atomic::cmpxchg(&_identity, current_id, id) != current_id);
 }
 
 bool JfrBuffer::try_acquire(const void* id) {
   assert(id != NULL, "invariant");
   const void* const current_id = Atomic::load(&_identity);
-  return current_id == NULL && Atomic::cmpxchg(id, &_identity, current_id) == current_id;
+  return current_id == NULL && Atomic::cmpxchg(&_identity, current_id, id) == current_id;
 }
 
 void JfrBuffer::release() {

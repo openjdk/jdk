@@ -86,7 +86,7 @@ class AttachListener: AllStatic {
 
  public:
   static void set_state(AttachListenerState new_state) {
-    Atomic::store(new_state, &_state);
+    Atomic::store(&_state, new_state);
   }
 
   static AttachListenerState get_state() {
@@ -95,7 +95,7 @@ class AttachListener: AllStatic {
 
   static AttachListenerState transit_state(AttachListenerState new_state,
                                            AttachListenerState cmp_state) {
-    return Atomic::cmpxchg(new_state, &_state, cmp_state);
+    return Atomic::cmpxchg(&_state, cmp_state, new_state);
   }
 
   static bool is_initialized() {
@@ -103,7 +103,7 @@ class AttachListener: AllStatic {
   }
 
   static void set_initialized() {
-    Atomic::store(AL_INITIALIZED, &_state);
+    Atomic::store(&_state, AL_INITIALIZED);
   }
 
   // indicates if this VM supports attach-on-demand

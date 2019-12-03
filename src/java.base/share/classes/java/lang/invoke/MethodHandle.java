@@ -448,11 +448,14 @@ public abstract class MethodHandle implements Constable {
     @interface PolymorphicSignature { }
 
     private final MethodType type;
-    /*private*/ final LambdaForm form;
+    /*private*/
+    final LambdaForm form;
     // form is not private so that invokers can easily fetch it
-    /*private*/ MethodHandle asTypeCache;
+    /*private*/
+    MethodHandle asTypeCache;
     // asTypeCache is not private so that invokers can easily fetch it
-    /*non-public*/ byte customizationCount;
+    /*non-public*/
+    byte customizationCount;
     // customizationCount should be accessible from invokers
 
     /**
@@ -470,7 +473,8 @@ public abstract class MethodHandle implements Constable {
      * the {@code java.lang.invoke} package.
      */
     // @param type type (permanently assigned) of the new method handle
-    /*non-public*/ MethodHandle(MethodType type, LambdaForm form) {
+    /*non-public*/
+    MethodHandle(MethodType type, LambdaForm form) {
         this.type = Objects.requireNonNull(type);
         this.form = Objects.requireNonNull(form).uncustomize();
 
@@ -553,7 +557,8 @@ public abstract class MethodHandle implements Constable {
      * @return the signature-polymorphic result, statically represented using {@code Object}
      */
     @HotSpotIntrinsicCandidate
-    /*non-public*/ final native @PolymorphicSignature Object invokeBasic(Object... args) throws Throwable;
+    /*non-public*/
+    final native @PolymorphicSignature Object invokeBasic(Object... args) throws Throwable;
 
     /**
      * Private method for trusted invocation of a MemberName of kind {@code REF_invokeVirtual}.
@@ -563,7 +568,8 @@ public abstract class MethodHandle implements Constable {
      * @return the signature-polymorphic result, statically represented using {@code Object}
      */
     @HotSpotIntrinsicCandidate
-    /*non-public*/ static native @PolymorphicSignature Object linkToVirtual(Object... args) throws Throwable;
+    /*non-public*/
+    static native @PolymorphicSignature Object linkToVirtual(Object... args) throws Throwable;
 
     /**
      * Private method for trusted invocation of a MemberName of kind {@code REF_invokeStatic}.
@@ -573,7 +579,8 @@ public abstract class MethodHandle implements Constable {
      * @return the signature-polymorphic result, statically represented using {@code Object}
      */
     @HotSpotIntrinsicCandidate
-    /*non-public*/ static native @PolymorphicSignature Object linkToStatic(Object... args) throws Throwable;
+    /*non-public*/
+    static native @PolymorphicSignature Object linkToStatic(Object... args) throws Throwable;
 
     /**
      * Private method for trusted invocation of a MemberName of kind {@code REF_invokeSpecial}.
@@ -583,7 +590,8 @@ public abstract class MethodHandle implements Constable {
      * @return the signature-polymorphic result, statically represented using {@code Object}
      */
     @HotSpotIntrinsicCandidate
-    /*non-public*/ static native @PolymorphicSignature Object linkToSpecial(Object... args) throws Throwable;
+    /*non-public*/
+    static native @PolymorphicSignature Object linkToSpecial(Object... args) throws Throwable;
 
     /**
      * Private method for trusted invocation of a MemberName of kind {@code REF_invokeInterface}.
@@ -593,7 +601,8 @@ public abstract class MethodHandle implements Constable {
      * @return the signature-polymorphic result, statically represented using {@code Object}
      */
     @HotSpotIntrinsicCandidate
-    /*non-public*/ static native @PolymorphicSignature Object linkToInterface(Object... args) throws Throwable;
+    /*non-public*/
+    static native @PolymorphicSignature Object linkToInterface(Object... args) throws Throwable;
 
     /**
      * Performs a variable arity invocation, passing the arguments in the given array
@@ -865,7 +874,8 @@ public abstract class MethodHandle implements Constable {
     }
 
     /** Override this to change asType behavior. */
-    /*non-public*/ MethodHandle asTypeUncached(MethodType newType) {
+    /*non-public*/
+    MethodHandle asTypeUncached(MethodType newType) {
         if (!type.isConvertibleTo(newType))
             throw new WrongMethodTypeException("cannot convert "+this+" to "+newType);
         return asTypeCache = MethodHandleImpl.makePairwiseConvert(this, newType, true);
@@ -1242,7 +1252,8 @@ assertEquals("[123]", (String) longsToString.invokeExact((long)123));
      * See if {@code asCollector} can be validly called with the given arguments.
      * Return false if the last parameter is not an exact match to arrayType.
      */
-    /*non-public*/ boolean asCollectorChecks(Class<?> arrayType, int pos, int arrayLength) {
+    /*non-public*/
+    boolean asCollectorChecks(Class<?> arrayType, int pos, int arrayLength) {
         spreadArrayChecks(arrayType, arrayLength);
         int nargs = type().parameterCount();
         if (pos < 0 || pos >= nargs) {

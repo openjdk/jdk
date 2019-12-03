@@ -38,7 +38,7 @@ public:
   // initialize policy
   virtual void init(G1CollectedHeap* g1h, G1CollectionSet* collection_set);
   // Record end of an evacuation pause.
-  virtual void record_collection_pause_end(double pause_time_ms, size_t heap_used_bytes_before_gc);
+  virtual void record_collection_pause_end(double pause_time_ms);
   // Record the end of full collection.
   virtual void record_full_collection_end();
 

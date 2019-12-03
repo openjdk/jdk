@@ -33,8 +33,7 @@ package java.lang;
  * @author  unascribed
  * @since   1.0
  */
-public
-class IncompatibleClassChangeError extends LinkageError {
+public class IncompatibleClassChangeError extends LinkageError {
     @java.io.Serial
     private static final long serialVersionUID = -4914975503642802119L;
 

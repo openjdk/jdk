@@ -47,8 +47,7 @@ package java.text;
  * @author      Mark Davis
  * @since 1.1
  */
-public
-class ParseException extends Exception {
+public class ParseException extends Exception {
 
     @java.io.Serial
     private static final long serialVersionUID = 2703218443322787634L;

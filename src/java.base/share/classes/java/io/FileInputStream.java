@@ -61,8 +61,7 @@ import sun.nio.ch.FileChannelImpl;
  * @see     java.nio.file.Files#newInputStream
  * @since   1.0
  */
-public
-class FileInputStream extends InputStream
+public class FileInputStream extends InputStream
 {
     /* File Descriptor - handle to the open file */
     private final FileDescriptor fd;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,67 +27,59 @@
  * @summary local schedule failed with checkcast of Thread.currentThread()
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
- *          java.management
  *
- * @run driver compiler.c2.Test6857159
+ * @build sun.hotspot.WhiteBox
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ *                                sun.hotspot.WhiteBox$WhiteBoxPermission
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *      -Xbatch -XX:CompileCommand=compileonly,compiler.c2.Test6857159$ct0::run
+ *      compiler.c2.Test6857159
  */
 
 package compiler.c2;
 
-import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.process.ProcessTools;
+import sun.hotspot.WhiteBox;
 
-public class Test6857159 {
-    public static void main(String[] args) throws Throwable {
-        String className = Test.class.getName();
-        OutputAnalyzer analyzer = ProcessTools.executeTestJvm("-Xbatch",
-                "-XX:+PrintCompilation",
-                "-XX:CompileOnly="+ className + "$ct::run",
-                className);
-        analyzer.shouldNotContain("COMPILE SKIPPED");
-        analyzer.shouldContain(className + "$ct0::run (16 bytes)");
-        analyzer.shouldHaveExitValue(0);
+public class Test6857159 extends Thread {
+    public static void main(String[] args) throws Exception {
+        var whiteBox = WhiteBox.getWhiteBox();
+        var method = ct0.class.getDeclaredMethod("run");
+        for (int i = 0; i < 20000; i++) {
+            Thread t = null;
+            switch (i % 3) {
+                case 0:
+                    t = new ct0();
+                    break;
+                case 1:
+                    t = new ct1();
+                    break;
+                case 2:
+                    t = new ct2();
+                    break;
+            }
+            t.start();
+            t.join();
+        }
+        if (!whiteBox.isMethodCompiled(method)) {
+            throw new AssertionError(method + " didn't get compiled");
+        }
     }
 
-    static class Test extends Thread {
-        static class ct0 extends Test {
-            public void message() {
-            }
+    static class ct0 extends Test6857159 {
+        public void message() { }
 
-            public void run() {
-                message();
-                ct0 ct = (ct0) Thread.currentThread();
-                ct.message();
-            }
+        public void run() {
+            message();
+            ct0 ct = (ct0) Thread.currentThread();
+            ct.message();
         }
+    }
 
-        static class ct1 extends ct0 {
-            public void message() {
-            }
-        }
+    static class ct1 extends ct0 {
+        public void message() { }
+    }
 
-        static class ct2 extends ct0 {
-            public void message() {
-            }
-        }
-
-        public static void main(String[] args) throws Exception {
-            for (int i = 0; i < 20000; i++) {
-                Thread t = null;
-                switch (i % 3) {
-                    case 0:
-                        t = new ct0();
-                        break;
-                    case 1:
-                        t = new ct1();
-                        break;
-                    case 2:
-                        t = new ct2();
-                        break;
-                }
-                t.start();
-                t.join();
-            }
-        }
+    static class ct2 extends ct0 {
+        public void message() { }
     }
 }

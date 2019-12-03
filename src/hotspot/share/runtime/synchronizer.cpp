@@ -240,7 +240,7 @@ bool ObjectSynchronizer::quick_enter(oop obj, Thread* self,
     // and last are the inflated Java Monitor (ObjectMonitor) checks.
     lock->set_displaced_header(markWord::unused_mark());
 
-    if (owner == NULL && Atomic::replace_if_null(self, &(m->_owner))) {
+    if (owner == NULL && Atomic::replace_if_null(&(m->_owner), self)) {
       assert(m->_recursions == 0, "invariant");
       return true;
     }
@@ -529,8 +529,7 @@ struct SharedGlobals {
 };
 
 static SharedGlobals GVars;
-static int MonitorScavengeThreshold = 1000000;
-static volatile int ForceMonitorScavenge = 0; // Scavenge required and pending
+static int _forceMonitorScavenge = 0; // Scavenge required and pending
 
 static markWord read_stable_mark(oop obj) {
   markWord mark = obj->mark();
@@ -694,35 +693,39 @@ intptr_t ObjectSynchronizer::FastHashCode(Thread* self, oop obj) {
   // object should remain ineligible for biased locking
   assert(!mark.has_bias_pattern(), "invariant");
 
-  if (mark.is_neutral()) {
-    hash = mark.hash();               // this is a normal header
-    if (hash != 0) {                  // if it has hash, just return it
+  if (mark.is_neutral()) {            // if this is a normal header
+    hash = mark.hash();
+    if (hash != 0) {                  // if it has a hash, just return it
       return hash;
     }
-    hash = get_next_hash(self, obj);  // allocate a new hash code
-    temp = mark.copy_set_hash(hash);  // merge the hash code into header
-    // use (machine word version) atomic operation to install the hash
+    hash = get_next_hash(self, obj);  // get a new hash
+    temp = mark.copy_set_hash(hash);  // merge the hash into header
+                                      // try to install the hash
     test = obj->cas_set_mark(temp, mark);
-    if (test == mark) {
+    if (test == mark) {               // if the hash was installed, return it
       return hash;
     }
-    // If atomic operation failed, we must inflate the header
-    // into heavy weight monitor. We could add more code here
-    // for fast path, but it does not worth the complexity.
+    // Failed to install the hash. It could be that another thread
+    // installed the hash just before our attempt or inflation has
+    // occurred or... so we fall thru to inflate the monitor for
+    // stability and then install the hash.
   } else if (mark.has_monitor()) {
     monitor = mark.monitor();
     temp = monitor->header();
     assert(temp.is_neutral(), "invariant: header=" INTPTR_FORMAT, temp.value());
     hash = temp.hash();
-    if (hash != 0) {
+    if (hash != 0) {                  // if it has a hash, just return it
       return hash;
     }
-    // Skip to the following code to reduce code size
+    // Fall thru so we only have one place that installs the hash in
+    // the ObjectMonitor.
   } else if (self->is_lock_owned((address)mark.locker())) {
-    temp = mark.displaced_mark_helper(); // this is a lightweight monitor owned
+    // This is a stack lock owned by the calling thread so fetch the
+    // displaced markWord from the BasicLock on the stack.
+    temp = mark.displaced_mark_helper();
     assert(temp.is_neutral(), "invariant: header=" INTPTR_FORMAT, temp.value());
-    hash = temp.hash();                  // by current thread, check if the displaced
-    if (hash != 0) {                     // header contains hash code
+    hash = temp.hash();
+    if (hash != 0) {                  // if it has a hash, just return it
       return hash;
     }
     // WARNING:
@@ -735,29 +738,30 @@ intptr_t ObjectSynchronizer::FastHashCode(Thread* self, oop obj) {
     // may not propagate to other threads correctly.
   }
 
-  // Inflate the monitor to set hash code
+  // Inflate the monitor to set the hash.
   monitor = inflate(self, obj, inflate_cause_hash_code);
-  // Load displaced header and check it has hash code
+  // Load ObjectMonitor's header/dmw field and see if it has a hash.
   mark = monitor->header();
   assert(mark.is_neutral(), "invariant: header=" INTPTR_FORMAT, mark.value());
   hash = mark.hash();
-  if (hash == 0) {
-    hash = get_next_hash(self, obj);
-    temp = mark.copy_set_hash(hash); // merge hash code into header
+  if (hash == 0) {                    // if it does not have a hash
+    hash = get_next_hash(self, obj);  // get a new hash
+    temp = mark.copy_set_hash(hash);  // merge the hash into header
     assert(temp.is_neutral(), "invariant: header=" INTPTR_FORMAT, temp.value());
-    uintptr_t v = Atomic::cmpxchg(temp.value(), (volatile uintptr_t*)monitor->header_addr(), mark.value());
+    uintptr_t v = Atomic::cmpxchg((volatile uintptr_t*)monitor->header_addr(), mark.value(), temp.value());
     test = markWord(v);
     if (test != mark) {
-      // The only non-deflation update to the ObjectMonitor's
-      // header/dmw field is to merge in the hash code. If someone
-      // adds a new usage of the header/dmw field, please update
-      // this code.
+      // The attempt to update the ObjectMonitor's header/dmw field
+      // did not work. This can happen if another thread managed to
+      // merge in the hash just before our cmpxchg().
+      // If we add any new usages of the header/dmw field, this code
+      // will need to be updated.
       hash = test.hash();
       assert(test.is_neutral(), "invariant: header=" INTPTR_FORMAT, test.value());
-      assert(hash != 0, "Trivial unexpected object/monitor header usage.");
+      assert(hash != 0, "should only have lost the race to a thread that set a non-zero hash");
     }
   }
-  // We finally get the hash
+  // We finally get the hash.
   return hash;
 }
 
@@ -884,7 +888,7 @@ JavaThread* ObjectSynchronizer::get_lock_owner(ThreadsList * t_list, Handle h_ob
 // Visitors ...
 
 void ObjectSynchronizer::monitors_iterate(MonitorClosure* closure) {
-  PaddedObjectMonitor* block = OrderAccess::load_acquire(&g_block_list);
+  PaddedObjectMonitor* block = Atomic::load_acquire(&g_block_list);
   while (block != NULL) {
     assert(block->object() == CHAINMARKER, "must be a block header");
     for (int i = _BLOCKSIZE - 1; i > 0; i--) {
@@ -910,7 +914,17 @@ static bool monitors_used_above_threshold() {
 
 bool ObjectSynchronizer::is_cleanup_needed() {
   if (MonitorUsedDeflationThreshold > 0) {
-    return monitors_used_above_threshold();
+    if (monitors_used_above_threshold()) {
+      return true;
+    }
+  }
+  return needs_monitor_scavenge();
+}
+
+bool ObjectSynchronizer::needs_monitor_scavenge() {
+  if (Atomic::load(&_forceMonitorScavenge) == 1) {
+    log_info(monitorinflation)("Monitor scavenge needed, triggering safepoint cleanup.");
+    return true;
   }
   return false;
 }
@@ -978,8 +992,6 @@ void ObjectSynchronizer::list_oops_do(ObjectMonitor* list, OopClosure* f) {
 // we'll incur more safepoints, which are harmful to performance.
 // See also: GuaranteedSafepointInterval
 //
-// The current implementation uses asynchronous VM operations.
-//
 // If MonitorBound is set, the boundry applies to
 //     (g_om_population - g_om_free_count)
 // i.e., if there are not enough ObjectMonitors on the global free list,
@@ -989,16 +1001,12 @@ void ObjectSynchronizer::list_oops_do(ObjectMonitor* list, OopClosure* f) {
 static void InduceScavenge(Thread* self, const char * Whence) {
   // Induce STW safepoint to trim monitors
   // Ultimately, this results in a call to deflate_idle_monitors() in the near future.
-  // More precisely, trigger an asynchronous STW safepoint as the number
+  // More precisely, trigger a cleanup safepoint as the number
   // of active monitors passes the specified threshold.
   // TODO: assert thread state is reasonable
 
-  if (ForceMonitorScavenge == 0 && Atomic::xchg (1, &ForceMonitorScavenge) == 0) {
-    // Induce a 'null' safepoint to scavenge monitors
-    // Must VM_Operation instance be heap allocated as the op will be enqueue and posted
-    // to the VMthread and have a lifespan longer than that of this activation record.
-    // The VMThread will delete the op when completed.
-    VMThread::execute(new VM_ScavengeMonitors());
+  if (Atomic::xchg (&_forceMonitorScavenge, 1) == 0) {
+    VMThread::check_for_forced_cleanup();
   }
 }
 
@@ -1113,7 +1121,7 @@ ObjectMonitor* ObjectSynchronizer::om_alloc(Thread* self) {
     temp[0]._next_om = g_block_list;
     // There are lock-free uses of g_block_list so make sure that
     // the previous stores happen before we update g_block_list.
-    OrderAccess::release_store(&g_block_list, temp);
+    Atomic::release_store(&g_block_list, temp);
 
     // Add the new string of ObjectMonitors to the global free list
     temp[_BLOCKSIZE - 1]._next_om = g_free_list;
@@ -1676,7 +1684,7 @@ void ObjectSynchronizer::finish_deflate_idle_monitors(DeflateMonitorCounters* co
     Thread::muxRelease(&gListLock);
   }
 
-  ForceMonitorScavenge = 0;    // Reset
+  Atomic::store(&_forceMonitorScavenge, 0);    // Reset
 
   OM_PERFDATA_OP(Deflations, inc(counters->n_scavenged));
   OM_PERFDATA_OP(MonExtant, set_value(counters->n_in_circulation));
@@ -2164,7 +2172,7 @@ int ObjectSynchronizer::log_monitor_list_counts(outputStream * out) {
 // the list of extant blocks without taking a lock.
 
 int ObjectSynchronizer::verify_objmon_isinpool(ObjectMonitor *monitor) {
-  PaddedObjectMonitor* block = OrderAccess::load_acquire(&g_block_list);
+  PaddedObjectMonitor* block = Atomic::load_acquire(&g_block_list);
   while (block != NULL) {
     assert(block->object() == CHAINMARKER, "must be a block header");
     if (monitor > &block[0] && monitor < &block[_BLOCKSIZE]) {

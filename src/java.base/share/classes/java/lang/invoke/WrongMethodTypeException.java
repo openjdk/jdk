@@ -69,7 +69,8 @@ public class WrongMethodTypeException extends RuntimeException {
      * @param cause the cause of the exception, or null.
      */
     //FIXME: make this public in MR1
-    /*non-public*/ WrongMethodTypeException(String s, Throwable cause) {
+    /*non-public*/
+    WrongMethodTypeException(String s, Throwable cause) {
         super(s, cause);
     }
 
@@ -80,7 +81,8 @@ public class WrongMethodTypeException extends RuntimeException {
      * @param cause the cause of the exception, or null.
      */
     //FIXME: make this public in MR1
-    /*non-public*/ WrongMethodTypeException(Throwable cause) {
+    /*non-public*/
+    WrongMethodTypeException(Throwable cause) {
         super(cause);
     }
 }

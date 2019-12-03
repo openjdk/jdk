@@ -55,7 +55,7 @@ u_char G1BlockOffsetTable::offset_array(size_t index) const {
 }
 
 void G1BlockOffsetTable::set_offset_array_raw(size_t index, u_char offset) {
-  Atomic::store(offset, &_offset_array[index]);
+  Atomic::store(&_offset_array[index], offset);
 }
 
 void G1BlockOffsetTable::set_offset_array(size_t index, u_char offset) {

@@ -2096,7 +2096,7 @@ static int check_pending_signals() {
   while (true) {
     for (int i = 0; i < NSIG + 1; i++) {
       jint n = pending_signals[i];
-      if (n > 0 && n == Atomic::cmpxchg(n - 1, &pending_signals[i], n)) {
+      if (n > 0 && n == Atomic::cmpxchg(&pending_signals[i], n, n - 1)) {
         return i;
       }
     }
@@ -3747,15 +3747,15 @@ int os::win32::exit_process_or_thread(Ept what, int exit_code) {
     // The first thread that reached this point, initializes the critical section.
     if (!InitOnceExecuteOnce(&init_once_crit_sect, init_crit_sect_call, &crit_sect, NULL)) {
       warning("crit_sect initialization failed in %s: %d\n", __FILE__, __LINE__);
-    } else if (OrderAccess::load_acquire(&process_exiting) == 0) {
+    } else if (Atomic::load_acquire(&process_exiting) == 0) {
       if (what != EPT_THREAD) {
         // Atomically set process_exiting before the critical section
         // to increase the visibility between racing threads.
-        Atomic::cmpxchg(GetCurrentThreadId(), &process_exiting, (DWORD)0);
+        Atomic::cmpxchg(&process_exiting, (DWORD)0, GetCurrentThreadId());
       }
       EnterCriticalSection(&crit_sect);
 
-      if (what == EPT_THREAD && OrderAccess::load_acquire(&process_exiting) == 0) {
+      if (what == EPT_THREAD && Atomic::load_acquire(&process_exiting) == 0) {
         // Remove from the array those handles of the threads that have completed exiting.
         for (i = 0, j = 0; i < handle_count; ++i) {
           res = WaitForSingleObject(handles[i], 0 /* don't wait */);
@@ -3868,7 +3868,7 @@ int os::win32::exit_process_or_thread(Ept what, int exit_code) {
     }
 
     if (!registered &&
-        OrderAccess::load_acquire(&process_exiting) != 0 &&
+        Atomic::load_acquire(&process_exiting) != 0 &&
         process_exiting != GetCurrentThreadId()) {
       // Some other thread is about to call exit(), so we don't let
       // the current unregistered thread proceed to exit() or _endthreadex()
@@ -5136,7 +5136,7 @@ int os::PlatformEvent::park(jlong Millis) {
   int v;
   for (;;) {
     v = _Event;
-    if (Atomic::cmpxchg(v-1, &_Event, v) == v) break;
+    if (Atomic::cmpxchg(&_Event, v, v-1) == v) break;
   }
   guarantee((v == 0) || (v == 1), "invariant");
   if (v != 0) return OS_OK;
@@ -5198,7 +5198,7 @@ void os::PlatformEvent::park() {
   int v;
   for (;;) {
     v = _Event;
-    if (Atomic::cmpxchg(v-1, &_Event, v) == v) break;
+    if (Atomic::cmpxchg(&_Event, v, v-1) == v) break;
   }
   guarantee((v == 0) || (v == 1), "invariant");
   if (v != 0) return;
@@ -5236,7 +5236,7 @@ void os::PlatformEvent::unpark() {
   // from the first park() call after an unpark() call which will help
   // shake out uses of park() and unpark() without condition variables.
 
-  if (Atomic::xchg(1, &_Event) >= 0) return;
+  if (Atomic::xchg(&_Event, 1) >= 0) return;
 
   ::SetEvent(_ParkHandle);
 }

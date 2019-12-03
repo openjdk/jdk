@@ -61,12 +61,10 @@ bool ZBarrierSetNMethod::nmethod_entry_barrier(nmethod* nm) {
   return true;
 }
 
-int ZBarrierSetNMethod::disarmed_value() const {
-  // We override the default BarrierSetNMethod::disarmed_value() since
-  // this can be called by GC threads, which doesn't keep an up to date
-  // address_bad_mask.
-  const uintptr_t disarmed_addr = ((uintptr_t)&ZAddressBadMask) + ZNMethodDisarmedOffset;
-  return *((int*)disarmed_addr);
+int* ZBarrierSetNMethod::disarmed_value_address() const {
+  const uintptr_t mask_addr = reinterpret_cast<uintptr_t>(&ZAddressBadMask);
+  const uintptr_t disarmed_addr = mask_addr + ZNMethodDisarmedOffset;
+  return reinterpret_cast<int*>(disarmed_addr);
 }
 
 ByteSize ZBarrierSetNMethod::thread_disarmed_offset() const {

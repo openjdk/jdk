@@ -34,6 +34,7 @@
 #include "oops/method.inline.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/oop.inline.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/biasedLocking.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
@@ -702,7 +703,7 @@ void JVMCINMethodData::clear_nmethod_mirror(nmethod* nm) {
 }
 
 void JVMCINMethodData::invalidate_nmethod_mirror(nmethod* nm) {
-  oop nmethod_mirror = get_nmethod_mirror(nm, /* phantom_ref */ true);
+  oop nmethod_mirror = get_nmethod_mirror(nm, /* phantom_ref */ false);
   if (nmethod_mirror == NULL) {
     return;
   }
@@ -917,7 +918,7 @@ void JVMCIRuntime::exit_on_pending_exception(JVMCIEnv* JVMCIENV, const char* mes
   JavaThread* THREAD = JavaThread::current();
 
   static volatile int report_error = 0;
-  if (!report_error && Atomic::cmpxchg(1, &report_error, 0) == 0) {
+  if (!report_error && Atomic::cmpxchg(&report_error, 0, 1) == 0) {
     // Only report an error once
     tty->print_raw_cr(message);
     if (JVMCIENV != NULL) {
@@ -1295,7 +1296,7 @@ JVMCI::CodeInstallResult JVMCIRuntime::validate_compile_task_dependencies(Depend
 static void fatal_exception_in_compile(JVMCIEnv* JVMCIENV, JavaThread* thread, const char* msg) {
   // Only report a fatal JVMCI compilation exception once
   static volatile int report_init_failure = 0;
-  if (!report_init_failure && Atomic::cmpxchg(1, &report_init_failure, 0) == 0) {
+  if (!report_init_failure && Atomic::cmpxchg(&report_init_failure, 0, 1) == 0) {
       tty->print_cr("%s:", msg);
       JVMCIENV->describe_pending_exception(true);
   }

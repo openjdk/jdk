@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,10 +52,6 @@ TEST_VM(FlagGuard, intx_flag) {
 
 TEST_VM(FlagGuard, uint_flag) {
   TEST_FLAG(ConcGCThreads, uint, 1337);
-}
-
-TEST_VM(FlagGuard, uintx_flag) {
-  TEST_FLAG(GCTaskTimeStampEntries, uint, 1337);
 }
 
 TEST_VM(FlagGuard, size_t_flag) {

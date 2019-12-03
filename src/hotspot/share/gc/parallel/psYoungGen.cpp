@@ -300,8 +300,7 @@ bool PSYoungGen::resize_generation(size_t eden_size, size_t survivor_size) {
   // Adjust new generation size
   const size_t eden_plus_survivors =
           align_up(eden_size + 2 * survivor_size, alignment);
-  size_t desired_size = MAX2(MIN2(eden_plus_survivors, max_size()),
-                             min_gen_size());
+  size_t desired_size = clamp(eden_plus_survivors, min_gen_size(), max_size());
   assert(desired_size <= max_size(), "just checking");
 
   if (desired_size > orig_size) {

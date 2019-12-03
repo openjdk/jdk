@@ -37,6 +37,7 @@
 #include "gc/shenandoah/shenandoahWorkerPolicy.hpp"
 #include "memory/iterator.hpp"
 #include "memory/universe.hpp"
+#include "runtime/atomic.hpp"
 
 ShenandoahControlThread::ShenandoahControlThread() :
   ConcurrentGCThread(),
@@ -92,7 +93,7 @@ void ShenandoahControlThread::run_service() {
     bool implicit_gc_requested = _gc_requested.is_set() && !is_explicit_gc(_requested_gc_cause);
 
     // This control loop iteration have seen this much allocations.
-    size_t allocs_seen = Atomic::xchg<size_t>(0, &_allocs_seen);
+    size_t allocs_seen = Atomic::xchg(&_allocs_seen, (size_t)0);
 
     // Choose which GC mode to run in. The block below should select a single mode.
     GCMode mode = none;
@@ -593,7 +594,7 @@ void ShenandoahControlThread::notify_heap_changed() {
 
 void ShenandoahControlThread::pacing_notify_alloc(size_t words) {
   assert(ShenandoahPacing, "should only call when pacing is enabled");
-  Atomic::add(words, &_allocs_seen);
+  Atomic::add(&_allocs_seen, words);
 }
 
 void ShenandoahControlThread::set_forced_counters_update(bool value) {

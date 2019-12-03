@@ -403,6 +403,9 @@ public abstract class DatagramChannel
      *          or {@code null} if this channel is in non-blocking mode
      *          and no datagram was immediately available
      *
+     * @throws  IllegalArgumentException
+     *          If the buffer is read-only
+     *
      * @throws  ClosedChannelException
      *          If this channel is closed
      *

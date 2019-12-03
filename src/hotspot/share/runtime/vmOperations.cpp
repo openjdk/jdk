@@ -73,22 +73,12 @@ void VM_Operation::evaluate() {
   }
 }
 
-const char* VM_Operation::mode_to_string(Mode mode) {
-  switch(mode) {
-    case _safepoint      : return "safepoint";
-    case _no_safepoint   : return "no safepoint";
-    case _concurrent     : return "concurrent";
-    case _async_safepoint: return "async safepoint";
-    default              : return "unknown";
-  }
-}
 // Called by fatal error handler.
 void VM_Operation::print_on_error(outputStream* st) const {
   st->print("VM_Operation (" PTR_FORMAT "): ", p2i(this));
   st->print("%s", name());
 
-  const char* mode = mode_to_string(evaluation_mode());
-  st->print(", mode: %s", mode);
+  st->print(", mode: %s", evaluate_at_safepoint() ? "safepoint" : "no safepoint");
 
   if (calling_thread()) {
     st->print(", requested by thread " PTR_FORMAT, p2i(calling_thread()));

@@ -42,6 +42,7 @@
 #include "oops/method.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "prims/nativeLookup.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/frame.inline.hpp"
@@ -1586,7 +1587,7 @@ class AttachDetach : public StackObj {
       jint res = main_vm.AttachCurrentThread((void**)&hotspotEnv, NULL);
       _attached = res == JNI_OK;
       static volatile int report_attach_error = 0;
-      if (res != JNI_OK && report_attach_error == 0 && Atomic::cmpxchg(1, &report_attach_error, 0) == 0) {
+      if (res != JNI_OK && report_attach_error == 0 && Atomic::cmpxchg(&report_attach_error, 0, 1) == 0) {
         // Only report an attach error once
         jio_printf("Warning: attaching current thread to VM failed with %d (future attach errors are suppressed)\n", res);
       }
@@ -1599,7 +1600,7 @@ class AttachDetach : public StackObj {
       extern struct JavaVM_ main_vm;
       jint res = main_vm.DetachCurrentThread();
       static volatile int report_detach_error = 0;
-      if (res != JNI_OK && report_detach_error == 0 && Atomic::cmpxchg(1, &report_detach_error, 0) == 0) {
+      if (res != JNI_OK && report_detach_error == 0 && Atomic::cmpxchg(&report_detach_error, 0, 1) == 0) {
         // Only report an attach error once
         jio_printf("Warning: detaching current thread from VM failed with %d (future attach errors are suppressed)\n", res);
       }

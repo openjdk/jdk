@@ -1,9 +1,9 @@
-## CUP Parser Generator for Java v 0.10k
+## CUP Parser Generator for Java v 0.11b
 
 ### CUP Parser Generator License
 <pre>
 
-Copyright 1996-1999 by Scott Hudson, Frank Flannery, C. Scott Ananian
+Copyright 1996-2015 by Scott Hudson, Frank Flannery, C. Scott Ananian, Michael Petter
 
 Permission to use, copy, modify, and distribute this software and its
 documentation for any purpose and without fee is hereby granted, provided

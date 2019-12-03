@@ -166,10 +166,11 @@
           "Use the Garbage-First garbage collector")                        \
                                                                             \
   product(bool, UseParallelGC, false,                                       \
-          "Use the Parallel Scavenge garbage collector")                    \
+          "Use the Parallel garbage collector.")                            \
                                                                             \
   product(bool, UseParallelOldGC, false,                                    \
-          "Use the Parallel Old garbage collector")                         \
+          "Use the Parallel or Serial garbage collector when collecting "   \
+          "the old generation. Deprecated.")                                \
                                                                             \
   experimental(bool, UseEpsilonGC, false,                                   \
           "Use the Epsilon (no-op) garbage collector")                      \
@@ -209,10 +210,6 @@
   product(uint, ConcGCThreads, 0,                                           \
           "Number of threads concurrent gc will use")                       \
           constraint(ConcGCThreadsConstraintFunc,AfterErgo)                 \
-                                                                            \
-  product(uint, GCTaskTimeStampEntries, 200,                                \
-          "Number of time stamp entries per gc worker thread")              \
-          range(1, max_jint)                                                \
                                                                             \
   product(bool, AlwaysTenure, false,                                        \
           "Always tenure objects in eden (ParallelGC only)")                \

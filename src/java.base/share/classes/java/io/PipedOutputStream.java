@@ -43,8 +43,7 @@ import java.io.*;
  * @see     java.io.PipedInputStream
  * @since   1.0
  */
-public
-class PipedOutputStream extends OutputStream {
+public class PipedOutputStream extends OutputStream {
 
         /* REMIND: identification of the read and write sides needs to be
            more sophisticated.  Either using thread groups (but what about

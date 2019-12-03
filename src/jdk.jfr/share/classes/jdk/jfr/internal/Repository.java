@@ -85,6 +85,7 @@ public final class Repository {
             if (!SecuritySupport.existDirectory(repository)) {
                 this.repository = createRepository(baseLocation);
                 jvm.setRepositoryLocation(repository.toString());
+                SecuritySupport.setProperty(JFR_REPOSITORY_LOCATION_PROPERTY, repository.toString());
                 cleanupDirectories.add(repository);
             }
             return new RepositoryChunk(repository, timestamp);
@@ -115,9 +116,7 @@ public final class Repository {
         if (i == MAX_REPO_CREATION_RETRIES) {
             throw new IOException("Unable to create JFR repository directory using base location (" + basePath + ")");
         }
-        SafePath canonicalRepositoryPath = SecuritySupport.toRealPath(f);
-        SecuritySupport.setProperty(JFR_REPOSITORY_LOCATION_PROPERTY, canonicalRepositoryPath.toString());
-        return canonicalRepositoryPath;
+        return SecuritySupport.toRealPath(f);
     }
 
     private static SafePath createRealBasePath(SafePath safePath) throws IOException {

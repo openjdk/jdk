@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,13 @@
 
 package jdk.internal.util.jar;
 
+import sun.nio.cs.UTF_8;
+
 import java.io.*;
 import java.util.*;
 import java.util.jar.*;
 import java.util.zip.*;
+
 import static sun.security.action.GetPropertyAction.privilegedGetProperty;
 
 /**
@@ -250,7 +253,7 @@ public class JarIndex {
      */
     public void write(OutputStream out) throws IOException {
         BufferedWriter bw = new BufferedWriter
-            (new OutputStreamWriter(out, "UTF8"));
+            (new OutputStreamWriter(out, UTF_8.INSTANCE));
         bw.write("JarIndex-Version: 1.0\n\n");
 
         if (jarFiles != null) {
@@ -280,7 +283,7 @@ public class JarIndex {
      */
     public void read(InputStream is) throws IOException {
         BufferedReader br = new BufferedReader
-            (new InputStreamReader(is, "UTF8"));
+            (new InputStreamReader(is, UTF_8.INSTANCE));
         String line = null;
         String currentJar = null;
 

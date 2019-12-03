@@ -34,8 +34,7 @@ package java.io;
  * @see     java.io.DataInputStream
  * @since   1.0
  */
-public
-class DataOutputStream extends FilterOutputStream implements DataOutput {
+public class DataOutputStream extends FilterOutputStream implements DataOutput {
     /**
      * The number of bytes written to the data output stream so far.
      * If this counter overflows, it will be wrapped to Integer.MAX_VALUE.

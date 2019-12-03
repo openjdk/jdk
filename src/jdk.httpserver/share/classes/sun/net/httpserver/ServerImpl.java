@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -210,7 +210,7 @@ class ServerImpl implements TimeSource {
         if (timer1Enabled) {
             timer1.cancel();
         }
-        if (dispatcherThread != null) {
+        if (dispatcherThread != null && dispatcherThread != Thread.currentThread()) {
             try {
                 dispatcherThread.join();
             } catch (InterruptedException e) {

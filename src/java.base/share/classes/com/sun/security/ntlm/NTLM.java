@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@ import sun.security.action.GetBooleanAction;
 
 import static com.sun.security.ntlm.Version.*;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -182,13 +182,9 @@ class NTLM {
         String readSecurityBuffer(int offset, boolean unicode)
                 throws NTLMException {
             byte[] raw = readSecurityBuffer(offset);
-            try {
-                return raw == null ? null : new String(
-                        raw, unicode ? "UnicodeLittleUnmarked" : "ISO8859_1");
-            } catch (UnsupportedEncodingException ex) {
-                throw new NTLMException(NTLMException.PACKET_READ_ERROR,
-                        "Invalid input encoding");
-            }
+            return raw == null ? null : new String(
+                    raw, unicode ? StandardCharsets.UTF_16LE
+                                 : StandardCharsets.ISO_8859_1);
         }
     }
 
@@ -247,12 +243,9 @@ class NTLM {
         }
 
         void writeSecurityBuffer(int offset, String str, boolean unicode) {
-            try {
-                writeSecurityBuffer(offset, str == null ? null : str.getBytes(
-                        unicode ? "UnicodeLittleUnmarked" : "ISO8859_1"));
-            } catch (UnsupportedEncodingException ex) {
-                assert false;
-            }
+            writeSecurityBuffer(offset, str == null ? null : str.getBytes(
+                    unicode ? StandardCharsets.UTF_16LE
+                            : StandardCharsets.ISO_8859_1));
         }
 
         byte[] getBytes() {
@@ -380,20 +373,14 @@ class NTLM {
     }
 
     byte[] calcV2(byte[] nthash, String text, byte[] blob, byte[] challenge) {
-        try {
-            byte[] ntlmv2hash = hmacMD5(nthash,
-                    text.getBytes("UnicodeLittleUnmarked"));
-            byte[] cn = new byte[blob.length+8];
-            System.arraycopy(challenge, 0, cn, 0, 8);
-            System.arraycopy(blob, 0, cn, 8, blob.length);
-            byte[] result = new byte[16+blob.length];
-            System.arraycopy(hmacMD5(ntlmv2hash, cn), 0, result, 0, 16);
-            System.arraycopy(blob, 0, result, 16, blob.length);
-            return result;
-        } catch (UnsupportedEncodingException ex) {
-            assert false;
-        }
-        return null;
+        byte[] ntlmv2hash = hmacMD5(nthash, text.getBytes(StandardCharsets.UTF_16LE));
+        byte[] cn = new byte[blob.length+8];
+        System.arraycopy(challenge, 0, cn, 0, 8);
+        System.arraycopy(blob, 0, cn, 8, blob.length);
+        byte[] result = new byte[16+blob.length];
+        System.arraycopy(hmacMD5(ntlmv2hash, cn), 0, result, 0, 16);
+        System.arraycopy(blob, 0, result, 16, blob.length);
+        return result;
     }
 
     // NTLM2 LM/NTLM
@@ -412,19 +399,11 @@ class NTLM {
     // Password in ASCII and UNICODE
 
     static byte[] getP1(char[] password) {
-        try {
-            return new String(password).toUpperCase(
-                                    Locale.ENGLISH).getBytes("ISO8859_1");
-        } catch (UnsupportedEncodingException ex) {
-            return null;
-        }
+        return new String(password).toUpperCase(Locale.ENGLISH)
+                                   .getBytes(StandardCharsets.ISO_8859_1);
     }
 
     static byte[] getP2(char[] password) {
-        try {
-            return new String(password).getBytes("UnicodeLittleUnmarked");
-        } catch (UnsupportedEncodingException ex) {
-            return null;
-        }
+        return new String(password).getBytes(StandardCharsets.UTF_16LE);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,6 +60,8 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
+
+import sun.nio.cs.UTF_8;
 
 import jdk.internal.jmod.JmodFile;
 import jdk.internal.jmod.JmodFile.Section;
@@ -543,7 +545,7 @@ public class ModulePath implements ModuleFinder {
             List<String> providerClasses = new ArrayList<>();
             try (InputStream in = jf.getInputStream(entry)) {
                 BufferedReader reader
-                    = new BufferedReader(new InputStreamReader(in, "UTF-8"));
+                    = new BufferedReader(new InputStreamReader(in, UTF_8.INSTANCE));
                 String cn;
                 while ((cn = nextLine(reader)) != null) {
                     if (!cn.isEmpty()) {

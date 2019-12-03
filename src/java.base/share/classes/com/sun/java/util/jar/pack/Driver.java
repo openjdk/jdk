@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@
  */
 
 package com.sun.java.util.jar.pack;
+
+import sun.nio.cs.UTF_8;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -443,7 +445,7 @@ class Driver {
                     // Skip sig4, disks4, entries4, clen4, coff4, cmt2
                     i += 4+4+4+4+4+2;
                     if (i < tail.length)
-                        return new String(tail, i, tail.length-i, "UTF8");
+                        return new String(tail, i, tail.length-i, UTF_8.INSTANCE);
                     return "";
                 }
             }

@@ -102,9 +102,6 @@ function loadScripts(doc, tag) {
     if (!tagSearchIndex) {
         createElem(doc, tag, 'tag-search-index.js');
     }
-    $(window).resize(function() {
-        $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
-    });
 }
 
 function createElem(doc, tag, path) {

@@ -48,6 +48,7 @@ public class VMDeprecatedOptions {
         {"AllowRedefinitionToAddDeleteMethods", "true"},
         {"CompactFields", "true"},
         {"FieldsAllocationStyle", "1"},
+        {"UseParallelOldGC", "false"},
 
         // deprecated alias flags (see also aliased_jvm_flags):
         {"DefaultMaxRAMFraction", "4"},

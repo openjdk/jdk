@@ -511,7 +511,7 @@ bool Universe::has_reference_pending_list() {
 
 oop Universe::swap_reference_pending_list(oop list) {
   assert_pll_locked(is_locked);
-  return Atomic::xchg(list, &_reference_pending_list);
+  return Atomic::xchg(&_reference_pending_list, list);
 }
 
 #undef assert_pll_locked
@@ -580,7 +580,7 @@ oop Universe::gen_out_of_memory_error(oop default_err) {
   int next;
   if ((_preallocated_out_of_memory_error_avail_count > 0) &&
       SystemDictionary::Throwable_klass()->is_initialized()) {
-    next = (int)Atomic::add(-1, &_preallocated_out_of_memory_error_avail_count);
+    next = (int)Atomic::add(&_preallocated_out_of_memory_error_avail_count, -1);
     assert(next < (int)PreallocatedOutOfMemoryErrorCount, "avail count is corrupt");
   } else {
     next = -1;

@@ -33,12 +33,11 @@
 #include "memory/resourceArea.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/mutexLocker.hpp"
-#include "runtime/safepoint.hpp"
 #include "runtime/thread.inline.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/stack.inline.hpp"
 
- // incremented during class unloading (safepoint) for each unloaded event class
+ // incremented during class unloading for each unloaded event class
 static jlong unloaded_event_classes = 0;
 
 jlong JfrEventClasses::unloaded_event_classes_count() {
@@ -46,8 +45,7 @@ jlong JfrEventClasses::unloaded_event_classes_count() {
 }
 
 void JfrEventClasses::increment_unloaded_event_class() {
-  // incremented during class unloading (safepoint) for each unloaded event class
-  assert(SafepointSynchronize::is_at_safepoint(), "invariant");
+  assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
   ++unloaded_event_classes;
 }
 

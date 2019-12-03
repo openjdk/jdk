@@ -35,8 +35,7 @@ package java.io;
  * @see     java.io.OutputStream
  * @since   1.0
  */
-public
-class IOException extends Exception {
+public class IOException extends Exception {
     @java.io.Serial
     static final long serialVersionUID = 7818375828146090155L;
 

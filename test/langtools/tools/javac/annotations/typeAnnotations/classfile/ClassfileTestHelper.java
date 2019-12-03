@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,12 +27,14 @@ import java.net.URL;
 import java.util.List;
 
 import com.sun.tools.classfile.*;
+import java.util.ArrayList;
 
 public class ClassfileTestHelper {
     int expected_tinvisibles = 0;
     int expected_tvisibles = 0;
     int expected_invisibles = 0;
     int expected_visibles = 0;
+    List<String> extraOptions = List.of();
 
     //Makes debugging much easier. Set to 'false' for less output.
     public Boolean verbose = true;
@@ -48,8 +50,9 @@ public class ClassfileTestHelper {
     }
 
     File compile(File f) {
-        int rc = com.sun.tools.javac.Main.compile(new String[] {
-                "-g", f.getPath() });
+        List<String> options = new ArrayList<>(List.of("-g", f.getPath()));
+        options.addAll(extraOptions);
+        int rc = com.sun.tools.javac.Main.compile(options.toArray(new String[0]));
         if (rc != 0)
             throw new Error("compilation failed. rc=" + rc);
         String path = f.getPath();

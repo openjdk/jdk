@@ -709,13 +709,6 @@ void* SplashProcAddress(const char* name) {
     }
 }
 
-void SplashFreeLibrary() {
-    if (hSplashLib) {
-        dlclose(hSplashLib);
-        hSplashLib = NULL;
-    }
-}
-
 /*
  * Signature adapter for pthread_create().
  */

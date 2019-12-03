@@ -72,8 +72,7 @@ public class SocketOptionTests {
             return;
         }
 
-        try {
-            SctpChannel sc = SctpChannel.open();
+        try (SctpChannel sc = SctpChannel.open()) {
 
             /* check supported options */
             Set<SctpSocketOption<?>> options = sc.supportedOptions();
@@ -143,8 +142,6 @@ public class SocketOptionTests {
 
     /* SCTP_PRIMARY_ADDR */
     void sctpPrimaryAddr() throws IOException {
-        SocketAddress addrToSet = null;;
-
         System.out.println("TESTING SCTP_PRIMARY_ADDR");
         SctpChannel sc = SctpChannel.open();
         SctpServerChannel ssc = SctpServerChannel.open().bind(null);
@@ -158,12 +155,11 @@ public class SocketOptionTests {
         sc.connect(serverAddr);
         SctpChannel peerChannel = ssc.accept();
         ssc.close();
-        Set<SocketAddress> peerAddrs = peerChannel.getAllLocalAddresses();
-        debug("Peer local Addresses: ");
-        for (Iterator<SocketAddress> it = peerAddrs.iterator(); it.hasNext(); ) {
+        Set<SocketAddress> remoteAddresses = sc.getRemoteAddresses();
+        debug("Remote Addresses: ");
+        for (Iterator<SocketAddress> it = remoteAddresses.iterator(); it.hasNext(); ) {
             InetSocketAddress addr = (InetSocketAddress)it.next();
             debug("\t" + addr);
-            addrToSet = addr;   // any of the peer addresses will do!
         }
 
         /* retrieval of SCTP_PRIMARY_ADDR is not supported on Solaris */
@@ -176,25 +172,21 @@ public class SocketOptionTests {
         } else { /* Linux */
             SocketAddress primaryAddr = sc.getOption(SCTP_PRIMARY_ADDR);
             System.out.println("SCTP_PRIMARY_ADDR returned: " + primaryAddr);
-            /* Verify that this is one of the peer addresses */
-            boolean found = false;
-            addrToSet = primaryAddr; // may not have more than one addr
-            for (Iterator<SocketAddress> it = peerAddrs.iterator(); it.hasNext(); ) {
-                InetSocketAddress addr = (InetSocketAddress)it.next();
-                if (addr.equals(primaryAddr)) {
-                    found = true;
-                }
-                addrToSet = addr;
-            }
-            check(found, "SCTP_PRIMARY_ADDR returned bogus address!");
+            /* Verify that this is one of the remote addresses */
+            check(remoteAddresses.contains(primaryAddr), "SCTP_PRIMARY_ADDR returned bogus address!");
 
-            System.out.println("SCTP_PRIMARY_ADDR try set to: " + addrToSet);
-            sc.setOption(SCTP_PRIMARY_ADDR, addrToSet);
-            System.out.println("SCTP_PRIMARY_ADDR set to: " + addrToSet);
-            primaryAddr = sc.getOption(SCTP_PRIMARY_ADDR);
-            System.out.println("SCTP_PRIMARY_ADDR returned: " + primaryAddr);
-            check(addrToSet.equals(primaryAddr),"SCTP_PRIMARY_ADDR not set correctly");
+            for (Iterator<SocketAddress> it = remoteAddresses.iterator(); it.hasNext(); ) {
+                InetSocketAddress addrToSet = (InetSocketAddress) it.next();
+                System.out.println("SCTP_PRIMARY_ADDR try set to: " + addrToSet);
+                sc.setOption(SCTP_PRIMARY_ADDR, addrToSet);
+                System.out.println("SCTP_PRIMARY_ADDR set to    : " + addrToSet);
+                primaryAddr = sc.getOption(SCTP_PRIMARY_ADDR);
+                System.out.println("SCTP_PRIMARY_ADDR returned  : " + primaryAddr);
+                check(addrToSet.equals(primaryAddr), "SCTP_PRIMARY_ADDR not set correctly");
+            }
         }
+        sc.close();
+        peerChannel.close();
     }
             //--------------------- Infrastructure ---------------------------
     boolean debug = true;

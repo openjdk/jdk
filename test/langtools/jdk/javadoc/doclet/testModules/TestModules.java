@@ -27,7 +27,7 @@
  *      8168766 8168688 8162674 8160196 8175799 8174974 8176778 8177562 8175218
  *      8175823 8166306 8178043 8181622 8183511 8169819 8074407 8183037 8191464
         8164407 8192007 8182765 8196200 8196201 8196202 8196202 8205593 8202462
-        8184205 8219060
+        8184205 8219060 8223378
  * @summary Test modules support in javadoc.
  * @author bpatel
  * @library ../../lib
@@ -533,6 +533,7 @@ public class TestModules extends JavadocTester {
         checkOutput("index.html", found,
                 "</nav>\n"
                 + "</header>\n"
+                + "<div class=\"flexContent\">\n"
                 + "<main role=\"main\">\n"
                 + "<div class=\"contentContainer\">\n"
                 + "<div class=\"block\">The overview summary page header.</div>\n"
@@ -744,9 +745,9 @@ public class TestModules extends JavadocTester {
                 + "<th class=\"colLast\" scope=\"col\">Description</th>\n"
                 + "</tr>\n"
                 + "</thead>",
-                "</script>\n"
-                + "</nav>\n"
+                "</nav>\n"
                 + "</header>\n"
+                + "<div class=\"flexContent\">\n"
                 + "<main role=\"main\">\n"
                 + "<div class=\"contentContainer\">\n"
                 + "<div class=\"block\">The overview summary page header.</div>\n"

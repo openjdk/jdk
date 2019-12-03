@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,19 +25,12 @@
 
 package jdk.javadoc.internal.doclets.toolkit;
 
-import java.lang.annotation.Annotation;
-import java.util.Set;
-
-import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Element;
-import javax.lang.model.element.ElementKind;
-import javax.lang.model.element.ElementVisitor;
-import javax.lang.model.element.Name;
+import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
-import javax.lang.model.type.TypeMirror;
 import javax.tools.FileObject;
 
-import jdk.javadoc.doclet.DocletEnvironment;
+import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
 /**
  * This is a pseudo element wrapper for doc-files html contents, essentially to
@@ -50,26 +43,30 @@ import jdk.javadoc.doclet.DocletEnvironment;
  */
 public class DocFileElement implements DocletElement {
 
-    private final Element element;
+    private final PackageElement packageElement;
     private final FileObject fo;
 
-    public DocFileElement(Element element, FileObject fo) {
-        this.element = element;
+    public DocFileElement(Utils utils, Element element, FileObject fo) {
         this.fo = fo;
+
+        switch(element.getKind()) {
+            case MODULE:
+                ModuleElement moduleElement = (ModuleElement) element;
+                packageElement = utils.elementUtils.getPackageElement(moduleElement, "");
+                break;
+
+            case PACKAGE:
+                packageElement = (PackageElement) element;
+                break;
+
+            default:
+                throw new AssertionError("unknown kind: " + element.getKind());
+        }
     }
 
     @Override
     public PackageElement getPackageElement() {
-        switch(element.getKind()) {
-            case MODULE:
-                // uncomment to support doc-files in modules
-                // return configuration.workArounds.getUnnamedPackage();
-                throw new UnsupportedOperationException("not implemented");
-            case PACKAGE:
-                return (PackageElement)element;
-            default:
-                throw new AssertionError("unknown kind: " + element.getKind());
-        }
+        return packageElement;
     }
 
     @Override

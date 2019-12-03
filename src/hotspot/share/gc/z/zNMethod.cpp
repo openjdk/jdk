@@ -41,7 +41,6 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "runtime/atomic.hpp"
-#include "runtime/orderAccess.hpp"
 #include "utilities/debug.hpp"
 
 static ZNMethodData* gc_data(const nmethod* nm) {
@@ -258,7 +257,7 @@ private:
   volatile bool _failed;
 
   void set_failed() {
-    Atomic::store(true, &_failed);
+    Atomic::store(&_failed, true);
   }
 
   void unlink(nmethod* nm) {

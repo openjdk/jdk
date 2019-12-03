@@ -27,6 +27,7 @@
 #include "gc/shenandoah/shenandoahHeapRegionSet.hpp"
 #include "gc/shenandoah/shenandoahHeapRegionCounters.hpp"
 #include "memory/resourceArea.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/perfData.inline.hpp"
 
 ShenandoahHeapRegionCounters::ShenandoahHeapRegionCounters() :
@@ -76,7 +77,7 @@ void ShenandoahHeapRegionCounters::update() {
     jlong current = os::javaTimeMillis();
     jlong last = _last_sample_millis;
     if (current - last > ShenandoahRegionSamplingRate &&
-            Atomic::cmpxchg(current, &_last_sample_millis, last) == last) {
+            Atomic::cmpxchg(&_last_sample_millis, last, current) == last) {
 
       ShenandoahHeap* heap = ShenandoahHeap::heap();
       jlong status = 0;

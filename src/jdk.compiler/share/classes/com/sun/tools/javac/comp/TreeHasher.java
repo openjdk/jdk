@@ -106,6 +106,12 @@ public class TreeHasher extends TreeScanner {
     }
 
     @Override
+    public void visitBindingPattern(JCTree.JCBindingPattern tree) {
+        symbolHashes.computeIfAbsent(tree.symbol, k -> symbolHashes.size());
+        super.visitBindingPattern(tree);
+    }
+
+    @Override
     public void visitVarDef(JCVariableDecl tree) {
         symbolHashes.computeIfAbsent(tree.sym, k -> symbolHashes.size());
         super.visitVarDef(tree);

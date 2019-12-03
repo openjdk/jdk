@@ -123,6 +123,9 @@ class G1AdaptiveIHOPControl : public G1IHOPControl {
   // as there is no marking or mixed gc that could impact its size too much.
   size_t _last_unrestrained_young_size;
 
+  // Get a new prediction bounded below by zero from the given sequence.
+  double predict(TruncatedSeq const* seq) const;
+
   bool have_enough_data_for_prediction() const;
 
   // The "actual" target threshold the algorithm wants to keep during and at the

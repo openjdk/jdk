@@ -42,8 +42,7 @@ import java.util.Vector;
  * @author  Author van Hoff
  * @since   1.0
  */
-public
-class SequenceInputStream extends InputStream {
+public class SequenceInputStream extends InputStream {
     Enumeration<? extends InputStream> e;
     InputStream in;
 

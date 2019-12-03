@@ -41,8 +41,7 @@ import jdk.internal.HotSpotIntrinsicCandidate;
  * @author      David Connelly
  * @since 1.1
  */
-public
-class Adler32 implements Checksum {
+public class Adler32 implements Checksum {
 
     private int adler = 1;
 

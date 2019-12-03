@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,18 +41,15 @@ static jrawMonitorID eventMon;
 /* ============================================================================= */
 
 static void JNICALL
-ClassUnload(jvmtiEnv* jvmti_env, JNIEnv *jni_env, jthread thread, jclass klass, ...) {
-    /*
-     * With the CMS GC the event can be posted on
-     * a ConcurrentGC thread that is not a JavaThread.
-     * In this case the thread argument can be NULL, so that,
-     * we should not expect the thread argument to be non-NULL.
-     */
-    if (klass == NULL) {
+ClassUnload(jvmtiEnv* jvmti_env, JNIEnv* jni_env, const char* name, ...) {
+    // The name argument should never be null
+    if (name == NULL) {
         nsk_jvmti_setFailStatus();
-        NSK_COMPLAIN0("ClassUnload: 'klass' input parameter is NULL.\n");
-
+        NSK_COMPLAIN0("ClassUnload: 'name' input parameter is NULL.\n");
+    } else {
+        NSK_DISPLAY1("Class unloaded %s\n", name);
     }
+
     NSK_DISPLAY0("Received ClassUnload event.\n");
     if (eventEnabled == JNI_TRUE) {
         eventReceived1 = JNI_TRUE;
@@ -107,6 +104,20 @@ jboolean isClassUnloadingEnabled() {
     return enabled;
 }
 
+jboolean checkParams(jvmtiExtensionEventInfo event) {
+    // Check parameters are:
+    // JNIEnv *jni_env, const char* name
+    if (event.param_count != 2 ||
+          event.params[0].kind != JVMTI_KIND_IN_PTR ||
+          event.params[0].base_type != JVMTI_TYPE_JNIENV ||
+          event.params[1].kind != JVMTI_KIND_IN_PTR ||
+          event.params[1].base_type != JVMTI_TYPE_CCHAR) {
+        return JNI_FALSE;
+    } else {
+        return JNI_TRUE;
+    }
+}
+
 jboolean enableClassUnloadEvent (jboolean enable) {
     jint extCount, i;
     jvmtiExtensionEventInfo* extList;
@@ -121,6 +132,14 @@ jboolean enableClassUnloadEvent (jboolean enable) {
     for (i = 0; i < extCount; i++) {
         if (strcmp(extList[i].id, (char*)"com.sun.hotspot.events.ClassUnload") == 0) {
             found = JNI_TRUE;
+
+            NSK_DISPLAY1("%s", extList[i].short_description);
+
+            if (!checkParams(extList[i])) {
+                NSK_COMPLAIN0("ClassUnload event has wrong parameters.");
+                nsk_jvmti_setFailStatus();
+                return JNI_FALSE;
+            }
 
             if (!NSK_JVMTI_VERIFY(
                     jvmti->SetExtensionEventCallback(extList[i].extension_event_index,

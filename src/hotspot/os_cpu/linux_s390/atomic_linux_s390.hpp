@@ -78,13 +78,13 @@ template<size_t byte_size>
 struct Atomic::PlatformAdd
   : Atomic::AddAndFetch<Atomic::PlatformAdd<byte_size> >
 {
-  template<typename I, typename D>
-  D add_and_fetch(I add_value, D volatile* dest, atomic_memory_order order) const;
+  template<typename D, typename I>
+  D add_and_fetch(D volatile* dest, I add_value, atomic_memory_order order) const;
 };
 
 template<>
-template<typename I, typename D>
-inline D Atomic::PlatformAdd<4>::add_and_fetch(I inc, D volatile* dest,
+template<typename D, typename I>
+inline D Atomic::PlatformAdd<4>::add_and_fetch(D volatile* dest, I inc,
                                                atomic_memory_order order) const {
   STATIC_ASSERT(4 == sizeof(I));
   STATIC_ASSERT(4 == sizeof(D));
@@ -137,8 +137,8 @@ inline D Atomic::PlatformAdd<4>::add_and_fetch(I inc, D volatile* dest,
 
 
 template<>
-template<typename I, typename D>
-inline D Atomic::PlatformAdd<8>::add_and_fetch(I inc, D volatile* dest,
+template<typename D, typename I>
+inline D Atomic::PlatformAdd<8>::add_and_fetch(D volatile* dest, I inc,
                                                atomic_memory_order order) const {
   STATIC_ASSERT(8 == sizeof(I));
   STATIC_ASSERT(8 == sizeof(D));
@@ -208,8 +208,8 @@ inline D Atomic::PlatformAdd<8>::add_and_fetch(I inc, D volatile* dest,
 // replacement succeeded.
 template<>
 template<typename T>
-inline T Atomic::PlatformXchg<4>::operator()(T exchange_value,
-                                             T volatile* dest,
+inline T Atomic::PlatformXchg<4>::operator()(T volatile* dest,
+                                             T exchange_value,
                                              atomic_memory_order unused) const {
   STATIC_ASSERT(4 == sizeof(T));
   T old;
@@ -232,8 +232,8 @@ inline T Atomic::PlatformXchg<4>::operator()(T exchange_value,
 
 template<>
 template<typename T>
-inline T Atomic::PlatformXchg<8>::operator()(T exchange_value,
-                                             T volatile* dest,
+inline T Atomic::PlatformXchg<8>::operator()(T volatile* dest,
+                                             T exchange_value,
                                              atomic_memory_order unused) const {
   STATIC_ASSERT(8 == sizeof(T));
   T old;
@@ -289,9 +289,9 @@ struct Atomic::PlatformCmpxchg<1> : Atomic::CmpxchgByteUsingInt {};
 
 template<>
 template<typename T>
-inline T Atomic::PlatformCmpxchg<4>::operator()(T xchg_val,
-                                                T volatile* dest,
+inline T Atomic::PlatformCmpxchg<4>::operator()(T volatile* dest,
                                                 T cmp_val,
+                                                T xchg_val,
                                                 atomic_memory_order unused) const {
   STATIC_ASSERT(4 == sizeof(T));
   T old;
@@ -313,9 +313,9 @@ inline T Atomic::PlatformCmpxchg<4>::operator()(T xchg_val,
 
 template<>
 template<typename T>
-inline T Atomic::PlatformCmpxchg<8>::operator()(T xchg_val,
-                                                T volatile* dest,
+inline T Atomic::PlatformCmpxchg<8>::operator()(T volatile* dest,
                                                 T cmp_val,
+                                                T xchg_val,
                                                 atomic_memory_order unused) const {
   STATIC_ASSERT(8 == sizeof(T));
   T old;
@@ -334,5 +334,12 @@ inline T Atomic::PlatformCmpxchg<8>::operator()(T xchg_val,
 
   return old;
 }
+
+template<size_t byte_size>
+struct Atomic::PlatformOrderedLoad<byte_size, X_ACQUIRE>
+{
+  template <typename T>
+  T operator()(const volatile T* p) const { T t = *p; OrderAccess::acquire(); return t; }
+};
 
 #endif // OS_CPU_LINUX_S390_ATOMIC_LINUX_S390_HPP

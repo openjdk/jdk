@@ -26,6 +26,7 @@
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahPacer.hpp"
+#include "runtime/atomic.hpp"
 
 /*
  * In normal concurrent cycle, we have to pace the application to let GC finish.
@@ -178,12 +179,12 @@ void ShenandoahPacer::setup_for_idle() {
 size_t ShenandoahPacer::update_and_get_progress_history() {
   if (_progress == -1) {
     // First initialization, report some prior
-    Atomic::store((intptr_t)PACING_PROGRESS_ZERO, &_progress);
+    Atomic::store(&_progress, (intptr_t)PACING_PROGRESS_ZERO);
     return (size_t) (_heap->max_capacity() * 0.1);
   } else {
     // Record history, and reply historical data
     _progress_history->add(_progress);
-    Atomic::store((intptr_t)PACING_PROGRESS_ZERO, &_progress);
+    Atomic::store(&_progress, (intptr_t)PACING_PROGRESS_ZERO);
     return (size_t) (_progress_history->avg() * HeapWordSize);
   }
 }
@@ -191,8 +192,8 @@ size_t ShenandoahPacer::update_and_get_progress_history() {
 void ShenandoahPacer::restart_with(size_t non_taxable_bytes, double tax_rate) {
   size_t initial = (size_t)(non_taxable_bytes * tax_rate) >> LogHeapWordSize;
   STATIC_ASSERT(sizeof(size_t) <= sizeof(intptr_t));
-  Atomic::xchg((intptr_t)initial, &_budget);
-  Atomic::store(tax_rate, &_tax_rate);
+  Atomic::xchg(&_budget, (intptr_t)initial);
+  Atomic::store(&_tax_rate, tax_rate);
   Atomic::inc(&_epoch);
 }
 
@@ -210,7 +211,7 @@ bool ShenandoahPacer::claim_for_alloc(size_t words, bool force) {
       return false;
     }
     new_val = cur - tax;
-  } while (Atomic::cmpxchg(new_val, &_budget, cur) != cur);
+  } while (Atomic::cmpxchg(&_budget, cur, new_val) != cur);
   return true;
 }
 
@@ -223,7 +224,7 @@ void ShenandoahPacer::unpace_for_alloc(intptr_t epoch, size_t words) {
   }
 
   intptr_t tax = MAX2<intptr_t>(1, words * Atomic::load(&_tax_rate));
-  Atomic::add(tax, &_budget);
+  Atomic::add(&_budget, tax);
 }
 
 intptr_t ShenandoahPacer::epoch() {

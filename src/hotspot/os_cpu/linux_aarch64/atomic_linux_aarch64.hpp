@@ -32,16 +32,12 @@
 // Note that memory_order_conservative requires a full barrier after atomic stores.
 // See https://patchwork.kernel.org/patch/3575821/
 
-#define FULL_MEM_BARRIER  __sync_synchronize()
-#define READ_MEM_BARRIER  __atomic_thread_fence(__ATOMIC_ACQUIRE);
-#define WRITE_MEM_BARRIER __atomic_thread_fence(__ATOMIC_RELEASE);
-
 template<size_t byte_size>
 struct Atomic::PlatformAdd
   : Atomic::AddAndFetch<Atomic::PlatformAdd<byte_size> >
 {
-  template<typename I, typename D>
-  D add_and_fetch(I add_value, D volatile* dest, atomic_memory_order order) const {
+  template<typename D, typename I>
+  D add_and_fetch(D volatile* dest, I add_value, atomic_memory_order order) const {
     D res = __atomic_add_fetch(dest, add_value, __ATOMIC_RELEASE);
     FULL_MEM_BARRIER;
     return res;
@@ -50,8 +46,8 @@ struct Atomic::PlatformAdd
 
 template<size_t byte_size>
 template<typename T>
-inline T Atomic::PlatformXchg<byte_size>::operator()(T exchange_value,
-                                                     T volatile* dest,
+inline T Atomic::PlatformXchg<byte_size>::operator()(T volatile* dest,
+                                                     T exchange_value,
                                                      atomic_memory_order order) const {
   STATIC_ASSERT(byte_size == sizeof(T));
   T res = __atomic_exchange_n(dest, exchange_value, __ATOMIC_RELEASE);
@@ -61,9 +57,9 @@ inline T Atomic::PlatformXchg<byte_size>::operator()(T exchange_value,
 
 template<size_t byte_size>
 template<typename T>
-inline T Atomic::PlatformCmpxchg<byte_size>::operator()(T exchange_value,
-                                                        T volatile* dest,
+inline T Atomic::PlatformCmpxchg<byte_size>::operator()(T volatile* dest,
                                                         T compare_value,
+                                                        T exchange_value,
                                                         atomic_memory_order order) const {
   STATIC_ASSERT(byte_size == sizeof(T));
   if (order == memory_order_relaxed) {
@@ -80,5 +76,26 @@ inline T Atomic::PlatformCmpxchg<byte_size>::operator()(T exchange_value,
     return value;
   }
 }
+
+template<size_t byte_size>
+struct Atomic::PlatformOrderedLoad<byte_size, X_ACQUIRE>
+{
+  template <typename T>
+  T operator()(const volatile T* p) const { T data; __atomic_load(const_cast<T*>(p), &data, __ATOMIC_ACQUIRE); return data; }
+};
+
+template<size_t byte_size>
+struct Atomic::PlatformOrderedStore<byte_size, RELEASE_X>
+{
+  template <typename T>
+  void operator()(volatile T* p, T v) const { __atomic_store(const_cast<T*>(p), &v, __ATOMIC_RELEASE); }
+};
+
+template<size_t byte_size>
+struct Atomic::PlatformOrderedStore<byte_size, RELEASE_X_FENCE>
+{
+  template <typename T>
+  void operator()(volatile T* p, T v) const { release_store(p, v); OrderAccess::fence(); }
+};
 
 #endif // OS_CPU_LINUX_AARCH64_ATOMIC_LINUX_AARCH64_HPP

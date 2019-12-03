@@ -69,11 +69,6 @@ public class ClassBuilder extends AbstractBuilder {
      */
     private final boolean isEnum;
 
-    /**
-     * The content tree for the class documentation.
-     */
-    private Content contentTree;
-
     private final Utils utils;
 
     /**
@@ -118,16 +113,15 @@ public class ClassBuilder extends AbstractBuilder {
      */
     @Override
     public void build() throws DocletException {
-        buildClassDoc(contentTree);
+        buildClassDoc();
     }
 
      /**
       * Handles the {@literal <TypeElement>} tag.
       *
-      * @param contentTree the content tree to which the documentation will be added
       * @throws DocletException if there is a problem while building the documentation
       */
-     protected void buildClassDoc(Content contentTree) throws DocletException {
+     protected void buildClassDoc() throws DocletException {
         String key;
         if (isInterface) {
             key = "doclet.Interface";
@@ -136,7 +130,7 @@ public class ClassBuilder extends AbstractBuilder {
         } else {
             key = "doclet.Class";
         }
-        contentTree = writer.getHeader(resources.getText(key) + " "
+        Content contentTree = writer.getHeader(resources.getText(key) + " "
                 + utils.getSimpleName(typeElement));
         Content classContentTree = writer.getClassContentHeader();
 
@@ -145,8 +139,8 @@ public class ClassBuilder extends AbstractBuilder {
         buildMemberSummary(classContentTree);
         buildMemberDetails(classContentTree);
 
-        writer.addClassContentTree(contentTree, classContentTree);
-        writer.addFooter(contentTree);
+        writer.addClassContentTree(classContentTree);
+        writer.addFooter();
         writer.printDocument(contentTree);
         copyDocFiles();
     }

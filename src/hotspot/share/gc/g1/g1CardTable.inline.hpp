@@ -33,16 +33,20 @@ inline uint G1CardTable::region_idx_for(CardValue* p) {
   return (uint)(card_idx >> (HeapRegion::LogOfHRGrainBytes - card_shift));
 }
 
-inline void G1CardTable::mark_clean_as_dirty(size_t card_index) {
+inline size_t G1CardTable::mark_clean_as_dirty(size_t card_index) {
   CardValue value = _byte_map[card_index];
   if (value == clean_card_val()) {
     _byte_map[card_index] = dirty_card_val();
+    return 1;
   }
+  return 0;
 }
 
-inline void G1CardTable::mark_region_dirty(size_t start_card_index, size_t num_cards) {
+inline size_t G1CardTable::mark_region_dirty(size_t start_card_index, size_t num_cards) {
   assert(is_aligned(start_card_index, sizeof(size_t)), "Start card index must be aligned.");
   assert(is_aligned(num_cards, sizeof(size_t)), "Number of cards to change must be evenly divisible.");
+
+  size_t result = 0;
 
   size_t const num_chunks = num_cards / sizeof(size_t);
 
@@ -52,6 +56,7 @@ inline void G1CardTable::mark_region_dirty(size_t start_card_index, size_t num_c
     size_t value = *cur_word;
     if (value == WordAllClean) {
       *cur_word = WordAllDirty;
+      result += sizeof(value);
     } else if (value == WordAllDirty) {
       // do nothing.
     } else {
@@ -61,12 +66,15 @@ inline void G1CardTable::mark_region_dirty(size_t start_card_index, size_t num_c
         CardValue value = *cur;
         if (value == clean_card_val()) {
           *cur = dirty_card_val();
+          result++;
         }
         cur++;
       }
     }
     cur_word++;
   }
+
+  return result;
 }
 
 inline void G1CardTable::mark_as_scanned(size_t start_card_index, size_t num_cards) {

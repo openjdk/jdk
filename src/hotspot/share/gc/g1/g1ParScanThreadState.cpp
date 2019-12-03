@@ -56,6 +56,9 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h,
     _stack_trim_upper_threshold(GCDrainStackTargetSize * 2 + 1),
     _stack_trim_lower_threshold(GCDrainStackTargetSize),
     _trim_ticks(),
+    _surviving_young_words_base(NULL),
+    _surviving_young_words(NULL),
+    _surviving_words_length(young_cset_length + 1),
     _old_gen_is_full(false),
     _num_optional_regions(optional_cset_length),
     _numa(g1h->numa()),
@@ -65,11 +68,10 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h,
   // entries, since entry 0 keeps track of surviving bytes for non-young regions.
   // We also add a few elements at the beginning and at the end in
   // an attempt to eliminate cache contention
-  size_t real_length = young_cset_length + 1;
-  size_t array_length = PADDING_ELEM_NUM + real_length + PADDING_ELEM_NUM;
+  size_t array_length = PADDING_ELEM_NUM + _surviving_words_length + PADDING_ELEM_NUM;
   _surviving_young_words_base = NEW_C_HEAP_ARRAY(size_t, array_length, mtGC);
   _surviving_young_words = _surviving_young_words_base + PADDING_ELEM_NUM;
-  memset(_surviving_young_words, 0, real_length * sizeof(size_t));
+  memset(_surviving_young_words, 0, _surviving_words_length * sizeof(size_t));
 
   _plab_allocator = new G1PLABAllocator(_g1h->allocator());
 
@@ -85,18 +87,19 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h,
   initialize_numa_stats();
 }
 
-// Pass locally gathered statistics to global state.
-void G1ParScanThreadState::flush(size_t* surviving_young_words) {
+size_t G1ParScanThreadState::flush(size_t* surviving_young_words) {
   _rdcq.flush();
+  flush_numa_stats();
   // Update allocation statistics.
   _plab_allocator->flush_and_retire_stats();
   _g1h->policy()->record_age_table(&_age_table);
 
-  uint length = _g1h->collection_set()->young_region_length() + 1;
-  for (uint i = 0; i < length; i++) {
+  size_t sum = 0;
+  for (uint i = 0; i < _surviving_words_length; i++) {
     surviving_young_words[i] += _surviving_young_words[i];
+    sum += _surviving_young_words[i];
   }
-  flush_numa_stats();
+  return sum;
 }
 
 G1ParScanThreadState::~G1ParScanThreadState() {
@@ -357,16 +360,27 @@ const size_t* G1ParScanThreadStateSet::surviving_young_words() const {
 void G1ParScanThreadStateSet::flush() {
   assert(!_flushed, "thread local state from the per thread states should be flushed once");
 
-  for (uint worker_index = 0; worker_index < _n_workers; ++worker_index) {
-    G1ParScanThreadState* pss = _states[worker_index];
+  for (uint worker_id = 0; worker_id < _n_workers; ++worker_id) {
+    G1ParScanThreadState* pss = _states[worker_id];
 
     if (pss == NULL) {
       continue;
     }
 
-    pss->flush(_surviving_young_words_total);
+    G1GCPhaseTimes* p = _g1h->phase_times();
+
+    // Need to get the following two before the call to G1ParThreadScanState::flush()
+    // because it resets the PLAB allocator where we get this info from.
+    size_t lab_waste_bytes = pss->lab_waste_words() * HeapWordSize;
+    size_t lab_undo_waste_bytes = pss->lab_undo_waste_words() * HeapWordSize;
+    size_t copied_bytes = pss->flush(_surviving_young_words_total) * HeapWordSize;
+
+    p->record_or_add_thread_work_item(G1GCPhaseTimes::MergePSS, worker_id, copied_bytes, G1GCPhaseTimes::MergePSSCopiedBytes);
+    p->record_or_add_thread_work_item(G1GCPhaseTimes::MergePSS, worker_id, lab_waste_bytes, G1GCPhaseTimes::MergePSSLABWasteBytes);
+    p->record_or_add_thread_work_item(G1GCPhaseTimes::MergePSS, worker_id, lab_undo_waste_bytes, G1GCPhaseTimes::MergePSSLABUndoWasteBytes);
+
     delete pss;
-    _states[worker_index] = NULL;
+    _states[worker_id] = NULL;
   }
   _flushed = true;
 }

@@ -25,6 +25,8 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
+import jdk.javadoc.internal.doclets.formats.html.markup.BodyContents;
+import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
@@ -50,9 +52,13 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
  */
 public class HelpWriter extends HtmlDocletWriter {
 
-    HtmlTree mainTree = HtmlTree.MAIN();
-
     private final Navigation navBar;
+
+    private final String[][] SEARCH_EXAMPLES = {
+            {"j.l.obj", "\"java.lang.Object\""},
+            {"InpStr", "\"java.io.InputStream\""},
+            {"HM.cK", "\"java.util.HashMap.containsKey(Object)\""}
+    };
 
     /**
      * Constructor to construct HelpWriter object.
@@ -62,7 +68,7 @@ public class HelpWriter extends HtmlDocletWriter {
     public HelpWriter(HtmlConfiguration configuration,
                       DocPath filename) {
         super(configuration, filename);
-        this.navBar = new Navigation(null, configuration, fixedNavDiv, PageMode.HELP, path);
+        this.navBar = new Navigation(null, configuration, PageMode.HELP, path);
     }
 
     /**
@@ -88,17 +94,21 @@ public class HelpWriter extends HtmlDocletWriter {
     protected void generateHelpFile() throws DocFileIOException {
         String title = resources.getText("doclet.Window_Help_title");
         HtmlTree body = getBody(getWindowTitle(title));
-        HtmlTree htmlTree = HtmlTree.HEADER();
-        addTop(htmlTree);
+        Content headerContent = new ContentBuilder();
+        addTop(headerContent);
         navBar.setUserHeader(getUserHeaderFooter(true));
-        htmlTree.add(navBar.getContent(true));
-        body.add(htmlTree);
-        addHelpFileContents(body);
-        htmlTree = HtmlTree.FOOTER();
+        headerContent.add(navBar.getContent(true));
+        ContentBuilder helpFileContent = new ContentBuilder();
+        addHelpFileContents(helpFileContent);
+        HtmlTree footer = HtmlTree.FOOTER();
         navBar.setUserFooter(getUserHeaderFooter(false));
-        htmlTree.add(navBar.getContent(false));
-        addBottom(htmlTree);
-        body.add(htmlTree);
+        footer.add(navBar.getContent(false));
+        addBottom(footer);
+        body.add(new BodyContents()
+                .setHeader(headerContent)
+                .addMainContent(helpFileContent)
+                .setFooter(footer)
+                .toContent());
         printHtmlDocument(null, "help", body);
     }
 
@@ -118,7 +128,7 @@ public class HelpWriter extends HtmlDocletWriter {
         Content intro = HtmlTree.DIV(HtmlStyle.subTitle,
                 contents.getContent("doclet.help.intro"));
         div.add(intro);
-        mainTree.add(div);
+        contentTree.add(div);
         HtmlTree htmlTree;
         HtmlTree ul = new HtmlTree(HtmlTag.UL);
         ul.setStyle(HtmlStyle.blockList);
@@ -322,9 +332,20 @@ public class HelpWriter extends HtmlDocletWriter {
         Content searchHead = HtmlTree.HEADING(Headings.CONTENT_HEADING,
                 contents.getContent("doclet.help.search.head"));
         htmlTree = HtmlTree.SECTION(HtmlStyle.helpSection, searchHead);
-        Content searchBody = contents.getContent("doclet.help.search.body");
-        Content searchPara = HtmlTree.P(searchBody);
-        htmlTree.add(searchPara);
+        Content searchIntro = HtmlTree.P(contents.getContent("doclet.help.search.intro"));
+        Content searchExamples = new HtmlTree(HtmlTag.UL);
+        for (String[] example : SEARCH_EXAMPLES) {
+            searchExamples.add(HtmlTree.LI(
+                    contents.getContent("doclet.help.search.example",
+                            HtmlTree.CODE(new StringContent(example[0])), example[1])));
+        }
+        Content searchSpecLink = HtmlTree.A(
+                resources.getText("doclet.help.search.spec.url", Runtime.version().feature()),
+                contents.getContent("doclet.help.search.spec.title"));
+        Content searchRefer = HtmlTree.P(contents.getContent("doclet.help.search.refer", searchSpecLink));
+        htmlTree.add(searchIntro);
+        htmlTree.add(searchExamples);
+        htmlTree.add(searchRefer);
         ul.add(HtmlTree.LI(HtmlStyle.blockList, htmlTree));
 
         Content divContent = HtmlTree.DIV(HtmlStyle.contentContainer, ul);
@@ -332,7 +353,6 @@ public class HelpWriter extends HtmlDocletWriter {
         Content footnote = HtmlTree.SPAN(HtmlStyle.emphasizedPhrase,
                 contents.getContent("doclet.help.footnote"));
         divContent.add(footnote);
-        mainTree.add(divContent);
-        contentTree.add(mainTree);
+        contentTree.add(divContent);
     }
 }

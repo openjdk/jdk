@@ -84,6 +84,7 @@ class JfrJavaSupport : public AllStatic {
   static void throw_internal_error(const char* message, TRAPS);
   static void throw_out_of_memory_error(const char* message, TRAPS);
   static void throw_class_format_error(const char* message, TRAPS);
+  static void throw_runtime_exception(const char* message, TRAPS);
 
   static bool is_jdk_jfr_module_available();
   static bool is_jdk_jfr_module_available(outputStream* stream, TRAPS);

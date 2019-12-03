@@ -27,9 +27,9 @@
 #include "classfile/vmSymbols.hpp"
 #include "memory/metaspace.hpp"
 #include "oops/oop.inline.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaCalls.hpp"
-#include "runtime/orderAccess.hpp"
 #include "services/lowMemoryDetector.hpp"
 #include "services/management.hpp"
 #include "services/memoryManager.hpp"
@@ -77,7 +77,7 @@ void MemoryPool::add_manager(MemoryManager* mgr) {
 instanceOop MemoryPool::get_memory_pool_instance(TRAPS) {
   // Must do an acquire so as to force ordering of subsequent
   // loads from anything _memory_pool_obj points to or implies.
-  instanceOop pool_obj = OrderAccess::load_acquire(&_memory_pool_obj);
+  instanceOop pool_obj = Atomic::load_acquire(&_memory_pool_obj);
   if (pool_obj == NULL) {
     // It's ok for more than one thread to execute the code up to the locked region.
     // Extra pool instances will just be gc'ed.
@@ -118,7 +118,7 @@ instanceOop MemoryPool::get_memory_pool_instance(TRAPS) {
       //
       // The lock has done an acquire, so the load can't float above it,
       // but we need to do a load_acquire as above.
-      pool_obj = OrderAccess::load_acquire(&_memory_pool_obj);
+      pool_obj = Atomic::load_acquire(&_memory_pool_obj);
       if (pool_obj != NULL) {
          return pool_obj;
       }
@@ -130,7 +130,7 @@ instanceOop MemoryPool::get_memory_pool_instance(TRAPS) {
       // with creating the pool are visible before publishing its address.
       // The unlock will publish the store to _memory_pool_obj because
       // it does a release first.
-      OrderAccess::release_store(&_memory_pool_obj, pool_obj);
+      Atomic::release_store(&_memory_pool_obj, pool_obj);
     }
   }
 

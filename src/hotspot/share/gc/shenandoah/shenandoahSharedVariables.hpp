@@ -25,7 +25,7 @@
 #define SHARE_GC_SHENANDOAH_SHENANDOAHSHAREDVARIABLES_HPP
 
 #include "memory/allocation.hpp"
-#include "runtime/orderAccess.hpp"
+#include "runtime/atomic.hpp"
 
 typedef jbyte ShenandoahSharedValue;
 
@@ -47,19 +47,19 @@ typedef struct ShenandoahSharedFlag {
   }
 
   void set() {
-    OrderAccess::release_store_fence(&value, (ShenandoahSharedValue)SET);
+    Atomic::release_store_fence(&value, (ShenandoahSharedValue)SET);
   }
 
   void unset() {
-    OrderAccess::release_store_fence(&value, (ShenandoahSharedValue)UNSET);
+    Atomic::release_store_fence(&value, (ShenandoahSharedValue)UNSET);
   }
 
   bool is_set() const {
-    return OrderAccess::load_acquire(&value) == SET;
+    return Atomic::load_acquire(&value) == SET;
   }
 
   bool is_unset() const {
-    return OrderAccess::load_acquire(&value) == UNSET;
+    return Atomic::load_acquire(&value) == UNSET;
   }
 
   void set_cond(bool val) {
@@ -74,7 +74,7 @@ typedef struct ShenandoahSharedFlag {
     if (is_set()) {
       return false;
     }
-    ShenandoahSharedValue old = Atomic::cmpxchg((ShenandoahSharedValue)SET, &value, (ShenandoahSharedValue)UNSET);
+    ShenandoahSharedValue old = Atomic::cmpxchg(&value, (ShenandoahSharedValue)UNSET, (ShenandoahSharedValue)SET);
     return old == UNSET; // success
   }
 
@@ -82,7 +82,7 @@ typedef struct ShenandoahSharedFlag {
     if (!is_set()) {
       return false;
     }
-    ShenandoahSharedValue old = Atomic::cmpxchg((ShenandoahSharedValue)UNSET, &value, (ShenandoahSharedValue)SET);
+    ShenandoahSharedValue old = Atomic::cmpxchg(&value, (ShenandoahSharedValue)SET, (ShenandoahSharedValue)UNSET);
     return old == SET; // success
   }
 
@@ -118,14 +118,14 @@ typedef struct ShenandoahSharedBitmap {
     assert (mask < (sizeof(ShenandoahSharedValue) * CHAR_MAX), "sanity");
     ShenandoahSharedValue mask_val = (ShenandoahSharedValue) mask;
     while (true) {
-      ShenandoahSharedValue ov = OrderAccess::load_acquire(&value);
+      ShenandoahSharedValue ov = Atomic::load_acquire(&value);
       if ((ov & mask_val) != 0) {
         // already set
         return;
       }
 
       ShenandoahSharedValue nv = ov | mask_val;
-      if (Atomic::cmpxchg(nv, &value, ov) == ov) {
+      if (Atomic::cmpxchg(&value, ov, nv) == ov) {
         // successfully set
         return;
       }
@@ -136,14 +136,14 @@ typedef struct ShenandoahSharedBitmap {
     assert (mask < (sizeof(ShenandoahSharedValue) * CHAR_MAX), "sanity");
     ShenandoahSharedValue mask_val = (ShenandoahSharedValue) mask;
     while (true) {
-      ShenandoahSharedValue ov = OrderAccess::load_acquire(&value);
+      ShenandoahSharedValue ov = Atomic::load_acquire(&value);
       if ((ov & mask_val) == 0) {
         // already unset
         return;
       }
 
       ShenandoahSharedValue nv = ov & ~mask_val;
-      if (Atomic::cmpxchg(nv, &value, ov) == ov) {
+      if (Atomic::cmpxchg(&value, ov, nv) == ov) {
         // successfully unset
         return;
       }
@@ -151,7 +151,7 @@ typedef struct ShenandoahSharedBitmap {
   }
 
   void clear() {
-    OrderAccess::release_store_fence(&value, (ShenandoahSharedValue)0);
+    Atomic::release_store_fence(&value, (ShenandoahSharedValue)0);
   }
 
   bool is_set(uint mask) const {
@@ -160,11 +160,11 @@ typedef struct ShenandoahSharedBitmap {
 
   bool is_unset(uint mask) const {
     assert (mask < (sizeof(ShenandoahSharedValue) * CHAR_MAX), "sanity");
-    return (OrderAccess::load_acquire(&value) & (ShenandoahSharedValue) mask) == 0;
+    return (Atomic::load_acquire(&value) & (ShenandoahSharedValue) mask) == 0;
   }
 
   bool is_clear() const {
-    return (OrderAccess::load_acquire(&value)) == 0;
+    return (Atomic::load_acquire(&value)) == 0;
   }
 
   void set_cond(uint mask, bool val) {
@@ -211,17 +211,17 @@ struct ShenandoahSharedEnumFlag {
   void set(T v) {
     assert (v >= 0, "sanity");
     assert (v < (sizeof(ShenandoahSharedValue) * CHAR_MAX), "sanity");
-    OrderAccess::release_store_fence(&value, (ShenandoahSharedValue)v);
+    Atomic::release_store_fence(&value, (ShenandoahSharedValue)v);
   }
 
   T get() const {
-    return (T)OrderAccess::load_acquire(&value);
+    return (T)Atomic::load_acquire(&value);
   }
 
   T cmpxchg(T new_value, T expected) {
     assert (new_value >= 0, "sanity");
     assert (new_value < (sizeof(ShenandoahSharedValue) * CHAR_MAX), "sanity");
-    return (T)Atomic::cmpxchg((ShenandoahSharedValue)new_value, &value, (ShenandoahSharedValue)expected);
+    return (T)Atomic::cmpxchg(&value, (ShenandoahSharedValue)expected, (ShenandoahSharedValue)new_value);
   }
 
   volatile ShenandoahSharedValue* addr_of() {

@@ -35,8 +35,7 @@ import java.io.IOException;
  * @since   1.1
  */
 
-public
-class ZipException extends IOException {
+public class ZipException extends IOException {
     @java.io.Serial
     private static final long serialVersionUID = 8000196834066748623L;
 

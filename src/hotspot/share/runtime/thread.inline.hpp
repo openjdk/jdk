@@ -37,14 +37,14 @@ inline void Thread::set_suspend_flag(SuspendFlags f) {
   do {
     flags = _suspend_flags;
   }
-  while (Atomic::cmpxchg((flags | f), &_suspend_flags, flags) != flags);
+  while (Atomic::cmpxchg(&_suspend_flags, flags, (flags | f)) != flags);
 }
 inline void Thread::clear_suspend_flag(SuspendFlags f) {
   uint32_t flags;
   do {
     flags = _suspend_flags;
   }
-  while (Atomic::cmpxchg((flags & ~f), &_suspend_flags, flags) != flags);
+  while (Atomic::cmpxchg(&_suspend_flags, flags, (flags & ~f)) != flags);
 }
 
 inline void Thread::set_has_async_exception() {
@@ -67,7 +67,7 @@ inline void Thread::clear_trace_flag() {
 }
 
 inline jlong Thread::cooked_allocated_bytes() {
-  jlong allocated_bytes = OrderAccess::load_acquire(&_allocated_bytes);
+  jlong allocated_bytes = Atomic::load_acquire(&_allocated_bytes);
   if (UseTLAB) {
     size_t used_bytes = tlab().used_bytes();
     if (used_bytes <= ThreadLocalAllocBuffer::max_size_in_bytes()) {
@@ -83,15 +83,15 @@ inline jlong Thread::cooked_allocated_bytes() {
 }
 
 inline ThreadsList* Thread::cmpxchg_threads_hazard_ptr(ThreadsList* exchange_value, ThreadsList* compare_value) {
-  return (ThreadsList*)Atomic::cmpxchg(exchange_value, &_threads_hazard_ptr, compare_value);
+  return (ThreadsList*)Atomic::cmpxchg(&_threads_hazard_ptr, compare_value, exchange_value);
 }
 
 inline ThreadsList* Thread::get_threads_hazard_ptr() {
-  return (ThreadsList*)OrderAccess::load_acquire(&_threads_hazard_ptr);
+  return (ThreadsList*)Atomic::load_acquire(&_threads_hazard_ptr);
 }
 
 inline void Thread::set_threads_hazard_ptr(ThreadsList* new_list) {
-  OrderAccess::release_store_fence(&_threads_hazard_ptr, new_list);
+  Atomic::release_store_fence(&_threads_hazard_ptr, new_list);
 }
 
 inline void JavaThread::set_ext_suspended() {
@@ -118,17 +118,19 @@ inline JavaThreadState JavaThread::thread_state() const    {
 #if defined(PPC64) || defined (AARCH64)
   // Use membars when accessing volatile _thread_state. See
   // Threads::create_vm() for size checks.
-  return (JavaThreadState) OrderAccess::load_acquire((volatile jint*)&_thread_state);
+  return (JavaThreadState) Atomic::load_acquire((volatile jint*)&_thread_state);
 #else
   return _thread_state;
 #endif
 }
 
 inline void JavaThread::set_thread_state(JavaThreadState s) {
+  assert(current_or_null() == NULL || current_or_null() == this,
+         "state change should only be called by the current thread");
 #if defined(PPC64) || defined (AARCH64)
   // Use membars when accessing volatile _thread_state. See
   // Threads::create_vm() for size checks.
-  OrderAccess::release_store((volatile jint*)&_thread_state, (jint)s);
+  Atomic::release_store((volatile jint*)&_thread_state, (jint)s);
 #else
   _thread_state = s;
 #endif
@@ -200,7 +202,7 @@ inline bool JavaThread::stack_guards_enabled() {
 // The release make sure this store is done after storing the handshake
 // operation or global state
 inline void JavaThread::set_polling_page_release(void* poll_value) {
-  OrderAccess::release_store(polling_page_addr(), poll_value);
+  Atomic::release_store(polling_page_addr(), poll_value);
 }
 
 // Caller is responsible for using a memory barrier if needed.
@@ -211,14 +213,14 @@ inline void JavaThread::set_polling_page(void* poll_value) {
 // The aqcquire make sure reading of polling page is done before
 // the reading the handshake operation or the global state
 inline volatile void* JavaThread::get_polling_page() {
-  return OrderAccess::load_acquire(polling_page_addr());
+  return Atomic::load_acquire(polling_page_addr());
 }
 
 inline bool JavaThread::is_exiting() const {
   // Use load-acquire so that setting of _terminated by
   // JavaThread::exit() is seen more quickly.
   TerminatedTypes l_terminated = (TerminatedTypes)
-      OrderAccess::load_acquire((volatile jint *) &_terminated);
+      Atomic::load_acquire((volatile jint *) &_terminated);
   return l_terminated == _thread_exiting || check_is_terminated(l_terminated);
 }
 
@@ -226,19 +228,19 @@ inline bool JavaThread::is_terminated() const {
   // Use load-acquire so that setting of _terminated by
   // JavaThread::exit() is seen more quickly.
   TerminatedTypes l_terminated = (TerminatedTypes)
-      OrderAccess::load_acquire((volatile jint *) &_terminated);
+      Atomic::load_acquire((volatile jint *) &_terminated);
   return check_is_terminated(l_terminated);
 }
 
 inline void JavaThread::set_terminated(TerminatedTypes t) {
   // use release-store so the setting of _terminated is seen more quickly
-  OrderAccess::release_store((volatile jint *) &_terminated, (jint) t);
+  Atomic::release_store((volatile jint *) &_terminated, (jint) t);
 }
 
 // special for Threads::remove() which is static:
 inline void JavaThread::set_terminated_value() {
   // use release-store so the setting of _terminated is seen more quickly
-  OrderAccess::release_store((volatile jint *) &_terminated, (jint) _thread_terminated);
+  Atomic::release_store((volatile jint *) &_terminated, (jint) _thread_terminated);
 }
 
 // Allow tracking of class initialization monitor use

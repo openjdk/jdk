@@ -34,8 +34,7 @@ package java.net;
  * @see     java.net.DatagramSocket
  * @since   1.3
  */
-public
-interface DatagramSocketImplFactory {
+public interface DatagramSocketImplFactory {
     /**
      * Creates a new {@code DatagramSocketImpl} instance.
      *

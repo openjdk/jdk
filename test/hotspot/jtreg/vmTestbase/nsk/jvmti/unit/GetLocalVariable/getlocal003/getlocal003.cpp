@@ -231,8 +231,44 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 }
 
 JNIEXPORT void JNICALL
+Java_nsk_jvmti_unit_GetLocalVariable_getlocal003_instMeth(JNIEnv *env, jobject inst) {
+    jvmtiError err;
+    jobject obj = NULL;
+
+    printf("\n Native instMeth: started\n");
+
+    // Test GetLocalInstance with native instance method instMeth() frame
+    err = jvmti->GetLocalInstance(NULL, 0, &obj);
+    printf(" Native instMeth: GetLocalInstance: %s (%d)\n", TranslateError(err), err);
+    if (err != JVMTI_ERROR_NONE) {
+        printf("FAIL: GetLocalInstance failed to get instance for native instance method frame\n");
+        result = STATUS_FAILED;
+    }
+    if (env->IsSameObject(inst, obj) == JNI_FALSE) {
+        printf("FAIL: GetLocalInstance returned unexpected instance for native instance method frame\n");
+        result = STATUS_FAILED;
+    }
+
+    // Test GetLocalInstance with java instance method meth01() frame
+    err = jvmti->GetLocalInstance(NULL, 1, &obj);
+    printf(" Native instMeth: GetLocalInstance: %s (%d)\n", TranslateError(err), err);
+    if (err != JVMTI_ERROR_NONE) {
+        printf("FAIL: GetLocalInstance failed to get instance for java instance method frame\n");
+        result = STATUS_FAILED;
+    }
+    if (env->IsSameObject(inst, obj) == JNI_FALSE) {
+        printf("FAIL: GetLocalInstance returned unexpected instance for java instance method frame\n");
+        result = STATUS_FAILED;
+    }
+    printf(" Native instMeth: finished\n\n");
+}
+
+JNIEXPORT void JNICALL
 Java_nsk_jvmti_unit_GetLocalVariable_getlocal003_getMeth(JNIEnv *env, jclass cls) {
     jvmtiError err;
+    jobject obj = NULL;
+
+    printf("\n Native getMeth: started\n");
 
     if (jvmti == NULL) {
         printf("JVMTI client was not properly loaded!\n");
@@ -261,6 +297,24 @@ Java_nsk_jvmti_unit_GetLocalVariable_getlocal003_getMeth(JNIEnv *env, jclass cls
                TranslateError(err), err);
         result = STATUS_FAILED;
     }
+
+    // Test GetLocalInstance with native static method getMeth() frame
+    err = jvmti->GetLocalInstance(NULL, 0, &obj);
+    printf(" Native getMeth: GetLocalInstance: %s (%d)\n", TranslateError(err), err);
+    if (err != JVMTI_ERROR_INVALID_SLOT) {
+        printf("FAIL: GetLocalInstance failed to return JVMTI_ERROR_INVALID_SLOT for native static method frame\n");
+        result = STATUS_FAILED;
+    }
+
+    // Test GetLocalInstance with java static method run() frame
+    err = jvmti->GetLocalInstance(NULL, 1, &obj);
+    printf(" Native getMeth: GetLocalInstance: %s (%d)\n", TranslateError(err), err);
+    if (err != JVMTI_ERROR_INVALID_SLOT) {
+        printf("FAIL: GetLocalInstance failed to return JVMTI_ERROR_INVALID_SLOT for java static method frame\n");
+        result = STATUS_FAILED;
+    }
+
+    printf(" Native getMeth: finished\n\n");
     fflush(stdout);
 }
 

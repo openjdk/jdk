@@ -70,7 +70,6 @@ public class Navigation {
     private final DocPath path;
     private final DocPath pathToRoot;
     private final Links links;
-    private final HtmlTree fixedNavDiv;
     private final PageMode documentedPage;
     private Content navLinkModule;
     private Content navLinkPackage;
@@ -85,9 +84,6 @@ public class Navigation {
     private Content userFooter;
     private final String rowListTitle;
     private final Content searchLabel;
-    private static final Script FIXED_NAV_SCRIPT = new Script("<!--\n"
-            + "$('.navPadding').css('padding-top', $('.fixedNav').css(\"height\"));\n"
-            + "//-->\n");
 
     public enum PageMode {
         ALLCLASSES,
@@ -133,15 +129,12 @@ public class Navigation {
      *
      * @param element element being documented. null if its not an element documentation page
      * @param configuration the configuration object
-     * @param fixedNavDiv the fixed navigation for the header navigation
      * @param page the kind of page being documented
      * @param path the DocPath object
      */
-    public Navigation(Element element, HtmlConfiguration configuration, HtmlTree fixedNavDiv,
-            PageMode page, DocPath path) {
+    public Navigation(Element element, HtmlConfiguration configuration, PageMode page, DocPath path) {
         this.configuration = configuration;
         this.element = element;
-        this.fixedNavDiv = fixedNavDiv;
         this.contents = configuration.contents;
         this.documentedPage = page;
         this.path = path;
@@ -941,10 +934,6 @@ public class Navigation {
         tree.add(searchDiv);
     }
 
-    private void addFixedNavScript(Content tree) {
-        tree.add(FIXED_NAV_SCRIPT.asContent());
-    }
-
     /**
      * Get the navigation content.
      *
@@ -952,69 +941,58 @@ public class Navigation {
      * @return the navigation contents
      */
     public Content getContent(boolean top) {
-        Content contentTree = new ContentBuilder();
-        if (!configuration.nonavbar) {
-            Deque<Content> queue;
-            Content tree = HtmlTree.NAV();
-            HtmlTree navDiv = new HtmlTree(HtmlTag.DIV);
-            if (top) {
-                queue = topBottomNavContents.get(Position.TOP);
-                fixedNavDiv.add(Position.TOP.startOfNav());
-                navDiv.setStyle(HtmlStyle.topNav);
-            } else {
-                queue = topBottomNavContents.get(Position.BOTTOM);
-                tree.add(Position.BOTTOM.startOfNav());
-                navDiv.setStyle(HtmlStyle.bottomNav);
-            }
-            navDiv.add(queue.poll());
-            HtmlTree skipLinkDiv = HtmlTree.DIV(HtmlStyle.skipNav, queue.poll());
-            navDiv.add(skipLinkDiv);
-            navDiv.add(queue.poll());
-            HtmlTree navList = new HtmlTree(HtmlTag.UL);
-            navList.setStyle(HtmlStyle.navList);
-            navList.put(HtmlAttr.TITLE, rowListTitle);
-            fixedNavDiv.setStyle(HtmlStyle.fixedNav);
-            addMainNavLinks(navList);
-            navDiv.add(navList);
-            Content aboutDiv = HtmlTree.DIV(HtmlStyle.aboutLanguage, top ? userHeader : userFooter);
-            navDiv.add(aboutDiv);
-            if (top) {
-                fixedNavDiv.add(navDiv);
-            } else {
-                tree.add(navDiv);
-            }
-            HtmlTree subDiv = new HtmlTree(HtmlTag.DIV);
-            subDiv.setStyle(HtmlStyle.subNav);
-            HtmlTree div = new HtmlTree(HtmlTag.DIV);
-            // Add the summary links if present.
-            HtmlTree ulNavSummary = new HtmlTree(HtmlTag.UL);
-            ulNavSummary.setStyle(HtmlStyle.subNavList);
-            addSummaryLinks(ulNavSummary);
-            div.add(ulNavSummary);
-            // Add the detail links if present.
-            HtmlTree ulNavDetail = new HtmlTree(HtmlTag.UL);
-            ulNavDetail.setStyle(HtmlStyle.subNavList);
-            addDetailLinks(ulNavDetail);
-            div.add(ulNavDetail);
-            subDiv.add(div);
-            if (top && configuration.createindex) {
-                addSearch(subDiv);
-            }
-            if (top) {
-                fixedNavDiv.add(subDiv);
-                fixedNavDiv.add(queue.poll());
-                fixedNavDiv.add(Position.TOP.endOfNav());
-                tree.add(fixedNavDiv);
-                HtmlTree paddingDiv = HtmlTree.DIV(HtmlStyle.navPadding, Entity.NO_BREAK_SPACE);
-                tree.add(paddingDiv);
-                addFixedNavScript(tree);
-            } else {
-                tree.add(subDiv);
-                tree.add(queue.poll());
-                tree.add(Position.BOTTOM.endOfNav());
-            }
-            return tree;
+        if (configuration.nonavbar) {
+            return new ContentBuilder();
         }
-        return contentTree;
+        Deque<Content> queue;
+        Content tree = HtmlTree.NAV();
+        HtmlTree navDiv = new HtmlTree(HtmlTag.DIV);
+        if (top) {
+            queue = topBottomNavContents.get(Position.TOP);
+            tree.add(Position.TOP.startOfNav());
+            navDiv.setStyle(HtmlStyle.topNav);
+        } else {
+            queue = topBottomNavContents.get(Position.BOTTOM);
+            tree.add(Position.BOTTOM.startOfNav());
+            navDiv.setStyle(HtmlStyle.bottomNav);
+        }
+        navDiv.add(queue.poll());
+        HtmlTree skipLinkDiv = HtmlTree.DIV(HtmlStyle.skipNav, queue.poll());
+        navDiv.add(skipLinkDiv);
+        navDiv.add(queue.poll());
+        HtmlTree navList = new HtmlTree(HtmlTag.UL);
+        navList.setStyle(HtmlStyle.navList);
+        navList.put(HtmlAttr.TITLE, rowListTitle);
+        addMainNavLinks(navList);
+        navDiv.add(navList);
+        Content aboutDiv = HtmlTree.DIV(HtmlStyle.aboutLanguage, top ? userHeader : userFooter);
+        navDiv.add(aboutDiv);
+        tree.add(navDiv);
+        HtmlTree subDiv = new HtmlTree(HtmlTag.DIV);
+        subDiv.setStyle(HtmlStyle.subNav);
+        HtmlTree div = new HtmlTree(HtmlTag.DIV);
+        // Add the summary links if present.
+        HtmlTree ulNavSummary = new HtmlTree(HtmlTag.UL);
+        ulNavSummary.setStyle(HtmlStyle.subNavList);
+        addSummaryLinks(ulNavSummary);
+        div.add(ulNavSummary);
+        // Add the detail links if present.
+        HtmlTree ulNavDetail = new HtmlTree(HtmlTag.UL);
+        ulNavDetail.setStyle(HtmlStyle.subNavList);
+        addDetailLinks(ulNavDetail);
+        div.add(ulNavDetail);
+        subDiv.add(div);
+        if (top && configuration.createindex) {
+            addSearch(subDiv);
+        }
+        tree.add(subDiv);
+        if (top) {
+            tree.add(Position.TOP.endOfNav());
+            tree.add(HtmlTree.DIV(HtmlStyle.skipNav, queue.poll()));
+        } else {
+            tree.add(queue.poll());
+            tree.add(Position.BOTTOM.endOfNav());
+        }
+        return tree;
     }
 }

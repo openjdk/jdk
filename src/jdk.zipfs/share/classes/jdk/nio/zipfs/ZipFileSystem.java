@@ -33,6 +33,7 @@ import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.lang.Runtime.Version;
 import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
@@ -50,6 +51,10 @@ import java.security.PrivilegedExceptionAction;
 import java.util.*;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.jar.Attributes;
+import java.util.jar.Manifest;
 import java.util.regex.Pattern;
 import java.util.zip.CRC32;
 import java.util.zip.Deflater;
@@ -85,6 +90,11 @@ class ZipFileSystem extends FileSystem {
     private static final String PROPERTY_DEFAULT_OWNER = "defaultOwner";
     private static final String PROPERTY_DEFAULT_GROUP = "defaultGroup";
     private static final String PROPERTY_DEFAULT_PERMISSIONS = "defaultPermissions";
+    // Property used to specify the entry version to use for a multi-release JAR
+    private static final String PROPERTY_RELEASE_VERSION = "releaseVersion";
+    // Original property used to specify the entry version to use for a
+    // multi-release JAR which is kept for backwards compatibility.
+    private static final String PROPERTY_MULTI_RELEASE = "multi-release";
 
     private static final Set<PosixFilePermission> DEFAULT_PERMISSIONS =
         PosixFilePermissions.fromString("rwxrwxrwx");
@@ -111,6 +121,9 @@ class ZipFileSystem extends FileSystem {
     private final boolean forceEnd64;
     private final int defaultCompressionMethod; // METHOD_STORED if "noCompression=true"
                                                 // METHOD_DEFLATED otherwise
+
+    // entryLookup is identity by default, will be overridden for multi-release jars
+    private Function<byte[], byte[]> entryLookup = Function.identity();
 
     // POSIX support
     final boolean supportPosix;
@@ -167,6 +180,8 @@ class ZipFileSystem extends FileSystem {
         }
         this.provider = provider;
         this.zfpath = zfpath;
+
+        initializeReleaseVersion(env);
     }
 
     /**
@@ -1349,6 +1364,142 @@ class ZipFileSystem extends FileSystem {
         }
     }
 
+    /**
+     * If a version property has been specified and the file represents a multi-release JAR,
+     * determine the requested runtime version and initialize the ZipFileSystem instance accordingly.
+     *
+     * Checks if the Zip File System property "releaseVersion" has been specified. If it has,
+     * use its value to determine the requested version. If not use the value of the "multi-release" property.
+     */
+    private void initializeReleaseVersion(Map<String, ?> env) throws IOException {
+        Object o = env.containsKey(PROPERTY_RELEASE_VERSION) ?
+            env.get(PROPERTY_RELEASE_VERSION) :
+            env.get(PROPERTY_MULTI_RELEASE);
+
+        if (o != null && isMultiReleaseJar()) {
+            int version;
+            if (o instanceof String) {
+                String s = (String)o;
+                if (s.equals("runtime")) {
+                    version = Runtime.version().feature();
+                } else if (s.matches("^[1-9][0-9]*$")) {
+                    version = Version.parse(s).feature();
+                } else {
+                    throw new IllegalArgumentException("Invalid runtime version");
+                }
+            } else if (o instanceof Integer) {
+                version = Version.parse(((Integer)o).toString()).feature();
+            } else if (o instanceof Version) {
+                version = ((Version)o).feature();
+            } else {
+                throw new IllegalArgumentException("env parameter must be String, " +
+                    "Integer, or Version");
+            }
+            createVersionedLinks(version < 0 ? 0 : version);
+            setReadOnly();
+        }
+    }
+
+    /**
+     * Returns true if the Manifest main attribute "Multi-Release" is set to true; false otherwise.
+     */
+    private boolean isMultiReleaseJar() throws IOException {
+        try (InputStream is = newInputStream(getBytes("/META-INF/MANIFEST.MF"))) {
+            String multiRelease = new Manifest(is).getMainAttributes()
+                .getValue(Attributes.Name.MULTI_RELEASE);
+            return "true".equalsIgnoreCase(multiRelease);
+        } catch (NoSuchFileException x) {
+            return false;
+        }
+    }
+
+    /**
+     * Create a map of aliases for versioned entries, for example:
+     *   version/PackagePrivate.class -> META-INF/versions/9/version/PackagePrivate.class
+     *   version/PackagePrivate.java -> META-INF/versions/9/version/PackagePrivate.java
+     *   version/Version.class -> META-INF/versions/10/version/Version.class
+     *   version/Version.java -> META-INF/versions/10/version/Version.java
+     *
+     * Then wrap the map in a function that getEntry can use to override root
+     * entry lookup for entries that have corresponding versioned entries.
+     */
+    private void createVersionedLinks(int version) {
+        IndexNode verdir = getInode(getBytes("/META-INF/versions"));
+        // nothing to do, if no /META-INF/versions
+        if (verdir == null) {
+            return;
+        }
+        // otherwise, create a map and for each META-INF/versions/{n} directory
+        // put all the leaf inodes, i.e. entries, into the alias map
+        // possibly shadowing lower versioned entries
+        HashMap<IndexNode, byte[]> aliasMap = new HashMap<>();
+        getVersionMap(version, verdir).values().forEach(versionNode ->
+            walk(versionNode.child, entryNode ->
+                aliasMap.put(
+                    getOrCreateInode(getRootName(entryNode, versionNode), entryNode.isdir),
+                    entryNode.name))
+        );
+        entryLookup = path -> {
+            byte[] entry = aliasMap.get(IndexNode.keyOf(path));
+            return entry == null ? path : entry;
+        };
+    }
+
+    /**
+     * Create a sorted version map of version -> inode, for inodes <= max version.
+     *   9 -> META-INF/versions/9
+     *  10 -> META-INF/versions/10
+     */
+    private TreeMap<Integer, IndexNode> getVersionMap(int version, IndexNode metaInfVersions) {
+        TreeMap<Integer,IndexNode> map = new TreeMap<>();
+        IndexNode child = metaInfVersions.child;
+        while (child != null) {
+            Integer key = getVersion(child, metaInfVersions);
+            if (key != null && key <= version) {
+                map.put(key, child);
+            }
+            child = child.sibling;
+        }
+        return map;
+    }
+
+    /**
+     * Extract the integer version number -- META-INF/versions/9 returns 9.
+     */
+    private Integer getVersion(IndexNode inode, IndexNode metaInfVersions) {
+        try {
+            byte[] fullName = inode.name;
+            return Integer.parseInt(getString(Arrays
+                .copyOfRange(fullName, metaInfVersions.name.length + 1, fullName.length)));
+        } catch (NumberFormatException x) {
+            // ignore this even though it might indicate issues with the JAR structure
+            return null;
+        }
+    }
+
+    /**
+     * Walk the IndexNode tree processing all leaf nodes.
+     */
+    private void walk(IndexNode inode, Consumer<IndexNode> consumer) {
+        if (inode == null) return;
+        if (inode.isDir()) {
+            walk(inode.child, consumer);
+        } else {
+            consumer.accept(inode);
+        }
+        walk(inode.sibling, consumer);
+    }
+
+    /**
+     * Extract the root name from a versioned entry name.
+     * E.g. given inode 'META-INF/versions/9/foo/bar.class'
+     * and prefix 'META-INF/versions/9/' returns 'foo/bar.class'.
+     */
+    private byte[] getRootName(IndexNode inode, IndexNode prefix) {
+        byte[] fullName = inode.name;
+        return Arrays.copyOfRange(fullName, prefix.name.length, fullName.length);
+    }
+
     // Reads zip file central directory. Returns the file position of first
     // CEN header, otherwise returns -1 if an error occurred. If zip->msg != NULL
     // then the error was a zip format error and zip->msg has the error text.
@@ -1644,15 +1795,15 @@ class ZipFileSystem extends FileSystem {
         hasUpdate = false;    // clear
     }
 
-    IndexNode getInode(byte[] path) {
-        return inodes.get(IndexNode.keyOf(Objects.requireNonNull(path, "path")));
+    private IndexNode getInode(byte[] path) {
+        return inodes.get(IndexNode.keyOf(Objects.requireNonNull(entryLookup.apply(path), "path")));
     }
 
     /**
      * Return the IndexNode from the root tree. If it doesn't exist,
      * it gets created along with all parent directory IndexNodes.
      */
-    IndexNode getOrCreateInode(byte[] path, boolean isdir) {
+    private IndexNode getOrCreateInode(byte[] path, boolean isdir) {
         IndexNode node = getInode(path);
         // if node exists, return it
         if (node != null) {
@@ -2248,7 +2399,7 @@ class ZipFileSystem extends FileSystem {
 
         private static final ThreadLocal<IndexNode> cachedKey = new ThreadLocal<>();
 
-        final static IndexNode keyOf(byte[] name) { // get a lookup key;
+        static final IndexNode keyOf(byte[] name) { // get a lookup key;
             IndexNode key = cachedKey.get();
             if (key == null) {
                 key = new IndexNode(name, -1);

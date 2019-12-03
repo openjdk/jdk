@@ -128,7 +128,7 @@ MallocSite* MallocSiteTable::lookup_or_add(const NativeCallStack& key, size_t* b
     if (entry == NULL) return NULL;
 
     // swap in the head
-    if (Atomic::replace_if_null(entry, &_table[index])) {
+    if (Atomic::replace_if_null(&_table[index], entry)) {
       return entry->data();
     }
 
@@ -229,7 +229,7 @@ void MallocSiteTable::AccessLock::exclusiveLock() {
   do {
     val = *_lock;
     target = _MAGIC_ + *_lock;
-  } while (Atomic::cmpxchg(target, _lock, val) != val);
+  } while (Atomic::cmpxchg(_lock, val, target) != val);
 
   // wait for all readers to exit
   while (*_lock != _MAGIC_) {
@@ -243,5 +243,5 @@ void MallocSiteTable::AccessLock::exclusiveLock() {
 }
 
 bool MallocSiteHashtableEntry::atomic_insert(MallocSiteHashtableEntry* entry) {
-  return Atomic::replace_if_null(entry, &_next);
+  return Atomic::replace_if_null(&_next, entry);
 }

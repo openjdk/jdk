@@ -29,6 +29,7 @@
 #include "compiler/abstractCompiler.hpp"
 #include "compiler/compileTask.hpp"
 #include "compiler/compilerDirectives.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/perfData.hpp"
 #include "utilities/stack.hpp"
 #if INCLUDE_JVMCI
@@ -335,7 +336,7 @@ public:
   static bool should_compile_new_jobs() { return UseCompiler && (_should_compile_new_jobs == run_compilation); }
   static bool set_should_compile_new_jobs(jint new_state) {
     // Return success if the current caller set it
-    jint old = Atomic::cmpxchg(new_state, &_should_compile_new_jobs, 1-new_state);
+    jint old = Atomic::cmpxchg(&_should_compile_new_jobs, 1-new_state, new_state);
     bool success = (old == (1-new_state));
     if (success) {
       if (new_state == run_compilation) {
@@ -350,7 +351,7 @@ public:
   static void disable_compilation_forever() {
     UseCompiler               = false;
     AlwaysCompileLoopMethods  = false;
-    Atomic::xchg(jint(shutdown_compilation), &_should_compile_new_jobs);
+    Atomic::xchg(&_should_compile_new_jobs, jint(shutdown_compilation));
   }
 
   static bool is_compilation_disabled_forever() {
@@ -359,7 +360,7 @@ public:
   static void handle_full_code_cache(int code_blob_type);
   // Ensures that warning is only printed once.
   static bool should_print_compiler_warning() {
-    jint old = Atomic::cmpxchg(1, &_print_compilation_warning, 0);
+    jint old = Atomic::cmpxchg(&_print_compilation_warning, 0, 1);
     return old == 0;
   }
   // Return total compilation ticks

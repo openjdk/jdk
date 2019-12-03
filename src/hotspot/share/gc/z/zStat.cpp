@@ -424,9 +424,9 @@ ZStatSamplerData ZStatSampler::collect_and_reset() const {
   for (uint32_t i = 0; i < ncpus; i++) {
     ZStatSamplerData* const cpu_data = get_cpu_local<ZStatSamplerData>(i);
     if (cpu_data->_nsamples > 0) {
-      const uint64_t nsamples = Atomic::xchg((uint64_t)0, &cpu_data->_nsamples);
-      const uint64_t sum = Atomic::xchg((uint64_t)0, &cpu_data->_sum);
-      const uint64_t max = Atomic::xchg((uint64_t)0, &cpu_data->_max);
+      const uint64_t nsamples = Atomic::xchg(&cpu_data->_nsamples, (uint64_t)0);
+      const uint64_t sum = Atomic::xchg(&cpu_data->_sum, (uint64_t)0);
+      const uint64_t max = Atomic::xchg(&cpu_data->_max, (uint64_t)0);
       all._nsamples += nsamples;
       all._sum += sum;
       if (all._max < max) {
@@ -459,7 +459,7 @@ void ZStatCounter::sample_and_reset() const {
   const uint32_t ncpus = ZCPU::count();
   for (uint32_t i = 0; i < ncpus; i++) {
     ZStatCounterData* const cpu_data = get_cpu_local<ZStatCounterData>(i);
-    counter += Atomic::xchg((uint64_t)0, &cpu_data->_counter);
+    counter += Atomic::xchg(&cpu_data->_counter, (uint64_t)0);
   }
 
   ZStatSample(_sampler, counter);
@@ -481,7 +481,7 @@ ZStatCounterData ZStatUnsampledCounter::collect_and_reset() const {
   const uint32_t ncpus = ZCPU::count();
   for (uint32_t i = 0; i < ncpus; i++) {
     ZStatCounterData* const cpu_data = get_cpu_local<ZStatCounterData>(i);
-    all._counter += Atomic::xchg((uint64_t)0, &cpu_data->_counter);
+    all._counter += Atomic::xchg(&cpu_data->_counter, (uint64_t)0);
   }
 
   return all;
@@ -761,8 +761,8 @@ THREAD_LOCAL uint32_t ZStatTimerDisable::_active = 0;
 //
 void ZStatSample(const ZStatSampler& sampler, uint64_t value) {
   ZStatSamplerData* const cpu_data = sampler.get();
-  Atomic::add(1u, &cpu_data->_nsamples);
-  Atomic::add(value, &cpu_data->_sum);
+  Atomic::add(&cpu_data->_nsamples, 1u);
+  Atomic::add(&cpu_data->_sum, value);
 
   uint64_t max = cpu_data->_max;
   for (;;) {
@@ -772,7 +772,7 @@ void ZStatSample(const ZStatSampler& sampler, uint64_t value) {
     }
 
     const uint64_t new_max = value;
-    const uint64_t prev_max = Atomic::cmpxchg(new_max, &cpu_data->_max, max);
+    const uint64_t prev_max = Atomic::cmpxchg(&cpu_data->_max, max, new_max);
     if (prev_max == max) {
       // Success
       break;
@@ -787,14 +787,14 @@ void ZStatSample(const ZStatSampler& sampler, uint64_t value) {
 
 void ZStatInc(const ZStatCounter& counter, uint64_t increment) {
   ZStatCounterData* const cpu_data = counter.get();
-  const uint64_t value = Atomic::add(increment, &cpu_data->_counter);
+  const uint64_t value = Atomic::add(&cpu_data->_counter, increment);
 
   ZTracer::tracer()->report_stat_counter(counter, increment, value);
 }
 
 void ZStatInc(const ZStatUnsampledCounter& counter, uint64_t increment) {
   ZStatCounterData* const cpu_data = counter.get();
-  Atomic::add(increment, &cpu_data->_counter);
+  Atomic::add(&cpu_data->_counter, increment);
 }
 
 //

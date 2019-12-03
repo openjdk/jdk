@@ -27,6 +27,7 @@
 #include "code/codeCache.hpp"
 #include "gc/shenandoah/shenandoahSharedVariables.hpp"
 #include "gc/shenandoah/shenandoahLock.hpp"
+#include "gc/shenandoah/shenandoahNMethod.hpp"
 #include "memory/allocation.hpp"
 #include "memory/iterator.hpp"
 
@@ -62,43 +63,13 @@ public:
   void parallel_blobs_do(CodeBlobClosure* f);
 };
 
-// ShenandoahNMethod tuple records the internal locations of oop slots within the nmethod.
-// This allows us to quickly scan the oops without doing the nmethod-internal scans, that
-// sometimes involves parsing the machine code. Note it does not record the oops themselves,
-// because it would then require handling these tuples as the new class of roots.
-class ShenandoahNMethod : public CHeapObj<mtGC> {
-private:
-  nmethod* _nm;
-  oop**    _oops;
-  int      _oops_count;
-
-public:
-  ShenandoahNMethod(nmethod *nm, GrowableArray<oop*>* oops);
-  ~ShenandoahNMethod();
-
-  nmethod* nm() {
-    return _nm;
-  }
-
-  bool has_cset_oops(ShenandoahHeap* heap);
-
-  void assert_alive_and_correct() NOT_DEBUG_RETURN;
-  void assert_same_oops(GrowableArray<oop*>* oops) NOT_DEBUG_RETURN;
-
-  static bool find_with_nmethod(void* nm, ShenandoahNMethod* other) {
-    return other->_nm == nm;
-  }
-};
-
 class ShenandoahCodeRootsIterator {
   friend class ShenandoahCodeRoots;
 protected:
-  ShenandoahHeap* _heap;
   ShenandoahParallelCodeCacheIterator _par_iterator;
   ShenandoahSharedFlag _seq_claimed;
-  DEFINE_PAD_MINUS_SIZE(0, DEFAULT_CACHE_LINE_SIZE, sizeof(volatile size_t));
-  volatile size_t _claimed;
-  DEFINE_PAD_MINUS_SIZE(1, DEFAULT_CACHE_LINE_SIZE, 0);
+  ShenandoahNMethodTableSnapshot* _table_snapshot;
+
 protected:
   ShenandoahCodeRootsIterator();
   ~ShenandoahCodeRootsIterator();
@@ -128,12 +99,24 @@ class ShenandoahCodeRoots : public AllStatic {
 
 public:
   static void initialize();
-  static void add_nmethod(nmethod* nm);
-  static void remove_nmethod(nmethod* nm);
+  static void register_nmethod(nmethod* nm);
+  static void unregister_nmethod(nmethod* nm);
+  static void flush_nmethod(nmethod* nm);
+
+  static ShenandoahNMethodTable* table() {
+    return _nmethod_table;
+  }
+
+  // Concurrent nmethod unloading support
+  static void unlink(WorkGang* workers, bool unloading_occurred);
+  static void purge(WorkGang* workers);
+  static void prepare_concurrent_unloading();
+  static int  disarmed_value()         { return _disarmed_value; }
+  static int* disarmed_value_address() { return &_disarmed_value; }
 
 private:
-  static GrowableArray<ShenandoahNMethod*>* _recorded_nms;
-  static ShenandoahLock                     _recorded_nms_lock;
+  static ShenandoahNMethodTable* _nmethod_table;
+  static int                     _disarmed_value;
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHCODEROOTS_HPP

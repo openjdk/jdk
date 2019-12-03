@@ -25,6 +25,7 @@
 #define SHARE_GC_SHENANDOAH_SHENANDOAHLOCK_HPP
 
 #include "memory/allocation.hpp"
+#include "runtime/safepoint.hpp"
 #include "runtime/thread.hpp"
 
 class ShenandoahLock  {
@@ -91,6 +92,52 @@ public:
 
   ~ShenandoahLocker() {
     if (_lock != NULL) {
+      _lock->unlock();
+    }
+  }
+};
+
+class ShenandoahSimpleLock {
+private:
+  os::PlatformMonitor   _lock; // native lock
+public:
+  ShenandoahSimpleLock();
+
+  virtual void lock();
+  virtual void unlock();
+};
+
+class ShenandoahReentrantLock : public ShenandoahSimpleLock {
+private:
+  Thread* volatile      _owner;
+  uint64_t              _count;
+
+public:
+  ShenandoahReentrantLock();
+  ~ShenandoahReentrantLock();
+
+  virtual void lock();
+  virtual void unlock();
+
+  // If the lock already owned by this thread
+  bool owned_by_self() const ;
+};
+
+class ShenandoahReentrantLocker : public StackObj {
+private:
+  ShenandoahReentrantLock* const _lock;
+
+public:
+  ShenandoahReentrantLocker(ShenandoahReentrantLock* lock) :
+    _lock(lock) {
+    if (_lock != NULL) {
+      _lock->lock();
+    }
+  }
+
+  ~ShenandoahReentrantLocker() {
+    if (_lock != NULL) {
+      assert(_lock->owned_by_self(), "Must be owner");
       _lock->unlock();
     }
   }

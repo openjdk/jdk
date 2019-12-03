@@ -49,8 +49,7 @@ package java.io;
  * @author  Jonathan Payne
  * @since   1.0
  */
-public
-class PushbackInputStream extends FilterInputStream {
+public class PushbackInputStream extends FilterInputStream {
     /**
      * The pushback buffer.
      * @since   1.1

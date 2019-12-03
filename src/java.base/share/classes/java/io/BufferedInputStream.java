@@ -49,8 +49,7 @@ import jdk.internal.util.ArraysSupport;
  * @author  Arthur van Hoff
  * @since   1.0
  */
-public
-class BufferedInputStream extends FilterInputStream {
+public class BufferedInputStream extends FilterInputStream {
 
     private static int DEFAULT_BUFFER_SIZE = 8192;
 

@@ -25,6 +25,8 @@
 #ifndef SHARE_SERVICES_MALLOCSITETABLE_HPP
 #define SHARE_SERVICES_MALLOCSITETABLE_HPP
 
+#include "utilities/macros.hpp"
+
 #if INCLUDE_NMT
 
 #include "memory/allocation.hpp"
@@ -153,7 +155,7 @@ class MallocSiteTable : AllStatic {
     // Acquire shared lock.
     // Return true if shared access is granted.
     inline bool sharedLock() {
-      jint res = Atomic::add(1, _lock);
+      jint res = Atomic::add(_lock, 1);
       if (res < 0) {
         Atomic::dec(_lock);
         return false;

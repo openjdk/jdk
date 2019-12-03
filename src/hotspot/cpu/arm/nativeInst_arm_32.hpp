@@ -28,6 +28,7 @@
 #include "asm/macroAssembler.hpp"
 #include "code/codeCache.hpp"
 #include "runtime/icache.hpp"
+#include "runtime/orderAccess.hpp"
 #include "runtime/os.hpp"
 #include "runtime/thread.hpp"
 #include "register_arm.hpp"

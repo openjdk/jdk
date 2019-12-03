@@ -1691,7 +1691,6 @@ static jobject getIPv4NetworkInterface (JNIEnv *env, jobject this, int fd, jint 
         static jfieldID ni_indexID;
         static jfieldID ni_addrsID;
 
-        jobjectArray addrArray;
         jobject addr;
         jobject ni;
 
@@ -1749,19 +1748,7 @@ static jobject getIPv4NetworkInterface (JNIEnv *env, jobject this, int fd, jint 
         if (ni) {
             return ni;
         }
-        if (ipv4Mode) {
-            ni = (*env)->NewObject(env, ni_class, ni_ctrID, 0);
-            CHECK_NULL_RETURN(ni, NULL);
-
-            (*env)->SetIntField(env, ni, ni_indexID, -1);
-            addrArray = (*env)->NewObjectArray(env, 1, inet4_class, NULL);
-            CHECK_NULL_RETURN(addrArray, NULL);
-            (*env)->SetObjectArrayElement(env, addrArray, 0, addr);
-            (*env)->SetObjectField(env, ni, ni_addrsID, addrArray);
-        } else {
-            ni = NULL;
-        }
-        return ni;
+        return NULL;
 }
 
 /*
@@ -1898,26 +1885,6 @@ jobject getMulticastInterface(JNIEnv *env, jobject this, int fd, int fd1, jint o
                 return netObject;
             }
         }
-
-        /*
-         * Multicast to any address - return anyLocalAddress
-         * or a NetworkInterface with addrs[0] set to anyLocalAddress
-         */
-
-        addr = (*env)->CallStaticObjectMethod(env, ia_class, ia_anyLocalAddressID,
-                                              NULL);
-        if (opt == java_net_SocketOptions_IP_MULTICAST_IF) {
-            return addr;
-        }
-
-        ni = (*env)->NewObject(env, ni_class, ni_ctrID, 0);
-        CHECK_NULL_RETURN(ni, NULL);
-        (*env)->SetIntField(env, ni, ni_indexID, -1);
-        addrArray = (*env)->NewObjectArray(env, 1, ia_class, NULL);
-        CHECK_NULL_RETURN(addrArray, NULL);
-        (*env)->SetObjectArrayElement(env, addrArray, 0, addr);
-        (*env)->SetObjectField(env, ni, ni_addrsID, addrArray);
-        return ni;
     }
     return NULL;
 }

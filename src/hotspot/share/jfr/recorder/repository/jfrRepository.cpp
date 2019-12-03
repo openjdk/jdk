@@ -115,6 +115,10 @@ void JfrRepository::set_chunk_path(const char* path) {
   chunkwriter().set_path(path);
 }
 
+void JfrRepository::mark_chunk_final() {
+  chunkwriter().mark_chunk_final();
+}
+
 jlong JfrRepository::current_chunk_start_nanos() {
   return chunkwriter().current_chunk_start_nanos();
 }

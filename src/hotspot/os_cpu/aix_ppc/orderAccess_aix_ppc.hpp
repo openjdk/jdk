@@ -64,8 +64,6 @@
 #define inlasm_lwsync()   __asm__ __volatile__ ("lwsync" : : : "memory");
 #define inlasm_eieio()    __asm__ __volatile__ ("eieio"  : : : "memory");
 #define inlasm_isync()    __asm__ __volatile__ ("isync"  : : : "memory");
-// Use twi-isync for load_acquire (faster than lwsync).
-#define inlasm_acquire_reg(X) __asm__ __volatile__ ("twi 0,%0,0\n isync\n" : : "r" (X) : "memory");
 
 inline void OrderAccess::loadload()   { inlasm_lwsync(); }
 inline void OrderAccess::storestore() { inlasm_lwsync(); }
@@ -77,13 +75,6 @@ inline void OrderAccess::release()    { inlasm_lwsync(); }
 inline void OrderAccess::fence()      { inlasm_sync();   }
 inline void OrderAccess::cross_modify_fence()
                                       { inlasm_isync();  }
-
-template<size_t byte_size>
-struct OrderAccess::PlatformOrderedLoad<byte_size, X_ACQUIRE>
-{
-  template <typename T>
-  T operator()(const volatile T* p) const { T t = Atomic::load(p); inlasm_acquire_reg(t); return t; }
-};
 
 #undef inlasm_sync
 #undef inlasm_lwsync

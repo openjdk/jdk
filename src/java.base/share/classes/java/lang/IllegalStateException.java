@@ -34,8 +34,7 @@ package java.lang;
  * @author  Jonni Kanerva
  * @since   1.1
  */
-public
-class IllegalStateException extends RuntimeException {
+public class IllegalStateException extends RuntimeException {
     /**
      * Constructs an IllegalStateException with no detail message.
      * A detail message is a String that describes this particular exception.

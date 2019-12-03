@@ -38,8 +38,7 @@ public:
   VM_StopSafepoint(Semaphore* running, Semaphore* wait_for) :
     _running(running), _test_complete(wait_for) {}
   VMOp_Type type() const          { return VMOp_None; }
-  Mode evaluation_mode() const    { return _no_safepoint; }
-  bool is_cheap_allocated() const { return false; }
+  bool evaluate_at_safepoint() const { return false; }
   void doit()                     { _running->signal(); _test_complete->wait(); }
 };
 

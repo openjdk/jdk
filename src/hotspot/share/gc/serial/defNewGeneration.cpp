@@ -51,7 +51,6 @@
 #include "memory/resourceArea.hpp"
 #include "oops/instanceRefKlass.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomic.hpp"
 #include "runtime/java.hpp"
 #include "runtime/prefetch.inline.hpp"
 #include "runtime/thread.inline.hpp"
@@ -392,7 +391,7 @@ void DefNewGeneration::compute_new_size() {
   size_t desired_new_size = adjust_for_thread_increase(new_size_candidate, new_size_before, alignment);
 
   // Adjust new generation size
-  desired_new_size = MAX2(MIN2(desired_new_size, max_new_size), min_new_size);
+  desired_new_size = clamp(desired_new_size, min_new_size, max_new_size);
   assert(desired_new_size <= max_new_size, "just checking");
 
   bool changed = false;

@@ -27,6 +27,7 @@
 #include "asm/macroAssembler.inline.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
+#include "gc/shared/barrierSetNMethod.hpp"
 #include "interpreter/interpreter.hpp"
 #include "memory/universe.hpp"
 #include "nativeInst_x86.hpp"
@@ -430,7 +431,8 @@ class StubGenerator: public StubCodeGenerator {
 
 
   //----------------------------------------------------------------------------------------------------
-  // Support for int32_t Atomic::xchg(int32_t exchange_value, volatile int32_t* dest)
+  // Implementation of int32_t atomic_xchg(int32_t exchange_value, volatile int32_t* dest)
+  // used by Atomic::xchg(volatile int32_t* dest, int32_t exchange_value)
   //
   // xchg exists as far back as 8086, lock needed for MP only
   // Stack layout immediately after call:
@@ -3662,6 +3664,68 @@ class StubGenerator: public StubCodeGenerator {
     __ ret(0);
   }
 
+  address generate_method_entry_barrier() {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "nmethod_entry_barrier");
+
+    Label deoptimize_label;
+
+    address start = __ pc();
+
+    __ push(-1); // cookie, this is used for writing the new rsp when deoptimizing
+
+    BLOCK_COMMENT("Entry:");
+    __ enter(); // save rbp
+
+    // save rbx, because we want to use that value.
+    // We could do without it but then we depend on the number of slots used by pusha
+    __ push(rbx);
+
+    __ lea(rbx, Address(rsp, wordSize * 3)); // 1 for cookie, 1 for rbp, 1 for rbx - this should be the return address
+
+    __ pusha();
+
+    // xmm0 and xmm1 may be used for passing float/double arguments
+    const int xmm_size = wordSize * 2;
+    const int xmm_spill_size = xmm_size * 2;
+    __ subptr(rsp, xmm_spill_size);
+    __ movdqu(Address(rsp, xmm_size * 1), xmm1);
+    __ movdqu(Address(rsp, xmm_size * 0), xmm0);
+
+    __ call_VM_leaf(CAST_FROM_FN_PTR(address, static_cast<int (*)(address*)>(BarrierSetNMethod::nmethod_stub_entry_barrier)), rbx);
+
+    __ movdqu(xmm0, Address(rsp, xmm_size * 0));
+    __ movdqu(xmm1, Address(rsp, xmm_size * 1));
+    __ addptr(rsp, xmm_spill_size);
+
+    __ cmpl(rax, 1); // 1 means deoptimize
+    __ jcc(Assembler::equal, deoptimize_label);
+
+    __ popa();
+    __ pop(rbx);
+
+    __ leave();
+
+    __ addptr(rsp, 1 * wordSize); // cookie
+    __ ret(0);
+
+    __ BIND(deoptimize_label);
+
+    __ popa();
+    __ pop(rbx);
+
+    __ leave();
+
+    // this can be taken out, but is good for verification purposes. getting a SIGSEGV
+    // here while still having a correct stack is valuable
+    __ testptr(rsp, Address(rsp, 0));
+
+    __ movptr(rsp, Address(rsp, 0)); // new rsp was written in the barrier
+    __ jmp(Address(rsp, -1 * wordSize)); // jmp target should be callers verified_entry_point
+
+    return start;
+  }
+
  public:
   // Information about frame layout at time of blocking runtime call.
   // Note that we only have to preserve callee-saved registers since
@@ -3958,6 +4022,11 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::_safefetchN_entry           = StubRoutines::_safefetch32_entry;
     StubRoutines::_safefetchN_fault_pc        = StubRoutines::_safefetch32_fault_pc;
     StubRoutines::_safefetchN_continuation_pc = StubRoutines::_safefetch32_continuation_pc;
+
+    BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
+    if (bs_nm != NULL) {
+      StubRoutines::x86::_method_entry_barrier = generate_method_entry_barrier();
+    }
   }
 
 

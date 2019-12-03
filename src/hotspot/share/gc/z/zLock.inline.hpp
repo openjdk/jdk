@@ -53,7 +53,7 @@ inline void ZReentrantLock::lock() {
 
   if (owner != thread) {
     _lock.lock();
-    Atomic::store(thread, &_owner);
+    Atomic::store(&_owner, thread);
   }
 
   _count++;
@@ -66,7 +66,7 @@ inline void ZReentrantLock::unlock() {
   _count--;
 
   if (_count == 0) {
-    Atomic::store((Thread*)NULL, &_owner);
+    Atomic::store(&_owner, (Thread*)NULL);
     _lock.unlock();
   }
 }

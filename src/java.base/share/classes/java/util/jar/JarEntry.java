@@ -35,8 +35,7 @@ import java.security.cert.Certificate;
  *
  * @since 1.2
  */
-public
-class JarEntry extends ZipEntry {
+public class JarEntry extends ZipEntry {
     Attributes attr;
     Certificate[] certs;
     CodeSigner[] signers;

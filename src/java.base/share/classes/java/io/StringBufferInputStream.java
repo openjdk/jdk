@@ -43,8 +43,7 @@ package java.io;
  *             string is via the {@code StringReader} class.
  */
 @Deprecated
-public
-class StringBufferInputStream extends InputStream {
+public class StringBufferInputStream extends InputStream {
     /**
      * The string from which bytes are read.
      */

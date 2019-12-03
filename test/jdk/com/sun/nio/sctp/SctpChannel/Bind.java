@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -110,9 +110,10 @@ public class Bind {
             try {
                 channel.close();  /* open a new unbound channel for test */
                 channel = SctpChannel.open();
-                connectChannel(channel);
-                channel.bind(null);
-                fail("AlreadyConnectedException expected");
+                try (var peer = connectChannel(channel)) {
+                    channel.bind(null);
+                    fail("AlreadyConnectedException expected");
+                }
             } catch (AlreadyConnectedException unused) { pass();
             } catch (IOException ioe) { unexpected(ioe); }
 
@@ -264,7 +265,9 @@ public class Bind {
         } finally {
             try { if (channel != null) channel.close(); }
             catch (IOException ioe) { unexpected(ioe); }
-        }
+            try { if (peerChannel != null) peerChannel.close(); }
+            catch (IOException ioe) { unexpected(ioe); }
+         }
     }
 
     boolean boundAddress(SctpChannel channel, InetAddress addr)

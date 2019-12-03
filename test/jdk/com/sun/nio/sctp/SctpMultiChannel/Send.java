@@ -276,7 +276,8 @@ public class Send {
                 /* echo the message */
                 debug("Server: echoing first message");
                 buffer.flip();
-                int bytes = serverChannel.send(buffer, info);
+                MessageInfo sendInfo = MessageInfo.createOutgoing(assoc, null, info.streamNumber());
+                int bytes = serverChannel.send(buffer, sendInfo);
                 debug("Server: sent " + bytes + "bytes");
 
                 /* receive a large message */
@@ -302,7 +303,8 @@ public class Send {
                 /* echo the message */
                 debug("Server: echoing second message");
                 buffer.flip();
-                bytes = serverChannel.send(buffer, info);
+                sendInfo = MessageInfo.createOutgoing(assoc, null, info.streamNumber());
+                bytes = serverChannel.send(buffer, sendInfo);
                 debug("Server: sent " + bytes + "bytes");
 
                 /* TEST 6 */

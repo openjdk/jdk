@@ -112,10 +112,9 @@ public interface AnnotationTypeWriter {
     /**
      * Add the annotation content tree to the documentation content tree.
      *
-     * @param contentTree content tree to which the annotation content will be added
      * @param annotationContentTree annotation content tree which will be added to the content tree
      */
-    public void addAnnotationContentTree(Content contentTree, Content annotationContentTree);
+    public void addAnnotationContentTree(Content annotationContentTree);
 
     /**
      * Get the member tree.
@@ -143,10 +142,8 @@ public interface AnnotationTypeWriter {
 
     /**
      * Add the footer of the page.
-     *
-     * @param contentTree content tree to which the footer will be added
      */
-    public void addFooter(Content contentTree);
+    public void addFooter();
 
     /**
      * Print the document.

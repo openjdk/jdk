@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +30,12 @@
 
 import com.sun.tools.classfile.*;
 import java.io.File;
+import java.util.List;
 
 public class CombinationsTargetTest2 extends ClassfileTestHelper {
+
+    private static final String JDK_VERSION =
+            Integer.toString(Runtime.getRuntime().version().feature());
 
     // Test count helps identify test case in event of failure.
     int testcount = 0;
@@ -45,7 +49,9 @@ public class CombinationsTargetTest2 extends ClassfileTestHelper {
         src5("(repeating) type annotations on field in anonymous class", false),
         src6("(repeating) type annotations on void method declaration", false),
         src7("(repeating) type annotations in use of instanceof", true),
-        src8("(repeating) type annotations in use of instanceof in method", true);
+        src7p("(repeating) type annotations in use of instanceof with type test pattern", true),
+        src8("(repeating) type annotations in use of instanceof in method", true),
+        src8p("(repeating) type annotations in use of instanceof with type test pattern in method", true);
 
         String description;
         Boolean local;
@@ -92,8 +98,12 @@ public class CombinationsTargetTest2 extends ClassfileTestHelper {
                        test( 0, 0, 0, 2, As, BDs, ABMix, "RUNTIME", et, ++testrun, srce.src6);
                        test( 2, 0, 0, 0, As, BDs, ABMix, "CLASS", et, ++testrun, srce.src7);
                        test( 0, 2, 0, 0, As, BDs, ABMix, "RUNTIME", et, ++testrun, srce.src7);
+                       test( 2, 0, 0, 0, As, BDs, ABMix, "CLASS", et, ++testrun, srce.src7p);
+                       test( 0, 2, 0, 0, As, BDs, ABMix, "RUNTIME", et, ++testrun, srce.src7p);
                        test( 4, 0, 0, 0, As, BDs, ABMix, "CLASS", et, ++testrun, srce.src8);
                        test( 0, 4, 0, 0, As, BDs, ABMix, "RUNTIME", et, ++testrun, srce.src8);
+                       test( 4, 0, 0, 0, As, BDs, ABMix, "CLASS", et, ++testrun, srce.src8p);
+                       test( 0, 4, 0, 0, As, BDs, ABMix, "RUNTIME", et, ++testrun, srce.src8p);
                        break;
                    case "FIELD":
                        test( 8, 0, 0, 0, As, BDs, ABMix, "CLASS",   et, ++testrun, srce.src1);
@@ -122,6 +132,7 @@ public class CombinationsTargetTest2 extends ClassfileTestHelper {
         expected_tinvisibles = tinv;
         expected_visibles = vis;
         expected_invisibles = inv;
+        extraOptions = List.of();
         File testFile = null;
         String tname="Test" + N.toString();
         hasInnerClass=false;
@@ -385,6 +396,24 @@ public class CombinationsTargetTest2 extends ClassfileTestHelper {
                     "\n\n";
                     hasInnerClass=false;
                 break;
+            case src7p: // (repeating) type annotations in use of instanceof with type test pattern
+                    /*
+                     *   class Test10{
+                     *       String data = "test";
+                     *       boolean dataIsString = ( data instanceof @A @B @A @B String str);
+                     *   }
+                     */
+                source = new String( source +
+                    "// " + src.description + "\n" +
+                    "class "+ testname + "{\n" +
+                    "    String data = \"test\";\n" +
+                    "    boolean dataIsString = ( data instanceof _As_ _Bs_ String str && str.isEmpty());\n" +
+                    "}\n").concat(sourceBase).replace("_OTHER_", annot2).replace("_As_",As).replace("_Bs_",Bs) +
+                    "\n\n";
+                extraOptions = List.of("--enable-preview",
+                                       "-source", JDK_VERSION);
+                hasInnerClass=false;
+                break;
             case src8: // (repeating) type annotations in use of instanceof
                     /*
                      *   class Test20{
@@ -410,6 +439,34 @@ public class CombinationsTargetTest2 extends ClassfileTestHelper {
                     "}\n").concat(sourceBase).replace("_OTHER_", annot2).replace("_As_",As).replace("_Bs_",Bs) +
                     "\n\n";
                     hasInnerClass=false;
+                break;
+            case src8p: // (repeating) type annotations in use of instanceof with type test pattern
+                   /*
+                     *   class Test20{
+                     *       String data = "test";
+                     *       Boolean isString() {
+                     *           if( data instanceof @A @B @A @B String )
+                     *               return true;
+                     *           else
+                     *               return( data instanceof @A @B @A @B String );
+                     *       }
+                     *   }
+                     */
+                source = new String( source +
+                    "// " + src.description + "\n" +
+                    "class "+ testname + "{\n" +
+                    "    String data = \"test\";\n" +
+                    "    Boolean isString() { \n" +
+                    "        if( data instanceof _As_ _Bs_ String str)\n" +
+                    "            return true;\n" +
+                    "        else\n" +
+                    "            return( data instanceof _As_ _Bs_ String str && str.isEmpty());\n" +
+                    "    }\n" +
+                    "}\n").concat(sourceBase).replace("_OTHER_", annot2).replace("_As_",As).replace("_Bs_",Bs) +
+                    "\n\n";
+                extraOptions = List.of("--enable-preview",
+                                       "-source", JDK_VERSION);
+                hasInnerClass=false;
                 break;
 
         }

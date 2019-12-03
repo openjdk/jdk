@@ -25,14 +25,10 @@
 #define SHARE_GC_Z_ZRESURRECTION_INLINE_HPP
 
 #include "gc/z/zResurrection.hpp"
-#include "runtime/orderAccess.hpp"
+#include "runtime/atomic.hpp"
 
 inline bool ZResurrection::is_blocked() {
-  // We use a loadload barrier to make sure we are not
-  // seeing oops from a time when resurrection was blocked.
-  const bool blocked = _blocked;
-  OrderAccess::loadload();
-  return blocked;
+  return Atomic::load(&_blocked);
 }
 
 #endif // SHARE_GC_Z_ZRESURRECTION_INLINE_HPP

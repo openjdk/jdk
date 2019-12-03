@@ -31,6 +31,9 @@ import com.sun.source.doctree.StartElementTree;
 import com.sun.source.doctree.TextTree;
 import com.sun.source.util.DocTreeFactory;
 import com.sun.tools.doclint.HtmlTag;
+import jdk.javadoc.internal.doclets.formats.html.markup.BodyContents;
+import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.Navigation;
 import jdk.javadoc.internal.doclets.toolkit.Content;
@@ -169,7 +172,7 @@ public class DocFilesHandlerImpl implements DocFilesHandler {
     private void handleHtmlFile(DocFile srcfile, DocPath dstPath) throws DocFileIOException {
         Utils utils = configuration.utils;
         FileObject fileObject = srcfile.getFileObject();
-        DocFileElement dfElement = new DocFileElement(element, fileObject);
+        DocFileElement dfElement = new DocFileElement(utils, element, fileObject);
 
         DocPath dfilePath = dstPath.resolve(srcfile.getName());
         HtmlDocletWriter docletWriter = new DocFileWriter(configuration, dfilePath, element);
@@ -180,32 +183,31 @@ public class DocFilesHandlerImpl implements DocFilesHandler {
 
         String title = getWindowTitle(docletWriter, dfElement).trim();
         HtmlTree htmlContent = docletWriter.getBody(title);
-        docletWriter.addTop(htmlContent);
-        PackageElement pkg = (PackageElement) element;
-        this.navBar = new Navigation(pkg, configuration, docletWriter.fixedNavDiv,
-                PageMode.DOCFILE, docletWriter.path);
+        PackageElement pkg = dfElement.getPackageElement();
+        this.navBar = new Navigation(element, configuration, PageMode.DOCFILE, docletWriter.path);
+        Content headerContent = new ContentBuilder();
+        docletWriter.addTop(headerContent);
         Content mdleLinkContent = docletWriter.getModuleLink(utils.elementUtils.getModuleOf(pkg),
                 docletWriter.contents.moduleLabel);
         navBar.setNavLinkModule(mdleLinkContent);
         Content pkgLinkContent = docletWriter.getPackageLink(pkg, docletWriter.contents.packageLabel);
         navBar.setNavLinkPackage(pkgLinkContent);
         navBar.setUserHeader(docletWriter.getUserHeaderFooter(true));
-        Content header = HtmlTree.HEADER();
-        header.add(navBar.getContent(true));
-        htmlContent.add(header);
+        headerContent.add(navBar.getContent(true));
 
         List<? extends DocTree> fullBody = utils.getFullBody(dfElement);
-        Content bodyContent = docletWriter.commentTagsToContent(null, dfElement, fullBody, false);
-        docletWriter.addTagsInfo(dfElement, bodyContent);
-        Content main = HtmlTree.MAIN();
-        main.add(bodyContent);
-        htmlContent.add(main);
+        Content pageContent = docletWriter.commentTagsToContent(null, dfElement, fullBody, false);
+        docletWriter.addTagsInfo(dfElement, pageContent);
 
         navBar.setUserFooter(docletWriter.getUserHeaderFooter(false));
         Content footer = HtmlTree.FOOTER();
         footer.add(navBar.getContent(false));
         docletWriter.addBottom(footer);
-        htmlContent.add(footer);
+        htmlContent.add(new BodyContents()
+                .setHeader(headerContent)
+                .addMainContent(HtmlTree.DIV(HtmlStyle.contentContainer, pageContent))
+                .setFooter(footer)
+                .toContent());
         docletWriter.printHtmlDocument(Collections.emptyList(), null, localTagsContent, Collections.emptyList(), htmlContent);
     }
 
@@ -299,8 +301,6 @@ public class DocFilesHandlerImpl implements DocFilesHandler {
 
     private static class DocFileWriter extends HtmlDocletWriter {
 
-        final PackageElement pkg;
-
         /**
          * Constructor to construct the HtmlDocletWriter object.
          *
@@ -312,7 +312,7 @@ public class DocFilesHandlerImpl implements DocFilesHandler {
             super(configuration, path);
             switch (e.getKind()) {
                 case PACKAGE:
-                    pkg = (PackageElement)e;
+                case MODULE:
                     break;
                 default:
                     throw new AssertionError("unsupported element: " + e.getKind());

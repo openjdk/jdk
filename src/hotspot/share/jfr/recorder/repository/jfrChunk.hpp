@@ -44,6 +44,7 @@ class JfrChunk : public JfrCHeapObj {
   int64_t _last_checkpoint_offset;
   int64_t _last_metadata_offset;
   mutable u1 _generation;
+  bool _final;
 
   JfrChunk();
   ~JfrChunk();
@@ -53,7 +54,9 @@ class JfrChunk : public JfrCHeapObj {
   u2 major_version() const;
   u2 minor_version() const;
   int64_t cpu_frequency() const;
-  u2 capabilities() const;
+  u2 flags() const;
+
+  void mark_final();
 
   void update_start_ticks();
   void update_start_nanos();

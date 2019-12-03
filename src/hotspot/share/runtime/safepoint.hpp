@@ -75,7 +75,6 @@ class SafepointSynchronize : AllStatic {
     SAFEPOINT_CLEANUP_COMPILATION_POLICY,
     SAFEPOINT_CLEANUP_SYMBOL_TABLE_REHASH,
     SAFEPOINT_CLEANUP_STRING_TABLE_REHASH,
-    SAFEPOINT_CLEANUP_CLD_PURGE,
     SAFEPOINT_CLEANUP_SYSTEM_DICTIONARY_RESIZE,
     SAFEPOINT_CLEANUP_REQUEST_OOPSTORAGE_CLEANUP,
     // Leave this one last.
@@ -164,6 +163,7 @@ public:
   static void handle_polling_page_exception(JavaThread *thread);
 
   static bool is_cleanup_needed();
+  static bool is_forced_cleanup_needed();
   static void do_cleanup_tasks();
 
   static void set_is_at_safepoint()             { _state = _synchronized; }

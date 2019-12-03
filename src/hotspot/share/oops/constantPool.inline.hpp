@@ -27,13 +27,13 @@
 
 #include "oops/constantPool.hpp"
 #include "oops/cpCache.inline.hpp"
-#include "runtime/orderAccess.hpp"
+#include "runtime/atomic.hpp"
 
 inline CPSlot ConstantPool::slot_at(int which) const {
   assert(is_within_bounds(which), "index out of bounds");
   assert(!tag_at(which).is_unresolved_klass() && !tag_at(which).is_unresolved_klass_in_error(), "Corrupted constant pool");
   // Uses volatile because the klass slot changes without a lock.
-  intptr_t adr = OrderAccess::load_acquire(obj_at_addr(which));
+  intptr_t adr = Atomic::load_acquire(obj_at_addr(which));
   assert(adr != 0 || which == 0, "cp entry for klass should not be zero");
   return CPSlot(adr);
 }
@@ -46,7 +46,7 @@ inline Klass* ConstantPool::resolved_klass_at(int which) const {  // Used by Com
   assert(tag_at(kslot.name_index()).is_symbol(), "sanity");
 
   Klass** adr = resolved_klasses()->adr_at(kslot.resolved_klass_index());
-  return OrderAccess::load_acquire(adr);
+  return Atomic::load_acquire(adr);
 }
 
 inline bool ConstantPool::is_pseudo_string_at(int which) {

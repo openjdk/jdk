@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
  * @test
  * @build TrySetAccessibleTest
  * @modules java.base/java.lang:open
+ *          java.base/jdk.internal.module
  *          java.base/jdk.internal.perf
  *          java.base/jdk.internal.misc:+open
  * @run testng/othervm --illegal-access=deny TrySetAccessibleTest
@@ -38,6 +39,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 import jdk.internal.misc.Unsafe;
+import jdk.internal.module.ModulePath;
 import jdk.internal.perf.Perf;
 
 import org.testng.annotations.Test;
@@ -80,7 +82,7 @@ public class TrySetAccessibleTest {
      * Invoke a private method on a public class in an exported package
      */
     public void testPrivateMethodInExportedPackage() throws Exception {
-        Method m = Perf.class.getDeclaredMethod("getBytes", String.class);
+        Method m = ModulePath.class.getDeclaredMethod("packageName", String.class);
         try {
             m.invoke(null);
             assertTrue(false);

@@ -25,7 +25,7 @@ package gc.z;
 
 /*
  * @test TestSmallHeap
- * @requires vm.gc.Z & !vm.graal.enabled
+ * @requires vm.gc.Z & !vm.graal.enabled & vm.compMode != "Xcomp"
  * @summary Test ZGC with small heaps
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseZGC -Xlog:gc,gc+init,gc+heap -Xmx8M gc.z.TestSmallHeap
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseZGC -Xlog:gc,gc+init,gc+heap -Xmx16M gc.z.TestSmallHeap

@@ -44,7 +44,6 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/handshake.hpp"
-#include "runtime/orderAccess.hpp"
 #include "runtime/prefetch.inline.hpp"
 #include "runtime/thread.hpp"
 #include "utilities/align.hpp"
@@ -487,7 +486,7 @@ bool ZMark::try_terminate() {
       // Flush before termination
       if (!try_flush(&_work_nterminateflush)) {
         // No more work available, skip further flush attempts
-        Atomic::store(false, &_work_terminateflush);
+        Atomic::store(&_work_terminateflush, false);
       }
 
       // Don't terminate, regardless of whether we successfully

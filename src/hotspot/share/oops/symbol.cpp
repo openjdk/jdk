@@ -281,7 +281,7 @@ bool Symbol::try_increment_refcount() {
     } else if (refc == 0) {
       return false; // dead, can't revive.
     } else {
-      found = Atomic::cmpxchg(old_value + 1, &_length_and_refcount, old_value);
+      found = Atomic::cmpxchg(&_length_and_refcount, old_value, old_value + 1);
       if (found == old_value) {
         return true; // successfully updated.
       }
@@ -324,7 +324,7 @@ void Symbol::decrement_refcount() {
 #endif
       return;
     } else {
-      found = Atomic::cmpxchg(old_value - 1, &_length_and_refcount, old_value);
+      found = Atomic::cmpxchg(&_length_and_refcount, old_value, old_value - 1);
       if (found == old_value) {
         return;  // successfully updated.
       }
@@ -348,7 +348,7 @@ void Symbol::make_permanent() {
       return;
     } else {
       int len = extract_length(old_value);
-      found = Atomic::cmpxchg(pack_length_and_refcount(len, PERM_REFCOUNT), &_length_and_refcount, old_value);
+      found = Atomic::cmpxchg(&_length_and_refcount, old_value, pack_length_and_refcount(len, PERM_REFCOUNT));
       if (found == old_value) {
         return;  // successfully updated.
       }

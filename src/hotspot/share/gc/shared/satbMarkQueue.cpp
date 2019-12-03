@@ -30,7 +30,6 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/mutexLocker.hpp"
-#include "runtime/orderAccess.hpp"
 #include "runtime/os.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/thread.hpp"
@@ -136,7 +135,7 @@ static void increment_count(volatile size_t* cfptr, size_t threshold) {
     value += 2;
     assert(value > old, "overflow");
     if (value > threshold) value |= 1;
-    value = Atomic::cmpxchg(value, cfptr, old);
+    value = Atomic::cmpxchg(cfptr, old, value);
   } while (value != old);
 }
 
@@ -149,7 +148,7 @@ static void decrement_count(volatile size_t* cfptr) {
     old = value;
     value -= 2;
     if (value <= 1) value = 0;
-    value = Atomic::cmpxchg(value, cfptr, old);
+    value = Atomic::cmpxchg(cfptr, old, value);
   } while (value != old);
 }
 
@@ -329,7 +328,7 @@ void SATBMarkQueueSet::print_all(const char* msg) {
 #endif // PRODUCT
 
 void SATBMarkQueueSet::abandon_completed_buffers() {
-  Atomic::store(size_t(0), &_count_and_process_flag);
+  Atomic::store(&_count_and_process_flag, size_t(0));
   BufferNode* buffers_to_delete = _list.pop_all();
   while (buffers_to_delete != NULL) {
     BufferNode* bn = buffers_to_delete;

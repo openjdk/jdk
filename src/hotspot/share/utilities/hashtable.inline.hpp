@@ -26,7 +26,7 @@
 #define SHARE_UTILITIES_HASHTABLE_INLINE_HPP
 
 #include "memory/allocation.inline.hpp"
-#include "runtime/orderAccess.hpp"
+#include "runtime/atomic.hpp"
 #include "utilities/hashtable.hpp"
 #include "utilities/dtrace.hpp"
 
@@ -88,7 +88,7 @@ template <MEMFLAGS F> inline void HashtableBucket<F>::set_entry(BasicHashtableEn
   //          SystemDictionary are read without locks.  The new entry must be
   //          complete before other threads can be allowed to see it
   //          via a store to _buckets[index].
-  OrderAccess::release_store(&_entry, l);
+  Atomic::release_store(&_entry, l);
 }
 
 
@@ -97,7 +97,7 @@ template <MEMFLAGS F> inline BasicHashtableEntry<F>* HashtableBucket<F>::get_ent
   //          SystemDictionary are read without locks.  The new entry must be
   //          complete before other threads can be allowed to see it
   //          via a store to _buckets[index].
-  return OrderAccess::load_acquire(&_entry);
+  return Atomic::load_acquire(&_entry);
 }
 
 

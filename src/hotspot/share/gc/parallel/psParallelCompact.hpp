@@ -32,6 +32,8 @@
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/collectorCounters.hpp"
 #include "oops/oop.hpp"
+#include "runtime/atomic.hpp"
+#include "runtime/orderAccess.hpp"
 
 class ParallelScavengeHeap;
 class PSAdaptiveSizePolicy;
@@ -536,7 +538,7 @@ inline void ParallelCompactData::RegionData::decrement_destination_count()
 {
   assert(_dc_and_los < dc_claimed, "already claimed");
   assert(_dc_and_los >= dc_one, "count would go negative");
-  Atomic::add(dc_mask, &_dc_and_los);
+  Atomic::add(&_dc_and_los, dc_mask);
 }
 
 inline HeapWord* ParallelCompactData::RegionData::data_location() const
@@ -576,7 +578,7 @@ inline bool ParallelCompactData::RegionData::claim_unsafe()
 inline void ParallelCompactData::RegionData::add_live_obj(size_t words)
 {
   assert(words <= (size_t)los_mask - live_obj_size(), "overflow");
-  Atomic::add(static_cast<region_sz_t>(words), &_dc_and_los);
+  Atomic::add(&_dc_and_los, static_cast<region_sz_t>(words));
 }
 
 inline void ParallelCompactData::RegionData::set_highest_ref(HeapWord* addr)
@@ -584,7 +586,7 @@ inline void ParallelCompactData::RegionData::set_highest_ref(HeapWord* addr)
 #ifdef ASSERT
   HeapWord* tmp = _highest_ref;
   while (addr > tmp) {
-    tmp = Atomic::cmpxchg(addr, &_highest_ref, tmp);
+    tmp = Atomic::cmpxchg(&_highest_ref, tmp, addr);
   }
 #endif  // #ifdef ASSERT
 }
@@ -592,7 +594,7 @@ inline void ParallelCompactData::RegionData::set_highest_ref(HeapWord* addr)
 inline bool ParallelCompactData::RegionData::claim()
 {
   const region_sz_t los = static_cast<region_sz_t>(live_obj_size());
-  const region_sz_t old = Atomic::cmpxchg(dc_claimed | los, &_dc_and_los, los);
+  const region_sz_t old = Atomic::cmpxchg(&_dc_and_los, los, dc_claimed | los);
   return old == los;
 }
 

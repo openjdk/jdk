@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -115,23 +115,11 @@ extern jfieldID iac_familyID;
  * get_ methods that return +ve int return -1 on error
  * get_ methods that return objects return NULL on error.
  */
-jobject getInet6Address_scopeifname(JNIEnv *env, jobject iaObj) {
-    jobject holder = (*env)->GetObjectField(env, iaObj, ia6_holder6ID);
-    CHECK_NULL_RETURN(holder, NULL);
-    return (*env)->GetObjectField(env, holder, ia6_scopeifnameID);
-}
-
 jboolean setInet6Address_scopeifname(JNIEnv *env, jobject iaObj, jobject scopeifname) {
     jobject holder = (*env)->GetObjectField(env, iaObj, ia6_holder6ID);
     CHECK_NULL_RETURN(holder, JNI_FALSE);
     (*env)->SetObjectField(env, holder, ia6_scopeifnameID, scopeifname);
     return JNI_TRUE;
-}
-
-jboolean getInet6Address_scopeid_set(JNIEnv *env, jobject iaObj) {
-    jobject holder = (*env)->GetObjectField(env, iaObj, ia6_holder6ID);
-    CHECK_NULL_RETURN(holder, JNI_FALSE);
-    return (*env)->GetBooleanField(env, holder, ia6_scopeidsetID);
 }
 
 unsigned int getInet6Address_scopeid(JNIEnv *env, jobject iaObj) {
@@ -206,12 +194,6 @@ int getInetAddress_family(JNIEnv *env, jobject iaObj) {
     jobject holder = (*env)->GetObjectField(env, iaObj, ia_holderID);
     CHECK_NULL_THROW_NPE_RETURN(env, holder, "InetAddress holder is null", -1);
     return (*env)->GetIntField(env, holder, iac_familyID);
-}
-
-jobject getInetAddress_hostName(JNIEnv *env, jobject iaObj) {
-    jobject holder = (*env)->GetObjectField(env, iaObj, ia_holderID);
-    CHECK_NULL_THROW_NPE_RETURN(env, holder, "InetAddress holder is null", NULL);
-    return (*env)->GetObjectField(env, holder, iac_hostNameID);
 }
 
 JNIEXPORT jobject JNICALL

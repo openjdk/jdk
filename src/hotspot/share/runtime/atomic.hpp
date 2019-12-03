@@ -34,6 +34,7 @@
 #include "metaprogramming/primitiveConversions.hpp"
 #include "metaprogramming/removeCV.hpp"
 #include "metaprogramming/removePointer.hpp"
+#include "runtime/orderAccess.hpp"
 #include "utilities/align.hpp"
 #include "utilities/macros.hpp"
 
@@ -46,6 +47,12 @@ enum atomic_memory_order {
   memory_order_acq_rel = 4,
   // Strong two-way memory barrier.
   memory_order_conservative = 8
+};
+
+enum ScopedFenceType {
+    X_ACQUIRE
+  , RELEASE_X
+  , RELEASE_X_FENCE
 };
 
 class Atomic : AllStatic {
@@ -72,8 +79,14 @@ public:
   // The type T must be either a pointer type convertible to or equal
   // to D, an integral/enum type equal to D, or a type equal to D that
   // is primitive convertible using PrimitiveConversions.
-  template<typename T, typename D>
-  inline static void store(T store_value, volatile D* dest);
+  template<typename D, typename T>
+  inline static void store(volatile D* dest, T store_value);
+
+  template <typename D, typename T>
+  inline static void release_store(volatile D* dest, T store_value);
+
+  template <typename D, typename T>
+  inline static void release_store_fence(volatile D* dest, T store_value);
 
   // Atomically load from a location
   // The type T must be either a pointer type, an integral/enum type,
@@ -81,15 +94,18 @@ public:
   template<typename T>
   inline static T load(const volatile T* dest);
 
+  template <typename T>
+  inline static T load_acquire(const volatile T* dest);
+
   // Atomically add to a location. Returns updated value. add*() provide:
   // <fence> add-value-to-dest <membar StoreLoad|StoreStore>
 
-  template<typename I, typename D>
-  inline static D add(I add_value, D volatile* dest,
+  template<typename D, typename I>
+  inline static D add(D volatile* dest, I add_value,
                       atomic_memory_order order = memory_order_conservative);
 
-  template<typename I, typename D>
-  inline static D sub(I sub_value, D volatile* dest,
+  template<typename D, typename I>
+  inline static D sub(D volatile* dest, I sub_value,
                       atomic_memory_order order = memory_order_conservative);
 
   // Atomically increment location. inc() provide:
@@ -116,8 +132,8 @@ public:
   // The type T must be either a pointer type convertible to or equal
   // to D, an integral/enum type equal to D, or a type equal to D that
   // is primitive convertible using PrimitiveConversions.
-  template<typename T, typename D>
-  inline static D xchg(T exchange_value, volatile D* dest,
+  template<typename D, typename T>
+  inline static D xchg(volatile D* dest, T exchange_value,
                        atomic_memory_order order = memory_order_conservative);
 
   // Performs atomic compare of *dest and compare_value, and exchanges
@@ -125,10 +141,10 @@ public:
   // value of *dest. cmpxchg*() provide:
   // <fence> compare-and-exchange <membar StoreLoad|StoreStore>
 
-  template<typename T, typename D, typename U>
-  inline static D cmpxchg(T exchange_value,
-                          D volatile* dest,
+  template<typename D, typename U, typename T>
+  inline static D cmpxchg(D volatile* dest,
                           U compare_value,
+                          T exchange_value,
                           atomic_memory_order order = memory_order_conservative);
 
   // Performs atomic compare of *dest and NULL, and replaces *dest
@@ -136,8 +152,8 @@ public:
   // the comparison succeeded and the exchange occurred.  This is
   // often used as part of lazy initialization, as a lock-free
   // alternative to the Double-Checked Locking Pattern.
-  template<typename T, typename D>
-  inline static bool replace_if_null(T* value, D* volatile* dest,
+  template<typename D, typename T>
+  inline static bool replace_if_null(D* volatile* dest, T* value,
                                      atomic_memory_order order = memory_order_conservative);
 
 private:
@@ -152,7 +168,7 @@ protected:
   // Dispatch handler for store.  Provides type-based validity
   // checking and limited conversions around calls to the platform-
   // specific implementation layer provided by PlatformOp.
-  template<typename T, typename D, typename PlatformOp, typename Enable = void>
+  template<typename D, typename T, typename PlatformOp, typename Enable = void>
   struct StoreImpl;
 
   // Platform-specific implementation of store.  Support for sizes
@@ -200,11 +216,15 @@ protected:
   // requires more for e.g. 64 bit loads, a specialization is required
   template<size_t byte_size> struct PlatformLoad;
 
+  // Give platforms a variation point to specialize.
+  template<size_t byte_size, ScopedFenceType type> struct PlatformOrderedStore;
+  template<size_t byte_size, ScopedFenceType type> struct PlatformOrderedLoad;
+
 private:
   // Dispatch handler for add.  Provides type-based validity checking
   // and limited conversions around calls to the platform-specific
   // implementation layer provided by PlatformAdd.
-  template<typename I, typename D, typename Enable = void>
+  template<typename D, typename I, typename Enable = void>
   struct AddImpl;
 
   // Platform-specific implementation of add.  Support for sizes of 4
@@ -219,7 +239,7 @@ private:
   // - platform_add is an object of type PlatformAdd<sizeof(D)>.
   //
   // Then
-  //   platform_add(add_value, dest)
+  //   platform_add(dest, add_value)
   // must be a valid expression, returning a result convertible to D.
   //
   // No definition is provided; all platforms must explicitly define
@@ -239,12 +259,12 @@ private:
   // otherwise, addend is add_value.
   //
   // FetchAndAdd requires the derived class to provide
-  //   fetch_and_add(addend, dest)
+  //   fetch_and_add(dest, addend)
   // atomically adding addend to the value of dest, and returning the
   // old value.
   //
   // AddAndFetch requires the derived class to provide
-  //   add_and_fetch(addend, dest)
+  //   add_and_fetch(dest, addend)
   // atomically adding addend to the value of dest, and returning the
   // new value.
   //
@@ -266,14 +286,14 @@ private:
   // function.  No scaling of add_value is performed when D is a pointer
   // type, so this function can be used to implement the support function
   // required by AddAndFetch.
-  template<typename Type, typename Fn, typename I, typename D>
-  static D add_using_helper(Fn fn, I add_value, D volatile* dest);
+  template<typename Type, typename Fn, typename D, typename I>
+  static D add_using_helper(Fn fn, D volatile* dest, I add_value);
 
   // Dispatch handler for cmpxchg.  Provides type-based validity
   // checking and limited conversions around calls to the
   // platform-specific implementation layer provided by
   // PlatformCmpxchg.
-  template<typename T, typename D, typename U, typename Enable = void>
+  template<typename D, typename U, typename T, typename Enable = void>
   struct CmpxchgImpl;
 
   // Platform-specific implementation of cmpxchg.  Support for sizes
@@ -286,11 +306,11 @@ private:
   // - platform_cmpxchg is an object of type PlatformCmpxchg<sizeof(T)>.
   //
   // Then
-  //   platform_cmpxchg(exchange_value, dest, compare_value, order)
+  //   platform_cmpxchg(dest, compare_value, exchange_value, order)
   // must be a valid expression, returning a result convertible to T.
   //
   // A default definition is provided, which declares a function template
-  //   T operator()(T, T volatile*, T, atomic_memory_order) const
+  //   T operator()(T volatile*, T, T, atomic_memory_order) const
   //
   // For each required size, a platform must either provide an
   // appropriate definition of that function, or must entirely
@@ -306,9 +326,9 @@ private:
   // helper function.
   template<typename Type, typename Fn, typename T>
   static T cmpxchg_using_helper(Fn fn,
-                                T exchange_value,
                                 T volatile* dest,
-                                T compare_value);
+                                T compare_value,
+                                T exchange_value);
 
   // Support platforms that do not provide Read-Modify-Write
   // byte-level atomic access. To use, derive PlatformCmpxchg<1> from
@@ -321,7 +341,7 @@ private:
   // checking and limited conversions around calls to the
   // platform-specific implementation layer provided by
   // PlatformXchg.
-  template<typename T, typename D, typename Enable = void>
+  template<typename D, typename T, typename Enable = void>
   struct XchgImpl;
 
   // Platform-specific implementation of xchg.  Support for sizes
@@ -333,11 +353,11 @@ private:
   // - platform_xchg is an object of type PlatformXchg<sizeof(T)>.
   //
   // Then
-  //   platform_xchg(exchange_value, dest)
+  //   platform_xchg(dest, exchange_value)
   // must be a valid expression, returning a result convertible to T.
   //
   // A default definition is provided, which declares a function template
-  //   T operator()(T, T volatile*, T, atomic_memory_order) const
+  //   T operator()(T volatile*, T, atomic_memory_order) const
   //
   // For each required size, a platform must either provide an
   // appropriate definition of that function, or must entirely
@@ -353,8 +373,8 @@ private:
   // helper function.
   template<typename Type, typename Fn, typename T>
   static T xchg_using_helper(Fn fn,
-                             T exchange_value,
-                             T volatile* dest);
+                             T volatile* dest,
+                             T exchange_value);
 };
 
 template<typename From, typename To>
@@ -430,9 +450,9 @@ struct Atomic::StoreImpl<
   PlatformOp,
   typename EnableIf<IsIntegral<T>::value || IsRegisteredEnum<T>::value>::type>
 {
-  void operator()(T new_value, T volatile* dest) const {
+  void operator()(T volatile* dest, T new_value) const {
     // Forward to the platform handler for the size of T.
-    PlatformOp()(new_value, dest);
+    PlatformOp()(dest, new_value);
   }
 };
 
@@ -441,16 +461,16 @@ struct Atomic::StoreImpl<
 // The new_value must be implicitly convertible to the
 // destination's type; it must be type-correct to store the
 // new_value in the destination.
-template<typename T, typename D, typename PlatformOp>
+template<typename D, typename T, typename PlatformOp>
 struct Atomic::StoreImpl<
-  T*, D*,
+  D*, T*,
   PlatformOp,
   typename EnableIf<Atomic::IsPointerConvertible<T*, D*>::value>::type>
 {
-  void operator()(T* new_value, D* volatile* dest) const {
+  void operator()(D* volatile* dest, T* new_value) const {
     // Allow derived to base conversion, and adding cv-qualifiers.
     D* value = new_value;
-    PlatformOp()(value, dest);
+    PlatformOp()(dest, value);
   }
 };
 
@@ -466,12 +486,12 @@ struct Atomic::StoreImpl<
   PlatformOp,
   typename EnableIf<PrimitiveConversions::Translate<T>::value>::type>
 {
-  void operator()(T new_value, T volatile* dest) const {
+  void operator()(T volatile* dest, T new_value) const {
     typedef PrimitiveConversions::Translate<T> Translator;
     typedef typename Translator::Decayed Decayed;
     STATIC_ASSERT(sizeof(T) == sizeof(Decayed));
-    PlatformOp()(Translator::decay(new_value),
-                 reinterpret_cast<Decayed volatile*>(dest));
+    PlatformOp()(reinterpret_cast<Decayed volatile*>(dest),
+                 Translator::decay(new_value));
   }
 };
 
@@ -484,8 +504,8 @@ struct Atomic::StoreImpl<
 template<size_t byte_size>
 struct Atomic::PlatformStore {
   template<typename T>
-  void operator()(T new_value,
-                  T volatile* dest) const {
+  void operator()(T volatile* dest,
+                  T new_value) const {
     STATIC_ASSERT(sizeof(T) <= sizeof(void*)); // wide atomics need specialization
     (void)const_cast<T&>(*dest = new_value);
   }
@@ -497,21 +517,21 @@ struct Atomic::PlatformStore {
 
 template<typename Derived>
 struct Atomic::FetchAndAdd {
-  template<typename I, typename D>
-  D operator()(I add_value, D volatile* dest, atomic_memory_order order) const;
+  template<typename D, typename I>
+  D operator()(D volatile* dest, I add_value, atomic_memory_order order) const;
 };
 
 template<typename Derived>
 struct Atomic::AddAndFetch {
-  template<typename I, typename D>
-  D operator()(I add_value, D volatile* dest, atomic_memory_order order) const;
+  template<typename D, typename I>
+  D operator()(D volatile* dest, I add_value, atomic_memory_order order) const;
 };
 
 template<typename D>
 inline void Atomic::inc(D volatile* dest, atomic_memory_order order) {
   STATIC_ASSERT(IsPointer<D>::value || IsIntegral<D>::value);
   typedef typename Conditional<IsPointer<D>::value, ptrdiff_t, D>::type I;
-  Atomic::add(I(1), dest, order);
+  Atomic::add(dest, I(1), order);
 }
 
 template<typename D>
@@ -520,11 +540,11 @@ inline void Atomic::dec(D volatile* dest, atomic_memory_order order) {
   typedef typename Conditional<IsPointer<D>::value, ptrdiff_t, D>::type I;
   // Assumes two's complement integer representation.
   #pragma warning(suppress: 4146)
-  Atomic::add(I(-1), dest, order);
+  Atomic::add(dest, I(-1), order);
 }
 
-template<typename I, typename D>
-inline D Atomic::sub(I sub_value, D volatile* dest, atomic_memory_order order) {
+template<typename D, typename I>
+inline D Atomic::sub(D volatile* dest, I sub_value, atomic_memory_order order) {
   STATIC_ASSERT(IsPointer<D>::value || IsIntegral<D>::value);
   STATIC_ASSERT(IsIntegral<I>::value);
   // If D is a pointer type, use [u]intptr_t as the addend type,
@@ -537,7 +557,7 @@ inline D Atomic::sub(I sub_value, D volatile* dest, atomic_memory_order order) {
   AddendType addend = sub_value;
   // Assumes two's complement integer representation.
   #pragma warning(suppress: 4146) // In case AddendType is not signed.
-  return Atomic::add(-addend, dest, order);
+  return Atomic::add(dest, -addend, order);
 }
 
 // Define the class before including platform file, which may specialize
@@ -548,9 +568,9 @@ inline D Atomic::sub(I sub_value, D volatile* dest, atomic_memory_order order) {
 template<size_t byte_size>
 struct Atomic::PlatformCmpxchg {
   template<typename T>
-  T operator()(T exchange_value,
-               T volatile* dest,
+  T operator()(T volatile* dest,
                T compare_value,
+               T exchange_value,
                atomic_memory_order order) const;
 };
 
@@ -559,9 +579,9 @@ struct Atomic::PlatformCmpxchg {
 // in this file, near the other definitions related to cmpxchg.
 struct Atomic::CmpxchgByteUsingInt {
   template<typename T>
-  T operator()(T exchange_value,
-               T volatile* dest,
+  T operator()(T volatile* dest,
                T compare_value,
+               T exchange_value,
                atomic_memory_order order) const;
 };
 
@@ -573,9 +593,35 @@ struct Atomic::CmpxchgByteUsingInt {
 template<size_t byte_size>
 struct Atomic::PlatformXchg {
   template<typename T>
-  T operator()(T exchange_value,
-               T volatile* dest,
+  T operator()(T volatile* dest,
+               T exchange_value,
                atomic_memory_order order) const;
+};
+
+template <ScopedFenceType T>
+class ScopedFenceGeneral: public StackObj {
+ public:
+  void prefix() {}
+  void postfix() {}
+};
+
+// The following methods can be specialized using simple template specialization
+// in the platform specific files for optimization purposes. Otherwise the
+// generalized variant is used.
+
+template<> inline void ScopedFenceGeneral<X_ACQUIRE>::postfix()       { OrderAccess::acquire(); }
+template<> inline void ScopedFenceGeneral<RELEASE_X>::prefix()        { OrderAccess::release(); }
+template<> inline void ScopedFenceGeneral<RELEASE_X_FENCE>::prefix()  { OrderAccess::release(); }
+template<> inline void ScopedFenceGeneral<RELEASE_X_FENCE>::postfix() { OrderAccess::fence();   }
+
+template <ScopedFenceType T>
+class ScopedFence : public ScopedFenceGeneral<T> {
+  void *const _field;
+ public:
+  ScopedFence(void *const field) : _field(field) { prefix(); }
+  ~ScopedFence() { postfix(); }
+  void prefix() { ScopedFenceGeneral<T>::prefix(); }
+  void postfix() { ScopedFenceGeneral<T>::postfix(); }
 };
 
 // platform specific in-line definitions - must come before shared definitions
@@ -594,94 +640,127 @@ inline T Atomic::load(const volatile T* dest) {
   return LoadImpl<T, PlatformLoad<sizeof(T)> >()(dest);
 }
 
-template<typename T, typename D>
-inline void Atomic::store(T store_value, volatile D* dest) {
-  StoreImpl<T, D, PlatformStore<sizeof(D)> >()(store_value, dest);
+template<size_t byte_size, ScopedFenceType type>
+struct Atomic::PlatformOrderedLoad {
+  template <typename T>
+  T operator()(const volatile T* p) const {
+    ScopedFence<type> f((void*)p);
+    return Atomic::load(p);
+  }
+};
+
+template <typename T>
+inline T Atomic::load_acquire(const volatile T* p) {
+  return LoadImpl<T, PlatformOrderedLoad<sizeof(T), X_ACQUIRE> >()(p);
 }
 
-template<typename I, typename D>
-inline D Atomic::add(I add_value, D volatile* dest,
+template<typename D, typename T>
+inline void Atomic::store(volatile D* dest, T store_value) {
+  StoreImpl<D, T, PlatformStore<sizeof(D)> >()(dest, store_value);
+}
+
+template<size_t byte_size, ScopedFenceType type>
+struct Atomic::PlatformOrderedStore {
+  template <typename T>
+  void operator()(volatile T* p, T v) const {
+    ScopedFence<type> f((void*)p);
+    Atomic::store(p, v);
+  }
+};
+
+template <typename D, typename T>
+inline void Atomic::release_store(volatile D* p, T v) {
+  StoreImpl<D, T, PlatformOrderedStore<sizeof(D), RELEASE_X> >()(p, v);
+}
+
+template <typename D, typename T>
+inline void Atomic::release_store_fence(volatile D* p, T v) {
+  StoreImpl<D, T, PlatformOrderedStore<sizeof(D), RELEASE_X_FENCE> >()(p, v);
+}
+
+template<typename D, typename I>
+inline D Atomic::add(D volatile* dest, I add_value,
                      atomic_memory_order order) {
-  return AddImpl<I, D>()(add_value, dest, order);
+  return AddImpl<D, I>()(dest, add_value, order);
 }
 
-template<typename I, typename D>
+template<typename D, typename I>
 struct Atomic::AddImpl<
-  I, D,
+  D, I,
   typename EnableIf<IsIntegral<I>::value &&
                     IsIntegral<D>::value &&
                     (sizeof(I) <= sizeof(D)) &&
                     (IsSigned<I>::value == IsSigned<D>::value)>::type>
 {
-  D operator()(I add_value, D volatile* dest, atomic_memory_order order) const {
+  D operator()(D volatile* dest, I add_value, atomic_memory_order order) const {
     D addend = add_value;
-    return PlatformAdd<sizeof(D)>()(addend, dest, order);
+    return PlatformAdd<sizeof(D)>()(dest, addend, order);
   }
 };
 
-template<typename I, typename P>
+template<typename P, typename I>
 struct Atomic::AddImpl<
-  I, P*,
+  P*, I,
   typename EnableIf<IsIntegral<I>::value && (sizeof(I) <= sizeof(P*))>::type>
 {
-  P* operator()(I add_value, P* volatile* dest, atomic_memory_order order) const {
+  P* operator()(P* volatile* dest, I add_value, atomic_memory_order order) const {
     STATIC_ASSERT(sizeof(intptr_t) == sizeof(P*));
     STATIC_ASSERT(sizeof(uintptr_t) == sizeof(P*));
     typedef typename Conditional<IsSigned<I>::value,
                                  intptr_t,
                                  uintptr_t>::type CI;
     CI addend = add_value;
-    return PlatformAdd<sizeof(P*)>()(addend, dest, order);
+    return PlatformAdd<sizeof(P*)>()(dest, addend, order);
   }
 };
 
 template<typename Derived>
-template<typename I, typename D>
-inline D Atomic::FetchAndAdd<Derived>::operator()(I add_value, D volatile* dest,
+template<typename D, typename I>
+inline D Atomic::FetchAndAdd<Derived>::operator()(D volatile* dest, I add_value,
                                                   atomic_memory_order order) const {
   I addend = add_value;
   // If D is a pointer type P*, scale by sizeof(P).
   if (IsPointer<D>::value) {
     addend *= sizeof(typename RemovePointer<D>::type);
   }
-  D old = static_cast<const Derived*>(this)->fetch_and_add(addend, dest, order);
+  D old = static_cast<const Derived*>(this)->fetch_and_add(dest, addend, order);
   return old + add_value;
 }
 
 template<typename Derived>
-template<typename I, typename D>
-inline D Atomic::AddAndFetch<Derived>::operator()(I add_value, D volatile* dest,
+template<typename D, typename I>
+inline D Atomic::AddAndFetch<Derived>::operator()(D volatile* dest, I add_value,
                                                   atomic_memory_order order) const {
   // If D is a pointer type P*, scale by sizeof(P).
   if (IsPointer<D>::value) {
     add_value *= sizeof(typename RemovePointer<D>::type);
   }
-  return static_cast<const Derived*>(this)->add_and_fetch(add_value, dest, order);
+  return static_cast<const Derived*>(this)->add_and_fetch(dest, add_value, order);
 }
 
-template<typename Type, typename Fn, typename I, typename D>
-inline D Atomic::add_using_helper(Fn fn, I add_value, D volatile* dest) {
+template<typename Type, typename Fn, typename D, typename I>
+inline D Atomic::add_using_helper(Fn fn, D volatile* dest, I add_value) {
   return PrimitiveConversions::cast<D>(
     fn(PrimitiveConversions::cast<Type>(add_value),
        reinterpret_cast<Type volatile*>(dest)));
 }
 
-template<typename T, typename D, typename U>
-inline D Atomic::cmpxchg(T exchange_value,
-                         D volatile* dest,
+template<typename D, typename U, typename T>
+inline D Atomic::cmpxchg(D volatile* dest,
                          U compare_value,
+                         T exchange_value,
                          atomic_memory_order order) {
-  return CmpxchgImpl<T, D, U>()(exchange_value, dest, compare_value, order);
+  return CmpxchgImpl<D, U, T>()(dest, compare_value, exchange_value, order);
 }
 
-template<typename T, typename D>
-inline bool Atomic::replace_if_null(T* value, D* volatile* dest,
+template<typename D, typename T>
+inline bool Atomic::replace_if_null(D* volatile* dest, T* value,
                                     atomic_memory_order order) {
   // Presently using a trivial implementation in terms of cmpxchg.
   // Consider adding platform support, to permit the use of compiler
   // intrinsics like gcc's __sync_bool_compare_and_swap.
   D* expected_null = NULL;
-  return expected_null == cmpxchg(value, dest, expected_null, order);
+  return expected_null == cmpxchg(dest, expected_null, value, order);
 }
 
 // Handle cmpxchg for integral and enum types.
@@ -692,12 +771,12 @@ struct Atomic::CmpxchgImpl<
   T, T, T,
   typename EnableIf<IsIntegral<T>::value || IsRegisteredEnum<T>::value>::type>
 {
-  T operator()(T exchange_value, T volatile* dest, T compare_value,
+  T operator()(T volatile* dest, T compare_value, T exchange_value,
                atomic_memory_order order) const {
     // Forward to the platform handler for the size of T.
-    return PlatformCmpxchg<sizeof(T)>()(exchange_value,
-                                        dest,
+    return PlatformCmpxchg<sizeof(T)>()(dest,
                                         compare_value,
+                                        exchange_value,
                                         order);
   }
 };
@@ -711,21 +790,21 @@ struct Atomic::CmpxchgImpl<
 // The exchange_value must be implicitly convertible to the
 // destination's type; it must be type-correct to store the
 // exchange_value in the destination.
-template<typename T, typename D, typename U>
+template<typename D, typename U, typename T>
 struct Atomic::CmpxchgImpl<
-  T*, D*, U*,
+  D*, U*, T*,
   typename EnableIf<Atomic::IsPointerConvertible<T*, D*>::value &&
                     IsSame<typename RemoveCV<D>::type,
                            typename RemoveCV<U>::type>::value>::type>
 {
-  D* operator()(T* exchange_value, D* volatile* dest, U* compare_value,
+  D* operator()(D* volatile* dest, U* compare_value, T* exchange_value,
                atomic_memory_order order) const {
     // Allow derived to base conversion, and adding cv-qualifiers.
     D* new_value = exchange_value;
     // Don't care what the CV qualifiers for compare_value are,
     // but we need to match D* when calling platform support.
     D* old_value = const_cast<D*>(compare_value);
-    return PlatformCmpxchg<sizeof(D*)>()(new_value, dest, old_value, order);
+    return PlatformCmpxchg<sizeof(D*)>()(dest, old_value, new_value, order);
   }
 };
 
@@ -741,24 +820,24 @@ struct Atomic::CmpxchgImpl<
   T, T, T,
   typename EnableIf<PrimitiveConversions::Translate<T>::value>::type>
 {
-  T operator()(T exchange_value, T volatile* dest, T compare_value,
+  T operator()(T volatile* dest, T compare_value, T exchange_value,
                atomic_memory_order order) const {
     typedef PrimitiveConversions::Translate<T> Translator;
     typedef typename Translator::Decayed Decayed;
     STATIC_ASSERT(sizeof(T) == sizeof(Decayed));
     return Translator::recover(
-      cmpxchg(Translator::decay(exchange_value),
-              reinterpret_cast<Decayed volatile*>(dest),
+      cmpxchg(reinterpret_cast<Decayed volatile*>(dest),
               Translator::decay(compare_value),
+              Translator::decay(exchange_value),
               order));
   }
 };
 
 template<typename Type, typename Fn, typename T>
 inline T Atomic::cmpxchg_using_helper(Fn fn,
-                                      T exchange_value,
                                       T volatile* dest,
-                                      T compare_value) {
+                                      T compare_value,
+                                      T exchange_value) {
   STATIC_ASSERT(sizeof(Type) == sizeof(T));
   return PrimitiveConversions::cast<T>(
     fn(PrimitiveConversions::cast<Type>(exchange_value),
@@ -767,9 +846,9 @@ inline T Atomic::cmpxchg_using_helper(Fn fn,
 }
 
 template<typename T>
-inline T Atomic::CmpxchgByteUsingInt::operator()(T exchange_value,
-                                                 T volatile* dest,
+inline T Atomic::CmpxchgByteUsingInt::operator()(T volatile* dest,
                                                  T compare_value,
+                                                 T exchange_value,
                                                  atomic_memory_order order) const {
   STATIC_ASSERT(sizeof(T) == sizeof(uint8_t));
   uint8_t canon_exchange_value = exchange_value;
@@ -792,7 +871,7 @@ inline T Atomic::CmpxchgByteUsingInt::operator()(T exchange_value,
     // ... except for the one byte we want to update
     reinterpret_cast<uint8_t*>(&new_value)[offset] = canon_exchange_value;
 
-    uint32_t res = cmpxchg(new_value, aligned_dest, cur, order);
+    uint32_t res = cmpxchg(aligned_dest, cur, new_value, order);
     if (res == cur) break;      // success
 
     // at least one byte in the int changed value, so update
@@ -812,9 +891,9 @@ struct Atomic::XchgImpl<
   T, T,
   typename EnableIf<IsIntegral<T>::value || IsRegisteredEnum<T>::value>::type>
 {
-  T operator()(T exchange_value, T volatile* dest, atomic_memory_order order) const {
+  T operator()(T volatile* dest, T exchange_value, atomic_memory_order order) const {
     // Forward to the platform handler for the size of T.
-    return PlatformXchg<sizeof(T)>()(exchange_value, dest, order);
+    return PlatformXchg<sizeof(T)>()(dest, exchange_value, order);
   }
 };
 
@@ -823,15 +902,15 @@ struct Atomic::XchgImpl<
 // The exchange_value must be implicitly convertible to the
 // destination's type; it must be type-correct to store the
 // exchange_value in the destination.
-template<typename T, typename D>
+template<typename D, typename T>
 struct Atomic::XchgImpl<
-  T*, D*,
+  D*, T*,
   typename EnableIf<Atomic::IsPointerConvertible<T*, D*>::value>::type>
 {
-  D* operator()(T* exchange_value, D* volatile* dest, atomic_memory_order order) const {
+  D* operator()(D* volatile* dest, T* exchange_value, atomic_memory_order order) const {
     // Allow derived to base conversion, and adding cv-qualifiers.
     D* new_value = exchange_value;
-    return PlatformXchg<sizeof(D*)>()(new_value, dest, order);
+    return PlatformXchg<sizeof(D*)>()(dest, new_value, order);
   }
 };
 
@@ -847,30 +926,31 @@ struct Atomic::XchgImpl<
   T, T,
   typename EnableIf<PrimitiveConversions::Translate<T>::value>::type>
 {
-  T operator()(T exchange_value, T volatile* dest, atomic_memory_order order) const {
+  T operator()(T volatile* dest, T exchange_value, atomic_memory_order order) const {
     typedef PrimitiveConversions::Translate<T> Translator;
     typedef typename Translator::Decayed Decayed;
     STATIC_ASSERT(sizeof(T) == sizeof(Decayed));
     return Translator::recover(
-      xchg(Translator::decay(exchange_value),
-           reinterpret_cast<Decayed volatile*>(dest),
+      xchg(reinterpret_cast<Decayed volatile*>(dest),
+           Translator::decay(exchange_value),
            order));
   }
 };
 
 template<typename Type, typename Fn, typename T>
 inline T Atomic::xchg_using_helper(Fn fn,
-                                   T exchange_value,
-                                   T volatile* dest) {
+                                   T volatile* dest,
+                                   T exchange_value) {
   STATIC_ASSERT(sizeof(Type) == sizeof(T));
+  // Notice the swapped order of arguments. Change when/if stubs are rewritten.
   return PrimitiveConversions::cast<T>(
     fn(PrimitiveConversions::cast<Type>(exchange_value),
        reinterpret_cast<Type volatile*>(dest)));
 }
 
-template<typename T, typename D>
-inline D Atomic::xchg(T exchange_value, volatile D* dest, atomic_memory_order order) {
-  return XchgImpl<T, D>()(exchange_value, dest, order);
+template<typename D, typename T>
+inline D Atomic::xchg(volatile D* dest, T exchange_value, atomic_memory_order order) {
+  return XchgImpl<D, T>()(dest, exchange_value, order);
 }
 
 #endif // SHARE_RUNTIME_ATOMIC_HPP

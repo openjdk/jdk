@@ -540,6 +540,10 @@ void JfrJavaSupport::throw_class_format_error(const char* message, TRAPS) {
   create_and_throw(vmSymbols::java_lang_ClassFormatError(), message, THREAD);
 }
 
+void JfrJavaSupport::throw_runtime_exception(const char* message, TRAPS) {
+  create_and_throw(vmSymbols::java_lang_RuntimeException(), message, THREAD);
+}
+
 void JfrJavaSupport::abort(jstring errorMsg, Thread* t) {
   DEBUG_ONLY(check_java_thread_in_vm(t));
 

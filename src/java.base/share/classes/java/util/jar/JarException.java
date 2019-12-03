@@ -32,8 +32,7 @@ package java.util.jar;
  * @author  David Connelly
  * @since   1.2
  */
-public
-class JarException extends java.util.zip.ZipException {
+public class JarException extends java.util.zip.ZipException {
     @java.io.Serial
     private static final long serialVersionUID = 7159778400963954473L;
 

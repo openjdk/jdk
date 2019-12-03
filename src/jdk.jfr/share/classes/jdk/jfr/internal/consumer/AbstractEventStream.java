@@ -40,6 +40,7 @@ import jdk.jfr.consumer.RecordedEvent;
 import jdk.jfr.internal.LogLevel;
 import jdk.jfr.internal.LogTag;
 import jdk.jfr.internal.Logger;
+import jdk.jfr.internal.PlatformRecording;
 import jdk.jfr.internal.SecuritySupport;
 
 /*
@@ -47,22 +48,22 @@ import jdk.jfr.internal.SecuritySupport;
  * an event stream.
  */
 abstract class AbstractEventStream implements EventStream {
-    private final static AtomicLong counter = new AtomicLong(1);
+    private final static AtomicLong counter = new AtomicLong(0);
 
     private final Object terminated = new Object();
-    private final boolean active;
     private final Runnable flushOperation = () -> dispatcher().runFlushActions();
     private final AccessControlContext accessControllerContext;
     private final StreamConfiguration configuration = new StreamConfiguration();
+    private final PlatformRecording recording;
 
     private volatile Thread thread;
     private Dispatcher dispatcher;
 
     private volatile boolean closed;
 
-    AbstractEventStream(AccessControlContext acc, boolean active) throws IOException {
+    AbstractEventStream(AccessControlContext acc, PlatformRecording recording) throws IOException {
         this.accessControllerContext = Objects.requireNonNull(acc);
-        this.active = active;
+        this.recording = recording;
     }
 
     @Override
@@ -75,9 +76,10 @@ abstract class AbstractEventStream implements EventStream {
     abstract public void close();
 
     protected final Dispatcher dispatcher() {
-        if (configuration.hasChanged()) {
+        if (configuration.hasChanged()) { // quick check
             synchronized (configuration) {
                 dispatcher = new Dispatcher(configuration);
+                configuration.setChanged(false);
             }
         }
         return dispatcher;
@@ -229,7 +231,7 @@ abstract class AbstractEventStream implements EventStream {
             if (configuration.started) {
                 throw new IllegalStateException("Event stream can only be started once");
             }
-            if (active && configuration.startTime == null) {
+            if (recording != null && configuration.startTime == null) {
                 configuration.setStartNanos(startNanos);
             }
             configuration.setStarted(true);

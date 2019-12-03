@@ -38,8 +38,7 @@ package java.lang;
  * @see     java.lang.Object#wait(long, int)
  * @since   1.0
  */
-public
-class IllegalMonitorStateException extends RuntimeException {
+public class IllegalMonitorStateException extends RuntimeException {
     @java.io.Serial
     private static final long serialVersionUID = 3713306369498869069L;
 

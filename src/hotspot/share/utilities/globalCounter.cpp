@@ -24,7 +24,7 @@
 
 #include "precompiled.hpp"
 #include "utilities/globalCounter.hpp"
-#include "runtime/orderAccess.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/thread.hpp"
 #include "runtime/threadSMR.inline.hpp"
 #include "runtime/vmThread.hpp"
@@ -41,7 +41,7 @@ class GlobalCounter::CounterThreadCheck : public ThreadClosure {
     SpinYield yield;
     // Loops on this thread until it has exited the critical read section.
     while(true) {
-      uintx cnt = OrderAccess::load_acquire(thread->get_rcu_counter());
+      uintx cnt = Atomic::load_acquire(thread->get_rcu_counter());
       // This checks if the thread's counter is active. And if so is the counter
       // for a pre-existing reader (belongs to this grace period). A pre-existing
       // reader will have a lower counter than the global counter version for this
@@ -59,7 +59,7 @@ class GlobalCounter::CounterThreadCheck : public ThreadClosure {
 void GlobalCounter::write_synchronize() {
   assert((*Thread::current()->get_rcu_counter() & COUNTER_ACTIVE) == 0x0, "must be outside a critcal section");
   // Atomic::add must provide fence since we have storeload dependency.
-  uintx gbl_cnt = Atomic::add(COUNTER_INCREMENT, &_global_counter._counter);
+  uintx gbl_cnt = Atomic::add(&_global_counter._counter, COUNTER_INCREMENT);
 
   // Do all RCU threads.
   CounterThreadCheck ctc(gbl_cnt);

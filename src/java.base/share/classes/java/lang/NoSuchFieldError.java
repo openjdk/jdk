@@ -36,8 +36,7 @@ package java.lang;
  * @author  unascribed
  * @since   1.0
  */
-public
-class NoSuchFieldError extends IncompatibleClassChangeError {
+public class NoSuchFieldError extends IncompatibleClassChangeError {
     @java.io.Serial
     private static final long serialVersionUID = -3456430195886129035L;
 

@@ -36,9 +36,9 @@ import java.util.Set;
 
 import jdk.internal.misc.VM;
 import jdk.internal.vm.annotation.Stable;
-import sun.util.logging.PlatformLogger;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
+import sun.nio.cs.UTF_8;
+import sun.util.logging.PlatformLogger;
 
 /**
  * The Attributes class maps Manifest attribute names to associated string
@@ -337,7 +337,7 @@ public class Attributes implements Map<Object,Object>, Cloneable {
             buffer.append(vername);
             buffer.append(": ");
             buffer.append(version);
-            out.write(buffer.toString().getBytes(UTF_8));
+            out.write(buffer.toString().getBytes(UTF_8.INSTANCE));
             Manifest.println(out);
         }
 
@@ -399,7 +399,7 @@ public class Attributes implements Map<Object,Object>, Cloneable {
                     lastline = buf;
                     continue;
                 }
-                value = new String(buf, 0, buf.length, UTF_8);
+                value = new String(buf, 0, buf.length, UTF_8.INSTANCE);
                 lastline = null;
             } else {
                 while (lbuf[i++] != ':') {
@@ -412,13 +412,13 @@ public class Attributes implements Map<Object,Object>, Cloneable {
                     throw new IOException("invalid header field ("
                                 + Manifest.getErrorPosition(filename, lineNumber) + ")");
                 }
-                name = new String(lbuf, 0, i - 2, UTF_8);
+                name = new String(lbuf, 0, i - 2, UTF_8.INSTANCE);
                 if (is.peek() == ' ') {
                     lastline = new byte[len - i];
                     System.arraycopy(lbuf, i, lastline, 0, len - i);
                     continue;
                 }
-                value = new String(lbuf, i, len - i, UTF_8);
+                value = new String(lbuf, i, len - i, UTF_8.INSTANCE);
             }
             try {
                 if ((putValue(name, value) != null) && (!lineContinued)) {

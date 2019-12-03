@@ -28,6 +28,7 @@
 #include "gc/g1/g1CodeCacheRemSet.hpp"
 #include "gc/g1/g1FromCardCache.hpp"
 #include "gc/g1/sparsePRT.hpp"
+#include "runtime/atomic.hpp"
 #include "utilities/bitMap.hpp"
 
 // Remembered set for a heap region.  Represent a set of "cards" that
@@ -70,6 +71,8 @@ class OtherRegionsTable {
   G1CollectedHeap* _g1h;
   Mutex*           _m;
 
+  size_t volatile _num_occupied;
+
   // These are protected by "_m".
   CHeapBitMap _coarse_map;
   size_t      _n_coarse_entries;
@@ -106,7 +109,7 @@ class OtherRegionsTable {
   // Find, delete, and return a candidate PerRegionTable, if any exists,
   // adding the deleted region to the coarse bitmap.  Requires the caller
   // to hold _m, and the fine-grain table to be full.
-  PerRegionTable* delete_region_table();
+  PerRegionTable* delete_region_table(size_t& added_by_deleted);
 
   // link/add the given fine grain remembered set into the "all" list
   void link_to_all(PerRegionTable * prt);
@@ -114,10 +117,6 @@ class OtherRegionsTable {
   void unlink_from_all(PerRegionTable * prt);
 
   bool contains_reference_locked(OopOrNarrowOopStar from) const;
-
-  size_t occ_fine() const;
-  size_t occ_coarse() const;
-  size_t occ_sparse() const;
 
 public:
   // Create a new remembered set. The given mutex is used to ensure consistency.
@@ -190,19 +189,17 @@ public:
   // We need access in order to union things into the base table.
   BitMap* bm() { return &_bm; }
 
-  HeapRegion* hr() const { return OrderAccess::load_acquire(&_hr); }
+  HeapRegion* hr() const { return Atomic::load_acquire(&_hr); }
 
   jint occupied() const {
-    // Overkill, but if we ever need it...
-    // guarantee(_occupied == _bm.count_one_bits(), "Check");
     return _occupied;
   }
 
   void init(HeapRegion* hr, bool clear_links_to_all_list);
 
-  inline void add_reference(OopOrNarrowOopStar from);
+  inline bool add_reference(OopOrNarrowOopStar from);
 
-  inline void add_card(CardIdx_t from_card_index);
+  inline bool add_card(CardIdx_t from_card_index);
 
   // (Destructively) union the bitmap of the current table into the given
   // bitmap (which is assumed to be of the same size.)
@@ -229,7 +226,7 @@ public:
     while (true) {
       PerRegionTable* fl = _free_list;
       last->set_next(fl);
-      PerRegionTable* res = Atomic::cmpxchg(prt, &_free_list, fl);
+      PerRegionTable* res = Atomic::cmpxchg(&_free_list, fl, prt);
       if (res == fl) {
         return;
       }
@@ -324,10 +321,6 @@ public:
   inline void iterate_prts(Closure& cl);
 
   size_t occupied() {
-    MutexLocker x(&_m, Mutex::_no_safepoint_check_flag);
-    return occupied_locked();
-  }
-  size_t occupied_locked() {
     return _other_regions.occupied();
   }
 

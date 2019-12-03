@@ -29,6 +29,7 @@
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/signature.hpp"
 
@@ -448,11 +449,11 @@ OopMapCache::~OopMapCache() {
 }
 
 OopMapCacheEntry* OopMapCache::entry_at(int i) const {
-  return OrderAccess::load_acquire(&(_array[i % _size]));
+  return Atomic::load_acquire(&(_array[i % _size]));
 }
 
 bool OopMapCache::put_at(int i, OopMapCacheEntry* entry, OopMapCacheEntry* old) {
-  return Atomic::cmpxchg(entry, &_array[i % _size], old) == old;
+  return Atomic::cmpxchg(&_array[i % _size], old, entry) == old;
 }
 
 void OopMapCache::flush() {
@@ -564,7 +565,7 @@ void OopMapCache::enqueue_for_cleanup(OopMapCacheEntry* entry) {
   do {
     head = _old_entries;
     entry->_next = head;
-    success = Atomic::cmpxchg(entry, &_old_entries, head) == head;
+    success = Atomic::cmpxchg(&_old_entries, head, entry) == head;
   } while (!success);
 
   if (log_is_enabled(Debug, interpreter, oopmap)) {

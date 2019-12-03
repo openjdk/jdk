@@ -32,6 +32,7 @@
 #include "memory/metaspace/metaspaceCommon.hpp"
 #include "memory/metaspace/virtualSpaceList.hpp"
 #include "memory/metaspace/virtualSpaceNode.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/safepoint.hpp"
@@ -444,4 +445,3 @@ void VirtualSpaceList::verify(bool slow) {
 #endif // ASSERT
 
 } // namespace metaspace
-

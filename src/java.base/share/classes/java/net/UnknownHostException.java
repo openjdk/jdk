@@ -33,8 +33,7 @@ import java.io.IOException;
  * @author  Jonathan Payne
  * @since   1.0
  */
-public
-class UnknownHostException extends IOException {
+public class UnknownHostException extends IOException {
     @java.io.Serial
     private static final long serialVersionUID = -4639126076052875403L;
 

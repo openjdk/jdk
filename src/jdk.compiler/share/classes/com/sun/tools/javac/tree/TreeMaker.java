@@ -29,7 +29,6 @@ import java.util.Iterator;
 
 import com.sun.source.tree.CaseTree;
 import com.sun.source.tree.ModuleTree.ModuleKind;
-import com.sun.source.tree.Tree.Kind;
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Attribute.UnresolvedClass;
 import com.sun.tools.javac.code.Symbol.*;
@@ -461,6 +460,12 @@ public class TreeMaker implements JCTree.Factory {
 
     public JCInstanceOf TypeTest(JCExpression expr, JCTree clazz) {
         JCInstanceOf tree = new JCInstanceOf(expr, clazz);
+        tree.pos = pos;
+        return tree;
+    }
+
+    public JCBindingPattern BindingPattern(Name name, JCTree vartype) {
+        JCBindingPattern tree = new JCBindingPattern(name, null, vartype);
         tree.pos = pos;
         return tree;
     }
