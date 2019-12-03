@@ -632,6 +632,9 @@ class os: AllStatic {
   static void print_date_and_time(outputStream* st, char* buf, size_t buflen);
   static void print_instructions(outputStream* st, address pc, int unitsize);
 
+  // helper for output of seconds in days , hours and months
+  static void print_dhm(outputStream* st, const char* startStr, long sec);
+
   static void print_location(outputStream* st, intptr_t x, bool verbose = false);
   static size_t lasterror(char *buf, size_t len);
   static int get_last_error();

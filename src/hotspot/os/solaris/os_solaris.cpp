@@ -1584,6 +1584,8 @@ void os::print_os_info(outputStream* st) {
 
   os::Posix::print_uname_info(st);
 
+  os::Posix::print_uptime_info(st);
+
   os::Solaris::print_libversion_info(st);
 
   os::Posix::print_rlimit_info(st);

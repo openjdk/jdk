@@ -41,6 +41,7 @@ protected:
   static void print_uname_info(outputStream* st);
   static void print_libversion_info(outputStream* st);
   static void print_load_average(outputStream* st);
+  static void print_uptime_info(outputStream* st);
 
   // Minimum stack size a thread can be created with (allowing
   // the VM to completely create the thread and enter user code).

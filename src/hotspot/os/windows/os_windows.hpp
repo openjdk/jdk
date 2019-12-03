@@ -55,6 +55,7 @@ class win32 {
   static bool   _has_exit_bug;
 
   static void print_windows_version(outputStream* st);
+  static void print_uptime_info(outputStream* st);
 
  public:
   // Windows-specific interface:

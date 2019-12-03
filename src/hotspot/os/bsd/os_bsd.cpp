@@ -168,6 +168,22 @@ julong os::Bsd::available_memory() {
   return available;
 }
 
+// for more info see :
+// https://man.openbsd.org/sysctl.2
+void os::Bsd::print_uptime_info(outputStream* st) {
+  struct timeval boottime;
+  size_t len = sizeof(boottime);
+  int mib[2];
+  mib[0] = CTL_KERN;
+  mib[1] = KERN_BOOTTIME;
+
+  if (sysctl(mib, 2, &boottime, &len, NULL, 0) >= 0) {
+    time_t bootsec = boottime.tv_sec;
+    time_t currsec = time(NULL);
+    os::print_dhm(st, "OS uptime:", (long) difftime(currsec, bootsec));
+  }
+}
+
 julong os::physical_memory() {
   return Bsd::physical_memory();
 }
@@ -1568,6 +1584,8 @@ void os::print_os_info(outputStream* st) {
   st->print("OS:");
 
   os::Posix::print_uname_info(st);
+
+  os::Bsd::print_uptime_info(st);
 
   os::Posix::print_rlimit_info(st);
 
