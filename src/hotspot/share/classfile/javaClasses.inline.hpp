@@ -179,6 +179,14 @@ inline bool java_lang_invoke_CallSite::is_instance(oop obj) {
   return obj != NULL && is_subclass(obj->klass());
 }
 
+inline jboolean java_lang_invoke_ConstantCallSite::is_frozen(oop site) {
+  return site->bool_field(_is_frozen_offset);
+}
+
+inline bool java_lang_invoke_ConstantCallSite::is_instance(oop obj) {
+  return obj != NULL && is_subclass(obj->klass());
+}
+
 inline bool java_lang_invoke_MethodHandleNatives_CallSiteContext::is_instance(oop obj) {
   return obj != NULL && is_subclass(obj->klass());
 }

@@ -128,7 +128,9 @@ public class CallSiteTest {
         if (ccs != holder[0]) {
             throw new AssertionError("different call site instances");
         }
-        test(false); // should not throw
+        for (int i = 0; i < 20_000; i++) {
+            test(false); // should not throw
+        }
     }
 
     private static void testMutableCallSite() throws Throwable {

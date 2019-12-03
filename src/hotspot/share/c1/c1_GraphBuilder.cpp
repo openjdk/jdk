@@ -1707,7 +1707,7 @@ void GraphBuilder::access_field(Bytecodes::Code code) {
             // For CallSite objects add a dependency for invalidation of the optimization.
             if (field->is_call_site_target()) {
               ciCallSite* call_site = const_oop->as_call_site();
-              if (!call_site->is_constant_call_site()) {
+              if (!call_site->is_fully_initialized_constant_call_site()) {
                 ciMethodHandle* target = field_value.as_object()->as_method_handle();
                 dependency_recorder()->assert_call_site_target_value(call_site, target);
               }

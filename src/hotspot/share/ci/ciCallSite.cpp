@@ -29,8 +29,18 @@
 
 // ciCallSite
 
-bool ciCallSite::is_constant_call_site() {
-  return klass()->is_subclass_of(CURRENT_ENV->ConstantCallSite_klass());
+bool ciCallSite::is_fully_initialized_constant_call_site() {
+  if (klass()->is_subclass_of(CURRENT_ENV->ConstantCallSite_klass())) {
+    bool is_fully_initialized = _is_fully_initialized_cache;
+    if (!is_fully_initialized) { // changes monotonically: false => true
+      VM_ENTRY_MARK;
+      is_fully_initialized = (java_lang_invoke_ConstantCallSite::is_frozen(get_oop()) != JNI_FALSE);
+      _is_fully_initialized_cache = is_fully_initialized; // cache updated value
+    }
+    return is_fully_initialized;
+  } else {
+    return false;
+  }
 }
 
 // ------------------------------------------------------------------

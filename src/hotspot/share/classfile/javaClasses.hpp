@@ -66,6 +66,7 @@
   f(java_lang_invoke_LambdaForm) \
   f(java_lang_invoke_MethodType) \
   f(java_lang_invoke_CallSite) \
+  f(java_lang_invoke_ConstantCallSite) \
   f(java_lang_invoke_MethodHandleNatives_CallSiteContext) \
   f(java_security_AccessControlContext) \
   f(java_lang_reflect_AccessibleObject) \
@@ -1224,6 +1225,28 @@ public:
 
   // Accessors for code generation:
   static int target_offset_in_bytes()           { return _target_offset; }
+};
+
+// Interface to java.lang.invoke.ConstantCallSite objects
+
+class java_lang_invoke_ConstantCallSite: AllStatic {
+  friend class JavaClasses;
+
+private:
+  static int _is_frozen_offset;
+
+  static void compute_offsets();
+
+public:
+  static void serialize_offsets(SerializeClosure* f) NOT_CDS_RETURN;
+  // Accessors
+  static jboolean is_frozen(oop site);
+
+  // Testers
+  static bool is_subclass(Klass* klass) {
+    return klass->is_subclass_of(SystemDictionary::ConstantCallSite_klass());
+  }
+  static bool is_instance(oop obj);
 };
 
 // Interface to java.lang.invoke.MethodHandleNatives$CallSiteContext objects

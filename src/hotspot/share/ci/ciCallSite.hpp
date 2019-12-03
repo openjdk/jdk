@@ -31,13 +31,16 @@
 //
 // The class represents a java.lang.invoke.CallSite object.
 class ciCallSite : public ciInstance {
-public:
-  ciCallSite(instanceHandle h_i) : ciInstance(h_i) {}
+ private:
+  bool _is_fully_initialized_cache;
+
+ public:
+  ciCallSite(instanceHandle h_i) : ciInstance(h_i), _is_fully_initialized_cache(false) {}
 
   // What kind of ciObject is this?
   bool is_call_site() const { return true; }
 
-  bool is_constant_call_site();
+  bool is_fully_initialized_constant_call_site();
 
   // Return the target MethodHandle of this CallSite.
   ciMethodHandle* get_target() const;
