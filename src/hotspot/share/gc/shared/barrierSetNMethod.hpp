@@ -36,10 +36,8 @@ class BarrierSetNMethod: public CHeapObj<mtGC> {
   void deoptimize(nmethod* nm, address* return_addr_ptr);
   int disarmed_value() const;
 
-protected:
-  virtual bool nmethod_entry_barrier(nmethod* nm) = 0;
-
 public:
+  virtual bool nmethod_entry_barrier(nmethod* nm) = 0;
   virtual ByteSize thread_disarmed_offset() const = 0;
   virtual int* disarmed_value_address() const = 0;
 

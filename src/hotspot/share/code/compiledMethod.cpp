@@ -30,6 +30,7 @@
 #include "code/codeCache.hpp"
 #include "code/icBuffer.hpp"
 #include "gc/shared/barrierSet.hpp"
+#include "gc/shared/barrierSetNMethod.hpp"
 #include "gc/shared/gcBehaviours.hpp"
 #include "interpreter/bytecode.inline.hpp"
 #include "logging/log.hpp"
@@ -554,6 +555,18 @@ void CompiledMethod::cleanup_inline_caches(bool clean_all) {
     { CompiledICLocker ic_locker(this);
       if (cleanup_inline_caches_impl(false, clean_all)) {
         return;
+      }
+    }
+    BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
+    if (bs_nm != NULL) {
+      // We want to keep an invariant that nmethods found through iterations of a Thread's
+      // nmethods found in safepoints have gone through an entry barrier and are not armed.
+      // By calling this nmethod entry barrier from the sweeper, it plays along and acts
+      // like any other nmethod found on the stack of a thread (fewer surprises).
+      nmethod* nm = as_nmethod_or_null();
+      if (nm != NULL) {
+        bool alive = bs_nm->nmethod_entry_barrier(nm);
+        assert(alive, "should be alive");
       }
     }
     InlineCacheBuffer::refill_ic_stubs();
