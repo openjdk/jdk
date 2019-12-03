@@ -217,9 +217,9 @@ public class KeyStoreDelegator extends KeyStoreSpi {
             try {
                 @SuppressWarnings("deprecation")
                 KeyStoreSpi tmp = primaryKeyStore.newInstance();
+                tmp.engineLoad(bufferedStream, password);
                 keystore = tmp;
                 type = primaryType;
-                keystore.engineLoad(bufferedStream, password);
 
             } catch (Exception e) {
 
@@ -236,11 +236,11 @@ public class KeyStoreDelegator extends KeyStoreSpi {
                     }
 
                     @SuppressWarnings("deprecation")
-                    KeyStoreSpi tmp= secondaryKeyStore.newInstance();
+                    KeyStoreSpi tmp = secondaryKeyStore.newInstance();
+                    bufferedStream.reset();
+                    tmp.engineLoad(bufferedStream, password);
                     keystore = tmp;
                     type = secondaryType;
-                    bufferedStream.reset();
-                    keystore.engineLoad(bufferedStream, password);
 
                     if (debug != null) {
                         debug.println("WARNING: switching from " +
