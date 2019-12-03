@@ -30,22 +30,21 @@ The functions here and in egif_lib.c are partitioned carefully so that
 if you only require one of read and write capability, only one of these
 two modules will be linked.  Preserve this property!
 
+SPDX-License-Identifier: MIT
+
 *****************************************************************************/
 
 #include <stdlib.h>
 #include <limits.h>
 #include <stdint.h>
 #include <fcntl.h>
-/** Begin JDK modifications to support building on Windows **/
-#ifndef _WIN32
-#include <unistd.h>
-#endif
-/** End JDK modifications to support building on Windows **/
 #include <stdio.h>
 #include <string.h>
 
 #ifdef _WIN32
 #include <io.h>
+#else
+#include <unistd.h>
 #endif /* _WIN32 */
 
 #include "gif_lib.h"
@@ -55,8 +54,7 @@ two modules will be linked.  Preserve this property!
 #define UNSIGNED_LITTLE_ENDIAN(lo, hi) ((lo) | ((hi) << 8))
 
 /* avoid extra function call in case we use fread (TVT) */
-/** JDK modification "inline" is dropped to support c89 **/
-static /**inline**/ int InternalRead(GifFileType *gif, GifByteType *buf, int len) {
+static int InternalRead(GifFileType *gif, GifByteType *buf, int len) {
     //fprintf(stderr, "### Read: %d\n", len);
     return
     (((GifFilePrivateType*)gif->Private)->Read ?
@@ -969,7 +967,7 @@ DGifDecompressLine(GifFileType *GifFile, GifPixelType *Line, int LineLen)
                 while (StackPtr != 0 && i < LineLen)
                     Line[i++] = Stack[--StackPtr];
             }
-            if (LastCode != NO_SUCH_CODE && Private->RunningCode - 2 < LZ_MAX_CODE && Prefix[Private->RunningCode - 2] == NO_SUCH_CODE) {
+            if (LastCode != NO_SUCH_CODE && Private->RunningCode - 2 < (LZ_MAX_CODE+1) && Prefix[Private->RunningCode - 2] == NO_SUCH_CODE) {
                 Prefix[Private->RunningCode - 2] = LastCode;
 
                 if (CrntCode == Private->RunningCode - 2) {

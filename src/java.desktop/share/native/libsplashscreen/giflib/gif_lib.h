@@ -26,6 +26,8 @@
 
 gif_lib.h - service library for decoding and encoding GIF images
 
+SPDX-License-Identifier: MIT
+
 *****************************************************************************/
 
 #ifndef _GIF_LIB_H_
@@ -36,8 +38,8 @@ extern "C" {
 #endif /* __cplusplus */
 
 #define GIFLIB_MAJOR 5
-#define GIFLIB_MINOR 1
-#define GIFLIB_RELEASE 8
+#define GIFLIB_MINOR 2
+#define GIFLIB_RELEASE 1
 
 #define GIF_ERROR   0
 #define GIF_OK      1
@@ -245,15 +247,6 @@ int DGifGetCodeNext(GifFileType *GifFile, GifByteType **GifCodeBlock);
 int DGifGetLZCodes(GifFileType *GifFile, int *GifCode);
 const char *DGifGetGifVersion(GifFileType *GifFile);
 
-
-/******************************************************************************
- Color table quantization (deprecated)
-******************************************************************************/
-int GifQuantizeBuffer(unsigned int Width, unsigned int Height,
-                   int *ColorMapSize, GifByteType * RedInput,
-                   GifByteType * GreenInput, GifByteType * BlueInput,
-                   GifByteType * OutputBuffer,
-                   GifColorType * OutputColorMap);
 
 /******************************************************************************
  Error handling and reporting.
