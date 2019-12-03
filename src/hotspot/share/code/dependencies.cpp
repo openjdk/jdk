@@ -1207,7 +1207,7 @@ class ClassHierarchyWalker {
           ClassHierarchyWalker wf(_participants, _num_participants);
           Klass* w = wf.find_witness_subtype(k);
           if (w != NULL) {
-            Method* wm = InstanceKlass::cast(w)->find_instance_method(_name, _signature);
+            Method* wm = InstanceKlass::cast(w)->find_instance_method(_name, _signature, Klass::skip_private);
             if (!Dependencies::is_concrete_method(wm, w)) {
               // Found a concrete subtype 'w' which does not override abstract method 'm'.
               // Bail out because 'm' could be called with 'w' as receiver (leading to an

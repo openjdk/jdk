@@ -3162,7 +3162,7 @@ oop java_lang_reflect_RecordComponent::create(InstanceKlass* holder, RecordCompo
     char* sig = NEW_RESOURCE_ARRAY(char, sig_len);
     jio_snprintf(sig, sig_len, "%c%c%s", JVM_SIGNATURE_FUNC, JVM_SIGNATURE_ENDFUNC, type->as_C_string());
     TempNewSymbol full_sig = SymbolTable::new_symbol(sig);
-    accessor_method = holder->find_instance_method(name, full_sig);
+    accessor_method = holder->find_instance_method(name, full_sig, Klass::find_private);
   }
 
   if (accessor_method != NULL) {

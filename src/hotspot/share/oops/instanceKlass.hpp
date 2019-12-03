@@ -610,11 +610,11 @@ public:
 
   // find a local method, but skip static methods
   Method* find_instance_method(const Symbol* name, const Symbol* signature,
-                               PrivateLookupMode private_mode = find_private) const;
+                               PrivateLookupMode private_mode) const;
   static Method* find_instance_method(const Array<Method*>* methods,
                                       const Symbol* name,
                                       const Symbol* signature,
-                                      PrivateLookupMode private_mode = find_private);
+                                      PrivateLookupMode private_mode);
 
   // find a local method (returns NULL if not found)
   Method* find_local_method(const Symbol* name,
