@@ -27,13 +27,12 @@
 
 #include "memory/allocation.hpp"
 #include "runtime/atomic.hpp"
-#include "utilities/align.hpp"
 
 // Forward decl;
 class BitMapClosure;
 
 // Operations for bitmaps represented as arrays of unsigned integers.
-// Bit offsets are numbered from 0 to size-1.
+// Bits are numbered from 0 to size-1.
 
 // The "abstract" base BitMap class.
 //
@@ -50,8 +49,10 @@ class BitMap {
 
  public:
   typedef size_t idx_t;         // Type used for bit and word indices.
-  typedef uintptr_t bm_word_t;  // Element type of array that represents
-                                // the bitmap.
+  typedef uintptr_t bm_word_t;  // Element type of array that represents the
+                                // bitmap, with BitsPerWord bits per element.
+  // If this were to fail, there are lots of places that would need repair.
+  STATIC_ASSERT((sizeof(bm_word_t) * BitsPerByte) == BitsPerWord);
 
   // Hints for range sizes.
   typedef enum {
@@ -61,6 +62,35 @@ class BitMap {
  private:
   bm_word_t* _map;     // First word in bitmap
   idx_t      _size;    // Size of bitmap (in bits)
+
+  // The maximum allowable size of a bitmap, in words or bits.
+  // Limit max_size_in_bits so aligning up to a word boundary never overflows.
+  static idx_t max_size_in_words() { return raw_to_words_align_down(~idx_t(0)); }
+  static idx_t max_size_in_bits() { return max_size_in_words() * BitsPerWord; }
+
+  // Assumes relevant validity checking for bit has already been done.
+  static idx_t raw_to_words_align_up(idx_t bit) {
+    return raw_to_words_align_down(bit + (BitsPerWord - 1));
+  }
+
+  // Assumes relevant validity checking for bit has already been done.
+  static idx_t raw_to_words_align_down(idx_t bit) {
+    return bit >> LogBitsPerWord;
+  }
+
+  // Word-aligns bit and converts it to a word offset.
+  // precondition: bit <= size()
+  idx_t to_words_align_up(idx_t bit) const {
+    verify_limit(bit);
+    return raw_to_words_align_up(bit);
+  }
+
+  // Word-aligns bit and converts it to a word offset.
+  // precondition: bit <= size()
+  inline idx_t to_words_align_down(idx_t bit) const {
+    verify_limit(bit);
+    return raw_to_words_align_down(bit);
+  }
 
   // Helper for get_next_{zero,one}_bit variants.
   // - flip designates whether searching for 1s or 0s.  Must be one of
@@ -77,6 +107,8 @@ class BitMap {
   // operation was requested. Measured in words.
   static const size_t small_range_words = 32;
 
+  static bool is_small_range_of_words(idx_t beg_full_word, idx_t end_full_word);
+
  protected:
   // Return the position of bit within the word that contains it (e.g., if
   // bitmap words are 32 bits, return a number 0 <= n <= 31).
@@ -85,9 +117,6 @@ class BitMap {
   // Return a mask that will select the specified bit, when applied to the word
   // containing the bit.
   static bm_word_t bit_mask(idx_t bit) { return (bm_word_t)1 << bit_in_word(bit); }
-
-  // Return the index of the word containing the specified bit.
-  static idx_t word_index(idx_t bit)  { return bit >> LogBitsPerWord; }
 
   // Return the bit number of the first bit in the specified word.
   static idx_t bit_index(idx_t word)  { return word << LogBitsPerWord; }
@@ -98,8 +127,12 @@ class BitMap {
   bm_word_t  map(idx_t word) const { return _map[word]; }
 
   // Return a pointer to the word containing the specified bit.
-  bm_word_t* word_addr(idx_t bit)             { return map() + word_index(bit); }
-  const bm_word_t* word_addr(idx_t bit) const { return map() + word_index(bit); }
+  bm_word_t* word_addr(idx_t bit) {
+    return map() + to_words_align_down(bit);
+  }
+  const bm_word_t* word_addr(idx_t bit) const {
+    return map() + to_words_align_down(bit);
+  }
 
   // Set a word to a specified value or to all ones; clear a word.
   void set_word  (idx_t word, bm_word_t val) { _map[word] = val; }
@@ -124,14 +157,16 @@ class BitMap {
 
   static void clear_range_of_words(bm_word_t* map, idx_t beg, idx_t end);
 
-  static bool is_small_range_of_words(idx_t beg_full_word, idx_t end_full_word);
-
-  // The index of the first full word in a range.
-  idx_t word_index_round_up(idx_t bit) const;
-
   // Verification.
-  void verify_index(idx_t index) const NOT_DEBUG_RETURN;
-  void verify_range(idx_t beg_index, idx_t end_index) const NOT_DEBUG_RETURN;
+
+  // Verify size_in_bits does not exceed max_size_in_bits().
+  static void verify_size(idx_t size_in_bits) NOT_DEBUG_RETURN;
+  // Verify bit is less than size().
+  void verify_index(idx_t bit) const NOT_DEBUG_RETURN;
+  // Verify bit is not greater than size().
+  void verify_limit(idx_t bit) const NOT_DEBUG_RETURN;
+  // Verify [beg,end) is a valid range, e.g. beg <= end <= size().
+  void verify_range(idx_t beg, idx_t end) const NOT_DEBUG_RETURN;
 
   // Statistics.
   static const idx_t* _pop_count_table;
@@ -182,7 +217,9 @@ class BitMap {
   }
 
   // Protected constructor and destructor.
-  BitMap(bm_word_t* map, idx_t size_in_bits) : _map(map), _size(size_in_bits) {}
+  BitMap(bm_word_t* map, idx_t size_in_bits) : _map(map), _size(size_in_bits) {
+    verify_size(size_in_bits);
+  }
   ~BitMap() {}
 
  public:
@@ -191,16 +228,13 @@ class BitMap {
 
   // Accessing
   static idx_t calc_size_in_words(size_t size_in_bits) {
-    return word_index(size_in_bits + BitsPerWord - 1);
-  }
-
-  static idx_t calc_size_in_bytes(size_t size_in_bits) {
-    return calc_size_in_words(size_in_bits) * BytesPerWord;
+    verify_size(size_in_bits);
+    return raw_to_words_align_up(size_in_bits);
   }
 
   idx_t size() const          { return _size; }
   idx_t size_in_words() const { return calc_size_in_words(size()); }
-  idx_t size_in_bytes() const { return calc_size_in_bytes(size()); }
+  idx_t size_in_bytes() const { return size_in_words() * BytesPerWord; }
 
   bool at(idx_t index) const {
     verify_index(index);
@@ -209,18 +243,6 @@ class BitMap {
 
   // memory_order must be memory_order_relaxed or memory_order_acquire.
   bool par_at(idx_t index, atomic_memory_order memory_order = memory_order_acquire) const;
-
-  // Align bit index up or down to the next bitmap word boundary, or check
-  // alignment.
-  static idx_t word_align_up(idx_t bit) {
-    return align_up(bit, BitsPerWord);
-  }
-  static idx_t word_align_down(idx_t bit) {
-    return align_down(bit, BitsPerWord);
-  }
-  static bool is_word_aligned(idx_t bit) {
-    return word_align_up(bit) == bit;
-  }
 
   // Set or clear the specified bit.
   inline void set_bit(idx_t bit);
@@ -235,7 +257,7 @@ class BitMap {
   inline bool par_set_bit(idx_t bit, atomic_memory_order memory_order = memory_order_conservative);
   inline bool par_clear_bit(idx_t bit, atomic_memory_order memory_order = memory_order_conservative);
 
-  // Put the given value at the given offset. The parallel version
+  // Put the given value at the given index. The parallel version
   // will CAS the value into the bitmap and is quite a bit slower.
   // The parallel version also returns a value indicating if the
   // calling thread was the one that changed the value of the bit.
@@ -454,7 +476,7 @@ class BitMapClosure {
  public:
   // Callback when bit in map is set.  Should normally return "true";
   // return of false indicates that the bitmap iteration should terminate.
-  virtual bool do_bit(BitMap::idx_t offset) = 0;
+  virtual bool do_bit(BitMap::idx_t index) = 0;
 };
 
 #endif // SHARE_UTILITIES_BITMAP_HPP

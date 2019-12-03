@@ -138,8 +138,12 @@ public:
   inline idx_t     addr_to_bit(HeapWord* addr) const;
   inline HeapWord* bit_to_addr(idx_t bit) const;
 
+  // Return word-aligned up range_end, which must not be greater than size().
+  inline idx_t align_range_end(idx_t range_end) const;
+
   // Return the bit index of the first marked object that begins (or ends,
   // respectively) in the range [beg, end).  If no object is found, return end.
+  // end must be word-aligned.
   inline idx_t find_obj_beg(idx_t beg, idx_t end) const;
   inline idx_t find_obj_end(idx_t beg, idx_t end) const;
 
