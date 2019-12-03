@@ -124,7 +124,7 @@ class G1AdaptiveIHOPControl : public G1IHOPControl {
   size_t _last_unrestrained_young_size;
 
   // Get a new prediction bounded below by zero from the given sequence.
-  double get_new_prediction(TruncatedSeq const* seq) const;
+  double predict(TruncatedSeq const* seq) const;
 
   bool have_enough_data_for_prediction() const;
 

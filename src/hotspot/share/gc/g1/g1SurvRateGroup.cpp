@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,98 +25,92 @@
 #include "precompiled.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1Predictions.hpp"
+#include "gc/g1/g1SurvRateGroup.hpp"
 #include "gc/g1/heapRegion.hpp"
-#include "gc/g1/survRateGroup.hpp"
 #include "logging/log.hpp"
 #include "memory/allocation.hpp"
 
-SurvRateGroup::SurvRateGroup() :
+G1SurvRateGroup::G1SurvRateGroup() :
   _stats_arrays_length(0),
   _accum_surv_rate_pred(NULL),
   _last_pred(0.0),
-  _surv_rate_pred(NULL),
-  _all_regions_allocated(0),
-  _region_num(0),
-  _setup_seq_num(0)
-{
+  _surv_rate_predictors(NULL),
+  _num_added_regions(0) {
   reset();
   start_adding_regions();
 }
 
-void SurvRateGroup::reset() {
-  _all_regions_allocated = 0;
-  _setup_seq_num         = 0;
-  _last_pred             = 0.0;
+void G1SurvRateGroup::reset() {
+  _last_pred = 0.0;
   // the following will set up the arrays with length 1
-  _region_num            = 1;
+  _num_added_regions = 1;
 
   // The call to stop_adding_regions() will use "new" to refill
   // the _surv_rate_pred array, so we need to make sure to call
   // "delete".
   for (size_t i = 0; i < _stats_arrays_length; ++i) {
-    delete _surv_rate_pred[i];
+    delete _surv_rate_predictors[i];
   }
   _stats_arrays_length = 0;
 
   stop_adding_regions();
 
   // Seed initial _surv_rate_pred and _accum_surv_rate_pred values
-  guarantee( _stats_arrays_length == 1, "invariant" );
-  guarantee( _surv_rate_pred[0] != NULL, "invariant" );
+  guarantee(_stats_arrays_length == 1, "invariant" );
+  guarantee(_surv_rate_predictors[0] != NULL, "invariant" );
   const double initial_surv_rate = 0.4;
-  _surv_rate_pred[0]->add(initial_surv_rate);
+  _surv_rate_predictors[0]->add(initial_surv_rate);
   _last_pred = _accum_surv_rate_pred[0] = initial_surv_rate;
 
-  _region_num = 0;
+  _num_added_regions = 0;
 }
 
-void SurvRateGroup::start_adding_regions() {
-  _setup_seq_num   = _stats_arrays_length;
-  _region_num      = 0;
+void G1SurvRateGroup::start_adding_regions() {
+  _num_added_regions = 0;
 }
 
-void SurvRateGroup::stop_adding_regions() {
-  if (_region_num > _stats_arrays_length) {
-    _accum_surv_rate_pred = REALLOC_C_HEAP_ARRAY(double, _accum_surv_rate_pred, _region_num, mtGC);
-    _surv_rate_pred = REALLOC_C_HEAP_ARRAY(TruncatedSeq*, _surv_rate_pred, _region_num, mtGC);
+void G1SurvRateGroup::stop_adding_regions() {
+  if (_num_added_regions > _stats_arrays_length) {
+    _accum_surv_rate_pred = REALLOC_C_HEAP_ARRAY(double, _accum_surv_rate_pred, _num_added_regions, mtGC);
+    _surv_rate_predictors = REALLOC_C_HEAP_ARRAY(TruncatedSeq*, _surv_rate_predictors, _num_added_regions, mtGC);
 
-    for (size_t i = _stats_arrays_length; i < _region_num; ++i) {
-      _surv_rate_pred[i] = new TruncatedSeq(10);
+    for (size_t i = _stats_arrays_length; i < _num_added_regions; ++i) {
+      _surv_rate_predictors[i] = new TruncatedSeq(10);
     }
 
-    _stats_arrays_length = _region_num;
+    _stats_arrays_length = _num_added_regions;
   }
 }
 
-void SurvRateGroup::record_surviving_words(int age_in_group, size_t surv_words) {
-  guarantee( 0 <= age_in_group && (size_t) age_in_group < _region_num,
-             "pre-condition" );
+void G1SurvRateGroup::record_surviving_words(int age_in_group, size_t surv_words) {
+  guarantee(0 <= age_in_group && (size_t)age_in_group < _num_added_regions,
+            "age_in_group is %d not between 0 and " SIZE_FORMAT, age_in_group, _num_added_regions);
 
-  double surv_rate = (double) surv_words / (double) HeapRegion::GrainWords;
-  _surv_rate_pred[age_in_group]->add(surv_rate);
+  double surv_rate = (double)surv_words / HeapRegion::GrainWords;
+  _surv_rate_predictors[age_in_group]->add(surv_rate);
 }
 
-void SurvRateGroup::all_surviving_words_recorded(const G1Predictions& predictor, bool update_predictors) {
+void G1SurvRateGroup::all_surviving_words_recorded(const G1Predictions& predictor, bool update_predictors) {
   if (update_predictors) {
     fill_in_last_surv_rates();
   }
   finalize_predictions(predictor);
 }
 
-void SurvRateGroup::fill_in_last_surv_rates() {
-  if (_region_num > 0) { // conservative
-    double surv_rate = _surv_rate_pred[_region_num-1]->last();
-    for (size_t i = _region_num; i < _stats_arrays_length; ++i) {
-      _surv_rate_pred[i]->add(surv_rate);
+void G1SurvRateGroup::fill_in_last_surv_rates() {
+  if (_num_added_regions > 0) { // conservative
+    double surv_rate = _surv_rate_predictors[_num_added_regions-1]->last();
+    for (size_t i = _num_added_regions; i < _stats_arrays_length; ++i) {
+      _surv_rate_predictors[i]->add(surv_rate);
     }
   }
 }
 
-void SurvRateGroup::finalize_predictions(const G1Predictions& predictor) {
+void G1SurvRateGroup::finalize_predictions(const G1Predictions& predictor) {
   double accum = 0.0;
   double pred = 0.0;
   for (size_t i = 0; i < _stats_arrays_length; ++i) {
-    pred = predictor.get_new_unit_prediction(_surv_rate_pred[i]);
+    pred = predictor.predict_in_unit_interval(_surv_rate_predictors[i]);
     accum += pred;
     _accum_surv_rate_pred[i] = accum;
   }

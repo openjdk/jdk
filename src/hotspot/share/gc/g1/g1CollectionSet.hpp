@@ -174,6 +174,22 @@ class G1CollectionSet {
   CSetBuildType _inc_build_state;
   size_t _inc_part_start;
 
+  // Information about eden regions in the incremental collection set.
+  struct IncCollectionSetRegionStat {
+    // The predicted non-copy time that was added to the total incremental value
+    // for the collection set.
+    double _non_copy_time_ms;
+    // The remembered set length that was added to the total incremental value
+    // for the collection set.
+    size_t _rs_length;
+
+#ifdef ASSERT
+    // Resets members to "uninitialized" values.
+    void reset() { _rs_length = ~(size_t)0; _non_copy_time_ms = -1.0; }
+#endif
+  };
+
+  IncCollectionSetRegionStat* _inc_collection_set_stats;
   // The associated information that is maintained while the incremental
   // collection set is being built with *young* regions. Used to populate
   // the recorded info for the evacuation pause.
@@ -195,25 +211,25 @@ class G1CollectionSet {
   // the RSets grow. Instead of having to synchronize updates to that
   // field we accumulate them in this field and add it to
   // _inc_recorded_rs_length_diff at the start of a GC.
-  ssize_t _inc_recorded_rs_length_diff;
+  size_t _inc_recorded_rs_length_diff;
 
   // The predicted elapsed time it will take to collect the regions in
   // the CSet. This is updated by the thread that adds a new region to
   // the CSet. See the comment for _inc_recorded_rs_length about
   // MT-safety assumptions.
-  double _inc_predicted_elapsed_time_ms;
+  double _inc_predicted_non_copy_time_ms;
 
   // See the comment for _inc_recorded_rs_length_diff.
-  double _inc_predicted_elapsed_time_ms_diff;
+  double _inc_predicted_non_copy_time_ms_diff;
 
   void set_recorded_rs_length(size_t rs_length);
 
-  G1CollectorState* collector_state();
+  G1CollectorState* collector_state() const;
   G1GCPhaseTimes* phase_times();
 
   void verify_young_cset_indices() const NOT_DEBUG_RETURN;
 
-  double predict_region_elapsed_time_ms(HeapRegion* hr);
+  double predict_region_non_copy_time_ms(HeapRegion* hr) const;
 
   // Update the incremental collection set information when adding a region.
   void add_young_region_common(HeapRegion* hr);

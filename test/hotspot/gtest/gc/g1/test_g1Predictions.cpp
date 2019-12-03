@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,17 +35,17 @@ TEST_VM(G1Predictions, basic_predictions) {
   G1Predictions predictor(0.0);
   TruncatedSeq s;
 
-  double p0 = predictor.get_new_prediction(&s);
+  double p0 = predictor.predict(&s);
   ASSERT_LT(p0, epsilon) << "Initial prediction of empty sequence must be 0.0";
 
   s.add(5.0);
-  double p1 = predictor.get_new_prediction(&s);
+  double p1 = predictor.predict(&s);
   ASSERT_NEAR(p1, 5.0, epsilon);
 
   for (int i = 0; i < 40; i++) {
     s.add(5.0);
   }
-  double p2 = predictor.get_new_prediction(&s);
+  double p2 = predictor.predict(&s);
   ASSERT_NEAR(p2, 5.0, epsilon);
 }
 
@@ -56,20 +56,20 @@ TEST_VM(G1Predictions, average_not_stdev_predictions) {
   TruncatedSeq s;
 
   s.add(1.0);
-  double p1 = predictor.get_new_prediction(&s);
+  double p1 = predictor.predict(&s);
   ASSERT_GT(p1, s.davg()) << "First prediction must be greater than average";
 
   s.add(1.0);
-  double p2 = predictor.get_new_prediction(&s);
+  double p2 = predictor.predict(&s);
   ASSERT_GT(p1, p2) << "First prediction must be greater than second";
 
   s.add(1.0);
-  double p3 = predictor.get_new_prediction(&s);
+  double p3 = predictor.predict(&s);
   ASSERT_GT(p2, p3) << "Second prediction must be greater than third";
 
   s.add(1.0);
   s.add(1.0); // Five elements are now in the sequence.
-  double p4 = predictor.get_new_prediction(&s);
+  double p4 = predictor.predict(&s);
   ASSERT_LT(p4, p3) << "Fourth prediction must be smaller than third";
   ASSERT_NEAR(p4, 1.0, epsilon);
 }
@@ -82,20 +82,20 @@ TEST_VM(G1Predictions, average_stdev_predictions) {
   TruncatedSeq s;
 
   s.add(0.5);
-  double p1 = predictor.get_new_prediction(&s);
+  double p1 = predictor.predict(&s);
   ASSERT_GT(p1, s.davg()) << "First prediction must be greater than average";
 
   s.add(0.2);
-  double p2 = predictor.get_new_prediction(&s);
+  double p2 = predictor.predict(&s);
   ASSERT_GT(p1, p2) << "First prediction must be greater than second";
 
   s.add(0.5);
-  double p3 = predictor.get_new_prediction(&s);
+  double p3 = predictor.predict(&s);
   ASSERT_GT(p2, p3) << "Second prediction must be greater than third";
 
   s.add(0.2);
   s.add(2.0);
-  double p4 = predictor.get_new_prediction(&s);
+  double p4 = predictor.predict(&s);
   ASSERT_GT(p4, p3) << "Fourth prediction must be greater than third";
 }
 
@@ -104,24 +104,24 @@ TEST_VM(G1Predictions, unit_predictions) {
   G1Predictions predictor(0.5);
   TruncatedSeq s;
 
-  double p0 = predictor.get_new_unit_prediction(&s);
+  double p0 = predictor.predict_in_unit_interval(&s);
   ASSERT_LT(p0, epsilon) << "Initial prediction of empty sequence must be 0.0";
 
   s.add(100.0);
-  double p1 = predictor.get_new_unit_prediction(&s);
+  double p1 = predictor.predict_in_unit_interval(&s);
   ASSERT_NEAR(p1, 1.0, epsilon);
 
   // Feed the sequence additional positive values to test the high bound.
   for (int i = 0; i < 3; i++) {
     s.add(2.0);
   }
-  ASSERT_NEAR(predictor.get_new_unit_prediction(&s), 1.0, epsilon);
+  ASSERT_NEAR(predictor.predict_in_unit_interval(&s), 1.0, epsilon);
 
   // Feed the sequence additional large negative value to test the low bound.
   for (int i = 0; i < 4; i++) {
     s.add(-200.0);
   }
-  ASSERT_NEAR(predictor.get_new_unit_prediction(&s), 0.0, epsilon);
+  ASSERT_NEAR(predictor.predict_in_unit_interval(&s), 0.0, epsilon);
 }
 
 // Some tests to verify bounding between [0 .. +inf]
@@ -129,7 +129,7 @@ TEST_VM(G1Predictions, lower_bound_zero_predictions) {
   G1Predictions predictor(0.5);
   TruncatedSeq s;
 
-  double p0 = predictor.get_new_lower_zero_bound_prediction(&s);
+  double p0 = predictor.predict_zero_bounded(&s);
   ASSERT_LT(p0, epsilon) << "Initial prediction of empty sequence must be 0.0";
 
   s.add(100.0);
@@ -138,11 +138,11 @@ TEST_VM(G1Predictions, lower_bound_zero_predictions) {
   for (int i = 0; i < 3; i++) {
     s.add(2.0);
   }
-  ASSERT_GT(predictor.get_new_lower_zero_bound_prediction(&s), 1.0);
+  ASSERT_GT(predictor.predict_zero_bounded(&s), 1.0);
 
   // Feed the sequence additional large negative value to test the low bound.
   for (int i = 0; i < 4; i++) {
     s.add(-200.0);
   }
-  ASSERT_NEAR(predictor.get_new_lower_zero_bound_prediction(&s), 0.0, epsilon);
+  ASSERT_NEAR(predictor.predict_zero_bounded(&s), 0.0, epsilon);
 }

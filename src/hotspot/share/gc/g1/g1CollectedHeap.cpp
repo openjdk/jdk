@@ -4266,7 +4266,7 @@ private:
     HeapRegion* r = g1h->region_at(region_idx);
     assert(!g1h->is_on_master_free_list(r), "sanity");
 
-    Atomic::add(&_rs_length, r->rem_set()->occupied_locked());
+    Atomic::add(&_rs_length, r->rem_set()->occupied());
 
     if (!is_young) {
       g1h->hot_card_cache()->reset_card_counts(r);

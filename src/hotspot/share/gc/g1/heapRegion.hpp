@@ -27,9 +27,9 @@
 
 #include "gc/g1/g1BlockOffsetTable.hpp"
 #include "gc/g1/g1HeapRegionTraceType.hpp"
+#include "gc/g1/g1SurvRateGroup.hpp"
 #include "gc/g1/heapRegionTracer.hpp"
 #include "gc/g1/heapRegionType.hpp"
-#include "gc/g1/survRateGroup.hpp"
 #include "gc/shared/ageTable.hpp"
 #include "gc/shared/spaceDecorator.hpp"
 #include "gc/shared/verifyOption.hpp"
@@ -38,6 +38,7 @@
 
 class G1CollectedHeap;
 class G1CMBitMap;
+class G1Predictions;
 class HeapRegionRemSet;
 class HeapRegion;
 class HeapRegionSetBase;
@@ -245,21 +246,13 @@ private:
 
   // Data for young region survivor prediction.
   uint  _young_index_in_cset;
-  SurvRateGroup* _surv_rate_group;
+  G1SurvRateGroup* _surv_rate_group;
   int  _age_index;
 
   // Cached attributes used in the collection set policy information
 
   // The calculated GC efficiency of the region.
   double _gc_efficiency;
-
-  // The remembered set length that was added to the total value
-  // for the collection set.
-  size_t _recorded_rs_length;
-
-  // The predicted elapsed time that was added to total value
-  // for the collection set.
-  double _predicted_elapsed_time_ms;
 
   uint _node_index;
 
@@ -544,50 +537,17 @@ public:
     _young_index_in_cset = index;
   }
 
-  int age_in_surv_rate_group() {
-    assert(_surv_rate_group != NULL, "pre-condition");
-    assert(_age_index > -1, "pre-condition");
-    return _surv_rate_group->age_in_group(_age_index);
-  }
+  int age_in_surv_rate_group() const;
+  bool has_valid_age_in_surv_rate() const;
 
-  void record_surv_words_in_group(size_t words_survived) {
-    assert(_surv_rate_group != NULL, "pre-condition");
-    assert(_age_index > -1, "pre-condition");
-    int age_in_group = age_in_surv_rate_group();
-    _surv_rate_group->record_surviving_words(age_in_group, words_survived);
-  }
+  bool has_surv_rate_group() const;
 
-  int age_in_surv_rate_group_cond() {
-    if (_surv_rate_group != NULL)
-      return age_in_surv_rate_group();
-    else
-      return -1;
-  }
+  double surv_rate_prediction(G1Predictions const& predictor) const;
 
-  SurvRateGroup* surv_rate_group() {
-    return _surv_rate_group;
-  }
+  void install_surv_rate_group(G1SurvRateGroup* surv_rate_group);
+  void uninstall_surv_rate_group();
 
-  void install_surv_rate_group(SurvRateGroup* surv_rate_group) {
-    assert(surv_rate_group != NULL, "pre-condition");
-    assert(_surv_rate_group == NULL, "pre-condition");
-    assert(is_young(), "pre-condition");
-
-    _surv_rate_group = surv_rate_group;
-    _age_index = surv_rate_group->next_age_index();
-  }
-
-  void uninstall_surv_rate_group() {
-    if (_surv_rate_group != NULL) {
-      assert(_age_index > -1, "pre-condition");
-      assert(is_young(), "pre-condition");
-
-      _surv_rate_group = NULL;
-      _age_index = -1;
-    } else {
-      assert(_age_index == -1, "pre-condition");
-    }
-  }
+  void record_surv_words_in_group(size_t words_survived);
 
   // Determine if an object has been allocated since the last
   // mark performed by the collector. This returns true iff the object
@@ -609,17 +569,6 @@ public:
   // only happen when invoked concurrently with the mutator).
   template <bool is_gc_active, class Closure>
   inline HeapWord* oops_on_memregion_seq_iterate_careful(MemRegion mr, Closure* cl);
-
-  size_t recorded_rs_length() const        { return _recorded_rs_length; }
-  double predicted_elapsed_time_ms() const { return _predicted_elapsed_time_ms; }
-
-  void set_recorded_rs_length(size_t rs_length) {
-    _recorded_rs_length = rs_length;
-  }
-
-  void set_predicted_elapsed_time_ms(double ms) {
-    _predicted_elapsed_time_ms = ms;
-  }
 
   // Routines for managing a list of code roots (attached to the
   // this region's RSet) that point into this heap region.

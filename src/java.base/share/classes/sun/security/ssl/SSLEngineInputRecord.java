@@ -381,7 +381,7 @@ final class SSLEngineInputRecord extends InputRecord implements SSLRecord {
                             "Requested to negotiate unsupported SSLv2!");
                 }
 
-                // hack code, the exception is caught in SSLEngineImpl
+                // Note that the exception is caught in SSLEngineImpl
                 // so that SSLv2 error message can be delivered properly.
                 throw new UnsupportedOperationException(        // SSLv2Hello
                         "Unsupported SSL v2.0 ClientHello");

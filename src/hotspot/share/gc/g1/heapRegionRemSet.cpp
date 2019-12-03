@@ -28,7 +28,7 @@
 #include "gc/g1/g1ConcurrentRefine.hpp"
 #include "gc/g1/heapRegionManager.inline.hpp"
 #include "gc/g1/heapRegionRemSet.inline.hpp"
-#include "gc/shared/space.inline.hpp"
+#include "gc/g1/sparsePRT.inline.hpp"
 #include "memory/allocation.hpp"
 #include "memory/padded.inline.hpp"
 #include "oops/oop.inline.hpp"
@@ -68,6 +68,7 @@ size_t OtherRegionsTable::_fine_eviction_sample_size = 0;
 OtherRegionsTable::OtherRegionsTable(Mutex* m) :
   _g1h(G1CollectedHeap::heap()),
   _m(m),
+  _num_occupied(0),
   _coarse_map(G1CollectedHeap::heap()->max_regions(), mtGC),
   _n_coarse_entries(0),
   _fine_grain_regions(NULL),
@@ -183,6 +184,7 @@ void OtherRegionsTable::add_reference(OopOrNarrowOopStar from, uint tid) {
     return;
   }
 
+  size_t num_added_by_coarsening = 0;
   // Otherwise find a per-region table to add it to.
   size_t ind = from_hrm_ind & _mod_max_fine_entries_mask;
   PerRegionTable* prt = find_region_table(ind, from_hr);
@@ -194,13 +196,17 @@ void OtherRegionsTable::add_reference(OopOrNarrowOopStar from, uint tid) {
 
       CardIdx_t card_index = card_within_region(from, from_hr);
 
-      if (_sparse_table.add_card(from_hrm_ind, card_index)) {
+      SparsePRT::AddCardResult result = _sparse_table.add_card(from_hrm_ind, card_index);
+      if (result != SparsePRT::overflow) {
+        if (result == SparsePRT::added) {
+          Atomic::inc(&_num_occupied, memory_order_relaxed);
+        }
         assert(contains_reference_locked(from), "We just added " PTR_FORMAT " to the Sparse table", p2i(from));
         return;
       }
 
       if (_n_fine_entries == _max_fine_entries) {
-        prt = delete_region_table();
+        prt = delete_region_table(num_added_by_coarsening);
         // There is no need to clear the links to the 'all' list here:
         // prt will be reused immediately, i.e. remain in the 'all' list.
         prt->init(from_hr, false /* clear_links_to_all_list */);
@@ -222,7 +228,8 @@ void OtherRegionsTable::add_reference(OopOrNarrowOopStar from, uint tid) {
       Atomic::release_store(&_fine_grain_regions[ind], prt);
       _n_fine_entries++;
 
-      // Transfer from sparse to fine-grain.
+      // Transfer from sparse to fine-grain. The cards from the sparse table
+      // were already added to the total in _num_occupied.
       SparsePRTEntry *sprt_entry = _sparse_table.get_entry(from_hrm_ind);
       assert(sprt_entry != NULL, "There should have been an entry");
       for (int i = 0; i < sprt_entry->num_valid_cards(); i++) {
@@ -240,7 +247,11 @@ void OtherRegionsTable::add_reference(OopOrNarrowOopStar from, uint tid) {
   // OtherRegionsTable for why this is OK.
   assert(prt != NULL, "Inv");
 
-  prt->add_reference(from);
+  bool added = prt->add_reference(from);
+  if (prt->add_reference(from)) {
+    num_added_by_coarsening++;
+  }
+  Atomic::add(&_num_occupied, num_added_by_coarsening, memory_order_relaxed);
   assert(contains_reference(from), "We just added " PTR_FORMAT " to the PRT (%d)", p2i(from), prt->contains_reference(from));
 }
 
@@ -257,7 +268,7 @@ OtherRegionsTable::find_region_table(size_t ind, HeapRegion* hr) const {
 
 jint OtherRegionsTable::_n_coarsenings = 0;
 
-PerRegionTable* OtherRegionsTable::delete_region_table() {
+PerRegionTable* OtherRegionsTable::delete_region_table(size_t& added_by_deleted) {
   assert(_m->owned_by_self(), "Precondition");
   assert(_n_fine_entries == _max_fine_entries, "Precondition");
   PerRegionTable* max = NULL;
@@ -307,6 +318,7 @@ PerRegionTable* OtherRegionsTable::delete_region_table() {
     _n_coarse_entries++;
   }
 
+  added_by_deleted = HeapRegion::CardsPerRegion - max_occ;
   // Unsplice.
   *max_prev = max->collision_list_next();
   Atomic::inc(&_n_coarsenings);
@@ -315,48 +327,15 @@ PerRegionTable* OtherRegionsTable::delete_region_table() {
 }
 
 bool OtherRegionsTable::occupancy_less_or_equal_than(size_t limit) const {
-  if (limit <= (size_t)G1RSetSparseRegionEntries) {
-    return occ_coarse() == 0 && _first_all_fine_prts == NULL && occ_sparse() <= limit;
-  } else {
-    // Current uses of this method may only use values less than G1RSetSparseRegionEntries
-    // for the limit. The solution, comparing against occupied() would be too slow
-    // at this time.
-    Unimplemented();
-    return false;
-  }
+  return occupied() <= limit;
 }
 
 bool OtherRegionsTable::is_empty() const {
-  return occ_sparse() == 0 && occ_coarse() == 0 && _first_all_fine_prts == NULL;
+  return occupied() == 0;
 }
 
 size_t OtherRegionsTable::occupied() const {
-  size_t sum = occ_fine();
-  sum += occ_sparse();
-  sum += occ_coarse();
-  return sum;
-}
-
-size_t OtherRegionsTable::occ_fine() const {
-  size_t sum = 0;
-
-  size_t num = 0;
-  PerRegionTable * cur = _first_all_fine_prts;
-  while (cur != NULL) {
-    sum += cur->occupied();
-    cur = cur->next();
-    num++;
-  }
-  guarantee(num == _n_fine_entries, "just checking");
-  return sum;
-}
-
-size_t OtherRegionsTable::occ_coarse() const {
-  return (_n_coarse_entries * HeapRegion::CardsPerRegion);
-}
-
-size_t OtherRegionsTable::occ_sparse() const {
-  return _sparse_table.occupied();
+  return _num_occupied;
 }
 
 size_t OtherRegionsTable::mem_size() const {
@@ -399,6 +378,8 @@ void OtherRegionsTable::clear() {
   }
   _n_fine_entries = 0;
   _n_coarse_entries = 0;
+
+  _num_occupied = 0;
 }
 
 bool OtherRegionsTable::contains_reference(OopOrNarrowOopStar from) const {
@@ -465,7 +446,7 @@ void HeapRegionRemSet::clear_locked(bool only_cardset) {
   clear_fcc();
   _other_regions.clear();
   set_state_empty();
-  assert(occupied_locked() == 0, "Should be clear.");
+  assert(occupied() == 0, "Should be clear.");
 }
 
 // Code roots support
