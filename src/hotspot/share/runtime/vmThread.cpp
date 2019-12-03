@@ -413,9 +413,10 @@ void VMThread::evaluate_operation(VM_Operation* op) {
 static VM_None    safepointALot_op("SafepointALot");
 static VM_Cleanup cleanup_op;
 
-class HandshakeALotTC : public ThreadClosure {
+class HandshakeALotClosure : public HandshakeClosure {
  public:
-  virtual void do_thread(Thread* thread) {
+  HandshakeALotClosure() : HandshakeClosure("HandshakeALot") {}
+  void do_thread(Thread* thread) {
 #ifdef ASSERT
     assert(thread->is_Java_thread(), "must be");
     JavaThread* jt = (JavaThread*)thread;
@@ -432,8 +433,8 @@ void VMThread::check_for_forced_cleanup() {
 VM_Operation* VMThread::no_op_safepoint() {
   // Check for handshakes first since we may need to return a VMop.
   if (HandshakeALot) {
-    HandshakeALotTC haltc;
-    Handshake::execute(&haltc);
+    HandshakeALotClosure hal_cl;
+    Handshake::execute(&hal_cl);
   }
   // Check for a cleanup before SafepointALot to keep stats correct.
   long interval_ms = SafepointTracing::time_since_last_safepoint_ms();

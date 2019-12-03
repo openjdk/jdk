@@ -2286,13 +2286,6 @@ class Threads: AllStatic {
   struct Test;                  // For private gtest access.
 };
 
-
-// Thread iterator
-class ThreadClosure: public StackObj {
- public:
-  virtual void do_thread(Thread* thread) = 0;
-};
-
 class SignalHandlerMark: public StackObj {
  private:
   Thread* _thread;

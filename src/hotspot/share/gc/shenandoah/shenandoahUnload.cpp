@@ -158,8 +158,9 @@ void ShenandoahUnload::purge() {
   CodeCache::purge_exception_caches();
 }
 
-class ShenandoahUnloadRendezvousClosure : public ThreadClosure {
+class ShenandoahUnloadRendezvousClosure : public HandshakeClosure {
 public:
+  ShenandoahUnloadRendezvousClosure() : HandshakeClosure("ShenandoahUnloadRendezvous") {}
   void do_thread(Thread* thread) {}
 };
 

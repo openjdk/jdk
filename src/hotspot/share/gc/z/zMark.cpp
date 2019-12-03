@@ -413,13 +413,14 @@ void ZMark::idle() const {
   os::naked_short_sleep(1);
 }
 
-class ZMarkFlushAndFreeStacksClosure : public ThreadClosure {
+class ZMarkFlushAndFreeStacksClosure : public HandshakeClosure {
 private:
   ZMark* const _mark;
   bool         _flushed;
 
 public:
   ZMarkFlushAndFreeStacksClosure(ZMark* mark) :
+      HandshakeClosure("ZMarkFlushAndFreeStacks"),
       _mark(mark),
       _flushed(false) {}
 

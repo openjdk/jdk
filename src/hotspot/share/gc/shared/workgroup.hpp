@@ -50,6 +50,7 @@
 
 class AbstractGangWorker;
 class Semaphore;
+class ThreadClosure;
 class WorkGang;
 
 // An abstract task to be worked on by a gang.

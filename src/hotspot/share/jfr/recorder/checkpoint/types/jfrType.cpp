@@ -40,6 +40,7 @@
 #include "jfr/support/jfrThreadLocal.hpp"
 #include "jfr/writers/jfrJavaEventWriter.hpp"
 #include "jfr/utilities/jfrThreadIterator.hpp"
+#include "memory/iterator.hpp"
 #include "memory/metaspaceGCThresholdUpdater.hpp"
 #include "memory/referenceType.hpp"
 #include "memory/universe.hpp"

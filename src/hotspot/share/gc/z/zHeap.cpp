@@ -326,9 +326,12 @@ void ZHeap::set_soft_reference_policy(bool clear) {
   _reference_processor.set_soft_reference_policy(clear);
 }
 
-class ZRendezvousClosure : public ThreadClosure {
+class ZRendezvousClosure : public HandshakeClosure {
 public:
-  virtual void do_thread(Thread* thread) {}
+  ZRendezvousClosure() :
+      HandshakeClosure("ZRendezvous") {}
+
+  void do_thread(Thread* thread) {}
 };
 
 void ZHeap::process_non_strong_references() {

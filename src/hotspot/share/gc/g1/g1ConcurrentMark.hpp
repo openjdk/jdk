@@ -45,6 +45,7 @@ class G1ConcurrentMark;
 class G1OldTracer;
 class G1RegionToSpaceMapper;
 class G1SurvivorRegions;
+class ThreadClosure;
 
 PRAGMA_DIAG_PUSH
 // warning C4522: multiple assignment operators specified

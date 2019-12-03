@@ -52,6 +52,7 @@
 #include "gc/shared/weakProcessor.hpp"
 #include "gc/shared/workerPolicy.hpp"
 #include "gc/shared/workgroup.hpp"
+#include "memory/iterator.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "logging/log.hpp"

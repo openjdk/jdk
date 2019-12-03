@@ -805,10 +805,10 @@ JRT_LEAF(BasicType, Deoptimization::unpack_frames(JavaThread* thread, int exec_m
   return bt;
 JRT_END
 
-class DeoptimizeMarkedTC : public ThreadClosure {
+class DeoptimizeMarkedClosure : public HandshakeClosure {
  public:
-  virtual void do_thread(Thread* thread) {
-    assert(thread->is_Java_thread(), "must be");
+  DeoptimizeMarkedClosure() : HandshakeClosure("Deoptimize") {}
+  void do_thread(Thread* thread) {
     JavaThread* jt = (JavaThread*)thread;
     jt->deoptimize_marked_methods();
   }
@@ -819,7 +819,7 @@ void Deoptimization::deoptimize_all_marked() {
   DeoptimizationMarker dm;
 
   if (SafepointSynchronize::is_at_safepoint()) {
-    DeoptimizeMarkedTC deopt;
+    DeoptimizeMarkedClosure deopt;
     // Make the dependent methods not entrant
     CodeCache::make_marked_nmethods_not_entrant();
     Threads::java_threads_do(&deopt);
@@ -829,7 +829,7 @@ void Deoptimization::deoptimize_all_marked() {
       MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
       CodeCache::make_marked_nmethods_not_entrant();
     }
-    DeoptimizeMarkedTC deopt;
+    DeoptimizeMarkedClosure deopt;
     Handshake::execute(&deopt);
   }
 }

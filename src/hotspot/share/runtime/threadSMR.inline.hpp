@@ -26,6 +26,7 @@
 #define SHARE_RUNTIME_THREADSMR_INLINE_HPP
 
 #include "runtime/atomic.hpp"
+#include "memory/iterator.hpp"
 #include "runtime/prefetch.inline.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/threadSMR.hpp"

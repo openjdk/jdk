@@ -34,6 +34,7 @@
 #include "gc/g1/heapRegionRemSet.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "gc/shared/workgroup.hpp"
+#include "memory/iterator.hpp"
 #include "runtime/flags/flagSetting.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/orderAccess.hpp"

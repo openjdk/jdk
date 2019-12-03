@@ -45,10 +45,10 @@ public:
 
 class HandshakeThreadsOperation: public HandshakeOperation {
   static Semaphore _done;
-  ThreadClosure* _thread_cl;
+  HandshakeClosure* _handshake_cl;
   bool _executed;
 public:
-  HandshakeThreadsOperation(ThreadClosure* cl) : _thread_cl(cl), _executed(false) {}
+  HandshakeThreadsOperation(HandshakeClosure* cl) : _handshake_cl(cl), _executed(false) {}
   void do_handshake(JavaThread* thread);
   bool thread_has_completed() { return _done.trywait(); }
   bool executed() const { return _executed; }
@@ -206,15 +206,15 @@ class VM_HandshakeAllThreads: public VM_Handshake {
 };
 
 class VM_HandshakeFallbackOperation : public VM_Operation {
-  ThreadClosure* _thread_cl;
+  HandshakeClosure* _handshake_cl;
   Thread* _target_thread;
   bool _all_threads;
   bool _executed;
 public:
-  VM_HandshakeFallbackOperation(ThreadClosure* cl) :
-      _thread_cl(cl), _target_thread(NULL), _all_threads(true), _executed(false) {}
-  VM_HandshakeFallbackOperation(ThreadClosure* cl, Thread* target) :
-      _thread_cl(cl), _target_thread(target), _all_threads(false), _executed(false) {}
+  VM_HandshakeFallbackOperation(HandshakeClosure* cl) :
+      _handshake_cl(cl), _target_thread(NULL), _all_threads(true), _executed(false) {}
+  VM_HandshakeFallbackOperation(HandshakeClosure* cl, Thread* target) :
+      _handshake_cl(cl), _target_thread(target), _all_threads(false), _executed(false) {}
 
   void doit() {
     log_trace(handshake)("VMThread executing VM_HandshakeFallbackOperation");
@@ -223,7 +223,7 @@ public:
         if (t == _target_thread) {
           _executed = true;
         }
-        _thread_cl->do_thread(t);
+        _handshake_cl->do_thread(t);
       }
     }
   }
@@ -240,7 +240,7 @@ void HandshakeThreadsOperation::do_handshake(JavaThread* thread) {
 
   // Only actually execute the operation for non terminated threads.
   if (!thread->is_terminated()) {
-    _thread_cl->do_thread(thread);
+    _handshake_cl->do_thread(thread);
     _executed = true;
   }
 
@@ -248,7 +248,7 @@ void HandshakeThreadsOperation::do_handshake(JavaThread* thread) {
   _done.signal();
 }
 
-void Handshake::execute(ThreadClosure* thread_cl) {
+void Handshake::execute(HandshakeClosure* thread_cl) {
   if (ThreadLocalHandshakes) {
     HandshakeThreadsOperation cto(thread_cl);
     VM_HandshakeAllThreads handshake(&cto);
@@ -259,7 +259,7 @@ void Handshake::execute(ThreadClosure* thread_cl) {
   }
 }
 
-bool Handshake::execute(ThreadClosure* thread_cl, JavaThread* target) {
+bool Handshake::execute(HandshakeClosure* thread_cl, JavaThread* target) {
   if (ThreadLocalHandshakes) {
     HandshakeThreadsOperation cto(thread_cl);
     VM_HandshakeOneThread handshake(&cto, target);
