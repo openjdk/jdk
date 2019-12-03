@@ -681,6 +681,7 @@ javax/net/ssl/ServerName/SSLEngineExplorerMatchedSNI.java       8212096 generic-
 javax/net/ssl/DTLS/PacketLossRetransmission.java                8169086 macosx-x64
 javax/net/ssl/DTLS/RespondToRetransmit.java                     8169086 macosx-x64
 javax/net/ssl/DTLS/CipherSuite.java                             8202059 macosx-x64
+javax/net/ssl/templates/SSLSocketSSLEngineTemplate.java         8231810 generic-all
 
 sun/security/provider/KeyStore/DKSTest.sh                       8180266 windows-all
 
