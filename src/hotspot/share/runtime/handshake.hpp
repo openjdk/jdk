@@ -88,7 +88,7 @@ public:
     }
   }
 
-  void process_by_vmthread(JavaThread* target);
+  bool try_process_by_vmThread(JavaThread* target);
 };
 
 #endif // SHARE_RUNTIME_HANDSHAKE_HPP
