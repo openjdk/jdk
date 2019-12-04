@@ -144,6 +144,8 @@ public abstract class JavadocTester {
     public static final String FS = System.getProperty("file.separator");
     public static final String PS = System.getProperty("path.separator");
     public static final String NL = System.getProperty("line.separator");
+    public static final String thisRelease = System.getProperty("java.specification.version");
+
     public static final Path currDir = Paths.get(".").toAbsolutePath().normalize();
 
     public enum Output {

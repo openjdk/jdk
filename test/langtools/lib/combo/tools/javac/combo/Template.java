@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 package tools.javac.combo;
 
 import java.util.Map;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -32,13 +33,10 @@ import java.util.regex.Pattern;
  * {@code #\{KEY.SUBKEY\}} can be expanded.
  */
 public interface Template {
+    static final Pattern KEY_PATTERN = Pattern.compile("#\\{([A-Z_][A-Z0-9_]*(?:\\[\\d+\\])?)(?:\\.([A-Z0-9_]*))?\\}");
+
     String expand(String selector);
 
-    interface Resolver {
-        public Template lookup(String key);
-    }
-
-    public static class Behavior {
         /* Looks for expandable keys.  An expandable key can take the form:
          *   #{MAJOR}
          *   #{MAJOR.}
@@ -56,27 +54,26 @@ public interface Template {
          * However, this being a general-purpose framework, the exact
          * use is left up to the test writers.
          */
-        private static final Pattern pattern = Pattern.compile("#\\{([A-Z_][A-Z0-9_]*(?:\\[\\d+\\])?)(?:\\.([A-Z0-9_]*))?\\}");
-
-        public static String expandTemplate(String template, final Map<String, Template> vars) {
-            return expandTemplate(template, new MapResolver(vars));
+    public static String expandTemplate(String template,
+                                        Map<String, Template> vars) {
+        return expandTemplate(template, vars::get);
         }
 
-        public static String expandTemplate(String template, Resolver res) {
+    private static String expandTemplate(String template, Function<String, Template> resolver) {
             CharSequence in = template;
             StringBuffer out = new StringBuffer();
             while (true) {
                 boolean more = false;
-                Matcher m = pattern.matcher(in);
+            Matcher m = KEY_PATTERN.matcher(in);
                 while (m.find()) {
                     String major = m.group(1);
                     String minor = m.group(2);
-                    Template key = res.lookup(major);
+                Template key = resolver.apply(major);
                     if (key == null)
                         throw new IllegalStateException("Unknown major key " + major);
 
                     String replacement = key.expand(minor == null ? "" : minor);
-                    more |= pattern.matcher(replacement).find();
+                more |= KEY_PATTERN.matcher(replacement).find();
                     m.appendReplacement(out, replacement);
                 }
                 m.appendTail(out);
@@ -87,38 +84,6 @@ public interface Template {
                     out = new StringBuffer();
                 }
             }
-        }
-
     }
 }
 
-class MapResolver implements Template.Resolver {
-    private final Map<String, Template> vars;
-
-    public MapResolver(Map<String, Template> vars) {this.vars = vars;}
-
-    public Template lookup(String key) {
-        return vars.get(key);
-    }
-}
-
-class ChainedResolver implements Template.Resolver {
-    private final Template.Resolver upstreamResolver, thisResolver;
-
-    public ChainedResolver(Template.Resolver upstreamResolver, Template.Resolver thisResolver) {
-        this.upstreamResolver = upstreamResolver;
-        this.thisResolver = thisResolver;
-    }
-
-    public Template.Resolver getUpstreamResolver() {
-        return upstreamResolver;
-    }
-
-    @Override
-    public Template lookup(String key) {
-        Template result = thisResolver.lookup(key);
-        if (result == null)
-            result = upstreamResolver.lookup(key);
-        return result;
-    }
-}

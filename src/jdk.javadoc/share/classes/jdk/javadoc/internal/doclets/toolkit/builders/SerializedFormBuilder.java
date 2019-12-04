@@ -591,10 +591,10 @@ public class SerializedFormBuilder extends AbstractBuilder {
     }
 
     /**
-     * Return true if any of the given typeElements have a @serialinclude tag.
+     * Return true if any of the given typeElements have a {@code @serial include} tag.
      *
      * @param classes the typeElements to check.
-     * @return true if any of the given typeElements have a @serialinclude tag.
+     * @return true if any of the given typeElements have a {@code @serial include} tag.
      */
     private boolean serialClassFoundToDocument(SortedSet<TypeElement> classes) {
         for (TypeElement aClass : classes) {

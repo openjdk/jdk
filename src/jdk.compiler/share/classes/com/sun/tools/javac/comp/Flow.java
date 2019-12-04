@@ -30,6 +30,7 @@ package com.sun.tools.javac.comp;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import com.sun.source.tree.LambdaExpressionTree.BodyKind;
 import com.sun.tools.javac.code.*;
@@ -559,6 +560,7 @@ public class Flow {
             try {
                 alive = Liveness.ALIVE;
                 scanStat(tree.body);
+                tree.completesNormally = alive != Liveness.DEAD;
 
                 if (alive == Liveness.ALIVE && !tree.sym.type.getReturnType().hasTag(VOID))
                     log.error(TreeInfo.diagEndPos(tree.body), Errors.MissingRetStmt);
@@ -1853,17 +1855,21 @@ public class Flow {
 
         /** Check that trackable variable is initialized.
          */
-        void checkInit(DiagnosticPosition pos, VarSymbol sym) {
-            checkInit(pos, sym, Errors.VarMightNotHaveBeenInitialized(sym));
+        boolean checkInit(DiagnosticPosition pos, VarSymbol sym, boolean compactConstructor) {
+            return checkInit(pos, sym, Errors.VarMightNotHaveBeenInitialized(sym), compactConstructor);
         }
 
-        void checkInit(DiagnosticPosition pos, VarSymbol sym, Error errkey) {
+        boolean checkInit(DiagnosticPosition pos, VarSymbol sym, Error errkey, boolean compactConstructor) {
             if ((sym.adr >= firstadr || sym.owner.kind != TYP) &&
                 trackable(sym) &&
                 !inits.isMember(sym.adr)) {
-                log.error(pos, errkey);
+                if (sym.owner.kind != TYP || !compactConstructor || !uninits.isMember(sym.adr)) {
+                    log.error(pos, errkey);
+                }
                 inits.incl(sym.adr);
+                return false;
             }
+            return true;
         }
 
         /** Utility method to reset several Bits instances.
@@ -2081,6 +2087,7 @@ public class Flow {
                     // leave caught unchanged.
                     scan(tree.body);
 
+                    boolean isCompactConstructor = (tree.sym.flags() & Flags.COMPACT_RECORD_CONSTRUCTOR) != 0;
                     if (isInitialConstructor) {
                         boolean isSynthesized = (tree.sym.flags() &
                                                  GENERATEDCONSTR) != 0;
@@ -2090,11 +2097,17 @@ public class Flow {
                             if (var.owner == classDef.sym) {
                                 // choose the diagnostic position based on whether
                                 // the ctor is default(synthesized) or not
-                                if (isSynthesized) {
+                                if (isSynthesized && !isCompactConstructor) {
                                     checkInit(TreeInfo.diagnosticPositionFor(var, vardecl),
-                                        var, Errors.VarNotInitializedInDefaultConstructor(var));
+                                        var, Errors.VarNotInitializedInDefaultConstructor(var), isCompactConstructor);
                                 } else {
-                                    checkInit(TreeInfo.diagEndPos(tree.body), var);
+                                    boolean wasInitialized = checkInit(TreeInfo.diagEndPos(tree.body), var, isCompactConstructor && tree.completesNormally);
+                                    if (!wasInitialized && var.owner.kind == TYP && isCompactConstructor && uninits.isMember(var.adr) && tree.completesNormally) {
+                                        /*  this way we indicate Lower that it should generate an initialization for this field
+                                         *  in the compact constructor
+                                         */
+                                        var.flags_field |= UNINITIALIZED_FIELD;
+                                    }
                                 }
                             }
                         }
@@ -2111,7 +2124,7 @@ public class Flow {
                             Assert.check(exit instanceof AssignPendingExit);
                             inits.assign(((AssignPendingExit) exit).exit_inits);
                             for (int i = firstadr; i < nextadr; i++) {
-                                checkInit(exit.tree.pos(), vardecls[i].sym);
+                                checkInit(exit.tree.pos(), vardecls[i].sym, isCompactConstructor);
                             }
                         }
                     }
@@ -2653,7 +2666,7 @@ public class Flow {
             super.visitSelect(tree);
             if (TreeInfo.isThisQualifier(tree.selected) &&
                 tree.sym.kind == VAR) {
-                checkInit(tree.pos(), (VarSymbol)tree.sym);
+                checkInit(tree.pos(), (VarSymbol)tree.sym, false);
             }
         }
 
@@ -2714,7 +2727,7 @@ public class Flow {
 
         public void visitIdent(JCIdent tree) {
             if (tree.sym.kind == VAR) {
-                checkInit(tree.pos(), (VarSymbol)tree.sym);
+                checkInit(tree.pos(), (VarSymbol)tree.sym, false);
                 referenced(tree.sym);
             }
         }

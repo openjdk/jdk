@@ -28,13 +28,15 @@ package jdk.javadoc.internal.doclets.formats.html;
 import java.util.List;
 
 import javax.lang.model.element.Element;
+import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeMirror;
-import javax.lang.model.util.SimpleElementVisitor9;
+import javax.lang.model.util.SimpleElementVisitor14;
 
 import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.IndexTree;
+import com.sun.source.doctree.ParamTree;
 import com.sun.source.doctree.SystemPropertyTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
@@ -190,15 +192,19 @@ public class TagletWriterImpl extends TagletWriter {
     /**
      * {@inheritDoc}
      */
+    @SuppressWarnings("preview")
     public Content paramTagOutput(Element element, DocTree paramTag, String paramName) {
         ContentBuilder body = new ContentBuilder();
         CommentHelper ch = utils.getCommentHelper(element);
-        body.add(HtmlTree.CODE(new RawHtml(paramName)));
+        // define id attributes for state components so that generated descriptions may refer to them
+        boolean defineID = (element.getKind() == ElementKind.RECORD)
+                && (paramTag instanceof ParamTree) && !((ParamTree) paramTag).isTypeParameter();
+        Content nameTree = new StringContent(paramName);
+        body.add(HtmlTree.CODE(defineID ? HtmlTree.A_ID("param-" + paramName, nameTree) : nameTree));
         body.add(" - ");
         List<? extends DocTree> description = ch.getDescription(configuration, paramTag);
         body.add(htmlWriter.commentTagsToContent(paramTag, element, description, false, inSummary));
-        HtmlTree result = HtmlTree.DD(body);
-        return result;
+        return HtmlTree.DD(body);
     }
 
     /**
@@ -409,6 +415,7 @@ public class TagletWriterImpl extends TagletWriter {
         return configuration;
     }
 
+    @SuppressWarnings("preview")
     private Content createAnchorAndSearchIndex(Element element, String tagText, String desc){
         Content result = null;
         if (isFirstSentence && inSummary) {
@@ -427,7 +434,7 @@ public class TagletWriterImpl extends TagletWriter {
                 si.setDescription(desc);
                 si.setUrl(htmlWriter.path.getPath() + "#" + anchorName);
                 DocPaths docPaths = configuration.docPaths;
-                new SimpleElementVisitor9<Void, Void>() {
+                new SimpleElementVisitor14<Void, Void>() {
                     @Override
                     public Void visitVariable(VariableElement e, Void p) {
                         TypeElement te = utils.getEnclosingTypeElement(e);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -254,5 +254,37 @@ public class SymbolMetadata {
 
     private boolean isStarted() {
         return attributes != DECL_NOT_STARTED;
+    }
+
+    private List<Attribute.Compound> removeFromCompoundList(List<Attribute.Compound> l, Attribute.Compound compound) {
+        ListBuffer<Attribute.Compound> lb = new ListBuffer<>();
+        for (Attribute.Compound c : l) {
+            if (c != compound) {
+                lb.add(c);
+            }
+        }
+        return lb.toList();
+    }
+
+    private List<Attribute.TypeCompound> removeFromTypeCompoundList(List<Attribute.TypeCompound> l, Attribute.TypeCompound compound) {
+        ListBuffer<Attribute.TypeCompound> lb = new ListBuffer<>();
+        for (Attribute.TypeCompound c : l) {
+            if (c != compound) {
+                lb.add(c);
+            }
+        }
+        return lb.toList();
+    }
+
+    public void remove(Attribute.Compound compound) {
+        if (attributes.contains(compound)) {
+            attributes = removeFromCompoundList(attributes, compound);
+        } else if (type_attributes.contains(compound)) {
+            type_attributes = removeFromTypeCompoundList(type_attributes, (TypeCompound)compound);
+        } else if (init_type_attributes.contains(compound)) {
+            init_type_attributes = removeFromTypeCompoundList(init_type_attributes, (TypeCompound)compound);
+        } else if (clinit_type_attributes.contains(compound)) {
+            clinit_type_attributes = removeFromTypeCompoundList(clinit_type_attributes, (TypeCompound)compound);
+        }
     }
 }

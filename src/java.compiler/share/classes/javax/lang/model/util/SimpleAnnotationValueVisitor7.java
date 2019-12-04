@@ -64,6 +64,7 @@ import static javax.lang.model.SourceVersion.*;
  * @see SimpleAnnotationValueVisitor6
  * @see SimpleAnnotationValueVisitor8
  * @see SimpleAnnotationValueVisitor9
+ * @see SimpleAnnotationValueVisitor14
  * @since 1.7
  */
 @SupportedSourceVersion(RELEASE_7)

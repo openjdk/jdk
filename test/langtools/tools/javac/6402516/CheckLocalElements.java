@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -115,7 +115,7 @@ public class CheckLocalElements extends Checker {
         return encl == null ? "" : encl.accept(qualNameVisitor, null);
     }
 
-    private ElementVisitor<String,Void> qualNameVisitor = new SimpleElementVisitor9<String,Void>() {
+    private ElementVisitor<String,Void> qualNameVisitor = new SimpleElementVisitor14<String,Void>() {
         protected String defaultAction(Element e, Void ignore) {
             return "";
         }

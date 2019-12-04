@@ -122,6 +122,7 @@ JVM_GetNestMembers
 JVM_GetPrimitiveArrayElement
 JVM_GetProperties
 JVM_GetProtectionDomain
+JVM_GetRecordComponents
 JVM_GetSimpleBinaryName
 JVM_GetStackAccessControlContext
 JVM_GetSystemPackage
@@ -143,6 +144,7 @@ JVM_IsArrayClass
 JVM_IsConstructorIx
 JVM_IsInterface
 JVM_IsPrimitiveClass
+JVM_IsRecord
 JVM_IsSameClassPackage
 JVM_IsSupportedJNIVersion
 JVM_IsThreadAlive

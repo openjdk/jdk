@@ -411,7 +411,7 @@ public abstract class MemberSummaryBuilder extends AbstractMemberBuilder {
                 blockTags.add(cmtutils.makeSeeTree(sb.toString(), setter));
             }
         }
-        cmtutils.setDocCommentTree(member, fullBody, blockTags, utils);
+        cmtutils.setDocCommentTree(member, fullBody, blockTags);
     }
 
     /**

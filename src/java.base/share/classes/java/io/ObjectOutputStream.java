@@ -150,6 +150,10 @@ import sun.reflect.misc.ReflectUtil;
  * defaultWriteObject and writeFields initially terminate any existing
  * block-data record.
  *
+ * @implSpec
+ * Records are serialized differently than ordinary serializable or externalizable
+ * objects, see <a href="ObjectInputStream.html#record-serialization">record serialization</a>.
+ *
  * @author      Mike Warres
  * @author      Roger Riggs
  * @see java.io.DataOutput
@@ -1431,7 +1435,10 @@ public class ObjectOutputStream
             bout.writeByte(TC_OBJECT);
             writeClassDesc(desc, false);
             handles.assign(unshared ? null : obj);
-            if (desc.isExternalizable() && !desc.isProxy()) {
+
+            if (desc.isRecord()) {
+                writeRecordData(obj, desc);
+            } else if (desc.isExternalizable() && !desc.isProxy()) {
                 writeExternalData((Externalizable) obj);
             } else {
                 writeSerialData(obj, desc);
@@ -1473,6 +1480,21 @@ public class ObjectOutputStream
         }
 
         curPut = oldPut;
+    }
+
+    /** Writes the record component values for the given record object. */
+    @SuppressWarnings("preview")
+    private void writeRecordData(Object obj, ObjectStreamClass desc)
+        throws IOException
+    {
+        assert obj.getClass().isRecord();
+        ObjectStreamClass.ClassDataSlot[] slots = desc.getClassDataLayout();
+        if (slots.length != 1) {
+            throw new InvalidClassException(
+                    "expected a single record slot length, but found: " + slots.length);
+        }
+
+        defaultWriteFields(obj, desc);  // #### seems unnecessary to use the accessors
     }
 
     /**

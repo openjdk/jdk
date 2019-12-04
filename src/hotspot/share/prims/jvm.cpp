@@ -51,6 +51,7 @@
 #include "oops/fieldStreams.inline.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/method.hpp"
+#include "oops/recordComponent.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
@@ -1690,6 +1691,54 @@ JVM_ENTRY(jobjectArray, JVM_GetClassDeclaredFields(JNIEnv *env, jclass ofClass, 
   }
   assert(out_idx == num_fields, "just checking");
   return (jobjectArray) JNIHandles::make_local(env, result());
+}
+JVM_END
+
+JVM_ENTRY(jboolean, JVM_IsRecord(JNIEnv *env, jclass cls))
+{
+  JVMWrapper("JVM_IsRecord");
+  Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(cls));
+  if (k != NULL && k->is_instance_klass()) {
+    InstanceKlass* ik = InstanceKlass::cast(k);
+    return ik->is_record();
+  } else {
+    return false;
+  }
+}
+JVM_END
+
+JVM_ENTRY(jobjectArray, JVM_GetRecordComponents(JNIEnv* env, jclass ofClass))
+{
+  JVMWrapper("JVM_GetRecordComponents");
+  Klass* c = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(ofClass));
+  assert(c->is_instance_klass(), "must be");
+  InstanceKlass* ik = InstanceKlass::cast(c);
+
+  if (ik->is_record()) {
+    Array<RecordComponent*>* components = ik->record_components();
+    assert(components != NULL, "components should not be NULL");
+    {
+      JvmtiVMObjectAllocEventCollector oam;
+      constantPoolHandle cp(THREAD, ik->constants());
+      int length = components->length();
+      assert(length >= 0, "unexpected record_components length");
+      objArrayOop record_components =
+        oopFactory::new_objArray(SystemDictionary::RecordComponent_klass(), length, CHECK_NULL);
+      objArrayHandle components_h (THREAD, record_components);
+
+      for (int x = 0; x < length; x++) {
+        RecordComponent* component = components->at(x);
+        assert(component != NULL, "unexpected NULL record component");
+        oop component_oop = java_lang_reflect_RecordComponent::create(ik, component, CHECK_NULL);
+        components_h->obj_at_put(x, component_oop);
+      }
+      return (jobjectArray)JNIHandles::make_local(components_h());
+    }
+  }
+
+  // Return empty array if ofClass is not a record.
+  objArrayOop result = oopFactory::new_objArray(SystemDictionary::RecordComponent_klass(), 0, CHECK_NULL);
+  return (jobjectArray)JNIHandles::make_local(env, result);
 }
 JVM_END
 

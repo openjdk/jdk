@@ -28,7 +28,7 @@ import java.util.Locale;
 import java.util.Set;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
-import javax.lang.model.util.ElementScanner9;
+import javax.lang.model.util.ElementScanner14;
 import javax.tools.Diagnostic;
 
 import jdk.javadoc.doclet.Doclet;
@@ -94,7 +94,7 @@ public class MyDoclet implements Doclet {
         return OK;
     }
 
-    class MyScanner extends ElementScanner9<Void, Integer> {
+    class MyScanner extends ElementScanner14<Void, Integer> {
         @Override
         public Void scan(Element e, Integer depth) {
             String msg = e.getKind() + " " + e;

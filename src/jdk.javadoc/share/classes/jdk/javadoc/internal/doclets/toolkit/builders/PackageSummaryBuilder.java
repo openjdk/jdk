@@ -151,6 +151,7 @@ public class PackageSummaryBuilder extends AbstractBuilder {
         buildInterfaceSummary(summaryContentTree);
         buildClassSummary(summaryContentTree);
         buildEnumSummary(summaryContentTree);
+        buildRecordSummary(summaryContentTree);
         buildExceptionSummary(summaryContentTree);
         buildErrorSummary(summaryContentTree);
         buildAnnotationTypeSummary(summaryContentTree);
@@ -203,6 +204,22 @@ public class PackageSummaryBuilder extends AbstractBuilder {
         SortedSet<TypeElement> enums = utils.filterOutPrivateClasses(elist, configuration.javafx);
         if (!enums.isEmpty()) {
             packageWriter.addEnumSummary(enums, summaryContentTree);
+        }
+    }
+
+    /**
+     * Build the summary for the records in this package.
+     *
+     * @param summaryContentTree the summary tree to which the record summary will
+     *                           be added
+     */
+    protected void buildRecordSummary(Content summaryContentTree) {
+        SortedSet<TypeElement> rlist = utils.isSpecified(packageElement)
+                ? utils.getTypeElementsAsSortedSet(utils.getRecords(packageElement))
+                : configuration.typeElementCatalog.records(packageElement);
+        SortedSet<TypeElement> records = utils.filterOutPrivateClasses(rlist, configuration.javafx);
+        if (!records.isEmpty()) {
+            packageWriter.addRecordSummary(records, summaryContentTree);
         }
     }
 

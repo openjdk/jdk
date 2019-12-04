@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.LinkedHashSet;
+import java.util.Objects;
 
 import javax.lang.model.AnnotatedConstruct;
 import javax.lang.model.element.*;
@@ -629,4 +630,42 @@ public interface Elements {
      * @since 1.8
      */
     boolean isFunctionalInterface(TypeElement type);
+
+    /**
+     * {@preview Associated with records, a preview feature of the Java language.
+     *
+     *           This method is associated with <i>records</i>, a preview
+     *           feature of the Java language. Preview features
+     *           may be removed in a future release, or upgraded to permanent
+     *           features of the Java language.}
+     *
+     * Returns the record component for the given accessor. Returns null if the
+     * given method is not a record component accessor.
+     *
+     * @implSpec The default implementation of this method checks if the element
+     * enclosing the accessor has kind {@link ElementKind#RECORD RECORD} if that is
+     * the case, then all the record components on the accessor's enclosing element
+     * are retrieved by invoking {@link ElementFilter#recordComponentsIn(Iterable)}.
+     * If the accessor of at least one of the record components retrieved happen to
+     * be equal to the accessor passed as a parameter to this method, then that
+     * record component is returned, in any other case {@code null} is returned.
+     *
+     * @param accessor the method for which the record component should be found.
+     * @return the record component, or null if the given method is not an record
+     * component accessor
+     * @since 14
+     */
+    @jdk.internal.PreviewFeature(feature=jdk.internal.PreviewFeature.Feature.RECORDS,
+                                 essentialAPI=false)
+    @SuppressWarnings("preview")
+    default RecordComponentElement recordComponentFor(ExecutableElement accessor) {
+        if (accessor.getEnclosingElement().getKind() == ElementKind.RECORD) {
+            for (RecordComponentElement rec : ElementFilter.recordComponentsIn(accessor.getEnclosingElement().getEnclosedElements())) {
+                if (Objects.equals(rec.getAccessor(), accessor)) {
+                    return rec;
+                }
+            }
+        }
+        return null;
+    }
 }

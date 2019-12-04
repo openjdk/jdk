@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,7 +90,19 @@ public final class TypeAnnotation {
         METHOD_RETURN,
         METHOD_RECEIVER,
         METHOD_FORMAL_PARAMETER,
-        THROWS;
+        THROWS,
+        /**
+         * {@preview Associated with records, a preview feature of the Java language.
+         *
+         *           This enum constant is associated with <i>records</i>, a preview
+         *           feature of the Java language. Preview features
+         *           may be removed in a future release, or upgraded to permanent
+         *           features of the Java language.}
+         * @since 14
+         */
+        @jdk.internal.PreviewFeature(feature=jdk.internal.PreviewFeature.Feature.RECORDS,
+                                     essentialAPI=false)
+        RECORD_COMPONENT;
     }
 
     public static final class TypeAnnotationTargetInfo {

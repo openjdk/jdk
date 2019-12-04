@@ -49,6 +49,7 @@ import com.sun.tools.javac.jvm.PoolConstant.Dynamic.BsmKey;
 import com.sun.tools.javac.resources.CompilerProperties.Errors;
 import com.sun.tools.javac.resources.CompilerProperties.Fragments;
 import com.sun.tools.javac.util.*;
+import com.sun.tools.javac.util.List;
 
 import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.Kinds.Kind.*;
@@ -345,8 +346,11 @@ public class ClassWriter extends ClassFile {
     /** Write member (field or method) attributes;
      *  return number of attributes written.
      */
-    int writeMemberAttrs(Symbol sym) {
-        int acount = writeFlagAttrs(sym.flags());
+    int writeMemberAttrs(Symbol sym, boolean isRecordComponent) {
+        int acount = 0;
+        if (!isRecordComponent) {
+            acount = writeFlagAttrs(sym.flags());
+        }
         long flags = sym.flags();
         if ((flags & (SYNTHETIC | BRIDGE)) != SYNTHETIC &&
             (flags & ANONCONSTR) == 0 &&
@@ -403,9 +407,9 @@ public class ClassWriter extends ClassFile {
             return 0;
     }
 
-
     private void writeParamAnnotations(List<VarSymbol> params,
                                        RetentionPolicy retention) {
+        databuf.appendByte(params.length());
         for (VarSymbol s : params) {
             ListBuffer<Attribute.Compound> buf = new ListBuffer<>();
             for (Attribute.Compound a : s.getRawAttributes())
@@ -427,11 +431,11 @@ public class ClassWriter extends ClassFile {
     /** Write method parameter annotations;
      *  return number of attributes written.
      */
-    int writeParameterAttrs(MethodSymbol m) {
+    int writeParameterAttrs(List<VarSymbol> vars) {
         boolean hasVisible = false;
         boolean hasInvisible = false;
-        if (m.params != null) {
-            for (VarSymbol s : m.params) {
+        if (vars != null) {
+            for (VarSymbol s : vars) {
                 for (Attribute.Compound a : s.getRawAttributes()) {
                     switch (types.getRetention(a)) {
                     case SOURCE: break;
@@ -446,13 +450,13 @@ public class ClassWriter extends ClassFile {
         int attrCount = 0;
         if (hasVisible) {
             int attrIndex = writeAttr(names.RuntimeVisibleParameterAnnotations);
-            writeParamAnnotations(m, RetentionPolicy.RUNTIME);
+            writeParamAnnotations(vars, RetentionPolicy.RUNTIME);
             endAttr(attrIndex);
             attrCount++;
         }
         if (hasInvisible) {
             int attrIndex = writeAttr(names.RuntimeInvisibleParameterAnnotations);
-            writeParamAnnotations(m, RetentionPolicy.CLASS);
+            writeParamAnnotations(vars, RetentionPolicy.CLASS);
             endAttr(attrIndex);
             attrCount++;
         }
@@ -831,6 +835,23 @@ public class ClassWriter extends ClassFile {
         endAttr(alenIdx);
     }
 
+    int writeRecordAttribute(ClassSymbol csym) {
+        int alenIdx = writeAttr(names.Record);
+        Scope s = csym.members();
+        databuf.appendChar(csym.getRecordComponents().size());
+        for (VarSymbol v: csym.getRecordComponents()) {
+            //databuf.appendChar(poolWriter.putMember(v.accessor.head.snd));
+            databuf.appendChar(poolWriter.putName(v.name));
+            databuf.appendChar(poolWriter.putDescriptor(v));
+            int acountIdx = beginAttrs();
+            int acount = 0;
+            acount += writeMemberAttrs(v, true);
+            endAttrs(acountIdx, acount);
+        }
+        endAttr(alenIdx);
+        return 1;
+    }
+
     /**
      * Write NestMembers attribute (if needed)
      */
@@ -920,7 +941,7 @@ public class ClassWriter extends ClassFile {
             endAttr(alenIdx);
             acount++;
         }
-        acount += writeMemberAttrs(v);
+        acount += writeMemberAttrs(v, false);
         endAttrs(acountIdx, acount);
     }
 
@@ -960,13 +981,13 @@ public class ClassWriter extends ClassFile {
             endAttr(alenIdx);
             acount++;
         }
-        if (options.isSet(PARAMETERS) && target.hasMethodParameters()) {
+        if (target.hasMethodParameters() && (options.isSet(PARAMETERS) || m.isConstructor() && (m.flags_field & RECORD) != 0)) {
             if (!m.isLambdaMethod()) // Per JDK-8138729, do not emit parameters table for lambda bodies.
                 acount += writeMethodParametersAttr(m);
         }
-        acount += writeMemberAttrs(m);
+        acount += writeMemberAttrs(m, false);
         if (!m.isLambdaMethod())
-            acount += writeParameterAttrs(m);
+            acount += writeParameterAttrs(m.params);
         endAttrs(acountIdx, acount);
     }
 
@@ -1598,6 +1619,10 @@ public class ClassWriter extends ClassFile {
                 acount += writeNestMembersIfNeeded(c);
                 acount += writeNestHostIfNeeded(c);
             }
+        }
+
+        if (c.isRecord()) {
+            acount += writeRecordAttribute(c);
         }
 
         if (!poolWriter.bootstrapMethods.isEmpty()) {

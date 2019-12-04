@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import java.util.List;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.ModuleElement;
+import javax.lang.model.element.Name;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeMirror;
@@ -99,7 +100,7 @@ public class CommentHelper {
 
     public void setOverrideElement(Element ove) {
         if (this.element == ove) {
-            throw new AssertionError("cannot set given element as overriden element");
+            throw new AssertionError("cannot set given element as overridden element");
         }
         overriddenElement = ove;
     }
@@ -147,6 +148,9 @@ public class CommentHelper {
     Element getElement(BaseConfiguration c, ReferenceTree rtree) {
         // likely a synthesized tree
         if (path == null) {
+            // NOTE: this code path only supports module/package/type signatures
+            //       and not member signatures. For more complete support,
+            //       set a suitable path and avoid this branch.
             TypeMirror symbol = c.utils.getSymbol(rtree.getSignature());
             if (symbol == null) {
                 return null;
@@ -547,7 +551,7 @@ public class CommentHelper {
         return new SimpleDocTreeVisitor<List<? extends DocTree>, Void>() {
             List<? extends DocTree> asList(String content) {
                 List<DocTree> out = new ArrayList<>();
-                out.add((TextTree)c.cmtUtils.makeTextTree(content));
+                out.add(c.cmtUtils.makeTextTree(content));
                 return out;
             }
 

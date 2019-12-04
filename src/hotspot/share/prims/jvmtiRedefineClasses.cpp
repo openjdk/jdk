@@ -40,10 +40,12 @@
 #include "memory/metaspaceShared.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
+#include "oops/annotations.hpp"
 #include "oops/constantPool.hpp"
 #include "oops/fieldStreams.inline.hpp"
 #include "oops/klassVtable.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/recordComponent.hpp"
 #include "prims/jvmtiImpl.hpp"
 #include "prims/jvmtiRedefineClasses.hpp"
 #include "prims/jvmtiThreadState.inline.hpp"
@@ -785,6 +787,69 @@ static jvmtiError check_nest_attributes(InstanceKlass* the_class,
   return JVMTI_ERROR_NONE;
 }
 
+// Return an error status if the class Record attribute was changed.
+static jvmtiError check_record_attribute(InstanceKlass* the_class, InstanceKlass* scratch_class) {
+  // Get lists of record components.
+  Array<RecordComponent*>* the_record = the_class->record_components();
+  Array<RecordComponent*>* scr_record = scratch_class->record_components();
+  bool the_record_exists = the_record != NULL;
+  bool scr_record_exists = scr_record != NULL;
+
+  if (the_record_exists && scr_record_exists) {
+    int the_num_components = the_record->length();
+    int scr_num_components = scr_record->length();
+    if (the_num_components != scr_num_components) {
+      log_trace(redefine, class, record)
+        ("redefined class %s attribute change error: Record num_components=%d changed to num_components=%d",
+         the_class->external_name(), the_num_components, scr_num_components);
+      return JVMTI_ERROR_UNSUPPORTED_REDEFINITION_CLASS_ATTRIBUTE_CHANGED;
+    }
+
+    // Compare each field in each record component.
+    ConstantPool* the_cp =  the_class->constants();
+    ConstantPool* scr_cp =  scratch_class->constants();
+    for (int x = 0; x < the_num_components; x++) {
+      RecordComponent* the_component = the_record->at(x);
+      RecordComponent* scr_component = scr_record->at(x);
+      const Symbol* const the_name = the_cp->symbol_at(the_component->name_index());
+      const Symbol* const scr_name = scr_cp->symbol_at(scr_component->name_index());
+      const Symbol* const the_descr = the_cp->symbol_at(the_component->descriptor_index());
+      const Symbol* const scr_descr = scr_cp->symbol_at(scr_component->descriptor_index());
+      if (the_name != scr_name || the_descr != scr_descr) {
+        log_trace(redefine, class, record)
+          ("redefined class %s attribute change error: Record name_index, descriptor_index, and/or attributes_count changed",
+           the_class->external_name());
+        return JVMTI_ERROR_UNSUPPORTED_REDEFINITION_CLASS_ATTRIBUTE_CHANGED;
+      }
+
+      int the_gen_sig = the_component->generic_signature_index();
+      int scr_gen_sig = scr_component->generic_signature_index();
+      const Symbol* const the_gen_sig_sym = (the_gen_sig == 0 ? NULL :
+        the_cp->symbol_at(the_component->generic_signature_index()));
+      const Symbol* const scr_gen_sig_sym = (scr_gen_sig == 0 ? NULL :
+        scr_cp->symbol_at(scr_component->generic_signature_index()));
+      if (the_gen_sig_sym != scr_gen_sig_sym) {
+        log_trace(redefine, class, record)
+          ("redefined class %s attribute change error: Record generic_signature attribute changed",
+           the_class->external_name());
+        return JVMTI_ERROR_UNSUPPORTED_REDEFINITION_CLASS_ATTRIBUTE_CHANGED;
+      }
+
+      // It's okay if a record component's annotations were changed.
+    }
+
+  } else if (the_record_exists ^ scr_record_exists) {
+    const char* action_str = (the_record_exists) ? "removed" : "added";
+    log_trace(redefine, class, record)
+      ("redefined class %s attribute change error: Record attribute %s",
+       the_class->external_name(), action_str);
+    return JVMTI_ERROR_UNSUPPORTED_REDEFINITION_CLASS_ATTRIBUTE_CHANGED;
+  }
+
+  return JVMTI_ERROR_NONE;
+}
+
+
 static bool can_add_or_delete(Method* m) {
       // Compatibility mode
   return (AllowRedefinitionToAddDeleteMethods &&
@@ -834,6 +899,12 @@ jvmtiError VM_RedefineClasses::compare_and_normalize_class_versions(
 
   // Check whether the nest-related attributes have been changed.
   jvmtiError err = check_nest_attributes(the_class, scratch_class);
+  if (err != JVMTI_ERROR_NONE) {
+    return err;
+  }
+
+  // Check whether the Record attribute has been changed.
+  err = check_record_attribute(the_class, scratch_class);
   if (err != JVMTI_ERROR_NONE) {
     return err;
   }
@@ -1711,6 +1782,12 @@ bool VM_RedefineClasses::rewrite_cp_refs(InstanceKlass* scratch_class,
     return false;
   }
 
+  // rewrite constant pool references in the Record attribute:
+  if (!rewrite_cp_refs_in_record_attribute(scratch_class, THREAD)) {
+    // propagate failure back to caller
+    return false;
+  }
+
   // rewrite constant pool references in the methods:
   if (!rewrite_cp_refs_in_methods(scratch_class, THREAD)) {
     // propagate failure back to caller
@@ -1805,6 +1882,46 @@ bool VM_RedefineClasses::rewrite_cp_refs_in_nest_attributes(
   for (int i = 0; i < nest_members->length(); i++) {
     u2 cp_index = nest_members->at(i);
     nest_members->at_put(i, find_new_index(cp_index));
+  }
+  return true;
+}
+
+// Rewrite constant pool references in the Record attribute.
+bool VM_RedefineClasses::rewrite_cp_refs_in_record_attribute(
+       InstanceKlass* scratch_class, TRAPS) {
+  Array<RecordComponent*>* components = scratch_class->record_components();
+  if (components != NULL) {
+    for (int i = 0; i < components->length(); i++) {
+      RecordComponent* component = components->at(i);
+      u2 cp_index = component->name_index();
+      component->set_name_index(find_new_index(cp_index));
+      cp_index = component->descriptor_index();
+      component->set_descriptor_index(find_new_index(cp_index));
+      cp_index = component->generic_signature_index();
+      if (cp_index != 0) {
+        component->set_generic_signature_index(find_new_index(cp_index));
+      }
+
+      AnnotationArray* annotations = component->annotations();
+      if (annotations != NULL && annotations->length() != 0) {
+        int byte_i = 0;  // byte index into annotations
+        if (!rewrite_cp_refs_in_annotations_typeArray(annotations, byte_i, THREAD)) {
+          log_debug(redefine, class, annotation)("bad record_component_annotations at %d", i);
+          // propagate failure back to caller
+          return false;
+        }
+      }
+
+      AnnotationArray* type_annotations = component->type_annotations();
+      if (type_annotations != NULL && type_annotations->length() != 0) {
+        int byte_i = 0;  // byte index into annotations
+        if (!rewrite_cp_refs_in_annotations_typeArray(type_annotations, byte_i, THREAD)) {
+          log_debug(redefine, class, annotation)("bad record_component_type_annotations at %d", i);
+          // propagate failure back to caller
+          return false;
+        }
+      }
+    }
   }
   return true;
 }

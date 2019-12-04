@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,7 +85,7 @@ public class Tokens {
         for (int i = 0; i <= maxKey; i++) key[i] = TokenKind.IDENTIFIER;
         for (TokenKind t : TokenKind.values()) {
             if (t.name != null)
-            key[tokenName[t.ordinal()].getIndex()] = t;
+                key[tokenName[t.ordinal()].getIndex()] = t;
         }
     }
 
@@ -315,7 +315,7 @@ public class Tokens {
             DEFAULT,
             NAMED,
             STRING,
-            NUMERIC
+            NUMERIC;
         }
 
         /** The token kind */

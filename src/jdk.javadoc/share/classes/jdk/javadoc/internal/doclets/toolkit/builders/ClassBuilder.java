@@ -25,11 +25,21 @@
 
 package jdk.javadoc.internal.doclets.toolkit.builders;
 
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import javax.lang.model.element.Element;
+import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.Name;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.VariableElement;
+import javax.lang.model.type.TypeMirror;
 
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.toolkit.ClassWriter;
+import jdk.javadoc.internal.doclets.toolkit.CommentUtils;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.DocFilesHandler;
 import jdk.javadoc.internal.doclets.toolkit.DocletException;
@@ -69,6 +79,16 @@ public class ClassBuilder extends AbstractBuilder {
      */
     private final boolean isEnum;
 
+    /**
+     * Keep track of whether or not this typeElement is a record.
+     */
+    private final boolean isRecord;
+
+    /**
+     * The content tree for the class documentation.
+     */
+    private Content contentTree;
+
     private final Utils utils;
 
     /**
@@ -86,13 +106,21 @@ public class ClassBuilder extends AbstractBuilder {
         if (utils.isInterface(typeElement)) {
             isInterface = true;
             isEnum = false;
+            isRecord = false;
         } else if (utils.isEnum(typeElement)) {
             isInterface = false;
             isEnum = true;
-            utils.setEnumDocumentation(typeElement);
+            isRecord = false;
+            setEnumDocumentation(typeElement);
+        } else if (utils.isRecord(typeElement)) {
+            isInterface = false;
+            isEnum = false;
+            isRecord = true;
+            setRecordDocumentation(typeElement);
         } else {
             isInterface = false;
             isEnum = false;
+            isRecord = false;
         }
     }
 
@@ -127,6 +155,8 @@ public class ClassBuilder extends AbstractBuilder {
             key = "doclet.Interface";
         } else if (isEnum) {
             key = "doclet.Enum";
+        } else if (isRecord) {
+            key = "doclet.Record";
         } else {
             key = "doclet.Class";
         }
@@ -162,7 +192,7 @@ public class ClassBuilder extends AbstractBuilder {
      */
     protected void buildClassInfo(Content classContentTree) throws DocletException {
         Content classInfoTree = new ContentBuilder();
-        buildTypeParamInfo(classInfoTree);
+        buildParamInfo(classInfoTree);
         buildSuperInterfacesInfo(classInfoTree);
         buildImplementedInterfacesInfo(classInfoTree);
         buildSubClassInfo(classInfoTree);
@@ -179,12 +209,12 @@ public class ClassBuilder extends AbstractBuilder {
     }
 
     /**
-     * Build the type parameters of this class.
+     * Build the type parameters and state components of this class.
      *
      * @param classInfoTree the content tree to which the documentation will be added
      */
-    protected void buildTypeParamInfo(Content classInfoTree) {
-        writer.addTypeParamInfo(classInfoTree);
+    protected void buildParamInfo(Content classInfoTree) {
+        writer.addParamInfo(classInfoTree);
     }
 
     /**
@@ -385,5 +415,97 @@ public class ClassBuilder extends AbstractBuilder {
      */
     protected void buildMethodDetails(Content memberDetailsTree) throws DocletException {
         builderFactory.getMethodBuilder(writer).build(memberDetailsTree);
+    }
+
+    /**
+     * The documentation for values() and valueOf() in Enums are set by the
+     * doclet only iff the user or overridden methods are missing.
+     * @param elem the enum element
+     */
+    private void setEnumDocumentation(TypeElement elem) {
+        CommentUtils cmtUtils = configuration.cmtUtils;
+        for (ExecutableElement ee : utils.getMethods(elem)) {
+            if (!utils.getFullBody(ee).isEmpty()) // ignore if already set
+                continue;
+            Name name = ee.getSimpleName();
+            if (name.contentEquals("values") && ee.getParameters().isEmpty()) {
+                utils.removeCommentHelper(ee); // purge previous entry
+                cmtUtils.setEnumValuesTree(ee);
+            } else if (name.contentEquals("valueOf") && ee.getParameters().size() == 1) {
+                // TODO: check parameter type
+                utils.removeCommentHelper(ee); // purge previous entry
+                cmtUtils.setEnumValueOfTree(ee);
+            }
+        }
+    }
+
+    /**
+     * Sets the documentation as needed for the mandated parts of a record type.
+     * This includes the canonical constructor, methods like {@code equals},
+     * {@code hashCode}, {@code toString}, the accessor methods, and the underlying
+     * field.
+     * @param elem the record element
+     */
+
+    @SuppressWarnings("preview")
+    private void setRecordDocumentation(TypeElement elem) {
+        CommentUtils cmtUtils = configuration.cmtUtils;
+        Set<Name> componentNames = elem.getRecordComponents().stream()
+                .map(Element::getSimpleName)
+                .collect(Collectors.toSet());
+
+        for (ExecutableElement ee : utils.getConstructors(elem)) {
+            if (utils.isCanonicalRecordConstructor(ee)) {
+                if (utils.getFullBody(ee).isEmpty()) {
+                    utils.removeCommentHelper(ee); // purge previous entry
+                    cmtUtils.setRecordConstructorTree(ee);
+                }
+                // only one canonical constructor; no need to keep looking
+                break;
+            }
+        }
+
+        for (VariableElement ve : utils.getFields(elem)) {
+            // The fields for the record component cannot be declared by the
+            // user and so cannot have any pre-existing comment.
+            Name name = ve.getSimpleName();
+            if (componentNames.contains(name)) {
+                utils.removeCommentHelper(ve); // purge previous entry
+                cmtUtils.setRecordFieldTree(ve);
+            }
+        }
+
+        TypeMirror objectType = utils.getObjectType();
+
+        for (ExecutableElement ee : utils.getMethods(elem)) {
+            if (!utils.getFullBody(ee).isEmpty()) {
+                continue;
+            }
+
+            Name name = ee.getSimpleName();
+            List<? extends VariableElement> params = ee.getParameters();
+            if (name.contentEquals("equals")) {
+                if (params.size() == 1 && utils.typeUtils.isSameType(params.get(0).asType(), objectType)) {
+                    utils.removeCommentHelper(ee); // purge previous entry
+                    cmtUtils.setRecordEqualsTree(ee);
+                }
+            } else if (name.contentEquals("hashCode")) {
+                if (params.isEmpty()) {
+                    utils.removeCommentHelper(ee); // purge previous entry
+                    cmtUtils.setRecordHashCodeTree(ee);
+                }
+            } else if (name.contentEquals("toString")) {
+                if (params.isEmpty()) {
+                    utils.removeCommentHelper(ee); // purge previous entry
+                    cmtUtils.setRecordToStringTree(ee);
+                }
+            } else if (componentNames.contains(name)) {
+                if (params.isEmpty()) {
+                    utils.removeCommentHelper(ee); // purge previous entry
+                    cmtUtils.setRecordAccessorTree(ee);
+                }
+            }
+        }
+
     }
 }

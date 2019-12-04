@@ -73,7 +73,8 @@ public class JdkQualifiedExportTest {
                "jdk.internal.vm.ci/jdk.vm.ci.runtime",
                "jdk.internal.vm.ci/jdk.vm.ci.hotspot",
                "jdk.internal.vm.ci/jdk.vm.ci.meta",
-               "jdk.internal.vm.ci/jdk.vm.ci.code");
+               "jdk.internal.vm.ci/jdk.vm.ci.code",
+               "java.base/jdk.internal");
 
     static void checkExports(ModuleDescriptor md) {
         // build a map of upgradeable module to Exports that are qualified to it

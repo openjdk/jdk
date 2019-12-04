@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,13 +26,14 @@
 package jdk.javadoc.internal.doclets.toolkit;
 
 import java.io.*;
+import java.lang.ref.*;
 import java.util.*;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
-import javax.lang.model.util.SimpleElementVisitor9;
+import javax.lang.model.util.SimpleElementVisitor14;
 import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
 
@@ -1222,6 +1223,7 @@ public abstract class BaseConfiguration {
      * Splits the elements in a collection to its individual
      * collection.
      */
+    @SuppressWarnings("preview")
     static private class Splitter {
 
         final Set<ModuleElement> mset = new LinkedHashSet<>();
@@ -1235,7 +1237,7 @@ public abstract class BaseConfiguration {
                     : docEnv.getSpecifiedElements();
 
             for (Element e : inset) {
-                new SimpleElementVisitor9<Void, Void>() {
+                new SimpleElementVisitor14<Void, Void>() {
                     @Override
                     @DefinedBy(Api.LANGUAGE_MODEL)
                     public Void visitModule(ModuleElement e, Void p) {

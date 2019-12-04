@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,6 +60,7 @@ public abstract class Attribute {
     public static final String ModuleTarget             = "ModuleTarget";
     public static final String NestHost                 = "NestHost";
     public static final String NestMembers              = "NestMembers";
+    public static final String Record                   = "Record";
     public static final String RuntimeVisibleAnnotations = "RuntimeVisibleAnnotations";
     public static final String RuntimeInvisibleAnnotations = "RuntimeInvisibleAnnotations";
     public static final String RuntimeVisibleParameterAnnotations = "RuntimeVisibleParameterAnnotations";
@@ -134,6 +135,7 @@ public abstract class Attribute {
             standardAttributes.put(ModuleTarget,      ModuleTarget_attribute.class);
             standardAttributes.put(NestHost, NestHost_attribute.class);
             standardAttributes.put(NestMembers, NestMembers_attribute.class);
+            standardAttributes.put(Record, Record_attribute.class);
             standardAttributes.put(RuntimeInvisibleAnnotations, RuntimeInvisibleAnnotations_attribute.class);
             standardAttributes.put(RuntimeInvisibleParameterAnnotations, RuntimeInvisibleParameterAnnotations_attribute.class);
             standardAttributes.put(RuntimeVisibleAnnotations, RuntimeVisibleAnnotations_attribute.class);
@@ -199,6 +201,7 @@ public abstract class Attribute {
         R visitModuleTarget(ModuleTarget_attribute attr, P p);
         R visitNestHost(NestHost_attribute attr, P p);
         R visitNestMembers(NestMembers_attribute attr, P p);
+        R visitRecord(Record_attribute attr, P p);
         R visitRuntimeVisibleAnnotations(RuntimeVisibleAnnotations_attribute attr, P p);
         R visitRuntimeInvisibleAnnotations(RuntimeInvisibleAnnotations_attribute attr, P p);
         R visitRuntimeVisibleParameterAnnotations(RuntimeVisibleParameterAnnotations_attribute attr, P p);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
-import javax.lang.model.util.SimpleElementVisitor9;
+import javax.lang.model.util.SimpleElementVisitor14;
 import javax.tools.JavaFileManager;
 import javax.tools.StandardJavaFileManager;
 
@@ -333,6 +333,7 @@ public class TagletManager {
      * @param trees the trees containing the comments
      * @param areInlineTags true if the array of tags are inline and false otherwise.
      */
+    @SuppressWarnings("preview")
     public void checkTags(Element element, Iterable<? extends DocTree> trees, boolean areInlineTags) {
         if (trees == null) {
             return;
@@ -365,7 +366,7 @@ public class TagletManager {
                 if (element == null) {
                     return;
                 }
-                new SimpleElementVisitor9<Void, Void>() {
+                new SimpleElementVisitor14<Void, Void>() {
                     @Override
                     public Void visitModule(ModuleElement e, Void p) {
                         if (!taglet.inModule()) {
@@ -521,6 +522,7 @@ public class TagletManager {
             case INTERFACE:
             case CLASS:
             case ENUM:
+            case RECORD:
                 return blockTagletsBySite.get(Site.TYPE);
             case MODULE:
                 return blockTagletsBySite.get(Site.MODULE);

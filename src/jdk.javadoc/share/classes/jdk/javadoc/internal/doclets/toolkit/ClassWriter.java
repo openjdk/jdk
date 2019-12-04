@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,11 +73,11 @@ public interface ClassWriter {
     public Content getClassInfoTreeHeader();
 
     /**
-     * Add the type parameter information.
+     * Add the type parameter and state component information.
      *
      * @param classInfoTree content tree to which the documentation will be added
      */
-    public void addTypeParamInfo(Content classInfoTree);
+    public void addParamInfo(Content classInfoTree);
 
     /**
      * Add all super interfaces if this is an interface.

@@ -212,6 +212,15 @@ public class PackageWriterImpl extends HtmlDocletWriter
      * {@inheritDoc}
      */
     @Override
+    public void addRecordSummary(SortedSet<TypeElement> records, Content summaryContentTree) {
+        TableHeader tableHeader= new TableHeader(contents.record, contents.descriptionLabel);
+        addClassesSummary(records, resources.recordSummary, tableHeader, summaryContentTree);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public void addExceptionSummary(SortedSet<TypeElement> exceptions, Content summaryContentTree) {
         TableHeader tableHeader= new TableHeader(contents.exception, contents.descriptionLabel);
         addClassesSummary(exceptions, resources.exceptionSummary, tableHeader, summaryContentTree);

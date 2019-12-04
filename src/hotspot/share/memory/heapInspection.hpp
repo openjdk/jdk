@@ -88,6 +88,8 @@
         "Number of bytes used by the InstanceKlass::inner_classes() array") \
     f(nest_members_bytes, IK_nest_members, \
         "Number of bytes used by the InstanceKlass::nest_members() array") \
+    f(record_components_bytes, IK_record_components, \
+        "Number of bytes used by the InstanceKlass::record_components() array") \
     f(signers_bytes, IK_signers, \
         "Number of bytes used by the InstanceKlass::singers() array") \
     f(class_annotations_bytes, class_annotations, \

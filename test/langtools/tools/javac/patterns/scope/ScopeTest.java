@@ -94,7 +94,7 @@ public class ScopeTest extends JavacTemplateTestBase {
 
     private void program(String block) {
         String s = "class C { void m(Object o) " + block + "}";
-        addSourceFile("C.java", new StringTemplate(s));
+        addSourceFile("C.java", s);
     }
 
     private void assertOK(String block) {

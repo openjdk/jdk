@@ -472,6 +472,7 @@ class VM_RedefineClasses: public VM_Operation {
   bool rewrite_cp_refs_in_fields_annotations(
     InstanceKlass* scratch_class, TRAPS);
   bool rewrite_cp_refs_in_nest_attributes(InstanceKlass* scratch_class);
+  bool rewrite_cp_refs_in_record_attribute(InstanceKlass* scratch_class, TRAPS);
   void rewrite_cp_refs_in_method(methodHandle method,
     methodHandle * new_method_p, TRAPS);
   bool rewrite_cp_refs_in_methods(InstanceKlass* scratch_class, TRAPS);

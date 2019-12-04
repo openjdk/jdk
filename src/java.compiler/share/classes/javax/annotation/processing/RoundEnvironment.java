@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,8 +78,8 @@ public interface RoundEnvironment {
      * The annotation may appear directly or be inherited.  Only
      * package elements, module elements, and type elements <i>included</i> in this
      * round of annotation processing, or declarations of members,
-     * constructors, parameters, or type parameters declared within
-     * those, are returned.  Included type elements are {@linkplain
+     * constructors, parameters, type parameters, or record components
+     * declared within those, are returned.  Included type elements are {@linkplain
      * #getRootElements root types} and any member types nested within
      * them.  Elements of a package are not considered included simply
      * because a {@code package-info} file for that package was
@@ -133,8 +133,8 @@ public interface RoundEnvironment {
      * The annotation may appear directly or be inherited.  Only
      * package elements, module elements, and type elements <i>included</i> in this
      * round of annotation processing, or declarations of members,
-     * constructors, parameters, or type parameters declared within
-     * those, are returned.  Included type elements are {@linkplain
+     * constructors, parameters, type parameters, or record components
+     * declared within those, are returned.  Included type elements are {@linkplain
      * #getRootElements root types} and any member types nested within
      * them.  Elements in a package are not considered included simply
      * because a {@code package-info} file for that package was

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,8 @@
  */
 
 // key: compiler.err.illegal.start.of.stmt
-// key: compiler.err.expected3
+// key: compiler.err.expected4
+// options: --enable-preview -source ${jdk.version}
 
 class IllegalStartOfStmt {
     void m() {

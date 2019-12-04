@@ -62,6 +62,10 @@ public class AttrContext {
      */
     boolean isSerializable = false;
 
+    /** Is this a serializable lambda?
+     */
+    boolean isSerializableLambda = false;
+
     /** Is this a lambda environment?
      */
     boolean isLambda = false;
@@ -134,6 +138,7 @@ public class AttrContext {
         info.defaultSuperCallSite = defaultSuperCallSite;
         info.isSerializable = isSerializable;
         info.isLambda = isLambda;
+        info.isSerializableLambda = isSerializableLambda;
         info.attributionMode = attributionMode;
         info.isAnonymousDiamond = isAnonymousDiamond;
         info.isNewClass = isNewClass;

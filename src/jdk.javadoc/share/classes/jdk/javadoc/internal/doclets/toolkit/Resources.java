@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,6 +49,7 @@ public class Resources {
     public final String exceptionSummary;
     public final String interfaceSummary;
     public final String packageSummary;
+    public final String recordSummary;
 
     protected ResourceBundle commonBundle;
     protected ResourceBundle docletBundle;
@@ -76,6 +77,7 @@ public class Resources {
         this.exceptionSummary = getText("doclet.Exception_Summary");
         this.interfaceSummary = getText("doclet.Interface_Summary");
         this.packageSummary = getText("doclet.Package_Summary");
+        this.recordSummary = getText("doclet.Record_Summary");
     }
 
     /**
