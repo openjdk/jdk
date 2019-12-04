@@ -146,6 +146,30 @@ public class BindingsTest1 {
             s.length();
         }
 
+        {
+            while (!(o1 instanceof String s)) {
+                L8: break L8;
+            }
+
+            s.length();
+        }
+
+        {
+            for ( ;!(o1 instanceof String s); ) {
+                L9: break L9;
+            }
+
+            s.length();
+        }
+
+        {
+            do {
+                L10: break L10;
+            } while (!(o1 instanceof String s));
+
+            s.length();
+        }
+
         if (o1 instanceof String s) {
             Runnable r1 = new Runnable() {
                 @Override

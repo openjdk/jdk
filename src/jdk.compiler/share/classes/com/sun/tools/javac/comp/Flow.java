@@ -280,8 +280,7 @@ public class Flow {
         //related errors, which will allow for more errors to be detected
         Log.DiagnosticHandler diagHandler = new Log.DiscardDiagnosticHandler(log);
         try {
-            boolean[] breaksOut = new boolean[1];
-            SnippetBreakAnalyzer analyzer = new SnippetBreakAnalyzer(loop);
+            SnippetBreakAnalyzer analyzer = new SnippetBreakAnalyzer();
 
             analyzer.analyzeTree(env, body, make);
             return analyzer.breaksOut();
@@ -1515,16 +1514,46 @@ public class Flow {
     }
 
     class SnippetBreakAnalyzer extends AliveAnalyzer {
-        private final JCTree loop;
+        private final Set<JCTree> seenTrees = new HashSet<>();
         private boolean breaksOut;
 
-        public SnippetBreakAnalyzer(JCTree loop) {
-            this.loop = loop;
+        public SnippetBreakAnalyzer() {
+        }
+
+        @Override
+        public void visitLabelled(JCTree.JCLabeledStatement tree) {
+            seenTrees.add(tree);
+            super.visitLabelled(tree);
+        }
+
+        @Override
+        public void visitWhileLoop(JCTree.JCWhileLoop tree) {
+            seenTrees.add(tree);
+            super.visitWhileLoop(tree);
+        }
+
+        @Override
+        public void visitForLoop(JCTree.JCForLoop tree) {
+            seenTrees.add(tree);
+            super.visitForLoop(tree);
+        }
+
+        @Override
+        public void visitForeachLoop(JCTree.JCEnhancedForLoop tree) {
+            seenTrees.add(tree);
+            super.visitForeachLoop(tree);
+        }
+
+        @Override
+        public void visitDoLoop(JCTree.JCDoWhileLoop tree) {
+            seenTrees.add(tree);
+            super.visitDoLoop(tree);
         }
 
         @Override
         public void visitBreak(JCBreak tree) {
-            breaksOut |= (super.alive == Liveness.ALIVE && tree.target == loop);
+            breaksOut |= (super.alive == Liveness.ALIVE &&
+                          !seenTrees.contains(tree.target));
             super.visitBreak(tree);
         }
 
