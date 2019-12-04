@@ -26,6 +26,7 @@
 #include "code/icBuffer.hpp"
 #include "code/nmethod.hpp"
 #include "gc/shenandoah/shenandoahCodeRoots.hpp"
+#include "gc/shenandoah/shenandoahEvacOOMHandler.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahNMethod.inline.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
@@ -221,7 +222,6 @@ public:
     ShenandoahReentrantLocker locker(nm_data->lock());
 
     // Heal oops and disarm
-    ShenandoahEvacOOMScope scope;
     ShenandoahNMethod::heal_nmethod(nm);
     ShenandoahNMethod::disarm_nmethod(nm);
 
@@ -258,6 +258,7 @@ public:
   }
 
   virtual void work(uint worker_id) {
+    ShenandoahEvacOOMScope evac_scope;
     ICRefillVerifierMark mark(_verifier);
     _iterator.nmethods_do(&_cl);
   }
