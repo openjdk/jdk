@@ -1254,9 +1254,11 @@ public final class SSLSocketImpl
             } catch (SSLHandshakeException she) {
                 // may be record sequence number overflow
                 throw conContext.fatal(Alert.HANDSHAKE_FAILURE, she);
-            } catch (IOException e) {
-                throw conContext.fatal(Alert.UNEXPECTED_MESSAGE, e);
-            }
+            } catch (SSLException ssle) {
+                throw conContext.fatal(Alert.UNEXPECTED_MESSAGE, ssle);
+            }   // re-throw other IOException, which should be caused by
+                // the underlying plain socket and could be handled by
+                // applications (for example, re-try the connection).
 
             // Is the sequence number is nearly overflow, or has the key usage
             // limit been reached?
