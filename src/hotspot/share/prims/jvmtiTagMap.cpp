@@ -483,6 +483,11 @@ JvmtiTagMap::~JvmtiTagMap() {
 // is returned. Otherwise an new entry is allocated.
 JvmtiTagHashmapEntry* JvmtiTagMap::create_entry(oop ref, jlong tag) {
   assert(Thread::current()->is_VM_thread() || is_locked(), "checking");
+
+  // ref was read with AS_NO_KEEPALIVE, or equivalent.
+  // The object needs to be kept alive when it is published.
+  Universe::heap()->keep_alive(ref);
+
   JvmtiTagHashmapEntry* entry;
   if (_free_entries == NULL) {
     entry = new JvmtiTagHashmapEntry(ref, tag);

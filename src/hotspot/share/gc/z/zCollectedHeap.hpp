@@ -99,6 +99,8 @@ public:
 
   virtual void object_iterate(ObjectClosure* cl);
 
+  virtual void keep_alive(oop obj);
+
   virtual void register_nmethod(nmethod* nm);
   virtual void unregister_nmethod(nmethod* nm);
   virtual void flush_nmethod(nmethod* nm);

@@ -2348,6 +2348,10 @@ void G1CollectedHeap::object_iterate(ObjectClosure* cl) {
   heap_region_iterate(&blk);
 }
 
+void G1CollectedHeap::keep_alive(oop obj) {
+  G1BarrierSet::enqueue(obj);
+}
+
 void G1CollectedHeap::heap_region_iterate(HeapRegionClosure* cl) const {
   _hrm->iterate(cl);
 }

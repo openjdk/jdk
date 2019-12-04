@@ -778,6 +778,10 @@ class FindInstanceClosure : public ObjectClosure {
 
   void do_object(oop obj) {
     if (obj->is_a(_klass)) {
+      // obj was read with AS_NO_KEEPALIVE, or equivalent.
+      // The object needs to be kept alive when it is published.
+      Universe::heap()->keep_alive(obj);
+
       _result->append(obj);
     }
   }
