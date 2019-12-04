@@ -92,7 +92,7 @@ public class MethodHandles {
     /**
      * Returns a {@link Lookup lookup object} with
      * full capabilities to emulate all supported bytecode behaviors of the caller.
-     * These capabilities include <a href="MethodHandles.Lookup.html#privacc">private access</a> to the caller.
+     * These capabilities include {@linkplain Lookup#hasFullPrivilegeAccess() full privilege access} to the caller.
      * Factory methods on the lookup object can create
      * <a href="MethodHandleInfo.html#directmh">direct method handles</a>
      * for any member that the caller has access to via bytecodes,
@@ -102,7 +102,8 @@ public class MethodHandles {
      * <p>
      * This method is caller sensitive, which means that it may return different
      * values to different callers.
-     * @return a lookup object for the caller of this method, with private access
+     * @return a lookup object for the caller of this method, with
+     * {@linkplain Lookup#hasFullPrivilegeAccess() full privilege access}
      */
     @CallerSensitive
     @ForceInline // to ensure Reflection.getCallerClass optimization
@@ -157,7 +158,7 @@ public class MethodHandles {
 
     /**
      * Returns a {@link Lookup lookup} object on a target class to emulate all supported
-     * bytecode behaviors, including <a href="MethodHandles.Lookup.html#privacc"> private access</a>.
+     * bytecode behaviors, including <a href="MethodHandles.Lookup.html#privacc">private access</a>.
      * The returned lookup object can provide access to classes in modules and packages,
      * and members of those classes, outside the normal rules of Java access control,
      * instead conforming to the more permissive rules for modular <em>deep reflection</em>.
@@ -169,14 +170,18 @@ public class MethodHandles {
      * <li>If there is a security manager, its {@code checkPermission} method is
      * called to check {@code ReflectPermission("suppressAccessChecks")} and
      * that must return normally.
-     * <li>The caller lookup object must have the {@link Lookup#MODULE MODULE} lookup mode.
-     * (This is because otherwise there would be no way to ensure the original lookup
-     * creator was a member of any particular module, and so any subsequent checks
-     * for readability and qualified exports would become ineffective.)
-     * <li>The caller lookup object must have {@link Lookup#PRIVATE PRIVATE} access.
-     * (This is because an application intending to share intra-module access
-     * using {@link Lookup#MODULE MODULE} alone will inadvertently also share
-     * deep reflection to its own module.)
+     * <li>The caller lookup object must have {@linkplain Lookup#hasFullPrivilegeAccess()
+     * full privilege access}.  Specifically:
+     *   <ul>
+     *     <li>The caller lookup object must have the {@link Lookup#MODULE MODULE} lookup mode.
+     *         (This is because otherwise there would be no way to ensure the original lookup
+     *         creator was a member of any particular module, and so any subsequent checks
+     *         for readability and qualified exports would become ineffective.)
+     *     <li>The caller lookup object must have {@link Lookup#PRIVATE PRIVATE} access.
+     *         (This is because an application intending to share intra-module access
+     *         using {@link Lookup#MODULE MODULE} alone will inadvertently also share
+     *         deep reflection to its own module.)
+     *   </ul>
      * <li>The target class must be a proper class, not a primitive or array class.
      * (Thus, {@code M2} is well-defined.)
      * <li>If the caller module {@code M1} differs from
@@ -192,13 +197,14 @@ public class MethodHandles {
      * exception.
      * <p>
      * Otherwise, if {@code M1} and {@code M2} are the same module, this method
-     * returns a {@code Lookup} on {@code targetClass} with full capabilities and
+     * returns a {@code Lookup} on {@code targetClass} with
+     * {@linkplain Lookup#hasFullPrivilegeAccess() full privilege access} and
      * {@code null} previous lookup class.
      * <p>
      * Otherwise, {@code M1} and {@code M2} are two different modules.  This method
      * returns a {@code Lookup} on {@code targetClass} that records
      * the lookup class of the caller as the new previous lookup class and
-     * drops {@code MODULE} access from the full capabilities mode.
+     * drops {@code MODULE} access from the full privilege access.
      *
      * @param targetClass the target class
      * @param caller the caller lookup object
@@ -220,10 +226,8 @@ public class MethodHandles {
         if (targetClass.isArray())
             throw new IllegalArgumentException(targetClass + " is an array class");
         // Ensure that we can reason accurately about private and module access.
-        if ((caller.lookupModes() & Lookup.PRIVATE) == 0)
-            throw new IllegalAccessException("caller does not have PRIVATE lookup mode");
-        if ((caller.lookupModes() & Lookup.MODULE) == 0)
-            throw new IllegalAccessException("caller does not have MODULE lookup mode");
+        if (!caller.hasFullPrivilegeAccess())
+            throw new IllegalAccessException("caller does not have PRIVATE and MODULE lookup mode");
 
         // previous lookup class is never set if it has MODULE access
         assert caller.previousLookupClass() == null;
@@ -551,7 +555,7 @@ public class MethodHandles {
      *
      * <p style="font-size:smaller;">
      * <a id="privacc"></a>
-     * <em>Discussion of private access:</em>
+     * <em>Discussion of private and module access:</em>
      * We say that a lookup has <em>private access</em>
      * if its {@linkplain #lookupModes lookup modes}
      * include the possibility of accessing {@code private} members
@@ -560,13 +564,23 @@ public class MethodHandles {
      * only lookups with private access possess the following capabilities:
      * <ul style="font-size:smaller;">
      * <li>access private fields, methods, and constructors of the lookup class and its nestmates
-     * <li>create method handles which invoke <a href="MethodHandles.Lookup.html#callsens">caller sensitive</a> methods,
-     *     such as {@code Class.forName}
      * <li>create method handles which {@link Lookup#findSpecial emulate invokespecial} instructions
      * <li>avoid <a href="MethodHandles.Lookup.html#secmgr">package access checks</a>
      *     for classes accessible to the lookup class
      * <li>create {@link Lookup#in delegated lookup objects} which have private access to other classes
      *     within the same package member
+     * </ul>
+     * <p style="font-size:smaller;">
+     * Similarly, a lookup with module access ensures that the original lookup creator was
+     * a member in the same module as the lookup class.
+     * <p style="font-size:smaller;">
+     * Private and module access are independently determined modes; a lookup may have
+     * either or both or neither.  A lookup which possesses both access modes is said to
+     * possess {@linkplain #hasFullPrivilegeAccess() full privilege access}.  Such a lookup has
+     * the following additional capability:
+     * <ul style="font-size:smaller;">
+     * <li>create method handles which invoke <a href="MethodHandles.Lookup.html#callsens">caller sensitive</a> methods,
+     *     such as {@code Class.forName}
      * </ul>
      * <p style="font-size:smaller;">
      * Each of these permissions is a consequence of the fact that a lookup object
@@ -643,7 +657,7 @@ public class MethodHandles {
      * <p>
      * {@link MethodHandles#privateLookupIn(Class, Lookup) MethodHandles.privateLookupIn(T.class, lookup)}
      * can be used to teleport a {@code lookup} from class {@code C} to class {@code T}
-     * and create a new {@code Lookup} with <a href="#privcc">private access</a>
+     * and create a new {@code Lookup} with <a href="#privacc">private access</a>
      * if the lookup class is allowed to do <em>deep reflection</em> on {@code T}.
      * The {@code lookup} must have {@link #MODULE} and {@link #PRIVATE} access
      * to call {@code privateLookupIn}.
@@ -1109,7 +1123,7 @@ public class MethodHandles {
      * the {@code refc} and {@code defc} values are the class itself.)
      * The value {@code lookc} is defined as <em>not present</em>
      * if the current lookup object does not have
-     * <a href="MethodHandles.Lookup.html#privacc">private access</a>.
+     * {@linkplain #hasFullPrivilegeAccess() full privilege access}.
      * The calls are made according to the following rules:
      * <ul>
      * <li><b>Step 1:</b>
@@ -1140,6 +1154,12 @@ public class MethodHandles {
      * Therefore, the above rules presuppose a member or class that is public,
      * or else that is being accessed from a lookup class that has
      * rights to access the member or class.
+     * <p>
+     * If a security manager is present and the current lookup object does not have
+     * {@linkplain #hasFullPrivilegeAccess() full privilege access}, then
+     * {@link #defineClass(byte[]) defineClass}
+     * calls {@link SecurityManager#checkPermission smgr.checkPermission}
+     * with {@code RuntimePermission("defineClass")}.
      *
      * <h2><a id="callsens"></a>Caller sensitive methods</h2>
      * A small number of Java methods have a special property called caller sensitivity.
@@ -1159,8 +1179,8 @@ public class MethodHandles {
      * <p>
      * In cases where the lookup object is
      * {@link MethodHandles#publicLookup() publicLookup()},
-     * or some other lookup object without
-     * <a href="MethodHandles.Lookup.html#privacc">private access</a>,
+     * or some other lookup object without the
+     * {@linkplain #hasFullPrivilegeAccess() full privilege access},
      * the lookup class is disregarded.
      * In such cases, no caller-sensitive method handle can be created,
      * access is forbidden, and the lookup fails with an
@@ -1513,7 +1533,8 @@ public class MethodHandles {
          * @apiNote
          * A lookup with {@code PACKAGE} but not {@code PRIVATE} mode can safely
          * delegate non-public access within the package of the lookup class without
-         * conferring private access.  A lookup with {@code MODULE} but not
+         * conferring  <a href="MethodHandles.Lookup.html#privacc">private access</a>.
+         * A lookup with {@code MODULE} but not
          * {@code PACKAGE} mode can safely delegate {@code PUBLIC} access within
          * the module of the lookup class without conferring package access.
          * A lookup with a {@linkplain #previousLookupClass() previous lookup class}
@@ -1564,8 +1585,9 @@ public class MethodHandles {
          * run at a later time, as detailed in section 12.4 of the <em>The Java Language
          * Specification</em>. </p>
          *
-         * <p> If there is a security manager, its {@code checkPermission} method is first called
-         * to check {@code RuntimePermission("defineClass")}. </p>
+         * <p> If there is a security manager and this lookup does not have {@linkplain
+         * #hasFullPrivilegeAccess() full privilege access}, its {@code checkPermission} method
+         * is first called to check {@code RuntimePermission("defineClass")}. </p>
          *
          * @param bytes the class bytes
          * @return the {@code Class} object for the class
@@ -1574,7 +1596,8 @@ public class MethodHandles {
          * @throws IllegalAccessException if this lookup does not have {@code PACKAGE} access
          * @throws LinkageError if the class is malformed ({@code ClassFormatError}), cannot be
          * verified ({@code VerifyError}), is already defined, or another linkage error occurs
-         * @throws SecurityException if denied by the security manager
+         * @throws SecurityException if a security manager is present and it
+         *                           <a href="MethodHandles.Lookup.html#secmgr">refuses access</a>
          * @throws NullPointerException if {@code bytes} is {@code null}
          * @since 9
          * @spec JPMS
@@ -1583,12 +1606,13 @@ public class MethodHandles {
          * @see ClassLoader#defineClass(String,byte[],int,int,ProtectionDomain)
          */
         public Class<?> defineClass(byte[] bytes) throws IllegalAccessException {
-            SecurityManager sm = System.getSecurityManager();
-            if (sm != null)
-                sm.checkPermission(new RuntimePermission("defineClass"));
+            if (!hasFullPrivilegeAccess()) {
+                SecurityManager sm = System.getSecurityManager();
+                if (sm != null)
+                    sm.checkPermission(new RuntimePermission("defineClass"));
+            }
             if ((lookupModes() & PACKAGE) == 0)
                 throw new IllegalAccessException("Lookup does not have PACKAGE access");
-            assert (lookupModes() & (MODULE|PUBLIC)) != 0;
 
             // parse class bytes to get class name (in internal form)
             bytes = bytes.clone();
@@ -1931,24 +1955,24 @@ assertEquals("[x, y, z]", pb.command().toString());
         }
 
         /**
-         * Looks up a class by name from the lookup context defined by this {@code Lookup} object. The static
-         * initializer of the class is not run.
+         * Looks up a class by name from the lookup context defined by this {@code Lookup} object,
+         * <a href="MethodHandles.Lookup.html#equiv">as if resolved</a> by an {@code ldc} instruction.
+         * Such a resolution, as specified in JVMS 5.4.3.1 section, attempts to locate and load the class,
+         * and then determines whether the class is accessible to this lookup object.
          * <p>
-         * The lookup context here is determined by the {@linkplain #lookupClass() lookup class}, its class
-         * loader, and the {@linkplain #lookupModes() lookup modes}. In particular, the method first attempts to
-         * load the requested class, and then determines whether the class is accessible to this lookup object.
+         * The lookup context here is determined by the {@linkplain #lookupClass() lookup class},
+         * its class loader, and the {@linkplain #lookupModes() lookup modes}.
          *
          * @param targetName the fully qualified name of the class to be looked up.
          * @return the requested class.
-         * @throws    SecurityException if a security manager is present and it
-         *            <a href="MethodHandles.Lookup.html#secmgr">refuses access</a>
+         * @throws SecurityException if a security manager is present and it
+         *                           <a href="MethodHandles.Lookup.html#secmgr">refuses access</a>
          * @throws LinkageError if the linkage fails
          * @throws ClassNotFoundException if the class cannot be loaded by the lookup class' loader.
          * @throws IllegalAccessException if the class is not accessible, using the allowed access
          * modes.
-         * @throws    SecurityException if a security manager is present and it
-         *                              <a href="MethodHandles.Lookup.html#secmgr">refuses access</a>
          * @since 9
+         * @jvms 5.4.3.1 Class and Interface Resolution
          */
         public Class<?> findClass(String targetName) throws ClassNotFoundException, IllegalAccessException {
             Class<?> targetClass = Class.forName(targetName, false, lookupClass.getClassLoader());
@@ -2736,7 +2760,7 @@ return mh1;
             }
             if (allowedModes != TRUSTED && member.isCallerSensitive()) {
                 Class<?> callerClass = target.internalCallerClass();
-                if (!hasPrivateAccess() || callerClass != lookupClass())
+                if (!hasFullPrivilegeAccess() || callerClass != lookupClass())
                     throw new IllegalArgumentException("method handle is caller sensitive: "+callerClass);
             }
             // Produce the handle to the results.
@@ -2801,14 +2825,14 @@ return mh1;
 
         /**
          * Find my trustable caller class if m is a caller sensitive method.
-         * If this lookup object has private access, then the caller class is the lookupClass.
+         * If this lookup object has full privilege access, then the caller class is the lookupClass.
          * Otherwise, if m is caller-sensitive, throw IllegalAccessException.
          */
         Class<?> findBoundCallerClass(MemberName m) throws IllegalAccessException {
             Class<?> callerClass = null;
             if (MethodHandleNatives.isCallerSensitive(m)) {
-                // Only lookups with private access are allowed to resolve caller-sensitive methods
-                if (hasPrivateAccess()) {
+                // Only lookups with full privilege access are allowed to resolve caller-sensitive methods
+                if (hasFullPrivilegeAccess()) {
                     callerClass = lookupClass;
                 } else {
                     throw new IllegalAccessException("Attempt to lookup caller-sensitive method using restricted lookup object");
@@ -2818,26 +2842,47 @@ return mh1;
         }
 
         /**
-         * Returns {@code true} if this lookup has {@code PRIVATE} access.
-         * @return {@code true} if this lookup has {@code PRIVATE} access.
+         * Returns {@code true} if this lookup has {@code PRIVATE} and {@code MODULE} access.
+         * @return {@code true} if this lookup has {@code PRIVATE} and {@code MODULE} access.
+         *
+         * @deprecated This method was originally designed to test {@code PRIVATE} access
+         * that implies full privilege access but {@code MODULE} access has since become
+         * independent of {@code PRIVATE} access.  It is recommended to call
+         * {@link #hasFullPrivilegeAccess()} instead.
          * @since 9
          */
+        @Deprecated(since="14")
         public boolean hasPrivateAccess() {
-            return (allowedModes & PRIVATE) != 0;
+            return hasFullPrivilegeAccess();
+        }
+
+        /**
+         * Returns {@code true} if this lookup has <em>full privilege access</em>,
+         * i.e. {@code PRIVATE} and {@code MODULE} access.
+         * A {@code Lookup} object must have full privilege access in order to
+         * access all members that are allowed to the {@linkplain #lookupClass() lookup class}.
+         *
+         * @return {@code true} if this lookup has full privilege access.
+         * @since 14
+         * @see <a href="MethodHandles.Lookup.html#privacc">private and module access</a>
+         */
+        public boolean hasFullPrivilegeAccess() {
+            return (allowedModes & (PRIVATE|MODULE)) == (PRIVATE|MODULE);
         }
 
         /**
          * Perform necessary <a href="MethodHandles.Lookup.html#secmgr">access checks</a>.
          * Determines a trustable caller class to compare with refc, the symbolic reference class.
-         * If this lookup object has private access, then the caller class is the lookupClass.
+         * If this lookup object has full privilege access, then the caller class is the lookupClass.
          */
         void checkSecurityManager(Class<?> refc, MemberName m) {
-            SecurityManager smgr = System.getSecurityManager();
-            if (smgr == null)  return;
             if (allowedModes == TRUSTED)  return;
 
+            SecurityManager smgr = System.getSecurityManager();
+            if (smgr == null)  return;
+
             // Step 1:
-            boolean fullPowerLookup = hasPrivateAccess();
+            boolean fullPowerLookup = hasFullPrivilegeAccess();
             if (!fullPowerLookup ||
                 !VerifyAccess.classLoaderIsAncestor(lookupClass, refc)) {
                 ReflectUtil.checkPackageAccess(refc);
@@ -2964,7 +3009,7 @@ return mh1;
         private void checkSpecialCaller(Class<?> specialCaller, Class<?> refc) throws IllegalAccessException {
             int allowedModes = this.allowedModes;
             if (allowedModes == TRUSTED)  return;
-            if (!hasPrivateAccess()
+            if ((lookupModes() & PRIVATE) == 0
                 || (specialCaller != lookupClass()
                        // ensure non-abstract methods in superinterfaces can be special-invoked
                     && !(refc != null && refc.isInterface() && refc.isAssignableFrom(specialCaller))))
@@ -3074,7 +3119,7 @@ return mh1;
             if (allowedModes == TRUSTED || !MethodHandleNatives.isCallerSensitive(method))
                 return mh;
             Class<?> hostClass = lookupClass;
-            if (!hasPrivateAccess())  // caller must have private access
+            if (!hasFullPrivilegeAccess())  // caller must have full power access
                 hostClass = boundCallerClass;  // boundCallerClass came from a security manager style stack walk
             MethodHandle cbmh = MethodHandleImpl.bindCaller(mh, hostClass);
             // Note: caller will apply varargs after this step happens.
