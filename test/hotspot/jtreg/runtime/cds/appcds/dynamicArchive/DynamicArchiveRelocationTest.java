@@ -88,8 +88,7 @@ public class DynamicArchiveRelocationTest extends DynamicArchiveTestBase {
         String baseArchiveName = getNewArchiveName("base");
         String topArchiveName  = getNewArchiveName("top");
 
-        String runtimeMsg1 = "runtime archive relocation start";
-        String runtimeMsg2 = "runtime archive relocation done";
+        String runtimeMsg = "ArchiveRelocationMode == 1: always map archive(s) at an alternative address";
         String unlockArg = "-XX:+UnlockDiagnosticVMOptions";
 
         // (1) Dump base archive (static)
@@ -109,8 +108,7 @@ public class DynamicArchiveRelocationTest extends DynamicArchiveTestBase {
               "-cp", appJar, mainClass)
             .assertNormalExit(output -> {
                     if (dump_top_reloc) {
-                        output.shouldContain(runtimeMsg1);
-                        output.shouldContain(runtimeMsg2);
+                        output.shouldContain(runtimeMsg);
                     }
                 });
 
@@ -121,8 +119,7 @@ public class DynamicArchiveRelocationTest extends DynamicArchiveTestBase {
             "-cp", appJar, mainClass)
             .assertNormalExit(output -> {
                     if (run_reloc) {
-                        output.shouldContain(runtimeMsg1);
-                        output.shouldContain(runtimeMsg2);
+                        output.shouldContain(runtimeMsg);
                     }
                 });
     }

@@ -80,8 +80,7 @@ public class ArchiveRelocationTest {
         TestCommon.run("-cp", appJar, unlockArg, runRelocArg, logArg,  mainClass)
             .assertNormalExit(output -> {
                     if (run_reloc) {
-                        output.shouldContain("runtime archive relocation start");
-                        output.shouldContain("runtime archive relocation done");
+                        output.shouldContain("ArchiveRelocationMode == 1: always map archive(s) at an alternative address");
                     }
                 });
     }
