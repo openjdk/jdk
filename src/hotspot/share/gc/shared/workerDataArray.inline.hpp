@@ -59,9 +59,6 @@ T WorkerDataArray<T>::get(uint worker_i) const {
 
 template <typename T>
 WorkerDataArray<T>::~WorkerDataArray() {
-  for (uint i = 0; i < MaxThreadWorkItems; i++) {
-    delete _thread_work_items[i];
-  }
   FREE_C_HEAP_ARRAY(T, _data);
 }
 
