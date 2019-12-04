@@ -26,7 +26,17 @@
  * @test
  * @bug 8229496
  * @summary Verify that zero check is executed before division/modulo operation.
+ * @requires vm.compiler2.enabled
  * @run main/othervm -Xbatch -XX:LoopUnrollLimit=0
+ *                   -XX:CompileCommand=dontinline,compiler.loopopts.TestDivZeroCheckControl::test*
+ *                   compiler.loopopts.TestDivZeroCheckControl
+ */
+
+/*
+ * @test
+ * @summary Verify that zero check is executed before division/modulo operation.
+ * @requires vm.graal.enabled
+ * @run main/othervm -Xbatch
  *                   -XX:CompileCommand=dontinline,compiler.loopopts.TestDivZeroCheckControl::test*
  *                   compiler.loopopts.TestDivZeroCheckControl
  */
