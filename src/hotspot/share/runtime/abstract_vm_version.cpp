@@ -236,7 +236,7 @@ const char* Abstract_VM_Version::internal_vm_info_string() {
       #elif _MSC_VER == 1922
         #define HOTSPOT_BUILD_COMPILER "MS VC++ 16.2 (VS2019)"
       #elif _MSC_VER == 1923
-        #define HOTSPOT_BUILD_COMPILER "MS VC++ 16.3 (VS2019)
+        #define HOTSPOT_BUILD_COMPILER "MS VC++ 16.3 (VS2019)"
       #else
         #define HOTSPOT_BUILD_COMPILER "unknown MS VC++:" XSTR(_MSC_VER)
       #endif
