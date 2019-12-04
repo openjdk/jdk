@@ -8334,3 +8334,17 @@ FormatData/zh/short.Eras/0=\u516c\u5143\u524d
 FormatData/zh/short.Eras/1=\u516c\u5143
 FormatData/zh_TW/short.Eras/0=\u897f\u5143\u524d
 FormatData/zh_TW/short.Eras/1=\u897f\u5143
+
+# bug 8234288
+TimeZoneNames/en/Asia\/Istanbul/1=Turkey Time
+TimeZoneNames/en/Asia\/Istanbul/2=TRT
+TimeZoneNames/en/Asia\/Istanbul/3=Turkey Summer Time
+TimeZoneNames/en/Asia\/Istanbul/4=TRST
+TimeZoneNames/en/Europe\/Istanbul/1=Turkey Time
+TimeZoneNames/en/Europe\/Istanbul/2=TRT
+TimeZoneNames/en/Europe\/Istanbul/3=Turkey Summer Time
+TimeZoneNames/en/Europe\/Istanbul/4=TRST
+TimeZoneNames/en/Turkey/1=Turkey Time
+TimeZoneNames/en/Turkey/2=TRT
+TimeZoneNames/en/Turkey/3=Turkey Summer Time
+TimeZoneNames/en/Turkey/4=TRST
