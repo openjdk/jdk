@@ -448,7 +448,6 @@ class JvmtiDeferredEvent {
   union {
     nmethod* compiled_method_load;
     struct {
-      nmethod* nm;
       jmethodID method_id;
       const void* code_begin;
     } compiled_method_unload;
@@ -471,7 +470,7 @@ class JvmtiDeferredEvent {
   // Factory methods
   static JvmtiDeferredEvent compiled_method_load_event(nmethod* nm)
     NOT_JVMTI_RETURN_(JvmtiDeferredEvent());
-  static JvmtiDeferredEvent compiled_method_unload_event(nmethod* nm,
+  static JvmtiDeferredEvent compiled_method_unload_event(
       jmethodID id, const void* code) NOT_JVMTI_RETURN_(JvmtiDeferredEvent());
   static JvmtiDeferredEvent dynamic_code_generated_event(
       const char* name, const void* begin, const void* end)

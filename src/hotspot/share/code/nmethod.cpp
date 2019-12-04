@@ -1622,8 +1622,7 @@ void nmethod::post_compiled_method_unload() {
   if (_jmethod_id != NULL && JvmtiExport::should_post_compiled_method_unload()) {
     assert(!unload_reported(), "already unloaded");
     JvmtiDeferredEvent event =
-      JvmtiDeferredEvent::compiled_method_unload_event(this,
-          _jmethod_id, insts_begin());
+      JvmtiDeferredEvent::compiled_method_unload_event(_jmethod_id, insts_begin());
     MutexLocker ml(Service_lock, Mutex::_no_safepoint_check_flag);
     JvmtiDeferredEventQueue::enqueue(event);
   }
