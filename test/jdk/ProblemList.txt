@@ -915,8 +915,7 @@ com/sun/jdi/NashornPopFrameTest.java                            8225620 generic-
 
 sun/tools/jhsdb/BasicLauncherTest.java                          8193639,8211767 solaris-all,linux-ppc64,linux-ppc64le
 sun/tools/jhsdb/HeapDumpTest.java                               8193639 solaris-all
-sun/tools/jhsdb/HeapDumpTestWithActiveProcess.java              8230731,8001227 windows-all
-sun/tools/jhsdb/HeapDumpTestWithActiveProcess.java              8231635,8231634 generic-all
+sun/tools/jhsdb/HeapDumpTestWithActiveProcess.java              8231634,8230731,8001227 generic-all,windows-all
 
 
 ############################################################################
