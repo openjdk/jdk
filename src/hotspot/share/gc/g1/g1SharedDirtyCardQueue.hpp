@@ -37,9 +37,7 @@ class G1SharedDirtyCardQueue {
   void** _buffer;
   size_t _index;
 
-  // Noncopyable
-  G1SharedDirtyCardQueue(const G1SharedDirtyCardQueue&);
-  G1SharedDirtyCardQueue& operator=(const G1SharedDirtyCardQueue&);
+  NONCOPYABLE(G1SharedDirtyCardQueue);
 
 public:
   G1SharedDirtyCardQueue(G1DirtyCardQueueSet* qset);

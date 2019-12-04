@@ -26,13 +26,12 @@
 #define OS_LINUX_WAITBARRIER_LINUX_HPP
 
 #include "memory/allocation.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 class LinuxWaitBarrier : public CHeapObj<mtInternal> {
   volatile int _futex_barrier;
 
-  // Prevent copying and assignment of LinuxWaitBarrier instances.
-  LinuxWaitBarrier(const LinuxWaitBarrier&);
-  LinuxWaitBarrier& operator=(const LinuxWaitBarrier&);
+  NONCOPYABLE(LinuxWaitBarrier);
 
  public:
   LinuxWaitBarrier() : _futex_barrier(0) {};

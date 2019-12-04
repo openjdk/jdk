@@ -28,6 +28,7 @@
 #include "runtime/os.hpp"
 #include "runtime/os_perf.hpp"
 #include "os_solaris.inline.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 
 #include CPU_HEADER(vm_version_ext)
@@ -737,8 +738,7 @@ class NetworkPerformanceInterface::NetworkPerformance : public CHeapObj<mtIntern
   friend class NetworkPerformanceInterface;
  private:
   NetworkPerformance();
-  NetworkPerformance(const NetworkPerformance& rhs); // no impl
-  NetworkPerformance& operator=(const NetworkPerformance& rhs); // no impl
+  NONCOPYABLE(NetworkPerformance);
   bool initialize();
   ~NetworkPerformance();
   int network_utilization(NetworkInterface** network_interfaces) const;

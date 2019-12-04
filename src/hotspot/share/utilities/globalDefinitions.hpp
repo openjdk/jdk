@@ -69,6 +69,19 @@
 // This file holds all globally used constants & types, class (forward)
 // declarations and a few frequently used utility functions.
 
+// Declare the named class to be noncopyable.  This macro must be used in
+// a private part of the class's definition, followed by a semi-colon.
+// Doing so provides private declarations for the class's copy constructor
+// and assignment operator.  Because these operations are private, most
+// potential callers will fail to compile because they are inaccessible.
+// The operations intentionally lack a definition, to provoke link-time
+// failures for calls from contexts where they are accessible, e.g. from
+// within the class or from a friend of the class.
+// Note: The lack of definitions is still not completely bullet-proof, as
+// an apparent call might be optimized away by copy elision.
+// For C++11 the declarations should be changed to deleted definitions.
+#define NONCOPYABLE(C) C(C const&); C& operator=(C const&) /* next token must be ; */
+
 //----------------------------------------------------------------------------------------------------
 // Printf-style formatters for fixed- and variable-width types as pointers and
 // integers.  These are derived from the definitions in inttypes.h.  If the platform

@@ -30,6 +30,7 @@
 #include "gc/shenandoah/shenandoahNMethod.hpp"
 #include "memory/allocation.hpp"
 #include "memory/iterator.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 class ShenandoahHeap;
 class ShenandoahHeapRegion;
@@ -53,10 +54,8 @@ private:
   ShenandoahParallelCodeHeapIterator* _iters;
   int                       _length;
 
-private:
-  // Noncopyable.
-  ShenandoahParallelCodeCacheIterator(const ShenandoahParallelCodeCacheIterator& o);
-  ShenandoahParallelCodeCacheIterator& operator=(const ShenandoahParallelCodeCacheIterator& o);
+  NONCOPYABLE(ShenandoahParallelCodeCacheIterator);
+
 public:
   ShenandoahParallelCodeCacheIterator(const GrowableArray<CodeHeap*>* heaps);
   ~ShenandoahParallelCodeCacheIterator();

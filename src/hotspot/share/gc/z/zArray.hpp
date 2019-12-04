@@ -25,6 +25,7 @@
 #define SHARE_GC_Z_ZARRAY_HPP
 
 #include "memory/allocation.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 template <typename T>
 class ZArray {
@@ -35,9 +36,7 @@ private:
   size_t _size;
   size_t _capacity;
 
-  // Copy and assignment are not allowed
-  ZArray(const ZArray<T>& array);
-  ZArray<T>& operator=(const ZArray<T>& array);
+  NONCOPYABLE(ZArray);
 
   void expand(size_t new_capacity);
 

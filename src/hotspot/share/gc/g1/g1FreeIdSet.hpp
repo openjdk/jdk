@@ -44,9 +44,7 @@ class G1FreeIdSet {
   uint head_index(uintx head) const;
   uintx make_head(uint index, uintx old_head) const;
 
-  // Noncopyable.
-  G1FreeIdSet(const G1FreeIdSet&);
-  G1FreeIdSet& operator=(const G1FreeIdSet&);
+  NONCOPYABLE(G1FreeIdSet);
 
 public:
   G1FreeIdSet(uint start, uint size);

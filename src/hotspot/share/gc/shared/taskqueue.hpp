@@ -28,6 +28,7 @@
 #include "memory/allocation.hpp"
 #include "memory/padded.hpp"
 #include "oops/oopsHierarchy.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/stack.hpp"
 
@@ -514,9 +515,8 @@ class TaskTerminator : public StackObj {
 private:
   ParallelTaskTerminator*  _terminator;
 
-  // Noncopyable.
-  TaskTerminator(const TaskTerminator&);
-  TaskTerminator& operator=(const TaskTerminator&);
+  NONCOPYABLE(TaskTerminator);
+
 public:
   TaskTerminator(uint n_threads, TaskQueueSetSuper* queue_set);
   ~TaskTerminator();

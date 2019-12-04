@@ -27,6 +27,7 @@
 
 #include "memory/allocation.hpp"
 #include "runtime/atomic.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 // Forward decl;
 class BitMapClosure;
@@ -390,9 +391,7 @@ class ArenaBitMap : public BitMap {
   ArenaBitMap(Arena* arena, idx_t size_in_bits);
 
  private:
-  // Don't allow copy or assignment.
-  ArenaBitMap(const ArenaBitMap&);
-  ArenaBitMap& operator=(const ArenaBitMap&);
+  NONCOPYABLE(ArenaBitMap);
 };
 
 // A BitMap with storage in the CHeap.
@@ -401,8 +400,7 @@ class CHeapBitMap : public BitMap {
  private:
   // Don't allow copy or assignment, to prevent the
   // allocated memory from leaking out to other instances.
-  CHeapBitMap(const CHeapBitMap&);
-  CHeapBitMap& operator=(const CHeapBitMap&);
+  NONCOPYABLE(CHeapBitMap);
 
   // NMT memory type
   MEMFLAGS _flags;

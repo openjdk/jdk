@@ -28,6 +28,7 @@
 #include "logging/log.hpp"
 #include "memory/allocation.hpp"
 #include "oops/array.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/hashtable.inline.hpp"
 
@@ -108,9 +109,8 @@ public:
   class Ref : public CHeapObj<mtInternal> {
     Writability _writability;
     Ref* _next;
-    // Noncopyable.
-    Ref(const Ref&);
-    Ref& operator=(const Ref&);
+    NONCOPYABLE(Ref);
+
   protected:
     virtual void** mpp() const = 0;
     Ref(Writability w) : _writability(w), _next(NULL) {}

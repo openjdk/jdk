@@ -334,9 +334,7 @@ class PlatformParker : public CHeapObj<mtSynchronizer> {
 // Platform specific implementations that underpin VM Mutex/Monitor classes
 
 class PlatformMutex : public CHeapObj<mtSynchronizer> {
-  // Disable copying
-  PlatformMutex(const PlatformMutex&);
-  PlatformMutex& operator=(const PlatformMutex&);
+  NONCOPYABLE(PlatformMutex);
 
  protected:
   mutex_t _mutex; // Native mutex for locking
@@ -352,9 +350,8 @@ class PlatformMutex : public CHeapObj<mtSynchronizer> {
 class PlatformMonitor : public PlatformMutex {
  private:
   cond_t  _cond;  // Native condition variable for blocking
-  // Disable copying
-  PlatformMonitor(const PlatformMonitor&);
-  PlatformMonitor& operator=(const PlatformMonitor&);
+
+  NONCOPYABLE(PlatformMonitor);
 
  public:
   PlatformMonitor();

@@ -285,10 +285,8 @@ class PlatformMutex : public CHeapObj<mtSynchronizer> {
 
 #endif // PLATFORM_MONITOR_IMPL_INDIRECT
 
-private:
-  // Disable copying
-  PlatformMutex(const PlatformMutex&);
-  PlatformMutex& operator=(const PlatformMutex&);
+ private:
+  NONCOPYABLE(PlatformMutex);
 
  public:
   void lock();
@@ -329,9 +327,7 @@ class PlatformMonitor : public PlatformMutex {
 #endif // PLATFORM_MONITOR_IMPL_INDIRECT
 
  private:
-  // Disable copying
-  PlatformMonitor(const PlatformMonitor&);
-  PlatformMonitor& operator=(const PlatformMonitor&);
+  NONCOPYABLE(PlatformMonitor);
 
  public:
   int wait(jlong millis);
