@@ -326,9 +326,17 @@ public class InetAddress implements java.io.Serializable {
 
                     public InetAddress getByName(String hostName,
                                                  InetAddress hostAddress)
-                            throws UnknownHostException
+                        throws UnknownHostException
                     {
                         return InetAddress.getByName(hostName, hostAddress);
+                    }
+
+                    public int addressValue(Inet4Address inet4Address) {
+                        return inet4Address.addressValue();
+                    }
+
+                    public byte[] addressBytes(Inet6Address inet6Address) {
+                        return inet6Address.addressBytes();
                     }
                 }
         );

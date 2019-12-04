@@ -311,6 +311,13 @@ class Inet4Address extends InetAddress {
     }
 
     /**
+     * Returns the 32-bit IPv4 address.
+     */
+    int addressValue() {
+        return holder().getAddress();
+    }
+
+    /**
      * Returns the IP address string in textual presentation form.
      *
      * @return  the raw IP address in a string format.
