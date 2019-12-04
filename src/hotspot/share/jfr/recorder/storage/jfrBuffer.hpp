@@ -26,32 +26,46 @@
 #define SHARE_JFR_RECORDER_STORAGE_JFRBUFFER_HPP
 
 #include "memory/allocation.hpp"
+#include "runtime/atomic.hpp"
 
 //
 // Represents a piece of committed memory.
 //
-// u1* _pos <-- next store position
+// Use acquire() and/or try_acquire() for exclusive access
+// to the buffer (cas identity). This is a precondition
+// for attempting stores.
+//
+// u1* _pos <-- last committed position
 // u1* _top <-- next unflushed position
 //
-// const void* _identity <-- acquired by
-//
-// Must be the owner before attempting stores.
-// Use acquire() and/or try_acquire() for exclusive access
-// to the (entire) buffer (cas identity).
-//
-// Stores to the buffer should uphold transactional semantics.
-// A new _pos must be updated only after all intended stores have completed.
+// Stores must uphold transactional semantics. This means that _pos
+// must be updated only after all intended stores have completed already.
 // The relation between _pos and _top must hold atomically,
 // e.g. the delta must always be fully parsable.
 // _top can move concurrently by other threads but is always <= _pos.
 //
+// Memory ordering:
+//
+//  Method                 Owner thread             Other threads
+//  ---------------------------------------------------------------
+//  acquire()              Acquire semantics (cas)  Acquire semantics (cas)
+//  try_acquire()          Acquire semantics (cas)  Acquire semantics (cas)
+//  release()              Release semantics        Release semantics
+//  pos()                  Plain load               Acquire semantics needed at call sites
+//  set_pos()              Release semantics        N/A
+//  top()                  Acquire semantics        Acquire semantics
+//  set_top()              Release semantics        Release semantics
+//  acquire_crit_sec_top() Acquire semantics (cas)  Acquire semantics (cas)
+//  release_crit_sec_top() Release semantics        Release semantics
+//
+
 class JfrBuffer {
  private:
   JfrBuffer* _next;
   JfrBuffer* _prev;
-  const void* volatile _identity;
+  const void* _identity;
   u1* _pos;
-  mutable const u1* volatile _top;
+  mutable const u1* _top;
   u2 _flags;
   u2 _header_size;
   u4 _size;
@@ -60,10 +74,9 @@ class JfrBuffer {
 
  public:
   JfrBuffer();
-  bool initialize(size_t header_size, size_t size, const void* id = NULL);
+  bool initialize(size_t header_size, size_t size);
   void reinitialize(bool exclusion = false);
-  void concurrent_reinitialization();
-  size_t discard();
+
   JfrBuffer* next() const {
     return _next;
   }
@@ -92,6 +105,8 @@ class JfrBuffer {
     return start() + size();
   }
 
+  // If pos() methods are invoked by a thread that is not the owner,
+  // then acquire semantics must be ensured at the call site.
   const u1* pos() const {
     return _pos;
   }
@@ -101,48 +116,45 @@ class JfrBuffer {
   }
 
   u1** pos_address() {
-    return (u1**)&_pos;
+    return &_pos;
   }
 
   void set_pos(u1* new_pos) {
     assert(new_pos <= end(), "invariant");
-    _pos = new_pos;
+    Atomic::release_store(&_pos, new_pos);
   }
 
   void set_pos(size_t size) {
-    assert(_pos + size <= end(), "invariant");
-    _pos += size;
+    set_pos(pos() + size);
   }
 
   const u1* top() const;
   void set_top(const u1* new_top);
-  const u1* concurrent_top() const;
-  void set_concurrent_top(const u1* new_top);
 
-  size_t header_size() const {
-    return _header_size;
-  }
+  // mutual exclusion
+  const u1* acquire_critical_section_top() const;
+  void release_critical_section_top(const u1* new_top);
 
   size_t size() const {
     return _size * BytesPerWord;
   }
 
   size_t total_size() const {
-    return header_size() + size();
+    return _header_size + size();
   }
 
   size_t free_size() const {
-    return end() - pos();
+    return end() - Atomic::load_acquire(&_pos);
   }
 
   size_t unflushed_size() const;
 
   bool empty() const {
-    return pos() == start();
+    return Atomic::load_acquire(&_pos) == start();
   }
 
   const void* identity() const {
-    return _identity;
+    return Atomic::load_acquire(&_identity);
   }
 
   void acquire(const void* id);
@@ -151,8 +163,8 @@ class JfrBuffer {
   bool acquired_by_self() const;
   void release();
 
+  size_t discard();
   void move(JfrBuffer* const to, size_t size);
-  void concurrent_move_and_reinitialize(JfrBuffer* const to, size_t size);
 
   bool transient() const;
   void set_transient();

@@ -426,9 +426,11 @@ inline bool ReleaseOp<Mspace>::process(typename Mspace::Type* t) {
     return true;
   }
   t->reinitialize();
-  assert(t->empty(), "invariant");
-  assert(!t->retired(), "invariant");
-  t->release(); // publish
+  if (t->identity() != NULL) {
+    assert(t->empty(), "invariant");
+    assert(!t->retired(), "invariant");
+    t->release(); // publish
+  }
   return true;
 }
 

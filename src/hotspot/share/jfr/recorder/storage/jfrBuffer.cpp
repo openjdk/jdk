@@ -24,11 +24,9 @@
 
 #include "precompiled.hpp"
 #include "jfr/recorder/storage/jfrBuffer.hpp"
-#include "runtime/atomic.hpp"
-#include "runtime/orderAccess.hpp"
 #include "runtime/thread.inline.hpp"
 
-static const u1* const MUTEX_CLAIM = NULL;
+static const u1* const TOP_CRITICAL_SECTION = NULL;
 
 JfrBuffer::JfrBuffer() : _next(NULL),
                          _prev(NULL),
@@ -39,14 +37,13 @@ JfrBuffer::JfrBuffer() : _next(NULL),
                          _header_size(0),
                          _size(0) {}
 
-bool JfrBuffer::initialize(size_t header_size, size_t size, const void* id /* NULL */) {
+bool JfrBuffer::initialize(size_t header_size, size_t size) {
+  assert(_next == NULL, "invariant");
+  assert(_identity == NULL, "invariant");
   _header_size = (u2)header_size;
   _size = (u4)(size / BytesPerWord);
-  assert(_identity == NULL, "invariant");
-  _identity = id;
   set_pos(start());
   set_top(start());
-  assert(_next == NULL, "invariant");
   assert(free_size() == size, "invariant");
   assert(!transient(), "invariant");
   assert(!lease(), "invariant");
@@ -55,9 +52,9 @@ bool JfrBuffer::initialize(size_t header_size, size_t size, const void* id /* NU
 }
 
 void JfrBuffer::reinitialize(bool exclusion /* false */) {
+  acquire_critical_section_top();
   assert(!lease(), "invariant");
   assert(!transient(), "invariant");
-  set_pos(start());
   if (exclusion != excluded()) {
     // update
     if (exclusion) {
@@ -66,80 +63,43 @@ void JfrBuffer::reinitialize(bool exclusion /* false */) {
       clear_excluded();
     }
   }
-  clear_retired();
-  set_top(start());
-}
-
-void JfrBuffer::concurrent_reinitialization() {
-  concurrent_top();
-  assert(!lease(), "invariant");
-  assert(!transient(), "invariant");
   set_pos(start());
-  set_concurrent_top(start());
+  release_critical_section_top(start());
   clear_retired();
 }
 
-size_t JfrBuffer::discard() {
-  size_t discard_size = unflushed_size();
-  set_top(pos());
-  return discard_size;
+const u1* JfrBuffer::top() const {
+  return Atomic::load_acquire(&_top);
 }
 
 const u1* JfrBuffer::stable_top() const {
   const u1* current_top;
   do {
-    current_top = Atomic::load(&_top);
-  } while (MUTEX_CLAIM == current_top);
+    current_top = top();
+  } while (TOP_CRITICAL_SECTION == current_top);
   return current_top;
 }
 
-const u1* JfrBuffer::top() const {
-  return _top;
-}
-
 void JfrBuffer::set_top(const u1* new_top) {
-  _top = new_top;
+  assert(new_top <= end(), "invariant");
+  assert(new_top >= start(), "invariant");
+  Atomic::release_store(&_top, new_top);
 }
 
-const u1* JfrBuffer::concurrent_top() const {
+const u1* JfrBuffer::acquire_critical_section_top() const {
   do {
     const u1* current_top = stable_top();
-    if (Atomic::cmpxchg(&_top, current_top, MUTEX_CLAIM) == current_top) {
+    assert(current_top != TOP_CRITICAL_SECTION, "invariant");
+    if (Atomic::cmpxchg(&_top, current_top, TOP_CRITICAL_SECTION) == current_top) {
       return current_top;
     }
   } while (true);
 }
 
-void JfrBuffer::set_concurrent_top(const u1* new_top) {
-  assert(new_top != MUTEX_CLAIM, "invariant");
-  assert(new_top <= end(), "invariant");
-  assert(new_top >= start(), "invariant");
-  assert(top() == MUTEX_CLAIM, "invariant");
-  OrderAccess::storestore();
-  _top = new_top;
-}
-
-size_t JfrBuffer::unflushed_size() const {
-  return pos() - stable_top();
-}
-
-void JfrBuffer::acquire(const void* id) {
-  assert(id != NULL, "invariant");
-  const void* current_id;
-  do {
-    current_id = Atomic::load(&_identity);
-  } while (current_id != NULL || Atomic::cmpxchg(&_identity, current_id, id) != current_id);
-}
-
-bool JfrBuffer::try_acquire(const void* id) {
-  assert(id != NULL, "invariant");
-  const void* const current_id = Atomic::load(&_identity);
-  return current_id == NULL && Atomic::cmpxchg(&_identity, current_id, id) == current_id;
-}
-
-void JfrBuffer::release() {
-  OrderAccess::storestore();
-  _identity = NULL;
+void JfrBuffer::release_critical_section_top(const u1* new_top) {
+  assert(new_top != TOP_CRITICAL_SECTION, "invariant");
+  assert(top() == TOP_CRITICAL_SECTION, "invariant");
+  set_top(new_top);
 }
 
 bool JfrBuffer::acquired_by(const void* id) const {
@@ -150,6 +110,25 @@ bool JfrBuffer::acquired_by_self() const {
   return acquired_by(Thread::current());
 }
 
+void JfrBuffer::acquire(const void* id) {
+  assert(id != NULL, "invariant");
+  const void* current_id;
+  do {
+    current_id = identity();
+  } while (current_id != NULL || Atomic::cmpxchg(&_identity, current_id, id) != current_id);
+}
+
+bool JfrBuffer::try_acquire(const void* id) {
+  assert(id != NULL, "invariant");
+  const void* const current_id = identity();
+  return current_id == NULL && Atomic::cmpxchg(&_identity, current_id, id) == current_id;
+}
+
+void JfrBuffer::release() {
+  assert(identity() != NULL, "invariant");
+  Atomic::release_store(&_identity, (const void*)NULL);
+}
+
 #ifdef ASSERT
 static bool validate_to(const JfrBuffer* const to, size_t size) {
   assert(to != NULL, "invariant");
@@ -158,39 +137,40 @@ static bool validate_to(const JfrBuffer* const to, size_t size) {
   return true;
 }
 
-static bool validate_concurrent_this(const JfrBuffer* const t, size_t size) {
-  assert(t->top() == MUTEX_CLAIM, "invariant");
-  return true;
-}
-
 static bool validate_this(const JfrBuffer* const t, size_t size) {
-  assert(t->top() + size <= t->pos(), "invariant");
+  assert(t->acquired_by_self(), "invariant");
+  assert(t->top() == TOP_CRITICAL_SECTION, "invariant");
   return true;
 }
 #endif // ASSERT
 
 void JfrBuffer::move(JfrBuffer* const to, size_t size) {
   assert(validate_to(to, size), "invariant");
+  const u1* const current_top = acquire_critical_section_top();
   assert(validate_this(this, size), "invariant");
-  const u1* current_top = top();
-  assert(current_top != NULL, "invariant");
-  memcpy(to->pos(), current_top, size);
-  to->set_pos(size);
+  const size_t actual_size = pos() - current_top;
+  assert(actual_size <= size, "invariant");
+  if (actual_size > 0) {
+    memcpy(to->pos(), current_top, actual_size);
+    to->set_pos(actual_size);
+  }
   to->release();
-  set_top(current_top + size);
+  set_pos(start());
+  release_critical_section_top(start());
 }
 
-void JfrBuffer::concurrent_move_and_reinitialize(JfrBuffer* const to, size_t size) {
-  assert(validate_to(to, size), "invariant");
-  const u1* current_top = concurrent_top();
-  assert(validate_concurrent_this(this, size), "invariant");
-  const size_t actual_size = MIN2(size, (size_t)(pos() - current_top));
-  assert(actual_size <= size, "invariant");
-  memcpy(to->pos(), current_top, actual_size);
-  to->set_pos(actual_size);
-  set_pos(start());
-  to->release();
-  set_concurrent_top(start());
+size_t JfrBuffer::discard() {
+  const u1* const position = pos();
+  // stable_top() provides acquire semantics for pos()
+  const u1* const current_top = stable_top();
+  set_top(position);
+  return position - current_top;
+}
+
+size_t JfrBuffer::unflushed_size() const {
+  const u1* const position = pos();
+  // stable_top() provides acquire semantics for pos()
+  return position - stable_top();
 }
 
 enum FLAG {
@@ -200,67 +180,93 @@ enum FLAG {
   EXCLUDED = 8
 };
 
+inline u2 load(const volatile u2* flags) {
+  assert(flags != NULL, "invariant");
+  return Atomic::load_acquire(flags);
+}
+
+inline void set(u2* flags, FLAG flag) {
+  assert(flags != NULL, "invariant");
+  OrderAccess::storestore();
+  *flags |= (u1)flag;
+}
+
+inline void clear(u2* flags, FLAG flag) {
+  assert(flags != NULL, "invariant");
+  OrderAccess::storestore();
+  *flags ^= (u1)flag;
+}
+
+inline bool test(const u2* flags, FLAG flag) {
+  return (u1)flag == (load(flags) & (u1)flag);
+}
+
 bool JfrBuffer::transient() const {
-  return (u1)TRANSIENT == (_flags & (u1)TRANSIENT);
+  return test(&_flags, TRANSIENT);
 }
 
 void JfrBuffer::set_transient() {
-  _flags |= (u1)TRANSIENT;
+  assert(acquired_by_self(), "invariant");
+  set(&_flags, TRANSIENT);
   assert(transient(), "invariant");
 }
 
 void JfrBuffer::clear_transient() {
   if (transient()) {
-    _flags ^= (u1)TRANSIENT;
+    assert(acquired_by_self(), "invariant");
+    clear(&_flags, TRANSIENT);
   }
   assert(!transient(), "invariant");
 }
 
 bool JfrBuffer::lease() const {
-  return (u1)LEASE == (_flags & (u1)LEASE);
+  return test(&_flags, LEASE);
 }
 
 void JfrBuffer::set_lease() {
-  _flags |= (u1)LEASE;
+  assert(acquired_by_self(), "invariant");
+  set(&_flags, LEASE);
   assert(lease(), "invariant");
 }
 
 void JfrBuffer::clear_lease() {
   if (lease()) {
-    _flags ^= (u1)LEASE;
+    assert(acquired_by_self(), "invariant");
+    clear(&_flags, LEASE);
   }
   assert(!lease(), "invariant");
 }
 
 bool JfrBuffer::excluded() const {
-  return (u1)EXCLUDED == (_flags & (u1)EXCLUDED);
+  return test(&_flags, EXCLUDED);
 }
 
 void JfrBuffer::set_excluded() {
-  _flags |= (u1)EXCLUDED;
+  assert(acquired_by_self(), "invariant");
+  set(&_flags, EXCLUDED);
   assert(excluded(), "invariant");
 }
 
 void JfrBuffer::clear_excluded() {
   if (excluded()) {
-    OrderAccess::storestore();
-    _flags ^= (u1)EXCLUDED;
+    assert(identity() != NULL, "invariant");
+    clear(&_flags, EXCLUDED);
   }
   assert(!excluded(), "invariant");
 }
 
 bool JfrBuffer::retired() const {
-  return (_flags & (u1)RETIRED) == (u1)RETIRED;
+  return test(&_flags, RETIRED);
 }
 
 void JfrBuffer::set_retired() {
-  OrderAccess::storestore();
-  _flags |= (u1)RETIRED;
+  assert(acquired_by_self(), "invariant");
+  set(&_flags, RETIRED);
 }
 
 void JfrBuffer::clear_retired() {
   if (retired()) {
-    OrderAccess::storestore();
-    _flags ^= (u1)RETIRED;
+    assert(identity() != NULL, "invariant");
+    clear(&_flags, RETIRED);
   }
 }
