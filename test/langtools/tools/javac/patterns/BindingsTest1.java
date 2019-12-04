@@ -161,6 +161,9 @@ public class BindingsTest1 {
             String s2 = s;
         }
 
+        boolean result = (o1 instanceof String a1) ? (o1 instanceof String a2) : (!(o1 instanceof String a3));
+        boolean result2 = (o1 instanceof String a1) ? (o1 instanceof String a2) : (!(switch (0) { default -> false; }));
+
         System.out.println("BindingsTest1 complete");
     }
 }
