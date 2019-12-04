@@ -215,6 +215,7 @@ public:
 
     if (nm->is_unloading()) {
       ShenandoahReentrantLocker locker(nm_data->lock());
+      ShenandoahEvacOOMScope evac_scope;
       unlink(nm);
       return;
     }
@@ -222,6 +223,7 @@ public:
     ShenandoahReentrantLocker locker(nm_data->lock());
 
     // Heal oops and disarm
+    ShenandoahEvacOOMScope evac_scope;
     ShenandoahNMethod::heal_nmethod(nm);
     ShenandoahNMethod::disarm_nmethod(nm);
 
@@ -258,7 +260,6 @@ public:
   }
 
   virtual void work(uint worker_id) {
-    ShenandoahEvacOOMScope evac_scope;
     ICRefillVerifierMark mark(_verifier);
     _iterator.nmethods_do(&_cl);
   }
