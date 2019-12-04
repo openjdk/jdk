@@ -62,6 +62,7 @@ public class IconifyTest {
             }
         });
         robot.waitForIdle();
+        robot.delay(1000);
 
         SwingUtilities.invokeAndWait(new Runnable() {
             public void run() {
@@ -69,6 +70,7 @@ public class IconifyTest {
             }
         });
         robot.waitForIdle();
+        robot.delay(1000);
 
         if (!windowIconifiedIsCalled) {
             throw new Exception("Test failed: window was not iconified.");
