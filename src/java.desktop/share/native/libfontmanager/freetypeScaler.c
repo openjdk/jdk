@@ -857,6 +857,17 @@ static jlong
         return ptr_to_jlong(getNullGlyphImage());
     }
 
+    /*
+     * When using Fractional metrics (linearly scaling advances) and
+     * greyscale antialiasing, disable hinting so that the glyph shapes
+     * are constant as size increases. This is good for animation as well
+     * as being compatible with what happened in earlier JDK versions
+     * which did not use freetype.
+     */
+    if (context->aaType == TEXT_AA_ON && context->fmType == TEXT_FM_ON) {
+         renderFlags |= FT_LOAD_NO_HINTING;
+     }
+
     if (!context->useSbits) {
         renderFlags |= FT_LOAD_NO_BITMAP;
     }
