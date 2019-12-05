@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @bug 8235369
  * @summary reflection test for records
  * @compile --enable-preview -source ${jdk.version} RecordReflectionTest.java
  * @run testng/othervm --enable-preview RecordReflectionTest
@@ -51,8 +52,11 @@ public class RecordReflectionTest {
     public void testIsRecord() {
         assertFalse(NoRecord.class.isRecord());
 
-        for (Class<?> c : List.of(R1.class, R2.class, R3.class))
-            assertTrue(c.isRecord());
+        for (Class<?> c : List.of(R1.class, R2.class, R3.class)) {
+            String message = c.toGenericString();
+            assertTrue(c.isRecord(), message);
+            assertTrue(message.contains("record") , message);
+        }
     }
 
     public void testGetComponentsNoRecord() {

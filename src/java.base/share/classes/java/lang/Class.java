@@ -207,8 +207,8 @@ public final class Class<T> implements java.io.Serializable,
      *
      * The string is formatted as a list of type modifiers, if any,
      * followed by the kind of type (empty string for primitive types
-     * and {@code class}, {@code enum}, {@code interface}, or
-     * <code>&#64;</code>{@code interface}, as appropriate), followed
+     * and {@code class}, {@code enum}, {@code interface},
+     * <code>&#64;</code>{@code interface}, or {@code record} as appropriate), followed
      * by the type's name, followed by an angle-bracketed
      * comma-separated list of the type's type parameters, if any,
      * including informative bounds on the type parameters, if any.
@@ -234,6 +234,7 @@ public final class Class<T> implements java.io.Serializable,
      *
      * @since 1.8
      */
+    @SuppressWarnings("preview")
     public String toGenericString() {
         if (isPrimitive()) {
             return toString();
@@ -264,6 +265,8 @@ public final class Class<T> implements java.io.Serializable,
                 } else {
                     if (isEnum())
                         sb.append("enum");
+                    else if (isRecord())
+                        sb.append("record");
                     else
                         sb.append("class");
                 }
