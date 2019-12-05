@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -325,16 +325,13 @@ public class JPopupMenu extends JComponent implements Accessible,MenuElement {
         }
 
         // Get screen bounds
-        Rectangle scrBounds;
         GraphicsConfiguration gc = getCurrentGraphicsConfiguration(popupLocation);
-        Toolkit toolkit = Toolkit.getDefaultToolkit();
-        if(gc != null) {
-            // If we have GraphicsConfiguration use it to get screen bounds
-            scrBounds = gc.getBounds();
-        } else {
+        if (gc == null) {
             // If we don't have GraphicsConfiguration use primary screen
-            scrBounds = new Rectangle(toolkit.getScreenSize());
+            gc = GraphicsEnvironment.getLocalGraphicsEnvironment().
+                            getDefaultScreenDevice().getDefaultConfiguration();
         }
+        Rectangle scrBounds = gc.getBounds();
 
         // Calculate the screen size that popup should fit
         Dimension popupSize = JPopupMenu.this.getPreferredSize();
@@ -345,6 +342,7 @@ public class JPopupMenu extends JComponent implements Accessible,MenuElement {
 
         if (!canPopupOverlapTaskBar()) {
             // Insets include the task bar. Take them into account.
+            Toolkit toolkit = Toolkit.getDefaultToolkit();
             Insets scrInsets = toolkit.getScreenInsets(gc);
             scrBounds.x += scrInsets.left;
             scrBounds.y += scrInsets.top;
