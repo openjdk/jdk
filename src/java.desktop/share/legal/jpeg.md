@@ -1,10 +1,18 @@
 ## Independent JPEG Group: JPEG release 6b
 
 ### JPEG License
-<pre>
 
-Must reproduce following license in documentation and/or other materials
-provided with distribution:
+```
+****************************************************************************
+
+Copyright (C) 1991-1998, Thomas G. Lane.
+
+This software is the work of Tom Lane, Philip Gladstone, Jim Boucher,
+Lee Crocker, Julian Minguillon, Luis Ortiz, George Phillips, Davide Rossi,
+Guido Vollbeding, Ge' Weijers, and other members of the Independent JPEG
+Group.
+
+IJG is not affiliated with the official ISO JPEG standards committee. 
 
 The authors make NO WARRANTY or representation, either express or implied,
 with respect to this software, its quality, accuracy, merchantability, or
@@ -44,22 +52,6 @@ We specifically permit and encourage the use of this software as the basis
 of commercial products, provided that all warranty or liability claims are
 assumed by the product vendor.
 
-
-ansi2knr.c is included in this distribution by permission of L. Peter Deutsch,
-sole proprietor of its copyright holder, Aladdin Enterprises of Menlo Park, CA.
-ansi2knr.c is NOT covered by the above copyright and conditions, but instead
-by the usual distribution terms of the Free Software Foundation; principally,
-that you must include source code if you redistribute it.
-(See the file ansi2knr.c for full details.)  However, since ansi2knr.c is
-not needed as part of any program generated from the IJG code, this does not
-limit you more than the foregoing paragraphs do.
-
-The Unix configuration script "configure" was produced with GNU Autoconf.
-It is copyright by the Free Software Foundation but is freely distributable.
-The same holds for its supporting scripts (config.guess, config.sub,
-ltconfig, ltmain.sh).  Another support script, install-sh, is copyright
-by M.I.T. but is also freely distributable.
-
 It appears that the arithmetic coding option of the JPEG spec is covered
 by patents owned by IBM, AT&T, and Mitsubishi.  Hence arithmetic coding
 cannot legally be used without obtaining one or more licenses.  For this
@@ -80,4 +72,6 @@ We are required to state that "The Graphics Interchange Format(c) is
 the Copyright property of CompuServe Incorporated.  GIF(sm) is a
 Service Mark property of CompuServe Incorporated."
 
-</pre>
+****************************************************************************
+```
+
