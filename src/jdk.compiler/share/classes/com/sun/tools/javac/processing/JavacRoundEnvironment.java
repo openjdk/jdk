@@ -124,8 +124,7 @@ public class JavacRoundEnvironment implements RoundEnvironment {
 
         Set<Element> result = Collections.emptySet();
         @SuppressWarnings("preview")
-        ElementScanner14<Set<Element>, TypeElement> scanner =
-            new AnnotationSetScanner(result);
+        var scanner = new AnnotationSetScanner(result);
 
         for (Element element : rootElements)
             result = scanner.scan(element, a);
@@ -146,8 +145,7 @@ public class JavacRoundEnvironment implements RoundEnvironment {
 
         Set<Element> result = Collections.emptySet();
         @SuppressWarnings("preview")
-        ElementScanner14<Set<Element>, Set<TypeElement>> scanner =
-            new AnnotationSetMultiScanner(result);
+        var scanner = new AnnotationSetMultiScanner(result);
 
         for (Element element : rootElements)
             result = scanner.scan(element, annotationSet);
@@ -156,8 +154,9 @@ public class JavacRoundEnvironment implements RoundEnvironment {
     }
 
     // Could be written as a local class inside getElementsAnnotatedWith
+    @SuppressWarnings("preview")
     private class AnnotationSetScanner extends
-        ElementScanningIncludingTypeParameters<Set<Element>, TypeElement> {
+        ElementScanner14<Set<Element>, TypeElement> {
         // Insertion-order preserving set
         private Set<Element> annotatedElements = new LinkedHashSet<>();
 
@@ -191,8 +190,9 @@ public class JavacRoundEnvironment implements RoundEnvironment {
     }
 
     // Could be written as a local class inside getElementsAnnotatedWithAny
+    @SuppressWarnings("preview")
     private class AnnotationSetMultiScanner extends
-        ElementScanningIncludingTypeParameters<Set<Element>, Set<TypeElement>> {
+        ElementScanner14<Set<Element>, Set<TypeElement>> {
         // Insertion-order preserving set
         private Set<Element> annotatedElements = new LinkedHashSet<>();
 
@@ -222,29 +222,6 @@ public class JavacRoundEnvironment implements RoundEnvironment {
         public Set<Element> visitPackage(PackageElement e, Set<TypeElement> annotations) {
             // Do not scan a package
             return annotatedElements;
-        }
-    }
-
-    @SuppressWarnings("preview")
-    private static abstract class ElementScanningIncludingTypeParameters<R, P>
-        extends ElementScanner14<R, P> {
-
-        protected ElementScanningIncludingTypeParameters(R defaultValue) {
-            super(defaultValue);
-        }
-
-        @Override @DefinedBy(Api.LANGUAGE_MODEL)
-        public R visitType(TypeElement e, P p) {
-            // Type parameters are not considered to be enclosed by a type
-            scan(e.getTypeParameters(), p);
-            return super.visitType(e, p);
-        }
-
-        @Override @DefinedBy(Api.LANGUAGE_MODEL)
-        public R visitExecutable(ExecutableElement e, P p) {
-            // Type parameters are not considered to be enclosed by an executable
-            scan(e.getTypeParameters(), p);
-            return super.visitExecutable(e, p);
         }
     }
 
