@@ -904,6 +904,9 @@ com/sun/jdi/RepStep.java                                        8043571 generic-
 
 com/sun/jdi/NashornPopFrameTest.java                            8225620 generic-all
 
+com/sun/jdi/JdwpListenTest.java                                 8234935 windows-all
+com/sun/jdi/JdwpAttachTest.java                                 8234935 windows-all
+
 ############################################################################
 
 # jdk_time
