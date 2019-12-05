@@ -256,6 +256,13 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
         return t1Filter;
     }
 
+    /* After we reach MAXSOFTREFCNT, use weak refs for created fonts.
+     * This means that a small number of created fonts as used in a UI app
+     * will not be eagerly collected, but an app that create many will
+     * have them collected more frequently to reclaim storage.
+     */
+    private static int maxSoftRefCnt = 10;
+
     static {
 
         java.security.AccessController.doPrivileged(
@@ -279,6 +286,9 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
                jreLibDirName =
                    System.getProperty("java.home","") + File.separator + "lib";
                jreFontDirName = jreLibDirName + File.separator + "fonts";
+
+                maxSoftRefCnt =
+                    Integer.getInteger("sun.java2d.font.maxSoftRefs", 10);
 
                return null;
            }
@@ -2283,6 +2293,8 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
     Thread fileCloser = null;
     Vector<File> tmpFontFiles = null;
 
+    private int createdFontCount = 0;
+
     public Font2D[] createFont2D(File fontFile, int fontFormat, boolean all,
                                  boolean isCopy, CreatedFontTracker tracker)
     throws FontFormatException {
@@ -2293,10 +2305,21 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
         FileFont font2D = null;
         final File fFile = fontFile;
         final CreatedFontTracker _tracker = tracker;
+        boolean weakRefs = false;
+        int maxStrikes = 0;
+        synchronized (this) {
+            if (createdFontCount < maxSoftRefCnt) {
+                createdFontCount++;
+            } else {
+                  weakRefs = true;
+                      maxStrikes = 10;
+            }
+        }
         try {
             switch (fontFormat) {
             case Font.TRUETYPE_FONT:
                 font2D = new TrueTypeFont(fontFilePath, null, 0, true);
+                font2D.setUseWeakRefs(weakRefs, maxStrikes);
                 fList.add(font2D);
                 if (!all) {
                     break;
@@ -2304,11 +2327,14 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
                 cnt = ((TrueTypeFont)font2D).getFontCount();
                 int index = 1;
                 while (index < cnt) {
-                    fList.add(new TrueTypeFont(fontFilePath, null, index++, true));
+                    font2D = new TrueTypeFont(fontFilePath, null, index++, true);
+                    font2D.setUseWeakRefs(weakRefs, maxStrikes);
+                    fList.add(font2D);
                 }
                 break;
             case Font.TYPE1_FONT:
                 font2D = new Type1Font(fontFilePath, null, isCopy);
+                font2D.setUseWeakRefs(weakRefs, maxStrikes);
                 fList.add(font2D);
                 break;
             default:

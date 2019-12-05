@@ -30,8 +30,10 @@ import java.awt.font.FontRenderContext;
 import java.awt.geom.AffineTransform;
 import java.lang.ref.Reference;
 import java.lang.ref.SoftReference;
+import java.lang.ref.WeakReference;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.Locale;
+import java.util.Set;
 
 public abstract class Font2D {
 
@@ -105,7 +107,22 @@ public abstract class Font2D {
      * This pre-supposes that a FontStrike is a shareable object, which
      * it should.
      */
-    protected Reference<FontStrike> lastFontStrike = new SoftReference<>(null);
+    protected Reference<FontStrike> lastFontStrike = new WeakReference<>(null);
+
+    /*
+     * if useWeak is true, proactively clear the cache after this
+     * many strikes are present. 0 means leave it alone.
+     */
+    private int strikeCacheMax = 0;
+    /*
+     * Whether to use weak refs for this font, even if soft refs is the default.
+     */
+    private boolean useWeak;
+
+    void setUseWeakRefs(boolean weak, int maxStrikes) {
+        this.useWeak = weak;
+        this.strikeCacheMax = weak && maxStrikes > 0 ? maxStrikes : 0;
+    }
 
     /*
      * POSSIBLE OPTIMISATION:
@@ -304,6 +321,15 @@ public abstract class Font2D {
         return getStrike(desc, false);
     }
 
+    void updateLastStrikeRef(FontStrike strike) {
+        lastFontStrike.clear();
+        if (useWeak) {
+            lastFontStrike = new WeakReference<>(strike);
+        } else {
+            lastFontStrike = new SoftReference<>(strike);
+        }
+    }
+
     FontStrike getStrike(FontStrikeDesc desc) {
         return getStrike(desc, true);
     }
@@ -324,15 +350,13 @@ public abstract class Font2D {
          */
         FontStrike strike = lastFontStrike.get();
         if (strike != null && desc.equals(strike.desc)) {
-            //strike.lastlookupTime = System.currentTimeMillis();
             return strike;
         } else {
             Reference<FontStrike> strikeRef = strikeCache.get(desc);
             if (strikeRef != null) {
                 strike = strikeRef.get();
                 if (strike != null) {
-                    //strike.lastlookupTime = System.currentTimeMillis();
-                    lastFontStrike = new SoftReference<>(strike);
+                    updateLastStrikeRef(strike);
                     StrikeCache.refStrike(strike);
                     return strike;
                 }
@@ -366,28 +390,18 @@ public abstract class Font2D {
              * which is what we want for what is likely a transient strike.
              */
             int txType = desc.glyphTx.getType();
-            if (txType == AffineTransform.TYPE_GENERAL_TRANSFORM ||
+            if (useWeak ||
+                txType == AffineTransform.TYPE_GENERAL_TRANSFORM ||
                 (txType & AffineTransform.TYPE_GENERAL_ROTATION) != 0 &&
                 strikeCache.size() > 10) {
                 strikeRef = StrikeCache.getStrikeRef(strike, true);
             } else {
-                strikeRef = StrikeCache.getStrikeRef(strike);
+                strikeRef = StrikeCache.getStrikeRef(strike, useWeak);
             }
             strikeCache.put(desc, strikeRef);
-            //strike.lastlookupTime = System.currentTimeMillis();
-            lastFontStrike = new SoftReference<>(strike);
+            updateLastStrikeRef(strike);
             StrikeCache.refStrike(strike);
             return strike;
-        }
-    }
-
-    void removeFromCache(FontStrikeDesc desc) {
-        Reference<FontStrike> ref = strikeCache.get(desc);
-        if (ref != null) {
-            Object o = ref.get();
-            if (o == null) {
-                strikeCache.remove(desc);
-            }
         }
     }
 

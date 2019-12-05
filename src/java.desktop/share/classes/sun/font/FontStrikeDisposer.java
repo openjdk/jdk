@@ -25,6 +25,8 @@
 
 package sun.font;
 
+import java.lang.ref.Reference;
+import java.util.concurrent.ConcurrentHashMap;
 import sun.java2d.Disposer;
 import sun.java2d.DisposerRecord;
 
@@ -53,7 +55,7 @@ import sun.java2d.DisposerRecord;
 class FontStrikeDisposer
     implements DisposerRecord, Disposer.PollDisposable {
 
-    Font2D font2D;
+    ConcurrentHashMap<FontStrikeDesc, Reference<FontStrike>> strikeCache;
     FontStrikeDesc desc;
     long[] longGlyphImages;
     int [] intGlyphImages;
@@ -65,7 +67,7 @@ class FontStrikeDisposer
 
     public FontStrikeDisposer(Font2D font2D, FontStrikeDesc desc,
                               long pContext, int[] images) {
-        this.font2D = font2D;
+        this.strikeCache = font2D.strikeCache;
         this.desc = desc;
         this.pScalerContext = pContext;
         this.intGlyphImages = images;
@@ -73,7 +75,7 @@ class FontStrikeDisposer
 
     public FontStrikeDisposer(Font2D font2D, FontStrikeDesc desc,
                               long pContext, long[] images) {
-        this.font2D = font2D;
+        this.strikeCache = font2D.strikeCache;
         this.desc = desc;
         this.pScalerContext = pContext;
         this.longGlyphImages = images;
@@ -81,20 +83,26 @@ class FontStrikeDisposer
 
     public FontStrikeDisposer(Font2D font2D, FontStrikeDesc desc,
                               long pContext) {
-        this.font2D = font2D;
+        this.strikeCache = font2D.strikeCache;
         this.desc = desc;
         this.pScalerContext = pContext;
     }
 
     public FontStrikeDisposer(Font2D font2D, FontStrikeDesc desc) {
-        this.font2D = font2D;
+        this.strikeCache = font2D.strikeCache;
         this.desc = desc;
         this.comp = true;
     }
 
     public synchronized void dispose() {
         if (!disposed) {
-            font2D.removeFromCache(desc);
+            Reference<FontStrike> ref = strikeCache.get(desc);
+            if (ref != null) {
+                Object o = ref.get();
+                if (o == null) {
+                    strikeCache.remove(desc);
+                }
+            }
             StrikeCache.disposeStrike(this);
             disposed = true;
         }
