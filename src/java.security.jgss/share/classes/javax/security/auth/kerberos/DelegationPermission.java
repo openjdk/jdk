@@ -109,29 +109,39 @@ public final class DelegationPermission extends BasicPermission
      */
     private void init(String target) {
 
-        StringTokenizer t = null;
-        if (!target.startsWith("\"")) {
-            throw new IllegalArgumentException
-                ("service principal [" + target +
-                 "] syntax invalid: " +
-                 "improperly quoted");
-        } else {
-            t = new StringTokenizer(target, "\"", false);
-            subordinate = t.nextToken();
-            switch (t.countTokens()) {
-                case 2:
-                    t.nextToken();  // bypass whitespace
-                    service = t.nextToken();
-                    break;
-                case 0:
-                    throw new IllegalArgumentException
-                            ("service principal not provided");
-                default:
-                    throw new IllegalArgumentException
-                            ("service principal [" + t.nextToken() +
-                            "] syntax invalid: " +
-                            "improperly quoted");
+        // 7 tokens in a string:
+        //    "subordinate@R1" "service@R2"
+        //    1<------2----->345<----6--->7
+        StringTokenizer t = new StringTokenizer(target, "\"", true);
+        try {
+            if (!t.nextToken().equals("\"")) { // 1
+                throw new IllegalArgumentException("Illegal input [" + target
+                        + "]: improperly quoted");
             }
+            subordinate = t.nextToken(); // 2
+            if (subordinate.equals("\"")) {
+                throw new IllegalArgumentException("Illegal input [" + target
+                        + "]: bad subordinate name");
+            }
+            t.nextToken(); // 3
+            if (!t.nextToken().trim().isEmpty()) { // 4
+                throw new IllegalArgumentException("Illegal input [" + target
+                        + "]: improperly separated");
+            }
+            t.nextToken(); // 5
+            service = t.nextToken(); // 6
+            if (service.equals("\"")) {
+                throw new IllegalArgumentException("Illegal input [" + target
+                        + "]: bad service name");
+            }
+            t.nextToken(); // 7
+        } catch (NoSuchElementException e) {
+            throw new IllegalArgumentException("Illegal input [" + target
+                    + "]: not enough input");
+        }
+        if (t.hasMoreTokens()) {
+            throw new IllegalArgumentException("Illegal input [" + target
+                    + "]: extra input");
         }
     }
 
