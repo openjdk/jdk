@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -496,10 +496,16 @@ public class AquaSpinnerUI extends SpinnerUI {
 
         @Override
         public void mouseEntered(final MouseEvent e) {
+            if (spinner != null && !autoRepeatTimer.isRunning() && spinner == eventToSpinner(e)) {
+                autoRepeatTimer.start();
+            }
         }
 
         @Override
         public void mouseExited(final MouseEvent e) {
+            if (autoRepeatTimer.isRunning()) {
+                autoRepeatTimer.stop();
+            }
         }
 
         /**
