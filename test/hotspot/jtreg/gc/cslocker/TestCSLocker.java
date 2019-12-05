@@ -23,12 +23,13 @@
 
 package gc.cslocker;
 
-import static java.lang.ref.Reference.reachabilityFence;
+import static gc.testlibrary.Allocation.blackHole;
 
 /*
  * @test TestCSLocker
  * @key gc
  * @bug 6186200
+ * @library /
  * @summary This short test check RFE 6186200 changes. One thread locked
  * @summary completely in JNI CS, while other is trying to allocate memory
  * @summary provoking GC. OOM means FAIL, deadlock means PASS.
@@ -75,7 +76,7 @@ class GarbageProducer extends Thread
 
         while (isRunning) {
             try {
-                reachabilityFence(new int[size]);
+                blackHole(new int[size]);
                 sleep(sleepTime);
             } catch (InterruptedException e) {
                 isRunning = false;

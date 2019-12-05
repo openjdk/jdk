@@ -23,7 +23,7 @@
 
 package gc.g1;
 
-import static java.lang.ref.Reference.reachabilityFence;
+import static gc.testlibrary.Allocation.blackHole;
 
 /*
  * @test TestHumongousAllocNearlyFullRegion
@@ -33,6 +33,7 @@ import static java.lang.ref.Reference.reachabilityFence;
  * @requires vm.gc.G1
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
+ * @library /
  * @run driver gc.g1.TestHumongousAllocNearlyFullRegion
  */
 
@@ -64,7 +65,7 @@ public class TestHumongousAllocNearlyFullRegion {
             for (int i = 0; i < heapSize; i++) {
                 // 131069 is the number of longs it takes to fill a heapRegion except
                 // for 8 bytes on 64 bit.
-                reachabilityFence(new long[131069]);
+                blackHole(new long[131069]);
             }
         }
     }

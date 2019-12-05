@@ -27,6 +27,7 @@ package gc.z;
  * @test TestSmallHeap
  * @requires vm.gc.Z & !vm.graal.enabled & vm.compMode != "Xcomp"
  * @summary Test ZGC with small heaps
+ * @library /
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseZGC -Xlog:gc,gc+init,gc+heap -Xmx8M gc.z.TestSmallHeap
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseZGC -Xlog:gc,gc+init,gc+heap -Xmx16M gc.z.TestSmallHeap
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseZGC -Xlog:gc,gc+init,gc+heap -Xmx32M gc.z.TestSmallHeap
@@ -37,7 +38,7 @@ package gc.z;
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseZGC -Xlog:gc,gc+init,gc+heap -Xmx1024M gc.z.TestSmallHeap
  */
 
-import java.lang.ref.Reference;
+import static gc.testlibrary.Allocation.blackHole;
 
 public class TestSmallHeap {
     public static void main(String[] args) throws Exception {
@@ -45,10 +46,10 @@ public class TestSmallHeap {
         System.out.println("Max Capacity " + maxCapacity + " bytes");
 
         // Allocate byte arrays of increasing length, so that
-        // all allocaion paths (small/medium/large) are tested.
+        // all allocation paths (small/medium/large) are tested.
         for (int length = 16; length <= maxCapacity / 16; length *= 2) {
             System.out.println("Allocating " + length + " bytes");
-            Reference.reachabilityFence(new byte[length]);
+            blackHole(new byte[length]);
         }
 
         System.out.println("Success");
