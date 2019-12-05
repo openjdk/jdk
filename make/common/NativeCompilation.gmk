@@ -397,6 +397,7 @@ endef
 #   ARFLAGS the archiver flags to be used
 #   OBJECT_DIR the directory where we store the object files
 #   OUTPUT_DIR the directory where the resulting binary is put
+#   SYMBOLS_DIR the directory where the debug symbols are put, defaults to OUTPUT_DIR
 #   INCLUDES only pick source from these directories
 #   EXCLUDES do not pick source from these directories
 #   INCLUDE_FILES only compile exactly these files!
@@ -533,8 +534,6 @@ define SetupNativeCompilationBody
   $$(call SetIfEmpty, $1_SYSROOT_CFLAGS, $$($$($1_TOOLCHAIN)_SYSROOT_CFLAGS))
   $$(call SetIfEmpty, $1_SYSROOT_LDFLAGS, $$($$($1_TOOLCHAIN)_SYSROOT_LDFLAGS))
 
-  # Make sure the dirs exist.
-  $$(call MakeDir, $$($1_OBJECT_DIR) $$($1_OUTPUT_DIR))
   $$(foreach d, $$($1_SRC), $$(if $$(wildcard $$d), , \
       $$(error SRC specified to SetupNativeCompilation $1 contains missing directory $$d)))
 
@@ -911,30 +910,31 @@ define SetupNativeCompilationBody
 
   ifeq ($$($1_COPY_DEBUG_SYMBOLS), true)
     ifneq ($$($1_DEBUG_SYMBOLS), false)
+      $$(call SetIfEmpty, $1_SYMBOLS_DIR, $$($1_OUTPUT_DIR))
       # Only copy debug symbols for dynamic libraries and programs.
       ifneq ($$($1_TYPE), STATIC_LIBRARY)
         # Generate debuginfo files.
         ifeq ($(call isTargetOs, windows), true)
-          $1_EXTRA_LDFLAGS += -debug "-pdb:$$($1_OUTPUT_DIR)/$$($1_NOSUFFIX).pdb" \
-              "-map:$$($1_OUTPUT_DIR)/$$($1_NOSUFFIX).map"
-          $1_DEBUGINFO_FILES := $$($1_OUTPUT_DIR)/$$($1_NOSUFFIX).pdb \
-              $$($1_OUTPUT_DIR)/$$($1_NOSUFFIX).map
+          $1_EXTRA_LDFLAGS += -debug "-pdb:$$($1_SYMBOLS_DIR)/$$($1_NOSUFFIX).pdb" \
+              "-map:$$($1_SYMBOLS_DIR)/$$($1_NOSUFFIX).map"
+          $1_DEBUGINFO_FILES := $$($1_SYMBOLS_DIR)/$$($1_NOSUFFIX).pdb \
+              $$($1_SYMBOLS_DIR)/$$($1_NOSUFFIX).map
 
         else ifeq ($(call isTargetOs, linux solaris), true)
-          $1_DEBUGINFO_FILES := $$($1_OUTPUT_DIR)/$$($1_NOSUFFIX).debuginfo
+          $1_DEBUGINFO_FILES := $$($1_SYMBOLS_DIR)/$$($1_NOSUFFIX).debuginfo
           # Setup the command line creating debuginfo files, to be run after linking.
           # It cannot be run separately since it updates the original target file
           $1_CREATE_DEBUGINFO_CMDS := \
               $$($1_OBJCOPY) --only-keep-debug $$($1_TARGET) $$($1_DEBUGINFO_FILES) $$(NEWLINE) \
-              $(CD) $$($1_OUTPUT_DIR) && \
+              $(CD) $$($1_SYMBOLS_DIR) && \
                   $$($1_OBJCOPY) --add-gnu-debuglink=$$($1_DEBUGINFO_FILES) $$($1_TARGET)
 
         else ifeq ($(call isTargetOs, macosx), true)
           $1_DEBUGINFO_FILES := \
-              $$($1_OUTPUT_DIR)/$$($1_BASENAME).dSYM/Contents/Info.plist \
-              $$($1_OUTPUT_DIR)/$$($1_BASENAME).dSYM/Contents/Resources/DWARF/$$($1_BASENAME)
+              $$($1_SYMBOLS_DIR)/$$($1_BASENAME).dSYM/Contents/Info.plist \
+              $$($1_SYMBOLS_DIR)/$$($1_BASENAME).dSYM/Contents/Resources/DWARF/$$($1_BASENAME)
           $1_CREATE_DEBUGINFO_CMDS := \
-              $(DSYMUTIL) --out $$($1_OUTPUT_DIR)/$$($1_BASENAME).dSYM $$($1_TARGET)
+              $(DSYMUTIL) --out $$($1_SYMBOLS_DIR)/$$($1_BASENAME).dSYM $$($1_TARGET)
         endif
 
         # Since the link rule creates more than one file that we want to track,
@@ -956,14 +956,14 @@ define SetupNativeCompilationBody
         $1 += $$($1_DEBUGINFO_FILES)
 
         ifeq ($$($1_ZIP_EXTERNAL_DEBUG_SYMBOLS), true)
-          $1_DEBUGINFO_ZIP := $$($1_OUTPUT_DIR)/$$($1_NOSUFFIX).diz
+          $1_DEBUGINFO_ZIP := $$($1_SYMBOLS_DIR)/$$($1_NOSUFFIX).diz
           $1 += $$($1_DEBUGINFO_ZIP)
 
           # The dependency on TARGET is needed for debuginfo files
           # to be rebuilt properly.
           $$($1_DEBUGINFO_ZIP): $$($1_DEBUGINFO_FILES) $$($1_TARGET)
-		$(CD) $$($1_OUTPUT_DIR) && \
-		    $(ZIPEXE) -q -r $$@ $$(subst $$($1_OUTPUT_DIR)/,, $$($1_DEBUGINFO_FILES))
+		$(CD) $$($1_SYMBOLS_DIR) && \
+		    $(ZIPEXE) -q -r $$@ $$(subst $$($1_SYMBOLS_DIR)/,, $$($1_DEBUGINFO_FILES))
 
         endif
        endif # !STATIC_LIBRARY
@@ -999,6 +999,7 @@ define SetupNativeCompilationBody
 
     $$($1_TARGET): $$($1_TARGET_DEPS)
 	$$(call LogInfo, Building static library $$($1_BASENAME))
+	$$(call MakeDir, $$($1_OUTPUT_DIR) $$($1_SYMBOLS_DIR))
 	$$(call ExecuteWithLog, $$($1_OBJECT_DIR)/$$($1_SAFE_NAME)_link, \
 	    $$($1_AR) $$($1_ARFLAGS) $(AR_OUT_OPTION)$$($1_TARGET) $$($1_ALL_OBJS) \
 	        $$($1_RES))
@@ -1100,7 +1101,9 @@ define SetupNativeCompilationBody
                 # Keep as much as possible on one execution line for best performance
                 # on Windows
 		$$(call LogInfo, Linking $$($1_BASENAME))
+		$$(call MakeDir, $$($1_OUTPUT_DIR) $$($1_SYMBOLS_DIR))
                 ifeq ($(call isTargetOs, windows), true)
+
 		  $$(call ExecuteWithLog, $$($1_OBJECT_DIR)/$$($1_SAFE_NAME)_link, \
 		      $$($1_LD) $$($1_LDFLAGS) $$($1_EXTRA_LDFLAGS) $$($1_SYSROOT_LDFLAGS) \
 		          $(LD_OUT_OPTION)$$($1_TARGET) $$($1_LD_OBJ_ARG) $$($1_RES) $$(GLOBAL_LIBS) \

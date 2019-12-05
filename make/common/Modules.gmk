@@ -128,6 +128,7 @@ endif
 
 JRE_TOOL_MODULES += \
     jdk.jdwp.agent \
+    jdk.incubator.jpackage \
     jdk.pack \
     jdk.scripting.nashorn.shell \
     #
@@ -149,6 +150,7 @@ DOCS_MODULES += \
     jdk.editpad \
     jdk.hotspot.agent \
     jdk.httpserver \
+    jdk.incubator.jpackage \
     jdk.jartool \
     jdk.javadoc \
     jdk.jcmd \
@@ -240,6 +242,13 @@ endif
 
 ifeq ($(ENABLE_AOT), false)
   MODULES_FILTER += jdk.aot
+endif
+
+################################################################################
+# jpackage is only on windows, macosx, and linux
+
+ifeq ($(call isTargetOs, windows macosx linux), false)
+  MODULES_FILTER += jdk.incubator.jpackage
 endif
 
 ################################################################################

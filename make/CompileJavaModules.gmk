@@ -380,6 +380,13 @@ endif
 
 ################################################################################
 
+jdk.incubator.jpackage_COPY += .gif .png .txt .spec .script .prerm .preinst .postrm .postinst .list .sh \
+    .desktop .copyright .control .plist .template .icns .scpt .entitlements .wxs .wxl .wxi .ico .bmp
+
+jdk.incubator.jpackage_CLEAN += .properties
+
+################################################################################
+
 jdk.jconsole_COPY += .gif .png
 
 jdk.jconsole_CLEAN_FILES += $(wildcard \
