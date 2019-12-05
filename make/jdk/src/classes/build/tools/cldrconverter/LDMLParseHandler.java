@@ -54,7 +54,6 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
     private String currentContext = ""; // "format"/"stand-alone"
     private String currentWidth = ""; // "wide"/"narrow"/"abbreviated"
     private String currentStyle = ""; // short, long for decimalFormat
-    private String compactCount = ""; // one or other for decimalFormat
 
     LDMLParseHandler(String id) {
         this.id = id;
@@ -577,32 +576,12 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
                     if (currentStyle == null) {
                         pushContainer(qName, attributes);
                     } else {
-                        // The compact number patterns parsing assumes that the order
-                        // of patterns are always in the increasing order of their
-                        // type attribute i.e. type = 1000...
-                        // Between the inflectional forms for a type (e.g.
-                        // count = "one" and count = "other" for type = 1000), it is
-                        // assumed that the count = "one" always appears before
-                        // count = "other"
                         switch (currentStyle) {
                             case "short":
                             case "long":
-                                String count = attributes.getValue("count");
-                                // first pattern of count = "one" or count = "other"
-                                if ((count.equals("one") || count.equals("other"))
-                                        && compactCount.equals("")) {
-                                    compactCount = count;
-                                    pushStringListElement(qName, attributes,
-                                            (int) Math.log10(Double.parseDouble(attributes.getValue("type"))));
-                                } else if ((count.equals("one") || count.equals("other"))
-                                        && compactCount.equals(count)) {
-                                    // extract patterns with similar "count"
-                                    // attribute value
-                                    pushStringListElement(qName, attributes,
-                                            (int) Math.log10(Double.parseDouble(attributes.getValue("type"))));
-                                } else {
-                                    pushIgnoredContainer(qName);
-                                }
+                                pushStringListElement(qName, attributes,
+                                    (int) Math.log10(Double.parseDouble(attributes.getValue("type"))),
+                                    attributes.getValue("count"));
                                 break;
                             default:
                                 pushIgnoredContainer(qName);
@@ -1051,7 +1030,6 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
             break;
         case "decimalFormatLength":
             currentStyle = "";
-            compactCount = "";
             putIfEntry();
             break;
         case "currencyFormats":

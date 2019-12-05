@@ -309,7 +309,7 @@ class ResourceBundleGenerator implements BundleGenerator {
             // for languageAliasMap
             if (CLDRConverter.isBaseModule) {
                 CLDRConverter.handlerSupplMeta.getLanguageAliasData().forEach((key, value) -> {
-                    out.printf("                languageAliasMap.put(\"%s\", \"%s\");\n", key, value);
+                    out.printf("        languageAliasMap.put(\"%s\", \"%s\");\n", key, value);
                 });
             }
 

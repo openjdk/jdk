@@ -242,14 +242,14 @@ class Bundle {
                         if (i < size) {
                             pattern = patterns.get(i);
                             if (!pattern.isEmpty()) {
-                                return pattern;
+                                return "{" + pattern + "}";
                             }
                         }
                         // if not found, try parent
                         if (i < psize) {
                             pattern = pList.get(i);
                             if (!pattern.isEmpty()) {
-                                return pattern;
+                                return "{" + pattern + "}";
                             }
                         }
                         // bail out with empty string

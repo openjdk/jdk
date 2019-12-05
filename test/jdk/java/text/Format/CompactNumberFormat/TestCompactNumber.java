@@ -22,7 +22,7 @@
  */
 /*
  * @test
- * @bug 8177552 8217721
+ * @bug 8177552 8217721 8222756
  * @summary Checks the functioning of compact number format
  * @modules jdk.localedata
  * @run testng/othervm TestCompactNumber
@@ -74,6 +74,12 @@ public class TestCompactNumber {
 
     private static final NumberFormat FORMAT_SE_SHORT = NumberFormat
             .getCompactNumberInstance(new Locale("se"), NumberFormat.Style.SHORT);
+
+    private static final NumberFormat FORMAT_DE_LONG = NumberFormat
+            .getCompactNumberInstance(Locale.GERMAN, NumberFormat.Style.LONG);
+
+    private static final NumberFormat FORMAT_SL_LONG = NumberFormat
+            .getCompactNumberInstance(new Locale("sl"), NumberFormat.Style.LONG);
 
     @DataProvider(name = "format")
     Object[][] compactFormatData() {
@@ -248,7 +254,7 @@ public class TestCompactNumber {
             {FORMAT_CA_LONG, 999.99, "1 miler"},
             {FORMAT_CA_LONG, 99000, "99 milers"},
             {FORMAT_CA_LONG, 330000, "330 milers"},
-            {FORMAT_CA_LONG, 3000.90, "3 miler"},
+            {FORMAT_CA_LONG, 3000.90, "3 milers"},
             {FORMAT_CA_LONG, 1000000, "1 mili\u00f3"},
             {FORMAT_CA_LONG, new BigInteger("12345678901234567890"),
                 "12345679 bilions"},
@@ -320,7 +326,20 @@ public class TestCompactNumber {
             // BigInteger
             {FORMAT_SE_SHORT, new BigInteger("-12345678901234567890"), "\u221212345679\u00a0bn"},
             // BigDecimal
-            {FORMAT_SE_SHORT, new BigDecimal("-12345678901234567890.98"), "\u221212345679\u00a0bn"},};
+            {FORMAT_SE_SHORT, new BigDecimal("-12345678901234567890.98"), "\u221212345679\u00a0bn"},
+
+            // Plurals
+            // DE: one:i = 1 and v = 0
+            {FORMAT_DE_LONG, 1_000_000, "1 Million"},
+            {FORMAT_DE_LONG, 2_000_000, "2 Millionen"},
+            // SL: one:v = 0 and i % 100 = 1
+            //     two:v = 0 and i % 100 = 2
+            //     few:v = 0 and i % 100 = 3..4 or v != 0
+            {FORMAT_SL_LONG, 1_000_000, "1 milijon"},
+            {FORMAT_SL_LONG, 2_000_000, "2 milijona"},
+            {FORMAT_SL_LONG, 3_000_000, "3 milijone"},
+            {FORMAT_SL_LONG, 5_000_000, "5 milijonov"},
+        };
     }
 
     @DataProvider(name = "parse")
@@ -409,7 +428,20 @@ public class TestCompactNumber {
                 {FORMAT_SE_SHORT, "\u22128\u00a0mn", -8000000L, Long.class},
                 {FORMAT_SE_SHORT, "\u22128\u00a0dt", -8000L, Long.class},
                 {FORMAT_SE_SHORT, "\u221212345679\u00a0bn", -1.2345679E19, Double.class},
-                {FORMAT_SE_SHORT, "\u221212345679,89\u00a0bn", -1.2345679890000001E19, Double.class},};
+                {FORMAT_SE_SHORT, "\u221212345679,89\u00a0bn", -1.2345679890000001E19, Double.class},
+
+                // Plurals
+                // DE: one:i = 1 and v = 0
+                {FORMAT_DE_LONG, "1 Million",   1_000_000L, Long.class},
+                {FORMAT_DE_LONG, "2 Millionen", 2_000_000L, Long.class},
+                // SL: one:v = 0 and i % 100 = 1
+                //     two:v = 0 and i % 100 = 2
+                //     few:v = 0 and i % 100 = 3..4 or v != 0
+                {FORMAT_SL_LONG, "1 milijon",   1_000_000L, Long.class},
+                {FORMAT_SL_LONG, "2 milijona",  2_000_000L, Long.class},
+                {FORMAT_SL_LONG, "3 milijone",  3_000_000L, Long.class},
+                {FORMAT_SL_LONG, "5 milijonov", 5_000_000L, Long.class},
+        };
     }
 
     @DataProvider(name = "exceptionParse")
@@ -444,7 +476,20 @@ public class TestCompactNumber {
             // Take partial suffix "K" as 1000 for en_US_SHORT patterns
             {FORMAT_EN_US_SHORT, "12KM", 12000L},
             // Invalid suffix
-            {FORMAT_HI_IN_LONG, "-1 \u00a0\u0915.", -1L},};
+            {FORMAT_HI_IN_LONG, "-1 \u00a0\u0915.", -1L},
+
+            // invalid plurals
+            {FORMAT_DE_LONG, "2 Million", 2L},
+            {FORMAT_SL_LONG, "2 milijon", 2L},
+            {FORMAT_SL_LONG, "2 milijone", 2L},
+            {FORMAT_SL_LONG, "2 milijonv", 2L},
+            {FORMAT_SL_LONG, "3 milijon", 3L},
+            {FORMAT_SL_LONG, "3 milijona", 3L},
+            {FORMAT_SL_LONG, "3 milijonv", 3L},
+            {FORMAT_SL_LONG, "5 milijon", 5L},
+            {FORMAT_SL_LONG, "5 milijona", 5L},
+            {FORMAT_SL_LONG, "5 milijone", 5L},
+        };
     }
 
     @DataProvider(name = "fieldPosition")

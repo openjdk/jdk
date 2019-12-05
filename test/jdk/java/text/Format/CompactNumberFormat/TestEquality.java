@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 /*
  * @test
- * @bug 8177552
+ * @bug 8177552 8222756
  * @summary Checks the equals and hashCode method of CompactNumberFormat
  * @modules jdk.localedata
  * @run testng/othervm TestEquality
@@ -48,9 +48,26 @@ public class TestEquality {
         // A custom compact instance with the same state as
         // compact number instance of "en_US" locale with SHORT style
         String decimalPattern = "#,##0.###";
-        String[] compactPatterns = new String[]{"", "", "", "0K", "00K", "000K", "0M", "00M", "000M", "0B", "00B", "000B", "0T", "00T", "000T"};
+        String[] compactPatterns = new String[]{
+                "",
+                "",
+                "",
+                "{one:0K other:0K}",
+                "{one:00K other:00K}",
+                "{one:000K other:000K}",
+                "{one:0M other:0M}",
+                "{one:00M other:00M}",
+                "{one:000M other:000M}",
+                "{one:0B other:0B}",
+                "{one:00B other:00B}",
+                "{one:000B other:000B}",
+                "{one:0T other:0T}",
+                "{one:00T other:00T}",
+                "{one:000T other:000T}"
+        };
         DecimalFormatSymbols symbols = DecimalFormatSymbols.getInstance(Locale.US);
-        CompactNumberFormat cnf3 = new CompactNumberFormat(decimalPattern, symbols, compactPatterns);
+        CompactNumberFormat cnf3 =
+            new CompactNumberFormat(decimalPattern, symbols, compactPatterns, "one:i = 1 and v = 0");
 
         // A compact instance created with different decimalPattern than cnf3
         CompactNumberFormat cnf4 = new CompactNumberFormat("#,#0.0#", symbols, compactPatterns);
