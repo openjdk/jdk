@@ -1568,6 +1568,8 @@ void ArchDesc::declareClasses(FILE *fp) {
     fprintf(fp,"    assert(operand_index < _num_opnds, \"invalid _opnd_array index\");\n");
     fprintf(fp,"    _opnd_array[operand_index] = operand;\n");
     fprintf(fp,"  }\n");
+    fprintf(fp,"  virtual uint           rule() const { return %s_rule; }\n",
+            instr->_ident);
     fprintf(fp,"private:\n");
     if ( instr->is_ideal_jump() ) {
       fprintf(fp,"  virtual void           add_case_label(int index_num, Label* blockLabel) {\n");
@@ -1579,8 +1581,6 @@ void ArchDesc::declareClasses(FILE *fp) {
     }
 
     out_RegMask(fp);                      // output register mask
-    fprintf(fp,"  virtual uint           rule() const { return %s_rule; }\n",
-            instr->_ident);
 
     // If this instruction contains a labelOper
     // Declare Node::methods that set operand Label's contents

@@ -2426,6 +2426,24 @@ const bool Matcher::require_postalloc_expand = true;
 // PowerPC requires masked shift counts.
 const bool Matcher::need_masked_shift_count = true;
 
+// No support for generic vector operands.
+const bool Matcher::supports_generic_vector_operands  = false;
+
+MachOper* Matcher::specialize_generic_vector_operand(MachOper* original_opnd, uint ideal_reg) {
+  ShouldNotReachHere(); // generic vector operands not supported
+  return NULL;
+}
+
+bool Matcher::is_generic_reg2reg_move(MachNode* m) {
+  ShouldNotReachHere();  // generic vector operands not supported
+  return false;
+}
+
+bool Matcher::is_generic_vector(MachOper* opnd)  {
+  ShouldNotReachHere();  // generic vector operands not supported
+  return false;
+}
+
 // This affects two different things:
 //  - how Decode nodes are matched
 //  - how ImplicitNullCheck opportunities are recognized
