@@ -264,15 +264,18 @@ public class Cipher {
      * @param cipherSpi the delegate
      * @param provider the provider
      * @param transformation the transformation
+     * @throws NullPointerException if {@code provider} is {@code null}
+     * @throws IllegalArgumentException if the supplied arguments
+     *         are deemed invalid for constructing the Cipher object
      */
     protected Cipher(CipherSpi cipherSpi,
                      Provider provider,
                      String transformation) {
         // See bug 4341369 & 4334690 for more info.
         // If the caller is trusted, then okay.
-        // Otherwise throw a NullPointerException.
+        // Otherwise throw an IllegalArgumentException.
         if (!JceSecurityManager.INSTANCE.isCallerTrusted(provider)) {
-            throw new NullPointerException();
+            throw new IllegalArgumentException("Cannot construct cipher");
         }
         this.spi = cipherSpi;
         this.provider = provider;
