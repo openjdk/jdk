@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,15 +27,34 @@
   @bug 4632143
   @summary Unit test for the RFE window/frame/dialog always on top
   @author dom@sparc.spb.su: area=awt.toplevel
-  @modules java.desktop/sun.awt
-  @run main AutoTestOnTop
+  @run main/othervm/timeout=600 AutoTestOnTop
 */
 
-import java.awt.*;
-import java.awt.event.*;
-import java.lang.reflect.*;
-import javax.swing.*;
+import java.awt.AWTEvent;
+import java.awt.AWTException;
+import java.awt.Component;
+import java.awt.Dialog;
+import java.awt.EventQueue;
+import java.awt.Frame;
+import java.awt.IllegalComponentStateException;
+import java.awt.Point;
+import java.awt.Robot;
+import java.awt.Toolkit;
+import java.awt.Window;
+import java.awt.event.AWTEventListener;
+import java.awt.event.FocusEvent;
+import java.awt.event.InputEvent;
+import java.awt.event.MouseEvent;
+import java.awt.event.PaintEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.Vector;
+
+import javax.swing.JDialog;
+import javax.swing.JFrame;
+import javax.swing.JWindow;
 
 /**
  * @author tav@sparc.spb.su
@@ -47,13 +66,16 @@ import java.util.Vector;
  * that after its invocation the frame will be placed above all other windows.
  */
 public class AutoTestOnTop {
+    private static final int X = 300;
+    private static final int Y = 300;
+
     static Window topw;
     static Frame  parentw = new Frame();
     static Window f;
     static Frame  parentf = new Frame();
 
-    static Object  uncheckedSrc = new Object(); // used when no need to check event source
-    static Object  eventSrc = uncheckedSrc;
+    static final Object  uncheckedSrc = new Object(); // used when no need to check event source
+    static volatile Object  eventSrc = uncheckedSrc;
     static boolean dispatchedCond;
 
     static Semaphore STATE_SEMA = new Semaphore();
@@ -114,9 +136,11 @@ public class AutoTestOnTop {
                             error("Test failed: stage #" + stageNum + ", action # " + actNum + ": " + msgCase + ": " + msgAction + ": " + msgError);
                             testResult = -1;
                         }
-                        synchronized (eventSrc) {
-                            dispatchedCond = true;
-                            eventSrc.notify();
+                        if (eventSrc != null){
+                            synchronized (eventSrc) {
+                                dispatchedCond = true;
+                                eventSrc.notify();
+                            }
                         }
                     }
 
@@ -158,12 +182,13 @@ public class AutoTestOnTop {
         }
 
         f = new Frame("Auxiliary Frame");
-        f.setBounds(50, 0, 400, 50);
+        f.setBounds(X, Y, 650, 100);
         f.setVisible(true);
         waitTillShown(f);
 
         try {
             robot = new Robot();
+            robot.setAutoDelay(100);
         } catch (AWTException e) {
             throw new RuntimeException("Error: unable to create robot", e);
         }
@@ -265,17 +290,17 @@ public class AutoTestOnTop {
 
         // Check that always-on-top window is topmost.
         // - Click on always-on-top window on the windows cross area.
-        clickOn(topw, f, 10, 30, "setting " + msgVisibility +
+        clickOn(topw, f, 10, 50, "setting " + msgVisibility +
                 " window (1) always-on-top didn't make it topmost");
 
         // Check that we can't change z-order of always-on-top window.
         // - a) Try to put the other window on the top.
         f.toFront();
-        clickOn(uncheckedSrc, f, 190, 30, ""); // coz toFront() works not always
+        clickOn(uncheckedSrc, f, 450, 50, ""); // coz toFront() works not always
         pause(300);
 
         // - b) Click on always-on-top window on the windows cross area.
-        clickOn(topw, f, 10, 30, "setting " + msgVisibility +
+        clickOn(topw, f, 10, 50, "setting " + msgVisibility +
                 " window (1) always-on-top didn't make it such");
 
         // Ask for always-on-top property
@@ -292,18 +317,18 @@ public class AutoTestOnTop {
         if (msgVisibility.equals("visible") && actNum != 2) {
             // Check that the window remains topmost.
             // - click on the window on the windows cross area.
-            clickOn(topw, f, 10, 30, "setting " + msgVisibility +
+            clickOn(topw, f, 10, 50, "setting " + msgVisibility +
                     " window (1) not always-on-top didn't keep it topmost");
         }
 
         // Check that we can change z-order of not always-on-top window.
         // - a) try to put the other window on the top.
         f.toFront();
-        clickOn(uncheckedSrc, f, 190, 30, ""); // coz toFront() works not always
+        clickOn(uncheckedSrc, f, 450, 50, ""); // coz toFront() works not always
         pause(300);
 
         // - b) click on not always-on-top window on the windows cross area.
-        clickOn(f, f, 10, 30, "setting " + msgVisibility +
+        clickOn(f, f, 10, 50, "setting " + msgVisibility +
                 " window (1) not always-on-top didn't make it such");
 
         // Ask for always-on-top property
@@ -316,7 +341,7 @@ public class AutoTestOnTop {
 
     private static void createWindow(int stageNum) {
         // Free native resourses
-        if (topw != null && topw.isVisible()) {
+        if (topw != null) {
             topw.dispose();
         }
 
@@ -341,7 +366,7 @@ public class AutoTestOnTop {
             topw = new Frame("Top Frame");
             f.dispose();
             f = new Dialog(parentf, "Auxiliary Dialog");
-            f.setBounds(50, 0, 250, 50);
+            f.setBounds(X, Y, 650, 100);
             f.setVisible(true);
             waitTillShown(f);
             msgCase.replace(0, msgCase.length(), "Frame (1) over Dialog (2)");
@@ -361,7 +386,7 @@ public class AutoTestOnTop {
                     STATE_SEMA.raise();
                 }
             });
-        topw.setSize(200, 50);
+        topw.setSize(300, 100);
     }
 
     /**
@@ -436,7 +461,7 @@ public class AutoTestOnTop {
     }
     public static void postAction_3() {
         Point p = topw.getLocationOnScreen();
-        int x = p.x + 40, y = p.y + 5;
+        int x = p.x + 150, y = p.y + 5;
 
         try {                      // Take a pause to avoid double click
             Thread.sleep(500);     // when called one after another.
@@ -449,7 +474,7 @@ public class AutoTestOnTop {
         // Drag the window.
         robot.mouseMove(x, y);
         robot.mousePress(InputEvent.BUTTON1_MASK);
-        robot.mouseMove(200, 50);
+        robot.mouseMove(X + 150, Y + 100);
         robot.mouseMove(x, y);
         robot.mouseRelease(InputEvent.BUTTON1_MASK);
     }
@@ -465,7 +490,7 @@ public class AutoTestOnTop {
     }
     public static void postAction_4() {
         Point p = f.getLocationOnScreen();
-        int x = p.x + 150, y = p.y + 5;
+        int x = p.x + 400, y = p.y + 5;
 
         try {                      // Take a pause to avoid double click
             Thread.sleep(500);     // when called one after another.
@@ -478,7 +503,7 @@ public class AutoTestOnTop {
         // Drag the window.
         robot.mouseMove(x, y);
         robot.mousePress(InputEvent.BUTTON1_MASK);
-        robot.mouseMove(200, 50);
+        robot.mouseMove(X + 400, Y + 100);
         robot.mouseMove(x, y);
         robot.mouseRelease(InputEvent.BUTTON1_MASK);
 
@@ -599,7 +624,7 @@ public class AutoTestOnTop {
 
         topw.setVisible(true);
         pause(100); // Needs for Sawfish
-        topw.setLocation(0, 0);
+        topw.setLocation(X, Y);
         waitTillShown(topw);
         f.toFront();
         pause(300);
@@ -640,7 +665,7 @@ public class AutoTestOnTop {
 
     private static void setAlwaysOnTop(Window w, boolean value) {
         System.err.println("Setting always on top on " + w + " to " + value);
-        robot.mouseMove(0, 100); // Move out of the window
+        robot.mouseMove(X - 50, Y - 50); // Move out of the window
         msgFunc.replace(0, msgCase.length(), "setAlwaysOnTop()");
         try {
             w.setAlwaysOnTop(value);
@@ -652,7 +677,7 @@ public class AutoTestOnTop {
     }
 
     private static boolean isAlwaysOnTop(Window w) {
-        robot.mouseMove(0, 100); // Move out of the window
+        robot.mouseMove(X - 50, Y - 50); // Move out of the window
         msgFunc.replace(0, msgCase.length(), "isAlwaysOnTop()");
         boolean result = false;
         try {
@@ -722,12 +747,13 @@ public class AutoTestOnTop {
         }
         boolean state = STATE_SEMA.getState();
         STATE_SEMA.reset();
+        robot.delay(1000); // animation normal <--> maximized states
         return state;
     }
 
     private static void ensureInitialWinPosition(Window w) {
         int counter = 30;
-        while (w.getLocationOnScreen().y != 0 && --counter > 0) {
+        while (w.getLocationOnScreen().y != Y && --counter > 0) {
             try {
                 Thread.sleep(100);
             } catch (InterruptedException e) {
@@ -736,7 +762,7 @@ public class AutoTestOnTop {
             }
         }
         if (counter <= 0) {
-            w.setLocation(0, 0);
+            w.setLocation(X, Y);
             pause(100);
             System.err.println("Test: window set to initial position forcedly");
         }
