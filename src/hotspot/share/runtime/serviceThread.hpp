@@ -25,6 +25,7 @@
 #ifndef SHARE_RUNTIME_SERVICETHREAD_HPP
 #define SHARE_RUNTIME_SERVICETHREAD_HPP
 
+#include "prims/jvmtiImpl.hpp"
 #include "runtime/thread.hpp"
 
 // A hidden from external view JavaThread for JVMTI compiled-method-load
@@ -37,6 +38,7 @@ class ServiceThread : public JavaThread {
  private:
   static ServiceThread* _instance;
   static JvmtiDeferredEvent* _jvmti_event;
+  static JvmtiDeferredEventQueue _jvmti_service_queue;
 
   static void service_thread_entry(JavaThread* thread, TRAPS);
   ServiceThread(ThreadFunction entry_point) : JavaThread(entry_point) {};
@@ -47,6 +49,9 @@ class ServiceThread : public JavaThread {
   // Hide this thread from external view.
   bool is_hidden_from_external_view() const      { return true; }
   bool is_service_thread() const                 { return true; }
+
+  // Add event to the service thread event queue.
+  static void enqueue_deferred_event(JvmtiDeferredEvent* event);
 
   // GC support
   void oops_do(OopClosure* f, CodeBlobClosure* cf);

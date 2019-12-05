@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,9 @@ class JvmtiEnvBase;
 class JvmtiEnvThreadState;
 class JvmtiDynamicCodeEventCollector;
 
+class JvmtiDeferredEvent;
+class JvmtiDeferredEventQueue;
+
 enum JvmtiClassLoadKind {
   jvmti_class_load_kind_load = 100,
   jvmti_class_load_kind_retransform,
@@ -75,6 +78,8 @@ class JvmtiThreadState : public CHeapObj<mtInternal> {
  private:
   friend class JvmtiEnv;
   JavaThread        *_thread;
+  // Jvmti Events that cannot be posted in their current context.
+  JvmtiDeferredEventQueue* _jvmti_event_queue;
   bool              _hide_single_stepping;
   bool              _pending_step_for_popframe;
   bool              _pending_step_for_earlyret;
@@ -384,10 +389,15 @@ class JvmtiThreadState : public CHeapObj<mtInternal> {
   static ByteSize earlyret_oop_offset()   { return byte_offset_of(JvmtiThreadState, _earlyret_oop); }
   static ByteSize earlyret_value_offset() { return byte_offset_of(JvmtiThreadState, _earlyret_value); }
 
-  void oops_do(OopClosure* f) NOT_JVMTI_RETURN; // GC support
+  void oops_do(OopClosure* f, CodeBlobClosure* cf) NOT_JVMTI_RETURN; // GC support
+  void nmethods_do(CodeBlobClosure* cf) NOT_JVMTI_RETURN;
 
 public:
   void set_should_post_on_exceptions(bool val) { _thread->set_should_post_on_exceptions_flag(val ? JNI_TRUE : JNI_FALSE); }
+
+  // Thread local event queue, which doesn't require taking the Service_lock.
+  void enqueue_event(JvmtiDeferredEvent* event);
+  void post_events(JvmtiEnv* env);
 };
 
 class RedefineVerifyMark : public StackObj {

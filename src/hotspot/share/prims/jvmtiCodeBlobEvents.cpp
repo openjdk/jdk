@@ -32,6 +32,7 @@
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiCodeBlobEvents.hpp"
 #include "prims/jvmtiExport.hpp"
+#include "prims/jvmtiThreadState.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/vmThread.hpp"
 
@@ -219,25 +220,27 @@ jvmtiError JvmtiCodeBlobEvents::generate_dynamic_code_events(JvmtiEnv* env) {
 
 // Generate a COMPILED_METHOD_LOAD event for each nnmethod
 jvmtiError JvmtiCodeBlobEvents::generate_compiled_method_load_events(JvmtiEnv* env) {
-  HandleMark hm;
-
-  // Walk the CodeCache notifying for live nmethods.  The code cache
-  // may be changing while this is happening which is ok since newly
-  // created nmethod will notify normally and nmethods which are freed
-  // can be safely skipped.
-  MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-  // Iterate over non-profiled and profiled nmethods
-  NMethodIterator iter(NMethodIterator::only_alive_and_not_unloading);
-  while(iter.next()) {
-    nmethod* current = iter.method();
-    // Lock the nmethod so it can't be freed
-    nmethodLocker nml(current);
-
-    // Don't hold the lock over the notify or jmethodID creation
-    MutexUnlocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-    current->get_and_cache_jmethod_id();
-    JvmtiExport::post_compiled_method_load(env, current);
+  JvmtiThreadState* state = JvmtiThreadState::state_for(JavaThread::current());
+  {
+    // Walk the CodeCache notifying for live nmethods, don't release the CodeCache_lock
+    // because the sweeper may be running concurrently.
+    // Save events to the queue for posting outside the CodeCache_lock.
+    MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+    // Iterate over non-profiled and profiled nmethods
+    NMethodIterator iter(NMethodIterator::only_alive_and_not_unloading);
+    while(iter.next()) {
+      nmethod* current = iter.method();
+      current->post_compiled_method_load_event(state);
+    }
   }
+
+  // Now post all the events outside the CodeCache_lock.
+  // If there's a safepoint, the queued events will be kept alive.
+  // Adding these events to the service thread to post is something that
+  // should work, but the service thread doesn't keep up in stress scenarios and
+  // the os eventually kills the process with OOM.
+  // We want this thread to wait until the events are all posted.
+  state->post_events(env);
   return JVMTI_ERROR_NONE;
 }
 
