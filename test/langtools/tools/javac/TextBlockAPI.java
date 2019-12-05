@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 8223967
+ * @bug 8232681
  * @summary Unit tests for Text Block language changes
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -49,6 +50,7 @@ public class TextBlockAPI {
         test5();
         test6();
         test7();
+        test8();
    }
 
     /*
@@ -194,6 +196,23 @@ public class TextBlockAPI {
                  "    }",
                  "}");
     }
+
+    static void test8() {
+        String code = "class C {\n" +
+                      "\n" +
+                      "    void x() {\n" +
+                      "        String s = \"\"\"\n" +
+                      "\n" +
+                      "\"\"\";\n" +
+                      "    }\n" +
+                      "}\n";
+
+        new JavacTask(TOOLBOX)
+            .sources(code)
+            .classpath(".")
+            .options("--enable-preview", "-source", JDK_VERSION, "-encoding", "utf8", "-Xlint")
+            .run();
+     }
 
     /*
      * Test source for successful compile.

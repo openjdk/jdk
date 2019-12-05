@@ -322,8 +322,8 @@ public class JavaTokenizer {
             String[] lines = string.split("\\R");
             int length = lines.length;
             // Extract last line.
-            String lastLine = lines[length - 1];
-            if (!optOut) {
+            String lastLine = length == 0 ? "" : lines[length - 1];
+             if (!optOut) {
                 // Prime with the last line indentation (may be blank.)
                 outdent = indent(lastLine);
                 for (String line : lines) {
