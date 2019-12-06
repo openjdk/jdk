@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ import java.io.*;
 import java.awt.*;
 import java.net.URL;
 
+import javax.accessibility.AccessibleContext;
 import javax.swing.*;
 import javax.swing.text.*;
 import javax.swing.text.html.*;
@@ -223,6 +224,34 @@ public class BasicHTML {
             }
         }
         c.putClientProperty(BasicHTML.propertyKey, value);
+        String currentAccessibleNameProperty =
+            (String) c.getClientProperty(AccessibleContext.ACCESSIBLE_NAME_PROPERTY);
+        String previousParsedText = null;
+        if (currentAccessibleNameProperty != null && oldValue != null) {
+            try {
+                previousParsedText =
+                    (oldValue.getDocument().getText(0, oldValue.getDocument().getLength())).strip();
+            } catch (BadLocationException e) {
+            }
+        }
+
+        // AccessibleContext.ACCESSIBLE_NAME_PROPERTY should be set from here only if,
+        // 1. If AccessibleContext.ACCESSIBLE_NAME_PROPERTY was NOT set before
+        //        i.e. currentAccessibleNameProperty is null. and,
+        // 2. If AccessibleContext.ACCESSIBLE_NAME_PROPERTY was previously set from this method
+        //        using the value.getDocument().getText().
+        if (currentAccessibleNameProperty == null ||
+                currentAccessibleNameProperty.equals(previousParsedText)) {
+            String parsedText = null;
+            if (value != null) {
+                try {
+                    parsedText =
+                        (value.getDocument().getText(0, value.getDocument().getLength())).strip();
+                } catch (BadLocationException e) {
+                }
+            }
+            c.putClientProperty(AccessibleContext.ACCESSIBLE_NAME_PROPERTY, parsedText);
+        }
     }
 
     /**
