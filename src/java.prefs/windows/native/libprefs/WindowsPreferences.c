@@ -49,7 +49,7 @@ Java_java_util_prefs_WindowsPreferences_WindowsRegOpenKey(JNIEnv* env,
     int errorCode = RegOpenKeyEx((HKEY) hKey, str, 0, securityMask, &handle);
     (*env)->ReleaseByteArrayElements(env, lpSubKey, str, 0);
 
-    jlong tmp[2];
+    __declspec(align(8)) jlong tmp[2];
     tmp[0] = (jlong) handle;
     tmp[1] = errorCode;
     jlongArray result = (*env)->NewLongArray(env, 2);
@@ -78,7 +78,7 @@ Java_java_util_prefs_WindowsPreferences_WindowsRegCreateKeyEx(JNIEnv* env,
         NULL, &handle, &lpdwDisposition);
     (*env)->ReleaseByteArrayElements(env, lpSubKey, str, 0);
 
-    jlong tmp[3];
+    __declspec(align(8)) jlong tmp[3];
     tmp[0] = (jlong) handle;
     tmp[1] = errorCode;
     tmp[2] = lpdwDisposition;
@@ -196,7 +196,7 @@ Java_java_util_prefs_WindowsPreferences_WindowsRegQueryInfoKey(JNIEnv* env,
         &valuesNumber, &maxValueNameLength,
         NULL, NULL, NULL);
 
-    jlong tmp[5];
+    __declspec(align(8)) jlong tmp[5];
     tmp[0] = subKeysNumber;
     tmp[1] = errorCode;
     tmp[2] = valuesNumber;
