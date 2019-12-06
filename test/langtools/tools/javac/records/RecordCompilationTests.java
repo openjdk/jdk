@@ -67,7 +67,7 @@ public class RecordCompilationTests extends CompilationTestCase {
         assertFail("compiler.err.premature.eof", "record R();");
         assertFail("compiler.err.illegal.start.of.type", "record R(,) { }");
         assertFail("compiler.err.illegal.start.of.type", "record R((int x)) { }");
-        assertFail("compiler.err.expected4", "record R { }");
+        assertFail("compiler.err.record.header.expected", "record R { }");
         assertFail("compiler.err.expected", "record R(foo) { }");
         assertFail("compiler.err.expected", "record R(int int) { }");
         assertFail("compiler.err.mod.not.allowed.here", "abstract record R(String foo) { }");

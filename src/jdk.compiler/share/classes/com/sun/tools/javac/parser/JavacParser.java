@@ -3664,23 +3664,29 @@ public class JavacParser implements Parser {
         } else {
             int pos = token.pos;
             List<JCTree> errs;
-            if (LAX_IDENTIFIER.accepts(token.kind)) {
-                errs = List.of(mods, toP(F.at(pos).Ident(ident())));
-                setErrorEndPos(token.pos);
+            if (token.kind == IDENTIFIER && token.name() == names.record && preview.isEnabled()) {
+                checkSourceLevel(Feature.RECORDS);
+                JCErroneous erroneousTree = syntaxError(token.pos, List.of(mods), Errors.RecordHeaderExpected);
+                return toP(F.Exec(erroneousTree));
             } else {
-                errs = List.of(mods);
-            }
-            final JCErroneous erroneousTree;
-            if (parseModuleInfo) {
-                erroneousTree = syntaxError(pos, errs, Errors.ExpectedModuleOrOpen);
-            } else {
-                if (allowRecords) {
-                    erroneousTree = syntaxError(pos, errs, Errors.Expected4(CLASS, INTERFACE, ENUM, "record"));
+                if (LAX_IDENTIFIER.accepts(token.kind)) {
+                    errs = List.of(mods, toP(F.at(pos).Ident(ident())));
+                    setErrorEndPos(token.pos);
                 } else {
-                    erroneousTree = syntaxError(pos, errs, Errors.Expected3(CLASS, INTERFACE, ENUM));
+                    errs = List.of(mods);
                 }
+                final JCErroneous erroneousTree;
+                if (parseModuleInfo) {
+                    erroneousTree = syntaxError(pos, errs, Errors.ExpectedModuleOrOpen);
+                } else {
+                    if (allowRecords) {
+                        erroneousTree = syntaxError(pos, errs, Errors.Expected4(CLASS, INTERFACE, ENUM, "record"));
+                    } else {
+                        erroneousTree = syntaxError(pos, errs, Errors.Expected3(CLASS, INTERFACE, ENUM));
+                    }
+                }
+                return toP(F.Exec(erroneousTree));
             }
-            return toP(F.Exec(erroneousTree));
         }
     }
 
