@@ -27,6 +27,7 @@
 #include "memory/allocation.inline.hpp"
 #include "memory/arena.hpp"
 #include "utilities/count_leading_zeros.hpp"
+#include "utilities/powerOfTwo.hpp"
 
 VectorSet::VectorSet(Arena *arena) : _size(2),
     _data(NEW_ARENA_ARRAY(arena, uint32_t, 2)),
@@ -38,8 +39,8 @@ VectorSet::VectorSet(Arena *arena) : _size(2),
 // Expand the existing set to a bigger size
 void VectorSet::grow(uint new_size) {
   new_size = (new_size + bit_mask) >> word_bits;
-  assert(new_size != 0 && new_size < (1U << 31), "");
-  uint x = (1U << 31) >> (count_leading_zeros(new_size) - 1);
+  assert(new_size > 0, "sanity");
+  uint x = next_power_of_2(new_size);
   _data = REALLOC_ARENA_ARRAY(_set_arena, uint32_t, _data, _size, x);
   Copy::zero_to_bytes(_data + _size, (x - _size) * sizeof(uint32_t));
   _size = x;

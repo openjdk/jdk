@@ -25,10 +25,10 @@
 #include "gc/z/zCPU.inline.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zHeuristics.hpp"
-#include "gc/z/zUtils.inline.hpp"
 #include "logging/log.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/os.hpp"
+#include "utilities/powerOfTwo.hpp"
 
 void ZHeuristics::set_medium_page_size() {
   // Set ZPageSizeMedium so that a medium page occupies at most 3.125% of the
@@ -39,7 +39,7 @@ void ZHeuristics::set_medium_page_size() {
   const size_t max = ZGranuleSize * 16;
   const size_t unclamped = MaxHeapSize * 0.03125;
   const size_t clamped = MIN2(MAX2(min, unclamped), max);
-  const size_t size = ZUtils::round_down_power_of_2(clamped);
+  const size_t size = round_down_power_of_2(clamped);
 
   if (size > ZPageSizeSmall) {
     // Enable medium pages

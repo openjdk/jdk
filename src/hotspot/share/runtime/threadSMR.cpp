@@ -37,6 +37,7 @@
 #include "utilities/copy.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
+#include "utilities/powerOfTwo.hpp"
 #include "utilities/resourceHash.hpp"
 #include "utilities/vmError.hpp"
 
@@ -809,13 +810,7 @@ void ThreadsSMRSupport::free_list(ThreadsList* threads) {
 
   // Hash table size should be first power of two higher than twice the length of the ThreadsList
   int hash_table_size = MIN2((int)get_java_thread_list()->length(), 32) << 1;
-  hash_table_size--;
-  hash_table_size |= hash_table_size >> 1;
-  hash_table_size |= hash_table_size >> 2;
-  hash_table_size |= hash_table_size >> 4;
-  hash_table_size |= hash_table_size >> 8;
-  hash_table_size |= hash_table_size >> 16;
-  hash_table_size++;
+  hash_table_size = round_up_power_of_2(hash_table_size);
 
   // Gather a hash table of the current hazard ptrs:
   ThreadScanHashtable *scan_table = new ThreadScanHashtable(hash_table_size);
@@ -872,13 +867,7 @@ bool ThreadsSMRSupport::is_a_protected_JavaThread(JavaThread *thread) {
   // Hash table size should be first power of two higher than twice
   // the length of the Threads list.
   int hash_table_size = MIN2((int)get_java_thread_list()->length(), 32) << 1;
-  hash_table_size--;
-  hash_table_size |= hash_table_size >> 1;
-  hash_table_size |= hash_table_size >> 2;
-  hash_table_size |= hash_table_size >> 4;
-  hash_table_size |= hash_table_size >> 8;
-  hash_table_size |= hash_table_size >> 16;
-  hash_table_size++;
+  hash_table_size = round_up_power_of_2(hash_table_size);
 
   // Gather a hash table of the JavaThreads indirectly referenced by
   // hazard ptrs.

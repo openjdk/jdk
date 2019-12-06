@@ -36,6 +36,7 @@
 #include "opto/opcodes.hpp"
 #include "opto/rootnode.hpp"
 #include "utilities/copy.hpp"
+#include "utilities/powerOfTwo.hpp"
 
 void Block_Array::grow( uint i ) {
   assert(i >= Max(), "must be an overflow");
@@ -47,7 +48,7 @@ void Block_Array::grow( uint i ) {
     _blocks[0] = NULL;
   }
   uint old = _size;
-  while( i >= _size ) _size <<= 1;      // Double to fit
+  _size = next_power_of_2(i);
   _blocks = (Block**)_arena->Arealloc( _blocks, old*sizeof(Block*),_size*sizeof(Block*));
   Copy::zero_to_bytes( &_blocks[old], (_size-old)*sizeof(Block*) );
 }

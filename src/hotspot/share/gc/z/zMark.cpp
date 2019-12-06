@@ -48,6 +48,7 @@
 #include "runtime/thread.hpp"
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/powerOfTwo.hpp"
 #include "utilities/ticks.hpp"
 
 static const ZStatSubPhase ZSubPhaseConcurrentMark("Concurrent Mark");
@@ -79,7 +80,7 @@ size_t ZMark::calculate_nstripes(uint nworkers) const {
   // Calculate the number of stripes from the number of workers we use,
   // where the number of stripes must be a power of two and we want to
   // have at least one worker per stripe.
-  const size_t nstripes = ZUtils::round_down_power_of_2(nworkers);
+  const size_t nstripes = round_down_power_of_2(nworkers);
   return MIN2(nstripes, ZMarkStripesMax);
 }
 

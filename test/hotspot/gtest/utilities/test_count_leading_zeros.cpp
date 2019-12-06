@@ -23,35 +23,78 @@
  */
 
 #include "precompiled.hpp"
+#include "metaprogramming/isSigned.hpp"
 #include "utilities/count_leading_zeros.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "unittest.hpp"
 
-TEST(count_leading_zeros, one_or_two_set_bits) {
-  unsigned i = 0;                  // Position of a set bit.
-  for (uint32_t ix = 1; ix != 0; ix <<= 1, ++i) {
-    unsigned j = 0;                // Position of a set bit.
-    for (uint32_t jx = 1; jx != 0; jx <<= 1, ++j) {
-      uint32_t value = ix | jx;
-      EXPECT_EQ(31u - MAX2(i, j), count_leading_zeros(value))
+#include <limits>
+
+template <typename T> void one_or_two_set_bits() {
+  uint32_t bit1_pos = 0;
+  uint32_t bits = sizeof(T) * BitsPerByte;
+  uint32_t limit = bits - (IsSigned<T>::value ? 1 : 0);
+  for (uint64_t ix = 1; bit1_pos < limit; ix = ix * 2, ++bit1_pos) {
+    uint32_t bit2_pos = 0;
+    for (uint64_t jx = 1; bit2_pos < limit; jx = jx * 2, ++bit2_pos) {
+      T value = T(ix | jx);
+      EXPECT_EQ((uint32_t)(bits - 1u - MAX2(bit1_pos, bit2_pos)), count_leading_zeros(value))
         << "value = " << value;
     }
   }
 }
 
-TEST(count_leading_zeros, high_zeros_low_ones) {
-  unsigned i = 0;                  // Number of leading zeros
-  uint32_t value = ~(uint32_t)0;
-  for ( ; value != 0; value >>= 1, ++i) {
-    EXPECT_EQ(i, count_leading_zeros(value))
+TEST(count_leading_zeros, one_or_two_set_bits) {
+  one_or_two_set_bits<int8_t>();
+  one_or_two_set_bits<int16_t>();
+  one_or_two_set_bits<int32_t>();
+  one_or_two_set_bits<int64_t>();
+  one_or_two_set_bits<uint8_t>();
+  one_or_two_set_bits<uint16_t>();
+  one_or_two_set_bits<uint32_t>();
+  one_or_two_set_bits<uint64_t>();
+}
+
+template <typename T> void high_zeros_low_ones() {
+  uint32_t number_of_leading_zeros = (IsSigned<T>::value ? 1 : 0);
+  T value = std::numeric_limits<T>::max();
+  for ( ; value != 0; value >>= 1, ++number_of_leading_zeros) {
+    EXPECT_EQ(number_of_leading_zeros, count_leading_zeros(value))
       << "value = " << value;
   }
 }
 
-TEST(count_leading_zeros, high_ones_low_zeros) {
-  uint32_t value = ~(uint32_t)0;
-  for ( ; value != 0; value <<= 1) {
-    EXPECT_EQ(0u, count_leading_zeros(value))
+TEST(count_leading_zeros, high_zeros_low_ones) {
+  high_zeros_low_ones<int8_t>();
+  high_zeros_low_ones<int16_t>();
+  high_zeros_low_ones<int32_t>();
+  high_zeros_low_ones<int64_t>();
+  high_zeros_low_ones<uint8_t>();
+  high_zeros_low_ones<uint16_t>();
+  high_zeros_low_ones<uint32_t>();
+  high_zeros_low_ones<uint64_t>();
+}
+
+template <typename T> void high_ones_low_zeros() {
+  T value = std::numeric_limits<T>::max();
+
+  uint32_t number_of_leading_zeros = (IsSigned<T>::value ? 1 : 0);
+  for (uint64_t i = 1; value != 0; value -= i, i <<= 1) {
+    EXPECT_EQ(number_of_leading_zeros, count_leading_zeros(value))
       << "value = " << value;
   }
+  value = (T)(~((uint64_t)0)); // all ones
+  EXPECT_EQ(0u, count_leading_zeros(value))
+    << "value = " << value;
+}
+
+TEST(count_leading_zeros, high_ones_low_zeros) {
+  high_ones_low_zeros<int8_t>();
+  high_ones_low_zeros<int16_t>();
+  high_ones_low_zeros<int32_t>();
+  high_ones_low_zeros<int64_t>();
+  high_ones_low_zeros<uint8_t>();
+  high_ones_low_zeros<uint16_t>();
+  high_ones_low_zeros<uint32_t>();
+  high_ones_low_zeros<uint64_t>();
 }
