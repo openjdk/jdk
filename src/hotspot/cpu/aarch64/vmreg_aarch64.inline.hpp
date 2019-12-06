@@ -28,11 +28,12 @@
 
 inline VMReg RegisterImpl::as_VMReg() {
   if( this==noreg ) return VMRegImpl::Bad();
-  return VMRegImpl::as_VMReg(encoding() << 1 );
+  return VMRegImpl::as_VMReg(encoding() * RegisterImpl::max_slots_per_register);
 }
 
 inline VMReg FloatRegisterImpl::as_VMReg() {
-  return VMRegImpl::as_VMReg((encoding() << 1) + ConcreteRegisterImpl::max_gpr);
+  return VMRegImpl::as_VMReg((encoding() * FloatRegisterImpl::max_slots_per_register) +
+                             ConcreteRegisterImpl::max_gpr);
 }
 
 #endif // CPU_AARCH64_VMREG_AARCH64_INLINE_HPP

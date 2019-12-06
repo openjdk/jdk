@@ -38,13 +38,14 @@ inline Register as_Register() {
 
   assert( is_Register(), "must be");
   // Yuk
-  return ::as_Register(value() >> 1);
+  return ::as_Register(value() / RegisterImpl::max_slots_per_register);
 }
 
 inline FloatRegister as_FloatRegister() {
   assert( is_FloatRegister() && is_even(value()), "must be" );
   // Yuk
-  return ::as_FloatRegister((value() - ConcreteRegisterImpl::max_gpr) >> 1);
+  return ::as_FloatRegister((value() - ConcreteRegisterImpl::max_gpr) /
+                            FloatRegisterImpl::max_slots_per_register);
 }
 
 inline   bool is_concrete() {
