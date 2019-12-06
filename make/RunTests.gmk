@@ -300,7 +300,8 @@ $(eval $(call SetTestOpt,FAILURE_HANDLER_TIMEOUT,JTREG))
 
 $(eval $(call ParseKeywordVariable, JTREG, \
     SINGLE_KEYWORDS := JOBS TIMEOUT_FACTOR FAILURE_HANDLER_TIMEOUT \
-        TEST_MODE ASSERT VERBOSE RETAIN MAX_MEM RUN_PROBLEM_LISTS, \
+        TEST_MODE ASSERT VERBOSE RETAIN MAX_MEM RUN_PROBLEM_LISTS \
+        RETRY_COUNT, \
     STRING_KEYWORDS := OPTIONS JAVA_OPTIONS VM_OPTIONS KEYWORDS \
         EXTRA_PROBLEM_LISTS AOT_MODULES, \
 ))
@@ -851,6 +852,7 @@ define SetupRunJtregTestBody
   JTREG_VERBOSE ?= fail,error,summary
   JTREG_RETAIN ?= fail,error
   JTREG_RUN_PROBLEM_LISTS ?= false
+  JTREG_RETRY_COUNT ?= 0
 
   ifneq ($$($1_JTREG_MAX_MEM), 0)
     $1_JTREG_BASIC_OPTIONS += -vmoption:-Xmx$$($1_JTREG_MAX_MEM)
@@ -942,25 +944,43 @@ define SetupRunJtregTestBody
   clean-workdir-$1:
 	$$(RM) -r $$($1_TEST_SUPPORT_DIR)
 
+  $1_COMMAND_LINE := \
+      $$(JAVA) $$($1_JTREG_LAUNCHER_OPTIONS) \
+          -Dprogram=jtreg -jar $$(JT_HOME)/lib/jtreg.jar \
+          $$($1_JTREG_BASIC_OPTIONS) \
+          -testjdk:$$(JDK_UNDER_TEST) \
+          -dir:$$(JTREG_TOPDIR) \
+          -reportDir:$$($1_TEST_RESULTS_DIR) \
+          -workDir:$$($1_TEST_SUPPORT_DIR) \
+          -status:$$$${JTREG_STATUS} \
+          $$(JTREG_OPTIONS) \
+          $$(JTREG_FAILURE_HANDLER_OPTIONS) \
+          $$(JTREG_COV_OPTIONS) \
+          $$($1_TEST_NAME) \
+      && $$(ECHO) $$$$? > $$($1_EXITCODE) \
+      || $$(ECHO) $$$$? > $$($1_EXITCODE)
+
+
+  ifneq ($$(JTREG_RETRY_COUNT), 0)
+    $1_COMMAND_LINE := \
+        for i in {0..$$(JTREG_RETRY_COUNT)}; do \
+          if [ "$$$$i" != 0 ]; then \
+            $$(PRINTF) "\nRetrying Jtreg run. Attempt: $$$$i\n"; \
+          fi; \
+          $$($1_COMMAND_LINE); \
+          if [ "`$$(CAT) $$($1_EXITCODE)`" = "0" ]; then \
+            break; \
+          fi; \
+          export JTREG_STATUS="-status:error,fail"; \
+        done
+  endif
+
   run-test-$1: pre-run-test clean-workdir-$1 $$($1_AOT_TARGETS)
 	$$(call LogWarn)
 	$$(call LogWarn, Running test '$$($1_TEST)')
 	$$(call MakeDir, $$($1_TEST_RESULTS_DIR) $$($1_TEST_SUPPORT_DIR))
 	$$(call ExecuteWithLog, $$($1_TEST_SUPPORT_DIR)/jtreg, ( \
-	    $$(COV_ENVIRONMENT) \
-	    $$(JAVA) $$($1_JTREG_LAUNCHER_OPTIONS) \
-	        -Dprogram=jtreg -jar $$(JT_HOME)/lib/jtreg.jar \
-	        $$($1_JTREG_BASIC_OPTIONS) \
-	        -testjdk:$$(JDK_UNDER_TEST) \
-	        -dir:$$(JTREG_TOPDIR) \
-	        -reportDir:$$($1_TEST_RESULTS_DIR) \
-	        -workDir:$$($1_TEST_SUPPORT_DIR) \
-	        $$(JTREG_OPTIONS) \
-	        $$(JTREG_FAILURE_HANDLER_OPTIONS) \
-	        $$(JTREG_COV_OPTIONS) \
-	        $$($1_TEST_NAME) \
-	    && $$(ECHO) $$$$? > $$($1_EXITCODE) \
-	    || $$(ECHO) $$$$? > $$($1_EXITCODE) \
+            $$(COV_ENVIRONMENT) $$($1_COMMAND_LINE) \
 	))
 
   $1_RESULT_FILE := $$($1_TEST_RESULTS_DIR)/text/stats.txt
