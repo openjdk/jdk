@@ -1103,14 +1103,6 @@ typedef struct {
                                          JVM_ACC_STRICT | \
                                          JVM_ACC_SYNTHETIC)
 
-/*
- * This is the function defined in libjava.so to perform path
- * canonicalization. VM call this function before opening jar files
- * to load system classes.
- *
- */
-
-typedef int (*canonicalize_fn_t)(JNIEnv *env, char *orig, char *out, int len);
 
 /*************************************************************************
  PART 3: I/O and Network Support
