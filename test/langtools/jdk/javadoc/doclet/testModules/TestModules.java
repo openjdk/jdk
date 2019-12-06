@@ -29,7 +29,6 @@
         8164407 8192007 8182765 8196200 8196201 8196202 8196202 8205593 8202462
         8184205 8219060 8223378
  * @summary Test modules support in javadoc.
- * @author bpatel
  * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
  * @build javadoc.tester.*

@@ -134,10 +134,6 @@ import java.util.function.Function;
  * of javadoc invocations is important, do that within a single method.
  * If the invocations are independent, for better clarity, use separate
  * test methods, each with their own set of checks on the results.
- *
- * @author Doug Kramer
- * @author Jamie Ho
- * @author Jonathan Gibbons (rewrite)
  */
 public abstract class JavadocTester {
 

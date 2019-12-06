@@ -25,7 +25,6 @@
  * @test
  * @bug      8005092 6469562 8182765
  * @summary  Test repeated annotations output.
- * @author   bpatel
  * @library  ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
  * @build    javadoc.tester.*

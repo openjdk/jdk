@@ -38,8 +38,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocletConstants;
  *  If you write code that depends on this, you do so at your own risk.
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
- *
- * @author Bhavesh Patel
  */
 public class StringContent extends Content {
 

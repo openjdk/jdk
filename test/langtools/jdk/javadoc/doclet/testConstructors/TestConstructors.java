@@ -25,7 +25,6 @@
  * @test
  * @bug 8025524 8031625 8081854 8175200 8186332 8182765
  * @summary Test for constructor name which should be a non-qualified name.
- * @author Bhavesh Patel
  * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
  * @build javadoc.tester.*

@@ -26,7 +26,6 @@
  * @bug      4924383 8149402 8196202
  * @summary  Test to make sure the -group option works correctly
  *           with the given pattern usages.
- * @author   jamieh
  * @library  ../../lib
  * @modules  jdk.javadoc/jdk.javadoc.internal.tool
  * @build    javadoc.tester.*

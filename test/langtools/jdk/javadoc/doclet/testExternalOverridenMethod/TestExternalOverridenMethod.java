@@ -27,7 +27,6 @@
  * @summary Test to make sure that externally overriden and implemented methods
  * are documented properly.  The method should still include "implements" or
  * "overrides" documentation even though the method is external.
- * @author jamieh
  * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
  * @build javadoc.tester.* TestExternalOverridenMethod

@@ -25,7 +25,6 @@
  * @test
  * @bug      4934778 4777599 6553182 8146427 8146475 8175055 8185371
  * @summary  Make sure that --help, -helpfile and -nohelp options work correctly.
- * @author   jamieh
  * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
  * @build    javadoc.tester.* TestHelpOption

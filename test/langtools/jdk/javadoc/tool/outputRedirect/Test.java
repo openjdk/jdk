@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
 /* @test
  * @bug 4587487
  * @summary jdk.javadoc.internal.tool.Main.execute ignores PrintWriters
- * @author gafter
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
  * @compile p/OutputRedirect.java
  * @run main p.OutputRedirect

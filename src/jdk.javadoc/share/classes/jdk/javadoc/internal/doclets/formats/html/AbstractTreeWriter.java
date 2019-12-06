@@ -47,8 +47,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
  *  If you write code that depends on this, you do so at your own risk.
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
- *
- * @author Atul M Dambalkar
  */
 public abstract class AbstractTreeWriter extends HtmlDocletWriter {
 

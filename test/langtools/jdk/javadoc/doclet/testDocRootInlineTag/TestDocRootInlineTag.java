@@ -27,7 +27,6 @@
  * @summary Determine if the docRoot inline tag works properly.
  * If docRoot performs as documented, the test passes.
  * Make sure that the docRoot tag works with the -bottom option.
- * @author jamieh
  * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
  * @build javadoc.tester.*

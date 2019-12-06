@@ -52,11 +52,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.IndexBuilder;
  *  If you write code that depends on this, you do so at your own risk.
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
- *
- * @author Atul M Dambalkar
- * @author Robert Field
- * @author Jamie Ho
- *
  */
 public class HtmlDoclet extends AbstractDoclet {
 

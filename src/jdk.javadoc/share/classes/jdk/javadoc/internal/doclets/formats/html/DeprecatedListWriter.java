@@ -61,8 +61,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
  *  deletion without notice.</b>
  *
  * @see java.util.List
- * @author Atul M Dambalkar
- * @author Bhavesh Patel (Modified)
  */
 public class DeprecatedListWriter extends SubWriterHolderWriter {
 

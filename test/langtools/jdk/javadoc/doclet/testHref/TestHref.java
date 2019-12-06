@@ -25,7 +25,6 @@
  * @test
  * @bug      4663254 8016328 8025633 8026567 8081854 8182765 8205593
  * @summary  Verify that spaces do not appear in hrefs and anchors.
- * @author   jamieh
  * @library  ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
  * @build    javadoc.tester.*

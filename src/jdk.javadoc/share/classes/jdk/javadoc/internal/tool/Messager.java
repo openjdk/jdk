@@ -59,7 +59,6 @@ import com.sun.tools.javac.util.Log;
  *
  * @see java.util.ResourceBundle
  * @see java.text.MessageFormat
- * @author Neal Gafter (rewrite)
  */
 public class Messager extends Log implements Reporter {
     final Context context;

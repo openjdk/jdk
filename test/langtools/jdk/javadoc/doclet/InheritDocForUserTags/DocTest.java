@@ -25,7 +25,6 @@
  * @test
  * @bug 8008768
  * @summary Using {@inheritDoc} in simple tag defined via -tag fails
- * @author Mike Duigou
  * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
  * @build javadoc.tester.*

@@ -26,7 +26,6 @@
  * @bug      4749567 8071982 8175200 8186332 8185371 8182765 8217034
  * @summary  Test the output for -header, -footer, -nooverview, -nodeprecatedlist, -nonavbar, -notree,
  *           -stylesheetfile, --main-stylesheet, --add-stylesheet options.
- * @author   Bhavesh Patel
  * @library  ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
  * @build    javadoc.tester.*

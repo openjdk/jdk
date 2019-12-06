@@ -28,7 +28,6 @@
  * If the first sentence of "method" is parsed correctly, the test passes.
  * Correct Answer: "This is a class (i.e. it is indeed a class)."
  * Wrong Answer: "This is a class (i.e."
- * @author jamieh
  * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
  * @build javadoc.tester.*

@@ -26,7 +26,6 @@
  * @bug      4904075 4774450 5015144 8043698 8196201 8203791 8184205
  * @summary  Reference unnamed package as "Unnamed", not empty string.
  *           Generate a package summary for the unnamed package.
- * @author   jamieh
  * @library  ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
  * @build    javadoc.tester.*

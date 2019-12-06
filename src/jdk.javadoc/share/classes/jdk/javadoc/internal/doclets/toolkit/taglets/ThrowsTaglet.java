@@ -49,8 +49,6 @@ import static com.sun.source.doctree.DocTree.Kind.THROWS;
  *  If you write code that depends on this, you do so at your own risk.
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
- *
- * @author Jamie Ho
  */
 public class ThrowsTaglet extends BaseTaglet
     implements InheritableTaglet {

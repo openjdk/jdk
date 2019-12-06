@@ -27,7 +27,6 @@
  * @summary  Document a class that does not have any methods to document.  The
  *           "Method Summary" heading should still show up since the class
  *           inherits methods.
- * @author   jamieh
  * @library  ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
  * @build    javadoc.tester.*

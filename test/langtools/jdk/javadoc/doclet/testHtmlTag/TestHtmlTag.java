@@ -25,7 +25,6 @@
  * @test
  * @bug 6786682 4649116 8182765
  * @summary This test verifies the use of lang attribute by <HTML>.
- * @author Bhavesh Patel
  * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
  * @build javadoc.tester.*

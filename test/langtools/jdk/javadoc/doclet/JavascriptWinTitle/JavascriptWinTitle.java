@@ -26,7 +26,6 @@
  * @bug 4645058 4747738 4855054 8024756 8141492 8196202 8205593 8215599
  * @summary  Javascript IE load error when linked by -linkoffline
  *           Window title shouldn't change when loading left frames (javascript)
- * @author dkramer
  * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
  * @build javadoc.tester.*

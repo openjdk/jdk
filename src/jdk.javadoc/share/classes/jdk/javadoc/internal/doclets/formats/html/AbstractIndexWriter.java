@@ -67,8 +67,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.IndexBuilder;
  *  deletion without notice.</b>
  *
  * @see    IndexBuilder
- * @author Atul M Dambalkar
- * @author Bhavesh Patel (Modified)
  */
 public class AbstractIndexWriter extends HtmlDocletWriter {
 

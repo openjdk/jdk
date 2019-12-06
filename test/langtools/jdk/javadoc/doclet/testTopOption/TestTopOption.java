@@ -25,7 +25,6 @@
  * @test
  * @bug      6227616 8043186 8196202 8223378
  * @summary  Test the new -top option.
- * @author   jamieh
  * @library  ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
  * @build    javadoc.tester.*
