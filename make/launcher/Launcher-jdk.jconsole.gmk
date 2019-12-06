@@ -29,6 +29,7 @@ $(eval $(call SetupBuildLauncher, jconsole, \
     MAIN_CLASS := sun.tools.jconsole.JConsole, \
     JAVA_ARGS := --add-opens java.base/java.io=jdk.jconsole \
                  --add-modules ALL-DEFAULT \
-		 -Djconsole.showOutputViewer, \
+		 -Djconsole.showOutputViewer \
+		 -Djdk.attach.allowAttachSelf=true, \
     CFLAGS_windows := -DJAVAW, \
 ))
