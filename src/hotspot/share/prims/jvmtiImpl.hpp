@@ -520,7 +520,7 @@ class JvmtiDeferredEventQueue : public CHeapObj<mtInternal> {
   JvmtiDeferredEvent dequeue() NOT_JVMTI_RETURN_(JvmtiDeferredEvent());
 
   // Post all events in the queue for the current Jvmti environment
-  void post(JvmtiEnv* env) NOT_JVMTI_RETURN_(false);
+  void post(JvmtiEnv* env) NOT_JVMTI_RETURN;
   void enqueue(JvmtiDeferredEvent event) NOT_JVMTI_RETURN;
 
   // Sweeper support to keep nmethods from being zombied while in the queue.
