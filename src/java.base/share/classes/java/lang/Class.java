@@ -2315,15 +2315,11 @@ public final class Class<T> implements java.io.Serializable,
         if (isPrimitive() || isArray()) {
             return new RecordComponent[0];
         }
-        Object[] recordComponents = getRecordComponents0();
-        if (recordComponents == null || recordComponents.length == 0) {
+        RecordComponent[] recordComponents = getRecordComponents0();
+        if (recordComponents == null) {
             return new RecordComponent[0];
         }
-        RecordComponent[] result = new RecordComponent[recordComponents.length];
-        for (int i = 0; i < recordComponents.length; i++) {
-            result[i] = (RecordComponent)recordComponents[i];
-        }
-        return result;
+        return recordComponents;
     }
 
     /**
@@ -3483,7 +3479,8 @@ public final class Class<T> implements java.io.Serializable,
     private native Method[]      getDeclaredMethods0(boolean publicOnly);
     private native Constructor<T>[] getDeclaredConstructors0(boolean publicOnly);
     private native Class<?>[]   getDeclaredClasses0();
-    private native Object[]     getRecordComponents0();
+    @SuppressWarnings("preview")
+    private native RecordComponent[] getRecordComponents0();
     private native boolean      isRecord0();
 
     /**

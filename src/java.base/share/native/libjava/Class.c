@@ -51,6 +51,7 @@ extern jboolean VerifyFixClassname(char *utf_name);
 #define CTR "Ljava/lang/reflect/Constructor;"
 #define PD  "Ljava/security/ProtectionDomain;"
 #define BA  "[B"
+#define RC  "Ljava/lang/reflect/RecordComponent;"
 
 static JNINativeMethod methods[] = {
     {"initClassName",    "()" STR,          (void *)&JVM_InitClassName},
@@ -77,8 +78,8 @@ static JNINativeMethod methods[] = {
     {"getRawTypeAnnotations", "()" BA,      (void *)&JVM_GetClassTypeAnnotations},
     {"getNestHost0",         "()" CLS,      (void *)&JVM_GetNestHost},
     {"getNestMembers0",      "()[" CLS,     (void *)&JVM_GetNestMembers},
-    {"getRecordComponents0",  "()[" OBJ,        (void *)&JVM_GetRecordComponents},
-    {"isRecord0",                 "()Z",        (void *)&JVM_IsRecord},
+    {"getRecordComponents0", "()[" RC,      (void *)&JVM_GetRecordComponents},
+    {"isRecord0",            "()Z",         (void *)&JVM_IsRecord},
 };
 
 #undef OBJ
