@@ -80,9 +80,7 @@ WeakProcessorPhaseTimes::WeakProcessorPhaseTimes(uint max_threads) :
   _max_threads(max_threads),
   _active_workers(0),
   _total_time_sec(uninitialized_time),
-  _worker_data(),
-  _worker_dead_items(),
-  _worker_total_items()
+  _worker_data()
 {
   assert(_max_threads > 0, "max_threads must not be zero");
 
@@ -93,9 +91,9 @@ WeakProcessorPhaseTimes::WeakProcessorPhaseTimes(uint max_threads) :
   for ( ; !it.is_end(); ++it) {
     assert(size_t(wpt - _worker_data) < ARRAY_SIZE(_worker_data), "invariant");
     const char* description = it->name();
-    *wpt = new WorkerDataArray<double>(_max_threads, description);
-    (*wpt)->link_thread_work_items(new WorkerDataArray<size_t>(_max_threads, "Dead"), DeadItems);
-    (*wpt)->link_thread_work_items(new WorkerDataArray<size_t>(_max_threads, "Total"), TotalItems);
+    *wpt = new WorkerDataArray<double>(description, _max_threads);
+    (*wpt)->create_thread_work_items("Dead", DeadItems);
+    (*wpt)->create_thread_work_items("Total", TotalItems);
     wpt++;
   }
   assert(size_t(wpt - _worker_data) == ARRAY_SIZE(_worker_data), "invariant");
@@ -104,8 +102,6 @@ WeakProcessorPhaseTimes::WeakProcessorPhaseTimes(uint max_threads) :
 WeakProcessorPhaseTimes::~WeakProcessorPhaseTimes() {
   for (size_t i = 0; i < ARRAY_SIZE(_worker_data); ++i) {
     delete _worker_data[i];
-    delete _worker_dead_items[i];
-    delete _worker_total_items[i];
   }
 }
 

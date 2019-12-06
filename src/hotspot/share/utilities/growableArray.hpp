@@ -30,6 +30,7 @@
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
+#include "utilities/powerOfTwo.hpp"
 
 // A growable array.
 
@@ -476,10 +477,9 @@ template<class E> class GrowableArray : public GenericGrowableArray {
 // Global GrowableArray methods (one instance in the library per each 'E' type).
 
 template<class E> void GrowableArray<E>::grow(int j) {
-    // grow the array by doubling its size (amortized growth)
     int old_max = _max;
-    if (_max == 0) _max = 1; // prevent endless loop
-    while (j >= _max) _max = _max*2;
+    // grow the array by increasing _max to the first power of two larger than the size we need
+    _max = next_power_of_2((uint32_t)j);
     // j < _max
     E* newData = (E*)raw_allocate(sizeof(E));
     int i = 0;

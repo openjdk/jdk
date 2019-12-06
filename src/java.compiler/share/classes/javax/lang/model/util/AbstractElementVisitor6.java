@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,6 +66,7 @@ import static javax.lang.model.SourceVersion.*;
  * @see AbstractElementVisitor7
  * @see AbstractElementVisitor8
  * @see AbstractElementVisitor9
+ * @see AbstractElementVisitor14
  * @since 1.6
  */
 @SupportedSourceVersion(RELEASE_6)
@@ -142,5 +143,24 @@ public abstract class AbstractElementVisitor6<R, P> implements ElementVisitor<R,
     public R visitModule(ModuleElement e, P p) {
         // Use implementation from interface default method
         return ElementVisitor.super.visitModule(e, p);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @implSpec Visits a {@code RecordComponentElement} by calling {@code
+     * visitUnknown}.
+     *
+     * @param e  {@inheritDoc}
+     * @param p  {@inheritDoc}
+     * @return   {@inheritDoc}
+     *
+     * @since 14
+     */
+    @SuppressWarnings("preview")
+    @Override
+    public R visitRecordComponent(RecordComponentElement e, P p) {
+        // Use implementation from interface default method
+        return ElementVisitor.super.visitRecordComponent(e, p);
     }
 }

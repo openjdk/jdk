@@ -40,11 +40,17 @@
      return AF_INET6;
  }
 
- JNIEXPORT jint JNICALL
- Java_sun_nio_ch_NativeSocketAddress_sizeofSOCKETADDRESS(JNIEnv* env, jclass clazz)
- {
-     return sizeof(SOCKETADDRESS);
- }
+JNIEXPORT jint JNICALL
+Java_sun_nio_ch_NativeSocketAddress_sizeofSockAddr4(JNIEnv* env, jclass clazz)
+{
+    return sizeof(struct sockaddr_in);
+}
+
+JNIEXPORT jint JNICALL
+Java_sun_nio_ch_NativeSocketAddress_sizeofSockAddr6(JNIEnv* env, jclass clazz)
+{
+    return sizeof(struct sockaddr_in6);
+}
 
 JNIEXPORT jint JNICALL
 Java_sun_nio_ch_NativeSocketAddress_sizeofFamily(JNIEnv* env, jclass clazz)
@@ -87,4 +93,10 @@ Java_sun_nio_ch_NativeSocketAddress_sizeofFamily(JNIEnv* env, jclass clazz)
  Java_sun_nio_ch_NativeSocketAddress_offsetSin6ScopeId(JNIEnv* env, jclass clazz)
  {
      return offsetof(struct sockaddr_in6, sin6_scope_id);
+ }
+
+ JNIEXPORT jint JNICALL
+ Java_sun_nio_ch_NativeSocketAddress_offsetSin6FlowInfo(JNIEnv* env, jclass clazz)
+ {
+     return offsetof(struct sockaddr_in6, sin6_flowinfo);
  }

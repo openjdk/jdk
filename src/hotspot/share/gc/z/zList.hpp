@@ -25,6 +25,7 @@
 #define SHARE_GC_Z_ZLIST_HPP
 
 #include "memory/allocation.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 template <typename T> class ZList;
 
@@ -55,9 +56,7 @@ private:
   ZListNode<T> _head;
   size_t       _size;
 
-  // Passing by value and assignment is not allowed
-  ZList(const ZList<T>& list);
-  ZList<T>& operator=(const ZList<T>& list);
+  NONCOPYABLE(ZList);
 
   void verify() const;
 

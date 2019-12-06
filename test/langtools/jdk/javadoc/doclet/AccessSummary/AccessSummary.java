@@ -25,7 +25,6 @@
  * @test
  * @bug      4637604 4775148 8183037 8182765 8196202
  * @summary  Test the tables for summary attribute
- * @author   dkramer
  * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
  * @build    javadoc.tester.*

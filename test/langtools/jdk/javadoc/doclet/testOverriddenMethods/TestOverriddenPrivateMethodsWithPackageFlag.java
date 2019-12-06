@@ -26,7 +26,6 @@
  * @bug 4634891 8025633 8026567 8182765
  * @summary Determine if overridden methods are properly documented when
  * -protected (default) visibility flag is used.
- * @author jamieh
  * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
  * @build javadoc.tester.*

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,8 +46,12 @@ public enum ElementKind {
     // Declared types
     /** An enum type. */
     ENUM,
-    /** A class not described by a more specific kind (like {@code ENUM}). */
+    /**
+     * A class not described by a more specific kind (like {@code
+     * ENUM} or {@code RECORD}).
+     */
     CLASS,
+
     /** An annotation type. */
     ANNOTATION_TYPE,
     /**
@@ -90,6 +94,8 @@ public enum ElementKind {
      */
     OTHER,
 
+    // Constants added since initial release
+
     /**
      * A resource variable.
      * @since 1.7
@@ -101,17 +107,47 @@ public enum ElementKind {
      * @since 9
      * @spec JPMS
      */
-     MODULE;
+     MODULE,
 
+    /**
+     * {@preview Associated with records, a preview feature of the Java language.
+     *
+     *           This enum constant is associated with <i>records</i>, a preview
+     *           feature of the Java language. Preview features
+     *           may be removed in a future release, or upgraded to permanent
+     *           features of the Java language.}
+     *
+     * A record type.
+     * @since 14
+     */
+    @jdk.internal.PreviewFeature(feature=jdk.internal.PreviewFeature.Feature.RECORDS,
+                                 essentialAPI=false)
+    RECORD,
+
+    /**
+     * {@preview Associated with records, a preview feature of the Java language.
+     *
+     *           This enum constant is associated with <i>records</i>, a preview
+     *           feature of the Java language. Preview features
+     *           may be removed in a future release, or upgraded to permanent
+     *           features of the Java language.}
+     *
+     * A record component of a {@code record}.
+     * @since 14
+     */
+    @jdk.internal.PreviewFeature(feature=jdk.internal.PreviewFeature.Feature.RECORDS,
+                                 essentialAPI=false)
+    RECORD_COMPONENT;
 
     /**
      * Returns {@code true} if this is a kind of class:
-     * either {@code CLASS} or {@code ENUM}.
+     * either {@code CLASS} or {@code ENUM} or {@code RECORD}.
      *
      * @return {@code true} if this is a kind of class
      */
+    @SuppressWarnings("preview")
     public boolean isClass() {
-        return this == CLASS || this == ENUM;
+        return this == CLASS || this == ENUM || this == RECORD;
     }
 
     /**

@@ -26,7 +26,6 @@
  * @bug      4927552 8026567 8071982 8162674 8175200 8175218 8183511 8186332
  *           8169819 8074407 8191030 8182765 8184205
  * @summary  test generated docs for deprecated items
- * @author   jamieh
  * @library  ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
  * @build    javadoc.tester.*

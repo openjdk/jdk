@@ -74,7 +74,7 @@ public class PrivateLookupInTests {
     public void testAllAccessCallerSameModule() throws Throwable {
         Lookup lookup = MethodHandles.privateLookupIn(nonPublicType, MethodHandles.lookup());
         assertTrue(lookup.lookupClass() == nonPublicType);
-        assertTrue(lookup.hasPrivateAccess());
+        assertTrue(lookup.hasFullPrivilegeAccess());
 
         // get obj field
         MethodHandle mh = lookup.findStaticGetter(nonPublicType, "obj", Object.class);
@@ -113,7 +113,8 @@ public class PrivateLookupInTests {
 
         Lookup lookup = MethodHandles.privateLookupIn(clazz, MethodHandles.lookup());
         assertTrue(lookup.lookupClass() == clazz);
-        assertTrue(lookup.hasPrivateAccess());
+        assertTrue((lookup.lookupModes() & PRIVATE) != 0);
+        assertFalse(lookup.hasFullPrivilegeAccess());
 
         // get obj field
         MethodHandle mh = lookup.findStaticGetter(clazz, "obj", Object.class);
@@ -137,7 +138,7 @@ public class PrivateLookupInTests {
         thisModule.addReads(clazz.getModule());
         Lookup lookup = MethodHandles.privateLookupIn(clazz, MethodHandles.lookup());
         assertTrue(lookup.lookupClass() == clazz);
-        assertTrue(lookup.hasPrivateAccess());
+        assertTrue((lookup.lookupModes() & PRIVATE) != 0);
     }
 
     // test does not read m2, m2 opens p2 to test

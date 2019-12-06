@@ -234,7 +234,7 @@ static void write_data_loss_event(JfrBuffer* buffer, u8 unflushed_size, Thread* 
 static void write_data_loss(BufferPtr buffer, Thread* thread) {
   assert(buffer != NULL, "invariant");
   const size_t unflushed_size = buffer->unflushed_size();
-  buffer->concurrent_reinitialization();
+  buffer->reinitialize();
   if (unflushed_size == 0) {
     return;
   }
@@ -249,7 +249,7 @@ bool JfrStorage::flush_regular_buffer(BufferPtr buffer, Thread* thread) {
   assert(!buffer->transient(), "invariant");
   const size_t unflushed_size = buffer->unflushed_size();
   if (unflushed_size == 0) {
-    buffer->concurrent_reinitialization();
+    buffer->reinitialize();
     assert(buffer->empty(), "invariant");
     return true;
   }
@@ -272,7 +272,7 @@ bool JfrStorage::flush_regular_buffer(BufferPtr buffer, Thread* thread) {
   }
   assert(promotion_buffer->acquired_by_self(), "invariant");
   assert(promotion_buffer->free_size() >= unflushed_size, "invariant");
-  buffer->concurrent_move_and_reinitialize(promotion_buffer, unflushed_size);
+  buffer->move(promotion_buffer, unflushed_size);
   assert(buffer->empty(), "invariant");
   return true;
 }
@@ -313,7 +313,7 @@ static void handle_registration_failure(BufferPtr buffer) {
   assert(buffer != NULL, "invariant");
   assert(buffer->retired(), "invariant");
   const size_t unflushed_size = buffer->unflushed_size();
-  buffer->concurrent_reinitialization();
+  buffer->reinitialize();
   log_registration_failure(unflushed_size);
 }
 
@@ -388,7 +388,7 @@ void JfrStorage::release(BufferPtr buffer, Thread* thread) {
   assert(!buffer->retired(), "invariant");
   if (!buffer->empty()) {
     if (!flush_regular_buffer(buffer, thread)) {
-      buffer->concurrent_reinitialization();
+      buffer->reinitialize();
     }
   }
   assert(buffer->empty(), "invariant");
@@ -431,6 +431,7 @@ void JfrStorage::discard_oldest(Thread* thread) {
       assert(oldest_age_node->identity() == NULL, "invariant");
       BufferPtr const buffer = oldest_age_node->retired_buffer();
       assert(buffer->retired(), "invariant");
+      assert(buffer->identity() != NULL, "invariant");
       discarded_size += buffer->discard();
       assert(buffer->unflushed_size() == 0, "invariant");
       num_full_post_discard = control().decrement_full();

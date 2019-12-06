@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -345,7 +345,7 @@ AC_DEFUN_ONCE([BOOTJDK_SETUP_BOOT_JDK],
 
   # When compiling code to be executed by the Boot JDK, force compatibility with the
   # oldest supported bootjdk.
-  BOOT_JDK_SOURCETARGET="-source 9 -target 9"
+  BOOT_JDK_SOURCETARGET="-source 13 -target 13"
   AC_SUBST(BOOT_JDK_SOURCETARGET)
 
   AC_SUBST(JAVAC_FLAGS)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ ParMarkBitMap::initialize(MemRegion covered_region)
   const idx_t bits = bits_required(covered_region);
   // The bits will be divided evenly between two bitmaps; each of them should be
   // an integral number of words.
-  assert(bits % (BitsPerWord * 2) == 0, "region size unaligned");
+  assert(is_aligned(bits, (BitsPerWord * 2)), "region size unaligned");
 
   const size_t words = bits / BitsPerWord;
   const size_t raw_bytes = words * sizeof(idx_t);
@@ -118,7 +118,7 @@ ParMarkBitMap::live_words_in_range_helper(HeapWord* beg_addr, oop end_obj) const
 
   // The bitmap routines require the right boundary to be word-aligned.
   const idx_t end_bit = addr_to_bit((HeapWord*)end_obj);
-  const idx_t range_end = BitMap::word_align_up(end_bit);
+  const idx_t range_end = align_range_end(end_bit);
 
   idx_t beg_bit = find_obj_beg(addr_to_bit(beg_addr), range_end);
   while (beg_bit < end_bit) {
@@ -177,7 +177,7 @@ ParMarkBitMap::iterate(ParMarkBitMapClosure* live_closure,
   assert(range_beg <= range_end, "live range invalid");
 
   // The bitmap routines require the right boundary to be word-aligned.
-  const idx_t search_end = BitMap::word_align_up(range_end);
+  const idx_t search_end = align_range_end(range_end);
 
   idx_t cur_beg = find_obj_beg(range_beg, search_end);
   while (cur_beg < range_end) {
@@ -216,8 +216,8 @@ ParMarkBitMap::iterate(ParMarkBitMapClosure* live_closure,
   assert(range_end <= dead_range_end, "dead range invalid");
 
   // The bitmap routines require the right boundary to be word-aligned.
-  const idx_t live_search_end = BitMap::word_align_up(range_end);
-  const idx_t dead_search_end = BitMap::word_align_up(dead_range_end);
+  const idx_t live_search_end = align_range_end(range_end);
+  const idx_t dead_search_end = align_range_end(dead_range_end);
 
   idx_t cur_beg = range_beg;
   if (range_beg < range_end && is_unmarked(range_beg)) {

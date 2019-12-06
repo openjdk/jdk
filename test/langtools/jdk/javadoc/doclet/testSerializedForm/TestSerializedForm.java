@@ -31,7 +31,6 @@
  * test passes.  This also tests that throws tag information is correctly shown
  * in the serialized form page.
  * Make sure see tags work in serialized form.
- * @author jamieh
  * @library ../../lib/
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
  * @build javadoc.tester.*

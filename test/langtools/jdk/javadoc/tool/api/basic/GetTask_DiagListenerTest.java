@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,7 +78,7 @@ public class GetTask_DiagListenerTest extends APITest {
                 }
                 List<String> expect = Arrays.asList(
                         "javadoc.note.msg",         // Loading source file
-                        "compiler.err.expected3",   // class, interface, or enum expected
+                        "compiler.err.expected3",   // class, interface, enum, or __datum expected
                         "javadoc.note.msg");        // 1 error
                 if (!diagCodes.equals(expect))
                     throw new Exception("unexpected diagnostics occurred");

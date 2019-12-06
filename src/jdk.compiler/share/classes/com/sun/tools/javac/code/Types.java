@@ -5174,7 +5174,7 @@ public class Types {
             append('>');
         }
 
-        private void assembleSig(List<Type> types) {
+        public void assembleSig(List<Type> types) {
             for (List<Type> ts = types; ts.nonEmpty(); ts = ts.tail) {
                 assembleSig(ts.head);
             }

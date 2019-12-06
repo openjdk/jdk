@@ -25,7 +25,6 @@
  * @test
  * @bug      6758050 8025633 8182765
  * @summary  Test HTML output for nested generic types.
- * @author   bpatel
  * @library  ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
  * @build    javadoc.tester.*

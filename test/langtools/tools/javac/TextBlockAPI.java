@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 8223967
+ * @bug 8232681
  * @summary Unit tests for Text Block language changes
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -46,7 +47,11 @@ public class TextBlockAPI {
         test2();
         test3();
         test4();
-    }
+        test5();
+        test6();
+        test7();
+        test8();
+   }
 
     /*
      * Check that correct/incorrect syntax is properly detected
@@ -72,35 +77,35 @@ public class TextBlockAPI {
      * Check that use of \u0022 is properly detected
      */
     static void test2() {
-        compPass("public class UnicodeDelimiterTest {\n" +
-                "    public static void main(String... args) {\n" +
-                "        String xxx = \\u0022\\u0022\\u0022\nabc\n\\u0022\\u0022\\u0022;\n" +
-                "    }\n" +
-                "}\n");
+        compPass("public class UnicodeDelimiterTest {",
+                 "    public static void main(String... args) {",
+                 "        String xxx = \\u0022\\u0022\\u0022\nabc\n\\u0022\\u0022\\u0022;",
+                 "    }",
+                 "}");
     }
 
     /*
      * Check edge cases of text blocks as last token
      */
     static void test3() {
-        compFail("public class EndTest {\n" +
-                "    public static void main(String... args) {\n" +
-                "        String xxx = \"\"\"\nabc\"\"\"");
-        compFail("public class TwoQuoteClose {\n" +
-                "    public static void main(String... args) {\n" +
-                "        String xxx = \"\"\"\nabc\"\"");
-        compFail("public class OneQuoteClose {\n" +
-                "    public static void main(String... args) {\n" +
-                "        String xxx = \"\"\"\nabc\"");
-        compFail("public class NoClose {\n" +
-                "    public static void main(String... args) {\n" +
-                "        String xxx = \"\"\"\nabc");
-        compFail("public class ZeroTerminator {\n" +
-                "    public static void main(String... args) {\n" +
-                "        String xxx = \"\"\"\nabc\\u0000");
-        compFail("public class NonBreakingSpace {\n" +
-                "    public static void main(String... args) {\n" +
-                "        String xxx = \"\"\"\nabc\\u001A");
+        compFail("public class EndTest {",
+                 "    public static void main(String... args) {",
+                 "        String xxx = \"\"\"\nabc\"\"\"");
+        compFail("public class TwoQuoteClose {",
+                 "    public static void main(String... args) {",
+                 "        String xxx = \"\"\"\nabc\"\"");
+        compFail("public class OneQuoteClose {",
+                 "    public static void main(String... args) {",
+                 "        String xxx = \"\"\"\nabc\"");
+        compFail("public class NoClose {",
+                 "    public static void main(String... args) {",
+                 "        String xxx = \"\"\"\nabc");
+        compFail("public class ZeroTerminator {",
+                 "    public static void main(String... args) {",
+                 "        String xxx = \"\"\"\nabc\\u0000");
+        compFail("public class NonBreakingSpace {",
+                 "    public static void main(String... args) {",
+                 "        String xxx = \"\"\"\nabc\\u001A");
     }
 
     /*
@@ -138,6 +143,78 @@ public class TextBlockAPI {
     }
 
     /*
+     * Check escape space
+     */
+    static void test5() {
+        compPass("public class EscapeSChar {",
+                 "    public static void main(String... args) {",
+                 "        char xxx = '\\s';",
+                 "    }",
+                 "}");
+        compPass("public class EscapeSString {",
+                 "    public static void main(String... args) {",
+                 "        String xxx = \"\\s\";",
+                 "    }",
+                 "}");
+        compPass("public class EscapeSTextBlock {",
+                 "    public static void main(String... args) {",
+                 "        String xxx = \"\"\"",
+                 "                     \\s",
+                 "                     \"\"\";",
+                 "    }",
+                 "}");
+    }
+
+    /*
+     * Check escape line terminator
+     */
+    static void test6() {
+        String[] terminators = new String[] { "\n", "\r\n", "\r" };
+        for (String terminator : terminators) {
+            compPass("public class EscapeLineTerminator {",
+                     "    public static void main(String... args) {",
+                     "        String xxx = \"\"\"",
+                     "                     \\" + terminator +
+                     "                     \"\"\";",
+                     "    }",
+                     "}");
+        }
+    }
+
+    /*
+     * Check incorrect escape line terminator cases
+     */
+    static void test7() {
+        compFail("public class EscapeLineTerminatorChar {",
+                 "    public static void main(String... args) {",
+                 "        char xxx = '\\\n';",
+                 "    }",
+                 "}");
+        compFail("public class EscapeLineTerminatorString {",
+                 "    public static void main(String... args) {",
+                 "        String xxx = \"\\\n\";",
+                 "    }",
+                 "}");
+    }
+
+    static void test8() {
+        String code = "class C {\n" +
+                      "\n" +
+                      "    void x() {\n" +
+                      "        String s = \"\"\"\n" +
+                      "\n" +
+                      "\"\"\";\n" +
+                      "    }\n" +
+                      "}\n";
+
+        new JavacTask(TOOLBOX)
+            .sources(code)
+            .classpath(".")
+            .options("--enable-preview", "-source", JDK_VERSION, "-encoding", "utf8", "-Xlint")
+            .run();
+     }
+
+    /*
      * Test source for successful compile.
      */
     static void compPass(String source) {
@@ -152,6 +229,10 @@ public class TextBlockAPI {
         if (output.contains("compiler.err")) {
             throw new RuntimeException("Error detected");
         }
+    }
+
+    static void compPass(String... lines) {
+        compPass(String.join("\n", lines) + "\n");
     }
 
     /*
@@ -169,5 +250,9 @@ public class TextBlockAPI {
         if (!errors.contains("compiler.err")) {
             throw new RuntimeException("No error detected");
         }
+    }
+
+    static void compFail(String... lines) {
+        compFail(String.join("\n", lines) + "\n");
     }
 }

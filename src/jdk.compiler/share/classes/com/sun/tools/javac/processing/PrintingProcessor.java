@@ -39,6 +39,8 @@ import java.io.PrintWriter;
 import java.io.Writer;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 
 import com.sun.tools.javac.util.DefinedBy;
 import com.sun.tools.javac.util.DefinedBy.Api;
@@ -88,8 +90,9 @@ public class PrintingProcessor extends AbstractProcessor {
     /**
      * Used for the -Xprint option and called by Elements.printElements
      */
+    @SuppressWarnings("preview")
     public static class PrintingElementVisitor
-        extends SimpleElementVisitor9<PrintingElementVisitor, Boolean> {
+        extends SimpleElementVisitor14<PrintingElementVisitor, Boolean> {
         int indentation; // Indentation level;
         final PrintWriter writer;
         final Elements elementUtils;
@@ -111,6 +114,13 @@ public class PrintingProcessor extends AbstractProcessor {
         }
 
         @Override @DefinedBy(Api.LANGUAGE_MODEL)
+        public PrintingElementVisitor visitRecordComponent(RecordComponentElement e, Boolean p) {
+                // Do nothing; printing of component information done by
+                // printing the record type itself
+            return this;
+        }
+
+        @Override @DefinedBy(Api.LANGUAGE_MODEL)
         public PrintingElementVisitor visitExecutable(ExecutableElement e, Boolean p) {
             ElementKind kind = e.getKind();
 
@@ -123,7 +133,7 @@ public class PrintingProcessor extends AbstractProcessor {
                     enclosing != null &&
                     NestingKind.ANONYMOUS ==
                     // Use an anonymous class to determine anonymity!
-                    (new SimpleElementVisitor9<NestingKind, Void>() {
+                    (new SimpleElementVisitor14<NestingKind, Void>() {
                         @Override @DefinedBy(Api.LANGUAGE_MODEL)
                         public NestingKind visitType(TypeElement e, Void p) {
                             return e.getNestingKind();
@@ -216,6 +226,16 @@ public class PrintingProcessor extends AbstractProcessor {
 
                 printFormalTypeParameters(e, false);
 
+                if (kind == RECORD) {
+                    // Print out record components
+                    writer.print("(");
+                    writer.print(e.getRecordComponents()
+                                 .stream()
+                                 .map(recordDes -> recordDes.asType().toString() + " " + recordDes.getSimpleName())
+                                 .collect(Collectors.joining(", ")));
+                    writer.print(")");
+                }
+
                 // Print superclass information if informative
                 if (kind == CLASS) {
                     TypeMirror supertype = e.getSuperclass();
@@ -255,7 +275,13 @@ public class PrintingProcessor extends AbstractProcessor {
                 for(Element element : enclosedElements)
                     this.visit(element);
             } else {
-                for(Element element : e.getEnclosedElements())
+                for(Element element :
+                        (kind != RECORD ?
+                         e.getEnclosedElements() :
+                         e.getEnclosedElements()
+                         .stream()
+                         .filter(elt -> elementUtils.getOrigin(elt) == Elements.Origin.EXPLICIT )
+                         .collect(Collectors.toList()) ) )
                     this.visit(element);
             }
 
@@ -446,6 +472,10 @@ public class PrintingProcessor extends AbstractProcessor {
             case ENUM:
                 modifiers.remove(Modifier.FINAL);
                 modifiers.remove(Modifier.ABSTRACT);
+                break;
+
+            case RECORD:
+                modifiers.remove(Modifier.FINAL);
                 break;
 
             case METHOD:

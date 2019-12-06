@@ -27,12 +27,13 @@ import java.util.List;
 import org.testng.ITestResult;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.Test;
+import tools.javac.combo.CompilationTestCase;
 import tools.javac.combo.JavacTemplateTestBase;
 
 import static java.util.stream.Collectors.toList;
 
 @Test
-public class ExpSwitchNestingTest extends JavacTemplateTestBase {
+public class ExpSwitchNestingTest extends CompilationTestCase {
     private static final String RUNNABLE = "Runnable r = () -> { # };";
     private static final String INT_FN = "java.util.function.IntSupplier r = () -> { # };";
     private static final String LABEL = "label: #";
@@ -68,58 +69,12 @@ public class ExpSwitchNestingTest extends JavacTemplateTestBase {
     private static final List<String> CONTAINER_STATEMENTS
             = List.of(FOR, WHILE, DO, SSWITCH, IF, BLOCK);
 
-    @AfterMethod
-    public void dumpTemplateIfError(ITestResult result) {
-        // Make sure offending template ends up in log file on failure
-        if (!result.isSuccess()) {
-            System.err.printf("Diagnostics: %s%nTemplate: %s%n", diags.errorKeys(), sourceFiles.stream().map(p -> p.snd).collect(toList()));
-        }
-    }
+    // @@@ When expression switch becomes a permanent feature, we don't need these any more
+    private static final String SHELL = "class C { static boolean cond = false; static int x = 0; void m() { # } }";
 
-    private void program(String... constructs) {
-        String s = "class C { static boolean cond = false; static int x = 0; void m() { # } }";
-        for (String c : constructs)
-            s = s.replace("#", c);
-        addSourceFile("C.java", new StringTemplate(s));
-    }
-
-    private void assertOK(String... constructs) {
-        reset();
-        addCompileOptions();
-        program(constructs);
-        try {
-            compile();
-        }
-        catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        assertCompileSucceeded();
-    }
-
-    private void assertOKWithWarning(String warning, String... constructs) {
-        reset();
-        addCompileOptions();
-        program(constructs);
-        try {
-            compile();
-        }
-        catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        assertCompileSucceededWithWarning(warning);
-    }
-
-    private void assertFail(String expectedDiag, String... constructs) {
-        reset();
-        addCompileOptions();
-        program(constructs);
-        try {
-            compile();
-        }
-        catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        assertCompileFailed(expectedDiag);
+    {
+        setDefaultFilename("C.java");
+        setProgramShell(SHELL);
     }
 
     public void testReallySimpleCases() {

@@ -187,5 +187,59 @@ public class BindingsTest2 {
 
             s.length();
         }
+
+        {
+            L: while (!(o1 instanceof String s)) {
+                break L;
+            }
+
+            s.length();
+        }
+
+        {
+            L: for (; !(o1 instanceof String s); ) {
+                break L;
+            }
+
+            s.length();
+        }
+
+        {
+            L: do {
+                break L;
+            } while (!(o1 instanceof String s));
+
+            s.length();
+        }
+
+        {
+            L: {
+                while (!(o1 instanceof String s)) {
+                    break L;
+                }
+
+                s.length();
+            }
+        }
+
+        {
+            L: {
+                for (; !(o1 instanceof String s); ) {
+                    break L;
+                }
+
+                s.length();
+            }
+        }
+
+        {
+            L: {
+                do {
+                    break L;
+                } while (!(o1 instanceof String s));
+
+                s.length();
+            }
+        }
     }
 }

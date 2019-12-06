@@ -82,6 +82,8 @@ public:
   ZPhysicalMemory alloc(size_t size);
   void free(const ZPhysicalMemory& pmem);
 
+  void pretouch(uintptr_t offset, size_t size) const;
+
   void map(const ZPhysicalMemory& pmem, uintptr_t offset) const;
   void unmap(const ZPhysicalMemory& pmem, uintptr_t offset) const;
 

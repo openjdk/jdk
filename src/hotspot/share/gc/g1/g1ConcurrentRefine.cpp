@@ -29,6 +29,7 @@
 #include "gc/g1/g1DirtyCardQueue.hpp"
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
+#include "memory/iterator.hpp"
 #include "runtime/java.hpp"
 #include "runtime/thread.hpp"
 #include "utilities/debug.hpp"

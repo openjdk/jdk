@@ -59,6 +59,7 @@
 #include "runtime/objectMonitor.inline.hpp"
 #include "runtime/os.inline.hpp"
 #include "runtime/safepointVerifiers.hpp"
+#include "runtime/serviceThread.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/vframe.inline.hpp"
@@ -1352,11 +1353,10 @@ void JvmtiExport::post_class_unload(Klass* klass) {
 
   // postings to the service thread so that it can perform them in a safe
   // context and in-order.
-  MutexLocker ml(Service_lock, Mutex::_no_safepoint_check_flag);
   ResourceMark rm;
   // JvmtiDeferredEvent copies the string.
   JvmtiDeferredEvent event = JvmtiDeferredEvent::class_unload_event(klass->name()->as_C_string());
-  JvmtiDeferredEventQueue::enqueue(event);
+  ServiceThread::enqueue_deferred_event(&event);
 }
 
 
@@ -2235,10 +2235,9 @@ void JvmtiExport::post_dynamic_code_generated(const char *name, const void *code
     // It may not be safe to post the event from this thread.  Defer all
     // postings to the service thread so that it can perform them in a safe
     // context and in-order.
-    MutexLocker ml(Service_lock, Mutex::_no_safepoint_check_flag);
     JvmtiDeferredEvent event = JvmtiDeferredEvent::dynamic_code_generated_event(
         name, code_begin, code_end);
-    JvmtiDeferredEventQueue::enqueue(event);
+    ServiceThread::enqueue_deferred_event(&event);
   }
 }
 

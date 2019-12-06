@@ -67,7 +67,7 @@ private:
 
   void try_recycle_trashed(ShenandoahHeapRegion *r);
 
-  bool is_empty_or_trash(ShenandoahHeapRegion *r);
+  bool can_allocate_from(ShenandoahHeapRegion *r);
   size_t alloc_capacity(ShenandoahHeapRegion *r);
   bool has_no_alloc_capacity(ShenandoahHeapRegion *r);
 

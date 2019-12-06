@@ -46,6 +46,7 @@ import javax.tools.JavaFileObject;
 
 import com.sun.source.tree.ClassTree;
 import com.sun.source.tree.CompilationUnitTree;
+import com.sun.source.tree.Tree;
 import com.sun.source.util.JavacTask;
 import com.sun.source.util.TaskEvent;
 import com.sun.source.util.TaskEvent.Kind;
@@ -68,6 +69,7 @@ import com.sun.tools.javac.main.Arguments;
 import com.sun.tools.javac.main.JavaCompiler;
 import com.sun.tools.javac.model.JavacElements;
 import com.sun.tools.javac.tree.JCTree.JCClassDecl;
+import com.sun.tools.javac.tree.JCTree.LetExpr;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.DefinedBy;
 import com.sun.tools.javac.util.DefinedBy.Api;
@@ -278,6 +280,18 @@ public class JavacTaskPool {
          * (typically because of cyclic inheritance) the symbol kind of a core class has been touched.
          */
         TreeScanner<Void, Symtab> pollutionScanner = new TreeScanner<Void, Symtab>() {
+            @Override @DefinedBy(Api.COMPILER_TREE)
+            public Void scan(Tree tree, Symtab syms) {
+                if (tree instanceof LetExpr) {
+                    LetExpr le = (LetExpr) tree;
+                    scan(le.defs, syms);
+                    scan(le.expr, syms);
+                    return null;
+                } else {
+                    return super.scan(tree, syms);
+                }
+            }
+
             @Override @DefinedBy(Api.COMPILER_TREE)
             public Void visitClass(ClassTree node, Symtab syms) {
                 Symbol sym = ((JCClassDecl)node).sym;

@@ -44,6 +44,7 @@
 #include "gc/shared/locationPrinter.inline.hpp"
 #include "gc/shared/scavengableNMethods.hpp"
 #include "logging/log.hpp"
+#include "memory/iterator.hpp"
 #include "memory/metaspaceCounters.hpp"
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"

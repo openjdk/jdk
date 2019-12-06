@@ -276,9 +276,8 @@ public final class LambdaMetafactory {
      *
      * @param caller Represents a lookup context with the accessibility
      *               privileges of the caller.  Specifically, the lookup context
-     *               must have
-     *               <a href="MethodHandles.Lookup.html#privacc">private access</a>
-     *               privileges.
+     *               must have {@linkplain MethodHandles.Lookup#hasFullPrivilegeAccess()
+     *               full privilege access}.
      *               When used with {@code invokedynamic}, this is stacked
      *               automatically by the VM.
      * @param invokedName The name of the method to implement.  When used with
@@ -422,9 +421,8 @@ public final class LambdaMetafactory {
      *
      * @param caller Represents a lookup context with the accessibility
      *               privileges of the caller.  Specifically, the lookup context
-     *               must have
-     *               <a href="MethodHandles.Lookup.html#privacc">private access</a>
-     *               privileges.
+     *               must have {@linkplain MethodHandles.Lookup#hasFullPrivilegeAccess()
+     *               full privilege access}.
      *               When used with {@code invokedynamic}, this is stacked
      *               automatically by the VM.
      * @param invokedName The name of the method to implement.  When used with

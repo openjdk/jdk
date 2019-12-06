@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,13 +30,9 @@ import static javax.lang.model.element.Modifier.PRIVATE;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import javax.lang.model.element.Element;
-import javax.lang.model.element.ExecutableElement;
-import javax.lang.model.element.TypeElement;
-import javax.lang.model.element.TypeParameterElement;
-import javax.lang.model.element.VariableElement;
+import javax.lang.model.element.*;
 import javax.lang.model.type.TypeMirror;
-import javax.lang.model.util.ElementScanner9;
+import javax.lang.model.util.ElementScanner14;
 
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.util.DefinedBy;
@@ -56,7 +52,8 @@ import com.sun.tools.sjavac.pubapi.TypeDesc;
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
  */
-public class PubapiVisitor extends ElementScanner9<Void, Void> {
+@SuppressWarnings("preview")
+public class PubapiVisitor extends ElementScanner14<Void, Void> {
 
     private PubApi collectedApi = new PubApi();
 
@@ -124,6 +121,17 @@ public class PubapiVisitor extends ElementScanner9<Void, Void> {
         // If it happens to contain an anonymous inner class (which it might)
         // then this class is never visible outside of the package anyway, so
         // we are allowed to ignore it here.
+        return null;
+    }
+
+    @SuppressWarnings("preview")
+    @Override @DefinedBy(Api.LANGUAGE_MODEL)
+    public Void visitRecordComponent(RecordComponentElement e, Void p) {
+        PubVar v = new PubVar(e.getModifiers(),
+                TypeDesc.fromType(e.asType()),
+                e.toString(),
+                null);
+        collectedApi.recordComponents.put(v.identifier, v);
         return null;
     }
 

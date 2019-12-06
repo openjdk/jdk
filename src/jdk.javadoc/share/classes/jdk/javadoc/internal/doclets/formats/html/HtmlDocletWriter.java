@@ -51,7 +51,7 @@ import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.SimpleAnnotationValueVisitor9;
-import javax.lang.model.util.SimpleElementVisitor9;
+import javax.lang.model.util.SimpleElementVisitor14;
 import javax.lang.model.util.SimpleTypeVisitor9;
 
 import com.sun.source.doctree.AttributeTree;
@@ -122,10 +122,6 @@ import static jdk.javadoc.internal.doclets.toolkit.util.CommentHelper.SPACER;
  *  If you write code that depends on this, you do so at your own risk.
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
- *
- * @author Atul M Dambalkar
- * @author Robert Field
- * @author Bhavesh Patel (Modified)
  */
 public class HtmlDocletWriter {
 
@@ -1510,7 +1506,8 @@ public class HtmlDocletWriter {
                 @Override
                 public Boolean visitLink(LinkTree node, Content c) {
                     // we need to pass the DocTreeImpl here, so ignore node
-                    result.add(seeTagToContent(element, tag));
+                    Content content = seeTagToContent(element, tag);
+                    result.add(content);
                     return false;
                 }
 
@@ -1658,13 +1655,14 @@ public class HtmlDocletWriter {
      *
      * @return the text, with all the relative links redirected to work.
      */
+    @SuppressWarnings("preview")
     private String redirectRelativeLinks(Element element, TextTree tt) {
         String text = tt.getBody();
         if (element == null || utils.isOverviewElement(element) || shouldNotRedirectRelativeLinks()) {
             return text;
         }
 
-        DocPath redirectPathFromRoot = new SimpleElementVisitor9<DocPath, Void>() {
+        DocPath redirectPathFromRoot = new SimpleElementVisitor14<DocPath, Void>() {
             @Override
             public DocPath visitType(TypeElement e, Void p) {
                 return docPaths.forPackage(utils.containingPackage(e));
@@ -1747,22 +1745,22 @@ public class HtmlDocletWriter {
     }
 
     /**
-     * Add the annotatation types for the given element and parameter.
+     * Add the annotation types for the given element and parameter.
      *
      * @param param the parameter to write annotations for.
      * @param tree the content tree to which the annotation types will be added
      */
     public boolean addAnnotationInfo(VariableElement param, Content tree) {
-        Content annotaionInfo = getAnnotationInfo(param.getAnnotationMirrors(), false);
-        if (annotaionInfo.isEmpty()) {
+        Content annotationInfo = getAnnotationInfo(param.getAnnotationMirrors(), false);
+        if (annotationInfo.isEmpty()) {
             return false;
         }
-        tree.add(annotaionInfo);
+        tree.add(annotationInfo);
         return true;
     }
 
     /**
-     * Adds the annotatation types for the given Element.
+     * Adds the annotation types for the given Element.
      *
      * @param descList a list of annotation mirrors.
      * @param htmltree the documentation tree to which the annotation info will be

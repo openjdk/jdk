@@ -26,15 +26,14 @@
 #define OS_WINDOWS_SEMAPHORE_WINDOWS_HPP
 
 #include "memory/allocation.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 #include <windows.h>
 
 class WindowsSemaphore : public CHeapObj<mtInternal> {
   HANDLE _semaphore;
 
-  // Prevent copying and assignment.
-  WindowsSemaphore(const WindowsSemaphore&);
-  WindowsSemaphore& operator=(const WindowsSemaphore&);
+  NONCOPYABLE(WindowsSemaphore);
 
  public:
   WindowsSemaphore(uint value = 0);

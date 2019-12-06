@@ -32,7 +32,7 @@ import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
-import javax.lang.model.util.SimpleElementVisitor9;
+import javax.lang.model.util.SimpleElementVisitor14;
 import java.lang.ref.SoftReference;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -666,6 +666,7 @@ public class VisibleMemberTable {
                     case INTERFACE:
                     case ENUM:
                     case ANNOTATION_TYPE:
+                    case RECORD:
                         addMember(e, Kind.INNER_CLASSES);
                         break;
                     case FIELD:
@@ -700,8 +701,9 @@ public class VisibleMemberTable {
             }
         }
 
+        @SuppressWarnings("preview")
         String getMemberKey(Element e) {
-            return new SimpleElementVisitor9<String, Void>() {
+            return new SimpleElementVisitor14<String, Void>() {
                 @Override
                 public String visitExecutable(ExecutableElement e, Void aVoid) {
                     return e.getSimpleName() + ":" + e.getParameters().size();

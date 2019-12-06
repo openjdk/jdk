@@ -3391,10 +3391,7 @@ void IdealLoopTree::verify_tree(IdealLoopTree *loop, const IdealLoopTree *parent
 void PhaseIdealLoop::set_idom(Node* d, Node* n, uint dom_depth) {
   uint idx = d->_idx;
   if (idx >= _idom_size) {
-    uint newsize = _idom_size<<1;
-    while( idx >= newsize ) {
-      newsize <<= 1;
-    }
+    uint newsize = next_power_of_2(idx);
     _idom      = REALLOC_RESOURCE_ARRAY( Node*,     _idom,_idom_size,newsize);
     _dom_depth = REALLOC_RESOURCE_ARRAY( uint, _dom_depth,_idom_size,newsize);
     memset( _dom_depth + _idom_size, 0, (newsize - _idom_size) * sizeof(uint) );

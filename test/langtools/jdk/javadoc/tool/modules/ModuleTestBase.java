@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@ import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.util.ElementFilter;
-import javax.lang.model.util.SimpleElementVisitor9;
+import javax.lang.model.util.SimpleElementVisitor14;
 
 import jdk.javadoc.doclet.Doclet;
 import jdk.javadoc.doclet.DocletEnvironment;
@@ -301,7 +301,7 @@ public class ModuleTestBase extends TestRunner {
         void printDataSet(String header, Set<? extends Element> set) {
             for (Element e : set) {
                 ps.print(header);
-                new SimpleElementVisitor9<Void, Void>() {
+                new SimpleElementVisitor14<Void, Void>() {
                     @Override
                     public Void visitModule(ModuleElement e, Void p) {
                         ps.print(FS);
@@ -347,7 +347,7 @@ public class ModuleTestBase extends TestRunner {
                     @Override
                     protected Void defaultAction(Element e, Void p) {
                         Element encl = e.getEnclosingElement();
-                        CharSequence fqn = new SimpleElementVisitor9<CharSequence, Void>() {
+                        CharSequence fqn = new SimpleElementVisitor14<CharSequence, Void>() {
                             @Override
                             public CharSequence visitModule(ModuleElement e, Void p) {
                                 return e.getQualifiedName();

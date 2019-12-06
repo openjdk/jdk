@@ -4130,72 +4130,6 @@ operand vlRegD() %{
    interface(REG_INTER);
 %}
 
-// Vectors : note, we use legacy registers to avoid extra (unneeded in 32-bit VM)
-// runtime code generation via reg_class_dynamic.
-operand vecS() %{
-  constraint(ALLOC_IN_RC(vectors_reg_legacy));
-  match(VecS);
-
-  format %{ %}
-  interface(REG_INTER);
-%}
-
-operand legVecS() %{
-  constraint(ALLOC_IN_RC(vectors_reg_legacy));
-  match(VecS);
-
-  format %{ %}
-  interface(REG_INTER);
-%}
-
-operand vecD() %{
-  constraint(ALLOC_IN_RC(vectord_reg_legacy));
-  match(VecD);
-
-  format %{ %}
-  interface(REG_INTER);
-%}
-
-operand legVecD() %{
-  constraint(ALLOC_IN_RC(vectord_reg_legacy));
-  match(VecD);
-
-  format %{ %}
-  interface(REG_INTER);
-%}
-
-operand vecX() %{
-  constraint(ALLOC_IN_RC(vectorx_reg_legacy));
-  match(VecX);
-
-  format %{ %}
-  interface(REG_INTER);
-%}
-
-operand legVecX() %{
-  constraint(ALLOC_IN_RC(vectorx_reg_legacy));
-  match(VecX);
-
-  format %{ %}
-  interface(REG_INTER);
-%}
-
-operand vecY() %{
-  constraint(ALLOC_IN_RC(vectory_reg_legacy));
-  match(VecY);
-
-  format %{ %}
-  interface(REG_INTER);
-%}
-
-operand legVecY() %{
-  constraint(ALLOC_IN_RC(vectory_reg_legacy));
-  match(VecY);
-
-  format %{ %}
-  interface(REG_INTER);
-%}
-
 //----------Memory Operands----------------------------------------------------
 // Direct Memory Operand
 operand direct(immP addr) %{
@@ -11795,12 +11729,12 @@ instruct string_equals(eDIRegP str1, eSIRegP str2, eCXRegI cnt, eAXRegI result,
 
 // fast search of substring with known size.
 instruct string_indexof_conL(eDIRegP str1, eDXRegI cnt1, eSIRegP str2, immI int_cnt2,
-                             eBXRegI result, regD vec, eAXRegI cnt2, eCXRegI tmp, eFlagsReg cr) %{
+                             eBXRegI result, regD vec1, eAXRegI cnt2, eCXRegI tmp, eFlagsReg cr) %{
   predicate(UseSSE42Intrinsics && (((StrIndexOfNode*)n)->encoding() == StrIntrinsicNode::LL));
   match(Set result (StrIndexOf (Binary str1 cnt1) (Binary str2 int_cnt2)));
-  effect(TEMP vec, USE_KILL str1, USE_KILL str2, USE_KILL cnt1, KILL cnt2, KILL tmp, KILL cr);
+  effect(TEMP vec1, USE_KILL str1, USE_KILL str2, USE_KILL cnt1, KILL cnt2, KILL tmp, KILL cr);
 
-  format %{ "String IndexOf byte[] $str1,$cnt1,$str2,$int_cnt2 -> $result   // KILL $vec, $cnt1, $cnt2, $tmp" %}
+  format %{ "String IndexOf byte[] $str1,$cnt1,$str2,$int_cnt2 -> $result   // KILL $vec1, $cnt1, $cnt2, $tmp" %}
   ins_encode %{
     int icnt2 = (int)$int_cnt2$$constant;
     if (icnt2 >= 16) {
@@ -11809,13 +11743,13 @@ instruct string_indexof_conL(eDIRegP str1, eDXRegI cnt1, eSIRegP str2, immI int_
       __ string_indexofC8($str1$$Register, $str2$$Register,
                           $cnt1$$Register, $cnt2$$Register,
                           icnt2, $result$$Register,
-                          $vec$$XMMRegister, $tmp$$Register, StrIntrinsicNode::LL);
+                          $vec1$$XMMRegister, $tmp$$Register, StrIntrinsicNode::LL);
     } else {
       // Small strings are loaded through stack if they cross page boundary.
       __ string_indexof($str1$$Register, $str2$$Register,
                         $cnt1$$Register, $cnt2$$Register,
                         icnt2, $result$$Register,
-                        $vec$$XMMRegister, $tmp$$Register, StrIntrinsicNode::LL);
+                        $vec1$$XMMRegister, $tmp$$Register, StrIntrinsicNode::LL);
     }
   %}
   ins_pipe( pipe_slow );
@@ -11823,12 +11757,12 @@ instruct string_indexof_conL(eDIRegP str1, eDXRegI cnt1, eSIRegP str2, immI int_
 
 // fast search of substring with known size.
 instruct string_indexof_conU(eDIRegP str1, eDXRegI cnt1, eSIRegP str2, immI int_cnt2,
-                             eBXRegI result, regD vec, eAXRegI cnt2, eCXRegI tmp, eFlagsReg cr) %{
+                             eBXRegI result, regD vec1, eAXRegI cnt2, eCXRegI tmp, eFlagsReg cr) %{
   predicate(UseSSE42Intrinsics && (((StrIndexOfNode*)n)->encoding() == StrIntrinsicNode::UU));
   match(Set result (StrIndexOf (Binary str1 cnt1) (Binary str2 int_cnt2)));
-  effect(TEMP vec, USE_KILL str1, USE_KILL str2, USE_KILL cnt1, KILL cnt2, KILL tmp, KILL cr);
+  effect(TEMP vec1, USE_KILL str1, USE_KILL str2, USE_KILL cnt1, KILL cnt2, KILL tmp, KILL cr);
 
-  format %{ "String IndexOf char[] $str1,$cnt1,$str2,$int_cnt2 -> $result   // KILL $vec, $cnt1, $cnt2, $tmp" %}
+  format %{ "String IndexOf char[] $str1,$cnt1,$str2,$int_cnt2 -> $result   // KILL $vec1, $cnt1, $cnt2, $tmp" %}
   ins_encode %{
     int icnt2 = (int)$int_cnt2$$constant;
     if (icnt2 >= 8) {
@@ -11837,13 +11771,13 @@ instruct string_indexof_conU(eDIRegP str1, eDXRegI cnt1, eSIRegP str2, immI int_
       __ string_indexofC8($str1$$Register, $str2$$Register,
                           $cnt1$$Register, $cnt2$$Register,
                           icnt2, $result$$Register,
-                          $vec$$XMMRegister, $tmp$$Register, StrIntrinsicNode::UU);
+                          $vec1$$XMMRegister, $tmp$$Register, StrIntrinsicNode::UU);
     } else {
       // Small strings are loaded through stack if they cross page boundary.
       __ string_indexof($str1$$Register, $str2$$Register,
                         $cnt1$$Register, $cnt2$$Register,
                         icnt2, $result$$Register,
-                        $vec$$XMMRegister, $tmp$$Register, StrIntrinsicNode::UU);
+                        $vec1$$XMMRegister, $tmp$$Register, StrIntrinsicNode::UU);
     }
   %}
   ins_pipe( pipe_slow );
@@ -11851,12 +11785,12 @@ instruct string_indexof_conU(eDIRegP str1, eDXRegI cnt1, eSIRegP str2, immI int_
 
 // fast search of substring with known size.
 instruct string_indexof_conUL(eDIRegP str1, eDXRegI cnt1, eSIRegP str2, immI int_cnt2,
-                             eBXRegI result, regD vec, eAXRegI cnt2, eCXRegI tmp, eFlagsReg cr) %{
+                             eBXRegI result, regD vec1, eAXRegI cnt2, eCXRegI tmp, eFlagsReg cr) %{
   predicate(UseSSE42Intrinsics && (((StrIndexOfNode*)n)->encoding() == StrIntrinsicNode::UL));
   match(Set result (StrIndexOf (Binary str1 cnt1) (Binary str2 int_cnt2)));
-  effect(TEMP vec, USE_KILL str1, USE_KILL str2, USE_KILL cnt1, KILL cnt2, KILL tmp, KILL cr);
+  effect(TEMP vec1, USE_KILL str1, USE_KILL str2, USE_KILL cnt1, KILL cnt2, KILL tmp, KILL cr);
 
-  format %{ "String IndexOf char[] $str1,$cnt1,$str2,$int_cnt2 -> $result   // KILL $vec, $cnt1, $cnt2, $tmp" %}
+  format %{ "String IndexOf char[] $str1,$cnt1,$str2,$int_cnt2 -> $result   // KILL $vec1, $cnt1, $cnt2, $tmp" %}
   ins_encode %{
     int icnt2 = (int)$int_cnt2$$constant;
     if (icnt2 >= 8) {
@@ -11865,62 +11799,62 @@ instruct string_indexof_conUL(eDIRegP str1, eDXRegI cnt1, eSIRegP str2, immI int
       __ string_indexofC8($str1$$Register, $str2$$Register,
                           $cnt1$$Register, $cnt2$$Register,
                           icnt2, $result$$Register,
-                          $vec$$XMMRegister, $tmp$$Register, StrIntrinsicNode::UL);
+                          $vec1$$XMMRegister, $tmp$$Register, StrIntrinsicNode::UL);
     } else {
       // Small strings are loaded through stack if they cross page boundary.
       __ string_indexof($str1$$Register, $str2$$Register,
                         $cnt1$$Register, $cnt2$$Register,
                         icnt2, $result$$Register,
-                        $vec$$XMMRegister, $tmp$$Register, StrIntrinsicNode::UL);
+                        $vec1$$XMMRegister, $tmp$$Register, StrIntrinsicNode::UL);
     }
   %}
   ins_pipe( pipe_slow );
 %}
 
 instruct string_indexofL(eDIRegP str1, eDXRegI cnt1, eSIRegP str2, eAXRegI cnt2,
-                         eBXRegI result, regD vec, eCXRegI tmp, eFlagsReg cr) %{
+                         eBXRegI result, regD vec1, eCXRegI tmp, eFlagsReg cr) %{
   predicate(UseSSE42Intrinsics && (((StrIndexOfNode*)n)->encoding() == StrIntrinsicNode::LL));
   match(Set result (StrIndexOf (Binary str1 cnt1) (Binary str2 cnt2)));
-  effect(TEMP vec, USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2, KILL tmp, KILL cr);
+  effect(TEMP vec1, USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2, KILL tmp, KILL cr);
 
   format %{ "String IndexOf byte[] $str1,$cnt1,$str2,$cnt2 -> $result   // KILL all" %}
   ins_encode %{
     __ string_indexof($str1$$Register, $str2$$Register,
                       $cnt1$$Register, $cnt2$$Register,
                       (-1), $result$$Register,
-                      $vec$$XMMRegister, $tmp$$Register, StrIntrinsicNode::LL);
+                      $vec1$$XMMRegister, $tmp$$Register, StrIntrinsicNode::LL);
   %}
   ins_pipe( pipe_slow );
 %}
 
 instruct string_indexofU(eDIRegP str1, eDXRegI cnt1, eSIRegP str2, eAXRegI cnt2,
-                         eBXRegI result, regD vec, eCXRegI tmp, eFlagsReg cr) %{
+                         eBXRegI result, regD vec1, eCXRegI tmp, eFlagsReg cr) %{
   predicate(UseSSE42Intrinsics && (((StrIndexOfNode*)n)->encoding() == StrIntrinsicNode::UU));
   match(Set result (StrIndexOf (Binary str1 cnt1) (Binary str2 cnt2)));
-  effect(TEMP vec, USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2, KILL tmp, KILL cr);
+  effect(TEMP vec1, USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2, KILL tmp, KILL cr);
 
   format %{ "String IndexOf char[] $str1,$cnt1,$str2,$cnt2 -> $result   // KILL all" %}
   ins_encode %{
     __ string_indexof($str1$$Register, $str2$$Register,
                       $cnt1$$Register, $cnt2$$Register,
                       (-1), $result$$Register,
-                      $vec$$XMMRegister, $tmp$$Register, StrIntrinsicNode::UU);
+                      $vec1$$XMMRegister, $tmp$$Register, StrIntrinsicNode::UU);
   %}
   ins_pipe( pipe_slow );
 %}
 
 instruct string_indexofUL(eDIRegP str1, eDXRegI cnt1, eSIRegP str2, eAXRegI cnt2,
-                         eBXRegI result, regD vec, eCXRegI tmp, eFlagsReg cr) %{
+                         eBXRegI result, regD vec1, eCXRegI tmp, eFlagsReg cr) %{
   predicate(UseSSE42Intrinsics && (((StrIndexOfNode*)n)->encoding() == StrIntrinsicNode::UL));
   match(Set result (StrIndexOf (Binary str1 cnt1) (Binary str2 cnt2)));
-  effect(TEMP vec, USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2, KILL tmp, KILL cr);
+  effect(TEMP vec1, USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2, KILL tmp, KILL cr);
 
   format %{ "String IndexOf char[] $str1,$cnt1,$str2,$cnt2 -> $result   // KILL all" %}
   ins_encode %{
     __ string_indexof($str1$$Register, $str2$$Register,
                       $cnt1$$Register, $cnt2$$Register,
                       (-1), $result$$Register,
-                      $vec$$XMMRegister, $tmp$$Register, StrIntrinsicNode::UL);
+                      $vec1$$XMMRegister, $tmp$$Register, StrIntrinsicNode::UL);
   %}
   ins_pipe( pipe_slow );
 %}

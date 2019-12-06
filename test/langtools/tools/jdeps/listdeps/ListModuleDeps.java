@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,6 +92,7 @@ public class ListModuleDeps {
     public Object[][] jdkModules() {
         return new Object[][]{
             {"jdk.compiler", new String[]{
+                                "java.base/jdk.internal",
                                 "java.base/jdk.internal.jmod",
                                 "java.base/jdk.internal.misc",
                                 "java.base/sun.reflect.annotation",

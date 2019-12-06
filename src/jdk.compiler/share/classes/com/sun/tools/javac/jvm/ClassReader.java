@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,6 +104,10 @@ public class ClassReader {
     /** Switch: allow modules.
      */
     boolean allowModules;
+
+    /** Switch: allow records
+     */
+    boolean allowRecords;
 
    /** Lint option: warn about classfile issues
      */
@@ -264,6 +268,8 @@ public class ClassReader {
         Source source = Source.instance(context);
         preview = Preview.instance(context);
         allowModules     = Feature.MODULES.allowedInSource(source);
+        allowRecords = (!preview.isPreview(Feature.RECORDS) || preview.isEnabled()) &&
+                Feature.RECORDS.allowedInSource(source);
 
         saveParameterNames = options.isSet(PARAMETERS);
 
@@ -1184,6 +1190,19 @@ public class ClassReader {
                     }
                 }
             },
+
+            new AttributeReader(names.Record, V58, CLASS_ATTRIBUTE) {
+                @Override
+                protected boolean accepts(AttributeKind kind) {
+                    return super.accepts(kind) && allowRecords;
+                }
+                protected void read(Symbol sym, int attrLen) {
+                    if (sym.kind == TYP) {
+                        sym.flags_field |= RECORD;
+                    }
+                    bp = bp + attrLen;
+                }
+            }
         };
 
         for (AttributeReader r: readers)

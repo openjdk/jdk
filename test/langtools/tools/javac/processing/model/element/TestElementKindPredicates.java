@@ -41,7 +41,8 @@ public class TestElementKindPredicates {
         // isClass: Returns true if this is a kind of class: either CLASS or ENUM.
         test(ALL_KINDS,
              (ElementKind k) -> Set.of(ElementKind.CLASS,
-                                       ElementKind.ENUM).contains(k),
+                                       ElementKind.ENUM,
+                                       ElementKind.RECORD).contains(k),
              (ElementKind k) -> k.isClass(), "isClass");
 
         // isField: Returns true if this is a kind of field: either FIELD or ENUM_CONSTANT.

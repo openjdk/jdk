@@ -912,17 +912,10 @@ JvmtiDeferredEvent JvmtiDeferredEvent::compiled_method_load_event(
 }
 
 JvmtiDeferredEvent JvmtiDeferredEvent::compiled_method_unload_event(
-    nmethod* nm, jmethodID id, const void* code) {
+    jmethodID id, const void* code) {
   JvmtiDeferredEvent event = JvmtiDeferredEvent(TYPE_COMPILED_METHOD_UNLOAD);
-  event._event_data.compiled_method_unload.nm = nm;
   event._event_data.compiled_method_unload.method_id = id;
   event._event_data.compiled_method_unload.code_begin = code;
-  // Keep the nmethod alive until the ServiceThread can process
-  // this deferred event. This will keep the memory for the
-  // generated code from being reused too early. We pass
-  // zombie_ok == true here so that our nmethod that was just
-  // made into a zombie can be locked.
-  nmethodLocker::lock_nmethod(nm, true /* zombie_ok */);
   return event;
 }
 
@@ -959,12 +952,9 @@ void JvmtiDeferredEvent::post() {
       break;
     }
     case TYPE_COMPILED_METHOD_UNLOAD: {
-      nmethod* nm = _event_data.compiled_method_unload.nm;
       JvmtiExport::post_compiled_method_unload(
         _event_data.compiled_method_unload.method_id,
         _event_data.compiled_method_unload.code_begin);
-      // done with the deferred event so unlock the nmethod
-      nmethodLocker::unlock_nmethod(nm);
       break;
     }
     case TYPE_DYNAMIC_CODE_GENERATED: {
@@ -996,6 +986,13 @@ void JvmtiDeferredEvent::post() {
   }
 }
 
+void JvmtiDeferredEvent::post_compiled_method_load_event(JvmtiEnv* env) {
+  assert(_type == TYPE_COMPILED_METHOD_LOAD, "only user of this method");
+  nmethod* nm = _event_data.compiled_method_load;
+  JvmtiExport::post_compiled_method_load(env, nm);
+}
+
+
 // Keep the nmethod for compiled_method_load from being unloaded.
 void JvmtiDeferredEvent::oops_do(OopClosure* f, CodeBlobClosure* cf) {
   if (cf != NULL && _type == TYPE_COMPILED_METHOD_LOAD) {
@@ -1008,20 +1005,14 @@ void JvmtiDeferredEvent::oops_do(OopClosure* f, CodeBlobClosure* cf) {
 void JvmtiDeferredEvent::nmethods_do(CodeBlobClosure* cf) {
   if (cf != NULL && _type == TYPE_COMPILED_METHOD_LOAD) {
     cf->do_code_blob(_event_data.compiled_method_load);
-  }  // May add UNLOAD event but it doesn't work yet.
+  }
 }
 
-JvmtiDeferredEventQueue::QueueNode* JvmtiDeferredEventQueue::_queue_tail = NULL;
-JvmtiDeferredEventQueue::QueueNode* JvmtiDeferredEventQueue::_queue_head = NULL;
-
 bool JvmtiDeferredEventQueue::has_events() {
-  assert(Service_lock->owned_by_self(), "Must own Service_lock");
   return _queue_head != NULL;
 }
 
-void JvmtiDeferredEventQueue::enqueue(const JvmtiDeferredEvent& event) {
-  assert(Service_lock->owned_by_self(), "Must own Service_lock");
-
+void JvmtiDeferredEventQueue::enqueue(JvmtiDeferredEvent event) {
   // Events get added to the end of the queue (and are pulled off the front).
   QueueNode* node = new QueueNode(event);
   if (_queue_tail == NULL) {
@@ -1032,14 +1023,11 @@ void JvmtiDeferredEventQueue::enqueue(const JvmtiDeferredEvent& event) {
     _queue_tail = node;
   }
 
-  Service_lock->notify_all();
   assert((_queue_head == NULL) == (_queue_tail == NULL),
          "Inconsistent queue markers");
 }
 
 JvmtiDeferredEvent JvmtiDeferredEventQueue::dequeue() {
-  assert(Service_lock->owned_by_self(), "Must own Service_lock");
-
   assert(_queue_head != NULL, "Nothing to dequeue");
 
   if (_queue_head == NULL) {
@@ -1059,6 +1047,14 @@ JvmtiDeferredEvent JvmtiDeferredEventQueue::dequeue() {
   JvmtiDeferredEvent event = node->event();
   delete node;
   return event;
+}
+
+void JvmtiDeferredEventQueue::post(JvmtiEnv* env) {
+  // Post and destroy queue nodes
+  while (_queue_head != NULL) {
+     JvmtiDeferredEvent event = dequeue();
+     event.post_compiled_method_load_event(env);
+  }
 }
 
 void JvmtiDeferredEventQueue::oops_do(OopClosure* f, CodeBlobClosure* cf) {

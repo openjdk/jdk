@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -223,7 +223,7 @@ public interface VirtualMachine extends Mirror {
      *   <LI>deleting a method
      *   <LI>changing class modifiers
      *   <LI>changing method modifiers
-     *   <LI>changing the {@code NestHost} or {@code NestMembers} class attributes
+     *   <LI>changing the {@code NestHost}, {@code NestMembers}, or {@code Record} class attributes
      *   </UL>
      * </UL>
      *

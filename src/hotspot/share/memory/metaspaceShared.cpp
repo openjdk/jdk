@@ -823,6 +823,7 @@ intptr_t* MetaspaceShared::fix_cpp_vtable_for_dynamic_archive(MetaspaceObj::Type
   case MetaspaceObj::ConstantPoolCacheType:
   case MetaspaceObj::AnnotationsType:
   case MetaspaceObj::MethodCountersType:
+  case MetaspaceObj::RecordComponentType:
     // These have no vtables.
     break;
   case MetaspaceObj::ClassType:

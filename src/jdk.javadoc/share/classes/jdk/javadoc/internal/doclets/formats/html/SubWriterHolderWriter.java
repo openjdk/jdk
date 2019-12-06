@@ -53,10 +53,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
  *
  * @see AbstractMemberWriter
  * @see ClassWriterImpl
- *
- * @author Robert Field
- * @author Atul M Dambalkar
- * @author Bhavesh Patel (Modified)
  */
 public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
 

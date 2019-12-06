@@ -43,8 +43,7 @@ DEBUG_ONLY(class ResourceMark;)
 // -XX:+DisplayVMOutputToStderr
 class outputStream : public ResourceObj {
  private:
-   outputStream(const outputStream&);
-   outputStream& operator=(const outputStream&);
+   NONCOPYABLE(outputStream);
 
  protected:
    int _indentation; // current indentation

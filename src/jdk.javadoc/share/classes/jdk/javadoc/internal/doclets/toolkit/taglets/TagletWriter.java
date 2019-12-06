@@ -26,7 +26,6 @@
 package jdk.javadoc.internal.doclets.toolkit.taglets;
 
 import java.util.List;
-
 import javax.lang.model.element.Element;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeMirror;
@@ -45,8 +44,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.Utils;
  *  If you write code that depends on this, you do so at your own risk.
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
- *
- * @author Jamie Ho
  */
 
 public abstract class TagletWriter {
@@ -233,8 +230,8 @@ public abstract class TagletWriter {
         tagletManager.checkTags(element, utils.getFullBody(element), true);
         for (Taglet taglet : taglets) {
             if (utils.isTypeElement(element) && taglet instanceof ParamTaglet) {
-                //The type parameters are documented in a special section away
-                //from the tag info, so skip here.
+                // The type parameters and state components are documented in a special
+                // section away from the tag info, so skip here.
                 continue;
             }
             if (taglet instanceof DeprecatedTaglet) {

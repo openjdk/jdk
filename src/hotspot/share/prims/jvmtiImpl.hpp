@@ -448,7 +448,6 @@ class JvmtiDeferredEvent {
   union {
     nmethod* compiled_method_load;
     struct {
-      nmethod* nm;
       jmethodID method_id;
       const void* code_begin;
     } compiled_method_unload;
@@ -471,7 +470,7 @@ class JvmtiDeferredEvent {
   // Factory methods
   static JvmtiDeferredEvent compiled_method_load_event(nmethod* nm)
     NOT_JVMTI_RETURN_(JvmtiDeferredEvent());
-  static JvmtiDeferredEvent compiled_method_unload_event(nmethod* nm,
+  static JvmtiDeferredEvent compiled_method_unload_event(
       jmethodID id, const void* code) NOT_JVMTI_RETURN_(JvmtiDeferredEvent());
   static JvmtiDeferredEvent dynamic_code_generated_event(
       const char* name, const void* begin, const void* end)
@@ -481,6 +480,7 @@ class JvmtiDeferredEvent {
 
   // Actually posts the event.
   void post() NOT_JVMTI_RETURN;
+  void post_compiled_method_load_event(JvmtiEnv* env) NOT_JVMTI_RETURN;
   // Sweeper support to keep nmethods from being zombied while in the queue.
   void nmethods_do(CodeBlobClosure* cf) NOT_JVMTI_RETURN;
   // GC support to keep nmethod from being unloaded while in the queue.
@@ -492,7 +492,7 @@ class JvmtiDeferredEvent {
  * and posts the events.  The Service_lock is required to be held
  * when operating on the queue.
  */
-class JvmtiDeferredEventQueue : AllStatic {
+class JvmtiDeferredEventQueue : public CHeapObj<mtInternal> {
   friend class JvmtiDeferredEvent;
  private:
   class QueueNode : public CHeapObj<mtInternal> {
@@ -510,18 +510,23 @@ class JvmtiDeferredEventQueue : AllStatic {
     void set_next(QueueNode* next) { _next = next; }
   };
 
-  static QueueNode* _queue_head;             // Hold Service_lock to access
-  static QueueNode* _queue_tail;             // Hold Service_lock to access
+  QueueNode* _queue_head;
+  QueueNode* _queue_tail;
 
  public:
-  // Must be holding Service_lock when calling these
-  static bool has_events() NOT_JVMTI_RETURN_(false);
-  static void enqueue(const JvmtiDeferredEvent& event) NOT_JVMTI_RETURN;
-  static JvmtiDeferredEvent dequeue() NOT_JVMTI_RETURN_(JvmtiDeferredEvent());
+  JvmtiDeferredEventQueue() : _queue_head(NULL), _queue_tail(NULL) {}
+
+  bool has_events() NOT_JVMTI_RETURN_(false);
+  JvmtiDeferredEvent dequeue() NOT_JVMTI_RETURN_(JvmtiDeferredEvent());
+
+  // Post all events in the queue for the current Jvmti environment
+  void post(JvmtiEnv* env) NOT_JVMTI_RETURN;
+  void enqueue(JvmtiDeferredEvent event) NOT_JVMTI_RETURN;
+
   // Sweeper support to keep nmethods from being zombied while in the queue.
-  static void nmethods_do(CodeBlobClosure* cf) NOT_JVMTI_RETURN;
+  void nmethods_do(CodeBlobClosure* cf) NOT_JVMTI_RETURN;
   // GC support to keep nmethod from being unloaded while in the queue.
-  static void oops_do(OopClosure* f, CodeBlobClosure* cf) NOT_JVMTI_RETURN;
+  void oops_do(OopClosure* f, CodeBlobClosure* cf) NOT_JVMTI_RETURN;
 };
 
 // Utility macro that checks for NULL pointers:

@@ -126,8 +126,9 @@ public class TestCrossProcessStreaming {
 
         // Expected that some portion of events emitted by the producer are delivered
         // to the consumer while producer is still alive, at least one event for certain.
-        Asserts.assertLTE(1, ce.whileProducerAlive.get(),
-                           "Too few events are delivered while producer is alive");
+        // Assertion below is disabled due to: JDK-8235206
+        // Asserts.assertLTE(1, ce.whileProducerAlive.get(),
+        //                   "Too few events are delivered while producer is alive");
     }
 
     static Process startProducerProcess(String extraParam) throws Exception {

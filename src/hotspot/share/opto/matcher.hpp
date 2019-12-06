@@ -506,6 +506,30 @@ public:
   // postalloc expand)?
   static const bool require_postalloc_expand;
 
+  // Does the platform support generic vector operands?
+  // Requires cleanup after selection phase.
+  static const bool supports_generic_vector_operands;
+
+ private:
+  void do_postselect_cleanup();
+
+  void specialize_generic_vector_operands();
+  void specialize_mach_node(MachNode* m);
+  void specialize_temp_node(MachTempNode* tmp, MachNode* use, uint idx);
+  MachOper* specialize_vector_operand(MachNode* m, uint idx);
+  MachOper* specialize_vector_operand_helper(MachNode* m, MachOper* generic_opnd);
+
+  static MachOper* specialize_generic_vector_operand(MachOper* generic_opnd, uint ideal_reg);
+
+  static bool is_generic_reg2reg_move(MachNode* m);
+  static bool is_generic_vector(MachOper* opnd);
+
+  const RegMask* regmask_for_ideal_register(uint ideal_reg, Node* ret);
+
+  // Graph verification code
+  DEBUG_ONLY( bool verify_after_postselect_cleanup(); )
+
+ public:
   // Perform a platform dependent implicit null fixup.  This is needed
   // on windows95 to take care of some unusual register constraints.
   void pd_implicit_null_fixup(MachNode *load, uint idx);

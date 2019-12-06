@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,7 +75,7 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.util.ElementFilter;
-import javax.lang.model.util.ElementScanner9;
+import javax.lang.model.util.ElementScanner14;
 import javax.tools.Diagnostic.Kind;
 import javax.tools.FileObject;
 import javax.tools.JavaCompiler;
@@ -189,7 +189,7 @@ public class AnnotationProcessing extends ModuleTestBase {
 
                 boolean[] seenModule = new boolean[1];
 
-                module.accept(new ElementScanner9<Void, Void>() {
+                module.accept(new ElementScanner14<Void, Void>() {
                     @Override
                     public Void visitModule(ModuleElement e, Void p) {
                         seenModule[0] = true;

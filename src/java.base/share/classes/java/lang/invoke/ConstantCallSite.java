@@ -39,7 +39,7 @@ public class ConstantCallSite extends CallSite {
     private static final Unsafe UNSAFE = Unsafe.getUnsafe();
 
     @Stable // should NOT be constant folded during instance initialization (isFrozen == false)
-    /*final*/ private boolean isFrozen;
+    /*final*/ private boolean isFrozen; // Note: This field is known to the JVM.
 
     /**
      * Creates a call site with a permanent target.

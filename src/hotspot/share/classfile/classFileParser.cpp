@@ -55,6 +55,7 @@
 #include "oops/metadata.hpp"
 #include "oops/method.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/recordComponent.hpp"
 #include "oops/symbol.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
@@ -3211,6 +3212,173 @@ u2 ClassFileParser::parse_classfile_nest_members_attribute(const ClassFileStream
   return length;
 }
 
+//  Record {
+//    u2 attribute_name_index;
+//    u4 attribute_length;
+//    u2 components_count;
+//    component_info components[components_count];
+//  }
+//  component_info {
+//    u2 name_index;
+//    u2 descriptor_index
+//    u2 attributes_count;
+//    attribute_info_attributes[attributes_count];
+//  }
+u2 ClassFileParser::parse_classfile_record_attribute(const ClassFileStream* const cfs,
+                                                     const ConstantPool* cp,
+                                                     const u1* const record_attribute_start,
+                                                     TRAPS) {
+  const u1* const current_mark = cfs->current();
+  int components_count = 0;
+  unsigned int calculate_attr_size = 0;
+  if (record_attribute_start != NULL) {
+    cfs->set_current(record_attribute_start);
+    cfs->guarantee_more(2, CHECK_0);  // num of components
+    components_count = (int)cfs->get_u2_fast();
+    calculate_attr_size = 2;
+  }
+
+  Array<RecordComponent*>* const record_components =
+    MetadataFactory::new_array<RecordComponent*>(_loader_data, components_count, NULL, CHECK_0);
+  _record_components = record_components;
+
+  for (int x = 0; x < components_count; x++) {
+    cfs->guarantee_more(6, CHECK_0); // name_index, descriptor_index, attributes_count
+
+    const u2 name_index = cfs->get_u2_fast();
+    check_property(valid_symbol_at(name_index),
+      "Invalid constant pool index %u for name in Record attribute in class file %s",
+      name_index, CHECK_0);
+    const Symbol* const name = cp->symbol_at(name_index);
+    verify_legal_field_name(name, CHECK_0);
+
+    const u2 descriptor_index = cfs->get_u2_fast();
+    check_property(valid_symbol_at(descriptor_index),
+      "Invalid constant pool index %u for descriptor in Record attribute in class file %s",
+      descriptor_index, CHECK_0);
+    const Symbol* const descr = cp->symbol_at(descriptor_index);
+    verify_legal_field_signature(name, descr, CHECK_0);
+
+    const u2 attributes_count = cfs->get_u2_fast();
+    calculate_attr_size += 6;
+    u2 generic_sig_index = 0;
+    const u1* runtime_visible_annotations = NULL;
+    int runtime_visible_annotations_length = 0;
+    const u1* runtime_invisible_annotations = NULL;
+    int runtime_invisible_annotations_length = 0;
+    bool runtime_invisible_annotations_exists = false;
+    const u1* runtime_visible_type_annotations = NULL;
+    int runtime_visible_type_annotations_length = 0;
+    const u1* runtime_invisible_type_annotations = NULL;
+    int runtime_invisible_type_annotations_length = 0;
+    bool runtime_invisible_type_annotations_exists = false;
+
+    // Expected attributes for record components are Signature, Runtime(In)VisibleAnnotations,
+    // and Runtime(In)VisibleTypeAnnotations.  Other attributes are ignored.
+    for (int y = 0; y < attributes_count; y++) {
+      cfs->guarantee_more(6, CHECK_0);  // attribute_name_index, attribute_length
+      const u2 attribute_name_index = cfs->get_u2_fast();
+      const u4 attribute_length = cfs->get_u4_fast();
+      calculate_attr_size += 6;
+      check_property(
+        valid_symbol_at(attribute_name_index),
+        "Invalid Record attribute name index %u in class file %s",
+        attribute_name_index, CHECK_0);
+
+      const Symbol* const attribute_name = cp->symbol_at(attribute_name_index);
+      if (attribute_name == vmSymbols::tag_signature()) {
+        if (generic_sig_index != 0) {
+          classfile_parse_error(
+            "Multiple Signature attributes for Record component in class file %s",
+            CHECK_0);
+        }
+        if (attribute_length != 2) {
+          classfile_parse_error(
+            "Invalid Signature attribute length %u in Record component in class file %s",
+            attribute_length, CHECK_0);
+        }
+        generic_sig_index = parse_generic_signature_attribute(cfs, CHECK_0);
+
+      } else if (attribute_name == vmSymbols::tag_runtime_visible_annotations()) {
+        if (runtime_visible_annotations != NULL) {
+          classfile_parse_error(
+            "Multiple RuntimeVisibleAnnotations attributes for Record component in class file %s", CHECK_0);
+        }
+        runtime_visible_annotations_length = attribute_length;
+        runtime_visible_annotations = cfs->current();
+
+        assert(runtime_visible_annotations != NULL, "null record component visible annotation");
+        cfs->guarantee_more(runtime_visible_annotations_length, CHECK_0);
+        cfs->skip_u1_fast(runtime_visible_annotations_length);
+
+      } else if (attribute_name == vmSymbols::tag_runtime_invisible_annotations()) {
+        if (runtime_invisible_annotations_exists) {
+          classfile_parse_error(
+            "Multiple RuntimeInvisibleAnnotations attributes for Record component in class file %s", CHECK_0);
+        }
+        runtime_invisible_annotations_exists = true;
+        if (PreserveAllAnnotations) {
+          runtime_invisible_annotations_length = attribute_length;
+          runtime_invisible_annotations = cfs->current();
+          assert(runtime_invisible_annotations != NULL, "null record component invisible annotation");
+        }
+        cfs->skip_u1(attribute_length, CHECK_0);
+
+      } else if (attribute_name == vmSymbols::tag_runtime_visible_type_annotations()) {
+        if (runtime_visible_type_annotations != NULL) {
+          classfile_parse_error(
+            "Multiple RuntimeVisibleTypeAnnotations attributes for Record component in class file %s", CHECK_0);
+        }
+        runtime_visible_type_annotations_length = attribute_length;
+        runtime_visible_type_annotations = cfs->current();
+
+        assert(runtime_visible_type_annotations != NULL, "null record component visible type annotation");
+        cfs->guarantee_more(runtime_visible_type_annotations_length, CHECK_0);
+        cfs->skip_u1_fast(runtime_visible_type_annotations_length);
+
+      } else if (attribute_name == vmSymbols::tag_runtime_invisible_type_annotations()) {
+        if (runtime_invisible_type_annotations_exists) {
+          classfile_parse_error(
+            "Multiple RuntimeInvisibleTypeAnnotations attributes for Record component in class file %s", CHECK_0);
+        }
+        runtime_invisible_type_annotations_exists = true;
+        if (PreserveAllAnnotations) {
+          runtime_invisible_type_annotations_length = attribute_length;
+          runtime_invisible_type_annotations = cfs->current();
+          assert(runtime_invisible_type_annotations != NULL, "null record component invisible type annotation");
+        }
+        cfs->skip_u1(attribute_length, CHECK_0);
+
+      } else {
+        // Skip unknown attributes
+        cfs->skip_u1(attribute_length, CHECK_0);
+      }
+      calculate_attr_size += attribute_length;
+    } // End of attributes For loop
+
+    AnnotationArray* annotations = assemble_annotations(runtime_visible_annotations,
+                                                        runtime_visible_annotations_length,
+                                                        runtime_invisible_annotations,
+                                                        runtime_invisible_annotations_length,
+                                                        CHECK_0);
+    AnnotationArray* type_annotations = assemble_annotations(runtime_visible_type_annotations,
+                                                             runtime_visible_type_annotations_length,
+                                                             runtime_invisible_type_annotations,
+                                                             runtime_invisible_type_annotations_length,
+                                                             CHECK_0);
+
+    RecordComponent* record_component =
+      RecordComponent::allocate(_loader_data, name_index, descriptor_index,
+                                attributes_count, generic_sig_index,
+                                annotations, type_annotations, CHECK_0);
+    record_components->at_put(x, record_component);
+  }  // End of component processing loop
+
+  // Restore buffer's current position.
+  cfs->set_current(current_mark);
+  return calculate_attr_size;
+}
+
 void ClassFileParser::parse_classfile_synthetic_attribute(TRAPS) {
   set_class_synthetic_flag(true);
 }
@@ -3308,6 +3476,12 @@ void ClassFileParser::parse_classfile_bootstrap_methods_attribute(const ClassFil
                      CHECK);
 }
 
+bool ClassFileParser::supports_records() {
+  return _major_version == JAVA_14_VERSION &&
+    _minor_version == JAVA_PREVIEW_MINOR_VERSION &&
+    Arguments::enable_preview();
+}
+
 void ClassFileParser::parse_classfile_attributes(const ClassFileStream* const cfs,
                                                  ConstantPool* cp,
                  ClassFileParser::ClassAnnotationCollector* parsed_annotations,
@@ -3326,6 +3500,7 @@ void ClassFileParser::parse_classfile_attributes(const ClassFileStream* const cf
   bool parsed_innerclasses_attribute = false;
   bool parsed_nest_members_attribute = false;
   bool parsed_nest_host_attribute = false;
+  bool parsed_record_attribute = false;
   bool parsed_enclosingmethod_attribute = false;
   bool parsed_bootstrap_methods_attribute = false;
   const u1* runtime_visible_annotations = NULL;
@@ -3345,6 +3520,8 @@ void ClassFileParser::parse_classfile_attributes(const ClassFileStream* const cf
   u2  enclosing_method_method_index = 0;
   const u1* nest_members_attribute_start = NULL;
   u4  nest_members_attribute_length = 0;
+  const u1* record_attribute_start = NULL;
+  u4  record_attribute_length = 0;
 
   // Iterate over attributes
   while (attributes_count--) {
@@ -3527,6 +3704,38 @@ void ClassFileParser::parse_classfile_attributes(const ClassFileStream* const cf
                          "Nest-host class_info_index %u has bad constant type in class file %s",
                          class_info_index, CHECK);
           _nest_host = class_info_index;
+        } else if (_major_version >= JAVA_14_VERSION) {
+          if (tag == vmSymbols::tag_record()) {
+            // Skip over Record attribute if not supported or if super class is
+            // not java.lang.Record.
+            if (supports_records() &&
+                cp->klass_name_at(_super_class_index) == vmSymbols::java_lang_Record()) {
+              if (parsed_record_attribute) {
+                classfile_parse_error("Multiple Record attributes in class file %s", CHECK);
+              }
+              // Check that class is final and not abstract.
+              if (!_access_flags.is_final() || _access_flags.is_abstract()) {
+                classfile_parse_error("Record attribute in non-final or abstract class file %s", CHECK);
+              }
+              parsed_record_attribute = true;
+              record_attribute_start = cfs->current();
+              record_attribute_length = attribute_length;
+            } else if (log_is_enabled(Info, class, record)) {
+              // Log why the Record attribute was ignored.  Note that if the
+              // class file version is 58.65535 and --enable-preview wasn't
+              // specified then a java.lang.UnsupportedClassVersionError
+              // exception would have been thrown.
+              ResourceMark rm(THREAD);
+              log_info(class, record)("Ignoring Record attribute in class %s because %s",
+                _class_name->as_C_string(),
+                supports_records() ? "super type is not java.lang.Record" :
+                                     "class file version is not 58.65535");
+            }
+            cfs->skip_u1(attribute_length, CHECK);
+          } else {
+            // Unknown attribute
+            cfs->skip_u1(attribute_length, CHECK);
+          }
         } else {
           // Unknown attribute
           cfs->skip_u1(attribute_length, CHECK);
@@ -3575,6 +3784,19 @@ void ClassFileParser::parse_classfile_attributes(const ClassFileStream* const cf
       guarantee_property(
         nest_members_attribute_length == sizeof(num_of_classes) + sizeof(u2) * num_of_classes,
         "Wrong NestMembers attribute length in class file %s", CHECK);
+    }
+  }
+
+  if (parsed_record_attribute) {
+    const unsigned int calculated_attr_length = parse_classfile_record_attribute(
+                            cfs,
+                            cp,
+                            record_attribute_start,
+                            CHECK);
+    if (_need_verify) {
+      guarantee_property(record_attribute_length == calculated_attr_length,
+                         "Record attribute has wrong length in class file %s",
+                         CHECK);
     }
   }
 
@@ -3632,7 +3854,8 @@ void ClassFileParser::create_combined_annotations(TRAPS) {
 // Transfer ownership of metadata allocated to the InstanceKlass.
 void ClassFileParser::apply_parsed_class_metadata(
                                             InstanceKlass* this_klass,
-                                            int java_fields_count, TRAPS) {
+                                            int java_fields_count,
+                                            TRAPS) {
   assert(this_klass != NULL, "invariant");
 
   _cp->set_pool_holder(this_klass);
@@ -3644,6 +3867,7 @@ void ClassFileParser::apply_parsed_class_metadata(
   this_klass->set_nest_host_index(_nest_host);
   this_klass->set_local_interfaces(_local_interfaces);
   this_klass->set_annotations(_combined_annotations);
+  this_klass->set_record_components(_record_components);
   // Delay the setting of _transitive_interfaces until after initialize_supers() in
   // fill_instance_klass(). It is because the _transitive_interfaces may be shared with
   // its _super. If an OOM occurs while loading the current klass, its _super field
@@ -4514,6 +4738,7 @@ static Array<InstanceKlass*>* compute_transitive_interfaces(const InstanceKlass*
 static void check_super_class_access(const InstanceKlass* this_klass, TRAPS) {
   assert(this_klass != NULL, "invariant");
   const Klass* const super = this_klass->super();
+
   if (super != NULL) {
 
     // If the loader is not the boot loader then throw an exception if its
@@ -4715,12 +4940,13 @@ void ClassFileParser::verify_legal_class_modifiers(jint flags, TRAPS) const {
   const bool is_super      = (flags & JVM_ACC_SUPER)      != 0;
   const bool is_enum       = (flags & JVM_ACC_ENUM)       != 0;
   const bool is_annotation = (flags & JVM_ACC_ANNOTATION) != 0;
-  const bool major_gte_15  = _major_version >= JAVA_1_5_VERSION;
+  const bool major_gte_1_5 = _major_version >= JAVA_1_5_VERSION;
+  const bool major_gte_14  = _major_version >= JAVA_14_VERSION;
 
   if ((is_abstract && is_final) ||
       (is_interface && !is_abstract) ||
-      (is_interface && major_gte_15 && (is_super || is_enum)) ||
-      (!is_interface && major_gte_15 && is_annotation)) {
+      (is_interface && major_gte_1_5 && (is_super || is_enum)) ||
+      (!is_interface && major_gte_1_5 && is_annotation)) {
     ResourceMark rm(THREAD);
     Exceptions::fthrow(
       THREAD_AND_LOCATION,
@@ -4816,14 +5042,14 @@ void ClassFileParser::verify_legal_field_modifiers(jint flags,
   const bool is_volatile  = (flags & JVM_ACC_VOLATILE)  != 0;
   const bool is_transient = (flags & JVM_ACC_TRANSIENT) != 0;
   const bool is_enum      = (flags & JVM_ACC_ENUM)      != 0;
-  const bool major_gte_15 = _major_version >= JAVA_1_5_VERSION;
+  const bool major_gte_1_5 = _major_version >= JAVA_1_5_VERSION;
 
   bool is_illegal = false;
 
   if (is_interface) {
     if (!is_public || !is_static || !is_final || is_private ||
         is_protected || is_volatile || is_transient ||
-        (major_gte_15 && is_enum)) {
+        (major_gte_1_5 && is_enum)) {
       is_illegal = true;
     }
   } else { // not interface
@@ -4859,7 +5085,7 @@ void ClassFileParser::verify_legal_method_modifiers(jint flags,
   const bool is_strict       = (flags & JVM_ACC_STRICT)       != 0;
   const bool is_synchronized = (flags & JVM_ACC_SYNCHRONIZED) != 0;
   const bool is_protected    = (flags & JVM_ACC_PROTECTED)    != 0;
-  const bool major_gte_15    = _major_version >= JAVA_1_5_VERSION;
+  const bool major_gte_1_5   = _major_version >= JAVA_1_5_VERSION;
   const bool major_gte_8     = _major_version >= JAVA_8_VERSION;
   const bool is_initializer  = (name == vmSymbols::object_initializer_name());
 
@@ -4882,7 +5108,7 @@ void ClassFileParser::verify_legal_method_modifiers(jint flags,
           (is_abstract && (is_private || is_static || is_strict))) {
         is_illegal = true;
       }
-    } else if (major_gte_15) {
+    } else if (major_gte_1_5) {
       // Class file version in the interval [JAVA_1_5_VERSION, JAVA_8_VERSION)
       if (!is_public || is_private || is_protected || is_static || is_final ||
           is_synchronized || is_native || !is_abstract || is_strict) {
@@ -4900,13 +5126,13 @@ void ClassFileParser::verify_legal_method_modifiers(jint flags,
     } else {
       if (is_initializer) {
         if (is_static || is_final || is_synchronized || is_native ||
-            is_abstract || (major_gte_15 && is_bridge)) {
+            is_abstract || (major_gte_1_5 && is_bridge)) {
           is_illegal = true;
         }
       } else { // not initializer
         if (is_abstract) {
           if ((is_final || is_native || is_private || is_static ||
-              (major_gte_15 && (is_synchronized || is_strict)))) {
+              (major_gte_1_5 && (is_synchronized || is_strict)))) {
             is_illegal = true;
           }
         }
@@ -5495,6 +5721,7 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik, bool changed_by_loa
   assert(NULL == _nest_members, "invariant");
   assert(NULL == _local_interfaces, "invariant");
   assert(NULL == _combined_annotations, "invariant");
+  assert(NULL == _record_components, "invariant");
 
   if (_has_final_method) {
     ik->set_has_final_method();
@@ -5776,6 +6003,7 @@ ClassFileParser::ClassFileParser(ClassFileStream* stream,
   _inner_classes(NULL),
   _nest_members(NULL),
   _nest_host(0),
+  _record_components(NULL),
   _local_interfaces(NULL),
   _transitive_interfaces(NULL),
   _combined_annotations(NULL),
@@ -5886,6 +6114,7 @@ void ClassFileParser::clear_class_metadata() {
   _combined_annotations = NULL;
   _class_annotations = _class_type_annotations = NULL;
   _fields_annotations = _fields_type_annotations = NULL;
+  _record_components = NULL;
 }
 
 // Destructor to clean up
@@ -5911,6 +6140,10 @@ ClassFileParser::~ClassFileParser() {
 
   if (_nest_members != NULL && _nest_members != Universe::the_empty_short_array()) {
     MetadataFactory::free_array<u2>(_loader_data, _nest_members);
+  }
+
+  if (_record_components != NULL) {
+    InstanceKlass::deallocate_record_components(_loader_data, _record_components);
   }
 
   // Free interfaces

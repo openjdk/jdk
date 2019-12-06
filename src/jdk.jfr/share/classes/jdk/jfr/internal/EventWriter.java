@@ -254,7 +254,8 @@ public final class EventWriter {
             return false;
         }
         startPosition = currentPosition;
-        unsafe.putAddress(startPositionAddress, startPosition);
+        unsafe.storeStoreFence();
+        unsafe.putAddress(startPositionAddress, currentPosition);
         // the event is now committed
         if (flushOnEnd) {
             flushOnEnd = flush();

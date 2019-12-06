@@ -25,7 +25,6 @@
  * @test
  * @bug      8017191 8182765 8200432
  * @summary  Javadoc is confused by at-link to imported classes outside of the set of generated packages
- * @author   jjg
  * @library  ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
  * @build    javadoc.tester.*

@@ -25,7 +25,6 @@
  * @test
  * @bug 4530730 8196202
  * @summary stddoclet: With frames off, window titles have "()" appended
- * @author dkramer
  * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
  * @build javadoc.tester.*

@@ -118,6 +118,7 @@ public interface Element extends javax.lang.model.AnnotatedConstruct {
      * @see TypeElement#getSimpleName
      * @see VariableElement#getSimpleName
      * @see ModuleElement#getSimpleName
+     * @see RecordComponentElement#getSimpleName
      * @revised 9
      * @spec JPMS
      */
@@ -148,6 +149,11 @@ public interface Element extends javax.lang.model.AnnotatedConstruct {
      * parameter}, {@linkplain ExecutableElement the executable
      * element} which declares the parameter is returned.
      *
+     * <li> If this is a {@linkplain
+     * RecordComponentElement#getEnclosingElement record component},
+     * {@linkplain TypeElement the type} which declares the
+     * record component is returned.
+     *
      * <li> If this is a {@linkplain ModuleElement#getEnclosingElement
      * module}, {@code null} is returned.
      *
@@ -166,7 +172,7 @@ public interface Element extends javax.lang.model.AnnotatedConstruct {
      *
      * A {@linkplain TypeElement#getEnclosedElements class or
      * interface} is considered to enclose the fields, methods,
-     * constructors, and member types that it directly declares.
+     * constructors, record components, and member types that it directly declares.
      *
      * A {@linkplain PackageElement#getEnclosedElements package}
      * encloses the top-level classes and interfaces within it, but is

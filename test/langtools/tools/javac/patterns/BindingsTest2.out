@@ -40,9 +40,15 @@ BindingsTest2.java:146:13: compiler.err.cant.resolve.location: kindname.variable
 BindingsTest2.java:154:13: compiler.err.cant.resolve.location: kindname.variable, s, , , (compiler.misc.location: kindname.class, BindingsTest2, null)
 BindingsTest2.java:171:13: compiler.err.cant.resolve.location: kindname.variable, s, , , (compiler.misc.location: kindname.class, BindingsTest2, null)
 BindingsTest2.java:179:13: compiler.err.cant.resolve.location: kindname.variable, s, , , (compiler.misc.location: kindname.class, BindingsTest2, null)
+BindingsTest2.java:196:13: compiler.err.cant.resolve.location: kindname.variable, s, , , (compiler.misc.location: kindname.class, BindingsTest2, null)
+BindingsTest2.java:204:13: compiler.err.cant.resolve.location: kindname.variable, s, , , (compiler.misc.location: kindname.class, BindingsTest2, null)
+BindingsTest2.java:212:13: compiler.err.cant.resolve.location: kindname.variable, s, , , (compiler.misc.location: kindname.class, BindingsTest2, null)
+BindingsTest2.java:221:17: compiler.err.cant.resolve.location: kindname.variable, s, , , (compiler.misc.location: kindname.class, BindingsTest2, null)
+BindingsTest2.java:231:17: compiler.err.cant.resolve.location: kindname.variable, s, , , (compiler.misc.location: kindname.class, BindingsTest2, null)
+BindingsTest2.java:241:17: compiler.err.cant.resolve.location: kindname.variable, s, , , (compiler.misc.location: kindname.class, BindingsTest2, null)
 BindingsTest2.java:135:17: compiler.err.unreachable.stmt
 BindingsTest2.java:160:17: compiler.err.unreachable.stmt
 BindingsTest2.java:185:17: compiler.err.unreachable.stmt
 - compiler.note.preview.filename: BindingsTest2.java
 - compiler.note.preview.recompile
-45 errors
+51 errors

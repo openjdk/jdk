@@ -26,6 +26,7 @@
 #define SHARE_GC_PARALLEL_PARMARKBITMAP_INLINE_HPP
 
 #include "gc/parallel/parMarkBitMap.hpp"
+#include "utilities/align.hpp"
 #include "utilities/bitMap.inline.hpp"
 
 inline ParMarkBitMap::ParMarkBitMap():
@@ -146,7 +147,7 @@ inline bool ParMarkBitMap::mark_obj(oop obj, int size) {
   return mark_obj((HeapWord*)obj, (size_t)size);
 }
 
-inline BitMap::idx_t ParMarkBitMap::addr_to_bit(HeapWord* addr) const {
+inline ParMarkBitMap::idx_t ParMarkBitMap::addr_to_bit(HeapWord* addr) const {
   DEBUG_ONLY(verify_addr(addr);)
   return words_to_bits(pointer_delta(addr, region_start()));
 }
@@ -154,6 +155,12 @@ inline BitMap::idx_t ParMarkBitMap::addr_to_bit(HeapWord* addr) const {
 inline HeapWord* ParMarkBitMap::bit_to_addr(idx_t bit) const {
   DEBUG_ONLY(verify_bit(bit);)
   return region_start() + bits_to_words(bit);
+}
+
+inline ParMarkBitMap::idx_t ParMarkBitMap::align_range_end(idx_t range_end) const {
+  // size is aligned, so if range_end <= size then so is aligned result.
+  assert(range_end <= size(), "range end out of range");
+  return align_up(range_end, BitsPerWord);
 }
 
 inline ParMarkBitMap::idx_t ParMarkBitMap::find_obj_beg(idx_t beg, idx_t end) const {
@@ -167,7 +174,7 @@ inline ParMarkBitMap::idx_t ParMarkBitMap::find_obj_end(idx_t beg, idx_t end) co
 inline HeapWord* ParMarkBitMap::find_obj_beg(HeapWord* beg, HeapWord* end) const {
   const idx_t beg_bit = addr_to_bit(beg);
   const idx_t end_bit = addr_to_bit(end);
-  const idx_t search_end = BitMap::word_align_up(end_bit);
+  const idx_t search_end = align_range_end(end_bit);
   const idx_t res_bit = MIN2(find_obj_beg(beg_bit, search_end), end_bit);
   return bit_to_addr(res_bit);
 }
@@ -175,7 +182,7 @@ inline HeapWord* ParMarkBitMap::find_obj_beg(HeapWord* beg, HeapWord* end) const
 inline HeapWord* ParMarkBitMap::find_obj_end(HeapWord* beg, HeapWord* end) const {
   const idx_t beg_bit = addr_to_bit(beg);
   const idx_t end_bit = addr_to_bit(end);
-  const idx_t search_end = BitMap::word_align_up(end_bit);
+  const idx_t search_end = align_range_end(end_bit);
   const idx_t res_bit = MIN2(find_obj_end(beg_bit, search_end), end_bit);
   return bit_to_addr(res_bit);
 }

@@ -25,6 +25,8 @@
 #ifndef OS_BSD_SEMAPHORE_BSD_HPP
 #define OS_BSD_SEMAPHORE_BSD_HPP
 
+#include "utilities/globalDefinitions.hpp"
+
 #ifndef __APPLE__
 // Use POSIX semaphores.
 # include "semaphore_posix.hpp"
@@ -37,9 +39,7 @@
 class OSXSemaphore : public CHeapObj<mtInternal>{
   semaphore_t _semaphore;
 
-  // Prevent copying and assignment.
-  OSXSemaphore(const OSXSemaphore&);
-  OSXSemaphore& operator=(const OSXSemaphore&);
+  NONCOPYABLE(OSXSemaphore);
 
  public:
   OSXSemaphore(uint value = 0);

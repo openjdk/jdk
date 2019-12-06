@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,12 +41,27 @@ public class ByteCodeLoader extends SecureClassLoader {
 
     /**
      * Creates a new {@code ByteCodeLoader} ready to load a class with the
-     * given name and the given byte code.
+     * given name and the given byte code, using the default parent class
+     * loader for delegation.
      *
      * @param className The name of the class
      * @param byteCode The byte code of the class
      */
     public ByteCodeLoader(String className, byte[] byteCode) {
+        this.className = className;
+        this.byteCode = byteCode;
+    }
+
+    /**
+     * Creates a new {@code ByteCodeLoader} ready to load a class with the
+     * given name and the given byte code, using the specified parent class
+     * loader for delegation.
+     *
+     * @param className The name of the class
+     * @param byteCode The byte code of the class
+     */
+    public ByteCodeLoader(String className, byte[] byteCode, ClassLoader parent) {
+        super(parent);
         this.className = className;
         this.byteCode = byteCode;
     }

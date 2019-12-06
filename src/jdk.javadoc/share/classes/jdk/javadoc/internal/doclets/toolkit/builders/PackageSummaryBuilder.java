@@ -44,9 +44,6 @@ import jdk.javadoc.internal.doclets.toolkit.PackageSummaryWriter;
  *  If you write code that depends on this, you do so at your own risk.
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
- *
- * @author Jamie Ho
- * @author Bhavesh Patel (Modified)
  */
 public class PackageSummaryBuilder extends AbstractBuilder {
 
@@ -151,6 +148,7 @@ public class PackageSummaryBuilder extends AbstractBuilder {
         buildInterfaceSummary(summaryContentTree);
         buildClassSummary(summaryContentTree);
         buildEnumSummary(summaryContentTree);
+        buildRecordSummary(summaryContentTree);
         buildExceptionSummary(summaryContentTree);
         buildErrorSummary(summaryContentTree);
         buildAnnotationTypeSummary(summaryContentTree);
@@ -203,6 +201,22 @@ public class PackageSummaryBuilder extends AbstractBuilder {
         SortedSet<TypeElement> enums = utils.filterOutPrivateClasses(elist, configuration.javafx);
         if (!enums.isEmpty()) {
             packageWriter.addEnumSummary(enums, summaryContentTree);
+        }
+    }
+
+    /**
+     * Build the summary for the records in this package.
+     *
+     * @param summaryContentTree the summary tree to which the record summary will
+     *                           be added
+     */
+    protected void buildRecordSummary(Content summaryContentTree) {
+        SortedSet<TypeElement> rlist = utils.isSpecified(packageElement)
+                ? utils.getTypeElementsAsSortedSet(utils.getRecords(packageElement))
+                : configuration.typeElementCatalog.records(packageElement);
+        SortedSet<TypeElement> records = utils.filterOutPrivateClasses(rlist, configuration.javafx);
+        if (!records.isEmpty()) {
+            packageWriter.addRecordSummary(records, summaryContentTree);
         }
     }
 

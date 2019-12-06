@@ -25,7 +25,6 @@
  * @test
  * @bug      6492694 8026567 8048351 8162363 8183511 8169819 8074407 8196202 8202626
  * @summary  Test package deprecation.
- * @author   bpatel
  * @library  ../../lib/
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
  * @build    javadoc.tester.* TestPackageDeprecation

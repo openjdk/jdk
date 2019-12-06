@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -637,6 +637,20 @@ public class ClassWriter {
             out.writeShort(attr.members_indexes.length);
             for (int i : attr.members_indexes) {
                 out.writeShort(i);
+            }
+            return null;
+        }
+
+        @Override
+        public Void visitRecord(Record_attribute attr, ClassOutputStream out) {
+            out.writeShort(attr.component_count);
+            for (Record_attribute.ComponentInfo info: attr.component_info_arr) {
+                out.writeShort(info.name_index);
+                out.writeShort(info.descriptor.index);
+                int size = info.attributes.size();
+                out.writeShort(size);
+                for (Attribute componentAttr: info.attributes)
+                    write(componentAttr, out);
             }
             return null;
         }

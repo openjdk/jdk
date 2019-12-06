@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,8 +42,6 @@ import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
  * <b>This is NOT part of any supported API. If you write code that depends on this, you do so at
  * your own risk. This code and its internal interfaces are subject to change or deletion without
  * notice.</b>
- *
- * @author Jamie Ho
  */
 public class TypeElementCatalog {
 
@@ -72,6 +70,11 @@ public class TypeElementCatalog {
      * Stores enums for each package.
      */
     private final Map<PackageElement, SortedSet<TypeElement>> enums;
+
+    /**
+     * Stores records for each package.
+     */
+    private final Map<PackageElement, SortedSet<TypeElement>> records;
 
     /**
      * Stores annotation types for each package.
@@ -116,6 +119,7 @@ public class TypeElementCatalog {
         ordinaryClasses = new HashMap<>();
         exceptions = new HashMap<>();
         enums = new HashMap<>();
+        records = new HashMap<>();
         annotationTypes = new HashMap<>();
         errors = new HashMap<>();
         interfaces = new HashMap<>();
@@ -138,6 +142,8 @@ public class TypeElementCatalog {
             addTypeElement(typeElement, exceptions);
         } else if (utils.isEnum(typeElement)) {
             addTypeElement(typeElement, enums);
+        } else if (utils.isRecord(typeElement)) {
+            addTypeElement(typeElement, records);
         } else if (utils.isAnnotationType(typeElement)) {
             addTypeElement(typeElement, annotationTypes);
         } else if (utils.isError(typeElement)) {
@@ -191,9 +197,7 @@ public class TypeElementCatalog {
     }
 
     /**
-     * Return all of the classes specified on the command-line that belong to the given package.
-     *
-     * @param packageName the name of the package specified on the command-line.
+     * Return all of the classes specified on the command-line that belong to the unnamed package.
      */
     public SortedSet<TypeElement> allUnnamedClasses() {
         for (PackageElement pkg : allClasses.keySet()) {
@@ -214,7 +218,7 @@ public class TypeElementCatalog {
     /**
      * Return all of the errors specified on the command-line that belong to the given package.
      *
-     * @param packageName the name of the package specified on the command-line.
+     * @param pkg the name of the package specified on the command-line.
      */
     public SortedSet<TypeElement> errors(PackageElement pkg) {
         return getSet(errors, pkg);
@@ -223,7 +227,7 @@ public class TypeElementCatalog {
     /**
      * Return all of the exceptions specified on the command-line that belong to the given package.
      *
-     * @param packageName the name of the package specified on the command-line.
+     * @param pkg the name of the package specified on the command-line.
      */
     public SortedSet<TypeElement> exceptions(PackageElement pkg) {
         return getSet(exceptions, pkg);
@@ -232,17 +236,26 @@ public class TypeElementCatalog {
     /**
      * Return all of the enums specified on the command-line that belong to the given package.
      *
-     * @param packageName the name of the package specified on the command-line.
+     * @param pkg the name of the package specified on the command-line.
      */
     public SortedSet<TypeElement> enums(PackageElement pkg) {
         return getSet(enums, pkg);
     }
 
     /**
+     * Return all of the records specified on the command-line that belong to the given package.
+     *
+     * @param pkg the name of the package specified on the command-line.
+     */
+    public SortedSet<TypeElement> records(PackageElement pkg) {
+        return getSet(records, pkg);
+    }
+
+    /**
      * Return all of the annotation types specified on the command-line that belong to the given
      * package.
      *
-     * @param packageName the name of the package specified on the command-line.
+     * @param pkg the name of the package specified on the command-line.
      */
     public SortedSet<TypeElement> annotationTypes(PackageElement pkg) {
         return getSet(annotationTypes, pkg);
@@ -251,7 +264,7 @@ public class TypeElementCatalog {
     /**
      * Return all of the interfaces specified on the command-line that belong to the given package.
      *
-     * @param packageName the name of the package specified on the command-line.
+     * @param pkg the name of the package specified on the command-line.
      */
     public SortedSet<TypeElement> interfaces(PackageElement pkg) {
         return getSet(interfaces, pkg);
@@ -261,7 +274,7 @@ public class TypeElementCatalog {
      * Return all of the ordinary classes specified on the command-line that belong to the given
      * package.
      *
-     * @param packageName the name of the package specified on the command-line.
+     * @param pkg the name of the package specified on the command-line.
      */
     public SortedSet<TypeElement> ordinaryClasses(PackageElement pkg) {
         return getSet(ordinaryClasses, pkg);

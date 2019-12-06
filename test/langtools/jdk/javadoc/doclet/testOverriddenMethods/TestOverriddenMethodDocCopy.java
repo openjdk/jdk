@@ -26,7 +26,6 @@
  * @bug      4368820 8025633 8026567 8182765
  * @summary  Inherited comment should link directly to member, not just
  *           class
- * @author   jamieh
  * @library  ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
  * @build    javadoc.tester.*

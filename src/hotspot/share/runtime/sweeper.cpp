@@ -197,11 +197,11 @@ bool NMethodSweeper::wait_for_stack_scanning() {
   return _current.end();
 }
 
-class NMethodMarkingThreadClosure : public ThreadClosure {
+class NMethodMarkingClosure : public HandshakeClosure {
 private:
   CodeBlobClosure* _cl;
 public:
-  NMethodMarkingThreadClosure(CodeBlobClosure* cl) : _cl(cl) {}
+  NMethodMarkingClosure(CodeBlobClosure* cl) : HandshakeClosure("NMethodMarking"), _cl(cl) {}
   void do_thread(Thread* thread) {
     if (thread->is_Java_thread() && ! thread->is_Code_cache_sweeper_thread()) {
       JavaThread* jt = (JavaThread*) thread;
@@ -212,9 +212,9 @@ public:
 
 class NMethodMarkingTask : public AbstractGangTask {
 private:
-  NMethodMarkingThreadClosure* _cl;
+  NMethodMarkingClosure* _cl;
 public:
-  NMethodMarkingTask(NMethodMarkingThreadClosure* cl) :
+  NMethodMarkingTask(NMethodMarkingClosure* cl) :
     AbstractGangTask("Parallel NMethod Marking"),
     _cl(cl) {
     Threads::change_thread_claim_token();
@@ -239,7 +239,7 @@ void NMethodSweeper::mark_active_nmethods() {
   if (cl != NULL) {
     WorkGang* workers = Universe::heap()->get_safepoint_workers();
     if (workers != NULL) {
-      NMethodMarkingThreadClosure tcl(cl);
+      NMethodMarkingClosure tcl(cl);
       NMethodMarkingTask task(&tcl);
       workers->run_task(&task);
     } else {
@@ -324,8 +324,8 @@ void NMethodSweeper::do_stack_scanning() {
         code_cl = prepare_mark_active_nmethods();
       }
       if (code_cl != NULL) {
-        NMethodMarkingThreadClosure tcl(code_cl);
-        Handshake::execute(&tcl);
+        NMethodMarkingClosure nm_cl(code_cl);
+        Handshake::execute(&nm_cl);
       }
     } else {
       VM_MarkActiveNMethods op;

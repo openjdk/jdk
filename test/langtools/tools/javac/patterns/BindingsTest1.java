@@ -146,6 +146,30 @@ public class BindingsTest1 {
             s.length();
         }
 
+        {
+            while (!(o1 instanceof String s)) {
+                L8: break L8;
+            }
+
+            s.length();
+        }
+
+        {
+            for ( ;!(o1 instanceof String s); ) {
+                L9: break L9;
+            }
+
+            s.length();
+        }
+
+        {
+            do {
+                L10: break L10;
+            } while (!(o1 instanceof String s));
+
+            s.length();
+        }
+
         if (o1 instanceof String s) {
             Runnable r1 = new Runnable() {
                 @Override
@@ -160,6 +184,9 @@ public class BindingsTest1 {
             r2.run();
             String s2 = s;
         }
+
+        boolean result = (o1 instanceof String a1) ? (o1 instanceof String a2) : (!(o1 instanceof String a3));
+        boolean result2 = (o1 instanceof String a1) ? (o1 instanceof String a2) : (!(switch (0) { default -> false; }));
 
         System.out.println("BindingsTest1 complete");
     }

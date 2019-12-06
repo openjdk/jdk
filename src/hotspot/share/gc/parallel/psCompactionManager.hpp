@@ -25,6 +25,7 @@
 #ifndef SHARE_GC_PARALLEL_PSCOMPACTIONMANAGER_HPP
 #define SHARE_GC_PARALLEL_PSCOMPACTIONMANAGER_HPP
 
+#include "gc/parallel/psParallelCompact.hpp"
 #include "gc/shared/taskqueue.hpp"
 #include "memory/allocation.hpp"
 #include "utilities/stack.hpp"
@@ -77,6 +78,7 @@ class ParCompactionManager : public CHeapObj<mtGC> {
 private:
   OverflowTaskQueue<oop, mtGC>        _marking_stack;
   ObjArrayTaskQueue             _objarray_stack;
+  size_t                        _next_shadow_region;
 
   // Is there a way to reuse the _marking_stack for the
   // saving empty regions?  For now just create a different
@@ -84,6 +86,14 @@ private:
   RegionTaskQueue              _region_stack;
 
   static ParMarkBitMap* _mark_bitmap;
+
+  // Contains currently free shadow regions. We use it in
+  // a LIFO fashion for better data locality and utilization.
+  static GrowableArray<size_t>* _shadow_region_array;
+
+  // Provides mutual exclusive access of _shadow_region_array.
+  // See pop/push_shadow_region_mt_safe() below
+  static Monitor*               _shadow_region_monitor;
 
   Action _action;
 
@@ -109,6 +119,19 @@ private:
   // marking stack and overflow stack directly.
 
  public:
+  static const size_t InvalidShadow = ~0;
+  static size_t  pop_shadow_region_mt_safe(PSParallelCompact::RegionData* region_ptr);
+  static void    push_shadow_region_mt_safe(size_t shadow_region);
+  static void    push_shadow_region(size_t shadow_region);
+  static void    remove_all_shadow_regions();
+
+  inline size_t  next_shadow_region() { return _next_shadow_region; }
+  inline void    set_next_shadow_region(size_t record) { _next_shadow_region = record; }
+  inline size_t  move_next_shadow_region_by(size_t workers) {
+    _next_shadow_region += workers;
+    return next_shadow_region();
+  }
+
   void reset_bitmap_query_cache() {
     _last_query_beg = NULL;
     _last_query_obj = NULL;

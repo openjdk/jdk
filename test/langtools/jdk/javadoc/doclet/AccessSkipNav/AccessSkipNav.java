@@ -25,7 +25,6 @@
  * @test
  * @bug 4638136 7198273 8025633 8081854 8182765
  * @summary  Add ability to skip over nav bar for accessibility
- * @author dkramer
  * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
  * @build javadoc.tester.*

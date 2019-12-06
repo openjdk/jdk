@@ -51,9 +51,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.Utils;
  *  If you write code that depends on this, you do so at your own risk.
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
- *
- * @author Jamie Ho
- * @author Bhavesh Patel (Modified)
  */
 public class SerializedFormBuilder extends AbstractBuilder {
 
@@ -591,10 +588,10 @@ public class SerializedFormBuilder extends AbstractBuilder {
     }
 
     /**
-     * Return true if any of the given typeElements have a @serialinclude tag.
+     * Return true if any of the given typeElements have a {@code @serial include} tag.
      *
      * @param classes the typeElements to check.
-     * @return true if any of the given typeElements have a @serialinclude tag.
+     * @return true if any of the given typeElements have a {@code @serial include} tag.
      */
     private boolean serialClassFoundToDocument(SortedSet<TypeElement> classes) {
         for (TypeElement aClass : classes) {

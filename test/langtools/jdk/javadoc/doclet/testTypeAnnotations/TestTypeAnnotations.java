@@ -26,7 +26,6 @@
  * @bug      8005091 8009686 8025633 8026567 6469562 8071982 8071984 8162363 8175200 8186332 8182765
  *           8187288
  * @summary  Make sure that type annotations are displayed correctly
- * @author   Bhavesh Patel
  * @library  ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
  * @build    javadoc.tester.*

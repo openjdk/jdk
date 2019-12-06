@@ -103,8 +103,11 @@ void Phase::print_timers() {
     }
   }
 
-  tty->print_cr ("       Matcher:             %7.3f s", timers[_t_matcher].seconds());
-  tty->print_cr ("       Scheduler:           %7.3f s", timers[_t_scheduler].seconds());
+  tty->print_cr ("       Matcher:                  %7.3f s", timers[_t_matcher].seconds());
+  if (Matcher::supports_generic_vector_operands) {
+    tty->print_cr ("         Post Selection Cleanup: %7.3f s", timers[_t_postselect_cleanup].seconds());
+  }
+  tty->print_cr ("       Scheduler:                %7.3f s", timers[_t_scheduler].seconds());
 
   {
     tty->print_cr ("       Regalloc:            %7.3f s", timers[_t_registerAllocation].seconds());

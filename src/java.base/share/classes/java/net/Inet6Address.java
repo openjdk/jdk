@@ -793,6 +793,7 @@ class Inet6Address extends InetAddress {
     public boolean isMCOrgLocal() {
         return holder6.isMCOrgLocal();
     }
+
     /**
      * Returns the raw IP address of this {@code InetAddress} object. The result
      * is in network byte order: the highest order byte of the address is in
@@ -806,6 +807,13 @@ class Inet6Address extends InetAddress {
     }
 
     /**
+     * Returns a reference to the byte[] with the IPv6 address.
+     */
+    byte[] addressBytes() {
+        return holder6.ipaddress;
+    }
+
+    /**
      * Returns the numeric scopeId, if this instance is associated with
      * an interface. If no scoped_id is set, the returned value is zero.
      *
@@ -814,7 +822,7 @@ class Inet6Address extends InetAddress {
      * @since 1.5
      */
      public int getScopeId() {
-        return holder6.scope_id;
+         return holder6.scope_id;
      }
 
     /**
@@ -825,7 +833,7 @@ class Inet6Address extends InetAddress {
      * @since 1.5
      */
      public NetworkInterface getScopedInterface() {
-        return holder6.scope_ifname;
+         return holder6.scope_ifname;
      }
 
     /**

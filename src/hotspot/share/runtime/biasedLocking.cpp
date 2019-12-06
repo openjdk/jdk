@@ -35,6 +35,7 @@
 #include "runtime/basicLock.hpp"
 #include "runtime/biasedLocking.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/handshake.hpp"
 #include "runtime/task.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/vframe.hpp"
@@ -500,7 +501,7 @@ public:
 };
 
 
-class RevokeOneBias : public ThreadClosure {
+class RevokeOneBias : public HandshakeClosure {
 protected:
   Handle _obj;
   JavaThread* _requesting_thread;
@@ -510,7 +511,8 @@ protected:
 
 public:
   RevokeOneBias(Handle obj, JavaThread* requesting_thread, JavaThread* biased_locker)
-    : _obj(obj)
+    : HandshakeClosure("RevokeOneBias")
+    , _obj(obj)
     , _requesting_thread(requesting_thread)
     , _biased_locker(biased_locker)
     , _status_code(BiasedLocking::NOT_BIASED)

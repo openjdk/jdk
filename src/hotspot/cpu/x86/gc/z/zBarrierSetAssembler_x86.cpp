@@ -517,8 +517,11 @@ private:
     // Sort by size, largest first
     _xmm_registers.sort(xmm_compare_register_size);
 
+    // On Windows, the caller reserves stack space for spilling register arguments
+    const int arg_spill_size = frame::arg_reg_save_area_bytes;
+
     // Stack pointer must be 16 bytes aligned for the call
-    _spill_offset = _spill_size = align_up(xmm_spill_size + gp_spill_size, 16);
+    _spill_offset = _spill_size = align_up(xmm_spill_size + gp_spill_size + arg_spill_size, 16);
   }
 
 public:

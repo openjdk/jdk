@@ -26,7 +26,6 @@
  * @bug 4496290 4985072 7006178 7068595 8016328 8050031 8048351 8081854 8071982 8162363 8175200 8186332
  *      8182765 8196202 8202626
  * @summary A simple test to ensure class-use files are correct.
- * @author jamieh
  * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
  * @build javadoc.tester.*

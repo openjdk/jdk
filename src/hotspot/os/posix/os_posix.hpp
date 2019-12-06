@@ -41,6 +41,7 @@ protected:
   static void print_uname_info(outputStream* st);
   static void print_libversion_info(outputStream* st);
   static void print_load_average(outputStream* st);
+  static void print_uptime_info(outputStream* st);
 
   // Minimum stack size a thread can be created with (allowing
   // the VM to completely create the thread and enter user code).
@@ -285,10 +286,8 @@ class PlatformMutex : public CHeapObj<mtSynchronizer> {
 
 #endif // PLATFORM_MONITOR_IMPL_INDIRECT
 
-private:
-  // Disable copying
-  PlatformMutex(const PlatformMutex&);
-  PlatformMutex& operator=(const PlatformMutex&);
+ private:
+  NONCOPYABLE(PlatformMutex);
 
  public:
   void lock();
@@ -329,9 +328,7 @@ class PlatformMonitor : public PlatformMutex {
 #endif // PLATFORM_MONITOR_IMPL_INDIRECT
 
  private:
-  // Disable copying
-  PlatformMonitor(const PlatformMonitor&);
-  PlatformMonitor& operator=(const PlatformMonitor&);
+  NONCOPYABLE(PlatformMonitor);
 
  public:
   int wait(jlong millis);

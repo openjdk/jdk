@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ import javax.lang.model.element.ModuleElement.RequiresDirective;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.util.ElementFilter;
-import javax.lang.model.util.SimpleElementVisitor9;
+import javax.lang.model.util.SimpleElementVisitor14;
 import javax.tools.JavaFileManager;
 import javax.tools.JavaFileManager.Location;
 import javax.tools.JavaFileObject;
@@ -985,7 +985,8 @@ public class ElementsTable {
         return (xclasses || toolEnv.getFileKind(te) == SOURCE) && isSelected(te);
     }
 
-    SimpleElementVisitor9<Boolean, Void> visibleElementVisitor = null;
+    @SuppressWarnings("preview")
+    SimpleElementVisitor14<Boolean, Void> visibleElementVisitor = null;
     /**
      * Returns true if the element is selected, by applying
      * the access filter checks. Special treatment is applied to
@@ -996,12 +997,13 @@ public class ElementsTable {
      * @param e the element to be checked
      * @return true if the element is visible
      */
+    @SuppressWarnings("preview")
     public boolean isSelected(Element e) {
         if (toolEnv.isSynthetic((Symbol) e)) {
             return false;
         }
         if (visibleElementVisitor == null) {
-            visibleElementVisitor = new SimpleElementVisitor9<Boolean, Void>() {
+            visibleElementVisitor = new SimpleElementVisitor14<Boolean, Void>() {
                 @Override
                 public Boolean visitType(TypeElement e, Void p) {
                     if (!accessFilter.checkModifier(e)) {
@@ -1035,7 +1037,8 @@ public class ElementsTable {
         return visibleElementVisitor.visit(e);
     }
 
-    private class IncludedVisitor extends SimpleElementVisitor9<Boolean, Void> {
+    @SuppressWarnings("preview")
+    private class IncludedVisitor extends SimpleElementVisitor14<Boolean, Void> {
         final private Set<Element> includedCache;
 
         public IncludedVisitor() {
@@ -1200,7 +1203,7 @@ public class ElementsTable {
                                                     ElementKind.PACKAGE,
                                                     ElementKind.MODULE);
 
-        // all possible accesss levels allowed for each element
+        // all possible access levels allowed for each element
         private final EnumMap<ElementKind, EnumSet<AccessKind>> filterMap =
                 new EnumMap<>(ElementKind.class);
 
@@ -1285,7 +1288,7 @@ public class ElementsTable {
             switch (kind) {
                 case CLASS: case METHOD: case MODULE: case PACKAGE:
                     return kind;
-                case ANNOTATION_TYPE: case ENUM: case INTERFACE:
+                case RECORD: case ANNOTATION_TYPE: case ENUM: case INTERFACE:
                     return ElementKind.CLASS;
                 case CONSTRUCTOR: case ENUM_CONSTANT: case EXCEPTION_PARAMETER:
                 case FIELD: case INSTANCE_INIT: case LOCAL_VARIABLE: case PARAMETER:

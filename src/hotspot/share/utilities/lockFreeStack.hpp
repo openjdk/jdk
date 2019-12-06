@@ -27,7 +27,7 @@
 
 #include "runtime/atomic.hpp"
 #include "utilities/debug.hpp"
-#include "utilities/macros.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 // The LockFreeStack class template provides a lock-free LIFO. The objects
 // in the sequence are intrusively linked via a member in the objects.  As
@@ -69,9 +69,7 @@ class LockFreeStack {
     } while (old != cur);
   }
 
-  // Noncopyable.
-  LockFreeStack(const LockFreeStack&);
-  LockFreeStack& operator=(const LockFreeStack&);
+  NONCOPYABLE(LockFreeStack);
 
 public:
   LockFreeStack() : _top(NULL) {}

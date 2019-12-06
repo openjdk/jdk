@@ -155,6 +155,7 @@ public class Contents {
     public final Content propertyLabel;
     public final Content propertyDetailsLabel;
     public final Content propertySummaryLabel;
+    public final Content record;
     public final Content seeLabel;
     public final Content serializedForm;
     public final Content servicesLabel;
@@ -282,6 +283,7 @@ public class Contents {
         propertyLabel = getContent("doclet.Property");
         propertyDetailsLabel = getContent("doclet.Property_Detail");
         propertySummaryLabel = getContent("doclet.Property_Summary");
+        record = getContent("doclet.Record");
         seeLabel = getContent("doclet.See");
         serializedForm = getContent("doclet.Serialized_Form");
         servicesLabel = getContent("doclet.Services");

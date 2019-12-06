@@ -454,13 +454,17 @@ public class SelectWithConsumer {
 
         // select(Consumer, timeout)
         try (Selector sel = Selector.open()) {
+            long before = System.nanoTime();
             scheduleClose(sel, 3, SECONDS);
-            long start = System.currentTimeMillis();
+            long start = System.nanoTime();
             int n = sel.select(k -> assertTrue(false), 60*1000);
-            long duration = System.currentTimeMillis() - start;
+            long after = System.nanoTime();
+            long selectDuration = (after - start) / 1000000;
+            long scheduleDuration = (start - before) / 1000000;
             assertTrue(n == 0);
-            assertTrue(duration > 2000 && duration < 10*1000,
-                    "select took " + duration + " ms");
+            assertTrue(selectDuration > 2000 && selectDuration < 10*1000,
+                    "select took " + selectDuration + " ms schedule took " +
+                    scheduleDuration + " ms");
             assertFalse(sel.isOpen());
         }
     }

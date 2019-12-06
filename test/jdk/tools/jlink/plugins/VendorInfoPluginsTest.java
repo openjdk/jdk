@@ -83,6 +83,7 @@ public class VendorInfoPluginsTest {
                             + (System.getProperty("os.name").startsWith("Windows")
                                ? ".exe" : "")).toString();
         var oa = ProcessTools.executeProcess(launcher,
+                                             "-Xmx64m",
                                              "-XshowSettings:properties",
                                              "--version");
         oa.stderrShouldMatch("^ +java.vendor.url.bug = " + BUG_URL + "$");
@@ -92,6 +93,8 @@ public class VendorInfoPluginsTest {
 
         // VM error log
         oa = ProcessTools.executeProcess(launcher,
+                                         "-Xmx64m",
+                                         "-XX:-CreateCoredumpOnCrash",
                                          "--class-path",
                                          System.getProperty("test.classes"),
                                          "VendorInfoPluginsTest$Crasher");

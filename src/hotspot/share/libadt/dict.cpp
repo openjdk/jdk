@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "libadt/dict.hpp"
+#include "utilities/powerOfTwo.hpp"
 
 // Dictionaries - An Abstract Data Type
 
@@ -86,8 +87,7 @@ Dict::Dict(CmpKey initcmp, Hash inithash, Arena *arena, int size)
     initflag = 1;               // Never again
   }
 
-  i=16;
-  while( i < size ) i <<= 1;
+  i = MAX2(16, round_up_power_of_2(size));
   _size = i;                    // Size is a power of 2
   _cnt = 0;                     // Dictionary is empty
   _bin = (bucket*)_arena->Amalloc_4(sizeof(bucket)*_size);

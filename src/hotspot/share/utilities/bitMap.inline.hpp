@@ -26,6 +26,7 @@
 #define SHARE_UTILITIES_BITMAP_INLINE_HPP
 
 #include "runtime/atomic.hpp"
+#include "utilities/align.hpp"
 #include "utilities/bitMap.hpp"
 #include "utilities/count_trailing_zeros.hpp"
 
@@ -167,7 +168,7 @@ template<BitMap::bm_word_t flip, bool aligned_right>
 inline BitMap::idx_t BitMap::get_next_bit_impl(idx_t l_index, idx_t r_index) const {
   STATIC_ASSERT(flip == find_ones_flip || flip == find_zeros_flip);
   verify_range(l_index, r_index);
-  assert(!aligned_right || is_word_aligned(r_index), "r_index not aligned");
+  assert(!aligned_right || is_aligned(r_index, BitsPerWord), "r_index not aligned");
 
   // The first word often contains an interesting bit, either due to
   // density or because of features of the calling algorithm.  So it's
@@ -176,8 +177,8 @@ inline BitMap::idx_t BitMap::get_next_bit_impl(idx_t l_index, idx_t r_index) con
   // first word is indeed interesting.
 
   // The benefit from aligned_right being true is relatively small.
-  // It saves a couple instructions in the setup for the word search
-  // loop.  It also eliminates the range check on the final result.
+  // It saves an operation in the setup for the word search loop.
+  // It also eliminates the range check on the final result.
   // However, callers often have a comparison with r_index, and
   // inlining often allows the two comparisons to be combined; it is
   // important when !aligned_right that return paths either return
@@ -188,7 +189,7 @@ inline BitMap::idx_t BitMap::get_next_bit_impl(idx_t l_index, idx_t r_index) con
 
   if (l_index < r_index) {
     // Get the word containing l_index, and shift out low bits.
-    idx_t index = word_index(l_index);
+    idx_t index = to_words_align_down(l_index);
     bm_word_t cword = (map(index) ^ flip) >> bit_in_word(l_index);
     if ((cword & 1) != 0) {
       // The first bit is similarly often interesting. When it matters
@@ -208,8 +209,8 @@ inline BitMap::idx_t BitMap::get_next_bit_impl(idx_t l_index, idx_t r_index) con
       // Flipped and shifted first word is zero.  Word search through
       // aligned up r_index for a non-zero flipped word.
       idx_t limit = aligned_right
-        ? word_index(r_index)
-        : (word_index(r_index - 1) + 1); // Align up, knowing r_index > 0.
+        ? to_words_align_down(r_index) // Miniscule savings when aligned.
+        : to_words_align_up(r_index);
       while (++index < limit) {
         cword = map(index) ^ flip;
         if (cword != 0) {
@@ -248,7 +249,7 @@ BitMap::get_next_one_offset_aligned_right(idx_t l_offset, idx_t r_offset) const 
 inline BitMap::bm_word_t
 BitMap::inverted_bit_mask_for_range(idx_t beg, idx_t end) const {
   assert(end != 0, "does not work when end == 0");
-  assert(beg == end || word_index(beg) == word_index(end - 1),
+  assert(beg == end || to_words_align_down(beg) == to_words_align_down(end - 1),
          "must be a single-word range");
   bm_word_t mask = bit_mask(beg) - 1;   // low (right) bits
   if (bit_in_word(end) != 0) {
@@ -265,12 +266,6 @@ inline void BitMap::set_large_range_of_words(idx_t beg, idx_t end) {
 inline void BitMap::clear_large_range_of_words(idx_t beg, idx_t end) {
   assert(beg <= end, "underflow");
   memset(_map + beg, 0, (end - beg) * sizeof(bm_word_t));
-}
-
-inline BitMap::idx_t BitMap::word_index_round_up(idx_t bit) const {
-  idx_t bit_rounded_up = bit + (BitsPerWord - 1);
-  // Check for integer arithmetic overflow.
-  return bit_rounded_up > bit ? word_index(bit_rounded_up) : size_in_words();
 }
 
 inline bool BitMap2D::is_valid_index(idx_t slot_index, idx_t bit_within_slot_index) {

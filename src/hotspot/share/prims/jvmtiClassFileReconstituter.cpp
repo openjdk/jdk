@@ -27,6 +27,7 @@
 #include "interpreter/bytecodeStream.hpp"
 #include "memory/universe.hpp"
 #include "oops/fieldStreams.inline.hpp"
+#include "oops/recordComponent.hpp"
 #include "prims/jvmtiClassFileReconstituter.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/signature.hpp"
@@ -423,6 +424,57 @@ void JvmtiClassFileReconstituter::write_nest_members_attribute() {
   }
 }
 
+//  Record {
+//    u2 attribute_name_index;
+//    u4 attribute_length;
+//    u2 components_count;
+//    component_info components[components_count];
+//  }
+//  component_info {
+//    u2 name_index;
+//    u2 descriptor_index
+//    u2 attributes_count;
+//    attribute_info_attributes[attributes_count];
+//  }
+void JvmtiClassFileReconstituter::write_record_attribute() {
+  Array<RecordComponent*>* components = ik()->record_components();
+  int number_of_components = components->length();
+
+  // Each component has a u2 for name, descr, attribute count
+  int length = sizeof(u2) + (sizeof(u2) * 3 * number_of_components);
+  for (int x = 0; x < number_of_components; x++) {
+    RecordComponent* component = components->at(x);
+    if (component->generic_signature_index() != 0) {
+      length += 8; // Signature attribute size
+      assert(component->attributes_count() > 0, "Bad component attributes count");
+    }
+    if (component->annotations() != NULL) {
+      length += 6 + component->annotations()->length();
+    }
+    if (component->type_annotations() != NULL) {
+      length += 6 + component->type_annotations()->length();
+    }
+  }
+
+  write_attribute_name_index("Record");
+  write_u4(length);
+  write_u2(number_of_components);
+  for (int i = 0; i < number_of_components; i++) {
+    RecordComponent* component = components->at(i);
+    write_u2(component->name_index());
+    write_u2(component->descriptor_index());
+    write_u2(component->attributes_count());
+    if (component->generic_signature_index() != 0) {
+      write_signature_attribute(component->generic_signature_index());
+    }
+    if (component->annotations() != NULL) {
+      write_annotations_attribute("RuntimeVisibleAnnotations", component->annotations());
+    }
+    if (component->type_annotations() != NULL) {
+      write_annotations_attribute("RuntimeVisibleTypeAnnotations", component->type_annotations());
+    }
+  }
+}
 
 // Write InnerClasses attribute
 // JVMSpec|   InnerClasses_attribute {
@@ -699,6 +751,9 @@ void JvmtiClassFileReconstituter::write_class_attributes() {
   if (ik()->nest_members() != Universe::the_empty_short_array()) {
     ++attr_count;
   }
+  if (ik()->record_components() != NULL) {
+    ++attr_count;
+  }
 
   write_u2(attr_count);
 
@@ -728,6 +783,9 @@ void JvmtiClassFileReconstituter::write_class_attributes() {
   }
   if (ik()->nest_members() != Universe::the_empty_short_array()) {
     write_nest_members_attribute();
+  }
+  if (ik()->record_components() != NULL) {
+    write_record_attribute();
   }
 }
 

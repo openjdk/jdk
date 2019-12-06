@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,11 +52,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.IndexBuilder;
  *  If you write code that depends on this, you do so at your own risk.
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
- *
- * @author Atul M Dambalkar
- * @author Robert Field
- * @author Jamie Ho
- *
  */
 public class HtmlDoclet extends AbstractDoclet {
 
@@ -236,22 +231,21 @@ public class HtmlDoclet extends AbstractDoclet {
      * {@inheritDoc}
      */
     @Override // defined by AbstractDoclet
-    protected void generateClassFiles(SortedSet<TypeElement> arr, ClassTree classtree)
+    protected void generateClassFiles(SortedSet<TypeElement> typeElems, ClassTree classTree)
             throws DocletException {
-        List<TypeElement> list = new ArrayList<>(arr);
-        for (TypeElement klass : list) {
-            if (utils.hasHiddenTag(klass) ||
-                    !(configuration.isGeneratedDoc(klass) && utils.isIncluded(klass))) {
+        for (TypeElement te : typeElems) {
+            if (utils.hasHiddenTag(te) ||
+                    !(configuration.isGeneratedDoc(te) && utils.isIncluded(te))) {
                 continue;
             }
-            if (utils.isAnnotationType(klass)) {
+            if (utils.isAnnotationType(te)) {
                 AbstractBuilder annotationTypeBuilder =
                     configuration.getBuilderFactory()
-                        .getAnnotationTypeBuilder(klass);
+                        .getAnnotationTypeBuilder(te);
                 annotationTypeBuilder.build();
             } else {
                 AbstractBuilder classBuilder =
-                    configuration.getBuilderFactory().getClassBuilder(klass, classtree);
+                    configuration.getBuilderFactory().getClassBuilder(te, classTree);
                 classBuilder.build();
             }
         }

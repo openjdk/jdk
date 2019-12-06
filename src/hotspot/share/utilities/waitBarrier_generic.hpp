@@ -27,6 +27,7 @@
 
 #include "memory/allocation.hpp"
 #include "runtime/semaphore.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 // In addition to the barrier tag, it uses two counters to keep the semaphore
 // count correct and not leave any late thread waiting.
@@ -39,9 +40,7 @@ class GenericWaitBarrier : public CHeapObj<mtInternal> {
   volatile int _barrier_threads;
   Semaphore _sem_barrier;
 
-  // Prevent copying and assignment of GenericWaitBarrier instances.
-  GenericWaitBarrier(const GenericWaitBarrier&);
-  GenericWaitBarrier& operator=(const GenericWaitBarrier&);
+  NONCOPYABLE(GenericWaitBarrier);
 
   int wake_if_needed();
 

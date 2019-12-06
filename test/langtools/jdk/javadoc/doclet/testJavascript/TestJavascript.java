@@ -25,7 +25,6 @@
  * @test
  * @bug      4665566 4855876 7025314 8012375 8015997 8016328 8024756 8148985 8151921 8151743 8196202 8223378
  * @summary  Verify that the output has the right javascript.
- * @author   jamieh
  * @library  ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
  * @build    javadoc.tester.*

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -175,7 +175,7 @@ class TrialParser extends JavacParser {
                 if (token.kind == CLASS
                         || token.kind == INTERFACE
                         || token.kind == ENUM) {
-                    return List.<JCTree>of(classOrInterfaceOrEnumDeclaration(mods, dc));
+                    return List.<JCTree>of(classOrRecordOrInterfaceOrEnumDeclaration(mods, dc));
                 } else {
                     int pos = token.pos;
                     List<JCTypeParameter> typarams = typeParametersOpt();
@@ -220,7 +220,7 @@ class TrialParser extends JavacParser {
                             //mods.flags |= Flags.STATIC;
                             return List.of(methodDeclaratorRest(
                                     pos, mods, t, name, typarams,
-                                    false, isVoid, dc));
+                                    false, isVoid, false, dc));
                         } else if (!isVoid && typarams.isEmpty()) {
                         // variable declaration
                             //mods.flags |= Flags.STATIC;

@@ -117,7 +117,8 @@ public abstract class NumberFormatProvider extends LocaleServiceProvider {
      * {@code locale} and {@code formatStyle}.
      *
      * @implSpec The default implementation of this method throws
-     * {@code UnSupportedOperationException}. Overriding the implementation
+     * {@link java.lang.UnsupportedOperationException
+     * UnsupportedOperationException}. Overriding the implementation
      * of this method returns the compact number formatter instance
      * of the given {@code locale} with specified {@code formatStyle}.
      *
@@ -129,6 +130,8 @@ public abstract class NumberFormatProvider extends LocaleServiceProvider {
      *     one of the locales returned from
      *     {@link java.util.spi.LocaleServiceProvider#getAvailableLocales()
      *     getAvailableLocales()}.
+     * @throws UnsupportedOperationException if the implementation does not
+     *      support this method
      * @return a compact number formatter
      *
      * @see java.text.NumberFormat#getCompactNumberInstance(Locale,

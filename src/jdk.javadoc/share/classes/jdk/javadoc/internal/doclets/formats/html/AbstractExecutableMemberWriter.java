@@ -58,10 +58,6 @@ import static jdk.javadoc.internal.doclets.formats.html.LinkInfoImpl.Kind.RECEIV
  *  If you write code that depends on this, you do so at your own risk.
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
- *
- * @author Robert Field
- * @author Atul M Dambalkar
- * @author Bhavesh Patel (Modified)
  */
 public abstract class AbstractExecutableMemberWriter extends AbstractMemberWriter {
 

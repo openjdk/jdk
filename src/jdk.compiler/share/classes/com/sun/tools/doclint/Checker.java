@@ -203,6 +203,7 @@ public class Checker extends DocTreePathScanner<Void, Void> {
             case INTERFACE:
             case ENUM:
             case ANNOTATION_TYPE:
+            case RECORD:
                 implicitHeadingRank = 1;
                 break;
 

@@ -44,6 +44,7 @@ import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.Kinds.*;
 import static com.sun.tools.javac.code.Kinds.Kind.*;
 import static com.sun.tools.javac.code.TypeTag.TYPEVAR;
+import static com.sun.tools.javac.tree.JCTree.Tag.VARDEF;
 
 /** Resolves field, method and constructor header, and constructs corresponding Symbols.
  *
@@ -299,7 +300,8 @@ public class MemberEnter extends JCTree.Visitor {
         if (chk.checkUnique(tree.pos(), v, enclScope)) {
             chk.checkTransparentVar(tree.pos(), v, enclScope);
             enclScope.enter(v);
-        } else if (v.owner.kind == MTH) {
+        } else if (v.owner.kind == MTH || (v.flags_field & (Flags.PRIVATE | Flags.FINAL | Flags.GENERATED_MEMBER | Flags.RECORD)) != 0) {
+            // if this is a parameter or a field obtained from a record component, enter it
             enclScope.enter(v);
         }
 

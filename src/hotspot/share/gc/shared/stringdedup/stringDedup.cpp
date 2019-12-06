@@ -27,6 +27,7 @@
 #include "gc/shared/stringdedup/stringDedupQueue.hpp"
 #include "gc/shared/stringdedup/stringDedupTable.hpp"
 #include "gc/shared/stringdedup/stringDedupThread.hpp"
+#include "memory/iterator.hpp"
 
 bool StringDedup::_enabled = false;
 

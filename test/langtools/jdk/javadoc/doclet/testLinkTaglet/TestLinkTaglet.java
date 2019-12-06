@@ -26,7 +26,6 @@
  * @bug      4732864 6280605 7064544 8014636 8016328 8025633 8071982 8182765
  * @summary  Make sure that you can link from one member to another using
  *           non-qualified name, furthermore, ensure the right one is linked.
- * @author   jamieh
  * @library  ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
  * @build    javadoc.tester.*

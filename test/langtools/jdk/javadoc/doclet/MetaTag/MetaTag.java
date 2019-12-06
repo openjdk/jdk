@@ -26,7 +26,6 @@
  * @bug      4034096 4764726 6235799 8182765 8196202
  * @summary  Add support for HTML keywords via META tag for
  *           class and member names to improve API search
- * @author   dkramer
  * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
  * @build    javadoc.tester.*

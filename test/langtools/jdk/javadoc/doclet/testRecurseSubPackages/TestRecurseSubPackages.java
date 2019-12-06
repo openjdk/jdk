@@ -25,7 +25,6 @@
  * @test
  * @bug 4074234 8196202
  * @summary Make Javadoc capable of traversing/recursing all of given subpackages.
- * @author jamieh
  * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
  * @build javadoc.tester.*

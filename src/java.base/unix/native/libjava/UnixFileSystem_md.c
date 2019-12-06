@@ -45,6 +45,7 @@
 #include "jni.h"
 #include "jni_util.h"
 #include "jlong.h"
+#include "jdk_util.h"
 #include "io_util.h"
 #include "io_util_md.h"
 #include "java_io_FileSystem.h"
@@ -91,8 +92,6 @@ Java_java_io_UnixFileSystem_initIDs(JNIEnv *env, jclass cls)
 
 /* -- Path operations -- */
 
-extern int canonicalize(char *path, const char *out, int len);
-
 JNIEXPORT jstring JNICALL
 Java_java_io_UnixFileSystem_canonicalize0(JNIEnv *env, jobject this,
                                           jstring pathname)
@@ -101,7 +100,7 @@ Java_java_io_UnixFileSystem_canonicalize0(JNIEnv *env, jobject this,
 
     WITH_PLATFORM_STRING(env, pathname, path) {
         char canonicalPath[PATH_MAX];
-        if (canonicalize((char *)path,
+        if (JDK_Canonicalize((char *)path,
                          canonicalPath, PATH_MAX) < 0) {
             JNU_ThrowIOExceptionWithLastError(env, "Bad pathname");
         } else {

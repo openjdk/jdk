@@ -30,7 +30,6 @@
  *          jdk.javadoc/jdk.javadoc.internal.doclets.toolkit.util
  *          jdk.javadoc/jdk.javadoc.internal.tool
  * @build javadoc.tester.*
- * @author Bhavesh Patel
  * @run main TestHtmlDocument
  */
 

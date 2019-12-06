@@ -25,7 +25,6 @@
  * @test
  * @bug 8025633 8025524 8081854 8187521 8182765
  * @summary Test for valid name attribute in HTML anchors.
- * @author Bhavesh Patel
  * @library /tools/lib ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
  * @build toolbox.ToolBox javadoc.tester.*

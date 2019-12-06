@@ -42,6 +42,7 @@ import javax.lang.model.element.Modifier;
 import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.NestingKind;
 import javax.lang.model.element.PackageElement;
+import javax.lang.model.element.RecordComponentElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.TypeParameterElement;
 import javax.lang.model.element.VariableElement;
@@ -61,17 +62,14 @@ import com.sun.tools.javac.tree.JCTree.JCVariableDecl;
 import com.sun.tools.javac.tree.JCTree.Tag;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.DefinedBy.Api;
+import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.Name;
 
 import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.Kinds.*;
 import static com.sun.tools.javac.code.Kinds.Kind.*;
-import com.sun.tools.javac.code.MissingInfoHandler;
 import static com.sun.tools.javac.code.Scope.LookupKind.NON_RECURSIVE;
 import com.sun.tools.javac.code.Scope.WriteableScope;
-import com.sun.tools.javac.code.Symbol;
-import static com.sun.tools.javac.code.Symbol.OperatorSymbol.AccessCode.FIRSTASGOP;
-import com.sun.tools.javac.code.Type;
 import static com.sun.tools.javac.code.TypeTag.CLASS;
 import static com.sun.tools.javac.code.TypeTag.FORALL;
 import static com.sun.tools.javac.code.TypeTag.TYPEVAR;
@@ -80,7 +78,6 @@ import static com.sun.tools.javac.jvm.ByteCodes.ishll;
 import static com.sun.tools.javac.jvm.ByteCodes.lushrl;
 import static com.sun.tools.javac.jvm.ByteCodes.lxor;
 import static com.sun.tools.javac.jvm.ByteCodes.string_add;
-import com.sun.tools.javac.util.Name;
 
 /** Root class for Java symbols. It contains subclasses
  *  for specific sorts of symbols, such as variables, methods and operators,
@@ -406,15 +403,27 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
         return (flags() & INTERFACE) != 0;
     }
 
+    public boolean isAbstract() {
+        return (flags_field & ABSTRACT) != 0;
+    }
+
     public boolean isPrivate() {
         return (flags_field & Flags.AccessFlags) == PRIVATE;
+    }
+
+    public boolean isPublic() {
+        return (flags_field & Flags.AccessFlags) == PUBLIC;
     }
 
     public boolean isEnum() {
         return (flags() & ENUM) != 0;
     }
 
-    /** Is this symbol declared (directly or indirectly) local
+    public boolean isFinal() {
+        return (flags_field & FINAL) != 0;
+    }
+
+   /** Is this symbol declared (directly or indirectly) local
      *  to a method or variable initializer?
      *  Also includes fields of inner classes which are in
      *  turn local to a method or variable initializer.
@@ -828,7 +837,7 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
         }
 
         @Override @DefinedBy(Api.LANGUAGE_MODEL)
-        public java.util.List<Symbol> getEnclosedElements() {
+        public List<Symbol> getEnclosedElements() {
             List<Symbol> list = List.nil();
             if (kind == TYP && type.hasTag(TYPEVAR)) {
                 return list;
@@ -1264,6 +1273,8 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
         /** the annotation metadata attached to this class */
         private AnnotationTypeMetadata annotationTypeMetadata;
 
+        private List<RecordComponent> recordComponents = List.nil();
+
         public ClassSymbol(long flags, Name name, Type type, Symbol owner) {
             super(TYP, flags, name, type, owner);
             this.members_field = null;
@@ -1330,6 +1341,18 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
         @DefinedBy(Api.LANGUAGE_MODEL)
         public Name getQualifiedName() {
             return fullname;
+        }
+
+        @Override @DefinedBy(Api.LANGUAGE_MODEL)
+        public List<Symbol> getEnclosedElements() {
+            List<Symbol> result = super.getEnclosedElements();
+            if (!recordComponents.isEmpty()) {
+                List<RecordComponent> reversed = recordComponents.reverse();
+                for (RecordComponent rc : reversed) {
+                    result = result.prepend(rc);
+                }
+            }
+            return result;
         }
 
         public Name flatName() {
@@ -1424,6 +1447,7 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
 
 
         @DefinedBy(Api.LANGUAGE_MODEL)
+        @SuppressWarnings("preview")
         public ElementKind getKind() {
             apiComplete();
             long flags = flags();
@@ -1433,6 +1457,8 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
                 return ElementKind.INTERFACE;
             else if ((flags & ENUM) != 0)
                 return ElementKind.ENUM;
+            else if ((flags & RECORD) != 0)
+                return ElementKind.RECORD;
             else
                 return ElementKind.CLASS;
         }
@@ -1442,6 +1468,25 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
             apiComplete();
             long flags = flags();
             return Flags.asModifierSet(flags & ~DEFAULT);
+        }
+
+        public RecordComponent getRecordComponent(VarSymbol field, boolean addIfMissing) {
+            for (RecordComponent rc : recordComponents) {
+                if (rc.name == field.name) {
+                    return rc;
+                }
+            }
+            RecordComponent rc = null;
+            if (addIfMissing) {
+                recordComponents = recordComponents.append(rc = new RecordComponent(PUBLIC, field.name, field.type, field.owner));
+            }
+            return rc;
+        }
+
+        @Override @DefinedBy(Api.LANGUAGE_MODEL)
+        @SuppressWarnings("preview")
+        public List<? extends RecordComponent> getRecordComponents() {
+            return recordComponents;
         }
 
         @DefinedBy(Api.LANGUAGE_MODEL)
@@ -1457,7 +1502,6 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
                 return NestingKind.MEMBER;
         }
 
-
         @Override
         protected <A extends Annotation> Attribute.Compound getAttribute(final Class<A> annoType) {
 
@@ -1472,9 +1516,6 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
             return superType == null ? null
                                      : superType.getAttribute(annoType);
         }
-
-
-
 
         @DefinedBy(Api.LANGUAGE_MODEL)
         public <R, P> R accept(ElementVisitor<R, P> v, P p) {
@@ -1533,6 +1574,10 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
             Assert.checkNonNull(a);
             Assert.check(!annotationTypeMetadata.isMetadataForAnnotationType());
             this.annotationTypeMetadata = a;
+        }
+
+        public boolean isRecord() {
+            return (flags_field & RECORD) != 0;
         }
     }
 
@@ -1678,6 +1723,35 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
 
         public <R, P> R accept(Symbol.Visitor<R, P> v, P p) {
             return v.visitVarSymbol(this, p);
+        }
+    }
+
+    @SuppressWarnings("preview")
+    public static class RecordComponent extends VarSymbol implements RecordComponentElement {
+        public MethodSymbol accessor;
+
+        /**
+         * Construct a record component, given its flags, name, type and owner.
+         */
+        public RecordComponent(long flags, Name name, Type type, Symbol owner) {
+            super(flags, name, type, owner);
+        }
+
+        @Override @DefinedBy(Api.LANGUAGE_MODEL)
+        @SuppressWarnings("preview")
+        public ElementKind getKind() {
+            return ElementKind.RECORD_COMPONENT;
+        }
+
+        @Override @DefinedBy(Api.LANGUAGE_MODEL)
+        public ExecutableElement getAccessor() {
+            return accessor;
+        }
+
+        @Override @DefinedBy(Api.LANGUAGE_MODEL)
+        @SuppressWarnings("preview")
+        public <R, P> R accept(ElementVisitor<R, P> v, P p) {
+            return v.visitRecordComponent(this, p);
         }
     }
 

@@ -157,9 +157,9 @@ abstract class AbstractLDMLHandler<V> extends DefaultHandler {
         }
     }
 
-    void pushStringListElement(String qName, Attributes attributes, int index) {
+    void pushStringListElement(String qName, Attributes attributes, int index, String count) {
         if (!pushIfIgnored(qName, attributes)) {
-            currentContainer = new StringListElement(qName, currentContainer, index);
+            currentContainer = new StringListElement(qName, currentContainer, index, count);
         }
     }
 

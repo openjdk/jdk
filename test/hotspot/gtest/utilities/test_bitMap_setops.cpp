@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,7 @@
  */
 
 #include "precompiled.hpp"
+#include "utilities/align.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/debug.hpp"
@@ -31,6 +32,10 @@
 
 typedef BitMap::idx_t idx_t;
 typedef BitMap::bm_word_t bm_word_t;
+
+inline idx_t word_align_down(idx_t bit) {
+  return align_down(bit, BitsPerWord);
+}
 
 class BitMapMemory {
 private:
@@ -147,7 +152,7 @@ TEST(BitMap, is_same__unaligned) {
   // Check that a difference in the final partial word does count.
   {
     idx_t index = unaligned_size - 2;
-    ASSERT_LE(BitMap::word_align_down(unaligned_size), index);
+    ASSERT_LE(word_align_down(unaligned_size), index);
 
     WithBitClear wbc(y, index);
     EXPECT_FALSE(x.is_same(y));
@@ -261,7 +266,7 @@ TEST(BitMap, contains__unaligned) {
   // Check that a missing bit in the final partial word does count.
   {
     idx_t index = unaligned_size - 2;
-    ASSERT_LE(BitMap::word_align_down(unaligned_size), index);
+    ASSERT_LE(word_align_down(unaligned_size), index);
 
     WithBitClear wbc(x, index);
     EXPECT_FALSE(x.contains(y));
@@ -307,7 +312,7 @@ TEST(BitMap, intersects__unaligned) {
   // Check that adding a bit in the final partial word does count.
   {
     idx_t index = unaligned_size - 2;
-    ASSERT_LE(BitMap::word_align_down(unaligned_size), index);
+    ASSERT_LE(word_align_down(unaligned_size), index);
     ASSERT_TRUE(x.at(index));
 
     WithBitSet wbs(y, index);
@@ -328,8 +333,8 @@ TEST(BitMap, intersects__unaligned) {
 static void check_tail_unmodified(BitMapMemory& mem,
                                   idx_t bits,
                                   bm_word_t fill_word) {
-  if (!BitMap::is_word_aligned(bits)) {
-    idx_t last_word_bit_index = BitMap::word_align_down(bits);
+  if (!is_aligned(bits, BitsPerWord)) {
+    idx_t last_word_bit_index = word_align_down(bits);
     idx_t last_word_index = BitMap::calc_size_in_words(last_word_bit_index);
     bm_word_t last_word = mem.memory()[last_word_index];
     idx_t shift = bits - last_word_bit_index;

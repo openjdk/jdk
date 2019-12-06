@@ -34,11 +34,10 @@ class WorkerDataArrayTest : public ::testing::Test {
  protected:
   WorkerDataArrayTest() :
     title("Test array"),
-    array(3, title),
-    sub_item_title("Sub item array"),
-    sub_item(3, sub_item_title) {
+    array(title, 3),
+    sub_item_title("Sub item array") {
 
-    array.link_thread_work_items(&sub_item);
+    array.create_thread_work_items(sub_item_title);
   }
 
   const char* print_summary() {
@@ -70,7 +69,6 @@ class WorkerDataArrayTest : public ::testing::Test {
   WorkerDataArray<T> array;
 
   const char* sub_item_title;
-  WorkerDataArray<size_t> sub_item;
 
  private:
   virtual const char* expected_summary() = 0;

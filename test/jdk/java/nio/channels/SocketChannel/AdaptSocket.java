@@ -202,6 +202,6 @@ public class AdaptSocket {
 
         TestServers.RefusingServer refuser = TestServers.RefusingServer.newRefusingServer();
         testConnect(refuser, 0, true);
-        testConnect(refuser, 2000, true);
+        testConnect(refuser, 10000, true);
     }
 }

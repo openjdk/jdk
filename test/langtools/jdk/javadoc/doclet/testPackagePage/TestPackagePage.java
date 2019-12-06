@@ -27,7 +27,6 @@
  * @summary Test that a package page is properly generated when a .java file
  * passed to Javadoc.  Also test that the proper package links are generated
  * when single or multiple packages are documented.
- * @author jamieh
  * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
  * @build javadoc.tester.*

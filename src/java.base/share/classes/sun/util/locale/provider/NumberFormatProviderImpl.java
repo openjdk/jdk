@@ -45,10 +45,14 @@ import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.text.NumberFormat;
 import java.text.spi.NumberFormatProvider;
+import java.util.Arrays;
 import java.util.Currency;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
+import sun.text.resources.PluralRules;
 
 /**
  * Concrete implementation of the  {@link java.text.spi.NumberFormatProvider
@@ -68,6 +72,12 @@ public class NumberFormatProviderImpl extends NumberFormatProvider implements Av
 
     private final LocaleProviderAdapter.Type type;
     private final Set<String> langtags;
+
+    private static Map<String, String> rulesMap =
+            Arrays.stream(PluralRules.rulesArray).collect(Collectors.toMap(
+                    sa -> sa[0],
+                    sa -> sa[1])
+            );
 
     public NumberFormatProviderImpl(LocaleProviderAdapter.Type type, Set<String> langtags) {
         this.type = type;
@@ -271,8 +281,12 @@ public class NumberFormatProviderImpl extends NumberFormatProvider implements Av
         DecimalFormatSymbols symbols = DecimalFormatSymbols.getInstance(override);
         String[] cnPatterns = resource.getCNPatterns(formatStyle);
 
+        // plural rules
+        String pluralRules = rulesMap.getOrDefault(override.toString(),
+                rulesMap.getOrDefault(override.getLanguage(), ""));
+
         CompactNumberFormat format = new CompactNumberFormat(numberPatterns[0],
-                symbols, cnPatterns);
+                symbols, cnPatterns, pluralRules);
         return format;
     }
 

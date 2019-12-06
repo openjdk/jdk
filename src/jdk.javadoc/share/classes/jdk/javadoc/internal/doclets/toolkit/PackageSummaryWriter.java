@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,9 +38,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
  *  If you write code that depends on this, you do so at your own risk.
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
- *
- * @author Jamie Ho
- * @author Bhavesh Patel (Modified)
  */
 
 public interface PackageSummaryWriter {
@@ -93,6 +90,15 @@ public interface PackageSummaryWriter {
      */
     public abstract void addEnumSummary(SortedSet<TypeElement> enums,
             Content summaryContentTree);
+
+    /**
+     * Adds the table of records to the documentation tree.
+     *
+     * @param records the records to document.
+     * @param summaryContentTree the content tree to which the summaries will be added
+     */
+    public abstract void addRecordSummary(SortedSet<TypeElement> records,
+                                        Content summaryContentTree);
 
     /**
      * Adds the table of exceptions to the documentation tree.

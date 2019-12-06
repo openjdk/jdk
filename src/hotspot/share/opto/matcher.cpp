@@ -392,10 +392,16 @@ void Matcher::match( ) {
   NOT_DEBUG( old->destruct_contents() );
 
   // ------------------------
-  // Set up save-on-entry registers
+  // Set up save-on-entry registers.
   Fixup_Save_On_Entry( );
-}
 
+  { // Cleanup mach IR after selection phase is over.
+    Compile::TracePhase tp("postselect_cleanup", &timers[_t_postselect_cleanup]);
+    do_postselect_cleanup();
+    if (C->failing())  return;
+    assert(verify_after_postselect_cleanup(), "");
+  }
+}
 
 //------------------------------Fixup_Save_On_Entry----------------------------
 // The stated purpose of this routine is to take care of save-on-entry
@@ -851,54 +857,23 @@ void Matcher::init_spill_mask( Node *ret ) {
 
   // Grab the Frame Pointer
   Node *fp  = ret->in(TypeFunc::FramePtr);
-  Node *mem = ret->in(TypeFunc::Memory);
-  const TypePtr* atp = TypePtr::BOTTOM;
   // Share frame pointer while making spill ops
   set_shared(fp);
 
-  // Compute generic short-offset Loads
+// Get the ADLC notion of the right regmask, for each basic type.
 #ifdef _LP64
-  MachNode *spillCP = match_tree(new LoadNNode(NULL,mem,fp,atp,TypeInstPtr::BOTTOM,MemNode::unordered));
+  idealreg2regmask[Op_RegN] = regmask_for_ideal_register(Op_RegN, ret);
 #endif
-  MachNode *spillI  = match_tree(new LoadINode(NULL,mem,fp,atp,TypeInt::INT,MemNode::unordered));
-  MachNode *spillL  = match_tree(new LoadLNode(NULL,mem,fp,atp,TypeLong::LONG,MemNode::unordered, LoadNode::DependsOnlyOnTest, false));
-  MachNode *spillF  = match_tree(new LoadFNode(NULL,mem,fp,atp,Type::FLOAT,MemNode::unordered));
-  MachNode *spillD  = match_tree(new LoadDNode(NULL,mem,fp,atp,Type::DOUBLE,MemNode::unordered));
-  MachNode *spillP  = match_tree(new LoadPNode(NULL,mem,fp,atp,TypeInstPtr::BOTTOM,MemNode::unordered));
-  assert(spillI != NULL && spillL != NULL && spillF != NULL &&
-         spillD != NULL && spillP != NULL, "");
-  // Get the ADLC notion of the right regmask, for each basic type.
-#ifdef _LP64
-  idealreg2regmask[Op_RegN] = &spillCP->out_RegMask();
-#endif
-  idealreg2regmask[Op_RegI] = &spillI->out_RegMask();
-  idealreg2regmask[Op_RegL] = &spillL->out_RegMask();
-  idealreg2regmask[Op_RegF] = &spillF->out_RegMask();
-  idealreg2regmask[Op_RegD] = &spillD->out_RegMask();
-  idealreg2regmask[Op_RegP] = &spillP->out_RegMask();
-
-  // Vector regmasks.
-  if (Matcher::vector_size_supported(T_BYTE,4)) {
-    TypeVect::VECTS = TypeVect::make(T_BYTE, 4);
-    MachNode *spillVectS = match_tree(new LoadVectorNode(NULL,mem,fp,atp,TypeVect::VECTS));
-    idealreg2regmask[Op_VecS] = &spillVectS->out_RegMask();
-  }
-  if (Matcher::vector_size_supported(T_FLOAT,2)) {
-    MachNode *spillVectD = match_tree(new LoadVectorNode(NULL,mem,fp,atp,TypeVect::VECTD));
-    idealreg2regmask[Op_VecD] = &spillVectD->out_RegMask();
-  }
-  if (Matcher::vector_size_supported(T_FLOAT,4)) {
-    MachNode *spillVectX = match_tree(new LoadVectorNode(NULL,mem,fp,atp,TypeVect::VECTX));
-    idealreg2regmask[Op_VecX] = &spillVectX->out_RegMask();
-  }
-  if (Matcher::vector_size_supported(T_FLOAT,8)) {
-    MachNode *spillVectY = match_tree(new LoadVectorNode(NULL,mem,fp,atp,TypeVect::VECTY));
-    idealreg2regmask[Op_VecY] = &spillVectY->out_RegMask();
-  }
-  if (Matcher::vector_size_supported(T_FLOAT,16)) {
-    MachNode *spillVectZ = match_tree(new LoadVectorNode(NULL,mem,fp,atp,TypeVect::VECTZ));
-    idealreg2regmask[Op_VecZ] = &spillVectZ->out_RegMask();
-  }
+  idealreg2regmask[Op_RegI] = regmask_for_ideal_register(Op_RegI, ret);
+  idealreg2regmask[Op_RegP] = regmask_for_ideal_register(Op_RegP, ret);
+  idealreg2regmask[Op_RegF] = regmask_for_ideal_register(Op_RegF, ret);
+  idealreg2regmask[Op_RegD] = regmask_for_ideal_register(Op_RegD, ret);
+  idealreg2regmask[Op_RegL] = regmask_for_ideal_register(Op_RegL, ret);
+  idealreg2regmask[Op_VecS] = regmask_for_ideal_register(Op_VecS, ret);
+  idealreg2regmask[Op_VecD] = regmask_for_ideal_register(Op_VecD, ret);
+  idealreg2regmask[Op_VecX] = regmask_for_ideal_register(Op_VecX, ret);
+  idealreg2regmask[Op_VecY] = regmask_for_ideal_register(Op_VecY, ret);
+  idealreg2regmask[Op_VecZ] = regmask_for_ideal_register(Op_VecZ, ret);
 }
 
 #ifdef ASSERT
@@ -2501,6 +2476,167 @@ bool Matcher::gen_narrow_oop_implicit_null_checks() {
          (narrow_oop_use_complex_address() ||
           CompressedOops::base() != NULL);
 }
+
+// Compute RegMask for an ideal register.
+const RegMask* Matcher::regmask_for_ideal_register(uint ideal_reg, Node* ret) {
+  const Type* t = Type::mreg2type[ideal_reg];
+  if (t == NULL) {
+    assert(ideal_reg >= Op_VecS && ideal_reg <= Op_VecZ, "not a vector: %d", ideal_reg);
+    return NULL; // not supported
+  }
+  Node* fp  = ret->in(TypeFunc::FramePtr);
+  Node* mem = ret->in(TypeFunc::Memory);
+  const TypePtr* atp = TypePtr::BOTTOM;
+  MemNode::MemOrd mo = MemNode::unordered;
+
+  Node* spill;
+  switch (ideal_reg) {
+    case Op_RegN: spill = new LoadNNode(NULL, mem, fp, atp, t->is_narrowoop(), mo); break;
+    case Op_RegI: spill = new LoadINode(NULL, mem, fp, atp, t->is_int(),       mo); break;
+    case Op_RegP: spill = new LoadPNode(NULL, mem, fp, atp, t->is_ptr(),       mo); break;
+    case Op_RegF: spill = new LoadFNode(NULL, mem, fp, atp, t,                 mo); break;
+    case Op_RegD: spill = new LoadDNode(NULL, mem, fp, atp, t,                 mo); break;
+    case Op_RegL: spill = new LoadLNode(NULL, mem, fp, atp, t->is_long(),      mo); break;
+
+    case Op_VecS: // fall-through
+    case Op_VecD: // fall-through
+    case Op_VecX: // fall-through
+    case Op_VecY: // fall-through
+    case Op_VecZ: spill = new LoadVectorNode(NULL, mem, fp, atp, t->is_vect()); break;
+
+    default: ShouldNotReachHere();
+  }
+  MachNode* mspill = match_tree(spill);
+  assert(mspill != NULL, "matching failed: %d", ideal_reg);
+  // Handle generic vector operand case
+  if (Matcher::supports_generic_vector_operands && t->isa_vect()) {
+    specialize_mach_node(mspill);
+  }
+  return &mspill->out_RegMask();
+}
+
+// Process Mach IR right after selection phase is over.
+void Matcher::do_postselect_cleanup() {
+  if (supports_generic_vector_operands) {
+    specialize_generic_vector_operands();
+    if (C->failing())  return;
+  }
+}
+
+//----------------------------------------------------------------------
+// Generic machine operands elision.
+//----------------------------------------------------------------------
+
+// Convert (leg)Vec to (leg)Vec[SDXYZ].
+MachOper* Matcher::specialize_vector_operand_helper(MachNode* m, MachOper* original_opnd) {
+  const Type* t = m->bottom_type();
+  uint ideal_reg = t->ideal_reg();
+  // Handle special cases
+  if (t->isa_vect()) {
+    // RShiftCntV/RShiftCntV report wide vector type, but VecS as ideal register (see vectornode.hpp).
+    if (m->ideal_Opcode() == Op_RShiftCntV || m->ideal_Opcode() == Op_LShiftCntV) {
+      ideal_reg = TypeVect::VECTS->ideal_reg(); // ideal_reg == Op_VecS
+    }
+  } else {
+    // Chain instructions which convert scalar to vector (e.g., vshiftcntimm on x86) don't have vector type.
+    int size_in_bytes = 4 * type2size[t->basic_type()];
+    ideal_reg = Matcher::vector_ideal_reg(size_in_bytes);
+  }
+  return Matcher::specialize_generic_vector_operand(original_opnd, ideal_reg);
+}
+
+// Compute concrete vector operand for a generic TEMP vector mach node based on its user info.
+void Matcher::specialize_temp_node(MachTempNode* tmp, MachNode* use, uint idx) {
+  assert(use->in(idx) == tmp, "not a user");
+  assert(!Matcher::is_generic_vector(use->_opnds[0]), "use not processed yet");
+
+  if ((uint)idx == use->two_adr()) { // DEF_TEMP case
+    tmp->_opnds[0] = use->_opnds[0]->clone();
+  } else {
+    uint ideal_vreg = vector_ideal_reg(C->max_vector_size());
+    tmp->_opnds[0] = specialize_generic_vector_operand(tmp->_opnds[0], ideal_vreg);
+  }
+}
+
+// Compute concrete vector operand for a generic DEF/USE vector operand (of mach node m at index idx).
+MachOper* Matcher::specialize_vector_operand(MachNode* m, uint idx) {
+  assert(Matcher::is_generic_vector(m->_opnds[idx]), "repeated updates");
+  if (idx == 0) { // DEF
+    // Use mach node itself to compute vector operand type.
+    return specialize_vector_operand_helper(m, m->_opnds[0]);
+  } else {
+    // Use def node to compute operand type.
+    int base_idx = m->operand_index(idx);
+    MachNode* in = m->in(base_idx)->as_Mach();
+    if (in->is_MachTemp() && Matcher::is_generic_vector(in->_opnds[0])) {
+      specialize_temp_node(in->as_MachTemp(), m, base_idx); // MachTemp node use site
+    } else if (is_generic_reg2reg_move(in)) {
+      in = in->in(1)->as_Mach(); // skip over generic reg-to-reg moves
+    }
+    return specialize_vector_operand_helper(in, m->_opnds[idx]);
+  }
+}
+
+void Matcher::specialize_mach_node(MachNode* m) {
+  assert(!m->is_MachTemp(), "processed along with its user");
+  // For generic use operands pull specific register class operands from
+  // its def instruction's output operand (def operand).
+  for (uint i = 0; i < m->num_opnds(); i++) {
+    if (Matcher::is_generic_vector(m->_opnds[i])) {
+      m->_opnds[i] = specialize_vector_operand(m, i);
+    }
+  }
+}
+
+// Replace generic vector operands with concrete vector operands and eliminate generic reg-to-reg moves from the graph.
+void Matcher::specialize_generic_vector_operands() {
+  assert(supports_generic_vector_operands, "sanity");
+  ResourceMark rm;
+
+  if (C->max_vector_size() == 0) {
+    return; // no vector instructions or operands
+  }
+  // Replace generic vector operands (vec/legVec) with concrete ones (vec[SDXYZ]/legVec[SDXYZ])
+  // and remove reg-to-reg vector moves (MoveVec2Leg and MoveLeg2Vec).
+  Unique_Node_List live_nodes;
+  C->identify_useful_nodes(live_nodes);
+
+  while (live_nodes.size() > 0) {
+    MachNode* m = live_nodes.pop()->isa_Mach();
+    if (m != NULL) {
+      if (Matcher::is_generic_reg2reg_move(m)) {
+        // Register allocator properly handles vec <=> leg moves using register masks.
+        int opnd_idx = m->operand_index(1);
+        Node* def = m->in(opnd_idx);
+        m->subsume_by(def, C);
+      } else if (m->is_MachTemp()) {
+        // process MachTemp nodes at use site (see Matcher::specialize_vector_operand)
+      } else {
+        specialize_mach_node(m);
+      }
+    }
+  }
+}
+
+#ifdef ASSERT
+bool Matcher::verify_after_postselect_cleanup() {
+  assert(!C->failing(), "sanity");
+  if (supports_generic_vector_operands) {
+    Unique_Node_List useful;
+    C->identify_useful_nodes(useful);
+    for (uint i = 0; i < useful.size(); i++) {
+      MachNode* m = useful.at(i)->isa_Mach();
+      if (m != NULL) {
+        assert(!Matcher::is_generic_reg2reg_move(m), "no MoveVec nodes allowed");
+        for (uint j = 0; j < m->num_opnds(); j++) {
+          assert(!Matcher::is_generic_vector(m->_opnds[j]), "no generic vector operands allowed");
+        }
+      }
+    }
+  }
+  return true;
+}
+#endif // ASSERT
 
 // Used by the DFA in dfa_xxx.cpp.  Check for a following barrier or
 // atomic instruction acting as a store_load barrier without any

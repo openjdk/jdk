@@ -364,7 +364,7 @@ final class BootstrapMethodInvoker {
         VM_BSCI(MethodHandle bsm, String name, T type,
                 Lookup lookup, int[] indexInfo) {
             super(bsm, name, type, indexInfo[0]);
-            if (!lookup.hasPrivateAccess())  //D.I.D.
+            if (!lookup.hasFullPrivilegeAccess())  //D.I.D.
                 throw new AssertionError("bad Lookup object");
             this.caller = lookup.lookupClass();
             this.indexInfo = indexInfo;

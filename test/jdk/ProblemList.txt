@@ -681,6 +681,7 @@ javax/net/ssl/ServerName/SSLEngineExplorerMatchedSNI.java       8212096 generic-
 javax/net/ssl/DTLS/PacketLossRetransmission.java                8169086 macosx-x64
 javax/net/ssl/DTLS/RespondToRetransmit.java                     8169086 macosx-x64
 javax/net/ssl/DTLS/CipherSuite.java                             8202059 macosx-x64
+javax/net/ssl/templates/SSLSocketSSLEngineTemplate.java         8231810 generic-all
 
 sun/security/provider/KeyStore/DKSTest.sh                       8180266 windows-all
 
@@ -884,6 +885,13 @@ sanity/client/SwingSet/src/ScrollPaneDemoTest.java 8225013 linux-all
 # core_tools
 
 tools/pack200/CommandLineTests.java                             8059906 generic-all
+tools/pack200/TestNormal.java                                   8234542 generic-all    this test can be delisted as soon as pack200 is removed
+tools/pack200/Pack200Test.java                                  8234542 generic-all    this test can be delisted as soon as pack200 is removed
+tools/pack200/MultiRelease.java                                 8234542 generic-all    this test can be delisted as soon as pack200 is removed
+tools/pack200/ModuleAttributes.java                             8234542 generic-all    this test can be delisted as soon as pack200 is removed
+tools/pack200/InstructionTests.java                             8234542 generic-all    this test can be delisted as soon as pack200 is removed
+tools/pack200/AttributeTests.java                               8234542 generic-all    this test can be delisted as soon as pack200 is removed
+tools/pack200/typeannos/TestTypeAnnotations.java                8234542 generic-all    this test can be delisted as soon as pack200 is removed
 
 tools/jlink/JLinkReproducibleTest.java                          8217166 windows-all
 
@@ -894,6 +902,9 @@ tools/jlink/JLinkReproducibleTest.java                          8217166 windows-
 com/sun/jdi/RepStep.java                                        8043571 generic-all
 
 com/sun/jdi/NashornPopFrameTest.java                            8225620 generic-all
+
+com/sun/jdi/JdwpListenTest.java                                 8234935 windows-all
+com/sun/jdi/JdwpAttachTest.java                                 8234935 windows-all
 
 ############################################################################
 
@@ -913,8 +924,7 @@ com/sun/jdi/NashornPopFrameTest.java                            8225620 generic-
 
 sun/tools/jhsdb/BasicLauncherTest.java                          8193639,8211767 solaris-all,linux-ppc64,linux-ppc64le
 sun/tools/jhsdb/HeapDumpTest.java                               8193639 solaris-all
-sun/tools/jhsdb/HeapDumpTestWithActiveProcess.java              8230731,8001227 windows-all
-sun/tools/jhsdb/HeapDumpTestWithActiveProcess.java              8231635,8231634 generic-all
+sun/tools/jhsdb/HeapDumpTestWithActiveProcess.java              8231634,8230731,8001227 generic-all,windows-all
 
 
 ############################################################################

@@ -1,0 +1,140 @@
+#
+# Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+include LibCommon.gmk
+
+################################################################################
+
+# Output app launcher library in resources dir, and symbols in the object dir
+$(eval $(call SetupJdkLibrary, BUILD_LIB_APPLAUNCHER, \
+    NAME := applauncher, \
+    OUTPUT_DIR := $(JDK_OUTPUTDIR)/modules/$(MODULE)/jdk/incubator/jpackage/internal/resources, \
+    SYMBOLS_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libapplauncher, \
+    TOOLCHAIN := TOOLCHAIN_LINK_CXX, \
+    OPTIMIZATION := LOW, \
+    CFLAGS := $(CXXFLAGS_JDKLIB), \
+    CFLAGS_windows := -EHsc -DUNICODE -D_UNICODE, \
+    LDFLAGS := $(LDFLAGS_JDKLIB) $(LDFLAGS_CXX_JDK) \
+        $(call SET_SHARED_LIBRARY_ORIGIN), \
+    LIBS := $(LIBCXX), \
+    LIBS_windows := user32.lib shell32.lib advapi32.lib ole32.lib, \
+    LIBS_linux := -ldl -lpthread, \
+    LIBS_macosx := -ldl -framework Cocoa, \
+))
+
+$(BUILD_LIB_APPLAUNCHER): $(call FindLib, java.base, java)
+
+TARGETS += $(BUILD_LIB_APPLAUNCHER)
+
+JPACKAGE_APPLAUNCHER_SRC := \
+    $(TOPDIR)/src/jdk.incubator.jpackage/$(OPENJDK_TARGET_OS)/native/jpackageapplauncher
+
+# Output app launcher executable in resources dir, and symbols in the object dir
+$(eval $(call SetupJdkExecutable, BUILD_JPACKAGE_APPLAUNCHEREXE, \
+    NAME := jpackageapplauncher, \
+    OUTPUT_DIR := $(JDK_OUTPUTDIR)/modules/$(MODULE)/jdk/incubator/jpackage/internal/resources, \
+    SYMBOLS_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/jpackageapplauncher, \
+    SRC := $(JPACKAGE_APPLAUNCHER_SRC), \
+    TOOLCHAIN := TOOLCHAIN_LINK_CXX, \
+    OPTIMIZATION := LOW, \
+    CFLAGS := $(CXXFLAGS_JDKEXE), \
+    CFLAGS_windows := -EHsc -DLAUNCHERC -DUNICODE -D_UNICODE, \
+    LDFLAGS := $(LDFLAGS_JDKEXE), \
+    LIBS_macosx := -framework Cocoa, \
+    LIBS := $(LIBCXX), \
+    LIBS_linux := -ldl, \
+    LIBS_windows := user32.lib shell32.lib advapi32.lib, \
+))
+
+TARGETS += $(BUILD_JPACKAGE_APPLAUNCHEREXE)
+
+################################################################################
+
+ifeq ($(call isTargetOs, windows), true)
+
+  $(eval $(call SetupJdkLibrary, BUILD_LIB_JPACKAGE, \
+      NAME := jpackage, \
+      OPTIMIZATION := LOW, \
+      CFLAGS := $(CXXFLAGS_JDKLIB), \
+      CFLAGS_windows := -EHsc -DUNICODE -D_UNICODE, \
+      LDFLAGS := $(LDFLAGS_JDKLIB) $(LDFLAGS_CXX_JDK) \
+          $(call SET_SHARED_LIBRARY_ORIGIN), \
+      LIBS := $(LIBCXX), \
+      LIBS_windows := user32.lib shell32.lib advapi32.lib ole32.lib, \
+  ))
+
+  TARGETS += $(BUILD_LIB_JPACKAGE)
+
+  # Build Wix custom action helper
+  # Output library in resources dir, and symbols in the object dir
+  $(eval $(call SetupJdkLibrary, BUILD_LIB_WIXHELPER, \
+      NAME := wixhelper, \
+      OUTPUT_DIR := $(JDK_OUTPUTDIR)/modules/$(MODULE)/jdk/incubator/jpackage/internal/resources, \
+      SYMBOLS_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libwixhelper, \
+      OPTIMIZATION := LOW, \
+      CFLAGS := $(CXXFLAGS_JDKLIB), \
+      CFLAGS_windows := -EHsc -DUNICODE -D_UNICODE -MT, \
+      LDFLAGS := $(LDFLAGS_JDKLIB) $(LDFLAGS_CXX_JDK), \
+      LIBS := $(LIBCXX), \
+      LIBS_windows := msi.lib Shlwapi.lib User32.lib, \
+  ))
+
+  TARGETS += $(BUILD_LIB_WIXHELPER)
+
+  # Build exe installer wrapper for msi installer
+  $(eval $(call SetupJdkExecutable, BUILD_JPACKAGE_MSIWRAPPER, \
+      NAME := msiwrapper, \
+      OUTPUT_DIR := $(JDK_OUTPUTDIR)/modules/$(MODULE)/jdk/incubator/jpackage/internal/resources, \
+      SYMBOLS_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/msiwrapper, \
+      SRC := $(TOPDIR)/src/jdk.incubator.jpackage/$(OPENJDK_TARGET_OS)/native/msiwrapper, \
+      EXTRA_FILES := $(addprefix $(TOPDIR)/src/jdk.incubator.jpackage/$(OPENJDK_TARGET_OS)/native/libjpackage/, \
+          FileUtils.cpp Log.cpp WinSysInfo.cpp tstrings.cpp WinErrorHandling.cpp ErrorHandling.cpp), \
+      CFLAGS := $(CXXFLAGS_JDKEXE) -MT \
+          $(addprefix -I$(TOPDIR)/src/jdk.incubator.jpackage/$(OPENJDK_TARGET_OS)/native/, msiwrapper libjpackage), \
+      CFLAGS_windows := -EHsc -DUNICODE -D_UNICODE, \
+      LDFLAGS := $(LDFLAGS_JDKEXE), \
+      LIBS := $(LIBCXX), \
+  ))
+
+  TARGETS += $(BUILD_JPACKAGE_MSIWRAPPER)
+
+  # Build non-console version of launcher
+  $(eval $(call SetupJdkExecutable, BUILD_JPACKAGE_APPLAUNCHERWEXE, \
+      NAME := jpackageapplauncherw, \
+      OUTPUT_DIR := $(JDK_OUTPUTDIR)/modules/$(MODULE)/jdk/incubator/jpackage/internal/resources, \
+      SYMBOLS_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/jpackageapplauncherw, \
+      SRC := $(JPACKAGE_APPLAUNCHER_SRC), \
+      TOOLCHAIN := TOOLCHAIN_LINK_CXX, \
+      OPTIMIZATION := LOW, \
+      CFLAGS := $(CXXFLAGS_JDKEXE), \
+      CFLAGS_windows := -EHsc -DUNICODE -D_UNICODE, \
+      LDFLAGS := $(LDFLAGS_JDKEXE), \
+      LIBS := $(LIBCXX), \
+      LIBS_windows := user32.lib shell32.lib advapi32.lib, \
+  ))
+
+  TARGETS += $(BUILD_JPACKAGE_APPLAUNCHERWEXE)
+
+endif

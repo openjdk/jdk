@@ -39,6 +39,8 @@
 #include "gc/z/zUnload.hpp"
 #include "gc/z/zWorkers.hpp"
 
+class ThreadClosure;
+
 class ZHeap {
   friend class VMStructs;
 

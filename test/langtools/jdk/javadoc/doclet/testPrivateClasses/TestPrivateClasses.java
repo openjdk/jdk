@@ -36,7 +36,6 @@
  *
  *           Make sure when no modifier appear in the class signature, the
  *           signature is displayed correctly without extra space at the beginning.
- * @author   jamieh
  * @library  ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
  * @build    javadoc.tester.*

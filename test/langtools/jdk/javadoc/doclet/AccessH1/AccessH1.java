@@ -25,7 +25,6 @@
  * @test
  * @bug 4636667 7052425 8016549 8196202
  * @summary  Use <H1, <H2>, and <H3> in proper sequence for accessibility
- * @author dkramer
  * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
  * @build javadoc.tester.*

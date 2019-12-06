@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8076318
- * @summary split verifier needs to add TraceClassResolution
+ * @summary split verifier needs to add class resolution tracing
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  */
@@ -32,12 +32,12 @@
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 
-// Test that the verifier outputs the classes it loads if -XX:+TraceClassResolution is specified"
+// Test that the verifier outputs the classes it loads if -Xlog:class+resove=debug is specified"
 public class TraceClassRes {
   public static void main(String[] args) throws Exception {
 
     ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-        "-XX:+TraceClassResolution", "-verify", "-Xshare:off", "-version");
+        "-Xlog:class+resolve=debug", "-verify", "-Xshare:off", "-version");
 
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
     output.shouldContain("[class,resolve] java.lang.ClassLoader java.lang.Throwable ClassLoader.java (verification)");

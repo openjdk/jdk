@@ -147,6 +147,7 @@ public:
   inline bool is_compiled_by_c2() const    { return _type == compiler_c2; };
   inline bool is_compiled_by_jvmci() const { return _type == compiler_jvmci; };
   const char* compiler_name() const;
+  CompilerType compiler_type() const { return _type; }
 
   // Casting
   nmethod* as_nmethod_or_null()                { return is_nmethod() ? (nmethod*) this : NULL; }

@@ -173,6 +173,10 @@ void ZPhysicalMemoryManager::free(const ZPhysicalMemory& pmem) {
   _backing.free(pmem);
 }
 
+void ZPhysicalMemoryManager::pretouch(uintptr_t offset, size_t size) const {
+  _backing.pretouch(offset, size);
+}
+
 void ZPhysicalMemoryManager::map(const ZPhysicalMemory& pmem, uintptr_t offset) const {
   _backing.map(pmem, offset);
   nmt_commit(pmem, offset);

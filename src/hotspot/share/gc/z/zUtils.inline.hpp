@@ -32,21 +32,6 @@
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-inline size_t ZUtils::round_up_power_of_2(size_t value) {
-  assert(value != 0, "Invalid value");
-
-  if (is_power_of_2(value)) {
-    return value;
-  }
-
-  return (size_t)1 << (log2_intptr(value) + 1);
-}
-
-inline size_t ZUtils::round_down_power_of_2(size_t value) {
-  assert(value != 0, "Invalid value");
-  return (size_t)1 << log2_intptr(value);
-}
-
 inline size_t ZUtils::bytes_to_words(size_t size_in_bytes) {
   assert(is_aligned(size_in_bytes, BytesPerWord), "Size not word aligned");
   return size_in_bytes >> LogBytesPerWord;

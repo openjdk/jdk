@@ -27,7 +27,6 @@
  *      8167967 8172528 8175200 8178830 8182257 8186332 8182765 8025091
  *      8203791 8184205
  * @summary Test of the JavaFX doclet features.
- * @author jvalenta
  * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
  * @build javadoc.tester.*

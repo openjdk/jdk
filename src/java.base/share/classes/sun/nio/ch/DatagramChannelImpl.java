@@ -91,8 +91,15 @@ class DatagramChannelImpl
     private final FileDescriptor fd;
     private final int fdVal;
 
-    // Native buffer for socket address used by receive0, protected by readLock
-    private final NativeSocketAddress socketAddress;
+    // Native sockaddrs and cached InetSocketAddress for receive, protected by readLock
+    private NativeSocketAddress sourceSockAddr;
+    private NativeSocketAddress cachedSockAddr;
+    private InetSocketAddress cachedInetSocketAddress;
+
+    // Native sockaddr and cached objects for send, protected by writeLock
+    private final NativeSocketAddress targetSockAddr;
+    private InetSocketAddress previousTarget;
+    private int previousSockAddrLength;
 
     // Cleaner to close file descriptor and free native socket address
     private final Cleanable cleaner;
@@ -150,59 +157,57 @@ class DatagramChannelImpl
 
     // -- End of fields protected by stateLock
 
-    public DatagramChannelImpl(SelectorProvider sp)
-        throws IOException
-    {
-        super(sp);
 
-        this.socketAddress = new NativeSocketAddress();
-
-        ResourceManager.beforeUdpCreate();
-        try {
-            this.family = Net.isIPv6Available()
-                    ? StandardProtocolFamily.INET6
-                    : StandardProtocolFamily.INET;
-            this.fd = Net.socket(family, false);
-            this.fdVal = IOUtil.fdVal(fd);
-        } catch (IOException ioe) {
-            ResourceManager.afterUdpClose();
-            socketAddress.free();
-            throw ioe;
-        }
-
-        Runnable releaser = releaserFor(fd, socketAddress);
-        this.cleaner = CleanerFactory.cleaner().register(this, releaser);
+    public DatagramChannelImpl(SelectorProvider sp) throws IOException {
+        this(sp, (Net.isIPv6Available()
+                ? StandardProtocolFamily.INET6
+                : StandardProtocolFamily.INET));
     }
 
     public DatagramChannelImpl(SelectorProvider sp, ProtocolFamily family)
         throws IOException
     {
         super(sp);
+
         Objects.requireNonNull(family, "'family' is null");
         if ((family != StandardProtocolFamily.INET) &&
-            (family != StandardProtocolFamily.INET6)) {
+                (family != StandardProtocolFamily.INET6)) {
             throw new UnsupportedOperationException("Protocol family not supported");
         }
-        if (family == StandardProtocolFamily.INET6) {
-            if (!Net.isIPv6Available()) {
-                throw new UnsupportedOperationException("IPv6 not available");
+        if (family == StandardProtocolFamily.INET6 && !Net.isIPv6Available()) {
+            throw new UnsupportedOperationException("IPv6 not available");
+        }
+
+        FileDescriptor fd = null;
+        NativeSocketAddress[] sockAddrs = null;
+
+        ResourceManager.beforeUdpCreate();
+        boolean initialized = false;
+        try {
+            this.family = family;
+            this.fd = fd = Net.socket(family, false);
+            this.fdVal = IOUtil.fdVal(fd);
+
+            sockAddrs = NativeSocketAddress.allocate(3);
+            readLock.lock();
+            try {
+                this.sourceSockAddr = sockAddrs[0];
+                this.cachedSockAddr = sockAddrs[1];
+            } finally {
+                readLock.unlock();
+            }
+            this.targetSockAddr = sockAddrs[2];
+
+            initialized = true;
+        } finally {
+            if (!initialized) {
+                if (sockAddrs != null) NativeSocketAddress.freeAll(sockAddrs);
+                if (fd != null) nd.close(fd);
+                ResourceManager.afterUdpClose();
             }
         }
 
-        this.socketAddress = new NativeSocketAddress();
-
-        ResourceManager.beforeUdpCreate();
-        try {
-            this.family = family;
-            this.fd = Net.socket(family, false);
-            this.fdVal = IOUtil.fdVal(fd);
-        } catch (IOException ioe) {
-            ResourceManager.afterUdpClose();
-            socketAddress.free();
-            throw ioe;
-        }
-
-        Runnable releaser = releaserFor(fd, socketAddress);
+        Runnable releaser = releaserFor(fd, sockAddrs);
         this.cleaner = CleanerFactory.cleaner().register(this, releaser);
     }
 
@@ -211,23 +216,37 @@ class DatagramChannelImpl
     {
         super(sp);
 
+        NativeSocketAddress[] sockAddrs = null;
+
+        ResourceManager.beforeUdpCreate();
+        boolean initialized = false;
         try {
-            this.socketAddress = new NativeSocketAddress();
-        } catch (OutOfMemoryError e) {
-            nd.close(fd);
-            throw e;
+            this.family = Net.isIPv6Available()
+                    ? StandardProtocolFamily.INET6
+                    : StandardProtocolFamily.INET;
+            this.fd = fd;
+            this.fdVal = IOUtil.fdVal(fd);
+
+            sockAddrs = NativeSocketAddress.allocate(3);
+            readLock.lock();
+            try {
+                this.sourceSockAddr = sockAddrs[0];
+                this.cachedSockAddr = sockAddrs[1];
+            } finally {
+                readLock.unlock();
+            }
+            this.targetSockAddr = sockAddrs[2];
+
+            initialized = true;
+        } finally {
+            if (!initialized) {
+                if (sockAddrs != null) NativeSocketAddress.freeAll(sockAddrs);
+                nd.close(fd);
+                ResourceManager.afterUdpClose();
+            }
         }
 
-        // increment UDP count to match decrement when closing
-        ResourceManager.beforeUdpCreate();
-
-        this.family = Net.isIPv6Available()
-                ? StandardProtocolFamily.INET6
-                : StandardProtocolFamily.INET;
-        this.fd = fd;
-        this.fdVal = IOUtil.fdVal(fd);
-
-        Runnable releaser = releaserFor(fd, socketAddress);
+        Runnable releaser = releaserFor(fd, sockAddrs);
         this.cleaner = CleanerFactory.cleaner().register(this, releaser);
 
         synchronized (stateLock) {
@@ -494,7 +513,7 @@ class DatagramChannelImpl
                     }
                     if (n >= 0) {
                         // sender address is in socket address buffer
-                        sender = socketAddress.toInetSocketAddress();
+                        sender = sourceSocketAddress();
                     }
                 } else {
                     // security manager and unconnected
@@ -534,7 +553,7 @@ class DatagramChannelImpl
                 }
                 if (n >= 0) {
                     // sender address is in socket address buffer
-                    InetSocketAddress isa = socketAddress.toInetSocketAddress();
+                    InetSocketAddress isa = sourceSocketAddress();
                     try {
                         sm.checkAccept(isa.getAddress().getHostAddress(), isa.getPort());
                         bb.flip();
@@ -613,7 +632,7 @@ class DatagramChannelImpl
             }
             if (n >= 0) {
                 // sender address is in socket address buffer
-                sender = socketAddress.toInetSocketAddress();
+                sender = sourceSocketAddress();
             }
             return sender;
         } finally {
@@ -650,7 +669,7 @@ class DatagramChannelImpl
                 }
                 if (n >= 0) {
                     // sender address is in socket address buffer
-                    sender = socketAddress.toInetSocketAddress();
+                    sender = sourceSocketAddress();
                 }
                 return sender;
             } finally {
@@ -692,11 +711,30 @@ class DatagramChannelImpl
     {
         int n = receive0(fd,
                          ((DirectBuffer)bb).address() + pos, rem,
-                         socketAddress.address(),
+                         sourceSockAddr.address(),
                          connected);
         if (n > 0)
             bb.position(pos + n);
         return n;
+    }
+
+    /**
+     * Return an InetSocketAddress to represent the source/sender socket address
+     * in sourceSockAddr. Returns the cached InetSocketAddress if the source
+     * address is the same as the cached address.
+     */
+    private InetSocketAddress sourceSocketAddress() throws IOException {
+        assert readLock.isHeldByCurrentThread();
+        if (cachedInetSocketAddress != null && sourceSockAddr.equals(cachedSockAddr)) {
+            return cachedInetSocketAddress;
+        }
+        InetSocketAddress isa = sourceSockAddr.decode();
+        // swap sourceSockAddr and cachedSockAddr
+        NativeSocketAddress tmp = cachedSockAddr;
+        cachedSockAddr = sourceSockAddr;
+        sourceSockAddr = tmp;
+        cachedInetSocketAddress = isa;
+        return isa;
     }
 
     @Override
@@ -709,7 +747,8 @@ class DatagramChannelImpl
         writeLock.lock();
         try {
             boolean blocking = isBlocking();
-            int n = 0;
+            int n;
+            boolean completed = false;
             try {
                 SocketAddress remote = beginWrite(blocking, false);
                 if (remote != null) {
@@ -724,6 +763,7 @@ class DatagramChannelImpl
                             n = IOUtil.write(fd, src, -1, nd);
                         }
                     }
+                    completed = (n > 0);
                 } else {
                     // not connected
                     SecurityManager sm = System.getSecurityManager();
@@ -744,11 +784,12 @@ class DatagramChannelImpl
                             n = send(fd, src, isa);
                         }
                     }
+                    completed = (n >= 0);
                 }
             } finally {
-                endWrite(blocking, n > 0);
-                assert IOStatus.check(n);
+                endWrite(blocking, completed);
             }
+            assert n >= 0 || n == IOStatus.UNAVAILABLE;
             return IOStatus.normalize(n);
         } finally {
             writeLock.unlock();
@@ -813,11 +854,11 @@ class DatagramChannelImpl
         assert (pos <= lim);
         int rem = (pos <= lim ? lim - pos : 0);
 
-        boolean preferIPv6 = (family != StandardProtocolFamily.INET);
         int written;
         try {
-            written = send0(preferIPv6, fd, ((DirectBuffer)bb).address() + pos,
-                            rem, target.getAddress(), target.getPort());
+            int addressLen = targetSocketAddress(target);
+            written = send0(fd, ((DirectBuffer)bb).address() + pos, rem,
+                            targetSockAddr.address(), addressLen);
         } catch (PortUnreachableException pue) {
             if (isConnected())
                 throw pue;
@@ -826,6 +867,23 @@ class DatagramChannelImpl
         if (written > 0)
             bb.position(pos + written);
         return written;
+    }
+
+    /**
+     * Encodes the given InetSocketAddress into targetSockAddr, returning the
+     * length of the sockaddr structure (sizeof struct sockaddr or sockaddr6).
+     */
+    private int targetSocketAddress(InetSocketAddress isa) {
+        assert writeLock.isHeldByCurrentThread();
+        // Nothing to do if target address is already in the buffer. Use
+        // identity rather than equals as Inet6Address.equals ignores scope_id.
+        if (isa == previousTarget)
+            return previousSockAddrLength;
+        previousTarget = null;
+        int len = targetSockAddr.encode(family, isa);
+        previousTarget = isa;
+        previousSockAddrLength = len;
+        return len;
     }
 
     @Override
@@ -1488,8 +1546,7 @@ class DatagramChannelImpl
     }
 
     /**
-     * Block datagrams from given source if a memory to receive all
-     * datagrams.
+     * Block datagrams from the given source.
      */
     void block(MembershipKeyImpl key, InetAddress source)
         throws IOException
@@ -1527,7 +1584,7 @@ class DatagramChannelImpl
     }
 
     /**
-     * Unblock given source.
+     * Unblock the given source.
      */
     void unblock(MembershipKeyImpl key, InetAddress source) {
         assert key.channel() == this;
@@ -1731,10 +1788,9 @@ class DatagramChannelImpl
     }
 
     /**
-     * Returns an action to release a the given file descriptor and free the
-     * given native socket address.
+     * Returns an action to release the given file descriptor and socket addresses.
      */
-    private static Runnable releaserFor(FileDescriptor fd, NativeSocketAddress sa) {
+    private static Runnable releaserFor(FileDescriptor fd, NativeSocketAddress... sockAddrs) {
         return () -> {
             try {
                 nd.close(fd);
@@ -1743,7 +1799,7 @@ class DatagramChannelImpl
             } finally {
                 // decrement socket count and release memory
                 ResourceManager.afterUdpClose();
-                sa.free();
+                NativeSocketAddress.freeAll(sockAddrs);
             }
         };
     }
@@ -1757,8 +1813,8 @@ class DatagramChannelImpl
                                        long senderAddress, boolean connected)
         throws IOException;
 
-    private static native int send0(boolean preferIPv6, FileDescriptor fd,
-                                    long address, int len, InetAddress addr, int port)
+    private static native int send0(FileDescriptor fd, long address, int len,
+                                    long targetAddress, int targetAddressLen)
         throws IOException;
 
     static {

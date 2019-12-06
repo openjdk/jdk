@@ -23,8 +23,6 @@
 
 package gc.arguments;
 
-import static java.lang.ref.Reference.reachabilityFence;
-
 /*
  * @test TestTargetSurvivorRatioFlag
  * @key gc
@@ -50,9 +48,9 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import jdk.internal.misc.Unsafe;
 import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.Utils;
 import sun.hotspot.WhiteBox;
+import static gc.testlibrary.Allocation.blackHole;
 
 /* In order to test that TargetSurvivorRatio affects survivor space occupancy
  * we setup fixed MaxTenuringThreshold and then verifying that if size of allocated
@@ -299,7 +297,7 @@ public class TestTargetSurvivorRatioFlag {
 
             // force minor GC
             while (youngGCBean.getCollectionCount() <= initialGcId + MAX_TENURING_THRESHOLD * 2) {
-                reachabilityFence(new byte[ARRAY_LENGTH]);
+                blackHole(new byte[ARRAY_LENGTH]);
             }
 
             allocator.release();

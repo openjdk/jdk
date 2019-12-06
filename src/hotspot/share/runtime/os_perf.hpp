@@ -26,6 +26,7 @@
 #define SHARE_RUNTIME_OS_PERF_HPP
 
 #include "memory/allocation.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 
 #define FUNCTIONALITY_NOT_IMPLEMENTED -8
@@ -190,9 +191,8 @@ class NetworkInterface : public ResourceObj {
   uint64_t _bytes_out;
   NetworkInterface* _next;
 
-  NetworkInterface(); // no impl
-  NetworkInterface(const NetworkInterface& rhs); // no impl
-  NetworkInterface& operator=(const NetworkInterface& rhs); // no impl
+  NONCOPYABLE(NetworkInterface);
+
  public:
   NetworkInterface(const char* name, uint64_t bytes_in, uint64_t bytes_out, NetworkInterface* next) :
   _name(NULL),
@@ -268,8 +268,8 @@ class NetworkPerformanceInterface : public CHeapObj<mtInternal> {
  private:
   class NetworkPerformance;
   NetworkPerformance* _impl;
-  NetworkPerformanceInterface(const NetworkPerformanceInterface& rhs); // no impl
-  NetworkPerformanceInterface& operator=(const NetworkPerformanceInterface& rhs); // no impl
+  NONCOPYABLE(NetworkPerformanceInterface);
+
  public:
   NetworkPerformanceInterface();
   bool initialize();

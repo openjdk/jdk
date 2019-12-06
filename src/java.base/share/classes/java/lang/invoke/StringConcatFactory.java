@@ -440,8 +440,8 @@ public final class StringConcatFactory {
      * @param lookup   Represents a lookup context with the accessibility
      *                 privileges of the caller. Specifically, the lookup
      *                 context must have
-     *                 <a href="MethodHandles.Lookup.html#privacc">private access</a>
-     *                 privileges.
+     *                 {@linkplain MethodHandles.Lookup#hasFullPrivilegeAccess()
+     *                 full privilege access}.
      *                 When used with {@code invokedynamic}, this is stacked
      *                 automatically by the VM.
      * @param name     The name of the method to implement. This name is
@@ -550,8 +550,8 @@ public final class StringConcatFactory {
      * @param lookup    Represents a lookup context with the accessibility
      *                  privileges of the caller. Specifically, the lookup
      *                  context must have
-     *                  <a href="MethodHandles.Lookup.html#privacc">private access</a>
-     *                  privileges.
+     *                  {@linkplain MethodHandles.Lookup#hasFullPrivilegeAccess()
+     *                  full privilege access}.
      *                  When used with {@code invokedynamic}, this is stacked
      *                  automatically by the VM.
      * @param name      The name of the method to implement. This name is

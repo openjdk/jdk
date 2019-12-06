@@ -69,6 +69,8 @@
 #include "memory/allocation.hpp"
 #include "runtime/thread.hpp"
 
+class ThreadClosure;
+
 //
 // Main interface for interacting with string deduplication.
 //

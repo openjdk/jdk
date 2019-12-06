@@ -29,7 +29,6 @@
  *           Make sure that links to private/unincluded methods do not cause
  *           a "link unresolved" warning.
  *           Make sure error message starts with "error -".
- * @author   jamieh
  * @library  ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
  * @build    javadoc.tester.*

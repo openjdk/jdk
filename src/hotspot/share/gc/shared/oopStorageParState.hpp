@@ -26,7 +26,7 @@
 #define SHARE_GC_SHARED_OOPSTORAGEPARSTATE_HPP
 
 #include "gc/shared/oopStorage.hpp"
-#include "utilities/macros.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 //////////////////////////////////////////////////////////////////////////////
 // Support for parallel and optionally concurrent state iteration.
@@ -134,9 +134,7 @@ class OopStorage::BasicParState {
   uint _estimated_thread_count;
   bool _concurrent;
 
-  // Noncopyable.
-  BasicParState(const BasicParState&);
-  BasicParState& operator=(const BasicParState&);
+  NONCOPYABLE(BasicParState);
 
   struct IterationData;
 

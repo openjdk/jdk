@@ -27,7 +27,9 @@
  * @requires vm.cds
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
  * @modules jdk.jartool/sun.tools.jar
- * @run driver MainModuleOnly
+ * @build sun.hotspot.WhiteBox
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox sun.hotspot.WhiteBox$WhiteBoxPermission
+ * @run main/othervm/timeout=480 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. MainModuleOnly
  * @summary Test some scenarios with a main modular jar specified in the --module-path and -cp options in the command line.
  */
 
@@ -39,6 +41,9 @@ import java.util.Arrays;
 
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.Platform;
+
+import jtreg.SkippedException;
+import sun.hotspot.code.Compiler;
 
 public class MainModuleOnly extends DynamicArchiveTestBase {
 
@@ -155,20 +160,26 @@ public class MainModuleOnly extends DynamicArchiveTestBase {
                    .shouldMatch("CDS is disabled when the.*option is specified")
                    .shouldMatch(".class.load. com.simple.Main source:.*com.simple.jar");
             });
-        // run with the archive with the --limit-modules option.
-        // CDS will be disabled with this options and the main class will be
-        // loaded from the modular jar.
-        run2(null, topArchiveName,
-             "-Xlog:cds+dynamic=debug,cds=debug,class+load=trace",
-             "-cp", destJar.toString(),
-             "--limit-modules", "java.base," + TEST_MODULE1,
-             "--module-path", moduleDir.toString(),
-             "-m", TEST_MODULE1)
-            .assertSilentlyDisabledCDS(out -> {
-                out.shouldHaveExitValue(0)
-                   .shouldMatch("CDS is disabled when the.*option is specified")
-                   .shouldMatch(".class.load. com.simple.Main source:.*com.simple.jar");
+
+        boolean skippedTest = false;
+        if (!Compiler.isGraalEnabled()) {
+            // run with the archive with the --limit-modules option.
+            // CDS will be disabled with this options and the main class will be
+            // loaded from the modular jar.
+            run2(null, topArchiveName,
+                 "-Xlog:cds+dynamic=debug,cds=debug,class+load=trace",
+                 "-cp", destJar.toString(),
+                 "--limit-modules", "java.base," + TEST_MODULE1,
+                 "--module-path", moduleDir.toString(),
+                 "-m", TEST_MODULE1)
+                .assertSilentlyDisabledCDS(out -> {
+                    out.shouldHaveExitValue(0)
+                       .shouldMatch("CDS is disabled when the.*option is specified")
+                       .shouldMatch(".class.load. com.simple.Main source:.*com.simple.jar");
             });
+        } else {
+            skippedTest = true;
+        }
         // run with the archive with the --patch-module option.
         // CDS will be disabled with this options and the main class will be
         // loaded from the modular jar.
@@ -253,5 +264,9 @@ public class MainModuleOnly extends DynamicArchiveTestBase {
             .ifAbnormalExit(output -> {
                 output.shouldMatch("os::stat error.*CDS dump aborted");
                 });
+
+        if (skippedTest) {
+            throw new SkippedException("Skipped --limit-modules test; it can't be run with Graal enabled");
+        }
     }
 }

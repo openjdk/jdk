@@ -115,4 +115,14 @@ class JfrThreadConstant : public JfrSerializer {
   void serialize(JfrCheckpointWriter& writer);
 };
 
+class BytecodeConstant : public JfrSerializer {
+ public:
+  void serialize(JfrCheckpointWriter& writer);
+};
+
+class CompilerTypeConstant : public JfrSerializer {
+ public:
+  void serialize(JfrCheckpointWriter& writer);
+};
+
 #endif // SHARE_JFR_RECORDER_CHECKPOINT_TYPES_JFRTYPE_HPP

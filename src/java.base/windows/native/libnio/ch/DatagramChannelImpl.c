@@ -145,22 +145,16 @@ Java_sun_nio_ch_DatagramChannelImpl_receive0(JNIEnv *env, jclass clazz,
 
 JNIEXPORT jint JNICALL
 Java_sun_nio_ch_DatagramChannelImpl_send0(JNIEnv *env, jclass clazz,
-                                          jboolean preferIPv6, jobject fdo,
-                                          jlong address, jint len,
-                                          jobject destAddress, jint destPort)
+                                          jobject fdo, jlong bufAddress, jint len,
+                                          jlong targetAddress, jint targetAddressLen)
 {
     jint fd = fdval(env, fdo);
-    void *buf = (void *)jlong_to_ptr(address);
-    SOCKETADDRESS sa;
-    int sa_len = 0;
-    jint rv = 0;
+    void *buf = (void *)jlong_to_ptr(bufAddress);
+    SOCKETADDRESS *sa = (SOCKETADDRESS *)jlong_to_ptr(targetAddress);
+    int sa_len = targetAddressLen;
+    jint rv;
 
-    if (NET_InetAddressToSockaddr(env, destAddress, destPort, &sa,
-                                  &sa_len, preferIPv6) != 0) {
-      return IOS_THROWN;
-    }
-
-    rv = sendto((SOCKET)fd, buf, len, 0, &sa.sa, sa_len);
+    rv = sendto((SOCKET)fd, buf, len, 0,(struct sockaddr *)sa, sa_len);
     if (rv == SOCKET_ERROR) {
         int theErr = (jint)WSAGetLastError();
         if (theErr == WSAEWOULDBLOCK) {

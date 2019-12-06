@@ -155,6 +155,8 @@ class Bsd {
     }
   }
   static int get_node_by_cpu(int cpu_id);
+
+  static void print_uptime_info(outputStream* st);
 };
 
 #endif // OS_BSD_OS_BSD_HPP

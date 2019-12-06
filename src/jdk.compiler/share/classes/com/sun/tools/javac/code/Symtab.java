@@ -161,6 +161,7 @@ public class Symtab {
     /** Predefined types.
      */
     public final Type objectType;
+    public final Type objectMethodsType;
     public final Type objectsType;
     public final Type classType;
     public final Type classLoaderType;
@@ -215,6 +216,8 @@ public class Symtab {
     public final Type elementTypeType;
     public final Type functionalInterfaceType;
     public final Type previewFeatureType;
+    public final Type typeDescriptorType;
+    public final Type recordType;
 
     /** The symbol representing the length field of an array.
      */
@@ -509,6 +512,7 @@ public class Symtab {
 
         // Enter predefined classes. All are assumed to be in the java.base module.
         objectType = enterClass("java.lang.Object");
+        objectMethodsType = enterClass("java.lang.runtime.ObjectMethods");
         objectsType = enterClass("java.util.Objects");
         classType = enterClass("java.lang.Class");
         stringType = enterClass("java.lang.String");
@@ -572,6 +576,8 @@ public class Symtab {
         stringConcatFactory = enterClass("java.lang.invoke.StringConcatFactory");
         functionalInterfaceType = enterClass("java.lang.FunctionalInterface");
         previewFeatureType = enterClass("jdk.internal.PreviewFeature");
+        typeDescriptorType = enterClass("java.lang.invoke.TypeDescriptor");
+        recordType = enterClass("java.lang.Record");
 
         synthesizeEmptyInterfaceIfMissing(autoCloseableType);
         synthesizeEmptyInterfaceIfMissing(cloneableType);

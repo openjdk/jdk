@@ -378,6 +378,14 @@ public class SPILocaleProviderAdapter extends AuxLocaleProviderAdapter {
             NumberFormatProvider nfp = getImpl(locale);
             return nfp.getPercentInstance(locale);
         }
+
+        @Override
+        public NumberFormat getCompactNumberInstance(Locale locale,
+                                NumberFormat.Style style) {
+            locale = CalendarDataUtility.findRegionOverride(locale);
+            NumberFormatProvider nfp = getImpl(locale);
+            return nfp.getCompactNumberInstance(locale, style);
+        }
     }
 
     static class CalendarDataProviderDelegate extends CalendarDataProvider

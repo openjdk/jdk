@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -111,11 +111,11 @@ public abstract class BridgeMethodTestCase extends JavacTemplateTestBase {
         ClassModel cm = new Parser(spec).parseClassModel();
         for (int i = 0; i <= cm.maxIndex() ; i++) {
             if (debug) System.out.println(indexClass(i));
-            addSourceFile(String.format("C%d.java", i), new StringTemplate(indexClass(i)));
+            addSourceFile(String.format("C%d.java", i), indexClass(i));
         }
         for (Map.Entry<String, ClassModel> e : classes(cm).entrySet()) {
             if (debug) System.out.println(e.getValue().toSource());
-            addSourceFile(e.getKey() + ".java", new StringTemplate(e.getValue().toSource()));
+            addSourceFile(e.getKey() + ".java", e.getValue().toSource());
         }
         compileDirs.add(compile(true));
         resetSourceFiles();
@@ -133,11 +133,11 @@ public abstract class BridgeMethodTestCase extends JavacTemplateTestBase {
         List<String> nameList = Arrays.asList(names);
         ClassModel cm = new Parser(spec).parseClassModel();
         for (int i = 0; i <= cm.maxIndex() ; i++) {
-            addSourceFile(String.format("C%d.java", i), new StringTemplate(indexClass(i)));
+            addSourceFile(String.format("C%d.java", i), indexClass(i));
         }
         for (Map.Entry<String, ClassModel> e : classes(cm).entrySet())
             if (nameList.contains(e.getKey()))
-                addSourceFile(e.getKey() + ".java", new StringTemplate(e.getValue().toSource()));
+                addSourceFile(e.getKey() + ".java", e.getValue().toSource());
         compileDirs.add(compile(Arrays.asList(classPaths()), true));
         resetSourceFiles();
         assertCompileSucceeded();

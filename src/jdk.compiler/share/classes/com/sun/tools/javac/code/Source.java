@@ -201,6 +201,7 @@ public enum Source {
         TEXT_BLOCKS(JDK14, Fragments.FeatureTextBlocks, DiagKind.PLURAL),
         PATTERN_MATCHING_IN_INSTANCEOF(JDK14, Fragments.FeaturePatternMatchingInstanceof, DiagKind.NORMAL),
         REIFIABLE_TYPES_INSTANCEOF(JDK14, Fragments.FeatureReifiableTypesInstanceof, DiagKind.PLURAL),
+        RECORDS(JDK14, Fragments.FeatureRecords, DiagKind.PLURAL),
         ;
 
         enum DiagKind {

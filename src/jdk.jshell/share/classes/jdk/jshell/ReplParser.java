@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,6 +59,7 @@ import com.sun.tools.javac.util.ListBuffer;
 import com.sun.tools.javac.util.Name;
 import com.sun.tools.javac.util.Position;
 
+import static com.sun.tools.javac.parser.Tokens.TokenKind.IDENTIFIER;
 /**
  * This is a subclass of JavacParser which overrides one method with a modified
  * verson of that method designed to allow parsing of one "snippet" of Java
@@ -178,9 +179,10 @@ class ReplParser extends JavacParser {
             default:
                 JCModifiers mods = modifiersOpt(pmods);
                 if (token.kind == CLASS
+                        || token.kind == IDENTIFIER && token.name() == token.name().table.names.record
                         || token.kind == INTERFACE
                         || token.kind == ENUM) {
-                    return List.<JCTree>of(classOrInterfaceOrEnumDeclaration(mods, dc));
+                    return List.<JCTree>of(classOrRecordOrInterfaceOrEnumDeclaration(mods, dc));
                 } else {
                     int pos = token.pos;
                     List<JCTypeParameter> typarams = typeParametersOpt();
@@ -228,7 +230,7 @@ class ReplParser extends JavacParser {
                             //mods.flags |= Flags.STATIC;
                             return List.of(methodDeclaratorRest(
                                     pos, mods, t, name, typarams,
-                                    false, isVoid, dc));
+                                    false, isVoid, false, dc));
                         } else if (!isVoid && typarams.isEmpty()) {
                         // variable declaration
                             //mods.flags |= Flags.STATIC;

@@ -375,7 +375,7 @@ const Type* Type::make_constant_from_field(ciField* field, ciInstance* holder,
                                             field->is_autobox_cache());
   if (con_type != NULL && field->is_call_site_target()) {
     ciCallSite* call_site = holder->as_call_site();
-    if (!call_site->is_constant_call_site()) {
+    if (!call_site->is_fully_initialized_constant_call_site()) {
       ciMethodHandle* target = con.as_object()->as_method_handle();
       Compile::current()->dependencies()->assert_call_site_target_value(call_site, target);
     }
@@ -4104,32 +4104,22 @@ const TypeOopPtr *TypeAryPtr::cast_to_nonconst() const {
 }
 
 
-//-----------------------------narrow_size_type-------------------------------
-// Local cache for arrayOopDesc::max_array_length(etype),
-// which is kind of slow (and cached elsewhere by other users).
-static jint max_array_length_cache[T_CONFLICT+1];
-static jint max_array_length(BasicType etype) {
-  jint& cache = max_array_length_cache[etype];
-  jint res = cache;
-  if (res == 0) {
-    switch (etype) {
-    case T_NARROWOOP:
+//-----------------------------max_array_length-------------------------------
+// A wrapper around arrayOopDesc::max_array_length(etype) with some input normalization.
+jint TypeAryPtr::max_array_length(BasicType etype) {
+  if (!is_java_primitive(etype) && !is_reference_type(etype)) {
+    if (etype == T_NARROWOOP) {
       etype = T_OBJECT;
-      break;
-    case T_NARROWKLASS:
-    case T_CONFLICT:
-    case T_ILLEGAL:
-    case T_VOID:
-      etype = T_BYTE;           // will produce conservatively high value
-      break;
-    default:
-      break;
+    } else if (etype == T_ILLEGAL) { // bottom[]
+      etype = T_BYTE; // will produce conservatively high value
+    } else {
+      fatal("not an element type: %s", type2name(etype));
     }
-    cache = res = arrayOopDesc::max_array_length(etype);
   }
-  return res;
+  return arrayOopDesc::max_array_length(etype);
 }
 
+//-----------------------------narrow_size_type-------------------------------
 // Narrow the given size type to the index range for the given array base type.
 // Return NULL if the resulting int type becomes empty.
 const TypeInt* TypeAryPtr::narrow_size_type(const TypeInt* size) const {

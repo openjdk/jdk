@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,13 +38,22 @@ class StringListEntry extends Entry<List<String>> {
         value = new ArrayList<>();
     }
 
-    void addCharacters(int index, char[] characters, int start, int length) {
-        // fill with empty strings when the patterns start from index > 0
-        if (value.size() < index) {
-            IntStream.range(0, index).forEach(i -> value.add(i, ""));
-            value.add(index, new String(characters, start, length));
+    void addCharacters(int index, String count, char[] characters, int start, int length) {
+        int size = value.size();
+        String elem = count + ":" + new String(characters, start, length);
+
+        // quote embedded spaces, if any
+        elem = elem.replaceAll(" ", "' '");
+
+        if (size < index) {
+            // fill with empty strings when the patterns start from index > size
+            IntStream.range(size, index).forEach(i -> value.add(i, ""));
+            value.add(index, elem);
+        } else if (size == index) {
+            value.add(index, elem);
         } else {
-            value.add(index, new String(characters, start, length));
+            // concatenate the pattern with the delimiter ' '
+            value.set(index, value.get(index) + " " + elem);
         }
     }
 

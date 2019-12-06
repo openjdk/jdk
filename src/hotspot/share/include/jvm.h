@@ -518,6 +518,7 @@ JVM_GetClassDeclaredFields(JNIEnv *env, jclass ofClass, jboolean publicOnly);
 JNIEXPORT jobjectArray JNICALL
 JVM_GetClassDeclaredConstructors(JNIEnv *env, jclass ofClass, jboolean publicOnly);
 
+
 /* Differs from JVM_GetClassModifiers in treatment of inner classes.
    This returns the access flags for the class as specified in the
    class file rather than searching the InnerClasses attribute (if
@@ -537,6 +538,14 @@ JVM_GetNestHost(JNIEnv *env, jclass current);
 
 JNIEXPORT jobjectArray JNICALL
 JVM_GetNestMembers(JNIEnv *env, jclass current);
+
+/* Records - since JDK 14 */
+
+JNIEXPORT jboolean JNICALL
+JVM_IsRecord(JNIEnv *env, jclass cls);
+
+JNIEXPORT jobjectArray JNICALL
+JVM_GetRecordComponents(JNIEnv *env, jclass ofClass);
 
 /* The following two reflection routines are still needed due to startup time issues */
 /*
@@ -1094,14 +1103,6 @@ typedef struct {
                                          JVM_ACC_STRICT | \
                                          JVM_ACC_SYNTHETIC)
 
-/*
- * This is the function defined in libjava.so to perform path
- * canonicalization. VM call this function before opening jar files
- * to load system classes.
- *
- */
-
-typedef int (*canonicalize_fn_t)(JNIEnv *env, char *orig, char *out, int len);
 
 /*************************************************************************
  PART 3: I/O and Network Support
