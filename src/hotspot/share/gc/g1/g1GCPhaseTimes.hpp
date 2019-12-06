@@ -122,42 +122,6 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
 
   WorkerDataArray<double>* _gc_par_phases[GCParPhasesSentinel];
 
-  WorkerDataArray<size_t>* _merge_rs_merged_sparse;
-  WorkerDataArray<size_t>* _merge_rs_merged_fine;
-  WorkerDataArray<size_t>* _merge_rs_merged_coarse;
-  WorkerDataArray<size_t>* _merge_rs_dirty_cards;
-
-  WorkerDataArray<size_t>* _merge_hcc_dirty_cards;
-  WorkerDataArray<size_t>* _merge_hcc_skipped_cards;
-
-  WorkerDataArray<size_t>* _merge_lb_dirty_cards;
-  WorkerDataArray<size_t>* _merge_lb_skipped_cards;
-
-  WorkerDataArray<size_t>* _scan_hr_scanned_cards;
-  WorkerDataArray<size_t>* _scan_hr_scanned_blocks;
-  WorkerDataArray<size_t>* _scan_hr_claimed_chunks;
-
-  WorkerDataArray<size_t>* _opt_merge_rs_merged_sparse;
-  WorkerDataArray<size_t>* _opt_merge_rs_merged_fine;
-  WorkerDataArray<size_t>* _opt_merge_rs_merged_coarse;
-  WorkerDataArray<size_t>* _opt_merge_rs_dirty_cards;
-
-  WorkerDataArray<size_t>* _opt_scan_hr_scanned_cards;
-  WorkerDataArray<size_t>* _opt_scan_hr_scanned_blocks;
-  WorkerDataArray<size_t>* _opt_scan_hr_claimed_chunks;
-  WorkerDataArray<size_t>* _opt_scan_hr_scanned_opt_refs;
-  WorkerDataArray<size_t>* _opt_scan_hr_used_memory;
-
-  WorkerDataArray<size_t>* _merge_pss_copied_bytes;
-  WorkerDataArray<size_t>* _merge_pss_lab_waste_bytes;
-  WorkerDataArray<size_t>* _merge_pss_lab_undo_waste_bytes;
-
-  WorkerDataArray<size_t>* _termination_attempts;
-
-  WorkerDataArray<size_t>* _opt_termination_attempts;
-
-  WorkerDataArray<size_t>* _redirtied_cards;
-
   double _cur_collection_initial_evac_time_ms;
   double _cur_optional_evac_time_ms;
   double _cur_collection_code_root_fixup_time_ms;

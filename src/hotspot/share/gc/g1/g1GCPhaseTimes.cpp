@@ -48,119 +48,91 @@ G1GCPhaseTimes::G1GCPhaseTimes(STWGCTimer* gc_timer, uint max_gc_threads) :
 {
   assert(max_gc_threads > 0, "Must have some GC threads");
 
-  _gc_par_phases[GCWorkerStart] = new WorkerDataArray<double>(max_gc_threads, "GC Worker Start (ms):");
-  _gc_par_phases[ExtRootScan] = new WorkerDataArray<double>(max_gc_threads, "Ext Root Scanning (ms):");
+  _gc_par_phases[GCWorkerStart] = new WorkerDataArray<double>("GC Worker Start (ms):", max_gc_threads);
+  _gc_par_phases[ExtRootScan] = new WorkerDataArray<double>("Ext Root Scanning (ms):", max_gc_threads);
 
   // Root scanning phases
-  _gc_par_phases[ThreadRoots] = new WorkerDataArray<double>(max_gc_threads, "Thread Roots (ms):");
-  _gc_par_phases[UniverseRoots] = new WorkerDataArray<double>(max_gc_threads, "Universe Roots (ms):");
-  _gc_par_phases[JNIRoots] = new WorkerDataArray<double>(max_gc_threads, "JNI Handles Roots (ms):");
-  _gc_par_phases[ObjectSynchronizerRoots] = new WorkerDataArray<double>(max_gc_threads, "ObjectSynchronizer Roots (ms):");
-  _gc_par_phases[ManagementRoots] = new WorkerDataArray<double>(max_gc_threads, "Management Roots (ms):");
-  _gc_par_phases[SystemDictionaryRoots] = new WorkerDataArray<double>(max_gc_threads, "SystemDictionary Roots (ms):");
-  _gc_par_phases[CLDGRoots] = new WorkerDataArray<double>(max_gc_threads, "CLDG Roots (ms):");
-  _gc_par_phases[JVMTIRoots] = new WorkerDataArray<double>(max_gc_threads, "JVMTI Roots (ms):");
-  AOT_ONLY(_gc_par_phases[AOTCodeRoots] = new WorkerDataArray<double>(max_gc_threads, "AOT Root Scan (ms):");)
-  _gc_par_phases[CMRefRoots] = new WorkerDataArray<double>(max_gc_threads, "CM RefProcessor Roots (ms):");
+  _gc_par_phases[ThreadRoots] = new WorkerDataArray<double>("Thread Roots (ms):", max_gc_threads);
+  _gc_par_phases[UniverseRoots] = new WorkerDataArray<double>("Universe Roots (ms):", max_gc_threads);
+  _gc_par_phases[JNIRoots] = new WorkerDataArray<double>("JNI Handles Roots (ms):", max_gc_threads);
+  _gc_par_phases[ObjectSynchronizerRoots] = new WorkerDataArray<double>("ObjectSynchronizer Roots (ms):", max_gc_threads);
+  _gc_par_phases[ManagementRoots] = new WorkerDataArray<double>("Management Roots (ms):", max_gc_threads);
+  _gc_par_phases[SystemDictionaryRoots] = new WorkerDataArray<double>("SystemDictionary Roots (ms):", max_gc_threads);
+  _gc_par_phases[CLDGRoots] = new WorkerDataArray<double>("CLDG Roots (ms):", max_gc_threads);
+  _gc_par_phases[JVMTIRoots] = new WorkerDataArray<double>("JVMTI Roots (ms):", max_gc_threads);
+  AOT_ONLY(_gc_par_phases[AOTCodeRoots] = new WorkerDataArray<double>("AOT Root Scan (ms):", max_gc_threads);)
+  _gc_par_phases[CMRefRoots] = new WorkerDataArray<double>("CM RefProcessor Roots (ms):", max_gc_threads);
 
-  _gc_par_phases[MergeER] = new WorkerDataArray<double>(max_gc_threads, "Eager Reclaim (ms):");
+  _gc_par_phases[MergeER] = new WorkerDataArray<double>("Eager Reclaim (ms):", max_gc_threads);
 
-  _gc_par_phases[MergeRS] = new WorkerDataArray<double>(max_gc_threads, "Remembered Sets (ms):");
-  _merge_rs_merged_sparse = new WorkerDataArray<size_t>(max_gc_threads, "Merged Sparse:");
-  _gc_par_phases[MergeRS]->link_thread_work_items(_merge_rs_merged_sparse, MergeRSMergedSparse);
-  _merge_rs_merged_fine = new WorkerDataArray<size_t>(max_gc_threads, "Merged Fine:");
-  _gc_par_phases[MergeRS]->link_thread_work_items(_merge_rs_merged_fine, MergeRSMergedFine);
-  _merge_rs_merged_coarse = new WorkerDataArray<size_t>(max_gc_threads, "Merged Coarse:");
-  _gc_par_phases[MergeRS]->link_thread_work_items(_merge_rs_merged_coarse, MergeRSMergedCoarse);
-  _merge_rs_dirty_cards = new WorkerDataArray<size_t>(max_gc_threads, "Dirty Cards:");
-  _gc_par_phases[MergeRS]->link_thread_work_items(_merge_rs_dirty_cards, MergeRSDirtyCards);
+  _gc_par_phases[MergeRS] = new WorkerDataArray<double>("Remembered Sets (ms):", max_gc_threads);
+  _gc_par_phases[MergeRS]->create_thread_work_items("Merged Sparse:", MergeRSMergedSparse);
+  _gc_par_phases[MergeRS]->create_thread_work_items("Merged Fine:", MergeRSMergedFine);
+  _gc_par_phases[MergeRS]->create_thread_work_items("Merged Coarse:", MergeRSMergedCoarse);
+  _gc_par_phases[MergeRS]->create_thread_work_items("Dirty Cards:", MergeRSDirtyCards);
 
-  _gc_par_phases[OptMergeRS] = new WorkerDataArray<double>(max_gc_threads, "Optional Remembered Sets (ms):");
-  _opt_merge_rs_merged_sparse = new WorkerDataArray<size_t>(max_gc_threads, "Merged Sparse:");
-  _gc_par_phases[OptMergeRS]->link_thread_work_items(_opt_merge_rs_merged_sparse, MergeRSMergedSparse);
-  _opt_merge_rs_merged_fine = new WorkerDataArray<size_t>(max_gc_threads, "Merged Fine:");
-  _gc_par_phases[OptMergeRS]->link_thread_work_items(_opt_merge_rs_merged_fine, MergeRSMergedFine);
-  _opt_merge_rs_merged_coarse = new WorkerDataArray<size_t>(max_gc_threads, "Merged Coarse:");
-  _gc_par_phases[OptMergeRS]->link_thread_work_items(_opt_merge_rs_merged_coarse, MergeRSMergedCoarse);
-  _opt_merge_rs_dirty_cards = new WorkerDataArray<size_t>(max_gc_threads, "Dirty Cards:");
-  _gc_par_phases[OptMergeRS]->link_thread_work_items(_opt_merge_rs_dirty_cards, MergeRSDirtyCards);
+  _gc_par_phases[OptMergeRS] = new WorkerDataArray<double>("Optional Remembered Sets (ms):", max_gc_threads);
+  _gc_par_phases[OptMergeRS]->create_thread_work_items("Merged Sparse:", MergeRSMergedSparse);
+  _gc_par_phases[OptMergeRS]->create_thread_work_items("Merged Fine:", MergeRSMergedFine);
+  _gc_par_phases[OptMergeRS]->create_thread_work_items("Merged Coarse:", MergeRSMergedCoarse);
+  _gc_par_phases[OptMergeRS]->create_thread_work_items("Dirty Cards:", MergeRSDirtyCards);
 
-  _gc_par_phases[MergeLB] = new WorkerDataArray<double>(max_gc_threads, "Log Buffers (ms):");
+  _gc_par_phases[MergeLB] = new WorkerDataArray<double>("Log Buffers (ms):", max_gc_threads);
   if (G1HotCardCache::default_use_cache()) {
-    _gc_par_phases[MergeHCC] = new WorkerDataArray<double>(max_gc_threads, "Hot Card Cache (ms):");
-    _merge_hcc_dirty_cards = new WorkerDataArray<size_t>(max_gc_threads, "Dirty Cards:");
-    _gc_par_phases[MergeHCC]->link_thread_work_items(_merge_hcc_dirty_cards, MergeHCCDirtyCards);
-    _merge_hcc_skipped_cards = new WorkerDataArray<size_t>(max_gc_threads, "Skipped Cards:");
-    _gc_par_phases[MergeHCC]->link_thread_work_items(_merge_hcc_skipped_cards, MergeHCCSkippedCards);
+    _gc_par_phases[MergeHCC] = new WorkerDataArray<double>("Hot Card Cache (ms):", max_gc_threads);
+    _gc_par_phases[MergeHCC]->create_thread_work_items("Dirty Cards:", MergeHCCDirtyCards);
+    _gc_par_phases[MergeHCC]->create_thread_work_items("Skipped Cards:", MergeHCCSkippedCards);
   } else {
     _gc_par_phases[MergeHCC] = NULL;
-    _merge_hcc_dirty_cards = NULL;
-    _merge_hcc_skipped_cards = NULL;
   }
-  _gc_par_phases[ScanHR] = new WorkerDataArray<double>(max_gc_threads, "Scan Heap Roots (ms):");
-  _gc_par_phases[OptScanHR] = new WorkerDataArray<double>(max_gc_threads, "Optional Scan Heap Roots (ms):");
-  _gc_par_phases[CodeRoots] = new WorkerDataArray<double>(max_gc_threads, "Code Root Scan (ms):");
-  _gc_par_phases[OptCodeRoots] = new WorkerDataArray<double>(max_gc_threads, "Optional Code Root Scan (ms):");
-  _gc_par_phases[ObjCopy] = new WorkerDataArray<double>(max_gc_threads, "Object Copy (ms):");
-  _gc_par_phases[OptObjCopy] = new WorkerDataArray<double>(max_gc_threads, "Optional Object Copy (ms):");
-  _gc_par_phases[Termination] = new WorkerDataArray<double>(max_gc_threads, "Termination (ms):");
-  _gc_par_phases[OptTermination] = new WorkerDataArray<double>(max_gc_threads, "Optional Termination (ms):");
-  _gc_par_phases[GCWorkerTotal] = new WorkerDataArray<double>(max_gc_threads, "GC Worker Total (ms):");
-  _gc_par_phases[GCWorkerEnd] = new WorkerDataArray<double>(max_gc_threads, "GC Worker End (ms):");
-  _gc_par_phases[Other] = new WorkerDataArray<double>(max_gc_threads, "GC Worker Other (ms):");
+  _gc_par_phases[ScanHR] = new WorkerDataArray<double>("Scan Heap Roots (ms):", max_gc_threads);
+  _gc_par_phases[OptScanHR] = new WorkerDataArray<double>("Optional Scan Heap Roots (ms):", max_gc_threads);
+  _gc_par_phases[CodeRoots] = new WorkerDataArray<double>("Code Root Scan (ms):", max_gc_threads);
+  _gc_par_phases[OptCodeRoots] = new WorkerDataArray<double>("Optional Code Root Scan (ms):", max_gc_threads);
+  _gc_par_phases[ObjCopy] = new WorkerDataArray<double>("Object Copy (ms):", max_gc_threads);
+  _gc_par_phases[OptObjCopy] = new WorkerDataArray<double>("Optional Object Copy (ms):", max_gc_threads);
+  _gc_par_phases[Termination] = new WorkerDataArray<double>("Termination (ms):", max_gc_threads);
+  _gc_par_phases[OptTermination] = new WorkerDataArray<double>("Optional Termination (ms):", max_gc_threads);
+  _gc_par_phases[GCWorkerTotal] = new WorkerDataArray<double>("GC Worker Total (ms):", max_gc_threads);
+  _gc_par_phases[GCWorkerEnd] = new WorkerDataArray<double>("GC Worker End (ms):", max_gc_threads);
+  _gc_par_phases[Other] = new WorkerDataArray<double>("GC Worker Other (ms):", max_gc_threads);
 
-  _scan_hr_scanned_cards = new WorkerDataArray<size_t>(max_gc_threads, "Scanned Cards:");
-  _gc_par_phases[ScanHR]->link_thread_work_items(_scan_hr_scanned_cards, ScanHRScannedCards);
-  _scan_hr_scanned_blocks = new WorkerDataArray<size_t>(max_gc_threads, "Scanned Blocks:");
-  _gc_par_phases[ScanHR]->link_thread_work_items(_scan_hr_scanned_blocks, ScanHRScannedBlocks);
-  _scan_hr_claimed_chunks = new WorkerDataArray<size_t>(max_gc_threads, "Claimed Chunks:");
-  _gc_par_phases[ScanHR]->link_thread_work_items(_scan_hr_claimed_chunks, ScanHRClaimedChunks);
+  _gc_par_phases[ScanHR]->create_thread_work_items("Scanned Cards:", ScanHRScannedCards);
+  _gc_par_phases[ScanHR]->create_thread_work_items("Scanned Blocks:", ScanHRScannedBlocks);
+  _gc_par_phases[ScanHR]->create_thread_work_items("Claimed Chunks:", ScanHRClaimedChunks);
 
-  _opt_scan_hr_scanned_cards = new WorkerDataArray<size_t>(max_gc_threads, "Scanned Cards:");
-  _gc_par_phases[OptScanHR]->link_thread_work_items(_opt_scan_hr_scanned_cards, ScanHRScannedCards);
-  _opt_scan_hr_scanned_blocks = new WorkerDataArray<size_t>(max_gc_threads, "Scanned Blocks:");
-  _gc_par_phases[OptScanHR]->link_thread_work_items(_opt_scan_hr_scanned_blocks, ScanHRScannedBlocks);
-  _opt_scan_hr_claimed_chunks = new WorkerDataArray<size_t>(max_gc_threads, "Claimed Chunks:");
-  _gc_par_phases[OptScanHR]->link_thread_work_items(_opt_scan_hr_claimed_chunks, ScanHRClaimedChunks);
-  _opt_scan_hr_scanned_opt_refs = new WorkerDataArray<size_t>(max_gc_threads, "Scanned Refs:");
-  _gc_par_phases[OptScanHR]->link_thread_work_items(_opt_scan_hr_scanned_opt_refs, ScanHRScannedOptRefs);
-  _opt_scan_hr_used_memory = new WorkerDataArray<size_t>(max_gc_threads, "Used Memory:");
-  _gc_par_phases[OptScanHR]->link_thread_work_items(_opt_scan_hr_used_memory, ScanHRUsedMemory);
+  _gc_par_phases[OptScanHR]->create_thread_work_items("Scanned Cards:", ScanHRScannedCards);
+  _gc_par_phases[OptScanHR]->create_thread_work_items("Scanned Blocks:", ScanHRScannedBlocks);
+  _gc_par_phases[OptScanHR]->create_thread_work_items("Claimed Chunks:", ScanHRClaimedChunks);
+  _gc_par_phases[OptScanHR]->create_thread_work_items("Scanned Refs:", ScanHRScannedOptRefs);
+  _gc_par_phases[OptScanHR]->create_thread_work_items("Used Memory:", ScanHRUsedMemory);
 
-  _merge_lb_dirty_cards = new WorkerDataArray<size_t>(max_gc_threads, "Dirty Cards:");
-  _gc_par_phases[MergeLB]->link_thread_work_items(_merge_lb_dirty_cards, MergeLBDirtyCards);
-  _merge_lb_skipped_cards = new WorkerDataArray<size_t>(max_gc_threads, "Skipped Cards:");
-  _gc_par_phases[MergeLB]->link_thread_work_items(_merge_lb_skipped_cards, MergeLBSkippedCards);
+  _gc_par_phases[MergeLB]->create_thread_work_items("Dirty Cards:", MergeLBDirtyCards);
+  _gc_par_phases[MergeLB]->create_thread_work_items("Skipped Cards:", MergeLBSkippedCards);
 
-  _gc_par_phases[MergePSS] = new WorkerDataArray<double>(1, "Merge Per-Thread State", true /* is_serial */);
+  _gc_par_phases[MergePSS] = new WorkerDataArray<double>("Merge Per-Thread State", 1 /* length */, true /* is_serial */);
 
-  _merge_pss_copied_bytes = new WorkerDataArray<size_t>(max_gc_threads, "Copied Bytes");
-  _gc_par_phases[MergePSS]->link_thread_work_items(_merge_pss_copied_bytes, MergePSSCopiedBytes);
-  _merge_pss_lab_waste_bytes = new WorkerDataArray<size_t>(max_gc_threads, "LAB Waste");
-  _gc_par_phases[MergePSS]->link_thread_work_items(_merge_pss_lab_waste_bytes, MergePSSLABWasteBytes);
-  _merge_pss_lab_undo_waste_bytes = new WorkerDataArray<size_t>(max_gc_threads, "LAB Undo Waste");
-  _gc_par_phases[MergePSS]->link_thread_work_items(_merge_pss_lab_undo_waste_bytes, MergePSSLABUndoWasteBytes);
+  _gc_par_phases[MergePSS]->create_thread_work_items("Copied Bytes", MergePSSCopiedBytes, max_gc_threads);
+  _gc_par_phases[MergePSS]->create_thread_work_items("LAB Waste", MergePSSLABWasteBytes, max_gc_threads);
+  _gc_par_phases[MergePSS]->create_thread_work_items("LAB Undo Waste", MergePSSLABUndoWasteBytes, max_gc_threads);
 
-  _termination_attempts = new WorkerDataArray<size_t>(max_gc_threads, "Termination Attempts:");
-  _gc_par_phases[Termination]->link_thread_work_items(_termination_attempts);
+  _gc_par_phases[Termination]->create_thread_work_items("Termination Attempts:");
 
-  _opt_termination_attempts = new WorkerDataArray<size_t>(max_gc_threads, "Optional Termination Attempts:");
-  _gc_par_phases[OptTermination]->link_thread_work_items(_opt_termination_attempts);
+  _gc_par_phases[OptTermination]->create_thread_work_items("Optional Termination Attempts:");
 
   if (UseStringDeduplication) {
-    _gc_par_phases[StringDedupQueueFixup] = new WorkerDataArray<double>(max_gc_threads, "Queue Fixup (ms):");
-    _gc_par_phases[StringDedupTableFixup] = new WorkerDataArray<double>(max_gc_threads, "Table Fixup (ms):");
+    _gc_par_phases[StringDedupQueueFixup] = new WorkerDataArray<double>("Queue Fixup (ms):", max_gc_threads);
+    _gc_par_phases[StringDedupTableFixup] = new WorkerDataArray<double>("Table Fixup (ms):", max_gc_threads);
   } else {
     _gc_par_phases[StringDedupQueueFixup] = NULL;
     _gc_par_phases[StringDedupTableFixup] = NULL;
   }
 
-  _gc_par_phases[RedirtyCards] = new WorkerDataArray<double>(max_gc_threads, "Parallel Redirty (ms):");
-  _redirtied_cards = new WorkerDataArray<size_t>(max_gc_threads, "Redirtied Cards:");
-  _gc_par_phases[RedirtyCards]->link_thread_work_items(_redirtied_cards);
+  _gc_par_phases[RedirtyCards] = new WorkerDataArray<double>("Parallel Redirty (ms):", max_gc_threads);
+  _gc_par_phases[RedirtyCards]->create_thread_work_items("Redirtied Cards:");
 
-  _gc_par_phases[YoungFreeCSet] = new WorkerDataArray<double>(max_gc_threads, "Young Free Collection Set (ms):");
-  _gc_par_phases[NonYoungFreeCSet] = new WorkerDataArray<double>(max_gc_threads, "Non-Young Free Collection Set (ms):");
+  _gc_par_phases[YoungFreeCSet] = new WorkerDataArray<double>("Young Free Collection Set (ms):", max_gc_threads);
+  _gc_par_phases[NonYoungFreeCSet] = new WorkerDataArray<double>("Non-Young Free Collection Set (ms):", max_gc_threads);
 
   reset();
 }

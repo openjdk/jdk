@@ -138,7 +138,7 @@ ShenandoahWorkerTimings::ShenandoahWorkerTimings(uint max_gc_threads) :
   assert(max_gc_threads > 0, "Must have some GC threads");
 
 #define GC_PAR_PHASE_DECLARE_WORKER_DATA(type, title) \
-  _gc_par_phases[ShenandoahPhaseTimings::type] = new WorkerDataArray<double>(max_gc_threads, title);
+  _gc_par_phases[ShenandoahPhaseTimings::type] = new WorkerDataArray<double>(title, max_gc_threads);
   // Root scanning phases
   SHENANDOAH_GC_PAR_PHASE_DO(GC_PAR_PHASE_DECLARE_WORKER_DATA)
 #undef GC_PAR_PHASE_DECLARE_WORKER_DATA
@@ -165,7 +165,7 @@ void ShenandoahWorkerTimings::print() const {
 
 
 ShenandoahTerminationTimings::ShenandoahTerminationTimings(uint max_gc_threads) {
-  _gc_termination_phase = new WorkerDataArray<double>(max_gc_threads, "Task Termination (ms):");
+  _gc_termination_phase = new WorkerDataArray<double>("Task Termination (ms):", max_gc_threads);
 }
 
 void ShenandoahTerminationTimings::record_time_secs(uint worker_id, double secs) {

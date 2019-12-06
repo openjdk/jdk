@@ -56,8 +56,6 @@ class WeakProcessorPhaseTimes : public CHeapObj<mtGC> {
   // Per-worker times and linked items.
   static const uint worker_data_count = WeakProcessorPhases::oopstorage_phase_count;
   WorkerDataArray<double>* _worker_data[worker_data_count];
-  WorkerDataArray<size_t>* _worker_dead_items[worker_data_count];
-  WorkerDataArray<size_t>* _worker_total_items[worker_data_count];
 
   WorkerDataArray<double>* worker_data(WeakProcessorPhase phase) const;
 

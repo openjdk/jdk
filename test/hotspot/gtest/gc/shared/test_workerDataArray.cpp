@@ -34,10 +34,10 @@ class WorkerDataArrayTest : public ::testing::Test {
  protected:
   WorkerDataArrayTest() :
     title("Test array"),
-    array(3, title),
+    array(title, 3),
     sub_item_title("Sub item array") {
 
-    array.link_thread_work_items(new WorkerDataArray<size_t>(3, sub_item_title));
+    array.create_thread_work_items(sub_item_title);
   }
 
   const char* print_summary() {
