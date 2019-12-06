@@ -69,6 +69,7 @@ import static org.testng.Assert.fail;
  * record objects.
  */
 public class ProhibitedMethods {
+    private static final String VERSION = Integer.toString(Runtime.version().feature());
 
     public interface ThrowingExternalizable extends Externalizable {
         default void writeExternal(ObjectOutput out) {
@@ -106,7 +107,7 @@ public class ProhibitedMethods {
         {
             byte[] byteCode = InMemoryJavaCompiler.compile("Foo",
                     "public record Foo () implements java.io.Serializable { }",
-                    "--enable-preview", "-source", "14");
+                    "--enable-preview", "-source", VERSION);
             byteCode = addWriteObject(byteCode);
             byteCode = addReadObject(byteCode);
             byteCode = addReadObjectNoData(byteCode);
@@ -115,7 +116,7 @@ public class ProhibitedMethods {
         {
             byte[] byteCode = InMemoryJavaCompiler.compile("Bar",
                     "public record Bar (int x, int y) implements java.io.Serializable { }",
-                    "--enable-preview", "-source", "14");
+                    "--enable-preview", "-source", VERSION);
             byteCode = addWriteObject(byteCode);
             byteCode = addReadObject(byteCode);
             byteCode = addReadObjectNoData(byteCode);
@@ -125,7 +126,7 @@ public class ProhibitedMethods {
             byte[] byteCode = InMemoryJavaCompiler.compile("Baz",
                     "import java.io.Serializable;" +
                     "public record Baz<U extends Serializable,V extends Serializable>(U u, V v) implements Serializable { }",
-                    "--enable-preview", "-source", "14");
+                    "--enable-preview", "-source", VERSION);
             byteCode = addWriteObject(byteCode);
             byteCode = addReadObject(byteCode);
             byteCode = addReadObjectNoData(byteCode);
