@@ -8945,34 +8945,6 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len, Regi
   shrl(len, 4);
   jcc(Assembler::zero, L_tail_restore);
 
-  // Fold total 512 bits of polynomial on each iteration
-  if (VM_Version::supports_vpclmulqdq()) {
-    Label Parallel_loop, L_No_Parallel;
-
-    cmpl(len, 8);
-    jccb(Assembler::less, L_No_Parallel);
-
-    movdqu(xmm0, ExternalAddress(StubRoutines::x86::crc_by128_masks_addr() + 32));
-    evmovdquq(xmm1, Address(buf, 0), Assembler::AVX_512bit);
-    movdl(xmm5, crc);
-    evpxorq(xmm1, xmm1, xmm5, Assembler::AVX_512bit);
-    addptr(buf, 64);
-    subl(len, 7);
-    evshufi64x2(xmm0, xmm0, xmm0, 0x00, Assembler::AVX_512bit); //propagate the mask from 128 bits to 512 bits
-
-    BIND(Parallel_loop);
-    fold_128bit_crc32_avx512(xmm1, xmm0, xmm5, buf, 0);
-    addptr(buf, 64);
-    subl(len, 4);
-    jcc(Assembler::greater, Parallel_loop);
-
-    vextracti64x2(xmm2, xmm1, 0x01);
-    vextracti64x2(xmm3, xmm1, 0x02);
-    vextracti64x2(xmm4, xmm1, 0x03);
-    jmp(L_fold_512b);
-
-    BIND(L_No_Parallel);
-  }
   // Fold crc into first bytes of vector
   movdqa(xmm1, Address(buf, 0));
   movdl(rax, xmm1);
