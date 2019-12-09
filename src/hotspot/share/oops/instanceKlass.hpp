@@ -579,7 +579,7 @@ public:
   bool find_field_from_offset(int offset, bool is_static, fieldDescriptor* fd) const;
 
  private:
-  static int quick_search(const Array<Method*>* methods, const Symbol* name);
+  inline static int quick_search(const Array<Method*>* methods, const Symbol* name);
 
  public:
   static void disable_method_binary_search() {
