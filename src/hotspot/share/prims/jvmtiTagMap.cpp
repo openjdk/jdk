@@ -2963,7 +2963,7 @@ inline bool VM_HeapWalkOperation::iterate_over_object(oop o) {
     ClassFieldDescriptor* field = field_map->field_at(i);
     char type = field->field_type();
     if (!is_primitive_field_type(type)) {
-      oop fld_o = o->obj_field(field->field_offset());
+      oop fld_o = o->obj_field_access<AS_NO_KEEPALIVE | ON_UNKNOWN_OOP_REF>(field->field_offset());
       // ignore any objects that aren't visible to profiler
       if (fld_o != NULL) {
         assert(Universe::heap()->is_in(fld_o), "unsafe code should not "
