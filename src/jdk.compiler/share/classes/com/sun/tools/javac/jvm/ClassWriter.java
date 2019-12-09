@@ -30,6 +30,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.LinkedHashSet;
+import java.util.function.Function;
 
 import javax.tools.JavaFileManager;
 import javax.tools.FileObject;
@@ -113,6 +114,8 @@ public class ClassWriter extends ClassFile {
      */
     public boolean multiModuleMode;
 
+    private List<Function<Symbol, Integer>> extraAttributeHooks = List.nil();
+
     /** The initial sizes of the data and constant pool buffers.
      *  Sizes are increased when buffers get full.
      */
@@ -121,7 +124,7 @@ public class ClassWriter extends ClassFile {
 
     /** An output buffer for member info.
      */
-    ByteBuffer databuf = new ByteBuffer(DATA_BUF_SIZE);
+    public ByteBuffer databuf = new ByteBuffer(DATA_BUF_SIZE);
 
     /** An output buffer for the constant pool.
      */
@@ -186,6 +189,10 @@ public class ClassWriter extends ClassFile {
             dumpInnerClassModifiers = modifierFlags.indexOf('i') != -1;
             dumpMethodModifiers = modifierFlags.indexOf('m') != -1;
         }
+    }
+
+    public void addExtraAttributes(Function<Symbol, Integer> addExtraAttributes) {
+        extraAttributeHooks = extraAttributeHooks.prepend(addExtraAttributes);
     }
 
 /******************************************************************
@@ -276,7 +283,7 @@ public class ClassWriter extends ClassFile {
     /** Write header for an attribute to data buffer and return
      *  position past attribute length index.
      */
-    int writeAttr(Name attrName) {
+    public int writeAttr(Name attrName) {
         int index = poolWriter.putName(attrName);
         databuf.appendChar(index);
         databuf.appendInt(0);
@@ -285,7 +292,7 @@ public class ClassWriter extends ClassFile {
 
     /** Fill in attribute length.
      */
-    void endAttr(int index) {
+    public void endAttr(int index) {
         putInt(databuf, index - 4, databuf.length - index);
     }
 
@@ -942,6 +949,7 @@ public class ClassWriter extends ClassFile {
             acount++;
         }
         acount += writeMemberAttrs(v, false);
+        acount += writeExtraAttributes(v);
         endAttrs(acountIdx, acount);
     }
 
@@ -988,6 +996,7 @@ public class ClassWriter extends ClassFile {
         acount += writeMemberAttrs(m, false);
         if (!m.isLambdaMethod())
             acount += writeParameterAttrs(m.params);
+        acount += writeExtraAttributes(m);
         endAttrs(acountIdx, acount);
     }
 
@@ -1605,6 +1614,7 @@ public class ClassWriter extends ClassFile {
             acount += writeFlagAttrs(c.owner.flags() & ~DEPRECATED);
         }
         acount += writeExtraClassAttributes(c);
+        acount += writeExtraAttributes(c);
 
         poolbuf.appendInt(JAVA_MAGIC);
         if (preview.isEnabled()) {
@@ -1643,14 +1653,26 @@ public class ClassWriter extends ClassFile {
         poolWriter.reset(); // to save space
 
         out.write(databuf.elems, 0, databuf.length);
-     }
+    }
 
-    /**Allows subclasses to write additional class attributes
+     /**Allows subclasses to write additional class attributes
+      *
+      * @return the number of attributes written
+      */
+    protected int writeExtraClassAttributes(ClassSymbol c) {
+        return 0;
+    }
+
+    /**Allows friends to write additional attributes
      *
      * @return the number of attributes written
      */
-    protected int writeExtraClassAttributes(ClassSymbol c) {
-        return 0;
+    protected int writeExtraAttributes(Symbol sym) {
+        int i = 0;
+        for (Function<Symbol, Integer> hook : extraAttributeHooks) {
+            i += hook.apply(sym);
+        }
+        return i;
     }
 
     int adjustFlags(final long flags) {
