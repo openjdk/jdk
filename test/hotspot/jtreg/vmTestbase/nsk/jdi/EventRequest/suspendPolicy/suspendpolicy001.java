@@ -150,12 +150,6 @@ public class suspendpolicy001 {
     static int  testExitCode = PASSED;
 
 
-    class JDITestRuntimeException extends RuntimeException {
-        JDITestRuntimeException(String str) {
-            super("JDITestRuntimeException : " + str);
-        }
-    }
-
     //------------------------------------------------------ methods
 
     private int runThis (String argv[], PrintStream out) {
@@ -298,7 +292,7 @@ public class suspendpolicy001 {
         String bPointMethod = "methodForCommunication";
         String lineForComm  = "lineForComm";
 
-        ThreadReference   mainThread = threadByName("main");
+        ThreadReference   mainThread = debuggee.threadByNameOrThrow("main");
 
         BreakpointRequest bpRequest = settingBreakpoint(mainThread,
                                              debuggeeClass,
@@ -346,7 +340,7 @@ public class suspendpolicy001 {
             switch (i) {
 
               case 0:
-                     thread1 = threadByName(threadName1);
+                     thread1 = debuggee.threadByNameOrThrow(threadName1);
 
                      log2("......setting up StepRequest");
                      eventRequest1 = eventRManager.createStepRequest
@@ -455,19 +449,6 @@ public class suspendpolicy001 {
         return;
     }
 
-    private ThreadReference threadByName(String name)
-                 throws JDITestRuntimeException {
-
-        List         all = vm.allThreads();
-        ListIterator li  = all.listIterator();
-
-        for (; li.hasNext(); ) {
-            ThreadReference thread = (ThreadReference) li.next();
-            if (thread.name().equals(name))
-                return thread;
-        }
-        throw new JDITestRuntimeException("** Thread IS NOT found ** : " + name);
-    }
 
    /*
     * private BreakpointRequest settingBreakpoint(ThreadReference, ReferenceType,

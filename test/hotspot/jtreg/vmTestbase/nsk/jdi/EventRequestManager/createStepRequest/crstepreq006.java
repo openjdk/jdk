@@ -215,7 +215,7 @@ public class crstepreq006 {
             }
 
             display("Getting mirror of thread: " + threadName);
-            ThreadReference thread = threadByName(threadName);
+            ThreadReference thread = debuggee.threadByNameOrThrow(threadName);
 
             display("Getting ReferenceType of thread: " + threadName);
             ReferenceType debuggeeThread = debuggee.classByName(debuggeeThreadName);
@@ -437,19 +437,6 @@ public class crstepreq006 {
         } catch (Exception e) {
             throw new Failure("getEventSet(): Unexpected exception while waiting for an event: " + e);
         }
-    }
-
-
-    private ThreadReference threadByName(String name) throws Failure{
-        List all = vm.allThreads();
-        ListIterator li = all.listIterator();
-
-        while (li.hasNext()) {
-            ThreadReference thread = (ThreadReference) li.next();
-            if (thread.name().equals(name))
-                return thread;
-        }
-        throw new Failure("Thread with searching for name is not found: " + name);
     }
 
     private ReferenceType waitForDebuggeeClassPrepared () {

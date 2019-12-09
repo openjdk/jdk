@@ -350,19 +350,6 @@ public class invokemethod015 {
         }
     }
 
-
-    private ThreadReference threadByName(String name) throws Failure{
-        List all = vm.allThreads();
-        ListIterator li = all.listIterator();
-
-        while (li.hasNext()) {
-            ThreadReference thread = (ThreadReference) li.next();
-            if (thread.name().equals(name))
-                return thread;
-        }
-        throw new Failure("Thread with searching for name is not found: " + name);
-    }
-
     private ReferenceType waitForDebuggeeClassPrepared () {
         display("Creating request for ClassPrepareEvent for debuggee.");
         ClassPrepareRequest cpRequest = eventRManager.createClassPrepareRequest();

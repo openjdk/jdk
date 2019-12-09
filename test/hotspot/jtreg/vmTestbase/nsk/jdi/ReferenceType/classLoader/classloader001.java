@@ -134,12 +134,6 @@ public class classloader001 {
 
     static int  testExitCode = PASSED;
 
-    class JDITestRuntimeException extends RuntimeException {
-        JDITestRuntimeException(String str) {
-            super("JDITestRuntimeException : " + str);
-        }
-    }
-
     //------------------------------------------------------ methods
 
     private int runThis (String argv[], PrintStream out) {
@@ -284,7 +278,7 @@ public class classloader001 {
         BreakpointRequest bpRequest;
 
         try {
-            bpRequest = settingBreakpoint(threadByName("main"),
+            bpRequest = settingBreakpoint(debuggee.threadByNameOrThrow("main"),
                                           debuggeeClass,
                                           bPointMethod, lineForComm, "zero");
         } catch ( Exception e ) {
@@ -357,20 +351,6 @@ public class classloader001 {
                  testExitCode = FAILED;
              }
          }
-    }
-
-    private ThreadReference threadByName(String name)
-                 throws JDITestRuntimeException {
-
-        List         all = vm.allThreads();
-        ListIterator li  = all.listIterator();
-
-        for (; li.hasNext(); ) {
-            ThreadReference thread = (ThreadReference) li.next();
-            if (thread.name().equals(name))
-                return thread;
-        }
-        throw new JDITestRuntimeException("** Thread IS NOT found ** : " + name);
     }
 
    /*

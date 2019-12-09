@@ -155,12 +155,6 @@ public class filter_rt002 {
     static int  testExitCode = PASSED;
 
 
-    class JDITestRuntimeException extends RuntimeException {
-        JDITestRuntimeException(String str) {
-            super("JDITestRuntimeException : " + str);
-        }
-    }
-
     //------------------------------------------------------ methods
 
     private int runThis (String argv[], PrintStream out) {
@@ -303,7 +297,7 @@ public class filter_rt002 {
         String bPointMethod = "methodForCommunication";
         String lineForComm  = "lineForComm";
 
-        ThreadReference   mainThread = threadByName("main");
+        ThreadReference   mainThread = debuggee.threadByNameOrThrow("main");
 
         BreakpointRequest bpRequest = settingBreakpoint(mainThread,
                                              debuggeeClass,
@@ -348,7 +342,7 @@ public class filter_rt002 {
                      testClassReference =
                           (ReferenceType) vm.classesByName(testedClassName).get(0);
 
-                     thread1 = threadByName(threadName1);
+                     thread1 = debuggee.threadByNameOrThrow(threadName1);
 
                      eventRequest1 = setting21StepRequest(thread1, testClassReference,
                                               EventRequest.SUSPEND_NONE, property1);
@@ -397,20 +391,6 @@ public class filter_rt002 {
         }
         log1("    TESTING ENDS");
         return;
-    }
-
-    private ThreadReference threadByName(String name)
-                 throws JDITestRuntimeException {
-
-        List         all = vm.allThreads();
-        ListIterator li  = all.listIterator();
-
-        for (; li.hasNext(); ) {
-            ThreadReference thread = (ThreadReference) li.next();
-            if (thread.name().equals(name))
-                return thread;
-        }
-        throw new JDITestRuntimeException("** Thread IS NOT found ** : " + name);
     }
 
    /*
