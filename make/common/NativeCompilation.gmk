@@ -1048,7 +1048,7 @@ define SetupNativeCompilationBody
 
     $1_VARDEPS := $$($1_LD) $$($1_SYSROOT_LDFLAGS) $$($1_LDFLAGS) $$($1_EXTRA_LDFLAGS) \
         $$(GLOBAL_LIBS) $$($1_LIBS) $$($1_EXTRA_LIBS) $$($1_MT) \
-        $$($1_CODESIGN) $$($1_CREATE_DEBUGINFO_CMDS) $$($1_MANIFEST_VERSION) \
+        $$($1_CREATE_DEBUGINFO_CMDS) $$($1_MANIFEST_VERSION) \
         $$($1_STRIP_CMD)
     $1_VARDEPS_FILE := $$(call DependOnVariable, $1_VARDEPS, \
         $$($1_OBJECT_DIR)/$$($1_NOSUFFIX).vardeps)
@@ -1129,9 +1129,8 @@ define SetupNativeCompilationBody
                 # This only works if the openjdk_codesign identity is present on the system. Let
                 # silently fail otherwise.
                 ifneq ($(CODESIGN), )
-                  ifneq ($$($1_CODESIGN), )
-		    $(CODESIGN) -s openjdk_codesign $$@
-                  endif
+		  $(CODESIGN) -s "$(MACOSX_CODESIGN_IDENTITY)" --timestamp --options runtime \
+		  --entitlements $(TOPDIR)/make/data/macosxsigning/entitlements.plist $$@
                 endif
   endif
 

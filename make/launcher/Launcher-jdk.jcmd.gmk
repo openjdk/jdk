@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@ $(eval $(call SetupBuildLauncher, jinfo, \
     JAVA_ARGS := \
         -Dsun.jvm.hotspot.debugger.useProcDebugger \
         -Dsun.jvm.hotspot.debugger.useWindbgDebugger, \
-    MACOSX_SIGNED := true, \
+    MACOSX_PRIVILEGED := true, \
 ))
 
 $(eval $(call SetupBuildLauncher, jmap, \
@@ -38,7 +38,7 @@ $(eval $(call SetupBuildLauncher, jmap, \
     JAVA_ARGS := \
         -Dsun.jvm.hotspot.debugger.useProcDebugger \
         -Dsun.jvm.hotspot.debugger.useWindbgDebugger, \
-    MACOSX_SIGNED := true, \
+    MACOSX_PRIVILEGED := true, \
 ))
 
 $(eval $(call SetupBuildLauncher, jps, \
@@ -50,7 +50,7 @@ $(eval $(call SetupBuildLauncher, jstack, \
     JAVA_ARGS := \
         -Dsun.jvm.hotspot.debugger.useProcDebugger \
         -Dsun.jvm.hotspot.debugger.useWindbgDebugger, \
-    MACOSX_SIGNED := true, \
+    MACOSX_PRIVILEGED := true, \
 ))
 
 $(eval $(call SetupBuildLauncher, jstat, \
