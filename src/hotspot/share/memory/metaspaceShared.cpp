@@ -2052,6 +2052,7 @@ void MetaspaceShared::initialize_runtime_shared_and_meta_spaces() {
     if (result == MAP_ARCHIVE_MMAP_FAILURE) {
       // Mapping has failed (probably due to ASLR). Let's map at an address chosen
       // by the OS.
+      log_info(cds)("Try to map archive(s) at an alternative address");
       result = map_archives(static_mapinfo, dynamic_mapinfo, false);
     }
   }
