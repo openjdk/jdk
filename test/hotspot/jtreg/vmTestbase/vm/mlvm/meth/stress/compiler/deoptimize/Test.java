@@ -45,7 +45,7 @@
  *
  * @requires vm.debug != true
  *
- * @run main/othervm
+ * @run main/othervm/timeout=300
  *      -XX:ReservedCodeCacheSize=100m
  *      vm.mlvm.meth.stress.compiler.deoptimize.Test
  *      -threadsPerCpu 4
@@ -67,7 +67,7 @@
  *
  * @requires vm.debug == true
  *
- * @run main/othervm
+ * @run main/othervm/timeout=300
  *      -XX:ReservedCodeCacheSize=100m
  *      vm.mlvm.meth.stress.compiler.deoptimize.Test
  *      -threadsPerCpu 2
