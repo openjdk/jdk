@@ -254,6 +254,16 @@ class G1CollectionSet {
   // Select the old regions of the initial collection set and determine how many optional
   // regions we might be able to evacuate in this pause.
   void finalize_old_part(double time_remaining_ms);
+
+  // Iterate the part of the collection set given by the offset and length applying the given
+  // HeapRegionClosure. The worker_id will determine where in the part to start the iteration
+  // to allow for more efficient parallel iteration.
+  void iterate_part_from(HeapRegionClosure* cl,
+                         HeapRegionClaimer* hr_claimer,
+                         size_t offset,
+                         size_t length,
+                         uint worker_id,
+                         uint total_workers) const;
 public:
   G1CollectionSet(G1CollectedHeap* g1h, G1Policy* policy);
   ~G1CollectionSet();
@@ -306,6 +316,10 @@ public:
   // Iterate over the entire collection set (all increments calculated so far), applying
   // the given HeapRegionClosure on all of them.
   void iterate(HeapRegionClosure* cl) const;
+  void par_iterate(HeapRegionClosure* cl,
+                   HeapRegionClaimer* hr_claimer,
+                   uint worker_id,
+                   uint total_workers) const;
 
   void iterate_optional(HeapRegionClosure* cl) const;
 

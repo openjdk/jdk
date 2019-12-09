@@ -90,6 +90,12 @@ void FreeRegionList::set_unrealistically_long_length(uint len) {
   _unrealistically_long_length = len;
 }
 
+void FreeRegionList::abandon() {
+  check_mt_safety();
+  clear();
+  verify_optional();
+}
+
 void FreeRegionList::remove_all() {
   check_mt_safety();
   verify_optional();
@@ -112,10 +118,9 @@ void FreeRegionList::remove_all() {
   verify_optional();
 }
 
-void FreeRegionList::add_ordered(FreeRegionList* from_list) {
+void FreeRegionList::add_list_common_start(FreeRegionList* from_list) {
   check_mt_safety();
   from_list->check_mt_safety();
-
   verify_optional();
   from_list->verify_optional();
 
@@ -138,6 +143,47 @@ void FreeRegionList::add_ordered(FreeRegionList* from_list) {
     hr->set_containing_set(this);
   }
   #endif // ASSERT
+}
+
+void FreeRegionList::add_list_common_end(FreeRegionList* from_list) {
+  _length += from_list->length();
+  from_list->clear();
+
+  verify_optional();
+  from_list->verify_optional();
+}
+
+void FreeRegionList::append_ordered(FreeRegionList* from_list) {
+  add_list_common_start(from_list);
+
+  if (from_list->is_empty()) {
+    return;
+  }
+
+  if (is_empty()) {
+    // Make from_list the current list.
+    assert_free_region_list(length() == 0 && _tail == NULL, "invariant");
+    _head = from_list->_head;
+    _tail = from_list->_tail;
+  } else {
+    // Add the from_list to the end of the current list.
+    assert(_tail->hrm_index() < from_list->_head->hrm_index(), "Should be sorted %u < %u",
+           _tail->hrm_index(), from_list->_head->hrm_index());
+
+    _tail->set_next(from_list->_head);
+    from_list->_head->set_prev(_tail);
+    _tail = from_list->_tail;
+  }
+
+  add_list_common_end(from_list);
+}
+
+void FreeRegionList::add_ordered(FreeRegionList* from_list) {
+  add_list_common_start(from_list);
+
+  if (from_list->is_empty()) {
+    return;
+  }
 
   if (is_empty()) {
     assert_free_region_list(length() == 0 && _tail == NULL, "invariant");
@@ -178,11 +224,7 @@ void FreeRegionList::add_ordered(FreeRegionList* from_list) {
     }
   }
 
-  _length += from_list->length();
-  from_list->clear();
-
-  verify_optional();
-  from_list->verify_optional();
+  add_list_common_end(from_list);
 }
 
 void FreeRegionList::remove_starting_at(HeapRegion* first, uint num_regions) {

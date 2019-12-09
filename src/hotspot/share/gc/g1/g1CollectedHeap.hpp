@@ -1201,6 +1201,11 @@ public:
   void heap_region_par_iterate_from_start(HeapRegionClosure* cl,
                                           HeapRegionClaimer* hrclaimer) const;
 
+  // Iterate over all regions in the collection set in parallel.
+  void collection_set_par_iterate_all(HeapRegionClosure* cl,
+                                      HeapRegionClaimer* hr_claimer,
+                                      uint worker_id);
+
   // Iterate over all regions currently in the current collection set.
   void collection_set_iterate_all(HeapRegionClosure* blk);
 

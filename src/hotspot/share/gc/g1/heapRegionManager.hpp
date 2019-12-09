@@ -172,6 +172,9 @@ public:
   // Insert the given region into the free region list.
   inline void insert_into_free_list(HeapRegion* hr);
 
+  // Rebuild the free region list from scratch.
+  void rebuild_free_list(WorkGang* workers);
+
   // Insert the given region list into the global free region list.
   void insert_list_into_free_list(FreeRegionList* list) {
     _free_list.add_ordered(list);
