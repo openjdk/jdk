@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,6 +90,25 @@ AWT_ASSERT_APPKIT_THREAD;
 AWT_ASSERT_APPKIT_THREAD;
 
     JNIEnv *env = [ThreadUtilities getJNIEnv];
+
+    SEL appearanceSel = @selector(setAppearance:); // macOS 10.14+
+    if ([self respondsToSelector:appearanceSel]) {
+        NSString *appearanceProp = [PropertiesUtilities
+                javaSystemPropertyForKey:@"apple.awt.application.appearance"
+                                 withEnv:env];
+        if (![@"system" isEqual:appearanceProp]) {
+            // by default use light mode, because dark mode is not supported yet
+            NSAppearance *appearance = [NSAppearance appearanceNamed:NSAppearanceNameAqua];
+            if (appearanceProp != nil) {
+                NSAppearance *requested = [NSAppearance appearanceNamed:appearanceProp];
+                if (requested != nil) {
+                    appearance = requested;
+                }
+            }
+            // [self setAppearance:appearance];
+            [self performSelector:appearanceSel withObject:appearance];
+        }
+    }
 
     // Get default nib file location
     // NOTE: This should learn about the current java.version. Probably best thru
