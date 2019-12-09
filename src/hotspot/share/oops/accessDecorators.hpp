@@ -176,11 +176,11 @@ const DecoratorSet ON_DECORATOR_MASK  = ON_STRONG_OOP_REF | ON_WEAK_OOP_REF |
                                         ON_PHANTOM_OOP_REF | ON_UNKNOWN_OOP_REF;
 
 // === Access Location ===
-// Accesses can take place in, e.g. the heap, old or young generation and different native roots.
+// Accesses can take place in, e.g. the heap, old or young generation, different native roots, or native memory off the heap.
 // The location is important to the GC as it may imply different actions. The following decorators are used:
 // * IN_HEAP: The access is performed in the heap. Many barriers such as card marking will
 //   be omitted if this decorator is not set.
-// * IN_NATIVE: The access is performed in an off-heap data structure pointing into the Java heap.
+// * IN_NATIVE: The access is performed in an off-heap data structure.
 const DecoratorSet IN_HEAP            = UCONST64(1) << 19;
 const DecoratorSet IN_NATIVE          = UCONST64(1) << 20;
 const DecoratorSet IN_DECORATOR_MASK  = IN_HEAP | IN_NATIVE;

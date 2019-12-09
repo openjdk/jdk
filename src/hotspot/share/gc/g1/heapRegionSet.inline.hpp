@@ -50,6 +50,26 @@ inline void HeapRegionSetBase::remove(HeapRegion* hr) {
   _length--;
 }
 
+inline void FreeRegionList::add_to_tail(HeapRegion* region_to_add) {
+  assert_free_region_list((length() == 0 && _head == NULL && _tail == NULL && _last == NULL) ||
+                          (length() >  0 && _head != NULL && _tail != NULL && _tail->hrm_index() < region_to_add->hrm_index()),
+                          "invariant");
+  // add() will verify the region and check mt safety.
+  add(region_to_add);
+
+  if (_head != NULL) {
+    // Link into list, next is already NULL, no need to set.
+    region_to_add->set_prev(_tail);
+    _tail->set_next(region_to_add);
+    _tail = region_to_add;
+  } else {
+    // Empty list, this region is now the list.
+    _head = region_to_add;
+    _tail = region_to_add;
+  }
+  increase_length(region_to_add->node_index());
+}
+
 inline void FreeRegionList::add_ordered(HeapRegion* hr) {
   assert_free_region_list((length() == 0 && _head == NULL && _tail == NULL && _last == NULL) ||
                           (length() >  0 && _head != NULL && _tail != NULL),

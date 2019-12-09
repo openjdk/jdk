@@ -112,35 +112,31 @@ public class ClhsdbCDSCore {
                 if (Platform.isOSX()) {
                     File coresDir = new File("/cores");
                     if (!coresDir.isDirectory()) {
-                        throw new Error("cores is not a directory");
+                        cleanup();
+                        throw new Error(coresDir + " is not a directory");
                     }
                     // the /cores directory is usually not writable on macOS 10.15
-                    final String osVersion = System.getProperty("os.version");
-                    if (osVersion == null) {
-                        throw new Error("Cannot query the 'os.version' property!");
-                    }
                     if (!coresDir.canWrite()) {
-                        if (osVersion.startsWith("10.15")) {
-                            throw new SkippedException("/cores is not writable");
-                        } else {
-                            throw new Error("cores does not have write permissions");
-                        }
+                        cleanup();
+                        throw new SkippedException("Directory \"" + coresDir +
+                            "\" is not writable");
                     }
                 } else if (Platform.isLinux()) {
                     // Check if a crash report tool is installed.
                     File corePatternFile = new File(CORE_PATTERN_FILE_NAME);
-                    Scanner scanner = new Scanner(corePatternFile);
-                    while (scanner.hasNextLine()) {
-                        String line = scanner.nextLine();
-                        line = line.trim();
-                        System.out.println(line);
-                        if (line.startsWith("|")) {
-                            System.out.println(
-                                "\nThis system uses a crash report tool ($cat /proc/sys/kernel/core_pattern).\n" +
-                                "Core files might not be generated. Please reset /proc/sys/kernel/core_pattern\n" +
-                                "to enable core generation. Skipping this test.");
-                            cleanup();
-                            throw new SkippedException("This system uses a crash report tool");
+                    try (Scanner scanner = new Scanner(corePatternFile)) {
+                        while (scanner.hasNextLine()) {
+                            String line = scanner.nextLine();
+                            line = line.trim();
+                            System.out.println(line);
+                            if (line.startsWith("|")) {
+                                System.out.println(
+                                    "\nThis system uses a crash report tool ($cat /proc/sys/kernel/core_pattern).\n" +
+                                    "Core files might not be generated. Please reset /proc/sys/kernel/core_pattern\n" +
+                                    "to enable core generation. Skipping this test.");
+                                cleanup();
+                                throw new SkippedException("This system uses a crash report tool");
+                            }
                         }
                     }
                 }

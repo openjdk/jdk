@@ -106,10 +106,19 @@ public final class KerberosPrincipal
      *
      * <p>If the input name does not contain a realm, the default realm
      * is used. The default realm can be specified either in a Kerberos
-     * configuration file or via the java.security.krb5.realm
+     * configuration file or via the {@systemproperty java.security.krb5.realm}
      * system property. For more information, see the
      * {@extLink security_guide_jgss_tutorial Kerberos Requirements}.
-     * Additionally, if a security manager is
+     *
+     * <p>Note that when this class or any other Kerberos-related class is
+     * initially loaded and initialized, it may read and cache the default
+     * realm from the Kerberos configuration file or via the
+     * java.security.krb5.realm system property (the value will be empty if
+     * no default realm is specified), such that any subsequent calls to set
+     * or change the default realm by setting the java.security.krb5.realm
+     * system property may be ignored.
+     *
+     * <p>Additionally, if a security manager is
      * installed, a {@link ServicePermission} must be granted and the service
      * principal of the permission must minimally be inside the
      * {@code KerberosPrincipal}'s realm. For example, if the result of
@@ -146,10 +155,19 @@ public final class KerberosPrincipal
      *
      * <p>If the input name does not contain a realm, the default realm
      * is used. The default realm can be specified either in a Kerberos
-     * configuration file or via the java.security.krb5.realm
+     * configuration file or via the {@systemproperty java.security.krb5.realm}
      * system property. For more information, see the
      * {@extLink security_guide_jgss_tutorial Kerberos Requirements}.
-     * Additionally, if a security manager is
+     *
+     * <p>Note that when this class or any other Kerberos-related class is
+     * initially loaded and initialized, it may read and cache the default
+     * realm from the Kerberos configuration file or via the
+     * java.security.krb5.realm system property (the value will be empty if
+     * no default realm is specified), such that any subsequent calls to set
+     * or change the default realm by setting the java.security.krb5.realm
+     * system property may be ignored.
+     *
+     * <p>Additionally, if a security manager is
      * installed, a {@link ServicePermission} must be granted and the service
      * principal of the permission must minimally be inside the
      * {@code KerberosPrincipal}'s realm. For example, if the result of
