@@ -25,10 +25,12 @@
  * @test
  * @bug 4361783
  * @key intermittent
- * @summary  Test to see if ICMP Port Unreachable on non-connected
- *           DatagramSocket causes a SocketException "socket closed"
- *           exception on Windows 2000.
+ * @summary Test to see if ICMP Port Unreachable on non-connected
+ *          DatagramSocket causes a SocketException "socket closed"
+ *          exception on Windows 2000.
+ * @run main/othervm PortUnreachable
  */
+
 import java.net.BindException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -56,6 +58,7 @@ public class PortUnreachable {
             b = "Greetings from the server".getBytes();
             packet = new DatagramPacket(b, b.length, addr, clientPort);
             sock.send(packet);
+            Thread.sleep(500);  // give time to the kernel to send packet
             sock.close();
         } catch (Exception e) {
             e.printStackTrace();
@@ -70,15 +73,15 @@ public class PortUnreachable {
                 serverPort);
         // it's possible that this method intermittently fails, if some other
         // process running on the machine grabs the port we want before us,
-        // and doesn't release it before the 5 * 500 ms are elapsed...
+        // and doesn't release it before the 10 * 500 ms are elapsed...
         while (serverSocket == null) {
             try {
                 serverSocket = new DatagramSocket(serverPort, InetAddress.getLocalHost());
             } catch (BindException bEx) {
-                if (retryCount++ < 5) {
-                   sleeptime += sleepAtLeast(500);
+                if (retryCount++ < 10) {
+                    sleeptime += sleepAtLeast(500);
                 } else {
-                    System.out.println("Give up after 5 retries and " + sleeptime(sleeptime));
+                    System.out.println("Give up after 10 retries and " + sleeptime(sleeptime));
                     System.out.println("Has some other process grabbed port " + serverPort + "?");
                     throw bEx;
                 }
@@ -154,6 +157,7 @@ public class PortUnreachable {
             clientSock.send(packet);
 
         serverSend();
+
         // try to receive
         b = new byte[25];
         packet = new DatagramPacket(b, b.length, addr, serverPort);
@@ -166,8 +170,20 @@ public class PortUnreachable {
     }
 
     public static void main(String[] args) throws Exception {
-        PortUnreachable test = new PortUnreachable();
-        test.execute();
-    }
+        // A BindException might be thrown intermittently. In that case retry
+        // 3 times before propagating the exception to finish execution.
+        int catchCount = 0;
 
+        while (true) {
+            try {
+                PortUnreachable test = new PortUnreachable();
+                test.execute();
+                return;
+            } catch (BindException bEx) {
+                if (++catchCount > 3) {
+                    throw bEx;
+                }
+            }
+        }
+    }
 }
