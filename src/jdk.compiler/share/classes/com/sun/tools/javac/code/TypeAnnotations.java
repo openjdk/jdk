@@ -955,6 +955,7 @@ public class TypeAnnotations {
                         appendTypeAnnotationsToOwner(v, v.getRawTypeAttributes());
                     }
                     switch (v.getKind()) {
+                        case BINDING_VARIABLE:
                         case LOCAL_VARIABLE:
                             return TypeAnnotationPosition
                                 .localVariable(location.toList(), currentLambda,

@@ -274,6 +274,9 @@ public class ElementKindVisitor6<R, P>
         case RESOURCE_VARIABLE:
             return visitVariableAsResourceVariable(e, p);
 
+        case BINDING_VARIABLE:
+            return visitVariableAsBindingVariable(e, p);
+
         default:
             throw new AssertionError("Bad kind " + k + " for VariableElement" + e);
         }
@@ -356,6 +359,21 @@ public class ElementKindVisitor6<R, P>
      * @since 1.7
      */
     public R visitVariableAsResourceVariable(VariableElement e, P p) {
+        return visitUnknown(e, p);
+    }
+
+    /**
+     * Visits a {@code BINDING_VARIABLE} variable element.
+     *
+     * @implSpec This implementation calls {@code visitUnknown}.
+     *
+     * @param e the element to visit
+     * @param p a visitor-specified parameter
+     * @return  the result of {@code visitUnknown}
+     *
+     * @since 14
+     */
+    public R visitVariableAsBindingVariable(VariableElement e, P p) {
         return visitUnknown(e, p);
     }
 

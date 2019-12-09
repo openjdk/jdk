@@ -137,7 +137,24 @@ public enum ElementKind {
      */
     @jdk.internal.PreviewFeature(feature=jdk.internal.PreviewFeature.Feature.RECORDS,
                                  essentialAPI=false)
-    RECORD_COMPONENT;
+    RECORD_COMPONENT,
+
+    /**
+     * {@preview Associated with pattern matching for {@code
+     * instanceof}, a preview feature of the Java language.
+     *
+     *           This enum constant is associated with <i>pattern
+     *           matching for {@code instanceof}</i>, a preview
+     *           feature of the Java language. Preview features
+     *           may be removed in a future release, or upgraded to permanent
+     *           features of the Java language.}
+     *
+     * A binding variable in a pattern .
+     * @since 14
+     */
+    @jdk.internal.PreviewFeature(feature=jdk.internal.PreviewFeature.Feature.PATTERN_MATCHING_IN_INSTANCEOF,
+                                 essentialAPI=false)
+    BINDING_VARIABLE;
 
     /**
      * Returns {@code true} if this is a kind of class:

@@ -136,4 +136,20 @@ public class ElementKindVisitor14<R, P> extends ElementKindVisitor9<R, P> {
     public R visitTypeAsRecord(TypeElement e, P p) {
         return defaultAction(e, p);
     }
+
+    /**
+     * Visits a {@code BINDING_VARIABLE} variable element.
+     *
+     * @implSpec This implementation calls {@code defaultAction}.
+     *
+     * @param e {@inheritDoc}
+     * @param p {@inheritDoc}
+     * @return  the result of {@code defaultAction}
+     *
+     * @since 14
+     */
+    @Override
+    public R visitVariableAsBindingVariable(VariableElement e, P p) {
+        return defaultAction(e, p);
+    }
 }
