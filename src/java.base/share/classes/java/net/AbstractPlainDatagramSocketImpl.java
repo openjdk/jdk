@@ -404,22 +404,8 @@ abstract class AbstractPlainDatagramSocketImpl extends DatagramSocketImpl
             ExtendedSocketOptions.getInstance();
 
     private static final Set<SocketOption<?>> datagramSocketOptions = datagramSocketOptions();
-    private static final Set<SocketOption<?>> multicastSocketOptions = multicastSocketOptions();
 
     private static Set<SocketOption<?>> datagramSocketOptions() {
-        HashSet<SocketOption<?>> options = new HashSet<>();
-        options.add(StandardSocketOptions.SO_SNDBUF);
-        options.add(StandardSocketOptions.SO_RCVBUF);
-        options.add(StandardSocketOptions.SO_REUSEADDR);
-        options.add(StandardSocketOptions.SO_BROADCAST);
-        options.add(StandardSocketOptions.IP_TOS);
-        if (isReusePortAvailable())
-            options.add(StandardSocketOptions.SO_REUSEPORT);
-        options.addAll(ExtendedSocketOptions.datagramSocketOptions());
-        return Collections.unmodifiableSet(options);
-    }
-
-    private static Set<SocketOption<?>> multicastSocketOptions() {
         HashSet<SocketOption<?>> options = new HashSet<>();
         options.add(StandardSocketOptions.SO_SNDBUF);
         options.add(StandardSocketOptions.SO_RCVBUF);
@@ -437,9 +423,6 @@ abstract class AbstractPlainDatagramSocketImpl extends DatagramSocketImpl
 
     @Override
     protected Set<SocketOption<?>> supportedOptions() {
-        if (isMulticast)
-            return multicastSocketOptions;
-        else
             return datagramSocketOptions;
     }
 

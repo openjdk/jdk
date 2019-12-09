@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,8 @@
  */
 
 import java.io.IOException;
-import java.net.*;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.util.Set;
 import static java.lang.System.out;
 import jdk.test.lib.net.IPSupport;
@@ -54,39 +55,24 @@ public class SupportedOptionsSet {
 
     static void first() throws IOException {
         try (Socket s = new Socket();
-             ServerSocket ss = new ServerSocket();
-             DatagramSocket ds = new DatagramSocket();
-             MulticastSocket ms = new MulticastSocket()) {
-
+             ServerSocket ss = new ServerSocket())
+        {
             Set<?> first = s.supportedOptions();
             Set<?> second = ss.supportedOptions();
             assertNotEqual(first, second,
                  "Socket and ServerSocket should have different options.");
-
-            first = ds.supportedOptions();
-            second = ms.supportedOptions();
-            assertNotEqual(first, second,
-                "DatagramSocket and MulticastSocket should have different options.");
         }
     }
 
     /** Tests with the order of access to supportedOptions reversed.  */
     static void second() throws IOException {
         try (ServerSocket ss = new ServerSocket();
-             Socket s = new Socket();
-             DatagramSocket ds = new DatagramSocket();
-             MulticastSocket ms = new MulticastSocket()) {
-
+             Socket s = new Socket())
+        {
             Set<?> first = ss.supportedOptions();
             Set<?> second = s.supportedOptions();
             assertNotEqual(first, second,
                 "ServerSocket and Socket should have different options.");
-
-            first = ms.supportedOptions();
-            second = ds.supportedOptions();
-            assertNotEqual(first, second,
-                "MulticastSocket and DatagramSocket should have different options.");
-
         }
     }
 
