@@ -166,13 +166,23 @@ public class DatagramSocketAdaptor
 
     @Override
     public SocketAddress getLocalSocketAddress() {
-        try {
-            return dc.getLocalAddress();
-        } catch (ClosedChannelException e) {
+        InetSocketAddress local = dc.localAddress();
+        if (local == null || isClosed())
             return null;
-        } catch (Exception x) {
-            throw new Error(x);
+
+        InetAddress addr = local.getAddress();
+        if (addr.isAnyLocalAddress())
+            return local;
+
+        SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            try {
+                sm.checkConnect(addr.getHostAddress(), -1);
+            } catch (SecurityException x) {
+                return new InetSocketAddress(local.getPort());
+            }
         }
+        return local;
     }
 
     @Override
