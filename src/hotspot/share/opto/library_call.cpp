@@ -2447,10 +2447,14 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
   offset = ConvL2X(offset);
   adr = make_unsafe_address(base, offset, is_store ? ACCESS_WRITE : ACCESS_READ, type, kind == Relaxed);
 
-  if (_gvn.type(base)->isa_ptr() != TypePtr::NULL_PTR) {
-    heap_base_oop = base;
-  } else if (type == T_OBJECT) {
-    return false; // off-heap oop accesses are not supported
+  if (_gvn.type(base)->isa_ptr() == TypePtr::NULL_PTR) {
+    if (type != T_OBJECT) {
+      decorators |= IN_NATIVE; // off-heap primitive access
+    } else {
+      return false; // off-heap oop accesses are not supported
+    }
+  } else {
+    heap_base_oop = base; // on-heap or mixed access
   }
 
   // Can base be NULL? Otherwise, always on-heap access.
