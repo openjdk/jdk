@@ -45,6 +45,7 @@ CT_MODULESOURCEPATH := $(call GetModuleSrcPath)
 CT_DATA_DESCRIPTION += $(TOPDIR)/make/data/symbols/symbols
 
 COMPILECREATESYMBOLS_ADD_EXPORTS := \
+    --add-exports java.base/jdk.internal=java.compiler.interim,jdk.compiler.interim \
     --add-exports jdk.compiler.interim/com.sun.tools.javac.api=ALL-UNNAMED \
     --add-exports jdk.compiler.interim/com.sun.tools.javac.code=ALL-UNNAMED \
     --add-exports jdk.compiler.interim/com.sun.tools.javac.util=ALL-UNNAMED \
@@ -58,6 +59,7 @@ $(eval $(call SetupJavaCompilation, COMPILE_CREATE_SYMBOLS, \
     INCLUDES := build/tools/symbolgenerator com/sun/tools/classfile, \
     BIN := $(BUILDTOOLS_OUTPUTDIR)/create_symbols, \
     ADD_JAVAC_FLAGS := $(INTERIM_LANGTOOLS_ARGS) \
+        --patch-module java.base=$(BUILDTOOLS_OUTPUTDIR)/gensrc/java.base.interim \
         $(COMPILECREATESYMBOLS_ADD_EXPORTS), \
 ))
 
