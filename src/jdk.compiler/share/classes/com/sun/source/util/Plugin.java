@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,4 +62,20 @@ public interface Plugin {
      * @param args Arguments, if any, for the plug-in
      */
     void init(JavacTask task, String... args);
+
+    /**
+     * Returns whether or not this plugin should be automatically started,
+     * even if not explicitly specified in the command-line options.
+     *
+     * <p>This method will be called by javac for all plugins located by the
+     * service loader. If the method returns {@code true}, the plugin will be
+     * {@link #init(JavacTask,String[]) initialized} with an empty array of
+     * string arguments if it is not otherwise initialized due to an explicit
+     * command-line option.
+     *
+     * @return whether or not this plugin should be automatically started
+     */
+    default boolean autoStart() {
+        return false;
+    }
 }
