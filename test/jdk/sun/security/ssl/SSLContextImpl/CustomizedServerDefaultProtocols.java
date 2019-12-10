@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 
 /*
  * @test
+ * @bug 8196584 8190492
  * @summary Test jdk.tls.server.protocols with TLS
  * @run main/othervm -Djdk.tls.server.protocols="SSLv3,TLSv1,TLSv1.1"
  *      CustomizedServerDefaultProtocols
@@ -48,32 +49,34 @@ public class CustomizedServerDefaultProtocols {
 
     final static String[] supportedProtocols = new String[]{
             "SSLv2Hello", "SSLv3", "TLSv1", "TLSv1.1", "TLSv1.2", "TLSv1.3"};
+    final static String[] serverDefaultProtocols = new String[] {
+            "TLSv1", "TLSv1.1", "TLSv1.2", "TLSv1.3"};
 
     enum ContextVersion {
         TLS_CV_01("SSL",
                 new String[]{"SSLv3", "TLSv1", "TLSv1.1"},
-                new String[]{"SSLv3", "TLSv1", "TLSv1.1", "TLSv1.2", "TLSv1.3"}),
+                new String[]{"TLSv1", "TLSv1.1", "TLSv1.2", "TLSv1.3"}),
         TLS_CV_02("TLS",
                 new String[]{"SSLv3", "TLSv1", "TLSv1.1"},
-                new String[]{"SSLv3", "TLSv1", "TLSv1.1", "TLSv1.2", "TLSv1.3"}),
+                new String[]{"TLSv1", "TLSv1.1", "TLSv1.2", "TLSv1.3"}),
         TLS_CV_03("SSLv3",
-                supportedProtocols,
-                new String[]{"SSLv3", "TLSv1"}),
+                serverDefaultProtocols,
+                new String[]{"TLSv1"}),
         TLS_CV_04("TLSv1",
-                supportedProtocols,
-                new String[]{"SSLv3", "TLSv1"}),
+                serverDefaultProtocols,
+                new String[]{"TLSv1"}),
         TLS_CV_05("TLSv1.1",
-                supportedProtocols,
-                new String[]{"SSLv3", "TLSv1", "TLSv1.1"}),
+                serverDefaultProtocols,
+                new String[]{"TLSv1", "TLSv1.1"}),
         TLS_CV_06("TLSv1.2",
-                supportedProtocols,
-                new String[]{"SSLv3", "TLSv1", "TLSv1.1", "TLSv1.2"}),
+                serverDefaultProtocols,
+                new String[]{"TLSv1", "TLSv1.1", "TLSv1.2"}),
         TLS_CV_07("TLSv1.3",
-                supportedProtocols,
-                new String[]{"SSLv3", "TLSv1", "TLSv1.1", "TLSv1.2", "TLSv1.3"}),
+                serverDefaultProtocols,
+                new String[]{"TLSv1", "TLSv1.1", "TLSv1.2", "TLSv1.3"}),
         TLS_CV_08("Default",
                 new String[]{"SSLv3", "TLSv1", "TLSv1.1"},
-                new String[]{"SSLv3", "TLSv1", "TLSv1.1", "TLSv1.2", "TLSv1.3"});
+                new String[]{"TLSv1", "TLSv1.1", "TLSv1.2", "TLSv1.3"});
 
         final String contextVersion;
         final String[] serverEnabledProtocols;
@@ -90,16 +93,18 @@ public class CustomizedServerDefaultProtocols {
     private static boolean checkProtocols(String[] target, String[] expected) {
         boolean success = true;
         if (target.length == 0) {
-            System.out.println("\tError: No protocols");
+            System.out.println("\t\t\t*** Error: No protocols");
             success = false;
         }
 
         if (!protocolEquals(target, expected)) {
-            System.out.println("\tError: Expected to get protocols " +
+            System.out.println("\t\t\t*** Error: Expected to get protocols " +
                     Arrays.toString(expected));
             success = false;
         }
-        System.out.println("\t  Protocols found " + Arrays.toString(target));
+        System.out.println("\t\t\t  Protocols found " + Arrays.toString(target));
+        System.out.println("\t\t\t--> Protocol check passed!!");
+
         return success;
     }
 
@@ -123,10 +128,11 @@ public class CustomizedServerDefaultProtocols {
     private static boolean checkCipherSuites(String[] target) {
         boolean success = true;
         if (target.length == 0) {
-            System.out.println("\tError: No cipher suites");
+            System.out.println("\t\t\t*** Error: No cipher suites");
             success = false;
         }
 
+        System.out.println("\t\t\t--> Cipher check passed!!");
         return success;
     }
 
@@ -145,7 +151,8 @@ public class CustomizedServerDefaultProtocols {
         boolean failed = false;
 
         for (ContextVersion cv : ContextVersion.values()) {
-            System.out.println("Checking SSLContext of " + cv.contextVersion);
+            System.out.println("\n\nChecking SSLContext of " + cv.contextVersion);
+            System.out.println("============================");
             SSLContext context = SSLContext.getInstance(cv.contextVersion);
 
             // Default SSLContext is initialized automatically.
@@ -159,6 +166,7 @@ public class CustomizedServerDefaultProtocols {
             //
             // Check default SSLParameters of SSLContext
             System.out.println("\tChecking default SSLParameters");
+            System.out.println("\t\tChecking SSLContext.getDefaultSSLParameters().getProtocols");
             SSLParameters parameters = context.getDefaultSSLParameters();
 
             String[] protocols = parameters.getProtocols();
@@ -168,7 +176,7 @@ public class CustomizedServerDefaultProtocols {
             failed |= !checkCipherSuites(ciphers);
 
             // Check supported SSLParameters of SSLContext
-            System.out.println("\tChecking supported SSLParameters");
+            System.out.println("\t\tChecking supported SSLParameters");
             parameters = context.getSupportedSSLParameters();
 
             protocols = parameters.getProtocols();
@@ -183,7 +191,7 @@ public class CustomizedServerDefaultProtocols {
             // Check SSLParameters of SSLEngine
             System.out.println();
             System.out.println("\tChecking SSLEngine of this SSLContext");
-            System.out.println("\tChecking SSLEngine.getSSLParameters()");
+            System.out.println("\t\tChecking SSLEngine.getSSLParameters()");
             SSLEngine engine = context.createSSLEngine();
             engine.setUseClientMode(true);
             parameters = engine.getSSLParameters();
@@ -194,20 +202,20 @@ public class CustomizedServerDefaultProtocols {
             ciphers = parameters.getCipherSuites();
             failed |= !checkCipherSuites(ciphers);
 
-            System.out.println("\tChecking SSLEngine.getEnabledProtocols()");
+            System.out.println("\t\tChecking SSLEngine.getEnabledProtocols()");
             protocols = engine.getEnabledProtocols();
             failed |= !checkProtocols(protocols, cv.clientEnabledProtocols);
 
-            System.out.println("\tChecking SSLEngine.getEnabledCipherSuites()");
+            System.out.println("\t\tChecking SSLEngine.getEnabledCipherSuites()");
             ciphers = engine.getEnabledCipherSuites();
             failed |= !checkCipherSuites(ciphers);
 
-            System.out.println("\tChecking SSLEngine.getSupportedProtocols()");
+            System.out.println("\t\tChecking SSLEngine.getSupportedProtocols()");
             protocols = engine.getSupportedProtocols();
             failed |= !checkProtocols(protocols, supportedProtocols);
 
             System.out.println(
-                    "\tChecking SSLEngine.getSupportedCipherSuites()");
+                    "\t\tChecking SSLEngine.getSupportedCipherSuites()");
             ciphers = engine.getSupportedCipherSuites();
             failed |= !checkCipherSuites(ciphers);
 
@@ -217,7 +225,7 @@ public class CustomizedServerDefaultProtocols {
             // Check SSLParameters of SSLSocket
             System.out.println();
             System.out.println("\tChecking SSLSocket of this SSLContext");
-            System.out.println("\tChecking SSLSocket.getSSLParameters()");
+            System.out.println("\t\tChecking SSLSocket.getSSLParameters()");
             SocketFactory fac = context.getSocketFactory();
             SSLSocket socket = (SSLSocket) fac.createSocket();
             parameters = socket.getSSLParameters();
@@ -228,20 +236,20 @@ public class CustomizedServerDefaultProtocols {
             ciphers = parameters.getCipherSuites();
             failed |= !checkCipherSuites(ciphers);
 
-            System.out.println("\tChecking SSLSocket.getEnabledProtocols()");
+            System.out.println("\t\tChecking SSLSocket.getEnabledProtocols()");
             protocols = socket.getEnabledProtocols();
             failed |= !checkProtocols(protocols, cv.clientEnabledProtocols);
 
-            System.out.println("\tChecking SSLSocket.getEnabledCipherSuites()");
+            System.out.println("\t\tChecking SSLSocket.getEnabledCipherSuites()");
             ciphers = socket.getEnabledCipherSuites();
             failed |= !checkCipherSuites(ciphers);
 
-            System.out.println("\tChecking SSLSocket.getSupportedProtocols()");
+            System.out.println("\t\tChecking SSLSocket.getSupportedProtocols()");
             protocols = socket.getSupportedProtocols();
             failed |= !checkProtocols(protocols, supportedProtocols);
 
             System.out.println(
-                    "\tChecking SSLSocket.getSupportedCipherSuites()");
+                    "\t\tChecking SSLSocket.getSupportedCipherSuites()");
             ciphers = socket.getSupportedCipherSuites();
             failed |= !checkCipherSuites(ciphers);
 
@@ -251,7 +259,7 @@ public class CustomizedServerDefaultProtocols {
             // Check SSLParameters of SSLServerSocket
             System.out.println();
             System.out.println("\tChecking SSLServerSocket of this SSLContext");
-            System.out.println("\tChecking SSLServerSocket.getSSLParameters()");
+            System.out.println("\t\tChecking SSLServerSocket.getSSLParameters()");
             SSLServerSocketFactory sf = context.getServerSocketFactory();
             SSLServerSocket ssocket = (SSLServerSocket) sf.createServerSocket();
             parameters = ssocket.getSSLParameters();
@@ -262,27 +270,25 @@ public class CustomizedServerDefaultProtocols {
             ciphers = parameters.getCipherSuites();
             failed |= !checkCipherSuites(ciphers);
 
-            System.out.println("\tChecking SSLEngine.getEnabledProtocols()");
+            System.out.println("\t\tChecking SSLEngine.getEnabledProtocols()");
             protocols = ssocket.getEnabledProtocols();
             failed |= !checkProtocols(protocols, cv.serverEnabledProtocols);
 
-            System.out.println("\tChecking SSLEngine.getEnabledCipherSuites()");
+            System.out.println("\t\tChecking SSLEngine.getEnabledCipherSuites()");
             ciphers = ssocket.getEnabledCipherSuites();
             failed |= !checkCipherSuites(ciphers);
 
-            System.out.println("\tChecking SSLEngine.getSupportedProtocols()");
+            System.out.println("\t\tChecking SSLEngine.getSupportedProtocols()");
             protocols = ssocket.getSupportedProtocols();
             failed |= !checkProtocols(protocols, supportedProtocols);
 
             System.out.println(
-                    "\tChecking SSLEngine.getSupportedCipherSuites()");
+                    "\t\tChecking SSLEngine.getSupportedCipherSuites()");
             ciphers = ssocket.getSupportedCipherSuites();
             failed |= !checkCipherSuites(ciphers);
 
             if (failed) {
                 throw new Exception("Run into problems, see log for more details");
-            } else {
-                System.out.println("\t... Success");
             }
         }
     }

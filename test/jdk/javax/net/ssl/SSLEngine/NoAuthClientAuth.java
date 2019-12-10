@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
 
 /*
  * @test
- * @bug 4495742
+ * @bug 4495742 8190492
  * @summary Demonstrate SSLEngine switch from no client auth to client auth.
  * @run main/othervm NoAuthClientAuth SSLv3
  * @run main/othervm NoAuthClientAuth TLSv1
@@ -303,6 +303,11 @@ public class NoAuthClientAuth {
         serverEngine = sslc.createSSLEngine();
         serverEngine.setUseClientMode(false);
         serverEngine.setNeedClientAuth(false);
+
+        // Enable all supported protocols on server side to test SSLv3
+        if ("SSLv3".equals(tlsProtocol)) {
+            serverEngine.setEnabledProtocols(serverEngine.getSupportedProtocols());
+        }
 
         /*
          * Similar to above, but using client mode instead.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
 
 /*
  * @test
- * @bug 4403428
+ * @bug 4403428 8190492
  * @summary Invalidating JSSE session on server causes SSLProtocolException
  * @run main/othervm InvalidateServerSessionRenegotiate SSLv3
  * @run main/othervm InvalidateServerSessionRenegotiate TLSv1
@@ -120,6 +120,12 @@ public class InvalidateServerSessionRenegotiate implements
 
         SSLSocket sslSocket = (SSLSocket) sslServerSocket.accept();
         sslSocket.addHandshakeCompletedListener(this);
+
+        // Enable all supported protocols on server side to test SSLv3
+        if ("SSLv3".equals(tlsProtocol)) {
+            sslSocket.setEnabledProtocols(sslSocket.getSupportedProtocols());
+        }
+
         InputStream sslIS = sslSocket.getInputStream();
         OutputStream sslOS = sslSocket.getOutputStream();
 
