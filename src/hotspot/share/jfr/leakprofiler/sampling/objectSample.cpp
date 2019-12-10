@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,36 +21,14 @@
  * questions.
  *
  */
+#include "precompiled.hpp"
+#include "jfr/leakprofiler/sampling/objectSample.hpp"
+#include "oops/access.inline.hpp"
 
-#ifndef SHARE_JFR_LEAKPROFILER_UTILITIES_UNIFIEDOOP_HPP
-#define SHARE_JFR_LEAKPROFILER_UTILITIES_UNIFIEDOOP_HPP
+const oop ObjectSample::object() const {
+  return NativeAccess<ON_PHANTOM_OOP_REF | AS_NO_KEEPALIVE>::oop_load(&_object);
+}
 
-#include "oops/oop.inline.hpp"
-
-class UnifiedOop : public AllStatic {
- public:
-  static const bool is_narrow(const oop* ref) {
-    assert(ref != NULL, "invariant");
-    return 1 == (((u8)ref) & 1);
-  }
-
-  static const oop* decode(const oop* ref) {
-    assert(ref != NULL, "invariant");
-    return is_narrow(ref) ? (const oop*)(((u8)ref) & ~1) : ref;
-  }
-
-  static const oop* encode(narrowOop* ref) {
-    assert(ref != NULL, "invariant");
-    return (const oop*)((u8)ref | 1);
-  }
-
-  static oop dereference(const oop* ref) {
-    assert(ref != NULL, "invariant");
-    return is_narrow(ref) ?
-      (oop)RawAccess<>::oop_load((narrowOop*)decode(ref)) :
-      (oop)RawAccess<>::oop_load(const_cast<oop*>(ref));
-
-  }
-};
-
-#endif // SHARE_JFR_LEAKPROFILER_UTILITIES_UNIFIEDOOP_HPP
+void ObjectSample::set_object(oop object) {
+  NativeAccess<ON_PHANTOM_OOP_REF>::oop_store(&_object, object);
+}

@@ -27,7 +27,7 @@
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/stringTable.hpp"
 #include "gc/shared/strongRootsScope.hpp"
-#include "jfr/leakprofiler/utilities/unifiedOop.hpp"
+#include "jfr/leakprofiler/utilities/unifiedOopRef.inline.hpp"
 #include "jfr/leakprofiler/checkpoint/rootResolver.hpp"
 #include "jfr/utilities/jfrThreadIterator.hpp"
 #include "memory/iterator.hpp"
@@ -47,7 +47,7 @@ class ReferenceLocateClosure : public OopClosure {
   RootCallbackInfo _info;
   bool _complete;
 
-  void do_oop_shared(const void* ref);
+  void do_oop_shared(UnifiedOopRef ref);
 
  public:
   ReferenceLocateClosure(RootCallback& callback,
@@ -71,20 +71,20 @@ class ReferenceLocateClosure : public OopClosure {
   }
 };
 
-void ReferenceLocateClosure::do_oop_shared(const void* ref) {
-  assert(ref != NULL, "invariant");
+void ReferenceLocateClosure::do_oop_shared(UnifiedOopRef ref) {
+  assert(!ref.is_null(), "invariant");
   if (!_complete) {
-    _info._high = ref;
+    _info._high = ref.addr<address>();
     _complete = _callback.process(_info);
   }
 }
 
 void ReferenceLocateClosure::do_oop(oop* ref) {
-  do_oop_shared(ref);
+  do_oop_shared(UnifiedOopRef::encode_in_native(ref));
 }
 
 void ReferenceLocateClosure::do_oop(narrowOop* ref) {
-  do_oop_shared(ref);
+  do_oop_shared(UnifiedOopRef::encode_in_native(ref));
 }
 
 class ReferenceToRootClosure : public StackObj {
@@ -303,7 +303,7 @@ bool ReferenceToThreadRootClosure::do_thread_stack_fast(JavaThread* jt) {
   info._type = OldObjectRoot::_stack_variable;
 
   for (int i = 0; i < _callback.entries(); ++i) {
-    const address adr = (address)_callback.at(i);
+    const address adr = _callback.at(i).addr<address>();
     if (jt->is_in_usable_stack(adr)) {
       info._high = adr;
       _complete = _callback.process(info);

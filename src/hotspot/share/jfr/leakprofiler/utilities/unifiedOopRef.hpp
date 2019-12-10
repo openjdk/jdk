@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,38 +22,29 @@
  *
  */
 
-#ifndef SHARE_JFR_LEAKPROFILER_CHAINS_EDGE_HPP
-#define SHARE_JFR_LEAKPROFILER_CHAINS_EDGE_HPP
+#ifndef SHARE_JFR_LEAKPROFILER_UTILITIES_UNIFIEDOOPREF_HPP
+#define SHARE_JFR_LEAKPROFILER_UTILITIES_UNIFIEDOOPREF_HPP
 
-#include "jfr/leakprofiler/utilities/unifiedOopRef.hpp"
-#include "memory/allocation.hpp"
 #include "oops/oopsHierarchy.hpp"
+#include "utilities/globalDefinitions.hpp"
 
-class Edge {
- protected:
-  const Edge* _parent;
-  UnifiedOopRef _reference;
- public:
-  Edge(const Edge* parent, UnifiedOopRef reference);
+struct UnifiedOopRef {
+  uintptr_t _value;
 
-  UnifiedOopRef reference() const {
-    return _reference;
-  }
-  const Edge* parent() const {
-    return _parent;
-  }
-  bool is_root() const {
-    return _parent == NULL;
-  }
-  const oop pointee() const;
-  const Klass* pointee_klass() const;
-  const oop reference_owner() const;
-  const Klass* reference_owner_klass() const;
-  size_t distance_to_root() const;
+  template <typename T>
+  T addr() const;
 
-  void* operator new (size_t sz, void* here) {
-    return here;
-  }
+  bool is_narrow() const;
+  bool is_native() const;
+  bool is_null() const;
+
+  oop dereference() const;
+
+  static UnifiedOopRef encode_in_native(const narrowOop* ref);
+  static UnifiedOopRef encode_in_native(const oop* ref);
+  static UnifiedOopRef encode_in_heap(const oop* ref);
+  static UnifiedOopRef encode_in_heap(const narrowOop* ref);
+  static UnifiedOopRef encode_null();
 };
 
-#endif // SHARE_JFR_LEAKPROFILER_CHAINS_EDGE_HPP
+#endif // SHARE_JFR_LEAKPROFILER_UTILITIES_UNIFIEDOOPREF_HPP

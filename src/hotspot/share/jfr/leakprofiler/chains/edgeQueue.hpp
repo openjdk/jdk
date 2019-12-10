@@ -27,6 +27,7 @@
 
 #include "memory/allocation.hpp"
 #include "jfr/leakprofiler/chains/edge.hpp"
+#include "jfr/leakprofiler/utilities/unifiedOopRef.hpp"
 
 class JfrVirtualMemory;
 
@@ -43,7 +44,7 @@ class EdgeQueue : public CHeapObj<mtTracing> {
 
   bool initialize();
 
-  void add(const Edge* parent, const oop* ref);
+  void add(const Edge* parent, UnifiedOopRef ref);
   const Edge* remove() const;
   const Edge* element_at(size_t index) const;
 

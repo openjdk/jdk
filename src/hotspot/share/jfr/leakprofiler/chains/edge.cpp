@@ -24,19 +24,17 @@
 #include "precompiled.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "jfr/leakprofiler/chains/edge.hpp"
-#include "jfr/leakprofiler/utilities/unifiedOop.hpp"
+#include "jfr/leakprofiler/utilities/unifiedOopRef.inline.hpp"
 
-Edge::Edge() : _parent(NULL), _reference(NULL) {}
-
-Edge::Edge(const Edge* parent, const oop* reference) : _parent(parent),
-                                                       _reference(reference) {}
+Edge::Edge(const Edge* parent, UnifiedOopRef reference) : _parent(parent),
+                                                          _reference(reference) {}
 
 const oop Edge::pointee() const {
-  return UnifiedOop::dereference(_reference);
+  return _reference.dereference();
 }
 
 const oop Edge::reference_owner() const {
-  return is_root() ? (oop)NULL : UnifiedOop::dereference(_parent->reference());
+  return is_root() ? (oop)NULL : _parent->reference().dereference();
 }
 
 static const Klass* resolve_klass(const oop obj) {

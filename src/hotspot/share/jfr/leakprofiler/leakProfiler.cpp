@@ -49,11 +49,6 @@ bool LeakProfiler::start(int sample_count) {
     return false;
   }
 
-  if (UseZGC) {
-    log_warning(jfr)("LeakProfiler is currently not supported in combination with ZGC");
-    return false;
-  }
-
   if (UseShenandoahGC) {
     log_warning(jfr)("LeakProfiler is currently not supported in combination with Shenandoah GC");
     return false;
@@ -101,11 +96,11 @@ void LeakProfiler::emit_events(int64_t cutoff_ticks, bool emit_all) {
   ObjectSampler::release();
 }
 
-void LeakProfiler::oops_do(BoolObjectClosure* is_alive, OopClosure* f) {
+void LeakProfiler::weak_oops_do(BoolObjectClosure* is_alive, OopClosure* f) {
   assert(SafepointSynchronize::is_at_safepoint(),
     "Leak Profiler::oops_do(...) may only be called during safepoint");
   if (is_running()) {
-    ObjectSampler::oops_do(is_alive, f);
+    ObjectSampler::weak_oops_do(is_alive, f);
   }
 }
 

@@ -41,7 +41,7 @@ class LeakProfiler : public AllStatic {
   static void sample(HeapWord* object, size_t size, JavaThread* thread);
 
   // Called by GC
-  static void oops_do(BoolObjectClosure* is_alive, OopClosure* f);
+  static void weak_oops_do(BoolObjectClosure* is_alive, OopClosure* f);
 };
 
 #endif // SHARE_JFR_LEAKPROFILER_LEAKPROFILER_HPP

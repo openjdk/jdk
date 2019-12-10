@@ -26,6 +26,7 @@
 #define SHARE_JFR_LEAKPROFILER_CHAINS_EDGESTORE_HPP
 
 #include "jfr/leakprofiler/chains/edge.hpp"
+#include "jfr/leakprofiler/utilities/unifiedOopRef.hpp"
 #include "jfr/utilities/jfrHashtable.hpp"
 #include "memory/allocation.hpp"
 
@@ -38,10 +39,9 @@ class StoredEdge : public Edge {
 
  public:
   StoredEdge();
-  StoredEdge(const Edge* parent, const oop* reference);
+  StoredEdge(const Edge* parent, UnifiedOopRef reference);
   StoredEdge(const Edge& edge);
   StoredEdge(const StoredEdge& edge);
-  void operator=(const StoredEdge& edge);
 
   traceid gc_root_id() const { return _gc_root_id; }
   void set_gc_root_id(traceid root_id) const { _gc_root_id = root_id; }
@@ -78,8 +78,8 @@ class EdgeStore : public CHeapObj<mtTracing> {
   bool on_equals(uintptr_t hash, const EdgeEntry* entry);
   void on_unlink(EdgeEntry* entry);
 
-  StoredEdge* get(const oop* reference) const;
-  StoredEdge* put(const oop* reference);
+  StoredEdge* get(UnifiedOopRef reference) const;
+  StoredEdge* put(UnifiedOopRef reference);
   traceid gc_root_id(const Edge* edge) const;
 
   bool put_edges(StoredEdge** previous, const Edge** current, size_t length);
@@ -94,7 +94,7 @@ class EdgeStore : public CHeapObj<mtTracing> {
   template <typename T>
   void iterate(T& functor) const { _edges->iterate_value<T>(functor); }
 
-  DEBUG_ONLY(bool contains(const oop* reference) const;)
+  DEBUG_ONLY(bool contains(UnifiedOopRef reference) const;)
 
  public:
   EdgeStore();

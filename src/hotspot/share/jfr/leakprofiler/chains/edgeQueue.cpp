@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "jfr/leakprofiler/chains/edgeQueue.hpp"
+#include "jfr/leakprofiler/utilities/unifiedOopRef.inline.hpp"
 #include "jfr/recorder/storage/jfrVirtualMemory.hpp"
 
 EdgeQueue::EdgeQueue(size_t reservation_size_bytes, size_t commit_block_size_bytes) :
@@ -45,8 +46,8 @@ EdgeQueue::~EdgeQueue() {
   delete _vmm;
 }
 
-void EdgeQueue::add(const Edge* parent, const oop* ref) {
-  assert(ref != NULL, "Null objects not allowed in EdgeQueue");
+void EdgeQueue::add(const Edge* parent, UnifiedOopRef ref) {
+  assert(!ref.is_null(), "Null objects not allowed in EdgeQueue");
   assert(!is_full(), "EdgeQueue is full. Check is_full before adding another Edge");
   assert(!_vmm->is_full(), "invariant");
   void* const allocation = _vmm->new_datum();

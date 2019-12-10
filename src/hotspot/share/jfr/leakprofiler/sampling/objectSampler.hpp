@@ -67,7 +67,7 @@ class ObjectSampler : public CHeapObj<mtTracing> {
   void remove_dead(ObjectSample* sample);
 
   // Called by GC
-  static void oops_do(BoolObjectClosure* is_alive, OopClosure* f);
+  static void weak_oops_do(BoolObjectClosure* is_alive, OopClosure* f);
 
   const ObjectSample* item_at(int index) const;
   ObjectSample* item_at(int index);

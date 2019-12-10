@@ -466,7 +466,7 @@ void ObjectSampleCheckpoint::on_type_set(JfrCheckpointWriter& writer) {
 }
 
 void ObjectSampleCheckpoint::on_type_set_unload(JfrCheckpointWriter& writer) {
-  assert(SafepointSynchronize::is_at_safepoint(), "invariant");
+  assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
   assert(LeakProfiler::is_running(), "invariant");
   if (writer.has_data() && ObjectSampler::sampler()->last() != NULL) {
     save_type_set_blob(writer, true);

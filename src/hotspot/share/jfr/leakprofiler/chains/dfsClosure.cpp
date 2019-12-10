@@ -30,7 +30,7 @@
 #include "jfr/leakprofiler/chains/rootSetClosure.hpp"
 #include "jfr/leakprofiler/utilities/granularTimer.hpp"
 #include "jfr/leakprofiler/utilities/rootType.hpp"
-#include "jfr/leakprofiler/utilities/unifiedOop.hpp"
+#include "jfr/leakprofiler/utilities/unifiedOopRef.inline.hpp"
 #include "memory/iterator.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/access.inline.hpp"
@@ -48,13 +48,13 @@ bool DFSClosure::_ignore_root_set = false;
 
 DFSClosure::DFSClosure() :
   _parent(NULL),
-  _reference(NULL),
+  _reference(UnifiedOopRef::encode_null()),
   _depth(0) {
 }
 
 DFSClosure::DFSClosure(DFSClosure* parent, size_t depth) :
   _parent(parent),
-  _reference(NULL),
+  _reference(UnifiedOopRef::encode_null()),
   _depth(depth) {
 }
 
@@ -99,9 +99,9 @@ void DFSClosure::find_leaks_from_root_set(EdgeStore* edge_store,
   rs.process();
 }
 
-void DFSClosure::closure_impl(const oop* reference, const oop pointee) {
+void DFSClosure::closure_impl(UnifiedOopRef reference, const oop pointee) {
   assert(pointee != NULL, "invariant");
-  assert(reference != NULL, "invariant");
+  assert(!reference.is_null(), "invariant");
 
   if (GranularTimer::is_finished()) {
      return;
@@ -161,24 +161,24 @@ void DFSClosure::add_chain() {
 void DFSClosure::do_oop(oop* ref) {
   assert(ref != NULL, "invariant");
   assert(is_aligned(ref, HeapWordSize), "invariant");
-  const oop pointee = *ref;
+  const oop pointee = HeapAccess<AS_NO_KEEPALIVE>::oop_load(ref);
   if (pointee != NULL) {
-    closure_impl(ref, pointee);
+    closure_impl(UnifiedOopRef::encode_in_heap(ref), pointee);
   }
 }
 
 void DFSClosure::do_oop(narrowOop* ref) {
   assert(ref != NULL, "invariant");
   assert(is_aligned(ref, sizeof(narrowOop)), "invariant");
-  const oop pointee = RawAccess<>::oop_load(ref);
+  const oop pointee = HeapAccess<AS_NO_KEEPALIVE>::oop_load(ref);
   if (pointee != NULL) {
-    closure_impl(UnifiedOop::encode(ref), pointee);
+    closure_impl(UnifiedOopRef::encode_in_heap(ref), pointee);
   }
 }
 
-void DFSClosure::do_root(const oop* ref) {
-  assert(ref != NULL, "invariant");
-  const oop pointee = UnifiedOop::dereference(ref);
+void DFSClosure::do_root(UnifiedOopRef ref) {
+  assert(!ref.is_null(), "invariant");
+  const oop pointee = ref.dereference();
   assert(pointee != NULL, "invariant");
   closure_impl(ref, pointee);
 }

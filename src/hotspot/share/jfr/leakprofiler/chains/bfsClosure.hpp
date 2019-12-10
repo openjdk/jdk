@@ -25,6 +25,7 @@
 #ifndef SHARE_JFR_LEAKPROFILER_CHAINS_BFSCLOSURE_HPP
 #define SHARE_JFR_LEAKPROFILER_CHAINS_BFSCLOSURE_HPP
 
+#include "jfr/leakprofiler/utilities/unifiedOopRef.hpp"
 #include "memory/iterator.hpp"
 
 class BitSet;
@@ -51,20 +52,23 @@ class BFSClosure : public BasicOopIterateClosure {
   bool is_complete() const;
   void step_frontier() const;
 
-  void closure_impl(const oop* reference, const oop pointee);
-  void add_chain(const oop* reference, const oop pointee);
+  void closure_impl(UnifiedOopRef reference, const oop pointee);
+  void add_chain(UnifiedOopRef reference, const oop pointee);
   void dfs_fallback();
 
   void iterate(const Edge* parent);
-  void process(const oop* reference, const oop pointee);
+  void process(UnifiedOopRef reference, const oop pointee);
 
   void process_root_set();
   void process_queue();
 
  public:
+  virtual ReferenceIterationMode reference_iteration_mode() { return DO_FIELDS_EXCEPT_REFERENT; }
+  virtual bool should_verify_oops() { return false; }
+
   BFSClosure(EdgeQueue* edge_queue, EdgeStore* edge_store, BitSet* mark_bits);
   void process();
-  void do_root(const oop* ref);
+  void do_root(UnifiedOopRef ref);
 
   virtual void do_oop(oop* ref);
   virtual void do_oop(narrowOop* ref);
