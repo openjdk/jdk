@@ -155,7 +155,7 @@ public class crstepreq004 {
     //--------------------------------------------------------- mutable common methods
 
     private void execTest() {
-        ThreadReference mainThread = threadByName("main");
+        ThreadReference mainThread = debuggee.threadByNameOrThrow("main");
 
         BreakpointRequest bpRequest = setBreakpoint( mainThread,
                                                      debuggeeClass,
@@ -247,7 +247,7 @@ public class crstepreq004 {
             exitCode = FAILED;
         }
 
-        ThreadReference thread = threadByName(threadName);
+        ThreadReference thread = debuggee.threadByNameOrThrow(threadName);
         StepRequest stepRequest = setStepRequest( thread,
                                                   StepRequest.STEP_LINE,
                                                   stepDepth,
@@ -416,19 +416,6 @@ public class crstepreq004 {
         } catch (Exception e) {
             throw new Failure("getEventSet(): Unexpected exception while waiting for an event: " + e);
         }
-    }
-
-
-    private ThreadReference threadByName(String name) throws Failure{
-        List all = vm.allThreads();
-        ListIterator li = all.listIterator();
-
-        while (li.hasNext()) {
-            ThreadReference thread = (ThreadReference) li.next();
-            if (thread.name().equals(name))
-                return thread;
-        }
-        throw new Failure("Thread with searching for name is not found: " + name);
     }
 
     private ReferenceType waitForDebuggeeClassPrepared () {

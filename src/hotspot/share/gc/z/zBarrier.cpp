@@ -31,14 +31,6 @@
 #include "runtime/safepoint.hpp"
 #include "utilities/debug.hpp"
 
-bool ZBarrier::during_mark() {
-  return ZGlobalPhase == ZPhaseMark;
-}
-
-bool ZBarrier::during_relocate() {
-  return ZGlobalPhase == ZPhaseRelocate;
-}
-
 template <bool finalizable>
 bool ZBarrier::should_mark_through(uintptr_t addr) {
   // Finalizable marked oops can still exists on the heap after marking

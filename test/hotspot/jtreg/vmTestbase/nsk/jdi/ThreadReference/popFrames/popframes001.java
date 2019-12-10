@@ -162,12 +162,6 @@ public class popframes001 {
 
     BreakpointRequest breakpointRequest;
 
-    class JDITestRuntimeException extends RuntimeException {
-        JDITestRuntimeException(String str) {
-            super("JDITestRuntimeException : " + str);
-        }
-    }
-
     //------------------------------------------------------ methods
 
     private int runThis (String argv[], PrintStream out) {
@@ -312,7 +306,7 @@ public class popframes001 {
         BreakpointRequest bpRequest;
 
         try {
-            bpRequest = settingBreakpoint(threadByName("main"),
+            bpRequest = settingBreakpoint(debuggee.threadByNameOrThrow("main"),
                                           debuggeeClass,
                                           bPointMethod, lineForComm, "zero");
         } catch ( Exception e ) {
@@ -360,7 +354,7 @@ public class popframes001 {
             }
 
             String thread2Name         = "thread2";
-            ThreadReference thread2Ref = threadByName(thread2Name);
+            ThreadReference thread2Ref = debuggee.threadByNameOrThrow(thread2Name);
 
 
             String poppedMethod    = "poppedMethod";
@@ -369,7 +363,7 @@ public class popframes001 {
 
             log2("......setting breakpoint in poppedMethod");
             try {
-                breakpointRequest = settingBreakpoint(threadByName(thread2Name),
+                breakpointRequest = settingBreakpoint(debuggee.threadByNameOrThrow(thread2Name),
                                           debuggeeClass,
                                           poppedMethod, breakpointLine, "one");
             } catch ( Exception e ) {
@@ -426,20 +420,6 @@ public class popframes001 {
         }
         log1("    TESTING ENDS");
         return;
-    }
-
-    private ThreadReference threadByName(String name)
-                 throws JDITestRuntimeException {
-
-        List         all = vm.allThreads();
-        ListIterator li  = all.listIterator();
-
-        for (; li.hasNext(); ) {
-            ThreadReference thread = (ThreadReference) li.next();
-            if (thread.name().equals(name))
-                return thread;
-        }
-        throw new JDITestRuntimeException("** Thread IS NOT found ** : " + name);
     }
 
    /*

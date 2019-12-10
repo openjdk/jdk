@@ -115,7 +115,7 @@ public class hashcode001 {
             switch (i) {
 
                 case 0:
-                       ThreadReference thread = threadByName(methodName);
+                       ThreadReference thread = debuggee.threadByNameOrThrow(methodName);
 
                        display(".....setting up StepRequest");
                        eventRequest = eventRequestManager.createStepRequest
@@ -222,19 +222,6 @@ public class hashcode001 {
 
         Method method = (Method) methodList.get(0);
         return method;
-    }
-
-    static private ThreadReference threadByName(String name) {
-
-        List all = debuggee.VM().allThreads();
-        ListIterator li  = all.listIterator();
-
-        while (li.hasNext()) {
-            ThreadReference thread = (ThreadReference) li.next();
-            if (thread.name().equals(name))
-                return thread;
-        }
-        throw new Failure("Thread IS NOT found : " + name);
     }
 
 }

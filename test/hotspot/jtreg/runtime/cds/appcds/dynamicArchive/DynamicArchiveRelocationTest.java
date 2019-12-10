@@ -88,7 +88,7 @@ public class DynamicArchiveRelocationTest extends DynamicArchiveTestBase {
         String baseArchiveName = getNewArchiveName("base");
         String topArchiveName  = getNewArchiveName("top");
 
-        String runtimeMsg = "ArchiveRelocationMode == 1: always map archive(s) at an alternative address";
+        String runtimeMsg = "Try to map archive(s) at an alternative address";
         String unlockArg = "-XX:+UnlockDiagnosticVMOptions";
 
         // (1) Dump base archive (static)

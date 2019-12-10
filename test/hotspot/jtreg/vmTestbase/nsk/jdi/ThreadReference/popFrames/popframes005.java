@@ -158,12 +158,6 @@ public class popframes005 {
     BreakpointRequest breakpointRequest2;
 
 
-    class JDITestRuntimeException extends RuntimeException {
-        JDITestRuntimeException(String str) {
-            super("JDITestRuntimeException : " + str);
-        }
-    }
-
     //------------------------------------------------------ methods
 
     private int runThis (String argv[], PrintStream out) {
@@ -313,7 +307,7 @@ public class popframes005 {
         String lineForComm  = "lineForComm";
 
         log2("......setting BreakpointRequest (bpRequest) in main thread");
-        bpRequest = settingBreakpoint(threadByName("main"),
+        bpRequest = settingBreakpoint(debuggee.threadByNameOrThrow("main"),
                                           debuggeeClass,
                                           bPointMethod, lineForComm, "zero");
         log2("bpRequest.enable();");
@@ -329,7 +323,7 @@ public class popframes005 {
             breakpointForCommunication();
 
             String thread2Name         = "thread2";
-            ThreadReference thread2Ref = threadByName(thread2Name);
+            ThreadReference thread2Ref = debuggee.threadByNameOrThrow(thread2Name);
 
             StackFrame stackFrame0 = null;
             StackFrame stackFrame1 = null;
@@ -398,20 +392,6 @@ public class popframes005 {
         }
         log1("    TESTING ENDS");
         return;
-    }
-
-    private ThreadReference threadByName(String name)
-                 throws JDITestRuntimeException {
-
-        List         all = vm.allThreads();
-        ListIterator li  = all.listIterator();
-
-        for (; li.hasNext(); ) {
-            ThreadReference thread = (ThreadReference) li.next();
-            if (thread.name().equals(name))
-                return thread;
-        }
-        throw new JDITestRuntimeException("** Thread IS NOT found ** : " + name);
     }
 
    /*

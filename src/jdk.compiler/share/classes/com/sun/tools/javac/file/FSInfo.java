@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,9 @@ package com.sun.tools.javac.file;
 
 import java.io.IOError;
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
@@ -92,7 +95,6 @@ public class FSInfo {
     }
 
     public List<Path> getJarClassPath(Path file) throws IOException {
-        Path parent = file.getParent();
         try (JarFile jarFile = new JarFile(file.toFile())) {
             Manifest man = jarFile.getManifest();
             if (man == null)
@@ -107,22 +109,42 @@ public class FSInfo {
                 return Collections.emptyList();
 
             List<Path> list = new ArrayList<>();
+            URL base = file.toUri().toURL();
 
             for (StringTokenizer st = new StringTokenizer(path);
                  st.hasMoreTokens(); ) {
                 String elt = st.nextToken();
                 try {
-                    Path f = FileSystems.getDefault().getPath(elt);
-                    if (!f.isAbsolute() && parent != null)
-                        f = parent.resolve(f).toAbsolutePath();
-                    list.add(f);
-                } catch (InvalidPathException | IOError e) {
-                    throw new IOException(e);
+                    URL url = tryResolveFile(base, elt);
+                    if (url != null) {
+                        list.add(Path.of(url.toURI()));
+                    }
+                } catch (URISyntaxException ex) {
+                    throw new IOException(ex);
                 }
             }
 
             return list;
         }
+    }
+
+    /**
+     * Attempt to return a file URL by resolving input against a base file
+     * URL.
+     *
+     * @return the resolved URL or null if the input is an absolute URL with
+     *         a scheme other than file (ignoring case)
+     * @throws MalformedURLException
+     */
+    static URL tryResolveFile(URL base, String input) throws MalformedURLException {
+        URL retVal = new URL(base, input);
+        if (input.indexOf(':') >= 0 && !"file".equalsIgnoreCase(retVal.getProtocol())) {
+            // 'input' contains a ':', which might be a scheme, or might be
+            // a Windows drive letter.  If the resolved file has a protocol
+            // that isn't "file:", it should be ignored.
+            return null;
+        }
+        return retVal;
     }
 
     private FileSystemProvider jarFSProvider;

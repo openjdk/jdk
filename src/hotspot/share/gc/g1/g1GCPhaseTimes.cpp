@@ -131,8 +131,10 @@ G1GCPhaseTimes::G1GCPhaseTimes(STWGCTimer* gc_timer, uint max_gc_threads) :
   _gc_par_phases[RedirtyCards] = new WorkerDataArray<double>("Parallel Redirty (ms):", max_gc_threads);
   _gc_par_phases[RedirtyCards]->create_thread_work_items("Redirtied Cards:");
 
+  _gc_par_phases[ParFreeCSet] = new WorkerDataArray<double>("Parallel Free Collection Set (ms):", max_gc_threads);
   _gc_par_phases[YoungFreeCSet] = new WorkerDataArray<double>("Young Free Collection Set (ms):", max_gc_threads);
   _gc_par_phases[NonYoungFreeCSet] = new WorkerDataArray<double>("Non-Young Free Collection Set (ms):", max_gc_threads);
+  _gc_par_phases[RebuildFreeList] = new WorkerDataArray<double>("Parallel Rebuild Free List (ms):", max_gc_threads);
 
   reset();
 }
@@ -167,6 +169,8 @@ void G1GCPhaseTimes::reset() {
   _recorded_start_new_cset_time_ms = 0.0;
   _recorded_total_free_cset_time_ms = 0.0;
   _recorded_serial_free_cset_time_ms = 0.0;
+  _recorded_total_rebuild_freelist_time_ms = 0.0;
+  _recorded_serial_rebuild_freelist_time_ms = 0.0;
   _cur_fast_reclaim_humongous_time_ms = 0.0;
   _cur_region_register_time = 0.0;
   _cur_fast_reclaim_humongous_total = 0;
@@ -328,11 +332,11 @@ void G1GCPhaseTimes::debug_phase(WorkerDataArray<double>* phase, uint extra_inde
   }
 }
 
-void G1GCPhaseTimes::trace_phase(WorkerDataArray<double>* phase, bool print_sum) const {
+void G1GCPhaseTimes::trace_phase(WorkerDataArray<double>* phase, bool print_sum, uint extra_indent) const {
   LogTarget(Trace, gc, phases) lt;
   if (lt.is_enabled()) {
     LogStream ls(lt);
-    log_phase(phase, 3, &ls, print_sum);
+    log_phase(phase, 3 + extra_indent, &ls, print_sum);
   }
 }
 
@@ -456,6 +460,7 @@ double G1GCPhaseTimes::print_post_evacuate_collection_set() const {
                         _cur_strong_code_root_purge_time_ms +
                         _recorded_redirty_logged_cards_time_ms +
                         _recorded_total_free_cset_time_ms +
+                        _recorded_total_rebuild_freelist_time_ms +
                         _cur_fast_reclaim_humongous_time_ms +
                         _cur_expand_heap_time_ms +
                         _cur_string_deduplication_time_ms;
@@ -492,9 +497,14 @@ double G1GCPhaseTimes::print_post_evacuate_collection_set() const {
 #endif
 
   debug_time("Free Collection Set", _recorded_total_free_cset_time_ms);
-  trace_time("Free Collection Set Serial", _recorded_serial_free_cset_time_ms);
-  trace_phase(_gc_par_phases[YoungFreeCSet]);
-  trace_phase(_gc_par_phases[NonYoungFreeCSet]);
+  trace_time("Serial Free Collection Set", _recorded_serial_free_cset_time_ms);
+  trace_phase(_gc_par_phases[ParFreeCSet]);
+  trace_phase(_gc_par_phases[YoungFreeCSet], true, 1);
+  trace_phase(_gc_par_phases[NonYoungFreeCSet], true, 1);
+
+  debug_time("Rebuild Free List", _recorded_total_rebuild_freelist_time_ms);
+  trace_time("Serial Rebuild Free List ", _recorded_serial_rebuild_freelist_time_ms);
+  trace_phase(_gc_par_phases[RebuildFreeList]);
 
   if (G1EagerReclaimHumongousObjects) {
     debug_time("Humongous Reclaim", _cur_fast_reclaim_humongous_time_ms);
@@ -566,8 +576,10 @@ const char* G1GCPhaseTimes::phase_name(GCParPhases phase) {
       "StringDedupQueueFixup",
       "StringDedupTableFixup",
       "RedirtyCards",
+      "ParFreeCSet",
       "YoungFreeCSet",
       "NonYoungFreeCSet",
+      "RebuildFreeList",
       "MergePSS"
       //GCParPhasesSentinel only used to tell end of enum
       };

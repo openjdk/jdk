@@ -1327,6 +1327,11 @@ void ShenandoahHeap::object_iterate(ObjectClosure* cl) {
   }
 }
 
+// Keep alive an object that was loaded with AS_NO_KEEPALIVE.
+void ShenandoahHeap::keep_alive(oop obj) {
+  ShenandoahBarrierSet::barrier_set()->enqueue(obj);
+}
+
 void ShenandoahHeap::heap_region_iterate(ShenandoahHeapRegionClosure* blk) const {
   for (size_t i = 0; i < num_regions(); i++) {
     ShenandoahHeapRegion* current = get_region(i);

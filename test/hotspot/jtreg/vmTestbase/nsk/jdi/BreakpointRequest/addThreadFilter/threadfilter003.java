@@ -156,12 +156,6 @@ public class threadfilter003 {
     static int  testExitCode = PASSED;
 
 
-    class JDITestRuntimeException extends RuntimeException {
-        JDITestRuntimeException(String str) {
-            super("JDITestRuntimeException : " + str);
-        }
-    }
-
     //------------------------------------------------------ methods
 
     private int runThis (String argv[], PrintStream out) {
@@ -285,7 +279,7 @@ public class threadfilter003 {
         eventRManager = vm.eventRequestManager();
 
         ClassPrepareRequest cpRequest = eventRManager.createClassPrepareRequest();
-        cpRequest.setSuspendPolicy( EventRequest.SUSPEND_EVENT_THREAD);
+        cpRequest.setSuspendPolicy(EventRequest.SUSPEND_EVENT_THREAD);
         cpRequest.addClassFilter(debuggeeName);
 
         cpRequest.enable();
@@ -297,21 +291,21 @@ public class threadfilter003 {
         debuggeeClass = event.referenceType();
 
         if (!debuggeeClass.name().equals(debuggeeName))
-           throw new JDITestRuntimeException("** Unexpected ClassName for ClassPrepareEvent **");
+            throw new JDITestRuntimeException("** Unexpected ClassName for ClassPrepareEvent **");
 
         log2("      received: ClassPrepareEvent for debuggeeClass");
 
         String bPointMethod = "methodForCommunication";
-        String lineForComm  = "lineForComm";
+        String lineForComm = "lineForComm";
 
-        ThreadReference   mainThread = threadByName("main");
+        ThreadReference mainThread = debuggee.threadByNameOrThrow("main");
 
         BreakpointRequest bpRequest = settingBreakpoint(mainThread,
-                                             debuggeeClass,
-                                            bPointMethod, lineForComm, "zero");
+                debuggeeClass,
+                bPointMethod, lineForComm, "zero");
         bpRequest.enable();
 
-    //------------------------------------------------------  testing section
+        //------------------------------------------------------  testing section
 
         log1("     TESTING BEGINS");
 
@@ -319,8 +313,8 @@ public class threadfilter003 {
         EventRequest eventRequest2 = null;
         EventRequest eventRequest3 = null;
 
-        ThreadReference thread1     = null;
-        String          thread1Name = "thread1";
+        ThreadReference thread1 = null;
+        String thread1Name = "thread1";
 
         String property1 = "BreakpointRequest1";
         String property2 = "BreakpointRequest2";
@@ -337,7 +331,7 @@ public class threadfilter003 {
             breakpointForCommunication();
 
             int instruction = ((IntegerValue)
-                               (debuggeeClass.getValue(debuggeeClass.fieldByName("instruction")))).value();
+                    (debuggeeClass.getValue(debuggeeClass.fieldByName("instruction")))).value();
 
             if (instruction == 0) {
                 vm.resume();
@@ -350,82 +344,68 @@ public class threadfilter003 {
 
             switch (i) {
 
-              case 0:
-                     testClassReference =
+                case 0:
+                    testClassReference =
                             (ReferenceType) vm.classesByName(testedClassName).get(0);
 
-                     thread1 = (ThreadReference) debuggeeClass.getValue(
-                                        debuggeeClass.fieldByName(thread1Name));
+                    thread1 = (ThreadReference) debuggeeClass.getValue(
+                            debuggeeClass.fieldByName(thread1Name));
 
-                     eventRequest1 = setting2BreakpointRequest (null,
-                                             testClassReference, methodName, bpLineName,
-                                             EventRequest.SUSPEND_NONE, property1);
+                    eventRequest1 = setting2BreakpointRequest(null,
+                            testClassReference, methodName, bpLineName,
+                            EventRequest.SUSPEND_NONE, property1);
 
-                     try {
-                         log2("......eventRequest1.addThreadFilter(thread1);");
-                         log2("        no Exception expected");
-                         ((BreakpointRequest)eventRequest1).addThreadFilter(thread1);
-                         log2("        no Exception");
-                     } catch ( Exception e ) {
-                         log3("ERROR: Exception : " + e);
-                         testExitCode = FAILED;
-                     }
+                    try {
+                        log2("......eventRequest1.addThreadFilter(thread1);");
+                        log2("        no Exception expected");
+                        ((BreakpointRequest) eventRequest1).addThreadFilter(thread1);
+                        log2("        no Exception");
+                    } catch (Exception e) {
+                        log3("ERROR: Exception : " + e);
+                        testExitCode = FAILED;
+                    }
 
-                     break;
+                    break;
 
-              case 1:
-                     eventRequest2 = setting2BreakpointRequest (null,
-                                             testClassReference, methodName, bpLineName,
-                                             EventRequest.SUSPEND_NONE, property2);
+                case 1:
+                    eventRequest2 = setting2BreakpointRequest(null,
+                            testClassReference, methodName, bpLineName,
+                            EventRequest.SUSPEND_NONE, property2);
 
-                     try {
-                         log2("......eventRequest2.addThreadFilter(thread1);");
-                         log2("        no Exception expected");
-                         ((BreakpointRequest)eventRequest2).addThreadFilter(thread1);
-                         log2("        no Exception");
-                     } catch ( Exception e ) {
-                         log3("ERROR: Exception : " + e);
-                         testExitCode = FAILED;
-                     }
-                     break;
+                    try {
+                        log2("......eventRequest2.addThreadFilter(thread1);");
+                        log2("        no Exception expected");
+                        ((BreakpointRequest) eventRequest2).addThreadFilter(thread1);
+                        log2("        no Exception");
+                    } catch (Exception e) {
+                        log3("ERROR: Exception : " + e);
+                        testExitCode = FAILED;
+                    }
+                    break;
 
-              case 2:
-                     eventRequest3 = setting2BreakpointRequest (null,
-                                             testClassReference, methodName, bpLineName,
-                                             EventRequest.SUSPEND_NONE, property3);
+                case 2:
+                    eventRequest3 = setting2BreakpointRequest(null,
+                            testClassReference, methodName, bpLineName,
+                            EventRequest.SUSPEND_NONE, property3);
 
-                     try {
-                         log2("......eventRequest3.addThreadFilter(thread1);");
-                         log2("        no Exception expected");
-                         ((BreakpointRequest)eventRequest3).addThreadFilter(thread1);
-                         log2("        no Exception");
-                     } catch ( Exception e ) {
-                         log3("ERROR: Exception : " + e);
-                         testExitCode = FAILED;
-                     }
-                     break;
+                    try {
+                        log2("......eventRequest3.addThreadFilter(thread1);");
+                        log2("        no Exception expected");
+                        ((BreakpointRequest) eventRequest3).addThreadFilter(thread1);
+                        log2("        no Exception");
+                    } catch (Exception e) {
+                        log3("ERROR: Exception : " + e);
+                        testExitCode = FAILED;
+                    }
+                    break;
 
-              default:
-                      throw new JDITestRuntimeException("** default case 2 **");
+                default:
+                    throw new JDITestRuntimeException("** default case 2 **");
             }
             //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         }
         log1("    TESTING ENDS");
         return;
-    }
-
-    private ThreadReference threadByName(String name)
-                 throws JDITestRuntimeException {
-
-        List         all = vm.allThreads();
-        ListIterator li  = all.listIterator();
-
-        for (; li.hasNext(); ) {
-            ThreadReference thread = (ThreadReference) li.next();
-            if (thread.name().equals(name))
-                return thread;
-        }
-        throw new JDITestRuntimeException("** Thread IS NOT found ** : " + name);
     }
 
    /*

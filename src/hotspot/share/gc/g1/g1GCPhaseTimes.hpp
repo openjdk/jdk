@@ -76,8 +76,10 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     StringDedupQueueFixup,
     StringDedupTableFixup,
     RedirtyCards,
+    ParFreeCSet,
     YoungFreeCSet,
     NonYoungFreeCSet,
+    RebuildFreeList,
     MergePSS,
     GCParPhasesSentinel
   };
@@ -171,6 +173,10 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
 
   double _recorded_serial_free_cset_time_ms;
 
+  double _recorded_total_rebuild_freelist_time_ms;
+
+  double _recorded_serial_rebuild_freelist_time_ms;
+
   double _cur_region_register_time;
 
   double _cur_fast_reclaim_humongous_time_ms;
@@ -195,7 +201,7 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
   void log_phase(WorkerDataArray<double>* phase, uint indent, outputStream* out, bool print_sum) const;
   void debug_serial_phase(WorkerDataArray<double>* phase, uint extra_indent = 0) const;
   void debug_phase(WorkerDataArray<double>* phase, uint extra_indent = 0) const;
-  void trace_phase(WorkerDataArray<double>* phase, bool print_sum = true) const;
+  void trace_phase(WorkerDataArray<double>* phase, bool print_sum = true, uint extra_indent = 0) const;
 
   void info_time(const char* name, double value) const;
   void debug_time(const char* name, double value) const;
@@ -318,6 +324,14 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     _recorded_serial_free_cset_time_ms = time_ms;
   }
 
+  void record_total_rebuild_freelist_time_ms(double time_ms) {
+    _recorded_total_rebuild_freelist_time_ms = time_ms;
+  }
+
+  void record_serial_rebuild_freelist_time_ms(double time_ms) {
+    _recorded_serial_rebuild_freelist_time_ms = time_ms;
+  }
+
   void record_register_regions(double time_ms, size_t total, size_t candidates) {
     _cur_region_register_time = time_ms;
     _cur_fast_reclaim_humongous_total = total;
@@ -399,6 +413,10 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
 
   double total_free_cset_time_ms() {
     return _recorded_total_free_cset_time_ms;
+  }
+
+  double total_rebuild_freelist_time_ms() {
+    return _recorded_total_rebuild_freelist_time_ms;
   }
 
   double non_young_cset_choice_time_ms() {

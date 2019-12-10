@@ -157,12 +157,6 @@ public class popframes002 {
     BreakpointRequest breakpointRequest3;
 
 
-    class JDITestRuntimeException extends RuntimeException {
-        JDITestRuntimeException(String str) {
-            super("JDITestRuntimeException : " + str);
-        }
-    }
-
     //------------------------------------------------------ methods
 
     private int runThis (String argv[], PrintStream out) {
@@ -313,7 +307,7 @@ public class popframes002 {
         String lineForComm  = "lineForComm";
 
         log2("......setting BreakpointRequest (bpRequest) in main thread");
-        bpRequest = settingBreakpoint(threadByName("main"),
+        bpRequest = settingBreakpoint(debuggee.threadByNameOrThrow("main"),
                                           debuggeeClass,
                                           bPointMethod, lineForComm, "zero");
         log2("bpRequest.enable();");
@@ -329,10 +323,10 @@ public class popframes002 {
             breakpointForCommunication();
 
             String thread2Name         = "thread2";
-            ThreadReference thread2Ref = threadByName(thread2Name);
+            ThreadReference thread2Ref = debuggee.threadByNameOrThrow(thread2Name);
 
             String thread3Name         = "thread3";
-            ThreadReference thread3Ref = threadByName(thread3Name);
+            ThreadReference thread3Ref = debuggee.threadByNameOrThrow(thread3Name);
 
             String poppedMethod    = "poppedMethod";
             String breakpointLine  = "breakpointLine";
@@ -405,20 +399,6 @@ public class popframes002 {
 
         log1("    TESTING ENDS");
         return;
-    }
-
-    private ThreadReference threadByName(String name)
-                 throws JDITestRuntimeException {
-
-        List         all = vm.allThreads();
-        ListIterator li  = all.listIterator();
-
-        for (; li.hasNext(); ) {
-            ThreadReference thread = (ThreadReference) li.next();
-            if (thread.name().equals(name))
-                return thread;
-        }
-        throw new JDITestRuntimeException("** Thread IS NOT found ** : " + name);
     }
 
    /*

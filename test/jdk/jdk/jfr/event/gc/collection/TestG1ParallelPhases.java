@@ -110,8 +110,10 @@ public class TestG1ParallelPhases {
             "StringDedupQueueFixup",
             "StringDedupTableFixup",
             "RedirtyCards",
+            "ParFreeCSet",
             "NonYoungFreeCSet",
-            "YoungFreeCSet"
+            "YoungFreeCSet",
+            "RebuildFreeList"
         );
 
         // Some GC phases may or may not occur depending on environment. Filter them out

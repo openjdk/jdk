@@ -284,12 +284,11 @@ public class Main {
             Dependencies.GraphDependencies.preRegister(context);
         }
 
+        BasicJavacTask t = (BasicJavacTask) BasicJavacTask.instance(context);
+
         // init plugins
         Set<List<String>> pluginOpts = args.getPluginOpts();
-        if (!pluginOpts.isEmpty() || context.get(PlatformDescription.class) != null) {
-            BasicJavacTask t = (BasicJavacTask) BasicJavacTask.instance(context);
-            t.initPlugins(pluginOpts);
-        }
+        t.initPlugins(pluginOpts);
 
         // init multi-release jar handling
         if (fileManager.isSupportedOption(Option.MULTIRELEASE.primaryName) == 1) {
@@ -304,7 +303,6 @@ public class Main {
         // init doclint
         List<String> docLintOpts = args.getDocLintOpts();
         if (!docLintOpts.isEmpty()) {
-            BasicJavacTask t = (BasicJavacTask) BasicJavacTask.instance(context);
             t.initDocLint(docLintOpts);
         }
 

@@ -145,9 +145,15 @@ public class TestGCLogMessages {
         new LogMessageWithLevel("Prepare Heap Roots", Level.DEBUG),
         // Free CSet
         new LogMessageWithLevel("Free Collection Set", Level.DEBUG),
-        new LogMessageWithLevel("Free Collection Set Serial", Level.TRACE),
+        new LogMessageWithLevel("Serial Free Collection Set", Level.TRACE),
+        new LogMessageWithLevel("Parallel Free Collection Set", Level.TRACE),
         new LogMessageWithLevel("Young Free Collection Set", Level.TRACE),
         new LogMessageWithLevel("Non-Young Free Collection Set", Level.TRACE),
+        // Rebuild Free List
+        new LogMessageWithLevel("Rebuild Free List", Level.DEBUG),
+        new LogMessageWithLevel("Serial Rebuild Free List", Level.TRACE),
+        new LogMessageWithLevel("Parallel Rebuild Free List", Level.TRACE),
+
         // Humongous Eager Reclaim
         new LogMessageWithLevel("Humongous Reclaim", Level.DEBUG),
         // Merge PSS

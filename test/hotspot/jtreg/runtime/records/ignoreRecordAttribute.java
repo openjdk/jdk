@@ -35,7 +35,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 public class ignoreRecordAttribute {
 
     public static void main(String[] args) throws Exception {
-
+        String MAJOR_VERSION = Integer.toString(44 + Runtime.version().feature());
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("--enable-preview",
             "-Xlog:class+record", "-Xshare:off", "superNotJLRecord");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
@@ -46,7 +46,7 @@ public class ignoreRecordAttribute {
             "-Xlog:class+record", "-Xshare:off", "recordIgnoredVersion");
         output = new OutputAnalyzer(pb.start());
         output.shouldContain("Ignoring Record attribute");
-        output.shouldContain("because class file version is not 58.65535");
+        output.shouldContain("because class file version is not " + MAJOR_VERSION + ".65535");
     }
 
 }

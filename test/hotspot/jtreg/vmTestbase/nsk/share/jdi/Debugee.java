@@ -48,6 +48,7 @@ import java.util.*;
  * @see DebugeeProcess
  */
 abstract public class Debugee extends DebugeeProcess {
+
     /**
      * Mirror of the debugee VM. This must be initialized by every
      * particular non-abstract class extending Debugee class.
@@ -238,6 +239,19 @@ abstract public class Debugee extends DebugeeProcess {
             throw new TestBug(
                 "found " + count + " such threads: " + name);
         return threads[index];
+    }
+
+
+    public ThreadReference threadByNameOrThrow(String name) throws JDITestRuntimeException {
+
+        List all = vm.allThreads();
+        ListIterator li = all.listIterator();
+        for (; li.hasNext(); ) {
+            ThreadReference thread = (ThreadReference) li.next();
+            if (thread.name().equals(name))
+                return thread;
+        }
+        throw new JDITestRuntimeException("** Thread IS NOT found ** : " + name);
     }
 
     // --------------------------------------------------- //

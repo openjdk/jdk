@@ -25,8 +25,13 @@
 package java.net;
 
 import java.io.IOException;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.access.JavaIOFileDescriptorAccess;
+
+import sun.net.ext.ExtendedSocketOptions;
 
 /**
  * This class defines the plain DatagramSocketImpl that is used on
@@ -228,6 +233,19 @@ class DualStackPlainDatagramSocketImpl extends AbstractPlainDatagramSocketImpl
         }
 
         return returnValue;
+    }
+
+    @Override
+    protected Set<SocketOption<?>> supportedOptions() {
+        HashSet<SocketOption<?>> options = new HashSet<>();
+        options.add(StandardSocketOptions.SO_SNDBUF);
+        options.add(StandardSocketOptions.SO_RCVBUF);
+        options.add(StandardSocketOptions.SO_REUSEADDR);
+        options.add(StandardSocketOptions.SO_BROADCAST);
+        options.add(StandardSocketOptions.IP_TOS);
+
+        options.addAll(ExtendedSocketOptions.datagramSocketOptions());
+        return Collections.unmodifiableSet(options);
     }
 
     /* Multicast specific methods.

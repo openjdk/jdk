@@ -208,16 +208,18 @@ public class BasicJavacTask extends JavacTask {
             }
         }
 
-        if (pluginOpts.isEmpty())
-            return;
-
         Set<List<String>> pluginsToCall = new LinkedHashSet<>(pluginOpts);
         JavacProcessingEnvironment pEnv = JavacProcessingEnvironment.instance(context);
         ServiceLoader<Plugin> sl = pEnv.getServiceLoader(Plugin.class);
+        Set<Plugin> autoStart = new LinkedHashSet<>();
         for (Plugin plugin : sl) {
+            if (plugin.autoStart()) {
+                autoStart.add(plugin);
+            }
             for (List<String> p : pluginsToCall) {
                 if (plugin.getName().equals(p.head)) {
                     pluginsToCall.remove(p);
+                    autoStart.remove(plugin);
                     try {
                         plugin.init(this, p.tail.toArray(new String[p.tail.size()]));
                     } catch (RuntimeException ex) {
@@ -229,6 +231,14 @@ public class BasicJavacTask extends JavacTask {
         }
         for (List<String> p: pluginsToCall) {
             Log.instance(context).error(Errors.PluginNotFound(p.head));
+        }
+        for (Plugin plugin : autoStart) {
+            try {
+                plugin.init(this, new String[0]);
+            } catch (RuntimeException ex) {
+                throw new PropagatedException(ex);
+            }
+
         }
     }
 

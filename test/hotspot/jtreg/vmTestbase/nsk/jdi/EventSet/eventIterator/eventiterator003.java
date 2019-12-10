@@ -151,12 +151,6 @@ public class eventiterator003 {
 
     static int testExitCode = PASSED;
 
-    class JDITestRuntimeException extends RuntimeException {
-        JDITestRuntimeException(String str) {
-            super("JDITestRuntimeException : " + str);
-        }
-    }
-
     //------------------------------------------------------ methods
 
     private int runThis(String argv[], PrintStream out) {
@@ -311,7 +305,7 @@ public class eventiterator003 {
         String lineForComm = "lineForComm";
         BreakpointRequest bpRequest;
 
-        ThreadReference mainThread = threadByName("main");
+        ThreadReference mainThread = debuggee.threadByNameOrThrow("main");
 
         bpRequest = settingBreakpoint(mainThread, debuggeeClass, bPointMethod, lineForComm, "zero");
         bpRequest.enable();
@@ -390,19 +384,6 @@ public class eventiterator003 {
 
         log1("    TESTING ENDS");
         return;
-    }
-
-    private ThreadReference threadByName(String name) throws JDITestRuntimeException {
-
-        List all = vm.allThreads();
-        ListIterator li = all.listIterator();
-
-        for (; li.hasNext();) {
-            ThreadReference thread = (ThreadReference) li.next();
-            if (thread.name().equals(name))
-                return thread;
-        }
-        throw new JDITestRuntimeException("** Thread IS NOT found ** : " + name);
     }
 
     /*

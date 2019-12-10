@@ -158,12 +158,6 @@ public class popframes003 {
     MethodEntryRequest meRequest3;
 
 
-    class JDITestRuntimeException extends RuntimeException {
-        JDITestRuntimeException(String str) {
-            super("JDITestRuntimeException : " + str);
-        }
-    }
-
     //------------------------------------------------------ methods
 
     private int runThis (String argv[], PrintStream out) {
@@ -313,7 +307,7 @@ public class popframes003 {
         String bPointMethod = "methodForCommunication";
         String lineForComm  = "lineForComm";
 
-        ThreadReference threadMainRef = threadByName("main");
+        ThreadReference threadMainRef = debuggee.threadByNameOrThrow("main");
         try {
             bpRequest = settingBreakpoint(threadMainRef,
                                           debuggeeClass,
@@ -344,10 +338,10 @@ public class popframes003 {
 
 
         String thread2Name         = "thread2";
-        ThreadReference thread2Ref = threadByName(thread2Name);
+        ThreadReference thread2Ref = debuggee.threadByNameOrThrow(thread2Name);
 
         String thread3Name         = "thread3";
-        ThreadReference thread3Ref = threadByName(thread3Name);
+        ThreadReference thread3Ref = debuggee.threadByNameOrThrow(thread3Name);
 
         String poppedMethod    = "poppedMethod";
         String breakpointLine  = "breakpointLine";
@@ -477,21 +471,6 @@ public class popframes003 {
         log1("    TESTING ENDS");
         return;
     }
-
-    private ThreadReference threadByName(String name)
-                 throws JDITestRuntimeException {
-
-        List         all = vm.allThreads();
-        ListIterator li  = all.listIterator();
-
-        for (; li.hasNext(); ) {
-            ThreadReference thread = (ThreadReference) li.next();
-            if (thread.name().equals(name))
-                return thread;
-        }
-        throw new JDITestRuntimeException("** Thread IS NOT found ** : " + name);
-    }
-
 
   /*
     * private BreakpointRequest settingBreakpoint(ThreadReference, ReferenceType,

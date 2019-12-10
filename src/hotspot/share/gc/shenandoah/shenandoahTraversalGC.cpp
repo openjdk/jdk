@@ -140,7 +140,7 @@ private:
 public:
   ShenandoahMarkCLDClosure(OopClosure* cl) : _cl(cl) {}
   void do_cld(ClassLoaderData* cld) {
-    cld->oops_do(_cl, true, true);
+    cld->oops_do(_cl, ClassLoaderData::_claim_strong, true);
   }
 };
 
@@ -152,7 +152,7 @@ public:
   ShenandoahRemarkCLDClosure(OopClosure* cl) : _cl(cl) {}
   void do_cld(ClassLoaderData* cld) {
     if (cld->has_modified_oops()) {
-      cld->oops_do(_cl, true, true);
+      cld->oops_do(_cl, ClassLoaderData::_claim_strong, true);
     }
   }
 };

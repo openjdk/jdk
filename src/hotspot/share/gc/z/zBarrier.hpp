@@ -105,6 +105,7 @@ public:
   static void keep_alive_barrier_on_weak_oop_field(volatile oop* p);
   static void keep_alive_barrier_on_phantom_oop_field(volatile oop* p);
   static void keep_alive_barrier_on_phantom_root_oop_field(oop* p);
+  static void keep_alive_barrier_on_oop(oop o);
 
   // Mark barrier
   static void mark_barrier_on_oop_field(volatile oop* p, bool finalizable);

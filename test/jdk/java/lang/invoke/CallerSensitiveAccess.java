@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 8196830
+ * @bug 8196830 8235351
  * @modules java.base/jdk.internal.reflect
  * @run testng/othervm --illegal-access=deny CallerSensitiveAccess
  * @summary Check Lookup findVirtual, findStatic and unreflect behavior with
@@ -95,6 +95,27 @@ public class CallerSensitiveAccess {
         MethodHandles.publicLookup().unreflect(method);
     }
 
+    /**
+     * public accessible caller sensitive methods in APIs exported by java.base.
+     */
+    @DataProvider(name = "accessibleCallerSensitiveMethods")
+    static Object[][] accessibleCallerSensitiveMethods() {
+        return callerSensitiveMethods(Object.class.getModule())
+                .filter(m -> Modifier.isPublic(m.getModifiers()))
+                .map(m -> { m.setAccessible(true); return m; })
+                .map(m -> new Object[] { m, shortDescription(m) })
+                .toArray(Object[][]::new);
+    }
+
+    /**
+     * Using publicLookup, attempt to use unreflect to obtain a method handle to a
+     * caller sensitive method.
+     */
+    @Test(dataProvider = "accessibleCallerSensitiveMethods",
+            expectedExceptions = IllegalAccessException.class)
+    public void testLookupUnreflect(@NoInjection Method method, String desc) throws Exception {
+        MethodHandles.publicLookup().unreflect(method);
+    }
 
     // -- Test method handles to setAccessible --
 

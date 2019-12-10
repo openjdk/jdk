@@ -43,13 +43,16 @@ void* C2ParseAccess::barrier_set_state() const {
 PhaseGVN& C2ParseAccess::gvn() const { return _kit->gvn(); }
 
 bool C2Access::needs_cpu_membar() const {
-  bool mismatched = (_decorators & C2_MISMATCHED) != 0;
+  bool mismatched   = (_decorators & C2_MISMATCHED) != 0;
   bool is_unordered = (_decorators & MO_UNORDERED) != 0;
-  bool anonymous = (_decorators & C2_UNSAFE_ACCESS) != 0;
-  bool in_heap = (_decorators & IN_HEAP) != 0;
 
-  bool is_write = (_decorators & C2_WRITE_ACCESS) != 0;
-  bool is_read = (_decorators & C2_READ_ACCESS) != 0;
+  bool anonymous = (_decorators & C2_UNSAFE_ACCESS) != 0;
+  bool in_heap   = (_decorators & IN_HEAP) != 0;
+  bool in_native = (_decorators & IN_NATIVE) != 0;
+  bool is_mixed  = !in_heap && !in_native;
+
+  bool is_write  = (_decorators & C2_WRITE_ACCESS) != 0;
+  bool is_read   = (_decorators & C2_READ_ACCESS) != 0;
   bool is_atomic = is_read && is_write;
 
   if (is_atomic) {
@@ -63,9 +66,11 @@ bool C2Access::needs_cpu_membar() const {
     // the barriers get omitted and the unsafe reference begins to "pollute"
     // the alias analysis of the rest of the graph, either Compile::can_alias
     // or Compile::must_alias will throw a diagnostic assert.)
-    if (!in_heap || !is_unordered || (mismatched && !_addr.type()->isa_aryptr())) {
+    if (is_mixed || !is_unordered || (mismatched && !_addr.type()->isa_aryptr())) {
       return true;
     }
+  } else {
+    assert(!is_mixed, "not unsafe");
   }
 
   return false;
@@ -80,7 +85,7 @@ Node* BarrierSetC2::store_at_resolved(C2Access& access, C2AccessValue& val) cons
   bool requires_atomic_access = (decorators & MO_UNORDERED) == 0;
 
   bool in_native = (decorators & IN_NATIVE) != 0;
-  assert(!in_native, "not supported yet");
+  assert(!in_native || (unsafe && !access.is_oop()), "not supported yet");
 
   MemNode::MemOrd mo = access.mem_node_mo();
 

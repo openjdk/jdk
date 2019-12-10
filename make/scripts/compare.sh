@@ -529,31 +529,6 @@ compare_zip_file() {
         (cd $OTHER_UNZIPDIR && $JIMAGE extract $OTHER_ZIP)
     fi
 
-    # Find all archives inside and unzip them as well to compare the contents rather than
-    # the archives. pie.jar.pack.gz i app3.war is corrupt, skip it.
-    EXCEPTIONS="pie.jar.pack.gz jdk.pack"
-    for pack in $($FIND $THIS_UNZIPDIR \( -name "*.pack" -o -name "*.pack.gz" \) -a \
-                        ! -name pie.jar.pack.gz -a ! -name jdk.pack); do
-        ($UNPACK200 $pack $pack.jar)
-        # Filter out the unzipped archives from the diff below.
-        EXCEPTIONS="$EXCEPTIONS $pack $pack.jar"
-    done
-    for pack in $($FIND $OTHER_UNZIPDIR \( -name "*.pack" -o -name "*.pack.gz" \) -a \
-                        ! -name pie.jar.pack.gz -a ! -name jdk.pack); do
-        ($UNPACK200 $pack $pack.jar)
-        EXCEPTIONS="$EXCEPTIONS $pack $pack.jar"
-    done
-    for zip in $($FIND $THIS_UNZIPDIR -name "*.jar" -o -name "*.zip"); do
-        $MKDIR $zip.unzip
-        (cd $zip.unzip && $UNARCHIVE $zip)
-        EXCEPTIONS="$EXCEPTIONS $zip"
-    done
-    for zip in $($FIND $OTHER_UNZIPDIR -name "*.jar" -o -name "*.zip"); do
-        $MKDIR $zip.unzip
-        (cd $zip.unzip && $UNARCHIVE $zip)
-        EXCEPTIONS="$EXCEPTIONS $zip"
-    done
-
     CONTENTS_DIFF_FILE=$WORK_DIR/$ZIP_FILE.diff
     # On solaris, there is no -q option.
     if [ "$OPENJDK_TARGET_OS" = "solaris" ]; then

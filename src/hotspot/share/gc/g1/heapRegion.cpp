@@ -110,6 +110,19 @@ void HeapRegion::setup_heap_region_size(size_t initial_heap_size, size_t max_hea
   }
 }
 
+void HeapRegion::handle_evacuation_failure() {
+  uninstall_surv_rate_group();
+  clear_young_index_in_cset();
+  set_evacuation_failed(false);
+  set_old();
+}
+
+void HeapRegion::unlink_from_list() {
+  set_next(NULL);
+  set_prev(NULL);
+  set_containing_set(NULL);
+}
+
 void HeapRegion::hr_clear(bool keep_remset, bool clear_space, bool locked) {
   assert(_humongous_start_region == NULL,
          "we should have already filtered out humongous regions");

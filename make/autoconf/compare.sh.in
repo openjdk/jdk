@@ -67,7 +67,6 @@ export STRIP="@STRIP@ @STRIPFLAGS@"
 export TAR="@TAR@"
 export TEE="@TEE@"
 export UNIQ="@UNIQ@"
-export UNPACK200="@FIXPATH@ @BOOT_JDK@/bin/unpack200"
 export UNARCHIVE="@UNZIP@ -q -o"
 
 export TOPDIR="@TOPDIR@"

@@ -614,3 +614,80 @@ bool HeapRegionClaimer::claim_region(uint region_index) {
   uint old_val = Atomic::cmpxchg(&_claims[region_index], Unclaimed, Claimed);
   return old_val == Unclaimed;
 }
+
+class G1RebuildFreeListTask : public AbstractGangTask {
+  HeapRegionManager* _hrm;
+  FreeRegionList*    _worker_freelists;
+  uint               _worker_chunk_size;
+  uint               _num_workers;
+
+public:
+  G1RebuildFreeListTask(HeapRegionManager* hrm, uint num_workers) :
+      AbstractGangTask("G1 Rebuild Free List Task"),
+      _hrm(hrm),
+      _worker_freelists(NEW_C_HEAP_ARRAY(FreeRegionList, num_workers, mtGC)),
+      _worker_chunk_size((_hrm->max_length() + num_workers - 1) / num_workers),
+      _num_workers(num_workers) {
+    for (uint worker = 0; worker < _num_workers; worker++) {
+      ::new (&_worker_freelists[worker]) FreeRegionList("Appendable Worker Free List");
+    }
+  }
+
+  ~G1RebuildFreeListTask() {
+    for (uint worker = 0; worker < _num_workers; worker++) {
+      _worker_freelists[worker].~FreeRegionList();
+    }
+    FREE_C_HEAP_ARRAY(FreeRegionList, _worker_freelists);
+  }
+
+  FreeRegionList* worker_freelist(uint worker) {
+    return &_worker_freelists[worker];
+  }
+
+  // Each worker creates a free list for a chunk of the heap. The chunks won't
+  // be overlapping so we don't need to do any claiming.
+  void work(uint worker_id) {
+    Ticks start_time = Ticks::now();
+    EventGCPhaseParallel event;
+
+    uint start = worker_id * _worker_chunk_size;
+    uint end = MIN2(start + _worker_chunk_size, _hrm->max_length());
+
+    // If start is outside the heap, this worker has nothing to do.
+    if (start > end) {
+      return;
+    }
+
+    FreeRegionList *free_list = worker_freelist(worker_id);
+    for (uint i = start; i < end; i++) {
+      HeapRegion *region = _hrm->at_or_null(i);
+      if (region != NULL && region->is_free()) {
+        // Need to clear old links to allow to be added to new freelist.
+        region->unlink_from_list();
+        free_list->add_to_tail(region);
+      }
+    }
+
+    event.commit(GCId::current(), worker_id, G1GCPhaseTimes::phase_name(G1GCPhaseTimes::RebuildFreeList));
+    G1CollectedHeap::heap()->phase_times()->record_time_secs(G1GCPhaseTimes::RebuildFreeList, worker_id, (Ticks::now() - start_time).seconds());
+  }
+};
+
+void HeapRegionManager::rebuild_free_list(WorkGang* workers) {
+  // Abandon current free list to allow a rebuild.
+  _free_list.abandon();
+
+  uint const num_workers = clamp(max_length(), 1u, workers->active_workers());
+  G1RebuildFreeListTask task(this, num_workers);
+
+  log_debug(gc, ergo)("Running %s using %u workers for rebuilding free list of %u (%u) regions",
+                      task.name(), num_workers, num_free_regions(), max_length());
+  workers->run_task(&task, num_workers);
+
+  // Link the partial free lists together.
+  Ticks serial_time = Ticks::now();
+  for (uint worker = 0; worker < num_workers; worker++) {
+    _free_list.append_ordered(task.worker_freelist(worker));
+  }
+  G1CollectedHeap::heap()->phase_times()->record_serial_rebuild_freelist_time_ms((Ticks::now() - serial_time).seconds() * 1000.0);
+}

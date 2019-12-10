@@ -42,8 +42,7 @@ tier1_part3 = \
     :jdk_svc_sanity \
     java/nio/Buffer \
     com/sun/crypto/provider/Cipher \
-    sun/nio/cs/ISO8859x.java \
-    tools/pack200
+    sun/nio/cs/ISO8859x.java
 
 # When adding tests to tier2, make sure they end up in one of the tier2_partX groups
 tier2 = \
@@ -59,7 +58,6 @@ tier2_part1 = \
 # sun/nio/cs/ISO8859x.java and java/nio/Buffer are in tier1 because of JDK-8132854
 tier2_part2 = \
     :core_tools \
-    -tools/pack200 \
     :jdk_io \
     :jdk_nio \
     -java/nio/Buffer \

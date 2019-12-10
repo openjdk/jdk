@@ -597,12 +597,15 @@ Node* G1BarrierSetC2::load_at_resolved(C2Access& access, const Type* val_type) c
   Node* adr = access.addr().node();
   Node* obj = access.base();
 
+  bool anonymous = (decorators & C2_UNSAFE_ACCESS) != 0;
   bool mismatched = (decorators & C2_MISMATCHED) != 0;
   bool unknown = (decorators & ON_UNKNOWN_OOP_REF) != 0;
   bool in_heap = (decorators & IN_HEAP) != 0;
+  bool in_native = (decorators & IN_NATIVE) != 0;
   bool on_weak = (decorators & ON_WEAK_OOP_REF) != 0;
   bool is_unordered = (decorators & MO_UNORDERED) != 0;
-  bool need_cpu_mem_bar = !is_unordered || mismatched || !in_heap;
+  bool is_mixed = !in_heap && !in_native;
+  bool need_cpu_mem_bar = !is_unordered || mismatched || is_mixed;
 
   Node* top = Compile::current()->top();
   Node* offset = adr->is_AddP() ? adr->in(AddPNode::Offset) : top;

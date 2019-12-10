@@ -1789,7 +1789,7 @@ assertEquals("[x, y]", MH_asList.invoke("x", "y").toString());
          */
         public MethodHandle findStatic(Class<?> refc, String name, MethodType type) throws NoSuchMethodException, IllegalAccessException {
             MemberName method = resolveOrFail(REF_invokeStatic, refc, name, type);
-            return getDirectMethod(REF_invokeStatic, refc, method, findBoundCallerClass(method));
+            return getDirectMethod(REF_invokeStatic, refc, method, findBoundCallerLookup(method));
         }
 
         /**
@@ -1881,7 +1881,7 @@ assertEquals("", (String) MH_newString.invokeExact());
             }
             byte refKind = (refc.isInterface() ? REF_invokeInterface : REF_invokeVirtual);
             MemberName method = resolveOrFail(refKind, refc, name, type);
-            return getDirectMethod(refKind, refc, method, findBoundCallerClass(method));
+            return getDirectMethod(refKind, refc, method, findBoundCallerLookup(method));
         }
         private MethodHandle findVirtualForMH(String name, MethodType type) {
             // these names require special lookups because of the implicit MethodType argument
@@ -2133,7 +2133,7 @@ assertEquals(""+l, (String) MH_this.invokeExact(subl)); // Listie method
             checkSpecialCaller(specialCaller, refc);
             Lookup specialLookup = this.in(specialCaller);
             MemberName method = specialLookup.resolveOrFail(REF_invokeSpecial, refc, name, type);
-            return specialLookup.getDirectMethod(REF_invokeSpecial, refc, method, findBoundCallerClass(method));
+            return specialLookup.getDirectMethod(REF_invokeSpecial, refc, method, findBoundCallerLookup(method));
         }
 
         /**
@@ -2434,7 +2434,7 @@ return mh1;
         public MethodHandle bind(Object receiver, String name, MethodType type) throws NoSuchMethodException, IllegalAccessException {
             Class<? extends Object> refc = receiver.getClass(); // may get NPE
             MemberName method = resolveOrFail(REF_invokeSpecial, refc, name, type);
-            MethodHandle mh = getDirectMethodNoRestrictInvokeSpecial(refc, method, findBoundCallerClass(method));
+            MethodHandle mh = getDirectMethodNoRestrictInvokeSpecial(refc, method, findBoundCallerLookup(method));
             if (!mh.type().leadingReferenceParameter().isAssignableFrom(receiver.getClass())) {
                 throw new IllegalAccessException("The restricted defining class " +
                                                  mh.type().leadingReferenceParameter().getName() +
@@ -2486,7 +2486,7 @@ return mh1;
             assert(method.isMethod());
             @SuppressWarnings("deprecation")
             Lookup lookup = m.isAccessible() ? IMPL_LOOKUP : this;
-            return lookup.getDirectMethodNoSecurityManager(refKind, method.getDeclaringClass(), method, findBoundCallerClass(method));
+            return lookup.getDirectMethodNoSecurityManager(refKind, method.getDeclaringClass(), method, findBoundCallerLookup(method));
         }
         private MethodHandle unreflectForMH(Method m) {
             // these names require special lookups because they throw UnsupportedOperationException
@@ -2537,7 +2537,7 @@ return mh1;
             MemberName method = new MemberName(m, true);
             assert(method.isMethod());
             // ignore m.isAccessible:  this is a new kind of access
-            return specialLookup.getDirectMethodNoSecurityManager(REF_invokeSpecial, method.getDeclaringClass(), method, findBoundCallerClass(method));
+            return specialLookup.getDirectMethodNoSecurityManager(REF_invokeSpecial, method.getDeclaringClass(), method, findBoundCallerLookup(method));
         }
 
         /**
@@ -2828,17 +2828,12 @@ return mh1;
          * If this lookup object has full privilege access, then the caller class is the lookupClass.
          * Otherwise, if m is caller-sensitive, throw IllegalAccessException.
          */
-        Class<?> findBoundCallerClass(MemberName m) throws IllegalAccessException {
-            Class<?> callerClass = null;
-            if (MethodHandleNatives.isCallerSensitive(m)) {
+        Lookup findBoundCallerLookup(MemberName m) throws IllegalAccessException {
+            if (MethodHandleNatives.isCallerSensitive(m) && !hasFullPrivilegeAccess()) {
                 // Only lookups with full privilege access are allowed to resolve caller-sensitive methods
-                if (hasFullPrivilegeAccess()) {
-                    callerClass = lookupClass;
-                } else {
-                    throw new IllegalAccessException("Attempt to lookup caller-sensitive method using restricted lookup object");
-                }
+                throw new IllegalAccessException("Attempt to lookup caller-sensitive method using restricted lookup object");
             }
-            return callerClass;
+            return this;
         }
 
         /**
@@ -3042,28 +3037,28 @@ return mh1;
         }
 
         /** Check access and get the requested method. */
-        private MethodHandle getDirectMethod(byte refKind, Class<?> refc, MemberName method, Class<?> boundCallerClass) throws IllegalAccessException {
+        private MethodHandle getDirectMethod(byte refKind, Class<?> refc, MemberName method, Lookup callerLookup) throws IllegalAccessException {
             final boolean doRestrict    = true;
             final boolean checkSecurity = true;
-            return getDirectMethodCommon(refKind, refc, method, checkSecurity, doRestrict, boundCallerClass);
+            return getDirectMethodCommon(refKind, refc, method, checkSecurity, doRestrict, callerLookup);
         }
         /** Check access and get the requested method, for invokespecial with no restriction on the application of narrowing rules. */
-        private MethodHandle getDirectMethodNoRestrictInvokeSpecial(Class<?> refc, MemberName method, Class<?> boundCallerClass) throws IllegalAccessException {
+        private MethodHandle getDirectMethodNoRestrictInvokeSpecial(Class<?> refc, MemberName method, Lookup callerLookup) throws IllegalAccessException {
             final boolean doRestrict    = false;
             final boolean checkSecurity = true;
-            return getDirectMethodCommon(REF_invokeSpecial, refc, method, checkSecurity, doRestrict, boundCallerClass);
+            return getDirectMethodCommon(REF_invokeSpecial, refc, method, checkSecurity, doRestrict, callerLookup);
         }
         /** Check access and get the requested method, eliding security manager checks. */
-        private MethodHandle getDirectMethodNoSecurityManager(byte refKind, Class<?> refc, MemberName method, Class<?> boundCallerClass) throws IllegalAccessException {
+        private MethodHandle getDirectMethodNoSecurityManager(byte refKind, Class<?> refc, MemberName method, Lookup callerLookup) throws IllegalAccessException {
             final boolean doRestrict    = true;
             final boolean checkSecurity = false;  // not needed for reflection or for linking CONSTANT_MH constants
-            return getDirectMethodCommon(refKind, refc, method, checkSecurity, doRestrict, boundCallerClass);
+            return getDirectMethodCommon(refKind, refc, method, checkSecurity, doRestrict, callerLookup);
         }
         /** Common code for all methods; do not call directly except from immediately above. */
         private MethodHandle getDirectMethodCommon(byte refKind, Class<?> refc, MemberName method,
                                                    boolean checkSecurity,
-                                                   boolean doRestrict, Class<?> boundCallerClass) throws IllegalAccessException {
-
+                                                   boolean doRestrict,
+                                                   Lookup boundCaller) throws IllegalAccessException {
             checkMethod(refKind, refc, method);
             // Optionally check with the security manager; this isn't needed for unreflect* calls.
             if (checkSecurity)
@@ -3101,7 +3096,6 @@ return mh1;
                 // redo basic checks
                 checkMethod(refKind, refc, method);
             }
-
             DirectMethodHandle dmh = DirectMethodHandle.make(refKind, refc, method, lookupClass());
             MethodHandle mh = dmh;
             // Optionally narrow the receiver argument to lookupClass using restrictReceiver.
@@ -3109,22 +3103,25 @@ return mh1;
                     (MethodHandleNatives.refKindHasReceiver(refKind) && restrictProtectedReceiver(method))) {
                 mh = restrictReceiver(method, dmh, lookupClass());
             }
-            mh = maybeBindCaller(method, mh, boundCallerClass);
+            mh = maybeBindCaller(method, mh, boundCaller);
             mh = mh.setVarargs(method);
             return mh;
         }
-        private MethodHandle maybeBindCaller(MemberName method, MethodHandle mh,
-                                             Class<?> boundCallerClass)
+        private MethodHandle maybeBindCaller(MemberName method, MethodHandle mh, Lookup boundCaller)
                                              throws IllegalAccessException {
-            if (allowedModes == TRUSTED || !MethodHandleNatives.isCallerSensitive(method))
+            if (boundCaller.allowedModes == TRUSTED || !MethodHandleNatives.isCallerSensitive(method))
                 return mh;
-            Class<?> hostClass = lookupClass;
-            if (!hasFullPrivilegeAccess())  // caller must have full power access
-                hostClass = boundCallerClass;  // boundCallerClass came from a security manager style stack walk
-            MethodHandle cbmh = MethodHandleImpl.bindCaller(mh, hostClass);
+
+            // boundCaller must have full privilege access.
+            // It should have been checked by findBoundCallerLookup. Safe to check this again.
+            if (!boundCaller.hasFullPrivilegeAccess())
+                throw new IllegalAccessException("Attempt to lookup caller-sensitive method using restricted lookup object");
+
+            MethodHandle cbmh = MethodHandleImpl.bindCaller(mh, boundCaller.lookupClass);
             // Note: caller will apply varargs after this step happens.
             return cbmh;
         }
+
         /** Check access and get the requested field. */
         private MethodHandle getDirectField(byte refKind, Class<?> refc, MemberName field) throws IllegalAccessException {
             final boolean checkSecurity = true;
@@ -3296,7 +3293,7 @@ return mh1;
             if (MethodHandleNatives.refKindIsField(refKind)) {
                 return getDirectFieldNoSecurityManager(refKind, defc, member);
             } else if (MethodHandleNatives.refKindIsMethod(refKind)) {
-                return getDirectMethodNoSecurityManager(refKind, defc, member, lookupClass);
+                return getDirectMethodNoSecurityManager(refKind, defc, member, findBoundCallerLookup(member));
             } else if (refKind == REF_newInvokeSpecial) {
                 return getDirectConstructorNoSecurityManager(defc, member);
             }

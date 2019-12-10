@@ -111,12 +111,6 @@ class GNUStyleOptions {
                     jartool.vflag = true;
                 }
             },
-            new Option(false, OptionType.CREATE, "--normalize", "-n") {
-                void process(Main jartool, String opt, String arg) {
-                    jartool.nflag = true;
-                }
-                boolean isExtra() { return true; }
-            },
             new Option(true, OptionType.CREATE_UPDATE, "--main-class", "-e") {
                 void process(Main jartool, String opt, String arg) {
                     jartool.ename = arg;

@@ -63,8 +63,7 @@ public class VersionCheck extends TestHelper {
         "jmc.ini",
         "jweblauncher",
         "jpackage",
-        "ssvagent",
-        "unpack200",
+        "ssvagent"
     };
 
     // tools that do not accept -version
@@ -107,15 +106,13 @@ public class VersionCheck extends TestHelper {
         "kinit",
         "klist",
         "ktab",
-        "pack200",
         "jpackage",
         "rmic",
         "rmid",
         "rmiregistry",
         "serialver",
         "servertool",
-        "ssvagent",
-        "unpack200"
+        "ssvagent"
     };
 
     // expected reference strings

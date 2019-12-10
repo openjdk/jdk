@@ -1401,6 +1401,10 @@ class java_lang_StackTraceElement: AllStatic {
   static void set_lineNumber(oop element, int value);
   static void set_declaringClassObject(oop element, oop value);
 
+  static void decode_file_and_line(Handle java_mirror, InstanceKlass* holder, int version,
+                                   const methodHandle& method, int bci,
+                                   Symbol*& source, oop& source_file, int& line_number, TRAPS);
+
  public:
   // Create an instance of StackTraceElement
   static oop create(const methodHandle& method, int bci, TRAPS);
@@ -1412,8 +1416,7 @@ class java_lang_StackTraceElement: AllStatic {
   static void serialize_offsets(SerializeClosure* f) NOT_CDS_RETURN;
 
 #if INCLUDE_JVMCI
-  static void decode(Handle mirror, int method, int version, int bci, int cpref, Symbol*& methodName, Symbol*& fileName, int& lineNumber);
-  static void decode(Handle mirror, methodHandle method, int bci, Symbol*& methodName, Symbol*& fileName, int& lineNumber);
+  static void decode(const methodHandle& method, int bci, Symbol*& fileName, int& lineNumber, TRAPS);
 #endif
 
   // Debugging

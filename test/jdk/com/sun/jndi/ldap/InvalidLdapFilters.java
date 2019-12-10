@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 /**
  * @test
  * @bug 6916202 7041125
+ * @library /test/lib
  * @summary More cases of invalid ldap filters accepted and processed
  *      LDAP API does not catch malformed filters that contain two operands
  *      for the ! operator
@@ -87,11 +88,15 @@
 import java.io.*;
 import javax.naming.*;
 import javax.naming.directory.*;
-import java.util.Properties;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.util.Hashtable;
 
 import java.net.Socket;
 import java.net.ServerSocket;
+
+import jdk.test.lib.net.URIBuilder;
 
 public class InvalidLdapFilters {
     // Should we run the client or server in a separate thread?
@@ -111,9 +116,13 @@ public class InvalidLdapFilters {
     // If the server prematurely exits, serverReady will be set to true
     // to avoid infinite hangs.
     void doServerSide() throws Exception {
-        ServerSocket serverSock = new ServerSocket(serverPort);
+        ServerSocket serverSock = new ServerSocket();
+        SocketAddress sockAddr = new InetSocketAddress(
+                InetAddress.getLoopbackAddress(), serverPort);
+        // Bind server socket
+        serverSock.bind(sockAddr);
 
-        // signal client, it's ready to accecpt connection
+        // signal client, it's ready to accept connection
         serverPort = serverSock.getLocalPort();
         serverReady = true;
 
@@ -160,10 +169,16 @@ public class InvalidLdapFilters {
         }
 
         // set up the environment for creating the initial context
-        Hashtable<Object, Object> env = new Hashtable<Object, Object>();
+        Hashtable<Object, Object> env = new Hashtable<>();
         env.put(Context.INITIAL_CONTEXT_FACTORY,
                                 "com.sun.jndi.ldap.LdapCtxFactory");
-        env.put(Context.PROVIDER_URL, "ldap://localhost:" + serverPort);
+        String providerUrl = URIBuilder.newBuilder()
+                .scheme("ldap")
+                .loopback()
+                .port(serverPort)
+                .build()
+                .toString();
+        env.put(Context.PROVIDER_URL, providerUrl);
         env.put("com.sun.jndi.ldap.read.timeout", "1000");
 
         // env.put(Context.SECURITY_AUTHENTICATION, "simple");

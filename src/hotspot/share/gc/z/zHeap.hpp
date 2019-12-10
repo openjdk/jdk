@@ -137,6 +137,7 @@ public:
   void mark(bool initial);
   void mark_flush_and_free(Thread* thread);
   bool mark_end();
+  void keep_alive(oop obj);
 
   // Relocation set
   void select_relocation_set();
