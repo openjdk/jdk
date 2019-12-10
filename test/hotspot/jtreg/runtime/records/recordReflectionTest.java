@@ -87,8 +87,8 @@ public class recordReflectionTest {
 
         recordReflectionTest rft = new recordReflectionTest();
         components = rft.nr.getComponents();
-        if (components.length != 0) {
-            throw new RuntimeException("Non-empty component accessors returned for notRecord");
+        if (components != null) {
+            throw new RuntimeException("Non-null component accessors returned for notRecord");
         }
 
         recordGeneric rg = new recordGeneric(35, "abcd");

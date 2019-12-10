@@ -2271,14 +2271,20 @@ public final class Class<T> implements java.io.Serializable,
      *           may be removed in a future release, or upgraded to permanent
      *           features of the Java language.}
      *
-     * Returns an array containing {@code RecordComponent} objects reflecting all the
-     * declared record components of the record represented by this {@code Class} object.
-     * The components are returned in the same order that they are declared in the
-     * record header.
+     * Returns an array of {@code RecordComponent} objects representing all the
+     * record components of this record class, or {@code null} if this class is
+     * not a record class.
      *
-     * @return  The array of {@code RecordComponent} objects representing all the
-     *          record components of this record. The array is empty if this class
-     *          is not a record, or if this class is a record with no components.
+     * <p> The components are returned in the same order that they are declared
+     * in the record header. The array is empty if this record class has no
+     * components. If the class is not a record class, that is {@link
+     * #isRecord()} returns {@code false}, then this method returns {@code null}.
+     * Conversely, if {@link #isRecord()} returns {@code true}, then this method
+     * returns a non-null value.
+     *
+     * @return  An array of {@code RecordComponent} objects representing all the
+     *          record components of this record class, or {@code null} if this
+     *          class is not a record class
      * @throws  SecurityException
      *          If a security manager, <i>s</i>, is present and any of the
      *          following conditions is met:
@@ -2312,8 +2318,8 @@ public final class Class<T> implements java.io.Serializable,
         if (sm != null) {
             checkMemberAccess(sm, Member.DECLARED, Reflection.getCallerClass(), true);
         }
-        if (isPrimitive() || isArray()) {
-            return new RecordComponent[0];
+        if (!isRecord()) {
+            return null;
         }
         RecordComponent[] recordComponents = getRecordComponents0();
         if (recordComponents == null) {
@@ -3590,6 +3596,16 @@ public final class Class<T> implements java.io.Serializable,
         this.getSuperclass() == java.lang.Enum.class;
     }
 
+    /** java.lang.Record.class */
+    private static final Class<?> JAVA_LANG_RECORD_CLASS = javaLangRecordClass();
+    private static Class<?> javaLangRecordClass() {
+        try {
+            return Class.forName0("java.lang.Record", false, null, null);
+        } catch (ClassNotFoundException e) {
+            throw new InternalError("should not reach here", e);
+        }
+    }
+
     /**
      * {@preview Associated with records, a preview feature of the Java language.
      *
@@ -3599,18 +3615,23 @@ public final class Class<T> implements java.io.Serializable,
      *           features of the Java language.}
      *
      * Returns {@code true} if and only if this class is a record class.
-     * It returns {@code false} otherwise. Note that class {@link Record} is not a
-     * record type and thus invoking this method on class {@link java.lang.Record}
-     * returns {@code false}.
      *
-     * @return true if and only if this class is a record class
+     * <p> The {@linkplain #getSuperclass() direct superclass} of a record
+     * class is {@code java.lang.Record}. A record class has (possibly zero)
+     * record components, that is, {@link #getRecordComponents()} returns a
+     * non-null value.
+     *
+     * <p> Note that class {@link Record} is not a record type and thus invoking
+     * this method on class {@code Record} returns {@code false}.
+     *
+     * @return true if and only if this class is a record class, otherwise false
      * @jls 8.10 Record Types
      * @since 14
      */
     @jdk.internal.PreviewFeature(feature=jdk.internal.PreviewFeature.Feature.RECORDS,
                                  essentialAPI=false)
     public boolean isRecord() {
-        return isRecord0();
+        return getSuperclass() == JAVA_LANG_RECORD_CLASS && isRecord0();
     }
 
     // Fetches the factory for reflective objects
