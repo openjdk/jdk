@@ -841,24 +841,13 @@ public abstract class SSLContextImpl extends SSLContextSpi {
             // Use the default enabled protocols if no customization
             ProtocolVersion[] candidates;
             if (refactored.isEmpty()) {
-                if (client) {
-                    // default client protocols
-                    candidates = new ProtocolVersion[] {
-                            ProtocolVersion.TLS13,
-                            ProtocolVersion.TLS12,
-                            ProtocolVersion.TLS11,
-                            ProtocolVersion.TLS10
-                        };
-
-                } else {
-                    // default server protocols
-                    candidates = new ProtocolVersion[] {
-                            ProtocolVersion.TLS13,
-                            ProtocolVersion.TLS12,
-                            ProtocolVersion.TLS11,
-                            ProtocolVersion.TLS10
+                // Client and server use the same default protocols.
+                candidates = new ProtocolVersion[] {
+                        ProtocolVersion.TLS13,
+                        ProtocolVersion.TLS12,
+                        ProtocolVersion.TLS11,
+                        ProtocolVersion.TLS10
                     };
-                }
             } else {
                 // Use the customized TLS protocols.
                 candidates =
