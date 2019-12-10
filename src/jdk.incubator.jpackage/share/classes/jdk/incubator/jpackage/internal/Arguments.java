@@ -565,11 +565,24 @@ public class Arguments {
                 }
             }
         }
-        if (installerOnly && hasRuntime) {
-            // note --runtime-image is only for image or runtime installer.
-            throw new PackagerException("ERR_InvalidTypeOption",
-                    CLIOptions.PREDEFINED_RUNTIME_IMAGE.getIdWithPrefix(),
-                    ptype);
+        if (hasRuntime) {
+            if (hasAppImage) {
+                // note --runtime-image is only for image or runtime installer.
+                throw new PackagerException("ERR_MutuallyExclusiveOptions",
+                        CLIOptions.PREDEFINED_RUNTIME_IMAGE.getIdWithPrefix(),
+                        CLIOptions.PREDEFINED_APP_IMAGE.getIdWithPrefix());
+            }
+            if (allOptions.contains(CLIOptions.ADD_MODULES)) {
+                throw new PackagerException("ERR_MutuallyExclusiveOptions",
+                        CLIOptions.PREDEFINED_RUNTIME_IMAGE.getIdWithPrefix(),
+                        CLIOptions.ADD_MODULES.getIdWithPrefix());
+            }
+            if (allOptions.contains(CLIOptions.BIND_SERVICES)) {
+                throw new PackagerException("ERR_MutuallyExclusiveOptions",
+                        CLIOptions.PREDEFINED_RUNTIME_IMAGE.getIdWithPrefix(),
+                        CLIOptions.BIND_SERVICES.getIdWithPrefix());
+            }
+
         }
         if (hasMainJar && hasMainModule) {
             throw new PackagerException("ERR_BothMainJarAndModule");
