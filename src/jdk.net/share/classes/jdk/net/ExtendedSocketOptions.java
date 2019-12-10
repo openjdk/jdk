@@ -64,7 +64,11 @@ public final class ExtendedSocketOptions {
      * setting or getting this option requires a {@link NetworkPermission}
      * {@code ("setOption.SO_FLOW_SLA")} or {@code "getOption.SO_FLOW_SLA"}
      * respectively.
+     * @deprecated This is supported only on Solaris. Due to deprecation
+     * of Solaris port, this option is also deprecated.
      */
+    @Deprecated(since="14", forRemoval=true)
+    @SuppressWarnings("removal")
     public static final SocketOption<SocketFlow> SO_FLOW_SLA = new
         ExtSocketOption<SocketFlow>("SO_FLOW_SLA", SocketFlow.class);
 
@@ -192,6 +196,7 @@ public final class ExtendedSocketOptions {
                 new sun.net.ext.ExtendedSocketOptions(extendedOptions) {
 
             @Override
+            @SuppressWarnings("removal")
             public void setOption(FileDescriptor fd,
                                   SocketOption<?> option,
                                   Object value)
@@ -222,6 +227,7 @@ public final class ExtendedSocketOptions {
             }
 
             @Override
+            @SuppressWarnings("removal")
             public Object getOption(FileDescriptor fd,
                                     SocketOption<?> option)
                 throws SocketException
@@ -265,6 +271,7 @@ public final class ExtendedSocketOptions {
     private static final JavaIOFileDescriptorAccess fdAccess =
             SharedSecrets.getJavaIOFileDescriptorAccess();
 
+    @SuppressWarnings("removal")
     private static void setFlowOption(FileDescriptor fd, SocketFlow f)
         throws SocketException
     {
@@ -274,6 +281,7 @@ public final class ExtendedSocketOptions {
         f.status(status);  // augment the given flow with the status
     }
 
+    @SuppressWarnings("removal")
     private static void getFlowOption(FileDescriptor fd, SocketFlow f)
             throws SocketException {
         int status = platformSocketOptions.getFlowOption(fdAccess.get(fd), f);
@@ -362,6 +370,7 @@ public final class ExtendedSocketOptions {
             throw new UnsupportedOperationException("unsupported socket option");
         }
 
+        @SuppressWarnings("removal")
         int getFlowOption(int fd, SocketFlow f) throws SocketException {
             throw new UnsupportedOperationException("unsupported socket option");
         }

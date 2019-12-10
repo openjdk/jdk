@@ -259,6 +259,7 @@ public class Sockets {
         return isReusePortAvailable;
     }
 
+    @SuppressWarnings("removal")
     private static Map<Class<?>,Set<SocketOption<?>>> optionSets() {
         Map<Class<?>,Set<SocketOption<?>>> options = new HashMap<>();
         boolean flowsupported = PlatformSocketOptions.get().flowSupported();
