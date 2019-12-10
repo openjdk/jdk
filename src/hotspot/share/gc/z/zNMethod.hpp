@@ -43,7 +43,8 @@ public:
   static void unregister_nmethod(nmethod* nm);
   static void flush_nmethod(nmethod* nm);
 
-  static void disarm_nmethod(nmethod* nm);
+  static bool is_armed(nmethod* nm);
+  static void disarm(nmethod* nm);
 
   static void nmethod_oops_do(nmethod* nm, OopClosure* cl);
 

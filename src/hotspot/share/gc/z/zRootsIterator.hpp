@@ -31,10 +31,7 @@
 #include "runtime/thread.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-class ZRootsIteratorClosure : public OopClosure {
-public:
-  virtual void do_thread(Thread* thread) {}
-};
+class ZRootsIteratorClosure;
 
 typedef OopStorage::ParState<true /* concurrent */, false /* is_const */> ZOopStorageIterator;
 
@@ -82,9 +79,18 @@ public:
   void weak_oops_do(BoolObjectClosure* is_alive, ZRootsIteratorClosure* cl);
 };
 
+class ZRootsIteratorClosure : public OopClosure {
+public:
+  virtual void do_thread(Thread* thread) {}
+
+  virtual bool should_disarm_nmethods() const {
+    return false;
+  }
+};
+
 class ZRootsIterator {
 private:
-  bool _visit_jvmti_weak_export;
+  const bool _visit_jvmti_weak_export;
 
   void do_universe(ZRootsIteratorClosure* cl);
   void do_object_synchronizer(ZRootsIteratorClosure* cl);

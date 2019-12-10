@@ -140,6 +140,10 @@ public:
     ZThreadLocalAllocBuffer::retire(thread);
   }
 
+  virtual bool should_disarm_nmethods() const {
+    return true;
+  }
+
   virtual void do_oop(oop* p) {
     ZBarrier::mark_barrier_on_root_oop_field(p);
   }
