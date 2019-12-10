@@ -109,7 +109,7 @@ class Abstract_VM_Version: AllStatic {
   static int vm_patch_version()               { return _vm_patch_version; }
   static int vm_build_number()                { return _vm_build_number; }
 
-  // Gets the jvm_version_info.jvm_version defined in jvm.h
+  // Gets the jvm_version_info.jvm_version
   static unsigned int jvm_version();
 
   // Internal version providing additional build information
