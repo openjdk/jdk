@@ -309,12 +309,11 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
      */
     @Override // PlatformWindow
     public void initialize(Window _target, LWWindowPeer _peer, PlatformWindow _owner) {
-        initializeBase(_target, _peer, _owner, new CPlatformView());
+        initializeBase(_target, _peer, _owner);
 
         final int styleBits = getInitialStyleBits();
 
         responder = createPlatformResponder();
-        contentView = createContentView();
         contentView.initialize(peer, responder);
 
         Rectangle bounds;
@@ -359,20 +358,20 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
         validateSurface();
     }
 
-    protected void initializeBase(Window target, LWWindowPeer peer, PlatformWindow owner, CPlatformView view) {
+    void initializeBase(Window target, LWWindowPeer peer, PlatformWindow owner) {
         this.peer = peer;
         this.target = target;
         if (owner instanceof CPlatformWindow) {
             this.owner = (CPlatformWindow)owner;
         }
-        this.contentView = view;
+        contentView = createContentView();
     }
 
     protected CPlatformResponder createPlatformResponder() {
         return new CPlatformResponder(peer, false);
     }
 
-    protected CPlatformView createContentView() {
+    CPlatformView createContentView() {
         return new CPlatformView();
     }
 

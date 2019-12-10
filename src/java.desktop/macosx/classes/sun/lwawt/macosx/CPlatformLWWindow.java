@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,9 +34,10 @@ import java.awt.MenuBar;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.Window;
+import java.awt.event.FocusEvent;
+
 import sun.awt.CGraphicsDevice;
 import sun.awt.CGraphicsEnvironment;
-import java.awt.event.FocusEvent;
 import sun.awt.LightweightFrame;
 import sun.java2d.SurfaceData;
 import sun.lwawt.LWLightweightFramePeer;
@@ -47,7 +48,12 @@ public class CPlatformLWWindow extends CPlatformWindow {
 
     @Override
     public void initialize(Window target, LWWindowPeer peer, PlatformWindow owner) {
-        initializeBase(target, peer, owner, new CPlatformLWView());
+        initializeBase(target, peer, owner);
+    }
+
+    @Override
+    CPlatformView createContentView() {
+        return new CPlatformLWView();
     }
 
     @Override
