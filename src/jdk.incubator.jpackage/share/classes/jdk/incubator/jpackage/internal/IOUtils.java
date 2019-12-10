@@ -121,10 +121,7 @@ public class IOUtils {
         try (FileChannel source = new FileInputStream(sourceFile).getChannel();
             FileChannel destination =
                     new FileOutputStream(destFile).getChannel()) {
-
-            if (destination != null && source != null) {
-                destination.transferFrom(source, 0, source.size());
-            }
+            destination.transferFrom(source, 0, source.size());
         }
 
         //preserve executable bit!
