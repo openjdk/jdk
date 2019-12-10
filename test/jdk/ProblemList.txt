@@ -885,15 +885,6 @@ sanity/client/SwingSet/src/ScrollPaneDemoTest.java 8225013 linux-all
 
 # core_tools
 
-tools/pack200/CommandLineTests.java                             8059906 generic-all
-tools/pack200/TestNormal.java                                   8234542 generic-all    this test can be delisted as soon as pack200 is removed
-tools/pack200/Pack200Test.java                                  8234542 generic-all    this test can be delisted as soon as pack200 is removed
-tools/pack200/MultiRelease.java                                 8234542 generic-all    this test can be delisted as soon as pack200 is removed
-tools/pack200/ModuleAttributes.java                             8234542 generic-all    this test can be delisted as soon as pack200 is removed
-tools/pack200/InstructionTests.java                             8234542 generic-all    this test can be delisted as soon as pack200 is removed
-tools/pack200/AttributeTests.java                               8234542 generic-all    this test can be delisted as soon as pack200 is removed
-tools/pack200/typeannos/TestTypeAnnotations.java                8234542 generic-all    this test can be delisted as soon as pack200 is removed
-
 tools/jlink/JLinkReproducibleTest.java                          8217166 windows-all
 
 ############################################################################

@@ -150,7 +150,7 @@ public class Main {
      * pflag: preserve/don't strip leading slash and .. component from file name
      * dflag: print module descriptor
      */
-    boolean cflag, uflag, xflag, tflag, vflag, flag0, Mflag, iflag, nflag, pflag, dflag;
+    boolean cflag, uflag, xflag, tflag, vflag, flag0, Mflag, iflag, pflag, dflag;
 
     boolean suppressDeprecateMsg = false;
 
@@ -317,34 +317,6 @@ public class Main {
                 tmpFile = createTemporaryFile(tmpbase, ".jar");
                 try (OutputStream out = new FileOutputStream(tmpFile)) {
                     create(new BufferedOutputStream(out, 4096), manifest);
-                }
-                if (nflag) {
-                    if (!suppressDeprecateMsg) {
-                        warn(formatMsg("warn.flag.is.deprecated", "-n"));
-                    }
-                    File packFile = createTemporaryFile(tmpbase, ".pack");
-                    try {
-                        java.util.jar.Pack200.Packer packer = java.util.jar.Pack200.newPacker();
-                        Map<String, String> p = packer.properties();
-                        p.put(java.util.jar.Pack200.Packer.EFFORT, "1"); // Minimal effort to conserve CPU
-                        try (JarFile jarFile = new JarFile(tmpFile.getCanonicalPath());
-                             OutputStream pack = new FileOutputStream(packFile))
-                        {
-                            packer.pack(jarFile, pack);
-                        }
-                        if (tmpFile.exists()) {
-                            tmpFile.delete();
-                        }
-                        tmpFile = createTemporaryFile(tmpbase, ".jar");
-                        try (OutputStream out = new FileOutputStream(tmpFile);
-                             JarOutputStream jos = new JarOutputStream(out))
-                        {
-                            java.util.jar.Pack200.Unpacker unpacker = java.util.jar.Pack200.newUnpacker();
-                            unpacker.unpack(packFile, jos);
-                        }
-                    } finally {
-                        Files.deleteIfExists(packFile.toPath());
-                    }
                 }
                 validateAndClose(tmpFile);
             } else if (uflag) {
@@ -586,9 +558,6 @@ public class Main {
                             // do not increase the counter, files will contain rootjar
                             rootjar = args[count++];
                             iflag = true;
-                            break;
-                        case 'n':
-                            nflag = true;
                             break;
                         case 'e':
                             ename = args[count++];

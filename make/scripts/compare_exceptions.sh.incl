@@ -50,9 +50,7 @@ elif [ "$OPENJDK_TARGET_OS" = "solaris" ]; then
   SORT_SYMBOLS="
       ./lib/libfontmanager.so
       ./lib/libjimage.so
-      ./lib/libunpack.so
       ./lib/server/libjvm.so
-      ./bin/unpack200
       ./hotspot/gtest/server/libjvm.so
       "
   KNOWN_DIS_DIFF="
