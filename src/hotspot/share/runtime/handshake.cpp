@@ -271,14 +271,14 @@ void HandshakeThreadsOperation::do_handshake(JavaThread* thread) {
     _executed = true;
   }
 
-  // Use the semaphore to inform the VM thread that we have completed the operation
-  _done.signal();
-
   if (start_time_ns != 0) {
     jlong completion_time = os::javaTimeNanos() - start_time_ns;
     log_debug(handshake, task)("Operation: %s for thread " PTR_FORMAT ", is_vm_thread: %s, completed in " JLONG_FORMAT " ns",
                                name(), p2i(thread), BOOL_TO_STR(Thread::current()->is_VM_thread()), completion_time);
   }
+
+  // Use the semaphore to inform the VM thread that we have completed the operation
+  _done.signal();
 }
 
 void Handshake::execute(HandshakeClosure* thread_cl) {
