@@ -1489,7 +1489,7 @@ const size_t minimumSymbolTableSize = 1024;
   notproduct(intx, MaxSubklassPrintSize, 4,                                 \
           "maximum number of subklasses to print when printing klass")      \
                                                                             \
-  product(intx, MaxInlineLevel, 9,                                          \
+  product(intx, MaxInlineLevel, 15,                                         \
           "maximum number of nested calls that are inlined")                \
           range(0, max_jint)                                                \
                                                                             \
