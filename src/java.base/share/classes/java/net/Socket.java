@@ -50,6 +50,52 @@ import java.util.Collections;
  * can configure itself to create sockets appropriate to the local
  * firewall.
  *
+ * <p> The {@code Socket} class defines convenience
+ * methods to set and get several socket options. This class also
+ * defines the {@link #setOption(SocketOption, Object) setOption}
+ * and {@link #getOption(SocketOption) getOption} methods to set
+ * and query socket options.
+ * A {@code Socket} support the following options:
+ * <blockquote>
+ * <table class="striped">
+ * <caption style="display:none">Socket options</caption>
+ * <thead>
+ *   <tr>
+ *     <th scope="col">Option Name</th>
+ *     <th scope="col">Description</th>
+ *   </tr>
+ * </thead>
+ * <tbody>
+ *   <tr>
+ *     <th scope="row"> {@link java.net.StandardSocketOptions#SO_SNDBUF SO_SNDBUF} </th>
+ *     <td> The size of the socket send buffer </td>
+ *   </tr>
+ *   <tr>
+ *     <th scope="row"> {@link java.net.StandardSocketOptions#SO_RCVBUF SO_RCVBUF} </th>
+ *     <td> The size of the socket receive buffer </td>
+ *   </tr>
+ *   <tr>
+ *     <th scope="row"> {@link java.net.StandardSocketOptions#SO_KEEPALIVE SO_KEEPALIVE} </th>
+ *     <td> Keep connection alive </td>
+ *   </tr>
+ *   <tr>
+ *     <th scope="row"> {@link java.net.StandardSocketOptions#SO_REUSEADDR SO_REUSEADDR} </th>
+ *     <td> Re-use address </td>
+ *   </tr>
+ *   <tr>
+ *     <th scope="row"> {@link java.net.StandardSocketOptions#SO_LINGER SO_LINGER} </th>
+ *     <td> Linger on close if data is present (when configured in blocking mode
+ *          only) </td>
+ *   </tr>
+ *   <tr>
+ *     <th scope="row"> {@link java.net.StandardSocketOptions#TCP_NODELAY TCP_NODELAY} </th>
+ *     <td> Disable the Nagle algorithm </td>
+ *   </tr>
+ * </tbody>
+ * </table>
+ * </blockquote>
+ * Additional (implementation specific) options may also be supported.
+ *
  * @author  unascribed
  * @see     java.net.Socket#setSocketImplFactory(java.net.SocketImplFactory)
  * @see     java.net.SocketImpl

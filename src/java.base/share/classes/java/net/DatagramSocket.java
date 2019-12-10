@@ -43,23 +43,68 @@ import java.util.Collections;
  * any order.
  *
  * <p> Where possible, a newly constructed {@code DatagramSocket} has the
- * {@link SocketOptions#SO_BROADCAST SO_BROADCAST} socket option enabled so as
+ * {@link StandardSocketOptions#SO_BROADCAST SO_BROADCAST} socket option enabled so as
  * to allow the transmission of broadcast datagrams. In order to receive
  * broadcast packets a DatagramSocket should be bound to the wildcard address.
  * In some implementations, broadcast packets may also be received when
  * a DatagramSocket is bound to a more specific address.
  * <p>
  * Example:
- * {@code
+ * <pre>{@code
  *              DatagramSocket s = new DatagramSocket(null);
  *              s.bind(new InetSocketAddress(8888));
- * }
+ * }</pre>
  * Which is equivalent to:
- * {@code
+ * <pre>{@code
  *              DatagramSocket s = new DatagramSocket(8888);
- * }
+ * }</pre>
  * Both cases will create a DatagramSocket able to receive broadcasts on
  * UDP port 8888.
+ *
+ * <p> The {@code DatagramSocket} class defines convenience
+ * methods to set and get several socket options. This class also
+ * defines the {@link #setOption(SocketOption,Object) setOption}
+ * and {@link #getOption(SocketOption) getOption} methods to set
+ * and query socket options.
+ * A {@code DatagramSocket} supports the following socket options:
+ * <blockquote>
+ * <a id="SocketOptions"></a>
+ * <table class="striped">
+ * <caption style="display:none">Socket options</caption>
+ * <thead>
+ *   <tr>
+ *     <th scope="col">Option Name</th>
+ *     <th scope="col">Description</th>
+ *   </tr>
+ * </thead>
+ * <tbody>
+ *   <tr>
+ *     <th scope="row"> {@link java.net.StandardSocketOptions#SO_SNDBUF SO_SNDBUF} </th>
+ *     <td> The size of the socket send buffer </td>
+ *   </tr>
+ *   <tr>
+ *     <th scope="row"> {@link java.net.StandardSocketOptions#SO_RCVBUF SO_RCVBUF} </th>
+ *     <td> The size of the socket receive buffer </td>
+ *   </tr>
+ *   <tr>
+ *     <th scope="row"> {@link java.net.StandardSocketOptions#SO_REUSEADDR SO_REUSEADDR} </th>
+ *     <td> Re-use address </td>
+ *   </tr>
+ *   <tr>
+ *     <th scope="row"> {@link java.net.StandardSocketOptions#SO_BROADCAST SO_BROADCAST} </th>
+ *     <td> Allow transmission of broadcast datagrams </td>
+ *   </tr>
+ *   <tr>
+ *     <th scope="row"> {@link java.net.StandardSocketOptions#IP_TOS IP_TOS} </th>
+ *     <td> The Type of Service (ToS) octet in the Internet Protocol (IP) header </td>
+ *   </tr>
+ * </tbody>
+ * </table>
+ * </blockquote>
+ * An implementation may also support additional options. In particular an implementation
+ * may support <a href="MulticastSocket.html#MulticastOptions">multicast options</a> which
+ * can be useful when using a plain {@code DatagramSocket} to send datagrams to a
+ * multicast group.
  *
  * @author  Pavani Diwanji
  * @see     java.net.DatagramPacket
