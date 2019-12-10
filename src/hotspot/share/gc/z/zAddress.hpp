@@ -46,6 +46,7 @@ public:
   static bool is_weak_good(uintptr_t value);
   static bool is_weak_good_or_null(uintptr_t value);
   static bool is_marked(uintptr_t value);
+  static bool is_marked_or_null(uintptr_t value);
   static bool is_finalizable(uintptr_t value);
   static bool is_finalizable_good(uintptr_t value);
   static bool is_remapped(uintptr_t value);

@@ -32,6 +32,77 @@
 #include "oops/oop.hpp"
 #include "runtime/atomic.hpp"
 
+// A self heal must always "upgrade" the address metadata bits in
+// accordance with the metadata bits state machine, which has the
+// valid state transitions as described below (where N is the GC
+// cycle).
+//
+// Note the subtleness of overlapping GC cycles. Specifically that
+// oops are colored Remapped(N) starting at relocation N and ending
+// at marking N + 1.
+//
+//              +--- Mark Start
+//              | +--- Mark End
+//              | | +--- Relocate Start
+//              | | | +--- Relocate End
+//              | | | |
+// Marked       |---N---|--N+1--|--N+2--|----
+// Finalizable  |---N---|--N+1--|--N+2--|----
+// Remapped     ----|---N---|--N+1--|--N+2--|
+//
+// VALID STATE TRANSITIONS
+//
+//   Marked(N)           -> Remapped(N)
+//                       -> Marked(N + 1)
+//                       -> Finalizable(N + 1)
+//
+//   Finalizable(N)      -> Marked(N)
+//                       -> Remapped(N)
+//                       -> Marked(N + 1)
+//                       -> Finalizable(N + 1)
+//
+//   Remapped(N)         -> Marked(N + 1)
+//                       -> Finalizable(N + 1)
+//
+// PHASE VIEW
+//
+// ZPhaseMark
+//   Load & Mark
+//     Marked(N)         <- Marked(N - 1)
+//                       <- Finalizable(N - 1)
+//                       <- Remapped(N - 1)
+//                       <- Finalizable(N)
+//
+//   Mark(Finalizable)
+//     Finalizable(N)    <- Marked(N - 1)
+//                       <- Finalizable(N - 1)
+//                       <- Remapped(N - 1)
+//
+//   Load(AS_NO_KEEPALIVE)
+//     Remapped(N - 1)   <- Marked(N - 1)
+//                       <- Finalizable(N - 1)
+//
+// ZPhaseMarkCompleted (Resurrection blocked)
+//   Load & Load(ON_WEAK/PHANTOM_OOP_REF | AS_NO_KEEPALIVE) & KeepAlive
+//     Marked(N)         <- Marked(N - 1)
+//                       <- Finalizable(N - 1)
+//                       <- Remapped(N - 1)
+//                       <- Finalizable(N)
+//
+//   Load(ON_STRONG_OOP_REF | AS_NO_KEEPALIVE)
+//     Remapped(N - 1)   <- Marked(N - 1)
+//                       <- Finalizable(N - 1)
+//
+// ZPhaseMarkCompleted (Resurrection unblocked)
+//   Load
+//     Marked(N)         <- Finalizable(N)
+//
+// ZPhaseRelocate
+//   Load & Load(AS_NO_KEEPALIVE)
+//     Remapped(N)       <- Marked(N)
+//                       <- Finalizable(N)
+
+template <ZBarrierFastPath fast_path>
 inline void ZBarrier::self_heal(volatile oop* p, uintptr_t addr, uintptr_t heal_addr) {
   if (heal_addr == 0) {
     // Never heal with null since it interacts badly with reference processing.
@@ -41,12 +112,10 @@ inline void ZBarrier::self_heal(volatile oop* p, uintptr_t addr, uintptr_t heal_
     return;
   }
 
-  for (;;) {
-    if (addr == heal_addr) {
-      // Already healed
-      return;
-    }
+  assert(!fast_path(addr), "Invalid self heal");
+  assert(fast_path(heal_addr), "Invalid self heal");
 
+  for (;;) {
     // Heal
     const uintptr_t prev_addr = Atomic::cmpxchg((volatile uintptr_t*)p, addr, heal_addr);
     if (prev_addr == addr) {
@@ -54,15 +123,14 @@ inline void ZBarrier::self_heal(volatile oop* p, uintptr_t addr, uintptr_t heal_
       return;
     }
 
-    if (ZAddress::is_good_or_null(prev_addr)) {
-      // No need to heal
+    if (fast_path(prev_addr)) {
+      // Must not self heal
       return;
     }
 
-    // The oop location was healed by another barrier, but it is still not
-    // good or null. Re-apply healing to make sure the oop is not left with
-    // weaker (remapped or finalizable) metadata bits than what this barrier
-    // tried to apply.
+    // The oop location was healed by another barrier, but still needs upgrading.
+    // Re-apply healing to make sure the oop is not left with weaker (remapped or
+    // finalizable) metadata bits than what this barrier tried to apply.
     assert(ZAddress::offset(prev_addr) == ZAddress::offset(heal_addr), "Invalid offset");
     addr = prev_addr;
   }
@@ -70,7 +138,7 @@ inline void ZBarrier::self_heal(volatile oop* p, uintptr_t addr, uintptr_t heal_
 
 template <ZBarrierFastPath fast_path, ZBarrierSlowPath slow_path>
 inline oop ZBarrier::barrier(volatile oop* p, oop o) {
-  uintptr_t addr = ZOop::to_address(o);
+  const uintptr_t addr = ZOop::to_address(o);
 
   // Fast path
   if (fast_path(addr)) {
@@ -81,7 +149,7 @@ inline oop ZBarrier::barrier(volatile oop* p, oop o) {
   const uintptr_t good_addr = slow_path(addr);
 
   if (p != NULL) {
-    self_heal(p, addr, good_addr);
+    self_heal<fast_path>(p, addr, good_addr);
   }
 
   return ZOop::from_address(good_addr);
@@ -104,7 +172,7 @@ inline oop ZBarrier::weak_barrier(volatile oop* p, oop o) {
   if (p != NULL) {
     // The slow path returns a good/marked address or null, but we never mark
     // oops in a weak load barrier so we always heal with the remapped address.
-    self_heal(p, addr, ZAddress::remapped_or_null(good_addr));
+    self_heal<fast_path>(p, addr, ZAddress::remapped_or_null(good_addr));
   }
 
   return ZOop::from_address(good_addr);
@@ -132,16 +200,16 @@ inline void ZBarrier::root_barrier(oop* p, oop o) {
   *p = ZOop::from_address(good_addr);
 }
 
-inline bool ZBarrier::is_null_fast_path(uintptr_t addr) {
-  return ZAddress::is_null(addr);
-}
-
 inline bool ZBarrier::is_good_or_null_fast_path(uintptr_t addr) {
   return ZAddress::is_good_or_null(addr);
 }
 
 inline bool ZBarrier::is_weak_good_or_null_fast_path(uintptr_t addr) {
   return ZAddress::is_weak_good_or_null(addr);
+}
+
+inline bool ZBarrier::is_marked_or_null_fast_path(uintptr_t addr) {
+  return ZAddress::is_marked_or_null(addr);
 }
 
 inline bool ZBarrier::during_mark() {
@@ -300,8 +368,11 @@ inline void ZBarrier::keep_alive_barrier_on_phantom_root_oop_field(oop* p) {
 }
 
 inline void ZBarrier::keep_alive_barrier_on_oop(oop o) {
+  const uintptr_t addr = ZOop::to_address(o);
+  assert(ZAddress::is_good(addr), "Invalid address");
+
   if (during_mark()) {
-    barrier<is_null_fast_path, mark_barrier_on_oop_slow_path>(NULL, o);
+    mark_barrier_on_oop_slow_path(addr);
   }
 }
 
@@ -309,14 +380,19 @@ inline void ZBarrier::keep_alive_barrier_on_oop(oop o) {
 // Mark barrier
 //
 inline void ZBarrier::mark_barrier_on_oop_field(volatile oop* p, bool finalizable) {
-  // The fast path only checks for null since the GC worker
-  // threads doing marking wants to mark through good oops.
   const oop o = *p;
 
   if (finalizable) {
-    barrier<is_null_fast_path, mark_barrier_on_finalizable_oop_slow_path>(p, o);
+    barrier<is_marked_or_null_fast_path, mark_barrier_on_finalizable_oop_slow_path>(p, o);
   } else {
-    barrier<is_null_fast_path, mark_barrier_on_oop_slow_path>(p, o);
+    const uintptr_t addr = ZOop::to_address(o);
+    if (ZAddress::is_good(addr)) {
+      // Mark through good oop
+      mark_barrier_on_oop_slow_path(addr);
+    } else {
+      // Mark through bad oop
+      barrier<is_good_or_null_fast_path, mark_barrier_on_oop_slow_path>(p, o);
+    }
   }
 }
 

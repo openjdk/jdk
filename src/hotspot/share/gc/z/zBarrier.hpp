@@ -41,15 +41,15 @@ private:
   static const bool Publish     = true;
   static const bool Overflow    = false;
 
-  static void self_heal(volatile oop* p, uintptr_t addr, uintptr_t heal_addr);
+  template <ZBarrierFastPath fast_path> static void self_heal(volatile oop* p, uintptr_t addr, uintptr_t heal_addr);
 
   template <ZBarrierFastPath fast_path, ZBarrierSlowPath slow_path> static oop barrier(volatile oop* p, oop o);
   template <ZBarrierFastPath fast_path, ZBarrierSlowPath slow_path> static oop weak_barrier(volatile oop* p, oop o);
   template <ZBarrierFastPath fast_path, ZBarrierSlowPath slow_path> static void root_barrier(oop* p, oop o);
 
-  static bool is_null_fast_path(uintptr_t addr);
   static bool is_good_or_null_fast_path(uintptr_t addr);
   static bool is_weak_good_or_null_fast_path(uintptr_t addr);
+  static bool is_marked_or_null_fast_path(uintptr_t addr);
 
   static bool during_mark();
   static bool during_relocate();
