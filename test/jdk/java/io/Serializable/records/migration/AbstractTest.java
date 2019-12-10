@@ -38,11 +38,13 @@ import org.testng.annotations.BeforeTest;
 import static org.testng.Assert.*;
 
 /**
- * An abstract superclass foe tests that require to serialize and deserialize
+ * An abstract superclass for tests that require to serialize and deserialize
  * record-like and record classes. Can be used for determining migration and
  * interop between record-like and record classes.
  */
 public class AbstractTest {
+
+    private static final String VERSION = Integer.toString(Runtime.version().feature());
 
     static final String TEST_SRC = System.getProperty("test.src", ".");
     static final String TEST_CLASSES = System.getProperty("test.classes", ".");
@@ -57,11 +59,11 @@ public class AbstractTest {
     @BeforeTest
     public void setup() throws IOException {
         assertTrue(CompilerUtils.compile(PLAIN_SRC_DIR, PLAIN_DEST_DIR,
-                   "--enable-preview", "-source", "14",
+                   "--enable-preview", "-source", VERSION,
                    "--class-path", TEST_CLASSES_DIR.toString()));
 
         assertTrue(CompilerUtils.compile(RECORD_SRC_DIR, RECORD_DEST_DIR,
-                   "--enable-preview", "-source", "14",
+                   "--enable-preview", "-source", VERSION,
                    "--class-path", TEST_CLASSES_DIR.toString()));
     }
 
