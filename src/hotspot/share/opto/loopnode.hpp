@@ -152,7 +152,7 @@ public:
   virtual void dump_spec(outputStream *st) const;
 #endif
 
-  void verify_strip_mined(int expect_skeleton) const;
+  void verify_strip_mined(int expect_skeleton) const NOT_DEBUG_RETURN;
   virtual LoopNode* skip_strip_mined(int expect_skeleton = 1) { return this; }
   virtual IfTrueNode* outer_loop_tail() const { ShouldNotReachHere(); return NULL; }
   virtual OuterStripMinedLoopEndNode* outer_loop_end() const { ShouldNotReachHere(); return NULL; }

@@ -1388,9 +1388,8 @@ bool PhaseIdealLoop::loop_predication_impl(IdealLoopTree *loop) {
     // an early loop exit. Try them with profile data.
     while (if_proj_list.size() > 0) {
       Node* proj = if_proj_list.pop();
-      float f = pf.to(proj);
       if (proj->as_Proj()->is_uncommon_trap_if_pattern(Deoptimization::Reason_none) &&
-          f * loop_trip_cnt >= 1) {
+          pf.to(proj) * loop_trip_cnt >= 1) {
         hoisted = loop_predication_impl_helper(loop, proj->as_Proj(), profile_predicate_proj, cl, zero, invar, Deoptimization::Reason_profile_predicate) | hoisted;
       }
     }

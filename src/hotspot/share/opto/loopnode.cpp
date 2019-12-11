@@ -944,8 +944,11 @@ Node *LoopNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   return RegionNode::Ideal(phase, can_reshape);
 }
 
-void LoopNode::verify_strip_mined(int expect_skeleton) const {
 #ifdef ASSERT
+void LoopNode::verify_strip_mined(int expect_skeleton) const {
+  if (!is_valid_counted_loop()) {
+    return; // Skip malformed counted loop
+  }
   const OuterStripMinedLoopNode* outer = NULL;
   const CountedLoopNode* inner = NULL;
   if (is_strip_mined()) {
@@ -955,6 +958,7 @@ void LoopNode::verify_strip_mined(int expect_skeleton) const {
   } else if (is_OuterStripMinedLoop()) {
     outer = this->as_OuterStripMinedLoop();
     inner = outer->unique_ctrl_out()->as_CountedLoop();
+    assert(inner->is_valid_counted_loop(), "OuterStripMinedLoop should have been removed");
     assert(!is_strip_mined(), "outer loop shouldn't be marked strip mined");
   }
   if (inner != NULL || outer != NULL) {
@@ -1024,8 +1028,8 @@ void LoopNode::verify_strip_mined(int expect_skeleton) const {
     assert(sfpt->outcnt() == 1, "no data node");
     assert(outer_tail->outcnt() == 1 || !has_skeleton, "no data node");
   }
-#endif
 }
+#endif
 
 //=============================================================================
 //------------------------------Ideal------------------------------------------
