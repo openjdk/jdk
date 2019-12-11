@@ -923,8 +923,7 @@ public class KDC {
             if (body.kdcOptions.get(KDCOptions.ALLOW_POSTDATE)) {
                 bFlags[Krb5.TKT_OPTS_MAY_POSTDATE] = true;
             }
-            if (body.kdcOptions.get(KDCOptions.CNAME_IN_ADDL_TKT) &&
-                    !isReferral) {
+            if (body.kdcOptions.get(KDCOptions.CNAME_IN_ADDL_TKT)) {
                 if (!options.containsKey(Option.ALLOW_S4U2PROXY)) {
                     // Don't understand CNAME_IN_ADDL_TKT
                     throw new KrbException(Krb5.KDC_ERR_BADOPTION);

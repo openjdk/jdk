@@ -53,9 +53,13 @@ public class ReferralsTest {
 
     // Names
     private static final String clientName = "test";
+    private static final String userName = "user";
     private static final String serviceName = "http" +
             PrincipalName.NAME_COMPONENT_SEPARATOR_STR +
             "server.dev.rabbit.hole";
+    private static final String backendServiceName = "cifs" +
+            PrincipalName.NAME_COMPONENT_SEPARATOR_STR +
+            "backend.rabbit.hole";
 
     // Alias
     private static final String clientAlias = clientName +
@@ -68,14 +72,34 @@ public class ReferralsTest {
             PrincipalName.NAME_REALM_SEPARATOR_STR + realmKDC1;
     private static final String clientKDC2Name = clientName +
             PrincipalName.NAME_REALM_SEPARATOR_STR + realmKDC2;
+    private static final String userKDC1Name = userName +
+            PrincipalName.NAME_REALM_SEPARATOR_STR + realmKDC1;
     private static final String serviceKDC2Name = serviceName +
+            PrincipalName.NAME_REALM_SEPARATOR_STR + realmKDC2;
+    private static final String backendKDC1Name = backendServiceName +
+            PrincipalName.NAME_REALM_SEPARATOR_STR + realmKDC1;
+    private static final String krbtgtKDC1 =
+            PrincipalName.TGS_DEFAULT_SRV_NAME +
+            PrincipalName.NAME_COMPONENT_SEPARATOR_STR + realmKDC1;
+    private static final String krbtgtKDC2 =
+            PrincipalName.TGS_DEFAULT_SRV_NAME +
+            PrincipalName.NAME_COMPONENT_SEPARATOR_STR + realmKDC2;
+    private static final String krbtgtKDC1toKDC2 =
+            PrincipalName.TGS_DEFAULT_SRV_NAME +
+            PrincipalName.NAME_COMPONENT_SEPARATOR_STR + realmKDC2 +
+            PrincipalName.NAME_REALM_SEPARATOR_STR + realmKDC1;
+    private static final String krbtgtKDC2toKDC1 =
+            PrincipalName.TGS_DEFAULT_SRV_NAME +
+            PrincipalName.NAME_COMPONENT_SEPARATOR_STR + realmKDC1 +
             PrincipalName.NAME_REALM_SEPARATOR_STR + realmKDC2;
 
     public static void main(String[] args) throws Exception {
         try {
             initializeKDCs();
             testSubjectCredentials();
-            testDelegated();
+            testDelegation();
+            testImpersonation();
+            testDelegationWithReferrals();
         } finally {
             cleanup();
         }
@@ -83,36 +107,35 @@ public class ReferralsTest {
 
     private static void initializeKDCs() throws Exception {
         KDC kdc1 = KDC.create(realmKDC1, "localhost", 0, true);
-        kdc1.addPrincipalRandKey(PrincipalName.TGS_DEFAULT_SRV_NAME +
-                PrincipalName.NAME_COMPONENT_SEPARATOR_STR + realmKDC1);
-        kdc1.addPrincipal(PrincipalName.TGS_DEFAULT_SRV_NAME +
-                PrincipalName.NAME_COMPONENT_SEPARATOR_STR + realmKDC1 +
-                PrincipalName.NAME_REALM_SEPARATOR_STR + realmKDC2,
-                password);
-        kdc1.addPrincipal(PrincipalName.TGS_DEFAULT_SRV_NAME +
-                PrincipalName.NAME_COMPONENT_SEPARATOR_STR + realmKDC2,
-                password);
+        kdc1.addPrincipalRandKey(krbtgtKDC1);
+        kdc1.addPrincipal(krbtgtKDC2toKDC1, password);
+        kdc1.addPrincipal(krbtgtKDC2, password);
+        kdc1.addPrincipal(userKDC1Name, password);
+        kdc1.addPrincipal(backendServiceName, password);
 
         KDC kdc2 = KDC.create(realmKDC2, "localhost", 0, true);
-        kdc2.addPrincipalRandKey(PrincipalName.TGS_DEFAULT_SRV_NAME +
-                PrincipalName.NAME_COMPONENT_SEPARATOR_STR + realmKDC2);
+        kdc2.addPrincipalRandKey(krbtgtKDC2);
         kdc2.addPrincipal(clientKDC2Name, password);
         kdc2.addPrincipal(serviceName, password);
-        kdc2.addPrincipal(PrincipalName.TGS_DEFAULT_SRV_NAME +
-                PrincipalName.NAME_COMPONENT_SEPARATOR_STR + realmKDC1,
-                password);
-        kdc2.addPrincipal(PrincipalName.TGS_DEFAULT_SRV_NAME +
-                PrincipalName.NAME_COMPONENT_SEPARATOR_STR + realmKDC2 +
-                PrincipalName.NAME_REALM_SEPARATOR_STR + realmKDC1,
-                password);
+        kdc2.addPrincipal(krbtgtKDC1, password);
+        kdc2.addPrincipal(krbtgtKDC1toKDC2, password);
 
         kdc1.registerAlias(clientAlias, kdc2);
         kdc1.registerAlias(serviceName, kdc2);
         kdc2.registerAlias(clientAlias, clientKDC2Name);
+        kdc2.registerAlias(backendServiceName, kdc1);
+
+        kdc1.setOption(KDC.Option.ALLOW_S4U2SELF, Arrays.asList(
+                new String[]{serviceName + "@" + realmKDC2}));
+        Map<String,List<String>> mapKDC1 = new HashMap<>();
+        mapKDC1.put(serviceName + "@" + realmKDC2, Arrays.asList(
+                new String[]{backendKDC1Name}));
+        kdc1.setOption(KDC.Option.ALLOW_S4U2PROXY, mapKDC1);
 
         Map<String,List<String>> mapKDC2 = new HashMap<>();
         mapKDC2.put(serviceName + "@" + realmKDC2, Arrays.asList(
-                new String[]{serviceName + "@" + realmKDC2}));
+                new String[]{serviceName + "@" + realmKDC2,
+                        krbtgtKDC2toKDC1}));
         kdc2.setOption(KDC.Option.ALLOW_S4U2PROXY, mapKDC2);
 
         KDC.saveConfig(krbConfigName, kdc1, kdc2,
@@ -171,10 +194,8 @@ public class ReferralsTest {
             String cname = clientTicket.getClient().getName();
             String sname = clientTicket.getServer().getName();
             if (cname.equals(clientKDC2Name)) {
-                if (sname.equals(PrincipalName.TGS_DEFAULT_SRV_NAME +
-                        PrincipalName.NAME_COMPONENT_SEPARATOR_STR +
-                        realmKDC2 + PrincipalName.NAME_REALM_SEPARATOR_STR +
-                        realmKDC2)) {
+                if (sname.equals(krbtgtKDC2 +
+                        PrincipalName.NAME_REALM_SEPARATOR_STR + realmKDC2)) {
                     tgtFound = true;
                 } else if (sname.equals(serviceKDC2Name)) {
                     tgsFound = true;
@@ -213,7 +234,7 @@ public class ReferralsTest {
      * when requesting different TGTs and TGSs (including the
      * request for delegated credentials).
      */
-    private static void testDelegated() throws Exception {
+    private static void testDelegation() throws Exception {
         Context c = Context.fromUserPass(clientKDC2Name,
                 password, false);
         c.startAsClient(serviceName, GSSUtil.GSS_KRB5_MECH_OID);
@@ -243,6 +264,64 @@ public class ReferralsTest {
         }
         if (!contextInitiatorName.toString().equals(clientKDC2Name) ||
                 !contextAcceptorName.toString().equals(serviceName)) {
+            throw new Exception("Unexpected initiator or acceptor names");
+        }
+    }
+
+    /*
+     * The server (http/server.dev.rabbit.hole@DEV.RABBIT.HOLE)
+     * will get a TGS ticket for itself on behalf of the client
+     * (user@RABBIT.HOLE). Cross-realm referrals will be handled
+     * in S4U2Self requests because the user and the server are
+     * on different realms.
+     */
+    private static void testImpersonation() throws Exception {
+        Context s = Context.fromUserPass(serviceKDC2Name, password, true);
+        s.startAsServer(GSSUtil.GSS_KRB5_MECH_OID);
+        GSSName impName = s.impersonate(userKDC1Name).cred().getName();
+        if (DEBUG) {
+            System.out.println("Impersonated name: " + impName);
+        }
+        if (!impName.toString().equals(userKDC1Name)) {
+            throw new Exception("Unexpected impersonated name");
+        }
+    }
+
+    /*
+     * The server (http/server.dev.rabbit.hole@DEV.RABBIT.HOLE)
+     * will use delegated credentials (user@RABBIT.HOLE) to
+     * authenticate in the backend (cifs/backend.rabbit.hole@RABBIT.HOLE).
+     * Cross-realm referrals will be handled in S4U2Proxy requests
+     * because the server and the backend are on different realms.
+     */
+    private static void testDelegationWithReferrals() throws Exception {
+        Context c = Context.fromUserPass(userKDC1Name, password, false);
+        c.startAsClient(serviceName, GSSUtil.GSS_KRB5_MECH_OID);
+        Context s = Context.fromUserPass(serviceKDC2Name, password, true);
+        s.startAsServer(GSSUtil.GSS_KRB5_MECH_OID);
+        Context.handshake(c, s);
+        Context delegatedContext = s.delegated();
+        delegatedContext.startAsClient(backendServiceName,
+                GSSUtil.GSS_KRB5_MECH_OID);
+        delegatedContext.x().requestMutualAuth(false);
+        Context b = Context.fromUserPass(backendKDC1Name, password, true);
+        b.startAsServer(GSSUtil.GSS_KRB5_MECH_OID);
+
+        // Test authentication
+        Context.handshake(delegatedContext, b);
+        if (!delegatedContext.x().isEstablished() || !b.x().isEstablished()) {
+            throw new Exception("Delegated authentication failed");
+        }
+
+        // Test identities
+        GSSName contextInitiatorName = delegatedContext.x().getSrcName();
+        GSSName contextAcceptorName = delegatedContext.x().getTargName();
+        if (DEBUG) {
+            System.out.println("Context initiator: " + contextInitiatorName);
+            System.out.println("Context acceptor: " + contextAcceptorName);
+        }
+        if (!contextInitiatorName.toString().equals(userKDC1Name) ||
+                !contextAcceptorName.toString().equals(backendServiceName)) {
             throw new Exception("Unexpected initiator or acceptor names");
         }
     }
