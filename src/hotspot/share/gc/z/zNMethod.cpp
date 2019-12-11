@@ -163,7 +163,7 @@ void ZNMethod::register_nmethod(nmethod* nm) {
   ZNMethodTable::register_nmethod(nm);
 
   // Disarm nmethod entry barrier
-  disarm_nmethod(nm);
+  disarm(nm);
 }
 
 void ZNMethod::unregister_nmethod(nmethod* nm) {
@@ -187,7 +187,16 @@ void ZNMethod::flush_nmethod(nmethod* nm) {
   delete gc_data(nm);
 }
 
-void ZNMethod::disarm_nmethod(nmethod* nm) {
+bool ZNMethod::is_armed(nmethod* nm) {
+  BarrierSetNMethod* const bs = BarrierSet::barrier_set()->barrier_set_nmethod();
+  if (bs != NULL) {
+    return bs->is_armed(nm);
+  }
+
+  return false;
+}
+
+void ZNMethod::disarm(nmethod* nm) {
   BarrierSetNMethod* const bs = BarrierSet::barrier_set()->barrier_set_nmethod();
   if (bs != NULL) {
     bs->disarm(nm);
@@ -301,10 +310,12 @@ public:
 
     ZLocker<ZReentrantLock> locker(ZNMethod::lock_for_nmethod(nm));
 
-    // Heal oops and disarm
-    ZNMethodOopClosure cl;
-    ZNMethod::nmethod_oops_do(nm, &cl);
-    ZNMethod::disarm_nmethod(nm);
+    if (ZNMethod::is_armed(nm)) {
+      // Heal oops and disarm
+      ZNMethodOopClosure cl;
+      ZNMethod::nmethod_oops_do(nm, &cl);
+      ZNMethod::disarm(nm);
+    }
 
     // Clear compiled ICs and exception caches
     if (!nm->unload_nmethod_caches(_unloading_occurred)) {

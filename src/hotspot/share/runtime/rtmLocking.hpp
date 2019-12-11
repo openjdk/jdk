@@ -82,6 +82,7 @@ class RTMLockingCounters {
   //     5     Set if an abort occurred during execution of a nested transaction.
  private:
   uintx _abortX_count[ABORT_STATUS_LIMIT];
+  static const char* _abortX_desc[ABORT_STATUS_LIMIT];
 
  public:
   static uintx _calculation_flag;

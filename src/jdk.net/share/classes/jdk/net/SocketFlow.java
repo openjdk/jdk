@@ -43,8 +43,12 @@ import java.lang.annotation.Native;
  * When a security manager is installed, a {@link NetworkPermission}
  * is required to set or get this option.
  *
+ * @deprecated This is supported only on Solaris. Due to deprecation
+ * of Solaris port, this feature is also deprecated.
+ *
  * @since 1.8
  */
+@Deprecated(since="14", forRemoval=true)
 public class SocketFlow {
 
     @Native public static final int UNSET = -1;
@@ -65,9 +69,13 @@ public class SocketFlow {
      * socket option. Both setting and getting the option return
      * one of these statuses, which reflect the state of socket's
      * flow.
+     * @deprecated This is supported only on Solaris. Due to
+     * deprecation of Solaris port, this enum is also deprecated.
      *
      * @since 1.8
      */
+    @SuppressWarnings("removal")
+    @Deprecated(since="14", forRemoval=true)
     public enum Status {
         /**
          * Set or get socket option has not been called yet. Status

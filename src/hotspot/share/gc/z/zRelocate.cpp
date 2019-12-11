@@ -56,6 +56,10 @@ public:
     ZThreadLocalAllocBuffer::remap(thread);
   }
 
+  virtual bool should_disarm_nmethods() const {
+    return true;
+  }
+
   virtual void do_oop(oop* p) {
     ZBarrier::relocate_barrier_on_root_oop_field(p);
   }

@@ -27,7 +27,7 @@
 #include "jfr/leakprofiler/chains/edge.hpp"
 #include "jfr/leakprofiler/chains/edgeStore.hpp"
 #include "jfr/leakprofiler/chains/edgeUtils.hpp"
-#include "jfr/leakprofiler/utilities/unifiedOop.hpp"
+#include "jfr/leakprofiler/utilities/unifiedOopRef.inline.hpp"
 #include "oops/fieldStreams.inline.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
@@ -42,12 +42,11 @@ static int field_offset(const StoredEdge& edge) {
   assert(!edge.is_root(), "invariant");
   const oop ref_owner = edge.reference_owner();
   assert(ref_owner != NULL, "invariant");
-  const oop* reference = UnifiedOop::decode(edge.reference());
-  assert(reference != NULL, "invariant");
-  assert(!UnifiedOop::is_narrow(reference), "invariant");
+  UnifiedOopRef reference = edge.reference();
+  assert(!reference.is_null(), "invariant");
   assert(!ref_owner->is_array(), "invariant");
   assert(ref_owner->is_instance(), "invariant");
-  const int offset = (int)pointer_delta(reference, ref_owner, sizeof(char));
+  const int offset = (int)(reference.addr<uintptr_t>() - cast_from_oop<uintptr_t>(ref_owner));
   assert(offset < (ref_owner->size() * HeapWordSize), "invariant");
   return offset;
 }
@@ -103,12 +102,11 @@ static int array_offset(const Edge& edge) {
   assert(!edge.is_root(), "invariant");
   const oop ref_owner = edge.reference_owner();
   assert(ref_owner != NULL, "invariant");
-  const oop* reference = UnifiedOop::decode(edge.reference());
-  assert(reference != NULL, "invariant");
-  assert(!UnifiedOop::is_narrow(reference), "invariant");
+  UnifiedOopRef reference = edge.reference();
+  assert(!reference.is_null(), "invariant");
   assert(ref_owner->is_array(), "invariant");
   const objArrayOop ref_owner_array = static_cast<const objArrayOop>(ref_owner);
-  const int offset = (int)pointer_delta(reference, ref_owner_array->base(), heapOopSize);
+  const int offset = (int)pointer_delta(reference.addr<HeapWord*>(), ref_owner_array->base(), heapOopSize);
   assert(offset >= 0 && offset < ref_owner_array->length(), "invariant");
   return offset;
 }
@@ -122,7 +120,7 @@ int EdgeUtils::array_size(const Edge& edge) {
     const oop ref_owner = edge.reference_owner();
     assert(ref_owner != NULL, "invariant");
     assert(ref_owner->is_objArray(), "invariant");
-    return ((objArrayOop)(ref_owner))->length();
+    return ((objArrayOop)ref_owner)->length();
   }
   return 0;
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,6 +51,10 @@ class JSSEServer extends CipherTest.Server {
         serverSocket
                 = (SSLServerSocket) factory.createServerSocket(CipherTest.serverPort);
         CipherTest.serverPort = serverSocket.getLocalPort();
+
+        // JDK-8190492: Enable all supported protocols on server side to test SSLv3
+        serverSocket.setEnabledProtocols(serverSocket.getSupportedProtocols());
+
         serverSocket.setEnabledCipherSuites(factory.getSupportedCipherSuites());
         serverSocket.setWantClientAuth(true);
     }

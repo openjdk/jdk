@@ -80,6 +80,46 @@ import java.util.Set;
  * <B>Multiple MulticastSockets</B> may subscribe to a multicast group
  * and port concurrently, and they will all receive group datagrams.
  *
+ * <p> The {@code DatagramSocket} and {@code MulticastSocket}
+ * classes define convenience methods to set and get several
+ * socket options. Like {@code DatagramSocket} this class also
+ * supports the {@link #setOption(SocketOption, Object) setOption}
+ * and {@link #getOption(SocketOption) getOption} methods to set
+ * and query socket options.
+ * In addition to the socket options supported by
+ * <a href="DatagramSocket.html#SocketOptions">{@code DatagramSocket}</a>, a
+ * {@code MulticastSocket} supports the following socket options:
+ * <blockquote>
+ * <a id="MulticastOptions"></a>
+ * <table class="striped">
+ * <caption style="display:none">Socket options</caption>
+ * <thead>
+ *   <tr>
+ *     <th scope="col">Option Name</th>
+ *     <th scope="col">Description</th>
+ *   </tr>
+ * </thead>
+ * <tbody>
+ *   <tr>
+ *     <th scope="row"> {@link java.net.StandardSocketOptions#IP_MULTICAST_IF IP_MULTICAST_IF} </th>
+ *     <td> The network interface for Internet Protocol (IP) multicast datagrams </td>
+ *   </tr>
+ *   <tr>
+ *     <th scope="row"> {@link java.net.StandardSocketOptions#IP_MULTICAST_TTL
+ *       IP_MULTICAST_TTL} </th>
+ *     <td> The <em>time-to-live</em> for Internet Protocol (IP) multicast
+ *       datagrams </td>
+ *   </tr>
+ *   <tr>
+ *     <th scope="row"> {@link java.net.StandardSocketOptions#IP_MULTICAST_LOOP
+ *       IP_MULTICAST_LOOP} </th>
+ *     <td> Loopback for Internet Protocol (IP) multicast datagrams </td>
+ *   </tr>
+ * </tbody>
+ * </table>
+ * </blockquote>
+ * Additional (implementation specific) options may also be supported.
+ *
  * @author Pavani Diwanji
  * @since 1.1
  */

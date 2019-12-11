@@ -30,6 +30,7 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import jdk.net.ExtendedSocketOptions.PlatformSocketOptions;
 
+@SuppressWarnings("removal")
 class SolarisSocketOptions extends PlatformSocketOptions {
 
     public SolarisSocketOptions() { }

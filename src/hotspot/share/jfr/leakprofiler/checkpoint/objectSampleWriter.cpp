@@ -32,7 +32,7 @@
 #include "jfr/leakprofiler/checkpoint/rootResolver.hpp"
 #include "jfr/leakprofiler/sampling/objectSampler.hpp"
 #include "jfr/leakprofiler/utilities/rootType.hpp"
-#include "jfr/leakprofiler/utilities/unifiedOop.hpp"
+#include "jfr/leakprofiler/utilities/unifiedOopRef.inline.hpp"
 #include "jfr/metadata/jfrSerializer.hpp"
 #include "jfr/writers/jfrTypeWriterHost.hpp"
 #include "oops/oop.inline.hpp"
@@ -374,8 +374,8 @@ int _edge_reference_compare_(uintptr_t lhs, uintptr_t rhs) {
 }
 
 int _root_desc_compare_(const ObjectSampleRootDescriptionInfo*const & lhs, const ObjectSampleRootDescriptionInfo* const& rhs) {
-  const uintptr_t lhs_ref = (uintptr_t)lhs->_data._root_edge->reference();
-  const uintptr_t rhs_ref = (uintptr_t)rhs->_data._root_edge->reference();
+  const uintptr_t lhs_ref = lhs->_data._root_edge->reference().addr<uintptr_t>();
+  const uintptr_t rhs_ref = rhs->_data._root_edge->reference().addr<uintptr_t>();
   return _edge_reference_compare_(lhs_ref, rhs_ref);
 }
 
@@ -393,7 +393,7 @@ static int find_sorted(const RootCallbackInfo& callback_info,
   while (max >= min) {
     const int mid = (int)(((uint)max + min) / 2);
     int diff = _edge_reference_compare_((uintptr_t)callback_info._high,
-                                        (uintptr_t)arr->at(mid)->_data._root_edge->reference());
+                                        arr->at(mid)->_data._root_edge->reference().addr<uintptr_t>());
     if (diff > 0) {
       min = mid + 1;
     } else if (diff < 0) {
@@ -411,11 +411,11 @@ class RootResolutionSet : public ResourceObj, public RootCallback {
   GrowableArray<const ObjectSampleRootDescriptionInfo*>* _unresolved_roots;
 
   const uintptr_t high() const {
-    return (uintptr_t)_unresolved_roots->last()->_data._root_edge->reference();
+    return _unresolved_roots->last()->_data._root_edge->reference().addr<uintptr_t>();
   }
 
   const uintptr_t low() const {
-    return (uintptr_t)_unresolved_roots->first()->_data._root_edge->reference();
+    return _unresolved_roots->first()->_data._root_edge->reference().addr<uintptr_t>();
   }
 
   bool in_set_address_range(const RootCallbackInfo& callback_info) const {
@@ -429,7 +429,7 @@ class RootResolutionSet : public ResourceObj, public RootCallback {
     assert(callback_info._low != NULL, "invariant");
 
     for (int i = 0; i < _unresolved_roots->length(); ++i) {
-      const uintptr_t ref_addr = (uintptr_t)_unresolved_roots->at(i)->_data._root_edge->reference();
+      const uintptr_t ref_addr = _unresolved_roots->at(i)->_data._root_edge->reference().addr<uintptr_t>();
       if ((uintptr_t)callback_info._low <= ref_addr && (uintptr_t)callback_info._high >= ref_addr) {
         return i;
       }
@@ -453,7 +453,7 @@ class RootResolutionSet : public ResourceObj, public RootCallback {
     ObjectSampleRootDescriptionInfo* const desc =
       const_cast<ObjectSampleRootDescriptionInfo*>(_unresolved_roots->at(idx));
     assert(desc != NULL, "invariant");
-    assert((uintptr_t)callback_info._high == (uintptr_t)desc->_data._root_edge->reference(), "invariant");
+    assert((uintptr_t)callback_info._high == desc->_data._root_edge->reference().addr<uintptr_t>(), "invariant");
 
     desc->_data._system = callback_info._system;
     desc->_data._type = callback_info._type;
@@ -499,7 +499,7 @@ class RootResolutionSet : public ResourceObj, public RootCallback {
     return _unresolved_roots->length();
   }
 
-  const void* at(int idx) const {
+  UnifiedOopRef at(int idx) const {
     assert(idx >= 0, "invariant");
     assert(idx < _unresolved_roots->length(), "invariant");
     return _unresolved_roots->at(idx)->_data._root_edge->reference();

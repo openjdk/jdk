@@ -23,16 +23,16 @@
 
 /*
  * @test
- * @bug 8235369
+ * @bug 8235369 8235550
  * @summary reflection test for records
  * @compile --enable-preview -source ${jdk.version} RecordReflectionTest.java
  * @run testng/othervm --enable-preview RecordReflectionTest
+ * @run testng/othervm/java.security.policy=allPermissions.policy --enable-preview RecordReflectionTest
  */
 
 import java.lang.annotation.*;
 import java.lang.reflect.*;
 import java.util.List;
-
 import org.testng.annotations.*;
 import static org.testng.Assert.*;
 
@@ -49,18 +49,56 @@ public class RecordReflectionTest {
 
     record R4(R1 r1, R2 r2, R3 r3) {}
 
-    public void testIsRecord() {
-        assertFalse(NoRecord.class.isRecord());
+    record R5(String... args) {}
 
-        for (Class<?> c : List.of(R1.class, R2.class, R3.class)) {
-            String message = c.toGenericString();
-            assertTrue(c.isRecord(), message);
-            assertTrue(message.contains("record") , message);
-        }
+    record R6(long l, String... args) implements java.io.Serializable {}
+
+    record R7(String s1, String s2, String... args) {}
+
+    record R8<A, B>(A a, B b) implements java.io.Serializable { }
+
+    @DataProvider(name = "recordClasses")
+    public Object[][] recordClassData() {
+        return List.of(R1.class,
+                       R2.class,
+                       R3.class,
+                       R4.class,
+                       R5.class,
+                       R6.class,
+                       R7.class,
+                       R8.class)
+                   .stream().map(c -> new Object[] {c}).toArray(Object[][]::new);
     }
 
-    public void testGetComponentsNoRecord() {
-        assertTrue(NoRecord.class.getRecordComponents().length == 0);
+    @Test(dataProvider = "recordClasses")
+    public void testIsRecord(Class<?> cls) {
+        String message = cls.toGenericString();
+        assertTrue(cls.isRecord());
+        assertTrue(cls.getSuperclass() == java.lang.Record.class);
+        assertTrue(cls.getRecordComponents() != null);
+        assertTrue(message.contains("record"), message);
+    }
+
+    @DataProvider(name = "notRecordClasses")
+    public Object[][] notRecordClasses() {
+        return List.of(NoRecord.class,
+                       NoRecord[].class,
+                       Record.class,  // java.lang.Record is not itself a record class
+                       Record[].class,
+                       byte.class,
+                       byte[].class,
+                       int.class,
+                       int[].class,
+                       long.class,
+                       long[].class)
+                   .stream().map(c -> new Object[] {c}).toArray(Object[][]::new);
+    }
+
+    @Test(dataProvider = "notRecordClasses")
+    public void testNotARecordClass(Class<?> cls) {
+        assertFalse(cls.isRecord());
+        assertFalse(cls.getSuperclass() == java.lang.Record.class);
+        assertTrue(cls.getRecordComponents() == null);
     }
 
     @DataProvider(name = "reflectionData")
@@ -83,7 +121,7 @@ public class RecordReflectionTest {
                            new String[]{ "java.util.List<java.lang.String>"} },
             new Object[] { new R4(new R1(), new R2(6, 7), new R3(List.of("s"))),
                            3,
-                           new Object[]{ new R1(), new R2(6, 7), new R3(List.of("s")) } ,
+                           new Object[]{ new R1(), new R2(6, 7), new R3(List.of("s")) },
                            new String[]{ "r1", "r2", "r3" },
                            new String[]{ R1.class.toString(), R2.class.toString(), R3.class.toString()} },
         };
@@ -112,10 +150,6 @@ public class RecordReflectionTest {
             i++;
         }
     }
-
-    record R5(String... args) {}
-    record R6(long l, String... args) {}
-    record R7(String s1, String s2, String... args) {}
 
     @Retention(RetentionPolicy.RUNTIME)
     @Target({ ElementType.RECORD_COMPONENT, ElementType.FIELD })

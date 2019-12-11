@@ -120,6 +120,8 @@ At a minimum, a machine with 4 cores is advisable, as well as 4 GB of RAM. (The
 more cores to use, the more memory you need.) At least 8 GB of free disk space
 is required.
 
+Note: The sparc port is deprecated.
+
 ### Building on aarch64
 
 At a minimum, a machine with 8 cores is advisable, as well as 8 GB of RAM.
@@ -257,6 +259,8 @@ version 2.21.1 is needed, which is provided by Solaris 11 Update 1. Objcopy is
 needed if you want to have external debug symbols. Please make sure you are
 using at least version 2.21.1 of objcopy, or that you disable external debug
 symbols.
+
+Note: The Solaris port is deprecated.
 
 ### macOS
 

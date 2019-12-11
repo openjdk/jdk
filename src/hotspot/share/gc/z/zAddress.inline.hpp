@@ -70,6 +70,10 @@ inline bool ZAddress::is_marked(uintptr_t value) {
   return value & ZAddressMetadataMarked;
 }
 
+inline bool ZAddress::is_marked_or_null(uintptr_t value) {
+  return is_marked(value) || is_null(value);
+}
+
 inline bool ZAddress::is_finalizable(uintptr_t value) {
   return value & ZAddressMetadataFinalizable;
 }

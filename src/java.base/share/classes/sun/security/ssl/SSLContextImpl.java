@@ -550,9 +550,7 @@ public abstract class SSLContextImpl extends SSLContextSpi {
                 ProtocolVersion.TLS13,
                 ProtocolVersion.TLS12,
                 ProtocolVersion.TLS11,
-                ProtocolVersion.TLS10,
-                ProtocolVersion.SSL30,
-                ProtocolVersion.SSL20Hello
+                ProtocolVersion.TLS10
             });
 
             supportedCipherSuites = getApplicableSupportedCipherSuites(
@@ -609,8 +607,7 @@ public abstract class SSLContextImpl extends SSLContextSpi {
         static {
             clientDefaultProtocols = getAvailableProtocols(
                     new ProtocolVersion[] {
-                ProtocolVersion.TLS10,
-                ProtocolVersion.SSL30
+                ProtocolVersion.TLS10
             });
 
             clientDefaultCipherSuites = getApplicableEnabledCipherSuites(
@@ -641,8 +638,7 @@ public abstract class SSLContextImpl extends SSLContextSpi {
             clientDefaultProtocols = getAvailableProtocols(
                     new ProtocolVersion[] {
                 ProtocolVersion.TLS11,
-                ProtocolVersion.TLS10,
-                ProtocolVersion.SSL30
+                ProtocolVersion.TLS10
             });
 
             clientDefaultCipherSuites = getApplicableEnabledCipherSuites(
@@ -675,8 +671,7 @@ public abstract class SSLContextImpl extends SSLContextSpi {
                     new ProtocolVersion[] {
                 ProtocolVersion.TLS12,
                 ProtocolVersion.TLS11,
-                ProtocolVersion.TLS10,
-                ProtocolVersion.SSL30
+                ProtocolVersion.TLS10
             });
 
             clientDefaultCipherSuites = getApplicableEnabledCipherSuites(
@@ -709,8 +704,7 @@ public abstract class SSLContextImpl extends SSLContextSpi {
                 ProtocolVersion.TLS13,
                 ProtocolVersion.TLS12,
                 ProtocolVersion.TLS11,
-                ProtocolVersion.TLS10,
-                ProtocolVersion.SSL30
+                ProtocolVersion.TLS10
             });
 
             clientDefaultCipherSuites = getApplicableEnabledCipherSuites(
@@ -847,26 +841,13 @@ public abstract class SSLContextImpl extends SSLContextSpi {
             // Use the default enabled protocols if no customization
             ProtocolVersion[] candidates;
             if (refactored.isEmpty()) {
-                if (client) {
-                    // default client protocols
-                    candidates = new ProtocolVersion[] {
-                            ProtocolVersion.TLS13,
-                            ProtocolVersion.TLS12,
-                            ProtocolVersion.TLS11,
-                            ProtocolVersion.TLS10,
-                            ProtocolVersion.SSL30
-                        };
-
-                } else {
-                    candidates = new ProtocolVersion[] {
-                            ProtocolVersion.TLS13,
-                            ProtocolVersion.TLS12,
-                            ProtocolVersion.TLS11,
-                            ProtocolVersion.TLS10,
-                            ProtocolVersion.SSL30,
-                            ProtocolVersion.SSL20Hello
+                // Client and server use the same default protocols.
+                candidates = new ProtocolVersion[] {
+                        ProtocolVersion.TLS13,
+                        ProtocolVersion.TLS12,
+                        ProtocolVersion.TLS11,
+                        ProtocolVersion.TLS10
                     };
-                }
             } else {
                 // Use the customized TLS protocols.
                 candidates =

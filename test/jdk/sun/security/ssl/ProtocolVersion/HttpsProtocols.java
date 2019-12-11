@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4671289
+ * @bug 4671289 8190492
  * @summary passing https.protocols from command line doesn't work.
  * @run main/othervm -Dhttps.protocols=SSLv3 HttpsProtocols
  * @author Brad Wetmore
@@ -87,6 +87,9 @@ public class HttpsProtocols implements HostnameVerifier {
             (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
         SSLServerSocket sslServerSocket =
             (SSLServerSocket) sslssf.createServerSocket(serverPort);
+
+        // Enable all supported protocols on server side to test SSLv3
+        sslServerSocket.setEnabledProtocols(sslServerSocket.getSupportedProtocols());
 
         serverPort = sslServerSocket.getLocalPort();
 

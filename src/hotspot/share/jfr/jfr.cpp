@@ -103,7 +103,7 @@ void Jfr::on_vm_shutdown(bool exception_handler) {
 
 void Jfr::weak_oops_do(BoolObjectClosure* is_alive, OopClosure* f) {
   if (LeakProfiler::is_running()) {
-    LeakProfiler::oops_do(is_alive, f);
+    LeakProfiler::weak_oops_do(is_alive, f);
   }
 }
 

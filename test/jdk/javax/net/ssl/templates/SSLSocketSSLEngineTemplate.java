@@ -30,7 +30,10 @@
  * @test
  * @bug 7105780
  * @summary Add SSLSocket client/SSLEngine server to templates directory.
- * @run main/othervm SSLSocketSSLEngineTemplate
+ * @run main/othervm SSLSocketSSLEngineTemplate TLSv1
+ * @run main/othervm SSLSocketSSLEngineTemplate TLSv1.1
+ * @run main/othervm SSLSocketSSLEngineTemplate TLSv1.2
+ * @run main/othervm SSLSocketSSLEngineTemplate TLSv1.3
  */
 
 /**
@@ -100,11 +103,12 @@ public class SSLSocketSSLEngineTemplate {
     private static final boolean debug = false;
     private final SSLContext sslc;
     private SSLEngine serverEngine;     // server-side SSLEngine
+    private SSLSocket clientSocket;
 
     private final byte[] serverMsg =
         "Hi there Client, I'm a Server.".getBytes();
     private final byte[] clientMsg =
-        "Hello Server, I'm a Client!  Pleased to meet you!".getBytes();
+        "Hello Server, I'm a Client! Pleased to meet you!".getBytes();
 
     private ByteBuffer serverOut;       // write side of serverEngine
     private ByteBuffer serverIn;        // read side of serverEngine
@@ -135,6 +139,8 @@ public class SSLSocketSSLEngineTemplate {
      * Main entry point for this test.
      */
     public static void main(String args[]) throws Exception {
+        String protocol = args[0];
+
         // reset security properties to make sure that the algorithms
         // and keys used in this test are not disabled.
         Security.setProperty("jdk.tls.disabledAlgorithms", "");
@@ -144,26 +150,20 @@ public class SSLSocketSSLEngineTemplate {
             System.setProperty("javax.net.debug", "all");
         }
 
-        String [] protocols = new String [] {
-            "SSLv3", "TLSv1", "TLSv1.1", "TLSv1.2", "TLSv1.3" };
+        /*
+         * Run the tests with direct and indirect buffers.
+         */
+        SSLSocketSSLEngineTemplate test =
+            new SSLSocketSSLEngineTemplate(protocol);
+        log("-------------------------------------");
+        log("Testing " + protocol + " for direct buffers ...");
+        test.runTest(true);
 
-        for (String protocol : protocols) {
-            log("Testing " + protocol);
-            /*
-             * Run the tests with direct and indirect buffers.
-             */
-            SSLSocketSSLEngineTemplate test =
-                new SSLSocketSSLEngineTemplate(protocol);
-            log("-------------------------------------");
-            log("Testing " + protocol + " for direct buffers ...");
-            test.runTest(true);
+        log("---------------------------------------");
+        log("Testing " + protocol + " for indirect buffers ...");
+        test.runTest(false);
 
-            log("---------------------------------------");
-            log("Testing " + protocol + " for indirect buffers ...");
-            test.runTest(false);
-        }
-
-        System.out.println("Test Passed.");
+        log("Test Passed.");
     }
 
     /*
@@ -213,6 +213,7 @@ public class SSLSocketSSLEngineTemplate {
      * sections of code.
      */
     private void runTest(boolean direct) throws Exception {
+        clientSocket = null;
         boolean serverClose = direct;
 
         // generates the server-side Socket
@@ -220,6 +221,7 @@ public class SSLSocketSSLEngineTemplate {
             serverSocket.setReuseAddress(false);
             serverSocket.bind(null);
             int port = serverSocket.getLocalPort();
+            log("Port: " + port);
             Thread thread = createClientThread(port, serverClose);
 
             createSSLEngine();
@@ -260,11 +262,18 @@ public class SSLSocketSSLEngineTemplate {
                     try {
                         len = is.read(inbound);
                         if (len == -1) {
-                            throw new Exception("Unexpected EOF");
+                            logSocketStatus(clientSocket);
+                            if (clientSocket.isClosed()
+                                    || clientSocket.isOutputShutdown()) {
+                                log("Client socket was closed or shutdown output");
+                                break;
+                            } else {
+                                throw new Exception("Unexpected EOF");
+                            }
                         }
                         cTOs.put(inbound, 0, len);
                     } catch (SocketTimeoutException ste) {
-                        // swallow.  Nothing yet, probably waiting on us.
+                        // swallow. Nothing yet, probably waiting on us.
                     }
 
                     cTOs.flip();
@@ -367,6 +376,8 @@ public class SSLSocketSSLEngineTemplate {
                 // client-side socket
                 try (SSLSocket sslSocket = (SSLSocket)sslc.getSocketFactory().
                             createSocket("localhost", port)) {
+                    clientSocket = sslSocket;
+
                     OutputStream os = sslSocket.getOutputStream();
                     InputStream is = sslSocket.getInputStream();
 
@@ -475,6 +486,15 @@ public class SSLSocketSSLEngineTemplate {
         return (engine.isOutboundDone() && engine.isInboundDone());
     }
 
+    private static void logSocketStatus(Socket socket) {
+        log("##### " + socket + " #####");
+        log("isBound: " + socket.isBound());
+        log("isConnected: " + socket.isConnected());
+        log("isClosed: " + socket.isClosed());
+        log("isInputShutdown: " + socket.isInputShutdown());
+        log("isOutputShutdown: " + socket.isOutputShutdown());
+    }
+
     /*
      * Logging code
      */
@@ -486,7 +506,7 @@ public class SSLSocketSSLEngineTemplate {
         }
         if (resultOnce) {
             resultOnce = false;
-            System.out.println("The format of the SSLEngineResult is: \n"
+            log("The format of the SSLEngineResult is: \n"
                     + "\t\"getStatus() / getHandshakeStatus()\" +\n"
                     + "\t\"bytesConsumed() / bytesProduced()\"\n");
         }
@@ -502,7 +522,11 @@ public class SSLSocketSSLEngineTemplate {
 
     private static void log(String str) {
         if (logging) {
-            System.out.println(str);
+            if (debug) {
+                System.err.println(str);
+            } else {
+                System.out.println(str);
+            }
         }
     }
 }

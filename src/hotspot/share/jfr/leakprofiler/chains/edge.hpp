@@ -25,18 +25,18 @@
 #ifndef SHARE_JFR_LEAKPROFILER_CHAINS_EDGE_HPP
 #define SHARE_JFR_LEAKPROFILER_CHAINS_EDGE_HPP
 
+#include "jfr/leakprofiler/utilities/unifiedOopRef.hpp"
 #include "memory/allocation.hpp"
 #include "oops/oopsHierarchy.hpp"
 
 class Edge {
  protected:
   const Edge* _parent;
-  const oop* _reference;
+  UnifiedOopRef _reference;
  public:
-  Edge();
-  Edge(const Edge* parent, const oop* reference);
+  Edge(const Edge* parent, UnifiedOopRef reference);
 
-  const oop* reference() const {
+  UnifiedOopRef reference() const {
     return _reference;
   }
   const Edge* parent() const {

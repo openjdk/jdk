@@ -3037,6 +3037,12 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
         return JNI_ERR;
 #endif // INCLUDE_MANAGEMENT
 #if INCLUDE_JVMCI
+    } else if (match_option(option, "-XX:-EnableJVMCIProduct")) {
+      if (EnableJVMCIProduct) {
+        jio_fprintf(defaultStream::error_stream(),
+                  "-XX:-EnableJVMCIProduct cannot come after -XX:+EnableJVMCIProduct\n");
+        return JNI_EINVAL;
+      }
     } else if (match_option(option, "-XX:+EnableJVMCIProduct")) {
       JVMFlag *jvmciFlag = JVMFlag::find_flag("EnableJVMCIProduct");
       // Allow this flag if it has been unlocked.

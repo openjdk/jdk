@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 
 /*
  * @test
- * @bug 7188658
+ * @bug 7188658 8190492
  * @summary Add possibility to disable client initiated renegotiation
  * @run main/othervm  -Djdk.tls.rejectClientInitiatedRenegotiation=true
  *      NoImpactServerRenego SSLv3
@@ -121,6 +121,12 @@ public class NoImpactServerRenego implements
 
         SSLSocket sslSocket = (SSLSocket) sslServerSocket.accept();
         sslSocket.addHandshakeCompletedListener(this);
+
+        // Enable all supported protocols on server side to test SSLv3
+        if ("SSLv3".equals(tlsProtocol)) {
+            sslSocket.setEnabledProtocols(sslSocket.getSupportedProtocols());
+        }
+
         InputStream sslIS = sslSocket.getInputStream();
         OutputStream sslOS = sslSocket.getOutputStream();
 

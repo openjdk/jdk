@@ -1125,27 +1125,21 @@ public class URLClassPath {
 
         /**
          * Attempt to return a file URL by resolving input against a base file
-         * URL. The input is an absolute or relative file URL that encodes a
-         * file path.
-         *
-         * @apiNote Nonsensical input such as a Windows file path with a drive
-         * letter cannot be disambiguated from an absolute URL so will be rejected
-         * (by returning null) by this method.
-         *
+         * URL.
          * @return the resolved URL or null if the input is an absolute URL with
          *         a scheme other than file (ignoring case)
          * @throws MalformedURLException
          */
         static URL tryResolveFile(URL base, String input) throws MalformedURLException {
-            int index = input.indexOf(':');
-            boolean isFile;
-            if (index >= 0) {
-                String scheme = input.substring(0, index);
-                isFile = "file".equalsIgnoreCase(scheme);
-            } else {
-                isFile = true;
+            URL retVal = new URL(base, input);
+            if (input.indexOf(':') >= 0 &&
+                    !"file".equalsIgnoreCase(retVal.getProtocol())) {
+                // 'input' contains a ':', which might be a scheme, or might be
+                // a Windows drive letter.  If the protocol for the resolved URL
+                // isn't "file:", it should be ignored.
+                return null;
             }
-            return (isFile) ? new URL(base, input) : null;
+            return retVal;
         }
 
         /**

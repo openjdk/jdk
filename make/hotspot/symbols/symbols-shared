@@ -31,5 +31,4 @@ JNI_CreateJavaVM
 JNI_GetCreatedJavaVMs
 JNI_GetDefaultJavaVMInitArgs
 JVM_FindClassFromBootLoader
-JVM_GetVersionInfo
 JVM_InitAgentProperties

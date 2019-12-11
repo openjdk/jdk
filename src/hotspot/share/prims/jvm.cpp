@@ -3645,20 +3645,6 @@ JVM_ENTRY(jobjectArray, JVM_GetEnclosingMethodInfo(JNIEnv *env, jclass ofClass))
 }
 JVM_END
 
-JVM_ENTRY(void, JVM_GetVersionInfo(JNIEnv* env, jvm_version_info* info, size_t info_size))
-{
-  memset(info, 0, info_size);
-
-  info->jvm_version = VM_Version::jvm_version();
-  info->patch_version = VM_Version::vm_patch_version();
-
-  // when we add a new capability in the jvm_version_info struct, we should also
-  // consider to expose this new capability in the sun.rt.jvmCapabilities jvmstat
-  // counter defined in runtimeService.cpp.
-  info->is_attach_supported = AttachListener::is_attach_supported();
-}
-JVM_END
-
 // Returns an array of java.lang.String objects containing the input arguments to the VM.
 JVM_ENTRY(jobjectArray, JVM_GetVmArguments(JNIEnv *env))
   ResourceMark rm(THREAD);
