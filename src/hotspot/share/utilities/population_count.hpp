@@ -25,23 +25,47 @@
 #ifndef SHARE_UTILITIES_POPULATION_COUNT_HPP
 #define SHARE_UTILITIES_POPULATION_COUNT_HPP
 
+#include "metaprogramming/conditional.hpp"
+#include "metaprogramming/enableIf.hpp"
+#include "metaprogramming/isIntegral.hpp"
+#include "metaprogramming/isSigned.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 // Returns the population count of x, i.e., the number of bits set in x.
 //
-// Adapted from Hacker's Delight, 2nd Edition, Figure 5-2.
+// Adapted from Hacker's Delight, 2nd Edition, Figure 5-2 and the text that
+// follows.
 //
 // Ideally this should be dispatched per platform to use optimized
 // instructions when available, such as POPCNT on modern x86/AMD. Our builds
 // still target and support older architectures that might lack support for
-// these, however. For example, with current build configurations,
-// __builtin_popcount(x) would generate a call to a similar but slower 64-bit
-// version of this 32-bit implementation.
-static uint32_t population_count(uint32_t x) {
-  x -= ((x >> 1) & 0x55555555);
-  x = (x & 0x33333333) + ((x >> 2) & 0x33333333);
-  return (((x + (x >> 4)) & 0x0F0F0F0F) * 0x01010101) >> 24;
+// these. For example, with current build configurations, __builtin_popcount(x)
+// generate a call to a similar but slower 64-bit version when calling with
+// a 32-bit integer type.
+template <typename T>
+inline unsigned population_count(T x) {
+  STATIC_ASSERT(BitsPerWord <= 128);
+  STATIC_ASSERT(BitsPerByte == 8);
+  STATIC_ASSERT(IsIntegral<T>::value);
+  STATIC_ASSERT(!IsSigned<T>::value);
+  // We need to take care with implicit integer promotion when dealing with
+  // integers < 32-bit. We chose to do this by explicitly widening constants
+  // to unsigned
+  typedef typename Conditional<(sizeof(T) < sizeof(unsigned)), unsigned, T>::type P;
+  const T all = ~T(0);           // 0xFF..FF
+  const P fives = all/3;         // 0x55..55
+  const P threes = (all/15) * 3; // 0x33..33
+  const P z_ones = all/255;      // 0x0101..01
+  const P z_effs = z_ones * 15;  // 0x0F0F..0F
+  P r = x;
+  r -= ((r >> 1) & fives);
+  r = (r & threes) + ((r >> 2) & threes);
+  r = ((r + (r >> 4)) & z_effs) * z_ones;
+  // The preceeding multiply by z_ones is the only place where the intermediate
+  // calculations can exceed the range of T. We need to discard any such excess
+  // before the right-shift, hence the conversion back to T.
+  return static_cast<T>(r) >> (((sizeof(T) - 1) * BitsPerByte));
 }
 
 #endif // SHARE_UTILITIES_POPULATION_COUNT_HPP

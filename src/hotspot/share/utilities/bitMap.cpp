@@ -29,6 +29,7 @@
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/population_count.hpp"
 
 STATIC_ASSERT(sizeof(BitMap::bm_word_t) == BytesPerWord); // "Implementation assumption."
 
@@ -646,50 +647,11 @@ bool BitMap::iterate(BitMapClosure* blk, idx_t leftOffset, idx_t rightOffset) {
   return true;
 }
 
-const BitMap::idx_t* BitMap::_pop_count_table = NULL;
-
-void BitMap::init_pop_count_table() {
-  if (_pop_count_table == NULL) {
-    BitMap::idx_t *table = NEW_C_HEAP_ARRAY(idx_t, 256, mtInternal);
-    for (uint i = 0; i < 256; i++) {
-      table[i] = num_set_bits(i);
-    }
-
-    if (!Atomic::replace_if_null(&_pop_count_table, table)) {
-      guarantee(_pop_count_table != NULL, "invariant");
-      FREE_C_HEAP_ARRAY(idx_t, table);
-    }
-  }
-}
-
-BitMap::idx_t BitMap::num_set_bits(bm_word_t w) {
-  idx_t bits = 0;
-
-  while (w != 0) {
-    while ((w & 1) == 0) {
-      w >>= 1;
-    }
-    bits++;
-    w >>= 1;
-  }
-  return bits;
-}
-
-BitMap::idx_t BitMap::num_set_bits_from_table(unsigned char c) {
-  assert(_pop_count_table != NULL, "precondition");
-  return _pop_count_table[c];
-}
-
 BitMap::idx_t BitMap::count_one_bits() const {
-  init_pop_count_table(); // If necessary.
   idx_t sum = 0;
-  typedef unsigned char uchar;
   for (idx_t i = 0; i < size_in_words(); i++) {
     bm_word_t w = map()[i];
-    for (size_t j = 0; j < sizeof(bm_word_t); j++) {
-      sum += num_set_bits_from_table(uchar(w & 255));
-      w >>= 8;
-    }
+    sum += population_count(w);
   }
   return sum;
 }
