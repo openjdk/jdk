@@ -1110,7 +1110,7 @@ class Eval {
                 Snippet sn = outer.wrapLineToSnippet(wln);
                 String file = "#" + sn.id();
                 elems[i] = new StackTraceElement(klass, method, file, line);
-            } else if (r.getFileName().equals("<none>")) {
+            } else if ("<none>".equals(r.getFileName())) {
                 elems[i] = new StackTraceElement(r.getClassName(), r.getMethodName(), null, r.getLineNumber());
             } else {
                 elems[i] = r;
