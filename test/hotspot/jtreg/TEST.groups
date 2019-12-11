@@ -156,6 +156,9 @@ tier1_compiler_aot_jvmci = \
   compiler/aot \
   compiler/jvmci
 
+tier1_compiler_graal = \
+  compiler/graalunit/HotspotTest.java
+
 ctw_1 = \
   applications/ctw/modules/ \
   -:ctw_2 \
