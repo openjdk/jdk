@@ -436,9 +436,6 @@ public:
   // Helper to call Node::Ideal() and BarrierSetC2::ideal_node().
   Node* apply_ideal(Node* i, bool can_reshape);
 
-  // Helper to call Node::Identity() and BarrierSetC2::identity_node().
-  Node* apply_identity(Node* n);
-
   // Check for a simple dead loop when a data node references itself.
   DEBUG_ONLY(void dead_loop_check(Node *n);)
 };

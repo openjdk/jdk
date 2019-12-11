@@ -1033,13 +1033,7 @@ void PhaseMacroExpand::process_users_of_allocation(CallNode *alloc) {
         if (ctrl_proj != NULL) {
           _igvn.replace_node(ctrl_proj, init->in(TypeFunc::Control));
 #ifdef ASSERT
-          BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
           Node* tmp = init->in(TypeFunc::Control);
-          while (bs->is_gc_barrier_node(tmp)) {
-            Node* tmp2 = bs->step_over_gc_barrier_ctrl(tmp);
-            assert(tmp != tmp2, "Must make progress");
-            tmp = tmp2;
-          }
           assert(tmp == _fallthroughcatchproj, "allocation control projection");
 #endif
         }

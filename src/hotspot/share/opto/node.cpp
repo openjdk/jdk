@@ -1166,7 +1166,7 @@ bool Node::has_special_unique_user() const {
     // See IfProjNode::Identity()
     return true;
   } else {
-    return BarrierSet::barrier_set()->barrier_set_c2()->has_special_unique_user(this);
+    return false;
   }
 };
 

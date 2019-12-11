@@ -157,11 +157,6 @@ public:
 
   GraphKit* kit() const           { return _kit; }
 
-  template <typename T>
-  T barrier_set_state_as() const {
-    return reinterpret_cast<T>(barrier_set_state());
-  }
-
   virtual PhaseGVN& gvn() const;
   virtual bool is_parse_access() const { return true; }
 };
@@ -187,8 +182,6 @@ public:
   Node* memory() const       { return _memory; }
   uint alias_idx() const     { return _alias_idx; }
   bool needs_pinning() const { return _needs_pinning; }
-
-  void set_needs_pinning(bool value)    { _needs_pinning = value; }
 };
 
 // C2Access for optimization time calls to the BarrierSetC2 backend.
@@ -205,11 +198,8 @@ public:
     fixup_decorators();
   }
 
-
   MergeMemNode* mem() const { return _mem; }
   Node* ctl() const { return _ctl; }
-  // void set_mem(Node* mem) { _mem = mem; }
-  void set_ctl(Node* ctl) { _ctl = ctl; }
 
   virtual PhaseGVN& gvn() const { return _gvn; }
   virtual bool is_opt_access() const { return true; }
@@ -248,15 +238,12 @@ public:
 
   virtual void clone(GraphKit* kit, Node* src, Node* dst, Node* size, bool is_array) const;
 
-  virtual Node* resolve(GraphKit* kit, Node* n, DecoratorSet decorators) const { return n; }
-
   virtual Node* obj_allocate(PhaseMacroExpand* macro, Node* ctrl, Node* mem, Node* toobig_false, Node* size_in_bytes,
                              Node*& i_o, Node*& needgc_ctrl,
                              Node*& fast_oop_ctrl, Node*& fast_oop_rawmem,
                              intx prefetch_lines) const;
 
   virtual Node* ideal_node(PhaseGVN* phase, Node* n, bool can_reshape) const { return NULL; }
-  virtual Node* identity_node(PhaseGVN* phase, Node* n) const { return n; }
 
   // These are general helper methods used by C2
   enum ArrayCopyPhase {
@@ -272,7 +259,6 @@ public:
   virtual bool has_load_barrier_nodes() const { return false; }
   virtual bool is_gc_barrier_node(Node* node) const { return false; }
   virtual Node* step_over_gc_barrier(Node* c) const { return c; }
-  virtual Node* step_over_gc_barrier_ctrl(Node* c) const { return c; }
 
   // Support for macro expanded GC barriers
   virtual void register_potential_barrier_node(Node* node) const { }
@@ -291,17 +277,13 @@ public:
   virtual bool strip_mined_loops_expanded(LoopOptsMode mode) const { return false; }
   virtual bool is_gc_specific_loop_opts_pass(LoopOptsMode mode) const { return false; }
 
-  virtual bool has_special_unique_user(const Node* node) const { return false; }
-
   enum CompilePhase {
     BeforeOptimize,
     BeforeMacroExpand,
     BeforeCodeGen
   };
 
-  virtual bool flatten_gc_alias_type(const TypePtr*& adr_type) const { return false; }
 #ifdef ASSERT
-  virtual bool verify_gc_alias_type(const TypePtr* adr_type, int offset) const { return false; }
   virtual void verify_gc_barriers(Compile* compile, CompilePhase phase) const {}
 #endif
 
@@ -311,16 +293,8 @@ public:
   virtual bool escape_add_final_edges(ConnectionGraph* conn_graph, PhaseGVN* gvn, Node* n, uint opcode) const { return false; }
   virtual bool escape_has_out_with_unsafe_object(Node* n) const { return false; }
 
-  virtual bool matcher_find_shared_visit(Matcher* matcher, Matcher::MStack& mstack, Node* n, uint opcode, bool& mem_op, int& mem_addr_idx) const { return false; };
   virtual bool matcher_find_shared_post_visit(Matcher* matcher, Node* n, uint opcode) const { return false; };
   virtual bool matcher_is_store_load_barrier(Node* x, uint xop) const { return false; }
-
-  virtual void igvn_add_users_to_worklist(PhaseIterGVN* igvn, Node* use) const { }
-  virtual void ccp_analyze(PhaseCCP* ccp, Unique_Node_List& worklist, Node* use) const { }
-
-  virtual Node* split_if_pre(PhaseIdealLoop* phase, Node* n) const { return NULL; }
-  virtual bool build_loop_late_post(PhaseIdealLoop* phase, Node* n) const { return false; }
-  virtual bool sink_node(PhaseIdealLoop* phase, Node* n, Node* x, Node* x_ctrl, Node* n_ctrl) const { return false; }
 
   virtual void late_barrier_analysis() const { }
   virtual int estimate_stub_size() const { return 0; }

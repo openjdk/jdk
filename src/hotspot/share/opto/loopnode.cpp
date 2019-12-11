@@ -1802,7 +1802,7 @@ void IdealLoopTree::split_fall_in( PhaseIdealLoop *phase, int fall_in_cnt ) {
       // disappear it.  In JavaGrande I have a case where this useless
       // Phi is the loop limit and prevents recognizing a CountedLoop
       // which in turn prevents removing an empty loop.
-      Node *id_old_phi = igvn.apply_identity(old_phi);
+      Node *id_old_phi = old_phi->Identity(&igvn);
       if( id_old_phi != old_phi ) { // Found a simple identity?
         // Note that I cannot call 'replace_node' here, because
         // that will yank the edge from old_phi to the Region and
@@ -4269,12 +4269,6 @@ void PhaseIdealLoop::verify_strip_mined_scheduling(Node *n, Node* least) {
 // Put Data nodes into some loop nest, by setting the _nodes[]->loop mapping.
 // Second pass finds latest legal placement, and ideal loop placement.
 void PhaseIdealLoop::build_loop_late_post(Node *n) {
-  BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
-
-  if (bs->build_loop_late_post(this, n)) {
-    return;
-  }
-
   build_loop_late_post_work(n, true);
 }
 
