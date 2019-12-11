@@ -45,6 +45,8 @@ public:
   static UnmapViewOfFile2Fn   UnmapViewOfFile2;
 
   static void initialize();
+
+  static bool is_supported();
 };
 
 #endif // OS_WINDOWS_GC_Z_ZSYSCALL_WINDOWS_HPP

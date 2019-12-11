@@ -48,28 +48,11 @@ public enum GC {
         this.name = name;
     }
 
-    private boolean supportsOSVersion() {
-        if (this != Z) {
-            return true;
-        }
-
-        String osName = System.getProperty("os.name");
-
-        if (!osName.startsWith("Windows")) {
-            return true;
-        }
-
-        // ZGC has specific Windows version requirements (>= 1803).
-        // The following check should be made more precise to
-        // also catch the corresponding Windows 10 version.
-        return osName.equals("Windows Server 2019");
-    }
-
     /**
      * @return true if this GC is supported by the VM, i.e., it is built into the VM.
      */
     public boolean isSupported() {
-        return WB.isGCSupported(name) && supportsOSVersion();
+        return WB.isGCSupported(name);
     }
 
     /**

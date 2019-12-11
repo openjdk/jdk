@@ -56,3 +56,14 @@ void ZSyscall::initialize() {
   lookup_symbol(MapViewOfFile3,     "KernelBase", "MapViewOfFile3");
   lookup_symbol(UnmapViewOfFile2,   "KernelBase", "UnmapViewOfFile2");
 }
+
+bool ZSyscall::is_supported() {
+  char ebuf[1024];
+  void* const handle = os::dll_load("KernelBase", ebuf, sizeof(ebuf));
+  if (handle == NULL) {
+    assert(false, "Failed to load library: KernelBase");
+    return false;
+  }
+
+  return os::dll_lookup(handle, "VirtualAlloc2") != NULL;
+}

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,26 +21,10 @@
  * questions.
  */
 
-#ifndef SHARE_GC_Z_ZARGUMENTS_HPP
-#define SHARE_GC_Z_ZARGUMENTS_HPP
+#include "precompiled.hpp"
+#include "gc/z/zArguments.hpp"
+#include "gc/z/zSyscall_windows.hpp"
 
-#include "gc/shared/gcArguments.hpp"
-
-class CollectedHeap;
-
-class ZArguments : public GCArguments {
-private:
-  void initialize_platform();
-
-  virtual void initialize_alignments();
-
-  virtual void initialize();
-  virtual size_t conservative_max_heap_alignment();
-  virtual CollectedHeap* create_heap();
-
-  virtual bool is_supported() const;
-
-  bool is_os_supported() const;
-};
-
-#endif // SHARE_GC_Z_ZARGUMENTS_HPP
+bool ZArguments::is_os_supported() const {
+  return ZSyscall::is_supported();
+}
