@@ -1317,9 +1317,11 @@ bool java_lang_Class::restore_archived_mirror(Klass *k,
 
   set_mirror_module_field(k, mirror, module, THREAD);
 
-  ResourceMark rm;
-  log_trace(cds, heap, mirror)(
-    "Restored %s archived mirror " PTR_FORMAT, k->external_name(), p2i(mirror()));
+  if (log_is_enabled(Trace, cds, heap, mirror)) {
+    ResourceMark rm(THREAD);
+    log_trace(cds, heap, mirror)(
+        "Restored %s archived mirror " PTR_FORMAT, k->external_name(), p2i(mirror()));
+  }
 
   return true;
 }

@@ -1774,7 +1774,7 @@ void MetaspaceShared::prepare_for_dumping() {
 // file.
 void MetaspaceShared::preload_and_dump(TRAPS) {
   { TraceTime timer("Dump Shared Spaces", TRACETIME_LOG(Info, startuptime));
-    ResourceMark rm;
+    ResourceMark rm(THREAD);
     char class_list_path_str[JVM_MAXPATHLEN];
     // Preload classes to be shared.
     const char* class_list_path;
@@ -1865,7 +1865,7 @@ int MetaspaceShared::preload_classes(const char* class_list_path, TRAPS) {
     }
     if (klass != NULL) {
       if (log_is_enabled(Trace, cds)) {
-        ResourceMark rm;
+        ResourceMark rm(THREAD);
         log_trace(cds)("Shared spaces preloaded: %s", klass->external_name());
       }
 
@@ -1904,7 +1904,7 @@ bool MetaspaceShared::try_link_class(InstanceKlass* ik, TRAPS) {
     }
     ik->link_class(THREAD);
     if (HAS_PENDING_EXCEPTION) {
-      ResourceMark rm;
+      ResourceMark rm(THREAD);
       log_warning(cds)("Preload Warning: Verification failed for %s",
                     ik->external_name());
       CLEAR_PENDING_EXCEPTION;

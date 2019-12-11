@@ -448,7 +448,7 @@ void SystemDictionary::validate_protection_domain(InstanceKlass* klass,
   JavaValue result(T_VOID);
   LogTarget(Debug, protectiondomain) lt;
   if (lt.is_enabled()) {
-    ResourceMark rm;
+    ResourceMark rm(THREAD);
     // Print out trace information
     LogStream ls(lt);
     ls.print_cr("Checking package access");
@@ -1176,7 +1176,7 @@ bool SystemDictionary::is_shared_class_visible(Symbol* class_name,
                                                Handle class_loader, TRAPS) {
   assert(!ModuleEntryTable::javabase_moduleEntry()->is_patched(),
          "Cannot use sharing if java.base is patched");
-  ResourceMark rm;
+  ResourceMark rm(THREAD);
   int path_index = ik->shared_classpath_index();
   ClassLoaderData* loader_data = class_loader_data(class_loader);
   if (path_index < 0) {
@@ -1341,7 +1341,7 @@ InstanceKlass* SystemDictionary::load_shared_class(InstanceKlass* ik,
   // package was loaded.
   if (class_loader.is_null()) {
     int path_index = ik->shared_classpath_index();
-    ResourceMark rm;
+    ResourceMark rm(THREAD);
     ClassLoader::add_package(ik->name()->as_C_string(), path_index, THREAD);
   }
 
@@ -1365,8 +1365,10 @@ InstanceKlass* SystemDictionary::load_shared_class(InstanceKlass* ik,
       // This class matches with a class saved in an AOT library
       ik->set_has_passed_fingerprint_check(true);
     } else {
-      ResourceMark rm;
-      log_info(class, fingerprint)("%s :  expected = " PTR64_FORMAT " actual = " PTR64_FORMAT, ik->external_name(), aot_fp, cds_fp);
+      if (log_is_enabled(Info, class, fingerprint)) {
+        ResourceMark rm(THREAD);
+        log_info(class, fingerprint)("%s :  expected = " PTR64_FORMAT " actual = " PTR64_FORMAT, ik->external_name(), aot_fp, cds_fp);
+      }
     }
   }
 
@@ -1377,7 +1379,7 @@ InstanceKlass* SystemDictionary::load_shared_class(InstanceKlass* ik,
 InstanceKlass* SystemDictionary::load_instance_class(Symbol* class_name, Handle class_loader, TRAPS) {
 
   if (class_loader.is_null()) {
-    ResourceMark rm;
+    ResourceMark rm(THREAD);
     PackageEntry* pkg_entry = NULL;
     bool search_only_bootloader_append = false;
     ClassLoaderData *loader_data = class_loader_data(class_loader);
