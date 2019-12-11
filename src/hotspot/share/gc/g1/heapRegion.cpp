@@ -123,7 +123,7 @@ void HeapRegion::unlink_from_list() {
   set_containing_set(NULL);
 }
 
-void HeapRegion::hr_clear(bool keep_remset, bool clear_space, bool locked) {
+void HeapRegion::hr_clear(bool clear_space) {
   assert(_humongous_start_region == NULL,
          "we should have already filtered out humongous regions");
   assert(!in_collection_set(),
@@ -135,13 +135,7 @@ void HeapRegion::hr_clear(bool keep_remset, bool clear_space, bool locked) {
   set_free();
   reset_pre_dummy_top();
 
-  if (!keep_remset) {
-    if (locked) {
-      rem_set()->clear_locked();
-    } else {
-      rem_set()->clear();
-    }
-  }
+  rem_set()->clear_locked();
 
   zero_marked_bytes();
 
@@ -286,7 +280,7 @@ void HeapRegion::initialize(bool clear_space, bool mangle_space) {
   set_compaction_top(bottom());
   reset_bot();
 
-  hr_clear(false /*par*/, false /*clear_space*/);
+  hr_clear(false /*clear_space*/);
 }
 
 void HeapRegion::report_region_type_change(G1HeapRegionTraceType::Type to) {

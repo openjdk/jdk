@@ -1274,7 +1274,7 @@ class G1ReclaimEmptyRegionsTask : public AbstractGangTask {
           _g1h->free_humongous_region(hr, _local_cleanup_list);
         } else {
           _old_regions_removed++;
-          _g1h->free_region(hr, _local_cleanup_list, false /* skip_remset */, false /* skip_hcc */, true /* locked */);
+          _g1h->free_region(hr, _local_cleanup_list);
         }
         hr->clear_cardtable();
         _g1h->concurrent_mark()->clear_statistics_in_region(hr->hrm_index());

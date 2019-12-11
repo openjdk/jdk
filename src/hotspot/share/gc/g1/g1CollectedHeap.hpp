@@ -658,20 +658,13 @@ public:
   // regions as necessary.
   HeapRegion* alloc_highest_free_region();
 
-  // Frees a non-humongous region by initializing its contents and
-  // adding it to the free list that's passed as a parameter (this is
-  // usually a local list which will be appended to the master free
-  // list later). The used bytes of freed regions are accumulated in
-  // pre_used. If skip_remset is true, the region's RSet will not be freed
-  // up. If skip_hot_card_cache is true, the region's hot card cache will not
-  // be freed up. The assumption is that this will be done later.
-  // The locked parameter indicates if the caller has already taken
-  // care of proper synchronization. This may allow some optimizations.
-  void free_region(HeapRegion* hr,
-                   FreeRegionList* free_list,
-                   bool skip_remset,
-                   bool skip_hot_card_cache = false,
-                   bool locked = false);
+  // Frees a region by resetting its metadata and adding it to the free list
+  // passed as a parameter (this is usually a local list which will be appended
+  // to the master free list later or NULL if free list management is handled
+  // in another way).
+  // Callers must ensure they are the only one calling free on the given region
+  // at the same time.
+  void free_region(HeapRegion* hr, FreeRegionList* free_list);
 
   // It dirties the cards that cover the block so that the post
   // write barrier never queues anything when updating objects on this
