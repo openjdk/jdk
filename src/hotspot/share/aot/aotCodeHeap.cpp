@@ -185,7 +185,6 @@ void AOTLib::verify_config() {
   verify_flag(_config->_compactFields, CompactFields, "CompactFields");
   verify_flag(_config->_enableContended, EnableContended, "EnableContended");
   verify_flag(_config->_restrictContended, RestrictContended, "RestrictContended");
-  verify_flag(_config->_threadLocalHandshakes, ThreadLocalHandshakes, "ThreadLocalHandshakes");
 
   if (!TieredCompilation && _config->_tieredAOT) {
     handle_config_error("Shared file %s error: Expected to run with tiered compilation on", _name);

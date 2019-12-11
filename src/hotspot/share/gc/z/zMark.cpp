@@ -45,6 +45,7 @@
 #include "runtime/atomic.hpp"
 #include "runtime/handshake.hpp"
 #include "runtime/prefetch.inline.hpp"
+#include "runtime/safepointMechanism.hpp"
 #include "runtime/thread.hpp"
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -454,7 +455,7 @@ bool ZMark::flush(bool at_safepoint) {
 
 bool ZMark::try_flush(volatile size_t* nflush) {
   // Only flush if handshakes are enabled
-  if (!ThreadLocalHandshakes) {
+  if (!SafepointMechanism::uses_thread_local_poll()) {
     return false;
   }
 

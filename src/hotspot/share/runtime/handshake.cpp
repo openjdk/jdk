@@ -282,7 +282,7 @@ void HandshakeThreadsOperation::do_handshake(JavaThread* thread) {
 }
 
 void Handshake::execute(HandshakeClosure* thread_cl) {
-  if (ThreadLocalHandshakes) {
+  if (SafepointMechanism::uses_thread_local_poll()) {
     HandshakeThreadsOperation cto(thread_cl);
     VM_HandshakeAllThreads handshake(&cto);
     VMThread::execute(&handshake);
@@ -293,7 +293,7 @@ void Handshake::execute(HandshakeClosure* thread_cl) {
 }
 
 bool Handshake::execute(HandshakeClosure* thread_cl, JavaThread* target) {
-  if (ThreadLocalHandshakes) {
+  if (SafepointMechanism::uses_thread_local_poll()) {
     HandshakeThreadsOperation cto(thread_cl);
     VM_HandshakeOneThread handshake(&cto, target);
     VMThread::execute(&handshake);

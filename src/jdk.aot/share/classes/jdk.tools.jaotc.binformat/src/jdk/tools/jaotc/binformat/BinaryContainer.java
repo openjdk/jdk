@@ -67,8 +67,6 @@ public final class BinaryContainer implements SymbolTable {
 
     private final int codeEntryAlignment;
 
-    private final boolean threadLocalHandshakes;
-
     /**
      * Container holding code bits and any other related information.
      */
@@ -294,8 +292,6 @@ public final class BinaryContainer implements SymbolTable {
 
         this.codeEntryAlignment = graalHotSpotVMConfig.codeEntryAlignment;
 
-        this.threadLocalHandshakes = graalHotSpotVMConfig.threadLocalHandshakes;
-
         // Section unique name is limited to 8 characters due to limitation on Windows.
         // Name could be longer but only first 8 characters are stored on Windows.
 
@@ -341,7 +337,6 @@ public final class BinaryContainer implements SymbolTable {
                                    graalHotSpotVMConfig.enableContended,
                                    graalHotSpotVMConfig.restrictContended,
                                    graphBuilderConfig.omitAssertions(),
-                                   graalHotSpotVMConfig.threadLocalHandshakes
         };
 
         int[] intFlags         = { graalHotSpotVMConfig.getOopEncoding().getShift(),
@@ -452,10 +447,6 @@ public final class BinaryContainer implements SymbolTable {
 
     public int getCodeEntryAlignment() {
         return codeEntryAlignment;
-    }
-
-    public boolean getThreadLocalHandshakes() {
-        return threadLocalHandshakes;
     }
 
     /**

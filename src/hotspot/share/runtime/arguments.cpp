@@ -4205,20 +4205,6 @@ jint Arguments::apply_ergo() {
   }
 #endif
 
-#if defined(IA32)
-  // Only server compiler can optimize safepoints well enough.
-  if (!is_server_compilation_mode_vm()) {
-    FLAG_SET_ERGO_IF_DEFAULT(ThreadLocalHandshakes, false);
-  }
-#endif
-
-  // ThreadLocalHandshakesConstraintFunc handles the constraints.
-  if (FLAG_IS_DEFAULT(ThreadLocalHandshakes) || !SafepointMechanism::supports_thread_local_poll()) {
-    log_debug(ergo)("ThreadLocalHandshakes %s", ThreadLocalHandshakes ? "enabled." : "disabled.");
-  } else {
-    log_info(ergo)("ThreadLocalHandshakes %s", ThreadLocalHandshakes ? "enabled." : "disabled.");
-  }
-
   return JNI_OK;
 }
 

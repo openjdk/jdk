@@ -36,6 +36,7 @@
 #include "runtime/biasedLocking.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/handshake.hpp"
+#include "runtime/safepointMechanism.hpp"
 #include "runtime/task.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/vframe.hpp"
@@ -665,8 +666,8 @@ BiasedLocking::Condition BiasedLocking::single_revoke_with_handshake(Handle obj,
 
 // Caller should have instantiated a ResourceMark object before calling this method
 void BiasedLocking::walk_stack_and_revoke(oop obj, JavaThread* biased_locker) {
-  assert(!SafepointSynchronize::is_at_safepoint() || !ThreadLocalHandshakes,
-         "if ThreadLocalHandshakes is enabled this should always be executed outside safepoints");
+  assert(!SafepointSynchronize::is_at_safepoint() || !SafepointMechanism::uses_thread_local_poll(),
+         "if SafepointMechanism::uses_thread_local_poll() is enabled this should always be executed outside safepoints");
   assert(Thread::current() == biased_locker || Thread::current()->is_VM_thread(), "wrong thread");
 
   markWord mark = obj->mark();
