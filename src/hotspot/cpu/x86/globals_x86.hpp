@@ -89,12 +89,7 @@ define_pd_global(bool, PreserveFramePointer, false);
 
 define_pd_global(intx, InitArrayShortSize, 8*BytesPerLong);
 
-#if defined(_LP64) || defined(_WINDOWS)
 define_pd_global(bool, ThreadLocalHandshakes, true);
-#else
-// get_thread() is slow on linux 32 bit, therefore off by default
-define_pd_global(bool, ThreadLocalHandshakes, false);
-#endif
 
 #define ARCH_FLAGS(develop, \
                    product, \
