@@ -1515,10 +1515,19 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
     private List<ModuleSymbol> getModuleInfoFiles(List<? extends JCCompilationUnit> units) {
         List<ModuleSymbol> modules = List.nil();
         for (JCCompilationUnit unit : units) {
-            if (isModuleInfo(unit.sourcefile, JavaFileObject.Kind.SOURCE) &&
-                unit.defs.nonEmpty() &&
-                unit.defs.head.hasTag(Tag.MODULEDEF)) {
-                modules = modules.prepend(unit.modle);
+            if (isModuleInfo(unit.sourcefile, JavaFileObject.Kind.SOURCE) && unit.defs.nonEmpty()) {
+                for (JCTree tree : unit.defs) {
+                    if (tree.hasTag(Tag.IMPORT)) {
+                        continue;
+                    }
+                    else if (tree.hasTag(Tag.MODULEDEF)) {
+                        modules = modules.prepend(unit.modle);
+                        break;
+                    }
+                    else {
+                        break;
+                    }
+                }
             }
         }
         return modules.reverse();
