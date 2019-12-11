@@ -49,11 +49,6 @@ bool LeakProfiler::start(int sample_count) {
     return false;
   }
 
-  if (UseShenandoahGC) {
-    log_warning(jfr)("LeakProfiler is currently not supported in combination with Shenandoah GC");
-    return false;
-  }
-
   assert(!is_running(), "invariant");
   assert(sample_count > 0, "invariant");
 
