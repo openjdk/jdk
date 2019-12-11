@@ -1238,6 +1238,7 @@ public class Check {
             if ((flags & RECORD) != 0) {
                 // records can't be declared abstract
                 mask &= ~ABSTRACT;
+                implicit |= FINAL;
             }
             // Imply STRICTFP if owner has STRICTFP set.
             implicit |= sym.owner.flags_field & STRICTFP;

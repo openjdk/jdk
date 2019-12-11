@@ -670,12 +670,12 @@ class CompletenessAnalyzer {
 
         public Completeness parseDeclaration() {
             boolean isImport = token.kind == IMPORT;
-            boolean isDatum = false;
+            boolean isRecord = false;
             boolean afterModifiers = false;
             boolean isBracesNeeded = false;
             while (token.kind.isDeclaration()) {
                 isBracesNeeded |= token.kind.isBracesNeeded();
-                isDatum |= !afterModifiers && token.kind == TK.IDENTIFIER && token.tok.name() == names.record;
+                isRecord |= !afterModifiers && token.kind == TK.IDENTIFIER && token.tok.name() == names.record;
                 afterModifiers |= !token.kind.isModifier();
                 nextToken();
             }
@@ -696,17 +696,11 @@ class CompletenessAnalyzer {
                         case SEMI:
                             return Completeness.COMPLETE;
                         case IDENTIFIER:
-                            return isBracesNeeded
+                            return isBracesNeeded || isRecord
                                     ? Completeness.DEFINITELY_INCOMPLETE
                                     : Completeness.COMPLETE_WITH_SEMI;
                         case BRACKETS:
                             return Completeness.COMPLETE_WITH_SEMI;
-                        case PARENS:
-                            if (isDatum) {
-                                return Completeness.COMPLETE_WITH_SEMI;
-                            } else {
-                                return Completeness.DEFINITELY_INCOMPLETE;
-                            }
                         case DOTSTAR:
                             if (isImport) {
                                 return Completeness.COMPLETE_WITH_SEMI;
@@ -780,6 +774,7 @@ class CompletenessAnalyzer {
                     case ENUM:
                     case ANNOTATION_TYPE:
                     case INTERFACE:
+                    case RECORD:
                     case METHOD:
                         return parseDeclaration();
                     default:

@@ -229,6 +229,10 @@ class Eval {
                     return processClass(userSource, unitTree, compileSourceInt, SubKind.ANNOTATION_TYPE_SUBKIND, pt);
                 case INTERFACE:
                     return processClass(userSource, unitTree, compileSourceInt, SubKind.INTERFACE_SUBKIND, pt);
+                case RECORD:
+                    @SuppressWarnings("preview")
+                    List<Snippet> snippets = processClass(userSource, unitTree, compileSourceInt, SubKind.RECORD_SUBKIND, pt);
+                    return snippets;
                 case METHOD:
                     return processMethod(userSource, unitTree, compileSourceInt, pt);
                 default:

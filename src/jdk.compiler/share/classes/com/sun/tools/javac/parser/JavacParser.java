@@ -3722,7 +3722,7 @@ public class JavacParser implements Parser {
     protected JCClassDecl recordDeclaration(JCModifiers mods, Comment dc) {
         int pos = token.pos;
         nextToken();
-        mods.flags |= Flags.RECORD | Flags.FINAL;
+        mods.flags |= Flags.RECORD;
         Name name = typeName();
 
         List<JCTypeParameter> typarams = typeParametersOpt();
@@ -4117,9 +4117,10 @@ public class JavacParser implements Parser {
         }
     }
 
-    boolean isRecordStart() {
+    protected boolean isRecordStart() {
      if (token.kind == IDENTIFIER && token.name() == names.record &&
             (peekToken(TokenKind.IDENTIFIER, TokenKind.LPAREN) ||
+             peekToken(TokenKind.IDENTIFIER, TokenKind.EOF) ||
              peekToken(TokenKind.IDENTIFIER, TokenKind.LT))) {
           checkSourceLevel(Feature.RECORDS);
           return true;

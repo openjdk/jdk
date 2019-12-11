@@ -140,7 +140,8 @@ module java.base {
     exports jdk.internal to
         java.compiler,
         jdk.jfr,
-        jdk.compiler;
+        jdk.compiler,
+        jdk.jshell;
     exports jdk.internal.access to
         java.desktop,
         java.logging,

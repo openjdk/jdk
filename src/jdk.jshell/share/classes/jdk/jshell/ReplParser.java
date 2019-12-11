@@ -179,7 +179,7 @@ class ReplParser extends JavacParser {
             default:
                 JCModifiers mods = modifiersOpt(pmods);
                 if (token.kind == CLASS
-                        || token.kind == IDENTIFIER && token.name() == token.name().table.names.record
+                        || isRecordStart()
                         || token.kind == INTERFACE
                         || token.kind == ENUM) {
                     return List.<JCTree>of(classOrRecordOrInterfaceOrEnumDeclaration(mods, dc));
