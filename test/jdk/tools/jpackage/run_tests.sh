@@ -8,7 +8,8 @@
 # Fail fast
 set -e; set -o pipefail;
 
-
+# $JT_BUNDLE_URL (Link can be obtained from https://openjdk.java.net/jtreg/ page)
+jtreg_bundle=$JT_BUNDLE_URL
 workdir=/tmp/jpackage_jtreg_testing
 jtreg_jar=$workdir/jtreg/lib/jtreg.jar
 jpackage_test_selector=test/jdk/tools/jpackage
@@ -180,6 +181,12 @@ if [ ! -e "$JAVA_HOME/bin/java" ]; then
   fatal JAVA_HOME variable is set to [$JAVA_HOME] value, but $JAVA_HOME/bin/java not found.
 fi
 
+if [ -z "$JT_HOME" ]; then
+  if [ -z "$JT_BUNDLE_URL" ]; then
+    fatal 'JT_HOME or JT_BUNDLE_URL environment variable is not set. Link to JTREG bundle can be found at https://openjdk.java.net/jtreg/'.
+  fi
+fi
+
 if [ -n "$runtime_dir" ]; then
   if [ ! -d "$runtime_dir" ]; then
     fatal 'Value of `-r` option is set to non-existing directory'.
@@ -218,12 +225,25 @@ fi
 installJtreg ()
 {
   # Install jtreg if missing
-  if [ ! -f "$jtreg_jar" ]; then
-    exec_command mkdir -p "$workdir"
-    # TODO - restore code to download or copy jtreg.jar
-    # to $workdir/jtreg/lib/jtreg.jar
-    fatal "ERROR: All Tests Disabled until locating jtreg.jar implemented."
+  if [ -z "$JT_HOME" ]; then
+    if [ ! -f "$jtreg_jar" ]; then
+      exec_command mkdir -p "$workdir"
+      if [[ ${jtreg_bundle: -7} == ".tar.gz" ]]; then
+        exec_command "(" cd "$workdir" "&&" wget "$jtreg_bundle" "&&" tar -xzf "$(basename $jtreg_bundle)" ";" rm -f "$(basename $jtreg_bundle)" ")"
+      else
+        if [[ ${jtreg_bundle: -4} == ".zip" ]]; then
+          exec_command "(" cd "$workdir" "&&" wget "$jtreg_bundle" "&&" unzip "$(basename $jtreg_bundle)" ";" rm -f "$(basename $jtreg_bundle)" ")"
+        else
+          fatal 'Unsupported extension of JREG bundle ['$JT_BUNDLE_URL']. Only *.zip or *.tar.gz is supported.'
+        fi
+      fi
+    fi
+  else
+    # use jtreg provided via JT_HOME
+    jtreg_jar=$JT_HOME/lib/jtreg.jar
   fi
+
+  echo 'jtreg jar file: '$jtreg_jar
 }
 
 
