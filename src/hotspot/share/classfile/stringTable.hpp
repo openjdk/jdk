@@ -94,11 +94,6 @@ class StringTable : public CHeapObj<mtSymbol>{
   // strings to this method.
   static void inc_dead_counter(size_t ndead) { add_items_to_clean(ndead); }
 
-  // Serially invoke "f->do_oop" on the locations of all oops in the table.
-  // Used by JFR leak profiler.  TODO: it should find these oops through
-  // the WeakProcessor.
-  static void oops_do(OopClosure* f);
-
   // Probing
   static oop lookup(Symbol* symbol);
   static oop lookup(const jchar* chars, int length);
