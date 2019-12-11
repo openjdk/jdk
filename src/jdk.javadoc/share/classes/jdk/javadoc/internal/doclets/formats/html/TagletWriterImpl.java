@@ -29,6 +29,9 @@ import java.util.List;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
+import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.ModuleElement;
+import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeMirror;
@@ -107,14 +110,14 @@ public class TagletWriterImpl extends TagletWriter {
         CommentHelper ch = utils.getCommentHelper(element);
         IndexTree itt = (IndexTree)tag;
 
-        String tagText =  ch.getText(itt.getSearchTerm());
+        String tagText = ch.getText(itt.getSearchTerm());
         if (tagText.charAt(0) == '"' && tagText.charAt(tagText.length() - 1) == '"') {
             tagText = tagText.substring(1, tagText.length() - 1)
                              .replaceAll("\\s+", " ");
         }
         String desc = ch.getText(itt.getDescription());
 
-        return createAnchorAndSearchIndex(element, tagText,desc);
+        return createAnchorAndSearchIndex(element, tagText, desc);
     }
 
     /**
@@ -413,14 +416,14 @@ public class TagletWriterImpl extends TagletWriter {
     }
 
     @SuppressWarnings("preview")
-    private Content createAnchorAndSearchIndex(Element element, String tagText, String desc){
+    private Content createAnchorAndSearchIndex(Element element, String tagText, String desc) {
         Content result = null;
         if (isFirstSentence && inSummary) {
             result = new StringContent(tagText);
         } else {
             String anchorName = htmlWriter.links.getName(tagText);
-            int count = htmlWriter.indexAnchorTable.computeIfAbsent(anchorName, s -> 0);
-            htmlWriter.indexAnchorTable.put(anchorName, count + 1);
+            int count = htmlWriter.indexAnchorTable
+                    .compute(anchorName, (k, v) -> v == null ? 0 : v + 1);
             if (count > 0) {
                 anchorName += "-" + count;
             }
@@ -430,12 +433,40 @@ public class TagletWriterImpl extends TagletWriter {
                 si.setLabel(tagText);
                 si.setDescription(desc);
                 si.setUrl(htmlWriter.path.getPath() + "#" + anchorName);
-                DocPaths docPaths = configuration.docPaths;
                 new SimpleElementVisitor14<Void, Void>() {
+
+                    @Override
+                    public Void visitModule(ModuleElement e, Void p) {
+                        si.setHolder(resources.getText("doclet.module")
+                                             + " " + utils.getFullyQualifiedName(e));
+                        return null;
+                    }
+
+                    @Override
+                    public Void visitPackage(PackageElement e, Void p) {
+                        si.setHolder(resources.getText("doclet.package")
+                                             + " " + utils.getFullyQualifiedName(e));
+                        return null;
+                    }
+
+                    @Override
+                    public Void visitType(TypeElement e, Void p) {
+                        si.setHolder(utils.getTypeElementName(e, true)
+                                             + " " + utils.getFullyQualifiedName(e));
+                        return null;
+                    }
+
+                    @Override
+                    public Void visitExecutable(ExecutableElement e, Void p) {
+                        si.setHolder(utils.getFullyQualifiedName(utils.getEnclosingTypeElement(e))
+                                             + "." + utils.getSimpleName(e) + utils.flatSignature(e));
+                        return null;
+                    }
+
                     @Override
                     public Void visitVariable(VariableElement e, Void p) {
                         TypeElement te = utils.getEnclosingTypeElement(e);
-                        si.setHolder(utils.getFullyQualifiedName(e) + "." + utils.getSimpleName(e));
+                        si.setHolder(utils.getFullyQualifiedName(te) + "." + utils.getSimpleName(e));
                         return null;
                     }
 
