@@ -161,6 +161,7 @@
 <p>Even for 32-bit builds, it is recommended to use a 64-bit build machine, and instead create a 32-bit target using <code>--with-target-bits=32</code>.</p>
 <h3 id="building-on-sparc">Building on sparc</h3>
 <p>At a minimum, a machine with 4 cores is advisable, as well as 4 GB of RAM. (The more cores to use, the more memory you need.) At least 8 GB of free disk space is required.</p>
+<p>Note: The sparc port is deprecated.</p>
 <h3 id="building-on-aarch64">Building on aarch64</h3>
 <p>At a minimum, a machine with 8 cores is advisable, as well as 8 GB of RAM. (The more cores to use, the more memory you need.) At least 6 GB of free disk space is required.</p>
 <p>If you do not have access to sufficiently powerful hardware, it is also possible to use <a href="#cross-compiling">cross-compiling</a>.</p>
@@ -225,6 +226,7 @@
 <h3 id="solaris">Solaris</h3>
 <p>See <code>make/devkit/solaris11.1-package-list.txt</code> for a list of recommended packages to install when building on Solaris. The versions specified in this list is the versions used by the daily builds at Oracle, and is likely to work properly.</p>
 <p>Older versions of Solaris shipped a broken version of <code>objcopy</code>. At least version 2.21.1 is needed, which is provided by Solaris 11 Update 1. Objcopy is needed if you want to have external debug symbols. Please make sure you are using at least version 2.21.1 of objcopy, or that you disable external debug symbols.</p>
+<p>Note: The Solaris port is deprecated.</p>
 <h3 id="macos">macOS</h3>
 <p>Apple is using a quite aggressive scheme of pushing OS updates, and coupling these updates with required updates of Xcode. Unfortunately, this makes it difficult for a project such as the JDK to keep pace with a continuously updated machine running macOS. See the section on <a href="#apple-xcode">Apple Xcode</a> on some strategies to deal with this.</p>
 <p>It is recommended that you use at least Mac OS X 10.13 (High Sierra). At the time of writing, the JDK has been successfully compiled on macOS 10.12 (Sierra).</p>
