@@ -1476,8 +1476,8 @@ void JVMCIEnv::invalidate_nmethod_mirror(JVMCIObject mirror, JVMCI_TRAPS) {
     JVMCI_THROW(NullPointerException);
   }
 
-  jlong nativeMethod = get_InstalledCode_address(mirror);
-  nmethod* nm = JVMCIENV->asNmethod(mirror);
+  nmethodLocker locker;
+  nmethod* nm = JVMCIENV->get_nmethod(mirror, locker);
   if (nm == NULL) {
     // Nothing to do
     return;
@@ -1518,45 +1518,81 @@ ConstantPool* JVMCIEnv::asConstantPool(JVMCIObject obj) {
   return *metadataHandle;
 }
 
-
-CodeBlob* JVMCIEnv::asCodeBlob(JVMCIObject obj) {
+CodeBlob* JVMCIEnv::get_code_blob(JVMCIObject obj, nmethodLocker& locker) {
   address code = (address) get_InstalledCode_address(obj);
   if (code == NULL) {
     return NULL;
   }
   if (isa_HotSpotNmethod(obj)) {
-    jlong compile_id_snapshot = get_HotSpotNmethod_compileIdSnapshot(obj);
-    if (compile_id_snapshot != 0L) {
-      // A HotSpotNMethod not in an nmethod's oops table so look up
-      // the nmethod and then update the fields based on its state.
+    nmethod* nm = NULL;
+    {
+      // Lookup the CodeBlob while holding the CodeCache_lock to ensure the nmethod can't be freed
+      // by nmethod::flush while we're interrogating it.
+      MutexLocker cm_lock(CodeCache_lock, Mutex::_no_safepoint_check_flag);
       CodeBlob* cb = CodeCache::find_blob_unsafe(code);
       if (cb == (CodeBlob*) code) {
-        // Found a live CodeBlob with the same address, make sure it's the same nmethod
-        nmethod* nm = cb->as_nmethod_or_null();
-        if (nm != NULL && nm->compile_id() == compile_id_snapshot) {
-          if (!nm->is_alive()) {
-            // Break the links from the mirror to the nmethod
-            set_InstalledCode_address(obj, 0);
-            set_InstalledCode_entryPoint(obj, 0);
-          } else if (nm->is_not_entrant()) {
-            // Zero the entry point so that the nmethod
-            // cannot be invoked by the mirror but can
-            // still be deoptimized.
-            set_InstalledCode_entryPoint(obj, 0);
-          }
-          return cb;
+        nmethod* the_nm = cb->as_nmethod_or_null();
+        if (the_nm != NULL && the_nm->is_alive()) {
+          // Lock the nmethod to stop any further transitions by the sweeper.  It's still possible
+          // for this code to execute in the middle of the sweeping of the nmethod but that will be
+          // handled below.
+          locker.set_code(nm, true);
+          nm = the_nm;
         }
       }
-      // Clear the InstalledCode fields of this HotSpotNmethod
-      // that no longer refers to an nmethod in the code cache.
+    }
+
+    if (nm != NULL) {
+      // We found the nmethod but it could be in the process of being freed.  Check the state of the
+      // nmethod while holding the CompiledMethod_lock.  This ensures that any transitions by other
+      // threads have seen the is_locked_by_vm() update above.
+      MutexLocker cm_lock(CompiledMethod_lock, Mutex::_no_safepoint_check_flag);
+      if (!nm->is_alive()) {
+        //  It was alive when we looked it up but it's no longer alive so release it.
+        locker.set_code(NULL);
+        nm = NULL;
+      }
+    }
+
+    jlong compile_id_snapshot = get_HotSpotNmethod_compileIdSnapshot(obj);
+    if (compile_id_snapshot != 0L) {
+      // Found a live nmethod with the same address, make sure it's the same nmethod
+      if (nm == (nmethod*) code && nm->compile_id() == compile_id_snapshot && nm->is_alive()) {
+        if (nm->is_not_entrant()) {
+          // Zero the entry point so that the nmethod
+          // cannot be invoked by the mirror but can
+          // still be deoptimized.
+          set_InstalledCode_entryPoint(obj, 0);
+        }
+        return nm;
+      }
+      // The HotSpotNmethod no longer refers to a valid nmethod so clear the state
+      locker.set_code(NULL);
+      nm = NULL;
+    }
+
+    if (nm == NULL) {
+      // The HotSpotNmethod was pointing at some nmethod but the nmethod is no longer valid, so
+      // clear the InstalledCode fields of this HotSpotNmethod so that it no longer refers to a
+      // nmethod in the code cache.
       set_InstalledCode_address(obj, 0);
       set_InstalledCode_entryPoint(obj, 0);
-      return NULL;
     }
+    return nm;
   }
-  return (CodeBlob*) code;
+
+  CodeBlob* cb = (CodeBlob*) code;
+  assert(!cb->is_nmethod(), "unexpected nmethod");
+  return cb;
 }
 
+nmethod* JVMCIEnv::get_nmethod(JVMCIObject obj, nmethodLocker& locker) {
+  CodeBlob* cb = get_code_blob(obj, locker);
+  if (cb != NULL) {
+    return cb->as_nmethod_or_null();
+  }
+  return NULL;
+}
 
 // Generate implementations for the initialize, new, isa, get and set methods for all the types and
 // fields declared in the JVMCI_CLASSES_DO macro.

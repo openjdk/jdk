@@ -32,6 +32,9 @@
  *          java.base/jdk.internal.org.objectweb.asm.tree
  *          jdk.internal.vm.ci/jdk.vm.ci.hotspot
  *          jdk.internal.vm.ci/jdk.vm.ci.code
+ *          jdk.internal.vm.ci/jdk.vm.ci.meta
+ *          jdk.internal.vm.ci/jdk.vm.ci.runtime
+ *
  * @clean compiler.jvmci.compilerToVM.*
  * @compile -g DummyInterface.java
  * @compile -g DummyAbstractClass.java

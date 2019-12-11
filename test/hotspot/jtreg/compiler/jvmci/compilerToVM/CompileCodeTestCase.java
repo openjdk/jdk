@@ -28,6 +28,9 @@ import compiler.testlibrary.CompilerUtils;
 import jdk.test.lib.util.Pair;
 import jdk.test.lib.Utils;
 import jdk.vm.ci.code.InstalledCode;
+import jdk.vm.ci.meta.MetaAccessProvider;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
+import jdk.vm.ci.runtime.JVMCI;
 import sun.hotspot.WhiteBox;
 import sun.hotspot.code.NMethod;
 
@@ -147,11 +150,12 @@ public class CompileCodeTestCase {
     }
 
     public InstalledCode toInstalledCode() {
+        MetaAccessProvider metaAccess = JVMCI.getRuntime().getHostJVMCIBackend().getMetaAccess();
+        ResolvedJavaMethod resolvedJavaMethod = metaAccess.lookupJavaMethod(executable);
         NMethod nmethod = toNMethod();
         long address = nmethod == null ? 0L : nmethod.address;
         long entryPoint = nmethod == null ? 0L : nmethod.entry_point;
-        return CTVMUtilities.getInstalledCode(
-                executable.getName(), address, entryPoint);
+        return CTVMUtilities.getInstalledCode(resolvedJavaMethod, executable.getName(), address, entryPoint);
     }
 
     @Override

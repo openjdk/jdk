@@ -33,6 +33,8 @@
  *          jdk.internal.vm.ci/jdk.vm.ci.hotspot
  *          jdk.internal.vm.ci/jdk.vm.ci.code
  *          jdk.internal.vm.ci/jdk.vm.ci.meta
+ *          jdk.internal.vm.ci/jdk.vm.ci.runtime
+ *
  * @build jdk.internal.vm.ci/jdk.vm.ci.hotspot.CompilerToVMHelper
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI -XX:-UseJVMCICompiler
  *                   compiler.jvmci.compilerToVM.AsResolvedJavaMethodTest
