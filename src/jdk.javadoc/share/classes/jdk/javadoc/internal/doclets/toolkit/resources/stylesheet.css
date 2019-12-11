@@ -124,19 +124,21 @@ button {
 /*
  * Styles for navigation bar.
  */
-.flexBox {
-    position:fixed;
-    display:flex;
-    flex-direction:column;
-    height: 100%;
-    width: 100%;
-}
-.flexHeader {
-    flex: 0 0 auto;
-}
-.flexContent {
-    flex: 1 1 auto;
-    overflow-y: auto;
+@media screen {
+    .flexBox {
+        position:fixed;
+        display:flex;
+        flex-direction:column;
+        height: 100%;
+        width: 100%;
+    }
+    .flexHeader {
+        flex: 0 0 auto;
+    }
+    .flexContent {
+        flex: 1 1 auto;
+        overflow-y: auto;
+    }
 }
 .topNav {
     background-color:#4D7A97;
@@ -225,6 +227,14 @@ ul.subNavList li {
     top:auto;
     left:-9999px;
     overflow:hidden;
+}
+/*
+ * Hide navigation links and search box in print layout
+ */
+@media print {
+    ul.navList, div.subNav  {
+        display:none;
+    }
 }
 /*
  * Styles for page header and footer.
