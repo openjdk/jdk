@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,10 @@
  * @provides java.security.Provider
  * @moduleGraph
  * @since 9
+ * @deprecated This module is deprecated and subject to removal in a future
+ *    version of the JDK. See JEP 362 for more information.
  */
+@Deprecated(since="14", forRemoval=true)
 module jdk.crypto.ucrypto {
     provides java.security.Provider with com.oracle.security.ucrypto.UcryptoProvider;
 }
