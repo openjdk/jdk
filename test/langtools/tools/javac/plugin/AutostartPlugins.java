@@ -141,6 +141,12 @@ public class AutostartPlugins extends TestRunner {
 
     @Test
     public void testImage(Path base) throws Exception {
+        // does not work on exploded image: cannot jlink an image from exploded modules; skip the test
+        if (Files.exists(Path.of(System.getProperty("java.home")).resolve("modules"))) {
+            out.println("JDK using exploded modules; test skipped");
+            return;
+        }
+
         Path tmpJDK = base.resolve("tmpJDK");
         ToolProvider jlink = ToolProvider.findFirst("jlink")
                 .orElseThrow(() -> new Exception("cannot find jlink"));
