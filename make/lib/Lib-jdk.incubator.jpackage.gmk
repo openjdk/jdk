@@ -34,7 +34,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIB_APPLAUNCHER, \
     SYMBOLS_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libapplauncher, \
     TOOLCHAIN := TOOLCHAIN_LINK_CXX, \
     OPTIMIZATION := LOW, \
-    CFLAGS := $(CXXFLAGS_JDKLIB), \
+    CFLAGS := $(CXXFLAGS_JDKLIB) $(X_CFLAGS), \
     CFLAGS_windows := -EHsc -DUNICODE -D_UNICODE, \
     LDFLAGS := $(LDFLAGS_JDKLIB) $(LDFLAGS_CXX_JDK) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
