@@ -31,6 +31,7 @@ import com.sun.tools.javac.code.Kinds.Kind;
 import com.sun.tools.javac.util.Assert;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
+import com.sun.tools.javac.util.Pair;
 
 /**
  * Container for all annotations (attributes in javac) on a Symbol.
@@ -285,6 +286,22 @@ public class SymbolMetadata {
             init_type_attributes = removeFromTypeCompoundList(init_type_attributes, (TypeCompound)compound);
         } else if (clinit_type_attributes.contains(compound)) {
             clinit_type_attributes = removeFromTypeCompoundList(clinit_type_attributes, (TypeCompound)compound);
+        } else {
+            // slow path, it could be that attributes list contains annotation containers, so we have to dig deeper
+            for (Attribute.Compound attrCompound : attributes) {
+                if (attrCompound.isSynthesized() && !attrCompound.values.isEmpty()) {
+                    Pair<Symbol.MethodSymbol, Attribute> val = attrCompound.values.get(0);
+                    if (val.fst.getSimpleName().contentEquals("value") &&
+                            val.snd instanceof Attribute.Array) {
+                        Attribute.Array arr = (Attribute.Array) val.snd;
+                        if (arr.values.length != 0
+                                && arr.values[0] instanceof Attribute.Compound
+                                && arr.values[0].type == compound.type) {
+                            attributes = removeFromCompoundList(attributes, attrCompound);
+                        }
+                    }
+                }
+            }
         }
     }
 }

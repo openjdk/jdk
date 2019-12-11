@@ -479,7 +479,7 @@ public class TagletWriterImpl extends TagletWriter {
                                     si.setHolder(resources.getText("doclet.Overview"));
                                     break;
                                 case DOCFILE:
-                                    si.setHolder(de.getPackageElement().toString());
+                                    si.setHolder(getHolderName(de));
                                     break;
                                 default:
                                     throw new IllegalStateException();
@@ -501,5 +501,18 @@ public class TagletWriterImpl extends TagletWriter {
             }
         }
         return result;
+    }
+
+    private String getHolderName(DocletElement de) {
+        PackageElement pe = de.getPackageElement();
+        if (pe.isUnnamed()) {
+            // if package is unnamed use enclosing module only if it is named
+            Element ee = pe.getEnclosingElement();
+            if (ee instanceof ModuleElement && !((ModuleElement)ee).isUnnamed()) {
+                return resources.getText("doclet.module") + " " + utils.getFullyQualifiedName(ee);
+            }
+            return pe.toString(); // "Unnamed package" or similar
+        }
+        return resources.getText("doclet.package") + " " + utils.getFullyQualifiedName(pe);
     }
 }

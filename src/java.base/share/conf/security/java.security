@@ -61,6 +61,8 @@
 # List of providers and their preference orders (see above):
 #
 #ifdef solaris
+# Note: The OracleUcrypto provider is deprecated and subject to removal in
+# a future version of the JDK.
 security.provider.tbd=OracleUcrypto
 security.provider.tbd=SunPKCS11 ${java.home}/conf/security/sunpkcs11-solaris.cfg
 #endif

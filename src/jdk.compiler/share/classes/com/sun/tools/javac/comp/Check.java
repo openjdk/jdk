@@ -2906,12 +2906,18 @@ public class Check {
                  */
                 ClassSymbol recordClass = (ClassSymbol) s.owner;
                 RecordComponent rc = recordClass.getRecordComponent((VarSymbol)s, false);
-                rc.appendAttributes(s.getRawAttributes().stream().filter(anno ->
-                    Arrays.stream(getTargetNames(anno.type.tsym)).anyMatch(name -> name == names.RECORD_COMPONENT)
-                ).collect(List.collector()));
-                rc.appendUniqueTypeAttributes(s.getRawTypeAttributes());
-                // to get all the type annotations applied to the type
-                rc.type = s.type;
+                SymbolMetadata metadata = rc.getMetadata();
+                if (metadata == null || metadata.isEmpty()) {
+                    /* if not is empty then we have already been here, which is the case if multiple annotations are applied
+                     * to the record component declaration
+                     */
+                    rc.appendAttributes(s.getRawAttributes().stream().filter(anno ->
+                            Arrays.stream(getTargetNames(anno.type.tsym)).anyMatch(name -> name == names.RECORD_COMPONENT)
+                    ).collect(List.collector()));
+                    rc.appendUniqueTypeAttributes(s.getRawTypeAttributes());
+                    // to get all the type annotations applied to the type
+                    rc.type = s.type;
+                }
             }
         }
 

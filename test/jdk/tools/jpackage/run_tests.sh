@@ -8,8 +8,8 @@
 # Fail fast
 set -e; set -o pipefail;
 
-# $JTREG_BUNDLE_URL (Link can be obtained from https://openjdk.java.net/jtreg/ page)
-jtreg_bundle=$JTREG_BUNDLE_URL
+# $JT_BUNDLE_URL (Link can be obtained from https://openjdk.java.net/jtreg/ page)
+jtreg_bundle=$JT_BUNDLE_URL
 workdir=/tmp/jpackage_jtreg_testing
 jtreg_jar=$workdir/jtreg/lib/jtreg.jar
 jpackage_test_selector=test/jdk/tools/jpackage
@@ -181,9 +181,9 @@ if [ ! -e "$JAVA_HOME/bin/java" ]; then
   fatal JAVA_HOME variable is set to [$JAVA_HOME] value, but $JAVA_HOME/bin/java not found.
 fi
 
-if [ -z "$JTREG_HOME" ]; then
-  if [ -z "$JTREG_BUNDLE_URL" ]; then
-    fatal 'JTREG_HOME or JTREG_BUNDLE_URL environment variable is not set. Link to JTREG bundle can be found at https://openjdk.java.net/jtreg/'.
+if [ -z "$JT_HOME" ]; then
+  if [ -z "$JT_BUNDLE_URL" ]; then
+    fatal 'JT_HOME or JT_BUNDLE_URL environment variable is not set. Link to JTREG bundle can be found at https://openjdk.java.net/jtreg/'.
   fi
 fi
 
@@ -225,7 +225,7 @@ fi
 installJtreg ()
 {
   # Install jtreg if missing
-  if [ -z "$JTREG_HOME" ]; then
+  if [ -z "$JT_HOME" ]; then
     if [ ! -f "$jtreg_jar" ]; then
       exec_command mkdir -p "$workdir"
       if [[ ${jtreg_bundle: -7} == ".tar.gz" ]]; then
@@ -234,13 +234,13 @@ installJtreg ()
         if [[ ${jtreg_bundle: -4} == ".zip" ]]; then
           exec_command "(" cd "$workdir" "&&" wget "$jtreg_bundle" "&&" unzip "$(basename $jtreg_bundle)" ";" rm -f "$(basename $jtreg_bundle)" ")"
         else
-          fatal 'Unsupported extension of JREG bundle ['$JTREG_BUNDLE_URL']. Only *.zip or *.tar.gz is supported.'
+          fatal 'Unsupported extension of JREG bundle ['$JT_BUNDLE_URL']. Only *.zip or *.tar.gz is supported.'
         fi
       fi
     fi
   else
-    # use jtreg provided via JTREG_HOME
-    jtreg_jar=$JTREG_HOME/lib/jtreg.jar
+    # use jtreg provided via JT_HOME
+    jtreg_jar=$JT_HOME/lib/jtreg.jar
   fi
 
   echo 'jtreg jar file: '$jtreg_jar

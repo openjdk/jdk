@@ -157,18 +157,18 @@ void Mutex::release_for_safepoint() {
 }
 
 void Mutex::unlock() {
-  assert_owner(Thread::current());
+  DEBUG_ONLY(assert_owner(Thread::current()));
   set_owner(NULL);
   _lock.unlock();
 }
 
 void Monitor::notify() {
-  assert_owner(Thread::current());
+  DEBUG_ONLY(assert_owner(Thread::current()));
   _lock.notify();
 }
 
 void Monitor::notify_all() {
-  assert_owner(Thread::current());
+  DEBUG_ONLY(assert_owner(Thread::current()));
   _lock.notify_all();
 }
 

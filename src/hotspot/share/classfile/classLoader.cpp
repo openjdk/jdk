@@ -1042,7 +1042,7 @@ bool ClassLoader::add_package(const char *fullq_class_name, s2 classpath_index, 
   assert(fullq_class_name != NULL, "just checking");
 
   // Get package name from fully qualified class name.
-  ResourceMark rm;
+  ResourceMark rm(THREAD);
   const char *cp = package_from_name(fullq_class_name);
   if (cp != NULL) {
     PackageEntryTable* pkg_entry_tbl = ClassLoaderData::the_null_class_loader_data()->packages();
