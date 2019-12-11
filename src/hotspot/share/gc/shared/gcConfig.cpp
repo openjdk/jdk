@@ -47,37 +47,37 @@
 #include "gc/z/zArguments.hpp"
 #endif
 
-struct SupportedGC {
+struct IncludedGC {
   bool&               _flag;
   CollectedHeap::Name _name;
   GCArguments&        _arguments;
   const char*         _hs_err_name;
 
-  SupportedGC(bool& flag, CollectedHeap::Name name, GCArguments& arguments, const char* hs_err_name) :
+  IncludedGC(bool& flag, CollectedHeap::Name name, GCArguments& arguments, const char* hs_err_name) :
       _flag(flag), _name(name), _arguments(arguments), _hs_err_name(hs_err_name) {}
 };
 
-   EPSILONGC_ONLY(static EpsilonArguments  epsilonArguments;)
-        G1GC_ONLY(static G1Arguments       g1Arguments;)
-  PARALLELGC_ONLY(static ParallelArguments parallelArguments;)
-    SERIALGC_ONLY(static SerialArguments   serialArguments;)
+   EPSILONGC_ONLY(static EpsilonArguments    epsilonArguments;)
+        G1GC_ONLY(static G1Arguments         g1Arguments;)
+  PARALLELGC_ONLY(static ParallelArguments   parallelArguments;)
+    SERIALGC_ONLY(static SerialArguments     serialArguments;)
 SHENANDOAHGC_ONLY(static ShenandoahArguments shenandoahArguments;)
-         ZGC_ONLY(static ZArguments        zArguments;)
+         ZGC_ONLY(static ZArguments          zArguments;)
 
-// Table of supported GCs, for translating between command
+// Table of included GCs, for translating between command
 // line flag, CollectedHeap::Name and GCArguments instance.
-static const SupportedGC SupportedGCs[] = {
-   EPSILONGC_ONLY_ARG(SupportedGC(UseEpsilonGC,       CollectedHeap::Epsilon,    epsilonArguments,    "epsilon gc"))
-        G1GC_ONLY_ARG(SupportedGC(UseG1GC,            CollectedHeap::G1,         g1Arguments,         "g1 gc"))
-  PARALLELGC_ONLY_ARG(SupportedGC(UseParallelGC,      CollectedHeap::Parallel,   parallelArguments,   "parallel gc"))
-  PARALLELGC_ONLY_ARG(SupportedGC(UseParallelOldGC,   CollectedHeap::Parallel,   parallelArguments,   "parallel gc"))
-    SERIALGC_ONLY_ARG(SupportedGC(UseSerialGC,        CollectedHeap::Serial,     serialArguments,     "serial gc"))
-SHENANDOAHGC_ONLY_ARG(SupportedGC(UseShenandoahGC,    CollectedHeap::Shenandoah, shenandoahArguments, "shenandoah gc"))
-         ZGC_ONLY_ARG(SupportedGC(UseZGC,             CollectedHeap::Z,          zArguments,          "z gc"))
+static const IncludedGC IncludedGCs[] = {
+   EPSILONGC_ONLY_ARG(IncludedGC(UseEpsilonGC,       CollectedHeap::Epsilon,    epsilonArguments,    "epsilon gc"))
+        G1GC_ONLY_ARG(IncludedGC(UseG1GC,            CollectedHeap::G1,         g1Arguments,         "g1 gc"))
+  PARALLELGC_ONLY_ARG(IncludedGC(UseParallelGC,      CollectedHeap::Parallel,   parallelArguments,   "parallel gc"))
+  PARALLELGC_ONLY_ARG(IncludedGC(UseParallelOldGC,   CollectedHeap::Parallel,   parallelArguments,   "parallel gc"))
+    SERIALGC_ONLY_ARG(IncludedGC(UseSerialGC,        CollectedHeap::Serial,     serialArguments,     "serial gc"))
+SHENANDOAHGC_ONLY_ARG(IncludedGC(UseShenandoahGC,    CollectedHeap::Shenandoah, shenandoahArguments, "shenandoah gc"))
+         ZGC_ONLY_ARG(IncludedGC(UseZGC,             CollectedHeap::Z,          zArguments,          "z gc"))
 };
 
-#define FOR_EACH_SUPPORTED_GC(var)                                          \
-  for (const SupportedGC* var = &SupportedGCs[0]; var < &SupportedGCs[ARRAY_SIZE(SupportedGCs)]; var++)
+#define FOR_EACH_INCLUDED_GC(var)                                            \
+  for (const IncludedGC* var = &IncludedGCs[0]; var < &IncludedGCs[ARRAY_SIZE(IncludedGCs)]; var++)
 
 #define FAIL_IF_SELECTED(option, enabled)                                   \
   if (option == enabled && FLAG_IS_CMDLINE(option)) {                       \
@@ -89,7 +89,7 @@ SHENANDOAHGC_ONLY_ARG(SupportedGC(UseShenandoahGC,    CollectedHeap::Shenandoah,
 GCArguments* GCConfig::_arguments = NULL;
 bool GCConfig::_gc_selected_ergonomically = false;
 
-void GCConfig::fail_if_unsupported_gc_is_selected() {
+void GCConfig::fail_if_non_included_gc_is_selected() {
   NOT_EPSILONGC(   FAIL_IF_SELECTED(UseEpsilonGC,       true));
   NOT_G1GC(        FAIL_IF_SELECTED(UseG1GC,            true));
   NOT_PARALLELGC(  FAIL_IF_SELECTED(UseParallelGC,      true));
@@ -117,7 +117,7 @@ void GCConfig::select_gc_ergonomically() {
 }
 
 bool GCConfig::is_no_gc_selected() {
-  FOR_EACH_SUPPORTED_GC(gc) {
+  FOR_EACH_INCLUDED_GC(gc) {
     if (gc->_flag) {
       return false;
     }
@@ -129,7 +129,7 @@ bool GCConfig::is_no_gc_selected() {
 bool GCConfig::is_exactly_one_gc_selected() {
   CollectedHeap::Name selected = CollectedHeap::None;
 
-  FOR_EACH_SUPPORTED_GC(gc) {
+  FOR_EACH_INCLUDED_GC(gc) {
     if (gc->_flag) {
       if (gc->_name == selected || selected == CollectedHeap::None) {
         // Selected
@@ -146,7 +146,7 @@ bool GCConfig::is_exactly_one_gc_selected() {
 
 GCArguments* GCConfig::select_gc() {
   // Fail immediately if an unsupported GC is selected
-  fail_if_unsupported_gc_is_selected();
+  fail_if_non_included_gc_is_selected();
 
   if (is_no_gc_selected()) {
     // Try select GC ergonomically
@@ -168,7 +168,7 @@ GCArguments* GCConfig::select_gc() {
   }
 
   // Exactly one GC selected
-  FOR_EACH_SUPPORTED_GC(gc) {
+  FOR_EACH_INCLUDED_GC(gc) {
     if (gc->_flag) {
       return &gc->_arguments;
     }
@@ -185,7 +185,7 @@ void GCConfig::initialize() {
 }
 
 bool GCConfig::is_gc_supported(CollectedHeap::Name name) {
-  FOR_EACH_SUPPORTED_GC(gc) {
+  FOR_EACH_INCLUDED_GC(gc) {
     if (gc->_name == name) {
       // Supported
       return true;
@@ -197,7 +197,7 @@ bool GCConfig::is_gc_supported(CollectedHeap::Name name) {
 }
 
 bool GCConfig::is_gc_selected(CollectedHeap::Name name) {
-  FOR_EACH_SUPPORTED_GC(gc) {
+  FOR_EACH_INCLUDED_GC(gc) {
     if (gc->_name == name && gc->_flag) {
       // Selected
       return true;
@@ -215,7 +215,7 @@ bool GCConfig::is_gc_selected_ergonomically() {
 const char* GCConfig::hs_err_name() {
   if (is_exactly_one_gc_selected()) {
     // Exacly one GC selected
-    FOR_EACH_SUPPORTED_GC(gc) {
+    FOR_EACH_INCLUDED_GC(gc) {
       if (gc->_flag) {
         return gc->_hs_err_name;
       }
@@ -227,7 +227,7 @@ const char* GCConfig::hs_err_name() {
 }
 
 const char* GCConfig::hs_err_name(CollectedHeap::Name name) {
-  FOR_EACH_SUPPORTED_GC(gc) {
+  FOR_EACH_INCLUDED_GC(gc) {
     if (gc->_name == name) {
       return gc->_hs_err_name;
     }
