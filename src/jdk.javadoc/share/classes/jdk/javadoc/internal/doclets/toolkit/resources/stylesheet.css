@@ -546,7 +546,7 @@ h1.hidden {
 }
 .block {
     display:block;
-    margin:3px 10px 2px 0px;
+    margin:0 10px 5px 0;
     color:#474747;
 }
 .deprecatedLabel, .descfrmTypeLabel, .implementationLabel, .memberNameLabel, .memberNameLink,
