@@ -57,7 +57,7 @@ import com.sun.tools.javac.util.StringUtils;
  * deletion without notice.</b>
  */
 @SupportedAnnotationTypes("*")
-@SupportedSourceVersion(SourceVersion.RELEASE_14)
+@SupportedSourceVersion(SourceVersion.RELEASE_15)
 public class PrintingProcessor extends AbstractProcessor {
     PrintWriter writer;
 

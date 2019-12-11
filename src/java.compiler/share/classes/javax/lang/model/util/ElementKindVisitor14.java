@@ -88,7 +88,7 @@ import javax.lang.model.SourceVersion;
  */
 @jdk.internal.PreviewFeature(feature=jdk.internal.PreviewFeature.Feature.RECORDS,
                              essentialAPI=false)
-@SupportedSourceVersion(RELEASE_14)
+@SupportedSourceVersion(RELEASE_15)
 public class ElementKindVisitor14<R, P> extends ElementKindVisitor9<R, P> {
     /**
      * Constructor for concrete subclasses; uses {@code null} for the

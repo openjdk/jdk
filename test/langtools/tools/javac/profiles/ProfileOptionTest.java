@@ -153,6 +153,7 @@ public class ProfileOptionTest {
                     case JDK1_12:
                     case JDK1_13:
                     case JDK1_14:
+                    case JDK1_15:
                         if (p == Profile.DEFAULT)
                             break;
                         if (ise == null)

@@ -151,9 +151,10 @@ public class RecordMemberTests {
 
     public void testLocalRecordsStatic() {
         Class<?> c = new LocalRecordHelper().m(3);
-        assertTrue(c.isRecord());
-        assertTrue((c.getModifiers() & Modifier.STATIC) != 0);
-        assertTrue((c.getModifiers() & Modifier.FINAL) != 0);
+        String message = c.toGenericString();
+        assertTrue(c.isRecord(), message);
+        assertTrue((c.getModifiers() & Modifier.STATIC) != 0, message);
+        assertTrue((c.getModifiers() & Modifier.FINAL)  != 0, message);
     }
 
     static class NestedRecordHelper {
@@ -198,9 +199,10 @@ public class RecordMemberTests {
                                   n.m2(),
                                   NestedRecordHelper.m3(),
                                   NestedRecordHelper.m4())) {
-            assertTrue(c.isRecord());
-            assertTrue((c.getModifiers() & Modifier.STATIC) != 0);
-            assertTrue((c.getModifiers() & Modifier.FINAL) != 0);
+            String message = c.toGenericString();
+            assertTrue(c.isRecord(), message);
+            assertTrue((c.getModifiers() & Modifier.STATIC) != 0, message);
+            assertTrue((c.getModifiers() & Modifier.FINAL) != 0, message);
         }
     }
 }

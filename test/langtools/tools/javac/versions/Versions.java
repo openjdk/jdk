@@ -69,9 +69,9 @@ public class Versions {
         Set.of("1.2", "1.3", "1.4", "1.5", "1.6");
 
     public static final Set<String> VALID_SOURCES =
-        Set.of("1.7", "1.8", "1.9", "1.10", "11", "12", "13", "14");
+        Set.of("1.7", "1.8", "1.9", "1.10", "11", "12", "13", "14", "15");
 
-    public static final String LATEST_MAJOR_VERSION = "58.0";
+    public static final String LATEST_MAJOR_VERSION = "59.0";
 
     static enum SourceTarget {
         SEVEN(true,   "51.0",  "7", Versions::checksrc17),
@@ -81,7 +81,8 @@ public class Versions {
         ELEVEN(false, "55.0", "11", Versions::checksrc111),
         TWELVE(false, "56.0", "12", Versions::checksrc112),
         THIRTEEN(false, "57.0", "13", Versions::checksrc113),
-        FOURTEEN(false, "58.0", "14", Versions::checksrc114);
+        FOURTEEN(false, "58.0", "14", Versions::checksrc114),
+        FIFTEEN(false,  "59.0", "15", Versions::checksrc115);
 
         private final boolean dotOne;
         private final String classFileVer;
@@ -302,6 +303,11 @@ public class Versions {
 
     protected void checksrc114(String... args) {
         printargs("checksrc114", args);
+        checksrc111(args);
+    }
+
+    protected void checksrc115(String... args) {
+        printargs("checksrc115", args);
         checksrc111(args);
     }
 

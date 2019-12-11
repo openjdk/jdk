@@ -94,9 +94,15 @@ public enum Source {
     JDK13("13"),
 
     /**
-     * 14, switch expressions
+     * 14, switch expressions; pattern matching, records, and revised
+     * text blocks in preview
      */
-    JDK14("14");
+    JDK14("14"),
+
+    /**
+      * 15, tbd
+      */
+    JDK15("15");
 
     private static final Context.Key<Source> sourceKey = new Context.Key<>();
 
@@ -147,6 +153,7 @@ public enum Source {
     }
 
     public Target requiredTarget() {
+        if (this.compareTo(JDK15) >= 0) return Target.JDK1_15;
         if (this.compareTo(JDK14) >= 0) return Target.JDK1_14;
         if (this.compareTo(JDK13) >= 0) return Target.JDK1_13;
         if (this.compareTo(JDK12) >= 0) return Target.JDK1_12;
@@ -198,10 +205,10 @@ public enum Source {
         SWITCH_MULTIPLE_CASE_LABELS(JDK14, Fragments.FeatureMultipleCaseLabels, DiagKind.PLURAL),
         SWITCH_RULE(JDK14, Fragments.FeatureSwitchRules, DiagKind.PLURAL),
         SWITCH_EXPRESSION(JDK14, Fragments.FeatureSwitchExpressions, DiagKind.PLURAL),
-        TEXT_BLOCKS(JDK14, Fragments.FeatureTextBlocks, DiagKind.PLURAL),
-        PATTERN_MATCHING_IN_INSTANCEOF(JDK14, Fragments.FeaturePatternMatchingInstanceof, DiagKind.NORMAL),
-        REIFIABLE_TYPES_INSTANCEOF(JDK14, Fragments.FeatureReifiableTypesInstanceof, DiagKind.PLURAL),
-        RECORDS(JDK14, Fragments.FeatureRecords, DiagKind.PLURAL),
+        TEXT_BLOCKS(JDK15, Fragments.FeatureTextBlocks, DiagKind.PLURAL),
+        PATTERN_MATCHING_IN_INSTANCEOF(JDK15, Fragments.FeaturePatternMatchingInstanceof, DiagKind.NORMAL),
+        REIFIABLE_TYPES_INSTANCEOF(JDK15, Fragments.FeatureReifiableTypesInstanceof, DiagKind.PLURAL),
+        RECORDS(JDK15, Fragments.FeatureRecords, DiagKind.PLURAL),
         ;
 
         enum DiagKind {
@@ -291,6 +298,8 @@ public enum Source {
             return RELEASE_13;
         case JDK14:
             return RELEASE_14;
+        case JDK15:
+            return RELEASE_15;
         default:
             return null;
         }
