@@ -186,7 +186,7 @@ void GCConfig::initialize() {
 
 bool GCConfig::is_gc_supported(CollectedHeap::Name name) {
   FOR_EACH_INCLUDED_GC(gc) {
-    if (gc->_name == name) {
+    if (gc->_name == name && gc->_arguments.is_supported()) {
       // Supported
       return true;
     }

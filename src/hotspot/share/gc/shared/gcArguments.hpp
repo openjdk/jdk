@@ -48,6 +48,11 @@ public:
   virtual size_t conservative_max_heap_alignment() = 0;
   virtual CollectedHeap* create_heap() = 0;
 
+  // Allows GCs to tell external code if it's supported or not in the current setup.
+  virtual bool is_supported() const {
+    return true;
+  }
+
   void initialize_heap_sizes();
 
   static size_t compute_heap_alignment();
