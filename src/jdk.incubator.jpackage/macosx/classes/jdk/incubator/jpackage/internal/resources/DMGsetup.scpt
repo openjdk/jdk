@@ -11,7 +11,7 @@ tell application "Finder"
     set theViewOptions to the icon view options of container window
     set arrangement of theViewOptions to not arranged
     set icon size of theViewOptions to 128
-    set background picture of theViewOptions to file ".background:background.png"
+    set background picture of theViewOptions to file ".background:background.tiff"
 
     -- Create alias for install location
     make new alias file at container window to DEPLOY_INSTALL_LOCATION with properties {name:"DEPLOY_INSTALL_NAME"}

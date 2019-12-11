@@ -38,7 +38,7 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
     private static final ResourceBundle I18N = ResourceBundle.getBundle(
             "jdk.incubator.jpackage.internal.resources.MacResources");
 
-    static final String DEFAULT_BACKGROUND_IMAGE="background_dmg.png";
+    static final String DEFAULT_BACKGROUND_IMAGE="background_dmg.tiff";
     static final String DEFAULT_DMG_SETUP_SCRIPT="DMGsetup.scpt";
     static final String TEMPLATE_BUNDLE_ICON = "java.icns";
 
@@ -112,7 +112,7 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
     private File getConfig_VolumeBackground(
             Map<String, ? super Object> params) {
         return new File(CONFIG_ROOT.fetchFrom(params),
-                APP_NAME.fetchFrom(params) + "-background.png");
+                APP_NAME.fetchFrom(params) + "-background.tiff");
     }
 
     private File getConfig_VolumeIcon(Map<String, ? super Object> params) {
@@ -304,7 +304,7 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
             File bgdir = new File(mountedRoot, ".background");
             bgdir.mkdirs();
             IOUtils.copyFile(getConfig_VolumeBackground(params),
-                    new File(bgdir, "background.png"));
+                    new File(bgdir, "background.tiff"));
 
             // Indicate that we want a custom icon
             // NB: attributes of the root directory are ignored
