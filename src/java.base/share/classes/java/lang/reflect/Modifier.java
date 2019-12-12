@@ -46,8 +46,7 @@ public class Modifier {
     /**
      * Do not call.
      */
-    @Deprecated(forRemoval=true, since="14")
-    public Modifier() {}
+    private Modifier() {throw new AssertionError();}
 
 
     /**

@@ -26,7 +26,7 @@
 package sun.tools.util;
 
 import sun.tools.java.*;
-
+import static java.lang.reflect.Modifier.*;
 
 /**
  *   A class whose instances are filters over Modifier bits.
@@ -43,7 +43,7 @@ import sun.tools.java.*;
  */
 
 public
-class ModifierFilter extends java.lang.reflect.Modifier {
+class ModifierFilter {
 
     /**
     * Package private access.
