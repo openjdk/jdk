@@ -542,6 +542,7 @@ void ShenandoahHeap::print_on(outputStream* st) const {
   if (is_degenerated_gc_in_progress())       st->print("degenerated gc, ");
   if (is_full_gc_in_progress())              st->print("full gc, ");
   if (is_full_gc_move_in_progress())         st->print("full gc move, ");
+  if (is_concurrent_root_in_progress())      st->print("concurrent roots, ");
 
   if (cancelled_gc()) {
     st->print("cancelled");
@@ -1540,6 +1541,11 @@ void ShenandoahHeap::op_final_mark() {
       _free_set->rebuild();
     }
 
+    if (!is_degenerated_gc_in_progress()) {
+      prepare_concurrent_roots();
+      prepare_concurrent_unloading();
+    }
+
     // If collection set has candidates, start evacuation.
     // Otherwise, bypass the rest of the cycle.
     if (!collection_set()->is_empty()) {
@@ -1554,8 +1560,9 @@ void ShenandoahHeap::op_final_mark() {
       set_has_forwarded_objects(true);
 
       if (!is_degenerated_gc_in_progress()) {
-        prepare_concurrent_roots();
-        prepare_concurrent_unloading();
+        if (ShenandoahConcurrentRoots::should_do_concurrent_class_unloading()) {
+          ShenandoahCodeRoots::arm_nmethods();
+        }
         evacuate_and_update_roots();
       }
 
@@ -1669,7 +1676,7 @@ public:
 };
 
 void ShenandoahHeap::op_roots() {
-  if (is_evacuation_in_progress()) {
+  if (is_concurrent_root_in_progress()) {
     if (ShenandoahConcurrentRoots::should_do_concurrent_class_unloading()) {
       _unloader.unload();
     }
@@ -2235,7 +2242,6 @@ void ShenandoahHeap::prepare_concurrent_roots() {
 void ShenandoahHeap::prepare_concurrent_unloading() {
   assert(SafepointSynchronize::is_at_safepoint(), "Must be at a safepoint");
   if (ShenandoahConcurrentRoots::should_do_concurrent_class_unloading()) {
-    ShenandoahCodeRoots::prepare_concurrent_unloading();
     _unloader.prepare();
   }
 }
