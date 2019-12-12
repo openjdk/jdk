@@ -33,7 +33,8 @@ hotspot_compiler = \
 
 hotspot_compiler_xcomp = \
   :hotspot_compiler \
-  -:tier1_compiler_not_xcomp
+  -:tier1_compiler_not_xcomp \
+  -compiler/graalunit
 
 hotspot_compiler_all_gcs = \
   :hotspot_compiler \
@@ -151,8 +152,7 @@ tier1_compiler_3 = \
 
 tier1_compiler_not_xcomp = \
   compiler/aot \
-  compiler/profiling \
-  compiler/graalunit
+  compiler/profiling
 
 tier1_compiler_aot_jvmci = \
   compiler/aot \
