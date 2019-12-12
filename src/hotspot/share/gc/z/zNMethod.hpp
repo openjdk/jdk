@@ -43,6 +43,8 @@ public:
   static void unregister_nmethod(nmethod* nm);
   static void flush_nmethod(nmethod* nm);
 
+  static bool supports_entry_barrier(nmethod* nm);
+
   static bool is_armed(nmethod* nm);
   static void disarm(nmethod* nm);
 

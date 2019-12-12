@@ -146,14 +146,15 @@ private:
 
 public:
   ZRootsIteratorCodeBlobClosure(ZRootsIteratorClosure* cl) :
-    _cl(cl),
-    _should_disarm_nmethods(cl->should_disarm_nmethods()) {}
+      _cl(cl),
+      _should_disarm_nmethods(cl->should_disarm_nmethods()) {}
 
   virtual void do_code_blob(CodeBlob* cb) {
     nmethod* const nm = cb->as_nmethod_or_null();
     if (nm != NULL && nm->oops_do_try_claim()) {
       ZNMethod::nmethod_oops_do(nm, _cl);
-      assert(ZNMethod::is_armed(nm) == _should_disarm_nmethods, "Invalid state");
+      assert(!ZNMethod::supports_entry_barrier(nm) ||
+             ZNMethod::is_armed(nm) == _should_disarm_nmethods, "Invalid state");
       if (_should_disarm_nmethods) {
         ZNMethod::disarm(nm);
       }
