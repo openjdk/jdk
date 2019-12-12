@@ -155,7 +155,7 @@ void ShenandoahCodeRoots::flush_nmethod(nmethod* nm) {
   }
 }
 
-void ShenandoahCodeRoots::prepare_concurrent_unloading() {
+void ShenandoahCodeRoots::arm_nmethods() {
   assert(SafepointSynchronize::is_at_safepoint(), "Must be at a safepoint");
   _disarmed_value ++;
   // 0 is reserved for new nmethod
@@ -224,7 +224,9 @@ public:
 
     // Heal oops and disarm
     ShenandoahEvacOOMScope evac_scope;
-    ShenandoahNMethod::heal_nmethod(nm);
+    if (_heap->is_evacuation_in_progress()) {
+      ShenandoahNMethod::heal_nmethod(nm);
+    }
     ShenandoahNMethod::disarm_nmethod(nm);
 
     // Clear compiled ICs and exception caches
