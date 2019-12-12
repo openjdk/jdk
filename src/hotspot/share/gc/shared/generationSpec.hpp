@@ -44,6 +44,7 @@ public:
   GenerationSpec(Generation::Name name, size_t init_size, size_t max_size, size_t alignment) :
     _name(name),
     _init_size(align_up(init_size, alignment)),
+    _min_size(_init_size),
     _max_size(align_up(max_size, alignment))
   { }
 

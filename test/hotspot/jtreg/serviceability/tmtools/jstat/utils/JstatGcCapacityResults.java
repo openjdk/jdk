@@ -70,6 +70,7 @@ public class JstatGcCapacityResults extends JstatResults {
 
         // Check Young Gen consistency
         float NGCMN = getFloatValue("NGCMN");
+        assertThat(NGCMN >= 0, "NGCMN < 0 (min generation capacity is negative)");
         float NGCMX = getFloatValue("NGCMX");
         assertThat(NGCMX >= NGCMN, "NGCMN > NGCMX (min generation capacity > max generation capacity)");
 
@@ -102,6 +103,7 @@ public class JstatGcCapacityResults extends JstatResults {
 
         // Check Old Gen consistency
         float OGCMN = getFloatValue("OGCMN");
+        assertThat(OGCMN >= 0, "OGCMN < 0 (min generation capacity is negative)");
         float OGCMX = getFloatValue("OGCMX");
         assertThat(OGCMX >= OGCMN, "OGCMN > OGCMX (min generation capacity > max generation capacity)");
 
