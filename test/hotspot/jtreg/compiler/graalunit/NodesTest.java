@@ -24,6 +24,7 @@
 /*
  * @test
  * @summary
+ * @requires vm.jvmci
  * @requires vm.graal.enabled
  * @modules jdk.internal.vm.compiler
  *

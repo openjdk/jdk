@@ -63,6 +63,7 @@ do
 /*
  * @test
  * @summary
+ * @requires vm.jvmci
  * $requireInfo
  * @modules jdk.internal.vm.compiler
  *
