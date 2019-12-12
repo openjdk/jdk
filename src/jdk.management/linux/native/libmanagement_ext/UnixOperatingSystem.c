@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -198,17 +198,19 @@ static int get_jvmticks(ticks *pticks) {
  * This method must be called first, before any data can be gathererd.
  */
 int perfInit() {
-    static int initialized=1;
+    static int initialized = 0;
 
     if (!initialized) {
         int  i;
-
-        int n = sysconf(_SC_NPROCESSORS_ONLN);
+        // We need to allocate counters for all CPUs, including ones that
+        // are currently offline as they could be turned online later.
+        int n = sysconf(_SC_NPROCESSORS_CONF);
         if (n <= 0) {
             n = 1;
         }
 
         counters.cpus = calloc(n,sizeof(ticks));
+        counters.nProcs = n;
         if (counters.cpus != NULL)  {
             // For the CPU load
             get_totalticks(-1, &counters.cpuTicks);
@@ -320,10 +322,10 @@ double get_process_load() {
 }
 
 JNIEXPORT jdouble JNICALL
-Java_com_sun_management_internal_OperatingSystemImpl_getSystemCpuLoad0
+Java_com_sun_management_internal_OperatingSystemImpl_getCpuLoad0
 (JNIEnv *env, jobject dummy)
 {
-    if(perfInit() == 0) {
+    if (perfInit() == 0) {
         return get_cpu_load(-1);
     } else {
         return -1.0;
@@ -334,9 +336,31 @@ JNIEXPORT jdouble JNICALL
 Java_com_sun_management_internal_OperatingSystemImpl_getProcessCpuLoad0
 (JNIEnv *env, jobject dummy)
 {
-    if(perfInit() == 0) {
+    if (perfInit() == 0) {
         return get_process_load();
     } else {
         return -1.0;
+    }
+}
+
+JNIEXPORT jdouble JNICALL
+Java_com_sun_management_internal_OperatingSystemImpl_getSingleCpuLoad0
+(JNIEnv *env, jobject mbean, jint cpu_number)
+{
+    if (perfInit() == 0 && cpu_number >= 0 && cpu_number < counters.nProcs) {
+        return get_cpu_load(cpu_number);
+    } else {
+        return -1.0;
+    }
+}
+
+JNIEXPORT jint JNICALL
+Java_com_sun_management_internal_OperatingSystemImpl_getHostConfiguredCpuCount0
+(JNIEnv *env, jobject mbean)
+{
+    if (perfInit() == 0) {
+        return counters.nProcs;
+    } else {
+       return -1;
     }
 }

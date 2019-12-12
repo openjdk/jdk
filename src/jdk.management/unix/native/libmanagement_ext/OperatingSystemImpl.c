@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -306,7 +306,7 @@ Java_com_sun_management_internal_OperatingSystemImpl_getProcessCpuTime0
 }
 
 JNIEXPORT jlong JNICALL
-Java_com_sun_management_internal_OperatingSystemImpl_getFreePhysicalMemorySize0
+Java_com_sun_management_internal_OperatingSystemImpl_getFreeMemorySize0
   (JNIEnv *env, jobject mbean)
 {
 #ifdef __APPLE__
@@ -340,7 +340,7 @@ Java_com_sun_management_internal_OperatingSystemImpl_getFreePhysicalMemorySize0
 }
 
 JNIEXPORT jlong JNICALL
-Java_com_sun_management_internal_OperatingSystemImpl_getTotalPhysicalMemorySize0
+Java_com_sun_management_internal_OperatingSystemImpl_getTotalMemorySize0
   (JNIEnv *env, jobject mbean)
 {
 #ifdef _ALLBSD_SOURCE

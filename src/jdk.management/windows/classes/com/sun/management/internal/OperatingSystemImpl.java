@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,18 +70,18 @@ class OperatingSystemImpl extends BaseOperatingSystemImpl
     }
 
     @Override
-    public long getFreePhysicalMemorySize() {
-        return getFreePhysicalMemorySize0();
+    public long getFreeMemorySize() {
+        return getFreeMemorySize0();
     }
 
     @Override
-    public long getTotalPhysicalMemorySize() {
-        return getTotalPhysicalMemorySize0();
+    public long getTotalMemorySize() {
+        return getTotalMemorySize0();
     }
 
     @Override
-    public double getSystemCpuLoad() {
-        return getSystemCpuLoad0();
+    public double getCpuLoad() {
+        return getCpuLoad0();
     }
 
     @Override
@@ -91,12 +91,12 @@ class OperatingSystemImpl extends BaseOperatingSystemImpl
 
     /* native methods */
     private native long getCommittedVirtualMemorySize0();
-    private native long getFreePhysicalMemorySize0();
+    private native long getFreeMemorySize0();
     private native long getFreeSwapSpaceSize0();
     private native double getProcessCpuLoad0();
     private native long getProcessCpuTime0();
-    private native double getSystemCpuLoad0();
-    private native long getTotalPhysicalMemorySize0();
+    private native double getCpuLoad0();
+    private native long getTotalMemorySize0();
     private native long getTotalSwapSpaceSize0();
 
     static {

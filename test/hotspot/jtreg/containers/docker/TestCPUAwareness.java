@@ -30,6 +30,7 @@
  * @modules java.base/jdk.internal.misc
  *          java.management
  *          jdk.jartool/sun.tools.jar
+ * @build PrintContainerInfo CheckOperatingSystemMXBean
  * @run driver TestCPUAwareness
  */
 import java.util.List;
@@ -76,8 +77,18 @@ public class TestCPUAwareness {
             testCpuQuotaAndPeriod(150*1000, 100*1000);
             testCpuQuotaAndPeriod(400*1000, 100*1000);
 
+            testOperatingSystemMXBeanAwareness("0.5", "1");
+            testOperatingSystemMXBeanAwareness("1.0", "1");
+            if (availableCPUs > 2) {
+                testOperatingSystemMXBeanAwareness("1.2", "2");
+                testOperatingSystemMXBeanAwareness("1.8", "2");
+                testOperatingSystemMXBeanAwareness("2.0", "2");
+            }
+
         } finally {
-            DockerTestUtils.removeDockerImage(imageName);
+            if (!DockerTestUtils.RETAIN_IMAGE_AFTER_TEST) {
+                DockerTestUtils.removeDockerImage(imageName);
+            }
         }
     }
 
@@ -205,5 +216,23 @@ public class TestCPUAwareness {
         Common.run(opts)
             .shouldMatch("CPU Shares is.*" + shares)
             .shouldMatch("active_processor_count.*" + expectedAPC);
+    }
+
+    private static void testOperatingSystemMXBeanAwareness(String cpuAllocation, String expectedCpus) throws Exception {
+        Common.logNewTestCase("Check OperatingSystemMXBean");
+
+        DockerRunOptions opts = Common.newOpts(imageName, "CheckOperatingSystemMXBean")
+            .addDockerOpts(
+                "--cpus", cpuAllocation
+            );
+
+        DockerTestUtils.dockerRunJava(opts)
+            .shouldHaveExitValue(0)
+            .shouldContain("Checking OperatingSystemMXBean")
+            .shouldContain("Runtime.availableProcessors: " + expectedCpus)
+            .shouldContain("OperatingSystemMXBean.getAvailableProcessors: " + expectedCpus)
+            .shouldMatch("OperatingSystemMXBean\\.getSystemCpuLoad: [0-9]+\\.[0-9]+")
+            .shouldMatch("OperatingSystemMXBean\\.getCpuLoad: [0-9]+\\.[0-9]+")
+            ;
     }
 }
