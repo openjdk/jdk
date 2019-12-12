@@ -117,7 +117,7 @@ public class TagletWriterImpl extends TagletWriter {
         }
         String desc = ch.getText(itt.getDescription());
 
-        return createAnchorAndSearchIndex(element, tagText, desc);
+        return createAnchorAndSearchIndex(element, tagText, desc, false);
     }
 
     /**
@@ -326,7 +326,7 @@ public class TagletWriterImpl extends TagletWriter {
         SystemPropertyTree itt = (SystemPropertyTree)tag;
         String tagText = itt.getPropertyName().toString();
         return HtmlTree.CODE(createAnchorAndSearchIndex(element, tagText,
-                resources.getText("doclet.System_Property")));
+                resources.getText("doclet.System_Property"), true));
     }
 
     /**
@@ -416,7 +416,7 @@ public class TagletWriterImpl extends TagletWriter {
     }
 
     @SuppressWarnings("preview")
-    private Content createAnchorAndSearchIndex(Element element, String tagText, String desc) {
+    private Content createAnchorAndSearchIndex(Element element, String tagText, String desc, boolean isSystemProperty) {
         Content result = null;
         if (isFirstSentence && inSummary) {
             result = new StringContent(tagText);
@@ -430,6 +430,7 @@ public class TagletWriterImpl extends TagletWriter {
             result = HtmlTree.A_ID(HtmlStyle.searchTagResult, anchorName, new StringContent(tagText));
             if (configuration.createindex && !tagText.isEmpty()) {
                 SearchIndexItem si = new SearchIndexItem();
+                si.setSystemProperty(isSystemProperty);
                 si.setLabel(tagText);
                 si.setDescription(desc);
                 si.setUrl(htmlWriter.path.getPath() + "#" + anchorName);

@@ -75,6 +75,7 @@ import com.sun.source.doctree.TextTree;
 import com.sun.source.util.SimpleDocTreeVisitor;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
+import jdk.javadoc.internal.doclets.formats.html.markup.FixedStringContent;
 import jdk.javadoc.internal.doclets.formats.html.markup.Head;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlAttr;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlDocument;
@@ -2185,4 +2186,7 @@ public class HtmlDocletWriter {
         return localStylesheets;
     }
 
+    Content getVerticalSeparator() {
+        return HtmlTree.SPAN(HtmlStyle.verticalSeparator, new FixedStringContent("|"));
+    }
 }

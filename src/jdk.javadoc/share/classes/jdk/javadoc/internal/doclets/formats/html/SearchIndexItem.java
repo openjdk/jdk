@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,6 +51,7 @@ public class SearchIndexItem {
     private String containingClass = "";
     private String holder = "";
     private String description = "";
+    private boolean systemProperty;
 
     public void setLabel(String l) {
         label = l;
@@ -98,6 +99,14 @@ public class SearchIndexItem {
 
     public String getDescription() {
         return description;
+    }
+
+    public void setSystemProperty(boolean value) {
+        systemProperty = value;
+    }
+
+    public boolean isSystemProperty() {
+        return systemProperty;
     }
 
     public String toString() {

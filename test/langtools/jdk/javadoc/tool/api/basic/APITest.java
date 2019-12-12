@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -236,6 +236,7 @@ class APITest {
             "script.js",
             "search.js",
             "stylesheet.css",
+            "system-properties.html",
             "type-search-index.js",
             "type-search-index.zip"
     ));
@@ -243,7 +244,8 @@ class APITest {
     protected static Set<String> noIndexFiles = standardExpectFiles.stream()
             .filter(s -> !s.startsWith("script-dir") && !s.startsWith("resources") && !s.endsWith("zip")
             && !s.equals("index-all.html") && !s.equals("search.js") && !s.endsWith("-search-index.js")
-            && !s.equals("allclasses-index.html") && !s.equals("allpackages-index.html"))
+            && !s.equals("allclasses-index.html") && !s.equals("allpackages-index.html")
+            && !s.equals("system-properties.html"))
             .collect(Collectors.toSet());
 }
 

@@ -159,6 +159,7 @@ public class HtmlDoclet extends AbstractDoclet {
             if (!configuration.packages.isEmpty()) {
                 AllPackagesIndexWriter.generate(configuration);
             }
+            SystemPropertiesWriter.generate(configuration);
         }
 
         if (configuration.createoverview) {

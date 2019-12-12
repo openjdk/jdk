@@ -282,7 +282,7 @@ body.class-declaration .summary .inheritedList h2 {
  * Styles for page layout containers.
  */
 .contentContainer, .sourceContainer, .classUseContainer, .serializedFormContainer, .constantValuesContainer,
-.allClassesContainer, .allPackagesContainer {
+.allClassesContainer, .allPackagesContainer, .systemPropertiesContainer {
     clear:both;
     padding:10px 20px;
     position:relative;
@@ -343,19 +343,21 @@ table tr td dl, table tr td dl dt, table tr td dl dd {
  * Styles for tables.
  */
 .overviewSummary table, .memberSummary table, .typeSummary table, .useSummary table, .constantsSummary table, .deprecatedSummary table,
-.requiresSummary table, .packagesSummary table, .providesSummary table, .usesSummary table {
+.requiresSummary table, .packagesSummary table, .providesSummary table, .usesSummary table, .systemPropertiesSummary table {
     width:100%;
     border-spacing:0;
     border-left:1px solid #EEE;
     border-right:1px solid #EEE;
     border-bottom:1px solid #EEE;
 }
-.overviewSummary table, .memberSummary table, .requiresSummary table, .packagesSummary table, .providesSummary table, .usesSummary table {
+.overviewSummary table, .memberSummary table, .requiresSummary table, .packagesSummary table,
+.providesSummary table, .usesSummary table, .systemPropertiesSummary table {
     padding:0px;
 }
 .overviewSummary caption, .memberSummary caption, .typeSummary caption,
 .useSummary caption, .constantsSummary caption, .deprecatedSummary caption,
-.requiresSummary caption, .packagesSummary caption, .providesSummary caption, .usesSummary caption {
+.requiresSummary caption, .packagesSummary caption, .providesSummary caption,
+.usesSummary caption, .systemPropertiesSummary caption {
     position:relative;
     text-align:left;
     background-repeat:no-repeat;
@@ -394,7 +396,7 @@ table tr td dl, table tr td dl dt, table tr td dl dd {
 .overviewSummary caption span, .memberSummary caption span, .typeSummary caption span,
 .useSummary caption span, .constantsSummary caption span, .deprecatedSummary caption span,
 .requiresSummary caption span, .packagesSummary caption span, .providesSummary caption span,
-.usesSummary caption span {
+.usesSummary caption span, .systemPropertiesSummary caption span {
     white-space:nowrap;
     padding-top:5px;
     padding-left:12px;
@@ -438,13 +440,14 @@ table tr td dl, table tr td dl dt, table tr td dl dd {
 }
 .overviewSummary td, .memberSummary td, .typeSummary td,
 .useSummary td, .constantsSummary td, .deprecatedSummary td,
-.requiresSummary td, .packagesSummary td, .providesSummary td, .usesSummary td {
+.requiresSummary td, .packagesSummary td, .providesSummary td,
+.usesSummary td, .systemPropertiesSummary td {
     text-align:left;
     padding:0px 0px 12px 10px;
 }
 th.colFirst, th.colSecond, th.colLast, th.colConstructorName, th.colDeprecatedItemName, .useSummary th,
 .constantsSummary th, .packagesSummary th, td.colFirst, td.colSecond, td.colLast, .useSummary td,
-.constantsSummary td {
+.constantsSummary td, .systemPropertiesSummary th {
     vertical-align:top;
     padding-right:0px;
     padding-top:8px;
@@ -686,7 +689,9 @@ section.description {
     background-color:#ffffff;
     border:none;
 }
-
+.verticalSeparator {
+    padding: 0 5px;
+}
 /*
  * Indicator icon for external links.
  */
