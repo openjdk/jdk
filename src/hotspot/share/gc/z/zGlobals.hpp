@@ -93,9 +93,6 @@ extern uintptr_t  ZAddressGoodMask;
 extern uintptr_t  ZAddressBadMask;
 extern uintptr_t  ZAddressWeakBadMask;
 
-// Pointer base address
-extern uintptr_t  ZAddressBase;
-
 // Pointer part of address
 extern size_t     ZAddressOffsetBits;
 const  size_t     ZAddressOffsetShift           = 0;

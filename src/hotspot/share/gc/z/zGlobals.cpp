@@ -42,8 +42,6 @@ uintptr_t  ZAddressGoodMask;
 uintptr_t  ZAddressBadMask;
 uintptr_t  ZAddressWeakBadMask;
 
-uintptr_t  ZAddressBase;
-
 size_t     ZAddressOffsetBits;
 uintptr_t  ZAddressOffsetMask;
 size_t     ZAddressOffsetMax;
