@@ -37,6 +37,7 @@ import java.util.stream.$Streamtype$Stream;
 #end[streamableType]
 
 import java.util.Objects;
+import jdk.internal.access.foreign.MemorySegmentProxy;
 import jdk.internal.util.ArraysSupport;
 
 /**
@@ -279,17 +280,25 @@ public abstract class $Type$Buffer
     // backing array, and array offset
     //
     $Type$Buffer(int mark, int pos, int lim, int cap,   // package-private
-                 $type$[] hb, int offset)
+                 $type$[] hb, int offset, MemorySegmentProxy segment)
     {
-        super(mark, pos, lim, cap);
+        super(mark, pos, lim, cap, segment);
         this.hb = hb;
         this.offset = offset;
     }
 
     // Creates a new buffer with the given mark, position, limit, and capacity
     //
-    $Type$Buffer(int mark, int pos, int lim, int cap) { // package-private
-        this(mark, pos, lim, cap, null, 0);
+    $Type$Buffer(int mark, int pos, int lim, int cap, MemorySegmentProxy segment) { // package-private
+        this(mark, pos, lim, cap, null, 0, segment);
+    }
+
+    // Creates a new buffer with given base, address and capacity
+    //
+    $Type$Buffer($type$[] hb, long addr, int cap, MemorySegmentProxy segment) { // package-private
+        super(addr, cap, segment);
+        this.hb = hb;
+        this.offset = 0;
     }
 
     @Override
@@ -348,7 +357,7 @@ public abstract class $Type$Buffer
     public static $Type$Buffer allocate(int capacity) {
         if (capacity < 0)
             throw createCapacityException(capacity);
-        return new Heap$Type$Buffer(capacity, capacity);
+        return new Heap$Type$Buffer(capacity, capacity, null);
     }
 
     /**
@@ -393,7 +402,7 @@ public abstract class $Type$Buffer
                                     int offset, int length)
     {
         try {
-            return new Heap$Type$Buffer(array, offset, length);
+            return new Heap$Type$Buffer(array, offset, length, null);
         } catch (IllegalArgumentException x) {
             throw new IndexOutOfBoundsException();
         }
