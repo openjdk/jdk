@@ -30,7 +30,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.LinkedHashSet;
-import java.util.function.Function;
+import java.util.function.ToIntFunction;
 
 import javax.tools.JavaFileManager;
 import javax.tools.FileObject;
@@ -114,7 +114,7 @@ public class ClassWriter extends ClassFile {
      */
     public boolean multiModuleMode;
 
-    private List<Function<Symbol, Integer>> extraAttributeHooks = List.nil();
+    private List<ToIntFunction<Symbol>> extraAttributeHooks = List.nil();
 
     /** The initial sizes of the data and constant pool buffers.
      *  Sizes are increased when buffers get full.
@@ -191,7 +191,7 @@ public class ClassWriter extends ClassFile {
         }
     }
 
-    public void addExtraAttributes(Function<Symbol, Integer> addExtraAttributes) {
+    public void addExtraAttributes(ToIntFunction<Symbol> addExtraAttributes) {
         extraAttributeHooks = extraAttributeHooks.prepend(addExtraAttributes);
     }
 
@@ -1669,7 +1669,7 @@ public class ClassWriter extends ClassFile {
      */
     protected int writeExtraAttributes(Symbol sym) {
         int i = 0;
-        for (Function<Symbol, Integer> hook : extraAttributeHooks) {
+        for (ToIntFunction<Symbol> hook : extraAttributeHooks) {
             i += hook.apply(sym);
         }
         return i;
