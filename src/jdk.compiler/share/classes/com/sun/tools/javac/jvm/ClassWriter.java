@@ -1670,7 +1670,7 @@ public class ClassWriter extends ClassFile {
     protected int writeExtraAttributes(Symbol sym) {
         int i = 0;
         for (ToIntFunction<Symbol> hook : extraAttributeHooks) {
-            i += hook.apply(sym);
+            i += hook.applyAsInt(sym);
         }
         return i;
     }
