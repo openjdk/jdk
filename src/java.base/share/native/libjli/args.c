@@ -130,6 +130,8 @@ static void checkArg(const char *arg) {
             }
         } else if (JLI_StrCmp(arg, "--disable-@files") == 0) {
             stopExpansion = JNI_TRUE;
+        } else if (JLI_StrCCmp(arg, "--module=") == 0) {
+            idx = argsCount;
         }
     } else {
         if (!expectingNoDashArg) {
@@ -449,6 +451,7 @@ int isTerminalOpt(char *arg) {
     return JLI_StrCmp(arg, "-jar") == 0 ||
            JLI_StrCmp(arg, "-m") == 0 ||
            JLI_StrCmp(arg, "--module") == 0 ||
+           JLI_StrCCmp(arg, "--module=") == 0 ||
            JLI_StrCmp(arg, "--dry-run") == 0 ||
            JLI_StrCmp(arg, "-h") == 0 ||
            JLI_StrCmp(arg, "-?") == 0 ||

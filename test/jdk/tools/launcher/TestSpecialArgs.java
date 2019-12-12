@@ -246,6 +246,10 @@ public class TestSpecialArgs extends TestHelper {
         if (!tr.contains("Error: Could not find or load main class AbsentClass")) {
             throw new RuntimeException("Test Fails");
         }
+
+        // Make sure we handle correctly the module long form (--module=)
+        tr = doExec(javaCmd, "-XX:NativeMemoryTracking=summary", "--module=jdk.compiler/com.sun.tools.javac.Main", "--help");
+        ensureNoWarnings(tr);
     }
 
     void ensureNoWarnings(TestResult tr) {
