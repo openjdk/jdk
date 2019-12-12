@@ -137,13 +137,13 @@ class Deoptimization : AllStatic {
     Unpack_LIMIT                = 4
   };
 
-  static void deoptimize_all_marked();
+  // Make all nmethods that are marked_for_deoptimization not_entrant and deoptimize any live
+  // activations using those nmethods.  If an nmethod is passed as an argument then it is
+  // marked_for_deoptimization and made not_entrant.  Otherwise a scan of the code cache is done to
+  // find all marked nmethods and they are made not_entrant.
+  static void deoptimize_all_marked(nmethod* nmethod_only = NULL);
 
  private:
-  // Checks all compiled methods. Invalid methods are deleted and
-  // corresponding activations are deoptimized.
-  static int deoptimize_dependents();
-
   // Revoke biased locks at deopt.
   static void revoke_from_deopt_handler(JavaThread* thread, frame fr, RegisterMap* map);
 

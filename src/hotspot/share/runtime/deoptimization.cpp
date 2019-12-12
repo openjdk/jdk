@@ -814,22 +814,23 @@ class DeoptimizeMarkedClosure : public HandshakeClosure {
   }
 };
 
-void Deoptimization::deoptimize_all_marked() {
+void Deoptimization::deoptimize_all_marked(nmethod* nmethod_only) {
   ResourceMark rm;
   DeoptimizationMarker dm;
 
-  if (SafepointSynchronize::is_at_safepoint()) {
-    DeoptimizeMarkedClosure deopt;
-    // Make the dependent methods not entrant
+  // Make the dependent methods not entrant
+  if (nmethod_only != NULL) {
+    nmethod_only->mark_for_deoptimization();
+    nmethod_only->make_not_entrant();
+  } else {
+    MutexLocker mu(SafepointSynchronize::is_at_safepoint() ? NULL : CodeCache_lock, Mutex::_no_safepoint_check_flag);
     CodeCache::make_marked_nmethods_not_entrant();
+  }
+
+  DeoptimizeMarkedClosure deopt;
+  if (SafepointSynchronize::is_at_safepoint()) {
     Threads::java_threads_do(&deopt);
   } else {
-    // Make the dependent methods not entrant
-    {
-      MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-      CodeCache::make_marked_nmethods_not_entrant();
-    }
-    DeoptimizeMarkedClosure deopt;
     Handshake::execute(&deopt);
   }
 }
