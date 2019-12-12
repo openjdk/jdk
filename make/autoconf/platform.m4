@@ -561,12 +561,11 @@ AC_DEFUN_ONCE([PLATFORM_SETUP_OPENJDK_BUILD_AND_TARGET],
   PLATFORM_CHECK_DEPRECATION
 ])
 
-AC_DEFUN_ONCE([PLATFORM_CHECK_DEPRECATION],
+AC_DEFUN([PLATFORM_CHECK_DEPRECATION],
 [
   AC_ARG_ENABLE(deprecated-ports, [AS_HELP_STRING([--enable-deprecated-ports@<:@=yes/no@:>@],
        [Suppress the error when configuring for a deprecated port @<:@no@:>@])])
 
-  AC_REQUIRE([PLATFORM_EXTRACT_TARGET_AND_BUILD])
   if test "x$OPENJDK_TARGET_OS" = xsolaris || test "x$OPENJDK_TARGET_CPU_ARCH" = xsparc; then
     if test "x$enable_deprecated_ports" = "xyes"; then
       AC_MSG_WARN([The Solaris and SPARC ports are deprecated and may be removed in a future release.])
