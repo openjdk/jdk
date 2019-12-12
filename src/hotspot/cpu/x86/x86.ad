@@ -1246,176 +1246,193 @@ int HandlerImpl::emit_deopt_handler(CodeBuffer& cbuf) {
 
 //=============================================================================
 const bool Matcher::match_rule_supported(int opcode) {
-  if (!has_match_rule(opcode))
-    return false;
-
-  bool ret_value = true;
+  if (!has_match_rule(opcode)) {
+    return false; // no match rule present
+  }
   switch (opcode) {
     case Op_AbsVL:
-      if (UseAVX < 3)
-        ret_value = false;
+      if (UseAVX < 3) {
+        return false;
+      }
+      break;
     case Op_PopCountI:
     case Op_PopCountL:
-      if (!UsePopCountInstruction)
-        ret_value = false;
+      if (!UsePopCountInstruction) {
+        return false;
+      }
       break;
     case Op_PopCountVI:
-      if (!UsePopCountInstruction || !VM_Version::supports_vpopcntdq())
-        ret_value = false;
+      if (!UsePopCountInstruction || !VM_Version::supports_vpopcntdq()) {
+        return false;
+      }
       break;
     case Op_MulVI:
-      if ((UseSSE < 4) && (UseAVX < 1)) // only with SSE4_1 or AVX
-        ret_value = false;
+      if ((UseSSE < 4) && (UseAVX < 1)) { // only with SSE4_1 or AVX
+        return false;
+      }
       break;
     case Op_MulVL:
     case Op_MulReductionVL:
-      if (VM_Version::supports_avx512dq() == false)
-        ret_value = false;
+      if (VM_Version::supports_avx512dq() == false) {
+        return false;
+      }
       break;
     case Op_AddReductionVL:
-      if (UseAVX < 3) // only EVEX : vector connectivity becomes an issue here
-        ret_value = false;
+      if (UseAVX < 3) { // only EVEX : vector connectivity becomes an issue here
+        return false;
+      }
       break;
     case Op_AbsVB:
     case Op_AbsVS:
     case Op_AbsVI:
     case Op_AddReductionVI:
-      if (UseSSE < 3 || !VM_Version::supports_ssse3()) // requires at least SSSE3
-        ret_value = false;
+      if (UseSSE < 3 || !VM_Version::supports_ssse3()) { // requires at least SSSE3
+        return false;
+      }
       break;
     case Op_MulReductionVI:
-      if (UseSSE < 4) // requires at least SSE4
-        ret_value = false;
+      if (UseSSE < 4) { // requires at least SSE4
+        return false;
+      }
       break;
     case Op_AddReductionVF:
     case Op_AddReductionVD:
     case Op_MulReductionVF:
     case Op_MulReductionVD:
-      if (UseSSE < 1) // requires at least SSE
-        ret_value = false;
+      if (UseSSE < 1) { // requires at least SSE
+        return false;
+      }
       break;
     case Op_SqrtVD:
     case Op_SqrtVF:
-      if (UseAVX < 1) // enabled for AVX only
-        ret_value = false;
+      if (UseAVX < 1) { // enabled for AVX only
+        return false;
+      }
       break;
     case Op_CompareAndSwapL:
 #ifdef _LP64
     case Op_CompareAndSwapP:
 #endif
-      if (!VM_Version::supports_cx8())
-        ret_value = false;
+      if (!VM_Version::supports_cx8()) {
+        return false;
+      }
       break;
     case Op_CMoveVF:
     case Op_CMoveVD:
-      if (UseAVX < 1 || UseAVX > 2)
-        ret_value = false;
+      if (UseAVX < 1 || UseAVX > 2) {
+        return false;
+      }
       break;
     case Op_StrIndexOf:
-      if (!UseSSE42Intrinsics)
-        ret_value = false;
+      if (!UseSSE42Intrinsics) {
+        return false;
+      }
       break;
     case Op_StrIndexOfChar:
-      if (!UseSSE42Intrinsics)
-        ret_value = false;
+      if (!UseSSE42Intrinsics) {
+        return false;
+      }
       break;
     case Op_OnSpinWait:
-      if (VM_Version::supports_on_spin_wait() == false)
-        ret_value = false;
+      if (VM_Version::supports_on_spin_wait() == false) {
+        return false;
+      }
       break;
     case Op_MulAddVS2VI:
     case Op_RShiftVL:
     case Op_AbsVD:
     case Op_NegVD:
-      if (UseSSE < 2)
-        ret_value = false;
+      if (UseSSE < 2) {
+        return false;
+      }
       break;
     case Op_MulVB:
     case Op_LShiftVB:
     case Op_RShiftVB:
     case Op_URShiftVB:
-      if (UseSSE < 4)
-        ret_value = false;
+      if (UseSSE < 4) {
+        return false;
+      }
       break;
 #ifdef _LP64
     case Op_MaxD:
     case Op_MaxF:
     case Op_MinD:
     case Op_MinF:
-      if (UseAVX < 1) // enabled for AVX only
-        ret_value = false;
+      if (UseAVX < 1) { // enabled for AVX only
+        return false;
+      }
       break;
 #endif
     case Op_CacheWB:
     case Op_CacheWBPreSync:
     case Op_CacheWBPostSync:
       if (!VM_Version::supports_data_cache_line_flush()) {
-        ret_value = false;
+        return false;
       }
       break;
     case Op_RoundDoubleMode:
-      if (UseSSE < 4)
-         ret_value = false;
+      if (UseSSE < 4) {
+        return false;
+      }
+      break;
+    case Op_RoundDoubleModeV:
+      if (VM_Version::supports_avx() == false) {
+        return false; // 128bit vroundpd is not available
+      }
       break;
   }
-
-  return ret_value;  // Per default match rules are supported.
+  return true;  // Match rules are supported by default.
 }
 
-const bool Matcher::match_rule_supported_vector(int opcode, int vlen) {
-  // identify extra cases that we might want to provide match rules for
-  // e.g. Op_ vector nodes and other intrinsics while guarding with vlen
-  bool ret_value = match_rule_supported(opcode);
-  if (ret_value) {
-    switch (opcode) {
-      case Op_AbsVB:
-      case Op_AddVB:
-      case Op_SubVB:
-        if ((vlen == 64) && (VM_Version::supports_avx512bw() == false))
-          ret_value = false;
-        break;
-      case Op_AbsVS:
-      case Op_AddVS:
-      case Op_SubVS:
-      case Op_MulVS:
-      case Op_LShiftVS:
-      case Op_RShiftVS:
-      case Op_URShiftVS:
-        if ((vlen == 32) && (VM_Version::supports_avx512bw() == false))
-          ret_value = false;
-        break;
-      case Op_MulVB:
-      case Op_LShiftVB:
-      case Op_RShiftVB:
-      case Op_URShiftVB:
-        if ((vlen == 32 && UseAVX < 2) ||
-            ((vlen == 64) && (VM_Version::supports_avx512bw() == false)))
-          ret_value = false;
-        break;
-      case Op_NegVF:
-        if ((vlen == 16) && (VM_Version::supports_avx512dq() == false))
-          ret_value = false;
-        break;
-      case Op_CMoveVF:
-        if (vlen != 8)
-          ret_value  = false;
-        break;
-      case Op_NegVD:
-        if ((vlen == 8) && (VM_Version::supports_avx512dq() == false))
-          ret_value = false;
-        break;
-      case Op_CMoveVD:
-        if (vlen != 4)
-          ret_value  = false;
-        break;
-      case Op_RoundDoubleModeV:
-        if (VM_Version::supports_avx() == false)
-          ret_value = false;
-        break;
-    }
-  }
+//------------------------------------------------------------------------
 
-  return ret_value;  // Per default match rules are supported.
+// Identify extra cases that we might want to provide match rules for vector nodes and
+// other intrinsics guarded with vector length (vlen) and element type (bt).
+const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType bt) {
+  if (!match_rule_supported(opcode)) {
+    return false;
+  }
+  // Matcher::vector_size_supported() restricts vector sizes in the following way (see Matcher::vector_width_in_bytes):
+  //   * SSE2 supports 128bit vectors for all types;
+  //   * AVX1 supports 256bit vectors only for FLOAT and DOUBLE types;
+  //   * AVX2 supports 256bit vectors for all types;
+  //   * AVX512F supports 512bit vectors only for INT, FLOAT, and DOUBLE types;
+  //   * AVX512BW supports 512bit vectors for BYTE, SHORT, and CHAR types.
+  // There's also a limit on minimum vector size supported: 2 elements (or 4 bytes for BYTE).
+  // And MaxVectorSize is taken into account as well.
+  if (!vector_size_supported(bt, vlen)) {
+    return false;
+  }
+  // Special cases which require vector length follow:
+  //   * implementation limitations
+  //   * some 512bit vector operations on FLOAT and DOUBLE types require AVX512DQ
+  //   * 128bit vroundpd instruction is present only in AVX1
+  switch (opcode) {
+    case Op_AbsVF:
+    case Op_NegVF:
+      if ((vlen == 16) && (VM_Version::supports_avx512dq() == false)) {
+        return false; // 512bit vandps and vxorps are not available
+      }
+      break;
+    case Op_AbsVD:
+    case Op_NegVD:
+      if ((vlen == 8) && (VM_Version::supports_avx512dq() == false)) {
+        return false; // 512bit vandpd and vxorpd are not available
+      }
+      break;
+    case Op_CMoveVF:
+      if (vlen != 8) {
+        return false; // implementation limitation (only vcmov8F_reg is present)
+      }
+      break;
+    case Op_CMoveVD:
+      if (vlen != 4) {
+        return false; // implementation limitation (only vcmov4D_reg is present)
+      }
+      break;
+  }
+  return true;  // Per default match rules are supported.
 }
 
 // x86 supports generic vector operands: vec and legVec.
