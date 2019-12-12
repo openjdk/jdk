@@ -619,7 +619,7 @@ public class TestModules extends JavadocTester {
                 "<dt><span class=\"simpleTagLabel\">Version:</span></dt>\n"
                 + "<dd>1.0</dd>",
                 "<dt><span class=\"simpleTagLabel\">Author:</span></dt>\n"
-                + "<dd>Bhavesh Patel</dd>");
+                + "<dd>Alice</dd>");
         checkOutput("moduletags/testpkgmdltags/TestClassInModuleTags.html", false,
                 "<dt><span class=\"simpleTagLabel\">Module Tag:</span></dt>\n"
                 + "<dd>Just a simple module tag.</dd>");

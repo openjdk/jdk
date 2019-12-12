@@ -59,6 +59,6 @@ public class AuthorDD extends JavadocTester {
                 + "<dd>JDK 1.0</dd>",
                 // Test multiple @author tags:
                 "<dt><span class=\"simpleTagLabel\">Author:</span></dt>\n"
-                + "<dd>Doug Kramer, Jamie, Neal</dd>");
+                + "<dd>Alice, Bob, Eve</dd>");
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,9 +28,9 @@ package p1;
  * Testing multiple @since and @version tags only to see if all
  * instances of SimpleTaglet have the same bug
  *
- * @author Doug Kramer
- * @author Jamie
- * @author Neal
+ * @author Alice
+ * @author Bob
+ * @author Eve
  *
  * @since  JDK 1.0
  *
