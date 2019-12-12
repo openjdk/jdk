@@ -6562,186 +6562,66 @@ instruct vcmov4D_reg(legVec dst, legVec src1, legVec src2, immI8 cop, cmpOp_vcmp
 // --------------------------------- DIV --------------------------------------
 
 // Floats vector div
-instruct vdiv2F(vec dst, vec src) %{
-  predicate(UseAVX == 0 && n->as_Vector()->length() == 2);
+instruct vdivF(vec dst, vec src) %{
+  predicate(UseAVX == 0);
   match(Set dst (DivVF dst src));
-  format %{ "divps   $dst,$src\t! div packed2F" %}
+  format %{ "divps   $dst,$src\t! div packedF" %}
   ins_encode %{
     __ divps($dst$$XMMRegister, $src$$XMMRegister);
   %}
   ins_pipe( pipe_slow );
 %}
 
-instruct vdiv2F_reg(vec dst, vec src1, vec src2) %{
-  predicate(UseAVX > 0 && n->as_Vector()->length() == 2);
+instruct vdivF_reg(vec dst, vec src1, vec src2) %{
+  predicate(UseAVX > 0);
   match(Set dst (DivVF src1 src2));
-  format %{ "vdivps  $dst,$src1,$src2\t! div packed2F" %}
+  format %{ "vdivps  $dst,$src1,$src2\t! div packedF" %}
   ins_encode %{
-    int vector_len = 0;
+    int vector_len = vector_length_encoding(this);
     __ vdivps($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vector_len);
   %}
   ins_pipe( pipe_slow );
 %}
 
-instruct vdiv2F_mem(vec dst, vec src, memory mem) %{
-  predicate(UseAVX > 0 && n->as_Vector()->length() == 2);
+instruct vdivF_mem(vec dst, vec src, memory mem) %{
+  predicate(UseAVX > 0);
   match(Set dst (DivVF src (LoadVector mem)));
-  format %{ "vdivps  $dst,$src,$mem\t! div packed2F" %}
+  format %{ "vdivps  $dst,$src,$mem\t! div packedF" %}
   ins_encode %{
-    int vector_len = 0;
-    __ vdivps($dst$$XMMRegister, $src$$XMMRegister, $mem$$Address, vector_len);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-instruct vdiv4F(vec dst, vec src) %{
-  predicate(UseAVX == 0 && n->as_Vector()->length() == 4);
-  match(Set dst (DivVF dst src));
-  format %{ "divps   $dst,$src\t! div packed4F" %}
-  ins_encode %{
-    __ divps($dst$$XMMRegister, $src$$XMMRegister);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-instruct vdiv4F_reg(vec dst, vec src1, vec src2) %{
-  predicate(UseAVX > 0 && n->as_Vector()->length() == 4);
-  match(Set dst (DivVF src1 src2));
-  format %{ "vdivps  $dst,$src1,$src2\t! div packed4F" %}
-  ins_encode %{
-    int vector_len = 0;
-    __ vdivps($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vector_len);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-instruct vdiv4F_mem(vec dst, vec src, memory mem) %{
-  predicate(UseAVX > 0 && n->as_Vector()->length() == 4);
-  match(Set dst (DivVF src (LoadVector mem)));
-  format %{ "vdivps  $dst,$src,$mem\t! div packed4F" %}
-  ins_encode %{
-    int vector_len = 0;
-    __ vdivps($dst$$XMMRegister, $src$$XMMRegister, $mem$$Address, vector_len);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-instruct vdiv8F_reg(vec dst, vec src1, vec src2) %{
-  predicate(UseAVX > 0 && n->as_Vector()->length() == 8);
-  match(Set dst (DivVF src1 src2));
-  format %{ "vdivps  $dst,$src1,$src2\t! div packed8F" %}
-  ins_encode %{
-    int vector_len = 1;
-    __ vdivps($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vector_len);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-instruct vdiv8F_mem(vec dst, vec src, memory mem) %{
-  predicate(UseAVX > 0 && n->as_Vector()->length() == 8);
-  match(Set dst (DivVF src (LoadVector mem)));
-  format %{ "vdivps  $dst,$src,$mem\t! div packed8F" %}
-  ins_encode %{
-    int vector_len = 1;
-    __ vdivps($dst$$XMMRegister, $src$$XMMRegister, $mem$$Address, vector_len);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-instruct vdiv16F_reg(vec dst, vec src1, vec src2) %{
-  predicate(UseAVX > 0 && n->as_Vector()->length() == 16);
-  match(Set dst (DivVF src1 src2));
-  format %{ "vdivps  $dst,$src1,$src2\t! div packed16F" %}
-  ins_encode %{
-    int vector_len = 2;
-    __ vdivps($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vector_len);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-instruct vdiv16F_mem(vec dst, vec src, memory mem) %{
-  predicate(UseAVX > 0 && n->as_Vector()->length() == 16);
-  match(Set dst (DivVF src (LoadVector mem)));
-  format %{ "vdivps  $dst,$src,$mem\t! div packed16F" %}
-  ins_encode %{
-    int vector_len = 2;
+    int vector_len = vector_length_encoding(this);
     __ vdivps($dst$$XMMRegister, $src$$XMMRegister, $mem$$Address, vector_len);
   %}
   ins_pipe( pipe_slow );
 %}
 
 // Doubles vector div
-instruct vdiv2D(vec dst, vec src) %{
-  predicate(UseAVX == 0 && n->as_Vector()->length() == 2);
+instruct vdivD(vec dst, vec src) %{
+  predicate(UseAVX == 0);
   match(Set dst (DivVD dst src));
-  format %{ "divpd   $dst,$src\t! div packed2D" %}
+  format %{ "divpd   $dst,$src\t! div packedD" %}
   ins_encode %{
     __ divpd($dst$$XMMRegister, $src$$XMMRegister);
   %}
   ins_pipe( pipe_slow );
 %}
 
-instruct vdiv2D_reg(vec dst, vec src1, vec src2) %{
-  predicate(UseAVX > 0 && n->as_Vector()->length() == 2);
+instruct vdivD_reg(vec dst, vec src1, vec src2) %{
+  predicate(UseAVX > 0);
   match(Set dst (DivVD src1 src2));
-  format %{ "vdivpd  $dst,$src1,$src2\t! div packed2D" %}
+  format %{ "vdivpd  $dst,$src1,$src2\t! div packedD" %}
   ins_encode %{
-    int vector_len = 0;
+    int vector_len = vector_length_encoding(this);
     __ vdivpd($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vector_len);
   %}
   ins_pipe( pipe_slow );
 %}
 
-instruct vdiv2D_mem(vec dst, vec src, memory mem) %{
-  predicate(UseAVX > 0 && n->as_Vector()->length() == 2);
+instruct vdivD_mem(vec dst, vec src, memory mem) %{
+  predicate(UseAVX > 0);
   match(Set dst (DivVD src (LoadVector mem)));
-  format %{ "vdivpd  $dst,$src,$mem\t! div packed2D" %}
+  format %{ "vdivpd  $dst,$src,$mem\t! div packedD" %}
   ins_encode %{
-    int vector_len = 0;
-    __ vdivpd($dst$$XMMRegister, $src$$XMMRegister, $mem$$Address, vector_len);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-instruct vdiv4D_reg(vec dst, vec src1, vec src2) %{
-  predicate(UseAVX > 0 && n->as_Vector()->length() == 4);
-  match(Set dst (DivVD src1 src2));
-  format %{ "vdivpd  $dst,$src1,$src2\t! div packed4D" %}
-  ins_encode %{
-    int vector_len = 1;
-    __ vdivpd($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vector_len);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-instruct vdiv4D_mem(vec dst, vec src, memory mem) %{
-  predicate(UseAVX > 0 && n->as_Vector()->length() == 4);
-  match(Set dst (DivVD src (LoadVector mem)));
-  format %{ "vdivpd  $dst,$src,$mem\t! div packed4D" %}
-  ins_encode %{
-    int vector_len = 1;
-    __ vdivpd($dst$$XMMRegister, $src$$XMMRegister, $mem$$Address, vector_len);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-instruct vdiv8D_reg(vec dst, vec src1, vec src2) %{
-  predicate(UseAVX > 2 && n->as_Vector()->length() == 8);
-  match(Set dst (DivVD src1 src2));
-  format %{ "vdivpd  $dst,$src1,$src2\t! div packed8D" %}
-  ins_encode %{
-    int vector_len = 2;
-    __ vdivpd($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vector_len);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-instruct vdiv8D_mem(vec dst, vec src, memory mem) %{
-  predicate(UseAVX > 2 && n->as_Vector()->length() == 8);
-  match(Set dst (DivVD src (LoadVector mem)));
-  format %{ "vdivpd  $dst,$src,$mem\t! div packed8D" %}
-  ins_encode %{
-    int vector_len = 2;
+    int vector_len = vector_length_encoding(this);
     __ vdivpd($dst$$XMMRegister, $src$$XMMRegister, $mem$$Address, vector_len);
   %}
   ins_pipe( pipe_slow );
@@ -6749,157 +6629,47 @@ instruct vdiv8D_mem(vec dst, vec src, memory mem) %{
 
 // --------------------------------- Sqrt --------------------------------------
 
+instruct vsqrtF_reg(vec dst, vec src) %{
+  match(Set dst (SqrtVF src));
+  format %{ "vsqrtps  $dst,$src\t! sqrt packedF" %}
+  ins_encode %{
+    assert(UseAVX > 0, "required");
+    int vector_len = vector_length_encoding(this);
+    __ vsqrtps($dst$$XMMRegister, $src$$XMMRegister, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsqrtF_mem(vec dst, memory mem) %{
+  match(Set dst (SqrtVF (LoadVector mem)));
+  format %{ "vsqrtps  $dst,$mem\t! sqrt packedF" %}
+  ins_encode %{
+    assert(UseAVX > 0, "required");
+    int vector_len = vector_length_encoding(this);
+    __ vsqrtps($dst$$XMMRegister, $mem$$Address, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
 // Floating point vector sqrt
-instruct vsqrt2D_reg(vec dst, vec src) %{
-  predicate(UseAVX > 0 && n->as_Vector()->length() == 2);
+instruct vsqrtD_reg(vec dst, vec src) %{
   match(Set dst (SqrtVD src));
-  format %{ "vsqrtpd  $dst,$src\t! sqrt packed2D" %}
+  format %{ "vsqrtpd  $dst,$src\t! sqrt packedD" %}
   ins_encode %{
-    int vector_len = 0;
+    assert(UseAVX > 0, "required");
+    int vector_len = vector_length_encoding(this);
     __ vsqrtpd($dst$$XMMRegister, $src$$XMMRegister, vector_len);
   %}
   ins_pipe( pipe_slow );
 %}
 
-instruct vsqrt2D_mem(vec dst, memory mem) %{
-  predicate(UseAVX > 0 && n->as_Vector()->length() == 2);
+instruct vsqrtD_mem(vec dst, memory mem) %{
   match(Set dst (SqrtVD (LoadVector mem)));
-  format %{ "vsqrtpd  $dst,$mem\t! sqrt packed2D" %}
+  format %{ "vsqrtpd  $dst,$mem\t! sqrt packedD" %}
   ins_encode %{
-    int vector_len = 0;
+    assert(UseAVX > 0, "required");
+    int vector_len = vector_length_encoding(this);
     __ vsqrtpd($dst$$XMMRegister, $mem$$Address, vector_len);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-instruct vsqrt4D_reg(vec dst, vec src) %{
-  predicate(UseAVX > 0 && n->as_Vector()->length() == 4);
-  match(Set dst (SqrtVD src));
-  format %{ "vsqrtpd  $dst,$src\t! sqrt packed4D" %}
-  ins_encode %{
-    int vector_len = 1;
-    __ vsqrtpd($dst$$XMMRegister, $src$$XMMRegister, vector_len);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-instruct vsqrt4D_mem(vec dst, memory mem) %{
-  predicate(UseAVX > 0 && n->as_Vector()->length() == 4);
-  match(Set dst (SqrtVD (LoadVector mem)));
-  format %{ "vsqrtpd  $dst,$mem\t! sqrt packed4D" %}
-  ins_encode %{
-    int vector_len = 1;
-    __ vsqrtpd($dst$$XMMRegister, $mem$$Address, vector_len);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-instruct vsqrt8D_reg(vec dst, vec src) %{
-  predicate(UseAVX > 2 && n->as_Vector()->length() == 8);
-  match(Set dst (SqrtVD src));
-  format %{ "vsqrtpd  $dst,$src\t! sqrt packed8D" %}
-  ins_encode %{
-    int vector_len = 2;
-    __ vsqrtpd($dst$$XMMRegister, $src$$XMMRegister, vector_len);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-instruct vsqrt8D_mem(vec dst, memory mem) %{
-  predicate(UseAVX > 2 && n->as_Vector()->length() == 8);
-  match(Set dst (SqrtVD (LoadVector mem)));
-  format %{ "vsqrtpd  $dst,$mem\t! sqrt packed8D" %}
-  ins_encode %{
-    int vector_len = 2;
-    __ vsqrtpd($dst$$XMMRegister, $mem$$Address, vector_len);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-instruct vsqrt2F_reg(vec dst, vec src) %{
-  predicate(UseAVX > 0 && n->as_Vector()->length() == 2);
-  match(Set dst (SqrtVF src));
-  format %{ "vsqrtps  $dst,$src\t! sqrt packed2F" %}
-  ins_encode %{
-    int vector_len = 0;
-    __ vsqrtps($dst$$XMMRegister, $src$$XMMRegister, vector_len);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-instruct vsqrt2F_mem(vec dst, memory mem) %{
-  predicate(UseAVX > 0 && n->as_Vector()->length() == 2);
-  match(Set dst (SqrtVF (LoadVector mem)));
-  format %{ "vsqrtps  $dst,$mem\t! sqrt packed2F" %}
-  ins_encode %{
-    int vector_len = 0;
-    __ vsqrtps($dst$$XMMRegister, $mem$$Address, vector_len);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-instruct vsqrt4F_reg(vec dst, vec src) %{
-  predicate(UseAVX > 0 && n->as_Vector()->length() == 4);
-  match(Set dst (SqrtVF src));
-  format %{ "vsqrtps  $dst,$src\t! sqrt packed4F" %}
-  ins_encode %{
-    int vector_len = 0;
-    __ vsqrtps($dst$$XMMRegister, $src$$XMMRegister, vector_len);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-instruct vsqrt4F_mem(vec dst, memory mem) %{
-  predicate(UseAVX > 0 && n->as_Vector()->length() == 4);
-  match(Set dst (SqrtVF (LoadVector mem)));
-  format %{ "vsqrtps  $dst,$mem\t! sqrt packed4F" %}
-  ins_encode %{
-    int vector_len = 0;
-    __ vsqrtps($dst$$XMMRegister, $mem$$Address, vector_len);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-instruct vsqrt8F_reg(vec dst, vec src) %{
-  predicate(UseAVX > 0 && n->as_Vector()->length() == 8);
-  match(Set dst (SqrtVF src));
-  format %{ "vsqrtps  $dst,$src\t! sqrt packed8F" %}
-  ins_encode %{
-    int vector_len = 1;
-    __ vsqrtps($dst$$XMMRegister, $src$$XMMRegister, vector_len);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-instruct vsqrt8F_mem(vec dst, memory mem) %{
-  predicate(UseAVX > 0 && n->as_Vector()->length() == 8);
-  match(Set dst (SqrtVF (LoadVector mem)));
-  format %{ "vsqrtps  $dst,$mem\t! sqrt packed8F" %}
-  ins_encode %{
-    int vector_len = 1;
-    __ vsqrtps($dst$$XMMRegister, $mem$$Address, vector_len);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-instruct vsqrt16F_reg(vec dst, vec src) %{
-  predicate(UseAVX > 2 && n->as_Vector()->length() == 16);
-  match(Set dst (SqrtVF src));
-  format %{ "vsqrtps  $dst,$src\t! sqrt packed16F" %}
-  ins_encode %{
-    int vector_len = 2;
-    __ vsqrtps($dst$$XMMRegister, $src$$XMMRegister, vector_len);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-instruct vsqrt16F_mem(vec dst, memory mem) %{
-  predicate(UseAVX > 2 && n->as_Vector()->length() == 16);
-  match(Set dst (SqrtVF (LoadVector mem)));
-  format %{ "vsqrtps  $dst,$mem\t! sqrt packed16F" %}
-  ins_encode %{
-    int vector_len = 2;
-    __ vsqrtps($dst$$XMMRegister, $mem$$Address, vector_len);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -7384,160 +7154,52 @@ instruct vabsnegD(vec dst, vec src, rRegI scratch) %{
 %}
 
 // --------------------------------- FMA --------------------------------------
-
 // a * b + c
-instruct vfma2D_reg(vec a, vec b, vec c) %{
-  predicate(UseFMA && n->as_Vector()->length() == 2);
-  match(Set c (FmaVD  c (Binary a b)));
-  format %{ "fmapd $a,$b,$c\t# $c = $a * $b + $c fma packed2D" %}
-  ins_cost(150);
-  ins_encode %{
-    int vector_len = 0;
-    __ vfmad($c$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $c$$XMMRegister, vector_len);
-  %}
-  ins_pipe( pipe_slow );
-%}
 
-// a * b + c
-instruct vfma2D_mem(vec a, memory b, vec c) %{
-  predicate(UseFMA && n->as_Vector()->length() == 2);
-  match(Set c (FmaVD  c (Binary a (LoadVector b))));
-  format %{ "fmapd $a,$b,$c\t# $c = $a * $b + $c fma packed2D" %}
-  ins_cost(150);
-  ins_encode %{
-    int vector_len = 0;
-    __ vfmad($c$$XMMRegister, $a$$XMMRegister, $b$$Address, $c$$XMMRegister, vector_len);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-
-// a * b + c
-instruct vfma4D_reg(vec a, vec b, vec c) %{
-  predicate(UseFMA && n->as_Vector()->length() == 4);
-  match(Set c (FmaVD  c (Binary a b)));
-  format %{ "fmapd $a,$b,$c\t# $c = $a * $b + $c fma packed4D" %}
-  ins_cost(150);
-  ins_encode %{
-    int vector_len = 1;
-    __ vfmad($c$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $c$$XMMRegister, vector_len);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-// a * b + c
-instruct vfma4D_mem(vec a, memory b, vec c) %{
-  predicate(UseFMA && n->as_Vector()->length() == 4);
-  match(Set c (FmaVD  c (Binary a (LoadVector b))));
-  format %{ "fmapd $a,$b,$c\t# $c = $a * $b + $c fma packed4D" %}
-  ins_cost(150);
-  ins_encode %{
-    int vector_len = 1;
-    __ vfmad($c$$XMMRegister, $a$$XMMRegister, $b$$Address, $c$$XMMRegister, vector_len);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-// a * b + c
-instruct vfma8D_reg(vec a, vec b, vec c) %{
-  predicate(UseFMA && n->as_Vector()->length() == 8);
-  match(Set c (FmaVD  c (Binary a b)));
-  format %{ "fmapd $a,$b,$c\t# $c = $a * $b + $c fma packed8D" %}
-  ins_cost(150);
-  ins_encode %{
-    int vector_len = 2;
-    __ vfmad($c$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $c$$XMMRegister, vector_len);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-// a * b + c
-instruct vfma8D_mem(vec a, memory b, vec c) %{
-  predicate(UseFMA && n->as_Vector()->length() == 8);
-  match(Set c (FmaVD  c (Binary a (LoadVector b))));
-  format %{ "fmapd $a,$b,$c\t# $c = $a * $b + $c fma packed8D" %}
-  ins_cost(150);
-  ins_encode %{
-    int vector_len = 2;
-    __ vfmad($c$$XMMRegister, $a$$XMMRegister, $b$$Address, $c$$XMMRegister, vector_len);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-// a * b + c
-instruct vfma4F_reg(vec a, vec b, vec c) %{
-  predicate(UseFMA && n->as_Vector()->length() == 4);
+instruct vfmaF_reg(vec a, vec b, vec c) %{
   match(Set c (FmaVF  c (Binary a b)));
-  format %{ "fmaps $a,$b,$c\t# $c = $a * $b + $c fma packed4F" %}
+  format %{ "fmaps $a,$b,$c\t# $c = $a * $b + $c fma packedF" %}
   ins_cost(150);
   ins_encode %{
-    int vector_len = 0;
+    assert(UseFMA, "not enabled");
+    int vector_len = vector_length_encoding(this);
     __ vfmaf($c$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $c$$XMMRegister, vector_len);
   %}
   ins_pipe( pipe_slow );
 %}
 
-// a * b + c
-instruct vfma4F_mem(vec a, memory b, vec c) %{
-  predicate(UseFMA && n->as_Vector()->length() == 4);
+instruct vfmaF_mem(vec a, memory b, vec c) %{
   match(Set c (FmaVF  c (Binary a (LoadVector b))));
-  format %{ "fmaps $a,$b,$c\t# $c = $a * $b + $c fma packed4F" %}
+  format %{ "fmaps $a,$b,$c\t# $c = $a * $b + $c fma packedF" %}
   ins_cost(150);
   ins_encode %{
-    int vector_len = 0;
+    assert(UseFMA, "not enabled");
+    int vector_len = vector_length_encoding(this);
     __ vfmaf($c$$XMMRegister, $a$$XMMRegister, $b$$Address, $c$$XMMRegister, vector_len);
   %}
   ins_pipe( pipe_slow );
 %}
 
-// a * b + c
-instruct vfma8F_reg(vec a, vec b, vec c) %{
-  predicate(UseFMA && n->as_Vector()->length() == 8);
-  match(Set c (FmaVF  c (Binary a b)));
-  format %{ "fmaps $a,$b,$c\t# $c = $a * $b + $c fma packed8F" %}
+instruct vfmaD_reg(vec a, vec b, vec c) %{
+  match(Set c (FmaVD  c (Binary a b)));
+  format %{ "fmapd $a,$b,$c\t# $c = $a * $b + $c fma packedD" %}
   ins_cost(150);
   ins_encode %{
-    int vector_len = 1;
-    __ vfmaf($c$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $c$$XMMRegister, vector_len);
+    assert(UseFMA, "not enabled");
+    int vector_len = vector_length_encoding(this);
+    __ vfmad($c$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $c$$XMMRegister, vector_len);
   %}
   ins_pipe( pipe_slow );
 %}
 
-// a * b + c
-instruct vfma8F_mem(vec a, memory b, vec c) %{
-  predicate(UseFMA && n->as_Vector()->length() == 8);
-  match(Set c (FmaVF  c (Binary a (LoadVector b))));
-  format %{ "fmaps $a,$b,$c\t# $c = $a * $b + $c fma packed8F" %}
+instruct vfmaD_mem(vec a, memory b, vec c) %{
+  match(Set c (FmaVD  c (Binary a (LoadVector b))));
+  format %{ "fmapd $a,$b,$c\t# $c = $a * $b + $c fma packedD" %}
   ins_cost(150);
   ins_encode %{
-    int vector_len = 1;
-    __ vfmaf($c$$XMMRegister, $a$$XMMRegister, $b$$Address, $c$$XMMRegister, vector_len);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-// a * b + c
-instruct vfma16F_reg(vec a, vec b, vec c) %{
-  predicate(UseFMA && n->as_Vector()->length() == 16);
-  match(Set c (FmaVF  c (Binary a b)));
-  format %{ "fmaps $a,$b,$c\t# $c = $a * $b + $c fma packed16F" %}
-  ins_cost(150);
-  ins_encode %{
-    int vector_len = 2;
-    __ vfmaf($c$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $c$$XMMRegister, vector_len);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-// a * b + c
-instruct vfma16F_mem(vec a, memory b, vec c) %{
-  predicate(UseFMA && n->as_Vector()->length() == 16);
-  match(Set c (FmaVF  c (Binary a (LoadVector b))));
-  format %{ "fmaps $a,$b,$c\t# $c = $a * $b + $c fma packed16F" %}
-  ins_cost(150);
-  ins_encode %{
-    int vector_len = 2;
-    __ vfmaf($c$$XMMRegister, $a$$XMMRegister, $b$$Address, $c$$XMMRegister, vector_len);
+    assert(UseFMA, "not enabled");
+    int vector_len = vector_length_encoding(this);
+    __ vfmad($c$$XMMRegister, $a$$XMMRegister, $b$$Address, $c$$XMMRegister, vector_len);
   %}
   ins_pipe( pipe_slow );
 %}
