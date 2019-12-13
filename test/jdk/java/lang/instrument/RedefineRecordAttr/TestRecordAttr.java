@@ -143,6 +143,7 @@ public class TestRecordAttr {
     static final String SRC = System.getProperty("test.src");
     static final String DEST = System.getProperty("test.classes");
     static final boolean VERBOSE = Boolean.getBoolean("verbose");
+    private static final String VERSION = Integer.toString(Runtime.version().feature());
 
     public static void main(String[] args) throws Throwable {
         String origin = args[0];
@@ -271,6 +272,6 @@ public class TestRecordAttr {
                               dst.toPath(),
                               false /* don't recurse */,
                               "--enable-preview",
-                              "--source", "14");
+                              "--source", VERSION);
     }
 }
