@@ -30,6 +30,7 @@ import javax.lang.model.element.Element;
 import javax.lang.model.element.VariableElement;
 
 import com.sun.source.doctree.DocTree;
+import jdk.javadoc.doclet.Taglet.Location;
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.Messages;
@@ -59,7 +60,7 @@ public class ValueTaglet extends BaseTaglet {
      * Construct a new ValueTaglet.
      */
     public ValueTaglet() {
-        super(VALUE.tagName, true, EnumSet.allOf(Site.class));
+        super(VALUE.tagName, true, EnumSet.allOf(Location.class));
     }
 
     /**

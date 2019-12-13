@@ -1323,16 +1323,16 @@ public class HtmlDocletWriter {
      * an inline tag, such as in comments or in free-form text arguments
      * to block tags.
      *
-     * @param holderTag    specific tag where comment resides
-     * @param element    specific element where comment resides
-     * @param tags   array of text tags and inline tags (often alternating)
-    present in the text of interest for this element
-     * @param isFirstSentence  true if text is first sentence
-     * @param inSummary   if the comment tags are added into the summary section
+     * @param holderTag       specific tag where comment resides
+     * @param element         specific element where comment resides
+     * @param trees           array of text tags and inline tags (often alternating)
+     *                        present in the text of interest for this element
+     * @param isFirstSentence true if text is first sentence
+     * @param inSummary       if the comment tags are added into the summary section
      * @return a Content object
      */
     public Content commentTagsToContent(DocTree holderTag, Element element,
-            List<? extends DocTree> tags, boolean isFirstSentence, boolean inSummary) {
+            List<? extends DocTree> trees, boolean isFirstSentence, boolean inSummary) {
 
         final Content result = new ContentBuilder() {
             @Override
@@ -1342,10 +1342,10 @@ public class HtmlDocletWriter {
         };
         CommentHelper ch = utils.getCommentHelper(element);
         // Array of all possible inline tags for this javadoc run
-        configuration.tagletManager.checkTags(element, tags, true);
+        configuration.tagletManager.checkTags(element, trees, true);
         commentRemoved = false;
 
-        for (ListIterator<? extends DocTree> iterator = tags.listIterator(); iterator.hasNext();) {
+        for (ListIterator<? extends DocTree> iterator = trees.listIterator(); iterator.hasNext();) {
             boolean isFirstNode = !iterator.hasPrevious();
             DocTree tag = iterator.next();
             boolean isLastNode  = !iterator.hasNext();

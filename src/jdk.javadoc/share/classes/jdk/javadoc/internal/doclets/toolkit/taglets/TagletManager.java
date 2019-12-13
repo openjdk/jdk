@@ -25,8 +25,22 @@
 
 package jdk.javadoc.internal.doclets.toolkit.taglets;
 
-import java.io.*;
-import java.util.*;
+import java.io.File;
+import java.io.IOException;
+import java.io.PrintStream;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.EnumMap;
+import java.util.EnumSet;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.ServiceLoader;
+import java.util.Set;
+import java.util.TreeSet;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
@@ -39,20 +53,32 @@ import javax.tools.JavaFileManager;
 import javax.tools.StandardJavaFileManager;
 
 import com.sun.source.doctree.DocTree;
+
 import jdk.javadoc.doclet.Doclet;
 import jdk.javadoc.doclet.DocletEnvironment;
+import jdk.javadoc.doclet.Taglet.Location;
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.DocletElement;
 import jdk.javadoc.internal.doclets.toolkit.Messages;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
-
-import jdk.javadoc.internal.doclets.toolkit.taglets.BaseTaglet.Site;
 import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
-import static javax.tools.DocumentationTool.Location.*;
-
-import static com.sun.source.doctree.DocTree.Kind.*;
+import static com.sun.source.doctree.DocTree.Kind.AUTHOR;
+import static com.sun.source.doctree.DocTree.Kind.EXCEPTION;
+import static com.sun.source.doctree.DocTree.Kind.HIDDEN;
+import static com.sun.source.doctree.DocTree.Kind.LINK;
+import static com.sun.source.doctree.DocTree.Kind.LINK_PLAIN;
+import static com.sun.source.doctree.DocTree.Kind.PROVIDES;
+import static com.sun.source.doctree.DocTree.Kind.SEE;
+import static com.sun.source.doctree.DocTree.Kind.SERIAL;
+import static com.sun.source.doctree.DocTree.Kind.SERIAL_DATA;
+import static com.sun.source.doctree.DocTree.Kind.SERIAL_FIELD;
+import static com.sun.source.doctree.DocTree.Kind.SINCE;
+import static com.sun.source.doctree.DocTree.Kind.THROWS;
+import static com.sun.source.doctree.DocTree.Kind.USES;
+import static com.sun.source.doctree.DocTree.Kind.VERSION;
+import static javax.tools.DocumentationTool.Location.TAGLET_PATH;
 
 /**
  * Manages the {@code Taglet}s used by doclets.
@@ -76,9 +102,9 @@ public class TagletManager {
     private final LinkedHashMap<String,Taglet> allTaglets;
 
     /**
-     * Block (non-line) taglets, grouped by Site
+     * Block (non-inline) taglets, grouped by Location
      */
-    private Map<Site, List<Taglet>> blockTagletsBySite;
+    private Map<Location, List<Taglet>> blockTagletsByLocation;
 
     /**
      * The taglets that can appear inline in descriptive text.
@@ -329,10 +355,10 @@ public class TagletManager {
      * Given a series of {@code DocTree}s, check for spelling mistakes.
      * @param element the tags holder
      * @param trees the trees containing the comments
-     * @param areInlineTags true if the array of tags are inline and false otherwise.
+     * @param inlineTrees true if the trees are inline and false otherwise.
      */
     @SuppressWarnings("preview")
-    public void checkTags(Element element, Iterable<? extends DocTree> trees, boolean areInlineTags) {
+    public void checkTags(Element element, Iterable<? extends DocTree> trees, boolean inlineTrees) {
         if (trees == null) {
             return;
         }
@@ -357,69 +383,72 @@ public class TagletManager {
             final Taglet taglet = allTaglets.get(name);
             // Check and verify tag usage
             if (taglet != null) {
-                if (areInlineTags && !taglet.isInlineTag()) {
+                if (inlineTrees && !taglet.isInlineTag()) {
                     printTagMisuseWarn(ch, taglet, tag, "inline");
                 }
                 // nothing more to do
                 if (element == null) {
                     return;
                 }
-                new SimpleElementVisitor14<Void, Void>() {
-                    @Override
-                    public Void visitModule(ModuleElement e, Void p) {
-                        if (!taglet.inModule()) {
-                            printTagMisuseWarn(utils.getCommentHelper(e), taglet, tag, "module");
-                        }
-                        return null;
-                    }
 
-                    @Override
-                    public Void visitPackage(PackageElement e, Void p) {
-                        if (!taglet.inPackage()) {
-                            printTagMisuseWarn(utils.getCommentHelper(e), taglet, tag, "package");
+                if (!inlineTrees) {
+                    new SimpleElementVisitor14<Void, Void>() {
+                        @Override
+                        public Void visitModule(ModuleElement e, Void p) {
+                            if (!taglet.inModule()) {
+                                printTagMisuseWarn(utils.getCommentHelper(e), taglet, tag, "module");
+                            }
+                            return null;
                         }
-                        return null;
-                    }
 
-                    @Override
-                    public Void visitType(TypeElement e, Void p) {
-                        if (!taglet.inType()) {
-                            printTagMisuseWarn(utils.getCommentHelper(e), taglet, tag, "class");
+                        @Override
+                        public Void visitPackage(PackageElement e, Void p) {
+                            if (!taglet.inPackage()) {
+                                printTagMisuseWarn(utils.getCommentHelper(e), taglet, tag, "package");
+                            }
+                            return null;
                         }
-                        return null;
-                    }
 
-                    @Override
-                    public Void visitExecutable(ExecutableElement e, Void p) {
-                        if (utils.isConstructor(e) && !taglet.inConstructor()) {
-                            printTagMisuseWarn(utils.getCommentHelper(e), taglet, tag, "constructor");
-                        } else if (!taglet.inMethod()) {
-                            printTagMisuseWarn(utils.getCommentHelper(e), taglet, tag, "method");
+                        @Override
+                        public Void visitType(TypeElement e, Void p) {
+                            if (!taglet.inType()) {
+                                printTagMisuseWarn(utils.getCommentHelper(e), taglet, tag, "class");
+                            }
+                            return null;
                         }
-                        return null;
-                    }
 
-                    @Override
-                    public Void visitVariable(VariableElement e, Void p) {
-                        if (utils.isField(e) && !taglet.inField()) {
-                            printTagMisuseWarn(utils.getCommentHelper(e), taglet, tag, "field");
+                        @Override
+                        public Void visitExecutable(ExecutableElement e, Void p) {
+                            if (utils.isConstructor(e) && !taglet.inConstructor()) {
+                                printTagMisuseWarn(utils.getCommentHelper(e), taglet, tag, "constructor");
+                            } else if (!taglet.inMethod()) {
+                                printTagMisuseWarn(utils.getCommentHelper(e), taglet, tag, "method");
+                            }
+                            return null;
                         }
-                        return null;
-                    }
 
-                    @Override
-                    public Void visitUnknown(Element e, Void p) {
-                        if (utils.isOverviewElement(e) && !taglet.inOverview()) {
-                            printTagMisuseWarn(utils.getCommentHelper(e), taglet, tag, "overview");
+                        @Override
+                        public Void visitVariable(VariableElement e, Void p) {
+                            if (utils.isField(e) && !taglet.inField()) {
+                                printTagMisuseWarn(utils.getCommentHelper(e), taglet, tag, "field");
+                            }
+                            return null;
                         }
-                        return null;
-                    }
 
-                    @Override
-                    protected Void defaultAction(Element e, Void p) {
-                        return null;
-                    }
-                }.visit(element);
+                        @Override
+                        public Void visitUnknown(Element e, Void p) {
+                            if (utils.isOverviewElement(e) && !taglet.inOverview()) {
+                                printTagMisuseWarn(utils.getCommentHelper(e), taglet, tag, "overview");
+                            }
+                            return null;
+                        }
+
+                        @Override
+                        protected Void defaultAction(Element e, Void p) {
+                            return null;
+                        }
+                    }.visit(element);
+                }
             }
         }
     }
@@ -504,36 +533,36 @@ public class TagletManager {
      */
     @SuppressWarnings("fallthrough")
     public List<Taglet> getBlockTaglets(Element e) {
-        if (blockTagletsBySite == null) {
+        if (blockTagletsByLocation == null) {
             initBlockTaglets();
         }
 
         switch (e.getKind()) {
             case CONSTRUCTOR:
-                return blockTagletsBySite.get(Site.CONSTRUCTOR);
+                return blockTagletsByLocation.get(Location.CONSTRUCTOR);
             case METHOD:
-                return blockTagletsBySite.get(Site.METHOD);
+                return blockTagletsByLocation.get(Location.METHOD);
             case ENUM_CONSTANT:
             case FIELD:
-                return blockTagletsBySite.get(Site.FIELD);
+                return blockTagletsByLocation.get(Location.FIELD);
             case ANNOTATION_TYPE:
             case INTERFACE:
             case CLASS:
             case ENUM:
             case RECORD:
-                return blockTagletsBySite.get(Site.TYPE);
+                return blockTagletsByLocation.get(Location.TYPE);
             case MODULE:
-                return blockTagletsBySite.get(Site.MODULE);
+                return blockTagletsByLocation.get(Location.MODULE);
             case PACKAGE:
-                return blockTagletsBySite.get(Site.PACKAGE);
+                return blockTagletsByLocation.get(Location.PACKAGE);
             case OTHER:
                 if (e instanceof DocletElement) {
                     DocletElement de = (DocletElement)e;
                     switch (de.getSubKind()) {
                         case DOCFILE:
-                            return blockTagletsBySite.get(Site.PACKAGE);
+                            return blockTagletsByLocation.get(Location.PACKAGE);
                         case OVERVIEW:
-                            return blockTagletsBySite.get(Site.OVERVIEW);
+                            return blockTagletsByLocation.get(Location.OVERVIEW);
                         default:
                             // fall through
                     }
@@ -549,9 +578,9 @@ public class TagletManager {
      */
     private void initBlockTaglets() {
 
-        blockTagletsBySite = new EnumMap<>(Site.class);
-        for (Site site : Site.values()) {
-            blockTagletsBySite.put(site, new ArrayList<>());
+        blockTagletsByLocation = new EnumMap<>(Location.class);
+        for (Location site : Location.values()) {
+            blockTagletsByLocation.put(site, new ArrayList<>());
         }
 
         inlineTags = new ArrayList<>();
@@ -559,27 +588,11 @@ public class TagletManager {
         for (Taglet current : allTaglets.values()) {
             if (current.isInlineTag()) {
                 inlineTags.add(current);
-            } else {
-                if (current.inOverview()) {
-                    blockTagletsBySite.get(Site.OVERVIEW).add(current);
-                }
-                if (current.inModule()) {
-                    blockTagletsBySite.get(Site.MODULE).add(current);
-                }
-                if (current.inPackage()) {
-                    blockTagletsBySite.get(Site.PACKAGE).add(current);
-                }
-                if (current.inType()) {
-                    blockTagletsBySite.get(Site.TYPE).add(current);
-                }
-                if (current.inConstructor()) {
-                    blockTagletsBySite.get(Site.CONSTRUCTOR).add(current);
-                }
-                if (current.inMethod()) {
-                    blockTagletsBySite.get(Site.METHOD).add(current);
-                }
-                if (current.inField()) {
-                    blockTagletsBySite.get(Site.FIELD).add(current);
+            }
+
+            if (current.isBlockTag()) {
+                for (Location l : current.getAllowedLocations()) {
+                    blockTagletsByLocation.get(l).add(current);
                 }
             }
         }
@@ -610,26 +623,26 @@ public class TagletManager {
         addStandardTaglet(new ThrowsTaglet());
         addStandardTaglet(
                 new SimpleTaglet(EXCEPTION.tagName, null,
-                    EnumSet.of(Site.METHOD, Site.CONSTRUCTOR)));
+                    EnumSet.of(Location.METHOD, Location.CONSTRUCTOR)));
         addStandardTaglet(
                 new SimpleTaglet(SINCE.tagName, resources.getText("doclet.Since"),
-                    EnumSet.allOf(Site.class), !nosince));
+                    EnumSet.allOf(Location.class), !nosince));
         addStandardTaglet(
                 new SimpleTaglet(VERSION.tagName, resources.getText("doclet.Version"),
-                    EnumSet.of(Site.OVERVIEW, Site.MODULE, Site.PACKAGE, Site.TYPE), showversion));
+                    EnumSet.of(Location.OVERVIEW, Location.MODULE, Location.PACKAGE, Location.TYPE), showversion));
         addStandardTaglet(
                 new SimpleTaglet(AUTHOR.tagName, resources.getText("doclet.Author"),
-                    EnumSet.of(Site.OVERVIEW, Site.MODULE, Site.PACKAGE, Site.TYPE), showauthor));
+                    EnumSet.of(Location.OVERVIEW, Location.MODULE, Location.PACKAGE, Location.TYPE), showauthor));
         addStandardTaglet(
                 new SimpleTaglet(SERIAL_DATA.tagName, resources.getText("doclet.SerialData"),
-                    EnumSet.noneOf(Site.class)));
+                    EnumSet.noneOf(Location.class)));
         addStandardTaglet(
                 new SimpleTaglet(HIDDEN.tagName, null,
-                    EnumSet.of(Site.TYPE, Site.METHOD, Site.FIELD)));
+                    EnumSet.of(Location.TYPE, Location.METHOD, Location.FIELD)));
 
         // This appears to be a default custom (non-standard) taglet
         Taglet factoryTaglet = new SimpleTaglet("factory", resources.getText("doclet.Factory"),
-                EnumSet.of(Site.METHOD));
+                EnumSet.of(Location.METHOD));
         allTaglets.put(factoryTaglet.getName(), factoryTaglet);
 
         addStandardTaglet(new SeeTaglet());
@@ -647,15 +660,15 @@ public class TagletManager {
         // Keep track of the names of standard tags for error checking purposes.
         // The following are not handled above.
         addStandardTaglet(new DeprecatedTaglet());
-        addStandardTaglet(new BaseTaglet(LINK.tagName, true, EnumSet.allOf(Site.class)));
-        addStandardTaglet(new BaseTaglet(LINK_PLAIN.tagName, true, EnumSet.allOf(Site.class)));
-        addStandardTaglet(new BaseTaglet(USES.tagName, false, EnumSet.of(Site.MODULE)));
-        addStandardTaglet(new BaseTaglet(PROVIDES.tagName, false, EnumSet.of(Site.MODULE)));
+        addStandardTaglet(new BaseTaglet(LINK.tagName, true, EnumSet.allOf(Location.class)));
+        addStandardTaglet(new BaseTaglet(LINK_PLAIN.tagName, true, EnumSet.allOf(Location.class)));
+        addStandardTaglet(new BaseTaglet(USES.tagName, false, EnumSet.of(Location.MODULE)));
+        addStandardTaglet(new BaseTaglet(PROVIDES.tagName, false, EnumSet.of(Location.MODULE)));
         addStandardTaglet(
                 new SimpleTaglet(SERIAL.tagName, null,
-                    EnumSet.of(Site.PACKAGE, Site.TYPE, Site.FIELD)));
+                    EnumSet.of(Location.PACKAGE, Location.TYPE, Location.FIELD)));
         addStandardTaglet(
-                new SimpleTaglet(SERIAL_FIELD.tagName, null, EnumSet.of(Site.FIELD)));
+                new SimpleTaglet(SERIAL_FIELD.tagName, null, EnumSet.of(Location.FIELD)));
     }
 
     /**
@@ -666,11 +679,11 @@ public class TagletManager {
         addStandardTaglet(new PropertySetterTaglet());
         addStandardTaglet(new SimpleTaglet("propertyDescription",
                 resources.getText("doclet.PropertyDescription"),
-                EnumSet.of(Site.METHOD, Site.FIELD)));
+                EnumSet.of(Location.METHOD, Location.FIELD)));
         addStandardTaglet(new SimpleTaglet("defaultValue", resources.getText("doclet.DefaultValue"),
-                EnumSet.of(Site.METHOD, Site.FIELD)));
+                EnumSet.of(Location.METHOD, Location.FIELD)));
         addStandardTaglet(new SimpleTaglet("treatAsPrivate", null,
-                EnumSet.of(Site.TYPE, Site.METHOD, Site.FIELD)));
+                EnumSet.of(Location.TYPE, Location.METHOD, Location.FIELD)));
     }
 
     private void addStandardTaglet(Taglet taglet) {
@@ -735,6 +748,7 @@ public class TagletManager {
         for (Taglet t : taglets) {
             String name = t.isInlineTag() ? "{@" + t.getName() + "}" : "@" + t.getName();
             out.println(String.format("%20s", name) + ": "
+                    + format(t.isBlockTag(), "block")+ " "
                     + format(t.inOverview(), "overview") + " "
                     + format(t.inModule(), "module") + " "
                     + format(t.inPackage(), "package") + " "

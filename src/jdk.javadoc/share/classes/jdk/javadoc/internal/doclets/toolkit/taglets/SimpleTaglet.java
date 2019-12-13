@@ -32,6 +32,7 @@ import java.util.Set;
 import javax.lang.model.element.Element;
 
 import com.sun.source.doctree.DocTree;
+import jdk.javadoc.doclet.Taglet.Location;
 
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
@@ -84,7 +85,7 @@ public class SimpleTaglet extends BaseTaglet implements InheritableTaglet {
      * for package, 't' for type, 'm' for method, 'c' for constructor
      * and 'f' for field.
      */
-    public SimpleTaglet(String tagName, String header, Set<Site> sites) {
+    public SimpleTaglet(String tagName, String header, Set<Location> sites) {
         this(tagName, header, sites, true);
     }
 
@@ -97,38 +98,38 @@ public class SimpleTaglet extends BaseTaglet implements InheritableTaglet {
      * for package, 't' for type, 'm' for method, 'c' for constructor
      * and 'f' for field.
      */
-    public SimpleTaglet(String tagName, String header, Set<Site> sites, boolean enabled) {
+    public SimpleTaglet(String tagName, String header, Set<Location> sites, boolean enabled) {
         super(tagName, false, sites);
         this.header = header;
         this.enabled = enabled;
     }
 
-    private static Set<Site> getSites(String locations) {
-        Set<Site> set = EnumSet.noneOf(Site.class);
+    private static Set<Location> getSites(String locations) {
+        Set<Location> set = EnumSet.noneOf(Location.class);
         for (int i = 0; i < locations.length(); i++) {
             switch (locations.charAt(i)) {
                 case 'a':  case 'A':
-                    return EnumSet.allOf(Site.class);
+                    return EnumSet.allOf(Location.class);
                 case 'c':  case 'C':
-                    set.add(Site.CONSTRUCTOR);
+                    set.add(Location.CONSTRUCTOR);
                     break;
                 case 'f':  case 'F':
-                    set.add(Site.FIELD);
+                    set.add(Location.FIELD);
                     break;
                 case 'm':  case 'M':
-                    set.add(Site.METHOD);
+                    set.add(Location.METHOD);
                     break;
                 case 'o':  case 'O':
-                    set.add(Site.OVERVIEW);
+                    set.add(Location.OVERVIEW);
                     break;
                 case 'p':  case 'P':
-                    set.add(Site.PACKAGE);
+                    set.add(Location.PACKAGE);
                     break;
                 case 's':  case 'S':        // super-packages, anyone?
-                    set.add(Site.MODULE);
+                    set.add(Location.MODULE);
                     break;
                 case 't':  case 'T':
-                    set.add(Site.TYPE);
+                    set.add(Location.TYPE);
                     break;
                 case 'x':  case 'X':
                     break;

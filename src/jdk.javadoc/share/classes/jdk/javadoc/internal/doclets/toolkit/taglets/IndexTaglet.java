@@ -29,6 +29,7 @@ import java.util.EnumSet;
 import javax.lang.model.element.Element;
 
 import com.sun.source.doctree.DocTree;
+import jdk.javadoc.doclet.Taglet.Location;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 
 import static com.sun.source.doctree.DocTree.Kind.INDEX;
@@ -42,7 +43,7 @@ import static com.sun.source.doctree.DocTree.Kind.INDEX;
 public class IndexTaglet extends BaseTaglet {
 
     IndexTaglet() {
-        super(INDEX.tagName, true, EnumSet.allOf(Site.class));
+        super(INDEX.tagName, true, EnumSet.allOf(Location.class));
     }
 
     @Override

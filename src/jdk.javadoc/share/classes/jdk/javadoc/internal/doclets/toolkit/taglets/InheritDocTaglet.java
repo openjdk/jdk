@@ -30,6 +30,7 @@ import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 
 import com.sun.source.doctree.DocTree;
+import jdk.javadoc.doclet.Taglet.Location;
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.Messages;
@@ -57,7 +58,7 @@ public class InheritDocTaglet extends BaseTaglet {
      * Construct a new InheritDocTaglet.
      */
     public InheritDocTaglet () {
-        super(INHERIT_DOC.tagName, true, EnumSet.of(Site.TYPE, Site.METHOD));
+        super(INHERIT_DOC.tagName, true, EnumSet.of(Location.TYPE, Location.METHOD));
     }
 
     /**

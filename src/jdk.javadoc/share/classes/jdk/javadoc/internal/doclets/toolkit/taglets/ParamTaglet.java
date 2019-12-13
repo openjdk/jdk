@@ -34,6 +34,7 @@ import javax.lang.model.element.TypeElement;
 
 import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.ParamTree;
+import jdk.javadoc.doclet.Taglet.Location;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.Messages;
 import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
@@ -65,7 +66,7 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
      * Construct a ParamTaglet.
      */
     public ParamTaglet() {
-        super(PARAM.tagName, false, EnumSet.of(Site.TYPE, Site.CONSTRUCTOR, Site.METHOD));
+        super(PARAM.tagName, false, EnumSet.of(Location.TYPE, Location.CONSTRUCTOR, Location.METHOD));
     }
 
     /**

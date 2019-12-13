@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.util.EnumSet;
 import javax.lang.model.element.Element;
 
 import com.sun.source.doctree.DocTree;
+import jdk.javadoc.doclet.Taglet.Location;
 import com.sun.source.doctree.SummaryTree;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 
@@ -46,7 +47,7 @@ import static com.sun.source.doctree.DocTree.Kind.SUMMARY;
 public class SummaryTaglet extends BaseTaglet {
 
     public SummaryTaglet() {
-        super(SUMMARY.tagName, true, EnumSet.allOf(Site.class));
+        super(SUMMARY.tagName, true, EnumSet.allOf(Location.class));
     }
 
     @Override

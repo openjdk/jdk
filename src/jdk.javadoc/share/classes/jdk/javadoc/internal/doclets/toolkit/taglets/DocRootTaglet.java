@@ -29,6 +29,7 @@ import java.util.EnumSet;
 import javax.lang.model.element.Element;
 
 import com.sun.source.doctree.DocTree;
+import jdk.javadoc.doclet.Taglet.Location;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 
 import static com.sun.source.doctree.DocTree.Kind.DOC_ROOT;
@@ -50,7 +51,7 @@ public class DocRootTaglet extends BaseTaglet {
      * Construct a new DocRootTaglet.
      */
     public DocRootTaglet() {
-        super(DOC_ROOT.tagName, true, EnumSet.allOf(Site.class));
+        super(DOC_ROOT.tagName, true, EnumSet.allOf(Location.class));
     }
 
     @Override

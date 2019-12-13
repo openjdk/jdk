@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,9 +36,10 @@ import com.sun.source.doctree.DocTree;
  * The interface for a custom taglet supported by doclets such as
  * the {@link jdk.javadoc.doclet.StandardDoclet standard doclet}.
  * Custom taglets are used to handle custom tags in documentation
- * comments; custom tags can be either <i>block tags</i>, which
- * appear at the end of a comment, or <i>inline tags</i>, which
- * can appear within the main body of a documentation comment.
+ * comments; custom tags can be instantiated individually as either
+ * <i>block tags</i>, which appear at the end of a comment,
+ * or <i>inline tags</i>, which can appear within the main body of a
+ * documentation comment.
  *
  * <p> Each implementation of a taglet must provide a public no-argument constructor
  * to be used by doclets to instantiate the taglet. A doclet will interact
@@ -78,20 +79,32 @@ import com.sun.source.doctree.DocTree;
 public interface Taglet {
 
     /**
-     * Returns the set of locations in which a tag may be used.
-     * @return the set of locations in which a tag may be used
+     * Returns the set of supported locations for block tags.
+     * @return the set of supported locations for block tags
      */
     Set<Location> getAllowedLocations();
 
     /**
-     * Indicates whether this taglet is for inline tags or not.
-     * @return true if this taglet is for an inline tag, and false otherwise
+     * Indicates whether this taglet supports inline tags.
+     *
+     * @return true if this taglet supports inline tags
      */
     boolean isInlineTag();
 
     /**
-     * Returns the name of the tag.
-     * @return the name of this custom tag.
+     * Indicates whether this taglet supports block tags.
+     *
+     * @return true if this taglet supports block tags
+     * @implSpec This implementation returns the inverse
+     * result to {@code isInlineTag}.
+     */
+    default boolean isBlockTag() {
+        return !isInlineTag();
+    }
+
+    /**
+     * Returns the name of the tag supported by this taglet.
+     * @return the name of this tag
      */
     String getName();
 
@@ -115,10 +128,11 @@ public interface Taglet {
      * Returns the string representation of a series of instances of
      * this tag to be included in the generated output.
      *
-     * <p>If this taglet is for an {@link #isInlineTag inline} tag it will
-     * be called once per instance of the tag, each time with a singleton list.
-     * Otherwise, if this tag is a block tag, it will be called once per
-     * comment, with a list of all the instances of the tag in a comment.
+     * <p>If this taglet supports {@link #isInlineTag inline} tags, it will
+     * be called once per instance of the inline tag, each time with a singleton list.
+     * If this taglet supports {@link #isBlockTag block} tags, it will be called once
+     * for each comment containing instances of block tags, with a list of all the instances
+     * of the block tag in that comment.
      *
      * @param tags the list of instances of this tag
      * @param element the element to which the enclosing comment belongs
@@ -133,14 +147,14 @@ public interface Taglet {
     /**
      * The kind of location in which a tag may be used.
      */
-    public static enum Location {
+    enum Location {
         /** In an Overview document. */
         OVERVIEW,
         /** In the documentation for a module. */
         MODULE,
         /** In the documentation for a package. */
         PACKAGE,
-        /** In the documentation for a class, interface or enum. */
+        /** In the documentation for a type, such as a class, interface or enum. */
         TYPE,
         /** In the documentation for a constructor. */
         CONSTRUCTOR,
