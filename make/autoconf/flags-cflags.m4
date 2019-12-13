@@ -855,18 +855,27 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_CPU_DEP],
     $1_WARNING_CFLAGS_JVM="-Wno-format-zero-length -Wtype-limits -Wuninitialized"
   fi
 
-  if test "x$TOOLCHAIN_TYPE" = xgcc || test "x$TOOLCHAIN_TYPE" = xclang; then
-    # Check if compiler supports -fmacro-prefix-map. If so, use that to make
-    # the __FILE__ macro resolve to paths relative to the workspace root.
-    workspace_root_trailing_slash="${WORKSPACE_ROOT%/}/"
-    FILE_MACRO_CFLAGS="-fmacro-prefix-map=${workspace_root_trailing_slash}="
-    FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [${FILE_MACRO_CFLAGS}],
-        PREFIX: $3,
-        IF_FALSE: [
-            FILE_MACRO_CFLAGS=
-        ]
-    )
+  # Prevent the __FILE__ macro from generating absolute paths into the built
+  # binaries. Depending on toolchain, different mitigations are possible.
+  # * GCC and Clang of new enough versions have -fmacro-prefix-map.
+  # * For most other toolchains, supplying all source files and -I flags as
+  #   relative paths fixes the issue.
+  FILE_MACRO_CFLAGS=
+  if test "x$ALLOW_ABSOLUTE_PATHS_IN_OUTPUT" = "xfalse"; then
+    if test "x$TOOLCHAIN_TYPE" = xgcc || test "x$TOOLCHAIN_TYPE" = xclang; then
+      # Check if compiler supports -fmacro-prefix-map. If so, use that to make
+      # the __FILE__ macro resolve to paths relative to the workspace root.
+      workspace_root_trailing_slash="${WORKSPACE_ROOT%/}/"
+      FILE_MACRO_CFLAGS="-fmacro-prefix-map=${workspace_root_trailing_slash}="
+      FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [${FILE_MACRO_CFLAGS}],
+          PREFIX: $3,
+          IF_FALSE: [
+              FILE_MACRO_CFLAGS=
+          ]
+      )
+    fi
   fi
+  AC_SUBST(FILE_MACRO_CFLAGS)
 
   # EXPORT to API
   CFLAGS_JVM_COMMON="$ALWAYS_CFLAGS_JVM $ALWAYS_DEFINES_JVM \

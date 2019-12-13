@@ -37,9 +37,21 @@ ifeq ($(call isTargetOs, windows), true)
 	$(call install-file)
 endif
 
-prepare-test-image: $(FIXPATH_COPY)
+BUILD_INFO_PROPERTIES := $(TEST_IMAGE_DIR)/build-info.properties
+
+FIXPATH_ECHO := $(FIXPATH) $(call FixPath, $(ECHO))
+
+$(BUILD_INFO_PROPERTIES):
+	$(call MakeTargetDir)
+	$(ECHO) "# Build info properties for JDK tests" > $@
+	$(FIXPATH_ECHO) "build.workspace.root=$(WORKSPACE_ROOT)" >> $@
+	$(FIXPATH_ECHO) "build.output.root=$(OUTPUTDIR)" >> $@
+
+prepare-test-image: $(FIXPATH_COPY) $(BUILD_INFO_PROPERTIES)
 	$(call MakeDir, $(TEST_IMAGE_DIR))
 	$(ECHO) > $(TEST_IMAGE_DIR)/Readme.txt 'JDK test image'
+
+################################################################################
 
 all: prepare-test-image
 

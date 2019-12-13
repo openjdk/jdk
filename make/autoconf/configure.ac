@@ -97,6 +97,9 @@ HOTSPOT_SETUP_JVM_VARIANTS
 # With basic setup done, call the custom early hook.
 CUSTOM_EARLY_HOOK
 
+# This only needs debug level to be setup
+JDKOPT_ALLOW_ABSOLUTE_PATHS_IN_OUTPUT
+
 # Check if we have devkits, extra paths or sysroot set.
 BASIC_SETUP_DEVKIT
 

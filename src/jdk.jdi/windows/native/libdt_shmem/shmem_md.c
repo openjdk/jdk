@@ -30,11 +30,6 @@
 #include "sysShmem.h"
 #include "shmemBase.h"  /* for exitTransportWithError */
 
-/* Use THIS_FILE when it is available. */
-#ifndef THIS_FILE
-    #define THIS_FILE __FILE__
-#endif
-
 /*
  * These functions are not completely universal. For now, they are used
  * exclusively for Jbug's shared memory transport mechanism. They have
@@ -49,7 +44,7 @@ static HANDLE memHandle = NULL;
     if (!(expression)) {                \
             exitTransportWithError \
             ("\"%s\", line %d: assertion failure\n", \
-             THIS_FILE, __DATE__, __LINE__); \
+             __FILE__, __DATE__, __LINE__); \
     }                                   \
 }
 #else

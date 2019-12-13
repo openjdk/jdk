@@ -205,6 +205,68 @@ DEPENDENCY_TARGET_SED_PATTERN := \
     #
 
 ################################################################################
+# When absolute paths are not allowed in the output, and the compiler does not
+# support any options to avoid it, we need to rewrite compile commands to use
+# relative paths. By doing this, the __FILE__ macro will resolve to relative
+# paths. The relevant input paths on the command line are the -I flags and the
+# path to the source file itself.
+#
+# The macro MakeCommandRelative is used to rewrite the command line like this:
+# 'CD $(WORKSPACE_ROOT) && <cmd>'
+# and changes all paths in cmd to be relative to the workspace root. This only
+# works properly if the build dir is inside the workspace root. If it's not,
+# relative paths are still calculated, but depending on the distance between the
+# dirs, paths in the build dir may end up as essentially absolute anyway.
+#
+# The fix-deps-file macro is used to adjust the contents of the generated make
+# dependency files to contain paths compatible with make.
+#
+ifeq ($(ALLOW_ABSOLUTE_PATHS_IN_OUTPUT)-$(FILE_MACRO_CFLAGS), false-)
+  # Need to handle -I flags as both '-Ifoo' and '-I foo'.
+  MakeCommandRelative = \
+      $(CD) $(WORKSPACE_ROOT) && \
+      $(foreach o, $1, \
+        $(if $(filter $(WORKSPACE_ROOT)/% $(OUTPUTDIR)/%, $o), \
+          $(call RelativePath, $o, $(WORKSPACE_ROOT)) \
+        , \
+          $(if $(filter -I$(WORKSPACE_ROOT)/%, $o), \
+            -I$(call RelativePath, $(patsubst -I%, %, $o), $(WORKSPACE_ROOT)) \
+          , \
+            $o \
+          ) \
+        ) \
+      )
+
+  # When compiling with relative paths, the deps file comes out with relative
+  # paths.
+  ifeq ($(TOOLCHAIN_TYPE), solstudio)
+    define fix-deps-file
+	$(SED) -e 's|\./|$(WORKSPACE_ROOT)/|g' $1.tmp > $1
+    endef
+  else
+    define fix-deps-file
+	$(SED) -e 's|^\([ ]*\)|\1$(WORKSPACE_ROOT)|' $1.tmp > $1
+    endef
+  endif
+else
+  # By default the MakeCommandRelative macro does nothing.
+  MakeCommandRelative = $1
+
+  # Even with absolute paths on the command line, the Solaris studio compiler
+  # doesn't output the full path to the object file in the generated deps files.
+  # For other toolchains, no adjustment is needed.
+  ifeq ($(TOOLCHAIN_TYPE), solstudio)
+    define fix-deps-file
+	$(SED) 's|^$$(@F):|$$@:|' $1.tmp > $1
+    endef
+  else
+    define fix-deps-file
+	$(MV) $1.tmp $1
+    endef
+  endif
+endif
+
+################################################################################
 # Create the recipe needed to compile a single native source file.
 #
 # Parameter 1 is the name of the rule, based on the name of the library/
@@ -214,7 +276,6 @@ DEPENDENCY_TARGET_SED_PATTERN := \
 # Remaining parameters are named arguments:
 #   FILE - The full path of the source file to compiler
 #   BASE - The name of the rule for the entire binary to build ($1)
-#   DISABLE_THIS_FILE_DEFINE - Set to true to disable the THIS_FILE define.
 #
 SetupCompileNativeFile = $(NamedParamsMacroTemplate)
 define SetupCompileNativeFileBody
@@ -235,12 +296,6 @@ define SetupCompileNativeFileBody
     $1_OBJ_PROCESSED := true
     # This is the definite source file to use for $1_FILENAME.
     $1_SRC_FILE := $$($1_FILE)
-
-    ifneq ($$($1_DEFINE_THIS_FILE), false)
-      ifneq ($$($$($1_BASE)_DEFINE_THIS_FILE), false)
-        $1_THIS_FILE = -DTHIS_FILE='"$$($1_FILENAME)"'
-      endif
-    endif
 
     ifeq ($$($1_OPTIMIZATION), )
       $1_OPT_CFLAGS := $$($$($1_BASE)_OPT_CFLAGS)
@@ -284,13 +339,13 @@ define SetupCompileNativeFileBody
     ifneq ($$(filter %.c, $$($1_FILENAME)), )
       # Compile as a C file
       $1_FLAGS := $(CFLAGS_CCACHE) $$($1_USE_PCH_FLAGS) $$($1_BASE_CFLAGS) \
-          $$($1_OPT_CFLAGS) $$($1_CFLAGS) $$($1_THIS_FILE) -c
+          $$($1_OPT_CFLAGS) $$($1_CFLAGS) -c
       $1_COMPILER := $$($$($1_BASE)_CC)
       $1_DEP_FLAG := $(C_FLAG_DEPS)
     else ifneq ($$(filter %.m, $$($1_FILENAME)), )
       # Compile as an Objective-C file
       $1_FLAGS := -x objective-c $(CFLAGS_CCACHE) $$($1_USE_PCH_FLAGS) \
-          $$($1_BASE_CFLAGS) $$($1_OPT_CFLAGS) $$($1_CFLAGS) $$($1_THIS_FILE) -c
+          $$($1_BASE_CFLAGS) $$($1_OPT_CFLAGS) $$($1_CFLAGS) -c
       $1_COMPILER := $$($$($1_BASE)_CC)
       $1_DEP_FLAG := $(C_FLAG_DEPS)
     else ifneq ($$(filter %.s %.S, $$($1_FILENAME)), )
@@ -301,7 +356,7 @@ define SetupCompileNativeFileBody
     else ifneq ($$(filter %.cpp %.cc %.mm, $$($1_FILENAME)), )
       # Compile as a C++ or Objective-C++ file
       $1_FLAGS := $(CFLAGS_CCACHE) $$($1_USE_PCH_FLAGS) $$($1_BASE_CXXFLAGS) \
-          $$($1_OPT_CXXFLAGS) $$($1_CXXFLAGS) $$($1_THIS_FILE) -c
+          $$($1_OPT_CXXFLAGS) $$($1_CXXFLAGS) -c
       $1_COMPILER := $$($$($1_BASE)_CXX)
       $1_DEP_FLAG := $(CXX_FLAG_DEPS)
     else
@@ -341,21 +396,17 @@ define SetupCompileNativeFileBody
 	$$(call LogInfo, Compiling $$($1_FILENAME) (for $$($$($1_BASE)_BASENAME)))
 	$$(call MakeDir, $$(@D))
         ifneq ($(TOOLCHAIN_TYPE), microsoft)
-          ifeq ($(TOOLCHAIN_TYPE)$$(filter %.s, $$($1_FILENAME)), solstudio)
-            # The Solaris studio compiler doesn't output the full path to the
-            # object file in the generated deps files. Fixing it with sed. If
-            # compiling assembly, don't try this.
-	    $$(call ExecuteWithLog, $$@, \
-	        $$($1_COMPILER) $$($1_DEP_FLAG) $$($1_DEPS_FILE).tmp $$($1_COMPILE_OPTIONS))
-	    $(SED) 's|^$$(@F):|$$@:|' $$($1_DEPS_FILE).tmp > $$($1_DEPS_FILE)
-          else
-	    $$(call ExecuteWithLog, $$@, \
-	        $$($1_COMPILER) $$($1_DEP_FLAG) $$($1_DEPS_FILE) $$($1_COMPILE_OPTIONS))
-          endif
-          # Create a dependency target file from the dependency file.
-          # Solution suggested by http://make.mad-scientist.net/papers/advanced-auto-dependency-generation/
+	  $$(call ExecuteWithLog, $$@, $$(call MakeCommandRelative, \
+	      $$($1_COMPILER) $$($1_DEP_FLAG) \
+	      $$(addsuffix .tmp, $$($1_DEPS_FILE)) \
+	      $$($1_COMPILE_OPTIONS)))
           ifneq ($$($1_DEPS_FILE), )
-	    $(SED) $(DEPENDENCY_TARGET_SED_PATTERN) $$($1_DEPS_FILE) > $$($1_DEPS_TARGETS_FILE)
+	    $$(call fix-deps-file, $$($1_DEPS_FILE))
+            # Create a dependency target file from the dependency file.
+            # Solution suggested by:
+            # http://make.mad-scientist.net/papers/advanced-auto-dependency-generation/
+	    $(SED) $(DEPENDENCY_TARGET_SED_PATTERN) $$($1_DEPS_FILE) \
+	        > $$($1_DEPS_TARGETS_FILE)
           endif
         else
           # The Visual Studio compiler lacks a feature for generating make
@@ -365,8 +416,8 @@ define SetupCompileNativeFileBody
           # Keep as much as possible on one execution line for best performance
           # on Windows. No need to save exit code from compilation since
           # pipefail is always active on Windows.
-	  $$(call ExecuteWithLog, $$@, \
-	      $$($1_COMPILER) -showIncludes $$($1_COMPILE_OPTIONS)) \
+	  $$(call ExecuteWithLog, $$@, $$(call MakeCommandRelative, \
+	      $$($1_COMPILER) -showIncludes $$($1_COMPILE_OPTIONS))) \
 	      | $(TR) -d '\r' | $(GREP) -v -e "^Note: including file:" \
 	          -e "^$$($1_FILENAME)$$$$" || test "$$$$?" = "1" ; \
 	  $(ECHO) $$@: \\ > $$($1_DEPS_FILE) ; \
@@ -430,7 +481,6 @@ endef
 #   STRIPFLAGS Optionally change the flags given to the strip command
 #   PRECOMPILED_HEADER Header file to use as precompiled header
 #   PRECOMPILED_HEADER_EXCLUDE List of source files that should not use PCH
-#   DEFINE_THIS_FILE Set to false to not set the THIS_FILE preprocessor macro
 #
 # After being called, some variables are exported from this macro, all prefixed
 # with parameter 1 followed by a '_':
@@ -734,7 +784,6 @@ define SetupNativeCompilationBody
             FILE := $$($1_GENERATED_PCH_SRC), \
             BASE := $1, \
             EXTRA_CXXFLAGS := -Fp$$($1_PCH_FILE) -Yc$$(notdir $$($1_PRECOMPILED_HEADER)), \
-            DEFINE_THIS_FILE := false, \
         ))
 
         $1_USE_PCH_FLAGS := \
@@ -769,7 +818,8 @@ define SetupNativeCompilationBody
         $$($1_PCH_FILE): $$($1_PRECOMPILED_HEADER) $$($1_COMPILE_VARDEPS_FILE)
 		$$(call LogInfo, Generating precompiled header)
 		$$(call MakeDir, $$(@D))
-		$$(call ExecuteWithLog, $$@, $$($1_PCH_COMMAND) $$< -o $$@)
+		$$(call ExecuteWithLog, $$@, $$(call MakeCommandRelative, \
+		    $$($1_PCH_COMMAND) $$< -o $$@))
 		$(SED) $(DEPENDENCY_TARGET_SED_PATTERN) $$($1_PCH_DEPS_FILE) \
 		    > $$($1_PCH_DEPS_TARGETS_FILE)
 
@@ -825,9 +875,9 @@ define SetupNativeCompilationBody
       $$($1_RES): $$($1_VERSIONINFO_RESOURCE) $$($1_RES_VARDEPS_FILE)
 		$$(call LogInfo, Compiling resource $$(notdir $$($1_VERSIONINFO_RESOURCE)) (for $$($1_BASENAME)))
 		$$(call MakeDir, $$(@D) $$($1_OBJECT_DIR))
-		$$(call ExecuteWithLog, $$@, \
+		$$(call ExecuteWithLog, $$@, $$(call MakeCommandRelative, \
 		    $$($1_RC) $$($1_RC_FLAGS) $$($1_SYSROOT_CFLAGS) $(CC_OUT_OPTION)$$@ \
-		    $$($1_VERSIONINFO_RESOURCE) 2>&1 )
+		    $$($1_VERSIONINFO_RESOURCE) 2>&1 ))
                 # Windows RC compiler does not support -showIncludes, so we mis-use CL
                 # for this. Filter out RC specific arguments that are unknown to CL.
                 # For some unknown reason, in this case CL actually outputs the show

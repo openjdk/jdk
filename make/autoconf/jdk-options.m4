@@ -598,3 +598,35 @@ AC_DEFUN([JDKOPT_ENABLE_DISABLE_CDS_ARCHIVE],
       ])
   AC_SUBST(BUILD_CDS_ARCHIVE)
 ])
+
+################################################################################
+#
+# Disallow any output from containing absolute paths from the build system.
+# This setting defaults to allowed on debug builds and not allowed on release
+# builds.
+#
+AC_DEFUN([JDKOPT_ALLOW_ABSOLUTE_PATHS_IN_OUTPUT],
+[
+  AC_ARG_ENABLE([absolute-paths-in-output],
+      [AS_HELP_STRING([--disable-absolute-paths-in-output],
+       [Set to disable to prevent any absolute paths from the build to end up in
+        any of the build output. @<:@disabled in release builds, otherwise enabled@:>@])
+      ])
+
+  AC_MSG_CHECKING([if absolute paths should be allowed in the build output])
+  if test "x$enable_absolute_paths_in_output" = "xno"; then
+    AC_MSG_RESULT([no, forced])
+    ALLOW_ABSOLUTE_PATHS_IN_OUTPUT="false"
+  elif test "x$enable_absolute_paths_in_output" = "xyes"; then
+    AC_MSG_RESULT([yes, forced])
+    ALLOW_ABSOLUTE_PATHS_IN_OUTPUT="true"
+  elif test "x$DEBUG_LEVEL" = "xrelease"; then
+    AC_MSG_RESULT([no, release build])
+    ALLOW_ABSOLUTE_PATHS_IN_OUTPUT="false"
+  else
+    AC_MSG_RESULT([yes, debug build])
+    ALLOW_ABSOLUTE_PATHS_IN_OUTPUT="true"
+  fi
+
+  AC_SUBST(ALLOW_ABSOLUTE_PATHS_IN_OUTPUT)
+])
