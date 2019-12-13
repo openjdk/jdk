@@ -25,6 +25,9 @@
 package org.graalvm.compiler.phases.common;
 
 import static org.graalvm.compiler.nodes.StaticDeoptimizingNode.mergeActions;
+import static org.graalvm.compiler.phases.common.ConditionalEliminationUtil.getOtherSafeStamp;
+import static org.graalvm.compiler.phases.common.ConditionalEliminationUtil.getSafeStamp;
+import static org.graalvm.compiler.phases.common.ConditionalEliminationUtil.rewireGuards;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
@@ -69,20 +72,15 @@ import org.graalvm.compiler.nodes.LogicNode;
 import org.graalvm.compiler.nodes.LoopExitNode;
 import org.graalvm.compiler.nodes.MergeNode;
 import org.graalvm.compiler.nodes.NodeView;
-import org.graalvm.compiler.nodes.ParameterNode;
 import org.graalvm.compiler.nodes.PiNode;
 import org.graalvm.compiler.nodes.ProxyNode;
-import org.graalvm.compiler.nodes.ShortCircuitOrNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.StructuredGraph.ScheduleResult;
 import org.graalvm.compiler.nodes.UnaryOpLogicNode;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.ValuePhiNode;
 import org.graalvm.compiler.nodes.calc.AndNode;
-import org.graalvm.compiler.nodes.calc.BinaryArithmeticNode;
-import org.graalvm.compiler.nodes.calc.BinaryNode;
 import org.graalvm.compiler.nodes.calc.IntegerEqualsNode;
-import org.graalvm.compiler.nodes.calc.UnaryNode;
 import org.graalvm.compiler.nodes.cfg.Block;
 import org.graalvm.compiler.nodes.cfg.ControlFlowGraph;
 import org.graalvm.compiler.nodes.extended.GuardingNode;
@@ -96,18 +94,23 @@ import org.graalvm.compiler.nodes.spi.NodeWithState;
 import org.graalvm.compiler.nodes.spi.StampInverter;
 import org.graalvm.compiler.nodes.util.GraphUtil;
 import org.graalvm.compiler.phases.BasePhase;
+import org.graalvm.compiler.phases.common.ConditionalEliminationUtil.GuardFolding;
+import org.graalvm.compiler.phases.common.ConditionalEliminationUtil.GuardRewirer;
+import org.graalvm.compiler.phases.common.ConditionalEliminationUtil.GuardedCondition;
+import org.graalvm.compiler.phases.common.ConditionalEliminationUtil.InfoElement;
+import org.graalvm.compiler.phases.common.ConditionalEliminationUtil.InfoElementProvider;
+import org.graalvm.compiler.phases.common.ConditionalEliminationUtil.InputFilter;
+import org.graalvm.compiler.phases.common.ConditionalEliminationUtil.Marks;
 import org.graalvm.compiler.phases.schedule.SchedulePhase;
 import org.graalvm.compiler.phases.schedule.SchedulePhase.SchedulingStrategy;
 
 import jdk.vm.ci.meta.DeoptimizationAction;
-import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.SpeculationLog.Speculation;
 import jdk.vm.ci.meta.TriState;
 
 public class ConditionalEliminationPhase extends BasePhase<CoreProviders> {
 
     private static final CounterKey counterStampsRegistered = DebugContext.counter("StampsRegistered");
-    private static final CounterKey counterStampsFound = DebugContext.counter("StampsFound");
     private static final CounterKey counterIfsKilled = DebugContext.counter("CE_KilledIfs");
     private static final CounterKey counterPhiStampsImproved = DebugContext.counter("CE_ImprovedPhis");
     private final boolean fullSchedule;
@@ -257,40 +260,6 @@ public class ConditionalEliminationPhase extends BasePhase<CoreProviders> {
         }
     }
 
-    public static final class Marks {
-        final int infoElementOperations;
-        final int conditions;
-
-        public Marks(int infoElementOperations, int conditions) {
-            this.infoElementOperations = infoElementOperations;
-            this.conditions = conditions;
-        }
-    }
-
-    protected static final class GuardedCondition {
-        private final GuardingNode guard;
-        private final LogicNode condition;
-        private final boolean negated;
-
-        public GuardedCondition(GuardingNode guard, LogicNode condition, boolean negated) {
-            this.guard = guard;
-            this.condition = condition;
-            this.negated = negated;
-        }
-
-        public GuardingNode getGuard() {
-            return guard;
-        }
-
-        public LogicNode getCondition() {
-            return condition;
-        }
-
-        public boolean isNegated() {
-            return negated;
-        }
-    }
-
     public static class Instance implements ControlFlowGraph.RecursiveVisitor<Marks> {
         protected final NodeMap<InfoElement> map;
         protected final BlockMap<List<Node>> blockToNodes;
@@ -300,6 +269,8 @@ public class ConditionalEliminationPhase extends BasePhase<CoreProviders> {
         protected final StructuredGraph graph;
         protected final DebugContext debug;
         protected final EconomicMap<MergeNode, EconomicMap<ValuePhiNode, PhiInfoElement>> mergeMaps;
+        private final InfoElementProvider infoElementProvider;
+        private final GuardFolding guardFolding;
 
         protected final ArrayDeque<GuardedCondition> conditions;
 
@@ -320,10 +291,24 @@ public class ConditionalEliminationPhase extends BasePhase<CoreProviders> {
             tool = GraphUtil.getDefaultSimplifier(context.getMetaAccess(), context.getConstantReflection(), context.getConstantFieldProvider(), false, graph.getAssumptions(), graph.getOptions(),
                             context.getLowerer());
             mergeMaps = EconomicMap.create(Equivalence.IDENTITY);
+            infoElementProvider = new InfoElementProvider() {
+
+                @Override
+                public InfoElement infoElements(ValueNode value) {
+                    return getInfoElements(value);
+                }
+            };
+            guardFolding = new GuardFolding() {
+
+                @Override
+                public boolean foldGuard(DeoptimizingGuard thisGuard, ValueNode original, Stamp newStamp, GuardRewirer rewireGuardFunction) {
+                    return foldPendingTest(thisGuard, original, newStamp, rewireGuardFunction);
+                }
+            };
         }
 
         protected void processConditionAnchor(ConditionAnchorNode node) {
-            tryProveCondition(node.condition(), (guard, result, guardedValueStamp, newInput) -> {
+            tryProveGuardCondition(null, node.condition(), (guard, result, guardedValueStamp, newInput) -> {
                 if (result != node.isNegated()) {
                     node.replaceAtUsages(guard.asNode());
                     GraphUtil.unlinkFixedNode(node);
@@ -443,7 +428,7 @@ public class ConditionalEliminationPhase extends BasePhase<CoreProviders> {
         }
 
         protected void processIf(IfNode node) {
-            tryProveCondition(node.condition(), (guard, result, guardedValueStamp, newInput) -> {
+            tryProveGuardCondition(null, node.condition(), (guard, result, guardedValueStamp, newInput) -> {
                 node.setCondition(LogicConstantNode.forBoolean(result, node.graph()));
                 AbstractBeginNode survivingSuccessor = node.getSuccessor(result);
                 survivingSuccessor.replaceAtUsages(InputType.Guard, guard.asNode());
@@ -601,7 +586,7 @@ public class ConditionalEliminationPhase extends BasePhase<CoreProviders> {
                                     if (input == null) {
                                         input = valueAt;
                                     }
-                                    valueAt = graph.maybeAddOrUnique(PiNode.create(input, curBestStamp, (ValueNode) infoElement.guard));
+                                    valueAt = graph.maybeAddOrUnique(PiNode.create(input, curBestStamp, (ValueNode) infoElement.getGuard()));
                                 }
                                 newPhi.addInput(valueAt);
                             }
@@ -693,60 +678,6 @@ public class ConditionalEliminationPhase extends BasePhase<CoreProviders> {
             registerCondition(condition, negated, guard);
         }
 
-        Pair<InfoElement, Stamp> recursiveFoldStamp(Node node) {
-            if (node instanceof UnaryNode) {
-                UnaryNode unary = (UnaryNode) node;
-                ValueNode value = unary.getValue();
-                InfoElement infoElement = getInfoElements(value);
-                while (infoElement != null) {
-                    Stamp result = unary.foldStamp(infoElement.getStamp());
-                    if (result != null) {
-                        return Pair.create(infoElement, result);
-                    }
-                    infoElement = nextElement(infoElement);
-                }
-            } else if (node instanceof BinaryNode) {
-                BinaryNode binary = (BinaryNode) node;
-                ValueNode y = binary.getY();
-                ValueNode x = binary.getX();
-                if (y.isConstant()) {
-                    InfoElement infoElement = getInfoElements(x);
-                    while (infoElement != null) {
-                        Stamp result = binary.foldStamp(infoElement.stamp, y.stamp(NodeView.DEFAULT));
-                        if (result != null) {
-                            return Pair.create(infoElement, result);
-                        }
-                        infoElement = nextElement(infoElement);
-                    }
-                }
-            }
-            return null;
-        }
-
-        /**
-         * Get the stamp that may be used for the value for which we are registering the condition.
-         * We may directly use the stamp here without restriction, because any later lookup of the
-         * registered info elements is in the same chain of pi nodes.
-         */
-        private static Stamp getSafeStamp(ValueNode x) {
-            return x.stamp(NodeView.DEFAULT);
-        }
-
-        /**
-         * We can only use the stamp of a second value involved in the condition if we are sure that
-         * we are not implicitly creating a dependency on a pi node that is responsible for that
-         * stamp. For now, we are conservatively only using the stamps of constants. Under certain
-         * circumstances, we may also be able to use the stamp of the value after skipping pi nodes
-         * (e.g., the stamp of a parameter after inlining, or the stamp of a fixed node that can
-         * never be replaced with a pi node via canonicalization).
-         */
-        private static Stamp getOtherSafeStamp(ValueNode x) {
-            if (x.isConstant() || x.graph().isAfterFixedReadPhase()) {
-                return x.stamp(NodeView.DEFAULT);
-            }
-            return x.stamp(NodeView.DEFAULT).unrestricted();
-        }
-
         /**
          * Recursively try to fold stamps within this expression using information from
          * {@link #getInfoElements(ValueNode)}. It's only safe to use constants and one
@@ -757,7 +688,7 @@ public class ConditionalEliminationPhase extends BasePhase<CoreProviders> {
          *         expression
          */
         Pair<InfoElement, Stamp> recursiveFoldStampFromInfo(Node node) {
-            return recursiveFoldStamp(node);
+            return ConditionalEliminationUtil.recursiveFoldStamp(infoElementProvider, node);
         }
 
         /**
@@ -873,6 +804,10 @@ public class ConditionalEliminationPhase extends BasePhase<CoreProviders> {
             return false;
         }
 
+        protected boolean tryProveGuardCondition(DeoptimizingGuard thisGuard, LogicNode node, GuardRewirer rewireGuardFunction) {
+            return ConditionalEliminationUtil.tryProveGuardCondition(infoElementProvider, conditions, guardFolding, thisGuard, node, rewireGuardFunction);
+        }
+
         protected void registerCondition(LogicNode condition, boolean negated, GuardingNode guard) {
             if (condition.hasMoreThanOneUsage()) {
                 registerNewStamp(condition, negated ? StampFactory.contradiction() : StampFactory.tautology(), guard);
@@ -891,15 +826,6 @@ public class ConditionalEliminationPhase extends BasePhase<CoreProviders> {
             return infoElement;
         }
 
-        protected boolean rewireGuards(GuardingNode guard, boolean result, ValueNode proxifiedInput, Stamp guardedValueStamp, GuardRewirer rewireGuardFunction) {
-            counterStampsFound.increment(debug);
-            return rewireGuardFunction.rewire(guard, result, guardedValueStamp, proxifiedInput);
-        }
-
-        protected boolean tryProveCondition(LogicNode node, GuardRewirer rewireGuardFunction) {
-            return tryProveGuardCondition(null, node, rewireGuardFunction);
-        }
-
         private InfoElement nextElement(InfoElement current) {
             InfoElement parent = current.getParent();
             if (parent != null) {
@@ -912,166 +838,6 @@ public class ConditionalEliminationPhase extends BasePhase<CoreProviders> {
                 }
             }
             return null;
-        }
-
-        protected boolean tryProveGuardCondition(DeoptimizingGuard thisGuard, LogicNode node, GuardRewirer rewireGuardFunction) {
-            InfoElement infoElement = getInfoElements(node);
-            while (infoElement != null) {
-                Stamp stamp = infoElement.getStamp();
-                JavaConstant constant = (JavaConstant) stamp.asConstant();
-                if (constant != null) {
-                    // No proxified input and stamp required.
-                    return rewireGuards(infoElement.getGuard(), constant.asBoolean(), null, null, rewireGuardFunction);
-                }
-                infoElement = nextElement(infoElement);
-            }
-
-            for (GuardedCondition guardedCondition : this.conditions) {
-                TriState result = guardedCondition.getCondition().implies(guardedCondition.isNegated(), node);
-                if (result.isKnown()) {
-                    return rewireGuards(guardedCondition.guard, result.toBoolean(), null, null, rewireGuardFunction);
-                }
-            }
-
-            if (node instanceof UnaryOpLogicNode) {
-                UnaryOpLogicNode unaryLogicNode = (UnaryOpLogicNode) node;
-                ValueNode value = unaryLogicNode.getValue();
-                infoElement = getInfoElements(value);
-                while (infoElement != null) {
-                    Stamp stamp = infoElement.getStamp();
-                    TriState result = unaryLogicNode.tryFold(stamp);
-                    if (result.isKnown()) {
-                        return rewireGuards(infoElement.getGuard(), result.toBoolean(), infoElement.getProxifiedInput(), infoElement.getStamp(), rewireGuardFunction);
-                    }
-                    infoElement = nextElement(infoElement);
-                }
-                Pair<InfoElement, Stamp> foldResult = recursiveFoldStampFromInfo(value);
-                if (foldResult != null) {
-                    TriState result = unaryLogicNode.tryFold(foldResult.getRight());
-                    if (result.isKnown()) {
-                        return rewireGuards(foldResult.getLeft().getGuard(), result.toBoolean(), foldResult.getLeft().getProxifiedInput(), foldResult.getRight(), rewireGuardFunction);
-                    }
-                }
-                if (thisGuard != null) {
-                    Stamp newStamp = unaryLogicNode.getSucceedingStampForValue(thisGuard.isNegated());
-                    if (newStamp != null && foldPendingTest(thisGuard, value, newStamp, rewireGuardFunction)) {
-                        return true;
-                    }
-
-                }
-            } else if (node instanceof BinaryOpLogicNode) {
-                BinaryOpLogicNode binaryOpLogicNode = (BinaryOpLogicNode) node;
-                ValueNode x = binaryOpLogicNode.getX();
-                ValueNode y = binaryOpLogicNode.getY();
-                infoElement = getInfoElements(x);
-                while (infoElement != null) {
-                    TriState result = binaryOpLogicNode.tryFold(infoElement.getStamp(), y.stamp(NodeView.DEFAULT));
-                    if (result.isKnown()) {
-                        return rewireGuards(infoElement.getGuard(), result.toBoolean(), infoElement.getProxifiedInput(), infoElement.getStamp(), rewireGuardFunction);
-                    }
-                    infoElement = nextElement(infoElement);
-                }
-
-                if (y.isConstant()) {
-                    Pair<InfoElement, Stamp> foldResult = recursiveFoldStampFromInfo(x);
-                    if (foldResult != null) {
-                        TriState result = binaryOpLogicNode.tryFold(foldResult.getRight(), y.stamp(NodeView.DEFAULT));
-                        if (result.isKnown()) {
-                            return rewireGuards(foldResult.getLeft().getGuard(), result.toBoolean(), foldResult.getLeft().getProxifiedInput(), foldResult.getRight(), rewireGuardFunction);
-                        }
-                    }
-                } else {
-                    infoElement = getInfoElements(y);
-                    while (infoElement != null) {
-                        TriState result = binaryOpLogicNode.tryFold(x.stamp(NodeView.DEFAULT), infoElement.getStamp());
-                        if (result.isKnown()) {
-                            return rewireGuards(infoElement.getGuard(), result.toBoolean(), infoElement.getProxifiedInput(), infoElement.getStamp(), rewireGuardFunction);
-                        }
-                        infoElement = nextElement(infoElement);
-                    }
-                }
-
-                /*
-                 * For complex expressions involving constants, see if it's possible to fold the
-                 * tests by using stamps one level up in the expression. For instance, (x + n < y)
-                 * might fold if something is known about x and all other values are constants. The
-                 * reason for the constant restriction is that if more than 1 real value is involved
-                 * the code might need to adopt multiple guards to have proper dependences.
-                 */
-                if (x instanceof BinaryArithmeticNode<?> && y.isConstant()) {
-                    BinaryArithmeticNode<?> binary = (BinaryArithmeticNode<?>) x;
-                    if (binary.getY().isConstant()) {
-                        infoElement = getInfoElements(binary.getX());
-                        while (infoElement != null) {
-                            Stamp newStampX = binary.foldStamp(infoElement.getStamp(), binary.getY().stamp(NodeView.DEFAULT));
-                            TriState result = binaryOpLogicNode.tryFold(newStampX, y.stamp(NodeView.DEFAULT));
-                            if (result.isKnown()) {
-                                return rewireGuards(infoElement.getGuard(), result.toBoolean(), infoElement.getProxifiedInput(), newStampX, rewireGuardFunction);
-                            }
-                            infoElement = nextElement(infoElement);
-                        }
-                    }
-                }
-
-                if (thisGuard != null && binaryOpLogicNode instanceof IntegerEqualsNode && !thisGuard.isNegated()) {
-                    if (y.isConstant() && x instanceof AndNode) {
-                        AndNode and = (AndNode) x;
-                        if (and.getY() == y) {
-                            /*
-                             * This 'and' proves something about some of the bits in and.getX().
-                             * It's equivalent to or'ing in the mask value since those values are
-                             * known to be set.
-                             */
-                            BinaryOp<Or> op = ArithmeticOpTable.forStamp(x.stamp(NodeView.DEFAULT)).getOr();
-                            IntegerStamp newStampX = (IntegerStamp) op.foldStamp(getSafeStamp(and.getX()), getOtherSafeStamp(y));
-                            if (foldPendingTest(thisGuard, and.getX(), newStampX, rewireGuardFunction)) {
-                                return true;
-                            }
-                        }
-                    }
-                }
-
-                if (thisGuard != null) {
-                    if (!x.isConstant()) {
-                        Stamp newStampX = binaryOpLogicNode.getSucceedingStampForX(thisGuard.isNegated(), getSafeStamp(x), getOtherSafeStamp(y));
-                        if (newStampX != null && foldPendingTest(thisGuard, x, newStampX, rewireGuardFunction)) {
-                            return true;
-                        }
-                    }
-                    if (!y.isConstant()) {
-                        Stamp newStampY = binaryOpLogicNode.getSucceedingStampForY(thisGuard.isNegated(), getOtherSafeStamp(x), getSafeStamp(y));
-                        if (newStampY != null && foldPendingTest(thisGuard, y, newStampY, rewireGuardFunction)) {
-                            return true;
-                        }
-                    }
-                }
-            } else if (node instanceof ShortCircuitOrNode) {
-                final ShortCircuitOrNode shortCircuitOrNode = (ShortCircuitOrNode) node;
-                return tryProveCondition(shortCircuitOrNode.getX(), (guard, result, guardedValueStamp, newInput) -> {
-                    if (result == !shortCircuitOrNode.isXNegated()) {
-                        return rewireGuards(guard, true, newInput, guardedValueStamp, rewireGuardFunction);
-                    } else {
-                        return tryProveCondition(shortCircuitOrNode.getY(), (innerGuard, innerResult, innerGuardedValueStamp, innerNewInput) -> {
-                            ValueNode proxifiedInput = newInput;
-                            if (proxifiedInput == null) {
-                                proxifiedInput = innerNewInput;
-                            } else if (innerNewInput != null) {
-                                if (innerNewInput != newInput) {
-                                    // Cannot canonicalize due to different proxied inputs.
-                                    return false;
-                                }
-                            }
-                            // Can only canonicalize if the guards are equal.
-                            if (innerGuard == guard) {
-                                return rewireGuards(guard, innerResult ^ shortCircuitOrNode.isYNegated(), proxifiedInput, guardedValueStamp, rewireGuardFunction);
-                            }
-                            return false;
-                        });
-                    }
-                });
-            }
-
-            return false;
         }
 
         protected void registerNewStamp(ValueNode maybeProxiedValue, Stamp newStamp, GuardingNode guard) {
@@ -1176,95 +942,6 @@ public class ConditionalEliminationPhase extends BasePhase<CoreProviders> {
             while (conditions.size() > conditionsMark) {
                 conditions.pop();
             }
-        }
-    }
-
-    @FunctionalInterface
-    protected interface InfoElementProvider {
-        Iterable<InfoElement> getInfoElements(ValueNode value);
-    }
-
-    /**
-     * Checks for safe nodes when moving pending tests up.
-     */
-    static class InputFilter extends Node.EdgeVisitor {
-        boolean ok;
-        private ValueNode value;
-
-        InputFilter(ValueNode value) {
-            this.value = value;
-            this.ok = true;
-        }
-
-        @Override
-        public Node apply(Node node, Node curNode) {
-            if (!ok) {
-                // Abort the recursion
-                return curNode;
-            }
-            if (!(curNode instanceof ValueNode)) {
-                ok = false;
-                return curNode;
-            }
-            ValueNode curValue = (ValueNode) curNode;
-            if (curValue.isConstant() || curValue == value || curValue instanceof ParameterNode) {
-                return curNode;
-            }
-            if (curValue instanceof BinaryNode || curValue instanceof UnaryNode) {
-                curValue.applyInputs(this);
-            } else {
-                ok = false;
-            }
-            return curNode;
-        }
-    }
-
-    @FunctionalInterface
-    protected interface GuardRewirer {
-        /**
-         * Called if the condition could be proven to have a constant value ({@code result}) under
-         * {@code guard}.
-         *
-         * @param guard the guard whose result is proven
-         * @param result the known result of the guard
-         * @param newInput new input to pi nodes depending on the new guard
-         * @return whether the transformation could be applied
-         */
-        boolean rewire(GuardingNode guard, boolean result, Stamp guardedValueStamp, ValueNode newInput);
-    }
-
-    protected static final class InfoElement {
-        private final Stamp stamp;
-        private final GuardingNode guard;
-        private final ValueNode proxifiedInput;
-        private final InfoElement parent;
-
-        public InfoElement(Stamp stamp, GuardingNode guard, ValueNode proxifiedInput, InfoElement parent) {
-            this.stamp = stamp;
-            this.guard = guard;
-            this.proxifiedInput = proxifiedInput;
-            this.parent = parent;
-        }
-
-        public InfoElement getParent() {
-            return parent;
-        }
-
-        public Stamp getStamp() {
-            return stamp;
-        }
-
-        public GuardingNode getGuard() {
-            return guard;
-        }
-
-        public ValueNode getProxifiedInput() {
-            return proxifiedInput;
-        }
-
-        @Override
-        public String toString() {
-            return stamp + " -> " + guard;
         }
     }
 

@@ -1298,9 +1298,9 @@ public class AMD64Assembler extends AMD64BaseAssembler {
      */
     public static class VexRVMROp extends VexOp {
         // @formatter:off
-        public static final VexRVMROp VPBLENDVB  = new VexRVMROp("VPBLENDVB",  P_66, M_0F3A, W0, 0x4C, VEXOpAssertion.AVX1_2);
-        public static final VexRVMROp VPBLENDVPS = new VexRVMROp("VPBLENDVPS", P_66, M_0F3A, W0, 0x4A, VEXOpAssertion.AVX1);
-        public static final VexRVMROp VPBLENDVPD = new VexRVMROp("VPBLENDVPD", P_66, M_0F3A, W0, 0x4B, VEXOpAssertion.AVX1);
+        public static final VexRVMROp VPBLENDVB = new VexRVMROp("VPBLENDVB", P_66, M_0F3A, W0, 0x4C, VEXOpAssertion.AVX1_2);
+        public static final VexRVMROp VBLENDVPS = new VexRVMROp("VBLENDVPS", P_66, M_0F3A, W0, 0x4A, VEXOpAssertion.AVX1);
+        public static final VexRVMROp VBLENDVPD = new VexRVMROp("VBLENDVPD", P_66, M_0F3A, W0, 0x4B, VEXOpAssertion.AVX1);
         // @formatter:on
 
         protected VexRVMROp(String opcode, int pp, int mmmmm, int w, int op, VEXOpAssertion assertion) {
@@ -3139,14 +3139,14 @@ public class AMD64Assembler extends AMD64BaseAssembler {
         SSEOp.XOR.emit(this, PS, dst, src);
     }
 
-    protected final void decl(Register dst) {
+    public final void decl(Register dst) {
         // Use two-byte form (one-byte form is a REX prefix in 64-bit mode)
         prefix(dst);
         emitByte(0xFF);
         emitModRM(1, dst);
     }
 
-    protected final void incl(Register dst) {
+    public final void incl(Register dst) {
         // Use two-byte form (one-byte from is a REX prefix in 64-bit mode)
         prefix(dst);
         emitByte(0xFF);

@@ -422,6 +422,22 @@ public final class LIRKind extends ValueKind<LIRKind> {
     }
 
     /**
+     * Check whether the given kind is a scalar (i.e., vector length 1) <b>compressed</b> reference.
+     *
+     * @param kind The kind to be checked.
+     * @return true if the given kind is a scalar compressed reference
+     */
+    public static boolean isScalarCompressedReference(ValueKind<?> kind) {
+        if (kind instanceof LIRKind) {
+            LIRKind lirKind = (LIRKind) kind;
+            if (lirKind.getPlatformKind().getVectorLength() == 1 && lirKind.isCompressedReference(0)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
      * Check whether this kind is a value type that doesn't need to be tracked at safepoints.
      */
     public boolean isValue() {

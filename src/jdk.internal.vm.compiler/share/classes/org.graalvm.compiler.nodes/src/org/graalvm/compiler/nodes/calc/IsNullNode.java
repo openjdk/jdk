@@ -97,7 +97,7 @@ public final class IsNullNode extends UnaryOpLogicNode implements LIRLowerable, 
     @Override
     public boolean verify() {
         assertTrue(getValue() != null, "is null input must not be null");
-        assertTrue(getValue().stamp(NodeView.DEFAULT) instanceof AbstractPointerStamp, "input must be a pointer not %s", getValue().stamp(NodeView.DEFAULT));
+        assertTrue(getValue().stamp(NodeView.DEFAULT).isPointerStamp(), "input must be a pointer not %s", getValue().stamp(NodeView.DEFAULT));
         return super.verify();
     }
 

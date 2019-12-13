@@ -24,52 +24,63 @@
 
 package org.graalvm.compiler.hotspot.test;
 
+import static org.graalvm.compiler.core.common.GraalOptions.FullUnroll;
+import static org.graalvm.compiler.core.common.GraalOptions.LoopPeeling;
+import static org.graalvm.compiler.core.common.GraalOptions.PartialEscapeAnalysis;
 import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.referentOffset;
 
+import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
+import java.util.EnumSet;
+import java.util.ListIterator;
+import java.util.Objects;
 
 import org.graalvm.compiler.api.test.Graal;
-import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.hotspot.GraalHotSpotVMConfig;
 import org.graalvm.compiler.hotspot.HotSpotBackend;
+import org.graalvm.compiler.hotspot.HotSpotGraalRuntime.HotSpotGC;
+import org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil;
+import org.graalvm.compiler.nodeinfo.NodeSize;
 import org.graalvm.compiler.nodes.StructuredGraph;
-import org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
 import org.graalvm.compiler.nodes.gc.G1PostWriteBarrier;
 import org.graalvm.compiler.nodes.gc.G1PreWriteBarrier;
 import org.graalvm.compiler.nodes.gc.G1ReferentFieldReadBarrier;
 import org.graalvm.compiler.nodes.gc.SerialWriteBarrier;
-import org.graalvm.compiler.nodes.memory.HeapAccess.BarrierType;
+import org.graalvm.compiler.nodes.memory.HeapAccess;
 import org.graalvm.compiler.nodes.memory.ReadNode;
 import org.graalvm.compiler.nodes.memory.WriteNode;
 import org.graalvm.compiler.nodes.memory.address.OffsetAddressNode;
-import org.graalvm.compiler.nodes.spi.LoweringTool;
-import org.graalvm.compiler.phases.OptimisticOptimizations;
-import org.graalvm.compiler.phases.common.GuardLoweringPhase;
-import org.graalvm.compiler.phases.common.LoweringPhase;
+import org.graalvm.compiler.options.OptionValues;
+import org.graalvm.compiler.phases.BasePhase;
+import org.graalvm.compiler.phases.Phase;
 import org.graalvm.compiler.phases.common.WriteBarrierAdditionPhase;
-import org.graalvm.compiler.phases.common.inlining.InliningPhase;
-import org.graalvm.compiler.phases.common.inlining.policy.InlineEverythingPolicy;
-import org.graalvm.compiler.phases.tiers.HighTierContext;
 import org.graalvm.compiler.phases.tiers.MidTierContext;
+import org.graalvm.compiler.phases.tiers.Suites;
 import org.graalvm.compiler.runtime.RuntimeProvider;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 
-import jdk.vm.ci.hotspot.HotSpotInstalledCode;
 import jdk.vm.ci.meta.JavaConstant;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
-import sun.misc.Unsafe;
+import jdk.vm.ci.meta.MetaAccessProvider;
 
 /**
- * The following unit tests assert the presence of write barriers for both Serial and G1 GCs.
- * Normally, the tests check for compile time inserted barriers. However, there are the cases of
- * unsafe loads of the java.lang.ref.Reference.referent field where runtime checks have to be
- * performed also. For those cases, the unit tests check the presence of the compile-time inserted
- * barriers. Concerning the runtime checks, the results of variable inputs (object types and
- * offsets) passed as input parameters can be checked against printed output from the G1 write
- * barrier snippets. The runtime checks have been validated offline.
+ * The following unit tests assert the presence of write barriers for G1 and for the other GCs that
+ * use a simple card mark barrier, like Serial, CMS, ParallelGC and Pthe arNew/ParOld GCs. Normally,
+ * the tests check for compile time inserted barriers. However, there are the cases of unsafe loads
+ * of the java.lang.ref.Reference.referent field where runtime checks have to be performed also. For
+ * those cases, the unit tests check the presence of the compile-time inserted barriers. Concerning
+ * the runtime checks, the results of variable inputs (object types and offsets) passed as input
+ * parameters can be checked against printed output from the G1 write barrier snippets. The runtime
+ * checks have been validated offline.
  */
 public class WriteBarrierAdditionTest extends HotSpotGraalCompilerTest {
+
+    /**
+     * The set of GCs known at the time of writing of this test. The number of expected barrier
+     * might need to be adjusted for new GCs implementations.
+     */
+    private static EnumSet<HotSpotGC> knownSupport = EnumSet.of(HotSpotGC.G1, HotSpotGC.CMS, HotSpotGC.Parallel, HotSpotGC.Serial);
 
     private final GraalHotSpotVMConfig config = runtime().getVMConfig();
 
@@ -77,30 +88,53 @@ public class WriteBarrierAdditionTest extends HotSpotGraalCompilerTest {
 
         public Container a;
         public Container b;
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            Container container = (Container) o;
+            return Objects.equals(a, container.a) && Objects.equals(b, container.b);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(a, b);
+        }
     }
+
+    private int expectedBarriers;
 
     /**
-     * Expected 2 barriers for the Serial GC and 4 for G1 (2 pre + 2 post).
+     * Expected 2 barriers for the card mark GCs and 4 for G1 (2 pre + 2 post).
      */
     @Test
-    public void test1() throws Exception {
-        testHelper("test1Snippet", (config.useG1GC) ? 4 : 2);
+    public void testAllocation() throws Exception {
+        this.expectedBarriers = (config.useG1GC) ? 4 : 2;
+        testWithoutPEA("testAllocationSnippet");
     }
 
-    public static void test1Snippet() {
+    public static Container testAllocationSnippet() {
         Container main = new Container();
         Container temp1 = new Container();
         Container temp2 = new Container();
         main.a = temp1;
         main.b = temp2;
+        return main;
     }
 
     /**
-     * Expected 4 barriers for the Serial GC and 8 for G1 (4 pre + 4 post).
+     * Expected 4 barriers for the card mark GCs and 8 for G1 (4 pre + 4 post).
      */
     @Test
-    public void test2() throws Exception {
-        testHelper("test2Snippet", config.useG1GC ? 8 : 4);
+    public void testLoopAllocation1() throws Exception {
+        this.expectedBarriers = config.useG1GC ? 8 : 4;
+        testWithoutPEA("test2Snippet", false);
+        testWithoutPEA("test2Snippet", true);
     }
 
     public static void test2Snippet(boolean test) {
@@ -119,11 +153,12 @@ public class WriteBarrierAdditionTest extends HotSpotGraalCompilerTest {
     }
 
     /**
-     * Expected 4 barriers for the Serial GC and 8 for G1 (4 pre + 4 post).
+     * Expected 4 barriers for the card mark GCs and 8 for G1 (4 pre + 4 post).
      */
     @Test
-    public void test3() throws Exception {
-        testHelper("test3Snippet", config.useG1GC ? 8 : 4);
+    public void testLoopAllocation2() throws Exception {
+        this.expectedBarriers = config.useG1GC ? 8 : 4;
+        testWithoutPEA("test3Snippet");
     }
 
     public static void test3Snippet() {
@@ -140,84 +175,109 @@ public class WriteBarrierAdditionTest extends HotSpotGraalCompilerTest {
     }
 
     /**
-     * Expected 2 barriers for the Serial GC and 5 for G1 (3 pre + 2 post) The (2 or 4) barriers are
-     * emitted while initializing the fields of the WeakReference instance. The extra pre barrier of
-     * G1 concerns the read of the referent field.
+     * Expected 2 barriers for the card mark GCs and 5 for G1 (3 pre + 2 post) The (2 or 4) barriers
+     * are emitted while initializing the fields of the WeakReference instance. The extra pre
+     * barrier of G1 concerns the read of the referent field.
      */
     @Test
-    public void test4() throws Exception {
-        testHelper("test4Snippet", config.useG1GC ? 5 : 2);
+    public void testReferenceGet() throws Exception {
+        this.expectedBarriers = config.useG1GC ? 1 : 0;
+        test("testReferenceGetSnippet");
     }
 
-    public static Object test4Snippet() {
-        WeakReference<Object> weakRef = new WeakReference<>(new Object());
-        return weakRef.get();
+    public static Object testReferenceGetSnippet() {
+        return weakReference.get();
     }
 
-    static WeakReference<Object> wr = new WeakReference<>(new Object());
-    static Container con = new Container();
+    static class DummyReference {
+        Object referent;
+    }
+
+    private static MetaAccessProvider getStaticMetaAccess() {
+        return ((HotSpotBackend) Graal.getRequiredCapability(RuntimeProvider.class).getHostBackend()).getRuntime().getHostProviders().getMetaAccess();
+    }
+
+    private static final WeakReference<?> weakReference = new WeakReference<>(new Object());
+    private static final Object weakReferenceAsObject = new WeakReference<>(new Object());
+    private static final long referenceReferentFieldOffset = HotSpotReplacementsUtil.getFieldOffset(getStaticMetaAccess().lookupJavaType(Reference.class), "referent");
+    private static final long referenceQueueFieldOffset = HotSpotReplacementsUtil.getFieldOffset(getStaticMetaAccess().lookupJavaType(Reference.class), "queue");
+
+    private static final DummyReference dummyReference = new DummyReference();
+    private static final long dummyReferenceReferentFieldOffset = HotSpotReplacementsUtil.getFieldOffset(getStaticMetaAccess().lookupJavaType(DummyReference.class), "referent");
 
     /**
-     * Expected 0 barrier for the Serial GC and 1 for G1. In this test, we load the correct offset
-     * of the WeakReference object so naturally we assert the presence of the pre barrier.
+     * The type is known to be WeakReference and the offset is a constant, so the
+     * {@link org.graalvm.compiler.nodes.extended.RawLoadNode} is converted back into a normal
+     * LoadFieldNode and the lowering of the field node inserts the proper barrier.
      */
     @Test
-    public void test5() throws Exception {
-        testHelper("test5Snippet", config.useG1GC ? 1 : 0);
+    public void testReferenceReferent1() throws Exception {
+        this.expectedBarriers = config.useG1GC ? 1 : 0;
+        test("testReferenceReferentSnippet");
     }
 
-    private static final boolean useCompressedOops = ((HotSpotBackend) Graal.getRequiredCapability(RuntimeProvider.class).getHostBackend()).getRuntime().getVMConfig().useCompressedOops;
-
-    public Object test5Snippet() {
-        return UNSAFE.getObject(wr, useCompressedOops ? 12L : 16L);
-    }
-
-    /**
-     * The following test concerns the runtime checks of the unsafe loads. In this test, we unsafely
-     * load the java.lang.ref.Reference.referent field so the pre barier has to be executed.
-     */
-    @Test
-    public void test6() throws Exception {
-        test2("testUnsafeLoad", UNSAFE, wr, Long.valueOf(referentOffset(getMetaAccess())), null);
-    }
-
-    /**
-     * The following test concerns the runtime checks of the unsafe loads. In this test, we unsafely
-     * load a matching offset of a wrong object so the pre barier must not be executed.
-     */
-    @Test
-    public void test7() throws Exception {
-        test2("testUnsafeLoad", UNSAFE, con, Long.valueOf(referentOffset(getMetaAccess())), null);
+    public Object testReferenceReferentSnippet() {
+        return UNSAFE.getObject(weakReference, referenceReferentFieldOffset);
     }
 
     /**
-     * The following test concerns the runtime checks of the unsafe loads. In this test, we unsafely
-     * load a non-matching offset field of the java.lang.ref.Reference object so the pre barier must
-     * not be executed.
+     * The type is known to be WeakReference and the offset is non-constant, so the lowering of the
+     * {@link org.graalvm.compiler.nodes.extended.RawLoadNode} is guarded by a check that the offset
+     * is the same as {@link #referenceReferentFieldOffset} which does a barrier if requires it.
      */
     @Test
-    public void test8() throws Exception {
-        test2("testUnsafeLoad", UNSAFE, wr, Long.valueOf(config.useCompressedOops ? 20 : 32), null);
+    public void testReferenceReferent2() throws Exception {
+        this.expectedBarriers = config.useG1GC ? 1 : 0;
+        test("testReferenceReferent2Snippet", referenceReferentFieldOffset);
+    }
+
+    public Object testReferenceReferent2Snippet(long offset) {
+        return UNSAFE.getObject(weakReference, offset);
     }
 
     /**
-     * The following test concerns the runtime checks of the unsafe loads. In this test, we unsafely
-     * load a matching offset+disp field of the java.lang.ref.Reference object so the pre barier
-     * must be executed.
+     * The type is known to be WeakReference and the offset is constant but not the referent field,
+     * so no barrier is required.
      */
     @Test
-    public void test10() throws Exception {
-        test2("testUnsafeLoad", UNSAFE, wr, Long.valueOf(config.useCompressedOops ? 6 : 8), Integer.valueOf(config.useCompressedOops ? 6 : 8));
+    public void testReferenceReferent3() throws Exception {
+        this.expectedBarriers = 0;
+        test("testReferenceReferent3Snippet");
+    }
+
+    public Object testReferenceReferent3Snippet() {
+        return UNSAFE.getObject(weakReference, referenceQueueFieldOffset);
     }
 
     /**
-     * The following test concerns the runtime checks of the unsafe loads. In this test, we unsafely
-     * load a non-matching offset+disp field of the java.lang.ref.Reference object so the pre barier
-     * must not be executed.
+     * The type is a super class of WeakReference and the offset is non-constant, so the lowering of
+     * the {@link org.graalvm.compiler.nodes.extended.RawLoadNode} is guarded by a check that the
+     * offset is the same as {@link #referenceReferentFieldOffset} and the base object is a
+     * subclasses of {@link java.lang.ref.Reference} and does a barrier if requires it.
      */
     @Test
-    public void test9() throws Exception {
-        test2("testUnsafeLoad", UNSAFE, wr, Long.valueOf(config.useCompressedOops ? 10 : 16), Integer.valueOf(config.useCompressedOops ? 10 : 16));
+    public void testReferenceReferent4() throws Exception {
+        this.expectedBarriers = config.useG1GC ? 1 : 0;
+        test("testReferenceReferent4Snippet");
+    }
+
+    public Object testReferenceReferent4Snippet() {
+        return UNSAFE.getObject(weakReferenceAsObject, referenceReferentFieldOffset);
+    }
+
+    /**
+     * The type is not related to Reference at all so no barrier check is required. This should be
+     * statically detectable.
+     */
+    @Test
+    public void testReferenceReferent5() throws Exception {
+        this.expectedBarriers = 0;
+        Assert.assertEquals("expected fields to have the same offset", referenceReferentFieldOffset, dummyReferenceReferentFieldOffset);
+        test("testReferenceReferent5Snippet");
+    }
+
+    public Object testReferenceReferent5Snippet() {
+        return UNSAFE.getObject(dummyReference, referenceReferentFieldOffset);
     }
 
     static Object[] src = new Object[1];
@@ -232,88 +292,93 @@ public class WriteBarrierAdditionTest extends HotSpotGraalCompilerTest {
         }
     }
 
-    public static void testArrayCopy(Object a, Object b, Object c) throws Exception {
+    public static void testArrayCopySnippet(Object a, Object b, Object c) throws Exception {
         System.arraycopy(a, 0, b, 0, (int) c);
     }
 
     @Test
-    public void test11() throws Exception {
-        test2("testArrayCopy", src, dst, dst.length);
+    public void testArrayCopy() throws Exception {
+        this.expectedBarriers = 0;
+        test("testArrayCopySnippet", src, dst, dst.length);
     }
 
-    public static Object testUnsafeLoad(Unsafe theUnsafe, Object a, Object b, Object c) throws Exception {
-        final int offset = (c == null ? 0 : ((Integer) c).intValue());
-        final long displacement = (b == null ? 0 : ((Long) b).longValue());
-        return theUnsafe.getObject(a, offset + displacement);
-    }
-
-    private HotSpotInstalledCode getInstalledCode(String name, boolean withUnsafePrefix) throws Exception {
-        final ResolvedJavaMethod javaMethod = withUnsafePrefix ? getResolvedJavaMethod(WriteBarrierAdditionTest.class, name, Unsafe.class, Object.class, Object.class, Object.class)
-                        : getResolvedJavaMethod(WriteBarrierAdditionTest.class, name, Object.class, Object.class, Object.class);
-        final HotSpotInstalledCode installedCode = (HotSpotInstalledCode) getCode(javaMethod);
-        return installedCode;
-    }
-
-    @SuppressWarnings("try")
-    private void testHelper(final String snippetName, final int expectedBarriers) throws Exception, SecurityException {
-        ResolvedJavaMethod snippet = getResolvedJavaMethod(snippetName);
-        DebugContext debug = getDebugContext();
-        try (DebugContext.Scope s = debug.scope("WriteBarrierAdditionTest", snippet)) {
-            StructuredGraph graph = parseEager(snippet, AllowAssumptions.NO, debug);
-            HighTierContext highContext = getDefaultHighTierContext();
-            MidTierContext midContext = new MidTierContext(getProviders(), getTargetProvider(), OptimisticOptimizations.ALL, graph.getProfilingInfo());
-            new InliningPhase(new InlineEverythingPolicy(), createCanonicalizerPhase()).apply(graph, highContext);
-            this.createCanonicalizerPhase().apply(graph, highContext);
-            new LoweringPhase(this.createCanonicalizerPhase(), LoweringTool.StandardLoweringStage.HIGH_TIER).apply(graph, highContext);
-            new GuardLoweringPhase().apply(graph, midContext);
-            new LoweringPhase(this.createCanonicalizerPhase(), LoweringTool.StandardLoweringStage.MID_TIER).apply(graph, midContext);
-            new WriteBarrierAdditionPhase().apply(graph, midContext);
-            debug.dump(DebugContext.BASIC_LEVEL, graph, "After Write Barrier Addition");
-
-            int barriers = 0;
+    private void verifyBarriers(StructuredGraph graph) {
+        Assert.assertTrue("Unknown collector selected", knownSupport.contains(runtime().getGarbageCollector()));
+        Assert.assertNotEquals("test must set expected barrier count", expectedBarriers, -1);
+        int barriers = 0;
+        if (config.useG1GC) {
+            barriers = graph.getNodes().filter(G1ReferentFieldReadBarrier.class).count() + graph.getNodes().filter(G1PreWriteBarrier.class).count() +
+                            graph.getNodes().filter(G1PostWriteBarrier.class).count();
+        } else {
+            barriers = graph.getNodes().filter(SerialWriteBarrier.class).count();
+        }
+        if (expectedBarriers != barriers) {
+            Assert.assertEquals(expectedBarriers, barriers);
+        }
+        for (WriteNode write : graph.getNodes().filter(WriteNode.class)) {
             if (config.useG1GC) {
-                barriers = graph.getNodes().filter(G1ReferentFieldReadBarrier.class).count() + graph.getNodes().filter(G1PreWriteBarrier.class).count() +
-                                graph.getNodes().filter(G1PostWriteBarrier.class).count();
+                if (write.getBarrierType() != HeapAccess.BarrierType.NONE) {
+                    Assert.assertEquals(1, write.successors().count());
+                    Assert.assertTrue(write.next() instanceof G1PostWriteBarrier);
+                    Assert.assertTrue(write.predecessor() instanceof G1PreWriteBarrier || write.getLocationIdentity().isImmutable());
+                }
             } else {
-                barriers = graph.getNodes().filter(SerialWriteBarrier.class).count();
-            }
-            if (expectedBarriers != barriers) {
-                Assert.assertEquals(getScheduledGraphString(graph), expectedBarriers, barriers);
-            }
-            for (WriteNode write : graph.getNodes().filter(WriteNode.class)) {
-                if (config.useG1GC) {
-                    if (write.getBarrierType() != BarrierType.NONE) {
-                        Assert.assertEquals(1, write.successors().count());
-                        Assert.assertTrue(write.next() instanceof G1PostWriteBarrier);
-                        Assert.assertTrue(write.predecessor() instanceof G1PreWriteBarrier);
-                    }
-                } else {
-                    if (write.getBarrierType() != BarrierType.NONE) {
-                        Assert.assertEquals(1, write.successors().count());
-                        Assert.assertTrue(write.next() instanceof SerialWriteBarrier);
-                    }
+                if (write.getBarrierType() != HeapAccess.BarrierType.NONE) {
+                    Assert.assertEquals(1, write.successors().count());
+                    Assert.assertTrue(write.next() instanceof SerialWriteBarrier);
                 }
             }
+        }
 
-            for (ReadNode read : graph.getNodes().filter(ReadNode.class)) {
-                if (read.getBarrierType() != BarrierType.NONE) {
-                    Assert.assertTrue(read.getAddress() instanceof OffsetAddressNode);
+        for (ReadNode read : graph.getNodes().filter(ReadNode.class)) {
+            if (read.getBarrierType() != HeapAccess.BarrierType.NONE) {
+                if (read.getAddress() instanceof OffsetAddressNode) {
                     JavaConstant constDisp = ((OffsetAddressNode) read.getAddress()).getOffset().asJavaConstant();
-                    Assert.assertNotNull(constDisp);
-                    Assert.assertEquals(referentOffset(getMetaAccess()), constDisp.asLong());
-                    Assert.assertEquals(BarrierType.WEAK_FIELD, read.getBarrierType());
-                    if (config.useG1GC) {
-                        Assert.assertTrue(read.next() instanceof G1ReferentFieldReadBarrier);
+                    if (constDisp != null) {
+                        Assert.assertEquals(referentOffset(getMetaAccess()), constDisp.asLong());
                     }
                 }
+                Assert.assertTrue(HeapAccess.BarrierType.WEAK_FIELD == read.getBarrierType() || HeapAccess.BarrierType.MAYBE_WEAK_FIELD == read.getBarrierType());
+                if (config.useG1GC) {
+                    Assert.assertTrue(read.next() instanceof G1ReferentFieldReadBarrier);
+                }
             }
-        } catch (Throwable e) {
-            throw debug.handle(e);
         }
     }
 
-    private void test2(final String snippet, Object... args) throws Exception {
-        HotSpotInstalledCode code = getInstalledCode(snippet, args[0] instanceof Unsafe);
-        code.executeVarargs(args);
+    protected Result testWithoutPEA(String name, Object... args) {
+        return test(new OptionValues(getInitialOptions(), PartialEscapeAnalysis, false, FullUnroll, false, LoopPeeling, false), name, args);
+    }
+
+    @Before
+    public void before() {
+        expectedBarriers = -1;
+    }
+
+    /*
+     * Check the state of the barriers immediately after insertion.
+     */
+    @Override
+    protected Suites createSuites(OptionValues opts) {
+        Suites ret = getBackend().getSuites().getDefaultSuites(opts).copy();
+        ListIterator<BasePhase<? super MidTierContext>> iter = ret.getMidTier().findPhase(WriteBarrierAdditionPhase.class, true);
+        iter.add(new Phase() {
+
+            @Override
+            protected void run(StructuredGraph graph) {
+                verifyBarriers(graph);
+            }
+
+            @Override
+            public float codeSizeIncrease() {
+                return NodeSize.IGNORE_SIZE_CONTRACT_FACTOR;
+            }
+
+            @Override
+            protected CharSequence getName() {
+                return "VerifyBarriersPhase";
+            }
+        });
+        return ret;
     }
 }

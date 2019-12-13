@@ -139,7 +139,7 @@ public class GraphDecoder {
                 maxFixedNodeOrderId = 0;
             }
 
-            if (loopExplosion != LoopExplosionKind.NONE) {
+            if (loopExplosion.useExplosion()) {
                 loopExplosionMerges = EconomicSet.create(Equivalence.IDENTITY);
             } else {
                 loopExplosionMerges = null;
@@ -196,12 +196,11 @@ public class GraphDecoder {
         protected LoopScope(MethodScope methodScope) {
             this.methodScope = methodScope;
             this.outer = null;
-            this.nextIterations = methodScope.loopExplosion == LoopExplosionKind.FULL_EXPLODE_UNTIL_RETURN ? new ArrayDeque<>(2) : null;
+            this.nextIterations = methodScope.loopExplosion.duplicateLoopExits() ? new ArrayDeque<>(2) : null;
             this.loopDepth = 0;
             this.loopIteration = 0;
             this.iterationStates = null;
             this.loopBeginOrderId = -1;
-
             int nodeCount = methodScope.encodedGraph.nodeStartOffsets.length;
             this.nodesToProcess = new BitSet(methodScope.maxFixedNodeOrderId);
             this.createdNodes = new Node[nodeCount];
@@ -433,7 +432,7 @@ public class GraphDecoder {
             /*
              * Finished with an inlined method. Perform end-of-method cleanup tasks.
              */
-            if (methodScope.loopExplosion == LoopExplosionKind.MERGE_EXPLODE) {
+            if (methodScope.loopExplosion.mergeLoops()) {
                 LoopDetector loopDetector = new LoopDetector(graph, methodScope);
                 loopDetector.run();
             }
@@ -472,8 +471,7 @@ public class GraphDecoder {
         }
 
         if ((node instanceof MergeNode ||
-                        (node instanceof LoopBeginNode && (methodScope.loopExplosion == LoopExplosionKind.FULL_UNROLL || methodScope.loopExplosion == LoopExplosionKind.FULL_EXPLODE ||
-                                        methodScope.loopExplosion == LoopExplosionKind.FULL_EXPLODE_UNTIL_RETURN))) &&
+                        (node instanceof LoopBeginNode && (methodScope.loopExplosion.unrollLoops() && !methodScope.loopExplosion.mergeLoops()))) &&
                         ((AbstractMergeNode) node).forwardEndCount() == 1) {
             AbstractMergeNode merge = (AbstractMergeNode) node;
             EndNode singleEnd = merge.forwardEndAt(0);
@@ -492,7 +490,7 @@ public class GraphDecoder {
         LoopScope successorAddScope = loopScope;
         boolean updatePredecessors = true;
         if (node instanceof LoopExitNode) {
-            if (methodScope.loopExplosion == LoopExplosionKind.FULL_EXPLODE_UNTIL_RETURN || (methodScope.loopExplosion == LoopExplosionKind.MERGE_EXPLODE && loopScope.loopDepth > 1)) {
+            if (methodScope.loopExplosion.duplicateLoopExits() || (methodScope.loopExplosion.mergeLoops() && loopScope.loopDepth > 1)) {
                 /*
                  * We do not want to merge loop exits of inner loops. Instead, we want to keep
                  * exploding the outer loop separately for every loop exit and then merge the outer
@@ -519,7 +517,7 @@ public class GraphDecoder {
             } else {
                 successorAddScope = loopScope.outer;
             }
-            updatePredecessors = methodScope.loopExplosion == LoopExplosionKind.NONE;
+            updatePredecessors = methodScope.loopExplosion.isNoExplosion();
         }
 
         methodScope.reader.setByteIndex(methodScope.encodedGraph.nodeStartOffsets[nodeOrderId]);
@@ -531,12 +529,12 @@ public class GraphDecoder {
 
         LoopScope resultScope = loopScope;
         if (node instanceof LoopBeginNode) {
-            if (methodScope.loopExplosion != LoopExplosionKind.NONE) {
+            if (methodScope.loopExplosion.useExplosion()) {
                 handleLoopExplosionBegin(methodScope, loopScope, (LoopBeginNode) node);
             }
 
         } else if (node instanceof LoopExitNode) {
-            if (methodScope.loopExplosion != LoopExplosionKind.NONE) {
+            if (methodScope.loopExplosion.useExplosion()) {
                 handleLoopExplosionProxyNodes(methodScope, loopScope, successorAddScope, (LoopExitNode) node, nodeOrderId);
             } else {
                 handleProxyNodes(methodScope, loopScope, (LoopExitNode) node);
@@ -549,7 +547,7 @@ public class GraphDecoder {
             LoopScope phiInputScope = loopScope;
             LoopScope phiNodeScope = loopScope;
 
-            if (methodScope.loopExplosion != LoopExplosionKind.NONE && node instanceof LoopEndNode) {
+            if (methodScope.loopExplosion.useExplosion() && node instanceof LoopEndNode) {
                 node = handleLoopExplosionEnd(methodScope, loopScope, (LoopEndNode) node);
                 phiNodeScope = loopScope.nextIterations.getLast();
             }
@@ -562,14 +560,14 @@ public class GraphDecoder {
                 if (merge instanceof LoopBeginNode) {
                     assert phiNodeScope == phiInputScope && phiNodeScope == loopScope;
                     resultScope = new LoopScope(methodScope, loopScope, loopScope.loopDepth + 1, 0, mergeOrderId,
-                                    methodScope.loopExplosion != LoopExplosionKind.NONE ? Arrays.copyOf(loopScope.createdNodes, loopScope.createdNodes.length) : null,
-                                    methodScope.loopExplosion != LoopExplosionKind.NONE ? Arrays.copyOf(loopScope.createdNodes, loopScope.createdNodes.length) : loopScope.createdNodes, //
-                                    methodScope.loopExplosion != LoopExplosionKind.NONE ? new ArrayDeque<>(2) : null, //
-                                    methodScope.loopExplosion == LoopExplosionKind.MERGE_EXPLODE ? EconomicMap.create(Equivalence.DEFAULT) : null);
+                                    methodScope.loopExplosion.useExplosion() ? Arrays.copyOf(loopScope.createdNodes, loopScope.createdNodes.length) : null,
+                                    methodScope.loopExplosion.useExplosion() ? Arrays.copyOf(loopScope.createdNodes, loopScope.createdNodes.length) : loopScope.createdNodes, //
+                                    methodScope.loopExplosion.useExplosion() ? new ArrayDeque<>(2) : null, //
+                                    methodScope.loopExplosion.mergeLoops() ? EconomicMap.create(Equivalence.DEFAULT) : null);
                     phiInputScope = resultScope;
                     phiNodeScope = resultScope;
 
-                    if (methodScope.loopExplosion != LoopExplosionKind.NONE) {
+                    if (methodScope.loopExplosion.useExplosion()) {
                         registerNode(loopScope, mergeOrderId, null, true, true);
                     }
                     loopScope.nodesToProcess.clear(mergeOrderId);
@@ -582,7 +580,6 @@ public class GraphDecoder {
         } else if (node instanceof Invoke) {
             InvokeData invokeData = readInvokeData(methodScope, nodeOrderId, (Invoke) node);
             resultScope = handleInvoke(methodScope, loopScope, invokeData);
-
         } else if (node instanceof ReturnNode || node instanceof UnwindNode) {
             methodScope.returnAndUnwindNodes.add((ControlSinkNode) node);
         } else {
@@ -658,7 +655,7 @@ public class GraphDecoder {
         FixedNode successor = loopBegin.next();
         FrameState frameState = loopBegin.stateAfter();
 
-        if (methodScope.loopExplosion == LoopExplosionKind.MERGE_EXPLODE) {
+        if (methodScope.loopExplosion.mergeLoops()) {
             LoopExplosionState queryState = new LoopExplosionState(frameState, null);
             LoopExplosionState existingState = loopScope.iterationStates.get(queryState);
             if (existingState != null) {
@@ -674,7 +671,7 @@ public class GraphDecoder {
         MergeNode merge = graph.add(new MergeNode());
         methodScope.loopExplosionMerges.add(merge);
 
-        if (methodScope.loopExplosion == LoopExplosionKind.MERGE_EXPLODE) {
+        if (methodScope.loopExplosion.mergeLoops()) {
             if (loopScope.iterationStates.size() == 0 && loopScope.loopDepth == 1) {
                 if (methodScope.loopExplosionHead != null) {
                     throw new PermanentBailoutException("Graal implementation restriction: Method with %s loop explosion must not have more than one top-level loop", LoopExplosionKind.MERGE_EXPLODE);
@@ -725,7 +722,7 @@ public class GraphDecoder {
             merge.addForwardEnd(predecessor);
         }
 
-        if (methodScope.loopExplosion == LoopExplosionKind.MERGE_EXPLODE) {
+        if (methodScope.loopExplosion.mergeLoops()) {
             LoopExplosionState explosionState = new LoopExplosionState(frameState, merge);
             loopScope.iterationStates.put(explosionState, explosionState);
         }
@@ -746,8 +743,8 @@ public class GraphDecoder {
         loopEnd.replaceAtPredecessor(replacementNode);
         loopEnd.safeDelete();
 
-        assert methodScope.loopExplosion != LoopExplosionKind.NONE;
-        if (methodScope.loopExplosion != LoopExplosionKind.FULL_UNROLL || loopScope.nextIterations.isEmpty()) {
+        assert methodScope.loopExplosion.useExplosion();
+        if (methodScope.loopExplosion.duplicateLoopEnds() || loopScope.nextIterations.isEmpty()) {
             int nextIterationNumber = loopScope.nextIterations.isEmpty() ? loopScope.loopIteration + 1 : loopScope.nextIterations.getLast().loopIteration + 1;
             LoopScope nextIterationScope = new LoopScope(methodScope, loopScope.outer, loopScope.loopDepth, nextIterationNumber, loopScope.loopBeginOrderId,
                             Arrays.copyOf(loopScope.initialCreatedNodes, loopScope.initialCreatedNodes.length),
@@ -800,7 +797,7 @@ public class GraphDecoder {
         loopExit.replaceAtPredecessor(begin);
 
         MergeNode loopExitPlaceholder = null;
-        if (methodScope.loopExplosion == LoopExplosionKind.MERGE_EXPLODE && loopScope.loopDepth == 1) {
+        if (methodScope.loopExplosion.mergeLoops() && loopScope.loopDepth == 1) {
             /*
              * This exit might end up as a loop exit of a loop detected after partial evaluation. We
              * need to be able to create a FrameState and the necessary proxy nodes in this case.
@@ -955,7 +952,7 @@ public class GraphDecoder {
          * not processed yet when processing the loop body, we need to create all phi functions
          * upfront.
          */
-        boolean lazyPhi = allowLazyPhis() && (!(merge instanceof LoopBeginNode) || methodScope.loopExplosion != LoopExplosionKind.NONE);
+        boolean lazyPhi = allowLazyPhis() && (!(merge instanceof LoopBeginNode) || methodScope.loopExplosion.useExplosion());
         int numPhis = methodScope.reader.getUVInt();
         for (int i = 0; i < numPhis; i++) {
             int phiInputOrderId = readOrderId(methodScope);
@@ -974,7 +971,7 @@ public class GraphDecoder {
                  * the stale value because it will never be needed to be merged (we are exploding
                  * until we hit a return).
                  */
-                assert methodScope.loopExplosion == LoopExplosionKind.FULL_EXPLODE_UNTIL_RETURN && phiNodeScope.loopIteration > 0;
+                assert methodScope.loopExplosion.duplicateLoopExits() && phiNodeScope.loopIteration > 0;
                 existing = null;
             }
 

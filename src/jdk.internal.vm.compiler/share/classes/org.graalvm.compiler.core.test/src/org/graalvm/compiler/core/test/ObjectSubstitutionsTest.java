@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2019, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,14 +22,36 @@
  */
 
 
-package org.graalvm.compiler.nodes.gc;
+package org.graalvm.compiler.core.test;
 
-import org.graalvm.compiler.nodes.extended.RawLoadNode;
-import org.graalvm.compiler.nodes.memory.FixedAccessNode;
-import org.graalvm.compiler.nodes.memory.HeapAccess;
+import org.junit.Test;
 
-public interface BarrierSet {
-    void addBarriers(FixedAccessNode n);
+public class ObjectSubstitutionsTest extends GraalCompilerTest {
 
-    HeapAccess.BarrierType readBarrierType(RawLoadNode load);
+    public static int SideEffect;
+
+    public static final void notifySnippet() {
+        synchronized (ObjectSubstitutionsTest.class) {
+            SideEffect = System.identityHashCode(ObjectSubstitutionsTest.class);
+            ObjectSubstitutionsTest.class.notify();
+        }
+    }
+
+    public static final void notifyAllSnippet() {
+        synchronized (ObjectSubstitutionsTest.class) {
+            SideEffect = System.identityHashCode(ObjectSubstitutionsTest.class);
+            ObjectSubstitutionsTest.class.notifyAll();
+        }
+    }
+
+    @Test
+    public void testNotifyEmpty() {
+        test("notifySnippet");
+    }
+
+    @Test
+    public void testNotifyAllEmpty() {
+        test("notifyAllSnippet");
+    }
+
 }

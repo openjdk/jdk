@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,7 @@ import org.graalvm.compiler.nodes.util.GraphUtil;
 import org.graalvm.compiler.options.OptionValues;
 
 import jdk.vm.ci.meta.ConstantReflectionProvider;
+import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.TriState;
 
@@ -54,7 +55,8 @@ public final class FloatEqualsNode extends CompareNode implements BinaryCommutat
 
     public FloatEqualsNode(ValueNode x, ValueNode y) {
         super(TYPE, CanonicalCondition.EQ, false, x, y);
-        assert x.stamp(NodeView.DEFAULT) instanceof FloatStamp && y.stamp(NodeView.DEFAULT) instanceof FloatStamp : x.stamp(NodeView.DEFAULT) + " " + y.stamp(NodeView.DEFAULT);
+        assert !x.getStackKind().isNumericInteger() && x.getStackKind() != JavaKind.Object;
+        assert !y.getStackKind().isNumericInteger() && y.getStackKind() != JavaKind.Object;
         assert x.stamp(NodeView.DEFAULT).isCompatible(y.stamp(NodeView.DEFAULT));
     }
 
@@ -78,15 +80,19 @@ public final class FloatEqualsNode extends CompareNode implements BinaryCommutat
 
     @Override
     public boolean isIdentityComparison() {
-        FloatStamp xStamp = (FloatStamp) x.stamp(NodeView.DEFAULT);
-        FloatStamp yStamp = (FloatStamp) y.stamp(NodeView.DEFAULT);
-        /*
-         * If both stamps have at most one 0.0 and it's the same 0.0 then this is an identity
-         * comparison. FloatStamp isn't careful about tracking the presence of -0.0 so assume that
-         * anything that includes 0.0 might include -0.0. So if either one is non-zero then it's an
-         * identity comparison.
-         */
-        return (!xStamp.contains(0.0) || !yStamp.contains(0.0));
+        Stamp xStamp = x.stamp(NodeView.DEFAULT);
+        Stamp yStamp = y.stamp(NodeView.DEFAULT);
+        if (xStamp instanceof FloatStamp && yStamp instanceof FloatStamp) {
+            /*
+             * If both stamps have at most one 0.0 and it's the same 0.0 then this is an identity
+             * comparison. FloatStamp isn't careful about tracking the presence of -0.0 so assume
+             * that anything that includes 0.0 might include -0.0. So if either one is non-zero then
+             * it's an identity comparison.
+             */
+            return (!((FloatStamp) xStamp).contains(0.0) || !((FloatStamp) yStamp).contains(0.0));
+        } else {
+            return false;
+        }
     }
 
     @Override
