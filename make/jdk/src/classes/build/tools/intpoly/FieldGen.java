@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,23 +24,23 @@
 
 /*
  * This file is used to generated optimized finite field implementations.
- * Required settings are included in the file. To generate, use jshell:
- * jshell < FieldGen.jsh
  */
+package build.tools.intpoly;
 
 import java.io.*;
 import java.math.BigInteger;
 import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.nio.file.Path;
 import java.util.*;
 
 public class FieldGen {
 
-    static FieldParams Curve25519 = new FieldParams("IntegerPolynomial25519", 26, 10, 1, 255,
-    Arrays.asList(
-    new Term(0, -19)
-    ),
-    Curve25519CrSequence(), simpleSmallCrSequence(10)
+    static FieldParams Curve25519 = new FieldParams(
+            "IntegerPolynomial25519", 26, 10, 1, 255,
+            Arrays.asList(
+                    new Term(0, -19)
+            ),
+            Curve25519CrSequence(), simpleSmallCrSequence(10)
     );
 
     private static List<CarryReduce> Curve25519CrSequence() {
@@ -65,12 +65,13 @@ public class FieldGen {
         return result;
     }
 
-    static FieldParams Curve448 = new FieldParams("IntegerPolynomial448", 28, 16, 1, 448,
-    Arrays.asList(
-    new Term(224, -1),
-    new Term(0, -1)
-    ),
-    Curve448CrSequence(), simpleSmallCrSequence(16)
+    static FieldParams Curve448 = new FieldParams(
+            "IntegerPolynomial448", 28, 16, 1, 448,
+            Arrays.asList(
+                    new Term(224, -1),
+                    new Term(0, -1)
+            ),
+            Curve448CrSequence(), simpleSmallCrSequence(16)
     );
 
     private static List<CarryReduce> Curve448CrSequence() {
@@ -100,14 +101,15 @@ public class FieldGen {
         return result;
     }
 
-    static FieldParams P256 = new FieldParams("IntegerPolynomialP256", 26, 10, 2, 256,
-    Arrays.asList(
-    new Term(224, -1),
-    new Term(192, 1),
-    new Term(96, 1),
-    new Term(0, -1)
-    ),
-    P256CrSequence(), simpleSmallCrSequence(10)
+    static FieldParams P256 = new FieldParams(
+            "IntegerPolynomialP256", 26, 10, 2, 256,
+            Arrays.asList(
+                    new Term(224, -1),
+                    new Term(192, 1),
+                    new Term(96, 1),
+                    new Term(0, -1)
+            ),
+            P256CrSequence(), simpleSmallCrSequence(10)
     );
 
     private static List<CarryReduce> P256CrSequence() {
@@ -117,14 +119,15 @@ public class FieldGen {
         return result;
     }
 
-    static FieldParams P384 = new FieldParams("IntegerPolynomialP384", 28, 14, 2, 384,
-    Arrays.asList(
-    new Term(128, -1),
-    new Term(96, -1),
-    new Term(32, 1),
-    new Term(0, -1)
-    ),
-    P384CrSequence(), simpleSmallCrSequence(14)
+    static FieldParams P384 = new FieldParams(
+            "IntegerPolynomialP384", 28, 14, 2, 384,
+            Arrays.asList(
+                    new Term(128, -1),
+                    new Term(96, -1),
+                    new Term(32, 1),
+                    new Term(0, -1)
+            ),
+            P384CrSequence(), simpleSmallCrSequence(14)
     );
 
     private static List<CarryReduce> P384CrSequence() {
@@ -134,8 +137,12 @@ public class FieldGen {
         return result;
     }
 
-    static FieldParams P521 = new FieldParams("IntegerPolynomialP521", 28, 19, 2, 521,
-    Arrays.asList(new Term(0, -1)), P521CrSequence(), simpleSmallCrSequence(19)
+    static FieldParams P521 = new FieldParams(
+            "IntegerPolynomialP521", 28, 19, 2, 521,
+            Arrays.asList(
+                    new Term(0, -1)
+            ),
+            P521CrSequence(), simpleSmallCrSequence(19)
     );
 
     private static List<CarryReduce> P521CrSequence() {
@@ -145,19 +152,22 @@ public class FieldGen {
         return result;
     }
 
-    static FieldParams O256 = new FieldParams("P256OrderField", 26, 10, 1, 256,
-    new BigInteger("26959946660873538059280334323273029441504803697035324946844617595567"),
-    orderFieldCrSequence(10), orderFieldSmallCrSequence(10)
+    static FieldParams O256 = new FieldParams(
+            "P256OrderField", 26, 10, 1, 256,
+            "FFFFFFFF00000000FFFFFFFFFFFFFFFFBCE6FAADA7179E84F3B9CAC2FC632551",
+            orderFieldCrSequence(10), orderFieldSmallCrSequence(10)
     );
 
-    static FieldParams O384 = new FieldParams("P384OrderField", 28, 14, 1, 384,
-    new BigInteger("1388124618062372383947042015309946732620727252194336364173"),
-    orderFieldCrSequence(14), orderFieldSmallCrSequence(14)
+    static FieldParams O384 = new FieldParams(
+            "P384OrderField", 28, 14, 1, 384,
+            "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFC7634D81F4372DDF581A0DB248B0A77AECEC196ACCC52973",
+            orderFieldCrSequence(14), orderFieldSmallCrSequence(14)
     );
 
-    static FieldParams O521 = new FieldParams("P521OrderField", 28, 19, 1, 521,
-    new BigInteger("657877501894328237357444332315020117536923257219387276263472201219398408051703"),
-    o521crSequence(19), orderFieldSmallCrSequence(19)
+    static FieldParams O521 = new FieldParams(
+            "P521OrderField", 28, 19, 1, 521,
+            "01FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFA51868783BF2F966B7FCC0148F709A5D03BB5C9B8899C47AEBB6FB71E91386409",
+            o521crSequence(19), orderFieldSmallCrSequence(19)
     );
 
     private static List<CarryReduce> o521crSequence(int numLimbs) {
@@ -165,7 +175,7 @@ public class FieldGen {
         // split the full reduce in half, with a carry in between
         List<CarryReduce> result = new ArrayList<CarryReduce>();
         result.addAll(fullCarry(2 * numLimbs));
-        for (int i = 2 * numLimbs - 1; i >= numLimbs + numLimbs/2; i--) {
+        for (int i = 2 * numLimbs - 1; i >= numLimbs + numLimbs / 2; i--) {
             result.add(new Reduce(i));
         }
         // carry
@@ -173,7 +183,7 @@ public class FieldGen {
             result.add(new Carry(i));
         }
         // rest of reduce
-        for (int i = numLimbs + numLimbs/2 - 1; i >= numLimbs; i--) {
+        for (int i = numLimbs + numLimbs / 2 - 1; i >= numLimbs; i--) {
             result.add(new Reduce(i));
         }
         result.addAll(orderFieldSmallCrSequence(numLimbs));
@@ -192,7 +202,8 @@ public class FieldGen {
 
         return result;
     }
-   private static List<CarryReduce> orderFieldSmallCrSequence(int numLimbs) {
+
+    private static List<CarryReduce> orderFieldSmallCrSequence(int numLimbs) {
         List<CarryReduce> result = new ArrayList<CarryReduce>();
         result.addAll(fullCarry(numLimbs + 1));
         result.add(new Reduce(numLimbs));
@@ -200,7 +211,9 @@ public class FieldGen {
         return result;
     }
 
-    static final FieldParams[] ALL_FIELDS = {P256, P384, P521, O256, O384, O521};
+    static final FieldParams[] ALL_FIELDS = {
+            P256, P384, P521, O256, O384, O521,
+    };
 
     public static class Term {
         private final int power;
@@ -220,9 +233,13 @@ public class FieldGen {
         }
 
         public BigInteger getValue() {
-            return BigInteger.valueOf(2).pow(power).multiply(BigInteger.valueOf(coefficient));
+            return BigInteger.valueOf(2).pow(power)
+                    .multiply(BigInteger.valueOf(coefficient));
         }
 
+        public String toString() {
+            return "2^" + power + " * " + coefficient;
+        }
     }
 
     static abstract class CarryReduce {
@@ -236,7 +253,8 @@ public class FieldGen {
             return index;
         }
 
-        public abstract void write(CodeBuffer out, FieldParams params, String prefix, Iterable<CarryReduce> remaining);
+        public abstract void write(CodeBuffer out, FieldParams params,
+                String prefix, Iterable<CarryReduce> remaining);
     }
 
     static class Carry extends CarryReduce {
@@ -244,7 +262,8 @@ public class FieldGen {
             super(index);
         }
 
-        public void write(CodeBuffer out, FieldParams params, String prefix, Iterable<CarryReduce> remaining) {
+        public void write(CodeBuffer out, FieldParams params, String prefix,
+                Iterable<CarryReduce> remaining) {
             carry(out, params, prefix, getIndex());
         }
     }
@@ -254,7 +273,8 @@ public class FieldGen {
             super(index);
         }
 
-        public void write(CodeBuffer out, FieldParams params, String prefix, Iterable<CarryReduce> remaining) {
+        public void write(CodeBuffer out, FieldParams params, String prefix,
+                Iterable<CarryReduce> remaining) {
             reduce(out, params, prefix, getIndex(), remaining);
         }
     }
@@ -269,8 +289,10 @@ public class FieldGen {
         private final List<CarryReduce> crSequence;
         private final List<CarryReduce> smallCrSequence;
 
-        public FieldParams(String className, int bitsPerLimb, int numLimbs, int maxAdds, int power,
-                           Iterable<Term> terms, List<CarryReduce> crSequence, List<CarryReduce> smallCrSequence) {
+        public FieldParams(String className, int bitsPerLimb, int numLimbs,
+                int maxAdds, int power,
+                Iterable<Term> terms, List<CarryReduce> crSequence,
+                List<CarryReduce> smallCrSequence) {
             this.className = className;
             this.bitsPerLimb = bitsPerLimb;
             this.numLimbs = numLimbs;
@@ -281,8 +303,10 @@ public class FieldGen {
             this.smallCrSequence = smallCrSequence;
         }
 
-        public FieldParams(String className, int bitsPerLimb, int numLimbs, int maxAdds, int power,
-                           BigInteger term, List<CarryReduce> crSequence, List<CarryReduce> smallCrSequence) {
+        public FieldParams(String className, int bitsPerLimb, int numLimbs,
+                int maxAdds, int power,
+                String term, List<CarryReduce> crSequence,
+                List<CarryReduce> smallCrSequence) {
             this.className = className;
             this.bitsPerLimb = bitsPerLimb;
             this.numLimbs = numLimbs;
@@ -291,11 +315,13 @@ public class FieldGen {
             this.crSequence = crSequence;
             this.smallCrSequence = smallCrSequence;
 
-            terms = buildTerms(term);
+            terms = buildTerms(BigInteger.ONE.shiftLeft(power)
+                    .subtract(new BigInteger(term, 16)));
         }
 
         private Iterable<Term> buildTerms(BigInteger sub) {
-            // split a large subtrahend into smaller terms that are aligned with limbs
+            // split a large subtrahend into smaller terms
+            // that are aligned with limbs
             List<Term> result = new ArrayList<Term>();
             BigInteger mod = BigInteger.valueOf(1 << bitsPerLimb);
             int termIndex = 0;
@@ -312,7 +338,7 @@ public class FieldGen {
                 }
                 sub = sub.shiftRight(bitsPerLimb);
                 if (plusOne) {
-                   sub = sub.add(BigInteger.ONE);
+                    sub = sub.add(BigInteger.ONE);
                 }
                 ++termIndex;
             }
@@ -370,7 +396,7 @@ public class FieldGen {
 
     static List<CarryReduce> simpleCrSequence(int numLimbs) {
         List<CarryReduce> result = new ArrayList<CarryReduce>();
-        for(int i = 0; i < 4; i++) {
+        for (int i = 0; i < 4; i++) {
             result.addAll(fullCarry(2 * numLimbs - 1));
             result.addAll(fullReduce(numLimbs));
         }
@@ -394,15 +420,30 @@ public class FieldGen {
     private final String packageName;
     private final String parentName;
 
-    public FieldGen(String packageName, String parentName) {
+    private final Path headerPath;
+    private final Path destPath;
+
+    public FieldGen(String packageName, String parentName,
+            Path headerPath, Path destRoot) throws IOException {
         this.packageName = packageName;
         this.parentName = parentName;
+        this.headerPath = headerPath;
+        this.destPath = destRoot.resolve(packageName.replace(".", "/"));
+        Files.createDirectories(destPath);
     }
 
+    // args: header.txt destpath
     public static void main(String[] args) throws Exception {
 
-        FieldGen gen = new FieldGen("sun.security.util.math.intpoly", "IntegerPolynomial");
-        for(FieldParams p : ALL_FIELDS) {
+        FieldGen gen = new FieldGen(
+                "sun.security.util.math.intpoly",
+                "IntegerPolynomial",
+                Path.of(args[0]),
+                Path.of(args[1]));
+        for (FieldParams p : ALL_FIELDS) {
+            System.out.println(p.className);
+            System.out.println(p.terms);
+            System.out.println();
             gen.generateFile(p);
         }
     }
@@ -410,7 +451,8 @@ public class FieldGen {
     private void generateFile(FieldParams params) throws IOException {
         String text = generate(params);
         String fileName = params.getClassName() + ".java";
-        PrintWriter out = new PrintWriter(new FileWriter(fileName));
+        PrintWriter out = new PrintWriter(Files.newBufferedWriter(
+                destPath.resolve(fileName)));
         out.println(text);
         out.close();
     }
@@ -421,7 +463,7 @@ public class FieldGen {
         private Set<String> temporaries = new HashSet<String>();
         private StringBuffer buffer = new StringBuffer();
         private int indent = 0;
-        private Class lastCR;
+        private Class<?> lastCR;
         private int lastCrCount = 0;
         private int crMethodBreakCount = 0;
         private int crNumLimbs = 0;
@@ -458,12 +500,13 @@ public class FieldGen {
             crMethodBreakCount = 0;
             lastCR = null;
         }
+
         /*
          * Record a carry/reduce of the specified type. This method is used to
          * break up large carry/reduce sequences into multiple methods to make
          * JIT/optimization easier
          */
-        public void record(Class type) {
+        public void record(Class<?> type) {
             if (type == lastCR) {
                 lastCrCount++;
             } else {
@@ -484,7 +527,7 @@ public class FieldGen {
             // call the new method
             appendIndent();
             append("carryReduce" + crMethodBreakCount + "(r");
-            for(int i = 0; i < crNumLimbs; i++) {
+            for (int i = 0; i < crNumLimbs; i++) {
                 append(", c" + i);
             }
             // temporaries are not live between operations, no need to send
@@ -496,13 +539,13 @@ public class FieldGen {
             // make the method
             appendIndent();
             append("void carryReduce" + crMethodBreakCount + "(long[] r");
-            for(int i = 0; i < crNumLimbs; i++) {
-                append (", long c" + i);
+            for (int i = 0; i < crNumLimbs; i++) {
+                append(", long c" + i);
             }
             append(") {\n");
             incrIndent();
             // declare temporaries
-            for(String temp : temporaries) {
+            for (String temp : temporaries) {
                 appendLine("long " + temp + ";");
             }
             append("\n");
@@ -512,7 +555,7 @@ public class FieldGen {
 
         public String getTemporary(String type, String value) {
             Iterator<String> iter = temporaries.iterator();
-            if(iter.hasNext()) {
+            if (iter.hasNext()) {
                 String result = iter.next();
                 iter.remove();
                 appendLine(result + " = " + value + ";");
@@ -529,7 +572,7 @@ public class FieldGen {
         }
 
         public void appendIndent() {
-            for(int i = 0; i < indent; i++) {
+            for (int i = 0; i < indent; i++) {
                 buffer.append("    ");
             }
         }
@@ -550,16 +593,23 @@ public class FieldGen {
         }
         result.appendLine("import java.math.BigInteger;");
 
-        result.appendLine("public class " + params.getClassName() + " extends " + this.parentName + " {");
+        result.appendLine("public class " + params.getClassName()
+                + " extends " + this.parentName + " {");
         result.incrIndent();
 
-        result.appendLine("private static final int BITS_PER_LIMB = " + params.getBitsPerLimb() + ";");
-        result.appendLine("private static final int NUM_LIMBS = " + params.getNumLimbs() + ";");
-        result.appendLine("private static final int MAX_ADDS = " + params.getMaxAdds() + ";");
-        result.appendLine("public static final BigInteger MODULUS = evaluateModulus();");
-        result.appendLine("private static final long CARRY_ADD = 1 << " + (params.getBitsPerLimb() - 1) + ";");
+        result.appendLine("private static final int BITS_PER_LIMB = "
+                + params.getBitsPerLimb() + ";");
+        result.appendLine("private static final int NUM_LIMBS = "
+                + params.getNumLimbs() + ";");
+        result.appendLine("private static final int MAX_ADDS = "
+                + params.getMaxAdds() + ";");
+        result.appendLine(
+                "public static final BigInteger MODULUS = evaluateModulus();");
+        result.appendLine("private static final long CARRY_ADD = 1 << "
+                + (params.getBitsPerLimb() - 1) + ";");
         if (params.getBitsPerLimb() * params.getNumLimbs() != params.getPower()) {
-            result.appendLine("private static final int LIMB_MASK = -1 >>> (64 - BITS_PER_LIMB);");
+            result.appendLine("private static final int LIMB_MASK = -1 "
+                    + ">>> (64 - BITS_PER_LIMB);");
         }
         int termIndex = 0;
 
@@ -571,8 +621,9 @@ public class FieldGen {
 
         result.appendLine("private static BigInteger evaluateModulus() {");
         result.incrIndent();
-        result.appendLine("BigInteger result = BigInteger.valueOf(2).pow(" + params.getPower() + ");");
-        for(Term t : params.getTerms()) {
+        result.appendLine("BigInteger result = BigInteger.valueOf(2).pow("
+                + params.getPower() + ");");
+        for (Term t : params.getTerms()) {
             boolean subtract = false;
             int coefValue = t.getCoefficient();
             if (coefValue < 0) {
@@ -602,14 +653,18 @@ public class FieldGen {
         result.appendLine("@Override");
         result.appendLine("protected void finalCarryReduceLast(long[] limbs) {");
         result.incrIndent();
-        int extraBits = params.getBitsPerLimb() * params.getNumLimbs() - params.getPower();
+        int extraBits = params.getBitsPerLimb() * params.getNumLimbs()
+                - params.getPower();
         int highBits = params.getBitsPerLimb() - extraBits;
-        result.appendLine("long c = limbs[" + (params.getNumLimbs() - 1) + "] >> " + highBits + ";");
-        result.appendLine("limbs[" + (params.getNumLimbs() - 1) + "] -= c << " + highBits + ";");
+        result.appendLine("long c = limbs[" + (params.getNumLimbs() - 1)
+                + "] >> " + highBits + ";");
+        result.appendLine("limbs[" + (params.getNumLimbs() - 1) + "] -= c << "
+                + highBits + ";");
         for (Term t : params.getTerms()) {
             int reduceBits = params.getPower() + extraBits - t.getPower();
             int negatedCoefficient = -1 * t.getCoefficient();
-            modReduceInBits(result, params, true, "limbs", params.getNumLimbs(), reduceBits, negatedCoefficient, "c");
+            modReduceInBits(result, params, true, "limbs", params.getNumLimbs(),
+                    reduceBits, negatedCoefficient, "c");
         }
         result.decrIndent();
         result.appendLine("}");
@@ -617,8 +672,8 @@ public class FieldGen {
         // full carry/reduce sequence
         result.appendIndent();
         result.append("private void carryReduce(long[] r, ");
-        for(int i = 0; i < 2 * params.getNumLimbs() - 1; i++) {
-            result.append ("long c" + i);
+        for (int i = 0; i < 2 * params.getNumLimbs() - 1; i++) {
+            result.append("long c" + i);
             if (i < 2 * params.getNumLimbs() - 2) {
                 result.append(", ");
             }
@@ -627,7 +682,8 @@ public class FieldGen {
         result.newTempScope();
         result.incrIndent();
         result.appendLine("long c" + (2 * params.getNumLimbs() - 1) + " = 0;");
-        write(result, params.getCrSequence(), params, "c", 2 * params.getNumLimbs());
+        write(result, params.getCrSequence(), params, "c",
+                2 * params.getNumLimbs());
         result.appendLine();
         for (int i = 0; i < params.getNumLimbs(); i++) {
             result.appendLine("r[" + i + "] = c" + i + ";");
@@ -638,8 +694,8 @@ public class FieldGen {
         // small carry/reduce sequence
         result.appendIndent();
         result.append("private void carryReduce(long[] r, ");
-        for(int i = 0; i < params.getNumLimbs(); i++) {
-            result.append ("long c" + i);
+        for (int i = 0; i < params.getNumLimbs(); i++) {
+            result.append("long c" + i);
             if (i < params.getNumLimbs() - 1) {
                 result.append(", ");
             }
@@ -648,7 +704,8 @@ public class FieldGen {
         result.newTempScope();
         result.incrIndent();
         result.appendLine("long c" + params.getNumLimbs() + " = 0;");
-        write(result, params.getSmallCrSequence(), params, "c", params.getNumLimbs() + 1);
+        write(result, params.getSmallCrSequence(), params,
+                "c", params.getNumLimbs() + 1);
         result.appendLine();
         for (int i = 0; i < params.getNumLimbs(); i++) {
             result.appendLine("r[" + i + "] = c" + i + ";");
@@ -727,7 +784,7 @@ public class FieldGen {
             if (jDiff % 2 == 1) {
                 int aIndex = i / 2;
                 if (jDiff > 1) {
-                    result.append (" + ");
+                    result.append(" + ");
                 }
                 result.append("(a[" + aIndex + "] * a[" + aIndex + "])");
             }
@@ -752,7 +809,8 @@ public class FieldGen {
         return result.toString();
     }
 
-    private static void write(CodeBuffer out, List<CarryReduce> sequence, FieldParams params, String prefix, int numLimbs) {
+    private static void write(CodeBuffer out, List<CarryReduce> sequence,
+            FieldParams params, String prefix, int numLimbs) {
 
         out.startCrSequence(numLimbs);
         for (int i = 0; i < sequence.size(); i++) {
@@ -764,7 +822,8 @@ public class FieldGen {
         }
     }
 
-    private static void reduce(CodeBuffer out, FieldParams params, String prefix, int index, Iterable<CarryReduce> remaining) {
+    private static void reduce(CodeBuffer out, FieldParams params,
+            String prefix, int index, Iterable<CarryReduce> remaining) {
 
         out.record(Reduce.class);
 
@@ -772,35 +831,40 @@ public class FieldGen {
         String reduceFrom = indexedExpr(false, prefix, index);
         boolean referenced = false;
         for (CarryReduce cr : remaining) {
-            if(cr.index == index) {
+            if (cr.index == index) {
                 referenced = true;
             }
         }
         for (Term t : params.getTerms()) {
             int reduceBits = params.getPower() - t.getPower();
             int negatedCoefficient = -1 * t.getCoefficient();
-            modReduceInBits(out, params, false, prefix, index, reduceBits, negatedCoefficient, reduceFrom);
+            modReduceInBits(out, params, false, prefix, index, reduceBits,
+                    negatedCoefficient, reduceFrom);
         }
         if (referenced) {
             out.appendLine(reduceFrom + " = 0;");
         }
     }
 
-    private static void carry(CodeBuffer out, FieldParams params, String prefix, int index) {
+    private static void carry(CodeBuffer out, FieldParams params,
+            String prefix, int index) {
 
         out.record(Carry.class);
 
         out.appendLine("//carry from position " + index);
         String carryFrom = prefix + index;
         String carryTo = prefix + (index + 1);
-        String carry = "(" + carryFrom + " + CARRY_ADD) >> " + params.getBitsPerLimb();
+        String carry = "(" + carryFrom + " + CARRY_ADD) >> "
+                + params.getBitsPerLimb();
         String temp = out.getTemporary("long", carry);
-        out.appendLine(carryFrom + " -= (" + temp + " << " + params.getBitsPerLimb() + ");");
+        out.appendLine(carryFrom + " -= (" + temp + " << "
+                + params.getBitsPerLimb() + ");");
         out.appendLine(carryTo + " += " + temp + ";");
         out.freeTemporary(temp);
     }
 
-    private static String indexedExpr(boolean isArray, String prefix, int index) {
+    private static String indexedExpr(
+            boolean isArray, String prefix, int index) {
         String result = prefix + index;
         if (isArray) {
             result = prefix + "[" + index + "]";
@@ -808,7 +872,9 @@ public class FieldGen {
         return result;
     }
 
-    private static void modReduceInBits(CodeBuffer result, FieldParams params, boolean isArray, String prefix, int index, int reduceBits, int coefficient, String c) {
+    private static void modReduceInBits(CodeBuffer result, FieldParams params,
+            boolean isArray, String prefix, int index, int reduceBits,
+            int coefficient, String c) {
 
         String x = coefficient + " * " + c;
         String accOp = "+=";
@@ -825,13 +891,19 @@ public class FieldGen {
 
         if (reduceBits % params.getBitsPerLimb() == 0) {
             int pos = reduceBits / params.getBitsPerLimb();
-            result.appendLine(indexedExpr(isArray, prefix, (index - pos)) + " " + accOp + " " + x + ";");
+            result.appendLine(indexedExpr(isArray, prefix, (index - pos))
+                    + " " + accOp + " " + x + ";");
         } else {
             int secondPos = reduceBits / params.getBitsPerLimb();
-            int bitOffset = (secondPos + 1) * params.getBitsPerLimb() - reduceBits;
+            int bitOffset = (secondPos + 1) * params.getBitsPerLimb()
+                    - reduceBits;
             int rightBitOffset = params.getBitsPerLimb() - bitOffset;
-            result.appendLine(indexedExpr(isArray, prefix, (index - (secondPos + 1))) + " " + accOp + " (" + x + " << " + bitOffset + ") & LIMB_MASK;");
-            result.appendLine(indexedExpr(isArray, prefix, (index - secondPos)) + " " + accOp + " " + x + " >> " + rightBitOffset + ";");
+            result.appendLine(indexedExpr(isArray, prefix,
+                    (index - (secondPos + 1))) + " " + accOp
+                    + " (" + x + " << " + bitOffset + ") & LIMB_MASK;");
+            result.appendLine(indexedExpr(isArray, prefix,
+                    (index - secondPos)) + " " + accOp + " " + x
+                    + " >> " + rightBitOffset + ";");
         }
 
         if (temp != null) {
@@ -840,12 +912,10 @@ public class FieldGen {
     }
 
     private String readHeader() throws IOException {
-        BufferedReader reader = Files.newBufferedReader(Paths.get("header.txt"));
+        BufferedReader reader
+                = Files.newBufferedReader(headerPath);
         StringBuffer result = new StringBuffer();
         reader.lines().forEach(s -> result.append(s + "\n"));
         return result.toString();
     }
 }
-
-FieldGen.main(null);
-
