@@ -31,7 +31,6 @@
  * @modules java.base/jdk.internal.misc
  * @modules java.compiler
  *          java.instrument
- *          jdk.jartool/sun.tools.jar
  * @compile ../NamedBuffer.java
  * @run main RedefineClassHelper
  * @compile --enable-preview -source ${jdk.version} Host/Host.java

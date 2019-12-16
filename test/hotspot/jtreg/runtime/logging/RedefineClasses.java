@@ -29,7 +29,6 @@
  * @library /test/lib
  * @modules java.compiler
  *          java.instrument
- *          jdk.jartool/sun.tools.jar
  * @run main RedefineClassHelper
  * @run main/othervm -Xmx256m -XX:MaxMetaspaceSize=64m -javaagent:redefineagent.jar -Xlog:all=trace:file=all.log RedefineClasses
  */
