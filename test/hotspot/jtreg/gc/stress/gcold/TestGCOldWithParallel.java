@@ -31,7 +31,6 @@ package gc.stress.gcold;
  * @requires vm.gc.Parallel
  * @summary Stress the Parallel GC by trying to make old objects more likely to be garbage than young objects.
  * @run main/othervm -Xmx384M -XX:+UseParallelGC gc.stress.gcold.TestGCOld 50 1 20 10 10000
- * @run main/othervm -Xmx384M -XX:+UseParallelGC -XX:-UseParallelOldGC gc.stress.gcold.TestGCOld 50 1 20 10 10000
  */
 public class TestGCOldWithParallel {
     public static void main(String[] args) {

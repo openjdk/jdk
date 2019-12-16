@@ -32,7 +32,7 @@ package jdk.jfr.event.gc.detailed;
  *
  * @requires vm.gc == "Parallel" | vm.gc == null
  * @library /test/lib /test/jdk
- * @run main/othervm -Xmx32m -Xms32m -Xmn12m -XX:+UseParallelGC -XX:+UseParallelOldGC -XX:MaxTenuringThreshold=5 -XX:InitialTenuringThreshold=5 jdk.jfr.event.gc.detailed.TestPromotionEventWithParallelScavenge
+ * @run main/othervm -Xmx32m -Xms32m -Xmn12m -XX:+UseParallelGC -XX:MaxTenuringThreshold=5 -XX:InitialTenuringThreshold=5 jdk.jfr.event.gc.detailed.TestPromotionEventWithParallelScavenge
  */
 public class TestPromotionEventWithParallelScavenge {
 

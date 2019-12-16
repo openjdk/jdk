@@ -82,13 +82,13 @@ public class TestAllocateOldGenAtError {
   }
 
   private static void testParallelOld() throws Exception {
-    System.out.println("Testing ParallelOld GC with UseAdaptiveGCBoundary disabled");
-    OutputAnalyzer output = runTest("-XX:+UseParallelOldGC -XX:-UseAdaptiveGCBoundary");
+    System.out.println("Testing Parallel GC with UseAdaptiveGCBoundary disabled");
+    OutputAnalyzer output = runTest("-XX:+UseParallelGC -XX:-UseAdaptiveGCBoundary");
     output.shouldContain("Error occurred during initialization of VM");
     output.shouldNotHaveExitValue(0);
 
-    System.out.println("Testing ParallelOld GC with UseAdaptiveGCBoundary enabled");
-    output = runTest("-XX:+UseParallelOldGC -XX:+UseAdaptiveGCBoundary");
+    System.out.println("Testing Parallel GC with UseAdaptiveGCBoundary enabled");
+    output = runTest("-XX:+UseParallelGC -XX:+UseAdaptiveGCBoundary");
     output.shouldContain("Error occurred during initialization of VM");
     output.shouldNotHaveExitValue(0);
   }

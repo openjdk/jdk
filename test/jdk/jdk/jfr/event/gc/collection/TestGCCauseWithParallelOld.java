@@ -39,7 +39,7 @@ import jdk.test.lib.jfr.GCHelper;
 public class TestGCCauseWithParallelOld {
     public static void main(String[] args) throws Exception {
         String testID = "ParallelOld";
-        String[] vmFlags = {"-XX:+UseParallelGC", "-XX:+UseParallelOldGC"};
+        String[] vmFlags = {"-XX:+UseParallelGC"};
         String[] gcNames = {GCHelper.gcParallelScavenge, GCHelper.gcParallelOld};
         String[] gcCauses = {"Allocation Failure", "Ergonomics", "System.gc()"};
         GCGarbageCollectionUtil.test(testID, vmFlags, gcNames, gcCauses);

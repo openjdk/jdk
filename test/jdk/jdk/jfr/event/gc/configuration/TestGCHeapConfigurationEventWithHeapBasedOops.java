@@ -38,7 +38,7 @@ import jdk.test.lib.jfr.EventVerifier;
  * @library /test/lib /test/jdk
  * @build sun.hotspot.WhiteBox
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:-UseFastUnorderedTimeStamps -XX:+UseParallelGC -XX:+UseParallelOldGC -XX:+UseCompressedOops -Xmx31g jdk.jfr.event.gc.configuration.TestGCHeapConfigurationEventWithHeapBasedOops
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:-UseFastUnorderedTimeStamps -XX:+UseParallelGC -XX:+UseCompressedOops -Xmx31g jdk.jfr.event.gc.configuration.TestGCHeapConfigurationEventWithHeapBasedOops
  */
 
 /* See the shell script wrapper for the flags used when invoking the JVM */

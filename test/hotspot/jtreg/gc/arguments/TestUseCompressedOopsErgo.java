@@ -53,7 +53,6 @@ package gc.arguments;
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm gc.arguments.TestUseCompressedOopsErgo -XX:+UseParallelGC
- * @run main/othervm gc.arguments.TestUseCompressedOopsErgo -XX:+UseParallelGC -XX:-UseParallelOldGC
  */
 
 /*
