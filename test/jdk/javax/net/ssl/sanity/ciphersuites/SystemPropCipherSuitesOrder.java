@@ -30,7 +30,6 @@ import javax.net.ssl.SSLSocket;
  * @library /javax/net/ssl/templates
  *          /javax/net/ssl/TLSCommon
  * @summary Test TLS ciphersuites order set through System properties
- * @ignore Not applicable until the cipher order of system property maintained.
  * @run main/othervm
  *      -Djdk.tls.client.cipherSuites=TLS_CHACHA20_POLY1305_SHA256,TLS_AES_128_GCM_SHA256,TLS_AES_256_GCM_SHA384
  *      -Djdk.tls.server.cipherSuites=TLS_AES_256_GCM_SHA384,TLS_CHACHA20_POLY1305_SHA256,TLS_AES_128_GCM_SHA256
