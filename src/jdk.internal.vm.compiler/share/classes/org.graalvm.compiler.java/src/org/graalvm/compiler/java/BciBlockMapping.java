@@ -1079,7 +1079,7 @@ public final class BciBlockMapping {
                 BciBlock successor = block.getSuccessor(i);
                 JsrScope nextScope = scope;
                 if (successor == block.getJsrSuccessor()) {
-                    nextScope = scope.push(block.getJsrReturnBci());
+                    nextScope = scope.push(block.getJsrReturnBci(), successor);
                 }
                 if (successor == block.getRetSuccessor()) {
                     nextScope = scope.pop();
@@ -1109,10 +1109,23 @@ public final class BciBlockMapping {
             }
         }
         for (BciBlock successor : block.getSuccessors()) {
-            if (!jsrVisited.contains(successor)) {
+            if (!jsrVisited.contains(successor) && shouldFollowEdge(successor, scope)) {
                 createJsrAlternatives(blockMap, successor);
             }
         }
+    }
+
+    private static boolean shouldFollowEdge(BciBlock successor, JsrScope scope) {
+        if (successor instanceof ExceptionDispatchBlock && scope.getJsrEntryBlock() != null) {
+            ExceptionDispatchBlock exceptionDispatchBlock = (ExceptionDispatchBlock) successor;
+            int bci = scope.getJsrEntryBlock().startBci;
+            if (exceptionDispatchBlock.handler.getStartBCI() < bci && bci < exceptionDispatchBlock.handler.getEndBCI()) {
+                // Handler covers start of JSR block and the bci before that => don't follow edge.
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private ExceptionDispatchBlock handleExceptions(BciBlock[] blockMap, int bci) {

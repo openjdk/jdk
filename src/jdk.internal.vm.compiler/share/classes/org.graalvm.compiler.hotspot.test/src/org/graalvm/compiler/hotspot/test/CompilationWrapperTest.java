@@ -249,7 +249,7 @@ public class CompilationWrapperTest extends GraalCompilerTest {
             for (Probe probe : probes) {
                 String error = probe.test();
                 if (error != null) {
-                    Assert.fail(String.format("Did not find expected occurences of '%s' in output of command: %s%n%s", probe.substring, error, proc));
+                    Assert.fail(String.format("Did not find expected occurrences of '%s' in output of command: %s%n%s", probe.substring, error, proc));
                 }
             }
             String line = diagnosticProbe.lastMatchingLine;

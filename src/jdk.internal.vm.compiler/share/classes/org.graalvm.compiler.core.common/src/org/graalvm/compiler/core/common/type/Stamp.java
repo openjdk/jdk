@@ -136,6 +136,13 @@ public abstract class Stamp implements SpeculationContextObject {
     }
 
     /**
+     * Tests whether this stamp represents a pointer value.
+     */
+    public boolean isPointerStamp() {
+        return this instanceof AbstractPointerStamp;
+    }
+
+    /**
      * If this stamp represents a single value, the methods returns this single value. It returns
      * null otherwise.
      *

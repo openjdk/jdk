@@ -302,8 +302,6 @@ public class BufferedReader extends Reader {
      * (EOF).
      *
      * @param      ignoreLF  If true, the next '\n' will be skipped
-     * @param      term      Output: Whether a line terminator was encountered
-     *                       while reading the line; may be {@code null}.
      *
      * @return     A String containing the contents of the line, not including
      *             any line-termination characters, or null if the end of the
@@ -313,14 +311,13 @@ public class BufferedReader extends Reader {
      *
      * @throws     IOException  If an I/O error occurs
      */
-    String readLine(boolean ignoreLF, boolean[] term) throws IOException {
+    String readLine(boolean ignoreLF) throws IOException {
         StringBuilder s = null;
         int startChar;
 
         synchronized (lock) {
             ensureOpen();
             boolean omitLF = ignoreLF || skipLF;
-            if (term != null) term[0] = false;
 
         bufferLoop:
             for (;;) {
@@ -347,7 +344,6 @@ public class BufferedReader extends Reader {
                 for (i = nextChar; i < nChars; i++) {
                     c = cb[i];
                     if ((c == '\n') || (c == '\r')) {
-                        if (term != null) term[0] = true;
                         eol = true;
                         break charLoop;
                     }
@@ -393,7 +389,7 @@ public class BufferedReader extends Reader {
      * @see java.nio.file.Files#readAllLines
      */
     public String readLine() throws IOException {
-        return readLine(false, null);
+        return readLine(false);
     }
 
     /**

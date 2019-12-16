@@ -231,7 +231,7 @@ public final class HotSpotGraalRuntime implements HotSpotGraalRuntimeProvider {
     public enum HotSpotGC {
         // Supported GCs
         Serial(true, "UseSerialGC"),
-        Parallel(true, "UseParallelGC", "UseParallelOldGC"),
+        Parallel(true, "UseParallelGC", "UseParallelOldGC", "UseParNewGC"),
         CMS(true, "UseConcMarkSweepGC"),
         G1(true, "UseG1GC"),
 
@@ -355,6 +355,7 @@ public final class HotSpotGraalRuntime implements HotSpotGraalRuntimeProvider {
         return null;
     }
 
+    @Override
     public HotSpotGC getGarbageCollector() {
         return garbageCollector;
     }

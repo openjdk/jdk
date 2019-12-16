@@ -130,7 +130,7 @@ public class UseCase {
 
     private static final Object[][] PARAMS = new Object[][] {
             PROTOCOLS,
-            FULL_CASES ? CIPHER_SUITES : MANDATORY_CIPHER_SUITES,
+            FULL_CASES || FULL_CIPHER_SUITES ? CIPHER_SUITES : MANDATORY_CIPHER_SUITES,
             FULL_CASES ? new Boolean[] { false, true } : new Boolean[] { true },
             FULL_CASES
                     ? new ServerName[] { ServerName.NONE, ServerName.EXAMPLE }

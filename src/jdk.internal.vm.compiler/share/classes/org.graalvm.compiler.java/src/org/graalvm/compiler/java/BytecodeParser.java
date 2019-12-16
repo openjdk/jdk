@@ -32,7 +32,6 @@ import static jdk.vm.ci.meta.DeoptimizationAction.InvalidateRecompile;
 import static jdk.vm.ci.meta.DeoptimizationAction.InvalidateReprofile;
 import static jdk.vm.ci.meta.DeoptimizationAction.None;
 import static jdk.vm.ci.meta.DeoptimizationReason.ClassCastException;
-import static jdk.vm.ci.meta.DeoptimizationReason.JavaSubroutineMismatch;
 import static jdk.vm.ci.meta.DeoptimizationReason.NullCheckException;
 import static jdk.vm.ci.meta.DeoptimizationReason.RuntimeConstraint;
 import static jdk.vm.ci.meta.DeoptimizationReason.UnreachedCode;
@@ -684,6 +683,114 @@ public class BytecodeParser implements GraphBuilderContext {
                 // Restore the original return value
                 parser.frameState.push(returnKind, returnValue);
             }
+            boolean inlinedIntrinsic = parser.getInvokeReturnType() != null;
+            if (inlinedIntrinsic) {
+                for (Node n : parser.graph.getNewNodes(mark)) {
+                    if (n instanceof FrameState) {
+                        GraalError.guarantee(((FrameState) n).bci != BytecodeFrame.INVALID_FRAMESTATE_BCI,
+                                        "Inlined call to intrinsic (callee %s) produced invalid framestate %s. " +
+                                                        "Such framestates must never be used as deoptimizing targets, thus they cannot be part of a high-tier graph, " +
+                                                        "and must only be used after framestate assignment. A common error is invalid usage of foreign call nodes in method " +
+                                                        "substitutions, which can be avoided by ensuring such calls are either replaced with nodes that are snippet " +
+                                                        "lowered after framestate assignment (see FastNotifyNode.java for example) or by ensuring all foreign use the state after of the " +
+                                                        "original call instruction.",
+                                        callee, n);
+                    }
+                }
+            } else {
+
+                /*
+                 * Special case root compiled method substitutions
+                 *
+                 * Root compiled intrinsics with self recursive calls (partial intrinsic exit) must
+                 * never produce more than one state except the start framestate since we do not
+                 * compile calls to the original method (or inline them) but deopt
+                 *
+                 * See ByteCodeParser::inline and search for compilationRoot
+                 */
+                assert intrinsic == null || intrinsic.isIntrinsicEncoding() || verifyIntrinsicRootCompileEffects();
+            }
+        }
+
+        private boolean verifyIntrinsicRootCompileEffects() {
+            int invalidBCIsInRootCompiledIntrinsic = 0;
+            for (Node n : parser.graph.getNewNodes(mark)) {
+                if (n instanceof FrameState) {
+                    if (((FrameState) n).bci == BytecodeFrame.INVALID_FRAMESTATE_BCI) {
+                        invalidBCIsInRootCompiledIntrinsic++;
+                    }
+                }
+            }
+            if (invalidBCIsInRootCompiledIntrinsic > 1) {
+                int invalidBCIsToFind = invalidBCIsInRootCompiledIntrinsic;
+                List<ReturnNode> returns = parser.getGraph().getNodes(ReturnNode.TYPE).snapshot();
+                if (returns.size() > 1) {
+                    outer: for (ReturnNode ret : returns) {
+                        for (FixedNode f : GraphUtil.predecessorIterable(ret)) {
+                            if (f instanceof StateSplit) {
+                                StateSplit split = (StateSplit) f;
+                                if (split.hasSideEffect()) {
+                                    assert ((StateSplit) f).stateAfter() != null;
+                                    if (split.stateAfter().bci == BytecodeFrame.INVALID_FRAMESTATE_BCI) {
+                                        invalidBCIsToFind--;
+                                        continue outer;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    GraalError.guarantee(invalidBCIsToFind == 0, "Root compiled intrinsic with invalid states has more than one return. " +
+                                    "This is allowed, however one path down a sink has more than one state, this is prohibited. " +
+                                    "Intrinsic %s", parser.method);
+                    return true;
+                }
+                ReturnNode ret = returns.get(0);
+                MergeNode merge = null;
+                int mergeCount = parser.graph.getNodes(MergeNode.TYPE).count();
+                if (mergeCount != 1) {
+                    throw new GraalError("Root compiled intrinsic with invalid states %s:Must have exactly one merge node. %d found", parser.method, mergeCount);
+                }
+                if (ret.predecessor() instanceof MergeNode) {
+                    merge = (MergeNode) ret.predecessor();
+                }
+                if (merge == null) {
+                    throw new GraalError("Root compiled intrinsic with invalid state: Unexpected node between return and merge.");
+                }
+                //@formatter:off
+                GraalError.guarantee(invalidBCIsInRootCompiledIntrinsic <= merge.phiPredecessorCount() + 1 /* merge itself */,
+                                "Root compiled intrinsic with invalid states %s must at maximum produce (0,1 or if the last instruction is a merge |merge.predCount|" +
+                                                " invalid BCI state, however %d where found.",
+                                parser.method, invalidBCIsInRootCompiledIntrinsic);
+                //@formatter:on
+                if (merge.stateAfter() != null && merge.stateAfter().bci == BytecodeFrame.INVALID_FRAMESTATE_BCI) {
+                    invalidBCIsToFind--;
+                }
+                for (EndNode pred : merge.cfgPredecessors()) {
+                    Node lastPred = pred.predecessor();
+                    for (FixedNode f : GraphUtil.predecessorIterable((FixedNode) lastPred)) {
+                        if (f instanceof StateSplit) {
+                            StateSplit split = (StateSplit) f;
+                            if (split.hasSideEffect()) {
+                                assert ((StateSplit) f).stateAfter() != null;
+                                if (split.stateAfter().bci == BytecodeFrame.INVALID_FRAMESTATE_BCI) {
+                                    invalidBCIsToFind--;
+                                }
+                            }
+                        }
+                    }
+                }
+                if (invalidBCIsToFind != 0) {
+                    throw new GraalError(
+                                    "Invalid BCI state missmatch: This root compiled method substitution %s " +
+                                                    "uses invalid side-effecting nodes resulting in invalid deoptimization information. " +
+                                                    "Method substitutions must never have more than one state (the after state) for deoptimization." +
+                                                    " Multiple states are only allowed if they are dominated by a control-flow split, there is only" +
+                                                    " a single effect per branch and a post dominating merge with the same invalid_bci state " +
+                                                    "(that must only be different in its return value).",
+                                    parser.method);
+                }
+            }
+            return true;
         }
 
         private void updateSplitFrameState(StateSplit split, JavaKind returnKind, ValueNode returnValue) {
@@ -1820,7 +1927,6 @@ public class BytecodeParser implements GraphBuilderContext {
         } finally {
             currentInvoke = null;
         }
-
         int invokeBci = bci();
         JavaTypeProfile profile = getProfileForInvoke(invokeKind);
         ExceptionEdgeAction edgeAction = getActionForInvokeExceptionEdge(inlineInfo);
@@ -2738,8 +2844,9 @@ public class BytecodeParser implements GraphBuilderContext {
         int retAddress = scope.nextReturnAddress();
         ConstantNode returnBciNode = getJsrConstant(retAddress);
         LogicNode guard = IntegerEqualsNode.create(getConstantReflection(), getMetaAccess(), options, null, local, returnBciNode, NodeView.DEFAULT);
-        guard = graph.addOrUniqueWithInputs(guard);
-        append(new FixedGuardNode(guard, JavaSubroutineMismatch, InvalidateReprofile));
+        if (!guard.isTautology()) {
+            throw new JsrNotSupportedBailout("cannot statically decide jsr return address " + local);
+        }
         if (!successor.getJsrScope().equals(scope.pop())) {
             throw new JsrNotSupportedBailout("unstructured control flow (ret leaves more than one scope)");
         }
@@ -3436,7 +3543,6 @@ public class BytecodeParser implements GraphBuilderContext {
             probability = getProfileProbability(canonicalizedCondition.mustNegate());
         }
 
-        probability = clampProbability(probability);
         genIf(condition, trueSuccessor, falseSuccessor, probability);
     }
 
@@ -3458,10 +3564,10 @@ public class BytecodeParser implements GraphBuilderContext {
             // the probability coming from profile is about the original condition
             probability = 1 - probability;
         }
-        return probability;
+        return clampProbability(probability);
     }
 
-    private static double extractInjectedProbability(IntegerEqualsNode condition) {
+    private double extractInjectedProbability(IntegerEqualsNode condition) {
         // Propagate injected branch probability if any.
         IntegerEqualsNode equalsNode = condition;
         BranchProbabilityNode probabilityNode = null;
@@ -3475,7 +3581,7 @@ public class BytecodeParser implements GraphBuilderContext {
         }
 
         if (probabilityNode != null && probabilityNode.getProbability().isConstant() && other != null && other.isConstant()) {
-            double probabilityValue = probabilityNode.getProbability().asJavaConstant().asDouble();
+            double probabilityValue = clampProbability(probabilityNode.getProbability().asJavaConstant().asDouble());
             return other.asJavaConstant().asInt() == 0 ? 1.0 - probabilityValue : probabilityValue;
         }
         return -1;
@@ -4166,9 +4272,13 @@ public class BytecodeParser implements GraphBuilderContext {
 
     private JavaMethod lookupMethod(int cpi, int opcode) {
         maybeEagerlyResolve(cpi, opcode);
-        JavaMethod result = constantPool.lookupMethod(cpi, opcode);
+        JavaMethod result = lookupMethodInPool(cpi, opcode);
         assert !graphBuilderConfig.unresolvedIsError() || result instanceof ResolvedJavaMethod : unresolvedMethodAssertionMessage(result);
         return result;
+    }
+
+    protected JavaMethod lookupMethodInPool(int cpi, int opcode) {
+        return constantPool.lookupMethod(cpi, opcode);
     }
 
     protected JavaField lookupField(int cpi, int opcode) {
@@ -4319,6 +4429,7 @@ public class BytecodeParser implements GraphBuilderContext {
         }
     }
 
+    @SuppressWarnings("try")
     protected void genInstanceOf(ResolvedJavaType resolvedType, ValueNode objectIn) {
         ValueNode object = objectIn;
         TypeReference checkedType = TypeReference.createTrusted(graph.getAssumptions(), resolvedType);
@@ -4353,18 +4464,20 @@ public class BytecodeParser implements GraphBuilderContext {
         int value = getStream().readUByte(next);
         if (next <= currentBlock.endBci && (value == Bytecodes.IFEQ || value == Bytecodes.IFNE)) {
             getStream().next();
-            BciBlock firstSucc = currentBlock.getSuccessor(0);
-            BciBlock secondSucc = currentBlock.getSuccessor(1);
-            if (firstSucc != secondSucc) {
-                boolean negate = value != Bytecodes.IFNE;
-                if (negate) {
-                    BciBlock tmp = firstSucc;
-                    firstSucc = secondSucc;
-                    secondSucc = tmp;
+            try (DebugCloseable context = openNodeContext()) {
+                BciBlock firstSucc = currentBlock.getSuccessor(0);
+                BciBlock secondSucc = currentBlock.getSuccessor(1);
+                if (firstSucc != secondSucc) {
+                    boolean negate = value != Bytecodes.IFNE;
+                    if (negate) {
+                        BciBlock tmp = firstSucc;
+                        firstSucc = secondSucc;
+                        secondSucc = tmp;
+                    }
+                    genIf(instanceOfNode, firstSucc, secondSucc, getProfileProbability(negate));
+                } else {
+                    appendGoto(firstSucc);
                 }
-                genIf(instanceOfNode, firstSucc, secondSucc, getProfileProbability(negate));
-            } else {
-                appendGoto(firstSucc);
             }
         } else {
             // Most frequent for value is IRETURN, followed by ISTORE.

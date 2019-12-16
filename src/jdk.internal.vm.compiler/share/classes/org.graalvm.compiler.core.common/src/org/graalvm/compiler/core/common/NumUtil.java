@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,6 +103,11 @@ public class NumUtil {
 
     public static boolean is32bit(long x) {
         return -0x80000000L <= x && x < 0x80000000L;
+    }
+
+    public static byte safeToByte(int v) {
+        assert isByte(v);
+        return (byte) v;
     }
 
     public static short safeToShort(int v) {

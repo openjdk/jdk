@@ -40,6 +40,7 @@ tier1_part2 = \
 tier1_part3 = \
     :jdk_math \
     :jdk_svc_sanity \
+    :jdk_foreign \
     java/nio/Buffer \
     com/sun/crypto/provider/Cipher \
     sun/nio/cs/ISO8859x.java
@@ -331,6 +332,9 @@ jdk_svc = \
     :jdk_jdi \
     :jdk_jfr \
     :svc_tools
+
+jdk_foreign = \
+    java/foreign
 
 #############################
 

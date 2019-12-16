@@ -56,6 +56,7 @@ import jdk.internal.vm.compiler.word.WordFactory;
 import jdk.vm.ci.code.Register;
 import jdk.vm.ci.code.TargetDescription;
 import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.ResolvedJavaType;
 
 public final class HotSpotG1WriteBarrierSnippets extends G1WriteBarrierSnippets {
     public static final ForeignCallDescriptor G1WBPRECALL = new ForeignCallDescriptor("write_barrier_pre", void.class, Object.class);
@@ -175,6 +176,16 @@ public final class HotSpotG1WriteBarrierSnippets extends G1WriteBarrierSnippets 
         return Log.LOG_PRINTF;
     }
 
+    @Override
+    protected ResolvedJavaType referenceType() {
+        return HotSpotReplacementsUtil.referenceType(INJECTED_METAACCESS);
+    }
+
+    @Override
+    protected long referentOffset() {
+        return HotSpotReplacementsUtil.referentOffset(INJECTED_METAACCESS);
+    }
+
     public static class Templates extends AbstractTemplates {
         private final SnippetInfo g1PreWriteBarrier;
         private final SnippetInfo g1ReferentReadBarrier;
@@ -191,7 +202,9 @@ public final class HotSpotG1WriteBarrierSnippets extends G1WriteBarrierSnippets 
             HotSpotG1WriteBarrierSnippets receiver = new HotSpotG1WriteBarrierSnippets(config, providers.getRegisters());
             g1PreWriteBarrier = snippet(G1WriteBarrierSnippets.class, "g1PreWriteBarrier", null, receiver, GC_INDEX_LOCATION, GC_LOG_LOCATION, SATB_QUEUE_MARKING_LOCATION, SATB_QUEUE_INDEX_LOCATION,
                             SATB_QUEUE_BUFFER_LOCATION);
-            g1ReferentReadBarrier = g1PreWriteBarrier;
+            g1ReferentReadBarrier = snippet(G1WriteBarrierSnippets.class, "g1ReferentReadBarrier", null, receiver, GC_INDEX_LOCATION, GC_LOG_LOCATION, SATB_QUEUE_MARKING_LOCATION,
+                            SATB_QUEUE_INDEX_LOCATION,
+                            SATB_QUEUE_BUFFER_LOCATION);
             g1PostWriteBarrier = snippet(G1WriteBarrierSnippets.class, "g1PostWriteBarrier", null, receiver, GC_CARD_LOCATION, GC_INDEX_LOCATION, GC_LOG_LOCATION, CARD_QUEUE_INDEX_LOCATION,
                             CARD_QUEUE_BUFFER_LOCATION);
             g1ArrayRangePreWriteBarrier = snippet(G1WriteBarrierSnippets.class, "g1ArrayRangePreWriteBarrier", null, receiver, GC_INDEX_LOCATION, GC_LOG_LOCATION, SATB_QUEUE_MARKING_LOCATION,

@@ -41,6 +41,7 @@ import sun.invoke.util.VerifyType;
 import sun.invoke.util.Wrapper;
 
 import java.lang.reflect.Array;
+import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -1790,6 +1791,44 @@ abstract class MethodHandleImpl {
                                 invokerMethodTypes, callSiteMethodTypes);
             }
 
+            @Override
+            public VarHandle memoryAddressViewVarHandle(Class<?> carrier, long alignmentMask,
+                                                        ByteOrder order, long offset, long[] strides) {
+                return VarHandles.makeMemoryAddressViewHandle(carrier, alignmentMask, order, offset, strides);
+            }
+
+            @Override
+            public Class<?> memoryAddressCarrier(VarHandle handle) {
+                return checkMemAccessHandle(handle).carrier();
+            }
+
+            @Override
+            public long memoryAddressAlignmentMask(VarHandle handle) {
+                return checkMemAccessHandle(handle).alignmentMask;
+            }
+
+            @Override
+            public ByteOrder memoryAddressByteOrder(VarHandle handle) {
+                return checkMemAccessHandle(handle).be ?
+                        ByteOrder.BIG_ENDIAN : ByteOrder.LITTLE_ENDIAN;
+            }
+
+            @Override
+            public long memoryAddressOffset(VarHandle handle) {
+                return checkMemAccessHandle(handle).offset;
+            }
+
+            @Override
+            public long[] memoryAddressStrides(VarHandle handle) {
+                return checkMemAccessHandle(handle).strides();
+            }
+
+            private VarHandleMemoryAddressBase checkMemAccessHandle(VarHandle handle) {
+                if (!(handle instanceof VarHandleMemoryAddressBase)) {
+                    throw new IllegalArgumentException("Not a memory access varhandle: " + handle);
+                }
+                return (VarHandleMemoryAddressBase) handle;
+            }
         });
     }
 

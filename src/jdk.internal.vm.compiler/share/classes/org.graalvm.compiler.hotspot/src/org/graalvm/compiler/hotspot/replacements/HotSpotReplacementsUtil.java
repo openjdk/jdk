@@ -155,7 +155,7 @@ public class HotSpotReplacementsUtil {
     }
 
     @Fold
-    static int getFieldOffset(ResolvedJavaType type, String fieldName) {
+    public static int getFieldOffset(ResolvedJavaType type, String fieldName) {
         for (ResolvedJavaField field : type.getInstanceFields(true)) {
             if (field.getName().equals(fieldName)) {
                 return field.getOffset();
@@ -887,6 +887,11 @@ public class HotSpotReplacementsUtil {
     @Fold
     public static long referentOffset(@InjectedParameter MetaAccessProvider metaAccessProvider) {
         return getFieldOffset(metaAccessProvider.lookupJavaType(Reference.class), "referent");
+    }
+
+    @Fold
+    public static ResolvedJavaType referenceType(@InjectedParameter MetaAccessProvider metaAccessProvider) {
+        return metaAccessProvider.lookupJavaType(Reference.class);
     }
 
     public static final LocationIdentity OBJ_ARRAY_KLASS_ELEMENT_KLASS_LOCATION = new HotSpotOptimizingLocationIdentity("ObjArrayKlass::_element_klass") {

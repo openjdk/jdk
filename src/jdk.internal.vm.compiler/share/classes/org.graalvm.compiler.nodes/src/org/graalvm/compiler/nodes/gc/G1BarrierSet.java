@@ -25,12 +25,15 @@
 
 package org.graalvm.compiler.nodes.gc;
 
+import java.lang.ref.Reference;
+
 import org.graalvm.compiler.core.common.type.AbstractObjectStamp;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.extended.ArrayRangeWrite;
+import org.graalvm.compiler.nodes.extended.RawLoadNode;
 import org.graalvm.compiler.nodes.java.AbstractCompareAndSwapNode;
 import org.graalvm.compiler.nodes.java.LoweredAtomicReadAndWriteNode;
 import org.graalvm.compiler.nodes.memory.FixedAccessNode;
@@ -41,8 +44,56 @@ import org.graalvm.compiler.nodes.memory.WriteNode;
 import org.graalvm.compiler.nodes.memory.address.AddressNode;
 import org.graalvm.compiler.nodes.type.StampTool;
 
+import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.MetaAccessProvider;
+import jdk.vm.ci.meta.ResolvedJavaField;
+import jdk.vm.ci.meta.ResolvedJavaType;
+
 public class G1BarrierSet implements BarrierSet {
-    public G1BarrierSet() {
+
+    private final long referentFieldOffset;
+    private final ResolvedJavaType referenceType;
+
+    public G1BarrierSet(MetaAccessProvider metaAccess) {
+        this.referenceType = metaAccess.lookupJavaType(Reference.class);
+        int offset = -1;
+        for (ResolvedJavaField field : referenceType.getInstanceFields(true)) {
+            if (field.getName().equals("referent")) {
+                offset = field.getOffset();
+            }
+        }
+        if (offset == 1) {
+            throw new GraalError("Can't find Reference.referent field");
+        }
+        this.referentFieldOffset = offset;
+    }
+
+    @Override
+    public BarrierType readBarrierType(RawLoadNode load) {
+        if (load.object().getStackKind() == JavaKind.Object &&
+                        load.accessKind() == JavaKind.Object &&
+                        !StampTool.isPointerAlwaysNull(load.object())) {
+            if (load.offset().isJavaConstant() && referentFieldOffset != load.offset().asJavaConstant().asLong()) {
+                // Reading at a constant offset which is different than the referent field.
+                return BarrierType.NONE;
+            }
+            ResolvedJavaType type = StampTool.typeOrNull(load.object());
+            if (type != null && referenceType.isAssignableFrom(type)) {
+                // It's definitely a field of a Reference type
+                if (load.offset().isJavaConstant() && referentFieldOffset == load.offset().asJavaConstant().asLong()) {
+                    // Exactly Reference.referent
+                    return BarrierType.WEAK_FIELD;
+                }
+                // An unknown offset into Reference
+                return BarrierType.MAYBE_WEAK_FIELD;
+            }
+            if (type == null || type.isAssignableFrom(referenceType)) {
+                // The object is a supertype of Reference with an unknown offset or a constant
+                // offset which is the same as Reference.referent.
+                return BarrierType.MAYBE_WEAK_FIELD;
+            }
+        }
+        return BarrierType.NONE;
     }
 
     @Override
@@ -66,9 +117,9 @@ public class G1BarrierSet implements BarrierSet {
     }
 
     private static void addReadNodeBarriers(ReadNode node) {
-        if (node.getBarrierType() == HeapAccess.BarrierType.WEAK_FIELD) {
+        if (node.getBarrierType() == HeapAccess.BarrierType.WEAK_FIELD || node.getBarrierType() == BarrierType.MAYBE_WEAK_FIELD) {
             StructuredGraph graph = node.graph();
-            G1ReferentFieldReadBarrier barrier = graph.add(new G1ReferentFieldReadBarrier(node.getAddress(), node, false));
+            G1ReferentFieldReadBarrier barrier = graph.add(new G1ReferentFieldReadBarrier(node.getAddress(), node, node.getBarrierType() == BarrierType.MAYBE_WEAK_FIELD));
             graph.addAfterFixed(node, barrier);
         }
     }

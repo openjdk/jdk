@@ -69,8 +69,8 @@ public class PointerEqualsNode extends CompareNode implements BinaryCommutative<
 
     protected PointerEqualsNode(NodeClass<? extends PointerEqualsNode> c, ValueNode x, ValueNode y) {
         super(c, CanonicalCondition.EQ, false, x, y);
-        assert x.stamp(NodeView.DEFAULT) instanceof AbstractPointerStamp;
-        assert y.stamp(NodeView.DEFAULT) instanceof AbstractPointerStamp;
+        assert x.stamp(NodeView.DEFAULT).isPointerStamp();
+        assert y.stamp(NodeView.DEFAULT).isPointerStamp();
     }
 
     @Override
@@ -137,9 +137,9 @@ public class PointerEqualsNode extends CompareNode implements BinaryCommutative<
             return LogicConstantNode.tautology();
         } else if (forX.stamp(view).alwaysDistinct(forY.stamp(view))) {
             return LogicConstantNode.contradiction();
-        } else if (((AbstractPointerStamp) forX.stamp(view)).alwaysNull()) {
+        } else if (forX.stamp(view) instanceof AbstractPointerStamp && ((AbstractPointerStamp) forX.stamp(view)).alwaysNull()) {
             return nullSynonym(forY, forX);
-        } else if (((AbstractPointerStamp) forY.stamp(view)).alwaysNull()) {
+        } else if (forY.stamp(view) instanceof AbstractPointerStamp && ((AbstractPointerStamp) forY.stamp(view)).alwaysNull()) {
             return nullSynonym(forX, forY);
         } else {
             return null;

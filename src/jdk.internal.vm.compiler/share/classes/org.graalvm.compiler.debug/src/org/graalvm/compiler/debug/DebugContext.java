@@ -1842,23 +1842,46 @@ public final class DebugContext implements AutoCloseable {
     }
 
     /**
+     * Gets the name to use for a class based on whether it appears to be an obfuscated name. The
+     * heuristic for an obfuscated name is that it is less than 6 characters in length and consists
+     * only of lower case letters.
+     */
+    private static String getBaseName(Class<?> c) {
+        String simpleName = c.getSimpleName();
+        if (simpleName.length() < 6) {
+            for (int i = 0; i < simpleName.length(); i++) {
+                if (!Character.isLowerCase(simpleName.charAt(0))) {
+                    return simpleName;
+                }
+            }
+            // Looks like an obfuscated simple class name so use qualified class name
+            return c.getName();
+        }
+        return simpleName;
+    }
+
+    /**
      * There are paths where construction of formatted class names are common and the code below is
      * surprisingly expensive, so compute it once and cache it.
      */
     private static final ClassValue<String> formattedClassName = new ClassValue<String>() {
         @Override
         protected String computeValue(Class<?> c) {
-            final String simpleName = c.getSimpleName();
+            String baseName = getBaseName(c);
+            if (Character.isLowerCase(baseName.charAt(0))) {
+                // Looks like an obfuscated simple class name so use qualified class name
+                baseName = c.getName();
+            }
             Class<?> enclosingClass = c.getEnclosingClass();
             if (enclosingClass != null) {
                 String prefix = "";
                 while (enclosingClass != null) {
-                    prefix = enclosingClass.getSimpleName() + "_" + prefix;
+                    prefix = getBaseName(enclosingClass) + "_" + prefix;
                     enclosingClass = enclosingClass.getEnclosingClass();
                 }
-                return prefix + simpleName;
+                return prefix + baseName;
             } else {
-                return simpleName;
+                return baseName;
             }
         }
     };

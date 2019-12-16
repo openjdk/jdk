@@ -25,6 +25,7 @@
 package org.graalvm.compiler.java;
 
 import org.graalvm.compiler.bytecode.Bytecodes;
+import org.graalvm.compiler.java.BciBlockMapping.BciBlock;
 
 /**
  * Represents a subroutine entered via {@link Bytecodes#JSR} and exited via {@link Bytecodes#RET}.
@@ -40,18 +41,26 @@ public final class JsrScope {
 
     private final JsrScope parent;
 
-    private JsrScope(int returnBci, JsrScope parent) {
+    private final BciBlock jsrEntryBlock;
+
+    private JsrScope(int returnBci, BciBlock jsrEntryBlock, JsrScope parent) {
         this.returnAddress = (char) returnBci;
         this.parent = parent;
+        this.jsrEntryBlock = jsrEntryBlock;
     }
 
     private JsrScope() {
         this.returnAddress = 0;
         this.parent = null;
+        this.jsrEntryBlock = null;
     }
 
     public int nextReturnAddress() {
         return returnAddress;
+    }
+
+    public BciBlock getJsrEntryBlock() {
+        return jsrEntryBlock;
     }
 
     /**
@@ -60,14 +69,18 @@ public final class JsrScope {
      * @param returnBci the bytecode address returned to when leaving the new scope
      * @return an object representing the newly entered scope
      */
-    public JsrScope push(int returnBci) {
+    public JsrScope push(int returnBci, BciBlock newJsrEntryBlock) {
         if (returnBci == 0) {
             throw new IllegalArgumentException("A bytecode subroutine cannot have a return address of 0");
         }
         if (returnBci < 1 || returnBci > 0xFFFF) {
             throw new IllegalArgumentException("Bytecode subroutine return address cannot be encoded as a char: " + returnBci);
         }
-        return new JsrScope(returnBci, this);
+        return new JsrScope(returnBci, newJsrEntryBlock, this);
+    }
+
+    public JsrScope push(int returnBci) {
+        return push(returnBci, null);
     }
 
     /**
@@ -85,13 +98,13 @@ public final class JsrScope {
      *         {@code int[]} with {@code value.chars().toArray()}.
      */
     public String getAncestry() {
-        StringBuilder sb = new StringBuilder();
+        String result = "";
         for (JsrScope s = this; s != null; s = s.parent) {
             if (!s.isEmpty()) {
-                sb.append(s.returnAddress);
+                result = s.returnAddress + result;
             }
         }
-        return sb.reverse().toString();
+        return result;
     }
 
     /**

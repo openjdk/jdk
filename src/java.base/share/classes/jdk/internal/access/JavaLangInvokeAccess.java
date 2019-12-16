@@ -26,6 +26,8 @@
 package jdk.internal.access;
 
 import java.lang.invoke.MethodType;
+import java.lang.invoke.VarHandle;
+import java.nio.ByteOrder;
 import java.util.Map;
 
 public interface JavaLangInvokeAccess {
@@ -106,4 +108,41 @@ public interface JavaLangInvokeAccess {
             MethodType[] invokerMethodTypes,
             MethodType[] callSiteMethodTypes);
 
+    /**
+     * Returns a var handle view of a given memory address.
+     * Used by {@code jdk.internal.foreign.LayoutPath} and
+     * {@code jdk.incubator.foreign.MemoryHandles}.
+     */
+    VarHandle memoryAddressViewVarHandle(Class<?> carrier, long alignmentMask,
+                                         ByteOrder order, long offset, long[] strides);
+
+    /**
+     * Returns the carrier associated with a memory access var handle.
+     * Used by {@code jdk.incubator.foreign.MemoryHandles}.
+     */
+    Class<?> memoryAddressCarrier(VarHandle handle);
+
+    /**
+     * Returns the alignment mask associated with a memory access var handle.
+     * Used by {@code jdk.incubator.foreign.MemoryHandles}.
+     */
+    long memoryAddressAlignmentMask(VarHandle handle);
+
+    /**
+     * Returns the byte order associated with a memory access var handle.
+     * Used by {@code jdk.incubator.foreign.MemoryHandles}.
+     */
+    ByteOrder memoryAddressByteOrder(VarHandle handle);
+
+    /**
+     * Returns the offset associated with a memory access var handle.
+     * Used by {@code jdk.incubator.foreign.MemoryHandles}.
+     */
+    long memoryAddressOffset(VarHandle handle);
+
+    /**
+     * Returns the strides associated with a memory access var handle.
+     * Used by {@code jdk.incubator.foreign.MemoryHandles}.
+     */
+    long[] memoryAddressStrides(VarHandle handle);
 }

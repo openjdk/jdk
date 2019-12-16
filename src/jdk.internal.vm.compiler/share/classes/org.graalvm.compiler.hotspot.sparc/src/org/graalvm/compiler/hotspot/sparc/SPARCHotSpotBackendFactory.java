@@ -101,7 +101,7 @@ public class SPARCHotSpotBackendFactory extends HotSpotBackendFactory {
         HotSpotForeignCallsProvider foreignCalls = new SPARCHotSpotForeignCallsProvider(jvmciRuntime, runtime, metaAccess, codeCache, wordTypes, nativeABICallerSaveRegisters);
         LoweringProvider lowerer = createLowerer(runtime, metaAccess, foreignCalls, registers, constantReflection, target);
         HotSpotStampProvider stampProvider = createStampProvider();
-        HotSpotGCProvider gc = createGCProvider(config);
+        HotSpotGCProvider gc = createGCProvider(config, metaAccess);
         Providers p = new Providers(metaAccess, codeCache, constantReflection, constantFieldProvider, foreignCalls, lowerer, null, stampProvider, gc);
         HotSpotSnippetReflectionProvider snippetReflection = createSnippetReflection(runtime, constantReflection, wordTypes);
         BytecodeProvider bytecodeProvider = createBytecodeProvider(metaAccess, snippetReflection);

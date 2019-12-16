@@ -31,6 +31,7 @@ import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.extended.ArrayRangeWrite;
+import org.graalvm.compiler.nodes.extended.RawLoadNode;
 import org.graalvm.compiler.nodes.java.AbstractCompareAndSwapNode;
 import org.graalvm.compiler.nodes.java.LoweredAtomicReadAndWriteNode;
 import org.graalvm.compiler.nodes.memory.FixedAccessNode;
@@ -45,6 +46,11 @@ import org.graalvm.compiler.nodes.util.GraphUtil;
 
 public class CardTableBarrierSet implements BarrierSet {
     public CardTableBarrierSet() {
+    }
+
+    @Override
+    public BarrierType readBarrierType(RawLoadNode load) {
+        return BarrierType.NONE;
     }
 
     @Override

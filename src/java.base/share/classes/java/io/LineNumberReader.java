@@ -25,6 +25,7 @@
 
 package java.io;
 
+
 /**
  * A buffered character-input stream that keeps track of line numbers.  This
  * class defines methods {@link #setLineNumber(int)} and {@link
@@ -199,10 +200,9 @@ public class LineNumberReader extends BufferedReader {
      */
     public String readLine() throws IOException {
         synchronized (lock) {
-            boolean[] term = new boolean[1];
-            String l = super.readLine(skipLF, term);
+            String l = super.readLine(skipLF);
             skipLF = false;
-            if (l != null && term[0])
+            if (l != null)
                 lineNumber++;
             return l;
         }
