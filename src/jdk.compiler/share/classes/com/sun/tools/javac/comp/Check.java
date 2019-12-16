@@ -1207,6 +1207,9 @@ public class Check {
                 mask = (flags & RECORD) != 0 ? LocalRecordFlags : LocalClassFlags;
                 if ((flags & RECORD) != 0) {
                     implicit = STATIC;
+                    if (sym.owner.kind == TYP) {
+                        log.error(pos, Errors.RecordDeclarationNotAllowedInInnerClasses);
+                    }
                 }
                 if ((sym.owner.flags_field & STATIC) == 0 &&
                     (flags & ENUM) != 0) {
