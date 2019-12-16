@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,9 @@
  */
 
 import java.util.Arrays;
+
 import jdk.internal.platform.Metrics;
+import jdk.internal.platform.CgroupV1Metrics;
 
 public class MetricsMemoryTester {
     public static void main(String[] args) {
@@ -65,9 +67,11 @@ public class MetricsMemoryTester {
 
         // Allocate 512M of data
         byte[][] bytes = new byte[64][];
+        boolean atLeastOneAllocationWorked = false;
         for (int i = 0; i < 64; i++) {
             try {
                 bytes[i] = new byte[8 * 1024 * 1024];
+                atLeastOneAllocationWorked = true;
                 // Break out as soon as we see an increase in failcount
                 // to avoid getting killed by the OOM killer.
                 if (Metrics.systemMetrics().getMemoryFailCount() > count) {
@@ -77,6 +81,12 @@ public class MetricsMemoryTester {
                 break;
             }
         }
+        if (!atLeastOneAllocationWorked) {
+            System.out.println("Allocation failed immediately. Ignoring test!");
+            return;
+        }
+        // Be sure bytes allocations don't get optimized out
+        System.out.println("DEBUG: Bytes allocation length 1: " + bytes[0].length);
         if (Metrics.systemMetrics().getMemoryFailCount() <= count) {
             throw new RuntimeException("Memory fail count : new : ["
                     + Metrics.systemMetrics().getMemoryFailCount() + "]"
@@ -99,14 +109,20 @@ public class MetricsMemoryTester {
     }
 
     private static void testKernelMemoryLimit(String value) {
-        long limit = getMemoryValue(value);
-        long kmemlimit = Metrics.systemMetrics().getKernelMemoryLimit();
-        if (kmemlimit != 0 && limit != kmemlimit) {
-            throw new RuntimeException("Kernel Memory limit not equal, expected : ["
-                    + limit + "]" + ", got : ["
-                    + kmemlimit + "]");
+        Metrics m = Metrics.systemMetrics();
+        if (m instanceof CgroupV1Metrics) {
+            CgroupV1Metrics mCgroupV1 = (CgroupV1Metrics)m;
+            System.out.println("TEST PASSED!!!");
+            long limit = getMemoryValue(value);
+            long kmemlimit = mCgroupV1.getKernelMemoryLimit();
+            if (kmemlimit != 0 && limit != kmemlimit) {
+                throw new RuntimeException("Kernel Memory limit not equal, expected : ["
+                        + limit + "]" + ", got : ["
+                        + kmemlimit + "]");
+            }
+        } else {
+            throw new RuntimeException("oomKillFlag test not supported for cgroups v2");
         }
-        System.out.println("TEST PASSED!!!");
     }
 
     private static void testMemoryAndSwapLimit(String memory, String memAndSwap) {
@@ -138,9 +154,17 @@ public class MetricsMemoryTester {
     }
 
     private static void testOomKillFlag(boolean oomKillFlag) {
-        if (!(oomKillFlag ^ Metrics.systemMetrics().isMemoryOOMKillEnabled())) {
-            throw new RuntimeException("oomKillFlag error");
+        Metrics m = Metrics.systemMetrics();
+        if (m instanceof CgroupV1Metrics) {
+            CgroupV1Metrics mCgroupV1 = (CgroupV1Metrics)m;
+            Boolean expected = Boolean.valueOf(oomKillFlag);
+            Boolean actual = mCgroupV1.isMemoryOOMKillEnabled();
+            if (!(expected.equals(actual))) {
+                throw new RuntimeException("oomKillFlag error");
+            }
+            System.out.println("TEST PASSED!!!");
+        } else {
+            throw new RuntimeException("oomKillFlag test not supported for cgroups v2");
         }
-        System.out.println("TEST PASSED!!!");
     }
 }

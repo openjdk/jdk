@@ -1,10 +1,12 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Red Hat Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -21,30 +23,22 @@
  * questions.
  */
 
-/*
- * @test
- * @requires os.family == "linux"
- * @modules java.base/jdk.internal.platform
- * @library /test/lib
- * @run main TestCgroupMetrics
- */
+package jdk.internal.platform.cgroupv1;
 
-import jdk.test.lib.containers.cgroup.MetricsTester;
-import jdk.internal.platform.Metrics;
+public class CgroupV1MemorySubSystemController extends CgroupV1SubsystemController {
 
-public class TestCgroupMetrics {
+    private boolean hierarchical;
 
-    public static void main(String[] args) throws Exception {
-        // If cgroups is not configured, report success.
-        Metrics metrics = Metrics.systemMetrics();
-        if (metrics == null) {
-            System.out.println("TEST PASSED!!!");
-            return;
-        }
+    public CgroupV1MemorySubSystemController(String root, String mountPoint) {
+        super(root, mountPoint);
+    }
 
-        MetricsTester metricsTester = new MetricsTester();
-        metricsTester.testAll(metrics);
-        System.out.println("TEST PASSED!!!");
+    boolean isHierarchical() {
+        return hierarchical;
+    }
+
+    void setHierarchical(boolean hierarchical) {
+        this.hierarchical = hierarchical;
     }
 
 }

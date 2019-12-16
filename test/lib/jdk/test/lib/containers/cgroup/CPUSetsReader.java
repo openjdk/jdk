@@ -32,6 +32,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+
 import jdk.test.lib.Asserts;
 
 
@@ -54,8 +55,7 @@ public class CPUSetsReader {
 
     public static int getNumCpus() {
         String path = "/proc/cpuinfo";
-        try {
-            Stream<String> stream = Files.lines(Paths.get(path));
+        try (Stream<String> stream = Files.lines(Paths.get(path))) {
             return (int) stream.filter(line -> line.startsWith("processor")).count();
         } catch (IOException e) {
             return 0;

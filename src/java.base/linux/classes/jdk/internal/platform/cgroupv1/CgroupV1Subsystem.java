@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,41 +26,37 @@
 package jdk.internal.platform.cgroupv1;
 
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.security.AccessController;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 import java.util.stream.Stream;
 
-import jdk.internal.platform.cgroupv1.SubSystem.MemorySubSystem;
+import jdk.internal.platform.CgroupSubsystem;
+import jdk.internal.platform.CgroupSubsystemController;
+import jdk.internal.platform.CgroupUtil;
+import jdk.internal.platform.CgroupV1Metrics;
 
-public class Metrics implements jdk.internal.platform.Metrics {
-    private MemorySubSystem memory;
-    private SubSystem cpu;
-    private SubSystem cpuacct;
-    private SubSystem cpuset;
-    private SubSystem blkio;
+public class CgroupV1Subsystem implements CgroupSubsystem, CgroupV1Metrics {
+    private CgroupV1MemorySubSystemController memory;
+    private CgroupV1SubsystemController cpu;
+    private CgroupV1SubsystemController cpuacct;
+    private CgroupV1SubsystemController cpuset;
+    private CgroupV1SubsystemController blkio;
     private boolean activeSubSystems;
 
-    // Values returned larger than this number are unlimited.
-    static long unlimited_minimum = 0x7FFFFFFFFF000000L;
-
-    private static final Metrics INSTANCE = initContainerSubSystems();
+    private static final CgroupV1Subsystem INSTANCE = initSubSystem();
 
     private static final String PROVIDER_NAME = "cgroupv1";
 
-    private Metrics() {
+    private CgroupV1Subsystem() {
         activeSubSystems = false;
     }
 
-    public static Metrics getInstance() {
+    public static CgroupV1Subsystem getInstance() {
         return INSTANCE;
     }
 
-    private static Metrics initContainerSubSystems() {
-        Metrics metrics = new Metrics();
+    private static CgroupV1Subsystem initSubSystem() {
+        CgroupV1Subsystem subsystem = new CgroupV1Subsystem();
 
         /**
          * Find the cgroup mount points for subsystems
@@ -73,11 +69,11 @@ public class Metrics implements jdk.internal.platform.Metrics {
          * 34 28 0:29 / /sys/fs/cgroup/MemorySubSystem rw,nosuid,nodev,noexec,relatime shared:16 - cgroup cgroup rw,MemorySubSystem
          */
         try (Stream<String> lines =
-             readFilePrivileged(Paths.get("/proc/self/mountinfo"))) {
+                CgroupUtil.readFilePrivileged(Paths.get("/proc/self/mountinfo"))) {
 
             lines.filter(line -> line.contains(" - cgroup "))
                  .map(line -> line.split(" "))
-                 .forEach(entry -> createSubSystem(metrics, entry));
+                 .forEach(entry -> createSubSystemController(subsystem, entry));
 
         } catch (IOException e) {
             return null;
@@ -107,47 +103,28 @@ public class Metrics implements jdk.internal.platform.Metrics {
          *
          */
         try (Stream<String> lines =
-             readFilePrivileged(Paths.get("/proc/self/cgroup"))) {
+                CgroupUtil.readFilePrivileged(Paths.get("/proc/self/cgroup"))) {
 
             lines.map(line -> line.split(":"))
                  .filter(line -> (line.length >= 3))
-                 .forEach(line -> setSubSystemPath(metrics, line));
+                 .forEach(line -> setSubSystemControllerPath(subsystem, line));
 
         } catch (IOException e) {
             return null;
         }
 
         // Return Metrics object if we found any subsystems.
-        if (metrics.activeSubSystems()) {
-            return metrics;
+        if (subsystem.activeSubSystems()) {
+            return subsystem;
         }
 
         return null;
     }
 
-    static Stream<String> readFilePrivileged(Path path) throws IOException {
-        try {
-            PrivilegedExceptionAction<Stream<String>> pea = () -> Files.lines(path);
-            return AccessController.doPrivileged(pea);
-        } catch (PrivilegedActionException e) {
-            unwrapIOExceptionAndRethrow(e);
-            throw new InternalError(e.getCause());
-        }
-    }
-
-    static void unwrapIOExceptionAndRethrow(PrivilegedActionException pae) throws IOException {
-        Throwable x = pae.getCause();
-        if (x instanceof IOException)
-            throw (IOException) x;
-        if (x instanceof RuntimeException)
-            throw (RuntimeException) x;
-        if (x instanceof Error)
-            throw (Error) x;
-    }
     /**
      * createSubSystem objects and initialize mount points
      */
-    private static void createSubSystem(Metrics metric, String[] mountentry) {
+    private static void createSubSystemController(CgroupV1Subsystem subsystem, String[] mountentry) {
         if (mountentry.length < 5) return;
 
         Path p = Paths.get(mountentry[4]);
@@ -156,19 +133,19 @@ public class Metrics implements jdk.internal.platform.Metrics {
         for (String subsystemName: subsystemNames) {
             switch (subsystemName) {
                 case "memory":
-                    metric.setMemorySubSystem(new MemorySubSystem(mountentry[3], mountentry[4]));
+                    subsystem.setMemorySubSystem(new CgroupV1MemorySubSystemController(mountentry[3], mountentry[4]));
                     break;
                 case "cpuset":
-                    metric.setCpuSetSubSystem(new SubSystem(mountentry[3], mountentry[4]));
+                    subsystem.setCpuSetController(new CgroupV1SubsystemController(mountentry[3], mountentry[4]));
                     break;
                 case "cpuacct":
-                    metric.setCpuAcctSubSystem(new SubSystem(mountentry[3], mountentry[4]));
+                    subsystem.setCpuAcctController(new CgroupV1SubsystemController(mountentry[3], mountentry[4]));
                     break;
                 case "cpu":
-                    metric.setCpuSubSystem(new SubSystem(mountentry[3], mountentry[4]));
+                    subsystem.setCpuController(new CgroupV1SubsystemController(mountentry[3], mountentry[4]));
                     break;
                 case "blkio":
-                    metric.setBlkIOSubSystem(new SubSystem(mountentry[3], mountentry[4]));
+                    subsystem.setBlkIOController(new CgroupV1SubsystemController(mountentry[3], mountentry[4]));
                     break;
                 default:
                     // Ignore subsystems that we don't support
@@ -180,35 +157,35 @@ public class Metrics implements jdk.internal.platform.Metrics {
     /**
      * setSubSystemPath based on the contents of /proc/self/cgroup
      */
-    private static void setSubSystemPath(Metrics metric, String[] entry) {
-        String controller;
+    private static void setSubSystemControllerPath(CgroupV1Subsystem subsystem, String[] entry) {
+        String controllerName;
         String base;
-        SubSystem subsystem = null;
-        SubSystem subsystem2 = null;
+        CgroupV1SubsystemController controller = null;
+        CgroupV1SubsystemController controller2 = null;
 
-        controller = entry[1];
+        controllerName = entry[1];
         base = entry[2];
-        if (controller != null && base != null) {
-            switch (controller) {
+        if (controllerName != null && base != null) {
+            switch (controllerName) {
                 case "memory":
-                    subsystem = metric.MemorySubSystem();
+                    controller = subsystem.memoryController();
                     break;
                 case "cpuset":
-                    subsystem = metric.CpuSetSubSystem();
+                    controller = subsystem.cpuSetController();
                     break;
                 case "cpu,cpuacct":
                 case "cpuacct,cpu":
-                    subsystem = metric.CpuSubSystem();
-                    subsystem2 = metric.CpuAcctSubSystem();
+                    controller = subsystem.cpuController();
+                    controller2 = subsystem.cpuAcctController();
                     break;
                 case "cpuacct":
-                    subsystem = metric.CpuAcctSubSystem();
+                    controller = subsystem.cpuAcctController();
                     break;
                 case "cpu":
-                    subsystem = metric.CpuSubSystem();
+                    controller = subsystem.cpuController();
                     break;
                 case "blkio":
-                    subsystem = metric.BlkIOSubSystem();
+                    controller = subsystem.blkIOController();
                     break;
                 // Ignore subsystems that we don't support
                 default:
@@ -216,23 +193,23 @@ public class Metrics implements jdk.internal.platform.Metrics {
             }
         }
 
-        if (subsystem != null) {
-            subsystem.setPath(base);
-            if (subsystem instanceof MemorySubSystem) {
-                MemorySubSystem memorySubSystem = (MemorySubSystem)subsystem;
+        if (controller != null) {
+            controller.setPath(base);
+            if (controller instanceof CgroupV1MemorySubSystemController) {
+                CgroupV1MemorySubSystemController memorySubSystem = (CgroupV1MemorySubSystemController)controller;
                 boolean isHierarchial = getHierarchical(memorySubSystem);
                 memorySubSystem.setHierarchical(isHierarchial);
             }
-            metric.setActiveSubSystems();
+            subsystem.setActiveSubSystems();
         }
-        if (subsystem2 != null) {
-            subsystem2.setPath(base);
+        if (controller2 != null) {
+            controller2.setPath(base);
         }
     }
 
 
-    private static boolean getHierarchical(MemorySubSystem subsystem) {
-        long hierarchical = SubSystem.getLongValue(subsystem, "memory.use_hierarchy");
+    private static boolean getHierarchical(CgroupV1MemorySubSystemController controller) {
+        long hierarchical = getLongValue(controller, "memory.use_hierarchy");
         return hierarchical > 0;
     }
 
@@ -244,44 +221,52 @@ public class Metrics implements jdk.internal.platform.Metrics {
         return activeSubSystems;
     }
 
-    private void setMemorySubSystem(MemorySubSystem memory) {
+    private void setMemorySubSystem(CgroupV1MemorySubSystemController memory) {
         this.memory = memory;
     }
 
-    private void setCpuSubSystem(SubSystem cpu) {
+    private void setCpuController(CgroupV1SubsystemController cpu) {
         this.cpu = cpu;
     }
 
-    private void setCpuAcctSubSystem(SubSystem cpuacct) {
+    private void setCpuAcctController(CgroupV1SubsystemController cpuacct) {
         this.cpuacct = cpuacct;
     }
 
-    private void setCpuSetSubSystem(SubSystem cpuset) {
+    private void setCpuSetController(CgroupV1SubsystemController cpuset) {
         this.cpuset = cpuset;
     }
 
-    private void setBlkIOSubSystem(SubSystem blkio) {
+    private void setBlkIOController(CgroupV1SubsystemController blkio) {
         this.blkio = blkio;
     }
 
-    private SubSystem MemorySubSystem() {
+    private CgroupV1SubsystemController memoryController() {
         return memory;
     }
 
-    private SubSystem CpuSubSystem() {
+    private CgroupV1SubsystemController cpuController() {
         return cpu;
     }
 
-    private SubSystem CpuAcctSubSystem() {
+    private CgroupV1SubsystemController cpuAcctController() {
         return cpuacct;
     }
 
-    private SubSystem CpuSetSubSystem() {
+    private CgroupV1SubsystemController cpuSetController() {
         return cpuset;
     }
 
-    private SubSystem BlkIOSubSystem() {
+    private CgroupV1SubsystemController blkIOController() {
         return blkio;
+    }
+
+    private static long getLongValue(CgroupSubsystemController controller,
+                              String parm) {
+        return CgroupSubsystemController.getLongValue(controller,
+                                                      parm,
+                                                      CgroupV1SubsystemController::convertStringToLong,
+                                                      CgroupSubsystem.LONG_RETVAL_UNLIMITED);
     }
 
     public String getProvider() {
@@ -294,13 +279,13 @@ public class Metrics implements jdk.internal.platform.Metrics {
 
 
     public long getCpuUsage() {
-        return SubSystem.getLongValue(cpuacct, "cpuacct.usage");
+        return getLongValue(cpuacct, "cpuacct.usage");
     }
 
     public long[] getPerCpuUsage() {
-        String usagelist = SubSystem.getStringValue(cpuacct, "cpuacct.usage_percpu");
+        String usagelist = CgroupSubsystemController.getStringValue(cpuacct, "cpuacct.usage_percpu");
         if (usagelist == null) {
-            return new long[0];
+            return null;
         }
 
         String list[] = usagelist.split(" ");
@@ -312,11 +297,11 @@ public class Metrics implements jdk.internal.platform.Metrics {
     }
 
     public long getCpuUserUsage() {
-        return SubSystem.getLongEntry(cpuacct, "cpuacct.stat", "user");
+        return CgroupV1SubsystemController.getLongEntry(cpuacct, "cpuacct.stat", "user");
     }
 
     public long getCpuSystemUsage() {
-        return SubSystem.getLongEntry(cpuacct, "cpuacct.stat", "system");
+        return CgroupV1SubsystemController.getLongEntry(cpuacct, "cpuacct.stat", "system");
     }
 
 
@@ -326,31 +311,31 @@ public class Metrics implements jdk.internal.platform.Metrics {
 
 
     public long getCpuPeriod() {
-        return SubSystem.getLongValue(cpu, "cpu.cfs_period_us");
+        return getLongValue(cpu, "cpu.cfs_period_us");
     }
 
     public long getCpuQuota() {
-        return SubSystem.getLongValue(cpu, "cpu.cfs_quota_us");
+        return getLongValue(cpu, "cpu.cfs_quota_us");
     }
 
     public long getCpuShares() {
-        long retval = SubSystem.getLongValue(cpu, "cpu.shares");
+        long retval = getLongValue(cpu, "cpu.shares");
         if (retval == 0 || retval == 1024)
-            return -1;
+            return CgroupSubsystem.LONG_RETVAL_UNLIMITED;
         else
             return retval;
     }
 
     public long getCpuNumPeriods() {
-        return SubSystem.getLongEntry(cpu, "cpu.stat", "nr_periods");
+        return CgroupV1SubsystemController.getLongEntry(cpu, "cpu.stat", "nr_periods");
     }
 
     public long getCpuNumThrottled() {
-        return SubSystem.getLongEntry(cpu, "cpu.stat", "nr_throttled");
+        return CgroupV1SubsystemController.getLongEntry(cpu, "cpu.stat", "nr_throttled");
     }
 
     public long getCpuThrottledTime() {
-        return SubSystem.getLongEntry(cpu, "cpu.stat", "throttled_time");
+        return CgroupV1SubsystemController.getLongEntry(cpu, "cpu.stat", "throttled_time");
     }
 
     public long getEffectiveCpuCount() {
@@ -363,27 +348,27 @@ public class Metrics implements jdk.internal.platform.Metrics {
      ****************************************************************/
 
     public int[] getCpuSetCpus() {
-        return SubSystem.StringRangeToIntArray(SubSystem.getStringValue(cpuset, "cpuset.cpus"));
+        return CgroupSubsystemController.stringRangeToIntArray(CgroupSubsystemController.getStringValue(cpuset, "cpuset.cpus"));
     }
 
     public int[] getEffectiveCpuSetCpus() {
-        return SubSystem.StringRangeToIntArray(SubSystem.getStringValue(cpuset, "cpuset.effective_cpus"));
+        return CgroupSubsystemController.stringRangeToIntArray(CgroupSubsystemController.getStringValue(cpuset, "cpuset.effective_cpus"));
     }
 
     public int[] getCpuSetMems() {
-        return SubSystem.StringRangeToIntArray(SubSystem.getStringValue(cpuset, "cpuset.mems"));
+        return CgroupSubsystemController.stringRangeToIntArray(CgroupSubsystemController.getStringValue(cpuset, "cpuset.mems"));
     }
 
     public int[] getEffectiveCpuSetMems() {
-        return SubSystem.StringRangeToIntArray(SubSystem.getStringValue(cpuset, "cpuset.effective_mems"));
+        return CgroupSubsystemController.stringRangeToIntArray(CgroupSubsystemController.getStringValue(cpuset, "cpuset.effective_mems"));
     }
 
     public double getCpuSetMemoryPressure() {
-        return SubSystem.getDoubleValue(cpuset, "cpuset.memory_pressure");
+        return CgroupV1SubsystemController.getDoubleValue(cpuset, "cpuset.memory_pressure");
     }
 
-    public boolean isCpuSetMemoryPressureEnabled() {
-        long val = SubSystem.getLongValue(cpuset, "cpuset.memory_pressure_enabled");
+    public Boolean isCpuSetMemoryPressureEnabled() {
+        long val = getLongValue(cpuset, "cpuset.memory_pressure_enabled");
         return (val == 1);
     }
 
@@ -394,112 +379,98 @@ public class Metrics implements jdk.internal.platform.Metrics {
 
 
     public long getMemoryFailCount() {
-        return SubSystem.getLongValue(memory, "memory.failcnt");
+        return getLongValue(memory, "memory.failcnt");
     }
 
     public long getMemoryLimit() {
-        long retval = SubSystem.getLongValue(memory, "memory.limit_in_bytes");
-        if (retval > unlimited_minimum) {
+        long retval = getLongValue(memory, "memory.limit_in_bytes");
+        if (retval > CgroupV1SubsystemController.UNLIMITED_MIN) {
             if (memory.isHierarchical()) {
                 // memory.limit_in_bytes returned unlimited, attempt
                 // hierarchical memory limit
                 String match = "hierarchical_memory_limit";
-                retval = SubSystem.getLongValueMatchingLine(memory,
+                retval = CgroupV1SubsystemController.getLongValueMatchingLine(memory,
                                                             "memory.stat",
-                                                            match,
-                                                            Metrics::convertHierachicalLimitLine);
+                                                            match);
             }
         }
-        return retval > unlimited_minimum ? -1L : retval;
-    }
-
-    public static long convertHierachicalLimitLine(String line) {
-        String[] tokens = line.split("\\s");
-        if (tokens.length == 2) {
-            String strVal = tokens[1];
-            return SubSystem.convertStringToLong(strVal);
-        }
-        return unlimited_minimum + 1; // unlimited
+        return CgroupV1SubsystemController.longValOrUnlimited(retval);
     }
 
     public long getMemoryMaxUsage() {
-        return SubSystem.getLongValue(memory, "memory.max_usage_in_bytes");
+        return getLongValue(memory, "memory.max_usage_in_bytes");
     }
 
     public long getMemoryUsage() {
-        return SubSystem.getLongValue(memory, "memory.usage_in_bytes");
+        return getLongValue(memory, "memory.usage_in_bytes");
     }
 
     public long getKernelMemoryFailCount() {
-        return SubSystem.getLongValue(memory, "memory.kmem.failcnt");
+        return getLongValue(memory, "memory.kmem.failcnt");
     }
 
     public long getKernelMemoryLimit() {
-        long retval = SubSystem.getLongValue(memory, "memory.kmem.limit_in_bytes");
-        return retval > unlimited_minimum ? -1L : retval;
+        return CgroupV1SubsystemController.longValOrUnlimited(getLongValue(memory, "memory.kmem.limit_in_bytes"));
     }
 
     public long getKernelMemoryMaxUsage() {
-        return SubSystem.getLongValue(memory, "memory.kmem.max_usage_in_bytes");
+        return getLongValue(memory, "memory.kmem.max_usage_in_bytes");
     }
 
     public long getKernelMemoryUsage() {
-        return SubSystem.getLongValue(memory, "memory.kmem.usage_in_bytes");
+        return getLongValue(memory, "memory.kmem.usage_in_bytes");
     }
 
     public long getTcpMemoryFailCount() {
-        return SubSystem.getLongValue(memory, "memory.kmem.tcp.failcnt");
+        return getLongValue(memory, "memory.kmem.tcp.failcnt");
     }
 
     public long getTcpMemoryLimit() {
-        long retval =  SubSystem.getLongValue(memory, "memory.kmem.tcp.limit_in_bytes");
-        return retval > unlimited_minimum ? -1L : retval;
+        return CgroupV1SubsystemController.longValOrUnlimited(getLongValue(memory, "memory.kmem.tcp.limit_in_bytes"));
     }
 
     public long getTcpMemoryMaxUsage() {
-        return SubSystem.getLongValue(memory, "memory.kmem.tcp.max_usage_in_bytes");
+        return getLongValue(memory, "memory.kmem.tcp.max_usage_in_bytes");
     }
 
     public long getTcpMemoryUsage() {
-        return SubSystem.getLongValue(memory, "memory.kmem.tcp.usage_in_bytes");
+        return getLongValue(memory, "memory.kmem.tcp.usage_in_bytes");
     }
 
     public long getMemoryAndSwapFailCount() {
-        return SubSystem.getLongValue(memory, "memory.memsw.failcnt");
+        return getLongValue(memory, "memory.memsw.failcnt");
     }
 
     public long getMemoryAndSwapLimit() {
-        long retval = SubSystem.getLongValue(memory, "memory.memsw.limit_in_bytes");
-        if (retval > unlimited_minimum) {
+        long retval = getLongValue(memory, "memory.memsw.limit_in_bytes");
+        if (retval > CgroupV1SubsystemController.UNLIMITED_MIN) {
             if (memory.isHierarchical()) {
                 // memory.memsw.limit_in_bytes returned unlimited, attempt
                 // hierarchical memory limit
                 String match = "hierarchical_memsw_limit";
-                retval = SubSystem.getLongValueMatchingLine(memory,
+                retval = CgroupV1SubsystemController.getLongValueMatchingLine(memory,
                                                             "memory.stat",
-                                                            match,
-                                                            Metrics::convertHierachicalLimitLine);
+                                                            match);
             }
         }
-        return retval > unlimited_minimum ? -1L : retval;
+        return CgroupV1SubsystemController.longValOrUnlimited(retval);
     }
 
     public long getMemoryAndSwapMaxUsage() {
-        return SubSystem.getLongValue(memory, "memory.memsw.max_usage_in_bytes");
+        return getLongValue(memory, "memory.memsw.max_usage_in_bytes");
     }
 
     public long getMemoryAndSwapUsage() {
-        return SubSystem.getLongValue(memory, "memory.memsw.usage_in_bytes");
+        return getLongValue(memory, "memory.memsw.usage_in_bytes");
     }
 
-    public boolean isMemoryOOMKillEnabled() {
-        long val = SubSystem.getLongEntry(memory, "memory.oom_control", "oom_kill_disable");
+    public Boolean isMemoryOOMKillEnabled() {
+        long val = CgroupV1SubsystemController.getLongEntry(memory, "memory.oom_control", "oom_kill_disable");
         return (val == 0);
     }
 
     public long getMemorySoftLimit() {
-        long retval = SubSystem.getLongValue(memory, "memory.soft_limit_in_bytes");
-        return retval > unlimited_minimum ? -1L : retval;
+        return CgroupV1SubsystemController.longValOrUnlimited(getLongValue(memory, "memory.soft_limit_in_bytes"));
     }
 
 
@@ -509,11 +480,11 @@ public class Metrics implements jdk.internal.platform.Metrics {
 
 
     public long getBlkIOServiceCount() {
-        return SubSystem.getLongEntry(blkio, "blkio.throttle.io_service_bytes", "Total");
+        return CgroupV1SubsystemController.getLongEntry(blkio, "blkio.throttle.io_service_bytes", "Total");
     }
 
     public long getBlkIOServiced() {
-        return SubSystem.getLongEntry(blkio, "blkio.throttle.io_serviced", "Total");
+        return CgroupV1SubsystemController.getLongEntry(blkio, "blkio.throttle.io_serviced", "Total");
     }
 
 }
