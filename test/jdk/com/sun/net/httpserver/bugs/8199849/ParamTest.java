@@ -32,7 +32,7 @@ import jdk.test.lib.net.URIBuilder;
 
 /**
  * @test
- * @bug 8199849
+ * @bug 8199849 8235976
  * @summary
  * @library /test/lib
  * @run main/othervm ParamTest
@@ -42,10 +42,10 @@ import jdk.test.lib.net.URIBuilder;
 public class ParamTest {
 
     static final String[] variants = {
-        " charset=utf-8",
-        " charset=UtF-8",
-        " charset=\"utF-8\"",
-        " charset=\"UtF-8\""
+        " ,charset=utf-8",
+        " ,charset=UtF-8",
+        " ,charset=\"utF-8\"",
+        " ,charset=\"UtF-8\""
     };
 
     static final int LOOPS = variants.length;
