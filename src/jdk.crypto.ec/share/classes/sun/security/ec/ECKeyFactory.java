@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -201,7 +201,6 @@ public final class ECKeyFactory extends KeyFactorySpi {
             ECPrivateKey ecKey = (ECPrivateKey)key;
             return new ECPrivateKeyImpl(
                 ecKey.getS(),
-                null,
                 ecKey.getParams()
             );
         } else if ("PKCS#8".equals(key.getFormat())) {
@@ -238,7 +237,7 @@ public final class ECKeyFactory extends KeyFactorySpi {
             return new ECPrivateKeyImpl(pkcsSpec.getEncoded());
         } else if (keySpec instanceof ECPrivateKeySpec) {
             ECPrivateKeySpec ecSpec = (ECPrivateKeySpec)keySpec;
-            return new ECPrivateKeyImpl(ecSpec.getS(), null, ecSpec.getParams());
+            return new ECPrivateKeyImpl(ecSpec.getS(), ecSpec.getParams());
         } else {
             throw new InvalidKeySpecException("Only ECPrivateKeySpec "
                 + "and PKCS8EncodedKeySpec supported for EC private keys");

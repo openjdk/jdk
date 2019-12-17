@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,8 +52,8 @@ import sun.security.pkcs.PKCS8Key;
  * }
  * </pre>
  *
- * We currently ignore the optional parameters. We require that the
- * parameters are encoded as part of the AlgorithmIdentifier,
+ * We currently ignore the optional parameters and publicKey fields. We
+ * require that the parameters are encoded as part of the AlgorithmIdentifier,
  * not in the private key structure.
  *
  * @since   1.6
@@ -66,7 +66,6 @@ public final class ECPrivateKeyImpl extends PKCS8Key implements ECPrivateKey {
     private BigInteger s;       // private value
     private byte[] arrayS;      // private value as a little-endian array
     private ECParameterSpec params;
-    private ECPoint pub;        // the optional public key
 
     /**
      * Construct a key from its encoding. Called by the ECKeyFactory.
@@ -79,20 +78,18 @@ public final class ECPrivateKeyImpl extends PKCS8Key implements ECPrivateKey {
      * Construct a key from its components. Used by the
      * KeyFactory.
      */
-    ECPrivateKeyImpl(BigInteger s, ECPoint pub, ECParameterSpec params)
+    ECPrivateKeyImpl(BigInteger s, ECParameterSpec params)
             throws InvalidKeyException {
         this.s = s;
         this.params = params;
-        this.pub = pub;
         makeEncoding(s);
 
     }
 
-    ECPrivateKeyImpl(byte[] s, ECPoint pub, ECParameterSpec params)
+    ECPrivateKeyImpl(byte[] s, ECParameterSpec params)
             throws InvalidKeyException {
         this.arrayS = s.clone();
         this.params = params;
-        this.pub = pub;
         makeEncoding(s);
     }
 
@@ -105,12 +102,6 @@ public final class ECPrivateKeyImpl extends PKCS8Key implements ECPrivateKey {
             byte[] privBytes = s.clone();
             ArrayUtil.reverse(privBytes);
             out.putOctetString(privBytes);
-            if (pub != null) {
-                DerOutputStream pubDer = new DerOutputStream();
-                pubDer.putBitString(ECUtil.encodePoint(pub, params.getCurve()));
-                out.write(DerValue.createTag(DerValue.TAG_CONTEXT,
-                        true, (byte) 0x01), pubDer);
-            }
             DerValue val =
                 new DerValue(DerValue.tag_Sequence, out.toByteArray());
             key = val.toByteArray();
@@ -195,25 +186,22 @@ public final class ECPrivateKeyImpl extends PKCS8Key implements ECPrivateKey {
             byte[] privData = data.getOctetString();
             ArrayUtil.reverse(privData);
             arrayS = privData;
-            AlgorithmParameters algParams = this.algid.getParameters();
-            if (algParams == null) {
-                throw new InvalidKeyException("EC domain parameters must be "
-                        + "encoded in the algorithm identifier");
-            }
-            params = algParams.getParameterSpec(ECParameterSpec.class);
             while (data.available() != 0) {
                 DerValue value = data.getDerValue();
                 if (value.isContextSpecific((byte) 0)) {
-                    // ignore for now. Usually not encoded because
-                    // pkcs8 already has the params
+                    // ignore for now
                 } else if (value.isContextSpecific((byte) 1)) {
-                    pub = ECUtil.decodePoint(
-                            value.data.getUnalignedBitString().toByteArray(),
-                            params.getCurve());
+                    // ignore for now
                 } else {
                     throw new InvalidKeyException("Unexpected value: " + value);
                 }
             }
+            AlgorithmParameters algParams = this.algid.getParameters();
+            if (algParams == null) {
+                throw new InvalidKeyException("EC domain parameters must be "
+                    + "encoded in the algorithm identifier");
+            }
+            params = algParams.getParameterSpec(ECParameterSpec.class);
         } catch (IOException e) {
             throw new InvalidKeyException("Invalid EC private key", e);
         } catch (InvalidParameterSpecException e) {
