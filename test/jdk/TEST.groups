@@ -464,7 +464,8 @@ jdk_jfr_sanity = \
     jdk/jfr/event/gc/collection/TestGCWithFasttime.java \
     jdk/jfr/event/gc/configuration/TestGCConfigurationEvent.java \
     jdk/jfr/event/metadata/TestDefaultConfigurations.java \
-    jdk/jfr/startupargs/TestDumpOnExit.java
+    jdk/jfr/startupargs/TestDumpOnExit.java \
+    jdk/jfr/api/consumer/recordingstream/TestBasics.java
 
 svc_tools_sanity =
 
