@@ -356,7 +356,6 @@ jdk_beans = \
     java/beans
 
 jdk_swing = \
-    javax/accessibility \
     javax/swing \
     com/sun/java/swing
 
@@ -365,6 +364,10 @@ jdk_sound = \
 
 jdk_imageio = \
     javax/imageio
+
+jdk_accessibility = \
+    javax/accessibility \
+    com/sun/java/accessibility
 
 jfc_demo = \
      demo/jfc
@@ -376,6 +379,7 @@ jdk_desktop = \
     :jdk_swing \
     :jdk_sound \
     :jdk_imageio \
+    :jdk_accessibility \
     :jfc_demo \
     :jdk_client_sanity
 
