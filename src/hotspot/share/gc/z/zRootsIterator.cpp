@@ -45,9 +45,10 @@
 #include "prims/jvmtiExport.hpp"
 #include "prims/resolvedMethodTable.hpp"
 #include "runtime/atomic.hpp"
-#include "runtime/thread.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/synchronizer.hpp"
+#include "runtime/thread.hpp"
+#include "runtime/vmThread.hpp"
 #include "services/management.hpp"
 #include "utilities/debug.hpp"
 #if INCLUDE_JFR
@@ -63,7 +64,8 @@ static const ZStatSubPhase ZSubPhasePauseRootsManagement("Pause Roots Management
 static const ZStatSubPhase ZSubPhasePauseRootsJVMTIExport("Pause Roots JVMTIExport");
 static const ZStatSubPhase ZSubPhasePauseRootsJVMTIWeakExport("Pause Roots JVMTIWeakExport");
 static const ZStatSubPhase ZSubPhasePauseRootsSystemDictionary("Pause Roots SystemDictionary");
-static const ZStatSubPhase ZSubPhasePauseRootsThreads("Pause Roots Threads");
+static const ZStatSubPhase ZSubPhasePauseRootsVMThread("Pause Roots VM Thread");
+static const ZStatSubPhase ZSubPhasePauseRootsJavaThreads("Pause Roots Java Threads");
 static const ZStatSubPhase ZSubPhasePauseRootsCodeCache("Pause Roots CodeCache");
 
 static const ZStatSubPhase ZSubPhaseConcurrentRootsSetup("Concurrent Roots Setup");
@@ -165,6 +167,7 @@ public:
 class ZRootsIteratorThreadClosure : public ThreadClosure {
 private:
   ZRootsIteratorClosure* const _cl;
+  ResourceMark                 _rm;
 
 public:
   ZRootsIteratorThreadClosure(ZRootsIteratorClosure* cl) :
@@ -177,19 +180,34 @@ public:
   }
 };
 
+ZJavaThreadsIterator::ZJavaThreadsIterator() :
+    _threads(),
+    _claimed(0) {}
+
+uint ZJavaThreadsIterator::claim() {
+  return Atomic::add(&_claimed, 1u) - 1u;
+}
+
+void ZJavaThreadsIterator::threads_do(ThreadClosure* cl) {
+  for (uint i = claim(); i < _threads.length(); i = claim()) {
+    cl->do_thread(_threads.thread_at(i));
+  }
+}
+
 ZRootsIterator::ZRootsIterator(bool visit_jvmti_weak_export) :
     _visit_jvmti_weak_export(visit_jvmti_weak_export),
+    _java_threads_iter(),
     _universe(this),
     _object_synchronizer(this),
     _management(this),
     _jvmti_export(this),
     _jvmti_weak_export(this),
     _system_dictionary(this),
-    _threads(this),
+    _vm_thread(this),
+    _java_threads(this),
     _code_cache(this) {
   assert(SafepointSynchronize::is_at_safepoint(), "Should be at safepoint");
   ZStatTimer timer(ZSubPhasePauseRootsSetup);
-  Threads::change_thread_claim_token();
   COMPILER2_PRESENT(DerivedPointerTable::clear());
   if (ClassUnloading) {
     nmethod::oops_do_marking_prologue();
@@ -208,7 +226,6 @@ ZRootsIterator::~ZRootsIterator() {
   }
 
   COMPILER2_PRESENT(DerivedPointerTable::update_pointers());
-  Threads::assert_all_threads_claimed();
 }
 
 void ZRootsIterator::do_universe(ZRootsIteratorClosure* cl) {
@@ -243,11 +260,16 @@ void ZRootsIterator::do_system_dictionary(ZRootsIteratorClosure* cl) {
   SystemDictionary::oops_do(cl, false /* include_handles */);
 }
 
-void ZRootsIterator::do_threads(ZRootsIteratorClosure* cl) {
-  ZStatTimer timer(ZSubPhasePauseRootsThreads);
-  ResourceMark rm;
+void ZRootsIterator::do_vm_thread(ZRootsIteratorClosure* cl) {
+  ZStatTimer timer(ZSubPhasePauseRootsVMThread);
   ZRootsIteratorThreadClosure thread_cl(cl);
-  Threads::possibly_parallel_threads_do(true, &thread_cl);
+  thread_cl.do_thread(VMThread::vm_thread());
+}
+
+void ZRootsIterator::do_java_threads(ZRootsIteratorClosure* cl) {
+  ZStatTimer timer(ZSubPhasePauseRootsJavaThreads);
+  ZRootsIteratorThreadClosure thread_cl(cl);
+  _java_threads_iter.threads_do(&thread_cl);
 }
 
 void ZRootsIterator::do_code_cache(ZRootsIteratorClosure* cl) {
@@ -262,7 +284,8 @@ void ZRootsIterator::oops_do(ZRootsIteratorClosure* cl) {
   _management.oops_do(cl);
   _jvmti_export.oops_do(cl);
   _system_dictionary.oops_do(cl);
-  _threads.oops_do(cl);
+  _vm_thread.oops_do(cl);
+  _java_threads.oops_do(cl);
   if (!ClassUnloading) {
     _code_cache.oops_do(cl);
   }
