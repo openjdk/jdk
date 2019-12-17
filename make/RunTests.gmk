@@ -701,7 +701,8 @@ define SetupRunMicroTestBody
   endif
 
   ifneq ($$(MICRO_VM_OPTIONS)$$(MICRO_JAVA_OPTIONS), )
-    $1_MICRO_VM_OPTIONS := -jvmArgs $$(MICRO_VM_OPTIONS) $$(MICRO_JAVA_OPTIONS)
+    JMH_JVM_ARGS := $$(MICRO_VM_OPTIONS) $$(MICRO_JAVA_OPTIONS)
+    $1_MICRO_VM_OPTIONS := -jvmArgs $(call ShellQuote,$$(JMH_JVM_ARGS))
   endif
 
   ifneq ($$(MICRO_ITER), )
