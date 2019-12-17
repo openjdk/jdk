@@ -204,11 +204,6 @@
   develop(bool, G1VerifyCTCleanup, false,                                   \
           "Verify card table cleanup.")                                     \
                                                                             \
-  product(size_t, G1RSetScanBlockSize, 64,                                  \
-          "Size of a work unit of cards claimed by a worker thread"         \
-          "during RSet scanning.")                                          \
-          range(1, max_uintx)                                               \
-                                                                            \
   develop(uintx, G1DummyRegionsPerGC, 0,                                    \
           "The number of dummy regions G1 will allocate at the end of "     \
           "each evacuation pause in order to artificially fill up the "     \
