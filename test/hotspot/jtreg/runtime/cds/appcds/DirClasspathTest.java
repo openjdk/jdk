@@ -27,7 +27,6 @@
  * @summary Handling of directories in -cp is based on the classlist
  * @requires vm.cds
  * @library /test/lib
- * @modules jdk.jartool/sun.tools.jar
  * @compile test-classes/Hello.java
  * @compile test-classes/Super.java
  * @run driver DirClasspathTest

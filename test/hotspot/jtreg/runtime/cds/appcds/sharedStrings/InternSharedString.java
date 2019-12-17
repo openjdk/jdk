@@ -27,7 +27,6 @@
  * @summary Test shared strings together with string intern operation
  * @requires vm.cds.archived.java.heap
  * @library /test/hotspot/jtreg/runtime/cds/appcds /test/lib
- * @modules jdk.jartool/sun.tools.jar
  * @compile InternStringTest.java
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox

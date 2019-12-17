@@ -30,7 +30,6 @@
  * @requires vm.cds.custom.loaders
  *
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
- * @modules jdk.jartool/sun.tools.jar
  * @compile test-classes/ProtDomain.java
  * @run driver ProtectionDomain
  */

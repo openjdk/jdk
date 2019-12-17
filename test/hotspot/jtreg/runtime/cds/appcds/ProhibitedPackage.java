@@ -27,7 +27,6 @@
  * @summary AppCDS handling of prohibited package.
  * @requires vm.cds
  * @library /test/lib
- * @modules jdk.jartool/sun.tools.jar
  * @compile test-classes/ProhibitedHelper.java test-classes/Prohibited.jasm
  * @run driver ProhibitedPackage
  */

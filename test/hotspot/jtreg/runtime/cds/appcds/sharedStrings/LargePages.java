@@ -27,7 +27,6 @@
  * @summary Basic shared string test with large pages
  * @requires vm.cds.archived.java.heap
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
- * @modules jdk.jartool/sun.tools.jar
  * @build HelloString
  * @run driver LargePages
  */

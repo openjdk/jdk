@@ -28,7 +28,6 @@
  *
  * @requires vm.cds & !vm.graal.enabled
  * @library /test/lib ..
- * @modules jdk.jartool/sun.tools.jar
  * @compile ../test-classes/Hello.java ../test-classes/HelloMore.java
  * @run driver JigsawOptionsCombo
  */

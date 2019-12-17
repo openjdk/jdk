@@ -27,7 +27,6 @@
  * @summary Test for field annotations.
  * @requires vm.cds
  * @library /test/lib
- * @modules jdk.jartool/sun.tools.jar
  * @compile test-classes/FieldAnnotationsApp.java test-classes/MyAnnotation.java
  * @run driver FieldAnnotationsTest
  */

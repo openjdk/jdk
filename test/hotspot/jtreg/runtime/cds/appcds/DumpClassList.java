@@ -28,7 +28,6 @@
  *          --patch-module.
  * @requires vm.cds
  * @library /test/lib
- * @modules jdk.jartool/sun.tools.jar
  * @compile test-classes/ArrayListTest.java
  * @run driver DumpClassList
  */

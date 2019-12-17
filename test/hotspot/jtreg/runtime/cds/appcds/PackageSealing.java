@@ -27,7 +27,6 @@
  * @summary AppCDS handling of package.
  * @requires vm.cds
  * @library /test/lib
- * @modules jdk.jartool/sun.tools.jar
  * @compile test-classes/C1.java
  * @compile test-classes/C2.java
  * @compile test-classes/PackageSealingTest.java

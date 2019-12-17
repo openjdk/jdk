@@ -27,7 +27,6 @@
  * @summary The DynamicDumpShareSpaces flag is internal, setting it at the command line should have no effect.
  * @requires vm.cds
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
- * @modules jdk.jartool/sun.tools.jar
  * @compile ../test-classes/Hello.java
  * @run driver DynamicFlag
  */

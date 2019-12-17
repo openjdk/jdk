@@ -32,7 +32,6 @@ import java.nio.file.Paths;
  * @summary unsupported base archive tests
  * @requires vm.cds
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds /test/hotspot/jtreg/runtime/cds/appcds/test-classes
- * @modules jdk.jartool/sun.tools.jar
  * @compile ../test-classes/Hello.java
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller -jar WhiteBox.jar sun.hotspot.WhiteBox

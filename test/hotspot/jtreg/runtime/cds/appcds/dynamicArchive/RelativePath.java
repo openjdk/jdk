@@ -27,7 +27,6 @@
  * @summary Test relative paths specified in the -cp.
  * @requires vm.cds
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
- * @modules jdk.jartool/sun.tools.jar
  * @compile ../test-classes/Hello.java
  * @compile ../test-classes/HelloMore.java
  * @run driver RelativePath

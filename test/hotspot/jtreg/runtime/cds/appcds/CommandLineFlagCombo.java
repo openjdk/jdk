@@ -32,7 +32,6 @@
  * @summary Test command line flag combinations that
  *          could likely affect the behaviour of AppCDS
  * @library /test/lib
- * @modules jdk.jartool/sun.tools.jar
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox sun.hotspot.WhiteBox$WhiteBoxPermission
  * @compile test-classes/Hello.java

@@ -30,7 +30,6 @@
  * @requires vm.cds.custom.loaders
  * @requires vm.opt.final.ClassUnloading
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds /test/hotspot/jtreg/runtime/testlibrary
- * @modules jdk.jartool/sun.tools.jar
  * @build sun.hotspot.WhiteBox ClassUnloadCommon
  * @compile test-classes/UnloadUnregisteredLoader.java test-classes/CustomLoadee.java
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox

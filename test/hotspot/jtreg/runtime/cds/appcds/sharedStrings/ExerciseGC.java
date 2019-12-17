@@ -27,7 +27,6 @@
  * @summary Exercise GC with shared strings
  * @requires vm.cds.archived.java.heap
  * @library /test/hotspot/jtreg/runtime/cds/appcds /test/lib
- * @modules jdk.jartool/sun.tools.jar
  * @build HelloStringGC sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  * @run driver ExerciseGC

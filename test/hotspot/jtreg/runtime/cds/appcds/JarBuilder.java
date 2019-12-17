@@ -38,12 +38,14 @@ import jdk.test.lib.process.ProcessTools;
 import java.io.File;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import sun.tools.jar.Main;
+import java.util.spi.ToolProvider;
 
 public class JarBuilder {
     // to turn DEBUG on via command line: -DJarBuilder.DEBUG=[true, TRUE]
     private static final boolean DEBUG = Boolean.parseBoolean(System.getProperty("JarBuilder.DEBUG", "false"));
     private static final String classDir = System.getProperty("test.classes");
+    private static final ToolProvider JAR = ToolProvider.findFirst("jar")
+        .orElseThrow(() -> new RuntimeException("ToolProvider for jar not found"));
 
     public static String getJarFilePath(String jarName) {
         return classDir + File.separator + jarName + ".jar";
@@ -196,8 +198,7 @@ public class JarBuilder {
     private static void createJar(ArrayList<String> args) {
         if (DEBUG) printIterable("createJar args: ", args);
 
-        Main jarTool = new Main(System.out, System.err, "jar");
-        if (!jarTool.run(args.toArray(new String[1]))) {
+        if (JAR.run(System.out, System.err, args.toArray(new String[1])) != 0) {
             throw new RuntimeException("jar operation failed");
         }
     }

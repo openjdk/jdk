@@ -26,7 +26,6 @@
  * @test
  * @requires vm.cds
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
- * @modules jdk.jartool/sun.tools.jar
  * @run driver ExportModule
  * @summary Tests involve exporting a module from the module path to a jar in the -cp.
  */

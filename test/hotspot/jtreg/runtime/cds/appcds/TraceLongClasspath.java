@@ -27,7 +27,6 @@
  * @summary ensure -Xlog:class+path showing entire expecting app classpath
  * @requires vm.cds
  * @library /test/lib
- * @modules jdk.jartool/sun.tools.jar
  * @compile test-classes/Hello.java
  * @compile test-classes/Super.java
  * @run driver TraceLongClasspath

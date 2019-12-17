@@ -27,7 +27,6 @@
  * @summary Regression test for JDK-8098821
  * @bug 8098821
  * @requires vm.cds.archived.java.heap
- * @modules jdk.jartool/sun.tools.jar
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
  * @run driver SysDictCrash
  */

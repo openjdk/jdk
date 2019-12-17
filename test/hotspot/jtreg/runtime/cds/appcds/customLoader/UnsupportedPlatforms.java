@@ -27,7 +27,6 @@
  * @summary Ensure that support for AppCDS custom class loaders are not enabled on unsupported platforms.
  * @requires vm.cds
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
- * @modules jdk.jartool/sun.tools.jar
  * @compile test-classes/SimpleHello.java
  * @run driver UnsupportedPlatforms
  */

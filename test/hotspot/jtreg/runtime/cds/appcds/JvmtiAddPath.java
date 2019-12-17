@@ -28,7 +28,6 @@
  * @requires vm.cds
  * @bug 8060592
  * @library /test/lib
- * @modules jdk.jartool/sun.tools.jar
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  * @compile test-classes/Hello.java

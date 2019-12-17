@@ -28,7 +28,6 @@
  *
  * @requires vm.cds
  * @library /test/lib
- * @modules jdk.jartool/sun.tools.jar
  * @compile test-classes/MissingSuper.java
  * @run driver MissingSuperTest
  */
