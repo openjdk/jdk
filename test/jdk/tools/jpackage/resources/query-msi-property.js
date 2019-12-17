@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,31 +21,45 @@
  * questions.
  */
 
- /*
- * @test
- * @summary jpackage create image with additional launcher test
- * @library ../helpers
- * @build JPackageHelper
- * @build JPackagePath
- * @build AddLauncherBase
- * @modules jdk.incubator.jpackage
- * @run main/othervm -Xmx512m AddLauncherModuleTest
- */
-public class AddLauncherModuleTest {
-    private static final String OUTPUT = "output";
-    private static final String [] CMD = {
-        "--type", "app-image",
-        "--dest", OUTPUT,
-        "--name", "test",
-        "--module", "com.hello/com.hello.Hello",
-        "--module-path", "input",
-        "--add-launcher", "test2=sl.properties"};
 
-    public static void main(String[] args) throws Exception {
-        JPackageHelper.createHelloModule();
-        AddLauncherBase.createSLProperties();
-        AddLauncherBase.testCreateAppImageToolProvider(
-                CMD);
+function readMsi(msiPath, callback) {
+    var installer = new ActiveXObject('WindowsInstaller.Installer')
+    var database = installer.OpenDatabase(msiPath, 0 /* msiOpenDatabaseModeReadOnly */)
+
+    return callback(database)
+}
+
+
+function queryAllProperties(db) {
+    var reply = {}
+
+    var view = db.OpenView("SELECT `Property`, `Value` FROM Property")
+    view.Execute()
+
+    try {
+        while(true) {
+            var record = view.Fetch()
+            if (!record) {
+                break
+            }
+
+            var name = record.StringData(1)
+            var value = record.StringData(2)
+
+            reply[name] = value
+        }
+    } finally {
+        view.Close()
     }
 
+    return reply
 }
+
+
+(function () {
+    var msi = WScript.arguments(0)
+    var propName = WScript.arguments(1)
+
+    var props = readMsi(msi, queryAllProperties)
+    WScript.Echo(props[propName])
+})()
