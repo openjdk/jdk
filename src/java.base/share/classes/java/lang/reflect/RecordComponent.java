@@ -233,7 +233,7 @@ public final class RecordComponent implements AnnotatedElement {
      * of the record component.
      * For example:
      * <pre>
-     *    String name
+     *    java.lang.String name
      *    int age
      * </pre>
      *
