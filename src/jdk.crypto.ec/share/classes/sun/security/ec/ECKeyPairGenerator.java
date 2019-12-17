@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -199,11 +199,10 @@ public final class ECKeyPairGenerator extends KeyPairGeneratorSpi {
         AffinePoint affGen = new AffinePoint(x, y);
         Point pub = ops.multiply(affGen, privArr);
         AffinePoint affPub = pub.asAffine();
-
-        PrivateKey privateKey = new ECPrivateKeyImpl(privArr, ecParams);
-
         ECPoint w = new ECPoint(affPub.getX().asBigInteger(),
             affPub.getY().asBigInteger());
+
+        PrivateKey privateKey = new ECPrivateKeyImpl(privArr, w, ecParams);
         PublicKey publicKey = new ECPublicKeyImpl(w, ecParams);
 
         return Optional.of(new KeyPair(publicKey, privateKey));
@@ -225,11 +224,12 @@ public final class ECKeyPairGenerator extends KeyPairGeneratorSpi {
         // keyBytes[0] is the encoding of the native private key
         BigInteger s = new BigInteger(1, (byte[]) keyBytes[0]);
 
-        PrivateKey privateKey = new ECPrivateKeyImpl(s, ecParams);
-
         // keyBytes[1] is the encoding of the native public key
         byte[] pubKey = (byte[]) keyBytes[1];
         ECPoint w = ECUtil.decodePoint(pubKey, ecParams.getCurve());
+
+        PrivateKey privateKey = new ECPrivateKeyImpl(s, w, ecParams);
+
         PublicKey publicKey = new ECPublicKeyImpl(w, ecParams);
 
         return new KeyPair(publicKey, privateKey);
