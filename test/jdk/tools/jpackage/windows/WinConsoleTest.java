@@ -26,6 +26,7 @@ import java.io.InputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
 import jdk.jpackage.test.TKit;
+import jdk.jpackage.test.HelloApp;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.Annotations.Parameter;
@@ -58,6 +59,10 @@ public class WinConsoleTest {
         }
         cmd.executeAndAssertHelloAppImageCreated();
         checkSubsystem(cmd.appLauncherPath(), withWinConsole);
+
+        // Run launcher with a number of arguments to make sure they go through
+        // regardless the launcher has or doesn't have console.
+        HelloApp.executeLauncherAndVerifyOutput(cmd, "a", "b", "c");
     }
 
     private static void checkSubsystem(Path path, boolean isConsole) throws

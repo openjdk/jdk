@@ -102,21 +102,6 @@ public class MacAppBundler extends AbstractImageBundler {
             params -> IDENTIFIER.fetchFrom(params) + ".",
             (s, p) -> s);
 
-    public static final BundlerParamInfo<File> ICON_ICNS =
-            new StandardBundlerParam<>(
-            "icon.icns",
-            File.class,
-            params -> {
-                File f = ICON.fetchFrom(params);
-                if (f != null && !f.getName().toLowerCase().endsWith(".icns")) {
-                    Log.error(MessageFormat.format(
-                            I18N.getString("message.icon-not-icns"), f));
-                    return null;
-                }
-                return f;
-            },
-            (s, p) -> new File(s));
-
     public static boolean validCFBundleVersion(String v) {
         // CFBundleVersion (String - iOS, OS X) specifies the build version
         // number of the bundle, which identifies an iteration (released or

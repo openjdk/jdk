@@ -52,12 +52,16 @@ final public class TKit {
 
         for (int i = 0; i != 10; ++i) {
             if (root.resolve("apps").toFile().isDirectory()) {
-                return root.toAbsolutePath();
+                return root.normalize().toAbsolutePath();
             }
             root = root.resolve("..");
         }
 
         throw new RuntimeException("Failed to locate apps directory");
+    }).get();
+
+    public static final Path SRC_ROOT = Functional.identity(() -> {
+        return TEST_SRC_ROOT.resolve("../../../../src/jdk.incubator.jpackage").normalize().toAbsolutePath();
     }).get();
 
     public final static String ICON_SUFFIX = Functional.identity(() -> {
@@ -148,14 +152,6 @@ final public class TKit {
 
     public static Path workDir() {
         return currentTest.workDir();
-    }
-
-    static Path defaultInputDir() {
-        return workDir().resolve("input");
-    }
-
-    static Path defaultOutputDir() {
-        return workDir().resolve("output");
     }
 
     static String getCurrentDefaultAppName() {
@@ -275,18 +271,16 @@ final public class TKit {
         return Files.createDirectory(createUniqueFileName(role));
     }
 
-    public static Path createTempFile(String role, String suffix) throws
+    public static Path createTempFile(Path templateFile) throws
             IOException {
-        if (role == null) {
-            return Files.createTempFile(workDir(), TEMP_FILE_PREFIX, suffix);
-        }
-        return Files.createFile(createUniqueFileName(role));
+        return Files.createFile(createUniqueFileName(
+                templateFile.getFileName().toString()));
     }
 
-    public static Path withTempFile(String role, String suffix,
+    public static Path withTempFile(Path templateFile,
             ThrowingConsumer<Path> action) {
         final Path tempFile = ThrowingSupplier.toSupplier(() -> createTempFile(
-                role, suffix)).get();
+                templateFile)).get();
         boolean keepIt = true;
         try {
             ThrowingConsumer.toConsumer(action).accept(tempFile);
@@ -449,10 +443,11 @@ final public class TKit {
     }
 
     public static Path createRelativePathCopy(final Path file) {
-        Path fileCopy = workDir().resolve(file.getFileName()).toAbsolutePath().normalize();
-
-        ThrowingRunnable.toRunnable(() -> Files.copy(file, fileCopy,
-                StandardCopyOption.REPLACE_EXISTING)).run();
+        Path fileCopy = ThrowingSupplier.toSupplier(() -> {
+            Path localPath = createTempFile(file);
+            Files.copy(file, localPath, StandardCopyOption.REPLACE_EXISTING);
+            return localPath;
+        }).get().toAbsolutePath().normalize();
 
         final Path basePath = Path.of(".").toAbsolutePath().normalize();
         try {
@@ -713,32 +708,32 @@ final public class TKit {
         }
     }
 
-    public final static class TextStreamAsserter {
-        TextStreamAsserter(String value) {
+    public final static class TextStreamVerifier {
+        TextStreamVerifier(String value) {
             this.value = value;
             predicate(String::contains);
         }
 
-        public TextStreamAsserter label(String v) {
+        public TextStreamVerifier label(String v) {
             label = v;
             return this;
         }
 
-        public TextStreamAsserter predicate(BiPredicate<String, String> v) {
+        public TextStreamVerifier predicate(BiPredicate<String, String> v) {
             predicate = v;
             return this;
         }
 
-        public TextStreamAsserter negate() {
+        public TextStreamVerifier negate() {
             negate = true;
             return this;
         }
 
-        public TextStreamAsserter orElseThrow(RuntimeException v) {
+        public TextStreamVerifier orElseThrow(RuntimeException v) {
             return orElseThrow(() -> v);
         }
 
-        public TextStreamAsserter orElseThrow(Supplier<RuntimeException> v) {
+        public TextStreamVerifier orElseThrow(Supplier<RuntimeException> v) {
             createException = v;
             return this;
         }
@@ -779,8 +774,8 @@ final public class TKit {
         final private String value;
     }
 
-    public static TextStreamAsserter assertTextStream(String what) {
-        return new TextStreamAsserter(what);
+    public static TextStreamVerifier assertTextStream(String what) {
+        return new TextStreamVerifier(what);
     }
 
     private static PrintStream openLogStream() {
@@ -809,13 +804,23 @@ final public class TKit {
         return "jpackage.test." + propertyName;
     }
 
-    static Set<String> tokenizeConfigProperty(String propertyName) {
+    static List<String> tokenizeConfigPropertyAsList(String propertyName) {
         final String val = TKit.getConfigProperty(propertyName);
         if (val == null) {
             return null;
         }
-        return Stream.of(val.toLowerCase().split(",")).map(String::strip).filter(
-                Predicate.not(String::isEmpty)).collect(Collectors.toSet());
+        return Stream.of(val.toLowerCase().split(","))
+                .map(String::strip)
+                .filter(Predicate.not(String::isEmpty))
+                .collect(Collectors.toList());
+    }
+
+    static Set<String> tokenizeConfigProperty(String propertyName) {
+        List<String> tokens = tokenizeConfigPropertyAsList(propertyName);
+        if (tokens == null) {
+            return null;
+        }
+        return tokens.stream().collect(Collectors.toSet());
     }
 
     static final Path LOG_FILE = Functional.identity(() -> {

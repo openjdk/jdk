@@ -24,6 +24,7 @@
 package jdk.jpackage.tests;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Collection;
 import java.util.List;
@@ -71,7 +72,7 @@ public final class ModulePathTest {
     }
 
     @Test
-    public void test() {
+    public void test() throws IOException {
         final String moduleName = "com.foo";
         JPackageCommand cmd = JPackageCommand.helloAppImage(
                 "benvenuto.jar:" + moduleName + "/com.foo.Hello");
@@ -88,45 +89,42 @@ public final class ModulePathTest {
         String goodModulePath = Objects.requireNonNull(cmd.getArgumentValue(
                 "--module-path"));
         cmd.removeArgumentWithValue("--module-path");
-        TKit.withTempDirectory("empty-dir", emptyDir -> {
-            Path nonExistingDir = TKit.withTempDirectory("non-existing-dir",
-                    unused -> {
-                    });
 
-            Function<String, String> substitute = str -> {
-                String v = str;
-                v = v.replace(GOOD_PATH, goodModulePath);
-                v = v.replace(EMPTY_DIR, emptyDir.toString());
-                v = v.replace(NON_EXISTING_DIR, nonExistingDir.toString());
-                return v;
-            };
+        Path emptyDir = TKit.createTempDirectory("empty-dir");
+        Path nonExistingDir = TKit.withTempDirectory("non-existing-dir", x -> {});
 
-            boolean withGoodPath = modulePathArgs.stream().anyMatch(
-                    s -> s.contains(GOOD_PATH));
+        Function<String, String> substitute = str -> {
+            String v = str;
+            v = v.replace(GOOD_PATH, goodModulePath);
+            v = v.replace(EMPTY_DIR, emptyDir.toString());
+            v = v.replace(NON_EXISTING_DIR, nonExistingDir.toString());
+            return v;
+        };
 
-            cmd.addArguments(modulePathArgs.stream().map(arg -> Stream.of(
-                    "--module-path", substitute.apply(arg))).flatMap(s -> s).collect(
-                    Collectors.toList()));
+        boolean withGoodPath = modulePathArgs.stream().anyMatch(
+                s -> s.contains(GOOD_PATH));
 
-            if (withGoodPath) {
-                cmd.executeAndAssertHelloAppImageCreated();
+        cmd.addArguments(modulePathArgs.stream().map(arg -> Stream.of(
+                "--module-path", substitute.apply(arg))).flatMap(s -> s).collect(
+                Collectors.toList()));
+
+        if (withGoodPath) {
+            cmd.executeAndAssertHelloAppImageCreated();
+        } else {
+            final String expectedErrorMessage;
+            if (modulePathArgs.isEmpty()) {
+                expectedErrorMessage = "Error: Missing argument: --runtime-image or --module-path";
             } else {
-                final String expectedErrorMessage;
-                if (modulePathArgs.isEmpty()) {
-                    expectedErrorMessage = "Error: Missing argument: --runtime-image or --module-path";
-                } else {
-                    expectedErrorMessage = String.format(
-                            "Error: Module %s not found", moduleName);
-                }
-
-                List<String> output = cmd
-                        .saveConsoleOutput(true)
-                        .execute()
-                        .assertExitCodeIs(1)
-                        .getOutput();
-                TKit.assertTextStream(expectedErrorMessage).apply(output.stream());
+                expectedErrorMessage = String.format(
+                        "Error: Module %s not found", moduleName);
             }
-        });
+
+            List<String> output = cmd
+                    .saveConsoleOutput(true)
+                    .execute(1)
+                    .getOutput();
+            TKit.assertTextStream(expectedErrorMessage).apply(output.stream());
+        }
     }
 
     private final List<String> modulePathArgs;

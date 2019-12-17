@@ -67,7 +67,7 @@ public final class JarBuilder {
                         .setToolProvider(JavaTool.JAVAC)
                         .addArguments("-d", workDir.toString())
                         .addPathArguments(sourceFiles)
-                        .execute().assertExitCodeIsZero();
+                        .execute();
             }
 
             Files.createDirectories(outputJar.getParent());
@@ -87,7 +87,7 @@ public final class JarBuilder {
                 jarExe.addArguments("-e", mainClass);
             }
             jarExe.addArguments("-C", workDir.toString(), ".");
-            jarExe.execute().assertExitCodeIsZero();
+            jarExe.execute();
         });
     }
     private List<Path> sourceFiles;

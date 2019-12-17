@@ -23,10 +23,7 @@
 package jdk.jpackage.test;
 
 import java.lang.reflect.InvocationTargetException;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.Predicate;
-import java.util.function.Supplier;
+import java.util.function.*;
 
 
 public class Functional {
@@ -38,6 +35,21 @@ public class Functional {
             return o -> {
                 try {
                     v.accept(o);
+                } catch (Throwable ex) {
+                    rethrowUnchecked(ex);
+                }
+            };
+        }
+    }
+
+    @FunctionalInterface
+    public interface ThrowingBiConsumer<T, U> {
+        void accept(T t, U u) throws Throwable;
+
+        public static <T, U> BiConsumer<T, U> toBiConsumer(ThrowingBiConsumer<T, U> v) {
+            return (t, u) -> {
+                try {
+                    v.accept(t, u);
                 } catch (Throwable ex) {
                     rethrowUnchecked(ex);
                 }
@@ -99,6 +111,10 @@ public class Functional {
     }
 
     public static <T> Consumer<T> identity(Consumer<T> v) {
+        return v;
+    }
+
+    public static <T, U> BiConsumer<T, U> identity(BiConsumer<T, U> v) {
         return v;
     }
 

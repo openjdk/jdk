@@ -23,9 +23,9 @@
 
 import java.nio.file.Path;
 import jdk.jpackage.test.TKit;
-import jdk.jpackage.test.PackageTest;
-import jdk.jpackage.test.PackageType;
 import jdk.jpackage.test.JPackageCommand;
+import jdk.jpackage.test.PackageTest;
+import jdk.jpackage.test.Annotations.Test;
 
 /**
  * Test --app-image parameter. The output installer should provide the same
@@ -41,34 +41,24 @@ import jdk.jpackage.test.JPackageCommand;
  * @requires (jpackage.test.SQETest == null)
  * @build jdk.jpackage.test.*
  * @modules jdk.incubator.jpackage/jdk.incubator.jpackage.internal
- * @run main/othervm/timeout=540 -Xmx512m AppImagePackageTest
+ * @compile AppImagePackageTest.java
+ * @run main/othervm/timeout=540 -Xmx512m jdk.jpackage.test.Main
+ *  --jpt-run=AppImagePackageTest
  */
 public class AppImagePackageTest {
 
-    public static void main(String[] args) {
-        TKit.run(args, () -> {
-            Path appimageOutput = Path.of("appimage");
+    @Test
+    public static void test() {
+        Path appimageOutput = TKit.workDir().resolve("appimage");
 
-            JPackageCommand appImageCmd = JPackageCommand.helloAppImage()
-                    .setArgumentValue("--dest", appimageOutput)
-                    .addArguments("--type", "app-image");
+        JPackageCommand appImageCmd = JPackageCommand.helloAppImage()
+                .setArgumentValue("--dest", appimageOutput);
 
-            PackageTest packageTest = new PackageTest();
-            if (packageTest.getAction() == PackageTest.Action.CREATE) {
-                appImageCmd.execute();
-            }
-
-            packageTest.addInitializer(cmd -> {
-                Path appimageInput = appimageOutput.resolve(appImageCmd.name());
-
-                if (PackageType.MAC.contains(cmd.packageType())) {
-                    // Why so complicated on macOS?
-                    appimageInput = Path.of(appimageInput.toString() + ".app");
-                }
-
-                cmd.addArguments("--app-image", appimageInput);
-                cmd.removeArgumentWithValue("--input");
-            }).addBundleDesktopIntegrationVerifier(false).run();
-        });
+        new PackageTest()
+        .addRunOnceInitializer(() -> appImageCmd.execute())
+        .addInitializer(cmd -> {
+            cmd.addArguments("--app-image", appImageCmd.outputBundle());
+            cmd.removeArgumentWithValue("--input");
+        }).addBundleDesktopIntegrationVerifier(false).run();
     }
 }

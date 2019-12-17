@@ -48,8 +48,7 @@ public class SigningBase {
                 .addArguments("--verify", "--deep", "--strict", "--verbose=2",
                         target.toString())
                 .saveOutput()
-                .execute()
-                .assertExitCodeIs(exitCode).getOutput();
+                .execute(exitCode).getOutput();
 
         return result;
     }

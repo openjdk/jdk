@@ -26,16 +26,16 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import jdk.jpackage.test.Functional.ThrowingFunction;
 import jdk.jpackage.test.Functional.ThrowingSupplier;
 
-public class HelloApp {
+public final class HelloApp {
 
     HelloApp(JavaAppDesc appDesc) {
         if (appDesc == null) {
@@ -131,13 +131,13 @@ public class HelloApp {
 
         if (moduleName == null && CLASS_NAME.equals(qualifiedClassName)) {
             // Use Hello.java as is.
-            cmd.addAction((self) -> {
+            cmd.addPrerequisiteAction((self) -> {
                 Path jarFile = self.inputDir().resolve(jarFileName);
                 createJarBuilder().setOutputJar(jarFile).addSourceFile(
                         HELLO_JAVA).create();
             });
         } else {
-            cmd.addAction((self) -> {
+            cmd.addPrerequisiteAction((self) -> {
                 final Path jarFile;
                 if (moduleName == null) {
                     jarFile = self.inputDir().resolve(jarFileName);
@@ -177,9 +177,11 @@ public class HelloApp {
                 "hello.jar");
     }
 
-    static void verifyOutputFile(Path outputFile, List<String> args) {
+    static void verifyOutputFile(Path outputFile, List<String> args,
+            Map<String, String> params) {
         if (!outputFile.isAbsolute()) {
-            verifyOutputFile(outputFile.toAbsolutePath().normalize(), args);
+            verifyOutputFile(outputFile.toAbsolutePath().normalize(), args,
+                    params);
             return;
         }
 
@@ -193,38 +195,121 @@ public class HelloApp {
                 String.format("args.length: %d", args.size())
         ));
         expected.addAll(args);
+        expected.addAll(params.entrySet().stream()
+                .sorted(Comparator.comparing(Map.Entry::getKey))
+                .map(entry -> String.format("-D%s=%s", entry.getKey(),
+                        entry.getValue()))
+                .collect(Collectors.toList()));
 
         TKit.assertStringListEquals(expected, contents, String.format(
                 "Check contents of [%s] file", outputFile));
     }
 
-    public static void executeLauncherAndVerifyOutput(JPackageCommand cmd) {
+    public static void executeLauncherAndVerifyOutput(JPackageCommand cmd,
+            String... args) {
         final Path launcherPath = cmd.appLauncherPath();
-        if (!cmd.isFakeRuntime(String.format("Not running [%s] launcher",
+        if (cmd.isFakeRuntime(String.format("Not running [%s] launcher",
                 launcherPath))) {
-            executeAndVerifyOutput(launcherPath, cmd.getAllArgumentValues(
-                    "--arguments"));
+            return;
         }
+
+        assertApp(launcherPath)
+        .addDefaultArguments(Optional
+                .ofNullable(cmd.getAllArgumentValues("--arguments"))
+                .orElseGet(() -> new String[0]))
+        .addJavaOptions(Optional
+                .ofNullable(cmd.getAllArgumentValues("--java-options"))
+                .orElseGet(() -> new String[0]))
+        .executeAndVerifyOutput(args);
     }
 
-    public static void executeAndVerifyOutput(Path helloAppLauncher,
-            String... defaultLauncherArgs) {
-        executeAndVerifyOutput(helloAppLauncher, List.of(defaultLauncherArgs));
+    public final static class AppOutputVerifier {
+        AppOutputVerifier(Path helloAppLauncher) {
+            this.launcherPath = helloAppLauncher;
+            this.params = new HashMap<>();
+            this.defaultLauncherArgs = new ArrayList<>();
+        }
+
+        public AppOutputVerifier addDefaultArguments(String... v) {
+            return addDefaultArguments(List.of(v));
+        }
+
+        public AppOutputVerifier addDefaultArguments(Collection<String> v) {
+            defaultLauncherArgs.addAll(v);
+            return this;
+        }
+
+        public AppOutputVerifier addParam(String name, String value) {
+            if (name.startsWith("param")) {
+                params.put(name, value);
+            }
+            return this;
+        }
+
+        public AppOutputVerifier addParams(Collection<Map.Entry<String, String>> v) {
+            v.forEach(entry -> addParam(entry.getKey(), entry.getValue()));
+            return this;
+        }
+        public AppOutputVerifier addParams(Map<String, String> v) {
+            return addParams(v.entrySet());
+        }
+
+        public AppOutputVerifier addParams(Map.Entry<String, String>... v) {
+            return addParams(List.of(v));
+        }
+
+        public AppOutputVerifier addJavaOptions(String... v) {
+            return addJavaOptions(List.of(v));
+        }
+
+        public AppOutputVerifier addJavaOptions(Collection<String> v) {
+            return addParams(v.stream()
+            .filter(javaOpt -> javaOpt.startsWith("-D"))
+            .map(javaOpt -> {
+                var components = javaOpt.split("=", 2);
+                return Map.entry(components[0].substring(2), components[1]);
+            })
+            .collect(Collectors.toList()));
+        }
+
+        public void executeAndVerifyOutput(String... args) {
+            // Output file will be created in the current directory.
+            Path outputFile = TKit.workDir().resolve(OUTPUT_FILENAME);
+            ThrowingFunction.toFunction(Files::deleteIfExists).apply(outputFile);
+
+            final Path executablePath;
+            if (launcherPath.isAbsolute()) {
+                executablePath = launcherPath;
+            } else {
+                // Make sure path to executable is relative to the current directory.
+                executablePath = Path.of(".").resolve(launcherPath.normalize());
+            }
+
+            final List<String> launcherArgs = List.of(args);
+            new Executor()
+                    .setDirectory(outputFile.getParent())
+                    .setExecutable(executablePath)
+                    .addArguments(launcherArgs)
+                    .dumpOutput()
+                    .execute();
+
+            final List<String> appArgs;
+            if (launcherArgs.isEmpty()) {
+                appArgs = defaultLauncherArgs;
+            } else {
+                appArgs = launcherArgs;
+            }
+
+            verifyOutputFile(outputFile, appArgs, params);
+        }
+
+        private final Path launcherPath;
+        private final List<String> defaultLauncherArgs;
+        private final Map<String, String> params;
     }
 
-    public static void executeAndVerifyOutput(Path helloAppLauncher,
-            List<String> defaultLauncherArgs) {
-        // Output file will be created in the current directory.
-        Path outputFile = TKit.workDir().resolve(OUTPUT_FILENAME);
-        ThrowingFunction.toFunction(Files::deleteIfExists).apply(outputFile);
-        new Executor()
-                .setDirectory(outputFile.getParent())
-                .setExecutable(helloAppLauncher)
-                .dumpOutput()
-                .execute()
-                .assertExitCodeIsZero();
-
-        verifyOutputFile(outputFile, defaultLauncherArgs);
+    public static AppOutputVerifier assertApp(Path helloAppLauncher) {
+        return new AppOutputVerifier(helloAppLauncher);
     }
 
     final static String OUTPUT_FILENAME = "appOutput.txt";

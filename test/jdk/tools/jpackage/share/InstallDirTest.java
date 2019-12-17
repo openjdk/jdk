@@ -126,12 +126,8 @@ public class InstallDirTest {
             cmd.saveConsoleOutput(true);
         })
         .addBundleVerifier((cmd, result) -> {
-            String errorMessage = JPackageCommand.filterOutput(
-                    result.getOutput().stream()).filter(line -> line.contains(
-                    errorMessageSubstring)).findFirst().orElse(null);
-            TKit.assertNotNull(errorMessage, String.format(
-                    "Check output contains [%s] substring",
-                    errorMessageSubstring));
+            TKit.assertTextStream(errorMessageSubstring).apply(
+                    result.getOutput().stream());
         })
         .run();
     }

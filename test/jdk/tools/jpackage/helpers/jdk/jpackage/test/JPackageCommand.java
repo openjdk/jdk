@@ -30,14 +30,15 @@ import java.security.SecureRandom;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import jdk.incubator.jpackage.internal.ApplicationLayout;
 import jdk.jpackage.test.Functional.ThrowingConsumer;
 import jdk.jpackage.test.Functional.ThrowingFunction;
+import jdk.jpackage.test.Functional.ThrowingSupplier;
 
 /**
  * jpackage command line with prerequisite actions. Prerequisite actions can be
@@ -47,18 +48,20 @@ import jdk.jpackage.test.Functional.ThrowingFunction;
 public final class JPackageCommand extends CommandArguments<JPackageCommand> {
 
     public JPackageCommand() {
-        actions = new ArrayList<>();
+        prerequisiteActions = new Actions();
+        verifyActions = new Actions();
     }
 
     public JPackageCommand(JPackageCommand cmd) {
-        this();
         args.addAll(cmd.args);
         withToolProvider = cmd.withToolProvider;
         saveConsoleOutput = cmd.saveConsoleOutput;
         suppressOutput = cmd.suppressOutput;
         ignoreDefaultRuntime = cmd.ignoreDefaultRuntime;
+        ignoreDefaultVerbose = cmd.ignoreDefaultVerbose;
         immutable = cmd.immutable;
-        actionsExecuted = cmd.actionsExecuted;
+        prerequisiteActions = new Actions(cmd.prerequisiteActions);
+        verifyActions = new Actions(cmd.verifyActions);
     }
 
     JPackageCommand createImmutableCopy() {
@@ -204,8 +207,8 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
     }
 
     public JPackageCommand setDefaultInputOutput() {
-        addArguments("--input", TKit.defaultInputDir());
-        addArguments("--dest", TKit.defaultOutputDir());
+        setArgumentValue("--input", TKit.workDir().resolve("input"));
+        setArgumentValue("--dest", TKit.workDir().resolve("output"));
         return this;
     }
 
@@ -221,7 +224,7 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
             }
         };
 
-        addAction(cmd -> {
+        addPrerequisiteAction(cmd -> {
             Path fakeRuntimeDir = TKit.workDir().resolve("fake_runtime");
 
             TKit.trace(String.format("Init fake runtime in [%s] directory",
@@ -254,9 +257,15 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
         return this;
     }
 
-    JPackageCommand addAction(ThrowingConsumer<JPackageCommand> action) {
+    JPackageCommand addPrerequisiteAction(ThrowingConsumer<JPackageCommand> action) {
         verifyMutable();
-        actions.add(ThrowingConsumer.toConsumer(action));
+        prerequisiteActions.add(action);
+        return this;
+    }
+
+    JPackageCommand addVerifyAction(ThrowingConsumer<JPackageCommand> action) {
+        verifyMutable();
+        verifyActions.add(action);
         return this;
     }
 
@@ -363,6 +372,12 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
      * `/opt/foo`
      */
     public Path appInstallationDirectory() {
+        Path unpackedDir = getArgumentValue(UNPACKED_PATH_ARGNAME, () -> null,
+                Path::of);
+        if (unpackedDir != null) {
+            return unpackedDir;
+        }
+
         if (isImagePackageType()) {
             return null;
         }
@@ -426,7 +441,7 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
             launcherName = launcherName + ".exe";
         }
 
-        if (isImagePackageType()) {
+        if (isImagePackageType() || isPackageUnpacked()) {
             return appLayout().launchersDirectory().resolve(launcherName);
         }
 
@@ -496,6 +511,19 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
         return false;
     }
 
+    public boolean isPackageUnpacked(String msg) {
+        if (isPackageUnpacked()) {
+            TKit.trace(String.format(
+                    "%s because package was unpacked, not installed", msg));
+            return true;
+        }
+        return false;
+    }
+
+    boolean isPackageUnpacked() {
+        return hasArgument(UNPACKED_PATH_ARGNAME);
+    }
+
     public static void useToolProviderByDefault() {
         defaultWithToolProvider = true;
     }
@@ -528,24 +556,28 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
         return this;
     }
 
+    public JPackageCommand ignoreDefaultVerbose(boolean v) {
+        verifyMutable();
+        ignoreDefaultVerbose = v;
+        return this;
+    }
+
     public boolean isWithToolProvider() {
         return Optional.ofNullable(withToolProvider).orElse(
                 defaultWithToolProvider);
     }
 
     public JPackageCommand executePrerequisiteActions() {
-        verifyMutable();
-        if (!actionsExecuted) {
-            actionsExecuted = true;
-            if (actions != null) {
-                actions.stream().forEach(r -> r.accept(this));
-            }
-        }
+        prerequisiteActions.run();
         return this;
     }
 
-    public Executor createExecutor() {
-        verifyMutable();
+    public JPackageCommand executeVerifyActions() {
+        verifyActions.run();
+        return this;
+    }
+
+    private Executor createExecutor() {
         Executor exec = new Executor()
                 .saveOutput(saveConsoleOutput).dumpOutput(!suppressOutput)
                 .addArguments(args);
@@ -560,27 +592,60 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
     }
 
     public Executor.Result execute() {
+        return execute(0);
+    }
+
+    public Executor.Result execute(int expectedExitCode) {
         executePrerequisiteActions();
 
         if (isImagePackageType()) {
             TKit.deleteDirectoryContentsRecursive(outputDir());
+        } else if (ThrowingSupplier.toSupplier(() -> Files.deleteIfExists(
+                outputBundle())).get()) {
+            TKit.trace(
+                    String.format("Deleted [%s] file before running jpackage",
+                            outputBundle()));
         }
 
-        return new JPackageCommand(this)
+        Path resourceDir = getArgumentValue("--resource-dir", () -> null, Path::of);
+        if (resourceDir != null && Files.isDirectory(resourceDir)) {
+            TKit.trace(String.format("Files in [%s] resource dir:",
+                    resourceDir));
+            try (var files = Files.walk(resourceDir, 1)) {
+                files.sequential()
+                        .filter(Predicate.not(resourceDir::equals))
+                        .map(path -> String.format("[%s]", path.getFileName()))
+                        .forEachOrdered(TKit::trace);
+                TKit.trace("Done");
+            } catch (IOException ex) {
+                TKit.trace(String.format(
+                        "Failed to list files in [%s] resource directory: %s",
+                        resourceDir, ex));
+            }
+        }
+
+        Executor.Result result = new JPackageCommand(this)
                 .adjustArgumentsBeforeExecution()
                 .createExecutor()
-                .execute();
+                .execute(expectedExitCode);
+
+        if (result.exitCode == 0) {
+            executeVerifyActions();
+        }
+
+        return result;
     }
 
-    public JPackageCommand executeAndAssertHelloAppImageCreated() {
-        executeAndAssertImageCreated();
+    public Executor.Result executeAndAssertHelloAppImageCreated() {
+        Executor.Result result = executeAndAssertImageCreated();
         HelloApp.executeLauncherAndVerifyOutput(this);
-        return this;
+        return result;
     }
 
-    public JPackageCommand executeAndAssertImageCreated() {
-        execute().assertExitCodeIsZero();
-        return assertImageCreated();
+    public Executor.Result executeAndAssertImageCreated() {
+        Executor.Result result = execute();
+        assertImageCreated();
+        return result;
     }
 
     public JPackageCommand assertImageCreated() {
@@ -595,23 +660,26 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
         return this;
     }
 
+    JPackageCommand setUnpackedPackageLocation(Path path) {
+        verifyIsOfType(PackageType.NATIVE);
+        setArgumentValue(UNPACKED_PATH_ARGNAME, path);
+        return this;
+    }
+
     private JPackageCommand adjustArgumentsBeforeExecution() {
         if (!hasArgument("--runtime-image") && !hasArgument("--app-image") && DEFAULT_RUNTIME_IMAGE != null && !ignoreDefaultRuntime) {
             addArguments("--runtime-image", DEFAULT_RUNTIME_IMAGE);
         }
 
-        if (!hasArgument("--verbose") && TKit.VERBOSE_JPACKAGE) {
+        if (!hasArgument("--verbose") && TKit.VERBOSE_JPACKAGE && !ignoreDefaultVerbose) {
             addArgument("--verbose");
         }
 
         return this;
     }
 
-    String getPrintableCommandLine() {
-        return new Executor()
-                .setExecutable(JavaTool.JPACKAGE)
-                .addArguments(args)
-                .getPrintableCommandLine();
+    public String getPrintableCommandLine() {
+        return createExecutor().getPrintableCommandLine();
     }
 
     public void verifyIsOfType(Collection<PackageType> types) {
@@ -699,13 +767,48 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
         return !immutable;
     }
 
+    private final class Actions implements Runnable {
+        Actions() {
+            actions = new ArrayList<>();
+        }
+
+        Actions(Actions other) {
+            this();
+            actions.addAll(other.actions);
+        }
+
+        void add(ThrowingConsumer<JPackageCommand> action) {
+            Objects.requireNonNull(action);
+            verifyMutable();
+            actions.add(new Consumer<JPackageCommand>() {
+                @Override
+                public void accept(JPackageCommand t) {
+                    if (!executed) {
+                        executed = true;
+                        ThrowingConsumer.toConsumer(action).accept(t);
+                    }
+                }
+                private boolean executed;
+            });
+        }
+
+        @Override
+        public void run() {
+            verifyMutable();
+            actions.forEach(action -> action.accept(JPackageCommand.this));
+        }
+
+        private final List<Consumer<JPackageCommand>> actions;
+    }
+
     private Boolean withToolProvider;
     private boolean saveConsoleOutput;
     private boolean suppressOutput;
     private boolean ignoreDefaultRuntime;
+    private boolean ignoreDefaultVerbose;
     private boolean immutable;
-    private boolean actionsExecuted;
-    private final List<Consumer<JPackageCommand>> actions;
+    private final Actions prerequisiteActions;
+    private final Actions verifyActions;
     private static boolean defaultWithToolProvider;
 
     private final static Map<String, PackageType> PACKAGE_TYPES = Functional.identity(
@@ -729,4 +832,6 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
         }
         return null;
     }).get();
+
+    private final static String UNPACKED_PATH_ARGNAME = "jpt-unpacked-folder";
 }

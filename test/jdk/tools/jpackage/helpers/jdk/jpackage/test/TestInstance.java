@@ -236,7 +236,13 @@ final class TestInstance implements ThrowingRunnable {
             }
 
             if (!KEEP_WORK_DIR.contains(status)) {
-                TKit.deleteDirectoryRecursive(workDir);
+                if (Files.isSameFile(workDir, Path.of("."))) {
+                    // 1. If the work directory is the current directory, don't
+                    // delete it, just clean as deleting it would be confusing.
+                    TKit.deleteDirectoryContentsRecursive(workDir);
+                } else {
+                    TKit.deleteDirectoryRecursive(workDir);
+                }
             }
 
             TKit.log(String.format("%s %s; checks=%d", status, fullName,

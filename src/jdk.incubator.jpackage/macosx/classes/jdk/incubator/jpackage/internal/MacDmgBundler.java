@@ -29,6 +29,7 @@ import java.io.*;
 import java.nio.file.Files;
 import java.text.MessageFormat;
 import java.util.*;
+import static jdk.incubator.jpackage.internal.MacAppImageBuilder.ICON_ICNS;
 import static jdk.incubator.jpackage.internal.OverridableResource.createResource;
 
 import static jdk.incubator.jpackage.internal.StandardBundlerParam.*;
@@ -160,7 +161,7 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
 
         createResource(TEMPLATE_BUNDLE_ICON, params)
                 .setCategory(I18N.getString("resource.volume-icon"))
-                .setExternal(MacAppBundler.ICON_ICNS.fetchFrom(params))
+                .setExternal(ICON_ICNS.fetchFrom(params))
                 .saveToFile(getConfig_VolumeIcon(params));
 
         createResource(null, params)

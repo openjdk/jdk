@@ -27,12 +27,8 @@ import java.util.Map;
 import java.util.List;
 import java.util.Optional;
 import java.lang.invoke.MethodHandles;
-import jdk.jpackage.test.HelloApp;
-import jdk.jpackage.test.PackageTest;
-import jdk.jpackage.test.PackageType;
-import jdk.jpackage.test.FileAssociations;
-import jdk.jpackage.test.Annotations.Test;
-import jdk.jpackage.test.TKit;
+import jdk.jpackage.test.*;
+import jdk.jpackage.test.Annotations.*;
 
 /**
  * Test --add-launcher parameter. Output of the test should be
@@ -46,11 +42,25 @@ import jdk.jpackage.test.TKit;
  * @test
  * @summary jpackage with --add-launcher
  * @key jpackagePlatformPackage
+ * @requires (jpackage.test.SQETest != null)
  * @library ../helpers
  * @build jdk.jpackage.test.*
  * @modules jdk.incubator.jpackage/jdk.incubator.jpackage.internal
  * @compile AdditionalLaunchersTest.java
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
+ *  --jpt-run=AdditionalLaunchersTest.test
+ */
+
+/*
+ * @test
+ * @summary jpackage with --add-launcher
+ * @key jpackagePlatformPackage
+ * @requires (jpackage.test.SQETest == null)
+ * @library ../helpers
+ * @build jdk.jpackage.test.*
+ * @modules jdk.jpackage/jdk.jpackage.internal
+ * @compile AdditionalLaunchersTest.java
+ * @run main/othervm/timeout=540 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=AdditionalLaunchersTest
  */
 
@@ -72,87 +82,122 @@ public class AdditionalLaunchersTest {
                 MethodHandles.lookup().lookupClass().getSimpleName()).applyTo(
                 packageTest);
 
-        new AdditionalLauncher("Baz2").setArguments().applyTo(packageTest);
-        new AdditionalLauncher("foo").setArguments("yep!").applyTo(packageTest);
+        new AdditionalLauncher("Baz2")
+                .setDefaultArguments()
+                .applyTo(packageTest);
 
-        AdditionalLauncher barLauncher = new AdditionalLauncher("Bar").setArguments(
-                "one", "two", "three");
-        if (TKit.isLinux()) {
-            barLauncher.setIcon(TKit.TEST_SRC_ROOT.resolve("apps/dukeplug.png"));
-        }
-        barLauncher.applyTo(packageTest);
+        new AdditionalLauncher("foo")
+                .setDefaultArguments("yep!")
+                .applyTo(packageTest);
+
+        new AdditionalLauncher("Bar")
+                .setDefaultArguments("one", "two", "three")
+                .setIcon(GOLDEN_ICON)
+                .applyTo(packageTest);
 
         packageTest.run();
     }
 
-    private static Path replaceFileName(Path path, String newFileName) {
-        String fname = path.getFileName().toString();
-        int lastDotIndex = fname.lastIndexOf(".");
-        if (lastDotIndex != -1) {
-            fname = newFileName + fname.substring(lastDotIndex);
+    @Test
+    public void bug8230933() {
+        PackageTest packageTest = new PackageTest().configureHelloApp();
+
+        new AdditionalLauncher("default_icon")
+                .applyTo(packageTest);
+
+        new AdditionalLauncher("no_icon")
+                .setNoIcon().applyTo(packageTest);
+
+        new AdditionalLauncher("custom_icon")
+                .setIcon(GOLDEN_ICON)
+                .applyTo(packageTest);
+
+        packageTest.run();
+    }
+
+    @Test
+    // Regular app
+    @Parameter("Hello")
+    // Modular app
+    @Parameter("com.other/com.other.CiaoBella")
+    public void testJavaOptions(String javaAppDesc) {
+        JPackageCommand cmd = JPackageCommand.helloAppImage(javaAppDesc)
+        .addArguments("--arguments", "courageous")
+        .addArguments("--java-options", "-Dparam1=xxx")
+        .addArguments("--java-options", "-Dparam2=yyy")
+        .addArguments("--java-options", "-Dparam3=zzz");
+
+        new AdditionalLauncher("Jack")
+                .addDefaultArguments("Jack of All Trades", "Master of None")
+                .setJavaOptions("-Dparam1=Contractor")
+                .applyTo(cmd);
+
+        new AdditionalLauncher("Monday")
+                .addDefaultArguments("Knock Your", "Socks Off")
+                .setJavaOptions("-Dparam2=Surprise workers!")
+                .applyTo(cmd);
+
+        // Should inherit default arguments and java options from the main launcher
+        new AdditionalLauncher("void").applyTo(cmd);
+
+        cmd.executeAndAssertHelloAppImageCreated();
+    }
+
+    /**
+     * Test usage of modular and non modular apps in additional launchers.
+     */
+    @Test
+    @Parameter("true")
+    @Parameter("fase")
+    public void testMainLauncherIsModular(boolean mainLauncherIsModular) {
+        final var nonModularAppDesc = JavaAppDesc.parse("a.b.c.Hello");
+        final var modularAppDesc = JavaAppDesc.parse(
+                "module.jar:com.that/com.that.main.Florence");
+
+        final var nonModularJarCmd = JPackageCommand.helloAppImage(nonModularAppDesc);
+        final var modularJarCmd = JPackageCommand.helloAppImage(modularAppDesc);
+
+        final JPackageCommand cmd;
+        if (mainLauncherIsModular) {
+            // Create non modular jar.
+            nonModularJarCmd.executePrerequisiteActions();
+
+            cmd = modularJarCmd;
+            cmd.addArguments("--description",
+                    "Test modular app with multiple add-launchers where one is modular app and other is non modular app");
+            cmd.addArguments("--input", nonModularJarCmd.getArgumentValue(
+                    "--input"));
         } else {
-            fname = newFileName;
+            // Create modular jar.
+            modularJarCmd.executePrerequisiteActions();
+
+            cmd = nonModularJarCmd;
+            cmd.addArguments("--description",
+                    "Test non modular app with multiple add-launchers where one is modular app and other is non modular app");
+            cmd.addArguments("--module-path", modularJarCmd.getArgumentValue(
+                    "--module-path"));
+            cmd.addArguments("--add-modules", modularAppDesc.moduleName());
         }
-        return path.getParent().resolve(fname);
+
+        new AdditionalLauncher("ModularAppLauncher")
+        .addRawProperties(Map.entry("module", JavaAppDesc.parse(
+                modularAppDesc.toString()).setJarFileName(null).toString()))
+        .addRawProperties(Map.entry("main-jar", ""))
+        .applyTo(cmd);
+
+        new AdditionalLauncher("NonModularAppLauncher")
+        // Use space ( ) character instead of equality sign (=) as
+        // a key/value separator
+        .setPersistenceHandler((path, properties) -> TKit.createTextFile(path,
+                properties.stream().map(entry -> String.join(" ", entry.getKey(),
+                        entry.getValue()))))
+        .addRawProperties(Map.entry("main-class", nonModularAppDesc.className()))
+        .addRawProperties(Map.entry("main-jar", nonModularAppDesc.jarFileName()))
+        .applyTo(cmd);
+
+        cmd.executeAndAssertHelloAppImageCreated();
     }
 
-    static class AdditionalLauncher {
-
-        AdditionalLauncher(String name) {
-            this.name = name;
-        }
-
-        AdditionalLauncher setArguments(String... args) {
-            arguments = List.of(args);
-            return this;
-        }
-
-        AdditionalLauncher setIcon(Path iconPath) {
-            icon = iconPath;
-            return this;
-        }
-
-        void applyTo(PackageTest test) {
-            final Path propsFile = TKit.workDir().resolve(name + ".properties");
-
-            test.addInitializer(cmd -> {
-                cmd.addArguments("--add-launcher", String.format("%s=%s", name,
-                        propsFile));
-
-                Map<String, String> properties = new HashMap<>();
-                if (arguments != null) {
-                    properties.put("arguments", String.join(" ",
-                            arguments.toArray(String[]::new)));
-                }
-
-                if (icon != null) {
-                    properties.put("icon", icon.toAbsolutePath().toString());
-                }
-
-                TKit.createPropertiesFile(propsFile, properties);
-            });
-            test.addInstallVerifier(cmd -> {
-                Path launcherPath = replaceFileName(cmd.appLauncherPath(), name);
-
-                TKit.assertExecutableFileExists(launcherPath);
-
-                if (cmd.isFakeRuntime(String.format(
-                        "Not running %s launcher", launcherPath))) {
-                    return;
-                }
-                HelloApp.executeAndVerifyOutput(launcherPath,
-                        Optional.ofNullable(arguments).orElse(List.of()).toArray(
-                                String[]::new));
-            });
-            test.addUninstallVerifier(cmd -> {
-                Path launcherPath = replaceFileName(cmd.appLauncherPath(), name);
-
-                TKit.assertPathExists(launcherPath, false);
-            });
-        }
-
-        private List<String> arguments;
-        private Path icon;
-        private final String name;
-    }
+    private final static Path GOLDEN_ICON = TKit.TEST_SRC_ROOT.resolve(Path.of(
+            "resources", "icon" + TKit.ICON_SUFFIX));
 }

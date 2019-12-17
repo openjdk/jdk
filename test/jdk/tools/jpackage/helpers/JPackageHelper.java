@@ -398,10 +398,6 @@ public class JPackageHelper {
         createModule("Hello.java", "input", "hello", moduleArgs, true);
     }
 
-    public static void createOtherModule() throws Exception {
-        createModule("Other.java", "input-other", "other", null, false);
-    }
-
     private static void createModule(String javaFile, String inputDir, String aName,
             ModuleArgs moduleArgs, boolean createModularJar) throws Exception {
         int retVal;

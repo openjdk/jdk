@@ -25,14 +25,11 @@ package jdk.jpackage.test;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import jdk.jpackage.test.PackageTest.PackageHandlers;
 
 public class LinuxHelper {
     private static String getRelease(JPackageCommand cmd) {
@@ -43,6 +40,19 @@ public class LinuxHelper {
         cmd.verifyIsOfType(PackageType.LINUX);
         return cmd.getArgumentValue("--linux-package-name",
                 () -> cmd.name().toLowerCase());
+    }
+
+    public static Path getDesktopFile(JPackageCommand cmd) {
+        return getDesktopFile(cmd, null);
+    }
+
+    public static Path getDesktopFile(JPackageCommand cmd, String launcherName) {
+        cmd.verifyIsOfType(PackageType.LINUX);
+        String desktopFileName = String.format("%s-%s.desktop", getPackageName(
+                cmd), Optional.ofNullable(launcherName).orElseGet(
+                        () -> cmd.name()));
+        return cmd.appLayout().destktopIntegrationDirectory().resolve(
+                desktopFileName);
     }
 
     static String getBundleName(JPackageCommand cmd) {
@@ -73,18 +83,14 @@ public class LinuxHelper {
         final PackageType packageType = cmd.packageType();
         final Path packageFile = cmd.outputBundle();
 
-        Executor exec = new Executor();
+        Executor exec = null;
         switch (packageType) {
             case LINUX_DEB:
-                exec.setExecutable("dpkg")
-                        .addArgument("--contents")
-                        .addArgument(packageFile);
+                exec = Executor.of("dpkg", "--contents").addArgument(packageFile);
                 break;
 
             case LINUX_RPM:
-                exec.setExecutable("rpm")
-                        .addArgument("-qpl")
-                        .addArgument(packageFile);
+                exec = Executor.of("rpm", "-qpl").addArgument(packageFile);
                 break;
         }
 
@@ -109,8 +115,8 @@ public class LinuxHelper {
                         Collectors.toList());
 
             case LINUX_RPM:
-                return new Executor().setExecutable("rpm")
-                .addArguments("-qp", "-R", cmd.outputBundle().toString())
+                return Executor.of("rpm", "-qp", "-R")
+                .addArgument(cmd.outputBundle())
                 .executeAndGetOutput();
         }
         // Unreachable
@@ -139,6 +145,57 @@ public class LinuxHelper {
         }
         // Unrechable
         return null;
+    }
+
+    static PackageHandlers createDebPackageHandlers() {
+        PackageHandlers deb = new PackageHandlers();
+        deb.installHandler = cmd -> {
+            cmd.verifyIsOfType(PackageType.LINUX_DEB);
+            Executor.of("sudo", "dpkg", "-i")
+            .addArgument(cmd.outputBundle())
+            .execute();
+        };
+        deb.uninstallHandler = cmd -> {
+            cmd.verifyIsOfType(PackageType.LINUX_DEB);
+            Executor.of("sudo", "dpkg", "-r", getPackageName(cmd)).execute();
+        };
+        deb.unpackHandler = (cmd, destinationDir) -> {
+            cmd.verifyIsOfType(PackageType.LINUX_DEB);
+            Executor.of("dpkg", "-x")
+            .addArgument(cmd.outputBundle())
+            .addArgument(destinationDir)
+            .execute();
+            return destinationDir.resolve(String.format(".%s",
+                    cmd.appInstallationDirectory())).normalize();
+        };
+        return deb;
+    }
+
+    static PackageHandlers createRpmPackageHandlers() {
+        PackageHandlers rpm = new PackageHandlers();
+        rpm.installHandler = cmd -> {
+            cmd.verifyIsOfType(PackageType.LINUX_RPM);
+            Executor.of("sudo", "rpm", "-i")
+            .addArgument(cmd.outputBundle())
+            .execute();
+        };
+        rpm.uninstallHandler = cmd -> {
+            cmd.verifyIsOfType(PackageType.LINUX_RPM);
+            Executor.of("sudo", "rpm", "-e", getPackageName(cmd)).execute();
+        };
+        rpm.unpackHandler = (cmd, destinationDir) -> {
+            cmd.verifyIsOfType(PackageType.LINUX_RPM);
+            Executor.of("sh", "-c", String.format(
+                    "rpm2cpio '%s' | cpio -idm --quiet",
+                    JPackageCommand.escapeAndJoin(
+                            cmd.outputBundle().toAbsolutePath().toString())))
+            .setDirectory(destinationDir)
+            .execute();
+            return destinationDir.resolve(String.format(".%s",
+                    cmd.appInstallationDirectory())).normalize();
+        };
+
+        return rpm;
     }
 
     static Path getLauncherPath(JPackageCommand cmd) {
@@ -173,20 +230,15 @@ public class LinuxHelper {
     }
 
     static String getDebBundleProperty(Path bundle, String fieldName) {
-        return new Executor()
-                .setExecutable("dpkg-deb")
-                .addArguments("-f", bundle.toString(), fieldName)
+        return Executor.of("dpkg-deb", "-f")
+                .addArgument(bundle)
+                .addArgument(fieldName)
                 .executeAndGetFirstLineOfOutput();
     }
 
     static String getRpmBundleProperty(Path bundle, String fieldName) {
-        return new Executor()
-                .setExecutable("rpm")
-                .addArguments(
-                        "-qp",
-                        "--queryformat",
-                        String.format("%%{%s}", fieldName),
-                        bundle.toString())
+        return Executor.of("rpm", "-qp", "--queryformat", String.format("%%{%s}", fieldName))
+                .addArgument(bundle)
                 .executeAndGetFirstLineOfOutput();
     }
 
@@ -264,13 +316,10 @@ public class LinuxHelper {
         test.addBundleVerifier(cmd -> {
             TKit.withTempDirectory("dpkg-control-files", tempDir -> {
                 // Extract control Debian package files into temporary directory
-                new Executor()
-                .setExecutable("dpkg")
-                .addArguments(
-                        "-e",
-                        cmd.outputBundle().toString(),
-                        tempDir.toString()
-                ).execute().assertExitCodeIsZero();
+                Executor.of("dpkg", "-e")
+                .addArgument(cmd.outputBundle())
+                .addArgument(tempDir)
+                .execute();
 
                 Path controlFile = Path.of("postinst");
 
@@ -318,6 +367,10 @@ public class LinuxHelper {
 
     static void addFileAssociationsVerifier(PackageTest test, FileAssociations fa) {
         test.addInstallVerifier(cmd -> {
+            if (cmd.isPackageUnpacked("Not running file associations checks")) {
+                return;
+            }
+
             PackageTest.withTestFileAssociationsFile(fa, testFile -> {
                 String mimeType = queryFileMimeType(testFile);
 
@@ -363,16 +416,12 @@ public class LinuxHelper {
     }
 
     private static String queryFileMimeType(Path file) {
-        return new Executor()
-                .setExecutable("xdg-mime")
-                .addArguments("query", "filetype", file.toString())
+        return Executor.of("xdg-mime", "query", "filetype").addArgument(file)
                 .executeAndGetFirstLineOfOutput();
     }
 
     private static String queryMimeTypeDefaultHandler(String mimeType) {
-        return new Executor()
-                .setExecutable("xdg-mime")
-                .addArguments("query", "default", mimeType)
+        return Executor.of("xdg-mime", "query", "default", mimeType)
                 .executeAndGetFirstLineOfOutput();
     }
 
@@ -383,16 +432,14 @@ public class LinuxHelper {
 
         String arch = archs.get(type);
         if (arch == null) {
-            Executor exec = new Executor();
+            Executor exec = null;
             switch (type) {
                 case LINUX_DEB:
-                    exec.setExecutable("dpkg").addArgument(
-                            "--print-architecture");
+                    exec = Executor.of("dpkg", "--print-architecture");
                     break;
 
                 case LINUX_RPM:
-                    exec.setExecutable("rpmbuild").addArgument(
-                            "--eval=%{_target_cpu}");
+                    exec = Executor.of("rpmbuild", "--eval=%{_target_cpu}");
                     break;
             }
             arch = exec.executeAndGetFirstLineOfOutput();

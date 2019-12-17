@@ -70,7 +70,7 @@ public class WinScriptTest {
     @Test
     @Parameter("0")
     @Parameter("10")
-    public void test(int wsfExitCode) {
+    public void test(int wsfExitCode) throws IOException {
         final ScriptData appImageScriptData;
         if (wsfExitCode != 0 && packageType == PackageType.WIN_EXE) {
             appImageScriptData = new ScriptData(PackageType.WIN_MSI, 0);
@@ -81,29 +81,32 @@ public class WinScriptTest {
         final ScriptData msiScriptData = new ScriptData(PackageType.WIN_EXE, wsfExitCode);
 
         test.setExpectedExitCode(wsfExitCode == 0 ? 0 : 1);
-        TKit.withTempDirectory("resources", tempDir -> {
-            test.addInitializer(cmd -> {
-                cmd.addArguments("--resource-dir", tempDir);
 
-                appImageScriptData.createScript(cmd);
-                msiScriptData.createScript(cmd);
-            });
+        final Path tempDir = TKit.createTempDirectory("resources");
 
-            if (packageType == PackageType.WIN_MSI) {
+        test.addInitializer(cmd -> {
+            cmd.addArguments("--resource-dir", tempDir);
+
+            appImageScriptData.createScript(cmd);
+            msiScriptData.createScript(cmd);
+        });
+
+        switch (packageType) {
+            case WIN_MSI:
                 test.addBundleVerifier((cmd, result) -> {
                     appImageScriptData.assertJPackageOutput(result.getOutput());
                 });
-            }
+                break;
 
-            if (packageType == PackageType.WIN_EXE) {
+            case WIN_EXE:
                 test.addBundleVerifier((cmd, result) -> {
                     appImageScriptData.assertJPackageOutput(result.getOutput());
                     msiScriptData.assertJPackageOutput(result.getOutput());
                 });
-            }
+                break;
+        }
 
-            test.run();
-        });
+        test.run();
     }
 
     private static class ScriptData {
