@@ -34,6 +34,7 @@ import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
+import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.*;
 import javax.xml.stream.XMLOutputFactory;
@@ -112,26 +113,11 @@ public class IOUtils {
 
     public static void copyFile(File sourceFile, File destFile)
             throws IOException {
-        destFile.getParentFile().mkdirs();
+        Files.createDirectories(destFile.getParentFile().toPath());
 
-        //recreate the file as existing copy may have weird permissions
-        destFile.delete();
-        destFile.createNewFile();
-
-        try (FileChannel source = new FileInputStream(sourceFile).getChannel();
-            FileChannel destination =
-                    new FileOutputStream(destFile).getChannel()) {
-            destination.transferFrom(source, 0, source.size());
-        }
-
-        //preserve executable bit!
-        if (sourceFile.canExecute()) {
-            destFile.setExecutable(true, false);
-        }
-        if (!sourceFile.canWrite()) {
-            destFile.setReadOnly();
-        }
-        destFile.setReadable(true, false);
+        Files.copy(sourceFile.toPath(), destFile.toPath(),
+                   StandardCopyOption.REPLACE_EXISTING,
+                   StandardCopyOption.COPY_ATTRIBUTES);
     }
 
     // run "launcher paramfile" in the directory where paramfile is kept
