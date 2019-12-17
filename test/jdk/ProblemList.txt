@@ -938,6 +938,7 @@ jdk/jfr/event/runtime/TestNetworkUtilizationEvent.java          8228990,8229370 
 jdk/jfr/event/compiler/TestCodeSweeper.java                     8225209    generic-all
 jdk/jfr/api/consumer/recordingstream/TestSetStartTime.java      8233217    generic-all
 jdk/jfr/api/consumer/streaming/TestJVMCrash.java                8235599    windows-all
+jdk/jfr/jmx/security/TestEnoughPermission.java                  8235946    generic-all
 
 ############################################################################
 
