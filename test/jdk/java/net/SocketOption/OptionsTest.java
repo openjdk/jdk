@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8036979 8072384 8044773 8225214 8233296
+ * @bug 8036979 8072384 8044773 8225214 8233296 8234083
  * @library /test/lib
  * @requires !vm.graal.enabled
  * @run main/othervm -Xcheck:jni OptionsTest
