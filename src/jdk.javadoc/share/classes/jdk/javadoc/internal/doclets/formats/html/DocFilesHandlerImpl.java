@@ -304,7 +304,7 @@ public class DocFilesHandlerImpl implements DocFilesHandler {
         /**
          * Constructor to construct the HtmlDocletWriter object.
          *
-         * @param configuration the configuruation of this doclet.
+         * @param configuration the configuration of this doclet.
          * @param path          the file to be generated.
          * @param e             the anchoring element.
          */

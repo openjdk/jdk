@@ -49,7 +49,7 @@ import static jdk.javadoc.doclet.Taglet.Location.*;
  */
 public class UserTaglet implements Taglet {
 
-    final private jdk.javadoc.doclet.Taglet userTaglet;
+    private final jdk.javadoc.doclet.Taglet userTaglet;
 
     public UserTaglet(jdk.javadoc.doclet.Taglet t) {
         userTaglet = t;

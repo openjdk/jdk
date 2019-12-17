@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
  */
 
 /**
- *  Doclets provide the user-selectable backends for processing the
+ *  Doclets provide the user-selectable back ends for processing the
  *  documentation comments in Java source code.
  *
  *  <p>Doclets are implementations of the {@link jdk.javadoc.doclet Doclet API}.</p>

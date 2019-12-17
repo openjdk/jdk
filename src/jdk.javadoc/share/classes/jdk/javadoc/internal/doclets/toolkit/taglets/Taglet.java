@@ -165,5 +165,5 @@ public interface Taglet {
         public UnsupportedTagletOperationException(String message) {
             super(message);
         }
-    };
+    }
 }

@@ -169,7 +169,7 @@ public class VisibleMemberTable {
      * a. The list may or may not contain simple overridden methods.
      * A simple overridden method is one that overrides a super method
      * with no specification changes as indicated by the existence of a
-     * sole &commat;inheritDoc or devoid of any API commments.
+     * sole &commat;inheritDoc or devoid of any API comments.
      * <p>
      * b.The list may contain (extra) members, inherited by inaccessible
      * super types, primarily package private types. These members are
@@ -227,7 +227,7 @@ public class VisibleMemberTable {
     }
 
     /**
-     * Returns the overridden method, if it is simply overridding or the
+     * Returns the overridden method, if it is simply overriding or the
      * method is a member of a package private type, this method is
      * primarily used to determine the location of a possible comment.
      *
@@ -305,7 +305,7 @@ public class VisibleMemberTable {
 
     /**
      * Returns true if this table contains visible members of
-     * the specified kind, including inhertied members.
+     * the specified kind, including inherited members.
      *
      * @return true if visible members are present.
      */
@@ -901,7 +901,7 @@ public class VisibleMemberTable {
             /*
              * Search for the method in the list of interfaces. If found check if it is
              * overridden by any other subinterface method which this class
-             * implements. If it is not overidden, add it in the method list.
+             * implements. If it is not overridden, add it in the method list.
              * Do this recursively for all the extended interfaces for each interface
              * from the list.
              */

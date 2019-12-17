@@ -225,7 +225,7 @@ public class Utils {
     /**
      * @param e1 the first method to compare.
      * @param e2 the second method to compare.
-     * @return true if member1 overrides/hides or is overriden/hidden by member2.
+     * @return true if member1 overrides/hides or is overridden/hidden by member2.
      */
 
     public boolean executableMembersEqual(ExecutableElement e1, ExecutableElement e2) {
@@ -1139,7 +1139,7 @@ public class Utils {
 
             @Override
             public TypeElement visitTypeVariable(TypeVariable t, Void p) {
-               /* TODO, this may not be an optimimal fix.
+               /* TODO, this may not be an optimal fix.
                 * if we have an annotated type @DA T, then erasure returns a
                 * none, in this case we use asElement instead.
                 */
@@ -1885,7 +1885,7 @@ public class Utils {
     }
 
     /**
-     * Get the qualified type name of a TypeMiror compatible with the Element's
+     * Get the qualified type name of a TypeMirror compatible with the Element's
      * getQualified name, returns  the qualified name of the Reference type
      * otherwise the primitive name.
      * @param t the type whose name is to be obtained.
@@ -2572,7 +2572,7 @@ public class Utils {
 
                 @Override
                 public Boolean visitUnknown(Element e, Void p) {
-                    throw new AssertionError("unkown element: " + p);
+                    throw new AssertionError("unknown element: " + e);
                 }
             };
         }

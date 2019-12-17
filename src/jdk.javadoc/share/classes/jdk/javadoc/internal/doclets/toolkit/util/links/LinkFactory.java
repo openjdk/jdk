@@ -87,7 +87,7 @@ public abstract class LinkFactory {
                 @Override
                 public Content visitArray(ArrayType type, LinkInfo linkInfo) {
                     // keep track of the dimension depth and replace the last dimension
-                    // specifier with vararags, when the stack is fully unwound.
+                    // specifier with varargs, when the stack is fully unwound.
                     currentDepth++;
                     linkInfo.type = type.getComponentType();
                     visit(linkInfo.type, linkInfo);

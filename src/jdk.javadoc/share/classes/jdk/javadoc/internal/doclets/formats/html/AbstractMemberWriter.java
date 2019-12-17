@@ -510,11 +510,11 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter {
         private Content exceptions;
 
         // Threshold for length of type parameters before switching from inline to block representation.
-        private final static int TYPE_PARAMS_MAX_INLINE_LENGTH = 50;
+        private static final int TYPE_PARAMS_MAX_INLINE_LENGTH = 50;
 
         // Threshold for combined length of modifiers, type params and return type before breaking
         // it up with a line break before the return type.
-        private final static int RETURN_TYPE_MAX_LINE_LENGTH = 50;
+        private static final int RETURN_TYPE_MAX_LINE_LENGTH = 50;
 
         /**
          * Create a new member signature builder.

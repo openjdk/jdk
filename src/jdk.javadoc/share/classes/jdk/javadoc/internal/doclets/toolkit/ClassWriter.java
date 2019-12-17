@@ -46,63 +46,63 @@ public interface ClassWriter {
      * @param header the header string to write
      * @return header content that needs to be added to the documentation
      */
-    public Content getHeader(String header);
+    Content getHeader(String header);
 
     /**
      * Get the class content header.
      *
      * @return class content header that needs to be added to the documentation
      */
-    public Content getClassContentHeader();
+    Content getClassContentHeader();
 
     /**
      * Add the class tree documentation.
      *
      * @param classContentTree class content tree to which the documentation will be added
      */
-    public void addClassTree(Content classContentTree);
+    void addClassTree(Content classContentTree);
 
     /**
      * Get the class information tree header.
      *
-     * @return class informaion tree header that needs to be added to the documentation
+     * @return class information tree header that needs to be added to the documentation
      */
-    public Content getClassInfoTreeHeader();
+    Content getClassInfoTreeHeader();
 
     /**
      * Add the type parameter and state component information.
      *
      * @param classInfoTree content tree to which the documentation will be added
      */
-    public void addParamInfo(Content classInfoTree);
+    void addParamInfo(Content classInfoTree);
 
     /**
      * Add all super interfaces if this is an interface.
      *
      * @param classInfoTree content tree to which the documentation will be added
      */
-    public void addSuperInterfacesInfo(Content classInfoTree);
+    void addSuperInterfacesInfo(Content classInfoTree);
 
     /**
      * Add all implemented interfaces if this is a class.
      *
      * @param classInfoTree content tree to which the documentation will be added
      */
-    public void addImplementedInterfacesInfo(Content classInfoTree);
+    void addImplementedInterfacesInfo(Content classInfoTree);
 
     /**
      * Add all the classes that extend this one.
      *
      * @param classInfoTree content tree to which the documentation will be added
      */
-    public void addSubClassInfo(Content classInfoTree);
+    void addSubClassInfo(Content classInfoTree);
 
     /**
      * Add all the interfaces that extend this one.
      *
      * @param classInfoTree content tree to which the documentation will be added
      */
-    public void addSubInterfacesInfo(Content classInfoTree);
+    void addSubInterfacesInfo(Content classInfoTree);
 
     /**
      * If this is an interface, add all classes that implement this
@@ -110,14 +110,14 @@ public interface ClassWriter {
      *
      * @param classInfoTree content tree to which the documentation will be added
      */
-    public void addInterfaceUsageInfo(Content classInfoTree);
+    void addInterfaceUsageInfo(Content classInfoTree);
 
     /**
      * If this is an functional interface, display appropriate message.
      *
      * @param classInfoTree content tree to which the documentation will be added
      */
-    public void addFunctionalInterfaceInfo(Content classInfoTree);
+    void addFunctionalInterfaceInfo(Content classInfoTree);
 
     /**
      * If this is an inner class or interface, add the enclosing class or
@@ -125,22 +125,22 @@ public interface ClassWriter {
      *
      * @param classInfoTree content tree to which the documentation will be added
      */
-    public void addNestedClassInfo (Content classInfoTree);
+    void addNestedClassInfo(Content classInfoTree);
 
     /**
      * Get the class information.
      *
-     * @param classInfoTree content tree conatining the class information
+     * @param classInfoTree content tree containing the class information
      * @return a content tree for the class
      */
-    public Content getClassInfo(Content classInfoTree);
+    Content getClassInfo(Content classInfoTree);
 
     /**
      * If this class is deprecated, add the appropriate information.
      *
      * @param classInfoTree content tree to which the documentation will be added
      */
-    public void addClassDeprecationInfo (Content classInfoTree);
+    void addClassDeprecationInfo(Content classInfoTree);
 
     /**
      * Add the signature of the current class content tree.
@@ -148,40 +148,40 @@ public interface ClassWriter {
      * @param modifiers the modifiers for the signature
      * @param classInfoTree the class content tree to which the signature will be added
      */
-    public void addClassSignature(String modifiers, Content classInfoTree);
+    void addClassSignature(String modifiers, Content classInfoTree);
 
     /**
      * Build the class description.
      *
      * @param classInfoTree content tree to which the documentation will be added
      */
-    public void addClassDescription(Content classInfoTree);
+    void addClassDescription(Content classInfoTree);
 
     /**
      * Add the tag information for the current class.
      *
      * @param classInfoTree content tree to which the tag information will be added
      */
-    public void addClassTagInfo(Content classInfoTree);
+    void addClassTagInfo(Content classInfoTree);
 
     /**
      * Get the member tree header for the class.
      *
      * @return a content tree for the member tree header
      */
-    public Content getMemberTreeHeader();
+    Content getMemberTreeHeader();
 
     /**
      * Add the class content tree.
      *
      * @param classContentTree class content tree which will be added to the content tree
      */
-    public void addClassContentTree(Content classContentTree);
+    void addClassContentTree(Content classContentTree);
 
     /**
      * Add the footer of the page.
      */
-    public void addFooter();
+    void addFooter();
 
     /**
      * Print the document.
@@ -189,14 +189,14 @@ public interface ClassWriter {
      * @param contentTree content tree that will be printed as a document
      * @throws DocFileIOException if there is a problem while writing the document
      */
-    public void printDocument(Content contentTree) throws DocFileIOException;
+    void printDocument(Content contentTree) throws DocFileIOException;
 
     /**
      * Return the TypeElement being documented.
      *
      * @return the TypeElement being documented.
      */
-    public TypeElement getTypeElement();
+    TypeElement getTypeElement();
 
     /**
      * Get the member summary tree.
@@ -204,7 +204,7 @@ public interface ClassWriter {
      * @param memberTree the content tree used to build the summary tree
      * @return a content tree for the member summary
      */
-    public Content getMemberSummaryTree(Content memberTree);
+    Content getMemberSummaryTree(Content memberTree);
 
     /**
      * Get the member details tree.
@@ -212,5 +212,5 @@ public interface ClassWriter {
      * @param memberTree the content tree used to build the details tree
      * @return a content tree for the member details
      */
-    public Content getMemberDetailsTree(Content memberTree);
+    Content getMemberDetailsTree(Content memberTree);
 }

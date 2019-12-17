@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@
  *  common processing, independent of the output format.
  *  Each doclet must have a taglet writer that takes a taglet
  *  as input and writes doclet-dependent output. The taglet itself will
- *  do the tag processing. For example, suppose we are outputing
+ *  do the tag processing. For example, suppose we are outputting
  *  &#64;throws tags. The taglet would:
  *  <ul>
  *      <li> Retrieve the list of throws tags to be documented.

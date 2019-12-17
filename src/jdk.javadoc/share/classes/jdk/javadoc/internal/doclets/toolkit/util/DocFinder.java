@@ -210,7 +210,7 @@ public class DocFinder {
          * IOException and the overridden element has throws tags for IOException and
          * ZipException, both tags would be inherited because ZipException is a
          * subclass of IOException.  This subclass of DocFinder.Output allows
-         * multiple tag inheritence.
+         * multiple tag inheritance.
          */
         public List<DocTree> tagList  = new ArrayList<>();
 

@@ -43,7 +43,7 @@ import static com.sun.source.doctree.DocTree.Kind.INHERIT_DOC;
 
 /**
  * An inline Taglet representing the {@code inheritDoc} tag. This tag should only
- * be used with a method.  It is used to inherit documentation from overriden
+ * be used with a method.  It is used to inherit documentation from overridden
  * and implemented methods.
  *
  *  <p><b>This is NOT part of any supported API.

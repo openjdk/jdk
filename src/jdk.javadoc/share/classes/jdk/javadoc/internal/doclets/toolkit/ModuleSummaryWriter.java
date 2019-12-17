@@ -44,21 +44,21 @@ public interface ModuleSummaryWriter {
      * @param heading module name.
      * @return the header to be added to the content tree
      */
-    public abstract Content getModuleHeader(String heading);
+    Content getModuleHeader(String heading);
 
     /**
      * Get the header for the module content.
      *
      * @return a content tree for the module content header
      */
-    public abstract Content getContentHeader();
+    Content getContentHeader();
 
     /**
      * Get the header for the summary header.
      *
      * @return a content tree with the summary header
      */
-    public abstract Content getSummaryHeader();
+    Content getSummaryHeader();
 
     /**
      * Get the header for the summary tree.
@@ -66,7 +66,7 @@ public interface ModuleSummaryWriter {
      * @param summaryContentTree the content tree.
      * @return a content tree with the summary tree
      */
-    public abstract Content getSummaryTree(Content summaryContentTree);
+    Content getSummaryTree(Content summaryContentTree);
 
     /**
      * Adds the module description.
@@ -74,7 +74,7 @@ public interface ModuleSummaryWriter {
      * @param moduleContentTree the content tree to which the module description
      *                           will be added
      */
-    public abstract void addModuleDescription(Content moduleContentTree);
+    void addModuleDescription(Content moduleContentTree);
 
     /**
      * Adds the tag information from the "module-info.java" file to the documentation
@@ -83,40 +83,40 @@ public interface ModuleSummaryWriter {
      * @param moduleContentTree the content tree to which the module tags will
      *                           be added
      */
-    public abstract void addModuleTags(Content moduleContentTree);
+    void addModuleTags(Content moduleContentTree);
 
     /**
      * Adds the modules summary to the documentation tree.
      *
      * @param summaryContentTree the content tree to which the summary will be added
      */
-    public abstract void addModulesSummary(Content summaryContentTree);
+    void addModulesSummary(Content summaryContentTree);
 
     /**
      * Adds the packages summary to the documentation tree.
      *
      * @param summaryContentTree the content tree to which the summary will be added
      */
-    public abstract void addPackagesSummary(Content summaryContentTree);
+    void addPackagesSummary(Content summaryContentTree);
 
     /**
      * Adds the services summary to the documentation tree.
      *
      * @param summaryContentTree the content tree to which the summary will be added
      */
-    public abstract void addServicesSummary(Content summaryContentTree);
+    void addServicesSummary(Content summaryContentTree);
 
     /**
      * Adds the module content tree to the documentation tree.
      *
      * @param moduleContentTree the content tree that will be added
      */
-    public abstract void addModuleContent(Content moduleContentTree);
+    void addModuleContent(Content moduleContentTree);
 
     /**
      * Adds the footer to the documentation tree.
      */
-    public abstract void addModuleFooter();
+    void addModuleFooter();
 
     /**
      * Print the module summary document.
@@ -124,5 +124,5 @@ public interface ModuleSummaryWriter {
      * @param contentTree the content tree that will be printed
      * @throws DocFileIOException if there is a problem while writing the document
      */
-    public abstract void printDocument(Content contentTree) throws DocFileIOException;
+    void printDocument(Content contentTree) throws DocFileIOException;
 }

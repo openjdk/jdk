@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ import java.util.Set;
 
 public interface DocletElement extends Element {
 
-    public default TypeMirror asType() {
+    default TypeMirror asType() {
         throw new UnsupportedOperationException("Unsupported method");
     }
 
@@ -102,7 +102,7 @@ public interface DocletElement extends Element {
     /**
      * Sub kind enums that this element supports.
      */
-    public static enum Kind {
+    enum Kind {
         OVERVIEW, DOCFILE;
     }
 }

@@ -1030,7 +1030,7 @@ public class ElementsTable {
 
                 @Override
                 public Boolean visitUnknown(Element e, Void p) {
-                    throw new AssertionError("unkown element: " + p);
+                    throw new AssertionError("unknown element: " + e);
                 }
             };
         }
@@ -1039,7 +1039,7 @@ public class ElementsTable {
 
     @SuppressWarnings("preview")
     private class IncludedVisitor extends SimpleElementVisitor14<Boolean, Void> {
-        final private Set<Element> includedCache;
+        private final Set<Element> includedCache;
 
         public IncludedVisitor() {
             includedCache = new LinkedHashSet<>();
@@ -1242,8 +1242,8 @@ public class ElementsTable {
             }
         }
 
-        static EnumSet<AccessKind> getFilterSet(AccessKind acccessValue) {
-            switch (acccessValue) {
+        static EnumSet<AccessKind> getFilterSet(AccessKind accessValue) {
+            switch (accessValue) {
                 case PUBLIC:
                     return EnumSet.of(AccessKind.PUBLIC);
                 case PROTECTED:

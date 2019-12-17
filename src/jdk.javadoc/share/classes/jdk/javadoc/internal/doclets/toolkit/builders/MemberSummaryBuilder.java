@@ -313,7 +313,7 @@ public abstract class MemberSummaryBuilder extends AbstractMemberBuilder {
                 }
                 List<? extends DocTree> firstSentenceTags = utils.getFirstSentenceTrees(member);
                 if (utils.isExecutableElement(member) && firstSentenceTags.isEmpty()) {
-                    //Inherit comments from overriden or implemented method if
+                    //Inherit comments from overridden or implemented method if
                     //necessary.
                     DocFinder.Output inheritedDoc =
                             DocFinder.search(configuration,

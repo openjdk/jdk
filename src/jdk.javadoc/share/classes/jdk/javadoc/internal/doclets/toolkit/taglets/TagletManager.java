@@ -136,9 +136,9 @@ public class TagletManager {
     private final Set<String> standardTagsLowercase;
 
     /**
-     * Keep track of overriden standard tags.
+     * Keep track of overridden standard tags.
      */
-    private final Set<String> overridenStandardTags;
+    private final Set<String> overriddenStandardTags;
 
     /**
      * Keep track of the tags that may conflict
@@ -188,7 +188,7 @@ public class TagletManager {
     public TagletManager(boolean nosince, boolean showversion,
                          boolean showauthor, boolean javafx,
                          BaseConfiguration configuration) {
-        overridenStandardTags = new HashSet<>();
+        overriddenStandardTags = new HashSet<>();
         potentiallyConflictingTags = new HashSet<>();
         standardTags = new HashSet<>();
         standardTagsLowercase = new HashSet<>();
@@ -229,7 +229,7 @@ public class TagletManager {
 
     /**
      * Initializes the location TAGLET_PATH which is used to locate the custom taglets.
-     * @param fileManager the filemanager to load classes and resources.
+     * @param fileManager the file manager to load classes and resources.
      * @param tagletPath the path to the custom taglet.
      * @throws IOException if an error occurs while setting the location.
      */
@@ -254,7 +254,7 @@ public class TagletManager {
      * Adds a new {@code Taglet}.  Print a message to indicate whether or not
      * the Taglet was registered properly.
      * @param classname  the name of the class representing the custom tag.
-     * @param fileManager the filemanager to load classes and resources.
+     * @param fileManager the file manager to load classes and resources.
      */
     public void addCustomTag(String classname, JavaFileManager fileManager) {
         try {
@@ -272,7 +272,7 @@ public class TagletManager {
 
     /**
      * Loads taglets from a taglet path using service loader.
-     * @param fileManager the filemanager to load the taglets.
+     * @param fileManager the file manager to load the taglets.
      * @throws IOException if an error occurs while getting the service loader.
      */
     public void loadTaglets(JavaFileManager fileManager) throws IOException {
@@ -333,7 +333,7 @@ public class TagletManager {
      */
     private void checkTagName(String name) {
         if (standardTags.contains(name)) {
-            overridenStandardTags.add(name);
+            overriddenStandardTags.add(name);
         } else {
             if (name.indexOf('.') == -1) {
                 potentiallyConflictingTags.add(name);
@@ -700,11 +700,11 @@ public class TagletManager {
     /**
      * Print a list of {@link Taglet}s that might conflict with
      * standard tags in the future and a list of standard tags
-     * that have been overriden.
+     * that have been overridden.
      */
     public void printReport() {
         printReportHelper("doclet.Notice_taglet_conflict_warn", potentiallyConflictingTags);
-        printReportHelper("doclet.Notice_taglet_overriden", overridenStandardTags);
+        printReportHelper("doclet.Notice_taglet_overridden", overriddenStandardTags);
         printReportHelper("doclet.Notice_taglet_unseen", unseenCustomTags);
     }
 

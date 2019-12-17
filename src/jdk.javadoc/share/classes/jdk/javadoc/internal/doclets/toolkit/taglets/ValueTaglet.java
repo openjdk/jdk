@@ -45,7 +45,7 @@ import static com.sun.source.doctree.DocTree.Kind.VALUE;
  * fields.  This inline tag has an optional field name parameter.  If the name is
  * specified, the constant value is retrieved from the specified field.  A link
  * is also created to the specified field.  If a name is not specified, the value
- * is retrieved for the field that the inline tag appears on.  The name is specifed
+ * is retrieved for the field that the inline tag appears on.  The name is specified
  * in the following format:  [fully qualified class name]#[constant field name].
  *
  *  <p><b>This is NOT part of any supported API.
