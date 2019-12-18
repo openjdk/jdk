@@ -85,9 +85,14 @@ public class CommandLineFlagComboNegative {
 
             TestCommon.checkDump(dumpOutput, "Loading classes to share");
 
-            OutputAnalyzer execOutput = TestCommon.exec(appJar, testEntry.testOptionForExecuteStep, "Hello");
-            execOutput.shouldContain(testEntry.expectedErrorMsg);
-            execOutput.shouldHaveExitValue(testEntry.expectedErrorCode);
+            TestCommon.run(
+                "-cp", appJar,
+                testEntry.testOptionForExecuteStep,
+                "Hello")
+                .assertAbnormalExit(output -> {
+                    output.shouldContain(testEntry.expectedErrorMsg)
+                          .shouldHaveExitValue(testEntry.expectedErrorCode);
+                    });
         }
     }
 
