@@ -190,7 +190,7 @@ ZRootsIterator::ZRootsIterator(bool visit_jvmti_weak_export) :
   assert(SafepointSynchronize::is_at_safepoint(), "Should be at safepoint");
   ZStatTimer timer(ZSubPhasePauseRootsSetup);
   Threads::change_thread_claim_token();
-  COMPILER2_PRESENT(DerivedPointerTable::clear());
+  COMPILER2_OR_JVMCI_PRESENT(DerivedPointerTable::clear());
   if (ClassUnloading) {
     nmethod::oops_do_marking_prologue();
   } else {
@@ -207,7 +207,7 @@ ZRootsIterator::~ZRootsIterator() {
     ZNMethod::oops_do_end();
   }
 
-  COMPILER2_PRESENT(DerivedPointerTable::update_pointers());
+  COMPILER2_OR_JVMCI_PRESENT(DerivedPointerTable::update_pointers());
   Threads::assert_all_threads_claimed();
 }
 

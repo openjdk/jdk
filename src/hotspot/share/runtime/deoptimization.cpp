@@ -302,7 +302,7 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
 
   // Reallocate the non-escaping objects and restore their fields. Then
   // relock objects if synchronization on them was eliminated.
-  if (jvmci_enabled || (DoEscapeAnalysis && EliminateAllocations)) {
+  if (jvmci_enabled COMPILER2_PRESENT( || (DoEscapeAnalysis && EliminateAllocations) )) {
     realloc_failures = eliminate_allocations(thread, exec_mode, cm, deoptee, map, chunk);
   }
 #endif // COMPILER2_OR_JVMCI
@@ -318,7 +318,7 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
   NoSafepointVerifier no_safepoint;
 
 #if COMPILER2_OR_JVMCI
-  if (jvmci_enabled || ((DoEscapeAnalysis || EliminateNestedLocks) && EliminateLocks)) {
+  if (jvmci_enabled COMPILER2_PRESENT( || ((DoEscapeAnalysis || EliminateNestedLocks) && EliminateLocks) )) {
     eliminate_locks(thread, chunk, realloc_failures);
   }
 #endif // COMPILER2_OR_JVMCI
