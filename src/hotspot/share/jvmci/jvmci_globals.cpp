@@ -114,6 +114,16 @@ bool JVMCIGlobals::check_jvmci_flags_are_consistent() {
   CHECK_NOT_SET(JVMCILibPath,                 EnableJVMCI)
   CHECK_NOT_SET(JVMCILibDumpJNIConfig,        EnableJVMCI)
 
+#ifndef COMPILER2
+  JVMCI_FLAG_CHECKED(MaxVectorSize)
+  JVMCI_FLAG_CHECKED(ReduceInitialCardMarks)
+  JVMCI_FLAG_CHECKED(UseMultiplyToLenIntrinsic)
+  JVMCI_FLAG_CHECKED(UseSquareToLenIntrinsic)
+  JVMCI_FLAG_CHECKED(UseMulAddIntrinsic)
+  JVMCI_FLAG_CHECKED(UseMontgomeryMultiplyIntrinsic)
+  JVMCI_FLAG_CHECKED(UseMontgomerySquareIntrinsic)
+#endif // !COMPILER2
+
 #ifndef PRODUCT
 #define JVMCI_CHECK4(type, name, value, doc) assert(name##checked, #name " flag not checked");
 #define JVMCI_CHECK3(type, name, doc)        assert(name##checked, #name " flag not checked");

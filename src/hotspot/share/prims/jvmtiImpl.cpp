@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
+#include "code/nmethod.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/oopMapCache.hpp"
 #include "jvmtifiles/jvmtiEnv.hpp"
@@ -992,6 +993,12 @@ void JvmtiDeferredEvent::post_compiled_method_load_event(JvmtiEnv* env) {
   JvmtiExport::post_compiled_method_load(env, nm);
 }
 
+void JvmtiDeferredEvent::run_nmethod_entry_barriers() {
+  if (_type == TYPE_COMPILED_METHOD_LOAD) {
+    _event_data.compiled_method_load->run_nmethod_entry_barrier();
+  }
+}
+
 
 // Keep the nmethod for compiled_method_load from being unloaded.
 void JvmtiDeferredEvent::oops_do(OopClosure* f, CodeBlobClosure* cf) {
@@ -1008,8 +1015,16 @@ void JvmtiDeferredEvent::nmethods_do(CodeBlobClosure* cf) {
   }
 }
 
+
 bool JvmtiDeferredEventQueue::has_events() {
-  return _queue_head != NULL;
+  // We save the queued events before the live phase and post them when it starts.
+  // This code could skip saving the events on the queue before the live
+  // phase and ignore them, but this would change how we do things now.
+  // Starting the service thread earlier causes this to be called before the live phase begins.
+  // The events on the queue should all be posted after the live phase so this is an
+  // ok check.  Before the live phase, DynamicCodeGenerated events are posted directly.
+  // If we add other types of events to the deferred queue, this could get ugly.
+  return JvmtiEnvBase::get_phase() == JVMTI_PHASE_LIVE  && _queue_head != NULL;
 }
 
 void JvmtiDeferredEventQueue::enqueue(JvmtiDeferredEvent event) {
@@ -1056,6 +1071,13 @@ void JvmtiDeferredEventQueue::post(JvmtiEnv* env) {
      event.post_compiled_method_load_event(env);
   }
 }
+
+void JvmtiDeferredEventQueue::run_nmethod_entry_barriers() {
+  for(QueueNode* node = _queue_head; node != NULL; node = node->next()) {
+     node->event().run_nmethod_entry_barriers();
+  }
+}
+
 
 void JvmtiDeferredEventQueue::oops_do(OopClosure* f, CodeBlobClosure* cf) {
   for(QueueNode* node = _queue_head; node != NULL; node = node->next()) {

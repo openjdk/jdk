@@ -44,8 +44,7 @@
 #include "memory/universe.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/resolvedMethodTable.hpp"
-#include "runtime/atomic.hpp"
-#include "runtime/safepoint.hpp"
+#include "runtime/atomic.hpp"#include "runtime/safepoint.hpp"
 #include "runtime/synchronizer.hpp"
 #include "runtime/thread.hpp"
 #include "runtime/vmThread.hpp"
@@ -208,7 +207,7 @@ ZRootsIterator::ZRootsIterator(bool visit_jvmti_weak_export) :
     _code_cache(this) {
   assert(SafepointSynchronize::is_at_safepoint(), "Should be at safepoint");
   ZStatTimer timer(ZSubPhasePauseRootsSetup);
-  COMPILER2_PRESENT(DerivedPointerTable::clear());
+  COMPILER2_OR_JVMCI_PRESENT(DerivedPointerTable::clear());
   if (ClassUnloading) {
     nmethod::oops_do_marking_prologue();
   } else {
@@ -225,7 +224,7 @@ ZRootsIterator::~ZRootsIterator() {
     ZNMethod::oops_do_end();
   }
 
-  COMPILER2_PRESENT(DerivedPointerTable::update_pointers());
+  COMPILER2_OR_JVMCI_PRESENT(DerivedPointerTable::update_pointers());
 }
 
 void ZRootsIterator::do_universe(ZRootsIteratorClosure* cl) {

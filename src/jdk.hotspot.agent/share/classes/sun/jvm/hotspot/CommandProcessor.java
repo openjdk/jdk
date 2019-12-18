@@ -1731,6 +1731,8 @@ public class CommandProcessor {
 
     // called after debuggee attach
     private void postAttach() {
+        /*
+         * JavaScript engine no longer works. For now disable it. Eventually we will remove it.
         // create JavaScript engine and start it
         try {
             jsengine = new JSJavaScriptEngine() {
@@ -1774,6 +1776,7 @@ public class CommandProcessor {
                 ex.printStackTrace(out);
             }
         }
+        */
     }
 
     public void registerCommand(String cmd, String usage, final String func) {
