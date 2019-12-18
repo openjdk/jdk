@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,10 @@ import java.security.AccessController;
 import java.security.AlgorithmConstraints;
 import java.security.PrivilegedAction;
 import java.security.Security;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -44,7 +48,7 @@ public abstract class AbstractAlgorithmConstraints
     }
 
     // Get algorithm constraints from the specified security property.
-    static String[] getAlgorithms(String propertyName) {
+    static List<String> getAlgorithms(String propertyName) {
         String property = AccessController.doPrivileged(
                 new PrivilegedAction<String>() {
                     @Override
@@ -68,12 +72,12 @@ public abstract class AbstractAlgorithmConstraints
 
         // map the disabled algorithms
         if (algorithmsInProperty == null) {
-            algorithmsInProperty = new String[0];
+            return Collections.emptyList();
         }
-        return algorithmsInProperty;
+        return new ArrayList<>(Arrays.asList(algorithmsInProperty));
     }
 
-    static boolean checkAlgorithm(String[] algorithms, String algorithm,
+    static boolean checkAlgorithm(List<String> algorithms, String algorithm,
             AlgorithmDecomposer decomposer) {
         if (algorithm == null || algorithm.isEmpty()) {
             throw new IllegalArgumentException("No algorithm name specified");
