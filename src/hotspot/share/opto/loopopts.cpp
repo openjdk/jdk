@@ -498,9 +498,10 @@ Node *PhaseIdealLoop::convert_add_to_muladd(Node* n) {
   Node * in2 = n->in(2);
   if (in1->Opcode() == Op_MulI && in2->Opcode() == Op_MulI) {
     IdealLoopTree* loop_n = get_loop(get_ctrl(n));
-    if (loop_n->_head->as_Loop()->is_valid_counted_loop() &&
-        Matcher::match_rule_supported(Op_MulAddS2I) &&
-        Matcher::match_rule_supported(Op_MulAddVS2VI)) {
+    if (loop_n->is_counted() &&
+        loop_n->_head->as_Loop()->is_valid_counted_loop() &&
+        Matcher::match_rule_supported(Op_MulAddVS2VI) &&
+        Matcher::match_rule_supported(Op_MulAddS2I)) {
       Node* mul_in1 = in1->in(1);
       Node* mul_in2 = in1->in(2);
       Node* mul_in3 = in2->in(1);
