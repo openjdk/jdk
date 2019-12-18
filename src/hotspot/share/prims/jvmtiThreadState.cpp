@@ -432,3 +432,8 @@ void JvmtiThreadState::post_events(JvmtiEnv* env) {
   }
 }
 
+void JvmtiThreadState::run_nmethod_entry_barriers() {
+  if (_jvmti_event_queue != NULL) {
+    _jvmti_event_queue->run_nmethod_entry_barriers();
+  }
+}

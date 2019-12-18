@@ -46,7 +46,6 @@
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/notificationThread.hpp"
 #include "runtime/os.hpp"
-#include "runtime/serviceThread.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/threadSMR.hpp"
 #include "services/classLoadingService.hpp"
@@ -147,8 +146,6 @@ void Management::init() {
 }
 
 void Management::initialize(TRAPS) {
-  // Start the service thread
-  ServiceThread::initialize();
   if (UseNotificationThread) {
     NotificationThread::initialize();
   }

@@ -549,6 +549,21 @@ bool CompiledMethod::unload_nmethod_caches(bool unloading_occurred) {
   return true;
 }
 
+void CompiledMethod::run_nmethod_entry_barrier() {
+  BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
+  if (bs_nm != NULL) {
+    // We want to keep an invariant that nmethods found through iterations of a Thread's
+    // nmethods found in safepoints have gone through an entry barrier and are not armed.
+    // By calling this nmethod entry barrier, it plays along and acts
+    // like any other nmethod found on the stack of a thread (fewer surprises).
+    nmethod* nm = as_nmethod_or_null();
+    if (nm != NULL) {
+      bool alive = bs_nm->nmethod_entry_barrier(nm);
+      assert(alive, "should be alive");
+    }
+  }
+}
+
 void CompiledMethod::cleanup_inline_caches(bool clean_all) {
   for (;;) {
     ICRefillVerifier ic_refill_verifier;
@@ -557,18 +572,8 @@ void CompiledMethod::cleanup_inline_caches(bool clean_all) {
         return;
       }
     }
-    BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
-    if (bs_nm != NULL) {
-      // We want to keep an invariant that nmethods found through iterations of a Thread's
-      // nmethods found in safepoints have gone through an entry barrier and are not armed.
-      // By calling this nmethod entry barrier from the sweeper, it plays along and acts
-      // like any other nmethod found on the stack of a thread (fewer surprises).
-      nmethod* nm = as_nmethod_or_null();
-      if (nm != NULL) {
-        bool alive = bs_nm->nmethod_entry_barrier(nm);
-        assert(alive, "should be alive");
-      }
-    }
+    // Call this nmethod entry barrier from the sweeper.
+    run_nmethod_entry_barrier();
     InlineCacheBuffer::refill_ic_stubs();
   }
 }
