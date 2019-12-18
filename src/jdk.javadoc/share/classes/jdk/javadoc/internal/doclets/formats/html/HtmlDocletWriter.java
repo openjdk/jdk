@@ -1566,12 +1566,14 @@ public class HtmlDocletWriter {
                     return textCleanup(text, isLast, false);
                 }
 
-                private CharSequence textCleanup(String text, boolean isLast, boolean trimLeader) {
-                    if (trimLeader) {
-                        text = removeLeadingWhitespace(text);
-                    }
-                    if (isFirstSentence && isLast) {
-                        text = removeTrailingWhitespace(text);
+                private CharSequence textCleanup(String text, boolean isLast, boolean stripLeading) {
+                    boolean stripTrailing = isFirstSentence && isLast;
+                    if (stripLeading && stripTrailing) {
+                        text = text.strip();
+                    } else if (stripLeading) {
+                        text = text.stripLeading();
+                    } else if (stripTrailing) {
+                        text = text.stripTrailing();
                     }
                     text = utils.replaceTabs(text);
                     return utils.normalizeNewlines(text);
@@ -1601,25 +1603,6 @@ public class HtmlDocletWriter {
                 break;
         }
         return result;
-    }
-
-    private String removeTrailingWhitespace(String text) {
-        char[] buf = text.toCharArray();
-        for (int i = buf.length - 1; i > 0 ; i--) {
-            if (!Character.isWhitespace(buf[i]))
-                return text.substring(0, i + 1);
-        }
-        return text;
-    }
-
-    private String removeLeadingWhitespace(String text) {
-        char[] buf = text.toCharArray();
-        for (int i = 0; i < buf.length; i++) {
-            if (!Character.isWhitespace(buf[i])) {
-                return text.substring(i);
-            }
-        }
-        return text;
     }
 
     /**
