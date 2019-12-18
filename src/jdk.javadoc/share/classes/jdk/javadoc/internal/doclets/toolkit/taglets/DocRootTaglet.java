@@ -32,8 +32,6 @@ import com.sun.source.doctree.DocTree;
 import jdk.javadoc.doclet.Taglet.Location;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 
-import static com.sun.source.doctree.DocTree.Kind.DOC_ROOT;
-
 /**
  * An inline Taglet representing {&#064;docRoot}.  This taglet is
  * used to get the relative path to the document's root output
@@ -51,7 +49,7 @@ public class DocRootTaglet extends BaseTaglet {
      * Construct a new DocRootTaglet.
      */
     public DocRootTaglet() {
-        super(DOC_ROOT.tagName, true, EnumSet.allOf(Location.class));
+        super(DocTree.Kind.DOC_ROOT, true, EnumSet.allOf(Location.class));
     }
 
     @Override

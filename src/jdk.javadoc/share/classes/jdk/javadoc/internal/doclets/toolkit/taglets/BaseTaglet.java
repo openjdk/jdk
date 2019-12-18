@@ -29,6 +29,7 @@ import java.util.Set;
 import javax.lang.model.element.Element;
 
 import com.sun.source.doctree.DocTree;
+import com.sun.source.doctree.UnknownBlockTagTree;
 import jdk.javadoc.doclet.Taglet.Location;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 
@@ -42,11 +43,20 @@ import jdk.javadoc.internal.doclets.toolkit.Content;
  */
 public class BaseTaglet implements Taglet {
 
+    protected final DocTree.Kind tagKind;
     protected final String name;
     private final boolean inline;
     private final Set<Location> sites;
 
+    BaseTaglet(DocTree.Kind tagKind, boolean inline, Set<Location> sites) {
+        this.tagKind = tagKind;
+        this.name = tagKind.tagName;
+        this.inline = inline;
+        this.sites = sites;
+    }
+
     BaseTaglet(String name, boolean inline, Set<Location> sites) {
+        this.tagKind = inline ? DocTree.Kind.UNKNOWN_INLINE_TAG : DocTree.Kind.UNKNOWN_BLOCK_TAG;
         this.name = name;
         this.inline = inline;
         this.sites = sites;
@@ -59,6 +69,7 @@ public class BaseTaglet implements Taglet {
 
     /**
      * Returns true if this {@code Taglet} can be used in constructor documentation.
+     *
      * @return true if this {@code Taglet} can be used in constructor documentation and false
      * otherwise.
      */
@@ -68,60 +79,67 @@ public class BaseTaglet implements Taglet {
 
     /**
      * Returns true if this {@code Taglet} can be used in field documentation.
+     *
      * @return true if this {@code Taglet} can be used in field documentation and false
      * otherwise.
      */
     public final boolean inField() {
-        return  sites.contains(Location.FIELD);
+        return sites.contains(Location.FIELD);
     }
 
     /**
      * Returns true if this {@code Taglet} can be used in method documentation.
+     *
      * @return true if this {@code Taglet} can be used in method documentation and false
      * otherwise.
      */
     public final boolean inMethod() {
-        return  sites.contains(Location.METHOD);
+        return sites.contains(Location.METHOD);
     }
 
     /**
      * Returns true if this {@code Taglet} can be used in overview documentation.
+     *
      * @return true if this {@code Taglet} can be used in method documentation and false
      * otherwise.
      */
     public final boolean inOverview() {
-        return  sites.contains(Location.OVERVIEW);
+        return sites.contains(Location.OVERVIEW);
     }
 
     /**
      * Returns true if this {@code Taglet} can be used in module documentation.
+     *
      * @return true if this {@code Taglet} can be used in module documentation and false
      * otherwise.
      */
     public final boolean inModule() {
-        return  sites.contains(Location.MODULE);
+        return sites.contains(Location.MODULE);
     }
 
     /**
      * Returns true if this {@code Taglet} can be used in package documentation.
+     *
      * @return true if this {@code Taglet} can be used in package documentation and false
      * otherwise.
      */
     public final boolean inPackage() {
-        return  sites.contains(Location.PACKAGE);
+        return sites.contains(Location.PACKAGE);
     }
 
     /**
      * Returns true if this {@code Taglet} can be used in type documentation (classes or interfaces).
+     *
      * @return true if this {@code Taglet} can be used in type documentation and false
      * otherwise.
      */
     public final boolean inType() {
-        return  sites.contains(Location.TYPE);
+        return sites.contains(Location.TYPE);
     }
 
     /**
      * Returns true if this {@code Taglet} is an inline tag.
+     *
      * @return true if this {@code Taglet} represents an inline tag and false otherwise.
      */
     public final boolean isInlineTag() {
@@ -129,7 +147,17 @@ public class BaseTaglet implements Taglet {
     }
 
     /**
+     * Returns the kind of trees recognized by this taglet.
+     *
+     * @return the kind of trees recognized by this taglet
+     */
+    public DocTree.Kind getTagKind() {
+        return tagKind;
+    }
+
+    /**
      * Returns the name of this tag.
+     *
      * @return the name of this tag.
      */
     public String getName() {
@@ -137,9 +165,25 @@ public class BaseTaglet implements Taglet {
     }
 
     /**
+     * Returns whether or not this taglet accepts a {@code DocTree} node.
+     * The taglet accepts a tree node if it has the same kind, and
+     * if the kind is {@code UNKNOWN_BLOCK_TAG} the same tag name.
+     *
+     * @param tree the tree node
+     * @return {@code true} if this taglet accepts this tree node.
+     */
+    public boolean accepts(DocTree tree) {
+        return (tree.getKind() == DocTree.Kind.UNKNOWN_BLOCK_TAG
+                    && tagKind == DocTree.Kind.UNKNOWN_BLOCK_TAG)
+                ? ((UnknownBlockTagTree) tree).getTagName().equals(name)
+                : tree.getKind() == tagKind;
+    }
+
+    /**
      * {@inheritDoc}
+     *
      * @throws UnsupportedTagletOperationException thrown when the method is
-     *         not supported by the taglet.
+     *                                             not supported by the taglet.
      */
     public Content getTagletOutput(Element element, DocTree tag, TagletWriter writer) {
         throw new UnsupportedTagletOperationException("Method not supported in taglet " + getName() + ".");
@@ -147,8 +191,9 @@ public class BaseTaglet implements Taglet {
 
     /**
      * {@inheritDoc}
+     *
      * @throws UnsupportedTagletOperationException thrown when the method is not
-     *         supported by the taglet.
+     *                                             supported by the taglet.
      */
     public Content getTagletOutput(Element holder, TagletWriter writer) {
         throw new UnsupportedTagletOperationException("Method not supported in taglet " + getName() + ".");

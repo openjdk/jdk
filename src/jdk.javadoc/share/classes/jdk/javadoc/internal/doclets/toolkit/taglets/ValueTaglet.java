@@ -37,8 +37,6 @@ import jdk.javadoc.internal.doclets.toolkit.Messages;
 import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
-import static com.sun.source.doctree.DocTree.Kind.VALUE;
-
 /**
  * An inline Taglet representing the value tag. This tag should only be used with
  * constant fields that have a value.  It is used to access the value of constant
@@ -60,7 +58,7 @@ public class ValueTaglet extends BaseTaglet {
      * Construct a new ValueTaglet.
      */
     public ValueTaglet() {
-        super(VALUE.tagName, true, EnumSet.allOf(Location.class));
+        super(DocTree.Kind.VALUE, true, EnumSet.allOf(Location.class));
     }
 
     /**

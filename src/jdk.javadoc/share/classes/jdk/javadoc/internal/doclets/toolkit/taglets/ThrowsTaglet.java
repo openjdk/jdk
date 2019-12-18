@@ -47,8 +47,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocFinder;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFinder.Input;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
-import static com.sun.source.doctree.DocTree.Kind.THROWS;
-
 /**
  * A taglet that represents the @throws tag.
  *
@@ -61,7 +59,7 @@ public class ThrowsTaglet extends BaseTaglet
     implements InheritableTaglet {
 
     public ThrowsTaglet() {
-        super(THROWS.tagName, false, EnumSet.of(Location.CONSTRUCTOR, Location.METHOD));
+        super(DocTree.Kind.THROWS, false, EnumSet.of(Location.CONSTRUCTOR, Location.METHOD));
     }
 
     @Override

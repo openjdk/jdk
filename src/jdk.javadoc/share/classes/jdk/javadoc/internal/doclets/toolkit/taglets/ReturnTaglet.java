@@ -42,8 +42,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocFinder;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFinder.Input;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
-import static com.sun.source.doctree.DocTree.Kind.RETURN;
-
 /**
  * A taglet that represents the @return tag.
  *
@@ -55,7 +53,7 @@ import static com.sun.source.doctree.DocTree.Kind.RETURN;
 public class ReturnTaglet extends BaseTaglet implements InheritableTaglet {
 
     public ReturnTaglet() {
-        super(RETURN.tagName, false, EnumSet.of(Location.METHOD));
+        super(DocTree.Kind.RETURN, false, EnumSet.of(Location.METHOD));
     }
 
     @Override
@@ -76,7 +74,7 @@ public class ReturnTaglet extends BaseTaglet implements InheritableTaglet {
         Messages messages = writer.configuration().getMessages();
         Utils utils = writer.configuration().utils;
         TypeMirror returnType = utils.getReturnType((ExecutableElement)holder);
-        List<? extends DocTree> tags = utils.getBlockTags(holder, name);
+        List<? extends DocTree> tags = utils.getBlockTags(holder, DocTree.Kind.RETURN);
 
         //Make sure we are not using @return tag on method with void return type.
         if (returnType != null && utils.isVoid(returnType)) {

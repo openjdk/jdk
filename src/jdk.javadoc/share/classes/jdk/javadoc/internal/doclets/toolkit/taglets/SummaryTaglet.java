@@ -33,8 +33,6 @@ import jdk.javadoc.doclet.Taglet.Location;
 import com.sun.source.doctree.SummaryTree;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 
-import static com.sun.source.doctree.DocTree.Kind.SUMMARY;
-
 /**
  * A taglet that represents the @summary tag.
  *
@@ -47,7 +45,7 @@ import static com.sun.source.doctree.DocTree.Kind.SUMMARY;
 public class SummaryTaglet extends BaseTaglet {
 
     public SummaryTaglet() {
-        super(SUMMARY.tagName, true, EnumSet.allOf(Location.class));
+        super(DocTree.Kind.SUMMARY, true, EnumSet.allOf(Location.class));
     }
 
     @Override

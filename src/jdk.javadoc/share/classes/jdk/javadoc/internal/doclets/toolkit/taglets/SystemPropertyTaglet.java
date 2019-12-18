@@ -32,8 +32,6 @@ import jdk.javadoc.internal.doclets.toolkit.Content;
 import javax.lang.model.element.Element;
 import java.util.EnumSet;
 
-import static com.sun.source.doctree.DocTree.Kind.SYSTEM_PROPERTY;
-
 /**
  * A taglet that represents the {@code @systemProperty} tag.
  *
@@ -46,7 +44,7 @@ import static com.sun.source.doctree.DocTree.Kind.SYSTEM_PROPERTY;
 public class SystemPropertyTaglet extends BaseTaglet {
 
     SystemPropertyTaglet(){
-        super(SYSTEM_PROPERTY.tagName, true, EnumSet.of(Location.CONSTRUCTOR, Location.METHOD, Location.FIELD,
+        super(DocTree.Kind.SYSTEM_PROPERTY, true, EnumSet.of(Location.CONSTRUCTOR, Location.METHOD, Location.FIELD,
                 Location.PACKAGE, Location.MODULE, Location.TYPE));
     }
 

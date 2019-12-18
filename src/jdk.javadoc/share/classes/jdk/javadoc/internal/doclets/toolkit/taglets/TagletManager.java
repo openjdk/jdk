@@ -622,22 +622,22 @@ public class TagletManager {
         addStandardTaglet(new ReturnTaglet());
         addStandardTaglet(new ThrowsTaglet());
         addStandardTaglet(
-                new SimpleTaglet(EXCEPTION.tagName, null,
+                new SimpleTaglet(EXCEPTION, null,
                     EnumSet.of(Location.METHOD, Location.CONSTRUCTOR)));
         addStandardTaglet(
-                new SimpleTaglet(SINCE.tagName, resources.getText("doclet.Since"),
+                new SimpleTaglet(SINCE, resources.getText("doclet.Since"),
                     EnumSet.allOf(Location.class), !nosince));
         addStandardTaglet(
-                new SimpleTaglet(VERSION.tagName, resources.getText("doclet.Version"),
+                new SimpleTaglet(VERSION, resources.getText("doclet.Version"),
                     EnumSet.of(Location.OVERVIEW, Location.MODULE, Location.PACKAGE, Location.TYPE), showversion));
         addStandardTaglet(
-                new SimpleTaglet(AUTHOR.tagName, resources.getText("doclet.Author"),
+                new SimpleTaglet(AUTHOR, resources.getText("doclet.Author"),
                     EnumSet.of(Location.OVERVIEW, Location.MODULE, Location.PACKAGE, Location.TYPE), showauthor));
         addStandardTaglet(
-                new SimpleTaglet(SERIAL_DATA.tagName, resources.getText("doclet.SerialData"),
+                new SimpleTaglet(SERIAL_DATA, resources.getText("doclet.SerialData"),
                     EnumSet.noneOf(Location.class)));
         addStandardTaglet(
-                new SimpleTaglet(HIDDEN.tagName, null,
+                new SimpleTaglet(HIDDEN, null,
                     EnumSet.of(Location.TYPE, Location.METHOD, Location.FIELD)));
 
         // This appears to be a default custom (non-standard) taglet
@@ -660,15 +660,15 @@ public class TagletManager {
         // Keep track of the names of standard tags for error checking purposes.
         // The following are not handled above.
         addStandardTaglet(new DeprecatedTaglet());
-        addStandardTaglet(new BaseTaglet(LINK.tagName, true, EnumSet.allOf(Location.class)));
-        addStandardTaglet(new BaseTaglet(LINK_PLAIN.tagName, true, EnumSet.allOf(Location.class)));
-        addStandardTaglet(new BaseTaglet(USES.tagName, false, EnumSet.of(Location.MODULE)));
-        addStandardTaglet(new BaseTaglet(PROVIDES.tagName, false, EnumSet.of(Location.MODULE)));
+        addStandardTaglet(new BaseTaglet(LINK, true, EnumSet.allOf(Location.class)));
+        addStandardTaglet(new BaseTaglet(LINK_PLAIN, true, EnumSet.allOf(Location.class)));
+        addStandardTaglet(new BaseTaglet(USES, false, EnumSet.of(Location.MODULE)));
+        addStandardTaglet(new BaseTaglet(PROVIDES, false, EnumSet.of(Location.MODULE)));
         addStandardTaglet(
-                new SimpleTaglet(SERIAL.tagName, null,
+                new SimpleTaglet(SERIAL, null,
                     EnumSet.of(Location.PACKAGE, Location.TYPE, Location.FIELD)));
         addStandardTaglet(
-                new SimpleTaglet(SERIAL_FIELD.tagName, null, EnumSet.of(Location.FIELD)));
+                new SimpleTaglet(SERIAL_FIELD, null, EnumSet.of(Location.FIELD)));
     }
 
     /**

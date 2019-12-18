@@ -28,10 +28,9 @@ package jdk.javadoc.internal.doclets.toolkit.taglets;
 import java.util.EnumSet;
 import javax.lang.model.element.Element;
 
+import com.sun.source.doctree.DocTree;
 import jdk.javadoc.doclet.Taglet.Location;
 import jdk.javadoc.internal.doclets.toolkit.Content;
-
-import static com.sun.source.doctree.DocTree.Kind.DEPRECATED;
 
 /**
  * A taglet that represents the @deprecated tag.
@@ -45,7 +44,7 @@ import static com.sun.source.doctree.DocTree.Kind.DEPRECATED;
 public class DeprecatedTaglet extends BaseTaglet {
 
     public DeprecatedTaglet() {
-        super(DEPRECATED.tagName, false,
+        super(DocTree.Kind.DEPRECATED, false,
                 EnumSet.of(Location.MODULE, Location.TYPE, Location.CONSTRUCTOR, Location.METHOD, Location.FIELD));
     }
 

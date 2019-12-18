@@ -39,8 +39,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocFinder;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFinder.Input;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
-import static com.sun.source.doctree.DocTree.Kind.INHERIT_DOC;
-
 /**
  * An inline Taglet representing the {@code inheritDoc} tag. This tag should only
  * be used with a method.  It is used to inherit documentation from overridden
@@ -58,7 +56,7 @@ public class InheritDocTaglet extends BaseTaglet {
      * Construct a new InheritDocTaglet.
      */
     public InheritDocTaglet () {
-        super(INHERIT_DOC.tagName, true, EnumSet.of(Location.TYPE, Location.METHOD));
+        super(DocTree.Kind.INHERIT_DOC, true, EnumSet.of(Location.TYPE, Location.METHOD));
     }
 
     /**
@@ -114,7 +112,7 @@ public class InheritDocTaglet extends BaseTaglet {
 
     @Override
     public Content getTagletOutput(Element e, DocTree tag, TagletWriter tagletWriter) {
-        DocTree inheritTag = (tag.getKind() == INHERIT_DOC) ? null : tag;
+        DocTree inheritTag = (tag.getKind() == DocTree.Kind.INHERIT_DOC) ? null : tag;
         return retrieveInheritedDocumentation(tagletWriter, e,
                 inheritTag, tagletWriter.isFirstSentence);
     }

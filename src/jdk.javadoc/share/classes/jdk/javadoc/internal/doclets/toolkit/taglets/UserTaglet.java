@@ -143,7 +143,7 @@ public class UserTaglet implements Taglet {
     public Content getTagletOutput(Element holder, TagletWriter writer) {
         Content output = writer.getOutputInstance();
         Utils utils = writer.configuration().utils;
-        List<? extends DocTree> tags = utils.getBlockTags(holder, getName());
+        List<? extends DocTree> tags = utils.getBlockTags(holder, this);
         if (!tags.isEmpty()) {
             String tagString = userTaglet.toString(tags, holder);
             if (tagString != null) {
