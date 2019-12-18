@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
 #include "jdk_internal_reflect_Reflection.h"
 
 JNIEXPORT jclass JNICALL
-Java_jdk_internal_reflect_Reflection_getCallerClass__(JNIEnv *env, jclass unused)
+Java_jdk_internal_reflect_Reflection_getCallerClass(JNIEnv *env, jclass unused)
 {
     return JVM_GetCallerClass(env);
 }
