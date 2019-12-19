@@ -72,6 +72,7 @@ import jdk.vm.ci.code.StackSlot;
 import jdk.vm.ci.code.TargetDescription;
 import jdk.vm.ci.code.site.ConstantReference;
 import jdk.vm.ci.code.site.DataSectionReference;
+import jdk.vm.ci.code.site.Infopoint;
 import jdk.vm.ci.code.site.InfopointReason;
 import jdk.vm.ci.code.site.Mark;
 import jdk.vm.ci.meta.Constant;
@@ -293,6 +294,16 @@ public class CompilationResultBuilder {
     public void recordImplicitException(int pcOffset, LIRFrameState info) {
         compilationResult.recordInfopoint(pcOffset, info.debugInfo(), InfopointReason.IMPLICIT_EXCEPTION);
         assert info.exceptionEdge == null;
+    }
+
+    public boolean isImplicitExceptionExist(int pcOffset) {
+        List<Infopoint> infopoints = compilationResult.getInfopoints();
+        for (Infopoint infopoint : infopoints) {
+            if (infopoint.pcOffset == pcOffset && infopoint.reason == InfopointReason.IMPLICIT_EXCEPTION) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public void recordDirectCall(int posBefore, int posAfter, InvokeTarget callTarget, LIRFrameState info) {

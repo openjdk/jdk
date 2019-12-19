@@ -110,7 +110,7 @@ public class VerifyDebugUsage extends VerifyPhase<CoreProviders> {
         }
     }
 
-    private void verifyParameters(MethodCallTargetNode callTarget, StructuredGraph callerGraph, NodeInputList<? extends ValueNode> args, ResolvedJavaType stringType, int startArgIdx) {
+    protected void verifyParameters(MethodCallTargetNode callTarget, StructuredGraph callerGraph, NodeInputList<? extends ValueNode> args, ResolvedJavaType stringType, int startArgIdx) {
         if (callTarget.targetMethod().isVarArgs() && args.get(args.count() - 1) instanceof NewArrayNode) {
             // unpack the arguments to the var args
             List<ValueNode> unpacked = new ArrayList<>(args.snapshot());

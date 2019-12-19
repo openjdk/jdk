@@ -1302,13 +1302,23 @@ public abstract class AArch64Assembler extends Assembler {
     }
 
     /**
+     * Insert ldp/stp at the specified position.
+     */
+    protected void insertLdpStp(int size, Instruction instr, Register rt, Register rt2, Register base, int offset, int position) {
+        InstructionType type = generalFromSize(size);
+        int scaledOffset = maskField(7, offset);
+        int memop = type.encoding | instr.encoding | scaledOffset << LoadStorePairImm7Offset | rt2(rt2) | rn(base) | rt(rt);
+        emitInt(memop | LoadStorePairOp | (0b010 << 23), position);
+    }
+
+    /**
      * Load Pair of Registers calculates an address from a base register value and an immediate
      * offset, and stores two 32-bit words or two 64-bit doublewords to the calculated address, from
      * two registers.
      */
     public void ldp(int size, Register rt, Register rt2, AArch64Address address) {
         assert size == 32 || size == 64;
-        loadStorePairInstruction(LDP, rt, rt2, address, generalFromSize(size));
+        loadStorePairInstruction(size, LDP, rt, rt2, address);
     }
 
     /**
@@ -1318,15 +1328,24 @@ public abstract class AArch64Assembler extends Assembler {
      */
     public void stp(int size, Register rt, Register rt2, AArch64Address address) {
         assert size == 32 || size == 64;
-        loadStorePairInstruction(STP, rt, rt2, address, generalFromSize(size));
+        loadStorePairInstruction(size, STP, rt, rt2, address);
     }
 
-    private void loadStorePairInstruction(Instruction instr, Register rt, Register rt2, AArch64Address address, InstructionType type) {
-        int scaledOffset = maskField(7, address.getImmediateRaw());  // LDP/STP use a 7-bit scaled
-                                                                     // offset
+    private void loadStorePairInstruction(int size, Instruction instr, Register rt, Register rt2, AArch64Address address) {
+        InstructionType type = generalFromSize(size);
+        // LDP/STP uses a 7-bit scaled offset
+        int offset = address.getImmediateRaw();
+        if (address.getAddressingMode() == AddressingMode.IMMEDIATE_UNSCALED) {
+            int sizeInBytes = size / Byte.SIZE;
+            long mask = sizeInBytes - 1;
+            assert (offset & mask) == 0 : "LDP/STP only supports aligned offset.";
+            offset = offset / sizeInBytes;
+        }
+        int scaledOffset = maskField(7, offset);
         int memop = type.encoding | instr.encoding | scaledOffset << LoadStorePairImm7Offset | rt2(rt2) | rn(address.getBase()) | rt(rt);
         switch (address.getAddressingMode()) {
             case IMMEDIATE_SCALED:
+            case IMMEDIATE_UNSCALED:
                 emitInt(memop | LoadStorePairOp | (0b010 << 23));
                 break;
             case IMMEDIATE_POST_INDEXED:

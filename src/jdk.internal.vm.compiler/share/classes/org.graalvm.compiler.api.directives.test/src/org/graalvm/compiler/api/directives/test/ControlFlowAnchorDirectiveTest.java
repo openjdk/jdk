@@ -33,9 +33,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import org.junit.Assert;
-import org.junit.Test;
-
 import org.graalvm.compiler.api.directives.GraalDirectives;
 import org.graalvm.compiler.core.test.GraalCompilerTest;
 import org.graalvm.compiler.graph.Node;
@@ -46,11 +43,11 @@ import org.graalvm.compiler.nodes.ReturnNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
 import org.graalvm.compiler.nodes.debug.ControlFlowAnchorNode;
+import org.graalvm.compiler.phases.OptimisticOptimizations;
+import org.junit.Assert;
+import org.junit.Test;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
-import org.graalvm.compiler.phases.OptimisticOptimizations;
-import org.graalvm.compiler.phases.OptimisticOptimizations.Optimization;
-import org.graalvm.compiler.phases.tiers.HighTierContext;
 
 public class ControlFlowAnchorDirectiveTest extends GraalCompilerTest {
 
@@ -244,8 +241,8 @@ public class ControlFlowAnchorDirectiveTest extends GraalCompilerTest {
     }
 
     @Override
-    protected HighTierContext getDefaultHighTierContext() {
-        return new HighTierContext(getProviders(), getDefaultGraphBuilderSuite(), OptimisticOptimizations.ALL.remove(Optimization.RemoveNeverExecutedCode));
+    protected OptimisticOptimizations getOptimisticOptimizations() {
+        return OptimisticOptimizations.ALL.remove(OptimisticOptimizations.Optimization.RemoveNeverExecutedCode);
     }
 
     @Override

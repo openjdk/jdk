@@ -31,6 +31,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -43,6 +44,7 @@ import jdk.tools.jaotc.binformat.pecoff.JPECoffRelocObject;
 import org.graalvm.compiler.hotspot.GraalHotSpotVMConfig;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration;
 import org.graalvm.compiler.options.OptionValues;
+import org.graalvm.compiler.serviceprovider.JavaVersionUtil;
 
 /**
  * A format-agnostic container class that holds various components of a binary.
@@ -66,6 +68,8 @@ public final class BinaryContainer implements SymbolTable {
     private final int codeSegmentSize;
 
     private final int codeEntryAlignment;
+
+    private final boolean threadLocalHandshakes;
 
     /**
      * Container holding code bits and any other related information.
@@ -292,6 +296,8 @@ public final class BinaryContainer implements SymbolTable {
 
         this.codeEntryAlignment = graalHotSpotVMConfig.codeEntryAlignment;
 
+        this.threadLocalHandshakes = graalHotSpotVMConfig.threadLocalHandshakes;
+
         // Section unique name is limited to 8 characters due to limitation on Windows.
         // Name could be longer but only first 8 characters are stored on Windows.
 
@@ -349,6 +355,12 @@ public final class BinaryContainer implements SymbolTable {
         };
         // @formatter:on
         // @Checkstyle: resume
+
+        if (JavaVersionUtil.JAVA_SPEC < 14) {
+            // See JDK-8220049. Thread local handshakes are on by default since JDK14, the command line option has been removed.
+            booleanFlags = Arrays.copyOf(booleanFlags, booleanFlags.length + 1);
+            booleanFlags[booleanFlags.length - 1] = graalHotSpotVMConfig.threadLocalHandshakes;
+        }
 
         byte[] booleanFlagsAsBytes = flagsToByteArray(booleanFlags);
         int size0 = configContainer.getByteStreamSize();
@@ -447,6 +459,10 @@ public final class BinaryContainer implements SymbolTable {
 
     public int getCodeEntryAlignment() {
         return codeEntryAlignment;
+    }
+
+    public boolean getThreadLocalHandshakes() {
+        return threadLocalHandshakes;
     }
 
     /**

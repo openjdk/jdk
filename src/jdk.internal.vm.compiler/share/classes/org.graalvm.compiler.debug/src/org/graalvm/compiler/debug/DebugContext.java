@@ -53,6 +53,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Formatter;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.SortedMap;
@@ -2159,6 +2160,18 @@ public final class DebugContext implements AutoCloseable {
             out.printf("%-" + String.valueOf(maxKeyWidth) + "s = %20s%n", e.getKey(), e.getValue());
         }
         out.println();
+    }
+
+    public Map<MetricKey, Long> getMetricsSnapshot() {
+        Map<MetricKey, Long> res = new HashMap<>();
+        for (MetricKey key : KeyRegistry.getKeys()) {
+            int index = ((AbstractKey) key).getIndex();
+            if (index < metricValues.length && metricValues[index] != 0) {
+                long value = metricValues[index];
+                res.put(key, value);
+            }
+        }
+        return res;
     }
 
     @SuppressWarnings({"unused", "unchecked"})
