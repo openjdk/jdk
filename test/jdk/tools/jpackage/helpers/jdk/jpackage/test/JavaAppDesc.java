@@ -40,8 +40,8 @@ public final class JavaAppDesc {
         return this;
     }
 
-    public JavaAppDesc setJarFileName(String v) {
-        jarFileName = v;
+    public JavaAppDesc setBundleFileName(String v) {
+        bundleFileName = v;
         return this;
     }
 
@@ -50,8 +50,8 @@ public final class JavaAppDesc {
         return this;
     }
 
-    public JavaAppDesc setJarWithMainClass(boolean v) {
-        jarWithMainClass = v;
+    public JavaAppDesc setWithMainClass(boolean v) {
+        withMainClass = v;
         return this;
     }
 
@@ -77,22 +77,36 @@ public final class JavaAppDesc {
     }
 
     public String jarFileName() {
-        return jarFileName;
+        if (bundleFileName != null && bundleFileName.endsWith(".jar")) {
+            return bundleFileName;
+        }
+        return null;
+    }
+
+    public String jmodFileName() {
+        if (bundleFileName != null && bundleFileName.endsWith(".jmod")) {
+            return bundleFileName;
+        }
+        return null;
+    }
+
+    public boolean isWithBundleFileName() {
+        return bundleFileName != null;
     }
 
     public String moduleVersion() {
         return moduleVersion;
     }
 
-    public boolean jarWithMainClass() {
-        return jarWithMainClass;
+    public boolean isWithMainClass() {
+        return withMainClass;
     }
 
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        if (jarFileName != null) {
-            sb.append(jarFileName).append(':');
+        if (bundleFileName != null) {
+            sb.append(bundleFileName).append(':');
         }
         if (moduleName != null) {
             sb.append(moduleName).append('/');
@@ -100,7 +114,7 @@ public final class JavaAppDesc {
         if (qualifiedClassName != null) {
             sb.append(qualifiedClassName);
         }
-        if (jarWithMainClass) {
+        if (withMainClass) {
             sb.append('!');
         }
         if (moduleVersion != null) {
@@ -113,13 +127,18 @@ public final class JavaAppDesc {
      * Create Java application description form encoded string value.
      *
      * Syntax of encoded Java application description is
-     * [jar_file:][module_name/]qualified_class_name[!][@module_version].
+     * [(jar_file|jmods_file):][module_name/]qualified_class_name[!][@module_version].
      *
      * E.g.: `duke.jar:com.other/com.other.foo.bar.Buz!@3.7` encodes modular
      * application. Module name is `com.other`. Main class is
      * `com.other.foo.bar.Buz`. Module version is `3.7`. Application will be
      * compiled and packed in `duke.jar` jar file. jar command will set module
      * version (3.7) and main class (Buz) attributes in the jar file.
+     *
+     * E.g.: `bar.jmod:com.another/com.another.One` encodes modular
+     * application. Module name is `com.another`. Main class is
+     * `com.another.One`. Application will be
+     * compiled and packed in `bar.jmod` jmod file.
      *
      * E.g.: `Ciao` encodes non-modular `Ciao` class in the default package.
      * jar command will not put main class attribute in the jar file.
@@ -128,7 +147,7 @@ public final class JavaAppDesc {
      * @param cmd jpackage command to configure
      * @param javaAppDesc encoded Java application description
      */
-    public static JavaAppDesc parse(String javaAppDesc) {
+    public static JavaAppDesc parse(final String javaAppDesc) {
         JavaAppDesc desc = HelloApp.createDefaltAppDesc();
 
         if (javaAppDesc == null) {
@@ -138,7 +157,7 @@ public final class JavaAppDesc {
         String moduleNameAndOther = Functional.identity(() -> {
             String[] components = javaAppDesc.split(":", 2);
             if (components.length == 2) {
-                desc.setJarFileName(components[0]);
+                desc.setBundleFileName(components[0]);
             }
             return components[components.length - 1];
         }).get();
@@ -156,7 +175,7 @@ public final class JavaAppDesc {
             if (components[0].endsWith("!")) {
                 components[0] = components[0].substring(0,
                         components[0].length() - 1);
-                desc.setJarWithMainClass(true);
+                desc.setWithMainClass(true);
             }
             desc.setClassName(components[0]);
             if (components.length == 2) {
@@ -164,12 +183,18 @@ public final class JavaAppDesc {
             }
         }).run();
 
+        if (desc.jmodFileName() != null && desc.moduleName() == null) {
+            throw new IllegalArgumentException(String.format(
+                    "Java Application Descriptor [%s] is invalid. Non modular app can't be packed in .jmod bundle",
+                    javaAppDesc));
+        }
+
         return desc;
     }
 
     private String qualifiedClassName;
     private String moduleName;
-    private String jarFileName;
+    private String bundleFileName;
     private String moduleVersion;
-    private boolean jarWithMainClass;
+    private boolean withMainClass;
 }

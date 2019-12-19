@@ -181,7 +181,7 @@ public class AdditionalLaunchersTest {
 
         new AdditionalLauncher("ModularAppLauncher")
         .addRawProperties(Map.entry("module", JavaAppDesc.parse(
-                modularAppDesc.toString()).setJarFileName(null).toString()))
+                modularAppDesc.toString()).setBundleFileName(null).toString()))
         .addRawProperties(Map.entry("main-jar", ""))
         .applyTo(cmd);
 

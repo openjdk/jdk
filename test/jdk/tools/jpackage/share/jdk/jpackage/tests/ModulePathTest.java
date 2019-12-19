@@ -32,10 +32,8 @@ import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import jdk.jpackage.test.Annotations.Parameters;
-import jdk.jpackage.test.Annotations.Test;
-import jdk.jpackage.test.JPackageCommand;
-import jdk.jpackage.test.TKit;
+import jdk.jpackage.test.Annotations.*;
+import jdk.jpackage.test.*;
 
 
 /*
@@ -72,12 +70,26 @@ public final class ModulePathTest {
     }
 
     @Test
-    public void test() throws IOException {
-        final String moduleName = "com.foo";
-        JPackageCommand cmd = JPackageCommand.helloAppImage(
-                "benvenuto.jar:" + moduleName + "/com.foo.Hello");
-        // Build app jar file.
-        cmd.executePrerequisiteActions();
+    @Parameter("benvenuto.jar:com.jar.foo/com.jar.foo.Hello")
+    @Parameter("benvenuto.jmod:com.jmod.foo/com.jmod.foo.JModHello")
+    public void test(String javaAppDesc) throws IOException {
+        JavaAppDesc appDesc = JavaAppDesc.parse(javaAppDesc);
+
+        Path goodModulePath = TKit.createTempDirectory("modules");
+
+        Path appBundle = HelloApp.createBundle(appDesc, goodModulePath);
+
+        JPackageCommand cmd = new JPackageCommand()
+                .setArgumentValue("--dest", TKit.workDir().resolve("output"))
+                .setDefaultAppName()
+                .setPackageType(PackageType.IMAGE);
+
+        if (TKit.isWindows()) {
+            cmd.addArguments("--win-console");
+        }
+
+        cmd.addArguments("--module", String.join("/", appDesc.moduleName(),
+                appDesc.className()));
 
         // Ignore runtime that can be set for all tests. Usually if default
         // runtime is set, it is fake one to save time on running jlink and
@@ -85,17 +97,12 @@ public final class ModulePathTest {
         // We need proper runtime for this test.
         cmd.ignoreDefaultRuntime(true);
 
-        // --module-path should be set in JPackageCommand.helloAppImage call
-        String goodModulePath = Objects.requireNonNull(cmd.getArgumentValue(
-                "--module-path"));
-        cmd.removeArgumentWithValue("--module-path");
-
         Path emptyDir = TKit.createTempDirectory("empty-dir");
         Path nonExistingDir = TKit.withTempDirectory("non-existing-dir", x -> {});
 
         Function<String, String> substitute = str -> {
             String v = str;
-            v = v.replace(GOOD_PATH, goodModulePath);
+            v = v.replace(GOOD_PATH, goodModulePath.toString());
             v = v.replace(EMPTY_DIR, emptyDir.toString());
             v = v.replace(NON_EXISTING_DIR, nonExistingDir.toString());
             return v;
@@ -116,7 +123,7 @@ public final class ModulePathTest {
                 expectedErrorMessage = "Error: Missing argument: --runtime-image or --module-path";
             } else {
                 expectedErrorMessage = String.format(
-                        "Error: Module %s not found", moduleName);
+                        "Error: Module %s not found", appDesc.moduleName());
             }
 
             List<String> output = cmd

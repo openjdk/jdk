@@ -196,11 +196,20 @@ public final class BasicTest {
     @Test
     // Regular app
     @Parameter("Hello")
-    // Modular app
+    // Modular app in .jar file
     @Parameter("com.other/com.other.Hello")
+    // Modular app in .jmod file
+    @Parameter("hello.jmod:com.other/com.other.Hello")
     public void testApp(String javaAppDesc) {
-        JPackageCommand.helloAppImage(javaAppDesc)
-        .executeAndAssertHelloAppImageCreated();
+        JavaAppDesc appDesc = JavaAppDesc.parse(javaAppDesc);
+        JPackageCommand cmd = JPackageCommand.helloAppImage(appDesc);
+        if (appDesc.jmodFileName() != null) {
+            // .jmod files are not supported at run-time. They should be
+            // bundled in Java run-time with jlink command, so disable
+            // use of external Java run-time if any configured.
+            cmd.ignoreDefaultRuntime(true);
+        }
+        cmd.executeAndAssertHelloAppImageCreated();
     }
 
     @Test

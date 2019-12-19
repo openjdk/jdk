@@ -77,7 +77,7 @@ public final class MainClassTest {
         }
 
         Script withJarMainClass(MainClassType v) {
-            appDesc.setJarWithMainClass(v != NotSet);
+            appDesc.setWithMainClass(v != NotSet);
             jarMainClass = v;
             return this;
         }
@@ -265,9 +265,10 @@ public final class MainClassTest {
                             script.appDesc.classFilePath()));
 
             // Create app's jar file with different main class.
-            var badAppDesc = JavaAppDesc.parse(script.appDesc.toString()).setClassName(
-                    nonExistingMainClass);
-            JPackageCommand.helloAppImage(badAppDesc).executePrerequisiteActions();
+            var badAppDesc = JavaAppDesc
+                    .parse(script.appDesc.toString())
+                    .setClassName(nonExistingMainClass);
+            HelloApp.createBundle(badAppDesc, jarFile.getParent());
 
             // Extract new jar but skip app's class.
             explodeJar(jarFile, workDir,

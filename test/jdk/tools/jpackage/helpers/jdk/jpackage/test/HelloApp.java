@@ -28,10 +28,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import jdk.jpackage.test.Functional.ThrowingFunction;
 import jdk.jpackage.test.Functional.ThrowingSupplier;
 
@@ -113,7 +113,7 @@ public final class HelloApp {
 
     private JarBuilder createJarBuilder() {
         JarBuilder builder = new JarBuilder();
-        if (appDesc.jarWithMainClass()) {
+        if (appDesc.isWithMainClass()) {
             builder.setMainClass(appDesc.className());
         }
         return builder;
@@ -121,7 +121,6 @@ public final class HelloApp {
 
     void addTo(JPackageCommand cmd) {
         final String moduleName = appDesc.moduleName();
-        final String jarFileName = appDesc.jarFileName();
         final String qualifiedClassName = appDesc.className();
 
         if (moduleName != null && appDesc.packageName() == null) {
@@ -129,24 +128,32 @@ public final class HelloApp {
                     "Module [%s] with default package", moduleName));
         }
 
+        Supplier<Path> getModulePath = () -> {
+            // `--module-path` option should be set by the moment
+            // when this action is being executed.
+            return cmd.getArgumentValue("--module-path", cmd::inputDir, Path::of);
+        };
+
         if (moduleName == null && CLASS_NAME.equals(qualifiedClassName)) {
             // Use Hello.java as is.
             cmd.addPrerequisiteAction((self) -> {
-                Path jarFile = self.inputDir().resolve(jarFileName);
+                Path jarFile = self.inputDir().resolve(appDesc.jarFileName());
                 createJarBuilder().setOutputJar(jarFile).addSourceFile(
                         HELLO_JAVA).create();
             });
+        } else if (appDesc.jmodFileName() != null) {
+            // Modular app in .jmod file
+            cmd.addPrerequisiteAction(unused -> {
+                createBundle(appDesc, getModulePath.get());
+            });
         } else {
-            cmd.addPrerequisiteAction((self) -> {
+            // Modular app in .jar file
+            cmd.addPrerequisiteAction(unused -> {
                 final Path jarFile;
                 if (moduleName == null) {
-                    jarFile = self.inputDir().resolve(jarFileName);
+                    jarFile = cmd.inputDir().resolve(appDesc.jarFileName());
                 } else {
-                    // `--module-path` option should be set by the moment
-                    // when this action is being executed.
-                    jarFile = Path.of(self.getArgumentValue("--module-path",
-                            () -> self.inputDir().toString()), jarFileName);
-                    Files.createDirectories(jarFile.getParent());
+                    jarFile = getModulePath.get().resolve(appDesc.jarFileName());
                 }
 
                 TKit.withTempDirectory("src",
@@ -155,7 +162,7 @@ public final class HelloApp {
         }
 
         if (moduleName == null) {
-            cmd.addArguments("--main-jar", jarFileName);
+            cmd.addArguments("--main-jar", appDesc.jarFileName());
             cmd.addArguments("--main-class", qualifiedClassName);
         } else {
             cmd.addArguments("--module-path", TKit.workDir().resolve(
@@ -173,8 +180,7 @@ public final class HelloApp {
     }
 
     static JavaAppDesc createDefaltAppDesc() {
-        return new JavaAppDesc().setClassName(CLASS_NAME).setJarFileName(
-                "hello.jar");
+        return new JavaAppDesc().setClassName(CLASS_NAME).setBundleFileName("hello.jar");
     }
 
     static void verifyOutputFile(Path outputFile, List<String> args,
@@ -203,6 +209,53 @@ public final class HelloApp {
 
         TKit.assertStringListEquals(expected, contents, String.format(
                 "Check contents of [%s] file", outputFile));
+    }
+
+    public static Path createBundle(JavaAppDesc appDesc, Path outputDir) {
+        String jmodFileName = appDesc.jmodFileName();
+        if (jmodFileName != null) {
+            final Path jmodFilePath = outputDir.resolve(jmodFileName);
+            TKit.withTempDirectory("jmod-workdir", jmodWorkDir -> {
+                var jarAppDesc = JavaAppDesc.parse(appDesc.toString())
+                        .setBundleFileName("tmp.jar");
+                Path jarPath = createBundle(jarAppDesc, jmodWorkDir);
+                Executor exec = new Executor()
+                        .setToolProvider(JavaTool.JMOD)
+                        .addArguments("create", "--class-path")
+                        .addArgument(jarPath)
+                        .addArgument(jmodFilePath);
+
+                if (appDesc.isWithMainClass()) {
+                    exec.addArguments("--main-class", appDesc.className());
+                }
+
+                if (appDesc.moduleVersion() != null) {
+                    exec.addArguments("--module-version", appDesc.moduleVersion());
+                }
+
+                Files.createDirectories(jmodFilePath.getParent());
+                exec.execute();
+            });
+
+            return jmodFilePath;
+        }
+
+        final JavaAppDesc jarAppDesc;
+        if (appDesc.isWithBundleFileName()) {
+            jarAppDesc = appDesc;
+        } else {
+            // Create copy of original JavaAppDesc instance.
+            jarAppDesc = JavaAppDesc.parse(appDesc.toString())
+                        .setBundleFileName(createDefaltAppDesc().jarFileName());
+        }
+
+        JPackageCommand
+                .helloAppImage(jarAppDesc)
+                .setArgumentValue("--input", outputDir)
+                .setArgumentValue("--module-path", outputDir)
+                .executePrerequisiteActions();
+
+        return outputDir.resolve(jarAppDesc.jarFileName());
     }
 
     public static void executeLauncherAndVerifyOutput(JPackageCommand cmd,

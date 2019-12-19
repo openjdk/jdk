@@ -309,7 +309,7 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
         return this;
     }
 
-    JPackageCommand setDefaultAppName() {
+    public JPackageCommand setDefaultAppName() {
         return addArguments("--name", TKit.getCurrentDefaultAppName());
     }
 
