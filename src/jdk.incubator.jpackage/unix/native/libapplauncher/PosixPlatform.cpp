@@ -33,7 +33,6 @@
 #include <stdbool.h>
 #include <sys/types.h>
 #include <unistd.h>
-#include <sys/sysctl.h>
 #include <sys/file.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
