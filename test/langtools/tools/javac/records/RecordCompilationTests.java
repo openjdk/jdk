@@ -469,4 +469,32 @@ public class RecordCompilationTests extends CompilationTestCase {
                 }
                 """);
     }
+
+    public void testReceiverParameter() {
+        assertFail("compiler.err.receiver.parameter.not.applicable.constructor.toplevel.class",
+                """
+                record R(int i) {
+                    public R(R this, int i) {
+                        this.i = i;
+                    }
+                }
+                """);
+        assertFail("compiler.err.non-static.cant.be.ref",
+                """
+                class Outer {
+                    record R(int i) {
+                        public R(Outer Outer.this, int i) {
+                            this.i = i;
+                        }
+                    }
+                }
+                """);
+        assertOK(
+                """
+                record R(int i) {
+                    void m(R this) {}
+                    public int i(R this) { return i; }
+                }
+                """);
+    }
 }
