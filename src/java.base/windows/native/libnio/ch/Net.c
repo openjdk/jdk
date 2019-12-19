@@ -25,11 +25,11 @@
 
 #include <windows.h>
 #include <winsock2.h>
+
 #include "jni.h"
 #include "jni_util.h"
 #include "jvm.h"
 #include "jlong.h"
-
 #include "nio.h"
 #include "nio_util.h"
 #include "net_util.h"
@@ -123,6 +123,12 @@ Java_sun_nio_ch_Net_isExclusiveBindAvailable(JNIEnv *env, jclass clazz) {
     return 1;
 }
 
+JNIEXPORT jboolean JNICALL
+Java_sun_nio_ch_Net_shouldSetBothIPv4AndIPv6Options0(JNIEnv* env, jclass cl)
+{
+    /* Set both IPv4 and IPv6 socket options when setting multicast options */
+    return JNI_TRUE;
+}
 
 JNIEXPORT jboolean JNICALL
 Java_sun_nio_ch_Net_canIPv6SocketJoinIPv4Group0(JNIEnv* env, jclass cl)
