@@ -1439,6 +1439,10 @@ static GtkStyleContext* get_style(WidgetType widget_type, const gchar *detail)
                 path = createWidgetPath (fp_gtk_style_context_get_path (widget_context));
                 append_element(path, "paned");
                 append_element(path, "separator");
+            } else if (strcmp(detail, "spinbutton_down") == 0 || strcmp(detail, "spinbutton_up") == 0) {
+                path = createWidgetPath (fp_gtk_style_context_get_path (widget_context));
+                append_element(path, "spinbutton");
+                append_element(path, "button");
             } else {
                 path = createWidgetPath (fp_gtk_style_context_get_path (widget_context));
                 append_element(path, detail);
