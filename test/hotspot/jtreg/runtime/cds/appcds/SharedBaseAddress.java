@@ -41,7 +41,7 @@ public class SharedBaseAddress {
     private static final String[] testTable = {
         "1g", "8g", "64g","512g", "4t",
         "32t", "128t", "0",
-        "1", "64k", "64M"
+        "1", "64k", "64M", "320g"
     };
 
     public static void main(String[] args) throws Exception {

@@ -3904,46 +3904,71 @@ void  MacroAssembler::decode_heap_oop_not_null(Register dst, Register src) {
   }
 }
 
-void MacroAssembler::encode_klass_not_null(Register dst, Register src) {
+MacroAssembler::KlassDecodeMode MacroAssembler::_klass_decode_mode(KlassDecodeNone);
+
+MacroAssembler::KlassDecodeMode MacroAssembler::klass_decode_mode() {
+  assert(UseCompressedClassPointers, "not using compressed class pointers");
+  assert(Metaspace::initialized(), "metaspace not initialized yet");
+
+  if (_klass_decode_mode != KlassDecodeNone) {
+    return _klass_decode_mode;
+  }
+
+  assert(LogKlassAlignmentInBytes == CompressedKlassPointers::shift()
+         || 0 == CompressedKlassPointers::shift(), "decode alg wrong");
+
   if (CompressedKlassPointers::base() == NULL) {
+    return (_klass_decode_mode = KlassDecodeZero);
+  }
+
+  if (operand_valid_for_logical_immediate(
+        /*is32*/false, (uint64_t)CompressedKlassPointers::base())) {
+    const uint64_t range_mask =
+      (1UL << log2_intptr(CompressedKlassPointers::range())) - 1;
+    if (((uint64_t)CompressedKlassPointers::base() & range_mask) == 0) {
+      return (_klass_decode_mode = KlassDecodeXor);
+    }
+  }
+
+  const uint64_t shifted_base =
+    (uint64_t)CompressedKlassPointers::base() >> CompressedKlassPointers::shift();
+  guarantee((shifted_base & 0xffff0000ffffffff) == 0,
+            "compressed class base bad alignment");
+
+  return (_klass_decode_mode = KlassDecodeMovk);
+}
+
+void MacroAssembler::encode_klass_not_null(Register dst, Register src) {
+  switch (klass_decode_mode()) {
+  case KlassDecodeZero:
     if (CompressedKlassPointers::shift() != 0) {
-      assert (LogKlassAlignmentInBytes == CompressedKlassPointers::shift(), "decode alg wrong");
       lsr(dst, src, LogKlassAlignmentInBytes);
     } else {
       if (dst != src) mov(dst, src);
     }
-    return;
-  }
+    break;
 
-  if (use_XOR_for_compressed_class_base) {
+  case KlassDecodeXor:
     if (CompressedKlassPointers::shift() != 0) {
       eor(dst, src, (uint64_t)CompressedKlassPointers::base());
       lsr(dst, dst, LogKlassAlignmentInBytes);
     } else {
       eor(dst, src, (uint64_t)CompressedKlassPointers::base());
     }
-    return;
-  }
+    break;
 
-  if (((uint64_t)CompressedKlassPointers::base() & 0xffffffff) == 0
-      && CompressedKlassPointers::shift() == 0) {
-    movw(dst, src);
-    return;
-  }
+  case KlassDecodeMovk:
+    if (CompressedKlassPointers::shift() != 0) {
+      ubfx(dst, src, LogKlassAlignmentInBytes, 32);
+    } else {
+      movw(dst, src);
+    }
+    break;
 
-#ifdef ASSERT
-  verify_heapbase("MacroAssembler::encode_klass_not_null2: heap base corrupted?");
-#endif
-
-  Register rbase = dst;
-  if (dst == src) rbase = rheapbase;
-  mov(rbase, (uint64_t)CompressedKlassPointers::base());
-  sub(dst, src, rbase);
-  if (CompressedKlassPointers::shift() != 0) {
-    assert (LogKlassAlignmentInBytes == CompressedKlassPointers::shift(), "decode alg wrong");
-    lsr(dst, dst, LogKlassAlignmentInBytes);
+  case KlassDecodeNone:
+    ShouldNotReachHere();
+    break;
   }
-  if (dst == src) reinit_heapbase();
 }
 
 void MacroAssembler::encode_klass_not_null(Register r) {
@@ -3951,49 +3976,44 @@ void MacroAssembler::encode_klass_not_null(Register r) {
 }
 
 void  MacroAssembler::decode_klass_not_null(Register dst, Register src) {
-  Register rbase = dst;
   assert (UseCompressedClassPointers, "should only be used for compressed headers");
 
-  if (CompressedKlassPointers::base() == NULL) {
+  switch (klass_decode_mode()) {
+  case KlassDecodeZero:
     if (CompressedKlassPointers::shift() != 0) {
-      assert(LogKlassAlignmentInBytes == CompressedKlassPointers::shift(), "decode alg wrong");
       lsl(dst, src, LogKlassAlignmentInBytes);
     } else {
       if (dst != src) mov(dst, src);
     }
-    return;
-  }
+    break;
 
-  if (use_XOR_for_compressed_class_base) {
+  case KlassDecodeXor:
     if (CompressedKlassPointers::shift() != 0) {
       lsl(dst, src, LogKlassAlignmentInBytes);
       eor(dst, dst, (uint64_t)CompressedKlassPointers::base());
     } else {
       eor(dst, src, (uint64_t)CompressedKlassPointers::base());
     }
-    return;
+    break;
+
+  case KlassDecodeMovk: {
+    const uint64_t shifted_base =
+      (uint64_t)CompressedKlassPointers::base() >> CompressedKlassPointers::shift();
+
+    if (dst != src) movw(dst, src);
+    movk(dst, shifted_base >> 32, 32);
+
+    if (CompressedKlassPointers::shift() != 0) {
+      lsl(dst, dst, LogKlassAlignmentInBytes);
+    }
+
+    break;
   }
 
-  if (((uint64_t)CompressedKlassPointers::base() & 0xffffffff) == 0
-      && CompressedKlassPointers::shift() == 0) {
-    if (dst != src)
-      movw(dst, src);
-    movk(dst, (uint64_t)CompressedKlassPointers::base() >> 32, 32);
-    return;
+  case KlassDecodeNone:
+    ShouldNotReachHere();
+    break;
   }
-
-  // Cannot assert, unverified entry point counts instructions (see .ad file)
-  // vtableStubs also counts instructions in pd_code_size_limit.
-  // Also do not verify_oop as this is called by verify_oop.
-  if (dst == src) rbase = rheapbase;
-  mov(rbase, (uint64_t)CompressedKlassPointers::base());
-  if (CompressedKlassPointers::shift() != 0) {
-    assert(LogKlassAlignmentInBytes == CompressedKlassPointers::shift(), "decode alg wrong");
-    add(dst, rbase, src, Assembler::LSL, LogKlassAlignmentInBytes);
-  } else {
-    add(dst, rbase, src);
-  }
-  if (dst == src) reinit_heapbase();
 }
 
 void  MacroAssembler::decode_klass_not_null(Register r) {

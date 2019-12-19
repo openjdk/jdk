@@ -59,4 +59,6 @@ const bool CCallingConventionRequiresIntsAsLongs = false;
 
 #define THREAD_LOCAL_POLL
 
+#define PREFERRED_METASPACE_ALIGNMENT
+
 #endif // CPU_AARCH64_GLOBALDEFINITIONS_AARCH64_HPP
