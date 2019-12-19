@@ -68,10 +68,7 @@ public:
   virtual ~GrowableElement() {}
   virtual address getCacheValue()          =0;
   virtual bool equals(GrowableElement* e)  =0;
-  virtual bool lessThan(GrowableElement *e)=0;
   virtual GrowableElement *clone()         =0;
-  virtual void oops_do(OopClosure* f)      =0;
-  virtual void metadata_do(void f(Metadata*)) =0;
 };
 
 class GrowableCache {
@@ -110,16 +107,10 @@ public:
   int find(GrowableElement* e);
   // append a copy of the element to the end of the collection, notify listener
   void append(GrowableElement* e);
-  // insert a copy of the element using lessthan(), notify listener
-  void insert(GrowableElement* e);
   // remove the element at index, notify listener
   void remove (int index);
   // clear out all elements and release all heap space, notify listener
   void clear();
-  // apply f to every element and update the cache
-  void oops_do(OopClosure* f);
-  // walk metadata to preserve for RedefineClasses
-  void metadata_do(void f(Metadata*));
 };
 
 
@@ -141,7 +132,7 @@ public:
   ~JvmtiBreakpointCache() {}
 
   void initialize(void *this_obj, void listener_fun(void *, address*) ) {
-    _cache.initialize(this_obj,listener_fun);
+    _cache.initialize(this_obj, listener_fun);
   }
 
   int length()                          { return _cache.length(); }
@@ -149,9 +140,6 @@ public:
   int find(JvmtiBreakpoint& e)          { return _cache.find((GrowableElement *) &e); }
   void append(JvmtiBreakpoint& e)       { _cache.append((GrowableElement *) &e); }
   void remove (int index)               { _cache.remove(index); }
-  void clear()                          { _cache.clear(); }
-  void oops_do(OopClosure* f)           { _cache.oops_do(f); }
-  void metadata_do(void f(Metadata*))   { _cache.metadata_do(f); }
 };
 
 
@@ -171,16 +159,14 @@ class JvmtiBreakpoint : public GrowableElement {
 private:
   Method*               _method;
   int                   _bci;
-  Bytecodes::Code       _orig_bytecode;
-  oop                   _class_holder;  // keeps _method memory from being deallocated
+  oop*                  _class_holder;  // keeps _method memory from being deallocated
 
 public:
-  JvmtiBreakpoint();
+  JvmtiBreakpoint() : _method(NULL), _bci(0), _class_holder(NULL) {}
   JvmtiBreakpoint(Method* m_method, jlocation location);
+  virtual ~JvmtiBreakpoint();
   bool equals(JvmtiBreakpoint& bp);
-  bool lessThan(JvmtiBreakpoint &bp);
   void copy(JvmtiBreakpoint& bp);
-  bool is_valid();
   address getBcp() const;
   void each_method_version_do(method_action meth_act);
   void set();
@@ -191,17 +177,7 @@ public:
 
   // GrowableElement implementation
   address getCacheValue()         { return getBcp(); }
-  bool lessThan(GrowableElement* e) { Unimplemented(); return false; }
   bool equals(GrowableElement* e) { return equals((JvmtiBreakpoint&) *e); }
-  void oops_do(OopClosure* f)     {
-    // Mark the method loader as live so the Method* class loader doesn't get
-    // unloaded and Method* memory reclaimed.
-    f->do_oop(&_class_holder);
-  }
-  void metadata_do(void f(Metadata*)) {
-    // walk metadata to preserve for RedefineClasses
-    f(_method);
-  }
 
   GrowableElement *clone()        {
     JvmtiBreakpoint *bp = new JvmtiBreakpoint();
@@ -240,15 +216,11 @@ private:
   void set_at_safepoint(JvmtiBreakpoint& bp);
   void clear_at_safepoint(JvmtiBreakpoint& bp);
 
-  static void do_element(GrowableElement *e);
-
 public:
   JvmtiBreakpoints(void listener_fun(void *, address *));
   ~JvmtiBreakpoints();
 
   int length();
-  void oops_do(OopClosure* f);
-  void metadata_do(void f(Metadata*));
   void print();
 
   int  set(JvmtiBreakpoint& bp);
@@ -281,7 +253,6 @@ private:
   // It exists only to make is_breakpoint fast.
   static address          *_breakpoint_list;
   static inline void set_breakpoint_list(address *breakpoint_list) { _breakpoint_list = breakpoint_list; }
-  static inline address *get_breakpoint_list()                     { return _breakpoint_list; }
 
   // Listener for the GrowableCache in _jvmti_breakpoints, updates _breakpoint_list.
   static void listener_fun(void *this_obj, address *cache);
@@ -292,9 +263,6 @@ public:
 
   // lazily create _jvmti_breakpoints and _breakpoint_list
   static JvmtiBreakpoints& get_jvmti_breakpoints();
-
-  static void oops_do(OopClosure* f);
-  static void metadata_do(void f(Metadata*)) NOT_JVMTI_RETURN;
 };
 
 ///////////////////////////////////////////////////////////////
@@ -326,8 +294,6 @@ public:
 
   VMOp_Type type() const { return VMOp_ChangeBreakpoints; }
   void doit();
-  void oops_do(OopClosure* f);
-  void metadata_do(void f(Metadata*));
 };
 
 
