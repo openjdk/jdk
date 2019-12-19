@@ -123,7 +123,7 @@ public class SyncResolverImpl extends CachedRowSetImpl implements SyncResolver {
 
     /**
      * Retrieves the conflict status of the current row of this
-     * {@code SyncResolver}, which indicates the operationthe {@code RowSet}
+     * {@code SyncResolver}, which indicates the operation the {@code RowSet}
      * object was attempting when the conflict occurred.
      *
      * @return one of the following constants:
@@ -132,7 +132,8 @@ public class SyncResolverImpl extends CachedRowSetImpl implements SyncResolver {
      *         {@code SyncResolver.INSERT_ROW_CONFLICT}
      */
     public int getStatus() {
-        return ((Integer)stats.get(rowStatus-1)).intValue();
+        return stats != null ? (Integer) stats.get(rowStatus - 1) :
+                SyncResolver.NO_ROW_CONFLICT;
     }
 
     /**
@@ -148,6 +149,8 @@ public class SyncResolverImpl extends CachedRowSetImpl implements SyncResolver {
              return crsRes.getObject(index);
         } catch(SQLException sqle) {
             throw new SQLException(sqle.getMessage());
+        } catch (Exception e ) {
+            throw new SQLException("Problem obtaining conflicted value!", e);
         }
     }
 
@@ -164,6 +167,8 @@ public class SyncResolverImpl extends CachedRowSetImpl implements SyncResolver {
              return crsRes.getObject(columnName);
         } catch(SQLException sqle) {
              throw new SQLException(sqle.getMessage());
+        } catch (Exception e ) {
+            throw new SQLException("Problem obtaining conflicted value!", e);
         }
     }
 
@@ -189,8 +194,9 @@ public class SyncResolverImpl extends CachedRowSetImpl implements SyncResolver {
          * then sync back immediately.
          **/
         try {
+            ResultSetMetaData rsmd = crsSync.getMetaData();
             // check whether the index is in range
-            if(index<=0 || index > crsSync.getMetaData().getColumnCount() ) {
+            if(index<=0 || rsmd == null || index > rsmd.getColumnCount() ) {
                 throw new SQLException(resBundle.handleGetObject("syncrsimpl.indexval").toString()+ index);
             }
              // check whether index col is in conflict
@@ -393,8 +399,8 @@ public class SyncResolverImpl extends CachedRowSetImpl implements SyncResolver {
      * @param obj an {@code Object} that is the value to be set in the data source
      */
     public void setResolvedValue(String columnName, Object obj) throws SQLException {
-       // modify method to throw SQLException in spec
-       // %%% Missing implementation!
+        // %%% Missing implementation!
+        throw new SQLException("Method not supported");
     }
 
     /**
@@ -503,7 +509,7 @@ public class SyncResolverImpl extends CachedRowSetImpl implements SyncResolver {
      *     is TYPE_FORWARD_ONLY
      */
    public boolean previousConflict() throws SQLException {
-       throw new UnsupportedOperationException();
+       return false;
    }
 
     //-----------------------------------------------------------------------
