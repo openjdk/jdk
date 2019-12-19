@@ -34,7 +34,7 @@ java/util/concurrent/tck/JSR166TestCase.java                            8187486 
 
 java/lang/ref/OOMEInReferenceHandler.java                               8196611   generic-all
 java/lang/ref/SoftReference/Pin.java                                    8196611   generic-all
-java/lang/Runtime/exec/LotsOfOutput.java                                8196611   generic-all
+java/lang/RuntimeTests/exec/LotsOfOutput.java                           8196611   generic-all
 java/util/concurrent/ScheduledThreadPoolExecutor/BasicCancelTest.java   8196611   generic-all
 com/sun/crypto/provider/KeyFactory/TestProviderLeak.java                8196611   generic-all
 
