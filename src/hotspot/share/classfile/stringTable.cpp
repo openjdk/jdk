@@ -383,11 +383,6 @@ oop StringTable::do_intern(Handle string_or_null_h, const jchar* name,
   } while(true);
 }
 
-void StringTable::oops_do(OopClosure* f) {
-  assert(f != NULL, "No closure");
-  OopStorageSet::string_table_weak()->oops_do(f);
-}
-
 // Concurrent work
 void StringTable::grow(JavaThread* jt) {
   StringTableHash::GrowTask gt(_local_table);

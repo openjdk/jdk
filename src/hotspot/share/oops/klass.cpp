@@ -552,7 +552,7 @@ void Klass::restore_unshareable_info(ClassLoaderData* loader_data, Handle protec
   assert(is_shared(), "must be set");
   JFR_ONLY(RESTORE_ID(this);)
   if (log_is_enabled(Trace, cds, unshareable)) {
-    ResourceMark rm;
+    ResourceMark rm(THREAD);
     log_trace(cds, unshareable)("restore: %s", external_name());
   }
 
@@ -585,7 +585,7 @@ void Klass::restore_unshareable_info(ClassLoaderData* loader_data, Handle protec
   Handle module_handle(THREAD, ((module_entry != NULL) ? module_entry->module() : (oop)NULL));
 
   if (this->has_raw_archived_mirror()) {
-    ResourceMark rm;
+    ResourceMark rm(THREAD);
     log_debug(cds, mirror)("%s has raw archived mirror", external_name());
     if (HeapShared::open_archive_heap_region_mapped()) {
       bool present = java_lang_Class::restore_archived_mirror(this, loader, module_handle,

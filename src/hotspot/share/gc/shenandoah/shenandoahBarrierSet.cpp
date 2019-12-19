@@ -252,9 +252,7 @@ oop ShenandoahBarrierSet::load_reference_barrier_native(oop obj, oop* load_addr)
 }
 
 oop ShenandoahBarrierSet::load_reference_barrier_native(oop obj, narrowOop* load_addr) {
-  // Assumption: narrow oop version should not be used anywhere.
-  ShouldNotReachHere();
-  return NULL;
+  return load_reference_barrier_native_impl(obj, load_addr);
 }
 
 template <class T>
@@ -264,7 +262,7 @@ oop ShenandoahBarrierSet::load_reference_barrier_native_impl(oop obj, T* load_ad
   }
 
   ShenandoahMarkingContext* const marking_context = _heap->marking_context();
-  if (_heap->is_evacuation_in_progress() && !marking_context->is_marked(obj)) {
+  if (_heap->is_concurrent_root_in_progress() && !marking_context->is_marked(obj)) {
     Thread* thr = Thread::current();
     if (thr->is_Java_thread()) {
       return NULL;

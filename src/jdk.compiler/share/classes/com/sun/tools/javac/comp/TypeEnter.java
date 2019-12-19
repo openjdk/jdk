@@ -884,6 +884,24 @@ public class TypeEnter implements Completer {
                 completing = prevCompleting;
             }
         }
+
+        void enterThisAndSuper(ClassSymbol sym, Env<AttrContext> env) {
+            ClassType ct = (ClassType)sym.type;
+            // enter symbols for 'this' into current scope.
+            VarSymbol thisSym =
+                    new VarSymbol(FINAL | HASINIT, names._this, sym.type, sym);
+            thisSym.pos = Position.FIRSTPOS;
+            env.info.scope.enter(thisSym);
+            // if this is a class, enter symbol for 'super' into current scope.
+            if ((sym.flags_field & INTERFACE) == 0 &&
+                    ct.supertype_field.hasTag(CLASS)) {
+                VarSymbol superSym =
+                        new VarSymbol(FINAL | HASINIT, names._super,
+                                ct.supertype_field, sym);
+                superSym.pos = Position.FIRSTPOS;
+                env.info.scope.enter(superSym);
+            }
+        }
     }
 
     private final class RecordPhase extends AbstractMembersPhase {
@@ -902,6 +920,9 @@ public class TypeEnter implements Completer {
                 for (JCVariableDecl field : fields) {
                     sym.getRecordComponent(field.sym, true);
                 }
+
+                enterThisAndSuper(sym, env);
+
                 // lets enter all constructors
                 for (JCTree def : tree.defs) {
                     if (TreeInfo.isConstructor(def)) {
@@ -932,19 +953,8 @@ public class TypeEnter implements Completer {
                 JCTree constrDef = defaultConstructor(make.at(tree.pos), helper);
                 tree.defs = tree.defs.prepend(constrDef);
             }
-            // enter symbols for 'this' into current scope.
-            VarSymbol thisSym =
-                new VarSymbol(FINAL | HASINIT, names._this, sym.type, sym);
-            thisSym.pos = Position.FIRSTPOS;
-            env.info.scope.enter(thisSym);
-            // if this is a class, enter symbol for 'super' into current scope.
-            if ((sym.flags_field & INTERFACE) == 0 &&
-                    ct.supertype_field.hasTag(CLASS)) {
-                VarSymbol superSym =
-                    new VarSymbol(FINAL | HASINIT, names._super,
-                                  ct.supertype_field, sym);
-                superSym.pos = Position.FIRSTPOS;
-                env.info.scope.enter(superSym);
+            if (!sym.isRecord()) {
+                enterThisAndSuper(sym, env);
             }
 
             if (!tree.typarams.isEmpty()) {

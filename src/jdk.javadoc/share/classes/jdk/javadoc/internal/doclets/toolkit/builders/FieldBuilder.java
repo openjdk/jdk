@@ -68,7 +68,7 @@ public class FieldBuilder extends AbstractMemberBuilder {
      * Construct a new FieldBuilder.
      *
      * @param context  the build context.
-     * @param typeElement the class whoses members are being documented.
+     * @param typeElement the class whose members are being documented.
      * @param writer the doclet specific writer.
      */
     private FieldBuilder(Context context,
@@ -83,7 +83,7 @@ public class FieldBuilder extends AbstractMemberBuilder {
      * Construct a new FieldBuilder.
      *
      * @param context  the build context.
-     * @param typeElement the class whoses members are being documented.
+     * @param typeElement the class whose members are being documented.
      * @param writer the doclet specific writer.
      * @return the new FieldBuilder
      */

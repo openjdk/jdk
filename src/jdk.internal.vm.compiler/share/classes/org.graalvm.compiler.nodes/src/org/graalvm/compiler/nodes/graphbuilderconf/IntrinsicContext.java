@@ -28,6 +28,7 @@ import static jdk.vm.ci.code.BytecodeFrame.AFTER_BCI;
 import static jdk.vm.ci.code.BytecodeFrame.AFTER_EXCEPTION_BCI;
 import static jdk.vm.ci.code.BytecodeFrame.BEFORE_BCI;
 import static jdk.vm.ci.code.BytecodeFrame.INVALID_FRAMESTATE_BCI;
+import static org.graalvm.compiler.nodes.graphbuilderconf.IntrinsicContext.CompilationContext.ROOT_COMPILATION_ENCODING;
 import static org.graalvm.compiler.nodes.graphbuilderconf.IntrinsicContext.CompilationContext.INLINE_AFTER_PARSING;
 import static org.graalvm.compiler.nodes.graphbuilderconf.IntrinsicContext.CompilationContext.ROOT_COMPILATION;
 
@@ -136,7 +137,11 @@ public class IntrinsicContext {
     }
 
     public boolean isCompilationRoot() {
-        return compilationContext.equals(ROOT_COMPILATION);
+        return compilationContext.equals(ROOT_COMPILATION) || compilationContext.equals(ROOT_COMPILATION_ENCODING);
+    }
+
+    public boolean isIntrinsicEncoding() {
+        return compilationContext.equals(ROOT_COMPILATION_ENCODING);
     }
 
     public NodeSourcePosition getNodeSourcePosition() {
@@ -166,7 +171,12 @@ public class IntrinsicContext {
         /**
          * An intrinsic is the root of compilation.
          */
-        ROOT_COMPILATION
+        ROOT_COMPILATION,
+
+        /**
+         * An intrinsic is the root of a compilation done for graph encoding.
+         */
+        ROOT_COMPILATION_ENCODING
     }
 
     /**

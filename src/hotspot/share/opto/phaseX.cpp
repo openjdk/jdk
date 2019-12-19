@@ -808,14 +808,6 @@ Node* PhaseGVN::apply_ideal(Node* k, bool can_reshape) {
   return i;
 }
 
-Node* PhaseGVN::apply_identity(Node* k) {
-  Node* i = BarrierSet::barrier_set()->barrier_set_c2()->identity_node(this, k);
-  if (i == k) {
-    i = k->Identity(this);
-  }
-  return i;
-}
-
 //------------------------------transform--------------------------------------
 // Return a node which computes the same function as this node, but in a
 // faster or cheaper fashion.
@@ -870,7 +862,7 @@ Node *PhaseGVN::transform_no_reclaim( Node *n ) {
   }
 
   // Now check for Identities
-  Node *i = apply_identity(k);  // Look for a nearby replacement
+  Node *i = k->Identity(this);  // Look for a nearby replacement
   if( i != k ) {                // Found? Return replacement!
     NOT_PRODUCT( set_progress(); )
     return i;
@@ -1299,7 +1291,7 @@ Node *PhaseIterGVN::transform_old(Node* n) {
   }
 
   // Now check for Identities
-  i = apply_identity(k);      // Look for a nearby replacement
+  i = k->Identity(this);      // Look for a nearby replacement
   if (i != k) {                // Found? Return replacement!
     NOT_PRODUCT(set_progress();)
     add_users_to_worklist(k);
@@ -1669,8 +1661,6 @@ void PhaseIterGVN::add_users_to_worklist( Node *n ) {
         }
       }
     }
-
-    BarrierSet::barrier_set()->barrier_set_c2()->igvn_add_users_to_worklist(this, use);
   }
 }
 
@@ -1829,8 +1819,6 @@ void PhaseCCP::analyze() {
             }
           }
         }
-
-        BarrierSet::barrier_set()->barrier_set_c2()->ccp_analyze(this, worklist, m);
       }
     }
   }

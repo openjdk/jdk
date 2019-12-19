@@ -25,7 +25,6 @@
 /**
  * @test
  * @requires vm.cds
- * @modules jdk.jartool/sun.tools.jar
  * @library ../..
  * @library /test/lib
  * @compile ../../test-classes/Hello.java

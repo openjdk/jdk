@@ -34,7 +34,6 @@ package gc.stress;
  * @run main/othervm gc.stress.TestReclaimStringsLeaksMemory
  * @run main/othervm gc.stress.TestReclaimStringsLeaksMemory -XX:+UseSerialGC
  * @run main/othervm gc.stress.TestReclaimStringsLeaksMemory -XX:+UseParallelGC
- * @run main/othervm gc.stress.TestReclaimStringsLeaksMemory -XX:+UseParallelGC -XX:-UseParallelOldGC
  * @run main/othervm gc.stress.TestReclaimStringsLeaksMemory -XX:+UseG1GC
  */
 

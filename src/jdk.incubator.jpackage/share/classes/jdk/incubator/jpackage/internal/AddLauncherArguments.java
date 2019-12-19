@@ -29,6 +29,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.io.File;
+import java.util.List;
 import jdk.incubator.jpackage.internal.Arguments.CLIOptions;
 
 /*
@@ -160,8 +161,10 @@ class AddLauncherArguments {
 
     static Map<String, ? super Object> merge(
             Map<String, ? super Object> original,
-            Map<String, ? super Object> additional) {
+            Map<String, ? super Object> additional, String... exclude) {
         Map<String, ? super Object> tmp = new HashMap<>(original);
+        List.of(exclude).forEach(tmp::remove);
+
         if (additional.containsKey(CLIOptions.MODULE.getId())) {
             tmp.remove(CLIOptions.MAIN_JAR.getId());
             tmp.remove(CLIOptions.APPCLASS.getId());

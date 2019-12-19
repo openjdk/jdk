@@ -31,17 +31,20 @@
 
 VectorSet::VectorSet(Arena *arena) : _size(2),
     _data(NEW_ARENA_ARRAY(arena, uint32_t, 2)),
+    _data_size(2),
     _set_arena(arena) {
   _data[0] = 0;
   _data[1] = 0;
 }
 
 // Expand the existing set to a bigger size
-void VectorSet::grow(uint new_size) {
-  new_size = (new_size + bit_mask) >> word_bits;
-  assert(new_size > 0, "sanity");
-  uint x = next_power_of_2(new_size);
-  _data = REALLOC_ARENA_ARRAY(_set_arena, uint32_t, _data, _size, x);
+void VectorSet::grow(uint new_word_capacity) {
+  assert(new_word_capacity < (1U << 30), "");
+  uint x = next_power_of_2(new_word_capacity);
+  if (x > _data_size) {
+    _data = REALLOC_ARENA_ARRAY(_set_arena, uint32_t, _data, _size, x);
+    _data_size = x;
+  }
   Copy::zero_to_bytes(_data + _size, (x - _size) * sizeof(uint32_t));
   _size = x;
 }
@@ -51,18 +54,9 @@ void VectorSet::insert(uint elem) {
   uint32_t word = elem >> word_bits;
   uint32_t mask = 1U << (elem & bit_mask);
   if (word >= _size) {
-    grow(elem + 1);
+    grow(word);
   }
   _data[word] |= mask;
-}
-
-// Resets the storage
-void VectorSet::reset_memory() {
-  assert(_size >= 2, "_size can never be less than 2");
-  _data = REALLOC_ARENA_ARRAY(_set_arena, uint32_t, _data, _size, 2);
-  _size = 2;
-  _data[0] = 0;
-  _data[1] = 0;
 }
 
 // Return true if the set is empty

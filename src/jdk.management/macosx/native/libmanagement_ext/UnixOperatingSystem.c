@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@
 #include "jvm.h"
 
 JNIEXPORT jdouble JNICALL
-Java_com_sun_management_internal_OperatingSystemImpl_getSystemCpuLoad0
+Java_com_sun_management_internal_OperatingSystemImpl_getCpuLoad0
 (JNIEnv *env, jobject dummy)
 {
     // This code is influenced by the darwin top source
@@ -159,3 +159,17 @@ Java_com_sun_management_internal_OperatingSystemImpl_getProcessCpuLoad0
 
     return cpu;
  }
+
+JNIEXPORT jdouble JNICALL
+Java_com_sun_management_internal_OperatingSystemImpl_getSingleCpuLoad0
+(JNIEnv *env, jobject dummy, jint cpu_number)
+{
+    return -1.0;
+}
+
+JNIEXPORT jint JNICALL
+Java_com_sun_management_internal_OperatingSystemImpl_getHostConfiguredCpuCount0
+(JNIEnv *env, jobject mbean)
+{
+    return -1;
+}

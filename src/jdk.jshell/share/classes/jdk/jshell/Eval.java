@@ -229,6 +229,10 @@ class Eval {
                     return processClass(userSource, unitTree, compileSourceInt, SubKind.ANNOTATION_TYPE_SUBKIND, pt);
                 case INTERFACE:
                     return processClass(userSource, unitTree, compileSourceInt, SubKind.INTERFACE_SUBKIND, pt);
+                case RECORD:
+                    @SuppressWarnings("preview")
+                    List<Snippet> snippets = processClass(userSource, unitTree, compileSourceInt, SubKind.RECORD_SUBKIND, pt);
+                    return snippets;
                 case METHOD:
                     return processMethod(userSource, unitTree, compileSourceInt, pt);
                 default:
@@ -1106,7 +1110,7 @@ class Eval {
                 Snippet sn = outer.wrapLineToSnippet(wln);
                 String file = "#" + sn.id();
                 elems[i] = new StackTraceElement(klass, method, file, line);
-            } else if (r.getFileName().equals("<none>")) {
+            } else if ("<none>".equals(r.getFileName())) {
                 elems[i] = new StackTraceElement(r.getClassName(), r.getMethodName(), null, r.getLineNumber());
             } else {
                 elems[i] = r;

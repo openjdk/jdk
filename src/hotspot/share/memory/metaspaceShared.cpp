@@ -240,9 +240,8 @@ size_t MetaspaceShared::reserved_space_alignment() {
 }
 
 ReservedSpace MetaspaceShared::reserve_shared_space(size_t size, char* requested_address) {
-  bool large_pages = false; // Don't use large pages for the CDS archive.
-  assert(is_aligned(requested_address, reserved_space_alignment()), "must be");
-  return ReservedSpace(size, reserved_space_alignment(), large_pages, requested_address);
+  return Metaspace::reserve_space(size, reserved_space_alignment(),
+                                  requested_address, requested_address != NULL);
 }
 
 void MetaspaceShared::initialize_dumptime_shared_and_meta_spaces() {
@@ -1774,7 +1773,7 @@ void MetaspaceShared::prepare_for_dumping() {
 // file.
 void MetaspaceShared::preload_and_dump(TRAPS) {
   { TraceTime timer("Dump Shared Spaces", TRACETIME_LOG(Info, startuptime));
-    ResourceMark rm;
+    ResourceMark rm(THREAD);
     char class_list_path_str[JVM_MAXPATHLEN];
     // Preload classes to be shared.
     const char* class_list_path;
@@ -1865,7 +1864,7 @@ int MetaspaceShared::preload_classes(const char* class_list_path, TRAPS) {
     }
     if (klass != NULL) {
       if (log_is_enabled(Trace, cds)) {
-        ResourceMark rm;
+        ResourceMark rm(THREAD);
         log_trace(cds)("Shared spaces preloaded: %s", klass->external_name());
       }
 
@@ -1904,7 +1903,7 @@ bool MetaspaceShared::try_link_class(InstanceKlass* ik, TRAPS) {
     }
     ik->link_class(THREAD);
     if (HAS_PENDING_EXCEPTION) {
-      ResourceMark rm;
+      ResourceMark rm(THREAD);
       log_warning(cds)("Preload Warning: Verification failed for %s",
                     ik->external_name());
       CLEAR_PENDING_EXCEPTION;
@@ -2254,8 +2253,11 @@ char* MetaspaceShared::reserve_address_space_for_archives(FileMapInfo* static_ma
     }
     if (use_klass_space) {
       // Make sure we can map the klass space immediately following the archive_space space
+      // Don't call reserve_shared_space here as that may try to enforce platform-specific
+      // alignment rules which only apply to the archive base address
       char* class_space_base = archive_space_end;
-      class_space_rs = reserve_shared_space(class_space_size, class_space_base);
+      class_space_rs = ReservedSpace(class_space_size, reserved_space_alignment(),
+                                     false /* large_pages */, class_space_base);
       if (!class_space_rs.is_reserved()) {
         return NULL;
       }

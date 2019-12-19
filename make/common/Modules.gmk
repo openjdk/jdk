@@ -58,6 +58,7 @@ BOOT_MODULES += \
     java.rmi \
     java.security.sasl \
     java.xml \
+    jdk.incubator.foreign \
     jdk.internal.vm.ci \
     jdk.jfr \
     jdk.management \
@@ -162,6 +163,7 @@ DOCS_MODULES += \
     jdk.jsobject \
     jdk.jshell \
     jdk.jstatd \
+    jdk.incubator.foreign \
     jdk.localedata \
     jdk.management \
     jdk.management.agent \

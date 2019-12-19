@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,6 @@ package testpkg3mdlB;
  * {@link java.lang.String Link to String Class}.<br>
  * {@link java.lang Link to java.lang package}.<br>
  * {@link java.base Link to java.base module}.
- *
- * @author bhavespa
  */
 public class TestClassLinkOption {
     public String testMethod() {

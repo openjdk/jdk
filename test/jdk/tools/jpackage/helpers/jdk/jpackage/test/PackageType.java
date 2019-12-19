@@ -65,7 +65,7 @@ public enum PackageType {
     }
 
     void applyTo(JPackageCommand cmd) {
-        cmd.addArguments("--type", getName());
+        cmd.setArgumentValue("--type", getName());
     }
 
     String getSuffix() {

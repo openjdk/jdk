@@ -27,7 +27,6 @@
  * @summary classpath mismatch between dump time and execution time
  * @requires vm.cds
  * @library /test/lib
- * @modules jdk.jartool/sun.tools.jar
  * @compile test-classes/Hello.java
  * @run driver WrongClasspath
  */

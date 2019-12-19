@@ -174,13 +174,6 @@ bool ReferenceToRootClosure::do_management_roots() {
   return rlc.complete();
 }
 
-bool ReferenceToRootClosure::do_string_table_roots() {
-  assert(!complete(), "invariant");
-  ReferenceLocateClosure rlc(_callback, OldObjectRoot::_string_table, OldObjectRoot::_type_undetermined, NULL);
-  StringTable::oops_do(&rlc);
-  return rlc.complete();
-}
-
 bool ReferenceToRootClosure::do_aot_loader_roots() {
   assert(!complete(), "invariant");
   ReferenceLocateClosure rcl(_callback, OldObjectRoot::_aot, OldObjectRoot::_type_undetermined, NULL);
@@ -224,11 +217,6 @@ bool ReferenceToRootClosure::do_roots() {
   }
 
   if (do_management_roots()) {
-   _complete = true;
-    return true;
-  }
-
-  if (do_string_table_roots()) {
    _complete = true;
     return true;
   }

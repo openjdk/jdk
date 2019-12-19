@@ -736,10 +736,7 @@ static bool safepoint_safe_with(JavaThread *thread, JavaThreadState state) {
 }
 
 bool SafepointSynchronize::handshake_safe(JavaThread *thread) {
-  // This function must be called with the Threads_lock held so an externally
-  // suspended thread cannot be resumed thus it is safe.
-  assert(Threads_lock->owned_by_self() && Thread::current()->is_VM_thread(),
-         "Must hold Threads_lock and be VMThread");
+  assert(Thread::current()->is_VM_thread(), "Must be VMThread");
   if (thread->is_ext_suspended() || thread->is_terminated()) {
     return true;
   }
@@ -881,7 +878,7 @@ void SafepointSynchronize::block(JavaThread *thread) {
 void SafepointSynchronize::handle_polling_page_exception(JavaThread *thread) {
   assert(thread->is_Java_thread(), "polling reference encountered by VM thread");
   assert(thread->thread_state() == _thread_in_Java, "should come from Java code");
-  if (!ThreadLocalHandshakes) {
+  if (!SafepointMechanism::uses_thread_local_poll()) {
     assert(SafepointSynchronize::is_synchronizing(), "polling encountered outside safepoint synchronization");
   }
 

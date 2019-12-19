@@ -81,7 +81,9 @@ public class ArgumentsTest {
         Path launcherPath = cmd.appLauncherPath();
         if (!cmd.isFakeRuntime(String.format(
                 "Not running [%s] launcher", launcherPath))) {
-            HelloApp.executeAndVerifyOutput(launcherPath, TRICKY_ARGUMENTS);
+            HelloApp.assertApp(launcherPath)
+                    .addDefaultArguments(TRICKY_ARGUMENTS)
+                    .executeAndVerifyOutput();
         }
     }
 

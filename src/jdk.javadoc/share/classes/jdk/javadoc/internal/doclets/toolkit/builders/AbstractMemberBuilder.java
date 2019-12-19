@@ -46,9 +46,9 @@ import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable.Kind;
  */
 public abstract class AbstractMemberBuilder extends AbstractBuilder {
 
-    final protected TypeElement typeElement;
+    protected final TypeElement typeElement;
 
-    final protected VisibleMemberTable visibleMemberTable;
+    protected final VisibleMemberTable visibleMemberTable;
 
     /**
      * Construct a SubBuilder.
@@ -76,7 +76,7 @@ public abstract class AbstractMemberBuilder extends AbstractBuilder {
      *
      * Build the documentation.
      *
-     * @param contentTree The content tree into which to add the documention
+     * @param contentTree The content tree into which to add the documentation
      * @throws DocletException  if there is a problem building the documentation
      */
     public abstract void build(Content contentTree) throws DocletException;

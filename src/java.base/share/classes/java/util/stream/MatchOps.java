@@ -48,10 +48,10 @@ final class MatchOps {
      * match.
      */
     enum MatchKind {
-        /** Do all elements match the predicate? */
+        /** Do any elements match the predicate? */
         ANY(true, true),
 
-        /** Do any elements match the predicate? */
+        /** Do all elements match the predicate? */
         ALL(false, false),
 
         /** Do no elements match the predicate? */

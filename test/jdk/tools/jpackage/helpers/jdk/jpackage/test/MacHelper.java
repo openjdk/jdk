@@ -29,6 +29,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.xml.parsers.DocumentBuilder;
@@ -39,6 +40,7 @@ import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathFactory;
 import jdk.jpackage.test.Functional.ThrowingConsumer;
 import jdk.jpackage.test.Functional.ThrowingSupplier;
+import jdk.jpackage.test.PackageTest.PackageHandlers;
 import org.xml.sax.SAXException;
 
 public class MacHelper {
@@ -47,10 +49,12 @@ public class MacHelper {
             ThrowingConsumer<Path> consumer) {
         cmd.verifyIsOfType(PackageType.MAC_DMG);
 
-        var plist = readPList(new Executor()
-                .setExecutable("/usr/bin/hdiutil")
+        // Explode DMG assuming this can require interaction, thus use `yes`.
+        var plist = readPList(Executor.of("sh", "-c",
+                String.join(" ", "yes", "|", "/usr/bin/hdiutil", "attach",
+                        JPackageCommand.escapeAndJoin(
+                                cmd.outputBundle().toString()), "-plist"))
                 .dumpOutput()
-                .addArguments("attach", cmd.outputBundle().toString(), "-plist")
                 .executeAndGetOutput());
 
         final Path mountPoint = Path.of(plist.queryValue("mount-point"));
@@ -60,10 +64,7 @@ public class MacHelper {
                     cmd.outputBundle(), dmgImage));
             ThrowingConsumer.toConsumer(consumer).accept(dmgImage);
         } finally {
-            new Executor()
-                    .setExecutable("/usr/bin/hdiutil")
-                    .addArgument("detach").addArgument(mountPoint)
-                    .execute().assertExitCodeIsZero();
+            Executor.of("/usr/bin/hdiutil", "detach").addArgument(mountPoint).execute();
         }
     }
 
@@ -82,8 +83,62 @@ public class MacHelper {
     }
 
     public static PListWrapper readPList(Stream<String> lines) {
-        return ThrowingSupplier.toSupplier(() -> new PListWrapper(lines.collect(
-                Collectors.joining()))).get();
+        return ThrowingSupplier.toSupplier(() -> new PListWrapper(lines
+                // Skip leading lines before xml declaration
+                .dropWhile(Pattern.compile("\\s?<\\?xml\\b.+\\?>").asPredicate().negate())
+                .collect(Collectors.joining()))).get();
+    }
+
+    static PackageHandlers createDmgPackageHandlers() {
+        PackageHandlers dmg = new PackageHandlers();
+
+        dmg.installHandler = cmd -> {
+            withExplodedDmg(cmd, dmgImage -> {
+                Executor.of("sudo", "cp", "-r")
+                .addArgument(dmgImage)
+                .addArgument("/Applications")
+                .execute();
+            });
+        };
+        dmg.unpackHandler = (cmd, destinationDir) -> {
+            Path[] unpackedFolder = new Path[1];
+            withExplodedDmg(cmd, dmgImage -> {
+                Executor.of("cp", "-r")
+                .addArgument(dmgImage)
+                .addArgument(destinationDir)
+                .execute();
+                unpackedFolder[0] = destinationDir.resolve(dmgImage.getFileName());
+            });
+            return unpackedFolder[0];
+        };
+        dmg.uninstallHandler = cmd -> {
+            cmd.verifyIsOfType(PackageType.MAC_DMG);
+            Executor.of("sudo", "rm", "-rf")
+            .addArgument(cmd.appInstallationDirectory())
+            .execute();
+        };
+
+        return dmg;
+    }
+
+    static PackageHandlers createPkgPackageHandlers() {
+        PackageHandlers pkg = new PackageHandlers();
+
+        pkg.installHandler = cmd -> {
+            cmd.verifyIsOfType(PackageType.MAC_PKG);
+            Executor.of("sudo", "/usr/sbin/installer", "-allowUntrusted", "-pkg")
+            .addArgument(cmd.outputBundle())
+            .addArguments("-target", "/")
+            .execute();
+        };
+        pkg.uninstallHandler = cmd -> {
+            cmd.verifyIsOfType(PackageType.MAC_PKG);
+            Executor.of("sudo", "rm", "-rf")
+            .addArgument(cmd.appInstallationDirectory())
+            .execute();
+        };
+
+        return pkg;
     }
 
     static String getBundleName(JPackageCommand cmd) {

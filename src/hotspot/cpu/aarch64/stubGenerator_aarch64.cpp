@@ -4010,7 +4010,7 @@ class StubGenerator: public StubCodeGenerator {
   // code for comparing 16 characters of strings with Latin1 and Utf16 encoding
   void compare_string_16_x_LU(Register tmpL, Register tmpU, Label &DIFF1,
       Label &DIFF2) {
-    Register cnt1 = r2, tmp1 = r10, tmp2 = r11, tmp3 = r12;
+    Register cnt1 = r2, tmp2 = r11, tmp3 = r12;
     FloatRegister vtmp = v1, vtmpZ = v0, vtmp3 = v2;
 
     __ ldrq(vtmp, Address(__ post(tmp2, 16)));
@@ -4070,18 +4070,14 @@ class StubGenerator: public StubCodeGenerator {
     __ add(str2, str2, isLU ? wordSize : wordSize/2);
     __ fmovd(isLU ? tmp1 : tmp2, vtmp);
     __ subw(cnt2, cnt2, 8); // Already loaded 4 symbols. Last 4 is special case.
-    __ add(str1, str1, cnt2, __ LSL, isLU ? 0 : 1);
     __ eor(rscratch2, tmp1, tmp2);
-    __ add(str2, str2, cnt2, __ LSL, isLU ? 1 : 0);
     __ mov(rscratch1, tmp2);
     __ cbnz(rscratch2, CALCULATE_DIFFERENCE);
-    Register strU = isLU ? str2 : str1,
-             strL = isLU ? str1 : str2,
-             tmpU = isLU ? rscratch1 : tmp1, // where to keep U for comparison
+    Register tmpU = isLU ? rscratch1 : tmp1, // where to keep U for comparison
              tmpL = isLU ? tmp1 : rscratch1; // where to keep L for comparison
     __ push(spilled_regs, sp);
-    __ sub(tmp2, strL, cnt2); // strL pointer to load from
-    __ sub(cnt1, strU, cnt2, __ LSL, 1); // strU pointer to load from
+    __ mov(tmp2, isLU ? str1 : str2); // init the pointer to L next load
+    __ mov(cnt1, isLU ? str2 : str1); // init the pointer to U next load
 
     __ ldr(tmp3, Address(__ post(cnt1, 8)));
 
@@ -4110,6 +4106,7 @@ class StubGenerator: public StubCodeGenerator {
     __ bind(NO_PREFETCH);
     __ subs(cnt2, cnt2, 16);
     __ br(__ LT, TAIL);
+    __ align(OptoLoopAlignment);
     __ bind(SMALL_LOOP); // smaller loop
       __ subs(cnt2, cnt2, 16);
       compare_string_16_x_LU(tmpL, tmpU, DIFF1, DIFF2);
@@ -4117,7 +4114,7 @@ class StubGenerator: public StubCodeGenerator {
       __ cmn(cnt2, (u1)16);
       __ br(__ EQ, LOAD_LAST);
     __ bind(TAIL); // 1..15 characters left until last load (last 4 characters)
-      __ add(cnt1, cnt1, cnt2, __ LSL, 1); // Address of 8 bytes before last 4 characters in UTF-16 string
+      __ add(cnt1, cnt1, cnt2, __ LSL, 1); // Address of 32 bytes before last 4 characters in UTF-16 string
       __ add(tmp2, tmp2, cnt2); // Address of 16 bytes before last 4 characters in Latin1 string
       __ ldr(tmp3, Address(cnt1, -8));
       compare_string_16_x_LU(tmpL, tmpU, DIFF1, DIFF2); // last 16 characters before last load
@@ -4133,7 +4130,8 @@ class StubGenerator: public StubCodeGenerator {
       __ mov(tmpU, tmp3);
       __ pop(spilled_regs, sp);
 
-      __ ldrs(vtmp, Address(strL));
+      // tmp2 points to the address of the last 4 Latin1 characters right now
+      __ ldrs(vtmp, Address(tmp2));
       __ zip1(vtmp, __ T8B, vtmp, vtmpZ);
       __ fmovd(tmpL, vtmp);
 
@@ -4199,6 +4197,7 @@ class StubGenerator: public StubCodeGenerator {
     // less than 16 bytes left?
     __ subs(cnt2, cnt2, isLL ? 16 : 8);
     __ br(__ LT, TAIL);
+    __ align(OptoLoopAlignment);
     __ bind(SMALL_LOOP);
       compare_string_16_bytes_same(DIFF, DIFF2);
       __ subs(cnt2, cnt2, isLL ? 16 : 8);

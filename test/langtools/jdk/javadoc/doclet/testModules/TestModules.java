@@ -26,8 +26,8 @@
  * @bug 8154119 8154262 8156077 8157987 8154261 8154817 8135291 8155995 8162363
  *      8168766 8168688 8162674 8160196 8175799 8174974 8176778 8177562 8175218
  *      8175823 8166306 8178043 8181622 8183511 8169819 8074407 8183037 8191464
-        8164407 8192007 8182765 8196200 8196201 8196202 8196202 8205593 8202462
-        8184205 8219060 8223378
+ *      8164407 8192007 8182765 8196200 8196201 8196202 8196202 8205593 8202462
+ *      8184205 8219060 8223378 8234746
  * @summary Test modules support in javadoc.
  * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -619,7 +619,7 @@ public class TestModules extends JavadocTester {
                 "<dt><span class=\"simpleTagLabel\">Version:</span></dt>\n"
                 + "<dd>1.0</dd>",
                 "<dt><span class=\"simpleTagLabel\">Author:</span></dt>\n"
-                + "<dd>Bhavesh Patel</dd>");
+                + "<dd>Alice</dd>");
         checkOutput("moduletags/testpkgmdltags/TestClassInModuleTags.html", false,
                 "<dt><span class=\"simpleTagLabel\">Module Tag:</span></dt>\n"
                 + "<dd>Just a simple module tag.</dd>");
@@ -901,18 +901,18 @@ public class TestModules extends JavadocTester {
                 + "</dl>",
                 "<dl>\n"
                 + "<dt><span class=\"searchTagLink\"><a href=\"moduleB/module-summary.html#search_word\">"
-                + "search_word</a></span> - Search tag in moduleB</dt>\n"
+                + "search_word</a></span> - Search tag in module moduleB</dt>\n"
                 + "<dd>&nbsp;</dd>\n"
                 + "<dt><span class=\"searchTagLink\"><a href=\"moduleA/module-summary.html#searchphrase\">"
-                + "search phrase</a></span> - Search tag in moduleA</dt>\n"
+                + "search phrase</a></span> - Search tag in module moduleA</dt>\n"
                 + "<dd>with description</dd>\n"
                 + "</dl>");
         checkOutput("index-all.html", false,
                 "<dt><span class=\"searchTagLink\"><a href=\"moduleA/module-summary.html#searchphrase\">"
-                + "search phrase</a></span> - Search tag in moduleA</dt>\n"
+                + "search phrase</a></span> - Search tag in module moduleA</dt>\n"
                 + "<dd>with description</dd>\n"
                 + "<dt><span class=\"searchTagLink\"><a href=\"moduleA/module-summary.html#searchphrase\">"
-                + "search phrase</a></span> - Search tag in moduleA</dt>\n"
+                + "search phrase</a></span> - Search tag in module moduleA</dt>\n"
                 + "<dd>with description</dd>");
     }
 
@@ -1343,7 +1343,8 @@ public class TestModules extends JavadocTester {
         checkOutput("package-search-index.js", true,
                 "{\"l\":\"All Packages\",\"url\":\"allpackages-index.html\"}");
         checkOutput("index-all.html", true,
-                "<br><a href=\"allclasses-index.html\">All&nbsp;Classes</a>&nbsp;"
+                "<br><a href=\"allclasses-index.html\">All&nbsp;Classes</a>"
+                + "<span class=\"verticalSeparator\">|</span>"
                 + "<a href=\"allpackages-index.html\">All&nbsp;Packages</a>");
-}
+    }
 }

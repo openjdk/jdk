@@ -625,7 +625,7 @@ bool klassVtable::needs_new_vtable_entry(const methodHandle& target_method,
 
   // search through the super class hierarchy to see if we need
   // a new entry
-  ResourceMark rm;
+  ResourceMark rm(THREAD);
   Symbol* name = target_method()->name();
   Symbol* signature = target_method()->signature();
   const Klass* k = super;

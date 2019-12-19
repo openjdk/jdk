@@ -338,23 +338,41 @@ class DatagramChannelImpl
 
             ProtocolFamily family = familyFor(name);
 
+            // Some platforms require both IPV6_XXX and IP_XXX socket options to
+            // be set when the channel's socket is IPv6 and it is used to send
+            // IPv4 multicast datagrams. The IP_XXX socket options are set on a
+            // best effort basis.
+            boolean needToSetIPv4Option = (family != Net.UNSPEC)
+                    && (this.family == StandardProtocolFamily.INET6)
+                    && Net.shouldSetBothIPv4AndIPv6Options();
+
+            // outgoing multicast interface
             if (name == StandardSocketOptions.IP_MULTICAST_IF) {
-                NetworkInterface interf = (NetworkInterface)value;
+                assert family != Net.UNSPEC;
+                NetworkInterface interf = (NetworkInterface) value;
                 if (family == StandardProtocolFamily.INET6) {
                     int index = interf.getIndex();
                     if (index == -1)
                         throw new IOException("Network interface cannot be identified");
                     Net.setInterface6(fd, index);
-                } else {
+                }
+                if (family == StandardProtocolFamily.INET || needToSetIPv4Option) {
                     // need IPv4 address to identify interface
                     Inet4Address target = Net.anyInet4Address(interf);
-                    if (target == null)
+                    if (target != null) {
+                        try {
+                            Net.setInterface4(fd, Net.inet4AsInt(target));
+                        } catch (IOException ioe) {
+                            if (family == StandardProtocolFamily.INET) throw ioe;
+                        }
+                    } else if (family == StandardProtocolFamily.INET) {
                         throw new IOException("Network interface not configured for IPv4");
-                    int targetAddress = Net.inet4AsInt(target);
-                    Net.setInterface4(fd, targetAddress);
+                    }
                 }
                 return this;
             }
+
+            // SO_REUSEADDR needs special handling as it may be emulated
             if (name == StandardSocketOptions.SO_REUSEADDR
                 && Net.useExclusiveBind() && localAddress != null) {
                 reuseAddressEmulated = true;
@@ -363,6 +381,12 @@ class DatagramChannelImpl
 
             // remaining options don't need any special handling
             Net.setSocketOption(fd, family, name, value);
+            if (needToSetIPv4Option && family != StandardProtocolFamily.INET) {
+                try {
+                    Net.setSocketOption(fd, StandardProtocolFamily.INET, name, value);
+                } catch (IOException ignore) { }
+            }
+
             return this;
         }
     }

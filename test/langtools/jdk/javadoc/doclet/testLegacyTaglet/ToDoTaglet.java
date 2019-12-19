@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,9 +48,6 @@ import static jdk.javadoc.doclet.Taglet.Location.*;
  * <DD><table summary="Summary" cellpadding=2 cellspacing=0><tr><td bgcolor="yellow">Fix this!
  * </td></tr></table></DD>
  * </DL>
- *
- * @author Jamie Ho
- * @since 1.4
  */
 
 public class ToDoTaglet implements Taglet {

@@ -58,6 +58,10 @@ const bool CCallingConventionRequiresIntsAsLongs = true;
 #define INCLUDE_RTM_OPT 0
 #endif
 
+#if defined(AIX)
+#define PREFERRED_METASPACE_ALIGNMENT
+#endif
+
 #define SUPPORT_RESERVED_STACK_AREA
 
 #define THREAD_LOCAL_POLL

@@ -32,16 +32,16 @@
  *          String size is specified via commandline. Various size values can
  *          be specified during intrinsic development in order to test cases
  *          specific for new or modified intrinsic implementation. Aarch64
- *          implementation has 1, 4, 8 -characters loops for length < 72 and
- *          16, 32, 64 -characters loops for string length >= 72. Code is also
+ *          implementation has 1, 4, 8 -bytes loops for length < 72 and
+ *          16, 32, 64 -bytes loops for string length >= 72. Code is also
  *          affected by SoftwarePrefetchHintDistance flag value.
  *          Test class can also accept "-fullmode" parameter
  *          with maxLength paramter after it. Then it will iterate through all
  *          string length values up to maxLength parameter (inclusive). It takes
  *          a lot of time but is useful for development.
- * @run main/othervm -XX:SoftwarePrefetchHintDistance=192 compiler.intrinsics.string.TestStringCompareToSameLength 2 5 10 13 17 20 25 71 72 73 88 90 192 193 208 209
- * @run main/othervm -XX:SoftwarePrefetchHintDistance=16 compiler.intrinsics.string.TestStringCompareToSameLength 2 5 10 13 17 20 25 71 72 73 88 90
- * @run main/othervm -XX:SoftwarePrefetchHintDistance=-1 compiler.intrinsics.string.TestStringCompareToSameLength 2 5 10 13 17 20 25 71 72 73 88 90
+ * @run main/othervm -XX:SoftwarePrefetchHintDistance=192 compiler.intrinsics.string.TestStringCompareToSameLength 2 5 10 13 17 20 25 35 36 37 71 72 73 88 90 192 193 208 209
+ * @run main/othervm -XX:SoftwarePrefetchHintDistance=16 compiler.intrinsics.string.TestStringCompareToSameLength 2 5 10 13 17 20 25 35 36 37 71 72 73 88 90
+ * @run main/othervm -XX:SoftwarePrefetchHintDistance=-1 compiler.intrinsics.string.TestStringCompareToSameLength 2 5 10 13 17 20 25 35 36 37 71 72 73 88 90
  */
 
 package compiler.intrinsics.string;

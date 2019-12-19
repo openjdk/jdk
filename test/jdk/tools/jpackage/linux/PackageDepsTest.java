@@ -25,6 +25,7 @@ import jdk.jpackage.test.TKit;
 import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.PackageType;
 import jdk.jpackage.test.LinuxHelper;
+import jdk.jpackage.test.Annotations.Test;
 
 
 /**
@@ -50,41 +51,38 @@ import jdk.jpackage.test.LinuxHelper;
  * @build jdk.jpackage.test.*
  * @requires (os.family == "linux")
  * @modules jdk.incubator.jpackage/jdk.incubator.jpackage.internal
- * @run main/othervm/timeout=360 -Xmx512m PackageDepsTest
+ * @compile PackageDepsTest.java
+ * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
+ *  --jpt-run=PackageDepsTest
  */
 public class PackageDepsTest {
 
-    public static void main(String[] args) {
-        // Pick the name of prerequisite package to be alphabetically
-        // preceeding the main package name.
-        // This is needed to make Bash script batch installing/uninstalling packages
-        // produced by jtreg tests install/uninstall packages in the right order.
+    @Test
+    public static void test() {
         final String PREREQ_PACKAGE_NAME = "apackagedepstestprereq";
 
-        TKit.run(args, () -> {
-            new PackageTest()
-            .forTypes(PackageType.LINUX)
-            .configureHelloApp()
-            .addInitializer(cmd -> {
-                cmd.setArgumentValue("--name", PREREQ_PACKAGE_NAME);
-            })
-            .run();
-
-            new PackageTest()
-            .forTypes(PackageType.LINUX)
-            .configureHelloApp()
-            .addInitializer(cmd -> {
-                cmd.addArguments("--linux-package-deps", PREREQ_PACKAGE_NAME);
-            })
-            .forTypes(PackageType.LINUX)
-            .addBundleVerifier(cmd -> {
-                TKit.assertTrue(
-                        LinuxHelper.getPrerequisitePackages(cmd).contains(
-                                PREREQ_PACKAGE_NAME), String.format(
-                                "Check package depends on [%s] package",
-                                PREREQ_PACKAGE_NAME));
-            })
-            .run();
+        PackageTest test1 = new PackageTest()
+        .forTypes(PackageType.LINUX)
+        .configureHelloApp()
+        .addInitializer(cmd -> {
+            cmd.setArgumentValue("--name", PREREQ_PACKAGE_NAME);
         });
+
+        PackageTest test2 = new PackageTest()
+        .forTypes(PackageType.LINUX)
+        .configureHelloApp()
+        .addInitializer(cmd -> {
+            cmd.addArguments("--linux-package-deps", PREREQ_PACKAGE_NAME);
+        })
+        .forTypes(PackageType.LINUX)
+        .addBundleVerifier(cmd -> {
+            TKit.assertTrue(
+                    LinuxHelper.getPrerequisitePackages(cmd).contains(
+                            PREREQ_PACKAGE_NAME), String.format(
+                            "Check package depends on [%s] package",
+                            PREREQ_PACKAGE_NAME));
+        });
+
+        new PackageTest.Group(test1, test2).run();
     }
 }

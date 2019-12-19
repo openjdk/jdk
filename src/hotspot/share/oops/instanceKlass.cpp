@@ -1319,7 +1319,7 @@ Klass* InstanceKlass::array_klass_impl(bool or_null, int n, TRAPS) {
   if (array_klasses_acquire() == NULL) {
     if (or_null) return NULL;
 
-    ResourceMark rm;
+    ResourceMark rm(THREAD);
     JavaThread *jt = (JavaThread *)THREAD;
     {
       // Atomic creation of array_klasses
@@ -1368,7 +1368,7 @@ void InstanceKlass::call_class_initializer(TRAPS) {
   assert(!is_initialized(), "we cannot initialize twice");
   LogTarget(Info, class, init) lt;
   if (lt.is_enabled()) {
-    ResourceMark rm;
+    ResourceMark rm(THREAD);
     LogStream ls(lt);
     ls.print("%d Initializing ", call_class_initializer_counter++);
     name()->print_value_on(&ls);
@@ -2678,7 +2678,7 @@ Symbol* InstanceKlass::package_from_name(const Symbol* name, TRAPS) {
     if (name->utf8_length() <= 0) {
       return NULL;
     }
-    ResourceMark rm;
+    ResourceMark rm(THREAD);
     const char* package_name = ClassLoader::package_from_name((const char*) name->as_C_string());
     if (package_name == NULL) {
       return NULL;
@@ -2720,7 +2720,7 @@ void InstanceKlass::set_package(ClassLoaderData* loader_data, TRAPS) {
     // entry table, it is an indication that the package has not
     // been defined. Consider it defined within the unnamed module.
     if (_package_entry == NULL) {
-      ResourceMark rm;
+      ResourceMark rm(THREAD);
 
       if (!ModuleEntryTable::javabase_defined()) {
         // Before java.base is defined during bootstrapping, define all packages in
@@ -2741,7 +2741,7 @@ void InstanceKlass::set_package(ClassLoaderData* loader_data, TRAPS) {
     }
 
     if (log_is_enabled(Debug, module)) {
-      ResourceMark rm;
+      ResourceMark rm(THREAD);
       ModuleEntry* m = _package_entry->module();
       log_trace(module)("Setting package: class: %s, package: %s, loader: %s, module: %s",
                         external_name(),
@@ -2750,7 +2750,7 @@ void InstanceKlass::set_package(ClassLoaderData* loader_data, TRAPS) {
                         (m->is_named() ? m->name()->as_C_string() : UNNAMED_MODULE));
     }
   } else {
-    ResourceMark rm;
+    ResourceMark rm(THREAD);
     log_trace(module)("Setting package: class: %s, package: unnamed, loader: %s, module: %s",
                       external_name(),
                       (loader_data != NULL) ? loader_data->loader_name_and_id() : "NULL",

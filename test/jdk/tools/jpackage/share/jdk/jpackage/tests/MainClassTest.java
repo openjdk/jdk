@@ -77,7 +77,7 @@ public final class MainClassTest {
         }
 
         Script withJarMainClass(MainClassType v) {
-            appDesc.setJarWithMainClass(v != NotSet);
+            appDesc.setWithMainClass(v != NotSet);
             jarMainClass = v;
             return this;
         }
@@ -209,8 +209,7 @@ public final class MainClassTest {
             // file nor on command line.
             List<String> output = cmd
                     .saveConsoleOutput(true)
-                    .execute()
-                    .assertExitCodeIs(1)
+                    .execute(1)
                     .getOutput();
             TKit.assertTextStream(script.expectedErrorMessage).apply(output.stream());
             return;
@@ -236,7 +235,7 @@ public final class MainClassTest {
                     .setDirectory(cmd.outputDir())
                     .setExecutable(cmd.appLauncherPath())
                     .dumpOutput().saveOutput()
-                    .execute().assertExitCodeIs(1).getOutput();
+                    .execute(1).getOutput();
                 TKit.assertTextStream(String.format(
                         "Error: Could not find or load main class %s",
                         nonExistingMainClass)).apply(output.stream());
@@ -266,9 +265,10 @@ public final class MainClassTest {
                             script.appDesc.classFilePath()));
 
             // Create app's jar file with different main class.
-            var badAppDesc = JavaAppDesc.parse(script.appDesc.toString()).setClassName(
-                    nonExistingMainClass);
-            JPackageCommand.helloAppImage(badAppDesc).executePrerequisiteActions();
+            var badAppDesc = JavaAppDesc
+                    .parse(script.appDesc.toString())
+                    .setClassName(nonExistingMainClass);
+            HelloApp.createBundle(badAppDesc, jarFile.getParent());
 
             // Extract new jar but skip app's class.
             explodeJar(jarFile, workDir,
@@ -289,7 +289,7 @@ public final class MainClassTest {
             .addArguments("-v", "-c", "-M", "-f", jarFile.toString())
             .addArguments("-C", workDir.toString(), ".")
             .dumpOutput()
-            .execute().assertExitCodeIsZero();
+            .execute();
         });
     }
 

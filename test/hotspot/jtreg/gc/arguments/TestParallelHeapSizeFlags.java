@@ -44,9 +44,7 @@ package gc.arguments;
 public class TestParallelHeapSizeFlags {
 
   public static void main(String args[]) throws Exception {
-    // just pick one of the parallel generational collectors. Sizing logic is the
-    // same.
-    final String gcName = "-XX:+UseParallelOldGC";
+    final String gcName = "-XX:+UseParallelGC";
 
     TestMaxHeapSizeTools.checkMinInitialMaxHeapFlags(gcName);
 

@@ -43,8 +43,7 @@ public final class ConstantBootstraps {
     /**
      * Do not call.
      */
-    @Deprecated(forRemoval=true, since="14")
-    public ConstantBootstraps() {}
+    private ConstantBootstraps() {throw new AssertionError();}
 
     // implements the upcall from the JVM, MethodHandleNatives.linkDynamicConstant:
     /*non-public*/

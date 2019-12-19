@@ -91,6 +91,10 @@ public class HttpProxy {
         this.proxyPort = proxyPort;
     }
 
+    static boolean canUseIPv6() {
+        return IPSupport.hasIPv6() && !IPSupport.preferIPv4Stack();
+    }
+
     void test() throws Exception {
         InetSocketAddress proxyAddress = new InetSocketAddress(proxyHost, proxyPort);
         Proxy httpProxy = new Proxy(Proxy.Type.HTTP, proxyAddress);
@@ -101,7 +105,7 @@ public class HttpProxy {
             externalAddresses.add(
                 new InetSocketAddress(InetAddress.getLocalHost(), ss.getLocalPort()));
 
-            if (!"true".equals(System.getProperty("java.net.preferIPv4Stack"))) {
+            if (canUseIPv6()) {
                 byte[] bytes = new byte[] {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1};
                 var address = InetAddress.getByAddress(bytes);
                 externalAddresses.add(

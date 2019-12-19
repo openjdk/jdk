@@ -80,17 +80,20 @@ class MacroAssembler: public Assembler {
 
   void call_VM_helper(Register oop_result, address entry_point, int number_of_arguments, bool check_exceptions = true);
 
-  // True if an XOR can be used to expand narrow klass references.
-  bool use_XOR_for_compressed_class_base;
+  enum KlassDecodeMode {
+    KlassDecodeNone,
+    KlassDecodeZero,
+    KlassDecodeXor,
+    KlassDecodeMovk
+  };
+
+  KlassDecodeMode klass_decode_mode();
+
+ private:
+  static KlassDecodeMode _klass_decode_mode;
 
  public:
-  MacroAssembler(CodeBuffer* code) : Assembler(code) {
-    use_XOR_for_compressed_class_base
-      = operand_valid_for_logical_immediate
-           (/*is32*/false, (uint64_t)CompressedKlassPointers::base())
-         && ((uint64_t)CompressedKlassPointers::base()
-             > (1UL << log2_intptr(CompressedKlassPointers::range())));
-  }
+  MacroAssembler(CodeBuffer* code) : Assembler(code) {}
 
  // These routines should emit JVMTI PopFrame and ForceEarlyReturn handling code.
  // The implementation is only non-empty for the InterpreterMacroAssembler,

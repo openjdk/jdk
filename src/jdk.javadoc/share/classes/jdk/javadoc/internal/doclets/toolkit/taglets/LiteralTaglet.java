@@ -29,9 +29,8 @@ import java.util.EnumSet;
 import javax.lang.model.element.Element;
 
 import com.sun.source.doctree.DocTree;
+import jdk.javadoc.doclet.Taglet.Location;
 import jdk.javadoc.internal.doclets.toolkit.Content;
-
-import static com.sun.source.doctree.DocTree.Kind.LITERAL;
 /**
  * An inline Taglet used to denote literal text.
  * For example, the text:
@@ -48,7 +47,7 @@ import static com.sun.source.doctree.DocTree.Kind.LITERAL;
 public class LiteralTaglet extends BaseTaglet {
 
     LiteralTaglet() {
-        super(LITERAL.tagName, true, EnumSet.allOf(Site.class));
+        super(DocTree.Kind.LITERAL, true, EnumSet.allOf(Location.class));
     }
 
     @Override

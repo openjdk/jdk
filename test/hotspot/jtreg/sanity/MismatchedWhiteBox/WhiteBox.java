@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,15 @@
 package sun.hotspot;
 
 public class WhiteBox {
+    @SuppressWarnings("serial")
+    public static class WhiteBoxPermission extends java.security.BasicPermission {
+        // ClassFileInstaller is hard-coded to copy WhiteBox$WhiteBoxPermission, so let's
+        // make a fake one here as well.
+        public WhiteBoxPermission(String s) {
+            super(s);
+        }
+    }
+
     private static native void registerNatives();
     static { registerNatives(); }
     public native int notExistedMethod();

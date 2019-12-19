@@ -75,6 +75,7 @@ import com.sun.source.doctree.TextTree;
 import com.sun.source.util.SimpleDocTreeVisitor;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
+import jdk.javadoc.internal.doclets.formats.html.markup.FixedStringContent;
 import jdk.javadoc.internal.doclets.formats.html.markup.Head;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlAttr;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlDocument;
@@ -1322,16 +1323,16 @@ public class HtmlDocletWriter {
      * an inline tag, such as in comments or in free-form text arguments
      * to block tags.
      *
-     * @param holderTag    specific tag where comment resides
-     * @param element    specific element where comment resides
-     * @param tags   array of text tags and inline tags (often alternating)
-    present in the text of interest for this element
-     * @param isFirstSentence  true if text is first sentence
-     * @param inSummary   if the comment tags are added into the summary section
+     * @param holderTag       specific tag where comment resides
+     * @param element         specific element where comment resides
+     * @param trees           array of text tags and inline tags (often alternating)
+     *                        present in the text of interest for this element
+     * @param isFirstSentence true if text is first sentence
+     * @param inSummary       if the comment tags are added into the summary section
      * @return a Content object
      */
     public Content commentTagsToContent(DocTree holderTag, Element element,
-            List<? extends DocTree> tags, boolean isFirstSentence, boolean inSummary) {
+            List<? extends DocTree> trees, boolean isFirstSentence, boolean inSummary) {
 
         final Content result = new ContentBuilder() {
             @Override
@@ -1341,10 +1342,10 @@ public class HtmlDocletWriter {
         };
         CommentHelper ch = utils.getCommentHelper(element);
         // Array of all possible inline tags for this javadoc run
-        configuration.tagletManager.checkTags(element, tags, true);
+        configuration.tagletManager.checkTags(element, trees, true);
         commentRemoved = false;
 
-        for (ListIterator<? extends DocTree> iterator = tags.listIterator(); iterator.hasNext();) {
+        for (ListIterator<? extends DocTree> iterator = trees.listIterator(); iterator.hasNext();) {
             boolean isFirstNode = !iterator.hasPrevious();
             DocTree tag = iterator.next();
             boolean isLastNode  = !iterator.hasNext();
@@ -1565,12 +1566,14 @@ public class HtmlDocletWriter {
                     return textCleanup(text, isLast, false);
                 }
 
-                private CharSequence textCleanup(String text, boolean isLast, boolean trimLeader) {
-                    if (trimLeader) {
-                        text = removeLeadingWhitespace(text);
-                    }
-                    if (isFirstSentence && isLast) {
-                        text = removeTrailingWhitespace(text);
+                private CharSequence textCleanup(String text, boolean isLast, boolean stripLeading) {
+                    boolean stripTrailing = isFirstSentence && isLast;
+                    if (stripLeading && stripTrailing) {
+                        text = text.strip();
+                    } else if (stripLeading) {
+                        text = text.stripLeading();
+                    } else if (stripTrailing) {
+                        text = text.stripTrailing();
                     }
                     text = utils.replaceTabs(text);
                     return utils.normalizeNewlines(text);
@@ -1600,25 +1603,6 @@ public class HtmlDocletWriter {
                 break;
         }
         return result;
-    }
-
-    private String removeTrailingWhitespace(String text) {
-        char[] buf = text.toCharArray();
-        for (int i = buf.length - 1; i > 0 ; i--) {
-            if (!Character.isWhitespace(buf[i]))
-                return text.substring(0, i + 1);
-        }
-        return text;
-    }
-
-    private String removeLeadingWhitespace(String text) {
-        char[] buf = text.toCharArray();
-        for (int i = 0; i < buf.length; i++) {
-            if (!Character.isWhitespace(buf[i])) {
-                return text.substring(i);
-            }
-        }
-        return text;
     }
 
     /**
@@ -2185,4 +2169,7 @@ public class HtmlDocletWriter {
         return localStylesheets;
     }
 
+    Content getVerticalSeparator() {
+        return HtmlTree.SPAN(HtmlStyle.verticalSeparator, new FixedStringContent("|"));
+    }
 }

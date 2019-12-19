@@ -34,6 +34,7 @@
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.inline.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/safepointVerifiers.hpp"
 #include "runtime/vmThread.hpp"
 
 // Support class to collect a list of the non-nmethod CodeBlobs in
@@ -222,16 +223,22 @@ jvmtiError JvmtiCodeBlobEvents::generate_dynamic_code_events(JvmtiEnv* env) {
 jvmtiError JvmtiCodeBlobEvents::generate_compiled_method_load_events(JvmtiEnv* env) {
   JvmtiThreadState* state = JvmtiThreadState::state_for(JavaThread::current());
   {
-    // Walk the CodeCache notifying for live nmethods, don't release the CodeCache_lock
-    // because the sweeper may be running concurrently.
-    // Save events to the queue for posting outside the CodeCache_lock.
-    MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-    // Iterate over non-profiled and profiled nmethods
-    NMethodIterator iter(NMethodIterator::only_alive_and_not_unloading);
-    while(iter.next()) {
-      nmethod* current = iter.method();
-      current->post_compiled_method_load_event(state);
+    NoSafepointVerifier nsv;  // safepoints are not safe while collecting methods to post.
+    {
+      // Walk the CodeCache notifying for live nmethods, don't release the CodeCache_lock
+      // because the sweeper may be running concurrently.
+      // Save events to the queue for posting outside the CodeCache_lock.
+      MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+      // Iterate over non-profiled and profiled nmethods
+      NMethodIterator iter(NMethodIterator::only_alive_and_not_unloading);
+      while(iter.next()) {
+        nmethod* current = iter.method();
+        current->post_compiled_method_load_event(state);
+      }
     }
+
+    // Enter nmethod barrier code if present outside CodeCache_lock
+    state->run_nmethod_entry_barriers();
   }
 
   // Now post all the events outside the CodeCache_lock.

@@ -69,7 +69,7 @@ public class HtmlSerialMethodWriter extends MethodWriterImpl implements
     /**
      * Return the header for serializable methods content section.
      *
-     * @param isLastContent true if the cotent being documented is the last content.
+     * @param isLastContent true if the content being documented is the last content.
      * @return a content tree for the header
      */
     public Content getMethodsContentHeader(boolean isLastContent) {

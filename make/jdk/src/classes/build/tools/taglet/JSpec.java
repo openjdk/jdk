@@ -35,6 +35,7 @@ import javax.lang.model.element.Element;
 import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.LiteralTree;
 import com.sun.source.doctree.UnknownBlockTagTree;
+import com.sun.source.doctree.UnknownInlineTagTree;
 import com.sun.source.util.SimpleDocTreeVisitor;
 import jdk.javadoc.doclet.Taglet;
 
@@ -96,16 +97,14 @@ public class JSpec implements Taglet  {
     private String baseURL;
     private String idPrefix;
 
-    protected JSpec(String tagName, String specTitle, String baseURL, String idPrefix) {
+    JSpec(String tagName, String specTitle, String baseURL, String idPrefix) {
         this.tagName = tagName;
         this.specTitle = specTitle;
         this.baseURL = baseURL;
         this.idPrefix = idPrefix;
     }
 
-
-    static final Pattern TAG_PATTERN = Pattern.compile("(?s)(.+ )?(?<chapter>[1-9][0-9]*)(?<section>[0-9.]*)( .*)?$");
-
+    private static final Pattern TAG_PATTERN = Pattern.compile("(?s)(.+ )?(?<chapter>[1-9][0-9]*)(?<section>[0-9.]*)( .*)?$");
 
     /**
      * Returns the set of locations in which the tag may be used.
@@ -115,9 +114,14 @@ public class JSpec implements Taglet  {
         return EnumSet.allOf(jdk.javadoc.doclet.Taglet.Location.class);
     }
 
+    //@Override // uncomment when JDK 15 is the boot JDK
+    public boolean isBlockTag() {
+        return true;
+    }
+
     @Override
     public boolean isInlineTag() {
-        return false;
+        return true;
     }
 
     @Override
@@ -132,17 +136,28 @@ public class JSpec implements Taglet  {
             return "";
 
         StringBuilder sb = new StringBuilder();
-        sb.append("<dt>See <i>" + specTitle + "</i>:</dt>\n")
-            .append("<dd>\n");
+        boolean in_dd = false;
 
         for (DocTree tag : tags) {
-
-            if (tag.getKind() != UNKNOWN_BLOCK_TAG) {
-                continue;
+            if (sb.length() == 0 && tag.getKind() == DocTree.Kind.UNKNOWN_BLOCK_TAG) {
+                sb.append("<dt>See <i>").append(specTitle).append("</i>:</dt>\n")
+                        .append("<dd>\n");
+                in_dd = true;
             }
 
-            UnknownBlockTagTree blockTag = (UnknownBlockTagTree)tag;
-            String tagText = blockTag.getContent().toString().trim();
+            List<? extends DocTree> contents;
+            switch (tag.getKind()) {
+                case UNKNOWN_BLOCK_TAG:
+                    contents = ((UnknownBlockTagTree) tag).getContent();
+                    break;
+                case UNKNOWN_INLINE_TAG:
+                    contents = ((UnknownInlineTagTree) tag).getContent();
+                    break;
+                default:
+                    continue;
+            }
+
+            String tagText = contents.toString().trim();
             Matcher m = TAG_PATTERN.matcher(tagText);
             if (m.find()) {
                 String chapter = m.group("chapter");
@@ -151,23 +166,27 @@ public class JSpec implements Taglet  {
                 String url = String.format("%1$s/%2$s-%3$s.html#jls-%3$s%4$s",
                         baseURL, idPrefix, chapter, section);
 
-
                 sb.append("<a href=\"")
                         .append(url)
                         .append("\">")
-                        .append(expand(blockTag))
-                        .append("</a><br>");
-            }
+                        .append(expand(contents))
+                        .append("</a>");
 
+                if (tag.getKind() == DocTree.Kind.UNKNOWN_BLOCK_TAG) {
+                    sb.append("<br>");
+                }
+            }
         }
 
-        sb.append("</dd>");
+        if (in_dd) {
+            sb.append("</dd>");
+        }
 
         return sb.toString();
     }
 
-    private String expand(UnknownBlockTagTree tree) {
-        StringBuilder sb = new StringBuilder();
+
+    private String expand(List<? extends DocTree> trees) {
         return (new SimpleDocTreeVisitor<StringBuilder, StringBuilder>() {
             public StringBuilder defaultAction(DocTree tree, StringBuilder sb) {
                 return sb.append(tree.toString());
@@ -185,8 +204,10 @@ public class JSpec implements Taglet  {
             }
 
             private String escape(String s) {
-                return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt");
+                return s.replace("&", "&amp;")
+                        .replace("<", "&lt;")
+                        .replace(">", "&gt");
             }
-        }).visit(tree.getContent(), new StringBuilder()).toString();
+        }).visit(trees, new StringBuilder()).toString();
     }
 }

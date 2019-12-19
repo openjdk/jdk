@@ -81,7 +81,7 @@ public class PackageTreeWriter extends AbstractTreeWriter {
      * @param configuration the configuration for this run.
      * @param pkg      Package for which tree file is to be generated.
      * @param noDeprecated  If true, do not generate any information for
-     * deprecated classe or interfaces.
+     * deprecated classes or interfaces.
      * @throws DocFileIOException if there is a problem generating the package tree page
      */
     public static void generate(HtmlConfiguration configuration,

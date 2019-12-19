@@ -383,6 +383,14 @@ public class RecordCompilationTests extends CompilationTestCase {
                 "        record RR(int x) { public int x() { return y; }};\n" +
                 "    }\n" +
                 "}");
+        // can be contained inside a lambda
+        assertOK("""
+                class Outer {
+                    Runnable run = () -> {
+                        record TestRecord(int i) {}
+                    };
+                }
+                """);
 
         // Can't self-shadow
         assertFail("compiler.err.already.defined",
@@ -431,5 +439,62 @@ public class RecordCompilationTests extends CompilationTestCase {
                 "        record R(int a) {}\n" +
                 "    }\n" +
                 "}");
+        assertFail("compiler.err.record.declaration.not.allowed.in.inner.classes",
+                """
+                class Outer {
+                    public void test() {
+                        class Inner extends Outer {
+                            record R(int i) {}
+                        }
+                    }
+                }
+                """);
+        assertFail("compiler.err.record.declaration.not.allowed.in.inner.classes",
+                """
+                class Outer {
+                    Runnable run = new Runnable() {
+                        record TestRecord(int i) {}
+                        public void run() {}
+                    };
+                }
+                """);
+        assertFail("compiler.err.record.declaration.not.allowed.in.inner.classes",
+                """
+                class Outer {
+                    void m() {
+                        record A() {
+                            record B() { }
+                        }
+                    }
+                }
+                """);
+    }
+
+    public void testReceiverParameter() {
+        assertFail("compiler.err.receiver.parameter.not.applicable.constructor.toplevel.class",
+                """
+                record R(int i) {
+                    public R(R this, int i) {
+                        this.i = i;
+                    }
+                }
+                """);
+        assertFail("compiler.err.non-static.cant.be.ref",
+                """
+                class Outer {
+                    record R(int i) {
+                        public R(Outer Outer.this, int i) {
+                            this.i = i;
+                        }
+                    }
+                }
+                """);
+        assertOK(
+                """
+                record R(int i) {
+                    void m(R this) {}
+                    public int i(R this) { return i; }
+                }
+                """);
     }
 }

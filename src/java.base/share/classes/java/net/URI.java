@@ -1572,10 +1572,11 @@ public final class URI
      * component is undefined but the other is defined then the first is
      * considered to be less than the second.  Unless otherwise noted, string
      * components are ordered according to their natural, case-sensitive
-     * ordering as defined by the {@link java.lang.String#compareTo(Object)
+     * ordering as defined by the {@link java.lang.String#compareTo(String)
      * String.compareTo} method.  String components that are subject to
      * encoding are compared by comparing their raw forms rather than their
-     * encoded forms.
+     * encoded forms and the hexadecimal digits of escaped octets are compared
+     * without regard to case.
      *
      * <p> The ordering of URIs is defined as follows: </p>
      *
@@ -1838,35 +1839,9 @@ public final class URI
     }
 
     private static boolean equal(String s, String t) {
-        if (s == t) return true;
-        if ((s != null) && (t != null)) {
-            if (s.length() != t.length())
-                return false;
-            if (s.indexOf('%') < 0)
-                return s.equals(t);
-            int n = s.length();
-            for (int i = 0; i < n;) {
-                char c = s.charAt(i);
-                char d = t.charAt(i);
-                if (c != '%') {
-                    if (c != d)
-                        return false;
-                    i++;
-                    continue;
-                }
-                if (d != '%')
-                    return false;
-                i++;
-                if (toLower(s.charAt(i)) != toLower(t.charAt(i)))
-                    return false;
-                i++;
-                if (toLower(s.charAt(i)) != toLower(t.charAt(i)))
-                    return false;
-                i++;
-            }
-            return true;
-        }
-        return false;
+        boolean testForEquality = true;
+        int result = percentNormalizedComparison(s, t, testForEquality);
+        return result == 0;
     }
 
     // US-ASCII only
@@ -1920,11 +1895,61 @@ public final class URI
     }
 
     private static int compare(String s, String t) {
+        boolean testForEquality = false;
+        int result = percentNormalizedComparison(s, t, testForEquality);
+        return result;
+    }
+
+    // The percentNormalizedComparison method does not verify two
+    // characters that follow the % sign are hexadecimal digits.
+    // Reason being:
+    // 1) percentNormalizedComparison method is not called with
+    // 'decoded' strings
+    // 2) The only place where a percent can be followed by anything
+    // other than hexadecimal digits is in the authority component
+    // (for a IPv6 scope) and the whole authority component is case
+    // insensitive.
+    private static int percentNormalizedComparison(String s, String t,
+                                                   boolean testForEquality) {
+
         if (s == t) return 0;
         if (s != null) {
-            if (t != null)
-                return s.compareTo(t);
-            else
+            if (t != null) {
+                if (s.indexOf('%') < 0) {
+                    return s.compareTo(t);
+                }
+                int sn = s.length();
+                int tn = t.length();
+                if ((sn != tn) && testForEquality)
+                    return sn - tn;
+                int val = 0;
+                int n = sn < tn ? sn : tn;
+                for (int i = 0; i < n; ) {
+                    char c = s.charAt(i);
+                    char d = t.charAt(i);
+                    val = c - d;
+                    if (c != '%') {
+                        if (val != 0)
+                            return val;
+                        i++;
+                        continue;
+                    }
+                    if (d != '%') {
+                        if (val != 0)
+                            return val;
+                    }
+                    i++;
+                    val = toLower(s.charAt(i)) - toLower(t.charAt(i));
+                    if (val != 0)
+                        return val;
+                    i++;
+                    val = toLower(s.charAt(i)) - toLower(t.charAt(i));
+                    if (val != 0)
+                        return val;
+                    i++;
+                }
+                return sn - tn;
+            } else
                 return +1;
         } else {
             return -1;

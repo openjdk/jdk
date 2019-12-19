@@ -102,7 +102,7 @@ import static javax.lang.model.SourceVersion.*;
  */
 @jdk.internal.PreviewFeature(feature=jdk.internal.PreviewFeature.Feature.RECORDS,
                              essentialAPI=false)
-@SupportedSourceVersion(RELEASE_14)
+@SupportedSourceVersion(RELEASE_15)
 public class ElementScanner14<R, P> extends ElementScanner9<R, P> {
     /**
      * Constructor for concrete subclasses; uses {@code null} for the

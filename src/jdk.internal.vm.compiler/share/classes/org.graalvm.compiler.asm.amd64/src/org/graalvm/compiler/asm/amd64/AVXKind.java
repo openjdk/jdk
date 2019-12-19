@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -109,6 +109,17 @@ public final class AVXKind {
 
     public static AMD64Kind changeSize(AMD64Kind kind, AVXSize newSize) {
         return getAVXKind(kind.getScalar(), newSize);
+    }
+
+    public static AMD64Kind getMaskKind(AMD64Kind kind) {
+        switch (kind.getScalar()) {
+            case SINGLE:
+                return getAVXKind(AMD64Kind.DWORD, kind.getVectorLength());
+            case DOUBLE:
+                return getAVXKind(AMD64Kind.QWORD, kind.getVectorLength());
+            default:
+                return kind;
+        }
     }
 
     public static AMD64Kind getAVXKind(AMD64Kind base, AVXSize size) {

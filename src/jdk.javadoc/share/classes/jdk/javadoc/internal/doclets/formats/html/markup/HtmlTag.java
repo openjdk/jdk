@@ -97,7 +97,7 @@ public enum HtmlTag {
     /**
      * Enum representing the type of HTML element.
      */
-    public static enum BlockType {
+    public enum BlockType {
         BLOCK,
         INLINE,
         OTHER
@@ -106,7 +106,7 @@ public enum HtmlTag {
     /**
      * Enum representing HTML end tag requirement.
      */
-    public static enum EndTag {
+    public enum EndTag {
         END,
         NOEND
     }

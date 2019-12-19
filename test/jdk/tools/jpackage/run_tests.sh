@@ -8,7 +8,8 @@
 # Fail fast
 set -e; set -o pipefail;
 
-
+# $JT_BUNDLE_URL (Link can be obtained from https://openjdk.java.net/jtreg/ page)
+jtreg_bundle=$JT_BUNDLE_URL
 workdir=/tmp/jpackage_jtreg_testing
 jtreg_jar=$workdir/jtreg/lib/jtreg.jar
 jpackage_test_selector=test/jdk/tools/jpackage
@@ -40,7 +41,7 @@ find_all_packaging_tests ()
 
 help_usage ()
 {
-  echo "Usage: `basename $0` [options] [test_names]"
+  echo "Usage: `basename $0` [options] [--] [jtreg_options|test_names]"
   echo "Options:"
   echo "  -h              - print this message"
   echo "  -v              - verbose output"
@@ -57,16 +58,12 @@ help_usage ()
   echo '  -l <logfile>    - value for `jpackage.test.logfile` property.'
   echo "                    Optional, for jtreg tests debug purposes only."
   echo "  -m <mode>       - mode to run jtreg tests."
-  echo '                    Should be one of `create`, `update`, `verify-install` or `verify-uninstall`.'
+  echo '                    Should be one of `create`, `update` or `print-default-tests`.'
   echo '                    Optional, default mode is `update`.'
   echo '                    - `create`'
   echo '                      Remove all package bundles from the output directory before running jtreg tests.'
   echo '                    - `update`'
   echo '                      Run jtreg tests and overrite existing package bundles in the output directory.'
-  echo '                    - `verify-install`'
-  echo '                      Verify installed packages created with the previous run of the script.'
-  echo '                    - `verify-uninstall`'
-  echo '                      Verify packages created with the previous run of the script were uninstalled cleanly.'
   echo '                    - `print-default-tests`'
   echo '                      Print default list of packaging tests and exit.'
 }
@@ -134,7 +131,10 @@ mode=update
 # jtreg extra arguments
 declare -a jtreg_args
 
-# Run all tests
+# Create packages only
+jtreg_args+=("-Djpackage.test.action=create")
+
+# run all tests
 run_all_tests=
 
 mapfile -t tests < <(find_all_packaging_tests)
@@ -180,6 +180,12 @@ if [ ! -e "$JAVA_HOME/bin/java" ]; then
   fatal JAVA_HOME variable is set to [$JAVA_HOME] value, but $JAVA_HOME/bin/java not found.
 fi
 
+if [ -z "$JT_HOME" ]; then
+  if [ -z "$JT_BUNDLE_URL" ]; then
+    fatal 'JT_HOME or JT_BUNDLE_URL environment variable is not set. Link to JTREG bundle can be found at https://openjdk.java.net/jtreg/'.
+  fi
+fi
+
 if [ -n "$runtime_dir" ]; then
   if [ ! -d "$runtime_dir" ]; then
     fatal 'Value of `-r` option is set to non-existing directory'.
@@ -199,10 +205,6 @@ if [ "$mode" = create ]; then
   true
 elif [ "$mode" = update ]; then
   true
-elif [ "$mode" = verify-install ]; then
-  jtreg_args+=("-Djpackage.test.action=$mode")
-elif [ "$mode" = verify-uninstall ]; then
-  jtreg_args+=("-Djpackage.test.action=$mode")
 else
   fatal_with_help_usage 'Invalid value of -m option:' [$mode]
 fi
@@ -211,19 +213,36 @@ if [ -z "$run_all_tests" ]; then
   jtreg_args+=(-Djpackage.test.SQETest=yes)
 fi
 
-# All remaining command line arguments are tests to run that should override the defaults
+# Drop arguments separator
+[ "$1" != "--" ] || shift
+
+# All remaining command line arguments are tests to run
+# that should override the defaults and explicit jtreg arguments
 [ $# -eq 0 ] || tests=($@)
 
 
 installJtreg ()
 {
   # Install jtreg if missing
-  if [ ! -f "$jtreg_jar" ]; then
-    exec_command mkdir -p "$workdir"
-    # TODO - restore code to download or copy jtreg.jar
-    # to $workdir/jtreg/lib/jtreg.jar
-    fatal "ERROR: All Tests Disabled until locating jtreg.jar implemented."
+  if [ -z "$JT_HOME" ]; then
+    if [ ! -f "$jtreg_jar" ]; then
+      exec_command mkdir -p "$workdir"
+      if [[ ${jtreg_bundle: -7} == ".tar.gz" ]]; then
+        exec_command "(" cd "$workdir" "&&" wget "$jtreg_bundle" "&&" tar -xzf "$(basename $jtreg_bundle)" ";" rm -f "$(basename $jtreg_bundle)" ")"
+      else
+        if [[ ${jtreg_bundle: -4} == ".zip" ]]; then
+          exec_command "(" cd "$workdir" "&&" wget "$jtreg_bundle" "&&" unzip "$(basename $jtreg_bundle)" ";" rm -f "$(basename $jtreg_bundle)" ")"
+        else
+          fatal 'Unsupported extension of JREG bundle ['$JT_BUNDLE_URL']. Only *.zip or *.tar.gz is supported.'
+        fi
+      fi
+    fi
+  else
+    # use jtreg provided via JT_HOME
+    jtreg_jar=$JT_HOME/lib/jtreg.jar
   fi
+
+  echo 'jtreg jar file: '$jtreg_jar
 }
 
 

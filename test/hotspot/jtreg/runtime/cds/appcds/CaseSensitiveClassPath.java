@@ -29,7 +29,6 @@
  *     between dump time and archive use time
  * @requires vm.cds
  * @library /test/lib
- * @modules jdk.jartool/sun.tools.jar
  * @requires os.family != "mac"
  * @compile test-classes/Hello.java
  * @run driver CaseSensitiveClassPath

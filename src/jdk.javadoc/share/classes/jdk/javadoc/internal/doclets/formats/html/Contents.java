@@ -156,6 +156,7 @@ public class Contents {
     public final Content propertyDetailsLabel;
     public final Content propertySummaryLabel;
     public final Content record;
+    public final Content referencedIn;
     public final Content seeLabel;
     public final Content serializedForm;
     public final Content servicesLabel;
@@ -163,6 +164,8 @@ public class Contents {
     public final Content subclassesLabel;
     public final Content subinterfacesLabel;
     public final Content summaryLabel;
+    public final Content systemPropertiesLabel;
+    public final Content systemPropertiesSummaryLabel;
     public final Content treeLabel;
     public final Content typeLabel;
     public final Content useLabel;
@@ -284,6 +287,7 @@ public class Contents {
         propertyDetailsLabel = getContent("doclet.Property_Detail");
         propertySummaryLabel = getContent("doclet.Property_Summary");
         record = getContent("doclet.Record");
+        referencedIn = getContent("doclet.ReferencedIn");
         seeLabel = getContent("doclet.See");
         serializedForm = getContent("doclet.Serialized_Form");
         servicesLabel = getContent("doclet.Services");
@@ -291,6 +295,8 @@ public class Contents {
         subclassesLabel = getContent("doclet.Subclasses");
         subinterfacesLabel = getContent("doclet.Subinterfaces");
         summaryLabel = getContent("doclet.Summary");
+        systemPropertiesLabel = getContent("doclet.systemProperties");
+        systemPropertiesSummaryLabel = getContent("doclet.systemPropertiesSummary");
         treeLabel = getContent("doclet.Tree");
         typeLabel = getContent("doclet.Type");
         useLabel = getContent("doclet.navClassUse");

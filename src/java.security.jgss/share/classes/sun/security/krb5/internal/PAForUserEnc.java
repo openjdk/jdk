@@ -181,6 +181,10 @@ public class PAForUserEnc {
         return output;
     }
 
+    public PrincipalName getName() {
+        return name;
+    }
+
     public String toString() {
         return "PA-FOR-USER: " + name;
     }

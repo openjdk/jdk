@@ -30,7 +30,7 @@ import static jdk.vm.ci.services.Services.IS_IN_NATIVE_IMAGE;
 import static org.graalvm.compiler.core.common.GraalOptions.UseEncodedGraphs;
 import static org.graalvm.compiler.nodes.graphbuilderconf.InlineInvokePlugin.InlineInfo.createIntrinsicInlineInfo;
 import static org.graalvm.compiler.nodes.graphbuilderconf.IntrinsicContext.CompilationContext.INLINE_AFTER_PARSING;
-import static org.graalvm.compiler.nodes.graphbuilderconf.IntrinsicContext.CompilationContext.ROOT_COMPILATION;
+import static org.graalvm.compiler.nodes.graphbuilderconf.IntrinsicContext.CompilationContext.ROOT_COMPILATION_ENCODING;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -306,13 +306,17 @@ public class SymbolicSnippetEncoder {
 
         StructuredGraph getMethodSubstitutionGraph(MethodSubstitutionPlugin plugin, ResolvedJavaMethod original, ReplacementsImpl replacements, IntrinsicContext.CompilationContext context,
                         StructuredGraph.AllowAssumptions allowAssumptions, Cancellable cancellable, OptionValues options) {
-            Integer startOffset = snippetStartOffsets.get(plugin.toString() + context);
+            IntrinsicContext.CompilationContext contextToUse = context;
+            if (context == IntrinsicContext.CompilationContext.ROOT_COMPILATION) {
+                contextToUse = IntrinsicContext.CompilationContext.ROOT_COMPILATION_ENCODING;
+            }
+            Integer startOffset = snippetStartOffsets.get(plugin.toString() + contextToUse);
             if (startOffset == null) {
-                throw GraalError.shouldNotReachHere("plugin graph not found: " + plugin + " with " + context);
+                throw GraalError.shouldNotReachHere("plugin graph not found: " + plugin + " with " + contextToUse);
             }
 
             ResolvedJavaType accessingClass = replacements.getProviders().getMetaAccess().lookupJavaType(plugin.getDeclaringClass());
-            return decodeGraph(original, accessingClass, startOffset, replacements, context, allowAssumptions, cancellable, options);
+            return decodeGraph(original, accessingClass, startOffset, replacements, contextToUse, allowAssumptions, cancellable, options);
         }
 
         @SuppressWarnings("try")
@@ -406,8 +410,13 @@ public class SymbolicSnippetEncoder {
         //
         // -J-Dgraal.Dump=SymbolicSnippetEncoder_:2 -J-Dgraal.PrintGraph=File
         // -J-Dgraal.DebugStubsAndSnippets=true
+        IntrinsicContext.CompilationContext contextToUse = context;
+        if (context == IntrinsicContext.CompilationContext.ROOT_COMPILATION) {
+            contextToUse = IntrinsicContext.CompilationContext.ROOT_COMPILATION_ENCODING;
+        }
         try (DebugContext debug = openDebugContext("SymbolicSnippetEncoder_", method, options)) {
-            StructuredGraph graph = snippetReplacements.makeGraph(debug, snippetReplacements.getDefaultReplacementBytecodeProvider(), method, args, original, trackNodeSourcePosition, null, context);
+            StructuredGraph graph = snippetReplacements.makeGraph(debug, snippetReplacements.getDefaultReplacementBytecodeProvider(), method, args, original, trackNodeSourcePosition, null,
+                            contextToUse);
 
             // Check if all methods which should be inlined are really inlined.
             for (MethodCallTargetNode callTarget : graph.getNodes(MethodCallTargetNode.TYPE)) {
@@ -508,7 +517,7 @@ public class SymbolicSnippetEncoder {
                 ResolvedJavaMethod original = plugin.getOriginalMethod(originalReplacements.getProviders().getMetaAccess());
                 registerMethodSubstitution(plugin, original, INLINE_AFTER_PARSING, options);
                 if (!original.isNative()) {
-                    registerMethodSubstitution(plugin, original, ROOT_COMPILATION, options);
+                    registerMethodSubstitution(plugin, original, ROOT_COMPILATION_ENCODING, options);
                 }
             }
             preparedPlugins = plugins.size();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 package sun.tools.util;
 
 import sun.tools.java.*;
-
+import static java.lang.reflect.Modifier.*;
 
 /**
  *   A class whose instances are filters over Modifier bits.
@@ -43,7 +43,7 @@ import sun.tools.java.*;
  */
 
 public
-class ModifierFilter extends java.lang.reflect.Modifier {
+class ModifierFilter {
 
     /**
     * Package private access.

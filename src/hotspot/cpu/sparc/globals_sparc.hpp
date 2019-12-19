@@ -80,8 +80,6 @@ define_pd_global(bool, CompactStrings, true);
 
 define_pd_global(intx, InitArrayShortSize, 8*BytesPerLong);
 
-define_pd_global(bool, ThreadLocalHandshakes, true);
-
 #define ARCH_FLAGS(develop, \
                    product, \
                    diagnostic, \

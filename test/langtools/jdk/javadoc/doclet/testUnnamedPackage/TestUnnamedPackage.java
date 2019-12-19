@@ -110,7 +110,8 @@ public class TestUnnamedPackage extends JavadocTester {
                 "{\"l\":\"All Packages\",\"url\":\"allpackages-index.html\"}");
 
         checkOutput("index-all.html", true,
-                "<br><a href=\"allclasses-index.html\">All&nbsp;Classes</a>&nbsp;"
+                "<br><a href=\"allclasses-index.html\">All&nbsp;Classes</a>"
+                + "<span class=\"verticalSeparator\">|</span>"
                 + "<a href=\"allpackages-index.html\">All&nbsp;Packages</a>");
 
         checkOutput(Output.OUT, false,

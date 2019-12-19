@@ -156,6 +156,18 @@ Java_sun_nio_ch_Net_isExclusiveBindAvailable(JNIEnv *env, jclass clazz) {
 }
 
 JNIEXPORT jboolean JNICALL
+Java_sun_nio_ch_Net_shouldSetBothIPv4AndIPv6Options0(JNIEnv* env, jclass cl)
+{
+#if defined(__linux__)
+    /* Set both IPv4 and IPv6 socket options when setting multicast options */
+    return JNI_TRUE;
+#else
+    /* Do not set both IPv4 and IPv6 socket options when setting multicast options */
+    return JNI_FALSE;
+#endif
+}
+
+JNIEXPORT jboolean JNICALL
 Java_sun_nio_ch_Net_canIPv6SocketJoinIPv4Group0(JNIEnv* env, jclass cl)
 {
 #if defined(__linux__) || defined(__APPLE__) || defined(__solaris__)
@@ -540,12 +552,6 @@ Java_sun_nio_ch_Net_setIntOption0(JNIEnv *env, jclass clazz, jobject fdo,
                                      JNU_JAVANETPKG "SocketException",
                                      "sun.nio.ch.Net.setIntOption");
     }
-#ifdef __linux__
-    if (level == IPPROTO_IPV6 && opt == IPV6_TCLASS && isIPv6) {
-        // set the V4 option also
-        setsockopt(fdval(env, fdo), IPPROTO_IP, IP_TOS, parg, arglen);
-    }
-#endif
 }
 
 JNIEXPORT jint JNICALL

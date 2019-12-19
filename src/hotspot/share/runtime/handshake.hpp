@@ -89,6 +89,12 @@ public:
   }
 
   bool try_process_by_vmThread(JavaThread* target);
+
+#ifdef ASSERT
+  bool _vmthread_processing_handshake;
+  bool is_vmthread_processing_handshake() const { return _vmthread_processing_handshake; }
+#endif
+
 };
 
 #endif // SHARE_RUNTIME_HANDSHAKE_HPP

@@ -27,7 +27,6 @@
  * @summary Test -Xshare:auto for AppCDS
  * @requires vm.cds
  * @library /test/lib
- * @modules jdk.jartool/sun.tools.jar
  * @compile test-classes/Hello.java
  * @run driver XShareAutoWithChangedJar
  */

@@ -99,7 +99,10 @@ public class LicenseTest {
             verifyLicenseFileInLinuxPackage(cmd, linuxLicenseFile(cmd));
         })
         .addInstallVerifier(cmd -> {
-            TKit.assertReadableFileExists(linuxLicenseFile(cmd));
+            Path path = linuxLicenseFile(cmd);
+            if (path != null) {
+                TKit.assertReadableFileExists(path);
+            }
         })
         .addUninstallVerifier(cmd -> {
             verifyLicenseFileNotInstalledLinux(linuxLicenseFile(cmd));
@@ -110,7 +113,10 @@ public class LicenseTest {
         })
         .forTypes(PackageType.LINUX_RPM)
         .addInstallVerifier(cmd -> {
-            verifyLicenseFileInstalledRpm(rpmLicenseFile(cmd));
+            Path path = rpmLicenseFile(cmd);
+            if (path != null) {
+                verifyLicenseFileInstalledRpm(path);
+            }
         })
         .run();
     }
@@ -124,6 +130,10 @@ public class LicenseTest {
     }
 
     private static Path rpmLicenseFile(JPackageCommand cmd) {
+        if (cmd.isPackageUnpacked("Not checking for rpm license file")) {
+            return null;
+        }
+
         final Path licenseRoot = Path.of(
                 new Executor()
                 .setExecutable("rpm")
@@ -236,7 +246,7 @@ public class LicenseTest {
 
         void run() {
             final Path srcLicenseFile = TKit.workDir().resolve("license");
-            new PackageTest().configureHelloApp().forTypes(PackageType.LINUX_DEB)
+            new PackageTest().forTypes(PackageType.LINUX_DEB).configureHelloApp()
             .addInitializer(cmd -> {
                 // Create source license file.
                 Files.write(srcLicenseFile, List.of(

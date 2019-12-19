@@ -169,12 +169,6 @@ class BitMap {
   // Verify [beg,end) is a valid range, e.g. beg <= end <= size().
   void verify_range(idx_t beg, idx_t end) const NOT_DEBUG_RETURN;
 
-  // Statistics.
-  static const idx_t* _pop_count_table;
-  static void init_pop_count_table();
-  static idx_t num_set_bits(bm_word_t w);
-  static idx_t num_set_bits_from_table(unsigned char c);
-
   // Allocation Helpers.
 
   // Allocates and clears the bitmap memory.

@@ -45,5 +45,5 @@ public interface AnnotationTypeOptionalMemberWriter extends
      * @param member the member being documented
      * @param annotationDocTree content tree to which the default value will be added
      */
-    public void addDefaultValueInfo(Element member, Content annotationDocTree);
+    void addDefaultValueInfo(Element member, Content annotationDocTree);
 }

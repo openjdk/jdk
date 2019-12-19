@@ -25,8 +25,13 @@
 
 package jdk.javadoc.internal.doclets.toolkit.taglets;
 
-import java.util.*;
+import java.util.EnumSet;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
@@ -34,13 +39,13 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeMirror;
 
 import com.sun.source.doctree.DocTree;
+
+import jdk.javadoc.doclet.Taglet.Location;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFinder;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFinder.Input;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
-
-import static com.sun.source.doctree.DocTree.Kind.THROWS;
 
 /**
  * A taglet that represents the @throws tag.
@@ -54,7 +59,7 @@ public class ThrowsTaglet extends BaseTaglet
     implements InheritableTaglet {
 
     public ThrowsTaglet() {
-        super(THROWS.tagName, false, EnumSet.of(Site.CONSTRUCTOR, Site.METHOD));
+        super(DocTree.Kind.THROWS, false, EnumSet.of(Location.CONSTRUCTOR, Location.METHOD));
     }
 
     @Override
@@ -174,7 +179,7 @@ public class ThrowsTaglet extends BaseTaglet
      * @return the Content representation of this <code>Tag</code>.
      */
     protected Content throwsTagsOutput(Map<List<? extends DocTree>, ExecutableElement> throwTags,
-        TagletWriter writer, Set<String> alreadyDocumented, boolean allowDups) {
+                                       TagletWriter writer, Set<String> alreadyDocumented, boolean allowDups) {
         Utils utils = writer.configuration().utils;
         Content result = writer.getOutputInstance();
         if (!throwTags.isEmpty()) {

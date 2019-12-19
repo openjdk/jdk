@@ -71,7 +71,7 @@ public class MethodBuilder extends AbstractMemberBuilder {
      * Construct a new MethodBuilder.
      *
      * @param context       the build context.
-     * @param typeElement the class whoses members are being documented.
+     * @param typeElement the class whose members are being documented.
      * @param writer the doclet specific writer.
      */
     private MethodBuilder(Context context,
@@ -86,7 +86,7 @@ public class MethodBuilder extends AbstractMemberBuilder {
      * Construct a new MethodBuilder.
      *
      * @param context       the build context.
-     * @param typeElement the class whoses members are being documented.
+     * @param typeElement the class whose members are being documented.
      * @param writer the doclet specific writer.
      *
      * @return an instance of a MethodBuilder.

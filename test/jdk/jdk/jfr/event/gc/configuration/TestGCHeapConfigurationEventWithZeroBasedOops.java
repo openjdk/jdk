@@ -36,7 +36,7 @@ import jdk.test.lib.jfr.EventVerifier;
  * @requires os.family == "linux" | os.family == "windows"
  * @requires sun.arch.data.model == "64"
  * @library /test/lib /test/jdk
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:-UseFastUnorderedTimeStamps -XX:+UseParallelGC -XX:+UseParallelOldGC -XX:+UseCompressedOops -Xmx4g jdk.jfr.event.gc.configuration.TestGCHeapConfigurationEventWithZeroBasedOops
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:-UseFastUnorderedTimeStamps -XX:+UseParallelGC -XX:+UseCompressedOops -Xmx4g jdk.jfr.event.gc.configuration.TestGCHeapConfigurationEventWithZeroBasedOops
  */
 
 /* See the shell script wrapper for the flags used when invoking the JVM */

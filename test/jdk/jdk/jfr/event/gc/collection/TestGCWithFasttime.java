@@ -39,7 +39,7 @@ import jdk.test.lib.jfr.GCHelper;
  * @requires vm.hasJFR
   * @requires vm.gc == "Parallel" | vm.gc == null
  * @library /test/lib /test/jdk
- * @run main/othervm -XX:+UseParallelGC -XX:+UseParallelOldGC jdk.jfr.event.gc.collection.TestGCWithFasttime
+ * @run main/othervm -XX:+UseParallelGC jdk.jfr.event.gc.collection.TestGCWithFasttime
  */
 public class TestGCWithFasttime {
     private static final String EVENT_NAME = GCHelper.event_garbage_collection;

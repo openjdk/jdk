@@ -29,6 +29,7 @@
 #include "memory/allocation.hpp"
 #include "memory/iterator.hpp"
 #include "runtime/thread.hpp"
+#include "runtime/threadSMR.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 class ZRootsIteratorClosure;
@@ -88,9 +89,23 @@ public:
   }
 };
 
+class ZJavaThreadsIterator {
+private:
+  ThreadsListHandle _threads;
+  volatile uint     _claimed;
+
+  uint claim();
+
+public:
+  ZJavaThreadsIterator();
+
+  void threads_do(ThreadClosure* cl);
+};
+
 class ZRootsIterator {
 private:
-  const bool _visit_jvmti_weak_export;
+  const bool           _visit_jvmti_weak_export;
+  ZJavaThreadsIterator _java_threads_iter;
 
   void do_universe(ZRootsIteratorClosure* cl);
   void do_object_synchronizer(ZRootsIteratorClosure* cl);
@@ -98,7 +113,8 @@ private:
   void do_jvmti_export(ZRootsIteratorClosure* cl);
   void do_jvmti_weak_export(ZRootsIteratorClosure* cl);
   void do_system_dictionary(ZRootsIteratorClosure* cl);
-  void do_threads(ZRootsIteratorClosure* cl);
+  void do_vm_thread(ZRootsIteratorClosure* cl);
+  void do_java_threads(ZRootsIteratorClosure* cl);
   void do_code_cache(ZRootsIteratorClosure* cl);
 
   ZSerialOopsDo<ZRootsIterator, &ZRootsIterator::do_universe>            _universe;
@@ -107,7 +123,8 @@ private:
   ZSerialOopsDo<ZRootsIterator, &ZRootsIterator::do_jvmti_export>        _jvmti_export;
   ZSerialOopsDo<ZRootsIterator, &ZRootsIterator::do_jvmti_weak_export>   _jvmti_weak_export;
   ZSerialOopsDo<ZRootsIterator, &ZRootsIterator::do_system_dictionary>   _system_dictionary;
-  ZParallelOopsDo<ZRootsIterator, &ZRootsIterator::do_threads>           _threads;
+  ZSerialOopsDo<ZRootsIterator, &ZRootsIterator::do_vm_thread>           _vm_thread;
+  ZParallelOopsDo<ZRootsIterator, &ZRootsIterator::do_java_threads>      _java_threads;
   ZParallelOopsDo<ZRootsIterator, &ZRootsIterator::do_code_cache>        _code_cache;
 
 public:

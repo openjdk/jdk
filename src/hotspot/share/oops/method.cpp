@@ -1399,7 +1399,7 @@ bool Method::has_member_arg() const {
 methodHandle Method::make_method_handle_intrinsic(vmIntrinsics::ID iid,
                                                          Symbol* signature,
                                                          TRAPS) {
-  ResourceMark rm;
+  ResourceMark rm(THREAD);
   methodHandle empty;
 
   InstanceKlass* holder = SystemDictionary::MethodHandle_klass();

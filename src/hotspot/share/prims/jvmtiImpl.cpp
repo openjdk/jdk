@@ -25,6 +25,9 @@
 #include "precompiled.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
+#include "code/nmethod.hpp"
+#include "gc/shared/oopStorage.hpp"
+#include "gc/shared/oopStorageSet.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/oopMapCache.hpp"
 #include "jvmtifiles/jvmtiEnv.hpp"
@@ -170,24 +173,6 @@ void GrowableCache::append(GrowableElement* e) {
   recache();
 }
 
-// insert a copy of the element using lessthan()
-void GrowableCache::insert(GrowableElement* e) {
-  GrowableElement *new_e = e->clone();
-  _elements->append(new_e);
-
-  int n = length()-2;
-  for (int i=n; i>=0; i--) {
-    GrowableElement *e1 = _elements->at(i);
-    GrowableElement *e2 = _elements->at(i+1);
-    if (e2->lessThan(e1)) {
-      _elements->at_put(i+1, e1);
-      _elements->at_put(i,   e2);
-    }
-  }
-
-  recache();
-}
-
 // remove the element at index
 void GrowableCache::remove (int index) {
   GrowableElement *e = _elements->at(index);
@@ -208,69 +193,45 @@ void GrowableCache::clear() {
   recache();
 }
 
-void GrowableCache::oops_do(OopClosure* f) {
-  int len = _elements->length();
-  for (int i=0; i<len; i++) {
-    GrowableElement *e = _elements->at(i);
-    e->oops_do(f);
-  }
-}
-
-void GrowableCache::metadata_do(void f(Metadata*)) {
-  int len = _elements->length();
-  for (int i=0; i<len; i++) {
-    GrowableElement *e = _elements->at(i);
-    e->metadata_do(f);
-  }
-}
-
 //
 // class JvmtiBreakpoint
 //
 
-JvmtiBreakpoint::JvmtiBreakpoint() {
-  _method = NULL;
-  _bci    = 0;
-  _class_holder = NULL;
+JvmtiBreakpoint::JvmtiBreakpoint(Method* m_method, jlocation location)
+    : _method(m_method), _bci((int)location), _class_holder(NULL) {
+  assert(_method != NULL, "No method for breakpoint.");
+  assert(_bci >= 0, "Negative bci for breakpoint.");
+  oop class_holder_oop  = _method->method_holder()->klass_holder();
+  _class_holder = OopStorageSet::vm_global()->allocate();
+  if (_class_holder == NULL) {
+    vm_exit_out_of_memory(sizeof(oop), OOM_MALLOC_ERROR,
+                          "Cannot create breakpoint oop handle");
+  }
+  NativeAccess<>::oop_store(_class_holder, class_holder_oop);
 }
 
-JvmtiBreakpoint::JvmtiBreakpoint(Method* m_method, jlocation location) {
-  _method        = m_method;
-  _class_holder  = _method->method_holder()->klass_holder();
-#ifdef CHECK_UNHANDLED_OOPS
-  // _class_holder can't be wrapped in a Handle, because JvmtiBreakpoints are
-  // sometimes allocated on the heap.
-  //
-  // The code handling JvmtiBreakpoints allocated on the stack can't be
-  // interrupted by a GC until _class_holder is reachable by the GC via the
-  // oops_do method.
-  Thread::current()->allow_unhandled_oop(&_class_holder);
-#endif // CHECK_UNHANDLED_OOPS
-  assert(_method != NULL, "_method != NULL");
-  _bci           = (int) location;
-  assert(_bci >= 0, "_bci >= 0");
+JvmtiBreakpoint::~JvmtiBreakpoint() {
+  if (_class_holder != NULL) {
+    NativeAccess<>::oop_store(_class_holder, (oop)NULL);
+    OopStorageSet::vm_global()->release(_class_holder);
+  }
 }
 
 void JvmtiBreakpoint::copy(JvmtiBreakpoint& bp) {
   _method   = bp._method;
   _bci      = bp._bci;
-  _class_holder = bp._class_holder;
-}
-
-bool JvmtiBreakpoint::lessThan(JvmtiBreakpoint& bp) {
-  Unimplemented();
-  return false;
+  _class_holder = OopStorageSet::vm_global()->allocate();
+  if (_class_holder == NULL) {
+    vm_exit_out_of_memory(sizeof(oop), OOM_MALLOC_ERROR,
+                          "Cannot create breakpoint oop handle");
+  }
+  oop resolved_ch = NativeAccess<>::oop_load(bp._class_holder);
+  NativeAccess<>::oop_store(_class_holder, resolved_ch);
 }
 
 bool JvmtiBreakpoint::equals(JvmtiBreakpoint& bp) {
   return _method   == bp._method
     &&   _bci      == bp._bci;
-}
-
-bool JvmtiBreakpoint::is_valid() {
-  // class loader can be NULL
-  return _method != NULL &&
-         _bci >= 0;
 }
 
 address JvmtiBreakpoint::getBcp() const {
@@ -346,21 +307,6 @@ void VM_ChangeBreakpoints::doit() {
   }
 }
 
-void VM_ChangeBreakpoints::oops_do(OopClosure* f) {
-  // The JvmtiBreakpoints in _breakpoints will be visited via
-  // JvmtiExport::oops_do.
-  if (_bp != NULL) {
-    _bp->oops_do(f);
-  }
-}
-
-void VM_ChangeBreakpoints::metadata_do(void f(Metadata*)) {
-  // Walk metadata in breakpoints to keep from being deallocated with RedefineClasses
-  if (_bp != NULL) {
-    _bp->metadata_do(f);
-  }
-}
-
 //
 // class JvmtiBreakpoints
 //
@@ -372,14 +318,6 @@ JvmtiBreakpoints::JvmtiBreakpoints(void listener_fun(void *,address *)) {
 }
 
 JvmtiBreakpoints:: ~JvmtiBreakpoints() {}
-
-void  JvmtiBreakpoints::oops_do(OopClosure* f) {
-  _bps.oops_do(f);
-}
-
-void  JvmtiBreakpoints::metadata_do(void f(Metadata*)) {
-  _bps.metadata_do(f);
-}
 
 void JvmtiBreakpoints::print() {
 #ifndef PRODUCT
@@ -487,19 +425,6 @@ void  JvmtiCurrentBreakpoints::listener_fun(void *this_obj, address *cache) {
   assert(cache[n] == NULL, "cache must be NULL terminated");
 
   set_breakpoint_list(cache);
-}
-
-
-void JvmtiCurrentBreakpoints::oops_do(OopClosure* f) {
-  if (_jvmti_breakpoints != NULL) {
-    _jvmti_breakpoints->oops_do(f);
-  }
-}
-
-void JvmtiCurrentBreakpoints::metadata_do(void f(Metadata*)) {
-  if (_jvmti_breakpoints != NULL) {
-    _jvmti_breakpoints->metadata_do(f);
-  }
 }
 
 ///////////////////////////////////////////////////////////////
@@ -992,6 +917,12 @@ void JvmtiDeferredEvent::post_compiled_method_load_event(JvmtiEnv* env) {
   JvmtiExport::post_compiled_method_load(env, nm);
 }
 
+void JvmtiDeferredEvent::run_nmethod_entry_barriers() {
+  if (_type == TYPE_COMPILED_METHOD_LOAD) {
+    _event_data.compiled_method_load->run_nmethod_entry_barrier();
+  }
+}
+
 
 // Keep the nmethod for compiled_method_load from being unloaded.
 void JvmtiDeferredEvent::oops_do(OopClosure* f, CodeBlobClosure* cf) {
@@ -1008,8 +939,16 @@ void JvmtiDeferredEvent::nmethods_do(CodeBlobClosure* cf) {
   }
 }
 
+
 bool JvmtiDeferredEventQueue::has_events() {
-  return _queue_head != NULL;
+  // We save the queued events before the live phase and post them when it starts.
+  // This code could skip saving the events on the queue before the live
+  // phase and ignore them, but this would change how we do things now.
+  // Starting the service thread earlier causes this to be called before the live phase begins.
+  // The events on the queue should all be posted after the live phase so this is an
+  // ok check.  Before the live phase, DynamicCodeGenerated events are posted directly.
+  // If we add other types of events to the deferred queue, this could get ugly.
+  return JvmtiEnvBase::get_phase() == JVMTI_PHASE_LIVE  && _queue_head != NULL;
 }
 
 void JvmtiDeferredEventQueue::enqueue(JvmtiDeferredEvent event) {
@@ -1056,6 +995,13 @@ void JvmtiDeferredEventQueue::post(JvmtiEnv* env) {
      event.post_compiled_method_load_event(env);
   }
 }
+
+void JvmtiDeferredEventQueue::run_nmethod_entry_barriers() {
+  for(QueueNode* node = _queue_head; node != NULL; node = node->next()) {
+     node->event().run_nmethod_entry_barriers();
+  }
+}
+
 
 void JvmtiDeferredEventQueue::oops_do(OopClosure* f, CodeBlobClosure* cf) {
   for(QueueNode* node = _queue_head; node != NULL; node = node->next()) {

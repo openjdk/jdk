@@ -302,7 +302,7 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
 
   // Reallocate the non-escaping objects and restore their fields. Then
   // relock objects if synchronization on them was eliminated.
-  if (jvmci_enabled || (DoEscapeAnalysis && EliminateAllocations)) {
+  if (jvmci_enabled COMPILER2_PRESENT( || (DoEscapeAnalysis && EliminateAllocations) )) {
     realloc_failures = eliminate_allocations(thread, exec_mode, cm, deoptee, map, chunk);
   }
 #endif // COMPILER2_OR_JVMCI
@@ -318,7 +318,7 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
   NoSafepointVerifier no_safepoint;
 
 #if COMPILER2_OR_JVMCI
-  if (jvmci_enabled || ((DoEscapeAnalysis || EliminateNestedLocks) && EliminateLocks)) {
+  if (jvmci_enabled COMPILER2_PRESENT( || ((DoEscapeAnalysis || EliminateNestedLocks) && EliminateLocks) )) {
     eliminate_locks(thread, chunk, realloc_failures);
   }
 #endif // COMPILER2_OR_JVMCI
@@ -814,22 +814,23 @@ class DeoptimizeMarkedClosure : public HandshakeClosure {
   }
 };
 
-void Deoptimization::deoptimize_all_marked() {
+void Deoptimization::deoptimize_all_marked(nmethod* nmethod_only) {
   ResourceMark rm;
   DeoptimizationMarker dm;
 
-  if (SafepointSynchronize::is_at_safepoint()) {
-    DeoptimizeMarkedClosure deopt;
-    // Make the dependent methods not entrant
+  // Make the dependent methods not entrant
+  if (nmethod_only != NULL) {
+    nmethod_only->mark_for_deoptimization();
+    nmethod_only->make_not_entrant();
+  } else {
+    MutexLocker mu(SafepointSynchronize::is_at_safepoint() ? NULL : CodeCache_lock, Mutex::_no_safepoint_check_flag);
     CodeCache::make_marked_nmethods_not_entrant();
+  }
+
+  DeoptimizeMarkedClosure deopt;
+  if (SafepointSynchronize::is_at_safepoint()) {
     Threads::java_threads_do(&deopt);
   } else {
-    // Make the dependent methods not entrant
-    {
-      MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-      CodeCache::make_marked_nmethods_not_entrant();
-    }
-    DeoptimizeMarkedClosure deopt;
     Handshake::execute(&deopt);
   }
 }

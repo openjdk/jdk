@@ -31,13 +31,12 @@ import java.util.List;
 import javax.lang.model.element.Element;
 
 import com.sun.source.doctree.DocTree;
+import jdk.javadoc.doclet.Taglet.Location;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFinder;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFinder.Input;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
-
-import static com.sun.source.doctree.DocTree.Kind.SEE;
 
 /**
  * A taglet that represents the @see tag.
@@ -50,7 +49,7 @@ import static com.sun.source.doctree.DocTree.Kind.SEE;
 public class SeeTaglet extends BaseTaglet implements InheritableTaglet {
 
     public SeeTaglet() {
-        super(SEE.tagName, false, EnumSet.allOf(Site.class));
+        super(DocTree.Kind.SEE, false, EnumSet.allOf(Location.class));
     }
 
     @Override

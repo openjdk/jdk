@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,6 @@ import java.lang.annotation.*;
 /**
  * This annotation is a non-documented synthesized annotation container for ContaineeSynthDoc.
  * It will be used to annotate Class C and methods in the class using a synthesized form.
- *
- * @author Bhavesh Patel
  */
 public @interface ContainerSynthNotDoc {
 

@@ -115,7 +115,8 @@ public class ClassFile {
         V55(55, 0),   // JDK 11: constant dynamic, nest mates
         V56(56, 0),   // JDK 12
         V57(57, 0),   // JDK 13
-        V58(58, 0);   // JDK 14
+        V58(58, 0),   // JDK 14
+        V59(59, 0);   // JDK 15
         Version(int major, int minor) {
             this.major = major;
             this.minor = minor;

@@ -44,7 +44,4 @@ JVMFlag::Error BiasedLockingDecayTimeFunc(intx value, bool verbose);
 
 JVMFlag::Error PerfDataSamplingIntervalFunc(intx value, bool verbose);
 
-JVMFlag::Error ThreadLocalHandshakesConstraintFunc(bool value, bool verbose);
-
-
 #endif // SHARE_RUNTIME_FLAGS_JVMFLAGCONSTRAINTSRUNTIME_HPP

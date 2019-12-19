@@ -29,15 +29,14 @@ import java.nio.file.Path;
 import java.util.spi.ToolProvider;
 
 public enum JavaTool {
-    JAVA("java"), JAVAC("javac"), JPACKAGE("jpackage"), JAR("jar"), JLINK("jlink");
+    JAVA, JAVAC, JPACKAGE, JAR, JLINK, JMOD;
 
-    JavaTool(String name) {
-        this.name = name;
+    JavaTool() {
         this.path = Path.of(System.getProperty("java.home")).resolve(
                 relativePathInJavaHome()).toAbsolutePath().normalize();
         if (!path.toFile().exists()) {
             throw new RuntimeException(String.format(
-                    "Unable to find tool [%s] at path=[%s]", name, path));
+                    "Unable to find tool [%s] at path=[%s]", toolName(), path));
         }
     }
 
@@ -46,17 +45,20 @@ public enum JavaTool {
     }
 
     public ToolProvider asToolProvider() {
-        return ToolProvider.findFirst(name).orElse(null);
+        return ToolProvider.findFirst(toolName()).orElse(null);
     }
 
     Path relativePathInJavaHome() {
-        Path path = Path.of("bin", name);
+        Path path = Path.of("bin", toolName());
         if (TKit.isWindows()) {
             path = path.getParent().resolve(path.getFileName().toString() + ".exe");
         }
         return path;
     }
 
+    private String toolName() {
+        return name().toLowerCase();
+    }
+
     private Path path;
-    private String name;
 }

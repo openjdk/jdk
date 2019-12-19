@@ -32,7 +32,9 @@ import jdk.internal.org.objectweb.asm.Opcodes;
 import jdk.internal.org.objectweb.asm.tree.ClassNode;
 import jdk.test.lib.Utils;
 import jdk.vm.ci.code.InstalledCode;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.hotspot.CompilerToVMHelper;
+import jdk.vm.ci.hotspot.HotSpotNmethod;
 import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethod;
 
 import java.io.IOException;
@@ -64,17 +66,10 @@ public class CTVMUtilities {
         return getResolvedMethod(method.getDeclaringClass(), method);
     }
 
-    public static InstalledCode getInstalledCode(String name, long address,
-            long entryPoint) {
-        return new InstalledCodeStub(name, address, entryPoint);
+    public static InstalledCode getInstalledCode(ResolvedJavaMethod method, String name, long address, long entryPoint) {
+        return CompilerToVMHelper.getInstalledCode(method, name, address, entryPoint);
     }
-    private static class InstalledCodeStub extends InstalledCode {
-        private InstalledCodeStub(String name, long address, long entryPoint) {
-            super(name);
-            this.address = address;
-            this.entryPoint = entryPoint;
-        }
-    }
+
     public static Map<Integer, Integer> getBciToLineNumber(Executable method) {
         Map<Integer, Integer> lineNumbers = new TreeMap<>();
         Class<?> aClass = method.getDeclaringClass();

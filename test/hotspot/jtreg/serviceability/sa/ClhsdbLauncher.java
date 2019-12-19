@@ -71,7 +71,6 @@ public class ClhsdbLauncher {
             cmdStringList = SATestUtils.addPrivileges(cmdStringList);
         }
         ProcessBuilder processBuilder = new ProcessBuilder(cmdStringList);
-        processBuilder.redirectError(ProcessBuilder.Redirect.INHERIT);
         toolProcess = processBuilder.start();
     }
 
@@ -91,8 +90,6 @@ public class ClhsdbLauncher {
                            " and exe " + JDKToolFinder.getTestJDKTool("java"));
 
         ProcessBuilder processBuilder = new ProcessBuilder(launcher.getCommand());
-        processBuilder.redirectError(ProcessBuilder.Redirect.INHERIT);
-
         toolProcess = processBuilder.start();
     }
 
@@ -116,6 +113,17 @@ public class ClhsdbLauncher {
             throw new RuntimeException("CLHSDB command must be provided\n");
         }
 
+        // Enable verbose exception tracing so we see the full exception backtrace
+        // when there is a failure. We need to insert this command into the start
+        // of the commands list. We can't just issue the "verbose true" command seperately
+        // because code below won't work correctly if all executed commands are
+        // not in the commands list. And since it's immutable, we need to allocate
+        // a mutable one.
+        List<String> savedCommands = commands;
+        commands = new java.util.LinkedList<String>();
+        commands.add("verbose true");
+        commands.addAll(savedCommands);
+
         try (OutputStream out = toolProcess.getOutputStream()) {
             for (String cmd : commands) {
                 out.write((cmd + "\n").getBytes());
@@ -134,7 +142,14 @@ public class ClhsdbLauncher {
 
         oa.shouldHaveExitValue(0);
         output = oa.getOutput();
+        System.out.println("Output: ");
         System.out.println(output);
+
+        // This will detect most SA failures, including during the attach.
+        oa.shouldNotMatch("^sun.jvm.hotspot.debugger.DebuggerException:.*$");
+        // This will detect unexpected exceptions, like NPEs and asserts, that are caught
+        // by sun.jvm.hotspot.CommandProcessor.
+        oa.shouldNotMatch("^Error: .*$");
 
         String[] parts = output.split("hsdb>");
         for (String cmd : commands) {

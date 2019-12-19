@@ -50,7 +50,7 @@ BOOL postEventDuringEventSynthesis = NO;
  * Subtypes of NSApplicationDefined, which are used for custom events.
  */
 enum {
-    ExecuteBlockEvent, NativeSyncQueueEvent
+    ExecuteBlockEvent = 777, NativeSyncQueueEvent
 };
 
 @implementation NSApplicationAWT
@@ -385,11 +385,14 @@ untilDate:(NSDate *)expiration inMode:(NSString *)mode dequeue:(BOOL)deqFlag {
 {
     if ([event type] == NSApplicationDefined
             && TS_EQUAL([event timestamp], dummyEventTimestamp)
-            && [event subtype] == NativeSyncQueueEvent) {
+            && (short)[event subtype] == NativeSyncQueueEvent
+            && [event data1] == NativeSyncQueueEvent
+            && [event data2] == NativeSyncQueueEvent) {
         [seenDummyEventLock lockWhenCondition:NO];
         [seenDummyEventLock unlockWithCondition:YES];
-
-    } else if ([event type] == NSApplicationDefined && [event subtype] == ExecuteBlockEvent) {
+    } else if ([event type] == NSApplicationDefined
+               && (short)[event subtype] == ExecuteBlockEvent
+               && [event data1] != 0 && [event data2] == ExecuteBlockEvent) {
         void (^block)() = (void (^)()) [event data1];
         block();
         [block release];
@@ -420,7 +423,7 @@ untilDate:(NSDate *)expiration inMode:(NSString *)mode dequeue:(BOOL)deqFlag {
                                          context: nil
                                          subtype: ExecuteBlockEvent
                                            data1: encode
-                                           data2: 0];
+                                           data2: ExecuteBlockEvent];
 
     [NSApp postEvent: event atStart: NO];
     [pool drain];
@@ -438,8 +441,8 @@ untilDate:(NSDate *)expiration inMode:(NSString *)mode dequeue:(BOOL)deqFlag {
                                     windowNumber: 0
                                          context: nil
                                          subtype: NativeSyncQueueEvent
-                                           data1: 0
-                                           data2: 0];
+                                           data1: NativeSyncQueueEvent
+                                           data2: NativeSyncQueueEvent];
     if (useCocoa) {
         [NSApp postEvent:event atStart:NO];
     } else {

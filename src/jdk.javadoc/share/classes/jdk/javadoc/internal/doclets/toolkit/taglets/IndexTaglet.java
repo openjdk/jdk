@@ -29,9 +29,8 @@ import java.util.EnumSet;
 import javax.lang.model.element.Element;
 
 import com.sun.source.doctree.DocTree;
+import jdk.javadoc.doclet.Taglet.Location;
 import jdk.javadoc.internal.doclets.toolkit.Content;
-
-import static com.sun.source.doctree.DocTree.Kind.INDEX;
 
 /**
  * An inline Taglet used to index word or a phrase.
@@ -42,7 +41,7 @@ import static com.sun.source.doctree.DocTree.Kind.INDEX;
 public class IndexTaglet extends BaseTaglet {
 
     IndexTaglet() {
-        super(INDEX.tagName, true, EnumSet.allOf(Site.class));
+        super(DocTree.Kind.INDEX, true, EnumSet.allOf(Location.class));
     }
 
     @Override

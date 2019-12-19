@@ -70,7 +70,6 @@ MetadataOnStackMark::MetadataOnStackMark(bool walk_all_metadata, bool redefiniti
       CodeCache::old_nmethods_do(&md_on_stack);
     }
     CompileBroker::mark_on_stack();
-    JvmtiCurrentBreakpoints::metadata_do(Metadata::mark_on_stack);
     ThreadService::metadata_do(Metadata::mark_on_stack);
 #if INCLUDE_JVMCI
     JVMCI::metadata_do(Metadata::mark_on_stack);

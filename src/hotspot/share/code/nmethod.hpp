@@ -776,9 +776,9 @@ class nmethodLocker : public StackObj {
     lock(_nm);
   }
 
-  static void lock(CompiledMethod* method) {
+  static void lock(CompiledMethod* method, bool zombie_ok = false) {
     if (method == NULL) return;
-    lock_nmethod(method);
+    lock_nmethod(method, zombie_ok);
   }
 
   static void unlock(CompiledMethod* method) {
@@ -792,10 +792,10 @@ class nmethodLocker : public StackObj {
   }
 
   CompiledMethod* code() { return _nm; }
-  void set_code(CompiledMethod* new_nm) {
+  void set_code(CompiledMethod* new_nm, bool zombie_ok = false) {
     unlock(_nm);   // note:  This works even if _nm==new_nm.
     _nm = new_nm;
-    lock(_nm);
+    lock(_nm, zombie_ok);
   }
 };
 

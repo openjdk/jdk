@@ -168,13 +168,13 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
                                 ? utils.getSimpleName(holder)
                                 : utils.getFullyQualifiedName(holder),
                             false);
-                Content codelLink = HtmlTree.CODE(link);
+                Content codeLink = HtmlTree.CODE(link);
                 Content descfrmLabel = HtmlTree.SPAN(HtmlStyle.descfrmTypeLabel,
                         utils.isClass(holder)
                                 ? contents.descfrmClassLabel
                                 : contents.descfrmInterfaceLabel);
                 descfrmLabel.add(Entity.NO_BREAK_SPACE);
-                descfrmLabel.add(codelLink);
+                descfrmLabel.add(codeLink);
                 methodDocTree.add(HtmlTree.DIV(HtmlStyle.block, descfrmLabel));
                 writer.addInlineComment(method, methodDocTree);
             }
@@ -328,7 +328,7 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
             dl.add(dt);
             Content overriddenTypeLink =
                     writer.getLink(new LinkInfoImpl(writer.configuration, context, overriddenType));
-            Content codeOverridenTypeLink = HtmlTree.CODE(overriddenTypeLink);
+            Content codeOverriddenTypeLink = HtmlTree.CODE(overriddenTypeLink);
             Content methlink = writer.getLink(
                     new LinkInfoImpl(writer.configuration, LinkInfoImpl.Kind.MEMBER,
                     holder)
@@ -338,7 +338,7 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
             dd.add(Entity.NO_BREAK_SPACE);
             dd.add(writer.contents.inClass);
             dd.add(Entity.NO_BREAK_SPACE);
-            dd.add(codeOverridenTypeLink);
+            dd.add(codeOverriddenTypeLink);
             dl.add(dd);
         }
     }

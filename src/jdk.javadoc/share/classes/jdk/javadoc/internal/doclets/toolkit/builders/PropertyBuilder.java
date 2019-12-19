@@ -68,7 +68,7 @@ public class PropertyBuilder extends AbstractMemberBuilder {
      * Construct a new PropertyBuilder.
      *
      * @param context  the build context.
-     * @param typeElement the class whoses members are being documented.
+     * @param typeElement the class whose members are being documented.
      * @param writer the doclet specific writer.
      */
     private PropertyBuilder(Context context,
@@ -83,7 +83,7 @@ public class PropertyBuilder extends AbstractMemberBuilder {
      * Construct a new PropertyBuilder.
      *
      * @param context  the build context.
-     * @param typeElement the class whoses members are being documented.
+     * @param typeElement the class whose members are being documented.
      * @param writer the doclet specific writer.
      * @return the new PropertyBuilder
      */

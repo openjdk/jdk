@@ -64,11 +64,9 @@ public class ReleaseTest {
             .forTypes(PackageType.LINUX_RPM)
             .addBundlePropertyVerifier("Release", RELEASE)
             .forTypes(PackageType.LINUX_DEB)
-            .addBundlePropertyVerifier("Version", (propName, propValue) -> {
-                TKit.assertTrue(propValue.endsWith("-" + RELEASE),
-                        String.format("Check value of %s property [%s] ends with %s",
-                                propName, propValue, RELEASE));
-            })
+            .addBundlePropertyVerifier("Version", propValue -> {
+                return propValue.endsWith("-" + RELEASE);
+            }, "ends with")
             .run();
         });
     }

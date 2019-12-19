@@ -98,6 +98,7 @@ public class Navigation {
         OVERVIEW,
         PACKAGE,
         SERIALIZEDFORM,
+        SYSTEMPROPERTIES,
         TREE,
         USE;
     }
@@ -358,6 +359,7 @@ public class Navigation {
             case ALLPACKAGES:
             case CONSTANTVALUES:
             case SERIALIZEDFORM:
+            case SYSTEMPROPERTIES:
                 addOverviewLink(tree);
                 addModuleLink(tree);
                 addPackageLink(tree);

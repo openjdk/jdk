@@ -299,6 +299,10 @@ public:
   uint length() const {
     return list()->length();
   }
+
+  JavaThread *thread_at(uint i) const {
+    return list()->thread_at(i);
+  }
 };
 
 // This stack allocated JavaThreadIterator is used to walk the

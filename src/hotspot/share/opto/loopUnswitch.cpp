@@ -262,7 +262,7 @@ ProjNode* PhaseIdealLoop::create_slow_version_of_loop(IdealLoopTree *loop,
   ProjNode* ifslow = new IfFalseNode(iff);
   register_node(ifslow, outer_loop, iff, dom_depth(iff));
 
-  // Clone the loop body.  The clone becomes the fast loop.  The
+  // Clone the loop body.  The clone becomes the slow loop.  The
   // original pre-header will (illegally) have 3 control users
   // (old & new loops & new if).
   clone_loop(loop, old_new, dom_depth(head->skip_strip_mined()), mode, iff);
@@ -281,6 +281,123 @@ ProjNode* PhaseIdealLoop::create_slow_version_of_loop(IdealLoopTree *loop,
   _igvn.replace_input_of(slow_l, LoopNode::EntryControl, ifslow_pred);
   set_idom(slow_l, ifslow_pred, dom_depth(l));
 
+  if (iffast != iffast_pred && entry->outcnt() > 1) {
+    // This situation occurs when only non-CFG nodes (i.e. no control dependencies between them) with a control
+    // input from the loop header were partially peeled before (now control dependent on loop entry control).
+    // If additional CFG nodes were peeled, then the insertion point of the loop predicates from the parsing stage
+    // would not be found anymore and the predicates not cloned at all (i.e. iffast == iffast_pred) as it happens
+    // for normal peeling. Those partially peeled statements have a control input from the old loop entry control
+    // and need to be executed after the predicates. These control dependencies need to be removed from the old
+    // entry control and added to the new entry control nodes 'iffast_pred' and 'ifslow_pred'. Since each node can
+    // only have one control input, we need to create clones for all statements (2) that can be reached over a path
+    // from the old entry control 'entry' (1) to a loop phi (8, 9). The old nodes (2) will be moved to the fast loop and the
+    // new cloned nodes (10) to the slow loop.
+    //
+    // The result of the following algorithm is visualized below. The cloned loop predicates for the fast loop
+    // are between the loop selection node (3) and the entry control for the fast loop (4) and for the slow loop
+    // between the loop selection node (3) and the entry control for the slow loop (5), respectively.
+    //
+    //      1 entry                                    1 entry
+    //      /     \                                       |
+    //  2 stmt    3 iff                                 3 iff
+    //   |        /  \                                 /     \
+    //   |      ..    ..                             ..       ..
+    //   |      /      \                             /         \
+    //   | 4 iffast_p  5 ifslow_p          4 iffast_p          5 ifslow_p
+    //   |     |          |                /    \               /       \
+    //   |   6 head  7 slow_head   ==>  6 head  2 stmt   7 slow_head  10 cloned_stmt
+    //   |     |          |                \    /               \       /
+    //   +--\  |    +--\  |                8 phi                  9 phi
+    //   |   8 phi  |  9 phi
+    //   |          |
+    //   +----------+
+    //
+    assert(ifslow != ifslow_pred, "sanity - must also be different");
+
+    ResourceMark rm;
+    Unique_Node_List worklist;
+    Unique_Node_List phis;
+    Node_List old_clone;
+    LoopNode* slow_head = old_new[head->_idx]->as_Loop();
+
+    // 1) Do a BFS starting from the outputs of the original entry control node 'entry' to all (loop) phis
+    // and add the non-phi nodes to the worklist.
+    // First get all outputs of 'entry' which are not the new "loop selection check" 'iff'.
+    for (DUIterator_Fast imax, i = entry->fast_outs(imax); i < imax; i++) {
+      Node* stmt = entry->fast_out(i);
+      if (stmt != iff) {
+        assert(!stmt->is_CFG(), "cannot be a CFG node");
+        worklist.push(stmt);
+      }
+    }
+
+    // Then do a BFS from all collected nodes so far and stop if a phi node is hit.
+    // Keep track of them on a separate 'phis' list to adjust their inputs later.
+    for (uint i = 0; i < worklist.size(); i++) {
+      Node* stmt = worklist.at(i);
+      for (DUIterator_Fast jmax, j = stmt->fast_outs(jmax); j < jmax; j++) {
+        Node* out = stmt->fast_out(j);
+        assert(!out->is_CFG(), "cannot be a CFG node");
+        if (out->is_Phi()) {
+          assert(out->in(PhiNode::Region) == head || out->in(PhiNode::Region) == slow_head,
+                 "phi must be either part of the slow or the fast loop");
+          phis.push(out);
+        } else {
+          worklist.push(out);
+        }
+      }
+    }
+
+    // 2) All nodes of interest are in 'worklist' and are now cloned. This could not be done simultaneously
+    // in step 1 in an easy way because we could have cloned a node which has an input that is added to the
+    // worklist later. As a result, the BFS would hit a clone which does not need to be cloned again.
+    // While cloning a node, the control inputs to 'entry' are updated such that the old node points to
+    // 'iffast_pred' and the clone to 'ifslow_pred', respectively.
+    for (uint i = 0; i < worklist.size(); i++) {
+      Node* stmt = worklist.at(i);
+      assert(!stmt->is_CFG(), "cannot be a CFG node");
+      Node* cloned_stmt = stmt->clone();
+      old_clone.map(stmt->_idx, cloned_stmt);
+      _igvn.register_new_node_with_optimizer(cloned_stmt);
+
+      if (stmt->in(0) == entry) {
+        _igvn.replace_input_of(stmt, 0, iffast_pred);
+        set_ctrl(stmt, iffast_pred);
+        _igvn.replace_input_of(cloned_stmt, 0, ifslow_pred);
+        set_ctrl(cloned_stmt, ifslow_pred);
+      }
+    }
+
+    // 3) Update the entry control of all collected phi nodes of the slow loop to use the cloned nodes
+    // instead of the old ones from the worklist
+    for (uint i = 0; i < phis.size(); i++) {
+      assert(phis.at(i)->is_Phi(), "must be a phi");
+      PhiNode* phi = phis.at(i)->as_Phi();
+      if (phi->in(PhiNode::Region) == slow_head) {
+        // Slow loop: Update phi entry control to use the cloned version instead of the old one from the worklist
+        Node* entry_control = phi->in(LoopNode::EntryControl);
+        _igvn.replace_input_of(phi, LoopNode::EntryControl, old_clone[phi->in(LoopNode::EntryControl)->_idx]);
+      }
+
+    }
+
+    // 4) Replace all input edges of cloned nodes from old nodes on the worklist by an input edge from their
+    // corresponding cloned version.
+    for (uint i = 0; i < worklist.size(); i++) {
+      Node* stmt = worklist.at(i);
+      for (uint j = 0; j < stmt->req(); j++) {
+        Node* in = stmt->in(j);
+        if (in == NULL) {
+          continue;
+        }
+
+        if (worklist.contains(in)) {
+          // Replace the edge old1->clone_of_old_2 with an edge clone_of_old1->clone_of_old2
+          old_clone[stmt->_idx]->set_req(j, old_clone[in->_idx]);
+        }
+      }
+    }
+  }
   recompute_dom_depth();
 
   return iffast;
@@ -303,7 +420,7 @@ LoopNode* PhaseIdealLoop::create_reserve_version_of_loop(IdealLoopTree *loop, Co
   ProjNode* ifslow = new IfFalseNode(iff);
   register_node(ifslow, outer_loop, iff, dom_depth(iff));
 
-  // Clone the loop body.  The clone becomes the fast loop.  The
+  // Clone the loop body.  The clone becomes the slow loop.  The
   // original pre-header will (illegally) have 3 control users
   // (old & new loops & new if).
   clone_loop(loop, old_new, dom_depth(head), CloneIncludesStripMined, iff);

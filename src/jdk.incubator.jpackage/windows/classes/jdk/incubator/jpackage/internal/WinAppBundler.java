@@ -37,21 +37,6 @@ public class WinAppBundler extends AbstractImageBundler {
     private static final ResourceBundle I18N = ResourceBundle.getBundle(
             "jdk.incubator.jpackage.internal.resources.WinResources");
 
-    static final BundlerParamInfo<File> ICON_ICO =
-            new StandardBundlerParam<>(
-            "icon.ico",
-            File.class,
-            params -> {
-                File f = ICON.fetchFrom(params);
-                if (f != null && !f.getName().toLowerCase().endsWith(".ico")) {
-                    Log.error(MessageFormat.format(
-                            I18N.getString("message.icon-not-ico"), f));
-                    return null;
-                }
-                return f;
-            },
-            (s, p) -> new File(s));
-
     @Override
     public boolean validate(Map<String, ? super Object> params)
             throws ConfigException {

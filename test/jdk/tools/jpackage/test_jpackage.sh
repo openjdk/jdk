@@ -29,13 +29,20 @@ set_args ()
   local arg_is_output_dir=
   local arg_is_mode=
   local output_dir_set=
+  local with_append_actions=yes
   for arg in "$@"; do
     if [ "$arg" == "-o" ]; then
       arg_is_output_dir=yes
       output_dir_set=yes
     elif [ "$arg" == "-m" ]; then
       arg_is_mode=yes
-    continue
+      continue
+    elif [ "$arg" == '--' ]; then
+      append_actions
+      with_append_actions=
+      continue
+    elif ! case "$arg" in -Djpackage.test.action=*) false;; esac; then
+      continue
     elif [ -n "$arg_is_output_dir" ]; then
       arg_is_output_dir=
       output_dir="$arg"
@@ -47,6 +54,13 @@ set_args ()
     args+=( "$arg" )
   done
   [ -n "$output_dir_set" ] || args=( -o "$output_dir" "${args[@]}" )
+  [ -z "$with_append_actions" ] || append_actions
+}
+
+
+append_actions ()
+{
+  args+=( '--' '-Djpackage.test.action=create,install,verify-install,uninstall,verify-uninstall' )
 }
 
 
@@ -62,7 +76,3 @@ exec_command ()
 set_args "$@"
 basedir="$(dirname $0)"
 exec_command "$basedir/run_tests.sh" -m create "${args[@]}"
-exec_command "$basedir/manage_packages.sh" -d "$output_dir"
-exec_command "$basedir/run_tests.sh" -m verify-install "${args[@]}"
-exec_command "$basedir/manage_packages.sh" -d "$output_dir" -u
-exec_command "$basedir/run_tests.sh" -m verify-uninstall "${args[@]}"

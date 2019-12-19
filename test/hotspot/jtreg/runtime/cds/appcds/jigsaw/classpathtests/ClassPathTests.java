@@ -27,7 +27,6 @@
  * @requires vm.cds & !vm.graal.enabled
  * @library ../..
  * @library /test/lib
- * @modules jdk.jartool/sun.tools.jar
  * @compile src/jdk/test/Main.java
  * @compile src/com/sun/tools/javac/Main.jasm
  * @compile src/com/sun/tools/javac/MyMain.jasm

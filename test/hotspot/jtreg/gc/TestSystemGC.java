@@ -37,7 +37,6 @@ package gc;
  * @requires vm.gc.Parallel
  * @summary Runs System.gc() with different flags.
  * @run main/othervm -XX:+UseParallelGC gc.TestSystemGC
- * @run main/othervm -XX:+UseParallelGC -XX:-UseParallelOldGC gc.TestSystemGC
  */
 
 /*

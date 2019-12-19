@@ -27,7 +27,6 @@
  * @summary Unused metadata created during dump time should be freed from the CDS archive.
  * @requires vm.cds
  * @library /test/lib
- * @modules jdk.jartool/sun.tools.jar
  * @compile test-classes/MethodNoReturn.jasm test-classes/Hello.java
  * @run driver FreeUnusedMetadata
  */

@@ -25,10 +25,12 @@
 
 package org.graalvm.compiler.replacements.nodes.arithmetic;
 
-import jdk.vm.ci.meta.JavaConstant;
-import jdk.vm.ci.meta.JavaKind;
+import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_2;
+import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_2;
+
 import org.graalvm.compiler.core.common.type.IntegerStamp;
 import org.graalvm.compiler.core.common.type.Stamp;
+import org.graalvm.compiler.graph.IterableNodeType;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.graph.spi.Canonicalizable.BinaryCommutative;
 import org.graalvm.compiler.graph.spi.CanonicalizerTool;
@@ -40,11 +42,11 @@ import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.BinaryNode;
 
-import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_2;
-import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_2;
+import jdk.vm.ci.meta.JavaConstant;
+import jdk.vm.ci.meta.JavaKind;
 
 @NodeInfo(cycles = CYCLES_2, size = SIZE_2)
-public final class IntegerAddExactOverflowNode extends IntegerExactOverflowNode implements Simplifiable, BinaryCommutative<ValueNode> {
+public final class IntegerAddExactOverflowNode extends IntegerExactOverflowNode implements Simplifiable, BinaryCommutative<ValueNode>, IterableNodeType {
     public static final NodeClass<IntegerAddExactOverflowNode> TYPE = NodeClass.create(IntegerAddExactOverflowNode.class);
 
     public IntegerAddExactOverflowNode(ValueNode x, ValueNode y) {

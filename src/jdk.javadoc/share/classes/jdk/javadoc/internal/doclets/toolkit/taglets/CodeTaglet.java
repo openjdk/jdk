@@ -30,9 +30,8 @@ import java.util.EnumSet;
 import javax.lang.model.element.Element;
 
 import com.sun.source.doctree.DocTree;
+import jdk.javadoc.doclet.Taglet.Location;
 import jdk.javadoc.internal.doclets.toolkit.Content;
-
-import static com.sun.source.doctree.DocTree.Kind.CODE;
 
 /**
  * An inline Taglet used to denote literal code fragments.
@@ -55,7 +54,7 @@ import static com.sun.source.doctree.DocTree.Kind.CODE;
 public class CodeTaglet extends BaseTaglet {
 
     CodeTaglet() {
-        super(CODE.tagName, true, EnumSet.allOf(Site.class));
+        super(DocTree.Kind.CODE, true, EnumSet.allOf(Location.class));
     }
 
     @Override

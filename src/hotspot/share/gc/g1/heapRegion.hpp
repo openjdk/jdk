@@ -490,11 +490,10 @@ public:
 #endif // ASSERT
 
 
-  // Reset the HeapRegion to default values.
-  // If skip_remset is true, do not clear the remembered set.
+  // Reset the HeapRegion to default values and clear its remembered set.
   // If clear_space is true, clear the HeapRegion's memory.
-  // If locked is true, assume we are the only thread doing this operation.
-  void hr_clear(bool skip_remset, bool clear_space, bool locked = false);
+  // Callers must ensure this is not called by multiple threads at the same time.
+  void hr_clear(bool clear_space);
   // Clear the card table corresponding to this region.
   void clear_cardtable();
 

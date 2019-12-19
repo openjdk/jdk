@@ -32,7 +32,7 @@ package jdk.jfr.event.gc.collection;
  *
  * @requires vm.gc == "Parallel" | vm.gc == null
  * @library /test/lib /test/jdk
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:-UseFastUnorderedTimeStamps -Xmx32m -Xmn8m -XX:+UseParallelGC -XX:+UseParallelOldGC jdk.jfr.event.gc.collection.TestGCEventMixedWithParallelOld
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:-UseFastUnorderedTimeStamps -Xmx32m -Xmn8m -XX:+UseParallelGC jdk.jfr.event.gc.collection.TestGCEventMixedWithParallelOld
  * good debug flags: -Xlog:gc*=debug
  */
 public class TestGCEventMixedWithParallelOld {

@@ -117,3 +117,7 @@ size_t ZArguments::conservative_max_heap_alignment() {
 CollectedHeap* ZArguments::create_heap() {
   return new ZCollectedHeap();
 }
+
+bool ZArguments::is_supported() const {
+  return is_os_supported();
+}

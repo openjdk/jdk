@@ -398,6 +398,7 @@ public:
   // Thread local event queue, which doesn't require taking the Service_lock.
   void enqueue_event(JvmtiDeferredEvent* event);
   void post_events(JvmtiEnv* env);
+  void run_nmethod_entry_barriers();
 };
 
 class RedefineVerifyMark : public StackObj {

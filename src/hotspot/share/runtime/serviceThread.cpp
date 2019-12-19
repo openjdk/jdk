@@ -48,7 +48,8 @@
 ServiceThread* ServiceThread::_instance = NULL;
 JvmtiDeferredEvent* ServiceThread::_jvmti_event = NULL;
 // The service thread has it's own static deferred event queue.
-// Events can be posted before the service thread is created.
+// Events can be posted before JVMTI vm_start, so it's too early to call JvmtiThreadState::state_for
+// to add this field to the per-JavaThread event queue.  TODO: fix this sometime later
 JvmtiDeferredEventQueue ServiceThread::_jvmti_service_queue;
 
 void ServiceThread::initialize() {
@@ -195,6 +196,10 @@ void ServiceThread::service_thread_entry(JavaThread* jt, TRAPS) {
 
 void ServiceThread::enqueue_deferred_event(JvmtiDeferredEvent* event) {
   MutexLocker ml(Service_lock, Mutex::_no_safepoint_check_flag);
+  // If you enqueue events before the service thread runs, gc and the sweeper
+  // cannot keep the nmethod alive.  This could be restricted to compiled method
+  // load and unload events, if we wanted to be picky.
+  assert(_instance != NULL, "cannot enqueue events before the service thread runs");
   _jvmti_service_queue.enqueue(*event);
   Service_lock->notify_all();
  }

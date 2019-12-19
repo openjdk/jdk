@@ -34,6 +34,7 @@
 #include <sys/stat.h>
 #include <wtypes.h>
 #include <commctrl.h>
+#include <assert.h>
 
 #include <jni.h>
 #include "java.h"
@@ -1008,6 +1009,17 @@ CreateApplicationArgs(JNIEnv *env, char **strv, int argc)
 
     // sanity check, match the args we have, to the holy grail
     idx = JLI_GetAppArgIndex();
+
+    // First arg index is NOT_FOUND
+    if (idx < 0) {
+        // The only allowed value should be NOT_FOUND (-1) unless another change introduces
+        // a different negative index
+        assert (idx == -1);
+        JLI_TraceLauncher("Warning: first app arg index not found, %d\n", idx);
+        JLI_TraceLauncher("passing arguments as-is.\n");
+        return NewPlatformStringArray(env, strv, argc);
+    }
+
     isTool = (idx == 0);
     if (isTool) { idx++; } // skip tool name
     JLI_TraceLauncher("AppArgIndex: %d points to %s\n", idx, stdargs[idx].arg);

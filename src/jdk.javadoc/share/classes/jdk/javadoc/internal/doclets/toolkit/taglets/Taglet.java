@@ -25,9 +25,11 @@
 
 package jdk.javadoc.internal.doclets.toolkit.taglets;
 
+import java.util.Set;
 import javax.lang.model.element.Element;
 
 import com.sun.source.doctree.DocTree;
+import jdk.javadoc.doclet.Taglet.Location;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 
 /**
@@ -35,6 +37,13 @@ import jdk.javadoc.internal.doclets.toolkit.Content;
  */
 
 public interface Taglet {
+    /**
+     * Returns the set of allowed locations for block tags
+     * handled by this taglet.
+     *
+     * @return the set of allowable locations
+     */
+    Set<Location> getAllowedLocations();
 
     /**
      * Return true if this <code>Taglet</code>
@@ -43,7 +52,7 @@ public interface Taglet {
      * is used in field documentation and false
      * otherwise.
      */
-    public abstract boolean inField();
+    boolean inField();
 
     /**
      * Return true if this <code>Taglet</code>
@@ -52,7 +61,7 @@ public interface Taglet {
      * is used in constructor documentation and false
      * otherwise.
      */
-    public abstract boolean inConstructor();
+    boolean inConstructor();
 
     /**
      * Return true if this <code>Taglet</code>
@@ -61,7 +70,7 @@ public interface Taglet {
      * is used in method documentation and false
      * otherwise.
      */
-    public abstract boolean inMethod();
+    boolean inMethod();
 
     /**
      * Return true if this <code>Taglet</code>
@@ -70,7 +79,7 @@ public interface Taglet {
      * is used in method documentation and false
      * otherwise.
      */
-    public abstract boolean inOverview();
+    boolean inOverview();
 
     /**
      * Return true if this <code>Taglet</code>
@@ -79,7 +88,7 @@ public interface Taglet {
      * is used in module documentation and false
      * otherwise.
      */
-    public abstract boolean inModule();
+    boolean inModule();
 
     /**
      * Return true if this <code>Taglet</code>
@@ -88,7 +97,7 @@ public interface Taglet {
      * is used in package documentation and false
      * otherwise.
      */
-    public abstract boolean inPackage();
+    boolean inPackage();
 
     /**
      * Return true if this <code>Taglet</code>
@@ -98,7 +107,7 @@ public interface Taglet {
      * is used in type documentation and false
      * otherwise.
      */
-    public abstract boolean inType();
+    boolean inType();
 
     /**
      * Return true if this <code>Taglet</code>
@@ -106,13 +115,24 @@ public interface Taglet {
      * @return true if this <code>Taglet</code>
      * is an inline tag and false otherwise.
      */
-    public abstract boolean isInlineTag();
+    boolean isInlineTag();
+
+    /**
+     * Indicates whether this taglet supports block tags.
+     *
+     * @return true if this taglet supports block tags
+     * @implSpec This implementation returns the inverse
+     * result to {@code isInlineTag}.
+     */
+    default boolean isBlockTag() {
+        return !isInlineTag();
+    }
 
     /**
      * Return the name of this custom tag.
      * @return the name of this custom tag.
      */
-    public abstract String getName();
+    String getName();
 
     /**
      * Given the <code>Tag</code> representation of this custom
@@ -124,29 +144,26 @@ public interface Taglet {
      * @throws UnsupportedOperationException thrown when the method is not supported by the taglet.
      * @return the Content representation of this <code>Tag</code>.
      */
-    public abstract Content getTagletOutput(Element holder, DocTree tag, TagletWriter writer) throws
+    Content getTagletOutput(Element holder, DocTree tag, TagletWriter writer) throws
             UnsupportedOperationException;
 
     /**
-     * Given a <code>Doc</code> object, check if it holds any tags of
-     * this type.  If it does, return the string representing the output.
+     * Given an element object, check if it holds any tags of
+     * this type.  If it does, return the content representing the output.
      * If it does not, return null.
-     * @param holder a {@link Doc} object holding the custom tag.
+     * @param holder an element holding the custom tag.
      * @param writer a {@link TagletWriter} Taglet writer.
      * @throws UnsupportedTagletOperationException thrown when the method is not
      *         supported by the taglet.
-     * @return the TagletOutput representation of this <code>Tag</code>.
+     * @return the content representation of this <code>Tag</code>.
      */
-    public abstract Content getTagletOutput(Element holder, TagletWriter writer) throws
+    Content getTagletOutput(Element holder, TagletWriter writer) throws
             UnsupportedTagletOperationException;
 
-    @Override
-    public abstract String toString();
-
-    static class UnsupportedTagletOperationException extends UnsupportedOperationException {
+    class UnsupportedTagletOperationException extends UnsupportedOperationException {
         private static final long serialVersionUID = -3530273193380250271L;
         public UnsupportedTagletOperationException(String message) {
             super(message);
         }
-    };
+    }
 }

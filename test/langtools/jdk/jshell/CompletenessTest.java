@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8149524 8131024 8165211 8080071 8130454 8167343 8129559 8114842 8182268 8223782
+ * @bug 8149524 8131024 8165211 8080071 8130454 8167343 8129559 8114842 8182268 8223782 8235474
  * @summary Test SourceCodeAnalysis
  * @build KullaTesting TestingInputStream
  * @run testng CompletenessTest
@@ -31,11 +31,15 @@
 
 import java.util.Map;
 import java.util.HashMap;
+import java.util.function.Consumer;
+import javax.lang.model.SourceVersion;
+import jdk.jshell.JShell;
 
 import org.testng.annotations.Test;
 import jdk.jshell.SourceCodeAnalysis.Completeness;
 
 import static jdk.jshell.SourceCodeAnalysis.Completeness.*;
+import org.testng.annotations.BeforeMethod;
 
 @Test
 public class CompletenessTest extends KullaTesting {
@@ -82,6 +86,10 @@ public class CompletenessTest extends KullaTesting {
         "i >= 0 && Character.isWhitespace(s.charAt(i))",
         "int.class",
         "String.class",
+        "record.any",
+        "record()",
+        "record(1)",
+        "record.length()"
     };
 
     static final String[] complete_with_semi = new String[] {
@@ -123,7 +131,7 @@ public class CompletenessTest extends KullaTesting {
         "int[] m = {1, 2}",
         "int[] m = {1, 2}, n = null",
         "int[] m = {1, 2}, n",
-        "int[] m = {1, 2}, n = {3, 4}"
+        "int[] m = {1, 2}, n = {3, 4}",
     };
 
     static final String[] considered_incomplete = new String[] {
@@ -193,6 +201,28 @@ public class CompletenessTest extends KullaTesting {
         "var v = switch (x) { case ",
         "var v = switch (x) { case 0:",
         "var v = switch (x) { case 0: break 12; ",
+        "record D",
+        "record D(",
+        "record D(String",
+        "record D(String i",
+        "record D(String i,",
+        "record D(String i, String",
+        "record D(String i, String j",
+        "record D(String i)",
+        "record D(String i, String j)",
+        "record D(String i) {",
+        "record D(String i, String j) {",
+        "static record D",
+        "static record D(",
+        "static record D(String",
+        "static record D(String i",
+        "static record D(String i,",
+        "static record D(String i, String",
+        "static record D(String i, String j",
+        "static record D(String i)",
+        "static record D(String i, String j)",
+        "static record D(String i) {",
+        "static record D(String i, String j) {",
     };
 
     static final String[] unknown = new String[] {
@@ -241,7 +271,7 @@ public class CompletenessTest extends KullaTesting {
     }
 
     public void test_complete() {
-        assertStatus(complete, COMPLETE);
+         assertStatus(complete, COMPLETE);
     }
 
     public void test_expression() {
@@ -349,4 +379,10 @@ public class CompletenessTest extends KullaTesting {
         assertStatus("int[] m = {1, 2}, n = new int[0];  int i;", COMPLETE,
                      "int[] m = {1, 2}, n = new int[0];");
     }
+
+    @BeforeMethod
+    public void setUp() {
+        setUp(b -> b.compilerOptions("--enable-preview", "-source", String.valueOf(SourceVersion.latest().ordinal())));
+    }
+
 }

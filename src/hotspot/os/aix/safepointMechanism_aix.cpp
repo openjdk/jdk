@@ -32,14 +32,14 @@
 
 void SafepointMechanism::pd_initialize() {
   // No special code needed if we can use SIGTRAP
-  if (ThreadLocalHandshakes && USE_POLL_BIT_ONLY) {
+  if (USE_POLL_BIT_ONLY) {
     default_initialize();
     return;
   }
 
   // Allocate one protected page
   char* map_address = (char*)MAP_FAILED;
-  const size_t map_size = ThreadLocalHandshakes ? 2 * os::vm_page_size() : os::vm_page_size();
+  const size_t map_size = 2 * os::vm_page_size();
   const int prot  = PROT_READ;
   const int flags = MAP_PRIVATE | MAP_ANONYMOUS;
 
@@ -99,13 +99,10 @@ void SafepointMechanism::pd_initialize() {
   // Register polling page with NMT.
   MemTracker::record_virtual_memory_reserve_and_commit(map_address, map_size, CALLER_PC, mtSafepoint);
 
-  // Use same page for ThreadLocalHandshakes without SIGTRAP
-  if (ThreadLocalHandshakes) {
-    set_uses_thread_local_poll();
-    os::make_polling_page_unreadable();
-    intptr_t bad_page_val  = reinterpret_cast<intptr_t>(map_address),
-             good_page_val = bad_page_val + os::vm_page_size();
-    _poll_armed_value    = reinterpret_cast<void*>(bad_page_val  + poll_bit());
-    _poll_disarmed_value = reinterpret_cast<void*>(good_page_val);
-  }
+  // Use same page for thread local handshakes without SIGTRAP
+  os::make_polling_page_unreadable();
+  intptr_t bad_page_val  = reinterpret_cast<intptr_t>(map_address),
+           good_page_val = bad_page_val + os::vm_page_size();
+  _poll_armed_value    = reinterpret_cast<void*>(bad_page_val  + poll_bit());
+  _poll_disarmed_value = reinterpret_cast<void*>(good_page_val);
 }

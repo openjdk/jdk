@@ -40,12 +40,15 @@ private:
   static const uint word_bits = 5;
   static const uint bit_mask  = 31;
 
-  uint       _size;             // Size of data in 32-bit words
-  uint32_t*  _data;             // The data, bit packed
+  // Used 32-bit words
+  uint       _size;
+  uint32_t*  _data;
+  // Allocated words
+  uint       _data_size;
   Arena*     _set_arena;
 
-  void grow(uint newsize);      // Grow vector to required bitsize
-  void reset_memory();
+  // Grow vector to required word capacity
+  void grow(uint new_word_capacity);
 public:
   VectorSet(Arena *arena);
   ~VectorSet() {}
@@ -53,15 +56,10 @@ public:
   void insert(uint elem);
   bool is_empty() const;
   void reset() {
-    Copy::zero_to_bytes(_data, _size * sizeof(uint32_t));
+    _size = 0;
   }
   void clear() {
-    // Reclaim storage if huge
-    if (_size > 100) {
-      reset_memory();
-    } else {
-      reset();
-    }
+    reset();
   }
 
   // Fast inlined "test and set".  Replaces the idiom:
@@ -73,9 +71,8 @@ public:
   bool test_set(uint elem) {
     uint32_t word = elem >> word_bits;
     if (word >= _size) {
-      // Then grow; set; return 0;
-      this->insert(elem);
-      return false;
+      // Then grow
+      grow(word);
     }
     uint32_t mask = 1U << (elem & bit_mask);
     uint32_t data = _data[word];
@@ -106,11 +103,10 @@ public:
   void set(uint elem) {
     uint32_t word = elem >> word_bits;
     if (word >= _size) {
-      this->insert(elem);
-    } else {
-      uint32_t mask = 1U << (elem & bit_mask);
-      _data[word] |= mask;
+      grow(word);
     }
+    uint32_t mask = 1U << (elem & bit_mask);
+    _data[word] |= mask;
   }
 };
 

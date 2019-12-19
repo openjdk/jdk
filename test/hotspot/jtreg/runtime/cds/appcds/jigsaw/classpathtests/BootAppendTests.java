@@ -27,7 +27,6 @@
  * @summary AppCDS tests for testing -Xbootclasspath/a
  * @requires vm.cds & !vm.graal.enabled
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
- * @modules jdk.jartool/sun.tools.jar
  * @compile src/jdk/test/Main.java
  * @compile src/com/sun/tools/javac/MyMain.jasm
  * @compile src/sun/nio/cs/ext/MyClass.java

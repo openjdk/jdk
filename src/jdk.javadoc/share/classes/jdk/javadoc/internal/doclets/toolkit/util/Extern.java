@@ -98,7 +98,7 @@ public class Extern {
 
         /**
          * The URL or the directory path at which the element documentation will be
-         * avaliable.
+         * available.
          */
         final DocPath path;
 

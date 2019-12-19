@@ -27,7 +27,6 @@
  * @summary Test automatic relocation of archive heap regions dur to heap size changes.
  * @requires vm.cds.archived.java.heap
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
- * @modules jdk.jartool/sun.tools.jar
  * @compile ../test-classes/Hello.java
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox

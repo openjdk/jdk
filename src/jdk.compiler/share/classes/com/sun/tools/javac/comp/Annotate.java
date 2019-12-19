@@ -835,7 +835,11 @@ public class Annotate {
                 Attribute.Compound c = new Attribute.Compound(targetContainerType, List.of(p));
                 JCAnnotation annoTree = m.Annotation(c);
 
-                if (!chk.annotationApplicable(annoTree, on)) {
+                boolean isRecordMember = (on.flags_field & Flags.RECORD) != 0 || on.enclClass() != null && on.enclClass().isRecord();
+                /* if it is a record member we will not issue the error now and wait until annotations on records are
+                 * checked at Check::validateAnnotation, which will issue it
+                 */
+                if (!chk.annotationApplicable(annoTree, on) && (!isRecordMember || isRecordMember && (on.flags_field & Flags.GENERATED_MEMBER) == 0)) {
                     log.error(annoTree.pos(),
                               Errors.InvalidRepeatableAnnotationNotApplicable(targetContainerType, on));
                 }

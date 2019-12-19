@@ -109,9 +109,9 @@ bool IniFile::SaveToFile(const TString FileName, bool ownerOnly) {
 
     for (unsigned int index = 0; index < keys.size(); index++) {
         TString name = keys[index];
-        IniSectionData *section;
+        IniSectionData *section = NULL;
 
-        if (FMap.GetValue(name, section) == true) {
+        if (FMap.GetValue(name, section) == true && section != NULL) {
             contents.push_back(_T("[") + name + _T("]"));
             std::list<TString> lines = section->GetLines();
             contents.insert(contents.end(), lines.begin(), lines.end());
@@ -128,7 +128,7 @@ bool IniFile::SaveToFile(const TString FileName, bool ownerOnly) {
 void IniFile::Append(const TString SectionName,
         const TString Key, TString Value) {
     if (FMap.ContainsKey(SectionName) == true) {
-        IniSectionData* section;
+        IniSectionData* section = NULL;
 
         if (FMap.GetValue(SectionName, section) == true && section != NULL) {
             section->SetValue(Key, Value);
@@ -144,7 +144,7 @@ void IniFile::Append(const TString SectionName,
 void IniFile::AppendSection(const TString SectionName,
         OrderedMap<TString, TString> Values) {
     if (FMap.ContainsKey(SectionName) == true) {
-        IniSectionData* section;
+        IniSectionData* section = NULL;
 
         if (FMap.GetValue(SectionName, section) == true && section != NULL) {
             section->Append(Values);
@@ -159,7 +159,7 @@ void IniFile::AppendSection(const TString SectionName,
 bool IniFile::GetValue(const TString SectionName,
         const TString Key, TString& Value) {
     bool result = false;
-    IniSectionData* section;
+    IniSectionData* section = NULL;
 
     if (FMap.GetValue(SectionName, section) == true && section != NULL) {
         result = section->GetValue(Key, Value);
@@ -171,7 +171,7 @@ bool IniFile::GetValue(const TString SectionName,
 bool IniFile::SetValue(const TString SectionName,
         const TString Key, TString Value) {
     bool result = false;
-    IniSectionData* section;
+    IniSectionData* section = NULL;
 
     if (FMap.GetValue(SectionName, section) && section != NULL) {
         result = section->SetValue(Key, Value);

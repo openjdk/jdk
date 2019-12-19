@@ -64,7 +64,7 @@ public class TestCopyFiles extends JavadocTester {
                 "In a named module acme.module and named package "
                         + "<a href=\"../package-summary.html\"><code>p</code></a>.",
                 "\"simpleTagLabel\">Since:</",
-                "1940",
+                "forever",
                 // check bottom navbar
                 "<a href=\"../../module-summary.html\">Module</a>",
                 "<a href=\"../package-summary.html\">Package</a>",
@@ -101,7 +101,7 @@ public class TestCopyFiles extends JavadocTester {
                 "In a named module acme.module and named package "
                         + "<a href=\"../package-summary.html\"><code>p</code></a>.",
                 "\"simpleTagLabel\">Since:</",
-                "1940",
+                "forever",
                 // check bottom navbar
                 "<a href=\"../../module-summary.html\">Module</a>",
                 "<a href=\"../package-summary.html\">Package</a>",

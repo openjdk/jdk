@@ -1659,6 +1659,10 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
                 return ElementKind.FIELD;
             } else if (isResourceVariable()) {
                 return ElementKind.RESOURCE_VARIABLE;
+            } else if ((flags & MATCH_BINDING) != 0) {
+                @SuppressWarnings("preview")
+                ElementKind kind = ElementKind.BINDING_VARIABLE;
+                return kind;
             } else {
                 return ElementKind.LOCAL_VARIABLE;
             }

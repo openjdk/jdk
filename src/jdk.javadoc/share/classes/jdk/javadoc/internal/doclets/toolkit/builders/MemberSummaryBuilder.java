@@ -38,6 +38,7 @@ import javax.lang.model.util.ElementFilter;
 import com.sun.source.doctree.DocCommentTree;
 import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.DocTree.Kind;
+import com.sun.source.doctree.UnknownBlockTagTree;
 import jdk.javadoc.internal.doclets.toolkit.AnnotationTypeWriter;
 import jdk.javadoc.internal.doclets.toolkit.ClassWriter;
 import jdk.javadoc.internal.doclets.toolkit.Content;
@@ -313,7 +314,7 @@ public abstract class MemberSummaryBuilder extends AbstractMemberBuilder {
                 }
                 List<? extends DocTree> firstSentenceTags = utils.getFirstSentenceTrees(member);
                 if (utils.isExecutableElement(member) && firstSentenceTags.isEmpty()) {
-                    //Inherit comments from overriden or implemented method if
+                    //Inherit comments from overridden or implemented method if
                     //necessary.
                     DocFinder.Output inheritedDoc =
                             DocFinder.search(configuration,
@@ -365,7 +366,9 @@ public abstract class MemberSummaryBuilder extends AbstractMemberBuilder {
                         utils.propertyName((ExecutableElement) member));
                 fullBody.addAll(cmtutils.makeFirstSentenceTree(text));
             }
-            List<? extends DocTree> propertyTags = utils.getBlockTags(property, "propertyDescription");
+            List<? extends DocTree> propertyTags = utils.getBlockTags(property,
+                    t -> (t instanceof UnknownBlockTagTree)
+                            && ((UnknownBlockTagTree) t).getTagName().equals("propertyDescription"));
             if (propertyTags.isEmpty()) {
                 List<? extends DocTree> comment = utils.getFullBody(property);
                 blockTags.addAll(cmtutils.makePropertyDescriptionTree(comment));
@@ -378,14 +381,10 @@ public abstract class MemberSummaryBuilder extends AbstractMemberBuilder {
         List<? extends DocTree> tags = utils.getBlockTags(property, Kind.SINCE);
         blockTags.addAll(tags);
 
-        List<? extends DocTree> bTags = utils.getBlockTags(property, Kind.UNKNOWN_BLOCK_TAG);
-        CommentHelper ch = utils.getCommentHelper(property);
-        for (DocTree dt : bTags) {
-            String tagName = ch.getTagName(dt);
-            if ( "defaultValue".equals(tagName)) {
-                blockTags.add(dt);
-            }
-        }
+        List<? extends DocTree> bTags = utils.getBlockTags(property,
+                t -> (t instanceof UnknownBlockTagTree)
+                        && ((UnknownBlockTagTree) t).getTagName().equals("defaultValue"));
+        blockTags.addAll(bTags);
 
         //add @see tags
         if (!isGetter && !isSetter) {

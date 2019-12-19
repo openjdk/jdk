@@ -1207,6 +1207,9 @@ public class Check {
                 mask = (flags & RECORD) != 0 ? LocalRecordFlags : LocalClassFlags;
                 if ((flags & RECORD) != 0) {
                     implicit = STATIC;
+                    if (sym.owner.kind == TYP) {
+                        log.error(pos, Errors.RecordDeclarationNotAllowedInInnerClasses);
+                    }
                 }
                 if ((sym.owner.flags_field & STATIC) == 0 &&
                     (flags & ENUM) != 0) {
@@ -1238,6 +1241,7 @@ public class Check {
             if ((flags & RECORD) != 0) {
                 // records can't be declared abstract
                 mask &= ~ABSTRACT;
+                implicit |= FINAL;
             }
             // Imply STRICTFP if owner has STRICTFP set.
             implicit |= sym.owner.flags_field & STRICTFP;
@@ -2905,12 +2909,18 @@ public class Check {
                  */
                 ClassSymbol recordClass = (ClassSymbol) s.owner;
                 RecordComponent rc = recordClass.getRecordComponent((VarSymbol)s, false);
-                rc.appendAttributes(s.getRawAttributes().stream().filter(anno ->
-                    Arrays.stream(getTargetNames(anno.type.tsym)).anyMatch(name -> name == names.RECORD_COMPONENT)
-                ).collect(List.collector()));
-                rc.appendUniqueTypeAttributes(s.getRawTypeAttributes());
-                // to get all the type annotations applied to the type
-                rc.type = s.type;
+                SymbolMetadata metadata = rc.getMetadata();
+                if (metadata == null || metadata.isEmpty()) {
+                    /* if not is empty then we have already been here, which is the case if multiple annotations are applied
+                     * to the record component declaration
+                     */
+                    rc.appendAttributes(s.getRawAttributes().stream().filter(anno ->
+                            Arrays.stream(getTargetNames(anno.type.tsym)).anyMatch(name -> name == names.RECORD_COMPONENT)
+                    ).collect(List.collector()));
+                    rc.appendUniqueTypeAttributes(s.getRawTypeAttributes());
+                    // to get all the type annotations applied to the type
+                    rc.type = s.type;
+                }
             }
         }
 

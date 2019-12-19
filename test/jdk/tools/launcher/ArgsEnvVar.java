@@ -37,6 +37,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
+import java.nio.file.Paths;
+import java.nio.file.Path;
 
 public class ArgsEnvVar extends TestHelper {
     private static File testJar = null;
@@ -153,6 +155,7 @@ public class ArgsEnvVar extends TestHelper {
                 List.of("-jar", "test.jar"),
                 List.of("-m", "test/Foo"),
                 List.of("--module", "test/Foo"),
+                List.of("--module=test/Foo"),
                 List.of("--dry-run"),
                 List.of("-h"),
                 List.of("-?"),
@@ -239,6 +242,69 @@ public class ArgsEnvVar extends TestHelper {
         env.put(JDK_JAVA_OPTIONS, "  --add-exports java.base/jdk.internal.misc=ALL-UNNAMED ");
         tr = doExec(env, javaCmd, "-jar", "test.jar");
         verifyOptions(List.of("--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED", "-jar", "test.jar"), tr);
+    }
+
+
+    @Test
+    // That that we can correctly handle the module longform argument option
+    // when supplied in an argument file
+    public void modulesInArgsFile() throws IOException {
+        File cwd = new File(".");
+        File testModuleDir = new File(cwd, "modules_test");
+
+        createEchoArgumentsModule(testModuleDir);
+
+        Path SRC_DIR = Paths.get(testModuleDir.getAbsolutePath(), "src");
+        Path MODS_DIR = Paths.get(testModuleDir.getAbsolutePath(), "mods");
+
+        // test module / main class
+        String MODULE_OPTION = "--module=test/launcher.Main";
+        String TEST_MODULE = "test";
+
+        // javac -d mods/test src/test/**
+        TestResult tr = doExec(
+            javacCmd,
+            "-d", MODS_DIR.toString(),
+            "--module-source-path", SRC_DIR.toString(),
+            "--module", TEST_MODULE);
+
+        if (!tr.isOK()) {
+            System.out.println("test did not compile");
+            throw new RuntimeException("Error: modules test did not compile");
+        }
+
+        // verify the terminating ability of --module= through environment variables
+        File argFile = createArgFile("cmdargs", List.of("--module-path", MODS_DIR.toString(), MODULE_OPTION, "--hello"));
+        env.put(JDK_JAVA_OPTIONS, "@cmdargs");
+        tr = doExec(env, javaCmd);
+        tr.checkNegative();
+        tr.contains("Error: Option " + MODULE_OPTION + " in @cmdargs is not allowed in environment variable JDK_JAVA_OPTIONS");
+        if (!tr.testStatus) {
+            System.out.println(tr);
+            throw new RuntimeException("test fails");
+        }
+
+        // check that specifying --module and --module-path with file works
+        tr = doExec(javaCmd, "-Dfile.encoding=UTF-8", "@cmdargs");
+        tr.contains("[--hello]");
+        if (!tr.testStatus) {
+            System.out.println(tr);
+            throw new RuntimeException("test fails");
+        }
+
+        // check with reversed --module-path and --module in the arguments file, this will fail, --module= is terminating
+        File argFile1 = createArgFile("cmdargs1", List.of(MODULE_OPTION, "--module-path", MODS_DIR.toString(), "--hello"));
+        tr = doExec(javaCmd, "-Dfile.encoding=UTF-8", "@cmdargs1");
+        tr.checkNegative();
+        if (!tr.testStatus) {
+            System.out.println(tr);
+            throw new RuntimeException("test fails");
+        }
+
+        // clean-up
+        argFile.delete();
+        argFile1.delete();
+        recursiveDelete(testModuleDir);
     }
 
     public static void main(String... args) throws Exception {

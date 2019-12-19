@@ -31,13 +31,11 @@
 #include "services/memTracker.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-SafepointMechanism::PollingType SafepointMechanism::_polling_type = SafepointMechanism::_global_page_poll;
 void* SafepointMechanism::_poll_armed_value;
 void* SafepointMechanism::_poll_disarmed_value;
 
 void SafepointMechanism::default_initialize() {
-  if (ThreadLocalHandshakes) {
-    set_uses_thread_local_poll();
+  if (uses_thread_local_poll()) {
 
     // Poll bit values
     intptr_t poll_armed_value = poll_bit();

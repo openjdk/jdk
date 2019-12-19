@@ -134,13 +134,15 @@ module java.base {
     // see make/gensrc/GenModuleInfo.gmk
 
     exports sun.invoke.util to
-        jdk.compiler;
+        jdk.compiler,
+        jdk.incubator.foreign;
     exports com.sun.security.ntlm to
         java.security.sasl;
     exports jdk.internal to
         java.compiler,
         jdk.jfr,
-        jdk.compiler;
+        jdk.compiler,
+        jdk.jshell;
     exports jdk.internal.access to
         java.desktop,
         java.logging,
@@ -148,7 +150,10 @@ module java.base {
         java.naming,
         java.rmi,
         jdk.jlink,
-        jdk.net;
+        jdk.net,
+        jdk.incubator.foreign;
+    exports jdk.internal.access.foreign to
+        jdk.incubator.foreign;
     exports jdk.internal.event to
         jdk.jfr;
     exports jdk.internal.jimage to
@@ -201,7 +206,8 @@ module java.base {
         jdk.scripting.nashorn,
         jdk.scripting.nashorn.shell,
         jdk.unsupported,
-        jdk.internal.vm.ci;
+        jdk.internal.vm.ci,
+        jdk.incubator.foreign;
     exports jdk.internal.module to
         java.instrument,
         java.management.rmi,
@@ -213,6 +219,8 @@ module java.base {
         java.management,
         jdk.management.agent,
         jdk.internal.jvmstat;
+    exports jdk.internal.platform to
+        jdk.management;
     exports jdk.internal.ref to
         java.desktop;
     exports jdk.internal.reflect to
@@ -257,7 +265,8 @@ module java.base {
         java.management,
         jdk.crypto.cryptoki,
         jdk.net,
-        jdk.sctp;
+        jdk.sctp,
+        jdk.incubator.foreign;
     exports sun.nio.cs to
         jdk.charsets;
     exports sun.reflect.annotation to
@@ -273,7 +282,8 @@ module java.base {
         java.sql.rowset;
     exports sun.security.action to
         java.desktop,
-        java.security.jgss;
+        java.security.jgss,
+        jdk.incubator.foreign;
     exports sun.security.internal.interfaces to
         jdk.crypto.cryptoki;
     exports sun.security.internal.spec to

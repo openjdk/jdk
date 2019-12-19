@@ -152,11 +152,6 @@ public class WindowsAppImageBuilder extends AbstractAppImageBuilder {
         return "app/" + APP_NAME.fetchFrom(params) +".cfg";
     }
 
-    private File getConfig_AppIcon(Map<String, ? super Object> params) {
-        return new File(getConfigRoot(params),
-                APP_NAME.fetchFrom(params) + ".ico");
-    }
-
     private File getConfig_ExecutableProperties(
            Map<String, ? super Object> params) {
         return new File(getConfigRoot(params),
@@ -180,8 +175,6 @@ public class WindowsAppImageBuilder extends AbstractAppImageBuilder {
     @Override
     public void prepareApplicationFiles(Map<String, ? super Object> params)
             throws IOException {
-        Map<String, ? super Object> originalParams = new HashMap<>(params);
-
         try {
             IOUtils.writableOutputDir(root);
             IOUtils.writableOutputDir(binDir);
@@ -191,7 +184,7 @@ public class WindowsAppImageBuilder extends AbstractAppImageBuilder {
         AppImageFile.save(root, params);
 
         // create the .exe launchers
-        createLauncherForEntryPoint(params);
+        createLauncherForEntryPoint(params, null);
 
         // copy the jars
         copyApplication(params);
@@ -207,8 +200,8 @@ public class WindowsAppImageBuilder extends AbstractAppImageBuilder {
         List<Map<String, ? super Object>> entryPoints =
                 StandardBundlerParam.ADD_LAUNCHERS.fetchFrom(params);
         for (Map<String, ? super Object> entryPoint : entryPoints) {
-            createLauncherForEntryPoint(
-                    AddLauncherArguments.merge(originalParams, entryPoint));
+            createLauncherForEntryPoint(AddLauncherArguments.merge(params,
+                    entryPoint, ICON.getID(), ICON_ICO.getID()), params);
         }
     }
 
@@ -272,15 +265,18 @@ public class WindowsAppImageBuilder extends AbstractAppImageBuilder {
                 .saveToFile(getConfig_ExecutableProperties(params));
     }
 
-    private void createLauncherForEntryPoint(
-            Map<String, ? super Object> params) throws IOException {
+    private void createLauncherForEntryPoint(Map<String, ? super Object> params,
+            Map<String, ? super Object> mainParams) throws IOException {
 
-        File iconTarget = getConfig_AppIcon(params);
-
-        createResource(TEMPLATE_APP_ICON, params)
-                .setCategory("icon")
-                .setExternal(ICON_ICO.fetchFrom(params))
-                .saveToFile(iconTarget);
+        var iconResource = createIconResource(TEMPLATE_APP_ICON, ICON_ICO, params,
+                mainParams);
+        Path iconTarget = null;
+        if (iconResource != null) {
+            iconTarget = binDir.resolve(APP_NAME.fetchFrom(params) + ".ico");
+            if (null == iconResource.saveToFile(iconTarget)) {
+                iconTarget = null;
+            }
+        }
 
         writeCfgFile(params, root.resolve(
                 getLauncherCfgName(params)).toFile());
@@ -315,8 +311,8 @@ public class WindowsAppImageBuilder extends AbstractAppImageBuilder {
 
                 launcher.setWritable(true);
 
-                if (iconTarget.exists()) {
-                    iconSwap(iconTarget.getAbsolutePath(),
+                if (iconTarget != null) {
+                    iconSwap(iconTarget.toAbsolutePath().toString(),
                             launcher.getAbsolutePath());
                 }
 
@@ -336,9 +332,6 @@ public class WindowsAppImageBuilder extends AbstractAppImageBuilder {
                 executableFile.toFile().setReadOnly();
             }
         }
-
-        Files.copy(iconTarget.toPath(),
-                binDir.resolve(APP_NAME.fetchFrom(params) + ".ico"));
     }
 
     private void copyApplication(Map<String, ? super Object> params)

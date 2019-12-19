@@ -105,7 +105,6 @@ public class CommentHelper {
         overriddenElement = ove;
     }
 
-    @SuppressWarnings("fallthrough")
     public String getTagName(DocTree dtree) {
         switch (dtree.getKind()) {
             case AUTHOR:

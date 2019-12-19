@@ -2064,11 +2064,8 @@ void Matcher::find_shared( Node *n ) {
       set_visited(n);   // Flag as visited now
       bool mem_op = false;
       int mem_addr_idx = MemNode::Address;
-      bool gc_handled = BarrierSet::barrier_set()->barrier_set_c2()->matcher_find_shared_visit(this, mstack, n, nop, mem_op, mem_addr_idx);
-      if (!gc_handled) {
-        if (find_shared_visit(mstack, n, nop, mem_op, mem_addr_idx)) {
-          continue;
-        }
+      if (find_shared_visit(mstack, n, nop, mem_op, mem_addr_idx)) {
+        continue;
       }
       for(int i = n->req() - 1; i >= 0; --i) { // For my children
         Node *m = n->in(i); // Get ith input

@@ -281,7 +281,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
                 }
                 packages.put(pkg, e);
             }
-        };
+        }
 
         // Get all exported packages for the module, using the exports directive for the module.
         for (ModuleElement.ExportsDirective directive : ElementFilter.exportsIn(mdle.getDirectives())) {

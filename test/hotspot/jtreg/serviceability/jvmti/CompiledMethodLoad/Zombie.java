@@ -26,9 +26,9 @@
  * @bug 8212159
  * @summary Generate compiled method load events without crashing
  * @run main/othervm/native -agentlib:CompiledZombie -Xcomp -XX:ReservedCodeCacheSize=20m Zombie
- *
- * The stress test that made this fail was -jar SwingSet2.jar from demos (without DISPLAY set so it exits)
- */
+ **/
+
+ // The stress test that made this fail was -jar SwingSet2.jar from demos (without DISPLAY set so it exits)
 
 public class Zombie {
     public static void main(java.lang.String[] unused) {

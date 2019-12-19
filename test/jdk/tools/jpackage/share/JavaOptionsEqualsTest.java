@@ -81,7 +81,7 @@ public class JavaOptionsEqualsTest {
         System.out.print(output);
 
         String[] result = JPackageHelper.splitAndFilter(output);
-        if (result.length != 4) {
+        if (result.length < 4) {
             throw new AssertionError(
                    "Unexpected number of lines: " + result.length
                    + " - output: " + output);
@@ -101,11 +101,11 @@ public class JavaOptionsEqualsTest {
             throw new AssertionError("Unexpected result[1]: " + result[1]);
         }
 
-        if (!result[2].trim().endsWith("jpackage test application")) {
+        if (!result[result.length - 2].trim().endsWith("jpackage test application")) {
             throw new AssertionError("Unexpected result[2]: " + result[2]);
         }
 
-        if (!result[3].trim().equals("args.length: 0")) {
+        if (!result[result.length - 1].trim().equals("args.length: 0")) {
             throw new AssertionError("Unexpected result[3]: " + result[3]);
         }
     }

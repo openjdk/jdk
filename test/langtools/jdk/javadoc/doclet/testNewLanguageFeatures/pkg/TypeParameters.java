@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,7 +63,6 @@ public class TypeParameters<E> implements SubInterface<E> {
     /**
      * This method has type parameters.  The list of type parameters is short
      * so there should not be a line break in the member summary table.
-     * @author Owner
      *
      * @param <A> This is the first type parameter.
      */

@@ -111,7 +111,7 @@ public class TestAnnotationTypes extends JavadocTester {
                 "@Documented public @interface AnnotationTypeField {");
 
         checkOutput("pkg/AnnotationType.html", true,
-                "public @interface <a href=\"../src-html/pkg/AnnotationType.html#line.34"
+                "public @interface <a href=\"../src-html/pkg/AnnotationType.html#line.31"
                 + "\">AnnotationType</a></pre>");
 
         checkOutput("pkg/AnnotationTypeField.html", true,

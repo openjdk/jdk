@@ -48,8 +48,9 @@ final class DesktopIntegration {
     static final String DESKTOP_COMMANDS_UNINSTALL = "DESKTOP_COMMANDS_UNINSTALL";
     static final String UTILITY_SCRIPTS = "UTILITY_SCRIPTS";
 
-    DesktopIntegration(PlatformPackage thePackage,
-            Map<String, ? super Object> params) {
+    private DesktopIntegration(PlatformPackage thePackage,
+            Map<String, ? super Object> params,
+            Map<String, ? super Object> mainParams) throws IOException {
 
         associations = FileAssociation.fetchFrom(params).stream()
                 .filter(fa -> !fa.mimeTypes.isEmpty())
@@ -60,11 +61,25 @@ final class DesktopIntegration {
 
         this.thePackage = thePackage;
 
-        final File customIconFile = ICON_PNG.fetchFrom(params);
+        // Need desktop and icon files if one of conditions is met:
+        //  - there are file associations configured
+        //  - user explicitely requested to create a shortcut
+        boolean withDesktopFile = !associations.isEmpty() || SHORTCUT_HINT.fetchFrom(params);
 
-        iconResource = createResource(DEFAULT_ICON, params)
-                .setCategory(I18N.getString("resource.menu-icon"))
-                .setExternal(customIconFile);
+        var curIconResource = LinuxAppImageBuilder.createIconResource(DEFAULT_ICON,
+                ICON_PNG, params, mainParams);
+        if (curIconResource == null) {
+            // This is additional launcher with explicit `no icon` configuration.
+            withDesktopFile = false;
+        } else {
+            final Path nullPath = null;
+            if (curIconResource.saveToFile(nullPath)
+                    != OverridableResource.Source.DefaultResource) {
+                // This launcher has custom icon configured.
+                withDesktopFile = true;
+            }
+        }
+
         desktopFileResource = createResource("template.desktop", params)
                 .setCategory(I18N.getString("resource.menu-shortcut-descriptor"))
                 .setPublicName(APP_NAME.fetchFrom(params) + ".desktop");
@@ -79,27 +94,42 @@ final class DesktopIntegration {
 
         mimeInfoFile = new DesktopFile(mimeInfoFileName);
 
-        if (!associations.isEmpty() || SHORTCUT_HINT.fetchFrom(params) || customIconFile != null) {
-            //
-            // Create primary .desktop file if one of conditions is met:
-            // - there are file associations configured
-            // - user explicitely requested to create a shortcut
-            // - custom icon specified
-            //
+        if (withDesktopFile) {
             desktopFile = new DesktopFile(desktopFileName);
             iconFile = new DesktopFile(APP_NAME.fetchFrom(params)
                     + IOUtils.getSuffix(Path.of(DEFAULT_ICON)));
+
+            if (curIconResource == null) {
+                // Create default icon.
+                curIconResource = LinuxAppImageBuilder.createIconResource(
+                        DEFAULT_ICON, ICON_PNG, mainParams, null);
+            }
         } else {
             desktopFile = null;
             iconFile = null;
         }
 
+        iconResource = curIconResource;
+
         desktopFileData = Collections.unmodifiableMap(
                 createDataForDesktopFile(params));
 
-        nestedIntegrations = launchers.stream().map(
-                launcherParams -> new DesktopIntegration(thePackage,
-                        launcherParams)).collect(Collectors.toList());
+        nestedIntegrations = new ArrayList<>();
+        for (var launcherParams : launchers) {
+            launcherParams = AddLauncherArguments.merge(params, launcherParams,
+                    ICON.getID(), ICON_PNG.getID(), ADD_LAUNCHERS.getID(),
+                    FILE_ASSOCIATIONS.getID());
+            nestedIntegrations.add(new DesktopIntegration(thePackage,
+                    launcherParams, params));
+        }
+    }
+
+    static DesktopIntegration create(PlatformPackage thePackage,
+            Map<String, ? super Object> params) throws IOException {
+        if (StandardBundlerParam.isRuntimeInstaller(params)) {
+            return null;
+        }
+        return new DesktopIntegration(thePackage, params, null);
     }
 
     List<String> requiredPackages() {

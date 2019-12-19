@@ -28,6 +28,8 @@ package java.nio;
 import java.io.FileDescriptor;
 import java.lang.ref.Reference;
 import java.util.Objects;
+
+import jdk.internal.access.foreign.MemorySegmentProxy;
 import jdk.internal.misc.Unsafe;
 
 
@@ -88,21 +90,21 @@ public abstract class MappedByteBuffer
     // This should only be invoked by the DirectByteBuffer constructors
     //
     MappedByteBuffer(int mark, int pos, int lim, int cap, // package-private
-                     FileDescriptor fd, boolean isSync) {
-        super(mark, pos, lim, cap);
+                     FileDescriptor fd, boolean isSync, MemorySegmentProxy segment) {
+        super(mark, pos, lim, cap, segment);
         this.fd = fd;
         this.isSync = isSync;
     }
 
     MappedByteBuffer(int mark, int pos, int lim, int cap, // package-private
-                     boolean isSync) {
-        super(mark, pos, lim, cap);
+                     boolean isSync, MemorySegmentProxy segment) {
+        super(mark, pos, lim, cap, segment);
         this.fd = null;
         this.isSync = isSync;
     }
 
-    MappedByteBuffer(int mark, int pos, int lim, int cap) { // package-private
-        super(mark, pos, lim, cap);
+    MappedByteBuffer(int mark, int pos, int lim, int cap, MemorySegmentProxy segment) { // package-private
+        super(mark, pos, lim, cap, segment);
         this.fd = null;
         this.isSync = false;
     }

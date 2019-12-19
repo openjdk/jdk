@@ -29,7 +29,6 @@
  * @modules java.base/jdk.internal.misc
  * @modules java.compiler
  *          java.instrument
- *          jdk.jartool/sun.tools.jar
  * @compile ../NamedBuffer.java
  * @compile redef/Xost.java
  * @run main RedefineClassHelper

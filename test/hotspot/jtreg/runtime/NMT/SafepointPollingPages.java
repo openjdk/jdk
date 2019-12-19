@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +30,7 @@
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @comment On ppc, with UseSIGTRAP on, no polling pages are used, but trap instructions instead.
- * @run main/othervm -XX:-UseSIGTRAP -XX:+IgnoreUnrecognizedVMOptions -Xbootclasspath/a:. -XX:NativeMemoryTracking=summary -XX:+ThreadLocalHandshakes SafepointPollingPages
- * @run main/othervm -XX:-UseSIGTRAP -XX:+IgnoreUnrecognizedVMOptions -Xbootclasspath/a:. -XX:NativeMemoryTracking=summary -XX:-ThreadLocalHandshakes SafepointPollingPages
+ * @run main/othervm -XX:-UseSIGTRAP -XX:+IgnoreUnrecognizedVMOptions -Xbootclasspath/a:. -XX:NativeMemoryTracking=summary SafepointPollingPages
  */
 
 import jdk.test.lib.process.ProcessTools;
@@ -53,4 +52,3 @@ public class SafepointPollingPages {
     output.shouldContain("Safepoint (reserved=");
   }
 }
-

@@ -32,6 +32,7 @@ import java.util.Set;
 import javax.lang.model.element.Element;
 
 import com.sun.source.doctree.DocTree;
+import jdk.javadoc.doclet.Taglet.Location;
 
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
@@ -63,72 +64,95 @@ public class SimpleTaglet extends BaseTaglet implements InheritableTaglet {
     protected final boolean enabled;
 
     /**
-     * Construct a <code>SimpleTaglet</code>.
-     * @param tagName the name of this tag
-     * @param header the header to output.
-     * @param locations the possible locations that this tag
-     * can appear in.  The <code>String</code> can contain 'p'
-     * for package, 't' for type, 'm' for method, 'c' for constructor
-     * and 'f' for field.
+     * Constructs a {@code SimpleTaglet}.
+     *
+     * @param tagName   the name of this tag
+     * @param header    the header to output
+     * @param locations the possible locations that this tag can appear in
+     *                  The string can contain 'p' for package, 't' for type,
+     *                  'm' for method, 'c' for constructor and 'f' for field.
+     *                  See {@linbk #getLocations(String) getLocations} for the
+     *                  complete list.
      */
     public SimpleTaglet(String tagName, String header, String locations) {
-        this(tagName, header, getSites(locations), isEnabled(locations));
+        this(tagName, header, getLocations(locations), isEnabled(locations));
     }
 
     /**
-     * Construct a <code>SimpleTaglet</code>.
-     * @param tagName the name of this tag
-     * @param header the header to output.
-     * @param sites the possible sites (locations) that this tag
-     * can appear in.  The <code>String</code> can contain 'p'
-     * for package, 't' for type, 'm' for method, 'c' for constructor
-     * and 'f' for field.
+     * Constructs a {@code SimpleTaglet}.
+     *
+     * @param tagKind   the kind of this tag
+     * @param header    the header to output
+     * @param locations the possible locations that this tag can appear in.
      */
-    public SimpleTaglet(String tagName, String header, Set<Site> sites) {
-        this(tagName, header, sites, true);
+    public SimpleTaglet(DocTree.Kind tagKind, String header, Set<Location> locations) {
+        this(tagKind, header, locations, true);
+    }
+
+
+    /**
+     * Constructs a {@code SimpleTaglet}.
+     *
+     * @param tagName   the name of this tag
+     * @param header    the header to output.
+     * @param locations the possible locations that this tag can appear in
+     */
+    public SimpleTaglet(String tagName, String header, Set<Location> locations) {
+        this(tagName, header, locations, true);
     }
 
     /**
-     * Construct a <code>SimpleTaglet</code>.
-     * @param tagName the name of this tag
-     * @param header the header to output.
-     * @param sites the possible sites (locations) that this tag
-     * can appear in.  The <code>String</code> can contain 'p'
-     * for package, 't' for type, 'm' for method, 'c' for constructor
-     * and 'f' for field.
+     * Constructs a {@code SimpleTaglet}.
+     *
+     * @param tagName   the name of this tag
+     * @param header    the header to output.
+     * @param locations the possible locations that this tag can appear in
      */
-    public SimpleTaglet(String tagName, String header, Set<Site> sites, boolean enabled) {
-        super(tagName, false, sites);
+    public SimpleTaglet(String tagName, String header, Set<Location> locations, boolean enabled) {
+        super(tagName, false, locations);
         this.header = header;
         this.enabled = enabled;
     }
 
-    private static Set<Site> getSites(String locations) {
-        Set<Site> set = EnumSet.noneOf(Site.class);
+    /**
+     * Constructs a {@code SimpleTaglet}.
+     *
+     * @param tagKind   the kind of this tag
+     * @param header    the header to output.
+     * @param locations the possible locations that this tag can appear in
+     */
+    public SimpleTaglet(DocTree.Kind tagKind, String header, Set<Location> locations, boolean enabled) {
+        super(tagKind, false, locations);
+        this.header = header;
+        this.enabled = enabled;
+    }
+
+    private static Set<Location> getLocations(String locations) {
+        Set<Location> set = EnumSet.noneOf(Location.class);
         for (int i = 0; i < locations.length(); i++) {
             switch (locations.charAt(i)) {
                 case 'a':  case 'A':
-                    return EnumSet.allOf(Site.class);
+                    return EnumSet.allOf(Location.class);
                 case 'c':  case 'C':
-                    set.add(Site.CONSTRUCTOR);
+                    set.add(Location.CONSTRUCTOR);
                     break;
                 case 'f':  case 'F':
-                    set.add(Site.FIELD);
+                    set.add(Location.FIELD);
                     break;
                 case 'm':  case 'M':
-                    set.add(Site.METHOD);
+                    set.add(Location.METHOD);
                     break;
                 case 'o':  case 'O':
-                    set.add(Site.OVERVIEW);
+                    set.add(Location.OVERVIEW);
                     break;
                 case 'p':  case 'P':
-                    set.add(Site.PACKAGE);
+                    set.add(Location.PACKAGE);
                     break;
                 case 's':  case 'S':        // super-packages, anyone?
-                    set.add(Site.MODULE);
+                    set.add(Location.MODULE);
                     break;
                 case 't':  case 'T':
-                    set.add(Site.TYPE);
+                    set.add(Location.TYPE);
                     break;
                 case 'x':  case 'X':
                     break;
@@ -143,7 +167,7 @@ public class SimpleTaglet extends BaseTaglet implements InheritableTaglet {
 
     @Override
     public void inherit(DocFinder.Input input, DocFinder.Output output) {
-        List<? extends DocTree> tags = input.utils.getBlockTags(input.element, name);
+        List<? extends DocTree> tags = input.utils.getBlockTags(input.element, this);
         if (!tags.isEmpty()) {
             output.holder = input.element;
             output.holderTag = tags.get(0);
@@ -162,7 +186,7 @@ public class SimpleTaglet extends BaseTaglet implements InheritableTaglet {
     @Override
     public Content getTagletOutput(Element holder, TagletWriter writer) {
         Utils utils = writer.configuration().utils;
-        List<? extends DocTree> tags = utils.getBlockTags(holder, getName());
+        List<? extends DocTree> tags = utils.getBlockTags(holder, this);
         if (header == null || tags.isEmpty()) {
             return null;
         }

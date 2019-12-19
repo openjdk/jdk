@@ -27,7 +27,6 @@
  * @summary White box test for shared strings
  * @requires vm.cds.archived.java.heap
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
- * @modules jdk.jartool/sun.tools.jar
  * @build sun.hotspot.WhiteBox SharedStringsWb
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  * @run driver SharedStringsWbTest

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -213,6 +213,12 @@ public class SourceLauncherTest extends TestRunner {
 
     @Test
     public void testPermissions(Path base) throws IOException {
+        // does not work on exploded image, because the default policy file assumes jrt:; skip the test
+        if (Files.exists(Path.of(System.getProperty("java.home")).resolve("modules"))) {
+            out.println("JDK using exploded modules; test skipped");
+            return;
+        }
+
         Path policyFile = base.resolve("test.policy");
         Path sourceFile = base.resolve("TestPermissions.java");
 

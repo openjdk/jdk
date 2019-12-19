@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,12 +26,11 @@
 package jdk.javadoc.internal.doclets.toolkit.taglets;
 
 import com.sun.source.doctree.DocTree;
+import jdk.javadoc.doclet.Taglet.Location;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 
 import javax.lang.model.element.Element;
 import java.util.EnumSet;
-
-import static com.sun.source.doctree.DocTree.Kind.SYSTEM_PROPERTY;
 
 /**
  * A taglet that represents the {@code @systemProperty} tag.
@@ -45,8 +44,8 @@ import static com.sun.source.doctree.DocTree.Kind.SYSTEM_PROPERTY;
 public class SystemPropertyTaglet extends BaseTaglet {
 
     SystemPropertyTaglet(){
-        super(SYSTEM_PROPERTY.tagName, true, EnumSet.of(Site.CONSTRUCTOR, Site.METHOD, Site.FIELD,
-                Site.PACKAGE, Site.MODULE, Site.TYPE));
+        super(DocTree.Kind.SYSTEM_PROPERTY, true, EnumSet.of(Location.CONSTRUCTOR, Location.METHOD, Location.FIELD,
+                Location.PACKAGE, Location.MODULE, Location.TYPE));
     }
 
     @Override

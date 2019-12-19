@@ -136,8 +136,8 @@ public class ConstructorBuilder extends AbstractMemberBuilder {
                     memberDetailsTree);
             Content constructorDetailsTree = writer.getMemberTreeHeader();
 
-            for (Element contructor : constructors) {
-                currentConstructor = (ExecutableElement)contructor;
+            for (Element constructor : constructors) {
+                currentConstructor = (ExecutableElement)constructor;
                 Content constructorDocTree = writer.getConstructorDocTreeHeader(currentConstructor, constructorDetailsTree);
 
                 buildSignature(constructorDocTree);

@@ -134,6 +134,8 @@ public enum HtmlStyle {
     subNavList,
     subTitle,
     summary,
+    systemPropertiesContainer,
+    systemPropertiesSummary,
     tabEnd,
     tableTab,
     throwsLabel,
@@ -145,5 +147,6 @@ public enum HtmlStyle {
     typeParametersLong,
     typeSummary,
     useSummary,
-    usesSummary
+    usesSummary,
+    verticalSeparator
 }

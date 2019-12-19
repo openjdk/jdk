@@ -1638,9 +1638,9 @@ public:
 
 #ifdef COMPILER2
   // Generic instructions support for use in .ad files C2 code generation
-  void vabsnegd(int opcode, XMMRegister dst, Register scr);
+  void vabsnegd(int opcode, XMMRegister dst, XMMRegister src, Register scr);
   void vabsnegd(int opcode, XMMRegister dst, XMMRegister src, int vector_len, Register scr);
-  void vabsnegf(int opcode, XMMRegister dst, Register scr);
+  void vabsnegf(int opcode, XMMRegister dst, XMMRegister src, Register scr);
   void vabsnegf(int opcode, XMMRegister dst, XMMRegister src, int vector_len, Register scr);
   void vextendbw(bool sign, XMMRegister dst, XMMRegister src, int vector_len);
   void vextendbw(bool sign, XMMRegister dst, XMMRegister src);

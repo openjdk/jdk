@@ -107,6 +107,16 @@ public class Net {
     }
 
     /**
+     * Tells whether both IPV6_XXX and IP_XXX socket options should be set on
+     * IPv6 sockets. On some kernels, both IPV6_XXX and IP_XXX socket options
+     * need to be set so that the settings are effective for IPv4 multicast
+     * datagrams sent using the socket.
+     */
+    static boolean shouldSetBothIPv4AndIPv6Options() {
+        return shouldSetBothIPv4AndIPv6Options0();
+    }
+
+    /**
      * Tells whether IPv6 sockets can join IPv4 multicast groups
      */
     static boolean canIPv6SocketJoinIPv4Group() {
@@ -437,6 +447,8 @@ public class Net {
      * Returns 1 for Windows and -1 for Solaris/Linux/Mac OS
      */
     private static native int isExclusiveBindAvailable();
+
+    private static native boolean shouldSetBothIPv4AndIPv6Options0();
 
     private static native boolean canIPv6SocketJoinIPv4Group0();
 

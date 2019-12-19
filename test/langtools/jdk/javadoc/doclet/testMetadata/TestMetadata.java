@@ -124,7 +124,7 @@ public class TestMetadata extends JavadocTester {
 
         checking ("all body classes");
         if (allBodyClassesFound.equals(allBodyClasses)) {
-            passed("all gbody classes found");
+            passed("all body classes found");
         } else {
             Set<String> notFound = new TreeSet<>(allBodyClasses);
             notFound.removeAll(allBodyClassesFound);
@@ -156,6 +156,7 @@ public class TestMetadata extends JavadocTester {
         "single-index",
         "source",
         "split-index",
+        "system-properties",
         "tree"
     );
 
@@ -223,6 +224,7 @@ public class TestMetadata extends JavadocTester {
             "SingleIndexWriter",
             "SourceToHTMLConverter",
             "SplitIndexWriter",
+            "SystemPropertiesWriter",
             "TreeWriter"
             );
 
@@ -359,6 +361,10 @@ public class TestMetadata extends JavadocTester {
 
             case "SourceToHTMLConverter":
                 check(generator, content, content.startsWith("source:"));
+                break;
+
+            case "SystemPropertiesWriter":
+                check(generator, content, content.contains("system properties"));
                 break;
 
             default:

@@ -41,7 +41,7 @@ import jdk.test.lib.jfr.Events;
  * @requires vm.hasJFR
  * @requires vm.gc == "Parallel" | vm.gc == null
  * @library /test/lib /test/jdk
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:-UseFastUnorderedTimeStamps -XX:+UseParallelGC -XX:+UseParallelOldGC -XX:MaxTenuringThreshold=13 -XX:InitialTenuringThreshold=9 jdk.jfr.event.gc.configuration.TestGCSurvivorConfigurationEvent
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:-UseFastUnorderedTimeStamps -XX:+UseParallelGC -XX:MaxTenuringThreshold=13 -XX:InitialTenuringThreshold=9 jdk.jfr.event.gc.configuration.TestGCSurvivorConfigurationEvent
  */
 public class TestGCSurvivorConfigurationEvent {
     public static void main(String[] args) throws Exception {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,11 +81,7 @@ public class AArch64HotSpotSafepointOp extends AArch64LIRInstruction {
     }
 
     public static void emitCode(CompilationResultBuilder crb, AArch64MacroAssembler masm, GraalHotSpotVMConfig config, boolean onReturn, Register thread, Register scratch, LIRFrameState state) {
-        if (config.threadLocalHandshakes) {
-            emitThreadLocalPoll(crb, masm, config, onReturn, thread, scratch, state);
-        } else {
-            emitGlobalPoll(crb, masm, config, onReturn, scratch, state);
-        }
+        emitThreadLocalPoll(crb, masm, config, onReturn, thread, scratch, state);
     }
 
     private static void emitGlobalPoll(CompilationResultBuilder crb, AArch64MacroAssembler masm, GraalHotSpotVMConfig config, boolean onReturn, Register scratch, LIRFrameState state) {

@@ -49,14 +49,14 @@ public interface ConstantsSummaryWriter {
      *
      * @return header that needs to be added to the documentation
      */
-    public abstract Content getHeader();
+    Content getHeader();
 
     /**
      * Get the header for the constant content list.
      *
      * @return content header that needs to be added to the documentation
      */
-    public abstract Content getContentsHeader();
+    Content getContentsHeader();
 
     /**
      * Adds the given package name link to the constant content list tree.
@@ -66,22 +66,22 @@ public interface ConstantsSummaryWriter {
      *                               been indexed, we want to index utmost once.
      * @param contentListTree        the content tree to which the link will be added
      */
-    public abstract void addLinkToPackageContent(PackageElement pkg,
-            Set<PackageElement> writtenPackageHeaders, Content contentListTree);
+    void addLinkToPackageContent(PackageElement pkg, Set<PackageElement> writtenPackageHeaders,
+                                 Content contentListTree);
 
     /**
      * Add the content list to the documentation tree.
      *
      * @param contentListTree the content that will be added to the list
      */
-    public abstract void addContentsList(Content contentListTree);
+    void addContentsList(Content contentListTree);
 
     /**
      * Get the constant summaries for the document.
      *
      * @return constant summaries header to be added to the documentation tree
      */
-    public abstract Content getConstantSummaries();
+    Content getConstantSummaries();
 
     /**
      * Adds the given package name.
@@ -94,14 +94,14 @@ public interface ConstantsSummaryWriter {
      * @param first true if the first package is listed
      *                    be written
      */
-    public abstract void addPackageName(PackageElement pkg, Content summariesTree, boolean first);
+    void addPackageName(PackageElement pkg, Content summariesTree, boolean first);
 
     /**
      * Get the class summary header for the constants summary.
      *
      * @return the header content for the class constants summary
      */
-    public abstract Content getClassConstantHeader();
+    Content getClassConstantHeader();
 
     /**
      * Add the content list to the documentation summaries tree.
@@ -109,30 +109,30 @@ public interface ConstantsSummaryWriter {
      * @param summariesTree the tree to which the class constants list will be added
      * @param classConstantTree the class constant tree that will be added to the list
      */
-    public abstract void addClassConstant(Content summariesTree, Content classConstantTree);
+    void addClassConstant(Content summariesTree, Content classConstantTree);
 
     /**
      * Adds the constant member table to the documentation tree.
      *
      * @param typeElement the class whose constants are being documented.
      * @param fields the constants being documented.
-     * @param classConstantTree the documentation tree to which theconstant member
+     * @param classConstantTree the documentation tree to which the constant member
      *                    table content will be added
      */
-    public abstract void addConstantMembers(TypeElement typeElement, Collection<VariableElement> fields,
-            Content classConstantTree);
+    void addConstantMembers(TypeElement typeElement, Collection<VariableElement> fields,
+                            Content classConstantTree);
 
     /**
      * Add the summaries list to the content tree.
      *
      * @param summariesTree the summaries content tree that will be added to the list
      */
-    public abstract void addConstantSummaries(Content summariesTree);
+    void addConstantSummaries(Content summariesTree);
 
     /**
      * Adds the footer for the summary documentation.
      */
-    public abstract void addFooter();
+    void addFooter();
 
     /**
      * Print the constants summary document.
@@ -140,6 +140,5 @@ public interface ConstantsSummaryWriter {
      * @param contentTree content tree which should be printed
      * @throws DocFileIOException if there is a problem while writing the document
      */
-    public abstract void printDocument(Content contentTree) throws DocFileIOException;
-
+    void printDocument(Content contentTree) throws DocFileIOException;
 }

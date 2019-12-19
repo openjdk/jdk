@@ -25,24 +25,37 @@
 
 package jdk.incubator.jpackage.internal;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.Writer;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.MessageFormat;
-import java.util.*;
-import java.util.regex.Pattern;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.xml.stream.XMLOutputFactory;
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamWriter;
-import static jdk.incubator.jpackage.internal.OverridableResource.createResource;
-import static jdk.incubator.jpackage.internal.StandardBundlerParam.*;
 
-import static jdk.incubator.jpackage.internal.WindowsBundlerParam.*;
+import static jdk.incubator.jpackage.internal.OverridableResource.createResource;
+import static jdk.incubator.jpackage.internal.StandardBundlerParam.APP_NAME;
+import static jdk.incubator.jpackage.internal.StandardBundlerParam.CONFIG_ROOT;
+import static jdk.incubator.jpackage.internal.StandardBundlerParam.DESCRIPTION;
+import static jdk.incubator.jpackage.internal.StandardBundlerParam.FA_CONTENT_TYPE;
+import static jdk.incubator.jpackage.internal.StandardBundlerParam.FILE_ASSOCIATIONS;
+import static jdk.incubator.jpackage.internal.StandardBundlerParam.LICENSE_FILE;
+import static jdk.incubator.jpackage.internal.StandardBundlerParam.TEMP_ROOT;
+import static jdk.incubator.jpackage.internal.StandardBundlerParam.VENDOR;
+import static jdk.incubator.jpackage.internal.StandardBundlerParam.VERSION;
+import static jdk.incubator.jpackage.internal.WindowsBundlerParam.INSTALLDIR_CHOOSER;
+import static jdk.incubator.jpackage.internal.WindowsBundlerParam.INSTALLER_FILE_NAME;
 
 /**
  * WinMsiBundler
@@ -479,8 +492,6 @@ public class WinMsiBundler  extends AbstractBundler {
 
         boolean enableLicenseUI = (LICENSE_FILE.fetchFrom(params) != null);
         boolean enableInstalldirUI = INSTALLDIR_CHOOSER.fetchFrom(params);
-
-        List<String> lightArgs = new ArrayList<>();
 
         if (!MSI_SYSTEM_WIDE.fetchFrom(params)) {
             wixPipeline.addLightOptions("-sice:ICE91");

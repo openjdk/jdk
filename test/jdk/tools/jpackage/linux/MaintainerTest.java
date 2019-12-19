@@ -56,12 +56,10 @@ public class MaintainerTest {
             .addInitializer(cmd -> {
                 cmd.addArguments("--linux-deb-maintainer", MAINTAINER);
             })
-            .addBundlePropertyVerifier("Maintainer", (propName, propValue) -> {
+            .addBundlePropertyVerifier("Maintainer", value -> {
                 String lookupValue = "<" + MAINTAINER + ">";
-                TKit.assertTrue(propValue.endsWith(lookupValue),
-                        String.format("Check value of %s property [%s] ends with %s",
-                                propName, propValue, lookupValue));
-            })
+                return value.endsWith(lookupValue);
+            }, "ends with")
             .run();
         });
     }

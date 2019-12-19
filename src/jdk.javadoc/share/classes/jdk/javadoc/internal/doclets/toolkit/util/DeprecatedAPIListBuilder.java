@@ -49,7 +49,7 @@ public class DeprecatedAPIListBuilder {
     private final Map<DeprElementKind, SortedSet<Element>> deprecatedMap;
     private final BaseConfiguration configuration;
     private final Utils utils;
-    public static enum DeprElementKind {
+    public enum DeprElementKind {
         REMOVAL,
         MODULE,
         PACKAGE,

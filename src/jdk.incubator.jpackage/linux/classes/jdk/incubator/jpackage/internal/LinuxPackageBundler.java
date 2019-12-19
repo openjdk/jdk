@@ -135,11 +135,7 @@ abstract class LinuxPackageBundler extends AbstractBundler {
                 }
             }
 
-            if (!StandardBundlerParam.isRuntimeInstaller(params)) {
-                desktopIntegration = new DesktopIntegration(thePackage, params);
-            } else {
-                desktopIntegration = null;
-            }
+            desktopIntegration = DesktopIntegration.create(thePackage, params);
 
             Map<String, String> data = createDefaultReplacementData(params);
             if (desktopIntegration != null) {

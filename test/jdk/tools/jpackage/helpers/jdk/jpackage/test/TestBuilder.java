@@ -68,11 +68,11 @@ final class TestBuilder implements AutoCloseable {
 
                 CMDLINE_ARG_PREFIX + "exclude",
                 arg -> (excludedTests = Optional.ofNullable(
-                        excludedTests).orElse(new HashSet<String>())).add(arg),
+                        excludedTests).orElseGet(() -> new HashSet<String>())).add(arg),
 
                 CMDLINE_ARG_PREFIX + "include",
                 arg -> (includedTests = Optional.ofNullable(
-                        includedTests).orElse(new HashSet<String>())).add(arg),
+                        includedTests).orElseGet(() -> new HashSet<String>())).add(arg),
 
                 CMDLINE_ARG_PREFIX + "space-subst",
                 arg -> spaceSubstitute = arg,
@@ -127,8 +127,7 @@ final class TestBuilder implements AutoCloseable {
         // Log all matches before returning from the function
         return tests.filter(test -> {
             String testDescription = test.createDescription().testFullName();
-            boolean match = filters.stream().anyMatch(
-                    v -> testDescription.contains(v));
+            boolean match = filters.stream().anyMatch(testDescription::contains);
             if (match) {
                 trace(String.format(logMsg + ": %s", testDescription));
             }
@@ -159,7 +158,7 @@ final class TestBuilder implements AutoCloseable {
 
     private void flushTestGroup() {
         if (testGroup != null) {
-            filterTestGroup().forEach(testBody -> createTestInstance(testBody));
+            filterTestGroup().forEach(this::createTestInstance);
             clear();
         }
     }
@@ -170,7 +169,7 @@ final class TestBuilder implements AutoCloseable {
 
         Method testMethod = testBody.getMethod();
         if (Stream.of(BeforeEach.class, AfterEach.class).anyMatch(
-                type -> testMethod.isAnnotationPresent(type))) {
+                testMethod::isAnnotationPresent)) {
             curBeforeActions = beforeActions;
             curAfterActions = afterActions;
         } else {
@@ -286,7 +285,7 @@ final class TestBuilder implements AutoCloseable {
         List<Method> methods = Stream.of(methodClass.getMethods()).filter(
                 (m) -> filterMethod(methodName, m)).collect(Collectors.toList());
         if (methods.isEmpty()) {
-            new ParseException(String.format(
+            throw new ParseException(String.format(
                     "Method [%s] not found in [%s] class;",
                     methodName, className));
         }

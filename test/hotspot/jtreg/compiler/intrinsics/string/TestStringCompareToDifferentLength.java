@@ -32,12 +32,12 @@
  *          parameters: <string length>, <maximum string length delta>
  *          Input parameters for this test are set according to Aarch64
  *          String::compareTo intrinsic implementation specifics. Aarch64
- *          implementation has 1, 4, 8 -characters loops for length < 72 and
+ *          implementation has 1, 4, 8 -bytes loops for length < 72 and
  *          16, 32, 64 -characters loops for length >= 72. Code is also affected
  *          by SoftwarePrefetchHintDistance vm flag value.
- * @run main/othervm -XX:SoftwarePrefetchHintDistance=192 compiler.intrinsics.string.TestStringCompareToDifferentLength 4 2 5 10 13 17 20 25 71 72 73 88 90 192 193 208 209
- * @run main/othervm -XX:SoftwarePrefetchHintDistance=16 compiler.intrinsics.string.TestStringCompareToDifferentLength 4 2 5 10 13 17 20 25 71 72 73 88 90
- * @run main/othervm -XX:SoftwarePrefetchHintDistance=-1 compiler.intrinsics.string.TestStringCompareToDifferentLength 4 2 5 10 13 17 20 25 71 72 73 88 90
+ * @run main/othervm -XX:SoftwarePrefetchHintDistance=192 compiler.intrinsics.string.TestStringCompareToDifferentLength 4 2 5 10 13 17 20 23 24 25 71 72 73 88 90 192 193 208 209
+ * @run main/othervm -XX:SoftwarePrefetchHintDistance=16 compiler.intrinsics.string.TestStringCompareToDifferentLength 4 2 5 10 13 17 20 23 24 25 71 72 73 88 90
+ * @run main/othervm -XX:SoftwarePrefetchHintDistance=-1 compiler.intrinsics.string.TestStringCompareToDifferentLength 4 2 5 10 13 17 20 23 24 25 71 72 73 88 90
  */
 
 package compiler.intrinsics.string;

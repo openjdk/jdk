@@ -26,7 +26,6 @@
  * @test
  * @requires vm.cds
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
- * @modules jdk.jartool/sun.tools.jar
  * @run driver AddOpens
  * @summary sanity test the --add-opens option
  */

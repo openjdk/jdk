@@ -22,10 +22,12 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package jdk.javadoc.internal.doclets.toolkit.taglets;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 import javax.lang.model.element.Element;
 
@@ -47,66 +49,63 @@ import static jdk.javadoc.doclet.Taglet.Location.*;
  */
 public class UserTaglet implements Taglet {
 
-    final private jdk.javadoc.doclet.Taglet userTaglet;
+    private final jdk.javadoc.doclet.Taglet userTaglet;
 
     public UserTaglet(jdk.javadoc.doclet.Taglet t) {
         userTaglet = t;
+    }
+
+    public Set<jdk.javadoc.doclet.Taglet.Location> getAllowedLocations() {
+        return userTaglet.getAllowedLocations();
     }
 
     /**
      * {@inheritDoc}
      */
     public boolean inField() {
-        return userTaglet.isInlineTag()
-                || userTaglet.getAllowedLocations().contains(FIELD);
+        return userTaglet.getAllowedLocations().contains(FIELD);
     }
 
     /**
      * {@inheritDoc}
      */
     public boolean inConstructor() {
-        return userTaglet.isInlineTag()
-                || userTaglet.getAllowedLocations().contains(CONSTRUCTOR);
+        return userTaglet.getAllowedLocations().contains(CONSTRUCTOR);
     }
 
     /**
      * {@inheritDoc}
      */
     public boolean inMethod() {
-        return userTaglet.isInlineTag()
-                || userTaglet.getAllowedLocations().contains(METHOD);
+        return userTaglet.getAllowedLocations().contains(METHOD);
     }
 
     /**
      * {@inheritDoc}
      */
     public boolean inOverview() {
-        return userTaglet.isInlineTag()
-                || userTaglet.getAllowedLocations().contains(OVERVIEW);
+        return userTaglet.getAllowedLocations().contains(OVERVIEW);
     }
 
     /**
      * {@inheritDoc}
      */
     public boolean inModule() {
-        return userTaglet.isInlineTag()
-                || userTaglet.getAllowedLocations().contains(MODULE);
+        return userTaglet.getAllowedLocations().contains(MODULE);
     }
 
     /**
      * {@inheritDoc}
      */
     public boolean inPackage() {
-        return userTaglet.isInlineTag()
-                || userTaglet.getAllowedLocations().contains(PACKAGE);
+        return userTaglet.getAllowedLocations().contains(PACKAGE);
     }
 
     /**
      * {@inheritDoc}
      */
     public boolean inType() {
-        return userTaglet.isInlineTag()
-                || userTaglet.getAllowedLocations().contains(TYPE);
+        return userTaglet.getAllowedLocations().contains(TYPE);
     }
 
     /**
@@ -116,6 +115,10 @@ public class UserTaglet implements Taglet {
      */
     public boolean isInlineTag() {
         return userTaglet.isInlineTag();
+    }
+
+    public boolean isBlockTag() {
+        return userTaglet.isBlockTag();
     }
 
     /**
@@ -140,7 +143,7 @@ public class UserTaglet implements Taglet {
     public Content getTagletOutput(Element holder, TagletWriter writer) {
         Content output = writer.getOutputInstance();
         Utils utils = writer.configuration().utils;
-        List<? extends DocTree> tags = utils.getBlockTags(holder, getName());
+        List<? extends DocTree> tags = utils.getBlockTags(holder, this);
         if (!tags.isEmpty()) {
             String tagString = userTaglet.toString(tags, holder);
             if (tagString != null) {

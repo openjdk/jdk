@@ -279,7 +279,10 @@ public interface LIRGeneratorTool extends DiagnosticLIRGeneratorTool, ValueKindF
         throw GraalError.unimplemented("String.compareTo substitution is not implemented on this architecture");
     }
 
-    Variable emitArrayEquals(JavaKind kind, Value array1, Value array2, Value length, boolean directPointers);
+    @SuppressWarnings("unused")
+    default Variable emitArrayEquals(JavaKind kind, Value array1, Value array2, Value length, boolean directPointers) {
+        throw GraalError.unimplemented("Array.equals substitution is not implemented on this architecture");
+    }
 
     @SuppressWarnings("unused")
     default Variable emitArrayEquals(JavaKind kind1, JavaKind kind2, Value array1, Value array2, Value length, boolean directPointers) {

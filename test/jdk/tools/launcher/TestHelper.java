@@ -500,6 +500,40 @@ public class TestHelper {
         return Locale.getDefault().getLanguage().equals("en");
     }
 
+    /**
+     * Helper method to initialize a simple module that just prints the passed in arguments
+     */
+    static void createEchoArgumentsModule(File modulesDir) throws IOException {
+        if (modulesDir.exists()) {
+            recursiveDelete(modulesDir);
+        }
+
+        modulesDir.mkdirs();
+
+        File srcDir = new File(modulesDir, "src");
+        File modsDir = new File(modulesDir, "mods");
+        File testDir = new File(srcDir, "test");
+        File launcherTestDir = new File(testDir, "launcher");
+        srcDir.mkdir();
+        modsDir.mkdir();
+        testDir.mkdir();
+        launcherTestDir.mkdir();
+
+        String[] moduleInfoCode = { "module test {}" };
+        createFile(new File(testDir, "module-info.java"), Arrays.asList(moduleInfoCode));
+
+        String[] moduleCode = {
+            "package launcher;",
+            "import java.util.Arrays;",
+            "public class Main {",
+            "public static void main(String[] args) {",
+            "System.out.println(Arrays.toString(args));",
+            "}",
+            "}"
+        };
+        createFile(new File(launcherTestDir, "Main.java"), Arrays.asList(moduleCode));
+    }
+
     /*
      * A class to encapsulate the test results and stuff, with some ease
      * of use methods to check the test results.

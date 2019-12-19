@@ -44,9 +44,9 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 /**
  * Writes a file that tries to redirect to an alternate page.
  * The redirect uses JavaScript, if enabled, falling back on
- * {@code <meta http-eqiv=refresh content="0,<uri>">}.
+ * {@code <meta http-equiv=refresh content="0,<uri>">}.
  * If neither are supported/enabled in a browser, the page displays the
- * standard "JavaScipt not enabled" message, and a link to the alternate page.
+ * standard "JavaScript not enabled" message, and a link to the alternate page.
  */
 public class IndexRedirectWriter extends HtmlDocletWriter {
 

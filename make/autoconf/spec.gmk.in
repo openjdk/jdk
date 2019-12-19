@@ -415,6 +415,9 @@ MACOSX_VERSION_MIN=@MACOSX_VERSION_MIN@
 # The highest allowed version of macosx
 MACOSX_VERSION_MAX=@MACOSX_VERSION_MAX@
 
+# The macosx code signing identity to use
+MACOSX_CODESIGN_IDENTITY=@MACOSX_CODESIGN_IDENTITY@
+
 # Toolchain type: gcc, clang, solstudio, lxc, microsoft...
 TOOLCHAIN_TYPE:=@TOOLCHAIN_TYPE@
 TOOLCHAIN_VERSION := @TOOLCHAIN_VERSION@

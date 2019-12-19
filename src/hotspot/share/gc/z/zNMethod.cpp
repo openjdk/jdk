@@ -187,6 +187,15 @@ void ZNMethod::flush_nmethod(nmethod* nm) {
   delete gc_data(nm);
 }
 
+bool ZNMethod::supports_entry_barrier(nmethod* nm) {
+  BarrierSetNMethod* const bs = BarrierSet::barrier_set()->barrier_set_nmethod();
+  if (bs != NULL) {
+    return bs->supports_entry_barrier(nm);
+  }
+
+  return false;
+}
+
 bool ZNMethod::is_armed(nmethod* nm) {
   BarrierSetNMethod* const bs = BarrierSet::barrier_set()->barrier_set_nmethod();
   if (bs != NULL) {

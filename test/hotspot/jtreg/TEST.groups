@@ -33,11 +33,13 @@ hotspot_compiler = \
 
 hotspot_compiler_xcomp = \
   :hotspot_compiler \
-  -:tier1_compiler_not_xcomp
+  -:tier1_compiler_not_xcomp \
+  -compiler/graalunit
 
 hotspot_compiler_all_gcs = \
   :hotspot_compiler \
-  -:tier1_compiler_aot_jvmci
+  -:tier1_compiler_aot_jvmci \
+  -compiler/graalunit
 
 hotspot_gc = \
   gc \

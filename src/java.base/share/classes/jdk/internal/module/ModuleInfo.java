@@ -63,7 +63,7 @@ import static jdk.internal.module.ClassFileConstants.*;
 public final class ModuleInfo {
 
     private final int JAVA_MIN_SUPPORTED_VERSION = 53;
-    private final int JAVA_MAX_SUPPORTED_VERSION = 58;
+    private final int JAVA_MAX_SUPPORTED_VERSION = 59;
 
     private static final JavaLangModuleAccess JLMA
         = SharedSecrets.getJavaLangModuleAccess();

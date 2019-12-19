@@ -30,7 +30,6 @@
  * @library ../..
  * @library /test/hotspot/jtreg/testlibrary
  * @library /test/lib
- * @modules jdk.jartool/sun.tools.jar
  * @build PatchMain
  * @run driver SubClassOfPatchedClass
  */

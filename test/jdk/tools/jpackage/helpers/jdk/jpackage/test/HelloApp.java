@@ -26,16 +26,16 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import jdk.jpackage.test.Functional.ThrowingFunction;
 import jdk.jpackage.test.Functional.ThrowingSupplier;
 
-public class HelloApp {
+public final class HelloApp {
 
     HelloApp(JavaAppDesc appDesc) {
         if (appDesc == null) {
@@ -113,7 +113,7 @@ public class HelloApp {
 
     private JarBuilder createJarBuilder() {
         JarBuilder builder = new JarBuilder();
-        if (appDesc.jarWithMainClass()) {
+        if (appDesc.isWithMainClass()) {
             builder.setMainClass(appDesc.className());
         }
         return builder;
@@ -121,7 +121,6 @@ public class HelloApp {
 
     void addTo(JPackageCommand cmd) {
         final String moduleName = appDesc.moduleName();
-        final String jarFileName = appDesc.jarFileName();
         final String qualifiedClassName = appDesc.className();
 
         if (moduleName != null && appDesc.packageName() == null) {
@@ -129,24 +128,32 @@ public class HelloApp {
                     "Module [%s] with default package", moduleName));
         }
 
+        Supplier<Path> getModulePath = () -> {
+            // `--module-path` option should be set by the moment
+            // when this action is being executed.
+            return cmd.getArgumentValue("--module-path", cmd::inputDir, Path::of);
+        };
+
         if (moduleName == null && CLASS_NAME.equals(qualifiedClassName)) {
             // Use Hello.java as is.
-            cmd.addAction((self) -> {
-                Path jarFile = self.inputDir().resolve(jarFileName);
+            cmd.addPrerequisiteAction((self) -> {
+                Path jarFile = self.inputDir().resolve(appDesc.jarFileName());
                 createJarBuilder().setOutputJar(jarFile).addSourceFile(
                         HELLO_JAVA).create();
             });
+        } else if (appDesc.jmodFileName() != null) {
+            // Modular app in .jmod file
+            cmd.addPrerequisiteAction(unused -> {
+                createBundle(appDesc, getModulePath.get());
+            });
         } else {
-            cmd.addAction((self) -> {
+            // Modular app in .jar file
+            cmd.addPrerequisiteAction(unused -> {
                 final Path jarFile;
                 if (moduleName == null) {
-                    jarFile = self.inputDir().resolve(jarFileName);
+                    jarFile = cmd.inputDir().resolve(appDesc.jarFileName());
                 } else {
-                    // `--module-path` option should be set by the moment
-                    // when this action is being executed.
-                    jarFile = Path.of(self.getArgumentValue("--module-path",
-                            () -> self.inputDir().toString()), jarFileName);
-                    Files.createDirectories(jarFile.getParent());
+                    jarFile = getModulePath.get().resolve(appDesc.jarFileName());
                 }
 
                 TKit.withTempDirectory("src",
@@ -155,7 +162,7 @@ public class HelloApp {
         }
 
         if (moduleName == null) {
-            cmd.addArguments("--main-jar", jarFileName);
+            cmd.addArguments("--main-jar", appDesc.jarFileName());
             cmd.addArguments("--main-class", qualifiedClassName);
         } else {
             cmd.addArguments("--module-path", TKit.workDir().resolve(
@@ -173,13 +180,14 @@ public class HelloApp {
     }
 
     static JavaAppDesc createDefaltAppDesc() {
-        return new JavaAppDesc().setClassName(CLASS_NAME).setJarFileName(
-                "hello.jar");
+        return new JavaAppDesc().setClassName(CLASS_NAME).setBundleFileName("hello.jar");
     }
 
-    static void verifyOutputFile(Path outputFile, List<String> args) {
+    static void verifyOutputFile(Path outputFile, List<String> args,
+            Map<String, String> params) {
         if (!outputFile.isAbsolute()) {
-            verifyOutputFile(outputFile.toAbsolutePath().normalize(), args);
+            verifyOutputFile(outputFile.toAbsolutePath().normalize(), args,
+                    params);
             return;
         }
 
@@ -193,38 +201,168 @@ public class HelloApp {
                 String.format("args.length: %d", args.size())
         ));
         expected.addAll(args);
+        expected.addAll(params.entrySet().stream()
+                .sorted(Comparator.comparing(Map.Entry::getKey))
+                .map(entry -> String.format("-D%s=%s", entry.getKey(),
+                        entry.getValue()))
+                .collect(Collectors.toList()));
 
         TKit.assertStringListEquals(expected, contents, String.format(
                 "Check contents of [%s] file", outputFile));
     }
 
-    public static void executeLauncherAndVerifyOutput(JPackageCommand cmd) {
-        final Path launcherPath = cmd.appLauncherPath();
-        if (!cmd.isFakeRuntime(String.format("Not running [%s] launcher",
-                launcherPath))) {
-            executeAndVerifyOutput(launcherPath, cmd.getAllArgumentValues(
-                    "--arguments"));
+    public static Path createBundle(JavaAppDesc appDesc, Path outputDir) {
+        String jmodFileName = appDesc.jmodFileName();
+        if (jmodFileName != null) {
+            final Path jmodFilePath = outputDir.resolve(jmodFileName);
+            TKit.withTempDirectory("jmod-workdir", jmodWorkDir -> {
+                var jarAppDesc = JavaAppDesc.parse(appDesc.toString())
+                        .setBundleFileName("tmp.jar");
+                Path jarPath = createBundle(jarAppDesc, jmodWorkDir);
+                Executor exec = new Executor()
+                        .setToolProvider(JavaTool.JMOD)
+                        .addArguments("create", "--class-path")
+                        .addArgument(jarPath)
+                        .addArgument(jmodFilePath);
+
+                if (appDesc.isWithMainClass()) {
+                    exec.addArguments("--main-class", appDesc.className());
+                }
+
+                if (appDesc.moduleVersion() != null) {
+                    exec.addArguments("--module-version", appDesc.moduleVersion());
+                }
+
+                Files.createDirectories(jmodFilePath.getParent());
+                exec.execute();
+            });
+
+            return jmodFilePath;
         }
+
+        final JavaAppDesc jarAppDesc;
+        if (appDesc.isWithBundleFileName()) {
+            jarAppDesc = appDesc;
+        } else {
+            // Create copy of original JavaAppDesc instance.
+            jarAppDesc = JavaAppDesc.parse(appDesc.toString())
+                        .setBundleFileName(createDefaltAppDesc().jarFileName());
+        }
+
+        JPackageCommand
+                .helloAppImage(jarAppDesc)
+                .setArgumentValue("--input", outputDir)
+                .setArgumentValue("--module-path", outputDir)
+                .executePrerequisiteActions();
+
+        return outputDir.resolve(jarAppDesc.jarFileName());
     }
 
-    public static void executeAndVerifyOutput(Path helloAppLauncher,
-            String... defaultLauncherArgs) {
-        executeAndVerifyOutput(helloAppLauncher, List.of(defaultLauncherArgs));
+    public static void executeLauncherAndVerifyOutput(JPackageCommand cmd,
+            String... args) {
+        final Path launcherPath = cmd.appLauncherPath();
+        if (cmd.isFakeRuntime(String.format("Not running [%s] launcher",
+                launcherPath))) {
+            return;
+        }
+
+        assertApp(launcherPath)
+        .addDefaultArguments(Optional
+                .ofNullable(cmd.getAllArgumentValues("--arguments"))
+                .orElseGet(() -> new String[0]))
+        .addJavaOptions(Optional
+                .ofNullable(cmd.getAllArgumentValues("--java-options"))
+                .orElseGet(() -> new String[0]))
+        .executeAndVerifyOutput(args);
     }
 
-    public static void executeAndVerifyOutput(Path helloAppLauncher,
-            List<String> defaultLauncherArgs) {
-        // Output file will be created in the current directory.
-        Path outputFile = TKit.workDir().resolve(OUTPUT_FILENAME);
-        ThrowingFunction.toFunction(Files::deleteIfExists).apply(outputFile);
-        new Executor()
-                .setDirectory(outputFile.getParent())
-                .setExecutable(helloAppLauncher)
-                .dumpOutput()
-                .execute()
-                .assertExitCodeIsZero();
+    public final static class AppOutputVerifier {
+        AppOutputVerifier(Path helloAppLauncher) {
+            this.launcherPath = helloAppLauncher;
+            this.params = new HashMap<>();
+            this.defaultLauncherArgs = new ArrayList<>();
+        }
 
-        verifyOutputFile(outputFile, defaultLauncherArgs);
+        public AppOutputVerifier addDefaultArguments(String... v) {
+            return addDefaultArguments(List.of(v));
+        }
+
+        public AppOutputVerifier addDefaultArguments(Collection<String> v) {
+            defaultLauncherArgs.addAll(v);
+            return this;
+        }
+
+        public AppOutputVerifier addParam(String name, String value) {
+            if (name.startsWith("param")) {
+                params.put(name, value);
+            }
+            return this;
+        }
+
+        public AppOutputVerifier addParams(Collection<Map.Entry<String, String>> v) {
+            v.forEach(entry -> addParam(entry.getKey(), entry.getValue()));
+            return this;
+        }
+        public AppOutputVerifier addParams(Map<String, String> v) {
+            return addParams(v.entrySet());
+        }
+
+        public AppOutputVerifier addParams(Map.Entry<String, String>... v) {
+            return addParams(List.of(v));
+        }
+
+        public AppOutputVerifier addJavaOptions(String... v) {
+            return addJavaOptions(List.of(v));
+        }
+
+        public AppOutputVerifier addJavaOptions(Collection<String> v) {
+            return addParams(v.stream()
+            .filter(javaOpt -> javaOpt.startsWith("-D"))
+            .map(javaOpt -> {
+                var components = javaOpt.split("=", 2);
+                return Map.entry(components[0].substring(2), components[1]);
+            })
+            .collect(Collectors.toList()));
+        }
+
+        public void executeAndVerifyOutput(String... args) {
+            // Output file will be created in the current directory.
+            Path outputFile = TKit.workDir().resolve(OUTPUT_FILENAME);
+            ThrowingFunction.toFunction(Files::deleteIfExists).apply(outputFile);
+
+            final Path executablePath;
+            if (launcherPath.isAbsolute()) {
+                executablePath = launcherPath;
+            } else {
+                // Make sure path to executable is relative to the current directory.
+                executablePath = Path.of(".").resolve(launcherPath.normalize());
+            }
+
+            final List<String> launcherArgs = List.of(args);
+            new Executor()
+                    .setDirectory(outputFile.getParent())
+                    .setExecutable(executablePath)
+                    .addArguments(launcherArgs)
+                    .dumpOutput()
+                    .execute();
+
+            final List<String> appArgs;
+            if (launcherArgs.isEmpty()) {
+                appArgs = defaultLauncherArgs;
+            } else {
+                appArgs = launcherArgs;
+            }
+
+            verifyOutputFile(outputFile, appArgs, params);
+        }
+
+        private final Path launcherPath;
+        private final List<String> defaultLauncherArgs;
+        private final Map<String, String> params;
+    }
+
+    public static AppOutputVerifier assertApp(Path helloAppLauncher) {
+        return new AppOutputVerifier(helloAppLauncher);
     }
 
     final static String OUTPUT_FILENAME = "appOutput.txt";

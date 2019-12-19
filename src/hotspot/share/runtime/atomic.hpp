@@ -36,6 +36,7 @@
 #include "metaprogramming/removePointer.hpp"
 #include "runtime/orderAccess.hpp"
 #include "utilities/align.hpp"
+#include "utilities/bytes.hpp"
 #include "utilities/macros.hpp"
 
 enum atomic_memory_order {
@@ -578,6 +579,8 @@ struct Atomic::PlatformCmpxchg {
 // as a base class, requiring it be complete.  The definition is later
 // in this file, near the other definitions related to cmpxchg.
 struct Atomic::CmpxchgByteUsingInt {
+  static uint8_t get_byte_in_int(uint32_t n, uint32_t idx);
+  static uint32_t set_byte_in_int(uint32_t n, uint8_t b, uint32_t idx);
   template<typename T>
   T operator()(T volatile* dest,
                T compare_value,
@@ -845,6 +848,19 @@ inline T Atomic::cmpxchg_using_helper(Fn fn,
        PrimitiveConversions::cast<Type>(compare_value)));
 }
 
+inline uint32_t Atomic::CmpxchgByteUsingInt::set_byte_in_int(uint32_t n,
+                                                             uint8_t b,
+                                                             uint32_t idx) {
+  int bitsIdx = BitsPerByte * idx;
+  return (n & ~(0xff << bitsIdx)) | (b << bitsIdx);
+}
+
+inline uint8_t Atomic::CmpxchgByteUsingInt::get_byte_in_int(uint32_t n,
+                                                            uint32_t idx) {
+  int bitsIdx = BitsPerByte * idx;
+  return (uint8_t)(n >> bitsIdx);
+}
+
 template<typename T>
 inline T Atomic::CmpxchgByteUsingInt::operator()(T volatile* dest,
                                                  T compare_value,
@@ -856,20 +872,21 @@ inline T Atomic::CmpxchgByteUsingInt::operator()(T volatile* dest,
   volatile uint32_t* aligned_dest
     = reinterpret_cast<volatile uint32_t*>(align_down(dest, sizeof(uint32_t)));
   size_t offset = pointer_delta(dest, aligned_dest, 1);
-  uint32_t cur = *aligned_dest;
-  uint8_t* cur_as_bytes = reinterpret_cast<uint8_t*>(&cur);
+
+  uint32_t idx = (Endian::NATIVE == Endian::BIG)
+                   ? (sizeof(uint32_t) - 1 - offset)
+                   : offset;
 
   // current value may not be what we are looking for, so force it
   // to that value so the initial cmpxchg will fail if it is different
-  cur_as_bytes[offset] = canon_compare_value;
+  uint32_t cur = set_byte_in_int(Atomic::load(aligned_dest), canon_compare_value, idx);
 
   // always execute a real cmpxchg so that we get the required memory
   // barriers even on initial failure
   do {
-    // value to swap in matches current value ...
-    uint32_t new_value = cur;
-    // ... except for the one byte we want to update
-    reinterpret_cast<uint8_t*>(&new_value)[offset] = canon_exchange_value;
+    // value to swap in matches current value
+    // except for the one byte we want to update
+    uint32_t new_value = set_byte_in_int(cur, canon_exchange_value, idx);
 
     uint32_t res = cmpxchg(aligned_dest, cur, new_value, order);
     if (res == cur) break;      // success
@@ -878,9 +895,9 @@ inline T Atomic::CmpxchgByteUsingInt::operator()(T volatile* dest,
     // our view of the current int
     cur = res;
     // if our byte is still as cur we loop and try again
-  } while (cur_as_bytes[offset] == canon_compare_value);
+  } while (get_byte_in_int(cur, idx) == canon_compare_value);
 
-  return PrimitiveConversions::cast<T>(cur_as_bytes[offset]);
+  return PrimitiveConversions::cast<T>(get_byte_in_int(cur, idx));
 }
 
 // Handle xchg for integral and enum types.

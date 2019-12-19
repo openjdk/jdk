@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,8 @@
  */
 
 import java.io.PrintWriter;
-import java.lang.instrument.*;
+import java.lang.instrument.Instrumentation;
+import java.lang.instrument.ClassDefinition;
 import jdk.test.lib.compiler.InMemoryJavaCompiler;
 
 /*
@@ -64,16 +65,7 @@ public class RedefineClassHelper {
      * Main method to be invoked before test to create the redefineagent.jar
      */
     public static void main(String[] args) throws Exception {
-        ClassFileInstaller.main("RedefineClassHelper");
-
-        PrintWriter pw = new PrintWriter("MANIFEST.MF");
-        pw.println("Premain-Class: RedefineClassHelper");
-        pw.println("Can-Redefine-Classes: true");
-        pw.close();
-
-        sun.tools.jar.Main jarTool = new sun.tools.jar.Main(System.out, System.err, "jar");
-        if (!jarTool.run(new String[] { "-cmf", "MANIFEST.MF", "redefineagent.jar", "RedefineClassHelper.class" })) {
-            throw new Exception("jar operation failed");
-        }
+        String manifest = "Premain-Class: RedefineClassHelper\nCan-Redefine-Classes: true\n";
+        ClassFileInstaller.writeJar("redefineagent.jar", ClassFileInstaller.Manifest.fromString(manifest), "RedefineClassHelper");
     }
 }

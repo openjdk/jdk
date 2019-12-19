@@ -126,7 +126,7 @@ Node *PhaseIdealLoop::split_thru_phi( Node *n, Node *region, int policy ) {
       // otherwise it will be not updated during igvn->transform since
       // igvn->type(x) is set to x->Value() already.
       x->raise_bottom_type(t);
-      Node *y = _igvn.apply_identity(x);
+      Node* y = x->Identity(&_igvn);
       if (y != x) {
         wins++;
         x = y;
@@ -498,9 +498,10 @@ Node *PhaseIdealLoop::convert_add_to_muladd(Node* n) {
   Node * in2 = n->in(2);
   if (in1->Opcode() == Op_MulI && in2->Opcode() == Op_MulI) {
     IdealLoopTree* loop_n = get_loop(get_ctrl(n));
-    if (loop_n->_head->as_Loop()->is_valid_counted_loop() &&
-        Matcher::match_rule_supported(Op_MulAddS2I) &&
-        Matcher::match_rule_supported(Op_MulAddVS2VI)) {
+    if (loop_n->is_counted() &&
+        loop_n->_head->as_Loop()->is_valid_counted_loop() &&
+        Matcher::match_rule_supported(Op_MulAddVS2VI) &&
+        Matcher::match_rule_supported(Op_MulAddS2I)) {
       Node* mul_in1 = in1->in(1);
       Node* mul_in2 = in1->in(2);
       Node* mul_in3 = in2->in(1);
@@ -941,11 +942,6 @@ void PhaseIdealLoop::try_move_store_after_loop(Node* n) {
 // Do the real work in a non-recursive function.  Data nodes want to be
 // cloned in the pre-order so they can feed each other nicely.
 Node *PhaseIdealLoop::split_if_with_blocks_pre( Node *n ) {
-  BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
-  Node* bs_res = bs->split_if_pre(this, n);
-  if (bs_res != NULL) {
-    return bs_res;
-  }
   // Cloning these guys is unlikely to win
   int n_op = n->Opcode();
   if( n_op == Op_MergeMem ) return n;
@@ -1389,7 +1385,6 @@ void PhaseIdealLoop::split_if_with_blocks_post(Node *n) {
         // control, then the cloning of n is a pointless exercise, because
         // GVN will ensure that we end up where we started.
         if (!n->is_Load() || late_load_ctrl != n_ctrl) {
-          BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
           for (DUIterator_Last jmin, j = n->last_outs(jmin); j >= jmin; ) {
             Node *u = n->last_out(j); // Clone private computation per use
             _igvn.rehash_node_delayed(u);
@@ -1419,10 +1414,6 @@ void PhaseIdealLoop::split_if_with_blocks_post(Node *n) {
             // Find control for 'x' next to use but not inside inner loops.
             // For inner loop uses get the preheader area.
             x_ctrl = place_near_use(x_ctrl);
-
-            if (bs->sink_node(this, n, x, x_ctrl, n_ctrl)) {
-              continue;
-            }
 
             if (n->is_Load()) {
               // For loads, add a control edge to a CFG node outside of the loop

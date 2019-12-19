@@ -290,6 +290,7 @@ public class Kinds {
         case TYPE_PARAMETER:
             return KindName.TYPEVAR;
 
+        case BINDING_VARIABLE:
         case ENUM_CONSTANT:
         case PARAMETER:
         case LOCAL_VARIABLE:

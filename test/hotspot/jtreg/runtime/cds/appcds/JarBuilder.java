@@ -38,12 +38,14 @@ import jdk.test.lib.process.ProcessTools;
 import java.io.File;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import sun.tools.jar.Main;
+import java.util.spi.ToolProvider;
 
 public class JarBuilder {
     // to turn DEBUG on via command line: -DJarBuilder.DEBUG=[true, TRUE]
     private static final boolean DEBUG = Boolean.parseBoolean(System.getProperty("JarBuilder.DEBUG", "false"));
     private static final String classDir = System.getProperty("test.classes");
+    private static final ToolProvider JAR = ToolProvider.findFirst("jar")
+        .orElseThrow(() -> new RuntimeException("ToolProvider for jar not found"));
 
     public static String getJarFilePath(String jarName) {
         return classDir + File.separator + jarName + ".jar";
@@ -124,6 +126,35 @@ public class JarBuilder {
         executeProcess(args.toArray(new String[1]));
     }
 
+    // Add commonly used inner classes that are often omitted by mistake. Currently
+    // we support only sun/hotspot/WhiteBox$WhiteBoxPermission. See JDK-8199290
+    private static String[] addInnerClasses(String[] classes, int startIdx) {
+        boolean seenWB = false;
+        boolean seenWBInner = false;
+        // This method is different than ClassFileInstaller.addInnerClasses which
+        // uses "." as the package delimiter :-(
+        final String wb = "sun/hotspot/WhiteBox";
+        final String wbInner = "sun/hotspot/WhiteBox$WhiteBoxPermission";
+
+        ArrayList<String> list = new ArrayList<>();
+
+        for (int i = startIdx; i < classes.length; i++) {
+            String cls = classes[i];
+            list.add(cls);
+            switch (cls) {
+            case wb:      seenWB      = true; break;
+            case wbInner: seenWBInner = true; break;
+            }
+        }
+        if (seenWB && !seenWBInner) {
+            list.add(wbInner);
+        }
+
+        String[] array = new String[list.size()];
+        list.toArray(array);
+        return array;
+    }
+
 
     private static String createSimpleJar(String jarclassDir, String jarName,
         String[] classNames) throws Exception {
@@ -139,6 +170,8 @@ public class JarBuilder {
 
     private static void addClassArgs(ArrayList<String> args, String jarclassDir,
         String[] classNames) {
+
+        classNames = addInnerClasses(classNames, 0);
 
         for (String name : classNames) {
             args.add("-C");
@@ -165,8 +198,7 @@ public class JarBuilder {
     private static void createJar(ArrayList<String> args) {
         if (DEBUG) printIterable("createJar args: ", args);
 
-        Main jarTool = new Main(System.out, System.err, "jar");
-        if (!jarTool.run(args.toArray(new String[1]))) {
+        if (JAR.run(System.out, System.err, args.toArray(new String[1])) != 0) {
             throw new RuntimeException("jar operation failed");
         }
     }

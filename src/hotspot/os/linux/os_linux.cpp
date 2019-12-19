@@ -2081,11 +2081,14 @@ int os::get_loaded_modules_info(os::LoadedModulesCallbackFunc callback, void *pa
       u8 base, top, offset, inode;
       char permissions[5];
       char device[6];
-      char name[PATH_MAX + 1];
+      char name[sizeof(line)];
 
       // Parse fields from line
-      sscanf(line, UINT64_FORMAT_X "-" UINT64_FORMAT_X " %4s " UINT64_FORMAT_X " %7s " INT64_FORMAT " %s",
+      int matches = sscanf(line, UINT64_FORMAT_X "-" UINT64_FORMAT_X " %4s " UINT64_FORMAT_X " %5s " INT64_FORMAT " %s",
              &base, &top, permissions, &offset, device, &inode, name);
+      // the last entry 'name' is empty for some entries, so we might have 6 matches instead of 7 for some lines
+      if (matches < 6) continue;
+      if (matches == 6) name[0] = '\0';
 
       // Filter by device id '00:00' so that we only get file system mapped files.
       if (strcmp(device, "00:00") != 0) {

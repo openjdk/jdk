@@ -88,7 +88,7 @@ import javax.lang.model.SourceVersion;
  */
 @jdk.internal.PreviewFeature(feature=jdk.internal.PreviewFeature.Feature.RECORDS,
                              essentialAPI=false)
-@SupportedSourceVersion(RELEASE_14)
+@SupportedSourceVersion(RELEASE_15)
 public class ElementKindVisitor14<R, P> extends ElementKindVisitor9<R, P> {
     /**
      * Constructor for concrete subclasses; uses {@code null} for the
@@ -134,6 +134,22 @@ public class ElementKindVisitor14<R, P> extends ElementKindVisitor9<R, P> {
      */
     @Override
     public R visitTypeAsRecord(TypeElement e, P p) {
+        return defaultAction(e, p);
+    }
+
+    /**
+     * Visits a {@code BINDING_VARIABLE} variable element.
+     *
+     * @implSpec This implementation calls {@code defaultAction}.
+     *
+     * @param e {@inheritDoc}
+     * @param p {@inheritDoc}
+     * @return  the result of {@code defaultAction}
+     *
+     * @since 14
+     */
+    @Override
+    public R visitVariableAsBindingVariable(VariableElement e, P p) {
         return defaultAction(e, p);
     }
 }

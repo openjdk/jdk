@@ -447,6 +447,16 @@ compare_general_files() {
                 $CAT $OTHER_DIR/$f | eval "$HTML_FILTER" > $OTHER_FILE &
                 $CAT $THIS_DIR/$f  | eval "$HTML_FILTER" > $THIS_FILE &
                 wait
+            elif [ "$SUFFIX" = "svg" ]; then
+                # GraphViz has non-determinism when generating svg files
+                OTHER_FILE=$WORK_DIR/$f.other
+                THIS_FILE=$WORK_DIR/$f.this
+                $MKDIR -p $(dirname $OTHER_FILE) $(dirname $THIS_FILE)
+                SVG_FILTER="$SED \
+                    -e 's/edge[0-9][0-9]*/edgeX/g'
+                    "
+                $CAT $OTHER_DIR/$f | eval "$SVG_FILTER" > $OTHER_FILE
+                $CAT $THIS_DIR/$f | eval "$SVG_FILTER" > $THIS_FILE
             elif [[ "$f" = *"/lib/classlist" ]] || [ "$SUFFIX" = "jar_contents" ]; then
                 # The classlist files may have some lines in random order
                 OTHER_FILE=$WORK_DIR/$f.other
@@ -566,8 +576,21 @@ compare_zip_file() {
                 | $CUT -f 2 -d ' ' | $SED "s|$OTHER_UNZIPDIR/||g")
         fi
 
-        $RM -f $WORK_DIR/$ZIP_FILE.diffs
+        # Separate executable/library files from other files in zip.
+        DIFFING_TEXT_FILES=
+        DIFFING_EXEC_FILES=
         for file in $DIFFING_FILES; do
+            SUFFIX="${file##*.}"
+            if [ "$SUFFIX" = "exe" -o "$SUFFIX" = "dll" -o "$SUFFIX" = "so" \
+                 -o "$SUFFIX" = "dylib" ]; then
+                DIFFING_EXEC_FILES="$DIFFING_EXEC_FILES $file"
+            else
+                DIFFING_TEXT_FILES="$DIFFING_TEXT_FILES $file"
+            fi
+        done
+
+        $RM -f $WORK_DIR/$ZIP_FILE.diffs
+        for file in $DIFFING_TEXT_FILES; do
             if [[ "$ACCEPTED_JARZIP_CONTENTS $EXCEPTIONS" != *"$file"* ]]; then
                 diff_text $OTHER_UNZIPDIR/$file $THIS_UNZIPDIR/$file >> $WORK_DIR/$ZIP_FILE.diffs
             fi
@@ -592,6 +615,15 @@ compare_zip_file() {
                 done
             fi
         fi
+
+        # Use the compare_bin_file function for comparing the executable files.
+        for file in $DIFFING_EXEC_FILES; do
+            compare_bin_file $THIS_UNZIPDIR $OTHER_UNZIPDIR $WORK_DIR/$ZIP_FILE.bin \
+                             $file
+            if [ "$?" != "0" ]; then
+                return_value=1
+            fi
+        done
     fi
 
     return $return_value
@@ -779,6 +811,7 @@ compare_bin_file() {
         PDB_DIRS="$(ls -d \
             {$OTHER,$THIS}/support/modules_{cmds,libs}/{*,*/*} \
             {$OTHER,$THIS}/support/native/java.base/java_objs \
+            {$OTHER,$THIS}/support/native/jdk.incubator.jpackage/* \
             )"
         export _NT_SYMBOL_PATH="$(echo $PDB_DIRS | tr ' ' ';')"
     fi

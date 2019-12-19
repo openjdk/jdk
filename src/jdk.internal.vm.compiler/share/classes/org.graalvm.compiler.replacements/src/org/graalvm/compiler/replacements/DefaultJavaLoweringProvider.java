@@ -43,7 +43,6 @@ import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.List;
 
-import jdk.vm.ci.meta.JavaConstant;
 import org.graalvm.compiler.api.directives.GraalDirectives;
 import org.graalvm.compiler.api.replacements.Snippet;
 import org.graalvm.compiler.api.replacements.SnippetReflectionProvider;
@@ -135,6 +134,7 @@ import org.graalvm.compiler.nodes.memory.WriteNode;
 import org.graalvm.compiler.nodes.memory.address.AddressNode;
 import org.graalvm.compiler.nodes.memory.address.IndexAddressNode;
 import org.graalvm.compiler.nodes.memory.address.OffsetAddressNode;
+import org.graalvm.compiler.nodes.spi.GCProvider;
 import org.graalvm.compiler.nodes.spi.Lowerable;
 import org.graalvm.compiler.nodes.spi.LoweringProvider;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
@@ -157,6 +157,7 @@ import jdk.vm.ci.code.MemoryBarriers;
 import jdk.vm.ci.code.TargetDescription;
 import jdk.vm.ci.meta.DeoptimizationAction;
 import jdk.vm.ci.meta.DeoptimizationReason;
+import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.ResolvedJavaField;
@@ -673,24 +674,25 @@ public abstract class DefaultJavaLoweringProvider implements LoweringProvider {
      * @param tool utility for performing the lowering
      */
     protected void lowerUnsafeLoadNode(RawLoadNode load, LoweringTool tool) {
+        GCProvider gc = tool.getProviders().getGC();
         StructuredGraph graph = load.graph();
         if (load instanceof GuardedUnsafeLoadNode) {
             GuardedUnsafeLoadNode guardedLoad = (GuardedUnsafeLoadNode) load;
             GuardingNode guard = guardedLoad.getGuard();
             if (guard == null) {
                 // can float freely if the guard folded away
-                ReadNode memoryRead = createUnsafeRead(graph, load, null);
+                ReadNode memoryRead = createUnsafeRead(gc, graph, load, null);
                 memoryRead.setForceFixed(false);
                 graph.replaceFixedWithFixed(load, memoryRead);
             } else {
                 // must be guarded, but flows below the guard
-                ReadNode memoryRead = createUnsafeRead(graph, load, guard);
+                ReadNode memoryRead = createUnsafeRead(gc, graph, load, guard);
                 graph.replaceFixedWithFixed(load, memoryRead);
             }
         } else {
             // never had a guarding condition so it must be fixed, creation of the read will force
             // it to be fixed
-            ReadNode memoryRead = createUnsafeRead(graph, load, null);
+            ReadNode memoryRead = createUnsafeRead(gc, graph, load, null);
             graph.replaceFixedWithFixed(load, memoryRead);
         }
     }
@@ -703,12 +705,12 @@ public abstract class DefaultJavaLoweringProvider implements LoweringProvider {
         }
     }
 
-    protected ReadNode createUnsafeRead(StructuredGraph graph, RawLoadNode load, GuardingNode guard) {
+    protected ReadNode createUnsafeRead(GCProvider gc, StructuredGraph graph, RawLoadNode load, GuardingNode guard) {
         boolean compressible = load.accessKind() == JavaKind.Object;
         JavaKind readKind = load.accessKind();
         Stamp loadStamp = loadStamp(load.stamp(NodeView.DEFAULT), readKind, compressible);
         AddressNode address = createUnsafeAddress(graph, load.object(), load.offset());
-        ReadNode memoryRead = graph.add(new ReadNode(address, load.getLocationIdentity(), loadStamp, BarrierType.NONE));
+        ReadNode memoryRead = graph.add(new ReadNode(address, load.getLocationIdentity(), loadStamp, gc.getBarrierSet().readBarrierType(load)));
         if (guard == null) {
             // An unsafe read must not float otherwise it may float above
             // a test guaranteeing the read is safe.

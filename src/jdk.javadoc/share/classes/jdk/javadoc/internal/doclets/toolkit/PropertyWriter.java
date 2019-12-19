@@ -46,8 +46,8 @@ public interface PropertyWriter {
      * @param memberDetailsTree the content tree representing member details
      * @return content tree for the property details header
      */
-    public Content getPropertyDetailsTreeHeader(TypeElement typeElement,
-            Content memberDetailsTree);
+    Content getPropertyDetailsTreeHeader(TypeElement typeElement,
+                                         Content memberDetailsTree);
 
     /**
      * Get the property documentation tree header.
@@ -56,8 +56,8 @@ public interface PropertyWriter {
      * @param propertyDetailsTree the content tree representing property details
      * @return content tree for the property documentation header
      */
-    public Content getPropertyDocTreeHeader(ExecutableElement property,
-            Content propertyDetailsTree);
+    Content getPropertyDocTreeHeader(ExecutableElement property,
+                                     Content propertyDetailsTree);
 
     /**
      * Get the signature for the given property.
@@ -65,7 +65,7 @@ public interface PropertyWriter {
      * @param property the property being documented
      * @return content tree for the property signature
      */
-    public Content getSignature(ExecutableElement property);
+    Content getSignature(ExecutableElement property);
 
     /**
      * Add the deprecated output for the given property.
@@ -73,7 +73,7 @@ public interface PropertyWriter {
      * @param property the property being documented
      * @param propertyDocTree content tree to which the deprecated information will be added
      */
-    public void addDeprecated(ExecutableElement property, Content propertyDocTree);
+    void addDeprecated(ExecutableElement property, Content propertyDocTree);
 
     /**
      * Add the comments for the given property.
@@ -81,7 +81,7 @@ public interface PropertyWriter {
      * @param property the property being documented
      * @param propertyDocTree the content tree to which the comments will be added
      */
-    public void addComments(ExecutableElement property, Content propertyDocTree);
+    void addComments(ExecutableElement property, Content propertyDocTree);
 
     /**
      * Add the tags for the given property.
@@ -89,7 +89,7 @@ public interface PropertyWriter {
      * @param property the property being documented
      * @param propertyDocTree the content tree to which the tags will be added
      */
-    public void addTags(ExecutableElement property, Content propertyDocTree);
+    void addTags(ExecutableElement property, Content propertyDocTree);
 
     /**
      * Get the property details tree.
@@ -98,7 +98,7 @@ public interface PropertyWriter {
      * @param memberDetailsTree the content tree representing member details
      * @return content tree for the property details
      */
-    public Content getPropertyDetails(Content memberDetailsTreeHeader, Content memberDetailsTree);
+    Content getPropertyDetails(Content memberDetailsTreeHeader, Content memberDetailsTree);
 
     /**
      * Get the property documentation.
@@ -106,12 +106,12 @@ public interface PropertyWriter {
      * @param propertyDocTree the content tree representing property documentation
      * @return content tree for the property documentation
      */
-    public Content getPropertyDoc(Content propertyDocTree);
+    Content getPropertyDoc(Content propertyDocTree);
 
     /**
      * Gets the member header tree.
      *
      * @return a content tree for the member header
      */
-    public Content getMemberTreeHeader();
+    Content getMemberTreeHeader();
 }

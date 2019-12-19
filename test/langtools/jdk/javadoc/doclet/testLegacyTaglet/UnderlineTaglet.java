@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,9 +34,6 @@ import static jdk.javadoc.doclet.Taglet.Location.*;
  * A sample Inline Taglet representing {@underline ...}.  The text
  * is simple underlined.  For example, "@underline UNDERLINE ME" would
  * be shown as: <u>UNDERLINE ME</u>.
- *
- * @author Jamie Ho
- * @since 1.4
  */
 
 public class UnderlineTaglet implements Taglet {

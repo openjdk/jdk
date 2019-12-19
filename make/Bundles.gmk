@@ -156,6 +156,12 @@ ifeq ($(call isTargetOs, macosx)+$(DEBUG_LEVEL), true+release)
   JRE_IMAGE_HOMEDIR := $(JRE_MACOSX_CONTENTS_DIR)/Home
   JDK_BUNDLE_SUBDIR :=
   JRE_BUNDLE_SUBDIR :=
+  # In certain situations, the JDK_IMAGE_DIR points to an image without the
+  # the symbols and demos. If so, the symobls and demos can be found in a
+  # separate image. These variables allow for overriding from a custom makefile.
+  JDK_SYMBOLS_IMAGE_DIR ?= $(JDK_IMAGE_DIR)
+  JDK_DEMOS_IMAGE_DIR ?= $(JDK_IMAGE_DIR)
+  JDK_DEMOS_IMAGE_HOMEDIR ?= $(JDK_DEMOS_IMAGE_DIR)/$(JDK_MACOSX_CONTENTS_SUBDIR)/Home
 else
   JDK_IMAGE_HOMEDIR := $(JDK_IMAGE_DIR)
   JRE_IMAGE_HOMEDIR := $(JRE_IMAGE_DIR)
@@ -165,6 +171,12 @@ else
     JDK_BUNDLE_SUBDIR := $(JDK_BUNDLE_SUBDIR)/$(DEBUG_LEVEL)
     JRE_BUNDLE_SUBDIR := $(JRE_BUNDLE_SUBDIR)/$(DEBUG_LEVEL)
   endif
+  # In certain situations, the JDK_IMAGE_DIR points to an image without the
+  # the symbols and demos. If so, the symobls and demos can be found in a
+  # separate image. These variables allow for overriding from a custom makefile.
+  JDK_SYMBOLS_IMAGE_DIR ?= $(JDK_IMAGE_DIR)
+  JDK_DEMOS_IMAGE_DIR ?= $(JDK_IMAGE_DIR)
+  JDK_DEMOS_IMAGE_HOMEDIR ?= $(JDK_DEMOS_IMAGE_DIR)
 endif
 
 ################################################################################
@@ -176,13 +188,24 @@ ifneq ($(filter product-bundles% legacy-bundles, $(MAKECMDGOALS)), )
   # There may be files with spaces in the names, so use ShellFindFiles
   # explicitly.
   ALL_JDK_FILES := $(call ShellFindFiles, $(JDK_IMAGE_DIR))
+  ifneq ($(JDK_IMAGE_DIR), $(JDK_SYMBOLS_IMAGE_DIR))
+    ALL_JDK_SYMBOLS_FILES := $(call ShellFindFiles, $(JDK_SYMBOLS_IMAGE_DIR))
+  else
+    ALL_JDK_SYMBOLS_FILES := $(ALL_JDK_FILES)
+  endif
+  ifneq ($(JDK_IMAGE_DIR), $(JDK_DEMOS_IMAGE_DIR))
+    ALL_JDK_DEMOS_FILES := $(call ShellFindFiles, $(JDK_DEMOS_IMAGE_DIR))
+  else
+    ALL_JDK_DEMOS_FILES := $(ALL_JDK_FILES)
+  endif
 
   # Create special filter rules when dealing with unzipped .dSYM directories on
   # macosx
   ifeq ($(call isTargetOs, macosx), true)
     ifeq ($(ZIP_EXTERNAL_DEBUG_SYMBOLS), false)
       JDK_SYMBOLS_EXCLUDE_PATTERN := $(addprefix %, \
-          $(call containing, .dSYM/, $(patsubst $(JDK_IMAGE_DIR)/%, %, $(ALL_JDK_FILES))))
+          $(call containing, .dSYM/, $(patsubst $(JDK_IMAGE_DIR)/%, %, \
+          $(ALL_JDK_SYMBOLS_FILES))))
     endif
   endif
 
@@ -203,12 +226,13 @@ ifneq ($(filter product-bundles% legacy-bundles, $(MAKECMDGOALS)), )
           $(filter-out \
               $(JDK_IMAGE_HOMEDIR)/demo/% \
               , \
-              $(ALL_JDK_FILES) \
+              $(ALL_JDK_SYMBOLS_FILES) \
           ) \
       ) \
       $(call FindFiles, $(SYMBOLS_IMAGE_DIR))
 
-  TEST_DEMOS_BUNDLE_FILES := $(filter $(JDK_IMAGE_HOMEDIR)/demo/%, $(ALL_JDK_FILES))
+  TEST_DEMOS_BUNDLE_FILES := $(filter $(JDK_DEMOS_IMAGE_HOMEDIR)/demo/%, \
+      $(ALL_JDK_DEMOS_FILES))
 
   ALL_JRE_FILES := $(call ShellFindFiles, $(JRE_IMAGE_DIR))
 
@@ -245,15 +269,17 @@ ifneq ($(filter product-bundles% legacy-bundles, $(MAKECMDGOALS)), )
 
   LEGACY_TARGETS += $(BUILD_JRE_BUNDLE)
 
-  $(eval $(call SetupBundleFile, BUILD_JDK_SYMBOLS_BUNDLE, \
-      BUNDLE_NAME := $(JDK_SYMBOLS_BUNDLE_NAME), \
-      FILES := $(JDK_SYMBOLS_BUNDLE_FILES), \
-      BASE_DIRS := $(JDK_IMAGE_DIR) $(wildcard $(SYMBOLS_IMAGE_DIR)), \
-      SUBDIR := $(JDK_BUNDLE_SUBDIR), \
-      UNZIP_DEBUGINFO := true, \
-  ))
+  ifeq ($(COPY_DEBUG_SYMBOLS), true)
+    $(eval $(call SetupBundleFile, BUILD_JDK_SYMBOLS_BUNDLE, \
+        BUNDLE_NAME := $(JDK_SYMBOLS_BUNDLE_NAME), \
+        FILES := $(JDK_SYMBOLS_BUNDLE_FILES), \
+        BASE_DIRS := $(JDK_SYMBOLS_IMAGE_DIR) $(wildcard $(SYMBOLS_IMAGE_DIR)), \
+        SUBDIR := $(JDK_BUNDLE_SUBDIR), \
+        UNZIP_DEBUGINFO := true, \
+    ))
 
-  PRODUCT_TARGETS += $(BUILD_JDK_SYMBOLS_BUNDLE)
+    PRODUCT_TARGETS += $(BUILD_JDK_SYMBOLS_BUNDLE)
+  endif
 
   # The demo bundle is only created to support client tests. Ideally it should
   # be built with the main test bundle, but since the prerequisites match
@@ -261,7 +287,7 @@ ifneq ($(filter product-bundles% legacy-bundles, $(MAKECMDGOALS)), )
   $(eval $(call SetupBundleFile, BUILD_TEST_DEMOS_BUNDLE, \
       BUNDLE_NAME := $(TEST_DEMOS_BUNDLE_NAME), \
       FILES := $(TEST_DEMOS_BUNDLE_FILES), \
-      BASE_DIRS := $(JDK_IMAGE_DIR), \
+      BASE_DIRS := $(JDK_DEMOS_IMAGE_DIR), \
       SUBDIR := $(JDK_BUNDLE_SUBDIR), \
   ))
 

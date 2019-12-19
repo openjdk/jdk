@@ -50,8 +50,7 @@ public interface MemberSummaryWriter {
      * @param memberSummaryTree the content tree to which the member summary will be added
      * @return a content tree for the member summary header
      */
-    public Content getMemberSummaryHeader(TypeElement typeElement,
-            Content memberSummaryTree);
+    Content getMemberSummaryHeader(TypeElement typeElement, Content memberSummaryTree);
 
     /**
      * Get the summary table for the given class.
@@ -59,7 +58,7 @@ public interface MemberSummaryWriter {
      * @param typeElement the class the summary table belongs to
      * @return a content tree for the member summary table
      */
-    public Content getSummaryTableTree(TypeElement typeElement);
+    Content getSummaryTableTree(TypeElement typeElement);
 
     /**
      * Add the member summary for the given class and member.
@@ -68,8 +67,8 @@ public interface MemberSummaryWriter {
      * @param member the member that is documented
      * @param firstSentenceTags the tags for the sentence being documented
      */
-    public void addMemberSummary(TypeElement typeElement, Element member,
-            List<? extends DocTree> firstSentenceTags);
+    void addMemberSummary(TypeElement typeElement, Element member,
+                          List<? extends DocTree> firstSentenceTags);
 
     /**
      * Get the inherited member summary header for the given class.
@@ -77,7 +76,7 @@ public interface MemberSummaryWriter {
      * @param typeElement the class the summary belongs to
      * @return a content tree containing the inherited summary header
      */
-    public Content getInheritedSummaryHeader(TypeElement typeElement);
+    Content getInheritedSummaryHeader(TypeElement typeElement);
 
     /**
      * Add the inherited member summary for the given class and member.
@@ -88,16 +87,16 @@ public interface MemberSummaryWriter {
      * @param isLast true if this is the last member in the list
      * @param linksTree the content tree to which the links will be added
      */
-    public void addInheritedMemberSummary(TypeElement typeElement,
-        Element member, boolean isFirst, boolean isLast,
-        Content linksTree);
+    void addInheritedMemberSummary(TypeElement typeElement,
+                                   Element member, boolean isFirst, boolean isLast,
+                                   Content linksTree);
 
     /**
      * Get inherited summary links.
      *
      * @return a content tree containing the inherited summary links
      */
-    public Content getInheritedSummaryLinksTree();
+    Content getInheritedSummaryLinksTree();
 
     /**
      * Add the member tree to the member summary tree.
@@ -105,7 +104,7 @@ public interface MemberSummaryWriter {
      * @param memberSummaryTree the content tree representing the member summary
      * @param memberTree the content tree representing the member
      */
-    public void addMemberTree(Content memberSummaryTree, Content memberTree);
+    void addMemberTree(Content memberSummaryTree, Content memberTree);
 
     /**
      * Get the member tree.
@@ -113,5 +112,5 @@ public interface MemberSummaryWriter {
      * @param memberTree the content tree representing the member
      * @return a content tree for the member
      */
-    public Content getMemberTree(Content memberTree);
+    Content getMemberTree(Content memberTree);
 }

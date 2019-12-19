@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.util.EnumSet;
 import javax.lang.model.element.Element;
 
 import com.sun.source.doctree.DocTree;
+import jdk.javadoc.doclet.Taglet.Location;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 
 /**
@@ -44,7 +45,7 @@ import jdk.javadoc.internal.doclets.toolkit.Content;
 public abstract class BasePropertyTaglet extends BaseTaglet {
 
     public BasePropertyTaglet(String name) {
-        super(name, false, EnumSet.of(Site.METHOD));
+        super(name, false, EnumSet.of(Location.METHOD));
     }
 
     /**

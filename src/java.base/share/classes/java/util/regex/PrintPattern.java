@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,18 +40,16 @@ class PrintPattern {
     private static void print(Pattern.Node node, String text, int depth) {
         if (!ids.containsKey(node))
             ids.put(node, ids.size());
-        print("%6d:%" + (depth==0? "": depth<<1) + "s<%s>", ids.get(node), "", text);
+        System.out.printf("%6d:%" + (depth==0? "": depth<<1) + "s<%s>",
+                          ids.get(node), "", text);
         if (ids.containsKey(node.next))
-            print(" (=>%d)", ids.get(node.next));
-        print("%n");
+            System.out.printf(" (=>%d)", ids.get(node.next));
+        System.out.printf("%n");
     }
 
     private static void print(String s, int depth) {
-        print("       %" + (depth==0?"":depth<<1) + "s<%s>%n", "", s);
-    }
-
-    private static void print(String fmt, Object ... args) {
-        System.err.printf(fmt, args);
+        System.out.printf("       %" + (depth==0?"":depth<<1) + "s<%s>%n",
+                          "", s);
     }
 
     private static String toStringCPS(int[] cps) {

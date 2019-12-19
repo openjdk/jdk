@@ -24,6 +24,7 @@
 /*
  * @test
  * @summary
+ * @requires vm.jvmci
  * @requires vm.simpleArch == "sparcv9"
  * @modules jdk.internal.vm.compiler
  *

@@ -92,7 +92,7 @@ typedef struct {
 } AOTHeader;
 
 typedef struct {
-  enum { CONFIG_SIZE = 8 * jintSize + 11 };
+  enum { CONFIG_SIZE = 8 * jintSize + 10 };
   // 8 int values
   int _config_size;
   int _narrowOopShift;
@@ -113,7 +113,6 @@ typedef struct {
   bool _enableContended;
   bool _restrictContended;
   bool _omitAssertions;
-  bool _threadLocalHandshakes;
 } AOTConfiguration;
 
 class AOTLib : public CHeapObj<mtCode> {
