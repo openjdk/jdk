@@ -117,7 +117,7 @@ public class RedefineIntrinsicTest extends ReplacementsTest {
         } else {
             List<String> vmArgs = withoutDebuggerArguments(getVMCommandLine());
             vmArgs.add("-D" + recursionPropName + "=true");
-            vmArgs.addAll(SubprocessUtil.getPackageOpeningOptions());
+            vmArgs.add(SubprocessUtil.PACKAGE_OPENING_OPTIONS);
             vmArgs.add("-Djdk.attach.allowAttachSelf=true");
             Subprocess proc = java(vmArgs, "com.oracle.mxtool.junit.MxJUnitWrapper", getClass().getName());
             if (proc.exitCode != 0) {

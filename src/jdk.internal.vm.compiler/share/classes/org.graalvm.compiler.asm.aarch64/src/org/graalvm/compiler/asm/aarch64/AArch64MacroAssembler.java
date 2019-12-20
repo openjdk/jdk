@@ -35,6 +35,8 @@ import static org.graalvm.compiler.asm.aarch64.AArch64Address.AddressingMode.EXT
 import static org.graalvm.compiler.asm.aarch64.AArch64Address.AddressingMode.IMMEDIATE_SCALED;
 import static org.graalvm.compiler.asm.aarch64.AArch64Address.AddressingMode.IMMEDIATE_UNSCALED;
 import static org.graalvm.compiler.asm.aarch64.AArch64Address.AddressingMode.REGISTER_OFFSET;
+import static org.graalvm.compiler.asm.aarch64.AArch64Assembler.Instruction.LDP;
+import static org.graalvm.compiler.asm.aarch64.AArch64Assembler.Instruction.STP;
 import static org.graalvm.compiler.asm.aarch64.AArch64MacroAssembler.AddressGenerationPlan.WorkPlan.ADD_TO_BASE;
 import static org.graalvm.compiler.asm.aarch64.AArch64MacroAssembler.AddressGenerationPlan.WorkPlan.ADD_TO_INDEX;
 import static org.graalvm.compiler.asm.aarch64.AArch64MacroAssembler.AddressGenerationPlan.WorkPlan.NO_WORK;
@@ -54,6 +56,10 @@ public class AArch64MacroAssembler extends AArch64Assembler {
 
     // Points to the next free scratch register
     private int nextFreeScratchRegister = 0;
+
+    // Last immediate ldr/str instruction, which is a candidate to be merged.
+    private AArch64MemoryEncoding lastImmLoadStoreEncoding;
+    private boolean isImmLoadStoreMerged = false;
 
     public AArch64MacroAssembler(TargetDescription target) {
         super(target);
@@ -79,6 +85,43 @@ public class AArch64MacroAssembler extends AArch64Assembler {
 
     public ScratchRegister getScratchRegister() {
         return scratchRegister[nextFreeScratchRegister++];
+    }
+
+    @Override
+    public void bind(Label l) {
+        super.bind(l);
+        // Clear last ldr/str instruction to prevent the labeled ldr/str being merged.
+        lastImmLoadStoreEncoding = null;
+    }
+
+    private static class AArch64MemoryEncoding {
+        private AArch64Address address;
+        private Register result;
+        private int sizeInBytes;
+        private int position;
+        private boolean isStore;
+
+        AArch64MemoryEncoding(int sizeInBytes, Register result, AArch64Address address, boolean isStore, int position) {
+            this.sizeInBytes = sizeInBytes;
+            this.result = result;
+            this.address = address;
+            this.isStore = isStore;
+            this.position = position;
+            AArch64Address.AddressingMode addressingMode = address.getAddressingMode();
+            assert addressingMode == IMMEDIATE_SCALED || addressingMode == IMMEDIATE_UNSCALED : "Invalid address mode" +
+                            "to merge: " + addressingMode;
+        }
+
+        Register getBase() {
+            return address.getBase();
+        }
+
+        int getOffset() {
+            if (address.getAddressingMode() == IMMEDIATE_UNSCALED) {
+                return address.getImmediateRaw();
+            }
+            return address.getImmediate() * sizeInBytes;
+        }
     }
 
     /**
@@ -321,6 +364,132 @@ public class AArch64MacroAssembler extends AArch64Assembler {
         }
     }
 
+    private boolean tryMerge(int sizeInBytes, Register rt, AArch64Address address, boolean isStore) {
+        isImmLoadStoreMerged = false;
+        if (lastImmLoadStoreEncoding == null) {
+            return false;
+        }
+
+        // Only immediate scaled/unscaled address can be merged.
+        // Pre-index and post-index mode can't be merged.
+        AArch64Address.AddressingMode addressMode = address.getAddressingMode();
+        if (addressMode != IMMEDIATE_SCALED && addressMode != IMMEDIATE_UNSCALED) {
+            return false;
+        }
+
+        // Only the two adjacent ldrs/strs can be merged.
+        int lastPosition = position() - 4;
+        if (lastPosition < 0 || lastPosition != lastImmLoadStoreEncoding.position) {
+            return false;
+        }
+
+        if (isStore != lastImmLoadStoreEncoding.isStore) {
+            return false;
+        }
+
+        // Only merge ldr/str with the same size of 32bits or 64bits.
+        if (sizeInBytes != lastImmLoadStoreEncoding.sizeInBytes || (sizeInBytes != 4 && sizeInBytes != 8)) {
+            return false;
+        }
+
+        // Base register must be the same one.
+        Register curBase = address.getBase();
+        Register preBase = lastImmLoadStoreEncoding.getBase();
+        if (!curBase.equals(preBase)) {
+            return false;
+        }
+
+        // If the two ldrs have the same rt register, they can't be merged.
+        // If the two ldrs have dependence, they can't be merged.
+        Register curRt = rt;
+        Register preRt = lastImmLoadStoreEncoding.result;
+        if (!isStore && (curRt.equals(preRt) || preRt.equals(curBase))) {
+            return false;
+        }
+
+        // Offset checking. Offsets of the two ldrs/strs must be continuous.
+        int curOffset = address.getImmediateRaw();
+        if (addressMode == IMMEDIATE_SCALED) {
+            curOffset = curOffset * sizeInBytes;
+        }
+        int preOffset = lastImmLoadStoreEncoding.getOffset();
+        if (Math.abs(curOffset - preOffset) != sizeInBytes) {
+            return false;
+        }
+
+        // Offset must be in ldp/stp instruction's range.
+        int offset = curOffset > preOffset ? preOffset : curOffset;
+        int minOffset = -64 * sizeInBytes;
+        int maxOffset = 63 * sizeInBytes;
+        if (offset < minOffset || offset > maxOffset) {
+            return false;
+        }
+
+        // Alignment checking.
+        if (isFlagSet(AArch64.Flag.AvoidUnalignedAccesses)) {
+            // AArch64 sp is 16-bytes aligned.
+            if (curBase.equals(sp)) {
+                long pairMask = sizeInBytes * 2 - 1;
+                if ((offset & pairMask) != 0) {
+                    return false;
+                }
+            } else {
+                // If base is not sp, we can't guarantee the access is aligned.
+                return false;
+            }
+        } else {
+            // ldp/stp only supports sizeInBytes aligned offset.
+            long mask = sizeInBytes - 1;
+            if ((curOffset & mask) != 0 || (preOffset & mask) != 0) {
+                return false;
+            }
+        }
+
+        // Merge two ldrs/strs to ldp/stp.
+        Register rt1 = preRt;
+        Register rt2 = curRt;
+        if (curOffset < preOffset) {
+            rt1 = curRt;
+            rt2 = preRt;
+        }
+        int immediate = offset / sizeInBytes;
+        Instruction instruction = isStore ? STP : LDP;
+        int size = sizeInBytes * Byte.SIZE;
+        insertLdpStp(size, instruction, rt1, rt2, curBase, immediate, lastPosition);
+        lastImmLoadStoreEncoding = null;
+        isImmLoadStoreMerged = true;
+        return true;
+    }
+
+    /**
+     * Try to merge two continuous ldr/str to one ldp/stp. If this current ldr/str is not merged,
+     * save it as the last ldr/str.
+     */
+    private boolean tryMergeLoadStore(int srcSize, Register rt, AArch64Address address, boolean isStore) {
+        int sizeInBytes = srcSize / Byte.SIZE;
+        if (tryMerge(sizeInBytes, rt, address, isStore)) {
+            return true;
+        }
+
+        // Save last ldr/str if it is not merged.
+        AArch64Address.AddressingMode addressMode = address.getAddressingMode();
+        if (addressMode == IMMEDIATE_SCALED || addressMode == IMMEDIATE_UNSCALED) {
+            if (addressMode == IMMEDIATE_UNSCALED) {
+                long mask = sizeInBytes - 1;
+                int offset = address.getImmediateRaw();
+                if ((offset & mask) != 0) {
+                    return false;
+                }
+            }
+            lastImmLoadStoreEncoding = new AArch64MemoryEncoding(sizeInBytes, rt, address, isStore, position());
+        }
+        return false;
+    }
+
+    public boolean isImmLoadStoreMerged() {
+        return isImmLoadStoreMerged;
+    }
+
     public void movx(Register dst, Register src) {
         mov(64, dst, src);
     }
@@ -505,7 +674,7 @@ public class AArch64MacroAssembler extends AArch64Assembler {
         assert targetSize == 32 || targetSize == 64;
         assert srcSize <= targetSize;
         if (targetSize == srcSize) {
-            super.ldr(srcSize, rt, address);
+            ldr(srcSize, rt, address);
         } else {
             super.ldrs(targetSize, srcSize, rt, address);
         }
@@ -521,7 +690,25 @@ public class AArch64MacroAssembler extends AArch64Assembler {
      */
     @Override
     public void ldr(int srcSize, Register rt, AArch64Address address) {
-        super.ldr(srcSize, rt, address);
+        // Try to merge two adjacent loads into one ldp.
+        if (!tryMergeLoadStore(srcSize, rt, address, false)) {
+            super.ldr(srcSize, rt, address);
+        }
+    }
+
+    /**
+     * Stores register rt into memory pointed by address.
+     *
+     * @param destSize number of bits written to memory. Must be 8, 16, 32 or 64.
+     * @param rt general purpose register. May not be null or stackpointer.
+     * @param address all addressing modes allowed. May not be null.
+     */
+    @Override
+    public void str(int destSize, Register rt, AArch64Address address) {
+        // Try to merge two adjacent stores into one stp.
+        if (!tryMergeLoadStore(destSize, rt, address, true)) {
+            super.str(destSize, rt, address);
+        }
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,14 +24,11 @@
 
 package org.graalvm.compiler.core.test.ea;
 
-import org.junit.Test;
-
 import org.graalvm.compiler.api.directives.GraalDirectives;
 import org.graalvm.compiler.code.SourceStackTraceBailoutException;
 import org.graalvm.compiler.core.test.GraalCompilerTest;
 import org.graalvm.compiler.phases.OptimisticOptimizations;
-import org.graalvm.compiler.phases.OptimisticOptimizations.Optimization;
-import org.graalvm.compiler.phases.tiers.HighTierContext;
+import org.junit.Test;
 
 public class PEAAssertionsTest extends GraalCompilerTest {
 
@@ -39,8 +36,8 @@ public class PEAAssertionsTest extends GraalCompilerTest {
      * These tests assume all code paths are reachable so disable profile based dead code removal.
      */
     @Override
-    protected HighTierContext getDefaultHighTierContext() {
-        return new HighTierContext(getProviders(), getDefaultGraphBuilderSuite(), OptimisticOptimizations.ALL.remove(Optimization.RemoveNeverExecutedCode));
+    protected OptimisticOptimizations getOptimisticOptimizations() {
+        return OptimisticOptimizations.ALL.remove(OptimisticOptimizations.Optimization.RemoveNeverExecutedCode);
     }
 
     public static Object field;

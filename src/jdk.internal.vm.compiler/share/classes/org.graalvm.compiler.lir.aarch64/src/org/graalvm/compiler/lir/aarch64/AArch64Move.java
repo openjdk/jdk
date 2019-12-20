@@ -255,10 +255,19 @@ public class AArch64Move {
 
         @Override
         public void emitCode(CompilationResultBuilder crb, AArch64MacroAssembler masm) {
-            if (state != null) {
-                crb.recordImplicitException(masm.position(), state);
-            }
+            int prePosition = masm.position();
             emitMemAccess(crb, masm);
+            if (state != null) {
+                int implicitExceptionPosition = prePosition;
+                // Adjust implicit exception position if this ldr/str has been merged to ldp/stp.
+                if (kind.isInteger() && prePosition == masm.position() && masm.isImmLoadStoreMerged()) {
+                    implicitExceptionPosition = prePosition - 4;
+                    if (crb.isImplicitExceptionExist(implicitExceptionPosition)) {
+                        return;
+                    }
+                }
+                crb.recordImplicitException(implicitExceptionPosition, state);
+            }
         }
 
         @Override
@@ -346,8 +355,17 @@ public class AArch64Move {
 
         @Override
         public void emitCode(CompilationResultBuilder crb, AArch64MacroAssembler masm) {
-            crb.recordImplicitException(masm.position(), state);
+            int prePosition = masm.position();
             masm.ldr(64, zr, address.toAddress());
+            int implicitExceptionPosition = prePosition;
+            // Adjust implicit exception position if this ldr has been merged to ldp.
+            if (prePosition == masm.position() && masm.isImmLoadStoreMerged()) {
+                implicitExceptionPosition = prePosition - 4;
+                if (crb.isImplicitExceptionExist(implicitExceptionPosition)) {
+                    return;
+                }
+            }
+            crb.recordImplicitException(implicitExceptionPosition, state);
         }
 
         @Override

@@ -32,13 +32,11 @@ import org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
 import org.graalvm.compiler.nodes.spi.CoreProviders;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
 import org.graalvm.compiler.phases.OptimisticOptimizations;
-import org.graalvm.compiler.phases.OptimisticOptimizations.Optimization;
 import org.graalvm.compiler.phases.common.CanonicalizerPhase;
 import org.graalvm.compiler.phases.common.ConditionalEliminationPhase;
 import org.graalvm.compiler.phases.common.IterativeConditionalEliminationPhase;
 import org.graalvm.compiler.phases.common.LoweringPhase;
 import org.graalvm.compiler.phases.schedule.SchedulePhase;
-import org.graalvm.compiler.phases.tiers.HighTierContext;
 import org.junit.Assert;
 
 /**
@@ -55,8 +53,8 @@ public class ConditionalEliminationTestBase extends GraalCompilerTest {
      * code based on method profiles.
      */
     @Override
-    protected HighTierContext getDefaultHighTierContext() {
-        return new HighTierContext(getProviders(), getDefaultGraphBuilderSuite(), OptimisticOptimizations.ALL.remove(Optimization.RemoveNeverExecutedCode));
+    protected OptimisticOptimizations getOptimisticOptimizations() {
+        return OptimisticOptimizations.ALL.remove(OptimisticOptimizations.Optimization.RemoveNeverExecutedCode);
     }
 
     protected void testConditionalElimination(String snippet, String referenceSnippet) {

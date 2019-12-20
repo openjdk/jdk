@@ -29,16 +29,13 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import org.junit.Assert;
-import org.junit.Test;
-
 import org.graalvm.compiler.api.directives.GraalDirectives;
 import org.graalvm.compiler.core.test.GraalCompilerTest;
 import org.graalvm.compiler.nodes.ParameterNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.phases.OptimisticOptimizations;
-import org.graalvm.compiler.phases.OptimisticOptimizations.Optimization;
-import org.graalvm.compiler.phases.tiers.HighTierContext;
+import org.junit.Assert;
+import org.junit.Test;
 
 /**
  * Tests for {@link GraalDirectives#blackhole}.
@@ -134,8 +131,8 @@ public class BlackholeDirectiveTest extends GraalCompilerTest {
     }
 
     @Override
-    protected HighTierContext getDefaultHighTierContext() {
-        return new HighTierContext(getProviders(), getDefaultGraphBuilderSuite(), OptimisticOptimizations.ALL.remove(Optimization.RemoveNeverExecutedCode));
+    protected OptimisticOptimizations getOptimisticOptimizations() {
+        return OptimisticOptimizations.ALL.remove(OptimisticOptimizations.Optimization.RemoveNeverExecutedCode);
     }
 
     @Override

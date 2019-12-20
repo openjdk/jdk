@@ -116,6 +116,11 @@ public abstract class UnsafeArrayTypeWriter implements TypeWriter {
         return buffer;
     }
 
+    public final byte[] toArray() {
+        byte[] result = new byte[TypeConversion.asS4(getBytesWritten())];
+        return toArray(result);
+    }
+
     @Override
     public final void putS1(long value) {
         long offset = writeOffset(Byte.BYTES);

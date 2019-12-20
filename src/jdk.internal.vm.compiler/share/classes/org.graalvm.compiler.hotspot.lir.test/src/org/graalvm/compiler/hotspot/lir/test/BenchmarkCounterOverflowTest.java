@@ -106,7 +106,7 @@ public class BenchmarkCounterOverflowTest extends LIRTest {
         List<String> vmArgs = withoutDebuggerArguments(getVMCommandLine());
         vmArgs.add("-XX:JVMCICounterSize=1");
         vmArgs.add("-Dgraal." + BenchmarkCounters.Options.AbortOnBenchmarkCounterOverflow.getName() + "=true");
-        vmArgs.addAll(SubprocessUtil.getPackageOpeningOptions());
+        vmArgs.add(SubprocessUtil.PACKAGE_OPENING_OPTIONS);
         vmArgs.add("-D" + SUBPROCESS_PROPERTY + "=true");
 
         // Disable increment range checks (e.g. HotSpotCounterOp.checkIncrements())
