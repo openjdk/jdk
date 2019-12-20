@@ -160,18 +160,16 @@ void DumpRegion::append_intptr_t(intptr_t n, bool need_to_mark) {
 }
 
 void DumpRegion::print(size_t total_bytes) const {
-  tty->print_cr("%-3s space: " SIZE_FORMAT_W(9) " [ %4.1f%% of total] out of " SIZE_FORMAT_W(9) " bytes [%5.1f%% used] at " INTPTR_FORMAT,
-                _name, used(), percent_of(used(), total_bytes), reserved(), percent_of(used(), reserved()),
-                p2i(_base + MetaspaceShared::final_delta()));
+  log_debug(cds)("%-3s space: " SIZE_FORMAT_W(9) " [ %4.1f%% of total] out of " SIZE_FORMAT_W(9) " bytes [%5.1f%% used] at " INTPTR_FORMAT,
+                 _name, used(), percent_of(used(), total_bytes), reserved(), percent_of(used(), reserved()),
+                 p2i(_base + MetaspaceShared::final_delta()));
 }
 
 void DumpRegion::print_out_of_space_msg(const char* failing_region, size_t needed_bytes) {
-  tty->print("[%-8s] " PTR_FORMAT " - " PTR_FORMAT " capacity =%9d, allocated =%9d",
-             _name, p2i(_base), p2i(_top), int(_end - _base), int(_top - _base));
+  log_error(cds)("[%-8s] " PTR_FORMAT " - " PTR_FORMAT " capacity =%9d, allocated =%9d",
+                 _name, p2i(_base), p2i(_top), int(_end - _base), int(_top - _base));
   if (strcmp(_name, failing_region) == 0) {
-    tty->print_cr(" required = %d", int(needed_bytes));
-  } else {
-    tty->cr();
+    log_error(cds)(" required = %d", int(needed_bytes));
   }
 }
 
@@ -323,7 +321,7 @@ void MetaspaceShared::initialize_dumptime_shared_and_meta_spaces() {
 
   init_shared_dump_space(&_mc_region);
   SharedBaseAddress = (size_t)_shared_rs.base();
-  tty->print_cr("Allocated shared space: " SIZE_FORMAT " bytes at " PTR_FORMAT,
+  log_info(cds)("Allocated shared space: " SIZE_FORMAT " bytes at " PTR_FORMAT,
                 _shared_rs.size(), p2i(_shared_rs.base()));
 }
 
@@ -427,8 +425,8 @@ void MetaspaceShared::commit_shared_space_to(char* newtop) {
                                           need_committed_size));
   }
 
-  log_info(cds)("Expanding shared spaces by " SIZE_FORMAT_W(7) " bytes [total " SIZE_FORMAT_W(9)  " bytes ending at %p]",
-                commit, _shared_vs.actual_committed_size(), _shared_vs.high());
+  log_debug(cds)("Expanding shared spaces by " SIZE_FORMAT_W(7) " bytes [total " SIZE_FORMAT_W(9)  " bytes ending at %p]",
+                 commit, _shared_vs.actual_committed_size(), _shared_vs.high());
 }
 
 void MetaspaceShared::initialize_ptr_marker(CHeapBitMap* ptrmap) {
@@ -1055,9 +1053,9 @@ void DumpAllocStats::print_stats(int ro_all, int rw_all, int mc_all, int md_all)
 
   LogMessage(cds) msg;
 
-  msg.info("Detailed metadata info (excluding st regions; rw stats include md/mc regions):");
-  msg.info("%s", hdr);
-  msg.info("%s", sep);
+  msg.debug("Detailed metadata info (excluding st regions; rw stats include md/mc regions):");
+  msg.debug("%s", hdr);
+  msg.debug("%s", sep);
   for (int type = 0; type < int(_number_of_types); type ++) {
     const char *name = type_name((Type)type);
     int ro_count = _counts[RO][type];
@@ -1071,7 +1069,7 @@ void DumpAllocStats::print_stats(int ro_all, int rw_all, int mc_all, int md_all)
     double rw_perc = percent_of(rw_bytes, rw_all);
     double perc    = percent_of(bytes, ro_all + rw_all);
 
-    msg.info(fmt_stats, name,
+    msg.debug(fmt_stats, name,
                          ro_count, ro_bytes, ro_perc,
                          rw_count, rw_bytes, rw_perc,
                          count, bytes, perc);
@@ -1089,8 +1087,8 @@ void DumpAllocStats::print_stats(int ro_all, int rw_all, int mc_all, int md_all)
   double all_rw_perc = percent_of(all_rw_bytes, rw_all);
   double all_perc    = percent_of(all_bytes, ro_all + rw_all);
 
-  msg.info("%s", sep);
-  msg.info(fmt_stats, "Total",
+  msg.debug("%s", sep);
+  msg.debug(fmt_stats, "Total",
                        all_ro_count, all_ro_bytes, all_ro_perc,
                        all_rw_count, all_rw_bytes, all_rw_perc,
                        all_count, all_bytes, all_perc);
@@ -1311,10 +1309,10 @@ public:
     SortedSymbolClosure the_ssc; // StackObj
     _ssc = &the_ssc;
 
-    tty->print_cr("Scanning all metaspace objects ... ");
+    log_info(cds)("Scanning all metaspace objects ... ");
     {
       // allocate and shallow-copy RW objects, immediately following the MC region
-      tty->print_cr("Allocating RW objects ... ");
+      log_info(cds)("Allocating RW objects ... ");
       _mc_region.pack(&_rw_region);
 
       ResourceMark rm;
@@ -1323,7 +1321,7 @@ public:
     }
     {
       // allocate and shallow-copy of RO object, immediately following the RW region
-      tty->print_cr("Allocating RO objects ... ");
+      log_info(cds)("Allocating RO objects ... ");
       _rw_region.pack(&_ro_region);
 
       ResourceMark rm;
@@ -1331,13 +1329,13 @@ public:
       iterate_roots(&ro_copier);
     }
     {
-      tty->print_cr("Relocating embedded pointers ... ");
+      log_info(cds)("Relocating embedded pointers ... ");
       ResourceMark rm;
       ShallowCopyEmbeddedRefRelocator emb_reloc;
       iterate_roots(&emb_reloc);
     }
     {
-      tty->print_cr("Relocating external roots ... ");
+      log_info(cds)("Relocating external roots ... ");
       ResourceMark rm;
       RefRelocator ext_reloc;
       iterate_roots(&ext_reloc);
@@ -1345,7 +1343,7 @@ public:
 
 #ifdef ASSERT
     {
-      tty->print_cr("Verifying external roots ... ");
+      log_info(cds)("Verifying external roots ... ");
       ResourceMark rm;
       IsRefInArchiveChecker checker;
       iterate_roots(&checker);
@@ -1362,7 +1360,7 @@ public:
   // old objects which assert that their klass is the original klass.
   static void relocate_well_known_klasses() {
     {
-      tty->print_cr("Relocating SystemDictionary::_well_known_klasses[] ... ");
+      log_info(cds)("Relocating SystemDictionary::_well_known_klasses[] ... ");
       ResourceMark rm;
       RefRelocator ext_reloc;
       SystemDictionary::well_known_klasses_do(&ext_reloc);
@@ -1410,7 +1408,7 @@ SortedSymbolClosure* ArchiveCompactor::_ssc;
 ArchiveCompactor::RelocationTable* ArchiveCompactor::_new_loc_table;
 
 void VM_PopulateDumpSharedSpace::dump_symbols() {
-  tty->print_cr("Dumping symbol table ...");
+  log_info(cds)("Dumping symbol table ...");
 
   NOT_PRODUCT(SymbolTable::verify());
   SymbolTable::write_to_archive();
@@ -1419,12 +1417,12 @@ void VM_PopulateDumpSharedSpace::dump_symbols() {
 char* VM_PopulateDumpSharedSpace::dump_read_only_tables() {
   ArchiveCompactor::OtherROAllocMark mark;
 
-  tty->print("Removing java_mirror ... ");
+  log_info(cds)("Removing java_mirror ... ");
   if (!HeapShared::is_heap_object_archiving_allowed()) {
     clear_basic_type_mirrors();
   }
   remove_java_mirror_in_classes();
-  tty->print_cr("done. ");
+  log_info(cds)("done. ");
 
   SystemDictionaryShared::write_to_archive();
 
@@ -1443,7 +1441,7 @@ char* VM_PopulateDumpSharedSpace::dump_read_only_tables() {
 }
 
 void VM_PopulateDumpSharedSpace::print_class_stats() {
-  tty->print_cr("Number of classes %d", _global_klass_objects->length());
+  log_info(cds)("Number of classes %d", _global_klass_objects->length());
   {
     int num_type_array = 0, num_obj_array = 0, num_inst = 0;
     for (int i = 0; i < _global_klass_objects->length(); i++) {
@@ -1457,9 +1455,9 @@ void VM_PopulateDumpSharedSpace::print_class_stats() {
         num_type_array ++;
       }
     }
-    tty->print_cr("    instance classes   = %5d", num_inst);
-    tty->print_cr("    obj array classes  = %5d", num_obj_array);
-    tty->print_cr("    type array classes = %5d", num_type_array);
+    log_info(cds)("    instance classes   = %5d", num_inst);
+    log_info(cds)("    obj array classes  = %5d", num_obj_array);
+    log_info(cds)("    type array classes = %5d", num_type_array);
   }
 }
 
@@ -1541,14 +1539,14 @@ void VM_PopulateDumpSharedSpace::doit() {
   print_class_stats();
 
   // Ensure the ConstMethods won't be modified at run-time
-  tty->print("Updating ConstMethods ... ");
+  log_info(cds)("Updating ConstMethods ... ");
   rewrite_nofast_bytecodes_and_calculate_fingerprints(THREAD);
-  tty->print_cr("done. ");
+  log_info(cds)("done. ");
 
   // Remove all references outside the metadata
-  tty->print("Removing unshareable information ... ");
+  log_info(cds)("Removing unshareable information ... ");
   remove_unshareable_in_classes();
-  tty->print_cr("done. ");
+  log_info(cds)("done. ");
 
   ArchiveCompactor::initialize();
   ArchiveCompactor::copy_and_compact();
@@ -1665,13 +1663,13 @@ void VM_PopulateDumpSharedSpace::print_region_stats() {
   print_heap_region_stats(_closed_archive_heap_regions, "ca", total_reserved);
   print_heap_region_stats(_open_archive_heap_regions, "oa", total_reserved);
 
-  tty->print_cr("total    : " SIZE_FORMAT_W(9) " [100.0%% of total] out of " SIZE_FORMAT_W(9) " bytes [%5.1f%% used]",
+  log_debug(cds)("total    : " SIZE_FORMAT_W(9) " [100.0%% of total] out of " SIZE_FORMAT_W(9) " bytes [%5.1f%% used]",
                  total_bytes, total_reserved, total_u_perc);
 }
 
 void VM_PopulateDumpSharedSpace::print_bitmap_region_stats(size_t size, size_t total_size) {
-  tty->print_cr("bm  space: " SIZE_FORMAT_W(9) " [ %4.1f%% of total] out of " SIZE_FORMAT_W(9) " bytes [100.0%% used] at " INTPTR_FORMAT,
-                size, size/double(total_size)*100.0, size, p2i(NULL));
+  log_debug(cds)("bm  space: " SIZE_FORMAT_W(9) " [ %4.1f%% of total] out of " SIZE_FORMAT_W(9) " bytes [100.0%% used] at " INTPTR_FORMAT,
+                 size, size/double(total_size)*100.0, size, p2i(NULL));
 }
 
 void VM_PopulateDumpSharedSpace::print_heap_region_stats(GrowableArray<MemRegion> *heap_mem,
@@ -1681,8 +1679,8 @@ void VM_PopulateDumpSharedSpace::print_heap_region_stats(GrowableArray<MemRegion
       char* start = (char*)heap_mem->at(i).start();
       size_t size = heap_mem->at(i).byte_size();
       char* top = start + size;
-      tty->print_cr("%s%d space: " SIZE_FORMAT_W(9) " [ %4.1f%% of total] out of " SIZE_FORMAT_W(9) " bytes [100.0%% used] at " INTPTR_FORMAT,
-                    name, i, size, size/double(total_size)*100.0, size, p2i(start));
+      log_debug(cds)("%s%d space: " SIZE_FORMAT_W(9) " [ %4.1f%% of total] out of " SIZE_FORMAT_W(9) " bytes [100.0%% used] at " INTPTR_FORMAT,
+                     name, i, size, size/double(total_size)*100.0, size, p2i(start));
 
   }
 }
@@ -1807,33 +1805,33 @@ void MetaspaceShared::preload_and_dump(TRAPS) {
       class_list_path = SharedClassListFile;
     }
 
-    tty->print_cr("Loading classes to share ...");
+    log_info(cds)("Loading classes to share ...");
     _has_error_classes = false;
     int class_count = preload_classes(class_list_path, THREAD);
     if (ExtraSharedClassListFile) {
       class_count += preload_classes(ExtraSharedClassListFile, THREAD);
     }
-    tty->print_cr("Loading classes to share: done.");
+    log_info(cds)("Loading classes to share: done.");
 
     log_info(cds)("Shared spaces: preloaded %d classes", class_count);
 
     if (SharedArchiveConfigFile) {
-      tty->print_cr("Reading extra data from %s ...", SharedArchiveConfigFile);
+      log_info(cds)("Reading extra data from %s ...", SharedArchiveConfigFile);
       read_extra_data(SharedArchiveConfigFile, THREAD);
     }
-    tty->print_cr("Reading extra data: done.");
+    log_info(cds)("Reading extra data: done.");
 
     HeapShared::init_subgraph_entry_fields(THREAD);
 
     // Rewrite and link classes
-    tty->print_cr("Rewriting and linking classes ...");
+    log_info(cds)("Rewriting and linking classes ...");
 
     // Link any classes which got missed. This would happen if we have loaded classes that
     // were not explicitly specified in the classlist. E.g., if an interface implemented by class K
     // fails verification, all other interfaces that were not specified in the classlist but
     // are implemented by K are not verified.
     link_and_cleanup_shared_classes(CATCH);
-    tty->print_cr("Rewriting and linking classes: done");
+    log_info(cds)("Rewriting and linking classes: done");
 
     if (HeapShared::is_heap_object_archiving_allowed()) {
       // Avoid fragmentation while archiving heap objects.
@@ -1947,10 +1945,10 @@ void VM_PopulateDumpSharedSpace::dump_archive_heap_oopmaps(GrowableArray<MemRegi
     size_t size_in_bytes = oopmap.size_in_bytes();
     uintptr_t* buffer = (uintptr_t*)_ro_region.allocate(size_in_bytes, sizeof(intptr_t));
     oopmap.write_to(buffer, size_in_bytes);
-    log_info(cds)("Oopmap = " INTPTR_FORMAT " (" SIZE_FORMAT_W(6) " bytes) for heap region "
-                  INTPTR_FORMAT " (" SIZE_FORMAT_W(8) " bytes)",
-                  p2i(buffer), size_in_bytes,
-                  p2i(regions->at(i).start()), regions->at(i).byte_size());
+    log_info(cds, heap)("Oopmap = " INTPTR_FORMAT " (" SIZE_FORMAT_W(6) " bytes) for heap region "
+                        INTPTR_FORMAT " (" SIZE_FORMAT_W(8) " bytes)",
+                        p2i(buffer), size_in_bytes,
+                        p2i(regions->at(i).start()), regions->at(i).byte_size());
 
     ArchiveHeapOopmapInfo info;
     info._oopmap = (address)buffer;

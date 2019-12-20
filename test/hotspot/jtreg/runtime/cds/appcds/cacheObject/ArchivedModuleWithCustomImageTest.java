@@ -106,7 +106,7 @@ public class ArchivedModuleWithCustomImageTest {
         String[] dumpCmd = {
             customJava.toString(),
             "-XX:SharedArchiveFile=./ArchivedModuleWithCustomImageTest.jsa",
-            "-Xshare:dump"};
+            "-Xshare:dump", "-Xlog:cds"};
         printCommand(dumpCmd);
         ProcessBuilder pbDump = new ProcessBuilder();
         pbDump.command(dumpCmd);

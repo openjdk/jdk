@@ -58,7 +58,7 @@ public class TestSharedArchiveWithPreTouch {
         if (Platform.is64bit()) {
           dump_args.addAll(0, Arrays.asList(new String[] { "-XX:+UseCompressedClassPointers", "-XX:+UseCompressedOops" }));
         }
-        dump_args.addAll(Arrays.asList(new String[] { "-Xshare:dump" }));
+        dump_args.addAll(Arrays.asList(new String[] { "-Xshare:dump", "-Xlog:cds" }));
 
         pb = ProcessTools.createJavaProcessBuilder(dump_args.toArray(new String[0]));
         OutputAnalyzer output = new OutputAnalyzer(pb.start());

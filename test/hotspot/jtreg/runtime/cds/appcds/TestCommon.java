@@ -226,6 +226,7 @@ public class TestCommon extends CDSTestUtils {
         } else {
             // static dump
             cmd.add("-Xshare:dump");
+            cmd.add("-Xlog:cds");
             cmd.add("-XX:SharedArchiveFile=" + opts.archiveName);
 
             if (opts.classList != null) {
