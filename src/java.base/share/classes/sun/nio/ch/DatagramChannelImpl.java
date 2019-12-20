@@ -84,6 +84,9 @@ class DatagramChannelImpl
     // Used to make native read and write calls
     private static final NativeDispatcher nd = new DatagramDispatcher();
 
+    // true if interruptible (can be false to emulate legacy DatagramSocket)
+    private final boolean interruptible;
+
     // The protocol family of the socket
     private final ProtocolFamily family;
 
@@ -158,13 +161,14 @@ class DatagramChannelImpl
     // -- End of fields protected by stateLock
 
 
-    public DatagramChannelImpl(SelectorProvider sp) throws IOException {
+    DatagramChannelImpl(SelectorProvider sp, boolean interruptible) throws IOException {
         this(sp, (Net.isIPv6Available()
                 ? StandardProtocolFamily.INET6
-                : StandardProtocolFamily.INET));
+                : StandardProtocolFamily.INET),
+                interruptible);
     }
 
-    public DatagramChannelImpl(SelectorProvider sp, ProtocolFamily family)
+    DatagramChannelImpl(SelectorProvider sp, ProtocolFamily family, boolean interruptible)
         throws IOException
     {
         super(sp);
@@ -184,6 +188,7 @@ class DatagramChannelImpl
         ResourceManager.beforeUdpCreate();
         boolean initialized = false;
         try {
+            this.interruptible = interruptible;
             this.family = family;
             this.fd = fd = Net.socket(family, false);
             this.fdVal = IOUtil.fdVal(fd);
@@ -211,7 +216,7 @@ class DatagramChannelImpl
         this.cleaner = CleanerFactory.cleaner().register(this, releaser);
     }
 
-    public DatagramChannelImpl(SelectorProvider sp, FileDescriptor fd)
+    DatagramChannelImpl(SelectorProvider sp, FileDescriptor fd)
         throws IOException
     {
         super(sp);
@@ -221,6 +226,7 @@ class DatagramChannelImpl
         ResourceManager.beforeUdpCreate();
         boolean initialized = false;
         try {
+            this.interruptible = true;
             this.family = Net.isIPv6Available()
                     ? StandardProtocolFamily.INET6
                     : StandardProtocolFamily.INET;
@@ -476,7 +482,7 @@ class DatagramChannelImpl
     private SocketAddress beginRead(boolean blocking, boolean mustBeConnected)
         throws IOException
     {
-        if (blocking) {
+        if (blocking && interruptible) {
             // set hook for Thread.interrupt
             begin();
         }
@@ -509,8 +515,12 @@ class DatagramChannelImpl
                     tryFinishClose();
                 }
             }
-            // remove hook for Thread.interrupt
-            end(completed);
+            if (interruptible) {
+                // remove hook for Thread.interrupt (may throw AsynchronousCloseException)
+                end(completed);
+            } else if (!completed && !isOpen()) {
+                throw new AsynchronousCloseException();
+            }
         }
     }
 
@@ -951,7 +961,7 @@ class DatagramChannelImpl
                 beginRead(blocking, true);
                 n = IOUtil.read(fd, dsts, offset, length, nd);
                 if (blocking) {
-                    while (IOStatus.okayToRetry(n) && isOpen()) {
+                    while (IOStatus.okayToRetry(n)  && isOpen()) {
                         park(Net.POLLIN);
                         n = IOUtil.read(fd, dsts, offset, length, nd);
                     }
@@ -978,7 +988,7 @@ class DatagramChannelImpl
     private SocketAddress beginWrite(boolean blocking, boolean mustBeConnected)
         throws IOException
     {
-        if (blocking) {
+        if (blocking && interruptible) {
             // set hook for Thread.interrupt
             begin();
         }
@@ -1011,8 +1021,13 @@ class DatagramChannelImpl
                     tryFinishClose();
                 }
             }
-            // remove hook for Thread.interrupt
-            end(completed);
+
+            if (interruptible) {
+                // remove hook for Thread.interrupt (may throw AsynchronousCloseException)
+                end(completed);
+            } else if (!completed && !isOpen()) {
+                throw new AsynchronousCloseException();
+            }
         }
     }
 
