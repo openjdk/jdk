@@ -31,7 +31,6 @@
 #include "jfr/recorder/service/jfrOptionSet.hpp"
 #include "logging/log.hpp"
 #include "memory/iterator.hpp"
-#include "runtime/mutexLocker.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/vmThread.hpp"
 
@@ -83,7 +82,6 @@ void LeakProfiler::emit_events(int64_t cutoff_ticks, bool emit_all) {
   if (!is_running()) {
     return;
   }
-  MutexLocker lock(JfrStream_lock);
   // exclusive access to object sampler instance
   ObjectSampler* const sampler = ObjectSampler::acquire();
   assert(sampler != NULL, "invariant");

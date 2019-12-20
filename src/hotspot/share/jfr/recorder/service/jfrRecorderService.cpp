@@ -359,7 +359,7 @@ bool JfrRecorderService::is_recording() {
 }
 
 void JfrRecorderService::start() {
-  MutexLocker lock(JfrStream_lock);
+  MutexLocker lock(JfrStream_lock, Mutex::_no_safepoint_check_flag);
   log_debug(jfr, system)("Request to START recording");
   assert(!is_recording(), "invariant");
   clear();
@@ -402,6 +402,7 @@ void JfrRecorderService::post_safepoint_clear() {
 }
 
 void JfrRecorderService::open_new_chunk(bool vm_error) {
+  assert(JfrStream_lock->owned_by_self(), "invariant");
   JfrChunkRotation::on_rotation();
   const bool valid_chunk = _repository.open_chunk(vm_error);
   _storage.control().set_to_disk(valid_chunk);
@@ -411,24 +412,61 @@ void JfrRecorderService::open_new_chunk(bool vm_error) {
 }
 
 static void stop() {
+  assert(JfrStream_lock->owned_by_self(), "invariant");
   assert(JfrRecorderService::is_recording(), "invariant");
   log_debug(jfr, system)("Recording STOPPED");
   set_recording_state(false);
   assert(!JfrRecorderService::is_recording(), "invariant");
 }
 
-void JfrRecorderService::prepare_for_vm_error_rotation() {
-  assert(JfrStream_lock->owned_by_self(), "invariant");
-  if (!_chunkwriter.is_valid()) {
-    open_new_chunk(true);
+// 'rotation_safepoint_pending' is currently only relevant in the unusual case of an emergency dump.
+// Since the JfrStream_lock must be acquired using _no_safepoint_check,
+// if the thread running the emergency dump is a JavaThread, a pending safepoint, induced by rotation,
+// would lead to a deadlock. This deadlock, although unpleasant, is not completely horrendous at this
+// location because the WatcherThread will terminate the VM after a timeout.
+// Deadlock avoidance is done not to affect the stability of general VM error reporting.
+static bool rotation_safepoint_pending = false;
+
+static bool is_rotation_safepoint_pending() {
+  return Atomic::load_acquire(&rotation_safepoint_pending);
+}
+
+static void set_rotation_safepoint_pending(bool value) {
+  assert(value ? !is_rotation_safepoint_pending() : is_rotation_safepoint_pending(), "invariant");
+  Atomic::release_store(&rotation_safepoint_pending, value);
+}
+
+static bool vm_error = false;
+static const Thread* vm_error_thread = NULL;
+
+static bool prepare_for_vm_error_rotation() {
+  assert(!JfrStream_lock->owned_by_self(), "invariant");
+  Thread* const t = Thread::current();
+  assert(t != NULL, "invariant");
+  if (is_rotation_safepoint_pending() && t->is_Java_thread()) {
+    // A safepoint is pending, avoid deadlock.
+    log_warning(jfr, system)("Unable to issue successful emergency dump");
+    return false;
   }
-  _checkpoint_manager.register_service_thread(Thread::current());
+  vm_error_thread = t;
+  vm_error = true;
+  OrderAccess::fence();
+  return true;
 }
 
 void JfrRecorderService::vm_error_rotation() {
   assert(JfrStream_lock->owned_by_self(), "invariant");
+  assert(vm_error, "invariant");
+  Thread* const t = Thread::current();
+  if (vm_error_thread != t) {
+    return;
+  }
+  assert(vm_error_thread == t, "invariant");
+  if (!_chunkwriter.is_valid()) {
+    open_new_chunk(true);
+  }
   if (_chunkwriter.is_valid()) {
-    Thread* const t = Thread::current();
+    _checkpoint_manager.register_service_thread(t);
     _storage.flush_regular_buffer(t->jfr_thread_local()->native_buffer(), t);
     _chunkwriter.mark_chunk_final();
     invoke_flush();
@@ -441,18 +479,21 @@ void JfrRecorderService::vm_error_rotation() {
 
 void JfrRecorderService::rotate(int msgs) {
   assert(!JfrStream_lock->owned_by_self(), "invariant");
-  MutexLocker lock(JfrStream_lock);
-  static bool vm_error = false;
   if (msgs & MSGBIT(MSG_VM_ERROR)) {
-    vm_error = true;
-    prepare_for_vm_error_rotation();
+    // emergency dump
+    if (!prepare_for_vm_error_rotation()) {
+      return;
+    }
   }
-  if (!_storage.control().to_disk()) {
-    in_memory_rotation();
-  } else if (vm_error) {
+  MutexLocker lock(JfrStream_lock, Mutex::_no_safepoint_check_flag);
+  if (vm_error) {
     vm_error_rotation();
-  } else {
+    return;
+  }
+  if (_storage.control().to_disk()) {
     chunk_rotation();
+  } else {
+    in_memory_rotation();
   }
   if (msgs & (MSGBIT(MSG_STOP))) {
     stop();
@@ -478,7 +519,10 @@ void JfrRecorderService::chunk_rotation() {
 
 void JfrRecorderService::finalize_current_chunk() {
   assert(_chunkwriter.is_valid(), "invariant");
+  assert(!is_rotation_safepoint_pending(), "invariant");
+  set_rotation_safepoint_pending(true);
   write();
+  assert(!is_rotation_safepoint_pending(), "invariant");
 }
 
 void JfrRecorderService::write() {
@@ -491,6 +535,7 @@ void JfrRecorderService::write() {
 
 void JfrRecorderService::pre_safepoint_write() {
   assert(_chunkwriter.is_valid(), "invariant");
+  assert(is_rotation_safepoint_pending(), "invariant");
   if (LeakProfiler::is_running()) {
     // Exclusive access to the object sampler instance.
     // The sampler is released (unlocked) later in post_safepoint_write.
@@ -512,6 +557,8 @@ void JfrRecorderService::invoke_safepoint_write() {
 
 void JfrRecorderService::safepoint_write() {
   assert(SafepointSynchronize::is_at_safepoint(), "invariant");
+  assert(is_rotation_safepoint_pending(), "invariant");
+  set_rotation_safepoint_pending(false);
   if (_string_pool.is_modified()) {
     write_stringpool_safepoint(_string_pool, _chunkwriter);
   }
@@ -524,6 +571,7 @@ void JfrRecorderService::safepoint_write() {
 
 void JfrRecorderService::post_safepoint_write() {
   assert(_chunkwriter.is_valid(), "invariant");
+  assert(!is_rotation_safepoint_pending(), "invariant");
   // During the safepoint tasks just completed, the system transitioned to a new epoch.
   // Type tagging is epoch relative which entails we are able to write out the
   // already tagged artifacts for the previous epoch. We can accomplish this concurrently
@@ -606,7 +654,7 @@ void JfrRecorderService::invoke_flush() {
 }
 
 void JfrRecorderService::flushpoint() {
-  MutexLocker lock(JfrStream_lock);
+  MutexLocker lock(JfrStream_lock, Mutex::_no_safepoint_check_flag);
   invoke_flush();
 }
 
