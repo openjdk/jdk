@@ -2292,7 +2292,7 @@ void Compile::Optimize() {
     if (has_loops()) {
       // Cleanup graph (remove dead nodes).
       TracePhase tp("idealLoop", &timers[_t_idealLoop]);
-      PhaseIdealLoop::optimize(igvn, LoopOptsNone);
+      PhaseIdealLoop::optimize(igvn, LoopOptsMaxUnroll);
       if (major_progress()) print_method(PHASE_PHASEIDEAL_BEFORE_EA, 2);
       if (failing())  return;
     }

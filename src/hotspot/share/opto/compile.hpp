@@ -93,6 +93,7 @@ struct Final_Reshape_Counts;
 enum LoopOptsMode {
   LoopOptsDefault,
   LoopOptsNone,
+  LoopOptsMaxUnroll,
   LoopOptsShenandoahExpand,
   LoopOptsShenandoahPostExpand,
   LoopOptsSkipSplitIf,
