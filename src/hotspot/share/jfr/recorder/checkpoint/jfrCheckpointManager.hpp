@@ -85,6 +85,7 @@ class JfrCheckpointManager : public JfrCHeapObj {
   size_t write_threads();
   size_t write_static_type_set_and_threads();
   bool is_type_set_required();
+  void clear_type_set();
   void write_type_set();
   static void write_type_set_for_unloaded_classes();
 

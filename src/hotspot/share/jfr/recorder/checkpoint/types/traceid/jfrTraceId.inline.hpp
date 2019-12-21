@@ -39,10 +39,27 @@
 #include "runtime/thread.inline.hpp"
 #include "utilities/debug.hpp"
 
+inline bool is_not_tagged(traceid value) {
+  const traceid this_epoch_bit = JfrTraceIdEpoch::in_use_this_epoch_bit();
+  return (value & ((this_epoch_bit << META_SHIFT) | this_epoch_bit)) != this_epoch_bit;
+}
+
+template <typename T>
+inline bool should_tag(const T* t) {
+  assert(t != NULL, "invariant");
+  return is_not_tagged(TRACE_ID_RAW(t));
+}
+
+template <>
+inline bool should_tag<Method>(const Method* method) {
+  assert(method != NULL, "invariant");
+  return is_not_tagged((traceid)method->trace_flags());
+}
+
 template <typename T>
 inline traceid set_used_and_get(const T* type) {
   assert(type != NULL, "invariant");
-  if (SHOULD_TAG(type)) {
+  if (should_tag(type)) {
     SET_USED_THIS_EPOCH(type);
     JfrTraceIdEpoch::set_changed_tag_state();
   }
@@ -62,7 +79,12 @@ inline traceid JfrTraceId::get(const Thread* t) {
 
 inline traceid JfrTraceId::use(const Klass* klass) {
   assert(klass != NULL, "invariant");
-  return set_used_and_get(klass);
+  if (should_tag(klass)) {
+    SET_USED_THIS_EPOCH(klass);
+    JfrTraceIdEpoch::set_changed_tag_state();
+  }
+  assert(USED_THIS_EPOCH(klass), "invariant");
+  return get(klass);
 }
 
 inline traceid JfrTraceId::use(const Method* method) {
