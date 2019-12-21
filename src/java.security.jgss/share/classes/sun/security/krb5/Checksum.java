@@ -102,7 +102,7 @@ public class Checksum {
         } catch (Exception exc) {
             if (DEBUG) {
                 System.out.println("Exception in getting default checksum "+
-                                   "value from the configuration " +
+                                   "value from the configuration. " +
                                    "Setting default checksum to be RSA-MD5");
                 exc.printStackTrace();
             }
@@ -122,7 +122,7 @@ public class Checksum {
             if (DEBUG) {
                 System.out.println("Exception in getting safe default " +
                                    "checksum value " +
-                                   "from the configuration Setting  " +
+                                   "from the configuration. Setting " +
                                    "safe default checksum to be RSA-MD5");
                 exc.printStackTrace();
             }

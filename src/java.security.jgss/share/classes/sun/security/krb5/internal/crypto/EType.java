@@ -63,7 +63,7 @@ public abstract class EType {
         } catch (Exception exc) {
             if (DEBUG) {
                 System.out.println ("Exception in getting allow_weak_crypto, " +
-                                    "using default value " +
+                                    "using default value: " +
                                     exc.getMessage());
             }
         }
@@ -256,7 +256,7 @@ public abstract class EType {
         } catch (KrbException exc) {
             if (DEBUG) {
                 System.out.println("Exception while getting " +
-                    configName + exc.getMessage());
+                    configName + ": " + exc.getMessage());
                 System.out.println("Using default builtin etypes");
             }
             return getBuiltInDefaults();

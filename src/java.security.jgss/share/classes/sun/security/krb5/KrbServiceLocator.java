@@ -57,8 +57,6 @@ class KrbServiceLocator {
 
     private static final Random random = new Random();
 
-    private static final boolean DEBUG = Krb5.DEBUG;
-
     private KrbServiceLocator() {
     }
 

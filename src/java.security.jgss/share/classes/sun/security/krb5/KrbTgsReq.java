@@ -54,8 +54,6 @@ public class KrbTgsReq {
     private boolean useSubkey = false;
     EncryptionKey tgsReqKey;
 
-    private static final boolean DEBUG = Krb5.DEBUG;
-
     private byte[] obuf;
     private byte[] ibuf;
 

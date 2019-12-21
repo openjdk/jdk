@@ -300,7 +300,7 @@ public class KerberosTime {
             if (DEBUG) {
                 System.out.println("Exception in getting clockskew from " +
                                    "Configuration " +
-                                   "using default value " +
+                                   "using default value: " +
                                    e.getMessage());
             }
         }

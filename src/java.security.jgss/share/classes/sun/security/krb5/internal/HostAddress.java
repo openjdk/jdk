@@ -211,7 +211,7 @@ public class HostAddress implements Cloneable {
         }
         if (DEBUG) {
             if (addrType == Krb5.ADDRTYPE_INET ||
-                addrType == Krb5.ADDRTYPE_INET6) {
+                    addrType == Krb5.ADDRTYPE_INET6) {
                 System.out.println("Host address is " +
                         InetAddress.getByAddress(address));
             }

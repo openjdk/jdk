@@ -45,7 +45,6 @@ import java.io.IOException;
 public abstract class CredentialsCache {
     static CredentialsCache singleton = null;
     static String cacheName;
-    private static boolean DEBUG = Krb5.DEBUG;
 
     public static CredentialsCache getInstance(PrincipalName principal) {
         return FileCredentialsCache.acquireInstance(principal, null);
