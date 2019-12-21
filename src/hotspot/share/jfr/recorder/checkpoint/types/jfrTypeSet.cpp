@@ -303,7 +303,7 @@ static bool write_klasses() {
     _subsystem_callback = &callback;
     do_klasses();
   } else {
-    LeakKlassWriter lkw(_leakp_writer, _artifacts, _class_unload);
+    LeakKlassWriter lkw(_leakp_writer, _class_unload);
     CompositeKlassWriter ckw(&lkw, &kw);
     CompositeKlassWriterRegistration ckwr(&ckw, &reg);
     CompositeKlassCallback callback(&ckwr);

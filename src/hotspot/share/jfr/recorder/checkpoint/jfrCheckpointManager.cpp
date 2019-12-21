@@ -44,9 +44,9 @@
 #include "logging/log.hpp"
 #include "memory/iterator.hpp"
 #include "memory/resourceArea.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/mutex.hpp"
-#include "runtime/orderAccess.hpp"
 #include "runtime/os.inline.hpp"
 #include "runtime/safepoint.hpp"
 
@@ -172,7 +172,7 @@ static BufferPtr lease_free(size_t size, JfrCheckpointMspace* mspace, size_t ret
 }
 
 bool JfrCheckpointManager::use_epoch_transition_mspace(const Thread* thread) const {
-  return _service_thread != thread && _checkpoint_epoch_state != JfrTraceIdEpoch::epoch();
+  return _service_thread != thread && Atomic::load_acquire(&_checkpoint_epoch_state) != JfrTraceIdEpoch::epoch();
 }
 
 static const size_t lease_retry = 10;
@@ -333,7 +333,19 @@ static size_t write_mspace(JfrCheckpointMspace* mspace, JfrChunkWriter& chunkwri
   return wo.processed();
 }
 
-void JfrCheckpointManager::synchronize_epoch() {
+void JfrCheckpointManager::begin_epoch_shift() {
+  assert(SafepointSynchronize::is_at_safepoint(), "invariant");
+  JfrTraceIdEpoch::begin_epoch_shift();
+}
+
+void JfrCheckpointManager::end_epoch_shift() {
+  assert(SafepointSynchronize::is_at_safepoint(), "invariant");
+  debug_only(const u1 current_epoch = JfrTraceIdEpoch::current();)
+  JfrTraceIdEpoch::end_epoch_shift();
+  assert(current_epoch != JfrTraceIdEpoch::current(), "invariant");
+}
+
+void JfrCheckpointManager::synchronize_checkpoint_manager_with_current_epoch() {
   assert(_checkpoint_epoch_state != JfrTraceIdEpoch::epoch(), "invariant");
   OrderAccess::storestore();
   _checkpoint_epoch_state = JfrTraceIdEpoch::epoch();
@@ -341,7 +353,7 @@ void JfrCheckpointManager::synchronize_epoch() {
 
 size_t JfrCheckpointManager::write() {
   const size_t processed = write_mspace<MutexedWriteOp, CompositeOperation>(_free_list_mspace, _chunkwriter);
-  synchronize_epoch();
+  synchronize_checkpoint_manager_with_current_epoch();
   return processed;
 }
 
@@ -365,7 +377,7 @@ size_t JfrCheckpointManager::clear() {
   DiscardOperation discarder(mutexed); // mutexed discard mode
   process_free_list(discarder, _free_list_mspace);
   process_free_list(discarder, _epoch_transition_mspace);
-  synchronize_epoch();
+  synchronize_checkpoint_manager_with_current_epoch();
   return discarder.elements();
 }
 
@@ -408,12 +420,6 @@ size_t JfrCheckpointManager::write_static_type_set_and_threads() {
   write_static_type_set();
   write_threads();
   return write_epoch_transition_mspace();
-}
-
-void JfrCheckpointManager::shift_epoch() {
-  debug_only(const u1 current_epoch = JfrTraceIdEpoch::current();)
-  JfrTraceIdEpoch::shift_epoch();
-  assert(current_epoch != JfrTraceIdEpoch::current(), "invariant");
 }
 
 void JfrCheckpointManager::on_rotation() {

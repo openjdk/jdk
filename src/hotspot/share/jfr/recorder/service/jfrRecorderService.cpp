@@ -46,9 +46,9 @@
 #include "jfr/utilities/jfrTypes.hpp"
 #include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/mutexLocker.hpp"
-#include "runtime/orderAccess.hpp"
 #include "runtime/os.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/thread.inline.hpp"
@@ -390,11 +390,12 @@ void JfrRecorderService::invoke_safepoint_clear() {
 
 void JfrRecorderService::safepoint_clear() {
   assert(SafepointSynchronize::is_at_safepoint(), "invariant");
+  _checkpoint_manager.begin_epoch_shift();
   _string_pool.clear();
-  _storage.clear();
-  _checkpoint_manager.shift_epoch();
-  _chunkwriter.set_time_stamp();
   _stack_trace_repository.clear();
+  _storage.clear();
+  _chunkwriter.set_time_stamp();
+  _checkpoint_manager.end_epoch_shift();
 }
 
 void JfrRecorderService::post_safepoint_clear() {
@@ -559,14 +560,15 @@ void JfrRecorderService::safepoint_write() {
   assert(SafepointSynchronize::is_at_safepoint(), "invariant");
   assert(is_rotation_safepoint_pending(), "invariant");
   set_rotation_safepoint_pending(false);
+  _checkpoint_manager.begin_epoch_shift();
   if (_string_pool.is_modified()) {
     write_stringpool_safepoint(_string_pool, _chunkwriter);
   }
   _checkpoint_manager.on_rotation();
-  _storage.write_at_safepoint();
-  _checkpoint_manager.shift_epoch();
-  _chunkwriter.set_time_stamp();
   write_stacktrace(_stack_trace_repository, _chunkwriter, true);
+  _storage.write_at_safepoint();
+  _chunkwriter.set_time_stamp();
+  _checkpoint_manager.end_epoch_shift();
 }
 
 void JfrRecorderService::post_safepoint_write() {
