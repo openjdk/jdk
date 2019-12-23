@@ -1601,7 +1601,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
      * @throws SQLException if the given index is out of bounds
      */
     private void checkIndex(int idx) throws SQLException {
-        if (idx < 1 || idx > RowSetMD.getColumnCount()) {
+        if (idx < 1 ||  RowSetMD == null || idx > RowSetMD.getColumnCount()) {
             throw new SQLException(resBundle.handleGetObject("cachedrowsetimpl.invalidcol").toString());
         }
     }
@@ -1638,14 +1638,15 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
     private int getColIdxByName(String name) throws SQLException {
         RowSetMD = (RowSetMetaDataImpl)this.getMetaData();
         int cols = RowSetMD.getColumnCount();
-
-        for (int i=1; i <= cols; ++i) {
-            String colName = RowSetMD.getColumnName(i);
-            if (colName != null)
-                if (name.equalsIgnoreCase(colName))
-                    return (i);
-                else
-                    continue;
+        if (RowSetMD != null) {
+            for (int i = 1; i <= cols; ++i) {
+                String colName = RowSetMD.getColumnName(i);
+                if (colName != null)
+                    if (name.equalsIgnoreCase(colName))
+                        return (i);
+                    else
+                        continue;
+            }
         }
         throw new SQLException(resBundle.handleGetObject("cachedrowsetimpl.invalcolnm").toString());
 
