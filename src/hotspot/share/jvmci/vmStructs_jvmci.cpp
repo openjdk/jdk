@@ -322,6 +322,8 @@
   static_field(StubRoutines,                _montgomeryMultiply,                              address)                               \
   static_field(StubRoutines,                _montgomerySquare,                                address)                               \
   static_field(StubRoutines,                _vectorizedMismatch,                              address)                               \
+  static_field(StubRoutines,                _bigIntegerRightShiftWorker,                      address)                               \
+  static_field(StubRoutines,                _bigIntegerLeftShiftWorker,                       address)                               \
                                                                                                                                      \
   nonstatic_field(Thread,                   _tlab,                                            ThreadLocalAllocBuffer)                \
   nonstatic_field(Thread,                   _allocated_bytes,                                 jlong)                                 \

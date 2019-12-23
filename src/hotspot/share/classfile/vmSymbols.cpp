@@ -837,6 +837,9 @@ bool vmIntrinsics::is_disabled_by_flags(vmIntrinsics::ID id) {
   case vmIntrinsics::_montgomerySquare:
     if (!UseMontgomerySquareIntrinsic) return true;
     break;
+  case vmIntrinsics::_bigIntegerRightShiftWorker:
+  case vmIntrinsics::_bigIntegerLeftShiftWorker:
+    break;
   case vmIntrinsics::_addExactI:
   case vmIntrinsics::_addExactL:
   case vmIntrinsics::_decrementExactI:

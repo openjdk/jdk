@@ -345,6 +345,8 @@ protected:
 #define CPU_FLUSH ((uint64_t)UCONST64(0x20000000000))  // flush instruction
 #define CPU_FLUSHOPT ((uint64_t)UCONST64(0x40000000000)) // flushopt instruction
 #define CPU_CLWB ((uint64_t)UCONST64(0x80000000000))   // clwb instruction
+#define CPU_VBMI2 ((uint64_t)UCONST64(0x100000000000))   // VBMI2 shift left double instructions
+
 
 enum Extended_Family {
     // AMD
@@ -567,6 +569,8 @@ enum Extended_Family {
           result |= CPU_VAES;
         if (_cpuid_info.sef_cpuid7_ecx.bits.avx512_vnni != 0)
           result |= CPU_VNNI;
+        if (_cpuid_info.sef_cpuid7_ecx.bits.avx512_vbmi2 != 0)
+          result |= CPU_VBMI2;
       }
     }
     if (_cpuid_info.sef_cpuid7_ebx.bits.bmi1 != 0)
@@ -858,6 +862,7 @@ public:
   static bool supports_avx512_vpclmulqdq() { return (_features & CPU_AVX512_VPCLMULQDQ) != 0; }
   static bool supports_vaes()       { return (_features & CPU_VAES) != 0; }
   static bool supports_vnni()       { return (_features & CPU_VNNI) != 0; }
+  static bool supports_vbmi2()      { return (_features & CPU_VBMI2) != 0; }
 
   // Intel features
   static bool is_intel_family_core() { return is_intel() &&

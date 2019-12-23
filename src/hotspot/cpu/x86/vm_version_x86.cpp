@@ -694,6 +694,7 @@ void VM_Version::get_processor_features() {
     _features &= ~CPU_AVX512_VPCLMULQDQ;
     _features &= ~CPU_VAES;
     _features &= ~CPU_VNNI;
+    _features &= ~CPU_VBMI2;
   }
 
   if (UseAVX < 2)
@@ -716,7 +717,7 @@ void VM_Version::get_processor_features() {
   }
 
   char buf[256];
-  jio_snprintf(buf, sizeof(buf), "(%u cores per cpu, %u threads per core) family %d model %d stepping %d%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
+  jio_snprintf(buf, sizeof(buf), "(%u cores per cpu, %u threads per core) family %d model %d stepping %d%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
                cores_per_cpu(), threads_per_core(),
                cpu_family(), _model, _stepping,
                (supports_cmov() ? ", cmov" : ""),
@@ -749,7 +750,10 @@ void VM_Version::get_processor_features() {
                (supports_adx() ? ", adx" : ""),
                (supports_evex() ? ", evex" : ""),
                (supports_sha() ? ", sha" : ""),
-               (supports_fma() ? ", fma" : ""));
+               (supports_fma() ? ", fma" : ""),
+               (supports_vbmi2() ? ", vbmi2" : ""),
+               (supports_vaes() ? ", vaes" : ""),
+               (supports_vnni() ? ", vnni" : ""));
   _features_string = os::strdup(buf);
 
   // UseSSE is set to the smaller of what hardware supports and what

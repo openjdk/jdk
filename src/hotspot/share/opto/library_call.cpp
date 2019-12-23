@@ -327,6 +327,7 @@ class LibraryCallKit : public GraphKit {
   bool inline_mulAdd();
   bool inline_montgomeryMultiply();
   bool inline_montgomerySquare();
+  bool inline_bigIntegerShift(bool isRightShift);
   bool inline_vectorizedMismatch();
   bool inline_fma(vmIntrinsics::ID id);
   bool inline_character_compare(vmIntrinsics::ID id);
@@ -844,6 +845,11 @@ bool LibraryCallKit::try_to_inline(int predicate) {
     return inline_montgomeryMultiply();
   case vmIntrinsics::_montgomerySquare:
     return inline_montgomerySquare();
+
+  case vmIntrinsics::_bigIntegerRightShiftWorker:
+    return inline_bigIntegerShift(true);
+  case vmIntrinsics::_bigIntegerLeftShiftWorker:
+    return inline_bigIntegerShift(false);
 
   case vmIntrinsics::_vectorizedMismatch:
     return inline_vectorizedMismatch();
@@ -5248,6 +5254,60 @@ bool LibraryCallKit::inline_montgomerySquare() {
                                    a_start, n_start, len, inv, top(),
                                    m_start);
     set_result(m);
+  }
+
+  return true;
+}
+
+bool LibraryCallKit::inline_bigIntegerShift(bool isRightShift) {
+  address stubAddr = NULL;
+  const char* stubName = NULL;
+
+  stubAddr = isRightShift? StubRoutines::bigIntegerRightShift(): StubRoutines::bigIntegerLeftShift();
+  if (stubAddr == NULL) {
+    return false; // Intrinsic's stub is not implemented on this platform
+  }
+
+  stubName = isRightShift? "bigIntegerRightShiftWorker" : "bigIntegerLeftShiftWorker";
+
+  assert(callee()->signature()->size() == 5, "expected 5 arguments");
+
+  Node* newArr = argument(0);
+  Node* oldArr = argument(1);
+  Node* newIdx = argument(2);
+  Node* shiftCount = argument(3);
+  Node* numIter = argument(4);
+
+  const Type* newArr_type = newArr->Value(&_gvn);
+  const TypeAryPtr* top_newArr = newArr_type->isa_aryptr();
+  const Type* oldArr_type = oldArr->Value(&_gvn);
+  const TypeAryPtr* top_oldArr = oldArr_type->isa_aryptr();
+  if (top_newArr == NULL || top_newArr->klass() == NULL || top_oldArr == NULL
+      || top_oldArr->klass() == NULL) {
+    return false;
+  }
+
+  BasicType newArr_elem = newArr_type->isa_aryptr()->klass()->as_array_klass()->element_type()->basic_type();
+  BasicType oldArr_elem = oldArr_type->isa_aryptr()->klass()->as_array_klass()->element_type()->basic_type();
+  if (newArr_elem != T_INT || oldArr_elem != T_INT) {
+    return false;
+  }
+
+  // Make the call
+  {
+    Node* newArr_start = array_element_address(newArr, intcon(0), newArr_elem);
+    Node* oldArr_start = array_element_address(oldArr, intcon(0), oldArr_elem);
+
+    Node* call = make_runtime_call(RC_LEAF,
+                                   OptoRuntime::bigIntegerShift_Type(),
+                                   stubAddr,
+                                   stubName,
+                                   TypePtr::BOTTOM,
+                                   newArr_start,
+                                   oldArr_start,
+                                   newIdx,
+                                   shiftCount,
+                                   numIter);
   }
 
   return true;

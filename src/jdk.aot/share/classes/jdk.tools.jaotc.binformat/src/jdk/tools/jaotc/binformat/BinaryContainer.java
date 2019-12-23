@@ -229,6 +229,8 @@ public final class BinaryContainer implements SymbolTable {
         {"StubRoutines::_montgomeryMultiply", "_aot_stub_routines_montgomeryMultiply" },
         {"StubRoutines::_montgomerySquare", "_aot_stub_routines_montgomerySquare" },
         {"StubRoutines::_vectorizedMismatch", "_aot_stub_routines_vectorizedMismatch" },
+        {"StubRoutines::_bigIntegerRightShiftWorker", "_aot_stub_routines_bigIntegerRightShiftWorker" },
+        {"StubRoutines::_bigIntegerLeftShiftWorker", "_aot_stub_routines_bigIntegerLeftShiftWorker" },
 
         {"StubRoutines::_throw_delayed_StackOverflowError_entry", "_aot_stub_routines_throw_delayed_StackOverflowError_entry" },
 
