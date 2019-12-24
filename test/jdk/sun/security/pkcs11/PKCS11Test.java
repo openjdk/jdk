@@ -83,11 +83,11 @@ public abstract class PKCS11Test {
     static {
         // hack
         String absBase = new File(BASE).getAbsolutePath();
-        int k = absBase.indexOf(SEP + "test" + SEP + "sun" + SEP);
+        int k = absBase.indexOf(SEP + "test" + SEP + "jdk" + SEP);
         if (k < 0) k = 0;
-        String p1 = absBase.substring(0, k + 6);
-        String p2 = absBase.substring(k + 5);
-        CLOSED_BASE = p1 + "closed" + p2;
+        String p1 = absBase.substring(0, k);
+        String p2 = absBase.substring(k);
+        CLOSED_BASE = p1 + "/../closed" + p2;
 
         // set it as a system property to make it available in policy file
         System.setProperty("closed.base", CLOSED_BASE);
