@@ -360,7 +360,7 @@ public class Flags {
      */
     public static final long UNINITIALIZED_FIELD= 1L<<51; // VarSymbols only
 
-    /** Flag is set for compiler-generated record members, it could be appplied to
+    /** Flag is set for compiler-generated record members, it could be applied to
      *  accessors and fields
      */
     public static final int GENERATED_MEMBER = 1<<24; // MethodSymbols and VarSymbols

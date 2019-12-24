@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@ package com.sun.tools.javac.util;
  *  <li><a href="http://docs.oracle.com/javase/7/docs/api/java/io/DataInput.html#modified-utf-8">
       java.io.DataInput: Modified UTF-8 </a></li>
     <li><a href="https://en.wikipedia.org/wiki/UTF-8#Modified_UTF-8">
-      Modified UTF-8 (wikipedia) </a></li>
+      Modified UTF-8 (Wikipedia) </a></li>
  *  </ul>
  *
  *  The methods here support modified UTF-8.

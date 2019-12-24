@@ -91,7 +91,7 @@ import com.sun.tools.javac.tree.JCTree.JCYield;
  * type, so that enclosing overload resolution can be carried by simply checking compatibility against the
  * type determined during this speculative pass.
  *
- * - if A is a standalone expression, regular atributtion takes place.
+ * - if A is a standalone expression, regular attribution takes place.
  *
  * To minimize the speculative work, a cache is used, so that already computed argument types
  * associated with a given unique source location are never recomputed multiple times.
@@ -112,7 +112,7 @@ public class ArgumentAttr extends JCTree.Visitor {
     /** Result of method attribution. */
     Type result;
 
-    /** Cache for argument types; behavior is influences by the currrently selected cache policy. */
+    /** Cache for argument types; behavior is influenced by the currently selected cache policy. */
     Map<UniquePos, ArgumentType<?>> argumentTypeCache = new LinkedHashMap<>();
 
     public static ArgumentAttr instance(Context context) {

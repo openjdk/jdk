@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,7 +104,7 @@ public class ForwardingDiagnosticFormatter<D extends Diagnostic<?>, F extends Di
      */
     public static class ForwardingConfiguration implements DiagnosticFormatter.Configuration {
 
-        /** The configurationr object to which the forwarding configuration delegates some settings */
+        /** The configuration object to which the forwarding configuration delegates some settings */
         protected Configuration configuration;
 
         public ForwardingConfiguration(Configuration configuration) {

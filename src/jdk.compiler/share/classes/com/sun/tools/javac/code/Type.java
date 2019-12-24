@@ -477,7 +477,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
 
     /**
      * The Java source which this type list represents.  A List is
-     * represented as a comma-spearated listing of the elements in
+     * represented as a comma-separated listing of the elements in
      * that list.
      */
     public static String toString(List<Type> ts) {

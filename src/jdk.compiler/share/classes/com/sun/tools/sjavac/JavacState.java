@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,7 +95,7 @@ public class JavacState {
     // A module dependency can occur directly through a require, or
     // indirectly through a module that does a public export for the first tainted module.
     // When all modules are tainted, then taint all packages belonging to these modules.
-    // Then rebuild. It is perhaps possible (and valuable?) to do a more finegrained examination of the
+    // Then rebuild. It is perhaps possible (and valuable?) to do a more fine-grained examination of the
     // change in module-info.java, but that will have to wait.
     private Set<String> taintedModules;
     // The set of all packages that has been recompiled.

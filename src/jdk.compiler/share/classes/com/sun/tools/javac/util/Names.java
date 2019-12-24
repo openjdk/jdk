@@ -28,7 +28,7 @@ package com.sun.tools.javac.util;
 import java.util.Set;
 
 /**
- * Access to the compiler's name table.  STandard names are defined,
+ * Access to the compiler's name table.  Standard names are defined,
  * as well as methods to create new names.
  *
  *  <p><b>This is NOT part of any supported API.

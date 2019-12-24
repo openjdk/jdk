@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -181,7 +181,7 @@ public class Source implements Comparable<Source> {
     }
 
     /**
-     * Recurse into the directory root and find all files matchine the excl/incl/exclfiles/inclfiles rules.
+     * Recurse into the directory root and find all files matching the excl/incl/exclfiles/inclfiles rules.
      * Detects the existence of module-info.java files and presumes that the directory it resides in
      * is the name of the current module.
      */
@@ -227,7 +227,7 @@ public class Source implements Comparable<Source> {
                     existing = currentModule.lookupSource(file.toString());
                     if (existing != null) {
 
-                            // Oups, the source is already added, could be ok, could be not, lets check.
+                            // Oops, the source is already added, could be ok, could be not, let's check.
                             if (inLinksrc) {
                                 // So we are collecting sources for linking only.
                                 if (existing.isLinkedOnly()) {

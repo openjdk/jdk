@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,7 +68,7 @@ public class SerialVer {
         String ret = null;
         boolean classFound = false;
 
-        // If using old style of qualifyling inner classes with '$'s.
+        // If using old style of qualifying inner classes with '$'s.
         if (classname.indexOf('$') != -1) {
             ret = resolveClass(classname);
         } else {

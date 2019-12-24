@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,7 +60,7 @@ public interface Lexer {
     Token prevToken();
 
     /**
-     * Splits the current token in two and return the first (splitted) token.
+     * Splits the current token in two and return the first (split) token.
      * For instance {@literal '<<<'} is split into two tokens
      * {@literal '<'} and {@literal '<<'} respectively,
      * and the latter is returned.

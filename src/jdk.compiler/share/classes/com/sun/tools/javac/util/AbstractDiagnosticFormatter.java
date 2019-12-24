@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,7 +61,7 @@ import static com.sun.tools.javac.util.JCDiagnostic.DiagnosticType.*;
  * by any formatter used by javac. Among the main features provided by AbstractDiagnosticFormatter are:
  *
  * <ul>
- *  <li> Provides a standard implementation of the visitor-like methods defined in the interface DiagnisticFormatter.
+ *  <li> Provides a standard implementation of the visitor-like methods defined in the interface DiagnosticFormatter.
  *  Those implementations are specifically targeting JCDiagnostic objects.
  *  <li> Provides basic support for i18n and a method for executing all locale-dependent conversions
  *  <li> Provides the formatting logic for rendering the arguments of a JCDiagnostic object.
@@ -85,7 +85,7 @@ public abstract class AbstractDiagnosticFormatter implements DiagnosticFormatter
     private SimpleConfiguration config;
 
     /**
-     * Current depth level of the disgnostic being formatted
+     * Current depth level of the diagnostic being formatted
      * (!= 0 for subdiagnostics)
      */
     protected int depth = 0;

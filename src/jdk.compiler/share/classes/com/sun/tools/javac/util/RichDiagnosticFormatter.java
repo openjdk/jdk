@@ -51,8 +51,8 @@ import static com.sun.tools.javac.util.RichDiagnosticFormatter.RichConfiguration
 
 /**
  * A rich diagnostic formatter is a formatter that provides better integration
- * with javac's type system. A diagostic is first preprocessed in order to keep
- * track of each types/symbols in it; after these informations are collected,
+ * with javac's type system. A diagnostic is first preprocessed in order to keep
+ * track of each types/symbols in it; after this information is collected,
  * the diagnostic is rendered using a standard formatter, whose type/symbol printer
  * has been replaced by a more refined version provided by this rich formatter.
  * The rich formatter currently enables three different features: (i) simple class
@@ -250,7 +250,7 @@ public class RichDiagnosticFormatter extends
     }
     //where
     /**
-     * This enum defines all posssible kinds of where clauses that can be
+     * This enum defines all possible kinds of where clauses that can be
      * attached by a rich diagnostic formatter to a given diagnostic
      */
     enum WhereClauseKind {

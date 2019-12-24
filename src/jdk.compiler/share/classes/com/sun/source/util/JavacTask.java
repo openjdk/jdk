@@ -160,7 +160,7 @@ public abstract class JavacTask implements CompilationTask {
 
     /**
      * Returns a type mirror of the tree node determined by the specified path.
-     * This method has been superceded by methods on
+     * This method has been superseded by methods on
      * {@link com.sun.source.util.Trees Trees}.
      *
      * @param path the path

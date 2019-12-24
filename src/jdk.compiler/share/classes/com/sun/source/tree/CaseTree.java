@@ -98,7 +98,7 @@ public interface CaseTree extends Tree {
     }
 
     /**
-     * The syntatic form of this case:
+     * The syntactic form of this case:
      * <ul>
      *     <li>STATEMENT: {@code case <expression>: <statements>}</li>
      *     <li>RULE: {@code case <expression> -> <expression>/<statement>}</li>

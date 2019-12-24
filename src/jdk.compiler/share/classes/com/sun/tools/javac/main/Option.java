@@ -184,7 +184,7 @@ public enum Option {
     SOURCE_PATH("--source-path -sourcepath", "opt.arg.path", "opt.sourcepath", STANDARD, FILEMANAGER),
 
     MODULE_SOURCE_PATH("--module-source-path", "opt.arg.mspath", "opt.modulesourcepath", STANDARD, FILEMANAGER) {
-        // The deferred filemanager diagnostics mechanism assumes a single value per option,
+        // The deferred file manager diagnostics mechanism assumes a single value per option,
         // but --module-source-path-module can be used multiple times, once in the old form
         // and once per module in the new form.  Therefore we compose an overall value for the
         // option containing the individual values given on the command line, separated by NULL.
@@ -233,7 +233,7 @@ public enum Option {
     SYSTEM("--system", "opt.arg.jdk", "opt.system", STANDARD, FILEMANAGER),
 
     PATCH_MODULE("--patch-module", "opt.arg.patch", "opt.patch", EXTENDED, FILEMANAGER) {
-        // The deferred filemanager diagnostics mechanism assumes a single value per option,
+        // The deferred file manager diagnostics mechanism assumes a single value per option,
         // but --patch-module can be used multiple times, once per module. Therefore we compose
         // a value for the option containing the last value specified for each module, and separate
         // the module=path pairs by an invalid path character, NULL.
