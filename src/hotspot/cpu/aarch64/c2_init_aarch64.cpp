@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2014, Red Hat Inc. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,10 +27,11 @@
 #include "opto/compile.hpp"
 #include "opto/node.hpp"
 
-// processor dependent initialization for i486
+// processor dependent initialization for AArch64
+
+extern void reg_mask_init();
 
 void Compile::pd_compiler2_init() {
   guarantee(CodeEntryAlignment >= InteriorEntryAlignment, "" );
-  // QQQ presumably all 64bit cpu's support this. Seems like the ifdef could
-  // simply be left out.
+  reg_mask_init();
 }

@@ -127,8 +127,8 @@ public class AArch64HotSpotJVMCIBackendFactory implements HotSpotJVMCIBackendFac
         return new HotSpotConstantReflectionProvider(runtime);
     }
 
-    private static RegisterConfig createRegisterConfig(TargetDescription target) {
-        return new AArch64HotSpotRegisterConfig(target);
+    private static RegisterConfig createRegisterConfig(AArch64HotSpotVMConfig config, TargetDescription target) {
+        return new AArch64HotSpotRegisterConfig(target, config.useCompressedOops);
     }
 
     protected HotSpotCodeCacheProvider createCodeCache(HotSpotJVMCIRuntime runtime, TargetDescription target, RegisterConfig regConfig) {
@@ -167,7 +167,7 @@ public class AArch64HotSpotJVMCIBackendFactory implements HotSpotJVMCIBackendFac
                 metaAccess = createMetaAccess(runtime);
             }
             try (InitTimer rt = timer("create RegisterConfig")) {
-                regConfig = createRegisterConfig(target);
+                regConfig = createRegisterConfig(config, target);
             }
             try (InitTimer rt = timer("create CodeCache provider")) {
                 codeCache = createCodeCache(runtime, target, regConfig);

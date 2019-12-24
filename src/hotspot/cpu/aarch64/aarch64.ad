@@ -128,8 +128,8 @@ reg_def R25     ( SOC, SOE, Op_RegI, 25, r25->as_VMReg()        );
 reg_def R25_H   ( SOC, SOE, Op_RegI, 25, r25->as_VMReg()->next());
 reg_def R26     ( SOC, SOE, Op_RegI, 26, r26->as_VMReg()        );
 reg_def R26_H   ( SOC, SOE, Op_RegI, 26, r26->as_VMReg()->next());
-reg_def R27     (  NS, SOE, Op_RegI, 27, r27->as_VMReg()        ); // heapbase
-reg_def R27_H   (  NS, SOE, Op_RegI, 27, r27->as_VMReg()->next());
+reg_def R27     ( SOC, SOE, Op_RegI, 27, r27->as_VMReg()        ); // heapbase
+reg_def R27_H   ( SOC, SOE, Op_RegI, 27, r27->as_VMReg()->next());
 reg_def R28     (  NS, SOE, Op_RegI, 28, r28->as_VMReg()        ); // thread
 reg_def R28_H   (  NS, SOE, Op_RegI, 28, r28->as_VMReg()->next());
 reg_def R29     (  NS,  NS, Op_RegI, 29, r29->as_VMReg()        ); // fp
@@ -435,9 +435,8 @@ alloc_class chunk2(RFLAGS);
 // 3) reg_class stack_slots( /* one chunk of stack-based "registers" */ )
 //
 
-// Class for all 32 bit integer registers -- excludes SP which will
-// never be used as an integer register
-reg_class any_reg32(
+// Class for all 32 bit general purpose registers
+reg_class all_reg32(
     R0,
     R1,
     R2,
@@ -466,8 +465,16 @@ reg_class any_reg32(
     R27,
     R28,
     R29,
-    R30
+    R30,
+    R31
 );
+
+
+// Class for all 32 bit integer registers (excluding SP which
+// will never be used as an integer register)
+reg_class any_reg32 %{
+  return _ANY_REG32_mask;
+%}
 
 // Singleton class for R0 int register
 reg_class int_r0_reg(R0);
@@ -481,8 +488,11 @@ reg_class int_r3_reg(R3);
 // Singleton class for R4 int register
 reg_class int_r4_reg(R4);
 
-// Class for all long integer registers (including RSP)
-reg_class any_reg(
+// Singleton class for R31 int register
+reg_class int_r31_reg(R31);
+
+// Class for all 64 bit general purpose registers
+reg_class all_reg(
     R0, R0_H,
     R1, R1_H,
     R2, R2_H,
@@ -515,143 +525,34 @@ reg_class any_reg(
     R31, R31_H
 );
 
+// Class for all long integer registers (including SP)
+reg_class any_reg %{
+  return _ANY_REG_mask;
+%}
+
+// Class for non-allocatable 32 bit registers
+reg_class non_allocatable_reg32(
+    R28,                        // thread
+    R30,                        // lr
+    R31                         // sp
+);
+
+// Class for non-allocatable 64 bit registers
+reg_class non_allocatable_reg(
+    R28, R28_H,                 // thread
+    R30, R30_H,                 // lr
+    R31, R31_H                  // sp
+);
+
 // Class for all non-special integer registers
-reg_class no_special_reg32_no_fp(
-    R0,
-    R1,
-    R2,
-    R3,
-    R4,
-    R5,
-    R6,
-    R7,
-    R10,
-    R11,
-    R12,                        // rmethod
-    R13,
-    R14,
-    R15,
-    R16,
-    R17,
-    R18,
-    R19,
-    R20,
-    R21,
-    R22,
-    R23,
-    R24,
-    R25,
-    R26
- /* R27, */                     // heapbase
- /* R28, */                     // thread
- /* R29, */                     // fp
- /* R30, */                     // lr
- /* R31 */                      // sp
-);
-
-reg_class no_special_reg32_with_fp(
-    R0,
-    R1,
-    R2,
-    R3,
-    R4,
-    R5,
-    R6,
-    R7,
-    R10,
-    R11,
-    R12,                        // rmethod
-    R13,
-    R14,
-    R15,
-    R16,
-    R17,
-    R18,
-    R19,
-    R20,
-    R21,
-    R22,
-    R23,
-    R24,
-    R25,
-    R26
- /* R27, */                     // heapbase
- /* R28, */                     // thread
-    R29,                        // fp
- /* R30, */                     // lr
- /* R31 */                      // sp
-);
-
-reg_class_dynamic no_special_reg32(no_special_reg32_no_fp, no_special_reg32_with_fp, %{ PreserveFramePointer %});
+reg_class no_special_reg32 %{
+  return _NO_SPECIAL_REG32_mask;
+%}
 
 // Class for all non-special long integer registers
-reg_class no_special_reg_no_fp(
-    R0, R0_H,
-    R1, R1_H,
-    R2, R2_H,
-    R3, R3_H,
-    R4, R4_H,
-    R5, R5_H,
-    R6, R6_H,
-    R7, R7_H,
-    R10, R10_H,
-    R11, R11_H,
-    R12, R12_H,                 // rmethod
-    R13, R13_H,
-    R14, R14_H,
-    R15, R15_H,
-    R16, R16_H,
-    R17, R17_H,
-    R18, R18_H,
-    R19, R19_H,
-    R20, R20_H,
-    R21, R21_H,
-    R22, R22_H,
-    R23, R23_H,
-    R24, R24_H,
-    R25, R25_H,
-    R26, R26_H,
- /* R27, R27_H, */              // heapbase
- /* R28, R28_H, */              // thread
- /* R29, R29_H, */              // fp
- /* R30, R30_H, */              // lr
- /* R31, R31_H */               // sp
-);
-
-reg_class no_special_reg_with_fp(
-    R0, R0_H,
-    R1, R1_H,
-    R2, R2_H,
-    R3, R3_H,
-    R4, R4_H,
-    R5, R5_H,
-    R6, R6_H,
-    R7, R7_H,
-    R10, R10_H,
-    R11, R11_H,
-    R12, R12_H,                 // rmethod
-    R13, R13_H,
-    R14, R14_H,
-    R15, R15_H,
-    R16, R16_H,
-    R17, R17_H,
-    R18, R18_H,
-    R19, R19_H,
-    R20, R20_H,
-    R21, R21_H,
-    R22, R22_H,
-    R23, R23_H,
-    R24, R24_H,
-    R25, R25_H,
-    R26, R26_H,
- /* R27, R27_H, */              // heapbase
- /* R28, R28_H, */              // thread
-    R29, R29_H,                 // fp
- /* R30, R30_H, */              // lr
- /* R31, R31_H */               // sp
-);
-
-reg_class_dynamic no_special_reg(no_special_reg_no_fp, no_special_reg_with_fp, %{ PreserveFramePointer %});
+reg_class no_special_reg %{
+  return _NO_SPECIAL_REG_mask;
+%}
 
 // Class for 64 bit register r0
 reg_class r0_reg(
@@ -724,72 +625,14 @@ reg_class sp_reg(
 );
 
 // Class for all pointer registers
-reg_class ptr_reg(
-    R0, R0_H,
-    R1, R1_H,
-    R2, R2_H,
-    R3, R3_H,
-    R4, R4_H,
-    R5, R5_H,
-    R6, R6_H,
-    R7, R7_H,
-    R10, R10_H,
-    R11, R11_H,
-    R12, R12_H,
-    R13, R13_H,
-    R14, R14_H,
-    R15, R15_H,
-    R16, R16_H,
-    R17, R17_H,
-    R18, R18_H,
-    R19, R19_H,
-    R20, R20_H,
-    R21, R21_H,
-    R22, R22_H,
-    R23, R23_H,
-    R24, R24_H,
-    R25, R25_H,
-    R26, R26_H,
-    R27, R27_H,
-    R28, R28_H,
-    R29, R29_H,
-    R30, R30_H,
-    R31, R31_H
-);
+reg_class ptr_reg %{
+  return _PTR_REG_mask;
+%}
 
 // Class for all non_special pointer registers
-reg_class no_special_ptr_reg(
-    R0, R0_H,
-    R1, R1_H,
-    R2, R2_H,
-    R3, R3_H,
-    R4, R4_H,
-    R5, R5_H,
-    R6, R6_H,
-    R7, R7_H,
-    R10, R10_H,
-    R11, R11_H,
-    R12, R12_H,
-    R13, R13_H,
-    R14, R14_H,
-    R15, R15_H,
-    R16, R16_H,
-    R17, R17_H,
-    R18, R18_H,
-    R19, R19_H,
-    R20, R20_H,
-    R21, R21_H,
-    R22, R22_H,
-    R23, R23_H,
-    R24, R24_H,
-    R25, R25_H,
-    R26, R26_H,
- /* R27, R27_H, */              // heapbase
- /* R28, R28_H, */              // thread
- /* R29, R29_H, */              // fp
- /* R30, R30_H, */              // lr
- /* R31, R31_H */               // sp
-);
+reg_class no_special_ptr_reg %{
+  return _NO_SPECIAL_PTR_REG_mask;
+%}
 
 // Class for all float registers
 reg_class float_reg(
@@ -1141,6 +984,13 @@ source_hpp %{
 #include "gc/shared/collectedHeap.hpp"
 #include "opto/addnode.hpp"
 
+extern RegMask _ANY_REG32_mask;
+extern RegMask _ANY_REG_mask;
+extern RegMask _PTR_REG_mask;
+extern RegMask _NO_SPECIAL_REG32_mask;
+extern RegMask _NO_SPECIAL_REG_mask;
+extern RegMask _NO_SPECIAL_PTR_REG_mask;
+
 class CallStubImpl {
 
   //--------------------------------------------------------------
@@ -1197,6 +1047,52 @@ class HandlerImpl {
 %}
 
 source %{
+
+  // Derived RegMask with conditionally allocatable registers
+
+  RegMask _ANY_REG32_mask;
+  RegMask _ANY_REG_mask;
+  RegMask _PTR_REG_mask;
+  RegMask _NO_SPECIAL_REG32_mask;
+  RegMask _NO_SPECIAL_REG_mask;
+  RegMask _NO_SPECIAL_PTR_REG_mask;
+
+  void reg_mask_init() {
+    // We derive below RegMask(s) from the ones which are auto-generated from
+    // adlc register classes to make AArch64 rheapbase (r27) and rfp (r29)
+    // registers conditionally reserved.
+
+    _ANY_REG32_mask = _ALL_REG32_mask;
+    _ANY_REG32_mask.Remove(OptoReg::as_OptoReg(r31_sp->as_VMReg()));
+
+    _ANY_REG_mask = _ALL_REG_mask;
+
+    _PTR_REG_mask = _ALL_REG_mask;
+
+    _NO_SPECIAL_REG32_mask = _ALL_REG32_mask;
+    _NO_SPECIAL_REG32_mask.SUBTRACT(_NON_ALLOCATABLE_REG32_mask);
+
+    _NO_SPECIAL_REG_mask = _ALL_REG_mask;
+    _NO_SPECIAL_REG_mask.SUBTRACT(_NON_ALLOCATABLE_REG_mask);
+
+    _NO_SPECIAL_PTR_REG_mask = _ALL_REG_mask;
+    _NO_SPECIAL_PTR_REG_mask.SUBTRACT(_NON_ALLOCATABLE_REG_mask);
+
+    // r27 is not allocatable when compressed oops is on, compressed klass
+    // pointers doesn't use r27 after JDK-8234794
+    if (UseCompressedOops) {
+      _NO_SPECIAL_REG32_mask.Remove(OptoReg::as_OptoReg(r27->as_VMReg()));
+      _NO_SPECIAL_REG_mask.SUBTRACT(_HEAPBASE_REG_mask);
+      _NO_SPECIAL_PTR_REG_mask.SUBTRACT(_HEAPBASE_REG_mask);
+    }
+
+    // r29 is not allocatable when PreserveFramePointer is on
+    if (PreserveFramePointer) {
+      _NO_SPECIAL_REG32_mask.Remove(OptoReg::as_OptoReg(r29->as_VMReg()));
+      _NO_SPECIAL_REG_mask.SUBTRACT(_FP_REG_mask);
+      _NO_SPECIAL_PTR_REG_mask.SUBTRACT(_FP_REG_mask);
+    }
+  }
 
   // Optimizaton of volatile gets and puts
   // -------------------------------------
