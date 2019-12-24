@@ -519,7 +519,7 @@ public:
   MachOper* specialize_vector_operand(MachNode* m, uint idx);
   MachOper* specialize_vector_operand_helper(MachNode* m, MachOper* generic_opnd);
 
-  static MachOper* specialize_generic_vector_operand(MachOper* generic_opnd, uint ideal_reg);
+  static MachOper* specialize_generic_vector_operand(MachOper* generic_opnd, uint ideal_reg, bool is_temp);
 
   static bool is_generic_reg2reg_move(MachNode* m);
   static bool is_generic_vector(MachOper* opnd);
