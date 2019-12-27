@@ -26,69 +26,40 @@
 package sun.java2d.opengl;
 
 import java.awt.GraphicsConfiguration;
-import java.awt.GraphicsDevice;
-import java.awt.GraphicsEnvironment;
 import java.awt.Image;
 import java.awt.Rectangle;
 import java.awt.image.ColorModel;
 
 import sun.java2d.SurfaceData;
-import sun.lwawt.macosx.CPlatformView;
 
 public abstract class CGLSurfaceData extends OGLSurfaceData {
 
-    protected final int scale;
-    protected final int width;
-    protected final int height;
-    protected CPlatformView pView;
-    private CGLGraphicsConfig graphicsConfig;
-
-    native void validate(int xoff, int yoff, int width, int height, boolean isOpaque);
+    private final int scale;
+    final int width;
+    final int height;
+    private final CGLGraphicsConfig graphicsConfig;
 
     private native void initOps(OGLGraphicsConfig gc, long pConfigInfo,
                                 long pPeerData, long layerPtr, int xoff,
                                 int yoff, boolean isOpaque);
 
-    protected CGLSurfaceData(CGLGraphicsConfig gc, ColorModel cm, int type,
-                             int width, int height) {
+    private CGLSurfaceData(CGLLayer layer, CGLGraphicsConfig gc,
+                           ColorModel cm, int type, int width, int height) {
         super(gc, cm, type);
         // TEXTURE shouldn't be scaled, it is used for managed BufferedImages.
         scale = type == TEXTURE ? 1 : gc.getDevice().getScaleFactor();
         this.width = width * scale;
         this.height = height * scale;
-    }
-
-    protected CGLSurfaceData(CPlatformView pView, CGLGraphicsConfig gc,
-                             ColorModel cm, int type,int width, int height)
-    {
-        this(gc, cm, type, width, height);
-        this.pView = pView;
         this.graphicsConfig = gc;
 
-        long pConfigInfo = gc.getNativeConfigInfo();
-        long pPeerData = 0L;
-        boolean isOpaque = true;
-        if (pView != null) {
-            pPeerData = pView.getAWTView();
-            isOpaque = pView.isOpaque();
-        }
-        initOps(gc, pConfigInfo, pPeerData, 0, 0, 0, isOpaque);
-    }
-
-    protected CGLSurfaceData(CGLLayer layer, CGLGraphicsConfig gc,
-                             ColorModel cm, int type,int width, int height)
-    {
-        this(gc, cm, type, width, height);
-        this.graphicsConfig = gc;
-
-        long pConfigInfo = gc.getNativeConfigInfo();
         long layerPtr = 0L;
         boolean isOpaque = true;
         if (layer != null) {
             layerPtr = layer.getPointer();
             isOpaque = layer.isOpaque();
         }
-        initOps(gc, pConfigInfo, 0, layerPtr, 0, 0, isOpaque);
+        // TODO delete the native code: pPeerData, xoff, yoff are always zero
+        initOps(gc, gc.getNativeConfigInfo(), 0, layerPtr, 0, 0, isOpaque);
     }
 
     @Override //SurfaceData
@@ -97,20 +68,11 @@ public abstract class CGLSurfaceData extends OGLSurfaceData {
     }
 
     /**
-     * Creates a SurfaceData object representing the primary (front) buffer of
-     * an on-screen Window.
-     */
-    public static CGLWindowSurfaceData createData(CPlatformView pView) {
-        CGLGraphicsConfig gc = getGC(pView);
-        return new CGLWindowSurfaceData(pView, gc);
-    }
-
-    /**
      * Creates a SurfaceData object representing the intermediate buffer
      * between the Java2D flusher thread and the AppKit thread.
      */
     public static CGLLayerSurfaceData createData(CGLLayer layer) {
-        CGLGraphicsConfig gc = getGC(layer);
+        CGLGraphicsConfig gc = (CGLGraphicsConfig) layer.getGraphicsConfiguration();
         Rectangle r = layer.getBounds();
         return new CGLLayerSurfaceData(layer, gc, r.width, r.height);
     }
@@ -121,29 +83,7 @@ public abstract class CGLSurfaceData extends OGLSurfaceData {
      */
     public static CGLOffScreenSurfaceData createData(CGLGraphicsConfig gc,
             int width, int height, ColorModel cm, Image image, int type) {
-        return new CGLOffScreenSurfaceData(null, gc, width, height, image, cm,
-                type);
-    }
-
-    public static CGLGraphicsConfig getGC(CPlatformView pView) {
-        if (pView != null) {
-            return (CGLGraphicsConfig)pView.getGraphicsConfiguration();
-        } else {
-            // REMIND: this should rarely (never?) happen, but what if
-            // default config is not CGL?
-            GraphicsEnvironment env = GraphicsEnvironment
-                .getLocalGraphicsEnvironment();
-            GraphicsDevice gd = env.getDefaultScreenDevice();
-            return (CGLGraphicsConfig) gd.getDefaultConfiguration();
-        }
-    }
-
-    public static CGLGraphicsConfig getGC(CGLLayer layer) {
-        return (CGLGraphicsConfig)layer.getGraphicsConfiguration();
-    }
-
-    public void validate() {
-        // Overridden in CGLWindowSurfaceData below
+        return new CGLOffScreenSurfaceData(gc, width, height, image, cm, type);
     }
 
     @Override
@@ -156,55 +96,12 @@ public abstract class CGLSurfaceData extends OGLSurfaceData {
         return scale;
     }
 
-    protected native void clearWindow();
-
-    public static class CGLWindowSurfaceData extends CGLSurfaceData {
-
-        public CGLWindowSurfaceData(CPlatformView pView,
-                CGLGraphicsConfig gc) {
-            super(pView, gc, gc.getColorModel(), WINDOW, 0, 0);
-        }
-
-        @Override
-        public SurfaceData getReplacement() {
-            return pView.getSurfaceData();
-        }
-
-        @Override
-        public Rectangle getBounds() {
-            Rectangle r = pView.getBounds();
-            return new Rectangle(0, 0, r.width, r.height);
-        }
-
-        /**
-         * Returns destination Component associated with this SurfaceData.
-         */
-        @Override
-        public Object getDestination() {
-            return pView.getDestination();
-        }
-
-        public void validate() {
-            OGLRenderQueue rq = OGLRenderQueue.getInstance();
-            rq.lock();
-            try {
-                rq.flushAndInvokeNow(new Runnable() {
-                    public void run() {
-                        Rectangle peerBounds = pView.getBounds();
-                        validate(0, 0, peerBounds.width, peerBounds.height, pView.isOpaque());
-                    }
-                });
-            } finally {
-                rq.unlock();
-            }
-        }
-
-        @Override
-        public void invalidate() {
-            super.invalidate();
-            clearWindow();
-        }
+    @Override
+    public Rectangle getBounds() {
+        return new Rectangle(width, height);
     }
+
+    protected native void clearWindow();
 
     /**
      * A surface which implements an intermediate buffer between
@@ -215,10 +112,10 @@ public abstract class CGLSurfaceData extends OGLSurfaceData {
      */
     public static class CGLLayerSurfaceData extends CGLSurfaceData {
 
-        private CGLLayer layer;
+        private final CGLLayer layer;
 
-        public CGLLayerSurfaceData(CGLLayer layer, CGLGraphicsConfig gc,
-                                   int width, int height) {
+        private CGLLayerSurfaceData(CGLLayer layer, CGLGraphicsConfig gc,
+                                    int width, int height) {
             super(layer, gc, gc.getColorModel(), FBOBJECT, width, height);
             this.layer = layer;
             initSurface(this.width, this.height);
@@ -232,11 +129,6 @@ public abstract class CGLSurfaceData extends OGLSurfaceData {
         @Override
         boolean isOnScreen() {
             return true;
-        }
-
-        @Override
-        public Rectangle getBounds() {
-            return new Rectangle(width, height);
         }
 
         @Override
@@ -256,13 +148,18 @@ public abstract class CGLSurfaceData extends OGLSurfaceData {
         }
     }
 
+    /**
+     * SurfaceData object representing an off-screen buffer (either a FBO or
+     * Texture).
+     */
     public static class CGLOffScreenSurfaceData extends CGLSurfaceData {
-        private Image offscreenImage;
 
-        public CGLOffScreenSurfaceData(CPlatformView pView,
-                                       CGLGraphicsConfig gc, int width, int height, Image image,
-                                       ColorModel cm, int type) {
-            super(pView, gc, cm, type, width, height);
+        private final Image offscreenImage;
+
+        private CGLOffScreenSurfaceData(CGLGraphicsConfig gc, int width,
+                                        int height, Image image,
+                                        ColorModel cm, int type) {
+            super(null, gc, cm, type, width, height);
             offscreenImage = image;
             initSurface(this.width, this.height);
         }
@@ -270,11 +167,6 @@ public abstract class CGLSurfaceData extends OGLSurfaceData {
         @Override
         public SurfaceData getReplacement() {
             return restoreContents(offscreenImage);
-        }
-
-        @Override
-        public Rectangle getBounds() {
-            return new Rectangle(width, height);
         }
 
         /**
