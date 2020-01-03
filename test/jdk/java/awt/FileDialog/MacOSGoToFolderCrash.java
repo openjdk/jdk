@@ -45,7 +45,7 @@ public final class MacOSGoToFolderCrash {
         Robot robot = new Robot();
         robot.setAutoDelay(400);
         robot.waitForIdle();
-        // "⌘+Shift+G" – Open "Go To Folder" window
+        // "CMD+Shift+G" - Open "Go To Folder" window
         robot.keyPress(KeyEvent.VK_META);
         robot.keyPress(KeyEvent.VK_SHIFT);
         robot.keyPress(KeyEvent.VK_G);
