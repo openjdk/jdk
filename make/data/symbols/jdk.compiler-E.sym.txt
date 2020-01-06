@@ -59,6 +59,7 @@ class name com/sun/source/tree/Tree$Kind
 -field name YIELD descriptor Lcom/sun/source/tree/Tree$Kind;
 field name BINDING_PATTERN descriptor Lcom/sun/source/tree/Tree$Kind; flags 4019
 field name SWITCH_EXPRESSION descriptor Lcom/sun/source/tree/Tree$Kind; flags 4019
+field name RECORD descriptor Lcom/sun/source/tree/Tree$Kind; flags 4019 classAnnotations @Ljdk/internal/PreviewFeature;(feature=eLjdk/internal/PreviewFeature$Feature;RECORDS;,essentialAPI=Zfalse)
 field name YIELD descriptor Lcom/sun/source/tree/Tree$Kind; flags 4019
 
 class name com/sun/source/tree/TreeVisitor
@@ -70,6 +71,9 @@ method name visitYield descriptor (Lcom/sun/source/tree/YieldTree;Ljava/lang/Obj
 
 class name com/sun/source/tree/YieldTree
 header extends java/lang/Object implements com/sun/source/tree/StatementTree flags 601
+
+class name com/sun/source/util/Plugin
+method name autoStart descriptor ()Z flags 1
 
 class name com/sun/source/util/SimpleTreeVisitor
 -method name visitSwitchExpression descriptor (Lcom/sun/source/tree/SwitchExpressionTree;Ljava/lang/Object;)Ljava/lang/Object;
