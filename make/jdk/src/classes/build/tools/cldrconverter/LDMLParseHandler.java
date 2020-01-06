@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -644,19 +644,13 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
             }
             break;
         case "decimal":
-            // for FormatData
-            // copy string for later assembly into NumberElements
-            if (currentContainer.getqName().equals("symbols")) {
-                pushStringEntry(qName, attributes, currentNumberingSystem + "NumberElements/decimal");
-            } else {
-                pushIgnoredContainer(qName);
-            }
-            break;
         case "group":
+        case "currencyDecimal":
+        case "currencyGroup":
             // for FormatData
             // copy string for later assembly into NumberElements
             if (currentContainer.getqName().equals("symbols")) {
-                pushStringEntry(qName, attributes, currentNumberingSystem + "NumberElements/group");
+                pushStringEntry(qName, attributes, currentNumberingSystem + "NumberElements/" + qName);
             } else {
                 pushIgnoredContainer(qName);
             }

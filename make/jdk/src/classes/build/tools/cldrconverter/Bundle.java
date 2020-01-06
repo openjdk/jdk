@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,7 +72,9 @@ class Bundle {
         "NumberElements/exponential",
         "NumberElements/permille",
         "NumberElements/infinity",
-        "NumberElements/nan"
+        "NumberElements/nan",
+        "NumberElements/currencyDecimal",
+        "NumberElements/currencyGroup",
     };
 
     private final static String[] TIME_PATTERN_KEYS = {
@@ -810,7 +812,10 @@ class Bundle {
                         assert keys == NUMBER_ELEMENT_KEYS;
                         if (key.endsWith("/pattern")) {
                             numArray[idx] = "#";
-                        } else {
+                        } else if (!key.endsWith("currencyDecimal") &&
+                                   !key.endsWith("currencyGroup")) {
+                            // throw error unless it is for "currencyDecimal/Group",
+                            // which may be missing.
                             throw new InternalError("NumberElements: null for " +
                                                     key + ", id: " + id);
                         }
