@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,11 +39,7 @@ import java.util.Locale;
 import javax.net.ssl.SSLProtocolException;
 import sun.security.provider.certpath.OCSPResponse;
 import sun.security.provider.certpath.ResponderId;
-import static sun.security.ssl.SSLExtension.CH_STATUS_REQUEST;
-import static sun.security.ssl.SSLExtension.CH_STATUS_REQUEST_V2;
 import sun.security.ssl.SSLExtension.ExtensionConsumer;
-import static sun.security.ssl.SSLExtension.SH_STATUS_REQUEST;
-import static sun.security.ssl.SSLExtension.SH_STATUS_REQUEST_V2;
 import sun.security.ssl.SSLExtension.SSLExtensionSpec;
 import sun.security.ssl.SSLHandshake.HandshakeMessage;
 import sun.security.util.DerInputStream;
@@ -434,8 +430,9 @@ final class CertStatusExtension {
                     } else {
                         extBuilder.append(",\n");
                     }
-                    extBuilder.append(
-                            "{\n" + Utilities.indent(ext.toString()) + "}");
+                    extBuilder.append("{\n").
+                            append(Utilities.indent(ext.toString())).
+                            append("}");
                 }
 
                 extsStr = extBuilder.toString();
@@ -552,11 +549,11 @@ final class CertStatusExtension {
                 return null;
             }
 
-            if (!chc.sslConfig.isAvailable(CH_STATUS_REQUEST)) {
+            if (!chc.sslConfig.isAvailable(SSLExtension.CH_STATUS_REQUEST)) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine(
                         "Ignore unavailable extension: " +
-                        CH_STATUS_REQUEST.name);
+                        SSLExtension.CH_STATUS_REQUEST.name);
                 }
                 return null;
             }
@@ -568,8 +565,8 @@ final class CertStatusExtension {
             byte[] extData = new byte[] {0x01, 0x00, 0x00, 0x00, 0x00};
 
             // Update the context.
-            chc.handshakeExtensions.put(
-                    CH_STATUS_REQUEST, CertStatusRequestSpec.DEFAULT);
+            chc.handshakeExtensions.put(SSLExtension.CH_STATUS_REQUEST,
+                    CertStatusRequestSpec.DEFAULT);
 
             return extData;
         }
@@ -593,10 +590,10 @@ final class CertStatusExtension {
             // The consuming happens in server side only.
             ServerHandshakeContext shc = (ServerHandshakeContext)context;
 
-            if (!shc.sslConfig.isAvailable(CH_STATUS_REQUEST)) {
+            if (!shc.sslConfig.isAvailable(SSLExtension.CH_STATUS_REQUEST)) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine("Ignore unavailable extension: " +
-                        CH_STATUS_REQUEST.name);
+                        SSLExtension.CH_STATUS_REQUEST.name);
                 }
                 return;     // ignore the extension
             }
@@ -610,7 +607,7 @@ final class CertStatusExtension {
             }
 
             // Update the context.
-            shc.handshakeExtensions.put(CH_STATUS_REQUEST, spec);
+            shc.handshakeExtensions.put(SSLExtension.CH_STATUS_REQUEST, spec);
             if (!shc.isResumption &&
                     !shc.negotiatedProtocol.useTLS13PlusSpec()) {
                 shc.handshakeProducers.put(SSLHandshake.CERTIFICATE_STATUS.id,
@@ -654,13 +651,12 @@ final class CertStatusExtension {
 
             // In response to "status_request" extension request only.
             CertStatusRequestSpec spec = (CertStatusRequestSpec)
-                    shc.handshakeExtensions.get(CH_STATUS_REQUEST);
+                    shc.handshakeExtensions.get(SSLExtension.CH_STATUS_REQUEST);
             if (spec == null) {
                 // Ignore, no status_request extension requested.
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
-                    SSLLogger.finest(
-                        "Ignore unavailable extension: " +
-                        CH_STATUS_REQUEST.name);
+                    SSLLogger.finest("Ignore unavailable extension: " +
+                        SSLExtension.CH_STATUS_REQUEST.name);
                 }
 
                 return null;        // ignore the extension
@@ -681,8 +677,8 @@ final class CertStatusExtension {
             byte[] extData = new byte[0];
 
             // Update the context.
-            shc.handshakeExtensions.put(
-                    SH_STATUS_REQUEST, CertStatusRequestSpec.DEFAULT);
+            shc.handshakeExtensions.put(SSLExtension.SH_STATUS_REQUEST,
+                    CertStatusRequestSpec.DEFAULT);
 
             return extData;
         }
@@ -708,7 +704,7 @@ final class CertStatusExtension {
 
             // In response to "status_request" extension request only.
             CertStatusRequestSpec requestedCsr = (CertStatusRequestSpec)
-                    chc.handshakeExtensions.get(CH_STATUS_REQUEST);
+                    chc.handshakeExtensions.get(SSLExtension.CH_STATUS_REQUEST);
             if (requestedCsr == null) {
                 throw chc.conContext.fatal(Alert.UNEXPECTED_MESSAGE,
                     "Unexpected status_request extension in ServerHello");
@@ -722,8 +718,8 @@ final class CertStatusExtension {
             }
 
             // Update the context.
-            chc.handshakeExtensions.put(
-                    SH_STATUS_REQUEST, CertStatusRequestSpec.DEFAULT);
+            chc.handshakeExtensions.put(SSLExtension.SH_STATUS_REQUEST,
+                    CertStatusRequestSpec.DEFAULT);
 
             // Since we've received a legitimate status_request in the
             // ServerHello, stapling is active if it's been enabled.
@@ -909,7 +905,7 @@ final class CertStatusExtension {
                 return null;
             }
 
-            if (!chc.sslConfig.isAvailable(CH_STATUS_REQUEST_V2)) {
+            if (!chc.sslConfig.isAvailable(SSLExtension.CH_STATUS_REQUEST_V2)) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.finest(
                         "Ignore unavailable status_request_v2 extension");
@@ -926,8 +922,8 @@ final class CertStatusExtension {
                 0x00, 0x07, 0x02, 0x00, 0x04, 0x00, 0x00, 0x00, 0x00};
 
             // Update the context.
-            chc.handshakeExtensions.put(
-                    CH_STATUS_REQUEST_V2, CertStatusRequestV2Spec.DEFAULT);
+            chc.handshakeExtensions.put(SSLExtension.CH_STATUS_REQUEST_V2,
+                    CertStatusRequestV2Spec.DEFAULT);
 
             return extData;
         }
@@ -951,7 +947,7 @@ final class CertStatusExtension {
             // The consuming happens in server side only.
             ServerHandshakeContext shc = (ServerHandshakeContext)context;
 
-            if (!shc.sslConfig.isAvailable(CH_STATUS_REQUEST_V2)) {
+            if (!shc.sslConfig.isAvailable(SSLExtension.CH_STATUS_REQUEST_V2)) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.finest(
                         "Ignore unavailable status_request_v2 extension");
@@ -969,7 +965,8 @@ final class CertStatusExtension {
             }
 
             // Update the context.
-            shc.handshakeExtensions.put(CH_STATUS_REQUEST_V2, spec);
+            shc.handshakeExtensions.put(SSLExtension.CH_STATUS_REQUEST_V2,
+                    spec);
             if (!shc.isResumption) {
                 shc.handshakeProducers.putIfAbsent(
                         SSLHandshake.CERTIFICATE_STATUS.id,
@@ -1013,7 +1010,7 @@ final class CertStatusExtension {
 
             // In response to "status_request_v2" extension request only
             CertStatusRequestV2Spec spec = (CertStatusRequestV2Spec)
-                    shc.handshakeExtensions.get(CH_STATUS_REQUEST_V2);
+                shc.handshakeExtensions.get(SSLExtension.CH_STATUS_REQUEST_V2);
             if (spec == null) {
                 // Ignore, no status_request_v2 extension requested.
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
@@ -1038,8 +1035,8 @@ final class CertStatusExtension {
             byte[] extData = new byte[0];
 
             // Update the context.
-            shc.handshakeExtensions.put(
-                    SH_STATUS_REQUEST_V2, CertStatusRequestV2Spec.DEFAULT);
+            shc.handshakeExtensions.put(SSLExtension.SH_STATUS_REQUEST_V2,
+                    CertStatusRequestV2Spec.DEFAULT);
 
             return extData;
         }
@@ -1065,7 +1062,7 @@ final class CertStatusExtension {
 
             // In response to "status_request" extension request only
             CertStatusRequestV2Spec requestedCsr = (CertStatusRequestV2Spec)
-                    chc.handshakeExtensions.get(CH_STATUS_REQUEST_V2);
+                chc.handshakeExtensions.get(SSLExtension.CH_STATUS_REQUEST_V2);
             if (requestedCsr == null) {
                 throw chc.conContext.fatal(Alert.UNEXPECTED_MESSAGE,
                     "Unexpected status_request_v2 extension in ServerHello");
@@ -1079,8 +1076,8 @@ final class CertStatusExtension {
             }
 
             // Update the context.
-            chc.handshakeExtensions.put(
-                    SH_STATUS_REQUEST_V2, CertStatusRequestV2Spec.DEFAULT);
+            chc.handshakeExtensions.put(SSLExtension.SH_STATUS_REQUEST_V2,
+                    CertStatusRequestV2Spec.DEFAULT);
 
             // Since we've received a legitimate status_request in the
             // ServerHello, stapling is active if it's been enabled.  If it

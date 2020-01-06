@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,11 +86,14 @@ final class SSLExtensions {
                                 "Received buggy supported_groups extension " +
                                 "in the ServerHello handshake message");
                     }
-                } else {
+                } else if (handshakeType == SSLHandshake.SERVER_HELLO) {
                     throw hm.handshakeContext.conContext.fatal(
-                        Alert.UNSUPPORTED_EXTENSION,
-                        "extension (" + extId +
-                        ") should not be presented in " + handshakeType.name);
+                            Alert.UNSUPPORTED_EXTENSION, "extension (" +
+                                    extId + ") should not be presented in " +
+                                    handshakeType.name);
+                } else {
+                    isSupported = false;
+                    // debug log to ignore unknown extension for handshakeType
                 }
             }
 
@@ -365,9 +368,10 @@ final class SSLExtensions {
     }
 
     private static String toString(int extId, byte[] extData) {
+        String extName = SSLExtension.nameOf(extId);
         MessageFormat messageFormat = new MessageFormat(
-            "\"unknown extension ({0})\": '{'\n" +
-            "{1}\n" +
+            "\"{0} ({1})\": '{'\n" +
+            "{2}\n" +
             "'}'",
             Locale.ENGLISH);
 
@@ -375,6 +379,7 @@ final class SSLExtensions {
         String encoded = hexEncoder.encodeBuffer(extData);
 
         Object[] messageFields = {
+            extName,
             extId,
             Utilities.indent(encoded)
         };
