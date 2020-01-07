@@ -104,7 +104,7 @@ void CompilationPolicy::compile_if_required(const methodHandle& selected_method,
       return;
     }
     CompileBroker::compile_method(selected_method, InvocationEntryBci,
-        CompilationPolicy::policy()->initial_compile_level(),
+        CompilationPolicy::policy()->initial_compile_level(selected_method),
         methodHandle(), 0, CompileTask::Reason_MustBeCompiled, CHECK);
   }
 }
