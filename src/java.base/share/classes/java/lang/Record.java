@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,8 +97,8 @@ public abstract class Record {
 
     /**
      * Indicates whether some other object is "equal to" this one.  In addition
-     * to the general contract of {@link Object#equals(Object)},
-     * record classes must further participate in the invariant that when
+     * to the general contract of {@link Object#equals(Object) Object.equals},
+     * record classes must further obey the invariant that when
      * a record instance is "copied" by passing the result of the record component
      * accessor methods to the canonical constructor, as follows:
      * <pre>
@@ -107,17 +107,38 @@ public abstract class Record {
      * then it must be the case that {@code r.equals(copy)}.
      *
      * @implSpec
-     * The implicitly provided implementation returns {@code true} if and
-     * only if the argument is an instance of the same record type as this object,
-     * and each component of this record is equal to the corresponding component
-     * of the argument, according to {@link java.util.Objects#equals(Object,Object)}
-     * for components whose types are reference types, and according to the semantics
-     * of the {@code equals} method on the corresponding primitive wrapper type.
+     * The implicitly provided implementation returns {@code true} if
+     * and only if the argument is an instance of the same record type
+     * as this object, and each component of this record is equal to
+     * the corresponding component of the argument; otherwise, {@code
+     * false} is returned. Equality of a component {@code c} is
+     * determined as follows:
+     * <ul>
+     *
+     * <li> If the component is of a reference type, the component is
+     * considered equal if and only if {@link
+     * java.util.Objects#equals(Object,Object)
+     * Objects.equals(this.c(), r.c()} would return {@code true}.
+     *
+     * <li> If the component is of a primitive type, using the
+     * corresponding primitive wrapper class {@code PW} (the
+     * corresponding wrapper class for {@code int} is {@code
+     * java.lang.Integer}, and so on), the component is considered
+     * equal if and only if {@code
+     * PW.valueOf(this.c()).equals(PW.valueOf(r.c()))} would return
+     * {@code true}.
+     *
+     * </ul>
+     *
+     * The implicitly provided implementation conforms to the
+     * semantics described above; the implementation may or may not
+     * accomplish this by using calls to the particular methods
+     * listed.
      *
      * @see java.util.Objects#equals(Object,Object)
      *
      * @param   obj   the reference object with which to compare.
-     * @return  {@code true} if this object is the same as the obj
+     * @return  {@code true} if this object is equal to the
      *          argument; {@code false} otherwise.
      */
     @Override
