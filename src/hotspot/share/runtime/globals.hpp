@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -777,16 +777,6 @@ const size_t minimumSymbolTableSize = 1024;
                                                                             \
   product(bool, UseXMMForArrayCopy, false,                                  \
           "Use SSE2 MOVQ instruction for Arraycopy")                        \
-                                                                            \
-  product(intx, FieldsAllocationStyle, 1,                                   \
-          "(Deprecated) 0 - type based with oops first, "                   \
-          "1 - with oops last, "                                            \
-          "2 - oops in super and sub classes are together")                 \
-          range(0, 2)                                                       \
-                                                                            \
-  product(bool, CompactFields, true,                                        \
-          "(Deprecated) Allocate nonstatic fields in gaps "                 \
-          "between previous fields")                                        \
                                                                             \
   notproduct(bool, PrintFieldLayout, false,                                 \
           "Print field layout for each class")                              \
