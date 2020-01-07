@@ -173,7 +173,6 @@ public:
   void work(uint worker_id) {
     ShenandoahParallelWorkerSession worker_session(worker_id);
 
-    ShenandoahEvacOOMScope oom_evac_scope;
     ShenandoahObjToScanQueueSet* queues = _heap->traversal_gc()->task_queues();
     ShenandoahObjToScanQueue* q = queues->queue(worker_id);
 
@@ -214,7 +213,6 @@ public:
   void work(uint worker_id) {
     ShenandoahConcurrentWorkerSession worker_session(worker_id);
     ShenandoahSuspendibleThreadSetJoiner stsj(ShenandoahSuspendibleWorkers);
-    ShenandoahEvacOOMScope oom_evac_scope;
     ShenandoahTraversalGC* traversal_gc = _heap->traversal_gc();
 
     // Drain all outstanding work in queues.
@@ -237,7 +235,6 @@ public:
   void work(uint worker_id) {
     ShenandoahParallelWorkerSession worker_session(worker_id);
 
-    ShenandoahEvacOOMScope oom_evac_scope;
     ShenandoahTraversalGC* traversal_gc = _heap->traversal_gc();
 
     ShenandoahObjToScanQueueSet* queues = traversal_gc->task_queues();
@@ -542,7 +539,6 @@ void ShenandoahTraversalGC::main_loop_work(T* cl, jushort* live_data, uint worke
 
     if (work == 0) {
       // No more work, try to terminate
-      ShenandoahEvacOOMScopeLeaver oom_scope_leaver;
       ShenandoahSuspendibleThreadSetLeaver stsl(sts_yield && ShenandoahSuspendibleWorkers);
       ShenandoahTerminationTimingsTracker term_tracker(worker_id);
       ShenandoahTerminatorTerminator tt(_heap);
@@ -811,7 +807,6 @@ private:
 
   template <class T>
   inline void do_oop_work(T* p) {
-    ShenandoahEvacOOMScope evac_scope;
     _traversal_gc->process_oop<T, false /* string dedup */, false /* degen */, true /* atomic update */>(p, _thread, _queue, _mark_context);
   }
 
@@ -834,7 +829,6 @@ private:
 
   template <class T>
   inline void do_oop_work(T* p) {
-    ShenandoahEvacOOMScope evac_scope;
     _traversal_gc->process_oop<T, false /* string dedup */, true /* degen */, false /* atomic update */>(p, _thread, _queue, _mark_context);
   }
 
@@ -861,7 +855,6 @@ public:
     assert(worker_id == 0, "The code below is single-threaded, only one worker is expected");
     ShenandoahParallelWorkerSession worker_session(worker_id);
     ShenandoahSuspendibleThreadSetJoiner stsj(ShenandoahSuspendibleWorkers);
-    ShenandoahEvacOOMScope oom_evac_scope;
 
     ShenandoahHeap* sh = ShenandoahHeap::heap();
 
@@ -968,7 +961,6 @@ public:
     assert(sh->process_references(), "why else would we be here?");
     shenandoah_assert_rp_isalive_installed();
 
-    ShenandoahEvacOOMScope evac_scope;
     traversal_gc->main_loop(_worker_id, _terminator, false);
 
     if (_reset_terminator) {
@@ -1010,7 +1002,6 @@ public:
   }
 
   void work(uint worker_id) {
-    ShenandoahEvacOOMScope oom_evac_scope;
     assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "Must be at a safepoint");
     ShenandoahHeap* heap = ShenandoahHeap::heap();
     ShenandoahTraversalDrainMarkingStackClosure complete_gc(worker_id, _terminator);

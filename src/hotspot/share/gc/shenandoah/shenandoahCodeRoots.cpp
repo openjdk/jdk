@@ -215,7 +215,6 @@ public:
 
     if (nm->is_unloading()) {
       ShenandoahReentrantLocker locker(nm_data->lock());
-      ShenandoahEvacOOMScope evac_scope;
       unlink(nm);
       return;
     }
@@ -223,7 +222,6 @@ public:
     ShenandoahReentrantLocker locker(nm_data->lock());
 
     // Heal oops and disarm
-    ShenandoahEvacOOMScope evac_scope;
     if (_heap->is_evacuation_in_progress()) {
       ShenandoahNMethod::heal_nmethod(nm);
     }
