@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,6 +52,7 @@ class VM_G1TryInitiateConcMark : public VM_GC_Operation {
   double _target_pause_time_ms;
   bool _transient_failure;
   bool _cycle_already_in_progress;
+  bool _terminating;
   bool _gc_succeeded;
 
 public:
@@ -63,6 +64,7 @@ public:
   virtual void doit();
   bool transient_failure() const { return _transient_failure; }
   bool cycle_already_in_progress() const { return _cycle_already_in_progress; }
+  bool terminating() const { return _terminating; }
   bool gc_succeeded() const { return _gc_succeeded; }
 };
 
