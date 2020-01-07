@@ -91,6 +91,11 @@ package java.lang;
                              essentialAPI=true)
 public abstract class Record {
     /**
+     * Constructor for record classes to call.
+     */
+    protected Record() {}
+
+    /**
      * Indicates whether some other object is "equal to" this one.  In addition
      * to the general contract of {@link Object#equals(Object)},
      * record classes must further participate in the invariant that when
