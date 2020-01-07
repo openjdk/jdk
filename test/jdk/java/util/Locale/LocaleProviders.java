@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -338,9 +338,12 @@ public class LocaleProviders {
         var nfExpectedList = List.of("123", "123.4");
         var ifExpectedList = List.of("123", "123");
 
+        var defLoc = Locale.getDefault(Locale.Category.FORMAT);
         var type = LocaleProviderAdapter.getAdapter(CalendarNameProvider.class, Locale.US)
                                         .getAdapterType();
-        if (type == LocaleProviderAdapter.Type.HOST && (IS_WINDOWS || IS_MAC)) {
+        if (defLoc.equals(Locale.US) &&
+            type == LocaleProviderAdapter.Type.HOST &&
+            (IS_WINDOWS || IS_MAC)) {
             final var numf = NumberFormat.getNumberInstance(Locale.US);
             final var intf = NumberFormat.getIntegerInstance(Locale.US);
 
@@ -366,6 +369,7 @@ public class LocaleProviders {
             System.out.println("bug8232860Test succeeded.");
         } else {
             System.out.println("Test ignored. Either :-\n" +
+                "Default format locale is not Locale.US: " + defLoc + ", or\n" +
                 "OS is neither macOS/Windows, or\n" +
                 "provider is not HOST: " + type);
         }
