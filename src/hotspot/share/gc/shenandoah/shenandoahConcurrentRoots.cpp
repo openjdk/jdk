@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2019, 2020, Red Hat, Inc. All rights reserved.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
@@ -47,6 +47,8 @@ bool ShenandoahConcurrentRoots::can_do_concurrent_class_unloading() {
 }
 
 bool ShenandoahConcurrentRoots::should_do_concurrent_class_unloading() {
+  ShenandoahHeap* const heap = ShenandoahHeap::heap();
   return can_do_concurrent_class_unloading() &&
-         !ShenandoahHeap::heap()->is_stw_gc_in_progress();
+         heap->unload_classes() &&
+         !heap->is_stw_gc_in_progress();
 }
