@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2225,7 +2225,7 @@ void LIRGenerator::do_SwitchRanges(SwitchRangeArray* x, LIR_Opr value, BlockBegi
   int lng = x->length();
 
   for (int i = 0; i < lng; i++) {
-    SwitchRange* one_range = x->at(i);
+    C1SwitchRange* one_range = x->at(i);
     int low_key = one_range->low_key();
     int high_key = one_range->high_key();
     BlockBegin* dest = one_range->sux();
@@ -2257,7 +2257,7 @@ SwitchRangeArray* LIRGenerator::create_lookup_ranges(TableSwitch* x) {
     BlockBegin* sux = x->sux_at(0);
     int key = x->lo_key();
     BlockBegin* default_sux = x->default_sux();
-    SwitchRange* range = new SwitchRange(key, sux);
+    C1SwitchRange* range = new C1SwitchRange(key, sux);
     for (int i = 0; i < len; i++, key++) {
       BlockBegin* new_sux = x->sux_at(i);
       if (sux == new_sux) {
@@ -2268,7 +2268,7 @@ SwitchRangeArray* LIRGenerator::create_lookup_ranges(TableSwitch* x) {
         if (sux != default_sux) {
           res->append(range);
         }
-        range = new SwitchRange(key, new_sux);
+        range = new C1SwitchRange(key, new_sux);
       }
       sux = new_sux;
     }
@@ -2286,7 +2286,7 @@ SwitchRangeArray* LIRGenerator::create_lookup_ranges(LookupSwitch* x) {
     BlockBegin* default_sux = x->default_sux();
     int key = x->key_at(0);
     BlockBegin* sux = x->sux_at(0);
-    SwitchRange* range = new SwitchRange(key, sux);
+    C1SwitchRange* range = new C1SwitchRange(key, sux);
     for (int i = 1; i < len; i++) {
       int new_key = x->key_at(i);
       BlockBegin* new_sux = x->sux_at(i);
@@ -2298,7 +2298,7 @@ SwitchRangeArray* LIRGenerator::create_lookup_ranges(LookupSwitch* x) {
         if (range->sux() != default_sux) {
           res->append(range);
         }
-        range = new SwitchRange(new_key, new_sux);
+        range = new C1SwitchRange(new_key, new_sux);
       }
       key = new_key;
       sux = new_sux;
