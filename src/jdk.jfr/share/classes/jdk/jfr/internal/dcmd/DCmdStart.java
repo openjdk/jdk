@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,7 @@ import jdk.jfr.internal.LogLevel;
 import jdk.jfr.internal.LogTag;
 import jdk.jfr.internal.Logger;
 import jdk.jfr.internal.OldObjectSample;
+import jdk.jfr.internal.PlatformRecording;
 import jdk.jfr.internal.PrivateAccess;
 import jdk.jfr.internal.SecuritySupport.SafePath;
 import jdk.jfr.internal.Type;
@@ -186,7 +187,8 @@ final class DCmdStart extends AbstractDCmd {
         }
 
         if (flush != null) {
-            recording.setFlushInterval(Duration.ofNanos(flush));
+            PlatformRecording p = PrivateAccess.getInstance().getPlatformRecording(recording);
+            p.setFlushInterval(Duration.ofNanos(flush));
         }
 
         if (maxSize != null) {
