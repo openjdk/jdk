@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2018 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -38,8 +38,7 @@
                          diagnostic_pd, \
                          notproduct, \
                          range, \
-                         constraint, \
-                         writeable) \
+                         constraint) \
                                                                                     \
   /* Whether to allow the VM to run if EXTSHM=ON. EXTSHM is an environment */       \
   /* variable used on AIX to activate certain hacks which allow more shm segments */\

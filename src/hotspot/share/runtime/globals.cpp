@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,6 @@
 #include "runtime/globals_extension.hpp"
 #include "runtime/globals_shared.hpp"
 #include "runtime/flags/jvmFlagConstraintList.hpp"
-#include "runtime/flags/jvmFlagWriteableList.hpp"
 #include "runtime/os.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/defaultStream.hpp"
@@ -76,5 +75,4 @@ ALL_FLAGS(MATERIALIZE_DEVELOPER_FLAG,     \
           MATERIALIZE_PRODUCT_RW_FLAG,    \
           MATERIALIZE_LP64_PRODUCT_FLAG,  \
           IGNORE_RANGE,                   \
-          IGNORE_CONSTRAINT,              \
-          IGNORE_WRITEABLE)
+          IGNORE_CONSTRAINT)

@@ -104,17 +104,6 @@
 //
 // constraint is a macro that will expand to custom function call
 //    for constraint checking if provided - see jvmFlagConstraintList.hpp
-//
-// writeable is a macro that controls if and how the value can change during the runtime
-//
-// writeable(Always) is optional and allows the flag to have its value changed
-//    without any limitations at any time
-//
-// writeable(Once) flag value's can be only set once during the lifetime of VM
-//
-// writeable(CommandLineOnly) flag value's can be only set from command line
-//    (multiple times allowed)
-//
 
 // Default and minimum StringTable and SymbolTable size values
 // Must be powers of 2
@@ -135,8 +124,7 @@ const size_t minimumSymbolTableSize = 1024;
                       product_rw, \
                       lp64_product, \
                       range, \
-                      constraint, \
-                      writeable) \
+                      constraint) \
                                                                             \
   lp64_product(bool, UseCompressedOops, false,                              \
           "Use 32-bit object references in 64-bit VM. "                     \
@@ -2538,7 +2526,6 @@ ALL_FLAGS(DECLARE_DEVELOPER_FLAG,     \
           DECLARE_PRODUCT_RW_FLAG,    \
           DECLARE_LP64_PRODUCT_FLAG,  \
           IGNORE_RANGE,               \
-          IGNORE_CONSTRAINT,          \
-          IGNORE_WRITEABLE)
+          IGNORE_CONSTRAINT)
 
 #endif // SHARE_RUNTIME_GLOBALS_HPP

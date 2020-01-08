@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2018 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -82,8 +82,7 @@ define_pd_global(intx, InitArrayShortSize, 1*BytesPerLong);
                    experimental, \
                    notproduct,   \
                    range,        \
-                   constraint,   \
-                   writeable)    \
+                   constraint)   \
                                                                               \
   /* Reoptimize code-sequences of calls at runtime, e.g. replace an */        \
   /* indirect call by a direct call.                                */        \

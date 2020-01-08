@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,8 +63,7 @@ typedef enum {
             FLAG_MEMBER_ENUM_PRODUCT_RW,
             FLAG_MEMBER_ENUM_LP64_PRODUCT,
             IGNORE_RANGE,
-            IGNORE_CONSTRAINT,
-            IGNORE_WRITEABLE)
+            IGNORE_CONSTRAINT)
   NUM_JVMFlagsEnum
 } JVMFlagsEnum;
 
@@ -128,8 +127,7 @@ ALL_FLAGS(FLAG_MEMBER_SET_DEVELOP,
           FLAG_MEMBER_SET_PRODUCT_RW,
           FLAG_MEMBER_SET_LP64_PRODUCT,
           IGNORE_RANGE,
-          IGNORE_CONSTRAINT,
-          IGNORE_WRITEABLE)
+          IGNORE_CONSTRAINT)
 
 #define FLAG_IS_DEFAULT(name)         (JVMFlagEx::is_default(FLAG_MEMBER_ENUM(name)))
 #define FLAG_IS_ERGO(name)            (JVMFlagEx::is_ergo(FLAG_MEMBER_ENUM(name)))

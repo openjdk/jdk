@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,8 +58,7 @@
                  product_rw,                                                \
                  lp64_product,                                              \
                  range,                                                     \
-                 constraint,                                                \
-                 writeable)                                                 \
+                 constraint)                                                \
                                                                             \
   EPSILONGC_ONLY(GC_EPSILON_FLAGS(                                          \
     develop,                                                                \
@@ -74,8 +73,7 @@
     product_rw,                                                             \
     lp64_product,                                                           \
     range,                                                                  \
-    constraint,                                                             \
-    writeable))                                                             \
+    constraint))                                                            \
                                                                             \
   G1GC_ONLY(GC_G1_FLAGS(                                                    \
     develop,                                                                \
@@ -90,8 +88,7 @@
     product_rw,                                                             \
     lp64_product,                                                           \
     range,                                                                  \
-    constraint,                                                             \
-    writeable))                                                             \
+    constraint))                                                            \
                                                                             \
   PARALLELGC_ONLY(GC_PARALLEL_FLAGS(                                        \
     develop,                                                                \
@@ -106,8 +103,7 @@
     product_rw,                                                             \
     lp64_product,                                                           \
     range,                                                                  \
-    constraint,                                                             \
-    writeable))                                                             \
+    constraint))                                                            \
                                                                             \
   SERIALGC_ONLY(GC_SERIAL_FLAGS(                                            \
     develop,                                                                \
@@ -122,8 +118,7 @@
     product_rw,                                                             \
     lp64_product,                                                           \
     range,                                                                  \
-    constraint,                                                             \
-    writeable))                                                             \
+    constraint))                                                            \
                                                                             \
   SHENANDOAHGC_ONLY(GC_SHENANDOAH_FLAGS(                                    \
     develop,                                                                \
@@ -138,8 +133,7 @@
     product_rw,                                                             \
     lp64_product,                                                           \
     range,                                                                  \
-    constraint,                                                             \
-    writeable))                                                             \
+    constraint))                                                            \
                                                                             \
   ZGC_ONLY(GC_Z_FLAGS(                                                      \
     develop,                                                                \
@@ -154,8 +148,7 @@
     product_rw,                                                             \
     lp64_product,                                                           \
     range,                                                                  \
-    constraint,                                                             \
-    writeable))                                                             \
+    constraint))                                                            \
                                                                             \
   /* gc */                                                                  \
                                                                             \
