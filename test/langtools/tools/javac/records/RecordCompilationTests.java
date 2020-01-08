@@ -406,6 +406,18 @@ public class RecordCompilationTests extends CompilationTestCase {
         // x is not DA nor DU in the body of the constructor hence error
         assertFail("compiler.err.var.might.not.have.been.initialized", "record R(int x) { # }",
                 "public R { if (x < 0) { this.x = -x; } }");
+
+        // if static fields are not DA then error
+        assertFail("compiler.err.var.might.not.have.been.initialized",
+                "record R() { # }", "static final String x;");
+
+        // ditto
+        assertFail("compiler.err.var.might.not.have.been.initialized",
+                "record R() { # }", "static final String x; public R {}");
+
+        // ditto
+        assertFail("compiler.err.var.might.not.have.been.initialized",
+                "record R(int i) { # }", "static final String x; public R {}");
     }
 
     public void testReturnInCanonical_Compact() {
