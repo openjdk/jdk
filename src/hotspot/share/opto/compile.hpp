@@ -512,6 +512,8 @@ class Compile : public Phase {
     PrintInliningBuffer()
       : _cg(NULL) { _ss = new stringStream(); }
 
+    void freeStream() { _ss->~stringStream(); _ss = NULL; }
+
     stringStream* ss() const { return _ss; }
     CallGenerator* cg() const { return _cg; }
     void set_cg(CallGenerator* cg) { _cg = cg; }
@@ -533,6 +535,7 @@ class Compile : public Phase {
 
   void* _replay_inline_data; // Pointer to data loaded from file
 
+  void print_inlining_stream_free();
   void print_inlining_init();
   void print_inlining_reinit();
   void print_inlining_commit();

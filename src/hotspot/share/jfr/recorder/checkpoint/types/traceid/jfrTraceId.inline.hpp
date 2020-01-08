@@ -39,10 +39,27 @@
 #include "runtime/thread.inline.hpp"
 #include "utilities/debug.hpp"
 
+inline bool is_not_tagged(traceid value) {
+  const traceid this_epoch_bit = JfrTraceIdEpoch::in_use_this_epoch_bit();
+  return (value & ((this_epoch_bit << META_SHIFT) | this_epoch_bit)) != this_epoch_bit;
+}
+
+template <typename T>
+inline bool should_tag(const T* t) {
+  assert(t != NULL, "invariant");
+  return is_not_tagged(TRACE_ID_RAW(t));
+}
+
+template <>
+inline bool should_tag<Method>(const Method* method) {
+  assert(method != NULL, "invariant");
+  return is_not_tagged((traceid)method->trace_flags());
+}
+
 template <typename T>
 inline traceid set_used_and_get(const T* type) {
   assert(type != NULL, "invariant");
-  if (SHOULD_TAG(type)) {
+  if (should_tag(type)) {
     SET_USED_THIS_EPOCH(type);
     JfrTraceIdEpoch::set_changed_tag_state();
   }
@@ -61,7 +78,13 @@ inline traceid JfrTraceId::get(const Thread* t) {
 }
 
 inline traceid JfrTraceId::use(const Klass* klass) {
-  return set_used_and_get(klass);
+  assert(klass != NULL, "invariant");
+  if (should_tag(klass)) {
+    SET_USED_THIS_EPOCH(klass);
+    JfrTraceIdEpoch::set_changed_tag_state();
+  }
+  assert(USED_THIS_EPOCH(klass), "invariant");
+  return get(klass);
 }
 
 inline traceid JfrTraceId::use(const Method* method) {
@@ -71,15 +94,12 @@ inline traceid JfrTraceId::use(const Method* method) {
 inline traceid JfrTraceId::use(const Klass* klass, const Method* method) {
   assert(klass != NULL, "invariant");
   assert(method != NULL, "invariant");
-  if (SHOULD_TAG_KLASS_METHOD(klass)) {
-    SET_METHOD_AND_CLASS_USED_THIS_EPOCH(klass);
-  }
-  assert(METHOD_AND_CLASS_USED_THIS_EPOCH(klass), "invariant");
   if (METHOD_FLAG_NOT_USED_THIS_EPOCH(method)) {
-    assert(USED_THIS_EPOCH(klass), "invariant");
+    SET_METHOD_AND_CLASS_USED_THIS_EPOCH(klass);
     SET_METHOD_FLAG_USED_THIS_EPOCH(method);
     JfrTraceIdEpoch::set_changed_tag_state();
   }
+  assert(METHOD_AND_CLASS_USED_THIS_EPOCH(klass), "invariant");
   assert(METHOD_FLAG_USED_THIS_EPOCH(method), "invariant");
   return (METHOD_ID(klass, method));
 }

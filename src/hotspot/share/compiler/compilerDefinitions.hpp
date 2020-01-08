@@ -83,7 +83,6 @@ public:
 #endif
 
 extern CompLevel CompLevel_highest_tier;
-extern CompLevel CompLevel_initial_compile;
 
 enum CompMode {
   CompMode_none = 0,

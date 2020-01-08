@@ -348,13 +348,12 @@ bool ArrayCopyNode::prepare_array_copy(PhaseGVN *phase, bool can_reshape,
   return true;
 }
 
-const TypePtr* ArrayCopyNode::get_address_type(PhaseGVN *phase, Node* n) {
-  const Type* at = phase->type(n);
-  assert(at != Type::TOP, "unexpected type");
-  const TypePtr* atp = at->isa_ptr();
+const TypePtr* ArrayCopyNode::get_address_type(PhaseGVN* phase, const TypePtr* atp, Node* n) {
+  if (atp == TypeOopPtr::BOTTOM) {
+    atp = phase->type(n)->isa_ptr();
+  }
   // adjust atp to be the correct array element address type
-  atp = atp->add_offset(Type::OffsetBot);
-  return atp;
+  return atp->add_offset(Type::OffsetBot);
 }
 
 void ArrayCopyNode::array_copy_test_overlap(PhaseGVN *phase, bool can_reshape, bool disjoint_bases, int count, Node*& forward_ctl, Node*& backward_ctl) {
@@ -574,8 +573,8 @@ Node *ArrayCopyNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
   Node* src = in(ArrayCopyNode::Src);
   Node* dest = in(ArrayCopyNode::Dest);
-  const TypePtr* atp_src = get_address_type(phase, src);
-  const TypePtr* atp_dest = get_address_type(phase, dest);
+  const TypePtr* atp_src = get_address_type(phase, _src_type, src);
+  const TypePtr* atp_dest = get_address_type(phase, _dest_type, dest);
 
   Node *in_mem = in(TypeFunc::Memory);
   if (!in_mem->is_MergeMem()) {

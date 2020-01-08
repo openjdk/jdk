@@ -79,9 +79,10 @@ template <typename T>
 class ClearArtifact {
  public:
   bool operator()(T const& value) {
-    CLEAR_METHOD_AND_CLASS_PREV_EPOCH(value);
     CLEAR_SERIALIZED(value);
     assert(IS_NOT_SERIALIZED(value), "invariant");
+    SET_PREV_EPOCH_CLEARED_BIT(value);
+    CLEAR_METHOD_AND_CLASS_PREV_EPOCH(value);
     return true;
   }
 };
@@ -91,9 +92,10 @@ class ClearArtifact<const Method*> {
  public:
   bool operator()(const Method* method) {
     assert(METHOD_FLAG_USED_PREV_EPOCH(method), "invariant");
-    CLEAR_METHOD_FLAG_USED_PREV_EPOCH(method);
     CLEAR_METHOD_SERIALIZED(method);
     assert(METHOD_NOT_SERIALIZED(method), "invariant");
+    SET_PREV_EPOCH_METHOD_CLEARED_BIT(method);
+    CLEAR_METHOD_FLAG_USED_PREV_EPOCH(method);
     return true;
   }
 };
