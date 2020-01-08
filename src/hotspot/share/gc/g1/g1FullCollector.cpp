@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -263,8 +263,7 @@ void G1FullCollector::phase4_do_compaction() {
 }
 
 void G1FullCollector::restore_marks() {
-  SharedRestorePreservedMarksTaskExecutor task_executor(_heap->workers());
-  _preserved_marks_set.restore(&task_executor);
+  _preserved_marks_set.restore(_heap->workers());
   _preserved_marks_set.reclaim();
 }
 

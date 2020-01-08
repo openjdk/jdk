@@ -175,8 +175,7 @@ void ShenandoahMarkCompact::do_it(GCCause::Cause gc_cause) {
 
   {
     // Epilogue
-    SharedRestorePreservedMarksTaskExecutor exec(heap->workers());
-    _preserved_marks->restore(&exec);
+    _preserved_marks->restore(heap->workers());
     BiasedLocking::restore_marks();
     _preserved_marks->reclaim();
   }

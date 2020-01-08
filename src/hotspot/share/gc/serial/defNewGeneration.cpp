@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -711,8 +711,7 @@ void DefNewGeneration::remove_forwarding_pointers() {
 }
 
 void DefNewGeneration::restore_preserved_marks() {
-  SharedRestorePreservedMarksTaskExecutor task_executor(NULL);
-  _preserved_marks_set.restore(&task_executor);
+  _preserved_marks_set.restore(NULL);
 }
 
 void DefNewGeneration::handle_promotion_failure(oop old) {

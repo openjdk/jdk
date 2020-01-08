@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,24 +79,6 @@ public:
   virtual void do_object(oop obj);
 };
 
-class RestorePreservedMarksTaskExecutor {
-public:
-  void virtual restore(PreservedMarksSet* preserved_marks_set,
-                       volatile size_t* total_size_addr) = 0;
-};
-
-class SharedRestorePreservedMarksTaskExecutor : public RestorePreservedMarksTaskExecutor {
-private:
-    WorkGang* _workers;
-
-public:
-    SharedRestorePreservedMarksTaskExecutor(WorkGang* workers) : _workers(workers) { }
-
-    void restore(PreservedMarksSet* preserved_marks_set,
-                 volatile size_t* total_size_addr);
-
-};
-
 class PreservedMarksSet : public CHeapObj<mtGC> {
 private:
   // true -> _stacks will be allocated in the C heap
@@ -127,10 +109,9 @@ public:
   void init(uint num);
 
   // Iterate over all stacks, restore all preserved marks, and reclaim
-  // the memory taken up by the stack segments.
-  // Supported executors: SharedRestorePreservedMarksTaskExecutor (Serial, G1),
-  // PSRestorePreservedMarksTaskExecutor (PS).
-  inline void restore(RestorePreservedMarksTaskExecutor* executor);
+  // the memory taken up by the stack segments using the given WorkGang. If the WorkGang
+  // is NULL, perform the work serially in the current thread.
+  void restore(WorkGang* workers);
 
   // Reclaim stack array.
   void reclaim();
