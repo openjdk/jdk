@@ -2200,6 +2200,12 @@ WB_ENTRY(jint, WB_AotLibrariesCount(JNIEnv* env, jobject o))
   return result;
 WB_END
 
+WB_ENTRY(jint, WB_GetKlassMetadataSize(JNIEnv* env, jobject wb, jclass mirror))
+  Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve(mirror));
+  // Return size in bytes.
+  return k->size() * wordSize;
+WB_END
+
 #define CC (char*)
 
 static JNINativeMethod methods[] = {
@@ -2442,6 +2448,7 @@ static JNINativeMethod methods[] = {
   {CC"resolvedMethodItemsCount",  CC"()J",            (void*)&WB_ResolvedMethodItemsCount },
   {CC"protectionDomainRemovedCount",   CC"()I",       (void*)&WB_ProtectionDomainRemovedCount },
   {CC"aotLibrariesCount", CC"()I",                    (void*)&WB_AotLibrariesCount },
+  {CC"getKlassMetadataSize", CC"(Ljava/lang/Class;)I",(void*)&WB_GetKlassMetadataSize},
 };
 
 

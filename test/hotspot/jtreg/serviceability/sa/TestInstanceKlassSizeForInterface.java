@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,10 +47,16 @@ import jdk.test.lib.Asserts;
  *          jdk.hotspot.agent/sun.jvm.hotspot.utilities
  *          jdk.hotspot.agent/sun.jvm.hotspot.oops
  *          jdk.hotspot.agent/sun.jvm.hotspot.debugger
- * @run main/othervm TestInstanceKlassSizeForInterface
+ * @build sun.hotspot.WhiteBox
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox sun.hotspot.WhiteBox$WhiteBoxPermission
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. TestInstanceKlassSize
  */
 
+import sun.hotspot.WhiteBox;
+
 public class TestInstanceKlassSizeForInterface {
+
+    public static WhiteBox wb = WhiteBox.getWhiteBox();
 
     private static LingeredAppWithInterface theApp = null;
 
@@ -103,6 +109,9 @@ public class TestInstanceKlassSizeForInterface {
             "--add-exports=jdk.hotspot.agent/sun.jvm.hotspot.utilities=ALL-UNNAMED",
             "--add-exports=jdk.hotspot.agent/sun.jvm.hotspot.oops=ALL-UNNAMED",
             "--add-exports=jdk.hotspot.agent/sun.jvm.hotspot.debugger=ALL-UNNAMED",
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:+WhiteBoxAPI",
+            "-Xbootclasspath/a:.",
             "TestInstanceKlassSizeForInterface",
             Integer.toString(lingeredAppPid)
         };
@@ -114,35 +123,21 @@ public class TestInstanceKlassSizeForInterface {
         SAOutput.shouldHaveExitValue(0);
         System.out.println(SAOutput.getOutput());
 
-        // Run jcmd on the LingeredApp process
-        ProcessBuilder pb = new ProcessBuilder();
-        pb.command(new String[] {
-                          JDKToolFinder.getJDKTool("jcmd"),
-                          Long.toString(lingeredAppPid),
-                          "GC.class_stats",
-                          "VTab,ITab,OopMap,KlassBytes"
-                      }
-                  );
-
-        OutputAnalyzer jcmdOutput = new OutputAnalyzer(pb.start());
-        System.out.println(jcmdOutput.getOutput());
-
         // Match the sizes from both the output streams
         for (String instanceKlassName : instanceKlassNames) {
+            Class<?> iklass = Class.forName(instanceKlassName);
             System.out.println ("Trying to match for " + instanceKlassName);
-            String jcmdInstanceKlassSize = getJcmdInstanceKlassSize(
-                                                      jcmdOutput,
-                                                      instanceKlassName);
-            Asserts.assertNotNull(jcmdInstanceKlassSize,
-                "Could not get the instance klass size from the jcmd output");
+            String size = String.valueOf(wb.getKlassMetadataSize(iklass));
+            boolean match = false;
             for (String s : SAOutput.asLines()) {
                 if (s.contains(instanceKlassName)) {
-                   Asserts.assertTrue(
-                      s.contains(jcmdInstanceKlassSize),
-                      "The size computed by SA for " +
-                      instanceKlassName + " does not match.");
-                }
+                    Asserts.assertTrue(
+                       s.contains(size), "The size computed by SA for" +
+                       instanceKlassName + " does not match.");
+                       match = true;
+                    }
             }
+            Asserts.assertTrue(match, "Found a match for " + instanceKlassName);
         }
     }
 

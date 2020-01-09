@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
 
 #include "precompiled.hpp"
 #include "logging/log.hpp"
-#include "memory/heapInspection.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/metaspace.hpp"
 #include "memory/metaspaceClosure.hpp"
@@ -62,19 +61,6 @@ void RecordComponent::metaspace_pointers_do(MetaspaceClosure* it) {
 void RecordComponent::print_value_on(outputStream* st) const {
   st->print("RecordComponent(" INTPTR_FORMAT ")", p2i(this));
 }
-
-#if INCLUDE_SERVICES
-void RecordComponent::collect_statistics(KlassSizeStats *sz) const {
-  if (_annotations != NULL) {
-    sz->_annotations_bytes += sz->count(_annotations);
-    sz->_ro_bytes += sz->count(_annotations);
-  }
-  if (_type_annotations != NULL) {
-    sz->_annotations_bytes += sz->count(_type_annotations);
-    sz->_ro_bytes += sz->count(_type_annotations);
-  }
-}
-#endif
 
 #ifndef PRODUCT
 void RecordComponent::print_on(outputStream* st) const {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,7 +64,6 @@ class MethodData;
 class MethodCounters;
 class ConstMethod;
 class InlineTableSizes;
-class KlassSizeStats;
 class CompiledMethod;
 class InterpreterOopMap;
 
@@ -713,9 +712,6 @@ public:
   }
   static int size(bool is_native);
   int size() const                               { return method_size(); }
-#if INCLUDE_SERVICES
-  void collect_statistics(KlassSizeStats *sz) const;
-#endif
   void log_touched(TRAPS);
   static void print_touched_methods(outputStream* out);
 

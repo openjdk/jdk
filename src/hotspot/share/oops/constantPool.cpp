@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,6 @@
 #include "interpreter/bootstrapInfo.hpp"
 #include "interpreter/linkResolver.hpp"
 #include "memory/allocation.inline.hpp"
-#include "memory/heapInspection.hpp"
 #include "memory/heapShared.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/metaspaceClosure.hpp"
@@ -2378,21 +2377,6 @@ void ConstantPool::print_value_on(outputStream* st) const {
     st->print(" cache=" PTR_FORMAT, p2i(cache()));
   }
 }
-
-#if INCLUDE_SERVICES
-// Size Statistics
-void ConstantPool::collect_statistics(KlassSizeStats *sz) const {
-  sz->_cp_all_bytes += (sz->_cp_bytes          = sz->count(this));
-  sz->_cp_all_bytes += (sz->_cp_tags_bytes     = sz->count_array(tags()));
-  sz->_cp_all_bytes += (sz->_cp_cache_bytes    = sz->count(cache()));
-  sz->_cp_all_bytes += (sz->_cp_operands_bytes = sz->count_array(operands()));
-  sz->_cp_all_bytes += (sz->_cp_refmap_bytes   = sz->count_array(reference_map()));
-
-  sz->_ro_bytes += sz->_cp_operands_bytes + sz->_cp_tags_bytes +
-                   sz->_cp_refmap_bytes;
-  sz->_rw_bytes += sz->_cp_bytes + sz->_cp_cache_bytes;
-}
-#endif // INCLUDE_SERVICES
 
 // Verification
 

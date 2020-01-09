@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,6 @@
 #include "oops/annotations.hpp"
 #include "oops/metadata.hpp"
 #include "utilities/globalDefinitions.hpp"
-
-class KlassSizeStats;
 
 // This class stores information extracted from the Record class attribute.
 class RecordComponent: public MetaspaceObj {
@@ -90,10 +88,6 @@ class RecordComponent: public MetaspaceObj {
     // Record_components should be stored in the read-only region of CDS archive.
     static bool is_read_only_by_default() { return true; }
     DEBUG_ONLY(bool on_stack() { return false; })  // for template
-
-#if INCLUDE_SERVICES
-    void collect_statistics(KlassSizeStats *sz) const;
-#endif
 
     bool is_klass() const { return false; }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,6 @@
 
 class ClassLoaderData;
 class outputStream;
-class KlassSizeStats;
 
 typedef Array<u1> AnnotationArray;
 
@@ -69,10 +68,6 @@ class Annotations: public MetaspaceObj {
 
   // Annotations should be stored in the read-only region of CDS archive.
   static bool is_read_only_by_default() { return true; }
-
-#if INCLUDE_SERVICES
-  void collect_statistics(KlassSizeStats *sz) const;
-#endif
 
   // Constructor to initialize to null
   Annotations() : _class_annotations(NULL),

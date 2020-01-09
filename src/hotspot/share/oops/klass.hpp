@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,7 +68,6 @@ const uint KLASS_ID_COUNT = 6;
 template <class T> class Array;
 template <class T> class GrowableArray;
 class fieldDescriptor;
-class KlassSizeStats;
 class klassVtable;
 class ModuleEntry;
 class PackageEntry;
@@ -541,9 +540,6 @@ protected:
 
   // Size of klass in word size.
   virtual int size() const = 0;
-#if INCLUDE_SERVICES
-  virtual void collect_statistics(KlassSizeStats *sz) const;
-#endif
 
   // Returns the Java name for a class (Resource allocated)
   // For arrays, this returns the name of the element with a leading '['.
