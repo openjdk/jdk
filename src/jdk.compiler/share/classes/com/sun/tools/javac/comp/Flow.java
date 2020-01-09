@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1855,21 +1855,17 @@ public class Flow {
 
         /** Check that trackable variable is initialized.
          */
-        boolean checkInit(DiagnosticPosition pos, VarSymbol sym, boolean compactConstructor) {
-            return checkInit(pos, sym, Errors.VarMightNotHaveBeenInitialized(sym), compactConstructor);
+        void checkInit(DiagnosticPosition pos, VarSymbol sym) {
+            checkInit(pos, sym, Errors.VarMightNotHaveBeenInitialized(sym));
         }
 
-        boolean checkInit(DiagnosticPosition pos, VarSymbol sym, Error errkey, boolean compactConstructor) {
+        void checkInit(DiagnosticPosition pos, VarSymbol sym, Error errkey) {
             if ((sym.adr >= firstadr || sym.owner.kind != TYP) &&
                 trackable(sym) &&
                 !inits.isMember(sym.adr)) {
-                if (sym.owner.kind != TYP || !compactConstructor || !uninits.isMember(sym.adr)) {
                     log.error(pos, errkey);
-                }
                 inits.incl(sym.adr);
-                return false;
             }
-            return true;
         }
 
         /** Utility method to reset several Bits instances.
@@ -2099,15 +2095,27 @@ public class Flow {
                                 // the ctor is default(synthesized) or not
                                 if (isSynthesized && !isCompactConstructor) {
                                     checkInit(TreeInfo.diagnosticPositionFor(var, vardecl),
-                                        var, Errors.VarNotInitializedInDefaultConstructor(var), isCompactConstructor);
-                                } else {
-                                    boolean wasInitialized = checkInit(TreeInfo.diagEndPos(tree.body), var, isCompactConstructor && tree.completesNormally);
-                                    if (!wasInitialized && var.owner.kind == TYP && isCompactConstructor && uninits.isMember(var.adr) && tree.completesNormally) {
+                                            var, Errors.VarNotInitializedInDefaultConstructor(var));
+                                } else if (isCompactConstructor) {
+                                    boolean isInstanceRecordField = var.enclClass().isRecord() &&
+                                            (var.flags_field & (Flags.PRIVATE | Flags.FINAL | Flags.GENERATED_MEMBER | Flags.RECORD)) != 0 &&
+                                            !var.isStatic() &&
+                                            var.owner.kind == TYP;
+                                    if (isInstanceRecordField) {
+                                        boolean notInitialized = !inits.isMember(var.adr);
+                                        if (notInitialized && uninits.isMember(var.adr) && tree.completesNormally) {
                                         /*  this way we indicate Lower that it should generate an initialization for this field
                                          *  in the compact constructor
                                          */
-                                        var.flags_field |= UNINITIALIZED_FIELD;
+                                            var.flags_field |= UNINITIALIZED_FIELD;
+                                        } else {
+                                            checkInit(TreeInfo.diagEndPos(tree.body), var);
+                                        }
+                                    } else {
+                                        checkInit(TreeInfo.diagnosticPositionFor(var, vardecl), var);
                                     }
+                                } else {
+                                    checkInit(TreeInfo.diagEndPos(tree.body), var);
                                 }
                             }
                         }
@@ -2124,7 +2132,7 @@ public class Flow {
                             Assert.check(exit instanceof AssignPendingExit);
                             inits.assign(((AssignPendingExit) exit).exit_inits);
                             for (int i = firstadr; i < nextadr; i++) {
-                                checkInit(exit.tree.pos(), vardecls[i].sym, isCompactConstructor);
+                                checkInit(exit.tree.pos(), vardecls[i].sym);
                             }
                         }
                     }
@@ -2666,7 +2674,7 @@ public class Flow {
             super.visitSelect(tree);
             if (TreeInfo.isThisQualifier(tree.selected) &&
                 tree.sym.kind == VAR) {
-                checkInit(tree.pos(), (VarSymbol)tree.sym, false);
+                checkInit(tree.pos(), (VarSymbol)tree.sym);
             }
         }
 
@@ -2727,7 +2735,7 @@ public class Flow {
 
         public void visitIdent(JCIdent tree) {
             if (tree.sym.kind == VAR) {
-                checkInit(tree.pos(), (VarSymbol)tree.sym, false);
+                checkInit(tree.pos(), (VarSymbol)tree.sym);
                 referenced(tree.sym);
             }
         }

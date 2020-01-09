@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,7 +86,6 @@ public final class RecordingStream implements AutoCloseable, EventStream {
         Utils.checkAccessFlightRecorder();
         AccessControlContext acc = AccessController.getContext();
         this.recording = new Recording();
-        this.recording.setFlushInterval(Duration.ofMillis(1000));
         try {
             PlatformRecording pr = PrivateAccess.getInstance().getPlatformRecording(recording);
             this.directoryStream = new EventDirectoryStream(acc, null, SecuritySupport.PRIVILIGED, pr);
@@ -265,20 +264,6 @@ public final class RecordingStream implements AutoCloseable, EventStream {
      */
     public void setMaxSize(long maxSize) {
         recording.setMaxSize(maxSize);
-    }
-
-    /**
-     * Determines how often events are made available for streaming.
-     *
-     * @param interval the interval at which events are made available to the
-     *        stream, no {@code null}
-     *
-     * @throws IllegalArgumentException if {@code interval} is negative
-     *
-     * @throws IllegalStateException if the stream is closed
-     */
-    public void setFlushInterval(Duration interval) {
-        recording.setFlushInterval(interval);
     }
 
     @Override

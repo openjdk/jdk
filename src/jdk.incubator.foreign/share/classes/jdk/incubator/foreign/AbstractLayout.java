@@ -140,7 +140,7 @@ abstract class AbstractLayout implements MemoryLayout {
 
     /*** Helper constants for implementing Layout::describeConstable ***/
 
-    public static final DirectMethodHandleDesc BSM_GET_STATIC_FINAL
+    static final DirectMethodHandleDesc BSM_GET_STATIC_FINAL
             = ConstantDescs.ofConstantBootstrap(ConstantDescs.CD_ConstantBootstraps, "getStaticFinal",
             ConstantDescs.CD_Object, ConstantDescs.CD_Class);
 
