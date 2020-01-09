@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2019, 2020, Red Hat, Inc. All rights reserved.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
@@ -54,13 +54,15 @@ bool ShenandoahNMethod::is_unregistered() const {
 }
 
 void ShenandoahNMethod::disarm_nmethod(nmethod* nm) {
- if (!ShenandoahConcurrentRoots::can_do_concurrent_class_unloading()) {
-   return;
- }
+  if (!ShenandoahConcurrentRoots::can_do_concurrent_class_unloading()) {
+    return;
+  }
 
- BarrierSetNMethod* const bs = BarrierSet::barrier_set()->barrier_set_nmethod();
- assert(bs != NULL, "Sanity");
- bs->disarm(nm);
+  BarrierSetNMethod* const bs = BarrierSet::barrier_set()->barrier_set_nmethod();
+  assert(bs != NULL, "Sanity");
+  if (bs->is_armed(nm)) {
+    bs->disarm(nm);
+  }
 }
 
 ShenandoahNMethod* ShenandoahNMethod::gc_data(nmethod* nm) {

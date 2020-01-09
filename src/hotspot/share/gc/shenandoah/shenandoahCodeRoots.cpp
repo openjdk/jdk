@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2017, 2020, Red Hat, Inc. All rights reserved.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
@@ -202,6 +202,7 @@ public:
       _heap(ShenandoahHeap::heap()) {}
 
   virtual void do_nmethod(nmethod* nm) {
+    assert(_heap->is_concurrent_root_in_progress(), "Only this phase");
     if (failed()) {
       return;
     }
@@ -222,9 +223,7 @@ public:
     ShenandoahReentrantLocker locker(nm_data->lock());
 
     // Heal oops and disarm
-    if (_heap->is_evacuation_in_progress()) {
-      ShenandoahNMethod::heal_nmethod(nm);
-    }
+    ShenandoahNMethod::heal_nmethod(nm);
     ShenandoahNMethod::disarm_nmethod(nm);
 
     // Clear compiled ICs and exception caches

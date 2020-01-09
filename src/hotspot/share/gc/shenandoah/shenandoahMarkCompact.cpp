@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2014, 2020, Red Hat, Inc. All rights reserved.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
@@ -28,6 +28,7 @@
 #include "gc/shared/preservedMarks.inline.hpp"
 #include "gc/shenandoah/shenandoahForwarding.inline.hpp"
 #include "gc/shenandoah/shenandoahConcurrentMark.inline.hpp"
+#include "gc/shenandoah/shenandoahConcurrentRoots.hpp"
 #include "gc/shenandoah/shenandoahCollectionSet.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
@@ -71,6 +72,12 @@ void ShenandoahMarkCompact::do_it(GCCause::Cause gc_cause) {
 
   if (VerifyBeforeGC) {
     Universe::verify();
+  }
+
+  // Degenerated GC may carry concurrent_root_in_progress flag when upgrading to
+  // full GC. We need to reset it before mutators resume.
+  if (ShenandoahConcurrentRoots::can_do_concurrent_class_unloading()) {
+    heap->set_concurrent_root_in_progress(false);
   }
 
   heap->set_full_gc_in_progress(true);

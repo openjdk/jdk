@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2013, 2020, Red Hat, Inc. All rights reserved.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
@@ -127,10 +127,12 @@ private:
 class ShenandoahUpdateRootsTask : public AbstractGangTask {
 private:
   ShenandoahRootUpdater*  _root_updater;
+  bool                    _check_alive;
 public:
-  ShenandoahUpdateRootsTask(ShenandoahRootUpdater* root_updater) :
+  ShenandoahUpdateRootsTask(ShenandoahRootUpdater* root_updater, bool check_alive) :
     AbstractGangTask("Shenandoah update roots task"),
-    _root_updater(root_updater) {
+    _root_updater(root_updater),
+    _check_alive(check_alive){
   }
 
   void work(uint worker_id) {
@@ -139,8 +141,13 @@ public:
 
     ShenandoahHeap* heap = ShenandoahHeap::heap();
     ShenandoahUpdateRefsClosure cl;
-    AlwaysTrueClosure always_true;
-    _root_updater->roots_do<AlwaysTrueClosure, ShenandoahUpdateRefsClosure>(worker_id, &always_true, &cl);
+    if (_check_alive) {
+      ShenandoahForwardedIsAliveClosure is_alive;
+      _root_updater->roots_do<ShenandoahForwardedIsAliveClosure, ShenandoahUpdateRefsClosure>(worker_id, &is_alive, &cl);
+    } else {
+      AlwaysTrueClosure always_true;;
+      _root_updater->roots_do<AlwaysTrueClosure, ShenandoahUpdateRefsClosure>(worker_id, &always_true, &cl);
+    }
   }
 };
 
@@ -282,6 +289,8 @@ void ShenandoahConcurrentMark::update_roots(ShenandoahPhaseTimings::Phase root_p
 
   ShenandoahGCPhase phase(root_phase);
 
+  bool check_alive = root_phase == ShenandoahPhaseTimings::degen_gc_update_roots;
+
 #if COMPILER2_OR_JVMCI
   DerivedPointerTable::clear();
 #endif
@@ -289,7 +298,7 @@ void ShenandoahConcurrentMark::update_roots(ShenandoahPhaseTimings::Phase root_p
   uint nworkers = _heap->workers()->active_workers();
 
   ShenandoahRootUpdater root_updater(nworkers, root_phase);
-  ShenandoahUpdateRootsTask update_roots(&root_updater);
+  ShenandoahUpdateRootsTask update_roots(&root_updater, check_alive);
   _heap->workers()->run_task(&update_roots);
 
 #if COMPILER2_OR_JVMCI

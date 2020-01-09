@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2013, 2020, Red Hat, Inc. All rights reserved.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
@@ -30,6 +30,7 @@
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/locationPrinter.inline.hpp"
 #include "gc/shared/memAllocator.hpp"
+#include "gc/shared/oopStorageSet.hpp"
 #include "gc/shared/plab.hpp"
 
 #include "gc/shenandoah/shenandoahAllocTracker.hpp"
@@ -1651,20 +1652,25 @@ private:
   ShenandoahVMRoots<true /*concurrent*/>        _vm_roots;
   ShenandoahWeakRoots<true /*concurrent*/>      _weak_roots;
   ShenandoahClassLoaderDataRoots<true /*concurrent*/, false /*single threaded*/> _cld_roots;
+  bool                                          _include_weak_roots;
 
 public:
-  ShenandoahConcurrentRootsEvacUpdateTask() :
-    AbstractGangTask("Shenandoah Evacuate/Update Concurrent Roots Task") {
+  ShenandoahConcurrentRootsEvacUpdateTask(bool include_weak_roots) :
+    AbstractGangTask("Shenandoah Evacuate/Update Concurrent Roots Task"),
+    _include_weak_roots(include_weak_roots) {
   }
 
   void work(uint worker_id) {
     ShenandoahEvacOOMScope oom;
     {
-      // jni_roots and weak_roots are OopStorage backed roots, concurrent iteration
+      // vm_roots and weak_roots are OopStorage backed roots, concurrent iteration
       // may race against OopStorage::release() calls.
       ShenandoahEvacUpdateOopStorageRootsClosure cl;
       _vm_roots.oops_do<ShenandoahEvacUpdateOopStorageRootsClosure>(&cl);
-      _weak_roots.oops_do<ShenandoahEvacUpdateOopStorageRootsClosure>(&cl);
+
+      if (_include_weak_roots) {
+        _weak_roots.oops_do<ShenandoahEvacUpdateOopStorageRootsClosure>(&cl);
+      }
     }
 
     {
@@ -1675,14 +1681,121 @@ public:
   }
 };
 
+class ShenandoahEvacUpdateCleanupOopStorageRootsClosure : public BasicOopIterateClosure {
+private:
+  ShenandoahHeap* const _heap;
+  ShenandoahMarkingContext* const _mark_context;
+  bool  _evac_in_progress;
+  Thread* const _thread;
+  size_t  _dead_counter;
+
+public:
+  ShenandoahEvacUpdateCleanupOopStorageRootsClosure();
+  void do_oop(oop* p);
+  void do_oop(narrowOop* p);
+
+  size_t dead_counter() const;
+  void reset_dead_counter();
+};
+
+ShenandoahEvacUpdateCleanupOopStorageRootsClosure::ShenandoahEvacUpdateCleanupOopStorageRootsClosure() :
+  _heap(ShenandoahHeap::heap()),
+  _mark_context(ShenandoahHeap::heap()->marking_context()),
+  _evac_in_progress(ShenandoahHeap::heap()->is_evacuation_in_progress()),
+  _thread(Thread::current()),
+  _dead_counter(0) {
+}
+
+void ShenandoahEvacUpdateCleanupOopStorageRootsClosure::do_oop(oop* p) {
+  const oop obj = RawAccess<>::oop_load(p);
+  if (!CompressedOops::is_null(obj)) {
+    if (!_mark_context->is_marked(obj)) {
+      shenandoah_assert_correct(p, obj);
+      oop old = Atomic::cmpxchg(p, obj, oop(NULL));
+      if (obj == old) {
+        _dead_counter ++;
+      }
+      assert(*p == NULL, "Must be");
+    } else if (_evac_in_progress && _heap->in_collection_set(obj)) {
+      oop resolved = ShenandoahBarrierSet::resolve_forwarded_not_null(obj);
+      if (resolved == obj) {
+        resolved = _heap->evacuate_object(obj, _thread);
+      }
+      Atomic::cmpxchg(p, obj, resolved);
+      assert(_heap->cancelled_gc() ||
+             _mark_context->is_marked(resolved) && !_heap->in_collection_set(resolved),
+             "Sanity");
+    }
+  }
+}
+
+void ShenandoahEvacUpdateCleanupOopStorageRootsClosure::do_oop(narrowOop* p) {
+  ShouldNotReachHere();
+}
+
+size_t ShenandoahEvacUpdateCleanupOopStorageRootsClosure::dead_counter() const {
+  return _dead_counter;
+}
+
+void ShenandoahEvacUpdateCleanupOopStorageRootsClosure::reset_dead_counter() {
+  _dead_counter = 0;
+}
+
+// This task not only evacuates/updates marked weak roots, but also "NULL"
+// dead weak roots.
+class ShenandoahConcurrentWeakRootsEvacUpdateTask : public AbstractGangTask {
+private:
+  ShenandoahWeakRoot<true /*concurrent*/>  _jni_roots;
+  ShenandoahWeakRoot<true /*concurrent*/>  _string_table_roots;
+  ShenandoahWeakRoot<true /*concurrent*/>  _resolved_method_table_roots;
+  ShenandoahWeakRoot<true /*concurrent*/>  _vm_roots;
+
+public:
+  ShenandoahConcurrentWeakRootsEvacUpdateTask() :
+    AbstractGangTask("Shenandoah Concurrent Weak Root Task"),
+    _jni_roots(OopStorageSet::jni_weak(), ShenandoahPhaseTimings::JNIWeakRoots),
+    _string_table_roots(OopStorageSet::string_table_weak(), ShenandoahPhaseTimings::StringTableRoots),
+    _resolved_method_table_roots(OopStorageSet::resolved_method_table_weak(), ShenandoahPhaseTimings::ResolvedMethodTableRoots),
+    _vm_roots(OopStorageSet::vm_weak(), ShenandoahPhaseTimings::VMWeakRoots) {
+    StringTable::reset_dead_counter();
+    ResolvedMethodTable::reset_dead_counter();
+  }
+
+  ~ShenandoahConcurrentWeakRootsEvacUpdateTask() {
+    StringTable::finish_dead_counter();
+    ResolvedMethodTable::finish_dead_counter();
+  }
+
+  void work(uint worker_id) {
+    ShenandoahEvacOOMScope oom;
+    // jni_roots and weak_roots are OopStorage backed roots, concurrent iteration
+    // may race against OopStorage::release() calls.
+    ShenandoahEvacUpdateCleanupOopStorageRootsClosure cl;
+    _jni_roots.oops_do(&cl, worker_id);
+    _vm_roots.oops_do(&cl, worker_id);
+
+    cl.reset_dead_counter();
+    _string_table_roots.oops_do(&cl, worker_id);
+    StringTable::inc_dead_counter(cl.dead_counter());
+
+    cl.reset_dead_counter();
+    _resolved_method_table_roots.oops_do(&cl, worker_id);
+    ResolvedMethodTable::inc_dead_counter(cl.dead_counter());
+  }
+};
+
 void ShenandoahHeap::op_roots() {
   if (is_concurrent_root_in_progress()) {
     if (ShenandoahConcurrentRoots::should_do_concurrent_class_unloading()) {
+      // Concurrent weak root processing
+      ShenandoahConcurrentWeakRootsEvacUpdateTask task;
+      workers()->run_task(&task);
+
       _unloader.unload();
     }
 
     if (ShenandoahConcurrentRoots::should_do_concurrent_roots()) {
-      ShenandoahConcurrentRootsEvacUpdateTask task;
+      ShenandoahConcurrentRootsEvacUpdateTask task(!ShenandoahConcurrentRoots::should_do_concurrent_class_unloading());
       workers()->run_task(&task);
     }
   }
@@ -2076,32 +2189,34 @@ void ShenandoahHeap::stw_process_weak_roots(bool full_gc) {
                                                ShenandoahPhaseTimings::purge_par;
   // Cleanup weak roots
   ShenandoahGCPhase phase(timing_phase);
+  phase_timings()->record_workers_start(timing_phase);
   if (has_forwarded_objects()) {
     if (is_traversal_mode()) {
       ShenandoahForwardedIsAliveClosure is_alive;
       ShenandoahTraversalUpdateRefsClosure keep_alive;
       ShenandoahParallelWeakRootsCleaningTask<ShenandoahForwardedIsAliveClosure, ShenandoahTraversalUpdateRefsClosure>
-        cleaning_task(&is_alive, &keep_alive, num_workers);
+        cleaning_task(&is_alive, &keep_alive, num_workers, !ShenandoahConcurrentRoots::should_do_concurrent_class_unloading());
       _workers->run_task(&cleaning_task);
     } else {
       ShenandoahForwardedIsAliveClosure is_alive;
       ShenandoahUpdateRefsClosure keep_alive;
       ShenandoahParallelWeakRootsCleaningTask<ShenandoahForwardedIsAliveClosure, ShenandoahUpdateRefsClosure>
-        cleaning_task(&is_alive, &keep_alive, num_workers);
+        cleaning_task(&is_alive, &keep_alive, num_workers, !ShenandoahConcurrentRoots::should_do_concurrent_class_unloading());
       _workers->run_task(&cleaning_task);
     }
   } else {
     ShenandoahIsAliveClosure is_alive;
 #ifdef ASSERT
-  ShenandoahAssertNotForwardedClosure verify_cl;
-  ShenandoahParallelWeakRootsCleaningTask<ShenandoahIsAliveClosure, ShenandoahAssertNotForwardedClosure>
-    cleaning_task(&is_alive, &verify_cl, num_workers);
+    ShenandoahAssertNotForwardedClosure verify_cl;
+    ShenandoahParallelWeakRootsCleaningTask<ShenandoahIsAliveClosure, ShenandoahAssertNotForwardedClosure>
+      cleaning_task(&is_alive, &verify_cl, num_workers, !ShenandoahConcurrentRoots::should_do_concurrent_class_unloading());
 #else
-  ShenandoahParallelWeakRootsCleaningTask<ShenandoahIsAliveClosure, DoNothingClosure>
-    cleaning_task(&is_alive, &do_nothing_cl, num_workers);
+    ShenandoahParallelWeakRootsCleaningTask<ShenandoahIsAliveClosure, DoNothingClosure>
+      cleaning_task(&is_alive, &do_nothing_cl, num_workers, !ShenandoahConcurrentRoots::should_do_concurrent_class_unloading());
 #endif
     _workers->run_task(&cleaning_task);
   }
+  phase_timings()->record_workers_end(timing_phase);
 }
 
 void ShenandoahHeap::parallel_cleaning(bool full_gc) {
@@ -2348,7 +2463,7 @@ void ShenandoahHeap::op_init_updaterefs() {
 
   if (ShenandoahVerify) {
     if (!is_degenerated_gc_in_progress()) {
-      verifier()->verify_roots_no_forwarded_except(ShenandoahRootVerifier::ThreadRoots);
+      verifier()->verify_roots_in_to_space_except(ShenandoahRootVerifier::ThreadRoots);
     }
     verifier()->verify_before_updaterefs();
   }
