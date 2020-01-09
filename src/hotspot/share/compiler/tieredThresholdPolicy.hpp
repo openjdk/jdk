@@ -170,8 +170,14 @@ class TieredThresholdPolicy : public CompilationPolicy {
   inline void set_carry_if_necessary(InvocationCounter *counter);
   // Set carry flags in the counters (in Method* and MDO).
   inline void handle_counter_overflow(Method* method);
+  // Verify that a level is consistent with the compilation mode
+  bool verify_level(CompLevel level);
+  // Clamp the request level according to various constraints.
+  inline CompLevel limit_level(CompLevel level);
+  // Return desired initial compilation level for Xcomp
+  CompLevel initial_compile_level_helper(const methodHandle& method);
   // Call and loop predicates determine whether a transition to a higher compilation
-  // level should be performed (pointers to predicate functions are passed to common_TF().
+  // level should be performed (pointers to predicate functions are passed to common().
   // Predicates also take compiler load into account.
   typedef bool (TieredThresholdPolicy::*Predicate)(int i, int b, CompLevel cur_level, const methodHandle& method);
   bool call_predicate(int i, int b, CompLevel cur_level, const methodHandle& method);
@@ -253,7 +259,8 @@ public:
     if (is_c2_compile(comp_level)) return c2_count();
     return 0;
   }
-  virtual CompLevel initial_compile_level() { return MIN2((CompLevel)TieredStopAtLevel, CompLevel_initial_compile); }
+  // Return initial compile level to use with Xcomp (depends on compilation mode).
+  virtual CompLevel initial_compile_level(const methodHandle& method);
   virtual void do_safepoint_work() { }
   virtual void delay_compilation(Method* method) { }
   virtual void disable_compilation(Method* method) { }

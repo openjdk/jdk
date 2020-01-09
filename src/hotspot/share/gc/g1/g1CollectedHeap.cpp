@@ -1,5 +1,5 @@
- /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+/*
+ * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2149,6 +2149,13 @@ bool G1CollectedHeap::try_collect_concurrently(GCCause::Cause cause,
     if (cause == GCCause::_g1_periodic_collection) {
       LOG_COLLECT_CONCURRENTLY_COMPLETE(cause, op.gc_succeeded());
       return op.gc_succeeded();
+    }
+
+    // If VMOp skipped initiating concurrent marking cycle because
+    // we're terminating, then we're done.
+    if (op.terminating()) {
+      LOG_COLLECT_CONCURRENTLY(cause, "skipped: terminating");
+      return false;
     }
 
     // Lock to get consistent set of values.

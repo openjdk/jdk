@@ -46,9 +46,9 @@
 #include "jfr/utilities/jfrTypes.hpp"
 #include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/mutexLocker.hpp"
-#include "runtime/orderAccess.hpp"
 #include "runtime/os.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/thread.inline.hpp"
@@ -347,26 +347,48 @@ JfrRecorderService::JfrRecorderService() :
   _storage(JfrStorage::instance()),
   _string_pool(JfrStringPool::instance()) {}
 
-static bool recording = false;
+enum RecorderState {
+  STOPPED,
+  RUNNING
+};
 
-static void set_recording_state(bool is_recording) {
+static RecorderState recorder_state = STOPPED;
+
+static void set_recorder_state(RecorderState from, RecorderState to) {
+  assert(from == recorder_state, "invariant");
   OrderAccess::storestore();
-  recording = is_recording;
+  recorder_state = to;
+}
+
+static void start_recorder() {
+  set_recorder_state(STOPPED, RUNNING);
+  log_debug(jfr, system)("Recording service STARTED");
+}
+
+static void stop_recorder() {
+  set_recorder_state(RUNNING, STOPPED);
+  log_debug(jfr, system)("Recording service STOPPED");
 }
 
 bool JfrRecorderService::is_recording() {
-  return recording;
+  const bool is_running = recorder_state == RUNNING;
+  OrderAccess::loadload();
+  return is_running;
 }
 
 void JfrRecorderService::start() {
   MutexLocker lock(JfrStream_lock, Mutex::_no_safepoint_check_flag);
-  log_debug(jfr, system)("Request to START recording");
   assert(!is_recording(), "invariant");
   clear();
-  set_recording_state(true);
-  assert(is_recording(), "invariant");
   open_new_chunk();
-  log_debug(jfr, system)("Recording STARTED");
+  start_recorder();
+  assert(is_recording(), "invariant");
+}
+
+static void stop() {
+  assert(JfrRecorderService::is_recording(), "invariant");
+  stop_recorder();
+  assert(!JfrRecorderService::is_recording(), "invariant");
 }
 
 void JfrRecorderService::clear() {
@@ -390,11 +412,12 @@ void JfrRecorderService::invoke_safepoint_clear() {
 
 void JfrRecorderService::safepoint_clear() {
   assert(SafepointSynchronize::is_at_safepoint(), "invariant");
+  _checkpoint_manager.begin_epoch_shift();
   _string_pool.clear();
   _storage.clear();
-  _checkpoint_manager.shift_epoch();
   _chunkwriter.set_time_stamp();
   _stack_trace_repository.clear();
+  _checkpoint_manager.end_epoch_shift();
 }
 
 void JfrRecorderService::post_safepoint_clear() {
@@ -409,14 +432,6 @@ void JfrRecorderService::open_new_chunk(bool vm_error) {
   if (valid_chunk) {
     _checkpoint_manager.write_static_type_set_and_threads();
   }
-}
-
-static void stop() {
-  assert(JfrStream_lock->owned_by_self(), "invariant");
-  assert(JfrRecorderService::is_recording(), "invariant");
-  log_debug(jfr, system)("Recording STOPPED");
-  set_recording_state(false);
-  assert(!JfrRecorderService::is_recording(), "invariant");
 }
 
 // 'rotation_safepoint_pending' is currently only relevant in the unusual case of an emergency dump.
@@ -559,14 +574,15 @@ void JfrRecorderService::safepoint_write() {
   assert(SafepointSynchronize::is_at_safepoint(), "invariant");
   assert(is_rotation_safepoint_pending(), "invariant");
   set_rotation_safepoint_pending(false);
+  _checkpoint_manager.begin_epoch_shift();
   if (_string_pool.is_modified()) {
     write_stringpool_safepoint(_string_pool, _chunkwriter);
   }
   _checkpoint_manager.on_rotation();
   _storage.write_at_safepoint();
-  _checkpoint_manager.shift_epoch();
   _chunkwriter.set_time_stamp();
   write_stacktrace(_stack_trace_repository, _chunkwriter, true);
+  _checkpoint_manager.end_epoch_shift();
 }
 
 void JfrRecorderService::post_safepoint_write() {

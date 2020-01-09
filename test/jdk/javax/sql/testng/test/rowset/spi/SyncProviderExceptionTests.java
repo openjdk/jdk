@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,21 @@ package test.rowset.spi;
 import com.sun.rowset.internal.SyncResolverImpl;
 import java.sql.SQLException;
 import javax.sql.rowset.spi.SyncProviderException;
+import javax.sql.rowset.spi.SyncResolver;
+
 import static org.testng.Assert.*;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import util.BaseTest;
 import util.StubSyncResolver;
 
 public class SyncProviderExceptionTests extends BaseTest {
+
+    // Used by SyncProviderException::getSyncResolver tests
+    private SyncResolver resolver;
+
     @BeforeClass
     public static void setUpClass() throws Exception {
         System.out.println(System.getProperty("java.naming.factory.initial"));
@@ -41,6 +48,12 @@ public class SyncProviderExceptionTests extends BaseTest {
     @AfterClass
     public static void tearDownClass() throws Exception {
     }
+
+    @BeforeMethod
+    public void setupTest() {
+        resolver = new SyncProviderException().getSyncResolver();
+    }
+
     /*
      * Create SyncProviderException with no-arg constructor
      */
@@ -183,5 +196,61 @@ public class SyncProviderExceptionTests extends BaseTest {
                 && ex1.getCause() == null
                 && ex1.getErrorCode() == 0
                 && ex1.getSyncResolver() instanceof StubSyncResolver);
+    }
+
+    /*
+     * Validate SyncResolver::getStatus() succeeds
+     */
+    @Test
+    public void testgetStatus() {
+        int status = resolver.getStatus();
+    }
+
+    /*
+     * Validate SyncResolver::nextConflict() succeeds
+     */
+    @Test
+    public void testnextConflict() throws SQLException {
+         boolean result = resolver.nextConflict();
+    }
+
+    /*
+     * Validate SyncResolver::previousConflict() succeeds
+     */
+    @Test
+    public void testPreviousConflict() throws SQLException {
+        boolean result =  resolver.previousConflict();
+    }
+
+    /*
+     * Validate SyncResolver::getConflictValue() throws a SQLException
+     */
+    @Test
+    public void testConflictedValueByInt() throws SQLException {
+        assertThrows(SQLException.class, () ->resolver.getConflictValue(1));
+    }
+
+    /*
+     * Validate SyncResolver::getConflictValue() throws a SQLException
+     */
+    @Test
+    public void testConflictedValueByName() throws SQLException {
+        assertThrows(SQLException.class, () -> resolver.getConflictValue("foo"));
+    }
+
+    /*
+     * Validate SyncResolver::setResolvedValue() throws a SQLException
+     */
+    @Test
+    public void testSetResolvedValueByInt() throws SQLException {
+        assertThrows(SQLException.class, () -> resolver.setResolvedValue(1, "foo"));
+    }
+
+    /*
+     * Validate SyncResolver::getConflictValue() throws a SQLException
+     */
+    @Test
+    public void testSetResolvedValueByName() throws SQLException {
+        assertThrows(SQLException.class, () -> resolver.setResolvedValue("foo", "bar"));
     }
 }

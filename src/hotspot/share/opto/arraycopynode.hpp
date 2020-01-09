@@ -90,7 +90,7 @@ private:
 
   intptr_t get_length_if_constant(PhaseGVN *phase) const;
   int get_count(PhaseGVN *phase) const;
-  static const TypePtr* get_address_type(PhaseGVN *phase, Node* n);
+  static const TypePtr* get_address_type(PhaseGVN* phase, const TypePtr* atp, Node* n);
 
   Node* try_clone_instance(PhaseGVN *phase, bool can_reshape, int count);
   bool prepare_array_copy(PhaseGVN *phase, bool can_reshape,

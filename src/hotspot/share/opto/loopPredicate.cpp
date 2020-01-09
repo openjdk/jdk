@@ -801,7 +801,8 @@ BoolNode* PhaseIdealLoop::rc_predicate(IdealLoopTree *loop, Node* ctrl,
 
   if (TraceLoopPredicate) {
     predString->print_cr("<u range");
-    tty->print("%s", predString->as_string());
+    tty->print("%s", predString->base());
+    predString->~stringStream();
   }
   return bol;
 }
