@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -131,12 +131,9 @@ inline void G1ArchiveAllocator::enable_archive_object_check() {
 
   _archive_check_enabled = true;
   size_t length = G1CollectedHeap::heap()->max_reserved_capacity();
-  _closed_archive_region_map.initialize(G1CollectedHeap::heap()->base(),
-                                        G1CollectedHeap::heap()->base() + length,
-                                        HeapRegion::GrainBytes);
-  _open_archive_region_map.initialize(G1CollectedHeap::heap()->base(),
-                                      G1CollectedHeap::heap()->base() + length,
-                                      HeapRegion::GrainBytes);
+  _archive_region_map.initialize(G1CollectedHeap::heap()->base(),
+                                 G1CollectedHeap::heap()->base() + length,
+                                 HeapRegion::GrainBytes);
 }
 
 // Set the regions containing the specified address range as archive.
@@ -146,36 +143,26 @@ inline void G1ArchiveAllocator::set_range_archive(MemRegion range, bool open) {
                      open ? "open" : "closed",
                      p2i(range.start()),
                      p2i(range.last()));
-  if (open) {
-    _open_archive_region_map.set_by_address(range, true);
-  } else {
-    _closed_archive_region_map.set_by_address(range, true);
-  }
+  uint8_t const value = open ? G1ArchiveRegionMap::OpenArchive : G1ArchiveRegionMap::ClosedArchive;
+  _archive_region_map.set_by_address(range, value);
 }
 
 // Clear the archive regions map containing the specified address range.
-inline void G1ArchiveAllocator::clear_range_archive(MemRegion range, bool open) {
+inline void G1ArchiveAllocator::clear_range_archive(MemRegion range) {
   assert(_archive_check_enabled, "archive range check not enabled");
-  log_info(gc, cds)("Clear %s archive regions in map: [" PTR_FORMAT ", " PTR_FORMAT "]",
-                    open ? "open" : "closed",
+  log_info(gc, cds)("Clear archive regions in map: [" PTR_FORMAT ", " PTR_FORMAT "]",
                     p2i(range.start()),
                     p2i(range.last()));
-  if (open) {
-    _open_archive_region_map.set_by_address(range, false);
-  } else {
-    _closed_archive_region_map.set_by_address(range, false);
-  }
+  _archive_region_map.set_by_address(range, G1ArchiveRegionMap::NoArchive);
 }
 
 // Check if an object is in a closed archive region using the _archive_region_map.
 inline bool G1ArchiveAllocator::in_closed_archive_range(oop object) {
-  // This is the out-of-line part of is_closed_archive_object test, done separately
-  // to avoid additional performance impact when the check is not enabled.
-  return _closed_archive_region_map.get_by_address((HeapWord*)object);
+  return _archive_region_map.get_by_address((HeapWord*)object) == G1ArchiveRegionMap::ClosedArchive;
 }
 
 inline bool G1ArchiveAllocator::in_open_archive_range(oop object) {
-  return _open_archive_region_map.get_by_address((HeapWord*)object);
+  return _archive_region_map.get_by_address((HeapWord*)object) == G1ArchiveRegionMap::OpenArchive;
 }
 
 // Check if archive object checking is enabled, to avoid calling in_open/closed_archive_range
@@ -193,8 +180,8 @@ inline bool G1ArchiveAllocator::is_open_archive_object(oop object) {
 }
 
 inline bool G1ArchiveAllocator::is_archived_object(oop object) {
-  return (archive_check_enabled() && (in_closed_archive_range(object) ||
-                                      in_open_archive_range(object)));
+  return archive_check_enabled() &&
+         (_archive_region_map.get_by_address((HeapWord*)object) != G1ArchiveRegionMap::NoArchive);
 }
 
 #endif // SHARE_GC_G1_G1ALLOCATOR_INLINE_HPP

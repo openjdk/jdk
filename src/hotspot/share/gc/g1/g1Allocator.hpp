@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -203,12 +203,17 @@ public:
   void undo_allocation(G1HeapRegionAttr dest, HeapWord* obj, size_t word_sz, uint node_index);
 };
 
-// G1ArchiveRegionMap is a boolean array used to mark G1 regions as
+// G1ArchiveRegionMap is an array used to mark G1 regions as
 // archive regions.  This allows a quick check for whether an object
 // should not be marked because it is in an archive region.
-class G1ArchiveRegionMap : public G1BiasedMappedArray<bool> {
+class G1ArchiveRegionMap : public G1BiasedMappedArray<uint8_t> {
+public:
+  static const uint8_t NoArchive = 0;
+  static const uint8_t OpenArchive = 1;
+  static const uint8_t ClosedArchive = 2;
+
 protected:
-  bool default_value() const { return false; }
+  uint8_t default_value() const { return NoArchive; }
 };
 
 // G1ArchiveAllocator is used to allocate memory in archive
@@ -290,7 +295,7 @@ public:
 
   // Mark regions containing the specified address range as archive/non-archive.
   static inline void set_range_archive(MemRegion range, bool open);
-  static inline void clear_range_archive(MemRegion range, bool open);
+  static inline void clear_range_archive(MemRegion range);
 
   // Check if the object is in closed archive
   static inline bool is_closed_archive_object(oop object);
@@ -301,8 +306,7 @@ public:
 
 private:
   static bool _archive_check_enabled;
-  static G1ArchiveRegionMap  _closed_archive_region_map;
-  static G1ArchiveRegionMap  _open_archive_region_map;
+  static G1ArchiveRegionMap  _archive_region_map;
 
   // Check if an object is in a closed archive region using the _closed_archive_region_map.
   static inline bool in_closed_archive_range(oop object);
