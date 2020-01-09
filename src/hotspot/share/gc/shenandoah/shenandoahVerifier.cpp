@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2017, 2020, Red Hat, Inc. All rights reserved.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
@@ -24,6 +24,7 @@
 #include "precompiled.hpp"
 
 #include "gc/shenandoah/shenandoahAsserts.hpp"
+#include "gc/shenandoah/shenandoahConcurrentRoots.hpp"
 #include "gc/shenandoah/shenandoahForwarding.inline.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
@@ -632,7 +633,8 @@ void ShenandoahVerifier::verify_at_safepoint(const char *label,
                                              VerifyForwarded forwarded, VerifyMarked marked,
                                              VerifyCollectionSet cset,
                                              VerifyLiveness liveness, VerifyRegions regions,
-                                             VerifyGCState gcstate) {
+                                             VerifyGCState gcstate,
+                                             VerifyWeakRoots weak_roots) {
   guarantee(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "only when nothing else happens");
   guarantee(ShenandoahVerify, "only when enabled, and bitmap is initialized in ShenandoahHeap::initialize");
 
@@ -724,6 +726,18 @@ void ShenandoahVerifier::verify_at_safepoint(const char *label,
   size_t count_reachable = 0;
   if (ShenandoahVerifyLevel >= 2) {
     ShenandoahRootVerifier verifier;
+    switch (weak_roots) {
+      case _verify_serial_weak_roots:
+        verifier.excludes(ShenandoahRootVerifier::ConcurrentWeakRoots);
+        break;
+      case _verify_concurrent_weak_roots:
+        verifier.excludes(ShenandoahRootVerifier::SerialWeakRoots);
+        break;
+      case _verify_all_weak_roots:
+        break;
+      default:
+        ShouldNotReachHere();
+    }
 
     ShenandoahVerifierReachableTask task(_verification_bit_map, ld, &verifier, label, options);
     _heap->workers()->run_task(&task);
@@ -791,7 +805,8 @@ void ShenandoahVerifier::verify_generic(VerifyOption vo) {
           _verify_cset_disable,        // cset may be inconsistent
           _verify_liveness_disable,    // no reliable liveness data
           _verify_regions_disable,     // no reliable region data
-          _verify_gcstate_disable      // no data about gcstate
+          _verify_gcstate_disable,     // no data about gcstate
+          _verify_all_weak_roots
   );
 }
 
@@ -804,7 +819,8 @@ void ShenandoahVerifier::verify_before_concmark() {
             _verify_cset_forwarded,      // allow forwarded references to cset
             _verify_liveness_disable,    // no reliable liveness data
             _verify_regions_notrash,     // no trash regions
-            _verify_gcstate_forwarded    // there are forwarded objects
+            _verify_gcstate_forwarded,   // there are forwarded objects
+            _verify_all_weak_roots
     );
   } else {
     verify_at_safepoint(
@@ -814,7 +830,8 @@ void ShenandoahVerifier::verify_before_concmark() {
             _verify_cset_none,           // UR should have fixed this
             _verify_liveness_disable,    // no reliable liveness data
             _verify_regions_notrash,     // no trash regions
-            _verify_gcstate_stable       // there are no forwarded objects
+            _verify_gcstate_stable,      // there are no forwarded objects
+            _verify_all_weak_roots
     );
   }
 }
@@ -827,11 +844,17 @@ void ShenandoahVerifier::verify_after_concmark() {
           _verify_cset_none,           // no references to cset anymore
           _verify_liveness_complete,   // liveness data must be complete here
           _verify_regions_disable,     // trash regions not yet recycled
-          _verify_gcstate_stable       // mark should have stabilized the heap
+          _verify_gcstate_stable,       // mark should have stabilized the heap
+          _verify_all_weak_roots
   );
 }
 
 void ShenandoahVerifier::verify_before_evacuation() {
+  // Concurrent weak roots are evacuated during concurrent phase
+  VerifyWeakRoots verify_weak_roots = ShenandoahConcurrentRoots::should_do_concurrent_class_unloading() ?
+                                      _verify_serial_weak_roots :
+                                      _verify_all_weak_roots;
+
   verify_at_safepoint(
           "Before Evacuation",
           _verify_forwarded_none,    // no forwarded references
@@ -839,19 +862,26 @@ void ShenandoahVerifier::verify_before_evacuation() {
           _verify_cset_disable,      // non-forwarded references to cset expected
           _verify_liveness_complete, // liveness data must be complete here
           _verify_regions_disable,   // trash regions not yet recycled
-          _verify_gcstate_stable     // mark should have stabilized the heap
+          _verify_gcstate_stable,    // mark should have stabilized the heap
+          verify_weak_roots
   );
 }
 
 void ShenandoahVerifier::verify_during_evacuation() {
+  // Concurrent weak roots are evacuated during concurrent phase
+  VerifyWeakRoots verify_weak_roots = ShenandoahConcurrentRoots::should_do_concurrent_class_unloading() ?
+                                      _verify_serial_weak_roots :
+                                      _verify_all_weak_roots;
+
   verify_at_safepoint(
           "During Evacuation",
-          _verify_forwarded_allow,   // some forwarded references are allowed
-          _verify_marked_disable,    // walk only roots
-          _verify_cset_disable,      // some cset references are not forwarded yet
-          _verify_liveness_disable,  // liveness data might be already stale after pre-evacs
-          _verify_regions_disable,   // trash regions not yet recycled
-          _verify_gcstate_evacuation // evacuation is in progress
+          _verify_forwarded_allow,    // some forwarded references are allowed
+          _verify_marked_disable,     // walk only roots
+          _verify_cset_disable,       // some cset references are not forwarded yet
+          _verify_liveness_disable,   // liveness data might be already stale after pre-evacs
+          _verify_regions_disable,    // trash regions not yet recycled
+          _verify_gcstate_evacuation, // evacuation is in progress
+          verify_weak_roots
   );
 }
 
@@ -863,7 +893,8 @@ void ShenandoahVerifier::verify_after_evacuation() {
           _verify_cset_forwarded,      // all cset refs are fully forwarded
           _verify_liveness_disable,    // no reliable liveness data anymore
           _verify_regions_notrash,     // trash regions have been recycled already
-          _verify_gcstate_forwarded    // evacuation produced some forwarded objects
+          _verify_gcstate_forwarded,   // evacuation produced some forwarded objects
+          _verify_all_weak_roots
   );
 }
 
@@ -875,7 +906,8 @@ void ShenandoahVerifier::verify_before_updaterefs() {
           _verify_cset_forwarded,      // all cset refs are fully forwarded
           _verify_liveness_disable,    // no reliable liveness data anymore
           _verify_regions_notrash,     // trash regions have been recycled already
-          _verify_gcstate_forwarded    // evacuation should have produced some forwarded objects
+          _verify_gcstate_forwarded,   // evacuation should have produced some forwarded objects
+          _verify_all_weak_roots
   );
 }
 
@@ -887,7 +919,8 @@ void ShenandoahVerifier::verify_after_updaterefs() {
           _verify_cset_none,           // no cset references, all updated
           _verify_liveness_disable,    // no reliable liveness data anymore
           _verify_regions_nocset,      // no cset regions, trash regions have appeared
-          _verify_gcstate_stable       // update refs had cleaned up forwarded objects
+          _verify_gcstate_stable,      // update refs had cleaned up forwarded objects
+          _verify_all_weak_roots
   );
 }
 
@@ -899,7 +932,8 @@ void ShenandoahVerifier::verify_after_degenerated() {
           _verify_cset_none,           // no cset references
           _verify_liveness_disable,    // no reliable liveness data anymore
           _verify_regions_notrash_nocset, // no trash, no cset
-          _verify_gcstate_stable       // degenerated refs had cleaned up forwarded objects
+          _verify_gcstate_stable,       // degenerated refs had cleaned up forwarded objects
+          _verify_all_weak_roots
   );
 }
 
@@ -911,7 +945,8 @@ void ShenandoahVerifier::verify_before_traversal() {
           _verify_cset_none,           // no cset references before traversal
           _verify_liveness_disable,    // no reliable liveness data anymore
           _verify_regions_notrash_nocset, // no trash and no cset regions
-          _verify_gcstate_stable       // nothing forwarded before traversal
+          _verify_gcstate_stable,      // nothing forwarded before traversal
+          _verify_all_weak_roots
   );
 }
 
@@ -923,7 +958,8 @@ void ShenandoahVerifier::verify_after_traversal() {
           _verify_cset_none,           // no cset references left after traversal
           _verify_liveness_disable,    // liveness data is not collected for new allocations
           _verify_regions_nocset,      // no cset regions, trash regions allowed
-          _verify_gcstate_stable       // nothing forwarded after traversal
+          _verify_gcstate_stable,      // nothing forwarded after traversal
+          _verify_all_weak_roots
   );
 }
 
@@ -935,7 +971,8 @@ void ShenandoahVerifier::verify_before_fullgc() {
           _verify_cset_disable,        // cset might be foobared
           _verify_liveness_disable,    // no reliable liveness data anymore
           _verify_regions_disable,     // no reliable region data here
-          _verify_gcstate_disable      // no reliable gcstate data
+          _verify_gcstate_disable,     // no reliable gcstate data
+          _verify_all_weak_roots
   );
 }
 
@@ -947,7 +984,8 @@ void ShenandoahVerifier::verify_after_fullgc() {
           _verify_cset_none,           // no cset references
           _verify_liveness_disable,    // no reliable liveness data anymore
           _verify_regions_notrash_nocset, // no trash, no cset
-          _verify_gcstate_stable       // full gc cleaned up everything
+          _verify_gcstate_stable,       // full gc cleaned up everything
+          _verify_all_weak_roots
   );
 }
 

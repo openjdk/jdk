@@ -520,6 +520,9 @@ static bool read_exec_segments(struct ps_prochandle* ph, ELF_EHDR* exec_ehdr) {
 #define LINK_MAP_LD_OFFSET    offsetof(struct link_map, l_ld)
 #define LINK_MAP_NEXT_OFFSET  offsetof(struct link_map, l_next)
 
+#define INVALID_LOAD_ADDRESS -1L
+#define ZERO_LOAD_ADDRESS 0x0L
+
 // Calculate the load address of shared library
 // on prelink-enabled environment.
 //
@@ -536,7 +539,7 @@ static uintptr_t calc_prelinked_load_address(struct ps_prochandle* ph, int lib_f
   phbuf = read_program_header_table(lib_fd, elf_ehdr);
   if (phbuf == NULL) {
     print_debug("can't read program header of shared object\n");
-    return 0L;
+    return INVALID_LOAD_ADDRESS;
   }
 
   // Get the address of .dynamic section from shared library.
@@ -552,7 +555,7 @@ static uintptr_t calc_prelinked_load_address(struct ps_prochandle* ph, int lib_f
   if (ps_pdread(ph, (psaddr_t)link_map_addr + LINK_MAP_LD_OFFSET,
                &lib_ld, sizeof(uintptr_t)) != PS_OK) {
     print_debug("can't read address of dynamic section in shared object\n");
-    return 0L;
+    return INVALID_LOAD_ADDRESS;
   }
 
   // Return the load address which is calculated by the address of .dynamic
@@ -663,9 +666,9 @@ static bool read_shared_lib_info(struct ps_prochandle* ph) {
             // continue with other libraries...
          } else {
             if (read_elf_header(lib_fd, &elf_ehdr)) {
-               if (lib_base_diff == 0x0L) {
+               if (lib_base_diff == ZERO_LOAD_ADDRESS ) {
                  lib_base_diff = calc_prelinked_load_address(ph, lib_fd, &elf_ehdr, link_map_addr);
-                 if (lib_base_diff == 0x0L) {
+                 if (lib_base_diff == INVALID_LOAD_ADDRESS) {
                    close(lib_fd);
                    return false;
                  }

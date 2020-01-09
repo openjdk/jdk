@@ -181,9 +181,9 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
     }
 
     /**
-     * Returns the current capacity. The capacity is the amount of storage
-     * available for newly inserted characters, beyond which an allocation
-     * will occur.
+     * Returns the current capacity. The capacity is the number of characters
+     * that can be stored (including already written characters), beyond which
+     * an allocation will occur.
      *
      * @return  the current capacity
      */

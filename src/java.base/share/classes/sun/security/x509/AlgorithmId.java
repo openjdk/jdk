@@ -239,6 +239,9 @@ public class AlgorithmId implements Serializable, DerEncoder {
      * return a name such as "MD5withRSA" for a signature algorithm on
      * some systems.  It also returns names like "OID.1.2.3.4", when
      * no particular name for the algorithm is known.
+     *
+     * Note: for ecdsa-with-SHA2 plus hash algorithm (Ex: SHA-256), this method
+     * returns the "full" signature algorithm (Ex: SHA256withECDSA) directly.
      */
     public String getName() {
         String algName = nameTable.get(algid);
@@ -248,7 +251,7 @@ public class AlgorithmId implements Serializable, DerEncoder {
         if ((params != null) && algid.equals((Object)specifiedWithECDSA_oid)) {
             try {
                 AlgorithmId paramsId =
-                        AlgorithmId.parse(new DerValue(getEncodedParams()));
+                        AlgorithmId.parse(new DerValue(params.toByteArray()));
                 String paramsName = paramsId.getName();
                 algName = makeSigAlg(paramsName, "EC");
             } catch (IOException e) {
@@ -264,12 +267,18 @@ public class AlgorithmId implements Serializable, DerEncoder {
 
     /**
      * Returns the DER encoded parameter, which can then be
-     * used to initialize java.security.AlgorithmParamters.
+     * used to initialize java.security.AlgorithmParameters.
+     *
+     * Note: for ecdsa-with-SHA2 plus hash algorithm (Ex: SHA-256), this method
+     * returns null because {@link #getName()} has already returned the "full"
+     * signature algorithm (Ex: SHA256withECDSA).
      *
      * @return DER encoded parameters, or null not present.
      */
     public byte[] getEncodedParams() throws IOException {
-        return (params == null) ? null : params.toByteArray();
+        return (params == null || algid.equals(specifiedWithECDSA_oid))
+                ? null
+                : params.toByteArray();
     }
 
     /**

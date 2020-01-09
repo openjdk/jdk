@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2019, 2020, Red Hat, Inc. All rights reserved.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
@@ -170,6 +170,7 @@ ShenandoahNMethod* ShenandoahNMethod::for_nmethod(nmethod* nm) {
 }
 
 void ShenandoahNMethod::heal_nmethod(nmethod* nm) {
+  assert(ShenandoahHeap::heap()->is_concurrent_root_in_progress(), "Only this phase");
   ShenandoahNMethod* data = gc_data(nm);
   assert(data != NULL, "Sanity");
   assert(data->lock()->owned_by_self(), "Must hold the lock");
