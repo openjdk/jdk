@@ -48,7 +48,6 @@ public class Credentials {
     TicketFlags flags;
     Ticket ticket;
     Ticket secondTicket; //optional
-    private boolean DEBUG = Krb5.DEBUG;
 
     public Credentials(
             PrincipalName new_cname,

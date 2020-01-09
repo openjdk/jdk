@@ -45,7 +45,7 @@ import java.util.concurrent.TimeUnit;
 @State(Scope.Thread)
 public class BigIntegers {
 
-    private BigInteger[] hugeArray, largeArray, smallArray;
+    private BigInteger[] hugeArray, largeArray, smallArray, shiftArray;
     public String[] dummyStringArray;
     public Object[] dummyArr;
     private static final int TESTSIZE = 1000;
@@ -53,6 +53,7 @@ public class BigIntegers {
     @Setup
     public void setup() {
         Random r = new Random(1123);
+        int numbits = r.nextInt(16384);
 
         hugeArray = new BigInteger[TESTSIZE]; /*
          * Huge numbers larger than
@@ -67,6 +68,10 @@ public class BigIntegers {
          * Small number less than
          * MAX_INT
          */
+        shiftArray = new BigInteger[TESTSIZE]; /*
+         * Each array entry is atmost 16k bits
+         * in size
+         */
 
         dummyStringArray = new String[TESTSIZE];
         dummyArr = new Object[TESTSIZE];
@@ -78,6 +83,7 @@ public class BigIntegers {
                     + ((long) value + (long) Integer.MAX_VALUE));
             largeArray[i] = new BigInteger("" + ((long) value + (long) Integer.MAX_VALUE));
             smallArray[i] = new BigInteger("" + ((long) value / 1000));
+            shiftArray[i] = new BigInteger(numbits, r);
         }
     }
 
@@ -134,6 +140,40 @@ public class BigIntegers {
                 continue;
             }
             tmp = tmp.add(s);
+        }
+        bh.consume(tmp);
+    }
+
+    /** Invokes the shiftLeft method of BigInteger with different values. */
+    @Benchmark
+    @OperationsPerInvocation(TESTSIZE)
+    public void testLeftShift(Blackhole bh) {
+        Random rand = new Random();
+        int shift = rand.nextInt(30) + 1;
+        BigInteger tmp = null;
+        for (BigInteger s : shiftArray) {
+            if (tmp == null) {
+                tmp = s;
+                continue;
+            }
+            tmp = tmp.shiftLeft(shift);
+        }
+        bh.consume(tmp);
+    }
+
+    /** Invokes the shiftRight method of BigInteger with different values. */
+    @Benchmark
+    @OperationsPerInvocation(TESTSIZE)
+    public void testRightShift(Blackhole bh) {
+        Random rand = new Random();
+        int shift = rand.nextInt(30) + 1;
+        BigInteger tmp = null;
+        for (BigInteger s : shiftArray) {
+            if (tmp == null) {
+                tmp = s;
+                continue;
+            }
+            tmp = tmp.shiftRight(shift);
         }
         bh.consume(tmp);
     }

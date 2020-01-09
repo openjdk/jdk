@@ -236,11 +236,13 @@ public class Credentials {
         try {
             retVal = ticket.asn1Encode();
         } catch (Asn1Exception e) {
-            if (DEBUG)
-            System.out.println(e);
+            if (DEBUG) {
+                System.out.println(e);
+            }
         } catch (IOException ioe) {
-            if (DEBUG)
-            System.out.println(ioe);
+            if (DEBUG) {
+                System.out.println(ioe);
+            }
         }
         return retVal;
     }
@@ -330,20 +332,20 @@ public class Credentials {
                 Credentials creds = acquireDefaultCreds();
                 if (creds == null) {
                     if (DEBUG) {
-                        System.out.println(">>> Found no TGT's in LSA");
+                        System.out.println(">>> Found no TGT's in native ccache");
                     }
                     return null;
                 }
                 if (princ != null) {
                     if (creds.getClient().equals(princ)) {
                         if (DEBUG) {
-                            System.out.println(">>> Obtained TGT from LSA: "
+                            System.out.println(">>> Obtained TGT from native ccache: "
                                                + creds);
                         }
                         return creds;
                     } else {
                         if (DEBUG) {
-                            System.out.println(">>> LSA contains TGT for "
+                            System.out.println(">>> native ccache contains TGT for "
                                                + creds.getClient()
                                                + " not "
                                                + princ);
@@ -352,7 +354,7 @@ public class Credentials {
                     }
                 } else {
                     if (DEBUG) {
-                        System.out.println(">>> Obtained TGT from LSA: "
+                        System.out.println(">>> Obtained TGT from native ccache: "
                                            + creds);
                     }
                     return creds;
@@ -445,7 +447,7 @@ public class Credentials {
                     ensureLoaded();
                 } catch (Exception e) {
                     if (DEBUG) {
-                        System.out.println("Can not load credentials cache");
+                        System.out.println("Can not load native ccache library");
                         e.printStackTrace();
                     }
                     alreadyTried = true;

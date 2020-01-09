@@ -138,7 +138,7 @@ public class InheritedChannelNotServerSocket {
         private volatile SocketChannel channel = null;
 
         public SP() {
-            provider = sun.nio.ch.DefaultSelectorProvider.create();
+            provider = sun.nio.ch.DefaultSelectorProvider.get();
         }
 
         public DatagramChannel openDatagramChannel() throws IOException {

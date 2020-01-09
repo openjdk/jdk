@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2019, 2020, Red Hat, Inc. All rights reserved.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
@@ -28,17 +28,24 @@
 #include "gc/shared/weakProcessor.hpp"
 #include "gc/shared/weakProcessorPhaseTimes.hpp"
 #include "gc/shared/workgroup.hpp"
+#include "gc/shenandoah/shenandoahRootProcessor.inline.hpp"
 #include "memory/iterator.hpp"
 
 // Perform weak root cleaning at a pause
 template <typename IsAlive, typename KeepAlive>
 class ShenandoahParallelWeakRootsCleaningTask : public AbstractGangTask {
 protected:
-  WeakProcessor::Task     _weak_processing_task;
-  IsAlive*                _is_alive;
-  KeepAlive*              _keep_alive;
+  WeakProcessor::Task       _weak_processing_task;
+  ShenandoahSerialWeakRoots _serial_weak_roots;
+  IsAlive*                  _is_alive;
+  KeepAlive*                _keep_alive;
+  bool                      _include_concurrent_roots;
+
 public:
-  ShenandoahParallelWeakRootsCleaningTask(IsAlive* is_alive, KeepAlive* keep_alive, uint num_workers);
+  ShenandoahParallelWeakRootsCleaningTask(IsAlive* is_alive,
+                                          KeepAlive* keep_alive,
+                                          uint num_workers,
+                                          bool include_concurrent_roots);
   ~ShenandoahParallelWeakRootsCleaningTask();
 
   void work(uint worker_id);

@@ -73,11 +73,11 @@ import com.sun.tools.javac.util.JCDiagnostic;
  *
  *  For each method, exceptions are handled as follows:
  *  <ul>
- *  <li>Checked exceptions are left alone and propogate upwards in the
+ *  <li>Checked exceptions are left alone to propagate upwards in the
  *      obvious way, since they are an expected aspect of the method's
  *      specification.
  *  <li>Unchecked exceptions which have already been caught and wrapped in
- *      ClientCodeException are left alone to continue propogating upwards.
+ *      ClientCodeException are left alone to continue propagating upwards.
  *  <li>All other unchecked exceptions (i.e. subtypes of RuntimeException
  *      and Error) and caught, and rethrown as a ClientCodeException with
  *      its cause set to the original exception.
@@ -157,7 +157,7 @@ public class ClientCodeWrapper {
             return fo;
     }
 
-    public <T /*super JavaFileOject*/> DiagnosticListener<T> wrap(DiagnosticListener<T> dl) {
+    public <T /*super JavaFileObject*/> DiagnosticListener<T> wrap(DiagnosticListener<T> dl) {
         if (isTrusted(dl))
             return dl;
         return new WrappedDiagnosticListener<>(dl);

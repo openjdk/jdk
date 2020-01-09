@@ -223,7 +223,7 @@ public class Types {
      * A downwards projection maps a type T into a type S such that (i) T has no variables in V,
      * and (ii) S is a lower bound of T.
      *
-     * Note that projections are only allowed to touch variables in V. Theferore it is possible for
+     * Note that projections are only allowed to touch variables in V. Therefore, it is possible for
      * a projection to leave its input type unchanged if it does not contain any variables in V.
      *
      * Moreover, note that while an upwards projection is always defined (every type as an upper bound),

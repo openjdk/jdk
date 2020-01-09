@@ -44,7 +44,6 @@ public class KrbTgsRep extends KrbKdcRep {
     private TGSRep rep;
     private Credentials creds;
     private Ticket secondTicket;
-    private static final boolean DEBUG = Krb5.DEBUG;
 
     KrbTgsRep(byte[] ibuf, KrbTgsReq tgsReq)
         throws KrbException, IOException {

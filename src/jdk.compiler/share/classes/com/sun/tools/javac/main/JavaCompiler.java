@@ -1490,7 +1490,7 @@ public class JavaCompiler {
                             } finally {
                                 /*
                                  * ignore any updates to hasLambdas made during
-                                 * the nested scan, this ensures an initalized
+                                 * the nested scan, this ensures an initialized
                                  * LambdaToMethod is available only to those
                                  * classes that contain lambdas
                                  */

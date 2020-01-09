@@ -195,6 +195,12 @@ void VM_Version::initialize() {
 
   intx cache_line_size = L1_data_cache_line_size();
 
+  if (PowerArchitecturePPC64 >= 9) {
+    if (os::supports_map_sync() == true) {
+      _data_cache_line_flush_size = cache_line_size;
+    }
+  }
+
   if (FLAG_IS_DEFAULT(AllocatePrefetchStyle)) AllocatePrefetchStyle = 1;
 
   if (AllocatePrefetchStyle == 4) {

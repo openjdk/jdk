@@ -199,7 +199,7 @@ public interface PoolConstant {
     }
 
     /**
-     * A pool constant implememntation describing a name and type pool entry.
+     * A pool constant implementation describing a name and type pool entry.
      */
     final class NameAndType implements PoolConstant {
 

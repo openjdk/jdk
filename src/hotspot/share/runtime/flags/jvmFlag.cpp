@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@
 #include "runtime/arguments.hpp"
 #include "runtime/flags/jvmFlag.hpp"
 #include "runtime/flags/jvmFlagConstraintList.hpp"
-#include "runtime/flags/jvmFlagWriteableList.hpp"
 #include "runtime/flags/jvmFlagRangeList.hpp"
 #include "runtime/globals_extension.hpp"
 #include "utilities/defaultStream.hpp"
@@ -92,163 +91,36 @@ static bool is_product_build() {
 #endif
 }
 
-JVMFlag::Error JVMFlag::check_writable(bool changed) {
-  if (is_constant_in_binary()) {
-    fatal("flag is constant: %s", _name);
-  }
-
-  JVMFlag::Error error = JVMFlag::SUCCESS;
-  if (changed) {
-    JVMFlagWriteable* writeable = JVMFlagWriteableList::find(_name);
-    if (writeable) {
-      if (writeable->is_writeable() == false) {
-        switch (writeable->type())
-        {
-          case JVMFlagWriteable::Once:
-            error = JVMFlag::SET_ONLY_ONCE;
-            jio_fprintf(defaultStream::error_stream(), "Error: %s may not be set more than once\n", _name);
-            break;
-          case JVMFlagWriteable::CommandLineOnly:
-            error = JVMFlag::COMMAND_LINE_ONLY;
-            jio_fprintf(defaultStream::error_stream(), "Error: %s may be modified only from commad line\n", _name);
-            break;
-          default:
-            ShouldNotReachHere();
-            break;
-        }
-      }
-      writeable->mark_once();
-    }
-  }
-  return error;
-}
-
 bool JVMFlag::is_bool() const {
   return strcmp(_type, "bool") == 0;
-}
-
-bool JVMFlag::get_bool() const {
-  return *((bool*) _addr);
-}
-
-JVMFlag::Error JVMFlag::set_bool(bool value) {
-  JVMFlag::Error error = check_writable(value!=get_bool());
-  if (error == JVMFlag::SUCCESS) {
-    *((bool*) _addr) = value;
-  }
-  return error;
 }
 
 bool JVMFlag::is_int() const {
   return strcmp(_type, "int")  == 0;
 }
 
-int JVMFlag::get_int() const {
-  return *((int*) _addr);
-}
-
-JVMFlag::Error JVMFlag::set_int(int value) {
-  JVMFlag::Error error = check_writable(value!=get_int());
-  if (error == JVMFlag::SUCCESS) {
-    *((int*) _addr) = value;
-  }
-  return error;
-}
-
 bool JVMFlag::is_uint() const {
   return strcmp(_type, "uint")  == 0;
-}
-
-uint JVMFlag::get_uint() const {
-  return *((uint*) _addr);
-}
-
-JVMFlag::Error JVMFlag::set_uint(uint value) {
-  JVMFlag::Error error = check_writable(value!=get_uint());
-  if (error == JVMFlag::SUCCESS) {
-    *((uint*) _addr) = value;
-  }
-  return error;
 }
 
 bool JVMFlag::is_intx() const {
   return strcmp(_type, "intx")  == 0;
 }
 
-intx JVMFlag::get_intx() const {
-  return *((intx*) _addr);
-}
-
-JVMFlag::Error JVMFlag::set_intx(intx value) {
-  JVMFlag::Error error = check_writable(value!=get_intx());
-  if (error == JVMFlag::SUCCESS) {
-    *((intx*) _addr) = value;
-  }
-  return error;
-}
-
 bool JVMFlag::is_uintx() const {
   return strcmp(_type, "uintx") == 0;
-}
-
-uintx JVMFlag::get_uintx() const {
-  return *((uintx*) _addr);
-}
-
-JVMFlag::Error JVMFlag::set_uintx(uintx value) {
-  JVMFlag::Error error = check_writable(value!=get_uintx());
-  if (error == JVMFlag::SUCCESS) {
-    *((uintx*) _addr) = value;
-  }
-  return error;
 }
 
 bool JVMFlag::is_uint64_t() const {
   return strcmp(_type, "uint64_t") == 0;
 }
 
-uint64_t JVMFlag::get_uint64_t() const {
-  return *((uint64_t*) _addr);
-}
-
-JVMFlag::Error JVMFlag::set_uint64_t(uint64_t value) {
-  JVMFlag::Error error = check_writable(value!=get_uint64_t());
-  if (error == JVMFlag::SUCCESS) {
-    *((uint64_t*) _addr) = value;
-  }
-  return error;
-}
-
 bool JVMFlag::is_size_t() const {
   return strcmp(_type, "size_t") == 0;
 }
 
-size_t JVMFlag::get_size_t() const {
-  return *((size_t*) _addr);
-}
-
-JVMFlag::Error JVMFlag::set_size_t(size_t value) {
-  JVMFlag::Error error = check_writable(value!=get_size_t());
-  if (error == JVMFlag::SUCCESS) {
-    *((size_t*) _addr) = value;
-  }
-  return error;
-}
-
 bool JVMFlag::is_double() const {
   return strcmp(_type, "double") == 0;
-}
-
-double JVMFlag::get_double() const {
-  return *((double*) _addr);
-}
-
-JVMFlag::Error JVMFlag::set_double(double value) {
-  JVMFlag::Error error = check_writable(value!=get_double());
-  if (error == JVMFlag::SUCCESS) {
-    *((double*) _addr) = value;
-  }
-  return error;
 }
 
 bool JVMFlag::is_ccstr() const {
@@ -258,19 +130,6 @@ bool JVMFlag::is_ccstr() const {
 bool JVMFlag::ccstr_accumulates() const {
   return strcmp(_type, "ccstrlist") == 0;
 }
-
-ccstr JVMFlag::get_ccstr() const {
-  return *((ccstr*) _addr);
-}
-
-JVMFlag::Error JVMFlag::set_ccstr(ccstr value) {
-  JVMFlag::Error error = check_writable(value!=get_ccstr());
-  if (error == JVMFlag::SUCCESS) {
-    *((ccstr*) _addr) = value;
-  }
-  return error;
-}
-
 
 JVMFlag::Flags JVMFlag::get_origin() {
   return Flags(_flags & VALUE_ORIGIN_MASK);
@@ -835,8 +694,7 @@ static JVMFlag flagTable[] = {
            RUNTIME_PRODUCT_RW_FLAG_STRUCT, \
            RUNTIME_LP64_PRODUCT_FLAG_STRUCT, \
            IGNORE_RANGE, \
-           IGNORE_CONSTRAINT, \
-           IGNORE_WRITEABLE)
+           IGNORE_CONSTRAINT)
 
   RUNTIME_OS_FLAGS(RUNTIME_DEVELOP_FLAG_STRUCT, \
                    RUNTIME_PD_DEVELOP_FLAG_STRUCT, \
@@ -846,8 +704,7 @@ static JVMFlag flagTable[] = {
                    RUNTIME_PD_DIAGNOSTIC_FLAG_STRUCT, \
                    RUNTIME_NOTPRODUCT_FLAG_STRUCT, \
                    IGNORE_RANGE, \
-                   IGNORE_CONSTRAINT, \
-                   IGNORE_WRITEABLE)
+                   IGNORE_CONSTRAINT)
 #if INCLUDE_JVMCI
   JVMCI_FLAGS(JVMCI_DEVELOP_FLAG_STRUCT, \
               JVMCI_PD_DEVELOP_FLAG_STRUCT, \
@@ -858,8 +715,7 @@ static JVMFlag flagTable[] = {
               JVMCI_EXPERIMENTAL_FLAG_STRUCT, \
               JVMCI_NOTPRODUCT_FLAG_STRUCT, \
               IGNORE_RANGE, \
-              IGNORE_CONSTRAINT, \
-              IGNORE_WRITEABLE)
+              IGNORE_CONSTRAINT)
 #endif // INCLUDE_JVMCI
 #ifdef COMPILER1
   C1_FLAGS(C1_DEVELOP_FLAG_STRUCT, \
@@ -870,8 +726,7 @@ static JVMFlag flagTable[] = {
            C1_PD_DIAGNOSTIC_FLAG_STRUCT, \
            C1_NOTPRODUCT_FLAG_STRUCT, \
            IGNORE_RANGE, \
-           IGNORE_CONSTRAINT, \
-           IGNORE_WRITEABLE)
+           IGNORE_CONSTRAINT)
 #endif // COMPILER1
 #ifdef COMPILER2
   C2_FLAGS(C2_DEVELOP_FLAG_STRUCT, \
@@ -883,8 +738,7 @@ static JVMFlag flagTable[] = {
            C2_EXPERIMENTAL_FLAG_STRUCT, \
            C2_NOTPRODUCT_FLAG_STRUCT, \
            IGNORE_RANGE, \
-           IGNORE_CONSTRAINT, \
-           IGNORE_WRITEABLE)
+           IGNORE_CONSTRAINT)
 #endif // COMPILER2
   ARCH_FLAGS(ARCH_DEVELOP_FLAG_STRUCT, \
              ARCH_PRODUCT_FLAG_STRUCT, \
@@ -892,8 +746,7 @@ static JVMFlag flagTable[] = {
              ARCH_EXPERIMENTAL_FLAG_STRUCT, \
              ARCH_NOTPRODUCT_FLAG_STRUCT, \
              IGNORE_RANGE, \
-             IGNORE_CONSTRAINT, \
-             IGNORE_WRITEABLE)
+             IGNORE_CONSTRAINT)
   {0, NULL, NULL}
 };
 
@@ -1025,10 +878,10 @@ JVMFlag::Error JVMFlag::boolAtPut(JVMFlag* flag, bool* value, JVMFlag::Flags ori
   if (check != JVMFlag::SUCCESS) return check;
   bool old_value = flag->get_bool();
   trace_flag_changed<EventBooleanFlagChanged, bool>(flag, old_value, *value, origin);
-  check = flag->set_bool(*value);
+  flag->set_bool(*value);
   *value = old_value;
   flag->set_origin(origin);
-  return check;
+  return JVMFlag::SUCCESS;
 }
 
 JVMFlag::Error JVMFlagEx::boolAtPut(JVMFlagsEnum flag, bool value, JVMFlag::Flags origin) {
@@ -1066,10 +919,10 @@ JVMFlag::Error JVMFlag::intAtPut(JVMFlag* flag, int* value, JVMFlag::Flags origi
   if (check != JVMFlag::SUCCESS) return check;
   int old_value = flag->get_int();
   trace_flag_changed<EventIntFlagChanged, s4>(flag, old_value, *value, origin);
-  check = flag->set_int(*value);
+  flag->set_int(*value);
   *value = old_value;
   flag->set_origin(origin);
-  return check;
+  return JVMFlag::SUCCESS;
 }
 
 JVMFlag::Error JVMFlagEx::intAtPut(JVMFlagsEnum flag, int value, JVMFlag::Flags origin) {
@@ -1107,10 +960,10 @@ JVMFlag::Error JVMFlag::uintAtPut(JVMFlag* flag, uint* value, JVMFlag::Flags ori
   if (check != JVMFlag::SUCCESS) return check;
   uint old_value = flag->get_uint();
   trace_flag_changed<EventUnsignedIntFlagChanged, u4>(flag, old_value, *value, origin);
-  check = flag->set_uint(*value);
+  flag->set_uint(*value);
   *value = old_value;
   flag->set_origin(origin);
-  return check;
+  return JVMFlag::SUCCESS;
 }
 
 JVMFlag::Error JVMFlagEx::uintAtPut(JVMFlagsEnum flag, uint value, JVMFlag::Flags origin) {
@@ -1148,10 +1001,10 @@ JVMFlag::Error JVMFlag::intxAtPut(JVMFlag* flag, intx* value, JVMFlag::Flags ori
   if (check != JVMFlag::SUCCESS) return check;
   intx old_value = flag->get_intx();
   trace_flag_changed<EventLongFlagChanged, intx>(flag, old_value, *value, origin);
-  check = flag->set_intx(*value);
+  flag->set_intx(*value);
   *value = old_value;
   flag->set_origin(origin);
-  return check;
+  return JVMFlag::SUCCESS;
 }
 
 JVMFlag::Error JVMFlagEx::intxAtPut(JVMFlagsEnum flag, intx value, JVMFlag::Flags origin) {
@@ -1189,10 +1042,10 @@ JVMFlag::Error JVMFlag::uintxAtPut(JVMFlag* flag, uintx* value, JVMFlag::Flags o
   if (check != JVMFlag::SUCCESS) return check;
   uintx old_value = flag->get_uintx();
   trace_flag_changed<EventUnsignedLongFlagChanged, u8>(flag, old_value, *value, origin);
-  check = flag->set_uintx(*value);
+  flag->set_uintx(*value);
   *value = old_value;
   flag->set_origin(origin);
-  return check;
+  return JVMFlag::SUCCESS;
 }
 
 JVMFlag::Error JVMFlagEx::uintxAtPut(JVMFlagsEnum flag, uintx value, JVMFlag::Flags origin) {
@@ -1230,10 +1083,10 @@ JVMFlag::Error JVMFlag::uint64_tAtPut(JVMFlag* flag, uint64_t* value, JVMFlag::F
   if (check != JVMFlag::SUCCESS) return check;
   uint64_t old_value = flag->get_uint64_t();
   trace_flag_changed<EventUnsignedLongFlagChanged, u8>(flag, old_value, *value, origin);
-  check = flag->set_uint64_t(*value);
+  flag->set_uint64_t(*value);
   *value = old_value;
   flag->set_origin(origin);
-  return check;
+  return JVMFlag::SUCCESS;
 }
 
 JVMFlag::Error JVMFlagEx::uint64_tAtPut(JVMFlagsEnum flag, uint64_t value, JVMFlag::Flags origin) {
@@ -1272,10 +1125,10 @@ JVMFlag::Error JVMFlag::size_tAtPut(JVMFlag* flag, size_t* value, JVMFlag::Flags
   if (check != JVMFlag::SUCCESS) return check;
   size_t old_value = flag->get_size_t();
   trace_flag_changed<EventUnsignedLongFlagChanged, u8>(flag, old_value, *value, origin);
-  check = flag->set_size_t(*value);
+  flag->set_size_t(*value);
   *value = old_value;
   flag->set_origin(origin);
-  return check;
+  return JVMFlag::SUCCESS;
 }
 
 JVMFlag::Error JVMFlagEx::size_tAtPut(JVMFlagsEnum flag, size_t value, JVMFlag::Flags origin) {
@@ -1313,10 +1166,10 @@ JVMFlag::Error JVMFlag::doubleAtPut(JVMFlag* flag, double* value, JVMFlag::Flags
   if (check != JVMFlag::SUCCESS) return check;
   double old_value = flag->get_double();
   trace_flag_changed<EventDoubleFlagChanged, double>(flag, old_value, *value, origin);
-  check = flag->set_double(*value);
+  flag->set_double(*value);
   *value = old_value;
   flag->set_origin(origin);
-  return check;
+  return JVMFlag::SUCCESS;
 }
 
 JVMFlag::Error JVMFlagEx::doubleAtPut(JVMFlagsEnum flag, double value, JVMFlag::Flags origin) {
@@ -1341,14 +1194,14 @@ JVMFlag::Error JVMFlag::ccstrAtPut(JVMFlag* flag, ccstr* value, JVMFlag::Flags o
   if (*value != NULL) {
     new_value = os::strdup_check_oom(*value);
   }
-  JVMFlag::Error check = flag->set_ccstr(new_value);
+  flag->set_ccstr(new_value);
   if (flag->is_default() && old_value != NULL) {
     // Prior value is NOT heap allocated, but was a literal constant.
     old_value = os::strdup_check_oom(old_value);
   }
   *value = old_value;
   flag->set_origin(origin);
-  return check;
+  return JVMFlag::SUCCESS;
 }
 
 JVMFlag::Error JVMFlagEx::ccstrAtPut(JVMFlagsEnum flag, ccstr value, JVMFlag::Flags origin) {
@@ -1357,13 +1210,13 @@ JVMFlag::Error JVMFlagEx::ccstrAtPut(JVMFlagsEnum flag, ccstr value, JVMFlag::Fl
   ccstr old_value = faddr->get_ccstr();
   trace_flag_changed<EventStringFlagChanged, const char*>(faddr, old_value, value, origin);
   char* new_value = os::strdup_check_oom(value);
-  JVMFlag::Error check = faddr->set_ccstr(new_value);
+  faddr->set_ccstr(new_value);
   if (!faddr->is_default() && old_value != NULL) {
     // Prior value is heap allocated so free it.
     FREE_C_HEAP_ARRAY(char, old_value);
   }
   faddr->set_origin(origin);
-  return check;
+  return JVMFlag::SUCCESS;
 }
 
 extern "C" {

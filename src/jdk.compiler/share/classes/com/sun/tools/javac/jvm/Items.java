@@ -174,9 +174,9 @@ public class Items {
 
     /** Make an item representing a conditional or unconditional jump.
      *  @param opcode      The jump's opcode.
-     *  @param trueJumps   A chain encomassing all jumps that can be taken
+     *  @param trueJumps   A chain encompassing all jumps that can be taken
      *                     if the condition evaluates to true.
-     *  @param falseJumps  A chain encomassing all jumps that can be taken
+     *  @param falseJumps  A chain encompassing all jumps that can be taken
      *                     if the condition evaluates to false.
      */
     CondItem makeCondItem(int opcode, Chain trueJumps, Chain falseJumps) {
@@ -754,12 +754,12 @@ public class Items {
      */
     class CondItem extends Item {
 
-        /** A chain encomassing all jumps that can be taken
+        /** A chain encompassing all jumps that can be taken
          *  if the condition evaluates to true.
          */
         Chain trueJumps;
 
-        /** A chain encomassing all jumps that can be taken
+        /** A chain encompassing all jumps that can be taken
          *  if the condition evaluates to false.
          */
         Chain falseJumps;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2019, 2020, Red Hat, Inc. All rights reserved.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
@@ -51,7 +51,7 @@ void ShenandoahRootVerifier::excludes(RootTypes types) {
 }
 
 bool ShenandoahRootVerifier::verify(RootTypes type) const {
-  return (_types & type) != 0;
+  return (_types & type) == type;
 }
 
 ShenandoahRootVerifier::RootTypes ShenandoahRootVerifier::combine(RootTypes t1, RootTypes t2) {
@@ -89,6 +89,11 @@ void ShenandoahRootVerifier::oops_do(OopClosure* oops) {
     shenandoah_assert_safepoint();
     AlwaysTrueClosure always_true;
     WeakProcessor::weak_oops_do(&always_true, oops);
+  } else if (verify(SerialWeakRoots)) {
+    shenandoah_assert_safepoint();
+    serial_weak_roots_do(oops);
+  } else if (verify(ConcurrentWeakRoots)) {
+    concurrent_weak_roots_do(oops);
   }
 
   if (ShenandoahStringDedup::is_enabled() && verify(StringDedupRoots)) {
@@ -153,4 +158,19 @@ void ShenandoahRootVerifier::strong_roots_do(OopClosure* oops) {
   // any broken objects from those special roots first, not the accidental
   // dangling reference from the thread root.
   Threads::possibly_parallel_oops_do(false, oops, &blobs);
+}
+
+void ShenandoahRootVerifier::serial_weak_roots_do(OopClosure* cl) {
+  WeakProcessorPhases::Iterator itr = WeakProcessorPhases::serial_iterator();
+  AlwaysTrueClosure always_true;
+  for ( ; !itr.is_end(); ++itr) {
+    WeakProcessorPhases::processor(*itr)(&always_true, cl);
+  }
+}
+
+void ShenandoahRootVerifier::concurrent_weak_roots_do(OopClosure* cl) {
+  for (OopStorageSet::Iterator it = OopStorageSet::weak_iterator(); !it.is_end(); ++it) {
+    OopStorage* storage = *it;
+    storage->oops_do<OopClosure>(cl);
+  }
 }

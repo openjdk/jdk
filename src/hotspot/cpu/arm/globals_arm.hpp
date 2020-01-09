@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,6 +76,5 @@ define_pd_global(intx, InitArrayShortSize, 8*BytesPerLong);
                    experimental, \
                    notproduct, \
                    range, \
-                   constraint, \
-                   writeable)
+                   constraint)
 #endif // CPU_ARM_GLOBALS_ARM_HPP

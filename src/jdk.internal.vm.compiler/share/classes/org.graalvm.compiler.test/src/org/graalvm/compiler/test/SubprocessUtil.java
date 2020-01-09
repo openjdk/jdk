@@ -29,6 +29,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Formatter;
@@ -46,6 +48,14 @@ import org.junit.Assume;
  * Utility methods for spawning a VM in a subprocess during unit tests.
  */
 public final class SubprocessUtil {
+
+    /**
+     * The name of the boolean system property that can be set to preserve temporary files created
+     * as arguments files passed to the java launcher.
+     *
+     * @see "https://docs.oracle.com/javase/9/tools/java.htm#JSWOR-GUID-4856361B-8BFD-4964-AE84-121F5F6CF111"
+     */
+    public static final String KEEP_TEMPORARY_ARGUMENT_FILES_PROPERTY_NAME = "test." + SubprocessUtil.class.getSimpleName() + ".keepTempArgumentFiles";
 
     private SubprocessUtil() {
     }
@@ -184,8 +194,14 @@ public final class SubprocessUtil {
          */
         public final List<String> output;
 
-        public Subprocess(List<String> command, int exitCode, List<String> output) {
+        /**
+         * Explicit environment variables.
+         */
+        private Map<String, String> env;
+
+        public Subprocess(List<String> command, Map<String, String> env, int exitCode, List<String> output) {
             this.command = command;
+            this.env = env;
             this.exitCode = exitCode;
             this.output = output;
         }
@@ -201,6 +217,13 @@ public final class SubprocessUtil {
             Formatter msg = new Formatter();
             if (delimiter != null) {
                 msg.format("%s%n", delimiter);
+            }
+            if (env != null && !env.isEmpty()) {
+                msg.format("env");
+                for (Map.Entry<String, String> e : env.entrySet()) {
+                    msg.format(" %s=%s", e.getKey(), quoteShellArg(e.getValue()));
+                }
+                msg.format("\\%n");
             }
             msg.format("%s%n", CollectionsUtil.mapAndJoin(command, e -> quoteShellArg(String.valueOf(e)), " "));
             for (String line : output) {
@@ -221,6 +244,14 @@ public final class SubprocessUtil {
             return toString(DASHES_DELIMITER);
         }
     }
+
+    /**
+     * A sentinel value which when present in the {@code vmArgs} parameter for any of the
+     * {@code java(...)} methods in this class is replaced with a temporary argument file containing
+     * the contents of {@link #getPackageOpeningOptions}. The argument file is preserved if the
+     * {@link #KEEP_TEMPORARY_ARGUMENT_FILES_PROPERTY_NAME} system property is true.
+     */
+    public static final String PACKAGE_OPENING_OPTIONS = ";:PACKAGE_OPENING_OPTIONS_IN_TEMPORARY_ARGUMENTS_FILE:;";
 
     /**
      * Executes a Java subprocess.
@@ -272,7 +303,22 @@ public final class SubprocessUtil {
      * @param mainClassAndArgs the main class and its arguments
      */
     private static Subprocess javaHelper(List<String> vmArgs, Map<String, String> env, List<String> mainClassAndArgs) throws IOException, InterruptedException {
-        List<String> command = new ArrayList<>(vmArgs);
+        List<String> command = new ArrayList<>(vmArgs.size());
+        Path packageOpeningOptionsArgumentsFile = null;
+        for (String vmArg : vmArgs) {
+            if (vmArg == PACKAGE_OPENING_OPTIONS) {
+                if (packageOpeningOptionsArgumentsFile == null) {
+                    List<String> packageOpeningOptions = getPackageOpeningOptions();
+                    if (!packageOpeningOptions.isEmpty()) {
+                        packageOpeningOptionsArgumentsFile = Files.createTempFile(Paths.get("."), "package-opening-options-arguments-file", ".txt").toAbsolutePath();
+                        Files.write(packageOpeningOptionsArgumentsFile, packageOpeningOptions);
+                        command.add("@" + packageOpeningOptionsArgumentsFile);
+                    }
+                }
+            } else {
+                command.add(vmArg);
+            }
+        }
         command.addAll(mainClassAndArgs);
         ProcessBuilder processBuilder = new ProcessBuilder(command);
         if (env != null) {
@@ -280,14 +326,22 @@ public final class SubprocessUtil {
             processBuilderEnv.putAll(env);
         }
         processBuilder.redirectErrorStream(true);
-        Process process = processBuilder.start();
-        BufferedReader stdout = new BufferedReader(new InputStreamReader(process.getInputStream()));
-        String line;
-        List<String> output = new ArrayList<>();
-        while ((line = stdout.readLine()) != null) {
-            output.add(line);
+        try {
+            Process process = processBuilder.start();
+            BufferedReader stdout = new BufferedReader(new InputStreamReader(process.getInputStream()));
+            String line;
+            List<String> output = new ArrayList<>();
+            while ((line = stdout.readLine()) != null) {
+                output.add(line);
+            }
+            return new Subprocess(command, env, process.waitFor(), output);
+        } finally {
+            if (packageOpeningOptionsArgumentsFile != null) {
+                if (!Boolean.getBoolean(KEEP_TEMPORARY_ARGUMENT_FILES_PROPERTY_NAME)) {
+                    Files.delete(packageOpeningOptionsArgumentsFile);
+                }
+            }
         }
-        return new Subprocess(command, process.waitFor(), output);
     }
 
     private static final boolean isJava8OrEarlier = JavaVersionUtil.JAVA_SPEC <= 8;

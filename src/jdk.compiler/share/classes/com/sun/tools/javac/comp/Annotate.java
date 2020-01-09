@@ -424,7 +424,7 @@ public class Annotate {
     public Attribute.Compound attributeAnnotation(JCAnnotation tree, Type expectedAnnotationType,
                                                   Env<AttrContext> env)
     {
-        // The attribute might have been entered if it is Target or Repetable
+        // The attribute might have been entered if it is Target or Repeatable
         // Because TreeCopier does not copy type, redo this if type is null
         if (tree.attribute != null && tree.type != null)
             return tree.attribute;
@@ -445,7 +445,7 @@ public class Annotate {
     public Attribute.TypeCompound attributeTypeAnnotation(JCAnnotation a, Type expectedAnnotationType,
                                                           Env<AttrContext> env)
     {
-        // The attribute might have been entered if it is Target or Repetable
+        // The attribute might have been entered if it is Target or Repeatable
         // Because TreeCopier does not copy type, redo this if type is null
         if (a.attribute == null || a.type == null || !(a.attribute instanceof Attribute.TypeCompound)) {
             // Create a new TypeCompound
@@ -540,7 +540,7 @@ public class Annotate {
     private Attribute attributeAnnotationValue(Type expectedElementType, JCExpression tree,
             Env<AttrContext> env)
     {
-        //first, try completing the symbol for the annotation value - if acompletion
+        //first, try completing the symbol for the annotation value - if a completion
         //error is thrown, we should recover gracefully, and display an
         //ordinary resolution diagnostic.
         try {
@@ -1127,7 +1127,7 @@ public class Annotate {
 
         @Override
         public void visitBindingPattern(JCTree.JCBindingPattern tree) {
-            //type binding pattern's type will be annotated separatelly, avoid
+            //type binding pattern's type will be annotated separately, avoid
             //adding its annotations into the owning method here (would clash
             //with repeatable annotations).
         }
@@ -1164,7 +1164,7 @@ public class Annotate {
     };
 
     /* Last stage completer to enter just enough annotations to have a prototype annotation type.
-     * This currently means entering @Target and @Repetable.
+     * This currently means entering @Target and @Repeatable.
      */
     public AnnotationTypeCompleter annotationTypeSourceCompleter() {
         return theSourceCompleter;

@@ -47,7 +47,7 @@ public class RMIDSelectorProvider extends SelectorProvider {
     private ServerSocketChannel channel;
 
     public RMIDSelectorProvider() {
-        provider = sun.nio.ch.DefaultSelectorProvider.create();
+        provider = sun.nio.ch.DefaultSelectorProvider.get();
     }
 
     public DatagramChannel openDatagramChannel()

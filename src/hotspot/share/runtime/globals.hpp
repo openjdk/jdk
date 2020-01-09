@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,17 +104,6 @@
 //
 // constraint is a macro that will expand to custom function call
 //    for constraint checking if provided - see jvmFlagConstraintList.hpp
-//
-// writeable is a macro that controls if and how the value can change during the runtime
-//
-// writeable(Always) is optional and allows the flag to have its value changed
-//    without any limitations at any time
-//
-// writeable(Once) flag value's can be only set once during the lifetime of VM
-//
-// writeable(CommandLineOnly) flag value's can be only set from command line
-//    (multiple times allowed)
-//
 
 // Default and minimum StringTable and SymbolTable size values
 // Must be powers of 2
@@ -135,8 +124,7 @@ const size_t minimumSymbolTableSize = 1024;
                       product_rw, \
                       lp64_product, \
                       range, \
-                      constraint, \
-                      writeable) \
+                      constraint) \
                                                                             \
   lp64_product(bool, UseCompressedOops, false,                              \
           "Use 32-bit object references in 64-bit VM. "                     \
@@ -777,16 +765,6 @@ const size_t minimumSymbolTableSize = 1024;
                                                                             \
   product(bool, UseXMMForArrayCopy, false,                                  \
           "Use SSE2 MOVQ instruction for Arraycopy")                        \
-                                                                            \
-  product(intx, FieldsAllocationStyle, 1,                                   \
-          "(Deprecated) 0 - type based with oops first, "                   \
-          "1 - with oops last, "                                            \
-          "2 - oops in super and sub classes are together")                 \
-          range(0, 2)                                                       \
-                                                                            \
-  product(bool, CompactFields, true,                                        \
-          "(Deprecated) Allocate nonstatic fields in gaps "                 \
-          "between previous fields")                                        \
                                                                             \
   notproduct(bool, PrintFieldLayout, false,                                 \
           "Print field layout for each class")                              \
@@ -2548,7 +2526,6 @@ ALL_FLAGS(DECLARE_DEVELOPER_FLAG,     \
           DECLARE_PRODUCT_RW_FLAG,    \
           DECLARE_LP64_PRODUCT_FLAG,  \
           IGNORE_RANGE,               \
-          IGNORE_CONSTRAINT,          \
-          IGNORE_WRITEABLE)
+          IGNORE_CONSTRAINT)
 
 #endif // SHARE_RUNTIME_GLOBALS_HPP

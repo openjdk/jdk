@@ -29,7 +29,6 @@
 class name com/sun/net/httpserver/BasicAuthenticator
 -field name realm descriptor Ljava/lang/String;
 field name realm descriptor Ljava/lang/String; flags 14
-field name charset descriptor Ljava/nio/charset/Charset; flags 14
 method name <init> descriptor (Ljava/lang/String;Ljava/nio/charset/Charset;)V flags 1
 
 class name com/sun/net/httpserver/HttpExchange

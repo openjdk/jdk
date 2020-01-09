@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,7 +57,7 @@ public abstract class Printer implements Type.Visitor<String, Locale>, Symbol.Vi
     protected Printer() { }
 
     /**
-     * This method should be overriden in order to provide proper i18n support.
+     * This method should be overridden in order to provide proper i18n support.
      *
      * @param locale the locale in which the string is to be rendered
      * @param key the key corresponding to the message to be displayed

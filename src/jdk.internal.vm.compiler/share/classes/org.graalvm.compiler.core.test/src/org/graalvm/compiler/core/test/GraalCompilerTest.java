@@ -54,6 +54,7 @@ import java.util.function.Supplier;
 import org.graalvm.compiler.api.directives.GraalDirectives;
 import org.graalvm.compiler.api.replacements.SnippetReflectionProvider;
 import org.graalvm.compiler.api.test.Graal;
+import org.graalvm.compiler.api.test.ModuleSupport;
 import org.graalvm.compiler.code.CompilationResult;
 import org.graalvm.compiler.core.CompilationPrinter;
 import org.graalvm.compiler.core.GraalCompiler;
@@ -126,7 +127,6 @@ import org.graalvm.compiler.printer.GraalDebugHandlersFactory;
 import org.graalvm.compiler.runtime.RuntimeProvider;
 import org.graalvm.compiler.test.AddExports;
 import org.graalvm.compiler.test.GraalTest;
-import org.graalvm.compiler.api.test.ModuleSupport;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -606,11 +606,21 @@ public abstract class GraalCompilerTest extends GraalTest {
         return providers;
     }
 
-    protected HighTierContext getDefaultHighTierContext() {
+    /**
+     * Override the {@link OptimisticOptimizations} settings used for the test. This is called for
+     * all the paths where the value is set so it is the proper place for a test override. Setting
+     * it in other places can result in inconsistent values being used in other parts of the
+     * compiler.
+     */
+    protected OptimisticOptimizations getOptimisticOptimizations() {
+        return OptimisticOptimizations.ALL;
+    }
+
+    protected final HighTierContext getDefaultHighTierContext() {
         return new HighTierContext(getProviders(), getDefaultGraphBuilderSuite(), getOptimisticOptimizations());
     }
 
-    protected MidTierContext getDefaultMidTierContext() {
+    protected final MidTierContext getDefaultMidTierContext() {
         return new MidTierContext(getProviders(), getTargetProvider(), getOptimisticOptimizations(), null);
     }
 
@@ -1079,10 +1089,6 @@ public abstract class GraalCompilerTest extends GraalTest {
         assert graph == null || graph.getOptions() == options;
         CompilationIdentifier compilationId = getOrCreateCompilationId(installedCodeOwner, graph);
         return compile(installedCodeOwner, graph, new CompilationResult(compilationId), compilationId, options);
-    }
-
-    protected OptimisticOptimizations getOptimisticOptimizations() {
-        return OptimisticOptimizations.ALL;
     }
 
     /**

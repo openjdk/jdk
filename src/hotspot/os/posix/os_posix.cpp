@@ -176,37 +176,50 @@ void os::wait_for_keypress_at_exit(void) {
 }
 
 int os::create_file_for_heap(const char* dir) {
+  int fd;
 
-  const char name_template[] = "/jvmheap.XXXXXX";
-
-  size_t fullname_len = strlen(dir) + strlen(name_template);
-  char *fullname = (char*)os::malloc(fullname_len + 1, mtInternal);
-  if (fullname == NULL) {
-    vm_exit_during_initialization(err_msg("Malloc failed during creation of backing file for heap (%s)", os::strerror(errno)));
+#if defined(LINUX) && defined(O_TMPFILE)
+  char* native_dir = os::strdup(dir);
+  if (native_dir == NULL) {
+    vm_exit_during_initialization(err_msg("strdup failed during creation of backing file for heap (%s)", os::strerror(errno)));
     return -1;
   }
-  int n = snprintf(fullname, fullname_len + 1, "%s%s", dir, name_template);
-  assert((size_t)n == fullname_len, "Unexpected number of characters in string");
+  os::native_path(native_dir);
+  fd = os::open(dir, O_TMPFILE | O_RDWR, S_IRUSR | S_IWUSR);
+  os::free(native_dir);
 
-  os::native_path(fullname);
+  if (fd == -1)
+#endif
+  {
+    const char name_template[] = "/jvmheap.XXXXXX";
 
-  // set the file creation mask.
-  mode_t file_mode = S_IRUSR | S_IWUSR;
+    size_t fullname_len = strlen(dir) + strlen(name_template);
+    char *fullname = (char*)os::malloc(fullname_len + 1, mtInternal);
+    if (fullname == NULL) {
+      vm_exit_during_initialization(err_msg("Malloc failed during creation of backing file for heap (%s)", os::strerror(errno)));
+      return -1;
+    }
+    int n = snprintf(fullname, fullname_len + 1, "%s%s", dir, name_template);
+    assert((size_t)n == fullname_len, "Unexpected number of characters in string");
 
-  // create a new file.
-  int fd = mkstemp(fullname);
+    os::native_path(fullname);
 
-  if (fd < 0) {
-    warning("Could not create file for heap with template %s", fullname);
+    // create a new file.
+    fd = mkstemp(fullname);
+
+    if (fd < 0) {
+      warning("Could not create file for heap with template %s", fullname);
+      os::free(fullname);
+      return -1;
+    } else {
+      // delete the name from the filesystem. When 'fd' is closed, the file (and space) will be deleted.
+      int ret = unlink(fullname);
+      assert_with_errno(ret == 0, "unlink returned error");
+    }
+
     os::free(fullname);
-    return -1;
   }
 
-  // delete the name from the filesystem. When 'fd' is closed, the file (and space) will be deleted.
-  int ret = unlink(fullname);
-  assert_with_errno(ret == 0, "unlink returned error");
-
-  os::free(fullname);
   return fd;
 }
 

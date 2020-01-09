@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -566,7 +566,7 @@ public class ModulePath implements ModuleFinder {
         if (attrs != null) {
             String mainClass = attrs.getValue(Attributes.Name.MAIN_CLASS);
             if (mainClass != null) {
-                mainClass = mainClass.replace("/", ".");
+                mainClass = mainClass.replace('/', '.');
                 if (Checks.isClassName(mainClass)) {
                     String pn = packageName(mainClass);
                     if (packages.contains(pn)) {

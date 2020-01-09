@@ -234,7 +234,7 @@ public class ClassReader {
     CompoundAnnotationProxy target;
 
     /**
-     * The prototype @Repetable Attribute.Compound if this class is an annotation annotated with
+     * The prototype @Repeatable Attribute.Compound if this class is an annotation annotated with
      * @Repeatable
      */
     CompoundAnnotationProxy repeatable;
@@ -876,8 +876,8 @@ public class ClassReader {
                         // Parameter names are not explicitly identified as such,
                         // but all parameter name entries in the LocalVariableTable
                         // have a start_pc of 0.  Therefore, we record the name
-                        // indicies of all slots with a start_pc of zero in the
-                        // parameterNameIndicies array.
+                        // indices of all slots with a start_pc of zero in the
+                        // parameterNameIndices array.
                         // Note that this implicitly honors the JVMS spec that
                         // there may be more than one LocalVariableTable, and that
                         // there is no specified ordering for the entries.
@@ -998,7 +998,7 @@ public class ClassReader {
                 }
             },
 
-            // additional "legacy" v49 attributes, superceded by flags
+            // additional "legacy" v49 attributes, superseded by flags
 
             new AttributeReader(names.Annotation, V49, CLASS_OR_MEMBER_ATTRIBUTE) {
                 protected void read(Symbol sym, int attrLen) {

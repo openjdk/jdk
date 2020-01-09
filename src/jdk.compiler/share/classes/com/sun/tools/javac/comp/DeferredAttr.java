@@ -618,7 +618,7 @@ public class DeferredAttr extends JCTree.Visitor {
                         inferenceContext.notifyChange();
                     } catch (Infer.GraphStrategy.NodeNotFoundException ex) {
                         //this means that we are in speculative mode and the
-                        //set of contraints are too tight for progess to be made.
+                        //set of constraints are too tight for progress to be made.
                         //Just leave the remaining expressions as stuck.
                         break;
                     }

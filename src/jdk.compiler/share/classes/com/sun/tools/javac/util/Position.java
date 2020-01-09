@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ import static com.sun.tools.javac.util.LayoutCharacters.*;
  *  is at position 0.
  *
  *  Support is also provided for (line,column) coordinates, but tab
- *  expansion is optional and no Unicode excape translation is considered.
+ *  expansion is optional and no Unicode escape translation is considered.
  *  The first character is at location (1,1).
  *
  *  <p><b>This is NOT part of any supported API.

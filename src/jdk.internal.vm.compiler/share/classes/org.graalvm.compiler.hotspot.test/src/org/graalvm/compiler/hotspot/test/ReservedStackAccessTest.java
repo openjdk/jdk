@@ -67,12 +67,13 @@ public class ReservedStackAccessTest extends HotSpotGraalCompilerTest {
 
     @Test
     public void run() throws IOException, InterruptedException {
+        Assume.assumeFalse("GR-19833", runtime().getVMConfig().osName.equals("windows"));
         Assume.assumeTrue(runtime().getVMConfig().enableStackReservedZoneAddress != 0);
         List<String> vmArgs = SubprocessUtil.withoutDebuggerArguments(SubprocessUtil.getVMCommandLine());
         vmArgs.add("-XX:+UseJVMCICompiler");
         vmArgs.add("-Dgraal.Inline=false");
         vmArgs.add("-XX:CompileCommand=exclude,java/util/concurrent/locks/AbstractOwnableSynchronizer.setExclusiveOwnerThread");
-        vmArgs.addAll(SubprocessUtil.getPackageOpeningOptions());
+        vmArgs.add(SubprocessUtil.PACKAGE_OPENING_OPTIONS);
 
         // Avoid SOE in HotSpotJVMCIRuntime.adjustCompilationLevel
         vmArgs.add("-Dgraal.CompileGraalWithC1Only=false");

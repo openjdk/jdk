@@ -185,6 +185,10 @@ class FrameMap : public CompilationResourceObj {
     return LIR_OprFact::single_cpu_metadata(cpu_reg2rnr(r));
   }
 
+  static LIR_Opr as_address_opr(Register r) {
+    return LIR_OprFact::single_cpu_address(cpu_reg2rnr(r));
+  }
+
   FrameMap(ciMethod* method, int monitors, int reserved_argument_area_size);
   bool finalize_frame(int nof_slots);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,8 +70,6 @@ public class GraalHotSpotVMConfig extends GraalHotSpotVMConfigBase {
     public final boolean enableContended = getFlag("EnableContended", Boolean.class);
     public final boolean restrictContended = getFlag("RestrictContended", Boolean.class);
     public final int contendedPaddingWidth = getFlag("ContendedPaddingWidth", Integer.class);
-    public final int fieldsAllocationStyle = getFlag("FieldsAllocationStyle", Integer.class);
-    public final boolean compactFields = getFlag("CompactFields", Boolean.class);
     public final boolean verifyOops = getFlag("VerifyOops", Boolean.class);
     public final boolean ciTime = getFlag("CITime", Boolean.class);
     public final boolean ciTimeEach = getFlag("CITimeEach", Boolean.class);
@@ -96,6 +94,7 @@ public class GraalHotSpotVMConfig extends GraalHotSpotVMConfigBase {
     public final boolean useAESCTRIntrinsics = getFlag("UseAESCTRIntrinsics", Boolean.class, false);
     public final boolean useCRC32Intrinsics = getFlag("UseCRC32Intrinsics", Boolean.class);
     public final boolean useCRC32CIntrinsics = versioned.useCRC32CIntrinsics;
+    public final boolean threadLocalHandshakes = versioned.threadLocalHandshakes;
 
     private final boolean useMultiplyToLenIntrinsic = getFlag("UseMultiplyToLenIntrinsic", Boolean.class);
     private final boolean useSHA1Intrinsics = getFlag("UseSHA1Intrinsics", Boolean.class);

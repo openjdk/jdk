@@ -57,9 +57,6 @@ bool CompilationModeFlag::initialize() {
       jio_fprintf(defaultStream::error_stream(), "Unsupported compilation mode '%s', supported modes are: quick-only, high-only, high-only-quick-internal\n", CompilationMode);
       return false;
     }
-    if (disable_intermediate()) {
-      CompLevel_initial_compile = CompLevel_full_optimization;
-    }
   }
   return true;
 }
@@ -72,16 +69,6 @@ CompLevel  CompLevel_highest_tier      = CompLevel_full_optimization;  // pure C
 CompLevel  CompLevel_highest_tier      = CompLevel_simple;             // pure C1 or JVMCI
 #else
 CompLevel  CompLevel_highest_tier      = CompLevel_none;
-#endif
-
-#if defined(TIERED)
-CompLevel  CompLevel_initial_compile   = CompLevel_full_profile;        // tiered
-#elif defined(COMPILER1) || INCLUDE_JVMCI
-CompLevel  CompLevel_initial_compile   = CompLevel_simple;              // pure C1 or JVMCI
-#elif defined(COMPILER2)
-CompLevel  CompLevel_initial_compile   = CompLevel_full_optimization;   // pure C2
-#else
-CompLevel  CompLevel_initial_compile   = CompLevel_none;
 #endif
 
 #if defined(COMPILER2)
@@ -145,7 +132,6 @@ intx CompilerConfig::scaled_freq_log(intx freq_log, double scale) {
 void set_client_compilation_mode() {
   Compilation_mode = CompMode_client;
   CompLevel_highest_tier = CompLevel_simple;
-  CompLevel_initial_compile = CompLevel_simple;
   FLAG_SET_ERGO(TieredCompilation, false);
   FLAG_SET_ERGO(ProfileInterpreter, false);
 #if INCLUDE_JVMCI

@@ -193,8 +193,8 @@ class KinitOptions {
             PrincipalName p = cis.readPrincipal(version);
             cis.close();
             if (DEBUG) {
-                System.out.println(">>>KinitOptions principal name from "+
-                                   "the cache is :" + p);
+                System.out.println(">>>KinitOptions principal name from " +
+                                   "the cache is: " + p);
             }
             return p;
         } catch (IOException e) {
@@ -211,7 +211,7 @@ class KinitOptions {
 
         String username = System.getProperty("user.name");
         if (DEBUG) {
-            System.out.println(">>>KinitOptions default username is :"
+            System.out.println(">>>KinitOptions default username is: "
                                + username);
         }
         try {

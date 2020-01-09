@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -477,7 +477,7 @@ public class Main {
     }
 
     /**
-     * An object to encapulate the set of in-memory classes, such that
+     * An object to encapsulate the set of in-memory classes, such that
      * they can be written by a file manager and subsequently used by
      * a class loader.
      */

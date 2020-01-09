@@ -186,14 +186,12 @@ void HeapShared::archive_klass_objects(Thread* THREAD) {
 void HeapShared::archive_java_heap_objects(GrowableArray<MemRegion> *closed,
                                            GrowableArray<MemRegion> *open) {
   if (!is_heap_object_archiving_allowed()) {
-    if (log_is_enabled(Info, cds)) {
-      log_info(cds)(
-        "Archived java heap is not supported as UseG1GC, "
-        "UseCompressedOops and UseCompressedClassPointers are required."
-        "Current settings: UseG1GC=%s, UseCompressedOops=%s, UseCompressedClassPointers=%s.",
-        BOOL_TO_STR(UseG1GC), BOOL_TO_STR(UseCompressedOops),
-        BOOL_TO_STR(UseCompressedClassPointers));
-    }
+    log_info(cds)(
+      "Archived java heap is not supported as UseG1GC, "
+      "UseCompressedOops and UseCompressedClassPointers are required."
+      "Current settings: UseG1GC=%s, UseCompressedOops=%s, UseCompressedClassPointers=%s.",
+      BOOL_TO_STR(UseG1GC), BOOL_TO_STR(UseCompressedOops),
+      BOOL_TO_STR(UseCompressedClassPointers));
     return;
   }
 
@@ -205,11 +203,11 @@ void HeapShared::archive_java_heap_objects(GrowableArray<MemRegion> *closed,
     // Cache for recording where the archived objects are copied to
     create_archived_object_cache();
 
-    tty->print_cr("Dumping objects to closed archive heap region ...");
+    log_info(cds)("Dumping objects to closed archive heap region ...");
     NOT_PRODUCT(StringTable::verify());
     copy_closed_archive_heap_objects(closed);
 
-    tty->print_cr("Dumping objects to open archive heap region ...");
+    log_info(cds)("Dumping objects to open archive heap region ...");
     copy_open_archive_heap_objects(open);
 
     destroy_archived_object_cache();

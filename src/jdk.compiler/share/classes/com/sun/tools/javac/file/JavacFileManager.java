@@ -1247,7 +1247,7 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
      * Get a detail message from an IOException.
      * Most, but not all, instances of IOException provide a non-null result
      * for getLocalizedMessage().  But some instances return null: in these
-     * cases, fallover to getMessage(), and if even that is null, return the
+     * cases, fall back to getMessage(), and if even that is null, return the
      * name of the exception itself.
      * @param e an IOException
      * @return a string to include in a compiler diagnostic

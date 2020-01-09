@@ -1299,9 +1299,9 @@ public class Check {
 
     /** Determine if this enum should be implicitly final.
      *
-     *  If the enum has no specialized enum contants, it is final.
+     *  If the enum has no specialized enum constants, it is final.
      *
-     *  If the enum does have specialized enum contants, it is
+     *  If the enum does have specialized enum constants, it is
      *  <i>not</i> final.
      */
     private long implicitEnumFinalFlag(JCTree tree) {
@@ -1861,7 +1861,7 @@ public class Check {
             // because in that case, we will rediscover the issue when examining the method
             // in the supertype.
             // If the method, m, is not defined in an interface, then the only time we need to
-            // address the issue is when the method is the supertype implemementation: any other
+            // address the issue is when the method is the supertype implementation: any other
             // case, we will have dealt with when examining the supertype classes
             ClassSymbol mc = m.enclClass();
             Type st = types.supertype(origin.type);
@@ -1952,7 +1952,7 @@ public class Check {
      *  @param t1     The first type.
      *  @param t2     The second type.
      *  @param site   The most derived type.
-     *  @returns symbol from t2 that conflicts with one in t1.
+     *  @return symbol from t2 that conflicts with one in t1.
      */
     private Symbol firstIncompatibility(DiagnosticPosition pos, Type t1, Type t2, Type site) {
         Map<TypeSymbol,Type> interfaces1 = new HashMap<>();
@@ -1982,7 +1982,7 @@ public class Check {
         }
     }
 
-    /** Compute all the supertypes of t, indexed by type symbol (except thise in typesSkip). */
+    /** Compute all the supertypes of t, indexed by type symbol (except those in typesSkip). */
     private void closure(Type t, Map<TypeSymbol,Type> typesSkip, Map<TypeSymbol,Type> typeMap) {
         if (!t.hasTag(CLASS)) return;
         if (typesSkip.get(t.tsym) != null) return;
@@ -2678,7 +2678,7 @@ public class Check {
             }
             if (potentiallyAmbiguous) {
                 //we found two incompatible functional interfaces with same arity
-                //this means a call site passing an implicit lambda would be ambigiuous
+                //this means a call site passing an implicit lambda would be ambiguous
                 msym1.flags_field |= POTENTIALLY_AMBIGUOUS;
                 msym2.flags_field |= POTENTIALLY_AMBIGUOUS;
                 log.warning(LintCategory.OVERLOADS, pos,
@@ -3276,7 +3276,7 @@ public class Check {
                     return true;
             } else if (target == names.TYPE_USE) {
                 if (s.kind == VAR && s.owner.kind == MTH && s.type.hasTag(NONE)) {
-                    //cannot type annotate implictly typed locals
+                    //cannot type annotate implicitly typed locals
                     return false;
                 } else if (s.kind == TYP || s.kind == VAR ||
                         (s.kind == MTH && !s.isConstructor() &&
@@ -3607,7 +3607,7 @@ public class Check {
                 } else if ((sym.flags() & MATCH_BINDING) != 0 &&
                            (byName.flags() & MATCH_BINDING) != 0 &&
                            (byName.flags() & MATCH_BINDING_TO_OUTER) == 0) {
-                    //this error will be reported separatelly in MatchBindingsComputer
+                    //this error will be reported separately in MatchBindingsComputer
                     return false;
                 } else {
                     duplicateError(pos, byName);

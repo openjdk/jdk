@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1455,7 +1455,7 @@ static void setMulticastInterface(JNIEnv *env, jobject this, int fd, int fd1,
          * address is bound to and use the IPV6_MULTICAST_IF
          * option instead of IP_MULTICAST_IF
          */
-        if (ipv6_supported) {
+        if (ipv6_supported && fd1 >= 0) {
             static jclass ni_class = NULL;
             if (ni_class == NULL) {
                 jclass c = (*env)->FindClass(env, "java/net/NetworkInterface");
@@ -1496,7 +1496,7 @@ static void setMulticastInterface(JNIEnv *env, jobject this, int fd, int fd1,
          * On IPv4 system extract addr[0] and use the IP_MULTICAST_IF
          * option. For IPv6 both must be done.
          */
-        if (ipv6_supported) {
+        if (ipv6_supported && fd1 >= 0) {
             static jfieldID ni_indexID = NULL;
             struct in_addr in;
             int index;
@@ -1508,7 +1508,6 @@ static void setMulticastInterface(JNIEnv *env, jobject this, int fd, int fd1,
                 CHECK_NULL(ni_indexID);
             }
             index = (*env)->GetIntField(env, value, ni_indexID);
-
             if (isAdapterIpv6Enabled(env, index) != 0) {
                 if (setsockopt(fd1, IPPROTO_IPV6, IPV6_MULTICAST_IF,
                                (const char*)&index, sizeof(index)) < 0) {
@@ -1523,16 +1522,18 @@ static void setMulticastInterface(JNIEnv *env, jobject this, int fd, int fd1,
                     return;
                 }
             }
-            /* If there are any IPv4 addresses on this interface then
-             * repeat the operation on the IPv4 fd */
+            if (fd >= 0) {
+                /* If there are any IPv4 addresses on this interface then
+                 * repeat the operation on the IPv4 fd */
 
-            if (getInet4AddrFromIf(env, value, &in) < 0) {
-                return;
-            }
-            if (setsockopt(fd, IPPROTO_IP, IP_MULTICAST_IF,
-                               (const char*)&in, sizeof(in)) < 0) {
-                JNU_ThrowByNameWithMessageAndLastError
-                    (env, JNU_JAVANETPKG "SocketException", "Error setting socket option");
+                if (getInet4AddrFromIf(env, value, &in) < 0) {
+                    return;
+                }
+                if (setsockopt(fd, IPPROTO_IP, IP_MULTICAST_IF,
+                                   (const char*)&in, sizeof(in)) < 0) {
+                    JNU_ThrowByNameWithMessageAndLastError
+                        (env, JNU_JAVANETPKG "SocketException", "Error setting socket option");
+                }
             }
             return;
         } else {
@@ -1877,7 +1878,7 @@ jobject getMulticastInterface(JNIEnv *env, jobject this, int fd, int fd1, jint o
 
             addr = (*env)->GetObjectArrayElement(env, addrArray, 0);
             return addr;
-        } else if (index == 0) { // index == 0 typically means IPv6 not configured on the interfaces
+        } else if (index == 0 && fd >= 0) {
             // falling back to treat interface as configured for IPv4
             jobject netObject = NULL;
             netObject = getIPv4NetworkInterface(env, this, fd, opt, 0);

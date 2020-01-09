@@ -1,4 +1,4 @@
-dnl Copyright (c) 2014, Red Hat Inc. All rights reserved.
+dnl Copyright (c) 2014, 2019, Red Hat Inc. All rights reserved.
 dnl DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 dnl
 dnl This code is free software; you can redistribute it and/or modify it
@@ -24,44 +24,50 @@ dnl Process this file with m4 ad_encode.m4 to generate the load/store
 dnl patterns used in aarch64.ad.
 dnl
 define(choose, `loadStore($1, &MacroAssembler::$3, $2, $4,
-               $5, $6, $7, $8);dnl
+               $5, $6, $7, $8, $9);dnl
 
   %}')dnl
 define(access, `
     $3Register $1_reg = as_$3Register($$1$$reg);
     $4choose(MacroAssembler(&cbuf), $1_reg,$2,$mem->opcode(),
-        as_Register($mem$$base),$mem$$index,$mem$$scale,$mem$$disp)')dnl
+        as_Register($mem$$base),$mem$$index,$mem$$scale,$mem$$disp,$5)')dnl
 define(load,`
-  enc_class aarch64_enc_$2($1 dst, memory mem) %{dnl
-access(dst,$2,$3)')dnl
-load(iRegI,ldrsbw)
-load(iRegI,ldrsb)
-load(iRegI,ldrb)
-load(iRegL,ldrb)
-load(iRegI,ldrshw)
-load(iRegI,ldrsh)
-load(iRegI,ldrh)
-load(iRegL,ldrh)
-load(iRegI,ldrw)
-load(iRegL,ldrw)
-load(iRegL,ldrsw)
-load(iRegL,ldr)
-load(vRegF,ldrs,Float)
-load(vRegD,ldrd,Float)
+  // This encoding class is generated automatically from ad_encode.m4.
+  // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
+  enc_class aarch64_enc_$2($1 dst, memory$5 mem) %{dnl
+access(dst,$2,$3,$4,$5)')dnl
+load(iRegI,ldrsbw,,,1)
+load(iRegI,ldrsb,,,1)
+load(iRegI,ldrb,,,1)
+load(iRegL,ldrb,,,1)
+load(iRegI,ldrshw,,,2)
+load(iRegI,ldrsh,,,2)
+load(iRegI,ldrh,,,2)
+load(iRegL,ldrh,,,2)
+load(iRegI,ldrw,,,4)
+load(iRegL,ldrw,,,4)
+load(iRegL,ldrsw,,,4)
+load(iRegL,ldr,,,8)
+load(vRegF,ldrs,Float,,4)
+load(vRegD,ldrd,Float,,8)
 define(STORE,`
-  enc_class aarch64_enc_$2($1 src, memory mem) %{dnl
-access(src,$2,$3,$4)')dnl
+  // This encoding class is generated automatically from ad_encode.m4.
+  // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
+  enc_class aarch64_enc_$2($1 src, memory$5 mem) %{dnl
+access(src,$2,$3,$4,$5)')dnl
 define(STORE0,`
-  enc_class aarch64_enc_$2`'0(memory mem) %{
+  // This encoding class is generated automatically from ad_encode.m4.
+  // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
+  enc_class aarch64_enc_$2`'0(memory$4 mem) %{
     MacroAssembler _masm(&cbuf);
     choose(_masm,zr,$2,$mem->opcode(),
-        as_$3Register($mem$$base),$mem$$index,$mem$$scale,$mem$$disp)')dnl
-STORE(iRegI,strb)
-STORE0(iRegI,strb)
-STORE(iRegI,strh)
-STORE0(iRegI,strh)
-STORE(iRegI,strw)
-STORE0(iRegI,strw)
+        as_$3Register($mem$$base),$mem$$index,$mem$$scale,$mem$$disp,$4)')dnl
+STORE(iRegI,strb,,,1)
+STORE0(iRegI,strb,,1)
+STORE(iRegI,strh,,,2)
+STORE0(iRegI,strh,,2)
+STORE(iRegI,strw,,,4)
+STORE0(iRegI,strw,,4)
 STORE(iRegL,str,,
 `// we sometimes get asked to store the stack pointer into the
     // current thread -- we cannot do that directly on AArch64
@@ -71,12 +77,14 @@ STORE(iRegL,str,,
       __ mov(rscratch2, sp);
       src_reg = rscratch2;
     }
-    ')
-STORE0(iRegL,str)
-STORE(vRegF,strs,Float)
-STORE(vRegD,strd,Float)
+    ',8)
+STORE0(iRegL,str,,8)
+STORE(vRegF,strs,Float,,4)
+STORE(vRegD,strd,Float,,8)
 
-  enc_class aarch64_enc_strw_immn(immN src, memory mem) %{
+  // This encoding class is generated automatically from ad_encode.m4.
+  // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
+  enc_class aarch64_enc_strw_immn(immN src, memory1 mem) %{
     MacroAssembler _masm(&cbuf);
     address con = (address)$src$$constant;
     // need to do this the hard way until we can manage relocs
@@ -84,9 +92,11 @@ STORE(vRegD,strd,Float)
     __ movoop(rscratch2, (jobject)con);
     if (con) __ encode_heap_oop_not_null(rscratch2);
     choose(_masm,rscratch2,strw,$mem->opcode(),
-        as_Register($mem$$base),$mem$$index,$mem$$scale,$mem$$disp)
+        as_Register($mem$$base),$mem$$index,$mem$$scale,$mem$$disp, 4)
 
-  enc_class aarch64_enc_strw_immnk(immN src, memory mem) %{
+  // This encoding class is generated automatically from ad_encode.m4.
+  // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
+  enc_class aarch64_enc_strw_immnk(immN src, memory4 mem) %{
     MacroAssembler _masm(&cbuf);
     address con = (address)$src$$constant;
     // need to do this the hard way until we can manage relocs
@@ -94,5 +104,14 @@ STORE(vRegD,strd,Float)
     __ movoop(rscratch2, (jobject)con);
     __ encode_klass_not_null(rscratch2);
     choose(_masm,rscratch2,strw,$mem->opcode(),
-        as_Register($mem$$base),$mem$$index,$mem$$scale,$mem$$disp)
+        as_Register($mem$$base),$mem$$index,$mem$$scale,$mem$$disp, 4)
+
+  // This encoding class is generated automatically from ad_encode.m4.
+  // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
+  enc_class aarch64_enc_strb0_ordered(memory4 mem) %{
+      MacroAssembler _masm(&cbuf);
+      __ membar(Assembler::StoreStore);
+      loadStore(_masm, &MacroAssembler::strb, zr, $mem->opcode(),
+               as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp, 1);
+  %}
 

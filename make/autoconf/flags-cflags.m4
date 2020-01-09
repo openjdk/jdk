@@ -123,7 +123,7 @@ AC_DEFUN([FLAGS_SETUP_DEBUG_SYMBOLS],
   elif test "x$TOOLCHAIN_TYPE" = xxlc; then
     CFLAGS_DEBUG_SYMBOLS="-g1"
   elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
-    CFLAGS_DEBUG_SYMBOLS="-Z7 -d2Zi+"
+    CFLAGS_DEBUG_SYMBOLS="-Z7"
   fi
 
   AC_SUBST(CFLAGS_DEBUG_SYMBOLS)

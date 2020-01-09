@@ -381,7 +381,7 @@ public class LambdaToMethod extends TreeTranslator {
         //translate lambda body
         //As the lambda body is translated, all references to lambda locals,
         //captured variables, enclosing members are adjusted accordingly
-        //to refer to the static method parameters (rather than i.e. acessing to
+        //to refer to the static method parameters (rather than i.e. accessing
         //captured members directly).
         lambdaDecl.body = translate(makeLambdaBody(tree, lambdaDecl));
 
@@ -963,7 +963,7 @@ public class LambdaToMethod extends TreeTranslator {
             // are used as pointers to the current parameter type information
             // and are thus not usable afterwards.
             for (int i = 0; implPTypes.nonEmpty() && i < last; ++i) {
-                // By default use the implementation method parmeter type
+                // By default use the implementation method parameter type
                 Type parmType = implPTypes.head;
                 // If the unerased parameter type is a type variable whose
                 // bound is an intersection (eg. <T extends A & B>) then

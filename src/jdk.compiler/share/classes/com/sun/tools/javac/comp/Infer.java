@@ -279,7 +279,7 @@ public class Infer {
         }
 
     /**
-     * A partially infered method/constructor type; such a type can be checked multiple times
+     * A partially inferred method/constructor type; such a type can be checked multiple times
      * against different targets.
      */
     public class PartiallyInferredMethodType extends MethodType {
@@ -306,7 +306,7 @@ public class Infer {
 
         /**
          * Checks this type against a target; this means generating return type constraints, solve
-         * and then roll back the results (to avoid poolluting the context).
+         * and then roll back the results (to avoid polluting the context).
          */
         Type check(Attr.ResultInfo resultInfo) {
             Warner noWarnings = new Warner(null);
@@ -1621,10 +1621,10 @@ public class Infer {
         /** stuck dependency */
         STUCK("dashed");
 
-        final String dotSyle;
+        final String dotStyle;
 
-        private DependencyKind(String dotSyle) {
-            this.dotSyle = dotSyle;
+        private DependencyKind(String dotStyle) {
+            this.dotStyle = dotStyle;
         }
     }
 
@@ -1829,7 +1829,7 @@ public class Infer {
                 @Override
                 public Properties dependencyAttributes(Node sink, GraphUtils.DependencyKind dk) {
                     Properties p = new Properties();
-                    p.put("style", ((DependencyKind)dk).dotSyle);
+                    p.put("style", ((DependencyKind)dk).dotStyle);
                     StringBuilder buf = new StringBuilder();
                     String sep = "";
                     for (Type from : data) {

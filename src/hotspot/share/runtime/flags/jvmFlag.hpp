@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -143,44 +143,42 @@ public:
   static const char* get_size_t_default_range_str();
   static const char* get_double_default_range_str();
 
-  JVMFlag::Error check_writable(bool changed);
-
   bool is_bool() const;
-  bool get_bool() const;
-  JVMFlag::Error set_bool(bool value);
+  bool get_bool() const                       { return *((bool*) _addr); }
+  void set_bool(bool value)                   { *((bool*) _addr) = value; }
 
   bool is_int() const;
-  int get_int() const;
-  JVMFlag::Error set_int(int value);
+  int get_int() const                         { return *((int*) _addr); }
+  void set_int(int value)                     { *((int*) _addr) = value; }
 
   bool is_uint() const;
-  uint get_uint() const;
-  JVMFlag::Error set_uint(uint value);
+  uint get_uint() const                       { return *((uint*) _addr); }
+  void set_uint(uint value)                   { *((uint*) _addr) = value; }
 
   bool is_intx() const;
-  intx get_intx() const;
-  JVMFlag::Error set_intx(intx value);
+  intx get_intx() const                       { return *((intx*) _addr); }
+  void set_intx(intx value)                   { *((intx*) _addr) = value; }
 
   bool is_uintx() const;
-  uintx get_uintx() const;
-  JVMFlag::Error set_uintx(uintx value);
+  uintx get_uintx() const                     { return *((uintx*) _addr); }
+  void set_uintx(uintx value)                 { *((uintx*) _addr) = value; }
 
   bool is_uint64_t() const;
-  uint64_t get_uint64_t() const;
-  JVMFlag::Error set_uint64_t(uint64_t value);
+  uint64_t get_uint64_t() const               { return *((uint64_t*) _addr); }
+  void set_uint64_t(uint64_t value)           { *((uint64_t*) _addr) = value; }
 
   bool is_size_t() const;
-  size_t get_size_t() const;
-  JVMFlag::Error set_size_t(size_t value);
+  size_t get_size_t() const                   { return *((size_t*) _addr); }
+  void set_size_t(size_t value)               { *((size_t*) _addr) = value; }
 
   bool is_double() const;
-  double get_double() const;
-  JVMFlag::Error set_double(double value);
+  double get_double() const                   { return *((double*) _addr); }
+  void set_double(double value)               { *((double*) _addr) = value; }
 
   bool is_ccstr() const;
   bool ccstr_accumulates() const;
-  ccstr get_ccstr() const;
-  JVMFlag::Error set_ccstr(ccstr value);
+  ccstr get_ccstr() const                     { return *((ccstr*) _addr); }
+  void set_ccstr(ccstr value)                 { *((ccstr*) _addr) = value; }
 
   Flags get_origin();
   void set_origin(Flags origin);

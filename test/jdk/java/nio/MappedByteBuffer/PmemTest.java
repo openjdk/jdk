@@ -50,10 +50,20 @@
  *
  * https://developers.redhat.com/blog/2016/12/05/configuring-and-using-persistent-memory-rhel-7-3/
  * https://nvdimm.wiki.kernel.org/
- * TL;DR: add "memmap=1G!4G" to /etc/default/grub,
- *        then grub2-mkconfig -o /boot/grub2/grub.cfg and reboot
+ * TL;DR: add "memmap=1G!4G" to /etc/default/grub, eg. GRUB_CMDLINE_LINUX="memmap=1G!4G"
+ *        then ("sudo" may required)
+ *          for RHEL(BIOS-based): grub2-mkconfig -o /boot/grub2/grub.cfg
+ *          for RHEL(UEFI-based): grub2-mkconfig -o /boot/efi/EFI/redhat/grub.cfg
+ *          for Ubuntu: update-grub2
+ *        finally reboot
+ *        after the host been rebooted, a new /dev/pmem{N} device should exist,
+ *        naming conversion starts at /dev/pmem0
  *
- *  ndctl create-namespace  * -f -e namespace0.0 -m memory -M mem
+ *  Prepare test directory follow below commands, "sudo" may required
+ *  (if ndctl or mkfs.xfs not exist, install ndctl or xfsprogs package first)
+ *  (for RHEL8, when call mkfs.xfs, specify the -m reflink=0 option to disable reflink feature)
+ *
+ *  ndctl create-namespace -f -e namespace0.0 -m memory -M mem
  *  mkdir /mnt/pmem
  *  mkfs.xfs -f /dev/pmem0; mount -o dax /dev/pmem0 /mnt/pmem/
  *  mkdir /mnt/pmem/test; chmod a+rwx /mnt/pmem/test
@@ -71,7 +81,7 @@
  * @summary Testing NVRAM mapped byte buffer support
  * @run main/manual PmemTest
  * @requires (os.family == "linux")
- * @requires ((os.arch == "x86_64")|(os.arch == "amd64")|(os.arch == "aarch64"))
+ * @requires ((os.arch == "x86_64")|(os.arch == "amd64")|(os.arch == "aarch64")|(os.arch == "ppc64le"))
  */
 
 import java.io.File;

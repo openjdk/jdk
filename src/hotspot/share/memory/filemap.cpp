@@ -1164,9 +1164,9 @@ void FileMapInfo::write_region(int region, char* base, size_t size,
 
   si->set_file_offset(_file_offset);
   char* requested_base = (target_base == NULL) ? NULL : target_base + MetaspaceShared::final_delta();
-  log_info(cds)("Shared file region  %d: " SIZE_FORMAT_HEX_W(08)
-                " bytes, addr " INTPTR_FORMAT " file offset " SIZE_FORMAT_HEX_W(08),
-                region, size, p2i(requested_base), _file_offset);
+  log_debug(cds)("Shared file region  %d: " SIZE_FORMAT_HEX_W(08)
+                 " bytes, addr " INTPTR_FORMAT " file offset " SIZE_FORMAT_HEX_W(08),
+                 region, size, p2i(requested_base), _file_offset);
 
   int crc = ClassLoader::crc32(0, base, (jint)size);
   si->init(region, target_base, size, read_only, allow_exec, crc);
@@ -1185,8 +1185,8 @@ void FileMapInfo::write_bitmap_region(const CHeapBitMap* ptrmap) {
   ptrmap->write_to(buffer, size_in_bytes);
   header()->set_ptrmap_size_in_bits(size_in_bits);
 
-  log_info(cds)("ptrmap = " INTPTR_FORMAT " (" SIZE_FORMAT " bytes)",
-                p2i(buffer), size_in_bytes);
+  log_debug(cds)("ptrmap = " INTPTR_FORMAT " (" SIZE_FORMAT " bytes)",
+                 p2i(buffer), size_in_bytes);
   write_region(MetaspaceShared::bm, (char*)buffer, size_in_bytes, /*read_only=*/true, /*allow_exec=*/false);
 }
 
@@ -1247,8 +1247,8 @@ size_t FileMapInfo::write_archive_heap_regions(GrowableArray<MemRegion> *heap_me
       total_size += size;
     }
 
-    log_info(cds)("Archive heap region %d: " INTPTR_FORMAT " - " INTPTR_FORMAT " = " SIZE_FORMAT_W(8) " bytes",
-                  i, p2i(start), p2i(start + size), size);
+    log_debug(cds)("Archive heap region %d: " INTPTR_FORMAT " - " INTPTR_FORMAT " = " SIZE_FORMAT_W(8) " bytes",
+                   i, p2i(start), p2i(start + size), size);
     write_region(i, start, size, false, false);
     if (size > 0) {
       address oopmap = oopmaps->at(arr_idx)._oopmap;

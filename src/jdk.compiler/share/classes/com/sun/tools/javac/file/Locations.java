@@ -979,7 +979,7 @@ public class Locations {
     }
 
     /**
-     * A LocationHander to represent modules found from a module-oriented
+     * A LocationHandler to represent modules found from a module-oriented
      * location such as MODULE_SOURCE_PATH, UPGRADE_MODULE_PATH,
      * SYSTEM_MODULES and MODULE_PATH.
      *

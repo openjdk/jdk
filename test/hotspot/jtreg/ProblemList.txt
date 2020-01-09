@@ -71,6 +71,8 @@ compiler/rtm/locking/TestUseRTMDeopt.java 8183263 generic-x64
 compiler/rtm/locking/TestUseRTMXendForLockBusy.java 8183263 generic-x64
 compiler/rtm/print/TestPrintPreciseRTMLockingStatistics.java 8183263 generic-x64
 
+compiler/jsr292/ContinuousCallSiteTargetChange.java 8234146 solaris-sparcv9
+
 #############################################################################
 
 # :hotspot_gc

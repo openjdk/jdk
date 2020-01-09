@@ -1741,7 +1741,7 @@ Address MacroAssembler::form_address(Register Rd, Register base, long byte_offse
   {
     unsigned long word_offset = byte_offset >> shift;
     unsigned long masked_offset = word_offset & 0xfff000;
-    if (Address::offset_ok_for_immed(word_offset - masked_offset)
+    if (Address::offset_ok_for_immed(word_offset - masked_offset, 0)
         && Assembler::operand_valid_for_add_sub_immediate(masked_offset << shift)) {
       add(Rd, base, masked_offset << shift);
       word_offset -= masked_offset;

@@ -8388,3 +8388,9 @@ FormatData/es_CL/MonthAbbreviations/8=sep.
 FormatData/es_CL/standalone.MonthAbbreviations/8=sept.
 FormatData/es_CO/MonthAbbreviations/8=sep.
 FormatData/es_CO/standalone.MonthAbbreviations/8=sept.
+
+# bug # 8227313
+FormatData/de/latn.NumberElements/12=
+FormatData/de_AT/latn.NumberElements/12=.
+FormatData/fr/latn.NumberElements/11=
+FormatData/fr_CH/latn.NumberElements/11=.

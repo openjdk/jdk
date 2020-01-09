@@ -42,6 +42,7 @@ import jdk.internal.math.DoubleConsts;
 import jdk.internal.math.FloatConsts;
 import jdk.internal.HotSpotIntrinsicCandidate;
 import jdk.internal.vm.annotation.Stable;
+import jdk.internal.vm.annotation.ForceInline;
 
 /**
  * Immutable arbitrary-precision integers.  All operations behave as if
@@ -2621,12 +2622,8 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
 
     // shifts a up to len right n bits assumes no leading zeros, 0<n<32
     static void primitiveRightShift(int[] a, int len, int n) {
-        int n2 = 32 - n;
-        for (int i=len-1, c=a[i]; i > 0; i--) {
-            int b = c;
-            c = a[i-1];
-            a[i] = (c << n2) | (b >>> n);
-        }
+        Objects.checkFromToIndex(0, len, a.length);
+        shiftRightImplWorker(a, a, 1, n, len-1);
         a[0] >>>= n;
     }
 
@@ -2634,13 +2631,8 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
     static void primitiveLeftShift(int[] a, int len, int n) {
         if (len == 0 || n == 0)
             return;
-
-        int n2 = 32 - n;
-        for (int i=0, c=a[i], m=i+len-1; i < m; i++) {
-            int b = c;
-            c = a[i+1];
-            a[i] = (b << n) | (c >>> n2);
-        }
+        Objects.checkFromToIndex(0, len, a.length);
+        shiftLeftImplWorker(a, a, 0, n, len-1);
         a[len-1] <<= n;
     }
 
@@ -3353,12 +3345,23 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
             } else {
                 newMag = new int[magLen + nInts];
             }
-            int j=0;
-            while (j < magLen-1)
-                newMag[i++] = mag[j++] << nBits | mag[j] >>> nBits2;
-            newMag[i] = mag[j] << nBits;
+            int numIter = magLen - 1;
+            Objects.checkFromToIndex(0, numIter + 1, mag.length);
+            Objects.checkFromToIndex(i, numIter + i + 1, newMag.length);
+            shiftLeftImplWorker(newMag, mag, i, nBits, numIter);
+            newMag[numIter + i] = mag[numIter] << nBits;
         }
         return newMag;
+    }
+
+    @ForceInline
+    @HotSpotIntrinsicCandidate
+    private static void shiftLeftImplWorker(int[] newArr, int[] oldArr, int newIdx, int shiftCount, int numIter) {
+        int shiftCountRight = 32 - shiftCount;
+        int oldIdx = 0;
+        while (oldIdx < numIter) {
+            newArr[newIdx++] = (oldArr[oldIdx++] << shiftCount) | (oldArr[oldIdx] >>> shiftCountRight);
+        }
     }
 
     /**
@@ -3415,11 +3418,10 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
             } else {
                 newMag = new int[magLen - nInts -1];
             }
-
-            int nBits2 = 32 - nBits;
-            int j=0;
-            while (j < magLen - nInts - 1)
-                newMag[i++] = (mag[j++] << nBits2) | (mag[j] >>> nBits);
+            int numIter = magLen - nInts - 1;
+            Objects.checkFromToIndex(0, numIter + 1, mag.length);
+            Objects.checkFromToIndex(i, numIter + i, newMag.length);
+            shiftRightImplWorker(newMag, mag, i, nBits, numIter);
         }
 
         if (signum < 0) {
@@ -3435,6 +3437,17 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         }
 
         return new BigInteger(newMag, signum);
+    }
+
+    @ForceInline
+    @HotSpotIntrinsicCandidate
+    private static void shiftRightImplWorker(int[] newArr, int[] oldArr, int newIdx, int shiftCount, int numIter) {
+        int shiftCountLeft = 32 - shiftCount;
+        int idx = numIter;
+        int nidx = (newIdx == 0) ? numIter - 1 : numIter;
+        while (nidx >= newIdx) {
+            newArr[nidx--] = (oldArr[idx--] >>> shiftCount) | (oldArr[idx] << shiftCountLeft);
+        }
     }
 
     int[] javaIncrement(int[] val) {

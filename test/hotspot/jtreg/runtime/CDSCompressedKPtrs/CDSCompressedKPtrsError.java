@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ public class CDSCompressedKPtrsError {
     if (Platform.is64bit()) {
       pb = ProcessTools.createJavaProcessBuilder(
         "-XX:+UseCompressedOops", "-XX:+UseCompressedClassPointers", "-XX:+UnlockDiagnosticVMOptions",
-        "-XX:SharedArchiveFile=" + filename, "-Xshare:dump");
+        "-XX:SharedArchiveFile=" + filename, "-Xshare:dump", "-Xlog:cds");
       OutputAnalyzer output = new OutputAnalyzer(pb.start());
       try {
         output.shouldContain("Loading classes to share");
@@ -79,19 +79,19 @@ public class CDSCompressedKPtrsError {
       // Test bad options with -Xshare:dump.
       pb = ProcessTools.createJavaProcessBuilder(
         "-XX:-UseCompressedOops", "-XX:+UseCompressedClassPointers", "-XX:+UnlockDiagnosticVMOptions",
-        "-XX:SharedArchiveFile=./CDSCompressedKPtrsErrorBad1.jsa", "-Xshare:dump");
+        "-XX:SharedArchiveFile=./CDSCompressedKPtrsErrorBad1.jsa", "-Xshare:dump", "-Xlog:cds");
       output = new OutputAnalyzer(pb.start());
       output.shouldContain("Cannot dump shared archive");
 
       pb = ProcessTools.createJavaProcessBuilder(
         "-XX:+UseCompressedOops", "-XX:-UseCompressedClassPointers", "-XX:+UnlockDiagnosticVMOptions",
-        "-XX:SharedArchiveFile=./CDSCompressedKPtrsErrorBad2.jsa", "-Xshare:dump");
+        "-XX:SharedArchiveFile=./CDSCompressedKPtrsErrorBad2.jsa", "-Xshare:dump", "-Xlog:cds");
       output = new OutputAnalyzer(pb.start());
       output.shouldContain("Cannot dump shared archive");
 
       pb = ProcessTools.createJavaProcessBuilder(
         "-XX:-UseCompressedOops", "-XX:-UseCompressedClassPointers", "-XX:+UnlockDiagnosticVMOptions",
-        "-XX:SharedArchiveFile=./CDSCompressedKPtrsErrorBad3.jsa", "-Xshare:dump");
+        "-XX:SharedArchiveFile=./CDSCompressedKPtrsErrorBad3.jsa", "-Xshare:dump", "-Xlog:cds");
       output = new OutputAnalyzer(pb.start());
       output.shouldContain("Cannot dump shared archive");
 

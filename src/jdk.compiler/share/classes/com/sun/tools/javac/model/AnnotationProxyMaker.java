@@ -321,7 +321,7 @@ public class AnnotationProxyMaker {
 
     /**
      * ExceptionProxy for MirroredTypesException.
-     * The toString, hashCode, and equals methods foward to the underlying
+     * The toString, hashCode, and equals methods forward to the underlying
      * types.
      */
     private static final class MirroredTypesExceptionProxy extends ExceptionProxy {

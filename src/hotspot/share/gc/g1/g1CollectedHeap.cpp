@@ -1,5 +1,5 @@
  /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3180,8 +3180,7 @@ void G1CollectedHeap::restore_after_evac_failure(G1RedirtyCardsQueueSet* rdcqs) 
   double remove_self_forwards_start = os::elapsedTime();
 
   remove_self_forwarding_pointers(rdcqs);
-  SharedRestorePreservedMarksTaskExecutor task_executor(workers());
-  _preserved_marks_set.restore(&task_executor);
+  _preserved_marks_set.restore(workers());
 
   phase_times()->record_evac_fail_remove_self_forwards((os::elapsedTime() - remove_self_forwards_start) * 1000.0);
 }

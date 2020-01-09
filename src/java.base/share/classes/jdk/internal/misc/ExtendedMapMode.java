@@ -27,8 +27,11 @@ package jdk.internal.misc;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.invoke.MethodType;
 import java.nio.channels.FileChannel.MapMode;
+import java.security.AccessController;
+import java.security.PrivilegedExceptionAction;
 
 /**
  * JDK-specific map modes implemented in java.base.
@@ -36,10 +39,11 @@ import java.nio.channels.FileChannel.MapMode;
 public class ExtendedMapMode {
 
     static final MethodHandle MAP_MODE_CONSTRUCTOR;
-
     static {
         try {
-            var lookup = MethodHandles.privateLookupIn(MapMode.class, MethodHandles.lookup());
+            PrivilegedExceptionAction<Lookup> pae = () ->
+                MethodHandles.privateLookupIn(MapMode.class, MethodHandles.lookup());
+            Lookup lookup = AccessController.doPrivileged(pae);
             var methodType = MethodType.methodType(void.class, String.class);
             MAP_MODE_CONSTRUCTOR = lookup.findConstructor(MapMode.class, methodType);
         } catch (Exception e) {

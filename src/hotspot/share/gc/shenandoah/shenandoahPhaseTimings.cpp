@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2017, 2020, Red Hat, Inc. All rights reserved.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
@@ -90,6 +90,8 @@ void ShenandoahPhaseTimings::record_workers_end(Phase phase) {
             phase == final_update_refs_roots ||
             phase == full_gc_roots ||
             phase == degen_gc_update_roots ||
+            phase == full_gc_purge_par ||
+            phase == purge_par ||
             phase == _num_phases,
             "only in these phases we can add per-thread phase times");
   if (phase != _num_phases) {

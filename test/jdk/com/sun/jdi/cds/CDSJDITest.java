@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,7 +72,7 @@ public class CDSJDITest {
             "-Xbootclasspath/a:" + appJar,
             "-XX:+UnlockDiagnosticVMOptions", "-XX:SharedArchiveFile=./SharedArchiveFile.jsa",
             "-XX:ExtraSharedClassListFile=" + jarClasslistFile.getPath(),
-            "-Xshare:dump");
+            "-Xshare:dump", "-Xlog:cds");
         OutputAnalyzer outputDump = executeAndLog(pb, "exec");
         for (String jarClass : jarClasses) {
             outputDump.shouldNotContain("Cannot find " + jarClass);

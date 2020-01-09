@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,7 +64,7 @@ public final class Resources {
         if (index == -1 || index == name.length()-1) {
             return "";
         } else {
-            return name.substring(0, index).replace("/", ".");
+            return name.substring(0, index).replace('/', '.');
         }
     }
 

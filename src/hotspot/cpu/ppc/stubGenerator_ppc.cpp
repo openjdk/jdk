@@ -3026,8 +3026,8 @@ class StubGenerator: public StubCodeGenerator {
     address start = __ function_entry();
 
     __ sha256 (multi_block);
-
     __ blr();
+
     return start;
   }
 
@@ -3037,8 +3037,36 @@ class StubGenerator: public StubCodeGenerator {
     address start = __ function_entry();
 
     __ sha512 (multi_block);
-
     __ blr();
+
+    return start;
+  }
+
+  address generate_data_cache_writeback() {
+    const Register cacheline = R3_ARG1;
+    StubCodeMark mark(this, "StubRoutines", "_data_cache_writeback");
+    address start = __ pc();
+
+    __ cache_wb(Address(cacheline));
+    __ blr();
+
+    return start;
+  }
+
+  address generate_data_cache_writeback_sync() {
+    const Register is_presync = R3_ARG1;
+    Register temp = R4;
+    Label SKIP;
+
+    StubCodeMark mark(this, "StubRoutines", "_data_cache_writeback_sync");
+    address start = __ pc();
+
+    __ andi_(temp, is_presync, 1);
+    __ bne(CCR0, SKIP);
+    __ cache_wbsync(false); // post sync => emit 'sync'
+    __ bind(SKIP);          // pre sync => emit nothing
+    __ blr();
+
     return start;
   }
 
@@ -3593,6 +3621,12 @@ class StubGenerator: public StubCodeGenerator {
         = CAST_FROM_FN_PTR(address, SharedRuntime::montgomery_square);
     }
 #endif
+
+    // data cache line writeback
+    if (VM_Version::supports_data_cache_line_flush()) {
+      StubRoutines::_data_cache_writeback = generate_data_cache_writeback();
+      StubRoutines::_data_cache_writeback_sync = generate_data_cache_writeback_sync();
+    }
 
     if (UseAESIntrinsics) {
       StubRoutines::_aescrypt_encryptBlock = generate_aescrypt_encryptBlock();

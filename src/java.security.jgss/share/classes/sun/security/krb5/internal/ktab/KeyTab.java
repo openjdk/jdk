@@ -300,7 +300,7 @@ public class KeyTab implements KeyTabConstants {
                     keys.add(key);
                     if (DEBUG) {
                         System.out.println("Added key: " + entry.keyType +
-                            "version: " + entry.keyVersion);
+                            ", version: " + entry.keyVersion);
                     }
                 } else if (DEBUG) {
                     System.out.println("Found unsupported keytype (" +

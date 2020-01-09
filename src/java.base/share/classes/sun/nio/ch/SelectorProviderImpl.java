@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,37 +25,50 @@
 
 package sun.nio.ch;
 
-import java.io.FileDescriptor;
 import java.io.IOException;
-import java.net.ServerSocket;
-import java.net.Socket;
 import java.net.ProtocolFamily;
-import java.nio.channels.*;
-import java.nio.channels.spi.*;
-
+import java.nio.channels.DatagramChannel;
+import java.nio.channels.Pipe;
+import java.nio.channels.ServerSocketChannel;
+import java.nio.channels.SocketChannel;
+import java.nio.channels.spi.AbstractSelector;
+import java.nio.channels.spi.SelectorProvider;
 
 public abstract class SelectorProviderImpl
     extends SelectorProvider
 {
-
+    @Override
     public DatagramChannel openDatagramChannel() throws IOException {
-        return new DatagramChannelImpl(this);
+        return new DatagramChannelImpl(this, /*interruptible*/true);
     }
 
+    /**
+     * SelectorProviderImpl specific method to create a DatagramChannel that
+     * is not interruptible.
+     */
+    public DatagramChannel openUninterruptibleDatagramChannel() throws IOException {
+        return new DatagramChannelImpl(this, /*interruptible*/false);
+    }
+
+    @Override
     public DatagramChannel openDatagramChannel(ProtocolFamily family) throws IOException {
-        return new DatagramChannelImpl(this, family);
+        return new DatagramChannelImpl(this, family, /*interruptible*/true);
     }
 
+    @Override
     public Pipe openPipe() throws IOException {
         return new PipeImpl(this);
     }
 
+    @Override
     public abstract AbstractSelector openSelector() throws IOException;
 
+    @Override
     public ServerSocketChannel openServerSocketChannel() throws IOException {
         return new ServerSocketChannelImpl(this);
     }
 
+    @Override
     public SocketChannel openSocketChannel() throws IOException {
         return new SocketChannelImpl(this);
     }

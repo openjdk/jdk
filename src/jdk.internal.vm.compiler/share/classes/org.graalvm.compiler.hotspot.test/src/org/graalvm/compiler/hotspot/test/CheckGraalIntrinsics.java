@@ -416,7 +416,9 @@ public class CheckGraalIntrinsics extends GraalTest {
         if (isJDK14OrHigher()) {
             add(toBeInvestigated,
                             "com/sun/crypto/provider/ElectronicCodeBook.implECBDecrypt([BII[BI)I",
-                            "com/sun/crypto/provider/ElectronicCodeBook.implECBEncrypt([BII[BI)I");
+                            "com/sun/crypto/provider/ElectronicCodeBook.implECBEncrypt([BII[BI)I",
+                            "java/math/BigInteger.shiftLeftImplWorker([I[IIII)V",
+                            "java/math/BigInteger.shiftRightImplWorker([I[IIII)V");
         }
 
         if (!config.inlineNotify()) {

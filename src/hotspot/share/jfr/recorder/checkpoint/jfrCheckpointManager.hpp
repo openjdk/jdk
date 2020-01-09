@@ -85,11 +85,14 @@ class JfrCheckpointManager : public JfrCHeapObj {
   size_t write_threads();
   size_t write_static_type_set_and_threads();
   bool is_type_set_required();
+  void clear_type_set();
   void write_type_set();
   static void write_type_set_for_unloaded_classes();
 
-  void shift_epoch();
-  void synchronize_epoch();
+  void begin_epoch_shift();
+  void end_epoch_shift();
+  void synchronize_checkpoint_manager_with_current_epoch();
+
   void notify_threads();
 
   JfrCheckpointManager(JfrChunkWriter& cw);

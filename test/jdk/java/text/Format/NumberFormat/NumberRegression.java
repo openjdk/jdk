@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
  * 4098741 4099404 4101481 4106658 4106662 4106664 4108738 4110936 4122840
  * 4125885 4134034 4134300 4140009 4141750 4145457 4147295 4147706 4162198
  * 4162852 4167494 4170798 4176114 4179818 4185761 4212072 4212073 4216742
- * 4217661 4243011 4243108 4330377 4233840 4241880 4833877 8008577
+ * 4217661 4243011 4243108 4330377 4233840 4241880 4833877 8008577 8227313
  * @summary Regression tests for NumberFormat and associated classes
  * @library /java/text/testlib
  * @build IntlTest HexDumpReader TestUtils
@@ -1801,6 +1801,66 @@ public class NumberRegression extends IntlTest {
             }
         }
         Locale.setDefault(savedLocale);
+    }
+
+    /**
+     * Test for get/setMonetaryGroupingSeparator() methods.
+     * @since 15
+     */
+    public void test8227313() throws ParseException {
+        var nrmSep = 'n';
+        var monSep = 'm';
+        var curSym = "Cur";
+        var inputNum = 10;
+        var nrmPattern = ",#";
+        var monPattern = "\u00a4 ,#";
+        var expectedNrmFmt = "1n0";
+        var expectedMonFmt = "Cur 1m0";
+
+        var ndfs = DecimalFormatSymbols.getInstance();
+        ndfs.setGroupingSeparator(nrmSep);
+        var nf = new DecimalFormat(nrmPattern, ndfs);
+        var mdfs = DecimalFormatSymbols.getInstance();
+        mdfs.setMonetaryGroupingSeparator(monSep);
+        mdfs.setCurrencySymbol(curSym);
+        var mf = new DecimalFormat(monPattern, mdfs);
+
+        // get test
+        char gotNrmSep = mdfs.getGroupingSeparator();
+        char gotMonSep = mdfs.getMonetaryGroupingSeparator();
+        if (gotMonSep != monSep) {
+            errln("FAIL: getMonetaryGroupingSeparator() returned incorrect value. expected: "
+                    + monSep + ", got: " + gotMonSep);
+        }
+        if (gotMonSep == gotNrmSep) {
+            errln("FAIL: getMonetaryGroupingSeparator() returned the same value with " +
+                    "getGroupingSeparator(): monetary sep: " + gotMonSep +
+                    ", normal sep: " + gotNrmSep);
+        }
+
+        // format test
+        var formatted = mf.format(inputNum);
+        if (!formatted.equals(expectedMonFmt)) {
+            errln("FAIL: format failed. expected: " + expectedMonFmt +
+                    ", got: " + formatted);
+        }
+        formatted = nf.format(inputNum);
+        if (!formatted.equals(expectedNrmFmt)) {
+            errln("FAIL: normal format failed. expected: " + expectedNrmFmt +
+                    ", got: " + formatted);
+        }
+
+        // parse test
+        Number parsed = mf.parse(expectedMonFmt);
+        if (parsed.intValue() != inputNum) {
+            errln("FAIL: parse failed. expected: " + inputNum +
+                    ", got: " + parsed);
+        }
+        parsed = nf.parse(expectedNrmFmt);
+        if (parsed.intValue() != inputNum) {
+            errln("FAIL: normal parse failed. expected: " + inputNum +
+                    ", got: " + parsed);
+        }
     }
 }
 

@@ -443,7 +443,7 @@ public class Config {
             } catch (NumberFormatException e) {
                 if (DEBUG) {
                     System.out.println("Exception in getting value of " +
-                                       Arrays.toString(keys) + " " +
+                                       Arrays.toString(keys) + ": " +
                                        e.getMessage());
                     System.out.println("Setting " + Arrays.toString(keys) +
                                        " to minimum value");

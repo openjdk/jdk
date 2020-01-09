@@ -47,7 +47,6 @@ class JfrRecorderService : public StackObj {
   void chunk_rotation();
   void in_memory_rotation();
   void finalize_current_chunk();
-  void prepare_for_vm_error_rotation();
   void vm_error_rotation();
   void invoke_flush();
 

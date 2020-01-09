@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -202,11 +202,12 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
      * @param zeroDigit the character used for zero
      */
     public void setZeroDigit(char zeroDigit) {
+        hashCode = 0;
         this.zeroDigit = zeroDigit;
     }
 
     /**
-     * Gets the character used for thousands separator. Different for French, etc.
+     * Gets the character used for grouping separator. Different for French, etc.
      *
      * @return the grouping separator
      */
@@ -215,11 +216,12 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
     }
 
     /**
-     * Sets the character used for thousands separator. Different for French, etc.
+     * Sets the character used for grouping separator. Different for French, etc.
      *
      * @param groupingSeparator the grouping separator
      */
     public void setGroupingSeparator(char groupingSeparator) {
+        hashCode = 0;
         this.groupingSeparator = groupingSeparator;
     }
 
@@ -238,6 +240,7 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
      * @param decimalSeparator the character used for decimal sign
      */
     public void setDecimalSeparator(char decimalSeparator) {
+        hashCode = 0;
         this.decimalSeparator = decimalSeparator;
     }
 
@@ -256,42 +259,9 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
      * @param perMill the character used for per mille sign
      */
     public void setPerMill(char perMill) {
+        hashCode = 0;
         this.perMill = perMill;
         this.perMillText = Character.toString(perMill);
-    }
-
-    /**
-     * Gets the string used for per mille sign. Different for Arabic, etc.
-     *
-     * @return the string used for per mille sign
-     * @since 13
-     */
-    String getPerMillText() {
-        return perMillText;
-    }
-
-    /**
-     * Sets the string used for per mille sign. Different for Arabic, etc.
-     *
-     * Setting the {@code perMillText} affects the return value of
-     * {@link #getPerMill()}, in which the first non-format character of
-     * {@code perMillText} is returned.
-     *
-     * @param perMillText the string used for per mille sign
-     * @throws NullPointerException if {@code perMillText} is null
-     * @throws IllegalArgumentException if {@code perMillText} is an empty string
-     * @see #getPerMill()
-     * @see #getPerMillText()
-     * @since 13
-     */
-    void setPerMillText(String perMillText) {
-        Objects.requireNonNull(perMillText);
-        if (perMillText.isEmpty()) {
-            throw new IllegalArgumentException("Empty argument string");
-        }
-
-        this.perMillText = perMillText;
-        this.perMill = findNonFormatChar(perMillText, '\u2030');
     }
 
     /**
@@ -309,42 +279,9 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
      * @param percent the character used for percent sign
      */
     public void setPercent(char percent) {
+        hashCode = 0;
         this.percent = percent;
         this.percentText = Character.toString(percent);
-    }
-
-    /**
-     * Gets the string used for percent sign. Different for Arabic, etc.
-     *
-     * @return the string used for percent sign
-     * @since 13
-     */
-    String getPercentText() {
-        return percentText;
-    }
-
-    /**
-     * Sets the string used for percent sign. Different for Arabic, etc.
-     *
-     * Setting the {@code percentText} affects the return value of
-     * {@link #getPercent()}, in which the first non-format character of
-     * {@code percentText} is returned.
-     *
-     * @param percentText the string used for percent sign
-     * @throws NullPointerException if {@code percentText} is null
-     * @throws IllegalArgumentException if {@code percentText} is an empty string
-     * @see #getPercent()
-     * @see #getPercentText()
-     * @since 13
-     */
-    void setPercentText(String percentText) {
-        Objects.requireNonNull(percentText);
-        if (percentText.isEmpty()) {
-            throw new IllegalArgumentException("Empty argument string");
-        }
-
-        this.percentText = percentText;
-        this.percent = findNonFormatChar(percentText, '%');
     }
 
     /**
@@ -362,6 +299,7 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
      * @param digit the character used for a digit in a pattern
      */
     public void setDigit(char digit) {
+        hashCode = 0;
         this.digit = digit;
     }
 
@@ -382,6 +320,7 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
      * @param patternSeparator the pattern separator
      */
     public void setPatternSeparator(char patternSeparator) {
+        hashCode = 0;
         this.patternSeparator = patternSeparator;
     }
 
@@ -402,6 +341,7 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
      * @param infinity the string representing infinity
      */
     public void setInfinity(String infinity) {
+        hashCode = 0;
         this.infinity = infinity;
     }
 
@@ -422,6 +362,7 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
      * @param NaN the string representing "not a number"
      */
     public void setNaN(String NaN) {
+        hashCode = 0;
         this.NaN = NaN;
     }
 
@@ -444,47 +385,9 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
      * @param minusSign the character representing minus sign
      */
     public void setMinusSign(char minusSign) {
+        hashCode = 0;
         this.minusSign = minusSign;
         this.minusSignText = Character.toString(minusSign);
-    }
-
-    /**
-     * Gets the string used to represent minus sign. If no explicit
-     * negative format is specified, one is formed by prefixing
-     * minusSignText to the positive format.
-     *
-     * @return the string representing minus sign
-     * @since 13
-     */
-    String getMinusSignText() {
-        return minusSignText;
-    }
-
-    /**
-     * Sets the string used to represent minus sign. If no explicit
-     * negative format is specified, one is formed by prefixing
-     * minusSignText to the positive format.
-     *
-     * Setting the {@code minusSignText} affects the return value of
-     * {@link #getMinusSign()}, in which the first non-format character of
-     * {@code minusSignText} is returned.
-     *
-     * @param minusSignText the character representing minus sign
-     * @throws NullPointerException if {@code minusSignText} is null
-     * @throws IllegalArgumentException if {@code minusSignText} is an
-     *  empty string
-     * @see #getMinusSign()
-     * @see #getMinusSignText()
-     * @since 13
-     */
-    void setMinusSignText(String minusSignText) {
-        Objects.requireNonNull(minusSignText);
-        if (minusSignText.isEmpty()) {
-            throw new IllegalArgumentException("Empty argument string");
-        }
-
-        this.minusSignText = minusSignText;
-        this.minusSign = findNonFormatChar(minusSignText, '-');
     }
 
     /**
@@ -510,6 +413,7 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
     public void setCurrencySymbol(String currency)
     {
         initializeCurrency(locale);
+        hashCode = 0;
         currencySymbol = currency;
     }
 
@@ -545,6 +449,7 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
     public void setInternationalCurrencySymbol(String currencyCode)
     {
         initializeCurrency(locale);
+        hashCode = 0;
         intlCurrencySymbol = currencyCode;
         currency = null;
         if (currencyCode != null) {
@@ -586,6 +491,7 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
             throw new NullPointerException();
         }
         initializeCurrency(locale);
+        hashCode = 0;
         this.currency = currency;
         intlCurrencySymbol = currency.getCurrencyCode();
         currencySymbol = currency.getSymbol(locale);
@@ -611,19 +517,8 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
      */
     public void setMonetaryDecimalSeparator(char sep)
     {
+        hashCode = 0;
         monetarySeparator = sep;
-    }
-
-    //------------------------------------------------------------
-    // BEGIN   Package Private methods ... to be made public later
-    //------------------------------------------------------------
-
-    /**
-     * Returns the character used to separate the mantissa from the exponent.
-     */
-    char getExponentialSymbol()
-    {
-        return exponential;
     }
 
     /**
@@ -640,14 +535,6 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
     }
 
     /**
-     * Sets the character used to separate the mantissa from the exponent.
-     */
-    void setExponentialSymbol(char exp)
-    {
-        exponential = exp;
-    }
-
-    /**
      * Sets the string used to separate the mantissa from the exponent.
      * Examples: "x10^" for 1.23x10^4, "E" for 1.23E4.
      *
@@ -661,9 +548,166 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
         if (exp == null) {
             throw new NullPointerException();
         }
+        hashCode = 0;
         exponentialSeparator = exp;
     }
 
+    /**
+     * Gets the character used for grouping separator for currencies.
+     * May be different from {@code grouping separator} in some locales,
+     * e.g, German in Austria.
+     *
+     * @return the monetary grouping separator
+     * @since 15
+     */
+    public char getMonetaryGroupingSeparator() {
+        return monetaryGroupingSeparator;
+    }
+
+    /**
+     * Sets the character used for grouping separator for currencies.
+     * Invocation of this method will not affect the normal
+     * {@code grouping separator}.
+     *
+     * @param monetaryGroupingSeparator the monetary grouping separator
+     * @see #setGroupingSeparator(char)
+     * @since 15
+     */
+    public void setMonetaryGroupingSeparator(char monetaryGroupingSeparator)
+    {
+        hashCode = 0;
+        this.monetaryGroupingSeparator = monetaryGroupingSeparator;
+    }
+
+    //------------------------------------------------------------
+    // BEGIN   Package Private methods ... to be made public later
+    //------------------------------------------------------------
+
+    /**
+     * Returns the character used to separate the mantissa from the exponent.
+     */
+    char getExponentialSymbol()
+    {
+        return exponential;
+    }
+
+    /**
+     * Sets the character used to separate the mantissa from the exponent.
+     */
+    void setExponentialSymbol(char exp)
+    {
+        exponential = exp;
+    }
+
+    /**
+     * Gets the string used for per mille sign. Different for Arabic, etc.
+     *
+     * @return the string used for per mille sign
+     * @since 13
+     */
+    String getPerMillText() {
+        return perMillText;
+    }
+
+    /**
+     * Sets the string used for per mille sign. Different for Arabic, etc.
+     *
+     * Setting the {@code perMillText} affects the return value of
+     * {@link #getPerMill()}, in which the first non-format character of
+     * {@code perMillText} is returned.
+     *
+     * @param perMillText the string used for per mille sign
+     * @throws NullPointerException if {@code perMillText} is null
+     * @throws IllegalArgumentException if {@code perMillText} is an empty string
+     * @see #getPerMill()
+     * @see #getPerMillText()
+     * @since 13
+     */
+    void setPerMillText(String perMillText) {
+        Objects.requireNonNull(perMillText);
+        if (perMillText.isEmpty()) {
+            throw new IllegalArgumentException("Empty argument string");
+        }
+
+        hashCode = 0;
+        this.perMillText = perMillText;
+        this.perMill = findNonFormatChar(perMillText, '\u2030');
+    }
+
+    /**
+     * Gets the string used for percent sign. Different for Arabic, etc.
+     *
+     * @return the string used for percent sign
+     * @since 13
+     */
+    String getPercentText() {
+        return percentText;
+    }
+
+    /**
+     * Sets the string used for percent sign. Different for Arabic, etc.
+     *
+     * Setting the {@code percentText} affects the return value of
+     * {@link #getPercent()}, in which the first non-format character of
+     * {@code percentText} is returned.
+     *
+     * @param percentText the string used for percent sign
+     * @throws NullPointerException if {@code percentText} is null
+     * @throws IllegalArgumentException if {@code percentText} is an empty string
+     * @see #getPercent()
+     * @see #getPercentText()
+     * @since 13
+     */
+    void setPercentText(String percentText) {
+        Objects.requireNonNull(percentText);
+        if (percentText.isEmpty()) {
+            throw new IllegalArgumentException("Empty argument string");
+        }
+
+        hashCode = 0;
+        this.percentText = percentText;
+        this.percent = findNonFormatChar(percentText, '%');
+    }
+
+    /**
+     * Gets the string used to represent minus sign. If no explicit
+     * negative format is specified, one is formed by prefixing
+     * minusSignText to the positive format.
+     *
+     * @return the string representing minus sign
+     * @since 13
+     */
+    String getMinusSignText() {
+        return minusSignText;
+    }
+
+    /**
+     * Sets the string used to represent minus sign. If no explicit
+     * negative format is specified, one is formed by prefixing
+     * minusSignText to the positive format.
+     *
+     * Setting the {@code minusSignText} affects the return value of
+     * {@link #getMinusSign()}, in which the first non-format character of
+     * {@code minusSignText} is returned.
+     *
+     * @param minusSignText the character representing minus sign
+     * @throws NullPointerException if {@code minusSignText} is null
+     * @throws IllegalArgumentException if {@code minusSignText} is an
+     *  empty string
+     * @see #getMinusSign()
+     * @see #getMinusSignText()
+     * @since 13
+     */
+    void setMinusSignText(String minusSignText) {
+        Objects.requireNonNull(minusSignText);
+        if (minusSignText.isEmpty()) {
+            throw new IllegalArgumentException("Empty argument string");
+        }
+
+        hashCode = 0;
+        this.minusSignText = minusSignText;
+        this.minusSign = findNonFormatChar(minusSignText, '-');
+    }
 
     //------------------------------------------------------------
     // END     Package Private methods ... to be made public later
@@ -692,35 +736,57 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
         if (getClass() != obj.getClass()) return false;
         DecimalFormatSymbols other = (DecimalFormatSymbols) obj;
         return (zeroDigit == other.zeroDigit &&
-        groupingSeparator == other.groupingSeparator &&
-        decimalSeparator == other.decimalSeparator &&
-        percent == other.percent &&
-        percentText.equals(other.percentText) &&
-        perMill == other.perMill &&
-        perMillText.equals(other.perMillText) &&
-        digit == other.digit &&
-        minusSign == other.minusSign &&
-        minusSignText.equals(other.minusSignText) &&
-        patternSeparator == other.patternSeparator &&
-        infinity.equals(other.infinity) &&
-        NaN.equals(other.NaN) &&
-        getCurrencySymbol().equals(other.getCurrencySymbol()) && // possible currency init occurs here
-        intlCurrencySymbol.equals(other.intlCurrencySymbol) &&
-        currency == other.currency &&
-        monetarySeparator == other.monetarySeparator &&
-        exponentialSeparator.equals(other.exponentialSeparator) &&
-        locale.equals(other.locale));
+            groupingSeparator == other.groupingSeparator &&
+            decimalSeparator == other.decimalSeparator &&
+            percent == other.percent &&
+            percentText.equals(other.percentText) &&
+            perMill == other.perMill &&
+            perMillText.equals(other.perMillText) &&
+            digit == other.digit &&
+            minusSign == other.minusSign &&
+            minusSignText.equals(other.minusSignText) &&
+            patternSeparator == other.patternSeparator &&
+            infinity.equals(other.infinity) &&
+            NaN.equals(other.NaN) &&
+            getCurrencySymbol().equals(other.getCurrencySymbol()) && // possible currency init occurs here
+            intlCurrencySymbol.equals(other.intlCurrencySymbol) &&
+            currency == other.currency &&
+            monetarySeparator == other.monetarySeparator &&
+            monetaryGroupingSeparator == other.monetaryGroupingSeparator &&
+            exponentialSeparator.equals(other.exponentialSeparator) &&
+            locale.equals(other.locale));
     }
 
     /**
      * Override hashCode.
      */
+    private volatile int hashCode;
     @Override
     public int hashCode() {
-            int result = zeroDigit;
-            result = result * 37 + groupingSeparator;
-            result = result * 37 + decimalSeparator;
-            return result;
+        if (hashCode == 0) {
+            hashCode = Objects.hash(
+                zeroDigit,
+                groupingSeparator,
+                decimalSeparator,
+                percent,
+                percentText,
+                perMill,
+                perMillText,
+                digit,
+                minusSign,
+                minusSignText,
+                patternSeparator,
+                infinity,
+                NaN,
+                getCurrencySymbol(), // possible currency init occurs here
+                intlCurrencySymbol,
+                currency,
+                monetarySeparator,
+                monetaryGroupingSeparator,
+                exponentialSeparator,
+                locale);
+        }
+        return hashCode;
     }
 
     /**
@@ -759,14 +825,15 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
         infinity  = numberElements[9];
         NaN = numberElements[10];
 
+        // monetary decimal/grouping separators may be missing in resource bundles
+        monetarySeparator = numberElements.length < 12 || numberElements[11].isEmpty() ?
+            decimalSeparator : numberElements[11].charAt(0);
+        monetaryGroupingSeparator = numberElements.length < 13 || numberElements[12].isEmpty() ?
+            groupingSeparator : numberElements[12].charAt(0);
+
         // maybe filled with previously cached values, or null.
         intlCurrencySymbol = (String) data[1];
         currencySymbol = (String) data[2];
-
-        // Currently the monetary decimal separator is the same as the
-        // standard decimal separator for all locales that we support.
-        // If that changes, add a new entry to NumberElements.
-        monetarySeparator = decimalSeparator;
     }
 
     /**
@@ -844,6 +911,8 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
      * {@code perMillText}, {@code percentText}, and
      * {@code minusSignText} using {@code perMill}, {@code percent}, and
      * {@code minusSign} respectively.
+     * If {@code serialVersionOnStream} is less than 5, it initializes
+     * {@code monetaryGroupingSeparator} using {@code groupingSeparator}.
      * Sets {@code serialVersionOnStream} back to the maximum allowed value so that
      * default serialization will work properly if this object is streamed out again.
      * Initializes the currency from the intlCurrencySymbol field.
@@ -886,6 +955,10 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
                     "per mille, and/or minus sign disagree.");
             }
         }
+        if (serialVersionOnStream < 5) {
+            // didn't have monetaryGroupingSeparator. Create one using groupingSeparator
+            monetaryGroupingSeparator = groupingSeparator;
+        }
 
         serialVersionOnStream = currentSerialVersion;
 
@@ -907,7 +980,7 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
     private  char    zeroDigit;
 
     /**
-     * Character used for thousands separator.
+     * Character used for grouping separator.
      *
      * @serial
      * @see #getGroupingSeparator
@@ -1063,6 +1136,14 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
      */
     private  String minusSignText;
 
+    /**
+     * The grouping separator used when formatting currency values.
+     *
+     * @serial
+     * @since 15
+     */
+    private  char    monetaryGroupingSeparator;
+
     // currency; only the ISO code is serialized.
     private transient Currency currency;
     private transient volatile boolean currencyInitialized;
@@ -1079,7 +1160,8 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
     // - 3 for version from J2SE 1.6, which includes exponentialSeparator field.
     // - 4 for version from Java SE 13, which includes perMillText, percentText,
     //      and minusSignText field.
-    private static final int currentSerialVersion = 4;
+    // - 5 for version from Java SE 15, which includes monetaryGroupingSeparator.
+    private static final int currentSerialVersion = 5;
 
     /**
      * Describes the version of {@code DecimalFormatSymbols} present on the stream.
@@ -1096,7 +1178,9 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
      * <li><b>4</b>: Versions written by Java SE 13 or later, which include
      *      new {@code perMillText}, {@code percentText}, and
      *      {@code minusSignText} field.
-     * </ul>
+     * <li><b>5</b>: Versions written by Java SE 15 or later, which include
+     *      new {@code monetaryGroupingSeparator} field.
+     * * </ul>
      * When streaming out a {@code DecimalFormatSymbols}, the most recent format
      * (corresponding to the highest allowable {@code serialVersionOnStream})
      * is always written.

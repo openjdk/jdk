@@ -238,7 +238,7 @@ public class PoolWriter {
         return s.kind == Kind.MTH ? s.externalType(types) : s.erasure(types);
     }
 
-    private int makeBoostrapEntry(Dynamic dynamic) {
+    private int makeBootstrapEntry(Dynamic dynamic) {
         BsmKey bsmKey = dynamic.bsmKey(types);
 
         // Figure out the index for existing BSM; create a new BSM if no key
@@ -455,14 +455,14 @@ public class PoolWriter {
                 case ClassFile.CONSTANT_InvokeDynamic: {
                     DynamicMethodSymbol d = (DynamicMethodSymbol)c;
                     poolbuf.appendByte(tag);
-                    poolbuf.appendChar(makeBoostrapEntry(d));
+                    poolbuf.appendChar(makeBootstrapEntry(d));
                     poolbuf.appendChar(putNameAndType(d));
                     break;
                 }
                 case ClassFile.CONSTANT_Dynamic: {
                     Symbol.DynamicVarSymbol d = (Symbol.DynamicVarSymbol)c;
                     poolbuf.appendByte(tag);
-                    poolbuf.appendChar(makeBoostrapEntry(d));
+                    poolbuf.appendChar(makeBootstrapEntry(d));
                     poolbuf.appendChar(putNameAndType(d));
                     break;
                 }

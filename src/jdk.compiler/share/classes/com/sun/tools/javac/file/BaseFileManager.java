@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,7 +66,7 @@ import com.sun.tools.javac.util.Log;
 import com.sun.tools.javac.util.Options;
 
 /**
- * Utility methods for building a filemanager.
+ * Utility methods for building a file manager.
  * There are no references here to file-system specific objects such as
  * java.io.File or java.nio.file.Path.
  */
@@ -92,7 +92,7 @@ public abstract class BaseFileManager implements JavaFileManager {
 
         // Setting this option is an indication that close() should defer actually closing
         // the file manager until after a specified period of inactivity.
-        // This is to accomodate clients which save references to Symbols created for use
+        // This is to accommodate clients which save references to Symbols created for use
         // within doclets or annotation processors, and which then attempt to use those
         // references after the tool exits, having closed any internally managed file manager.
         // Ideally, such clients should run the tool via the javax.tools API, providing their

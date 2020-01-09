@@ -1160,7 +1160,7 @@ public class Modules extends JCTree.Visitor {
                      */
                     PackageSymbol implementationDefiningPackage = impl.packge();
                     if (implementationDefiningPackage.modle != msym) {
-                        // TODO: should use tree for the implentation name, not the entire provides tree
+                        // TODO: should use tree for the implementation name, not the entire provides tree
                         // TODO: should improve error message to identify the implementation type
                         log.error(tree.pos(), Errors.ServiceImplementationNotInRightModule(implementationDefiningPackage.modle));
                     }

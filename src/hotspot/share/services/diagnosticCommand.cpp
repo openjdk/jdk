@@ -700,7 +700,7 @@ JMXStartRemoteDCmd::JMXStartRemoteDCmd(outputStream *output, bool heap_allocated
 
   _jmxremote_ssl_config_file
   ("jmxremote.ssl.config.file",
-   "set com.sun.management.jmxremote.ssl_config_file", "STRING", false),
+   "set com.sun.management.jmxremote.ssl.config.file", "STRING", false),
 
 // JDP Protocol support
   _jmxremote_autodiscovery

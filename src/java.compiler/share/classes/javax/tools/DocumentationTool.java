@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,7 @@ public interface DocumentationTool extends Tool, OptionChecker {
      * use {@code System.err} if {@code null}
      *
      * @param fileManager a file manager; if {@code null} use the
-     * tool's standard filemanager
+     * tool's standard file manager
      *
      * @param diagnosticListener a diagnostic listener; if {@code null}
      * use the tool's default method for reporting diagnostics
@@ -117,7 +117,7 @@ public interface DocumentationTool extends Tool, OptionChecker {
      * task has not yet started.  To start the task, call
      * the {@linkplain #call call} method.
      *
-     * <p>Before calling the call method, additional aspects of the
+     * <p>Before calling the {@code call} method, additional aspects of the
      * task can be configured, for example, by calling the
      * {@linkplain #setLocale setLocale} method.
      */
@@ -149,7 +149,7 @@ public interface DocumentationTool extends Tool, OptionChecker {
         /**
          * Performs this documentation task.  The task may only
          * be performed once.  Subsequent calls to this method throw
-         * IllegalStateException.
+         * {@code IllegalStateException}.
          *
          * @return true if and only all the files were processed without errors;
          * false otherwise
@@ -161,6 +161,7 @@ public interface DocumentationTool extends Tool, OptionChecker {
          *
          * @throws IllegalStateException if called more than once
          */
+        @Override
         Boolean call();
     }
 

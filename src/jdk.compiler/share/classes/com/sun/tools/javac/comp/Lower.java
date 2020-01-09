@@ -801,7 +801,7 @@ public class Lower extends TreeTranslator {
 
     /** Anon inner classes are used as access constructor tags.
      * accessConstructorTag will use an existing anon class if one is available,
-     * and synthethise a class (with makeEmptyClass) if one is not available.
+     * and synthesize a class (with makeEmptyClass) if one is not available.
      * However, there is a small possibility that an existing class will not
      * be generated as expected if it is inside a conditional with a constant
      * expression. If that is found to be the case, create an empty class tree here.
@@ -1337,7 +1337,7 @@ public class Lower extends TreeTranslator {
             JCExpression site = make.Ident(md.params.head);
             if (acode % 2 != 0) {
                 //odd access codes represent qualified super accesses - need to
-                //emit reference to the direct superclass, even if the refered
+                //emit reference to the direct superclass, even if the referred
                 //member is from an indirect superclass (JLS 13.1)
                 site.setType(types.erasure(types.supertype(vsym.owner.enclClass().type)));
             }

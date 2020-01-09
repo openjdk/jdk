@@ -5694,6 +5694,247 @@ address generate_avx_ghash_processBlocks() {
     return start;
   }
 
+  address generate_bigIntegerRightShift() {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "bigIntegerRightShiftWorker");
+
+    address start = __ pc();
+    Label Shift512Loop, ShiftTwo, ShiftTwoLoop, ShiftOne, Exit;
+    // For Unix, the arguments are as follows: rdi, rsi, rdx, rcx, r8.
+    const Register newArr = rdi;
+    const Register oldArr = rsi;
+    const Register newIdx = rdx;
+    const Register shiftCount = rcx;  // It was intentional to have shiftCount in rcx since it is used implicitly for shift.
+    const Register totalNumIter = r8;
+
+    // For windows, we use r9 and r10 as temps to save rdi and rsi. Thus we cannot allocate them for our temps.
+    // For everything else, we prefer using r9 and r10 since we do not have to save them before use.
+    const Register tmp1 = r11;                    // Caller save.
+    const Register tmp2 = rax;                    // Caller save.
+    const Register tmp3 = WINDOWS_ONLY(r12) NOT_WINDOWS(r9);   // Windows: Callee save. Linux: Caller save.
+    const Register tmp4 = WINDOWS_ONLY(r13) NOT_WINDOWS(r10);  // Windows: Callee save. Linux: Caller save.
+    const Register tmp5 = r14;                    // Callee save.
+    const Register tmp6 = r15;
+
+    const XMMRegister x0 = xmm0;
+    const XMMRegister x1 = xmm1;
+    const XMMRegister x2 = xmm2;
+
+    BLOCK_COMMENT("Entry:");
+    __ enter(); // required for proper stackwalking of RuntimeStub frame
+
+#ifdef _WINDOWS
+    setup_arg_regs(4);
+    // For windows, since last argument is on stack, we need to move it to the appropriate register.
+    __ movl(totalNumIter, Address(rsp, 6 * wordSize));
+    // Save callee save registers.
+    __ push(tmp3);
+    __ push(tmp4);
+#endif
+    __ push(tmp5);
+
+    // Rename temps used throughout the code.
+    const Register idx = tmp1;
+    const Register nIdx = tmp2;
+
+    __ xorl(idx, idx);
+
+    // Start right shift from end of the array.
+    // For example, if #iteration = 4 and newIdx = 1
+    // then dest[4] = src[4] >> shiftCount  | src[3] <<< (shiftCount - 32)
+    // if #iteration = 4 and newIdx = 0
+    // then dest[3] = src[4] >> shiftCount  | src[3] <<< (shiftCount - 32)
+    __ movl(idx, totalNumIter);
+    __ movl(nIdx, idx);
+    __ addl(nIdx, newIdx);
+
+    // If vectorization is enabled, check if the number of iterations is at least 64
+    // If not, then go to ShifTwo processing 2 iterations
+    if (VM_Version::supports_vbmi2()) {
+      __ cmpptr(totalNumIter, (AVX3Threshold/64));
+      __ jcc(Assembler::less, ShiftTwo);
+
+      if (AVX3Threshold < 16 * 64) {
+        __ cmpl(totalNumIter, 16);
+        __ jcc(Assembler::less, ShiftTwo);
+      }
+      __ evpbroadcastd(x0, shiftCount, Assembler::AVX_512bit);
+      __ subl(idx, 16);
+      __ subl(nIdx, 16);
+      __ BIND(Shift512Loop);
+      __ evmovdqul(x2, Address(oldArr, idx, Address::times_4, 4), Assembler::AVX_512bit);
+      __ evmovdqul(x1, Address(oldArr, idx, Address::times_4), Assembler::AVX_512bit);
+      __ vpshrdvd(x2, x1, x0, Assembler::AVX_512bit);
+      __ evmovdqul(Address(newArr, nIdx, Address::times_4), x2, Assembler::AVX_512bit);
+      __ subl(nIdx, 16);
+      __ subl(idx, 16);
+      __ jcc(Assembler::greaterEqual, Shift512Loop);
+      __ addl(idx, 16);
+      __ addl(nIdx, 16);
+    }
+    __ BIND(ShiftTwo);
+    __ cmpl(idx, 2);
+    __ jcc(Assembler::less, ShiftOne);
+    __ subl(idx, 2);
+    __ subl(nIdx, 2);
+    __ BIND(ShiftTwoLoop);
+    __ movl(tmp5, Address(oldArr, idx, Address::times_4, 8));
+    __ movl(tmp4, Address(oldArr, idx, Address::times_4, 4));
+    __ movl(tmp3, Address(oldArr, idx, Address::times_4));
+    __ shrdl(tmp5, tmp4);
+    __ shrdl(tmp4, tmp3);
+    __ movl(Address(newArr, nIdx, Address::times_4, 4), tmp5);
+    __ movl(Address(newArr, nIdx, Address::times_4), tmp4);
+    __ subl(nIdx, 2);
+    __ subl(idx, 2);
+    __ jcc(Assembler::greaterEqual, ShiftTwoLoop);
+    __ addl(idx, 2);
+    __ addl(nIdx, 2);
+
+    // Do the last iteration
+    __ BIND(ShiftOne);
+    __ cmpl(idx, 1);
+    __ jcc(Assembler::less, Exit);
+    __ subl(idx, 1);
+    __ subl(nIdx, 1);
+    __ movl(tmp4, Address(oldArr, idx, Address::times_4, 4));
+    __ movl(tmp3, Address(oldArr, idx, Address::times_4));
+    __ shrdl(tmp4, tmp3);
+    __ movl(Address(newArr, nIdx, Address::times_4), tmp4);
+    __ BIND(Exit);
+    // Restore callee save registers.
+    __ pop(tmp5);
+#ifdef _WINDOWS
+    __ pop(tmp4);
+    __ pop(tmp3);
+    restore_arg_regs();
+#endif
+    __ leave(); // required for proper stackwalking of RuntimeStub frame
+    __ ret(0);
+    return start;
+  }
+
+   /**
+   *  Arguments:
+   *
+   *  Input:
+   *    c_rarg0   - newArr address
+   *    c_rarg1   - oldArr address
+   *    c_rarg2   - newIdx
+   *    c_rarg3   - shiftCount
+   * not Win64
+   *    c_rarg4   - numIter
+   * Win64
+   *    rsp40    - numIter
+   */
+  address generate_bigIntegerLeftShift() {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this,  "StubRoutines", "bigIntegerLeftShiftWorker");
+    address start = __ pc();
+    Label Shift512Loop, ShiftTwo, ShiftTwoLoop, ShiftOne, Exit;
+    // For Unix, the arguments are as follows: rdi, rsi, rdx, rcx, r8.
+    const Register newArr = rdi;
+    const Register oldArr = rsi;
+    const Register newIdx = rdx;
+    const Register shiftCount = rcx;  // It was intentional to have shiftCount in rcx since it is used implicitly for shift.
+    const Register totalNumIter = r8;
+    // For windows, we use r9 and r10 as temps to save rdi and rsi. Thus we cannot allocate them for our temps.
+    // For everything else, we prefer using r9 and r10 since we do not have to save them before use.
+    const Register tmp1 = r11;                    // Caller save.
+    const Register tmp2 = rax;                    // Caller save.
+    const Register tmp3 = WINDOWS_ONLY(r12) NOT_WINDOWS(r9);   // Windows: Callee save. Linux: Caller save.
+    const Register tmp4 = WINDOWS_ONLY(r13) NOT_WINDOWS(r10);  // Windows: Callee save. Linux: Caller save.
+    const Register tmp5 = r14;                    // Callee save.
+
+    const XMMRegister x0 = xmm0;
+    const XMMRegister x1 = xmm1;
+    const XMMRegister x2 = xmm2;
+    BLOCK_COMMENT("Entry:");
+    __ enter(); // required for proper stackwalking of RuntimeStub frame
+
+#ifdef _WINDOWS
+    setup_arg_regs(4);
+    // For windows, since last argument is on stack, we need to move it to the appropriate register.
+    __ movl(totalNumIter, Address(rsp, 6 * wordSize));
+    // Save callee save registers.
+    __ push(tmp3);
+    __ push(tmp4);
+#endif
+    __ push(tmp5);
+
+    // Rename temps used throughout the code
+    const Register idx = tmp1;
+    const Register numIterTmp = tmp2;
+
+    // Start idx from zero.
+    __ xorl(idx, idx);
+    // Compute interior pointer for new array. We do this so that we can use same index for both old and new arrays.
+    __ lea(newArr, Address(newArr, newIdx, Address::times_4));
+    __ movl(numIterTmp, totalNumIter);
+
+    // If vectorization is enabled, check if the number of iterations is at least 64
+    // If not, then go to ShiftTwo shifting two numbers at a time
+    if (VM_Version::supports_vbmi2()) {
+      __ cmpl(totalNumIter, (AVX3Threshold/64));
+      __ jcc(Assembler::less, ShiftTwo);
+
+      if (AVX3Threshold < 16 * 64) {
+        __ cmpl(totalNumIter, 16);
+        __ jcc(Assembler::less, ShiftTwo);
+      }
+      __ evpbroadcastd(x0, shiftCount, Assembler::AVX_512bit);
+      __ subl(numIterTmp, 16);
+      __ BIND(Shift512Loop);
+      __ evmovdqul(x1, Address(oldArr, idx, Address::times_4), Assembler::AVX_512bit);
+      __ evmovdqul(x2, Address(oldArr, idx, Address::times_4, 0x4), Assembler::AVX_512bit);
+      __ vpshldvd(x1, x2, x0, Assembler::AVX_512bit);
+      __ evmovdqul(Address(newArr, idx, Address::times_4), x1, Assembler::AVX_512bit);
+      __ addl(idx, 16);
+      __ subl(numIterTmp, 16);
+      __ jcc(Assembler::greaterEqual, Shift512Loop);
+      __ addl(numIterTmp, 16);
+    }
+    __ BIND(ShiftTwo);
+    __ cmpl(totalNumIter, 1);
+    __ jcc(Assembler::less, Exit);
+    __ movl(tmp3, Address(oldArr, idx, Address::times_4));
+    __ subl(numIterTmp, 2);
+    __ jcc(Assembler::less, ShiftOne);
+
+    __ BIND(ShiftTwoLoop);
+    __ movl(tmp4, Address(oldArr, idx, Address::times_4, 0x4));
+    __ movl(tmp5, Address(oldArr, idx, Address::times_4, 0x8));
+    __ shldl(tmp3, tmp4);
+    __ shldl(tmp4, tmp5);
+    __ movl(Address(newArr, idx, Address::times_4), tmp3);
+    __ movl(Address(newArr, idx, Address::times_4, 0x4), tmp4);
+    __ movl(tmp3, tmp5);
+    __ addl(idx, 2);
+    __ subl(numIterTmp, 2);
+    __ jcc(Assembler::greaterEqual, ShiftTwoLoop);
+
+    // Do the last iteration
+    __ BIND(ShiftOne);
+    __ addl(numIterTmp, 2);
+    __ cmpl(numIterTmp, 1);
+    __ jcc(Assembler::less, Exit);
+    __ movl(tmp4, Address(oldArr, idx, Address::times_4, 0x4));
+    __ shldl(tmp3, tmp4);
+    __ movl(Address(newArr, idx, Address::times_4), tmp3);
+
+    __ BIND(Exit);
+    // Restore callee save registers.
+    __ pop(tmp5);
+#ifdef _WINDOWS
+    __ pop(tmp4);
+    __ pop(tmp3);
+    restore_arg_regs();
+#endif
+    __ leave(); // required for proper stackwalking of RuntimeStub frame
+    __ ret(0);
+    return start;
+  }
+
   address generate_libmExp() {
     StubCodeMark mark(this, "StubRoutines", "libmExp");
 
@@ -6313,6 +6554,10 @@ address generate_avx_ghash_processBlocks() {
     }
     if (UseMulAddIntrinsic) {
       StubRoutines::_mulAdd = generate_mulAdd();
+    }
+    if (VM_Version::supports_vbmi2()) {
+      StubRoutines::_bigIntegerRightShiftWorker = generate_bigIntegerRightShift();
+      StubRoutines::_bigIntegerLeftShiftWorker = generate_bigIntegerLeftShift();
     }
 #ifndef _WINDOWS
     if (UseMontgomeryMultiplyIntrinsic) {

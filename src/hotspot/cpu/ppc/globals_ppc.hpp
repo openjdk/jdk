@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2018 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -81,8 +81,7 @@ define_pd_global(intx, InitArrayShortSize, 9*BytesPerLong);
                    experimental, \
                    notproduct,   \
                    range,        \
-                   constraint,   \
-                   writeable)    \
+                   constraint)   \
                                                                             \
   product(uintx, PowerArchitecturePPC64, 0,                                 \
           "CPU Version: x for PowerX. Currently recognizes Power5 to "      \

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -240,8 +240,7 @@ void PSPromotionManager::register_preserved_marks(PreservedMarks* preserved_mark
 }
 
 void PSPromotionManager::restore_preserved_marks() {
-  SharedRestorePreservedMarksTaskExecutor task_executor(&ParallelScavengeHeap::heap()->workers());
-  _preserved_marks_set->restore(&task_executor);
+  _preserved_marks_set->restore(&ParallelScavengeHeap::heap()->workers());
 }
 
 void PSPromotionManager::drain_stacks_depth(bool totally_drain) {

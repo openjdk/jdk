@@ -190,6 +190,13 @@ public class CheckGraalInvariants extends GraalCompilerTest {
         public boolean shouldVerifyFoldableMethods() {
             return true;
         }
+
+        /**
+         * Makes edits to the list of verifiers to be run.
+         */
+        @SuppressWarnings("unused")
+        protected void updateVerifiers(List<VerifyPhase<CoreProviders>> verifiers) {
+        }
     }
 
     @Test
@@ -303,6 +310,8 @@ public class CheckGraalInvariants extends GraalCompilerTest {
         if (tool.shouldVerifyFoldableMethods()) {
             verifiers.add(foldableMethodsVerifier);
         }
+
+        tool.updateVerifiers(verifiers);
 
         for (Method m : BadUsageWithEquals.class.getDeclaredMethods()) {
             ResolvedJavaMethod method = metaAccess.lookupJavaMethod(m);

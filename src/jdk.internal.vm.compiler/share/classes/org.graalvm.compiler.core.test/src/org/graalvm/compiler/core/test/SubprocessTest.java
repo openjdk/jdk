@@ -48,7 +48,7 @@ public abstract class SubprocessTest extends GraalCompilerTest {
             runnable.run();
         } else {
             List<String> vmArgs = withoutDebuggerArguments(getVMCommandLine());
-            vmArgs.addAll(SubprocessUtil.getPackageOpeningOptions());
+            vmArgs.add(SubprocessUtil.PACKAGE_OPENING_OPTIONS);
             vmArgs.add("-D" + recursionPropName + "=true");
             configSubprocess(vmArgs);
             SubprocessUtil.Subprocess proc = java(vmArgs, "com.oracle.mxtool.junit.MxJUnitWrapper", getClass().getName());

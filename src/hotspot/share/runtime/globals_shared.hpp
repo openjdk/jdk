@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,8 +77,6 @@
 // Only materialize src code for contraint checking when required, ignore otherwise
 #define IGNORE_CONSTRAINT(func,type)
 
-#define IGNORE_WRITEABLE(type)
-
 #define VM_FLAGS(             \
     develop,                  \
     develop_pd,               \
@@ -92,8 +90,7 @@
     product_rw,               \
     lp64_product,             \
     range,                    \
-    constraint,               \
-    writeable)                \
+    constraint)               \
                               \
   RUNTIME_FLAGS(              \
     develop,                  \
@@ -108,8 +105,7 @@
     product_rw,               \
     lp64_product,             \
     range,                    \
-    constraint,               \
-    writeable)                \
+    constraint)               \
                               \
   GC_FLAGS(                   \
     develop,                  \
@@ -124,8 +120,7 @@
     product_rw,               \
     lp64_product,             \
     range,                    \
-    constraint,               \
-    writeable)                \
+    constraint)               \
 
 
 #define ALL_FLAGS(            \
@@ -141,8 +136,7 @@
     product_rw,               \
     lp64_product,             \
     range,                    \
-    constraint,               \
-    writeable)                \
+    constraint)               \
                               \
   VM_FLAGS(                   \
     develop,                  \
@@ -157,8 +151,7 @@
     product_rw,               \
     lp64_product,             \
     range,                    \
-    constraint,               \
-    writeable)                \
+    constraint)               \
                               \
   RUNTIME_OS_FLAGS(           \
     develop,                  \
@@ -169,8 +162,7 @@
     diagnostic_pd,            \
     notproduct,               \
     range,                    \
-    constraint,               \
-    writeable)                \
+    constraint)               \
                               \
   JVMCI_ONLY(JVMCI_FLAGS(     \
     develop,                  \
@@ -182,8 +174,7 @@
     experimental,             \
     notproduct,               \
     range,                    \
-    constraint,               \
-    writeable))               \
+    constraint))              \
                               \
   COMPILER1_PRESENT(C1_FLAGS( \
     develop,                  \
@@ -194,8 +185,7 @@
     diagnostic_pd,            \
     notproduct,               \
     range,                    \
-    constraint,               \
-    writeable))               \
+    constraint))              \
                               \
   COMPILER2_PRESENT(C2_FLAGS( \
     develop,                  \
@@ -207,8 +197,7 @@
     experimental,             \
     notproduct,               \
     range,                    \
-    constraint,               \
-    writeable))               \
+    constraint))              \
                               \
   ARCH_FLAGS(                 \
     develop,                  \
@@ -217,7 +206,6 @@
     experimental,             \
     notproduct,               \
     range,                    \
-    constraint,               \
-    writeable)
+    constraint)
 
 #endif // SHARE_RUNTIME_GLOBALS_SHARED_HPP

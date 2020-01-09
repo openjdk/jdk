@@ -396,7 +396,7 @@ public:
   void set_should_post_on_exceptions(bool val) { _thread->set_should_post_on_exceptions_flag(val ? JNI_TRUE : JNI_FALSE); }
 
   // Thread local event queue, which doesn't require taking the Service_lock.
-  void enqueue_event(JvmtiDeferredEvent* event);
+  void enqueue_event(JvmtiDeferredEvent* event) NOT_JVMTI_RETURN;
   void post_events(JvmtiEnv* env);
   void run_nmethod_entry_barriers();
 };

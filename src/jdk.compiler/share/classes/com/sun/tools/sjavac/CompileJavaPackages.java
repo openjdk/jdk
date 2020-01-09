@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -179,7 +179,7 @@ public class CompileJavaPackages implements Transformer {
                     // Ouch it does not fit. Reduce to a single chunk.
                     numCompiles = 1;
                     sourcesPerCompile = numSources;
-                    // What if the relationship betweem number of compile_chunks and num_required_mbytes
+                    // What if the relationship between number of compile_chunks and num_required_mbytes
                     // is not linear? Then perhaps 2 chunks would fit where 3 does not. Well, this is
                     // something to experiment upon in the future.
                     Log.debug("Limiting compile to a single thread to stay within heap size limitations!");

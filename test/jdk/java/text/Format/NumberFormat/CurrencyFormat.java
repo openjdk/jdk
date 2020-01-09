@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,11 @@
 
 /*
  * @test
- * @bug 4290801 4942982 5102005 8008577 8021121 8210153
+ * @bug 4290801 4942982 5102005 8008577 8021121 8210153 8227313
  * @summary Basic tests for currency formatting.
  * @modules jdk.localedata
- * @run main/othervm -Djava.locale.providers=JRE,SPI CurrencyFormat
+ * @run main/othervm -Djava.locale.providers=COMPAT CurrencyFormat COMPAT
+ * @run main/othervm -Djava.locale.providers=CLDR CurrencyFormat CLDR
  */
 
 import java.io.File;
@@ -42,7 +43,10 @@ import java.text.SimpleDateFormat;
 
 public class CurrencyFormat {
 
+    private static boolean isCompat;
+
     public static void main(String[] args) throws Exception {
+        isCompat = "COMPAT".equals(args[0]);
         testFormatting();
         testSymbols();
     }
@@ -54,7 +58,10 @@ public class CurrencyFormat {
             Locale.JAPAN,
             Locale.GERMANY,
             Locale.ITALY,
-            new Locale("it", "IT", "EURO") };
+            new Locale("it", "IT", "EURO"),
+            Locale.forLanguageTag("de-AT"),
+            Locale.forLanguageTag("fr-CH"),
+        };
         Currency[] currencies = {
             null,
             Currency.getInstance("USD"),
@@ -68,6 +75,17 @@ public class CurrencyFormat {
             {"1.234,56 \u20AC", "1.234,56 USD", "1.235 JPY", "1.234,56 DM", "1.234,56 \u20AC"},
             {"\u20AC 1.234,56", "USD 1.234,56", "JPY 1.235", "DEM 1.234,56", "\u20AC 1.234,56"},
             {"\u20AC 1.234,56", "USD 1.234,56", "JPY 1.235", "DEM 1.234,56", "\u20AC 1.234,56"},
+            {"\u20AC 1.234,56", "USD 1.234,56", "JPY 1.235", "DEM 1.234,56", "\u20AC 1.234,56"},
+            {"SFr. 1'234.56", "USD 1'234.56", "JPY 1'235", "DEM 1'234.56", "EUR 1'234.56"},
+        };
+        String[][] expecteds_cldr = {
+            {"$1,234.56", "$1,234.56", "\u00a51,235", "DEM1,234.56", "\u20ac1,234.56"},
+            {"\uFFE51,235", "$1,234.56", "\uFFE51,235", "DEM1,234.56", "\u20ac1,234.56"},
+            {"1.234,56\u00a0\u20ac", "1.234,56\u00a0$", "1.235\u00a0\u00a5", "1.234,56\u00a0DM", "1.234,56\u00a0\u20ac"},
+            {"1.234,56\u00a0\u20ac", "1.234,56\u00a0USD", "1.235\u00a0JPY", "1.234,56\u00a0DEM", "1.234,56\u00a0\u20ac"},
+            {"1.234,56\u00a0\u20ac", "1.234,56\u00a0USD", "1.235\u00a0JPY", "1.234,56\u00a0DEM", "1.234,56\u00a0\u20ac"},
+            {"\u20ac\u00a01.234,56", "$\u00a01.234,56", "\u00a5\u00a01.235", "DM\u00a01.234,56", "\u20ac\u00a01.234,56"},
+            {"1\u202f234.56\u00a0CHF", "1\u202f234.56\u00a0$US", "1\u202f235\u00a0JPY", "1\u202f234.56\u00a0DEM", "1\u202f234.56\u00a0\u20ac"},
         };
 
         for (int i = 0; i < locales.length; i++) {
@@ -75,7 +93,7 @@ public class CurrencyFormat {
             NumberFormat format = NumberFormat.getCurrencyInstance(locale);
             for (int j = 0; j < currencies.length; j++) {
                 Currency currency = currencies[j];
-                String expected = expecteds[i][j];
+                String expected = isCompat ? expecteds[i][j] : expecteds_cldr[i][j];
                 if (currency != null) {
                     format.setCurrency(currency);
                     int digits = currency.getDefaultFractionDigits();
@@ -99,6 +117,11 @@ public class CurrencyFormat {
     }
 
     static void testSymbols() throws Exception {
+        if (!isCompat) {
+            // For COMPAT only.
+            return;
+        }
+
         FileInputStream stream = new FileInputStream(new File(System.getProperty("test.src", "."), "CurrencySymbols.properties"));
         Properties props = new Properties();
         props.load(stream);

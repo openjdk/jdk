@@ -5063,3 +5063,22 @@ SkipIfEqualZero::SkipIfEqualZero(MacroAssembler* masm, Register temp, const bool
 SkipIfEqualZero::~SkipIfEqualZero() {
   _masm->bind(_label);
 }
+
+void MacroAssembler::cache_wb(Address line) {
+  assert(line.index() == noreg, "index should be noreg");
+  assert(line.disp() == 0, "displacement should be 0");
+  assert(VM_Version::supports_data_cache_line_flush(), "CPU or OS does not support flush to persistent memory");
+  // Data Cache Store, not really a flush, so it works like a sync of cache
+  // line and persistent mem, i.e. copying the cache line to persistent whilst
+  // not invalidating the cache line.
+  dcbst(line.base());
+}
+
+void MacroAssembler::cache_wbsync(bool is_presync) {
+  assert(VM_Version::supports_data_cache_line_flush(), "CPU or OS does not support sync related to persistent memory");
+  // We only need a post sync barrier. Post means _after_ a cache line flush or
+  // store instruction, pre means a barrier emitted before such a instructions.
+  if (!is_presync) {
+    fence();
+  }
+}

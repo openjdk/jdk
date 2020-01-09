@@ -305,6 +305,15 @@ public:
   }
 
   void prepare() {
+    // Reset the claim and clear scan top for all regions, including
+    // regions currently not available or free. Since regions might
+    // become used during the collection these values must be valid
+    // for those regions as well.
+    for (size_t i = 0; i < _max_regions; i++) {
+      reset_region_claim((uint)i);
+      clear_scan_top((uint)i);
+    }
+
     _all_dirty_regions = new G1DirtyRegions(_max_regions);
     _next_dirty_regions = new G1DirtyRegions(_max_regions);
   }
@@ -885,7 +894,6 @@ void G1RemSet::scan_collection_set_regions(G1ParScanThreadState* pss,
 void G1RemSet::prepare_region_for_scan(HeapRegion* region) {
   uint hrm_index = region->hrm_index();
 
-  _scan_state->reset_region_claim(hrm_index);
   if (region->in_collection_set()) {
     // Young regions had their card table marked as young at their allocation;
     // we need to make sure that these marks are cleared at the end of GC, *but*
@@ -893,7 +901,6 @@ void G1RemSet::prepare_region_for_scan(HeapRegion* region) {
     // So directly add them to the "all_dirty_regions".
     // Same for regions in the (initial) collection set: they may contain cards from
     // the log buffers, make sure they are cleaned.
-    _scan_state->clear_scan_top(hrm_index);
     _scan_state->add_all_dirty_region(hrm_index);
   } else if (region->is_old_or_humongous_or_archive()) {
     _scan_state->set_scan_top(hrm_index, region->top());
