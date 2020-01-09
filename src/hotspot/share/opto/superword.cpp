@@ -576,12 +576,13 @@ void SuperWord::find_adjacent_refs() {
   }
 
   Node_List align_to_refs;
+  int max_idx;
   int best_iv_adjustment = 0;
   MemNode* best_align_to_mem_ref = NULL;
 
   while (memops.size() != 0) {
     // Find a memory reference to align to.
-    MemNode* mem_ref = find_align_to_ref(memops);
+    MemNode* mem_ref = find_align_to_ref(memops, max_idx);
     if (mem_ref == NULL) break;
     align_to_refs.push(mem_ref);
     int iv_adjustment = get_iv_adjustment(mem_ref);
@@ -699,34 +700,40 @@ void SuperWord::find_adjacent_refs() {
         // Put memory ops from remaining packs back on memops list for
         // the best alignment search.
         uint orig_msize = memops.size();
-        if (_packset.length() == 1 && orig_msize == 0) {
-          // If there are no remaining memory ops and only 1 pack we have only one choice
-          // for the alignment
-          Node_List* p = _packset.at(0);
-          assert(p->size() > 0, "sanity");
+        for (int i = 0; i < _packset.length(); i++) {
+          Node_List* p = _packset.at(i);
           MemNode* s = p->at(0)->as_Mem();
           assert(!same_velt_type(s, mem_ref), "sanity");
-          best_align_to_mem_ref = s;
-        } else {
-          for (int i = 0; i < _packset.length(); i++) {
-            Node_List* p = _packset.at(i);
-            MemNode* s = p->at(0)->as_Mem();
-            assert(!same_velt_type(s, mem_ref), "sanity");
-            memops.push(s);
-          }
-          best_align_to_mem_ref = find_align_to_ref(memops);
-          if (best_align_to_mem_ref == NULL) {
-            if (TraceSuperWord) {
-              tty->print_cr("SuperWord::find_adjacent_refs(): best_align_to_mem_ref == NULL");
-            }
-            break;
-          }
-          best_iv_adjustment = get_iv_adjustment(best_align_to_mem_ref);
-          NOT_PRODUCT(find_adjacent_refs_trace_1(best_align_to_mem_ref, best_iv_adjustment);)
-          // Restore list.
-          while (memops.size() > orig_msize)
-            (void)memops.pop();
+          memops.push(s);
         }
+        best_align_to_mem_ref = find_align_to_ref(memops, max_idx);
+        if (best_align_to_mem_ref == NULL) {
+          if (TraceSuperWord) {
+            tty->print_cr("SuperWord::find_adjacent_refs(): best_align_to_mem_ref == NULL");
+          }
+          // best_align_to_mem_ref will be used for adjusting the pre-loop limit in
+          // SuperWord::align_initial_loop_index. Find one with the biggest vector size,
+          // smallest data size and smallest iv offset from memory ops from remaining packs.
+          if (_packset.length() > 0) {
+            if (orig_msize == 0) {
+              best_align_to_mem_ref = memops.at(max_idx)->as_Mem();
+            } else {
+              for (uint i = 0; i < orig_msize; i++) {
+                memops.remove(0);
+              }
+              best_align_to_mem_ref = find_align_to_ref(memops, max_idx);
+              assert(best_align_to_mem_ref == NULL, "sanity");
+              best_align_to_mem_ref = memops.at(max_idx)->as_Mem();
+            }
+            assert(best_align_to_mem_ref != NULL, "sanity");
+          }
+          break;
+        }
+        best_iv_adjustment = get_iv_adjustment(best_align_to_mem_ref);
+        NOT_PRODUCT(find_adjacent_refs_trace_1(best_align_to_mem_ref, best_iv_adjustment);)
+        // Restore list.
+        while (memops.size() > orig_msize)
+          (void)memops.pop();
       }
     } // unaligned memory accesses
 
@@ -761,7 +768,7 @@ void SuperWord::find_adjacent_refs_trace_1(Node* best_align_to_mem_ref, int best
 // Find a memory reference to align the loop induction variable to.
 // Looks first at stores then at loads, looking for a memory reference
 // with the largest number of references similar to it.
-MemNode* SuperWord::find_align_to_ref(Node_List &memops) {
+MemNode* SuperWord::find_align_to_ref(Node_List &memops, int &idx) {
   GrowableArray<int> cmp_ct(arena(), memops.size(), memops.size(), 0);
 
   // Count number of comparable memory ops
@@ -848,6 +855,7 @@ MemNode* SuperWord::find_align_to_ref(Node_List &memops) {
   }
 #endif
 
+  idx = max_idx;
   if (max_ct > 0) {
 #ifdef ASSERT
     if (TraceSuperWord) {
