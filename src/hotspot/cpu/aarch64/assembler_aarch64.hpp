@@ -554,7 +554,7 @@ class Address {
 
   void lea(MacroAssembler *, Register) const;
 
-  static bool offset_ok_for_immed(long offset, int shift = 0) {
+  static bool offset_ok_for_immed(long offset, int shift) {
     unsigned mask = (1 << shift) - 1;
     if (offset < 0 || offset & mask) {
       return (uabs(offset) < (1 << (20 - 12))); // Unscaled offset

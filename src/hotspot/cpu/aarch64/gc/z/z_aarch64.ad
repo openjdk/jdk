@@ -47,7 +47,7 @@ static void z_load_barrier_slow_path(MacroAssembler& _masm, const MachNode* node
 %}
 
 // Load Pointer
-instruct zLoadP(iRegPNoSp dst, memory mem, rFlagsReg cr)
+instruct zLoadP(iRegPNoSp dst, memory8 mem, rFlagsReg cr)
 %{
   match(Set dst (LoadP mem));
   predicate(UseZGC && !needs_acquiring_load(n) && (n->as_Load()->barrier_data() == ZLoadBarrierStrong));
@@ -69,7 +69,7 @@ instruct zLoadP(iRegPNoSp dst, memory mem, rFlagsReg cr)
 %}
 
 // Load Weak Pointer
-instruct zLoadWeakP(iRegPNoSp dst, memory mem, rFlagsReg cr)
+instruct zLoadWeakP(iRegPNoSp dst, memory8 mem, rFlagsReg cr)
 %{
   match(Set dst (LoadP mem));
   predicate(UseZGC && !needs_acquiring_load(n) && (n->as_Load()->barrier_data() == ZLoadBarrierWeak));
