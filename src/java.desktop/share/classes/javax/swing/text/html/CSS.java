@@ -2521,7 +2521,7 @@ public class CSS implements Serializable {
             } catch (NumberFormatException nfe) {
                 // Not pixels, use LengthUnit
                 LengthUnit lu = new LengthUnit(value,
-                                               LengthUnit.UNINITALIZED_LENGTH,
+                                               LengthUnit.UNINITIALIZED_LENGTH,
                                                0);
 
                 // PENDING: currently, we only support absolute values and
@@ -2855,25 +2855,25 @@ public class CSS implements Serializable {
         static Hashtable<String, Float> lengthMapping = new Hashtable<String, Float>(6);
         static Hashtable<String, Float> w3cLengthMapping = new Hashtable<String, Float>(6);
         static {
-            lengthMapping.put("pt", Float.valueOf(1f));
-            // Not sure about 1.3, determined by experiementation.
-            lengthMapping.put("px", Float.valueOf(1.3f));
-            lengthMapping.put("mm", Float.valueOf(2.83464f));
-            lengthMapping.put("cm", Float.valueOf(28.3464f));
-            lengthMapping.put("pc", Float.valueOf(12f));
-            lengthMapping.put("in", Float.valueOf(72f));
+            lengthMapping.put("pt", 1f);
+            // Not sure about 1.3, determined by experimentation.
+            lengthMapping.put("px", 1.3f);
+            lengthMapping.put("mm", 2.83464f);
+            lengthMapping.put("cm", 28.3464f);
+            lengthMapping.put("pc", 12f);
+            lengthMapping.put("in", 72f);
             int res = 72;
             try {
                 res = Toolkit.getDefaultToolkit().getScreenResolution();
             } catch (HeadlessException e) {
             }
             // mapping according to the CSS2 spec
-            w3cLengthMapping.put("pt", Float.valueOf(res/72f));
-            w3cLengthMapping.put("px", Float.valueOf(1f));
-            w3cLengthMapping.put("mm", Float.valueOf(res/25.4f));
-            w3cLengthMapping.put("cm", Float.valueOf(res/2.54f));
-            w3cLengthMapping.put("pc", Float.valueOf(res/6f));
-            w3cLengthMapping.put("in", Float.valueOf((float)res));
+            w3cLengthMapping.put("pt", res / 72f);
+            w3cLengthMapping.put("px", 1f);
+            w3cLengthMapping.put("mm", res / 25.4f);
+            w3cLengthMapping.put("cm", res / 2.54f);
+            w3cLengthMapping.put("pc", res / 6f);
+            w3cLengthMapping.put("in", (float) res);
         }
 
         LengthUnit(String value, short defaultType, float defaultValue) {
@@ -2885,21 +2885,22 @@ public class CSS implements Serializable {
             this.value = defaultValue;
 
             int length = value.length();
-            if (length > 0 && value.charAt(length - 1) == '%') {
+            if (length < 1) {
+                return;
+            }
+            if (value.charAt(length - 1) == '%') {
                 try {
-                    this.value = Float.valueOf(value.substring(0, length - 1)).
-                                               floatValue() / 100.0f;
+                    this.value = Float.parseFloat(value.substring(0, length - 1)) / 100.0f;
                     type = 1;
                 }
                 catch (NumberFormatException nfe) { }
             }
-            if (length >= 2) {
+            else if (length >= 2) {
                 units = value.substring(length - 2, length);
                 Float scale = lengthMapping.get(units);
                 if (scale != null) {
                     try {
-                        this.value = Float.valueOf(value.substring(0,
-                               length - 2)).floatValue();
+                        this.value = Float.parseFloat(value.substring(0, length - 2));
                         type = 0;
                     }
                     catch (NumberFormatException nfe) { }
@@ -2907,32 +2908,31 @@ public class CSS implements Serializable {
                 else if (units.equals("em") ||
                          units.equals("ex")) {
                     try {
-                        this.value = Float.valueOf(value.substring(0,
-                                      length - 2)).floatValue();
+                        this.value = Float.parseFloat(value.substring(0, length - 2));
                         type = 3;
                     }
                     catch (NumberFormatException nfe) { }
                 }
                 else if (value.equals("larger")) {
-                    this.value = 2f;
+                    this.value = 2.f;
                     type = 2;
                 }
                 else if (value.equals("smaller")) {
-                    this.value = -2;
+                    this.value = -2.f;
                     type = 2;
                 }
                 else {
                     // treat like points.
                     try {
-                        this.value = Float.valueOf(value).floatValue();
+                        this.value = Float.parseFloat(value);
                         type = 0;
                     } catch (NumberFormatException nfe) {}
                 }
             }
-            else if (length > 0) {
+            else {
                 // treat like points.
                 try {
-                    this.value = Float.valueOf(value).floatValue();
+                    this.value = Float.parseFloat(value);
                     type = 0;
                 } catch (NumberFormatException nfe) {}
             }
@@ -2978,7 +2978,7 @@ public class CSS implements Serializable {
         String units = null;
 
 
-        static final short UNINITALIZED_LENGTH = (short)10;
+        static final short UNINITIALIZED_LENGTH = (short)10;
     }
 
 
