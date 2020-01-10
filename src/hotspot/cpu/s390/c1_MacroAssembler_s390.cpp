@@ -40,7 +40,7 @@
 
 void C1_MacroAssembler::inline_cache_check(Register receiver, Register iCache) {
   Label ic_miss, ic_hit;
-  verify_oop(receiver);
+  verify_oop(receiver, FILE_AND_LINE);
   int klass_offset = oopDesc::klass_offset_in_bytes();
 
   if (!ImplicitNullChecks || MacroAssembler::needs_explicit_null_check(klass_offset)) {
@@ -83,7 +83,7 @@ void C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hd
   assert_different_registers(hdr, obj, disp_hdr);
   NearLabel done;
 
-  verify_oop(obj);
+  verify_oop(obj, FILE_AND_LINE);
 
   // Load object header.
   z_lg(hdr, Address(obj, hdr_offset));
@@ -158,7 +158,7 @@ void C1_MacroAssembler::unlock_object(Register hdr, Register obj, Register disp_
     // Load object.
     z_lg(obj, Address(disp_hdr, BasicObjectLock::obj_offset_in_bytes()));
   }
-  verify_oop(obj);
+  verify_oop(obj, FILE_AND_LINE);
   // Test if object header is pointing to the displaced header, and if so, restore
   // the displaced header in the object. If the object header is not pointing to
   // the displaced header, get the object header instead.
@@ -278,7 +278,7 @@ void C1_MacroAssembler::initialize_object(
   //    call(RuntimeAddress(Runtime1::entry_for (Runtime1::dtrace_object_alloc_id)));
   //  }
 
-  verify_oop(obj);
+  verify_oop(obj, FILE_AND_LINE);
 }
 
 void C1_MacroAssembler::allocate_array(
@@ -336,16 +336,15 @@ void C1_MacroAssembler::allocate_array(
   //   call(RuntimeAddress(Runtime1::entry_for (Runtime1::dtrace_object_alloc_id)));
   // }
 
-  verify_oop(obj);
+  verify_oop(obj, FILE_AND_LINE);
 }
 
 
 #ifndef PRODUCT
 
 void C1_MacroAssembler::verify_stack_oop(int stack_offset) {
-  Unimplemented();
-  // if (!VerifyOops) return;
-  // verify_oop_addr(Address(SP, stack_offset + STACK_BIAS));
+  if (!VerifyOops) return;
+  verify_oop_addr(Address(Z_SP, stack_offset), FILE_AND_LINE);
 }
 
 void C1_MacroAssembler::verify_not_null_oop(Register r) {
@@ -354,7 +353,7 @@ void C1_MacroAssembler::verify_not_null_oop(Register r) {
   compareU64_and_branch(r, (intptr_t)0, bcondNotEqual, not_null);
   stop("non-null oop required");
   bind(not_null);
-  verify_oop(r);
+  verify_oop(r, FILE_AND_LINE);
 }
 
 void C1_MacroAssembler::invalidate_registers(Register preserve1,
