@@ -986,7 +986,7 @@ class JdepsTask {
                 throw new UncheckedBadArgs(new BadArgs("err.invalid.options",
                                                        list, "--check"));
             }
-            return new ModuleAnalyzer(config, log, modules).run();
+            return new ModuleAnalyzer(config, log, modules).run(options.ignoreMissingDeps);
         }
 
         /*

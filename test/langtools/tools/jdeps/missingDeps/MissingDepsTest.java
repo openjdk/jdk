@@ -84,6 +84,14 @@ public class MissingDepsTest {
     }
 
     @Test
+    public void checkModuleDeps() {
+        JdepsTest test = new JdepsTest();
+        test.options(List.of("--module-path", "m1.jar", "--multi-release", VERSION, "--check", "m1"));
+        test.checkMissingDeps();
+        test.ignoreMissingDeps("requires java.management");
+    }
+
+    @Test
     public void genModuleInfo() {
         JdepsTest test = new JdepsTest();
         test.options(List.of("--generate-module-info", ".", "--multi-release", VERSION, "mr.jar"));

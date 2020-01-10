@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,7 +86,7 @@ public class CheckModuleTest {
             jdeps.appModulePath(MODS_DIR.toString());
 
             ModuleAnalyzer analyzer = jdeps.getModuleAnalyzer(Set.of(name));
-            assertTrue(analyzer.run());
+            assertTrue(analyzer.run(false));
             jdeps.dumpOutput(System.err);
 
             ModuleDescriptor[] descriptors = analyzer.descriptors(name);
@@ -146,7 +146,7 @@ public class CheckModuleTest {
             jdeps.appModulePath(MODS_DIR.toString());
 
             ModuleAnalyzer analyzer = jdeps.getModuleAnalyzer(Set.of(name));
-            assertTrue(analyzer.run());
+            assertTrue(analyzer.run(false));
             jdeps.dumpOutput(System.err);
 
             // compare the module descriptors and the suggested versions
