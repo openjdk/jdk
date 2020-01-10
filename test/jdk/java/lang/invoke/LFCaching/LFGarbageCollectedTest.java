@@ -25,10 +25,10 @@
  * @test LFGarbageCollectedTest
  * @bug 8046703
  * @key randomness
+ * @library /lib/testlibrary /java/lang/invoke/common
  * @ignore 8078602
  * @summary Test verifies that lambda forms are garbage collected
  * @author kshefov
- * @library /lib/testlibrary /java/lang/invoke/common
  * @build jdk.test.lib.TimeLimitedRunner
  * @build TestMethods
  * @build LambdaFormTestCase
