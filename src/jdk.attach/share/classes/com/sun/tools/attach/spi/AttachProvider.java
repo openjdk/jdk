@@ -46,17 +46,18 @@ import java.util.ServiceLoader;
  * <p> An attach provider implementation is typically tied to a Java virtual
  * machine implementation, version, or even mode of operation. That is, a specific
  * provider implementation will typically only be capable of attaching to
- * a specific Java virtual machine implementation or version. For example, Sun's
+ * a specific Java virtual machine implementation or version. For example, Oracle's
  * JDK implementation ships with provider implementations that can only attach to
- * Sun's <i>HotSpot</i> virtual machine. In general, if an environment
+ * Oracle's <i>HotSpot</i> virtual machine. In general, if an environment
  * consists of Java virtual machines of different versions and from different
  * vendors then there will be an attach provider implementation for each
  * <i>family</i> of implementations or versions.
  *
  * <p> An attach provider is identified by its {@link #name <i>name</i>} and
  * {@link #type <i>type</i>}. The <i>name</i> is typically, but not required to
- * be, a name that corresponds to the VM vendor. The Sun JDK implementation,
- * for example, ships with attach providers that use the name <i>"sun"</i>. The
+ * be, a name that corresponds to the VM vendor. The Oracle JDK implementation,
+ * for example, ships with attach providers that use the package name <i>"sun"</i>
+ * (for historical reasons). The
  * <i>type</i> typically corresponds to the attach mechanism. For example, an
  * implementation that uses the Doors inter-process communication mechanism
  * might use the type <i>"doors"</i>. The purpose of the name and type is to
