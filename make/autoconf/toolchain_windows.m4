@@ -209,8 +209,8 @@ AC_DEFUN([TOOLCHAIN_FIND_VISUAL_STUDIO_BAT_FILE],
   eval SDK_INSTALL_DIR="\${VS_SDK_INSTALLDIR_${VS_VERSION}}"
   eval VS_ENV_ARGS="\${VS_ENV_ARGS_${VS_VERSION}}"
   eval VS_TOOLSET_SUPPORTED="\${VS_TOOLSET_SUPPORTED_${VS_VERSION}}"
-    
-  VS_ENV_CMD="" 
+
+  VS_ENV_CMD=""
 
   # When using --with-tools-dir, assume it points to the correct and default
   # version of Visual Studio or that --with-toolchain-version was also set.
