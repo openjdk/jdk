@@ -2505,13 +2505,14 @@ uint IdealLoopTree::est_loop_flow_merge_sz() const {
 
     for (uint k = 0; k < outcnt; k++) {
       Node* out = node->raw_out(k);
-
+      if (out == NULL) continue;
       if (out->is_CFG()) {
         if (!is_member(_phase->get_loop(out))) {
           ctrl_edge_out_cnt++;
         }
-      } else {
+      } else if (_phase->has_ctrl(out)) {
         Node* ctrl = _phase->get_ctrl(out);
+        assert(ctrl != NULL, "must be");
         assert(ctrl->is_CFG(), "must be");
         if (!is_member(_phase->get_loop(ctrl))) {
           data_edge_out_cnt++;
