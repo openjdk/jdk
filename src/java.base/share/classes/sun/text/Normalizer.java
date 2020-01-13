@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,8 @@
 
 package sun.text;
 
-import sun.text.normalizer.NormalizerBase;
-import sun.text.normalizer.UCharacter;
+import jdk.internal.icu.lang.UCharacter;
+import jdk.internal.icu.text.NormalizerBase;
 
 /**
  * This Normalizer is for Unicode 3.2 support for IDNA only.

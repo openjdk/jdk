@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,9 @@
 
 /*
  * @test
- * @summary Unit test for sun.net.idn.Punycode
- * @bug 4737170 8060097
- * @modules java.base/sun.net.idn:+open
- *          java.base/sun.text.normalizer
+ * @summary Unit test for jdk.internal.icu.text.StringPrep
+ * @bug 4737170 8060097 8174270
+ * @modules java.base/jdk.internal.icu.text
  * @library .
  * @compile -XDignore.symbol.file TestStringPrep.java NFS4StringPrep.java
  *     TestData.java
@@ -44,8 +43,8 @@ import java.text.ParseException;
 import java.io.InputStream;
 import java.util.Locale;
 
-import sun.net.idn.StringPrep;
-import sun.text.normalizer.UCharacterIterator;
+import jdk.internal.icu.text.StringPrep;
+import jdk.internal.icu.text.UCharacterIterator;
 
 public class TestStringPrep {
     public static void main(String[] args) throws Exception {

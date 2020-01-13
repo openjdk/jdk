@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +22,10 @@
  */
 /*
  * @test
- * @bug  4221795 6565620 6959267 7070436 7198195 8032446 8221431
+ * @bug  4221795 6565620 6959267 7070436 7198195 8032446 8174270 8221431
  * @summary Confirm Normalizer's fundamental behavior
  * @library /lib/testlibrary/java/lang
- * @modules java.base/sun.text java.base/sun.text.normalizer
+ * @modules java.base/sun.text java.base/jdk.internal.icu.text
  * @compile -XDignore.symbol.file ConformanceTest.java
  * @run main/timeout=3000 ConformanceTest
  */
@@ -34,14 +34,12 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStreamReader;
-import java.lang.reflect.Method;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.util.BitSet;
 import java.util.StringTokenizer;
 
-import sun.text.normalizer.NormalizerBase;
-import sun.text.normalizer.NormalizerImpl;
+import jdk.internal.icu.text.NormalizerBase;
 
 /*
  * Conformance test for java.text.Normalizer and sun.text.Normalizer.
