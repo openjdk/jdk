@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,10 @@ import static com.sun.tools.javac.code.Flags.PUBLIC;
 import static com.sun.tools.javac.code.Flags.STATIC;
 import static com.sun.tools.javac.code.Flags.INTERFACE;
 import static com.sun.tools.javac.code.Flags.ENUM;
+import static com.sun.tools.javac.code.Flags.RECORD;
+import static com.sun.tools.javac.code.Flags.SYNTHETIC;
+import com.sun.tools.javac.tree.JCTree.Tag;
+import com.sun.tools.javac.tree.TreeInfo;
 import jdk.jshell.Wrap.CompoundWrap;
 import jdk.jshell.Wrap.Range;
 import jdk.jshell.Wrap.RangeWrap;
@@ -114,6 +118,7 @@ class Corraller extends Visitor {
     public void visitClassDef(JCClassDecl tree) {
         boolean isEnum = (tree.mods.flags & ENUM) != 0;
         boolean isInterface = (tree.mods.flags & INTERFACE ) != 0;
+        boolean isRecord = (tree.mods.flags & RECORD ) != 0;
         int classBegin = dis.getStartPosition(tree);
         int classEnd = dis.getEndPosition(tree);
         //debugWrap("visitClassDef: %d-%d = %s\n", classBegin, classEnd, source.substring(classBegin, classEnd));
@@ -151,8 +156,12 @@ class Corraller extends Visitor {
                 // non-enum
                 boolean constructorSeen = false;
                 for (List<? extends JCTree> l = tree.defs; l.nonEmpty(); l = l.tail) {
-                    wrappedDefs.append("\n   ");
                     JCTree t = l.head;
+                    if (isRecord && t.hasTag(Tag.VARDEF) && (TreeInfo.flags(t) & RECORD) != 0) {
+                        //record parameters are part of the record's header
+                        continue;
+                    }
+                    wrappedDefs.append("\n   ");
                     switch (t.getKind()) {
                         case METHOD:
                             constructorSeen = constructorSeen || ((MethodTree)t).getName() == tree.name.table.names.init;
@@ -166,7 +175,14 @@ class Corraller extends Visitor {
                     }
                     wrappedDefs.append(corral(t));
                 }
-                if (!constructorSeen && !isInterface && !isEnum) {
+                if (!constructorSeen && isRecord) {
+                    // Generate a default constructor, since
+                    // this is a regular record and there are no constructors
+                    if (wrappedDefs.length() > 0) {
+                        wrappedDefs.append("\n ");
+                    }
+                    wrappedDefs.append("  public " + tree.name.toString() + " " + resolutionExceptionBlock);
+                } else if (!constructorSeen && !isInterface && !isEnum) {
                     // Generate a default constructor, since
                     // this is a regular class and there are no constructors
                     if (wrappedDefs.length() > 0) {
@@ -175,7 +191,9 @@ class Corraller extends Visitor {
                     wrappedDefs.append(defaultConstructor(tree));
                 }
             }
-            bodyBegin = dis.getStartPosition(tree.defs.head);
+            if (!isRecord) {
+                bodyBegin = dis.getStartPosition(tree.defs.head);
+            }
         }
         Object defs = wrappedDefs.length() == 1
             ? wrappedDefs.first()
