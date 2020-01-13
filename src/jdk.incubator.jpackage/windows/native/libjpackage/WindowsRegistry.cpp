@@ -24,8 +24,8 @@
  */
 
 #include <Windows.h>
-#include <strsafe.h>
 #include <tchar.h>
+#include <strsafe.h>
 #include <jni.h>
 
 #include "Utils.h"
