@@ -25,6 +25,11 @@
 
 package jdk.internal.event;
 
+import jdk.internal.access.JavaUtilJarAccess;
+import jdk.internal.access.SharedSecrets;
+
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Date;
@@ -37,14 +42,24 @@ import java.util.stream.IntStream;
 
 public final class EventHelper {
 
+    private static final JavaUtilJarAccess JUJA = SharedSecrets.javaUtilJarAccess();
+    private static volatile boolean loggingSecurity;
+    private static volatile System.Logger securityLogger;
+    private static final VarHandle LOGGER_HANDLE;
+    static {
+        try {
+            LOGGER_HANDLE =
+                    MethodHandles.lookup().findStaticVarHandle(
+                            EventHelper.class, "securityLogger", System.Logger.class);
+        } catch (ReflectiveOperationException e) {
+            throw new Error(e);
+        }
+    }
     private static final System.Logger.Level LOG_LEVEL = System.Logger.Level.DEBUG;
 
     // helper class used for logging security related events for now
     private static final String SECURITY_LOGGER_NAME = "jdk.event.security";
-    private static final System.Logger SECURITY_LOGGER =
-            System.getLogger(SECURITY_LOGGER_NAME);
-    private static final boolean LOGGING_SECURITY =
-            SECURITY_LOGGER.isLoggable(LOG_LEVEL);
+
 
     public static void logTLSHandshakeEvent(Instant start,
                                             String peerHost,
@@ -52,8 +67,9 @@ public final class EventHelper {
                                             String cipherSuite,
                                             String protocolVersion,
                                             long peerCertId) {
+        assert securityLogger != null;
         String prepend = getDurationString(start);
-        SECURITY_LOGGER.log(LOG_LEVEL, prepend +
+        securityLogger.log(LOG_LEVEL, prepend +
         " TLSHandshake: {0}:{1,number,#}, {2}, {3}, {4,number,#}",
         peerHost, peerPort, protocolVersion, cipherSuite, peerCertId);
     }
@@ -61,18 +77,18 @@ public final class EventHelper {
     public static void logSecurityPropertyEvent(String key,
                                                 String value) {
 
-        if (isLoggingSecurity()) {
-            SECURITY_LOGGER.log(LOG_LEVEL,
-                "SecurityPropertyModification: key:{0}, value:{1}", key, value);
-        }
+        assert securityLogger != null;
+        securityLogger.log(LOG_LEVEL,
+            "SecurityPropertyModification: key:{0}, value:{1}", key, value);
     }
 
     public static void logX509ValidationEvent(int anchorCertId,
                                          int[] certIds) {
+        assert securityLogger != null;
         String codes = IntStream.of(certIds)
                 .mapToObj(Integer::toString)
                 .collect(Collectors.joining(", "));
-        SECURITY_LOGGER.log(LOG_LEVEL,
+        securityLogger.log(LOG_LEVEL,
                 "ValidationChain: {0,number,#}, {1}", anchorCertId, codes);
     }
 
@@ -85,7 +101,8 @@ public final class EventHelper {
                                                long certId,
                                                long beginDate,
                                                long endDate) {
-        SECURITY_LOGGER.log(LOG_LEVEL, "X509Certificate: Alg:{0}, Serial:{1}" +
+        assert securityLogger != null;
+        securityLogger.log(LOG_LEVEL, "X509Certificate: Alg:{0}, Serial:{1}" +
             ", Subject:{2}, Issuer:{3}, Key type:{4}, Length:{5,number,#}" +
             ", Cert Id:{6,number,#}, Valid from:{7}, Valid until:{8}",
             algId, serialNum, subject, issuer, keyType, length,
@@ -124,6 +141,14 @@ public final class EventHelper {
      * @return boolean indicating whether an event should be logged
      */
     public static boolean isLoggingSecurity() {
-        return LOGGING_SECURITY;
+        // Avoid a bootstrap issue where the commitEvent attempts to
+        // trigger early loading of System Logger but where
+        // the verification process still has JarFiles locked
+        if (securityLogger == null && !JUJA.isInitializing()) {
+            LOGGER_HANDLE.compareAndSet( null, System.getLogger(SECURITY_LOGGER_NAME));
+            loggingSecurity = securityLogger.isLoggable(LOG_LEVEL);
+        }
+        return loggingSecurity;
     }
+
 }

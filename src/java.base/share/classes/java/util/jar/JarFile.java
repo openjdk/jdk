@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -157,8 +157,10 @@ public class JarFile extends ZipFile {
     private boolean jvInitialized;
     private boolean verify;
     private final Runtime.Version version;  // current version
-    private final int versionFeature;         // version.feature()
+    private final int versionFeature;       // version.feature()
     private boolean isMultiRelease;         // is jar multi-release?
+    static final ThreadLocal<Boolean> isInitializing =
+            ThreadLocal.withInitial(() -> Boolean.FALSE);
 
     // indicates if Class-Path attribute present
     private boolean hasClassPathAttribute;
@@ -1031,8 +1033,13 @@ public class JarFile extends ZipFile {
             throw new RuntimeException(e);
         }
         if (jv != null && !jvInitialized) {
-            initializeVerifier();
-            jvInitialized = true;
+            isInitializing.set(Boolean.TRUE);
+            try {
+                initializeVerifier();
+                jvInitialized = true;
+            } finally {
+                isInitializing.set(Boolean.FALSE);
+            }
         }
     }
 
