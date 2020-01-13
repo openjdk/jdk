@@ -437,6 +437,17 @@ public class RecordCompilationTests extends CompilationTestCase {
         assertOK("record R(int x) { public R { Runnable r = () -> { return; };} }");
     }
 
+    public void testArgumentsAreNotFinalInCompact() {
+        assertOK(
+                """
+                record R(int x) {
+                    public R {
+                        x++;
+                    }
+                }
+                """);
+    }
+
     public void testNoNativeMethods() {
         assertFail("compiler.err.mod.not.allowed.here", "record R(int x) { # }",
                 "public native R {}");

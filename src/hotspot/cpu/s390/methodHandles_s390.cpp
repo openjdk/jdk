@@ -85,7 +85,7 @@ void MethodHandles::verify_klass(MacroAssembler* _masm,
 
   BLOCK_COMMENT("verify_klass {");
 
-  __ verify_oop(obj_reg);
+  __ verify_oop(obj_reg, FILE_AND_LINE);
   __ compareU64_and_branch(obj_reg, (intptr_t)0L, Assembler::bcondEqual, L_bad);
   __ load_klass(temp_reg, obj_reg);
   // klass_addr is a klass in allstatic SystemDictionaryHandles. Can't get GCed.
@@ -194,22 +194,22 @@ void MethodHandles::jump_to_lambda_form(MacroAssembler* _masm,
   BLOCK_COMMENT("jump_to_lambda_form {");
 
   // Load the invoker, as MH -> MH.form -> LF.vmentry
-  __ verify_oop(recv);
+  __ verify_oop(recv, FILE_AND_LINE);
   __ load_heap_oop(method_temp,
                    Address(recv,
                            NONZERO(java_lang_invoke_MethodHandle::form_offset_in_bytes())),
                    noreg, noreg, IS_NOT_NULL);
-  __ verify_oop(method_temp);
+  __ verify_oop(method_temp, FILE_AND_LINE);
   __ load_heap_oop(method_temp,
                    Address(method_temp,
                            NONZERO(java_lang_invoke_LambdaForm::vmentry_offset_in_bytes())),
                    noreg, noreg, IS_NOT_NULL);
-  __ verify_oop(method_temp);
+  __ verify_oop(method_temp, FILE_AND_LINE);
   __ load_heap_oop(method_temp,
                    Address(method_temp,
                            NONZERO(java_lang_invoke_MemberName::method_offset_in_bytes())),
                    noreg, noreg, IS_NOT_NULL);
-  __ verify_oop(method_temp);
+  __ verify_oop(method_temp, FILE_AND_LINE);
   __ z_lg(method_temp,
           Address(method_temp,
                   NONZERO(java_lang_invoke_ResolvedMethodName::vmtarget_offset_in_bytes())));
@@ -385,7 +385,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
   Register temp1_recv_klass = temp1;
 
   if (iid != vmIntrinsics::_linkToStatic) {
-    __ verify_oop(receiver_reg);
+    __ verify_oop(receiver_reg, FILE_AND_LINE);
     if (iid == vmIntrinsics::_linkToSpecial) {
       // Don't actually load the klass; just null-check the receiver.
       __ null_check(receiver_reg);

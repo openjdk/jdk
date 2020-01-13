@@ -1664,7 +1664,7 @@ void InterpreterMacroAssembler::profile_obj_type(Register obj, Address mdo_addr,
     compareU64_and_branch(obj, (intptr_t)0, Assembler::bcondEqual, null_seen);
   }
 
-  verify_oop(obj);
+  MacroAssembler::verify_oop(obj, FILE_AND_LINE);
   load_klass(klass, obj);
 
   // Klass seen before, nothing to do (regardless of unknown bit).
@@ -2073,7 +2073,7 @@ void InterpreterMacroAssembler::access_local_int(Register index, Register dst) {
 }
 
 void InterpreterMacroAssembler::verify_oop(Register reg, TosState state) {
-  if (state == atos) { MacroAssembler::verify_oop(reg); }
+  if (state == atos) { MacroAssembler::verify_oop(reg, FILE_AND_LINE); }
 }
 
 // Inline assembly for:

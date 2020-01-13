@@ -2579,7 +2579,7 @@ public class Flow {
                 recordExit(exit);
                 return ;
             } else {
-                scan(tree.value);
+                scanExpr(tree.value);
                 recordExit(new AssignPendingExit(tree, inits, uninits));
             }
         }

@@ -897,7 +897,7 @@ void LIR_Assembler::mem2reg(LIR_Opr src_opr, LIR_Opr dest, BasicType type, LIR_P
   bool needs_patching = (patch_code != lir_patch_none);
 
   if (addr->base()->type() == T_OBJECT) {
-    __ verify_oop(src);
+    __ verify_oop(src, FILE_AND_LINE);
   }
 
   PatchingStub* patch = NULL;
@@ -972,7 +972,7 @@ void LIR_Assembler::mem2reg(LIR_Opr src_opr, LIR_Opr dest, BasicType type, LIR_P
       } else {
         __ z_lg(dest->as_register(), disp_value, disp_reg, src);
       }
-      __ verify_oop(dest->as_register());
+      __ verify_oop(dest->as_register(), FILE_AND_LINE);
       break;
     }
     case T_FLOAT:
@@ -1006,7 +1006,7 @@ void LIR_Assembler::stack2reg(LIR_Opr src, LIR_Opr dest, BasicType type) {
   if (dest->is_single_cpu()) {
     if (is_reference_type(type)) {
       __ mem2reg_opt(dest->as_register(), frame_map()->address_for_slot(src->single_stack_ix()), true);
-      __ verify_oop(dest->as_register());
+      __ verify_oop(dest->as_register(), FILE_AND_LINE);
     } else if (type == T_METADATA || type == T_ADDRESS) {
       __ mem2reg_opt(dest->as_register(), frame_map()->address_for_slot(src->single_stack_ix()), true);
     } else {
@@ -1033,7 +1033,7 @@ void LIR_Assembler::reg2stack(LIR_Opr src, LIR_Opr dest, BasicType type, bool po
   if (src->is_single_cpu()) {
     const Address dst = frame_map()->address_for_slot(dest->single_stack_ix());
     if (is_reference_type(type)) {
-      __ verify_oop(src->as_register());
+      __ verify_oop(src->as_register(), FILE_AND_LINE);
       __ reg2mem_opt(src->as_register(), dst, true);
     } else if (type == T_METADATA || type == T_ADDRESS) {
       __ reg2mem_opt(src->as_register(), dst, true);
@@ -1079,7 +1079,7 @@ void LIR_Assembler::reg2reg(LIR_Opr from_reg, LIR_Opr to_reg) {
     ShouldNotReachHere();
   }
   if (is_reference_type(to_reg->type())) {
-    __ verify_oop(to_reg->as_register());
+    __ verify_oop(to_reg->as_register(), FILE_AND_LINE);
   }
 }
 
@@ -1095,7 +1095,7 @@ void LIR_Assembler::reg2mem(LIR_Opr from, LIR_Opr dest_opr, BasicType type,
   bool needs_patching = (patch_code != lir_patch_none);
 
   if (addr->base()->is_oop_register()) {
-    __ verify_oop(dest);
+    __ verify_oop(dest, FILE_AND_LINE);
   }
 
   PatchingStub* patch = NULL;
@@ -1130,7 +1130,7 @@ void LIR_Assembler::reg2mem(LIR_Opr from, LIR_Opr dest_opr, BasicType type,
   assert(disp_reg != Z_R0 || Immediate::is_simm20(disp_value), "should have set this up");
 
   if (is_reference_type(type)) {
-    __ verify_oop(from->as_register());
+    __ verify_oop(from->as_register(), FILE_AND_LINE);
   }
 
   bool short_disp = Immediate::is_uimm12(disp_value);
@@ -2412,7 +2412,7 @@ void LIR_Assembler::emit_alloc_obj(LIR_OpAllocObj* op) {
                      op->klass()->as_register(),
                      *op->stub()->entry());
   __ bind(*op->stub()->continuation());
-  __ verify_oop(op->obj()->as_register());
+  __ verify_oop(op->obj()->as_register(), FILE_AND_LINE);
 }
 
 void LIR_Assembler::emit_alloc_array(LIR_OpAllocArray* op) {
@@ -2548,7 +2548,7 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
   }
   assert(obj != k_RInfo, "must be different");
 
-  __ verify_oop(obj);
+  __ verify_oop(obj, FILE_AND_LINE);
 
   // Get object class.
   // Not a safepoint as obj null check happens earlier.
@@ -3009,7 +3009,7 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
   assert(do_null || do_update, "why are we here?");
   assert(!TypeEntries::was_null_seen(current_klass) || do_update, "why are we here?");
 
-  __ verify_oop(obj);
+  __ verify_oop(obj, FILE_AND_LINE);
 
   if (do_null || tmp1 != obj DEBUG_ONLY(|| true)) {
     __ z_ltgr(tmp1, obj);

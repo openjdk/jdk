@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@ import java.lang.invoke.VarHandle;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
+import org.testng.SkipException;
 import org.testng.annotations.*;
 import static org.testng.Assert.*;
 
@@ -76,8 +77,8 @@ public class TestArrays {
     static VarHandle shortHandle = shorts.varHandle(short.class, PathElement.sequenceElement());
     static VarHandle intHandle = ints.varHandle(int.class, PathElement.sequenceElement());
     static VarHandle floatHandle = floats.varHandle(float.class, PathElement.sequenceElement());
-    static VarHandle longHandle = doubles.varHandle(long.class, PathElement.sequenceElement());
-    static VarHandle doubleHandle = longs.varHandle(double.class, PathElement.sequenceElement());
+    static VarHandle longHandle = longs.varHandle(long.class, PathElement.sequenceElement());
+    static VarHandle doubleHandle = doubles.varHandle(double.class, PathElement.sequenceElement());
 
     static void initBytes(MemoryAddress base, SequenceLayout seq, BiConsumer<MemoryAddress, Long> handleSetter) {
         for (long i = 0; i < seq.elementCount().getAsLong() ; i++) {
@@ -103,8 +104,13 @@ public class TestArrays {
         }
     }
 
-    @Test(expectedExceptions = UnsupportedOperationException.class)
+    @Test(expectedExceptions = { UnsupportedOperationException.class,
+                                 OutOfMemoryError.class })
     public void testTooBigForArray() {
+        if (System.getProperty("sun.arch.data.model").equals("32")) {
+            throw new SkipException("32-bit Unsafe does not support this allocation size");
+        }
+
         MemorySegment.allocateNative((long) Integer.MAX_VALUE * 2).toByteArray();
     }
 

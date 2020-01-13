@@ -892,9 +892,9 @@ static void verify_oop_args(MacroAssembler *masm,
       if (r->is_stack()) {
         __ z_lg(Z_R0_scratch,
                 Address(Z_SP, r->reg2stack() * VMRegImpl::stack_slot_size + wordSize));
-        __ verify_oop(Z_R0_scratch);
+        __ verify_oop(Z_R0_scratch, FILE_AND_LINE);
       } else {
-        __ verify_oop(r->as_Register());
+        __ verify_oop(r->as_Register(), FILE_AND_LINE);
       }
     }
   }
@@ -2686,7 +2686,7 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm
       __ z_ltgr(Z_ARG1, Z_ARG1);
       __ z_bre(ic_miss);
     }
-    __ verify_oop(Z_ARG1);
+    __ verify_oop(Z_ARG1, FILE_AND_LINE);
 
     // Check ic: object class <-> cached class
     // Compress cached class for comparison. That's more efficient.
@@ -2955,7 +2955,7 @@ void SharedRuntime::generate_deopt_blob() {
 #ifdef ASSERT
   // verify that there is really an exception oop in JavaThread
   __ z_lg(Z_ARG1, Address(Z_thread, JavaThread::exception_oop_offset()));
-  __ verify_oop(Z_ARG1);
+  __ MacroAssembler::verify_oop(Z_ARG1, FILE_AND_LINE);
 
   // verify that there is no pending exception
   __ asm_assert_mem8_is_zero(in_bytes(Thread::pending_exception_offset()), Z_thread,
