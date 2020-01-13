@@ -802,6 +802,23 @@ public final class LWCToolkit extends LWToolkit {
         return locale;
     }
 
+    public static boolean isLocaleUSInternationalPC(Locale locale) {
+        return (locale != null ?
+            locale.toString().equals("_US_UserDefined_15000") : false);
+    }
+
+    public static boolean isCharModifierKeyInUSInternationalPC(char ch) {
+        // 5 characters: APOSTROPHE, QUOTATION MARK, ACCENT GRAVE, SMALL TILDE,
+        // CIRCUMFLEX ACCENT
+        final char[] modifierKeys = {'\'', '"', '`', '\u02DC', '\u02C6'};
+        for (char modKey : modifierKeys) {
+            if (modKey == ch) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     @Override
     public InputMethodDescriptor getInputMethodAdapterDescriptor() {
         if (sInputMethodDescriptor == null)
