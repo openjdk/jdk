@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@ import tests.Result;
 /*
  * @test
  * @bug 8152143 8152704 8155649 8165804 8185841 8176841 8190918
- *      8179071 8202537 8221432
+ *      8179071 8202537 8221432 8222098
  * @summary IncludeLocalesPlugin tests
  * @author Naoto Sato
  * @requires (vm.compMode != "Xcomp" & os.maxMemory >= 2g)
@@ -56,7 +56,7 @@ import tests.Result;
  *          jdk.compiler
  * @build tests.*
  * @build tools.jlink.plugins.GetAvailableLocales
- * @run main/othervm -Xmx1g IncludeLocalesPluginTest
+ * @run main/othervm/timeout=180 -Xmx1g IncludeLocalesPluginTest
  */
 public class IncludeLocalesPluginTest {
 
