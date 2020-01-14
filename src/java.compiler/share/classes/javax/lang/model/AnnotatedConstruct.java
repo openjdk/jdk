@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,10 +60,17 @@ import javax.lang.model.type.*;
  * the source code of representation of <i>C</i>, then <i>A</i> is
  * explicitly declared as applying to <i>C</i>.
  *
+ * An annotation of type <i>AT</i> on a {@linkplain
+ * RecordComponentElement record component} can be implicitly propagated
+ * down to affiliated mandated members. Type annotations modifying the
+ * type of a record component can be also propagated to mandated
+ * members. Propagation of the annotations to mandated members is
+ * governed by rules given in the <cite>The Java&trade; Language
+ * Specification</cite>.
+ *
  * If there are multiple annotations of type <i>AT</i> present on
  * <i>C</i>, then if <i>AT</i> is repeatable annotation type, an
  * annotation of type <i>ATC</i> is {@linkplain javax.lang.model.util.Elements#getOrigin(AnnotatedConstruct, AnnotationMirror) implicitly declared} on <i>C</i>.
- *
  * <li> A representation of <i>A</i> appears in the executable output
  * for <i>C</i>, such as the {@code RuntimeVisibleAnnotations} or
  * {@code RuntimeVisibleParameterAnnotations} attributes of a class
