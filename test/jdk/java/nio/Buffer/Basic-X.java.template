@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,16 @@
 
 #warn This file is preprocessed before being compiled
 
+#if[byte]
+import java.io.IOException;
+import java.io.UncheckedIOException;
+#end[byte]
 import java.nio.*;
+#if[byte]
+import java.nio.channels.FileChannel;
+import java.nio.file.Files;
+import java.nio.file.Path;
+#end[byte]
 
 
 public class Basic$Type$
@@ -468,6 +477,41 @@ public class Basic$Type$
                     fail("Buffer capacity incorrect, expected: " + ec, as);
                 }
             }
+        }
+
+        // mapped buffers
+        try {
+            for (MappedByteBuffer bb : mappedBuffers()) {
+                try {
+                    int offset = bb.alignmentOffset(1, 4);
+                    ck(bb, offset >= 0);
+                } catch (UnsupportedOperationException e) {
+                    System.out.println("Not applicable, UOE thrown: ");
+                }
+            }
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    private static MappedByteBuffer[] mappedBuffers() throws IOException {
+        return new MappedByteBuffer[]{
+                createMappedBuffer(new byte[]{0, 1, 2, 3}),
+                createMappedBuffer(new byte[]{0, 1, 2, -3,
+                    45, 6, 7, 78, 3, -7, 6, 7, -128, 127}),
+        };
+    }
+
+    private static MappedByteBuffer createMappedBuffer(byte[] contents)
+        throws IOException {
+        Path tempFile = Files.createTempFile("mbb", null);
+        tempFile.toFile().deleteOnExit();
+        Files.write(tempFile, contents);
+        try (FileChannel fc = FileChannel.open(tempFile)) {
+            MappedByteBuffer map =
+                fc.map(FileChannel.MapMode.READ_ONLY, 0, contents.length);
+            map.load();
+            return map;
         }
     }
 #end[byte]
