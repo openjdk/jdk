@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -312,15 +312,15 @@ class DerInputBuffer extends ByteArrayInputStream implements Cloneable {
 
         if (generalized) {
             type = "Generalized";
-            year = 1000 * Character.digit((char)buf[pos++], 10);
-            year += 100 * Character.digit((char)buf[pos++], 10);
-            year += 10 * Character.digit((char)buf[pos++], 10);
-            year += Character.digit((char)buf[pos++], 10);
+            year = 1000 * toDigit(buf[pos++], type);
+            year += 100 * toDigit(buf[pos++], type);
+            year += 10 * toDigit(buf[pos++], type);
+            year += toDigit(buf[pos++], type);
             len -= 2; // For the two extra YY
         } else {
             type = "UTC";
-            year = 10 * Character.digit((char)buf[pos++], 10);
-            year += Character.digit((char)buf[pos++], 10);
+            year = 10 * toDigit(buf[pos++], type);
+            year += toDigit(buf[pos++], type);
 
             if (year < 50)              // origin 2000
                 year += 2000;
@@ -328,17 +328,17 @@ class DerInputBuffer extends ByteArrayInputStream implements Cloneable {
                 year += 1900;   // origin 1900
         }
 
-        month = 10 * Character.digit((char)buf[pos++], 10);
-        month += Character.digit((char)buf[pos++], 10);
+        month = 10 * toDigit(buf[pos++], type);
+        month += toDigit(buf[pos++], type);
 
-        day = 10 * Character.digit((char)buf[pos++], 10);
-        day += Character.digit((char)buf[pos++], 10);
+        day = 10 * toDigit(buf[pos++], type);
+        day += toDigit(buf[pos++], type);
 
-        hour = 10 * Character.digit((char)buf[pos++], 10);
-        hour += Character.digit((char)buf[pos++], 10);
+        hour = 10 * toDigit(buf[pos++], type);
+        hour += toDigit(buf[pos++], type);
 
-        minute = 10 * Character.digit((char)buf[pos++], 10);
-        minute += Character.digit((char)buf[pos++], 10);
+        minute = 10 * toDigit(buf[pos++], type);
+        minute += toDigit(buf[pos++], type);
 
         len -= 10; // YYMMDDhhmm
 
@@ -350,8 +350,8 @@ class DerInputBuffer extends ByteArrayInputStream implements Cloneable {
 
         millis = 0;
         if (len > 2) {
-            second = 10 * Character.digit((char)buf[pos++], 10);
-            second += Character.digit((char)buf[pos++], 10);
+            second = 10 * toDigit(buf[pos++], type);
+            second += toDigit(buf[pos++], type);
             len -= 2;
             // handle fractional seconds (if present)
             if (buf[pos] == '.' || buf[pos] == ',') {
@@ -363,7 +363,7 @@ class DerInputBuffer extends ByteArrayInputStream implements Cloneable {
                        buf[pos] != '-') {
                     // Validate all digits in the fractional part but
                     // store millisecond precision only
-                    int thisDigit = Character.digit((char)buf[pos], 10);
+                    int thisDigit = toDigit(buf[pos], type);
                     precision++;
                     pos++;
                     switch (precision) {
@@ -412,10 +412,10 @@ class DerInputBuffer extends ByteArrayInputStream implements Cloneable {
 
         switch (buf[pos++]) {
         case '+':
-            hr = 10 * Character.digit((char)buf[pos++], 10);
-            hr += Character.digit((char)buf[pos++], 10);
-            min = 10 * Character.digit((char)buf[pos++], 10);
-            min += Character.digit((char)buf[pos++], 10);
+            hr = 10 * toDigit(buf[pos++], type);
+            hr += toDigit(buf[pos++], type);
+            min = 10 * toDigit(buf[pos++], type);
+            min += toDigit(buf[pos++], type);
 
             if (hr >= 24 || min >= 60)
                 throw new IOException("Parse " + type + " time, +hhmm");
@@ -424,10 +424,10 @@ class DerInputBuffer extends ByteArrayInputStream implements Cloneable {
             break;
 
         case '-':
-            hr = 10 * Character.digit((char)buf[pos++], 10);
-            hr += Character.digit((char)buf[pos++], 10);
-            min = 10 * Character.digit((char)buf[pos++], 10);
-            min += Character.digit((char)buf[pos++], 10);
+            hr = 10 * toDigit(buf[pos++], type);
+            hr += toDigit(buf[pos++], type);
+            min = 10 * toDigit(buf[pos++], type);
+            min += toDigit(buf[pos++], type);
 
             if (hr >= 24 || min >= 60)
                 throw new IOException("Parse " + type + " time, -hhmm");
@@ -442,5 +442,17 @@ class DerInputBuffer extends ByteArrayInputStream implements Cloneable {
             throw new IOException("Parse " + type + " time, garbage offset");
         }
         return new Date(time);
+    }
+
+    /**
+     * Converts byte (represented as a char) to int.
+     * @throws IOException if integer is not a valid digit in the specified
+     *    radix (10)
+     */
+    private static int toDigit(byte b, String type) throws IOException {
+        if (b < '0' || b > '9') {
+            throw new IOException("Parse " + type + " time, invalid format");
+        }
+        return b - '0';
     }
 }
