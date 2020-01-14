@@ -42,22 +42,18 @@ public interface ConstructorWriter {
     /**
      * Get the constructor details tree header.
      *
-     * @param typeElement the class being documented
      * @param memberDetailsTree the content tree representing member details
      * @return content tree for the constructor details header
      */
-    Content getConstructorDetailsTreeHeader(TypeElement typeElement,
-                                            Content memberDetailsTree);
+    Content getConstructorDetailsTreeHeader(Content memberDetailsTree);
 
     /**
      * Get the constructor documentation tree header.
      *
      * @param constructor the constructor being documented
-     * @param constructorDetailsTree the content tree representing constructor details
      * @return content tree for the constructor documentation header
      */
-    Content getConstructorDocTreeHeader(ExecutableElement constructor,
-                                        Content constructorDetailsTree);
+    Content getConstructorDocTreeHeader(ExecutableElement constructor);
 
     /**
      * Get the signature for the given constructor.

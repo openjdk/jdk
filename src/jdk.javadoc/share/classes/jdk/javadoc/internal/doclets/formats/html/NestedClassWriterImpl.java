@@ -68,7 +68,7 @@ public class NestedClassWriterImpl extends AbstractMemberWriter
             Content memberSummaryTree) {
         memberSummaryTree.add(MarkerComments.START_OF_NESTED_CLASS_SUMMARY);
         Content memberTree = new ContentBuilder();
-        writer.addSummaryHeader(this, typeElement, memberTree);
+        writer.addSummaryHeader(this, memberTree);
         return memberTree;
     }
 
@@ -77,7 +77,8 @@ public class NestedClassWriterImpl extends AbstractMemberWriter
      */
     @Override
     public void addMemberTree(Content memberSummaryTree, Content memberTree) {
-        writer.addMemberTree(HtmlStyle.nestedClassSummary, memberSummaryTree, memberTree);
+        writer.addMemberTree(HtmlStyle.nestedClassSummary,
+                SectionName.NESTED_CLASS_SUMMARY, memberSummaryTree, memberTree);
     }
 
     /**
@@ -117,25 +118,6 @@ public class NestedClassWriterImpl extends AbstractMemberWriter
      * {@inheritDoc}
      */
     @Override
-    public void addSummaryAnchor(TypeElement typeElement, Content memberTree) {
-        memberTree.add(links.createAnchor(
-                SectionName.NESTED_CLASS_SUMMARY));
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void addInheritedSummaryAnchor(TypeElement typeElement, Content inheritedTree) {
-        inheritedTree.add(links.createAnchor(
-                SectionName.NESTED_CLASSES_INHERITANCE,
-                utils.getFullyQualifiedName(typeElement)));
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
     public void addInheritedSummaryLabel(TypeElement typeElement, Content inheritedTree) {
         Content classLink = writer.getPreQualifiedClassLink(
                 LinkInfoImpl.Kind.MEMBER, typeElement, false);
@@ -149,7 +131,9 @@ public class NestedClassWriterImpl extends AbstractMemberWriter
                     ? resources.getText("doclet.Nested_Classes_Interfaces_Inherited_From_Interface")
                     : resources.getText("doclet.Nested_Classes_Interfaces_Inherited_From_Class"));
         }
-        Content labelHeading = HtmlTree.HEADING(Headings.TypeDeclaration.SUMMARY_HEADING, label);
+        HtmlTree labelHeading = HtmlTree.HEADING(Headings.TypeDeclaration.SUMMARY_HEADING, label);
+        labelHeading.setId(SectionName.NESTED_CLASSES_INHERITANCE.getName()
+                + links.getName(utils.getFullyQualifiedName(typeElement)));
         labelHeading.add(Entity.NO_BREAK_SPACE);
         labelHeading.add(classLink);
         inheritedTree.add(labelHeading);

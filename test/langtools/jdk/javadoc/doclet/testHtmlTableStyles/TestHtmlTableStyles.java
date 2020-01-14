@@ -70,7 +70,7 @@ public class TestHtmlTableStyles extends JavadocTester {
                 "<div class=\"overviewSummary\">\n<table>");
 
         checkOutput("deprecated-list.html", true,
-            "<div class=\"deprecatedSummary\">\n<table>");
+            "<div class=\"deprecatedSummary\" id=\"method\">\n<table>");
 
         checkOutput("constant-values.html", true,
             "<div class=\"constantsSummary\">\n<table>");

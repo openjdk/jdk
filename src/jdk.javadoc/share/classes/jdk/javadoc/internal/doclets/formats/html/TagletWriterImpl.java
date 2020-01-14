@@ -200,7 +200,7 @@ public class TagletWriterImpl extends TagletWriter {
         boolean defineID = (element.getKind() == ElementKind.RECORD)
                 && (paramTag instanceof ParamTree) && !((ParamTree) paramTag).isTypeParameter();
         Content nameTree = new StringContent(paramName);
-        body.add(HtmlTree.CODE(defineID ? HtmlTree.A_ID("param-" + paramName, nameTree) : nameTree));
+        body.add(HtmlTree.CODE(defineID ? HtmlTree.SPAN_ID("param-" + paramName, nameTree) : nameTree));
         body.add(" - ");
         List<? extends DocTree> description = ch.getDescription(configuration, paramTag);
         body.add(htmlWriter.commentTagsToContent(paramTag, element, description, false, inSummary));
@@ -427,7 +427,7 @@ public class TagletWriterImpl extends TagletWriter {
             if (count > 0) {
                 anchorName += "-" + count;
             }
-            result = HtmlTree.A_ID(HtmlStyle.searchTagResult, anchorName, new StringContent(tagText));
+            result = HtmlTree.SPAN(anchorName, HtmlStyle.searchTagResult, new StringContent(tagText));
             if (configuration.createindex && !tagText.isEmpty()) {
                 SearchIndexItem si = new SearchIndexItem();
                 si.setSystemProperty(isSystemProperty);

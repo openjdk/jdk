@@ -43,20 +43,18 @@ public interface FieldWriter {
     /**
      * Get the field details tree header.
      *
-     * @param typeElement the class being documented
      * @param memberDetailsTree the content tree representing member details
      * @return content tree for the field details header
      */
-    Content getFieldDetailsTreeHeader(TypeElement typeElement, Content memberDetailsTree);
+    Content getFieldDetailsTreeHeader(Content memberDetailsTree);
 
     /**
      * Get the field documentation tree header.
      *
      * @param field the constructor being documented
-     * @param fieldDetailsTree the content tree representing field details
      * @return content tree for the field documentation header
      */
-    Content getFieldDocTreeHeader(VariableElement field, Content fieldDetailsTree);
+    Content getFieldDocTreeHeader(VariableElement field);
 
     /**
      * Get the signature for the given field.

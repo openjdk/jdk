@@ -70,7 +70,7 @@ public class AnnotationTypeFieldWriterImpl extends AbstractMemberWriter
         memberSummaryTree.add(
                 MarkerComments.START_OF_ANNOTATION_TYPE_FIELD_SUMMARY);
         Content memberTree = new ContentBuilder();
-        writer.addSummaryHeader(this, typeElement, memberTree);
+        writer.addSummaryHeader(this, memberTree);
         return memberTree;
     }
 
@@ -85,7 +85,8 @@ public class AnnotationTypeFieldWriterImpl extends AbstractMemberWriter
      * {@inheritDoc}
      */
     public void addMemberTree(Content memberSummaryTree, Content memberTree) {
-        writer.addMemberTree(HtmlStyle.fieldSummary, memberSummaryTree, memberTree);
+        writer.addMemberTree(HtmlStyle.fieldSummary,
+                SectionName.ANNOTATION_TYPE_FIELD_SUMMARY, memberSummaryTree, memberTree);
     }
 
     /**
@@ -98,13 +99,11 @@ public class AnnotationTypeFieldWriterImpl extends AbstractMemberWriter
     /**
      * {@inheritDoc}
      */
-    public Content getAnnotationDetailsTreeHeader(TypeElement typeElement) {
+    public Content getAnnotationDetailsTreeHeader() {
         Content memberDetailsTree = new ContentBuilder();
         if (!writer.printedAnnotationFieldHeading) {
             Content heading = HtmlTree.HEADING(Headings.TypeDeclaration.DETAILS_HEADING,
                     contents.fieldDetailsLabel);
-            memberDetailsTree.add(links.createAnchor(
-                    SectionName.ANNOTATION_TYPE_FIELD_DETAIL));
             memberDetailsTree.add(heading);
             writer.printedAnnotationFieldHeading = true;
         }
@@ -114,13 +113,12 @@ public class AnnotationTypeFieldWriterImpl extends AbstractMemberWriter
     /**
      * {@inheritDoc}
      */
-    public Content getAnnotationDocTreeHeader(Element member,
-            Content annotationDetailsTree) {
+    public Content getAnnotationDocTreeHeader(Element member) {
         Content annotationDocTree = new ContentBuilder();
-        Content heading = new HtmlTree(Headings.TypeDeclaration.MEMBER_HEADING);
-        heading.add(links.createAnchor(name(member), new StringContent(name(member))));
+        Content heading = new HtmlTree(Headings.TypeDeclaration.MEMBER_HEADING,
+                new StringContent(name(member)));
         annotationDocTree.add(heading);
-        return HtmlTree.SECTION(HtmlStyle.detail, annotationDocTree);
+        return HtmlTree.SECTION(HtmlStyle.detail, annotationDocTree).setId(name(member));
     }
 
     /**
@@ -160,7 +158,8 @@ public class AnnotationTypeFieldWriterImpl extends AbstractMemberWriter
         Content annotationDetails = new ContentBuilder();
         annotationDetails.add(annotationDetailsTreeHeader);
         annotationDetails.add(annotationDetailsTree);
-        return getMemberTree(HtmlTree.SECTION(HtmlStyle.fieldDetails, annotationDetails));
+        return getMemberTree(HtmlTree.SECTION(HtmlStyle.fieldDetails, annotationDetails)
+                .setId(SectionName.ANNOTATION_TYPE_FIELD_DETAIL.getName()));
     }
 
     /**
@@ -174,7 +173,7 @@ public class AnnotationTypeFieldWriterImpl extends AbstractMemberWriter
      * {@inheritDoc}
      */
     public void addSummaryLabel(Content memberTree) {
-        Content label = HtmlTree.HEADING(Headings.TypeDeclaration.SUMMARY_HEADING,
+        HtmlTree label = HtmlTree.HEADING(Headings.TypeDeclaration.SUMMARY_HEADING,
                 contents.fieldSummaryLabel);
         memberTree.add(label);
     }
@@ -200,22 +199,6 @@ public class AnnotationTypeFieldWriterImpl extends AbstractMemberWriter
                 .setHeader(header)
                 .setRowScopeColumn(1)
                 .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colSecond, HtmlStyle.colLast);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void addSummaryAnchor(TypeElement typeElement, Content memberTree) {
-        memberTree.add(links.createAnchor(
-                SectionName.ANNOTATION_TYPE_FIELD_SUMMARY));
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void addInheritedSummaryAnchor(TypeElement typeElement, Content inheritedTree) {
     }
 
     /**

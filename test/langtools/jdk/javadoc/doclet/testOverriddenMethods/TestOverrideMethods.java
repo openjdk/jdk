@@ -231,7 +231,7 @@ public class TestOverrideMethods  extends JavadocTester {
 
         // Test synthetic values and valuesof of an enum.
         checkOrder("index-all.html",
-                "<h2 class=\"title\">M</h2>",
+                "<h2 class=\"title\" id=\"I:M\">M</h2>",
                 "<a href=\"pkg5/Interfaces.C.html#m()\">m()",
                 "<a href=\"pkg5/Interfaces.D.html#m()\">m()</a>",
                 "<a href=\"pkg5/Classes.GP.html#m0()\">m0()",
@@ -279,9 +279,8 @@ public class TestOverrideMethods  extends JavadocTester {
                 + "</tbody>\n"
                 + "</table>\n",
                 "<div class=\"inheritedList\">\n"
-                + "<h3>Methods declared in class&nbsp;pkg6.<a href=\"Base.html\" title=\"class in pkg6\">Base</a></h3>\n"
-                + "<a id=\"methods.inherited.from.class.pkg6.Base\">\n"
-                + "<!--   -->\n"
-                + "</a><code><a href=\"Base.html#m1()\">m1</a>, <a href=\"Base.html#m3()\">m3</a></code></div>\n");
+                + "<h3 id=\"methods.inherited.from.class.pkg6.Base\">Methods declared in class&nbsp;pkg6."
+                + "<a href=\"Base.html\" title=\"class in pkg6\">Base</a></h3>\n"
+                + "<code><a href=\"Base.html#m1()\">m1</a>, <a href=\"Base.html#m3()\">m3</a></code></div>\n");
     }
 }

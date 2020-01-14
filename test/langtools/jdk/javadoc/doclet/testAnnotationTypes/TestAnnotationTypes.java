@@ -60,7 +60,8 @@ public class TestAnnotationTypes extends JavadocTester {
                 "<th class=\"colSecond\" scope=\"row\"><code><span class=\"memberNameLink\"><a href=\"#DEFAULT_NAME\">DEFAULT_NAME</a></span>"
                 + "</code></th>",
                 "<!-- ============ ANNOTATION TYPE FIELD DETAIL =========== -->",
-                "<h3><a id=\"DEFAULT_NAME\">DEFAULT_NAME</a></h3>\n"
+                "<section class=\"detail\" id=\"DEFAULT_NAME\">\n"
+                + "<h3>DEFAULT_NAME</h3>\n"
                 + "<div class=\"memberSignature\"><span class=\"modifiers\">static final</span>&nbsp;"
                 + "<span class=\"returnType\">java.lang.String</span>&nbsp;"
                 + "<span class=\"memberName\">DEFAULT_NAME</span></div>\n");
@@ -75,15 +76,14 @@ public class TestAnnotationTypes extends JavadocTester {
                     "<!-- ============ ANNOTATION TYPE MEMBER DETAIL =========== -->",
                     "<ul class=\"blockList\">",
                     "<li class=\"blockList\">",
-                    "<section class=\"memberDetails\">",
+                    "<section class=\"details\" id=\"annotation.type.element.detail\">",
                     "<h2>Element Details</h2>",
-                    "<a id=\"annotation.type.element.detail\">",
                     "<!--   -->",
                     "</a>",
                     "<ul class=\"blockList\">",
                     "<li class=\"blockList\">",
-                    "<section class=\"detail\">",
-                    "<h3><a id=\"value()\">value</a></h3>",
+                    "<section class=\"detail\" id=\"value()\">",
+                    "<h3>value</h3>\n",
                     "<div class=\"memberSignature\"><span class=\"returnType\">int</span>"
                     + "&nbsp;<span class=\"memberName\">value</span></div>");
 

@@ -71,9 +71,7 @@ public class TestHtmlVersion extends JavadocTester {
         checkOutput("index.html", true,
                 "<!DOCTYPE HTML>",
                 "<meta name=\"dc.created\"",
-                "<a id=\"navbar.top.firstrow\">\n"
-                + "<!--   -->\n"
-                + "</a>",
+                "<ul id=\"navbar.top.firstrow\" class=\"navList\" title=\"Navigation\">\n",
                 "<div class=\"overviewSummary\">\n"
                 + "<table>\n"
                 + "<caption>",
@@ -88,18 +86,14 @@ public class TestHtmlVersion extends JavadocTester {
         checkOutput("pkg/package-summary.html", true,
                 "<!DOCTYPE HTML>",
                 "<meta name=\"dc.created\"",
-                "<a id=\"navbar.top.firstrow\">\n"
-                + "<!--   -->\n"
-                + "</a>",
+                "<ul id=\"navbar.top.firstrow\" class=\"navList\" title=\"Navigation\">\n",
                 "<div class=\"typeSummary\">\n<table>",
                 "<header role=\"banner\" class=\"flexHeader\">\n"
                 + "<nav role=\"navigation\">\n"
                 + "<!-- ========= START OF TOP NAVBAR ======= -->",
                 "<main role=\"main\">\n"
                 + "<div class=\"header\">",
-                "<section class=\"packageDescription\"><a id=\"package.description\">\n"
-                + "<!--   -->\n"
-                + "</a>\n"
+                "<section class=\"packageDescription\" id=\"package.description\">\n"
                 + "<div class=\"block\">Test package.</div>",
                 "<footer role=\"contentinfo\">\n"
                 + "<nav role=\"navigation\">\n"
@@ -117,9 +111,7 @@ public class TestHtmlVersion extends JavadocTester {
         checkOutput("pkg/package-tree.html", true,
                 "<!DOCTYPE HTML>",
                 "<meta name=\"dc.created\"",
-                "<a id=\"navbar.top.firstrow\">\n"
-                + "<!--   -->\n"
-                + "</a>",
+                "<ul id=\"navbar.top.firstrow\" class=\"navList\" title=\"Navigation\">\n",
                 "<li class=\"circle\">",
                 "<header role=\"banner\" class=\"flexHeader\">\n"
                 + "<nav role=\"navigation\">\n"
@@ -142,9 +134,7 @@ public class TestHtmlVersion extends JavadocTester {
         checkOutput("pkg1/package-use.html", true,
                 "<!DOCTYPE HTML>",
                 "<meta name=\"dc.created\"",
-                "<a id=\"navbar.top.firstrow\">\n"
-                + "<!--   -->\n"
-                + "</a>",
+                "<ul id=\"navbar.top.firstrow\" class=\"navList\" title=\"Navigation\">\n",
                 "<div class=\"useSummary\">\n<table>",
                 "<header role=\"banner\" class=\"flexHeader\">\n"
                 + "<nav role=\"navigation\">\n"
@@ -159,9 +149,7 @@ public class TestHtmlVersion extends JavadocTester {
         checkOutput("constant-values.html", true,
                 "<!DOCTYPE HTML>",
                 "<meta name=\"dc.created\"",
-                "<a id=\"navbar.top.firstrow\">\n"
-                + "<!--   -->\n"
-                + "</a>",
+                "<ul id=\"navbar.top.firstrow\" class=\"navList\" title=\"Navigation\">\n",
                 "<div class=\"constantsSummary\">\n<table>",
                 "<header role=\"banner\" class=\"flexHeader\">\n"
                 + "<nav role=\"navigation\">\n"
@@ -170,7 +158,7 @@ public class TestHtmlVersion extends JavadocTester {
                 + "<div class=\"header\">",
                 "<section class=\"packages\">\n"
                 + "<h2 title=\"Contents\">Contents</h2>\n",
-                "<section class=\"constantsSummary\">\n"
+                "<section class=\"constantsSummary\" id=\"pkg\">\n"
                 + "<h2 title=\"pkg\">pkg.*</h2>\n",
                 "<footer role=\"contentinfo\">\n"
                 + "<nav role=\"navigation\">\n"
@@ -180,10 +168,8 @@ public class TestHtmlVersion extends JavadocTester {
         checkOutput("deprecated-list.html", true,
                 "<!DOCTYPE HTML>",
                 "<meta name=\"dc.created\"",
-                "<a id=\"navbar.top.firstrow\">\n"
-                + "<!--   -->\n"
-                + "</a>",
-                "<div class=\"deprecatedSummary\">\n<table>",
+                "<ul id=\"navbar.top.firstrow\" class=\"navList\" title=\"Navigation\">\n",
+                "<div class=\"deprecatedSummary\" id=\"class\">\n<table>",
                 "<header role=\"banner\" class=\"flexHeader\">\n"
                 + "<nav role=\"navigation\">\n"
                 + "<!-- ========= START OF TOP NAVBAR ======= -->",
@@ -197,9 +183,7 @@ public class TestHtmlVersion extends JavadocTester {
         checkOutput("serialized-form.html", true,
                 "<!DOCTYPE HTML>",
                 "<meta name=\"dc.created\"",
-                "<a id=\"navbar.top.firstrow\">\n"
-                + "<!--   -->\n"
-                + "</a>",
+                "<ul id=\"navbar.top.firstrow\" class=\"navList\" title=\"Navigation\">\n",
                 "<header role=\"banner\" class=\"flexHeader\">\n"
                 + "<nav role=\"navigation\">\n"
                 + "<!-- ========= START OF TOP NAVBAR ======= -->",
@@ -215,9 +199,7 @@ public class TestHtmlVersion extends JavadocTester {
         checkOutput("overview-tree.html", true,
                 "<!DOCTYPE HTML>",
                 "<meta name=\"dc.created\"",
-                "<a id=\"navbar.top.firstrow\">\n"
-                + "<!--   -->\n"
-                + "</a>",
+                "<ul id=\"navbar.top.firstrow\" class=\"navList\" title=\"Navigation\">\n",
                 "<li class=\"circle\">",
                 "<header role=\"banner\" class=\"flexHeader\">\n"
                 + "<nav role=\"navigation\">\n"
@@ -240,9 +222,7 @@ public class TestHtmlVersion extends JavadocTester {
         checkOutput("index-all.html", true,
                 "<!DOCTYPE HTML>",
                 "<meta name=\"dc.created\"",
-                "<a id=\"navbar.top.firstrow\">\n"
-                + "<!--   -->\n"
-                + "</a>",
+                "<ul id=\"navbar.top.firstrow\" class=\"navList\" title=\"Navigation\">\n",
                 "<header role=\"banner\" class=\"flexHeader\">\n"
                 + "<nav role=\"navigation\">\n"
                 + "<!-- ========= START OF TOP NAVBAR ======= -->",
@@ -263,9 +243,7 @@ public class TestHtmlVersion extends JavadocTester {
         checkOutput("help-doc.html", true,
                 "<!DOCTYPE HTML>",
                 "<meta name=\"dc.created\"",
-                "<a id=\"navbar.top.firstrow\">\n"
-                + "<!--   -->\n"
-                + "</a>",
+                "<ul id=\"navbar.top.firstrow\" class=\"navList\" title=\"Navigation\">\n",
                 "<header role=\"banner\" class=\"flexHeader\">\n"
                 + "<nav role=\"navigation\">\n"
                 + "<!-- ========= START OF TOP NAVBAR ======= -->",
@@ -285,48 +263,29 @@ public class TestHtmlVersion extends JavadocTester {
         checkOutput("pkg/AnotherClass.html", true,
                 "<!DOCTYPE HTML>",
                 "<meta name=\"dc.created\"",
-                "<a id=\"navbar.top.firstrow\">\n"
-                + "<!--   -->\n"
-                + "</a>",
+                "<ul id=\"navbar.top.firstrow\" class=\"navList\" title=\"Navigation\">\n",
                 "<header role=\"banner\" class=\"flexHeader\">\n"
                 + "<nav role=\"navigation\">\n"
                 + "<!-- ========= START OF TOP NAVBAR ======= -->",
                 "<main role=\"main\">\n"
                 + "<!-- ======== START OF CLASS DATA ======== -->\n"
                 + "<div class=\"header\">",
-                "<section class=\"nestedClassSummary\"><a id=\"nested.class.summary\">\n"
-                + "<!--   -->\n"
-                + "</a>\n"
+                "<section class=\"nestedClassSummary\" id=\"nested.class.summary\">\n"
                 + "<h2>Nested Class Summary</h2>\n"
                 + "<div class=\"memberSummary\">\n<table>",
-                "<section class=\"fieldSummary\"><a id=\"field.summary\">\n"
-                + "<!--   -->\n"
-                + "</a>\n"
+                "<section class=\"fieldSummary\" id=\"field.summary\">\n"
                 + "<h2>Field Summary</h2>\n"
                 + "<div class=\"memberSummary\">\n<table>",
-                "<section class=\"constructorSummary\"><a id=\"constructor.summary\">\n"
-                + "<!--   -->\n"
-                + "</a>\n"
+                "<section class=\"constructorSummary\" id=\"constructor.summary\">\n"
                 + "<h2>Constructor Summary</h2>\n"
                 + "<div class=\"memberSummary\">\n<table>",
-                "<section class=\"methodSummary\"><a id=\"method.summary\">\n"
-                + "<!--   -->\n"
-                + "</a>\n"
+                "<section class=\"methodSummary\" id=\"method.summary\">\n"
                 + "<h2>Method Summary</h2>",
-                "<section class=\"fieldDetails\">"
-                + "<a id=\"field.detail\">\n"
-                + "<!--   -->\n"
-                + "</a>\n"
+                "<section class=\"fieldDetails\" id=\"field.detail\">\n"
                 + "<h2>Field Details</h2>\n",
-                "<section class=\"constructorDetails\">"
-                + "<a id=\"constructor.detail\">\n"
-                + "<!--   -->\n"
-                + "</a>\n"
+                "<section class=\"constructorDetails\" id=\"constructor.detail\">\n"
                 + "<h2>Constructor Details</h2>\n",
-                "<section class=\"methodDetails\">"
-                + "<a id=\"method.detail\">\n"
-                + "<!--   -->\n"
-                + "</a>\n"
+                "<section class=\"methodDetails\" id=\"method.detail\">\n"
                 + "<h2>Method Details</h2>\n",
                 "<footer role=\"contentinfo\">\n"
                 + "<nav role=\"navigation\">\n"
@@ -336,36 +295,24 @@ public class TestHtmlVersion extends JavadocTester {
         checkOutput("pkg/AnotherClass.ModalExclusionType.html", true,
                 "<!DOCTYPE HTML>",
                 "<meta name=\"dc.created\"",
-                "<a id=\"navbar.top.firstrow\">\n"
-                + "<!--   -->\n"
-                + "</a>",
+                "<ul id=\"navbar.top.firstrow\" class=\"navList\" title=\"Navigation\">\n",
                 "<header role=\"banner\" class=\"flexHeader\">\n"
                 + "<nav role=\"navigation\">\n"
                 + "<!-- ========= START OF TOP NAVBAR ======= -->",
                 "<main role=\"main\">\n"
                 + "<!-- ======== START OF CLASS DATA ======== -->\n"
                 + "<div class=\"header\">",
-                "<section class=\"constantsSummary\"><a id=\"enum.constant.summary\">\n"
-                + "<!--   -->\n"
-                + "</a>\n"
+                "<section class=\"constantsSummary\" id=\"enum.constant.summary\">\n"
                 + "<h2>Enum Constant Summary</h2>\n"
                 + "<div class=\"memberSummary\">\n",
                 "<table aria-labelledby=\"t0\">\n",
-                "<section class=\"methodSummary\"><a id=\"method.summary\">\n"
-                + "<!--   -->\n"
-                + "</a>\n"
+                "<section class=\"methodSummary\" id=\"method.summary\">\n"
                 + "<h2>Method Summary</h2>\n"
                 + "<div class=\"memberSummary\">\n",
                 "<table aria-labelledby=\"t0\">",
-                "<section class=\"constantDetails\">"
-                + "<a id=\"enum.constant.detail\">\n"
-                + "<!--   -->\n"
-                + "</a>\n"
+                "<section class=\"constantDetails\" id=\"enum.constant.detail\">\n"
                 + "<h2>Enum Constant Details</h2>\n",
-                "<section class=\"methodDetails\">"
-                + "<a id=\"method.detail\">\n"
-                + "<!--   -->\n"
-                + "</a>\n"
+                "<section class=\"methodDetails\" id=\"method.detail\">\n"
                 + "<h2>Method Details</h2>\n",
                 "<footer role=\"contentinfo\">\n"
                 + "<nav role=\"navigation\">\n"
@@ -375,25 +322,18 @@ public class TestHtmlVersion extends JavadocTester {
         checkOutput("pkg2/Interface.html", true,
                 "<!DOCTYPE HTML>",
                 "<meta name=\"dc.created\"",
-                "<a id=\"navbar.top.firstrow\">\n"
-                + "<!--   -->\n"
-                + "</a>",
+                "<ul id=\"navbar.top.firstrow\" class=\"navList\" title=\"Navigation\">\n",
                 "<header role=\"banner\" class=\"flexHeader\">\n"
                 + "<nav role=\"navigation\">\n"
                 + "<!-- ========= START OF TOP NAVBAR ======= -->",
                 "<main role=\"main\">\n"
                 + "<!-- ======== START OF CLASS DATA ======== -->\n"
                 + "<div class=\"header\">",
-                "<section class=\"methodSummary\"><a id=\"method.summary\">\n"
-                + "<!--   -->\n"
-                + "</a>\n"
+                "<section class=\"methodSummary\" id=\"method.summary\">\n"
                 + "<h2>Method Summary</h2>\n"
                 + "<div class=\"memberSummary\">\n",
                 "<table aria-labelledby=\"t0\">\n",
-                "<section class=\"methodDetails\">"
-                + "<a id=\"method.detail\">\n"
-                + "<!--   -->\n"
-                + "</a>\n"
+                "<section class=\"methodDetails\" id=\"method.detail\">\n"
                 + "<h2>Method Details</h2>\n",
                 "<footer role=\"contentinfo\">\n"
                 + "<nav role=\"navigation\">\n"
@@ -403,23 +343,16 @@ public class TestHtmlVersion extends JavadocTester {
         checkOutput("pkg/TestError.html", true,
                 "<!DOCTYPE HTML>",
                 "<meta name=\"dc.created\"",
-                "<a id=\"navbar.top.firstrow\">\n"
-                + "<!--   -->\n"
-                + "</a>",
+                "<ul id=\"navbar.top.firstrow\" class=\"navList\" title=\"Navigation\">\n",
                 "<header role=\"banner\" class=\"flexHeader\">\n"
                 + "<nav role=\"navigation\">\n"
                 + "<!-- ========= START OF TOP NAVBAR ======= -->",
                 "<main role=\"main\">\n"
                 + "<!-- ======== START OF CLASS DATA ======== -->\n"
                 + "<div class=\"header\">",
-                "<section class=\"constructorSummary\"><a id=\"constructor.summary\">\n"
-                + "<!--   -->\n"
-                + "</a>\n"
+                "<section class=\"constructorSummary\" id=\"constructor.summary\">\n"
                 + "<h2>Constructor Summary</h2>",
-                "<section class=\"constructorDetails\">"
-                + "<a id=\"constructor.detail\">\n"
-                + "<!--   -->\n"
-                + "</a>\n"
+                "<section class=\"constructorDetails\" id=\"constructor.detail\">\n"
                 + "<h2>Constructor Details</h2>\n",
                 "<footer role=\"contentinfo\">\n"
                 + "<nav role=\"navigation\">\n"
@@ -429,23 +362,16 @@ public class TestHtmlVersion extends JavadocTester {
         checkOutput("pkg/TestException.html", true,
                 "<!DOCTYPE HTML>",
                 "<meta name=\"dc.created\"",
-                "<a id=\"navbar.top.firstrow\">\n"
-                + "<!--   -->\n"
-                + "</a>",
+                "<ul id=\"navbar.top.firstrow\" class=\"navList\" title=\"Navigation\">\n",
                 "<header role=\"banner\" class=\"flexHeader\">\n"
                 + "<nav role=\"navigation\">\n"
                 + "<!-- ========= START OF TOP NAVBAR ======= -->",
                 "<main role=\"main\">\n"
                 + "<!-- ======== START OF CLASS DATA ======== -->\n"
                 + "<div class=\"header\">",
-                "<section class=\"constructorSummary\"><a id=\"constructor.summary\">\n"
-                + "<!--   -->\n"
-                + "</a>\n"
+                "<section class=\"constructorSummary\" id=\"constructor.summary\">\n"
                 + "<h2>Constructor Summary</h2>",
-                "<section class=\"constructorDetails\">"
-                + "<a id=\"constructor.detail\">\n"
-                + "<!--   -->\n"
-                + "</a>\n"
+                "<section class=\"constructorDetails\" id=\"constructor.detail\">\n"
                 + "<h2>Constructor Details</h2>\n",
                 "<footer role=\"contentinfo\">\n"
                 + "<nav role=\"navigation\">\n"
@@ -455,30 +381,25 @@ public class TestHtmlVersion extends JavadocTester {
         checkOutput("pkg2/TestAnnotationType.html", true,
                 "<!DOCTYPE HTML>",
                 "<meta name=\"dc.created\"",
-                "<a id=\"navbar.top.firstrow\">\n"
-                + "<!--   -->\n"
-                + "</a>",
+                "<ul id=\"navbar.top.firstrow\" class=\"navList\" title=\"Navigation\">\n",
                 "<header role=\"banner\" class=\"flexHeader\">\n"
                 + "<nav role=\"navigation\">\n"
                 + "<!-- ========= START OF TOP NAVBAR ======= -->",
                 "<main role=\"main\">\n"
                 + "<!-- ======== START OF CLASS DATA ======== -->\n"
                 + "<div class=\"header\">",
-                "<section class=\"memberSummary\"><a id=\"annotation.type.required.element.summary\">\n"
-                + "<!--   -->\n"
-                + "</a>\n"
+                "<section class=\"memberSummary\" id=\"annotation.type.required.element.summary\">\n"
                 + "<h2>Required Element Summary</h2>\n"
                 + "<div class=\"memberSummary\">\n<table>",
-                "<section class=\"memberSummary\"><a id=\"annotation.type.optional.element.summary\">\n"
-                + "<!--   -->\n"
-                + "</a>\n"
+                "<section class=\"memberSummary\" id=\"annotation.type.optional.element.summary\">\n"
                 + "<h2>Optional Element Summary</h2>\n"
                 + "<div class=\"memberSummary\">\n<table>",
-                "<section class=\"memberDetails\">"
-                + "<a id=\"annotation.type.element.detail\">\n"
-                + "<!--   -->\n"
-                + "</a>\n"
-                + "<h2>Element Details</h2>",
+                "<section class=\"details\" id=\"annotation.type.element.detail\">\n"
+                + "<ul class=\"blockList\">\n"
+                + "<!-- ============ ANNOTATION TYPE MEMBER DETAIL =========== -->\n"
+                + "<li class=\"blockList\">\n"
+                + "<section class=\"memberDetails\">\n"
+                + "<h2>Element Details</h2>\n",
                 "<footer role=\"contentinfo\">\n"
                 + "<nav role=\"navigation\">\n"
                 + "<!-- ======= START OF BOTTOM NAVBAR ====== -->");
@@ -487,18 +408,14 @@ public class TestHtmlVersion extends JavadocTester {
         checkOutput("pkg1/class-use/RegClass.html", true,
                 "<!DOCTYPE HTML>",
                 "<meta name=\"dc.created\"",
-                "<a id=\"navbar.top.firstrow\">\n"
-                + "<!--   -->\n"
-                + "</a>",
+                "<ul id=\"navbar.top.firstrow\" class=\"navList\" title=\"Navigation\">\n",
                 "<header role=\"banner\" class=\"flexHeader\">\n"
                 + "<nav role=\"navigation\">\n"
                 + "<!-- ========= START OF TOP NAVBAR ======= -->",
                 "<main role=\"main\">\n"
                 + "<div class=\"header\">",
                 "<div class=\"useSummary\">\n<table>",
-                "<section class=\"detail\"><a id=\"pkg\">\n"
-                + "<!--   -->\n"
-                + "</a>\n"
+                "<section class=\"detail\" id=\"pkg\">\n"
                 + "<h2>Uses of <a href=\"../RegClass.html\" title=\"class in pkg1\">RegClass</a> in <a href=\"../../pkg/package-summary.html\">pkg</a></h2>\n"
                 + "<div class=\"useSummary\">\n<table>",
                 "<footer role=\"contentinfo\">\n"

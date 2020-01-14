@@ -123,13 +123,12 @@ public class MethodBuilder extends AbstractMemberBuilder {
             return;
         }
         if (hasMembersToDocument()) {
-            Content methodDetailsTreeHeader = writer.getMethodDetailsTreeHeader(typeElement,
-                    memberDetailsTree);
+            Content methodDetailsTreeHeader = writer.getMethodDetailsTreeHeader(memberDetailsTree);
             Content methodDetailsTree = writer.getMemberTreeHeader();
 
             for (Element method : methods) {
                 currentMethod = (ExecutableElement)method;
-                Content methodDocTree = writer.getMethodDocTreeHeader(currentMethod, methodDetailsTree);
+                Content methodDocTree = writer.getMethodDocTreeHeader(currentMethod);
 
                 buildSignature(methodDocTree);
                 buildDeprecationInfo(methodDocTree);

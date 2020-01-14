@@ -287,13 +287,12 @@ public class DeprecatedListWriter extends SubWriterHolderWriter {
         div.setStyle(HtmlStyle.contentContainer);
         for (DeprElementKind kind : DeprElementKind.values()) {
             if (deprapi.hasDocumentation(kind)) {
-                addAnchor(deprapi, kind, div);
                 memberTableSummary = resources.getText("doclet.Member_Table_Summary",
                         resources.getText(getHeadingKey(kind)),
                         resources.getText(getSummaryKey(kind)));
                 TableHeader memberTableHeader = new TableHeader(
                         contents.getContent(getHeaderKey(kind)), contents.descriptionLabel);
-                addDeprecatedAPI(deprapi.getSet(kind),
+                addDeprecatedAPI(deprapi.getSet(kind), getAnchorName(kind),
                             getHeadingKey(kind), memberTableSummary, memberTableHeader, div);
             }
         }
@@ -347,19 +346,6 @@ public class DeprecatedListWriter extends SubWriterHolderWriter {
     }
 
     /**
-     * Add the anchor.
-     *
-     * @param builder the deprecated list builder
-     * @param kind the kind of list being documented
-     * @param htmlTree the content tree to which the anchor will be added
-     */
-    private void addAnchor(DeprecatedAPIListBuilder builder, DeprElementKind kind, Content htmlTree) {
-        if (builder.hasDocumentation(kind)) {
-            htmlTree.add(links.createAnchor(getAnchorName(kind)));
-        }
-    }
-
-    /**
      * Get the header for the deprecated API Listing.
      *
      * @return a content tree for the header
@@ -379,18 +365,20 @@ public class DeprecatedListWriter extends SubWriterHolderWriter {
      * Add deprecated information to the documentation tree
      *
      * @param deprList list of deprecated API elements
+     * @param id the id attribute of the table
      * @param headingKey the caption for the deprecated table
      * @param tableSummary the summary for the deprecated table
      * @param tableHeader table headers for the deprecated table
      * @param contentTree the content tree to which the deprecated table will be added
      */
-    protected void addDeprecatedAPI(SortedSet<Element> deprList, String headingKey,
+    protected void addDeprecatedAPI(SortedSet<Element> deprList, String id, String headingKey,
             String tableSummary, TableHeader tableHeader, Content contentTree) {
         if (deprList.size() > 0) {
             Content caption = contents.getContent(headingKey);
             Table table = new Table(HtmlStyle.deprecatedSummary)
                     .setCaption(caption)
                     .setHeader(tableHeader)
+                    .setId(id)
                     .setColumnStyles(HtmlStyle.colDeprecatedItemName, HtmlStyle.colLast);
             for (Element e : deprList) {
                 Content link;

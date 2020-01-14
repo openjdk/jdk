@@ -132,13 +132,12 @@ public class ConstructorBuilder extends AbstractMemberBuilder {
             return;
         }
         if (hasMembersToDocument()) {
-            Content constructorDetailsTreeHeader = writer.getConstructorDetailsTreeHeader(typeElement,
-                    memberDetailsTree);
+            Content constructorDetailsTreeHeader = writer.getConstructorDetailsTreeHeader(memberDetailsTree);
             Content constructorDetailsTree = writer.getMemberTreeHeader();
 
             for (Element constructor : constructors) {
                 currentConstructor = (ExecutableElement)constructor;
-                Content constructorDocTree = writer.getConstructorDocTreeHeader(currentConstructor, constructorDetailsTree);
+                Content constructorDocTree = writer.getConstructorDocTreeHeader(currentConstructor);
 
                 buildSignature(constructorDocTree);
                 buildDeprecationInfo(constructorDocTree);

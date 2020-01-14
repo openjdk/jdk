@@ -56,18 +56,17 @@ public interface AnnotationTypeFieldWriter {
     /**
      * Add the annotation type details tree header.
      *
-     * @param typeElement the annotation type being documented
+     * @return content tree for the annotation details header
      */
-    Content getAnnotationDetailsTreeHeader(TypeElement typeElement);
+    Content getAnnotationDetailsTreeHeader();
 
     /**
      * Get the annotation type documentation tree header.
      *
      * @param member the annotation type being documented
-     * @param annotationDetailsTree the content tree representing annotation type details
      * @return content tree for the annotation type documentation header
      */
-    Content getAnnotationDocTreeHeader(Element member, Content annotationDetailsTree);
+    Content getAnnotationDocTreeHeader(Element member);
 
     /**
      * Get the annotation type details tree.

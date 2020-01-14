@@ -88,15 +88,15 @@ public class TestIndexInPackageFiles extends JavadocTester {
         // to match the A-Z index files checked here.
 
         checkOutput("p/q/package-summary.html", true,
-            "<a id=\"test.name.1\" class=\"searchTagResult\">test.name.1</a>",
-            "<a id=\"test.property.1\" class=\"searchTagResult\">test.property.1</a>");
+            "<span id=\"test.name.1\" class=\"searchTagResult\">test.name.1</span>",
+            "<span id=\"test.property.1\" class=\"searchTagResult\">test.property.1</span>");
 
         checkOutput("p/q/doc-files/extra.html", true,
-            "<a id=\"test.name.2\" class=\"searchTagResult\">test.name.2</a>",
-            "<a id=\"test.property.2\" class=\"searchTagResult\">test.property.2</a>");
+            "<span id=\"test.name.2\" class=\"searchTagResult\">test.name.2</span>",
+            "<span id=\"test.property.2\" class=\"searchTagResult\">test.property.2</span>");
 
         checkOutput("index.html", true,
-            "<a id=\"test.name.3\" class=\"searchTagResult\">test.name.3</a>");
+            "<span id=\"test.name.3\" class=\"searchTagResult\">test.name.3</span>");
 
         checkOutput("index-all.html", true,
             "<span class=\"searchTagLink\"><a href=\"p/q/package-summary.html#test.name.1\">test.name.1</a></span>",

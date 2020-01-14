@@ -70,7 +70,7 @@ public class FieldWriterImpl extends AbstractMemberWriter
             Content memberSummaryTree) {
         memberSummaryTree.add(MarkerComments.START_OF_FIELD_SUMMARY);
         Content memberTree = new ContentBuilder();
-        writer.addSummaryHeader(this, typeElement, memberTree);
+        writer.addSummaryHeader(this, memberTree);
         return memberTree;
     }
 
@@ -79,20 +79,19 @@ public class FieldWriterImpl extends AbstractMemberWriter
      */
     @Override
     public void addMemberTree(Content memberSummaryTree, Content memberTree) {
-        writer.addMemberTree(HtmlStyle.fieldSummary, memberSummaryTree, memberTree);
+        writer.addMemberTree(HtmlStyle.fieldSummary,
+                SectionName.FIELD_SUMMARY, memberSummaryTree, memberTree);
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public Content getFieldDetailsTreeHeader(TypeElement typeElement, Content memberDetailsTree) {
+    public Content getFieldDetailsTreeHeader(Content memberDetailsTree) {
         memberDetailsTree.add(MarkerComments.START_OF_FIELD_DETAILS);
         Content fieldDetailsTree = new ContentBuilder();
         Content heading = HtmlTree.HEADING(Headings.TypeDeclaration.DETAILS_HEADING,
                 contents.fieldDetailsLabel);
-        fieldDetailsTree.add(links.createAnchor(
-                SectionName.FIELD_DETAIL));
         fieldDetailsTree.add(heading);
         return fieldDetailsTree;
     }
@@ -101,12 +100,12 @@ public class FieldWriterImpl extends AbstractMemberWriter
      * {@inheritDoc}
      */
     @Override
-    public Content getFieldDocTreeHeader(VariableElement field, Content fieldDetailsTree) {
+    public Content getFieldDocTreeHeader(VariableElement field) {
         Content fieldTree = new ContentBuilder();
-        Content heading = new HtmlTree(Headings.TypeDeclaration.MEMBER_HEADING);
-        heading.add(links.createAnchor(name(field), new StringContent(name(field))));
+        Content heading = new HtmlTree(Headings.TypeDeclaration.MEMBER_HEADING,
+                new StringContent(name(field)));
         fieldTree.add(heading);
-        return HtmlTree.SECTION(HtmlStyle.detail, fieldTree);
+        return HtmlTree.SECTION(HtmlStyle.detail, fieldTree).setId(name(field));
     }
 
     /**
@@ -151,7 +150,8 @@ public class FieldWriterImpl extends AbstractMemberWriter
     @Override
     public Content getFieldDetails(Content fieldDetailsTreeHeader, Content fieldDetailsTree) {
         Content fieldDetails = new ContentBuilder(fieldDetailsTreeHeader, fieldDetailsTree);
-        return getMemberTree(HtmlTree.SECTION(HtmlStyle.fieldDetails, fieldDetails));
+        return getMemberTree(HtmlTree.SECTION(HtmlStyle.fieldDetails, fieldDetails)
+                .setId(SectionName.FIELD_DETAIL.getName()));
     }
 
     /**
@@ -197,24 +197,6 @@ public class FieldWriterImpl extends AbstractMemberWriter
      * {@inheritDoc}
      */
     @Override
-    public void addSummaryAnchor(TypeElement typeElement, Content memberTree) {
-        memberTree.add(links.createAnchor(
-                SectionName.FIELD_SUMMARY));
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void addInheritedSummaryAnchor(TypeElement typeElement, Content inheritedTree) {
-        inheritedTree.add(links.createAnchor(
-                SectionName.FIELDS_INHERITANCE, configuration.getClassName(typeElement)));
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
     public void addInheritedSummaryLabel(TypeElement typeElement, Content inheritedTree) {
         Content classLink = writer.getPreQualifiedClassLink(
                 LinkInfoImpl.Kind.MEMBER, typeElement, false);
@@ -228,8 +210,10 @@ public class FieldWriterImpl extends AbstractMemberWriter
                     ? resources.getText("doclet.Fields_Inherited_From_Class")
                     : resources.getText("doclet.Fields_Inherited_From_Interface"));
         }
-        Content labelHeading = HtmlTree.HEADING(Headings.TypeDeclaration.INHERITED_SUMMARY_HEADING,
+        HtmlTree labelHeading = HtmlTree.HEADING(Headings.TypeDeclaration.INHERITED_SUMMARY_HEADING,
                 label);
+        labelHeading.setId(SectionName.FIELDS_INHERITANCE.getName()
+                + links.getName(configuration.getClassName(typeElement)));
         labelHeading.add(Entity.NO_BREAK_SPACE);
         labelHeading.add(classLink);
         inheritedTree.add(labelHeading);

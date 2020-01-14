@@ -51,15 +51,15 @@ public class AccessSkipNav extends JavadocTester {
         checkOutput("p1/C1.html", true,
                 // Top navbar <a href>
                 "<a href=\"#skip.navbar.top\" title=\"Skip navigation links\">Skip navigation links</a>",
-                // Top navbar <a name>
-                "<a id=\"skip.navbar.top\">\n"
+                // Top navbar <span id>
+                "<span class=\"skipNav\" id=\"skip.navbar.top\">\n"
                 + "<!--   -->\n"
-                + "</a>",
+                + "</span>",
                 // Bottom navbar <a href>
                 "<a href=\"#skip.navbar.bottom\" title=\"Skip navigation links\">Skip navigation links</a>",
-                // Bottom navbar <a name>
-                "<a id=\"skip.navbar.bottom\">\n"
+                // Bottom navbar <span id>
+                "<span class=\"skipNav\" id=\"skip.navbar.bottom\">\n"
                 + "<!--   -->\n"
-                + "</a>");
+                + "</span>");
     }
 }

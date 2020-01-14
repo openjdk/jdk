@@ -42,22 +42,18 @@ public interface PropertyWriter {
     /**
      * Get the property details tree header.
      *
-     * @param typeElement the class being documented
      * @param memberDetailsTree the content tree representing member details
      * @return content tree for the property details header
      */
-    Content getPropertyDetailsTreeHeader(TypeElement typeElement,
-                                         Content memberDetailsTree);
+    Content getPropertyDetailsTreeHeader(Content memberDetailsTree);
 
     /**
      * Get the property documentation tree header.
      *
      * @param property the property being documented
-     * @param propertyDetailsTree the content tree representing property details
      * @return content tree for the property documentation header
      */
-    Content getPropertyDocTreeHeader(ExecutableElement property,
-                                     Content propertyDetailsTree);
+    Content getPropertyDocTreeHeader(ExecutableElement property);
 
     /**
      * Get the signature for the given property.

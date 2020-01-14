@@ -77,6 +77,7 @@ public class Table {
     private final List<Content> bodyRows;
     private final List<Integer> bodyRowMasks;
     private String rowIdPrefix = "i";
+    private String id;
 
     /**
      * Creates a builder for an HTML table.
@@ -277,6 +278,17 @@ public class Table {
     }
 
     /**
+     * Sets the id attribute of the table.
+     *
+     * @param id the id
+     * @return this object
+     */
+    public Table setId(String id) {
+        this.id = id;
+        return this;
+    }
+
+    /**
      * Add a row of data to the table.
      * Each item of content should be suitable for use as the content of a
      * {@code <th>} or {@code <td>} cell.
@@ -396,6 +408,9 @@ public class Table {
     public Content toContent() {
         HtmlTree mainDiv = new HtmlTree(HtmlTag.DIV);
         mainDiv.setStyle(tableStyle);
+        if (id != null) {
+            mainDiv.setId(id);
+        }
         HtmlTree table = new HtmlTree(HtmlTag.TABLE);
         if (tabMap == null || tabs.size() == 1) {
             if (tabMap == null) {

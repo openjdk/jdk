@@ -24,12 +24,9 @@
  */
 package jdk.javadoc.internal.doclets.formats.html.markup;
 
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
 
@@ -79,11 +76,12 @@ public class Navigation {
     private boolean displaySummaryModulesLink;
     private boolean displaySummaryPackagesLink;
     private boolean displaySummaryServicesLink;
-    private final Map<Position, Deque<Content>> topBottomNavContents;
     private Content userHeader;
     private Content userFooter;
     private final String rowListTitle;
     private final Content searchLabel;
+
+    private static final Content EMPTY_COMMENT = new Comment(" ");
 
     public enum PageMode {
         ALLCLASSES,
@@ -141,41 +139,8 @@ public class Navigation {
         this.path = path;
         this.pathToRoot = path.parent().invert();
         this.links = new Links(path);
-        this.topBottomNavContents = new HashMap<>();
         this.rowListTitle = configuration.getResources().getText("doclet.Navigation");
         this.searchLabel = contents.getContent("doclet.search");
-        populateNavContents(Position.TOP);
-        populateNavContents(Position.BOTTOM);
-    }
-
-    /**
-     * Populate the navigation contents for top and bottom navigation
-     *
-     * @param position the position of the navigation bar on the page
-     */
-    private void populateNavContents(Position position) {
-        Deque<Content> queue = new ArrayDeque<>();
-        Content skipNavLinks = contents.getContent("doclet.Skip_navigation_links");
-        switch (position) {
-            case TOP:
-                queue.addLast(links.createAnchor(SectionName.NAVBAR_TOP));
-                queue.addLast(links.createLink(SectionName.SKIP_NAVBAR_TOP, skipNavLinks,
-                        skipNavLinks.toString(), ""));
-                queue.addLast(links.createAnchor(SectionName.NAVBAR_TOP_FIRSTROW));
-                queue.addLast(links.createAnchor(SectionName.SKIP_NAVBAR_TOP));
-                topBottomNavContents.put(position, queue);
-                break;
-            case BOTTOM:
-                queue.addLast(links.createAnchor(SectionName.NAVBAR_BOTTOM));
-                queue.addLast(links.createLink(SectionName.SKIP_NAVBAR_BOTTOM, skipNavLinks,
-                        skipNavLinks.toString(), ""));
-                queue.addLast(links.createAnchor(SectionName.NAVBAR_BOTTOM_FIRSTROW));
-                queue.addLast(links.createAnchor(SectionName.SKIP_NAVBAR_BOTTOM));
-                topBottomNavContents.put(position, queue);
-                break;
-            default:
-                break;
-        }
     }
 
     public Navigation setNavLinkModule(Content navLinkModule) {
@@ -946,23 +911,27 @@ public class Navigation {
         if (configuration.nonavbar) {
             return new ContentBuilder();
         }
-        Deque<Content> queue;
         Content tree = HtmlTree.NAV();
         HtmlTree navDiv = new HtmlTree(HtmlTag.DIV);
+        Content skipNavLinks = contents.getContent("doclet.Skip_navigation_links");
         if (top) {
-            queue = topBottomNavContents.get(Position.TOP);
             tree.add(Position.TOP.startOfNav());
-            navDiv.setStyle(HtmlStyle.topNav);
+            navDiv.setStyle(HtmlStyle.topNav)
+                    .setId(SectionName.NAVBAR_TOP.getName())
+                    .add(HtmlTree.DIV(HtmlStyle.skipNav,
+                            links.createLink(SectionName.SKIP_NAVBAR_TOP, skipNavLinks,
+                                    skipNavLinks.toString(), "")));
         } else {
-            queue = topBottomNavContents.get(Position.BOTTOM);
             tree.add(Position.BOTTOM.startOfNav());
-            navDiv.setStyle(HtmlStyle.bottomNav);
+            navDiv.setStyle(HtmlStyle.bottomNav)
+                    .setId(SectionName.NAVBAR_BOTTOM.getName())
+                    .add(HtmlTree.DIV(HtmlStyle.skipNav,
+                            links.createLink(SectionName.SKIP_NAVBAR_BOTTOM, skipNavLinks,
+                                    skipNavLinks.toString(), "")));
         }
-        navDiv.add(queue.poll());
-        HtmlTree skipLinkDiv = HtmlTree.DIV(HtmlStyle.skipNav, queue.poll());
-        navDiv.add(skipLinkDiv);
-        navDiv.add(queue.poll());
         HtmlTree navList = new HtmlTree(HtmlTag.UL);
+        navList.setId(top ? SectionName.NAVBAR_TOP_FIRSTROW.getName()
+                          : SectionName.NAVBAR_BOTTOM_FIRSTROW.getName());
         navList.setStyle(HtmlStyle.navList);
         navList.put(HtmlAttr.TITLE, rowListTitle);
         addMainNavLinks(navList);
@@ -990,10 +959,12 @@ public class Navigation {
         tree.add(subDiv);
         if (top) {
             tree.add(Position.TOP.endOfNav());
-            tree.add(HtmlTree.DIV(HtmlStyle.skipNav, queue.poll()));
+            tree.add(HtmlTree.SPAN(HtmlStyle.skipNav, EMPTY_COMMENT)
+                    .setId(SectionName.SKIP_NAVBAR_TOP.getName()));
         } else {
-            tree.add(queue.poll());
             tree.add(Position.BOTTOM.endOfNav());
+            tree.add(HtmlTree.SPAN(HtmlStyle.skipNav, EMPTY_COMMENT)
+                    .setId(SectionName.SKIP_NAVBAR_BOTTOM.getName()));
         }
         return tree;
     }

@@ -320,7 +320,7 @@ public class SourceToHTMLConverter {
      */
     private void addLine(Content pre, String line, int currentLineNo) {
         if (line != null) {
-            Content anchor = HtmlTree.A_ID(
+            Content anchor = HtmlTree.SPAN_ID(
                     "line." + Integer.toString(currentLineNo),
                     new StringContent(utils.replaceTabs(line)));
             pre.add(anchor);

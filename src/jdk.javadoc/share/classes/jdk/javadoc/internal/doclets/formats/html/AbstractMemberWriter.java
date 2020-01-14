@@ -153,22 +153,6 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter {
     public abstract void addInheritedSummaryLabel(TypeElement typeElement, Content inheritedTree);
 
     /**
-     * Add the anchor for the summary section of the member.
-     *
-     * @param typeElement the TypeElement to be documented
-     * @param memberTree the content tree to which the summary anchor will be added
-     */
-    public abstract void addSummaryAnchor(TypeElement typeElement, Content memberTree);
-
-    /**
-     * Add the anchor for the inherited summary section of the member.
-     *
-     * @param typeElement the TypeElement to be documented
-     * @param inheritedTree the content tree to which the inherited summary anchor will be added
-     */
-    public abstract void addInheritedSummaryAnchor(TypeElement typeElement, Content inheritedTree);
-
-    /**
      * Add the summary type for the member.
      *
      * @param member the member to be documented

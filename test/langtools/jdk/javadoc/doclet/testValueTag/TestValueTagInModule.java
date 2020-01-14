@@ -68,9 +68,8 @@ public class TestValueTagInModule extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("m1/module-summary.html", true,
-                "<a id=\"module.description\">\n"
-                + "<!--   -->\n"
-                + "</a>\n"
+                "<section class=\"moduleDescription\" id=\"module.description\">\n"
+                + "<!-- ============ MODULE DESCRIPTION =========== -->\n"
                 + "<div class=\"block\">value of field CONS : <a href=\"pkg/A.html#CONS\">100</a></div>");
     }
 
