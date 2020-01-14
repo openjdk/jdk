@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,9 +78,7 @@ static ArchivableStaticFieldInfo closed_archive_subgraph_entry_fields[] = {
 // Entry fields for subgraphs archived in the open archive heap region.
 static ArchivableStaticFieldInfo open_archive_subgraph_entry_fields[] = {
   {"jdk/internal/module/ArchivedModuleGraph",  "archivedModuleGraph"},
-  {"java/util/ImmutableCollections$ListN",     "EMPTY_LIST"},
-  {"java/util/ImmutableCollections$MapN",      "EMPTY_MAP"},
-  {"java/util/ImmutableCollections$SetN",      "EMPTY_SET"},
+  {"java/util/ImmutableCollections",           "archivedObjects"},
   {"java/lang/module/Configuration",           "EMPTY_CONFIGURATION"},
   {"jdk/internal/math/FDBigInteger",           "archivedCaches"},
 };
