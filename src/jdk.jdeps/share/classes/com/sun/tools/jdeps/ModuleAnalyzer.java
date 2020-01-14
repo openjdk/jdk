@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,22 +24,16 @@
  */
 package com.sun.tools.jdeps;
 
-import static com.sun.tools.jdeps.Graph.*;
 import static com.sun.tools.jdeps.JdepsFilter.DEFAULT_FILTER;
 import static com.sun.tools.jdeps.Module.*;
 import static java.lang.module.ModuleDescriptor.Requires.Modifier.*;
 import static java.util.stream.Collectors.*;
 
 import com.sun.tools.classfile.Dependency;
-import com.sun.tools.jdeps.JdepsTask.BadArgs;
 
 import java.io.IOException;
-import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.lang.module.ModuleDescriptor;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -80,22 +74,31 @@ public class ModuleAnalyzer {
         }
     }
 
-    public boolean run() throws IOException {
+    public boolean run(boolean ignoreMissingDeps) throws IOException {
         try {
-            // compute "requires transitive" dependences
-            modules.values().forEach(ModuleDeps::computeRequiresTransitive);
-
-            modules.values().forEach(md -> {
+            for (ModuleDeps md: modules.values()) {
+                // compute "requires transitive" dependences
+                md.computeRequiresTransitive(ignoreMissingDeps);
                 // compute "requires" dependences
-                md.computeRequires();
+                md.computeRequires(ignoreMissingDeps);
+                // print module descriptor
+                md.printModuleDescriptor();
+
                 // apply transitive reduction and reports recommended requires.
-                md.analyzeDeps();
-            });
+                boolean ok = md.analyzeDeps();
+                if (!ok) return false;
+
+                if (ignoreMissingDeps && md.hasMissingDependencies()) {
+                    log.format("Warning: --ignore-missing-deps specified. Missing dependencies from %s are ignored%n",
+                               md.root.name());
+                }
+            }
         } finally {
             dependencyFinder.shutdown();
         }
         return true;
     }
+
 
     class ModuleDeps {
         final Module root;
@@ -110,23 +113,22 @@ public class ModuleAnalyzer {
         /**
          * Compute 'requires transitive' dependences by analyzing API dependencies
          */
-        private void computeRequiresTransitive() {
+        private void computeRequiresTransitive(boolean ignoreMissingDeps) {
             // record requires transitive
-            this.requiresTransitive = computeRequires(true)
+            this.requiresTransitive = computeRequires(true, ignoreMissingDeps)
                 .filter(m -> !m.name().equals(JAVA_BASE))
                 .collect(toSet());
 
             trace("requires transitive: %s%n", requiresTransitive);
         }
 
-        private void computeRequires() {
-            this.requires = computeRequires(false).collect(toSet());
+        private void computeRequires(boolean ignoreMissingDeps) {
+            this.requires = computeRequires(false, ignoreMissingDeps).collect(toSet());
             trace("requires: %s%n", requires);
         }
 
-        private Stream<Module> computeRequires(boolean apionly) {
+        private Stream<Module> computeRequires(boolean apionly, boolean ignoreMissingDeps) {
             // analyze all classes
-
             if (apionly) {
                 dependencyFinder.parseExportedAPIs(Stream.of(root));
             } else {
@@ -135,7 +137,12 @@ public class ModuleAnalyzer {
 
             // find the modules of all the dependencies found
             return dependencyFinder.getDependences(root)
+                        .filter(a -> !(ignoreMissingDeps && Analyzer.notFound(a)))
                         .map(Archive::getModule);
+        }
+
+        boolean hasMissingDependencies() {
+            return dependencyFinder.getDependences(root).anyMatch(Analyzer::notFound);
         }
 
         ModuleDescriptor descriptor() {
@@ -196,12 +203,30 @@ public class ModuleAnalyzer {
             return descriptor(requiresTransitive, g.adjacentNodes(root));
         }
 
+        private void showMissingDeps() {
+            // build the analyzer if there are missing dependences
+            Analyzer analyzer = new Analyzer(configuration, Analyzer.Type.CLASS, DEFAULT_FILTER);
+            analyzer.run(Set.of(root), dependencyFinder.locationToArchive());
+            log.println("Error: Missing dependencies: classes not found from the module path.");
+            Analyzer.Visitor visitor = new Analyzer.Visitor() {
+                @Override
+                public void visitDependence(String origin, Archive originArchive, String target, Archive targetArchive) {
+                    log.format("   %-50s -> %-50s %s%n", origin, target, targetArchive.getName());
+                }
+            };
+            analyzer.visitDependences(root, visitor, Analyzer.Type.VERBOSE, Analyzer::notFound);
+            log.println();
+        }
+
         /**
          * Apply transitive reduction on the resulting graph and reports
          * recommended requires.
          */
-        private void analyzeDeps() {
-            printModuleDescriptor(log, root);
+        private boolean analyzeDeps() {
+            if (requires.stream().anyMatch(m -> m == UNNAMED_MODULE)) {
+                showMissingDeps();
+                return false;
+            }
 
             ModuleDescriptor analyzedDescriptor = descriptor();
             if (!matches(root.descriptor(), analyzedDescriptor)) {
@@ -223,6 +248,7 @@ public class ModuleAnalyzer {
 
             checkQualifiedExports();
             log.println();
+            return true;
         }
 
         private void checkQualifiedExports() {
@@ -237,6 +263,10 @@ public class ModuleAnalyzer {
                     unusedQualifiedExports.get(pn).stream()
                         .sorted()
                         .collect(joining(","))));
+        }
+
+        void printModuleDescriptor() {
+            printModuleDescriptor(log, root);
         }
 
         private void printModuleDescriptor(PrintWriter out, Module module) {

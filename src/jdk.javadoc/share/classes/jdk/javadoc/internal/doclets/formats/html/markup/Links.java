@@ -61,51 +61,6 @@ public class Links {
     }
 
     /**
-     * Creates an anchor of the form {@code <a id="name"><!-- --></a>}.
-     *
-     * @param name the value for the {@code id} or {@code name} attribute
-     * @return a content tree for the anchor
-     */
-    public Content createAnchor(String name) {
-        return createAnchor(getName(name), null);
-    }
-
-    /**
-     * Creates an anchor of the form {@code <a id="sectionName"><!-- --></a>}.
-     *
-     * @param sectionName the value for the {@code id} or {@code name} attribute
-     * @return a content tree for the anchor
-     */
-    public Content createAnchor(SectionName sectionName) {
-        return createAnchor(sectionName.getName(), null);
-    }
-
-    /**
-     * Creates an anchor of the form {@code <a id="sectionNameName"><!-- --></a>}.
-     *
-     * @param sectionName the first part of the value for the {@code id} or {@code name} attribute
-     * @param name the second part of the value for the {@code id} or {@code name} attribute
-     * @return a content tree for the anchor
-     */
-    public Content createAnchor(SectionName sectionName, String name) {
-        return createAnchor(sectionName.getName() + getName(name), null);
-    }
-
-    /**
-     * Creates an anchor of the form {@code <a id="anchorName">content</a>}.
-     *
-     * @param name the value for the {@code id} or {@code name} attribute
-     * @param content the content that should be added to the anchor,
-     *              or null, to use an empty comment
-     * @return a content tree for the marker anchor
-     */
-    public Content createAnchor(String name, Content content) {
-        return HtmlTree.A_ID(getName(name), (content == null ? EMPTY_COMMENT : content));
-    }
-
-    private static final Content EMPTY_COMMENT = new Comment(" ");
-
-    /**
      * Creates a link of the form {@code <a href="#where">label</a>}.
      *
      * @param where      the position of the link in the file

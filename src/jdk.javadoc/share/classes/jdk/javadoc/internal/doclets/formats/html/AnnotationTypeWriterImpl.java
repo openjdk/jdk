@@ -248,4 +248,13 @@ public class AnnotationTypeWriterImpl extends SubWriterHolderWriter
     public TypeElement getAnnotationTypeElement() {
         return annotationType;
     }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Content getMemberDetailsTree(Content contentTree) {
+        return HtmlTree.SECTION(HtmlStyle.details, contentTree)
+                .setId(SectionName.ANNOTATION_TYPE_ELEMENT_DETAIL.getName());
+    }
 }

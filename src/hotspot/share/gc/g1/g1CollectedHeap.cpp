@@ -1,4 +1,4 @@
- /*
+/*
  * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -766,7 +766,7 @@ inline HeapWord* G1CollectedHeap::attempt_allocation(size_t min_word_size,
   return result;
 }
 
-void G1CollectedHeap::dealloc_archive_regions(MemRegion* ranges, size_t count, bool is_open) {
+void G1CollectedHeap::dealloc_archive_regions(MemRegion* ranges, size_t count) {
   assert(!is_init_completed(), "Expect to be called at JVM init time");
   assert(ranges != NULL, "MemRegion array NULL");
   assert(count != 0, "No MemRegions provided");
@@ -828,7 +828,7 @@ void G1CollectedHeap::dealloc_archive_regions(MemRegion* ranges, size_t count, b
     }
 
     // Notify mark-sweep that this is no longer an archive range.
-    G1ArchiveAllocator::clear_range_archive(ranges[i], is_open);
+    G1ArchiveAllocator::clear_range_archive(ranges[i]);
   }
 
   if (uncommitted_regions != 0) {
@@ -2149,6 +2149,13 @@ bool G1CollectedHeap::try_collect_concurrently(GCCause::Cause cause,
     if (cause == GCCause::_g1_periodic_collection) {
       LOG_COLLECT_CONCURRENTLY_COMPLETE(cause, op.gc_succeeded());
       return op.gc_succeeded();
+    }
+
+    // If VMOp skipped initiating concurrent marking cycle because
+    // we're terminating, then we're done.
+    if (op.terminating()) {
+      LOG_COLLECT_CONCURRENTLY(cause, "skipped: terminating");
+      return false;
     }
 
     // Lock to get consistent set of values.

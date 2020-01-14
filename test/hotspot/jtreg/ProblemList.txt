@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -93,6 +93,7 @@ gc/metaspace/CompressedClassSpaceSizeInJmapHeap.java 8193639 solaris-all
 
 runtime/jni/terminatedThread/TestTerminatedThread.java 8219652 aix-ppc64
 runtime/ReservedStack/ReservedStackTest.java 8231031 generic-all
+runtime/Metaspace/DefineClass.java 8236901 generic-all
 
 #############################################################################
 
@@ -133,7 +134,7 @@ serviceability/sa/TestG1HeapRegion.java 8193639 solaris-all
 serviceability/sa/TestHeapDumpForInvokeDynamic.java 8193639 solaris-all
 serviceability/sa/TestHeapDumpForLargeArray.java 8193639 solaris-all
 serviceability/sa/TestInstanceKlassSize.java 8193639,8230664 solaris-all,linux-ppc64le,linux-ppc64
-serviceability/sa/TestInstanceKlassSizeForInterface.java 8193639 solaris-all
+serviceability/sa/TestInstanceKlassSizeForInterface.java 8193639,8230664 solaris-all,linux-ppc64le,linux-ppc64
 serviceability/sa/TestIntConstant.java 8193639 solaris-all
 serviceability/sa/TestJhsdbJstackLock.java 8193639 solaris-all
 serviceability/sa/TestJmapCore.java 8193639 solaris-all

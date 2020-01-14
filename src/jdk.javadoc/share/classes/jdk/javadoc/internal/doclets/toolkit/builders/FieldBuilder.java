@@ -122,12 +122,12 @@ public class FieldBuilder extends AbstractMemberBuilder {
             return;
         }
         if (!fields.isEmpty()) {
-            Content fieldDetailsTreeHeader = writer.getFieldDetailsTreeHeader(typeElement, memberDetailsTree);
+            Content fieldDetailsTreeHeader = writer.getFieldDetailsTreeHeader(memberDetailsTree);
             Content fieldDetailsTree = writer.getMemberTreeHeader();
 
             for (Element element : fields) {
                 currentElement = (VariableElement)element;
-                Content fieldDocTree = writer.getFieldDocTreeHeader(currentElement, fieldDetailsTree);
+                Content fieldDocTree = writer.getFieldDocTreeHeader(currentElement);
 
                 buildSignature(fieldDocTree);
                 buildDeprecationInfo(fieldDocTree);

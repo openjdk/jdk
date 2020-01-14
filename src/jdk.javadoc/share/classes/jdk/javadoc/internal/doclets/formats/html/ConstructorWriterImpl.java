@@ -97,7 +97,7 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
             Content memberSummaryTree) {
         memberSummaryTree.add(MarkerComments.START_OF_CONSTRUCTOR_SUMMARY);
         Content memberTree = new ContentBuilder();
-        writer.addSummaryHeader(this, typeElement, memberTree);
+        writer.addSummaryHeader(this, memberTree);
         return memberTree;
     }
 
@@ -106,21 +106,19 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
      */
     @Override
     public void addMemberTree(Content memberSummaryTree, Content memberTree) {
-        writer.addMemberTree(HtmlStyle.constructorSummary, memberSummaryTree, memberTree);
+        writer.addMemberTree(HtmlStyle.constructorSummary,
+                SectionName.CONSTRUCTOR_SUMMARY, memberSummaryTree, memberTree);
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public Content getConstructorDetailsTreeHeader(TypeElement typeElement,
-            Content memberDetailsTree) {
+    public Content getConstructorDetailsTreeHeader(Content memberDetailsTree) {
         memberDetailsTree.add(MarkerComments.START_OF_CONSTRUCTOR_DETAILS);
         Content constructorDetailsTree = new ContentBuilder();
         Content heading = HtmlTree.HEADING(Headings.TypeDeclaration.DETAILS_HEADING,
                 contents.constructorDetailsLabel);
-        constructorDetailsTree.add(links.createAnchor(
-                SectionName.CONSTRUCTOR_DETAIL));
         constructorDetailsTree.add(heading);
         return constructorDetailsTree;
     }
@@ -129,17 +127,17 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
      * {@inheritDoc}
      */
     @Override
-    public Content getConstructorDocTreeHeader(ExecutableElement constructor,
-            Content constructorDetailsTree) {
+    public Content getConstructorDocTreeHeader(ExecutableElement constructor) {
         String erasureAnchor;
         Content constructorDocTree = new ContentBuilder();
-        Content heading = new HtmlTree(Headings.TypeDeclaration.MEMBER_HEADING);
+        HtmlTree heading = new HtmlTree(Headings.TypeDeclaration.MEMBER_HEADING,
+                new StringContent(name(constructor)));
         if ((erasureAnchor = getErasureAnchor(constructor)) != null) {
-            heading.add(links.createAnchor((erasureAnchor)));
+            heading.setId(erasureAnchor);
         }
-        heading.add(links.createAnchor(writer.getAnchor(constructor), new StringContent(name(constructor))));
         constructorDocTree.add(heading);
-        return HtmlTree.SECTION(HtmlStyle.detail, constructorDocTree);
+        return HtmlTree.SECTION(HtmlStyle.detail, constructorDocTree)
+                .setId(links.getName(writer.getAnchor(constructor)));
     }
 
     /**
@@ -183,7 +181,8 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
     @Override
     public Content getConstructorDetails(Content constructorDetailsTreeHeader, Content constructorDetailsTree) {
         Content constructorDetails = new ContentBuilder(constructorDetailsTreeHeader, constructorDetailsTree);
-        return getMemberTree(HtmlTree.SECTION(HtmlStyle.constructorDetails, constructorDetails));
+        return getMemberTree(HtmlTree.SECTION(HtmlStyle.constructorDetails, constructorDetails)
+                .setId(SectionName.CONSTRUCTOR_DETAIL.getName()));
     }
 
     /**
@@ -246,21 +245,6 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
                 .setHeader(getSummaryTableHeader(typeElement))
                 .setRowScopeColumn(rowScopeColumn)
                 .setColumnStyles(bodyRowStyles);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void addSummaryAnchor(TypeElement typeElement, Content memberTree) {
-        memberTree.add(links.createAnchor(SectionName.CONSTRUCTOR_SUMMARY));
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void addInheritedSummaryAnchor(TypeElement typeElement, Content inheritedTree) {
     }
 
     /**

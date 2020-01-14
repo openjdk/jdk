@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -375,28 +375,6 @@ public:
   static int num_arguments();
   virtual void execute(DCmdSource source, TRAPS);
 };
-
-class ClassStatsDCmd : public DCmdWithParser {
-protected:
-  DCmdArgument<bool> _all;
-  DCmdArgument<bool> _csv;
-  DCmdArgument<bool> _help;
-  DCmdArgument<char*> _columns;
-public:
-  ClassStatsDCmd(outputStream* output, bool heap);
-  static const char* name() {
-    return "GC.class_stats";
-  }
-  static const char* description() {
-    return "(Deprecated) Provide statistics about Java class meta data.";
-  }
-  static const char* impact() {
-    return "High: Depends on Java heap size and content.";
-  }
-  static int num_arguments();
-  virtual void execute(DCmdSource source, TRAPS);
-};
-
 
 class ClassHierarchyDCmd : public DCmdWithParser {
 protected:

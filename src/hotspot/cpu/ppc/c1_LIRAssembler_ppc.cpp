@@ -33,8 +33,6 @@
 #include "ci/ciArrayKlass.hpp"
 #include "ci/ciInstance.hpp"
 #include "gc/shared/collectedHeap.hpp"
-#include "gc/shared/barrierSet.hpp"
-#include "gc/shared/cardTableBarrierSet.hpp"
 #include "memory/universe.hpp"
 #include "nativeInst_ppc.hpp"
 #include "oops/compressedOops.hpp"

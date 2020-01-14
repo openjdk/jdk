@@ -123,7 +123,8 @@ public class TestInterface extends JavadocTester {
                 "<dt><span class=\"overrideSpecifyLabel\">Specified by:</span></dt>\n");
 
         checkOutput("pkg/ClassWithStaticMembers.html", true,
-                "<h3><a id=\"f\">f</a></h3>\n"
+                "<section class=\"detail\" id=\"f\">\n"
+                + "<h3>f</h3>\n"
                 + "<div class=\"memberSignature\"><span class=\"modifiers\">public static</span>&nbsp;"
                 + "<span class=\"returnType\">int</span>&nbsp;<span class=\"memberName\">f</span></div>\n"
                 + "<div class=\"block\">A hider field</div>",
@@ -135,7 +136,8 @@ public class TestInterface extends JavadocTester {
                 + "<div class=\"block\">A hider method</div>\n"
                 + "</td>\n",
 
-                "<h3><a id=\"staticMethod()\">staticMethod</a></h3>\n"
+                "<section class=\"detail\" id=\"staticMethod()\">\n"
+                + "<h3>staticMethod</h3>\n"
                 + "<div class=\"memberSignature\"><span class=\"modifiers\">public static</span>&nbsp;"
                 + "<span class=\"returnType\">void</span>&nbsp;<span class=\"memberName\">staticMethod</span>()</div>\n"
                 + "<div class=\"block\"><span class=\"descfrmTypeLabel\">"
@@ -177,11 +179,10 @@ public class TestInterface extends JavadocTester {
 
         checkOutput("pkg2/Spliterator.OfDouble.html", true,
             // Ensure the correct type parameters are displayed correctly
-            "<h2>Nested classes/interfaces inherited from interface&nbsp;pkg2."
+            "<h2 id=\"nested.classes.inherited.from.class.pkg2.Spliterator\">"
+            + "Nested classes/interfaces inherited from interface&nbsp;pkg2."
             + "<a href=\"Spliterator.html\" title=\"interface in pkg2\">Spliterator</a></h2>\n"
-            + "<a id=\"nested.classes.inherited.from.class.pkg2.Spliterator\">\n"
-            + "<!--   -->\n"
-            + "</a><code><a href=\"Spliterator.OfDouble.html\" title=\"interface in pkg2\">"
+            + "<code><a href=\"Spliterator.OfDouble.html\" title=\"interface in pkg2\">"
             + "Spliterator.OfDouble</a>, <a href=\"Spliterator.OfInt.html\" "
             + "title=\"interface in pkg2\">Spliterator.OfInt</a>&lt;"
             + "<a href=\"Spliterator.OfInt.html\" title=\"type parameter in Spliterator.OfInt\">"

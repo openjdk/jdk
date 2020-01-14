@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,141 +46,6 @@
 // KlassInfoHisto is a growable array of pointers
 // to KlassInfoEntry's and is used to sort
 // the entries.
-
-#define HEAP_INSPECTION_COLUMNS_DO(f) \
-    f(inst_size, InstSize, \
-        "Size of each object instance of the Java class") \
-    f(inst_count, InstCount, \
-        "Number of object instances of the Java class")  \
-    f(inst_bytes, InstBytes, \
-        "This is usually (InstSize * InstNum). The only exception is " \
-        "java.lang.Class, whose InstBytes also includes the slots " \
-        "used to store static fields. InstBytes is not counted in " \
-        "ROAll, RWAll or Total") \
-    f(mirror_bytes, Mirror, \
-        "Size of the Klass::java_mirror() object") \
-    f(klass_bytes, KlassBytes, \
-        "Size of the InstanceKlass or ArrayKlass for this class. " \
-        "Note that this includes VTab, ITab, OopMap") \
-    f(secondary_supers_bytes, K_secondary_supers, \
-        "Number of bytes used by the Klass::secondary_supers() array") \
-    f(vtab_bytes, VTab, \
-        "Size of the embedded vtable in InstanceKlass") \
-    f(itab_bytes, ITab, \
-        "Size of the embedded itable in InstanceKlass") \
-    f(nonstatic_oopmap_bytes, OopMap, \
-        "Size of the embedded nonstatic_oop_map in InstanceKlass") \
-    f(methods_array_bytes, IK_methods, \
-        "Number of bytes used by the InstanceKlass::methods() array") \
-    f(method_ordering_bytes, IK_method_ordering, \
-        "Number of bytes used by the InstanceKlass::method_ordering() array") \
-    f(default_methods_array_bytes, IK_default_methods, \
-        "Number of bytes used by the InstanceKlass::default_methods() array") \
-    f(default_vtable_indices_bytes, IK_default_vtable_indices, \
-        "Number of bytes used by the InstanceKlass::default_vtable_indices() array") \
-    f(local_interfaces_bytes, IK_local_interfaces, \
-        "Number of bytes used by the InstanceKlass::local_interfaces() array") \
-    f(transitive_interfaces_bytes, IK_transitive_interfaces, \
-        "Number of bytes used by the InstanceKlass::transitive_interfaces() array") \
-    f(fields_bytes, IK_fields, \
-        "Number of bytes used by the InstanceKlass::fields() array") \
-    f(inner_classes_bytes, IK_inner_classes, \
-        "Number of bytes used by the InstanceKlass::inner_classes() array") \
-    f(nest_members_bytes, IK_nest_members, \
-        "Number of bytes used by the InstanceKlass::nest_members() array") \
-    f(record_components_bytes, IK_record_components, \
-        "Number of bytes used by the InstanceKlass::record_components() array") \
-    f(signers_bytes, IK_signers, \
-        "Number of bytes used by the InstanceKlass::singers() array") \
-    f(class_annotations_bytes, class_annotations, \
-        "Size of class annotations") \
-    f(class_type_annotations_bytes, class_type_annotations, \
-        "Size of class type annotations") \
-    f(fields_annotations_bytes, fields_annotations, \
-        "Size of field annotations") \
-    f(fields_type_annotations_bytes, fields_type_annotations, \
-        "Size of field type annotations") \
-    f(methods_annotations_bytes, methods_annotations, \
-        "Size of method annotations") \
-    f(methods_parameter_annotations_bytes, methods_parameter_annotations, \
-        "Size of method parameter annotations") \
-    f(methods_type_annotations_bytes, methods_type_annotations, \
-        "Size of methods type annotations") \
-    f(methods_default_annotations_bytes, methods_default_annotations, \
-        "Size of methods default annotations") \
-    f(annotations_bytes, annotations, \
-        "Size of all annotations") \
-    f(cp_bytes, Cp, \
-        "Size of InstanceKlass::constants()") \
-    f(cp_tags_bytes, CpTags, \
-        "Size of InstanceKlass::constants()->tags()") \
-    f(cp_cache_bytes, CpCache, \
-        "Size of InstanceKlass::constants()->cache()") \
-    f(cp_operands_bytes, CpOperands, \
-        "Size of InstanceKlass::constants()->operands()") \
-    f(cp_refmap_bytes, CpRefMap, \
-        "Size of InstanceKlass::constants()->reference_map()") \
-    f(cp_all_bytes, CpAll, \
-        "Sum of Cp + CpTags + CpCache + CpOperands + CpRefMap") \
-    f(method_count, MethodCount, \
-        "Number of methods in this class") \
-    f(method_bytes, MethodBytes, \
-        "Size of the Method object") \
-    f(const_method_bytes, ConstMethod, \
-        "Size of the ConstMethod object") \
-    f(method_data_bytes, MethodData, \
-        "Size of the MethodData object") \
-    f(stackmap_bytes, StackMap, \
-        "Size of the stackmap_data") \
-    f(bytecode_bytes, Bytecodes, \
-        "Of the MethodBytes column, how much are the space taken up by bytecodes") \
-    f(method_all_bytes, MethodAll, \
-        "Sum of MethodBytes + Constmethod + Stackmap + Methoddata") \
-    f(ro_bytes, ROAll, \
-        "Size of all class meta data that could (potentially) be placed " \
-        "in read-only memory. (This could change with CDS design)") \
-    f(rw_bytes, RWAll, \
-        "Size of all class meta data that must be placed in read/write " \
-        "memory. (This could change with CDS design) ") \
-    f(total_bytes, Total, \
-        "ROAll + RWAll. Note that this does NOT include InstBytes.")
-
-// Size statistics for a Klass - filled in by Klass::collect_statistics()
-class KlassSizeStats {
-public:
-#define COUNT_KLASS_SIZE_STATS_FIELD(field, name, help)   _index_ ## field,
-#define DECLARE_KLASS_SIZE_STATS_FIELD(field, name, help) julong _ ## field;
-
-  enum {
-    HEAP_INSPECTION_COLUMNS_DO(COUNT_KLASS_SIZE_STATS_FIELD)
-    _num_columns
-  };
-
-  HEAP_INSPECTION_COLUMNS_DO(DECLARE_KLASS_SIZE_STATS_FIELD)
-
-  static int count(oop x);
-
-  static int count_array(objArrayOop x);
-
-  template <class T> static int count(T* x) {
-    return (HeapWordSize * ((x) ? (x)->size() : 0));
-  }
-
-  template <class T> static int count_array(T* x) {
-    if (x == NULL) {
-      return 0;
-    }
-    if (x->length() == 0) {
-      // This is a shared array, e.g., Universe::the_empty_int_array(). Don't
-      // count it to avoid double-counting.
-      return 0;
-    }
-    return HeapWordSize * x->size();
-  }
-};
-
-
-
 
 class KlassInfoEntry: public CHeapObj<mtInternal> {
  private:
@@ -281,13 +146,7 @@ class KlassInfoHisto : public StackObj {
   GrowableArray<KlassInfoEntry*>* elements() const { return _elements; }
   static int sort_helper(KlassInfoEntry** e1, KlassInfoEntry** e2);
   void print_elements(outputStream* st) const;
-  void print_class_stats(outputStream* st, bool csv_format, const char *columns);
-  julong annotations_bytes(Array<AnnotationArray*>* p) const;
-  const char *_selected_columns;
   bool is_selected(const char *col_name);
-  void print_title(outputStream* st, bool csv_format,
-                   bool selected_columns_table[], int width_table[],
-                   const char *name_table[]);
 
   template <class T> static int count_bytes(T* x) {
     return (HeapWordSize * ((x) ? (x)->size() : 0));
@@ -339,7 +198,7 @@ class KlassInfoHisto : public StackObj {
   KlassInfoHisto(KlassInfoTable* cit);
   ~KlassInfoHisto();
   void add(KlassInfoEntry* cie);
-  void print_histo_on(outputStream* st, bool print_class_stats, bool csv_format, const char *columns);
+  void print_histo_on(outputStream* st);
   void sort();
 };
 
@@ -351,15 +210,7 @@ class KlassInfoTable;
 class KlassInfoClosure;
 
 class HeapInspection : public StackObj {
-  bool _csv_format; // "comma separated values" format for spreadsheet.
-  bool _print_help;
-  bool _print_class_stats;
-  const char* _columns;
  public:
-  HeapInspection(bool csv_format, bool print_help,
-                 bool print_class_stats, const char *columns) :
-      _csv_format(csv_format), _print_help(print_help),
-      _print_class_stats(print_class_stats), _columns(columns) {}
   void heap_inspection(outputStream* st) NOT_SERVICES_RETURN;
   size_t populate_table(KlassInfoTable* cit, BoolObjectClosure* filter = NULL) NOT_SERVICES_RETURN_(0);
   static void find_instances_at_safepoint(Klass* k, GrowableArray<oop>* result) NOT_SERVICES_RETURN;

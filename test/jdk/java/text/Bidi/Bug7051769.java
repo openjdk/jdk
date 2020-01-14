@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 7051769 8038092
+ * @bug 7051769 8038092 8174270
  * @summary verify that Bidi.toString() returns the corect result.
  *     The second run is intended to test lazy SharedSectets init for 8038092
  * @modules java.desktop
@@ -40,7 +40,7 @@ public class Bug7051769 {
         if (System.getProperty("preloadBidi", "").equals("true")) {
             // Make sure the SharedSecret is lazily initialized correctly
             try {
-                Class.forName("sun.text.bidi.BidiBase");
+                Class.forName("jdk.internal.icu.text.BidiBase");
                 System.out.println("BidiBase class has been pre-loaded.");
             } catch (ClassNotFoundException e) {
                 System.out.println("BidiBase class could not be pre-loaded.");
@@ -68,7 +68,7 @@ public class Bug7051769 {
                    TextAttribute.RUN_DIRECTION_RTL);
 
         String text = "\u0623\u0643\u062a\u0648\u0628\u0631 10";
-        String expected = "sun.text.bidi.BidiBase[dir: 2 baselevel: 1 length: 9 runs: [1 1 1 1 1 1 1 2 2] text: [0x623 0x643 0x62a 0x648 0x628 0x631 0x20 0x661 0x660]]";
+        String expected = "jdk.internal.icu.text.BidiBase[dir: 2 baselevel: 1 length: 9 runs: [1 1 1 1 1 1 1 2 2] text: [0x623 0x643 0x62a 0x648 0x628 0x631 0x20 0x661 0x660]]";
 
         AttributedString as = new AttributedString(text, attrNS);
         AttributedCharacterIterator itr = as.getIterator();

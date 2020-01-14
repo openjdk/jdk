@@ -49,7 +49,7 @@ public class TestLinkToSerialForm extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("serialized-form.html", true,
-                "<a id=\"pkg.C\">");
+                "<section class=\"serializedClassDetails\" id=\"pkg.C\">");
         checkOutput("pkg/C.html", true,
                 "<a href=\"../serialized-form.html#pkg.C\">");
     }

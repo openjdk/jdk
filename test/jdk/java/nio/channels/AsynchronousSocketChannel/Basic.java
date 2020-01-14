@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -336,8 +336,9 @@ public class Basic {
             }
 
             // close channel (should cause initial read to complete)
+            SocketChannel peer = server.accept();
             ch.close();
-            server.accept().close();
+            peer.close();
 
             // check that AsynchronousCloseException is thrown
             try {
@@ -352,7 +353,7 @@ public class Basic {
 
             ch = AsynchronousSocketChannel.open();
             ch.connect(server.address()).get();
-            SocketChannel peer = server.accept();
+            peer = server.accept();
             peer.setOption(SO_RCVBUF, 1);
 
             final AtomicReference<Throwable> writeException =

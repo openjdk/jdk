@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,7 +108,6 @@ class SafepointSynchronize : AllStatic {
   // JavaThreads that need to block for the safepoint will stop on the
   // _wait_barrier, where they can quickly be started again.
   static WaitBarrier* _wait_barrier;
-  static long         _end_of_last_safepoint;     // Time of last safepoint in milliseconds
   static julong       _coalesced_vmop_count;     // coalesced vmop count
 
   // For debug long safepoint

@@ -434,9 +434,9 @@ public class TestSearch extends JavadocTester {
                 + "pkg2.<a href=\"pkg2/TestEnum.html\" title=\"enum in pkg2\">TestEnum</a></dt>");
         checkOutput("index-all.html", true,
                 "<div class=\"deprecationComment\">class_test1 passes. Search tag"
-                + " <a id=\"SearchTagDeprecatedClass\" class=\"searchTagResult\">SearchTagDeprecatedClass</a></div>",
+                + " <span id=\"SearchTagDeprecatedClass\" class=\"searchTagResult\">SearchTagDeprecatedClass</span></div>",
                 "<div class=\"deprecationComment\">error_test3 passes. Search tag for\n"
-                + " method <a id=\"SearchTagDeprecatedMethod\" class=\"searchTagResult\">SearchTagDeprecatedMethod</a></div>");
+                + " method <span id=\"SearchTagDeprecatedMethod\" class=\"searchTagResult\">SearchTagDeprecatedMethod</span></div>");
     }
 
     void checkSplitIndex() {
@@ -516,9 +516,9 @@ public class TestSearch extends JavadocTester {
                 "<dt><span class=\"searchTagLink\"><a href=\"pkg/package-summary.html#SingleWord\">"
                 + "SingleWord</a></span> - Search tag in package pkg</dt>",
                 "<div class=\"deprecationComment\">class_test1 passes. Search tag"
-                + " <a id=\"SearchTagDeprecatedClass\">SearchTagDeprecatedClass</a></div>",
+                + " <span id=\"SearchTagDeprecatedClass\">SearchTagDeprecatedClass</span></div>",
                 "<div class=\"deprecationComment\">error_test3 passes. Search tag for\n"
-                + " method <a id=\"SearchTagDeprecatedMethod\">SearchTagDeprecatedMethod</a></div>");
+                + " method <span id=\"SearchTagDeprecatedMethod\">SearchTagDeprecatedMethod</span></div>");
         checkOutput("index-all.html", true,
                 "<dt><span class=\"searchTagLink\"><a href=\"pkg2/TestEnum.html#searchphrasedeprecated\">"
                 + "search phrase deprecated</a></span> - Search tag in pkg2.TestEnum.ONE</dt>",
@@ -547,9 +547,9 @@ public class TestSearch extends JavadocTester {
                 "<dt><span class=\"searchTagLink\"><a href=\"pkg2/TestError.html#SearchTagDeprecatedMethod\">"
                 + "SearchTagDeprecatedMethod</a></span> - Search tag in pkg2.TestError.TestError()</dt>",
                 "<div class=\"deprecationComment\">class_test1 passes. Search tag"
-                + " <a id=\"SearchTagDeprecatedClass\">SearchTagDeprecatedClass</a></div>",
+                + " <span id=\"SearchTagDeprecatedClass\">SearchTagDeprecatedClass</span></div>",
                 "<div class=\"deprecationComment\">error_test3 passes. Search tag for\n"
-                + " method <a id=\"SearchTagDeprecatedMethod\">SearchTagDeprecatedMethod</a></div>");
+                + " method <span id=\"SearchTagDeprecatedMethod\">SearchTagDeprecatedMethod</span></div>");
     }
 
     void checkJavaFXOutput() {

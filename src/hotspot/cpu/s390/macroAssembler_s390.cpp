@@ -3587,7 +3587,7 @@ void MacroAssembler::get_vm_result(Register oop_result) {
   z_lg(oop_result, Address(Z_thread, JavaThread::vm_result_offset()));
   clear_mem(Address(Z_thread, JavaThread::vm_result_offset()), sizeof(void*));
 
-  verify_oop(oop_result);
+  verify_oop(oop_result, FILE_AND_LINE);
 }
 
 void MacroAssembler::get_vm_result_2(Register result) {
@@ -6813,26 +6813,94 @@ void MacroAssembler::verify_thread() {
   }
 }
 
+// Save and restore functions: Exclude Z_R0.
+void MacroAssembler::save_volatile_regs(Register dst, int offset, bool include_fp, bool include_flags) {
+  z_stmg(Z_R1, Z_R5, offset, dst); offset += 5 * BytesPerWord;
+  if (include_fp) {
+    z_std(Z_F0, Address(dst, offset)); offset += BytesPerWord;
+    z_std(Z_F1, Address(dst, offset)); offset += BytesPerWord;
+    z_std(Z_F2, Address(dst, offset)); offset += BytesPerWord;
+    z_std(Z_F3, Address(dst, offset)); offset += BytesPerWord;
+    z_std(Z_F4, Address(dst, offset)); offset += BytesPerWord;
+    z_std(Z_F5, Address(dst, offset)); offset += BytesPerWord;
+    z_std(Z_F6, Address(dst, offset)); offset += BytesPerWord;
+    z_std(Z_F7, Address(dst, offset)); offset += BytesPerWord;
+  }
+  if (include_flags) {
+    Label done;
+    z_mvi(Address(dst, offset), 2); // encoding: equal
+    z_bre(done);
+    z_mvi(Address(dst, offset), 4); // encoding: higher
+    z_brh(done);
+    z_mvi(Address(dst, offset), 1); // encoding: lower
+    bind(done);
+  }
+}
+void MacroAssembler::restore_volatile_regs(Register src, int offset, bool include_fp, bool include_flags) {
+  z_lmg(Z_R1, Z_R5, offset, src); offset += 5 * BytesPerWord;
+  if (include_fp) {
+    z_ld(Z_F0, Address(src, offset)); offset += BytesPerWord;
+    z_ld(Z_F1, Address(src, offset)); offset += BytesPerWord;
+    z_ld(Z_F2, Address(src, offset)); offset += BytesPerWord;
+    z_ld(Z_F3, Address(src, offset)); offset += BytesPerWord;
+    z_ld(Z_F4, Address(src, offset)); offset += BytesPerWord;
+    z_ld(Z_F5, Address(src, offset)); offset += BytesPerWord;
+    z_ld(Z_F6, Address(src, offset)); offset += BytesPerWord;
+    z_ld(Z_F7, Address(src, offset)); offset += BytesPerWord;
+  }
+  if (include_flags) {
+    z_cli(Address(src, offset), 2); // see encoding above
+  }
+}
+
 // Plausibility check for oops.
 void MacroAssembler::verify_oop(Register oop, const char* msg) {
   if (!VerifyOops) return;
 
   BLOCK_COMMENT("verify_oop {");
-  Register tmp = Z_R0;
-  unsigned int nbytes_save = 5*BytesPerWord;
-  address entry = StubRoutines::verify_oop_subroutine_entry_address();
+  unsigned int nbytes_save = (5 + 8 + 1) * BytesPerWord;
+  address entry_addr = StubRoutines::verify_oop_subroutine_entry_address();
 
   save_return_pc();
-  push_frame_abi160(nbytes_save);
-  z_stmg(Z_R1, Z_R5, frame::z_abi_160_size, Z_SP);
 
-  z_lgr(Z_ARG2, oop);
-  load_const(Z_ARG1, (address) msg);
-  load_const(Z_R1, entry);
+  // Push frame, but preserve flags
+  z_lgr(Z_R0, Z_SP);
+  z_lay(Z_SP, -((int64_t)nbytes_save + frame::z_abi_160_size), Z_SP);
+  z_stg(Z_R0, _z_abi(callers_sp), Z_SP);
+
+  save_volatile_regs(Z_SP, frame::z_abi_160_size, true, true);
+
+  lgr_if_needed(Z_ARG2, oop);
+  load_const_optimized(Z_ARG1, (address)msg);
+  load_const_optimized(Z_R1, entry_addr);
   z_lg(Z_R1, 0, Z_R1);
   call_c(Z_R1);
 
-  z_lmg(Z_R1, Z_R5, frame::z_abi_160_size, Z_SP);
+  restore_volatile_regs(Z_SP, frame::z_abi_160_size, true, true);
+  pop_frame();
+  restore_return_pc();
+
+  BLOCK_COMMENT("} verify_oop ");
+}
+
+void MacroAssembler::verify_oop_addr(Address addr, const char* msg) {
+  if (!VerifyOops) return;
+
+  BLOCK_COMMENT("verify_oop {");
+  unsigned int nbytes_save = (5 + 8) * BytesPerWord;
+  address entry_addr = StubRoutines::verify_oop_subroutine_entry_address();
+
+  save_return_pc();
+  unsigned int frame_size = push_frame_abi160(nbytes_save); // kills Z_R0
+  save_volatile_regs(Z_SP, frame::z_abi_160_size, true, false);
+
+  z_lg(Z_ARG2, addr.plus_disp(frame_size));
+  load_const_optimized(Z_ARG1, (address)msg);
+  load_const_optimized(Z_R1, entry_addr);
+  z_lg(Z_R1, 0, Z_R1);
+  call_c(Z_R1);
+
+  restore_volatile_regs(Z_SP, frame::z_abi_160_size, true, false);
   pop_frame();
   restore_return_pc();
 

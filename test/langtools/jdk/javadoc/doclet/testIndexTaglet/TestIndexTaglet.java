@@ -76,8 +76,8 @@ public class TestIndexTaglet extends JavadocTester {
 
         checkOrder("pkg/A.html",
                 "<h2>Method Details</h2>\n",
-                "<div class=\"block\">test description with <a id=\"search_phrase_a\" "
-                 +    "class=\"searchTagResult\">search_phrase_a</a></div>");
+                "<div class=\"block\">test description with <span id=\"search_phrase_a\" "
+                 +    "class=\"searchTagResult\">search_phrase_a</span></div>");
 
         checkOrder("pkg/A.html",
                 "<h2>Method Summary</h2>\n",
@@ -124,7 +124,7 @@ public class TestIndexTaglet extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("pkg/A.html", true,
-                "This is a class. Here is <a id=\"foo\" class=\"searchTagResult\">foo</a>.",
-                "This is a method. Here is <a id=\"foo-1\" class=\"searchTagResult\">foo</a>.");
+                "This is a class. Here is <span id=\"foo\" class=\"searchTagResult\">foo</span>.",
+                "This is a method. Here is <span id=\"foo-1\" class=\"searchTagResult\">foo</span>.");
     }
 }

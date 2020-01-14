@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,9 @@
 
 /*
  * @test
- * @bug 4221795
+ * @bug 4221795 8174270
  * @summary Confirm Normalizer's fundamental behavior
- * @modules java.base/sun.text java.base/sun.text.normalizer
+ * @modules java.base/sun.text java.base/jdk.internal.icu.text
  * @library /java/text/testlib
  * @compile -XDignore.symbol.file NormalizerAPITest.java
  * @run main/timeout=30 NormalizerAPITest
@@ -64,8 +64,8 @@ public class NormalizerAPITest extends IntlTest {
     static final int[] options = {
         0x00,
         sun.text.Normalizer.UNICODE_3_2,
-        sun.text.normalizer.NormalizerBase.UNICODE_3_2,
-        sun.text.normalizer.NormalizerBase.UNICODE_LATEST,
+        jdk.internal.icu.text.NormalizerBase.UNICODE_3_2,
+        jdk.internal.icu.text.NormalizerBase.UNICODE_LATEST,
     };
 
     static final String nonNullStr = "testdata";
@@ -319,7 +319,7 @@ public class NormalizerAPITest extends IntlTest {
                   in.getClass().getSimpleName() + ") failed.");
         }
         out = sun.text.Normalizer.normalize(in, NFD,
-                             sun.text.normalizer.NormalizerBase.UNICODE_LATEST);
+                             jdk.internal.icu.text.NormalizerBase.UNICODE_LATEST);
         if (!out.equals(expected.toString())) {
             errln("sun.text.Normalizer.normalize(" +
                   in.getClass().getSimpleName() + ") failed.");
@@ -330,7 +330,7 @@ public class NormalizerAPITest extends IntlTest {
                   in.getClass().getSimpleName() + ") failed.");
         }
         if (!sun.text.Normalizer.isNormalized(expected, NFD,
-                           sun.text.normalizer.NormalizerBase.UNICODE_LATEST)) {
+                           jdk.internal.icu.text.NormalizerBase.UNICODE_LATEST)) {
             errln("sun.text.Normalizer.isNormalize(" +
                   in.getClass().getSimpleName() + ") failed.");
         }

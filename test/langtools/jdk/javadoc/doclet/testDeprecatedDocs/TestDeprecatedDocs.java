@@ -214,8 +214,7 @@ public class TestDeprecatedDocs extends JavadocTester {
                 + "<li><a href=\"#enum.constant\">Enum Constants</a></li>\n"
                 + "<li><a href=\"#annotation.type.member\">Annotation Type Elements</a></li>\n"
                 + "</ul>",
-                "<a id=\"forRemoval\">",
-                "<div class=\"deprecatedSummary\">\n"
+                "<div class=\"deprecatedSummary\" id=\"forRemoval\">\n"
                 + "<table>\n"
                 + "<caption><span>For Removal</span><span class=\"tabEnd\">&nbsp;</span></caption>\n"
                 + "<thead>\n"
@@ -224,7 +223,7 @@ public class TestDeprecatedDocs extends JavadocTester {
                 + "<th class=\"colLast\" scope=\"col\">Description</th>\n"
                 + "</tr>\n"
                 + "</thead>",
-                "<div class=\"deprecatedSummary\">\n"
+                "<div class=\"deprecatedSummary\" id=\"enum\">\n"
                 + "<table>\n"
                 + "<caption><span>Enums</span><span class=\"tabEnd\">&nbsp;</span></caption>\n"
                 + "<thead>\n"
@@ -243,7 +242,7 @@ public class TestDeprecatedDocs extends JavadocTester {
                 + "</tbody>\n"
                 + "</table>\n"
                 + "</div>",
-                "<div class=\"deprecatedSummary\">\n"
+                "<div class=\"deprecatedSummary\" id=\"exception\">\n"
                 + "<table>\n"
                 + "<caption><span>Exceptions</span><span class=\"tabEnd\">&nbsp;</span></caption>\n"
                 + "<thead>\n"
@@ -262,7 +261,7 @@ public class TestDeprecatedDocs extends JavadocTester {
                 + "</tbody>\n"
                 + "</table>\n"
                 + "</div>",
-                "<div class=\"deprecatedSummary\">\n"
+                "<div class=\"deprecatedSummary\" id=\"field\">\n"
                 + "<table>\n"
                 + "<caption><span>Fields</span><span class=\"tabEnd\">&nbsp;</span></caption>\n"
                 + "<thead>\n"

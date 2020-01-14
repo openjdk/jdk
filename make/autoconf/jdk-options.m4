@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -302,15 +302,21 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_DEBUG_SYMBOLS],
           if test "x$withval" = xexternal || test "x$withval" = xzipped; then
             AC_MSG_ERROR([AIX only supports the parameters 'none' and 'internal' for --with-native-debug-symbols])
           fi
+        else
+          if test "x$OPENJDK_TARGET_OS" = xwindows; then
+            if test "x$withval" = xinternal; then
+              AC_MSG_ERROR([Windows does not support the parameter 'internal' for --with-native-debug-symbols])
+            fi
+          fi
         fi
       ],
       [
-        if test "x$OPENJDK_TARGET_OS" = xaix; then
-          # AIX doesn't support 'external' so use 'internal' as default
-          with_native_debug_symbols="internal"
+        if test "x$STATIC_BUILD" = xtrue; then
+          with_native_debug_symbols="none"
         else
-          if test "x$STATIC_BUILD" = xtrue; then
-            with_native_debug_symbols="none"
+          if test "x$OPENJDK_TARGET_OS" = xaix; then
+            # AIX doesn't support 'external' so use 'internal' as default
+            with_native_debug_symbols="internal"
           else
             with_native_debug_symbols="external"
           fi
@@ -319,20 +325,7 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_DEBUG_SYMBOLS],
   NATIVE_DEBUG_SYMBOLS=$with_native_debug_symbols
   AC_MSG_RESULT([$NATIVE_DEBUG_SYMBOLS])
 
-  if test "x$NATIVE_DEBUG_SYMBOLS" = xzipped; then
-
-    if test "x$OPENJDK_TARGET_OS" = xsolaris || test "x$OPENJDK_TARGET_OS" = xlinux; then
-      if test "x$OBJCOPY" = x; then
-        # enabling of enable-debug-symbols and can't find objcopy
-        # this is an error
-        AC_MSG_ERROR([Unable to find objcopy, cannot enable native debug symbols])
-      fi
-    fi
-
-    COMPILE_WITH_DEBUG_SYMBOLS=true
-    COPY_DEBUG_SYMBOLS=true
-    ZIP_EXTERNAL_DEBUG_SYMBOLS=true
-  elif test "x$NATIVE_DEBUG_SYMBOLS" = xnone; then
+  if test "x$NATIVE_DEBUG_SYMBOLS" = xnone; then
     COMPILE_WITH_DEBUG_SYMBOLS=false
     COPY_DEBUG_SYMBOLS=false
     ZIP_EXTERNAL_DEBUG_SYMBOLS=false
@@ -353,6 +346,19 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_DEBUG_SYMBOLS],
     COMPILE_WITH_DEBUG_SYMBOLS=true
     COPY_DEBUG_SYMBOLS=true
     ZIP_EXTERNAL_DEBUG_SYMBOLS=false
+  elif test "x$NATIVE_DEBUG_SYMBOLS" = xzipped; then
+
+    if test "x$OPENJDK_TARGET_OS" = xsolaris || test "x$OPENJDK_TARGET_OS" = xlinux; then
+      if test "x$OBJCOPY" = x; then
+        # enabling of enable-debug-symbols and can't find objcopy
+        # this is an error
+        AC_MSG_ERROR([Unable to find objcopy, cannot enable native debug symbols])
+      fi
+    fi
+
+    COMPILE_WITH_DEBUG_SYMBOLS=true
+    COPY_DEBUG_SYMBOLS=true
+    ZIP_EXTERNAL_DEBUG_SYMBOLS=true
   else
     AC_MSG_ERROR([Allowed native debug symbols are: none, internal, external, zipped])
   fi

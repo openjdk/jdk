@@ -1451,7 +1451,7 @@ public class MethodHandles {
          * <li>If the new lookup class is in the same module as the old lookup class,
          * the new previous lookup class is the old previous lookup class.
          * <li>If the new lookup class is in a different module from the old lookup class,
-         * the new previous lookup class is the the old lookup class.
+         * the new previous lookup class is the old lookup class.
          *</ul>
          * <p>
          * The resulting lookup's capabilities for loading classes

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,6 +93,21 @@ public final class Recording implements Closeable {
 
     private final PlatformRecording internal;
 
+    /**
+     * Creates a recording with settings from a map of name-value pairs.
+     * <p>
+     * A newly created recording is in the {@link RecordingState#NEW} state. To start
+     * the recording, invoke the {@link Recording#start()} method.
+     *
+     * @throws IllegalStateException if Flight Recorder can't be created (for
+     *         example, if the Java Virtual Machine (JVM) lacks Flight Recorder
+     *         support, or if the file repository can't be created or accessed)
+     *
+     * @throws SecurityException If a security manager is used and
+     *         FlightRecorderPermission "accessFlightRecorder" is not set.
+     *
+     * @see jdk.jfr
+     */
     public Recording(Map<String, String> settings) {
         PlatformRecorder r = FlightRecorder.getFlightRecorder().getInternal();
         synchronized (r) {
@@ -424,7 +439,7 @@ public final class Recording implements Closeable {
          *
          * @since 14
          */
-        public void setFlushInterval(Duration interval) {
+        /*package private*/ void setFlushInterval(Duration interval) {
             Objects.nonNull(interval);
             if (interval.isNegative()) {
                 throw new IllegalArgumentException("Stream interval can't be negative");
@@ -439,7 +454,7 @@ public final class Recording implements Closeable {
      *
      * @since 14
      */
-    public Duration getFlushInterval() {
+    /*package private*/ Duration getFlushInterval() {
         return internal.getFlushInterval();
     }
 

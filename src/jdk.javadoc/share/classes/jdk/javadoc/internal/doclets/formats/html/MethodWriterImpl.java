@@ -83,7 +83,7 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
     public Content getMemberSummaryHeader(TypeElement typeElement, Content memberSummaryTree) {
         memberSummaryTree.add(MarkerComments.START_OF_METHOD_SUMMARY);
         Content memberTree = new ContentBuilder();
-        writer.addSummaryHeader(this, typeElement, memberTree);
+        writer.addSummaryHeader(this, memberTree);
         return memberTree;
     }
 
@@ -92,19 +92,19 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
      */
     @Override
     public void addMemberTree(Content memberSummaryTree, Content memberTree) {
-        writer.addMemberTree(HtmlStyle.methodSummary, memberSummaryTree, memberTree);
+        writer.addMemberTree(HtmlStyle.methodSummary,
+                SectionName.METHOD_SUMMARY, memberSummaryTree, memberTree);
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public Content getMethodDetailsTreeHeader(TypeElement typeElement, Content memberDetailsTree) {
+    public Content getMethodDetailsTreeHeader(Content memberDetailsTree) {
         memberDetailsTree.add(MarkerComments.START_OF_METHOD_DETAILS);
         Content methodDetailsTree = new ContentBuilder();
         Content heading = HtmlTree.HEADING(Headings.TypeDeclaration.DETAILS_HEADING,
                 contents.methodDetailLabel);
-        methodDetailsTree.add(links.createAnchor(SectionName.METHOD_DETAIL));
         methodDetailsTree.add(heading);
         return methodDetailsTree;
     }
@@ -113,16 +113,17 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
      * {@inheritDoc}
      */
     @Override
-    public Content getMethodDocTreeHeader(ExecutableElement method, Content methodDetailsTree) {
+    public Content getMethodDocTreeHeader(ExecutableElement method) {
         String erasureAnchor;
         Content methodDocTree = new ContentBuilder();
-        Content heading = new HtmlTree(Headings.TypeDeclaration.MEMBER_HEADING);
+        HtmlTree heading = new HtmlTree(Headings.TypeDeclaration.MEMBER_HEADING,
+                new StringContent(name(method)));
         if ((erasureAnchor = getErasureAnchor(method)) != null) {
-            heading.add(links.createAnchor((erasureAnchor)));
+            heading.setId(erasureAnchor);
         }
-        heading.add(links.createAnchor(writer.getAnchor(method), new StringContent(name(method))));
         methodDocTree.add(heading);
-        return HtmlTree.SECTION(HtmlStyle.detail, methodDocTree);
+        return HtmlTree.SECTION(HtmlStyle.detail, methodDocTree)
+                .setId(links.getName(writer.getAnchor(method)));
     }
 
     /**
@@ -195,7 +196,8 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
     @Override
     public Content getMethodDetails(Content methodDetailsTreeHeader, Content methodDetailsTree) {
         Content methodDetails = new ContentBuilder(methodDetailsTreeHeader, methodDetailsTree);
-        return getMemberTree(HtmlTree.SECTION(HtmlStyle.methodDetails, methodDetails));
+        return getMemberTree(HtmlTree.SECTION(HtmlStyle.methodDetails, methodDetails)
+                .setId(SectionName.METHOD_DETAIL.getName()));
     }
 
     /**
@@ -247,23 +249,6 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
      * {@inheritDoc}
      */
     @Override
-    public void addSummaryAnchor(TypeElement typeElement, Content memberTree) {
-        memberTree.add(links.createAnchor(SectionName.METHOD_SUMMARY));
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void addInheritedSummaryAnchor(TypeElement typeElement, Content inheritedTree) {
-        inheritedTree.add(links.createAnchor(
-                SectionName.METHODS_INHERITANCE, configuration.getClassName(typeElement)));
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
     public void addInheritedSummaryLabel(TypeElement typeElement, Content inheritedTree) {
         Content classLink = writer.getPreQualifiedClassLink(
                 LinkInfoImpl.Kind.MEMBER, typeElement, false);
@@ -277,8 +262,10 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
                     ? resources.getText("doclet.Methods_Inherited_From_Class")
                     : resources.getText("doclet.Methods_Inherited_From_Interface"));
         }
-        Content labelHeading = HtmlTree.HEADING(Headings.TypeDeclaration.INHERITED_SUMMARY_HEADING,
+        HtmlTree labelHeading = HtmlTree.HEADING(Headings.TypeDeclaration.INHERITED_SUMMARY_HEADING,
                 label);
+        labelHeading.setId(SectionName.METHODS_INHERITANCE.getName()
+                + links.getName(configuration.getClassName(typeElement)));
         labelHeading.add(Entity.NO_BREAK_SPACE);
         labelHeading.add(classLink);
         inheritedTree.add(labelHeading);
@@ -330,9 +317,9 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
                     writer.getLink(new LinkInfoImpl(writer.configuration, context, overriddenType));
             Content codeOverriddenTypeLink = HtmlTree.CODE(overriddenTypeLink);
             Content methlink = writer.getLink(
-                    new LinkInfoImpl(writer.configuration, LinkInfoImpl.Kind.MEMBER,
-                    holder)
-                    .where(writer.links.getName(writer.getAnchor(method))).label(method.getSimpleName()));
+                    new LinkInfoImpl(writer.configuration, LinkInfoImpl.Kind.MEMBER, holder)
+                            .where(writer.links.getName(writer.getAnchor(method)))
+                            .label(method.getSimpleName()));
             Content codeMethLink = HtmlTree.CODE(methlink);
             Content dd = HtmlTree.DD(codeMethLink);
             dd.add(Entity.NO_BREAK_SPACE);

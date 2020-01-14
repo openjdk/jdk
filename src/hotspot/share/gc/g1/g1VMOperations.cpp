@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,6 +47,7 @@ VM_G1TryInitiateConcMark::VM_G1TryInitiateConcMark(uint gc_count_before,
   _target_pause_time_ms(target_pause_time_ms),
   _transient_failure(false),
   _cycle_already_in_progress(false),
+  _terminating(false),
   _gc_succeeded(false)
 {}
 
@@ -66,7 +67,17 @@ void VM_G1TryInitiateConcMark::doit() {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
   GCCauseSetter x(g1h, _gc_cause);
-  if (!g1h->policy()->force_initial_mark_if_outside_cycle(_gc_cause)) {
+
+  // Record for handling by caller.
+  _terminating = g1h->_cm_thread->should_terminate();
+
+  if (_terminating && GCCause::is_user_requested_gc(_gc_cause)) {
+    // When terminating, the request to initiate a concurrent cycle will be
+    // ignored by do_collection_pause_at_safepoint; instead it will just do
+    // a young-only or mixed GC (depending on phase).  For a user request
+    // there's no point in even doing that much, so done.  For some non-user
+    // requests the alternative GC might still be needed.
+  } else if (!g1h->policy()->force_initial_mark_if_outside_cycle(_gc_cause)) {
     // Failure to force the next GC pause to be an initial mark indicates
     // there is already a concurrent marking cycle in progress.  Set flag
     // to notify the caller and return immediately.

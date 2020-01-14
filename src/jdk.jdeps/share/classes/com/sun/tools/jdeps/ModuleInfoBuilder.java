@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,7 +98,7 @@ public class ModuleInfoBuilder {
         }
     }
 
-    public boolean run() throws IOException {
+    public boolean run(boolean ignoreMissingDeps, PrintWriter log, boolean quiet) throws IOException {
         try {
             // pass 1: find API dependencies
             Map<Archive, Set<Archive>> requiresTransitive = computeRequiresTransitive();
@@ -108,52 +108,65 @@ public class ModuleInfoBuilder {
 
             analyzer.run(automaticModules(), dependencyFinder.locationToArchive());
 
-            boolean missingDeps = false;
             for (Module m : automaticModules()) {
                 Set<Archive> apiDeps = requiresTransitive.containsKey(m)
                                             ? requiresTransitive.get(m)
                                             : Collections.emptySet();
 
-                Path file = outputdir.resolve(m.name()).resolve("module-info.java");
+                // if this is a multi-release JAR, write to versions/$VERSION/module-info.java
+                Runtime.Version version = configuration.getVersion();
+                Path dir = version != null
+                            ? outputdir.resolve(m.name())
+                                       .resolve("versions")
+                                       .resolve(String.valueOf(version.feature()))
+                            : outputdir.resolve(m.name());
+                Path file = dir.resolve("module-info.java");
 
                 // computes requires and requires transitive
-                Module normalModule = toNormalModule(m, apiDeps);
+                Module normalModule = toNormalModule(m, apiDeps, ignoreMissingDeps);
                 if (normalModule != null) {
                     automaticToNormalModule.put(m, normalModule);
 
                     // generate module-info.java
-                    System.out.format("writing to %s%n", file);
+                    if (!quiet) {
+                        if (ignoreMissingDeps && analyzer.requires(m).anyMatch(Analyzer::notFound)) {
+                            log.format("Warning: --ignore-missing-deps specified. Missing dependencies from %s are ignored%n",
+                                       m.name());
+                        }
+                        log.format("writing to %s%n", file);
+                    }
                     writeModuleInfo(file,  normalModule.descriptor());
                 } else {
                     // find missing dependences
-                    System.out.format("Missing dependence: %s not generated%n", file);
-                    missingDeps = true;
+                    return false;
                 }
             }
 
-            return !missingDeps;
         } finally {
             dependencyFinder.shutdown();
         }
+        return true;
     }
 
-    private Module toNormalModule(Module module, Set<Archive> requiresTransitive)
+    private Module toNormalModule(Module module, Set<Archive> requiresTransitive, boolean ignoreMissingDeps)
         throws IOException
     {
         // done analysis
         module.close();
 
-        if (analyzer.requires(module).anyMatch(Analyzer::notFound)) {
+        if (!ignoreMissingDeps && analyzer.requires(module).anyMatch(Analyzer::notFound)) {
             // missing dependencies
             return null;
         }
 
         Map<String, Boolean> requires = new HashMap<>();
         requiresTransitive.stream()
+            .filter(a -> !(ignoreMissingDeps && Analyzer.notFound(a)))
             .map(Archive::getModule)
             .forEach(m -> requires.put(m.name(), Boolean.TRUE));
 
         analyzer.requires(module)
+            .filter(a -> !(ignoreMissingDeps && Analyzer.notFound(a)))
             .map(Archive::getModule)
             .forEach(d -> requires.putIfAbsent(d.name(), Boolean.FALSE));
 

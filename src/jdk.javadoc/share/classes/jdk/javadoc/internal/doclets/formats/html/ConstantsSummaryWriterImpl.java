@@ -175,22 +175,24 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
     @Override
     public void addPackageName(PackageElement pkg, Content summariesTree, boolean first) {
         Content pkgNameContent;
+        String anchorName;
         if (!first) {
             summariesTree.add(summaryTree);
         }
         if (pkg.isUnnamed()) {
-            summariesTree.add(links.createAnchor(SectionName.UNNAMED_PACKAGE_ANCHOR));
+            anchorName = SectionName.UNNAMED_PACKAGE_ANCHOR.getName();
             pkgNameContent = contents.defaultPackageLabel;
         } else {
             String parsedPackageName = utils.parsePackageName(pkg);
-            summariesTree.add(links.createAnchor(parsedPackageName));
+            anchorName = parsedPackageName;
             pkgNameContent = getPackageLabel(parsedPackageName);
         }
         Content headingContent = new StringContent(".*");
         Content heading = HtmlTree.HEADING(Headings.ConstantsSummary.PACKAGE_HEADING, true,
                 pkgNameContent);
         heading.add(headingContent);
-        summaryTree = HtmlTree.SECTION(HtmlStyle.constantsSummary, heading);
+        summaryTree = HtmlTree.SECTION(HtmlStyle.constantsSummary, heading)
+                .setId(links.getName(anchorName));
     }
 
     /**
@@ -253,11 +255,9 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
      * @return the type column of the constant table row
      */
     private Content getTypeColumn(VariableElement member) {
-        Content anchor = links.createAnchor(
-                currentTypeElement.getQualifiedName() + "." + member.getSimpleName());
         Content typeContent = new ContentBuilder();
-        typeContent.add(anchor);
-        Content code = new HtmlTree(HtmlTag.CODE);
+        String id = currentTypeElement.getQualifiedName() + "." + member.getSimpleName();
+        Content code = new HtmlTree(HtmlTag.CODE).setId(id);
         for (Modifier mod : member.getModifiers()) {
             Content modifier = new StringContent(mod.toString());
             code.add(modifier);

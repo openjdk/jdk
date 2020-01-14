@@ -153,8 +153,8 @@ public class SerializedFormWriterImpl extends SubWriterHolderWriter
                 ? getLink(new LinkInfoImpl(configuration, LinkInfoImpl.Kind.DEFAULT, typeElement)
                         .label(configuration.getClassName(typeElement)))
                 : new StringContent(utils.getFullyQualifiedName(typeElement));
-        Content section = HtmlTree.SECTION(HtmlStyle.serializedClassDetails, links.createAnchor(
-                utils.getFullyQualifiedName(typeElement)));
+        Content section = HtmlTree.SECTION(HtmlStyle.serializedClassDetails)
+                .setId(utils.getFullyQualifiedName(typeElement));
         Content superClassLink = typeElement.getSuperclass() != null
                 ? getLink(new LinkInfoImpl(configuration, LinkInfoImpl.Kind.SERIALIZED_FORM,
                         typeElement.getSuperclass()))

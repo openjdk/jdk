@@ -108,7 +108,7 @@ void BarrierSetAssembler::resolve_jobject(MacroAssembler* masm, Register value, 
   __ z_nill(value, ~JNIHandles::weak_tag_mask);
   __ z_lg(value, 0, value); // Resolve (untagged) jobject.
 
-  __ verify_oop(value);
+  __ verify_oop(value, FILE_AND_LINE);
   __ bind(Ldone);
 }
 

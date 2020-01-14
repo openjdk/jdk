@@ -43,20 +43,18 @@ public interface MethodWriter {
     /**
      * Get the method details tree header.
      *
-     * @param typeElement the class being documented
      * @param memberDetailsTree the content tree representing member details
      * @return content tree for the method details header
      */
-    Content getMethodDetailsTreeHeader(TypeElement typeElement, Content memberDetailsTree);
+    Content getMethodDetailsTreeHeader(Content memberDetailsTree);
 
     /**
      * Get the method documentation tree header.
      *
      * @param method the method being documented
-     * @param methodDetailsTree the content tree representing method details
      * @return content tree for the method documentation header
      */
-    Content getMethodDocTreeHeader(ExecutableElement method, Content methodDetailsTree);
+    Content getMethodDocTreeHeader(ExecutableElement method);
 
     /**
      * Get the signature for the given method.

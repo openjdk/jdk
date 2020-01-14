@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,15 @@ import sun.hotspot.WhiteBox;
 public class Compiler {
 
     private static final WhiteBox WB = WhiteBox.getWhiteBox();
+
+    /**
+     * Check if C2 or JVMCI were included in the VM build
+     *
+     * @return true if either C2 or JVMCI were included in the VM build.
+     */
+    public static boolean isC2OrJVMCIIncludedInVmBuild() {
+        return WB.isC2OrJVMCIIncludedInVmBuild();
+    }
 
     /**
      * Check if Graal is used as JIT compiler.

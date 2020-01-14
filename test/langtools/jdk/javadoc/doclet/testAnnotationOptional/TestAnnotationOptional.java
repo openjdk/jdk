@@ -49,6 +49,6 @@ public class TestAnnotationOptional extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("pkg/AnnotationOptional.html", true,
-            "<a id=\"annotation.type.element.detail\">");
+            "<section class=\"details\" id=\"annotation.type.element.detail\">");
     }
 }

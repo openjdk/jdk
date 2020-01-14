@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,40 +50,23 @@ import java.util.*;
  *          jdk.hotspot.agent/sun.jvm.hotspot.utilities
  *          jdk.hotspot.agent/sun.jvm.hotspot.oops
  *          jdk.hotspot.agent/sun.jvm.hotspot.debugger
- * @run main/othervm TestInstanceKlassSize
+ * @build sun.hotspot.WhiteBox
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox sun.hotspot.WhiteBox$WhiteBoxPermission
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. TestInstanceKlassSize
  */
+
+import sun.hotspot.WhiteBox;
 
 public class TestInstanceKlassSize {
 
-    private static String getJcmdInstanceKlassSize(OutputAnalyzer output,
-                                                   String instanceKlassName) {
-        for (String s : output.asLines()) {
-            if (s.contains(instanceKlassName)) {
-                String tokens[];
-                System.out.println(s);
-                tokens = s.split("\\s+");
-                return tokens[3];
-            }
-        }
-        return null;
-    }
-
-    private static OutputAnalyzer jcmd(Long pid,
-                                       String... toolArgs) throws Exception {
-        ProcessBuilder processBuilder = new ProcessBuilder();
-        JDKToolLauncher launcher = JDKToolLauncher.createUsingTestJDK("jcmd");
-        launcher.addToolArg(Long.toString(pid));
-        if (toolArgs != null) {
-            for (String toolArg : toolArgs) {
-                launcher.addToolArg(toolArg);
-            }
-        }
-
-        processBuilder.command(launcher.getCommand());
-        System.out.println(
-            processBuilder.command().stream().collect(Collectors.joining(" ")));
-        return ProcessTools.executeProcess(processBuilder);
-    }
+    public static WhiteBox wb = WhiteBox.getWhiteBox();
+    private static String[] SAInstanceKlassNames = new String[] {
+                                                "java.lang.Object",
+                                                "java.util.Vector",
+                                                "java.lang.String",
+                                                "java.lang.Thread",
+                                                "java.lang.Byte"
+                                             };
 
     private static void startMeWithArgs() throws Exception {
 
@@ -100,48 +83,41 @@ public class TestInstanceKlassSize {
             throw new RuntimeException(ex);
         }
         try {
-            String[] instanceKlassNames = new String[] {
-                                              " java.lang.Object",
-                                              " java.util.Vector",
-                                              " java.lang.String",
-                                              " java.lang.Thread",
-                                              " java.lang.Byte",
-                                          };
+            // Run this app with the LingeredApp PID to get SA output from the LingeredApp
             String[] toolArgs = {
                 "--add-modules=jdk.hotspot.agent",
                 "--add-exports=jdk.hotspot.agent/sun.jvm.hotspot=ALL-UNNAMED",
                 "--add-exports=jdk.hotspot.agent/sun.jvm.hotspot.utilities=ALL-UNNAMED",
                 "--add-exports=jdk.hotspot.agent/sun.jvm.hotspot.oops=ALL-UNNAMED",
                 "--add-exports=jdk.hotspot.agent/sun.jvm.hotspot.debugger=ALL-UNNAMED",
+                "-XX:+UnlockDiagnosticVMOptions",
+                "-XX:+WhiteBoxAPI",
+                "-Xbootclasspath/a:.",
                 "TestInstanceKlassSize",
                 Long.toString(app.getPid())
             };
 
-            OutputAnalyzer jcmdOutput = jcmd(
-                           app.getPid(),
-                           "GC.class_stats", "VTab,ITab,OopMap,KlassBytes");
             ProcessBuilder processBuilder = ProcessTools
                                             .createJavaProcessBuilder(toolArgs);
             output = ProcessTools.executeProcess(processBuilder);
             System.out.println(output.getOutput());
             output.shouldHaveExitValue(0);
 
-            // Check whether the size matches that which jcmd outputs
-            for (String instanceKlassName : instanceKlassNames) {
-                System.out.println ("Trying to match for" + instanceKlassName);
-                String jcmdInstanceKlassSize = getJcmdInstanceKlassSize(
-                                                      jcmdOutput,
-                                                      instanceKlassName);
-                Asserts.assertNotNull(jcmdInstanceKlassSize,
-                    "Could not get the instance klass size from the jcmd output");
+            // Check whether the size matches with value from VM.
+            for (String instanceKlassName : SAInstanceKlassNames) {
+                Class<?> iklass = Class.forName(instanceKlassName);
+                System.out.println ("Trying to match for " + instanceKlassName);
+                String size = String.valueOf(wb.getKlassMetadataSize(iklass));
+                boolean match = false;
                 for (String s : output.asLines()) {
                     if (s.contains(instanceKlassName)) {
                        Asserts.assertTrue(
-                          s.contains(jcmdInstanceKlassSize),
-                          "The size computed by SA for" +
+                          s.contains(size), "The size computed by SA for" +
                           instanceKlassName + " does not match.");
+                       match = true;
                     }
                 }
+                Asserts.assertTrue(match, "Found a match for " + instanceKlassName);
             }
         } finally {
             LingeredApp.stopApp(app);
@@ -179,13 +155,6 @@ public class TestInstanceKlassSize {
             System.out.println ("No args run. Starting with args now.");
             startMeWithArgs();
         } else {
-            String[] SAInstanceKlassNames = new String[] {
-                                                "java.lang.Object",
-                                                "java.util.Vector",
-                                                "java.lang.String",
-                                                "java.lang.Thread",
-                                                "java.lang.Byte"
-                                             };
             SAInstanceKlassSize(Integer.parseInt(args[0]), SAInstanceKlassNames);
         }
     }

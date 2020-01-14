@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,13 +58,6 @@ import java.util.zip.ZipFile;
  * a .class file, a directory, or a JAR file.
  */
 public class ClassFileReader implements Closeable {
-    /**
-     * Returns a ClassFileReader instance of a given path.
-     */
-    public static ClassFileReader newInstance(Path path) throws IOException {
-        return newInstance(path, null);
-    }
-
     /**
      * Returns a ClassFileReader instance of a given path.
      */

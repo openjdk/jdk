@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -122,7 +122,6 @@ class MethodParametersElement {
   u2 flags;
 };
 
-class KlassSizeStats;
 class AdapterHandlerEntry;
 
 // Class to collect the sizes of ConstMethod inline tables
@@ -378,10 +377,6 @@ public:
 
   // ConstMethods should be stored in the read-only region of CDS archive.
   static bool is_read_only_by_default() { return true; }
-
-#if INCLUDE_SERVICES
-  void collect_statistics(KlassSizeStats *sz) const;
-#endif
 
   // code size
   int code_size() const                          { return _code_size; }

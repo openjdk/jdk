@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,10 @@
 
 /*
  * @test
- * @bug 4221795 8032446
- * @summary Confirm that java.text.Normalizer and sun.text.Normalize are
+ * @bug 4221795 8032446 8174270
+ * @summary Confirm that java.text.Normalizer and sun.text.Normalizer are
  * thread-safe.
- * @modules java.base/sun.text java.base/sun.text.normalizer
+ * @modules java.base/sun.text java.base/jdk.internal.icu.text
  * @compile -XDignore.symbol.file ThreadSafeTest.java
  * @run main/othervm -esa ThreadSafeTest 5 10
  */
@@ -115,7 +115,7 @@ public class ThreadSafeTest {
                                  sun.text.Normalizer.UNICODE_3_2);
                 testJavaNormalize(2, java.text.Normalizer.Form.NFKD);
                 testSunNormalize(3, java.text.Normalizer.Form.NFC,
-                            sun.text.normalizer.NormalizerBase.UNICODE_LATEST);
+                            jdk.internal.icu.text.NormalizerBase.UNICODE_LATEST);
                 testJavaNormalize(4, java.text.Normalizer.Form.NFD);
 
                 testIsNormalized(0, java.text.Normalizer.Form.NFKC);

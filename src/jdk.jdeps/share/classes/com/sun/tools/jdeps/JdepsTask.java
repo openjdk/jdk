@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -915,6 +915,11 @@ class JdepsTask {
                             option);
                 return false;
             }
+            if (!options.rootModules.isEmpty()) {
+                reportError("err.invalid.options", "-m or --module",
+                            option);
+                return false;
+            }
             return true;
         }
 
@@ -922,12 +927,12 @@ class JdepsTask {
         boolean run(JdepsConfiguration config) throws IOException {
             // check if any JAR file contains unnamed package
             for (String arg : inputArgs) {
-                try (ClassFileReader reader = ClassFileReader.newInstance(Paths.get(arg))) {
+                try (ClassFileReader reader = ClassFileReader.newInstance(Paths.get(arg), config.getVersion())) {
                     Optional<String> classInUnnamedPackage =
                         reader.entries().stream()
-                             .filter(n -> n.endsWith(".class"))
-                             .filter(cn -> toPackageName(cn).isEmpty())
-                             .findFirst();
+                              .filter(n -> n.endsWith(".class"))
+                              .filter(cn -> toPackageName(cn).isEmpty())
+                              .findFirst();
 
                     if (classInUnnamedPackage.isPresent()) {
                         if (classInUnnamedPackage.get().equals("module-info.class")) {
@@ -942,10 +947,10 @@ class JdepsTask {
 
             ModuleInfoBuilder builder
                  = new ModuleInfoBuilder(config, inputArgs, dir, openModule);
-            boolean ok = builder.run();
-
-            if (!ok && !options.nowarning) {
+            boolean ok = builder.run(options.ignoreMissingDeps, log, options.nowarning);
+            if (!ok) {
                 reportError("err.missing.dependences");
+                log.println();
                 builder.visitMissingDeps(new SimpleDepVisitor());
             }
             return ok;
@@ -981,7 +986,7 @@ class JdepsTask {
                 throw new UncheckedBadArgs(new BadArgs("err.invalid.options",
                                                        list, "--check"));
             }
-            return new ModuleAnalyzer(config, log, modules).run();
+            return new ModuleAnalyzer(config, log, modules).run(options.ignoreMissingDeps);
         }
 
         /*
@@ -1041,7 +1046,7 @@ class JdepsTask {
                                                                        separator);
             boolean ok = analyzer.run(options.depth(), options.ignoreMissingDeps);
             if (!ok) {
-                reportError("err.cant.list.module.deps");
+                reportError("err.missing.dependences");
                 log.println();
                 analyzer.visitMissingDeps(new SimpleDepVisitor());
             }

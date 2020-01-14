@@ -973,8 +973,15 @@ class MacroAssembler: public Assembler {
   // Verify Z_thread contents.
   void verify_thread();
 
+  // Save and restore functions: Exclude Z_R0.
+  void save_volatile_regs(   Register dst, int offset, bool include_fp, bool include_flags);
+  void restore_volatile_regs(Register src, int offset, bool include_fp, bool include_flags);
+
   // Only if +VerifyOops.
+  // Kills Z_R0.
   void verify_oop(Register reg, const char* s = "broken oop");
+  // Kills Z_R0, condition code.
+  void verify_oop_addr(Address addr, const char* msg = "contains broken oop");
 
   // TODO: verify_method and klass metadata (compare against vptr?).
   void _verify_method_ptr(Register reg, const char * msg, const char * file, int line) {}

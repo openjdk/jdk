@@ -71,7 +71,7 @@ public class AnnotationTypeRequiredMemberWriterImpl extends AbstractMemberWriter
         memberSummaryTree.add(
                 MarkerComments.START_OF_ANNOTATION_TYPE_REQUIRED_MEMBER_SUMMARY);
         Content memberTree = new ContentBuilder();
-        writer.addSummaryHeader(this, typeElement, memberTree);
+        writer.addSummaryHeader(this, memberTree);
         return memberTree;
     }
 
@@ -86,7 +86,8 @@ public class AnnotationTypeRequiredMemberWriterImpl extends AbstractMemberWriter
      * {@inheritDoc}
      */
     public void addMemberTree(Content memberSummaryTree, Content memberTree) {
-        writer.addMemberTree(HtmlStyle.memberSummary, memberSummaryTree, memberTree);
+        writer.addMemberTree(HtmlStyle.memberSummary,
+                SectionName.ANNOTATION_TYPE_REQUIRED_ELEMENT_SUMMARY, memberSummaryTree, memberTree);
     }
 
     /**
@@ -99,13 +100,11 @@ public class AnnotationTypeRequiredMemberWriterImpl extends AbstractMemberWriter
     /**
      * {@inheritDoc}
      */
-    public Content getAnnotationDetailsTreeHeader(TypeElement te) {
+    public Content getAnnotationDetailsTreeHeader() {
         Content memberDetailsTree = new ContentBuilder();
         if (!writer.printedAnnotationHeading) {
             Content heading = HtmlTree.HEADING(Headings.TypeDeclaration.DETAILS_HEADING,
                     contents.annotationTypeDetailsLabel);
-            memberDetailsTree.add(links.createAnchor(
-                    SectionName.ANNOTATION_TYPE_ELEMENT_DETAIL));
             memberDetailsTree.add(heading);
             writer.printedAnnotationHeading = true;
         }
@@ -116,14 +115,14 @@ public class AnnotationTypeRequiredMemberWriterImpl extends AbstractMemberWriter
      * {@inheritDoc}
      */
     @Override
-    public Content getAnnotationDocTreeHeader(Element member, Content annotationDetailsTree) {
+    public Content getAnnotationDocTreeHeader(Element member) {
         String simpleName = name(member);
         Content annotationDocTree = new ContentBuilder();
-        Content heading = new HtmlTree(Headings.TypeDeclaration.MEMBER_HEADING);
-        heading.add(links.createAnchor(
-                simpleName + utils.signature((ExecutableElement) member), new StringContent(simpleName)));
+        Content heading = new HtmlTree(Headings.TypeDeclaration.MEMBER_HEADING,
+                new StringContent(simpleName));
         annotationDocTree.add(heading);
-        return HtmlTree.SECTION(HtmlStyle.detail, annotationDocTree);
+        return HtmlTree.SECTION(HtmlStyle.detail, annotationDocTree)
+                .setId(simpleName + utils.signature((ExecutableElement) member));
     }
 
     /**
@@ -175,7 +174,7 @@ public class AnnotationTypeRequiredMemberWriterImpl extends AbstractMemberWriter
      * {@inheritDoc}
      */
     public void addSummaryLabel(Content memberTree) {
-        Content label = HtmlTree.HEADING(Headings.TypeDeclaration.SUMMARY_HEADING,
+        HtmlTree label = HtmlTree.HEADING(Headings.TypeDeclaration.SUMMARY_HEADING,
                 contents.annotateTypeRequiredMemberSummaryLabel);
         memberTree.add(label);
     }
@@ -208,20 +207,6 @@ public class AnnotationTypeRequiredMemberWriterImpl extends AbstractMemberWriter
                 .setHeader(getSummaryTableHeader(typeElement))
                 .setRowScopeColumn(1)
                 .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colSecond, HtmlStyle.colLast);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public void addSummaryAnchor(TypeElement typeElement, Content memberTree) {
-        memberTree.add(links.createAnchor(
-                SectionName.ANNOTATION_TYPE_REQUIRED_ELEMENT_SUMMARY));
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public void addInheritedSummaryAnchor(TypeElement typeElement, Content inheritedTree) {
     }
 
     /**

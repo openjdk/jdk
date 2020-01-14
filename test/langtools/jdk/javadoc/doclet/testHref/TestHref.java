@@ -56,9 +56,7 @@ public class TestHref extends JavadocTester {
                 //Member summary table link.
                 "href=\"#method(int,int,java.util.ArrayList)\"",
                 //Anchor test.
-                "<a id=\"method(int,int,java.util.ArrayList)\">",
-                //Backward compatibility anchor test."pkg/C1.html",
-                "<a id=\"method(int,int,java.util.ArrayList)\">");
+                "<section class=\"detail\" id=\"method(int,int,java.util.ArrayList)\">");
 
         checkOutput("pkg/C2.html", true,
                 //{@link} test.

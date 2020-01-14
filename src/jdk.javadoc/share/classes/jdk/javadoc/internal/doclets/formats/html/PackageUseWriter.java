@@ -198,8 +198,8 @@ public class PackageUseWriter extends SubWriterHolderWriter {
         ul.setStyle(HtmlStyle.blockList);
         for (String packageName : usingPackageToUsedClasses.keySet()) {
             PackageElement usingPackage = utils.elementUtils.getPackageElement(packageName);
-            HtmlTree section = HtmlTree.SECTION(HtmlStyle.detail);
-            section.add(links.createAnchor(getPackageAnchorName(usingPackage)));
+            HtmlTree section = HtmlTree.SECTION(HtmlStyle.detail)
+                    .setId(getPackageAnchorName(usingPackage));
             String tableSummary = resources.getText("doclet.Use_Table_Summary",
                                                         resources.getText("doclet.classes"));
             Content caption = contents.getContent(

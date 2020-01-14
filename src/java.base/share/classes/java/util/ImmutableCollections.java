@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,9 +56,47 @@ class ImmutableCollections {
      * will vary between JVM runs.
      */
     static final int SALT;
+
+    /**
+     * For set and map iteration, we will iterate in "reverse" stochastically,
+     * decided at bootstrap time.
+     */
+    private static final boolean REVERSE;
     static {
-        long nt = System.nanoTime();
-        SALT = (int)((nt >>> 32) ^ nt);
+        long color = 0x243F_6A88_85A3_08D3L; // pi slice
+        long seed = System.nanoTime();
+        SALT = (int)((color * seed) >> 16);  // avoid LSB and MSB
+        REVERSE = SALT >= 0;
+    }
+
+    /**
+     * Constants following this might be initialized from the CDS archive via
+     * this array.
+     */
+    private static Object[] archivedObjects;
+
+    private static final Object EMPTY;
+
+    static final ListN<?> EMPTY_LIST;
+
+    static final SetN<?> EMPTY_SET;
+
+    static final MapN<?,?> EMPTY_MAP;
+
+    static {
+        VM.initializeFromArchive(ImmutableCollections.class);
+        if (archivedObjects == null) {
+            EMPTY = new Object();
+            EMPTY_LIST = new ListN<>();
+            EMPTY_SET = new SetN<>();
+            EMPTY_MAP = new MapN<>();
+            archivedObjects = new Object[] { EMPTY, EMPTY_LIST, EMPTY_SET, EMPTY_MAP };
+        } else {
+            EMPTY = archivedObjects[0];
+            EMPTY_LIST = (ListN)archivedObjects[1];
+            EMPTY_SET = (SetN)archivedObjects[2];
+            EMPTY_MAP = (MapN)archivedObjects[3];
+        }
     }
 
     /** No instances. */
@@ -386,11 +424,13 @@ class ImmutableCollections {
         private final E e0;
 
         @Stable
-        private final E e1;
+        private final Object e1;
 
         List12(E e0) {
             this.e0 = Objects.requireNonNull(e0);
-            this.e1 = null;
+            // Use EMPTY as a sentinel for an unused element: not using null
+            // enable constant folding optimizations over single-element lists
+            this.e1 = EMPTY;
         }
 
         List12(E e0, E e1) {
@@ -400,7 +440,7 @@ class ImmutableCollections {
 
         @Override
         public int size() {
-            return e1 != null ? 2 : 1;
+            return e1 != EMPTY ? 2 : 1;
         }
 
         @Override
@@ -409,11 +449,12 @@ class ImmutableCollections {
         }
 
         @Override
+        @SuppressWarnings("unchecked")
         public E get(int index) {
             if (index == 0) {
                 return e0;
-            } else if (index == 1 && e1 != null) {
-                return e1;
+            } else if (index == 1 && e1 != EMPTY) {
+                return (E)e1;
             }
             throw outOfBounds(index);
         }
@@ -425,7 +466,7 @@ class ImmutableCollections {
 
         @java.io.Serial
         private Object writeReplace() {
-            if (e1 == null) {
+            if (e1 == EMPTY) {
                 return new CollSer(CollSer.IMM_LIST, e0);
             } else {
                 return new CollSer(CollSer.IMM_LIST, e0, e1);
@@ -434,7 +475,7 @@ class ImmutableCollections {
 
         @Override
         public Object[] toArray() {
-            if (e1 == null) {
+            if (e1 == EMPTY) {
                 return new Object[] { e0 };
             } else {
                 return new Object[] { e0, e1 };
@@ -444,7 +485,7 @@ class ImmutableCollections {
         @Override
         @SuppressWarnings("unchecked")
         public <T> T[] toArray(T[] a) {
-            int size = e1 == null ? 1 : 2;
+            int size = size();
             T[] array = a.length >= size ? a :
                     (T[])Array.newInstance(a.getClass().getComponentType(), size);
             array[0] = (T)e0;
@@ -460,16 +501,6 @@ class ImmutableCollections {
 
     static final class ListN<E> extends AbstractImmutableList<E>
             implements Serializable {
-
-        // EMPTY_LIST may be initialized from the CDS archive.
-        static @Stable List<?> EMPTY_LIST;
-
-        static {
-            VM.initializeFromArchive(ListN.class);
-            if (EMPTY_LIST == null) {
-                EMPTY_LIST = new ListN<>();
-            }
-        }
 
         @Stable
         private final E[] elements;
@@ -564,13 +595,16 @@ class ImmutableCollections {
             implements Serializable {
 
         @Stable
-        final E e0;
+        private final E e0;
+
         @Stable
-        final E e1;
+        private final Object e1;
 
         Set12(E e0) {
             this.e0 = Objects.requireNonNull(e0);
-            this.e1 = null;
+            // Use EMPTY as a sentinel for an unused element: not using null
+            // enable constant folding optimizations over single-element sets
+            this.e1 = EMPTY;
         }
 
         Set12(E e0, E e1) {
@@ -584,7 +618,7 @@ class ImmutableCollections {
 
         @Override
         public int size() {
-            return (e1 == null) ? 1 : 2;
+            return (e1 == EMPTY) ? 1 : 2;
         }
 
         @Override
@@ -594,12 +628,12 @@ class ImmutableCollections {
 
         @Override
         public boolean contains(Object o) {
-            return o.equals(e0) || o.equals(e1); // implicit nullcheck of o
+            return o.equals(e0) || e1.equals(o); // implicit nullcheck of o
         }
 
         @Override
         public int hashCode() {
-            return e0.hashCode() + (e1 == null ? 0 : e1.hashCode());
+            return e0.hashCode() + (e1 == EMPTY ? 0 : e1.hashCode());
         }
 
         @Override
@@ -613,13 +647,14 @@ class ImmutableCollections {
                 }
 
                 @Override
+                @SuppressWarnings("unchecked")
                 public E next() {
                     if (idx == 1) {
                         idx = 0;
-                        return SALT >= 0 || e1 == null ? e0 : e1;
+                        return (REVERSE || e1 == EMPTY) ? e0 : (E)e1;
                     } else if (idx == 2) {
                         idx = 1;
-                        return SALT >= 0 ? e1 : e0;
+                        return REVERSE ? (E)e1 : e0;
                     } else {
                         throw new NoSuchElementException();
                     }
@@ -634,7 +669,7 @@ class ImmutableCollections {
 
         @java.io.Serial
         private Object writeReplace() {
-            if (e1 == null) {
+            if (e1 == EMPTY) {
                 return new CollSer(CollSer.IMM_SET, e0);
             } else {
                 return new CollSer(CollSer.IMM_SET, e0, e1);
@@ -643,9 +678,9 @@ class ImmutableCollections {
 
         @Override
         public Object[] toArray() {
-            if (e1 == null) {
+            if (e1 == EMPTY) {
                 return new Object[] { e0 };
-            } else if (SALT >= 0) {
+            } else if (REVERSE) {
                 return new Object[] { e1, e0 };
             } else {
                 return new Object[] { e0, e1 };
@@ -655,12 +690,12 @@ class ImmutableCollections {
         @Override
         @SuppressWarnings("unchecked")
         public <T> T[] toArray(T[] a) {
-            int size = e1 == null ? 1 : 2;
+            int size = size();
             T[] array = a.length >= size ? a :
                     (T[])Array.newInstance(a.getClass().getComponentType(), size);
             if (size == 1) {
                 array[0] = (T)e0;
-            } else if (SALT >= 0) {
+            } else if (REVERSE) {
                 array[0] = (T)e1;
                 array[1] = (T)e0;
             } else {
@@ -684,18 +719,9 @@ class ImmutableCollections {
     static final class SetN<E> extends AbstractImmutableSet<E>
             implements Serializable {
 
-        // EMPTY_SET may be initialized from the CDS archive.
-        static @Stable Set<?> EMPTY_SET;
-
-        static {
-            VM.initializeFromArchive(SetN.class);
-            if (EMPTY_SET == null) {
-                EMPTY_SET = new SetN<>();
-            }
-        }
-
         @Stable
         final E[] elements;
+
         @Stable
         final int size;
 
@@ -752,7 +778,7 @@ class ImmutableCollections {
 
             private int nextIndex() {
                 int idx = this.idx;
-                if (SALT >= 0) {
+                if (REVERSE) {
                     if (++idx >= elements.length) {
                         idx = 0;
                     }
@@ -941,16 +967,6 @@ class ImmutableCollections {
      */
     static final class MapN<K,V> extends AbstractImmutableMap<K,V> {
 
-        // EMPTY_MAP may be initialized from the CDS archive.
-        static @Stable Map<?,?> EMPTY_MAP;
-
-        static {
-            VM.initializeFromArchive(MapN.class);
-            if (EMPTY_MAP == null) {
-                EMPTY_MAP = new MapN<>();
-            }
-        }
-
         @Stable
         final Object[] table; // pairs of key, value
 
@@ -1058,7 +1074,7 @@ class ImmutableCollections {
 
             private int nextIndex() {
                 int idx = this.idx;
-                if (SALT >= 0) {
+                if (REVERSE) {
                     if ((idx += 2) >= table.length) {
                         idx = 0;
                     }
@@ -1284,7 +1300,7 @@ final class CollSer implements Serializable {
                     return Set.of(array);
                 case IMM_MAP:
                     if (array.length == 0) {
-                        return ImmutableCollections.MapN.EMPTY_MAP;
+                        return ImmutableCollections.EMPTY_MAP;
                     } else if (array.length == 2) {
                         return new ImmutableCollections.Map1<>(array[0], array[1]);
                     } else {

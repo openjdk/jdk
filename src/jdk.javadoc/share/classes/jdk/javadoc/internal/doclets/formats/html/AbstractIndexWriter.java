@@ -169,10 +169,10 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
 
     protected void addHeading(Character uc, Content contentTree) {
         String unicode = uc.toString();
-        contentTree.add(getMarkerAnchorForIndex(unicode));
         Content headContent = new StringContent(unicode);
-        Content heading = HtmlTree.HEADING(Headings.CONTENT_HEADING, false,
+        HtmlTree heading = HtmlTree.HEADING(Headings.CONTENT_HEADING, false,
                 HtmlStyle.title, headContent);
+        heading.setId(getNameForIndex(unicode));
         contentTree.add(heading);
     }
 
@@ -409,16 +409,6 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
         }
         addPreQualifiedClassLink(LinkInfoImpl.Kind.INDEX, containing,
                 false, contentTree);
-    }
-
-    /**
-     * Get the marker anchor which will be added to the index documentation tree.
-     *
-     * @param anchorNameForIndex the anchor name attribute for index page
-     * @return a content tree for the marker anchor
-     */
-    public Content getMarkerAnchorForIndex(String anchorNameForIndex) {
-        return links.createAnchor(getNameForIndex(anchorNameForIndex));
     }
 
     /**

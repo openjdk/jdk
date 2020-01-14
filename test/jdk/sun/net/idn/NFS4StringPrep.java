@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,8 +32,8 @@ import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.text.ParseException;
 
-import sun.net.idn.StringPrep;
-import sun.text.normalizer.UCharacterIterator;
+import jdk.internal.icu.text.StringPrep;
+import jdk.internal.icu.text.UCharacterIterator;
 
 /**
  * @author ram

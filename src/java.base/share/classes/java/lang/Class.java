@@ -89,16 +89,15 @@ import sun.reflect.annotation.*;
 import sun.reflect.misc.ReflectUtil;
 
 /**
- * Instances of the class {@code Class} represent classes and interfaces
- * in a running Java application. An enum type is a kind of class and an
- * annotation type is a kind of interface. Every array also
- * belongs to a class that is reflected as a {@code Class} object
- * that is shared by all arrays with the same element type and number
- * of dimensions.  The primitive Java types ({@code boolean},
- * {@code byte}, {@code char}, {@code short},
- * {@code int}, {@code long}, {@code float}, and
- * {@code double}), and the keyword {@code void} are also
- * represented as {@code Class} objects.
+ * Instances of the class {@code Class} represent classes and
+ * interfaces in a running Java application. An enum type and a record
+ * type are kinds of class; an annotation type is a kind of
+ * interface. Every array also belongs to a class that is reflected as
+ * a {@code Class} object that is shared by all arrays with the same
+ * element type and number of dimensions.  The primitive Java types
+ * ({@code boolean}, {@code byte}, {@code char}, {@code short}, {@code
+ * int}, {@code long}, {@code float}, and {@code double}), and the
+ * keyword {@code void} are also represented as {@code Class} objects.
  *
  * <p> {@code Class} has no public constructor. Instead a {@code Class}
  * object is constructed automatically by the Java Virtual Machine

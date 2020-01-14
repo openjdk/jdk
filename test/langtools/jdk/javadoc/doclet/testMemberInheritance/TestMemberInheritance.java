@@ -120,7 +120,8 @@ public class TestMemberInheritance extends JavadocTester {
                 + "</td>\n");
 
         checkOutput("pkg2/DocumentedNonGenericChild.html", true,
-                "<h3><a id=\"parentMethod()\">parentMethod</a></h3>\n"
+                "<section class=\"detail\" id=\"parentMethod()\">\n"
+                + "<h3>parentMethod</h3>\n"
                 + "<div class=\"memberSignature\"><span class=\"modifiers\">protected abstract</span>"
                 + "&nbsp;<span class=\"returnType\">java.lang.String</span>&nbsp;"
                 + "<span class=\"memberName\">parentMethod</span>()</div>");

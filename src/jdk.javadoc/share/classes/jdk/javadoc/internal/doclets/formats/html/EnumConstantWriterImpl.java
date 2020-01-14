@@ -67,7 +67,7 @@ public class EnumConstantWriterImpl extends AbstractMemberWriter
             Content memberSummaryTree) {
         memberSummaryTree.add(MarkerComments.START_OF_ENUM_CONSTANT_SUMMARY);
         Content memberTree = new ContentBuilder();
-        writer.addSummaryHeader(this, typeElement, memberTree);
+        writer.addSummaryHeader(this, memberTree);
         return memberTree;
     }
 
@@ -76,7 +76,8 @@ public class EnumConstantWriterImpl extends AbstractMemberWriter
      */
     @Override
     public void addMemberTree(Content memberSummaryTree, Content memberTree) {
-        writer.addMemberTree(HtmlStyle.constantsSummary, memberSummaryTree, memberTree);
+        writer.addMemberTree(HtmlStyle.constantsSummary,
+                SectionName.ENUM_CONSTANT_SUMMARY, memberSummaryTree, memberTree);
     }
 
     /**
@@ -89,8 +90,6 @@ public class EnumConstantWriterImpl extends AbstractMemberWriter
         Content enumConstantsDetailsTree = new ContentBuilder();
         Content heading = HtmlTree.HEADING(Headings.TypeDeclaration.DETAILS_HEADING,
                 contents.enumConstantDetailLabel);
-        enumConstantsDetailsTree.add(links.createAnchor(
-                SectionName.ENUM_CONSTANT_DETAIL));
         enumConstantsDetailsTree.add(heading);
         return enumConstantsDetailsTree;
     }
@@ -102,10 +101,11 @@ public class EnumConstantWriterImpl extends AbstractMemberWriter
     public Content getEnumConstantsTreeHeader(VariableElement enumConstant,
             Content enumConstantsDetailsTree) {
         Content enumConstantsTree = new ContentBuilder();
-        Content heading = new HtmlTree(Headings.TypeDeclaration.MEMBER_HEADING);
-        heading.add(links.createAnchor(name(enumConstant), new StringContent(name(enumConstant))));
+        HtmlTree heading = new HtmlTree(Headings.TypeDeclaration.MEMBER_HEADING,
+                new StringContent(name(enumConstant)));
         enumConstantsTree.add(heading);
-        return HtmlTree.SECTION(HtmlStyle.detail, enumConstantsTree);
+        return HtmlTree.SECTION(HtmlStyle.detail, enumConstantsTree)
+                .setId(name(enumConstant));
     }
 
     /**
@@ -150,7 +150,8 @@ public class EnumConstantWriterImpl extends AbstractMemberWriter
             Content enumConstantsDetailsTree) {
         Content enumConstantsDetails =
                 new ContentBuilder(enumConstantsDetailsTreeHeader, enumConstantsDetailsTree);
-        return getMemberTree(HtmlTree.SECTION(HtmlStyle.constantDetails, enumConstantsDetails));
+        return getMemberTree(HtmlTree.SECTION(HtmlStyle.constantDetails, enumConstantsDetails)
+                .setId(SectionName.ENUM_CONSTANT_DETAIL.getName()));
     }
 
     /**
@@ -188,21 +189,6 @@ public class EnumConstantWriterImpl extends AbstractMemberWriter
                 .setCaption(contents.getContent("doclet.Enum_Constants"))
                 .setHeader(getSummaryTableHeader(typeElement))
                 .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void addSummaryAnchor(TypeElement typeElement, Content memberTree) {
-        memberTree.add(links.createAnchor(SectionName.ENUM_CONSTANT_SUMMARY));
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void addInheritedSummaryAnchor(TypeElement typeElement, Content inheritedTree) {
     }
 
     /**

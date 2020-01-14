@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,11 +91,21 @@ public class ImmutableColls {
     public static final Map<String, String> fm3 = Map.copyOf(m3);
     public static final Map<String, String> fm4 = Map.copyOf(m4);
 
-    public static final List<String> fa0 = new ArrayList<>(l0);
-    public static final List<String> fa1 = new ArrayList<>(l1);
-    public static final List<String> fa2 = new ArrayList<>(l2);
-    public static final List<String> fa3 = new ArrayList<>(l3);
-    public static final List<String> fa4 = new ArrayList<>(l4);
+    @Benchmark
+    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
+    public void constructLists(Blackhole bh) {
+        bh.consume(List.of(STRINGS[0]));
+        bh.consume(List.of(STRINGS[0], STRINGS[1]));
+        bh.consume(List.of(STRINGS[0], STRINGS[1], STRINGS[2]));
+    }
+
+    @Benchmark
+    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
+    public void constructSets(Blackhole bh) {
+        bh.consume(Set.of(STRINGS[0]));
+        bh.consume(Set.of(STRINGS[0], STRINGS[1]));
+        bh.consume(Set.of(STRINGS[0], STRINGS[1], STRINGS[2]));
+    }
 
     @Benchmark
     @CompilerControl(CompilerControl.Mode.DONT_INLINE)
@@ -109,7 +119,7 @@ public class ImmutableColls {
 
     @Benchmark
     @CompilerControl(CompilerControl.Mode.DONT_INLINE)
-    public int finalSumSizesList() {
+    public int sumSizesFinalList() {
         return sizeOf(fl0) +
                 sizeOf(fl1) +
                 sizeOf(fl2) +
@@ -119,30 +129,118 @@ public class ImmutableColls {
 
     @Benchmark
     @CompilerControl(CompilerControl.Mode.DONT_INLINE)
-    public int sumSizesArrayList() {
-        return sizeOf2(a0) +
-                sizeOf2(a1) +
-                sizeOf2(a2) +
-                sizeOf2(a3) +
-                sizeOf2(a4);
+    public int sumSizesSet() {
+        return sizeOf(s0) +
+                sizeOf(s1) +
+                sizeOf(s2) +
+                sizeOf(s3) +
+                sizeOf(s4);
     }
 
     @Benchmark
     @CompilerControl(CompilerControl.Mode.DONT_INLINE)
-    public int finalSumSizesArrayList() {
-        return sizeOf2(fa0) +
-                sizeOf2(fa1) +
-                sizeOf2(fa2) +
-                sizeOf2(fa3) +
-                sizeOf2(fa4);
+    public int sumSizesFinalSet() {
+        return sizeOf2(fs0) +
+                sizeOf2(fs1) +
+                sizeOf2(fs2) +
+                sizeOf2(fs3) +
+                sizeOf2(fs4);
     }
 
-    public int sizeOf2(List<String> list) {
-        return list.size();
+    @Benchmark
+    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
+    public boolean emptyFinalSet() {
+        return fs0.isEmpty() &
+                fs1.isEmpty() &
+                fs2.isEmpty() &
+                fs3.isEmpty() &
+                fs4.isEmpty();
+    }
+
+    @Benchmark
+    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
+    public boolean emptyFinalList() {
+        return fl0.isEmpty() &
+                fl1.isEmpty() &
+                fl2.isEmpty() &
+                fl3.isEmpty() &
+                fl4.isEmpty();
+    }
+
+    @Benchmark
+    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
+    public boolean emptyFinalMap() {
+        return fm0.isEmpty() &
+                fm1.isEmpty() &
+                fm2.isEmpty() &
+                fm3.isEmpty() &
+                fm4.isEmpty();
+    }
+
+    @Benchmark
+    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
+    public boolean containsFinalSet() {
+        return fs0.contains("hi") &
+                fs1.contains("hi") &
+                fs2.contains("hi") &
+                fs3.contains("hi") &
+                fs4.contains("hi");
+    }
+
+    @Benchmark
+    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
+    public boolean containsFinalList() {
+        return fl0.contains("hi") &
+                fl1.contains("hi") &
+                fl2.contains("hi") &
+                fl3.contains("hi") &
+                fl4.contains("hi");
+    }
+
+    @Benchmark
+    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
+    public boolean containsKeyFinalMap() {
+        return fm0.containsKey("hi") &
+                fm1.containsKey("hi") &
+                fm2.containsKey("hi") &
+                fm3.containsKey("hi") &
+                fm4.containsKey("hi");
+    }
+
+    @Benchmark
+    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
+    public boolean containsValueFinalMap() {
+        return fm0.containsValue("hi") &
+                fm1.containsValue("hi") &
+                fm2.containsValue("hi") &
+                fm3.containsValue("hi") &
+                fm4.containsValue("hi");
     }
 
     public int sizeOf(List<String> list) {
         return list.size();
+    }
+
+    /**
+     * Same as sizeOf(List), but duplicated to avoid any
+     * potential profile pollution with tests using
+     * sizeOf.
+     */
+    public int sizeOf2(List<String> list) {
+        return list.size();
+    }
+
+    public int sizeOf(Set<String> set) {
+        return set.size();
+    }
+
+    /**
+     * Same as sizeOf(Set), but duplicated to avoid any
+     * potential profile pollution with tests using
+     * sizeOf.
+     */
+    public int sizeOf2(Set<String> set) {
+        return set.size();
     }
 
     @Benchmark
@@ -171,6 +269,22 @@ public class ImmutableColls {
         bh.consume(s3.toArray());
         bh.consume(fs2.toArray());
         bh.consume(s0.toArray());
+    }
+
+    @Benchmark
+    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
+    public void iterateOverSet(Blackhole bh) {
+        iterateSet(bh, fs4);
+        iterateSet(bh, s1);
+        iterateSet(bh, s3);
+        iterateSet(bh, fs2);
+        iterateSet(bh, s0);
+    }
+
+    public void iterateSet(Blackhole bh, Set<String> coll) {
+        for (String s : coll) {
+            bh.consume(s);
+        }
     }
 
     @Benchmark
@@ -230,15 +344,6 @@ public class ImmutableColls {
         bh.consume(List.copyOf(fl4));
         bh.consume(List.copyOf(fsl2));
         bh.consume(List.copyOf(fsl3));
-    }
-
-    @Benchmark
-    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
-    public int finalGetFromArrayList() {
-        return get2(fa1, 0).length() +
-                get2(fa2, 1).length() +
-                get2(fa3, 2).length() +
-                get2(fa4, 3).length();
     }
 
     public String get2(List<String> list, int idx) {

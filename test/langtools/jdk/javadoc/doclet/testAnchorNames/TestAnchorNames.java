@@ -61,15 +61,19 @@ public class TestAnchorNames extends JavadocTester {
 
         // Test some section markers and links to these markers
         checkOutput("pkg1/RegClass.html", true,
-                "<a id=\"skip.navbar.top\">",
+                "<span class=\"skipNav\" id=\"skip.navbar.top\">",
                 "<a href=\"#skip.navbar.top\" title=\"Skip navigation links\">",
-                "<a id=\"nested.class.summary\">",
+                "<section class=\"nestedClassSummary\" id=\"nested.class.summary\">\n"
+                + "<h2>Nested Class Summary</h2>",
                 "<a href=\"#nested.class.summary\">",
-                "<a id=\"method.summary\">",
+                "<section class=\"methodSummary\" id=\"method.summary\">\n"
+                + "<h2>Method Summary</h2>",
                 "<a href=\"#method.summary\">",
-                "<a id=\"field.detail\">",
+                "<section class=\"fieldDetails\" id=\"field.detail\">\n"
+                + "<h2>Field Details</h2>",
                 "<a href=\"#field.detail\">",
-                "<a id=\"constructor.detail\">",
+                "<section class=\"constructorDetails\" id=\"constructor.detail\">\n"
+                + "<h2>Constructor Details</h2>",
                 "<a href=\"#constructor.detail\">");
 
         // Test some members and link to these members
@@ -80,59 +84,59 @@ public class TestAnchorNames extends JavadocTester {
 
         // Test some fields
         checkOutput("pkg1/RegClass.html", true,
-                "<a id=\"_\">",
+                "<section class=\"detail\" id=\"_\">",
                 "<a href=\"#_\">",
-                "<a id=\"_$\">",
+                "<section class=\"detail\" id=\"_$\">",
                 "<a href=\"#_$\">",
-                "<a id=\"$_\">",
+                "<section class=\"detail\" id=\"$_\">",
                 "<a href=\"#$_\">",
-                "<a id=\"$field\">",
+                "<section class=\"detail\" id=\"$field\">",
                 "<a href=\"#$field\">",
-                "<a id=\"fieldInCla$$\">",
+                "<section class=\"detail\" id=\"fieldInCla$$\">",
                 "<a href=\"#fieldInCla$$\">",
-                "<a id=\"S_$$$$$INT\">",
+                "<section class=\"detail\" id=\"S_$$$$$INT\">",
                 "<a href=\"#S_$$$$$INT\">",
-                "<a id=\"method$$\">",
+                "<section class=\"detail\" id=\"method$$\">",
                 "<a href=\"#method$$\">");
 
         checkOutput("pkg1/DeprMemClass.html", true,
-                "<a id=\"_field_In_Class\">",
+                "<section class=\"detail\" id=\"_field_In_Class\">",
                 "<a href=\"#_field_In_Class\">");
 
         // Test constructor
         checkOutput("pkg1/RegClass.html", true,
-                "<a id=\"&lt;init&gt;(java.lang.String,int)\">",
+                "<section class=\"detail\" id=\"&lt;init&gt;(java.lang.String,int)\">",
                 "<a href=\"#%3Cinit%3E(java.lang.String,int)\">");
 
         // Test some methods
         checkOutput("pkg1/RegClass.html", true,
-                "<a id=\"_methodInClass(java.lang.String)\">",
+                "<section class=\"detail\" id=\"_methodInClass(java.lang.String)\">",
                 "<a href=\"#_methodInClass(java.lang.String)\">",
-                "<a id=\"method()\">",
+                "<section class=\"detail\" id=\"method()\">",
                 "<a href=\"#method()\">",
-                "<a id=\"foo(java.util.Map)\">",
+                "<section class=\"detail\" id=\"foo(java.util.Map)\">",
                 "<a href=\"#foo(java.util.Map)\">",
-                "<a id=\"methodInCla$s(java.lang.String[])\">",
+                "<section class=\"detail\" id=\"methodInCla$s(java.lang.String[])\">",
                 "<a href=\"#methodInCla$s(java.lang.String%5B%5D)\">",
-                "<a id=\"_methodInClas$(java.lang.String,int)\">",
+                "<section class=\"detail\" id=\"_methodInClas$(java.lang.String,int)\">",
                 "<a href=\"#_methodInClas$(java.lang.String,int)\">",
-                "<a id=\"methodD(pkg1.RegClass.$A)\">",
+                "<section class=\"detail\" id=\"methodD(pkg1.RegClass.$A)\">",
                 "<a href=\"#methodD(pkg1.RegClass.$A)\">",
-                "<a id=\"methodD(pkg1.RegClass.D[])\">",
+                "<section class=\"detail\" id=\"methodD(pkg1.RegClass.D[])\">",
                 "<a href=\"#methodD(pkg1.RegClass.D%5B%5D)\">");
 
         checkOutput("pkg1/DeprMemClass.html", true,
-                "<a id=\"$method_In_Class()\">",
+                "<section class=\"detail\" id=\"$method_In_Class()\">",
                 "<a href=\"#$method_In_Class()\">");
 
         // Test enum
         checkOutput("pkg1/RegClass.Te$t_Enum.html", true,
-                "<a id=\"$FLD2\">",
+                "<section class=\"detail\" id=\"$FLD2\">",
                 "<a href=\"#$FLD2\">");
 
         // Test nested class
         checkOutput("pkg1/RegClass._NestedClas$.html", true,
-                "<a id=\"&lt;init&gt;()\">",
+                "<section class=\"detail\" id=\"&lt;init&gt;()\">",
                 "<a href=\"#%3Cinit%3E()\">");
 
         // Test class use page
@@ -151,11 +155,11 @@ public class TestAnchorNames extends JavadocTester {
         // Test serialized form page
         checkOutput("serialized-form.html", true,
                 //This is the marker for the link that appears in the pkg1.RegClass.html page
-                "<a id=\"pkg1.RegClass\">");
+                "<section class=\"serializedClassDetails\" id=\"pkg1.RegClass\">");
 
         // Test member name index page
         checkOutput("index-all.html", true,
-                "<a id=\"I:$\">",
+                "<h2 class=\"title\" id=\"I:$\">$</h2>",
                 "<a href=\"#I:$\">$",
                 "<a href=\"#I:_\">_");
     }
@@ -194,10 +198,10 @@ public class TestAnchorNames extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("p/Def.html", true,
-                "<a id=\"\u00e0\u00e9\">",
-                "<a id=\"\u00c0\u00c9()\">",
-                "<a id=\"\u03b1\u03b2\u03b3\">",
-                "<a id=\"\u0391\u0392\u0393()\">");
+                "<section class=\"detail\" id=\"\u00e0\u00e9\">",
+                "<section class=\"detail\" id=\"\u00c0\u00c9()\">",
+                "<section class=\"detail\" id=\"\u03b1\u03b2\u03b3\">",
+                "<section class=\"detail\" id=\"\u0391\u0392\u0393()\">");
 
         checkOutput("p/Ref.html", true,
                 "<a href=\"Def.html#%C3%A0%C3%A9\"><code>&agrave;&eacute;</code></a>",

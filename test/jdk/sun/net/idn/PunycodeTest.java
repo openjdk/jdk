@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,17 +23,16 @@
 
 /*
  * @test
- * @summary Unit test for sun.net.idn.Punycode
- * @bug 4737170
- * @modules java.base/sun.net.idn
+ * @summary Unit test for jdk.internal.icu.impl.Punycode
+ * @bug 4737170 8174270
+ * @modules java.base/jdk.internal.icu.impl
  * @compile -XDignore.symbol.file PunycodeTest.java
  * @run main/othervm -ea PunycodeTest
  * @author Edward Wang
  */
 
 import java.util.Scanner;
-import java.text.ParseException;
-import sun.net.idn.Punycode;
+import jdk.internal.icu.impl.Punycode;
 
 /**
  * unit test for Punycode that is also originated from the sample code

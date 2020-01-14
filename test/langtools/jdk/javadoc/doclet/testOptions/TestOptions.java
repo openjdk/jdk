@@ -192,19 +192,21 @@ public class TestOptions extends JavadocTester {
                 "<pre>@Documented\npublic @interface <a href="
                 + "\"../src-html/linksource/AnnotationTypeField.html#line.31\">"
                 + "AnnotationTypeField</a></pre>",
-                "<h3><a id=\"DEFAULT_NAME\">DEFAULT_NAME</a></h3>\n"
+                "<section class=\"detail\" id=\"DEFAULT_NAME\">\n"
+                + "<h3>DEFAULT_NAME</h3>\n"
                 + "<div class=\"memberSignature\"><span class=\"modifiers\">static final</span>&nbsp;"
                 + "<span class=\"returnType\">java.lang.String</span>&nbsp;<span class=\"memberName\">"
                 + "<a href=\"../src-html/linksource/AnnotationTypeField.html#line.32\">DEFAULT_NAME</a></span></div>",
-                "<h3><a id=\"name()\">name</a></h3>\n"
+                "<section class=\"detail\" id=\"name()\">\n"
+                + "<h3>name</h3>\n"
                 + "<div class=\"memberSignature\"><span class=\"returnType\">java.lang.String</span>&nbsp;"
                 + "<span class=\"memberName\"><a href=\"../src-html/linksource/AnnotationTypeField.html#line.34\">"
                 + "name</a></span></div>");
 
         checkOutput("src-html/linksource/AnnotationTypeField.html", true,
                 "<title>Source code</title>",
-                "<span class=\"sourceLineNo\">031</span><a id=\"line.31\">"
-                + "@Documented public @interface AnnotationTypeField {</a>");
+                "<span class=\"sourceLineNo\">031</span><span id=\"line.31\">"
+                + "@Documented public @interface AnnotationTypeField {</span>");
 
         checkOutput("linksource/Properties.html", true,
                 "<pre>public class <a href=\"../src-html/linksource/Properties.html#line.29\">"
@@ -215,8 +217,8 @@ public class TestOptions extends JavadocTester {
 
         checkOutput("src-html/linksource/Properties.html", true,
                 "<title>Source code</title>",
-                "<span class=\"sourceLineNo\">031</span><a id=\"line.31\">    "
-                + "public Object someProperty() {</a>");
+                "<span class=\"sourceLineNo\">031</span><span id=\"line.31\">    "
+                + "public Object someProperty() {</span>");
 
         checkOutput("linksource/SomeClass.html", true,
                 "<pre>public class <a href=\"../src-html/linksource/SomeClass.html#line.29\">"
@@ -233,14 +235,14 @@ public class TestOptions extends JavadocTester {
 
         checkOutput("src-html/linksource/SomeClass.html", true,
                 "<title>Source code</title>",
-                "<span class=\"sourceLineNo\">029</span><a id=\"line.29\">"
-                + "public class SomeClass {</a>",
-                "<span class=\"sourceLineNo\">031</span><a id=\"line.31\">    "
-                + "public int field;</a>",
-                "<span class=\"sourceLineNo\">033</span><a id=\"line.33\">    "
-                + "public SomeClass() {</a>",
-                "<span class=\"sourceLineNo\">036</span><a id=\"line.36\">    "
-                + "public int method() {</a>");
+                "<span class=\"sourceLineNo\">029</span><span id=\"line.29\">"
+                + "public class SomeClass {</span>",
+                "<span class=\"sourceLineNo\">031</span><span id=\"line.31\">    "
+                + "public int field;</span>",
+                "<span class=\"sourceLineNo\">033</span><span id=\"line.33\">    "
+                + "public SomeClass() {</span>",
+                "<span class=\"sourceLineNo\">036</span><span id=\"line.36\">    "
+                + "public int method() {</span>");
 
         checkOutput("linksource/SomeEnum.html", true,
                 "<div class=\"memberSignature\"><span class=\"modifiers\">public static final</span>&nbsp;"
@@ -253,8 +255,8 @@ public class TestOptions extends JavadocTester {
                 + "<a href=\"../src-html/linksource/SomeEnum.html#line.30\">VALUE2</a></span></div>");
 
         checkOutput("src-html/linksource/SomeEnum.html", true,
-                "<span class=\"sourceLineNo\">029</span><a id=\"line.29\">    VALUE1,</a>",
-                "<span class=\"sourceLineNo\">030</span><a id=\"line.30\">    VALUE2</a>");
+                "<span class=\"sourceLineNo\">029</span><span id=\"line.29\">    VALUE1,</span>",
+                "<span class=\"sourceLineNo\">030</span><span id=\"line.30\">    VALUE2</span>");
     }
 
     @Test

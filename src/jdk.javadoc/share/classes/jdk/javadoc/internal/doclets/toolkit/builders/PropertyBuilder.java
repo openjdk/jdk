@@ -122,14 +122,12 @@ public class PropertyBuilder extends AbstractMemberBuilder {
             return;
         }
         if (hasMembersToDocument()) {
-            Content propertyDetailsTreeHeader = writer.getPropertyDetailsTreeHeader(typeElement,
-                    memberDetailsTree);
+            Content propertyDetailsTreeHeader = writer.getPropertyDetailsTreeHeader(memberDetailsTree);
             Content propertyDetailsTree = writer.getMemberTreeHeader();
 
             for (Element property : properties) {
                 currentProperty = (ExecutableElement)property;
-                Content propertyDocTree = writer.getPropertyDocTreeHeader(currentProperty,
-                        propertyDetailsTree);
+                Content propertyDocTree = writer.getPropertyDocTreeHeader(currentProperty);
 
                 buildSignature(propertyDocTree);
                 buildPropertyComments(propertyDocTree);

@@ -139,13 +139,12 @@ public class AnnotationTypeRequiredMemberBuilder extends AbstractMemberBuilder {
         }
         if (hasMembersToDocument()) {
             writer.addAnnotationDetailsMarker(memberDetailsTree);
-            Content annotationDetailsTreeHeader = writer.getAnnotationDetailsTreeHeader(typeElement);
+            Content annotationDetailsTreeHeader = writer.getAnnotationDetailsTreeHeader();
             Content detailsTree = writer.getMemberTreeHeader();
 
             for (Element member : members) {
                 currentMember = member;
-                Content annotationDocTree = writer.getAnnotationDocTreeHeader(
-                        currentMember, detailsTree);
+                Content annotationDocTree = writer.getAnnotationDocTreeHeader(currentMember);
 
                 buildAnnotationTypeMemberChildren(annotationDocTree);
 

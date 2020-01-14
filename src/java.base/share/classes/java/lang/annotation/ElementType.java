@@ -71,7 +71,8 @@ package java.lang.annotation;
  * @jls 4.1 The Kinds of Types and Values
  */
 public enum ElementType {
-    /** Class, interface (including annotation type), or enum declaration */
+    /** Class, interface (including annotation type), enum, or record
+     * declaration */
     TYPE,
 
     /** Field declaration (includes enum constants) */

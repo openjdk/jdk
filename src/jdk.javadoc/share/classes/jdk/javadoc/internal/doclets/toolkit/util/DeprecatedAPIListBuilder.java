@@ -192,7 +192,7 @@ public class DeprecatedAPIListBuilder {
     /**
      * Return true if the list of a given type has size greater than 0.
      *
-     * @param type the type of list being checked.
+     * @param kind the type of list being checked.
      */
     public boolean hasDocumentation(DeprElementKind kind) {
         return !deprecatedMap.get(kind).isEmpty();

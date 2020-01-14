@@ -138,7 +138,7 @@ public class TestRecordTypes extends JavadocTester {
                 "public record <span class=\"typeNameLabel\">R</span>",
                 "<dl>\n"
                 + "<dt><span class=\"paramLabel\">Record Components:</span></dt>\n"
-                + "<dd><code><a id=\"param-r1\">r1</a></code> - This is a component.</dd>\n"
+                + "<dd><code><span id=\"param-r1\">r1</span></code> - This is a component.</dd>\n"
                 + "</dl>",
                 "<code><span class=\"memberNameLink\"><a href=\"#%3Cinit%3E(int)\">R</a></span>&#8203;(int&nbsp;r1)</code>");
     }
@@ -167,7 +167,7 @@ public class TestRecordTypes extends JavadocTester {
                 + "<dt><span class=\"paramLabel\">Type Parameters:</span></dt>\n"
                 + "<dd><code>T</code> - This is a type parameter.</dd>\n"
                 + "<dt><span class=\"paramLabel\">Record Components:</span></dt>\n"
-                + "<dd><code><a id=\"param-r1\">r1</a></code> - This is a component.</dd>\n"
+                + "<dd><code><span id=\"param-r1\">r1</span></code> - This is a component.</dd>\n"
                 + "</dl>",
                 "<code><span class=\"memberNameLink\"><a href=\"#%3Cinit%3E(int)\">R</a></span>&#8203;(int&nbsp;r1)</code>");
     }
@@ -192,10 +192,10 @@ public class TestRecordTypes extends JavadocTester {
         // in these cases, we want to verify that something non-empty was put into
         // the documentation for the generated members.
         checkOrder("p/R.html",
-                "<section class=\"constructorSummary\">",
+                "<section class=\"constructorSummary\" id=\"constructor.summary\">",
                 "<a href=\"#%3Cinit%3E(int)\">R</a>",
                 "Creates an instance of a <code>R</code> record.",
-                "<section class=\"methodSummary\">",
+                "<section class=\"methodSummary\" id=\"method.summary\">",
                 "<a href=\"#equals(java.lang.Object)\">equals</a>",
                 "Indicates whether some other object is \"equal to\" this one.",
                 "<a href=\"#hashCode()\">hashCode</a>",
@@ -244,10 +244,10 @@ public class TestRecordTypes extends JavadocTester {
         // in these cases, we want to verify that something non-empty was put into
         // the documentation for the generated members.
         checkOrder("p/R.html",
-                "<section class=\"constructorSummary\">",
+                "<section class=\"constructorSummary\" id=\"constructor.summary\">",
                 "<a href=\"#%3Cinit%3E(int)\">R</a>",
                 "Creates an instance of a <code>R</code> record.",
-                "<section class=\"methodSummary\">",
+                "<section class=\"methodSummary\" id=\"method.summary\">",
                 "<a href=\"#equals(java.lang.Object)\">equals</a>",
                 "Indicates whether some other object is \"equal to\" this one.",
                 "<a href=\"#hashCode()\">hashCode</a>",
@@ -334,10 +334,10 @@ public class TestRecordTypes extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOrder("p/R.html",
-                "<section class=\"constructorSummary\">",
+                "<section class=\"constructorSummary\" id=\"constructor.summary\">",
                 "<a href=\"#%3Cinit%3E(int)\">R</a>",
                 "User constructor.",
-                "<section class=\"methodSummary\">",
+                "<section class=\"methodSummary\" id=\"method.summary\">",
                 "<a href=\"#equals(java.lang.Object)\">equals</a>",
                 "User equals.",
                 "<a href=\"#hashCode()\">hashCode</a>",
