@@ -1406,6 +1406,9 @@ Node* GraphKit::cast_not_null(Node* obj, bool do_replace_in_map) {
 // opts so the test goes away and the compiled code doesn't execute a
 // useless check.
 Node* GraphKit::must_be_not_null(Node* value, bool do_replace_in_map) {
+  if (!TypePtr::NULL_PTR->higher_equal(_gvn.type(value))) {
+    return value;
+  }
   Node* chk = _gvn.transform(new CmpPNode(value, null()));
   Node *tst = _gvn.transform(new BoolNode(chk, BoolTest::ne));
   Node* opaq = _gvn.transform(new Opaque4Node(C, tst, intcon(1)));

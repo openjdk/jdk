@@ -2191,6 +2191,11 @@ void Compile::remove_root_to_sfpts_edges(PhaseIterGVN& igvn) {
         --i;
       }
     }
+    // Parsing may have added top inputs to the root node (Path
+    // leading to the Halt node proven dead). Make sure we get a
+    // chance to clean them up.
+    igvn._worklist.push(r);
+    igvn.optimize();
   }
 }
 
