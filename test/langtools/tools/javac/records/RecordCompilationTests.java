@@ -377,10 +377,44 @@ public class RecordCompilationTests extends CompilationTestCase {
                 "    }\n" +
                 "}");
 
-        // Capture locals from local record
+        // Cant capture locals
+        assertFail("compiler.err.non-static.cant.be.ref",
+                "class R { \n" +
+                        "    void m(int y) { \n" +
+                        "        record RR(int x) { public int x() { return y; }};\n" +
+                        "    }\n" +
+                        "}");
+
+        assertFail("compiler.err.non-static.cant.be.ref",
+                "class R { \n" +
+                        "    void m() {\n" +
+                        "        int y;\n" +
+                        "        record RR(int x) { public int x() { return y; }};\n" +
+                        "    }\n" +
+                        "}");
+
+        // instance fields
+        assertFail("compiler.err.non-static.cant.be.ref",
+                "class R { \n" +
+                        "    int z = 0;\n" +
+                        "    void m() { \n" +
+                        "        record RR(int x) { public int x() { return z; }};\n" +
+                        "    }\n" +
+                        "}");
+
+        // or type variables
+        assertFail("compiler.err.non-static.cant.be.ref",
+                "class R<T> { \n" +
+                        "    void m() { \n" +
+                        "        record RR(T t) {};\n" +
+                        "    }\n" +
+                        "}");
+
+        // but static fields are OK
         assertOK("class R { \n" +
-                "    void m(int y) { \n" +
-                "        record RR(int x) { public int x() { return y; }};\n" +
+                "    static int z = 0;\n" +
+                "    void m() { \n" +
+                "        record RR(int x) { public int x() { return z; }};\n" +
                 "    }\n" +
                 "}");
 
