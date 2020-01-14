@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,11 +26,12 @@
 package com.sun.tools.javac.comp;
 
 import com.sun.tools.javac.code.Flags;
+import com.sun.tools.javac.code.Symbol;
+import com.sun.tools.javac.code.Symbol.BindingSymbol;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
 import com.sun.tools.javac.code.Symtab;
 import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.code.Types;
-import com.sun.tools.javac.comp.MatchBindingsComputer.BindingSymbol;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.JCTree.JCAssign;
 import com.sun.tools.javac.tree.JCTree.JCBinary;
@@ -42,7 +43,6 @@ import com.sun.tools.javac.tree.JCTree.JCIf;
 import com.sun.tools.javac.tree.JCTree.JCInstanceOf;
 import com.sun.tools.javac.tree.JCTree.JCLabeledStatement;
 import com.sun.tools.javac.tree.JCTree.JCMethodDecl;
-import com.sun.tools.javac.tree.JCTree.JCStatement;
 import com.sun.tools.javac.tree.JCTree.JCVariableDecl;
 import com.sun.tools.javac.tree.JCTree.JCBindingPattern;
 import com.sun.tools.javac.tree.JCTree.JCWhileLoop;
@@ -51,7 +51,6 @@ import com.sun.tools.javac.tree.TreeMaker;
 import com.sun.tools.javac.tree.TreeTranslator;
 import com.sun.tools.javac.util.Assert;
 import com.sun.tools.javac.util.Context;
-import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
 import com.sun.tools.javac.util.Log;
 import com.sun.tools.javac.util.Names;
@@ -59,18 +58,18 @@ import com.sun.tools.javac.util.Options;
 
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.stream.Collectors;
 
 import com.sun.tools.javac.code.Symbol.MethodSymbol;
-import static com.sun.tools.javac.code.TypeTag.BOOLEAN;
 import static com.sun.tools.javac.code.TypeTag.BOT;
-import com.sun.tools.javac.comp.MatchBindingsComputer.BindingSymbol;
 import com.sun.tools.javac.jvm.Target;
+import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.JCTree.JCBlock;
 import com.sun.tools.javac.tree.JCTree.JCDoWhileLoop;
+import com.sun.tools.javac.tree.JCTree.JCLambda;
 import com.sun.tools.javac.tree.JCTree.JCStatement;
 import com.sun.tools.javac.tree.JCTree.LetExpr;
 import com.sun.tools.javac.util.List;
+import java.util.HashMap;
 
 /**
  * This pass translates pattern-matching constructs, such as instanceof <pattern>.
@@ -93,10 +92,14 @@ public class TransPatterns extends TreeTranslator {
     private final ConstFold constFold;
     private final Names names;
     private final Target target;
-    private final MatchBindingsComputer matchBindingsComputer;
     private TreeMaker make;
 
     BindingContext bindingContext = new BindingContext() {
+        @Override
+        VarSymbol bindingDeclared(BindingSymbol varSymbol) {
+            return null;
+        }
+
         @Override
         VarSymbol getBindingFor(BindingSymbol varSymbol) {
             return null;
@@ -140,7 +143,6 @@ public class TransPatterns extends TreeTranslator {
         constFold = ConstFold.instance(context);
         names = Names.instance(context);
         target = Target.instance(context);
-        matchBindingsComputer = MatchBindingsComputer.instance(context);
         debugTransPatterns = Options.instance(context).isSet("debug.patterns");
     }
 
@@ -164,8 +166,8 @@ public class TransPatterns extends TreeTranslator {
 
             result = makeTypeTest(make.Ident(temp), make.Type(castTargetType));
 
-            VarSymbol bindingVar = bindingContext.getBindingFor(patt.symbol);
-            if (bindingVar != null) {
+            VarSymbol bindingVar = bindingContext.bindingDeclared(patt.symbol);
+            if (bindingVar != null) { //TODO: cannot be null here?
                 JCAssign fakeInit = (JCAssign)make.at(tree.pos).Assign(
                         make.Ident(bindingVar), convert(make.Ident(temp), castTargetType)).setType(bindingVar.erasure(types));
                 result = makeBinary(Tag.AND, (JCExpression)result,
@@ -180,20 +182,7 @@ public class TransPatterns extends TreeTranslator {
 
     @Override
     public void visitBinary(JCBinary tree) {
-        List<BindingSymbol> matchBindings;
-        switch (tree.getTag()) {
-            case AND:
-                matchBindings = matchBindingsComputer.getMatchBindings(tree.lhs, true);
-                break;
-            case OR:
-                matchBindings = matchBindingsComputer.getMatchBindings(tree.lhs, false);
-                break;
-            default:
-                matchBindings = List.nil();
-                break;
-        }
-
-        bindingContext = new BasicBindingContext(matchBindings);
+        bindingContext = new BasicBindingContext();
         try {
             super.visitBinary(tree);
             result = bindingContext.decorateExpression(tree);
@@ -204,9 +193,7 @@ public class TransPatterns extends TreeTranslator {
 
     @Override
     public void visitConditional(JCConditional tree) {
-        bindingContext = new BasicBindingContext(
-                matchBindingsComputer.getMatchBindings(tree.cond, true)
-                        .appendList(matchBindingsComputer.getMatchBindings(tree.cond, false)));
+        bindingContext = new BasicBindingContext();
         try {
             super.visitConditional(tree);
             result = bindingContext.decorateExpression(tree);
@@ -217,7 +204,7 @@ public class TransPatterns extends TreeTranslator {
 
     @Override
     public void visitIf(JCIf tree) {
-        bindingContext = new BasicBindingContext(getMatchBindings(tree.cond));
+        bindingContext = new BasicBindingContext();
         try {
             super.visitIf(tree);
             result = bindingContext.decorateStatement(tree);
@@ -228,7 +215,7 @@ public class TransPatterns extends TreeTranslator {
 
     @Override
     public void visitForLoop(JCForLoop tree) {
-        bindingContext = new BasicBindingContext(getMatchBindings(tree.cond));
+        bindingContext = new BasicBindingContext();
         try {
             super.visitForLoop(tree);
             result = bindingContext.decorateStatement(tree);
@@ -239,7 +226,7 @@ public class TransPatterns extends TreeTranslator {
 
     @Override
     public void visitWhileLoop(JCWhileLoop tree) {
-        bindingContext = new BasicBindingContext(getMatchBindings(tree.cond));
+        bindingContext = new BasicBindingContext();
         try {
             super.visitWhileLoop(tree);
             result = bindingContext.decorateStatement(tree);
@@ -250,7 +237,7 @@ public class TransPatterns extends TreeTranslator {
 
     @Override
     public void visitDoLoop(JCDoWhileLoop tree) {
-        bindingContext = new BasicBindingContext(getMatchBindings(tree.cond));
+        bindingContext = new BasicBindingContext();
         try {
             super.visitDoLoop(tree);
             result = bindingContext.decorateStatement(tree);
@@ -286,7 +273,7 @@ public class TransPatterns extends TreeTranslator {
     @Override
     public void visitBlock(JCBlock tree) {
         ListBuffer<JCStatement> statements = new ListBuffer<>();
-        bindingContext = new BasicBindingContext(List.nil()) {
+        bindingContext = new BindingDeclarationFenceBindingContext() {
             boolean tryPrepend(BindingSymbol binding, JCVariableDecl var) {
                 //{
                 //    if (E instanceof T N) {
@@ -316,6 +303,17 @@ public class TransPatterns extends TreeTranslator {
             result = tree;
         } finally {
             bindingContext.pop();
+        }
+    }
+
+    @Override
+    public void visitLambda(JCLambda tree) {
+        BindingContext prevContent = bindingContext;
+        try {
+            bindingContext = new BindingDeclarationFenceBindingContext();
+            super.visitLambda(tree);
+        } finally {
+            bindingContext = prevContent;
         }
     }
 
@@ -360,11 +358,8 @@ public class TransPatterns extends TreeTranslator {
         return result;
     }
 
-    private List<BindingSymbol> getMatchBindings(JCExpression cond) {
-        return matchBindingsComputer.getMatchBindings(cond, true)
-                        .appendList(matchBindingsComputer.getMatchBindings(cond, false));
-    }
     abstract class BindingContext {
+        abstract VarSymbol bindingDeclared(BindingSymbol varSymbol);
         abstract VarSymbol getBindingFor(BindingSymbol varSymbol);
         abstract JCStatement decorateStatement(JCStatement stat);
         abstract JCExpression decorateExpression(JCExpression expr);
@@ -373,20 +368,23 @@ public class TransPatterns extends TreeTranslator {
     }
 
     class BasicBindingContext extends BindingContext {
-        List<BindingSymbol> matchBindings;
         Map<BindingSymbol, VarSymbol> hoistedVarMap;
         BindingContext parent;
 
-        public BasicBindingContext(List<BindingSymbol> matchBindings) {
-            this.matchBindings = matchBindings;
+        public BasicBindingContext() {
             this.parent = bindingContext;
-            this.hoistedVarMap = matchBindings.stream()
-                    .filter(v -> parent.getBindingFor(v) == null)
-                    .collect(Collectors.toMap(v -> v, v -> {
-                        VarSymbol res = new VarSymbol(v.flags(), v.name, v.type, v.owner);
-                        res.setTypeAttributes(v.getRawTypeAttributes());
-                        return res;
-                    }));
+            this.hoistedVarMap = new HashMap<>();
+        }
+
+        @Override
+        VarSymbol bindingDeclared(BindingSymbol varSymbol) {
+            VarSymbol res = parent.bindingDeclared(varSymbol);
+            if (res == null) {
+                res = new VarSymbol(varSymbol.flags(), varSymbol.name, varSymbol.type, varSymbol.owner);
+                res.setTypeAttributes(varSymbol.getRawTypeAttributes());
+                hoistedVarMap.put(varSymbol, res);
+            }
+            return res;
         }
 
         @Override
@@ -453,5 +451,14 @@ public class TransPatterns extends TreeTranslator {
         private JCVariableDecl makeHoistedVarDecl(int pos, VarSymbol varSymbol) {
             return make.at(pos).VarDef(varSymbol, null);
         }
+    }
+
+    private class BindingDeclarationFenceBindingContext extends BasicBindingContext {
+
+        @Override
+        VarSymbol bindingDeclared(BindingSymbol varSymbol) {
+            return null;
+        }
+
     }
 }
