@@ -236,7 +236,7 @@ StringDedupTable::StringDedupTable(size_t size, jint hash_seed) :
 }
 
 StringDedupTable::~StringDedupTable() {
-  FREE_C_HEAP_ARRAY(G1StringDedupEntry*, _buckets);
+  FREE_C_HEAP_ARRAY(StringDedupEntry*, _buckets);
 }
 
 void StringDedupTable::create() {
