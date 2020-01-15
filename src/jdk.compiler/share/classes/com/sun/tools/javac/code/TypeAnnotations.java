@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1129,6 +1129,9 @@ public class TypeAnnotations {
                 scan(tree.implementing);
             }
             scan(tree.defs);
+            if (tree.sym.isRecord()) {
+                tree.sym.getRecordComponents().stream().forEach(rc -> scan(rc.accessorMeth));
+            }
         }
 
         /**
