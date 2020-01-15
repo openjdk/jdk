@@ -97,10 +97,10 @@ inline traceid JfrTraceId::use(const Klass* klass, const Method* method) {
   if (METHOD_FLAG_NOT_USED_THIS_EPOCH(method)) {
     SET_METHOD_AND_CLASS_USED_THIS_EPOCH(klass);
     SET_METHOD_FLAG_USED_THIS_EPOCH(method);
+    assert(METHOD_AND_CLASS_USED_THIS_EPOCH(klass), "invariant");
+    assert(METHOD_FLAG_USED_THIS_EPOCH(method), "invariant");
     JfrTraceIdEpoch::set_changed_tag_state();
   }
-  assert(METHOD_AND_CLASS_USED_THIS_EPOCH(klass), "invariant");
-  assert(METHOD_FLAG_USED_THIS_EPOCH(method), "invariant");
   return (METHOD_ID(klass, method));
 }
 

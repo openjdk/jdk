@@ -1787,6 +1787,29 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
 
     }
 
+    public static class BindingSymbol extends VarSymbol {
+
+        public BindingSymbol(Name name, Type type, Symbol owner) {
+            super(Flags.FINAL | Flags.HASINIT | Flags.MATCH_BINDING, name, type, owner);
+        }
+
+        public boolean isAliasFor(BindingSymbol b) {
+            return aliases().containsAll(b.aliases());
+        }
+
+        List<BindingSymbol> aliases() {
+            return List.of(this);
+        }
+
+        public void preserveBinding() {
+            flags_field |= Flags.MATCH_BINDING_TO_OUTER;
+        }
+
+        public boolean isPreserved() {
+            return (flags_field & Flags.MATCH_BINDING_TO_OUTER) != 0;
+        }
+    }
+
     /** A class for method symbols.
      */
     public static class MethodSymbol extends Symbol implements ExecutableElement {

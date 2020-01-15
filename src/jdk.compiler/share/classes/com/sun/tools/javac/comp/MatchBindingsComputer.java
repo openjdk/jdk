@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,31 +25,26 @@
 
 package com.sun.tools.javac.comp;
 
-import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.code.Symbol;
-import com.sun.tools.javac.code.Symbol.VarSymbol;
-import com.sun.tools.javac.code.Type;
-import com.sun.tools.javac.code.Types;
+import com.sun.tools.javac.code.Symbol.BindingSymbol;
 import com.sun.tools.javac.resources.CompilerProperties.Errors;
 import com.sun.tools.javac.tree.JCTree;
-import com.sun.tools.javac.tree.JCTree.JCBinary;
-import com.sun.tools.javac.tree.JCTree.JCConditional;
-import com.sun.tools.javac.tree.JCTree.JCUnary;
-import com.sun.tools.javac.tree.JCTree.JCBindingPattern;
+import com.sun.tools.javac.tree.JCTree.Tag;
 import com.sun.tools.javac.tree.TreeScanner;
 import com.sun.tools.javac.util.Context;
+import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.Log;
-import com.sun.tools.javac.util.Name;
+
+import static com.sun.tools.javac.code.Flags.CLASH;
 
 
 public class MatchBindingsComputer extends TreeScanner {
+    public static final MatchBindings EMPTY = new MatchBindings(List.nil(), List.nil());
+
     protected static final Context.Key<MatchBindingsComputer> matchBindingsComputerKey = new Context.Key<>();
 
     private final Log log;
-    private final Types types;
-    boolean whenTrue;
-    List<BindingSymbol> bindings;
 
     public static MatchBindingsComputer instance(Context context) {
         MatchBindingsComputer instance = context.get(matchBindingsComputerKey);
@@ -60,106 +55,99 @@ public class MatchBindingsComputer extends TreeScanner {
 
     protected MatchBindingsComputer(Context context) {
         this.log = Log.instance(context);
-        this.types = Types.instance(context);
     }
 
-    public List<BindingSymbol> getMatchBindings(JCTree expression, boolean whenTrue) {
-        this.whenTrue = whenTrue;
-        this.bindings = List.nil();
-        scan(expression);
-        return bindings;
-    }
-
-    @Override
-    public void visitBindingPattern(JCBindingPattern tree) {
-        bindings = whenTrue ? List.of(tree.symbol) : List.nil();
-    }
-
-    @Override
-    public void visitBinary(JCBinary tree) {
-        switch (tree.getTag()) {
-            case AND:
-                // e.T = union(x.T, y.T)
-                // e.F = intersection(x.F, y.F)
-                scan(tree.lhs);
-                List<BindingSymbol> lhsBindings = bindings;
-                scan(tree.rhs);
-                List<BindingSymbol> rhsBindings = bindings;
-                bindings = whenTrue ? union(tree, lhsBindings, rhsBindings) : intersection(tree, lhsBindings, rhsBindings);
-                break;
-            case OR:
-                // e.T = intersection(x.T, y.T)
-                // e.F = union(x.F, y.F)
-                scan(tree.lhs);
-                lhsBindings = bindings;
-                scan(tree.rhs);
-                rhsBindings = bindings;
-                bindings = whenTrue ? intersection(tree, lhsBindings, rhsBindings) : union(tree, lhsBindings, rhsBindings);
-                break;
-            default:
-                super.visitBinary(tree);
-                break;
+    public MatchBindings conditional(JCTree tree, MatchBindings condBindings, MatchBindings trueBindings, MatchBindings falseBindings) {
+        if (condBindings == EMPTY &&
+            trueBindings == EMPTY &&
+            falseBindings == EMPTY) {
+            return EMPTY;
         }
-    }
 
-    @Override
-    public void visitUnary(JCUnary tree) {
-        switch (tree.getTag()) {
-            case NOT:
-                // e.T = x.F  // flip 'em
-                // e.F = x.T
-                whenTrue = !whenTrue;
-                scan(tree.arg);
-                whenTrue = !whenTrue;
-                break;
-            default:
-                super.visitUnary(tree);
-                break;
-        }
-    }
+        DiagnosticPosition pos = tree.pos();
+         //A pattern variable is introduced both by a when true, and by c when true:
+        List<BindingSymbol> xTzT = intersection(pos, condBindings.bindingsWhenTrue, falseBindings.bindingsWhenTrue);
+         //A pattern variable is introduced both by a when false, and by b when true:
+        List<BindingSymbol> xFyT = intersection(pos, condBindings.bindingsWhenFalse, trueBindings.bindingsWhenTrue);
+         //A pattern variable is introduced both by b when true, and by c when true:
+        List<BindingSymbol> yTzT = intersection(pos, trueBindings.bindingsWhenTrue, falseBindings.bindingsWhenTrue);
+         //A pattern variable is introduced both by a when true, and by c when false:
+        List<BindingSymbol> xTzF = intersection(pos, condBindings.bindingsWhenTrue, falseBindings.bindingsWhenFalse);
+         //A pattern variable is introduced both by a when false, and by b when false:
+        List<BindingSymbol> xFyF = intersection(pos, condBindings.bindingsWhenFalse, trueBindings.bindingsWhenFalse);
+         //A pattern variable is introduced both by b when false, and by c when false:
+        List<BindingSymbol> yFzF = intersection(pos, trueBindings.bindingsWhenFalse, falseBindings.bindingsWhenFalse);
 
-    @Override
-    public void visitConditional(JCConditional tree) {
+        //error recovery:
         /* if e = "x ? y : z", then:
                e.T = union(intersect(y.T, z.T), intersect(x.T, z.T), intersect(x.F, y.T))
                e.F = union(intersect(y.F, z.F), intersect(x.T, z.F), intersect(x.F, y.F))
         */
-        if (whenTrue) {
-            List<BindingSymbol> xT, yT, zT, xF;
-            scan(tree.cond);
-            xT = bindings;
-            scan(tree.truepart);
-            yT = bindings;
-            scan(tree.falsepart);
-            zT = bindings;
-            whenTrue = false;
-            scan(tree.cond);
-            xF = bindings;
-            whenTrue = true;
-            bindings = union(tree, intersection(tree, yT, zT), intersection(tree, xT, zT), intersection(tree, xF, yT));
-        } else {
-            List<BindingSymbol> xF, yF, zF, xT;
-            scan(tree.cond);
-            xF = bindings;
-            scan(tree.truepart);
-            yF = bindings;
-            scan(tree.falsepart);
-            zF = bindings;
-            whenTrue = true;
-            scan(tree.cond);
-            xT = bindings;
-            whenTrue = false;
-            bindings = union(tree, intersection(tree, yF, zF), intersection(tree, xT, zF), intersection(tree, xF, yF));
+        List<BindingSymbol> bindingsWhenTrue = union(pos, yTzT, xTzT, xFyT);
+        List<BindingSymbol> bindingsWhenFalse = union(pos, yFzF, xTzF, xFyF);
+        return new MatchBindings(bindingsWhenTrue, bindingsWhenFalse);
+    }
+
+    public MatchBindings unary(JCTree tree, MatchBindings bindings) {
+        if (bindings == EMPTY || !tree.hasTag(Tag.NOT)) return bindings;
+        return new MatchBindings(bindings.bindingsWhenFalse, bindings.bindingsWhenTrue);
+    }
+
+    public MatchBindings binary(JCTree tree, MatchBindings lhsBindings, MatchBindings rhsBindings) {
+        switch (tree.getTag()) {
+            case AND: {
+                // e.T = union(x.T, y.T)
+                // e.F = intersection(x.F, y.F) (error recovery)
+                List<BindingSymbol> bindingsWhenTrue =
+                        union(tree.pos(), lhsBindings.bindingsWhenTrue, rhsBindings.bindingsWhenTrue);
+                List<BindingSymbol> bindingsWhenFalse = //error recovery
+                        intersection(tree.pos(), lhsBindings.bindingsWhenFalse, rhsBindings.bindingsWhenFalse);
+                return new MatchBindings(bindingsWhenTrue, bindingsWhenFalse);
+            }
+            case OR: {
+                // e.T = intersection(x.T, y.T) (error recovery)
+                // e.F = union(x.F, y.F)
+                List<BindingSymbol> bindingsWhenTrue = //error recovery
+                        intersection(tree.pos(), lhsBindings.bindingsWhenTrue, rhsBindings.bindingsWhenTrue);
+                List<Symbol.BindingSymbol> bindingsWhenFalse =
+                        union(tree.pos(), lhsBindings.bindingsWhenFalse, rhsBindings.bindingsWhenFalse);
+                return new MatchBindings(bindingsWhenTrue, bindingsWhenFalse);
+            }
+        }
+        return EMPTY;
+    }
+
+    public MatchBindings finishBindings(JCTree tree, MatchBindings matchBindings) {
+        switch (tree.getTag()) {
+            case NOT: case AND: case OR: case BINDINGPATTERN:
+            case PARENS: case TYPETEST:
+            case CONDEXPR: //error recovery:
+                return matchBindings;
+            default:
+                return MatchBindingsComputer.EMPTY;
         }
     }
 
-    private List<BindingSymbol> intersection(JCTree tree, List<BindingSymbol> lhsBindings, List<BindingSymbol> rhsBindings) {
+    public static class MatchBindings {
+
+        public final List<BindingSymbol> bindingsWhenTrue;
+        public final List<BindingSymbol> bindingsWhenFalse;
+
+        public MatchBindings(List<BindingSymbol> bindingsWhenTrue, List<BindingSymbol> bindingsWhenFalse) {
+            this.bindingsWhenTrue = bindingsWhenTrue;
+            this.bindingsWhenFalse = bindingsWhenFalse;
+        }
+
+    }
+    private List<BindingSymbol> intersection(DiagnosticPosition pos, List<BindingSymbol> lhsBindings, List<BindingSymbol> rhsBindings) {
         // It is an error if, for intersection(a,b), if a and b contain the same variable name (may be eventually relaxed to merge variables of same type)
         List<BindingSymbol> list = List.nil();
         for (BindingSymbol v1 : lhsBindings) {
             for (BindingSymbol v2 : rhsBindings) {
-                if (v1.name == v2.name) {
-                    log.error(tree.pos(), Errors.MatchBindingExists);
+                if (v1.name == v2.name &&
+                    (v1.flags() & CLASH) == 0 &&
+                    (v2.flags() & CLASH) == 0) {
+                    log.error(pos, Errors.MatchBindingExists);
                     list = list.append(v2);
                 }
             }
@@ -168,14 +156,16 @@ public class MatchBindingsComputer extends TreeScanner {
     }
 
     @SafeVarargs
-    private final List<BindingSymbol> union(JCTree tree, List<BindingSymbol> lhsBindings, List<BindingSymbol> ... rhsBindings_s) {
+    private final List<BindingSymbol> union(DiagnosticPosition pos, List<BindingSymbol> lhsBindings, List<BindingSymbol> ... rhsBindings_s) {
         // It is an error if for union(a,b), a and b contain the same name (disjoint union).
         List<BindingSymbol> list = lhsBindings;
         for (List<BindingSymbol> rhsBindings : rhsBindings_s) {
             for (BindingSymbol v : rhsBindings) {
                 for (BindingSymbol ov : list) {
-                    if (ov.name == v.name) {
-                        log.error(tree.pos(), Errors.MatchBindingExists);
+                    if (ov.name == v.name &&
+                        (ov.flags() & CLASH) == 0 &&
+                        (v.flags() & CLASH) == 0) {
+                        log.error(pos, Errors.MatchBindingExists);
                     }
                 }
                 list = list.append(v);
@@ -183,34 +173,4 @@ public class MatchBindingsComputer extends TreeScanner {
         }
         return list;
     }
-
-    @Override
-    public void scan(JCTree tree) {
-        bindings = List.nil();
-        super.scan(tree);
-    }
-
-    public static class BindingSymbol extends VarSymbol {
-
-        public BindingSymbol(Name name, Type type, Symbol owner) {
-            super(Flags.FINAL | Flags.HASINIT | Flags.MATCH_BINDING, name, type, owner);
-        }
-
-        public boolean isAliasFor(BindingSymbol b) {
-            return aliases().containsAll(b.aliases());
-        }
-
-        List<BindingSymbol> aliases() {
-            return List.of(this);
-        }
-
-        public void preserveBinding() {
-            flags_field |= Flags.MATCH_BINDING_TO_OUTER;
-        }
-
-        public boolean isPreserved() {
-            return (flags_field & Flags.MATCH_BINDING_TO_OUTER) != 0;
-        }
-    }
-
 }

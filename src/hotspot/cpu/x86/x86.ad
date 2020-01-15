@@ -2143,7 +2143,7 @@ operand vecZ() %{
 
 // Replaces legVec during post-selection cleanup. See above.
 operand legVecZ() %{
-  constraint(ALLOC_IN_RC(vectorz_reg_vl));
+  constraint(ALLOC_IN_RC(vectorz_reg_legacy));
   match(VecZ);
 
   format %{ %}
