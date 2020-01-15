@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
  */
 package tools.javac.combo;
 
+import java.io.File;
 import java.io.IOException;
 
 import org.testng.ITestResult;
@@ -69,28 +70,34 @@ public class CompilationTestCase extends JavacTemplateTestBase {
         return s;
     }
 
-    private void assertCompile(String program, Runnable postTest) {
+    private File assertCompile(String program, Runnable postTest, boolean generate) {
         reset();
         addCompileOptions(compileOptions);
         addSourceFile(defaultFileName, program);
+        File dir = null;
         try {
-            compile();
+            dir = compile(generate);
         }
         catch (IOException e) {
             throw new RuntimeException(e);
         }
         postTest.run();
+        return dir;
     }
 
     protected void assertOK(String... constructs) {
-        assertCompile(expandMarkers(constructs), this::assertCompileSucceeded);
+        assertCompile(expandMarkers(constructs), this::assertCompileSucceeded, false);
+    }
+
+    protected File assertOK(boolean generate, String... constructs) {
+        return assertCompile(expandMarkers(constructs), this::assertCompileSucceeded, generate);
     }
 
     protected void assertOKWithWarning(String warning, String... constructs) {
-        assertCompile(expandMarkers(constructs), () -> assertCompileSucceededWithWarning(warning));
+        assertCompile(expandMarkers(constructs), () -> assertCompileSucceededWithWarning(warning), false);
     }
 
     protected void assertFail(String expectedDiag, String... constructs) {
-        assertCompile(expandMarkers(constructs), () -> assertCompileFailed(expectedDiag));
+        assertCompile(expandMarkers(constructs), () -> assertCompileFailed(expectedDiag), false);
     }
 }
