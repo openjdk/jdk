@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,7 @@ method name getMessage descriptor ()Ljava/lang/String; flags 1
 
 class name java/lang/Record
 header extends java/lang/Object flags 421 classAnnotations @Ljdk/internal/PreviewFeature;(feature=eLjdk/internal/PreviewFeature$Feature;RECORDS;,essentialAPI=Ztrue)
-method name <init> descriptor ()V flags 1
+method name <init> descriptor ()V flags 4
 method name equals descriptor (Ljava/lang/Object;)Z flags 401
 method name hashCode descriptor ()I flags 401
 method name toString descriptor ()Ljava/lang/String; flags 401
