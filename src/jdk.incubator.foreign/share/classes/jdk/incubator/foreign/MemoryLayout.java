@@ -55,14 +55,14 @@ import java.util.OptionalLong;
  * <p>
  * Non-platform classes should not implement {@linkplain MemoryLayout} directly.
  *
- * <h2>Size, alignment and byte order</h2>
+ * <h2><a id = "layout-align">Size, alignment and byte order</a></h2>
  *
  * All layouts have a size; layout size for value and padding layouts is always explicitly denoted; this means that a layout description
  * always has the same size in bits, regardless of the platform in which it is used. For derived layouts, the size is computed
  * as follows:
  * <ul>
  *     <li>for a <em>finite</em> sequence layout <em>S</em> whose element layout is <em>E</em> and size is L,
- *     the size of <em>S</em> is that of <em>E, multiplied by L</em></li>
+ *     the size of <em>S</em> is that of <em>E</em>, multiplied by <em>L</em></li>
  *     <li>the size of an <em>unbounded</em> sequence layout is <em>unknown</em></li>
  *     <li>for a group layout <em>G</em> with member layouts <em>M1</em>, <em>M2</em>, ... <em>Mn</em> whose sizes are
  *     <em>S1</em>, <em>S2</em>, ... <em>Sn</em>, respectively, the size of <em>G</em> is either <em>S1 + S2 + ... + Sn</em> or
@@ -180,6 +180,9 @@ public interface MemoryLayout extends Constable {
      * <li>{@code A=512} is the most strict alignment required by the x86/SV ABI (for AVX-512 data).</li>
      * </ul>
      *
+     * If no explicit alignment constraint was set on this layout (see {@link #withBitAlignment(long)}),
+     * then this method returns the <a href="#layout-align">natural alignment</a> constraint (in bits) associated with this layout.
+     *
      * @return the layout alignment constraint, in bits.
      */
     long bitAlignment();
@@ -194,6 +197,9 @@ public interface MemoryLayout extends Constable {
      * <li>{@code A=8} means word aligned (on LP64), {@code A=4} int aligned, {@code A=2} short aligned, etc.</li>
      * <li>{@code A=64} is the most strict alignment required by the x86/SV ABI (for AVX-512 data).</li>
      * </ul>
+     *
+     * If no explicit alignment constraint was set on this layout (see {@link #withBitAlignment(long)}),
+     * then this method returns the <a href="#layout-align">natural alignment</a> constraint (in bytes) associated with this layout.
      *
      * @return the layout alignment constraint, in bytes.
      * @throws UnsupportedOperationException if {@code bitAlignment()} is not a multiple of 8.
@@ -352,7 +358,16 @@ E * (S + I * F)
 
     /**
      * Compares the specified object with this layout for equality. Returns {@code true} if and only if the specified
-     * object is also a layout, and it is equal to this layout.
+     * object is also a layout, and it is equal to this layout. Two layouts are considered equal if they are of
+     * the same kind, have the same size, name and alignment constraints. Furthermore, depending on the layout kind, additional
+     * conditions must be satisfied:
+     * <ul>
+     *     <li>two value layouts are considered equal if they have the same endianness (see {@link ValueLayout#order()})</li>
+     *     <li>two sequence layouts are considered equal if they have the same element count (see {@link SequenceLayout#elementCount()}), and
+     *     if their element layouts (see {@link SequenceLayout#elementLayout()}) are also equal</li>
+     *     <li>two group layouts are considered equal if they are of the same kind (see {@link GroupLayout#isStruct()},
+     *     {@link GroupLayout#isUnion()}) and if their member layouts (see {@link GroupLayout#memberLayouts()}) are also equal</li>
+     * </ul>
      *
      * @param that the object to be compared for equality with this layout.
      * @return {@code true} if the specified object is equal to this layout.

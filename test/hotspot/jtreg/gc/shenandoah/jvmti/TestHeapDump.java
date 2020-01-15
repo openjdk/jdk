@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2017, 2020, Red Hat, Inc. All rights reserved.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
@@ -38,6 +38,15 @@
  * @requires vm.gc.Shenandoah & !vm.graal.enabled & (vm.bits == "64")
  * @compile TestHeapDump.java
  * @run main/othervm/native/timeout=300 -agentlib:TestHeapDump -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -Xmx128m -XX:ShenandoahGCHeuristics=aggressive -XX:-UseCompressedOops TestHeapDump
+ */
+
+/**
+ * @test TestHeapDump
+ * @summary Tests JVMTI heap dumps
+ * @key gc
+ * @requires vm.gc.Shenandoah & !vm.graal.enabled
+ * @compile TestHeapDump.java
+ * @run main/othervm/native/timeout=300 -agentlib:TestHeapDump -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -Xmx128m -XX:ShenandoahGCHeuristics=aggressive                         -XX:+UseStringDeduplication TestHeapDump
  */
 
 import java.lang.ref.Reference;

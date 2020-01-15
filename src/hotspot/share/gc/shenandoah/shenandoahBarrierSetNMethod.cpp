@@ -57,7 +57,6 @@ bool ShenandoahBarrierSetNMethod::nmethod_entry_barrier(nmethod* nm) {
   }
 
   // Heal oops and disarm
-  ShenandoahEvacOOMScope scope;
   ShenandoahNMethod::heal_nmethod(nm);
   ShenandoahNMethod::disarm_nmethod(nm);
   return true;

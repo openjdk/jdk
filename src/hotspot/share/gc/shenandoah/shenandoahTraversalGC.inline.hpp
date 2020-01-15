@@ -51,6 +51,7 @@ void ShenandoahTraversalGC::process_oop(T* p, Thread* thread, ShenandoahObjToSca
     } else if (_heap->in_collection_set(obj)) {
       oop forw = ShenandoahBarrierSet::resolve_forwarded_not_null(obj);
       if (obj == forw) {
+        ShenandoahEvacOOMScope evac_scope;
         forw = _heap->evacuate_object(obj, thread);
       }
       shenandoah_assert_forwarded_except(p, obj, _heap->cancelled_gc());

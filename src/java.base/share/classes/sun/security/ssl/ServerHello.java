@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,9 +28,11 @@ package sun.security.ssl;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.security.AlgorithmConstraints;
+import java.security.CryptoPrimitive;
 import java.security.GeneralSecurityException;
 import java.text.MessageFormat;
 import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
@@ -434,7 +436,7 @@ final class ServerHello {
                     continue;
                 }
                 if (!ServerHandshakeContext.legacyAlgorithmConstraints.permits(
-                        null, cs.name, null)) {
+                        EnumSet.of(CryptoPrimitive.KEY_AGREEMENT), cs.name, null)) {
                     legacySuites.add(cs);
                     continue;
                 }
@@ -723,7 +725,9 @@ final class ServerHello {
                 }
 
                 if ((legacySuite == null) &&
-                        !legacyConstraints.permits(null, cs.name, null)) {
+                        !legacyConstraints.permits(
+                                EnumSet.of(CryptoPrimitive.KEY_AGREEMENT),
+                                cs.name, null)) {
                     legacySuite = cs;
                     continue;
                 }

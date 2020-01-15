@@ -377,10 +377,44 @@ public class RecordCompilationTests extends CompilationTestCase {
                 "    }\n" +
                 "}");
 
-        // Capture locals from local record
+        // Cant capture locals
+        assertFail("compiler.err.non-static.cant.be.ref",
+                "class R { \n" +
+                        "    void m(int y) { \n" +
+                        "        record RR(int x) { public int x() { return y; }};\n" +
+                        "    }\n" +
+                        "}");
+
+        assertFail("compiler.err.non-static.cant.be.ref",
+                "class R { \n" +
+                        "    void m() {\n" +
+                        "        int y;\n" +
+                        "        record RR(int x) { public int x() { return y; }};\n" +
+                        "    }\n" +
+                        "}");
+
+        // instance fields
+        assertFail("compiler.err.non-static.cant.be.ref",
+                "class R { \n" +
+                        "    int z = 0;\n" +
+                        "    void m() { \n" +
+                        "        record RR(int x) { public int x() { return z; }};\n" +
+                        "    }\n" +
+                        "}");
+
+        // or type variables
+        assertFail("compiler.err.non-static.cant.be.ref",
+                "class R<T> { \n" +
+                        "    void m() { \n" +
+                        "        record RR(T t) {};\n" +
+                        "    }\n" +
+                        "}");
+
+        // but static fields are OK
         assertOK("class R { \n" +
-                "    void m(int y) { \n" +
-                "        record RR(int x) { public int x() { return y; }};\n" +
+                "    static int z = 0;\n" +
+                "    void m() { \n" +
+                "        record RR(int x) { public int x() { return z; }};\n" +
                 "    }\n" +
                 "}");
 
@@ -406,6 +440,18 @@ public class RecordCompilationTests extends CompilationTestCase {
         // x is not DA nor DU in the body of the constructor hence error
         assertFail("compiler.err.var.might.not.have.been.initialized", "record R(int x) { # }",
                 "public R { if (x < 0) { this.x = -x; } }");
+
+        // if static fields are not DA then error
+        assertFail("compiler.err.var.might.not.have.been.initialized",
+                "record R() { # }", "static final String x;");
+
+        // ditto
+        assertFail("compiler.err.var.might.not.have.been.initialized",
+                "record R() { # }", "static final String x; public R {}");
+
+        // ditto
+        assertFail("compiler.err.var.might.not.have.been.initialized",
+                "record R(int i) { # }", "static final String x; public R {}");
     }
 
     public void testReturnInCanonical_Compact() {
@@ -415,6 +461,17 @@ public class RecordCompilationTests extends CompilationTestCase {
                 "public R { if (i < 0) { return; }}");
         assertOK("record R(int x) { public R(int x) { this.x = x; return; } }");
         assertOK("record R(int x) { public R { Runnable r = () -> { return; };} }");
+    }
+
+    public void testArgumentsAreNotFinalInCompact() {
+        assertOK(
+                """
+                record R(int x) {
+                    public R {
+                        x++;
+                    }
+                }
+                """);
     }
 
     public void testNoNativeMethods() {

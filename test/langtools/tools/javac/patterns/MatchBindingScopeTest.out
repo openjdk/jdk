@@ -1,5 +1,5 @@
 MatchBindingScopeTest.java:19:32: compiler.err.cant.resolve.location: kindname.variable, j, , , (compiler.misc.location: kindname.class, MatchBindingScopeTest, null)
-MatchBindingScopeTest.java:23:36: compiler.err.match.binding.exists
+MatchBindingScopeTest.java:23:61: compiler.err.match.binding.exists
 MatchBindingScopeTest.java:30:32: compiler.err.cant.resolve.location: kindname.variable, j, , , (compiler.misc.location: kindname.class, MatchBindingScopeTest, null)
 MatchBindingScopeTest.java:31:32: compiler.err.cant.resolve.location: kindname.variable, k, , , (compiler.misc.location: kindname.class, MatchBindingScopeTest, null)
 MatchBindingScopeTest.java:34:39: compiler.err.cant.resolve.location: kindname.variable, j, , , (compiler.misc.location: kindname.class, MatchBindingScopeTest, null)

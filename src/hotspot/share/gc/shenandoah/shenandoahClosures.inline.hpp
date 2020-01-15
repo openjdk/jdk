@@ -111,12 +111,13 @@ ShenandoahEvacuateUpdateRootsClosure::ShenandoahEvacuateUpdateRootsClosure() :
 
 template <class T>
 void ShenandoahEvacuateUpdateRootsClosure::do_oop_work(T* p) {
-  assert(_heap->is_evacuation_in_progress(), "Only do this when evacuation is in progress");
+  assert(_heap->is_concurrent_root_in_progress(), "Only do this when evacuation is in progress");
 
   T o = RawAccess<>::oop_load(p);
   if (! CompressedOops::is_null(o)) {
     oop obj = CompressedOops::decode_not_null(o);
     if (_heap->in_collection_set(obj)) {
+      assert(_heap->is_evacuation_in_progress(), "Only do this when evacuation is in progress");
       shenandoah_assert_marked(p, obj);
       oop resolved = ShenandoahBarrierSet::resolve_forwarded_not_null(obj);
       if (resolved == obj) {
@@ -139,11 +140,12 @@ ShenandoahEvacUpdateOopStorageRootsClosure::ShenandoahEvacUpdateOopStorageRootsC
 }
 
 void ShenandoahEvacUpdateOopStorageRootsClosure::do_oop(oop* p) {
-  assert(_heap->is_evacuation_in_progress(), "Only do this when evacuation is in progress");
+  assert(_heap->is_concurrent_root_in_progress(), "Only do this when evacuation is in progress");
 
   oop obj = RawAccess<>::oop_load(p);
   if (! CompressedOops::is_null(obj)) {
     if (_heap->in_collection_set(obj)) {
+      assert(_heap->is_evacuation_in_progress(), "Only do this when evacuation is in progress");
       shenandoah_assert_marked(p, obj);
       oop resolved = ShenandoahBarrierSet::resolve_forwarded_not_null(obj);
       if (resolved == obj) {

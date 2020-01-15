@@ -294,7 +294,7 @@ void PatchingStub::align_patch_site(MacroAssembler* masm) {
 void PatchingStub::emit_code(LIR_Assembler* ce) {
   // Copy original code here.
   assert(NativeGeneralJump::instruction_size <= _bytes_to_copy && _bytes_to_copy <= 0xFF,
-         "not enough room for call");
+         "not enough room for call, need %d", _bytes_to_copy);
 
   NearLabel call_patch;
 
@@ -331,7 +331,7 @@ void PatchingStub::emit_code(LIR_Assembler* ce) {
     }
 #endif
   } else {
-    // Make a copy the code which is going to be patched.
+    // Make a copy of the code which is going to be patched.
     for (int i = 0; i < _bytes_to_copy; i++) {
       address ptr = (address)(_pc_start + i);
       int a_byte = (*ptr) & 0xFF;

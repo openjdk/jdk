@@ -935,7 +935,7 @@ void LIR_Assembler::reg2stack(LIR_Opr src, LIR_Opr dest, BasicType type, bool po
     if (is_reference_type(type)) {
       __ verify_oop(src->as_register());
       __ movptr (dst, src->as_register());
-    } else if (type == T_METADATA) {
+    } else if (type == T_METADATA || type == T_ADDRESS) {
       __ movptr (dst, src->as_register());
     } else {
       __ movl (dst, src->as_register());
@@ -1116,7 +1116,7 @@ void LIR_Assembler::stack2reg(LIR_Opr src, LIR_Opr dest, BasicType type) {
     if (is_reference_type(type)) {
       __ movptr(dest->as_register(), frame_map()->address_for_slot(src->single_stack_ix()));
       __ verify_oop(dest->as_register());
-    } else if (type == T_METADATA) {
+    } else if (type == T_METADATA || type == T_ADDRESS) {
       __ movptr(dest->as_register(), frame_map()->address_for_slot(src->single_stack_ix()));
     } else {
       __ movl(dest->as_register(), frame_map()->address_for_slot(src->single_stack_ix()));

@@ -199,12 +199,8 @@ oop ShenandoahBarrierSet::load_reference_barrier_impl(oop obj) {
         _heap->in_collection_set(obj) &&
         obj == fwd) {
       Thread *t = Thread::current();
-      if (t->is_GC_task_thread()) {
-        return _heap->evacuate_object(obj, t);
-      } else {
-        ShenandoahEvacOOMScope oom_evac_scope;
-        return _heap->evacuate_object(obj, t);
-      }
+      ShenandoahEvacOOMScope oom_evac_scope;
+      return _heap->evacuate_object(obj, t);
     } else {
       return fwd;
     }
@@ -252,9 +248,7 @@ oop ShenandoahBarrierSet::load_reference_barrier_native(oop obj, oop* load_addr)
 }
 
 oop ShenandoahBarrierSet::load_reference_barrier_native(oop obj, narrowOop* load_addr) {
-  // Assumption: narrow oop version should not be used anywhere.
-  ShouldNotReachHere();
-  return NULL;
+  return load_reference_barrier_native_impl(obj, load_addr);
 }
 
 template <class T>
@@ -264,7 +258,7 @@ oop ShenandoahBarrierSet::load_reference_barrier_native_impl(oop obj, T* load_ad
   }
 
   ShenandoahMarkingContext* const marking_context = _heap->marking_context();
-  if (_heap->is_evacuation_in_progress() && !marking_context->is_marked(obj)) {
+  if (_heap->is_concurrent_root_in_progress() && !marking_context->is_marked(obj)) {
     Thread* thr = Thread::current();
     if (thr->is_Java_thread()) {
       return NULL;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -128,6 +128,11 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
     @Override
     public final boolean permits(Set<CryptoPrimitive> primitives,
             String algorithm, AlgorithmParameters parameters) {
+        if (primitives == null || primitives.isEmpty()) {
+            throw new IllegalArgumentException("The primitives cannot be null" +
+                    " or empty.");
+        }
+
         if (!checkAlgorithm(disabledAlgorithms, algorithm, decomposer)) {
             return false;
         }
@@ -216,7 +221,11 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
     private boolean checkConstraints(Set<CryptoPrimitive> primitives,
             String algorithm, Key key, AlgorithmParameters parameters) {
 
-        // check the key parameter, it cannot be null.
+        if (primitives == null || primitives.isEmpty()) {
+            throw new IllegalArgumentException("The primitives cannot be null" +
+                    " or empty.");
+        }
+
         if (key == null) {
             throw new IllegalArgumentException("The key cannot be null");
         }

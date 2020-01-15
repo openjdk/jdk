@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,6 +70,7 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import jdk.internal.foreign.MemoryAddressImpl;
+import org.testng.SkipException;
 import org.testng.annotations.*;
 import sun.nio.ch.DirectBuffer;
 
@@ -119,8 +120,8 @@ public class TestByteBuffer {
     static VarHandle shortHandle = shorts.varHandle(short.class, PathElement.sequenceElement());
     static VarHandle intHandle = ints.varHandle(int.class, PathElement.sequenceElement());
     static VarHandle floatHandle = floats.varHandle(float.class, PathElement.sequenceElement());
-    static VarHandle longHandle = doubles.varHandle(long.class, PathElement.sequenceElement());
-    static VarHandle doubleHandle = longs.varHandle(double.class, PathElement.sequenceElement());
+    static VarHandle longHandle = longs.varHandle(long.class, PathElement.sequenceElement());
+    static VarHandle doubleHandle = doubles.varHandle(double.class, PathElement.sequenceElement());
 
 
     static void initTuples(MemoryAddress base) {
@@ -247,6 +248,13 @@ public class TestByteBuffer {
         }
     }
 
+    static void checkByteArrayAlignment(MemoryLayout layout) {
+        if (layout.bitSize() > 32
+                && System.getProperty("sun.arch.data.model").equals("32")) {
+            throw new SkipException("avoid unaligned access on 32-bit system");
+        }
+    }
+
     @Test(dataProvider = "bufferOps")
     public void testScopedBuffer(Function<ByteBuffer, Buffer> bufferFactory, Map<Method, Object[]> members) {
         Buffer bb;
@@ -338,6 +346,7 @@ public class TestByteBuffer {
 
     @Test(dataProvider="resizeOps")
     public void testResizeHeap(Consumer<MemoryAddress> checker, Consumer<MemoryAddress> initializer, SequenceLayout seq) {
+        checkByteArrayAlignment(seq.elementLayout());
         int capacity = (int)seq.byteSize();
         MemoryAddress base = MemorySegment.ofArray(new byte[capacity]).baseAddress();
         initializer.accept(base);
@@ -346,6 +355,7 @@ public class TestByteBuffer {
 
     @Test(dataProvider="resizeOps")
     public void testResizeBuffer(Consumer<MemoryAddress> checker, Consumer<MemoryAddress> initializer, SequenceLayout seq) {
+        checkByteArrayAlignment(seq.elementLayout());
         int capacity = (int)seq.byteSize();
         MemoryAddress base = MemorySegment.ofByteBuffer(ByteBuffer.wrap(new byte[capacity])).baseAddress();
         initializer.accept(base);
@@ -354,6 +364,7 @@ public class TestByteBuffer {
 
     @Test(dataProvider="resizeOps")
     public void testResizeRoundtripHeap(Consumer<MemoryAddress> checker, Consumer<MemoryAddress> initializer, SequenceLayout seq) {
+        checkByteArrayAlignment(seq.elementLayout());
         int capacity = (int)seq.byteSize();
         byte[] arr = new byte[capacity];
         MemorySegment segment = MemorySegment.ofArray(arr);
@@ -382,13 +393,19 @@ public class TestByteBuffer {
         leaked.asByteBuffer();
     }
 
-    @Test(expectedExceptions = UnsupportedOperationException.class)
+    @Test(expectedExceptions = { UnsupportedOperationException.class,
+                                 OutOfMemoryError.class })
     public void testTooBigForByteBuffer() {
+        if (System.getProperty("sun.arch.data.model").equals("32")) {
+            throw new SkipException("32-bit Unsafe does not support this allocation size");
+        }
+
         MemorySegment.allocateNative((long) Integer.MAX_VALUE * 2).asByteBuffer();
     }
 
     @Test(dataProvider="resizeOps")
     public void testCopyHeapToNative(Consumer<MemoryAddress> checker, Consumer<MemoryAddress> initializer, SequenceLayout seq) {
+        checkByteArrayAlignment(seq.elementLayout());
         int bytes = (int)seq.byteSize();
         try (MemorySegment nativeArray = MemorySegment.allocateNative(bytes);
              MemorySegment heapArray = MemorySegment.ofArray(new byte[bytes])) {
@@ -400,6 +417,7 @@ public class TestByteBuffer {
 
     @Test(dataProvider="resizeOps")
     public void testCopyNativeToHeap(Consumer<MemoryAddress> checker, Consumer<MemoryAddress> initializer, SequenceLayout seq) {
+        checkByteArrayAlignment(seq.elementLayout());
         int bytes = (int)seq.byteSize();
         try (MemorySegment nativeArray = MemorySegment.allocateNative(seq);
              MemorySegment heapArray = MemorySegment.ofArray(new byte[bytes])) {
