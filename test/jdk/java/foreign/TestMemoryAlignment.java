@@ -69,7 +69,7 @@ public class TestMemoryAlignment {
         VarHandle vh = aligned.varHandle(int.class);
         try (MemorySegment segment = MemorySegment.allocateNative(alignedGroup)) {
             MemoryAddress addr = segment.baseAddress();
-            vh.set(addr.offset(1L), -42);
+            vh.set(addr.addOffset(1L), -42);
             assertEquals(align, 8); //this is the only case where access is aligned
         } catch (IllegalStateException ex) {
             assertNotEquals(align, 8); //if align != 8, access is always unaligned

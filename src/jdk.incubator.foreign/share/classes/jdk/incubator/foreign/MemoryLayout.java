@@ -26,16 +26,21 @@
 package jdk.incubator.foreign;
 
 import jdk.internal.foreign.LayoutPath;
+import jdk.internal.foreign.LayoutPath.PathElementImpl.PathKind;
 import jdk.internal.foreign.Utils;
 
 import java.lang.constant.Constable;
 import java.lang.constant.DynamicConstantDesc;
 import java.lang.invoke.VarHandle;
 import java.nio.ByteOrder;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalLong;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.function.UnaryOperator;
 
 /**
  * A memory layout can be used to describe the contents of a memory segment in a <em>language neutral</em> fashion.
@@ -87,9 +92,11 @@ import java.util.OptionalLong;
  * at a layout nested within the root layout - this is the layout <em>selected</em> by the layout path.
  * Layout paths are typically expressed as a sequence of one or more {@link PathElement} instances.
  * <p>
- * Layout paths are useful in order to e.g. to obtain offset of leaf elements inside arbitrarily nested layouts
- * (see {@link MemoryLayout#offset(PathElement...)}), or to quickly obtain a memory access handle corresponding to the selected
- * layout (see {@link MemoryLayout#varHandle(Class, PathElement...)}).
+ * Layout paths are for example useful in order to obtain offsets of arbitrarily nested layouts inside another layout
+ * (see {@link MemoryLayout#offset(PathElement...)}), to quickly obtain a memory access handle corresponding to the selected
+ * layout (see {@link MemoryLayout#varHandle(Class, PathElement...)}), to select an arbitrarily nested layout inside
+ * another layout (see {@link MemoryLayout#select(PathElement...)}, or to transform a nested layout element inside
+ * another layout (see {@link MemoryLayout#map(UnaryOperator, PathElement...)}).
  * <p>
  * Such <em>layout paths</em> can be constructed programmatically using the methods in this class.
  * For instance, given a layout constructed as follows:
@@ -106,11 +113,37 @@ SequenceLayout seq = MemoryLayout.ofSequence(5,
 long valueOffset = seq.offset(PathElement.sequenceElement(), PathElement.groupElement("value"));
  * }</pre></blockquote>
  *
+ * Similarly, we can select the member layout named {@code value}, as follows:
+ * <blockquote><pre>{@code
+MemoryLayout value = seq.select(PathElement.sequenceElement(), PathElement.groupElement("value"));
+ * }</pre></blockquote>
+ *
+ * And, we can also replace the layout named {@code value} with another layout, as follows:
+ * <blockquote><pre>{@code
+MemoryLayout newSeq = seq.map(l -> MemoryLayout.ofPadding(32), PathElement.sequenceElement(), PathElement.groupElement("value"));
+ * }</pre></blockquote>
+ *
+ * That is, the above declaration is identical to the following, more verbose one:
+ * <blockquote><pre>{@code
+MemoryLayout newSeq = MemoryLayout.ofSequence(5,
+    MemoryLayout.ofStruct(
+        MemoryLayout.ofPaddingBits(32),
+        MemoryLayout.ofPaddingBits(32)
+));
+ * }</pre></blockquote>
+ *
  * Layout paths can feature one or more <em>free dimensions</em>. For instance, a layout path traversing
  * an unspecified sequence element (that is, where one of the path component was obtained with the
- * {@link PathElement#sequenceElement()} method) features an additional free dimension, which will have to be bound at runtime;
- * that is, the memory access var handle associated with such a layout path expression will feature an extra {@code long}
- * access coordinate. The layout path constructed in the above example features exactly one free dimension.
+ * {@link PathElement#sequenceElement()} method) features an additional free dimension, which will have to be bound at runtime.
+ * This is important when obtaining memory access var handle from layouts, as in the following code:
+ *
+ * <blockquote><pre>{@code
+VarHandle valueHandle = seq.map(int.class, PathElement.sequenceElement(), PathElement.groupElement("value"));
+ * }</pre></blockquote>
+ *
+ * Since the layout path {@code seq} constructed in the above example features exactly one free dimension,
+ * it follows that the memory access var handle {@code valueHandle} will feature an extra {@code long}
+ * access coordinate.
  *
  * @apiNote In the future, if the Java language permits, {@link MemoryLayout}
  * may become a {@code sealed} interface, which would prohibit subclassing except by
@@ -131,6 +164,17 @@ public interface MemoryLayout extends Constable {
      */
     @Override
     Optional<? extends DynamicConstantDesc<? extends MemoryLayout>> describeConstable();
+
+    /**
+     * Does this layout have a specified size? A layout does not have a specified size if it is (or contains) a sequence layout whose
+     * size is unspecified (see {@link SequenceLayout#elementCount()}).
+     *
+     * Value layouts (see {@link ValueLayout}) and padding layouts (see {@link MemoryLayout#ofPaddingBits(long)})
+     * <em>always</em> have a specified size, therefore this method always returns {@code true} in these cases.
+     *
+     * @return {@code true}, if this layout has a specified size.
+     */
+    boolean hasSize();
 
     /**
      * Computes the layout size, in bits.
@@ -219,23 +263,21 @@ public interface MemoryLayout extends Constable {
     MemoryLayout withBitAlignment(long bitAlignment);
 
     /**
-     * Computes the offset of the layout selected by a given layout path, where the path is considered rooted in this
+     * Computes the offset, in bits, of the layout selected by a given layout path, where the path is considered rooted in this
      * layout.
      *
      * @apiNote if the layout path has one (or more) free dimensions,
      * the offset is computed as if all the indices corresponding to such dimensions were set to {@code 0}.
      *
      * @param elements the layout path elements.
-     * @return The offset of layout selected by a the layout path obtained by concatenating the path elements in {@code elements}.
-     * @throws IllegalArgumentException if the layout path obtained by concatenating the path elements in {@code elements}
-     * does not select a valid layout element.
+     * @return The offset, in bits, of the layout selected by the layout path in {@code elements}.
+     * @throws IllegalArgumentException if the layout path does not select any layout nested in this layout, or if the
+     * layout path contains one or more path elements that select multiple sequence element indices
+     * (see {@link PathElement#sequenceElement()} and {@link PathElement#sequenceElement(long, long)}).
+     * @throws UnsupportedOperationException if one of the layouts traversed by the layout path has unspecified size.
      */
     default long offset(PathElement... elements) {
-        LayoutPath path = LayoutPath.rootPath(this);
-        for (PathElement e : elements) {
-            path = ((LayoutPath.PathElementImpl)e).apply(path);
-        }
-        return path.offset();
+        return computePathOp(LayoutPath.rootPath(this, MemoryLayout::bitSize), LayoutPath::offset, EnumSet.of(PathKind.SEQUENCE_ELEMENT, PathKind.SEQUENCE_RANGE), elements);
     }
 
     /**
@@ -248,19 +290,59 @@ public interface MemoryLayout extends Constable {
      *
      * @param carrier the var handle carrier type.
      * @param elements the layout path elements.
-     * @return a var handle which can be used to dereference memory at the layout denoted by given layout path.
-     * @throws UnsupportedOperationException if the layout path has one or more elements with incompatible alignment constraints.
+     * @return a var handle which can be used to dereference memory at the (possibly nested) layout selected by the layout path in {@code elements}.
+     * @throws UnsupportedOperationException if the layout path has one or more elements with incompatible alignment constraints,
+     * or if one of the layouts traversed by the layout path has unspecified size.
      * @throws IllegalArgumentException if the carrier does not represent a primitive type, if the carrier is {@code void},
-     * {@code boolean}, or if the layout path obtained by concatenating the path elements in {@code elements}
-     * does not select a value layout (see {@link ValueLayout}), or if the selected value layout has a size that
-     * that does not match that of the specified carrier type.
+     * {@code boolean}, or if the layout path in {@code elements} does not select a value layout (see {@link ValueLayout}),
+     * or if the selected value layout has a size that that does not match that of the specified carrier type.
      */
     default VarHandle varHandle(Class<?> carrier, PathElement... elements) {
-        LayoutPath path = LayoutPath.rootPath(this);
+        return computePathOp(LayoutPath.rootPath(this, MemoryLayout::bitSize), path -> path.dereferenceHandle(carrier),
+                Set.of(), elements);
+    }
+
+    /**
+     * Selects the layout from a path rooted in this layout.
+     *
+     * @param elements the layout path elements.
+     * @return the layout selected by the layout path in {@code elements}.
+     * @throws IllegalArgumentException if the layout path does not select any layout nested in this layout,
+     * or if the layout path contains one or more path elements that select one or more sequence element indices
+     * (see {@link PathElement#sequenceElement(long)} and {@link PathElement#sequenceElement(long, long)}).
+     */
+    default MemoryLayout select(PathElement... elements) {
+        return computePathOp(LayoutPath.rootPath(this, l -> 0L), LayoutPath::layout,
+                EnumSet.of(PathKind.SEQUENCE_ELEMENT_INDEX, PathKind.SEQUENCE_RANGE), elements);
+    }
+
+    /**
+     * Creates a transformed copy of this layout where a selected layout, from a path rooted in this layout,
+     * is replaced with the result of applying the given operation.
+     *
+     * @param op the unary operation to be applied to the selected layout.
+     * @param elements the layout path elements.
+     * @return a new layout where the layout selected by the layout path in {@code elements},
+     * has been replaced by the result of applying {@code op} to the selected layout.
+     * @throws IllegalArgumentException if the layout path does not select any layout nested in this layout,
+     * or if the layout path contains one or more path elements that select one or more sequence element indices
+     * (see {@link PathElement#sequenceElement(long)} and {@link PathElement#sequenceElement(long, long)}).
+     */
+    default MemoryLayout map(UnaryOperator<MemoryLayout> op, PathElement... elements) {
+        return computePathOp(LayoutPath.rootPath(this, l -> 0L), path -> path.map(op),
+                EnumSet.of(PathKind.SEQUENCE_ELEMENT_INDEX, PathKind.SEQUENCE_RANGE), elements);
+    }
+
+    private static <Z> Z computePathOp(LayoutPath path, Function<LayoutPath, Z> finalizer,
+                                       Set<LayoutPath.PathElementImpl.PathKind> badKinds, PathElement... elements) {
         for (PathElement e : elements) {
-            path = ((LayoutPath.PathElementImpl)e).apply(path);
+            LayoutPath.PathElementImpl pathElem = (LayoutPath.PathElementImpl)e;
+            if (badKinds.contains(pathElem.kind())) {
+                throw new IllegalArgumentException(String.format("Invalid %s selection in layout path", pathElem.kind().description()));
+            }
+            path = pathElem.apply(path);
         }
-        return path.dereferenceHandle(carrier);
+        return finalizer.apply(path);
     }
 
     /**
@@ -297,7 +379,8 @@ public interface MemoryLayout extends Constable {
          */
         static PathElement groupElement(String name) {
             Objects.requireNonNull(name);
-            return new LayoutPath.PathElementImpl(path -> path.groupElement(name));
+            return new LayoutPath.PathElementImpl(LayoutPath.PathElementImpl.PathKind.GROUP_ELEMENT,
+                                                  path -> path.groupElement(name));
         }
 
         /**
@@ -313,7 +396,8 @@ public interface MemoryLayout extends Constable {
             if (index < 0) {
                 throw new IllegalArgumentException("Index must be positive: " + index);
             }
-            return new LayoutPath.PathElementImpl(path -> path.sequenceElement(index));
+            return new LayoutPath.PathElementImpl(LayoutPath.PathElementImpl.PathKind.SEQUENCE_ELEMENT_INDEX,
+                                                  path -> path.sequenceElement(index));
         }
 
         /**
@@ -341,7 +425,8 @@ E * (S + I * F)
             if (step == 0) {
                 throw new IllegalArgumentException("Step must be != 0: " + step);
             }
-            return new LayoutPath.PathElementImpl(path -> path.sequenceElement(start, step));
+            return new LayoutPath.PathElementImpl(LayoutPath.PathElementImpl.PathKind.SEQUENCE_RANGE,
+                                                  path -> path.sequenceElement(start, step));
         }
 
         /**
@@ -352,7 +437,8 @@ E * (S + I * F)
          * @return a path element which selects an unspecified sequence element layout.
          */
         static PathElement sequenceElement() {
-            return new LayoutPath.PathElementImpl(LayoutPath::sequenceElement);
+            return new LayoutPath.PathElementImpl(LayoutPath.PathElementImpl.PathKind.SEQUENCE_ELEMENT,
+                                                  LayoutPath::sequenceElement);
         }
     }
 

@@ -162,7 +162,7 @@ public class TestVarHandleCombinators {
                 for (long j = 0; j < inner_size; j++) {
                     outer_vh.set(segment.baseAddress(), i, j, count);
                     assertEquals(
-                            (int)inner_vh.get(segment.baseAddress().offset(i * inner_size * 8), j),
+                            (int)inner_vh.get(segment.baseAddress().addOffset(i * inner_size * 8), j),
                             count);
                     count++;
                 }
