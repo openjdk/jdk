@@ -505,14 +505,15 @@ public class DeferredAttr extends JCTree.Visitor {
     /**
      * Attribute the given tree, mostly reverting side-effects applied to shared
      * compiler state. Exceptions include the ArgumentAttr.argumentTypeCache,
-     * changes to which may be preserved if localCache is null.
+     * changes to which may be preserved if localCache is null and errors reported
+     * outside of the speculatively attributed tree.
      */
     <Z> JCTree attribSpeculative(JCTree tree, Env<AttrContext> env, ResultInfo resultInfo,
                               Supplier<DiagnosticHandler> diagHandlerCreator, AttributionMode attributionMode,
                               LocalCacheContext localCache) {
         Env<AttrContext> speculativeEnv = env.dup(tree, env.info.dup(env.info.scope.dupUnshared(env.info.scope.owner)));
         speculativeEnv.info.attributionMode = attributionMode;
-        Log.DiagnosticHandler deferredDiagnosticHandler = diagHandlerCreator != null ? diagHandlerCreator.get() : new DeferredDiagnosticHandler(log);
+        Log.DiagnosticHandler deferredDiagnosticHandler = diagHandlerCreator != null ? diagHandlerCreator.get() : new DeferredAttrDiagHandler(log, tree);
         DeferredCompletionFailureHandler.Handler prevCFHandler = dcfh.setHandler(dcfh.speculativeCodeHandler);
         Queues prevQueues = annotate.setQueues(new Queues());
         int nwarnings = log.nwarnings;
@@ -531,6 +532,35 @@ public class DeferredAttr extends JCTree.Visitor {
             }
         }
     }
+    //where
+        static class DeferredAttrDiagHandler extends Log.DeferredDiagnosticHandler {
+
+            static class PosScanner extends TreeScanner {
+                DiagnosticPosition pos;
+                boolean found = false;
+
+                PosScanner(DiagnosticPosition pos) {
+                    this.pos = pos;
+                }
+
+                @Override
+                public void scan(JCTree tree) {
+                    if (tree != null &&
+                            tree.pos() == pos) {
+                        found = true;
+                    }
+                    super.scan(tree);
+                }
+            }
+
+            DeferredAttrDiagHandler(Log log, JCTree newTree) {
+                super(log, d -> {
+                    PosScanner posScanner = new PosScanner(d.getDiagnosticPosition());
+                    posScanner.scan(newTree);
+                    return posScanner.found;
+                });
+            }
+        }
 
     /**
      * A deferred context is created on each method check. A deferred context is
