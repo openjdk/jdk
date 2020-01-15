@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,15 +28,11 @@ package jdk.javadoc.internal.doclets.formats.html.markup;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
-import java.util.GregorianCalendar;
 import java.util.List;
-import java.util.TimeZone;
 
 import jdk.javadoc.internal.doclets.toolkit.Content;
-import jdk.javadoc.internal.doclets.toolkit.util.DocFile;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 
@@ -52,6 +48,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
  */
 public class Head {
     private final String docletVersion;
+    private final Date generatedDate;
     private final DocPath pathToRoot;
     private String title;
     private String charset;
@@ -68,8 +65,6 @@ public class Head {
     private boolean addDefaultScript = true;
     private DocPath canonicalLink;
 
-    private static final Calendar calendar = new GregorianCalendar(TimeZone.getDefault());
-
     /**
      * Creates a {@code Head} object, for a given file and HTML version.
      * The file is used to help determine the relative paths to stylesheet and script files.
@@ -79,8 +74,9 @@ public class Head {
      * @param path the path for the file that will include this HEAD element
      * @param docletVersion a string identifying the doclet version
      */
-    public Head(DocPath path, String docletVersion) {
+    public Head(DocPath path, String docletVersion, Date generatedDate) {
         this.docletVersion = docletVersion;
+        this.generatedDate = generatedDate;
         pathToRoot = path.parent().invert();
         keywords = new ArrayList<>();
         scripts = new ArrayList<>();
@@ -215,7 +211,7 @@ public class Head {
      * Specifies a value for a
      * <a href="https://en.wikipedia.org/wiki/Canonical_link_element">canonical link</a>
      * in the {@code <head>} element.
-     * @param link
+     * @param link the value for the canonical link
      */
     public void setCanonicalLink(DocPath link) {
         this.canonicalLink = link;
@@ -238,10 +234,8 @@ public class Head {
      * @return the HTML
      */
     public Content toContent() {
-        Date now = showTimestamp ? calendar.getTime() : null;
-
         HtmlTree tree = new HtmlTree(HtmlTag.HEAD);
-        tree.add(getGeneratedBy(showTimestamp, now));
+        tree.add(getGeneratedBy(showTimestamp, generatedDate));
         tree.add(HtmlTree.TITLE(title));
 
         if (charset != null) { // compatibility; should this be allowed?
@@ -250,7 +244,7 @@ public class Head {
 
         if (showTimestamp) {
             SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-            tree.add(HtmlTree.META("dc.created", dateFormat.format(now)));
+            tree.add(HtmlTree.META("dc.created", dateFormat.format(generatedDate)));
         }
 
         if (description != null) {
@@ -317,7 +311,7 @@ public class Head {
                 mainBodyScript.append("var pathtoroot = ")
                         .appendStringLiteral(ptrPath + "/")
                         .append(";\n")
-                        .append("loadScripts(document, \'script\');");
+                        .append("loadScripts(document, 'script');");
             }
             addJQueryFile(tree, DocPaths.JSZIP_MIN);
             addJQueryFile(tree, DocPaths.JSZIPUTILS_MIN);
