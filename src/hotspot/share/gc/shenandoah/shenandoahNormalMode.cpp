@@ -33,12 +33,13 @@
 #include "logging/logTag.hpp"
 
 void ShenandoahNormalMode::initialize_flags() const {
+  if (ShenandoahConcurrentRoots::can_do_concurrent_class_unloading()) {
+    FLAG_SET_DEFAULT(ShenandoahSuspendibleWorkers, true);
+    FLAG_SET_DEFAULT(VerifyBeforeExit, false);
+  }
+
   SHENANDOAH_ERGO_ENABLE_FLAG(ExplicitGCInvokesConcurrent);
   SHENANDOAH_ERGO_ENABLE_FLAG(ShenandoahImplicitGCInvokesConcurrent);
-  if (ShenandoahConcurrentRoots::can_do_concurrent_class_unloading()) {
-    SHENANDOAH_ERGO_ENABLE_FLAG(ShenandoahSuspendibleWorkers);
-    SHENANDOAH_ERGO_DISABLE_FLAG(VerifyBeforeExit);
-  }
 
   // Final configuration checks
   SHENANDOAH_CHECK_FLAG_SET(ShenandoahLoadRefBarrier);
