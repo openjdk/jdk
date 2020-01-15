@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,6 +55,8 @@ public class AgentConfigurationError extends Error {
         "agent.err.invalid.jmxremote.port";
     public static final String INVALID_JMXREMOTE_RMI_PORT =
         "agent.err.invalid.jmxremote.rmi.port";
+    public static final String INVALID_JMXREMOTE_LOCAL_PORT =
+        "agent.err.invalid.jmxremote.local.port";
     public static final String PASSWORD_FILE_NOT_SET =
         "agent.err.password.file.notset";
     public static final String PASSWORD_FILE_NOT_READABLE =

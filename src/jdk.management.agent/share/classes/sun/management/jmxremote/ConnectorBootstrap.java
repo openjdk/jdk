@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -116,6 +116,8 @@ public final class ConnectorBootstrap {
                 "com.sun.management.jmxremote.host";
         public static final String RMI_PORT =
                 "com.sun.management.jmxremote.rmi.port";
+        public static final String LOCAL_PORT =
+                "com.sun.management.jmxremote.local.port";
         public static final String CONFIG_FILE_NAME =
                 "com.sun.management.config.file";
         public static final String USE_LOCAL_ONLY =
@@ -540,13 +542,35 @@ public final class ConnectorBootstrap {
         }
 
         MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
+
+        Properties props = null;
         try {
-            JMXServiceURL url = new JMXServiceURL("rmi", localhost, 0);
-            // Do we accept connections from local interfaces only?
-            Properties props = Agent.getManagementProperties();
-            if (props ==  null) {
+            props = Agent.getManagementProperties();
+            if (props == null) {
                 props = new Properties();
             }
+        } catch (Exception e) {
+            throw new AgentConfigurationError(AGENT_EXCEPTION, e, e.toString());
+        }
+
+        // User can specify a port to be used to start local connector server.
+        // Random one will be allocated if port is not specified.
+        int localPort = 0;
+        String localPortStr = props.getProperty(PropertyNames.LOCAL_PORT);
+        try {
+            if (localPortStr != null) {
+                localPort = Integer.parseInt(localPortStr);
+            }
+        } catch (NumberFormatException x) {
+            throw new AgentConfigurationError(INVALID_JMXREMOTE_LOCAL_PORT, x, localPortStr);
+        }
+        if (localPort < 0) {
+            throw new AgentConfigurationError(INVALID_JMXREMOTE_LOCAL_PORT, localPortStr);
+        }
+
+        try {
+            JMXServiceURL url = new JMXServiceURL("rmi", localhost, localPort);
+            // Do we accept connections from local interfaces only?
             String useLocalOnlyStr = props.getProperty(
                     PropertyNames.USE_LOCAL_ONLY, DefaultValues.USE_LOCAL_ONLY);
             boolean useLocalOnly = Boolean.valueOf(useLocalOnlyStr).booleanValue();
