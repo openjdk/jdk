@@ -62,6 +62,7 @@ public class SharedSecrets {
     private static JavaIOFileDescriptorAccess javaIOFileDescriptorAccess;
     private static JavaIOFilePermissionAccess javaIOFilePermissionAccess;
     private static JavaIORandomAccessFileAccess javaIORandomAccessFileAccess;
+    private static JavaObjectInputStreamReadString javaObjectInputStreamReadString;
     private static JavaObjectInputStreamAccess javaObjectInputStreamAccess;
     private static JavaObjectInputFilterAccess javaObjectInputFilterAccess;
     private static JavaNetInetAddressAccess javaNetInetAddressAccess;
@@ -281,6 +282,17 @@ public class SharedSecrets {
 
     public static void setJavaUtilResourceBundleAccess(JavaUtilResourceBundleAccess access) {
         javaUtilResourceBundleAccess = access;
+    }
+
+    public static JavaObjectInputStreamReadString getJavaObjectInputStreamReadString() {
+        if (javaObjectInputStreamReadString == null) {
+            unsafe.ensureClassInitialized(ObjectInputStream.class);
+        }
+        return javaObjectInputStreamReadString;
+    }
+
+    public static void setJavaObjectInputStreamReadString(JavaObjectInputStreamReadString access) {
+        javaObjectInputStreamReadString = access;
     }
 
     public static JavaObjectInputStreamAccess getJavaObjectInputStreamAccess() {

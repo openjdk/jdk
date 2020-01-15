@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,7 @@ public final class StaticProperty {
     private static final String USER_HOME = initProperty("user.home");
     private static final String USER_DIR  = initProperty("user.dir");
     private static final String USER_NAME = initProperty("user.name");
+    private static final String JDK_SERIAL_FILTER = System.getProperty("jdk.serialFilter");
 
     private StaticProperty() {}
 
@@ -103,5 +104,18 @@ public final class StaticProperty {
      */
     public static String userName() {
         return USER_NAME;
+    }
+
+    /**
+     * Return the {@code jdk.serialFilter} system property.
+     *
+     * <strong>{@link SecurityManager#checkPropertyAccess} is NOT checked
+     * in this method. The caller of this method should take care to ensure
+     * that the returned property is not made accessible to untrusted code.</strong>
+     *
+     * @return the {@code user.name} system property
+     */
+    public static String jdkSerialFilter() {
+        return JDK_SERIAL_FILTER;
     }
 }

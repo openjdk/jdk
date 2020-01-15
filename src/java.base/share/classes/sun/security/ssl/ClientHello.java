@@ -1140,6 +1140,15 @@ final class ClientHello {
             ServerHandshakeContext shc = (ServerHandshakeContext)context;
             ClientHelloMessage clientHello = (ClientHelloMessage)message;
 
+            // [RFC 8446] TLS 1.3 forbids renegotiation. If a server has
+            // negotiated TLS 1.3 and receives a ClientHello at any other
+            // time, it MUST terminate the connection with an
+            // "unexpected_message" alert.
+            if (shc.conContext.isNegotiated) {
+                throw shc.conContext.fatal(Alert.UNEXPECTED_MESSAGE,
+                        "Received unexpected renegotiation handshake message");
+            }
+
             // The client may send a dummy change_cipher_spec record
             // immediately after the first ClientHello.
             shc.conContext.consumers.putIfAbsent(

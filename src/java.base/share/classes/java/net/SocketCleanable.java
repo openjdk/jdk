@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.lang.ref.Cleaner;
 
+import sun.net.ResourceManager;
 
 /**
  * Cleanable for a socket/datagramsocket FileDescriptor when it becomes phantom reachable.
@@ -56,17 +57,22 @@ final class SocketCleanable extends PhantomCleanable<FileDescriptor> {
     // The raw fd to close
     private final int fd;
 
+    // true for socket, false for datagram socket
+    private final boolean stream;
+
     /**
      * Register a socket specific Cleanable with the FileDescriptor
      * if the FileDescriptor is non-null and the raw fd is != -1.
      *
-     * @param fdo the FileDescriptor; may be null
+     * @param fdo     the FileDescriptor; may be null
+     * @param stream  false for datagram socket
      */
-    static void register(FileDescriptor fdo) {
+    static void register(FileDescriptor fdo, boolean stream) {
         if (fdo != null && fdo.valid()) {
             int fd = fdAccess.get(fdo);
             fdAccess.registerCleanup(fdo,
-                    new SocketCleanable(fdo, CleanerFactory.cleaner(), fd));
+                    new SocketCleanable(fdo, CleanerFactory.cleaner(),
+                                        fd, stream));
         }
     }
 
@@ -86,10 +92,13 @@ final class SocketCleanable extends PhantomCleanable<FileDescriptor> {
      * @param obj     the object to monitor
      * @param cleaner the cleaner
      * @param fd      file descriptor to close
+     * @param stream  false for datagram socket
      */
-    private SocketCleanable(FileDescriptor obj, Cleaner cleaner, int fd) {
+    private SocketCleanable(FileDescriptor obj, Cleaner cleaner,
+                            int fd, boolean stream) {
         super(obj, cleaner);
         this.fd = fd;
+        this.stream = stream;
     }
 
     /**
@@ -101,6 +110,10 @@ final class SocketCleanable extends PhantomCleanable<FileDescriptor> {
             cleanupClose0(fd);
         } catch (IOException ioe) {
             throw new UncheckedIOException("close", ioe);
+        } finally {
+            if (!stream) {
+                ResourceManager.afterUdpClose();
+            }
         }
     }
 }
