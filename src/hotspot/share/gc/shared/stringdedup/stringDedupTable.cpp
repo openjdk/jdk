@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -215,7 +215,7 @@ const uintx              StringDedupTable::_rehash_multiple = 60;   // Hash buck
 const uintx              StringDedupTable::_rehash_threshold = (uintx)(_rehash_multiple * _grow_load_factor);
 
 uintx                    StringDedupTable::_entries_added = 0;
-uintx                    StringDedupTable::_entries_removed = 0;
+volatile uintx           StringDedupTable::_entries_removed = 0;
 uintx                    StringDedupTable::_resize_count = 0;
 uintx                    StringDedupTable::_rehash_count = 0;
 
@@ -477,11 +477,13 @@ void StringDedupTable::unlink_or_oops_do(StringDedupUnlinkOrOopsDoClosure* cl, u
     removed += unlink_or_oops_do(cl, table_half + partition_begin, table_half + partition_end, worker_id);
   }
 
-  // Delayed update to avoid contention on the table lock
+  // Do atomic update here instead of taking StringDedupTable_lock. This allows concurrent
+  // cleanup when multiple workers are cleaning up the table, while the mutators are blocked
+  // on StringDedupTable_lock.
   if (removed > 0) {
-    MutexLocker ml(StringDedupTable_lock, Mutex::_no_safepoint_check_flag);
-    _table->_entries -= removed;
-    _entries_removed += removed;
+    assert_locked_or_safepoint_weak(StringDedupTable_lock);
+    Atomic::sub(&_table->_entries, removed);
+    Atomic::add(&_entries_removed, removed);
   }
 }
 
