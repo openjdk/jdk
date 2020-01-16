@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -221,14 +221,15 @@ jvmtiError JvmtiCodeBlobEvents::generate_dynamic_code_events(JvmtiEnv* env) {
 
 // Generate a COMPILED_METHOD_LOAD event for each nnmethod
 jvmtiError JvmtiCodeBlobEvents::generate_compiled_method_load_events(JvmtiEnv* env) {
-  JvmtiThreadState* state = JvmtiThreadState::state_for(JavaThread::current());
+  JavaThread* java_thread = JavaThread::current();
+  JvmtiThreadState* state = JvmtiThreadState::state_for(java_thread);
   {
     NoSafepointVerifier nsv;  // safepoints are not safe while collecting methods to post.
     {
       // Walk the CodeCache notifying for live nmethods, don't release the CodeCache_lock
       // because the sweeper may be running concurrently.
       // Save events to the queue for posting outside the CodeCache_lock.
-      MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+      MutexLocker mu(java_thread, CodeCache_lock, Mutex::_no_safepoint_check_flag);
       // Iterate over non-profiled and profiled nmethods
       NMethodIterator iter(NMethodIterator::only_alive_and_not_unloading);
       while(iter.next()) {

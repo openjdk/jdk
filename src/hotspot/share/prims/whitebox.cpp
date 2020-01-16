@@ -1021,7 +1021,7 @@ bool WhiteBox::compile_method(Method* method, int comp_level, int bci, Thread* T
 
   // Compile method and check result
   nmethod* nm = CompileBroker::compile_method(mh, bci, comp_level, mh, mh->invocation_count(), CompileTask::Reason_Whitebox, THREAD);
-  MutexLocker mu(Compile_lock);
+  MutexLocker mu(THREAD, Compile_lock);
   bool is_queued = mh->queued_for_compilation();
   if ((!is_blocking && is_queued) || nm != NULL) {
     return true;
@@ -1068,7 +1068,7 @@ WB_ENTRY(jint, WB_MatchesInline(JNIEnv* env, jobject o, jobject method, jstring 
 
   methodHandle mh(THREAD, Method::checked_resolve_jmethod_id(jmid));
 
-  ResourceMark rm;
+  ResourceMark rm(THREAD);
   const char* error_msg = NULL;
   char* method_str = java_lang_String::as_utf8_string(JNIHandles::resolve_non_null(pattern));
   InlineMatcher* m = InlineMatcher::parse_inline_pattern(method_str, error_msg);
@@ -1139,18 +1139,18 @@ WB_ENTRY(void, WB_ClearMethodState(JNIEnv* env, jobject o, jobject method))
   jmethodID jmid = reflected_method_to_jmid(thread, env, method);
   CHECK_JNI_EXCEPTION(env);
   methodHandle mh(THREAD, Method::checked_resolve_jmethod_id(jmid));
-  MutexLocker mu(Compile_lock);
+  MutexLocker mu(THREAD, Compile_lock);
   MethodData* mdo = mh->method_data();
   MethodCounters* mcs = mh->method_counters();
 
   if (mdo != NULL) {
     mdo->init();
-    ResourceMark rm;
+    ResourceMark rm(THREAD);
     int arg_count = mdo->method()->size_of_parameters();
     for (int i = 0; i < arg_count; i++) {
       mdo->set_arg_modified(i, 0);
     }
-    MutexLocker mu(mdo->extra_data_lock());
+    MutexLocker mu(THREAD, mdo->extra_data_lock());
     mdo->clean_method_data(/*always_clean*/true);
   }
 

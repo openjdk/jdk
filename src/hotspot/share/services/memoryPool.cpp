@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -110,7 +110,7 @@ instanceOop MemoryPool::get_memory_pool_instance(TRAPS) {
 
     {
       // Get lock since another thread may have create the instance
-      MutexLocker ml(Management_lock);
+      MutexLocker ml(THREAD, Management_lock);
 
       // Check if another thread has created the pool.  We reload
       // _memory_pool_obj here because some other thread may have

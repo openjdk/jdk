@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,7 +88,7 @@ static void fill_klasses(GrowableArray<const void*>& event_subklasses, const Kla
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(thread));
 
   Stack<const Klass*, mtTracing> mark_stack;
-  MutexLocker ml(Compile_lock, thread);
+  MutexLocker ml(thread, Compile_lock);
   mark_stack.push(event_klass->subklass());
 
   while (!mark_stack.is_empty()) {

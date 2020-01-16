@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -971,7 +971,7 @@ void ciEnv::register_method(ciMethod* target,
   nmethod* nm = NULL;
   {
     // To prevent compile queue updates.
-    MutexLocker locker(MethodCompileQueue_lock, THREAD);
+    MutexLocker locker(THREAD, MethodCompileQueue_lock);
 
     // Prevent SystemDictionary::add_to_hierarchy from running
     // and invalidating our dependencies until we install this method.

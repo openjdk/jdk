@@ -2107,7 +2107,7 @@ ClassPathEntry* FileMapInfo::get_classpath_entry_for_jvmti(int i, TRAPS) {
       }
     }
 
-    MutexLocker mu(CDSClassFileStream_lock, THREAD);
+    MutexLocker mu(THREAD, CDSClassFileStream_lock);
     if (_classpath_entries_for_jvmti[i] == NULL) {
       _classpath_entries_for_jvmti[i] = ent;
     } else {

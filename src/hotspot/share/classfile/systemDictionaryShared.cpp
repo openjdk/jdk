@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -823,7 +823,7 @@ InstanceKlass* SystemDictionaryShared::find_or_load_shared_class(
       ObjectLocker ol(lockObject, THREAD, DoObjectLock);
 
       {
-        MutexLocker mu(SystemDictionary_lock, THREAD);
+        MutexLocker mu(THREAD, SystemDictionary_lock);
         InstanceKlass* check = find_class(d_hash, name, dictionary);
         if (check != NULL) {
           return check;
@@ -935,7 +935,7 @@ InstanceKlass* SystemDictionaryShared::acquire_class_for_current_thread(
   ClassLoaderData* loader_data = ClassLoaderData::class_loader_data(class_loader());
 
   {
-    MutexLocker mu(SharedDictionary_lock, THREAD);
+    MutexLocker mu(THREAD, SharedDictionary_lock);
     if (ik->class_loader_data() != NULL) {
       //    ik is already loaded (by this loader or by a different loader)
       // or ik is being loaded by a different thread (by this loader or by a different loader)
@@ -978,7 +978,7 @@ bool SystemDictionaryShared::add_unregistered_class(InstanceKlass* k, TRAPS) {
   } else {
     bool isnew = _loaded_unregistered_classes.put(name, true);
     assert(isnew, "sanity");
-    MutexLocker mu_r(Compile_lock, THREAD); // add_to_hierarchy asserts this.
+    MutexLocker mu_r(THREAD, Compile_lock); // add_to_hierarchy asserts this.
     SystemDictionary::add_to_hierarchy(k, CHECK_0);
     return true;
   }

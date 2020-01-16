@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -631,7 +631,7 @@ class CompileReplay : public StackObj {
     {
       // Grab a lock here to prevent multiple
       // MethodData*s from being created.
-      MutexLocker ml(MethodData_lock, THREAD);
+      MutexLocker ml(THREAD, MethodData_lock);
       if (method->method_data() == NULL) {
         ClassLoaderData* loader_data = method->method_holder()->class_loader_data();
         MethodData* method_data = MethodData::allocate(loader_data, methodHandle(THREAD, method), CHECK);

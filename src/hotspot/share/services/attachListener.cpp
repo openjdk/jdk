@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -467,7 +467,7 @@ void AttachListener::init() {
     return;
   }
 
-  { MutexLocker mu(Threads_lock);
+  { MutexLocker mu(THREAD, Threads_lock);
     JavaThread* listener_thread = new JavaThread(&attach_listener_thread_entry);
 
     // Check that thread and osthread were created

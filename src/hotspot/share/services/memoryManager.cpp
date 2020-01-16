@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -110,7 +110,7 @@ instanceOop MemoryManager::get_memory_manager_instance(TRAPS) {
     {
       // Get lock before setting _memory_mgr_obj
       // since another thread may have created the instance
-      MutexLocker ml(Management_lock);
+      MutexLocker ml(THREAD, Management_lock);
 
       // Check if another thread has created the management object.  We reload
       // _memory_mgr_obj here because some other thread may have initialized

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -882,7 +882,7 @@ void java_lang_Class::set_mirror_module_field(Klass* k, Handle mirror, Handle mo
 
     bool javabase_was_defined = false;
     {
-      MutexLocker m1(Module_lock, THREAD);
+      MutexLocker m1(THREAD, Module_lock);
       // Keep list of classes needing java.base module fixup
       if (!ModuleEntryTable::javabase_defined()) {
         assert(k->java_mirror() != NULL, "Class's mirror is null");

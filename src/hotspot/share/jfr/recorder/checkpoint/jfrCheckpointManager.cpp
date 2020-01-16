@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -442,8 +442,8 @@ void JfrCheckpointManager::write_type_set() {
   if (LeakProfiler::is_running()) {
     Thread* const t = Thread::current();
     // can safepoint here
-    MutexLocker cld_lock(ClassLoaderDataGraph_lock);
-    MutexLocker module_lock(Module_lock);
+    MutexLocker cld_lock(t, ClassLoaderDataGraph_lock);
+    MutexLocker module_lock(t, Module_lock);
     JfrCheckpointWriter leakp_writer(t);
     JfrCheckpointWriter writer(t);
     JfrTypeSet::serialize(&writer, &leakp_writer, false, false);
