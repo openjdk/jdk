@@ -290,7 +290,7 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
     @Override
     protected void addSummaryType(Element member, Content tdSummaryType) {
         ExecutableElement meth = (ExecutableElement)member;
-        addModifierAndType(meth, utils.getReturnType(meth), tdSummaryType);
+        addModifierAndType(meth, utils.getReturnType(typeElement, meth), tdSummaryType);
     }
 
     /**
@@ -386,7 +386,7 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
      * @return content containing the return type
      */
     protected Content getReturnType(ExecutableElement method) {
-        TypeMirror type = utils.getReturnType(method);
+        TypeMirror type = utils.getReturnType(typeElement, method);
         if (type != null) {
             return writer.getLink(new LinkInfoImpl(configuration, LinkInfoImpl.Kind.RETURN_TYPE, type));
         }

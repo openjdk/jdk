@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 4638588 4635809 6256068 6270645 8025633 8026567 8162363 8175200
- *      8192850 8182765 8220217
+ *      8192850 8182765 8220217 8224052
  * @summary Test to make sure that members are inherited properly in the Javadoc.
  *          Verify that inheritance labels are correct.
  * @library ../../lib
@@ -46,7 +46,7 @@ public class TestMemberInheritance extends JavadocTester {
     public void test() {
         javadoc("-d", "out",
                 "-sourcepath", testSrc,
-                "pkg", "diamond", "inheritDist", "pkg1", "pkg2");
+                "pkg", "diamond", "inheritDist", "pkg1", "pkg2", "pkg3");
         checkExit(Exit.OK);
 
         checkOutput("pkg/SubClass.html", true,
@@ -114,16 +114,54 @@ public class TestMemberInheritance extends JavadocTester {
         checkOutput("pkg2/DocumentedNonGenericChild.html", true,
                 "<td class=\"colFirst\"><code>protected abstract java.lang.String</code></td>\n"
                 + "<th class=\"colSecond\" scope=\"row\"><code><span class=\"memberNameLink\">"
-                + "<a href=\"#parentMethod()\">parentMethod</a></span>()</code></th>\n"
+                + "<a href=\"#parentMethod(T)\">parentMethod</a></span>&#8203;"
+                + "(java.lang.String&nbsp;t)</code></th>\n"
                 + "<td class=\"colLast\">\n"
                 + "<div class=\"block\">Returns some value.</div>\n"
                 + "</td>\n");
 
         checkOutput("pkg2/DocumentedNonGenericChild.html", true,
-                "<h3><a id=\"parentMethod()\">parentMethod</a></h3>\n"
+                "</a><a id=\"parentMethod(T)\">parentMethod</a></h3>\n"
                 + "<div class=\"memberSignature\"><span class=\"modifiers\">protected abstract</span>"
                 + "&nbsp;<span class=\"returnType\">java.lang.String</span>&nbsp;"
-                + "<span class=\"memberName\">parentMethod</span>()</div>");
+                + "<span class=\"memberName\">parentMethod</span>&#8203;"
+                + "(<span class=\"arguments\">java.lang.String&nbsp;t)</span>\n"
+                + "                                          "
+                + "throws <span class=\"exceptions\">java.lang.IllegalArgumentException,\n"
+                + "java.lang.InterruptedException,\n"
+                + "java.lang.IllegalStateException</span></div>");
+
+        checkOutput("pkg2/DocumentedNonGenericChild.html", true,
+                "<dt><span class=\"throwsLabel\">Throws:</span></dt>\n"
+                + "<dd><code>java.lang.InterruptedException</code> - a generic error</dd>\n"
+                + "<dd><code>java.lang.IllegalStateException</code> - illegal state</dd>\n"
+                + "<dd><code>java.lang.IllegalArgumentException</code></dd>");
+
+        checkOutput("pkg2/DocumentedNonGenericChild.html", true,
+                "<td class=\"colFirst\"><code>java.lang.String</code></td>\n"
+                + "<th class=\"colSecond\" scope=\"row\"><code><span class=\"memberNameLink\">"
+                + "<a href=\"#f\">f</a></span></code></th>\n"
+                + "<td class=\"colLast\">\n"
+                + "<div class=\"block\">A field.</div>",
+                "<section class=\"detail\">\n"
+                + "<h3><a id=\"f\">f</a></h3>\n"
+                + "<div class=\"memberSignature\"><span class=\"modifiers\">public</span>&nbsp;"
+                + "<span class=\"returnType\">java.lang.String</span>&nbsp;<span class=\"memberName\">f</span></div>\n"
+                + "<div class=\"block\">A field.</div>\n"
+                + "</section>");
+
+        checkOutput("pkg3/PrivateGenericParent.PublicChild.html", true,
+                "<td class=\"colFirst\"><code>java.lang.String</code></td>\n"
+                + "<th class=\"colSecond\" scope=\"row\"><code><span class=\"memberNameLink\">"
+                + "<a href=\"#method(T)\">method</a></span>&#8203;(java.lang.String&nbsp;t)</code></th>",
+                "<section class=\"detail\">\n"
+                + "<h3><a id=\"method(java.lang.Object)\">\n"
+                + "<!--   -->\n"
+                + "</a><a id=\"method(T)\">method</a></h3>\n"
+                + "<div class=\"memberSignature\"><span class=\"modifiers\">public</span>&nbsp;"
+                + "<span class=\"returnType\">java.lang.String</span>&nbsp;<span class=\"memberName\">"
+                + "method</span>&#8203;(<span class=\"arguments\">java.lang.String&nbsp;t)</span></div>\n"
+                + "</section>");
 
     }
 }

@@ -109,7 +109,7 @@ public class PropertyWriterImpl extends AbstractMemberWriter
     @Override
     public Content getSignature(ExecutableElement property) {
         return new MemberSignature(property)
-                .addType(utils.getReturnType(property))
+                .addType(utils.getReturnType(typeElement, property))
                 .toContent();
     }
 
@@ -282,7 +282,7 @@ public class PropertyWriterImpl extends AbstractMemberWriter
      */
     @Override
     protected void addSummaryType(Element member, Content tdSummaryType) {
-        addModifierAndType(member, utils.getReturnType((ExecutableElement)member), tdSummaryType);
+        addModifierAndType(member, utils.getReturnType(typeElement, (ExecutableElement)member), tdSummaryType);
     }
 
     /**

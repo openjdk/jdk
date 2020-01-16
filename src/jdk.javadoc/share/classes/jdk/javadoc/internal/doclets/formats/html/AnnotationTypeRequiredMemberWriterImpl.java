@@ -266,7 +266,7 @@ public class AnnotationTypeRequiredMemberWriterImpl extends AbstractMemberWriter
 
     private TypeMirror getType(Element member) {
         return utils.isExecutableElement(member)
-                ? utils.getReturnType((ExecutableElement) member)
+                ? utils.getReturnType(typeElement, (ExecutableElement) member)
                 : member.asType();
     }
 }

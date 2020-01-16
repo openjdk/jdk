@@ -23,6 +23,6 @@
 
 package pkg2;
 
-public abstract class DocumentedNonGenericChild extends UndocumentedGenericParent<String> {
+public abstract class DocumentedNonGenericChild extends UndocumentedGenericParent<String, InterruptedException, IllegalArgumentException> {
 
 }
