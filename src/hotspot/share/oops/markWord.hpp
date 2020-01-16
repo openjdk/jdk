@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,8 +83,7 @@
 //    [ptr             | 00]  locked             ptr points to real header on stack
 //    [header      | 0 | 01]  unlocked           regular object header
 //    [ptr             | 10]  monitor            inflated lock (header is wapped out)
-//    [ptr             | 11]  marked             used by markSweep to mark an object
-//                                               not valid at any other time
+//    [ptr             | 11]  marked             used to mark an object
 //
 //    We assume that stack/thread pointers have the lowest two bits cleared.
 
