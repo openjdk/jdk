@@ -771,7 +771,7 @@ Java_sun_java2d_xr_XRBackendNative_putMaskNative
     if (ea != 1.0f) {
         for (line=0; line < height; line++) {
             for (pix=0; pix < width; pix++) {
-                int index = maskScan*line + pix + maskOff;
+                size_t index = (size_t) maskScan * line + pix + maskOff;
                 mask[index] = (((unsigned char) mask[index])*ea);
             }
         }
@@ -796,8 +796,8 @@ Java_sun_java2d_xr_XRBackendNative_putMaskNative
         if (imageFits) {
             for (line=0; line < height; line++) {
                 for (pix=0; pix < width; pix++) {
-                    img->data[line*img->bytes_per_line + pix] =
-                        (unsigned char) (mask[maskScan*line + pix + maskOff]);
+                    img->data[(size_t) line * img->bytes_per_line + pix] =
+                        (unsigned char) (mask[(size_t) maskScan * line + pix + maskOff]);
                 }
             }
         } else {

@@ -2523,7 +2523,7 @@ static gboolean gtk2_get_drawable_data(JNIEnv *env, jintArray pixelArray, jint x
                 int index;
                 for (_y = 0; _y < height; _y++) {
                     for (_x = 0; _x < width; _x++) {
-                        p = pix + _y * stride + _x * nchan;
+                        p = pix + (intptr_t) _y * stride + _x * nchan;
 
                         index = (_y + dy) * jwidth + (_x + dx);
                         ary[index] = 0xff000000
