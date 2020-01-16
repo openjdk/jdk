@@ -97,10 +97,10 @@ public interface MemoryAddress {
 
     /**
      * Perform bulk copy from source address to target address. More specifically, the bytes at addresses {@code src}
-     * through {@code src.offset(bytes - 1)} are copied into addresses {@code dst} through {@code dst.offset(bytes - 1)}.
+     * through {@code src.addOffset(bytes - 1)} are copied into addresses {@code dst} through {@code dst.addOffset(bytes - 1)}.
      * If the source and address ranges overlap, then the copying is performed as if the bytes at addresses {@code src}
-     * through {@code src.offset(bytes - 1)} were first copied into a temporary segment with size {@code bytes},
-     * and then the contents of the temporary segment were copied into the bytes at addresses {@code dst} through {@code dst.offset(bytes - 1)}.
+     * through {@code src.addOffset(bytes - 1)} were first copied into a temporary segment with size {@code bytes},
+     * and then the contents of the temporary segment were copied into the bytes at addresses {@code dst} through {@code dst.addOffset(bytes - 1)}.
      * @param src the source address.
      * @param dst the target address.
      * @param bytes the number of bytes to be copied.
