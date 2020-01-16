@@ -34,6 +34,7 @@ import java.nio.ByteOrder;
 import java.util.function.LongFunction;
 
 import jdk.incubator.foreign.MemorySegment;
+import jdk.incubator.foreign.SequenceLayout;
 import org.testng.annotations.*;
 import static org.testng.Assert.*;
 
@@ -55,11 +56,13 @@ public class TestLayouts {
                 MemoryLayouts.JAVA_INT.withName("size"),
                 MemoryLayout.ofPaddingBits(32),
                 MemoryLayout.ofSequence(MemoryLayouts.JAVA_DOUBLE).withName("arr"));
+        assertFalse(layout.hasSize());
         VarHandle size_handle = layout.varHandle(int.class, MemoryLayout.PathElement.groupElement("size"));
         VarHandle array_elem_handle = layout.varHandle(double.class,
                 MemoryLayout.PathElement.groupElement("arr"),
                 MemoryLayout.PathElement.sequenceElement());
-        try (MemorySegment segment = MemorySegment.allocateNative(8 + 8 * 4)) {
+        try (MemorySegment segment = MemorySegment.allocateNative(
+                layout.map(l -> ((SequenceLayout)l).withElementCount(4), MemoryLayout.PathElement.groupElement("arr")))) {
             size_handle.set(segment.baseAddress(), 4);
             for (int i = 0 ; i < 4 ; i++) {
                 array_elem_handle.set(segment.baseAddress(), i, (double)i);
@@ -78,12 +81,14 @@ public class TestLayouts {
                 MemoryLayouts.JAVA_INT.withName("size"),
                 MemoryLayout.ofPaddingBits(32),
                 MemoryLayout.ofSequence(1, MemoryLayout.ofSequence(MemoryLayouts.JAVA_DOUBLE)).withName("arr"));
+        assertFalse(layout.hasSize());
         VarHandle size_handle = layout.varHandle(int.class, MemoryLayout.PathElement.groupElement("size"));
         VarHandle array_elem_handle = layout.varHandle(double.class,
                 MemoryLayout.PathElement.groupElement("arr"),
                 MemoryLayout.PathElement.sequenceElement(0),
                 MemoryLayout.PathElement.sequenceElement());
-        try (MemorySegment segment = MemorySegment.allocateNative(8 + 8 * 4)) {
+        try (MemorySegment segment = MemorySegment.allocateNative(
+                layout.map(l -> ((SequenceLayout)l).withElementCount(4), MemoryLayout.PathElement.groupElement("arr"), MemoryLayout.PathElement.sequenceElement()))) {
             size_handle.set(segment.baseAddress(), 4);
             for (int i = 0 ; i < 4 ; i++) {
                 array_elem_handle.set(segment.baseAddress(), i, (double)i);
@@ -133,6 +138,18 @@ public class TestLayouts {
     @Test(dataProvider = "unboundLayouts")
     public void testUnboundHash(MemoryLayout layout, long align) {
         layout.hashCode();
+    }
+
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void testBadUnboundSequenceLayoutResize() {
+        SequenceLayout seq = MemoryLayout.ofSequence(MemoryLayouts.JAVA_INT);
+        seq.withElementCount(-1);
+    }
+
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void testBadBoundSequenceLayoutResize() {
+        SequenceLayout seq = MemoryLayout.ofSequence(10, MemoryLayouts.JAVA_INT);
+        seq.withElementCount(-1);
     }
 
     @Test

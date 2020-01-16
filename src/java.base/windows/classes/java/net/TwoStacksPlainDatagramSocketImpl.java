@@ -87,7 +87,9 @@ final class TwoStacksPlainDatagramSocketImpl extends AbstractPlainDatagramSocket
         fd1 = new FileDescriptor();
         try {
             super.create();
-            SocketCleanable.register(fd1);
+            // make SocketCleanable treat fd1 as a stream socket
+            // to avoid touching the counter in ResourceManager
+            SocketCleanable.register(fd1, true);
         } catch (SocketException e) {
             fd1 = null;
             throw e;
@@ -114,8 +116,10 @@ final class TwoStacksPlainDatagramSocketImpl extends AbstractPlainDatagramSocket
 
         bind0(lport, laddr, exclusiveBind);
 
-        SocketCleanable.register(fd);
-        SocketCleanable.register(fd1);
+        SocketCleanable.register(fd, false);
+        // make SocketCleanable treat fd1 as a stream socket
+        // to avoid touching the counter in ResourceManager
+        SocketCleanable.register(fd1, true);
     }
 
     protected synchronized void receive(DatagramPacket p)

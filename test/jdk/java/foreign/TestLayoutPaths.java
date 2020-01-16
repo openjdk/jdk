@@ -34,6 +34,10 @@ import jdk.incubator.foreign.MemoryLayout.PathElement;
 import jdk.incubator.foreign.SequenceLayout;
 
 import org.testng.annotations.*;
+
+import java.util.List;
+import java.util.function.Function;
+
 import static org.testng.Assert.*;
 
 public class TestLayoutPaths {
@@ -132,6 +136,147 @@ public class TestLayoutPaths {
         } catch (Throwable ex) {
             throw new AssertionError(ex); //should fail!
         }
+    }
+
+    @Test
+    public void testBadSequencePathInOffset() {
+        SequenceLayout seq = MemoryLayout.ofSequence(10, MemoryLayouts.JAVA_INT);
+        // bad path elements
+        for (PathElement e : List.of( PathElement.sequenceElement(), PathElement.sequenceElement(0, 2) )) {
+            try {
+                seq.offset(e);
+                fail();
+            } catch (IllegalArgumentException ex) {
+                assertTrue(true);
+            }
+        }
+    }
+
+    @Test
+    public void testBadSequencePathInSelect() {
+        SequenceLayout seq = MemoryLayout.ofSequence(10, MemoryLayouts.JAVA_INT);
+        for (PathElement e : List.of( PathElement.sequenceElement(0), PathElement.sequenceElement(0, 2) )) {
+            try {
+                seq.select(e);
+                fail();
+            } catch (IllegalArgumentException ex) {
+                assertTrue(true);
+            }
+        }
+    }
+
+    @Test
+    public void testBadSequencePathInMap() {
+        SequenceLayout seq = MemoryLayout.ofSequence(10, MemoryLayouts.JAVA_INT);
+        for (PathElement e : List.of( PathElement.sequenceElement(0), PathElement.sequenceElement(0, 2) )) {
+            try {
+                seq.map(l -> l, e);
+                fail();
+            } catch (IllegalArgumentException ex) {
+                assertTrue(true);
+            }
+        }
+    }
+
+    @Test
+    public void testStructPaths() {
+        long[] offsets = { 0, 8, 24, 56 };
+        GroupLayout g = MemoryLayout.ofStruct(
+                MemoryLayouts.JAVA_BYTE.withName("1"),
+                MemoryLayouts.JAVA_CHAR.withName("2"),
+                MemoryLayouts.JAVA_FLOAT.withName("3"),
+                MemoryLayouts.JAVA_LONG.withName("4")
+        );
+
+        // test select
+
+        for (int i = 1 ; i <= 4 ; i++) {
+            MemoryLayout selected = g.select(PathElement.groupElement(String.valueOf(i)));
+            assertTrue(selected == g.memberLayouts().get(i - 1));
+        }
+
+        // test offset
+
+        for (int i = 1 ; i <= 4 ; i++) {
+            long offset = g.offset(PathElement.groupElement(String.valueOf(i)));
+            assertEquals(offsets[i - 1], offset);
+        }
+
+        // test map
+
+        for (int i = 1 ; i <= 4 ; i++) {
+            GroupLayout g2 = (GroupLayout)g.map(l -> MemoryLayouts.JAVA_DOUBLE, PathElement.groupElement(String.valueOf(i)));
+            assertTrue(g2.isStruct());
+            for (int j = 0 ; j < 4 ; j++) {
+                if (j == i - 1) {
+                    assertEquals(g2.memberLayouts().get(j), MemoryLayouts.JAVA_DOUBLE);
+                } else {
+                    assertEquals(g2.memberLayouts().get(j), g.memberLayouts().get(j));
+                }
+            }
+        }
+    }
+
+    @Test
+    public void testUnionPaths() {
+        long[] offsets = { 0, 0, 0, 0 };
+        GroupLayout g = MemoryLayout.ofUnion(
+                MemoryLayouts.JAVA_BYTE.withName("1"),
+                MemoryLayouts.JAVA_CHAR.withName("2"),
+                MemoryLayouts.JAVA_FLOAT.withName("3"),
+                MemoryLayouts.JAVA_LONG.withName("4")
+        );
+
+        // test select
+
+        for (int i = 1 ; i <= 4 ; i++) {
+            MemoryLayout selected = g.select(PathElement.groupElement(String.valueOf(i)));
+            assertTrue(selected == g.memberLayouts().get(i - 1));
+        }
+
+        // test offset
+
+        for (int i = 1 ; i <= 4 ; i++) {
+            long offset = g.offset(PathElement.groupElement(String.valueOf(i)));
+            assertEquals(offsets[i - 1], offset);
+        }
+
+        // test map
+
+        for (int i = 1 ; i <= 4 ; i++) {
+            GroupLayout g2 = (GroupLayout)g.map(l -> MemoryLayouts.JAVA_DOUBLE, PathElement.groupElement(String.valueOf(i)));
+            assertTrue(g2.isUnion());
+            for (int j = 0 ; j < 4 ; j++) {
+                if (j == i - 1) {
+                    assertEquals(g2.memberLayouts().get(j), MemoryLayouts.JAVA_DOUBLE);
+                } else {
+                    assertEquals(g2.memberLayouts().get(j), g.memberLayouts().get(j));
+                }
+            }
+        }
+    }
+
+    @Test
+    public void testSequencePaths() {
+        long[] offsets = { 0, 8, 16, 24 };
+        SequenceLayout g = MemoryLayout.ofSequence(4, MemoryLayouts.JAVA_BYTE);
+
+        // test select
+
+        MemoryLayout selected = g.select(PathElement.sequenceElement());
+        assertTrue(selected == MemoryLayouts.JAVA_BYTE);
+
+        // test offset
+
+        for (int i = 0 ; i < 4 ; i++) {
+            long offset = g.offset(PathElement.sequenceElement(i));
+            assertEquals(offsets[i], offset);
+        }
+
+        // test map
+
+        SequenceLayout seq2 = (SequenceLayout)g.map(l -> MemoryLayouts.JAVA_DOUBLE, PathElement.sequenceElement());
+        assertTrue(seq2.elementLayout() == MemoryLayouts.JAVA_DOUBLE);
     }
 }
 

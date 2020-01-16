@@ -27,7 +27,9 @@
 package sun.rmi.registry;
 
 import java.io.IOException;
+import java.io.ObjectInputStream;
 
+import jdk.internal.access.SharedSecrets;
 import sun.rmi.transport.StreamRemoteCall;
 
 /**
@@ -83,8 +85,9 @@ public final class RegistryImpl_Skel
                 java.lang.String $param_String_1;
                 java.rmi.Remote $param_Remote_2;
                 try {
-                    java.io.ObjectInput in = call.getInputStream();
-                    $param_String_1 = (java.lang.String) in.readObject();
+                    ObjectInputStream in = (ObjectInputStream)call.getInputStream();
+                    $param_String_1 =
+                            SharedSecrets.getJavaObjectInputStreamReadString().readString(in);
                     $param_Remote_2 = (java.rmi.Remote) in.readObject();
                 } catch (ClassCastException | IOException | ClassNotFoundException e) {
                     call.discardPendingRefs();
@@ -118,9 +121,10 @@ public final class RegistryImpl_Skel
             {
                 java.lang.String $param_String_1;
                 try {
-                    java.io.ObjectInput in = call.getInputStream();
-                    $param_String_1 = (java.lang.String) in.readObject();
-                } catch (ClassCastException | IOException | ClassNotFoundException e) {
+                    ObjectInputStream in = (ObjectInputStream)call.getInputStream();
+                    $param_String_1 =
+                            SharedSecrets.getJavaObjectInputStreamReadString().readString(in);
+                } catch (ClassCastException | IOException e) {
                     call.discardPendingRefs();
                     throw new java.rmi.UnmarshalException("error unmarshalling arguments", e);
                 } finally {
@@ -144,8 +148,9 @@ public final class RegistryImpl_Skel
                 java.lang.String $param_String_1;
                 java.rmi.Remote $param_Remote_2;
                 try {
-                    java.io.ObjectInput in = call.getInputStream();
-                    $param_String_1 = (java.lang.String) in.readObject();
+                    ObjectInputStream in = (ObjectInputStream)call.getInputStream();
+                    $param_String_1 =
+                            SharedSecrets.getJavaObjectInputStreamReadString().readString(in);
                     $param_Remote_2 = (java.rmi.Remote) in.readObject();
                 } catch (ClassCastException | IOException | java.lang.ClassNotFoundException e) {
                     call.discardPendingRefs();
@@ -169,9 +174,10 @@ public final class RegistryImpl_Skel
 
                 java.lang.String $param_String_1;
                 try {
-                    java.io.ObjectInput in = call.getInputStream();
-                    $param_String_1 = (java.lang.String) in.readObject();
-                } catch (ClassCastException | IOException | ClassNotFoundException e) {
+                    ObjectInputStream in = (ObjectInputStream)call.getInputStream();
+                    $param_String_1 =
+                            SharedSecrets.getJavaObjectInputStreamReadString().readString(in);
+                } catch (ClassCastException | IOException e) {
                     call.discardPendingRefs();
                     throw new java.rmi.UnmarshalException("error unmarshalling arguments", e);
                 } finally {

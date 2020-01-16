@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
+import java.lang.reflect.Proxy;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -553,6 +554,9 @@ public class TCPEndpoint implements Endpoint {
             host = in.readUTF();
             port = in.readInt();
             csf = (RMIClientSocketFactory) in.readObject();
+            if (Proxy.isProxyClass(csf.getClass())) {
+                throw new IOException("Invalid SocketFactory");
+            }
           break;
 
           default:

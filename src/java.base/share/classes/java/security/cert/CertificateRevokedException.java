@@ -244,7 +244,7 @@ public class CertificateRevokedException extends CertificateException {
         for (int i = 0; i < size; i++) {
             String oid = (String) ois.readObject();
             boolean critical = ois.readBoolean();
-            byte[] extVal = IOUtils.readNBytes(ois, ois.readInt());
+            byte[] extVal = IOUtils.readExactlyNBytes(ois, ois.readInt());
             Extension ext = sun.security.x509.Extension.newExtension
                 (new ObjectIdentifier(oid), critical, extVal);
             extensions.put(oid, ext);

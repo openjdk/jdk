@@ -95,6 +95,18 @@ public final class SequenceLayout extends AbstractLayout {
         return elemCount;
     }
 
+    /**
+     * Obtains a new sequence layout with same element layout, alignment constraints and name as this sequence layout
+     * but with the new specified element count.
+     * @param elementCount the new element count.
+     * @return a new sequence with given element count.
+     * @throws IllegalArgumentException if {@code elementCount < 0}.
+     */
+    public SequenceLayout withElementCount(long elementCount) {
+        AbstractLayout.checkSize(elementCount, true);
+        return new SequenceLayout(OptionalLong.of(elementCount), elementLayout, alignment, name());
+    }
+
     @Override
     public String toString() {
         return decorateLayoutString(String.format("[%s:%s]",

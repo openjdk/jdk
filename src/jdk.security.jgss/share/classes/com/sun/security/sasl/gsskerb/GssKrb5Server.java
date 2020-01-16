@@ -252,8 +252,10 @@ final class GssKrb5Server extends GssKrb5Base implements SaslServer {
         try {
             // Expecting 4 octets from client selected protection
             // and client's receive buffer size
+            MessageProp msgProp = new MessageProp(false);
             byte[] gssOutToken = secCtx.unwrap(responseData, 0,
-                responseData.length, new MessageProp(0, false));
+                responseData.length, msgProp);
+            checkMessageProp("Handshake failure: ", msgProp);
 
             if (logger.isLoggable(Level.FINER)) {
                 traceOutput(MY_CLASS_NAME, "doHandshake2",

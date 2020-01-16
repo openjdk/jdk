@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,7 @@ public class ChainNotValidatedTest extends Test {
         // Root CA is not checked at all. If the intermediate CA has
         // BasicConstraints extension set to true, it will be valid.
         // Otherwise, chain validation will fail.
-        createAlias(CA_KEY_ALIAS);
+        createAlias(CA_KEY_ALIAS, "-ext", "bc:c");
         createAlias(CA2_KEY_ALIAS);
         issueCert(CA2_KEY_ALIAS,
                 "-ext",

@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8177068
+ * @bug 8177068 8233655
  * @summary CompletionFailures occurring during speculative attribution should
  *          not be lost forever.
  * @library /tools/lib
@@ -72,6 +72,7 @@ public class NoCompletionFailureSkipOnSpeculativeAttribution {
 
     public static void main(String[] args) throws Exception {
         new NoCompletionFailureSkipOnSpeculativeAttribution().test();
+        new NoCompletionFailureSkipOnSpeculativeAttribution().test8233655();
     }
 
     public void test() throws Exception {
@@ -96,6 +97,34 @@ public class NoCompletionFailureSkipOnSpeculativeAttribution {
 
         List<String> expectedOutput = List.of(
                 "T.java:4:29: compiler.err.cant.access: two.C.D, (compiler.misc.class.file.not.found: two.C$D)",
+                "1 error"
+        );
+
+        Assert.check(output.equals(expectedOutput));
+    }
+
+    public void test8233655() throws Exception {
+        ToolBox tb = new ToolBox();
+        tb.writeJavaFiles(Paths.get("."),
+                          "public class Test {" +
+                          "    private <T> T test(Class<?> c) {\n" +
+                          "        Class<?> c2 = test(test(Helper.class));\n" +
+                          "        return null;\n" +
+                          "    }\n" +
+                          "}",
+                          "public class Helper extends Unknown {}");
+
+        List<String> output = new JavacTask(tb)
+                .sourcepath(".")
+                .options("-XDrawDiagnostics")
+                .classpath(".")
+                .files("Test.java")
+                .run(Task.Expect.FAIL)
+                .writeAll()
+                .getOutputLines(Task.OutputKind.DIRECT);
+
+        List<String> expectedOutput = List.of(
+                "Helper.java:1:29: compiler.err.cant.resolve: kindname.class, Unknown, , ",
                 "1 error"
         );
 

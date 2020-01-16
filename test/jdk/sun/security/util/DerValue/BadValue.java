@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2017 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,23 +35,23 @@ public class BadValue {
 
     public static void main(String[] args) throws Exception {
 
-        // Test IOUtils.readFully
+        // Test IOUtils.
 
         // We have 4 bytes
         InputStream in = new ByteArrayInputStream(new byte[10]);
-        byte[] bs = IOUtils.readFully(in, 4, true);
+        byte[] bs = IOUtils.readExactlyNBytes(in, 4);
         if (bs.length != 4 || in.available() != 6) {
             throw new Exception("First read error");
         }
         // But only 6 left
-        bs = IOUtils.readFully(in, 10, false);
+        bs = in.readNBytes(10);
         if (bs.length != 6 || in.available() != 0) {
             throw new Exception("Second read error");
         }
         // MAX length results in exception
         in = new ByteArrayInputStream(new byte[10]);
         try {
-            bs = IOUtils.readFully(in, Integer.MAX_VALUE, true);
+            bs = IOUtils.readExactlyNBytes(in, Integer.MAX_VALUE);
             throw new Exception("No exception on MAX_VALUE length");
         } catch (EOFException ex) {
             // this is expected
@@ -61,7 +61,7 @@ public class BadValue {
         // -1 length results in exception
         in = new ByteArrayInputStream(new byte[10]);
         try {
-            bs = IOUtils.readFully(in, -1, true);
+            bs = IOUtils.readExactlyNBytes(in, -1);
             throw new Exception("No exception on -1 length");
         } catch (IOException ex) {
             // this is expected
@@ -70,13 +70,13 @@ public class BadValue {
         // 20>10, readAll means failure
         in = new ByteArrayInputStream(new byte[10]);
         try {
-            bs = IOUtils.readFully(in, 20, true);
+            bs = IOUtils.readExactlyNBytes(in, 20);
             throw new Exception("No exception on EOF");
         } catch (EOFException e) {
             // OK
         }
         int bignum = 10 * 1024 * 1024;
-        bs = IOUtils.readFully(new SuperSlowStream(bignum), bignum, true);
+        bs = IOUtils.readExactlyNBytes(new SuperSlowStream(bignum), bignum);
         if (bs.length != bignum) {
             throw new Exception("Read returned small array");
         }

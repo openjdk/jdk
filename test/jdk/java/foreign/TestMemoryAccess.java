@@ -94,7 +94,7 @@ public class TestMemoryAccess {
                 return;
             }
             try {
-                checker.check(handle, addr.offset(layout.byteSize()));
+                checker.check(handle, addr.addOffset(layout.byteSize()));
                 throw new AssertionError(); //not ok, out of bounds
             } catch (IndexOutOfBoundsException ex) {
                 //ok, should fail (out of bounds)

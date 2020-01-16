@@ -74,6 +74,7 @@ static void X11SD_SwapBytes(X11SDOps *xsdo, XImage *img, int depth, int bpp);
 static XImage * X11SD_GetImage(JNIEnv *env, X11SDOps *xsdo,
                                SurfaceDataBounds *bounds,
                                jint lockFlags);
+static int X11SD_GetBitmapPad(int pixelStride);
 
 extern jfieldID validID;
 
@@ -390,11 +391,33 @@ jboolean XShared_initSurface(JNIEnv *env, X11SDOps *xsdo, jint depth, jint width
         xsdo->drawable = drawable;
         xsdo->isPixmap = JNI_FALSE;
     } else {
+        jboolean sizeIsInvalid = JNI_FALSE;
+        jlong scan = 0;
+
         /*
          * width , height must be nonzero otherwise XCreatePixmap
          * generates BadValue in error_handler
          */
         if (width <= 0 || height <= 0 || width > 32767 || height > 32767) {
+            sizeIsInvalid = JNI_TRUE;
+        } else {
+            XImage* tmpImg = NULL;
+
+            AWT_LOCK();
+            tmpImg = XCreateImage(awt_display,
+                xsdo->configData->awt_visInfo.visual,
+                depth, ZPixmap, 0, NULL, width, height,
+                X11SD_GetBitmapPad(xsdo->configData->pixelStride), 0);
+            if (tmpImg) {
+                scan = (jlong) tmpImg->bytes_per_line;
+                XDestroyImage(tmpImg);
+                tmpImg = NULL;
+            }
+            AWT_UNLOCK();
+            JNU_CHECK_EXCEPTION_RETURN(env, JNI_FALSE);
+        }
+
+        if (sizeIsInvalid || (scan * height > 0x7FFFFFFFL)) {
             JNU_ThrowOutOfMemoryError(env,
                                   "Can't create offscreen surface");
             return JNI_FALSE;
@@ -405,7 +428,7 @@ jboolean XShared_initSurface(JNIEnv *env, X11SDOps *xsdo, jint depth, jint width
         xsdo->pmHeight = height;
 
 #ifdef MITSHM
-        xsdo->shmPMData.pmSize = width * height * depth;
+        xsdo->shmPMData.pmSize = (jlong) width * height * depth;
         xsdo->shmPMData.pixelsReadThreshold = width * height / 8;
         if (forceSharedPixmaps) {
             AWT_LOCK();
@@ -508,7 +531,7 @@ XImage* X11SD_CreateSharedImage(X11SDOps *xsdo,
         return NULL;
     }
     shminfo->shmid =
-        shmget(IPC_PRIVATE, height * img->bytes_per_line,
+        shmget(IPC_PRIVATE, (size_t) height * img->bytes_per_line,
                IPC_CREAT|mitShmPermissionMask);
     if (shminfo->shmid < 0) {
         J2dRlsTraceLn1(J2D_TRACE_ERROR,
@@ -570,7 +593,7 @@ XImage* X11SD_GetSharedImage(X11SDOps *xsdo, jint width, jint height,
         XSync(awt_display, False);
         retImage = cachedXImage;
         cachedXImage = (XImage *)NULL;
-    } else if (width * height * xsdo->depth > 0x10000) {
+    } else if ((jlong) width * height * xsdo->depth > 0x10000) {
         retImage = X11SD_CreateSharedImage(xsdo, width, height);
     }
     return retImage;
@@ -870,7 +893,7 @@ static void X11SD_GetRasInfo(JNIEnv *env,
             int scan = xpriv->img->bytes_per_line;
             xpriv->x = x;
             xpriv->y = y;
-            pRasInfo->rasBase = xpriv->img->data - x * mult - y * scan;
+            pRasInfo->rasBase = xpriv->img->data - x * mult - (intptr_t) y * scan;
             pRasInfo->pixelStride = mult;
             pRasInfo->pixelBitOffset = 0;
             pRasInfo->scanStride = scan;
@@ -1029,8 +1052,8 @@ X11SD_FindClip(SurfaceDataBounds *b, SurfaceDataBounds *bounds, X11SDOps *xsdo)
 
 static void
 X11SD_SwapBytes(X11SDOps *xsdo, XImage * img, int depth, int bpp) {
-    int lengthInBytes = img->height * img->bytes_per_line;
-    int i;
+    jlong lengthInBytes = (jlong) img->height * img->bytes_per_line;
+    jlong i;
 
     switch (depth) {
     case 12:
@@ -1103,7 +1126,7 @@ static XImage * X11SD_GetImage(JNIEnv *env, X11SDOps *xsdo,
     Drawable drawable;
     int depth = xsdo->depth;
     int mult = xsdo->configData->pixelStride;
-    int pad = (mult == 3) ? 32 : mult * 8; // pad must be 8, 16, or 32
+    int pad = X11SD_GetBitmapPad(mult);
     jboolean readBits = lockFlags & SD_LOCK_NEED_PIXELS;
 
     x = bounds->x1;
@@ -1169,7 +1192,7 @@ static XImage * X11SD_GetImage(JNIEnv *env, X11SDOps *xsdo,
             }
 
             scan = img->bytes_per_line;
-            img->data = malloc(h * scan);
+            img->data = malloc((size_t) h * scan);
             if (img->data == NULL) {
                 XFree(img);
                 return NULL;
@@ -1204,7 +1227,7 @@ static XImage * X11SD_GetImage(JNIEnv *env, X11SDOps *xsdo,
                     int i;
 
                     img_addr = img->data +
-                        (temp.y1 - y) * scan + (temp.x1 - x) * mult;
+                        (intptr_t) (temp.y1 - y) * scan + (temp.x1 - x) * mult;
                     temp_scan = temp_image->bytes_per_line;
                     temp_addr = temp_image->data;
                     bytes_to_copy = (temp.x2 - temp.x1) * mult;
@@ -1238,7 +1261,7 @@ static XImage * X11SD_GetImage(JNIEnv *env, X11SDOps *xsdo,
                 return NULL;
             }
 
-            img->data = malloc(h * img->bytes_per_line);
+            img->data = malloc((size_t) h * img->bytes_per_line);
             if (img->data == NULL) {
                 XFree(img);
                 return NULL;
@@ -1377,6 +1400,11 @@ X11SD_ReleasePixmapWithBg(JNIEnv *env, X11SDOps *xsdo)
         xsdo->shmPMData.xRequestSent = JNI_TRUE;
     }
 #endif /* MITSHM */
+}
+
+static int X11SD_GetBitmapPad(int pixelStride) {
+    // pad must be 8, 16, or 32
+    return (pixelStride == 3) ? 32 : pixelStride * 8;
 }
 
 #endif /* !HEADLESS */

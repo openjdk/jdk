@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,7 @@ public class NotSignedByAliasTest extends Test {
         Utils.createFiles(FIRST_FILE);
         JarUtils.createJar(UNSIGNED_JARFILE, FIRST_FILE);
 
-        createAlias(CA_KEY_ALIAS);
+        createAlias(CA_KEY_ALIAS, "-ext", "bc:c");
 
         // create first key pair for signing
         createAlias(FIRST_KEY_ALIAS);

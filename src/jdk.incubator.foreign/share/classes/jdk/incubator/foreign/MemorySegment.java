@@ -145,10 +145,10 @@ public interface MemorySegment extends AutoCloseable {
     MemorySegment acquire();
 
     /**
-     * Is this segment accessible from the current thread?
-     * @return true, if this segment is accessible from the current thread.
+     * The thread owning this segment.
+     * @return the thread owning this segment.
      */
-    boolean isAccessible();
+    Thread ownerThread();
 
     /**
      * The size (in bytes) of this memory segment.

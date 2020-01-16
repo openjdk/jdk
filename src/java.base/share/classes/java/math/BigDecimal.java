@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2119,7 +2119,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             // approximately a 15 digit approximation to the square
             // root, it is helpful to instead normalize this so that
             // the significand portion is to right of the decimal
-            // point by roughly (scale() - precision() +1).
+            // point by roughly (scale() - precision() + 1).
 
             // Now the precision / scale adjustment
             int scaleAdjust = 0;
@@ -2147,7 +2147,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             // than 15 digits were needed, it might be faster to do
             // the loop entirely in BigDecimal arithmetic.
             //
-            // (A double value might have as much many as 17 decimal
+            // (A double value might have as many as 17 decimal
             // digits of precision; it depends on the relative density
             // of binary and decimal numbers at different regions of
             // the number line.)
@@ -2171,7 +2171,25 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             if (originalPrecision == 0) {
                 targetPrecision = stripped.precision()/2 + 1;
             } else {
-                targetPrecision = originalPrecision;
+                /*
+                 * To avoid the need for post-Newton fix-up logic, in
+                 * the case of half-way rounding modes, double the
+                 * target precision so that the "2p + 2" property can
+                 * be relied on to accomplish the final rounding.
+                 */
+                switch (mc.getRoundingMode()) {
+                case HALF_UP:
+                case HALF_DOWN:
+                case HALF_EVEN:
+                    targetPrecision = 2 * originalPrecision;
+                    if (targetPrecision < 0) // Overflow
+                        targetPrecision = Integer.MAX_VALUE - 2;
+                    break;
+
+                default:
+                    targetPrecision = originalPrecision;
+                    break;
+                }
             }
 
             // When setting the precision to use inside the Newton
@@ -2199,38 +2217,90 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
 
                 // If result*result != this numerically, the square
                 // root isn't exact
-                if (this.subtract(result.multiply(result)).compareTo(ZERO) != 0) {
+                if (this.subtract(result.square()).compareTo(ZERO) != 0) {
                     throw new ArithmeticException("Computed square root not exact.");
                 }
             } else {
                 result = approx.scaleByPowerOfTen(-scaleAdjust/2).round(mc);
+
+                switch (targetRm) {
+                case DOWN:
+                case FLOOR:
+                    // Check if too big
+                    if (result.square().compareTo(this) > 0) {
+                        BigDecimal ulp = result.ulp();
+                        // Adjust increment down in case of 1.0 = 10^0
+                        // since the next smaller number is only 1/10
+                        // as far way as the next larger at exponent
+                        // boundaries. Test approx and *not* result to
+                        // avoid having to detect an arbitrary power
+                        // of ten.
+                        if (approx.compareTo(ONE) == 0) {
+                            ulp = ulp.multiply(ONE_TENTH);
+                        }
+                        result = result.subtract(ulp);
+                    }
+                    break;
+
+                case UP:
+                case CEILING:
+                    // Check if too small
+                    if (result.square().compareTo(this) < 0) {
+                        result = result.add(result.ulp());
+                    }
+                    break;
+
+                default:
+                    // No additional work, rely on "2p + 2" property
+                    // for correct rounding. Alternatively, could
+                    // instead run the Newton iteration to around p
+                    // digits and then do tests and fix-ups on the
+                    // rounded value. One possible set of tests and
+                    // fix-ups is given in the Hull and Abrham paper;
+                    // however, additional half-way cases can occur
+                    // for BigDecimal given the more varied
+                    // combinations of input and output precisions
+                    // supported.
+                    break;
+                }
+
             }
 
+            // Test numerical properties at full precision before any
+            // scale adjustments.
+            assert squareRootResultAssertions(result, mc);
             if (result.scale() != preferredScale) {
                 // The preferred scale of an add is
                 // max(addend.scale(), augend.scale()). Therefore, if
                 // the scale of the result is first minimized using
                 // stripTrailingZeros(), adding a zero of the
-                // preferred scale rounding the correct precision will
-                // perform the proper scale vs precision tradeoffs.
+                // preferred scale rounding to the correct precision
+                // will perform the proper scale vs precision
+                // tradeoffs.
                 result = result.stripTrailingZeros().
                     add(zeroWithFinalPreferredScale,
                         new MathContext(originalPrecision, RoundingMode.UNNECESSARY));
             }
-            assert squareRootResultAssertions(result, mc);
             return result;
         } else {
+            BigDecimal result = null;
             switch (signum) {
             case -1:
                 throw new ArithmeticException("Attempted square root " +
                                               "of negative BigDecimal");
             case 0:
-                return valueOf(0L, scale()/2);
+                result = valueOf(0L, scale()/2);
+                assert squareRootResultAssertions(result, mc);
+                return result;
 
             default:
                 throw new AssertionError("Bad value from signum");
             }
         }
+    }
+
+    private BigDecimal square() {
+        return this.multiply(this);
     }
 
     private boolean isPowerOfTen() {
@@ -2241,10 +2311,16 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * For nonzero values, check numerical correctness properties of
      * the computed result for the chosen rounding mode.
      *
-     * For the directed roundings, for DOWN and FLOOR, result^2 must
-     * be {@code <=} the input and (result+ulp)^2 must be {@code >} the
-     * input. Conversely, for UP and CEIL, result^2 must be {@code >=} the
-     * input and (result-ulp)^2 must be {@code <} the input.
+     * For the directed rounding modes:
+     *
+     * <ul>
+     *
+     * <li> For DOWN and FLOOR, result^2 must be {@code <=} the input
+     * and (result+ulp)^2 must be {@code >} the input.
+     *
+     * <li>Conversely, for UP and CEIL, result^2 must be {@code >=}
+     * the input and (result-ulp)^2 must be {@code <} the input.
+     * </ul>
      */
     private boolean squareRootResultAssertions(BigDecimal result, MathContext mc) {
         if (result.signum() == 0) {
@@ -2254,52 +2330,68 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             BigDecimal ulp = result.ulp();
             BigDecimal neighborUp   = result.add(ulp);
             // Make neighbor down accurate even for powers of ten
-            if (this.isPowerOfTen()) {
+            if (result.isPowerOfTen()) {
                 ulp = ulp.divide(TEN);
             }
             BigDecimal neighborDown = result.subtract(ulp);
 
             // Both the starting value and result should be nonzero and positive.
-            if (result.signum() != 1 ||
-                this.signum() != 1) {
-                return false;
-            }
+            assert (result.signum() == 1 &&
+                    this.signum() == 1) :
+                "Bad signum of this and/or its sqrt.";
 
             switch (rm) {
             case DOWN:
             case FLOOR:
-                return
-                    result.multiply(result).compareTo(this)         <= 0 &&
-                    neighborUp.multiply(neighborUp).compareTo(this) > 0;
+                assert
+                    result.square().compareTo(this)     <= 0 &&
+                    neighborUp.square().compareTo(this) > 0:
+                "Square of result out for bounds rounding " + rm;
+                return true;
 
             case UP:
             case CEILING:
-                return
-                    result.multiply(result).compareTo(this)             >= 0 &&
-                    neighborDown.multiply(neighborDown).compareTo(this) < 0;
+                assert
+                    result.square().compareTo(this)       >= 0 &&
+                    neighborDown.square().compareTo(this) < 0:
+                "Square of result out for bounds rounding " + rm;
+                return true;
+
 
             case HALF_DOWN:
             case HALF_EVEN:
             case HALF_UP:
-                BigDecimal err = result.multiply(result).subtract(this).abs();
-                BigDecimal errUp = neighborUp.multiply(neighborUp).subtract(this);
-                BigDecimal errDown =  this.subtract(neighborDown.multiply(neighborDown));
+                BigDecimal err = result.square().subtract(this).abs();
+                BigDecimal errUp = neighborUp.square().subtract(this);
+                BigDecimal errDown =  this.subtract(neighborDown.square());
                 // All error values should be positive so don't need to
                 // compare absolute values.
 
                 int err_comp_errUp = err.compareTo(errUp);
                 int err_comp_errDown = err.compareTo(errDown);
 
-                return
+                assert
                     errUp.signum()   == 1 &&
-                    errDown.signum() == 1 &&
+                    errDown.signum() == 1 :
+                "Errors of neighbors squared don't have correct signs";
 
-                    err_comp_errUp   <= 0 &&
-                    err_comp_errDown <= 0 &&
+                // For breaking a half-way tie, the return value may
+                // have a larger error than one of the neighbors. For
+                // example, the square root of 2.25 to a precision of
+                // 1 digit is either 1 or 2 depending on how the exact
+                // value of 1.5 is rounded. If 2 is returned, it will
+                // have a larger rounding error than its neighbor 1.
+                assert
+                    err_comp_errUp   <= 0 ||
+                    err_comp_errDown <= 0 :
+                "Computed square root has larger error than neighbors for " + rm;
 
+                assert
                     ((err_comp_errUp   == 0 ) ? err_comp_errDown < 0 : true) &&
-                    ((err_comp_errDown == 0 ) ? err_comp_errUp   < 0 : true);
+                    ((err_comp_errDown == 0 ) ? err_comp_errUp   < 0 : true) :
+                        "Incorrect error relationships";
                 // && could check for digit conditions for ties too
+                return true;
 
             default: // Definition of UNNECESSARY already verified.
                 return true;

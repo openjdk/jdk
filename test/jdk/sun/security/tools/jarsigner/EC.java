@@ -59,7 +59,7 @@ public class EC {
         Files.write(Path.of("A"), List.of("A"));
         JarUtils.createJarFile(Path.of("a.jar"), Path.of("."), Path.of("A"));
 
-        kt("-alias ca -dname CN=ca -keyalg ec -genkey -validity 300")
+        kt("-alias ca -dname CN=ca -keyalg ec -genkey -validity 300 -ext bc:c")
                 .shouldHaveExitValue(0);
         kt("-alias a -dname CN=a -keyalg ec -genkey")
                 .shouldHaveExitValue(0);

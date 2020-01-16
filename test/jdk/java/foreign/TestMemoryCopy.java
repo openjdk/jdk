@@ -28,7 +28,6 @@
  */
 
 import jdk.incubator.foreign.MemoryAddress;
-import jdk.incubator.foreign.MemoryHandles;
 import jdk.incubator.foreign.MemoryLayouts;
 import jdk.incubator.foreign.MemorySegment;
 import org.testng.annotations.DataProvider;
@@ -36,11 +35,8 @@ import org.testng.annotations.Test;
 
 import java.lang.invoke.VarHandle;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.function.IntFunction;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 import static org.testng.Assert.*;
 
@@ -55,16 +51,16 @@ public class TestMemoryCopy {
         int size = Math.min(s1.size(), s2.size());
         //prepare source and target segments
         for (int i = 0 ; i < size ; i++) {
-            BYTE_HANDLE.set(addr2.offset(i), (byte)0);
+            BYTE_HANDLE.set(addr2.addOffset(i), (byte)0);
         }
         for (int i = 0 ; i < size ; i++) {
-            BYTE_HANDLE.set(addr1.offset(i), (byte) i);
+            BYTE_HANDLE.set(addr1.addOffset(i), (byte) i);
         }
         //perform copy
         MemoryAddress.copy(addr1, addr2, size);
         //check that copy actually worked
         for (int i = 0 ; i < size ; i++) {
-            assertEquals((byte)i, BYTE_HANDLE.get(addr2.offset(i)));
+            assertEquals((byte)i, BYTE_HANDLE.get(addr2.addOffset(i)));
         }
     }
 
