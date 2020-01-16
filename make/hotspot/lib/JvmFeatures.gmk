@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -192,13 +192,11 @@ ifeq ($(call check-jvm-feature, minimal), true)
     OPT_SPEED_SRC := \
         allocation.cpp \
         assembler.cpp \
-        assembler_linux_arm.cpp \
         barrierSet.cpp \
         basicLock.cpp \
         biasedLocking.cpp \
         bytecode.cpp \
         bytecodeInterpreter.cpp \
-        bytecodeInterpreter_x86.cpp \
         c1_Compilation.cpp \
         c1_Compiler.cpp \
         c1_GraphBuilder.cpp \
@@ -232,7 +230,6 @@ ifeq ($(call check-jvm-feature, minimal), true)
         javaClasses.cpp \
         jniFastGetField_arm.cpp \
         jvm.cpp \
-        jvm_linux.cpp \
         linkResolver.cpp \
         klass.cpp \
         klassVtable.cpp \
@@ -243,17 +240,13 @@ ifeq ($(call check-jvm-feature, minimal), true)
         methodHandles.cpp \
         methodHandles_arm.cpp \
         methodLiveness.cpp \
-        metablock.cpp \
         metaspace.cpp \
         mutex.cpp \
-        mutex_linux.cpp \
         mutexLocker.cpp \
         nativeLookup.cpp \
         objArrayKlass.cpp \
         os_linux.cpp \
         os_linux_arm.cpp \
-        placeHolders.cpp \
-        quickSort.cpp \
         resourceArea.cpp \
         rewriter.cpp \
         sharedRuntime.cpp \
@@ -264,9 +257,6 @@ ifeq ($(call check-jvm-feature, minimal), true)
         systemDictionary.cpp \
         symbol.cpp \
         synchronizer.cpp \
-        threadLS_bsd_x86.cpp \
-        threadLS_linux_arm.cpp \
-        threadLS_linux_x86.cpp \
         timer.cpp \
         typeArrayKlass.cpp \
         unsafe.cpp \
