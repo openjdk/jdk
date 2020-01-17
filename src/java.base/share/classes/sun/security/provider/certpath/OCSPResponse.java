@@ -258,7 +258,7 @@ public final class OCSPResponse {
         DerInputStream basicOCSPResponse =
             new DerInputStream(derIn.getOctetString());
 
-        DerValue[] seqTmp = basicOCSPResponse.getSequence(2);
+        DerValue[] seqTmp = basicOCSPResponse.getSequence(3);
         if (seqTmp.length < 3) {
             throw new IOException("Unexpected BasicOCSPResponse value");
         }
