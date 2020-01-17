@@ -1,4 +1,4 @@
-## JSZip v3.1.5
+## JSZip v3.2.1
 
 ### MIT License
 <pre>
@@ -26,7 +26,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 ******************************************
 
-The JSZip JavaScript Library v3.1.5 also includes pako
+The JSZip JavaScript Library v3.2.1 also includes pako
 
 pako includes the following license:
 
