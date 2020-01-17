@@ -23,10 +23,10 @@
 
 #include "precompiled.hpp"
 #include "gc/z/zArray.inline.hpp"
-#include "gc/z/zBackingPath_linux.hpp"
 #include "gc/z/zErrno.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zLargePages.inline.hpp"
+#include "gc/z/zMountPoint_linux.hpp"
 #include "gc/z/zPhysicalMemoryBacking_linux.hpp"
 #include "gc/z/zSyscall_linux.hpp"
 #include "logging/log.hpp"
@@ -207,18 +207,18 @@ int ZPhysicalMemoryBacking::create_file_fd(const char* name) const {
                                              : z_preferred_tmpfs_mountpoints;
 
   // Find mountpoint
-  ZBackingPath path(filesystem, preferred_mountpoints);
-  if (path.get() == NULL) {
+  ZMountPoint mountpoint(filesystem, preferred_mountpoints);
+  if (mountpoint.get() == NULL) {
     log_error(gc)("Use -XX:ZPath to specify the path to a %s filesystem", filesystem);
     return -1;
   }
 
   // Try to create an anonymous file using the O_TMPFILE flag. Note that this
   // flag requires kernel >= 3.11. If this fails we fall back to open/unlink.
-  const int fd_anon = os::open(path.get(), O_TMPFILE|O_EXCL|O_RDWR|O_CLOEXEC, S_IRUSR|S_IWUSR);
+  const int fd_anon = os::open(mountpoint.get(), O_TMPFILE|O_EXCL|O_RDWR|O_CLOEXEC, S_IRUSR|S_IWUSR);
   if (fd_anon == -1) {
     ZErrno err;
-    log_debug(gc, init)("Failed to create anonymous file in %s (%s)", path.get(),
+    log_debug(gc, init)("Failed to create anonymous file in %s (%s)", mountpoint.get(),
                         (err == EINVAL ? "Not supported" : err.to_string()));
   } else {
     // Get inode number for anonymous file
@@ -229,7 +229,7 @@ int ZPhysicalMemoryBacking::create_file_fd(const char* name) const {
       return -1;
     }
 
-    log_info(gc, init)("Heap backed by file: %s/#" UINT64_FORMAT, path.get(), (uint64_t)stat_buf.st_ino);
+    log_info(gc, init)("Heap backed by file: %s/#" UINT64_FORMAT, mountpoint.get(), (uint64_t)stat_buf.st_ino);
 
     return fd_anon;
   }
@@ -238,7 +238,7 @@ int ZPhysicalMemoryBacking::create_file_fd(const char* name) const {
 
   // Create file name
   char filename[PATH_MAX];
-  snprintf(filename, sizeof(filename), "%s/%s.%d", path.get(), name, os::current_process_id());
+  snprintf(filename, sizeof(filename), "%s/%s.%d", mountpoint.get(), name, os::current_process_id());
 
   // Create file
   const int fd = os::open(filename, O_CREAT|O_EXCL|O_RDWR|O_CLOEXEC, S_IRUSR|S_IWUSR);

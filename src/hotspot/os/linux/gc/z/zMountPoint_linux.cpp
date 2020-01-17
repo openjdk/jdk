@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,8 @@
 
 #include "precompiled.hpp"
 #include "gc/z/zArray.inline.hpp"
-#include "gc/z/zBackingPath_linux.hpp"
 #include "gc/z/zErrno.hpp"
+#include "gc/z/zMountPoint_linux.hpp"
 #include "logging/log.hpp"
 
 #include <stdio.h>
@@ -33,7 +33,7 @@
 // Mount information, see proc(5) for more details.
 #define PROC_SELF_MOUNTINFO        "/proc/self/mountinfo"
 
-ZBackingPath::ZBackingPath(const char* filesystem, const char** preferred_mountpoints) {
+ZMountPoint::ZMountPoint(const char* filesystem, const char** preferred_mountpoints) {
   if (ZPath != NULL) {
     // Use specified path
     _path = strdup(ZPath);
@@ -43,12 +43,12 @@ ZBackingPath::ZBackingPath(const char* filesystem, const char** preferred_mountp
   }
 }
 
-ZBackingPath::~ZBackingPath() {
+ZMountPoint::~ZMountPoint() {
   free(_path);
   _path = NULL;
 }
 
-char* ZBackingPath::get_mountpoint(const char* line, const char* filesystem) const {
+char* ZMountPoint::get_mountpoint(const char* line, const char* filesystem) const {
   char* line_mountpoint = NULL;
   char* line_filesystem = NULL;
 
@@ -68,7 +68,7 @@ char* ZBackingPath::get_mountpoint(const char* line, const char* filesystem) con
   return line_mountpoint;
 }
 
-void ZBackingPath::get_mountpoints(const char* filesystem, ZArray<char*>* mountpoints) const {
+void ZMountPoint::get_mountpoints(const char* filesystem, ZArray<char*>* mountpoints) const {
   FILE* fd = fopen(PROC_SELF_MOUNTINFO, "r");
   if (fd == NULL) {
     ZErrno err;
@@ -90,7 +90,7 @@ void ZBackingPath::get_mountpoints(const char* filesystem, ZArray<char*>* mountp
   fclose(fd);
 }
 
-void ZBackingPath::free_mountpoints(ZArray<char*>* mountpoints) const {
+void ZMountPoint::free_mountpoints(ZArray<char*>* mountpoints) const {
   ZArrayIterator<char*> iter(mountpoints);
   for (char* mountpoint; iter.next(&mountpoint);) {
     free(mountpoint);
@@ -98,7 +98,7 @@ void ZBackingPath::free_mountpoints(ZArray<char*>* mountpoints) const {
   mountpoints->clear();
 }
 
-char* ZBackingPath::find_preferred_mountpoint(const char* filesystem,
+char* ZMountPoint::find_preferred_mountpoint(const char* filesystem,
                                               ZArray<char*>* mountpoints,
                                               const char** preferred_mountpoints) const {
   // Find preferred mount point
@@ -122,7 +122,7 @@ char* ZBackingPath::find_preferred_mountpoint(const char* filesystem,
   return NULL;
 }
 
-char* ZBackingPath::find_mountpoint(const char* filesystem, const char** preferred_mountpoints) const {
+char* ZMountPoint::find_mountpoint(const char* filesystem, const char** preferred_mountpoints) const {
   char* path = NULL;
   ZArray<char*> mountpoints;
 
@@ -144,6 +144,6 @@ char* ZBackingPath::find_mountpoint(const char* filesystem, const char** preferr
   return path;
 }
 
-const char* ZBackingPath::get() const {
+const char* ZMountPoint::get() const {
   return _path;
 }
