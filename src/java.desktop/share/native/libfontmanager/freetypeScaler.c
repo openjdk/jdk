@@ -958,11 +958,11 @@ static jlong
     }
 
     if (context->fmType == TEXT_FM_ON) {
-        double advh = FTFixedToFloat(ftglyph->linearHoriAdvance);
+        float advh = FTFixedToFloat(ftglyph->linearHoriAdvance);
         glyphInfo->advanceX =
             (float) (advh * FTFixedToFloat(context->transform.xx));
         glyphInfo->advanceY =
-            (float) (advh * FTFixedToFloat(context->transform.xy));
+            (float) - (advh * FTFixedToFloat(context->transform.yx));
     } else {
         if (!ftglyph->advance.y) {
             glyphInfo->advanceX =
