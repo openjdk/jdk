@@ -42,7 +42,6 @@
 #define VM_OPS_DO(template)                       \
   template(None)                                  \
   template(Cleanup)                               \
-  template(ThreadStop)                            \
   template(ThreadDump)                            \
   template(PrintThreads)                          \
   template(FindDeadlocks)                         \
@@ -177,7 +176,6 @@ class VM_Operation : public StackObj {
   // Configuration. Override these appropriately in subclasses.
   virtual VMOp_Type type() const = 0;
   virtual bool allow_nested_vm_operations() const { return false; }
-  virtual void oops_do(OopClosure* f)              { /* do nothing */ };
 
   // An operation can either be done inside a safepoint
   // or concurrently with Java threads running.

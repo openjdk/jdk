@@ -53,9 +53,6 @@ class VMOperationQueue : public CHeapObj<mtInternal> {
   int           _queue_length[nof_priorities];
   int           _queue_counter;
   VM_Operation* _queue       [nof_priorities];
-  // we also allow the vmThread to register the ops it has drained so we
-  // can scan them from oops_do
-  VM_Operation* _drain_list;
 
   static VM_QueueHead _queue_head[nof_priorities];
 
@@ -67,8 +64,6 @@ class VMOperationQueue : public CHeapObj<mtInternal> {
   bool queue_empty                (int prio);
   void queue_add                  (int prio, VM_Operation *op);
   VM_Operation* queue_remove_front(int prio);
-  void queue_oops_do(int queue, OopClosure* f);
-  void drain_list_oops_do(OopClosure* f);
   VM_Operation* queue_drain(int prio);
   // lock-free query: may return the wrong answer but must not break
   bool queue_peek(int prio) { return _queue_length[prio] > 0; }
@@ -80,13 +75,7 @@ class VMOperationQueue : public CHeapObj<mtInternal> {
   void add(VM_Operation *op);
   VM_Operation* remove_next();                        // Returns next or null
   VM_Operation* drain_at_safepoint_priority() { return queue_drain(SafepointPriority); }
-  void set_drain_list(VM_Operation* list) { _drain_list = list; }
   bool peek_at_safepoint_priority() { return queue_peek(SafepointPriority); }
-
-  // GC support
-  void oops_do(OopClosure* f);
-
-  void verify_queue(int prio) PRODUCT_RETURN;
 };
 
 
@@ -164,9 +153,6 @@ class VMThread: public NamedThread {
 
   // Returns the single instance of VMThread.
   static VMThread* vm_thread()                    { return _vm_thread; }
-
-  // GC support
-  void oops_do(OopClosure* f, CodeBlobClosure* cf);
 
   void verify();
 
