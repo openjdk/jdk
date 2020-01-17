@@ -21,40 +21,13 @@
  * questions.
  */
 
-#ifndef OS_WINDOWS_GC_Z_ZBACKINGFILE_WINDOWS_HPP
-#define OS_WINDOWS_GC_Z_ZBACKINGFILE_WINDOWS_HPP
+#ifndef SHARE_GC_Z_ZNUMA_INLINE_HPP
+#define SHARE_GC_Z_ZNUMA_INLINE_HPP
 
-#include "gc/z/zGranuleMap.hpp"
-#include "memory/allocation.hpp"
+#include "gc/z/zNUMA.hpp"
 
-#include <Windows.h>
+inline bool ZNUMA::is_enabled() {
+  return _enabled;
+}
 
-class ZBackingFile {
-private:
-  ZGranuleMap<HANDLE> _handles;
-  size_t              _size;
-
-  HANDLE get_handle(uintptr_t offset) const;
-  void put_handle(uintptr_t offset, HANDLE handle);
-  void clear_handle(uintptr_t offset);
-
-  size_t commit_from_paging_file(size_t offset, size_t size);
-  size_t uncommit_from_paging_file(size_t offset, size_t size);
-
-public:
-  ZBackingFile();
-
-  bool is_initialized() const;
-
-  void warn_commit_limits(size_t max) const;
-
-  size_t size() const;
-
-  size_t commit(size_t offset, size_t length);
-  size_t uncommit(size_t offset, size_t length);
-
-  void map(uintptr_t addr, size_t size, size_t offset) const;
-  void unmap(uintptr_t addr, size_t size) const;
-};
-
-#endif // OS_WINDOWS_GC_Z_ZBACKINGFILE_WINDOWS_HPP
+#endif // SHARE_GC_Z_ZNUMA_INLINE_HPP

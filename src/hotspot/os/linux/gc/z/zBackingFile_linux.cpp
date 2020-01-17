@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@
 #include "utilities/debug.hpp"
 
 #include <fcntl.h>
+#include <stdio.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <sys/statfs.h>
@@ -81,6 +82,9 @@
 // Filesystem names
 #define ZFILESYSTEM_TMPFS                "tmpfs"
 #define ZFILESYSTEM_HUGETLBFS            "hugetlbfs"
+
+// Proc file entry for max map mount
+#define ZFILENAME_PROC_MAX_MAP_COUNT     "/proc/sys/vm/max_map_count"
 
 // Sysfs file for transparent huge page on tmpfs
 #define ZFILENAME_SHMEM_ENABLED          "/sys/kernel/mm/transparent_hugepage/shmem_enabled"
@@ -278,16 +282,76 @@ bool ZBackingFile::is_initialized() const {
   return _initialized;
 }
 
-int ZBackingFile::fd() const {
-  return _fd;
+void ZBackingFile::warn_available_space(size_t max) const {
+  // Note that the available space on a tmpfs or a hugetlbfs filesystem
+  // will be zero if no size limit was specified when it was mounted.
+  if (_available == 0) {
+    // No size limit set, skip check
+    log_info(gc, init)("Available space on backing filesystem: N/A");
+    return;
+  }
+
+  log_info(gc, init)("Available space on backing filesystem: " SIZE_FORMAT "M", _available / M);
+
+  // Warn if the filesystem doesn't currently have enough space available to hold
+  // the max heap size. The max heap size will be capped if we later hit this limit
+  // when trying to expand the heap.
+  if (_available < max) {
+    log_warning(gc)("***** WARNING! INCORRECT SYSTEM CONFIGURATION DETECTED! *****");
+    log_warning(gc)("Not enough space available on the backing filesystem to hold the current max Java heap");
+    log_warning(gc)("size (" SIZE_FORMAT "M). Please adjust the size of the backing filesystem accordingly "
+                    "(available", max / M);
+    log_warning(gc)("space is currently " SIZE_FORMAT "M). Continuing execution with the current filesystem "
+                    "size could", _available / M);
+    log_warning(gc)("lead to a premature OutOfMemoryError being thrown, due to failure to map memory.");
+  }
+}
+
+void ZBackingFile::warn_max_map_count(size_t max) const {
+  const char* const filename = ZFILENAME_PROC_MAX_MAP_COUNT;
+  FILE* const file = fopen(filename, "r");
+  if (file == NULL) {
+    // Failed to open file, skip check
+    log_debug(gc, init)("Failed to open %s", filename);
+    return;
+  }
+
+  size_t actual_max_map_count = 0;
+  const int result = fscanf(file, SIZE_FORMAT, &actual_max_map_count);
+  fclose(file);
+  if (result != 1) {
+    // Failed to read file, skip check
+    log_debug(gc, init)("Failed to read %s", filename);
+    return;
+  }
+
+  // The required max map count is impossible to calculate exactly since subsystems
+  // other than ZGC are also creating memory mappings, and we have no control over that.
+  // However, ZGC tends to create the most mappings and dominate the total count.
+  // In the worst cases, ZGC will map each granule three times, i.e. once per heap view.
+  // We speculate that we need another 20% to allow for non-ZGC subsystems to map memory.
+  const size_t required_max_map_count = (max / ZGranuleSize) * 3 * 1.2;
+  if (actual_max_map_count < required_max_map_count) {
+    log_warning(gc)("***** WARNING! INCORRECT SYSTEM CONFIGURATION DETECTED! *****");
+    log_warning(gc)("The system limit on number of memory mappings per process might be too low for the given");
+    log_warning(gc)("max Java heap size (" SIZE_FORMAT "M). Please adjust %s to allow for at",
+                    max / M, filename);
+    log_warning(gc)("least " SIZE_FORMAT " mappings (current limit is " SIZE_FORMAT "). Continuing execution "
+                    "with the current", required_max_map_count, actual_max_map_count);
+    log_warning(gc)("limit could lead to a fatal error, due to failure to map memory.");
+  }
+}
+
+void ZBackingFile::warn_commit_limits(size_t max) const {
+  // Warn if available space is too low
+  warn_available_space(max);
+
+  // Warn if max map count is too low
+  warn_max_map_count(max);
 }
 
 size_t ZBackingFile::size() const {
   return _size;
-}
-
-size_t ZBackingFile::available() const {
-  return _available;
 }
 
 bool ZBackingFile::is_tmpfs() const {
@@ -571,4 +635,23 @@ size_t ZBackingFile::uncommit(size_t offset, size_t length) {
   }
 
   return length;
+}
+
+void ZBackingFile::map(uintptr_t addr, size_t size, uintptr_t offset) const {
+  const void* const res = mmap((void*)addr, size, PROT_READ|PROT_WRITE, MAP_FIXED|MAP_SHARED, _fd, offset);
+  if (res == MAP_FAILED) {
+    ZErrno err;
+    fatal("Failed to map memory (%s)", err.to_string());
+  }
+}
+
+void ZBackingFile::unmap(uintptr_t addr, size_t size) const {
+  // Note that we must keep the address space reservation intact and just detach
+  // the backing memory. For this reason we map a new anonymous, non-accessible
+  // and non-reserved page over the mapping instead of actually unmapping.
+  const void* const res = mmap((void*)addr, size, PROT_NONE, MAP_FIXED | MAP_ANONYMOUS | MAP_PRIVATE | MAP_NORESERVE, -1, 0);
+  if (res == MAP_FAILED) {
+    ZErrno err;
+    fatal("Failed to map memory (%s)", err.to_string());
+  }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,9 @@ private:
   size_t   _available;
   bool     _initialized;
 
+  void warn_available_space(size_t max) const;
+  void warn_max_map_count(size_t max) const;
+
   int create_mem_fd(const char* name) const;
   int create_file_fd(const char* name) const;
   int create_fd(const char* name) const;
@@ -62,12 +65,15 @@ public:
 
   bool is_initialized() const;
 
-  int fd() const;
+  void warn_commit_limits(size_t max) const;
+
   size_t size() const;
-  size_t available() const;
 
   size_t commit(size_t offset, size_t length);
   size_t uncommit(size_t offset, size_t length);
+
+  void map(uintptr_t addr, size_t size, uintptr_t offset) const;
+  void unmap(uintptr_t addr, size_t size) const;
 };
 
 #endif // OS_LINUX_GC_Z_ZBACKINGFILE_LINUX_HPP

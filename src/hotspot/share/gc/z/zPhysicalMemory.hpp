@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,9 @@
 #ifndef SHARE_GC_Z_ZPHYSICALMEMORY_HPP
 #define SHARE_GC_Z_ZPHYSICALMEMORY_HPP
 
+#include "gc/z/zMemory.hpp"
 #include "memory/allocation.hpp"
-#include OS_HEADER(gc/z/zPhysicalMemoryBacking)
+#include OS_HEADER(gc/z/zBackingFile)
 
 class ZPhysicalMemorySegment : public CHeapObj<mtGC> {
 private:
@@ -65,10 +66,16 @@ public:
 
 class ZPhysicalMemoryManager {
 private:
-  ZPhysicalMemoryBacking _backing;
+  ZBackingFile   _backing;
+  ZMemoryManager _committed;
+  ZMemoryManager _uncommitted;
 
   void nmt_commit(const ZPhysicalMemory& pmem, uintptr_t offset) const;
   void nmt_uncommit(const ZPhysicalMemory& pmem, uintptr_t offset) const;
+
+  void pretouch_view(uintptr_t addr, size_t size) const;
+  void map_view(const ZPhysicalMemory& pmem, uintptr_t addr) const;
+  void unmap_view(const ZPhysicalMemory& pmem, uintptr_t addr) const;
 
 public:
   bool is_initialized() const;
