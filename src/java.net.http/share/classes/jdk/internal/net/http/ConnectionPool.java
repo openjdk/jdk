@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -144,6 +144,7 @@ final class ConnectionPool {
         HttpConnection c = secure ? findConnection(key, sslPool)
                                   : findConnection(key, plainPool);
         //System.out.println ("getConnection returning: " + c);
+        assert c == null || c.isSecure() == secure;
         return c;
     }
 
@@ -156,6 +157,10 @@ final class ConnectionPool {
 
     // Called also by whitebox tests
     void returnToPool(HttpConnection conn, Instant now, long keepAlive) {
+
+        assert (conn instanceof PlainHttpConnection) || conn.isSecure()
+            : "Attempting to return unsecure connection to SSL pool: "
+                + conn.getClass();
 
         // Don't call registerCleanupTrigger while holding a lock,
         // but register it before the connection is added to the pool,
@@ -452,7 +457,7 @@ final class ConnectionPool {
         if (c instanceof PlainHttpConnection) {
             removeFromPool(c, plainPool);
         } else {
-            assert c.isSecure();
+            assert c.isSecure() : "connection " + c + " is not secure!";
             removeFromPool(c, sslPool);
         }
     }

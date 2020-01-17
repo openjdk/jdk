@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,15 @@
 
 /*
  * @test
- * @bug 8217429
+ * @bug 8217429 8236859
  * @summary WebSocket proxy tunneling tests
- * @compile DummyWebSocketServer.java ../ProxyServer.java
+ * @library /test/lib
+ * @compile SecureSupport.java DummySecureWebSocketServer.java ../ProxyServer.java
+ * @build jdk.test.lib.net.SimpleSSLContext WebSocketProxyTest
  * @run testng/othervm
+ *         -Djdk.internal.httpclient.debug=true
+ *         -Djdk.internal.httpclient.websocket.debug=true
+ *         -Djdk.httpclient.HttpClient.log=errors,requests,headers
  *         -Djdk.http.auth.tunneling.disabledSchemes=
  *         WebSocketProxyTest
  */
@@ -52,9 +57,14 @@ import java.util.concurrent.CompletionStage;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+
+import jdk.test.lib.net.SimpleSSLContext;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
+
+import javax.net.ssl.SSLContext;
+
 import static java.net.http.HttpClient.newBuilder;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.testng.Assert.assertEquals;
@@ -66,6 +76,14 @@ public class WebSocketProxyTest {
     private static final String USERNAME = "wally";
     private static final String PASSWORD = "xyz987";
 
+    static {
+        try {
+            SSLContext.setDefault(new SimpleSSLContext().get());
+        } catch (IOException ex) {
+            throw new ExceptionInInitializerError(ex);
+        }
+    }
+
     static class WSAuthenticator extends Authenticator {
         @Override
         protected PasswordAuthentication getPasswordAuthentication() {
@@ -73,19 +91,33 @@ public class WebSocketProxyTest {
         }
     }
 
-    static final Function<int[],DummyWebSocketServer> SERVER_WITH_CANNED_DATA =
+    static final Function<int[],DummySecureWebSocketServer> SERVER_WITH_CANNED_DATA =
         new Function<>() {
-            @Override public DummyWebSocketServer apply(int[] data) {
-                return Support.serverWithCannedData(data); }
+            @Override public DummySecureWebSocketServer apply(int[] data) {
+                return SecureSupport.serverWithCannedData(data); }
             @Override public String toString() { return "SERVER_WITH_CANNED_DATA"; }
         };
 
-    static final Function<int[],DummyWebSocketServer> AUTH_SERVER_WITH_CANNED_DATA =
+    static final Function<int[],DummySecureWebSocketServer> SSL_SERVER_WITH_CANNED_DATA =
+            new Function<>() {
+                @Override public DummySecureWebSocketServer apply(int[] data) {
+                    return SecureSupport.serverWithCannedData(data).secure(); }
+                @Override public String toString() { return "SSL_SERVER_WITH_CANNED_DATA"; }
+            };
+
+    static final Function<int[],DummySecureWebSocketServer> AUTH_SERVER_WITH_CANNED_DATA =
         new Function<>() {
-            @Override public DummyWebSocketServer apply(int[] data) {
-                return Support.serverWithCannedDataAndAuthentication(USERNAME, PASSWORD, data); }
+            @Override public DummySecureWebSocketServer apply(int[] data) {
+                return SecureSupport.serverWithCannedDataAndAuthentication(USERNAME, PASSWORD, data); }
             @Override public String toString() { return "AUTH_SERVER_WITH_CANNED_DATA"; }
         };
+
+    static final Function<int[],DummySecureWebSocketServer> AUTH_SSL_SVR_WITH_CANNED_DATA =
+            new Function<>() {
+                @Override public DummySecureWebSocketServer apply(int[] data) {
+                    return SecureSupport.serverWithCannedDataAndAuthentication(USERNAME, PASSWORD, data).secure(); }
+                @Override public String toString() { return "AUTH_SSL_SVR_WITH_CANNED_DATA"; }
+            };
 
     static final Supplier<ProxyServer> TUNNELING_PROXY_SERVER =
         new Supplier<>() {
@@ -105,15 +137,20 @@ public class WebSocketProxyTest {
     @DataProvider(name = "servers")
     public Object[][] servers() {
         return new Object[][] {
-            { SERVER_WITH_CANNED_DATA,      TUNNELING_PROXY_SERVER      },
-            { SERVER_WITH_CANNED_DATA,      AUTH_TUNNELING_PROXY_SERVER },
-            { AUTH_SERVER_WITH_CANNED_DATA, TUNNELING_PROXY_SERVER      },
+            { SERVER_WITH_CANNED_DATA,       TUNNELING_PROXY_SERVER      },
+            { SERVER_WITH_CANNED_DATA,       AUTH_TUNNELING_PROXY_SERVER },
+            { SSL_SERVER_WITH_CANNED_DATA,   TUNNELING_PROXY_SERVER      },
+            { SSL_SERVER_WITH_CANNED_DATA,   AUTH_TUNNELING_PROXY_SERVER },
+            { AUTH_SERVER_WITH_CANNED_DATA,  TUNNELING_PROXY_SERVER      },
+            { AUTH_SSL_SVR_WITH_CANNED_DATA, TUNNELING_PROXY_SERVER      },
+            { AUTH_SERVER_WITH_CANNED_DATA,  AUTH_TUNNELING_PROXY_SERVER },
+            { AUTH_SSL_SVR_WITH_CANNED_DATA, AUTH_TUNNELING_PROXY_SERVER },
         };
     }
 
     @Test(dataProvider = "servers")
     public void simpleAggregatingBinaryMessages
-            (Function<int[],DummyWebSocketServer> serverSupplier,
+            (Function<int[],DummySecureWebSocketServer> serverSupplier,
              Supplier<ProxyServer> proxyServerSupplier)
         throws IOException
     {
@@ -134,6 +171,8 @@ public class WebSocketProxyTest {
             InetSocketAddress proxyAddress = new InetSocketAddress(
                     InetAddress.getLoopbackAddress(), proxyServer.getPort());
             server.open();
+            System.out.println("Server: " + server.getURI());
+            System.out.println("Proxy: " + proxyAddress);
 
             WebSocket.Listener listener = new WebSocket.Listener() {
 
@@ -209,7 +248,7 @@ public class WebSocketProxyTest {
     @Test
     public void clientAuthenticate() throws IOException  {
         try (var proxyServer = AUTH_TUNNELING_PROXY_SERVER.get();
-             var server = new DummyWebSocketServer()){
+             var server = new DummySecureWebSocketServer()){
             server.open();
             InetSocketAddress proxyAddress = new InetSocketAddress(
                     InetAddress.getLoopbackAddress(), proxyServer.getPort());
@@ -230,7 +269,7 @@ public class WebSocketProxyTest {
     @Test
     public void explicitAuthenticate() throws IOException  {
         try (var proxyServer = AUTH_TUNNELING_PROXY_SERVER.get();
-             var server = new DummyWebSocketServer()) {
+             var server = new DummySecureWebSocketServer()) {
             server.open();
             InetSocketAddress proxyAddress = new InetSocketAddress(
                     InetAddress.getLoopbackAddress(), proxyServer.getPort());
@@ -248,12 +287,36 @@ public class WebSocketProxyTest {
     }
 
     /*
+     * Ensures authentication succeeds when an `Authorization` header is explicitly set.
+     */
+    @Test
+    public void explicitAuthenticate2() throws IOException  {
+        try (var proxyServer = AUTH_TUNNELING_PROXY_SERVER.get();
+             var server = new DummySecureWebSocketServer(USERNAME, PASSWORD).secure()) {
+            server.open();
+            InetSocketAddress proxyAddress = new InetSocketAddress(
+                    InetAddress.getLoopbackAddress(), proxyServer.getPort());
+
+            String hv = "Basic " + Base64.getEncoder().encodeToString(
+                    (USERNAME + ":" + PASSWORD).getBytes(UTF_8));
+
+            var webSocket = newBuilder()
+                    .proxy(ProxySelector.of(proxyAddress)).build()
+                    .newWebSocketBuilder()
+                    .header("Proxy-Authorization", hv)
+                    .header("Authorization", hv)
+                    .buildAsync(server.getURI(), new WebSocket.Listener() { })
+                    .join();
+        }
+    }
+
+    /*
      * Ensures authentication does not succeed when no authenticator is present.
      */
     @Test
     public void failNoAuthenticator() throws IOException  {
         try (var proxyServer = AUTH_TUNNELING_PROXY_SERVER.get();
-             var server = new DummyWebSocketServer(USERNAME, PASSWORD)) {
+             var server = new DummySecureWebSocketServer(USERNAME, PASSWORD)) {
             server.open();
             InetSocketAddress proxyAddress = new InetSocketAddress(
                     InetAddress.getLoopbackAddress(), proxyServer.getPort());
@@ -281,7 +344,7 @@ public class WebSocketProxyTest {
     @Test
     public void failBadCredentials() throws IOException  {
         try (var proxyServer = AUTH_TUNNELING_PROXY_SERVER.get();
-             var server = new DummyWebSocketServer(USERNAME, PASSWORD)) {
+             var server = new DummySecureWebSocketServer(USERNAME, PASSWORD)) {
             server.open();
             InetSocketAddress proxyAddress = new InetSocketAddress(
                     InetAddress.getLoopbackAddress(), proxyServer.getPort());
