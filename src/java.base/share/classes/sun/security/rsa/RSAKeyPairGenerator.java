@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,6 +95,10 @@ public abstract class RSAKeyPairGenerator extends KeyPairGeneratorSpi {
             if (tmpPublicExponent.compareTo(RSAKeyGenParameterSpec.F0) < 0) {
                 throw new InvalidAlgorithmParameterException
                         ("Public exponent must be 3 or larger");
+            }
+            if (!tmpPublicExponent.testBit(0)) {
+                throw new InvalidAlgorithmParameterException
+                        ("Public exponent must be an odd number");
             }
             if (tmpPublicExponent.bitLength() > tmpKeySize) {
                 throw new InvalidAlgorithmParameterException
