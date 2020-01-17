@@ -161,24 +161,23 @@ WB_END
 
 class WBIsKlassAliveClosure : public LockedClassesDo {
     Symbol* _name;
-    bool _found;
+    int _count;
 public:
-    WBIsKlassAliveClosure(Symbol* name) : _name(name), _found(false) {}
+    WBIsKlassAliveClosure(Symbol* name) : _name(name), _count(0) {}
 
     void do_klass(Klass* k) {
-      if (_found) return;
       Symbol* ksym = k->name();
       if (ksym->fast_compare(_name) == 0) {
-        _found = true;
+        _count++;
       }
     }
 
-    bool found() const {
-        return _found;
+    int count() const {
+        return _count;
     }
 };
 
-WB_ENTRY(jboolean, WB_IsClassAlive(JNIEnv* env, jobject target, jstring name))
+WB_ENTRY(jint, WB_CountAliveClasses(JNIEnv* env, jobject target, jstring name))
   oop h_name = JNIHandles::resolve(name);
   if (h_name == NULL) return false;
   Symbol* sym = java_lang_String::as_symbol(h_name);
@@ -187,7 +186,8 @@ WB_ENTRY(jboolean, WB_IsClassAlive(JNIEnv* env, jobject target, jstring name))
   WBIsKlassAliveClosure closure(sym);
   ClassLoaderDataGraph::classes_do(&closure);
 
-  return closure.found();
+  // Return the count of alive classes with this name.
+  return closure.count();
 WB_END
 
 WB_ENTRY(jint, WB_GetSymbolRefcount(JNIEnv* env, jobject unused, jstring name))
@@ -2218,7 +2218,7 @@ static JNINativeMethod methods[] = {
   {CC"getVMLargePageSize",               CC"()J",                   (void*)&WB_GetVMLargePageSize},
   {CC"getHeapSpaceAlignment",            CC"()J",                   (void*)&WB_GetHeapSpaceAlignment},
   {CC"getHeapAlignment",                 CC"()J",                   (void*)&WB_GetHeapAlignment},
-  {CC"isClassAlive0",                    CC"(Ljava/lang/String;)Z", (void*)&WB_IsClassAlive      },
+  {CC"countAliveClasses0",               CC"(Ljava/lang/String;)I", (void*)&WB_CountAliveClasses },
   {CC"getSymbolRefcount",                CC"(Ljava/lang/String;)I", (void*)&WB_GetSymbolRefcount },
   {CC"parseCommandLine0",
       CC"(Ljava/lang/String;C[Lsun/hotspot/parser/DiagnosticCommand;)[Ljava/lang/Object;",

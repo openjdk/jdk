@@ -28,6 +28,8 @@
 #include "classfile/moduleEntry.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "gc/shared/collectedHeap.hpp"
+#include "logging/log.hpp"
+#include "logging/logTag.hpp"
 #include "memory/heapInspection.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
@@ -512,14 +514,14 @@ size_t HeapInspection::populate_table(KlassInfoTable* cit, BoolObjectClosure *fi
 void HeapInspection::heap_inspection(outputStream* st) {
   ResourceMark rm;
 
-  KlassInfoTable cit(true);
+  KlassInfoTable cit(false);
   if (!cit.allocation_failed()) {
     // populate table with object allocation info
     size_t missed_count = populate_table(&cit);
     if (missed_count != 0) {
-      st->print_cr("WARNING: Ran out of C-heap; undercounted " SIZE_FORMAT
-                   " total instances in data below",
-                   missed_count);
+      log_info(gc, classhisto)("WARNING: Ran out of C-heap; undercounted " SIZE_FORMAT
+                               " total instances in data below",
+                               missed_count);
     }
 
     // Sort and print klass instance info
