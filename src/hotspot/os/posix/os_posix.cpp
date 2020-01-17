@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -681,7 +681,7 @@ void os::naked_short_nanosleep(jlong ns) {
 
 void os::naked_short_sleep(jlong ms) {
   assert(ms < MILLIUNITS, "Un-interruptable sleep, short time use only");
-  os::naked_short_nanosleep(ms * (NANOUNITS / MILLIUNITS));
+  os::naked_short_nanosleep(millis_to_nanos(ms));
   return;
 }
 
@@ -1833,18 +1833,18 @@ static void unpack_abs_time(timespec* abstime, jlong deadline, jlong now_sec) {
     abstime->tv_nsec = 0;
   } else {
     abstime->tv_sec = seconds;
-    abstime->tv_nsec = millis * (NANOUNITS / MILLIUNITS);
+    abstime->tv_nsec = millis_to_nanos(millis);
   }
 }
 
-static jlong millis_to_nanos(jlong millis) {
+static jlong millis_to_nanos_bounded(jlong millis) {
   // We have to watch for overflow when converting millis to nanos,
   // but if millis is that large then we will end up limiting to
   // MAX_SECS anyway, so just do that here.
   if (millis / MILLIUNITS > MAX_SECS) {
     millis = jlong(MAX_SECS) * MILLIUNITS;
   }
-  return millis * (NANOUNITS / MILLIUNITS);
+  return millis_to_nanos(millis);
 }
 
 static void to_abstime(timespec* abstime, jlong timeout,
@@ -1897,7 +1897,7 @@ static void to_abstime(timespec* abstime, jlong timeout,
 // Create an absolute time 'millis' milliseconds in the future, using the
 // real-time (time-of-day) clock. Used by PosixSemaphore.
 void os::Posix::to_RTC_abstime(timespec* abstime, int64_t millis) {
-  to_abstime(abstime, millis_to_nanos(millis),
+  to_abstime(abstime, millis_to_nanos_bounded(millis),
              false /* not absolute */,
              true  /* use real-time clock */);
 }
@@ -1992,7 +1992,7 @@ int os::PlatformEvent::park(jlong millis) {
 
   if (v == 0) { // Do this the hard way by blocking ...
     struct timespec abst;
-    to_abstime(&abst, millis_to_nanos(millis), false, false);
+    to_abstime(&abst, millis_to_nanos_bounded(millis), false, false);
 
     int ret = OS_TIMEOUT;
     int status = pthread_mutex_lock(_mutex);
@@ -2318,7 +2318,7 @@ int os::PlatformMonitor::wait(jlong millis) {
     if (millis / MILLIUNITS > MAX_SECS) {
       millis = jlong(MAX_SECS) * MILLIUNITS;
     }
-    to_abstime(&abst, millis * (NANOUNITS / MILLIUNITS), false, false);
+    to_abstime(&abst, millis_to_nanos(millis), false, false);
 
     int ret = OS_TIMEOUT;
     int status = pthread_cond_timedwait(cond(), mutex(), &abst);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -659,9 +659,10 @@ void defaultStream::start_log() {
     // Write XML header.
     xs->print_cr("<?xml version='1.0' encoding='UTF-8'?>");
     // (For now, don't bother to issue a DTD for this private format.)
+
+    // Calculate the start time of the log as ms since the epoch: this is
+    // the current time in ms minus the uptime in ms.
     jlong time_ms = os::javaTimeMillis() - tty->time_stamp().milliseconds();
-    // %%% Should be: jlong time_ms = os::start_time_milliseconds(), if
-    // we ever get round to introduce that method on the os class
     xs->head("hotspot_log version='%d %d'"
              " process='%d' time_ms='" INT64_FORMAT "'",
              LOG_MAJOR_VERSION, LOG_MINOR_VERSION,

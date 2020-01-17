@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,17 +76,17 @@ bool OSXSemaphore::timedwait(int64_t millis) {
   // kernel semaphores take a relative timeout
   mach_timespec_t waitspec;
   int secs = millis / MILLIUNITS;
-  int nsecs = (millis % MILLIUNITS) * NANOSECS_PER_MILLISEC;
+  int nsecs = millis_to_nanos(millis % MILLIUNITS);
   waitspec.tv_sec = secs;
   waitspec.tv_nsec = nsecs;
 
-  int64_t starttime = os::javaTimeMillis() * NANOSECS_PER_MILLISEC;
+  int64_t starttime = os::javaTimeNanos();
 
   kr = semaphore_timedwait(_semaphore, waitspec);
   while (kr == KERN_ABORTED) {
     // reduce the timout and try again
-    int64_t totalwait = millis * NANOSECS_PER_MILLISEC;
-    int64_t current = os::javaTimeMillis() * NANOSECS_PER_MILLISEC;
+    int64_t totalwait = millis_to_nanos(millis);
+    int64_t current = os::javaTimeNanos();
     int64_t passedtime = current - starttime;
 
     if (passedtime >= totalwait) {

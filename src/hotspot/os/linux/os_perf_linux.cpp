@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -431,19 +431,21 @@ static int get_boot_time(uint64_t* time) {
 
 static int perf_context_switch_rate(double* rate) {
   static pthread_mutex_t contextSwitchLock = PTHREAD_MUTEX_INITIALIZER;
-  static uint64_t      lastTime;
+  static uint64_t      bootTime;
+  static uint64_t      lastTimeNanos;
   static uint64_t      lastSwitches;
   static double        lastRate;
 
-  uint64_t lt = 0;
+  uint64_t bt = 0;
   int res = 0;
 
-  if (lastTime == 0) {
+  // First time through bootTime will be zero.
+  if (bootTime == 0) {
     uint64_t tmp;
     if (get_boot_time(&tmp) < 0) {
       return OS_ERR;
     }
-    lt = tmp * 1000;
+    bt = tmp * 1000;
   }
 
   res = OS_OK;
@@ -454,20 +456,29 @@ static int perf_context_switch_rate(double* rate) {
     uint64_t sw;
     s8 t, d;
 
-    if (lastTime == 0) {
-      lastTime = lt;
+    if (bootTime == 0) {
+      // First interval is measured from boot time which is
+      // seconds since the epoch. Thereafter we measure the
+      // elapsed time using javaTimeNanos as it is monotonic-
+      // non-decreasing.
+      lastTimeNanos = os::javaTimeNanos();
+      t = os::javaTimeMillis();
+      d = t - bt;
+      // keep bootTime zero for now to use as a first-time-through flag
+    } else {
+      t = os::javaTimeNanos();
+      d = nanos_to_millis(t - lastTimeNanos);
     }
-
-    t = os::javaTimeMillis();
-    d = t - lastTime;
 
     if (d == 0) {
       *rate = lastRate;
-    } else if (!get_noof_context_switches(&sw)) {
+    } else if (get_noof_context_switches(&sw) == 0) {
       *rate      = ( (double)(sw - lastSwitches) / d ) * 1000;
       lastRate     = *rate;
       lastSwitches = sw;
-      lastTime     = t;
+      if (bootTime != 0) {
+        lastTimeNanos = t;
+      }
     } else {
       *rate = 0;
       res   = OS_ERR;
@@ -475,6 +486,10 @@ static int perf_context_switch_rate(double* rate) {
     if (*rate <= 0) {
       *rate = 0;
       lastRate = 0;
+    }
+
+    if (bootTime == 0) {
+      bootTime = bt;
     }
   }
   pthread_mutex_unlock(&contextSwitchLock);

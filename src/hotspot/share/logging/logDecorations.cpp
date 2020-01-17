@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ jlong LogDecorations::_vm_start_time_millis = 0;
 const char* volatile LogDecorations::_host_name = NULL;
 
 LogDecorations::LogDecorations(LogLevelType level, const LogTagSet &tagset, const LogDecorators &decorators)
-    : _level(level), _tagset(tagset), _millis(-1) {
+    : _level(level), _tagset(tagset) {
   create_decorations(decorators);
 }
 
@@ -71,13 +71,6 @@ void LogDecorations::create_decorations(const LogDecorators &decorators) {
 #undef DECORATOR
 }
 
-jlong LogDecorations::java_millis() {
-  if (_millis < 0) {
-    _millis = os::javaTimeMillis();
-  }
-  return _millis;
-}
-
 #define ASSERT_AND_RETURN(written, pos) \
     assert(written >= 0, "Decorations buffer overflow"); \
     return pos + written;
@@ -100,13 +93,13 @@ char * LogDecorations::create_uptime_decoration(char* pos) {
 }
 
 char * LogDecorations::create_timemillis_decoration(char* pos) {
-  int written = jio_snprintf(pos, DecorationsBufferSize - (pos - _decorations_buffer), INT64_FORMAT "ms", java_millis());
+  int written = jio_snprintf(pos, DecorationsBufferSize - (pos - _decorations_buffer), INT64_FORMAT "ms", os::javaTimeMillis());
   ASSERT_AND_RETURN(written, pos)
 }
 
 char * LogDecorations::create_uptimemillis_decoration(char* pos) {
   int written = jio_snprintf(pos, DecorationsBufferSize - (pos - _decorations_buffer),
-                             INT64_FORMAT "ms", java_millis() - _vm_start_time_millis);
+                             INT64_FORMAT "ms", nanos_to_millis(os::elapsed_counter()));
   ASSERT_AND_RETURN(written, pos)
 }
 

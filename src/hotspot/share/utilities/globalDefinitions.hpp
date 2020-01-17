@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -254,9 +254,21 @@ const size_t HWperKB            = K / sizeof(HeapWord);
 const int MILLIUNITS    = 1000;         // milli units per base unit
 const int MICROUNITS    = 1000000;      // micro units per base unit
 const int NANOUNITS     = 1000000000;   // nano units per base unit
+const int NANOUNITS_PER_MILLIUNIT = NANOUNITS / MILLIUNITS;
 
 const jlong NANOSECS_PER_SEC      = CONST64(1000000000);
 const jint  NANOSECS_PER_MILLISEC = 1000000;
+
+
+// Unit conversion functions
+// The caller is responsible for considering overlow.
+
+inline int64_t nanos_to_millis(int64_t nanos) {
+  return nanos / NANOUNITS_PER_MILLIUNIT;
+}
+inline int64_t millis_to_nanos(int64_t millis) {
+  return millis * NANOUNITS_PER_MILLIUNIT;
+}
 
 // Proper units routines try to maintain at least three significant digits.
 // In worst case, it would print five significant digits with lower prefix.

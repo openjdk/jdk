@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -289,14 +289,14 @@ class CounterDecay : public AllStatic {
 public:
   static void decay();
   static bool is_decay_needed() {
-    return (os::javaTimeMillis() - _last_timestamp) > CounterDecayMinIntervalLength;
+    return nanos_to_millis(os::javaTimeNanos() - _last_timestamp) > CounterDecayMinIntervalLength;
   }
 };
 
 jlong CounterDecay::_last_timestamp = 0;
 
 void CounterDecay::decay() {
-  _last_timestamp = os::javaTimeMillis();
+  _last_timestamp = os::javaTimeNanos();
 
   // This operation is going to be performed only at the end of a safepoint
   // and hence GC's will not be going on, all Java mutators are suspended

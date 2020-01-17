@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,8 @@ static const u2 JFR_VERSION_MINOR = 1;
 // strictly monotone
 static jlong nanos_now() {
   static jlong last = 0;
+  // We use javaTimeMillis so this can be correlated with
+  // external timestamps.
   const jlong now = os::javaTimeMillis() * JfrTimeConverter::NANOS_PER_MILLISEC;
   if (now > last) {
     last = now;

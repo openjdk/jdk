@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -167,7 +167,7 @@ VM_Operation* VMOperationQueue::remove_next() {
 void VMOperationTimeoutTask::task() {
   assert(AbortVMOnVMOperationTimeout, "only if enabled");
   if (is_armed()) {
-    jlong delay = (os::javaTimeMillis() - _arm_time);
+    jlong delay = nanos_to_millis(os::javaTimeNanos() - _arm_time);
     if (delay > AbortVMOnVMOperationTimeoutDelay) {
       fatal("VM operation took too long: " JLONG_FORMAT " ms (timeout: " INTX_FORMAT " ms)",
             delay, AbortVMOnVMOperationTimeoutDelay);
@@ -180,7 +180,7 @@ bool VMOperationTimeoutTask::is_armed() {
 }
 
 void VMOperationTimeoutTask::arm() {
-  _arm_time = os::javaTimeMillis();
+  _arm_time = os::javaTimeNanos();
   Atomic::release_store_fence(&_armed, 1);
 }
 
@@ -446,9 +446,9 @@ void VMThread::loop() {
 
       // Stall time tracking code
       if (PrintVMQWaitTime && _cur_vm_operation != NULL) {
-        long stall = os::javaTimeMillis() - _cur_vm_operation->timestamp();
+        jlong stall = nanos_to_millis(os::javaTimeNanos() - _cur_vm_operation->timestamp());
         if (stall > 0)
-          tty->print_cr("%s stall: %ld",  _cur_vm_operation->name(), stall);
+          tty->print_cr("%s stall: " JLONG_FORMAT,  _cur_vm_operation->name(), stall);
       }
 
       while (!should_terminate() && _cur_vm_operation == NULL) {
@@ -640,7 +640,7 @@ void VMThread::execute(VM_Operation* op) {
       MonitorLocker ml(VMOperationQueue_lock, Mutex::_no_safepoint_check_flag);
       log_debug(vmthread)("Adding VM operation: %s", op->name());
       _vm_queue->add(op);
-      op->set_timestamp(os::javaTimeMillis());
+      op->set_timestamp(os::javaTimeNanos());
       ml.notify();
     }
     {
