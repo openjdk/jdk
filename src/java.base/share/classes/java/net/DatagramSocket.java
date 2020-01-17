@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -499,6 +499,7 @@ public class DatagramSocket implements java.io.Closeable {
      *         not permit access to the given remote address
      *
      * @see #disconnect
+     * @since 1.2
      */
     public void connect(InetAddress address, int port) {
         try {
@@ -546,6 +547,7 @@ public class DatagramSocket implements java.io.Closeable {
      * then this method has no effect.
      *
      * @see #connect
+     * @since 1.2
      */
     public void disconnect() {
         synchronized (this) {
@@ -598,6 +600,7 @@ public class DatagramSocket implements java.io.Closeable {
      * after the socket is closed.
      *
      * @return the address to which this socket is connected.
+     * @since 1.2
      */
     public InetAddress getInetAddress() {
         return connectedAddress;
@@ -612,6 +615,7 @@ public class DatagramSocket implements java.io.Closeable {
      * after the socket is closed.
      *
      * @return the port number to which this socket is connected.
+     * @since 1.2
      */
     public int getPort() {
         return connectedPort;
@@ -1009,6 +1013,7 @@ public class DatagramSocket implements java.io.Closeable {
      * @throws    IllegalArgumentException if the value is 0 or is
      * negative.
      * @see #getSendBufferSize()
+     * @since 1.2
      */
     public synchronized void setSendBufferSize(int size) throws SocketException {
         if (!(size > 0)) {
@@ -1027,6 +1032,7 @@ public class DatagramSocket implements java.io.Closeable {
      * @throws    SocketException if there is an error in
      * the underlying protocol, such as an UDP error.
      * @see #setSendBufferSize
+     * @since 1.2
      */
     public synchronized int getSendBufferSize() throws SocketException {
         if (isClosed())
@@ -1066,6 +1072,7 @@ public class DatagramSocket implements java.io.Closeable {
      * @throws    IllegalArgumentException if the value is 0 or is
      * negative.
      * @see #getReceiveBufferSize()
+     * @since 1.2
      */
     public synchronized void setReceiveBufferSize(int size) throws SocketException {
         if (size <= 0) {
@@ -1083,6 +1090,7 @@ public class DatagramSocket implements java.io.Closeable {
      * @return the value of the SO_RCVBUF option for this {@code DatagramSocket}
      * @throws    SocketException if there is an error in the underlying protocol, such as an UDP error.
      * @see #setReceiveBufferSize(int)
+     * @since 1.2
      */
     public synchronized int getReceiveBufferSize() throws SocketException {
         if (isClosed())

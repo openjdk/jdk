@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -280,6 +280,7 @@ public class MulticastSocket extends DatagramSocket {
      *          default time-to-live value
      *
      * @see #getTimeToLive()
+     * @since 1.2
      */
     public void setTimeToLive(int ttl) throws IOException {
         if (ttl < 0 || ttl > 255) {
@@ -315,6 +316,7 @@ public class MulticastSocket extends DatagramSocket {
      * getting the default time-to-live value
      * @return the default time-to-live value
      * @see #setTimeToLive(int)
+     * @since 1.2
      */
     public int getTimeToLive() throws IOException {
         if (isClosed())
