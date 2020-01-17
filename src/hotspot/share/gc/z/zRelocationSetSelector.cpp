@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,8 +40,7 @@ ZRelocationSetSelectorGroup::ZRelocationSetSelectorGroup(const char* name,
     _registered_pages(),
     _sorted_pages(NULL),
     _nselected(0),
-    _relocating(0),
-    _fragmentation(0) {}
+    _relocating(0) {}
 
 ZRelocationSetSelectorGroup::~ZRelocationSetSelectorGroup() {
   FREE_C_HEAP_ARRAY(ZPage*, _sorted_pages);
@@ -50,8 +49,6 @@ ZRelocationSetSelectorGroup::~ZRelocationSetSelectorGroup() {
 void ZRelocationSetSelectorGroup::register_live_page(ZPage* page, size_t garbage) {
   if (garbage > _fragmentation_limit) {
     _registered_pages.add(page);
-  } else {
-    _fragmentation += garbage;
   }
 }
 
@@ -143,13 +140,7 @@ void ZRelocationSetSelectorGroup::select() {
 
   // Finalize selection
   _nselected = selected_from;
-
-  // Update statistics
   _relocating = selected_from_size;
-  for (size_t i = _nselected; i < npages; i++) {
-    ZPage* const page = _sorted_pages[i];
-    _fragmentation += page->size() - page->live_bytes();
-  }
 
   log_debug(gc, reloc)("Relocation Set (%s Pages): " SIZE_FORMAT "->" SIZE_FORMAT ", " SIZE_FORMAT " skipped",
                        _name, selected_from, selected_to, npages - _nselected);
@@ -167,16 +158,11 @@ size_t ZRelocationSetSelectorGroup::relocating() const {
   return _relocating;
 }
 
-size_t ZRelocationSetSelectorGroup::fragmentation() const {
-  return _fragmentation;
-}
-
 ZRelocationSetSelector::ZRelocationSetSelector() :
     _small("Small", ZPageSizeSmall, ZObjectSizeLimitSmall),
     _medium("Medium", ZPageSizeMedium, ZObjectSizeLimitMedium),
     _live(0),
-    _garbage(0),
-    _fragmentation(0) {}
+    _garbage(0) {}
 
 void ZRelocationSetSelector::register_live_page(ZPage* page) {
   const uint8_t type = page->type();
@@ -187,8 +173,6 @@ void ZRelocationSetSelector::register_live_page(ZPage* page) {
     _small.register_live_page(page, garbage);
   } else if (type == ZPageTypeMedium) {
     _medium.register_live_page(page, garbage);
-  } else {
-    _fragmentation += garbage;
   }
 
   _live += live;
@@ -225,8 +209,4 @@ size_t ZRelocationSetSelector::garbage() const {
 
 size_t ZRelocationSetSelector::relocating() const {
   return _small.relocating() + _medium.relocating();
-}
-
-size_t ZRelocationSetSelector::fragmentation() const {
-  return _fragmentation + _small.fragmentation() + _medium.fragmentation();
 }
