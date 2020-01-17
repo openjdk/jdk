@@ -21,20 +21,10 @@
  * questions.
  */
 
-#ifndef OS_BSD_GC_Z_ZBACKINGFILE_BSD_HPP
-#define OS_BSD_GC_Z_ZBACKINGFILE_BSD_HPP
+#ifndef OS_BSD_GC_Z_ZPHYSICALMEMORYBACKING_BSD_HPP
+#define OS_BSD_GC_Z_ZPHYSICALMEMORYBACKING_BSD_HPP
 
-#include "memory/allocation.hpp"
-
-class ZPhysicalMemory;
-
-// On macOS, we use a virtual backing file. It is represented by a reserved virtual
-// address space, in which we commit physical memory using the mach_vm_map() API.
-// The multi-mapping API simply remaps these addresses using mach_vm_remap() into
-// the different heap views. This works as-if there was a backing file, it's just
-// that the file is represented with memory mappings instead.
-
-class ZBackingFile {
+class ZPhysicalMemoryBacking {
 private:
   uintptr_t _base;
   size_t    _size;
@@ -43,7 +33,7 @@ private:
   bool commit_inner(size_t offset, size_t length);
 
 public:
-  ZBackingFile();
+  ZPhysicalMemoryBacking();
 
   bool is_initialized() const;
 
@@ -58,4 +48,4 @@ public:
   void unmap(uintptr_t addr, size_t size) const;
 };
 
-#endif // OS_BSD_GC_Z_ZBACKINGFILE_BSD_HPP
+#endif // OS_BSD_GC_Z_ZPHYSICALMEMORYBACKING_BSD_HPP

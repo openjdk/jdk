@@ -21,14 +21,12 @@
  * questions.
  */
 
-#ifndef OS_LINUX_GC_Z_ZBACKINGFILE_LINUX_HPP
-#define OS_LINUX_GC_Z_ZBACKINGFILE_LINUX_HPP
-
-#include "memory/allocation.hpp"
+#ifndef OS_LINUX_GC_Z_ZPHYSICALMEMORYBACKING_LINUX_HPP
+#define OS_LINUX_GC_Z_ZPHYSICALMEMORYBACKING_LINUX_HPP
 
 class ZErrno;
 
-class ZBackingFile {
+class ZPhysicalMemoryBacking {
 private:
   int      _fd;
   size_t   _size;
@@ -61,7 +59,7 @@ private:
   bool commit_inner(size_t offset, size_t length);
 
 public:
-  ZBackingFile();
+  ZPhysicalMemoryBacking();
 
   bool is_initialized() const;
 
@@ -76,4 +74,4 @@ public:
   void unmap(uintptr_t addr, size_t size) const;
 };
 
-#endif // OS_LINUX_GC_Z_ZBACKINGFILE_LINUX_HPP
+#endif // OS_LINUX_GC_Z_ZPHYSICALMEMORYBACKING_LINUX_HPP

@@ -26,7 +26,7 @@
 
 #include "gc/z/zMemory.hpp"
 #include "memory/allocation.hpp"
-#include OS_HEADER(gc/z/zBackingFile)
+#include OS_HEADER(gc/z/zPhysicalMemoryBacking)
 
 class ZPhysicalMemorySegment : public CHeapObj<mtGC> {
 private:
@@ -66,9 +66,9 @@ public:
 
 class ZPhysicalMemoryManager {
 private:
-  ZBackingFile   _backing;
-  ZMemoryManager _committed;
-  ZMemoryManager _uncommitted;
+  ZPhysicalMemoryBacking _backing;
+  ZMemoryManager         _committed;
+  ZMemoryManager         _uncommitted;
 
   void nmt_commit(const ZPhysicalMemory& pmem, uintptr_t offset) const;
   void nmt_uncommit(const ZPhysicalMemory& pmem, uintptr_t offset) const;

@@ -23,11 +23,11 @@
 
 #include "precompiled.hpp"
 #include "gc/z/zArray.inline.hpp"
-#include "gc/z/zBackingFile_linux.hpp"
 #include "gc/z/zBackingPath_linux.hpp"
 #include "gc/z/zErrno.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zLargePages.inline.hpp"
+#include "gc/z/zPhysicalMemoryBacking_linux.hpp"
 #include "gc/z/zSyscall_linux.hpp"
 #include "logging/log.hpp"
 #include "runtime/init.hpp"
@@ -109,7 +109,7 @@ static const char* z_preferred_hugetlbfs_mountpoints[] = {
 static int z_fallocate_hugetlbfs_attempts = 3;
 static bool z_fallocate_supported = true;
 
-ZBackingFile::ZBackingFile() :
+ZPhysicalMemoryBacking::ZPhysicalMemoryBacking() :
     _fd(-1),
     _size(0),
     _filesystem(0),
@@ -178,7 +178,7 @@ ZBackingFile::ZBackingFile() :
   _initialized = true;
 }
 
-int ZBackingFile::create_mem_fd(const char* name) const {
+int ZPhysicalMemoryBacking::create_mem_fd(const char* name) const {
   // Create file name
   char filename[PATH_MAX];
   snprintf(filename, sizeof(filename), "%s%s", name, ZLargePages::is_explicit() ? ".hugetlb" : "");
@@ -198,7 +198,7 @@ int ZBackingFile::create_mem_fd(const char* name) const {
   return fd;
 }
 
-int ZBackingFile::create_file_fd(const char* name) const {
+int ZPhysicalMemoryBacking::create_file_fd(const char* name) const {
   const char* const filesystem = ZLargePages::is_explicit()
                                  ? ZFILESYSTEM_HUGETLBFS
                                  : ZFILESYSTEM_TMPFS;
@@ -260,7 +260,7 @@ int ZBackingFile::create_file_fd(const char* name) const {
   return fd;
 }
 
-int ZBackingFile::create_fd(const char* name) const {
+int ZPhysicalMemoryBacking::create_fd(const char* name) const {
   if (ZPath == NULL) {
     // If the path is not explicitly specified, then we first try to create a memfd file
     // instead of looking for a tmpfd/hugetlbfs mount point. Note that memfd_create() might
@@ -278,11 +278,11 @@ int ZBackingFile::create_fd(const char* name) const {
   return create_file_fd(name);
 }
 
-bool ZBackingFile::is_initialized() const {
+bool ZPhysicalMemoryBacking::is_initialized() const {
   return _initialized;
 }
 
-void ZBackingFile::warn_available_space(size_t max) const {
+void ZPhysicalMemoryBacking::warn_available_space(size_t max) const {
   // Note that the available space on a tmpfs or a hugetlbfs filesystem
   // will be zero if no size limit was specified when it was mounted.
   if (_available == 0) {
@@ -307,7 +307,7 @@ void ZBackingFile::warn_available_space(size_t max) const {
   }
 }
 
-void ZBackingFile::warn_max_map_count(size_t max) const {
+void ZPhysicalMemoryBacking::warn_max_map_count(size_t max) const {
   const char* const filename = ZFILENAME_PROC_MAX_MAP_COUNT;
   FILE* const file = fopen(filename, "r");
   if (file == NULL) {
@@ -342,7 +342,7 @@ void ZBackingFile::warn_max_map_count(size_t max) const {
   }
 }
 
-void ZBackingFile::warn_commit_limits(size_t max) const {
+void ZPhysicalMemoryBacking::warn_commit_limits(size_t max) const {
   // Warn if available space is too low
   warn_available_space(max);
 
@@ -350,25 +350,25 @@ void ZBackingFile::warn_commit_limits(size_t max) const {
   warn_max_map_count(max);
 }
 
-size_t ZBackingFile::size() const {
+size_t ZPhysicalMemoryBacking::size() const {
   return _size;
 }
 
-bool ZBackingFile::is_tmpfs() const {
+bool ZPhysicalMemoryBacking::is_tmpfs() const {
   return _filesystem == TMPFS_MAGIC;
 }
 
-bool ZBackingFile::is_hugetlbfs() const {
+bool ZPhysicalMemoryBacking::is_hugetlbfs() const {
   return _filesystem == HUGETLBFS_MAGIC;
 }
 
-bool ZBackingFile::tmpfs_supports_transparent_huge_pages() const {
+bool ZPhysicalMemoryBacking::tmpfs_supports_transparent_huge_pages() const {
   // If the shmem_enabled file exists and is readable then we
   // know the kernel supports transparent huge pages for tmpfs.
   return access(ZFILENAME_SHMEM_ENABLED, R_OK) == 0;
 }
 
-ZErrno ZBackingFile::fallocate_compat_ftruncate(size_t size) const {
+ZErrno ZPhysicalMemoryBacking::fallocate_compat_ftruncate(size_t size) const {
   while (ftruncate(_fd, size) == -1) {
     if (errno != EINTR) {
       // Failed
@@ -380,7 +380,7 @@ ZErrno ZBackingFile::fallocate_compat_ftruncate(size_t size) const {
   return 0;
 }
 
-ZErrno ZBackingFile::fallocate_compat_mmap(size_t offset, size_t length, bool touch) const {
+ZErrno ZPhysicalMemoryBacking::fallocate_compat_mmap(size_t offset, size_t length, bool touch) const {
   // On hugetlbfs, mapping a file segment will fail immediately, without
   // the need to touch the mapped pages first, if there aren't enough huge
   // pages available to back the mapping.
@@ -410,7 +410,7 @@ ZErrno ZBackingFile::fallocate_compat_mmap(size_t offset, size_t length, bool to
   return 0;
 }
 
-ZErrno ZBackingFile::fallocate_compat_pwrite(size_t offset, size_t length) const {
+ZErrno ZPhysicalMemoryBacking::fallocate_compat_pwrite(size_t offset, size_t length) const {
   uint8_t data = 0;
 
   // Allocate backing memory by writing to each block
@@ -425,7 +425,7 @@ ZErrno ZBackingFile::fallocate_compat_pwrite(size_t offset, size_t length) const
   return 0;
 }
 
-ZErrno ZBackingFile::fallocate_fill_hole_compat(size_t offset, size_t length) {
+ZErrno ZPhysicalMemoryBacking::fallocate_fill_hole_compat(size_t offset, size_t length) {
   // fallocate(2) is only supported by tmpfs since Linux 3.5, and by hugetlbfs
   // since Linux 4.3. When fallocate(2) is not supported we emulate it using
   // ftruncate/pwrite (for tmpfs) or ftruncate/mmap/munmap (for hugetlbfs).
@@ -462,7 +462,7 @@ ZErrno ZBackingFile::fallocate_fill_hole_compat(size_t offset, size_t length) {
   return 0;
 }
 
-ZErrno ZBackingFile::fallocate_fill_hole_syscall(size_t offset, size_t length) {
+ZErrno ZPhysicalMemoryBacking::fallocate_fill_hole_syscall(size_t offset, size_t length) {
   const int mode = 0; // Allocate
   const int res = ZSyscall::fallocate(_fd, mode, offset, length);
   if (res == -1) {
@@ -480,7 +480,7 @@ ZErrno ZBackingFile::fallocate_fill_hole_syscall(size_t offset, size_t length) {
   return 0;
 }
 
-ZErrno ZBackingFile::fallocate_fill_hole(size_t offset, size_t length) {
+ZErrno ZPhysicalMemoryBacking::fallocate_fill_hole(size_t offset, size_t length) {
   // Using compat mode is more efficient when allocating space on hugetlbfs.
   // Note that allocating huge pages this way will only reserve them, and not
   // associate them with segments of the file. We must guarantee that we at
@@ -505,7 +505,7 @@ ZErrno ZBackingFile::fallocate_fill_hole(size_t offset, size_t length) {
   return fallocate_fill_hole_compat(offset, length);
 }
 
-ZErrno ZBackingFile::fallocate_punch_hole(size_t offset, size_t length) {
+ZErrno ZPhysicalMemoryBacking::fallocate_punch_hole(size_t offset, size_t length) {
   if (is_hugetlbfs()) {
     // We can only punch hole in pages that have been touched. Non-touched
     // pages are only reserved, and not associated with any specific file
@@ -528,7 +528,7 @@ ZErrno ZBackingFile::fallocate_punch_hole(size_t offset, size_t length) {
   return 0;
 }
 
-ZErrno ZBackingFile::split_and_fallocate(bool punch_hole, size_t offset, size_t length) {
+ZErrno ZPhysicalMemoryBacking::split_and_fallocate(bool punch_hole, size_t offset, size_t length) {
   // Try first half
   const size_t offset0 = offset;
   const size_t length0 = align_up(length / 2, _block_size);
@@ -549,7 +549,7 @@ ZErrno ZBackingFile::split_and_fallocate(bool punch_hole, size_t offset, size_t 
   return 0;
 }
 
-ZErrno ZBackingFile::fallocate(bool punch_hole, size_t offset, size_t length) {
+ZErrno ZPhysicalMemoryBacking::fallocate(bool punch_hole, size_t offset, size_t length) {
   assert(is_aligned(offset, _block_size), "Invalid offset");
   assert(is_aligned(length, _block_size), "Invalid length");
 
@@ -565,7 +565,7 @@ ZErrno ZBackingFile::fallocate(bool punch_hole, size_t offset, size_t length) {
   return err;
 }
 
-bool ZBackingFile::commit_inner(size_t offset, size_t length) {
+bool ZPhysicalMemoryBacking::commit_inner(size_t offset, size_t length) {
   log_trace(gc, heap)("Committing memory: " SIZE_FORMAT "M-" SIZE_FORMAT "M (" SIZE_FORMAT "M)",
                       offset / M, (offset + length) / M, length / M);
 
@@ -596,7 +596,7 @@ retry:
   return true;
 }
 
-size_t ZBackingFile::commit(size_t offset, size_t length) {
+size_t ZPhysicalMemoryBacking::commit(size_t offset, size_t length) {
   // Try to commit the whole region
   if (commit_inner(offset, length)) {
     // Success
@@ -624,7 +624,7 @@ size_t ZBackingFile::commit(size_t offset, size_t length) {
   }
 }
 
-size_t ZBackingFile::uncommit(size_t offset, size_t length) {
+size_t ZPhysicalMemoryBacking::uncommit(size_t offset, size_t length) {
   log_trace(gc, heap)("Uncommitting memory: " SIZE_FORMAT "M-" SIZE_FORMAT "M (" SIZE_FORMAT "M)",
                       offset / M, (offset + length) / M, length / M);
 
@@ -637,7 +637,7 @@ size_t ZBackingFile::uncommit(size_t offset, size_t length) {
   return length;
 }
 
-void ZBackingFile::map(uintptr_t addr, size_t size, uintptr_t offset) const {
+void ZPhysicalMemoryBacking::map(uintptr_t addr, size_t size, uintptr_t offset) const {
   const void* const res = mmap((void*)addr, size, PROT_READ|PROT_WRITE, MAP_FIXED|MAP_SHARED, _fd, offset);
   if (res == MAP_FAILED) {
     ZErrno err;
@@ -645,7 +645,7 @@ void ZBackingFile::map(uintptr_t addr, size_t size, uintptr_t offset) const {
   }
 }
 
-void ZBackingFile::unmap(uintptr_t addr, size_t size) const {
+void ZPhysicalMemoryBacking::unmap(uintptr_t addr, size_t size) const {
   // Note that we must keep the address space reservation intact and just detach
   // the backing memory. For this reason we map a new anonymous, non-accessible
   // and non-reserved page over the mapping instead of actually unmapping.

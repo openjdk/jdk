@@ -22,11 +22,11 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/z/zBackingFile_bsd.hpp"
 #include "gc/z/zErrno.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zLargePages.inline.hpp"
 #include "gc/z/zPhysicalMemory.inline.hpp"
+#include "gc/z/zPhysicalMemoryBacking_bsd.hpp"
 #include "logging/log.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/os.hpp"
@@ -37,6 +37,10 @@
 #include <mach/mach_vm.h>
 #include <sys/mman.h>
 #include <sys/types.h>
+
+// The backing is represented by a reserved virtual address space, in which
+// we commit and uncommit physical memory. Multi-mapping the different heap
+// views is done by simply remapping the backing memory using mach_vm_remap().
 
 static int vm_flags_superpage() {
   if (!ZLargePages::is_explicit()) {
@@ -68,16 +72,16 @@ static ZErrno mremap(uintptr_t from_addr, uintptr_t to_addr, size_t size) {
   return (res == KERN_SUCCESS) ? ZErrno(0) : ZErrno(EINVAL);
 }
 
-ZBackingFile::ZBackingFile() :
+ZPhysicalMemoryBacking::ZPhysicalMemoryBacking() :
     _base(0),
     _size(0),
     _initialized(false) {
 
-  // Reserve address space for virtual backing file
+  // Reserve address space for backing memory
   _base = (uintptr_t)os::reserve_memory(MaxHeapSize);
   if (_base == 0) {
     // Failed
-    log_error(gc)("Failed to reserve address space for virtual backing file");
+    log_error(gc)("Failed to reserve address space for backing memory");
     return;
   }
 
@@ -85,19 +89,19 @@ ZBackingFile::ZBackingFile() :
   _initialized = true;
 }
 
-bool ZBackingFile::is_initialized() const {
+bool ZPhysicalMemoryBacking::is_initialized() const {
   return _initialized;
 }
 
-void ZBackingFile::warn_commit_limits(size_t max) const {
+void ZPhysicalMemoryBacking::warn_commit_limits(size_t max) const {
   // Does nothing
 }
 
-size_t ZBackingFile::size() const {
+size_t ZPhysicalMemoryBacking::size() const {
   return _size;
 }
 
-bool ZBackingFile::commit_inner(size_t offset, size_t length) {
+bool ZPhysicalMemoryBacking::commit_inner(size_t offset, size_t length) {
   assert(is_aligned(offset, os::vm_page_size()), "Invalid offset");
   assert(is_aligned(length, os::vm_page_size()), "Invalid length");
 
@@ -114,7 +118,7 @@ bool ZBackingFile::commit_inner(size_t offset, size_t length) {
 
   const size_t end = offset + length;
   if (end > _size) {
-    // Record new virtual file size
+    // Record new size
     _size = end;
   }
 
@@ -122,7 +126,7 @@ bool ZBackingFile::commit_inner(size_t offset, size_t length) {
   return true;
 }
 
-size_t ZBackingFile::commit(size_t offset, size_t length) {
+size_t ZPhysicalMemoryBacking::commit(size_t offset, size_t length) {
   // Try to commit the whole region
   if (commit_inner(offset, length)) {
     // Success
@@ -150,7 +154,7 @@ size_t ZBackingFile::commit(size_t offset, size_t length) {
   }
 }
 
-size_t ZBackingFile::uncommit(size_t offset, size_t length) {
+size_t ZPhysicalMemoryBacking::uncommit(size_t offset, size_t length) {
   assert(is_aligned(offset, os::vm_page_size()), "Invalid offset");
   assert(is_aligned(length, os::vm_page_size()), "Invalid length");
 
@@ -168,14 +172,14 @@ size_t ZBackingFile::uncommit(size_t offset, size_t length) {
   return length;
 }
 
-void ZBackingFile::map(uintptr_t addr, size_t size, uintptr_t offset) const {
+void ZPhysicalMemoryBacking::map(uintptr_t addr, size_t size, uintptr_t offset) const {
   const ZErrno err = mremap(_base + offset, addr, size);
   if (err) {
     fatal("Failed to remap memory (%s)", err.to_string());
   }
 }
 
-void ZBackingFile::unmap(uintptr_t addr, size_t size) const {
+void ZPhysicalMemoryBacking::unmap(uintptr_t addr, size_t size) const {
   // Note that we must keep the address space reservation intact and just detach
   // the backing memory. For this reason we map a new anonymous, non-accessible
   // and non-reserved page over the mapping instead of actually unmapping.

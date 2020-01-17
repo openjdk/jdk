@@ -21,15 +21,14 @@
  * questions.
  */
 
-#ifndef OS_WINDOWS_GC_Z_ZBACKINGFILE_WINDOWS_HPP
-#define OS_WINDOWS_GC_Z_ZBACKINGFILE_WINDOWS_HPP
+#ifndef OS_WINDOWS_GC_Z_ZPHYSICALMEMORYBACKING_WINDOWS_HPP
+#define OS_WINDOWS_GC_Z_ZPHYSICALMEMORYBACKING_WINDOWS_HPP
 
 #include "gc/z/zGranuleMap.hpp"
-#include "memory/allocation.hpp"
 
 #include <Windows.h>
 
-class ZBackingFile {
+class ZPhysicalMemoryBacking {
 private:
   ZGranuleMap<HANDLE> _handles;
   size_t              _size;
@@ -42,7 +41,7 @@ private:
   size_t uncommit_from_paging_file(size_t offset, size_t size);
 
 public:
-  ZBackingFile();
+  ZPhysicalMemoryBacking();
 
   bool is_initialized() const;
 
@@ -57,4 +56,4 @@ public:
   void unmap(uintptr_t addr, size_t size) const;
 };
 
-#endif // OS_WINDOWS_GC_Z_ZBACKINGFILE_WINDOWS_HPP
+#endif // OS_WINDOWS_GC_Z_ZPHYSICALMEMORYBACKING_WINDOWS_HPP
