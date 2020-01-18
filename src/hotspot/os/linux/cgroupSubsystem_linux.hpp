@@ -58,7 +58,7 @@ typedef char * cptr;
 
 class CgroupController: public CHeapObj<mtInternal> {
   public:
-    virtual char *subsystem_path();
+    virtual char *subsystem_path() = 0;
 };
 
 PRAGMA_DIAG_PUSH
@@ -227,19 +227,19 @@ class CgroupSubsystem: public CHeapObj<mtInternal> {
     jlong memory_limit_in_bytes();
     int active_processor_count();
 
-    virtual int cpu_quota();
-    virtual int cpu_period();
-    virtual int cpu_shares();
-    virtual jlong memory_usage_in_bytes();
-    virtual jlong memory_and_swap_limit_in_bytes();
-    virtual jlong memory_soft_limit_in_bytes();
-    virtual jlong memory_max_usage_in_bytes();
-    virtual char * cpu_cpuset_cpus();
-    virtual char * cpu_cpuset_memory_nodes();
-    virtual jlong read_memory_limit_in_bytes();
-    virtual const char * container_type();
-    virtual CachingCgroupController* memory_controller();
-    virtual CachingCgroupController* cpu_controller();
+    virtual int cpu_quota() = 0;
+    virtual int cpu_period() = 0;
+    virtual int cpu_shares() = 0;
+    virtual jlong memory_usage_in_bytes() = 0;
+    virtual jlong memory_and_swap_limit_in_bytes() = 0;
+    virtual jlong memory_soft_limit_in_bytes() = 0;
+    virtual jlong memory_max_usage_in_bytes() = 0;
+    virtual char * cpu_cpuset_cpus() = 0;
+    virtual char * cpu_cpuset_memory_nodes() = 0;
+    virtual jlong read_memory_limit_in_bytes() = 0;
+    virtual const char * container_type() = 0;
+    virtual CachingCgroupController* memory_controller() = 0;
+    virtual CachingCgroupController* cpu_controller() = 0;
 };
 
 class CgroupSubsystemFactory: AllStatic {
