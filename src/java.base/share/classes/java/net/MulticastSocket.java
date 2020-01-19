@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.Set;
+
 /**
  * The multicast datagram socket class is useful for sending
  * and receiving IP multicast packets. A MulticastSocket is
@@ -207,6 +208,10 @@ public class MulticastSocket extends DatagramSocket {
      */
     public MulticastSocket(SocketAddress bindaddr) throws IOException {
         super((SocketAddress) null);
+
+        // No further initialization when this is a DatagramChannel socket adaptor
+        if (this instanceof sun.nio.ch.DatagramSocketAdaptor)
+            return;
 
         // Enable SO_REUSEADDR before binding
         setReuseAddress(true);

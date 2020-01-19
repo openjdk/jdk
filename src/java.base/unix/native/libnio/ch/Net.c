@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -587,6 +587,13 @@ Java_sun_nio_ch_Net_joinOrDrop4(JNIEnv *env, jobject this, jboolean join, jobjec
     }
 
     n = setsockopt(fdval(env,fdo), IPPROTO_IP, opt, optval, optlen);
+#ifdef __APPLE__
+    // workaround macOS bug where IP_ADD_MEMBERSHIP fails intermittently
+    if (n < 0 && errno == ENOMEM) {
+        n = setsockopt(fdval(env,fdo), IPPROTO_IP, opt, optval, optlen);
+    }
+#endif
+
     if (n < 0) {
         if (join && (errno == ENOPROTOOPT || errno == EOPNOTSUPP))
             return IOS_UNAVAILABLE;
@@ -657,6 +664,13 @@ Java_sun_nio_ch_Net_joinOrDrop6(JNIEnv *env, jobject this, jboolean join, jobjec
     }
 
     n = setsockopt(fdval(env,fdo), IPPROTO_IPV6, opt, optval, optlen);
+#ifdef __APPLE__
+    // workaround macOS bug where IPV6_ADD_MEMBERSHIP fails intermittently
+    if (n < 0 && errno == ENOMEM) {
+        n = setsockopt(fdval(env,fdo), IPPROTO_IPV6, opt, optval, optlen);
+    }
+#endif
+
     if (n < 0) {
         if (join && (errno == ENOPROTOOPT || errno == EOPNOTSUPP))
             return IOS_UNAVAILABLE;

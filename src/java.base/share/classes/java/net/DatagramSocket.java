@@ -115,7 +115,6 @@ public class DatagramSocket implements java.io.Closeable {
     /**
      * Various states of this socket.
      */
-    private boolean created = false;
     private boolean bound = false;
     private boolean closed = false;
     private Object closeLock = new Object();
@@ -123,12 +122,12 @@ public class DatagramSocket implements java.io.Closeable {
     /*
      * The implementation of this DatagramSocket.
      */
-    DatagramSocketImpl impl;
+    private final DatagramSocketImpl impl;
 
     /**
      * Are we using an older DatagramSocketImpl?
      */
-    boolean oldImpl = false;
+    final boolean oldImpl;
 
     /**
      * Set when a socket is ST_CONNECTED until we are certain
@@ -255,7 +254,7 @@ public class DatagramSocket implements java.io.Closeable {
         if (impl == null)
             throw new NullPointerException();
         this.impl = impl;
-        checkOldImpl();
+        this.oldImpl = checkOldImpl(impl);
     }
 
     /**
@@ -282,8 +281,17 @@ public class DatagramSocket implements java.io.Closeable {
      * @since   1.4
      */
     public DatagramSocket(SocketAddress bindaddr) throws SocketException {
+        // Special case initialization for the DatagramChannel socket adaptor.
+        if (this instanceof sun.nio.ch.DatagramSocketAdaptor) {
+            this.impl = null;  // no DatagramSocketImpl
+            this.oldImpl = false;
+            return;
+        }
+
         // create a datagram socket.
-        createImpl();
+        boolean multicast = (this instanceof MulticastSocket);
+        this.impl = createImpl(multicast);
+        this.oldImpl = checkOldImpl(impl);
         if (bindaddr != null) {
             try {
                 bind(bindaddr);
@@ -346,9 +354,11 @@ public class DatagramSocket implements java.io.Closeable {
         this(new InetSocketAddress(laddr, port));
     }
 
-    private void checkOldImpl() {
-        if (impl == null)
-            return;
+    /**
+     * Return true if the given DatagramSocketImpl is an "old" impl. An old impl
+     * is one that doesn't implement the abstract methods added in Java SE 1.4.
+     */
+    private static boolean checkOldImpl(DatagramSocketImpl impl) {
         // DatagramSocketImpl.peekData() is a protected method, therefore we need to use
         // getDeclaredMethod, therefore we need permission to access the member
         try {
@@ -361,42 +371,40 @@ public class DatagramSocket implements java.io.Closeable {
                         return null;
                     }
                 });
+            return false;
         } catch (java.security.PrivilegedActionException e) {
-            oldImpl = true;
+            return true;
         }
     }
 
     static Class<?> implClass = null;
 
-    void createImpl() throws SocketException {
-        if (impl == null) {
-            if (factory != null) {
-                impl = factory.createDatagramSocketImpl();
-                checkOldImpl();
-            } else {
-                boolean isMulticast = (this instanceof MulticastSocket) ? true : false;
-                impl = DefaultDatagramSocketImplFactory.createDatagramSocketImpl(isMulticast);
-
-                checkOldImpl();
-            }
+    /**
+     * Creates a DatagramSocketImpl.
+     * @param multicast true if the DatagramSocketImpl is for a MulticastSocket
+     */
+    private static DatagramSocketImpl createImpl(boolean multicast) throws SocketException {
+        DatagramSocketImpl impl;
+        DatagramSocketImplFactory factory = DatagramSocket.factory;
+        if (factory != null) {
+            impl = factory.createDatagramSocketImpl();
+        } else {
+            impl = DefaultDatagramSocketImplFactory.createDatagramSocketImpl(multicast);
         }
         // creates a udp socket
         impl.create();
-        created = true;
+        return impl;
     }
 
     /**
-     * Get the {@code DatagramSocketImpl} attached to this socket,
-     * creating it if necessary.
+     * Return the {@code DatagramSocketImpl} attached to this socket.
      *
      * @return  the {@code DatagramSocketImpl} attached to that
      *          DatagramSocket
-     * @throws SocketException if creation fails.
+     * @throws SocketException never thrown
      * @since 1.4
      */
     DatagramSocketImpl getImpl() throws SocketException {
-        if (!created)
-            createImpl();
         return impl;
     }
 
@@ -1329,7 +1337,7 @@ public class DatagramSocket implements java.io.Closeable {
     /**
      * User defined factory for all datagram sockets.
      */
-    static DatagramSocketImplFactory factory;
+    private static volatile DatagramSocketImplFactory factory;
 
     /**
      * Sets the datagram socket implementation factory for the

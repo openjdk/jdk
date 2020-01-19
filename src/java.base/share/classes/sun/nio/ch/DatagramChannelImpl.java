@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1581,6 +1581,22 @@ class DatagramChannelImpl
 
             key.invalidate();
             registry.remove(key);
+        }
+    }
+
+    /**
+     * Finds an existing membership of a multicast group. Returns null if this
+     * channel's socket is not a member of the group.
+     *
+     * @apiNote This method is for use by the socket adaptor
+     */
+    MembershipKey findMembership(InetAddress group, NetworkInterface interf) {
+        synchronized (stateLock) {
+            if (registry != null) {
+                return registry.checkMembership(group, interf, null);
+            } else {
+                return null;
+            }
         }
     }
 
