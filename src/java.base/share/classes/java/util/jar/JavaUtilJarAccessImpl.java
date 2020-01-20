@@ -69,7 +69,7 @@ class JavaUtilJarAccessImpl implements JavaUtilJarAccess {
         jar.ensureInitialization();
     }
 
-    public Boolean isInitializing() {
-        return JarFile.isInitializing.get();
+    public boolean isInitializing() {
+        return JarFile.isInitializing();
     }
 }

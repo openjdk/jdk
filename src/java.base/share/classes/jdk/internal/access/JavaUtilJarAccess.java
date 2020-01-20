@@ -45,5 +45,5 @@ public interface JavaUtilJarAccess {
     public List<Object> getManifestDigests(JarFile jar);
     public Attributes getTrustedAttributes(Manifest man, String name);
     public void ensureInitialization(JarFile jar);
-    public Boolean isInitializing();
+    public boolean isInitializing();
 }
