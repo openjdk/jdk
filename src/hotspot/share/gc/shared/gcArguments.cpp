@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2017, Red Hat, Inc. and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -41,7 +41,7 @@ void GCArguments::initialize() {
     MarkSweepAlwaysCompactCount = 1;  // Move objects every gc.
   }
 
-  if (!(UseParallelGC || UseParallelOldGC) && FLAG_IS_DEFAULT(ScavengeBeforeFullGC)) {
+  if (!UseParallelGC && FLAG_IS_DEFAULT(ScavengeBeforeFullGC)) {
     FLAG_SET_DEFAULT(ScavengeBeforeFullGC, false);
   }
 

@@ -367,7 +367,6 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   unsigned int total_full_collections() const { return _total_full_collections;}
 
   // Increment total number of GC collections (started)
-  // Should be protected but used by PSMarkSweep - cleanup for 1.4.2
   void increment_total_collections(bool full = false) {
     _total_collections++;
     if (full) {

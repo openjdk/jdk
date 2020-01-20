@@ -41,7 +41,7 @@ class PSParallelCompactTest : public ::testing::Test {
 
 // @requires UseParallelGC
 TEST_VM(PSParallelCompact, print_generic_summary_data) {
-  if (!UseParallelOldGC) {
+  if (!UseParallelGC) {
     return;
   }
   // Check that print_generic_summary_data() does not print the

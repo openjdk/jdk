@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,7 +104,7 @@ class PSScavenge: AllStatic {
   static void set_subject_to_discovery_span(MemRegion mr) {
     _span_based_discoverer.set_span(mr);
   }
-  // Used by scavenge_contents && psMarkSweep
+  // Used by scavenge_contents
   static ReferenceProcessor* const reference_processor() {
     assert(_ref_processor != NULL, "Sanity");
     return _ref_processor;

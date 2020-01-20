@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,8 +32,6 @@
 #include "gc/parallel/spaceCounters.hpp"
 #include "runtime/safepoint.hpp"
 
-class PSMarkSweepDecorator;
-
 class PSOldGen : public CHeapObj<mtGC> {
   friend class VMStructs;
   friend class PSPromotionManager; // Uses the cas_allocate methods
@@ -45,10 +43,6 @@ class PSOldGen : public CHeapObj<mtGC> {
   PSVirtualSpace*          _virtual_space;     // Controls mapping and unmapping of virtual mem
   ObjectStartArray         _start_array;       // Keeps track of where objects start in a 512b block
   MutableSpace*            _object_space;      // Where all the objects live
-#if INCLUDE_SERIALGC
-  PSMarkSweepDecorator*    _object_mark_sweep; // The mark sweep view of _object_space
-#endif
-  const char* const        _name;              // Name of this generation.
 
   // Performance Counters
   PSGenerationCounters*    _gen_counters;
@@ -58,9 +52,6 @@ class PSOldGen : public CHeapObj<mtGC> {
   const size_t _init_gen_size;
   const size_t _min_gen_size;
   const size_t _max_gen_size;
-
-  // Used when initializing the _name field.
-  static inline const char* select_name();
 
 #ifdef ASSERT
   void assert_block_in_covered_region(MemRegion new_memregion) {
@@ -152,21 +143,11 @@ class PSOldGen : public CHeapObj<mtGC> {
   }
 
   MutableSpace*         object_space() const      { return _object_space; }
-#if INCLUDE_SERIALGC
-  PSMarkSweepDecorator* object_mark_sweep() const { return _object_mark_sweep; }
-#endif
   ObjectStartArray*     start_array()             { return &_start_array; }
   PSVirtualSpace*       virtual_space() const     { return _virtual_space;}
 
   // Has the generation been successfully allocated?
   bool is_allocated();
-
-#if INCLUDE_SERIALGC
-  // MarkSweep methods
-  virtual void precompact();
-  void adjust_pointers();
-  void compact();
-#endif
 
   // Size info
   size_t capacity_in_bytes() const        { return object_space()->capacity_in_bytes(); }
@@ -215,7 +196,7 @@ class PSOldGen : public CHeapObj<mtGC> {
   void update_counters();
 
   // Printing support
-  virtual const char* name() const { return _name; }
+  virtual const char* name() const { return "ParOldGen"; }
 
   // Debugging support
   // Save the tops of all spaces for later use during mangling.

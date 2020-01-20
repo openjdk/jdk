@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,6 @@
 #include "gc/parallel/objectStartArray.inline.hpp"
 #include "gc/parallel/parallelScavengeHeap.inline.hpp"
 #include "gc/parallel/psAdaptiveSizePolicy.hpp"
-#include "gc/parallel/psMarkSweepProxy.hpp"
 #include "gc/parallel/psMemoryPool.hpp"
 #include "gc/parallel/psParallelCompact.inline.hpp"
 #include "gc/parallel/psPromotionManager.hpp"
@@ -116,7 +115,7 @@ jint ParallelScavengeHeap::initialize() {
   _gc_policy_counters =
     new PSGCAdaptivePolicyCounters("ParScav:MSC", 2, 2, _size_policy);
 
-  if (UseParallelOldGC && !PSParallelCompact::initialize()) {
+  if (!PSParallelCompact::initialize()) {
     return JNI_ENOMEM;
   }
 
@@ -165,11 +164,7 @@ void ParallelScavengeHeap::post_initialize() {
   CollectedHeap::post_initialize();
   // Need to init the tenuring threshold
   PSScavenge::initialize();
-  if (UseParallelOldGC) {
-    PSParallelCompact::post_initialize();
-  } else {
-    PSMarkSweepProxy::initialize();
-  }
+  PSParallelCompact::post_initialize();
   PSPromotionManager::initialize();
 
   ScavengableNMethods::initialize(&_is_scavengable);
@@ -414,15 +409,11 @@ HeapWord* ParallelScavengeHeap::mem_allocate_old_gen(size_t size) {
 }
 
 void ParallelScavengeHeap::do_full_collection(bool clear_all_soft_refs) {
-  if (UseParallelOldGC) {
-    // The do_full_collection() parameter clear_all_soft_refs
-    // is interpreted here as maximum_compaction which will
-    // cause SoftRefs to be cleared.
-    bool maximum_compaction = clear_all_soft_refs;
-    PSParallelCompact::invoke(maximum_compaction);
-  } else {
-    PSMarkSweepProxy::invoke(clear_all_soft_refs);
-  }
+  // The do_full_collection() parameter clear_all_soft_refs
+  // is interpreted here as maximum_compaction which will
+  // cause SoftRefs to be cleared.
+  bool maximum_compaction = clear_all_soft_refs;
+  PSParallelCompact::invoke(maximum_compaction);
 }
 
 // Failed allocation policy. Must be called from the VM thread, and
@@ -554,9 +545,7 @@ bool ParallelScavengeHeap::block_is_obj(const HeapWord* addr) const {
 }
 
 jlong ParallelScavengeHeap::millis_since_last_gc() {
-  return UseParallelOldGC ?
-    PSParallelCompact::millis_since_last_gc() :
-    PSMarkSweepProxy::millis_since_last_gc();
+  return PSParallelCompact::millis_since_last_gc();
 }
 
 void ParallelScavengeHeap::prepare_for_verify() {
@@ -599,10 +588,8 @@ void ParallelScavengeHeap::print_on(outputStream* st) const {
 void ParallelScavengeHeap::print_on_error(outputStream* st) const {
   this->CollectedHeap::print_on_error(st);
 
-  if (UseParallelOldGC) {
-    st->cr();
-    PSParallelCompact::print_on_error(st);
-  }
+  st->cr();
+  PSParallelCompact::print_on_error(st);
 }
 
 void ParallelScavengeHeap::gc_threads_do(ThreadClosure* tc) const {
@@ -616,8 +603,7 @@ void ParallelScavengeHeap::print_gc_threads_on(outputStream* st) const {
 void ParallelScavengeHeap::print_tracing_info() const {
   AdaptiveSizePolicyOutput::print();
   log_debug(gc, heap, exit)("Accumulated young generation GC time %3.7f secs", PSScavenge::accumulated_time()->seconds());
-  log_debug(gc, heap, exit)("Accumulated old generation GC time %3.7f secs",
-      UseParallelOldGC ? PSParallelCompact::accumulated_time()->seconds() : PSMarkSweepProxy::accumulated_time()->seconds());
+  log_debug(gc, heap, exit)("Accumulated old generation GC time %3.7f secs", PSParallelCompact::accumulated_time()->seconds());
 }
 
 PreGenGCValues ParallelScavengeHeap::get_pre_gc_values() const {

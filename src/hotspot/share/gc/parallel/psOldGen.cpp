@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@
 #include "gc/parallel/psAdaptiveSizePolicy.hpp"
 #include "gc/parallel/psCardTable.hpp"
 #include "gc/parallel/psFileBackedVirtualspace.hpp"
-#include "gc/parallel/psMarkSweepDecorator.hpp"
 #include "gc/parallel/psOldGen.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
 #include "gc/shared/gcLocker.hpp"
@@ -39,14 +38,10 @@
 #include "runtime/java.hpp"
 #include "utilities/align.hpp"
 
-inline const char* PSOldGen::select_name() {
-  return UseParallelOldGC ? "ParOldGen" : "PSOldGen";
-}
-
 PSOldGen::PSOldGen(ReservedSpace rs, size_t alignment,
                    size_t initial_size, size_t min_size, size_t max_size,
                    const char* perf_data_name, int level):
-  _name(select_name()), _init_gen_size(initial_size), _min_gen_size(min_size),
+  _init_gen_size(initial_size), _min_gen_size(min_size),
   _max_gen_size(max_size)
 {
   initialize(rs, alignment, perf_data_name, level);
@@ -55,7 +50,7 @@ PSOldGen::PSOldGen(ReservedSpace rs, size_t alignment,
 PSOldGen::PSOldGen(size_t initial_size,
                    size_t min_size, size_t max_size,
                    const char* perf_data_name, int level):
-  _name(select_name()), _init_gen_size(initial_size), _min_gen_size(min_size),
+  _init_gen_size(initial_size), _min_gen_size(min_size),
   _max_gen_size(max_size)
 {}
 
@@ -148,14 +143,6 @@ void PSOldGen::initialize_work(const char* perf_data_name, int level) {
                              SpaceDecorator::Clear,
                              SpaceDecorator::Mangle);
 
-#if INCLUDE_SERIALGC
-  _object_mark_sweep = new PSMarkSweepDecorator(_object_space, start_array(), MarkSweepDeadRatio);
-
-  if (_object_mark_sweep == NULL) {
-    vm_exit_during_initialization("Could not complete allocation of old generation");
-  }
-#endif // INCLUDE_SERIALGC
-
   // Update the start_array
   start_array()->set_covered_region(cmr);
 }
@@ -174,30 +161,6 @@ void PSOldGen::initialize_performance_counters(const char* perf_data_name, int l
 bool  PSOldGen::is_allocated() {
   return virtual_space()->reserved_size() != 0;
 }
-
-#if INCLUDE_SERIALGC
-
-void PSOldGen::precompact() {
-  ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
-
-  // Reset start array first.
-  start_array()->reset();
-
-  object_mark_sweep()->precompact();
-
-  // Now compact the young gen
-  heap->young_gen()->precompact();
-}
-
-void PSOldGen::adjust_pointers() {
-  object_mark_sweep()->adjust_pointers();
-}
-
-void PSOldGen::compact() {
-  object_mark_sweep()->compact(ZapUnusedHeapArea);
-}
-
-#endif // INCLUDE_SERIALGC
 
 size_t PSOldGen::contiguous_available() const {
   return object_space()->free_in_bytes() + virtual_space()->uncommitted_size();

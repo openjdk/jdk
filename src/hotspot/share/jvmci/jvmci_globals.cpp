@@ -194,7 +194,7 @@ bool JVMCIGlobals::enable_jvmci_product_mode(JVMFlag::Flags origin) {
 void JVMCIGlobals::check_jvmci_supported_gc() {
   if (EnableJVMCI) {
     // Check if selected GC is supported by JVMCI and Java compiler
-    if (!(UseSerialGC || UseParallelGC || UseParallelOldGC || UseG1GC)) {
+    if (!(UseSerialGC || UseParallelGC || UseG1GC)) {
       vm_exit_during_initialization("JVMCI Compiler does not support selected GC", GCConfig::hs_err_name());
       FLAG_SET_DEFAULT(EnableJVMCI, false);
       FLAG_SET_DEFAULT(UseJVMCICompiler, false);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,6 @@
 #include "gc/parallel/psAdaptiveSizePolicy.hpp"
 #include "gc/parallel/psClosure.inline.hpp"
 #include "gc/parallel/psCompactionManager.hpp"
-#include "gc/parallel/psMarkSweepProxy.hpp"
 #include "gc/parallel/psParallelCompact.inline.hpp"
 #include "gc/parallel/psPromotionManager.inline.hpp"
 #include "gc/parallel/psRootType.hpp"
@@ -284,11 +283,7 @@ bool PSScavenge::invoke() {
     SoftRefPolicy* srp = heap->soft_ref_policy();
     const bool clear_all_softrefs = srp->should_clear_all_soft_refs();
 
-    if (UseParallelOldGC) {
-      full_gc_done = PSParallelCompact::invoke_no_policy(clear_all_softrefs);
-    } else {
-      full_gc_done = PSMarkSweepProxy::invoke_no_policy(clear_all_softrefs);
-    }
+    full_gc_done = PSParallelCompact::invoke_no_policy(clear_all_softrefs);
   }
 
   return full_gc_done;
