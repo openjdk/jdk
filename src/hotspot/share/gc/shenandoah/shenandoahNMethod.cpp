@@ -145,11 +145,16 @@ void ShenandoahNMethod::detect_reloc_oops(nmethod* nm, GrowableArray<oop*>& oops
       continue;
     }
 
-    if (r->oop_value() != NULL) {
+    oop value = r->oop_value();
+    if (value != NULL) {
+      oop* addr = r->oop_addr();
+      shenandoah_assert_correct(addr, value);
+      shenandoah_assert_not_in_cset_except(addr, value, ShenandoahHeap::heap()->cancelled_gc());
+      shenandoah_assert_not_forwarded(addr, value);
       // Non-NULL immediate oop found. NULL oops can safely be
       // ignored since the method will be re-registered if they
       // are later patched to be non-NULL.
-      oops.push(r->oop_addr());
+      oops.push(addr);
     }
   }
 }
