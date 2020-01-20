@@ -703,7 +703,7 @@ public class DatagramSocket implements java.io.Closeable {
      * @throws     IllegalArgumentException if the socket is connected,
      *             and connected address and packet address differ, or
      *             if the socket is not connected and the packet address
-     *             is not set.
+     *             is not set or if its port is out of range.
      *
      * @see        java.net.DatagramPacket
      * @see        SecurityManager#checkMulticast(InetAddress)
@@ -716,11 +716,14 @@ public class DatagramSocket implements java.io.Closeable {
             if (isClosed())
                 throw new SocketException("Socket is closed");
             InetAddress packetAddress = p.getAddress();
+            int packetPort = p.getPort();
             checkAddress (packetAddress, "send");
             if (connectState == ST_NOT_CONNECTED) {
                 if (packetAddress == null) {
                     throw new IllegalArgumentException("Address not set");
                 }
+                if (packetPort < 0 || packetPort > 0xFFFF)
+                    throw new IllegalArgumentException("port out of range:" + packetPort);
                 // check the address is ok with the security manager on every send.
                 SecurityManager security = System.getSecurityManager();
 
@@ -733,7 +736,7 @@ public class DatagramSocket implements java.io.Closeable {
                         security.checkMulticast(packetAddress);
                     } else {
                         security.checkConnect(packetAddress.getHostAddress(),
-                                              p.getPort());
+                                packetPort);
                     }
                 }
             } else {
@@ -742,7 +745,7 @@ public class DatagramSocket implements java.io.Closeable {
                     p.setAddress(connectedAddress);
                     p.setPort(connectedPort);
                 } else if ((!packetAddress.equals(connectedAddress)) ||
-                           p.getPort() != connectedPort) {
+                        packetPort != connectedPort) {
                     throw new IllegalArgumentException("connected address " +
                                                        "and packet address" +
                                                        " differ");
