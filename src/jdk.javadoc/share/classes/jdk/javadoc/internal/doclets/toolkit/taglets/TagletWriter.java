@@ -28,6 +28,7 @@ package jdk.javadoc.internal.doclets.toolkit.taglets;
 import java.util.List;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
+import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeMirror;
 
@@ -190,9 +191,10 @@ public abstract class TagletWriter {
      *
      * @param element
      * @param throwsTag the throws tag.
+     * @param substituteType instantiated type of a generic type-variable, or null.
      * @return the output of the throws tag.
      */
-    protected abstract Content throwsTagOutput(Element element, DocTree throwsTag);
+    protected abstract Content throwsTagOutput(Element element, DocTree throwsTag, TypeMirror substituteType);
 
     /**
      * Return the output for the throws tag.
@@ -213,6 +215,13 @@ public abstract class TagletWriter {
      */
     protected abstract Content valueTagOutput(VariableElement field,
         String constantVal, boolean includeLink);
+
+    /**
+     * Return the main type element of the current page or null for pages that don't have one.
+     *
+     * @return the type element of the current page or null.
+     */
+    protected abstract TypeElement getCurrentPageElement();
 
     /**
      * Given an output object, append to it the tag documentation for

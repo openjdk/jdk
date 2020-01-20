@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -121,7 +121,7 @@ void DFSClosure::closure_impl(UnifiedOopRef reference, const oop pointee) {
   assert(_mark_bits->is_marked(pointee), "invariant");
 
   // is the pointee a sample object?
-  if (NULL == pointee->mark().to_pointer()) {
+  if (pointee->mark().is_marked()) {
     add_chain();
   }
 

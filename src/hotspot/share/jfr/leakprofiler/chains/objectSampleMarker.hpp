@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,14 +67,11 @@ class ObjectSampleMarker : public StackObj {
     assert(obj != NULL, "invariant");
     // save the original markWord
     _store->push(ObjectSampleMarkWord(obj, obj->mark()));
-    // now we will "poison" the mark word of the sample object
-    // to the intermediate monitor INFLATING state.
-    // This is an "impossible" state during a safepoint,
-    // hence we will use it to quickly identify sample objects
-    // during the reachability search from gc roots.
-    assert(NULL == markWord::INFLATING().to_pointer(), "invariant");
-    obj->set_mark(markWord::INFLATING());
-    assert(NULL == obj->mark().to_pointer(), "invariant");
+    // now we will set the mark word to "marked" in order to quickly
+    // identify sample objects during the reachability search from gc roots.
+    assert(!obj->mark().is_marked(), "should only mark an object once");
+    obj->set_mark(markWord::prototype().set_marked());
+    assert(obj->mark().is_marked(), "invariant");
   }
 };
 

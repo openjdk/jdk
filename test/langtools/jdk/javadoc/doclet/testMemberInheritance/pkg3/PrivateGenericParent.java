@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,21 +21,15 @@
  * questions.
  */
 
-package pkg2;
+package pkg3;
 
-abstract class UndocumentedGenericParent<T, E extends Throwable, F extends Throwable> {
-    /**
-     * A field.
-     */
-    public T f;
+public class PrivateGenericParent {
 
-    /**
-     * Returns some value.
-     *
-     * @param t a parameter
-     * @return some value
-     * @throws E a generic error
-     * @throws IllegalStateException illegal state
-     */
-    protected abstract T parentMethod(T t) throws F, E, IllegalStateException;
+    private static class PrivateParent<T> {
+        public T method(T t) {
+            return t;
+        }
+    }
+
+    public class PublicChild extends PrivateParent<String> {}
 }

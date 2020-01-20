@@ -207,6 +207,14 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
     /**
      * {@inheritDoc}
      */
+    @Override
+    protected TypeElement getCurrentPageElement() {
+        return typeElement;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
     @Override @SuppressWarnings("preview")
     public void addClassSignature(String modifiers, Content classInfoTree) {
         Content hr = new HtmlTree(HtmlTag.HR);

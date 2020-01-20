@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -131,7 +131,7 @@ void BFSClosure::closure_impl(UnifiedOopRef reference, const oop pointee) {
   if (!_mark_bits->is_marked(pointee)) {
     _mark_bits->mark_obj(pointee);
     // is the pointee a sample object?
-    if (NULL == pointee->mark().to_pointer()) {
+    if (pointee->mark().is_marked()) {
       add_chain(reference, pointee);
     }
 
@@ -148,7 +148,7 @@ void BFSClosure::closure_impl(UnifiedOopRef reference, const oop pointee) {
 
 void BFSClosure::add_chain(UnifiedOopRef reference, const oop pointee) {
   assert(pointee != NULL, "invariant");
-  assert(NULL == pointee->mark().to_pointer(), "invariant");
+  assert(pointee->mark().is_marked(), "invariant");
   Edge leak_edge(_current_parent, reference);
   _edge_store->put_chain(&leak_edge, _current_parent == NULL ? 1 : _current_frontier_level + 2);
 }

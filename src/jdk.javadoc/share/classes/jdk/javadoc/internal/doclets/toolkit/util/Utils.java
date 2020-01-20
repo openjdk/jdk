@@ -223,7 +223,7 @@ public class Utils {
      * @return true if t1 is a superclass of t2.
      */
     public boolean isSubclassOf(TypeElement t1, TypeElement t2) {
-        return typeUtils.isSubtype(t1.asType(), t2.asType());
+        return typeUtils.isSubtype(typeUtils.erasure(t1.asType()), typeUtils.erasure(t2.asType()));
     }
 
     /**
@@ -569,7 +569,8 @@ public class Utils {
     }
 
     public boolean isUndocumentedEnclosure(TypeElement enclosingTypeElement) {
-        return isPackagePrivate(enclosingTypeElement) && !isLinkable(enclosingTypeElement);
+        return (isPackagePrivate(enclosingTypeElement) || isPrivate(enclosingTypeElement))
+                && !isLinkable(enclosingTypeElement);
     }
 
     public boolean isError(TypeElement te) {
@@ -800,13 +801,51 @@ public class Utils {
     }
 
     /**
-     * Returns the TypeMirror of the ExecutableElement for all methods,
-     * a null if constructor.
+     * Returns the TypeMirror of the ExecutableElement if it is a method, or null
+     * if it is a constructor.
+     * @param site the contextual type
      * @param ee the ExecutableElement
-     * @return
+     * @return the return type
      */
-    public TypeMirror getReturnType(ExecutableElement ee) {
-        return ee.getKind() == CONSTRUCTOR ? null : ee.getReturnType();
+    public TypeMirror getReturnType(TypeElement site, ExecutableElement ee) {
+        return ee.getKind() == CONSTRUCTOR ? null : asInstantiatedMethodType(site, ee).getReturnType();
+    }
+
+    /**
+     * Returns the ExecutableType corresponding to the type of the method declaration seen as a
+     * member of a given declared type. This might cause type-variable substitution to kick in.
+     * @param site the contextual type.
+     * @param ee the method declaration.
+     * @return the instantiated method type.
+     */
+    public ExecutableType asInstantiatedMethodType(TypeElement site, ExecutableElement ee) {
+        return shouldInstantiate(site, ee) ?
+                (ExecutableType)typeUtils.asMemberOf((DeclaredType)site.asType(), ee) :
+                (ExecutableType)ee.asType();
+    }
+
+    /**
+     * Returns the TypeMirror corresponding to the type of the field declaration seen as a
+     * member of a given declared type. This might cause type-variable substitution to kick in.
+     * @param site the contextual type.
+     * @param ve the field declaration.
+     * @return the instantiated field type.
+     */
+    public TypeMirror asInstantiatedFieldType(TypeElement site, VariableElement ve) {
+        return shouldInstantiate(site, ve) ?
+                typeUtils.asMemberOf((DeclaredType)site.asType(), ve) :
+                ve.asType();
+    }
+
+    /*
+     * We should not instantiate if (i) there's no contextual type declaration, (ii) the declaration
+     * to which the member belongs to is the same as the one under consideration, (iii) if the
+     * delcaration to which the member belongs to is not generic.
+     */
+    private boolean shouldInstantiate(TypeElement site, Element e) {
+        return site != null &&
+                site != e.getEnclosingElement() &&
+               !((DeclaredType)e.getEnclosingElement().asType()).getTypeArguments().isEmpty();
     }
 
     /**

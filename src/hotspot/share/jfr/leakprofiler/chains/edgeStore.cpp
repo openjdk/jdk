@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -231,7 +231,7 @@ StoredEdge* EdgeStore::associate_leak_context_with_candidate(const Edge* edge) {
   StoredEdge* const leak_context_edge = put(edge->reference());
   oop sample_object = edge->pointee();
   assert(sample_object != NULL, "invariant");
-  assert(NULL == sample_object->mark().to_pointer(), "invariant");
+  assert(sample_object->mark().is_marked(), "invariant");
   sample_object->set_mark(markWord::from_pointer(leak_context_edge));
   return leak_context_edge;
 }

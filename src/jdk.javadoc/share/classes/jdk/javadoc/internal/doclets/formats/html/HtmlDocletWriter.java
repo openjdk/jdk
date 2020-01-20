@@ -861,6 +861,15 @@ public class HtmlDocletWriter {
     }
 
     /**
+     * Return the main type element of the current page or null for pages that don't have one.
+     *
+     * @return the type element of the current page.
+     */
+    protected TypeElement getCurrentPageElement() {
+        return null;
+    }
+
+    /**
      * Add the class link, with only class name as the strong link and prefixing
      * plain package name.
      *

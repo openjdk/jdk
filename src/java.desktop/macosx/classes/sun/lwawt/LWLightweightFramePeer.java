@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,7 +90,7 @@ public class LWLightweightFramePeer extends LWWindowPeer implements OverrideNati
 
     @Override
     public void setBounds(int x, int y, int w, int h, int op) {
-        setBounds(x, y, w, h, op, true, false);
+        setBounds(x, y, w, h, op, true, true);
     }
 
     @Override
