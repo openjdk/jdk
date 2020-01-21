@@ -26,6 +26,7 @@
 package java.lang;
 
 import java.io.File;
+import java.util.ArrayList;
 
 class ClassLoaderHelper {
 
