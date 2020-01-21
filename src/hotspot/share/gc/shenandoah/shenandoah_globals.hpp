@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016, 2019, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2016, 2020, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -141,10 +141,11 @@
           "to duration(marking)+duration(update-refs).")                    \
                                                                             \
   experimental(uintx, ShenandoahGuaranteedGCInterval, 5*60*1000,            \
-          "Adaptive and dynamic heuristics would guarantee a GC cycle "     \
-          "at least with this interval. This is useful when large idle"     \
-          " intervals are present, where GC can run without stealing "      \
-          "time from active application. Time is in milliseconds.")         \
+          "Most heuristics would guarantee a concurrent GC cycle at "       \
+          "least with this interval. This is useful when large idle "       \
+          "intervals are present, where GC can run without stealing "       \
+          "time from active application. Time is in milliseconds. "         \
+          "(Setting this interval to 0 disables this feature).")            \
                                                                             \
   experimental(bool, ShenandoahAlwaysClearSoftRefs, false,                  \
           "Clear soft references always, instead of using any smart "       \

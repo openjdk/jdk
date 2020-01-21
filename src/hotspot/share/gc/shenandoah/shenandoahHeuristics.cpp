@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2018, 2020, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -245,13 +245,16 @@ bool ShenandoahHeuristics::should_start_gc() const {
     return true;
   }
 
-  double last_time_ms = (os::elapsedTime() - _last_cycle_end) * 1000;
-  bool periodic_gc = (last_time_ms > ShenandoahGuaranteedGCInterval);
-  if (periodic_gc) {
-    log_info(gc)("Trigger: Time since last GC (%.0f ms) is larger than guaranteed interval (" UINTX_FORMAT " ms)",
-                  last_time_ms, ShenandoahGuaranteedGCInterval);
+  if (ShenandoahGuaranteedGCInterval > 0) {
+    double last_time_ms = (os::elapsedTime() - _last_cycle_end) * 1000;
+    if (last_time_ms > ShenandoahGuaranteedGCInterval) {
+      log_info(gc)("Trigger: Time since last GC (%.0f ms) is larger than guaranteed interval (" UINTX_FORMAT " ms)",
+                   last_time_ms, ShenandoahGuaranteedGCInterval);
+      return true;
+    }
   }
-  return periodic_gc;
+
+  return false;
 }
 
 bool ShenandoahHeuristics::should_degenerate_cycle() {
