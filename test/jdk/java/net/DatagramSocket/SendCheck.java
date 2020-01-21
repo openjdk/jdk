@@ -112,10 +112,14 @@ public class SendCheck {
         pkt1.setPort(0);
          */
 
+        /*
+        Commented until JDK-8236852 is fixed
+
         // wildcard w/port 0 -- DC, DSA, MS, DS throws IO
         var pkt2 = new DatagramPacket(buf, 0, buf.length);
         pkt2.setAddress(wildcard.getAddress());
         pkt2.setPort(0);
+        */
 
         // loopback w/port -1 -- DC, DSA, MS, DS throws IAE
         var pkt3 = new DatagramPacket(buf, 0, buf.length);
@@ -135,9 +139,6 @@ public class SendCheck {
         pkt5.setPort(socket.getLocalPort());
         */
 
-        // PKT 2: invalid port 0
-        List<Packet> ioPackets = List.of(Packet.of(pkt2));
-
         // PKTS 3 & 4: invalid port -1
         List<Packet> iaePackets = List.of(Packet.of(pkt3), Packet.of(pkt4));
 
@@ -149,9 +150,6 @@ public class SendCheck {
         );
 
         List<Object[]> testcases = new ArrayList<>();
-        for (var p : ioPackets) {
-            addTestCaseFor(testcases, senders, p, IOE);
-        }
         for (var p : iaePackets) {
             addTestCaseFor(testcases, senders, p, IAE);
         }
