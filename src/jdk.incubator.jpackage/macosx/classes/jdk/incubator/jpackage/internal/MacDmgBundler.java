@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package jdk.incubator.jpackage.internal;
 
 import java.io.*;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.text.MessageFormat;
 import java.util.*;
 import static jdk.incubator.jpackage.internal.MacAppImageBuilder.ICON_ICNS;
@@ -39,8 +40,12 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
     private static final ResourceBundle I18N = ResourceBundle.getBundle(
             "jdk.incubator.jpackage.internal.resources.MacResources");
 
-    static final String DEFAULT_BACKGROUND_IMAGE="background_dmg.tiff";
-    static final String DEFAULT_DMG_SETUP_SCRIPT="DMGsetup.scpt";
+    // Background image name in resources
+    static final String DEFAULT_BACKGROUND_IMAGE = "background_dmg.tiff";
+    // Backround image name and folder under which it will be stored in DMG
+    static final String BACKGROUND_IMAGE_FOLDER =".background";
+    static final String BACKGROUND_IMAGE = "background.tiff";
+    static final String DEFAULT_DMG_SETUP_SCRIPT = "DMGsetup.scpt";
     static final String TEMPLATE_BUNDLE_ICON = "java.icns";
 
     static final String DEFAULT_LICENSE_PLIST="lic_template.plist";
@@ -84,16 +89,31 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
 
     private static final String hdiutil = "/usr/bin/hdiutil";
 
-    private void prepareDMGSetupScript(String volumeName,
-            Map<String, ? super Object> params) throws IOException {
+    private void prepareDMGSetupScript(Map<String, ? super Object> params)
+                                                                    throws IOException {
         File dmgSetup = getConfig_VolumeScript(params);
         Log.verbose(MessageFormat.format(
                 I18N.getString("message.preparing-dmg-setup"),
                 dmgSetup.getAbsolutePath()));
 
+        // We need to use URL for DMG to find it. We cannot use volume name, since
+        // user might have open DMG with same volume name already. Url should end with
+        // '/' and it should be real path (no symbolic links).
+        File imageDir = IMAGES_ROOT.fetchFrom(params);
+        if (!imageDir.exists()) imageDir.mkdirs(); // Create it, since it does not exist
+        Path rootPath = Path.of(imageDir.toString()).toRealPath();
+        Path volumePath = rootPath.resolve(APP_NAME.fetchFrom(params));
+        String volumeUrl = volumePath.toUri().toString() + File.separator;
+
+        // Provide full path to backround image, so we can find it.
+        Path bgFile = Path.of(rootPath.toString(), APP_NAME.fetchFrom(params),
+                              BACKGROUND_IMAGE_FOLDER, BACKGROUND_IMAGE);
+
         //prepare config for exe
         Map<String, String> data = new HashMap<>();
-        data.put("DEPLOY_ACTUAL_VOLUME_NAME", volumeName);
+        data.put("DEPLOY_VOLUME_URL", volumeUrl);
+        data.put("DEPLOY_BG_FILE", bgFile.toString());
+        data.put("DEPLOY_VOLUME_PATH", volumePath.toString());
         data.put("DEPLOY_APPLICATION_NAME", APP_NAME.fetchFrom(params));
 
         data.put("DEPLOY_INSTALL_LOCATION", "(path to applications folder)");
@@ -170,12 +190,7 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
 
         prepareLicense(params);
 
-        // In theory we need to extract name from results of attach command
-        // However, this will be a problem for customization as name will
-        // possibly change every time and developer will not be able to fix it
-        // As we are using tmp dir chance we get "different" name are low =>
-        // Use fixed name we used for bundle
-        prepareDMGSetupScript(APP_NAME.fetchFrom(params), params);
+        prepareDMGSetupScript(params);
 
         return true;
     }
@@ -302,10 +317,10 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
                     volumeIconFile);
 
             // background image
-            File bgdir = new File(mountedRoot, ".background");
+            File bgdir = new File(mountedRoot, BACKGROUND_IMAGE_FOLDER);
             bgdir.mkdirs();
             IOUtils.copyFile(getConfig_VolumeBackground(params),
-                    new File(bgdir, "background.tiff"));
+                    new File(bgdir, BACKGROUND_IMAGE));
 
             // Indicate that we want a custom icon
             // NB: attributes of the root directory are ignored
