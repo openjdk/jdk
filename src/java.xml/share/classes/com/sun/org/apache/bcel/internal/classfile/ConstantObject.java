@@ -25,7 +25,6 @@ package com.sun.org.apache.bcel.internal.classfile;
  * This interface denotes those constants that have a "natural" value,
  * such as ConstantLong, ConstantString, etc..
  *
- * @version $Id$
  * @see     Constant
  */
 public interface ConstantObject {

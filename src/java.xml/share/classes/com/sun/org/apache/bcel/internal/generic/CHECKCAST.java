@@ -27,7 +27,6 @@ import com.sun.org.apache.bcel.internal.ExceptionConst;
  * CHECKCAST - Check whether object is of given type
  * <PRE>Stack: ..., objectref -&gt; ..., objectref</PRE>
  *
- * @version $Id$
  */
 public class CHECKCAST extends CPInstruction implements LoadClass, ExceptionThrower, StackProducer,
         StackConsumer {

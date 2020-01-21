@@ -27,7 +27,6 @@ import com.sun.org.apache.bcel.internal.ExceptionConst;
  * ANEWARRAY -  Create new array of references
  * <PRE>Stack: ..., count -&gt; ..., arrayref</PRE>
  *
- * @version $Id$
  */
 public class ANEWARRAY extends CPInstruction implements LoadClass, AllocationInstruction,
         ExceptionThrower, StackConsumer, StackProducer {

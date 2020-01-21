@@ -35,7 +35,6 @@ import com.sun.org.apache.bcel.internal.Const;
  * attribute using the name <em>Exceptions</em> (which is inconsistent
  * with the other classes).
  *
- * @version $Id$
  * @see     Code
  */
 public final class ExceptionTable extends Attribute {
@@ -103,7 +102,7 @@ public final class ExceptionTable extends Attribute {
      * @throws IOException
      */
     @Override
-    public final void dump( final DataOutputStream file ) throws IOException {
+    public void dump( final DataOutputStream file ) throws IOException {
         super.dump(file);
         file.writeShort(exception_index_table.length);
         for (final int index : exception_index_table) {
@@ -115,7 +114,7 @@ public final class ExceptionTable extends Attribute {
     /**
      * @return Array of indices into constant pool of thrown exceptions.
      */
-    public final int[] getExceptionIndexTable() {
+    public int[] getExceptionIndexTable() {
         return exception_index_table;
     }
 
@@ -123,7 +122,7 @@ public final class ExceptionTable extends Attribute {
     /**
      * @return Length of exception table.
      */
-    public final int getNumberOfExceptions() {
+    public int getNumberOfExceptions() {
         return exception_index_table == null ? 0 : exception_index_table.length;
     }
 
@@ -131,7 +130,7 @@ public final class ExceptionTable extends Attribute {
     /**
      * @return class names of thrown exceptions
      */
-    public final String[] getExceptionNames() {
+    public String[] getExceptionNames() {
         final String[] names = new String[exception_index_table.length];
         for (int i = 0; i < exception_index_table.length; i++) {
             names[i] = super.getConstantPool().getConstantString(exception_index_table[i],
@@ -145,7 +144,7 @@ public final class ExceptionTable extends Attribute {
      * @param exception_index_table the list of exception indexes
      * Also redefines number_of_exceptions according to table length.
      */
-    public final void setExceptionIndexTable( final int[] exception_index_table ) {
+    public void setExceptionIndexTable( final int[] exception_index_table ) {
         this.exception_index_table = exception_index_table != null ? exception_index_table : new int[0];
     }
 
@@ -154,7 +153,7 @@ public final class ExceptionTable extends Attribute {
      * @return String representation, i.e., a list of thrown exceptions.
      */
     @Override
-    public final String toString() {
+    public String toString() {
         final StringBuilder buf = new StringBuilder();
         String str;
         buf.append("Exceptions: ");

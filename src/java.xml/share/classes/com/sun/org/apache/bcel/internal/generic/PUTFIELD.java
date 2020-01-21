@@ -30,7 +30,6 @@ import com.sun.org.apache.bcel.internal.ExceptionConst;
  * OR
  * <PRE>Stack: ..., objectref, value.word1, value.word2 -&gt; ...</PRE>
  *
- * @version $Id$
  */
 public class PUTFIELD extends FieldInstruction implements PopInstruction, ExceptionThrower {
 

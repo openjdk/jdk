@@ -29,7 +29,6 @@ package com.sun.org.apache.bcel.internal.generic;
  * @see InstructionHandle
  * @see Instruction
  * @see InstructionList
- * @version $Id$
  */
 public final class BranchHandle extends InstructionHandle {
 

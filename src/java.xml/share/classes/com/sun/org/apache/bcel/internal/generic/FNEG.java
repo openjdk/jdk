@@ -25,7 +25,6 @@ package com.sun.org.apache.bcel.internal.generic;
  * FNEG - Negate float
  * <PRE>Stack: ..., value -&gt; ..., result</PRE>
  *
- * @version $Id$
  */
 public class FNEG extends ArithmeticInstruction {
 

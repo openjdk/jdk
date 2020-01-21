@@ -25,7 +25,6 @@ package com.sun.org.apache.bcel.internal.generic;
  * ISUB - Substract ints
  * <PRE>Stack: ..., value1, value2 -&gt; result</PRE>
  *
- * @version $Id$
  */
 public class ISUB extends ArithmeticInstruction {
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -39,8 +39,7 @@ import java.util.Map;
  *
  * @see com.sun.org.apache.bcel.internal.Repository
  *
- * @version $Id$
- * @LastModified: Jun 2019
+ * @LastModified: Jan 2020
  */
 public class SyntheticRepository implements Repository {
 
@@ -79,7 +78,7 @@ public class SyntheticRepository implements Repository {
         final SoftReference<JavaClass> ref = loadedClasses.get(className);
         if (ref == null) {
             return null;
-}
+        }
         return ref.get();
     }
 
@@ -95,7 +94,7 @@ public class SyntheticRepository implements Repository {
     public JavaClass loadClass(String className) throws ClassNotFoundException {
         if ((className == null) || className.isEmpty()) {
             throw new IllegalArgumentException("Invalid class name " + className);
-        }
+    }
         className = className.replace('/', '.'); // Just in case, canonical form
         final JavaClass clazz = findClass(className);
         if (clazz != null) {
@@ -126,7 +125,7 @@ public class SyntheticRepository implements Repository {
         final JavaClass repositoryClass = findClass(className);
         if (repositoryClass != null) {
             return repositoryClass;
-        }
+    }
         String name = className;
         final int i = name.lastIndexOf('.');
         if (i > 0) {

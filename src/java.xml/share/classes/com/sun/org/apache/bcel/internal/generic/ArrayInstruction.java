@@ -26,7 +26,6 @@ import com.sun.org.apache.bcel.internal.ExceptionConst;
 /**
  * Super class for instructions dealing with array access such as IALOAD.
  *
- * @version $Id$
  */
 public abstract class ArrayInstruction extends Instruction implements ExceptionThrower,
         TypedInstruction {

@@ -26,7 +26,6 @@ import com.sun.org.apache.bcel.internal.Const;
 /**
  * Super class for the x2y family of instructions.
  *
- * @version $Id$
  */
 public abstract class ConversionInstruction extends Instruction implements TypedInstruction,
         StackProducer, StackConsumer {

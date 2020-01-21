@@ -26,7 +26,6 @@ import java.util.Stack;
  * applied to all components of a JavaClass object. I.e. this class supplies the
  * traversal strategy, other classes can make use of it.
  *
- * @version $Id$
  */
 public class DescendingVisitor implements Visitor
 {
@@ -503,6 +502,21 @@ public class DescendingVisitor implements Visitor
     {
         stack.push(obj);
         obj.accept(visitor);
+        final MethodParameter[] table = obj.getParameters();
+        for (final MethodParameter element : table) {
+            element.accept(this);
+        }
+        stack.pop();
+    }
+
+    /**
+     * @since 6.4.0
+     */
+    @Override
+    public void visitMethodParameter(final MethodParameter obj)
+    {
+        stack.push(obj);
+        obj.accept(visitor);
         stack.pop();
     }
 
@@ -549,6 +563,94 @@ public class DescendingVisitor implements Visitor
     /** @since 6.3 */
     @Override
     public void visitConstantDynamic(final ConstantDynamic obj) {
+        stack.push(obj);
+        obj.accept(visitor);
+        stack.pop();
+    }
+
+    /** @since 6.4.0 */
+    @Override
+    public void visitModule(final Module obj) {
+        stack.push(obj);
+        obj.accept(visitor);
+        final ModuleRequires[] rtable = obj.getRequiresTable();
+        for (final ModuleRequires element : rtable) {
+            element.accept(this);
+        }
+        final ModuleExports[] etable = obj.getExportsTable();
+        for (final ModuleExports element : etable) {
+            element.accept(this);
+        }
+        final ModuleOpens[] otable = obj.getOpensTable();
+        for (final ModuleOpens element : otable) {
+            element.accept(this);
+        }
+        final ModuleProvides[] ptable = obj.getProvidesTable();
+        for (final ModuleProvides element : ptable) {
+            element.accept(this);
+        }
+        stack.pop();
+    }
+
+    /** @since 6.4.0 */
+    @Override
+    public void visitModuleRequires(final ModuleRequires obj) {
+        stack.push(obj);
+        obj.accept(visitor);
+        stack.pop();
+    }
+
+    /** @since 6.4.0 */
+    @Override
+    public void visitModuleExports(final ModuleExports obj) {
+        stack.push(obj);
+        obj.accept(visitor);
+        stack.pop();
+    }
+
+    /** @since 6.4.0 */
+    @Override
+    public void visitModuleOpens(final ModuleOpens obj) {
+        stack.push(obj);
+        obj.accept(visitor);
+        stack.pop();
+    }
+
+    /** @since 6.4.0 */
+    @Override
+    public void visitModuleProvides(final ModuleProvides obj) {
+        stack.push(obj);
+        obj.accept(visitor);
+        stack.pop();
+    }
+
+    /** @since 6.4.0 */
+    @Override
+    public void visitModulePackages(final ModulePackages obj) {
+        stack.push(obj);
+        obj.accept(visitor);
+        stack.pop();
+    }
+
+    /** @since 6.4.0 */
+    @Override
+    public void visitModuleMainClass(final ModuleMainClass obj) {
+        stack.push(obj);
+        obj.accept(visitor);
+        stack.pop();
+    }
+
+    /** @since 6.4.0 */
+    @Override
+    public void visitNestHost(final NestHost obj) {
+        stack.push(obj);
+        obj.accept(visitor);
+        stack.pop();
+    }
+
+    /** @since 6.4.0 */
+    @Override
+    public void visitNestMembers(final NestMembers obj) {
         stack.push(obj);
         obj.accept(visitor);
         stack.pop();

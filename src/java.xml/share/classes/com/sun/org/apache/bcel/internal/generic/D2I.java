@@ -25,7 +25,6 @@ package com.sun.org.apache.bcel.internal.generic;
  * D2I - Convert double to int
  * <PRE>Stack: ..., value.word1, value.word2 -&gt; ..., result</PRE>
  *
- * @version $Id$
  */
 public class D2I extends ConversionInstruction {
 

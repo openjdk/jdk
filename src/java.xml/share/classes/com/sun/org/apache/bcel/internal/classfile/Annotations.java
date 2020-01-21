@@ -28,7 +28,6 @@ import java.io.IOException;
 /**
  * base class for annotations
  *
- * @version $Id: Annotations
  * @since 6.0
  */
 public abstract class Annotations extends Attribute {

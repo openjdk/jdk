@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -30,8 +30,7 @@ import com.sun.org.apache.bcel.internal.classfile.ConstantPool;
 /**
  * Super class for the INVOKExxx family of instructions.
  *
- * @version $Id$
- * @LastModified: Jun 2019
+ * @LastModified: Jan 2020
  */
 public abstract class InvokeInstruction extends FieldOrMethod implements ExceptionThrower,
         StackConsumer, StackProducer {
@@ -59,8 +58,19 @@ public abstract class InvokeInstruction extends FieldOrMethod implements Excepti
     public String toString( final ConstantPool cp ) {
         final Constant c = cp.getConstant(super.getIndex());
         final StringTokenizer tok = new StringTokenizer(cp.constantToString(c));
-        return Const.getOpcodeName(super.getOpcode()) + " " + tok.nextToken().replace('.', '/')
-                + tok.nextToken();
+
+        final String opcodeName = Const.getOpcodeName(super.getOpcode());
+
+        final StringBuilder sb = new StringBuilder(opcodeName);
+        if (tok.hasMoreTokens()) {
+            sb.append(" ");
+            sb.append(tok.nextToken().replace('.', '/'));
+            if (tok.hasMoreTokens()) {
+                sb.append(tok.nextToken());
+            }
+        }
+
+        return sb.toString();
     }
 
 

@@ -74,7 +74,7 @@ public class BootstrapMethod implements Cloneable {
 
     /**
      * @param bootstrap_method_ref int index into constant_pool of CONSTANT_MethodHandle
-     * @param bootstrap_arguments int[] indices into constant_pool of CONSTANT_<type>_info
+     * @param bootstrap_arguments int[] indices into constant_pool of CONSTANT_[type]_info
      */
     public BootstrapMethod(final int bootstrap_method_ref, final int[] bootstrap_arguments) {
         this.bootstrap_method_ref = bootstrap_method_ref;
@@ -96,7 +96,7 @@ public class BootstrapMethod implements Cloneable {
     }
 
     /**
-     * @return int[] of bootstrap_method indices into constant_pool of CONSTANT_<type>_info
+     * @return int[] of bootstrap_method indices into constant_pool of CONSTANT_[type]_info
      */
     public int[] getBootstrapArguments() {
         return bootstrap_arguments;
@@ -110,7 +110,7 @@ public class BootstrapMethod implements Cloneable {
     }
 
     /**
-     * @param bootstrap_arguments int[] indices into constant_pool of CONSTANT_<type>_info
+     * @param bootstrap_arguments int[] indices into constant_pool of CONSTANT_[type]_info
      */
     public void setBootstrapArguments(final int[] bootstrap_arguments) {
         this.bootstrap_arguments = bootstrap_arguments;
@@ -133,12 +133,12 @@ public class BootstrapMethod implements Cloneable {
         String bootstrap_method_name;
         bootstrap_method_name = constant_pool.constantToString(bootstrap_method_ref,
                 Const.CONSTANT_MethodHandle);
-        buf.append(Utility.compactClassName(bootstrap_method_name));
+        buf.append(Utility.compactClassName(bootstrap_method_name, false));
         final int num_bootstrap_arguments = bootstrap_arguments.length;
         if (num_bootstrap_arguments > 0) {
-            buf.append("\n     Method Arguments:");
+            buf.append("\nMethod Arguments:");
             for (int i = 0; i < num_bootstrap_arguments; i++) {
-                buf.append("\n     ").append(i).append(": ");
+                buf.append("\n  ").append(i).append(": ");
                 buf.append(constant_pool.constantToString(constant_pool.getConstant(bootstrap_arguments[i])));
             }
         }

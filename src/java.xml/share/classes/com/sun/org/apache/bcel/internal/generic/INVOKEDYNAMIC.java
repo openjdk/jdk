@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -35,12 +35,11 @@ import com.sun.org.apache.bcel.internal.util.ByteSequence;
  * expects to be able to get the class of the method. Ignores the bootstrap
  * mechanism entirely.
  *
- * @version $Id: InvokeInstruction.java 1152072 2011-07-29 01:54:05Z dbrosius $
  * @see
  * <a href="http://docs.oracle.com/javase/specs/jvms/se8/html/jvms-6.html#jvms-6.5.invokedynamic">
  * The invokedynamic instruction in The Java Virtual Machine Specification</a>
  * @since 6.0
- * @LastModified: Jun 2019
+ * @LastModified: Jan 2020
  */
 public class INVOKEDYNAMIC extends InvokeInstruction {
 

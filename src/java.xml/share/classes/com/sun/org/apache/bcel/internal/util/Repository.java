@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -27,42 +27,34 @@ import com.sun.org.apache.bcel.internal.classfile.JavaClass;
  * Repository.setRepository method.
  *
  * @see com.sun.org.apache.bcel.internal.Repository
- * @version $Id$
- * @LastModified: Jun 2019
+ * @LastModified: Jan 2020
  */
 public interface Repository {
 
     /**
      * Stores the provided class under "clazz.getClassName()"
      */
-    void storeClass( JavaClass clazz );
-
+    void storeClass(JavaClass clazz);
 
     /**
      * Removes class from repository
      */
-    void removeClass( JavaClass clazz );
-
-
-    /**
-     * Finds the class with the name provided, if the class
-     * isn't there, return NULL.
-     */
-    JavaClass findClass( String className );
-
+    void removeClass(JavaClass clazz);
 
     /**
-     * Finds the class with the name provided, if the class
-     * isn't there, make an attempt to load it.
+     * Finds the class with the name provided, if the class isn't there, return NULL.
      */
-    JavaClass loadClass( String className ) throws java.lang.ClassNotFoundException;
+    JavaClass findClass(String className);
 
+    /**
+     * Finds the class with the name provided, if the class isn't there, make an attempt to load it.
+     */
+    JavaClass loadClass(String className) throws java.lang.ClassNotFoundException;
 
     /**
      * Finds the JavaClass instance for the given run-time class object
      */
-    JavaClass loadClass( Class<?> clazz ) throws java.lang.ClassNotFoundException;
-
+    JavaClass loadClass(Class<?> clazz) throws java.lang.ClassNotFoundException;
 
     /**
      * Clears all entries from cache.

@@ -25,7 +25,6 @@ package com.sun.org.apache.bcel.internal.generic;
  * FCMPL - Compare floats: value1 &lt; value2
  * <PRE>Stack: ..., value1, value2 -&gt; ..., result</PRE>
  *
- * @version $Id$
  */
 public class FCMPL extends Instruction implements TypedInstruction, StackProducer, StackConsumer {
 

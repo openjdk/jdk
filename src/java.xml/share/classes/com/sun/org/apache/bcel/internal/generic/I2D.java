@@ -25,7 +25,6 @@ package com.sun.org.apache.bcel.internal.generic;
  * I2D - Convert int to double
  * <PRE>Stack: ..., value -&gt; ..., result.word1, result.word2</PRE>
  *
- * @version $Id$
  */
 public class I2D extends ConversionInstruction {
 

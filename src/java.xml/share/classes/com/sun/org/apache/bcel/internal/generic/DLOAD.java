@@ -25,7 +25,6 @@ package com.sun.org.apache.bcel.internal.generic;
  * DLOAD - Load double from local variable
  * <PRE>Stack ... -&gt; ..., result.word1, result.word2</PRE>
  *
- * @version $Id$
  */
 public class DLOAD extends LoadInstruction {
 

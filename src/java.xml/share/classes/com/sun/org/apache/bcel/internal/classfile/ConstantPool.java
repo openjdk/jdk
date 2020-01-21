@@ -35,14 +35,12 @@ import com.sun.org.apache.bcel.internal.Const;
  * programatically should see <a href="../generic/ConstantPoolGen.html">
  * ConstantPoolGen</a>.
 
- * @version $Id$
  * @see     Constant
  * @see     com.sun.org.apache.bcel.internal.generic.ConstantPoolGen
  */
 public class ConstantPool implements Cloneable, Node {
 
     private Constant[] constant_pool;
-
 
     /**
      * @param constant_pool Array of constants
@@ -51,9 +49,8 @@ public class ConstantPool implements Cloneable, Node {
         this.constant_pool = constant_pool;
     }
 
-
     /**
-     * Read constants from given input stream.
+     * Reads constants from given input stream.
      *
      * @param input Input stream
      * @throws IOException
@@ -82,7 +79,6 @@ public class ConstantPool implements Cloneable, Node {
         }
     }
 
-
     /**
      * Called by objects that are traversing the nodes of the tree implicitely
      * defined by the contents of a Java class. I.e., the hierarchy of methods,
@@ -95,9 +91,8 @@ public class ConstantPool implements Cloneable, Node {
         v.visitConstantPool(this);
     }
 
-
     /**
-     * Resolve constant to a string representation.
+     * Resolves constant to a string representation.
      *
      * @param  c Constant to be printed
      * @return String representation
@@ -163,12 +158,21 @@ public class ConstantPool implements Cloneable, Node {
                         + ":" + constantToString(cid.getNameAndTypeIndex(),
                         Const.CONSTANT_NameAndType);
                 break;
+            case Const.CONSTANT_Module:
+                i = ((ConstantModule) c).getNameIndex();
+                c = getConstant(i, Const.CONSTANT_Utf8);
+                str = Utility.compactClassName(((ConstantUtf8) c).getBytes(), false);
+                break;
+            case Const.CONSTANT_Package:
+                i = ((ConstantPackage) c).getNameIndex();
+                c = getConstant(i, Const.CONSTANT_Utf8);
+                str = Utility.compactClassName(((ConstantUtf8) c).getBytes(), false);
+                break;
             default: // Never reached
                 throw new RuntimeException("Unknown constant type " + tag);
         }
         return str;
     }
-
 
     private static String escape( final String str ) {
         final int len = str.length();
@@ -198,9 +202,8 @@ public class ConstantPool implements Cloneable, Node {
         return buf.toString();
     }
 
-
     /**
-     * Retrieve constant at `index' from constant pool and resolve it to
+     * Retrieves constant at `index' from constant pool and resolve it to
      * a string representation.
      *
      * @param  index of constant in constant pool
@@ -211,7 +214,6 @@ public class ConstantPool implements Cloneable, Node {
         final Constant c = getConstant(index, tag);
         return constantToString(c);
     }
-
 
     /**
      * Dump constant pool to file stream in binary format.
@@ -228,9 +230,8 @@ public class ConstantPool implements Cloneable, Node {
         }
     }
 
-
     /**
-     * Get constant from constant pool.
+     * Gets constant from constant pool.
      *
      * @param  index Index in constant pool
      * @return Constant value
@@ -244,9 +245,8 @@ public class ConstantPool implements Cloneable, Node {
         return constant_pool[index];
     }
 
-
     /**
-     * Get constant from constant pool and check whether it has the
+     * Gets constant from constant pool and check whether it has the
      * expected type.
      *
      * @param  index Index in constant pool
@@ -268,7 +268,6 @@ public class ConstantPool implements Cloneable, Node {
         return c;
     }
 
-
     /**
      * @return Array of constants.
      * @see    Constant
@@ -277,9 +276,8 @@ public class ConstantPool implements Cloneable, Node {
         return constant_pool;
     }
 
-
     /**
-     * Get string from constant pool and bypass the indirection of
+     * Gets string from constant pool and bypass the indirection of
      * `ConstantClass' and `ConstantString' objects. I.e. these classes have
      * an index field that points to another entry of the constant pool of
      * type `ConstantUtf8' which contains the real data.
@@ -295,7 +293,7 @@ public class ConstantPool implements Cloneable, Node {
         Constant c;
         int i;
         c = getConstant(index, tag);
-        /* This switch() is not that elegant, since the two classes have the
+        /* This switch() is not that elegant, since the four classes have the
          * same contents, they just differ in the name of the index
          * field variable.
          * But we want to stick to the JVM naming conventions closely though
@@ -308,6 +306,12 @@ public class ConstantPool implements Cloneable, Node {
                 break;
             case Const.CONSTANT_String:
                 i = ((ConstantString) c).getStringIndex();
+                break;
+            case Const.CONSTANT_Module:
+                i = ((ConstantModule) c).getNameIndex();
+                break;
+            case Const.CONSTANT_Package:
+                i = ((ConstantPackage) c).getNameIndex();
                 break;
             default:
                 throw new RuntimeException("getConstantString called with illegal tag " + tag);

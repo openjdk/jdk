@@ -87,12 +87,10 @@ public class ModularRuntimeImage implements Closeable {
     @Override
     public void close() throws IOException {
         if (classLoader != null) {
-            if (classLoader != null) {
-                classLoader.close();
-            }
-            if (fileSystem != null) {
-                fileSystem.close();
-            }
+            classLoader.close();
+        }
+        if (fileSystem != null) {
+            fileSystem.close();
         }
     }
 

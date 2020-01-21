@@ -25,7 +25,6 @@ import com.sun.org.apache.bcel.internal.Const;
 /**
  * Denotes basic type such as int.
  *
- * @version $Id$
  */
 public final class BasicType extends Type {
 

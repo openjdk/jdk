@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -29,8 +29,7 @@ import com.sun.org.apache.bcel.internal.Const;
 /**
  * Abstract super class for fields and methods.
  *
- * @version $Id$
- * @LastModified: Jun 2019
+ * @LastModified: Jan 2020
  */
 public abstract class FieldOrMethod extends AccessFlags implements Cloneable, Node {
     private int name_index; // Points to field name in constant pool
@@ -69,7 +68,8 @@ public abstract class FieldOrMethod extends AccessFlags implements Cloneable, No
      * @deprecated (6.0) Use {@link #FieldOrMethod(java.io.DataInput, ConstantPool)} instead.
      */
     @java.lang.Deprecated
-    protected FieldOrMethod(final DataInputStream file, final ConstantPool constant_pool) throws IOException,
+    protected FieldOrMethod(final DataInputStream file, final ConstantPool constant_pool)
+            throws IOException,
             ClassFormatException {
         this((DataInput) file, constant_pool);
     }
@@ -80,8 +80,8 @@ public abstract class FieldOrMethod extends AccessFlags implements Cloneable, No
      * @throws IOException
      * @throws ClassFormatException
      */
-    protected FieldOrMethod(final DataInput file,
-            final ConstantPool constant_pool) throws IOException, ClassFormatException {
+    protected FieldOrMethod(final DataInput file, final ConstantPool constant_pool)
+            throws IOException, ClassFormatException {
         this(file.readUnsignedShort(), file.readUnsignedShort(), file.readUnsignedShort(), null,
                 constant_pool);
         final int attributes_count = file.readUnsignedShort();

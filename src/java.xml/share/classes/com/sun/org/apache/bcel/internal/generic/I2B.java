@@ -25,7 +25,6 @@ package com.sun.org.apache.bcel.internal.generic;
  * I2B - Convert int to byte
  * <PRE>Stack: ..., value -&gt; ..., result</PRE>
  *
- * @version $Id$
  */
 public class I2B extends ConversionInstruction {
 

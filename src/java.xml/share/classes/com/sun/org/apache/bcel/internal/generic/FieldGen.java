@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -40,9 +40,8 @@ import com.sun.org.apache.bcel.internal.util.BCELComparator;
  * one can do is to add a constant value attribute to a field (which must of
  * course be compatible with to the declared type).
  *
- * @version $Id$
  * @see Field
- * @LastModified: Jun 2019
+ * @LastModified: Jan 2020
  */
 public class FieldGen extends FieldGenOrMethodGen {
 

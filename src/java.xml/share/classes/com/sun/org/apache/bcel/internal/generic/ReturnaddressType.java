@@ -27,7 +27,6 @@ import com.sun.org.apache.bcel.internal.Const;
  * Returnaddress, the type JSR or JSR_W instructions push upon the stack.
  *
  * see vmspec2 3.3.3
- * @version $Id$
  */
 public class ReturnaddressType extends Type {
 

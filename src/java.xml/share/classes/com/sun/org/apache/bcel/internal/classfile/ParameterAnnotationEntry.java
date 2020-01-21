@@ -31,7 +31,6 @@ import java.util.List;
 /**
  * represents one parameter annotation in the parameter annotation table
  *
- * @version $Id: ParameterAnnotationEntry
  * @since 6.0
  */
 public class ParameterAnnotationEntry implements Node {

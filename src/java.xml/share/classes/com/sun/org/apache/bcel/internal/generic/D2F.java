@@ -25,7 +25,6 @@ package com.sun.org.apache.bcel.internal.generic;
  * D2F - Convert double to float
  * <PRE>Stack: ..., value.word1, value.word2 -&gt; ..., result</PRE>
  *
- * @version $Id$
  */
 public class D2F extends ConversionInstruction {
 

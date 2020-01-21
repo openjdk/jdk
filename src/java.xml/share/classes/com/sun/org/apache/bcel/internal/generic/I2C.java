@@ -25,7 +25,6 @@ package com.sun.org.apache.bcel.internal.generic;
  * I2C - Convert int to char
  * <PRE>Stack: ..., value -&gt; ..., result</PRE>
  *
- * @version $Id$
  */
 public class I2C extends ConversionInstruction {
 

@@ -43,7 +43,6 @@ import com.sun.org.apache.bcel.internal.Const;
  * JVM specification 1.0</a>. See this paper for
  * further details about the structure of a bytecode file.
  *
- * @version $Id$
  */
 public final class ClassParser {
 
@@ -66,7 +65,7 @@ public final class ClassParser {
 
 
     /**
-     * Parse class from the given stream.
+     * Parses class from the given stream.
      *
      * @param inputStream Input stream
      * @param file_name File name
@@ -84,7 +83,7 @@ public final class ClassParser {
     }
 
 
-    /** Parse class from given .class file.
+    /** Parses class from given .class file.
      *
      * @param file_name file name
      */
@@ -95,7 +94,7 @@ public final class ClassParser {
     }
 
 
-    /** Parse class from given .class file in a ZIP-archive
+    /** Parses class from given .class file in a ZIP-archive
      *
      * @param zip_file zip file name
      * @param file_name file name
@@ -109,7 +108,7 @@ public final class ClassParser {
 
 
     /**
-     * Parse the given Java class file and return an object that represents
+     * Parses the given Java class file and return an object that represents
      * the contained data, i.e., constants, methods, fields and commands.
      * A <em>ClassFormatException</em> is raised, if the file is not a valid
      * .class file. (This does not include verification of the byte code as it
@@ -199,7 +198,7 @@ public final class ClassParser {
 
 
     /**
-     * Read information about the attributes of the class.
+     * Reads information about the attributes of the class.
      * @throws  IOException
      * @throws  ClassFormatException
      */
@@ -213,7 +212,7 @@ public final class ClassParser {
 
 
     /**
-     * Read information about the class and its super class.
+     * Reads information about the class and its super class.
      * @throws  IOException
      * @throws  ClassFormatException
      */
@@ -235,7 +234,7 @@ public final class ClassParser {
 
 
     /**
-     * Read constant pool entries.
+     * Reads constant pool entries.
      * @throws  IOException
      * @throws  ClassFormatException
      */
@@ -245,7 +244,7 @@ public final class ClassParser {
 
 
     /**
-     * Read information about the fields of the class, i.e., its variables.
+     * Reads information about the fields of the class, i.e., its variables.
      * @throws  IOException
      * @throws  ClassFormatException
      */
@@ -260,7 +259,7 @@ public final class ClassParser {
 
     /******************** Private utility methods **********************/
     /**
-     * Check whether the header of the file is ok.
+     * Checks whether the header of the file is ok.
      * Of course, this has to be the first action on successive file reads.
      * @throws  IOException
      * @throws  ClassFormatException
@@ -273,7 +272,7 @@ public final class ClassParser {
 
 
     /**
-     * Read information about the interfaces implemented by this class.
+     * Reads information about the interfaces implemented by this class.
      * @throws  IOException
      * @throws  ClassFormatException
      */
@@ -287,7 +286,7 @@ public final class ClassParser {
 
 
     /**
-     * Read information about the methods of the class.
+     * Reads information about the methods of the class.
      * @throws  IOException
      * @throws  ClassFormatException
      */
@@ -301,7 +300,7 @@ public final class ClassParser {
 
 
     /**
-     * Read major and minor version of compiler which created the file.
+     * Reads major and minor version of compiler which created the file.
      * @throws  IOException
      * @throws  ClassFormatException
      */

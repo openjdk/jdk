@@ -29,7 +29,6 @@ import com.sun.org.apache.bcel.internal.Const;
 /**
  * an annotation's element value pair
  *
- * @version $Id: ElementValuePair
  * @since 6.0
  */
 public class ElementValuePair

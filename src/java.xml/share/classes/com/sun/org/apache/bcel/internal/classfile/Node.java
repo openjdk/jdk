@@ -24,7 +24,6 @@ package com.sun.org.apache.bcel.internal.classfile;
 /**
  * Denote class to have an accept method();
  *
- * @version $Id$
  */
 public interface Node {
 

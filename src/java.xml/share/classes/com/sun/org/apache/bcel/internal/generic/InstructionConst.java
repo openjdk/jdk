@@ -37,7 +37,6 @@ import com.sun.org.apache.bcel.internal.Const;
  * The Instructions can also accessed directly under their names, so
  * it's possible to write il.append(Instruction.ICONST_0);
  *
- * @version $Id: InstructionConstants.java 1695415 2015-08-12 01:02:39Z chas $
  */
 public final class InstructionConst {
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -42,8 +42,7 @@ import com.sun.org.apache.bcel.internal.util.ByteSequence;
 /**
  * Utility functions that do not really belong to any class in particular.
  *
- * @version $Id$
- * @LastModified: Jun 2019
+ * @LastModified: Jan 2020
  */
 // @since 6.0 methods are no longer final
 public abstract class Utility {
@@ -52,23 +51,23 @@ public abstract class Utility {
         return tl.get();
     }
 
-
     private static void wrap( final ThreadLocal<Integer> tl, final int value ) {
         tl.set(value);
     }
 
+    /* How many chars have been consumed
+     * during parsing in typeSignatureToString().
+     * Read by methodSignatureToString().
+     * Set by side effect, but only internally.
+     */
     private static ThreadLocal<Integer> consumed_chars = new ThreadLocal<Integer>() {
-
         @Override
         protected Integer initialValue() {
             return 0;
         }
-    };/* How many chars have been consumed
-     * during parsing in signatureToString().
-     * Read by methodSignatureToString().
-     * Set by side effect,but only internally.
-     */
-    private static boolean wide = false; /* The `WIDE' instruction is used in the
+    };
+
+    /* The `WIDE' instruction is used in the
      * byte code to allow 16-bit wide indices
      * for local variables. This opcode
      * precedes an `ILOAD', e.g.. The opcode
@@ -77,6 +76,7 @@ public abstract class Utility {
      * following byte to form a
      * 16-bit value.
      */
+    private static boolean wide = false;
 
 
     /**
@@ -105,7 +105,7 @@ public abstract class Utility {
     public static String accessToString( final int access_flags, final boolean for_class ) {
         final StringBuilder buf = new StringBuilder();
         int p = 0;
-        for (int i = 0; p < Const.MAX_ACC_FLAG; i++) { // Loop through known flags
+        for (int i = 0; p < Const.MAX_ACC_FLAG_I; i++) { // Loop through known flags
             p = pow2(i);
             if ((access_flags & p) != 0) {
                 /* Special case: Classes compiled with new compilers and with the
@@ -470,6 +470,21 @@ public abstract class Utility {
 
 
     /**
+     * Shorten long class names, <em>java/lang/String</em> becomes
+     * <em>java.lang.String</em>,
+     * e.g.. If <em>chopit</em> is <em>true</em> the prefix <em>java.lang</em>
+     * is also removed.
+     *
+     * @param str The long class name
+     * @param chopit flag that determines whether chopping is executed or not
+     * @return Compacted class name
+     */
+    public static String compactClassName( final String str, final boolean chopit ) {
+        return compactClassName(str, "java.lang.", chopit);
+    }
+
+
+    /**
      * Shorten long class name <em>str</em>, i.e., chop off the <em>prefix</em>,
      * if the
      * class name starts with this string and the flag <em>chopit</em> is true.
@@ -477,7 +492,7 @@ public abstract class Utility {
      *
      * @param str The long class name
      * @param prefix The prefix the get rid off
-     * @param chopit Flag that determines whether chopping is executed or not
+     * @param chopit flag that determines whether chopping is executed or not
      * @return Compacted class name
      */
     public static String compactClassName( String str, final String prefix, final boolean chopit ) {
@@ -490,21 +505,6 @@ public abstract class Utility {
             }
         }
         return str;
-    }
-
-
-    /**
-     * Shorten long class names, <em>java/lang/String</em> becomes
-     * <em>java.lang.String</em>,
-     * e.g.. If <em>chopit</em> is <em>true</em> the prefix <em>java.lang</em>
-     * is also removed.
-     *
-     * @param str The long class name
-     * @param chopit Flag that determines whether chopping is executed or not
-     * @return Compacted class name
-     */
-    public static String compactClassName( final String str, final boolean chopit ) {
-        return compactClassName(str, "java.lang.", chopit);
     }
 
 
@@ -563,9 +563,11 @@ public abstract class Utility {
 
 
     /**
+     * Converts argument list portion of method signature to string with all class names compacted.
+     *
      * @param  signature    Method signature
-     * @return Array of argument types
-     * @throws  ClassFormatException
+     * @return String Array of argument types
+     * @throws ClassFormatException
      */
     public static String[] methodSignatureArgumentTypes( final String signature )
             throws ClassFormatException {
@@ -574,22 +576,25 @@ public abstract class Utility {
 
 
     /**
+     * Converts argument list portion of method signature to string.
+     *
      * @param  signature    Method signature
-     * @param chopit Shorten class names ?
-     * @return Array of argument types
-     * @throws  ClassFormatException
+     * @param  chopit flag that determines whether chopping is executed or not
+     * @return String Array of argument types
+     * @throws ClassFormatException
      */
     public static String[] methodSignatureArgumentTypes( final String signature, final boolean chopit )
             throws ClassFormatException {
         final List<String> vec = new ArrayList<>();
         int index;
-        try { // Read all declarations between for `(' and `)'
-            if (signature.charAt(0) != '(') {
+        try {
+            // Skip any type arguments to read argument declarations between `(' and `)'
+            index = signature.indexOf('(') + 1;
+            if (index <= 0) {
                 throw new ClassFormatException("Invalid method signature: " + signature);
             }
-            index = 1; // current string position
             while (signature.charAt(index) != ')') {
-                vec.add(signatureToString(signature.substring(index), chopit));
+                vec.add(typeSignatureToString(signature.substring(index), chopit));
                 //corrected concurrent private static field acess
                 index += unwrap(consumed_chars); // update position
             }
@@ -601,9 +606,11 @@ public abstract class Utility {
 
 
     /**
+     * Converts return type portion of method signature to string with all class names compacted.
+     *
      * @param  signature    Method signature
-     * @return return type of method
-     * @throws  ClassFormatException
+     * @return String representation of method return type
+     * @throws ClassFormatException
      */
     public static String methodSignatureReturnType( final String signature ) throws ClassFormatException {
         return methodSignatureReturnType(signature, true);
@@ -611,10 +618,12 @@ public abstract class Utility {
 
 
     /**
+     * Converts return type portion of method signature to string.
+     *
      * @param  signature    Method signature
-     * @param chopit Shorten class names ?
-     * @return return type of method
-     * @throws  ClassFormatException
+     * @param  chopit flag that determines whether chopping is executed or not
+     * @return String representation of method return type
+     * @throws ClassFormatException
      */
     public static String methodSignatureReturnType( final String signature, final boolean chopit ) throws ClassFormatException {
         int index;
@@ -622,7 +631,10 @@ public abstract class Utility {
         try {
             // Read return type after `)'
             index = signature.lastIndexOf(')') + 1;
-            type = signatureToString(signature.substring(index), chopit);
+            if (index <= 0) {
+                throw new ClassFormatException("Invalid method signature: " + signature);
+            }
+            type = typeSignatureToString(signature.substring(index), chopit);
         } catch (final StringIndexOutOfBoundsException e) { // Should never occur
             throw new ClassFormatException("Invalid method signature: " + signature, e);
         }
@@ -633,9 +645,9 @@ public abstract class Utility {
     /**
      * Converts method signature to string with all class names compacted.
      *
-     * @param signature to convert
-     * @param name of method
-     * @param access flags of method
+     * @param  signature to convert
+     * @param  name of method
+     * @param  access flags of method
      * @return Human readable signature
      */
     public static String methodSignatureToString( final String signature, final String name, final String access ) {
@@ -643,45 +655,32 @@ public abstract class Utility {
     }
 
 
+    /**
+     * Converts method signature to string.
+     *
+     * @param  signature to convert
+     * @param  name of method
+     * @param  access flags of method
+     * @param  chopit flag that determines whether chopping is executed or not
+     * @return Human readable signature
+     */
     public static String methodSignatureToString( final String signature, final String name, final String access, final boolean chopit ) {
         return methodSignatureToString(signature, name, access, chopit, null);
     }
 
 
     /**
-     * A returntype signature represents the return value from a method.
-     * It is a series of bytes in the following grammar:
-     *
-     * <pre>
-     * &lt;return_signature&gt; ::= &lt;field_type&gt; | V
-     * </pre>
-     *
-     * The character V indicates that the method returns no value. Otherwise, the
-     * signature indicates the type of the return value.
-     * An argument signature represents an argument passed to a method:
-     *
-     * <pre>
-     * &lt;argument_signature&gt; ::= &lt;field_type&gt;
-     * </pre>
-     *
-     * A method signature represents the arguments that the method expects, and
-     * the value that it returns.
-     * <pre>
-     * &lt;method_signature&gt; ::= (&lt;arguments_signature&gt;) &lt;return_signature&gt;
-     * &lt;arguments_signature&gt;::= &lt;argument_signature&gt;*
-     * </pre>
-     *
-     * This method converts such a string into a Java type declaration like
+     * This method converts a method signature string into a Java type declaration like
      * `void main(String[])' and throws a `ClassFormatException' when the parsed
      * type is invalid.
      *
      * @param  signature    Method signature
      * @param  name         Method name
      * @param  access       Method access rights
-     * @param chopit
-     * @param vars
+     * @param  chopit flag that determines whether chopping is executed or not
+     * @param  vars the LocalVariableTable for the method
      * @return Java type declaration
-     * @throws  ClassFormatException
+     * @throws ClassFormatException
      */
     public static String methodSignatureToString( final String signature, final String name,
             final String access, final boolean chopit, final LocalVariableTable vars ) throws ClassFormatException {
@@ -689,13 +688,14 @@ public abstract class Utility {
         String type;
         int index;
         int var_index = access.contains("static") ? 0 : 1;
-        try { // Read all declarations between for `(' and `)'
-            if (signature.charAt(0) != '(') {
+        try {
+            // Skip any type arguments to read argument declarations between `(' and `)'
+            index = signature.indexOf('(') + 1;
+            if (index <= 0) {
                 throw new ClassFormatException("Invalid method signature: " + signature);
             }
-            index = 1; // current string position
             while (signature.charAt(index) != ')') {
-                final String param_type = signatureToString(signature.substring(index), chopit);
+                final String param_type = typeSignatureToString(signature.substring(index), chopit);
                 buf.append(param_type);
                 if (vars != null) {
                     final LocalVariable l = vars.getLocalVariable(var_index, 0);
@@ -716,10 +716,11 @@ public abstract class Utility {
             }
             index++; // update position
             // Read return type after `)'
-            type = signatureToString(signature.substring(index), chopit);
+            type = typeSignatureToString(signature.substring(index), chopit);
         } catch (final StringIndexOutOfBoundsException e) { // Should never occur
             throw new ClassFormatException("Invalid method signature: " + signature, e);
         }
+        // ignore any throws information in the signature
         if (buf.length() > 1) {
             buf.setLength(buf.length() - 2);
         }
@@ -729,7 +730,6 @@ public abstract class Utility {
     }
 
 
-    // Guess what this does
     private static int pow2( final int n ) {
         return 1 << n;
     }
@@ -767,10 +767,40 @@ public abstract class Utility {
 
 
     /**
-     * Converts signature to string with all class names compacted.
+     * WARNING:
      *
-     * @param signature to convert
-     * @return Human readable signature
+     * There is some nomenclature confusion through much of the BCEL code base with
+     * respect to the terms Descriptor and Signature.  For the offical definitions see:
+     *
+     * @see <a href="http://docs.oracle.com/javase/specs/jvms/se8/html/jvms-4.html#jvms-4.3">
+     * Descriptors in The Java Virtual Machine Specification</a>
+     *
+     * @see <a href="http://docs.oracle.com/javase/specs/jvms/se8/html/jvms-4.html#jvms-4.7.9.1">
+     * Signatures in The Java Virtual Machine Specification</a>
+     *
+     * In brief, a descriptor is a string representing the type of a field or method.
+     * Signatures are similar, but more complex.  Signatures are used to encode declarations
+     * written in the Java programming language that use types outside the type system of the
+     * Java Virtual Machine.  They are used to describe the type of any class, interface,
+     * constructor, method or field whose declaration uses type variables or parameterized types.
+     *
+     * To parse a descriptor, call typeSignatureToString.
+     * To parse a signature, call signatureToString.
+     *
+     * Note that if the signature string is a single, non-generic item, the call to
+     * signatureToString reduces to a call to typeSignatureToString.
+     * Also note, that if you only wish to parse the first item in a longer signature
+     * string, you should call typeSignatureToString directly.
+     */
+
+
+    /**
+     * Converts a signature to a string with all class names compacted.
+     * Class, Method and Type signatures are supported.
+     * Enum and Interface signatures are not supported.
+     *
+     * @param  signature signature to convert
+     * @return String containg human readable signature
      */
     public static String signatureToString( final String signature ) {
         return signatureToString(signature, true);
@@ -778,40 +808,158 @@ public abstract class Utility {
 
 
     /**
-     * The field signature represents the value of an argument to a function or
-     * the value of a variable. It is a series of bytes generated by the
-     * following grammar:
+     * Converts a signature to a string.
+     * Class, Method and Type signatures are supported.
+     * Enum and Interface signatures are not supported.
      *
-     * <PRE>
-     * &lt;field_signature&gt; ::= &lt;field_type&gt;
-     * &lt;field_type&gt;      ::= &lt;base_type&gt;|&lt;object_type&gt;|&lt;array_type&gt;
-     * &lt;base_type&gt;       ::= B|C|D|F|I|J|S|Z
-     * &lt;object_type&gt;     ::= L&lt;fullclassname&gt;;
-     * &lt;array_type&gt;      ::= [&lt;field_type&gt;
-     *
-     * The meaning of the base types is as follows:
-     * B byte signed byte
-     * C char character
-     * D double double precision IEEE float
-     * F float single precision IEEE float
-     * I int integer
-     * J long long integer
-     * L&lt;fullclassname&gt;; ... an object of the given class
-     * S short signed short
-     * Z boolean true or false
-     * [&lt;field sig&gt; ... array
-     * </PRE>
-     *
-     * This method converts this string into a Java type declaration such as
-     * `String[]' and throws a `ClassFormatException' when the parsed type is
-     * invalid.
-     *
-     * @param  signature  Class signature
-     * @param chopit Flag that determines whether chopping is executed or not
-     * @return Java type declaration
-     * @throws ClassFormatException
+     * @param  signature signature to convert
+     * @param  chopit flag that determines whether chopping is executed or not
+     * @return String containg human readable signature
      */
     public static String signatureToString( final String signature, final boolean chopit ) {
+        String type = "";
+        String typeParams = "";
+        int index = 0;
+        if (signature.charAt(0) == '<') {
+            // we have type paramters
+            typeParams = typeParamTypesToString(signature, chopit);
+            index += unwrap(consumed_chars); // update position
+        }
+        if (signature.charAt(index) == '(') {
+            // We have a Method signature.
+            // add types of arguments
+            type = typeParams + typeSignaturesToString(signature.substring(index), chopit, ')');
+            index += unwrap(consumed_chars); // update position
+            // add return type
+            type = type + typeSignatureToString(signature.substring(index), chopit);
+            index += unwrap(consumed_chars); // update position
+            // ignore any throws information in the signature
+            return type;
+        } else {
+            // Could be Class or Type...
+            type = typeSignatureToString(signature.substring(index), chopit);
+            index += unwrap(consumed_chars); // update position
+            if ((typeParams.length() == 0) && (index == signature.length())) {
+                // We have a Type signature.
+                return type;
+            }
+            // We have a Class signature.
+            final StringBuilder typeClass = new StringBuilder(typeParams);
+            typeClass.append(" extends ");
+            typeClass.append(type);
+            if (index < signature.length()) {
+                typeClass.append(" implements ");
+                typeClass.append(typeSignatureToString(signature.substring(index), chopit));
+                index += unwrap(consumed_chars); // update position
+            }
+            while (index < signature.length()) {
+                typeClass.append(", ");
+                typeClass.append(typeSignatureToString(signature.substring(index), chopit));
+                index += unwrap(consumed_chars); // update position
+            }
+            return typeClass.toString();
+        }
+    }
+
+
+    /**
+     * Converts a type parameter list signature to a string.
+     *
+     * @param  signature signature to convert
+     * @param  chopit flag that determines whether chopping is executed or not
+     * @return String containg human readable signature
+     */
+    private static String typeParamTypesToString( final String signature, final boolean chopit ) {
+        // The first character is guranteed to be '<'
+        final StringBuilder typeParams = new StringBuilder("<");
+        int index = 1;  // skip the '<'
+        // get the first TypeParameter
+        typeParams.append(typeParamTypeToString(signature.substring(index), chopit));
+        index += unwrap(consumed_chars); // update position
+        // are there more TypeParameters?
+        while (signature.charAt(index) != '>') {
+            typeParams.append(", ");
+            typeParams.append(typeParamTypeToString(signature.substring(index), chopit));
+            index += unwrap(consumed_chars); // update position
+        }
+        wrap(consumed_chars, index + 1); // account for the '>' char
+        return typeParams.append(">").toString();
+    }
+
+
+    /**
+     * Converts a type parameter signature to a string.
+     *
+     * @param  signature signature to convert
+     * @param  chopit flag that determines whether chopping is executed or not
+     * @return String containg human readable signature
+     */
+    private static String typeParamTypeToString( final String signature, final boolean chopit ) {
+        int index = signature.indexOf(':');
+        if (index <= 0) {
+            throw new ClassFormatException("Invalid type parameter signature: " + signature);
+        }
+        // get the TypeParameter identifier
+        final StringBuilder typeParam = new StringBuilder(signature.substring(0, index));
+        index++;  // account for the ':'
+        if (signature.charAt(index) != ':') {
+            // we have a class bound
+            typeParam.append(" extends ");
+            typeParam.append(typeSignatureToString(signature.substring(index), chopit));
+            index += unwrap(consumed_chars); // update position
+        }
+        // look for interface bounds
+        while (signature.charAt(index) == ':') {
+            index++;  // skip over the ':'
+            typeParam.append(" & ");
+            typeParam.append(typeSignatureToString(signature.substring(index), chopit));
+            index += unwrap(consumed_chars); // update position
+        }
+        wrap(consumed_chars, index);
+        return typeParam.toString();
+    }
+
+
+    /**
+     * Converts a list of type signatures to a string.
+     *
+     * @param  signature signature to convert
+     * @param  chopit flag that determines whether chopping is executed or not
+     * @param  term character indicating the end of the list
+     * @return String containg human readable signature
+     */
+    private static String typeSignaturesToString( final String signature, final boolean chopit, final char term ) {
+        // The first character will be an 'open' that matches the 'close' contained in term.
+        final StringBuilder typeList = new StringBuilder(signature.substring(0, 1));
+        int index = 1;  // skip the 'open' character
+        // get the first Type in the list
+        if (signature.charAt(index) != term) {
+            typeList.append(typeSignatureToString(signature.substring(index), chopit));
+            index += unwrap(consumed_chars); // update position
+        }
+        // are there more types in the list?
+        while (signature.charAt(index) != term) {
+            typeList.append(", ");
+            typeList.append(typeSignatureToString(signature.substring(index), chopit));
+            index += unwrap(consumed_chars); // update position
+        }
+        wrap(consumed_chars, index + 1); // account for the term char
+        return typeList.append(term).toString();
+    }
+
+
+    /**
+     *
+     * This method converts a type signature string into a Java type declaration such as
+     * `String[]' and throws a `ClassFormatException' when the parsed type is invalid.
+     *
+     * @param  signature type signature
+     * @param  chopit flag that determines whether chopping is executed or not
+     * @return string containing human readable type signature
+     * @throws ClassFormatException
+     * @since 6.4.0
+     */
+    public static String typeSignatureToString( final String signature, final boolean chopit ) throws ClassFormatException {
         //corrected concurrent private static field acess
         wrap(consumed_chars, 1); // This is the default, read just one char like `B'
         try {
@@ -831,7 +979,7 @@ public abstract class Utility {
                 case 'T': { // TypeVariableSignature
                     final int index = signature.indexOf(';'); // Look for closing `;'
                     if (index < 0) {
-                        throw new ClassFormatException("Invalid signature: " + signature);
+                        throw new ClassFormatException("Invalid type variable signature: " + signature);
                     }
                     //corrected concurrent private static field acess
                     wrap(consumed_chars, index + 1); // "Tblabla;" `T' and `;' are removed
@@ -891,7 +1039,7 @@ public abstract class Utility {
                         type.append("?");
                         consumed_chars++;
                     } else {
-                        type.append(signatureToString(signature.substring(consumed_chars), chopit));
+                        type.append(typeSignatureToString(signature.substring(consumed_chars), chopit));
                         // update our consumed count by the number of characters the for type argument
                         consumed_chars = unwrap(Utility.consumed_chars) + consumed_chars;
                         wrap(Utility.consumed_chars, consumed_chars);
@@ -912,7 +1060,7 @@ public abstract class Utility {
                             type.append("?");
                             consumed_chars++;
                         } else {
-                            type.append(signatureToString(signature.substring(consumed_chars), chopit));
+                            type.append(typeSignatureToString(signature.substring(consumed_chars), chopit));
                             // update our consumed count by the number of characters the for type argument
                             consumed_chars = unwrap(Utility.consumed_chars) + consumed_chars;
                             wrap(Utility.consumed_chars, consumed_chars);
@@ -928,7 +1076,7 @@ public abstract class Utility {
                         type.append(".");
                         // convert SimpleClassTypeSignature to fake ClassTypeSignature
                         // and then recurse to parse it
-                        type.append(signatureToString("L" + signature.substring(consumed_chars+1), chopit));
+                        type.append(typeSignatureToString("L" + signature.substring(consumed_chars+1), chopit));
                         // update our consumed count by the number of characters the for type argument
                         // note that this count includes the "L" we added, but that is ok
                         // as it accounts for the "." we didn't consume
@@ -958,7 +1106,7 @@ public abstract class Utility {
                     }
                     consumed_chars = n; // Remember value
                     // The rest of the string denotes a `<field_type>'
-                    type = signatureToString(signature.substring(n), chopit);
+                    type = typeSignatureToString(signature.substring(n), chopit);
                     //corrected concurrent private static field acess
                     //Utility.consumed_chars += consumed_chars; is replaced by:
                     final int _temp = unwrap(Utility.consumed_chars) + consumed_chars;

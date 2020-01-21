@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -23,7 +23,7 @@ package com.sun.org.apache.bcel.internal;
 /**
  * Exception constants.
  * @since 6.0 (intended to replace the InstructionConstant interface)
- * @LastModified: Oct 2017
+ * @LastModified: Jan 2020
  */
 public final class ExceptionConst {
 

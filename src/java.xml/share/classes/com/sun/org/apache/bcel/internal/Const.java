@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -25,8 +25,8 @@ import java.util.Collections;
 /**
  * Constants for the project, mostly defined in the JVM specification.
  *
- * @version $Id$
  * @since 6.0 (intended to replace the Constants interface)
+ * @LastModified: Jan 2020
  */
 public final class Const {
 
@@ -180,6 +180,18 @@ public final class Const {
    *  */
   public static final short MINOR_13 = 0;
 
+  /** Major version number of class files for Java 14.
+   *  @see #MINOR_14
+   *  @since 6.4.0
+   *  */
+  public static final short MAJOR_14 = 58;
+
+  /** Minor version number of class files for Java 14.
+   *  @see #MAJOR_14
+   *  @since 6.4.0
+   *  */
+  public static final short MINOR_14 = 0;
+
   /** Default major version number.  Class file is for Java 1.1.
    *  @see #MAJOR_1_1
    *  */
@@ -199,12 +211,14 @@ public final class Const {
   public static final int MAX_BYTE  = 255; // 2^8 - 1
 
   /** One of the access flags for fields, methods, or classes.
-   *  @see <a href='http://docs.oracle.com/javase/specs/jvms/se8/html/jvms-4.html#jvms-4.5'>
-   *  Flag definitions for Fields in the Java Virtual Machine Specification (Java SE 8 Edition).</a>
-   *  @see <a href='http://docs.oracle.com/javase/specs/jvms/se8/html/jvms-4.html#jvms-4.6'>
-   *  Flag definitions for Methods in the Java Virtual Machine Specification (Java SE 8 Edition).</a>
-   *  @see <a href='http://docs.oracle.com/javase/specs/jvms/se8/html/jvms-4.html#jvms-4.7.6-300-D.1-D.1'>
-   *  Flag definitions for Classes in the Java Virtual Machine Specification (Java SE 8 Edition).</a>
+   *  @see <a href='http://docs.oracle.com/javase/specs/jvms/se9/html/jvms-4.html#jvms-4.1-200-E.1'>
+   *  Flag definitions for Classes in the Java Virtual Machine Specification (Java SE 9 Edition).</a>
+   *  @see <a href='http://docs.oracle.com/javase/specs/jvms/se9/html/jvms-4.html#jvms-4.5'>
+   *  Flag definitions for Fields in the Java Virtual Machine Specification (Java SE 9 Edition).</a>
+   *  @see <a href='http://docs.oracle.com/javase/specs/jvms/se9/html/jvms-4.html#jvms-4.6'>
+   *  Flag definitions for Methods in the Java Virtual Machine Specification (Java SE 9 Edition).</a>
+   *  @see <a href='http://docs.oracle.com/javase/specs/jvms/se9/html/jvms-4.html#jvms-4.7.6-300-D.1-D.1'>
+   *  Flag definitions for Inner Classes in the Java Virtual Machine Specification (Java SE 9 Edition).</a>
    */
   public static final short ACC_PUBLIC       = 0x0001;
 
@@ -228,89 +242,123 @@ public final class Const {
    */
   public static final short ACC_FINAL        = 0x0010;
 
-  /** One of the access flags for fields, methods, or classes.
+  /** One of the access flags for the Module attribute.
    *  @see #ACC_PUBLIC
    */
-  public static final short ACC_SYNCHRONIZED = 0x0020;
+  public static final short ACC_OPEN         = 0x0020;
 
-  /** One of the access flags for fields, methods, or classes.
-   *  @see #ACC_PUBLIC
-   */
-  public static final short ACC_VOLATILE     = 0x0040;
-
-  /** One of the access flags for fields, methods, or classes.
-   *  @see #ACC_PUBLIC
-   */
-  public static final short ACC_BRIDGE       = 0x0040;
-
-  /** One of the access flags for fields, methods, or classes.
-   *  @see #ACC_PUBLIC
-   */
-  public static final short ACC_TRANSIENT    = 0x0080;
-
-  /** One of the access flags for fields, methods, or classes.
-   *  @see #ACC_PUBLIC
-   */
-  public static final short ACC_VARARGS      = 0x0080;
-
-  /** One of the access flags for fields, methods, or classes.
-   *  @see #ACC_PUBLIC
-   */
-  public static final short ACC_NATIVE       = 0x0100;
-
-  /** One of the access flags for fields, methods, or classes.
-   *  @see #ACC_PUBLIC
-   */
-  public static final short ACC_INTERFACE    = 0x0200;
-
-  /** One of the access flags for fields, methods, or classes.
-   *  @see #ACC_PUBLIC
-   */
-  public static final short ACC_ABSTRACT     = 0x0400;
-
-  /** One of the access flags for fields, methods, or classes.
-   *  @see #ACC_PUBLIC
-   */
-  public static final short ACC_STRICT       = 0x0800;
-
-  /** One of the access flags for fields, methods, or classes.
-   *  @see #ACC_PUBLIC
-   */
-  public static final short ACC_SYNTHETIC    = 0x1000;
-
-  /** One of the access flags for fields, methods, or classes.
-   *  @see #ACC_PUBLIC
-   */
-  public static final short ACC_ANNOTATION   = 0x2000;
-
-  /** One of the access flags for fields, methods, or classes.
-   *  @see #ACC_PUBLIC
-   */
-  public static final short ACC_ENUM         = 0x4000;
-
-  /** One of the access flags for fields, methods, or classes.
-   *  @see #ACC_PUBLIC
-   */
-  public static final short ACC_MANDATED     = (short) 0x8000;
-
-  // Applies to classes compiled by new compilers only
-  /** One of the access flags for fields, methods, or classes.
+  /** One of the access flags for classes.
    *  @see #ACC_PUBLIC
    */
   public static final short ACC_SUPER        = 0x0020;
 
-  /** One of the access flags for fields, methods, or classes.
+  /** One of the access flags for methods.
    *  @see #ACC_PUBLIC
    */
+  public static final short ACC_SYNCHRONIZED = 0x0020;
+
+  /** One of the access flags for the Module attribute.
+   *  @see #ACC_PUBLIC
+   */
+  public static final short ACC_TRANSITIVE   = 0x0020;
+
+  /** One of the access flags for methods.
+   *  @see #ACC_PUBLIC
+   */
+  public static final short ACC_BRIDGE       = 0x0040;
+
+  /** One of the access flags for the Module attribute.
+   *  @see #ACC_PUBLIC
+   */
+  public static final short ACC_STATIC_PHASE = 0x0040;
+
+  /** One of the access flags for fields.
+   *  @see #ACC_PUBLIC
+   */
+  public static final short ACC_VOLATILE     = 0x0040;
+
+  /** One of the access flags for fields.
+   *  @see #ACC_PUBLIC
+   */
+  public static final short ACC_TRANSIENT    = 0x0080;
+
+  /** One of the access flags for methods.
+   *  @see #ACC_PUBLIC
+   */
+  public static final short ACC_VARARGS      = 0x0080;
+
+  /** One of the access flags for methods.
+   *  @see #ACC_PUBLIC
+   */
+  public static final short ACC_NATIVE       = 0x0100;
+
+  /** One of the access flags for classes.
+   *  @see #ACC_PUBLIC
+   */
+  public static final short ACC_INTERFACE    = 0x0200;
+
+  /** One of the access flags for methods or classes.
+   *  @see #ACC_PUBLIC
+   */
+  public static final short ACC_ABSTRACT     = 0x0400;
+
+  /** One of the access flags for methods.
+   *  @see #ACC_PUBLIC
+   */
+  public static final short ACC_STRICT       = 0x0800;
+
+  /** One of the access flags for fields, methods, classes, MethodParameter attribute, or Module attribute.
+   *  @see #ACC_PUBLIC
+   */
+  public static final short ACC_SYNTHETIC    = 0x1000;
+
+  /** One of the access flags for classes.
+   *  @see #ACC_PUBLIC
+   */
+  public static final short ACC_ANNOTATION   = 0x2000;
+
+  /** One of the access flags for fields or classes.
+   *  @see #ACC_PUBLIC
+   */
+  public static final short ACC_ENUM         = 0x4000;
+
+  // Applies to classes compiled by new compilers only
+  /** One of the access flags for MethodParameter or Module attributes.
+   *  @see #ACC_PUBLIC
+   */
+  public static final short ACC_MANDATED     = (short) 0x8000;
+
+  /** One of the access flags for classes.
+   *  @see #ACC_PUBLIC
+   */
+  public static final short ACC_MODULE       = (short) 0x8000;
+
+  /** One of the access flags for fields, methods, or classes.
+   *  @see #ACC_PUBLIC
+   *  @deprecated Use {@link #MAX_ACC_FLAG_I}
+   */
+  @Deprecated
   public static final short MAX_ACC_FLAG     = ACC_ENUM;
 
+  /** One of the access flags for fields, methods, or classes.
+   * ACC_MODULE is negative as a short.
+   * @see #ACC_PUBLIC
+   * @since 6.4.0
+   */
+  public static final int MAX_ACC_FLAG_I = 0x8000; // ACC_MODULE is negative as a short
+
+  // Note that do to overloading:
+  // 'synchronized' is for methods, might be 'open' (if Module), 'super' (if class), or 'transitive' (if Module).
+  // 'volatile'     is for fields,  might be 'bridge' (if method) or 'static_phase' (if Module)
+  // 'transient'    is for fields,  might be 'varargs' (if method)
+  // 'module'       is for classes, might be 'mandated' (if Module or MethodParameters)
   /**
    * The names of the access flags.
    */
   private static final String[] ACCESS_NAMES = {
     "public", "private", "protected", "static", "final", "synchronized",
     "volatile", "transient", "native", "interface", "abstract", "strictfp",
-    "synthetic", "annotation", "enum"
+    "synthetic", "annotation", "enum", "module"
   };
 
   /** @since 6.0 */
@@ -2279,8 +2327,13 @@ public final class Const {
   public static final byte ATTR_STACK_MAP_TABLE                         = 19;
   public static final byte ATTR_BOOTSTRAP_METHODS                       = 20;
   public static final byte ATTR_METHOD_PARAMETERS                       = 21;
+  public static final byte ATTR_MODULE                                  = 22;
+  public static final byte ATTR_MODULE_PACKAGES                         = 23;
+  public static final byte ATTR_MODULE_MAIN_CLASS                       = 24;
+  public static final byte ATTR_NEST_HOST                               = 25;
+  public static final byte ATTR_NEST_MEMBERS                            = 26;
 
-  public static final short KNOWN_ATTRIBUTES = 22; // count of attributes
+  public static final short KNOWN_ATTRIBUTES = 27; // count of attributes
 
   private static final String[] ATTRIBUTE_NAMES = {
     "SourceFile", "ConstantValue", "Code", "Exceptions",
@@ -2290,7 +2343,8 @@ public final class Const {
     "RuntimeVisibleAnnotations", "RuntimeInvisibleAnnotations",
     "RuntimeVisibleParameterAnnotations", "RuntimeInvisibleParameterAnnotations",
     "AnnotationDefault", "LocalVariableTypeTable", "EnclosingMethod", "StackMapTable",
-    "BootstrapMethods", "MethodParameters"
+    "BootstrapMethods", "MethodParameters", "Module", "ModulePackages",
+    "ModuleMainClass", "NestHost", "NestMembers"
   };
 
   /**

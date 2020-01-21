@@ -23,7 +23,6 @@ package com.sun.org.apache.bcel.internal.generic;
 /**
  * BREAKPOINT, JVM dependent, ignored by default
  *
- * @version $Id$
  */
 public class BREAKPOINT extends Instruction {
 

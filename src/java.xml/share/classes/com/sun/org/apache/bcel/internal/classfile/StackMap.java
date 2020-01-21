@@ -30,13 +30,12 @@ import com.sun.org.apache.bcel.internal.Const;
 /**
  * This class represents a stack map attribute used for
  * preverification of Java classes for the <a
- * href="http://java.sun.com/j2me/"> Java 2 Micro Edition</a>
- * (J2ME). This attribute is used by the <a
- * href="http://java.sun.com/products/cldc/">KVM</a> and contained
- * within the Code attribute of a method. See CLDC specification
+ * href="https://www.oracle.com/java/technologies/javameoverview.html">Java Platform, Micro Edition</a>
+ * (Java ME). This attribute is used by the <a
+ * href="https://www.oracle.com/technetwork/java/embedded/javame/java-mobile/kvmwp-150240.pdf">KVM</a>
+ * and contained within the Code attribute of a method. See CLDC specification
  * 5.3.1.2
  *
- * @version $Id$
  * @see     Code
  * @see     StackMapEntry
  * @see     StackMapType
@@ -84,7 +83,7 @@ public final class StackMap extends Attribute {
      * @throws IOException
      */
     @Override
-    public final void dump( final DataOutputStream file ) throws IOException {
+    public void dump( final DataOutputStream file ) throws IOException {
         super.dump(file);
         file.writeShort(map.length);
         for (final StackMapEntry entry : map) {
@@ -96,7 +95,7 @@ public final class StackMap extends Attribute {
     /**
      * @return Array of stack map entries
      */
-    public final StackMapEntry[] getStackMap() {
+    public StackMapEntry[] getStackMap() {
         return map;
     }
 
@@ -104,7 +103,7 @@ public final class StackMap extends Attribute {
     /**
      * @param map Array of stack map entries
      */
-    public final void setStackMap( final StackMapEntry[] map ) {
+    public void setStackMap( final StackMapEntry[] map ) {
         this.map = map;
         int len = 2; // Length of 'number_of_entries' field prior to the array of stack maps
         for (final StackMapEntry element : map) {
@@ -118,7 +117,7 @@ public final class StackMap extends Attribute {
      * @return String representation.
      */
     @Override
-    public final String toString() {
+    public String toString() {
         final StringBuilder buf = new StringBuilder("StackMap(");
         for (int i = 0; i < map.length; i++) {
             buf.append(map[i]);
@@ -159,7 +158,7 @@ public final class StackMap extends Attribute {
     }
 
 
-    public final int getMapLength() {
+    public int getMapLength() {
         return map == null ? 0 : map.length;
     }
 }

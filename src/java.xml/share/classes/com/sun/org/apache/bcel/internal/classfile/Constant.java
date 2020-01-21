@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -32,8 +32,7 @@ import com.sun.org.apache.bcel.internal.util.BCELComparator;
  * in the constant pool of a class file. The classes keep closely to
  * the JVM specification.
  *
- * @version $Id$
- * @LastModified: Jun 2019
+ * @LastModified: Jan 2020
  */
 public abstract class Constant implements Cloneable, Node {
 
@@ -64,11 +63,9 @@ public abstract class Constant implements Cloneable, Node {
      */
     private byte tag;
 
-
     Constant(final byte tag) {
         this.tag = tag;
     }
-
 
     /**
      * Called by objects that are traversing the nodes of the tree implicitely
@@ -80,9 +77,7 @@ public abstract class Constant implements Cloneable, Node {
     @Override
     public abstract void accept( Visitor v );
 
-
     public abstract void dump( DataOutputStream file ) throws IOException;
-
 
     /**
      * @return Tag of constant, i.e., its type. No setTag() method to avoid
@@ -92,7 +87,6 @@ public abstract class Constant implements Cloneable, Node {
         return tag;
     }
 
-
     /**
      * @return String representation.
      */
@@ -100,7 +94,6 @@ public abstract class Constant implements Cloneable, Node {
     public String toString() {
         return Const.getConstantName(tag) + "[" + tag + "]";
     }
-
 
     /**
      * @return deep copy of this constant
@@ -114,7 +107,6 @@ public abstract class Constant implements Cloneable, Node {
         return null;
     }
 
-
     @Override
     public Object clone() {
         try {
@@ -124,9 +116,8 @@ public abstract class Constant implements Cloneable, Node {
         }
     }
 
-
     /**
-     * Read one constant from the given input, the type depends on a tag byte.
+     * Reads one constant from the given input, the type depends on a tag byte.
      *
      * @param dataInput Input stream
      * @return Constant object
@@ -183,7 +174,6 @@ public abstract class Constant implements Cloneable, Node {
         return bcelComparator;
     }
 
-
     /**
      * @param comparator Comparison strategy object
      */
@@ -191,9 +181,8 @@ public abstract class Constant implements Cloneable, Node {
         bcelComparator = comparator;
     }
 
-
     /**
-     * Return value as defined by given BCELComparator strategy.
+     * Returns value as defined by given BCELComparator strategy.
      * By default two Constant objects are said to be equal when
      * the result of toString() is equal.
      *
@@ -204,9 +193,8 @@ public abstract class Constant implements Cloneable, Node {
         return bcelComparator.equals(this, obj);
     }
 
-
     /**
-     * Return value as defined by given BCELComparator strategy.
+     * Returns value as defined by given BCELComparator strategy.
      * By default return the hashcode of the result of toString().
      *
      * @see java.lang.Object#hashCode()

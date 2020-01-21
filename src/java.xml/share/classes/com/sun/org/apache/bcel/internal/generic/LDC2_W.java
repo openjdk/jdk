@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -25,8 +25,7 @@ package com.sun.org.apache.bcel.internal.generic;
  *
  * <PRE>Stack: ... -&gt; ..., item.word1, item.word2</PRE>
  *
- * @version $Id$
- * @LastModified: Jun 2019
+ * @LastModified: Jan 2020
  */
 public class LDC2_W extends CPInstruction implements PushInstruction {
 

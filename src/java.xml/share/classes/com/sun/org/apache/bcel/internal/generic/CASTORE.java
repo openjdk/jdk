@@ -25,7 +25,6 @@ package com.sun.org.apache.bcel.internal.generic;
  * CASTORE -  Store into char array
  * <PRE>Stack: ..., arrayref, index, value -&gt; ...</PRE>
  *
- * @version $Id$
  */
 public class CASTORE extends ArrayInstruction implements StackConsumer {
 

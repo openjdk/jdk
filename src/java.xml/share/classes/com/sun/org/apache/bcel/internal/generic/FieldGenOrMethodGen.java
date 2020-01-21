@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -30,8 +30,7 @@ import com.sun.org.apache.bcel.internal.classfile.Attribute;
  * Super class for FieldGen and MethodGen objects, since they have
  * some methods in common!
  *
- * @version $Id$
- * @LastModified: Jun 2019
+ * @LastModified: Jun 2020
  */
 public abstract class FieldGenOrMethodGen extends AccessFlags implements NamedAndTyped, Cloneable {
 

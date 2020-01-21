@@ -31,7 +31,6 @@ import com.sun.org.apache.bcel.internal.Const;
  * represents an annotation that is represented in the class file and is
  * provided to the JVM.
  *
- * @version $Id: RuntimeVisibleAnnotations
  * @since 6.0
  */
 public class RuntimeVisibleAnnotations extends Annotations

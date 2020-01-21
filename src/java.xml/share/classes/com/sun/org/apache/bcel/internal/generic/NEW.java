@@ -27,7 +27,6 @@ import com.sun.org.apache.bcel.internal.ExceptionConst;
  * NEW - Create new object
  * <PRE>Stack: ... -&gt; ..., objectref</PRE>
  *
- * @version $Id$
  */
 public class NEW extends CPInstruction implements LoadClass, AllocationInstruction,
         ExceptionThrower, StackProducer {

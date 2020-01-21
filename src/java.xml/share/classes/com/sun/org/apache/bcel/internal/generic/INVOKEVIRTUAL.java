@@ -32,7 +32,6 @@ import com.sun.org.apache.bcel.internal.ExceptionConst;
  *
  * <PRE>Stack: ..., objectref, [arg1, [arg2 ...]] -&gt; ...</PRE>
  *
- * @version $Id$
  * @see
  * <a href="http://docs.oracle.com/javase/specs/jvms/se8/html/jvms-6.html#jvms-6.5.invokevirtual">
  * The invokevirtual instruction in The Java Virtual Machine Specification</a>

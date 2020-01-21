@@ -25,7 +25,6 @@ package com.sun.org.apache.bcel.internal.generic;
  * Denotes a push instruction that produces a literal on the stack
  * such as  SIPUSH, BIPUSH, ICONST, etc.
  *
- * @version $Id$
 
  * @see ICONST
  * @see SIPUSH

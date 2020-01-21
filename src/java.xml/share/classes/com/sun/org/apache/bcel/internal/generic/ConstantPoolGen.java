@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -49,9 +49,8 @@ import com.sun.org.apache.bcel.internal.classfile.ConstantUtf8;
  * Constants.MAX_SHORT entries. Note that the first (0) is used by the
  * JVM and that Double and Long constants need two slots.
  *
- * @version $Id$
  * @see Constant
- * @LastModified: Jun 2019
+ * @LastModified: Jan 2020
  */
 public class ConstantPoolGen {
 
@@ -181,6 +180,10 @@ public class ConstantPoolGen {
             } else if (c instanceof com.sun.org.apache.bcel.internal.classfile.ConstantMethodType) {
                 // TODO should this be handled somehow?
             } else if (c instanceof com.sun.org.apache.bcel.internal.classfile.ConstantMethodHandle) {
+                // TODO should this be handled somehow?
+            } else if (c instanceof com.sun.org.apache.bcel.internal.classfile.ConstantModule) {
+                // TODO should this be handled somehow?
+            } else if (c instanceof com.sun.org.apache.bcel.internal.classfile.ConstantPackage) {
                 // TODO should this be handled somehow?
             } else {
                 assert false : "Unexpected constant type: " + c.getClass().getName();

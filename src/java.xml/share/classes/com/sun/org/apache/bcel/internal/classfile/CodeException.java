@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -31,9 +31,8 @@ import com.sun.org.apache.bcel.internal.Const;
  * attribute and is used only there. It contains a range in which a
  * particular exception handler is active.
  *
- * @version $Id$
  * @see     Code
- * @LastModified: Jun 2019
+ * @LastModified: Jan 2020
  */
 public final class CodeException implements Cloneable, Node {
 
@@ -104,7 +103,7 @@ public final class CodeException implements Cloneable, Node {
      * @param file Output file stream
      * @throws IOException
      */
-    public final void dump( final DataOutputStream file ) throws IOException {
+    public void dump( final DataOutputStream file ) throws IOException {
         file.writeShort(start_pc);
         file.writeShort(end_pc);
         file.writeShort(handler_pc);
@@ -116,7 +115,7 @@ public final class CodeException implements Cloneable, Node {
      * @return 0, if the handler catches any exception, otherwise it points to
      * the exception class which is to be caught.
      */
-    public final int getCatchType() {
+    public int getCatchType() {
         return catch_type;
     }
 
@@ -124,7 +123,7 @@ public final class CodeException implements Cloneable, Node {
     /**
      * @return Exclusive end index of the region where the handler is active.
      */
-    public final int getEndPC() {
+    public int getEndPC() {
         return end_pc;
     }
 
@@ -132,7 +131,7 @@ public final class CodeException implements Cloneable, Node {
     /**
      * @return Starting address of exception handler, relative to the code.
      */
-    public final int getHandlerPC() {
+    public int getHandlerPC() {
         return handler_pc;
     }
 
@@ -140,7 +139,7 @@ public final class CodeException implements Cloneable, Node {
     /**
      * @return Inclusive start index of the region where the handler is active.
      */
-    public final int getStartPC() {
+    public int getStartPC() {
         return start_pc;
     }
 
@@ -148,7 +147,7 @@ public final class CodeException implements Cloneable, Node {
     /**
      * @param catch_type the type of exception that is caught
      */
-    public final void setCatchType( final int catch_type ) {
+    public void setCatchType( final int catch_type ) {
         this.catch_type = catch_type;
     }
 
@@ -156,7 +155,7 @@ public final class CodeException implements Cloneable, Node {
     /**
      * @param end_pc end of handled block
      */
-    public final void setEndPC( final int end_pc ) {
+    public void setEndPC( final int end_pc ) {
         this.end_pc = end_pc;
     }
 
@@ -164,7 +163,7 @@ public final class CodeException implements Cloneable, Node {
     /**
      * @param handler_pc where the actual code is
      */
-    public final void setHandlerPC( final int handler_pc ) { // TODO unused
+    public void setHandlerPC( final int handler_pc ) { // TODO unused
         this.handler_pc = handler_pc;
     }
 
@@ -172,7 +171,7 @@ public final class CodeException implements Cloneable, Node {
     /**
      * @param start_pc start of handled block
      */
-    public final void setStartPC( final int start_pc ) { // TODO unused
+    public void setStartPC( final int start_pc ) { // TODO unused
         this.start_pc = start_pc;
     }
 
@@ -181,7 +180,7 @@ public final class CodeException implements Cloneable, Node {
      * @return String representation.
      */
     @Override
-    public final String toString() {
+    public String toString() {
         return "CodeException(start_pc = " + start_pc + ", end_pc = " + end_pc + ", handler_pc = "
                 + handler_pc + ", catch_type = " + catch_type + ")";
     }
@@ -190,7 +189,7 @@ public final class CodeException implements Cloneable, Node {
     /**
      * @return String representation.
      */
-    public final String toString( final ConstantPool cp, final boolean verbose ) {
+    public String toString( final ConstantPool cp, final boolean verbose ) {
         String str;
         if (catch_type == 0) {
             str = "<Any exception>(0)";
@@ -202,7 +201,7 @@ public final class CodeException implements Cloneable, Node {
     }
 
 
-    public final String toString( final ConstantPool cp ) {
+    public String toString( final ConstantPool cp ) {
         return toString(cp, true);
     }
 

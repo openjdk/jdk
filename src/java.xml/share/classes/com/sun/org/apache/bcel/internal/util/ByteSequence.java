@@ -29,7 +29,6 @@ import java.io.DataInputStream;
  * via the `readByte()' method. This is used to implement a wrapper for the
  * Java byte code stream to gain some more readability.
  *
- * @version $Id$
  */
 public final class ByteSequence extends DataInputStream {
 
@@ -42,12 +41,12 @@ public final class ByteSequence extends DataInputStream {
     }
 
 
-    public final int getIndex() {
+    public int getIndex() {
         return byteStream.getPosition();
     }
 
 
-    final void unreadByte() {
+    void unreadByte() {
         byteStream.unreadByte();
     }
 
@@ -57,12 +56,12 @@ public final class ByteSequence extends DataInputStream {
             super(bytes);
         }
 
-        final int getPosition() {
+        int getPosition() {
             // pos is protected in ByteArrayInputStream
             return pos;
         }
 
-        final void unreadByte() {
+        void unreadByte() {
             if (pos > 0) {
                 pos--;
             }

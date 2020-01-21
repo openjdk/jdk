@@ -25,7 +25,6 @@ package com.sun.org.apache.bcel.internal.generic;
  * IXOR - Bitwise XOR int
  * <PRE>Stack: ..., value1, value2 -&gt; ..., result</PRE>
  *
- * @version $Id$
  */
 public class IXOR extends ArithmeticInstruction {
 

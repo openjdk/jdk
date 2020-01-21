@@ -25,7 +25,6 @@ package com.sun.org.apache.bcel.internal.generic;
  * DRETURN -  Return double from method
  * <PRE>Stack: ..., value.word1, value.word2 -&gt; &lt;empty&gt;</PRE>
  *
- * @version $Id$
  */
 public class DRETURN extends ReturnInstruction {
 

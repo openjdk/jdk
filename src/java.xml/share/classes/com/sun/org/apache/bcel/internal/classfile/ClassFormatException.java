@@ -26,7 +26,6 @@ package com.sun.org.apache.bcel.internal.classfile;
  * that the file is malformed or otherwise cannot be interpreted as a
  * class file.
  *
- * @version $Id$
  */
 public class ClassFormatException extends RuntimeException {
 

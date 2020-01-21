@@ -29,7 +29,6 @@ import com.sun.org.apache.bcel.internal.util.ByteSequence;
  *
  * <PRE>Stack: ... -&gt; ..., value</PRE>
  *
- * @version $Id$
  */
 public class BIPUSH extends Instruction implements ConstantPushInstruction {
 

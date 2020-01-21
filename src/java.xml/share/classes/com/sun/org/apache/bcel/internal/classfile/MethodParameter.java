@@ -95,6 +95,10 @@ public class MethodParameter implements Cloneable {
         return (access_flags & Const.ACC_MANDATED) != 0;
     }
 
+    public void accept(final Visitor v) {
+        v.visitMethodParameter(this);
+    }
+
     /**
      * Dump object to file stream on binary format.
      *

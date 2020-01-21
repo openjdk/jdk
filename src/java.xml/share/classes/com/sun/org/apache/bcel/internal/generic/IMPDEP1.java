@@ -24,7 +24,6 @@ package com.sun.org.apache.bcel.internal.generic;
 /**
  * IMPDEP1 - Implementation dependent
  *
- * @version $Id$
  */
 public class IMPDEP1 extends Instruction {
 

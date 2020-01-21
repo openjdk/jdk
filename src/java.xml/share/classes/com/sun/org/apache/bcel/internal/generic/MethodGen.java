@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -39,10 +39,10 @@ import com.sun.org.apache.bcel.internal.classfile.Utility;
 import com.sun.org.apache.bcel.internal.util.BCELComparator;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Stack;
 
 /**
@@ -55,10 +55,9 @@ import java.util.Stack;
  * use the `removeNOPs' method to get rid off them.
  * The resulting method object can be obtained via the `getMethod()' method.
  *
- * @version $Id$
  * @see     InstructionList
  * @see     Method
- * @LastModified: Jun 2019
+ * @LastModified: Jan 2020
  */
 public class MethodGen extends FieldGenOrMethodGen {
 
@@ -86,8 +85,8 @@ public class MethodGen extends FieldGenOrMethodGen {
         public boolean equals( final Object o1, final Object o2 ) {
             final MethodGen THIS = (MethodGen) o1;
             final MethodGen THAT = (MethodGen) o2;
-            return THIS.getName().equals(THAT.getName())
-                    && THIS.getSignature().equals(THAT.getSignature());
+            return Objects.equals(THIS.getName(), THAT.getName())
+                    && Objects.equals(THIS.getSignature(), THAT.getSignature());
         }
 
 
@@ -357,12 +356,7 @@ public class MethodGen extends FieldGenOrMethodGen {
             }
         }
         if (size > 1) {
-            Arrays.sort(lg, new Comparator<LocalVariableGen>() {
-                @Override
-                public int compare(final LocalVariableGen o1, final LocalVariableGen o2) {
-                    return o1.getIndex() - o2.getIndex();
-                }
-            });
+            Arrays.sort(lg, (o1, o2) -> o1.getIndex() - o2.getIndex());
         }
         return lg;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -29,11 +29,10 @@ import com.sun.org.apache.bcel.internal.util.ByteSequence;
  *
  * <p>We use our super's <code>target</code> property as the default target.
  *
- * @version $Id$
  * @see LOOKUPSWITCH
  * @see TABLESWITCH
  * @see InstructionList
- * @LastModified: Jun 2019
+ * @LastModified: Jan 2020
  */
 public abstract class Select extends BranchInstruction implements VariableLengthInstruction,
         StackConsumer /* @since 6.0 */, StackProducer {
@@ -46,8 +45,8 @@ public abstract class Select extends BranchInstruction implements VariableLength
     private int padding = 0; // number of pad bytes for alignment TODO could be package-protected?
 
     /**
-     * Empty constructor needed for the Class.newInstance() statement in
-     * Instruction.readInstruction(). Not to be used otherwise.
+     * Empty constructor needed for Instruction.readInstruction.
+     * Not to be used otherwise.
      */
     Select() {
     }

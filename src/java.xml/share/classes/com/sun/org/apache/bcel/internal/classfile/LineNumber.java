@@ -30,7 +30,6 @@ import java.io.IOException;
  * the source that corresponds to a relative address in the byte code. This
  * is used for debugging purposes.
  *
- * @version $Id$
  * @see     LineNumberTable
  */
 public final class LineNumber implements Cloneable, Node {
@@ -55,7 +54,7 @@ public final class LineNumber implements Cloneable, Node {
      * Construct object from file stream.
      *
      * @param file Input stream
-     * @throws IOEXception if an I/O Exception occurs in readUnsignedShort
+     * @throws IOException if an I/O Exception occurs in readUnsignedShort
      */
     LineNumber(final DataInput file) throws IOException {
         this(file.readUnsignedShort(), file.readUnsignedShort());
@@ -89,9 +88,9 @@ public final class LineNumber implements Cloneable, Node {
      * Dump line number/pc pair to file stream in binary format.
      *
      * @param file Output file stream
-     * @throws IOEXception if an I/O Exception occurs in writeShort
+     * @throws IOException if an I/O Exception occurs in writeShort
      */
-    public final void dump( final DataOutputStream file ) throws IOException {
+    public void dump( final DataOutputStream file ) throws IOException {
         file.writeShort(start_pc);
         file.writeShort(line_number);
     }
@@ -100,7 +99,7 @@ public final class LineNumber implements Cloneable, Node {
     /**
      * @return Corresponding source line
      */
-    public final int getLineNumber() {
+    public int getLineNumber() {
         return 0xffff & line_number;
     }
 
@@ -108,7 +107,7 @@ public final class LineNumber implements Cloneable, Node {
     /**
      * @return PC in code
      */
-    public final int getStartPC() {
+    public int getStartPC() {
         return  0xffff & start_pc;
     }
 
@@ -116,7 +115,7 @@ public final class LineNumber implements Cloneable, Node {
     /**
      * @param line_number the source line number
      */
-    public final void setLineNumber( final int line_number ) {
+    public void setLineNumber( final int line_number ) {
         this.line_number = (short) line_number;
     }
 
@@ -124,7 +123,7 @@ public final class LineNumber implements Cloneable, Node {
     /**
      * @param start_pc the pc for this line number
      */
-    public final void setStartPC( final int start_pc ) {
+    public void setStartPC( final int start_pc ) {
         this.start_pc = (short) start_pc;
     }
 
@@ -133,7 +132,7 @@ public final class LineNumber implements Cloneable, Node {
      * @return String representation
      */
     @Override
-    public final String toString() {
+    public String toString() {
         return "LineNumber(" + start_pc + ", " + line_number + ")";
     }
 
