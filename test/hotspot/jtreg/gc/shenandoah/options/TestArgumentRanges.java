@@ -39,7 +39,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 public class TestArgumentRanges {
     public static void main(String[] args) throws Exception {
         testRange("ShenandoahGarbageThreshold", 0, 100);
-        testRange("ShenandoahFreeThreshold", 0, 100);
+        testRange("ShenandoahMinFreeThreshold", 0, 100);
         testRange("ShenandoahAllocationThreshold", 0, 100);
         testHeuristics();
     }
