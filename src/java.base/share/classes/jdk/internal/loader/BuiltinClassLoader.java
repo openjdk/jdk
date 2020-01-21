@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -198,22 +198,23 @@ public class BuiltinClassLoader
      * types in the module visible.
      */
     public void loadModule(ModuleReference mref) {
-        String mn = mref.descriptor().name();
+        ModuleDescriptor descriptor = mref.descriptor();
+        String mn = descriptor.name();
         if (nameToModule.putIfAbsent(mn, mref) != null) {
             throw new InternalError(mn + " already defined to this loader");
         }
 
         LoadedModule loadedModule = new LoadedModule(this, mref);
-        for (String pn : mref.descriptor().packages()) {
+        for (String pn : descriptor.packages()) {
             LoadedModule other = packageToModule.putIfAbsent(pn, loadedModule);
             if (other != null) {
                 throw new InternalError(pn + " in modules " + mn + " and "
-                                        + other.mref().descriptor().name());
+                                        + other.name());
             }
         }
 
         // clear resources cache if VM is already initialized
-        if (VM.isModuleSystemInited() && resourceCache != null) {
+        if (resourceCache != null && VM.isModuleSystemInited()) {
             resourceCache = null;
         }
     }
@@ -408,8 +409,11 @@ public class BuiltinClassLoader
         SoftReference<Map<String, List<URL>>> ref = this.resourceCache;
         Map<String, List<URL>> map = (ref != null) ? ref.get() : null;
         if (map == null) {
-            map = new ConcurrentHashMap<>();
-            this.resourceCache = new SoftReference<>(map);
+            // only cache resources after VM is fully initialized
+            if (VM.isModuleSystemInited()) {
+                map = new ConcurrentHashMap<>();
+                this.resourceCache = new SoftReference<>(map);
+            }
         } else {
             List<URL> urls = map.get(name);
             if (urls != null)
@@ -444,7 +448,7 @@ public class BuiltinClassLoader
         }
 
         // only cache resources after VM is fully initialized
-        if (VM.isModuleSystemInited()) {
+        if (map != null) {
             map.putIfAbsent(name, urls);
         }
 

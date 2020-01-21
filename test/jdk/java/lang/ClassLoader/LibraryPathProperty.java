@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,8 @@
 
 /*
  * @test
- * @bug 8067951
- * @summary Unit test for internal ClassLoader#initializePath().
+ * @bug 8067951 8236075
+ * @summary Unit test for internal ClassLoaderHelper#parsePath().
  *          Quoted entries should get unquoted on Windows.
  *          Empty entries should be replaced with dot.
  * @library /test/lib
@@ -40,14 +40,12 @@ import jdk.test.lib.Platform;
 
 public class LibraryPathProperty {
 
-    static final String propName = "test.property.name";
     static final String SP = File.pathSeparator;
     static Method method;
 
     public static void main(String[] args) throws Throwable {
-        method = ClassLoader.class
-                .getDeclaredMethod("initializePath",
-                                   String.class);
+        Class<?> klass = Class.forName("java.lang.ClassLoaderHelper");
+        method = klass.getDeclaredMethod("parsePath", String.class);
         method.setAccessible(true);
 
         test("", ".");
@@ -74,8 +72,7 @@ public class LibraryPathProperty {
     }
 
     static void test(String s, String... expected) throws Throwable {
-        System.setProperty(propName, s);
-        String[] res = (String[])method.invoke(null, propName);
+        String[] res = (String[])method.invoke(null, s);
         if (!Arrays.asList(res).equals(Arrays.asList(expected))) {
             throw new RuntimeException("Parsing [" + s + "] " +
                     " result " + Arrays.asList(res) +

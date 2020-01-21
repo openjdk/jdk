@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2019, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -40,20 +40,19 @@ import java.security.PrivilegedAction;
 import java.security.ProtectionDomain;
 import java.security.cert.Certificate;
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Hashtable;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Set;
 import java.util.Spliterator;
 import java.util.Spliterators;
-import java.util.Vector;
 import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
@@ -69,6 +68,7 @@ import jdk.internal.misc.VM;
 import jdk.internal.ref.CleanerFactory;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
+import jdk.internal.util.StaticProperty;
 import sun.reflect.misc.ReflectUtil;
 import sun.security.util.SecurityConstants;
 
@@ -303,14 +303,14 @@ public abstract class ClassLoader {
     private final ConcurrentHashMap<String, Object> parallelLockMap;
 
     // Maps packages to certs
-    private final Map <String, Certificate[]> package2certs;
+    private final ConcurrentHashMap<String, Certificate[]> package2certs;
 
     // Shared among all packages with unsigned classes
     private static final Certificate[] nocerts = new Certificate[0];
 
     // The classes loaded by this class loader. The only purpose of this table
     // is to keep the classes from being GC'ed until the loader is GC'ed.
-    private final Vector<Class<?>> classes = new Vector<>();
+    private final ArrayList<Class<?>> classes = new ArrayList<>();
 
     // The "default" domain. Set as the default ProtectionDomain on newly
     // created classes.
@@ -320,7 +320,9 @@ public abstract class ClassLoader {
 
     // Invoked by the VM to record every loaded class with this loader.
     void addClass(Class<?> c) {
-        classes.addElement(c);
+        synchronized (classes) {
+            classes.add(c);
+        }
     }
 
     // The packages defined in this class loader.  Each package name is
@@ -378,14 +380,13 @@ public abstract class ClassLoader {
         this.unnamedModule = new Module(this);
         if (ParallelLoaders.isRegistered(this.getClass())) {
             parallelLockMap = new ConcurrentHashMap<>();
-            package2certs = new ConcurrentHashMap<>();
             assertionLock = new Object();
         } else {
             // no finer-grained lock; lock on the classloader instance
             parallelLockMap = null;
-            package2certs = new Hashtable<>();
             assertionLock = this;
         }
+        this.package2certs = new ConcurrentHashMap<>();
         this.nameAndId = nameAndId(this);
     }
 
@@ -1135,18 +1136,8 @@ public abstract class ClassLoader {
         if (cs != null) {
             certs = cs.getCertificates();
         }
-        Certificate[] pcerts = null;
-        if (parallelLockMap == null) {
-            synchronized (this) {
-                pcerts = package2certs.get(pname);
-                if (pcerts == null) {
-                    package2certs.put(pname, (certs == null? nocerts:certs));
-                }
-            }
-        } else {
-            pcerts = ((ConcurrentHashMap<String, Certificate[]>)package2certs).
-                putIfAbsent(pname, (certs == null? nocerts:certs));
-        }
+        certs = certs == null ? nocerts : certs;
+        Certificate[] pcerts = package2certs.putIfAbsent(pname, certs);
         if (pcerts != null && !compareCerts(pcerts, certs)) {
             throw new SecurityException("class \"" + name
                 + "\"'s signer information does not match signer information"
@@ -1158,13 +1149,10 @@ public abstract class ClassLoader {
      * check to make sure the certs for the new class (certs) are the same as
      * the certs for the first class inserted in the package (pcerts)
      */
-    private boolean compareCerts(Certificate[] pcerts,
-                                 Certificate[] certs)
-    {
-        // certs can be null, indicating no certs.
-        if ((certs == null) || (certs.length == 0)) {
+    private boolean compareCerts(Certificate[] pcerts, Certificate[] certs) {
+        // empty array fast-path
+        if (certs.length == 0)
             return pcerts.length == 0;
-        }
 
         // the length must be the same at this point
         if (certs.length != pcerts.length)
@@ -2005,17 +1993,6 @@ public abstract class ClassLoader {
         return scl;
     }
 
-    /*
-     * Initialize default paths for native libraries search.
-     * Must be done early as JDK may load libraries during bootstrap.
-     *
-     * @see java.lang.System#initPhase1
-     */
-    static void initLibraryPaths() {
-        usr_paths = initializePath("java.library.path");
-        sys_paths = initializePath("sun.boot.library.path");
-    }
-
     // Returns true if the specified class loader can be found in this class
     // loader's delegation chain.
     boolean isAncestor(ClassLoader cl) {
@@ -2570,59 +2547,17 @@ public abstract class ClassLoader {
         static native void unload(String name, boolean isBuiltin, long handle);
     }
 
-    // The paths searched for libraries
-    private static String usr_paths[];
-    private static String sys_paths[];
-
-    private static String[] initializePath(String propName) {
-        String ldPath = System.getProperty(propName, "");
-        int ldLen = ldPath.length();
-        char ps = File.pathSeparatorChar;
-        int psCount = 0;
-
-        if (ClassLoaderHelper.allowsQuotedPathElements &&
-            ldPath.indexOf('\"') >= 0) {
-            // First, remove quotes put around quoted parts of paths.
-            // Second, use a quotation mark as a new path separator.
-            // This will preserve any quoted old path separators.
-            char[] buf = new char[ldLen];
-            int bufLen = 0;
-            for (int i = 0; i < ldLen; ++i) {
-                char ch = ldPath.charAt(i);
-                if (ch == '\"') {
-                    while (++i < ldLen &&
-                        (ch = ldPath.charAt(i)) != '\"') {
-                        buf[bufLen++] = ch;
-                    }
-                } else {
-                    if (ch == ps) {
-                        psCount++;
-                        ch = '\"';
-                    }
-                    buf[bufLen++] = ch;
-                }
-            }
-            ldPath = new String(buf, 0, bufLen);
-            ldLen = bufLen;
-            ps = '\"';
-        } else {
-            for (int i = ldPath.indexOf(ps); i >= 0;
-                 i = ldPath.indexOf(ps, i + 1)) {
-                psCount++;
-            }
-        }
-
-        String[] paths = new String[psCount + 1];
-        int pathStart = 0;
-        for (int j = 0; j < psCount; ++j) {
-            int pathEnd = ldPath.indexOf(ps, pathStart);
-            paths[j] = (pathStart < pathEnd) ?
-                ldPath.substring(pathStart, pathEnd) : ".";
-            pathStart = pathEnd + 1;
-        }
-        paths[psCount] = (pathStart < ldLen) ?
-            ldPath.substring(pathStart, ldLen) : ".";
-        return paths;
+    /**
+     * Holds system and user library paths derived from the
+     * {@code java.library.path} and {@code sun.boot.library.path} system
+     * properties. The system properties are eagerly read at bootstrap, then
+     * lazily parsed on first use to avoid initialization ordering issues.
+     */
+    private static class LibraryPaths {
+        static final String[] USER =
+                ClassLoaderHelper.parsePath(StaticProperty.javaLibraryPath());
+        static final String[] SYS =
+                ClassLoaderHelper.parsePath(StaticProperty.sunBootLibraryPath());
     }
 
     // Invoked in the java.lang.Runtime class to implement load and loadLibrary.
@@ -2630,8 +2565,6 @@ public abstract class ClassLoader {
                             boolean isAbsolute) {
         ClassLoader loader =
             (fromClass == null) ? null : fromClass.getClassLoader();
-        assert sys_paths != null : "should be initialized at this point";
-        assert usr_paths != null : "should be initialized at this point";
 
         if (isAbsolute) {
             if (loadLibrary0(fromClass, new File(name))) {
@@ -2653,8 +2586,8 @@ public abstract class ClassLoader {
                 throw new UnsatisfiedLinkError("Can't load " + libfilename);
             }
         }
-        for (String sys_path : sys_paths) {
-            File libfile = new File(sys_path, System.mapLibraryName(name));
+        for (String sysPath : LibraryPaths.SYS) {
+            File libfile = new File(sysPath, System.mapLibraryName(name));
             if (loadLibrary0(fromClass, libfile)) {
                 return;
             }
@@ -2664,8 +2597,8 @@ public abstract class ClassLoader {
             }
         }
         if (loader != null) {
-            for (String usr_path : usr_paths) {
-                File libfile = new File(usr_path, System.mapLibraryName(name));
+            for (String userPath : LibraryPaths.USER) {
+                File libfile = new File(userPath, System.mapLibraryName(name));
                 if (loadLibrary0(fromClass, libfile)) {
                     return;
                 }
@@ -2677,7 +2610,7 @@ public abstract class ClassLoader {
         }
         // Oops, it failed
         throw new UnsatisfiedLinkError("no " + name +
-            " in java.library.path: " + Arrays.toString(usr_paths));
+            " in java.library.path: " + Arrays.toString(LibraryPaths.USER));
     }
 
     private static native String findBuiltinLib(String name);

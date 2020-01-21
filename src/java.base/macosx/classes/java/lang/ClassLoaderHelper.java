@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,11 +32,6 @@ class ClassLoaderHelper {
     private ClassLoaderHelper() {}
 
     /**
-     * Indicates, whether PATH env variable is allowed to contain quoted entries.
-     */
-    static final boolean allowsQuotedPathElements = false;
-
-    /**
      * Returns an alternate path name for the given file
      * such that if the original pathname did not exist, then the
      * file may be located at the alternate location.
@@ -49,5 +44,26 @@ class ClassLoaderHelper {
             return null;
         }
         return new File(name.substring(0, index) + ".jnilib");
+    }
+
+    /**
+     * Parse a PATH env variable.
+     *
+     * Empty elements will be replaced by dot.
+     */
+    static String[] parsePath(String ldPath) {
+        char ps = File.pathSeparatorChar;
+        ArrayList<String> paths = new ArrayList<>();
+        int pathStart = 0;
+        int pathEnd;
+        while ((pathEnd = ldPath.indexOf(ps, pathStart)) >= 0) {
+            paths.add((pathStart < pathEnd) ?
+                    ldPath.substring(pathStart, pathEnd) : ".");
+            pathStart = pathEnd + 1;
+        }
+        int ldLen = ldPath.length();
+        paths.add((pathStart < ldLen) ?
+                ldPath.substring(pathStart, ldLen) : ".");
+        return paths.toArray(new String[paths.size()]);
     }
 }

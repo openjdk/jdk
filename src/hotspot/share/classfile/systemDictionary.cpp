@@ -1564,7 +1564,7 @@ void SystemDictionary::define_instance_class(InstanceKlass* k, TRAPS) {
   unsigned int d_hash = dictionary->compute_hash(name_h);
   check_constraints(d_hash, k, class_loader_h, true, CHECK);
 
-  // Register class just loaded with class loader (placed in Vector)
+  // Register class just loaded with class loader (placed in ArrayList)
   // Note we do this before updating the dictionary, as this can
   // fail with an OutOfMemoryError (if it does, we will *not* put this
   // class in the dictionary and will not update the class hierarchy).

@@ -62,7 +62,7 @@ public class TestInstanceKlassSize {
     public static WhiteBox wb = WhiteBox.getWhiteBox();
     private static String[] SAInstanceKlassNames = new String[] {
                                                 "java.lang.Object",
-                                                "java.util.Vector",
+                                                "java.util.ArrayList",
                                                 "java.lang.String",
                                                 "java.lang.Thread",
                                                 "java.lang.Byte"

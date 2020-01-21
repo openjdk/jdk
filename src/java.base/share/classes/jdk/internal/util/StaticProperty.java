@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 
 package jdk.internal.util;
 
+import java.util.Properties;
+
 /**
  * System Property access for internal use only.
  * Read-only access to System property values initialized during Phase 1
@@ -38,20 +40,39 @@ public final class StaticProperty {
 
     // The class static initialization is triggered to initialize these final
     // fields during init Phase 1 and before a security manager is set.
-    private static final String JAVA_HOME = initProperty("java.home");
-    private static final String USER_HOME = initProperty("user.home");
-    private static final String USER_DIR  = initProperty("user.dir");
-    private static final String USER_NAME = initProperty("user.name");
-    private static final String JDK_SERIAL_FILTER = System.getProperty("jdk.serialFilter");
+    private static final String JAVA_HOME;
+    private static final String USER_HOME;
+    private static final String USER_DIR;
+    private static final String USER_NAME;
+    private static final String JAVA_LIBRARY_PATH;
+    private static final String SUN_BOOT_LIBRARY_PATH;
+    private static final String JDK_SERIAL_FILTER;
 
     private StaticProperty() {}
 
-    private static String initProperty(String key) {
-        String v = System.getProperty(key);
+    static {
+        Properties props = System.getProperties();
+        JAVA_HOME = getProperty(props, "java.home");
+        USER_HOME = getProperty(props, "user.home");
+        USER_DIR  = getProperty(props, "user.dir");
+        USER_NAME = getProperty(props, "user.name");
+        JAVA_LIBRARY_PATH = getProperty(props, "java.library.path", "");
+        SUN_BOOT_LIBRARY_PATH = getProperty(props, "sun.boot.library.path", "");
+        JDK_SERIAL_FILTER = getProperty(props, "jdk.serialFilter", null);
+    }
+
+    private static String getProperty(Properties props, String key) {
+        String v = props.getProperty(key);
         if (v == null) {
             throw new InternalError("null property: " + key);
         }
         return v;
+    }
+
+    private static String getProperty(Properties props, String key,
+                                      String defaultVal) {
+        String v = props.getProperty(key);
+        return (v == null) ? defaultVal : v;
     }
 
     /**
@@ -105,6 +126,33 @@ public final class StaticProperty {
     public static String userName() {
         return USER_NAME;
     }
+
+    /**
+     * Return the {@code java.library.path} system property.
+     *
+     * <strong>{@link SecurityManager#checkPropertyAccess} is NOT checked
+     * in this method. The caller of this method should take care to ensure
+     * that the returned property is not made accessible to untrusted code.</strong>
+     *
+     * @return the {@code java.library.path} system property
+     */
+    public static String javaLibraryPath() {
+        return JAVA_LIBRARY_PATH;
+    }
+
+    /**
+     * Return the {@code sun.boot.library.path} system property.
+     *
+     * <strong>{@link SecurityManager#checkPropertyAccess} is NOT checked
+     * in this method. The caller of this method should take care to ensure
+     * that the returned property is not made accessible to untrusted code.</strong>
+     *
+     * @return the {@code sun.boot.library.path} system property
+     */
+    public static String sunBootLibraryPath() {
+        return SUN_BOOT_LIBRARY_PATH;
+    }
+
 
     /**
      * Return the {@code jdk.serialFilter} system property.
