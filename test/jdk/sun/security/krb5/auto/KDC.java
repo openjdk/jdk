@@ -720,7 +720,7 @@ public class KDC {
      * @return the key
      * @throws sun.security.krb5.KrbException for unknown/unsupported etype
      */
-    private EncryptionKey keyForUser(PrincipalName p, int etype, boolean server)
+    EncryptionKey keyForUser(PrincipalName p, int etype, boolean server)
             throws KrbException {
         try {
             // Do not call EncryptionKey.acquireSecretKeys(), otherwise
@@ -801,7 +801,7 @@ public class KDC {
             int e2 = eTypes[0];     // etype for outgoing session key
             int e3 = eTypes[0];     // etype for outgoing ticket
 
-            PAData[] pas = KDCReqDotPAData(tgsReq);
+            PAData[] pas = tgsReq.pAData;
 
             Ticket tkt = null;
             EncTicketPart etp = null;
@@ -832,7 +832,6 @@ public class KDC {
                 for (PAData pa: pas) {
                     if (pa.getType() == Krb5.PA_TGS_REQ) {
                         APReq apReq = new APReq(pa.getValue());
-                        EncryptedData ed = apReq.authenticator;
                         tkt = apReq.ticket;
                         int te = tkt.encPart.getEType();
                         EncryptionKey kkey = keyForUser(tkt.sname, te, true);
@@ -1276,7 +1275,7 @@ public class KDC {
                 outPAs.add(new PAData(Krb5.PA_ETYPE_INFO, eid.toByteArray()));
             }
 
-            PAData[] inPAs = KDCReqDotPAData(asReq);
+            PAData[] inPAs = asReq.pAData;
             List<PAData> enc_outPAs = new ArrayList<>();
 
             byte[] paEncTimestamp = null;
@@ -1988,7 +1987,6 @@ public class KDC {
     }
 
     // Calling private methods thru reflections
-    private static final Field getPADataField;
     private static final Field getEType;
     private static final Constructor<EncryptedData> ctorEncryptedData;
     private static final Method stringToKey;
@@ -1998,8 +1996,6 @@ public class KDC {
         try {
             ctorEncryptedData = EncryptedData.class.getDeclaredConstructor(DerValue.class);
             ctorEncryptedData.setAccessible(true);
-            getPADataField = KDCReq.class.getDeclaredField("pAData");
-            getPADataField.setAccessible(true);
             getEType = KDCReqBody.class.getDeclaredField("eType");
             getEType.setAccessible(true);
             stringToKey = EncryptionKey.class.getDeclaredMethod(
@@ -2017,13 +2013,6 @@ public class KDC {
     private EncryptedData newEncryptedData(DerValue der) {
         try {
             return ctorEncryptedData.newInstance(der);
-        } catch (Exception e) {
-            throw new AssertionError(e);
-        }
-    }
-    private static PAData[] KDCReqDotPAData(KDCReq req) {
-        try {
-            return (PAData[])getPADataField.get(req);
         } catch (Exception e) {
             throw new AssertionError(e);
         }

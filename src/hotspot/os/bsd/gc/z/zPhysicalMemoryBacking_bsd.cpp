@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,198 +22,170 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/z/zAddress.inline.hpp"
+#include "gc/z/zErrno.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zLargePages.inline.hpp"
 #include "gc/z/zPhysicalMemory.inline.hpp"
 #include "gc/z/zPhysicalMemoryBacking_bsd.hpp"
+#include "logging/log.hpp"
 #include "runtime/globals.hpp"
-#include "runtime/init.hpp"
 #include "runtime/os.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
 
+#include <mach/mach.h>
+#include <mach/mach_vm.h>
+#include <sys/mman.h>
+#include <sys/types.h>
+
+// The backing is represented by a reserved virtual address space, in which
+// we commit and uncommit physical memory. Multi-mapping the different heap
+// views is done by simply remapping the backing memory using mach_vm_remap().
+
+static int vm_flags_superpage() {
+  if (!ZLargePages::is_explicit()) {
+    return 0;
+  }
+
+  const int page_size_in_megabytes = ZGranuleSize >> 20;
+  return page_size_in_megabytes << VM_FLAGS_SUPERPAGE_SHIFT;
+}
+
+static ZErrno mremap(uintptr_t from_addr, uintptr_t to_addr, size_t size) {
+  mach_vm_address_t remap_addr = to_addr;
+  vm_prot_t remap_cur_prot;
+  vm_prot_t remap_max_prot;
+
+  // Remap memory to an additional location
+  const kern_return_t res = mach_vm_remap(mach_task_self(),
+                                          &remap_addr,
+                                          size,
+                                          0 /* mask */,
+                                          VM_FLAGS_FIXED | VM_FLAGS_OVERWRITE | vm_flags_superpage(),
+                                          mach_task_self(),
+                                          from_addr,
+                                          FALSE /* copy */,
+                                          &remap_cur_prot,
+                                          &remap_max_prot,
+                                          VM_INHERIT_COPY);
+
+  return (res == KERN_SUCCESS) ? ZErrno(0) : ZErrno(EINVAL);
+}
+
+ZPhysicalMemoryBacking::ZPhysicalMemoryBacking() :
+    _base(0),
+    _size(0),
+    _initialized(false) {
+
+  // Reserve address space for backing memory
+  _base = (uintptr_t)os::reserve_memory(MaxHeapSize);
+  if (_base == 0) {
+    // Failed
+    log_error(gc)("Failed to reserve address space for backing memory");
+    return;
+  }
+
+  // Successfully initialized
+  _initialized = true;
+}
+
 bool ZPhysicalMemoryBacking::is_initialized() const {
-  return _file.is_initialized();
+  return _initialized;
 }
 
 void ZPhysicalMemoryBacking::warn_commit_limits(size_t max) const {
   // Does nothing
 }
 
-bool ZPhysicalMemoryBacking::supports_uncommit() {
-  assert(!is_init_completed(), "Invalid state");
-  assert(_file.size() >= ZGranuleSize, "Invalid size");
-
-  // Test if uncommit is supported by uncommitting and then re-committing a granule
-  return commit(uncommit(ZGranuleSize)) == ZGranuleSize;
+size_t ZPhysicalMemoryBacking::size() const {
+  return _size;
 }
 
-size_t ZPhysicalMemoryBacking::commit(size_t size) {
-  size_t committed = 0;
+bool ZPhysicalMemoryBacking::commit_inner(size_t offset, size_t length) {
+  assert(is_aligned(offset, os::vm_page_size()), "Invalid offset");
+  assert(is_aligned(length, os::vm_page_size()), "Invalid length");
 
-  // Fill holes in the backing file
-  while (committed < size) {
-    size_t allocated = 0;
-    const size_t remaining = size - committed;
-    const uintptr_t start = _uncommitted.alloc_from_front_at_most(remaining, &allocated);
-    if (start == UINTPTR_MAX) {
-      // No holes to commit
-      break;
+  log_trace(gc, heap)("Committing memory: " SIZE_FORMAT "M-" SIZE_FORMAT "M (" SIZE_FORMAT "M)",
+                      offset / M, (offset + length) / M, length / M);
+
+  const uintptr_t addr = _base + offset;
+  const void* const res = mmap((void*)addr, length, PROT_READ | PROT_WRITE, MAP_FIXED | MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
+  if (res == MAP_FAILED) {
+    ZErrno err;
+    log_error(gc)("Failed to commit memory (%s)", err.to_string());
+    return false;
+  }
+
+  const size_t end = offset + length;
+  if (end > _size) {
+    // Record new size
+    _size = end;
+  }
+
+  // Success
+  return true;
+}
+
+size_t ZPhysicalMemoryBacking::commit(size_t offset, size_t length) {
+  // Try to commit the whole region
+  if (commit_inner(offset, length)) {
+    // Success
+    return length;
+  }
+
+  // Failed, try to commit as much as possible
+  size_t start = offset;
+  size_t end = offset + length;
+
+  for (;;) {
+    length = align_down((end - start) / 2, ZGranuleSize);
+    if (length == 0) {
+      // Done, don't commit more
+      return start - offset;
     }
 
-    // Try commit hole
-    const size_t filled = _file.commit(start, allocated);
-    if (filled > 0) {
-      // Successful or partialy successful
-      _committed.free(start, filled);
-      committed += filled;
-    }
-    if (filled < allocated) {
-      // Failed or partialy failed
-      _uncommitted.free(start + filled, allocated - filled);
-      return committed;
+    if (commit_inner(start, length)) {
+      // Success, try commit more
+      start += length;
+    } else {
+      // Failed, try commit less
+      end -= length;
     }
   }
-
-  // Expand backing file
-  if (committed < size) {
-    const size_t remaining = size - committed;
-    const uintptr_t start = _file.size();
-    const size_t expanded = _file.commit(start, remaining);
-    if (expanded > 0) {
-      // Successful or partialy successful
-      _committed.free(start, expanded);
-      committed += expanded;
-    }
-  }
-
-  return committed;
 }
 
-size_t ZPhysicalMemoryBacking::uncommit(size_t size) {
-  size_t uncommitted = 0;
+size_t ZPhysicalMemoryBacking::uncommit(size_t offset, size_t length) {
+  assert(is_aligned(offset, os::vm_page_size()), "Invalid offset");
+  assert(is_aligned(length, os::vm_page_size()), "Invalid length");
 
-  // Punch holes in backing file
-  while (uncommitted < size) {
-    size_t allocated = 0;
-    const size_t remaining = size - uncommitted;
-    const uintptr_t start = _committed.alloc_from_back_at_most(remaining, &allocated);
-    assert(start != UINTPTR_MAX, "Allocation should never fail");
+  log_trace(gc, heap)("Uncommitting memory: " SIZE_FORMAT "M-" SIZE_FORMAT "M (" SIZE_FORMAT "M)",
+                      offset / M, (offset + length) / M, length / M);
 
-    // Try punch hole
-    const size_t punched = _file.uncommit(start, allocated);
-    if (punched > 0) {
-      // Successful or partialy successful
-      _uncommitted.free(start, punched);
-      uncommitted += punched;
-    }
-    if (punched < allocated) {
-      // Failed or partialy failed
-      _committed.free(start + punched, allocated - punched);
-      return uncommitted;
-    }
+  const uintptr_t start = _base + offset;
+  const void* const res = mmap((void*)start, length, PROT_NONE, MAP_FIXED | MAP_ANONYMOUS | MAP_PRIVATE | MAP_NORESERVE, -1, 0);
+  if (res == MAP_FAILED) {
+    ZErrno err;
+    log_error(gc)("Failed to uncommit memory (%s)", err.to_string());
+    return 0;
   }
 
-  return uncommitted;
+  return length;
 }
 
-ZPhysicalMemory ZPhysicalMemoryBacking::alloc(size_t size) {
-  assert(is_aligned(size, ZGranuleSize), "Invalid size");
-
-  ZPhysicalMemory pmem;
-
-  // Allocate segments
-  for (size_t allocated = 0; allocated < size; allocated += ZGranuleSize) {
-    const uintptr_t start = _committed.alloc_from_front(ZGranuleSize);
-    assert(start != UINTPTR_MAX, "Allocation should never fail");
-    pmem.add_segment(ZPhysicalMemorySegment(start, ZGranuleSize));
-  }
-
-  return pmem;
-}
-
-void ZPhysicalMemoryBacking::free(const ZPhysicalMemory& pmem) {
-  const size_t nsegments = pmem.nsegments();
-
-  // Free segments
-  for (size_t i = 0; i < nsegments; i++) {
-    const ZPhysicalMemorySegment& segment = pmem.segment(i);
-    _committed.free(segment.start(), segment.size());
+void ZPhysicalMemoryBacking::map(uintptr_t addr, size_t size, uintptr_t offset) const {
+  const ZErrno err = mremap(_base + offset, addr, size);
+  if (err) {
+    fatal("Failed to remap memory (%s)", err.to_string());
   }
 }
 
-void ZPhysicalMemoryBacking::pretouch_view(uintptr_t addr, size_t size) const {
-  const size_t page_size = ZLargePages::is_explicit() ? ZGranuleSize : os::vm_page_size();
-  os::pretouch_memory((void*)addr, (void*)(addr + size), page_size);
-}
-
-void ZPhysicalMemoryBacking::map_view(const ZPhysicalMemory& pmem, uintptr_t addr) const {
-  const size_t nsegments = pmem.nsegments();
-  size_t size = 0;
-
-  // Map segments
-  for (size_t i = 0; i < nsegments; i++) {
-    const ZPhysicalMemorySegment& segment = pmem.segment(i);
-    const uintptr_t segment_addr = addr + size;
-    _file.map(segment_addr, segment.size(), segment.start());
-    size += segment.size();
+void ZPhysicalMemoryBacking::unmap(uintptr_t addr, size_t size) const {
+  // Note that we must keep the address space reservation intact and just detach
+  // the backing memory. For this reason we map a new anonymous, non-accessible
+  // and non-reserved page over the mapping instead of actually unmapping.
+  const void* const res = mmap((void*)addr, size, PROT_NONE, MAP_FIXED | MAP_ANONYMOUS | MAP_PRIVATE | MAP_NORESERVE, -1, 0);
+  if (res == MAP_FAILED) {
+    ZErrno err;
+    fatal("Failed to map memory (%s)", err.to_string());
   }
-}
-
-void ZPhysicalMemoryBacking::unmap_view(const ZPhysicalMemory& pmem, uintptr_t addr) const {
-  _file.unmap(addr, pmem.size());
-}
-
-uintptr_t ZPhysicalMemoryBacking::nmt_address(uintptr_t offset) const {
-  // From an NMT point of view we treat the first heap view (marked0) as committed
-  return ZAddress::marked0(offset);
-}
-
-void ZPhysicalMemoryBacking::pretouch(uintptr_t offset, size_t size) const {
-  if (ZVerifyViews) {
-    // Pre-touch good view
-    pretouch_view(ZAddress::good(offset), size);
-  } else {
-    // Pre-touch all views
-    pretouch_view(ZAddress::marked0(offset), size);
-    pretouch_view(ZAddress::marked1(offset), size);
-    pretouch_view(ZAddress::remapped(offset), size);
-  }
-}
-
-void ZPhysicalMemoryBacking::map(const ZPhysicalMemory& pmem, uintptr_t offset) const {
-  if (ZVerifyViews) {
-    // Map good view
-    map_view(pmem, ZAddress::good(offset));
-  } else {
-    // Map all views
-    map_view(pmem, ZAddress::marked0(offset));
-    map_view(pmem, ZAddress::marked1(offset));
-    map_view(pmem, ZAddress::remapped(offset));
-  }
-}
-
-void ZPhysicalMemoryBacking::unmap(const ZPhysicalMemory& pmem, uintptr_t offset) const {
-  if (ZVerifyViews) {
-    // Unmap good view
-    unmap_view(pmem, ZAddress::good(offset));
-  } else {
-    // Unmap all views
-    unmap_view(pmem, ZAddress::marked0(offset));
-    unmap_view(pmem, ZAddress::marked1(offset));
-    unmap_view(pmem, ZAddress::remapped(offset));
-  }
-}
-
-void ZPhysicalMemoryBacking::debug_map(const ZPhysicalMemory& pmem, uintptr_t offset) const {
-  // Map good view
-  assert(ZVerifyViews, "Should be enabled");
-  map_view(pmem, ZAddress::good(offset));
-}
-
-void ZPhysicalMemoryBacking::debug_unmap(const ZPhysicalMemory& pmem, uintptr_t offset) const {
-  // Unmap good view
-  assert(ZVerifyViews, "Should be enabled");
-  unmap_view(pmem, ZAddress::good(offset));
 }

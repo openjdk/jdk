@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,42 +24,36 @@
 #ifndef OS_WINDOWS_GC_Z_ZPHYSICALMEMORYBACKING_WINDOWS_HPP
 #define OS_WINDOWS_GC_Z_ZPHYSICALMEMORYBACKING_WINDOWS_HPP
 
-#include "gc/z/zBackingFile_windows.hpp"
-#include "gc/z/zMemory.hpp"
+#include "gc/z/zGranuleMap.hpp"
 
-class ZPhysicalMemory;
+#include <Windows.h>
 
 class ZPhysicalMemoryBacking {
 private:
-  ZBackingFile   _file;
-  ZMemoryManager _committed;
-  ZMemoryManager _uncommitted;
+  ZGranuleMap<HANDLE> _handles;
+  size_t              _size;
 
-  void pretouch_view(uintptr_t addr, size_t size) const;
-  void map_view(const ZPhysicalMemory& pmem, uintptr_t addr) const;
-  void unmap_view(const ZPhysicalMemory& pmem, uintptr_t addr) const;
+  HANDLE get_handle(uintptr_t offset) const;
+  void put_handle(uintptr_t offset, HANDLE handle);
+  void clear_handle(uintptr_t offset);
+
+  size_t commit_from_paging_file(size_t offset, size_t size);
+  size_t uncommit_from_paging_file(size_t offset, size_t size);
 
 public:
+  ZPhysicalMemoryBacking();
+
   bool is_initialized() const;
 
   void warn_commit_limits(size_t max) const;
-  bool supports_uncommit();
 
-  size_t commit(size_t size);
-  size_t uncommit(size_t size);
+  size_t size() const;
 
-  ZPhysicalMemory alloc(size_t size);
-  void free(const ZPhysicalMemory& pmem);
+  size_t commit(size_t offset, size_t length);
+  size_t uncommit(size_t offset, size_t length);
 
-  uintptr_t nmt_address(uintptr_t offset) const;
-
-  void pretouch(uintptr_t offset, size_t size) const;
-
-  void map(const ZPhysicalMemory& pmem, uintptr_t offset) const;
-  void unmap(const ZPhysicalMemory& pmem, uintptr_t offset) const;
-
-  void debug_map(const ZPhysicalMemory& pmem, uintptr_t offset) const;
-  void debug_unmap(const ZPhysicalMemory& pmem, uintptr_t offset) const;
+  void map(uintptr_t addr, size_t size, size_t offset) const;
+  void unmap(uintptr_t addr, size_t size) const;
 };
 
 #endif // OS_WINDOWS_GC_Z_ZPHYSICALMEMORYBACKING_WINDOWS_HPP

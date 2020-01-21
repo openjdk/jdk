@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2017, Red Hat, Inc. and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -44,12 +44,7 @@ size_t ParallelArguments::conservative_max_heap_alignment() {
 
 void ParallelArguments::initialize() {
   GCArguments::initialize();
-  assert(UseParallelGC || UseParallelOldGC, "Error");
-  // Enable ParallelOld unless it was explicitly disabled (cmd line or rc file).
-  if (FLAG_IS_DEFAULT(UseParallelOldGC)) {
-    FLAG_SET_DEFAULT(UseParallelOldGC, true);
-  }
-  FLAG_SET_DEFAULT(UseParallelGC, true);
+  assert(UseParallelGC, "Error");
 
   // If no heap maximum was requested explicitly, use some reasonable fraction
   // of the physical memory, up to a maximum of 1GB.
@@ -85,13 +80,11 @@ void ParallelArguments::initialize() {
     }
   }
 
-  if (UseParallelOldGC) {
-    // Par compact uses lower default values since they are treated as
-    // minimums.  These are different defaults because of the different
-    // interpretation and are not ergonomically set.
-    if (FLAG_IS_DEFAULT(MarkSweepDeadRatio)) {
-      FLAG_SET_DEFAULT(MarkSweepDeadRatio, 1);
-    }
+  // Par compact uses lower default values since they are treated as
+  // minimums.  These are different defaults because of the different
+  // interpretation and are not ergonomically set.
+  if (FLAG_IS_DEFAULT(MarkSweepDeadRatio)) {
+    FLAG_SET_DEFAULT(MarkSweepDeadRatio, 1);
   }
 }
 

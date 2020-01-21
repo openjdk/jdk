@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -131,6 +131,30 @@ class HttpResponseImpl<T> implements HttpResponse<T>, RawChannel.Provider {
         return rawChannelProvider.rawChannel();
     }
 
+    /**
+     * Closes the RawChannel that may have been used for WebSocket protocol.
+     *
+     * @apiNote This method should be called to close the connection
+     * if an exception occurs during the websocket handshake, in cases where
+     * {@link #rawChannel() rawChannel().close()} would have been called.
+     * An unsuccessful handshake may prevent the creation of the RawChannel:
+     * if a RawChannel has already been created, this method wil close it.
+     * Otherwise, it will close the connection.
+     *
+     * @throws UnsupportedOperationException if getting a RawChannel over
+     *         this connection is not supported.
+     * @throws IOException if an I/O exception occurs while closing
+     *         the channel.
+     */
+    @Override
+    public synchronized void closeRawChannel() throws IOException {
+        if (rawChannelProvider == null) {
+            throw new UnsupportedOperationException(
+                    "RawChannel is only supported for WebSocket creation");
+        }
+        rawChannelProvider.closeRawChannel();
+    }
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
@@ -187,6 +211,13 @@ class HttpResponseImpl<T> implements HttpResponse<T>, RawChannel.Provider {
                 rawchan = new RawChannelTube(connection, initial);
             }
             return rawchan;
+        }
+
+        public synchronized void closeRawChannel() throws IOException {
+            //  close the rawChannel, if created, or the
+            // connection, if not.
+            if (rawchan != null) rawchan.close();
+            else connection.close();
         }
 
         private static HttpConnection connection(Response resp, Exchange<?> exch) {

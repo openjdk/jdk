@@ -31,7 +31,7 @@ import jdk.internal.foreign.MemoryAddressImpl;
 /**
  * A memory address encodes an offset within a given {@link MemorySegment}. Memory addresses are typically obtained
  * using the {@link MemorySegment#baseAddress()} method; such addresses can then be adjusted as required,
- * using {@link MemoryAddress#offset(long)}.
+ * using {@link MemoryAddress#addOffset(long)}.
  * <p>
  * A memory address is typically used as the first argument in a memory access var handle call, to perform some operation
  * on the underlying memory backing a given memory segment. Since a memory address is always associated with a memory segment,
@@ -53,11 +53,11 @@ import jdk.internal.foreign.MemoryAddressImpl;
  */
 public interface MemoryAddress {
     /**
-     * Creates a new memory address with given offset (in bytes) from current one.
-     * @param l specified offset (in bytes), relative to this address, which should be used to create the new address.
+     * Creates a new memory address with given offset (in bytes), which might be negative, from current one.
+     * @param offset specified offset (in bytes), relative to this address, which should be used to create the new address.
      * @return a new memory address with given offset from current one.
      */
-    MemoryAddress offset(long l);
+    MemoryAddress addOffset(long offset);
 
     /**
      * The offset of this memory address into the underlying segment.
@@ -97,10 +97,10 @@ public interface MemoryAddress {
 
     /**
      * Perform bulk copy from source address to target address. More specifically, the bytes at addresses {@code src}
-     * through {@code src.offset(bytes - 1)} are copied into addresses {@code dst} through {@code dst.offset(bytes - 1)}.
+     * through {@code src.addOffset(bytes - 1)} are copied into addresses {@code dst} through {@code dst.addOffset(bytes - 1)}.
      * If the source and address ranges overlap, then the copying is performed as if the bytes at addresses {@code src}
-     * through {@code src.offset(bytes - 1)} were first copied into a temporary segment with size {@code bytes},
-     * and then the contents of the temporary segment were copied into the bytes at addresses {@code dst} through {@code dst.offset(bytes - 1)}.
+     * through {@code src.addOffset(bytes - 1)} were first copied into a temporary segment with size {@code bytes},
+     * and then the contents of the temporary segment were copied into the bytes at addresses {@code dst} through {@code dst.addOffset(bytes - 1)}.
      * @param src the source address.
      * @param dst the target address.
      * @param bytes the number of bytes to be copied.

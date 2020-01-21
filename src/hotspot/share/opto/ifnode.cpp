@@ -615,9 +615,19 @@ const TypeInt* IfNode::filtered_int_type(PhaseGVN* gvn, Node* val, Node* if_proj
             jint hi = cmp2_t->_hi;
             BoolTest::mask msk = if_proj->Opcode() == Op_IfTrue ? bol->_test._test : bol->_test.negate();
             switch (msk) {
-            case BoolTest::ne:
+            case BoolTest::ne: {
+              // If val is compared to its lower or upper bound, we can narrow the type
+              const TypeInt* val_t = gvn->type(val)->isa_int();
+              if (val_t != NULL && !val_t->singleton() && cmp2_t->is_con()) {
+                if (val_t->_lo == lo) {
+                  return TypeInt::make(val_t->_lo + 1, val_t->_hi, val_t->_widen);
+                } else if (val_t->_hi == hi) {
+                  return TypeInt::make(val_t->_lo, val_t->_hi - 1, val_t->_widen);
+                }
+              }
               // Can't refine type
               return NULL;
+            }
             case BoolTest::eq:
               return cmp2_t;
             case BoolTest::lt:
@@ -691,7 +701,7 @@ const TypeInt* IfNode::filtered_int_type(PhaseGVN* gvn, Node* val, Node* if_proj
 //
 
 // Is the comparison for this If suitable for folding?
-bool IfNode::cmpi_folds(PhaseIterGVN* igvn) {
+bool IfNode::cmpi_folds(PhaseIterGVN* igvn, bool fold_ne) {
   return in(1) != NULL &&
     in(1)->is_Bool() &&
     in(1)->in(1) != NULL &&
@@ -699,7 +709,8 @@ bool IfNode::cmpi_folds(PhaseIterGVN* igvn) {
     in(1)->in(1)->in(2) != NULL &&
     in(1)->in(1)->in(2) != igvn->C->top() &&
     (in(1)->as_Bool()->_test.is_less() ||
-     in(1)->as_Bool()->_test.is_greater());
+     in(1)->as_Bool()->_test.is_greater() ||
+     (fold_ne && in(1)->as_Bool()->_test._test == BoolTest::ne));
 }
 
 // Is a dominating control suitable for folding with this if?
@@ -709,7 +720,7 @@ bool IfNode::is_ctrl_folds(Node* ctrl, PhaseIterGVN* igvn) {
     ctrl->in(0) != NULL &&
     ctrl->in(0)->Opcode() == Op_If &&
     ctrl->in(0)->outcnt() == 2 &&
-    ctrl->in(0)->as_If()->cmpi_folds(igvn) &&
+    ctrl->in(0)->as_If()->cmpi_folds(igvn, true) &&
     // Must compare same value
     ctrl->in(0)->in(1)->in(1)->in(1) != NULL &&
     ctrl->in(0)->in(1)->in(1)->in(1) == in(1)->in(1)->in(1);
@@ -871,7 +882,7 @@ bool IfNode::fold_compares_helper(ProjNode* proj, ProjNode* success, ProjNode* f
   // sets the lower bound if any.
   Node* adjusted_lim = NULL;
   if (lo_type != NULL && hi_type != NULL && hi_type->_lo > lo_type->_hi &&
-      hi_type->_hi == max_jint && lo_type->_lo == min_jint) {
+      hi_type->_hi == max_jint && lo_type->_lo == min_jint && lo_test != BoolTest::ne) {
     assert((dom_bool->_test.is_less() && !proj->_con) ||
            (dom_bool->_test.is_greater() && proj->_con), "incorrect test");
     // this test was canonicalized
@@ -912,7 +923,7 @@ bool IfNode::fold_compares_helper(ProjNode* proj, ProjNode* success, ProjNode* f
       }
     }
   } else if (lo_type != NULL && hi_type != NULL && lo_type->_lo > hi_type->_hi &&
-             lo_type->_hi == max_jint && hi_type->_lo == min_jint) {
+             lo_type->_hi == max_jint && hi_type->_lo == min_jint && lo_test != BoolTest::ne) {
 
     // this_bool = <
     //   dom_bool = < (proj = True) or dom_bool = >= (proj = False)
@@ -963,7 +974,7 @@ bool IfNode::fold_compares_helper(ProjNode* proj, ProjNode* success, ProjNode* f
       }
     }
   } else {
-    const TypeInt* failtype  = filtered_int_type(igvn, n, proj);
+    const TypeInt* failtype = filtered_int_type(igvn, n, proj);
     if (failtype != NULL) {
       const TypeInt* type2 = filtered_int_type(igvn, n, fail);
       if (type2 != NULL) {
@@ -1600,11 +1611,11 @@ Node* IfNode::simple_subsuming(PhaseIterGVN* igvn) {
   return this;
 }
 
-// Map BoolTest to local table ecoding. The BoolTest (e)numerals
+// Map BoolTest to local table encoding. The BoolTest (e)numerals
 //   { eq = 0, ne = 4, le = 5, ge = 7, lt = 3, gt = 1 }
 // are mapped to table indices, while the remaining (e)numerals in BoolTest
 //   { overflow = 2, no_overflow = 6, never = 8, illegal = 9 }
-// are ignored (these are not modelled in the table).
+// are ignored (these are not modeled in the table).
 //
 static int subsuming_bool_test_encode(Node* node) {
   precond(node->is_Bool());

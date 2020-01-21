@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,7 @@ import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
  * jimage testing.
  * @test
  * @summary Test jimage tool
+ * @bug 8222100
  * @library ../lib
  * @modules java.base/jdk.internal.jimage
  *          jdk.jdeps/com.sun.tools.classfile
@@ -54,7 +55,7 @@ import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
  *          jdk.compiler
  * @run build JImageTest
  * @run build tests.*
- * @run main/othervm -verbose:gc -Xmx1g JImageTest
+ * @run main/othervm/timeout=360 -verbose:gc -Xmx1g JImageTest
 */
 public class JImageTest {
 

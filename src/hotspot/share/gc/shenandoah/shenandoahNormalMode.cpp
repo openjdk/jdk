@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2019, 2020, Red Hat, Inc. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
@@ -14,6 +15,7 @@
  * You should have received a copy of the GNU General Public License version
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
@@ -31,12 +33,13 @@
 #include "logging/logTag.hpp"
 
 void ShenandoahNormalMode::initialize_flags() const {
+  if (ShenandoahConcurrentRoots::can_do_concurrent_class_unloading()) {
+    FLAG_SET_DEFAULT(ShenandoahSuspendibleWorkers, true);
+    FLAG_SET_DEFAULT(VerifyBeforeExit, false);
+  }
+
   SHENANDOAH_ERGO_ENABLE_FLAG(ExplicitGCInvokesConcurrent);
   SHENANDOAH_ERGO_ENABLE_FLAG(ShenandoahImplicitGCInvokesConcurrent);
-  if (ShenandoahConcurrentRoots::can_do_concurrent_class_unloading()) {
-    SHENANDOAH_ERGO_ENABLE_FLAG(ShenandoahSuspendibleWorkers);
-    SHENANDOAH_ERGO_DISABLE_FLAG(VerifyBeforeExit);
-  }
 
   // Final configuration checks
   SHENANDOAH_CHECK_FLAG_SET(ShenandoahLoadRefBarrier);

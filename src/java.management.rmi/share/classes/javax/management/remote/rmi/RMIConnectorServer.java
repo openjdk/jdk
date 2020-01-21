@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,26 +100,6 @@ public class RMIConnectorServer extends JMXConnectorServer {
      */
     public static final String RMI_SERVER_SOCKET_FACTORY_ATTRIBUTE =
         "jmx.remote.rmi.server.socket.factory";
-
-    /**
-     * Name of the attribute that specifies a list of class names acceptable
-     * as parameters to the {@link RMIServer#newClient(java.lang.Object) RMIServer.newClient()}
-     * remote method call.
-     * <p>
-     * This list of classes should correspond to the transitive closure of the
-     * credentials class (or classes) used by the installed {@linkplain JMXAuthenticator}
-     * associated with the {@linkplain RMIServer} implementation.
-     * <p>
-     * If the attribute is not set, or is null, then any class is
-     * deemed acceptable.
-     *
-     * @deprecated Use {@link #CREDENTIALS_FILTER_PATTERN} with a
-     * {@linkplain java.io.ObjectInputFilter.Config#createFilter
-     * filter pattern} string instead.
-     */
-    @Deprecated(since="10", forRemoval=true)
-    public static final String CREDENTIAL_TYPES =
-            "jmx.remote.rmi.server.credential.types";
 
     /**
     * Name of the attribute that specifies an

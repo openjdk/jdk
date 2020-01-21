@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.rmi.Remote;
+import java.rmi.RemoteException;
 import java.rmi.UnexpectedException;
 import java.rmi.activation.Activatable;
 import java.util.Map;
@@ -206,6 +207,13 @@ public class RemoteObjectInvocationHandler
                 throw new IllegalArgumentException(
                     "proxy not Remote instance");
             }
+
+            // Verify that the method is declared on an interface that extends Remote
+            Class<?> decl = method.getDeclaringClass();
+            if (!Remote.class.isAssignableFrom(decl)) {
+                throw new RemoteException("Method is not Remote: " + decl + "::" + method);
+            }
+
             return ref.invoke((Remote) proxy, method, args,
                               getMethodHash(method));
         } catch (Exception e) {

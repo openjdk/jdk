@@ -59,7 +59,7 @@ public class DefaultOptions {
     public static void main(String[] args) throws Throwable {
         keytool("-genkeypair -dname CN=A -alias a -keyalg rsa")
                 .shouldHaveExitValue(0);
-        keytool("-genkeypair -dname CN=CA -alias ca -keyalg rsa")
+        keytool("-genkeypair -dname CN=CA -alias ca -keyalg rsa -ext bc:c")
                 .shouldHaveExitValue(0);
         keytool("-alias a -certreq -file a.req");
         keytool("-alias ca -gencert -infile a.req -outfile a.cert");

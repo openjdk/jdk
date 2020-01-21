@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -881,15 +881,9 @@ inline void ParMarkBitMapClosure::decrement_words_remaining(size_t words) {
   _words_remaining -= words;
 }
 
-// The UseParallelOldGC collector is a stop-the-world garbage collector that
+// The Parallel collector is a stop-the-world garbage collector that
 // does parts of the collection using parallel threads.  The collection includes
-// the tenured generation and the young generation.  The permanent generation is
-// collected at the same time as the other two generations but the permanent
-// generation is collect by a single GC thread.  The permanent generation is
-// collected serially because of the requirement that during the processing of a
-// klass AAA, any objects reference by AAA must already have been processed.
-// This requirement is enforced by a left (lower address) to right (higher
-// address) sliding compaction.
+// the tenured generation and the young generation.
 //
 // There are four phases of the collection.
 //

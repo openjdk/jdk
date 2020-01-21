@@ -1040,9 +1040,16 @@ public class TypeEnter implements Completer {
                  * it could be that some of those annotations are not applicable to the accessor, they will be striped
                  * away later at Check::validateAnnotation
                  */
-                JCMethodDecl getter = make.at(tree.pos).MethodDef(make.Modifiers(Flags.PUBLIC | Flags.GENERATED_MEMBER, tree.mods.annotations),
+                JCMethodDecl getter = make.at(tree.pos).
+                        MethodDef(
+                                make.Modifiers(Flags.PUBLIC | Flags.GENERATED_MEMBER, tree.mods.annotations),
                           tree.sym.name,
-                          make.Type(tree.sym.type),
+                          /* we need to special case for the case when the user declared the type as an ident
+                           * if we don't do that then we can have issues if type annotations are applied to the
+                           * return type: javac issues an error if a type annotation is applied to java.lang.String
+                           * but applying a type annotation to String is kosher
+                           */
+                          tree.vartype.hasTag(IDENT) ? make.Ident(tree.vartype.type.tsym) : make.Type(tree.sym.type),
                           List.nil(),
                           List.nil(),
                           List.nil(), // thrown
@@ -1050,6 +1057,7 @@ public class TypeEnter implements Completer {
                           null);
                 memberEnter.memberEnter(getter, env);
                 rec.accessor = getter.sym;
+                rec.accessorMeth = getter;
             } else if (implSym != null) {
                 rec.accessor = implSym;
             }
@@ -1155,11 +1163,8 @@ public class TypeEnter implements Completer {
                 field.sym.flags_field &= ~Flags.VARARGS;
             }
             // now lets add the accessors
-            tree.defs.stream()
-                    .filter(t -> t.hasTag(VARDEF))
-                    .map(t -> (JCVariableDecl) t)
-                    // lets stay clear of adding a forbidden name, javac will fail later anyway
-                    .filter(vd -> (vd.sym.flags_field & RECORD) != 0 && lookupMethod(syms.objectType.tsym, vd.name, List.nil()) == null)
+            recordFields.stream()
+                    .filter(vd -> (lookupMethod(syms.objectType.tsym, vd.name, List.nil()) == null))
                     .forEach(vd -> addAccessor(vd, env));
         }
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1098,18 +1098,6 @@ public class X500Name implements GeneralNameInterface, Principal {
     /****************************************************************/
 
     /*
-     * Maybe return a preallocated OID, to reduce storage costs
-     * and speed recognition of common X.500 attributes.
-     */
-    static ObjectIdentifier intern(ObjectIdentifier oid) {
-        ObjectIdentifier interned = internedOIDs.putIfAbsent(oid, oid);
-        return (interned == null) ? oid : interned;
-    }
-
-    private static final Map<ObjectIdentifier,ObjectIdentifier> internedOIDs
-                        = new HashMap<ObjectIdentifier,ObjectIdentifier>();
-
-    /*
      * Selected OIDs from X.520
      * Includes all those specified in RFC 5280 as MUST or SHOULD
      * be recognized
@@ -1136,92 +1124,82 @@ public class X500Name implements GeneralNameInterface, Principal {
         { 0, 9, 2342, 19200300, 100, 1, 1 };
 
 
-    public static final ObjectIdentifier commonName_oid;
-    public static final ObjectIdentifier countryName_oid;
-    public static final ObjectIdentifier localityName_oid;
-    public static final ObjectIdentifier orgName_oid;
-    public static final ObjectIdentifier orgUnitName_oid;
-    public static final ObjectIdentifier stateName_oid;
-    public static final ObjectIdentifier streetAddress_oid;
-    public static final ObjectIdentifier title_oid;
-    public static final ObjectIdentifier DNQUALIFIER_OID;
-    public static final ObjectIdentifier SURNAME_OID;
-    public static final ObjectIdentifier GIVENNAME_OID;
-    public static final ObjectIdentifier INITIALS_OID;
-    public static final ObjectIdentifier GENERATIONQUALIFIER_OID;
-    public static final ObjectIdentifier ipAddress_oid;
-    public static final ObjectIdentifier DOMAIN_COMPONENT_OID;
-    public static final ObjectIdentifier userid_oid;
-    public static final ObjectIdentifier SERIALNUMBER_OID;
+    // OID for the "CN=" attribute, denoting a person's common name.
+    public static final ObjectIdentifier commonName_oid =
+            ObjectIdentifier.newInternal(commonName_data);
 
-    static {
-    /** OID for the "CN=" attribute, denoting a person's common name. */
-        commonName_oid = intern(ObjectIdentifier.newInternal(commonName_data));
+    // OID for the "SERIALNUMBER=" attribute, denoting a serial number for.
+    // a name. Do not confuse with PKCS#9 issuerAndSerialNumber or the
+    // certificate serial number.
+    public static final ObjectIdentifier SERIALNUMBER_OID =
+            ObjectIdentifier.newInternal(SERIALNUMBER_DATA);
 
-    /** OID for the "SERIALNUMBER=" attribute, denoting a serial number for.
-        a name. Do not confuse with PKCS#9 issuerAndSerialNumber or the
-        certificate serial number. */
-        SERIALNUMBER_OID = intern(ObjectIdentifier.newInternal(SERIALNUMBER_DATA));
+    // OID for the "C=" attribute, denoting a country.
+    public static final ObjectIdentifier countryName_oid =
+            ObjectIdentifier.newInternal(countryName_data);
 
-    /** OID for the "C=" attribute, denoting a country. */
-        countryName_oid = intern(ObjectIdentifier.newInternal(countryName_data));
+    // OID for the "L=" attribute, denoting a locality (such as a city).
+    public static final ObjectIdentifier localityName_oid =
+            ObjectIdentifier.newInternal(localityName_data);
 
-    /** OID for the "L=" attribute, denoting a locality (such as a city) */
-        localityName_oid = intern(ObjectIdentifier.newInternal(localityName_data));
+    // OID for the "O=" attribute, denoting an organization name.
+    public static final ObjectIdentifier orgName_oid =
+            ObjectIdentifier.newInternal(orgName_data);
 
-    /** OID for the "O=" attribute, denoting an organization name */
-        orgName_oid = intern(ObjectIdentifier.newInternal(orgName_data));
+    // OID for the "OU=" attribute, denoting an organizational unit name.
+    public static final ObjectIdentifier orgUnitName_oid =
+            ObjectIdentifier.newInternal(orgUnitName_data);
 
-    /** OID for the "OU=" attribute, denoting an organizational unit name */
-        orgUnitName_oid = intern(ObjectIdentifier.newInternal(orgUnitName_data));
+    // OID for the "S=" attribute, denoting a state (such as Delaware).
+    public static final ObjectIdentifier stateName_oid =
+            ObjectIdentifier.newInternal(stateName_data);
 
-    /** OID for the "S=" attribute, denoting a state (such as Delaware) */
-        stateName_oid = intern(ObjectIdentifier.newInternal(stateName_data));
+    // OID for the "STREET=" attribute, denoting a street address.
+    public static final ObjectIdentifier streetAddress_oid =
+            ObjectIdentifier.newInternal(streetAddress_data);
 
-    /** OID for the "STREET=" attribute, denoting a street address. */
-        streetAddress_oid = intern(ObjectIdentifier.newInternal(streetAddress_data));
+    // OID for the "T=" attribute, denoting a person's title.
+    public static final ObjectIdentifier title_oid =
+            ObjectIdentifier.newInternal(title_data);
 
-    /** OID for the "T=" attribute, denoting a person's title. */
-        title_oid = intern(ObjectIdentifier.newInternal(title_data));
+    // OID for the "DNQUALIFIER=" or "DNQ=" attribute, denoting DN
+    // disambiguating information.
+    public static final ObjectIdentifier DNQUALIFIER_OID =
+            ObjectIdentifier.newInternal(DNQUALIFIER_DATA);
 
-    /** OID for the "DNQUALIFIER=" or "DNQ=" attribute, denoting DN
-        disambiguating information.*/
-        DNQUALIFIER_OID = intern(ObjectIdentifier.newInternal(DNQUALIFIER_DATA));
+    // OID for the "SURNAME=" attribute, denoting a person's surname.
+    public static final ObjectIdentifier SURNAME_OID =
+            ObjectIdentifier.newInternal(SURNAME_DATA);
 
-    /** OID for the "SURNAME=" attribute, denoting a person's surname.*/
-        SURNAME_OID = intern(ObjectIdentifier.newInternal(SURNAME_DATA));
+    // OID for the "GIVENNAME=" attribute, denoting a person's given name.
+    public static final ObjectIdentifier GIVENNAME_OID =
+            ObjectIdentifier.newInternal(GIVENNAME_DATA);
 
-    /** OID for the "GIVENNAME=" attribute, denoting a person's given name.*/
-        GIVENNAME_OID = intern(ObjectIdentifier.newInternal(GIVENNAME_DATA));
+    // OID for the "INITIALS=" attribute, denoting a person's initials.
+    public static final ObjectIdentifier INITIALS_OID =
+            ObjectIdentifier.newInternal(INITIALS_DATA);
 
-    /** OID for the "INITIALS=" attribute, denoting a person's initials.*/
-        INITIALS_OID = intern(ObjectIdentifier.newInternal(INITIALS_DATA));
+    // OID for the "GENERATION=" attribute, denoting Jr., II, etc.
+    public static final ObjectIdentifier GENERATIONQUALIFIER_OID =
+            ObjectIdentifier.newInternal(GENERATIONQUALIFIER_DATA);
 
-    /** OID for the "GENERATION=" attribute, denoting Jr., II, etc.*/
-        GENERATIONQUALIFIER_OID =
-            intern(ObjectIdentifier.newInternal(GENERATIONQUALIFIER_DATA));
+    // OIDs from other sources which show up in X.500 names we
+    // expect to deal with often.
+    //
+    // OID for "IP=" IP address attributes, used with SKIP.
+    public static final ObjectIdentifier ipAddress_oid =
+            ObjectIdentifier.newInternal(ipAddress_data);
 
-    /*
-     * OIDs from other sources which show up in X.500 names we
-     * expect to deal with often
-     */
-    /** OID for "IP=" IP address attributes, used with SKIP. */
-        ipAddress_oid = intern(ObjectIdentifier.newInternal(ipAddress_data));
+    // Domain component OID from RFC 1274, RFC 2247, RFC 5280.
+    //
+    // OID for "DC=" domain component attributes, used with DNSNames in DN
+    // format.
+    public static final ObjectIdentifier DOMAIN_COMPONENT_OID =
+            ObjectIdentifier.newInternal(DOMAIN_COMPONENT_DATA);
 
-    /*
-     * Domain component OID from RFC 1274, RFC 2247, RFC 5280
-     */
-
-    /*
-     * OID for "DC=" domain component attributes, used with DNSNames in DN
-     * format
-     */
-        DOMAIN_COMPONENT_OID =
-            intern(ObjectIdentifier.newInternal(DOMAIN_COMPONENT_DATA));
-
-    /** OID for "UID=" denoting a user id, defined in RFCs 1274 & 2798. */
-        userid_oid = intern(ObjectIdentifier.newInternal(userid_data));
-    }
+    // OID for "UID=" denoting a user id, defined in RFCs 1274 & 2798.
+    public static final ObjectIdentifier userid_oid =
+            ObjectIdentifier.newInternal(userid_data);
 
     /**
      * Return constraint type:<ul>

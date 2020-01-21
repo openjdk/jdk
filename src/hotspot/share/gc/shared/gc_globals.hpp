@@ -161,10 +161,6 @@
   product(bool, UseParallelGC, false,                                       \
           "Use the Parallel garbage collector.")                            \
                                                                             \
-  product(bool, UseParallelOldGC, false,                                    \
-          "Use the Parallel or Serial garbage collector when collecting "   \
-          "the old generation. Deprecated.")                                \
-                                                                            \
   experimental(bool, UseEpsilonGC, false,                                   \
           "Use the Epsilon (no-op) garbage collector")                      \
                                                                             \

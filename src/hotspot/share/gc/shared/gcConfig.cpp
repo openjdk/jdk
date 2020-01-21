@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,7 +70,6 @@ static const IncludedGC IncludedGCs[] = {
    EPSILONGC_ONLY_ARG(IncludedGC(UseEpsilonGC,       CollectedHeap::Epsilon,    epsilonArguments,    "epsilon gc"))
         G1GC_ONLY_ARG(IncludedGC(UseG1GC,            CollectedHeap::G1,         g1Arguments,         "g1 gc"))
   PARALLELGC_ONLY_ARG(IncludedGC(UseParallelGC,      CollectedHeap::Parallel,   parallelArguments,   "parallel gc"))
-  PARALLELGC_ONLY_ARG(IncludedGC(UseParallelOldGC,   CollectedHeap::Parallel,   parallelArguments,   "parallel gc"))
     SERIALGC_ONLY_ARG(IncludedGC(UseSerialGC,        CollectedHeap::Serial,     serialArguments,     "serial gc"))
 SHENANDOAHGC_ONLY_ARG(IncludedGC(UseShenandoahGC,    CollectedHeap::Shenandoah, shenandoahArguments, "shenandoah gc"))
          ZGC_ONLY_ARG(IncludedGC(UseZGC,             CollectedHeap::Z,          zArguments,          "z gc"))
@@ -93,9 +92,7 @@ void GCConfig::fail_if_non_included_gc_is_selected() {
   NOT_EPSILONGC(   FAIL_IF_SELECTED(UseEpsilonGC,       true));
   NOT_G1GC(        FAIL_IF_SELECTED(UseG1GC,            true));
   NOT_PARALLELGC(  FAIL_IF_SELECTED(UseParallelGC,      true));
-  NOT_PARALLELGC(  FAIL_IF_SELECTED(UseParallelOldGC,   true));
   NOT_SERIALGC(    FAIL_IF_SELECTED(UseSerialGC,        true));
-  NOT_SERIALGC(    FAIL_IF_SELECTED(UseParallelOldGC,   false));
   NOT_SHENANDOAHGC(FAIL_IF_SELECTED(UseShenandoahGC,    true));
   NOT_ZGC(         FAIL_IF_SELECTED(UseZGC,             true));
 }

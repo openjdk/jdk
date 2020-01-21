@@ -449,12 +449,12 @@ void RunFinalizationDCmd::execute(DCmdSource source, TRAPS) {
 }
 
 void HeapInfoDCmd::execute(DCmdSource source, TRAPS) {
-  MutexLocker hl(Heap_lock);
+  MutexLocker hl(THREAD, Heap_lock);
   Universe::heap()->print_on(output());
 }
 
 void FinalizerInfoDCmd::execute(DCmdSource source, TRAPS) {
-  ResourceMark rm;
+  ResourceMark rm(THREAD);
 
   Klass* k = SystemDictionary::resolve_or_fail(
     vmSymbols::finalizer_histogram_klass(), true, CHECK);

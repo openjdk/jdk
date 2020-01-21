@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -447,7 +447,7 @@ public class HtmlDocletWriter {
         Content htmlComment = contents.newPage;
         List<DocPath> additionalStylesheets = configuration.getAdditionalStylesheets();
         additionalStylesheets.addAll(localStylesheets);
-        Head head = new Head(path, configuration.docletVersion)
+        Head head = new Head(path, configuration.docletVersion, configuration.startTime)
                 .setTimestamp(!configuration.notimestamp)
                 .setDescription(description)
                 .setGenerator(getGenerator(getClass()))
@@ -858,6 +858,15 @@ public class HtmlDocletWriter {
 
         PackageElement encl = configuration.utils.containingPackage(te);
         return (encl.isUnnamed()) ? "" : (encl.getQualifiedName() + ".");
+    }
+
+    /**
+     * Return the main type element of the current page or null for pages that don't have one.
+     *
+     * @return the type element of the current page.
+     */
+    protected TypeElement getCurrentPageElement() {
+        return null;
     }
 
     /**

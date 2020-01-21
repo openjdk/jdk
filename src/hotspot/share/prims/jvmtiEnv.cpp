@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1330,7 +1330,7 @@ JvmtiEnv::RunAgentThread(jthread thread, jvmtiStartFunction proc, const void* ar
 
   Handle thread_hndl(current_thread, thread_oop);
   {
-    MutexLocker mu(Threads_lock); // grab Threads_lock
+    MutexLocker mu(current_thread, Threads_lock); // grab Threads_lock
 
     JvmtiAgentThread *new_thread = new JvmtiAgentThread(this, proc, arg);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,13 +26,11 @@
 #define SHARE_GC_PARALLEL_PARALLELSCAVENGEHEAP_INLINE_HPP
 
 #include "gc/parallel/parallelScavengeHeap.hpp"
-#include "gc/parallel/psMarkSweepProxy.hpp"
 #include "gc/parallel/psParallelCompact.inline.hpp"
 #include "gc/parallel/psScavenge.hpp"
 
 inline size_t ParallelScavengeHeap::total_invocations() {
-  return UseParallelOldGC ? PSParallelCompact::total_invocations() :
-    PSMarkSweepProxy::total_invocations();
+  return PSParallelCompact::total_invocations();
 }
 
 inline bool ParallelScavengeHeap::should_alloc_in_eden(const size_t size) const {

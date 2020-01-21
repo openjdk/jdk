@@ -99,10 +99,15 @@ public class WhiteBox {
 
   // Runtime
   // Make sure class name is in the correct format
-  public boolean isClassAlive(String name) {
-    return isClassAlive0(name.replace('.', '/'));
+  public int countAliveClasses(String name) {
+    return countAliveClasses0(name.replace('.', '/'));
   }
-  private native boolean isClassAlive0(String name);
+  private native int countAliveClasses0(String name);
+
+  public boolean isClassAlive(String name) {
+    return countAliveClasses(name) != 0;
+  }
+
   public  native int getSymbolRefcount(String name);
 
   private native boolean isMonitorInflated0(Object obj);

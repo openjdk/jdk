@@ -30,7 +30,6 @@
 enum GCName {
   ParallelOld,
   SerialOld,
-  PSMarkSweep,
   ParallelScavenge,
   DefNew,
   G1New,
@@ -48,7 +47,6 @@ class GCNameHelper {
     switch(name) {
       case ParallelOld: return "ParallelOld";
       case SerialOld: return "SerialOld";
-      case PSMarkSweep: return "PSMarkSweep";
       case ParallelScavenge: return "ParallelScavenge";
       case DefNew: return "DefNew";
       case G1New: return "G1New";

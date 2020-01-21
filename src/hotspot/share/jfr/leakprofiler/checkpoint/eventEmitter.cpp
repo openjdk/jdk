@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -116,7 +116,9 @@ void EventEmitter::write_event(const ObjectSample* sample, EdgeStore* edge_store
   traceid gc_root_id = 0;
   const Edge* edge = NULL;
   if (SafepointSynchronize::is_at_safepoint()) {
-    edge = (const Edge*)(sample->object())->mark().to_pointer();
+    if (!sample->object()->mark().is_marked()) {
+      edge = (const Edge*)(sample->object())->mark().to_pointer();
+    }
   }
   if (edge == NULL) {
     // In order to dump out a representation of the event

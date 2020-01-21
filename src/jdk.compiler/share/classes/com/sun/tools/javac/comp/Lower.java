@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2259,12 +2259,15 @@ public class Lower extends TreeTranslator {
     }
 
     List<JCTree> generateMandatedAccessors(JCClassDecl tree) {
+        List<JCVariableDecl> fields = TreeInfo.recordFields(tree);
         return tree.sym.getRecordComponents().stream()
                 .filter(rc -> (rc.accessor.flags() & Flags.GENERATED_MEMBER) != 0)
                 .map(rc -> {
+                    // we need to return the field not the record component
+                    JCVariableDecl field = fields.stream().filter(f -> f.name == rc.name).findAny().get();
                     make_at(tree.pos());
                     return make.MethodDef(rc.accessor, make.Block(0,
-                            List.of(make.Return(make.Ident(rc)))));
+                            List.of(make.Return(make.Ident(field)))));
                 }).collect(List.collector());
     }
 

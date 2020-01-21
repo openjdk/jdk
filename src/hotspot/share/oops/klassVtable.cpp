@@ -291,23 +291,26 @@ InstanceKlass* klassVtable::find_transitive_override(InstanceKlass* initialsuper
                             int vtable_index, Handle target_loader, Symbol* target_classname, Thread * THREAD) {
   InstanceKlass* superk = initialsuper;
   while (superk != NULL && superk->super() != NULL) {
-    InstanceKlass* supersuperklass = InstanceKlass::cast(superk->super());
-    klassVtable ssVtable = supersuperklass->vtable();
+    klassVtable ssVtable = (superk->super())->vtable();
     if (vtable_index < ssVtable.length()) {
       Method* super_method = ssVtable.method_at(vtable_index);
+      // get the class holding the matching method
+      // make sure you use that class for is_override
+      InstanceKlass* supermethodholder = super_method->method_holder();
 #ifndef PRODUCT
       Symbol* name= target_method()->name();
       Symbol* signature = target_method()->signature();
       assert(super_method->name() == name && super_method->signature() == signature, "vtable entry name/sig mismatch");
 #endif
-      if (supersuperklass->is_override(methodHandle(THREAD, super_method), target_loader, target_classname, THREAD)) {
+
+      if (supermethodholder->is_override(methodHandle(THREAD, super_method), target_loader, target_classname, THREAD)) {
         if (log_develop_is_enabled(Trace, vtables)) {
           ResourceMark rm(THREAD);
           LogTarget(Trace, vtables) lt;
           LogStream ls(lt);
           char* sig = target_method()->name_and_sig_as_C_string();
           ls.print("transitive overriding superclass %s with %s index %d, original flags: ",
-                       supersuperklass->internal_name(),
+                       supermethodholder->internal_name(),
                        sig, vtable_index);
           super_method->print_linkage_flags(&ls);
           ls.print("overriders flags: ");

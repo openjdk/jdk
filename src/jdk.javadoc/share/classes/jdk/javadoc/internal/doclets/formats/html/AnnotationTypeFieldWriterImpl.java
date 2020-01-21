@@ -247,7 +247,7 @@ public class AnnotationTypeFieldWriterImpl extends AbstractMemberWriter
         if (utils.isConstructor(member))
             return null;
         if (utils.isExecutableElement(member))
-            return utils.getReturnType((ExecutableElement)member);
+            return utils.getReturnType(typeElement, (ExecutableElement)member);
         return member.asType();
     }
 }

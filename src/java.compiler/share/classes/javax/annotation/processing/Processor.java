@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -130,7 +130,7 @@ import javax.lang.model.SourceVersion;
  * annotations on elements, are ignored when computing whether or not
  * an annotation type is present.
  *
- * <p>An annotation is present if it meets the definition of being
+ * <p>An annotation is <em>present</em> if it meets the definition of being
  * present given in {@link AnnotatedConstruct}. In brief, an
  * annotation is considered present for the purposes of discovery if
  * it is directly present or present via inheritance. An annotation is

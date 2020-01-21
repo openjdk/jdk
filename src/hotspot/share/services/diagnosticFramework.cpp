@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -455,7 +455,7 @@ void DCmdFactory::send_notification_internal(TRAPS) {
   HandleMark hm(THREAD);
   bool notif = false;
   {
-    MutexLocker ml(Notification_lock, Mutex::_no_safepoint_check_flag);
+    MutexLocker ml(THREAD, Notification_lock, Mutex::_no_safepoint_check_flag);
     notif = _has_pending_jmx_notification;
     _has_pending_jmx_notification = false;
   }

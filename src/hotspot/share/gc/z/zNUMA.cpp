@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,22 +32,9 @@ void ZNUMA::initialize() {
   initialize_platform();
 
   log_info(gc, init)("NUMA Support: %s", to_string());
-  if (is_enabled()) {
+  if (_enabled) {
     log_info(gc, init)("NUMA Nodes: %u", count());
   }
-}
-
-bool ZNUMA::is_enabled() {
-  return _enabled;
-}
-
-void ZNUMA::memory_interleave(uintptr_t addr, size_t size) {
-  if (!_enabled) {
-    // NUMA support not enabled
-    return;
-  }
-
-  os::numa_make_global((char*)addr, size);
 }
 
 const char* ZNUMA::to_string() {

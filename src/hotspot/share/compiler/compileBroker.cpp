@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -266,7 +266,7 @@ CompileTaskWrapper::~CompileTaskWrapper() {
   if (task->is_blocking()) {
     bool free_task = false;
     {
-      MutexLocker notifier(task->lock(), thread);
+      MutexLocker notifier(thread, task->lock());
       task->mark_complete();
 #if INCLUDE_JVMCI
       if (CompileBroker::compiler(task->comp_level())->is_jvmci()) {
@@ -765,7 +765,7 @@ Handle CompileBroker::create_thread_oop(const char* name, TRAPS) {
 JavaThread* CompileBroker::make_thread(jobject thread_handle, CompileQueue* queue, AbstractCompiler* comp, Thread* THREAD) {
   JavaThread* new_thread = NULL;
   {
-    MutexLocker mu(Threads_lock, THREAD);
+    MutexLocker mu(THREAD, Threads_lock);
     if (comp != NULL) {
       if (!InjectCompilerCreationFailure || comp->num_compiler_threads() == 0) {
         CompilerCounters* counters = new CompilerCounters();
@@ -1102,7 +1102,7 @@ void CompileBroker::compile_method_base(const methodHandle& method,
 
   // Acquire our lock.
   {
-    MutexLocker locker(MethodCompileQueue_lock, thread);
+    MutexLocker locker(thread, MethodCompileQueue_lock);
 
     // Make sure the method has not slipped into the queues since
     // last we checked; note that those checks were "fast bail-outs".
@@ -1507,7 +1507,7 @@ int CompileBroker::assign_compile_id(const methodHandle& method, int osr_bci) {
 //
 // Public wrapper for assign_compile_id that acquires the needed locks
 uint CompileBroker::assign_compile_id_unlocked(Thread* thread, const methodHandle& method, int osr_bci) {
-  MutexLocker locker(MethodCompileQueue_lock, thread);
+  MutexLocker locker(thread, MethodCompileQueue_lock);
   return assign_compile_id(method, osr_bci);
 }
 
@@ -1552,7 +1552,7 @@ static const int JVMCI_COMPILATION_PROGRESS_WAIT_ATTEMPTS = 10;
  * @return true if this thread needs to free/recycle the task
  */
 bool CompileBroker::wait_for_jvmci_completion(JVMCICompiler* jvmci, CompileTask* task, JavaThread* thread) {
-  MonitorLocker ml(task->lock(), thread);
+  MonitorLocker ml(thread, task->lock());
   int progress_wait_attempts = 0;
   int methods_compiled = jvmci->methods_compiled();
   while (!task->is_complete() && !is_compilation_disabled_forever() &&
@@ -1613,7 +1613,7 @@ void CompileBroker::wait_for_completion(CompileTask* task) {
   } else
 #endif
   {
-    MonitorLocker ml(task->lock(), thread);
+    MonitorLocker ml(thread, task->lock());
     free_task = true;
     while (!task->is_complete() && !is_compilation_disabled_forever()) {
       ml.wait();
@@ -1783,7 +1783,7 @@ void CompileBroker::compiler_thread_loop() {
 
   {
     ASSERT_IN_VM;
-    MutexLocker only_one (CompileThread_lock, thread);
+    MutexLocker only_one (thread, CompileThread_lock);
     if (!ciObjectFactory::is_initialized()) {
       ciObjectFactory::initialize();
     }

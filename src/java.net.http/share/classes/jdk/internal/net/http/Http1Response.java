@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -264,7 +264,7 @@ class Http1Response<T> {
             connection.close();
             return MinimalFuture.completedFuture(null); // not treating as error
         } else {
-            return readBody(discarding(), true, executor);
+            return readBody(discarding(), !request.isWebSocket(), executor);
         }
     }
 
@@ -394,6 +394,14 @@ class Http1Response<T> {
     public <U> CompletableFuture<U> readBody(HttpResponse.BodySubscriber<U> p,
                                          boolean return2Cache,
                                          Executor executor) {
+        if (debug.on()) {
+            debug.log("readBody: return2Cache: " + return2Cache);
+            if (request.isWebSocket() && return2Cache && connection != null) {
+                debug.log("websocket connection will be returned to cache: "
+                        + connection.getClass() + "/" + connection );
+            }
+        }
+        assert !return2Cache || !request.isWebSocket();
         this.return2Cache = return2Cache;
         final Http1BodySubscriber<U> subscriber = new Http1BodySubscriber<>(p);
 

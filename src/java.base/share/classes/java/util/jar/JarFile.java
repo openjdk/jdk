@@ -146,11 +146,13 @@ import java.util.zip.ZipFile;
  * @since   1.2
  */
 public class JarFile extends ZipFile {
-    private final static Runtime.Version BASE_VERSION;
-    private final static int BASE_VERSION_FEATURE;
-    private final static Runtime.Version RUNTIME_VERSION;
-    private final static boolean MULTI_RELEASE_ENABLED;
-    private final static boolean MULTI_RELEASE_FORCED;
+    private static final Runtime.Version BASE_VERSION;
+    private static final int BASE_VERSION_FEATURE;
+    private static final Runtime.Version RUNTIME_VERSION;
+    private static final boolean MULTI_RELEASE_ENABLED;
+    private static final boolean MULTI_RELEASE_FORCED;
+    private static final ThreadLocal<Boolean> isInitializing = new ThreadLocal<>();
+
     private SoftReference<Manifest> manRef;
     private JarEntry manEntry;
     private JarVerifier jv;
@@ -159,8 +161,6 @@ public class JarFile extends ZipFile {
     private final Runtime.Version version;  // current version
     private final int versionFeature;       // version.feature()
     private boolean isMultiRelease;         // is jar multi-release?
-    static final ThreadLocal<Boolean> isInitializing =
-            ThreadLocal.withInitial(() -> Boolean.FALSE);
 
     // indicates if Class-Path attribute present
     private boolean hasClassPathAttribute;
@@ -1041,6 +1041,11 @@ public class JarFile extends ZipFile {
                 isInitializing.set(Boolean.FALSE);
             }
         }
+    }
+
+    static boolean isInitializing() {
+        Boolean value = isInitializing.get();
+        return (value == null) ? false : value;
     }
 
     /*

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@
  * @run driver TestCPUAwareness
  */
 import java.util.List;
+import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.containers.docker.Common;
 import jdk.test.lib.containers.docker.DockerRunOptions;
 import jdk.test.lib.containers.docker.DockerTestUtils;
@@ -213,9 +214,21 @@ public class TestCPUAwareness {
 
         DockerRunOptions opts = Common.newOpts(imageName)
             .addDockerOpts("--cpu-shares=" + shares);
-        Common.run(opts)
-            .shouldMatch("CPU Shares is.*" + shares)
-            .shouldMatch("active_processor_count.*" + expectedAPC);
+        OutputAnalyzer out = Common.run(opts);
+        // Cgroups v2 needs to do some scaling of raw shares values. Hence,
+        // 256 CPU shares come back as 264. Raw value written to cpu.weight
+        // is 10. The reason this works for >= 1024 shares value is because
+        // post-scaling the closest multiple of 1024 is found and returned.
+        //
+        // For values < 1024, this doesn't happen so loosen the match to a
+        // 3-digit number and ensure the active_processor_count is as
+        // expected.
+        if (shares < 1024) {
+            out.shouldMatch("CPU Shares is.*\\d{3}");
+        } else {
+            out.shouldMatch("CPU Shares is.*" + shares);
+        }
+        out.shouldMatch("active_processor_count.*" + expectedAPC);
     }
 
     private static void testOperatingSystemMXBeanAwareness(String cpuAllocation, String expectedCpus) throws Exception {

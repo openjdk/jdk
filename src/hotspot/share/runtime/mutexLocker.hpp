@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -206,7 +206,7 @@ class MutexLocker: public StackObj {
     }
   }
 
-  MutexLocker(Mutex* mutex, Thread* thread, Mutex::SafepointCheckFlag flag = Mutex::_safepoint_check_flag) :
+  MutexLocker(Thread* thread, Mutex* mutex, Mutex::SafepointCheckFlag flag = Mutex::_safepoint_check_flag) :
     _mutex(mutex) {
     bool no_safepoint_check = flag == Mutex::_no_safepoint_check_flag;
     if (_mutex != NULL) {
@@ -242,8 +242,8 @@ class MonitorLocker: public MutexLocker {
     assert(_monitor != NULL, "NULL monitor not allowed");
   }
 
-  MonitorLocker(Monitor* monitor, Thread* thread, Mutex::SafepointCheckFlag flag = Mutex::_safepoint_check_flag) :
-    MutexLocker(monitor, thread, flag), _flag(flag), _monitor(monitor)  {
+  MonitorLocker(Thread* thread, Monitor* monitor, Mutex::SafepointCheckFlag flag = Mutex::_safepoint_check_flag) :
+    MutexLocker(thread, monitor, flag), _flag(flag), _monitor(monitor)  {
     // Superclass constructor did locking
     assert(_monitor != NULL, "NULL monitor not allowed");
   }

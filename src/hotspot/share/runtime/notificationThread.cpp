@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,7 +59,7 @@ void NotificationThread::initialize() {
                           thread_oop,
                           THREAD);
   {
-    MutexLocker mu(Threads_lock);
+    MutexLocker mu(THREAD, Threads_lock);
     NotificationThread* thread =  new NotificationThread(&notification_thread_entry);
 
     // At this point it may be possible that no osthread was created for the

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,47 +27,47 @@
  * @summary Add C2 x86 Superword support for VNNI VPDPWSSD Instruction
  * @requires os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64"
  *
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:LoopUnrollLimit=250
+ * @run main/othervm -XX:LoopUnrollLimit=250
  *      -XX:CompileThresholdScaling=0.1
- *      -XX:+SuperWord
+ *      -XX:+UseSuperWord
  *      -XX:LoopMaxUnroll=2
  *      compiler.loopopts.superword.Vec_MulAddS2I
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:LoopUnrollLimit=250
+ * @run main/othervm -XX:LoopUnrollLimit=250
  *      -XX:CompileThresholdScaling=0.1
- *      -XX:-SuperWord
+ *      -XX:-UseSuperWord
  *      -XX:LoopMaxUnroll=2
  *      compiler.loopopts.superword.Vec_MulAddS2I
  *
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:LoopUnrollLimit=250
+ * @run main/othervm -XX:LoopUnrollLimit=250
  *      -XX:CompileThresholdScaling=0.1
- *      -XX:+SuperWord
+ *      -XX:+UseSuperWord
  *      -XX:LoopMaxUnroll=4
  *      compiler.loopopts.superword.Vec_MulAddS2I
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:LoopUnrollLimit=250
+ * @run main/othervm -XX:LoopUnrollLimit=250
  *      -XX:CompileThresholdScaling=0.1
- *      -XX:-SuperWord
+ *      -XX:-UseSuperWord
  *      -XX:LoopMaxUnroll=4
  *      compiler.loopopts.superword.Vec_MulAddS2I
  *
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:LoopUnrollLimit=250
+ * @run main/othervm -XX:LoopUnrollLimit=250
  *      -XX:CompileThresholdScaling=0.1
- *      -XX:+SuperWord
+ *      -XX:+UseSuperWord
  *      -XX:LoopMaxUnroll=8
  *      compiler.loopopts.superword.Vec_MulAddS2I
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:LoopUnrollLimit=250
+ * @run main/othervm -XX:LoopUnrollLimit=250
  *      -XX:CompileThresholdScaling=0.1
- *      -XX:-SuperWord
+ *      -XX:-UseSuperWord
  *      -XX:LoopMaxUnroll=8
  *      compiler.loopopts.superword.Vec_MulAddS2I
  *
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:LoopUnrollLimit=250
+ * @run main/othervm -XX:LoopUnrollLimit=250
  *      -XX:CompileThresholdScaling=0.1
- *      -XX:+SuperWord
+ *      -XX:+UseSuperWord
  *      -XX:LoopMaxUnroll=16
  *      compiler.loopopts.superword.Vec_MulAddS2I
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:LoopUnrollLimit=250
+ * @run main/othervm -XX:LoopUnrollLimit=250
  *      -XX:CompileThresholdScaling=0.1
- *      -XX:-SuperWord
+ *      -XX:-UseSuperWord
  *      -XX:LoopMaxUnroll=16
  *      compiler.loopopts.superword.Vec_MulAddS2I
  */

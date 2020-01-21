@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2017 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -29,14 +29,21 @@
  * @summary Failures during class definition can lead to memory leaks in metaspace
  * @requires vm.opt.final.ClassUnloading
  * @library /test/lib
- * @run main/othervm test.DefineClass defineClass
- * @run main/othervm test.DefineClass defineSystemClass
- * @run main/othervm -XX:+AllowParallelDefineClass
-                     test.DefineClass defineClassParallel
- * @run main/othervm -XX:-AllowParallelDefineClass
-                     test.DefineClass defineClassParallel
- * @run main/othervm -Djdk.attach.allowAttachSelf test.DefineClass redefineClass
- * @run main/othervm -Djdk.attach.allowAttachSelf test.DefineClass redefineClassWithError
+ * @build sun.hotspot.WhiteBox
+ * @run main ClassFileInstaller sun.hotspot.WhiteBox
+ *                              sun.hotspot.WhiteBox$WhiteBoxPermission
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI test.DefineClass defineClass
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI test.DefineClass defineSystemClass
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *                   -XX:+AllowParallelDefineClass
+ *                   test.DefineClass defineClassParallel
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *                   -XX:-AllowParallelDefineClass
+ *                   test.DefineClass defineClassParallel
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *                   -Djdk.attach.allowAttachSelf test.DefineClass redefineClass
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *                   -Djdk.attach.allowAttachSelf test.DefineClass redefineClassWithError
  * @author volker.simonis@gmail.com
  */
 
@@ -48,20 +55,16 @@ import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.lang.instrument.ClassDefinition;
 import java.lang.instrument.Instrumentation;
-import java.lang.management.ManagementFactory;
-import java.util.Scanner;
 import java.util.concurrent.CountDownLatch;
 import java.util.jar.Attributes;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 import java.util.jar.Manifest;
 
-import javax.management.MBeanServer;
-import javax.management.ObjectName;
-
 import com.sun.tools.attach.VirtualMachine;
 
 import jdk.test.lib.process.ProcessTools;
+import sun.hotspot.WhiteBox;
 
 public class DefineClass {
 
@@ -205,35 +208,10 @@ public class DefineClass {
         }
     }
 
-    private static MBeanServer mbserver = ManagementFactory.getPlatformMBeanServer();
+    public static WhiteBox wb = WhiteBox.getWhiteBox();
 
-    private static int getClassStats(String pattern) {
-        try {
-            ObjectName diagCmd = new ObjectName("com.sun.management:type=DiagnosticCommand");
-
-            String result = (String)mbserver.invoke(diagCmd , "gcClassStats" , new Object[] { null }, new String[] {String[].class.getName()});
-            int count = 0;
-            try (Scanner s = new Scanner(result)) {
-                if (s.hasNextLine()) {
-                    System.out.println(s.nextLine());
-                }
-                while (s.hasNextLine()) {
-                    String l = s.nextLine();
-                    if (l.endsWith(pattern)) {
-                        count++;
-                        System.out.println(l);
-                    }
-                }
-            }
-            return count;
-        }
-        catch (Exception e) {
-            throw new RuntimeException("Test failed because we can't read the class statistics!", e);
-        }
-    }
-
-    private static void printClassStats(int expectedCount, boolean reportError) {
-        int count = getClassStats("DefineClass");
+    private static void checkClasses(int expectedCount, boolean reportError) {
+        int count = wb.countAliveClasses("test.DefineClass");
         String res = "Should have " + expectedCount +
                      " DefineClass instances and we have: " + count;
         System.out.println(res);
@@ -243,6 +221,21 @@ public class DefineClass {
     }
 
     public static final int ITERATIONS = 10;
+
+    private static void checkClassesAfterGC(int expectedCount) {
+        // The first System.gc() doesn't clean metaspaces but triggers cleaning
+        // for the next safepoint.
+        // In the future the ServiceThread may clean metaspaces, but this loop
+        // should give it enough time to run, when that is changed.
+        // We might need to revisit this test though.
+        for (int i = 0; i < ITERATIONS; i++) {
+            System.gc();
+            System.out.println("System.gc()");
+            // Break if the GC has cleaned metaspace before iterations.
+            if (wb.countAliveClasses("test.DefineClass") == expectedCount) break;
+        }
+        checkClasses(expectedCount, true);
+    }
 
     public static void main(String[] args) throws Exception {
         String myName = DefineClass.class.getName();
@@ -265,11 +258,10 @@ public class DefineClass {
             // We expect to have two instances of DefineClass here: the initial version in which we are
             // executing and another version which was loaded into our own classloader 'MyClassLoader'.
             // All the subsequent attempts to reload DefineClass into our 'MyClassLoader' should have failed.
-            printClassStats(2, false);
-            System.gc();
-            System.out.println("System.gc()");
-            // At least after System.gc() the failed loading attempts should leave no instances around!
-            printClassStats(2, true);
+            // The ClassLoaderDataGraph has the failed instances recorded at least until the next GC.
+            checkClasses(2, false);
+            // At least after some System.gc() the failed loading attempts should leave no instances around!
+            checkClassesAfterGC(2);
         }
         else if ("defineSystemClass".equals(args[0])) {
             MyClassLoader cl = new MyClassLoader();
@@ -293,11 +285,9 @@ public class DefineClass {
             }
             // We expect to stay with one (the initial) instances of DefineClass.
             // All the subsequent attempts to reload DefineClass into the 'java' package should have failed.
-            printClassStats(1, false);
-            System.gc();
-            System.out.println("System.gc()");
-            // At least after System.gc() the failed loading attempts should leave no instances around!
-            printClassStats(1, true);
+            // The ClassLoaderDataGraph has the failed instances recorded at least until the next GC.
+            checkClasses(1, false);
+            checkClassesAfterGC(1);
         }
         else if ("defineClassParallel".equals(args[0])) {
             MyParallelClassLoader pcl = new MyParallelClassLoader();
@@ -315,11 +305,9 @@ public class DefineClass {
             System.out.print("Counted " + pcl.getLinkageErrors() + " LinkageErrors ");
             System.out.println(pcl.getLinkageErrors() == 0 ?
                     "" : "(use -XX:+AllowParallelDefineClass to avoid this)");
-            System.gc();
-            System.out.println("System.gc()");
             // After System.gc() we expect to remain with two instances: one is the initial version which is
             // kept alive by this main method and another one in the parallel class loader.
-            printClassStats(2, true);
+            checkClassesAfterGC(2);
         }
         else if ("redefineClass".equals(args[0])) {
             loadInstrumentationAgent(myName, buf);
@@ -337,17 +325,15 @@ public class DefineClass {
             }
             // We expect to have one instance for each redefinition because they are all kept alive by an activation
             // plus the initial version which is kept active by this main method.
-            printClassStats(iterations + 1, false);
+            checkClasses(iterations + 1, true);
             stop.countDown(); // Let all threads leave the DefineClass.getID() activation..
             // ..and wait until really all of them returned from DefineClass.getID()
             for (int i = 0; i < iterations; i++) {
                 threads[i].join();
             }
-            System.gc();
-            System.out.println("System.gc()");
             // After System.gc() we expect to remain with two instances: one is the initial version which is
             // kept alive by this main method and another one which is the latest redefined version.
-            printClassStats(2, true);
+            checkClassesAfterGC(2);
         }
         else if ("redefineClassWithError".equals(args[0])) {
             loadInstrumentationAgent(myName, buf);
@@ -365,11 +351,10 @@ public class DefineClass {
             }
             // We expect just a single DefineClass instance because failed redefinitions should
             // leave no garbage around.
-            printClassStats(1, false);
-            System.gc();
-            System.out.println("System.gc()");
+            // The ClassLoaderDataGraph has the failed instances recorded at least until the next GC.
+            checkClasses(1, false);
             // At least after a System.gc() we should definitely stay with a single instance!
-            printClassStats(1, true);
+            checkClassesAfterGC(1);
         }
     }
 }

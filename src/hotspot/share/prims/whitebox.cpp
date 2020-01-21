@@ -161,24 +161,23 @@ WB_END
 
 class WBIsKlassAliveClosure : public LockedClassesDo {
     Symbol* _name;
-    bool _found;
+    int _count;
 public:
-    WBIsKlassAliveClosure(Symbol* name) : _name(name), _found(false) {}
+    WBIsKlassAliveClosure(Symbol* name) : _name(name), _count(0) {}
 
     void do_klass(Klass* k) {
-      if (_found) return;
       Symbol* ksym = k->name();
       if (ksym->fast_compare(_name) == 0) {
-        _found = true;
+        _count++;
       }
     }
 
-    bool found() const {
-        return _found;
+    int count() const {
+        return _count;
     }
 };
 
-WB_ENTRY(jboolean, WB_IsClassAlive(JNIEnv* env, jobject target, jstring name))
+WB_ENTRY(jint, WB_CountAliveClasses(JNIEnv* env, jobject target, jstring name))
   oop h_name = JNIHandles::resolve(name);
   if (h_name == NULL) return false;
   Symbol* sym = java_lang_String::as_symbol(h_name);
@@ -187,7 +186,8 @@ WB_ENTRY(jboolean, WB_IsClassAlive(JNIEnv* env, jobject target, jstring name))
   WBIsKlassAliveClosure closure(sym);
   ClassLoaderDataGraph::classes_do(&closure);
 
-  return closure.found();
+  // Return the count of alive classes with this name.
+  return closure.count();
 WB_END
 
 WB_ENTRY(jint, WB_GetSymbolRefcount(JNIEnv* env, jobject unused, jstring name))
@@ -1021,7 +1021,7 @@ bool WhiteBox::compile_method(Method* method, int comp_level, int bci, Thread* T
 
   // Compile method and check result
   nmethod* nm = CompileBroker::compile_method(mh, bci, comp_level, mh, mh->invocation_count(), CompileTask::Reason_Whitebox, THREAD);
-  MutexLocker mu(Compile_lock);
+  MutexLocker mu(THREAD, Compile_lock);
   bool is_queued = mh->queued_for_compilation();
   if ((!is_blocking && is_queued) || nm != NULL) {
     return true;
@@ -1068,7 +1068,7 @@ WB_ENTRY(jint, WB_MatchesInline(JNIEnv* env, jobject o, jobject method, jstring 
 
   methodHandle mh(THREAD, Method::checked_resolve_jmethod_id(jmid));
 
-  ResourceMark rm;
+  ResourceMark rm(THREAD);
   const char* error_msg = NULL;
   char* method_str = java_lang_String::as_utf8_string(JNIHandles::resolve_non_null(pattern));
   InlineMatcher* m = InlineMatcher::parse_inline_pattern(method_str, error_msg);
@@ -1139,18 +1139,18 @@ WB_ENTRY(void, WB_ClearMethodState(JNIEnv* env, jobject o, jobject method))
   jmethodID jmid = reflected_method_to_jmid(thread, env, method);
   CHECK_JNI_EXCEPTION(env);
   methodHandle mh(THREAD, Method::checked_resolve_jmethod_id(jmid));
-  MutexLocker mu(Compile_lock);
+  MutexLocker mu(THREAD, Compile_lock);
   MethodData* mdo = mh->method_data();
   MethodCounters* mcs = mh->method_counters();
 
   if (mdo != NULL) {
     mdo->init();
-    ResourceMark rm;
+    ResourceMark rm(THREAD);
     int arg_count = mdo->method()->size_of_parameters();
     for (int i = 0; i < arg_count; i++) {
       mdo->set_arg_modified(i, 0);
     }
-    MutexLocker mu(mdo->extra_data_lock());
+    MutexLocker mu(THREAD, mdo->extra_data_lock());
     mdo->clean_method_data(/*always_clean*/true);
   }
 
@@ -2218,7 +2218,7 @@ static JNINativeMethod methods[] = {
   {CC"getVMLargePageSize",               CC"()J",                   (void*)&WB_GetVMLargePageSize},
   {CC"getHeapSpaceAlignment",            CC"()J",                   (void*)&WB_GetHeapSpaceAlignment},
   {CC"getHeapAlignment",                 CC"()J",                   (void*)&WB_GetHeapAlignment},
-  {CC"isClassAlive0",                    CC"(Ljava/lang/String;)Z", (void*)&WB_IsClassAlive      },
+  {CC"countAliveClasses0",               CC"(Ljava/lang/String;)I", (void*)&WB_CountAliveClasses },
   {CC"getSymbolRefcount",                CC"(Ljava/lang/String;)I", (void*)&WB_GetSymbolRefcount },
   {CC"parseCommandLine0",
       CC"(Ljava/lang/String;C[Lsun/hotspot/parser/DiagnosticCommand;)[Ljava/lang/Object;",

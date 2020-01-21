@@ -350,6 +350,21 @@ public class WinMsiBundler  extends AbstractBundler {
                     MSI_IMAGE_DIR.fetchFrom(params), true);
         }
 
+        // Configure installer icon
+        if (StandardBundlerParam.isRuntimeInstaller(params)) {
+            // Use icon from java launcher.
+            // Assume java.exe exists in Java Runtime being packed.
+            // Ignore custom icon if any as we don't want to copy anything in
+            // Java Runtime image.
+            installerIcon = ApplicationLayout.javaRuntime()
+                    .runtimeDirectory()
+                    .resolve(Path.of("bin", "java.exe"));
+        } else {
+            installerIcon = ApplicationLayout.windowsAppImage()
+                    .launchersDirectory()
+                    .resolve(APP_NAME.fetchFrom(params) + ".exe");
+        }
+
         params.put(WIN_APP_IMAGE.getID(), appDir);
 
         String licenseFile = LICENSE_FILE.fetchFrom(params);
@@ -414,11 +429,13 @@ public class WinMsiBundler  extends AbstractBundler {
                 upgradeCode));
 
         data.put("JpAllowUpgrades", "yes");
+        data.put("JpAllowDowngrades", "yes");
 
         data.put("JpAppName", APP_NAME.fetchFrom(params));
         data.put("JpAppDescription", DESCRIPTION.fetchFrom(params));
         data.put("JpAppVendor", VENDOR.fetchFrom(params));
         data.put("JpAppVersion", PRODUCT_VERSION.fetchFrom(params));
+        data.put("JpIcon", installerIcon.toString());
 
         final Path configDir = CONFIG_ROOT.fetchFrom(params).toPath();
 
@@ -585,6 +602,7 @@ public class WinMsiBundler  extends AbstractBundler {
 
     }
 
+    private Path installerIcon;
     private Map<WixTool, WixTool.ToolInfo> wixToolset;
     private WixSourcesBuilder wixSourcesBuilder = new WixSourcesBuilder();
 

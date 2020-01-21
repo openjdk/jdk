@@ -132,8 +132,9 @@ seconds_until(int inputIsUTC, TimeStamp *time)
         return 0;
     }
     ULONGLONG diff = (time->QuadPart - uiLocal.QuadPart) / 10000000;
-    if (diff > (ULONGLONG)~(OM_uint32)0)
+    if (diff > (ULONGLONG)~(OM_uint32)0) {
         return GSS_C_INDEFINITE;
+    }
     return (OM_uint32)diff;
 }
 
@@ -177,8 +178,10 @@ static gss_cred_id_t
 new_cred()
 {
     gss_cred_id_t out = new gss_cred_id_struct;
-    out->phCredK = out->phCredS = NULL;
-    out->time = 0L;
+    if (out) {
+        out->phCredK = out->phCredS = NULL;
+        out->time = 0L;
+    }
     return out;
 }
 
@@ -864,6 +867,7 @@ gss_init_sec_context(OM_uint32 *minor_status,
     SecBufferDesc outBuffDesc;
     SecBuffer outSecBuff;
     BOOLEAN isSPNEGO = is_same_oid(mech_type, &SPNEGO_OID);
+    CredHandle* newCred = NULL;
 
     gss_ctx_id_t pc;
 
@@ -928,7 +932,10 @@ gss_init_sec_context(OM_uint32 *minor_status,
             pc->isLocalCred = FALSE;
         } else {
             PP("No credentials provided, acquire myself");
-            CredHandle* newCred = new CredHandle;
+            newCred = new CredHandle;
+            if (!newCred) {
+                goto err;
+            }
             SEC_WINNT_AUTH_IDENTITY_EX auth;
             ZeroMemory(&auth, sizeof(auth));
             auth.Version = SEC_WINNT_AUTH_IDENTITY_VERSION;
@@ -947,7 +954,6 @@ gss_init_sec_context(OM_uint32 *minor_status,
                     newCred,
                     &lifeTime);
             if (!(SEC_SUCCESS(ss))) {
-                delete newCred;
                 goto err;
             }
             pc->phCred = newCred;
@@ -989,7 +995,6 @@ gss_init_sec_context(OM_uint32 *minor_status,
         output_token->value = new char[outSecBuff.cbBuffer];
         if (!output_token->value) {
             FreeContextBuffer(outSecBuff.pvBuffer);
-            output_token->length = 0;
             goto err;
         }
         memcpy(output_token->value, outSecBuff.pvBuffer, outSecBuff.cbBuffer);
@@ -1009,14 +1014,17 @@ gss_init_sec_context(OM_uint32 *minor_status,
         return GSS_S_COMPLETE;
     }
 err:
+    if (newCred) {
+        delete newCred;
+    }
     if (firstTime) {
         OM_uint32 dummy;
         gss_delete_sec_context(&dummy, context_handle, GSS_C_NO_BUFFER);
     }
     if (output_token->value) {
         gss_release_buffer(NULL, output_token);
-        output_token = GSS_C_NO_BUFFER;
     }
+    output_token = GSS_C_NO_BUFFER;
     return GSS_S_FAILURE;
 }
 
@@ -1233,17 +1241,26 @@ gss_get_mic(OM_uint32 *minor_status,
     secBuff[1].cbBuffer = context_handle->SecPkgContextSizes.cbMaxSignature;
     secBuff[1].pvBuffer = msg_token->value = new char[secBuff[1].cbBuffer];
 
+    if (!secBuff[1].pvBuffer) {
+        goto err;
+    }
+
     ss = MakeSignature((PCtxtHandle)&context_handle->hCtxt, 0, &buffDesc, 0);
 
     if (!SEC_SUCCESS(ss)) {
-        msg_token->length = 0;
-        msg_token->value = NULL;
-        delete[] secBuff[1].pvBuffer;
-        return GSS_S_FAILURE;
+        goto err;
     }
 
     msg_token->length = secBuff[1].cbBuffer;
     return GSS_S_COMPLETE;
+
+err:
+    msg_token->length = 0;
+    msg_token->value = NULL;
+    if (secBuff[1].pvBuffer) {
+        delete[] secBuff[1].pvBuffer;
+    }
+    return GSS_S_FAILURE;
 }
 
 __declspec(dllexport) OM_uint32
@@ -1317,16 +1334,25 @@ gss_wrap(OM_uint32 *minor_status,
             context_handle->SecPkgContextSizes.cbSecurityTrailer
                     + input_message_buffer->length
                     + context_handle->SecPkgContextSizes.cbBlockSize);;
+    if (!output_message_buffer->value) {
+        goto err;
+    }
 
     secBuff[1].BufferType = SECBUFFER_DATA;
     secBuff[1].cbBuffer = (ULONG)input_message_buffer->length;
     secBuff[1].pvBuffer = malloc(secBuff[1].cbBuffer);
+    if (!secBuff[1].pvBuffer) {
+        goto err;
+    }
     memcpy_s(secBuff[1].pvBuffer, secBuff[1].cbBuffer,
             input_message_buffer->value, input_message_buffer->length);
 
     secBuff[2].BufferType = SECBUFFER_PADDING;
     secBuff[2].cbBuffer = context_handle->SecPkgContextSizes.cbBlockSize;
     secBuff[2].pvBuffer = malloc(secBuff[2].cbBuffer);
+    if (!secBuff[2].pvBuffer) {
+        goto err;
+    }
 
     ss = EncryptMessage((PCtxtHandle)&context_handle->hCtxt,
             conf_req_flag ? 0 : SECQOP_WRAP_NO_ENCRYPT,
@@ -1336,12 +1362,7 @@ gss_wrap(OM_uint32 *minor_status,
     }
 
     if (!SEC_SUCCESS(ss)) {
-        free(secBuff[0].pvBuffer);
-        free(secBuff[1].pvBuffer);
-        free(secBuff[2].pvBuffer);
-        output_message_buffer->length = 0;
-        output_message_buffer->value = NULL;
-        return GSS_S_FAILURE;
+        goto err;
     }
 
     memcpy_s((PBYTE)secBuff[0].pvBuffer + secBuff[0].cbBuffer,
@@ -1359,6 +1380,20 @@ gss_wrap(OM_uint32 *minor_status,
     free(secBuff[2].pvBuffer);
 
     return GSS_S_COMPLETE;
+
+err:
+    if (secBuff[0].pvBuffer) {
+        free(secBuff[0].pvBuffer);
+    }
+    if (secBuff[1].pvBuffer) {
+        free(secBuff[1].pvBuffer);
+    }
+    if (secBuff[2].pvBuffer) {
+        free(secBuff[2].pvBuffer);
+    }
+    output_message_buffer->length = 0;
+    output_message_buffer->value = NULL;
+    return GSS_S_FAILURE;
 }
 
 __declspec(dllexport) OM_uint32
@@ -1386,6 +1421,11 @@ gss_unwrap(OM_uint32 *minor_status,
     secBuff[0].BufferType = SECBUFFER_STREAM;
     secBuff[0].cbBuffer = (ULONG)input_message_buffer->length;
     secBuff[0].pvBuffer = malloc(input_message_buffer->length);
+
+    if (!secBuff[0].pvBuffer) {
+        goto err;
+    }
+
     memcpy_s(secBuff[0].pvBuffer, input_message_buffer->length,
             input_message_buffer->value, input_message_buffer->length);
 
@@ -1398,21 +1438,31 @@ gss_unwrap(OM_uint32 *minor_status,
         *qop_state = ulQop;
     }
     if (!SEC_SUCCESS(ss)) {
-        free(secBuff[0].pvBuffer);
-        output_message_buffer->length = 0;
-        output_message_buffer->value = NULL;
-        return GSS_S_FAILURE;
+        goto err;
     }
 
     // Must allocate a new memory block so client can release it correctly
     output_message_buffer->length = secBuff[1].cbBuffer;
     output_message_buffer->value = new char[secBuff[1].cbBuffer];
+
+    if (!output_message_buffer->value) {
+        goto err;
+    }
+
     memcpy_s(output_message_buffer->value, secBuff[1].cbBuffer,
             secBuff[1].pvBuffer, secBuff[1].cbBuffer);
     *conf_state = ulQop == SECQOP_WRAP_NO_ENCRYPT ? 0 : 1;
 
     free(secBuff[0].pvBuffer);
     return GSS_S_COMPLETE;
+
+err:
+    if (secBuff[0].pvBuffer) {
+        free(secBuff[0].pvBuffer);
+    }
+    output_message_buffer->length = 0;
+    output_message_buffer->value = NULL;
+    return GSS_S_FAILURE;
 }
 
 __declspec(dllexport) OM_uint32
@@ -1544,11 +1594,19 @@ gss_display_status(OM_uint32 *minor_status,
             msg, 256, 0);
     if (len > 0) {
         status_string->value = new char[len + 20];
+        if (!status_string->value) {
+            status_string = GSS_C_NO_BUFFER;
+            return GSS_S_FAILURE;
+        }
         status_string->length = sprintf_s(
                 (LPSTR)status_string->value, len + 19,
                 "(%lx) %ls", status_value, msg);
     } else {
         status_string->value = new char[33];
+        if (!status_string->value) {
+            status_string = GSS_C_NO_BUFFER;
+            return GSS_S_FAILURE;
+        }
         status_string->length = sprintf_s(
                 (LPSTR)status_string->value, 32,
                 "status is %lx", status_value);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -290,11 +290,11 @@ void initialize_basic_type_klass(Klass* k, TRAPS) {
 }
 
 void Universe::genesis(TRAPS) {
-  ResourceMark rm;
+  ResourceMark rm(THREAD);
 
   { FlagSetting fs(_bootstrapping, true);
 
-    { MutexLocker mc(Compile_lock);
+    { MutexLocker mc(THREAD, Compile_lock);
 
       java_lang_Class::allocate_fixup_lists();
 
@@ -403,7 +403,7 @@ void Universe::genesis(TRAPS) {
       // Only modify the global variable inside the mutex.
       // If we had a race to here, the other dummy_array instances
       // and their elements just get dropped on the floor, which is fine.
-      MutexLocker ml(FullGCALot_lock);
+      MutexLocker ml(THREAD, FullGCALot_lock);
       if (_fullgc_alot_dummy_array == NULL) {
         _fullgc_alot_dummy_array = dummy_array();
       }
@@ -544,7 +544,7 @@ void initialize_itable_for_klass(InstanceKlass* k, TRAPS) {
 
 
 void Universe::reinitialize_itables(TRAPS) {
-  MutexLocker mcld(ClassLoaderDataGraph_lock);
+  MutexLocker mcld(THREAD, ClassLoaderDataGraph_lock);
   ClassLoaderDataGraph::dictionary_classes_do(initialize_itable_for_klass, CHECK);
 }
 
@@ -946,7 +946,7 @@ bool universe_post_init() {
   // This needs to be done before the first scavenge/gc, since
   // it's an input to soft ref clearing policy.
   {
-    MutexLocker x(Heap_lock);
+    MutexLocker x(THREAD, Heap_lock);
     Universe::update_heap_info_at_gc();
   }
 

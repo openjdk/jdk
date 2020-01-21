@@ -318,28 +318,8 @@ public class KrbTgsReq {
         byte[] temp = reqBody.asn1Encode(Krb5.KRB_TGS_REQ);
         // if the checksum type is one of the keyed checksum types,
         // use session key.
-        Checksum cksum;
-        switch (Checksum.CKSUMTYPE_DEFAULT) {
-        case Checksum.CKSUMTYPE_RSA_MD4_DES:
-        case Checksum.CKSUMTYPE_DES_MAC:
-        case Checksum.CKSUMTYPE_DES_MAC_K:
-        case Checksum.CKSUMTYPE_RSA_MD4_DES_K:
-        case Checksum.CKSUMTYPE_RSA_MD5_DES:
-        case Checksum.CKSUMTYPE_HMAC_SHA1_DES3_KD:
-        case Checksum.CKSUMTYPE_HMAC_MD5_ARCFOUR:
-        case Checksum.CKSUMTYPE_HMAC_SHA1_96_AES128:
-        case Checksum.CKSUMTYPE_HMAC_SHA1_96_AES256:
-        case Checksum.CKSUMTYPE_HMAC_SHA256_128_AES128:
-        case Checksum.CKSUMTYPE_HMAC_SHA384_192_AES256:
-            cksum = new Checksum(Checksum.CKSUMTYPE_DEFAULT, temp, key,
+        Checksum cksum  = new Checksum(Checksum.CKSUMTYPE_DEFAULT, temp, key,
                 KeyUsage.KU_PA_TGS_REQ_CKSUM);
-            break;
-        case Checksum.CKSUMTYPE_CRC32:
-        case Checksum.CKSUMTYPE_RSA_MD4:
-        case Checksum.CKSUMTYPE_RSA_MD5:
-        default:
-            cksum = new Checksum(Checksum.CKSUMTYPE_DEFAULT, temp);
-        }
 
         // Usage will be KeyUsage.KU_PA_TGS_REQ_AUTHENTICATOR
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,6 @@ private:
   ZPage**           _sorted_pages;
   size_t            _nselected;
   size_t            _relocating;
-  size_t            _fragmentation;
 
   void semi_sort();
 
@@ -57,7 +56,6 @@ public:
   ZPage* const* selected() const;
   size_t nselected() const;
   size_t relocating() const;
-  size_t fragmentation() const;
 };
 
 class ZRelocationSetSelector : public StackObj {
@@ -66,7 +64,6 @@ private:
   ZRelocationSetSelectorGroup _medium;
   size_t                      _live;
   size_t                      _garbage;
-  size_t                      _fragmentation;
 
 public:
   ZRelocationSetSelector();
@@ -78,7 +75,6 @@ public:
   size_t live() const;
   size_t garbage() const;
   size_t relocating() const;
-  size_t fragmentation() const;
 };
 
 #endif // SHARE_GC_Z_ZRELOCATIONSETSELECTOR_HPP

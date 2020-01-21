@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -215,19 +215,26 @@ public class OpeningHandshake {
         //
         // See https://tools.ietf.org/html/rfc6455#section-7.4.1
         Result result = null;
-        Exception exception = null;
+        Throwable exception = null;
         try {
             result = handleResponse(response);
         } catch (IOException e) {
             exception = e;
         } catch (Exception e) {
             exception = new WebSocketHandshakeException(response).initCause(e);
+        } catch (Error e) {
+            // We should attempt to close the connection and relay
+            // the error through the completable future even in this
+            // case.
+            exception = e;
         }
         if (exception == null) {
             return MinimalFuture.completedFuture(result);
         }
         try {
-            ((RawChannel.Provider) response).rawChannel().close();
+            // calling this method will close the rawChannel, if created,
+            // or the connection, if not.
+            ((RawChannel.Provider) response).closeRawChannel();
         } catch (IOException e) {
             exception.addSuppressed(e);
         }

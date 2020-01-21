@@ -32,7 +32,7 @@ import java.nio.ByteOrder;
  * This class defines useful layout constants. Some of the constants defined in this class are explicit in both
  * size and byte order (see {@link #BITS_64_BE}), and can therefore be used to explicitly and unambiguously specify the
  * contents of a memory segment. Other constants make implicit byte order assumptions (see
- * {@link #JAVA_INT}); as such, these constants make it easy to interoperate with other serialization-centric APIs,
+ * {@link #JAVA_INT}); as such, these constants make it easy to work with other serialization-centric APIs,
  * such as {@link java.nio.ByteBuffer}.
  */
 public final class MemoryLayouts {

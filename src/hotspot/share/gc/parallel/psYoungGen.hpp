@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,8 +31,6 @@
 #include "gc/parallel/psVirtualspace.hpp"
 #include "gc/parallel/spaceCounters.hpp"
 
-class PSMarkSweepDecorator;
-
 class PSYoungGen : public CHeapObj<mtGC> {
   friend class VMStructs;
   friend class ParallelScavengeHeap;
@@ -46,12 +44,6 @@ class PSYoungGen : public CHeapObj<mtGC> {
   MutableSpace* _eden_space;
   MutableSpace* _from_space;
   MutableSpace* _to_space;
-
-
-  // MarkSweep Decorators
-  PSMarkSweepDecorator* _eden_mark_sweep;
-  PSMarkSweepDecorator* _from_mark_sweep;
-  PSMarkSweepDecorator* _to_mark_sweep;
 
   // Sizing information, in bytes, set in constructor
   const size_t _init_gen_size;
@@ -117,17 +109,6 @@ class PSYoungGen : public CHeapObj<mtGC> {
 
   // For Adaptive size policy
   size_t min_gen_size() { return _min_gen_size; }
-
-  // MarkSweep support
-  PSMarkSweepDecorator* eden_mark_sweep() const    { return _eden_mark_sweep; }
-  PSMarkSweepDecorator* from_mark_sweep() const    { return _from_mark_sweep; }
-  PSMarkSweepDecorator* to_mark_sweep() const      { return _to_mark_sweep;   }
-
-#if INCLUDE_SERIALGC
-  void precompact();
-  void adjust_pointers();
-  void compact();
-#endif
 
   // Called during/after GC
   void swap_spaces();

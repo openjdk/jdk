@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2016, 2018, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2016, 2020, Red Hat, Inc. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
@@ -49,8 +50,9 @@ public class TestEvilSyncBug {
         if (args.length > 0) {
             test();
         } else {
-            ExecutorService pool = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
-
+            // Use 1/4 of available processors to avoid over-saturation.
+            int numJobs = Math.max(1, Runtime.getRuntime().availableProcessors() / 4);
+            ExecutorService pool = Executors.newFixedThreadPool(numJobs);
             Future<?>[] fs = new Future<?>[NUM_RUNS];
 
             for (int c = 0; c < NUM_RUNS; c++) {

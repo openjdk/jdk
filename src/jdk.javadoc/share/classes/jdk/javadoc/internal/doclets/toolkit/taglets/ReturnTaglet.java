@@ -73,7 +73,7 @@ public class ReturnTaglet extends BaseTaglet implements InheritableTaglet {
     public Content getTagletOutput(Element holder, TagletWriter writer) {
         Messages messages = writer.configuration().getMessages();
         Utils utils = writer.configuration().utils;
-        TypeMirror returnType = utils.getReturnType((ExecutableElement)holder);
+        TypeMirror returnType = utils.getReturnType(writer.getCurrentPageElement(), (ExecutableElement)holder);
         List<? extends DocTree> tags = utils.getBlockTags(holder, DocTree.Kind.RETURN);
 
         //Make sure we are not using @return tag on method with void return type.

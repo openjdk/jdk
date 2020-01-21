@@ -1,6 +1,6 @@
 //
-// Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
-// Copyright (c) 2014, 2019, Red Hat, Inc. All rights reserved.
+// Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2014, 2020, Red Hat, Inc. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -983,6 +983,7 @@ source_hpp %{
 #include "gc/shared/cardTableBarrierSet.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "opto/addnode.hpp"
+#include "opto/convertnode.hpp"
 
 extern RegMask _ANY_REG32_mask;
 extern RegMask _ANY_REG_mask;
@@ -13232,6 +13233,29 @@ instruct sqrtF_reg(vRegF dst, vRegF src) %{
   ins_pipe(fp_div_d);
 %}
 
+// Math.rint, floor, ceil
+instruct roundD_reg(vRegD dst, vRegD src, immI rmode) %{
+  match(Set dst (RoundDoubleMode src rmode));
+  format %{ "frint  $dst, $src, $rmode" %}
+  ins_encode %{
+    switch ($rmode$$constant) {
+      case RoundDoubleModeNode::rmode_rint:
+        __ frintnd(as_FloatRegister($dst$$reg),
+                   as_FloatRegister($src$$reg));
+        break;
+      case RoundDoubleModeNode::rmode_floor:
+        __ frintmd(as_FloatRegister($dst$$reg),
+                   as_FloatRegister($src$$reg));
+        break;
+      case RoundDoubleModeNode::rmode_ceil:
+        __ frintpd(as_FloatRegister($dst$$reg),
+                   as_FloatRegister($src$$reg));
+        break;
+    }
+  %}
+  ins_pipe(fp_uop_d);
+%}
+
 // ============================================================================
 // Logical Instructions
 
@@ -17935,6 +17959,29 @@ instruct vmin2D(vecX dst, vecX src1, vecX src2)
     __ fmin(as_FloatRegister($dst$$reg), __ T2D,
             as_FloatRegister($src1$$reg),
             as_FloatRegister($src2$$reg));
+  %}
+  ins_pipe(vdop_fp128);
+%}
+
+instruct vround2D_reg(vecX dst, vecX src, immI rmode) %{
+  predicate(n->as_Vector()->length() == 2 && n->bottom_type()->is_vect()->element_basic_type() == T_DOUBLE);
+  match(Set dst (RoundDoubleModeV src rmode));
+  format %{ "frint  $dst, $src, $rmode" %}
+  ins_encode %{
+    switch ($rmode$$constant) {
+      case RoundDoubleModeNode::rmode_rint:
+        __ frintn(as_FloatRegister($dst$$reg), __ T2D,
+                  as_FloatRegister($src$$reg));
+        break;
+      case RoundDoubleModeNode::rmode_floor:
+        __ frintm(as_FloatRegister($dst$$reg), __ T2D,
+                  as_FloatRegister($src$$reg));
+        break;
+      case RoundDoubleModeNode::rmode_ceil:
+        __ frintp(as_FloatRegister($dst$$reg), __ T2D,
+                  as_FloatRegister($src$$reg));
+        break;
+    }
   %}
   ins_pipe(vdop_fp128);
 %}

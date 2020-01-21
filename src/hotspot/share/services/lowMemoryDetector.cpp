@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -335,7 +335,7 @@ void SensorInfo::trigger(int count, TRAPS) {
 
   {
     // Holds Notification_lock and update the sensor state
-    MutexLocker ml(Notification_lock, Mutex::_no_safepoint_check_flag);
+    MutexLocker ml(THREAD, Notification_lock, Mutex::_no_safepoint_check_flag);
     assert(_pending_trigger_count > 0, "Must have pending trigger");
     _sensor_on = true;
     _sensor_count += count;
@@ -346,7 +346,7 @@ void SensorInfo::trigger(int count, TRAPS) {
 void SensorInfo::clear(int count, TRAPS) {
   {
     // Holds Notification_lock and update the sensor state
-    MutexLocker ml(Notification_lock, Mutex::_no_safepoint_check_flag);
+    MutexLocker ml(THREAD, Notification_lock, Mutex::_no_safepoint_check_flag);
     if (_pending_clear_count == 0) {
       // Bail out if we lost a race to set_*_sensor_level() which may have
       // reactivated the sensor in the meantime because it was triggered again.

@@ -35,6 +35,7 @@ import java.util.Optional;
 import java.util.function.Function;
 
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.util.StaticProperty;
 
 /**
  * Filter classes, array lengths, and graph metrics during deserialization.
@@ -205,15 +206,17 @@ public interface ObjectInputFilter {
      * <p>
      * The filter is configured during the initialization of the {@code ObjectInputFilter.Config}
      * class. For example, by calling {@link #getSerialFilter() Config.getSerialFilter}.
-     * If the system property {@systemProperty jdk.serialFilter} is defined, it is used
-     * to configure the filter.
-     * If the system property is not defined, and the {@link java.security.Security}
-     * property {@code jdk.serialFilter} is defined then it is used to configure the filter.
-     * Otherwise, the filter is not configured during initialization.
+     * If the system property {@systemProperty jdk.serialFilter} is defined on the command line,
+     * it is used to configure the filter.
+     * If the system property is not defined on the command line, and the
+     * {@link java.security.Security} property {@code jdk.serialFilter} is defined
+     * then it is used to configure the filter.
+     * Otherwise, the filter is not configured during initialization and
+     * can be set with {@link #setSerialFilter(ObjectInputFilter) Config.setSerialFilter}.
+     * Setting the {@code jdk.serialFilter} with {@link System#setProperty(String, String)
+     * System.setProperty} <em>does not set the filter</em>.
      * The syntax for each property is the same as for the
      * {@link #createFilter(String) createFilter} method.
-     * If a filter is not configured, it can be set with
-     * {@link #setSerialFilter(ObjectInputFilter) Config.setSerialFilter}.
      *
      * @since 9
      */
@@ -256,7 +259,7 @@ public interface ObjectInputFilter {
         static {
             configuredFilter = AccessController
                     .doPrivileged((PrivilegedAction<ObjectInputFilter>) () -> {
-                        String props = System.getProperty(SERIAL_FILTER_PROPNAME);
+                        String props = StaticProperty.jdkSerialFilter();
                         if (props == null) {
                             props = Security.getProperty(SERIAL_FILTER_PROPNAME);
                         }

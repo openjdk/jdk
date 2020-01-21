@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2020 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@ import java.util.*;
 
 public class Worker extends Thread {
     ArrayList<Runnable> jobs = new ArrayList<Runnable>();
-    private boolean stopped = false;
+    private volatile boolean stopped = false;
 
     public Worker(String name) {
         super("Worker-"+name);
@@ -38,17 +38,17 @@ public class Worker extends Thread {
     }
 
     public void run() {
-        while (!isStopped()) {
+        while (!stopped) {
             Runnable job;
             synchronized(jobs) {
-                while (!isStopped() && jobs.size() == 0) {
+                while (!stopped && jobs.size() == 0) {
                     try {
                         jobs.wait();
                     } catch (InterruptedException ex) {
                     }
                 }
 
-                if(isStopped()) break;
+                if(stopped) break;
 
                 job = jobs.remove(0);
             }
@@ -56,11 +56,7 @@ public class Worker extends Thread {
         }
     }
 
-    private synchronized boolean isStopped() {
-        return stopped;
-    }
-
-    public synchronized void stopWorker() {
+    public void stopWorker() {
         stopped = true;
         synchronized(jobs) {
             jobs.notify();

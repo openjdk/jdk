@@ -116,7 +116,7 @@ public class TestInstanceKlassSizeForInterface {
             Integer.toString(lingeredAppPid)
         };
 
-        // Start a new process to attach to the LingeredApp process
+        // Start a new process to attach to the LingeredApp process to get SA info
         ProcessBuilder processBuilder = ProcessTools
                   .createJavaProcessBuilder(toolArgs);
         OutputAnalyzer SAOutput = ProcessTools.executeProcess(processBuilder);
@@ -150,9 +150,7 @@ public class TestInstanceKlassSizeForInterface {
 
         if (args == null || args.length == 0) {
             try {
-                List<String> vmArgs = new ArrayList<String>();
-                vmArgs.addAll(Utils.getVmOptions());
-
+                List<String> vmArgs = Arrays.asList(Utils.getTestJavaOpts());
                 theApp = new LingeredAppWithInterface();
                 LingeredApp.startApp(vmArgs, theApp);
                 createAnotherToAttach(instanceKlassNames,

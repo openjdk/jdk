@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1393,7 +1393,7 @@ JVM_ENTRY(void, MHN_setCallSiteTargetNormal(JNIEnv* env, jobject igcls, jobject 
   Handle target   (THREAD, JNIHandles::resolve_non_null(target_jh));
   {
     // Walk all nmethods depending on this call site.
-    MutexLocker mu(Compile_lock, thread);
+    MutexLocker mu(thread, Compile_lock);
     MethodHandles::flush_dependent_nmethods(call_site, target);
     java_lang_invoke_CallSite::set_target(call_site(), target());
   }
@@ -1405,7 +1405,7 @@ JVM_ENTRY(void, MHN_setCallSiteTargetVolatile(JNIEnv* env, jobject igcls, jobjec
   Handle target   (THREAD, JNIHandles::resolve_non_null(target_jh));
   {
     // Walk all nmethods depending on this call site.
-    MutexLocker mu(Compile_lock, thread);
+    MutexLocker mu(thread, Compile_lock);
     MethodHandles::flush_dependent_nmethods(call_site, target);
     java_lang_invoke_CallSite::set_target_volatile(call_site(), target());
   }
@@ -1499,12 +1499,12 @@ JVM_ENTRY(void, MHN_clearCallSiteContext(JNIEnv* env, jobject igcls, jobject con
   Handle context(THREAD, JNIHandles::resolve_non_null(context_jh));
   {
     // Walk all nmethods depending on this call site.
-    MutexLocker mu1(Compile_lock, thread);
+    MutexLocker mu1(thread, Compile_lock);
 
     int marked = 0;
     {
       NoSafepointVerifier nsv;
-      MutexLocker mu2(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+      MutexLocker mu2(THREAD, CodeCache_lock, Mutex::_no_safepoint_check_flag);
       DependencyContext deps = java_lang_invoke_MethodHandleNatives_CallSiteContext::vmdependencies(context());
       marked = deps.remove_all_dependents();
     }

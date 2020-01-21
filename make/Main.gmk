@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -407,6 +407,9 @@ release-file:
 exploded-image-optimize:
 	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f ExplodedImageOptimize.gmk)
 
+graal-builder-image:
+	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f GraalBuilderImage.gmk)
+
 ifeq ($(JCOV_ENABLED), true)
   jcov-image:
 	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f Coverage.gmk jcov-image)
@@ -415,7 +418,7 @@ endif
 ALL_TARGETS += store-source-revision create-source-revision-tracker bootcycle-images zip-security \
     zip-source jrtfs-jar jdk-image legacy-jre-image \
     symbols-image static-libs-image mac-jdk-bundle mac-legacy-jre-bundle \
-    release-file exploded-image-optimize jcov-image
+    release-file exploded-image-optimize graal-builder-image jcov-image
 
 ################################################################################
 # Docs targets
@@ -885,6 +888,8 @@ else
   symbols-image: $(LIBS_TARGETS) $(LAUNCHER_TARGETS)
 
   static-libs-image: $(STATIC_LIBS_TARGETS)
+
+  graal-builder-image: jdk-image static-libs-image
 
   mac-jdk-bundle: jdk-image
   mac-legacy-jre-bundle: legacy-jre-image

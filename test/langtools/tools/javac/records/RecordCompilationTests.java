@@ -23,6 +23,21 @@
  * questions.
  */
 
+/**
+ * RecordCompilationTests
+ *
+ * @test
+ * @summary Negative compilation tests, and positive compilation (smoke) tests for records
+ * @library /lib/combo
+ * @modules
+ *      jdk.compiler/com.sun.tools.javac.util
+ *      jdk.jdeps/com.sun.tools.classfile
+ * @compile --enable-preview -source ${jdk.version} RecordCompilationTests.java
+ * @run testng/othervm --enable-preview RecordCompilationTests
+ */
+
+import java.io.File;
+
 import java.lang.annotation.ElementType;
 import java.util.EnumMap;
 import java.util.EnumSet;
@@ -30,22 +45,18 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import com.sun.tools.javac.util.Assert;
+
+import com.sun.tools.classfile.ClassFile;
+import com.sun.tools.classfile.ConstantPool;
+import com.sun.tools.classfile.ConstantPool.CPInfo;
+
 import org.testng.annotations.Test;
 import tools.javac.combo.CompilationTestCase;
 
 import static java.lang.annotation.ElementType.*;
 import static org.testng.Assert.assertEquals;
 
-/**
- * RecordCompilationTests
- *
- * @test
- * @summary Negative compilation tests, and positive compilation (smoke) tests for records
- * @library /lib/combo
- * @modules jdk.compiler/com.sun.tools.javac.util
- * @compile --enable-preview -source ${jdk.version} RecordCompilationTests.java
- * @run testng/othervm --enable-preview RecordCompilationTests
- */
 @Test
 public class RecordCompilationTests extends CompilationTestCase {
 
@@ -377,10 +388,44 @@ public class RecordCompilationTests extends CompilationTestCase {
                 "    }\n" +
                 "}");
 
-        // Capture locals from local record
+        // Cant capture locals
+        assertFail("compiler.err.non-static.cant.be.ref",
+                "class R { \n" +
+                        "    void m(int y) { \n" +
+                        "        record RR(int x) { public int x() { return y; }};\n" +
+                        "    }\n" +
+                        "}");
+
+        assertFail("compiler.err.non-static.cant.be.ref",
+                "class R { \n" +
+                        "    void m() {\n" +
+                        "        int y;\n" +
+                        "        record RR(int x) { public int x() { return y; }};\n" +
+                        "    }\n" +
+                        "}");
+
+        // instance fields
+        assertFail("compiler.err.non-static.cant.be.ref",
+                "class R { \n" +
+                        "    int z = 0;\n" +
+                        "    void m() { \n" +
+                        "        record RR(int x) { public int x() { return z; }};\n" +
+                        "    }\n" +
+                        "}");
+
+        // or type variables
+        assertFail("compiler.err.non-static.cant.be.ref",
+                "class R<T> { \n" +
+                        "    void m() { \n" +
+                        "        record RR(T t) {};\n" +
+                        "    }\n" +
+                        "}");
+
+        // but static fields are OK
         assertOK("class R { \n" +
-                "    void m(int y) { \n" +
-                "        record RR(int x) { public int x() { return y; }};\n" +
+                "    static int z = 0;\n" +
+                "    void m() { \n" +
+                "        record RR(int x) { public int x() { return z; }};\n" +
                 "    }\n" +
                 "}");
         // can be contained inside a lambda
@@ -519,5 +564,25 @@ public class RecordCompilationTests extends CompilationTestCase {
                     public int i(R this) { return i; }
                 }
                 """);
+    }
+
+    public void testOnlyOneFieldRef() throws Exception {
+        int numberOfFieldRefs = 0;
+        File dir = assertOK(true, "record R(int recordComponent) {}");
+        for (final File fileEntry : dir.listFiles()) {
+            if (fileEntry.getName().equals("R.class")) {
+                ClassFile classFile = ClassFile.read(fileEntry);
+                for (CPInfo cpInfo : classFile.constant_pool.entries()) {
+                    if (cpInfo instanceof ConstantPool.CONSTANT_Fieldref_info) {
+                        numberOfFieldRefs++;
+                        ConstantPool.CONSTANT_NameAndType_info nameAndType =
+                                (ConstantPool.CONSTANT_NameAndType_info)classFile.constant_pool
+                                        .get(((ConstantPool.CONSTANT_Fieldref_info)cpInfo).name_and_type_index);
+                        Assert.check(nameAndType.getName().equals("recordComponent"));
+                    }
+                }
+            }
+        }
+        Assert.check(numberOfFieldRefs == 1);
     }
 }

@@ -33,12 +33,8 @@ import sun.security.krb5.Checksum;
 import sun.security.krb5.Confounder;
 import sun.security.krb5.KrbCryptoException;
 import sun.security.krb5.internal.*;
-import javax.crypto.Cipher;
-import javax.crypto.SecretKey;
 import javax.crypto.spec.DESKeySpec;
 import java.security.MessageDigest;
-import java.security.Provider;
-import java.security.Security;
 import java.security.InvalidKeyException;
 
 public final class RsaMd5DesCksumType extends CksumType {
@@ -54,7 +50,7 @@ public final class RsaMd5DesCksumType extends CksumType {
         return Checksum.CKSUMTYPE_RSA_MD5_DES;
     }
 
-    public boolean isSafe() {
+    public boolean isKeyed() {
         return true;
     }
 
@@ -79,7 +75,7 @@ public final class RsaMd5DesCksumType extends CksumType {
      *
      * @modified by Yanni Zhang, 12/08/99.
      */
-    public byte[] calculateKeyedChecksum(byte[] data, int size, byte[] key,
+    public byte[] calculateChecksum(byte[] data, int size, byte[] key,
         int usage) throws KrbCryptoException {
         //prepend confounder
         byte[] new_data = new byte[size + confounderSize()];
@@ -88,7 +84,7 @@ public final class RsaMd5DesCksumType extends CksumType {
         System.arraycopy(data, 0, new_data, confounderSize(), size);
 
         //calculate md5 cksum
-        byte[] mdc_cksum = calculateChecksum(new_data, new_data.length);
+        byte[] mdc_cksum = calculateRawChecksum(new_data, new_data.length);
         byte[] cksum = new byte[cksumSize()];
         System.arraycopy(conf, 0, cksum, 0, confounderSize());
         System.arraycopy(mdc_cksum, 0, cksum, confounderSize(),
@@ -125,7 +121,7 @@ public final class RsaMd5DesCksumType extends CksumType {
      *
      * @modified by Yanni Zhang, 12/08/99.
      */
-    public boolean verifyKeyedChecksum(byte[] data, int size,
+    public boolean verifyChecksum(byte[] data, int size,
         byte[] key, byte[] checksum, int usage) throws KrbCryptoException {
         //decrypt checksum
         byte[] cksum = decryptKeyedChecksum(checksum, key);
@@ -135,7 +131,7 @@ public final class RsaMd5DesCksumType extends CksumType {
         System.arraycopy(cksum, 0, new_data, 0, confounderSize());
         System.arraycopy(data, 0, new_data, confounderSize(), size);
 
-        byte[] new_cksum = calculateChecksum(new_data, new_data.length);
+        byte[] new_cksum = calculateRawChecksum(new_data, new_data.length);
         //extract original cksum value
         byte[] orig_cksum = new byte[cksumSize() - confounderSize()];
         System.arraycopy(cksum,  confounderSize(), orig_cksum, 0,
@@ -181,7 +177,7 @@ public final class RsaMd5DesCksumType extends CksumType {
      *
      * @modified by Yanni Zhang, 12/08/99.
      */
-    public byte[] calculateChecksum(byte[] data, int size) throws KrbCryptoException{
+    private byte[] calculateRawChecksum(byte[] data, int size) throws KrbCryptoException{
         MessageDigest md5;
         byte[] result = null;
         try {
@@ -197,5 +193,4 @@ public final class RsaMd5DesCksumType extends CksumType {
         }
         return result;
     }
-
 }

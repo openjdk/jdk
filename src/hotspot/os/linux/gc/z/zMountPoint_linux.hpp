@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,13 +21,13 @@
  * questions.
  */
 
-#ifndef OS_LINUX_GC_Z_ZBACKINGPATH_LINUX_HPP
-#define OS_LINUX_GC_Z_ZBACKINGPATH_LINUX_HPP
+#ifndef OS_LINUX_GC_Z_ZMOUNTPOINT_LINUX_HPP
+#define OS_LINUX_GC_Z_ZMOUNTPOINT_LINUX_HPP
 
 #include "gc/z/zArray.hpp"
 #include "memory/allocation.hpp"
 
-class ZBackingPath : public StackObj {
+class ZMountPoint : public StackObj {
 private:
   char* _path;
 
@@ -43,10 +43,10 @@ private:
                         const char** preferred_mountpoints) const;
 
 public:
-  ZBackingPath(const char* filesystem, const char** preferred_mountpoints);
-  ~ZBackingPath();
+  ZMountPoint(const char* filesystem, const char** preferred_mountpoints);
+  ~ZMountPoint();
 
   const char* get() const;
 };
 
-#endif // OS_LINUX_GC_Z_ZBACKINGPATH_LINUX_HPP
+#endif // OS_LINUX_GC_Z_ZMOUNTPOINT_LINUX_HPP

@@ -86,6 +86,11 @@
     <CustomAction Id="JpCheckInstallDir" BinaryKey="JpCaDll" DllEntry="CheckInstallDir" />
     <?endif?>
 
+    <CustomAction Id="JpSetARPINSTALLLOCATION" Property="ARPINSTALLLOCATION" Value="[INSTALLDIR]" />
+    <?ifdef JpIcon ?>
+    <CustomAction Id="JpSetARPPRODUCTICON" Property="ARPPRODUCTICON" Value="[INSTALLDIR]$(var.JpIcon)" />
+    <?endif?>
+
     <UI>
       <?ifdef JpInstallDirChooser ?>
       <Dialog Id="JpInvalidInstallDir" Width="300" Height="85" Title="[ProductName] Setup" NoMinimize="yes">
@@ -133,5 +138,11 @@
     <WixVariable Id="WixUILicenseRtf" Value="$(var.JpLicenseRtf)"/>
     <?endif?>
 
+    <InstallExecuteSequence>
+      <Custom Action="JpSetARPINSTALLLOCATION" After="CostFinalize">Not Installed</Custom>
+      <?ifdef JpIcon ?>
+      <Custom Action="JpSetARPPRODUCTICON" After="JpSetARPINSTALLLOCATION">Not Installed</Custom>
+      <?endif?>
+    </InstallExecuteSequence>
   </Product>
 </Wix>

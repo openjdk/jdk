@@ -52,7 +52,7 @@ public class OnlyManifest {
         Files.write(Path.of("manifest"), List.of("Key: Value"));
         SecurityTools.jar("cvfm a.jar manifest");
 
-        kt("-alias ca -dname CN=ca -genkey -validity 300")
+        kt("-alias ca -dname CN=ca -genkey -validity 300 -ext bc:c")
                 .shouldHaveExitValue(0);
         kt("-alias a -dname CN=a -genkey -validity 300")
                 .shouldHaveExitValue(0);
