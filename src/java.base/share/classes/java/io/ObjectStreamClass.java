@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -883,6 +883,17 @@ public class ObjectStreamClass implements Serializable {
     private final void requireInitialized() {
         if (!initialized)
             throw new InternalError("Unexpected call when not initialized");
+    }
+
+    /**
+     * Throws InvalidClassException if not initialized.
+     * To be called in cases where an uninitialized class descriptor indicates
+     * a problem in the serialization stream.
+     */
+    final void checkInitialized() throws InvalidClassException {
+        if (!initialized) {
+            throw new InvalidClassException("Class descriptor should be initialized");
+        }
     }
 
     /**
