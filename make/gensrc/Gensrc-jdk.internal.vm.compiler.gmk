@@ -36,6 +36,7 @@ SRC_DIR := $(TOPDIR)/src/$(MODULE)/share/classes
 ################################################################################
 
 PROC_SRC_SUBDIRS := \
+    org.graalvm.compiler.asm.amd64 \
     org.graalvm.compiler.code \
     org.graalvm.compiler.core \
     org.graalvm.compiler.core.aarch64 \
