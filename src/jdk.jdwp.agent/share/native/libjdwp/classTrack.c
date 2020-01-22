@@ -22,273 +22,204 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 /*
  * This module tracks classes that have been prepared, so as to
- * be able to compute which have been unloaded.  On VM start-up
- * all prepared classes are put in a table.  As class prepare
- * events come in they are added to the table.  After an unload
- * event or series of them, the VM can be asked for the list
- * of classes; this list is compared against the table keep by
- * this module, any classes no longer present are known to
- * have been unloaded.
- *
- * For efficient access, classes are keep in a hash table.
- * Each slot in the hash table has a linked list of KlassNode.
- *
- * Comparing current set of classes is compared with previous
- * set by transferring all classes in the current set into
- * a new table, any that remain in the old table have been
- * unloaded.
+ * be able to report which have been unloaded. On VM start-up
+ * and whenever new classes are loaded, all prepared classes'
+ * signatures are attached as JVMTI tag to the class object.
+ * Class unloading is tracked by registering
+ * ObjectFree callback on class objects. When this happens, we find
+ * the signature of the unloaded class(es) and report them back
+ * to the event handler to synthesize class-unload-events.
  */
 
 #include "util.h"
 #include "bag.h"
 #include "classTrack.h"
 
-/* ClassTrack hash table slot count */
-#define CT_HASH_SLOT_COUNT 263    /* Prime which eauals 4k+3 for some k */
-
-typedef struct KlassNode {
-    jclass klass;            /* weak global reference */
-    char *signature;         /* class signature */
-    struct KlassNode *next;  /* next node in this slot */
-} KlassNode;
+#define NOT_TAGGED 0
 
 /*
- * Hash table of prepared classes.  Each entry is a pointer
- * to a linked list of KlassNode.
+ * The JVMTI tracking env to keep track of klass tags for class-unloads
  */
-static KlassNode **table;
+static jvmtiEnv* trackingEnv;
 
 /*
- * Return slot in hash table to use for this class.
+ * A bag containing all the deleted classes' signatures. Must be accessed under
+ * classTrackLock.
  */
-static jint
-hashKlass(jclass klass)
+struct bag* deletedSignatures;
+
+/*
+ * Lock to keep integrity of deletedSignatures.
+ */
+static jrawMonitorID classTrackLock;
+
+/*
+ * Invoke the callback when classes are freed, find and record the signature
+ * in deletedSignatures. Those are only used in addPreparedClass() by the
+ * same thread.
+ */
+static void JNICALL
+cbTrackingObjectFree(jvmtiEnv* jvmti_env, jlong tag)
 {
-    jint hashCode = objectHashCode(klass);
-    return abs(hashCode) % CT_HASH_SLOT_COUNT;
+    debugMonitorEnter(classTrackLock);
+    if (deletedSignatures == NULL) {
+      debugMonitorExit(classTrackLock);
+      return;
+    }
+    *(char**)bagAdd(deletedSignatures) = (char*)tag;
+
+    debugMonitorExit(classTrackLock);
 }
 
 /*
- * Transfer a node (which represents klass) from the current
- * table to the new table.
- */
-static void
-transferClass(JNIEnv *env, jclass klass, KlassNode **newTable) {
-    jint slot = hashKlass(klass);
-    KlassNode **head = &table[slot];
-    KlassNode **newHead = &newTable[slot];
-    KlassNode **nodePtr;
-    KlassNode *node;
-
-    /* Search the node list of the current table for klass */
-    for (nodePtr = head; node = *nodePtr, node != NULL; nodePtr = &(node->next)) {
-        if (isSameObject(env, klass, node->klass)) {
-            /* Match found transfer node */
-
-            /* unlink from old list */
-            *nodePtr = node->next;
-
-            /* insert in new list */
-            node->next = *newHead;
-            *newHead = node;
-
-            return;
-        }
-    }
-
-    /* we haven't found the class, only unloads should have happenned,
-     * so the only reason a class should not have been found is
-     * that it is not prepared yet, in which case we don't want it.
-     * Asset that the above is true.
-     */
-/**** the HotSpot VM doesn't create prepare events for some internal classes ***
-    JDI_ASSERT_MSG((classStatus(klass) &
-                (JVMTI_CLASS_STATUS_PREPARED|JVMTI_CLASS_STATUS_ARRAY))==0,
-               classSignature(klass));
-***/
-}
-
-/*
- * Delete a hash table of classes.
- * The signatures of classes in the table are returned.
- */
-static struct bag *
-deleteTable(JNIEnv *env, KlassNode *oldTable[])
-{
-    struct bag *signatures = bagCreateBag(sizeof(char*), 10);
-    jint slot;
-
-    if (signatures == NULL) {
-        EXIT_ERROR(AGENT_ERROR_OUT_OF_MEMORY,"signatures");
-    }
-
-    for (slot = 0; slot < CT_HASH_SLOT_COUNT; slot++) {
-        KlassNode *node = oldTable[slot];
-
-        while (node != NULL) {
-            KlassNode *next;
-            char **sigSpot;
-
-            /* Add signature to the signature bag */
-            sigSpot = bagAdd(signatures);
-            if (sigSpot == NULL) {
-                EXIT_ERROR(AGENT_ERROR_OUT_OF_MEMORY,"signature bag");
-            }
-            *sigSpot = node->signature;
-
-            /* Free weak ref and the node itself */
-            JNI_FUNC_PTR(env,DeleteWeakGlobalRef)(env, node->klass);
-            next = node->next;
-            jvmtiDeallocate(node);
-
-            node = next;
-        }
-    }
-    jvmtiDeallocate(oldTable);
-
-    return signatures;
-}
-
-/*
- * Called after class unloads have occurred.  Creates a new hash table
- * of currently loaded prepared classes.
- * The signatures of classes which were unloaded (not present in the
- * new table) are returned.
+ * Called after class unloads have occurred.
+ * The signatures of classes which were unloaded are returned.
  */
 struct bag *
 classTrack_processUnloads(JNIEnv *env)
 {
-    KlassNode **newTable;
-    struct bag *unloadedSignatures;
-
-    unloadedSignatures = NULL;
-    newTable = jvmtiAllocate(CT_HASH_SLOT_COUNT * sizeof(KlassNode *));
-    if (newTable == NULL) {
-        EXIT_ERROR(AGENT_ERROR_OUT_OF_MEMORY, "classTrack table");
-    } else {
-
-        (void)memset(newTable, 0, CT_HASH_SLOT_COUNT * sizeof(KlassNode *));
-
-        WITH_LOCAL_REFS(env, 1) {
-
-            jint classCount;
-            jclass *classes;
-            jvmtiError error;
-            int i;
-
-            error = allLoadedClasses(&classes, &classCount);
-            if ( error != JVMTI_ERROR_NONE ) {
-                jvmtiDeallocate(newTable);
-                EXIT_ERROR(error,"loaded classes");
-            } else {
-
-                /* Transfer each current class into the new table */
-                for (i=0; i<classCount; i++) {
-                    jclass klass = classes[i];
-                    transferClass(env, klass, newTable);
-                }
-                jvmtiDeallocate(classes);
-
-                /* Delete old table, install new one */
-                unloadedSignatures = deleteTable(env, table);
-                table = newTable;
-            }
-
-        } END_WITH_LOCAL_REFS(env)
-
+    debugMonitorEnter(classTrackLock);
+    if (deletedSignatures == NULL) {
+        // Class tracking not initialized, nobody's interested.
+        debugMonitorExit(classTrackLock);
+        return NULL;
     }
-
-    return unloadedSignatures;
+    struct bag* deleted = deletedSignatures;
+    deletedSignatures = bagCreateBag(sizeof(char*), 10);
+    debugMonitorExit(classTrackLock);
+    return deleted;
 }
 
 /*
- * Add a class to the prepared class hash table.
- * Assumes no duplicates.
+ * Add a class to the prepared class table.
  */
 void
-classTrack_addPreparedClass(JNIEnv *env, jclass klass)
+classTrack_addPreparedClass(JNIEnv *env_unused, jclass klass)
 {
-    jint slot = hashKlass(klass);
-    KlassNode **head = &table[slot];
-    KlassNode *node;
     jvmtiError error;
+    jvmtiEnv* env = trackingEnv;
 
-    if (gdata->assertOn) {
-        /* Check this is not a duplicate */
-        for (node = *head; node != NULL; node = node->next) {
-            if (isSameObject(env, klass, node->klass)) {
-                JDI_ASSERT_FAILED("Attempting to insert duplicate class");
-                break;
-            }
+    if (gdata && gdata->assertOn) {
+        // Check this is not already tagged.
+        jlong tag;
+        error = JVMTI_FUNC_PTR(trackingEnv, GetTag)(env, klass, &tag);
+        if (error != JVMTI_ERROR_NONE) {
+            EXIT_ERROR(error, "Unable to GetTag with class trackingEnv");
         }
+        JDI_ASSERT(tag == NOT_TAGGED);
     }
 
-    node = jvmtiAllocate(sizeof(KlassNode));
-    if (node == NULL) {
-        EXIT_ERROR(AGENT_ERROR_OUT_OF_MEMORY,"KlassNode");
-    }
-    error = classSignature(klass, &(node->signature), NULL);
+    char* signature;
+    error = classSignature(klass, &signature, NULL);
     if (error != JVMTI_ERROR_NONE) {
-        jvmtiDeallocate(node);
         EXIT_ERROR(error,"signature");
     }
-    if ((node->klass = JNI_FUNC_PTR(env,NewWeakGlobalRef)(env, klass)) == NULL) {
-        jvmtiDeallocate(node->signature);
-        jvmtiDeallocate(node);
-        EXIT_ERROR(AGENT_ERROR_NULL_POINTER,"NewWeakGlobalRef");
+    error = JVMTI_FUNC_PTR(trackingEnv, SetTag)(env, klass, (jlong)signature);
+    if (error != JVMTI_ERROR_NONE) {
+        jvmtiDeallocate(signature);
+        EXIT_ERROR(error,"SetTag");
     }
+}
 
-    /* Insert the new node */
-    node->next = *head;
-    *head = node;
+static jboolean
+setupEvents()
+{
+    jvmtiCapabilities caps;
+    memset(&caps, 0, sizeof(caps));
+    caps.can_generate_object_free_events = 1;
+    jvmtiError error = JVMTI_FUNC_PTR(trackingEnv, AddCapabilities)(trackingEnv, &caps);
+    if (error != JVMTI_ERROR_NONE) {
+        return JNI_FALSE;
+    }
+    jvmtiEventCallbacks cb;
+    memset(&cb, 0, sizeof(cb));
+    cb.ObjectFree = cbTrackingObjectFree;
+    error = JVMTI_FUNC_PTR(trackingEnv, SetEventCallbacks)(trackingEnv, &cb, sizeof(cb));
+    if (error != JVMTI_ERROR_NONE) {
+        return JNI_FALSE;
+    }
+    error = JVMTI_FUNC_PTR(trackingEnv, SetEventNotificationMode)(trackingEnv, JVMTI_ENABLE, JVMTI_EVENT_OBJECT_FREE, NULL);
+    if (error != JVMTI_ERROR_NONE) {
+        return JNI_FALSE;
+    }
+    return JNI_TRUE;
 }
 
 /*
- * Called once to build the initial prepared class hash table.
+ * Called once to initialize class-tracking.
  */
 void
 classTrack_initialize(JNIEnv *env)
 {
-    WITH_LOCAL_REFS(env, 1) {
+    deletedSignatures = NULL;
+    classTrackLock = debugMonitorCreate("Deleted class tag lock");
+    trackingEnv = getSpecialJvmti();
+    if (trackingEnv == NULL) {
+        EXIT_ERROR(AGENT_ERROR_INTERNAL, "Failed to allocate tag-tracking jvmtiEnv");
+    }
 
-        jint classCount;
-        jclass *classes;
-        jvmtiError error;
-        jint i;
 
-        error = allLoadedClasses(&classes, &classCount);
-        if ( error == JVMTI_ERROR_NONE ) {
-            table = jvmtiAllocate(CT_HASH_SLOT_COUNT * sizeof(KlassNode *));
-            if (table != NULL) {
-                (void)memset(table, 0, CT_HASH_SLOT_COUNT * sizeof(KlassNode *));
-                for (i=0; i<classCount; i++) {
-                    jclass klass = classes[i];
-                    jint status;
-                    jint wanted =
-                        (JVMTI_CLASS_STATUS_PREPARED|JVMTI_CLASS_STATUS_ARRAY);
+    if (!setupEvents()) {
+        EXIT_ERROR(AGENT_ERROR_INTERNAL, "Unable to setup ObjectFree tracking");
+    }
 
-                    /* We only want prepared classes and arrays */
-                    status = classStatus(klass);
-                    if ( (status & wanted) != 0 ) {
-                        classTrack_addPreparedClass(env, klass);
-                    }
-                }
-            } else {
-                jvmtiDeallocate(classes);
-                EXIT_ERROR(AGENT_ERROR_OUT_OF_MEMORY,"KlassNode");
+    jint classCount;
+    jclass *classes;
+    jvmtiError error;
+    jint i;
+
+    error = allLoadedClasses(&classes, &classCount);
+    if ( error == JVMTI_ERROR_NONE ) {
+        for (i = 0; i < classCount; i++) {
+            jclass klass = classes[i];
+            jint status;
+            jint wanted = JVMTI_CLASS_STATUS_PREPARED | JVMTI_CLASS_STATUS_ARRAY;
+            status = classStatus(klass);
+            if ((status & wanted) != 0) {
+                classTrack_addPreparedClass(env, klass);
             }
-            jvmtiDeallocate(classes);
-        } else {
-            EXIT_ERROR(error,"loaded classes array");
         }
-
-    } END_WITH_LOCAL_REFS(env)
-
+        jvmtiDeallocate(classes);
+    } else {
+        EXIT_ERROR(error,"loaded classes array");
+    }
 }
 
+/*
+ * Called to activate class-tracking when a listener registers for EI_GC_FINISH.
+ */
+void
+classTrack_activate(JNIEnv *env)
+{
+    debugMonitorEnter(classTrackLock);
+    deletedSignatures = bagCreateBag(sizeof(char*), 1000);
+    debugMonitorExit(classTrackLock);
+}
+
+static jboolean
+cleanDeleted(void *signatureVoid, void *arg)
+{
+    char* sig = *(char**)signatureVoid;
+    jvmtiDeallocate(sig);
+    return JNI_TRUE;
+}
+
+/*
+ * Called when agent detaches.
+ */
 void
 classTrack_reset(void)
 {
+    debugMonitorEnter(classTrackLock);
+
+    if (deletedSignatures != NULL) {
+        bagEnumerateOver(deletedSignatures, cleanDeleted, NULL);
+        bagDestroyBag(deletedSignatures);
+        deletedSignatures = NULL;
+    }
+
+    debugMonitorExit(classTrackLock);
 }
