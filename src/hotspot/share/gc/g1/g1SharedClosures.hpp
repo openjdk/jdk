@@ -40,6 +40,14 @@ class G1SharedClosures {
 public:
   G1ParCopyClosure<G1BarrierNone, Mark> _oops;
   G1ParCopyClosure<G1BarrierCLD,  Mark> _oops_in_cld;
+  // We do not need (and actually should not) collect oops from nmethods into the
+  // optional collection set as we already automatically collect the corresponding
+  // nmethods in the region's strong code roots set. So set G1BarrierNoOptRoots in
+  // this closure.
+  // If these were present there would be opportunity for multiple threads to try
+  // to change this oop* at the same time. Since embedded oops are not necessarily
+  // word-aligned, this could lead to word tearing during update and crashes.
+  G1ParCopyClosure<G1BarrierNoOptRoots, Mark> _oops_in_nmethod;
 
   G1CLDScanClosure                _clds;
   G1CodeBlobClosure               _codeblobs;
@@ -47,6 +55,7 @@ public:
   G1SharedClosures(G1CollectedHeap* g1h, G1ParScanThreadState* pss, bool process_only_dirty) :
     _oops(g1h, pss),
     _oops_in_cld(g1h, pss),
+    _oops_in_nmethod(g1h, pss),
     _clds(&_oops_in_cld, process_only_dirty),
-    _codeblobs(pss->worker_id(), &_oops, needs_strong_processing()) {}
+    _codeblobs(pss->worker_id(), &_oops_in_nmethod, needs_strong_processing()) {}
 };
