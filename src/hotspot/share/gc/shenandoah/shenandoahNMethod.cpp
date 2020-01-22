@@ -182,7 +182,7 @@ void ShenandoahNMethod::heal_nmethod(nmethod* nm) {
   assert(data->lock()->owned_by_self(), "Must hold the lock");
 
   ShenandoahEvacOOMScope evac_scope;
-  ShenandoahEvacuateUpdateRootsClosure cl;
+  ShenandoahEvacuateUpdateRootsClosure<> cl;
   data->oops_do(&cl, true /*fix relocation*/);
 }
 

@@ -106,12 +106,14 @@ void ShenandoahTraversalUpdateRefsClosure::do_oop_work(T* p) {
 void ShenandoahTraversalUpdateRefsClosure::do_oop(oop* p)       { do_oop_work(p); }
 void ShenandoahTraversalUpdateRefsClosure::do_oop(narrowOop* p) { do_oop_work(p); }
 
-ShenandoahEvacuateUpdateRootsClosure::ShenandoahEvacuateUpdateRootsClosure() :
+template <DecoratorSet MO>
+ShenandoahEvacuateUpdateRootsClosure<MO>::ShenandoahEvacuateUpdateRootsClosure() :
   _heap(ShenandoahHeap::heap()), _thread(Thread::current()) {
 }
 
+template <DecoratorSet MO>
 template <class T>
-void ShenandoahEvacuateUpdateRootsClosure::do_oop_work(T* p) {
+void ShenandoahEvacuateUpdateRootsClosure<MO>::do_oop_work(T* p) {
   assert(_heap->is_concurrent_root_in_progress(), "Only do this when evacuation is in progress");
 
   T o = RawAccess<>::oop_load(p);
@@ -124,15 +126,17 @@ void ShenandoahEvacuateUpdateRootsClosure::do_oop_work(T* p) {
       if (resolved == obj) {
         resolved = _heap->evacuate_object(obj, _thread);
       }
-      RawAccess<IS_NOT_NULL>::oop_store(p, resolved);
+      RawAccess<IS_NOT_NULL | MO>::oop_store(p, resolved);
     }
   }
 }
-void ShenandoahEvacuateUpdateRootsClosure::do_oop(oop* p) {
+template <DecoratorSet MO>
+void ShenandoahEvacuateUpdateRootsClosure<MO>::do_oop(oop* p) {
   do_oop_work(p);
 }
 
-void ShenandoahEvacuateUpdateRootsClosure::do_oop(narrowOop* p) {
+template <DecoratorSet MO>
+void ShenandoahEvacuateUpdateRootsClosure<MO>::do_oop(narrowOop* p) {
   do_oop_work(p);
 }
 

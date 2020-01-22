@@ -228,7 +228,7 @@ void mutex_init() {
   }
   if (UseShenandoahGC) {
     def(StringDedupQueue_lock      , PaddedMonitor, leaf,        true,  _safepoint_check_never);
-    def(StringDedupTable_lock      , PaddedMutex  , leaf,        true,  _safepoint_check_never);
+    def(StringDedupTable_lock      , PaddedMutex  , leaf + 1,    true,  _safepoint_check_never);
   }
   def(ParGCRareEvent_lock          , PaddedMutex  , leaf     ,   true,  _safepoint_check_always);
   def(CGCPhaseManager_lock         , PaddedMonitor, leaf,        false, _safepoint_check_always);

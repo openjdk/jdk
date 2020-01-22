@@ -188,6 +188,14 @@ public:
   void oops_do(BoolObjectClosure* is_alive, OopClosure* keep_alive, uint worker_id);
 };
 
+class ShenandoahConcurrentStringDedupRoots {
+public:
+  ShenandoahConcurrentStringDedupRoots();
+  ~ShenandoahConcurrentStringDedupRoots();
+
+  void oops_do(BoolObjectClosure* is_alive, OopClosure* keep_alive, uint worker_id);
+};
+
 template <typename ITR>
 class ShenandoahCodeCacheRoots {
 private:
