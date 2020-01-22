@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,15 +32,14 @@ import sun.jvm.hotspot.runtime.VMObjectFactory;
 import sun.jvm.hotspot.types.*;
 
 public class FileMapInfo {
-  private static FileMapHeader header;
-  private static Address headerValue;
+  private static FileMapHeader headerObj;
 
-  // Fields for class FileMapHeader
-  private static Address mdSpaceValue;
-  private static Address mdRegionBaseAddress;
-  private static Address mdRegionEndAddress;
+  // Fields for handling the copied C++ vtables
+  private static Address mcRegionBaseAddress;
+  private static Address mcRegionEndAddress;
+  private static Address vtablesStartAddress;
 
-  // HashMap created by mapping the vTable addresses in the md region with
+  // HashMap created by mapping the vTable addresses in the mc region with
   // the corresponding metadata type.
   private static Map<Address, Type> vTableTypeMap;
 
@@ -54,27 +53,59 @@ public class FileMapInfo {
       });
   }
 
+  static Address getStatic_AddressField(Type type, String fieldName) {
+    AddressField field = type.getAddressField(fieldName);
+    return field.getValue();
+  }
+
+  static Address get_AddressField(Type type, Address instance, String fieldName) {
+    AddressField field = type.getAddressField(fieldName);
+    return field.getValue(instance);
+  }
+
+  static long get_CIntegerField(Type type, Address instance, String fieldName) {
+    CIntegerField field = type.getCIntegerField(fieldName);
+    return field.getValue(instance);
+  }
+
+  // C equivalent:   return &header->_space[index];
+  static Address get_CDSFileMapRegion(Type FileMapHeader_type, Address header, int index) {
+    AddressField spaceField = FileMapHeader_type.getAddressField("_space[0]");
+
+    // size_t offset = offsetof(FileMapHeader, _space[0]);
+    // CDSFileMapRegion* space_0 = ((char*)header) + offset; // space_0 = &header->_space[index];
+    // return ((char*)space_0) + index * sizeof(CDSFileMapRegion);
+    long offset = spaceField.getOffset();
+    Address space_0 = header.addOffsetTo(offset);
+    return space_0.addOffsetTo(index * spaceField.getSize());
+  }
+
   private static void initialize(TypeDataBase db) {
-    // FileMapInfo
-    Type type = db.lookupType("FileMapInfo");
-    AddressField currentInfoField = type.getAddressField("_current_info");
-    long headerFieldOffset = type.getField("_header").getOffset();
-    Address headerAddress = currentInfoField.getValue().addOffsetTo(headerFieldOffset);
-    headerValue = headerAddress.getAddressAt(0);
+    Type FileMapInfo_type = db.lookupType("FileMapInfo");
+    Type FileMapHeader_type = db.lookupType("FileMapHeader");
+    Type CDSFileMapRegion_type = db.lookupType("CDSFileMapRegion");
 
-    // FileMapHeader
-    type = db.lookupType("FileMapHeader");
-    AddressField spaceField = type.getAddressField("_space[0]");
-    Address spaceValue = headerValue.addOffsetTo(type.getField("_space[0]").getOffset());
-    mdSpaceValue = spaceValue.addOffsetTo(3 * spaceField.getSize());
+    // FileMapInfo * info = FileMapInfo::_current_info;
+    // FileMapHeader* header = info->_header
+    Address info = getStatic_AddressField(FileMapInfo_type, "_current_info");
+    Address header = get_AddressField(FileMapInfo_type, info, "_header");
+    headerObj = (FileMapHeader) VMObjectFactory.newObject(FileMapInfo.FileMapHeader.class, header);
 
-    // SpaceInfo
-    type = db.lookupType("CDSFileMapRegion");
-    long mdRegionBaseAddressOffset = type.getField("_mapped_base").getOffset();
-    mdRegionBaseAddress = (mdSpaceValue.addOffsetTo(mdRegionBaseAddressOffset)).getAddressAt(0);
-    long mdRegionSizeOffset = type.getField("_used").getOffset();
-    long mdRegionSize = (mdSpaceValue.addOffsetTo(mdRegionSizeOffset)).getAddressAt(0).asLongValue();
-    mdRegionEndAddress = mdRegionBaseAddress.addOffsetTo(mdRegionSize);
+    // char* mapped_base_address = header->_mapped_base_address
+    // size_t cloned_vtable_offset = header->_cloned_vtable_offset
+    // char* vtablesStartAddress = mapped_base_address + cloned_vtable_offset;
+    Address mapped_base_address = get_AddressField(FileMapHeader_type, header, "_mapped_base_address");
+    long cloned_vtable_offset = get_CIntegerField(FileMapHeader_type, header, "_cloned_vtables_offset");
+    vtablesStartAddress = mapped_base_address.addOffsetTo(cloned_vtable_offset);
+
+    // CDSFileMapRegion* mc_space = &header->_space[mc];
+    // char* mcRegionBaseAddress = mc_space->_mapped_base;
+    // size_t used = mc_space->_used;
+    // char* mcRegionEndAddress = mcRegionBaseAddress + used;
+    Address mc_space = get_CDSFileMapRegion(FileMapHeader_type, header, 0);
+    mcRegionBaseAddress = get_AddressField(CDSFileMapRegion_type, mc_space, "_mapped_base");
+    long used = get_CIntegerField(CDSFileMapRegion_type, mc_space, "_used");
+    mcRegionEndAddress = mcRegionBaseAddress.addOffsetTo(used);
 
     populateMetadataTypeArray(db);
   }
@@ -93,10 +124,7 @@ public class FileMapInfo {
   }
 
   public FileMapHeader getHeader() {
-    if (header == null) {
-      header = (FileMapHeader) VMObjectFactory.newObject(FileMapInfo.FileMapHeader.class, headerValue);
-    }
-    return header;
+    return headerObj;
   }
 
   public boolean inCopiedVtableSpace(Address vptrAddress) {
@@ -121,8 +149,8 @@ public class FileMapInfo {
     }
 
     public boolean inCopiedVtableSpace(Address vptrAddress) {
-      if (vptrAddress.greaterThan(mdRegionBaseAddress) &&
-          vptrAddress.lessThanOrEqual(mdRegionEndAddress)) {
+      if (vptrAddress.greaterThan(mcRegionBaseAddress) &&
+          vptrAddress.lessThanOrEqual(mcRegionEndAddress)) {
         return true;
       }
       return false;
@@ -133,7 +161,7 @@ public class FileMapInfo {
       long metadataVTableSize = 0;
       long addressSize = VM.getVM().getAddressSize();
 
-      Address copiedVtableAddress = mdRegionBaseAddress;
+      Address copiedVtableAddress = vtablesStartAddress;
       for (int i=0; i < metadataTypeArray.length; i++) {
         // The first entry denotes the vtable size.
         metadataVTableSize = copiedVtableAddress.getAddressAt(0).asLongValue();

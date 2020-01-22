@@ -1355,7 +1355,7 @@ bool FileMapInfo::remap_shared_readonly_as_readwrite() {
 }
 
 // Memory map a region in the address space.
-static const char* shared_region_name[] = { "MiscData", "ReadWrite", "ReadOnly", "MiscCode", "Bitmap",
+static const char* shared_region_name[] = { "MiscCode", "ReadWrite", "ReadOnly", "Bitmap",
                                             "String1", "String2", "OpenArchive1", "OpenArchive2" };
 
 MapArchiveResult FileMapInfo::map_regions(int regions[], int num_regions, char* mapped_base_address, ReservedSpace rs) {
@@ -1972,12 +1972,13 @@ char* FileMapInfo::region_addr(int idx) {
   }
 }
 
+// The 3 core spaces are MC->RW->RO
 FileMapRegion* FileMapInfo::first_core_space() const {
-  return is_static() ? space_at(MetaspaceShared::mc) : space_at(MetaspaceShared::rw);
+  return space_at(MetaspaceShared::mc);
 }
 
 FileMapRegion* FileMapInfo::last_core_space() const {
-  return is_static() ? space_at(MetaspaceShared::md) : space_at(MetaspaceShared::mc);
+  return space_at(MetaspaceShared::ro);
 }
 
 int FileMapHeader::compute_crc() {
@@ -2051,8 +2052,7 @@ bool FileMapInfo::validate_header() {
 bool FileMapInfo::is_in_shared_region(const void* p, int idx) {
   assert(idx == MetaspaceShared::ro ||
          idx == MetaspaceShared::rw ||
-         idx == MetaspaceShared::mc ||
-         idx == MetaspaceShared::md, "invalid region index");
+         idx == MetaspaceShared::mc, "invalid region index");
   char* base = region_addr(idx);
   if (p >= base && p < base + space_at(idx)->used()) {
     return true;

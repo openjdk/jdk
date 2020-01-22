@@ -187,7 +187,7 @@ class FileMapHeader: private CDSFileMapHeaderBase {
   uintx  _max_heap_size;            // java max heap size during dumping
   CompressedOops::Mode _narrow_oop_mode; // compressed oop encoding mode
   int     _narrow_klass_shift;      // save narrow klass base and shift
-  size_t  _misc_data_patching_offset;
+  size_t  _cloned_vtables_offset;   // The address of the first cloned vtable
   size_t  _serialized_data_offset;  // Data accessed using {ReadClosure,WriteClosure}::serialize()
   size_t  _i2i_entry_code_buffers_offset;
   size_t  _i2i_entry_code_buffers_size;
@@ -252,8 +252,8 @@ public:
   CompressedOops::Mode narrow_oop_mode()   const { return _narrow_oop_mode; }
   int narrow_klass_shift()                 const { return _narrow_klass_shift; }
   address narrow_klass_base()              const { return (address)mapped_base_address(); }
-  char* misc_data_patching_start()         const { return from_mapped_offset(_misc_data_patching_offset); }
-  char* serialized_data_start()            const { return from_mapped_offset(_serialized_data_offset); }
+  char* cloned_vtables()                   const { return from_mapped_offset(_cloned_vtables_offset); }
+  char* serialized_data()                  const { return from_mapped_offset(_serialized_data_offset); }
   address i2i_entry_code_buffers()         const { return (address)from_mapped_offset(_i2i_entry_code_buffers_offset); }
   size_t i2i_entry_code_buffers_size()     const { return _i2i_entry_code_buffers_size; }
   address heap_end()                       const { return _heap_end; }
@@ -272,8 +272,8 @@ public:
   jshort num_module_paths()                const { return _num_module_paths; }
 
   void set_has_platform_or_app_classes(bool v)   { _has_platform_or_app_classes = v; }
-  void set_misc_data_patching_start(char* p)     { set_mapped_offset(p, &_misc_data_patching_offset); }
-  void set_serialized_data_start(char* p)        { set_mapped_offset(p, &_serialized_data_offset); }
+  void set_cloned_vtables(char* p)               { set_mapped_offset(p, &_cloned_vtables_offset); }
+  void set_serialized_data(char* p)              { set_mapped_offset(p, &_serialized_data_offset); }
   void set_base_archive_name_size(size_t s)      { _base_archive_name_size = s; }
   void set_base_archive_is_default(bool b)       { _base_archive_is_default = b; }
   void set_header_size(size_t s)                 { _header_size = s; }
@@ -382,10 +382,10 @@ public:
   jshort app_module_paths_start_index()       const { return header()->app_module_paths_start_index(); }
   jshort app_class_paths_start_index()        const { return header()->app_class_paths_start_index(); }
 
-  char* misc_data_patching_start()            const { return header()->misc_data_patching_start(); }
-  void  set_misc_data_patching_start(char* p) const { header()->set_misc_data_patching_start(p); }
-  char* serialized_data_start()               const { return header()->serialized_data_start(); }
-  void  set_serialized_data_start(char* p)    const { header()->set_serialized_data_start(p); }
+  char* cloned_vtables()                      const { return header()->cloned_vtables(); }
+  void  set_cloned_vtables(char* p)           const { header()->set_cloned_vtables(p); }
+  char* serialized_data()                     const { return header()->serialized_data(); }
+  void  set_serialized_data(char* p)          const { header()->set_serialized_data(p); }
 
   bool  is_file_position_aligned() const;
   void  align_file_position();
