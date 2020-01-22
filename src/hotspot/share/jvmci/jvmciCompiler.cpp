@@ -95,7 +95,7 @@ void JVMCICompiler::bootstrap(TRAPS) {
 
   if (PrintBootstrap) {
     tty->print_cr(" in " JLONG_FORMAT " ms (compiled %d methods)",
-                  nanos_to_millis(os::javaTimeNanos() - start), _methods_compiled);
+                  (jlong)nanos_to_millis(os::javaTimeNanos() - start), _methods_compiled);
   }
   _bootstrapping = false;
   JVMCI::compiler_runtime()->bootstrap_finished(CHECK);
