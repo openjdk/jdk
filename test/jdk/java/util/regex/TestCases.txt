@@ -1,5 +1,5 @@
 //
-// Copyright (c) 1999, 2009, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,15 @@
 a
 true a 1
 
+^(a){0,1}a
+a
+true a 1
+
 ^(aa(bb)?)+$
+aabbaa
+true aabbaa 2 aa bb
+
+^(aa(bb){0,1})+$
 aabbaa
 true aabbaa 2 aa bb
 
@@ -42,7 +50,15 @@ true aabbaa 2 aa bb
 b
 true b 2 b
 
+((a|b){0,1}b)+
+b
+true b 2 b
+
 (aaa)?aaa
+aaa
+true aaa 1
+
+(aaa){0,1}aaa
 aaa
 true aaa 1
 
@@ -50,7 +66,15 @@ true aaa 1
 aba
 true aba 2 a b
 
+^(a(b){0,1})+$
+aba
+true aba 2 a b
+
 ^(a(b(c)?)?)?abc
+abc
+true abc 3
+
+^(a(b(c){0,1}){0,1}){0,1}abc
 abc
 true abc 3
 
@@ -750,7 +774,15 @@ a?b
 aaaab
 true ab 0
 
+a{0,1}b
+aaaab
+true ab 0
+
 a?b
+b
+true b 0
+
+a{0,1}b
 b
 true b 0
 
@@ -758,7 +790,15 @@ a?b
 aaaccc
 false 0
 
+a{0,1}b
+aaaccc
+false 0
+
 .?b
+aaaab
+true ab 0
+
+.{0,1}b
 aaaab
 true ab 0
 
@@ -767,7 +807,15 @@ a??b
 aaaab
 true ab 0
 
+a{0,1}?b
+aaaab
+true ab 0
+
 a??b
+b
+true b 0
+
+a{0,1}?b
 b
 true b 0
 
@@ -775,7 +823,15 @@ a??b
 aaaccc
 false 0
 
+a{0,1}?b
+aaaccc
+false 0
+
 .??b
+aaaab
+true ab 0
+
+.{0,1}?b
 aaaab
 true ab 0
 
@@ -784,7 +840,15 @@ a?+b
 aaaab
 true ab 0
 
+a{0,1}+b
+aaaab
+true ab 0
+
 a?+b
+b
+true b 0
+
+a{0,1}+b
 b
 true b 0
 
@@ -792,7 +856,15 @@ a?+b
 aaaccc
 false 0
 
+a{0,1}+b
+aaaccc
+false 0
+
 .?+b
+aaaab
+true ab 0
+
+.{0,1}+b
 aaaab
 true ab 0
 
@@ -1153,5 +1225,9 @@ blahblah#blech
 true blahblah 0
 
 (|f)?+
+foo
+true  1 
+
+(|f){0,1}+
 foo
 true  1 

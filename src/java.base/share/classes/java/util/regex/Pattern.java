@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3243,21 +3243,28 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
         GREEDY, LAZY, POSSESSIVE, INDEPENDENT
     }
 
-    private Node curly(Node prev, int cmin) {
+    private Qtype qtype() {
         int ch = next();
         if (ch == '?') {
             next();
-            return new Curly(prev, cmin, MAX_REPS, Qtype.LAZY);
+            return Qtype.LAZY;
         } else if (ch == '+') {
             next();
-            return new Curly(prev, cmin, MAX_REPS, Qtype.POSSESSIVE);
+            return Qtype.POSSESSIVE;
         }
-        if (prev instanceof BmpCharProperty) {
-            return new BmpCharPropertyGreedy((BmpCharProperty)prev, cmin);
-        } else if (prev instanceof CharProperty) {
-            return new CharPropertyGreedy((CharProperty)prev, cmin);
+        return Qtype.GREEDY;
+    }
+
+    private Node curly(Node prev, int cmin) {
+        Qtype qtype = qtype();
+        if (qtype == Qtype.GREEDY) {
+            if (prev instanceof BmpCharProperty) {
+                return new BmpCharPropertyGreedy((BmpCharProperty)prev, cmin);
+            } else if (prev instanceof CharProperty) {
+                return new CharPropertyGreedy((CharProperty)prev, cmin);
+            }
         }
-        return new Curly(prev, cmin, MAX_REPS, Qtype.GREEDY);
+        return new Curly(prev, cmin, MAX_REPS, qtype);
     }
 
     /**
@@ -3269,15 +3276,7 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
         int ch = peek();
         switch (ch) {
         case '?':
-            ch = next();
-            if (ch == '?') {
-                next();
-                return new Ques(prev, Qtype.LAZY);
-            } else if (ch == '+') {
-                next();
-                return new Ques(prev, Qtype.POSSESSIVE);
-            }
-            return new Ques(prev, Qtype.GREEDY);
+            return new Ques(prev, qtype());
         case '*':
             return curly(prev, 0);
         case '+':
@@ -3314,16 +3313,10 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
                     throw error("Unclosed counted closure");
                 if (cmax < cmin)
                     throw error("Illegal repetition range");
-                ch = peek();
-                if (ch == '?') {
-                    next();
-                    return new Curly(prev, cmin, cmax, Qtype.LAZY);
-                } else if (ch == '+') {
-                    next();
-                    return new Curly(prev, cmin, cmax, Qtype.POSSESSIVE);
-                } else {
-                    return new Curly(prev, cmin, cmax, Qtype.GREEDY);
-                }
+                unread();
+                return (cmin == 0 && cmax == 1)
+                        ? new Ques(prev, qtype())
+                        : new Curly(prev, cmin, cmax, qtype());
             } else {
                 throw error("Illegal repetition");
             }
