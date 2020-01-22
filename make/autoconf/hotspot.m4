@@ -523,8 +523,7 @@ AC_DEFUN_ONCE([HOTSPOT_SETUP_JVM_FEATURES],
     fi
   fi
 
-  # Disable CDS for zero, minimal, core..
-  if HOTSPOT_CHECK_JVM_VARIANT(zero) || HOTSPOT_CHECK_JVM_VARIANT(minimal) || HOTSPOT_CHECK_JVM_VARIANT(core); then
+  if ! HOTSPOT_CHECK_JVM_VARIANT(server) && ! HOTSPOT_CHECK_JVM_VARIANT(client); then
     # ..except when the user explicitely requested it with --enable-jvm-features
     if ! HOTSPOT_CHECK_JVM_FEATURE(cds); then
       ENABLE_CDS="false"
