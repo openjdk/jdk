@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,6 @@
  * questions.
  */
 
-
 package sun.lwawt;
 
 import java.awt.Dimension;
@@ -36,6 +35,8 @@ import java.awt.peer.TextFieldPeer;
 
 import javax.swing.*;
 import javax.swing.text.JTextComponent;
+
+import sun.awt.AWTAccessor;
 
 /**
  * Lightweight implementation of {@link TextFieldPeer}. Delegates most of the
@@ -139,6 +140,17 @@ final class LWTextFieldPeer
         @Override
         public Point getLocationOnScreen() {
             return LWTextFieldPeer.this.getLocationOnScreen();
+        }
+
+        @Override
+        public void setTransferHandler(final TransferHandler newHandler) {
+            // override the default implementation to avoid loading
+            // SystemFlavorMap and associated classes
+            Object key = AWTAccessor.getClientPropertyKeyAccessor()
+                                    .getJComponent_TRANSFER_HANDLER();
+            Object oldHandler = getClientProperty(key);
+            putClientProperty(key, newHandler);
+            firePropertyChange("transferHandler", oldHandler, newHandler);
         }
     }
 }

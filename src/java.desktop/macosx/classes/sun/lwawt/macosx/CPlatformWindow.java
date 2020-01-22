@@ -62,7 +62,6 @@ import sun.awt.AWTAccessor;
 import sun.awt.AWTAccessor.ComponentAccessor;
 import sun.awt.AWTAccessor.WindowAccessor;
 import sun.java2d.SurfaceData;
-import sun.java2d.opengl.CGLSurfaceData;
 import sun.lwawt.LWLightweightFramePeer;
 import sun.lwawt.LWToolkit;
 import sun.lwawt.LWWindowPeer;
@@ -354,8 +353,6 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
                 }
             });
         }
-
-        validateSurface();
     }
 
     void initializeBase(Window target, LWWindowPeer peer, PlatformWindow owner) {
@@ -1049,13 +1046,6 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
     @Override
     public long getLayerPtr() {
         return contentView.getWindowLayerPtr();
-    }
-
-    private void validateSurface() {
-        SurfaceData surfaceData = getSurfaceData();
-        if (surfaceData instanceof CGLSurfaceData) {
-            ((CGLSurfaceData)surfaceData).validate();
-        }
     }
 
     void flushBuffers() {

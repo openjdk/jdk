@@ -184,8 +184,11 @@ final class CPlatformResponder {
             // It is necessary to use testCharIgnoringModifiers instead of testChar for event
             // generation in such case to avoid uppercase letters in text components.
             LWCToolkit lwcToolkit = (LWCToolkit)Toolkit.getDefaultToolkit();
-            if (lwcToolkit.getLockingKeyState(KeyEvent.VK_CAPS_LOCK) &&
-                    Locale.SIMPLIFIED_CHINESE.equals(lwcToolkit.getDefaultKeyboardLocale())) {
+            if ((lwcToolkit.getLockingKeyState(KeyEvent.VK_CAPS_LOCK) &&
+                    Locale.SIMPLIFIED_CHINESE.equals(lwcToolkit.getDefaultKeyboardLocale())) ||
+                (LWCToolkit.isLocaleUSInternationalPC(lwcToolkit.getDefaultKeyboardLocale()) &&
+                    LWCToolkit.isCharModifierKeyInUSInternationalPC(testChar) &&
+                    (testChar != testCharIgnoringModifiers))) {
                 testChar = testCharIgnoringModifiers;
             }
 

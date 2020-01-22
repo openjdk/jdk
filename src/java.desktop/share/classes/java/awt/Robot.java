@@ -642,20 +642,25 @@ public class Robot {
 
     /**
      * Sleeps for the specified time.
-     * To catch any {@code InterruptedException}s that occur,
-     * {@code Thread.sleep()} may be used instead.
+     * <p>
+     * If the invoking thread is interrupted while waiting, then it will return
+     * immediately with the interrupt status set. If the interrupted status is
+     * already set, this method returns immediately with the interrupt status
+     * set.
      *
      * @param  ms time to sleep in milliseconds
-     * @throws IllegalArgumentException if {@code ms}
-     *         is not between 0 and 60,000 milliseconds inclusive
-     * @see java.lang.Thread#sleep
+     * @throws IllegalArgumentException if {@code ms} is not between {@code 0}
+     *         and {@code 60,000} milliseconds inclusive
      */
-    public synchronized void delay(int ms) {
+    public void delay(int ms) {
         checkDelayArgument(ms);
-        try {
-            Thread.sleep(ms);
-        } catch(InterruptedException ite) {
-            ite.printStackTrace();
+        Thread thread = Thread.currentThread();
+        if (!thread.isInterrupted()) {
+            try {
+                Thread.sleep(ms);
+            } catch (final InterruptedException ignored) {
+                thread.interrupt(); // Preserve interrupt status
+            }
         }
     }
 

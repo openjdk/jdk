@@ -59,6 +59,7 @@ public class XMenuPeer extends XMenuItemPeer implements MenuPeer {
      * to its container window. Creates submenu window
      * that fills its items vector while construction
      */
+    @Override
     void setContainer(XBaseMenuWindow container) {
         super.setContainer(container);
         menuWindow = new XMenuWindow(this);
@@ -78,6 +79,7 @@ public class XMenuPeer extends XMenuItemPeer implements MenuPeer {
     /**
      * Disposes menu window if needed
      */
+    @Override
     public void dispose() {
         if (menuWindow != null) {
             menuWindow.dispose();
@@ -89,6 +91,7 @@ public class XMenuPeer extends XMenuItemPeer implements MenuPeer {
      * Resets text metrics for this item, for its menu window
      * and for all descendant menu windows
      */
+    @Override
     public void setFont(Font font) {
         //TODO:We can decrease count of repaints here
         //and get rid of recursion
@@ -105,17 +108,7 @@ public class XMenuPeer extends XMenuItemPeer implements MenuPeer {
     /*
      * From MenuPeer
      */
-    /**
-     * addSeparator routines are not used
-     * in peers. Shared code invokes addItem("-")
-     * for adding separators
-     */
-    public void addSeparator() {
-        if (log.isLoggable(PlatformLogger.Level.FINER)) {
-            log.finer("addSeparator is not implemented");
-        }
-    }
-
+    @Override
     public void addItem(MenuItem item) {
         XMenuWindow menuWindow = getMenuWindow();
         if (menuWindow != null) {
@@ -127,6 +120,7 @@ public class XMenuPeer extends XMenuItemPeer implements MenuPeer {
         }
     }
 
+    @Override
     public void delItem(int index) {
         XMenuWindow menuWindow = getMenuWindow();
         if (menuWindow != null) {
@@ -152,12 +146,14 @@ public class XMenuPeer extends XMenuItemPeer implements MenuPeer {
      * Overriden behaviour
      *
      ************************************************/
+    @Override
     boolean isSeparator() {
         return false;
     }
 
     //Fix for 6180416: Shortcut keys are displayed against Menus on XToolkit
     //Menu should always return null as shortcutText
+    @Override
     String getShortcutText() {
         return null;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -128,24 +128,6 @@ done:
     return menu;
 }
 
-void AwtMenu::_AddSeparator(void *param)
-{
-    if (AwtToolkit::IsMainThread()) {
-        JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
-
-        jobject self = (jobject)param;
-        AwtMenu *m = NULL;
-        PDATA pData;
-        JNI_CHECK_PEER_GOTO(self, ret);
-        m = (AwtMenu *)pData;
-        m->AddSeparator();
-ret:
-        env->DeleteGlobalRef(self);
-    } else {
-        AwtToolkit::GetInstance().InvokeFunction(AwtMenu::_AddSeparator, param);
-    }
-}
-
 void AwtMenu::_DelItem(void *param)
 {
     if (AwtToolkit::IsMainThread()) {
@@ -211,10 +193,6 @@ HWND AwtMenu::GetOwnerHWnd() {
     return (GetMenuContainer() == NULL) ? NULL : GetMenuContainer()->GetOwnerHWnd();
 }
 
-void AwtMenu::AddSeparator() {
-    VERIFY(::AppendMenu(GetHMenu(), MF_SEPARATOR, 0, 0));
-}
-
 void AwtMenu::AddItem(AwtMenuItem* item)
 {
     JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
@@ -223,7 +201,7 @@ void AwtMenu::AddItem(AwtMenuItem* item)
     }
 
     if (item->IsSeparator()) {
-        AddSeparator();
+        VERIFY(::AppendMenu(GetHMenu(), MF_SEPARATOR, 0, 0));
     } else {
         /* jitem is a java.awt.MenuItem */
         jobject jitem = item->GetTarget(env);
@@ -402,24 +380,6 @@ Java_java_awt_Menu_initIDs(JNIEnv *env, jclass cls)
  */
 
 extern "C" {
-
-/*
- * Class:     sun_awt_windows_WMenuPeer
- * Method:    addSeparator
- * Signature: ()V
- */
-JNIEXPORT void JNICALL
-Java_sun_awt_windows_WMenuPeer_addSeparator(JNIEnv *env, jobject self)
-{
-    TRY;
-
-    jobject selfGlobalRef = env->NewGlobalRef(self);
-
-    AwtToolkit::GetInstance().SyncCall(AwtMenu::_AddSeparator, selfGlobalRef);
-    // selfGlobalRef is deleted in _AddSeparator
-
-    CATCH_BAD_ALLOC;
-}
 
 /*
  * Class:     sun_awt_windows_WMenuPeer

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,6 @@ extern NSString *JAVA_MENU_NAME;
 - (void)setJavaMenuTitle:(NSString *)title;
 - (void)deleteJavaItem:(jint)index;
 - (void)addNSMenuItemToMenu:(NSMenu *)inMenu;
-- (void)addSeparator;
 
 // Accessors
 - (NSMenu *)menu;

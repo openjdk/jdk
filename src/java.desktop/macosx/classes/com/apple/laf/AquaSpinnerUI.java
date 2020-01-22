@@ -556,6 +556,7 @@ public class AquaSpinnerUI extends SpinnerUI {
             if (bottom != null) {
                 fBottomModel = bottom.getModel();
             }
+            setFocusable(false);
         }
 
         @Override

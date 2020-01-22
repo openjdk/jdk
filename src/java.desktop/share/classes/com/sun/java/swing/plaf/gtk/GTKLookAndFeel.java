@@ -312,7 +312,7 @@ public class GTKLookAndFeel extends SynthLookAndFeel {
             "com.sun.java.swing.plaf.gtk.GTKPainter$ListTableFocusBorder",
             "getNoFocusCellBorder");
 
-        GTKStyleFactory factory = (GTKStyleFactory)getStyleFactory();
+        SynthStyleFactory factory = getStyleFactory();
         GTKStyle tableStyle = (GTKStyle)factory.getStyle(null, Region.TREE);
         Color tableBg = tableStyle.getGTKColor(SynthConstants.ENABLED,
                 GTKColorType.TEXT_BACKGROUND);
@@ -505,7 +505,7 @@ public class GTKLookAndFeel extends SynthLookAndFeel {
                 this.region = region;
             }
             public Object createValue(UIDefaults table) {
-                GTKStyleFactory factory = (GTKStyleFactory)getStyleFactory();
+                SynthStyleFactory factory = getStyleFactory();
                 GTKStyle style = (GTKStyle)factory.getStyle(null, region);
                 return style.getDefaultFont();
             }
@@ -1305,7 +1305,7 @@ public class GTKLookAndFeel extends SynthLookAndFeel {
     }
 
     protected void initSystemColorDefaults(UIDefaults table) {
-        GTKStyleFactory factory = (GTKStyleFactory)getStyleFactory();
+        SynthStyleFactory factory = getStyleFactory();
         GTKStyle windowStyle =
                 (GTKStyle)factory.getStyle(null, Region.INTERNAL_FRAME);
         table.put("window", windowStyle.getGTKColor(SynthConstants.ENABLED,

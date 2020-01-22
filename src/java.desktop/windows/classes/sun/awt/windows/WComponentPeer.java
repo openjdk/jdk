@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -579,23 +579,25 @@ public abstract class WComponentPeer extends WObjectPeer
         if (window != null) {
             final WWindowPeer wpeer = AWTAccessor.getComponentAccessor()
                                                  .getPeer(window);
-            Graphics g = wpeer.getTranslucentGraphics();
-            // getTranslucentGraphics() returns non-null value for non-opaque windows only
-            if (g != null) {
-                // Non-opaque windows do not support heavyweight children.
-                // Redirect all painting to the Window's Graphics instead.
-                // The caller is responsible for calling the
-                // WindowPeer.updateWindow() after painting has finished.
-                int x = 0, y = 0;
-                for (Component c = target; c != window; c = c.getParent()) {
-                    x += c.getX();
-                    y += c.getY();
+            if (wpeer != null) {
+                Graphics g = wpeer.getTranslucentGraphics();
+                // getTranslucentGraphics() returns non-null value for non-opaque windows only
+                if (g != null) {
+                    // Non-opaque windows do not support heavyweight children.
+                    // Redirect all painting to the Window's Graphics instead.
+                    // The caller is responsible for calling the
+                    // WindowPeer.updateWindow() after painting has finished.
+                    int x = 0, y = 0;
+                    for (Component c = target; c != window; c = c.getParent()) {
+                        x += c.getX();
+                        y += c.getY();
+                    }
+
+                    g.translate(x, y);
+                    g.clipRect(0, 0, target.getWidth(), target.getHeight());
+
+                    return g;
                 }
-
-                g.translate(x, y);
-                g.clipRect(0, 0, target.getWidth(), target.getHeight());
-
-                return g;
             }
         }
 

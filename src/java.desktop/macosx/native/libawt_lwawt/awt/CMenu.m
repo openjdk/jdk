@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,10 +84,6 @@ AWT_ASSERT_APPKIT_THREAD;
         NSMenuItem *menuItem = [parent itemAtIndex:index];
         [menuItem setTitle:title];
     }
-}
-
-- (void)addSeparator {
-    // Nothing calls this, which is good because we need a CMenuItem here.
 }
 
 - (void)deleteJavaItem:(jint)index {
@@ -220,21 +216,6 @@ Java_sun_lwawt_macosx_CMenu_nativeSetMenuTitle
 JNF_COCOA_ENTER(env);
     // Set the menu's title.
     [((CMenu *)jlong_to_ptr(menuObject)) setJavaMenuTitle:JNFJavaToNSString(env, label)];
-JNF_COCOA_EXIT(env);
-}
-
-/*
- * Class:     sun_lwawt_macosx_CMenu
- * Method:    nativeAddSeparator
- * Signature: (J)V
- */
-JNIEXPORT void JNICALL
-Java_sun_lwawt_macosx_CMenu_nativeAddSeparator
-(JNIEnv *env, jobject peer, jlong menuObject)
-{
-JNF_COCOA_ENTER(env);
-    // Add a separator item.
-    [((CMenu *)jlong_to_ptr(menuObject))addSeparator];
 JNF_COCOA_EXIT(env);
 }
 

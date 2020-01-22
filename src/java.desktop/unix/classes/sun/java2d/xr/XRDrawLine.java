@@ -222,7 +222,7 @@ public class XRDrawLine {
         outcode2 = outcode(x2, y2, cxmin, cymin, cxmax, cymax);
 
         while ((outcode1 | outcode2) != 0) {
-            int xsteps = 0, ysteps = 0;
+            long xsteps = 0, ysteps = 0;
 
             if ((outcode1 & outcode2) != 0) {
                 return false;
@@ -247,7 +247,7 @@ public class XRDrawLine {
                     if (dx < 0) {
                         xsteps = -xsteps;
                     }
-                    x1 = ucX1 + xsteps;
+                    x1 = ucX1 + (int) xsteps;
                 } else if ((outcode1 & (OUTCODE_LEFT | OUTCODE_RIGHT)) != 0) {
                     if ((outcode1 & OUTCODE_LEFT) != 0) {
                         x1 = cxmin;
@@ -266,7 +266,7 @@ public class XRDrawLine {
                     if (dy < 0) {
                         ysteps = -ysteps;
                     }
-                    y1 = ucY1 + ysteps;
+                    y1 = ucY1 + (int) ysteps;
                 }
                 outcode1 = outcode(x1, y1, cxmin, cymin, cxmax, cymax);
             } else {
@@ -290,7 +290,7 @@ public class XRDrawLine {
                     if (dx > 0) {
                         xsteps = -xsteps;
                     }
-                    x2 = ucX2 + xsteps;
+                    x2 = ucX2 + (int) xsteps;
                 } else if ((outcode2 & (OUTCODE_LEFT | OUTCODE_RIGHT)) != 0) {
                     if ((outcode2 & OUTCODE_LEFT) != 0) {
                         x2 = cxmin;
@@ -311,7 +311,7 @@ public class XRDrawLine {
                     if (dy > 0) {
                         ysteps = -ysteps;
                     }
-                    y2 = ucY2 + ysteps;
+                    y2 = ucY2 + (int) ysteps;
                 }
                 outcode2 = outcode(x2, y2, cxmin, cymin, cxmax, cymax);
             }

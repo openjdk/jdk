@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,8 @@
 
 package sun.lwawt.macosx;
 
-import sun.lwawt.LWWindowPeer;
 import sun.java2d.SurfaceData;
+import sun.lwawt.LWWindowPeer;
 
 public class CPlatformLWView extends CPlatformView {
 
@@ -42,11 +42,6 @@ public class CPlatformLWView extends CPlatformView {
     @Override
     public long getAWTView() {
         return 0;
-    }
-
-    @Override
-    public boolean isOpaque() {
-        return true;
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,13 +93,6 @@ public class CMenu extends CMenuItem implements MenuPeer {
         super.setLabel(label);
     }
 
-    // Note that addSeparator is never called directly from java.awt.Menu,
-    // though it is required in the MenuPeer interface.
-    @Override
-    public final void addSeparator() {
-        execute(this::nativeAddSeparator);
-    }
-
     // Used by ScreenMenuBar to get to the native menu for event handling.
     public final long getNativeMenu() {
         return executeGet(this::nativeGetNSMenu);
@@ -110,7 +103,6 @@ public class CMenu extends CMenuItem implements MenuPeer {
                                          int insertionLocation);
     private native long nativeCreateSubMenu(long parentMenuPtr);
     private native void nativeSetMenuTitle(long menuPtr, String title);
-    private native void nativeAddSeparator(long menuPtr);
     private native void nativeDeleteItem(long menuPtr, int index);
 
     // Returns a retained NSMenu object! We have to explicitly
