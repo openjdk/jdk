@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,6 +97,11 @@ class JvmtiTagHashmapEntry : public CHeapObj<mtInternal> {
   inline oop object_peek()  {
     return NativeAccess<ON_PHANTOM_OOP_REF | AS_NO_KEEPALIVE>::oop_load(object_addr());
   }
+
+  inline oop object_raw() {
+    return RawAccess<>::oop_load(object_addr());
+  }
+
   inline jlong tag() const  { return _tag; }
 
   inline void set_tag(jlong tag) {
@@ -3352,7 +3357,7 @@ void JvmtiTagMap::do_weak_oops(BoolObjectClosure* is_alive, OopClosure* f) {
       JvmtiTagHashmapEntry* next = entry->next();
 
       // has object been GC'ed
-      if (!is_alive->do_object_b(entry->object_peek())) {
+      if (!is_alive->do_object_b(entry->object_raw())) {
         // grab the tag
         jlong tag = entry->tag();
         guarantee(tag != 0, "checking");
@@ -3370,7 +3375,7 @@ void JvmtiTagMap::do_weak_oops(BoolObjectClosure* is_alive, OopClosure* f) {
         ++freed;
       } else {
         f->do_oop(entry->object_addr());
-        oop new_oop = entry->object_peek();
+        oop new_oop = entry->object_raw();
 
         // if the object has moved then re-hash it and move its
         // entry to its new location.
@@ -3404,7 +3409,7 @@ void JvmtiTagMap::do_weak_oops(BoolObjectClosure* is_alive, OopClosure* f) {
   // Re-add all the entries which were kept aside
   while (delayed_add != NULL) {
     JvmtiTagHashmapEntry* next = delayed_add->next();
-    unsigned int pos = JvmtiTagHashmap::hash(delayed_add->object_peek(), size);
+    unsigned int pos = JvmtiTagHashmap::hash(delayed_add->object_raw(), size);
     delayed_add->set_next(table[pos]);
     table[pos] = delayed_add;
     delayed_add = next;
