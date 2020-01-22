@@ -1161,6 +1161,10 @@ public class ObjectStreamClass implements Serializable {
             } catch (IllegalAccessException ex) {
                 // should not occur, as access checks have been suppressed
                 throw new InternalError(ex);
+            } catch (InstantiationError err) {
+                var ex = new InstantiationException();
+                ex.initCause(err);
+                throw ex;
             }
         } else {
             throw new UnsupportedOperationException();
