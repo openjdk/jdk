@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,30 +37,37 @@
 #include "utilities/formatBuffer.hpp"
 #include "utilities/preserveException.hpp"
 
-class HandshakeOperation: public StackObj {
-public:
-  virtual void do_handshake(JavaThread* thread) = 0;
-};
 
-class HandshakeThreadsOperation: public HandshakeOperation {
-  static Semaphore _done;
+class HandshakeOperation: public StackObj {
   HandshakeClosure* _handshake_cl;
+  int64_t _pending_threads;
   bool _executed;
+  bool _is_direct;
 public:
-  HandshakeThreadsOperation(HandshakeClosure* cl) : _handshake_cl(cl), _executed(false) {}
+  HandshakeOperation(HandshakeClosure* cl, bool is_direct = false) :
+    _handshake_cl(cl),
+    _pending_threads(1),
+    _executed(false),
+    _is_direct(is_direct) {}
+
   void do_handshake(JavaThread* thread);
-  bool thread_has_completed() { return _done.trywait(); }
+  bool is_completed() {
+    int64_t val = Atomic::load(&_pending_threads);
+    assert(val >= 0, "_pending_threads cannot be negative");
+    return val == 0;
+  }
+  void add_target_count(int count) { Atomic::add(&_pending_threads, count); }
   bool executed() const { return _executed; }
   const char* name() { return _handshake_cl->name(); }
 
+  bool is_direct() { return _is_direct; }
+
 #ifdef ASSERT
   void check_state() {
-    assert(!_done.trywait(), "Must be zero");
+    assert(_pending_threads == 0, "Must be zero");
   }
 #endif
 };
-
-Semaphore HandshakeThreadsOperation::_done(0);
 
 class VM_Handshake: public VM_Operation {
   const jlong _handshake_timeout;
@@ -68,19 +75,10 @@ class VM_Handshake: public VM_Operation {
   bool evaluate_at_safepoint() const { return false; }
 
  protected:
-  HandshakeThreadsOperation* const _op;
+  HandshakeOperation* const _op;
 
-  VM_Handshake(HandshakeThreadsOperation* op) :
+  VM_Handshake(HandshakeOperation* op) :
       _handshake_timeout(TimeHelper::millis_to_counter(HandshakeTimeout)), _op(op) {}
-
-  void set_handshake(JavaThread* target) {
-    target->set_handshake_operation(_op);
-  }
-
-  // This method returns true for threads completed their operation
-  // and true for threads canceled their operation.
-  // A cancellation can happen if the thread is exiting.
-  bool poll_for_completed_thread() { return _op->thread_has_completed(); }
 
   bool handshake_has_timed_out(jlong start_time);
   static void handle_timeout();
@@ -121,12 +119,10 @@ static void log_handshake_info(jlong start_time_ns, const char* name, int target
 class VM_HandshakeOneThread: public VM_Handshake {
   JavaThread* _target;
  public:
-  VM_HandshakeOneThread(HandshakeThreadsOperation* op, JavaThread* target) :
+  VM_HandshakeOneThread(HandshakeOperation* op, JavaThread* target) :
     VM_Handshake(op), _target(target) {}
 
   void doit() {
-    DEBUG_ONLY(_op->check_state();)
-
     jlong start_time_ns = 0;
     if (log_is_enabled(Info, handshake)) {
       start_time_ns = os::javaTimeNanos();
@@ -134,7 +130,7 @@ class VM_HandshakeOneThread: public VM_Handshake {
 
     ThreadsListHandle tlh;
     if (tlh.includes(_target)) {
-      set_handshake(_target);
+      _target->set_handshake_operation(_op);
     } else {
       log_handshake_info(start_time_ns, _op->name(), 0, 0, "(thread dead)");
       return;
@@ -147,8 +143,8 @@ class VM_HandshakeOneThread: public VM_Handshake {
       if (handshake_has_timed_out(timeout_start_time)) {
         handle_timeout();
       }
-      by_vm_thread = _target->handshake_try_process_by_vmThread();
-    } while (!poll_for_completed_thread());
+      by_vm_thread = _target->handshake_try_process(_op);
+    } while (!_op->is_completed());
     DEBUG_ONLY(_op->check_state();)
     log_handshake_info(start_time_ns, _op->name(), 1, by_vm_thread ? 1 : 0);
   }
@@ -160,11 +156,9 @@ class VM_HandshakeOneThread: public VM_Handshake {
 
 class VM_HandshakeAllThreads: public VM_Handshake {
  public:
-  VM_HandshakeAllThreads(HandshakeThreadsOperation* op) : VM_Handshake(op) {}
+  VM_HandshakeAllThreads(HandshakeOperation* op) : VM_Handshake(op) {}
 
   void doit() {
-    DEBUG_ONLY(_op->check_state();)
-
     jlong start_time_ns = 0;
     if (log_is_enabled(Info, handshake)) {
       start_time_ns = os::javaTimeNanos();
@@ -174,7 +168,7 @@ class VM_HandshakeAllThreads: public VM_Handshake {
     JavaThreadIteratorWithHandle jtiwh;
     int number_of_threads_issued = 0;
     for (JavaThread *thr = jtiwh.next(); thr != NULL; thr = jtiwh.next()) {
-      set_handshake(thr);
+      thr->set_handshake_operation(_op);
       number_of_threads_issued++;
     }
 
@@ -182,10 +176,11 @@ class VM_HandshakeAllThreads: public VM_Handshake {
       log_handshake_info(start_time_ns, _op->name(), 0, 0);
       return;
     }
+    // _op was created with a count == 1 so don't double count.
+    _op->add_target_count(number_of_threads_issued - 1);
 
     log_trace(handshake)("Threads signaled, begin processing blocked threads by VMThread");
     const jlong start_time = os::elapsed_counter();
-    int number_of_threads_completed = 0;
     do {
       // Check if handshake operation has timed out
       if (handshake_has_timed_out(start_time)) {
@@ -198,18 +193,12 @@ class VM_HandshakeAllThreads: public VM_Handshake {
       jtiwh.rewind();
       for (JavaThread *thr = jtiwh.next(); thr != NULL; thr = jtiwh.next()) {
         // A new thread on the ThreadsList will not have an operation,
-        // hence it is skipped in handshake_process_by_vmthread.
-        if (thr->handshake_try_process_by_vmThread()) {
+        // hence it is skipped in handshake_try_process.
+        if (thr->handshake_try_process(_op)) {
           handshake_executed_by_vm_thread++;
         }
       }
-      while (poll_for_completed_thread()) {
-        // Includes canceled operations by exiting threads.
-        number_of_threads_completed++;
-      }
-
-    } while (number_of_threads_issued > number_of_threads_completed);
-    assert(number_of_threads_issued == number_of_threads_completed, "Must be the same");
+    } while (!_op->is_completed());
     DEBUG_ONLY(_op->check_state();)
 
     log_handshake_info(start_time_ns, _op->name(), number_of_threads_issued, handshake_executed_by_vm_thread);
@@ -245,7 +234,7 @@ public:
   bool executed() const { return _executed; }
 };
 
-void HandshakeThreadsOperation::do_handshake(JavaThread* thread) {
+void HandshakeOperation::do_handshake(JavaThread* thread) {
   jlong start_time_ns = 0;
   if (log_is_enabled(Debug, handshake, task)) {
     start_time_ns = os::javaTimeNanos();
@@ -263,16 +252,16 @@ void HandshakeThreadsOperation::do_handshake(JavaThread* thread) {
                                name(), p2i(thread), BOOL_TO_STR(Thread::current()->is_VM_thread()), completion_time);
   }
 
-  // Use the semaphore to inform the VM thread that we have completed the operation
-  _done.signal();
+  // Inform VMThread/Handshaker that we have completed the operation
+  Atomic::dec(&_pending_threads);
 
-  // It is no longer safe to refer to 'this' as the VMThread may have destroyed this operation
+  // It is no longer safe to refer to 'this' as the VMThread/Handshaker may have destroyed this operation
 }
 
 void Handshake::execute(HandshakeClosure* thread_cl) {
   if (SafepointMechanism::uses_thread_local_poll()) {
-    HandshakeThreadsOperation cto(thread_cl);
-    VM_HandshakeAllThreads handshake(&cto);
+    HandshakeOperation ho(thread_cl);
+    VM_HandshakeAllThreads handshake(&ho);
     VMThread::execute(&handshake);
   } else {
     VM_HandshakeFallbackOperation op(thread_cl);
@@ -282,8 +271,8 @@ void Handshake::execute(HandshakeClosure* thread_cl) {
 
 bool Handshake::execute(HandshakeClosure* thread_cl, JavaThread* target) {
   if (SafepointMechanism::uses_thread_local_poll()) {
-    HandshakeThreadsOperation cto(thread_cl);
-    VM_HandshakeOneThread handshake(&cto, target);
+    HandshakeOperation ho(thread_cl);
+    VM_HandshakeOneThread handshake(&ho, target);
     VMThread::execute(&handshake);
     return handshake.executed();
   } else {
@@ -293,61 +282,125 @@ bool Handshake::execute(HandshakeClosure* thread_cl, JavaThread* target) {
   }
 }
 
-HandshakeState::HandshakeState() : _operation(NULL), _semaphore(1), _thread_in_process_handshake(false) {
-  DEBUG_ONLY(_vmthread_processing_handshake = false;)
+bool Handshake::execute_direct(HandshakeClosure* thread_cl, JavaThread* target) {
+  if (!SafepointMechanism::uses_thread_local_poll()) {
+    VM_HandshakeFallbackOperation op(thread_cl, target);
+    VMThread::execute(&op);
+    return op.executed();
+  }
+  JavaThread* self = JavaThread::current();
+  HandshakeOperation op(thread_cl, /*is_direct*/ true);
+
+  jlong start_time_ns = 0;
+  if (log_is_enabled(Info, handshake)) {
+    start_time_ns = os::javaTimeNanos();
+  }
+
+  ThreadsListHandle tlh;
+  if (tlh.includes(target)) {
+    target->set_handshake_operation(&op);
+  } else {
+    log_handshake_info(start_time_ns, op.name(), 0, 0, "(thread dead)");
+    return false;
+  }
+
+  bool by_handshaker = false;
+  while (!op.is_completed()) {
+    by_handshaker = target->handshake_try_process(&op);
+    // Check for pending handshakes to avoid possible deadlocks where our
+    // target is trying to handshake us.
+    if (SafepointMechanism::should_block(self)) {
+      ThreadBlockInVM tbivm(self);
+    }
+  }
+  DEBUG_ONLY(op.check_state();)
+  log_handshake_info(start_time_ns, op.name(), 1, by_handshaker ? 1 : 0);
+
+  return op.executed();
 }
 
-void HandshakeState::set_operation(JavaThread* target, HandshakeOperation* op) {
-  _operation = op;
-  SafepointMechanism::arm_local_poll_release(target);
+HandshakeState::HandshakeState() :
+  _operation(NULL),
+  _operation_direct(NULL),
+  _handshake_turn_sem(1),
+  _processing_sem(1),
+  _thread_in_process_handshake(false)
+{
+  DEBUG_ONLY(_active_handshaker = NULL;)
 }
 
-void HandshakeState::clear_handshake(JavaThread* target) {
-  _operation = NULL;
-  SafepointMechanism::disarm_if_needed(target, true /* release */);
+void HandshakeState::set_operation(HandshakeOperation* op) {
+  if (!op->is_direct()) {
+    assert(Thread::current()->is_VM_thread(), "should be the VMThread");
+    _operation = op;
+  } else {
+    assert(Thread::current()->is_Java_thread(), "should be a JavaThread");
+    // Serialize direct handshakes so that only one proceeds at a time for a given target
+    _handshake_turn_sem.wait_with_safepoint_check(JavaThread::current());
+    _operation_direct = op;
+  }
+  SafepointMechanism::arm_local_poll_release(_handshakee);
 }
 
-void HandshakeState::process_self_inner(JavaThread* thread) {
-  assert(Thread::current() == thread, "should call from thread");
-  assert(!thread->is_terminated(), "should not be a terminated thread");
-  assert(thread->thread_state() != _thread_blocked, "should not be in a blocked state");
-  assert(thread->thread_state() != _thread_in_native, "should not be in native");
+void HandshakeState::clear_handshake(bool is_direct) {
+  if (!is_direct) {
+    _operation = NULL;
+  } else {
+    _operation_direct = NULL;
+    _handshake_turn_sem.signal();
+  }
+}
+
+void HandshakeState::process_self_inner() {
+  assert(Thread::current() == _handshakee, "should call from _handshakee");
+  assert(!_handshakee->is_terminated(), "should not be a terminated thread");
+  assert(_handshakee->thread_state() != _thread_blocked, "should not be in a blocked state");
+  assert(_handshakee->thread_state() != _thread_in_native, "should not be in native");
+  JavaThread* self = _handshakee;
 
   do {
-    ThreadInVMForHandshake tivm(thread);
-    if (!_semaphore.trywait()) {
-      _semaphore.wait_with_safepoint_check(thread);
+    ThreadInVMForHandshake tivm(self);
+    if (!_processing_sem.trywait()) {
+      _processing_sem.wait_with_safepoint_check(self);
     }
-    HandshakeOperation* op = Atomic::load_acquire(&_operation);
-    if (op != NULL) {
-      HandleMark hm(thread);
-      CautiouslyPreserveExceptionMark pem(thread);
-      // Disarm before execute the operation
-      clear_handshake(thread);
-      op->do_handshake(thread);
+    if (has_operation()) {
+      HandleMark hm(self);
+      CautiouslyPreserveExceptionMark pem(self);
+      HandshakeOperation * op = _operation;
+      if (op != NULL) {
+        // Disarm before executing the operation
+        clear_handshake(/*is_direct*/ false);
+        op->do_handshake(self);
+      }
+      op = _operation_direct;
+      if (op != NULL) {
+        // Disarm before executing the operation
+        clear_handshake(/*is_direct*/ true);
+        op->do_handshake(self);
+      }
     }
-    _semaphore.signal();
+    _processing_sem.signal();
   } while (has_operation());
 }
 
-bool HandshakeState::vmthread_can_process_handshake(JavaThread* target) {
+bool HandshakeState::can_process_handshake() {
   // handshake_safe may only be called with polls armed.
-  // VM thread controls this by first claiming the handshake via claim_handshake_for_vmthread.
-  return SafepointSynchronize::handshake_safe(target);
+  // Handshaker controls this by first claiming the handshake via claim_handshake().
+  return SafepointSynchronize::handshake_safe(_handshakee);
 }
 
-static bool possibly_vmthread_can_process_handshake(JavaThread* target) {
+bool HandshakeState::possibly_can_process_handshake() {
   // Note that this method is allowed to produce false positives.
-  if (target->is_ext_suspended()) {
+  if (_handshakee->is_ext_suspended()) {
     return true;
   }
-  if (target->is_terminated()) {
+  if (_handshakee->is_terminated()) {
     return true;
   }
-  switch (target->thread_state()) {
+  switch (_handshakee->thread_state()) {
   case _thread_in_native:
     // native threads are safe if they have no java stack or have walkable stack
-    return !target->has_last_Java_frame() || target->frame_anchor()->walkable();
+    return !_handshakee->has_last_Java_frame() || _handshakee->frame_anchor()->walkable();
 
   case _thread_blocked:
     return true;
@@ -357,32 +410,40 @@ static bool possibly_vmthread_can_process_handshake(JavaThread* target) {
   }
 }
 
-bool HandshakeState::claim_handshake_for_vmthread() {
-  if (!_semaphore.trywait()) {
+bool HandshakeState::claim_handshake(bool is_direct) {
+  if (!_processing_sem.trywait()) {
     return false;
   }
-  if (has_operation()) {
+  if (has_specific_operation(is_direct)){
     return true;
   }
-  _semaphore.signal();
+  _processing_sem.signal();
   return false;
 }
 
-bool HandshakeState::try_process_by_vmThread(JavaThread* target) {
-  assert(Thread::current()->is_VM_thread(), "should call from vm thread");
+bool HandshakeState::try_process(HandshakeOperation* op) {
+  bool is_direct = op->is_direct();
 
-  if (!has_operation()) {
+  if (!has_specific_operation(is_direct)){
     // JT has already cleared its handshake
     return false;
   }
 
-  if (!possibly_vmthread_can_process_handshake(target)) {
+  if (!possibly_can_process_handshake()) {
     // JT is observed in an unsafe state, it must notice the handshake itself
     return false;
   }
 
   // Claim the semaphore if there still an operation to be executed.
-  if (!claim_handshake_for_vmthread()) {
+  if (!claim_handshake(is_direct)) {
+    return false;
+  }
+
+  // Check if the handshake operation is the same as the one we meant to execute. The
+  // handshake could have been already processed by the handshakee and a new handshake
+  // by another JavaThread might be in progress.
+  if ( (is_direct && op != _operation_direct)) {
+    _processing_sem.signal();
     return false;
   }
 
@@ -390,19 +451,19 @@ bool HandshakeState::try_process_by_vmThread(JavaThread* target) {
   // can observe a safe state the thread cannot possibly continue without
   // getting caught by the semaphore.
   bool executed = false;
-  if (vmthread_can_process_handshake(target)) {
-    guarantee(!_semaphore.trywait(), "we should already own the semaphore");
-    log_trace(handshake)("Processing handshake by VMThtread");
-    DEBUG_ONLY(_vmthread_processing_handshake = true;)
-    _operation->do_handshake(target);
-    DEBUG_ONLY(_vmthread_processing_handshake = false;)
-    // Disarm after VM thread have executed the operation.
-    clear_handshake(target);
+  if (can_process_handshake()) {
+    guarantee(!_processing_sem.trywait(), "we should already own the semaphore");
+    log_trace(handshake)("Processing handshake by %s", Thread::current()->is_VM_thread() ? "VMThread" : "Handshaker");
+    DEBUG_ONLY(_active_handshaker = Thread::current();)
+    op->do_handshake(_handshakee);
+    DEBUG_ONLY(_active_handshaker = NULL;)
+    // Disarm after we have executed the operation.
+    clear_handshake(is_direct);
     executed = true;
   }
 
   // Release the thread
-  _semaphore.signal();
+  _processing_sem.signal();
 
   return executed;
 }

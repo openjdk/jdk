@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1318,7 +1318,7 @@ class JavaThread: public Thread {
   HandshakeState _handshake;
  public:
   void set_handshake_operation(HandshakeOperation* op) {
-    _handshake.set_operation(this, op);
+    _handshake.set_operation(op);
   }
 
   bool has_handshake() const {
@@ -1326,16 +1326,16 @@ class JavaThread: public Thread {
   }
 
   void handshake_process_by_self() {
-    _handshake.process_by_self(this);
+    _handshake.process_by_self();
   }
 
-  bool handshake_try_process_by_vmThread() {
-    return _handshake.try_process_by_vmThread(this);
+  bool handshake_try_process(HandshakeOperation* op) {
+    return _handshake.try_process(op);
   }
 
 #ifdef ASSERT
-  bool is_vmthread_processing_handshake() const {
-    return _handshake.is_vmthread_processing_handshake();
+  Thread* get_active_handshaker() const {
+    return _handshake.get_active_handshaker();
   }
 #endif
 

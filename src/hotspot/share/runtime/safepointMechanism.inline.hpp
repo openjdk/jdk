@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,19 +68,6 @@ void SafepointMechanism::arm_local_poll(JavaThread* thread) {
 
 void SafepointMechanism::disarm_local_poll(JavaThread* thread) {
   thread->set_polling_page(poll_disarmed_value());
-}
-
-void SafepointMechanism::disarm_if_needed(JavaThread* thread, bool memory_order_release) {
-  JavaThreadState jts = thread->thread_state();
-  if (jts == _thread_in_native || jts == _thread_in_native_trans) {
-    // JavaThread will disarm itself and execute cross_modify_fence() before continuing
-    return;
-  }
-  if (memory_order_release) {
-    thread->set_polling_page_release(poll_disarmed_value());
-  } else {
-    thread->set_polling_page(poll_disarmed_value());
-  }
 }
 
 void SafepointMechanism::arm_local_poll_release(JavaThread* thread) {
