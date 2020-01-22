@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,17 +23,20 @@
 
 package test.java.time.zone;
 
-import static org.testng.Assert.assertEquals;
-
+import java.time.DayOfWeek;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.Month;
+import java.time.Year;
 import java.time.ZonedDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.zone.ZoneOffsetTransition;
+import java.time.zone.ZoneOffsetTransitionRule;
 import java.time.zone.ZoneRules;
+import java.util.Collections;
 
 import org.testng.annotations.Test;
 import org.testng.annotations.DataProvider;
@@ -41,11 +44,9 @@ import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
 
 /**
- * @summary Test ZoneRules whether the savings are positive in time zones that have
- *      negative savings in the source TZ files. Also, check the transition cutover
- *      time beyond 24:00, which should translate into the next day.
+ * @summary Tests for ZoneRules class.
  *
- * @bug 8212970
+ * @bug 8212970 8236903
  */
 @Test
 public class TestZoneRules {
@@ -107,6 +108,11 @@ public class TestZoneRules {
         };
     }
 
+    /**
+     * Test ZoneRules whether the savings are positive in time zones that have
+     * negative savings in the source TZ files.
+     * @bug 8212970
+     */
     @Test(dataProvider="negativeDST")
     public void test_NegativeDST(ZoneId zid, LocalDate ld, ZoneOffset offset, ZoneOffset stdOffset, boolean isDST) {
         Instant i = Instant.from(ZonedDateTime.of(ld, LocalTime.MIN, zid));
@@ -116,10 +122,53 @@ public class TestZoneRules {
         assertEquals(zr.isDaylightSavings(i), isDST);
     }
 
+    /**
+     * Check the transition cutover time beyond 24:00, which should translate into the next day.
+     * @bug 8212970
+     */
     @Test(dataProvider="transitionBeyondDay")
     public void test_TransitionBeyondDay(ZoneId zid, LocalDateTime ldt, ZoneOffset before, ZoneOffset after) {
         ZoneOffsetTransition zot = ZoneOffsetTransition.of(ldt, before, after);
         ZoneRules zr = zid.getRules();
         assertTrue(zr.getTransitions().contains(zot));
+    }
+
+    /**
+     * Make sure ZoneRules.findYear() won't throw out-of-range DateTimeException for
+     * year calculation.
+     * @bug 8236903
+     */
+    @Test
+    public void test_TransitionLastRuleYear() {
+        Instant maxLocalDateTime = LocalDateTime.of(Year.MAX_VALUE,
+                12,
+                31,
+                23,
+                59,
+                59,
+                999999999).toInstant(ZoneOffset.UTC);
+        ZoneOffset offsetZero = ZoneOffset.ofHours(0);
+        ZoneOffset offsetPlusOneHour = ZoneOffset.ofHours(1);
+        ZoneRules zoneRulesA = ZoneRules.of(offsetPlusOneHour);
+        ZoneOffsetTransition transition = ZoneOffsetTransition.of(LocalDateTime.ofEpochSecond(0, 0, offsetZero),
+                offsetZero,
+                offsetPlusOneHour);
+        ZoneOffsetTransitionRule transitionRule = ZoneOffsetTransitionRule.of(Month.JANUARY,
+                1,
+                DayOfWeek.SUNDAY,
+                LocalTime.MIDNIGHT,
+                true,
+                ZoneOffsetTransitionRule.TimeDefinition.STANDARD,
+                offsetZero,
+                offsetZero,
+                offsetPlusOneHour);
+        ZoneRules zoneRulesB = ZoneRules.of(offsetZero,
+                offsetZero,
+                Collections.singletonList(transition),
+                Collections.singletonList(transition),
+                Collections.singletonList(transitionRule));
+        ZoneOffset offsetA = zoneRulesA.getOffset(maxLocalDateTime);
+        ZoneOffset offsetB = zoneRulesB.getOffset(maxLocalDateTime);
+        assertEquals(offsetA, offsetB);
     }
 }
