@@ -33,12 +33,12 @@ class name jdk/incubator/foreign/AbstractLayout
 header extends java/lang/Object implements jdk/incubator/foreign/MemoryLayout flags 420
 innerclass innerClass java/lang/constant/DirectMethodHandleDesc$Kind outerClass java/lang/constant/DirectMethodHandleDesc innerClassName Kind flags 4019
 innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
-field name BSM_GET_STATIC_FINAL descriptor Ljava/lang/constant/DirectMethodHandleDesc; flags 19
 method name <init> descriptor (Ljava/util/OptionalLong;JLjava/util/Optional;)V flags 1 signature (Ljava/util/OptionalLong;JLjava/util/Optional<Ljava/lang/String;>;)V
 method name withName descriptor (Ljava/lang/String;)Ljdk/incubator/foreign/AbstractLayout; flags 1
 method name name descriptor ()Ljava/util/Optional; flags 11 signature ()Ljava/util/Optional<Ljava/lang/String;>;
 method name withBitAlignment descriptor (J)Ljdk/incubator/foreign/AbstractLayout; flags 1
 method name bitAlignment descriptor ()J flags 11
+method name hasSize descriptor ()Z flags 1
 method name bitSize descriptor ()J flags 1
 method name hashCode descriptor ()I flags 1
 method name equals descriptor (Ljava/lang/Object;)Z flags 1
@@ -58,6 +58,7 @@ method name describeConstable descriptor ()Ljava/util/Optional; flags 1 signatur
 method name withName descriptor (Ljava/lang/String;)Ljdk/incubator/foreign/GroupLayout; flags 1
 method name withBitAlignment descriptor (J)Ljdk/incubator/foreign/GroupLayout; flags 1
 method name bitSize descriptor ()J flags 1041
+method name hasSize descriptor ()Z flags 1041
 method name withBitAlignment descriptor (J)Ljdk/incubator/foreign/AbstractLayout; flags 1041
 method name withName descriptor (Ljava/lang/String;)Ljdk/incubator/foreign/AbstractLayout; flags 1041
 method name withBitAlignment descriptor (J)Ljdk/incubator/foreign/MemoryLayout; flags 1041
@@ -65,7 +66,7 @@ method name withName descriptor (Ljava/lang/String;)Ljdk/incubator/foreign/Memor
 
 class name jdk/incubator/foreign/MemoryAddress
 header extends java/lang/Object flags 601
-method name offset descriptor (J)Ljdk/incubator/foreign/MemoryAddress; flags 401
+method name addOffset descriptor (J)Ljdk/incubator/foreign/MemoryAddress; flags 401
 method name offset descriptor ()J flags 401
 method name segment descriptor ()Ljdk/incubator/foreign/MemorySegment; flags 401
 method name equals descriptor (Ljava/lang/Object;)Z flags 401
@@ -85,6 +86,7 @@ header extends java/lang/Object implements java/lang/constant/Constable nestMemb
 innerclass innerClass jdk/incubator/foreign/MemoryLayout$PathElement outerClass jdk/incubator/foreign/MemoryLayout innerClassName PathElement flags 609
 innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
 method name describeConstable descriptor ()Ljava/util/Optional; flags 401 signature ()Ljava/util/Optional<+Ljava/lang/constant/DynamicConstantDesc<+Ljdk/incubator/foreign/MemoryLayout;>;>;
+method name hasSize descriptor ()Z flags 401
 method name bitSize descriptor ()J flags 401
 method name byteSize descriptor ()J flags 1
 method name name descriptor ()Ljava/util/Optional; flags 401 signature ()Ljava/util/Optional<Ljava/lang/String;>;
@@ -94,6 +96,8 @@ method name byteAlignment descriptor ()J flags 1
 method name withBitAlignment descriptor (J)Ljdk/incubator/foreign/MemoryLayout; flags 401
 method name offset descriptor ([Ljdk/incubator/foreign/MemoryLayout$PathElement;)J flags 81
 method name varHandle descriptor (Ljava/lang/Class;[Ljdk/incubator/foreign/MemoryLayout$PathElement;)Ljava/lang/invoke/VarHandle; flags 81 signature (Ljava/lang/Class<*>;[Ljdk/incubator/foreign/MemoryLayout$PathElement;)Ljava/lang/invoke/VarHandle;
+method name select descriptor ([Ljdk/incubator/foreign/MemoryLayout$PathElement;)Ljdk/incubator/foreign/MemoryLayout; flags 81
+method name map descriptor (Ljava/util/function/UnaryOperator;[Ljdk/incubator/foreign/MemoryLayout$PathElement;)Ljdk/incubator/foreign/MemoryLayout; flags 81 signature (Ljava/util/function/UnaryOperator<Ljdk/incubator/foreign/MemoryLayout;>;[Ljdk/incubator/foreign/MemoryLayout$PathElement;)Ljdk/incubator/foreign/MemoryLayout;
 method name equals descriptor (Ljava/lang/Object;)Z flags 401
 method name hashCode descriptor ()I flags 401
 method name toString descriptor ()Ljava/lang/String; flags 401
@@ -141,7 +145,7 @@ innerclass innerClass java/nio/channels/FileChannel$MapMode outerClass java/nio/
 innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
 method name baseAddress descriptor ()Ljdk/incubator/foreign/MemoryAddress; flags 401
 method name acquire descriptor ()Ljdk/incubator/foreign/MemorySegment; flags 401
-method name isAccessible descriptor ()Z flags 401
+method name ownerThread descriptor ()Ljava/lang/Thread; flags 401
 method name byteSize descriptor ()J flags 401
 method name asReadOnly descriptor ()Ljdk/incubator/foreign/MemorySegment; flags 401
 method name asSlice descriptor (JJ)Ljdk/incubator/foreign/MemorySegment; flags 401
@@ -167,6 +171,7 @@ class name jdk/incubator/foreign/SequenceLayout
 header extends jdk/incubator/foreign/AbstractLayout flags 31
 method name elementLayout descriptor ()Ljdk/incubator/foreign/MemoryLayout; flags 1
 method name elementCount descriptor ()Ljava/util/OptionalLong; flags 1
+method name withElementCount descriptor (J)Ljdk/incubator/foreign/SequenceLayout; flags 1
 method name toString descriptor ()Ljava/lang/String; flags 1
 method name equals descriptor (Ljava/lang/Object;)Z flags 1
 method name hashCode descriptor ()I flags 1
@@ -174,6 +179,7 @@ method name describeConstable descriptor ()Ljava/util/Optional; flags 1 signatur
 method name withName descriptor (Ljava/lang/String;)Ljdk/incubator/foreign/SequenceLayout; flags 1
 method name withBitAlignment descriptor (J)Ljdk/incubator/foreign/SequenceLayout; flags 1
 method name bitSize descriptor ()J flags 1041
+method name hasSize descriptor ()Z flags 1041
 method name withBitAlignment descriptor (J)Ljdk/incubator/foreign/AbstractLayout; flags 1041
 method name withName descriptor (Ljava/lang/String;)Ljdk/incubator/foreign/AbstractLayout; flags 1041
 method name withBitAlignment descriptor (J)Ljdk/incubator/foreign/MemoryLayout; flags 1041
@@ -190,6 +196,7 @@ method name describeConstable descriptor ()Ljava/util/Optional; flags 1 signatur
 method name withName descriptor (Ljava/lang/String;)Ljdk/incubator/foreign/ValueLayout; flags 1
 method name withBitAlignment descriptor (J)Ljdk/incubator/foreign/ValueLayout; flags 1
 method name bitSize descriptor ()J flags 1041
+method name hasSize descriptor ()Z flags 1041
 method name withBitAlignment descriptor (J)Ljdk/incubator/foreign/AbstractLayout; flags 1041
 method name withName descriptor (Ljava/lang/String;)Ljdk/incubator/foreign/AbstractLayout; flags 1041
 method name withBitAlignment descriptor (J)Ljdk/incubator/foreign/MemoryLayout; flags 1041
