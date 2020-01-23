@@ -40,7 +40,7 @@
 
 class HandshakeOperation: public StackObj {
   HandshakeClosure* _handshake_cl;
-  int64_t _pending_threads;
+  int32_t _pending_threads;
   bool _executed;
   bool _is_direct;
 public:
