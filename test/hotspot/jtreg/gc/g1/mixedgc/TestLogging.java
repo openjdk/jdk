@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,29 +21,28 @@
  * questions.
  */
 
+package gc.g1.mixedgc;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+import gc.testlibrary.g1.MixedGCProvoker;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
+
 /*
  * @test TestLogging
  * @summary Check that a mixed GC is reflected in the gc logs
  * @requires vm.gc.G1
  * @requires vm.opt.MaxGCPauseMillis == "null"
- * @library /test/lib
+ * @library /test/lib /
  * @modules java.base/jdk.internal.misc
  * @modules java.management
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  * @run driver gc.g1.mixedgc.TestLogging
  */
-
-package gc.g1.mixedgc;
-
-import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.process.ProcessTools;
-import jdk.test.lib.Asserts;
-import sun.hotspot.WhiteBox;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Collections;
 
 /**
  * Test spawns MixedGCProvoker in a separate VM and expects to find a message
@@ -55,9 +54,8 @@ public class TestLogging {
             "-XX:+UnlockExperimentalVMOptions",
             "-XX:+UnlockDiagnosticVMOptions",
             "-XX:+WhiteBoxAPI",
-            "-XX:SurvivorRatio=1", // Survivor-to-eden ratio is 1:1
-            "-Xms10M", "-Xmx10M",
-            "-XX:MaxTenuringThreshold=1", // promote objects after first gc
+            "-Xms10M", "-Xmx10M", "-XX:NewSize=2M", "-XX:MaxNewSize=2M",
+            "-XX:+AlwaysTenure", // surviving promote objects immediately
             "-XX:InitiatingHeapOccupancyPercent=100", // set initial CMC threshold and disable adaptive IHOP
             "-XX:-G1UseAdaptiveIHOP",                 // to avoid additional concurrent cycles caused by ergonomics
             "-XX:G1MixedGCCountTarget=4",
@@ -65,14 +63,11 @@ public class TestLogging {
             "-XX:G1HeapRegionSize=1m", "-XX:G1HeapWastePercent=0",
             "-XX:G1MixedGCLiveThresholdPercent=100"};
 
-    public static final int ALLOCATION_SIZE = 20000;
-    public static final int ALLOCATION_COUNT = 15;
-
     public static void main(String args[]) throws Exception {
         // Test turns logging on by giving -Xlog:gc flag
-        test("-Xlog:gc");
+        test("-Xlog:gc,gc+heap=debug");
         // Test turns logging on by giving -Xlog:gc=debug flag
-        test("-Xlog:gc=debug");
+        test("-Xlog:gc=debug,gc+heap=debug");
     }
 
     private static void test(String vmFlag) throws Exception {
@@ -80,7 +75,7 @@ public class TestLogging {
         OutputAnalyzer output = spawnMixedGCProvoker(vmFlag);
         System.out.println(output.getStdout());
         output.shouldHaveExitValue(0);
-        output.shouldContain("Pause Young (Mixed) (G1 Evacuation Pause)");
+        output.shouldContain("Pause Young (Mixed)");
     }
 
     /**
@@ -93,7 +88,7 @@ public class TestLogging {
         List<String> testOpts = new ArrayList<>();
         Collections.addAll(testOpts, COMMON_OPTIONS);
         Collections.addAll(testOpts, extraFlags);
-        testOpts.add(MixedGCProvoker.class.getName());
+        testOpts.add(RunMixedGC.class.getName());
         System.out.println(testOpts);
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(false,
                 testOpts.toArray(new String[testOpts.size()]));
@@ -101,82 +96,10 @@ public class TestLogging {
     }
 }
 
-/**
- * Utility class to guarantee a mixed GC. The class allocates several arrays and
- * promotes them to the oldgen. After that it tries to provoke mixed GC by
- * allocating new objects.
- *
- * The necessary condition for guaranteed mixed GC is running MixedGCProvoker is
- * running in VM with the following flags: -XX:MaxTenuringThreshold=1, -Xms10M,
- * -Xmx10M, -XX:G1MixedGCLiveThresholdPercent=100, -XX:G1HeapWastePercent=0,
- * -XX:G1HeapRegionSize=1m
- */
-class MixedGCProvoker {
-    private static final WhiteBox WB = WhiteBox.getWhiteBox();
-    private static final List<byte[]> liveOldObjects = new ArrayList<>();
-    private static final List<byte[]> newObjects = new ArrayList<>();
-
-    private static void allocateOldObjects() throws Exception {
-        List<byte[]> deadOldObjects = new ArrayList<>();
-        // Allocates buffer and promotes it to the old gen. Mix live and dead old
-        // objects
-        for (int i = 0; i < TestLogging.ALLOCATION_COUNT; ++i) {
-            liveOldObjects.add(new byte[TestLogging.ALLOCATION_SIZE * 5]);
-            deadOldObjects.add(new byte[TestLogging.ALLOCATION_SIZE * 5]);
-        }
-
-        // need only 2 promotions to promote objects to the old gen
-        WB.youngGC();
-        WB.youngGC();
-        // check it is promoted & keep alive
-        Asserts.assertTrue(WB.isObjectInOldGen(liveOldObjects),
-                "List of the objects is suppose to be in OldGen");
-        Asserts.assertTrue(WB.isObjectInOldGen(deadOldObjects),
-                "List of the objects is suppose to be in OldGen");
-    }
-
-
-    /**
-     * Waits until Concurent Mark Cycle finishes
-     * @param wb  Whitebox instance
-     * @param sleepTime sleep time
-     */
-    public static void waitTillCMCFinished(WhiteBox wb, int sleepTime) {
-        while (wb.g1InConcurrentMark()) {
-            if (sleepTime > -1) {
-                try {
-                    Thread.sleep(sleepTime);
-                } catch (InterruptedException e) {
-                    System.out.println("Got InterruptedException while waiting for ConcMarkCycle to finish");
-                }
-            }
-        }
-    }
-
-
-
-    public static void main(String args[]) throws Exception {
-        // allocate old objects
-        allocateOldObjects();
-        waitTillCMCFinished(WB, 0);
-        WB.g1StartConcMarkCycle();
-        waitTillCMCFinished(WB, 0);
-
-        WB.youngGC();
-        System.out.println("Allocating new objects to provoke mixed GC");
-        // allocate more objects to provoke GC
-        for (int i = 0; i < (TestLogging.ALLOCATION_COUNT * 20); i++) {
-            try {
-                newObjects.add(new byte[TestLogging.ALLOCATION_SIZE]);
-            } catch (OutOfMemoryError e) {
-                newObjects.clear();
-                WB.youngGC();
-                WB.youngGC();
-                break;
-            }
-        }
-        // check that liveOldObjects still alive
-        Asserts.assertTrue(WB.isObjectInOldGen(liveOldObjects),
-                "List of the objects is suppose to be in OldGen");
+class RunMixedGC {
+    public static void main(String[] args) {
+        final int MB = 1024 * 1024;
+        MixedGCProvoker.allocateAndProvokeMixedGC(MB);
     }
 }
+
