@@ -239,6 +239,12 @@ public class SPARCHotSpotLIRGenerator extends SPARCLIRGenerator implements HotSp
     }
 
     @Override
+    public void emitDeoptimizeWithExceptionInCaller(Value exception) {
+        Register thread = getProviders().getRegisters().getThreadRegister();
+        append(new SPARCHotSpotDeoptimizeWithExceptionCallerOp(config, exception, thread));
+    }
+
+    @Override
     public Variable emitLogicCompareAndSwap(LIRKind accessKind, Value address, Value expectedValue, Value newValue, Value trueValue, Value falseValue) {
         ValueKind<?> kind = newValue.getValueKind();
         assert kind.equals(expectedValue.getValueKind());

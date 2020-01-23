@@ -722,7 +722,13 @@ public abstract class DefaultHotSpotLoweringProvider extends DefaultJavaLowering
 
         StructuredGraph graph = node.graph();
         ForeignCallNode foreignCallNode = graph.add(new ForeignCallNode(foreignCalls, descriptor, node.stamp(NodeView.DEFAULT), node.getArguments()));
-        foreignCallNode.setStateAfter(node.stateAfter());
+        /*
+         * The original BytecodeExceptionNode has a rethrowException FrameState which isn't suitable
+         * for deopt because the exception to be thrown come from this call so it's not available in
+         * the debug info. The foreign call needs a stateDuring instead so it can deopt with a
+         * pending exception.
+         */
+        foreignCallNode.setStateAfter(node.createStateDuring());
         graph.replaceFixedWithFixed(node, foreignCallNode);
     }
 

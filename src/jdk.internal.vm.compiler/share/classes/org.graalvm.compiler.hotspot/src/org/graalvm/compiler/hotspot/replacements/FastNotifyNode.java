@@ -24,6 +24,7 @@
 
 package org.graalvm.compiler.hotspot.replacements;
 
+import static org.graalvm.compiler.nodeinfo.InputType.Memory;
 import static org.graalvm.compiler.nodeinfo.InputType.State;
 import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_2;
 import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_0;
@@ -40,7 +41,7 @@ import org.graalvm.compiler.nodes.spi.Lowerable;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
 import jdk.internal.vm.compiler.word.LocationIdentity;
 
-@NodeInfo(cycles = CYCLES_2, size = SIZE_0)
+@NodeInfo(cycles = CYCLES_2, size = SIZE_0, allowedUsageTypes = Memory)
 public class FastNotifyNode extends AbstractMemoryCheckpoint implements Lowerable, MemoryCheckpoint.Single, DeoptimizingNode.DeoptDuring {
 
     public static final NodeClass<FastNotifyNode> TYPE = NodeClass.create(FastNotifyNode.class);

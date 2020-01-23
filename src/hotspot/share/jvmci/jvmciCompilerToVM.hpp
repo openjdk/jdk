@@ -45,6 +45,7 @@ class CompilerToVM {
     static address SharedRuntime_ic_miss_stub;
     static address SharedRuntime_handle_wrong_method_stub;
     static address SharedRuntime_deopt_blob_unpack;
+    static address SharedRuntime_deopt_blob_unpack_with_exception_in_tls;
     static address SharedRuntime_deopt_blob_uncommon_trap;
 
     static size_t ThreadLocalAllocBuffer_alignment_reserve;
