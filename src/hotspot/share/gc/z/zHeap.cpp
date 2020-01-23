@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@
 #include "gc/z/zPage.inline.hpp"
 #include "gc/z/zPageTable.inline.hpp"
 #include "gc/z/zRelocationSet.inline.hpp"
-#include "gc/z/zRelocationSetSelector.hpp"
+#include "gc/z/zRelocationSetSelector.inline.hpp"
 #include "gc/z/zResurrection.hpp"
 #include "gc/z/zStat.hpp"
 #include "gc/z/zThread.inline.hpp"
@@ -412,10 +412,8 @@ void ZHeap::select_relocation_set() {
   }
 
   // Update statistics
-  ZStatRelocation::set_at_select_relocation_set(selector.relocating());
-  ZStatHeap::set_at_select_relocation_set(selector.live(),
-                                          selector.garbage(),
-                                          reclaimed());
+  ZStatRelocation::set_at_select_relocation_set(selector.stats());
+  ZStatHeap::set_at_select_relocation_set(selector.stats(), reclaimed());
 }
 
 void ZHeap::reset_relocation_set() {

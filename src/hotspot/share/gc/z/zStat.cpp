@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 #include "gc/z/zLargePages.inline.hpp"
 #include "gc/z/zNMethodTable.hpp"
 #include "gc/z/zNUMA.hpp"
+#include "gc/z/zRelocationSetSelector.inline.hpp"
 #include "gc/z/zStat.hpp"
 #include "gc/z/zTracer.inline.hpp"
 #include "gc/z/zUtils.hpp"
@@ -41,12 +42,13 @@
 #include "utilities/debug.hpp"
 #include "utilities/ticks.hpp"
 
-#define ZSIZE_FMT               SIZE_FORMAT "M(%.0f%%)"
-#define ZSIZE_ARGS(size)        ((size) / M), (percent_of(size, ZStatHeap::max_capacity()))
+#define ZSIZE_FMT                       SIZE_FORMAT "M(%.0f%%)"
+#define ZSIZE_ARGS_WITH_MAX(size, max)  ((size) / M), (percent_of(size, max))
+#define ZSIZE_ARGS(size)                ZSIZE_ARGS_WITH_MAX(size, ZStatHeap::max_capacity())
 
-#define ZTABLE_ARGS_NA          "%9s", "-"
-#define ZTABLE_ARGS(size)       SIZE_FORMAT_W(8) "M (%.0f%%)", \
-                                ((size) / M), (percent_of(size, ZStatHeap::max_capacity()))
+#define ZTABLE_ARGS_NA                  "%9s", "-"
+#define ZTABLE_ARGS(size)               SIZE_FORMAT_W(8) "M (%.0f%%)", \
+                                        ((size) / M), (percent_of(size, ZStatHeap::max_capacity()))
 
 //
 // Stat sampler/counter data
@@ -641,10 +643,10 @@ void ZStatPhaseCycle::register_end(const Ticks& start, const Ticks& end) const {
   ZStatLoad::print();
   ZStatMMU::print();
   ZStatMark::print();
-  ZStatRelocation::print();
   ZStatNMethods::print();
   ZStatMetaspace::print();
   ZStatReferences::print();
+  ZStatRelocation::print();
   ZStatHeap::print();
 
   log_info(gc)("Garbage Collection (%s) " ZSIZE_FMT "->" ZSIZE_FMT,
@@ -1126,23 +1128,35 @@ void ZStatMark::print() {
 //
 // Stat relocation
 //
-size_t ZStatRelocation::_relocating;
-bool ZStatRelocation::_success;
+ZRelocationSetSelectorStats ZStatRelocation::_stats;
+bool                        ZStatRelocation::_success;
 
-void ZStatRelocation::set_at_select_relocation_set(size_t relocating) {
-  _relocating = relocating;
+void ZStatRelocation::set_at_select_relocation_set(const ZRelocationSetSelectorStats& stats) {
+  _stats = stats;
 }
 
 void ZStatRelocation::set_at_relocate_end(bool success) {
   _success = success;
 }
 
+void ZStatRelocation::print(const char* name, const ZRelocationSetSelectorGroupStats& group) {
+  const size_t total = _stats.small().total() + _stats.medium().total() + _stats.large().total();
+
+  log_info(gc, reloc)("%s Pages: " SIZE_FORMAT " / " ZSIZE_FMT ", Empty: " ZSIZE_FMT ", Compacting: " ZSIZE_FMT "->" ZSIZE_FMT,
+                      name,
+                      group.npages(),
+                      ZSIZE_ARGS_WITH_MAX(group.total(), total),
+                      ZSIZE_ARGS_WITH_MAX(group.empty(), total),
+                      ZSIZE_ARGS_WITH_MAX(group.compacting_from(), total),
+                      ZSIZE_ARGS_WITH_MAX(group.compacting_to(), total));
+}
+
 void ZStatRelocation::print() {
-  if (_success) {
-    log_info(gc, reloc)("Relocation: Successful, " SIZE_FORMAT "M relocated", _relocating / M);
-  } else {
-    log_info(gc, reloc)("Relocation: Incomplete");
-  }
+  print("Small", _stats.small());
+  print("Medium", _stats.medium());
+  print("Large", _stats.large());
+
+  log_info(gc, reloc)("Relocation: %s", _success ? "Successful" : "Incomplete");
 }
 
 //
@@ -1278,9 +1292,10 @@ void ZStatHeap::set_at_mark_end(size_t capacity,
   _at_mark_end.free = free(used);
 }
 
-void ZStatHeap::set_at_select_relocation_set(size_t live,
-                                             size_t garbage,
-                                             size_t reclaimed) {
+void ZStatHeap::set_at_select_relocation_set(const ZRelocationSetSelectorStats& stats, size_t reclaimed) {
+  const size_t live = stats.small().live() + stats.medium().live() + stats.large().live();
+  const size_t garbage = stats.small().garbage() + stats.medium().garbage() + stats.large().garbage();
+
   _at_mark_end.live = live;
   _at_mark_end.garbage = garbage;
 
