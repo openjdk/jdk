@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -189,7 +189,7 @@ void assert_lock_strong(const Mutex* lock) {
 }
 
 void assert_locked_or_safepoint_or_handshake(const Mutex* lock, const JavaThread* thread) {
-  if (Thread::current() == thread->get_active_handshaker()) return;
+  if (Thread::current()->is_VM_thread() && thread->is_vmthread_processing_handshake()) return;
   assert_locked_or_safepoint(lock);
 }
 #endif

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,17 +30,13 @@
 #include "runtime/flags/flagSetting.hpp"
 #include "runtime/semaphore.hpp"
 
-class HandshakeOperation;
 class JavaThread;
 
 // A handshake closure is a callback that is executed for each JavaThread
 // while that thread is in a safepoint safe state. The callback is executed
-// either by the target JavaThread itself or by the VMThread while keeping
-// the target thread in a blocked state. A handshake can be performed with a
-// single JavaThread as well. In that case, the callback is executed either
-// by the target JavaThread itself or, depending on whether the operation is
-// a direct handshake or not, by the JavaThread that requested the handshake
-// or the VMThread respectively.
+// either by the thread itself or by the VM thread while keeping the thread
+// in a blocked state. A handshake can be performed with a single
+// JavaThread as well.
 class HandshakeClosure : public ThreadClosure {
   const char* const _name;
  public:
@@ -56,51 +52,47 @@ class Handshake : public AllStatic {
   // Execution of handshake operation
   static void execute(HandshakeClosure* hs_cl);
   static bool execute(HandshakeClosure* hs_cl, JavaThread* target);
-  static bool execute_direct(HandshakeClosure* hs_cl, JavaThread* target);
 };
 
-// The HandshakeState keeps track of an ongoing handshake for this JavaThread.
-// VMThread/Handshaker and JavaThread are serialized with semaphore _processing_sem
-// making sure the operation is only done by either VMThread/Handshaker on behalf
-// of the JavaThread or by the target JavaThread itself.
-class HandshakeState {
-  JavaThread* _handshakee;
-  HandshakeOperation* volatile _operation;
-  HandshakeOperation* volatile _operation_direct;
+class HandshakeOperation;
 
-  Semaphore _handshake_turn_sem;  // Used to serialize direct handshakes for this JavaThread.
-  Semaphore _processing_sem;
+// The HandshakeState keep tracks of an ongoing handshake for one JavaThread.
+// VM thread and JavaThread are serialized with the semaphore making sure
+// the operation is only done by either VM thread on behalf of the JavaThread
+// or the JavaThread itself.
+class HandshakeState {
+  HandshakeOperation* volatile _operation;
+
+  Semaphore _semaphore;
   bool _thread_in_process_handshake;
 
-  bool claim_handshake(bool is_direct);
-  bool possibly_can_process_handshake();
-  bool can_process_handshake();
-  void clear_handshake(bool is_direct);
+  bool claim_handshake_for_vmthread();
+  bool vmthread_can_process_handshake(JavaThread* target);
 
-  void process_self_inner();
+  void clear_handshake(JavaThread* thread);
 
+  void process_self_inner(JavaThread* thread);
 public:
   HandshakeState();
 
-  void set_thread(JavaThread* thread) { _handshakee = thread; }
+  void set_operation(JavaThread* thread, HandshakeOperation* op);
 
-  void set_operation(HandshakeOperation* op);
-  bool has_operation() const { return _operation != NULL || _operation_direct != NULL; }
-  bool has_specific_operation(bool is_direct) const {
-    return is_direct ? _operation_direct != NULL : _operation != NULL;
+  bool has_operation() const {
+    return _operation != NULL;
   }
 
-  void process_by_self() {
+  void process_by_self(JavaThread* thread) {
     if (!_thread_in_process_handshake) {
       FlagSetting fs(_thread_in_process_handshake, true);
-      process_self_inner();
+      process_self_inner(thread);
     }
   }
-  bool try_process(HandshakeOperation* op);
+
+  bool try_process_by_vmThread(JavaThread* target);
 
 #ifdef ASSERT
-  Thread* _active_handshaker;
-  Thread* get_active_handshaker() const { return _active_handshaker; }
+  bool _vmthread_processing_handshake;
+  bool is_vmthread_processing_handshake() const { return _vmthread_processing_handshake; }
 #endif
 
 };
