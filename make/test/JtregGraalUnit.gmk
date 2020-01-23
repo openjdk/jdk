@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -176,8 +176,6 @@ ifeq ($(INCLUDE_GRAAL), true)
     ))
 
     TARGETS_IMAGE += $(COPY_HOTSPOT_JTREG_GRAAL)
-  else
-    $(info Skip building of Graal unit tests because 3rd party libraries directory is not specified)
   endif
 endif
 
