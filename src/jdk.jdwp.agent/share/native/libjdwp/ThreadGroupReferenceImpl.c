@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -135,7 +135,10 @@ children(PacketInputStream *in, PacketOutputStream *out)
      return JNI_TRUE;
 }
 
-void *ThreadGroupReference_Cmds[] = { (void *)3,
-                                      (void *)name,
-                                      (void *)parent,
-                                      (void *)children };
+Command ThreadGroupReference_Commands[] = {
+    {name, "Name"},
+    {parent, "Parent"},
+    {children, "Children"}
+};
+
+DEBUG_DISPATCH_DEFINE_CMDSET(ThreadGroupReference)

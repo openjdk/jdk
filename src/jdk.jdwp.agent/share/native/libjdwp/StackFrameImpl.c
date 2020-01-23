@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -456,9 +456,11 @@ popFrames(PacketInputStream *in, PacketOutputStream *out)
     return JNI_TRUE;
 }
 
-void *StackFrame_Cmds[] = { (void *)0x4
-    ,(void *)getValues
-    ,(void *)setValues
-    ,(void *)thisObject
-    ,(void *)popFrames
+Command StackFrame_Commands[] = {
+    {getValues, "GetValues"},
+    {setValues, "SetValues"},
+    {thisObject, "ThisObject"},
+    {popFrames, "PopFrames"}
 };
+
+DEBUG_DISPATCH_DEFINE_CMDSET(StackFrame)

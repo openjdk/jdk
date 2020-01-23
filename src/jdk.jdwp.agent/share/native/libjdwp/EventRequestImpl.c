@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -346,7 +346,10 @@ clearAllBreakpoints(PacketInputStream *in, PacketOutputStream *out)
     return JNI_TRUE;
 }
 
-void *EventRequest_Cmds[] = { (void *)0x3
-    ,(void *)setCommand
-    ,(void *)clearCommand
-    ,(void *)clearAllBreakpoints};
+Command EventRequest_Commands[] = {
+    {setCommand, "SetCommand"},
+    {clearCommand, "ClearCommand"},
+    {clearAllBreakpoints, "ClearAllBreakpoints"}
+};
+
+DEBUG_DISPATCH_DEFINE_CMDSET(EventRequest)

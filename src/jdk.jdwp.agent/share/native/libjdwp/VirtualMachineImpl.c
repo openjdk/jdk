@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -927,27 +927,29 @@ releaseEvents(PacketInputStream *in, PacketOutputStream *out)
     return JNI_TRUE;
 }
 
-void *VirtualMachine_Cmds[] = { (void *)22
-    ,(void *)version
-    ,(void *)classesForSignature
-    ,(void *)allClasses
-    ,(void *)getAllThreads
-    ,(void *)topLevelThreadGroups
-    ,(void *)dispose
-    ,(void *)idSizes
-    ,(void *)suspend
-    ,(void *)resume
-    ,(void *)doExit
-    ,(void *)createString
-    ,(void *)capabilities
-    ,(void *)classPaths
-    ,(void *)disposeObjects
-    ,(void *)holdEvents
-    ,(void *)releaseEvents
-    ,(void *)capabilitiesNew
-    ,(void *)redefineClasses
-    ,(void *)setDefaultStratum
-    ,(void *)allClassesWithGeneric
-    ,(void *)instanceCounts
-    ,(void *)allModules
+Command VirtualMachine_Commands[] = {
+    {version, "Version"},
+    {classesForSignature, "ClassesForSignature"},
+    {allClasses, "AllClasses"},
+    {getAllThreads, "GetAllThreads"},
+    {topLevelThreadGroups, "TopLevelThreadGroups"},
+    {dispose, "Dispose"},
+    {idSizes, "IDSizes"},
+    {suspend, "Suspend"},
+    {resume, "Resume"},
+    {doExit, "DoExit"},
+    {createString, "CreateString"},
+    {capabilities, "Capabilities"},
+    {classPaths, "ClassPaths"},
+    {disposeObjects, "DisposeObjects"},
+    {holdEvents, "HoldEvents"},
+    {releaseEvents, "ReleaseEvents"},
+    {capabilitiesNew, "CapabilitiesNew"},
+    {redefineClasses, "RedefineClasses"},
+    {setDefaultStratum, "SetDefaultStratum"},
+    {allClassesWithGeneric, "AllClassesWithGeneric"},
+    {instanceCounts, "InstanceCounts"},
+    {allModules, "AllModules"}
 };
+
+DEBUG_DISPATCH_DEFINE_CMDSET(VirtualMachine)

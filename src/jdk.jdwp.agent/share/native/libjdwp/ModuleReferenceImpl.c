@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,8 +83,9 @@ getClassLoader(PacketInputStream *in, PacketOutputStream *out)
     return JNI_TRUE;
 }
 
-
-void *ModuleReference_Cmds[] = { (void *)3
-    ,(void *)getName
-    ,(void *)getClassLoader
+Command ModuleReference_Commands[] = {
+    {getName, "GetName"},
+    {getClassLoader, "GetClassLoader"}
 };
+
+DEBUG_DISPATCH_DEFINE_CMDSET(ModuleReference)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,5 +56,8 @@ value(PacketInputStream *in, PacketOutputStream *out)
     return JNI_TRUE;
 }
 
-void *StringReference_Cmds[] = { (void *)0x1
-    ,(void *)value};
+Command StringReference_Commands[] = {
+    {value, "Value"}
+};
+
+DEBUG_DISPATCH_DEFINE_CMDSET(StringReference)

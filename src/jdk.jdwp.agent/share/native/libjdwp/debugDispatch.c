@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@
 #include "EventRequestImpl.h"
 #include "StackFrameImpl.h"
 
-static void **l1Array;
+static CommandSet **cmdSetsArray;
 
 void
 debugDispatch_initialize(void)
@@ -54,36 +54,36 @@ debugDispatch_initialize(void)
      * Zero the table so that unknown CommandSets do not
      * cause random errors.
      */
-    l1Array = jvmtiAllocate((JDWP_HIGHEST_COMMAND_SET+1) * sizeof(void *));
+    cmdSetsArray = jvmtiAllocate((JDWP_HIGHEST_COMMAND_SET+1) * sizeof(CommandSet *));
 
-    if (l1Array == NULL) {
+    if (cmdSetsArray == NULL) {
         EXIT_ERROR(AGENT_ERROR_OUT_OF_MEMORY,"command set array");
     }
 
-    (void)memset(l1Array, 0, (JDWP_HIGHEST_COMMAND_SET+1) * sizeof(void *));
+    (void)memset(cmdSetsArray, 0, (JDWP_HIGHEST_COMMAND_SET+1) * sizeof(CommandSet *));
 
     /*
      * Create the level-two (Command) dispatch tables to the
      * corresponding slots in the CommandSet dispatch table..
      */
-    l1Array[JDWP_COMMAND_SET(VirtualMachine)] = (void *)VirtualMachine_Cmds;
-    l1Array[JDWP_COMMAND_SET(ReferenceType)] = (void *)ReferenceType_Cmds;
-    l1Array[JDWP_COMMAND_SET(ClassType)] = (void *)ClassType_Cmds;
-    l1Array[JDWP_COMMAND_SET(InterfaceType)] = (void *)InterfaceType_Cmds;
-    l1Array[JDWP_COMMAND_SET(ArrayType)] = (void *)ArrayType_Cmds;
+    cmdSetsArray[JDWP_COMMAND_SET(VirtualMachine)] = &VirtualMachine_CmdSet;
+    cmdSetsArray[JDWP_COMMAND_SET(ReferenceType)] = &ReferenceType_CmdSet;
+    cmdSetsArray[JDWP_COMMAND_SET(ClassType)] = &ClassType_CmdSet;
+    cmdSetsArray[JDWP_COMMAND_SET(InterfaceType)] = &InterfaceType_CmdSet;
+    cmdSetsArray[JDWP_COMMAND_SET(ArrayType)] = &ArrayType_CmdSet;
 
-    l1Array[JDWP_COMMAND_SET(Field)] = (void *)Field_Cmds;
-    l1Array[JDWP_COMMAND_SET(Method)] = (void *)Method_Cmds;
-    l1Array[JDWP_COMMAND_SET(ObjectReference)] = (void *)ObjectReference_Cmds;
-    l1Array[JDWP_COMMAND_SET(StringReference)] = (void *)StringReference_Cmds;
-    l1Array[JDWP_COMMAND_SET(ThreadReference)] = (void *)ThreadReference_Cmds;
-    l1Array[JDWP_COMMAND_SET(ThreadGroupReference)] = (void *)ThreadGroupReference_Cmds;
-    l1Array[JDWP_COMMAND_SET(ClassLoaderReference)] = (void *)ClassLoaderReference_Cmds;
-    l1Array[JDWP_COMMAND_SET(ArrayReference)] = (void *)ArrayReference_Cmds;
-    l1Array[JDWP_COMMAND_SET(EventRequest)] = (void *)EventRequest_Cmds;
-    l1Array[JDWP_COMMAND_SET(StackFrame)] = (void *)StackFrame_Cmds;
-    l1Array[JDWP_COMMAND_SET(ClassObjectReference)] = (void *)ClassObjectReference_Cmds;
-    l1Array[JDWP_COMMAND_SET(ModuleReference)] = (void *)ModuleReference_Cmds;
+    cmdSetsArray[JDWP_COMMAND_SET(Field)] = &Field_CmdSet;
+    cmdSetsArray[JDWP_COMMAND_SET(Method)] = &Method_CmdSet;
+    cmdSetsArray[JDWP_COMMAND_SET(ObjectReference)] = &ObjectReference_CmdSet;
+    cmdSetsArray[JDWP_COMMAND_SET(StringReference)] = &StringReference_CmdSet;
+    cmdSetsArray[JDWP_COMMAND_SET(ThreadReference)] = &ThreadReference_CmdSet;
+    cmdSetsArray[JDWP_COMMAND_SET(ThreadGroupReference)] = &ThreadGroupReference_CmdSet;
+    cmdSetsArray[JDWP_COMMAND_SET(ClassLoaderReference)] = &ClassLoaderReference_CmdSet;
+    cmdSetsArray[JDWP_COMMAND_SET(ArrayReference)] = &ArrayReference_CmdSet;
+    cmdSetsArray[JDWP_COMMAND_SET(EventRequest)] = &EventRequest_CmdSet;
+    cmdSetsArray[JDWP_COMMAND_SET(StackFrame)] = &StackFrame_CmdSet;
+    cmdSetsArray[JDWP_COMMAND_SET(ClassObjectReference)] = &ClassObjectReference_CmdSet;
+    cmdSetsArray[JDWP_COMMAND_SET(ModuleReference)] = &ModuleReference_CmdSet;
 }
 
 void
@@ -92,25 +92,27 @@ debugDispatch_reset(void)
 }
 
 CommandHandler
-debugDispatch_getHandler(int cmdSet, int cmd)
+debugDispatch_getHandler(int cmdSetNum, int cmdNum, const char **cmdSetName_p, const char **cmdName_p)
 {
-    void **l2Array;
+    CommandSet *cmd_set;
+    *cmdSetName_p = "<Invalid CommandSet>";
+    *cmdName_p = "<Unkown Command>";
 
-    if (cmdSet > JDWP_HIGHEST_COMMAND_SET) {
+    if (cmdSetNum > JDWP_HIGHEST_COMMAND_SET) {
         return NULL;
     }
 
-    l2Array = (void **)l1Array[cmdSet];
-
-    /*
-     * If there is no such CommandSet or the Command
-     * is greater than the nummber of commands (the first
-     * element) in the CommandSet, indicate this is invalid.
-     */
-    /*LINTED*/
-    if (l2Array == NULL || cmd > (int)(intptr_t)(void*)l2Array[0]) {
-        return NULL;
+    cmd_set = cmdSetsArray[cmdSetNum];
+    if (cmd_set == NULL) {
+      return NULL;
     }
 
-    return (CommandHandler)l2Array[cmd];
+    *cmdSetName_p = cmd_set->cmd_set_name;
+    if (cmdNum > cmd_set->num_cmds) {
+        *cmdName_p = "<Invalid Command>";
+        return NULL;
+    } else {
+        *cmdName_p = cmd_set->cmds[cmdNum - 1].cmd_name;
+        return cmd_set->cmds[cmdNum - 1].cmd_handler;
+    }
 }
