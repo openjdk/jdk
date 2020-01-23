@@ -31,13 +31,19 @@ import java.util.List;
 
 import org.graalvm.compiler.api.replacements.MethodSubstitution;
 import org.graalvm.compiler.api.replacements.Snippet;
+import org.graalvm.compiler.bytecode.Bytecodes;
+import org.graalvm.compiler.core.common.spi.ForeignCallDescriptor;
 import org.graalvm.compiler.core.gen.DebugInfoBuilder;
 import org.graalvm.compiler.graph.GraalGraphError;
 import org.graalvm.compiler.graph.NodeSourcePosition;
+import org.graalvm.compiler.hotspot.meta.DefaultHotSpotLoweringProvider;
 import org.graalvm.compiler.lir.VirtualStackSlot;
 import org.graalvm.compiler.nodes.FrameState;
+import org.graalvm.compiler.nodes.FullInfopointNode;
 import org.graalvm.compiler.nodes.ValueNode;
+import org.graalvm.compiler.nodes.extended.ForeignCallNode;
 import org.graalvm.compiler.nodes.spi.NodeValueMap;
+import org.graalvm.compiler.nodes.spi.NodeWithState;
 
 import jdk.vm.ci.code.BytecodeFrame;
 import jdk.vm.ci.code.StackLockValue;
@@ -87,11 +93,42 @@ public class HotSpotDebugInfoBuilder extends DebugInfoBuilder {
     }
 
     @Override
-    protected BytecodeFrame computeFrameForState(FrameState state) {
+    protected boolean verifyFrameState(NodeWithState node, FrameState topState) {
+        if (node instanceof FullInfopointNode) {
+            return true;
+        }
+        if (node instanceof ForeignCallNode) {
+            ForeignCallNode call = (ForeignCallNode) node;
+            ForeignCallDescriptor descriptor = call.getDescriptor();
+            if (DefaultHotSpotLoweringProvider.RuntimeCalls.runtimeCalls.containsValue(descriptor)) {
+                return true;
+            }
+        }
+        // There are many properties of FrameStates which could be validated though it's complicated
+        // by some of the idiomatic ways that they are used. This check specifically tries to catch
+        // cases where a FrameState that's constructed for reexecution has an incorrect stack depth
+        // at invokes.
+        if (topState.bci >= 0 && !topState.duringCall() && !topState.rethrowException()) {
+            ResolvedJavaMethod m = topState.getMethod();
+            int opcode = m.getCode()[topState.bci] & 0xff;
+            if (opcode == Bytecodes.INVOKEVIRTUAL || opcode == Bytecodes.INVOKEINTERFACE) {
+                assert topState.stackSize() > 0 : "expected non-empty stack: " + topState;
+            } else {
+                int stackEffect = Bytecodes.stackEffectOf(opcode);
+                if (stackEffect < 0) {
+                    assert topState.stackSize() >= -stackEffect : "expected at least " + (-stackEffect) + " stack depth : " + topState;
+                }
+            }
+        }
+        return true;
+    }
+
+    @Override
+    protected BytecodeFrame computeFrameForState(NodeWithState node, FrameState state) {
         if (isPlaceholderBci(state.bci) && state.bci != BytecodeFrame.BEFORE_BCI) {
             raiseInvalidFrameStateError(state);
         }
-        BytecodeFrame result = super.computeFrameForState(state);
+        BytecodeFrame result = super.computeFrameForState(node, state);
         maxInterpreterFrameSize = Math.max(maxInterpreterFrameSize, codeCacheProvider.interpreterFrameSize(result));
         return result;
     }

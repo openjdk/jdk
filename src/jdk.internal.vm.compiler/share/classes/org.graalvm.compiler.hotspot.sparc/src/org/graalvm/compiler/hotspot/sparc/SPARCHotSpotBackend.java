@@ -349,7 +349,7 @@ public class SPARCHotSpotBackend extends HotSpotHostBackend implements LIRGenera
             crb.recordMark(config.MARKID_EXCEPTION_HANDLER_ENTRY);
             SPARCCall.directCall(crb, masm, foreignCalls.lookupForeignCall(EXCEPTION_HANDLER), null, null);
             crb.recordMark(config.MARKID_DEOPT_HANDLER_ENTRY);
-            SPARCCall.directCall(crb, masm, foreignCalls.lookupForeignCall(DEOPTIMIZATION_HANDLER), null, null);
+            SPARCCall.directCall(crb, masm, foreignCalls.lookupForeignCall(DEOPT_BLOB_UNPACK), null, null);
         } else {
             // No need to emit the stubs for entries back into the method since
             // it has no calls that can cause such "return" entries

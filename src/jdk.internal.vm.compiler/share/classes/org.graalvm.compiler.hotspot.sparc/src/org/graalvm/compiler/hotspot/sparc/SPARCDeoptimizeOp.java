@@ -24,7 +24,7 @@
 
 package org.graalvm.compiler.hotspot.sparc;
 
-import static org.graalvm.compiler.hotspot.HotSpotHostBackend.UNCOMMON_TRAP_HANDLER;
+import static org.graalvm.compiler.hotspot.HotSpotHostBackend.DEOPT_BLOB_UNCOMMON_TRAP;
 
 import org.graalvm.compiler.asm.sparc.SPARCMacroAssembler;
 import org.graalvm.compiler.core.common.LIRKind;
@@ -62,6 +62,6 @@ final class SPARCDeoptimizeOp extends SPARCBlockEndOp {
         // [Deopt Handler Code]
         // 0xffffffff749bb60c: call 0xffffffff748da540 ; {runtime_call}
         // 0xffffffff749bb610: nop
-        SPARCCall.directCall(crb, masm, crb.foreignCalls.lookupForeignCall(UNCOMMON_TRAP_HANDLER), null, info);
+        SPARCCall.directCall(crb, masm, crb.foreignCalls.lookupForeignCall(DEOPT_BLOB_UNCOMMON_TRAP), null, info);
     }
 }

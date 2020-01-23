@@ -74,10 +74,11 @@ import static org.graalvm.compiler.hotspot.HotSpotForeignCallLinkage.Transition.
 import static org.graalvm.compiler.hotspot.HotSpotForeignCallLinkage.Transition.LEAF_NO_VZERO;
 import static org.graalvm.compiler.hotspot.HotSpotForeignCallLinkage.Transition.SAFEPOINT;
 import static org.graalvm.compiler.hotspot.HotSpotForeignCallLinkage.Transition.STACK_INSPECTABLE_LEAF;
-import static org.graalvm.compiler.hotspot.HotSpotHostBackend.DEOPTIMIZATION_HANDLER;
+import static org.graalvm.compiler.hotspot.HotSpotHostBackend.DEOPT_BLOB_UNCOMMON_TRAP;
+import static org.graalvm.compiler.hotspot.HotSpotHostBackend.DEOPT_BLOB_UNPACK;
+import static org.graalvm.compiler.hotspot.HotSpotHostBackend.DEOPT_BLOB_UNPACK_WITH_EXCEPTION_IN_TLS;
 import static org.graalvm.compiler.hotspot.HotSpotHostBackend.ENABLE_STACK_RESERVED_ZONE;
 import static org.graalvm.compiler.hotspot.HotSpotHostBackend.THROW_DELAYED_STACKOVERFLOW_ERROR;
-import static org.graalvm.compiler.hotspot.HotSpotHostBackend.UNCOMMON_TRAP_HANDLER;
 import static org.graalvm.compiler.hotspot.replacements.AssertionSnippets.ASSERTION_VM_MESSAGE_C;
 import static org.graalvm.compiler.hotspot.replacements.HotSpotG1WriteBarrierSnippets.G1WBPOSTCALL;
 import static org.graalvm.compiler.hotspot.replacements.HotSpotG1WriteBarrierSnippets.G1WBPRECALL;
@@ -270,8 +271,11 @@ public abstract class HotSpotHostForeignCallsProvider extends HotSpotForeignCall
 
     public void initialize(HotSpotProviders providers, OptionValues options) {
         GraalHotSpotVMConfig c = runtime.getVMConfig();
-        registerForeignCall(DEOPTIMIZATION_HANDLER, c.handleDeoptStub, NativeCall, LEAF_NO_VZERO, REEXECUTABLE, NO_LOCATIONS);
-        registerForeignCall(UNCOMMON_TRAP_HANDLER, c.uncommonTrapStub, NativeCall, LEAF_NO_VZERO, REEXECUTABLE, NO_LOCATIONS);
+        registerForeignCall(DEOPT_BLOB_UNPACK, c.deoptBlobUnpack, NativeCall, LEAF_NO_VZERO, REEXECUTABLE, NO_LOCATIONS);
+        if (c.deoptBlobUnpackWithExceptionInTLS != 0) {
+            registerForeignCall(DEOPT_BLOB_UNPACK_WITH_EXCEPTION_IN_TLS, c.deoptBlobUnpackWithExceptionInTLS, NativeCall, LEAF_NO_VZERO, REEXECUTABLE, NO_LOCATIONS);
+        }
+        registerForeignCall(DEOPT_BLOB_UNCOMMON_TRAP, c.deoptBlobUncommonTrap, NativeCall, LEAF_NO_VZERO, REEXECUTABLE, NO_LOCATIONS);
         registerForeignCall(IC_MISS_HANDLER, c.inlineCacheMissStub, NativeCall, LEAF_NO_VZERO, REEXECUTABLE, NO_LOCATIONS);
 
         if (c.enableStackReservedZoneAddress != 0) {
