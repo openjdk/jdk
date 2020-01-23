@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -253,7 +253,7 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
         Content classLink = writer.getPreQualifiedClassLink(
                 LinkInfoImpl.Kind.MEMBER, typeElement, false);
         Content label;
-        if (configuration.summarizeOverriddenMethods) {
+        if (options.summarizeOverriddenMethods) {
             label = new StringContent(utils.isClass(typeElement)
                     ? resources.getText("doclet.Methods_Declared_In_Class")
                     : resources.getText("doclet.Methods_Declared_In_Interface"));
@@ -285,7 +285,7 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
      */
     protected static void addOverridden(HtmlDocletWriter writer,
             TypeMirror overriddenType, ExecutableElement method, Content dl) {
-        if (writer.configuration.nocomment) {
+        if (writer.options.noComment) {
             return;
         }
         Utils utils = writer.utils;
@@ -336,7 +336,7 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
     protected static void addImplementsInfo(HtmlDocletWriter writer,
             ExecutableElement method, Content dl) {
         Utils utils = writer.utils;
-        if (utils.isStatic(method) || writer.configuration.nocomment) {
+        if (utils.isStatic(method) || writer.options.noComment) {
             return;
         }
         Contents contents = writer.contents;

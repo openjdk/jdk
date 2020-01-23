@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,7 +108,8 @@ public class HtmlDoclet extends AbstractDoclet {
     protected void generateOtherFiles(DocletEnvironment docEnv, ClassTree classtree)
             throws DocletException {
         super.generateOtherFiles(docEnv, classtree);
-        if (configuration.linksource) {
+        HtmlOptions options = configuration.getOptions();
+        if (options.linkSource) {
             SourceToHTMLConverter.convertRoot(configuration,
                 docEnv, DocPaths.SOURCE_OUTPUT);
         }
@@ -119,27 +120,27 @@ public class HtmlDoclet extends AbstractDoclet {
             messages.error("doclet.No_Non_Deprecated_Classes_To_Document");
             return;
         }
-        boolean nodeprecated = configuration.nodeprecated;
-        performCopy(configuration.helpfile);
-        performCopy(configuration.stylesheetfile);
-        for (String stylesheet : configuration.additionalStylesheets) {
+        boolean nodeprecated = options.noDeprecated;
+        performCopy(options.helpFile);
+        performCopy(options.stylesheetFile);
+        for (String stylesheet : options.additionalStylesheets) {
             performCopy(stylesheet);
         }
         // do early to reduce memory footprint
-        if (configuration.classuse) {
+        if (options.classUse) {
             ClassUseWriter.generate(configuration, classtree);
         }
         IndexBuilder indexbuilder = new IndexBuilder(configuration, nodeprecated);
 
-        if (configuration.createtree) {
+        if (options.createTree) {
             TreeWriter.generate(configuration, classtree);
         }
 
-        if (!(configuration.nodeprecatedlist || nodeprecated)) {
+        if (!(options.noDeprecatedList || nodeprecated)) {
             DeprecatedListWriter.generate(configuration);
         }
 
-        if (configuration.createoverview) {
+        if (options.createOverview) {
             if (configuration.showModules) {
                 ModuleIndexWriter.generate(configuration);
             } else {
@@ -147,9 +148,9 @@ public class HtmlDoclet extends AbstractDoclet {
             }
         }
 
-        if (configuration.createindex) {
+        if (options.createIndex) {
             configuration.buildSearchTagIndex();
-            if (configuration.splitindex) {
+            if (options.splitIndex) {
                 SplitIndexWriter.generate(configuration, indexbuilder);
             } else {
                 SingleIndexWriter.generate(configuration, indexbuilder);
@@ -162,25 +163,25 @@ public class HtmlDoclet extends AbstractDoclet {
             SystemPropertiesWriter.generate(configuration);
         }
 
-        if (configuration.createoverview) {
+        if (options.createOverview) {
             IndexRedirectWriter.generate(configuration, DocPaths.OVERVIEW_SUMMARY, DocPaths.INDEX);
         } else {
             IndexRedirectWriter.generate(configuration);
         }
 
-        if (configuration.helpfile.isEmpty() && !configuration.nohelp) {
+        if (options.helpFile.isEmpty() && !options.noHelp) {
             HelpWriter.generate(configuration);
         }
         // If a stylesheet file is not specified, copy the default stylesheet
         // and replace newline with platform-specific newline.
         DocFile f;
-        if (configuration.stylesheetfile.length() == 0) {
+        if (options.stylesheetFile.length() == 0) {
             f = DocFile.createFileForOutput(configuration, DocPaths.STYLESHEET);
             f.copyResource(DocPaths.RESOURCES.resolve(DocPaths.STYLESHEET), true, true);
         }
         f = DocFile.createFileForOutput(configuration, DocPaths.JAVASCRIPT);
         f.copyResource(DocPaths.RESOURCES.resolve(DocPaths.JAVASCRIPT), true, true);
-        if (configuration.createindex) {
+        if (options.createIndex) {
             f = DocFile.createFileForOutput(configuration, DocPaths.SEARCH_JS);
             f.copyResource(DOCLET_RESOURCES.resolve(DocPaths.SEARCH_JS), true, true);
 
@@ -272,26 +273,27 @@ public class HtmlDoclet extends AbstractDoclet {
      */
     @Override // defined by AbstractDoclet
     protected void generatePackageFiles(ClassTree classtree) throws DocletException {
+        HtmlOptions options = configuration.getOptions();
         Set<PackageElement> packages = configuration.packages;
         List<PackageElement> pList = new ArrayList<>(packages);
         for (PackageElement pkg : pList) {
             // if -nodeprecated option is set and the package is marked as
             // deprecated, do not generate the package-summary.html, package-frame.html
             // and package-tree.html pages for that package.
-            if (!(configuration.nodeprecated && utils.isDeprecated(pkg))) {
+            if (!(options.noDeprecated && utils.isDeprecated(pkg))) {
                 AbstractBuilder packageSummaryBuilder =
                         configuration.getBuilderFactory().getPackageSummaryBuilder(pkg);
                 packageSummaryBuilder.build();
-                if (configuration.createtree) {
-                    PackageTreeWriter.generate(configuration, pkg, configuration.nodeprecated);
+                if (options.createTree) {
+                    PackageTreeWriter.generate(configuration, pkg, options.noDeprecated);
                 }
             }
         }
     }
 
     @Override // defined by Doclet
-    public Set<Option> getSupportedOptions() {
-        return configuration.getSupportedOptions();
+    public Set<? extends Option> getSupportedOptions() {
+        return configuration.getOptions().getSupportedOptions();
     }
 
     private void performCopy(String filename) throws DocFileIOException {

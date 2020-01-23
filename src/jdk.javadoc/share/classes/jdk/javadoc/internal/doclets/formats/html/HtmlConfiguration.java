@@ -25,7 +25,6 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
-import java.net.*;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -37,7 +36,6 @@ import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
 
 import com.sun.source.util.DocTreePath;
-import com.sun.tools.doclint.DocLint;
 
 import jdk.javadoc.doclet.Doclet;
 import jdk.javadoc.doclet.DocletEnvironment;
@@ -53,9 +51,9 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import static javax.tools.Diagnostic.Kind.*;
 
 /**
- * Configure the output based on the command line options.
+ * Configure the output based on the command-line options.
  * <p>
- * Also determine the length of the command line option. For example,
+ * Also determine the length of the command-line option. For example,
  * for a option "-header" there will be a string argument associated, then the
  * the length of option "-header" is two. But for option "-nohelp" no argument
  * is needed so it's length is 1.
@@ -76,125 +74,6 @@ public class HtmlConfiguration extends BaseConfiguration {
      * Default charset for HTML.
      */
     public static final String HTML_DEFAULT_CHARSET = "utf-8";
-
-    /**
-     * Argument for command line option "-header".
-     */
-    public String header = "";
-
-    /**
-     * Argument for command line option "-packagesheader".
-     */
-    public String packagesheader = "";
-
-    /**
-     * Argument for command line option "-footer".
-     */
-    public String footer = "";
-
-    /**
-     * Argument for command line option "-doctitle".
-     */
-    public String doctitle = "";
-
-    /**
-     * Argument for command line option "-windowtitle".
-     */
-    public String windowtitle = "";
-
-    /**
-     * Argument for command line option "-top".
-     */
-    public String top = "";
-
-    /**
-     * Argument for command line option "-bottom".
-     */
-    public String bottom = "";
-
-    /**
-     * Argument for command line option "-helpfile".
-     */
-    public String helpfile = "";
-
-    /**
-     * Argument for command line option "-stylesheetfile".
-     */
-    public String stylesheetfile = "";
-
-    /**
-     * Argument for command line option "--add-stylesheet".
-     */
-    public List<String> additionalStylesheets = new ArrayList<>();
-
-    /**
-     * Argument for command line option "-Xdocrootparent".
-     */
-    public String docrootparent = "";
-
-    /**
-     * True if command line option "-nohelp" is used. Default value is false.
-     */
-    public boolean nohelp = false;
-
-    /**
-     * True if command line option "-splitindex" is used. Default value is
-     * false.
-     */
-    public boolean splitindex = false;
-
-    /**
-     * False if command line option "-noindex" is used. Default value is true.
-     */
-    public boolean createindex = true;
-
-    /**
-     * True if command line option "-use" is used. Default value is false.
-     */
-    public boolean classuse = false;
-
-    /**
-     * False if command line option "-notree" is used. Default value is true.
-     */
-    public boolean createtree = true;
-
-    /**
-     * The META charset tag used for cross-platform viewing.
-     */
-    public String charset = null;
-
-    /**
-     * True if command line option "-nodeprecated" is used. Default value is
-     * false.
-     */
-    public boolean nodeprecatedlist = false;
-
-    /**
-     * True if command line option "-nonavbar" is used. Default value is false.
-     */
-    public boolean nonavbar = false;
-
-    /**
-     * True if command line option "-nooverview" is used. Default value is
-     * false
-     */
-    private boolean nooverview = false;
-
-    /**
-     * The overview path specified with "-overview" flag.
-     */
-    public String overviewpath = null;
-
-    /**
-     * This is true if option "-overview" is used or option "-overview" is not
-     * used and number of packages is more than one.
-     */
-    public boolean createoverview = false;
-
-    /**
-     * Collected set of doclint options
-     */
-    public Map<Doclet.Option, String> doclintOpts = new LinkedHashMap<>();
 
     public final Resources resources;
 
@@ -231,6 +110,8 @@ public class HtmlConfiguration extends BaseConfiguration {
 
     public Map<Element, List<DocPath>> localStylesheetMap = new HashMap<>();
 
+    private final HtmlOptions options;
+
     /**
      * Creates an object to hold the configuration for a doclet.
      *
@@ -244,6 +125,7 @@ public class HtmlConfiguration extends BaseConfiguration {
 
         messages = new Messages(this);
         contents = new Contents(this);
+        options = new HtmlOptions(this);
 
         String v;
         try {
@@ -283,54 +165,14 @@ public class HtmlConfiguration extends BaseConfiguration {
         return messages;
     }
 
-    protected boolean validateOptions() {
-        // check shared options
-        if (!generalValidOptions()) {
-            return false;
-        }
-
-        // check if helpfile exists
-        if (!helpfile.isEmpty()) {
-            DocFile help = DocFile.createFileForInput(this, helpfile);
-            if (!help.exists()) {
-                reporter.print(ERROR, resources.getText("doclet.File_not_found", helpfile));
-                return false;
-            }
-        }
-        // check if stylesheetfile exists
-        if (!stylesheetfile.isEmpty()) {
-            DocFile stylesheet = DocFile.createFileForInput(this, stylesheetfile);
-            if (!stylesheet.exists()) {
-                reporter.print(ERROR, resources.getText("doclet.File_not_found", stylesheetfile));
-                return false;
-            }
-        }
-        // check if additional stylesheets exists
-        for (String ssheet : additionalStylesheets) {
-            DocFile ssfile = DocFile.createFileForInput(this, ssheet);
-            if (!ssfile.exists()) {
-                reporter.print(ERROR, resources.getText("doclet.File_not_found", ssheet));
-                return false;
-            }
-        }
-
-        // In a more object-oriented world, this would be done by methods on the Option objects.
-        // Note that -windowtitle silently removes any and all HTML elements, and so does not need
-        // to be handled here.
-        utils.checkJavaScriptInOption("-header", header);
-        utils.checkJavaScriptInOption("-footer", footer);
-        utils.checkJavaScriptInOption("-top", top);
-        utils.checkJavaScriptInOption("-bottom", bottom);
-        utils.checkJavaScriptInOption("-doctitle", doctitle);
-        utils.checkJavaScriptInOption("-packagesheader", packagesheader);
-
-        return true;
+    @Override
+    public HtmlOptions getOptions() {
+        return options;
     }
-
 
     @Override
     public boolean finishOptionSettings() {
-        if (!validateOptions()) {
+        if (!options.validateOptions()) {
             return false;
         }
         if (!getSpecifiedTypeElements().isEmpty()) {
@@ -346,7 +188,7 @@ public class HtmlConfiguration extends BaseConfiguration {
         docPaths = new DocPaths(utils);
         setCreateOverview();
         setTopFile(docEnv);
-        workArounds.initDocLint(doclintOpts.values(), tagletManager.getAllTagletNames());
+        workArounds.initDocLint(options.doclintOpts.values(), tagletManager.getAllTagletNames());
         return true;
     }
 
@@ -364,7 +206,7 @@ public class HtmlConfiguration extends BaseConfiguration {
         if (!checkForDeprecation(docEnv)) {
             return;
         }
-        if (createoverview) {
+        if (options.createOverview) {
             topFile = DocPaths.INDEX;
         } else {
             if (showModules) {
@@ -382,7 +224,7 @@ public class HtmlConfiguration extends BaseConfiguration {
     }
 
     protected TypeElement getValidClass(List<TypeElement> classes) {
-        if (!nodeprecated) {
+        if (!options.noDeprecated) {
             return classes.get(0);
         }
         for (TypeElement te : classes) {
@@ -404,14 +246,14 @@ public class HtmlConfiguration extends BaseConfiguration {
 
     /**
      * Generate "overview.html" page if option "-overview" is used or number of
-     * packages is more than one. Sets {@link #createoverview} field to true.
+     * packages is more than one. Sets {@link HtmlOptions#createOverview} field to true.
      */
     protected void setCreateOverview() {
-        if (!nooverview) {
-            if (overviewpath != null
+        if (!options.noOverview) {
+            if (options.overviewPath != null
                     || modules.size() > 1
                     || (modules.isEmpty() && packages.size() > 1)) {
-                createoverview = true;
+                options.createOverview = true;
             }
         }
     }
@@ -441,6 +283,7 @@ public class HtmlConfiguration extends BaseConfiguration {
      */
     @Override
     public JavaFileObject getOverviewPath() {
+        String overviewpath = options.overviewPath;
         if (overviewpath != null && getFileManager() instanceof StandardJavaFileManager) {
             StandardJavaFileManager fm = (StandardJavaFileManager) getFileManager();
             return fm.getJavaFileObjects(overviewpath).iterator().next();
@@ -449,6 +292,7 @@ public class HtmlConfiguration extends BaseConfiguration {
     }
 
     public DocPath getMainStylesheet() {
+        String stylesheetfile = options.stylesheetFile;
         if(!stylesheetfile.isEmpty()){
             DocFile docFile = DocFile.createFileForInput(this, stylesheetfile);
             return DocPath.create(docFile.getName());
@@ -457,7 +301,7 @@ public class HtmlConfiguration extends BaseConfiguration {
     }
 
     public List<DocPath> getAdditionalStylesheets() {
-        return additionalStylesheets.stream()
+        return options.additionalStylesheets.stream()
                 .map(ssf -> DocFile.createFileForInput(this, ssf)).map(file -> DocPath.create(file.getName()))
                 .collect(Collectors.toList());
     }
@@ -497,264 +341,17 @@ public class HtmlConfiguration extends BaseConfiguration {
     }
 
     @Override
-    public Set<Doclet.Option> getSupportedOptions() {
-        Resources resources = getResources();
-        Doclet.Option[] options = {
-            new Option(resources, "--add-stylesheet", 1) {
-                @Override
-                public boolean process(String opt, List<String> args) {
-                    additionalStylesheets.add(args.get(0));
-                    return true;
-                }
-            },
-            new Option(resources, "-bottom", 1) {
-                @Override
-                public boolean process(String opt,  List<String> args) {
-                    bottom = args.get(0);
-                    return true;
-                }
-            },
-            new Option(resources, "-charset", 1) {
-                @Override
-                public boolean process(String opt,  List<String> args) {
-                    charset = args.get(0);
-                    return true;
-                }
-            },
-            new Option(resources, "-doctitle", 1) {
-                @Override
-                public boolean process(String opt,  List<String> args) {
-                    doctitle = args.get(0);
-                    return true;
-                }
-            },
-            new Option(resources, "-footer", 1) {
-                @Override
-                public boolean process(String opt, List<String> args) {
-                    footer = args.get(0);
-                    return true;
-                }
-            },
-            new Option(resources, "-header", 1) {
-                @Override
-                public boolean process(String opt,  List<String> args) {
-                    header = args.get(0);
-                    return true;
-                }
-            },
-            new Option(resources, "-helpfile", 1) {
-                @Override
-                public boolean process(String opt,  List<String> args) {
-                    if (nohelp == true) {
-                        reporter.print(ERROR, resources.getText("doclet.Option_conflict",
-                                "-helpfile", "-nohelp"));
-                        return false;
-                    }
-                    if (!helpfile.isEmpty()) {
-                        reporter.print(ERROR, resources.getText("doclet.Option_reuse",
-                                "-helpfile"));
-                        return false;
-                    }
-                    helpfile = args.get(0);
-                    return true;
-                }
-            },
-            new Option(resources, "-html5") {
-                @Override
-                public boolean process(String opt,  List<String> args) {
-                    return true;
-                }
-            },
-            new Option(resources, "-nohelp") {
-                @Override
-                public boolean process(String opt, List<String> args) {
-                    nohelp = true;
-                    if (!helpfile.isEmpty()) {
-                        reporter.print(ERROR, resources.getText("doclet.Option_conflict",
-                                "-nohelp", "-helpfile"));
-                        return false;
-                    }
-                    return true;
-                }
-            },
-            new Option(resources, "-nodeprecatedlist") {
-                @Override
-                public boolean process(String opt,  List<String> args) {
-                    nodeprecatedlist = true;
-                    return true;
-                }
-            },
-            new Option(resources, "-noindex") {
-                @Override
-                public boolean process(String opt,  List<String> args) {
-                    createindex = false;
-                    if (splitindex == true) {
-                        reporter.print(ERROR, resources.getText("doclet.Option_conflict",
-                                "-noindex", "-splitindex"));
-                        return false;
-                    }
-                    return true;
-                }
-            },
-            new Option(resources, "-nonavbar") {
-                @Override
-                public boolean process(String opt,  List<String> args) {
-                    nonavbar = true;
-                    return true;
-                }
-            },
-            new Hidden(resources, "-nooverview") {
-                @Override
-                public boolean process(String opt,  List<String> args) {
-                    nooverview = true;
-                    if (overviewpath != null) {
-                        reporter.print(ERROR, resources.getText("doclet.Option_conflict",
-                                "-nooverview", "-overview"));
-                        return false;
-                    }
-                    return true;
-                }
-            },
-            new Option(resources, "-notree") {
-                @Override
-                public boolean process(String opt,  List<String> args) {
-                    createtree = false;
-                    return true;
-                }
-            },
-            new Option(resources, "-overview", 1) {
-                @Override
-                public boolean process(String opt,  List<String> args) {
-                    overviewpath = args.get(0);
-                    if (nooverview == true) {
-                        reporter.print(ERROR, resources.getText("doclet.Option_conflict",
-                                "-overview", "-nooverview"));
-                        return false;
-                    }
-                    return true;
-                }
-            },
-            new Hidden(resources, "-packagesheader", 1) {
-                @Override
-                public boolean process(String opt,  List<String> args) {
-                    packagesheader = args.get(0);
-                    return true;
-                }
-            },
-            new Option(resources, "-splitindex") {
-                @Override
-                public boolean process(String opt, List<String> args) {
-                    splitindex = true;
-                    if (createindex == false) {
-                        reporter.print(ERROR, resources.getText("doclet.Option_conflict",
-                                "-splitindex", "-noindex"));
-                        return false;
-                    }
-                    return true;
-                }
-            },
-            new Option(resources, "--main-stylesheet -stylesheetfile", 1) {
-                @Override
-                public boolean process(String opt,  List<String> args) {
-                    stylesheetfile = args.get(0);
-                    return true;
-                }
-            },
-            new Option(resources, "-top", 1) {
-                @Override
-                public boolean process(String opt,  List<String> args) {
-                    top = args.get(0);
-                    return true;
-                }
-            },
-            new Option(resources, "-use") {
-                @Override
-                public boolean process(String opt,  List<String> args) {
-                    classuse = true;
-                    return true;
-                }
-            },
-            new Option(resources, "-windowtitle", 1) {
-                @Override
-                public boolean process(String opt,  List<String> args) {
-                    windowtitle = args.get(0).replaceAll("\\<.*?>", "");
-                    return true;
-                }
-            },
-            new XOption(resources, "-Xdoclint") {
-                @Override
-                public boolean process(String opt,  List<String> args) {
-                    doclintOpts.put(this, DocLint.XMSGS_OPTION);
-                    return true;
-                }
-            },
-            new XOption(resources, "-Xdocrootparent", 1) {
-                @Override
-                public boolean process(String opt, List<String> args) {
-                    docrootparent = args.get(0);
-                    try {
-                        URL ignored = new URL(docrootparent);
-                    } catch (MalformedURLException e) {
-                        reporter.print(ERROR, resources.getText("doclet.MalformedURL", docrootparent));
-                        return false;
-                    }
-                    return true;
-                }
-            },
-            new XOption(resources, "doclet.usage.xdoclint-extended", "-Xdoclint:", 0) {
-                @Override
-                public boolean process(String opt,  List<String> args) {
-                    String dopt = opt.replace("-Xdoclint:", DocLint.XMSGS_CUSTOM_PREFIX);
-                    doclintOpts.put(this, dopt);
-                    if (dopt.contains("/")) {
-                        reporter.print(ERROR, resources.getText("doclet.Option_doclint_no_qualifiers"));
-                        return false;
-                    }
-                    if (!DocLint.isValidOption(dopt)) {
-                        reporter.print(ERROR, resources.getText("doclet.Option_doclint_invalid_arg"));
-                        return false;
-                    }
-                    return true;
-                }
-            },
-            new XOption(resources, "doclet.usage.xdoclint-package", "-Xdoclint/package:", 0) {
-                @Override
-                public boolean process(String opt,  List<String> args) {
-                    String dopt = opt.replace("-Xdoclint/package:", DocLint.XCHECK_PACKAGE);
-                    doclintOpts.put(this, dopt);
-                    if (!DocLint.isValidOption(dopt)) {
-                        reporter.print(ERROR, resources.getText("doclet.Option_doclint_package_invalid_arg"));
-                        return false;
-                    }
-                    return true;
-                }
-            },
-            new XOption(resources, "--no-frames") {
-                @Override
-                public boolean process(String opt, List<String> args) {
-                    reporter.print(WARNING, resources.getText("doclet.NoFrames_specified"));
-                    return true;
-                }
-            }
-        };
-        Set<Doclet.Option> oset = new TreeSet<>();
-        oset.addAll(Arrays.asList(options));
-        oset.addAll(super.getSupportedOptions());
-        return oset;
-    }
-
-    @Override
     protected boolean finishOptionSettings0() throws DocletException {
-        if (docencoding == null) {
-            if (charset == null) {
-                docencoding = charset = (encoding == null) ? HTML_DEFAULT_CHARSET : encoding;
+        if (options.docEncoding == null) {
+            if (options.charset == null) {
+                options.docEncoding = options.charset = (options.encoding == null) ? HTML_DEFAULT_CHARSET : options.encoding;
             } else {
-                docencoding = charset;
+                options.docEncoding = options.charset;
             }
         } else {
-            if (charset == null) {
-                charset = docencoding;
-            } else if (!charset.equals(docencoding)) {
+            if (options.charset == null) {
+                options.charset = options.docEncoding;
+            } else if (!options.charset.equals(options.docEncoding)) {
                 reporter.print(ERROR, resources.getText("doclet.Option_conflict", "-charset", "-docencoding"));
                 return false;
             }

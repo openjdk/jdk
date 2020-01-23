@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,6 +87,7 @@ import com.sun.source.util.TreePath;
 import com.sun.tools.javac.model.JavacTypes;
 import jdk.javadoc.internal.doclets.formats.html.SearchIndexItem;
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
+import jdk.javadoc.internal.doclets.toolkit.BaseOptions;
 import jdk.javadoc.internal.doclets.toolkit.CommentUtils.DocCommentDuo;
 import jdk.javadoc.internal.doclets.toolkit.Messages;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
@@ -112,15 +113,17 @@ import static jdk.javadoc.internal.doclets.toolkit.builders.ConstantsSummaryBuil
  */
 public class Utils {
     public final BaseConfiguration configuration;
-    public final Messages messages;
-    public final Resources resources;
+    private final BaseOptions options;
+    private final Messages messages;
+    private final Resources resources;
     public final DocTrees docTrees;
     public final Elements elementUtils;
     public final Types typeUtils;
-    public final JavaScriptScanner javaScriptScanner;
+    private final JavaScriptScanner javaScriptScanner;
 
     public Utils(BaseConfiguration c) {
         configuration = c;
+        options = configuration.getOptions();
         messages = configuration.getMessages();
         resources = configuration.getResources();
         elementUtils = c.docEnv.getElementUtils();
@@ -390,7 +393,7 @@ public class Utils {
     }
 
     public boolean isProperty(String name) {
-        return configuration.javafx && name.endsWith("Property");
+        return options.javafx && name.endsWith("Property");
     }
 
     public String getPropertyName(String name) {
@@ -1387,8 +1390,8 @@ public class Utils {
         if (!text.contains("\t"))
             return text;
 
-        final int tabLength = configuration.sourcetab;
-        final String whitespace = configuration.tabSpaces;
+        final int tabLength = options.sourceTabSize;
+        final String whitespace = " ".repeat(tabLength);
         final int textLength = text.length();
         StringBuilder result = new StringBuilder(textLength);
         int pos = 0;
@@ -1520,7 +1523,7 @@ public class Utils {
         if (!isIncluded(e)) {
             return false;
         }
-        if (configuration.javafx &&
+        if (options.javafx &&
                 hasBlockTag(e, DocTree.Kind.UNKNOWN_BLOCK_TAG, "treatAsPrivate")) {
             return true;
         }
@@ -1533,7 +1536,7 @@ public class Utils {
      * @return true if there are no comments, false otherwise
      */
     public boolean isSimpleOverride(ExecutableElement m) {
-        if (!configuration.summarizeOverriddenMethods ||
+        if (!options.summarizeOverriddenMethods ||
                 !isIncluded(m)) {
             return false;
         }
