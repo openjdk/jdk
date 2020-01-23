@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,6 +47,7 @@ import java.util.ArrayDeque;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.TimeUnit;
@@ -242,87 +243,84 @@ public final class FileUtils {
     }
 
     /**
-     * Checks whether all file systems are accessible. This is performed
-     * by checking free disk space on all mounted file systems via a
-     * separate, spawned process. File systems are considered to be
-     * accessible if this process completes successfully before a given
-     * fixed duration has elapsed.
+     * Checks whether all file systems are accessible and there are no
+     * duplicate mount points. This is performed by checking free disk
+     * space on all mounted file systems via a separate, spawned process.
+     * File systems are considered to be accessible if this process completes
+     * successfully before a given fixed duration has elapsed.
      *
      * @implNote On Unix this executes the {@code df} command in a separate
      * process and on Windows always returns {@code true}.
      *
-     * @return whether file systems appear to be accessible
-     *
-     * @throws RuntimeException if there are duplicate mount points or some
-     * other execution problem occurs
+     * @return whether file systems appear to be accessible and duplicate-free
      */
-    public static boolean areAllMountPointsAccessible() {
-        final AtomicBoolean areMountPointsOK = new AtomicBoolean(true);
-        if (!IS_WINDOWS) {
-            Thread thr = new Thread(() -> {
-                try {
-                    Process proc = new ProcessBuilder("df").start();
-                    BufferedReader reader = new BufferedReader
-                        (new InputStreamReader(proc.getInputStream()));
-                    // Skip the first line as it is the "df" output header.
-                    if (reader.readLine() != null ) {
-                        String prevMountPoint = null, mountPoint = null;
-                        while ((mountPoint = reader.readLine()) != null) {
-                            if (prevMountPoint != null &&
-                                mountPoint.equals(prevMountPoint)) {
-                                throw new RuntimeException
-                                    ("System configuration error: " +
-                                    "duplicate mount point " + mountPoint +
-                                    " detected");
-                            }
-                            prevMountPoint = mountPoint;
-                        }
-                    }
+    public static boolean areMountPointsAccessibleAndUnique() {
+        if (IS_WINDOWS) return true;
 
-                    try {
-                        proc.waitFor(90, TimeUnit.SECONDS);
-                    } catch (InterruptedException ignored) {
-                    }
-                    try {
-                        int exitValue = proc.exitValue();
-                        if (exitValue != 0) {
-                            System.err.printf("df process exited with %d != 0%n",
-                                exitValue);
+        final AtomicBoolean areMountPointsOK = new AtomicBoolean(true);
+        Thread thr = new Thread(() -> {
+            try {
+                Process proc = new ProcessBuilder("df").start();
+                BufferedReader reader = new BufferedReader
+                    (new InputStreamReader(proc.getInputStream()));
+                // Skip the first line as it is the "df" output header.
+                if (reader.readLine() != null ) {
+                    Set mountPoints = new HashSet();
+                    String mountPoint = null;
+                    while ((mountPoint = reader.readLine()) != null) {
+                        if (!mountPoints.add(mountPoint)) {
+                            System.err.printf
+                                ("Config error: duplicate mount point %s%n",
+                                mountPoint);
                             areMountPointsOK.set(false);
+                            break;
                         }
-                    } catch (IllegalThreadStateException ignored) {
-                        System.err.println("df command apparently hung");
+                    }
+                }
+
+                try {
+                    proc.waitFor(90, TimeUnit.SECONDS);
+                } catch (InterruptedException ignored) {
+                }
+                try {
+                    int exitValue = proc.exitValue();
+                    if (exitValue != 0) {
+                        System.err.printf("df process exited with %d != 0%n",
+                            exitValue);
                         areMountPointsOK.set(false);
                     }
-                } catch (IOException ioe) {
-                    throw new RuntimeException(ioe);
-                };
+                } catch (IllegalThreadStateException ignored) {
+                    System.err.println("df command apparently hung");
+                    areMountPointsOK.set(false);
+                }
+            } catch (IOException ioe) {
+                throw new RuntimeException(ioe);
+            };
+        });
+
+        final AtomicReference throwableReference =
+            new AtomicReference<Throwable>();
+        thr.setUncaughtExceptionHandler(
+            new Thread.UncaughtExceptionHandler() {
+                public void uncaughtException(Thread t, Throwable e) {
+                    throwableReference.set(e);
+                }
             });
 
-            final AtomicReference throwableReference =
-                new AtomicReference<Throwable>();
-            thr.setUncaughtExceptionHandler(
-                new Thread.UncaughtExceptionHandler() {
-                    public void uncaughtException(Thread t, Throwable e) {
-                        throwableReference.set(e);
-                    }
-                });
+        thr.start();
+        try {
+            thr.join(120*1000L);
+        } catch (InterruptedException ie) {
+            throw new RuntimeException(ie);
+        }
 
-            thr.start();
-            try {
-                thr.join(120*1000L);
-            } catch (InterruptedException ie) {
-                throw new RuntimeException(ie);
-            }
+        Throwable uncaughtException = (Throwable)throwableReference.get();
+        if (uncaughtException != null) {
+            throw new RuntimeException(uncaughtException);
+        }
 
-            Throwable uncaughtException = (Throwable)throwableReference.get();
-            if (uncaughtException != null) {
-                throw new RuntimeException(uncaughtException);
-            }
-
-            if (thr.isAlive()) {
-                throw new RuntimeException("df thread did not join in time");
-            }
+        if (thr.isAlive()) {
+            throw new RuntimeException("df thread did not join in time");
         }
 
         return areMountPointsOK.get();
