@@ -360,8 +360,10 @@ class MetaspaceShared : AllStatic {
 
   static void write_core_archive_regions(FileMapInfo* mapinfo);
 private:
+#if INCLUDE_CDS
   static void write_region(FileMapInfo* mapinfo, int region_idx, DumpRegion* dump_region,
                            bool read_only,  bool allow_exec);
+#endif
   static void read_extra_data(const char* filename, TRAPS) NOT_CDS_RETURN;
   static FileMapInfo* open_static_archive();
   static FileMapInfo* open_dynamic_archive();
