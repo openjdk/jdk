@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,7 +60,7 @@ public class HeapDumpTest {
         System.out.println("Starting LingeredApp");
         try {
             theApp = new LingeredAppWithExtendedChars();
-            LingeredApp.startApp(Arrays.asList("-Xmx256m"), theApp);
+            LingeredApp.startApp(theApp, "-Xmx256m");
 
             System.out.println(theApp.\u00CB);
             System.out.println("Starting " + toolArgs.get(0) + " against " + theApp.getPid());

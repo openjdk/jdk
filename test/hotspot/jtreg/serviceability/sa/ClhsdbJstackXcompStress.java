@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2019, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -89,12 +90,12 @@ public class ClhsdbJstackXcompStress {
     public static void main(String... args) throws Exception {
         LingeredApp app = null;
         try {
-            List<String> vmArgs = List.of("-Xcomp",
-                                          "-XX:CompileCommand=dontinline,LingeredAppWithRecComputation.factorial",
-                                          "-XX:CompileCommand=compileonly,LingeredAppWithRecComputation.testLoop",
-                                          "-XX:CompileCommand=compileonly,LingeredAppWithRecComputation.factorial");
             app = new LingeredAppWithRecComputation();
-            LingeredApp.startApp(vmArgs, app);
+            LingeredApp.startApp(app,
+                                 "-Xcomp",
+                                 "-XX:CompileCommand=dontinline,LingeredAppWithRecComputation.factorial",
+                                 "-XX:CompileCommand=compileonly,LingeredAppWithRecComputation.testLoop",
+                                 "-XX:CompileCommand=compileonly,LingeredAppWithRecComputation.factorial");
             System.out.println("Started LingeredAppWithRecComputation with pid " + app.getPid());
             runJstackInLoop(app);
             System.out.println("Test Completed");

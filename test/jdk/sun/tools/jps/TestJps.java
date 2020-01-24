@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@ public class TestJps {
     public static void testJpsClass() throws Throwable {
         LingeredApp app = new LingeredAppForJps();
         try {
-            LingeredApp.startApp(JpsHelper.getVmArgs(), app);
+            LingeredApp.startApp(app, JpsHelper.getVmArgs());
             JpsHelper.runJpsVariants(app.getPid(),
                 LingeredAppForJps.getProcessName(), LingeredAppForJps.getFullProcessName(), app.getLockFileName());
 
@@ -64,7 +64,7 @@ public class TestJps {
         // Jar created go to the main test
         LingeredAppForJps app = new LingeredAppForJps();
         try {
-            LingeredAppForJps.startAppJar(JpsHelper.getVmArgs(), app, jar);
+            LingeredAppForJps.startAppJar(app, JpsHelper.getVmArgs(), jar);
             JpsHelper.runJpsVariants(app.getPid(),
                 LingeredAppForJps.getProcessName(jar), LingeredAppForJps.getFullProcessName(jar), app.getLockFileName());
         } finally {

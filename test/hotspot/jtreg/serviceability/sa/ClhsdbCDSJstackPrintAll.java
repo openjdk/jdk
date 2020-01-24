@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,11 +51,10 @@ public class ClhsdbCDSJstackPrintAll {
             CDSTestUtils.createArchiveAndCheck(opts);
 
             ClhsdbLauncher test = new ClhsdbLauncher();
-            List<String> vmArgs = Arrays.asList(
+            theApp = LingeredApp.startApp(
                 "-XX:+UnlockDiagnosticVMOptions",
                 "-XX:SharedArchiveFile=" + sharedArchiveName,
                 "-Xshare:auto");
-            theApp = LingeredApp.startApp(vmArgs);
             System.out.println("Started LingeredApp with pid " + theApp.getPid());
 
             // Ensure that UseSharedSpaces is turned on.

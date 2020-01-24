@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -145,15 +145,6 @@ public final class Utils {
     }
 
     /**
-     * Returns the list of VM options.
-     *
-     * @return List of VM options
-     */
-    public static List<String> getVmOptions() {
-        return Arrays.asList(safeSplitString(VM_OPTIONS));
-    }
-
-    /**
      * Returns the list of VM options with -J prefix.
      *
      * @return The list of VM options with -J prefix
@@ -183,11 +174,32 @@ public final class Utils {
      * This is the combination of JTReg arguments test.vm.opts and test.java.opts
      * @return The combination of JTReg test java options and user args.
      */
-    public static String[] addTestJavaOpts(String... userArgs) {
+    public static String[] prependTestJavaOpts(String... userArgs) {
         List<String> opts = new ArrayList<String>();
         Collections.addAll(opts, getTestJavaOpts());
         Collections.addAll(opts, userArgs);
         return opts.toArray(new String[0]);
+    }
+
+    /**
+     * Combines given arguments with default JTReg arguments for a jvm running a test.
+     * This is the combination of JTReg arguments test.vm.opts and test.java.opts
+     * @return The combination of JTReg test java options and user args.
+     */
+    public static String[] appendTestJavaOpts(String... userArgs) {
+        List<String> opts = new ArrayList<String>();
+        Collections.addAll(opts, userArgs);
+        Collections.addAll(opts, getTestJavaOpts());
+        return opts.toArray(new String[0]);
+    }
+
+    /**
+     * Combines given arguments with default JTReg arguments for a jvm running a test.
+     * This is the combination of JTReg arguments test.vm.opts and test.java.opts
+     * @return The combination of JTReg test java options and user args.
+     */
+    public static String[] addTestJavaOpts(String... userArgs) {
+        return prependTestJavaOpts(userArgs);
     }
 
     /**

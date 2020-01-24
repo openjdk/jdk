@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@ import java.net.URL;
 public class LingeredAppForJps extends LingeredApp {
 
     // Copy runApp logic here to be able to run an app from JarFile
-    public void runAppWithName(List<String> vmArguments, String runName)
+    public void runAppWithName(String[] vmArguments, String runName)
             throws IOException {
 
         List<String> cmd = runAppPrepare(vmArguments);
@@ -52,7 +52,7 @@ public class LingeredAppForJps extends LingeredApp {
         startGobblerPipe();
     }
 
-    public static LingeredApp startAppJar(List<String> cmd, LingeredAppForJps app, File jar) throws IOException {
+    public static LingeredApp startAppJar(LingeredAppForJps app, String[] cmd, File jar) throws IOException {
         app.createLock();
         try {
             app.runAppWithName(cmd, jar.getAbsolutePath());
