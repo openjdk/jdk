@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,9 @@
 
 package sun.net.dns;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.LinkedList;
-import java.util.StringTokenizer;
+import java.util.concurrent.TimeUnit;
 
 /*
  * An implementation of sun.net.ResolverConfiguration for Windows.
@@ -42,38 +42,64 @@ public class ResolverConfigurationImpl
     // Resolver options
     private final Options opts;
 
-    // Addresses have changed
-    private static boolean changed = false;
+    // Addresses have changed. We default to true to make sure we
+    // resolve the first time it is requested.
+    private static boolean changed = true;
 
     // Time of last refresh.
-    private static long lastRefresh = -1;
+    private static long lastRefresh;
 
     // Cache timeout (120 seconds) - should be converted into property
     // or configured as preference in the future.
-    private static final int TIMEOUT = 120000;
+    private static final long TIMEOUT_NANOS = TimeUnit.SECONDS.toNanos(120);
 
     // DNS suffix list and name servers populated by native method
     private static String os_searchlist;
     private static String os_nameservers;
 
     // Cached lists
-    private static LinkedList<String> searchlist;
-    private static LinkedList<String> nameservers;
+    private static ArrayList<String> searchlist;
+    private static ArrayList<String> nameservers;
 
-    // Parse string that consists of token delimited by space or commas
-    // and return LinkedHashMap
-    private LinkedList<String> stringToList(String str) {
-        LinkedList<String> ll = new LinkedList<>();
-
-        // comma and space are valid delimiters
-        StringTokenizer st = new StringTokenizer(str, ", ");
-        while (st.hasMoreTokens()) {
-            String s = st.nextToken();
-            if (!ll.contains(s)) {
-                ll.add(s);
+    // Parse string that consists of token delimited by comma
+    // and return ArrayList. Refer to ResolverConfigurationImpl.c and
+    // strappend to see how the string is created.
+    private ArrayList<String> stringToList(String str) {
+        // String is delimited by comma.
+        String[] tokens = str.split(",");
+        ArrayList<String> l = new ArrayList<>(tokens.length);
+        for (String s : tokens) {
+            if (!s.isEmpty() && !l.contains(s)) {
+                l.add(s);
             }
         }
-        return ll;
+        l.trimToSize();
+        return l;
+    }
+
+    // Parse string that consists of token delimited by comma
+    // and return ArrayList.  Refer to ResolverConfigurationImpl.c and
+    // strappend to see how the string is created.
+    // In addition to splitting the string, converts IPv6 addresses to
+    // BSD-style.
+    private ArrayList<String> addressesToList(String str) {
+        // String is delimited by comma
+        String[] tokens = str.split(",");
+        ArrayList<String> l = new ArrayList<>(tokens.length);
+
+        for (String s : tokens) {
+            if (!s.isEmpty()) {
+                if (s.indexOf(':') >= 0 && s.charAt(0) != '[') {
+                    // Not BSD style
+                    s = '[' + s + ']';
+                }
+                if (!s.isEmpty() && !l.contains(s)) {
+                    l.add(s);
+                }
+            }
+        }
+        l.trimToSize();
+        return l;
     }
 
     // Load DNS configuration from OS
@@ -81,28 +107,34 @@ public class ResolverConfigurationImpl
     private void loadConfig() {
         assert Thread.holdsLock(lock);
 
-        // if address have changed then DNS probably changed as well;
-        // otherwise check if cached settings have expired.
-        //
+        // A change in the network address of the machine usually indicates
+        // a change in DNS configuration too so we always refresh the config
+        // after such a change.
         if (changed) {
             changed = false;
         } else {
-            if (lastRefresh >= 0) {
-                long currTime = System.currentTimeMillis();
-                if ((currTime - lastRefresh) < TIMEOUT) {
-                    return;
-                }
+            // Otherwise we refresh if TIMEOUT_NANOS has passed since last
+            // load.
+            long currTime = System.nanoTime();
+            // lastRefresh will always have been set once because we start with
+            // changed = true.
+            if ((currTime - lastRefresh) < TIMEOUT_NANOS) {
+                return;
             }
         }
 
-        // load DNS configuration, update timestamp, create
-        // new HashMaps from the loaded configuration
-        //
+        // Native code that uses Windows API to find out the DNS server
+        // addresses and search suffixes. It builds a comma-delimited string
+        // of nameservers and domain suffixes and sets them to the static
+        // os_nameservers and os_searchlist. We then split these into Java
+        // Lists here.
         loadDNSconfig0();
 
-        lastRefresh = System.currentTimeMillis();
+        // Record the time of update and refresh the lists of addresses /
+        // domain suffixes.
+        lastRefresh = System.nanoTime();
         searchlist = stringToList(os_searchlist);
-        nameservers = stringToList(os_nameservers);
+        nameservers = addressesToList(os_nameservers);
         os_searchlist = null;                       // can be GC'ed
         os_nameservers = null;
     }
