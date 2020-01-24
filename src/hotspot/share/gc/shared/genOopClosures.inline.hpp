@@ -62,17 +62,6 @@ template <class T> inline void OopsInGenClosure::do_barrier(T* p) {
   }
 }
 
-template <class T> inline void OopsInGenClosure::par_do_barrier(T* p) {
-  assert(generation()->is_in_reserved(p), "expected ref in generation");
-  T heap_oop = RawAccess<>::oop_load(p);
-  assert(!CompressedOops::is_null(heap_oop), "expected non-null oop");
-  oop obj = CompressedOops::decode_not_null(heap_oop);
-  // If p points to a younger generation, mark the card.
-  if ((HeapWord*)obj < gen_boundary()) {
-    rs()->write_ref_field_gc_par(p, obj);
-  }
-}
-
 inline BasicOopsInGenClosure::BasicOopsInGenClosure(Generation* gen) : OopsInGenClosure(gen) {
 }
 

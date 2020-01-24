@@ -124,11 +124,6 @@ public:
     inline_write_ref_field_gc(field, new_val);
   }
 
-  // Override.  Might want to devirtualize this in the same fashion as
-  // above.  Ensures that the value of the card for field says that it's
-  // a younger card in the current collection.
-  virtual void write_ref_field_gc_par(void* field, oop new_val);
-
   bool is_aligned(HeapWord* addr) {
     return is_card_aligned(addr);
   }
