@@ -1,6 +1,6 @@
 <!DOCTYPE HTML>
 <!--
- Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -54,8 +54,8 @@ and detail all of these properties.</P>
 	When dealing with a host which has both IPv4
 	and IPv6 addresses, and if IPv6 is available on the operating
 	system, the default behavior is to prefer using IPv4 addresses over
-	IPv6 ones. This is to ensure backward compatibility, for example
-	applications that depend on the representation of an IPv4 address
+	IPv6 ones. This is to ensure backward compatibility: for example,
+	for applications that depend on the representation of an IPv4 address
 	(e.g. 192.168.1.1). This property can be set to <B>true</B> to
 	change that preference and use IPv6 addresses over IPv4 ones where
 	possible, or <B>system</B> to preserve the order of the addresses as
@@ -74,18 +74,18 @@ of proxies.</P>
 	<P>The following proxy settings are used by the HTTP protocol handler.</P>
 	<UL>
 		<LI><P><B>{@systemProperty http.proxyHost}</B> (default: &lt;none&gt;)<BR>
-	        The hostname, or address, of the proxy server
+	        The hostname, or address, of the proxy server.
 		</P>
-		<LI><P><B>{@systemProperty http.proxyPort}</B> (default: 80)<BR>
+		<LI><P><B>{@systemProperty http.proxyPort}</B> (default: {@code 80})<BR>
 	        The port number of the proxy server.</P>
-		<LI><P><B>{@systemProperty http.nonProxyHosts}</B> (default:  localhost|127.*|[::1])<BR>
+		<LI><P><B>{@systemProperty http.nonProxyHosts}</B> (default: {@code localhost|127.*|[::1]})<BR>
 	        Indicates the hosts that should be accessed without going
 	        through the proxy. Typically this defines internal hosts.
 	        The value of this property is a list of hosts,
-		separated by the '|' character. In addition the wildcard
-	        character '*' can be used for pattern matching. For example
-		<code>-Dhttp.nonProxyHosts=&rdquo;*.foo.com|localhost&rdquo;</code>
-		will indicate that every hosts in the foo.com domain and the
+		separated by the '|' character. In addition, the wildcard
+	        character '*' can be used for pattern matching. For example,
+		{@code -Dhttp.nonProxyHosts="*.foo.com|localhost"}
+		will indicate that every host in the foo.com domain and the
 		localhost should be accessed directly even if a proxy server is
 		specified.</P>
                 <P>The default value excludes all common variations of the loopback address.</P>
@@ -94,10 +94,10 @@ of proxies.</P>
 	mainly used when confidentiality (like on payment sites) is needed.</P>
 	<P>The following proxy settings are used by the HTTPS protocol handler.</P>
 	<UL>
-		<LI><P><B>{@systemProperty https.proxyHost}</B>(default: &lt;none&gt;)<BR>
-	        The hostname, or address, of the proxy server
+		<LI><P><B>{@systemProperty https.proxyHost}</B> (default: &lt;none&gt;)<BR>
+	        The hostname, or address, of the proxy server.
 		</P>
-		<LI><P><B>{@systemProperty https.proxyPort}</B> (default: 443)<BR>
+		<LI><P><B>{@systemProperty https.proxyPort}</B> (default: {@code 443})<BR>
 	        The port number of the proxy server.</P>
 		<P>The HTTPS protocol handler will use the same nonProxyHosts
 		property as the HTTP protocol.</P>
@@ -105,25 +105,25 @@ of proxies.</P>
 	<LI><P>FTP</P>
 	<P>The following proxy settings are used by the FTP protocol handler.</P>
 	<UL>
-		<LI><P><B>{@systemProperty ftp.proxyHost}</B>(default: &lt;none&gt;)<BR>
-	        The hostname, or address, of the proxy server
+		<LI><P><B>{@systemProperty ftp.proxyHost}</B> (default: &lt;none&gt;)<BR>
+	        The hostname, or address, of the proxy server.
 		</P>
-		<LI><P><B>{@systemProperty ftp.proxyPort}</B> (default: 80)<BR>
+		<LI><P><B>{@systemProperty ftp.proxyPort}</B> (default: {@code 80})<BR>
 	        The port number of the proxy server.</P>
-		<LI><P><B>{@systemProperty ftp.nonProxyHosts}</B> (default: localhost|127.*|[::1])<BR>
+		<LI><P><B>{@systemProperty ftp.nonProxyHosts}</B> (default: {@code localhost|127.*|[::1]})<BR>
 	        Indicates the hosts that should be accessed without going
 	        through the proxy. Typically this defines internal hosts.
 	        The value of this property is a list of hosts, separated by
-	        the '|' character. In addition the wildcard character
-		'*' can be used for pattern matching. For example
-		<code>-Dhttp.nonProxyHosts=&rdquo;*.foo.com|localhost&rdquo;</code>
-		will indicate that every hosts in the foo.com domain and the
+	        the '|' character. In addition, the wildcard character
+		'*' can be used for pattern matching. For example,
+		{@code -Dhttp.nonProxyHosts="*.foo.com|localhost"}
+		will indicate that every host in the foo.com domain and the
 		localhost should be accessed directly even if a proxy server is
 		specified.</P>
                 <P>The default value excludes all common variations of the loopback address.</P>
 	</UL>
-	<LI><P>SOCKS<BR>This is another type of proxy. It allows for lower
-	level type of tunneling since it works at the TCP level. In effect,
+	<LI><P>SOCKS<BR>This is another type of proxy. It allows for lower-level
+	type of tunneling since it works at the TCP level. In effect,
 	in the Java(tm) platform setting a SOCKS proxy server will result in
 	all TCP connections to go through that proxy, unless other proxies
 	are specified. If SOCKS is supported by a Java SE implementation, the
@@ -131,27 +131,27 @@ of proxies.</P>
 	<UL>
 		<LI><P><B>{@systemProperty socksProxyHost}</B> (default: &lt;none&gt;)<BR>
 	        The hostname, or address, of the proxy server.</P>
-		<LI><P><B>{@systemProperty socksProxyPort}</B> (default: 1080)<BR>
+		<LI><P><B>{@systemProperty socksProxyPort}</B> (default: {@code 1080})<BR>
 	        The port number of the proxy server.</P>
-                <LI><P><B>{@systemProperty socksProxyVersion}</B> (default: 5)<BR>
+                <LI><P><B>{@systemProperty socksProxyVersion}</B> (default: {@code 5})<BR>
                 The version of the SOCKS protocol supported by the server. The
-                default is <code>5</code> indicating SOCKS V5, alternatively
-                <code>4</code> can be specified for SOCKS V4. Setting the property
+                default is {@code 5} indicating SOCKS V5. Alternatively,
+                {@code 4} can be specified for SOCKS V4. Setting the property
                 to values other than these leads to unspecified behavior.</P>
 		<LI><P><B>{@systemProperty java.net.socks.username}</B> (default: &lt;none&gt;)<BR>
 	        Username to use if the SOCKSv5 server asks for authentication
-	        and no java.net.Authenticator instance was found.</P>
+	        and no {@link java.net.Authenticator java.net.Authenticator} instance was found.</P>
 		<LI><P><B>{@systemProperty java.net.socks.password}</B> (default: &lt;none&gt;)<BR>
 	        Password to use if the SOCKSv5 server asks for authentication
-	        and no java.net.Authenticator instance was found.</P>
+	        and no {@code java.net.Authenticator} instance was found.</P>
 		<P>Note that if no authentication is provided with either the above
 		properties or an Authenticator, and the proxy requires one, then
 		the <B>user.name</B> property will be used with no password.</P>
 	</UL>
-	<LI><P><B>{@systemProperty java.net.useSystemProxies}</B> (default: false)<BR>
-	On Windows systems, macOS systems and on Gnome systems it is possible to
+	<LI><P><B>{@systemProperty java.net.useSystemProxies}</B> (default: {@code false})<BR>
+	On Windows systems, macOS systems, and Gnome systems it is possible to
 	tell the java.net stack, setting this property to <B>true</B>, to use
-	the system proxy settings (both	these systems let you set proxies
+	the system proxy settings (all these systems let you set proxies
 	globally through their user interface). Note that this property is
 	checked only once at startup.</P>
 </UL>
@@ -162,29 +162,29 @@ of proxies.</P>
 	Defines the string sent in the User-Agent request header in http
 	requests. Note that the string &ldquo;Java/&lt;version&gt;&rdquo; will
 	be appended to the one provided in the property (e.g. if
-	-Dhttp.agent=&rdquo;foobar&rdquo; is used, the User-Agent header will
+	{@code -Dhttp.agent="foobar"} is used, the User-Agent header will
 	contain &ldquo;foobar Java/1.5.0&rdquo; if the version of the VM is
 	1.5.0). This property is checked only once at startup.</P>
-	<LI><P><B>{@systemProperty http.keepAlive}</B> (default: true)<BR>
+	<LI><P><B>{@systemProperty http.keepAlive}</B> (default: {@code true})<BR>
 	Indicates if persistent connections should be supported. They improve
 	performance by allowing the underlying socket connection to be reused
-	for multiple http requests. If this is set to true then persistent
+	for multiple HTTP requests. If this is set to true then persistent
 	connections will be requested with HTTP 1.1 servers.</P>
-	<LI><P><B>{@systemProperty http.maxConnections}</B> (default: 5)<BR>
+	<LI><P><B>{@systemProperty http.maxConnections}</B> (default: {@code 5})<BR>
 	If HTTP keepalive is enabled (see above) this value determines the
 	maximum number of idle connections that will be simultaneously kept
 	alive, per destination.</P>
-	<LI><P><B>{@systemProperty http.maxRedirects}</B> (default: 20)<BR>
+	<LI><P><B>{@systemProperty http.maxRedirects}</B> (default: {@code 20})<BR>
 	This integer value determines the maximum number, for a given request,
 	of HTTP redirects that will be automatically followed by the
 	protocol handler.</P>
-	<LI><P><B>{@systemProperty http.auth.digest.validateServer}</B> (default: false)</P>
-	<LI><P><B>{@systemProperty http.auth.digest.validateProxy}</B> (default: false)</P>
-	<LI><P><B>{@systemProperty http.auth.digest.cnonceRepeat}</B> (default: 5)</P>
+	<LI><P><B>{@systemProperty http.auth.digest.validateServer}</B> (default: {@code false})</P>
+	<LI><P><B>{@systemProperty http.auth.digest.validateProxy}</B> (default: {@code false})</P>
+	<LI><P><B>{@systemProperty http.auth.digest.cnonceRepeat}</B> (default: {@code 5})</P>
 	<P>These 3 properties modify the behavior of the HTTP digest
 	authentication mechanism. Digest authentication provides a limited
 	ability for the server  to authenticate itself to the client (i.e.
-	By proving it knows the user's password). However not all HTTP
+	By proving it knows the user's password). However, not all HTTP
 	servers support this capability and by default it is turned off. The
 	first two properties can be set to true to enforce this check for
 	authentication with either an origin or proxy server, respectively.</P>
@@ -196,20 +196,20 @@ of proxies.</P>
 	HTTP request.</P>
 	<LI><P><B>{@systemProperty http.auth.ntlm.domain}</B> (default: &lt;none&gt;)<BR>
 	NTLM is another authentication scheme. It uses the
-	java.net.Authenticator class to acquire usernames and passwords when
-	they are needed. However NTLM also needs the NT domain name. There are
+	{@code java.net.Authenticator} class to acquire usernames and passwords when
+	they are needed. However, NTLM also needs the NT domain name. There are
 	3 options for specifying that domain:</P>
 	<OL>
 	  <LI><P>Do not specify it. In some environments the domain is
 	      actually not required and the application does not have to specify
 	      it.</P>
 	  <LI><P>The domain name can be encoded within the username by
-	      prefixing the domain name, followed by a back-slash '\' before the
+	      prefixing the domain name, followed by a backslash '\' before the
 	      username. With this method existing applications that use the
 	      authenticator class do not need to be modified, as long as users
 	      are made aware that this notation must be used.</P>
 	  <LI><P>If a domain name is not specified as in method 2) and this
-	      property is defined, then its value will be used a the domain
+	      property is defined, then its value will be used as the domain
 	      name.</P>
 	</OL>
 </UL>
@@ -226,19 +226,19 @@ tuning on how the cache is operating.</P>
 <UL>
 	<LI><P><B>{@systemProperty networkaddress.cache.ttl}</B> (default: see below)<BR>
 	Value is an integer corresponding to the number of seconds successful
-	name lookups will be kept in the cache. A value of -1, or any  other
+	name lookups will be kept in the cache. A value of -1, or any other
 	negative value for that matter,	indicates a &ldquo;cache forever&rdquo;
 	policy, while a value of 0 (zero) means no caching. The default value
-	is -1 (forever) if a security manager is installed, and implementation
-	specific when no security manager is installed.</P>
-	<LI><P><B>{@systemProperty networkaddress.cache.negative.ttl}</B>	(default: 10)<BR>
+	is -1 (forever) if a security manager is installed, and implementation-specific
+	when no security manager is installed.</P>
+	<LI><P><B>{@systemProperty networkaddress.cache.negative.ttl}</B> (default: {@code 10})<BR>
 	Value is an integer corresponding to the number of seconds an
 	unsuccessful name lookup will be kept in the cache. A value of -1,
 	or any negative value, means &ldquo;cache forever&rdquo;, while a
 	value of 0 (zero) means no caching.</P>
 </UL>
 <P>Since these 2 properties are part of the security policy, they are
-not set by either the -D option or the System.setProperty() API,
+not set by either the -D option or the {@code System.setProperty()} API,
 instead they are set as security properties.</P>
 </BODY>
 </HTML>
