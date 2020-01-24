@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ *  Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -49,8 +49,9 @@ public final class Utils {
 
     private static Unsafe unsafe = Unsafe.getUnsafe();
 
-    // The maximum alignment supported by malloc - typically 16 on 64-bit platforms.
-    private final static long MAX_ALIGN = 16;
+    // The maximum alignment supported by malloc - typically 16 on
+    // 64-bit platforms and 8 on 32-bit platforms.
+    private final static long MAX_ALIGN = Unsafe.ADDRESS_SIZE == 4 ? 8 : 16;
 
     private static final JavaNioAccess javaNioAccess = SharedSecrets.getJavaNioAccess();
 

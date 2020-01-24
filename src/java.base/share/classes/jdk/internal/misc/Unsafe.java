@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -584,6 +584,17 @@ public final class Unsafe {
     /// wrappers for malloc, realloc, free:
 
     /**
+     * Round up allocation size to a multiple of HeapWordSize.
+     */
+    private long alignToHeapWordSize(long bytes) {
+        if (bytes >= 0) {
+            return (bytes + ADDRESS_SIZE - 1) & ~(ADDRESS_SIZE - 1);
+        } else {
+            throw invalidInput();
+        }
+    }
+
+    /**
      * Allocates a new block of native memory, of the given size in bytes.  The
      * contents of the memory are uninitialized; they will generally be
      * garbage.  The resulting native pointer will never be zero, and will be
@@ -608,6 +619,8 @@ public final class Unsafe {
      * @see #putByte(long, byte)
      */
     public long allocateMemory(long bytes) {
+        bytes = alignToHeapWordSize(bytes);
+
         allocateMemoryChecks(bytes);
 
         if (bytes == 0) {
@@ -661,6 +674,8 @@ public final class Unsafe {
      * @see #allocateMemory
      */
     public long reallocateMemory(long address, long bytes) {
+        bytes = alignToHeapWordSize(bytes);
+
         reallocateMemoryChecks(address, bytes);
 
         if (bytes == 0) {

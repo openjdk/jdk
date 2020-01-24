@@ -23,7 +23,6 @@
 
 /*
  * @test
- * @requires vm.bits != "32"
  * @run testng TestMemoryAlignment
  */
 

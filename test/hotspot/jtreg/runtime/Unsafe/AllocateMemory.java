@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,10 +59,29 @@ public class AllocateMemory {
         // we test this by limiting the malloc using -XX:MallocMaxTestWords
         try {
             address = unsafe.allocateMemory(100 * 1024 * 1024 * 8);
+            throw new RuntimeException("Did not get expected OutOfMemoryError");
         } catch (OutOfMemoryError e) {
             // Expected
-            return;
         }
-        throw new RuntimeException("Did not get expected OutOfMemoryError");
+
+        // Allocation should fail on a 32-bit system if the aligned-up
+        // size overflows a size_t
+        if (Unsafe.ADDRESS_SIZE == 4) {
+            try {
+                address = unsafe.allocateMemory((long)Integer.MAX_VALUE * 2);
+                throw new RuntimeException("Did not get expected IllegalArgumentException");
+            } catch (IllegalArgumentException e) {
+                // Expected
+            }
+        }
+
+        // Allocation should fail if the aligned-up size overflows a
+        // Java long
+        try {
+            address = unsafe.allocateMemory((long)Long.MAX_VALUE);
+            throw new RuntimeException("Did not get expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            // Expected
+        }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -360,7 +360,8 @@ UNSAFE_ENTRY(jobject, Unsafe_AllocateInstance(JNIEnv *env, jobject unsafe, jclas
 UNSAFE_ENTRY(jlong, Unsafe_AllocateMemory0(JNIEnv *env, jobject unsafe, jlong size)) {
   size_t sz = (size_t)size;
 
-  sz = align_up(sz, HeapWordSize);
+  assert(is_aligned(sz, HeapWordSize), "sz not aligned");
+
   void* x = os::malloc(sz, mtOther);
 
   return addr_to_java(x);
@@ -369,7 +370,8 @@ UNSAFE_ENTRY(jlong, Unsafe_AllocateMemory0(JNIEnv *env, jobject unsafe, jlong si
 UNSAFE_ENTRY(jlong, Unsafe_ReallocateMemory0(JNIEnv *env, jobject unsafe, jlong addr, jlong size)) {
   void* p = addr_from_java(addr);
   size_t sz = (size_t)size;
-  sz = align_up(sz, HeapWordSize);
+
+  assert(is_aligned(sz, HeapWordSize), "sz not aligned");
 
   void* x = os::realloc(p, sz, mtOther);
 
