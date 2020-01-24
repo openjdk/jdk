@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,10 +49,6 @@ public:
 
     HPALETTE                GetPalette() { return logicalPalette; }
 
-    static void             DisableCustomPalette();
-
-    static BOOL             UseCustomPalette();
-
                             AwtPalette(AwtWin32GraphicsDevice *device);
 
     static int              FetchPaletteEntries(HDC hDC, PALETTEENTRY* pPalEntries);
@@ -66,8 +62,6 @@ public:
     unsigned char           *GetSystemInverseLUT() { return systemInverseLUT; }
 
 private:
-    static BOOL             m_useCustomPalette;
-
     unsigned int            logicalEntries[256];
     unsigned int            systemEntries[256];
     PALETTEENTRY            systemEntriesWin32[256];  // cached to eliminate

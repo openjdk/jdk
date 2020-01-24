@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -405,7 +405,7 @@ jobject AwtWin32GraphicsDevice::GetColorModel(JNIEnv *env, jboolean dynamic)
                 vbits[sizeof(vbits)-1] = 0;
                 allvalid = JNI_FALSE;
             } else {
-                if (AwtPalette::UseCustomPalette() && !dynamic) {
+                if (!dynamic) {
                     // If we plan to use our custom palette (i.e., we are
                     // not running inside another app and we are not creating
                     // a dynamic colorModel object), then setup ICM with

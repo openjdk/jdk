@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +30,6 @@
 #include "awt_CustomPaletteDef.h"
 #include "Trace.h"
 
-BOOL AwtPalette::m_useCustomPalette = TRUE;
-
 #define ERROR_GRAY (-1)
 #define NON_GRAY 0
 #define LINEAR_STATIC_GRAY 1
@@ -46,8 +44,7 @@ HPALETTE AwtPalette::Select(HDC hDC)
 {
     HPALETTE prevPalette = NULL;
     if (logicalPalette) {
-        BOOL background = !(m_useCustomPalette);
-        prevPalette = ::SelectPalette(hDC, logicalPalette, background);
+        prevPalette = ::SelectPalette(hDC, logicalPalette, FALSE);
     }
     return prevPalette;
 }
@@ -60,8 +57,7 @@ HPALETTE AwtPalette::Select(HDC hDC)
 void AwtPalette::Realize(HDC hDC)
 {
     if (logicalPalette) {
-        if (!m_useCustomPalette ||
-            AwtComponent::QueryNewPaletteCalled() ||
+        if (AwtComponent::QueryNewPaletteCalled() ||
             AwtToolkit::GetInstance().HasDisplayChanged()) {
             // Fix for bug 4178909, workaround for Windows bug.  Shouldn't
             // do a RealizePalette until the first QueryNewPalette message
@@ -78,28 +74,6 @@ void AwtPalette::Realize(HDC hDC)
         }
     }
 }
-
-/**
- * Disable the use of our custom palette.  This method is called
- * during initialization if we detect that we are running inside
- * the plugin; we do not want to clobber our parent application's
- * palette with our own in that situation.
- */
-void AwtPalette::DisableCustomPalette()
-{
-    m_useCustomPalette = FALSE;
-}
-
-/**
- * Returns whether we are currently using a custom palette.  Used
- * by AwtWin32GraphicsDevice when creating the colorModel of the
- * device.
- */
-BOOL AwtPalette::UseCustomPalette()
-{
-    return m_useCustomPalette;
-}
-
 
 /**
  * Constructor.  Initialize the system and logical palettes.
@@ -153,7 +127,7 @@ int AwtPalette::FetchPaletteEntries(HDC hDC, PALETTEENTRY* pPalEntries)
         return 0;
     }
 
-    hPalOld = ::SelectPalette(hDC, hPal, 1);
+    hPalOld = ::SelectPalette(hDC, hPal, TRUE);
     if (hPalOld == 0) {
         ::DeleteObject(hPal);
         return 0;
@@ -168,7 +142,7 @@ int AwtPalette::FetchPaletteEntries(HDC hDC, PALETTEENTRY* pPalEntries)
         pPalEntries[iEntry].peBlue = GetBValue(rgb);
     }
 
-    ::SelectPalette(hDC, hPalOld, 0 );
+    ::SelectPalette(hDC, hPalOld, FALSE);
     ::DeleteObject(hPal);
     ::RealizePalette(hDC);
 
