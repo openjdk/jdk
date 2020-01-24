@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1092,12 +1092,6 @@ static void pd_fill_to_aligned_words(HeapWord* tohw, size_t count, juint value) 
 // Delegate to pd_zero_to_bytes. It also works HeapWord-atomic.
 // Distinguish between simple and large zero_to_words.
 static void pd_zero_to_words(HeapWord* tohw, size_t count) {
-  pd_zero_to_bytes(tohw, count*HeapWordSize);
-}
-
-// Delegate to pd_zero_to_bytes. It also works HeapWord-atomic.
-static void pd_zero_to_words_large(HeapWord* tohw, size_t count) {
-  // JVM2008: generally frequent, some tests show very frequent calls.
   pd_zero_to_bytes(tohw, count*HeapWordSize);
 }
 
