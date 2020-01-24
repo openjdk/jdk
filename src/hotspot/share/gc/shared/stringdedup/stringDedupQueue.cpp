@@ -32,7 +32,7 @@ StringDedupQueue* StringDedupQueue::_queue = NULL;
 volatile size_t   StringDedupQueue::_claimed_index = 0;
 
 size_t StringDedupQueue::claim() {
-  return Atomic::add(&_claimed_index, size_t(1)) - 1;
+  return Atomic::fetch_and_add(&_claimed_index, 1u);
 }
 
 void StringDedupQueue::unlink_or_oops_do(StringDedupUnlinkOrOopsDoClosure* cl) {

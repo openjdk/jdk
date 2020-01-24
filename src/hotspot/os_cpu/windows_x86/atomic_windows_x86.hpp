@@ -54,11 +54,14 @@ template<> inline void ScopedFence<RELEASE_X_FENCE>::postfix() { OrderAccess::fe
 #pragma warning(disable: 4035) // Disables warnings reporting missing return statement
 
 template<size_t byte_size>
-struct Atomic::PlatformAdd
-  : Atomic::AddAndFetch<Atomic::PlatformAdd<byte_size> >
-{
+struct Atomic::PlatformAdd {
   template<typename D, typename I>
   D add_and_fetch(D volatile* dest, I add_value, atomic_memory_order order) const;
+
+  template<typename D, typename I>
+  D fetch_and_add(D volatile* dest, I add_value, atomic_memory_order order) const {
+    return add_and_fetch(dest, add_value, order) - add_value;
+  }
 };
 
 #ifdef AMD64

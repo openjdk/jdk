@@ -33,14 +33,17 @@
 // See https://patchwork.kernel.org/patch/3575821/
 
 template<size_t byte_size>
-struct Atomic::PlatformAdd
-  : Atomic::AddAndFetch<Atomic::PlatformAdd<byte_size> >
-{
+struct Atomic::PlatformAdd {
   template<typename D, typename I>
   D add_and_fetch(D volatile* dest, I add_value, atomic_memory_order order) const {
     D res = __atomic_add_fetch(dest, add_value, __ATOMIC_RELEASE);
     FULL_MEM_BARRIER;
     return res;
+  }
+
+  template<typename D, typename I>
+  D fetch_and_add(D volatile* dest, I add_value, atomic_memory_order order) const {
+    return add_and_fetch(dest, add_value, order) - add_value;
   }
 };
 

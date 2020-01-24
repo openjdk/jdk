@@ -2452,7 +2452,7 @@ public:
   }
 
   bool try_claim(PSParallelCompact::UpdateDensePrefixTask& reference) {
-    uint claimed = Atomic::add(&_counter, 1u) - 1; // -1 is so that we start with zero
+    uint claimed = Atomic::fetch_and_add(&_counter, 1u);
     if (claimed < _insert_index) {
       reference = _backing_array[claimed];
       return true;

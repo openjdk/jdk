@@ -180,7 +180,7 @@ private:
 
       bool marked_as_dirty = Atomic::cmpxchg(&_contains[region], false, true) == false;
       if (marked_as_dirty) {
-        uint allocated = Atomic::add(&_cur_idx, 1u) - 1;
+        uint allocated = Atomic::fetch_and_add(&_cur_idx, 1u);
         _buffer[allocated] = region;
       }
     }
@@ -232,7 +232,7 @@ private:
 
     void work(uint worker_id) {
       while (_cur_dirty_regions < _regions->size()) {
-        uint next = Atomic::add(&_cur_dirty_regions, _chunk_length) - _chunk_length;
+        uint next = Atomic::fetch_and_add(&_cur_dirty_regions, _chunk_length);
         uint max = MIN2(next + _chunk_length, _regions->size());
 
         for (uint i = next; i < max; i++) {
@@ -429,7 +429,7 @@ public:
 
   uint claim_cards_to_scan(uint region, uint increment) {
     assert(region < _max_regions, "Tried to access invalid region %u", region);
-    return Atomic::add(&_card_table_scan_state[region], increment) - increment;
+    return Atomic::fetch_and_add(&_card_table_scan_state[region], increment);
   }
 
   void add_dirty_region(uint const region) {

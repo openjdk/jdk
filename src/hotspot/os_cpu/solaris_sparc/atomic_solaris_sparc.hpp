@@ -31,7 +31,7 @@
 template<size_t byte_size>
 struct Atomic::PlatformAdd {
   template<typename D, typename I>
-  inline D operator()(D volatile* dest, I add_value, atomic_memory_order order) const {
+  inline D add_and_fetch(D volatile* dest, I add_value, atomic_memory_order order) const {
     D old_value = *dest;
     while (true) {
       D new_value = old_value + add_value;
@@ -40,6 +40,11 @@ struct Atomic::PlatformAdd {
       old_value = result;
     }
     return old_value + add_value;
+  }
+
+  template<typename D, typename I>
+  inline D fetch_and_add(D volatile* dest, I add_value, atomic_memory_order order) const {
+    return add_and_fetch(dest, add_value, order) - add_value;
   }
 };
 

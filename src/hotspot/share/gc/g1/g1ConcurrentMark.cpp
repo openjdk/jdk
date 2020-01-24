@@ -209,7 +209,7 @@ G1CMMarkStack::TaskQueueEntryChunk* G1CMMarkStack::allocate_new_chunk() {
     return NULL;
   }
 
-  size_t cur_idx = Atomic::add(&_hwm, 1u) - 1;
+  size_t cur_idx = Atomic::fetch_and_add(&_hwm, 1u);
   if (cur_idx >= _chunk_capacity) {
     return NULL;
   }
@@ -282,7 +282,7 @@ void G1CMRootMemRegions::reset() {
 
 void G1CMRootMemRegions::add(HeapWord* start, HeapWord* end) {
   assert_at_safepoint();
-  size_t idx = Atomic::add(&_num_root_regions, (size_t)1) - 1;
+  size_t idx = Atomic::fetch_and_add(&_num_root_regions, 1u);
   assert(idx < _max_regions, "Trying to add more root MemRegions than there is space " SIZE_FORMAT, _max_regions);
   assert(start != NULL && end != NULL && start <= end, "Start (" PTR_FORMAT ") should be less or equal to "
          "end (" PTR_FORMAT ")", p2i(start), p2i(end));
@@ -310,7 +310,7 @@ const MemRegion* G1CMRootMemRegions::claim_next() {
     return NULL;
   }
 
-  size_t claimed_index = Atomic::add(&_claimed_root_regions, (size_t)1) - 1;
+  size_t claimed_index = Atomic::fetch_and_add(&_claimed_root_regions, 1u);
   if (claimed_index < _num_root_regions) {
     return &_root_regions[claimed_index];
   }

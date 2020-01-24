@@ -70,7 +70,7 @@ CardTable::CardValue* G1HotCardCache::insert(CardValue* card_ptr) {
     return card_ptr;
   }
   // Otherwise, the card is hot.
-  size_t index = Atomic::add(&_hot_cache_idx, 1u) - 1;
+  size_t index = Atomic::fetch_and_add(&_hot_cache_idx, 1u);
   if (index == _hot_cache_size) {
     // Can use relaxed store because all racing threads are writing the same
     // value and there aren't any concurrent readers.
