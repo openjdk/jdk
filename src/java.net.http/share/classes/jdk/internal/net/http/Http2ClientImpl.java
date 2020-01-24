@@ -25,6 +25,7 @@
 
 package jdk.internal.net.http;
 
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.ConnectException;
@@ -186,14 +187,18 @@ class Http2ClientImpl {
         }
     }
 
+    private EOFException STOPPED;
     void stop() {
         if (debug.on()) debug.log("stopping");
+        STOPPED = new EOFException("HTTP/2 client stopped");
+        STOPPED.setStackTrace(new StackTraceElement[0]);
         connections.values().forEach(this::close);
         connections.clear();
     }
 
     private void close(Http2Connection h2c) {
         try { h2c.close(); } catch (Throwable t) {}
+        try { h2c.shutdown(STOPPED); } catch (Throwable t) {}
     }
 
     HttpClientImpl client() {
