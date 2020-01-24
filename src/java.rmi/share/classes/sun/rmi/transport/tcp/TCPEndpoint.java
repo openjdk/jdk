@@ -554,7 +554,7 @@ public class TCPEndpoint implements Endpoint {
             host = in.readUTF();
             port = in.readInt();
             csf = (RMIClientSocketFactory) in.readObject();
-            if (Proxy.isProxyClass(csf.getClass())) {
+            if (csf != null && Proxy.isProxyClass(csf.getClass())) {
                 throw new IOException("Invalid SocketFactory");
             }
           break;
