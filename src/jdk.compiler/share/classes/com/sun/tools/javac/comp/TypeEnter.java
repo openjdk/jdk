@@ -918,7 +918,7 @@ public class TypeEnter implements Completer {
                 List<JCVariableDecl> fields = TreeInfo.recordFields(tree);
                 memberEnter.memberEnter(fields, env);
                 for (JCVariableDecl field : fields) {
-                    sym.getRecordComponent(field.sym, true);
+                    sym.getRecordComponent(field, true);
                 }
 
                 enterThisAndSuper(sym, env);
@@ -1034,15 +1034,16 @@ public class TypeEnter implements Completer {
 
         private void addAccessor(JCVariableDecl tree, Env<AttrContext> env) {
             MethodSymbol implSym = lookupMethod(env.enclClass.sym, tree.sym.name, List.nil());
-            RecordComponent rec = ((ClassSymbol) tree.sym.owner).getRecordComponent(tree.sym, false);
+            RecordComponent rec = ((ClassSymbol) tree.sym.owner).getRecordComponent(tree.sym);
             if (implSym == null || (implSym.flags_field & GENERATED_MEMBER) != 0) {
                 /* here we are pushing the annotations present in the corresponding field down to the accessor
                  * it could be that some of those annotations are not applicable to the accessor, they will be striped
                  * away later at Check::validateAnnotation
                  */
+                List<JCAnnotation> originalAnnos = rec.getOriginalAnnos();
                 JCMethodDecl getter = make.at(tree.pos).
                         MethodDef(
-                                make.Modifiers(Flags.PUBLIC | Flags.GENERATED_MEMBER, tree.mods.annotations),
+                                make.Modifiers(Flags.PUBLIC | Flags.GENERATED_MEMBER, originalAnnos),
                           tree.sym.name,
                           /* we need to special case for the case when the user declared the type as an ident
                            * if we don't do that then we can have issues if type annotations are applied to the
@@ -1349,7 +1350,8 @@ public class TypeEnter implements Completer {
                 /* at this point we are passing all the annotations in the field to the corresponding
                  * parameter in the constructor.
                  */
-                arg.mods.annotations = tmpRecordFieldDecls.head.mods.annotations;
+                RecordComponent rc = ((ClassSymbol) owner).getRecordComponent(arg.sym);
+                arg.mods.annotations = rc.getOriginalAnnos();
                 arg.vartype = tmpRecordFieldDecls.head.vartype;
                 tmpRecordFieldDecls = tmpRecordFieldDecls.tail;
             }
