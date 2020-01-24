@@ -106,7 +106,7 @@ public:
   // as they have either been dead or evacuated (which are unreferenced now, i.e.
   // dead too) already.
   void do_object(oop obj) {
-    HeapWord* obj_addr = (HeapWord*) obj;
+    HeapWord* obj_addr = cast_from_oop<HeapWord*>(obj);
     assert(_hr->is_in(obj_addr), "sanity");
 
     if (obj->is_forwarded() && obj->forwardee() == obj) {

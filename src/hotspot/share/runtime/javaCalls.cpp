@@ -460,7 +460,7 @@ void JavaCalls::call_helper(JavaValue* result, const methodHandle& method, JavaC
 
   // Restore possible oop return
   if (oop_result_flag) {
-    result->set_jobject((jobject)thread->vm_result());
+    result->set_jobject(cast_from_oop<jobject>(thread->vm_result()));
     thread->set_vm_result(NULL);
   }
 }

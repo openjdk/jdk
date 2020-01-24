@@ -1559,9 +1559,9 @@ address FileMapInfo::decode_start_address(FileMapRegion* spc, bool with_current_
   assert(offset == (size_t)(uint32_t)offset, "must be 32-bit only");
   uint n = (uint)offset;
   if (with_current_oop_encoding_mode) {
-    return (address)CompressedOops::decode_not_null(n);
+    return cast_from_oop<address>(CompressedOops::decode_not_null(n));
   } else {
-    return (address)HeapShared::decode_from_archive(n);
+    return cast_from_oop<address>(HeapShared::decode_from_archive(n));
   }
 }
 

@@ -72,9 +72,7 @@ inline bool G1ConcurrentMark::mark_in_next_bitmap(uint const worker_id, HeapRegi
   // Can't assert that this is a valid object at this point, since it might be in the process of being copied by another thread.
   assert(!hr->is_continues_humongous(), "Should not try to mark object " PTR_FORMAT " in Humongous continues region %u above nTAMS " PTR_FORMAT, p2i(obj), hr->hrm_index(), p2i(hr->next_top_at_mark_start()));
 
-  HeapWord* const obj_addr = (HeapWord*)obj;
-
-  bool success = _next_mark_bitmap->par_mark(obj_addr);
+  bool success = _next_mark_bitmap->par_mark(obj);
   if (success) {
     add_to_liveness(worker_id, obj, obj->size());
   }
@@ -112,7 +110,7 @@ inline void G1CMTask::push(G1TaskQueueEntry task_entry) {
   assert(task_entry.is_array_slice() || !_g1h->is_on_master_free_list(
               _g1h->heap_region_containing(task_entry.obj())), "invariant");
   assert(task_entry.is_array_slice() || !_g1h->is_obj_ill(task_entry.obj()), "invariant");  // FIXME!!!
-  assert(task_entry.is_array_slice() || _next_mark_bitmap->is_marked((HeapWord*)task_entry.obj()), "invariant");
+  assert(task_entry.is_array_slice() || _next_mark_bitmap->is_marked(cast_from_oop<HeapWord*>(task_entry.obj())), "invariant");
 
   if (!_task_queue->push(task_entry)) {
     // The local task queue looks full. We need to push some entries
@@ -135,7 +133,7 @@ inline bool G1CMTask::is_below_finger(oop obj, HeapWord* global_finger) const {
   // of checking both vs only checking the global finger is that the
   // local check will be more accurate and so result in fewer pushes,
   // but may also be a little slower.
-  HeapWord* objAddr = (HeapWord*)obj;
+  HeapWord* objAddr = cast_from_oop<HeapWord*>(obj);
   if (_finger != NULL) {
     // We have a current region.
 
@@ -160,7 +158,7 @@ inline bool G1CMTask::is_below_finger(oop obj, HeapWord* global_finger) const {
 template<bool scan>
 inline void G1CMTask::process_grey_task_entry(G1TaskQueueEntry task_entry) {
   assert(scan || (task_entry.is_oop() && task_entry.obj()->is_typeArray()), "Skipping scan of grey non-typeArray");
-  assert(task_entry.is_array_slice() || _next_mark_bitmap->is_marked((HeapWord*)task_entry.obj()),
+  assert(task_entry.is_array_slice() || _next_mark_bitmap->is_marked(cast_from_oop<HeapWord*>(task_entry.obj())),
          "Any stolen object should be a slice or marked");
 
   if (scan) {
@@ -203,7 +201,7 @@ inline void G1ConcurrentMark::update_top_at_rebuild_start(HeapRegion* r) {
 }
 
 inline void G1CMTask::update_liveness(oop const obj, const size_t obj_size) {
-  _mark_stats_cache.add_live_words(_g1h->addr_to_region((HeapWord*)obj), obj_size);
+  _mark_stats_cache.add_live_words(_g1h->addr_to_region(cast_from_oop<HeapWord*>(obj)), obj_size);
 }
 
 inline void G1ConcurrentMark::add_to_liveness(uint worker_id, oop const obj, size_t size) {
@@ -270,18 +268,18 @@ inline bool G1CMTask::deal_with_reference(T* p) {
 }
 
 inline void G1ConcurrentMark::mark_in_prev_bitmap(oop p) {
-  assert(!_prev_mark_bitmap->is_marked((HeapWord*) p), "sanity");
- _prev_mark_bitmap->mark((HeapWord*) p);
+  assert(!_prev_mark_bitmap->is_marked(p), "sanity");
+ _prev_mark_bitmap->mark(p);
 }
 
 bool G1ConcurrentMark::is_marked_in_prev_bitmap(oop p) const {
   assert(p != NULL && oopDesc::is_oop(p), "expected an oop");
-  return _prev_mark_bitmap->is_marked((HeapWord*)p);
+  return _prev_mark_bitmap->is_marked(cast_from_oop<HeapWord*>(p));
 }
 
 bool G1ConcurrentMark::is_marked_in_next_bitmap(oop p) const {
   assert(p != NULL && oopDesc::is_oop(p), "expected an oop");
-  return _next_mark_bitmap->is_marked((HeapWord*)p);
+  return _next_mark_bitmap->is_marked(cast_from_oop<HeapWord*>(p));
 }
 
 inline bool G1ConcurrentMark::do_yield_check() {

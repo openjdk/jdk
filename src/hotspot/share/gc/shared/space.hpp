@@ -91,7 +91,7 @@ class Space: public CHeapObj<mtGC> {
   // Returns true if this object has been allocated since a
   // generation's "save_marks" call.
   virtual bool obj_allocated_since_save_marks(const oop obj) const {
-    return (HeapWord*)obj >= saved_mark_word();
+    return cast_from_oop<HeapWord*>(obj) >= saved_mark_word();
   }
 
   // Returns a subregion of the space containing only the allocated objects in

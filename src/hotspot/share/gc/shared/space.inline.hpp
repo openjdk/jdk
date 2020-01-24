@@ -332,7 +332,7 @@ inline void CompactibleSpace::scan_and_compact(SpaceType* space) {
 
       // size and destination
       size_t size = space->obj_size(cur_obj);
-      HeapWord* compaction_top = (HeapWord*)oop(cur_obj)->forwardee();
+      HeapWord* compaction_top = cast_from_oop<HeapWord*>(oop(cur_obj)->forwardee());
 
       // prefetch beyond compaction_top
       Prefetch::write(compaction_top, copy_interval);

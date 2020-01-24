@@ -206,7 +206,7 @@ int __write_sample_info__(JfrCheckpointWriter* writer, const void* si) {
   oop object = oosi->_data._object;
   assert(object != NULL, "invariant");
   writer->write(oosi->_id);
-  writer->write((u8)(const HeapWord*)object);
+  writer->write(cast_from_oop<u8>(object));
   writer->write(const_cast<const Klass*>(object->klass()));
   ObjectSampleDescription od(object);
   writer->write(od.description());

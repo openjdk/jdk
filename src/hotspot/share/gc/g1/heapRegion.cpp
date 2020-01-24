@@ -357,7 +357,7 @@ class VerifyStrongCodeRootOopClosure: public OopClosure {
       // current region. We only look at those which are.
       if (_hr->is_in(obj)) {
         // Object is in the region. Check that its less than top
-        if (_hr->top() <= (HeapWord*)obj) {
+        if (_hr->top() <= cast_from_oop<HeapWord*>(obj)) {
           // Object is above top
           log_error(gc, verify)("Object " PTR_FORMAT " in region " HR_FORMAT " is above top ",
                                 p2i(obj), HR_FORMAT_PARAMS(_hr));
@@ -566,7 +566,7 @@ public:
                     p2i(obj), HR_FORMAT_PARAMS(to), to->rem_set()->get_state_str());
         } else {
           HeapRegion* from = _g1h->heap_region_containing((HeapWord*)p);
-          HeapRegion* to = _g1h->heap_region_containing((HeapWord*)obj);
+          HeapRegion* to = _g1h->heap_region_containing(obj);
           log.error("Field " PTR_FORMAT " of live obj " PTR_FORMAT " in region " HR_FORMAT,
                     p2i(p), p2i(_containing_obj), HR_FORMAT_PARAMS(from));
           LogStream ls(log.error());
@@ -737,7 +737,7 @@ void HeapRegion::verify(VerifyOption vo,
 
   if (is_region_humongous) {
     oop obj = oop(this->humongous_start_region()->bottom());
-    if ((HeapWord*)obj > bottom() || (HeapWord*)obj + obj->size() < bottom()) {
+    if (cast_from_oop<HeapWord*>(obj) > bottom() || cast_from_oop<HeapWord*>(obj) + obj->size() < bottom()) {
       log_error(gc, verify)("this humongous region is not part of its' humongous object " PTR_FORMAT, p2i(obj));
       *failures = true;
       return;

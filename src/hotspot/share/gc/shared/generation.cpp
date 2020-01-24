@@ -169,7 +169,7 @@ oop Generation::promote(oop obj, size_t obj_size) {
 
   HeapWord* result = allocate(obj_size, false);
   if (result != NULL) {
-    Copy::aligned_disjoint_words((HeapWord*)obj, result, obj_size);
+    Copy::aligned_disjoint_words(cast_from_oop<HeapWord*>(obj), result, obj_size);
     return oop(result);
   } else {
     GenCollectedHeap* gch = GenCollectedHeap::heap();

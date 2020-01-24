@@ -94,7 +94,7 @@ void ShenandoahTraversalUpdateRefsClosure::do_oop_work(T* p) {
   T o = RawAccess<>::oop_load(p);
   if (!CompressedOops::is_null(o)) {
     oop obj = CompressedOops::decode_not_null(o);
-    if (_heap->in_collection_set(obj) || _traversal_set->is_in((HeapWord*)obj)) {
+    if (_heap->in_collection_set(obj) || _traversal_set->is_in(cast_from_oop<HeapWord*>(obj))) {
       obj = ShenandoahBarrierSet::resolve_forwarded_not_null(obj);
       RawAccess<IS_NOT_NULL>::oop_store(p, obj);
     } else {

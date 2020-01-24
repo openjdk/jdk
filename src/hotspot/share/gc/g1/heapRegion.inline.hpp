@@ -116,7 +116,7 @@ inline HeapWord* HeapRegion::block_start_const(const void* p) const {
 }
 
 inline bool HeapRegion::is_obj_dead_with_size(const oop obj, const G1CMBitMap* const prev_bitmap, size_t* size) const {
-  HeapWord* addr = (HeapWord*) obj;
+  HeapWord* addr = cast_from_oop<HeapWord*>(obj);
 
   assert(addr < top(), "must be");
   assert(!is_closed_archive(),
@@ -165,7 +165,7 @@ inline size_t HeapRegion::block_size_using_bitmap(const HeapWord* addr, const G1
 inline bool HeapRegion::is_obj_dead(const oop obj, const G1CMBitMap* const prev_bitmap) const {
   assert(is_in_reserved(obj), "Object " PTR_FORMAT " must be in region", p2i(obj));
   return !obj_allocated_since_prev_marking(obj) &&
-         !prev_bitmap->is_marked((HeapWord*)obj) &&
+         !prev_bitmap->is_marked(obj) &&
          !is_open_archive();
 }
 
@@ -299,7 +299,7 @@ HeapWord* HeapRegion::do_oops_on_memregion_in_humongous(MemRegion mr,
     // We have scanned to the end of the object, but since there can be no objects
     // after this humongous object in the region, we can return the end of the
     // region if it is greater.
-    return MAX2((HeapWord*)obj + size, mr.end());
+    return MAX2(cast_from_oop<HeapWord*>(obj) + size, mr.end());
   }
 }
 
@@ -358,7 +358,7 @@ HeapWord* HeapRegion::oops_on_memregion_seq_iterate_careful(MemRegion mr,
       // start, in which case we need to iterate over them in full.
       // objArrays are precisely marked, but can still be iterated
       // over in full if completely covered.
-      if (!obj->is_objArray() || (((HeapWord*)obj) >= start && cur <= end)) {
+      if (!obj->is_objArray() || (cast_from_oop<HeapWord*>(obj) >= start && cur <= end)) {
         obj->oop_iterate(cl);
       } else {
         obj->oop_iterate(cl, mr);

@@ -97,7 +97,7 @@ void compiledVFrame::update_stack(BasicType type, int index, jvalue value) {
 void compiledVFrame::update_monitor(int index, MonitorInfo* val) {
   assert(index >= 0, "out of bounds");
   jvalue value;
-  value.l = (jobject) val->owner();
+  value.l = cast_from_oop<jobject>(val->owner());
   update_deferred_value(T_OBJECT, index + method()->max_locals() + method()->max_stack(), value);
 }
 

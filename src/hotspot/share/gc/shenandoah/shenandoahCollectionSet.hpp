@@ -80,7 +80,7 @@ public:
 
   inline bool is_in(ShenandoahHeapRegion* r) const;
   inline bool is_in(size_t region_number)    const;
-  inline bool is_in(HeapWord* p)             const;
+  inline bool is_in(oop obj)                 const;
 
   void print_on(outputStream* out) const;
 

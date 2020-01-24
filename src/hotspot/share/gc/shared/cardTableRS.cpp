@@ -309,7 +309,7 @@ protected:
            "[_begin, _end) = [" PTR_FORMAT "," PTR_FORMAT ")",
            p2i(jp), p2i(_begin), p2i(_end));
     oop obj = RawAccess<>::oop_load(p);
-    guarantee(obj == NULL || (HeapWord*)obj >= _boundary,
+    guarantee(obj == NULL || cast_from_oop<HeapWord*>(obj) >= _boundary,
               "pointer " PTR_FORMAT " at " PTR_FORMAT " on "
               "clean card crosses boundary" PTR_FORMAT,
               p2i(obj), p2i(jp), p2i(_boundary));

@@ -33,16 +33,15 @@ inline MarkBitMap* ShenandoahMarkingContext::mark_bit_map() {
 
 inline bool ShenandoahMarkingContext::mark(oop obj) {
   shenandoah_assert_not_forwarded(NULL, obj);
-  HeapWord* addr = (HeapWord*) obj;
-  return (! allocated_after_mark_start(addr)) && _mark_bit_map.par_mark(addr);
+  return (! allocated_after_mark_start(obj)) && _mark_bit_map.par_mark(obj);
 }
 
 inline bool ShenandoahMarkingContext::is_marked(oop obj) const {
-  HeapWord* addr = (HeapWord*) obj;
-  return allocated_after_mark_start(addr) || _mark_bit_map.is_marked(addr);
+  return allocated_after_mark_start(obj) || _mark_bit_map.is_marked(obj);
 }
 
-inline bool ShenandoahMarkingContext::allocated_after_mark_start(HeapWord* addr) const {
+inline bool ShenandoahMarkingContext::allocated_after_mark_start(oop obj) const {
+  HeapWord* addr = cast_from_oop<HeapWord*>(obj);
   uintx index = ((uintx) addr) >> ShenandoahHeapRegion::region_size_bytes_shift();
   HeapWord* top_at_mark_start = _top_at_mark_starts[index];
   bool alloc_after_mark_start = addr >= top_at_mark_start;

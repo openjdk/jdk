@@ -2906,7 +2906,7 @@ JVM_ENTRY(void, JVM_StopThread(JNIEnv* env, jobject jthread, jobject throwable))
   bool is_alive = tlh.cv_internal_thread_to_JavaThread(jthread, &receiver, &java_thread);
   Events::log_exception(thread,
                         "JVM_StopThread thread JavaThread " INTPTR_FORMAT " as oop " INTPTR_FORMAT " [exception " INTPTR_FORMAT "]",
-                        p2i(receiver), p2i((address)java_thread), p2i(throwable));
+                        p2i(receiver), p2i(java_thread), p2i(throwable));
 
   if (is_alive) {
     // jthread refers to a live JavaThread.

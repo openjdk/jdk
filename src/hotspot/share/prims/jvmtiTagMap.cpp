@@ -1182,7 +1182,7 @@ static jint invoke_primitive_field_callback_for_static_fields
 
     // get offset and field value
     int offset = field->field_offset();
-    address addr = (address)klass->java_mirror() + offset;
+    address addr = cast_from_oop<address>(klass->java_mirror()) + offset;
     jvalue value;
     copy_to_jvalue(&value, addr, value_type);
 
@@ -1235,7 +1235,7 @@ static jint invoke_primitive_field_callback_for_instance_fields(
 
     // get offset and field value
     int offset = field->field_offset();
-    address addr = (address)obj + offset;
+    address addr = cast_from_oop<address>(obj) + offset;
     jvalue value;
     copy_to_jvalue(&value, addr, value_type);
 
@@ -2808,7 +2808,7 @@ inline bool VM_HeapWalkOperation::iterate_over_type_array(oop o) {
 // verify that a static oop field is in range
 static inline bool verify_static_oop(InstanceKlass* ik,
                                      oop mirror, int offset) {
-  address obj_p = (address)mirror + offset;
+  address obj_p = cast_from_oop<address>(mirror) + offset;
   address start = (address)InstanceMirrorKlass::start_of_static_fields(mirror);
   address end = start + (java_lang_Class::static_oop_field_count(mirror) * heapOopSize);
   assert(end >= start, "sanity check");
@@ -2936,7 +2936,7 @@ inline bool VM_HeapWalkOperation::iterate_over_class(oop java_class) {
         }
       } else {
          if (is_reporting_primitive_fields()) {
-           address addr = (address)mirror + field->field_offset();
+           address addr = cast_from_oop<address>(mirror) + field->field_offset();
            int slot = field->field_index();
            if (!CallbackInvoker::report_primitive_static_field(mirror, slot, addr, type)) {
              delete field_map;
@@ -2981,7 +2981,7 @@ inline bool VM_HeapWalkOperation::iterate_over_object(oop o) {
     } else {
       if (is_reporting_primitive_fields()) {
         // primitive instance field
-        address addr = (address)o + field->field_offset();
+        address addr = cast_from_oop<address>(o) + field->field_offset();
         int slot = field->field_index();
         if (!CallbackInvoker::report_primitive_instance_field(o, slot, addr, type)) {
           return false;

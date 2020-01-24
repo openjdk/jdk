@@ -351,14 +351,6 @@ class AddressLiteral {
     : _address((address) addr),
       _rspec(rspec_from_rtype(rtype, (address) addr)) {}
 
-  AddressLiteral(oop addr, relocInfo::relocType rtype = relocInfo::none)
-    : _address((address) addr),
-      _rspec(rspec_from_rtype(rtype, (address) addr)) {}
-
-  AddressLiteral(oop* addr, relocInfo::relocType rtype = relocInfo::none)
-    : _address((address) addr),
-      _rspec(rspec_from_rtype(rtype, (address) addr)) {}
-
   AddressLiteral(float* addr, relocInfo::relocType rtype = relocInfo::none)
     : _address((address) addr),
       _rspec(rspec_from_rtype(rtype, (address) addr)) {}
@@ -390,7 +382,6 @@ class ExternalAddress: public AddressLiteral {
 
  public:
   ExternalAddress(address target) : AddressLiteral(target, reloc_for_target(          target)) {}
-  ExternalAddress(oop*    target) : AddressLiteral(target, reloc_for_target((address) target)) {}
 };
 
 // Argument is an abstraction used to represent an outgoing actual

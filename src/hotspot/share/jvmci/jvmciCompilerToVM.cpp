@@ -431,7 +431,7 @@ C2V_VMENTRY_NULL(jobject, getResolvedJavaType0, (JNIEnv* env, jobject, jobject b
       } else if (JVMCIENV->isa_HotSpotObjectConstantImpl(base_object)) {
         Handle base_oop = JVMCIENV->asConstant(base_object, JVMCI_CHECK_NULL);
         if (base_oop->is_a(SystemDictionary::Class_klass())) {
-          base_address = (jlong) (address) base_oop();
+          base_address = cast_from_oop<jlong>(base_oop());
         }
       }
       if (base_address == 0) {
@@ -1534,7 +1534,7 @@ C2V_VMENTRY(void, materializeVirtualObjects, (JNIEnv* env, jobject, jobject _hs_
         StackValue* var = locals->at(i2);
         if (var->type() == T_OBJECT && scopeLocals->at(i2)->is_object()) {
           jvalue val;
-          val.l = (jobject) locals->at(i2)->get_obj()();
+          val.l = cast_from_oop<jobject>(locals->at(i2)->get_obj()());
           cvf->update_local(T_OBJECT, i2, val);
         }
       }
@@ -1547,7 +1547,7 @@ C2V_VMENTRY(void, materializeVirtualObjects, (JNIEnv* env, jobject, jobject _hs_
         StackValue* var = expressions->at(i2);
         if (var->type() == T_OBJECT && scopeExpressions->at(i2)->is_object()) {
           jvalue val;
-          val.l = (jobject) expressions->at(i2)->get_obj()();
+          val.l = cast_from_oop<jobject>(expressions->at(i2)->get_obj()());
           cvf->update_stack(T_OBJECT, i2, val);
         }
       }

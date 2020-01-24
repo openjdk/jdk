@@ -3383,7 +3383,7 @@ MoveAndUpdateClosure::do_addr(HeapWord* addr, size_t words) {
   assert(oopDesc::is_oop_or_null(moved_oop), "Expected an oop or NULL at " PTR_FORMAT, p2i(moved_oop));
 
   update_state(words);
-  assert(copy_destination() == (HeapWord*)moved_oop + moved_oop->size(), "sanity");
+  assert(copy_destination() == cast_from_oop<HeapWord*>(moved_oop) + moved_oop->size(), "sanity");
   return is_full() ? ParMarkBitMap::full : ParMarkBitMap::incomplete;
 }
 

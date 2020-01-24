@@ -289,34 +289,6 @@ class AbstractInterpreter: AllStatic {
       Bytes::put_native_u8((address)slot_addr, value);
     }
   }
-  static void get_jvalue_in_slot(intptr_t* slot_addr, BasicType type, jvalue* value) {
-    switch (type) {
-    case T_BOOLEAN: value->z = *int_addr_in_slot(slot_addr);            break;
-    case T_CHAR:    value->c = *int_addr_in_slot(slot_addr);            break;
-    case T_BYTE:    value->b = *int_addr_in_slot(slot_addr);            break;
-    case T_SHORT:   value->s = *int_addr_in_slot(slot_addr);            break;
-    case T_INT:     value->i = *int_addr_in_slot(slot_addr);            break;
-    case T_LONG:    value->j = long_in_slot(slot_addr);                 break;
-    case T_FLOAT:   value->f = *(jfloat*)int_addr_in_slot(slot_addr);   break;
-    case T_DOUBLE:  value->d = jdouble_cast(long_in_slot(slot_addr));   break;
-    case T_OBJECT:  value->l = (jobject)*oop_addr_in_slot(slot_addr);   break;
-    default:        ShouldNotReachHere();
-    }
-  }
-  static void set_jvalue_in_slot(intptr_t* slot_addr, BasicType type, jvalue* value) {
-    switch (type) {
-    case T_BOOLEAN: *int_addr_in_slot(slot_addr) = (value->z != 0);     break;
-    case T_CHAR:    *int_addr_in_slot(slot_addr) = value->c;            break;
-    case T_BYTE:    *int_addr_in_slot(slot_addr) = value->b;            break;
-    case T_SHORT:   *int_addr_in_slot(slot_addr) = value->s;            break;
-    case T_INT:     *int_addr_in_slot(slot_addr) = value->i;            break;
-    case T_LONG:    set_long_in_slot(slot_addr, value->j);              break;
-    case T_FLOAT:   *(jfloat*)int_addr_in_slot(slot_addr) = value->f;   break;
-    case T_DOUBLE:  set_long_in_slot(slot_addr, jlong_cast(value->d));  break;
-    case T_OBJECT:  *oop_addr_in_slot(slot_addr) = (oop) value->l;      break;
-    default:        ShouldNotReachHere();
-    }
-  }
 
   static void initialize_method_handle_entries();
 };

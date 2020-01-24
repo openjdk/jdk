@@ -315,7 +315,7 @@ bool ciInstanceKlass::is_in_package_impl(const char* packagename, int len) {
 // Implementation of the print method.
 void ciInstanceKlass::print_impl(outputStream* st) {
   ciKlass::print_impl(st);
-  GUARDED_VM_ENTRY(st->print(" loader=" INTPTR_FORMAT, p2i((address)loader()));)
+  GUARDED_VM_ENTRY(st->print(" loader=" INTPTR_FORMAT, p2i(loader()));)
   if (is_loaded()) {
     st->print(" loaded=true initialized=%s finalized=%s subklass=%s size=%d flags=",
               bool_to_str(is_initialized()),

@@ -139,7 +139,7 @@ oop HeapShared::archive_heap_object(oop obj, Thread* THREAD) {
 
   oop archived_oop = (oop)G1CollectedHeap::heap()->archive_mem_allocate(len);
   if (archived_oop != NULL) {
-    Copy::aligned_disjoint_words((HeapWord*)obj, (HeapWord*)archived_oop, len);
+    Copy::aligned_disjoint_words(cast_from_oop<HeapWord*>(obj), cast_from_oop<HeapWord*>(archived_oop), len);
     MetaspaceShared::relocate_klass_ptr(archived_oop);
     ArchivedObjectCache* cache = archived_object_cache();
     cache->put(obj, archived_oop);
@@ -553,7 +553,7 @@ class WalkOopAndArchiveClosure: public BasicOopIterateClosure {
              "original objects must not point to archived objects");
 
       size_t field_delta = pointer_delta(p, _orig_referencing_obj, sizeof(char));
-      T* new_p = (T*)(address(_archived_referencing_obj) + field_delta);
+      T* new_p = (T*)(cast_from_oop<address>(_archived_referencing_obj) + field_delta);
       Thread* THREAD = _thread;
 
       if (!_record_klasses_only && log_is_enabled(Debug, cds, heap)) {

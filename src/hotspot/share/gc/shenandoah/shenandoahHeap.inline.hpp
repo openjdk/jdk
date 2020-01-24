@@ -283,7 +283,7 @@ inline oop ShenandoahHeap::evacuate_object(oop p, Thread* thread) {
   }
 
   // Copy the object:
-  Copy::aligned_disjoint_words((HeapWord*) p, copy, size);
+  Copy::aligned_disjoint_words(cast_from_oop<HeapWord*>(p), copy, size);
 
   // Try to install the new forwarding pointer.
   oop copy_val = oop(copy);
@@ -326,7 +326,7 @@ inline bool ShenandoahHeap::requires_marking(const void* entry) const {
 
 template <class T>
 inline bool ShenandoahHeap::in_collection_set(T p) const {
-  HeapWord* obj = (HeapWord*) p;
+  HeapWord* obj = cast_from_oop<HeapWord*>(p);
   assert(collection_set() != NULL, "Sanity");
   assert(is_in(obj), "should be in heap");
 

@@ -700,7 +700,7 @@ void VM_GetOrSetLocal::doit() {
       // happens. The oop stored in the deferred local will be
       // gc'd on its own.
       if (_type == T_OBJECT) {
-        _value.l = (jobject) (JNIHandles::resolve_external_guard(_value.l));
+        _value.l = cast_from_oop<jobject>(JNIHandles::resolve_external_guard(_value.l));
       }
       // Re-read the vframe so we can see that it is deoptimized
       // [ Only need because of assert in update_local() ]

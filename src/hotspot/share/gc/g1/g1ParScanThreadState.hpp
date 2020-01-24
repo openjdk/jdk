@@ -129,7 +129,7 @@ public:
     assert(!_g1h->heap_region_containing(p)->is_young(), "Should have filtered out from-young references already.");
 
 #ifdef ASSERT
-    HeapRegion* const hr_obj = _g1h->heap_region_containing((HeapWord*)o);
+    HeapRegion* const hr_obj = _g1h->heap_region_containing(o);
     assert(region_attr.needs_remset_update() == hr_obj->rem_set()->is_tracked(),
            "State flag indicating remset tracking disagrees (%s) with actual remembered set (%s) for region %u",
            BOOL_TO_STR(region_attr.needs_remset_update()),

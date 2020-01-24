@@ -113,7 +113,7 @@ BasicType Reflection::unbox_for_primitive(oop box, jvalue* value, TRAPS) {
 
 BasicType Reflection::unbox_for_regular_object(oop box, jvalue* value) {
   // Note:  box is really the unboxed oop.  It might even be a Short, etc.!
-  value->l = (jobject) box;
+  value->l = cast_from_oop<jobject>(box);
   return T_OBJECT;
 }
 
@@ -224,7 +224,7 @@ BasicType Reflection::array_get(jvalue* value, arrayOop a, int index, TRAPS) {
     THROW_(vmSymbols::java_lang_ArrayIndexOutOfBoundsException(), T_ILLEGAL);
   }
   if (a->is_objArray()) {
-    value->l = (jobject) objArrayOop(a)->obj_at(index);
+    value->l = cast_from_oop<jobject>(objArrayOop(a)->obj_at(index));
     return T_OBJECT;
   } else {
     assert(a->is_typeArray(), "just checking");

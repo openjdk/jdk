@@ -163,7 +163,7 @@ static void object_construction(JfrJavaArguments* args, JavaValue* result, Insta
   result->set_type(T_VOID); // constructor result type
   JfrJavaSupport::call_special(args, CHECK);
   result->set_type(T_OBJECT); // set back to original result type
-  result->set_jobject((jobject)h_obj());
+  result->set_jobject(cast_from_oop<jobject>(h_obj()));
 }
 
 static void array_construction(JfrJavaArguments* args, JavaValue* result, InstanceKlass* klass, int array_length, TRAPS) {
@@ -176,7 +176,7 @@ static void array_construction(JfrJavaArguments* args, JavaValue* result, Instan
   ObjArrayKlass::cast(ak)->initialize(THREAD);
   HandleMark hm(THREAD);
   objArrayOop arr = ObjArrayKlass::cast(ak)->allocate(array_length, CHECK);
-  result->set_jobject((jobject)arr);
+  result->set_jobject(cast_from_oop<jobject>(arr));
 }
 
 static void create_object(JfrJavaArguments* args, JavaValue* result, TRAPS) {
@@ -377,7 +377,7 @@ static void read_specialized_field(JavaValue* result, const Handle& h_oop, field
       result->set_jlong(h_oop->long_field(fd->offset()));
       break;
     case T_OBJECT:
-      result->set_jobject((jobject)h_oop->obj_field(fd->offset()));
+      result->set_jobject(cast_from_oop<jobject>(h_oop->obj_field(fd->offset())));
       break;
     default:
       ShouldNotReachHere();
