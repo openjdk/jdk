@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2015, 2020, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -268,7 +268,7 @@ void ShenandoahBarrierSet::arraycopy_work(T* src, size_t count) {
     T o = RawAccess<>::oop_load(elem_ptr);
     if (!CompressedOops::is_null(o)) {
       oop obj = CompressedOops::decode_not_null(o);
-      if (HAS_FWD && cset->is_in(cast_from_oop<HeapWord *>(obj))) {
+      if (HAS_FWD && cset->is_in(obj)) {
         assert(_heap->has_forwarded_objects(), "only get here with forwarded objects");
         oop fwd = resolve_forwarded_not_null(obj);
         if (EVAC && obj == fwd) {

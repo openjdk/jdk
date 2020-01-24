@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2015, 2020, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -324,13 +324,16 @@ inline bool ShenandoahHeap::requires_marking(const void* entry) const {
   return !_marking_context->is_marked(obj);
 }
 
-template <class T>
-inline bool ShenandoahHeap::in_collection_set(T p) const {
-  HeapWord* obj = cast_from_oop<HeapWord*>(p);
+inline bool ShenandoahHeap::in_collection_set(oop p) const {
   assert(collection_set() != NULL, "Sanity");
-  assert(is_in(obj), "should be in heap");
+  assert(is_in(p), "should be in heap");
+  return collection_set()->is_in(p);
+}
 
-  return collection_set()->is_in(obj);
+inline bool ShenandoahHeap::in_collection_set_loc(void* p) const {
+  assert(collection_set() != NULL, "Sanity");
+  assert(is_in(p), "should be in heap");
+  return collection_set()->is_in((HeapWord*)p);
 }
 
 inline bool ShenandoahHeap::is_stable() const {

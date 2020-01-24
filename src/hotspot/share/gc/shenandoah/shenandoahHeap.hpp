@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2013, 2020, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -698,11 +698,11 @@ public:
 
   ShenandoahCollectionSet* collection_set() const { return _collection_set; }
 
-  template <class T>
-  inline bool in_collection_set(T obj) const;
+  // Checks if object is in the collection set.
+  inline bool in_collection_set(oop obj) const;
 
-  // Avoid accidentally calling the method above with ShenandoahHeapRegion*, which would be *wrong*.
-  inline bool in_collection_set(ShenandoahHeapRegion* r) shenandoah_not_implemented_return(false);
+  // Checks if location is in the collection set. Can be interior pointer, not the oop itself.
+  inline bool in_collection_set_loc(void* loc) const;
 
   // Evacuates object src. Returns the evacuated object, either evacuated
   // by this thread, or by some other thread.

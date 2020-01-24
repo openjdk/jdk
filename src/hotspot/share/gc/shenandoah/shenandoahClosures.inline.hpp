@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2019, 2020, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -94,7 +94,7 @@ void ShenandoahTraversalUpdateRefsClosure::do_oop_work(T* p) {
   T o = RawAccess<>::oop_load(p);
   if (!CompressedOops::is_null(o)) {
     oop obj = CompressedOops::decode_not_null(o);
-    if (_heap->in_collection_set(obj) || _traversal_set->is_in(cast_from_oop<HeapWord*>(obj))) {
+    if (_heap->in_collection_set(obj) || _traversal_set->is_in(obj)) {
       obj = ShenandoahBarrierSet::resolve_forwarded_not_null(obj);
       RawAccess<IS_NOT_NULL>::oop_store(p, obj);
     } else {
