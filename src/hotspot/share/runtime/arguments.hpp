@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -653,6 +653,8 @@ class Arguments : AllStatic {
   static void assert_is_dumping_archive() {
     assert(Arguments::is_dumping_archive(), "dump time only");
   }
+
+  DEBUG_ONLY(static bool verify_special_jvm_flags(bool check_globals);)
 };
 
 // Disable options not supported in this release, with a warning if they

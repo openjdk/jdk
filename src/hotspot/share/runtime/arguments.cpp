@@ -548,6 +548,7 @@ static SpecialFlag const special_jvm_flags[] = {
   { "dep > obs",                    JDK_Version::jdk(9), JDK_Version::jdk(8), JDK_Version::undefined() },
   { "dep > exp ",                   JDK_Version::jdk(9), JDK_Version::undefined(), JDK_Version::jdk(8) },
   { "obs > exp ",                   JDK_Version::undefined(), JDK_Version::jdk(9), JDK_Version::jdk(8) },
+  { "obs > exp",                    JDK_Version::jdk(8), JDK_Version::undefined(), JDK_Version::jdk(10) },
   { "not deprecated or obsolete",   JDK_Version::undefined(), JDK_Version::undefined(), JDK_Version::jdk(9) },
   { "dup option",                   JDK_Version::jdk(9), JDK_Version::undefined(), JDK_Version::undefined() },
   { "dup option",                   JDK_Version::jdk(9), JDK_Version::undefined(), JDK_Version::undefined() },
@@ -632,6 +633,18 @@ bool Arguments::is_obsolete_flag(const char *flag_name, JDK_Version* version) {
     if (!flag.obsolete_in.is_undefined()) {
       if (!version_less_than(JDK_Version::current(), flag.obsolete_in)) {
         *version = flag.obsolete_in;
+        // This flag may have been marked for obsoletion in this version, but we may not
+        // have actually removed it yet. Rather than ignoring it as soon as we reach
+        // this version we allow some time for the removal to happen. So if the flag
+        // still actually exists we process it as normal, but issue an adjusted warning.
+        const JVMFlag *real_flag = JVMFlag::find_declared_flag(flag_name);
+        if (real_flag != NULL) {
+          char version_str[256];
+          version->to_string(version_str, sizeof(version_str));
+          warning("Temporarily processing option %s; support is scheduled for removal in %s",
+                  flag_name, version_str);
+          return false;
+        }
         return true;
       }
     }
@@ -692,11 +705,22 @@ static bool lookup_special_flag(const char *flag_name, size_t skip_index) {
 // If there is a semantic error (i.e. a bug in the table) such as the obsoletion
 // version being earlier than the deprecation version, then a warning is issued
 // and verification fails - by returning false. If it is detected that the table
-// is out of date, with respect to the current version, then a warning is issued
-// but verification does not fail. This allows the VM to operate when the version
-// is first updated, without needing to update all the impacted flags at the
-// same time.
-static bool verify_special_jvm_flags() {
+// is out of date, with respect to the current version, then ideally a warning is
+// issued but verification does not fail. This allows the VM to operate when the
+// version is first updated, without needing to update all the impacted flags at
+// the same time. In practice we can't issue the warning immediately when the version
+// is updated as it occurs for every test and some tests are not prepared to handle
+// unexpected output - see 8196739. Instead we only check if the table is up-to-date
+// if the check_globals flag is true, and in addition allow a grace period and only
+// check for stale flags when we hit build 20 (which is far enough into the 6 month
+// release cycle that all flag updates should have been processed, whilst still
+// leaving time to make the change before RDP2).
+// We use a gtest to call this, passing true, so that we can detect stale flags before
+// the end of the release cycle.
+
+static const int SPECIAL_FLAG_VALIDATION_BUILD = 20;
+
+bool Arguments::verify_special_jvm_flags(bool check_globals) {
   bool success = true;
   for (size_t i = 0; special_jvm_flags[i].name != NULL; i++) {
     const SpecialFlag& flag = special_jvm_flags[i];
@@ -729,24 +753,29 @@ static bool verify_special_jvm_flags() {
       }
 
       // if flag has become obsolete it should not have a "globals" flag defined anymore.
-      if (!version_less_than(JDK_Version::current(), flag.obsolete_in)) {
+      if (check_globals && VM_Version::vm_build_number() >= SPECIAL_FLAG_VALIDATION_BUILD &&
+          !version_less_than(JDK_Version::current(), flag.obsolete_in)) {
         if (JVMFlag::find_declared_flag(flag.name) != NULL) {
-          // Temporarily disable the warning: 8196739
-          // warning("Global variable for obsolete special flag entry \"%s\" should be removed", flag.name);
+          warning("Global variable for obsolete special flag entry \"%s\" should be removed", flag.name);
+          success = false;
         }
       }
+
+    } else if (!flag.expired_in.is_undefined()) {
+      warning("Special flag entry \"%s\" must be explicitly obsoleted before expired.", flag.name);
+      success = false;
     }
 
     if (!flag.expired_in.is_undefined()) {
       // if flag has become expired it should not have a "globals" flag defined anymore.
-      if (!version_less_than(JDK_Version::current(), flag.expired_in)) {
+      if (check_globals && VM_Version::vm_build_number() >= SPECIAL_FLAG_VALIDATION_BUILD &&
+          !version_less_than(JDK_Version::current(), flag.expired_in)) {
         if (JVMFlag::find_declared_flag(flag.name) != NULL) {
-          // Temporarily disable the warning: 8196739
-          // warning("Global variable for expired flag entry \"%s\" should be removed", flag.name);
+          warning("Global variable for expired flag entry \"%s\" should be removed", flag.name);
+          success = false;
         }
       }
     }
-
   }
   return success;
 }
@@ -937,8 +966,17 @@ const char* Arguments::handle_aliases_and_deprecation(const char* arg, bool warn
   const char* real_name = real_flag_name(arg);
   JDK_Version since = JDK_Version();
   switch (is_deprecated_flag(arg, &since)) {
-    case -1:
-      return NULL; // obsolete or expired, don't process normally
+  case -1: {
+      // Obsolete or expired, so don't process normally,
+      // but allow for an obsolete flag we're still
+      // temporarily allowing.
+      if (!is_obsolete_flag(arg, &since)) {
+        return real_name;
+      }
+      // Note if we're not considered obsolete then we can't be expired either
+      // as obsoletion must come first.
+      return NULL;
+    }
     case 0:
       return real_name;
     case 1: {
@@ -3813,7 +3851,7 @@ bool Arguments::handle_deprecated_print_gc_flags() {
 // Parse entry point called from JNI_CreateJavaVM
 
 jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
-  assert(verify_special_jvm_flags(), "deprecated and obsolete flag table inconsistent");
+  assert(verify_special_jvm_flags(false), "deprecated and obsolete flag table inconsistent");
 
   // Initialize ranges and constraints
   JVMFlagRangeList::init();
