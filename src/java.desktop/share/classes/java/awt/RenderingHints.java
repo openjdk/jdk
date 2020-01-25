@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,14 @@
 
 package java.awt;
 
-import java.util.Map;
-import java.util.Set;
+import java.lang.ref.WeakReference;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
+
 import sun.awt.SunHints;
-import java.lang.ref.WeakReference;
 
 /**
  * The {@code RenderingHints} class defines and manages collections of
@@ -1255,8 +1255,7 @@ public class RenderingHints
      * returned {@code Set} is a {@code Map.Entry}.
      * The {@code Set} is backed by the {@code RenderingHints},
      * so changes to the {@code RenderingHints} are reflected
-     * in the {@code Set}, and vice-versa.  If the
-     * {@code RenderingHints} is modified while
+     * in the {@code Set}. If the {@code RenderingHints} is modified while
      * while an iteration over the {@code Set} is in progress,
      * the results of the iteration are undefined.
      * <p>
