@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,14 +22,23 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package sun.awt.windows;
 
-import java.awt.*;
-import java.awt.peer.*;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.Frame;
+import java.awt.GraphicsConfiguration;
+import java.awt.MenuBar;
+import java.awt.Rectangle;
+import java.awt.peer.FramePeer;
+import java.security.AccessController;
+
 import sun.awt.AWTAccessor;
 import sun.awt.im.InputMethodManager;
-import java.security.AccessController;
 import sun.security.action.GetPropertyAction;
+
+import static sun.java2d.SunGraphicsEnvironment.convertToDeviceSpace;
 
 class WFramePeer extends WWindowPeer implements FramePeer {
 
@@ -65,49 +74,51 @@ class WFramePeer extends WWindowPeer implements FramePeer {
             "sun.awt.keepWorkingSetOnMinimize")));
 
     @Override
-    public void setMaximizedBounds(Rectangle b) {
+    public final void setMaximizedBounds(Rectangle b) {
         if (b == null) {
             clearMaximizedBounds();
         } else {
-            Rectangle adjBounds = (Rectangle)b.clone();
-            adjustMaximizedBounds(adjBounds);
-            setMaximizedBounds(adjBounds.x, adjBounds.y, adjBounds.width, adjBounds.height);
+            b = adjustMaximizedBounds(b);
+            setMaximizedBounds(b.x, b.y, b.width, b.height);
         }
     }
 
     /**
      * The incoming bounds describe the maximized size and position of the
-     * window on the monitor that displays the window. But the window manager
-     * expects that the bounds are based on the size and position of the
-     * primary monitor, even if the window ultimately maximizes onto a
-     * secondary monitor. And the window manager adjusts these values to
-     * compensate for differences between the primary monitor and the monitor
-     * that displays the window.
+     * window in the virtual coordinate system. But the window manager expects
+     * that the bounds are based on the size of the primary monitor and
+     * position is based on the actual window monitor, even if the window
+     * ultimately maximizes onto a secondary monitor. And the window manager
+     * adjusts these values to compensate for differences between the primary
+     * monitor and the monitor that displays the window.
+     * <p>
      * The method translates the incoming bounds to the values acceptable
      * by the window manager. For more details, please refer to 6699851.
      */
-    private void adjustMaximizedBounds(Rectangle b) {
-        GraphicsConfiguration currentDevGC = getGraphicsConfiguration();
+    private Rectangle adjustMaximizedBounds(Rectangle bounds) {
+        // All calculations should be done in the device space
+        bounds = convertToDeviceSpace(bounds);
 
-        GraphicsDevice primaryDev = GraphicsEnvironment
-            .getLocalGraphicsEnvironment().getDefaultScreenDevice();
-        GraphicsConfiguration primaryDevGC = primaryDev.getDefaultConfiguration();
-
-        if (currentDevGC != null && currentDevGC != primaryDevGC) {
-            Rectangle currentDevBounds = currentDevGC.getBounds();
-            Rectangle primaryDevBounds = primaryDevGC.getBounds();
-
-            boolean isCurrentDevLarger =
-                ((currentDevBounds.width - primaryDevBounds.width > 0) ||
-                 (currentDevBounds.height - primaryDevBounds.height > 0));
-
-            // the window manager doesn't seem to compensate for differences when
-            // the primary monitor is larger than the monitor that display the window
-            if (isCurrentDevLarger) {
-                b.width -= (currentDevBounds.width - primaryDevBounds.width);
-                b.height -= (currentDevBounds.height - primaryDevBounds.height);
-            }
-        }
+        GraphicsConfiguration gc = getGraphicsConfiguration();
+        Rectangle currentDevBounds = convertToDeviceSpace(gc, gc.getBounds());
+        // Prepare data for WM_GETMINMAXINFO message.
+        // ptMaxPosition should be in coordinate system of the current monitor,
+        // not the main monitor, or monitor on which we maximize the window.
+        bounds.x -= currentDevBounds.x;
+        bounds.y -= currentDevBounds.y;
+        // ptMaxSize will be used as-is if the size is smaller than the main
+        // monitor. If the size is larger than the main monitor then the
+        // window manager adjusts the size, like this:
+        // result = bounds.w + (current.w - main.w); =>> wrong size
+        // We can try to compensate for this adjustment like this:
+        // result = bounds.w - (current.w - main.w);
+        // but this can result to the size smaller than the main screen, so no
+        // adjustment will be done by the window manager =>> wrong size.
+        // So we skip compensation here and cut the adjustment on
+        // WM_WINDOWPOSCHANGING event.
+        // Note that the result does not depend on the monitor on which we
+        // maximize the window.
+        return bounds;
     }
 
     @Override

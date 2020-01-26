@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -116,6 +116,7 @@ public:
     MsgRouting WmNcMouseUp(WPARAM hitTest, int x, int y, int button);
     MsgRouting WmGetIcon(WPARAM iconType, LRESULT& retVal);
     MsgRouting WmShowWindow(BOOL show, UINT status);
+    MsgRouting WmWindowPosChanging(LPARAM windowPos);
 
     virtual MsgRouting WmSysCommand(UINT uCmdType, int xPos, int yPos);
 

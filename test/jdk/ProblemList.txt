@@ -1,6 +1,6 @@
 ###########################################################################
 #
-# Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -211,7 +211,6 @@ java/awt/event/KeyEvent/KeyMaskTest/KeyMaskTest.java 8129778 generic-all
 java/awt/event/MouseEvent/MouseButtonsAndKeyMasksTest/MouseButtonsAndKeyMasksTest.java 8129778 generic-all
 
 java/awt/dnd/URIListToFileListBetweenJVMsTest/URIListToFileListBetweenJVMsTest.java 8194947 generic-all
-java/awt/Frame/SetMaximizedBounds/SetMaximizedBounds.java 8196006 windows-all
 java/awt/Frame/FramesGC/FramesGC.java 8079069 macosx-all
 java/awt/FullScreen/AltTabCrashTest/AltTabCrashTest.java 8047218 generic-all
 java/awt/GridLayout/LayoutExtraGaps/LayoutExtraGaps.java 8000171 windows-all

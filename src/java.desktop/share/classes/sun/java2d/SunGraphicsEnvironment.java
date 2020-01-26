@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -364,7 +364,38 @@ public abstract class SunGraphicsEnvironment extends GraphicsEnvironment
         AffineTransform tx = gc.getDefaultTransform();
         x = Region.clipRound(x * tx.getScaleX());
         y = Region.clipRound(y * tx.getScaleY());
-
         return new Point((int) x, (int) y);
+    }
+
+    /**
+     * Converts bounds from the user's space to the device space using
+     * appropriate device transformation.
+     *
+     * @param  bounds the rectangle in the user space
+     * @return the rectangle which uses device space(pixels)
+     */
+    public static Rectangle convertToDeviceSpace(Rectangle bounds) {
+        GraphicsConfiguration gc = getLocalGraphicsEnvironment()
+                .getDefaultScreenDevice().getDefaultConfiguration();
+        gc = getGraphicsConfigurationAtPoint(gc, bounds.x, bounds.y);
+        return convertToDeviceSpace(gc, bounds);
+    }
+
+    /**
+     * Converts bounds from the user's space to the device space using
+     * appropriate device transformation of the passed graphics configuration.
+     *
+     * @param  bounds the rectangle in the user space
+     * @return the rectangle which uses device space(pixels)
+     */
+    public static Rectangle convertToDeviceSpace(GraphicsConfiguration gc,
+                                                 Rectangle bounds) {
+        AffineTransform tx = gc.getDefaultTransform();
+        return new Rectangle(
+                Region.clipRound(bounds.x * tx.getScaleX()),
+                Region.clipRound(bounds.y * tx.getScaleY()),
+                Region.clipRound(bounds.width * tx.getScaleX()),
+                Region.clipRound(bounds.height * tx.getScaleY())
+        );
     }
 }

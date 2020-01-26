@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,23 +21,27 @@
  * questions.
  */
 
-import java.awt.*;
+import java.awt.Frame;
+import java.awt.GraphicsConfiguration;
+import java.awt.GraphicsDevice;
+import java.awt.GraphicsEnvironment;
+import java.awt.Insets;
+import java.awt.Rectangle;
+import java.awt.Robot;
+import java.awt.Toolkit;
 
 /**
  * @test
  * @key headful
- * @bug 8065739 8131339
+ * @bug 8065739 8131339 8231564
+ * @requires (os.family == "windows" | os.family == "mac")
  * @summary When Frame.setExtendedState(Frame.MAXIMIZED_BOTH)
  *          is called for a Frame after been called setMaximizedBounds() with
  *          certain value, Frame bounds must equal to this value.
- *
- * @run main SetMaximizedBounds
  */
-
 public class SetMaximizedBounds {
 
     public static void main(String[] args) throws Exception {
-
         //Supported platforms are Windows and OS X.
         String os = System.getProperty("os.name").toLowerCase();
         if (!os.contains("windows") && !os.contains("os x")) {
@@ -51,10 +55,6 @@ public class SetMaximizedBounds {
 
         GraphicsEnvironment ge = GraphicsEnvironment.
                 getLocalGraphicsEnvironment();
-
-        if (ge.isHeadlessInstance()) {
-            return;
-        }
 
         for (GraphicsDevice gd : ge.getScreenDevices()) {
             for (GraphicsConfiguration gc : gd.getConfigurations()) {
@@ -78,10 +78,10 @@ public class SetMaximizedBounds {
             frame = new Frame();
             frame.setUndecorated(undecorated);
             Rectangle maximizedBounds = new Rectangle(
-                    maxArea.x + maxArea.width / 6,
-                    maxArea.y + maxArea.height / 6,
-                    maxArea.width / 3,
-                    maxArea.height / 3);
+                    maxArea.x + maxArea.width / 5,
+                    maxArea.y + maxArea.height / 5,
+                    maxArea.width / 2,
+                    maxArea.height / 2);
             frame.setMaximizedBounds(maximizedBounds);
             frame.setSize(maxArea.width / 8, maxArea.height / 8);
             frame.setVisible(true);
@@ -93,6 +93,8 @@ public class SetMaximizedBounds {
 
             Rectangle bounds = frame.getBounds();
             if (!bounds.equals(maximizedBounds)) {
+                System.err.println("Expected: " + maximizedBounds);
+                System.err.println("Actual: " + bounds);
                 throw new RuntimeException("The bounds of the Frame do not equal to what"
                         + " is specified when the frame is in Frame.MAXIMIZED_BOTH state");
             }
@@ -102,10 +104,10 @@ public class SetMaximizedBounds {
             robot.delay(1000);
 
             maximizedBounds = new Rectangle(
-                    maxArea.x + maxArea.width / 10,
-                    maxArea.y + maxArea.height / 10,
-                    maxArea.width / 5,
-                    maxArea.height / 5);
+                    maxArea.x + maxArea.width / 6,
+                    maxArea.y + maxArea.height / 6,
+                    maxArea.width / 3,
+                    maxArea.height / 3);
             frame.setMaximizedBounds(maximizedBounds);
             frame.setExtendedState(Frame.MAXIMIZED_BOTH);
             robot.waitForIdle();
@@ -113,6 +115,8 @@ public class SetMaximizedBounds {
 
             bounds = frame.getBounds();
             if (!bounds.equals(maximizedBounds)) {
+                System.err.println("Expected: " + maximizedBounds);
+                System.err.println("Actual: " + bounds);
                 throw new RuntimeException("The bounds of the Frame do not equal to what"
                         + " is specified when the frame is in Frame.MAXIMIZED_BOTH state");
             }
