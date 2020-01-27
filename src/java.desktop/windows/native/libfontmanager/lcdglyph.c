@@ -172,7 +172,8 @@ JNIEXPORT jboolean JNICALL
 JNIEXPORT jlong JNICALL
 Java_sun_font_FileFontStrike__1getGlyphImageFromWindows
 (JNIEnv *env, jobject unused,
- jstring fontFamily, jint style, jint size, jint glyphCode, jboolean fm) {
+ jstring fontFamily, jint style, jint size, jint glyphCode, jboolean fm,
+ jint fontDataSize) {
 
     GLYPHMETRICS glyphMetrics;
     LOGFONTW lf;
@@ -188,6 +189,7 @@ Java_sun_font_FileFontStrike__1getGlyphImageFromWindows
     LPWSTR name;
     HFONT oldFont, hFont;
     MAT2 mat2;
+    DWORD actualFontDataSize;
 
     unsigned short width;
     unsigned short height;
@@ -253,6 +255,17 @@ Java_sun_font_FileFontStrike__1getGlyphImageFromWindows
         FREE_AND_RETURN;
     }
     oldFont = SelectObject(hMemoryDC, hFont);
+
+    if (fontDataSize > 0) {
+        // GDI doesn't allow to select a specific font file for drawing, we can
+        // only check that it picks the file we need by validating font size.
+        // If it doesn't match, we cannot proceed, as the same glyph code can
+        // correspond to a completely different glyph in the selected font.
+        actualFontDataSize = GetFontData(hMemoryDC, 0, 0, NULL, 0);
+        if (actualFontDataSize != fontDataSize) {
+            FREE_AND_RETURN;
+        }
+    }
 
     tmpBitmap = CreateCompatibleBitmap(hDesktopDC, 1, 1);
     if (tmpBitmap == NULL) {

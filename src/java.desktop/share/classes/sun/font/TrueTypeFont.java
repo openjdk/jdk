@@ -180,6 +180,15 @@ public class TrueTypeFont extends FileFont {
     private String localeFamilyName;
     private String localeFullName;
 
+    /*
+     * Used on Windows to validate the font selected by GDI for (sub-pixel
+     * antialiased) rendering. For 'standalone' fonts it's equal to the font
+     * file size, for collection (TTC, OTC) members it's the number of bytes in
+     * the collection file from the start of this font's offset table till the
+     * end of the file.
+     */
+    int fontDataSize;
+
     public TrueTypeFont(String platname, Object nativeNames, int fIndex,
                  boolean javaRasterizer)
         throws FontFormatException
@@ -537,11 +546,13 @@ public class TrueTypeFont extends FileFont {
                 fontIndex = fIndex;
                 buffer = readBlock(TTCHEADERSIZE+4*fIndex, 4);
                 headerOffset = buffer.getInt();
+                fontDataSize = Math.max(0, fileSize - headerOffset);
                 break;
 
             case v1ttTag:
             case trueTag:
             case ottoTag:
+                fontDataSize = fileSize;
                 break;
 
             default:

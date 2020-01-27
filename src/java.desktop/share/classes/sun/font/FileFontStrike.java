@@ -328,7 +328,8 @@ public class FileFontStrike extends PhysicalStrike {
                                                   int style,
                                                   int size,
                                                   int glyphCode,
-                                                  boolean fracMetrics);
+                                                  boolean fracMetrics,
+                                                  int fontDataSize);
 
     long getGlyphImageFromWindows(int glyphCode) {
         String family = fileFont.getFamilyName(null);
@@ -337,7 +338,8 @@ public class FileFontStrike extends PhysicalStrike {
         int size = intPtSize;
         long ptr = _getGlyphImageFromWindows
             (family, style, size, glyphCode,
-             desc.fmHint == INTVAL_FRACTIONALMETRICS_ON);
+             desc.fmHint == INTVAL_FRACTIONALMETRICS_ON,
+             ((TrueTypeFont)fileFont).fontDataSize);
         if (ptr != 0) {
             /* Get the advance from the JDK rasterizer. This is mostly
              * necessary for the fractional metrics case, but there are
@@ -351,6 +353,12 @@ public class FileFontStrike extends PhysicalStrike {
                                         advance);
             return ptr;
         } else {
+            if (FontUtilities.isLogging()) {
+                FontUtilities.getLogger().warning(
+                        "Failed to render glyph using GDI: code=" + glyphCode
+                                + ", fontFamily=" + family + ", style=" + style
+                                + ", size=" + size);
+            }
             return fileFont.getGlyphImage(pScalerContext, glyphCode);
         }
     }
