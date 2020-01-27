@@ -2023,10 +2023,8 @@ public class Utils {
                         return result;
                     }
                     if (hasParameters(e1) && hasParameters(e2)) {
-                        @SuppressWarnings("unchecked")
-                        List<VariableElement> parameters1 = (List<VariableElement>)((ExecutableElement)e1).getParameters();
-                        @SuppressWarnings("unchecked")
-                        List<VariableElement> parameters2 = (List<VariableElement>)((ExecutableElement)e2).getParameters();
+                        List<? extends VariableElement> parameters1 = ((ExecutableElement)e1).getParameters();
+                        List<? extends VariableElement> parameters2 = ((ExecutableElement)e2).getParameters();
                         result = compareParameters(false, parameters1, parameters2);
                         if (result != 0) {
                             return result;

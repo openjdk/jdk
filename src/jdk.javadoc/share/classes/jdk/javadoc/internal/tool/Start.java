@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,12 +28,10 @@ package jdk.javadoc.internal.tool;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.nio.file.Path;
 import java.text.BreakIterator;
 import java.text.Collator;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.IllformedLocaleException;
@@ -44,12 +42,10 @@ import java.util.Objects;
 import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
-import javax.tools.StandardLocation;
 
 import com.sun.tools.javac.api.JavacTrees;
 import com.sun.tools.javac.file.BaseFileManager;
@@ -57,25 +53,20 @@ import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.jvm.Target;
 import com.sun.tools.javac.main.Arguments;
 import com.sun.tools.javac.main.CommandLine;
-import com.sun.tools.javac.main.OptionHelper;
-import com.sun.tools.javac.main.OptionHelper.GrumpyHelper;
-import com.sun.tools.javac.platform.PlatformDescription;
-import com.sun.tools.javac.platform.PlatformUtils;
 import com.sun.tools.javac.util.ClientCodeException;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.Log;
-import com.sun.tools.javac.util.Log.WriterKind;
-import com.sun.tools.javac.util.Options;
 import com.sun.tools.javac.util.StringUtils;
 
 import jdk.javadoc.doclet.Doclet;
 import jdk.javadoc.doclet.Doclet.Option;
 import jdk.javadoc.doclet.DocletEnvironment;
+import jdk.javadoc.doclet.StandardDoclet;
 import jdk.javadoc.internal.tool.Main.Result;
+import jdk.javadoc.internal.tool.ToolOptions.ToolOption;
 
 import static javax.tools.DocumentationTool.Location.*;
 
-import static com.sun.tools.javac.main.Option.*;
 import static jdk.javadoc.internal.tool.Main.Result.*;
 
 /**
@@ -87,10 +78,8 @@ import static jdk.javadoc.internal.tool.Main.Result.*;
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
  */
-public class Start extends ToolOption.Helper {
+public class Start {
 
-    private static final Class<?> StdDoclet =
-            jdk.javadoc.doclet.StandardDoclet.class;
     /** Context for this invocation. */
     private final Context context;
 
@@ -118,6 +107,8 @@ public class Start extends ToolOption.Helper {
 
     private JavaFileManager fileManager;
 
+    private final ToolOptions options;
+
     Start() {
         this(null, null, null, null, null, null);
     }
@@ -138,6 +129,8 @@ public class Start extends ToolOption.Helper {
         this.classLoader = classLoader;
         this.docletClass = null;
         this.locale = Locale.getDefault();
+
+        options = getToolOptions();
     }
 
     public Start(Context context) {
@@ -147,48 +140,50 @@ public class Start extends ToolOption.Helper {
         this.docletName = null;
         this.classLoader = null;
         this.locale = Locale.getDefault();
-    }
 
-    void initMessager() {
-        if (!apiMode)
-            return;
-        if (messager == null) {
-            Log log = context.get(Log.logKey);
-            if (log instanceof Messager) {
-                messager = (Messager) log;
-            } else {
-                PrintWriter out = context.get(Log.errKey);
-                messager = (out == null)
-                        ? new Messager(context, ProgramName)
-                        : new Messager(context, ProgramName, out, out);
-            }
+        Log log = context.get(Log.logKey);
+        if (log instanceof Messager) {
+            messager = (Messager) log;
+        } else {
+            PrintWriter out = context.get(Log.errKey);
+            messager = (out == null)
+                    ? new Messager(context, ProgramName)
+                    : new Messager(context, ProgramName, out, out);
         }
+
+        options = getToolOptions();
     }
 
-    /**
-     * Usage
-     */
-    @Override
-    void usage() {
-        usage("main.usage", OptionKind.STANDARD, "main.usage.foot");
+    private ToolOptions getToolOptions() {
+        ToolOptions.ShowHelper helper =  new ToolOptions.ShowHelper() {
+            @Override
+            public void usage() {
+                showUsage("main.usage", ToolOption.Kind.STANDARD, "main.usage.foot");
+            }
+
+            @Override
+            public void Xusage() {
+                showUsage("main.Xusage", ToolOption.Kind.EXTENDED, "main.Xusage.foot");
+            }
+
+            @Override
+            public void version() {
+                showVersion("javadoc.version", "release");
+            }
+
+            @Override
+            public void fullVersion() {
+                showVersion("javadoc.fullversion", "full");
+            }
+        };
+        return new ToolOptions(context, messager, helper);
     }
 
-    @Override
-    void Xusage() {
-        usage("main.Xusage", OptionKind.EXTENDED, "main.Xusage.foot");
+    private void showUsage() {
+        showUsage("main.usage", ToolOption.Kind.STANDARD, "main.usage.foot");
     }
 
-    @Override
-    void version() {
-        messager.notice("javadoc.version", messager.programName, version("release"));
-    }
-
-    @Override
-    void fullVersion() {
-        messager.notice("javadoc.fullversion", messager.programName, version("full"));
-    }
-
-    private void usage(String headerKey, OptionKind kind, String footerKey) {
+    private void showUsage(String headerKey, ToolOption.Kind kind, String footerKey) {
         messager.notice(headerKey);
         showToolOptions(kind);
 
@@ -196,7 +191,7 @@ public class Start extends ToolOption.Helper {
         if (docletClass != null) {
             String name = doclet.getName();
             messager.notice("main.doclet.usage.header", name);
-            showDocletOptions(kind == OptionKind.EXTENDED
+            showDocletOptions(kind == ToolOption.Kind.EXTENDED
                     ? Option.Kind.EXTENDED
                     : Option.Kind.STANDARD);
         }
@@ -207,7 +202,11 @@ public class Start extends ToolOption.Helper {
     private static final String versionRBName = "jdk.javadoc.internal.tool.resources.version";
     private static ResourceBundle versionRB;
 
-    private static String version(String key) {
+    private void showVersion(String labelKey, String versionKey) {
+        messager.notice(labelKey, messager.programName, getVersion(versionKey));
+    }
+
+    private static String getVersion(String key) {
         if (versionRB == null) {
             try {
                 versionRB = ResourceBundle.getBundle(versionRBName);
@@ -222,7 +221,7 @@ public class Start extends ToolOption.Helper {
         }
     }
 
-    void showToolOptions(OptionKind kind) {
+    private void showToolOptions(ToolOption.Kind kind) {
         Comparator<ToolOption> comp = new Comparator<ToolOption>() {
             final Collator collator = Collator.getInstance(Locale.US);
             { collator.setStrength(Collator.PRIMARY); }
@@ -233,26 +232,27 @@ public class Start extends ToolOption.Helper {
             }
         };
 
-        Stream.of(ToolOption.values())
+        options.getSupportedOptions().stream()
                     .filter(opt -> opt.kind == kind)
                     .sorted(comp)
                     .forEach(this::showToolOption);
     }
 
-    void showToolOption(ToolOption option) {
+    private void showToolOption(ToolOption option) {
         List<String> names = option.getNames();
+        String primaryName = option.primaryName;
         String parameters;
-        if (option.hasArg || option.primaryName.endsWith(":")) {
-            String sep = (option == ToolOption.J) || option.primaryName.endsWith(":") ? "" : " ";
+        if (option.hasArg || primaryName.endsWith(":")) {
+            String sep = primaryName.equals(ToolOptions.J) || primaryName.endsWith(":") ? "" : " ";
             parameters = sep + option.getParameters(messager);
         } else {
             parameters = "";
         }
         String description = option.getDescription(messager);
-        showUsage(names, parameters, description);
+        showOption(names, parameters, description);
     }
 
-    void showDocletOptions(Option.Kind kind) {
+    private void showDocletOptions(Option.Kind kind) {
         Comparator<Doclet.Option> comp = new Comparator<Doclet.Option>() {
             final Collator collator = Collator.getInstance(Locale.US);
             { collator.setStrength(Collator.PRIMARY); }
@@ -269,18 +269,18 @@ public class Start extends ToolOption.Helper {
                 .forEach(this::showDocletOption);
     }
 
-    void showDocletOption(Doclet.Option option) {
+    private void showDocletOption(Doclet.Option option) {
         List<String> names = option.getNames();
         String parameters;
-        String optname = names.get(0);
-        if (option.getArgumentCount() > 0 || optname.endsWith(":")) {
-            String sep = optname.endsWith(":") ? "" : " ";
+        String primaryName = names.get(0);
+        if (option.getArgumentCount() > 0 || primaryName.endsWith(":")) {
+            String sep = primaryName.endsWith(":") ? "" : " ";
             parameters = sep + option.getParameters();
         } else {
             parameters = "";
         }
         String description = option.getDescription();
-        showUsage(names, parameters, description);
+        showOption(names, parameters, description);
     }
 
     // The following constants are intended to format the output to
@@ -297,7 +297,7 @@ public class Start extends ToolOption.Helper {
     /** The format for a single-line help entry. */
     private static final String COMPACT_FORMAT = SMALL_INDENT + "%-" + DEFAULT_SYNOPSIS_WIDTH + "s %s";
 
-    void showUsage(List<String> names, String parameters, String description) {
+    void showOption(List<String> names, String parameters, String description) {
         String synopses = names.stream()
                 .map(s -> s + parameters)
                 .collect(Collectors.joining(", "));
@@ -358,7 +358,6 @@ public class Start extends ToolOption.Helper {
         return begin(opts, fileObjects).isOK();
     }
 
-    @SuppressWarnings("removal")
     private Result begin(List<String> options, Iterable<? extends JavaFileObject> fileObjects) {
         fileManager = context.get(JavaFileManager.class);
         if (fileManager == null) {
@@ -438,7 +437,7 @@ public class Start extends ToolOption.Helper {
                 } catch (IOException ignore) {}
             }
             boolean haveErrorWarnings = messager.hasErrors()
-                    || (rejectWarnings && messager.hasWarnings());
+                    || (this.options.rejectWarnings() && messager.hasWarnings());
             if (!result.isOK() && !haveErrorWarnings) {
                 // the doclet failed, but nothing reported, flag it!.
                 error("main.unknown.error");
@@ -462,7 +461,7 @@ public class Start extends ToolOption.Helper {
     }
 
     private void dumpStack(boolean enabled, Throwable t) {
-        if (t != null && (enabled || dumpOnError)) {
+        if (t != null && (enabled || options.dumpOnError())) {
             t.printStackTrace(System.err);
         }
     }
@@ -470,18 +469,15 @@ public class Start extends ToolOption.Helper {
     /**
      * Main program - internal
      */
-    @SuppressWarnings("unchecked")
     private Result parseAndExecute(List<String> argList, Iterable<? extends JavaFileObject> fileObjects)
             throws ToolException, OptionException, com.sun.tools.javac.main.Option.InvalidValueException {
         long tm = System.currentTimeMillis();
 
         List<String> javaNames = new ArrayList<>();
 
-        compOpts = Options.instance(context);
-
         // Make sure no obsolete source/target messages are reported
         try {
-            com.sun.tools.javac.main.Option.XLINT_CUSTOM.process(getOptionHelper(), "-Xlint:-options");
+            options.processCompilerOption(com.sun.tools.javac.main.Option.XLINT_CUSTOM, "-Xlint:-options");
         } catch (com.sun.tools.javac.main.Option.InvalidValueException ignore) {
         }
 
@@ -511,22 +507,19 @@ public class Start extends ToolOption.Helper {
         }
 
         if (fileManager instanceof BaseFileManager) {
-            ((BaseFileManager) fileManager).handleOptions(fileManagerOpts);
+            ((BaseFileManager) fileManager).handleOptions(options.fileManagerOptions());
         }
 
-        if (fileManager.isSupportedOption(MULTIRELEASE.primaryName) == 1) {
+        String mr = com.sun.tools.javac.main.Option.MULTIRELEASE.primaryName;
+        if (fileManager.isSupportedOption(mr) == 1) {
             Target target = Target.instance(context);
             List<String> list = List.of(target.multiReleaseValue());
-            fileManager.handleOption(MULTIRELEASE.primaryName, list.iterator());
+            fileManager.handleOption(mr, list.iterator());
         }
-        compOpts.notifyListeners();
-        List<String> modules = (List<String>) jdtoolOpts.computeIfAbsent(ToolOption.MODULE,
-                s -> Collections.EMPTY_LIST);
+        options.compilerOptions().notifyListeners();
 
-        if (modules.isEmpty()) {
-            List<String> subpkgs = (List<String>) jdtoolOpts.computeIfAbsent(ToolOption.SUBPACKAGES,
-                    s -> Collections.EMPTY_LIST);
-            if (subpkgs.isEmpty()) {
+        if (options.modules().isEmpty()) {
+            if (options.subpackages().isEmpty()) {
                 if (javaNames.isEmpty() && isEmpty(fileObjects)) {
                     String text = messager.getText("main.No_modules_packages_or_classes_specified");
                     throw new ToolException(CMDERR, text);
@@ -537,14 +530,12 @@ public class Start extends ToolOption.Helper {
         JavadocTool comp = JavadocTool.make0(context);
         if (comp == null) return ABNORMAL;
 
-        DocletEnvironment docEnv = comp.getEnvironment(jdtoolOpts,
-                javaNames,
-                fileObjects);
+        DocletEnvironment docEnv = comp.getEnvironment(options, javaNames, fileObjects);
 
         // release resources
         comp = null;
 
-        if (breakiterator || !locale.getLanguage().equals(Locale.ENGLISH.getLanguage())) {
+        if (options.breakIterator() || !locale.getLanguage().equals(Locale.ENGLISH.getLanguage())) {
             JavacTrees trees = JavacTrees.instance(context);
             trees.setBreakIterator(BreakIterator.getSentenceInstance(locale));
         }
@@ -554,7 +545,7 @@ public class Start extends ToolOption.Helper {
                 : ERROR;
 
         // We're done.
-        if (compOpts.get("-verbose") != null) {
+        if (options.verbose()) {
             tm = System.currentTimeMillis() - tm;
             messager.notice("main.done_in", Long.toString(tm));
         }
@@ -578,8 +569,8 @@ public class Start extends ToolOption.Helper {
         return matches(option.getNames(), targ);
     }
 
-    Set<? extends Doclet.Option> docletOptions = null;
-    int handleDocletOptions(int idx, List<String> args, boolean isToolOption)
+    private Set<? extends Doclet.Option> docletOptions = null;
+    int handleDocletOption(int idx, List<String> args, boolean isToolOption)
             throws OptionException {
         if (docletOptions == null) {
             docletOptions = doclet.getSupportedOptions();
@@ -601,18 +592,18 @@ public class Start extends ToolOption.Helper {
                     switch (opt.getArgumentCount()) {
                         case 0:
                             text = messager.getText("main.unnecessary_arg_provided", argBase);
-                            throw new OptionException(ERROR, this::usage, text);
+                            throw new OptionException(ERROR, this::showUsage, text);
                         case 1:
                             opt.process(arg, Arrays.asList(argVal));
                             break;
                         default:
                             text = messager.getText("main.only_one_argument_with_equals", argBase);
-                            throw new OptionException(ERROR, this::usage, text);
+                            throw new OptionException(ERROR, this::showUsage, text);
                     }
                 } else {
                     if (args.size() - idx -1 < opt.getArgumentCount()) {
                         text = messager.getText("main.requires_argument", arg);
-                        throw new OptionException(ERROR, this::usage, text);
+                        throw new OptionException(ERROR, this::showUsage, text);
                     }
                     opt.process(arg, args.subList(idx + 1, args.size()));
                     idx += opt.getArgumentCount();
@@ -623,13 +614,13 @@ public class Start extends ToolOption.Helper {
         // check if arg is accepted by the tool before emitting error
         if (!isToolOption) {
             text = messager.getText("main.invalid_flag", arg);
-            throw new OptionException(ERROR, this::usage, text);
+            throw new OptionException(ERROR, this::showUsage, text);
         }
         return idx;
     }
 
-    private Doclet preprocess(JavaFileManager jfm,
-            List<String> argv) throws ToolException, OptionException {
+    private Doclet preprocess(JavaFileManager jfm, List<String> argv)
+            throws ToolException, OptionException {
         // doclet specifying arguments
         String userDocletPath = null;
         String userDocletName = null;
@@ -642,13 +633,13 @@ public class Start extends ToolOption.Helper {
         // Step 1: loop through the args, set locale early on, if found.
         for (int i = 0 ; i < argv.size() ; i++) {
             String arg = argv.get(i);
-            if (arg.equals(ToolOption.DUMPONERROR.primaryName)) {
-                dumpOnError = true;
-            } else if (arg.equals(ToolOption.LOCALE.primaryName)) {
+            if (arg.equals(ToolOptions.DUMP_ON_ERROR)) {
+                options.setDumpOnError(true);
+            } else if (arg.equals(ToolOptions.LOCALE)) {
                 checkOneArg(argv, i++);
                 String lname = argv.get(i);
                 locale = getLocale(lname);
-            } else if (arg.equals(ToolOption.DOCLET.primaryName)) {
+            } else if (arg.equals(ToolOptions.DOCLET)) {
                 checkOneArg(argv, i++);
                 if (userDocletName != null) {
                     if (apiMode) {
@@ -669,7 +660,7 @@ public class Start extends ToolOption.Helper {
                     throw new ToolException(CMDERR, text);
                 }
                 userDocletName = argv.get(i);
-            } else if (arg.equals(ToolOption.DOCLETPATH.primaryName)) {
+            } else if (arg.equals(ToolOptions.DOCLET_PATH)) {
                 checkOneArg(argv, i++);
                 if (userDocletPath == null) {
                     userDocletPath = argv.get(i);
@@ -685,10 +676,9 @@ public class Start extends ToolOption.Helper {
             }
         }
 
-
         // Step 3: doclet name specified ? if so find a ClassLoader,
         // and load it.
-        if(docletClass == null) {
+        if (docletClass == null) {
             if (userDocletName != null) {
                 ClassLoader cl = classLoader;
                 if (cl == null) {
@@ -728,13 +718,11 @@ public class Start extends ToolOption.Helper {
             } else if (docletName != null){
                 docletClass = loadDocletClass(docletName, getClass().getClassLoader());
             } else {
-                docletClass = StdDoclet;
+                docletClass = StandardDoclet.class;
             }
         }
 
         if (jdk.javadoc.doclet.Doclet.class.isAssignableFrom(docletClass)) {
-            // no need to dispatch to old, safe to init now
-            initMessager();
             messager.setLocale(locale);
             try {
                 Object o = docletClass.getConstructor().newInstance();
@@ -769,22 +757,22 @@ public class Start extends ToolOption.Helper {
             OptionException, com.sun.tools.javac.main.Option.InvalidValueException {
         for (int i = 0 ; i < args.size() ; i++) {
             String arg = args.get(i);
-            ToolOption o = ToolOption.get(arg);
+            ToolOption o = options.getOption(arg);
             if (o != null) {
                 // handle a doclet argument that may be needed however
                 // don't increment the index, and allow the tool to consume args
-                handleDocletOptions(i, args, true);
+                handleDocletOption(i, args, true);
                 if (o.hasArg) {
                     if (arg.startsWith("--") && arg.contains("=")) {
-                        o.process(this, arg.substring(arg.indexOf('=') + 1));
+                        o.process(arg.substring(arg.indexOf('=') + 1));
                     } else {
                         checkOneArg(args, i++);
-                        o.process(this, args.get(i));
+                        o.process(args.get(i));
                     }
                 } else if (o.hasSuffix) {
-                    o.process(this, arg);
+                    o.process(arg);
                 } else {
-                    o.process(this);
+                    o.process();
                 }
             } else if (arg.startsWith("-XD")) {
                 // hidden javac options
@@ -792,9 +780,9 @@ public class Start extends ToolOption.Helper {
                 int eq = s.indexOf('=');
                 String key = (eq < 0) ? s : s.substring(0, eq);
                 String value = (eq < 0) ? s : s.substring(eq+1);
-                compOpts.put(key, value);
+                options.compilerOptions().put(key, value);
             } else if (arg.startsWith("-")) {
-                i = handleDocletOptions(i, args, false);
+                i = handleDocletOption(i, args, false);
             } else {
                 javaNames.add(arg);
             }
@@ -812,7 +800,7 @@ public class Start extends ToolOption.Helper {
     private void checkOneArg(List<String> args, int index) throws OptionException {
         if ((index + 1) >= args.size() || args.get(index + 1).startsWith("-d")) {
             String text = messager.getText("main.requires_argument", args.get(index));
-            throw new OptionException(CMDERR, this::usage, text);
+            throw new OptionException(CMDERR, this::showUsage, text);
         }
     }
 
@@ -859,34 +847,5 @@ public class Start extends ToolOption.Helper {
         return null;
     }
 
-    @Override
-    OptionHelper getOptionHelper() {
-        return new GrumpyHelper(messager) {
-            @Override
-            public String get(com.sun.tools.javac.main.Option option) {
-                return compOpts.get(option);
-            }
 
-            @Override
-            public void put(String name, String value) {
-                compOpts.put(name, value);
-            }
-
-            @Override
-            public void remove(String name) {
-                compOpts.remove(name);
-            }
-
-            @Override
-            public boolean handleFileManagerOption(com.sun.tools.javac.main.Option option, String value) {
-                fileManagerOpts.put(option, value);
-                return true;
-            }
-        };
-    }
-
-    @Override
-    String getLocalizedMessage(String msg, Object... args) {
-        return messager.getText(msg, args);
-    }
 }

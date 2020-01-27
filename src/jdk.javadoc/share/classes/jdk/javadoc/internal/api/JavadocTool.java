@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,7 @@ import com.sun.tools.javac.file.BaseFileManager;
 import com.sun.tools.javac.util.ClientCodeException;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.Log;
-import jdk.javadoc.internal.tool.ToolOption;
+import jdk.javadoc.internal.tool.ToolOptions;
 
 /**
  * Provides access to functionality specific to the JDK documentation tool,
@@ -170,13 +170,7 @@ public class JavadocTool implements DocumentationTool {
     public int isSupportedOption(String option) {
         if (option == null)
             throw new NullPointerException();
-        for (ToolOption o : ToolOption.values()) {
-            for (String name : o.names) {
-                if (name.equals(option))
-                    return o.hasArg ? 1 : 0;
-            }
-        }
-        return -1;
+        return ToolOptions.isSupportedOption(option);
     }
 
 }
