@@ -109,7 +109,7 @@ public class PackageIndexWriter extends AbstractOverviewIndexWriter {
 
             for (PackageElement pkg : configuration.packages) {
                 if (!pkg.isUnnamed()) {
-                    if (!(options.noDeprecated && utils.isDeprecated(pkg))) {
+                    if (!(options.noDeprecated() && utils.isDeprecated(pkg))) {
                         Content packageLinkContent = getPackageLink(pkg, getPackageName(pkg));
                         Content summaryContent = new ContentBuilder();
                         addSummaryComment(pkg, summaryContent);

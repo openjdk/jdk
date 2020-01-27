@@ -207,7 +207,7 @@ public class HtmlSerialFieldWriter extends FieldWriterImpl
      * @return true if overview details need to be printed
      */
     public boolean shouldPrintOverview(VariableElement field) {
-        if (!options.noComment) {
+        if (!options.noComment()) {
             if(!utils.getFullBody(field).isEmpty() ||
                     writer.hasSerializationOverviewTags(field))
                 return true;

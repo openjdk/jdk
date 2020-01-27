@@ -51,140 +51,146 @@ import static javax.tools.Diagnostic.Kind.WARNING;
  * including the format-independent options handled
  * by {@link BaseOptions}.
  *
+ * <p>Some of the methods used to access the values of options
+ * have names that begin with a verb, such as {@link #createOverview}
+ * or {@link #splitIndex}. Unless otherwise stated,
+ * these methods should all be taken as just accessing the value
+ * of the associated option.
+ *
  */
 public class HtmlOptions extends BaseOptions {
     //<editor-fold desc="Option values">
     /**
      * Argument for command-line option {@code --add-stylesheet}.
      */
-    public List<String> additionalStylesheets = new ArrayList<>();
+    private List<String> additionalStylesheets = new ArrayList<>();
 
     /**
      * Argument for command-line option {@code -bottom}.
      */
-    public String bottom = "";
+    private String bottom = "";
 
     /**
      * Argument for command-line option {@code -charset}.
      * The META charset tag used for cross-platform viewing.
      */
-    public String charset = null;
+    private String charset = null;
 
     /**
      * Argument for command-line option {@code -use}.
      * True if command-line option "-use" is used. Default value is false.
      */
-    public boolean classUse = false;
+    private boolean classUse = false;
 
     /**
      * Argument for command-line option {@code -noindex}.
      * False if command-line option "-noindex" is used. Default value is true.
      */
-    public boolean createIndex = true;
+    private boolean createIndex = true;
 
     /**
      * Argument for command-line option {@code -overview}.
      * This is true if option "-overview" is used or option "-overview" is not
      * used and number of packages is more than one.
      */
-    public boolean createOverview = false;
+    private boolean createOverview = false;
 
     /**
      * Argument for command-line option {@code -notree}.
      * False if command-line option "-notree" is used. Default value is true.
      */
-    public boolean createTree = true;
+    private boolean createTree = true;
 
     /**
      * Arguments for command-line option {@code -Xdoclint} and friends.
      * Collected set of doclint options.
      */
-    public Map<Doclet.Option, String> doclintOpts = new LinkedHashMap<>();
+    private Map<Doclet.Option, String> doclintOpts = new LinkedHashMap<>();
 
     /**
      * Argument for command-line option {@code -Xdocrootparent}.
      */
-    public String docrootParent = "";
+    private String docrootParent = "";
 
     /**
      * Argument for command-line option {@code -doctitle}.
      */
-    public String docTitle = "";
+    private String docTitle = "";
 
 
     /**
      * Argument for command-line option {@code -footer}.
      */
-    public String footer = "";
+    private String footer = "";
 
     /**
      * Argument for command-line option {@code -header}.
      */
-    public String header = "";
+    private String header = "";
 
     /**
      * Argument for command-line option {@code -helpfile}.
      */
-    public String helpFile = "";
+    private String helpFile = "";
 
     /**
      * Argument for command-line option {@code -nodeprecated}.
      * True if command-line option "-nodeprecated" is used. Default value is
      * false.
      */
-    public boolean noDeprecatedList = false;
+    private boolean noDeprecatedList = false;
 
     /**
      * Argument for command-line option {@code -nohelp}.
      * True if command-line option "-nohelp" is used. Default value is false.
      */
-    public boolean noHelp = false;
+    private boolean noHelp = false;
 
     /**
      * Argument for command-line option {@code -nonavbar}.
      * True if command-line option "-nonavbar" is used. Default value is false.
      */
-    public boolean noNavbar = false;
+    private boolean noNavbar = false;
 
     /**
      * Argument for command-line option {@code -nooverview}.
      * True if command-line option "-nooverview" is used. Default value is
      * false
      */
-    boolean noOverview = false;
+    private boolean noOverview = false;
 
     /**
      * Argument for command-line option {@code -overview}.
      * The overview path specified with "-overview" flag.
      */
-    public String overviewPath = null;
+    private String overviewPath = null;
 
     /**
      * Argument for command-line option {@code -packagesheader}.
      */
-    public String packagesHeader = "";
+    private String packagesHeader = "";
 
     /**
      * Argument for command-line option {@code -splitindex}.
      * True if command-line option "-splitindex" is used. Default value is
      * false.
      */
-    public boolean splitIndex = false;
+    private boolean splitIndex = false;
 
     /**
      * Argument for command-line option {@code -stylesheetfile}.
      */
-    public String stylesheetFile = "";
+    private String stylesheetFile = "";
 
     /**
      * Argument for command-line option {@code -top}.
      */
-    public String top = "";
+    private String top = "";
 
     /**
      * Argument for command-line option {@code -windowtitle}.
      */
-    public String windowTitle = "";
+    private String windowTitle = "";
     //</editor-fold>
 
     private HtmlConfiguration config;
@@ -516,4 +522,188 @@ public class HtmlOptions extends BaseOptions {
         return true;
     }
 
+    /**
+     * Argument for command-line option {@code --add-stylesheet}.
+     */
+    List<String> additionalStylesheets() {
+        return additionalStylesheets;
+    }
+
+    /**
+     * Argument for command-line option {@code -bottom}.
+     */
+    String bottom() {
+        return bottom;
+    }
+
+    /**
+     * Argument for command-line option {@code -charset}.
+     * The META charset tag used for cross-platform viewing.
+     */
+    String charset() {
+        return charset;
+    }
+
+    void setCharset(String charset) {
+        this.charset = charset;
+    }
+
+    /**
+     * Argument for command-line option {@code -use}.
+     * True if command-line option "-use" is used. Default value is false.
+     */
+    public boolean classUse() {
+        return classUse;
+    }
+
+    /**
+     * Argument for command-line option {@code -noindex}.
+     * False if command-line option "-noindex" is used. Default value is true.
+     */
+    public boolean createIndex() {
+        return createIndex;
+    }
+
+    /**
+     * Argument for command-line option {@code -overview}.
+     * This is true if option "-overview" is used or option "-overview" is not
+     * used and number of packages is more than one.
+     */
+    public boolean createOverview() {
+        return createOverview;
+    }
+
+    public void setCreateOverview(boolean createOverview) {
+        this.createOverview = createOverview;
+    }
+
+    /**
+     * Argument for command-line option {@code -notree}.
+     * False if command-line option "-notree" is used. Default value is true.
+     */
+    public boolean createTree() {
+        return createTree;
+    }
+
+    /**
+     * Arguments for command-line option {@code -Xdoclint} and friends.
+     * Collected set of doclint options.
+     */
+    Map<Doclet.Option, String> doclintOpts() {
+        return doclintOpts;
+    }
+
+    /**
+     * Argument for command-line option {@code -Xdocrootparent}.
+     */
+    String docrootParent() {
+        return docrootParent;
+    }
+
+    /**
+     * Argument for command-line option {@code -doctitle}.
+     */
+    String docTitle() {
+        return docTitle;
+    }
+
+    /**
+     * Argument for command-line option {@code -footer}.
+     */
+    String footer() {
+        return footer;
+    }
+
+    /**
+     * Argument for command-line option {@code -header}.
+     */
+    String header() {
+        return header;
+    }
+
+    /**
+     * Argument for command-line option {@code -helpfile}.
+     */
+    public String helpFile() {
+        return helpFile;
+    }
+
+    /**
+     * Argument for command-line option {@code -nodeprecated}.
+     * True if command-line option "-nodeprecated" is used. Default value is
+     * false.
+     */
+    public boolean noDeprecatedList() {
+        return noDeprecatedList;
+    }
+
+    /**
+     * Argument for command-line option {@code -nohelp}.
+     * True if command-line option "-nohelp" is used. Default value is false.
+     */
+    public boolean noHelp() {
+        return noHelp;
+    }
+
+    /**
+     * Argument for command-line option {@code -nonavbar}.
+     * True if command-line option "-nonavbar" is used. Default value is false.
+     */
+    public boolean noNavbar() {
+        return noNavbar;
+    }
+
+    /**
+     * Argument for command-line option {@code -nooverview}.
+     * True if command-line option "-nooverview" is used. Default value is
+     * false
+     */
+    boolean noOverview() {
+        return noOverview;
+    }
+
+    /**
+     * Argument for command-line option {@code -overview}.
+     * The overview path specified with "-overview" flag.
+     */
+    String overviewPath() {
+        return overviewPath;
+    }
+
+    /**
+     * Argument for command-line option {@code -packagesheader}.
+     */
+    String packagesHeader() {
+        return packagesHeader;
+    }
+
+    /**
+     * Argument for command-line option {@code -splitindex}.
+     * True if command-line option "-splitindex" is used. Default value is
+     * false.
+     */
+    public boolean splitIndex() {
+        return splitIndex;
+    }
+
+    /**
+     * Argument for command-line option {@code -stylesheetfile}.
+     */
+    String stylesheetFile() {
+        return stylesheetFile;
+    }
+
+    /**
+     * Argument for command-line option {@code -top}.
+     */
+    String top() {
+        return top;
+    }
+
+    /**
+     * Argument for command-line option {@code -windowtitle}.
+     */
+    String windowTitle() {
+        return windowTitle;
+    }
 }

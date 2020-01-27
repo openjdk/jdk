@@ -253,7 +253,7 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
         Content classLink = writer.getPreQualifiedClassLink(
                 LinkInfoImpl.Kind.MEMBER, typeElement, false);
         Content label;
-        if (options.summarizeOverriddenMethods) {
+        if (options.summarizeOverriddenMethods()) {
             label = new StringContent(utils.isClass(typeElement)
                     ? resources.getText("doclet.Methods_Declared_In_Class")
                     : resources.getText("doclet.Methods_Declared_In_Interface"));
@@ -285,7 +285,7 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
      */
     protected static void addOverridden(HtmlDocletWriter writer,
             TypeMirror overriddenType, ExecutableElement method, Content dl) {
-        if (writer.options.noComment) {
+        if (writer.options.noComment()) {
             return;
         }
         Utils utils = writer.utils;
@@ -336,7 +336,7 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
     protected static void addImplementsInfo(HtmlDocletWriter writer,
             ExecutableElement method, Content dl) {
         Utils utils = writer.utils;
-        if (utils.isStatic(method) || writer.options.noComment) {
+        if (utils.isStatic(method) || writer.options.noComment()) {
             return;
         }
         Contents contents = writer.contents;

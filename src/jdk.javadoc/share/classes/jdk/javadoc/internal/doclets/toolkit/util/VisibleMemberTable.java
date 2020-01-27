@@ -661,7 +661,7 @@ public class VisibleMemberTable {
 
             List<? extends Element> elements = te.getEnclosedElements();
             for (Element e : elements) {
-                if (options.noDeprecated && utils.isDeprecated(e)) {
+                if (options.noDeprecated() && utils.isDeprecated(e)) {
                     continue;
                 }
                 switch (e.getKind()) {
@@ -803,7 +803,7 @@ public class VisibleMemberTable {
      * {@code boolean isFoo()}
      */
     private void computeVisibleProperties(LocalMemberTable lmt) {
-        if (!options.javafx)
+        if (!options.javafx())
             return;
 
         PropertyUtils pUtils = config.propertyUtils;

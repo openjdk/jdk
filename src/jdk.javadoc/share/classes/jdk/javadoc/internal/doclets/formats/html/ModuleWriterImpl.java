@@ -188,7 +188,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
         HtmlTree bodyTree = getBody(getWindowTitle(mdle.getQualifiedName().toString()));
         Content headerContent = new ContentBuilder();
         addTop(headerContent);
-        navBar.setDisplaySummaryModuleDescLink(!utils.getFullBody(mdle).isEmpty() && !options.noComment);
+        navBar.setDisplaySummaryModuleDescLink(!utils.getFullBody(mdle).isEmpty() && !options.noComment());
         navBar.setDisplaySummaryModulesLink(display(requires) || display(indirectModules));
         navBar.setDisplaySummaryPackagesLink(display(packages) || display(indirectPackages)
                 || display(indirectOpenPackages));

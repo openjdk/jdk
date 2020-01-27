@@ -78,7 +78,7 @@ public class MetaKeywords {
         ArrayList<String> results = new ArrayList<>();
 
         // Add field and method keywords only if -keywords option is used
-        if (options.keywords) {
+        if (options.keywords()) {
             results.addAll(getClassKeyword(typeElement));
             results.addAll(getMemberKeywords(utils.getFields(typeElement)));
             results.addAll(getMemberKeywords(utils.getMethods(typeElement)));
@@ -103,7 +103,7 @@ public class MetaKeywords {
      */
     public List<String> getMetaKeywords(PackageElement packageElement) {
         List<String> result = new ArrayList<>(1);
-        if (options.keywords) {
+        if (options.keywords()) {
             String pkgName = utils.getPackageName(packageElement);
             result.add(pkgName + " " + "package");
         }
@@ -116,7 +116,7 @@ public class MetaKeywords {
      * @param mdle the module being documented
      */
     public List<String> getMetaKeywordsForModule(ModuleElement mdle) {
-        if (options.keywords) {
+        if (options.keywords()) {
             return Arrays.asList(mdle.getQualifiedName() + " " + "module");
         } else {
             return Collections.emptyList();
@@ -128,7 +128,7 @@ public class MetaKeywords {
      */
     public List<String> getOverviewMetaKeywords(String title, String docTitle) {
          List<String> result = new ArrayList<>(1);
-        if (options.keywords) {
+        if (options.keywords()) {
             String windowOverview = resources.getText(title);
             if (docTitle.length() > 0) {
                 result.add(windowOverview + ", " + docTitle);

@@ -166,7 +166,7 @@ public class EnumConstantBuilder extends AbstractMemberBuilder {
      * @param enumConstantsTree the content tree to which the documentation will be added
      */
     protected void buildEnumConstantComments(Content enumConstantsTree) {
-        if (!options.noComment) {
+        if (!options.noComment()) {
             writer.addComments(currentElement, enumConstantsTree);
         }
     }

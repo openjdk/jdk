@@ -111,7 +111,7 @@ public class IndexBuilder {
 
         this.noDeprecated = noDeprecated;
         this.classesOnly = classesOnly;
-        this.javafx = configuration.getOptions().javafx;
+        this.javafx = configuration.getOptions().javafx();
         this.indexmap = new TreeMap<>();
         comparator = classesOnly
                 ? utils.makeAllClassesComparator()

@@ -113,7 +113,7 @@ public class AllPackagesIndexWriter extends HtmlDocletWriter {
                 .setHeader(new TableHeader(contents.packageLabel, contents.descriptionLabel))
                 .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast);
         for (PackageElement pkg : configuration.packages) {
-            if (!(configuration.getOptions().noDeprecated && utils.isDeprecated(pkg))) {
+            if (!(options.noDeprecated() && utils.isDeprecated(pkg))) {
                 Content packageLinkContent = getPackageLink(pkg, getPackageName(pkg));
                 Content summaryContent = new ContentBuilder();
                 addSummaryComment(pkg, summaryContent);

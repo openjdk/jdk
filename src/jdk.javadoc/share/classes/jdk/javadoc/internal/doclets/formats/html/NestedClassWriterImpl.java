@@ -122,7 +122,7 @@ public class NestedClassWriterImpl extends AbstractMemberWriter
         Content classLink = writer.getPreQualifiedClassLink(
                 LinkInfoImpl.Kind.MEMBER, typeElement, false);
         Content label;
-        if (options.summarizeOverriddenMethods) {
+        if (options.summarizeOverriddenMethods()) {
             label = new StringContent(utils.isInterface(typeElement)
                     ? resources.getText("doclet.Nested_Classes_Interfaces_Declared_In_Interface")
                     : resources.getText("doclet.Nested_Classes_Interfaces_Declared_In_Class"));

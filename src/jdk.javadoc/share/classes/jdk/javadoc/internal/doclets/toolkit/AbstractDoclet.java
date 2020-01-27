@@ -126,16 +126,16 @@ public abstract class AbstractDoclet implements Doclet {
                     messages.error("doclet.exception.write.file",
                             e.fileName.getPath(), e.getCause());
             }
-            dumpStack(options.dumpOnError, e);
+            dumpStack(options.dumpOnError(), e);
 
         } catch (ResourceIOException e) {
             messages.error("doclet.exception.read.resource",
                     e.resource.getPath(), e.getCause());
-            dumpStack(options.dumpOnError, e);
+            dumpStack(options.dumpOnError(), e);
 
         } catch (SimpleDocletException e) {
             configuration.reporter.print(ERROR, e.getMessage());
-            dumpStack(options.dumpOnError, e);
+            dumpStack(options.dumpOnError(), e);
 
         } catch (InternalException e) {
             configuration.reporter.print(ERROR, e.getMessage());
@@ -201,7 +201,7 @@ public abstract class AbstractDoclet implements Doclet {
         }
         messages.notice("doclet.build_version",
             configuration.getDocletVersion());
-        ClassTree classtree = new ClassTree(configuration, configuration.getOptions().noDeprecated);
+        ClassTree classtree = new ClassTree(configuration, configuration.getOptions().noDeprecated());
 
         generateClassFiles(docEnv, classtree);
 

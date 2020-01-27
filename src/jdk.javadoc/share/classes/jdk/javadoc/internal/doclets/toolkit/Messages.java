@@ -132,7 +132,7 @@ public class Messages {
      * @param args optional arguments to be replaced in the message.
      */
     public void notice(String key, Object... args) {
-        if (!configuration.getOptions().quiet) {
+        if (!configuration.getOptions().quiet()) {
             report(NOTE, resources.getText(key, args));
         }
     }

@@ -440,7 +440,7 @@ public class TagletWriterImpl extends TagletWriter {
                 anchorName += "-" + count;
             }
             result = HtmlTree.SPAN(anchorName, HtmlStyle.searchTagResult, new StringContent(tagText));
-            if (options.createIndex && !tagText.isEmpty()) {
+            if (options.createIndex() && !tagText.isEmpty()) {
                 SearchIndexItem si = new SearchIndexItem();
                 si.setSystemProperty(isSystemProperty);
                 si.setLabel(tagText);

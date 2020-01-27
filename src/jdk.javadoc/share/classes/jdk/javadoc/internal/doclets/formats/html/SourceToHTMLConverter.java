@@ -124,20 +124,20 @@ public class SourceToHTMLConverter {
         for (ModuleElement mdl : configuration.getSpecifiedModuleElements()) {
             // If -nodeprecated option is set and the module is marked as deprecated,
             // do not convert the module files to HTML.
-            if (!(options.noDeprecated && utils.isDeprecated(mdl)))
+            if (!(options.noDeprecated() && utils.isDeprecated(mdl)))
                 convertModule(mdl, outputdir);
         }
         for (PackageElement pkg : configuration.getSpecifiedPackageElements()) {
             // If -nodeprecated option is set and the package is marked as deprecated,
             // do not convert the package files to HTML.
-            if (!(options.noDeprecated && utils.isDeprecated(pkg)))
+            if (!(options.noDeprecated() && utils.isDeprecated(pkg)))
                 convertPackage(pkg, outputdir);
         }
         for (TypeElement te : configuration.getSpecifiedTypeElements()) {
             // If -nodeprecated option is set and the class is marked as deprecated
             // or the containing package is deprecated, do not convert the
             // package files to HTML.
-            if (!(options.noDeprecated &&
+            if (!(options.noDeprecated() &&
                   (utils.isDeprecated(te) || utils.isDeprecated(utils.containingPackage(te)))))
                 convertClass(te, outputdir);
         }
@@ -161,7 +161,7 @@ public class SourceToHTMLConverter {
             // do not convert the package files to HTML. We do not check for
             // containing package deprecation since it is already check in
             // the calling method above.
-            if (!(options.noDeprecated && utils.isDeprecated(te)))
+            if (!(options.noDeprecated() && utils.isDeprecated(te)))
                 convertClass((TypeElement)te, outputdir);
         }
     }
@@ -181,7 +181,7 @@ public class SourceToHTMLConverter {
         }
         for (Element elem : mdl.getEnclosedElements()) {
             if (elem instanceof PackageElement && configuration.docEnv.isIncluded(elem)
-                    && !(options.noDeprecated && utils.isDeprecated(elem))) {
+                    && !(options.noDeprecated() && utils.isDeprecated(elem))) {
                 convertPackage((PackageElement) elem, outputdir);
             }
         }
@@ -258,7 +258,7 @@ public class SourceToHTMLConverter {
      * @param head an HtmlTree to which the stylesheet links will be added
      */
     public void addStyleSheetProperties(Content head) {
-        String filename = options.stylesheetFile;
+        String filename = options.stylesheetFile();
         DocPath stylesheet;
         if (filename.length() > 0) {
             DocFile file = DocFile.createFileForInput(configuration, filename);
@@ -273,7 +273,7 @@ public class SourceToHTMLConverter {
     }
 
     protected void addStylesheets(Content tree) {
-        List<String> stylesheets = options.additionalStylesheets;
+        List<String> stylesheets = options.additionalStylesheets();
         if (!stylesheets.isEmpty()) {
             stylesheets.forEach((ssheet) -> {
                 DocFile file = DocFile.createFileForInput(configuration, ssheet);

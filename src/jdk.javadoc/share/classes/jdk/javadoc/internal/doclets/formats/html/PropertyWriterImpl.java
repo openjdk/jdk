@@ -213,7 +213,7 @@ public class PropertyWriterImpl extends AbstractMemberWriter
         Content classLink = writer.getPreQualifiedClassLink(
                 LinkInfoImpl.Kind.MEMBER, typeElement, false);
         Content label;
-        if (options.summarizeOverriddenMethods) {
+        if (options.summarizeOverriddenMethods()) {
             label = new StringContent(utils.isClass(typeElement)
                     ? resources.getText("doclet.Properties_Declared_In_Class")
                     : resources.getText("doclet.Properties_Declared_In_Interface"));

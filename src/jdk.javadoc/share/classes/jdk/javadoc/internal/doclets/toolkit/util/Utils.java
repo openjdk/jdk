@@ -393,7 +393,7 @@ public class Utils {
     }
 
     public boolean isProperty(String name) {
-        return options.javafx && name.endsWith("Property");
+        return options.javafx() && name.endsWith("Property");
     }
 
     public String getPropertyName(String name) {
@@ -1390,7 +1390,7 @@ public class Utils {
         if (!text.contains("\t"))
             return text;
 
-        final int tabLength = options.sourceTabSize;
+        final int tabLength = options.sourceTabSize();
         final String whitespace = " ".repeat(tabLength);
         final int textLength = text.length();
         StringBuilder result = new StringBuilder(textLength);
@@ -1523,7 +1523,7 @@ public class Utils {
         if (!isIncluded(e)) {
             return false;
         }
-        if (options.javafx &&
+        if (options.javafx() &&
                 hasBlockTag(e, DocTree.Kind.UNKNOWN_BLOCK_TAG, "treatAsPrivate")) {
             return true;
         }
@@ -1536,8 +1536,7 @@ public class Utils {
      * @return true if there are no comments, false otherwise
      */
     public boolean isSimpleOverride(ExecutableElement m) {
-        if (!options.summarizeOverriddenMethods ||
-                !isIncluded(m)) {
+        if (!options.summarizeOverriddenMethods() || !isIncluded(m)) {
             return false;
         }
 

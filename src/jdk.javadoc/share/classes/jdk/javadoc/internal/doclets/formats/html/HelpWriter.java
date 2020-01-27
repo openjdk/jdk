@@ -132,7 +132,7 @@ public class HelpWriter extends HtmlDocletWriter {
         ul.setStyle(HtmlStyle.blockList);
 
         // Overview
-        if (options.createOverview) {
+        if (options.createOverview()) {
             Content overviewHeading = HtmlTree.HEADING(Headings.CONTENT_HEADING,
                 contents.overviewLabel);
             htmlTree = HtmlTree.SECTION(HtmlStyle.helpSection, overviewHeading);
@@ -246,7 +246,7 @@ public class HelpWriter extends HtmlDocletWriter {
         ul.add(HtmlTree.LI(HtmlStyle.blockList, htmlTree));
 
         // Class Use
-        if (options.classUse) {
+        if (options.classUse()) {
             Content useHead = HtmlTree.HEADING(Headings.CONTENT_HEADING,
                     contents.getContent("doclet.help.use.head"));
             htmlTree = HtmlTree.SECTION(HtmlStyle.helpSection, useHead);
@@ -257,7 +257,7 @@ public class HelpWriter extends HtmlDocletWriter {
         }
 
         // Tree
-        if (options.createTree) {
+        if (options.createTree()) {
             Content treeHead = HtmlTree.HEADING(Headings.CONTENT_HEADING,
                     contents.getContent("doclet.help.tree.head"));
             htmlTree = HtmlTree.SECTION(HtmlStyle.helpSection, treeHead);
@@ -275,7 +275,7 @@ public class HelpWriter extends HtmlDocletWriter {
         }
 
         // Deprecated
-        if (!(options.noDeprecatedList || options.noDeprecated)) {
+        if (!(options.noDeprecatedList() || options.noDeprecated())) {
             Content dHead = HtmlTree.HEADING(Headings.CONTENT_HEADING,
                     contents.deprecatedAPI);
             htmlTree = HtmlTree.SECTION(HtmlStyle.helpSection, dHead);
@@ -288,9 +288,9 @@ public class HelpWriter extends HtmlDocletWriter {
         }
 
         // Index
-        if (options.createIndex) {
+        if (options.createIndex()) {
             Content indexlink;
-            if (options.splitIndex) {
+            if (options.splitIndex()) {
                 indexlink = links.createLink(DocPaths.INDEX_FILES.resolve(DocPaths.indexN(1)),
                         resources.getText("doclet.Index"));
             } else {

@@ -31,8 +31,6 @@ import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Types;
 
-import jdk.javadoc.internal.doclets.formats.html.HtmlOptions;
-
 /**
  * This class provides basic JavaFX property related utility methods.
  * Refer to the JavaFX conventions in the VisibleMemberTable comments.
@@ -49,12 +47,12 @@ public class PropertyUtils {
 
     PropertyUtils(BaseConfiguration configuration) {
         BaseOptions options = configuration.getOptions();
-        javafx = options.javafx;
+        javafx = options.javafx();
 
         typeUtils = configuration.docEnv.getTypeUtils();
 
         // Disable strict check for JDK's without FX.
-        TypeMirror jboType = options.disableJavaFxStrictChecks
+        TypeMirror jboType = options.disableJavaFxStrictChecks()
                 ? null
                 : configuration.utils.getSymbol("javafx.beans.Observable");
 

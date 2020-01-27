@@ -52,6 +52,12 @@ import static javax.tools.Diagnostic.Kind.ERROR;
  * The objects to handle command-line options, and to initialize this
  * object, are all subtypes of {@link BaseOptions.Option},
  * returned by {@link BaseOptions#getSupportedOptions()}.
+ *
+ * <p>Some of the methods used to access the values of options
+ * have names that begin with a verb, such as {@link #copyDocfileSubdirs}
+ * or {@link #showVersion}. Unless otherwise stated,
+ * these methods should all be taken as just accessing the value
+ * of the associated option.
  */
 public abstract class BaseOptions {
 
@@ -61,25 +67,25 @@ public abstract class BaseOptions {
      * Argument for command-line option {@code --allow-script-in-comments}.
      * Allow JavaScript in doc comments.
      */
-    public boolean allowScriptInComments = false;
+    private boolean allowScriptInComments = false;
 
     /**
      * Argument for command-line option {@code -docfilessubdirs}.
      * True if we should recursively copy the doc-file subdirectories
      */
-    public boolean copyDocfileSubdirs = false;
+    private boolean copyDocfileSubdirs = false;
 
     /**
      * Arguments for command-line option {@code -tag} and {@code -taglet}.
      */
-    final LinkedHashSet<List<String>> customTagStrs = new LinkedHashSet<>();
+    private final LinkedHashSet<List<String>> customTagStrs = new LinkedHashSet<>();
 
     /**
      * Argument for command-line option {@code -d}.
      * Destination directory name, in which doclet will generate the entire
      * documentation. Default is current directory.
      */
-    public String destDirName = "";
+    private String destDirName = "";
 
     /**
      * Argument for command-line option {@code --disable-javafx-strict-checks}.
@@ -87,56 +93,56 @@ public abstract class BaseOptions {
      * tests allowing those tests to be executed successfully, for
      * instance, with OpenJDK builds which may not contain FX libraries.
      */
-    public boolean disableJavaFxStrictChecks = false;
+    private boolean disableJavaFxStrictChecks = false;
 
     /**
      * Argument for command-line option {@code -docencoding}.
      * Encoding for this document. Default is default encoding for this
      * platform.
      */
-    public String docEncoding = null;
+    private String docEncoding = null;
 
     /**
      * Argument for command-line option {@code ???}.
      * Destination directory name, in which doclet will copy the doc-files to.
      */
-    public String docFileDestDirName = "";
+    private String docFileDestDirName = "";
 
     /**
      * Argument for hidden command-line option {@code --dump-on-error}.
      */
-    public boolean dumpOnError = false;
+    private boolean dumpOnError = false;
 
     /**
      * Argument for command-line option {@code -encoding}.
      * Encoding for this document. Default is default encoding for this
      * platform.
      */
-    public String encoding = null;
+    private String encoding = null;
 
     /**
      * Argument for command-line option {@code -excludedocfilessubdir}.
      * The set of doc-file subdirectories to exclude.
      */
-    protected Set<String> excludedDocFileDirs;
+    private Set<String> excludedDocFileDirs;
 
     /**
      * Argument for command-line option {@code -noqualifier}.
      * The set of qualifiers to exclude.
      */
-    protected Set<String> excludedQualifiers;
+    private Set<String> excludedQualifiers;
 
     /**
      * Arguments for command-line option {@code -group}
      */
-    List<Utils.Pair<String, String>> groupPairs;
+    private List<Utils.Pair<String, String>> groupPairs;
 
     /**
      * Argument for command-line option {@code --javafx} or {@code -javafx}.
      * Generate documentation for JavaFX getters and setters automatically
      * by copying it from the appropriate property definition.
      */
-    public boolean javafx = false;
+    private boolean javafx = false;
 
     /**
      * Argument for command-line option {@code -keywords}.
@@ -144,31 +150,31 @@ public abstract class BaseOptions {
      * Set to false because meta keywords are ignored in general
      * by most Internet search engines.
      */
-    public boolean keywords = false;
+    private boolean keywords = false;
 
     /**
      * Arguments for command-line option {@code -link}.
      */
     // A list containing urls
-    final List<String> linkList = new ArrayList<>();
+    private final List<String> linkList = new ArrayList<>();
 
     /**
      * Arguments for command-line option {@code -linkoffline}.
      */
     // A list of pairs containing urls and package list
-    final List<Utils.Pair<String, String>> linkOfflineList = new ArrayList<>();
+    private final List<Utils.Pair<String, String>> linkOfflineList = new ArrayList<>();
 
     /**
      * Argument for command-line option {@code -linksource}.
      * True if we should generate browsable sources.
      */
-    public boolean linkSource = false;
+    private boolean linkSource = false;
 
     /**
      * Argument for command-line option {@code -nocomment}.
      * True if user wants to suppress descriptions and tags.
      */
-    public boolean noComment = false;
+    private boolean noComment = false;
 
     /**
      * Argument for command-line option {@code -nodeprecated}.
@@ -177,34 +183,34 @@ public abstract class BaseOptions {
      * -nodeprecated option is used. Default is generate deprecated API
      * information.
      */
-    public boolean noDeprecated = false;
+    private boolean noDeprecated = false;
 
     /**
      * Argument for command-line option {@code -nosince}.
      * True if command-line option "-nosince" is used. Default value is
      * false.
      */
-    public boolean noSince = false;
+    private boolean noSince = false;
 
     /**
      * Argument for command-line option {@code -notimestamp}.
      * True if user wants to suppress time stamp in output.
      * Default is false.
      */
-    public boolean noTimestamp = false;
+    private boolean noTimestamp = false;
 
     /**
      * Argument for command-line option {@code -quiet}.
      * Suppress all messages
      */
-    public boolean quiet = false;
+    private boolean quiet = false;
 
     /**
      * Argument for command-line option {@code -serialwarn}.
      * This is true if option "-serialwarn" is used. Default value is false to
      * suppress excessive warnings about serial tag.
      */
-    public boolean serialWarn = false;
+    private boolean serialWarn = false;
 
     /**
      * Argument for command-line option {@code -author}.
@@ -213,13 +219,13 @@ public abstract class BaseOptions {
      * <code>showauthor</code> is set to true if -author option is used.
      * Default is don't show author information.
      */
-    public boolean showAuthor = false;
+    private boolean showAuthor = false;
 
     /**
      * Argument for command-line option {@code --show-taglets}.
      * Show taglets (internal debug switch)
      */
-    public boolean showTaglets = false;
+    private boolean showTaglets = false;
 
     /**
      * Argument for command-line option {@code -version}.
@@ -228,13 +234,13 @@ public abstract class BaseOptions {
      * used. {@code showVersion} is set to true if -version option is
      * used. Default is don't show version information.
      */
-    public boolean showVersion = false;
+    private boolean showVersion = false;
 
     /**
      * Argument for command-line option {@code -sourcetab}.
      * The specified amount of space between tab stops.
      */
-    public int sourceTabSize;
+    private int sourceTabSize;
 
     /**
      * Value for command-line option {@code --override-methods summary}
@@ -243,13 +249,13 @@ public abstract class BaseOptions {
      * with no changes to the API contract should be summarized in the
      * footnote section.
      */
-    public boolean summarizeOverriddenMethods = false;
+    private boolean summarizeOverriddenMethods = false;
 
     /**
      * Argument for command-line option {@code -tagletpath}.
      * The path to Taglets
      */
-    public String tagletPath = null;
+    private String tagletPath = null;
 
     //</editor-fold>
 
@@ -607,6 +613,265 @@ public abstract class BaseOptions {
         if (!path.endsWith(fs))
             path += fs;
         return path;
+    }
+
+    /**
+     * Argument for command-line option {@code --allow-script-in-comments}.
+     * Allow JavaScript in doc comments.
+     */
+    boolean allowScriptInComments() {
+        return allowScriptInComments;
+    }
+
+    /**
+     * Argument for command-line option {@code -docfilessubdirs}.
+     * True if we should recursively copy the doc-file subdirectories
+     */
+    public boolean copyDocfileSubdirs() {
+        return copyDocfileSubdirs;
+    }
+
+    /**
+     * Arguments for command-line option {@code -tag} and {@code -taglet}.
+     */
+    LinkedHashSet<List<String>> customTagStrs() {
+        return customTagStrs;
+    }
+
+    /**
+     * Argument for command-line option {@code -d}.
+     * Destination directory name, in which doclet will generate the entire
+     * documentation. Default is current directory.
+     */
+    String destDirName() {
+        return destDirName;
+    }
+
+    /**
+     * Argument for command-line option {@code --disable-javafx-strict-checks}.
+     * Primarily used to disable strict checks in the regression
+     * tests allowing those tests to be executed successfully, for
+     * instance, with OpenJDK builds which may not contain FX libraries.
+     */
+    boolean disableJavaFxStrictChecks() {
+        return disableJavaFxStrictChecks;
+    }
+
+    /**
+     * Argument for command-line option {@code -docencoding}.
+     * Encoding for this document. Default is default encoding for this
+     * platform.
+     */
+    public String docEncoding() {
+        return docEncoding;
+    }
+
+    public void setDocEncoding(String docEncoding) {
+        this.docEncoding = docEncoding;
+    }
+
+
+    /**
+     * Argument for command-line option {@code ???}.
+     * Destination directory name, in which doclet will copy the doc-files to.
+     */
+    String docFileDestDirName() {
+        return docFileDestDirName;
+    }
+
+    /**
+     * Argument for hidden command-line option {@code --dump-on-error}.
+     */
+    boolean dumpOnError() {
+        return dumpOnError;
+    }
+
+    /**
+     * Argument for command-line option {@code -encoding}.
+     * Encoding for this document. Default is default encoding for this
+     * platform.
+     */
+    public String encoding() {
+        return encoding;
+    }
+
+    /**
+     * Argument for command-line option {@code -excludedocfilessubdir}.
+     * The set of doc-file subdirectories to exclude.
+     */
+    Set<String> excludedDocFileDirs() {
+        return excludedDocFileDirs;
+    }
+
+    /**
+     * Argument for command-line option {@code -noqualifier}.
+     * The set of qualifiers to exclude.
+     */
+    Set<String> excludedQualifiers() {
+        return excludedQualifiers;
+    }
+
+    /**
+     * Arguments for command-line option {@code -group}
+     */
+    List<Utils.Pair<String, String>> groupPairs() {
+        return groupPairs;
+    }
+
+    /**
+     * Argument for command-line option {@code --javafx} or {@code -javafx}.
+     * Generate documentation for JavaFX getters and setters automatically
+     * by copying it from the appropriate property definition.
+     */
+    public boolean javafx() {
+        return javafx;
+    }
+
+    public void setJavaFX(boolean javafx) {
+        this.javafx = javafx;
+    }
+
+    /**
+     * Argument for command-line option {@code -keywords}.
+     * True if user wants to add member names as meta keywords.
+     * Set to false because meta keywords are ignored in general
+     * by most Internet search engines.
+     */
+    public boolean keywords() {
+        return keywords;
+    }
+
+    /**
+     * Arguments for command-line option {@code -link}.
+     */
+    List<String> linkList() {
+        return linkList;
+    }
+
+    /**
+     * Arguments for command-line option {@code -linkoffline}.
+     */
+    List<Utils.Pair<String, String>> linkOfflineList() {
+        return linkOfflineList;
+    }
+
+    /**
+     * Argument for command-line option {@code -linksource}.
+     * True if we should generate browsable sources.
+     */
+    public boolean linkSource() {
+        return linkSource;
+    }
+
+    /**
+     * Argument for command-line option {@code -nocomment}.
+     * True if user wants to suppress descriptions and tags.
+     */
+    public boolean noComment() {
+        return noComment;
+    }
+
+    /**
+     * Argument for command-line option {@code -nodeprecated}.
+     * Don't generate deprecated API information at all if -nodeprecated
+     * option is used. {@code noDeprecated} is set to {@code true} if
+     * {@code -nodeprecated} option is used.
+     * Default is generate deprecated API information.
+     */
+    public boolean noDeprecated() {
+        return noDeprecated;
+    }
+
+    /**
+     * Argument for command-line option {@code -nosince}.
+     * True if command-line option {@code -nosince"} is used.
+     * Default value is false.
+     */
+    public boolean noSince() {
+        return noSince;
+    }
+
+    /**
+     * Argument for command-line option {@code -notimestamp}.
+     * True if user wants to suppress time stamp in output.
+     * Default is false.
+     */
+    public boolean noTimestamp() {
+        return noTimestamp;
+    }
+
+    /**
+     * Argument for command-line option {@code -quiet}.
+     * Suppress all messages
+     */
+    boolean quiet() {
+        return quiet;
+    }
+
+    /**
+     * Argument for command-line option {@code -serialwarn}.
+     * This is true if option "-serialwarn" is used. Default value is false to
+     * suppress excessive warnings about serial tag.
+     */
+    public boolean serialWarn() {
+        return serialWarn;
+    }
+
+    /**
+     * Argument for command-line option {@code -author}.
+     * Generate author specific information for all the classes if @author
+     * tag is used in the doc comment and if -author option is used.
+     * <code>showauthor</code> is set to true if -author option is used.
+     * Default is don't show author information.
+     */
+    public boolean showAuthor() {
+        return showAuthor;
+    }
+
+    /**
+     * Argument for command-line option {@code --show-taglets}.
+     * Show taglets (internal debug switch)
+     */
+    public boolean showTaglets() {
+        return showTaglets;
+    }
+
+    /**
+     * Argument for command-line option {@code -version}.
+     * Generate version specific information for the all the classes
+     * if @version tag is used in the doc comment and if -version option is
+     * used. {@code showVersion} is set to true if -version option is
+     * used. Default is don't show version information.
+     */
+    public boolean showVersion() {
+        return showVersion;
+    }
+
+    /**
+     * Argument for command-line option {@code -sourcetab}.
+     * The specified amount of space between tab stops.
+     */
+    public int sourceTabSize() {
+        return sourceTabSize;
+    }
+
+    /**
+     * Value for command-line option {@code --override-methods summary}
+     * or  {@code --override-methods detail}.
+     * Specifies whether those methods that override a super-type's method
+     * with no changes to the API contract should be summarized in the
+     * footnote section.
+     */
+    public boolean summarizeOverriddenMethods() {
+        return summarizeOverriddenMethods;
+    }
+
+    /**
+     * Argument for command-line option {@code -tagletpath}.
+     * The path to Taglets
+     */
+    public String tagletPath() {
+        return tagletPath;
     }
 
     protected abstract static class Option implements Doclet.Option, Comparable<Option> {

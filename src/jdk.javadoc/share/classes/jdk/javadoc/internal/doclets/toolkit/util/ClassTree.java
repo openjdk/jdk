@@ -166,7 +166,7 @@ public class ClassTree {
             // In the tree page (e.g overview-tree.html) do not include
             // information of classes which are deprecated or are a part of a
             // deprecated package.
-            if (configuration.getOptions().noDeprecated &&
+            if (configuration.getOptions().noDeprecated() &&
                     (utils.isDeprecated(aClass) ||
                     utils.isDeprecated(utils.containingPackage(aClass)))) {
                 continue;

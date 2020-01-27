@@ -141,7 +141,7 @@ public abstract class AbstractOverviewIndexWriter extends HtmlDocletWriter {
                 .setFooter(footer)
                 .toContent());
         printHtmlDocument(
-                configuration.metakeywords.getOverviewMetaKeywords(title, configuration.getOptions().docTitle),
+                configuration.metakeywords.getOverviewMetaKeywords(title, configuration.getOptions().docTitle()),
                 description, body);
     }
 
@@ -158,7 +158,7 @@ public abstract class AbstractOverviewIndexWriter extends HtmlDocletWriter {
      * @param body the document tree to which the title will be added
      */
     protected void addConfigurationTitle(Content body) {
-        String doctitle = configuration.getOptions().docTitle;
+        String doctitle = configuration.getOptions().docTitle();
         if (!doctitle.isEmpty()) {
             Content title = new RawHtml(doctitle);
             Content heading = HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING,

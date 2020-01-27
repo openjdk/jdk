@@ -192,17 +192,17 @@ public class TagletManager {
         unseenCustomTags = new HashSet<>();
         allTaglets = new LinkedHashMap<>();
         BaseOptions options = configuration.getOptions();
-        this.nosince = options.noSince;
-        this.showversion = options.showVersion;
-        this.showauthor = options.showAuthor;
-        this.javafx = options.javafx;
+        this.nosince = options.noSince();
+        this.showversion = options.showVersion();
+        this.showauthor = options.showAuthor();
+        this.javafx = options.javafx();
         this.docEnv = configuration.docEnv;
         this.doclet = configuration.doclet;
         this.messages = configuration.getMessages();
         this.resources = configuration.getResources();
-        this.showTaglets = options.showTaglets;
+        this.showTaglets = options.showTaglets();
         this.utils = configuration.utils;
-        this.tagletPath = options.tagletPath;
+        this.tagletPath = options.tagletPath();
         initStandardTaglets();
     }
 

@@ -232,8 +232,8 @@ public abstract class BaseConfiguration {
         utils = new Utils(this);
 
         BaseOptions options = getOptions();
-        if (!options.javafx) {
-            options.javafx = isJavaFXMode();
+        if (!options.javafx()) {
+            options.setJavaFX(isJavaFXMode());
         }
 
         // Once docEnv and Utils have been initialized, others should be safe.
@@ -356,15 +356,15 @@ public abstract class BaseConfiguration {
         BaseOptions options = getOptions();
         extern = new Extern(this);
         initDestDirectory();
-        for (String link : options.linkList) {
+        for (String link : options.linkList()) {
             extern.link(link, reporter);
         }
-        for (Pair<String, String> linkOfflinePair : options.linkOfflineList) {
+        for (Pair<String, String> linkOfflinePair : options.linkOfflineList()) {
             extern.link(linkOfflinePair.first, linkOfflinePair.second, reporter);
         }
         typeElementCatalog = new TypeElementCatalog(includedTypeElements, this);
-        initTagletManager(options.customTagStrs);
-        options.groupPairs.stream().forEach((grp) -> {
+        initTagletManager(options.customTagStrs());
+        options.groupPairs().stream().forEach((grp) -> {
             if (showModules) {
                 group.checkModuleGroups(grp.first, grp.second);
             } else {
@@ -391,7 +391,7 @@ public abstract class BaseConfiguration {
     }
 
     private void initDestDirectory() throws DocletException {
-        String destDirName = getOptions().destDirName;
+        String destDirName = getOptions().destDirName();
         if (!destDirName.isEmpty()) {
             Resources resources = getResources();
             DocFile destDir = DocFile.createFileForDirectory(this, destDirName);
@@ -513,7 +513,7 @@ public abstract class BaseConfiguration {
      * @return true if the directory is excluded.
      */
     public boolean shouldExcludeDocFileDir(String docfilesubdir) {
-        Set<String> excludedDocFileDirs = getOptions().excludedDocFileDirs;
+        Set<String> excludedDocFileDirs = getOptions().excludedDocFileDirs();
         return excludedDocFileDirs.contains(docfilesubdir);
     }
 
@@ -524,7 +524,7 @@ public abstract class BaseConfiguration {
      * @return true if the qualifier should be excluded
      */
     public boolean shouldExcludeQualifier(String qualifier) {
-        Set<String> excludedQualifiers = getOptions().excludedQualifiers;
+        Set<String> excludedQualifiers = getOptions().excludedQualifiers();
         if (excludedQualifiers.contains("all") ||
                 excludedQualifiers.contains(qualifier) ||
                 excludedQualifiers.contains(qualifier + ".*")) {
@@ -564,7 +564,7 @@ public abstract class BaseConfiguration {
      * @return true if it is a generated doc.
      */
     public boolean isGeneratedDoc(TypeElement te) {
-        boolean nodeprecated = getOptions().noDeprecated;
+        boolean nodeprecated = getOptions().noDeprecated();
         if (!nodeprecated) {
             return true;
         }
@@ -673,7 +673,7 @@ public abstract class BaseConfiguration {
      * @return the allowScriptInComments
      */
     public boolean isAllowScriptInComments() {
-        return getOptions().allowScriptInComments;
+        return getOptions().allowScriptInComments();
     }
 
     public synchronized VisibleMemberTable getVisibleMemberTable(TypeElement te) {

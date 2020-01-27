@@ -109,7 +109,7 @@ public class HtmlDoclet extends AbstractDoclet {
             throws DocletException {
         super.generateOtherFiles(docEnv, classtree);
         HtmlOptions options = configuration.getOptions();
-        if (options.linkSource) {
+        if (options.linkSource()) {
             SourceToHTMLConverter.convertRoot(configuration,
                 docEnv, DocPaths.SOURCE_OUTPUT);
         }
@@ -120,27 +120,27 @@ public class HtmlDoclet extends AbstractDoclet {
             messages.error("doclet.No_Non_Deprecated_Classes_To_Document");
             return;
         }
-        boolean nodeprecated = options.noDeprecated;
-        performCopy(options.helpFile);
-        performCopy(options.stylesheetFile);
-        for (String stylesheet : options.additionalStylesheets) {
+        boolean nodeprecated = options.noDeprecated();
+        performCopy(options.helpFile());
+        performCopy(options.stylesheetFile());
+        for (String stylesheet : options.additionalStylesheets()) {
             performCopy(stylesheet);
         }
         // do early to reduce memory footprint
-        if (options.classUse) {
+        if (options.classUse()) {
             ClassUseWriter.generate(configuration, classtree);
         }
         IndexBuilder indexbuilder = new IndexBuilder(configuration, nodeprecated);
 
-        if (options.createTree) {
+        if (options.createTree()) {
             TreeWriter.generate(configuration, classtree);
         }
 
-        if (!(options.noDeprecatedList || nodeprecated)) {
+        if (!(options.noDeprecatedList() || nodeprecated)) {
             DeprecatedListWriter.generate(configuration);
         }
 
-        if (options.createOverview) {
+        if (options.createOverview()) {
             if (configuration.showModules) {
                 ModuleIndexWriter.generate(configuration);
             } else {
@@ -148,9 +148,9 @@ public class HtmlDoclet extends AbstractDoclet {
             }
         }
 
-        if (options.createIndex) {
+        if (options.createIndex()) {
             configuration.buildSearchTagIndex();
-            if (options.splitIndex) {
+            if (options.splitIndex()) {
                 SplitIndexWriter.generate(configuration, indexbuilder);
             } else {
                 SingleIndexWriter.generate(configuration, indexbuilder);
@@ -163,25 +163,25 @@ public class HtmlDoclet extends AbstractDoclet {
             SystemPropertiesWriter.generate(configuration);
         }
 
-        if (options.createOverview) {
+        if (options.createOverview()) {
             IndexRedirectWriter.generate(configuration, DocPaths.OVERVIEW_SUMMARY, DocPaths.INDEX);
         } else {
             IndexRedirectWriter.generate(configuration);
         }
 
-        if (options.helpFile.isEmpty() && !options.noHelp) {
+        if (options.helpFile().isEmpty() && !options.noHelp()) {
             HelpWriter.generate(configuration);
         }
         // If a stylesheet file is not specified, copy the default stylesheet
         // and replace newline with platform-specific newline.
         DocFile f;
-        if (options.stylesheetFile.length() == 0) {
+        if (options.stylesheetFile().length() == 0) {
             f = DocFile.createFileForOutput(configuration, DocPaths.STYLESHEET);
             f.copyResource(DocPaths.RESOURCES.resolve(DocPaths.STYLESHEET), true, true);
         }
         f = DocFile.createFileForOutput(configuration, DocPaths.JAVASCRIPT);
         f.copyResource(DocPaths.RESOURCES.resolve(DocPaths.JAVASCRIPT), true, true);
-        if (options.createIndex) {
+        if (options.createIndex()) {
             f = DocFile.createFileForOutput(configuration, DocPaths.SEARCH_JS);
             f.copyResource(DOCLET_RESOURCES.resolve(DocPaths.SEARCH_JS), true, true);
 
@@ -280,12 +280,12 @@ public class HtmlDoclet extends AbstractDoclet {
             // if -nodeprecated option is set and the package is marked as
             // deprecated, do not generate the package-summary.html, package-frame.html
             // and package-tree.html pages for that package.
-            if (!(options.noDeprecated && utils.isDeprecated(pkg))) {
+            if (!(options.noDeprecated() && utils.isDeprecated(pkg))) {
                 AbstractBuilder packageSummaryBuilder =
                         configuration.getBuilderFactory().getPackageSummaryBuilder(pkg);
                 packageSummaryBuilder.build();
-                if (options.createTree) {
-                    PackageTreeWriter.generate(configuration, pkg, options.noDeprecated);
+                if (options.createTree()) {
+                    PackageTreeWriter.generate(configuration, pkg, options.noDeprecated());
                 }
             }
         }

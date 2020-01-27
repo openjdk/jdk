@@ -155,7 +155,7 @@ public class TreeWriter extends AbstractTreeWriter {
                 // is set and the package is marked as deprecated, do not include
                 // the page in the list of package hierarchies.
                 if (pkg.isUnnamed() ||
-                        (options.noDeprecated && utils.isDeprecated(pkg))) {
+                        (options.noDeprecated() && utils.isDeprecated(pkg))) {
                     i++;
                     continue;
                 }

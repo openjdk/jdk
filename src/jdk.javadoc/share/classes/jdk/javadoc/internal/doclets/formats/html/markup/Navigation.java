@@ -203,11 +203,11 @@ public class Navigation {
     private void addMainNavLinks(Content tree) {
         switch (documentedPage) {
             case OVERVIEW:
-                addActivePageLink(tree, contents.overviewLabel, options.createOverview);
+                addActivePageLink(tree, contents.overviewLabel, options.createOverview());
                 addModuleLink(tree);
                 addPackageLink(tree);
                 addPageLabel(tree, contents.classLabel, true);
-                addPageLabel(tree, contents.useLabel, options.classUse);
+                addPageLabel(tree, contents.useLabel, options.classUse());
                 addTreeLink(tree);
                 addDeprecatedLink(tree);
                 addIndexLink(tree);
@@ -218,7 +218,7 @@ public class Navigation {
                 addActivePageLink(tree, contents.moduleLabel, configuration.showModules);
                 addPackageLink(tree);
                 addPageLabel(tree, contents.classLabel, true);
-                addPageLabel(tree, contents.useLabel, options.classUse);
+                addPageLabel(tree, contents.useLabel, options.classUse());
                 addTreeLink(tree);
                 addDeprecatedLink(tree);
                 addIndexLink(tree);
@@ -229,11 +229,11 @@ public class Navigation {
                 addModuleOfElementLink(tree);
                 addActivePageLink(tree, contents.packageLabel, true);
                 addPageLabel(tree, contents.classLabel, true);
-                if (options.classUse) {
+                if (options.classUse()) {
                     addContentToTree(tree, links.createLink(DocPaths.PACKAGE_USE,
                             contents.useLabel, "", ""));
                 }
-                if (options.createTree) {
+                if (options.createTree()) {
                     addContentToTree(tree, links.createLink(DocPaths.PACKAGE_TREE,
                             contents.treeLabel, "", ""));
                 }
@@ -246,11 +246,11 @@ public class Navigation {
                 addModuleOfElementLink(tree);
                 addPackageSummaryLink(tree);
                 addActivePageLink(tree, contents.classLabel, true);
-                if (options.classUse) {
+                if (options.classUse()) {
                     addContentToTree(tree, links.createLink(DocPaths.CLASS_USE.resolve(path.basename()),
                             contents.useLabel));
                 }
-                if (options.createTree) {
+                if (options.createTree()) {
                     addContentToTree(tree, links.createLink(DocPaths.PACKAGE_TREE,
                             contents.treeLabel, "", ""));
                 }
@@ -268,7 +268,7 @@ public class Navigation {
                     addPackageOfElementLink(tree);
                     addContentToTree(tree, navLinkClass);
                 }
-                addActivePageLink(tree, contents.useLabel, options.classUse);
+                addActivePageLink(tree, contents.useLabel, options.classUse());
                 if (element instanceof PackageElement) {
                     addContentToTree(tree, links.createLink(DocPaths.PACKAGE_TREE, contents.treeLabel));
                 } else {
@@ -290,8 +290,8 @@ public class Navigation {
                     addPackageSummaryLink(tree);
                 }
                 addPageLabel(tree, contents.classLabel, true);
-                addPageLabel(tree, contents.useLabel, options.classUse);
-                addActivePageLink(tree, contents.treeLabel, options.createTree);
+                addPageLabel(tree, contents.useLabel, options.classUse());
+                addActivePageLink(tree, contents.treeLabel, options.createTree());
                 addDeprecatedLink(tree);
                 addIndexLink(tree);
                 addHelpLink(tree);
@@ -303,21 +303,21 @@ public class Navigation {
                 addModuleLink(tree);
                 addPackageLink(tree);
                 addPageLabel(tree, contents.classLabel, true);
-                addPageLabel(tree, contents.useLabel, options.classUse);
+                addPageLabel(tree, contents.useLabel, options.classUse());
                 addTreeLink(tree);
                 if (documentedPage == PageMode.DEPRECATED) {
-                    addActivePageLink(tree, contents.deprecatedLabel, !(options.noDeprecated
-                            || options.noDeprecatedList));
+                    addActivePageLink(tree, contents.deprecatedLabel, !(options.noDeprecated()
+                            || options.noDeprecatedList()));
                 } else {
                     addDeprecatedLink(tree);
                 }
                 if (documentedPage == PageMode.INDEX) {
-                    addActivePageLink(tree, contents.indexLabel, options.createIndex);
+                    addActivePageLink(tree, contents.indexLabel, options.createIndex());
                 } else {
                     addIndexLink(tree);
                 }
                 if (documentedPage == PageMode.HELP) {
-                    addActivePageLink(tree, contents.helpLabel, !options.noHelp);
+                    addActivePageLink(tree, contents.helpLabel, !options.noHelp());
                 } else {
                     addHelpLink(tree);
                 }
@@ -331,7 +331,7 @@ public class Navigation {
                 addModuleLink(tree);
                 addPackageLink(tree);
                 addPageLabel(tree, contents.classLabel, true);
-                addPageLabel(tree, contents.useLabel, options.classUse);
+                addPageLabel(tree, contents.useLabel, options.classUse());
                 addTreeLink(tree);
                 addDeprecatedLink(tree);
                 addIndexLink(tree);
@@ -342,7 +342,7 @@ public class Navigation {
                 addModuleOfElementLink(tree);
                 addContentToTree(tree, navLinkPackage);
                 addPageLabel(tree, contents.classLabel, true);
-                addPageLabel(tree, contents.useLabel, options.classUse);
+                addPageLabel(tree, contents.useLabel, options.classUse());
                 addTreeLink(tree);
                 addDeprecatedLink(tree);
                 addIndexLink(tree);
@@ -785,7 +785,7 @@ public class Navigation {
     }
 
     private void addOverviewLink(Content tree) {
-        if (options.createOverview) {
+        if (options.createOverview()) {
             tree.add(HtmlTree.LI(links.createLink(pathToRoot.resolve(DocPaths.INDEX),
                     contents.overviewLabel, "", "")));
         }
@@ -851,7 +851,7 @@ public class Navigation {
     }
 
     private void addTreeLink(Content tree) {
-        if (options.createTree) {
+        if (options.createTree()) {
             List<PackageElement> packages = new ArrayList<>(configuration.getSpecifiedPackageElements());
             DocPath docPath = packages.size() == 1 && configuration.getSpecifiedTypeElements().isEmpty()
                     ? pathToRoot.resolve(configuration.docPaths.forPackage(packages.get(0)).resolve(DocPaths.PACKAGE_TREE))
@@ -861,16 +861,16 @@ public class Navigation {
     }
 
     private void addDeprecatedLink(Content tree) {
-        if (!(options.noDeprecated || options.noDeprecatedList)) {
+        if (!(options.noDeprecated() || options.noDeprecatedList())) {
             tree.add(HtmlTree.LI(links.createLink(pathToRoot.resolve(DocPaths.DEPRECATED_LIST),
                     contents.deprecatedLabel, "", "")));
         }
     }
 
     private void addIndexLink(Content tree) {
-        if (options.createIndex) {
+        if (options.createIndex()) {
             tree.add(HtmlTree.LI(links.createLink(pathToRoot.resolve(
-                    (options.splitIndex
+                    (options.splitIndex()
                             ? DocPaths.INDEX_FILES.resolve(DocPaths.indexN(1))
                             : DocPaths.INDEX_ALL)),
                     contents.indexLabel, "", "")));
@@ -878,8 +878,8 @@ public class Navigation {
     }
 
     private void addHelpLink(Content tree) {
-        if (!options.noHelp) {
-            String helpfile = options.helpFile;
+        if (!options.noHelp()) {
+            String helpfile = options.helpFile();
             DocPath helpfilenm;
             if (helpfile.isEmpty()) {
                 helpfilenm = DocPaths.HELP_DOC;
@@ -910,7 +910,7 @@ public class Navigation {
      * @return the navigation contents
      */
     public Content getContent(boolean top) {
-        if (options.noNavbar) {
+        if (options.noNavbar()) {
             return new ContentBuilder();
         }
         Content tree = HtmlTree.NAV();
@@ -955,7 +955,7 @@ public class Navigation {
         addDetailLinks(ulNavDetail);
         div.add(ulNavDetail);
         subDiv.add(div);
-        if (top && options.createIndex) {
+        if (top && options.createIndex()) {
             addSearch(subDiv);
         }
         tree.add(subDiv);

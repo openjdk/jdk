@@ -77,7 +77,7 @@ public class ElementListWriter {
         try (BufferedWriter out = new BufferedWriter(file.openWriter())) {
             if (configuration.showModules) {
                 for (ModuleElement mdle : configuration.modulePackages.keySet()) {
-                    if (!(options.noDeprecated && utils.isDeprecated(mdle))) {
+                    if (!(options.noDeprecated() && utils.isDeprecated(mdle))) {
                         out.write(DocletConstants.MODULE_PREFIX + mdle.toString());
                         out.newLine();
                         for (PackageElement pkg : configuration.modulePackages.get(mdle)) {
@@ -90,7 +90,7 @@ public class ElementListWriter {
                 for (PackageElement pkg : configuration.packages) {
                     // if the -nodeprecated option is set and the package is marked as
                     // deprecated, do not include it in the packages list.
-                    if (!(options.noDeprecated && utils.isDeprecated(pkg))) {
+                    if (!(options.noDeprecated() && utils.isDeprecated(pkg))) {
                         out.write(pkg.toString());
                         out.newLine();
                     }

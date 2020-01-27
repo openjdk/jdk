@@ -159,7 +159,7 @@ public class ClassUseWriter extends SubWriterHolderWriter {
      */
     public static void generate(HtmlConfiguration configuration, ClassTree classtree) throws DocFileIOException  {
         ClassUseMapper mapper = new ClassUseMapper(configuration, classtree);
-        boolean nodeprecated = configuration.getOptions().noDeprecated;
+        boolean nodeprecated = configuration.getOptions().noDeprecated();
         Utils utils = configuration.utils;
         for (TypeElement aClass : configuration.getIncludedTypeElements()) {
             // If -nodeprecated option is set and the containing package is marked

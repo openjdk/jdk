@@ -187,7 +187,7 @@ public class AnnotationTypeWriterImpl extends SubWriterHolderWriter
                 LinkInfoImpl.Kind.CLASS_SIGNATURE, annotationType);
         Content annotationName = new StringContent(utils.getSimpleName(annotationType));
         Content parameterLinks = getTypeParameterLinks(linkInfo);
-        if (configuration.getOptions().linkSource) {
+        if (options.linkSource()) {
             addSrcLink(annotationType, annotationName, pre);
             pre.add(parameterLinks);
         } else {
@@ -203,7 +203,7 @@ public class AnnotationTypeWriterImpl extends SubWriterHolderWriter
      */
     @Override
     public void addAnnotationTypeDescription(Content annotationInfoTree) {
-        if (!configuration.getOptions().noComment) {
+        if (!options.noComment()) {
             if (!utils.getFullBody(annotationType).isEmpty()) {
                 addInlineComment(annotationType, annotationInfoTree);
             }
@@ -215,7 +215,7 @@ public class AnnotationTypeWriterImpl extends SubWriterHolderWriter
      */
     @Override
     public void addAnnotationTypeTagInfo(Content annotationInfoTree) {
-        if (!configuration.getOptions().noComment) {
+        if (!options.noComment()) {
             addTagsInfo(annotationType, annotationInfoTree);
         }
     }

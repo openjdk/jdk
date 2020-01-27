@@ -108,7 +108,7 @@ public class ModuleIndexWriter extends AbstractOverviewIndexWriter {
 
             for (ModuleElement mdle : modules) {
                 if (!mdle.isUnnamed()) {
-                    if (!(options.noDeprecated && utils.isDeprecated(mdle))) {
+                    if (!(options.noDeprecated() && utils.isDeprecated(mdle))) {
                         Content moduleLinkContent = getModuleLink(mdle, new StringContent(mdle.getQualifiedName().toString()));
                         Content summaryContent = new ContentBuilder();
                         addSummaryComment(mdle, summaryContent);
