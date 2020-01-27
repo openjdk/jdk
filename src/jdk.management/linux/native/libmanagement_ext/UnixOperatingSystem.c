@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,8 @@
 #include <pthread.h>
 #include <inttypes.h>
 #include "com_sun_management_internal_OperatingSystemImpl.h"
+
+#include <assert.h>
 
 struct ticks {
     uint64_t  used;
@@ -250,7 +252,7 @@ static double get_cpuload_internal(int which, double *pkernelLoad, CpuLoadTarget
 
     pthread_mutex_lock(&lock);
 
-    if(perfInit() == 0) {
+    if (perfInit() == 0) {
 
         if (target == CPU_LOAD_VM_ONLY) {
             pticks = &counters.jvmTicks;
@@ -270,14 +272,10 @@ static double get_cpuload_internal(int which, double *pkernelLoad, CpuLoadTarget
             failed = 1;
         }
 
-        if(!failed) {
-            // seems like we sometimes end up with less kernel ticks when
-            // reading /proc/self/stat a second time, timing issue between cpus?
-            if (pticks->usedKernel < tmp.usedKernel) {
-                kdiff = 0;
-            } else {
-                kdiff = pticks->usedKernel - tmp.usedKernel;
-            }
+        if (!failed) {
+
+            assert(pticks->usedKernel >= tmp.usedKernel);
+            kdiff = pticks->usedKernel - tmp.usedKernel;
             tdiff = pticks->total - tmp.total;
             udiff = pticks->used - tmp.used;
 
