@@ -206,11 +206,10 @@ public interface ObjectInputFilter {
      * <p>
      * The filter is configured during the initialization of the {@code ObjectInputFilter.Config}
      * class. For example, by calling {@link #getSerialFilter() Config.getSerialFilter}.
-     * If the system property {@systemProperty jdk.serialFilter} is defined on the command line,
-     * it is used to configure the filter.
-     * If the system property is not defined on the command line, and the
-     * {@link java.security.Security} property {@code jdk.serialFilter} is defined
-     * then it is used to configure the filter.
+     * If the Java virtual machine is started with the system property
+     * {@systemProperty jdk.serialFilter}, its value is used to configure the filter.
+     * If the system property is not defined, and the {@link java.security.Security} property
+     * {@code jdk.serialFilter} is defined then it is used to configure the filter.
      * Otherwise, the filter is not configured during initialization and
      * can be set with {@link #setSerialFilter(ObjectInputFilter) Config.setSerialFilter}.
      * Setting the {@code jdk.serialFilter} with {@link System#setProperty(String, String)
