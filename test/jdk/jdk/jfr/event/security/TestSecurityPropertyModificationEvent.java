@@ -48,6 +48,15 @@ public class TestSecurityPropertyModificationEvent {
     static String keyValue = "shouldBecomeAnEvent";
 
     public static void main(String[] args) throws Exception {
+
+        // If events in java.base are used before JFR is initialized
+        // the event handler field will be of type java.lang.Object.
+        // Adding this for one of the security events makes sure
+        // we have test coverage of this mode as well.
+        for (String key : keys) {
+            Security.setProperty(key, keyValue);
+        }
+
         try (Recording recording = new Recording()) {
             recording.enable(EventNames.SecurityProperty);
             recording.start();
