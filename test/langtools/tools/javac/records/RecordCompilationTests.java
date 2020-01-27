@@ -625,6 +625,19 @@ public class RecordCompilationTests extends CompilationTestCase {
         Assert.check(numberOfFieldRefs == 1);
     }
 
+    public void testAcceptRecordId() {
+        String[] testOptions = {/* no options */};
+        setCompileOptions(testOptions);
+        assertOKWithWarning("compiler.warn.restricted.type.not.allowed.preview",
+                "class R {\n" +
+                "    record RR(int i) {\n" +
+                "        return null;\n" +
+                "    }\n" +
+                "    class record {}\n" +
+                "}");
+        setCompileOptions(PREVIEW_OPTIONS);
+    }
+
     public void testAnnos() throws Exception {
         String srcTemplate =
                 """
@@ -861,14 +874,12 @@ public class RecordCompilationTests extends CompilationTestCase {
         @Override
         public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
             targets = processingEnv.getOptions().get("targets");
-            System.out.println("targets------------------------------------------------- " + targets);
             for (TypeElement te : annotations) {
                 if (te.toString().equals("Anno")) {
                     checkElements(te, roundEnv, targets);
                     if (targets.contains("TYPE_USE")) {
                         Element element = processingEnv.getElementUtils().getTypeElement("R");
                         numberOfTypeAnnotations = 0;
-                        System.out.println("element found --------------------------------- " + element);
                         checkTypeAnnotations(element);
                         Assert.check(numberOfTypeAnnotations == 4);
                     }
