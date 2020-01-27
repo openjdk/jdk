@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@ package jit.escape.LockCoarsening;
 
 import nsk.share.TestFailure;
 
-class LockCoarsening {
+public class LockCoarsening {
     // JVM option '-XX:+EliminateLocks' specified
     public static boolean eliminateLocks = false;
     // Number of chances Thread 2 has to acquire the lock

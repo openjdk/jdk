@@ -1650,7 +1650,7 @@ vmTestbase_vm_compiler_quick = \
   vmTestbase/jit/deoptimization/test08/test08.java \
   vmTestbase/jit/escape/AdaptiveBlocking/AdaptiveBlocking001/AdaptiveBlocking001.java \
   vmTestbase/jit/escape/LockElision/MatMul/MatMul.java \
-  vmTestbase/jit/escape/LockCoarsening/LockCoarsening002/TestDescription.java \
+  vmTestbase/jit/escape/LockCoarsening/LockCoarsening002.java \
   vmTestbase/jit/exception/exception.java \
   vmTestbase/jit/graph/cgt0.java \
   vmTestbase/jit/graph/cgt1.java \

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,17 @@
 /*
  * @test
  *
- * @summary converted from VM Testbase jit/escape/LockCoarsening/LockCoarsening001.
- * VM Testbase keywords: [jit, quarantine]
- * VM Testbase comments: 8148743
+ * @summary converted from VM Testbase jit/escape/LockCoarsening/LockCoarsening002.
+ * VM Testbase keywords: [jit, quick, quarantine]
+ * VM Testbase comments: 8208259
+ *
+ * @requires vm.flavor == "server"
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
- * @build jit.escape.LockCoarsening.LockCoarsening
- * @run shell ../run.sh EliminateLocks
+ * @run main/othervm
+ *      -XX:-DoEscapeAnalysis -XX:-EliminateLocks
+ *      -Xcomp -XX:-TieredCompilation -XX:+IgnoreUnrecognizedVMOptions -XX:-DeoptimizeALot
+ *      jit.escape.LockCoarsening.LockCoarsening
  */
 
