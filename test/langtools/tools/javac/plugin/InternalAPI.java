@@ -27,6 +27,7 @@
  *  @summary Extend support for -XDaccessInternalAPI to plugin modules
  *  @library /tools/lib
  *  @modules jdk.compiler/com.sun.tools.javac.api
+ *           jdk.compiler/com.sun.tools.javac.code
  *           jdk.compiler/com.sun.tools.javac.main
  *           jdk.jlink
  *  @build toolbox.ToolBox toolbox.JavacTask toolbox.JarTask
@@ -127,10 +128,10 @@ public class InternalAPI extends TestRunner {
         runTests(m -> new Object[] { Path.of(m.getName()) });
     }
 
-    // -XDaccessInternalAPI has always been supported for classpath plugins
     @Test
     public void testClassPath(Path base) throws Exception {
         List<String> stdout = new JavacTask(tb)
+                .options("-XDaccessInternalAPI")
                 .classpath(pluginJar)
                 .outdir(Files.createDirectories(base.resolve("out")))
                 .files(tb.findJavaFiles(Path.of("hw")))
