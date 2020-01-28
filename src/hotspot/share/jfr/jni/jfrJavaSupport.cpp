@@ -764,15 +764,15 @@ bool JfrJavaSupport::is_excluded(jobject thread) {
   return native_thread != NULL ? native_thread->jfr_thread_local()->is_excluded() : is_thread_excluded(thread);
 }
 
-jobject JfrJavaSupport::get_handler(jobject clazz, Thread* thread) {
-  DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(thread));
+jobject JfrJavaSupport::get_handler(jobject clazz, TRAPS) {
+  DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(THREAD));
   const oop klass_oop = JNIHandles::resolve(clazz);
   assert(klass_oop != NULL, "invariant");
   Klass* klass = java_lang_Class::as_Klass(klass_oop);
-  HandleMark hm(thread);
-  Handle h_klass_oop(Handle(thread, klass->java_mirror()));
+  HandleMark hm(THREAD);
+  Handle h_klass_oop(Handle(THREAD, klass->java_mirror()));
   InstanceKlass* const instance_klass = static_cast<InstanceKlass*>(klass);
-  assert(instance_klass->is_initialized(), "inavarient");
+  klass->initialize(CHECK_NULL);
 
   fieldDescriptor event_handler_field;
   Klass* f = instance_klass->find_field(
@@ -781,7 +781,7 @@ jobject JfrJavaSupport::get_handler(jobject clazz, Thread* thread) {
     true, &event_handler_field);
   if (f != NULL) {
     oop ret = h_klass_oop->obj_field(event_handler_field.offset());
-    return ret != NULL ? JfrJavaSupport::local_jni_handle(ret, thread) : NULL;
+    return ret != NULL ? JfrJavaSupport::local_jni_handle(ret, THREAD) : NULL;
   }
 
   fieldDescriptor object_field;
@@ -791,23 +791,23 @@ jobject JfrJavaSupport::get_handler(jobject clazz, Thread* thread) {
     true, &object_field);
   if (g != NULL) {
     oop ret = h_klass_oop->obj_field(object_field.offset());
-    return ret != NULL ? JfrJavaSupport::local_jni_handle(ret, thread) : NULL;
+    return ret != NULL ? JfrJavaSupport::local_jni_handle(ret, THREAD) : NULL;
   }
   assert(f == NULL && g == NULL, "no handler field for class");
   return NULL;
 }
 
-bool JfrJavaSupport::set_handler(jobject clazz, jobject handler, Thread* thread) {
-  DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(thread));
+bool JfrJavaSupport::set_handler(jobject clazz, jobject handler, TRAPS) {
+  DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(THREAD));
   const oop klass_oop = JNIHandles::resolve(clazz);
   assert(klass_oop != NULL, "invariant");
   const oop handler_oop = JNIHandles::resolve(handler);
   assert(handler_oop != NULL, "invariant");
   Klass* klass = java_lang_Class::as_Klass(klass_oop);
-  HandleMark hm(thread);
-  Handle h_klass_oop(Handle(thread, klass->java_mirror()));
+  HandleMark hm(THREAD);
+  Handle h_klass_oop(Handle(THREAD, klass->java_mirror()));
   InstanceKlass* const instance_klass = static_cast<InstanceKlass*>(klass);
-  assert(instance_klass->is_initialized(), "inavarient");
+  klass->initialize(CHECK_false);
 
   fieldDescriptor event_handler_field;
   Klass* f = instance_klass->find_field(
