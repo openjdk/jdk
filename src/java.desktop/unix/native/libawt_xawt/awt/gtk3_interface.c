@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -347,8 +347,10 @@ GtkApi* gtk3_load(JNIEnv *env, const char* lib_name)
 
         fp_cairo_image_surface_create = dl_symbol("cairo_image_surface_create");
         fp_cairo_surface_destroy = dl_symbol("cairo_surface_destroy");
+        fp_cairo_surface_status = dl_symbol("cairo_surface_status");
         fp_cairo_create = dl_symbol("cairo_create");
         fp_cairo_destroy = dl_symbol("cairo_destroy");
+        fp_cairo_status = dl_symbol("cairo_status");
         fp_cairo_fill = dl_symbol("cairo_fill");
         fp_cairo_rectangle = dl_symbol("cairo_rectangle");
         fp_cairo_set_source_rgb = dl_symbol("cairo_set_source_rgb");
@@ -777,6 +779,9 @@ static void gtk3_init_painting(JNIEnv *env, gint width, gint height)
     }
 
     cr = fp_cairo_create(surface);
+    if (fp_cairo_surface_status(surface) || fp_cairo_status(cr)) {
+        JNU_ThrowOutOfMemoryError(env, "The surface size is too big");
+    }
 }
 
 /*
@@ -799,16 +804,17 @@ static gint gtk3_copy_image(gint *dst, gint width, gint height)
     data = (*fp_cairo_image_surface_get_data)(surface);
     stride = (*fp_cairo_image_surface_get_stride)(surface);
     padding = stride - width * 4;
-
-    for (i = 0; i < height; i++) {
-        for (j = 0; j < width; j++) {
-            int r = *data++;
-            int g = *data++;
-            int b = *data++;
-            int a = *data++;
-            *dst++ = (a << 24 | b << 16 | g << 8 | r);
+    if (stride > 0 && padding >= 0) {
+        for (i = 0; i < height; i++) {
+            for (j = 0; j < width; j++) {
+                int r = *data++;
+                int g = *data++;
+                int b = *data++;
+                int a = *data++;
+                *dst++ = (a << 24 | b << 16 | g << 8 | r);
+            }
+            data += padding;
         }
-        data += padding;
     }
     return java_awt_Transparency_TRANSLUCENT;
 }
