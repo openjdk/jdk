@@ -2014,21 +2014,22 @@ void ShenandoahBarrierC2Support::optimize_after_expansion(VectorSet &visited, No
       if (loop != phase->ltree_root() &&
           loop->_child == NULL &&
           !loop->_irreducible) {
-        LoopNode* head = loop->_head->as_Loop();
-        if ((!head->is_CountedLoop() || head->as_CountedLoop()->is_main_loop() || head->as_CountedLoop()->is_normal_loop()) &&
+        Node* head = loop->_head;
+        if (head->is_Loop() &&
+            (!head->is_CountedLoop() || head->as_CountedLoop()->is_main_loop() || head->as_CountedLoop()->is_normal_loop()) &&
             !seen.test_set(head->_idx)) {
           IfNode* iff = find_unswitching_candidate(loop, phase);
           if (iff != NULL) {
             Node* bol = iff->in(1);
-            if (head->is_strip_mined()) {
-              head->verify_strip_mined(0);
+            if (head->as_Loop()->is_strip_mined()) {
+              head->as_Loop()->verify_strip_mined(0);
             }
             move_heap_stable_test_out_of_loop(iff, phase);
 
             AutoNodeBudget node_budget(phase);
 
             if (loop->policy_unswitching(phase)) {
-              if (head->is_strip_mined()) {
+              if (head->as_Loop()->is_strip_mined()) {
                 OuterStripMinedLoopNode* outer = head->as_CountedLoop()->outer_loop();
                 hide_strip_mined_loop(outer, head->as_CountedLoop(), phase);
               }
@@ -2296,7 +2297,12 @@ void MemoryGraphFixer::collect_memory_nodes() {
         if (in_opc == Op_Return || in_opc == Op_Rethrow) {
           mem = in->in(TypeFunc::Memory);
         } else if (in_opc == Op_Halt) {
-          if (!in->in(0)->is_Region()) {
+          if (in->in(0)->is_Region()) {
+            Node* r = in->in(0);
+            for (uint j = 1; j < r->req(); j++) {
+              assert(r->in(j)->Opcode() != Op_NeverBranch, "");
+            }
+          } else {
             Node* proj = in->in(0);
             assert(proj->is_Proj(), "");
             Node* in = proj->in(0);
@@ -2308,25 +2314,37 @@ void MemoryGraphFixer::collect_memory_nodes() {
               assert(call->is_Call(), "");
               mem = call->in(TypeFunc::Memory);
             } else if (in->Opcode() == Op_NeverBranch) {
-              ResourceMark rm;
-              Unique_Node_List wq;
-              wq.push(in);
-              wq.push(in->as_Multi()->proj_out(0));
-              for (uint j = 1; j < wq.size(); j++) {
-                Node* c = wq.at(j);
-                assert(!c->is_Root(), "shouldn't leave loop");
-                if (c->is_SafePoint()) {
-                  assert(mem == NULL, "only one safepoint");
+              Node* head = in->in(0);
+              assert(head->is_Region() && head->req() == 3, "unexpected infinite loop graph shape");
+              assert(_phase->is_dominator(head, head->in(1)) || _phase->is_dominator(head, head->in(2)), "no back branch?");
+              Node* tail = _phase->is_dominator(head, head->in(1)) ? head->in(1) : head->in(2);
+              Node* c = tail;
+              while (c != head) {
+                if (c->is_SafePoint() && !c->is_CallLeaf()) {
                   mem = c->in(TypeFunc::Memory);
                 }
-                for (DUIterator_Fast kmax, k = c->fast_outs(kmax); k < kmax; k++) {
-                  Node* u = c->fast_out(k);
-                  if (u->is_CFG()) {
-                    wq.push(u);
+                c = _phase->idom(c);
+              }
+              assert(mem != NULL, "should have found safepoint");
+
+              Node* phi_mem = NULL;
+              for (DUIterator_Fast jmax, j = head->fast_outs(jmax); j < jmax; j++) {
+                Node* u = head->fast_out(j);
+                if (u->is_Phi() && u->bottom_type() == Type::MEMORY) {
+                  if (_phase->C->get_alias_index(u->adr_type()) == _alias) {
+                    assert(phi_mem == NULL || phi_mem->adr_type() == TypePtr::BOTTOM, "");
+                    phi_mem = u;
+                  } else if (u->adr_type() == TypePtr::BOTTOM) {
+                    assert(phi_mem == NULL || _phase->C->get_alias_index(phi_mem->adr_type()) == _alias, "");
+                    if (phi_mem == NULL) {
+                      phi_mem = u;
+                    }
                   }
                 }
               }
-              assert(mem != NULL, "should have found safepoint");
+              if (phi_mem != NULL) {
+                mem = phi_mem;
+              }
             }
           }
         } else {
