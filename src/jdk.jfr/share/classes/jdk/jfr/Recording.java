@@ -99,6 +99,8 @@ public final class Recording implements Closeable {
      * A newly created recording is in the {@link RecordingState#NEW} state. To start
      * the recording, invoke the {@link Recording#start()} method.
      *
+     * @param settings settings as a map of name-value pairs, not {@code null}
+     *
      * @throws IllegalStateException if Flight Recorder can't be created (for
      *         example, if the Java Virtual Machine (JVM) lacks Flight Recorder
      *         support, or if the file repository can't be created or accessed)
@@ -109,9 +111,11 @@ public final class Recording implements Closeable {
      * @see jdk.jfr
      */
     public Recording(Map<String, String> settings) {
+        Objects.requireNonNull(settings);
+        Map<String, String> sanitized = Utils.sanitizeNullFreeStringMap(settings);
         PlatformRecorder r = FlightRecorder.getFlightRecorder().getInternal();
         synchronized (r) {
-            this.internal = r.newRecording(settings);
+            this.internal = r.newRecording(sanitized);
             this.internal.setRecording(this);
             if (internal.getRecording() != this) {
                 throw new InternalError("Internal recording not properly setup");
