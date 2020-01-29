@@ -432,24 +432,13 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
     } else {
       __ call_VM_leaf0(CAST_FROM_FN_PTR(address, SharedRuntime::dtan));
     }
+  } else if (kind == Interpreter::java_lang_math_abs) {
+    assert(StubRoutines::x86::double_sign_mask() != NULL, "not initialized");
+    __ movdbl(xmm0, Address(rsp, wordSize));
+    __ andpd(xmm0, ExternalAddress(StubRoutines::x86::double_sign_mask()));
   } else {
-    __ fld_d(Address(rsp, wordSize));
-    switch (kind) {
-    case Interpreter::java_lang_math_abs:
-      __ fabs();
-      break;
-    default:
-      ShouldNotReachHere();
-    }
-
-    // return double result in xmm0 for interpreter and compilers.
-    __ subptr(rsp, 2*wordSize);
-    // Round to 64bit precision
-    __ fstp_d(Address(rsp, 0));
-    __ movdbl(xmm0, Address(rsp, 0));
-    __ addptr(rsp, 2*wordSize);
+    ShouldNotReachHere();
   }
-
 
   __ pop(rax);
   __ mov(rsp, r13);

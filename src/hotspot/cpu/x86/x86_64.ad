@@ -10588,25 +10588,9 @@ instruct convF2I_reg_reg(rRegI dst, regF src, rFlagsReg cr)
 %{
   match(Set dst (ConvF2I src));
   effect(KILL cr);
-
-  format %{ "cvttss2sil $dst, $src\t# f2i\n\t"
-            "cmpl    $dst, #0x80000000\n\t"
-            "jne,s   done\n\t"
-            "subq    rsp, #8\n\t"
-            "movss   [rsp], $src\n\t"
-            "call    f2i_fixup\n\t"
-            "popq    $dst\n"
-    "done:   "%}
+  format %{ "convert_f2i $dst,$src" %}
   ins_encode %{
-    Label done;
-    __ cvttss2sil($dst$$Register, $src$$XMMRegister);
-    __ cmpl($dst$$Register, 0x80000000);
-    __ jccb(Assembler::notEqual, done);
-    __ subptr(rsp, 8);
-    __ movflt(Address(rsp, 0), $src$$XMMRegister);
-    __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::x86::f2i_fixup())));
-    __ pop($dst$$Register);
-    __ bind(done);
+    __ convert_f2i($dst$$Register, $src$$XMMRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -10615,26 +10599,9 @@ instruct convF2L_reg_reg(rRegL dst, regF src, rFlagsReg cr)
 %{
   match(Set dst (ConvF2L src));
   effect(KILL cr);
-
-  format %{ "cvttss2siq $dst, $src\t# f2l\n\t"
-            "cmpq    $dst, [0x8000000000000000]\n\t"
-            "jne,s   done\n\t"
-            "subq    rsp, #8\n\t"
-            "movss   [rsp], $src\n\t"
-            "call    f2l_fixup\n\t"
-            "popq    $dst\n"
-    "done:   "%}
+  format %{ "convert_f2l $dst,$src"%}
   ins_encode %{
-    Label done;
-    __ cvttss2siq($dst$$Register, $src$$XMMRegister);
-    __ cmp64($dst$$Register,
-             ExternalAddress((address) StubRoutines::x86::double_sign_flip()));
-    __ jccb(Assembler::notEqual, done);
-    __ subptr(rsp, 8);
-    __ movflt(Address(rsp, 0), $src$$XMMRegister);
-    __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::x86::f2l_fixup())));
-    __ pop($dst$$Register);
-    __ bind(done);
+    __ convert_f2l($dst$$Register, $src$$XMMRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -10643,25 +10610,9 @@ instruct convD2I_reg_reg(rRegI dst, regD src, rFlagsReg cr)
 %{
   match(Set dst (ConvD2I src));
   effect(KILL cr);
-
-  format %{ "cvttsd2sil $dst, $src\t# d2i\n\t"
-            "cmpl    $dst, #0x80000000\n\t"
-            "jne,s   done\n\t"
-            "subq    rsp, #8\n\t"
-            "movsd   [rsp], $src\n\t"
-            "call    d2i_fixup\n\t"
-            "popq    $dst\n"
-    "done:   "%}
+  format %{ "convert_d2i $dst,$src"%}
   ins_encode %{
-    Label done;
-    __ cvttsd2sil($dst$$Register, $src$$XMMRegister);
-    __ cmpl($dst$$Register, 0x80000000);
-    __ jccb(Assembler::notEqual, done);
-    __ subptr(rsp, 8);
-    __ movdbl(Address(rsp, 0), $src$$XMMRegister);
-    __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::x86::d2i_fixup())));
-    __ pop($dst$$Register);
-    __ bind(done);
+    __ convert_d2i($dst$$Register, $src$$XMMRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -10670,26 +10621,9 @@ instruct convD2L_reg_reg(rRegL dst, regD src, rFlagsReg cr)
 %{
   match(Set dst (ConvD2L src));
   effect(KILL cr);
-
-  format %{ "cvttsd2siq $dst, $src\t# d2l\n\t"
-            "cmpq    $dst, [0x8000000000000000]\n\t"
-            "jne,s   done\n\t"
-            "subq    rsp, #8\n\t"
-            "movsd   [rsp], $src\n\t"
-            "call    d2l_fixup\n\t"
-            "popq    $dst\n"
-    "done:   "%}
+  format %{ "convert_d2l $dst,$src"%}
   ins_encode %{
-    Label done;
-    __ cvttsd2siq($dst$$Register, $src$$XMMRegister);
-    __ cmp64($dst$$Register,
-             ExternalAddress((address) StubRoutines::x86::double_sign_flip()));
-    __ jccb(Assembler::notEqual, done);
-    __ subptr(rsp, 8);
-    __ movdbl(Address(rsp, 0), $src$$XMMRegister);
-    __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::x86::d2l_fixup())));
-    __ pop($dst$$Register);
-    __ bind(done);
+    __ convert_d2l($dst$$Register, $src$$XMMRegister);
   %}
   ins_pipe(pipe_slow);
 %}

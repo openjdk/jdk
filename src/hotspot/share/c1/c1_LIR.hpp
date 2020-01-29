@@ -888,8 +888,6 @@ enum LIR_Code {
       , lir_osr_entry
       , lir_build_frame
       , lir_fpop_raw
-      , lir_24bit_FPU
-      , lir_reset_FPU
       , lir_breakpoint
       , lir_rtcall
       , lir_membar
@@ -905,7 +903,6 @@ enum LIR_Code {
   , begin_op1
       , lir_fxch
       , lir_fld
-      , lir_ffree
       , lir_push
       , lir_pop
       , lir_null_check
@@ -2232,8 +2229,6 @@ class LIR_List: public CompilationResourceObj {
   void unlock_object(LIR_Opr hdr, LIR_Opr obj, LIR_Opr lock, LIR_Opr scratch, CodeStub* stub);
   void lock_object(LIR_Opr hdr, LIR_Opr obj, LIR_Opr lock, LIR_Opr scratch, CodeStub* stub, CodeEmitInfo* info);
 
-  void set_24bit_fpu()                                               { append(new LIR_Op0(lir_24bit_FPU )); }
-  void restore_fpu()                                                 { append(new LIR_Op0(lir_reset_FPU )); }
   void breakpoint()                                                  { append(new LIR_Op0(lir_breakpoint)); }
 
   void arraycopy(LIR_Opr src, LIR_Opr src_pos, LIR_Opr dst, LIR_Opr dst_pos, LIR_Opr length, LIR_Opr tmp, ciArrayKlass* expected_type, int flags, CodeEmitInfo* info) { append(new LIR_OpArrayCopy(src, src_pos, dst, dst_pos, length, tmp, expected_type, flags, info)); }

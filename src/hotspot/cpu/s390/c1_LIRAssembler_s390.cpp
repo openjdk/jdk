@@ -1698,10 +1698,6 @@ void LIR_Assembler::arith_op(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr
   }
 }
 
-void LIR_Assembler::fpop() {
-  // do nothing
-}
-
 void LIR_Assembler::intrinsic_op(LIR_Code code, LIR_Opr value, LIR_Opr thread, LIR_Opr dest, LIR_Op* op) {
   switch (code) {
     case lir_sqrt: {
@@ -2739,14 +2735,6 @@ void LIR_Assembler::emit_compare_and_swap(LIR_OpCompareAndSwap* op) {
   }
 }
 
-void LIR_Assembler::set_24bit_FPU() {
-  ShouldNotCallThis(); // x86 only
-}
-
-void LIR_Assembler::reset_FPU() {
-  ShouldNotCallThis(); // x86 only
-}
-
 void LIR_Assembler::breakpoint() {
   Unimplemented();
   //  __ breakpoint_trap();
@@ -2885,18 +2873,6 @@ void LIR_Assembler::negate(LIR_Opr left, LIR_Opr dest, LIR_Opr tmp) {
     assert(left->is_double_cpu(), "Must be a long");
     __ z_lcgr(dest->as_register_lo(), left->as_register_lo());
   }
-}
-
-void LIR_Assembler::fxch(int i) {
-  ShouldNotCallThis(); // x86 only
-}
-
-void LIR_Assembler::fld(int i) {
-  ShouldNotCallThis(); // x86 only
-}
-
-void LIR_Assembler::ffree(int i) {
-  ShouldNotCallThis(); // x86 only
 }
 
 void LIR_Assembler::rt_call(LIR_Opr result, address dest,

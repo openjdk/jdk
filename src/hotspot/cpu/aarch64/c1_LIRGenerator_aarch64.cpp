@@ -1127,7 +1127,6 @@ void LIRGenerator::do_Convert(Convert* x) {
   // arguments of lir_convert
   LIR_Opr conv_input = input;
   LIR_Opr conv_result = result;
-  ConversionStub* stub = NULL;
 
   __ convert(x->op(), conv_input, conv_result);
 

@@ -86,30 +86,6 @@ void LIR_Assembler::store_parameter(Metadata* m, int offset_from_sp_in_words) {
 //--------------fpu register translations-----------------------
 
 
-void LIR_Assembler::set_24bit_FPU() {
-  ShouldNotReachHere();
-}
-
-void LIR_Assembler::reset_FPU() {
-  ShouldNotReachHere();
-}
-
-void LIR_Assembler::fpop() {
-  Unimplemented();
-}
-
-void LIR_Assembler::fxch(int i) {
-  Unimplemented();
-}
-
-void LIR_Assembler::fld(int i) {
-  Unimplemented();
-}
-
-void LIR_Assembler::ffree(int i) {
-  Unimplemented();
-}
-
 void LIR_Assembler::breakpoint() {
   __ breakpoint();
 }

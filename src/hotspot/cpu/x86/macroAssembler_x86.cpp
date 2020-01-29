@@ -349,23 +349,12 @@ void MacroAssembler::pop_callee_saved_registers() {
   pop(rsi);
 }
 
-void MacroAssembler::pop_fTOS() {
-  fld_d(Address(rsp, 0));
-  addl(rsp, 2 * wordSize);
-}
-
 void MacroAssembler::push_callee_saved_registers() {
   push(rsi);
   push(rdi);
   push(rdx);
   push(rcx);
 }
-
-void MacroAssembler::push_fTOS() {
-  subl(rsp, 2 * wordSize);
-  fstp_d(Address(rsp, 0));
-}
-
 
 void MacroAssembler::pushoop(jobject obj) {
   push_literal32((int32_t)obj, oop_Relocation::spec_for_immediate());
@@ -2735,8 +2724,7 @@ void MacroAssembler::divss(XMMRegister dst, AddressLiteral src) {
   }
 }
 
-// !defined(COMPILER2) is because of stupid core builds
-#if !defined(_LP64) || defined(COMPILER1) || !defined(COMPILER2) || INCLUDE_JVMCI
+#ifndef _LP64
 void MacroAssembler::empty_FPU_stack() {
   if (VM_Version::supports_mmx()) {
     emms();
@@ -2744,7 +2732,7 @@ void MacroAssembler::empty_FPU_stack() {
     for (int i = 8; i-- > 0; ) ffree(i);
   }
 }
-#endif // !LP64 || C1 || !C2 || INCLUDE_JVMCI
+#endif // !LP64
 
 
 void MacroAssembler::enter() {
@@ -2765,6 +2753,7 @@ void MacroAssembler::fat_nop() {
   }
 }
 
+#if !defined(_LP64)
 void MacroAssembler::fcmp(Register tmp) {
   fcmp(tmp, 1, true, true);
 }
@@ -2846,6 +2835,29 @@ void MacroAssembler::fldcw(AddressLiteral src) {
   Assembler::fldcw(as_Address(src));
 }
 
+void MacroAssembler::fpop() {
+  ffree();
+  fincstp();
+}
+
+void MacroAssembler::fremr(Register tmp) {
+  save_rax(tmp);
+  { Label L;
+    bind(L);
+    fprem();
+    fwait(); fnstsw_ax();
+    sahf();
+    jcc(Assembler::parity, L);
+  }
+  restore_rax(tmp);
+  // Result is in ST0.
+  // Note: fxch & fpop to get rid of ST1
+  // (otherwise FPU stack could overflow eventually)
+  fxch(1);
+  fpop();
+}
+#endif // !LP64
+
 void MacroAssembler::mulpd(XMMRegister dst, AddressLiteral src) {
   if (reachable(src)) {
     Assembler::mulpd(dst, as_Address(src));
@@ -2853,26 +2865,6 @@ void MacroAssembler::mulpd(XMMRegister dst, AddressLiteral src) {
     lea(rscratch1, src);
     Assembler::mulpd(dst, Address(rscratch1, 0));
   }
-}
-
-void MacroAssembler::increase_precision() {
-  subptr(rsp, BytesPerWord);
-  fnstcw(Address(rsp, 0));
-  movl(rax, Address(rsp, 0));
-  orl(rax, 0x300);
-  push(rax);
-  fldcw(Address(rsp, 0));
-  pop(rax);
-}
-
-void MacroAssembler::restore_precision() {
-  fldcw(Address(rsp, 0));
-  addptr(rsp, BytesPerWord);
-}
-
-void MacroAssembler::fpop() {
-  ffree();
-  fincstp();
 }
 
 void MacroAssembler::load_float(Address src) {
@@ -2909,28 +2901,6 @@ void MacroAssembler::store_double(Address dst) {
     LP64_ONLY(ShouldNotReachHere());
     NOT_LP64(fstp_d(dst));
   }
-}
-
-void MacroAssembler::fremr(Register tmp) {
-  save_rax(tmp);
-  { Label L;
-    bind(L);
-    fprem();
-    fwait(); fnstsw_ax();
-#ifdef _LP64
-    testl(rax, 0x400);
-    jcc(Assembler::notEqual, L);
-#else
-    sahf();
-    jcc(Assembler::parity, L);
-#endif // _LP64
-  }
-  restore_rax(tmp);
-  // Result is in ST0.
-  // Note: fxch & fpop to get rid of ST1
-  // (otherwise FPU stack could overflow eventually)
-  fxch(1);
-  fpop();
 }
 
 // dst = c = a * b + c
@@ -5098,6 +5068,7 @@ void MacroAssembler::print_CPU_state() {
 }
 
 
+#ifndef _LP64
 static bool _verify_FPU(int stack_depth, char* s, CPU_State* state) {
   static int counter = 0;
   FPU_State* fs = &state->_fpu_state;
@@ -5154,7 +5125,6 @@ static bool _verify_FPU(int stack_depth, char* s, CPU_State* state) {
   return true;
 }
 
-
 void MacroAssembler::verify_FPU(int stack_depth, const char* s) {
   if (!VerifyFPU) return;
   push_CPU_state();
@@ -5174,6 +5144,7 @@ void MacroAssembler::verify_FPU(int stack_depth, const char* s) {
   }
   pop_CPU_state();
 }
+#endif // _LP64
 
 void MacroAssembler::restore_cpu_control_state_after_jni() {
   // Either restore the MXCSR register after returning from the JNI Call
@@ -9888,6 +9859,56 @@ void MacroAssembler::byte_array_inflate(Register src, Register dst, Register len
 }
 
 #ifdef _LP64
+void MacroAssembler::convert_f2i(Register dst, XMMRegister src) {
+  Label done;
+  cvttss2sil(dst, src);
+  // Conversion instructions do not match JLS for overflow, underflow and NaN -> fixup in stub
+  cmpl(dst, 0x80000000); // float_sign_flip
+  jccb(Assembler::notEqual, done);
+  subptr(rsp, 8);
+  movflt(Address(rsp, 0), src);
+  call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::x86::f2i_fixup())));
+  pop(dst);
+  bind(done);
+}
+
+void MacroAssembler::convert_d2i(Register dst, XMMRegister src) {
+  Label done;
+  cvttsd2sil(dst, src);
+  // Conversion instructions do not match JLS for overflow, underflow and NaN -> fixup in stub
+  cmpl(dst, 0x80000000); // float_sign_flip
+  jccb(Assembler::notEqual, done);
+  subptr(rsp, 8);
+  movdbl(Address(rsp, 0), src);
+  call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::x86::d2i_fixup())));
+  pop(dst);
+  bind(done);
+}
+
+void MacroAssembler::convert_f2l(Register dst, XMMRegister src) {
+  Label done;
+  cvttss2siq(dst, src);
+  cmp64(dst, ExternalAddress((address) StubRoutines::x86::double_sign_flip()));
+  jccb(Assembler::notEqual, done);
+  subptr(rsp, 8);
+  movflt(Address(rsp, 0), src);
+  call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::x86::f2l_fixup())));
+  pop(dst);
+  bind(done);
+}
+
+void MacroAssembler::convert_d2l(Register dst, XMMRegister src) {
+  Label done;
+  cvttsd2siq(dst, src);
+  cmp64(dst, ExternalAddress((address) StubRoutines::x86::double_sign_flip()));
+  jccb(Assembler::notEqual, done);
+  subptr(rsp, 8);
+  movdbl(Address(rsp, 0), src);
+  call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::x86::d2l_fixup())));
+  pop(dst);
+  bind(done);
+}
+
 void MacroAssembler::cache_wb(Address line)
 {
   // 64 bit cpus always support clflush
@@ -10000,4 +10021,4 @@ void MacroAssembler::get_thread(Register thread) {
   }
 }
 
-#endif
+#endif // !WIN32 || _LP64

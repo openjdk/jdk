@@ -481,7 +481,7 @@ void LIR_Assembler::emit_call(LIR_OpJavaCall* op) {
     compilation()->set_has_method_handle_invokes(true);
   }
 
-#if defined(X86) && defined(TIERED)
+#if defined(IA32) && defined(TIERED)
   // C2 leave fpu stack dirty clean it
   if (UseSSE < 2) {
     int i;
@@ -532,6 +532,7 @@ void LIR_Assembler::emit_op1(LIR_Op1* op) {
       safepoint_poll(op->in_opr(), op->info());
       break;
 
+#ifdef IA32
     case lir_fxch:
       fxch(op->in_opr()->as_jint());
       break;
@@ -539,10 +540,7 @@ void LIR_Assembler::emit_op1(LIR_Op1* op) {
     case lir_fld:
       fld(op->in_opr()->as_jint());
       break;
-
-    case lir_ffree:
-      ffree(op->in_opr()->as_jint());
-      break;
+#endif // IA32
 
     case lir_branch:
       break;
@@ -636,20 +634,14 @@ void LIR_Assembler::emit_op0(LIR_Op0* op) {
       osr_entry();
       break;
 
-    case lir_24bit_FPU:
-      set_24bit_FPU();
+#ifdef IA32
+    case lir_fpop_raw:
+      fpop();
       break;
-
-    case lir_reset_FPU:
-      reset_FPU();
-      break;
+#endif // IA32
 
     case lir_breakpoint:
       breakpoint();
-      break;
-
-    case lir_fpop_raw:
-      fpop();
       break;
 
     case lir_membar:

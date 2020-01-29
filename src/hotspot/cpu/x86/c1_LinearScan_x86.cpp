@@ -28,6 +28,11 @@
 #include "utilities/bitMap.inline.hpp"
 
 
+#ifdef _LP64
+void LinearScan::allocate_fpu_stack() {
+  // No FPU stack used on x86-64
+}
+#else
 //----------------------------------------------------------------------
 // Allocation of FPU stack slots (Intel x86 only)
 //----------------------------------------------------------------------
@@ -815,12 +820,6 @@ void FpuStackAllocator::handle_opCall(LIR_OpCall* opCall) {
 #ifndef PRODUCT
 void FpuStackAllocator::check_invalid_lir_op(LIR_Op* op) {
   switch (op->code()) {
-    case lir_24bit_FPU:
-    case lir_reset_FPU:
-    case lir_ffree:
-      assert(false, "operations not allowed in lir. If one of these operations is needed, check if they have fpu operands");
-      break;
-
     case lir_fpop_raw:
     case lir_fxch:
     case lir_fld:
@@ -1139,3 +1138,4 @@ bool FpuStackAllocator::merge_fpu_stack_with_successors(BlockBegin* block) {
 
   return changed;
 }
+#endif // _LP64

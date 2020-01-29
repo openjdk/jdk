@@ -177,7 +177,7 @@ class LinearScan : public CompilationResourceObj {
   bool          is_interval_in_loop(int interval, int loop) const { return _interval_in_loop.at(interval, loop); }
 
   // handling of fpu stack allocation (platform dependent, needed for debug information generation)
-#ifdef X86
+#ifdef IA32
   FpuStackAllocator* _fpu_stack_allocator;
   bool use_fpu_stack_allocation() const          { return UseSSE < 2 && has_fpu_registers(); }
 #else

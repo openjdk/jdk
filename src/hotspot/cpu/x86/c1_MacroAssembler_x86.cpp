@@ -325,12 +325,12 @@ void C1_MacroAssembler::build_frame(int frame_size_in_bytes, int bang_size_in_by
   if (PreserveFramePointer) {
     mov(rbp, rsp);
   }
-#ifdef TIERED
-  // c2 leaves fpu stack dirty. Clean it on entry
+#if !defined(_LP64) && defined(TIERED)
   if (UseSSE < 2 ) {
+    // c2 leaves fpu stack dirty. Clean it on entry
     empty_FPU_stack();
   }
-#endif // TIERED
+#endif // !_LP64 && TIERED
   decrement(rsp, frame_size_in_bytes); // does not emit code for frame_size == 0
 
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
@@ -357,7 +357,7 @@ void C1_MacroAssembler::verified_entry() {
   }
   if (C1Breakpoint)int3();
   // build frame
-  verify_FPU(0, "method_entry");
+  IA32_ONLY( verify_FPU(0, "method_entry"); )
 }
 
 void C1_MacroAssembler::load_parameter(int offset_in_words, Register reg) {
