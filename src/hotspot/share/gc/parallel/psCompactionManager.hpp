@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,16 +50,6 @@ class ParCompactionManager : public CHeapObj<mtGC> {
 
  public:
 
-// ------------------------  Don't putback if not needed
-  // Actions that the compaction manager should take.
-  enum Action {
-    Update,
-    Copy,
-    UpdateAndCopy,
-    CopyAndUpdate,
-    NotValid
-  };
-// ------------------------  End don't putback if not needed
 
  private:
   // 32-bit:  4K * 8 = 32KiB; 64-bit:  8K * 16 = 128KiB
@@ -94,8 +84,6 @@ private:
   // Provides mutual exclusive access of _shadow_region_array.
   // See pop/push_shadow_region_mt_safe() below
   static Monitor*               _shadow_region_monitor;
-
-  Action _action;
 
   HeapWord* _last_query_beg;
   oop _last_query_obj;
@@ -137,9 +125,6 @@ private:
     _last_query_obj = NULL;
     _last_query_ret = 0;
   }
-
-  Action action() { return _action; }
-  void set_action(Action v) { _action = v; }
 
   // Bitmap query support, cache last query and result
   HeapWord* last_query_begin() { return _last_query_beg; }
