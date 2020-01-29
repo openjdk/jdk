@@ -203,7 +203,6 @@ public class HtmlDoclet extends AbstractDoclet {
                 "jquery-ui.min.css",
                 "jquery-ui.structure.min.css",
                 "jquery-ui.structure.css",
-                "external/jquery/jquery.js",
                 "jszip/dist/jszip.js",
                 "jszip/dist/jszip.min.js",
                 "jszip-utils/dist/jszip-utils.js",
