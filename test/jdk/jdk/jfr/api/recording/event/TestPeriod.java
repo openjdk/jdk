@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,10 @@ import java.io.IOException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 
+import jdk.jfr.Event;
+import jdk.jfr.FlightRecorder;
 import jdk.jfr.Recording;
 import jdk.jfr.consumer.RecordedEvent;
 import jdk.jfr.consumer.RecordedThread;
@@ -39,89 +42,38 @@ import jdk.test.lib.jfr.Events;
 
 /**
  * @test
- * @summary Test event period.
+ * @summary Test periodic events.
  * @key jfr
  * @requires vm.hasJFR
  * @library /test/lib
  * @run main/othervm jdk.jfr.api.recording.event.TestPeriod
  */
 public class TestPeriod {
-    private static final String EVENT_PATH = EventNames.ThreadAllocationStatistics;
-    private static final long ERROR_MARGIN = 20; // 186 ms has been measured, when period was set to 200 ms
+
+    static class Pulse extends Event {
+    }
 
     public static void main(String[] args) throws Throwable {
-        long[] periods = { 100, 200 };
-        int eventCount = 4;
-        int deltaCount;
-        for (long period : periods) {
-            List<Long> deltaBetweenEvents;
-            do {
-                deltaBetweenEvents = createPeriodicEvents(period, eventCount);
-                deltaCount = deltaBetweenEvents.size();
-                if (deltaCount < eventCount - 1) {
-                    System.out.println("Didn't get sufficent number of events. Retrying...");
-                    System.out.println();
-                }
-            } while (deltaCount < eventCount - 1);
-            for (int i = 0; i < eventCount - 1; i++) {
-                verifyDelta(deltaBetweenEvents.get(i), period);
-            }
-            System.out.println();
-        }
-    }
 
-    private static List<Long> createPeriodicEvents(long period, int eventCount) throws Exception, IOException {
-        System.out.println("Provoking events with period " + period + " ms");
-        Recording r = new Recording();
-        r.start();
-        runWithPeriod(r, period, eventCount + 1);
-        r.stop();
+        CountDownLatch latch = new CountDownLatch(3);
+        FlightRecorder.addPeriodicEvent(Pulse.class, () -> {
+           Pulse event = new Pulse();
+           event.commit();
+           latch.countDown();
+        });
 
-        long prevTime = -1;
-        List<Long> deltas = new ArrayList<>();
-        for (RecordedEvent event : Events.fromRecording(r)) {
-            if (Events.isEventType(event, EVENT_PATH) && isMyThread(event)) {
-                long timeMillis = event.getEndTime().toEpochMilli();
-                if (prevTime != -1) {
-                    long delta = timeMillis - prevTime;
-                    deltas.add(delta);
-                    System.out.printf("event: time=%d, delta=%d%n", timeMillis, delta);
-                }
-                prevTime = timeMillis;
+        try (Recording r = new Recording()) {
+            r.enable(Pulse.class).withPeriod(Duration.ofMillis(500));
+            r.start();
+            latch.await();
+            r.stop();
+            List<RecordedEvent> events = Events.fromRecording(r);
+            if (events.size() < 3) {
+                System.out.println(events);
+                throw new Exception("Expected at least 3 events");
             }
         }
-        r.close();
-        return deltas;
-    }
 
-    // We only check that time is at least as expected.
-    // We ignore if time is much longer than expected, since anything can happen
-    // during heavy load,
-    private static void verifyDelta(long actual, long expected) {
-        System.out.printf("verifyDelta: actaul=%d, expected=%d (errorMargin=%d)%n", actual, expected, ERROR_MARGIN);
-        Asserts.assertGreaterThan(actual, expected - ERROR_MARGIN, "period delta too short");
-    }
-
-    private static boolean isMyThread(RecordedEvent event) {
-        Object o = event.getValue("thread");
-        if (o instanceof RecordedThread) {
-            RecordedThread rt = (RecordedThread) o;
-            return Thread.currentThread().getId() == rt.getJavaThreadId();
-        }
-        return false;
-    }
-
-    @SuppressWarnings("unused")
-    private static byte[] dummy = null;
-
-    // Generate at least minEvents event with given period
-    private static void runWithPeriod(Recording r, long period, int minEventCount) throws Exception {
-        r.enable(EVENT_PATH).withPeriod(Duration.ofMillis(period));
-        long endTime = System.currentTimeMillis() + period * minEventCount;
-        while (System.currentTimeMillis() < endTime) {
-            dummy = new byte[100];
-            Thread.sleep(1);
-        }
     }
 
 }
