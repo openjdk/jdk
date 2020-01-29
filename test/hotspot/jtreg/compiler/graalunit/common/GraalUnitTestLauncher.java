@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -234,6 +234,9 @@ public class GraalUnitTestLauncher {
         javaFlags.addAll(getModuleExports("jdk.internal.vm.compiler", "ALL-UNNAMED"));
         javaFlags.addAll(getModuleExports("jdk.internal.vm.ci", "ALL-UNNAMED,jdk.internal.vm.compiler"));
 
+        // add opens, see JDK-8236211
+        javaFlags.add("--add-opens");
+        javaFlags.add("jdk.internal.vm.compiler/org.graalvm.graphio=ALL-UNNAMED");
 
         // add VM flags
         javaFlags.add("-XX:+UnlockExperimentalVMOptions");
