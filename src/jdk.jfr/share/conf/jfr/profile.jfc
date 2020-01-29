@@ -707,6 +707,12 @@
       <setting name="enabled">true</setting>
       <setting name="stackTrace">true</setting>
     </event>
+	
+    <event name="jdk.HeapDump">
+      <setting name="enabled">true</setting>
+      <setting name="threshold">0 ns</setting>
+      <setting name="stackTrace">true</setting>
+    </event>
 
 
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -196,6 +196,9 @@ public class EventNames {
     public static final String FlushStorage = PREFIX + "FlushStorage";
     public static final String FlushMetadata = PREFIX + "FlushMetadata";
     public static final String FlushTypeSet = PREFIX + "FlushTypeSet";
+
+    // Diagnostics
+    public static final String HeapDump = PREFIX + "HeapDump";
 
     public static boolean isGcEvent(EventType et) {
         return et.getCategoryNames().contains(GC_CATEGORY);

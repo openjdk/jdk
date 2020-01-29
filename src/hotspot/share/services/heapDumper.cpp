@@ -32,6 +32,7 @@
 #include "classfile/vmSymbols.hpp"
 #include "gc/shared/gcLocker.hpp"
 #include "gc/shared/gcVMOperations.hpp"
+#include "jfr/jfrEvents.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
@@ -1952,6 +1953,9 @@ int HeapDumper::dump(const char* path, outputStream* out) {
     timer()->start();
   }
 
+  // create JFR event
+  EventHeapDump event;
+
   // create the dump writer. If the file can be opened then bail
   DumpWriter writer(path);
   if (writer.error() != NULL) {
@@ -1975,6 +1979,15 @@ int HeapDumper::dump(const char* path, outputStream* out) {
   // close dump file and record any error that the writer may have encountered
   writer.close();
   set_error(writer.error());
+
+  // emit JFR event
+  if (error() == NULL) {
+    event.set_destination(path);
+    event.set_gcBeforeDump(_gc_before_heap_dump);
+    event.set_size(writer.bytes_written());
+    event.set_onOutOfMemoryError(_oome);
+    event.commit();
+  }
 
   // print message in interactive case
   if (out != NULL) {
