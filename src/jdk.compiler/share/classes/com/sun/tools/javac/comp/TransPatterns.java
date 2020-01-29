@@ -170,8 +170,11 @@ public class TransPatterns extends TreeTranslator {
             if (bindingVar != null) { //TODO: cannot be null here?
                 JCAssign fakeInit = (JCAssign)make.at(tree.pos).Assign(
                         make.Ident(bindingVar), convert(make.Ident(temp), castTargetType)).setType(bindingVar.erasure(types));
-                result = makeBinary(Tag.AND, (JCExpression)result,
-                        makeBinary(Tag.EQ, fakeInit, convert(make.Ident(temp), castTargetType)));
+                LetExpr nestedLE = make.LetExpr(List.of(make.Exec(fakeInit)),
+                                                make.Literal(true));
+                nestedLE.needsCond = true;
+                nestedLE.setType(syms.booleanType);
+                result = makeBinary(Tag.AND, (JCExpression)result, nestedLE);
             }
             result = make.at(tree.pos).LetExpr(make.VarDef(temp, translatedExpr), (JCExpression)result).setType(syms.booleanType);
             ((LetExpr) result).needsCond = true;
