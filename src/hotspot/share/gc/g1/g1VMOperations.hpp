@@ -29,10 +29,6 @@
 #include "gc/shared/gcVMOperations.hpp"
 
 // VM_operations for the G1 collector.
-// VM_GC_Operation:
-//   - VM_G1Concurrent
-//   - VM_G1CollectForAllocation
-//   - VM_G1CollectFull
 
 class VM_G1CollectFull : public VM_GC_Operation {
   bool _gc_succeeded;

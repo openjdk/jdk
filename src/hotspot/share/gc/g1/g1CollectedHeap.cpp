@@ -2987,6 +2987,19 @@ bool G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_
     return false;
   }
 
+  do_collection_pause_at_safepoint_helper(target_pause_time_ms);
+  if (should_upgrade_to_full_gc(gc_cause())) {
+    log_info(gc, ergo)("Attempting maximally compacting collection");
+    bool result = do_full_collection(false /* explicit gc */,
+                                     true /* clear_all_soft_refs */);
+    // do_full_collection only fails if blocked by GC locker, but
+    // we've already checked for that above.
+    assert(result, "invariant");
+  }
+  return true;
+}
+
+void G1CollectedHeap::do_collection_pause_at_safepoint_helper(double target_pause_time_ms) {
   GCIdMark gc_id_mark;
 
   SvcGCMarker sgcm(SvcGCMarker::MINOR);
@@ -3174,8 +3187,6 @@ bool G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_
     // itself is released in SuspendibleThreadSet::desynchronize().
     do_concurrent_mark();
   }
-
-  return true;
 }
 
 void G1CollectedHeap::remove_self_forwarding_pointers(G1RedirtyCardsQueueSet* rdcqs) {

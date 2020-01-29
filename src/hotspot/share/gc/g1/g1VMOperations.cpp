@@ -82,20 +82,14 @@ void VM_G1TryInitiateConcMark::doit() {
     // there is already a concurrent marking cycle in progress.  Set flag
     // to notify the caller and return immediately.
     _cycle_already_in_progress = true;
-  } else if (!g1h->do_collection_pause_at_safepoint(_target_pause_time_ms)) {
+  } else if (g1h->do_collection_pause_at_safepoint(_target_pause_time_ms)) {
+    _gc_succeeded = true;
+  } else {
     // Failure to perform the collection at all occurs because GCLocker is
     // active, and we have the bad luck to be the collection request that
     // makes a later _gc_locker collection needed.  (Else we would have hit
     // the GCLocker check in the prologue.)
     _transient_failure = true;
-  } else if (g1h->should_upgrade_to_full_gc(_gc_cause)) {
-    // GC ran, but we're still in trouble and need a full GC.
-    log_info(gc, ergo)("Attempting maximally compacting collection");
-    _gc_succeeded = g1h->do_full_collection(false, /* explicit gc */
-                                            true /* clear_all_soft_refs */);
-    guarantee(_gc_succeeded, "Elevated collections during the safepoint must always succeed");
-  } else {
-    _gc_succeeded = true;
   }
 }
 
@@ -132,20 +126,10 @@ void VM_G1CollectForAllocation::doit() {
   // Try a partial collection of some kind.
   _gc_succeeded = g1h->do_collection_pause_at_safepoint(_target_pause_time_ms);
 
-  if (_gc_succeeded) {
-    if (_word_size > 0) {
-      // An allocation had been requested. Do it, eventually trying a stronger
-      // kind of GC.
-      _result = g1h->satisfy_failed_allocation(_word_size, &_gc_succeeded);
-    } else if (g1h->should_upgrade_to_full_gc(_gc_cause)) {
-      // There has been a request to perform a GC to free some space. We have no
-      // information on how much memory has been asked for. In case there are
-      // absolutely no regions left to allocate into, do a maximally compacting full GC.
-      log_info(gc, ergo)("Attempting maximally compacting collection");
-      _gc_succeeded = g1h->do_full_collection(false, /* explicit gc */
-                                              true   /* clear_all_soft_refs */);
-    }
-    guarantee(_gc_succeeded, "Elevated collections during the safepoint must always succeed.");
+  if (_gc_succeeded && (_word_size > 0)) {
+    // An allocation had been requested. Do it, eventually trying a stronger
+    // kind of GC.
+    _result = g1h->satisfy_failed_allocation(_word_size, &_gc_succeeded);
   }
 }
 
