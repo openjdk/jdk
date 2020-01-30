@@ -211,7 +211,7 @@ int ZPhysicalMemoryBacking::create_file_fd(const char* name) const {
   // Find mountpoint
   ZMountPoint mountpoint(filesystem, preferred_mountpoints);
   if (mountpoint.get() == NULL) {
-    log_error(gc)("Use -XX:ZPath to specify the path to a %s filesystem", filesystem);
+    log_error(gc)("Use -XX:AllocateHeapAt to specify the path to a %s filesystem", filesystem);
     return -1;
   }
 
@@ -263,7 +263,7 @@ int ZPhysicalMemoryBacking::create_file_fd(const char* name) const {
 }
 
 int ZPhysicalMemoryBacking::create_fd(const char* name) const {
-  if (ZPath == NULL) {
+  if (AllocateHeapAt == NULL) {
     // If the path is not explicitly specified, then we first try to create a memfd file
     // instead of looking for a tmpfd/hugetlbfs mount point. Note that memfd_create() might
     // not be supported at all (requires kernel >= 3.17), or it might not support large

@@ -2113,12 +2113,6 @@ bool Arguments::check_vm_args_consistency() {
   }
 #endif
 
-  if (!FLAG_IS_DEFAULT(AllocateHeapAt)) {
-    if ((UseNUMAInterleaving && !FLAG_IS_DEFAULT(UseNUMAInterleaving)) || (UseNUMA && !FLAG_IS_DEFAULT(UseNUMA))) {
-      log_warning(arguments) ("NUMA support for Heap depends on the file system when AllocateHeapAt option is used.\n");
-    }
-  }
-
   status = status && GCArguments::check_args_consistency();
 
   return status;
@@ -4159,9 +4153,7 @@ jint Arguments::apply_ergo() {
 
 jint Arguments::adjust_after_os() {
   if (UseNUMA) {
-    if (!FLAG_IS_DEFAULT(AllocateHeapAt)) {
-      FLAG_SET_ERGO(UseNUMA, false);
-    } else if (UseParallelGC) {
+    if (UseParallelGC) {
       if (FLAG_IS_DEFAULT(MinHeapDeltaBytes)) {
          FLAG_SET_DEFAULT(MinHeapDeltaBytes, 64*M);
       }
