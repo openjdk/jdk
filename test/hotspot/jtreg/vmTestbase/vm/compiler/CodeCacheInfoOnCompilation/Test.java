@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,13 +32,28 @@
  *     format of the -XX:+PrintCodeCacheOnCompilation vm option during this method
  *     call.
  *
- *     Test will be skipped if java has not "-Xcomp" option
- *
- *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
- * @build vm.compiler.CodeCacheInfoOnCompilation.PrintOnCall
- * @run shell run.sh
+ * @run driver vm.compiler.CodeCacheInfoOnCompilation.Test
  */
 
+package vm.compiler.CodeCacheInfoOnCompilation;
+
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
+
+public class Test {
+    private static String REGEXP = "^(CodeCache|(CodeHeap.*)): size=\\d+Kb used=\\d+Kb max_used=\\d+Kb free=\\d+Kb";
+
+    public static void main(String[] args) throws Exception {
+        var pb = ProcessTools.createJavaProcessBuilder(true,
+                "-XX:-PrintCodeCache",
+                "-XX:+PrintCodeCacheOnCompilation",
+                "-XX:-Inline",
+                "-Xcomp",
+                PrintOnCall.class.getName());
+        var output = new OutputAnalyzer(pb.start());
+        output.shouldHaveExitValue(0);
+        output.stdoutShouldMatch(REGEXP);
+    }
+}
