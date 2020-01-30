@@ -36,7 +36,6 @@ class LogDecorations {
   char* _decoration_offset[LogDecorators::Count];
   LogLevelType _level;
   const LogTagSet& _tagset;
-  static jlong _vm_start_time_millis;
   static const char* volatile _host_name;
 
   const char* host_name();
@@ -47,8 +46,6 @@ class LogDecorations {
 #undef DECORATOR
 
  public:
-  static void initialize(jlong vm_start_time);
-
   LogDecorations(LogLevelType level, const LogTagSet& tagset, const LogDecorators& decorators);
 
   void set_level(LogLevelType level) {

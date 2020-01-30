@@ -30,16 +30,11 @@
 #include "runtime/thread.inline.hpp"
 #include "services/management.hpp"
 
-jlong LogDecorations::_vm_start_time_millis = 0;
 const char* volatile LogDecorations::_host_name = NULL;
 
 LogDecorations::LogDecorations(LogLevelType level, const LogTagSet &tagset, const LogDecorators &decorators)
     : _level(level), _tagset(tagset) {
   create_decorations(decorators);
-}
-
-void LogDecorations::initialize(jlong vm_start_time) {
-  _vm_start_time_millis = vm_start_time;
 }
 
 const char* LogDecorations::host_name() {
@@ -97,9 +92,14 @@ char * LogDecorations::create_timemillis_decoration(char* pos) {
   ASSERT_AND_RETURN(written, pos)
 }
 
+// Small helper for uptime conversion
+static jlong elapsed_time(int unit_multiplier) {
+  return (jlong)(os::elapsedTime() * unit_multiplier);
+}
+
 char * LogDecorations::create_uptimemillis_decoration(char* pos) {
   int written = jio_snprintf(pos, DecorationsBufferSize - (pos - _decorations_buffer),
-                             INT64_FORMAT "ms", nanos_to_millis(os::elapsed_counter()));
+                             INT64_FORMAT "ms", elapsed_time(MILLIUNITS));
   ASSERT_AND_RETURN(written, pos)
 }
 
@@ -109,7 +109,7 @@ char * LogDecorations::create_timenanos_decoration(char* pos) {
 }
 
 char * LogDecorations::create_uptimenanos_decoration(char* pos) {
-  int written = jio_snprintf(pos, DecorationsBufferSize - (pos - _decorations_buffer), INT64_FORMAT "ns", os::elapsed_counter());
+  int written = jio_snprintf(pos, DecorationsBufferSize - (pos - _decorations_buffer), INT64_FORMAT "ns", elapsed_time(NANOUNITS));
   ASSERT_AND_RETURN(written, pos)
 }
 

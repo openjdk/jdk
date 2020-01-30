@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,14 +86,16 @@ TEST_VM(LogDecorations, timestamps) {
   struct {
     const LogDecorators::Decorator decorator;
     const char* suffix;
+    const char* desc;
   } test_decorator[] = {
-    { LogDecorators::timemillis_decorator, "ms" },
-    { LogDecorators::uptimemillis_decorator, "ms" },
-    { LogDecorators::timenanos_decorator, "ns" },
-    { LogDecorators::uptimenanos_decorator, "ns" }
+    { LogDecorators::timemillis_decorator, "ms", "timemillis" },
+    { LogDecorators::uptimemillis_decorator, "ms", "uptimemillis" },
+    { LogDecorators::timenanos_decorator, "ns", "timenanos" },
+    { LogDecorators::uptimenanos_decorator, "ns", "uptimenanos" }
   };
 
   for (uint i = 0; i < ARRAY_SIZE(test_decorator); i++) {
+    tty->print_cr("Processing Decorator %s", test_decorator[i].desc);
     LogDecorators::Decorator decorator = test_decorator[i].decorator;
     LogDecorators decorator_selection;
     ASSERT_TRUE(decorator_selection.parse(LogDecorators::name(decorator)));
@@ -112,9 +114,13 @@ TEST_VM(LogDecorations, timestamps) {
     // Verify timestamp values
     julong prev = 0;
     for (int i = 0; i < 3; i++) {
-      os::naked_short_sleep(5);
+      // The sleep needs to be longer than the timer resolution to ensure
+      // we see updates to 'timemillis'. Windows has the lowest resolution
+      // at 15-16ms, so we use 20.
+      os::naked_short_sleep(20);
       LogDecorations d(LogLevel::Info, tagset, decorator_selection);
       julong val = strtoull(d.decoration(decorator), NULL, 10);
+      tty->print_cr("Read value: " UINT64_FORMAT, val);
       ASSERT_LT(prev, val);
       prev = val;
     }
