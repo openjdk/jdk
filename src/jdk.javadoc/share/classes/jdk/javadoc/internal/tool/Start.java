@@ -436,13 +436,15 @@ public class Start {
                     fileManager.close();
                 } catch (IOException ignore) {}
             }
-            boolean haveErrorWarnings = messager.hasErrors()
-                    || (this.options.rejectWarnings() && messager.hasWarnings());
-            if (!result.isOK() && !haveErrorWarnings) {
+            if (this.options.rejectWarnings() && messager.hasWarnings()) {
+                error("main.warnings.Werror");
+            }
+            boolean haveErrors = messager.hasErrors();
+            if (!result.isOK() && !haveErrors) {
                 // the doclet failed, but nothing reported, flag it!.
                 error("main.unknown.error");
             }
-            if (haveErrorWarnings && result.isOK()) {
+            if (haveErrors && result.isOK()) {
                 result = ERROR;
             }
             messager.printErrorWarningCounts();

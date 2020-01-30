@@ -107,8 +107,8 @@ public class ToolOptions {
     private List<String> modules = new ArrayList<>();
 
     /**
-     * Argument for command-line option {@code -Xwerror}.
-     * Set by -Xwerror.
+     * Argument for command-line option {@code -Werror}.
+     * Set by -Werror.
      */
     private boolean rejectWarnings = false;
 
@@ -514,7 +514,17 @@ public class ToolOptions {
                 }
             },
 
+            // superseded by -Werror, retained for a while for compatibility,
+            // although note that it is an undocumented hidden option, and can
+            // be removed without warning
             new ToolOption("-Xwerror", HIDDEN) {
+                @Override
+                public void process() {
+                    rejectWarnings = true;
+                }
+            },
+
+            new ToolOption("-Werror", STANDARD) {
                 @Override
                 public void process() {
                     rejectWarnings = true;
@@ -731,8 +741,8 @@ public class ToolOptions {
     }
 
     /**
-     * Argument for command-line option {@code -Xwerror}.
-     * Set by -Xwerror.
+     * Argument for command-line option {@code -Werror}.
+     * Set by -Werror.
      */
     boolean rejectWarnings() {
         return rejectWarnings;
