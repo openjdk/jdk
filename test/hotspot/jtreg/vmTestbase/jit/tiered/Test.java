@@ -34,6 +34,9 @@
  *     If tiered compilation is explicitly disabled the test verifies that there are no
  *     output from PrintTieredEvents.
  *
+ * @comment the test can't be run w/ jvmci compiler enabled as it enforces tiered compilation
+ * @requires vm.opt.UseJVMCICompiler != true
+ *
  * @library /vmTestbase
  *          /test/lib
  * @run driver vmTestbase.jit.tiered.Test
