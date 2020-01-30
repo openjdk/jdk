@@ -27,6 +27,7 @@
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zLargePages.inline.hpp"
 #include "gc/z/zMountPoint_linux.hpp"
+#include "gc/z/zNUMA.inline.hpp"
 #include "gc/z/zPhysicalMemoryBacking_linux.hpp"
 #include "gc/z/zSyscall_linux.hpp"
 #include "logging/log.hpp"
@@ -34,6 +35,7 @@
 #include "runtime/os.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/growableArray.hpp"
 
 #include <fcntl.h>
 #include <stdio.h>
@@ -596,7 +598,38 @@ retry:
   return true;
 }
 
-size_t ZPhysicalMemoryBacking::commit(size_t offset, size_t length) {
+static int offset_to_node(size_t offset) {
+  const GrowableArray<int>* mapping = os::Linux::numa_nindex_to_node();
+  const size_t nindex = (offset >> ZGranuleSizeShift) % mapping->length();
+  return mapping->at((int)nindex);
+}
+
+size_t ZPhysicalMemoryBacking::commit_numa_interleaved(size_t offset, size_t length) {
+  size_t committed = 0;
+
+  // Commit one granule at a time, so that each granule
+  // can be allocated from a different preferred node.
+  while (committed < length) {
+    const size_t granule_offset = offset + committed;
+
+    // Setup NUMA policy to allocate memory from a preferred node
+    os::Linux::numa_set_preferred(offset_to_node(granule_offset));
+
+    if (!commit_inner(granule_offset, ZGranuleSize)) {
+      // Failed
+      break;
+    }
+
+    committed += ZGranuleSize;
+  }
+
+  // Restore NUMA policy
+  os::Linux::numa_set_preferred(-1);
+
+  return committed;
+}
+
+size_t ZPhysicalMemoryBacking::commit_default(size_t offset, size_t length) {
   // Try to commit the whole region
   if (commit_inner(offset, length)) {
     // Success
@@ -622,6 +655,16 @@ size_t ZPhysicalMemoryBacking::commit(size_t offset, size_t length) {
       end -= length;
     }
   }
+}
+
+size_t ZPhysicalMemoryBacking::commit(size_t offset, size_t length) {
+  if (ZNUMA::is_enabled() && !ZLargePages::is_explicit()) {
+    // To get granule-level NUMA interleaving when using non-large pages,
+    // we must explicitly interleave the memory at commit/fallocate time.
+    return commit_numa_interleaved(offset, length);
+  }
+
+  return commit_default(offset, length);
 }
 
 size_t ZPhysicalMemoryBacking::uncommit(size_t offset, size_t length) {

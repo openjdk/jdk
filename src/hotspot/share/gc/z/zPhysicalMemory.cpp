@@ -277,8 +277,11 @@ void ZPhysicalMemoryManager::map_view(const ZPhysicalMemory& pmem, uintptr_t add
     size += segment.size();
   }
 
-  // Setup NUMA interleaving
-  if (ZNUMA::is_enabled()) {
+  // Setup NUMA interleaving for large pages
+  if (ZNUMA::is_enabled() && ZLargePages::is_explicit()) {
+    // To get granule-level NUMA interleaving when using large pages,
+    // we simply let the kernel interleave the memory for us at page
+    // fault time.
     os::numa_make_global((char*)addr, size);
   }
 
