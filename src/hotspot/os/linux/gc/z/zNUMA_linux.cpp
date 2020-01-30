@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,27 +21,13 @@
  * questions.
  */
 
-#include "gc/z/zErrno.hpp"
 #include "gc/z/zCPU.inline.hpp"
+#include "gc/z/zErrno.hpp"
 #include "gc/z/zNUMA.hpp"
+#include "gc/z/zSyscall_linux.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/os.hpp"
 #include "utilities/debug.hpp"
-
-#include <unistd.h>
-#include <sys/syscall.h>
-
-#ifndef MPOL_F_NODE
-#define MPOL_F_NODE     (1<<0)  // Return next IL mode instead of node mask
-#endif
-
-#ifndef MPOL_F_ADDR
-#define MPOL_F_ADDR     (1<<1)  // Look up VMA using address
-#endif
-
-static int z_get_mempolicy(uint32_t* mode, const unsigned long *nmask, unsigned long maxnode, uintptr_t addr, int flags) {
-  return syscall(SYS_get_mempolicy, mode, nmask, maxnode, addr, flags);
-}
 
 void ZNUMA::initialize_platform() {
   _enabled = UseNUMA;
@@ -73,7 +59,7 @@ uint32_t ZNUMA::memory_id(uintptr_t addr) {
 
   uint32_t id = (uint32_t)-1;
 
-  if (z_get_mempolicy(&id, NULL, 0, addr, MPOL_F_NODE | MPOL_F_ADDR) == -1) {
+  if (ZSyscall::get_mempolicy((int*)&id, NULL, 0, (void*)addr, MPOL_F_NODE | MPOL_F_ADDR) == -1) {
     ZErrno err;
     fatal("Failed to get NUMA id for memory at " PTR_FORMAT " (%s)", addr, err.to_string());
   }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,10 +26,19 @@
 
 #include "memory/allocation.hpp"
 
+// Flags for get_mempolicy()
+#ifndef MPOL_F_NODE
+#define MPOL_F_NODE        (1<<0)
+#endif
+#ifndef MPOL_F_ADDR
+#define MPOL_F_ADDR        (1<<1)
+#endif
+
 class ZSyscall : public AllStatic {
 public:
-  static int memfd_create(const char *name, unsigned int flags);
+  static int memfd_create(const char* name, unsigned int flags);
   static int fallocate(int fd, int mode, size_t offset, size_t length);
+  static long get_mempolicy(int* mode, unsigned long* nodemask, unsigned long maxnode, void* addr, unsigned long flags);
 };
 
 #endif // OS_LINUX_GC_Z_ZSYSCALL_LINUX_HPP

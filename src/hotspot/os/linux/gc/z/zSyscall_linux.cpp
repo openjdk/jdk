@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,4 +33,8 @@ int ZSyscall::memfd_create(const char *name, unsigned int flags) {
 
 int ZSyscall::fallocate(int fd, int mode, size_t offset, size_t length) {
   return syscall(SYS_fallocate, fd, mode, offset, length);
+}
+
+long ZSyscall::get_mempolicy(int* mode, unsigned long* nodemask, unsigned long maxnode, void* addr, unsigned long flags) {
+  return syscall(SYS_get_mempolicy, mode, nodemask, maxnode, addr, flags);
 }
