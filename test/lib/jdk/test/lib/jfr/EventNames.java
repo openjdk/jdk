@@ -191,11 +191,6 @@ public class EventNames {
     public final static String ActiveRecording = PREFIX + "ActiveRecording";
     public final static String ActiveSetting = PREFIX + "ActiveSetting";
     public static final String Flush = PREFIX + "Flush";
-    public static final String FlushStringPool = PREFIX + "FlushStringPool";
-    public static final String FlushStacktrace = PREFIX + "FlushStacktrace";
-    public static final String FlushStorage = PREFIX + "FlushStorage";
-    public static final String FlushMetadata = PREFIX + "FlushMetadata";
-    public static final String FlushTypeSet = PREFIX + "FlushTypeSet";
 
     // Diagnostics
     public static final String HeapDump = PREFIX + "HeapDump";
