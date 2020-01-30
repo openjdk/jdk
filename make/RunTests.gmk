@@ -1073,10 +1073,14 @@ define SetupRunSpecialTestBody
 	$$(call LogWarn, Test report is stored in $$(strip \
 	    $$(subst $$(TOPDIR)/, , $$($1_TEST_RESULTS_DIR))))
 	$$(call LogWarn, Warning: Special test results are not properly parsed!)
-	$$(eval $1_PASSED := 0)
-	$$(eval $1_FAILED := 0)
+	$$(eval $1_PASSED := $$(shell \
+	  if [ `$(CAT) $$($1_EXITCODE)` = "0" ]; then $(ECHO) 1; else $(ECHO) 0; fi \
+	))
+	$$(eval $1_FAILED := $$(shell \
+	  if [ `$(CAT) $$($1_EXITCODE)` = "0" ]; then $(ECHO) 0; else $(ECHO) 1; fi \
+	))
 	$$(eval $1_ERROR := 0)
-	$$(eval $1_TOTAL := 0)
+	$$(eval $1_TOTAL := 1)
 
   $1: run-test-$1 parse-test-$1
 
