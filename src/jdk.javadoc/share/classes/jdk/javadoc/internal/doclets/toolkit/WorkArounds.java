@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,10 +27,11 @@ package jdk.javadoc.internal.doclets.toolkit;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
@@ -111,37 +112,72 @@ public class WorkArounds {
         }
     }
 
-    // TODO: fix this up correctly
-    public void initDocLint(Collection<String> opts, Collection<String> customTagNames) {
-        ArrayList<String> doclintOpts = new ArrayList<>();
-        boolean msgOptionSeen = false;
+    /**
+     * Initializes doclint, if appropriate, depending on options derived
+     * from the doclet command-line options, and the set of custom tags
+     * that should be ignored by doclint.
+     *
+     * DocLint is not enabled if the option {@code -Xmsgs:none} is given,
+     * and it is not followed by any options to enable any groups.
+     * Note that arguments for {@code -Xmsgs:} can be given individually
+     * in separate {@code -Xmsgs:} options, or in a comma-separated list
+     * for a single option. For example, the following are equivalent:
+     * <ul>
+     *     <li>{@code -Xmsgs:all} {@code -Xmsgs:-html}
+     *     <li>{@code -Xmsgs:all,-html}
+     * </ul>
+     *
+     * @param opts  options for doclint, derived from the corresponding doclet
+     *              command-line options
+     * @param customTagNames the names of custom tags, to be ignored by doclint
+     */
+    public void initDocLint(List<String> opts, Set<String> customTagNames) {
+        List<String> doclintOpts = new ArrayList<>();
 
+        // basic analysis of -Xmsgs and -Xmsgs: options to see if doclint is enabled
+        Set<String> groups = new HashSet<>();
+        boolean seenXmsgs = false;
         for (String opt : opts) {
-            if (opt.startsWith(DocLint.XMSGS_OPTION)) {
-                if (opt.equals(DocLint.XMSGS_CUSTOM_PREFIX + "none"))
-                    return;
-                msgOptionSeen = true;
+            if (opt.equals(DocLint.XMSGS_OPTION)) {
+                groups.add("all");
+                seenXmsgs = true;
+            } else if (opt.startsWith(DocLint.XMSGS_CUSTOM_PREFIX)) {
+                String[] args = opt.substring(DocLint.XMSGS_CUSTOM_PREFIX.length())
+                        .split(DocLint.SEPARATOR);
+                for (String a : args) {
+                    if (a.equals("none")) {
+                        groups.clear();
+                    } else if (a.startsWith("-")) {
+                        groups.remove(a.substring(1));
+                    } else {
+                        groups.add(a);
+                    }
+                }
+                seenXmsgs = true;
             }
             doclintOpts.add(opt);
         }
 
-        if (!msgOptionSeen) {
+        if (seenXmsgs) {
+            if (groups.isEmpty()) {
+                // no groups enabled; do not init doclint
+                return;
+            }
+        } else {
+            // no -Xmsgs options of any kind, use default
             doclintOpts.add(DocLint.XMSGS_OPTION);
         }
 
-        String sep = "";
-        StringBuilder customTags = new StringBuilder();
-        for (String customTag : customTagNames) {
-            customTags.append(sep);
-            customTags.append(customTag);
-            sep = DocLint.SEPARATOR;
+        if (!customTagNames.isEmpty()) {
+            String customTags = String.join(DocLint.SEPARATOR, customTagNames);
+            doclintOpts.add(DocLint.XCUSTOM_TAGS_PREFIX + customTags);
         }
-        doclintOpts.add(DocLint.XCUSTOM_TAGS_PREFIX + customTags.toString());
+
         doclintOpts.add(DocLint.XHTML_VERSION_PREFIX + "html5");
 
         JavacTask t = BasicJavacTask.instance(toolEnv.context);
         doclint = new DocLint();
-        doclint.init(t, doclintOpts.toArray(new String[doclintOpts.size()]), false);
+        doclint.init(t, doclintOpts.toArray(new String[0]), false);
     }
 
     // TODO: fix this up correctly
@@ -422,7 +458,7 @@ public class WorkArounds {
                 if (md != null) {
                     methods.add(md);
                 }
-                md = findMethod((ClassSymbol) te, "writeExternal", Arrays.asList(writeExternalParamArr));
+                md = findMethod(te, "writeExternal", Arrays.asList(writeExternalParamArr));
                 if (md != null) {
                     methods.add(md);
                 }
@@ -434,7 +470,7 @@ public class WorkArounds {
                      * serialField tag.
                      */
                     definesSerializableFields = true;
-                    fields.add((VariableElement) dsf);
+                    fields.add(dsf);
                 } else {
 
                     /* Calculate default Serializable fields as all
@@ -573,9 +609,8 @@ public class WorkArounds {
     public PackageElement getAbbreviatedPackageElement(PackageElement pkg) {
         String parsedPackageName = utils.parsePackageName(pkg);
         ModuleElement encl = (ModuleElement) pkg.getEnclosingElement();
-        PackageElement abbrevPkg = encl == null
+        return encl == null
                 ? utils.elementUtils.getPackageElement(parsedPackageName)
                 : ((JavacElements) utils.elementUtils).getPackageElement(encl, parsedPackageName);
-        return abbrevPkg;
     }
 }

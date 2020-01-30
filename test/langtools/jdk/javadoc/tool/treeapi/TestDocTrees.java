@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8157611
+ * @bug 8157611 8236949
  * @summary test DocTrees is working correctly relative to HTML access
  * @modules
  *      jdk.javadoc/jdk.javadoc.internal.api
@@ -76,7 +76,7 @@ public class TestDocTrees extends TestRunner {
         execTask("-d", out.toString(),
                 "--release", "8",
                 "-Xdoclint:all",
-                "-Xdoclint:-missing",
+                "-Xdoclint:-reference",
                 "-sourcepath", testSrc.getAbsolutePath(),
                 testFile.getAbsolutePath(),
                 "-overview", overviewFile.getAbsolutePath());
@@ -86,7 +86,7 @@ public class TestDocTrees extends TestRunner {
     public void testOverviewWithoutRelease(Path out) throws Exception {
         execTask("-d", out.toString(),
                 "-Xdoclint:all",
-                "-Xdoclint:-missing",
+                "-Xdoclint:-reference",
                 "-sourcepath", testSrc.getAbsolutePath(),
                 testFile.getAbsolutePath(),
                 "-overview", overviewFile.getAbsolutePath());

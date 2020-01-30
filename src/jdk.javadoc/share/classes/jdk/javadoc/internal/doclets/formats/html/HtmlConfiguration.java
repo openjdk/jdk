@@ -188,7 +188,7 @@ public class HtmlConfiguration extends BaseConfiguration {
         docPaths = new DocPaths(utils);
         setCreateOverview();
         setTopFile(docEnv);
-        workArounds.initDocLint(options.doclintOpts().values(), tagletManager.getAllTagletNames());
+        workArounds.initDocLint(options.doclintOpts(), tagletManager.getAllTagletNames());
         return true;
     }
 

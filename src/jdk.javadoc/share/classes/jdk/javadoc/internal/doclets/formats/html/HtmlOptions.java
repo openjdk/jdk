@@ -28,14 +28,11 @@ package jdk.javadoc.internal.doclets.formats.html;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
 import com.sun.tools.doclint.DocLint;
-import jdk.javadoc.doclet.Doclet;
 import jdk.javadoc.doclet.Reporter;
 import jdk.javadoc.internal.doclets.toolkit.BaseOptions;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
@@ -105,7 +102,7 @@ public class HtmlOptions extends BaseOptions {
      * Arguments for command-line option {@code -Xdoclint} and friends.
      * Collected set of doclint options.
      */
-    private Map<Doclet.Option, String> doclintOpts = new LinkedHashMap<>();
+    private List<String> doclintOpts = new ArrayList<>();
 
     /**
      * Argument for command-line option {@code -Xdocrootparent}.
@@ -411,7 +408,37 @@ public class HtmlOptions extends BaseOptions {
                 new XOption(resources, "-Xdoclint") {
                     @Override
                     public boolean process(String opt,  List<String> args) {
-                        doclintOpts.put(this, DocLint.XMSGS_OPTION);
+                        doclintOpts.add(DocLint.XMSGS_OPTION);
+                        return true;
+                    }
+                },
+
+                new XOption(resources, "doclet.usage.xdoclint-extended", "-Xdoclint:", 0) {
+                    @Override
+                    public boolean process(String opt,  List<String> args) {
+                        String dopt = opt.replace("-Xdoclint:", DocLint.XMSGS_CUSTOM_PREFIX);
+                        if (dopt.contains("/")) {
+                            reporter.print(ERROR, resources.getText("doclet.Option_doclint_no_qualifiers"));
+                            return false;
+                        }
+                        if (!DocLint.isValidOption(dopt)) {
+                            reporter.print(ERROR, resources.getText("doclet.Option_doclint_invalid_arg"));
+                            return false;
+                        }
+                        doclintOpts.add(dopt);
+                        return true;
+                    }
+                },
+
+                new XOption(resources, "doclet.usage.xdoclint-package", "-Xdoclint/package:", 0) {
+                    @Override
+                    public boolean process(String opt,  List<String> args) {
+                        String dopt = opt.replace("-Xdoclint/package:", DocLint.XCHECK_PACKAGE);
+                        if (!DocLint.isValidOption(dopt)) {
+                            reporter.print(ERROR, resources.getText("doclet.Option_doclint_package_invalid_arg"));
+                            return false;
+                        }
+                        doclintOpts.add(dopt);
                         return true;
                     }
                 },
@@ -424,36 +451,6 @@ public class HtmlOptions extends BaseOptions {
                             new URL(docrootParent);
                         } catch (MalformedURLException e) {
                             reporter.print(ERROR, resources.getText("doclet.MalformedURL", docrootParent));
-                            return false;
-                        }
-                        return true;
-                    }
-                },
-
-                new XOption(resources, "doclet.usage.xdoclint-extended", "-Xdoclint:", 0) {
-                    @Override
-                    public boolean process(String opt,  List<String> args) {
-                        String dopt = opt.replace("-Xdoclint:", DocLint.XMSGS_CUSTOM_PREFIX);
-                        doclintOpts.put(this, dopt);
-                        if (dopt.contains("/")) {
-                            reporter.print(ERROR, resources.getText("doclet.Option_doclint_no_qualifiers"));
-                            return false;
-                        }
-                        if (!DocLint.isValidOption(dopt)) {
-                            reporter.print(ERROR, resources.getText("doclet.Option_doclint_invalid_arg"));
-                            return false;
-                        }
-                        return true;
-                    }
-                },
-
-                new XOption(resources, "doclet.usage.xdoclint-package", "-Xdoclint/package:", 0) {
-                    @Override
-                    public boolean process(String opt,  List<String> args) {
-                        String dopt = opt.replace("-Xdoclint/package:", DocLint.XCHECK_PACKAGE);
-                        doclintOpts.put(this, dopt);
-                        if (!DocLint.isValidOption(dopt)) {
-                            reporter.print(ERROR, resources.getText("doclet.Option_doclint_package_invalid_arg"));
                             return false;
                         }
                         return true;
@@ -589,7 +586,7 @@ public class HtmlOptions extends BaseOptions {
      * Arguments for command-line option {@code -Xdoclint} and friends.
      * Collected set of doclint options.
      */
-    Map<Doclet.Option, String> doclintOpts() {
+    List<String> doclintOpts() {
         return doclintOpts;
     }
 
