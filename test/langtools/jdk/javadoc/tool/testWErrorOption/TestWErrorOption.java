@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug     8200383
+ * @bug     8200383 8238259
  * @summary Add javadoc command line setting to fail on warnings
  * @library /tools/lib ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -74,7 +74,7 @@ public class TestWErrorOption extends JavadocTester {
                 "p");
         checkExit(Exit.ERROR);
         checkOutput(Output.OUT, true,
-                "testWerror/src/p/C.java:6: warning - @return tag cannot be used in method with void return type.",
+                "C.java:6: warning - @return tag cannot be used in method with void return type.",
                 "javadoc: error - warnings found and -Werror specified\n"
                 + "1 error\n"
                 + "1 warning\n");

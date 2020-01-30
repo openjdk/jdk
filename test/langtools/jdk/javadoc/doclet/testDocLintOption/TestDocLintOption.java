@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug     8236949
+ * @bug     8236949 8238259
  * @summary javadoc -Xdoclint does not accumulate options correctly
  * @library /tools/lib ../../lib
  * @modules jdk.compiler/com.sun.tools.doclint
@@ -143,19 +143,19 @@ public class TestDocLintOption extends JavadocTester {
         checkExit(expectExit);
 
         checkOutput(Output.OUT, expectGroups.contains(ACCESSIBILITY),
-                "src/p/C.java:4: error: no \"alt\" attribute for image");
+                "C.java:4: error: no \"alt\" attribute for image");
 
         checkOutput(Output.OUT, expectGroups.contains(HTML),
-                "src/p/C.java:8: error: text not allowed in <ul> element");
+                "C.java:8: error: text not allowed in <ul> element");
 
         checkOutput(Output.OUT, expectGroups.contains(MISSING),
-                "src/p/C.java:13: warning: no @return");
+                "C.java:13: warning: no @return");
 
         checkOutput(Output.OUT, expectGroups.contains(REFERENCE),
-                "src/p/C.java:15: error: invalid use of @return");
+                "C.java:15: error: invalid use of @return");
 
         checkOutput(Output.OUT, expectGroups.contains(SYNTAX),
-                "src/p/C.java:19: error: bad HTML entity");
+                "C.java:19: error: bad HTML entity");
     }
 
     /**
