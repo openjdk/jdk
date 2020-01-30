@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -959,8 +959,6 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     // Force this write out before the read below
   __ membar(MacroAssembler::StoreLoad, Rtemp);
 
-  __ ldr_global_s32(Rtemp, SafepointSynchronize::address_of_state());
-
   // Protect the return value in the interleaved code: save it to callee-save registers.
   __ mov(Rsaved_result_lo, R0);
   __ mov(Rsaved_result_hi, R1);
@@ -973,12 +971,16 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 #endif // __ABI_HARD__
 
   {
-    __ ldr_u32(R3, Address(Rthread, JavaThread::suspend_flags_offset()));
-    __ cmp(Rtemp, SafepointSynchronize::_not_synchronized);
-    __ cond_cmp(R3, 0, eq);
+  Label call, skip_call;
+  __ safepoint_poll(Rtemp, call);
+  __ ldr_u32(R3, Address(Rthread, JavaThread::suspend_flags_offset()));
+  __ cmp(R3, 0);
+  __ b(skip_call, eq);
+  __ bind(call);
+  __ mov(R0, Rthread);
+  __ call(CAST_FROM_FN_PTR(address, JavaThread::check_special_condition_for_native_trans), relocInfo::none);
+  __ bind(skip_call);
 
-  __ mov(R0, Rthread, ne);
-  __ call(CAST_FROM_FN_PTR(address, JavaThread::check_special_condition_for_native_trans), relocInfo::none, ne);
 #if R9_IS_SCRATCHED
   __ restore_method();
 #endif

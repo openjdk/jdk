@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,7 @@
 #include "runtime/basicLock.hpp"
 #include "runtime/biasedLocking.hpp"
 #include "runtime/frame.inline.hpp"
+#include "runtime/safepointMechanism.hpp"
 #include "runtime/sharedRuntime.hpp"
 
 //--------------------------------------------------------------------
@@ -556,7 +557,7 @@ void InterpreterMacroAssembler::dispatch_epilog(TosState state, int step) {
 
 void InterpreterMacroAssembler::dispatch_base(TosState state,
                                               DispatchTableMode table_mode,
-                                              bool verifyoop) {
+                                              bool verifyoop, bool generate_poll) {
   if (VerifyActivationFrameSize) {
     Label L;
     sub(Rtemp, FP, SP);
@@ -569,6 +570,18 @@ void InterpreterMacroAssembler::dispatch_base(TosState state,
 
   if (verifyoop) {
     interp_verify_oop(R0_tos, state, __FILE__, __LINE__);
+  }
+
+  Label safepoint;
+  address* const safepoint_table = Interpreter::safept_table(state);
+  address* const table           = Interpreter::dispatch_table(state);
+  bool needs_thread_local_poll = generate_poll &&
+    SafepointMechanism::uses_thread_local_poll() && table != safepoint_table;
+
+  if (needs_thread_local_poll) {
+    NOT_PRODUCT(block_comment("Thread-local Safepoint poll"));
+    ldr(Rtemp, Address(Rthread, Thread::polling_page_offset()));
+    tbnz(Rtemp, exact_log2(SafepointMechanism::poll_bit()), safepoint);
   }
 
   if((state == itos) || (state == btos) || (state == ztos) || (state == ctos) || (state == stos)) {
@@ -600,12 +613,18 @@ void InterpreterMacroAssembler::dispatch_base(TosState state,
     indirect_jump(Address::indexed_ptr(Rtemp, R3_bytecode), Rtemp);
   }
 
+  if (needs_thread_local_poll) {
+    bind(safepoint);
+    lea(Rtemp, ExternalAddress((address)safepoint_table));
+    indirect_jump(Address::indexed_ptr(Rtemp, R3_bytecode), Rtemp);
+  }
+
   nop(); // to avoid filling CPU pipeline with invalid instructions
   nop();
 }
 
-void InterpreterMacroAssembler::dispatch_only(TosState state) {
-  dispatch_base(state, DispatchDefault);
+void InterpreterMacroAssembler::dispatch_only(TosState state, bool generate_poll) {
+  dispatch_base(state, DispatchDefault, true, generate_poll);
 }
 
 
@@ -617,10 +636,10 @@ void InterpreterMacroAssembler::dispatch_only_noverify(TosState state) {
   dispatch_base(state, DispatchNormal, false);
 }
 
-void InterpreterMacroAssembler::dispatch_next(TosState state, int step) {
+void InterpreterMacroAssembler::dispatch_next(TosState state, int step, bool generate_poll) {
   // load next bytecode and advance Rbcp
   ldrb(R3_bytecode, Address(Rbcp, step, pre_indexed));
-  dispatch_base(state, DispatchDefault);
+  dispatch_base(state, DispatchDefault, true, generate_poll);
 }
 
 void InterpreterMacroAssembler::narrow(Register result) {
