@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,12 +29,12 @@
 #include "jfr/utilities/jfrTypes.hpp"
 
 class EdgeStore;
+class InstanceKlass;
 class JavaThread;
 class JfrCheckpointWriter;
 class JfrStackTrace;
 class JfrStackTraceRepository;
 class Klass;
-class Method;
 class ObjectSample;
 class ObjectSampleMarker;
 class ObjectSampler;
@@ -45,7 +45,7 @@ class ObjectSampleCheckpoint : AllStatic {
   friend class PathToGcRootsOperation;
   friend class StackTraceBlobInstaller;
  private:
-  static void add_to_leakp_set(const Method* method, traceid method_id);
+  static void add_to_leakp_set(const InstanceKlass* ik, traceid method_id);
   static int save_mark_words(const ObjectSampler* sampler, ObjectSampleMarker& marker, bool emit_all);
   static void write_stacktrace(const JfrStackTrace* trace, JfrCheckpointWriter& writer);
   static void write(const ObjectSampler* sampler, EdgeStore* edge_store, bool emit_all, Thread* thread);
