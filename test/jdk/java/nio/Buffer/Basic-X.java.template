@@ -39,6 +39,7 @@ import java.nio.*;
 import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Random;
 #end[byte]
 
 
@@ -491,6 +492,38 @@ public class Basic$Type$
             }
         } catch (IOException e) {
             throw new UncheckedIOException(e);
+        }
+
+        // alignment identities
+        final int maxPow2 = 12;
+        ByteBuffer bb = ByteBuffer.allocateDirect(1 << maxPow2); // cap 4096
+
+        Random rnd = new Random();
+        long seed = rnd.nextLong();
+        rnd = new Random(seed);
+
+        for (int i = 0; i < 100; i++) {
+            // 1 == 2^0 <= unitSize == 2^k <= bb.capacity()/2
+            int unitSize = 1 << rnd.nextInt(maxPow2);
+            // 0 <= index < 2*unitSize
+            int index = rnd.nextInt(unitSize << 1);
+            int value = bb.alignmentOffset(index, unitSize);
+            try {
+                if (value < 0 || value >= unitSize) {
+                    throw new RuntimeException(value + " < 0 || " +
+                        value + " >= " + unitSize);
+                }
+                if (value <= index &&
+                    bb.alignmentOffset(index - value, unitSize) != 0)
+                    throw new RuntimeException("Identity 1");
+                if (bb.alignmentOffset(index + (unitSize - value),
+                    unitSize) != 0)
+                    throw new RuntimeException("Identity 2");
+            } catch (RuntimeException re) {
+                System.err.format("seed %d, index %d, unitSize %d, value %d%n",
+                    seed, index, unitSize, value);
+                throw re;
+            }
         }
     }
 

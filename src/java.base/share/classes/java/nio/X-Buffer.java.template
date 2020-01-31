@@ -1871,19 +1871,20 @@ public abstract class $Type$Buffer
      * Returns the memory address, pointing to the byte at the given index,
      * modulo the given unit size.
      *
-     * <p> The return value is non-negative, with {@code 0} indicating that the
-     * address of the byte at the index is aligned for the unit size, and a
-     * positive value that the address is misaligned for the unit size.  If the
-     * address of the byte at the index is misaligned, the return value
+     * <p> The return value is non-negative in the range of {@code 0}
+     * (inclusive) up to {@code unitSize} (exclusive), with zero indicating
+     * that the address of the byte at the index is aligned for the unit size,
+     * and a positive value that the address is misaligned for the unit size.
+     * If the address of the byte at the index is misaligned, the return value
      * represents how much the index should be adjusted to locate a byte at an
      * aligned address.  Specifically, the index should either be decremented by
-     * the return value, or incremented by the unit size minus the return value.
-     * Therefore given
+     * the return value if the latter is not greater than {@code index}, or be
+     * incremented by the unit size minus the return value.  Therefore given
      * <blockquote><pre>
      * int value = alignmentOffset(index, unitSize)</pre></blockquote>
      * then the identities
      * <blockquote><pre>
-     * alignmentOffset(index - value, unitSize) == 0</pre></blockquote>
+     * alignmentOffset(index - value, unitSize) == 0, value &le; index</pre></blockquote>
      * and
      * <blockquote><pre>
      * alignmentOffset(index + (unitSize - value), unitSize) == 0</pre></blockquote>
