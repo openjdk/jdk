@@ -2746,11 +2746,14 @@ Node* ConnectionGraph::find_inst_mem(Node *orig_mem, int alias_idx, GrowableArra
           result = proj_in->in(TypeFunc::Memory);
         }
       } else if (proj_in->is_MemBar()) {
-        if (proj_in->in(TypeFunc::Memory)->is_MergeMem() &&
-            proj_in->in(TypeFunc::Memory)->as_MergeMem()->in(Compile::AliasIdxRaw)->is_Proj() &&
-            proj_in->in(TypeFunc::Memory)->as_MergeMem()->in(Compile::AliasIdxRaw)->in(0)->is_ArrayCopy()) {
-          // clone
-          ArrayCopyNode* ac = proj_in->in(TypeFunc::Memory)->as_MergeMem()->in(Compile::AliasIdxRaw)->in(0)->as_ArrayCopy();
+        // Check if there is an array copy for a clone
+        // Step over GC barrier when ReduceInitialCardMarks is disabled
+        BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
+        Node* control_proj_ac = bs->step_over_gc_barrier(proj_in->in(0));
+
+        if (control_proj_ac->is_Proj() && control_proj_ac->in(0)->is_ArrayCopy()) {
+          // Stop if it is a clone
+          ArrayCopyNode* ac = control_proj_ac->in(0)->as_ArrayCopy();
           if (ac->may_modify(toop, igvn)) {
             break;
           }
