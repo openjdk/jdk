@@ -512,6 +512,19 @@ void ShenandoahBarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet d
   // 3: apply keep-alive barrier if needed
   if (ShenandoahBarrierSet::need_keep_alive_barrier(decorators, type)) {
     __ push_IU_state();
+    // That path can be reached from the c2i adapter with live fp
+    // arguments in registers.
+    LP64_ONLY(assert(Argument::n_float_register_parameters_j == 8, "8 fp registers to save at java call"));
+    __ subptr(rsp, 64);
+    __ movdbl(Address(rsp, 0), xmm0);
+    __ movdbl(Address(rsp, 8), xmm1);
+    __ movdbl(Address(rsp, 16), xmm2);
+    __ movdbl(Address(rsp, 24), xmm3);
+    __ movdbl(Address(rsp, 32), xmm4);
+    __ movdbl(Address(rsp, 40), xmm5);
+    __ movdbl(Address(rsp, 48), xmm6);
+    __ movdbl(Address(rsp, 56), xmm7);
+
     Register thread = NOT_LP64(tmp_thread) LP64_ONLY(r15_thread);
     assert_different_registers(dst, tmp1, tmp_thread);
     if (!thread->is_valid()) {
@@ -527,6 +540,15 @@ void ShenandoahBarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet d
                                  tmp1 /* tmp */,
                                  true /* tosca_live */,
                                  true /* expand_call */);
+    __ movdbl(xmm0, Address(rsp, 0));
+    __ movdbl(xmm1, Address(rsp, 8));
+    __ movdbl(xmm2, Address(rsp, 16));
+    __ movdbl(xmm3, Address(rsp, 24));
+    __ movdbl(xmm4, Address(rsp, 32));
+    __ movdbl(xmm5, Address(rsp, 40));
+    __ movdbl(xmm6, Address(rsp, 48));
+    __ movdbl(xmm7, Address(rsp, 56));
+    __ addptr(rsp, 64);
     __ pop_IU_state();
   }
 }
