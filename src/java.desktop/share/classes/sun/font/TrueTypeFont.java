@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,9 @@ import java.nio.IntBuffer;
 import java.nio.ShortBuffer;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.FileChannel;
+import java.security.AccessController;
+import java.security.PrivilegedActionException;
+import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -321,15 +324,10 @@ public class TrueTypeFont extends FileFont {
                 FontUtilities.getLogger().info("open TTF: " + platName);
             }
             try {
-                RandomAccessFile raf = (RandomAccessFile)
-                java.security.AccessController.doPrivileged(
-                    new java.security.PrivilegedAction<Object>() {
-                        public Object run() {
-                            try {
-                                return new RandomAccessFile(platName, "r");
-                            } catch (FileNotFoundException ffne) {
-                            }
-                            return null;
+                RandomAccessFile raf = AccessController.doPrivileged(
+                    new PrivilegedExceptionAction<RandomAccessFile>() {
+                        public RandomAccessFile run() throws FileNotFoundException {
+                            return new RandomAccessFile(platName, "r");
                     }
                 });
                 disposerRecord.channel = raf.getChannel();
@@ -340,9 +338,13 @@ public class TrueTypeFont extends FileFont {
                         ((SunFontManager) fm).addToPool(this);
                     }
                 }
-            } catch (NullPointerException e) {
+            } catch (PrivilegedActionException e) {
                 close();
-                throw new FontFormatException(e.toString());
+                Throwable reason = e.getCause();
+                if (reason == null) {
+                    reason = e;
+                }
+                throw new FontFormatException(reason.toString());
             } catch (ClosedChannelException e) {
                 /* NIO I/O is interruptible, recurse to retry operation.
                  * The call to channel.size() above can throw this exception.

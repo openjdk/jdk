@@ -129,6 +129,8 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
         }
     }
 
+    private static Font2DHandle FONT_HANDLE_NULL = new Font2DHandle(null);
+
      public static final int FONTFORMAT_NONE = -1;
      public static final int FONTFORMAT_TRUETYPE = 0;
      public static final int FONTFORMAT_TYPE1 = 1;
@@ -949,7 +951,7 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
                             .info("Opening deferred font file " + fileNameKey);
         }
 
-        PhysicalFont physicalFont;
+        PhysicalFont physicalFont = null;
         FontRegistrationInfo regInfo = deferredFontFiles.get(fileNameKey);
         if (regInfo != null) {
             deferredFontFiles.remove(fileNameKey);
@@ -959,21 +961,19 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
                                             regInfo.javaRasterizer,
                                             regInfo.fontRank);
 
-
             if (physicalFont != null) {
                 /* Store the handle, so that if a font is bad, we
                  * retrieve the substituted font.
                  */
                 initialisedFonts.put(fileNameKey, physicalFont.handle);
             } else {
-                initialisedFonts.put(fileNameKey,
-                                     getDefaultPhysicalFont().handle);
+                initialisedFonts.put(fileNameKey, FONT_HANDLE_NULL);
             }
         } else {
             Font2DHandle handle = initialisedFonts.get(fileNameKey);
             if (handle == null) {
                 /* Probably shouldn't happen, but just in case */
-                physicalFont = getDefaultPhysicalFont();
+                initialisedFonts.put(fileNameKey, FONT_HANDLE_NULL);
             } else {
                 physicalFont = (PhysicalFont)(handle.font2D);
             }
@@ -1080,15 +1080,20 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
      */
     public PhysicalFont getDefaultPhysicalFont() {
         if (defaultPhysicalFont == null) {
-            /* findFont2D will load all fonts before giving up the search.
-             * If the JRE Lucida isn't found (eg because the JRE fonts
-             * directory is missing), it could find another version of Lucida
-             * from the host system. This is OK because at that point we are
-             * trying to gracefully handle/recover from a system
-             * misconfiguration and this is probably a reasonable substitution.
-             */
-            defaultPhysicalFont = (PhysicalFont)
-                findFont2D(getDefaultFontFaceName(), Font.PLAIN, NO_FALLBACK);
+            String defaultFontName = getDefaultFontFaceName();
+            // findFont2D will load all fonts
+            Font2D font2d = findFont2D(defaultFontName, Font.PLAIN, NO_FALLBACK);
+            if (font2d != null) {
+                if (font2d instanceof PhysicalFont) {
+                    defaultPhysicalFont = (PhysicalFont)font2d;
+                } else {
+                    if (FontUtilities.isLogging()) {
+                        FontUtilities.getLogger()
+                            .warning("Font returned by findFont2D for default font name " +
+                                     defaultFontName + " is not a physical font: " + font2d.getFontName(null));
+                    }
+                }
+            }
             if (defaultPhysicalFont == null) {
                 /* Because of the findFont2D call above, if we reach here, we
                  * know all fonts have already been loaded, just accept any
@@ -1096,12 +1101,8 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
                  * and I don't know how to recover from there being absolutely
                  * no fonts anywhere on the system.
                  */
-                Iterator<PhysicalFont> i = physicalFonts.values().iterator();
-                if (i.hasNext()) {
-                    defaultPhysicalFont = i.next();
-                } else {
-                    throw new Error("Probable fatal error:No fonts found.");
-                }
+                defaultPhysicalFont = physicalFonts.values().stream().findFirst()
+                    .orElseThrow(()->new Error("Probable fatal error: No physical fonts found."));
             }
         }
         return defaultPhysicalFont;
