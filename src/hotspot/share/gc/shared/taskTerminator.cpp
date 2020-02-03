@@ -25,26 +25,26 @@
 
 #include "precompiled.hpp"
 
-#include "gc/shared/owstTaskTerminator.hpp"
+#include "gc/shared/taskTerminator.hpp"
 #include "gc/shared/taskqueue.hpp"
 #include "logging/log.hpp"
 
 #ifdef TRACESPINNING
-uint OWSTTaskTerminator::_total_yields = 0;
-uint OWSTTaskTerminator::_total_spins = 0;
-uint OWSTTaskTerminator::_total_peeks = 0;
+uint TaskTerminator::_total_yields = 0;
+uint TaskTerminator::_total_spins = 0;
+uint TaskTerminator::_total_peeks = 0;
 #endif
 
-OWSTTaskTerminator::OWSTTaskTerminator(uint n_threads, TaskQueueSetSuper* queue_set) :
+TaskTerminator::TaskTerminator(uint n_threads, TaskQueueSetSuper* queue_set) :
   _n_threads(n_threads),
   _queue_set(queue_set),
   _offered_termination(0),
   _spin_master(NULL) {
 
-  _blocker = new Monitor(Mutex::leaf, "OWSTTaskTerminator", false, Monitor::_safepoint_check_never);
+  _blocker = new Monitor(Mutex::leaf, "TaskTerminator", false, Monitor::_safepoint_check_never);
 }
 
-OWSTTaskTerminator::~OWSTTaskTerminator() {
+TaskTerminator::~TaskTerminator() {
   assert(_offered_termination == 0 || !peek_in_queue_set(), "Precondition");
   assert(_offered_termination == 0 || _offered_termination == _n_threads, "Terminated or aborted" );
 
@@ -54,24 +54,24 @@ OWSTTaskTerminator::~OWSTTaskTerminator() {
 }
 
 #ifdef ASSERT
-bool OWSTTaskTerminator::peek_in_queue_set() {
+bool TaskTerminator::peek_in_queue_set() {
   return _queue_set->peek();
 }
 #endif
 
-void OWSTTaskTerminator::yield() {
+void TaskTerminator::yield() {
   assert(_offered_termination <= _n_threads, "Invariant");
   os::naked_yield();
 }
 
 #ifdef TRACESPINNING
-void OWSTTaskTerminator::print_termination_counts() {
+void TaskTerminator::print_termination_counts() {
   log_trace(gc, task)("TaskTerminator Yields: %u Spins: %u Peeks: %u",
                       total_yields(), total_spins(), total_peeks());
 }
 #endif
 
-void OWSTTaskTerminator::reset_for_reuse() {
+void TaskTerminator::reset_for_reuse() {
   if (_offered_termination != 0) {
     assert(_offered_termination == _n_threads,
            "Terminator may still be in use");
@@ -79,20 +79,20 @@ void OWSTTaskTerminator::reset_for_reuse() {
   }
 }
 
-void OWSTTaskTerminator::reset_for_reuse(uint n_threads) {
+void TaskTerminator::reset_for_reuse(uint n_threads) {
   reset_for_reuse();
   _n_threads = n_threads;
 }
 
-bool OWSTTaskTerminator::exit_termination(size_t tasks, TerminatorTerminator* terminator) {
+bool TaskTerminator::exit_termination(size_t tasks, TerminatorTerminator* terminator) {
   return tasks > 0 || (terminator != NULL && terminator->should_exit_termination());
 }
 
-size_t OWSTTaskTerminator::tasks_in_queue_set() const {
+size_t TaskTerminator::tasks_in_queue_set() const {
   return _queue_set->tasks();
 }
 
-bool OWSTTaskTerminator::offer_termination(TerminatorTerminator* terminator) {
+bool TaskTerminator::offer_termination(TerminatorTerminator* terminator) {
   assert(_n_threads > 0, "Initialization is incorrect");
   assert(_offered_termination < _n_threads, "Invariant");
   assert(_blocker != NULL, "Invariant");
@@ -155,7 +155,7 @@ bool OWSTTaskTerminator::offer_termination(TerminatorTerminator* terminator) {
   }
 }
 
-bool OWSTTaskTerminator::do_spin_master_work(TerminatorTerminator* terminator) {
+bool TaskTerminator::do_spin_master_work(TerminatorTerminator* terminator) {
   uint yield_count = 0;
   // Number of hard spin loops done since last yield
   uint hard_spin_count = 0;
@@ -209,7 +209,7 @@ bool OWSTTaskTerminator::do_spin_master_work(TerminatorTerminator* terminator) {
 #endif
       }
     } else {
-      log_develop_trace(gc, task)("OWSTTaskTerminator::do_spin_master_work() thread " PTR_FORMAT " sleeps after %u yields",
+      log_develop_trace(gc, task)("TaskTerminator::do_spin_master_work() thread " PTR_FORMAT " sleeps after %u yields",
                                   p2i(Thread::current()), yield_count);
       yield_count = 0;
 

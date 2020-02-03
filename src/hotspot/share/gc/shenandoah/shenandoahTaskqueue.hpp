@@ -24,7 +24,8 @@
 
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHTASKQUEUE_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHTASKQUEUE_HPP
-#include "gc/shared/owstTaskTerminator.hpp"
+
+#include "gc/shared/taskTerminator.hpp"
 #include "gc/shared/taskqueue.hpp"
 #include "memory/allocation.hpp"
 #include "runtime/atomic.hpp"
@@ -340,7 +341,7 @@ public:
 
 class ShenandoahTaskTerminator : public StackObj {
 private:
-  OWSTTaskTerminator _terminator;
+  TaskTerminator _terminator;
 public:
   ShenandoahTaskTerminator(uint n_threads, TaskQueueSetSuper* queue_set);
 

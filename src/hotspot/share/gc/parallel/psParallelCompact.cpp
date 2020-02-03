@@ -49,11 +49,11 @@
 #include "gc/shared/gcTrace.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/isGCActiveMark.hpp"
-#include "gc/shared/owstTaskTerminator.hpp"
 #include "gc/shared/referencePolicy.hpp"
 #include "gc/shared/referenceProcessor.hpp"
 #include "gc/shared/referenceProcessorPhaseTimes.hpp"
 #include "gc/shared/spaceDecorator.inline.hpp"
+#include "gc/shared/taskTerminator.hpp"
 #include "gc/shared/weakProcessor.hpp"
 #include "gc/shared/workerPolicy.hpp"
 #include "gc/shared/workgroup.hpp"
@@ -1970,7 +1970,7 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
                          collection_exit.ticks());
 
 #ifdef TRACESPINNING
-  OWSTTaskTerminator::print_termination_counts();
+  TaskTerminator::print_termination_counts();
 #endif
 
   AdaptiveSizePolicyOutput::print(size_policy, heap->total_collections());
@@ -2150,7 +2150,7 @@ static void mark_from_roots_work(ParallelRootType::Value root_type, uint worker_
   cm->follow_marking_stacks();
 }
 
-static void steal_marking_work(OWSTTaskTerminator& terminator, uint worker_id) {
+static void steal_marking_work(TaskTerminator& terminator, uint worker_id) {
   assert(ParallelScavengeHeap::heap()->is_gc_active(), "called outside gc");
 
   ParCompactionManager* cm =
@@ -2174,7 +2174,7 @@ class MarkFromRootsTask : public AbstractGangTask {
   typedef AbstractRefProcTaskExecutor::ProcessTask ProcessTask;
   StrongRootsScope _strong_roots_scope; // needed for Threads::possibly_parallel_threads_do
   SequentialSubTasksDone _subtasks;
-  OWSTTaskTerminator _terminator;
+  TaskTerminator _terminator;
   uint _active_workers;
 
 public:
@@ -2207,7 +2207,7 @@ class PCRefProcTask : public AbstractGangTask {
   typedef AbstractRefProcTaskExecutor::ProcessTask ProcessTask;
   ProcessTask& _task;
   uint _ergo_workers;
-  OWSTTaskTerminator _terminator;
+  TaskTerminator _terminator;
 
 public:
   PCRefProcTask(ProcessTask& task, uint ergo_workers) :
@@ -2587,7 +2587,7 @@ void PSParallelCompact::write_block_fill_histogram()
 }
 #endif // #ifdef ASSERT
 
-static void compaction_with_stealing_work(OWSTTaskTerminator* terminator, uint worker_id) {
+static void compaction_with_stealing_work(TaskTerminator* terminator, uint worker_id) {
   assert(ParallelScavengeHeap::heap()->is_gc_active(), "called outside gc");
 
   ParCompactionManager* cm =
@@ -2623,7 +2623,7 @@ static void compaction_with_stealing_work(OWSTTaskTerminator* terminator, uint w
 class UpdateDensePrefixAndCompactionTask: public AbstractGangTask {
   typedef AbstractRefProcTaskExecutor::ProcessTask ProcessTask;
   TaskQueue& _tq;
-  OWSTTaskTerminator _terminator;
+  TaskTerminator _terminator;
   uint _active_workers;
 
 public:

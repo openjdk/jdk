@@ -61,7 +61,7 @@ private:
     typedef AbstractRefProcTaskExecutor::ProcessTask ProcessTask;
     ProcessTask&                  _proc_task;
     G1FullCollector*              _collector;
-    OWSTTaskTerminator            _terminator;
+    TaskTerminator                _terminator;
 
   public:
     G1RefProcTaskProxy(ProcessTask& proc_task,

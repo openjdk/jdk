@@ -25,8 +25,8 @@
 #include "precompiled.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "gc/g1/g1FullGCMarker.inline.hpp"
-#include "gc/shared/owstTaskTerminator.hpp"
 #include "gc/shared/referenceProcessor.hpp"
+#include "gc/shared/taskTerminator.hpp"
 #include "gc/shared/verifyOption.hpp"
 #include "memory/iterator.inline.hpp"
 
@@ -50,7 +50,7 @@ G1FullGCMarker::~G1FullGCMarker() {
 
 void G1FullGCMarker::complete_marking(OopQueueSet* oop_stacks,
                                       ObjArrayTaskQueueSet* array_stacks,
-                                      OWSTTaskTerminator* terminator) {
+                                      TaskTerminator* terminator) {
   do {
     drain_stack();
     ObjArrayTask steal_array;

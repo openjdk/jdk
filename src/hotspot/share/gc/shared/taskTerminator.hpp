@@ -22,8 +22,8 @@
  * questions.
  *
  */
-#ifndef SHARE_GC_SHARED_OWSTTASKTERMINATOR_HPP
-#define SHARE_GC_SHARED_OWSTTASKTERMINATOR_HPP
+#ifndef SHARE_GC_SHARED_TASKTERMINATOR_HPP
+#define SHARE_GC_SHARED_TASKTERMINATOR_HPP
 
 #include "memory/allocation.hpp"
 #include "runtime/mutex.hpp"
@@ -36,10 +36,12 @@ class TaskQueueSetSuper;
 class TerminatorTerminator;
 
 /*
- * Provides a task termination protocol. OWST stands for Optimized Work Stealing Threads
+ * Provides a task termination protocol.
  *
- * This is an enhanced implementation of Google's work stealing task termination
- * protocol, which is described in the paper:
+ * This is an enhanced implementation of Google's OWST work stealing task termination
+ * protocol (OWST stands for Optimized Work Stealing Threads).
+ *
+ * It is described in the paper:
  * "Wessam Hassanein. 2016. Understanding and improving JVM GC work
  * stealing at the data center scale. In Proceedings of the 2016 ACM
  * SIGPLAN International Symposium on Memory Management (ISMM 2016). ACM,
@@ -50,7 +52,7 @@ class TerminatorTerminator;
  * The intention of above enhancement is to reduce spin-master's latency on detecting new tasks
  * for stealing and termination condition.
  */
-class OWSTTaskTerminator : public CHeapObj<mtGC> {
+class TaskTerminator : public CHeapObj<mtGC> {
   uint _n_threads;
   TaskQueueSetSuper* _queue_set;
 
@@ -81,11 +83,11 @@ class OWSTTaskTerminator : public CHeapObj<mtGC> {
   // Return true if termination condition is detected, otherwise return false
   bool do_spin_master_work(TerminatorTerminator* terminator);
 
-  NONCOPYABLE(OWSTTaskTerminator);
+  NONCOPYABLE(TaskTerminator);
 
 public:
-  OWSTTaskTerminator(uint n_threads, TaskQueueSetSuper* queue_set);
-  ~OWSTTaskTerminator();
+  TaskTerminator(uint n_threads, TaskQueueSetSuper* queue_set);
+  ~TaskTerminator();
 
   // The current thread has no work, and is ready to terminate if everyone
   // else is.  If returns "true", all threads are terminated.  If returns
@@ -117,5 +119,4 @@ public:
 #endif
 };
 
-
-#endif // SHARE_GC_SHARED_OWSTTASKTERMINATOR_HPP
+#endif // SHARE_GC_SHARED_TASKTERMINATOR_HPP

@@ -1482,18 +1482,18 @@ protected:
   G1CollectedHeap*              _g1h;
   G1ParScanThreadState*         _par_scan_state;
   RefToScanQueueSet*            _queues;
-  OWSTTaskTerminator*           _terminator;
+  TaskTerminator*               _terminator;
   G1GCPhaseTimes::GCParPhases   _phase;
 
   G1ParScanThreadState*   par_scan_state() { return _par_scan_state; }
   RefToScanQueueSet*      queues()         { return _queues; }
-  OWSTTaskTerminator*     terminator()     { return _terminator; }
+  TaskTerminator*         terminator()     { return _terminator; }
 
 public:
   G1ParEvacuateFollowersClosure(G1CollectedHeap* g1h,
                                 G1ParScanThreadState* par_scan_state,
                                 RefToScanQueueSet* queues,
-                                OWSTTaskTerminator* terminator,
+                                TaskTerminator* terminator,
                                 G1GCPhaseTimes::GCParPhases phase)
     : _start_term(0.0), _term_time(0.0), _term_attempts(0),
       _g1h(g1h), _par_scan_state(par_scan_state),

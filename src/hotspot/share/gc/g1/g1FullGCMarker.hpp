@@ -87,7 +87,7 @@ public:
   inline void drain_stack();
   void complete_marking(OopQueueSet* oop_stacks,
                         ObjArrayTaskQueueSet* array_stacks,
-                        OWSTTaskTerminator* terminator);
+                        TaskTerminator* terminator);
 
   // Closure getters
   CLDToOopClosure*      cld_closure()   { return &_cld_closure; }

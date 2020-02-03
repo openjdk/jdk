@@ -76,10 +76,10 @@
 #include "gc/shared/isGCActiveMark.hpp"
 #include "gc/shared/locationPrinter.inline.hpp"
 #include "gc/shared/oopStorageParState.hpp"
-#include "gc/shared/owstTaskTerminator.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "gc/shared/referenceProcessor.inline.hpp"
+#include "gc/shared/taskTerminator.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
 #include "gc/shared/weakProcessor.inline.hpp"
 #include "gc/shared/workerPolicy.hpp"
@@ -1133,7 +1133,7 @@ void G1CollectedHeap::print_heap_after_full_collection(G1HeapTransition* heap_tr
   print_heap_after_gc();
   print_heap_regions();
 #ifdef TRACESPINNING
-  OWSTTaskTerminator::print_termination_counts();
+  TaskTerminator::print_termination_counts();
 #endif
 }
 
@@ -3141,7 +3141,7 @@ void G1CollectedHeap::do_collection_pause_at_safepoint_helper(double target_paus
       verify_after_young_collection(verify_type);
 
 #ifdef TRACESPINNING
-      OWSTTaskTerminator::print_termination_counts();
+      TaskTerminator::print_termination_counts();
 #endif
 
       gc_epilogue(false);
@@ -3477,14 +3477,14 @@ class G1STWRefProcTaskProxy: public AbstractGangTask {
   G1CollectedHeap* _g1h;
   G1ParScanThreadStateSet* _pss;
   RefToScanQueueSet* _task_queues;
-  OWSTTaskTerminator* _terminator;
+  TaskTerminator* _terminator;
 
 public:
   G1STWRefProcTaskProxy(ProcessTask& proc_task,
                         G1CollectedHeap* g1h,
                         G1ParScanThreadStateSet* per_thread_states,
                         RefToScanQueueSet *task_queues,
-                        OWSTTaskTerminator* terminator) :
+                        TaskTerminator* terminator) :
     AbstractGangTask("Process reference objects in parallel"),
     _proc_task(proc_task),
     _g1h(g1h),
@@ -3528,7 +3528,7 @@ void G1STWRefProcTaskExecutor::execute(ProcessTask& proc_task, uint ergo_workers
   assert(_workers->active_workers() >= ergo_workers,
          "Ergonomically chosen workers (%u) should be less than or equal to active workers (%u)",
          ergo_workers, _workers->active_workers());
-  OWSTTaskTerminator terminator(ergo_workers, _queues);
+  TaskTerminator terminator(ergo_workers, _queues);
   G1STWRefProcTaskProxy proc_task_proxy(proc_task, _g1h, _pss, _queues, &terminator);
 
   _workers->run_task(&proc_task_proxy, ergo_workers);
@@ -3815,7 +3815,7 @@ protected:
   G1CollectedHeap* _g1h;
   G1ParScanThreadStateSet* _per_thread_states;
   RefToScanQueueSet* _task_queues;
-  OWSTTaskTerminator _terminator;
+  TaskTerminator _terminator;
   uint _num_workers;
 
   void evacuate_live_objects(G1ParScanThreadState* pss,

@@ -678,7 +678,7 @@ void GenCollectedHeap::do_collection(bool           full,
   }
 
 #ifdef TRACESPINNING
-  OWSTTaskTerminator::print_termination_counts();
+  TaskTerminator::print_termination_counts();
 #endif
 }
 

@@ -24,7 +24,6 @@
 
 #include "precompiled.hpp"
 #include "gc/shared/taskqueue.hpp"
-#include "gc/shared/owstTaskTerminator.hpp"
 #include "oops/oop.inline.hpp"
 #include "logging/log.hpp"
 #include "runtime/atomic.hpp"

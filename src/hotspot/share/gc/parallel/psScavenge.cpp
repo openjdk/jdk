@@ -43,12 +43,12 @@
 #include "gc/shared/gcTrace.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/isGCActiveMark.hpp"
-#include "gc/shared/owstTaskTerminator.hpp"
 #include "gc/shared/referencePolicy.hpp"
 #include "gc/shared/referenceProcessor.hpp"
 #include "gc/shared/referenceProcessorPhaseTimes.hpp"
 #include "gc/shared/scavengableNMethods.hpp"
 #include "gc/shared/spaceDecorator.inline.hpp"
+#include "gc/shared/taskTerminator.hpp"
 #include "gc/shared/weakProcessor.hpp"
 #include "gc/shared/workerPolicy.hpp"
 #include "gc/shared/workgroup.hpp"
@@ -139,7 +139,7 @@ static void scavenge_roots_work(ParallelRootType::Value root_type, uint worker_i
   pm->drain_stacks(false);
 }
 
-static void steal_work(OWSTTaskTerminator& terminator, uint worker_id) {
+static void steal_work(TaskTerminator& terminator, uint worker_id) {
   assert(ParallelScavengeHeap::heap()->is_gc_active(), "called outside gc");
 
   PSPromotionManager* pm =
@@ -219,7 +219,7 @@ class PSRefProcTaskExecutor: public AbstractRefProcTaskExecutor {
 
 class PSRefProcTask : public AbstractGangTask {
   typedef AbstractRefProcTaskExecutor::ProcessTask ProcessTask;
-  OWSTTaskTerminator _terminator;
+  TaskTerminator _terminator;
   ProcessTask& _task;
   uint _active_workers;
 
@@ -315,7 +315,7 @@ class ScavengeRootsTask : public AbstractGangTask {
   HeapWord* _gen_top;
   uint _active_workers;
   bool _is_empty;
-  OWSTTaskTerminator _terminator;
+  TaskTerminator _terminator;
 
 public:
   ScavengeRootsTask(PSOldGen* old_gen,
@@ -732,7 +732,7 @@ bool PSScavenge::invoke_no_policy() {
                             scavenge_exit.ticks());
 
 #ifdef TRACESPINNING
-  OWSTTaskTerminator::print_termination_counts();
+  TaskTerminator::print_termination_counts();
 #endif
 
   AdaptiveSizePolicyOutput::print(size_policy, heap->total_collections());
