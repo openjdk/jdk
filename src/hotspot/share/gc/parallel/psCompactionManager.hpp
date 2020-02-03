@@ -38,7 +38,6 @@ class ParallelCompactData;
 class ParMarkBitMap;
 
 class ParCompactionManager : public CHeapObj<mtGC> {
-  friend class ParallelTaskTerminator;
   friend class ParMarkBitMap;
   friend class PSParallelCompact;
   friend class CompactionWithStealingTask;
@@ -96,7 +95,7 @@ private:
   static void initialize(ParMarkBitMap* mbm);
 
  protected:
-  // Array of tasks.  Needed by the ParallelTaskTerminator.
+  // Array of task queues.  Needed by the task terminator.
   static RegionTaskQueueSet* region_array()      { return _region_array; }
   OverflowTaskQueue<oop, mtGC>*  marking_stack()       { return &_marking_stack; }
 

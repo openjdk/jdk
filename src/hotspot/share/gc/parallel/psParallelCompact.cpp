@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,6 +49,7 @@
 #include "gc/shared/gcTrace.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/isGCActiveMark.hpp"
+#include "gc/shared/owstTaskTerminator.hpp"
 #include "gc/shared/referencePolicy.hpp"
 #include "gc/shared/referenceProcessor.hpp"
 #include "gc/shared/referenceProcessorPhaseTimes.hpp"
@@ -1969,7 +1970,7 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
                          collection_exit.ticks());
 
 #ifdef TRACESPINNING
-  ParallelTaskTerminator::print_termination_counts();
+  OWSTTaskTerminator::print_termination_counts();
 #endif
 
   AdaptiveSizePolicyOutput::print(size_policy, heap->total_collections());
@@ -2149,7 +2150,7 @@ static void mark_from_roots_work(ParallelRootType::Value root_type, uint worker_
   cm->follow_marking_stacks();
 }
 
-static void steal_marking_work(ParallelTaskTerminator& terminator, uint worker_id) {
+static void steal_marking_work(OWSTTaskTerminator& terminator, uint worker_id) {
   assert(ParallelScavengeHeap::heap()->is_gc_active(), "called outside gc");
 
   ParCompactionManager* cm =
@@ -2173,7 +2174,7 @@ class MarkFromRootsTask : public AbstractGangTask {
   typedef AbstractRefProcTaskExecutor::ProcessTask ProcessTask;
   StrongRootsScope _strong_roots_scope; // needed for Threads::possibly_parallel_threads_do
   SequentialSubTasksDone _subtasks;
-  TaskTerminator _terminator;
+  OWSTTaskTerminator _terminator;
   uint _active_workers;
 
 public:
@@ -2197,7 +2198,7 @@ public:
     Threads::possibly_parallel_threads_do(true /*parallel */, &closure);
 
     if (_active_workers > 1) {
-      steal_marking_work(*_terminator.terminator(), worker_id);
+      steal_marking_work(_terminator, worker_id);
     }
   }
 };
@@ -2206,7 +2207,7 @@ class PCRefProcTask : public AbstractGangTask {
   typedef AbstractRefProcTaskExecutor::ProcessTask ProcessTask;
   ProcessTask& _task;
   uint _ergo_workers;
-  TaskTerminator _terminator;
+  OWSTTaskTerminator _terminator;
 
 public:
   PCRefProcTask(ProcessTask& task, uint ergo_workers) :
@@ -2227,7 +2228,7 @@ public:
     _task.work(worker_id, *PSParallelCompact::is_alive_closure(),
                mark_and_push_closure, follow_stack_closure);
 
-    steal_marking_work(*_terminator.terminator(), worker_id);
+    steal_marking_work(_terminator, worker_id);
   }
 };
 
@@ -2586,7 +2587,7 @@ void PSParallelCompact::write_block_fill_histogram()
 }
 #endif // #ifdef ASSERT
 
-static void compaction_with_stealing_work(ParallelTaskTerminator* terminator, uint worker_id) {
+static void compaction_with_stealing_work(OWSTTaskTerminator* terminator, uint worker_id) {
   assert(ParallelScavengeHeap::heap()->is_gc_active(), "called outside gc");
 
   ParCompactionManager* cm =
@@ -2622,7 +2623,7 @@ static void compaction_with_stealing_work(ParallelTaskTerminator* terminator, ui
 class UpdateDensePrefixAndCompactionTask: public AbstractGangTask {
   typedef AbstractRefProcTaskExecutor::ProcessTask ProcessTask;
   TaskQueue& _tq;
-  TaskTerminator _terminator;
+  OWSTTaskTerminator _terminator;
   uint _active_workers;
 
 public:
@@ -2644,7 +2645,7 @@ public:
 
     // Once a thread has drained it's stack, it should try to steal regions from
     // other threads.
-    compaction_with_stealing_work(_terminator.terminator(), worker_id);
+    compaction_with_stealing_work(&_terminator, worker_id);
   }
 };
 

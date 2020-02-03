@@ -51,12 +51,7 @@ bool ShenandoahObjToScanQueueSet::is_empty() {
 }
 
 ShenandoahTaskTerminator::ShenandoahTaskTerminator(uint n_threads, TaskQueueSetSuper* queue_set) :
-  _terminator(new OWSTTaskTerminator(n_threads, queue_set)) { }
-
-ShenandoahTaskTerminator::~ShenandoahTaskTerminator() {
-  assert(_terminator != NULL, "Invariant");
-  delete _terminator;
-}
+  _terminator(n_threads, queue_set) { }
 
 #if TASKQUEUE_STATS
 void ShenandoahObjToScanQueueSet::print_taskqueue_stats_hdr(outputStream* const st) {

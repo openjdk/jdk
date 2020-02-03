@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "gc/g1/g1FullGCMarker.inline.hpp"
+#include "gc/shared/owstTaskTerminator.hpp"
 #include "gc/shared/referenceProcessor.hpp"
 #include "gc/shared/verifyOption.hpp"
 #include "memory/iterator.inline.hpp"
@@ -49,7 +50,7 @@ G1FullGCMarker::~G1FullGCMarker() {
 
 void G1FullGCMarker::complete_marking(OopQueueSet* oop_stacks,
                                       ObjArrayTaskQueueSet* array_stacks,
-                                      ParallelTaskTerminator* terminator) {
+                                      OWSTTaskTerminator* terminator) {
   do {
     drain_stack();
     ObjArrayTask steal_array;

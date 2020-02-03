@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018, 2019, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,14 +25,20 @@
 #ifndef SHARE_GC_SHARED_OWSTTASKTERMINATOR_HPP
 #define SHARE_GC_SHARED_OWSTTASKTERMINATOR_HPP
 
-#include "gc/shared/taskqueue.hpp"
+#include "memory/allocation.hpp"
 #include "runtime/mutex.hpp"
 #include "runtime/thread.hpp"
 
+// Define this to enable additional tracing probes.
+#undef TRACESPINNING
+
+class TaskQueueSetSuper;
+class TerminatorTerminator;
+
 /*
- * OWST stands for Optimized Work Stealing Threads
+ * Provides a task termination protocol. OWST stands for Optimized Work Stealing Threads
  *
- * This is an enhanced implementation of Google's work stealing
+ * This is an enhanced implementation of Google's work stealing task termination
  * protocol, which is described in the paper:
  * "Wessam Hassanein. 2016. Understanding and improving JVM GC work
  * stealing at the data center scale. In Proceedings of the 2016 ACM
@@ -43,38 +50,71 @@
  * The intention of above enhancement is to reduce spin-master's latency on detecting new tasks
  * for stealing and termination condition.
  */
+class OWSTTaskTerminator : public CHeapObj<mtGC> {
+  uint _n_threads;
+  TaskQueueSetSuper* _queue_set;
 
-class OWSTTaskTerminator: public ParallelTaskTerminator {
-private:
+  DEFINE_PAD_MINUS_SIZE(0, DEFAULT_CACHE_LINE_SIZE, 0);
+  volatile uint _offered_termination;
+  DEFINE_PAD_MINUS_SIZE(1, DEFAULT_CACHE_LINE_SIZE, sizeof(volatile uint));
+
+#ifdef ASSERT
+  bool peek_in_queue_set();
+#endif
+  void yield();
+
   Monitor*    _blocker;
   Thread*     _spin_master;
 
+#ifdef TRACESPINNING
+  static uint _total_yields;
+  static uint _total_spins;
+  static uint _total_peeks;
+#endif
+
+  // If we should exit current termination protocol
+  bool exit_termination(size_t tasks, TerminatorTerminator* terminator);
+
+  size_t tasks_in_queue_set() const;
+
+  // Perform spin-master task.
+  // Return true if termination condition is detected, otherwise return false
+  bool do_spin_master_work(TerminatorTerminator* terminator);
+
+  NONCOPYABLE(OWSTTaskTerminator);
+
 public:
-  OWSTTaskTerminator(uint n_threads, TaskQueueSetSuper* queue_set) :
-    ParallelTaskTerminator(n_threads, queue_set), _spin_master(NULL) {
-    _blocker = new Monitor(Mutex::leaf, "OWSTTaskTerminator", false, Monitor::_safepoint_check_never);
+  OWSTTaskTerminator(uint n_threads, TaskQueueSetSuper* queue_set);
+  ~OWSTTaskTerminator();
+
+  // The current thread has no work, and is ready to terminate if everyone
+  // else is.  If returns "true", all threads are terminated.  If returns
+  // "false", available work has been observed in one of the task queues,
+  // so the global task is not complete.
+  bool offer_termination() {
+    return offer_termination(NULL);
   }
 
-  virtual ~OWSTTaskTerminator() {
-    assert(_spin_master == NULL, "Should have been reset");
-    assert(_blocker != NULL, "Can not be NULL");
-    delete _blocker;
-  }
-
+  // As above, but it also terminates if the should_exit_termination()
+  // method of the terminator parameter returns true. If terminator is
+  // NULL, then it is ignored.
   bool offer_termination(TerminatorTerminator* terminator);
 
-protected:
-  // If should exit current termination protocol
-  virtual bool exit_termination(size_t tasks, TerminatorTerminator* terminator);
+  // Reset the terminator, so that it may be reused again.
+  // The caller is responsible for ensuring that this is done
+  // in an MT-safe manner, once the previous round of use of
+  // the terminator is finished.
+  void reset_for_reuse();
+  // Same as above but the number of parallel threads is set to the
+  // given number.
+  void reset_for_reuse(uint n_threads);
 
-private:
-  size_t tasks_in_queue_set() { return _queue_set->tasks(); }
-
-  /*
-   * Perform spin-master task.
-   * Return true if termination condition is detected, otherwise return false
-   */
-  bool do_spin_master_work(TerminatorTerminator* terminator);
+#ifdef TRACESPINNING
+  static uint total_yields() { return _total_yields; }
+  static uint total_spins() { return _total_spins; }
+  static uint total_peeks() { return _total_peeks; }
+  static void print_termination_counts();
+#endif
 };
 
 

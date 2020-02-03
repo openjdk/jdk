@@ -43,6 +43,7 @@
 #include "gc/shared/gcTrace.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/isGCActiveMark.hpp"
+#include "gc/shared/owstTaskTerminator.hpp"
 #include "gc/shared/referencePolicy.hpp"
 #include "gc/shared/referenceProcessor.hpp"
 #include "gc/shared/referenceProcessorPhaseTimes.hpp"
@@ -138,7 +139,7 @@ static void scavenge_roots_work(ParallelRootType::Value root_type, uint worker_i
   pm->drain_stacks(false);
 }
 
-static void steal_work(ParallelTaskTerminator& terminator, uint worker_id) {
+static void steal_work(OWSTTaskTerminator& terminator, uint worker_id) {
   assert(ParallelScavengeHeap::heap()->is_gc_active(), "called outside gc");
 
   PSPromotionManager* pm =
@@ -218,7 +219,7 @@ class PSRefProcTaskExecutor: public AbstractRefProcTaskExecutor {
 
 class PSRefProcTask : public AbstractGangTask {
   typedef AbstractRefProcTaskExecutor::ProcessTask ProcessTask;
-  TaskTerminator _terminator;
+  OWSTTaskTerminator _terminator;
   ProcessTask& _task;
   uint _active_workers;
 
@@ -240,7 +241,7 @@ public:
     _task.work(worker_id, is_alive, keep_alive, evac_followers);
 
     if (_task.marks_oops_alive() && _active_workers > 1) {
-      steal_work(*_terminator.terminator(), worker_id);
+      steal_work(_terminator, worker_id);
     }
   }
 };
@@ -314,7 +315,7 @@ class ScavengeRootsTask : public AbstractGangTask {
   HeapWord* _gen_top;
   uint _active_workers;
   bool _is_empty;
-  TaskTerminator _terminator;
+  OWSTTaskTerminator _terminator;
 
 public:
   ScavengeRootsTask(PSOldGen* old_gen,
@@ -377,7 +378,7 @@ public:
     // ParallelGCThreads is > 1.
 
     if (_active_workers > 1) {
-      steal_work(*_terminator.terminator() , worker_id);
+      steal_work(_terminator, worker_id);
     }
   }
 };
@@ -731,7 +732,7 @@ bool PSScavenge::invoke_no_policy() {
                             scavenge_exit.ticks());
 
 #ifdef TRACESPINNING
-  ParallelTaskTerminator::print_termination_counts();
+  OWSTTaskTerminator::print_termination_counts();
 #endif
 
   AdaptiveSizePolicyOutput::print(size_policy, heap->total_collections());
