@@ -32,10 +32,14 @@ import java.awt.*;
 import java.awt.event.*;
 
 import javax.swing.*;
+import static javax.swing.UIManager.LookAndFeelInfo;
+import static javax.swing.UIManager.getInstalledLookAndFeels;
+import static javax.swing.UIManager.setLookAndFeel;
 
 public class NonOpaquePopupMenuTest extends JFrame {
 
     private static JMenu fileMenu;
+    private static final String AQUALAF="com.apple.laf.AquaLookAndFeel";
 
     public NonOpaquePopupMenuTest() {
         getContentPane().setBackground(java.awt.Color.RED);
@@ -53,30 +57,40 @@ public class NonOpaquePopupMenuTest extends JFrame {
     }
 
     public static void main(String[] args) throws Throwable {
-        Robot robot = new Robot();
-        robot.setAutoDelay(250);
+        LookAndFeelInfo[] lookAndFeelInfoArray = getInstalledLookAndFeels();
 
-        SwingUtilities.invokeAndWait(new Runnable() {
-
-            @Override
-            public void run() {
-                new NonOpaquePopupMenuTest();
+        for (LookAndFeelInfo lookAndFeelInfo : lookAndFeelInfoArray) {
+            System.out.println(lookAndFeelInfo.getClassName());
+            if ( AQUALAF == lookAndFeelInfo.getClassName()) {
+                System.out.println("This test scenario is not applicable for" +
+                        " Aqua LookandFeel and hence skipping the validation");
+                continue;
             }
-        });
+            setLookAndFeel(lookAndFeelInfo.getClassName());
+            Robot robot = new Robot();
+            robot.setAutoDelay(250);
 
-        robot.waitForIdle();
+            SwingUtilities.invokeAndWait(new Runnable() {
 
-        Point p = getMenuClickPoint();
-        robot.mouseMove(p.x, p.y);
-        robot.mousePress(InputEvent.BUTTON1_MASK);
-        robot.mouseRelease(InputEvent.BUTTON1_MASK);
+                @Override
+                public void run() {
+                    new NonOpaquePopupMenuTest();
+                }
+            });
 
-        robot.waitForIdle();
+            robot.waitForIdle();
 
-        if (isParentOpaque()) {
-            throw new RuntimeException("Popup menu parent is opaque");
+            Point p = getMenuClickPoint();
+            robot.mouseMove(p.x, p.y);
+            robot.mousePress(InputEvent.BUTTON1_MASK);
+            robot.mouseRelease(InputEvent.BUTTON1_MASK);
+
+            robot.waitForIdle();
+
+            if (isParentOpaque()) {
+                throw new RuntimeException("Popup menu parent is opaque");
+            }
         }
-
     }
 
     private static boolean isParentOpaque() throws Exception {
