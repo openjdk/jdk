@@ -676,10 +676,6 @@ void GenCollectedHeap::do_collection(bool           full,
 
     print_heap_after_gc();
   }
-
-#ifdef TRACESPINNING
-  TaskTerminator::print_termination_counts();
-#endif
 }
 
 bool GenCollectedHeap::should_do_full_collection(size_t size, bool full, bool is_tlab,

@@ -731,10 +731,6 @@ bool PSScavenge::invoke_no_policy() {
                             scavenge_entry.ticks(), scavenge_midpoint.ticks(),
                             scavenge_exit.ticks());
 
-#ifdef TRACESPINNING
-  TaskTerminator::print_termination_counts();
-#endif
-
   AdaptiveSizePolicyOutput::print(size_policy, heap->total_collections());
 
   _gc_timer.register_gc_end();

@@ -1132,9 +1132,6 @@ void G1CollectedHeap::print_heap_after_full_collection(G1HeapTransition* heap_tr
   heap_transition->print();
   print_heap_after_gc();
   print_heap_regions();
-#ifdef TRACESPINNING
-  TaskTerminator::print_termination_counts();
-#endif
 }
 
 bool G1CollectedHeap::do_full_collection(bool explicit_gc,
@@ -3139,10 +3136,6 @@ void G1CollectedHeap::do_collection_pause_at_safepoint_helper(double target_paus
       }
 
       verify_after_young_collection(verify_type);
-
-#ifdef TRACESPINNING
-      TaskTerminator::print_termination_counts();
-#endif
 
       gc_epilogue(false);
     }

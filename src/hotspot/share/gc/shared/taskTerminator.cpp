@@ -29,12 +29,6 @@
 #include "gc/shared/taskqueue.hpp"
 #include "logging/log.hpp"
 
-#ifdef TRACESPINNING
-uint TaskTerminator::_total_yields = 0;
-uint TaskTerminator::_total_spins = 0;
-uint TaskTerminator::_total_peeks = 0;
-#endif
-
 TaskTerminator::TaskTerminator(uint n_threads, TaskQueueSetSuper* queue_set) :
   _n_threads(n_threads),
   _queue_set(queue_set),
@@ -63,13 +57,6 @@ void TaskTerminator::yield() {
   assert(_offered_termination <= _n_threads, "Invariant");
   os::naked_yield();
 }
-
-#ifdef TRACESPINNING
-void TaskTerminator::print_termination_counts() {
-  log_trace(gc, task)("TaskTerminator Yields: %u Spins: %u Peeks: %u",
-                      total_yields(), total_spins(), total_peeks());
-}
-#endif
 
 void TaskTerminator::reset_for_reuse() {
   if (_offered_termination != 0) {
@@ -192,9 +179,6 @@ bool TaskTerminator::do_spin_master_work(TerminatorTerminator* terminator) {
         yield();
         hard_spin_count = 0;
         hard_spin_limit = hard_spin_start;
-#ifdef TRACESPINNING
-        _total_yields++;
-#endif
       } else {
         // Hard spin this time
         // Increase the hard spinning period but only up to a limit.
@@ -204,9 +188,6 @@ bool TaskTerminator::do_spin_master_work(TerminatorTerminator* terminator) {
           SpinPause();
         }
         hard_spin_count++;
-#ifdef TRACESPINNING
-        _total_spins++;
-#endif
       }
     } else {
       log_develop_trace(gc, task)("TaskTerminator::do_spin_master_work() thread " PTR_FORMAT " sleeps after %u yields",
@@ -223,9 +204,6 @@ bool TaskTerminator::do_spin_master_work(TerminatorTerminator* terminator) {
       }
     }
 
-#ifdef TRACESPINNING
-    _total_peeks++;
-#endif
     size_t tasks = tasks_in_queue_set();
     bool exit = exit_termination(tasks, terminator);
     {

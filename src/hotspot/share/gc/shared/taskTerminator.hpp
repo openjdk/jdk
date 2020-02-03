@@ -29,9 +29,6 @@
 #include "runtime/mutex.hpp"
 #include "runtime/thread.hpp"
 
-// Define this to enable additional tracing probes.
-#undef TRACESPINNING
-
 class TaskQueueSetSuper;
 class TerminatorTerminator;
 
@@ -67,12 +64,6 @@ class TaskTerminator : public CHeapObj<mtGC> {
 
   Monitor*    _blocker;
   Thread*     _spin_master;
-
-#ifdef TRACESPINNING
-  static uint _total_yields;
-  static uint _total_spins;
-  static uint _total_peeks;
-#endif
 
   // If we should exit current termination protocol
   bool exit_termination(size_t tasks, TerminatorTerminator* terminator);
@@ -110,13 +101,6 @@ public:
   // Same as above but the number of parallel threads is set to the
   // given number.
   void reset_for_reuse(uint n_threads);
-
-#ifdef TRACESPINNING
-  static uint total_yields() { return _total_yields; }
-  static uint total_spins() { return _total_spins; }
-  static uint total_peeks() { return _total_peeks; }
-  static void print_termination_counts();
-#endif
 };
 
 #endif // SHARE_GC_SHARED_TASKTERMINATOR_HPP

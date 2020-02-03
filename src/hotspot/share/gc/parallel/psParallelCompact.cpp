@@ -1969,10 +1969,6 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
                          marking_start.ticks(), compaction_start.ticks(),
                          collection_exit.ticks());
 
-#ifdef TRACESPINNING
-  TaskTerminator::print_termination_counts();
-#endif
-
   AdaptiveSizePolicyOutput::print(size_policy, heap->total_collections());
 
   _gc_timer.register_gc_end();
