@@ -155,10 +155,10 @@ public:
 class ShenandoahConcurrentMarkingTask : public AbstractGangTask {
 private:
   ShenandoahConcurrentMark* _cm;
-  ShenandoahTaskTerminator* _terminator;
+  TaskTerminator* _terminator;
 
 public:
-  ShenandoahConcurrentMarkingTask(ShenandoahConcurrentMark* cm, ShenandoahTaskTerminator* terminator) :
+  ShenandoahConcurrentMarkingTask(ShenandoahConcurrentMark* cm, TaskTerminator* terminator) :
     AbstractGangTask("Root Region Scan"), _cm(cm), _terminator(terminator) {
   }
 
@@ -202,11 +202,11 @@ public:
 class ShenandoahFinalMarkingTask : public AbstractGangTask {
 private:
   ShenandoahConcurrentMark* _cm;
-  ShenandoahTaskTerminator* _terminator;
+  TaskTerminator*           _terminator;
   bool _dedup_string;
 
 public:
-  ShenandoahFinalMarkingTask(ShenandoahConcurrentMark* cm, ShenandoahTaskTerminator* terminator, bool dedup_string) :
+  ShenandoahFinalMarkingTask(ShenandoahConcurrentMark* cm, TaskTerminator* terminator, bool dedup_string) :
     AbstractGangTask("Shenandoah Final Marking"), _cm(cm), _terminator(terminator), _dedup_string(dedup_string) {
   }
 
@@ -405,7 +405,7 @@ void ShenandoahConcurrentMark::mark_from_roots() {
 
   {
     ShenandoahTerminationTracker term(ShenandoahPhaseTimings::conc_termination);
-    ShenandoahTaskTerminator terminator(nworkers, task_queues());
+    TaskTerminator terminator(nworkers, task_queues());
     ShenandoahConcurrentMarkingTask task(this, &terminator);
     workers->run_task(&task);
   }
@@ -440,7 +440,7 @@ void ShenandoahConcurrentMark::finish_mark_from_roots(bool full_gc) {
                                                      ShenandoahPhaseTimings::termination);
 
     StrongRootsScope scope(nworkers);
-    ShenandoahTaskTerminator terminator(nworkers, task_queues());
+    TaskTerminator terminator(nworkers, task_queues());
     ShenandoahFinalMarkingTask task(this, &terminator, ShenandoahStringDedup::is_enabled());
     _heap->workers()->run_task(&task);
   }
@@ -460,11 +460,11 @@ void ShenandoahConcurrentMark::finish_mark_from_roots(bool full_gc) {
 // Weak Reference Closures
 class ShenandoahCMDrainMarkingStackClosure: public VoidClosure {
   uint _worker_id;
-  ShenandoahTaskTerminator* _terminator;
+  TaskTerminator* _terminator;
   bool _reset_terminator;
 
 public:
-  ShenandoahCMDrainMarkingStackClosure(uint worker_id, ShenandoahTaskTerminator* t, bool reset_terminator = false):
+  ShenandoahCMDrainMarkingStackClosure(uint worker_id, TaskTerminator* t, bool reset_terminator = false):
     _worker_id(worker_id),
     _terminator(t),
     _reset_terminator(reset_terminator) {
@@ -552,11 +552,11 @@ public:
 class ShenandoahRefProcTaskProxy : public AbstractGangTask {
 private:
   AbstractRefProcTaskExecutor::ProcessTask& _proc_task;
-  ShenandoahTaskTerminator* _terminator;
+  TaskTerminator* _terminator;
 
 public:
   ShenandoahRefProcTaskProxy(AbstractRefProcTaskExecutor::ProcessTask& proc_task,
-                             ShenandoahTaskTerminator* t) :
+                             TaskTerminator* t) :
     AbstractGangTask("Process reference objects in parallel"),
     _proc_task(proc_task),
     _terminator(t) {
@@ -600,7 +600,7 @@ public:
                                           /* do_check = */ false);
     uint nworkers = _workers->active_workers();
     cm->task_queues()->reserve(nworkers);
-    ShenandoahTaskTerminator terminator(nworkers, cm->task_queues());
+    TaskTerminator terminator(nworkers, cm->task_queues());
     ShenandoahRefProcTaskProxy proc_task_proxy(task, &terminator);
     _workers->run_task(&proc_task_proxy);
   }
@@ -658,7 +658,7 @@ void ShenandoahConcurrentMark::weak_refs_work_doit(bool full_gc) {
   // simplifies implementation. Since RP may decide to call complete_gc several
   // times, we need to be able to reuse the terminator.
   uint serial_worker_id = 0;
-  ShenandoahTaskTerminator terminator(1, task_queues());
+  TaskTerminator terminator(1, task_queues());
   ShenandoahCMDrainMarkingStackClosure complete_gc(serial_worker_id, &terminator, /* reset_terminator = */ true);
 
   ShenandoahRefProcTaskExecutor executor(workers);
@@ -703,7 +703,7 @@ public:
     ShenandoahHeap* sh = ShenandoahHeap::heap();
     ShenandoahConcurrentMark* scm = sh->concurrent_mark();
     assert(sh->process_references(), "why else would we be here?");
-    ShenandoahTaskTerminator terminator(1, scm->task_queues());
+    TaskTerminator terminator(1, scm->task_queues());
 
     ReferenceProcessor* rp = sh->ref_processor();
     shenandoah_assert_rp_isalive_installed();
@@ -826,7 +826,7 @@ ShenandoahObjToScanQueue* ShenandoahConcurrentMark::get_queue(uint worker_id) {
 }
 
 template <bool CANCELLABLE>
-void ShenandoahConcurrentMark::mark_loop_prework(uint w, ShenandoahTaskTerminator *t, ReferenceProcessor *rp,
+void ShenandoahConcurrentMark::mark_loop_prework(uint w, TaskTerminator *t, ReferenceProcessor *rp,
                                                  bool strdedup) {
   ShenandoahObjToScanQueue* q = get_queue(w);
 
@@ -876,7 +876,7 @@ void ShenandoahConcurrentMark::mark_loop_prework(uint w, ShenandoahTaskTerminato
 }
 
 template <class T, bool CANCELLABLE>
-void ShenandoahConcurrentMark::mark_loop_work(T* cl, jushort* live_data, uint worker_id, ShenandoahTaskTerminator *terminator) {
+void ShenandoahConcurrentMark::mark_loop_work(T* cl, jushort* live_data, uint worker_id, TaskTerminator *terminator) {
   uintx stride = ShenandoahMarkLoopStride;
 
   ShenandoahHeap* heap = ShenandoahHeap::heap();

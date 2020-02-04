@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2016, 2020, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,9 +49,6 @@ bool ShenandoahObjToScanQueueSet::is_empty() {
   }
   return true;
 }
-
-ShenandoahTaskTerminator::ShenandoahTaskTerminator(uint n_threads, TaskQueueSetSuper* queue_set) :
-  _terminator(n_threads, queue_set) { }
 
 #if TASKQUEUE_STATS
 void ShenandoahObjToScanQueueSet::print_taskqueue_stats_hdr(outputStream* const st) {
