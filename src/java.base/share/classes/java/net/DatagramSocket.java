@@ -118,7 +118,8 @@ public class DatagramSocket implements java.io.Closeable {
      */
     private boolean bound = false;
     private boolean closed = false;
-    private Object closeLock = new Object();
+    private volatile boolean created;
+    private final Object closeLock = new Object();
 
     /*
      * The implementation of this DatagramSocket.
@@ -292,6 +293,9 @@ public class DatagramSocket implements java.io.Closeable {
         // create a datagram socket.
         boolean multicast = (this instanceof MulticastSocket);
         this.impl = createImpl(multicast);
+        // creates the udp socket
+        impl.create();
+        created = true;
         this.oldImpl = checkOldImpl(impl);
         if (bindaddr != null) {
             try {
@@ -392,20 +396,27 @@ public class DatagramSocket implements java.io.Closeable {
         } else {
             impl = DefaultDatagramSocketImplFactory.createDatagramSocketImpl(multicast);
         }
-        // creates a udp socket
-        impl.create();
         return impl;
     }
 
     /**
-     * Return the {@code DatagramSocketImpl} attached to this socket.
+     * Return the {@code DatagramSocketImpl} attached to this socket,
+     * creating the socket if not already created.
      *
      * @return  the {@code DatagramSocketImpl} attached to that
      *          DatagramSocket
-     * @throws SocketException never thrown
+     * @throws SocketException if creating the socket fails
      * @since 1.4
      */
-    DatagramSocketImpl getImpl() throws SocketException {
+    final DatagramSocketImpl getImpl() throws SocketException {
+        if (!created) {
+            synchronized (this) {
+                if (!created)  {
+                    impl.create();
+                    created = true;
+                }
+            }
+        }
         return impl;
     }
 
