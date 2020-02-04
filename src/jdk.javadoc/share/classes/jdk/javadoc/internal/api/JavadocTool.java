@@ -62,7 +62,8 @@ import jdk.javadoc.internal.tool.ToolOptions;
  * or deletion without notice.</b></p>
  */
 public class JavadocTool implements DocumentationTool {
-    // @Override // can't add @Override until bootstrap JDK provides Tool.name()
+
+    @Override
     public String name() {
         return "javadoc";
     }

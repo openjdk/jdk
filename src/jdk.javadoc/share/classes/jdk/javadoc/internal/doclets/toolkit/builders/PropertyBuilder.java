@@ -103,9 +103,6 @@ public class PropertyBuilder extends AbstractMemberBuilder {
         return !properties.isEmpty();
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void build(Content contentTree) throws DocletException {
         buildPropertyDoc(contentTree);

@@ -103,9 +103,6 @@ public class FieldBuilder extends AbstractMemberBuilder {
         return !fields.isEmpty();
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void build(Content contentTree) throws DocletException {
         buildFieldDoc(contentTree);

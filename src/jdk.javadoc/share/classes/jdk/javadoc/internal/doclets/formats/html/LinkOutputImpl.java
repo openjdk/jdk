@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,24 +49,18 @@ public class LinkOutputImpl implements LinkOutput {
         output = new StringBuilder();
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public void append(Object o) {
         output.append(o instanceof String ?
             (String) o : ((LinkOutputImpl)o).toString());
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public void insert(int offset, Object o) {
         output.insert(offset, o.toString());
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public String toString() {
         return output.toString();
     }

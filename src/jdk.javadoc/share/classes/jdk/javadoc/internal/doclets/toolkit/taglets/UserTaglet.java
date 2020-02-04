@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,55 +55,42 @@ public class UserTaglet implements Taglet {
         userTaglet = t;
     }
 
+    @Override
     public Set<jdk.javadoc.doclet.Taglet.Location> getAllowedLocations() {
         return userTaglet.getAllowedLocations();
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public boolean inField() {
         return userTaglet.getAllowedLocations().contains(FIELD);
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public boolean inConstructor() {
         return userTaglet.getAllowedLocations().contains(CONSTRUCTOR);
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public boolean inMethod() {
         return userTaglet.getAllowedLocations().contains(METHOD);
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public boolean inOverview() {
         return userTaglet.getAllowedLocations().contains(OVERVIEW);
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public boolean inModule() {
         return userTaglet.getAllowedLocations().contains(MODULE);
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public boolean inPackage() {
         return userTaglet.getAllowedLocations().contains(PACKAGE);
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public boolean inType() {
         return userTaglet.getAllowedLocations().contains(TYPE);
     }
@@ -113,33 +100,29 @@ public class UserTaglet implements Taglet {
      *
      * @return true if this <code>Taglet</code> is an inline tag and false otherwise.
      */
+    @Override
     public boolean isInlineTag() {
         return userTaglet.isInlineTag();
     }
 
+    @Override
     public boolean isBlockTag() {
         return userTaglet.isBlockTag();
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public String getName() {
         return userTaglet.getName();
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public Content getTagletOutput(Element element, DocTree tag, TagletWriter writer){
         Content output = writer.getOutputInstance();
         output.add(new RawHtml(userTaglet.toString(Collections.singletonList(tag), element)));
         return output;
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public Content getTagletOutput(Element holder, TagletWriter writer) {
         Content output = writer.getOutputInstance();
         Utils utils = writer.configuration().utils;

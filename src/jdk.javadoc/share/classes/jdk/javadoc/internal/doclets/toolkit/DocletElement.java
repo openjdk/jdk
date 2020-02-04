@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,42 +39,52 @@ import java.util.Set;
 
 public interface DocletElement extends Element {
 
+    @Override
     default TypeMirror asType() {
         throw new UnsupportedOperationException("Unsupported method");
     }
 
+    @Override
     default ElementKind getKind() {
         return ElementKind.OTHER;
     }
 
+    @Override
     default Set<Modifier> getModifiers() {
         throw new UnsupportedOperationException("Unsupported method");
     }
 
+    @Override
     default Name getSimpleName() {
         throw new UnsupportedOperationException("Unsupported method");
     }
 
+    @Override
     default Element getEnclosingElement() {
         throw new UnsupportedOperationException("Unsupported method");
     }
 
+    @Override
     default java.util.List<? extends Element> getEnclosedElements() {
         throw new UnsupportedOperationException("Unsupported method");
     }
 
+    @Override
     default java.util.List<? extends AnnotationMirror> getAnnotationMirrors() {
         throw new UnsupportedOperationException("Unsupported method");
     }
 
+    @Override
     default <A extends Annotation> A getAnnotation(Class<A> annotationType) {
         throw new UnsupportedOperationException("Unsupported method");
     }
 
+    @Override
     default <R, P> R accept(ElementVisitor<R, P> v, P p) {
         return v.visitUnknown(this, p);
     }
 
+    @Override
     default <A extends Annotation> A[] getAnnotationsByType(Class<A> annotationType) {
         throw new UnsupportedOperationException("Unsupported method");
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,9 +95,6 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
         this.navBar = new Navigation(null, configuration, PageMode.CONSTANTVALUES, path);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Content getHeader() {
         String label = resources.getText("doclet.Constants_Summary");
@@ -110,17 +107,11 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
         return bodyTree;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Content getContentsHeader() {
         return new HtmlTree(HtmlTag.UL);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void addLinkToPackageContent(PackageElement pkg,
             Set<PackageElement> printedPackageHeaders, Content contentListTree) {
@@ -141,9 +132,6 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
         contentListTree.add(HtmlTree.LI(link));
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void addContentsList(Content contentListTree) {
         Content titleContent = contents.constantsSummaryTitle;
@@ -159,9 +147,6 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
         bodyContents.addMainContent(div);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Content getConstantSummaries() {
         HtmlTree summariesDiv = new HtmlTree(HtmlTag.DIV);
@@ -169,9 +154,6 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
         return summariesDiv;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void addPackageName(PackageElement pkg, Content summariesTree, boolean first) {
         Content pkgNameContent;
@@ -195,9 +177,6 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
                 .setId(links.getName(anchorName));
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Content getClassConstantHeader() {
         HtmlTree ul = new HtmlTree(HtmlTag.UL);
@@ -205,17 +184,11 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
         return ul;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void addClassConstant(Content summariesTree, Content classConstantTree) {
         summaryTree.add(classConstantTree);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void addConstantMembers(TypeElement typeElement, Collection<VariableElement> fields,
             Content classConstantTree) {
@@ -294,9 +267,6 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
         return HtmlTree.CODE(valueContent);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void addConstantSummaries(Content summariesTree) {
         if (summaryTree != null) {
@@ -305,9 +275,6 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
         bodyContents.addMainContent(summariesTree);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void addFooter() {
         Content htmlTree = HtmlTree.FOOTER();
@@ -317,9 +284,6 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
         bodyContents.setFooter(htmlTree);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void printDocument(Content contentTree) throws DocFileIOException {
         contentTree.add(bodyContents.toContent());

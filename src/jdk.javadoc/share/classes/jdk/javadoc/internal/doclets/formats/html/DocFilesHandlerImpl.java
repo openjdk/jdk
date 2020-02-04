@@ -106,7 +106,7 @@ public class DocFilesHandlerImpl implements DocFilesHandler {
      * @throws DocFileIOException if there is a problem while copying
      *         the documentation files
      */
-
+    @Override
     public void copyDocFiles()  throws DocFileIOException {
         boolean first = true;
         for (DocFile srcdir : DocFile.list(configuration, location, source)) {
@@ -129,6 +129,7 @@ public class DocFilesHandlerImpl implements DocFilesHandler {
         }
     }
 
+    @Override
     public List<DocPath> getStylesheets() throws DocFileIOException {
         List<DocPath> stylesheets = new ArrayList<DocPath>();
         for (DocFile srcdir : DocFile.list(configuration, location, source)) {

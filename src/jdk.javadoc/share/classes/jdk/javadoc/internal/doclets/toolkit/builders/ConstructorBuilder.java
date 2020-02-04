@@ -96,9 +96,6 @@ public class ConstructorBuilder extends AbstractMemberBuilder {
         return new ConstructorBuilder(context, typeElement, writer);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public boolean hasMembersToDocument() {
         return !constructors.isEmpty();
@@ -113,9 +110,6 @@ public class ConstructorBuilder extends AbstractMemberBuilder {
         return writer;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void build(Content contentTree) throws DocletException {
         buildConstructorDoc(contentTree);

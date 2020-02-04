@@ -96,17 +96,11 @@ public class MethodBuilder extends AbstractMemberBuilder {
         return new MethodBuilder(context, typeElement, writer);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public boolean hasMembersToDocument() {
         return !methods.isEmpty();
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void build(Content contentTree) throws DocletException {
         buildMethodDoc(contentTree);

@@ -101,9 +101,6 @@ public class EnumConstantBuilder extends AbstractMemberBuilder {
         return !enumConstants.isEmpty();
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void build(Content contentTree) throws DocletException {
         buildEnumConstant(contentTree);

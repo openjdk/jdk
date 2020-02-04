@@ -228,9 +228,6 @@ public class HtmlDoclet extends AbstractDoclet {
         }
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override // defined by AbstractDoclet
     protected void generateClassFiles(SortedSet<TypeElement> typeElems, ClassTree classTree)
             throws DocletException {
@@ -252,9 +249,6 @@ public class HtmlDoclet extends AbstractDoclet {
         }
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override // defined by AbstractDoclet
     protected void generateModuleFiles() throws DocletException {
         if (configuration.showModules) {
@@ -267,9 +261,6 @@ public class HtmlDoclet extends AbstractDoclet {
         }
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override // defined by AbstractDoclet
     protected void generatePackageFiles(ClassTree classtree) throws DocletException {
         HtmlOptions options = configuration.getOptions();

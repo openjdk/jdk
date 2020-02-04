@@ -78,9 +78,6 @@ public class AnnotationTypeWriterImpl extends SubWriterHolderWriter
         this.navBar = new Navigation(annotationType, configuration, PageMode.CLASS, path);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Content getHeader(String header) {
         Content headerContent = new ContentBuilder();
@@ -123,17 +120,11 @@ public class AnnotationTypeWriterImpl extends SubWriterHolderWriter
         return getBody(getWindowTitle(utils.getSimpleName(annotationType)));
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Content getAnnotationContentHeader() {
         return getContentHeader();
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void addFooter() {
         Content htmlTree = HtmlTree.FOOTER();
@@ -144,9 +135,6 @@ public class AnnotationTypeWriterImpl extends SubWriterHolderWriter
                     .setFooter(htmlTree);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void printDocument(Content contentTree) throws DocFileIOException {
         String description = getDescription("declaration", annotationType);
@@ -157,25 +145,16 @@ public class AnnotationTypeWriterImpl extends SubWriterHolderWriter
                 description, localStylesheets, contentTree);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Content getAnnotationInfoTreeHeader() {
         return getMemberTreeHeader();
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Content getAnnotationInfo(Content annotationInfoTree) {
         return HtmlTree.SECTION(HtmlStyle.description, annotationInfoTree);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void addAnnotationTypeSignature(String modifiers, Content annotationInfoTree) {
         Content hr = new HtmlTree(HtmlTag.HR);
@@ -198,9 +177,6 @@ public class AnnotationTypeWriterImpl extends SubWriterHolderWriter
         annotationInfoTree.add(pre);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void addAnnotationTypeDescription(Content annotationInfoTree) {
         if (!options.noComment()) {
@@ -210,9 +186,6 @@ public class AnnotationTypeWriterImpl extends SubWriterHolderWriter
         }
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void addAnnotationTypeTagInfo(Content annotationInfoTree) {
         if (!options.noComment()) {
@@ -220,9 +193,6 @@ public class AnnotationTypeWriterImpl extends SubWriterHolderWriter
         }
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void addAnnotationTypeDeprecationInfo(Content annotationInfoTree) {
         List<? extends DocTree> deprs = utils.getBlockTags(annotationType, DocTree.Kind.DEPRECATED);
@@ -241,17 +211,11 @@ public class AnnotationTypeWriterImpl extends SubWriterHolderWriter
         }
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public TypeElement getAnnotationTypeElement() {
         return annotationType;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Content getMemberDetailsTree(Content contentTree) {
         return HtmlTree.SECTION(HtmlStyle.details, contentTree)

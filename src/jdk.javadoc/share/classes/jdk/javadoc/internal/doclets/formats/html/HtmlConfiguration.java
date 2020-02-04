@@ -258,17 +258,11 @@ public class HtmlConfiguration extends BaseConfiguration {
         }
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public WriterFactory getWriterFactory() {
         return new WriterFactoryImpl(this);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Locale getLocale() {
         if (locale == null)
@@ -306,9 +300,6 @@ public class HtmlConfiguration extends BaseConfiguration {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public JavaFileManager getFileManager() {
         return docEnv.getJavaFileManager();

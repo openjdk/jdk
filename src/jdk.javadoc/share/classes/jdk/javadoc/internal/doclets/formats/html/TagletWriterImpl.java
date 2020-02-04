@@ -91,16 +91,12 @@ public class TagletWriterImpl extends TagletWriter {
         resources = configuration.getResources();
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public Content getOutputInstance() {
         return new ContentBuilder();
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     protected Content codeTagOutput(Element element, DocTree tag) {
         CommentHelper ch = utils.getCommentHelper(element);
         StringContent content = new StringContent(utils.normalizeNewlines(ch.getText(tag)));
@@ -108,6 +104,7 @@ public class TagletWriterImpl extends TagletWriter {
         return result;
     }
 
+    @Override
     protected Content indexTagOutput(Element element, DocTree tag) {
         CommentHelper ch = utils.getCommentHelper(element);
         IndexTree itt = (IndexTree)tag;
@@ -122,9 +119,7 @@ public class TagletWriterImpl extends TagletWriter {
         return createAnchorAndSearchIndex(element, tagText, desc, false);
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public Content getDocRootOutput() {
         String path;
         if (htmlWriter.pathToRoot.isEmpty())
@@ -134,9 +129,7 @@ public class TagletWriterImpl extends TagletWriter {
         return new StringContent(path);
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public Content deprecatedTagOutput(Element element) {
         ContentBuilder result = new ContentBuilder();
         CommentHelper ch = utils.getCommentHelper(element);
@@ -173,27 +166,21 @@ public class TagletWriterImpl extends TagletWriter {
         return result;
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     protected Content literalTagOutput(Element element, DocTree tag) {
         CommentHelper ch = utils.getCommentHelper(element);
         Content result = new StringContent(utils.normalizeNewlines(ch.getText(tag)));
         return result;
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public Content getParamHeader(String header) {
         HtmlTree result = HtmlTree.DT(HtmlTree.SPAN(HtmlStyle.paramLabel,
                 new StringContent(header)));
         return result;
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     @SuppressWarnings("preview")
     public Content paramTagOutput(Element element, DocTree paramTag, String paramName) {
         ContentBuilder body = new ContentBuilder();
@@ -209,9 +196,7 @@ public class TagletWriterImpl extends TagletWriter {
         return HtmlTree.DD(body);
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public Content propertyTagOutput(Element element, DocTree tag, String prefix) {
         Content body = new ContentBuilder();
         CommentHelper ch = utils.getCommentHelper(element);
@@ -223,9 +208,7 @@ public class TagletWriterImpl extends TagletWriter {
         return result;
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public Content returnTagOutput(Element element, DocTree returnTag) {
         ContentBuilder result = new ContentBuilder();
         CommentHelper ch = utils.getCommentHelper(element);
@@ -236,9 +219,7 @@ public class TagletWriterImpl extends TagletWriter {
         return result;
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public Content seeTagOutput(Element holder, List<? extends DocTree> seeTags) {
         ContentBuilder body = new ContentBuilder();
         for (DocTree dt : seeTags) {
@@ -287,9 +268,7 @@ public class TagletWriterImpl extends TagletWriter {
         }
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public Content simpleTagOutput(Element element, List<? extends DocTree> simpleTags, String header) {
         CommentHelper ch = utils.getCommentHelper(element);
         ContentBuilder result = new ContentBuilder();
@@ -308,9 +287,7 @@ public class TagletWriterImpl extends TagletWriter {
         return result;
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public Content simpleTagOutput(Element element, DocTree simpleTag, String header) {
         ContentBuilder result = new ContentBuilder();
         result.add(HtmlTree.DT(HtmlTree.SPAN(HtmlStyle.simpleTagLabel, new RawHtml(header))));
@@ -321,9 +298,7 @@ public class TagletWriterImpl extends TagletWriter {
         return result;
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     protected Content systemPropertyTagOutput(Element element, DocTree tag) {
         SystemPropertyTree itt = (SystemPropertyTree)tag;
         String tagText = itt.getPropertyName().toString();
@@ -331,18 +306,14 @@ public class TagletWriterImpl extends TagletWriter {
                 resources.getText("doclet.System_Property"), true));
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public Content getThrowsHeader() {
         HtmlTree result = HtmlTree.DT(HtmlTree.SPAN(HtmlStyle.throwsLabel,
                 new StringContent(resources.getText("doclet.Throws"))));
         return result;
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public Content throwsTagOutput(Element element, DocTree throwsTag, TypeMirror substituteType) {
         ContentBuilder body = new ContentBuilder();
         CommentHelper ch = utils.getCommentHelper(element);
@@ -372,57 +343,43 @@ public class TagletWriterImpl extends TagletWriter {
         return result;
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public Content throwsTagOutput(TypeMirror throwsType) {
         HtmlTree result = HtmlTree.DD(HtmlTree.CODE(htmlWriter.getLink(
                 new LinkInfoImpl(configuration, LinkInfoImpl.Kind.MEMBER, throwsType))));
         return result;
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public Content valueTagOutput(VariableElement field, String constantVal, boolean includeLink) {
         return includeLink
                 ? htmlWriter.getDocLink(LinkInfoImpl.Kind.VALUE_TAG, field, constantVal, false)
                 : new StringContent(constantVal);
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public Content commentTagsToOutput(DocTree holderTag, List<? extends DocTree> tags) {
         return commentTagsToOutput(holderTag, null, tags, false);
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public Content commentTagsToOutput(Element holder, List<? extends DocTree> tags) {
         return commentTagsToOutput(null, holder, tags, false);
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public Content commentTagsToOutput(DocTree holderTag,
         Element holder, List<? extends DocTree> tags, boolean isFirstSentence) {
         return htmlWriter.commentTagsToContent(holderTag, holder,
                 tags, isFirstSentence, inSummary);
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public BaseConfiguration configuration() {
         return configuration;
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     protected TypeElement getCurrentPageElement() {
         return htmlWriter.getCurrentPageElement();
     }
