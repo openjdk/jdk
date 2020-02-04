@@ -1172,7 +1172,7 @@ void InstanceKlass::add_implementor(Klass* k) {
   Klass* ik = implementor();
   if (ik == NULL) {
     set_implementor(k);
-  } else if (ik != this) {
+  } else if (ik != this && ik != k) {
     // There is already an implementor. Use itself as an indicator of
     // more than one implementors.
     set_implementor(this);
