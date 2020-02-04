@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,14 +22,19 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package sun.awt.windows;
 
-import java.awt.*;
-import java.awt.peer.*;
+import java.awt.Choice;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.FontMetrics;
+import java.awt.Window;
 import java.awt.event.ItemEvent;
+import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
-import java.awt.event.WindowAdapter;
+import java.awt.peer.ChoicePeer;
 
 import sun.awt.AWTAccessor;
 import sun.awt.SunToolkit;
@@ -152,13 +157,6 @@ final class WChoicePeer extends WComponentPeer implements ChoicePeer {
                                 c.getItem(index), ItemEvent.SELECTED));
             }
         });
-    }
-
-    int getDropDownHeight() {
-        Choice c = (Choice)target;
-        FontMetrics fm = getFontMetrics(c.getFont());
-        int maxItems = Math.min(c.getItemCount(), 8);
-        return fm.getHeight() * maxItems;
     }
 
     native void closeList();
