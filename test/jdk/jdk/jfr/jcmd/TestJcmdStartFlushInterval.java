@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package jdk.jfr.jcmd;
 
+import java.lang.reflect.Method;
 import java.time.Duration;
 
 import jdk.jfr.FlightRecorder;
@@ -36,15 +37,18 @@ import jdk.jfr.Recording;
  * @key jfr
  * @requires vm.hasJFR
  * @library /test/lib /test/jdk
- * @run main/othervm jdk.jfr.jcmd.TestJcmdStartReadOnlyFile
+ * @modules jdk.jfr/jdk.jfr:open
+ * @run main/othervm jdk.jfr.jcmd.TestJcmdStartFlushInterval
  */
 public class TestJcmdStartFlushInterval {
 
     public static void main(String[] args) throws Exception {
-        JcmdHelper.jcmd("JFR.start","flush-interval=1s");
+        JcmdHelper.jcmd("JFR.start", "flush-interval=2s");
+        Method getFlushIntervalMethod = Recording.class.getDeclaredMethod("getFlushInterval");
+        getFlushIntervalMethod.setAccessible(true);
         for (Recording r : FlightRecorder.getFlightRecorder().getRecordings()) {
-            Duration d = r.getFlushInterval();
-            if (d.equals(Duration.ofSeconds(1))) {
+            Duration d = (Duration)getFlushIntervalMethod.invoke(r);
+            if (d.equals(Duration.ofSeconds(2))) {
                 return; //OK
             } else {
                 throw new Exception("Unexpected flush-interval=" + d);
