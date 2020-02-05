@@ -39,6 +39,9 @@ import com.sun.source.util.DocTreePath;
 
 import jdk.javadoc.doclet.Doclet;
 import jdk.javadoc.doclet.DocletEnvironment;
+import jdk.javadoc.doclet.Reporter;
+import jdk.javadoc.doclet.StandardDoclet;
+import jdk.javadoc.doclet.Taglet;
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.DocletException;
 import jdk.javadoc.internal.doclets.toolkit.Messages;
@@ -113,13 +116,24 @@ public class HtmlConfiguration extends BaseConfiguration {
     private final HtmlOptions options;
 
     /**
-     * Creates an object to hold the configuration for a doclet.
+     * Constructs the full configuration needed by the doclet, including
+     * the format-specific part, defined in this class, and the format-independent
+     * part, defined in the supertype.
      *
-     * @param doclet the doclet
+     * @apiNote The {@code doclet} parameter is used when
+     * {@link Taglet#init(DocletEnvironment, Doclet) initializing tags}.
+     * Some doclets (such as the {@link StandardDoclet}), may delegate to another
+     * (such as the {@link HtmlDoclet}).  In such cases, the primary doclet (i.e
+     * {@code StandardDoclet}) should be provided here, and not any internal
+     * class like {@code HtmlDoclet}.
+     *
+     * @param doclet   the doclet for this run of javadoc
+     * @param locale   the locale for the generated documentation
+     * @param reporter the reporter to use for console messages
      */
-    public HtmlConfiguration(Doclet doclet) {
-        super(doclet);
-        resources = new Resources(this,
+    public HtmlConfiguration(Doclet doclet, Locale locale, Reporter reporter) {
+        super(doclet, locale, reporter);
+        resources = new Resources(locale,
                 BaseConfiguration.sharedResourceBundleName,
                 "jdk.javadoc.internal.doclets.formats.html.resources.standard");
 

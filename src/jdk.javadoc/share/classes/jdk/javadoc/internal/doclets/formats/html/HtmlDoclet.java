@@ -55,8 +55,17 @@ import jdk.javadoc.internal.doclets.toolkit.util.IndexBuilder;
  */
 public class HtmlDoclet extends AbstractDoclet {
 
-    public HtmlDoclet(Doclet parent) {
-        configuration = new HtmlConfiguration(parent);
+    /**
+     * Creates a doclet to generate HTML documentation,
+     * specifying the "initiating doclet" to be used when
+     * initializing any taglets for this doclet.
+     * An initiating doclet is one that delegates to
+     * this doclet.
+     *
+     * @param initiatingDoclet the initiating doclet
+     */
+    public HtmlDoclet(Doclet initiatingDoclet) {
+        this.initiatingDoclet = initiatingDoclet;
     }
 
     @Override // defined by Doclet
@@ -65,20 +74,31 @@ public class HtmlDoclet extends AbstractDoclet {
     }
 
     /**
-     * The global configuration information for this run.
+     * The initiating doclet, to be specified when creating
+     * the configuration.
      */
-    private final HtmlConfiguration configuration;
+    private final Doclet initiatingDoclet;
 
+    /**
+     * The global configuration information for this run.
+     * Initialized in {@link #init(Locale, Reporter)}.
+     */
+    private HtmlConfiguration configuration;
+
+    /**
+     * Object for generating messages and diagnostics.
+     */
     private Messages messages;
 
-
+    /**
+     * Base path for resources for this doclet.
+     */
     private static final DocPath DOCLET_RESOURCES = DocPath
             .create("/jdk/javadoc/internal/doclets/formats/html/resources");
 
     @Override // defined by Doclet
     public void init(Locale locale, Reporter reporter) {
-        configuration.reporter = reporter;
-        configuration.locale = locale;
+        configuration = new HtmlConfiguration(initiatingDoclet, locale, reporter);
         messages = configuration.getMessages();
     }
 

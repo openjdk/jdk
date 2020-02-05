@@ -45,7 +45,7 @@ import static javax.tools.Diagnostic.Kind.*;
 public class Messages {
     private final BaseConfiguration configuration;
     private final Resources resources;
-    private Reporter reporter;
+    private final Reporter reporter;
 
     /**
      * Creates a {@code Messages} object to provide standardized access to
@@ -58,6 +58,7 @@ public class Messages {
     public Messages(BaseConfiguration configuration) {
         this.configuration = configuration;
         resources = configuration.getResources();
+        reporter = configuration.getReporter();
     }
 
     // ***** Errors *****
@@ -140,25 +141,14 @@ public class Messages {
     // ***** Internal support *****
 
     private void report(Diagnostic.Kind k, String msg) {
-        initReporter();
         reporter.print(k, msg);
     }
 
     private void report(Diagnostic.Kind k, DocTreePath p, String msg) {
-        initReporter();
         reporter.print(k, p, msg);
     }
 
     private void report(Diagnostic.Kind k, Element e, String msg) {
-        initReporter();
         reporter.print(k, e, msg);
-    }
-
-    // Lazy init the reporter for now, until we can fix/improve
-    // the init of HtmlConfiguration in HtmlDoclet (and similar.)
-    private void initReporter() {
-        if (reporter == null) {
-            reporter = configuration.reporter;
-        }
     }
 }

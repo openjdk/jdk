@@ -148,9 +148,9 @@ public abstract class BaseConfiguration {
      */
     public Extern extern;
 
-    public Reporter reporter;
+    public final Reporter reporter;
 
-    public Locale locale;
+    public final Locale locale;
 
     public abstract Messages getMessages();
 
@@ -202,20 +202,23 @@ public abstract class BaseConfiguration {
     public PropertyUtils propertyUtils = null;
 
     /**
-     * Constructs the configurations needed by the doclet.
+     * Constructs the format-independent configuration needed by the doclet.
      *
-     * @apiNote
-     * The {@code doclet} parameter is used when {@link Taglet#init(DocletEnvironment, Doclet)
-     * initializing tags}.
-     * Some doclets (such as the {@link StandardDoclet), may delegate to another
+     * @apiNote The {@code doclet} parameter is used when
+     * {@link Taglet#init(DocletEnvironment, Doclet) initializing tags}.
+     * Some doclets (such as the {@link StandardDoclet}), may delegate to another
      * (such as the {@link HtmlDoclet}).  In such cases, the primary doclet (i.e
      * {@code StandardDoclet}) should be provided here, and not any internal
      * class like {@code HtmlDoclet}.
      *
-     * @param doclet the doclet for this run of javadoc
+     * @param doclet   the doclet for this run of javadoc
+     * @param locale   the locale for the generated documentation
+     * @param reporter the reporter to use for console messages
      */
-    public BaseConfiguration(Doclet doclet) {
+    public BaseConfiguration(Doclet doclet, Locale locale, Reporter reporter) {
         this.doclet = doclet;
+        this.locale = locale;
+        this.reporter = reporter;
     }
 
     public abstract BaseOptions getOptions();
