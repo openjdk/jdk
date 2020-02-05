@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -517,15 +517,15 @@ void ObjectSynchronizer::notifyall(Handle obj, TRAPS) {
 // performed by the CPU(s) or platform.
 
 struct SharedGlobals {
-  char         _pad_prefix[DEFAULT_CACHE_LINE_SIZE];
+  char         _pad_prefix[OM_CACHE_LINE_SIZE];
   // These are highly shared mostly-read variables.
   // To avoid false-sharing they need to be the sole occupants of a cache line.
   volatile int stw_random;
   volatile int stw_cycle;
-  DEFINE_PAD_MINUS_SIZE(1, DEFAULT_CACHE_LINE_SIZE, sizeof(volatile int) * 2);
+  DEFINE_PAD_MINUS_SIZE(1, OM_CACHE_LINE_SIZE, sizeof(volatile int) * 2);
   // Hot RW variable -- Sequester to avoid false-sharing
   volatile int hc_sequence;
-  DEFINE_PAD_MINUS_SIZE(2, DEFAULT_CACHE_LINE_SIZE, sizeof(volatile int));
+  DEFINE_PAD_MINUS_SIZE(2, OM_CACHE_LINE_SIZE, sizeof(volatile int));
 };
 
 static SharedGlobals GVars;
@@ -1082,9 +1082,9 @@ ObjectMonitor* ObjectSynchronizer::om_alloc(Thread* self) {
     assert(_BLOCKSIZE > 1, "invariant");
     size_t neededsize = sizeof(PaddedObjectMonitor) * _BLOCKSIZE;
     PaddedObjectMonitor* temp;
-    size_t aligned_size = neededsize + (DEFAULT_CACHE_LINE_SIZE - 1);
+    size_t aligned_size = neededsize + (OM_CACHE_LINE_SIZE - 1);
     void* real_malloc_addr = NEW_C_HEAP_ARRAY(char, aligned_size, mtInternal);
-    temp = (PaddedObjectMonitor*)align_up(real_malloc_addr, DEFAULT_CACHE_LINE_SIZE);
+    temp = (PaddedObjectMonitor*)align_up(real_malloc_addr, OM_CACHE_LINE_SIZE);
     (void)memset((void *) temp, 0, neededsize);
 
     // Format the block.

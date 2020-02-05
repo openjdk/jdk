@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,13 @@
 class ObjectMonitor;
 class ThreadsList;
 
-typedef PaddedEnd<ObjectMonitor, DEFAULT_CACHE_LINE_SIZE> PaddedObjectMonitor;
+#ifndef OM_CACHE_LINE_SIZE
+// Use DEFAULT_CACHE_LINE_SIZE if not already specified for
+// the current build platform.
+#define OM_CACHE_LINE_SIZE DEFAULT_CACHE_LINE_SIZE
+#endif
+
+typedef PaddedEnd<ObjectMonitor, OM_CACHE_LINE_SIZE> PaddedObjectMonitor;
 
 struct DeflateMonitorCounters {
   int n_in_use;              // currently associated with objects

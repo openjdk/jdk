@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -120,6 +120,12 @@ class ObjectWaiter : public StackObj {
 //     intptr_t. There's no reason to use a 64-bit type for this field
 //     in a 64-bit JVM.
 
+#ifndef OM_CACHE_LINE_SIZE
+// Use DEFAULT_CACHE_LINE_SIZE if not already specified for
+// the current build platform.
+#define OM_CACHE_LINE_SIZE DEFAULT_CACHE_LINE_SIZE
+#endif
+
 class ObjectMonitor {
   friend class ObjectSynchronizer;
   friend class ObjectWaiter;
@@ -139,7 +145,7 @@ class ObjectMonitor {
   // _object is a good choice to share the cache line with _header.
   // _next_om shares _header's cache line for pre-monitor list historical
   // reasons. _next_om only changes if the next ObjectMonitor is deflated.
-  DEFINE_PAD_MINUS_SIZE(0, DEFAULT_CACHE_LINE_SIZE,
+  DEFINE_PAD_MINUS_SIZE(0, OM_CACHE_LINE_SIZE,
                         sizeof(volatile markWord) + sizeof(void* volatile) +
                         sizeof(ObjectMonitor *));
   void* volatile _owner;            // pointer to owning thread OR BasicLock

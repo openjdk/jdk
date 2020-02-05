@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,12 +42,14 @@ const bool CCallingConventionRequiresIntsAsLongs = true;
 #if defined(TIERED)
   // tiered, 64-bit, large machine
   #define DEFAULT_CACHE_LINE_SIZE 128
+  #define OM_CACHE_LINE_SIZE 64
 #elif defined(COMPILER1)
   // pure C1, 32-bit, small machine
   #define DEFAULT_CACHE_LINE_SIZE 16
 #elif defined(COMPILER2)
   // pure C2, 64-bit, large machine
   #define DEFAULT_CACHE_LINE_SIZE 128
+  #define OM_CACHE_LINE_SIZE 64
 #endif
 
 #if defined(SOLARIS)
