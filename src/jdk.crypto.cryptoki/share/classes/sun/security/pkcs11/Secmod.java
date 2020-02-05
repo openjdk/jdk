@@ -414,10 +414,6 @@ public final class Secmod {
                 } else {
                     type = ModuleType.EXTERNAL;
                 }
-                if (fips) {
-                    throw new RuntimeException("FIPS flag set for non-internal "
-                        + "module: " + libraryName + ", " + commonName);
-                }
             }
             // On Ubuntu the libsoftokn3 library is located in a subdirectory
             // of the system libraries directory. (Since Ubuntu 11.04.)
