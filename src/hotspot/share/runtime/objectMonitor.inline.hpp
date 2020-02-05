@@ -137,4 +137,24 @@ inline void* ObjectMonitor::try_set_owner_from(void* old_value, void* new_value)
   return prev;
 }
 
+// The _next_om field can be concurrently read and modified so we
+// use Atomic operations to disable compiler optimizations that
+// might try to elide loading and/or storing this field.
+
+inline ObjectMonitor* ObjectMonitor::next_om() const {
+  return Atomic::load(&_next_om);
+}
+
+// Simply set _next_om field to new_value.
+inline void ObjectMonitor::set_next_om(ObjectMonitor* new_value) {
+  Atomic::store(&_next_om, new_value);
+}
+
+// Try to set _next_om field to new_value if the current value matches
+// old_value. Otherwise, does not change the _next_om field. Returns
+// the prior value of the _next_om field.
+inline ObjectMonitor* ObjectMonitor::try_set_next_om(ObjectMonitor* old_value, ObjectMonitor* new_value) {
+  return Atomic::cmpxchg(&_next_om, old_value, new_value);
+}
+
 #endif // SHARE_RUNTIME_OBJECTMONITOR_INLINE_HPP

@@ -1987,7 +1987,7 @@ void ObjectMonitor::print_debug_style_on(outputStream* st) const {
   st->print_cr("(ObjectMonitor*) " INTPTR_FORMAT " = {", p2i(this));
   st->print_cr("  _header = " INTPTR_FORMAT, header().value());
   st->print_cr("  _object = " INTPTR_FORMAT, p2i(_object));
-  st->print_cr("  _next_om = " INTPTR_FORMAT, p2i(_next_om));
+  st->print_cr("  _next_om = " INTPTR_FORMAT, p2i(next_om()));
   st->print_cr("  _pad_buf0 = {");
   st->print_cr("    [0] = '\\0'");
   st->print_cr("    ...");
