@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<WixLocalization Culture="en-us" xmlns="http://schemas.microsoft.com/wix/2006/localization" Codepage="936">
-  <String Id="message.install.dir.exist">The folder [INSTALLDIR] already exist. Would you like to install to that folder anyway?</String>
-  <String Id="MainFeatureTitle">Main Feature</String>
-  <String Id="DowngradeErrorMessage">A higher version of [ProductName] is already installed. Downgrades disabled. Setup will now exit.</String>
-  <String Id="DisallowUpgradeErrorMessage">A lower version of [ProductName] is already installed. Upgrades disabled. Setup will now exit.</String>
+<WixLocalization Culture="zh-CN" xmlns="http://schemas.microsoft.com/wix/2006/localization" Codepage="936">
+  <String Id="message.install.dir.exist">文件夹 [INSTALLDIR] 已存在。是否仍要安装到该文件夹？</String>
+  <String Id="MainFeatureTitle">主要功能</String>
+  <String Id="DowngradeErrorMessage">已安装更高版本的 [ProductName]。降级已禁用。现在将退出安装。</String>
+  <String Id="DisallowUpgradeErrorMessage">已安装更低版本的 [ProductName]。升级已禁用。现在将退出安装。</String>
 </WixLocalization>

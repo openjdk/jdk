@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -117,12 +117,18 @@ inline traceid JfrTraceId::use(const ClassLoaderData* cld) {
   return cld->is_unsafe_anonymous() ? 0 : set_used_and_get(cld);
 }
 
-inline void JfrTraceId::set_leakp(const Method* method) {
-  assert(method != NULL, "invariant");
-  const Klass* const klass = method->method_holder();
+inline void JfrTraceId::set_leakp(const Klass* klass, const Method* method) {
   assert(klass != NULL, "invariant");
   assert(METHOD_AND_CLASS_USED_THIS_EPOCH(klass), "invariant");
-  assert(METHOD_FLAG_USED_THIS_EPOCH(method), "invariant");
+  assert(method != NULL, "invariant");
+  assert(klass == method->method_holder(), "invariant");
+  if (METHOD_FLAG_NOT_USED_THIS_EPOCH(method)) {
+    // the method is already logically tagged, just like the klass,
+    // but because of redefinition, the latest Method*
+    // representation might not have a reified tag.
+    SET_METHOD_FLAG_USED_THIS_EPOCH(method);
+    assert(METHOD_FLAG_USED_THIS_EPOCH(method), "invariant");
+  }
   SET_LEAKP(klass);
   SET_METHOD_LEAKP(method);
 }

@@ -99,7 +99,7 @@ class JfrTraceId : public AllStatic {
   static traceid use(const ClassLoaderData* cld);
 
   // leak profiler
-  static void set_leakp(const Method* method);
+  static void set_leakp(const Klass* klass, const Method* method);
 
   static void remove(const Klass* klass);
   static void restore(const Klass* klass);
