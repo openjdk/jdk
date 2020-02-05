@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,18 +27,12 @@
 
 // Macros related to control of compiler warnings.
 
-// Diagnostic pragmas like the ones defined below in PRAGMA_FORMAT_NONLITERAL_IGNORED
-// were only introduced in GCC 4.2. Because we have no other possibility to ignore
-// these warnings for older versions of GCC, we simply don't decorate our printf-style
-// functions with __attribute__(format) in that case.
-#if ((__GNUC__ == 4) && (__GNUC_MINOR__ >= 2)) || (__GNUC__ > 4)
 #ifndef ATTRIBUTE_PRINTF
 #define ATTRIBUTE_PRINTF(fmt,vargs)  __attribute__((format(printf, fmt, vargs)))
 #endif
 #ifndef ATTRIBUTE_SCANF
 #define ATTRIBUTE_SCANF(fmt,vargs)  __attribute__((format(scanf, fmt, vargs)))
 #endif
-#endif // gcc version check
 
 #define PRAGMA_DISABLE_GCC_WARNING_AUX(x) _Pragma(#x)
 #define PRAGMA_DISABLE_GCC_WARNING(option_string) \

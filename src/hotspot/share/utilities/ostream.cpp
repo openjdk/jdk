@@ -531,7 +531,7 @@ fileStream::fileStream(const char* file_name, const char* opentype) {
 
 void fileStream::write(const char* s, size_t len) {
   if (_file != NULL)  {
-    // Make an unused local variable to avoid warning from gcc 4.x compiler.
+    // Make an unused local variable to avoid warning from gcc compiler.
     size_t count = fwrite(s, 1, len, _file);
   }
   update_position(s, len);
@@ -570,7 +570,7 @@ void fileStream::flush() {
 
 void fdStream::write(const char* s, size_t len) {
   if (_fd != -1) {
-    // Make an unused local variable to avoid warning from gcc 4.x compiler.
+    // Make an unused local variable to avoid warning from gcc compiler.
     size_t count = ::write(_fd, s, (int)len);
   }
   update_position(s, len);

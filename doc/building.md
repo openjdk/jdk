@@ -339,7 +339,7 @@ features that it does support.
 
 ### gcc
 
-The minimum accepted version of gcc is 4.8. Older versions will generate a warning
+The minimum accepted version of gcc is 5.0. Older versions will generate a warning
 by `configure` and are unlikely to work.
 
 The JDK is currently known to be able to compile with at least version 8.3 of
@@ -1037,14 +1037,6 @@ appending the directory when searching for cross-compilations tools
 (`--with-toolchain-path`). As a compact form, you can also use `--with-devkit`
 to point to a single directory, if it is correctly setup. (See `basics.m4` for
 details.)
-
-If you are unsure what toolchain and versions to use, these have been proved
-working at the time of writing:
-
-  * [aarch64](
-https://releases.linaro.org/archive/13.11/components/toolchain/binaries/gcc-linaro-aarch64-linux-gnu-4.8-2013.11_linux.tar.xz)
-  * [arm 32-bit hardware floating  point](
-https://launchpad.net/linaro-toolchain-unsupported/trunk/2012.09/+download/gcc-linaro-arm-linux-gnueabihf-raspbian-2012.09-20120921_linux.tar.bz2)
 
 ### Native Libraries
 

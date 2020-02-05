@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -210,10 +210,7 @@ inline int g_isnan(double f) { return isnan(f); }
 #error "missing platform-specific definition here"
 #endif
 
-// GCC 4.3 does not allow 0.0/0.0 to produce a NAN value
-#if (__GNUC__ == 4) && (__GNUC_MINOR__ > 2)
 #define CAN_USE_NAN_DEFINE 1
-#endif
 
 
 // Checking for finiteness
@@ -238,16 +235,7 @@ inline int wcslen(const jchar* x) { return wcslen((const wchar_t*)x); }
 #define FORMAT64_MODIFIER "ll"
 #endif // _LP64
 
-// HACK: gcc warns about applying offsetof() to non-POD object or calculating
-//       offset directly when base address is NULL. Use 16 to get around the
-//       warning. gcc-3.4 has an option -Wno-invalid-offsetof to suppress
-//       this warning.
-#define offset_of(klass,field) (size_t)((intx)&(((klass*)16)->field) - 16)
-
-#ifdef offsetof
-# undef offsetof
-#endif
-#define offsetof(klass,field) offset_of(klass,field)
+#define offset_of(klass,field) offsetof(klass,field)
 
 #if defined(_LP64) && defined(__APPLE__)
 #define JLONG_FORMAT          "%ld"
@@ -262,15 +250,6 @@ inline int wcslen(const jchar* x) { return wcslen((const wchar_t*)x); }
 
 // Alignment
 //
-// NOTE! The "+0" below is a workaround for a known bug in older GCC versions
-// (known to fail with 4.6.0, fixed in 4.9.0). This bug affects systems such as
-// RedHat/Oracle Linux 7.5, which ships with GCC 4.8.5. For more details, see
-// https://gcc.gnu.org/bugzilla/show_bug.cgi?id=55382 and
-// https://gcc.gnu.org/bugzilla/show_bug.cgi?id=53017
-//
-// GCC versions older than 4.6.4 would fail even with "+0", and needs additional
-// cast to __typeof__(x) to work around the similar bug.
-//
-#define ATTRIBUTE_ALIGNED(x) __attribute__((aligned((__typeof__(x))x+0)))
+#define ATTRIBUTE_ALIGNED(x) __attribute__((aligned(x)))
 
 #endif // SHARE_UTILITIES_GLOBALDEFINITIONS_GCC_HPP
