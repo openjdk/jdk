@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 6888925 8180570
+ * @bug 6888925 8180570 8237804
  * @summary SunMSCAPI's Cipher can't use RSA public keys obtained from other sources.
  * @requires os.family == "windows"
  * @library /test/lib
@@ -45,6 +45,7 @@ public class PublicKeyInterop {
 
     public static void main(String[] arg) throws Exception {
 
+        cleanup();
         SecurityTools.keytool("-genkeypair",
                 "-storetype", "Windows-My",
                 "-keyalg", "RSA",
@@ -55,10 +56,18 @@ public class PublicKeyInterop {
         try {
             run();
         } finally {
+            cleanup();
+        }
+    }
+
+    private static void cleanup() {
+        try {
             KeyStore ks = KeyStore.getInstance("Windows-MY");
             ks.load(null, null);
             ks.deleteEntry("6888925");
             ks.store(null, null);
+        } catch (Exception e) {
+            System.out.println("No such entry.");
         }
     }
 
