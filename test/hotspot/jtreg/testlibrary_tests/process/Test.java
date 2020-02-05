@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,15 +21,8 @@
  * questions.
  */
 
-
-/*
- * @test
- *
- * @summary converted from VM Testbase metaspace/flags/maxMetaspaceSize.
- *
- * @library /vmTestbase /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
- * @build metaspace.flags.maxMetaspaceSize.maxMetaspaceSize
- * @run shell maxMetaspaceSize.sh
- */
-
+public class Test {
+    public static void test() {
+        System.out.println ("Hello Test");
+    }
+}
