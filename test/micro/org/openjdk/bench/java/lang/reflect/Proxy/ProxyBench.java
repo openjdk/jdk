@@ -40,13 +40,14 @@ public class ProxyBench {
     /**
      * On Dell T7610:
      *
-     * Benchmark w/ -Djdk.proxy.ProxyGenerator.v49=true
+     * Benchmark w/ the old ProxyGenerator
      * Benchmark                      Mode  Cnt   Score   Error  Units
      * ProxyBench.getProxyClass1i     avgt   10  20.472 +/- 0.209  ns/op
      * ProxyBench.getProxyClass4i     avgt   10  57.353 +/- 0.461  ns/op
      * ProxyBench.newProxyInstance1i  avgt   10  31.459 +/- 0.516  ns/op
      * ProxyBench.newProxyInstance4i  avgt   10  66.580 +/- 0.983  ns/op
      *
+     * Benchmark w/ the new ProxyGenerator using ASM
      * Benchmark                      Mode  Cnt   Score   Error  Units
      * ProxyBench.getProxyClass1i     avgt   10  21.291 +/- 0.475  ns/op
      * ProxyBench.getProxyClass4i     avgt   10  61.481 +/- 4.709  ns/op
