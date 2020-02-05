@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,13 @@ static jmethodID isaCtrID = 0;
 
 static const char* nativeSctpLib = "libsctp.so.1";
 static jboolean funcsLoaded = JNI_FALSE;
+
+sctp_getladdrs_func* nio_sctp_getladdrs;
+sctp_freeladdrs_func* nio_sctp_freeladdrs;
+sctp_getpaddrs_func* nio_sctp_getpaddrs;
+sctp_freepaddrs_func* nio_sctp_freepaddrs;
+sctp_bindx_func* nio_sctp_bindx;
+sctp_peeloff_func* nio_sctp_peeloff;
 
 JNIEXPORT jint JNICALL DEF_JNI_OnLoad
   (JavaVM *vm, void *reserved) {
