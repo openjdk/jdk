@@ -240,7 +240,7 @@ bool ObjectSynchronizer::quick_enter(oop obj, Thread* self,
     // and last are the inflated Java Monitor (ObjectMonitor) checks.
     lock->set_displaced_header(markWord::unused_mark());
 
-    if (owner == NULL && Atomic::replace_if_null(&(m->_owner), self)) {
+    if (owner == NULL && m->try_set_owner_from(NULL, self) == NULL) {
       assert(m->_recursions == 0, "invariant");
       return true;
     }
@@ -1404,7 +1404,7 @@ ObjectMonitor* ObjectSynchronizer::inflate(Thread* self,
       // Note that a thread can inflate an object
       // that it has stack-locked -- as might happen in wait() -- directly
       // with CAS.  That is, we can avoid the xchg-NULL .... ST idiom.
-      m->set_owner(mark.locker());
+      m->set_owner_from(NULL, mark.locker());
       m->set_object(object);
       // TODO-FIXME: assert BasicLock->dhw != 0.
 

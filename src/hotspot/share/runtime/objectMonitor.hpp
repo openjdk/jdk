@@ -238,7 +238,16 @@ class ObjectMonitor {
   intptr_t  is_entered(Thread* current) const;
 
   void*     owner() const;
-  void      set_owner(void* owner);
+  // Clear _owner field; current value must match old_value.
+  void      release_clear_owner(void* old_value);
+  // Simply set _owner field to new_value; current value must match old_value.
+  void      set_owner_from(void* old_value, void* new_value);
+  // Simply set _owner field to self; current value must match basic_lock_p.
+  void      set_owner_from_BasicLock(void* basic_lock_p, Thread* self);
+  // Try to set _owner field to new_value if the current value matches
+  // old_value, using Atomic::cmpxchg(). Otherwise, does not change the
+  // _owner field. Returns the prior value of the _owner field.
+  void*     try_set_owner_from(void* old_value, void* new_value);
 
   jint      waiters() const;
 
