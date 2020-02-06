@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -330,7 +330,7 @@ void Rewriter::maybe_rewrite_ldc(address bcp, int offset, bool is_wide,
         tag.is_string() ||
         (tag.is_dynamic_constant() &&
          // keep regular ldc interpreter logic for condy primitives
-         is_reference_type(FieldType::basic_type(_pool->uncached_signature_ref_at(cp_index))))
+         is_reference_type(Signature::basic_type(_pool->uncached_signature_ref_at(cp_index))))
         ) {
       int ref_index = cp_entry_to_resolved_references(cp_index);
       if (is_wide) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -901,8 +901,7 @@ static Method* new_method(
   m->set_constants(NULL); // This will get filled in later
   m->set_name_index(cp->utf8(name));
   m->set_signature_index(cp->utf8(sig));
-  ResultTypeFinder rtf(sig);
-  m->constMethod()->set_result_type(rtf.type());
+  m->compute_from_signature(sig);
   m->set_size_of_parameters(params);
   m->set_max_stack(max_stack);
   m->set_max_locals(params);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -808,8 +808,9 @@ static objArrayHandle get_exception_types(const methodHandle& method, TRAPS) {
 }
 
 static Handle new_type(Symbol* signature, Klass* k, TRAPS) {
+  SignatureStream ss(signature, false);
   // Basic types
-  BasicType type = vmSymbols::signature_type(signature);
+  BasicType type = ss.is_reference() ? T_OBJECT : ss.type();
   if (type != T_OBJECT) {
     return Handle(THREAD, Universe::java_mirror(type));
   }

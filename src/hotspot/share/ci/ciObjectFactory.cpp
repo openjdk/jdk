@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,6 @@
 #include "memory/allocation.inline.hpp"
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/fieldType.hpp"
 #include "runtime/handles.inline.hpp"
 #include "utilities/macros.hpp"
 
@@ -418,6 +417,7 @@ ciMethod* ciObjectFactory::get_unloaded_method(ciInstanceKlass* holder,
                                                ciSymbol*        name,
                                                ciSymbol*        signature,
                                                ciInstanceKlass* accessor) {
+  assert(accessor != NULL, "need origin of access");
   ciSignature* that = NULL;
   for (int i = 0; i < _unloaded_methods->length(); i++) {
     ciMethod* entry = _unloaded_methods->at(i);
@@ -488,20 +488,14 @@ ciKlass* ciObjectFactory::get_unloaded_klass(ciKlass* accessing_klass,
   // unloaded InstanceKlass.  Deal with both.
   if (name->char_at(0) == JVM_SIGNATURE_ARRAY) {
     // Decompose the name.'
-    FieldArrayInfo fd;
-    BasicType element_type = FieldType::get_array_info(name->get_symbol(),
-                                                       fd, THREAD);
-    if (HAS_PENDING_EXCEPTION) {
-      CLEAR_PENDING_EXCEPTION;
-      CURRENT_THREAD_ENV->record_out_of_memory_failure();
-      return ciEnv::_unloaded_ciobjarrayklass;
-    }
-    int dimension = fd.dimension();
+    SignatureStream ss(name->get_symbol(), false);
+    int dimension = ss.skip_array_prefix();  // skip all '['s
+    BasicType element_type = ss.type();
     assert(element_type != T_ARRAY, "unsuccessful decomposition");
     ciKlass* element_klass = NULL;
     if (element_type == T_OBJECT) {
       ciEnv *env = CURRENT_THREAD_ENV;
-      ciSymbol* ci_name = env->get_symbol(fd.object_key());
+      ciSymbol* ci_name = env->get_symbol(ss.as_symbol());
       element_klass =
         env->get_klass_by_name(accessing_klass, ci_name, false)->as_instance_klass();
     } else {

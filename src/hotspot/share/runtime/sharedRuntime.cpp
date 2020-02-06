@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2979,9 +2979,6 @@ VMReg SharedRuntime::name_for_receiver() {
 VMRegPair *SharedRuntime::find_callee_arguments(Symbol* sig, bool has_receiver, bool has_appendix, int* arg_size) {
   // This method is returning a data structure allocating as a
   // ResourceObject, so do not put any ResourceMarks in here.
-  char *s = sig->as_C_string();
-  int len = (int)strlen(s);
-  s++; len--;                   // Skip opening paren
 
   BasicType *sig_bt = NEW_RESOURCE_ARRAY(BasicType, 256);
   VMRegPair *regs = NEW_RESOURCE_ARRAY(VMRegPair, 256);
@@ -2990,33 +2987,11 @@ VMRegPair *SharedRuntime::find_callee_arguments(Symbol* sig, bool has_receiver, 
     sig_bt[cnt++] = T_OBJECT; // Receiver is argument 0; not in signature
   }
 
-  while (*s != JVM_SIGNATURE_ENDFUNC) { // Find closing right paren
-    switch (*s++) {                     // Switch on signature character
-    case JVM_SIGNATURE_BYTE:    sig_bt[cnt++] = T_BYTE;    break;
-    case JVM_SIGNATURE_CHAR:    sig_bt[cnt++] = T_CHAR;    break;
-    case JVM_SIGNATURE_DOUBLE:  sig_bt[cnt++] = T_DOUBLE;  sig_bt[cnt++] = T_VOID; break;
-    case JVM_SIGNATURE_FLOAT:   sig_bt[cnt++] = T_FLOAT;   break;
-    case JVM_SIGNATURE_INT:     sig_bt[cnt++] = T_INT;     break;
-    case JVM_SIGNATURE_LONG:    sig_bt[cnt++] = T_LONG;    sig_bt[cnt++] = T_VOID; break;
-    case JVM_SIGNATURE_SHORT:   sig_bt[cnt++] = T_SHORT;   break;
-    case JVM_SIGNATURE_BOOLEAN: sig_bt[cnt++] = T_BOOLEAN; break;
-    case JVM_SIGNATURE_VOID:    sig_bt[cnt++] = T_VOID;    break;
-    case JVM_SIGNATURE_CLASS: // Oop
-      while (*s++ != JVM_SIGNATURE_ENDCLASS);   // Skip signature
-      sig_bt[cnt++] = T_OBJECT;
-      break;
-    case JVM_SIGNATURE_ARRAY: { // Array
-      do {                      // Skip optional size
-        while (*s >= '0' && *s <= '9') s++;
-      } while (*s++ == JVM_SIGNATURE_ARRAY);   // Nested arrays?
-      // Skip element type
-      if (s[-1] == JVM_SIGNATURE_CLASS)
-        while (*s++ != JVM_SIGNATURE_ENDCLASS); // Skip signature
-      sig_bt[cnt++] = T_ARRAY;
-      break;
-    }
-    default : ShouldNotReachHere();
-    }
+  for (SignatureStream ss(sig); !ss.at_return_type(); ss.next()) {
+    BasicType type = ss.type();
+    sig_bt[cnt++] = type;
+    if (is_double_word_type(type))
+      sig_bt[cnt++] = T_VOID;
   }
 
   if (has_appendix) {

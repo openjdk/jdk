@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -271,7 +271,8 @@ void MethodMatcher::parse_method_pattern(char*& line, const char*& error_msg, Me
     }
     if ((strchr(method_name, JVM_SIGNATURE_SPECIAL) != NULL) ||
         (strchr(method_name, JVM_SIGNATURE_ENDSPECIAL) != NULL)) {
-      if ((strncmp("<init>", method_name, 255) != 0) && (strncmp("<clinit>", method_name, 255) != 0)) {
+      if (!vmSymbols::object_initializer_name()->equals(method_name) &&
+          !vmSymbols::class_initializer_name()->equals(method_name)) {
         error_msg = "Chars '<' and '>' only allowed in <init> and <clinit>";
         return;
       }

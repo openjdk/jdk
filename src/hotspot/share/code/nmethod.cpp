@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3151,12 +3151,10 @@ void nmethod::print_nmethod_labels(outputStream* stream, address block_begin, bo
           m->method_holder()->print_value_on(stream);
         } else {
           bool did_name = false;
-          if (!at_this && ss.is_object()) {
-            Symbol* name = ss.as_symbol_or_null();
-            if (name != NULL) {
-              name->print_value_on(stream);
-              did_name = true;
-            }
+          if (!at_this && ss.is_reference()) {
+            Symbol* name = ss.as_symbol();
+            name->print_value_on(stream);
+            did_name = true;
           }
           if (!did_name)
             stream->print("%s", type2name(t));

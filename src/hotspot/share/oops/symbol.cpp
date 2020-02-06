@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,6 +52,7 @@ uint32_t Symbol::pack_length_and_refcount(int length, int refcount) {
 Symbol::Symbol(const u1* name, int length, int refcount) {
   _length_and_refcount =  pack_length_and_refcount(length, refcount);
   _identity_hash = (short)os::random();
+  _body[0] = 0;  // in case length == 0
   for (int i = 0; i < length; i++) {
     byte_at_put(i, name[i]);
   }
@@ -82,20 +83,31 @@ void Symbol::set_permanent() {
 
 
 // ------------------------------------------------------------------
-// Symbol::starts_with
+// Symbol::contains_byte_at
 //
-// Tests if the symbol starts with the specified prefix of the given
-// length.
-bool Symbol::starts_with(const char* prefix, int len) const {
-  if (len > utf8_length()) return false;
-  while (len-- > 0) {
-    if (prefix[len] != char_at(len))
-      return false;
-  }
-  assert(len == -1, "we should be at the beginning");
-  return true;
+// Tests if the symbol contains the given byte at the given position.
+bool Symbol::contains_byte_at(int position, char code_byte) const {
+  if (position < 0)  return false;  // can happen with ends_with
+  if (position >= utf8_length()) return false;
+  return code_byte == char_at(position);
 }
 
+// ------------------------------------------------------------------
+// Symbol::contains_utf8_at
+//
+// Tests if the symbol contains the given utf8 substring
+// at the given byte position.
+bool Symbol::contains_utf8_at(int position, const char* substring, int len) const {
+  assert(len >= 0 && substring != NULL, "substring must be valid");
+  if (len <= 1)
+    return len == 0 || contains_byte_at(position, substring[0]);
+  if (position < 0)  return false;  // can happen with ends_with
+  if (position + len > utf8_length()) return false;
+  if (memcmp((char*)base() + position, substring, len) == 0)
+    return true;
+  else
+    return false;
+}
 
 // ------------------------------------------------------------------
 // Symbol::index_of
@@ -116,8 +128,11 @@ int Symbol::index_of_at(int i, const char* str, int len) const {
     if (scan == NULL)
       return -1;  // not found
     assert(scan >= bytes+i && scan <= limit, "scan oob");
-    if (memcmp(scan, str, len) == 0)
+    if (len <= 2
+        ? (char) scan[len-1] == str[len-1]
+        : memcmp(scan+1, str+1, len-1) == 0) {
       return (int)(scan - bytes);
+    }
   }
   return -1;
 }
@@ -186,8 +201,8 @@ const char* Symbol::as_klass_external_name(char* buf, int size) const {
     int   length = (int)strlen(str);
     // Turn all '/'s into '.'s (also for array klasses)
     for (int index = 0; index < length; index++) {
-      if (str[index] == '/') {
-        str[index] = '.';
+      if (str[index] == JVM_SIGNATURE_SLASH) {
+        str[index] = JVM_SIGNATURE_DOT;
       }
     }
     return str;
@@ -208,28 +223,25 @@ const char* Symbol::as_klass_external_name() const {
   return str;
 }
 
-static void print_class(outputStream *os, char *class_str, int len) {
-  for (int i = 0; i < len; ++i) {
-    if (class_str[i] == JVM_SIGNATURE_SLASH) {
+static void print_class(outputStream *os, const SignatureStream& ss) {
+  int sb = ss.raw_symbol_begin(), se = ss.raw_symbol_end();
+  for (int i = sb; i < se; ++i) {
+    int ch = ss.raw_char_at(i);
+    if (ch == JVM_SIGNATURE_SLASH) {
       os->put(JVM_SIGNATURE_DOT);
     } else {
-      os->put(class_str[i]);
+      os->put(ch);
     }
   }
 }
 
-static void print_array(outputStream *os, char *array_str, int len) {
-  int dimensions = 0;
-  for (int i = 0; i < len; ++i) {
-    if (array_str[i] == JVM_SIGNATURE_ARRAY) {
-      dimensions++;
-    } else if (array_str[i] == JVM_SIGNATURE_CLASS) {
-      // Expected format: L<type name>;. Skip 'L' and ';' delimiting the type name.
-      print_class(os, array_str+i+1, len-i-2);
-      break;
-    } else {
-      os->print("%s", type2name(char2type(array_str[i])));
-    }
+static void print_array(outputStream *os, SignatureStream& ss) {
+  int dimensions = ss.skip_array_prefix();
+  assert(dimensions > 0, "");
+  if (ss.is_reference()) {
+    print_class(os, ss);
+  } else {
+    os->print("%s", type2name(ss.type()));
   }
   for (int i = 0; i < dimensions; ++i) {
     os->print("[]");
@@ -240,10 +252,9 @@ void Symbol::print_as_signature_external_return_type(outputStream *os) {
   for (SignatureStream ss(this); !ss.is_done(); ss.next()) {
     if (ss.at_return_type()) {
       if (ss.is_array()) {
-        print_array(os, (char*)ss.raw_bytes(), (int)ss.raw_length());
-      } else if (ss.is_object()) {
-        // Expected format: L<type name>;. Skip 'L' and ';' delimiting the class name.
-        print_class(os, (char*)ss.raw_bytes()+1, (int)ss.raw_length()-2);
+        print_array(os, ss);
+      } else if (ss.is_reference()) {
+        print_class(os, ss);
       } else {
         os->print("%s", type2name(ss.type()));
       }
@@ -257,10 +268,9 @@ void Symbol::print_as_signature_external_parameters(outputStream *os) {
     if (ss.at_return_type()) break;
     if (!first) { os->print(", "); }
     if (ss.is_array()) {
-      print_array(os, (char*)ss.raw_bytes(), (int)ss.raw_length());
-    } else if (ss.is_object()) {
-      // Skip 'L' and ';'.
-      print_class(os, (char*)ss.raw_bytes()+1, (int)ss.raw_length()-2);
+      print_array(os, ss);
+    } else if (ss.is_reference()) {
+      print_class(os, ss);
     } else {
       os->print("%s", type2name(ss.type()));
     }

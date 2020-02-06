@@ -539,25 +539,21 @@ enum { OBJ_SIG_LEN = 18 };
 bool MethodHandles::is_basic_type_signature(Symbol* sig) {
   assert(vmSymbols::object_signature()->utf8_length() == (int)OBJ_SIG_LEN, "");
   assert(vmSymbols::object_signature()->equals(OBJ_SIG), "");
-  const int len = sig->utf8_length();
-  for (int i = 0; i < len; i++) {
-    switch (sig->char_at(i)) {
-    case JVM_SIGNATURE_CLASS:
+  for (SignatureStream ss(sig, sig->starts_with(JVM_SIGNATURE_FUNC)); !ss.is_done(); ss.next()) {
+    switch (ss.type()) {
+    case T_OBJECT:
       // only java/lang/Object is valid here
-      if (sig->index_of_at(i, OBJ_SIG, OBJ_SIG_LEN) != i)
+      if (strncmp((char*) ss.raw_bytes(), OBJ_SIG, OBJ_SIG_LEN) != 0)
         return false;
-      i += OBJ_SIG_LEN-1;  //-1 because of i++ in loop
-      continue;
-    case JVM_SIGNATURE_FUNC:
-    case JVM_SIGNATURE_ENDFUNC:
-    case JVM_SIGNATURE_VOID:
-    case JVM_SIGNATURE_INT:
-    case JVM_SIGNATURE_LONG:
-    case JVM_SIGNATURE_FLOAT:
-    case JVM_SIGNATURE_DOUBLE:
-      continue;
+      break;
+    case T_VOID:
+    case T_INT:
+    case T_LONG:
+    case T_FLOAT:
+    case T_DOUBLE:
+      break;
     default:
-      // subword types (T_BYTE etc.), arrays
+      // subword types (T_BYTE etc.), Q-descriptors, arrays
       return false;
     }
   }
@@ -571,8 +567,8 @@ Symbol* MethodHandles::lookup_basic_type_signature(Symbol* sig, bool keep_last_a
   } else if (is_basic_type_signature(sig)) {
     sig->increment_refcount();
     return sig;  // that was easy
-  } else if (sig->char_at(0) != JVM_SIGNATURE_FUNC) {
-    BasicType bt = char2type(sig->char_at(0));
+  } else if (!sig->starts_with(JVM_SIGNATURE_FUNC)) {
+    BasicType bt = Signature::basic_type(sig);
     if (is_subword_type(bt)) {
       bsig = vmSymbols::int_signature();
     } else {
@@ -615,71 +611,26 @@ Symbol* MethodHandles::lookup_basic_type_signature(Symbol* sig, bool keep_last_a
 }
 
 void MethodHandles::print_as_basic_type_signature_on(outputStream* st,
-                                                     Symbol* sig,
-                                                     bool keep_arrays,
-                                                     bool keep_basic_names) {
+                                                     Symbol* sig) {
   st = st ? st : tty;
-  int len  = sig->utf8_length();
-  int array = 0;
   bool prev_type = false;
-  for (int i = 0; i < len; i++) {
-    char ch = sig->char_at(i);
-    switch (ch) {
-    case JVM_SIGNATURE_FUNC:
-    case JVM_SIGNATURE_ENDFUNC:
-      prev_type = false;
-      st->put(ch);
-      continue;
-    case JVM_SIGNATURE_ARRAY:
-      if (!keep_basic_names && keep_arrays)
-        st->put(ch);
-      array++;
-      continue;
-    case JVM_SIGNATURE_CLASS:
-      {
-        if (prev_type)  st->put(',');
-        int start = i+1, slash = start;
-        while (++i < len && (ch = sig->char_at(i)) != JVM_SIGNATURE_ENDCLASS) {
-          if (ch == JVM_SIGNATURE_SLASH || ch == JVM_SIGNATURE_DOT || ch == '$')  slash = i+1;
-        }
-        if (slash < i)  start = slash;
-        if (!keep_basic_names) {
-          st->put(JVM_SIGNATURE_CLASS);
-        } else {
-          for (int j = start; j < i; j++)
-            st->put(sig->char_at(j));
-          prev_type = true;
-        }
-        break;
-      }
-    default:
-      {
-        if (array && char2type(ch) != T_ILLEGAL && !keep_arrays) {
-          ch = JVM_SIGNATURE_ARRAY;
-          array = 0;
-        }
-        if (prev_type)  st->put(',');
-        const char* n = NULL;
-        if (keep_basic_names)
-          n = type2name(char2type(ch));
-        if (n == NULL) {
-          // unknown letter, or we don't want to know its name
-          st->put(ch);
-        } else {
-          st->print("%s", n);
-          prev_type = true;
-        }
-        break;
-      }
+  bool is_method = (sig->char_at(0) == JVM_SIGNATURE_FUNC);
+  if (is_method)  st->put(JVM_SIGNATURE_FUNC);
+  for (SignatureStream ss(sig, is_method); !ss.is_done(); ss.next()) {
+    if (ss.at_return_type())
+      st->put(JVM_SIGNATURE_ENDFUNC);
+    else if (prev_type)
+      st->put(',');
+    const char* cp = (const char*) ss.raw_bytes();
+    if (ss.is_array()) {
+      st->put(JVM_SIGNATURE_ARRAY);
+      if (ss.array_prefix_length() == 1)
+        st->put(cp[1]);
+      else
+        st->put(JVM_SIGNATURE_CLASS);
+    } else {
+      st->put(cp[0]);
     }
-    // Switch break goes here to take care of array suffix:
-    if (prev_type) {
-      while (array > 0) {
-        st->print("[]");
-        --array;
-      }
-    }
-    array = 0;
   }
 }
 
@@ -696,7 +647,7 @@ oop MethodHandles::field_name_or_null(Symbol* s) {
 
 oop MethodHandles::field_signature_type_or_null(Symbol* s) {
   if (s == NULL)  return NULL;
-  BasicType bt = FieldType::basic_type(s);
+  BasicType bt = Signature::basic_type(s);
   if (is_java_primitive(bt)) {
     assert(s->utf8_length() == 1, "");
     return java_lang_Class::primitive_mirror(bt);
@@ -982,8 +933,7 @@ int MethodHandles::find_MemberNames(Klass* k,
     if (name->utf8_length() == 0)  return 0; // a match is not possible
   }
   if (sig != NULL) {
-    if (sig->utf8_length() == 0)  return 0; // a match is not possible
-    if (sig->char_at(0) == JVM_SIGNATURE_FUNC)
+    if (sig->starts_with(JVM_SIGNATURE_FUNC))
       match_flags &= ~(IS_FIELD | IS_TYPE);
     else
       match_flags &= ~(IS_CONSTRUCTOR | IS_METHOD);

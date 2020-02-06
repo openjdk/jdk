@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,9 @@
 #include "oops/oop.inline.hpp"
 #include "oops/symbol.hpp"
 #include "oops/typeArrayKlass.hpp"
+#include "runtime/fieldDescriptor.inline.hpp"
+#include "runtime/handles.inline.hpp"
+#include "runtime/safepointVerifiers.hpp"
 #include "runtime/signature.hpp"
 
 // Implementation of SignatureIterator
@@ -44,232 +47,154 @@
 // FieldType  = "B" | "C" | "D" | "F" | "I" | "J" | "S" | "Z" | "L" ClassName ";" | "[" FieldType.
 // ClassName  = string.
 
+// The ClassName string can be any JVM-style UTF8 string except:
+//  - an empty string (the empty string is never a name of any kind)
+//  - a string which begins or ends with slash '/' (the package separator)
+//  - a string which contains adjacent slashes '//' (no empty package names)
+//  - a string which contains a semicolon ';' (the end-delimiter)
+//  - a string which contains a left bracket '[' (the array marker)
+//  - a string which contains a dot '.' (the external package separator)
+//
+// Other "meta-looking" characters, such as '(' and '<' and '+',
+// are perfectly legitimate within a class name, for the JVM.
+// Class names which contain double slashes ('a//b') and non-initial
+// brackets ('a[b]') are reserved for possible enrichment of the
+// type language.
 
-SignatureIterator::SignatureIterator(Symbol* signature) {
-  _signature       = signature;
-  _parameter_index = 0;
-}
-
-void SignatureIterator::expect(char c) {
-  if (_signature->char_at(_index) != c) fatal("expecting %c", c);
-  _index++;
-}
-
-int SignatureIterator::parse_type() {
-  // Note: This function could be simplified by using "return T_XXX_size;"
-  //       instead of the assignment and the break statements. However, it
-  //       seems that the product build for win32_i486 with MS VC++ 6.0 doesn't
-  //       work (stack underflow for some tests) - this seems to be a VC++ 6.0
-  //       compiler bug (was problem - gri 4/27/2000).
-  int size = -1;
-  switch(_signature->char_at(_index)) {
-    case JVM_SIGNATURE_BYTE:    do_byte(); if (_parameter_index < 0 ) _return_type = T_BYTE;
-                                  _index++; size = T_BYTE_size; break;
-    case JVM_SIGNATURE_CHAR:    do_char(); if (_parameter_index < 0 ) _return_type = T_CHAR;
-                                  _index++; size = T_CHAR_size; break;
-    case JVM_SIGNATURE_DOUBLE:  do_double(); if (_parameter_index < 0 ) _return_type = T_DOUBLE;
-                                  _index++; size = T_DOUBLE_size; break;
-    case JVM_SIGNATURE_FLOAT:   do_float(); if (_parameter_index < 0 ) _return_type = T_FLOAT;
-                                  _index++; size = T_FLOAT_size; break;
-    case JVM_SIGNATURE_INT:     do_int(); if (_parameter_index < 0 ) _return_type = T_INT;
-                                  _index++; size = T_INT_size; break;
-    case JVM_SIGNATURE_LONG:    do_long(); if (_parameter_index < 0 ) _return_type = T_LONG;
-                                  _index++; size = T_LONG_size; break;
-    case JVM_SIGNATURE_SHORT:   do_short(); if (_parameter_index < 0 ) _return_type = T_SHORT;
-                                  _index++; size = T_SHORT_size; break;
-    case JVM_SIGNATURE_BOOLEAN: do_bool(); if (_parameter_index < 0 ) _return_type = T_BOOLEAN;
-                                  _index++; size = T_BOOLEAN_size; break;
-    case JVM_SIGNATURE_VOID:    do_void(); if (_parameter_index < 0 ) _return_type = T_VOID;
-                                  _index++; size = T_VOID_size; break;
-    case JVM_SIGNATURE_CLASS:
-      { int begin = ++_index;
-        Symbol* sig = _signature;
-        while (sig->char_at(_index++) != JVM_SIGNATURE_ENDCLASS) ;
-        do_object(begin, _index);
-      }
-      if (_parameter_index < 0 ) _return_type = T_OBJECT;
-      size = T_OBJECT_size;
-      break;
-    case JVM_SIGNATURE_ARRAY:
-      { int begin = ++_index;
-        Symbol* sig = _signature;
-        while (sig->char_at(_index) == JVM_SIGNATURE_ARRAY) {
-          _index++;
-        }
-        if (sig->char_at(_index) == JVM_SIGNATURE_CLASS) {
-          while (sig->char_at(_index++) != JVM_SIGNATURE_ENDCLASS) ;
-        } else {
-          _index++;
-        }
-        do_array(begin, _index);
-       if (_parameter_index < 0 ) _return_type = T_ARRAY;
-      }
-      size = T_ARRAY_size;
-      break;
-    default:
-      ShouldNotReachHere();
-      break;
-  }
-  assert(size >= 0, "size must be set");
-  return size;
-}
-
-
-void SignatureIterator::check_signature_end() {
-  if (_index < _signature->utf8_length()) {
-    tty->print_cr("too many chars in signature");
-    _signature->print_value_on(tty);
-    tty->print_cr(" @ %d", _index);
+void SignatureIterator::set_fingerprint(fingerprint_t fingerprint) {
+  if (!fp_is_valid(fingerprint)) {
+    _fingerprint = fingerprint;
+    _return_type = T_ILLEGAL;
+  } else if (fingerprint != _fingerprint) {
+    assert(_fingerprint == zero_fingerprint(), "consistent fingerprint values");
+    _fingerprint = fingerprint;
+    _return_type = fp_return_type(fingerprint);
   }
 }
 
-
-void SignatureIterator::iterate_parameters() {
-  // Parse parameters
-  _index = 0;
-  _parameter_index = 0;
-  expect(JVM_SIGNATURE_FUNC);
-  while (_signature->char_at(_index) != JVM_SIGNATURE_ENDFUNC) _parameter_index += parse_type();
-  expect(JVM_SIGNATURE_ENDFUNC);
-  _parameter_index = 0;
+BasicType SignatureIterator::return_type() {
+  if (_return_type == T_ILLEGAL) {
+    SignatureStream ss(_signature);
+    ss.skip_to_return_type();
+    _return_type = ss.type();
+    assert(_return_type != T_ILLEGAL, "illegal return type");
+  }
+  return _return_type;
 }
 
-// Optimized version of iterate_parameters when fingerprint is known
-void SignatureIterator::iterate_parameters( uint64_t fingerprint ) {
-  uint64_t saved_fingerprint = fingerprint;
+bool SignatureIterator::fp_is_valid_type(BasicType type, bool for_return_type) {
+  assert(type != (BasicType)fp_parameters_done, "fingerprint is incorrectly at done");
+  assert(((int)type & ~fp_parameter_feature_mask) == 0, "fingerprint feature mask yielded non-zero value");
+  return (is_java_primitive(type) ||
+          is_reference_type(type) ||
+          (for_return_type && type == T_VOID));
+}
 
-  // Check for too many arguments
-  if (fingerprint == (uint64_t)CONST64(-1)) {
-    SignatureIterator::iterate_parameters();
+ArgumentSizeComputer::ArgumentSizeComputer(Symbol* signature)
+  : SignatureIterator(signature)
+{
+  _size = 0;
+  do_parameters_on(this);  // non-virtual template execution
+}
+
+ArgumentCount::ArgumentCount(Symbol* signature)
+  : SignatureIterator(signature)
+{
+  _size = 0;
+  do_parameters_on(this);  // non-virtual template execution
+}
+
+ReferenceArgumentCount::ReferenceArgumentCount(Symbol* signature)
+  : SignatureIterator(signature)
+{
+  _refs = 0;
+  do_parameters_on(this);  // non-virtual template execution
+}
+
+void Fingerprinter::compute_fingerprint_and_return_type(bool static_flag) {
+  // See if we fingerprinted this method already
+  if (_method != NULL) {
+    assert(!static_flag, "must not be passed by caller");
+    static_flag = _method->is_static();
+    _fingerprint = _method->constMethod()->fingerprint();
+
+    if (_fingerprint != zero_fingerprint()) {
+      _return_type = _method->result_type();
+      assert(is_java_type(_return_type), "return type must be a java type");
+      return;
+    }
+
+    if (_method->size_of_parameters() > fp_max_size_of_parameters) {
+      _fingerprint = overflow_fingerprint();
+      _method->constMethod()->set_fingerprint(_fingerprint);
+      // as long as we are here compute the return type:
+      _return_type = ResultTypeFinder(_method->signature()).type();
+      assert(is_java_type(_return_type), "return type must be a java type");
+      return;
+    }
+  }
+
+  // Note:  This will always take the slow path, since _fp==zero_fp.
+  initialize_accumulator();
+  do_parameters_on(this);
+  assert(fp_is_valid_type(_return_type, true), "bad result type");
+
+  // Fill in the return type and static bits:
+  _accumulator |= _return_type << fp_static_feature_size;
+  if (static_flag) {
+    _accumulator |= fp_is_static_bit;
+  } else {
+    _param_size += 1;  // this is the convention for Method::compute_size_of_parameters
+  }
+
+  // Detect overflow.  (We counted _param_size correctly.)
+  if (_method == NULL && _param_size > fp_max_size_of_parameters) {
+    // We did a one-pass computation of argument size, return type,
+    // and fingerprint.
+    _fingerprint = overflow_fingerprint();
     return;
   }
 
-  assert(fingerprint, "Fingerprint should not be 0");
+  assert(_shift_count < BitsPerLong,
+         "shift count overflow %d (%d vs. %d): %s",
+         _shift_count, _param_size, fp_max_size_of_parameters,
+         _signature->as_C_string());
+  assert((_accumulator >> _shift_count) == fp_parameters_done, "must be zero");
 
-  _parameter_index = 0;
-  fingerprint = fingerprint >> (static_feature_size + result_feature_size);
-  while ( 1 ) {
-    switch ( fingerprint & parameter_feature_mask ) {
-      case bool_parm:
-        do_bool();
-        _parameter_index += T_BOOLEAN_size;
-        break;
-      case byte_parm:
-        do_byte();
-        _parameter_index += T_BYTE_size;
-        break;
-      case char_parm:
-        do_char();
-        _parameter_index += T_CHAR_size;
-        break;
-      case short_parm:
-        do_short();
-        _parameter_index += T_SHORT_size;
-        break;
-      case int_parm:
-        do_int();
-        _parameter_index += T_INT_size;
-        break;
-      case obj_parm:
-        do_object(0, 0);
-        _parameter_index += T_OBJECT_size;
-        break;
-      case long_parm:
-        do_long();
-        _parameter_index += T_LONG_size;
-        break;
-      case float_parm:
-        do_float();
-        _parameter_index += T_FLOAT_size;
-        break;
-      case double_parm:
-        do_double();
-        _parameter_index += T_DOUBLE_size;
-        break;
-      case done_parm:
-        return;
-      default:
-        tty->print_cr("*** parameter is " UINT64_FORMAT, fingerprint & parameter_feature_mask);
-        tty->print_cr("*** fingerprint is " PTR64_FORMAT, saved_fingerprint);
-        ShouldNotReachHere();
-        break;
-    }
-    fingerprint >>= parameter_feature_size;
+  // This is the result, along with _return_type:
+  _fingerprint = _accumulator;
+
+  // Cache the result on the method itself:
+  if (_method != NULL) {
+    _method->constMethod()->set_fingerprint(_fingerprint);
   }
 }
-
-
-void SignatureIterator::iterate_returntype() {
-  // Ignore parameters
-  _index = 0;
-  expect(JVM_SIGNATURE_FUNC);
-  Symbol* sig = _signature;
-  // Need to skip over each type in the signature's argument list until a
-  // closing ')' is found., then get the return type.  We cannot just scan
-  // for the first ')' because ')' is a legal character in a type name.
-  while (sig->char_at(_index) != JVM_SIGNATURE_ENDFUNC) {
-    switch(sig->char_at(_index)) {
-      case JVM_SIGNATURE_BYTE:
-      case JVM_SIGNATURE_CHAR:
-      case JVM_SIGNATURE_DOUBLE:
-      case JVM_SIGNATURE_FLOAT:
-      case JVM_SIGNATURE_INT:
-      case JVM_SIGNATURE_LONG:
-      case JVM_SIGNATURE_SHORT:
-      case JVM_SIGNATURE_BOOLEAN:
-      case JVM_SIGNATURE_VOID:
-        {
-          _index++;
-        }
-        break;
-      case JVM_SIGNATURE_CLASS:
-        {
-          while (sig->char_at(_index++) != JVM_SIGNATURE_ENDCLASS) ;
-        }
-        break;
-      case JVM_SIGNATURE_ARRAY:
-        {
-          while (sig->char_at(++_index) == JVM_SIGNATURE_ARRAY) ;
-          if (sig->char_at(_index) == JVM_SIGNATURE_CLASS) {
-            while (sig->char_at(_index++) != JVM_SIGNATURE_ENDCLASS) ;
-          } else {
-            _index++;
-          }
-        }
-        break;
-      default:
-        ShouldNotReachHere();
-        break;
-    }
-  }
-  expect(JVM_SIGNATURE_ENDFUNC);
-  // Parse return type
-  _parameter_index = -1;
-  parse_type();
-  check_signature_end();
-  _parameter_index = 0;
-}
-
-
-void SignatureIterator::iterate() {
-  // Parse parameters
-  _parameter_index = 0;
-  _index = 0;
-  expect(JVM_SIGNATURE_FUNC);
-  while (_signature->char_at(_index) != JVM_SIGNATURE_ENDFUNC) _parameter_index += parse_type();
-  expect(JVM_SIGNATURE_ENDFUNC);
-  // Parse return type
-  _parameter_index = -1;
-  parse_type();
-  check_signature_end();
-  _parameter_index = 0;
-}
-
 
 // Implementation of SignatureStream
-SignatureStream::SignatureStream(Symbol* signature, bool is_method) :
-                   _signature(signature), _at_return_type(false), _previous_name(NULL), _names(NULL) {
-  _begin = _end = (is_method ? 1 : 0);  // skip first '(' in method signatures
+
+static inline int decode_signature_char(int ch) {
+  switch (ch) {
+#define EACH_SIG(ch, bt, ignore) \
+    case ch: return bt;
+    SIGNATURE_TYPES_DO(EACH_SIG, ignore)
+#undef EACH_SIG
+  }
+  return 0;
+}
+
+SignatureStream::SignatureStream(const Symbol* signature,
+                                 bool is_method) {
+  assert(!is_method || signature->starts_with(JVM_SIGNATURE_FUNC),
+         "method signature required");
+  _signature = signature;
+  _limit = signature->utf8_length();
+  int oz = (is_method ? 1 : 0);
+  _state = oz;
+  assert(_state == (int)(is_method ? _s_method : _s_field), "signature state incorrectly set");
+  _begin = _end = oz; // skip first '(' in method signatures
+  _array_prefix = 0;  // just for definiteness
+  _previous_name = NULL;
+  _names = NULL;
   next();
 }
 
@@ -279,84 +204,162 @@ SignatureStream::~SignatureStream() {
     for (int i = 0; i < _names->length(); i++) {
       _names->at(i)->decrement_refcount();
     }
+  } else if (_previous_name != NULL && !_previous_name->is_permanent()) {
+    _previous_name->decrement_refcount();
   }
 }
 
-bool SignatureStream::is_done() const {
-  return _end > _signature->utf8_length();
-}
+inline int SignatureStream::scan_non_primitive(BasicType type) {
+  const u1* base = _signature->bytes();
+  int end = _end;
+  int limit = _limit;
+  const u1* tem;
+  switch (type) {
+  case T_OBJECT:
+    tem = (const u1*) memchr(&base[end], JVM_SIGNATURE_ENDCLASS, limit - end);
+    end = (tem == NULL ? limit : tem+1 - base);
+    break;
 
-
-void SignatureStream::next_non_primitive(int t) {
-  switch (t) {
-    case JVM_SIGNATURE_CLASS: {
-      _type = T_OBJECT;
-      Symbol* sig = _signature;
-      while (sig->char_at(_end++) != JVM_SIGNATURE_ENDCLASS);
+  case T_ARRAY:
+    while ((end < limit) && ((char)base[end] == JVM_SIGNATURE_ARRAY)) { end++; }
+    _array_prefix = end - _end;  // number of '[' chars just skipped
+    if (Signature::has_envelope(base[end++])) {
+      tem = (const u1*) memchr(&base[end], JVM_SIGNATURE_ENDCLASS, limit - end);
+      end = (tem == NULL ? limit : tem+1 - base);
       break;
     }
-    case JVM_SIGNATURE_ARRAY: {
-      _type = T_ARRAY;
-      Symbol* sig = _signature;
-      char c = sig->char_at(_end);
-      while ('0' <= c && c <= '9') c = sig->char_at(_end++);
-      while (sig->char_at(_end) == JVM_SIGNATURE_ARRAY) {
-        _end++;
-        c = sig->char_at(_end);
-        while ('0' <= c && c <= '9') c = sig->char_at(_end++);
-      }
-      switch(sig->char_at(_end)) {
-        case JVM_SIGNATURE_BYTE:
-        case JVM_SIGNATURE_CHAR:
-        case JVM_SIGNATURE_DOUBLE:
-        case JVM_SIGNATURE_FLOAT:
-        case JVM_SIGNATURE_INT:
-        case JVM_SIGNATURE_LONG:
-        case JVM_SIGNATURE_SHORT:
-        case JVM_SIGNATURE_BOOLEAN:_end++; break;
-        default: {
-          while (sig->char_at(_end++) != JVM_SIGNATURE_ENDCLASS);
-          break;
-        }
-      }
-      break;
-    }
-    case JVM_SIGNATURE_ENDFUNC: _end++; next(); _at_return_type = true; break;
-    default : ShouldNotReachHere();
+    break;
+
+  default : ShouldNotReachHere();
   }
+  return end;
 }
 
-
-bool SignatureStream::is_object() const {
-  return _type == T_OBJECT
-      || _type == T_ARRAY;
+void SignatureStream::next() {
+  const Symbol* sig = _signature;
+  int len = _limit;
+  if (_end >= len) { set_done(); return; }
+  _begin = _end;
+  int ch = sig->char_at(_begin);
+  int btcode = decode_signature_char(ch);
+  if (btcode == 0) {
+    guarantee(ch == JVM_SIGNATURE_ENDFUNC, "bad signature char %c/%d", ch, ch);
+    assert(_state == _s_method, "must be in method");
+    _state = _s_method_return;
+    _begin = ++_end;
+    if (_end >= len) { set_done(); return; }
+    ch = sig->char_at(_begin);
+    btcode = decode_signature_char(ch);
+  }
+  BasicType bt = (BasicType) btcode;
+  assert(ch == type2char(bt), "bad signature char %c/%d", ch, ch);
+  _type = bt;
+  if (!is_reference_type(bt)) {
+    // Skip over a single character for a primitive type (or void).
+    _end++;
+    return;
+  }
+  _end = scan_non_primitive(bt);
 }
 
-bool SignatureStream::is_array() const {
-  return _type == T_ARRAY;
+int SignatureStream::skip_array_prefix(int max_skip_length) {
+  if (_type != T_ARRAY) {
+    return 0;
+  }
+  if (_array_prefix > max_skip_length) {
+    // strip some but not all levels of T_ARRAY
+    _array_prefix -= max_skip_length;
+    _begin += max_skip_length;
+    return max_skip_length;
+  }
+  // we are stripping all levels of T_ARRAY,
+  // so we must decode the next character
+  int whole_array_prefix = _array_prefix;
+  int new_begin = _begin + whole_array_prefix;
+  _begin = new_begin;
+  int ch = _signature->char_at(new_begin);
+  int btcode = decode_signature_char(ch);
+  BasicType bt = (BasicType) btcode;
+  assert(ch == type2char(bt), "bad signature char %c/%d", ch, ch);
+  _type = bt;
+  assert(bt != T_VOID && bt != T_ARRAY, "bad signature type");
+  // Don't bother to call scan_non_primitive, since it won't
+  // change the value of _end.
+  return whole_array_prefix;
 }
 
-Symbol* SignatureStream::as_symbol() {
+bool Signature::is_valid_array_signature(const Symbol* sig) {
+  assert(sig->utf8_length() > 1, "this should already have been checked");
+  assert(sig->char_at(0) == JVM_SIGNATURE_ARRAY, "this should already have been checked");
+  // The first character is already checked
+  int i = 1;
+  int len = sig->utf8_length();
+  // First skip all '['s
+  while(i < len - 1 && sig->char_at(i) == JVM_SIGNATURE_ARRAY) i++;
+
+  // Check type
+  switch(sig->char_at(i)) {
+  case JVM_SIGNATURE_BYTE:
+  case JVM_SIGNATURE_CHAR:
+  case JVM_SIGNATURE_DOUBLE:
+  case JVM_SIGNATURE_FLOAT:
+  case JVM_SIGNATURE_INT:
+  case JVM_SIGNATURE_LONG:
+  case JVM_SIGNATURE_SHORT:
+  case JVM_SIGNATURE_BOOLEAN:
+    // If it is an array, the type is the last character
+    return (i + 1 == len);
+  case JVM_SIGNATURE_CLASS:
+    // If it is an object, the last character must be a ';'
+    return sig->char_at(len - 1) == JVM_SIGNATURE_ENDCLASS;
+  }
+  return false;
+}
+
+BasicType Signature::basic_type(int ch) {
+  int btcode = decode_signature_char(ch);
+  if (btcode == 0)  return T_ILLEGAL;
+  return (BasicType) btcode;
+}
+
+static const int jl_len = 10, object_len = 6, jl_object_len = jl_len + object_len;
+static const char jl_str[] = "java/lang/";
+
+#ifdef ASSERT
+static bool signature_symbols_sane() {
+  static bool done;
+  if (done)  return true;
+  done = true;
+  // test some tense code that looks for common symbol names:
+  assert(vmSymbols::java_lang_Object()->utf8_length() == jl_object_len &&
+         vmSymbols::java_lang_Object()->starts_with(jl_str, jl_len) &&
+         vmSymbols::java_lang_Object()->ends_with("Object", object_len) &&
+         vmSymbols::java_lang_Object()->is_permanent() &&
+         vmSymbols::java_lang_String()->utf8_length() == jl_object_len &&
+         vmSymbols::java_lang_String()->starts_with(jl_str, jl_len) &&
+         vmSymbols::java_lang_String()->ends_with("String", object_len) &&
+         vmSymbols::java_lang_String()->is_permanent(),
+         "sanity");
+  return true;
+}
+#endif //ASSERT
+
+// returns a symbol; the caller is responsible for decrementing it
+Symbol* SignatureStream::find_symbol() {
   // Create a symbol from for string _begin _end
-  int begin = _begin;
-  int end   = _end;
-
-  if (   _signature->char_at(_begin) == JVM_SIGNATURE_CLASS
-      && _signature->char_at(_end-1) == JVM_SIGNATURE_ENDCLASS) {
-    begin++;
-    end--;
-  }
+  int begin = raw_symbol_begin();
+  int end   = raw_symbol_end();
 
   const char* symbol_chars = (const char*)_signature->base() + begin;
   int len = end - begin;
 
   // Quick check for common symbols in signatures
-  assert((vmSymbols::java_lang_String()->utf8_length() == 16 && vmSymbols::java_lang_Object()->utf8_length() == 16), "sanity");
-  if (len == 16 &&
-      strncmp(symbol_chars, "java/lang/", 10) == 0) {
-    if (strncmp("String", symbol_chars + 10, 6) == 0) {
+  assert(signature_symbols_sane(), "incorrect signature sanity check");
+  if (len == jl_object_len &&
+      memcmp(symbol_chars, jl_str, jl_len) == 0) {
+    if (memcmp("String", symbol_chars + jl_len, object_len) == 0) {
       return vmSymbols::java_lang_String();
-    } else if (strncmp("Object", symbol_chars + 10, 6) == 0) {
+    } else if (memcmp("Object", symbol_chars + jl_len, object_len) == 0) {
       return vmSymbols::java_lang_Object();
     }
   }
@@ -369,7 +372,17 @@ Symbol* SignatureStream::as_symbol() {
   // Save names for cleaning up reference count at the end of
   // SignatureStream scope.
   name = SymbolTable::new_symbol(symbol_chars, len);
-  if (!name->is_permanent()) {
+
+  // Only allocate the GrowableArray for the _names buffer if more than
+  // one name is being processed in the signature.
+  if (_previous_name != NULL &&
+      !_previous_name->is_permanent() &&
+      !name->is_permanent() &&
+      _names == NULL) {
+    _names =  new GrowableArray<Symbol*>(10);
+    _names->push(_previous_name);
+  }
+  if (!name->is_permanent() && _previous_name != NULL) {
     if (_names == NULL) {
       _names = new GrowableArray<Symbol*>(10);
     }
@@ -381,57 +394,67 @@ Symbol* SignatureStream::as_symbol() {
 
 Klass* SignatureStream::as_klass(Handle class_loader, Handle protection_domain,
                                  FailureMode failure_mode, TRAPS) {
-  if (!is_object())  return NULL;
+  if (!is_reference())  return NULL;
   Symbol* name = as_symbol();
+  Klass* k = NULL;
   if (failure_mode == ReturnNull) {
-    return SystemDictionary::resolve_or_null(name, class_loader, protection_domain, THREAD);
+    // Note:  SD::resolve_or_null returns NULL for most failure modes,
+    // but not all.  Circularity errors, invalid PDs, etc., throw.
+    k = SystemDictionary::resolve_or_null(name, class_loader, protection_domain, CHECK_NULL);
+  } else if (failure_mode == CachedOrNull) {
+    NoSafepointVerifier nsv;  // no loading, now, we mean it!
+    assert(!HAS_PENDING_EXCEPTION, "");
+    k = SystemDictionary::find(name, class_loader, protection_domain, CHECK_NULL);
+    // SD::find does not trigger loading, so there should be no throws
+    // Still, bad things can happen, so we CHECK_NULL and ask callers
+    // to do likewise.
+    return k;
   } else {
+    // The only remaining failure mode is NCDFError.
+    // The test here allows for an additional mode CNFException
+    // if callers need to request the reflective error instead.
     bool throw_error = (failure_mode == NCDFError);
-    return SystemDictionary::resolve_or_fail(name, class_loader, protection_domain, throw_error, THREAD);
+    k = SystemDictionary::resolve_or_fail(name, class_loader, protection_domain, throw_error, CHECK_NULL);
   }
+
+  return k;
 }
 
 oop SignatureStream::as_java_mirror(Handle class_loader, Handle protection_domain,
                                     FailureMode failure_mode, TRAPS) {
-  if (!is_object())
+  if (!is_reference())
     return Universe::java_mirror(type());
   Klass* klass = as_klass(class_loader, protection_domain, failure_mode, CHECK_NULL);
   if (klass == NULL)  return NULL;
   return klass->java_mirror();
 }
 
-Symbol* SignatureStream::as_symbol_or_null() {
-  // Create a symbol from for string _begin _end
-  ResourceMark rm;
-
-  int begin = _begin;
-  int end   = _end;
-
-  if (   _signature->char_at(_begin) == JVM_SIGNATURE_CLASS
-      && _signature->char_at(_end-1) == JVM_SIGNATURE_ENDCLASS) {
-    begin++;
-    end--;
+void SignatureStream::skip_to_return_type() {
+  while (!at_return_type()) {
+    next();
   }
-
-  char* buffer = NEW_RESOURCE_ARRAY(char, end - begin);
-  for (int index = begin; index < end; index++) {
-    buffer[index - begin] = _signature->char_at(index);
-  }
-  Symbol* result = SymbolTable::probe(buffer, end - begin);
-  return result;
-}
-
-int SignatureStream::reference_parameter_count() {
-  int args_count = 0;
-  for ( ; !at_return_type(); next()) {
-    if (is_object()) {
-      args_count++;
-    }
-  }
-  return args_count;
 }
 
 #ifdef ASSERT
+
+extern bool signature_constants_sane(); // called from basic_types_init()
+
+bool signature_constants_sane() {
+  // for the lookup table, test every 8-bit code point, and then some:
+  for (int i = -256; i <= 256; i++) {
+    int btcode = 0;
+    switch (i) {
+#define EACH_SIG(ch, bt, ignore) \
+    case ch: { btcode = bt; break; }
+    SIGNATURE_TYPES_DO(EACH_SIG, ignore)
+#undef EACH_SIG
+    }
+    int btc = decode_signature_char(i);
+    assert(btc == btcode, "misconfigured table: %d => %d not %d", i, btc, btcode);
+  }
+  return true;
+}
+
 bool SignatureVerifier::is_valid_method_signature(Symbol* sig) {
   const char* method_sig = (const char*)sig->bytes();
   ssize_t len = sig->utf8_length();
@@ -476,8 +499,8 @@ ssize_t SignatureVerifier::is_valid_type(const char* type, ssize_t limit) {
   switch (type[index]) {
     case JVM_SIGNATURE_BYTE:
     case JVM_SIGNATURE_CHAR:
-    case JVM_SIGNATURE_DOUBLE:
     case JVM_SIGNATURE_FLOAT:
+    case JVM_SIGNATURE_DOUBLE:
     case JVM_SIGNATURE_INT:
     case JVM_SIGNATURE_LONG:
     case JVM_SIGNATURE_SHORT:
@@ -500,4 +523,5 @@ ssize_t SignatureVerifier::is_valid_type(const char* type, ssize_t limit) {
   }
   return -1;
 }
+
 #endif // ASSERT

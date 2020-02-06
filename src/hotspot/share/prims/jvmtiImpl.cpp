@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -570,8 +570,7 @@ bool VM_GetOrSetLocal::check_slot_type_lvt(javaVFrame* jvf) {
     return false;       // Incorrect slot index
   }
   Symbol*   sign_sym  = method_oop->constants()->symbol_at(signature_idx);
-  const char* signature = (const char *) sign_sym->as_utf8();
-  BasicType slot_type = char2type(signature[0]);
+  BasicType slot_type = Signature::basic_type(sign_sym);
 
   switch (slot_type) {
   case T_BYTE:
@@ -602,6 +601,7 @@ bool VM_GetOrSetLocal::check_slot_type_lvt(javaVFrame* jvf) {
     Klass* ob_k = obj->klass();
     NULL_CHECK(ob_k, (_result = JVMTI_ERROR_INVALID_OBJECT, false));
 
+    const char* signature = (const char *) sign_sym->as_utf8();
     if (!is_assignable(signature, ob_k, cur_thread)) {
       _result = JVMTI_ERROR_TYPE_MISMATCH;
       return false;

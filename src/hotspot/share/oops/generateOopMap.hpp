@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -403,7 +403,7 @@ class GenerateOopMap {
   void  do_monitorexit                      (int bci);
   void  do_return_monitor_check             ();
   void  do_checkcast                        ();
-  CellTypeState *sigchar_to_effect          (char sigch, int bci, CellTypeState *out);
+  CellTypeState *signature_to_effect        (const Symbol* sig, int bci, CellTypeState *out);
   int copy_cts                              (CellTypeState *dst, CellTypeState *src);
 
   // Error handling

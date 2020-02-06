@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,102 +25,232 @@
 #ifndef SHARE_RUNTIME_SIGNATURE_HPP
 #define SHARE_RUNTIME_SIGNATURE_HPP
 
+#include "classfile/symbolTable.hpp"
 #include "memory/allocation.hpp"
 #include "oops/method.hpp"
 
-// SignatureIterators iterate over a Java signature (or parts of it).
-// (Syntax according to: "The Java Virtual Machine Specification" by
-// Tim Lindholm & Frank Yellin; section 4.3 Descriptors; p. 89ff.)
+
+// Static routines and parsing loops for processing field and method
+// descriptors.  In the HotSpot sources we call them "signatures".
 //
-// Example: Iterating over ([Lfoo;D)I using
-//                         0123456789
+// A SignatureStream iterates over a Java descriptor (or parts of it).
+// The syntax is documented in the Java Virtual Machine Specification,
+// section 4.3.
 //
-// iterate_parameters() calls: do_array(2, 7); do_double();
-// iterate_returntype() calls:                              do_int();
-// iterate()            calls: do_array(2, 7); do_double(); do_int();
+// The syntax may be summarized as follows:
 //
-// is_return_type()        is: false         ; false      ; true
+//     MethodType: '(' {FieldType}* ')' (FieldType | 'V')
+//     FieldType: PrimitiveType | ObjectType | ArrayType
+//     PrimitiveType: 'B' | 'C' | 'D' | 'F' | 'I' | 'J' | 'S' | 'Z'
+//     ObjectType: 'L' ClassName ';' | ArrayType
+//     ArrayType: '[' FieldType
+//     ClassName: {UnqualifiedName '/'}* UnqualifiedName
+//     UnqualifiedName: NameChar {NameChar}*
+//     NameChar: ANY_CHAR_EXCEPT('/' | '.' | ';' | '[')
 //
-// NOTE: The new optimizer has an alternate, for-loop based signature
-// iterator implemented in opto/type.cpp, TypeTuple::make().
+// All of the concrete characters in the above grammar are given
+// standard manifest constant names of the form JVM_SIGNATURE_x.
+// Executable code uses these constant names in preference to raw
+// character constants.  Comments and assertion code sometimes use
+// the raw character constants for brevity.
+//
+// The primitive field types (like 'I') correspond 1-1 with type codes
+// (like T_INT) which form part of the specification of the 'newarray'
+// instruction (JVMS 6.5, section on newarray).  These type codes are
+// widely used in the HotSpot code.  They are joined by ad hoc codes
+// like T_OBJECT and T_ARRAY (defined in HotSpot but not in the JVMS)
+// so that each "basic type" of field descriptor (or void return type)
+// has a corresponding T_x code.  Thus, while T_x codes play a very
+// minor role in the JVMS, they play a major role in the HotSpot
+// sources.  There are fewer than 16 such "basic types", so they fit
+// nicely into bitfields.
+//
+// The syntax of ClassName overlaps slightly with the descriptor
+// syntaxes.  The strings "I" and "(I)V" are both class names
+// *and* descriptors.  If a class name contains any character other
+// than "BCDFIJSZ()V" it cannot be confused with a descriptor.
+// Class names inside of descriptors are always contained in an
+// "envelope" syntax which starts with 'L' and ends with ';'.
+//
+// As a confounding factor, array types report their type name strings
+// in descriptor format.  These name strings are easy to recognize,
+// since they begin with '['.  For this reason some API points on
+// HotSpot look for array descriptors as well as proper class names.
+//
+// For historical reasons some API points that accept class names and
+// array names also look for class names wrapped inside an envelope
+// (like "LFoo;") and unwrap them on the fly (to a name like "Foo").
+
+class Signature : AllStatic {
+ private:
+  static bool is_valid_array_signature(const Symbol* sig);
+
+ public:
+
+  // Returns the basic type of a field signature (or T_VOID for "V").
+  // Assumes the signature is a valid field descriptor.
+  // Do not apply this function to class names or method signatures.
+  static BasicType basic_type(const Symbol* signature) {
+    return basic_type(signature->char_at(0));
+  }
+
+  // Returns T_ILLEGAL for an illegal signature char.
+  static BasicType basic_type(int ch);
+
+  // Assuming it is either a class name or signature,
+  // determine if it in fact cannot be a class name.
+  // This means it either starts with '[' or ends with ';'
+  static bool not_class_name(const Symbol* signature) {
+    return (signature->starts_with(JVM_SIGNATURE_ARRAY) ||
+            signature->ends_with(JVM_SIGNATURE_ENDCLASS));
+  }
+
+  // Assuming it is either a class name or signature,
+  // determine if it in fact is an array descriptor.
+  static bool is_array(const Symbol* signature) {
+    return (signature->utf8_length() > 1 &&
+            signature->char_at(0) == JVM_SIGNATURE_ARRAY &&
+            is_valid_array_signature(signature));
+  }
+
+  // Assuming it is either a class name or signature,
+  // determine if it contains a class name plus ';'.
+  static bool has_envelope(const Symbol* signature) {
+    return ((signature->utf8_length() > 0) &&
+            signature->ends_with(JVM_SIGNATURE_ENDCLASS) &&
+            has_envelope(signature->char_at(0)));
+  }
+
+  // Determine if this signature char introduces an
+  // envelope, which is a class name plus ';'.
+  static bool has_envelope(char signature_char) {
+    return (signature_char == JVM_SIGNATURE_CLASS);
+  }
+
+  // Assuming has_envelope is true, return the symbol
+  // inside the envelope, by stripping 'L' and ';'.
+  // Caller is responsible for decrementing the newly created
+  // Symbol's refcount, use TempNewSymbol.
+  static Symbol* strip_envelope(const Symbol* signature) {
+    assert(has_envelope(signature), "precondition");
+    return SymbolTable::new_symbol((char*) signature->bytes() + 1,
+                                   signature->utf8_length() - 2);
+  }
+
+  // Assuming it's either a field or method descriptor, determine
+  // whether it is in fact a method descriptor:
+  static bool is_method(const Symbol* signature) {
+    return signature->starts_with(JVM_SIGNATURE_FUNC);
+  }
+
+  // Assuming it's a method signature, determine if it must
+  // return void.
+  static bool is_void_method(const Symbol* signature) {
+    assert(is_method(signature), "signature is not for a method");
+    return signature->ends_with(JVM_SIGNATURE_VOID);
+  }
+};
+
+// A SignatureIterator uses a SignatureStream to produce BasicType
+// results, discarding class names.  This means it can be accelerated
+// using a fingerprint mechanism, in many cases, without loss of type
+// information.  The FingerPrinter class computes and caches this
+// reduced information for faster iteration.
 
 class SignatureIterator: public ResourceObj {
+ public:
+  typedef uint64_t fingerprint_t;
+
  protected:
   Symbol*      _signature;             // the signature to iterate over
-  int          _index;                 // the current character index (only valid during iteration)
-  int          _parameter_index;       // the current parameter index (0 outside iteration phase)
   BasicType    _return_type;
-
-  void expect(char c);
-  int  parse_type();                   // returns the parameter size in words (0 for void)
-  void check_signature_end();
+  fingerprint_t _fingerprint;
 
  public:
   // Definitions used in generating and iterating the
   // bit field form of the signature generated by the
   // Fingerprinter.
   enum {
-    static_feature_size    = 1,
-    is_static_bit          = 1,
+    fp_static_feature_size    = 1,
+    fp_is_static_bit          = 1,
 
-    result_feature_size    = 4,
-    result_feature_mask    = 0xF,
-    parameter_feature_size = 4,
-    parameter_feature_mask = 0xF,
+    fp_result_feature_size    = 4,
+    fp_result_feature_mask    = right_n_bits(fp_result_feature_size),
+    fp_parameter_feature_size = 4,
+    fp_parameter_feature_mask = right_n_bits(fp_parameter_feature_size),
 
-      bool_parm            = 1,
-      byte_parm            = 2,
-      char_parm            = 3,
-      short_parm           = 4,
-      int_parm             = 5,
-      long_parm            = 6,
-      float_parm           = 7,
-      double_parm          = 8,
-      obj_parm             = 9,
-      done_parm            = 10,  // marker for end of parameters
+    fp_parameters_done        = 0,  // marker for end of parameters (must be zero)
 
-    // max parameters is wordsize minus
-    //    The sign bit, termination field, the result and static bit fields
-    max_size_of_parameters = (BitsPerLong-1 -
-                              result_feature_size - parameter_feature_size -
-                              static_feature_size) / parameter_feature_size
+    // Parameters take up full wordsize, minus the result and static bit fields.
+    // Since fp_parameters_done is zero, termination field arises from shifting
+    // in zero bits, and therefore occupies no extra space.
+    // The sentinel value is all-zero-bits, which is impossible for a true
+    // fingerprint, since at least the result field will be non-zero.
+    fp_max_size_of_parameters = ((BitsPerLong
+                                  - (fp_result_feature_size + fp_static_feature_size))
+                                 / fp_parameter_feature_size)
   };
 
+  static bool fp_is_valid_type(BasicType type, bool for_return_type = false);
+
+  // Sentinel values are zero and not-zero (-1).
+  // No need to protect the sign bit, since every valid return type is non-zero
+  // (even T_VOID), and there are no valid parameter fields which are 0xF (T_VOID).
+  static fingerprint_t zero_fingerprint() { return (fingerprint_t)0; }
+  static fingerprint_t overflow_fingerprint() { return ~(fingerprint_t)0; }
+  static bool fp_is_valid(fingerprint_t fingerprint) {
+    return (fingerprint != zero_fingerprint()) && (fingerprint != overflow_fingerprint());
+  }
+
   // Constructors
-  SignatureIterator(Symbol* signature);
+  SignatureIterator(Symbol* signature, fingerprint_t fingerprint = zero_fingerprint()) {
+    _signature   = signature;
+    _return_type = T_ILLEGAL;  // sentinel value for uninitialized
+    _fingerprint = zero_fingerprint();
+    if (fingerprint != _fingerprint) {
+      set_fingerprint(fingerprint);
+    }
+  }
+
+  // If the fingerprint is present, we can use an accelerated loop.
+  void set_fingerprint(fingerprint_t fingerprint);
+
+  // Returns the set fingerprint, or zero_fingerprint()
+  // if none has been set already.
+  fingerprint_t fingerprint() const { return _fingerprint; }
 
   // Iteration
-  void iterate_parameters();           // iterates over parameters only
-  void iterate_parameters( uint64_t fingerprint );
-  void iterate_returntype();           // iterates over returntype only
-  void iterate();                      // iterates over whole signature
-  // Returns the word index of the current parameter;
-  int  parameter_index() const         { return _parameter_index; }
-  bool is_return_type() const          { return parameter_index() < 0; }
-  BasicType get_ret_type() const       { return _return_type; }
+  // Hey look:  There are no virtual methods in this class.
+  // So how is it customized?  By calling do_parameters_on
+  // an object which answers to "do_type(BasicType)".
+  // By convention, this object is in the subclass
+  // itself, so the call is "do_parameters_on(this)".
+  // The effect of this is to inline the parsing loop
+  // everywhere "do_parameters_on" is called.
+  // If there is a valid fingerprint in the object,
+  // an improved loop is called which just unpacks the
+  // bitfields from the fingerprint.  Otherwise, the
+  // symbol is parsed.
+  template<typename T> inline void do_parameters_on(T* callback); // iterates over parameters only
+  void skip_parameters();   // skips over parameters to find return type
+  BasicType return_type();  // computes the value on the fly if necessary
 
-  // Basic types
-  virtual void do_bool  ()             = 0;
-  virtual void do_char  ()             = 0;
-  virtual void do_float ()             = 0;
-  virtual void do_double()             = 0;
-  virtual void do_byte  ()             = 0;
-  virtual void do_short ()             = 0;
-  virtual void do_int   ()             = 0;
-  virtual void do_long  ()             = 0;
-  virtual void do_void  ()             = 0;
-
-  // Object types (begin indexes the first character of the entry, end indexes the first character after the entry)
-  virtual void do_object(int begin, int end) = 0;
-  virtual void do_array (int begin, int end) = 0;
-
-  static bool is_static(uint64_t fingerprint) {
-    assert(fingerprint != (uint64_t)CONST64(-1), "invalid fingerprint");
-    return fingerprint & is_static_bit;
+  static bool fp_is_static(fingerprint_t fingerprint) {
+    assert(fp_is_valid(fingerprint), "invalid fingerprint");
+    return fingerprint & fp_is_static_bit;
   }
-  static BasicType return_type(uint64_t fingerprint) {
-    assert(fingerprint != (uint64_t)CONST64(-1), "invalid fingerprint");
-    return (BasicType) ((fingerprint >> static_feature_size) & result_feature_mask);
+  static BasicType fp_return_type(fingerprint_t fingerprint) {
+    assert(fp_is_valid(fingerprint), "invalid fingerprint");
+    return (BasicType) ((fingerprint >> fp_static_feature_size) & fp_result_feature_mask);
+  }
+  static fingerprint_t fp_start_parameters(fingerprint_t fingerprint) {
+    assert(fp_is_valid(fingerprint), "invalid fingerprint");
+    return fingerprint >> (fp_static_feature_size + fp_result_feature_size);
+  }
+  static BasicType fp_next_parameter(fingerprint_t& mask) {
+    int result = (mask & fp_parameter_feature_mask);
+    mask >>= fp_parameter_feature_size;
+    return (BasicType) result;
   }
 };
 
@@ -131,87 +261,70 @@ class SignatureTypeNames : public SignatureIterator {
  protected:
   virtual void type_name(const char* name)   = 0;
 
-  void do_bool()                       { type_name("jboolean"); }
-  void do_char()                       { type_name("jchar"   ); }
-  void do_float()                      { type_name("jfloat"  ); }
-  void do_double()                     { type_name("jdouble" ); }
-  void do_byte()                       { type_name("jbyte"   ); }
-  void do_short()                      { type_name("jshort"  ); }
-  void do_int()                        { type_name("jint"    ); }
-  void do_long()                       { type_name("jlong"   ); }
-  void do_void()                       { type_name("void"    ); }
-  void do_object(int begin, int end)   { type_name("jobject" ); }
-  void do_array (int begin, int end)   { type_name("jobject" ); }
+  friend class SignatureIterator;  // so do_parameters_on can call do_type
+  void do_type(BasicType type) {
+    switch (type) {
+    case T_BOOLEAN: type_name("jboolean"); break;
+    case T_CHAR:    type_name("jchar"   ); break;
+    case T_FLOAT:   type_name("jfloat"  ); break;
+    case T_DOUBLE:  type_name("jdouble" ); break;
+    case T_BYTE:    type_name("jbyte"   ); break;
+    case T_SHORT:   type_name("jshort"  ); break;
+    case T_INT:     type_name("jint"    ); break;
+    case T_LONG:    type_name("jlong"   ); break;
+    case T_VOID:    type_name("void"    ); break;
+    case T_ARRAY:
+    case T_OBJECT:  type_name("jobject" ); break;
+    default: ShouldNotReachHere();
+    }
+  }
 
  public:
   SignatureTypeNames(Symbol* signature) : SignatureIterator(signature) {}
 };
 
 
-class SignatureInfo: public SignatureIterator {
- protected:
-  bool      _has_iterated;             // need this because iterate cannot be called in constructor (set is virtual!)
-  bool      _has_iterated_return;
-  int       _size;
-
-  void lazy_iterate_parameters()       { if (!_has_iterated) { iterate_parameters(); _has_iterated = true; } }
-  void lazy_iterate_return()           { if (!_has_iterated_return) { iterate_returntype(); _has_iterated_return = true; } }
-
-  virtual void set(int size, BasicType type) = 0;
-
-  void do_bool  ()                     { set(T_BOOLEAN_size, T_BOOLEAN); }
-  void do_char  ()                     { set(T_CHAR_size   , T_CHAR   ); }
-  void do_float ()                     { set(T_FLOAT_size  , T_FLOAT  ); }
-  void do_double()                     { set(T_DOUBLE_size , T_DOUBLE ); }
-  void do_byte  ()                     { set(T_BYTE_size   , T_BYTE   ); }
-  void do_short ()                     { set(T_SHORT_size  , T_SHORT  ); }
-  void do_int   ()                     { set(T_INT_size    , T_INT    ); }
-  void do_long  ()                     { set(T_LONG_size   , T_LONG   ); }
-  void do_void  ()                     { set(T_VOID_size   , T_VOID   ); }
-  void do_object(int begin, int end)   { set(T_OBJECT_size , T_OBJECT ); }
-  void do_array (int begin, int end)   { set(T_ARRAY_size  , T_ARRAY  ); }
-
- public:
-  SignatureInfo(Symbol* signature) : SignatureIterator(signature) {
-    _has_iterated = _has_iterated_return = false;
-    _size         = 0;
-    _return_type  = T_ILLEGAL;
-  }
-
-};
-
-
 // Specialized SignatureIterator: Used to compute the argument size.
 
-class ArgumentSizeComputer: public SignatureInfo {
+class ArgumentSizeComputer: public SignatureIterator {
  private:
-  void set(int size, BasicType type)   { _size += size; }
+  int _size;
+  friend class SignatureIterator;  // so do_parameters_on can call do_type
+  void do_type(BasicType type) { _size += parameter_type_word_count(type); }
  public:
-  ArgumentSizeComputer(Symbol* signature) : SignatureInfo(signature) {}
-
-  int       size()                     { lazy_iterate_parameters(); return _size; }
+  ArgumentSizeComputer(Symbol* signature);
+  int size() { return _size; }
 };
 
 
-class ArgumentCount: public SignatureInfo {
+class ArgumentCount: public SignatureIterator {
  private:
-  void set(int size, BasicType type)   { _size ++; }
+  int _size;
+  friend class SignatureIterator;  // so do_parameters_on can call do_type
+  void do_type(BasicType type) { _size++; }
  public:
-  ArgumentCount(Symbol* signature) : SignatureInfo(signature) {}
+  ArgumentCount(Symbol* signature);
+  int size() { return _size; }
+};
 
-  int       size()                     { lazy_iterate_parameters(); return _size; }
+
+class ReferenceArgumentCount: public SignatureIterator {
+ private:
+  int _refs;
+  friend class SignatureIterator;  // so do_parameters_on can call do_type
+  void do_type(BasicType type) { if (is_reference_type(type)) _refs++; }
+ public:
+  ReferenceArgumentCount(Symbol* signature);
+  int count() { return _refs; }
 };
 
 
 // Specialized SignatureIterator: Used to compute the result type.
 
-class ResultTypeFinder: public SignatureInfo {
- private:
-  void set(int size, BasicType type)   { _return_type = type; }
+class ResultTypeFinder: public SignatureIterator {
  public:
-  BasicType type()                     { lazy_iterate_return(); return _return_type; }
-
-  ResultTypeFinder(Symbol* signature) : SignatureInfo(signature) {}
+  BasicType type() { return return_type(); }
+  ResultTypeFinder(Symbol* signature) : SignatureIterator(signature) { }
 };
 
 
@@ -219,52 +332,41 @@ class ResultTypeFinder: public SignatureInfo {
 // is a bitvector characterizing the methods signature (incl. the receiver).
 class Fingerprinter: public SignatureIterator {
  private:
-  uint64_t _fingerprint;
+  fingerprint_t _accumulator;
+  int _param_size;
   int _shift_count;
-  methodHandle mh;
+  const Method* _method;
 
- public:
-
-  void do_bool()    { _fingerprint |= (((uint64_t)bool_parm) << _shift_count); _shift_count += parameter_feature_size; }
-  void do_char()    { _fingerprint |= (((uint64_t)char_parm) << _shift_count); _shift_count += parameter_feature_size; }
-  void do_byte()    { _fingerprint |= (((uint64_t)byte_parm) << _shift_count); _shift_count += parameter_feature_size; }
-  void do_short()   { _fingerprint |= (((uint64_t)short_parm) << _shift_count); _shift_count += parameter_feature_size; }
-  void do_int()     { _fingerprint |= (((uint64_t)int_parm) << _shift_count); _shift_count += parameter_feature_size; }
-  void do_long()    { _fingerprint |= (((uint64_t)long_parm) << _shift_count); _shift_count += parameter_feature_size; }
-  void do_float()   { _fingerprint |= (((uint64_t)float_parm) << _shift_count); _shift_count += parameter_feature_size; }
-  void do_double()  { _fingerprint |= (((uint64_t)double_parm) << _shift_count); _shift_count += parameter_feature_size; }
-
-  void do_object(int begin, int end)  { _fingerprint |= (((uint64_t)obj_parm) << _shift_count); _shift_count += parameter_feature_size; }
-  void do_array (int begin, int end)  { _fingerprint |= (((uint64_t)obj_parm) << _shift_count); _shift_count += parameter_feature_size; }
-
-  void do_void()    { ShouldNotReachHere(); }
-
-  Fingerprinter(const methodHandle& method) : SignatureIterator(method->signature()) {
-    mh = method;
-    _fingerprint = 0;
+  void initialize_accumulator() {
+    _accumulator = 0;
+    _shift_count = fp_result_feature_size + fp_static_feature_size;
+    _param_size = 0;
   }
 
-  uint64_t fingerprint() {
-    // See if we fingerprinted this method already
-    if (mh->constMethod()->fingerprint() != CONST64(0)) {
-      return mh->constMethod()->fingerprint();
-    }
+  // Out-of-line method does it all in constructor:
+  void compute_fingerprint_and_return_type(bool static_flag = false);
 
-    if (mh->size_of_parameters() > max_size_of_parameters ) {
-      _fingerprint = (uint64_t)CONST64(-1);
-      mh->constMethod()->set_fingerprint(_fingerprint);
-      return _fingerprint;
-    }
+  friend class SignatureIterator;  // so do_parameters_on can call do_type
+  void do_type(BasicType type) {
+    assert(fp_is_valid_type(type), "bad parameter type");
+    _accumulator |= ((fingerprint_t)type << _shift_count);
+    _shift_count += fp_parameter_feature_size;
+    _param_size += (is_double_word_type(type) ? 2 : 1);
+  }
 
-    assert( (int)mh->result_type() <= (int)result_feature_mask, "bad result type");
-    _fingerprint = mh->result_type();
-    _fingerprint <<= static_feature_size;
-    if (mh->is_static())  _fingerprint |= 1;
-    _shift_count = result_feature_size + static_feature_size;
-    iterate_parameters();
-    _fingerprint |= ((uint64_t)done_parm) << _shift_count;// mark end of sig
-    mh->constMethod()->set_fingerprint(_fingerprint);
-    return _fingerprint;
+ public:
+  int size_of_parameters() const { return _param_size; }
+  // fingerprint() and return_type() are in super class
+
+  Fingerprinter(const methodHandle& method)
+    : SignatureIterator(method->signature()),
+      _method(method()) {
+    compute_fingerprint_and_return_type();
+  }
+  Fingerprinter(Symbol* signature, bool is_static)
+    : SignatureIterator(signature),
+      _method(NULL) {
+    compute_fingerprint_and_return_type(is_static);
   }
 };
 
@@ -281,35 +383,46 @@ class NativeSignatureIterator: public SignatureIterator {
   int          _prepended;             // number of prepended JNI parameters (1 JNIEnv, plus 1 mirror if static)
   int          _jni_offset;            // the current parameter offset, starting with 0
 
-  void do_bool  ()                     { pass_int();    _jni_offset++; _offset++;       }
-  void do_char  ()                     { pass_int();    _jni_offset++; _offset++;       }
-  void do_float ()                     { pass_float();  _jni_offset++; _offset++;       }
-#ifdef _LP64
-  void do_double()                     { pass_double(); _jni_offset++; _offset += 2;    }
-#else
-  void do_double()                     { pass_double(); _jni_offset += 2; _offset += 2; }
-#endif
-  void do_byte  ()                     { pass_int();    _jni_offset++; _offset++;       }
-  void do_short ()                     { pass_int();    _jni_offset++; _offset++;       }
-  void do_int   ()                     { pass_int();    _jni_offset++; _offset++;       }
-#ifdef _LP64
-  void do_long  ()                     { pass_long();   _jni_offset++; _offset += 2;    }
-#else
-  void do_long  ()                     { pass_long();   _jni_offset += 2; _offset += 2; }
-#endif
-  void do_void  ()                     { ShouldNotReachHere();                               }
-  void do_object(int begin, int end)   { pass_object(); _jni_offset++; _offset++;        }
-  void do_array (int begin, int end)   { pass_object(); _jni_offset++; _offset++;        }
+  friend class SignatureIterator;  // so do_parameters_on can call do_type
+  void do_type(BasicType type) {
+    switch (type) {
+    case T_BYTE:
+    case T_SHORT:
+    case T_INT:
+    case T_BOOLEAN:
+    case T_CHAR:
+      pass_int();    _jni_offset++; _offset++;
+      break;
+    case T_FLOAT:
+      pass_float();  _jni_offset++; _offset++;
+      break;
+    case T_DOUBLE: {
+      int jni_offset = LP64_ONLY(1) NOT_LP64(2);
+      pass_double(); _jni_offset += jni_offset; _offset += 2;
+      break;
+    }
+    case T_LONG: {
+      int jni_offset = LP64_ONLY(1) NOT_LP64(2);
+      pass_long();   _jni_offset += jni_offset; _offset += 2;
+      break;
+    }
+    case T_ARRAY:
+    case T_OBJECT:
+      pass_object(); _jni_offset++; _offset++;
+      break;
+    default:
+      ShouldNotReachHere();
+    }
+  }
 
  public:
   methodHandle method() const          { return _method; }
   int          offset() const          { return _offset; }
   int      jni_offset() const          { return _jni_offset + _prepended; }
-//  int     java_offset() const          { return method()->size_of_parameters() - _offset - 1; }
   bool      is_static() const          { return method()->is_static(); }
   virtual void pass_int()              = 0;
   virtual void pass_long()             = 0;
-  virtual void pass_object()           = 0;
+  virtual void pass_object()           = 0;  // objects, arrays, inlines
   virtual void pass_float()            = 0;
 #ifdef _LP64
   virtual void pass_double()           = 0;
@@ -327,7 +440,9 @@ class NativeSignatureIterator: public SignatureIterator {
     _prepended = !is_static() ? JNIEnv_words : JNIEnv_words + mirror_words;
   }
 
-  // iterate() calles the 2 virtual methods according to the following invocation syntax:
+  void iterate() { iterate(Fingerprinter(method()).fingerprint()); }
+
+  // iterate() calls the 3 virtual methods according to the following invocation syntax:
   //
   // {pass_int | pass_long | pass_object}
   //
@@ -335,87 +450,132 @@ class NativeSignatureIterator: public SignatureIterator {
   // The offset() values refer to the Java stack offsets but are 0 based and increasing.
   // The java_offset() values count down to 0, and refer to the Java TOS.
   // The jni_offset() values increase from 1 or 2, and refer to C arguments.
+  // The method's return type is ignored.
 
-  void iterate() { iterate(Fingerprinter(method()).fingerprint());
-  }
-
-
-  // Optimized path if we have the bitvector form of signature
-  void iterate( uint64_t fingerprint ) {
-
+  void iterate(fingerprint_t fingerprint) {
+    set_fingerprint(fingerprint);
     if (!is_static()) {
       // handle receiver (not handled by iterate because not in signature)
       pass_object(); _jni_offset++; _offset++;
     }
-
-    SignatureIterator::iterate_parameters( fingerprint );
+    do_parameters_on(this);
   }
 };
 
 
-// Handy stream for iterating over signature
+// This is the core parsing logic for iterating over signatures.
+// All of the previous classes use this for doing their work.
 
 class SignatureStream : public StackObj {
  private:
-  Symbol*      _signature;
+  const Symbol* _signature;
   int          _begin;
   int          _end;
+  int          _limit;
+  int          _array_prefix;  // count of '[' before the array element descr
   BasicType    _type;
-  bool         _at_return_type;
-  Symbol*      _previous_name;     // cache the previously looked up symbol to avoid lookups
-  GrowableArray<Symbol*>* _names;  // symbols created while parsing that need to be dereferenced
- public:
-  bool at_return_type() const                    { return _at_return_type; }
-  bool is_done() const;
-  void next_non_primitive(int t);
-  void next() {
-    Symbol* sig = _signature;
-    int len = sig->utf8_length();
-    if (_end >= len) {
-      _end = len + 1;
-      return;
-    }
+  int          _state;
+  Symbol*      _previous_name;    // cache the previously looked up symbol to avoid lookups
+  GrowableArray<Symbol*>* _names; // symbols created while parsing that need to be dereferenced
 
-    _begin = _end;
-    int t = sig->char_at(_begin);
-    switch (t) {
-      case JVM_SIGNATURE_BYTE:    _type = T_BYTE;    break;
-      case JVM_SIGNATURE_CHAR:    _type = T_CHAR;    break;
-      case JVM_SIGNATURE_DOUBLE:  _type = T_DOUBLE;  break;
-      case JVM_SIGNATURE_FLOAT:   _type = T_FLOAT;   break;
-      case JVM_SIGNATURE_INT:     _type = T_INT;     break;
-      case JVM_SIGNATURE_LONG:    _type = T_LONG;    break;
-      case JVM_SIGNATURE_SHORT:   _type = T_SHORT;   break;
-      case JVM_SIGNATURE_BOOLEAN: _type = T_BOOLEAN; break;
-      case JVM_SIGNATURE_VOID:    _type = T_VOID;    break;
-      default : next_non_primitive(t);
-                return;
-    }
-    _end++;
+  inline int scan_non_primitive(BasicType type);
+
+  Symbol* find_symbol();
+
+  enum { _s_field = 0, _s_method = 1, _s_method_return = 3 };
+  void set_done() {
+    _state |= -2;   // preserve s_method bit
+    assert(is_done(), "Unable to set state to done");
   }
 
-  SignatureStream(Symbol* signature, bool is_method = true);
+ public:
+  bool is_method_signature() const               { return (_state & (int)_s_method) != 0; }
+  bool at_return_type() const                    { return _state == (int)_s_method_return; }
+  bool is_done() const                           { return _state < 0; }
+  void next();
+
+  SignatureStream(const Symbol* signature, bool is_method = true);
   ~SignatureStream();
 
-  bool is_object() const;                        // True if this argument is an object
-  bool is_array() const;                         // True if this argument is an array
-  BasicType type() const                         { return _type; }
-  Symbol* as_symbol();
-  enum FailureMode { ReturnNull, NCDFError };
+  bool is_reference() const { return is_reference_type(_type); }
+  bool is_array() const     { return _type == T_ARRAY; }
+  bool is_primitive() const { return is_java_primitive(_type); }
+  BasicType type() const    { return _type; }
+
+  const u1* raw_bytes() const  { return _signature->bytes() + _begin; }
+  int       raw_length() const { return _end - _begin; }
+  int       raw_begin() const  { return _begin; }
+  int       raw_end() const    { return _end; }
+  int raw_symbol_begin() const { return _begin + (has_envelope() ? 1 : 0); }
+  int raw_symbol_end() const   { return _end  -  (has_envelope() ? 1 : 0); }
+  char raw_char_at(int i) const {
+    assert(i < _limit, "index for raw_char_at is over the limit");
+    return _signature->char_at(i);
+  }
+
+  // True if there is an embedded class name in this type,
+  // followed by ';'.
+  bool has_envelope() const {
+    if (!Signature::has_envelope(_signature->char_at(_begin)))
+      return false;
+    // this should always be true, but let's test it:
+    assert(_signature->char_at(_end-1) == JVM_SIGNATURE_ENDCLASS, "signature envelope has no semi-colon at end");
+    return true;
+  }
+
+  // return the symbol for chars in symbol_begin()..symbol_end()
+  Symbol* as_symbol() {
+    return find_symbol();
+  }
+
+  // in case you want only the return type:
+  void skip_to_return_type();
+
+  // number of '[' in array prefix
+  int array_prefix_length() {
+    return _type == T_ARRAY ? _array_prefix : 0;
+  }
+
+  // In case you want only the array base type,
+  // reset the stream after skipping some brackets '['.
+  // (The argument is clipped to array_prefix_length(),
+  // and if it ends up as zero this call is a nop.
+  // The default is value skips all brackets '['.)
+  int skip_array_prefix(int prefix_length = 9999);
+
+  // free-standing lookups (bring your own CL/PD pair)
+  enum FailureMode { ReturnNull, NCDFError, CachedOrNull };
   Klass* as_klass(Handle class_loader, Handle protection_domain, FailureMode failure_mode, TRAPS);
   oop as_java_mirror(Handle class_loader, Handle protection_domain, FailureMode failure_mode, TRAPS);
-  const u1* raw_bytes()  { return _signature->bytes() + _begin; }
-  int       raw_length() { return _end - _begin; }
-
-  // return same as_symbol except allocation of new symbols is avoided.
-  Symbol* as_symbol_or_null();
-
-  // count the number of references in the signature
-  int reference_parameter_count();
 };
 
-#ifdef ASSERT
-class SignatureVerifier : public StackObj {
+// Here is how all the SignatureIterator classes invoke the
+// SignatureStream engine to do their parsing.
+template<typename T> inline
+void SignatureIterator::do_parameters_on(T* callback) {
+  fingerprint_t unaccumulator = _fingerprint;
+
+  // Check for too many arguments, or missing fingerprint:
+  if (!fp_is_valid(unaccumulator)) {
+    SignatureStream ss(_signature);
+    for (; !ss.at_return_type(); ss.next()) {
+      callback->do_type(ss.type());
+    }
+    // while we are here, capture the return type
+    _return_type = ss.type();
+  } else {
+    // Optimized version of do_parameters when fingerprint is known
+    assert(_return_type != T_ILLEGAL, "return type already captured from fp");
+    unaccumulator = fp_start_parameters(unaccumulator);
+    for (BasicType type; (type = fp_next_parameter(unaccumulator)) != (BasicType)fp_parameters_done; ) {
+      assert(fp_is_valid_type(type), "garbled fingerprint");
+      callback->do_type(type);
+    }
+  }
+}
+
+ #ifdef ASSERT
+ class SignatureVerifier : public StackObj {
   public:
     static bool is_valid_method_signature(Symbol* sig);
     static bool is_valid_type_signature(Symbol* sig);

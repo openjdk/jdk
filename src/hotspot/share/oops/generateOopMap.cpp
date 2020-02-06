@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -114,22 +114,22 @@ class ComputeCallStack : public SignatureIterator {
   void set(CellTypeState state)         { _effect[_idx++] = state; }
   int  length()                         { return _idx; };
 
-  virtual void do_bool  ()              { set(CellTypeState::value); };
-  virtual void do_char  ()              { set(CellTypeState::value); };
-  virtual void do_float ()              { set(CellTypeState::value); };
-  virtual void do_byte  ()              { set(CellTypeState::value); };
-  virtual void do_short ()              { set(CellTypeState::value); };
-  virtual void do_int   ()              { set(CellTypeState::value); };
-  virtual void do_void  ()              { set(CellTypeState::bottom);};
-  virtual void do_object(int begin, int end)  { set(CellTypeState::ref); };
-  virtual void do_array (int begin, int end)  { set(CellTypeState::ref); };
+  friend class SignatureIterator;  // so do_parameters_on can call do_type
+  void do_type(BasicType type, bool for_return = false) {
+    if (for_return && type == T_VOID) {
+      set(CellTypeState::bottom);
+    } else if (is_reference_type(type)) {
+      set(CellTypeState::ref);
+    } else {
+      assert(is_java_primitive(type), "");
+      set(CellTypeState::value);
+      if (is_double_word_type(type)) {
+        set(CellTypeState::value);
+      }
+    }
+  }
 
-  void do_double()                      { set(CellTypeState::value);
-                                          set(CellTypeState::value); }
-  void do_long  ()                      { set(CellTypeState::value);
-                                           set(CellTypeState::value); }
-
-public:
+ public:
   ComputeCallStack(Symbol* signature) : SignatureIterator(signature) {};
 
   // Compute methods
@@ -140,7 +140,7 @@ public:
     if (!is_static)
       effect[_idx++] = CellTypeState::ref;
 
-    iterate_parameters();
+    do_parameters_on(this);
 
     return length();
   };
@@ -148,7 +148,7 @@ public:
   int compute_for_returntype(CellTypeState *effect) {
     _idx    = 0;
     _effect = effect;
-    iterate_returntype();
+    do_type(return_type(), true);
     set(CellTypeState::bottom);  // Always terminate with a bottom state, so ppush works
 
     return length();
@@ -168,22 +168,22 @@ class ComputeEntryStack : public SignatureIterator {
   void set(CellTypeState state)         { _effect[_idx++] = state; }
   int  length()                         { return _idx; };
 
-  virtual void do_bool  ()              { set(CellTypeState::value); };
-  virtual void do_char  ()              { set(CellTypeState::value); };
-  virtual void do_float ()              { set(CellTypeState::value); };
-  virtual void do_byte  ()              { set(CellTypeState::value); };
-  virtual void do_short ()              { set(CellTypeState::value); };
-  virtual void do_int   ()              { set(CellTypeState::value); };
-  virtual void do_void  ()              { set(CellTypeState::bottom);};
-  virtual void do_object(int begin, int end)  { set(CellTypeState::make_slot_ref(_idx)); }
-  virtual void do_array (int begin, int end)  { set(CellTypeState::make_slot_ref(_idx)); }
+  friend class SignatureIterator;  // so do_parameters_on can call do_type
+  void do_type(BasicType type, bool for_return = false) {
+    if (for_return && type == T_VOID) {
+      set(CellTypeState::bottom);
+    } else if (is_reference_type(type)) {
+      set(CellTypeState::make_slot_ref(_idx));
+    } else {
+      assert(is_java_primitive(type), "");
+      set(CellTypeState::value);
+      if (is_double_word_type(type)) {
+        set(CellTypeState::value);
+      }
+    }
+  }
 
-  void do_double()                      { set(CellTypeState::value);
-                                          set(CellTypeState::value); }
-  void do_long  ()                      { set(CellTypeState::value);
-                                          set(CellTypeState::value); }
-
-public:
+ public:
   ComputeEntryStack(Symbol* signature) : SignatureIterator(signature) {};
 
   // Compute methods
@@ -194,7 +194,7 @@ public:
     if (!is_static)
       effect[_idx++] = CellTypeState::make_slot_ref(0);
 
-    iterate_parameters();
+    do_parameters_on(this);
 
     return length();
   };
@@ -202,7 +202,7 @@ public:
   int compute_for_returntype(CellTypeState *effect) {
     _idx    = 0;
     _effect = effect;
-    iterate_returntype();
+    do_type(return_type(), true);
     set(CellTypeState::bottom);  // Always terminate with a bottom state, so ppush works
 
     return length();
@@ -1930,12 +1930,8 @@ void GenerateOopMap::do_field(int is_get, int is_static, int idx, int bci) {
   int signatureIdx       = cp->signature_ref_index_at(nameAndTypeIdx);
   Symbol* signature      = cp->symbol_at(signatureIdx);
 
-  // Parse signature (espcially simple for fields)
-  assert(signature->utf8_length() > 0, "field signatures cannot have zero length");
-  // The signature is UFT8 encoded, but the first char is always ASCII for signatures.
-  char sigch = (char)*(signature->base());
   CellTypeState temp[4];
-  CellTypeState *eff  = sigchar_to_effect(sigch, bci, temp);
+  CellTypeState *eff  = signature_to_effect(signature, bci, temp);
 
   CellTypeState in[4];
   CellTypeState *out;
@@ -1991,16 +1987,17 @@ void GenerateOopMap::do_method(int is_static, int is_interface, int idx, int bci
 }
 
 // This is used to parse the signature for fields, since they are very simple...
-CellTypeState *GenerateOopMap::sigchar_to_effect(char sigch, int bci, CellTypeState *out) {
+CellTypeState *GenerateOopMap::signature_to_effect(const Symbol* sig, int bci, CellTypeState *out) {
   // Object and array
-  if (sigch==JVM_SIGNATURE_CLASS || sigch==JVM_SIGNATURE_ARRAY) {
+  BasicType bt = Signature::basic_type(sig);
+  if (is_reference_type(bt)) {
     out[0] = CellTypeState::make_line_ref(bci);
     out[1] = CellTypeState::bottom;
     return out;
   }
-  if (sigch == JVM_SIGNATURE_LONG || sigch == JVM_SIGNATURE_DOUBLE) return vvCTS;  // Long and Double
-  if (sigch == JVM_SIGNATURE_VOID) return epsilonCTS; // Void
-  return vCTS;                                        // Otherwise
+  if (is_double_word_type(bt)) return vvCTS; // Long and Double
+  if (bt == T_VOID) return epsilonCTS;       // Void
+  return vCTS;                               // Otherwise
 }
 
 long GenerateOopMap::_total_byte_count = 0;

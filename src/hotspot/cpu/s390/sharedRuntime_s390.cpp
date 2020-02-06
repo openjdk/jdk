@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2019, SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -1626,27 +1626,15 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
     for (int i = 0; i < total_in_args; i++, o++) {
       if (in_sig_bt[i] == T_ARRAY) {
         // Arrays are passed as tuples (int, elem*).
-        Symbol* atype = ss.as_symbol();
-        const char* at = atype->as_C_string();
-        if (strlen(at) == 2) {
-          assert(at[0] == '[', "must be");
-          switch (at[1]) {
-            case 'B': in_elem_bt[o]  = T_BYTE; break;
-            case 'C': in_elem_bt[o]  = T_CHAR; break;
-            case 'D': in_elem_bt[o]  = T_DOUBLE; break;
-            case 'F': in_elem_bt[o]  = T_FLOAT; break;
-            case 'I': in_elem_bt[o]  = T_INT; break;
-            case 'J': in_elem_bt[o]  = T_LONG; break;
-            case 'S': in_elem_bt[o]  = T_SHORT; break;
-            case 'Z': in_elem_bt[o]  = T_BOOLEAN; break;
-            default: ShouldNotReachHere();
-          }
-        }
+        ss.skip_array_prefix(1);  // skip one '['
+        assert(ss.is_primitive(), "primitive type expected");
+        in_elem_bt[o] = ss.type();
       } else {
         in_elem_bt[o] = T_VOID;
       }
       if (in_sig_bt[i] != T_VOID) {
-        assert(in_sig_bt[i] == ss.type(), "must match");
+        assert(in_sig_bt[i] == ss.type() ||
+               in_sig_bt[i] == T_ARRAY, "must match");
         ss.next();
       }
     }

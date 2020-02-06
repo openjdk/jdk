@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,13 +72,11 @@ Klass* CompilerRuntime::resolve_klass_helper(JavaThread *thread, const char* nam
   Handle loader(THREAD, caller->method_holder()->class_loader());
   Handle protection_domain(THREAD, caller->method_holder()->protection_domain());
 
-  // Ignore wrapping L and ;
-  if (name[0] == JVM_SIGNATURE_CLASS) {
-    assert(len > 2, "small name %s", name);
-    name++;
-    len -= 2;
-  }
   TempNewSymbol sym = SymbolTable::new_symbol(name, len);
+  if (sym != NULL && Signature::has_envelope(sym)) {
+    // Ignore wrapping L and ;
+    sym = Signature::strip_envelope(sym);
+  }
   if (sym == NULL) {
     return NULL;
   }

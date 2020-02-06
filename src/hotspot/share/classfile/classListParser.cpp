@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,6 @@
 #include "logging/logTag.hpp"
 #include "memory/metaspaceShared.hpp"
 #include "memory/resourceArea.hpp"
-#include "runtime/fieldType.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaCalls.hpp"
 #include "utilities/defaultStream.hpp"
@@ -338,7 +337,7 @@ Klass* ClassListParser::load_current_class(TRAPS) {
       error("If source location is not specified, interface(s) must not be specified");
     }
 
-    bool non_array = !FieldType::is_array(class_name_symbol);
+    bool non_array = !Signature::is_array(class_name_symbol);
 
     JavaValue result(T_OBJECT);
     if (non_array) {
