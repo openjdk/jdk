@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3702,6 +3702,8 @@ public final class Files {
         Objects.requireNonNull(cs);
 
         byte[] bytes = JLA.getBytesNoRepl(String.valueOf(csq), cs);
+        if (path.getClass().getModule() != Object.class.getModule())
+            bytes = bytes.clone();
         write(path, bytes, options);
 
         return path;
