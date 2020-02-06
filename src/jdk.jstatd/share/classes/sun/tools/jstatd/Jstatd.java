@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@ public class Jstatd {
     private static RemoteHost remoteHost;
 
     private static void printUsage() {
-        System.err.println("usage: jstatd [-nr] [-p port] [-n rminame]\n" +
+        System.err.println("usage: jstatd [-nr] [-p port] [-r rmiport] [-n rminame]\n" +
                            "       jstatd -?|-h|--help");
     }
 
@@ -75,6 +75,7 @@ public class Jstatd {
     @SuppressWarnings("deprecation") // Use of RMISecurityManager
     public static void main(String[] args) {
         String rminame = null;
+        int rmiPort = 0;
         int argc = 0;
 
         for ( ; (argc < args.length) && (args[argc].startsWith("-")); argc++) {
@@ -97,6 +98,17 @@ public class Jstatd {
                       System.exit(1);
                   }
                   port = Integer.parseInt(args[argc]);
+                }
+            } else if (arg.startsWith("-r")) {
+                if (arg.compareTo("-r") != 0) {
+                    rmiPort = Integer.parseInt(arg.substring(2));
+                } else {
+                    argc++;
+                    if (argc >= args.length) {
+                        printUsage();
+                        System.exit(1);
+                    }
+                    rmiPort = Integer.parseInt(args[argc]);
                 }
             } else if (arg.startsWith("-n")) {
                 if (arg.compareTo("-n") != 0) {
@@ -139,9 +151,9 @@ public class Jstatd {
         try {
             // use 1.5.0 dynamically generated subs.
             System.setProperty("java.rmi.server.ignoreSubClasses", "true");
-            remoteHost = new RemoteHostImpl();
+            remoteHost = new RemoteHostImpl(rmiPort);
             RemoteHost stub = (RemoteHost) UnicastRemoteObject.exportObject(
-                    remoteHost, 0);
+                    remoteHost, rmiPort);
             bind(name.toString(), stub);
             System.out.println("jstatd started (bound to " + name.toString() + ")");
             System.out.flush();

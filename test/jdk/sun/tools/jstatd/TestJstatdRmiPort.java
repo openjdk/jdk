@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,33 +21,31 @@
  * questions.
  */
 
-import jdk.test.lib.JDKToolLauncher;
-import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.process.ProcessTools;
-
 /*
  * @test
- * @bug 4990825
+ *
  * @library /test/lib
- * @modules java.management
- * @run main TestJstatdUsage
+ *
+ * @build JstatdTest JstatGCUtilParser
+ * @run main/timeout=60 TestJstatdRmiPort
  */
-public class TestJstatdUsage {
+public class TestJstatdRmiPort {
 
-    public static void main(String[] args) throws Exception {
-        testUsage("-?");
-        testUsage("-h");
-        testUsage("--help");
+    public static void main(String[] args) throws Throwable {
+        testRmiPort();
+        testRegistryAndRmiPorts();
     }
 
-    private static void testUsage(String option) throws Exception {
-        JDKToolLauncher launcher = JDKToolLauncher.createUsingTestJDK("jstatd");
-        launcher.addToolArg(option);
-        ProcessBuilder processBuilder = new ProcessBuilder(launcher.getCommand());
-        OutputAnalyzer output = ProcessTools.executeProcess(processBuilder);
-
-        output.shouldContain("usage: jstatd [-nr] [-p port] [-r rmiport] [-n rminame]");
-        output.shouldHaveExitValue(0);
+    private static void testRmiPort() throws Throwable {
+        JstatdTest test = new JstatdTest();
+        test.setUseDefaultRmiPort(false);
+        test.doTest();
     }
 
+    private static void testRegistryAndRmiPorts() throws Throwable {
+        JstatdTest test = new JstatdTest();
+        test.setUseDefaultPort(false);
+        test.setUseDefaultRmiPort(false);
+        test.doTest();
+    }
 }
