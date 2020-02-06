@@ -75,11 +75,6 @@ public class ToolOptions {
     private boolean breakIterator = false;
 
     /**
-     * Argument for command-line option {@code -locale}.
-     */
-    private String docLocale = "";
-
-    /**
      * Argument for command-line option {@code --dump-on-error}.
      * Dump stack traces for debugging etc.
      * Similar to javac {@code -doe}.
@@ -413,9 +408,13 @@ public class ToolOptions {
 
             // ----- doclet options -----
 
-            new ToolOption(DOCLET, STANDARD, true), // handled in setDocletInvoker
+            // This option exists so that it is documented in the command-line help.
+            // It is implemented in {@link Start#preprocess}.
+            new ToolOption(DOCLET, STANDARD, true),
 
-            new ToolOption(DOCLET_PATH, STANDARD, true), // handled in setDocletInvoker
+            // This option exists so that it is documented in the command-line help.
+            // It is implemented in {@link Start#preprocess}.
+            new ToolOption(DOCLET_PATH, STANDARD, true),
 
             // ----- selection options -----
 
@@ -540,12 +539,9 @@ public class ToolOptions {
                 }
             },
 
-            new ToolOption(LOCALE, STANDARD, true) {
-                @Override
-                public void process(String arg) {
-                    docLocale = arg;
-                }
-            },
+            // This option exists so that it is documented in the command-line help.
+            // It is implemented in {@link Start#preprocess}.
+            new ToolOption(LOCALE, STANDARD, true),
 
             new ToolOption("-Xclasses", HIDDEN) {
                 @Override
@@ -554,12 +550,9 @@ public class ToolOptions {
                 }
             },
 
-            new ToolOption(DUMP_ON_ERROR, HIDDEN) {
-                @Override
-                public void process() {
-                    dumpOnError = true;
-                }
-            },
+            // This option exists so that it is documented in the command-line help.
+            // It is implemented in {@link Start#preprocess}.
+            new ToolOption(DUMP_ON_ERROR, HIDDEN),
 
             new ToolOption("--ignore-source-errors", HIDDEN) {
                 @Override
@@ -584,8 +577,9 @@ public class ToolOptions {
                 }
             },
 
-            // This option exists only for the purpose of documenting itself.
-            // It's actually implemented by the launcher.
+            // This option exists so that it is documented in the command-line help.
+            // It is actually implemented by the launcher, and can only be used when
+            // invoking javadoc from the launcher.
             new ToolOption(J, STANDARD, true) {
                 @Override
                 public void process() {
@@ -690,13 +684,6 @@ public class ToolOptions {
      */
     boolean breakIterator() {
         return breakIterator;
-    }
-
-    /**
-     * Argument for command-line option {@code -locale}.
-     */
-    String locale() {
-        return docLocale;
     }
 
     /**

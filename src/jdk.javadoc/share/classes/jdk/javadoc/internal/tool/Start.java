@@ -368,9 +368,10 @@ public class Start {
             }
         }
 
-        // locale, doclet and maybe taglet, needs to be determined first
+        // Perform an initial scan of the options to determine the doclet to be used (if any),
+        // so that it may participate in the main round of option processing.
         try {
-            doclet = preprocess(fileManager, options);
+            doclet = preprocess(options);
         } catch (ToolException te) {
             if (!te.result.isOK()) {
                 if (te.message != null) {
@@ -621,21 +622,34 @@ public class Start {
         return idx;
     }
 
-    private Doclet preprocess(JavaFileManager jfm, List<String> argv)
+    /**
+     * Performs an initial pass over the options, primarily to determine
+     * the doclet to be used (if any), so that it may participate in the
+     * main round of option decoding. This avoids having to specify that
+     * the options to specify the doclet should appear before any options
+     * that are handled by the doclet.
+     *
+     * The downside of this initial phase is that we have to skip over
+     * unknown options, and assume that we can reliably detect the options
+     * we need to handle.
+     *
+     * @param argv the arguments to be processed
+     * @return the doclet
+     * @throws ToolException if an error occurs initializing the doclet
+     * @throws OptionException if an error occurs while processing an option
+     */
+    private Doclet preprocess(List<String> argv)
             throws ToolException, OptionException {
         // doclet specifying arguments
         String userDocletPath = null;
         String userDocletName = null;
 
-        // taglet specifying arguments, since tagletpath is a doclet
-        // functionality, assume they are repeated and inspect all.
-        List<File> userTagletPath = new ArrayList<>();
-        List<String> userTagletNames = new ArrayList<>();
-
         // Step 1: loop through the args, set locale early on, if found.
         for (int i = 0 ; i < argv.size() ; i++) {
             String arg = argv.get(i);
             if (arg.equals(ToolOptions.DUMP_ON_ERROR)) {
+                // although this option is not needed in order to initialize the doclet,
+                // it is helpful if it is set before trying to initialize the doclet
                 options.setDumpOnError(true);
             } else if (arg.equals(ToolOptions.LOCALE)) {
                 checkOneArg(argv, i++);
@@ -668,12 +682,6 @@ public class Start {
                     userDocletPath = argv.get(i);
                 } else {
                     userDocletPath += File.pathSeparator + argv.get(i);
-                }
-            } else if ("-taglet".equals(arg)) {
-                userTagletNames.add(argv.get(i + 1));
-            } else if ("-tagletpath".equals(arg)) {
-                for (String pathname : argv.get(i + 1).split(File.pathSeparator)) {
-                    userTagletPath.add(new File(pathname));
                 }
             }
         }
@@ -724,7 +732,7 @@ public class Start {
             }
         }
 
-        if (jdk.javadoc.doclet.Doclet.class.isAssignableFrom(docletClass)) {
+        if (Doclet.class.isAssignableFrom(docletClass)) {
             messager.setLocale(locale);
             try {
                 Object o = docletClass.getConstructor().newInstance();
