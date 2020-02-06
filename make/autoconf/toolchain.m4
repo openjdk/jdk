@@ -451,9 +451,10 @@ AC_DEFUN([TOOLCHAIN_EXTRACT_COMPILER_VERSION],
     # There is no specific version flag, but all output starts with a version string.
     # First line typically looks something like:
     # Microsoft (R) 32-bit C/C++ Optimizing Compiler Version 16.00.40219.01 for 80x86
+    # but the compiler name may vary depending on locale.
     COMPILER_VERSION_OUTPUT=`"$COMPILER" 2>&1 | $GREP -v 'ERROR.*UtilTranslatePathList' | $HEAD -n 1 | $TR -d '\r'`
     # Check that this is likely to be Microsoft CL.EXE.
-    $ECHO "$COMPILER_VERSION_OUTPUT" | $GREP "Microsoft.*Compiler" > /dev/null
+    $ECHO "$COMPILER_VERSION_OUTPUT" | $GREP "Microsoft" > /dev/null
     if test $? -ne 0; then
       AC_MSG_NOTICE([The $COMPILER_NAME compiler (located as $COMPILER) does not seem to be the required $TOOLCHAIN_TYPE compiler.])
       AC_MSG_NOTICE([The result from running it was: "$COMPILER_VERSION_OUTPUT"])
