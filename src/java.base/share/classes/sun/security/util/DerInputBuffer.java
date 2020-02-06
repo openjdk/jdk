@@ -354,8 +354,12 @@ class DerInputBuffer extends ByteArrayInputStream implements Cloneable {
             second += toDigit(buf[pos++], type);
             len -= 2;
             // handle fractional seconds (if present)
-            if (buf[pos] == '.' || buf[pos] == ',') {
+            if (generalized && (buf[pos] == '.' || buf[pos] == ',')) {
                 len --;
+                if (len == 0) {
+                    throw new IOException("Parse " + type +
+                            " time, empty fractional part");
+                }
                 pos++;
                 int precision = 0;
                 while (buf[pos] != 'Z' &&
@@ -365,6 +369,11 @@ class DerInputBuffer extends ByteArrayInputStream implements Cloneable {
                     // store millisecond precision only
                     int thisDigit = toDigit(buf[pos], type);
                     precision++;
+                    len--;
+                    if (len == 0) {
+                        throw new IOException("Parse " + type +
+                                " time, invalid fractional part");
+                    }
                     pos++;
                     switch (precision) {
                         case 1:
@@ -382,7 +391,6 @@ class DerInputBuffer extends ByteArrayInputStream implements Cloneable {
                     throw new IOException("Parse " + type +
                             " time, empty fractional part");
                 }
-                len -= precision;
             }
         } else
             second = 0;
@@ -412,6 +420,9 @@ class DerInputBuffer extends ByteArrayInputStream implements Cloneable {
 
         switch (buf[pos++]) {
         case '+':
+            if (len != 5) {
+                throw new IOException("Parse " + type + " time, invalid offset");
+            }
             hr = 10 * toDigit(buf[pos++], type);
             hr += toDigit(buf[pos++], type);
             min = 10 * toDigit(buf[pos++], type);
@@ -424,6 +435,9 @@ class DerInputBuffer extends ByteArrayInputStream implements Cloneable {
             break;
 
         case '-':
+            if (len != 5) {
+                throw new IOException("Parse " + type + " time, invalid offset");
+            }
             hr = 10 * toDigit(buf[pos++], type);
             hr += toDigit(buf[pos++], type);
             min = 10 * toDigit(buf[pos++], type);
@@ -436,6 +450,9 @@ class DerInputBuffer extends ByteArrayInputStream implements Cloneable {
             break;
 
         case 'Z':
+            if (len != 1) {
+                throw new IOException("Parse " + type + " time, invalid format");
+            }
             break;
 
         default:
