@@ -64,10 +64,11 @@ TOOLCHAIN_MINIMUM_LD_VERSION_gcc="2.18"
 # Must have CC_VERSION_NUMBER and CXX_VERSION_NUMBER.
 # $1 - optional variable prefix for compiler and version variables (BUILD_)
 # $2 - optional variable prefix for comparable variable (OPENJDK_BUILD_)
+# $3 - optional human readable description for the type of compilers ("build " or "")
 AC_DEFUN([TOOLCHAIN_PREPARE_FOR_VERSION_COMPARISONS],
 [
   if test "x[$]$1CC_VERSION_NUMBER" != "x[$]$1CXX_VERSION_NUMBER"; then
-    AC_MSG_WARN([C and C++ compiler have different version numbers, [$]$1CC_VERSION_NUMBER vs [$]$1CXX_VERSION_NUMBER.])
+    AC_MSG_WARN([The $3C and C++ compilers have different version numbers, [$]$1CC_VERSION_NUMBER vs [$]$1CXX_VERSION_NUMBER.])
     AC_MSG_WARN([This typically indicates a broken setup, and is not supported])
   fi
 
@@ -997,7 +998,7 @@ AC_DEFUN_ONCE([TOOLCHAIN_SETUP_BUILD_COMPILERS],
 
     TOOLCHAIN_EXTRACT_COMPILER_VERSION(BUILD_CC, [BuildC])
     TOOLCHAIN_EXTRACT_COMPILER_VERSION(BUILD_CXX, [BuildC++])
-    TOOLCHAIN_PREPARE_FOR_VERSION_COMPARISONS([BUILD_], [OPENJDK_BUILD_])
+    TOOLCHAIN_PREPARE_FOR_VERSION_COMPARISONS([BUILD_], [OPENJDK_BUILD_], [build ])
     TOOLCHAIN_EXTRACT_LD_VERSION(BUILD_LD, [build linker])
     TOOLCHAIN_PREPARE_FOR_LD_VERSION_COMPARISONS([BUILD_], [OPENJDK_BUILD_])
   else
@@ -1013,7 +1014,7 @@ AC_DEFUN_ONCE([TOOLCHAIN_SETUP_BUILD_COMPILERS],
     BUILD_STRIP="$STRIP"
     BUILD_AR="$AR"
 
-    TOOLCHAIN_PREPARE_FOR_VERSION_COMPARISONS([], [OPENJDK_BUILD_])
+    TOOLCHAIN_PREPARE_FOR_VERSION_COMPARISONS([], [OPENJDK_BUILD_], [build ])
     TOOLCHAIN_PREPARE_FOR_LD_VERSION_COMPARISONS([BUILD_], [OPENJDK_BUILD_])
   fi
 
