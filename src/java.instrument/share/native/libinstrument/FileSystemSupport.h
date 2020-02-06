@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,17 +24,6 @@
  */
 
 #include "FileSystemSupport_md.h"
-
-/**
- * Return the local filesystem's path-separator character.
- */
-char pathSeparator();
-
-/**
- * Compare two filenames represent and tell if they represent the same file
- * or not.
- */
-int filenameStrcmp(const char* s1, const char* s2);
 
 /**
  * Post-process the given URI path string if necessary.  This is used on
