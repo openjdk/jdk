@@ -79,6 +79,18 @@ int PhaseMacroExpand::replace_input(Node *use, Node *oldref, Node *newref) {
   return nreplacements;
 }
 
+void PhaseMacroExpand::migrate_outs(Node *old, Node *target) {
+  assert(old != NULL, "sanity");
+  for (DUIterator_Fast imax, i = old->fast_outs(imax); i < imax; i++) {
+    Node* use = old->fast_out(i);
+    _igvn.rehash_node_delayed(use);
+    imax -= replace_input(use, old, target);
+    // back up iterator
+    --i;
+  }
+  assert(old->outcnt() == 0, "all uses must be deleted");
+}
+
 void PhaseMacroExpand::copy_call_debug_info(CallNode *oldcall, CallNode * newcall) {
   // Copy debug information and adjust JVMState information
   uint old_dbg_start = oldcall->tf()->domain()->cnt();
@@ -1277,15 +1289,14 @@ void PhaseMacroExpand::expand_allocate_common(
             address slow_call_address  // Address of slow call
     )
 {
-
   Node* ctrl = alloc->in(TypeFunc::Control);
   Node* mem  = alloc->in(TypeFunc::Memory);
   Node* i_o  = alloc->in(TypeFunc::I_O);
   Node* size_in_bytes     = alloc->in(AllocateNode::AllocSize);
   Node* klass_node        = alloc->in(AllocateNode::KlassNode);
   Node* initial_slow_test = alloc->in(AllocateNode::InitialTest);
-
   assert(ctrl != NULL, "must have control");
+
   // We need a Region and corresponding Phi's to merge the slow-path and fast-path results.
   // they will not be used if "always_slow" is set
   enum { slow_result_path = 1, fast_result_path = 2 };
@@ -1296,10 +1307,14 @@ void PhaseMacroExpand::expand_allocate_common(
 
   // The initial slow comparison is a size check, the comparison
   // we want to do is a BoolTest::gt
-  bool always_slow = false;
+  bool expand_fast_path = true;
   int tv = _igvn.find_int_con(initial_slow_test, -1);
   if (tv >= 0) {
-    always_slow = (tv == 1);
+    // InitialTest has constant result
+    //   0 - can fit in TLAB
+    //   1 - always too big or negative
+    assert(tv <= 1, "0 or 1 if a constant");
+    expand_fast_path = (tv == 0);
     initial_slow_test = NULL;
   } else {
     initial_slow_test = BoolNode::make_predicate(initial_slow_test, &_igvn);
@@ -1308,18 +1323,34 @@ void PhaseMacroExpand::expand_allocate_common(
   if (C->env()->dtrace_alloc_probes() ||
       (!UseTLAB && !Universe::heap()->supports_inline_contig_alloc())) {
     // Force slow-path allocation
-    always_slow = true;
+    expand_fast_path = false;
     initial_slow_test = NULL;
   }
 
+  bool allocation_has_use = (alloc->result_cast() != NULL);
+  if (!allocation_has_use) {
+    InitializeNode* init = alloc->initialization();
+    if (init != NULL) {
+      yank_initalize_node(init);
+      assert(init->outcnt() == 0, "all uses must be deleted");
+      _igvn.remove_dead_node(init);
+    }
+    if (expand_fast_path && (initial_slow_test == NULL)) {
+      // Remove allocation node and return.
+      // Size is a non-negative constant -> no initial check needed -> directly to fast path.
+      // Also, no usages -> empty fast path -> no fall out to slow path -> nothing left.
+      yank_alloc_node(alloc);
+      return;
+    }
+  }
 
   enum { too_big_or_final_path = 1, need_gc_path = 2 };
   Node *slow_region = NULL;
   Node *toobig_false = ctrl;
 
-  assert (initial_slow_test == NULL || !always_slow, "arguments must be consistent");
   // generate the initial test if necessary
   if (initial_slow_test != NULL ) {
+    assert (expand_fast_path, "Only need test if there is a fast path");
     slow_region = new RegionNode(3);
 
     // Now make the initial failure test.  Usually a too-big test but
@@ -1333,14 +1364,26 @@ void PhaseMacroExpand::expand_allocate_common(
     slow_region    ->init_req( too_big_or_final_path, toobig_true );
     toobig_false = new IfFalseNode( toobig_iff );
     transform_later(toobig_false);
-  } else {         // No initial test, just fall into next case
+  } else {
+    // No initial test, just fall into next case
+    assert(allocation_has_use || !expand_fast_path, "Should already have been handled");
     toobig_false = ctrl;
     debug_only(slow_region = NodeSentinel);
   }
 
+  // If we are here there are several possibilities
+  // - expand_fast_path is false - then only a slow path is expanded. That's it.
+  // no_initial_check means a constant allocation.
+  // - If check always evaluates to false -> expand_fast_path is false (see above)
+  // - If check always evaluates to true -> directly into fast path (but may bailout to slowpath)
+  // if !allocation_has_use the fast path is empty
+  // if !allocation_has_use && no_initial_check
+  // - Then there are no fastpath that can fall out to slowpath -> no allocation code at all.
+  //   removed by yank_alloc_node above.
+
   Node *slow_mem = mem;  // save the current memory state for slow path
   // generate the fast allocation code unless we know that the initial test will always go slow
-  if (!always_slow) {
+  if (expand_fast_path) {
     // Fast path modifies only raw memory.
     if (mem->is_MergeMem()) {
       mem = mem->as_MergeMem()->memory_at(Compile::AliasIdxRaw);
@@ -1349,137 +1392,52 @@ void PhaseMacroExpand::expand_allocate_common(
     // allocate the Region and Phi nodes for the result
     result_region = new RegionNode(3);
     result_phi_rawmem = new PhiNode(result_region, Type::MEMORY, TypeRawPtr::BOTTOM);
-    result_phi_rawoop = new PhiNode(result_region, TypeRawPtr::BOTTOM);
     result_phi_i_o    = new PhiNode(result_region, Type::ABIO); // I/O is used for Prefetch
 
     // Grab regular I/O before optional prefetch may change it.
     // Slow-path does no I/O so just set it to the original I/O.
     result_phi_i_o->init_req(slow_result_path, i_o);
 
-    Node* needgc_ctrl = NULL;
     // Name successful fast-path variables
     Node* fast_oop_ctrl;
     Node* fast_oop_rawmem;
+    if (allocation_has_use) {
+      Node* needgc_ctrl = NULL;
+      result_phi_rawoop = new PhiNode(result_region, TypeRawPtr::BOTTOM);
 
-    intx prefetch_lines = length != NULL ? AllocatePrefetchLines : AllocateInstancePrefetchLines;
+      intx prefetch_lines = length != NULL ? AllocatePrefetchLines : AllocateInstancePrefetchLines;
+      BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
+      Node* fast_oop = bs->obj_allocate(this, ctrl, mem, toobig_false, size_in_bytes, i_o, needgc_ctrl,
+                                        fast_oop_ctrl, fast_oop_rawmem,
+                                        prefetch_lines);
 
-    BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
-    Node* fast_oop = bs->obj_allocate(this, ctrl, mem, toobig_false, size_in_bytes, i_o, needgc_ctrl,
-                                      fast_oop_ctrl, fast_oop_rawmem,
-                                      prefetch_lines);
-
-    if (initial_slow_test) {
-      slow_region->init_req(need_gc_path, needgc_ctrl);
-      // This completes all paths into the slow merge point
-      transform_later(slow_region);
-    } else {                      // No initial slow path needed!
-      // Just fall from the need-GC path straight into the VM call.
-      slow_region = needgc_ctrl;
-    }
-
-    InitializeNode* init = alloc->initialization();
-    fast_oop_rawmem = initialize_object(alloc,
-                                        fast_oop_ctrl, fast_oop_rawmem, fast_oop,
-                                        klass_node, length, size_in_bytes);
-
-    // If initialization is performed by an array copy, any required
-    // MemBarStoreStore was already added. If the object does not
-    // escape no need for a MemBarStoreStore. If the object does not
-    // escape in its initializer and memory barrier (MemBarStoreStore or
-    // stronger) is already added at exit of initializer, also no need
-    // for a MemBarStoreStore. Otherwise we need a MemBarStoreStore
-    // so that stores that initialize this object can't be reordered
-    // with a subsequent store that makes this object accessible by
-    // other threads.
-    // Other threads include java threads and JVM internal threads
-    // (for example concurrent GC threads). Current concurrent GC
-    // implementation: G1 will not scan newly created object,
-    // so it's safe to skip storestore barrier when allocation does
-    // not escape.
-    if (!alloc->does_not_escape_thread() &&
-        !alloc->is_allocation_MemBar_redundant() &&
-        (init == NULL || !init->is_complete_with_arraycopy())) {
-      if (init == NULL || init->req() < InitializeNode::RawStores) {
-        // No InitializeNode or no stores captured by zeroing
-        // elimination. Simply add the MemBarStoreStore after object
-        // initialization.
-        MemBarNode* mb = MemBarNode::make(C, Op_MemBarStoreStore, Compile::AliasIdxBot);
-        transform_later(mb);
-
-        mb->init_req(TypeFunc::Memory, fast_oop_rawmem);
-        mb->init_req(TypeFunc::Control, fast_oop_ctrl);
-        fast_oop_ctrl = new ProjNode(mb,TypeFunc::Control);
-        transform_later(fast_oop_ctrl);
-        fast_oop_rawmem = new ProjNode(mb,TypeFunc::Memory);
-        transform_later(fast_oop_rawmem);
+      if (initial_slow_test != NULL) {
+        // This completes all paths into the slow merge point
+        slow_region->init_req(need_gc_path, needgc_ctrl);
+        transform_later(slow_region);
       } else {
-        // Add the MemBarStoreStore after the InitializeNode so that
-        // all stores performing the initialization that were moved
-        // before the InitializeNode happen before the storestore
-        // barrier.
-
-        Node* init_ctrl = init->proj_out_or_null(TypeFunc::Control);
-        Node* init_mem = init->proj_out_or_null(TypeFunc::Memory);
-
-        MemBarNode* mb = MemBarNode::make(C, Op_MemBarStoreStore, Compile::AliasIdxBot);
-        transform_later(mb);
-
-        Node* ctrl = new ProjNode(init,TypeFunc::Control);
-        transform_later(ctrl);
-        Node* mem = new ProjNode(init,TypeFunc::Memory);
-        transform_later(mem);
-
-        // The MemBarStoreStore depends on control and memory coming
-        // from the InitializeNode
-        mb->init_req(TypeFunc::Memory, mem);
-        mb->init_req(TypeFunc::Control, ctrl);
-
-        ctrl = new ProjNode(mb,TypeFunc::Control);
-        transform_later(ctrl);
-        mem = new ProjNode(mb,TypeFunc::Memory);
-        transform_later(mem);
-
-        // All nodes that depended on the InitializeNode for control
-        // and memory must now depend on the MemBarNode that itself
-        // depends on the InitializeNode
-        if (init_ctrl != NULL) {
-          _igvn.replace_node(init_ctrl, ctrl);
-        }
-        if (init_mem != NULL) {
-          _igvn.replace_node(init_mem, mem);
-        }
+        // No initial slow path needed!
+        // Just fall from the need-GC path straight into the VM call.
+        slow_region = needgc_ctrl;
       }
-    }
 
-    if (C->env()->dtrace_extended_probes()) {
-      // Slow-path call
-      int size = TypeFunc::Parms + 2;
-      CallLeafNode *call = new CallLeafNode(OptoRuntime::dtrace_object_alloc_Type(),
-                                            CAST_FROM_FN_PTR(address, SharedRuntime::dtrace_object_alloc_base),
-                                            "dtrace_object_alloc",
-                                            TypeRawPtr::BOTTOM);
+      InitializeNode* init = alloc->initialization();
+      fast_oop_rawmem = initialize_object(alloc,
+                                          fast_oop_ctrl, fast_oop_rawmem, fast_oop,
+                                          klass_node, length, size_in_bytes);
+      expand_initialize_membar(alloc, init, fast_oop_ctrl, fast_oop_rawmem);
+      expand_dtrace_alloc_probe(alloc, fast_oop, fast_oop_ctrl, fast_oop_rawmem);
 
-      // Get base of thread-local storage area
-      Node* thread = new ThreadLocalNode();
-      transform_later(thread);
-
-      call->init_req(TypeFunc::Parms+0, thread);
-      call->init_req(TypeFunc::Parms+1, fast_oop);
-      call->init_req(TypeFunc::Control, fast_oop_ctrl);
-      call->init_req(TypeFunc::I_O    , top()); // does no i/o
-      call->init_req(TypeFunc::Memory , fast_oop_rawmem);
-      call->init_req(TypeFunc::ReturnAdr, alloc->in(TypeFunc::ReturnAdr));
-      call->init_req(TypeFunc::FramePtr, alloc->in(TypeFunc::FramePtr));
-      transform_later(call);
-      fast_oop_ctrl = new ProjNode(call,TypeFunc::Control);
-      transform_later(fast_oop_ctrl);
-      fast_oop_rawmem = new ProjNode(call,TypeFunc::Memory);
-      transform_later(fast_oop_rawmem);
+      result_phi_rawoop->init_req(fast_result_path, fast_oop);
+    } else {
+      assert (initial_slow_test != NULL, "sanity");
+      fast_oop_ctrl   = toobig_false;
+      fast_oop_rawmem = mem;
+      transform_later(slow_region);
     }
 
     // Plug in the successful fast-path into the result merge point
     result_region    ->init_req(fast_result_path, fast_oop_ctrl);
-    result_phi_rawoop->init_req(fast_result_path, fast_oop);
     result_phi_i_o   ->init_req(fast_result_path, i_o);
     result_phi_rawmem->init_req(fast_result_path, fast_oop_rawmem);
   } else {
@@ -1492,11 +1450,11 @@ void PhaseMacroExpand::expand_allocate_common(
                                OptoRuntime::stub_name(slow_call_address),
                                alloc->jvms()->bci(),
                                TypePtr::BOTTOM);
-  call->init_req( TypeFunc::Control, slow_region );
-  call->init_req( TypeFunc::I_O    , top() )     ;   // does no i/o
-  call->init_req( TypeFunc::Memory , slow_mem ); // may gc ptrs
-  call->init_req( TypeFunc::ReturnAdr, alloc->in(TypeFunc::ReturnAdr) );
-  call->init_req( TypeFunc::FramePtr, alloc->in(TypeFunc::FramePtr) );
+  call->init_req(TypeFunc::Control,   slow_region);
+  call->init_req(TypeFunc::I_O,       top());    // does no i/o
+  call->init_req(TypeFunc::Memory,    slow_mem); // may gc ptrs
+  call->init_req(TypeFunc::ReturnAdr, alloc->in(TypeFunc::ReturnAdr));
+  call->init_req(TypeFunc::FramePtr,  alloc->in(TypeFunc::FramePtr));
 
   call->init_req(TypeFunc::Parms+0, klass_node);
   if (length != NULL) {
@@ -1506,7 +1464,7 @@ void PhaseMacroExpand::expand_allocate_common(
   // Copy debug information and adjust JVMState information, then replace
   // allocate node with the call
   copy_call_debug_info((CallNode *) alloc,  call);
-  if (!always_slow) {
+  if (expand_fast_path) {
     call->set_cnt(PROB_UNLIKELY_MAG(4));  // Same effect as RC_UNCOMMON.
   } else {
     // Hook i_o projection to avoid its elimination during allocation
@@ -1532,14 +1490,8 @@ void PhaseMacroExpand::expand_allocate_common(
   // the control and i_o paths. Replace the control memory projection with
   // result_phi_rawmem (unless we are only generating a slow call when
   // both memory projections are combined)
-  if (!always_slow && _memproj_fallthrough != NULL) {
-    for (DUIterator_Fast imax, i = _memproj_fallthrough->fast_outs(imax); i < imax; i++) {
-      Node *use = _memproj_fallthrough->fast_out(i);
-      _igvn.rehash_node_delayed(use);
-      imax -= replace_input(use, _memproj_fallthrough, result_phi_rawmem);
-      // back up iterator
-      --i;
-    }
+  if (expand_fast_path && _memproj_fallthrough != NULL) {
+    migrate_outs(_memproj_fallthrough, result_phi_rawmem);
   }
   // Now change uses of _memproj_catchall to use _memproj_fallthrough and delete
   // _memproj_catchall so we end up with a call that has only 1 memory projection.
@@ -1548,14 +1500,7 @@ void PhaseMacroExpand::expand_allocate_common(
       _memproj_fallthrough = new ProjNode(call, TypeFunc::Memory);
       transform_later(_memproj_fallthrough);
     }
-    for (DUIterator_Fast imax, i = _memproj_catchall->fast_outs(imax); i < imax; i++) {
-      Node *use = _memproj_catchall->fast_out(i);
-      _igvn.rehash_node_delayed(use);
-      imax -= replace_input(use, _memproj_catchall, _memproj_fallthrough);
-      // back up iterator
-      --i;
-    }
-    assert(_memproj_catchall->outcnt() == 0, "all uses must be deleted");
+    migrate_outs(_memproj_catchall, _memproj_fallthrough);
     _igvn.remove_dead_node(_memproj_catchall);
   }
 
@@ -1565,13 +1510,7 @@ void PhaseMacroExpand::expand_allocate_common(
   // (it is different from memory projections where both projections are
   // combined in such case).
   if (_ioproj_fallthrough != NULL) {
-    for (DUIterator_Fast imax, i = _ioproj_fallthrough->fast_outs(imax); i < imax; i++) {
-      Node *use = _ioproj_fallthrough->fast_out(i);
-      _igvn.rehash_node_delayed(use);
-      imax -= replace_input(use, _ioproj_fallthrough, result_phi_i_o);
-      // back up iterator
-      --i;
-    }
+    migrate_outs(_ioproj_fallthrough, result_phi_i_o);
   }
   // Now change uses of _ioproj_catchall to use _ioproj_fallthrough and delete
   // _ioproj_catchall so we end up with a call that has only 1 i_o projection.
@@ -1580,24 +1519,17 @@ void PhaseMacroExpand::expand_allocate_common(
       _ioproj_fallthrough = new ProjNode(call, TypeFunc::I_O);
       transform_later(_ioproj_fallthrough);
     }
-    for (DUIterator_Fast imax, i = _ioproj_catchall->fast_outs(imax); i < imax; i++) {
-      Node *use = _ioproj_catchall->fast_out(i);
-      _igvn.rehash_node_delayed(use);
-      imax -= replace_input(use, _ioproj_catchall, _ioproj_fallthrough);
-      // back up iterator
-      --i;
-    }
-    assert(_ioproj_catchall->outcnt() == 0, "all uses must be deleted");
+    migrate_outs(_ioproj_catchall, _ioproj_fallthrough);
     _igvn.remove_dead_node(_ioproj_catchall);
   }
 
   // if we generated only a slow call, we are done
-  if (always_slow) {
+  if (!expand_fast_path) {
     // Now we can unhook i_o.
     if (result_phi_i_o->outcnt() > 1) {
       call->set_req(TypeFunc::I_O, top());
     } else {
-      assert(result_phi_i_o->unique_ctrl_out() == call, "");
+      assert(result_phi_i_o->unique_ctrl_out() == call, "sanity");
       // Case of new array with negative size known during compilation.
       // AllocateArrayNode::Ideal() optimization disconnect unreachable
       // following code since call to runtime will throw exception.
@@ -1606,7 +1538,6 @@ void PhaseMacroExpand::expand_allocate_common(
     }
     return;
   }
-
 
   if (_fallthroughcatchproj != NULL) {
     ctrl = _fallthroughcatchproj->clone();
@@ -1626,16 +1557,177 @@ void PhaseMacroExpand::expand_allocate_common(
   }
 
   // Plug slow-path into result merge point
-  result_region    ->init_req( slow_result_path, ctrl );
-  result_phi_rawoop->init_req( slow_result_path, slow_result);
-  result_phi_rawmem->init_req( slow_result_path, _memproj_fallthrough );
+  result_region->init_req( slow_result_path, ctrl);
   transform_later(result_region);
-  transform_later(result_phi_rawoop);
+  if (allocation_has_use) {
+    result_phi_rawoop->init_req(slow_result_path, slow_result);
+    transform_later(result_phi_rawoop);
+  }
+  result_phi_rawmem->init_req(slow_result_path, _memproj_fallthrough);
   transform_later(result_phi_rawmem);
   transform_later(result_phi_i_o);
   // This completes all paths into the result merge point
 }
 
+// Remove alloc node that has no uses.
+void PhaseMacroExpand::yank_alloc_node(AllocateNode* alloc) {
+  Node* ctrl = alloc->in(TypeFunc::Control);
+  Node* mem  = alloc->in(TypeFunc::Memory);
+  Node* i_o  = alloc->in(TypeFunc::I_O);
+
+  extract_call_projections(alloc);
+  if (_fallthroughcatchproj != NULL) {
+    migrate_outs(_fallthroughcatchproj, ctrl);
+    _igvn.remove_dead_node(_fallthroughcatchproj);
+  }
+  if (_catchallcatchproj != NULL) {
+    _igvn.rehash_node_delayed(_catchallcatchproj);
+    _catchallcatchproj->set_req(0, top());
+  }
+  if (_fallthroughproj != NULL) {
+    Node* catchnode = _fallthroughproj->unique_ctrl_out();
+    _igvn.remove_dead_node(catchnode);
+    _igvn.remove_dead_node(_fallthroughproj);
+  }
+  if (_memproj_fallthrough != NULL) {
+    migrate_outs(_memproj_fallthrough, mem);
+    _igvn.remove_dead_node(_memproj_fallthrough);
+  }
+  if (_ioproj_fallthrough != NULL) {
+    migrate_outs(_ioproj_fallthrough, i_o);
+    _igvn.remove_dead_node(_ioproj_fallthrough);
+  }
+  if (_memproj_catchall != NULL) {
+    _igvn.rehash_node_delayed(_memproj_catchall);
+    _memproj_catchall->set_req(0, top());
+  }
+  if (_ioproj_catchall != NULL) {
+    _igvn.rehash_node_delayed(_ioproj_catchall);
+    _ioproj_catchall->set_req(0, top());
+  }
+  _igvn.remove_dead_node(alloc);
+}
+
+void PhaseMacroExpand::expand_initialize_membar(AllocateNode* alloc, InitializeNode* init,
+                                                Node*& fast_oop_ctrl, Node*& fast_oop_rawmem) {
+  // If initialization is performed by an array copy, any required
+  // MemBarStoreStore was already added. If the object does not
+  // escape no need for a MemBarStoreStore. If the object does not
+  // escape in its initializer and memory barrier (MemBarStoreStore or
+  // stronger) is already added at exit of initializer, also no need
+  // for a MemBarStoreStore. Otherwise we need a MemBarStoreStore
+  // so that stores that initialize this object can't be reordered
+  // with a subsequent store that makes this object accessible by
+  // other threads.
+  // Other threads include java threads and JVM internal threads
+  // (for example concurrent GC threads). Current concurrent GC
+  // implementation: G1 will not scan newly created object,
+  // so it's safe to skip storestore barrier when allocation does
+  // not escape.
+  if (!alloc->does_not_escape_thread() &&
+    !alloc->is_allocation_MemBar_redundant() &&
+    (init == NULL || !init->is_complete_with_arraycopy())) {
+    if (init == NULL || init->req() < InitializeNode::RawStores) {
+      // No InitializeNode or no stores captured by zeroing
+      // elimination. Simply add the MemBarStoreStore after object
+      // initialization.
+      MemBarNode* mb = MemBarNode::make(C, Op_MemBarStoreStore, Compile::AliasIdxBot);
+      transform_later(mb);
+
+      mb->init_req(TypeFunc::Memory, fast_oop_rawmem);
+      mb->init_req(TypeFunc::Control, fast_oop_ctrl);
+      fast_oop_ctrl = new ProjNode(mb, TypeFunc::Control);
+      transform_later(fast_oop_ctrl);
+      fast_oop_rawmem = new ProjNode(mb, TypeFunc::Memory);
+      transform_later(fast_oop_rawmem);
+    } else {
+      // Add the MemBarStoreStore after the InitializeNode so that
+      // all stores performing the initialization that were moved
+      // before the InitializeNode happen before the storestore
+      // barrier.
+
+      Node* init_ctrl = init->proj_out_or_null(TypeFunc::Control);
+      Node* init_mem = init->proj_out_or_null(TypeFunc::Memory);
+
+      MemBarNode* mb = MemBarNode::make(C, Op_MemBarStoreStore, Compile::AliasIdxBot);
+      transform_later(mb);
+
+      Node* ctrl = new ProjNode(init, TypeFunc::Control);
+      transform_later(ctrl);
+      Node* mem = new ProjNode(init, TypeFunc::Memory);
+      transform_later(mem);
+
+      // The MemBarStoreStore depends on control and memory coming
+      // from the InitializeNode
+      mb->init_req(TypeFunc::Memory, mem);
+      mb->init_req(TypeFunc::Control, ctrl);
+
+      ctrl = new ProjNode(mb, TypeFunc::Control);
+      transform_later(ctrl);
+      mem = new ProjNode(mb, TypeFunc::Memory);
+      transform_later(mem);
+
+      // All nodes that depended on the InitializeNode for control
+      // and memory must now depend on the MemBarNode that itself
+      // depends on the InitializeNode
+      if (init_ctrl != NULL) {
+        _igvn.replace_node(init_ctrl, ctrl);
+      }
+      if (init_mem != NULL) {
+        _igvn.replace_node(init_mem, mem);
+      }
+    }
+  }
+}
+
+void PhaseMacroExpand::expand_dtrace_alloc_probe(AllocateNode* alloc, Node* oop,
+                                                Node*& ctrl, Node*& rawmem) {
+  if (C->env()->dtrace_extended_probes()) {
+    // Slow-path call
+    int size = TypeFunc::Parms + 2;
+    CallLeafNode *call = new CallLeafNode(OptoRuntime::dtrace_object_alloc_Type(),
+                                          CAST_FROM_FN_PTR(address, SharedRuntime::dtrace_object_alloc_base),
+                                          "dtrace_object_alloc",
+                                          TypeRawPtr::BOTTOM);
+
+    // Get base of thread-local storage area
+    Node* thread = new ThreadLocalNode();
+    transform_later(thread);
+
+    call->init_req(TypeFunc::Parms + 0, thread);
+    call->init_req(TypeFunc::Parms + 1, oop);
+    call->init_req(TypeFunc::Control, ctrl);
+    call->init_req(TypeFunc::I_O    , top()); // does no i/o
+    call->init_req(TypeFunc::Memory , ctrl);
+    call->init_req(TypeFunc::ReturnAdr, alloc->in(TypeFunc::ReturnAdr));
+    call->init_req(TypeFunc::FramePtr, alloc->in(TypeFunc::FramePtr));
+    transform_later(call);
+    ctrl = new ProjNode(call, TypeFunc::Control);
+    transform_later(ctrl);
+    rawmem = new ProjNode(call, TypeFunc::Memory);
+    transform_later(rawmem);
+  }
+}
+
+// Remove InitializeNode without use
+void PhaseMacroExpand::yank_initalize_node(InitializeNode* initnode) {
+  assert(initnode->proj_out_or_null(TypeFunc::Parms) == NULL, "No uses allowed");
+
+  Node* ctrl_out  = initnode->proj_out_or_null(TypeFunc::Control);
+  Node* mem_out   = initnode->proj_out_or_null(TypeFunc::Memory);
+
+  // Move all uses of each to
+  if (ctrl_out != NULL ) {
+    migrate_outs(ctrl_out, initnode->in(TypeFunc::Control));
+    _igvn.remove_dead_node(ctrl_out);
+  }
+
+  // Move all uses of each to
+  if (mem_out != NULL ) {
+    migrate_outs(mem_out, initnode->in(TypeFunc::Memory));
+    _igvn.remove_dead_node(mem_out);
+  }
+}
 
 // Helper for PhaseMacroExpand::expand_allocate_common.
 // Initializes the newly-allocated storage.
