@@ -120,7 +120,9 @@ inline oop ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_loa
   if (value != NULL) {
     ShenandoahBarrierSet *const bs = ShenandoahBarrierSet::barrier_set();
     value = bs->load_reference_barrier_native(value, addr);
-    bs->keep_alive_if_weak<decorators>(value);
+    if (value != NULL) {
+      bs->keep_alive_if_weak<decorators>(value);
+    }
   }
   return value;
 }
