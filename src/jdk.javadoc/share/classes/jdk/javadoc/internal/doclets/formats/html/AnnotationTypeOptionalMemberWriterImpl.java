@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,9 +63,6 @@ public class AnnotationTypeOptionalMemberWriterImpl extends
         super(writer, annotationType);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Content getMemberSummaryHeader(TypeElement typeElement,
             Content memberSummaryTree) {
@@ -76,18 +73,12 @@ public class AnnotationTypeOptionalMemberWriterImpl extends
         return memberTree;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void addMemberTree(Content memberSummaryTree, Content memberTree) {
         writer.addMemberTree(HtmlStyle.memberSummary,
                 SectionName.ANNOTATION_TYPE_OPTIONAL_ELEMENT_SUMMARY, memberSummaryTree, memberTree);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void addDefaultValueInfo(Element member, Content annotationDocTree) {
         if (utils.isAnnotationType(member)) {
@@ -103,9 +94,6 @@ public class AnnotationTypeOptionalMemberWriterImpl extends
         }
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void addSummaryLabel(Content memberTree) {
         Content label = HtmlTree.HEADING(Headings.TypeDeclaration.SUMMARY_HEADING,
@@ -113,17 +101,11 @@ public class AnnotationTypeOptionalMemberWriterImpl extends
         memberTree.add(label);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     protected Content getCaption() {
         return contents.getContent("doclet.Annotation_Type_Optional_Members");
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public TableHeader getSummaryTableHeader(Element member) {
         return new TableHeader(contents.modifierAndTypeLabel,

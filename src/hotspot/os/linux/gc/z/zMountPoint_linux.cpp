@@ -25,6 +25,7 @@
 #include "gc/z/zArray.inline.hpp"
 #include "gc/z/zErrno.hpp"
 #include "gc/z/zMountPoint_linux.hpp"
+#include "runtime/globals.hpp"
 #include "logging/log.hpp"
 
 #include <stdio.h>
@@ -34,9 +35,9 @@
 #define PROC_SELF_MOUNTINFO        "/proc/self/mountinfo"
 
 ZMountPoint::ZMountPoint(const char* filesystem, const char** preferred_mountpoints) {
-  if (ZPath != NULL) {
+  if (AllocateHeapAt != NULL) {
     // Use specified path
-    _path = strdup(ZPath);
+    _path = strdup(AllocateHeapAt);
   } else {
     // Find suitable path
     _path = find_mountpoint(filesystem, preferred_mountpoints);

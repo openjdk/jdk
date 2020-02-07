@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,6 +73,7 @@ public class BaseTaglet implements Taglet {
      * @return true if this {@code Taglet} can be used in constructor documentation and false
      * otherwise.
      */
+    @Override
     public final boolean inConstructor() {
         return sites.contains(Location.CONSTRUCTOR);
     }
@@ -83,6 +84,7 @@ public class BaseTaglet implements Taglet {
      * @return true if this {@code Taglet} can be used in field documentation and false
      * otherwise.
      */
+    @Override
     public final boolean inField() {
         return sites.contains(Location.FIELD);
     }
@@ -93,6 +95,7 @@ public class BaseTaglet implements Taglet {
      * @return true if this {@code Taglet} can be used in method documentation and false
      * otherwise.
      */
+    @Override
     public final boolean inMethod() {
         return sites.contains(Location.METHOD);
     }
@@ -103,6 +106,7 @@ public class BaseTaglet implements Taglet {
      * @return true if this {@code Taglet} can be used in method documentation and false
      * otherwise.
      */
+    @Override
     public final boolean inOverview() {
         return sites.contains(Location.OVERVIEW);
     }
@@ -113,6 +117,7 @@ public class BaseTaglet implements Taglet {
      * @return true if this {@code Taglet} can be used in module documentation and false
      * otherwise.
      */
+    @Override
     public final boolean inModule() {
         return sites.contains(Location.MODULE);
     }
@@ -123,6 +128,7 @@ public class BaseTaglet implements Taglet {
      * @return true if this {@code Taglet} can be used in package documentation and false
      * otherwise.
      */
+    @Override
     public final boolean inPackage() {
         return sites.contains(Location.PACKAGE);
     }
@@ -133,6 +139,7 @@ public class BaseTaglet implements Taglet {
      * @return true if this {@code Taglet} can be used in type documentation and false
      * otherwise.
      */
+    @Override
     public final boolean inType() {
         return sites.contains(Location.TYPE);
     }
@@ -142,6 +149,7 @@ public class BaseTaglet implements Taglet {
      *
      * @return true if this {@code Taglet} represents an inline tag and false otherwise.
      */
+    @Override
     public final boolean isInlineTag() {
         return inline;
     }
@@ -160,6 +168,7 @@ public class BaseTaglet implements Taglet {
      *
      * @return the name of this tag.
      */
+    @Override
     public String getName() {
         return name;
     }
@@ -179,22 +188,12 @@ public class BaseTaglet implements Taglet {
                 : tree.getKind() == tagKind;
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * @throws UnsupportedTagletOperationException thrown when the method is
-     *                                             not supported by the taglet.
-     */
+    @Override
     public Content getTagletOutput(Element element, DocTree tag, TagletWriter writer) {
         throw new UnsupportedTagletOperationException("Method not supported in taglet " + getName() + ".");
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * @throws UnsupportedTagletOperationException thrown when the method is not
-     *                                             supported by the taglet.
-     */
+    @Override
     public Content getTagletOutput(Element holder, TagletWriter writer) {
         throw new UnsupportedTagletOperationException("Method not supported in taglet " + getName() + ".");
     }

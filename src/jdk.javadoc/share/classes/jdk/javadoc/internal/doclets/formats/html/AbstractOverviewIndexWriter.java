@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -141,7 +141,7 @@ public abstract class AbstractOverviewIndexWriter extends HtmlDocletWriter {
                 .setFooter(footer)
                 .toContent());
         printHtmlDocument(
-                configuration.metakeywords.getOverviewMetaKeywords(title, configuration.doctitle),
+                configuration.metakeywords.getOverviewMetaKeywords(title, configuration.getOptions().docTitle()),
                 description, body);
     }
 
@@ -158,8 +158,9 @@ public abstract class AbstractOverviewIndexWriter extends HtmlDocletWriter {
      * @param body the document tree to which the title will be added
      */
     protected void addConfigurationTitle(Content body) {
-        if (configuration.doctitle.length() > 0) {
-            Content title = new RawHtml(configuration.doctitle);
+        String doctitle = configuration.getOptions().docTitle();
+        if (!doctitle.isEmpty()) {
+            Content title = new RawHtml(doctitle);
             Content heading = HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING,
                     HtmlStyle.title, title);
             Content div = HtmlTree.DIV(HtmlStyle.header, heading);

@@ -297,7 +297,7 @@ public:
   void do_object(oop p) {
     assert(_from_region != NULL, "must set before work");
     assert(_heap->complete_marking_context()->is_marked(p), "must be marked");
-    assert(!_heap->complete_marking_context()->allocated_after_mark_start((HeapWord*) p), "must be truly marked");
+    assert(!_heap->complete_marking_context()->allocated_after_mark_start(p), "must be truly marked");
 
     size_t obj_size = p->size();
     if (_compact_point + obj_size > _to_region->end()) {
@@ -664,8 +664,8 @@ public:
     assert(_heap->complete_marking_context()->is_marked(p), "must be marked");
     size_t size = (size_t)p->size();
     if (p->is_forwarded()) {
-      HeapWord* compact_from = (HeapWord*) p;
-      HeapWord* compact_to = (HeapWord*) p->forwardee();
+      HeapWord* compact_from = cast_from_oop<HeapWord*>(p);
+      HeapWord* compact_to = cast_from_oop<HeapWord*>(p->forwardee());
       Copy::aligned_conjoint_words(compact_from, compact_to, size);
       oop new_obj = oop(compact_to);
       new_obj->init_mark_raw();

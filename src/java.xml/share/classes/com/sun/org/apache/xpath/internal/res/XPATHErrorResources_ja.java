@@ -1,6 +1,5 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -32,6 +31,7 @@ import java.util.ListResourceBundle;
   * Also you need to  update the count of messages(MAX_CODE)or
  * the count of warnings(MAX_WARNING) [ Information purpose only]
  * @xsl.usage advanced
+ * @LastModified: May 2019
  */
 public class XPATHErrorResources_ja extends ListResourceBundle
 {
@@ -150,6 +150,10 @@ public class XPATHErrorResources_ja extends ListResourceBundle
          "ER_FOUND_COMMA_BUT_NO_FOLLOWING_ARG";
   public static final String ER_PREDICATE_ILLEGAL_SYNTAX =
          "ER_PREDICATE_ILLEGAL_SYNTAX";
+  public static final String ER_PREDICATE_TOO_MANY_OPEN =
+         "ER_PREDICATE_TOO_MANY_OPEN";
+  public static final String ER_COMPILATION_TOO_MANY_OPERATION =
+         "ER_COMPILATION_TOO_MANY_OPERATION";
   public static final String ER_ILLEGAL_AXIS_NAME = "ER_ILLEGAL_AXIS_NAME";
   public static final String ER_UNKNOWN_NODETYPE = "ER_UNKNOWN_NODETYPE";
   public static final String ER_PATTERN_LITERAL_NEEDS_BE_QUOTED =
@@ -463,6 +467,12 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
 
   { ER_PREDICATE_ILLEGAL_SYNTAX,
       "'..[predicate]'\u307E\u305F\u306F'.[predicate]'\u306F\u4E0D\u6B63\u306A\u69CB\u6587\u3067\u3059\u3002\u304B\u308F\u308A\u306B'self::node()[predicate]'\u3092\u4F7F\u7528\u3057\u3066\u304F\u3060\u3055\u3044\u3002"},
+
+  { ER_PREDICATE_TOO_MANY_OPEN,
+      "{1}\u3067{0}\u3092\u89E3\u6790\u4E2D\u306B\u30B9\u30BF\u30C3\u30AF\u30FB\u30AA\u30FC\u30D0\u30FC\u30D5\u30ED\u30FC\u304C\u767A\u751F\u3057\u307E\u3057\u305F\u3002\u30AA\u30FC\u30D7\u30F3\u8FF0\u8A9E\u304C\u591A\u3059\u304E\u307E\u3059({2})\u3002"},
+
+  { ER_COMPILATION_TOO_MANY_OPERATION,
+      "\u5F0F\u306E\u30B3\u30F3\u30D1\u30A4\u30EB\u4E2D\u306B\u30B9\u30BF\u30C3\u30AF\u30FB\u30AA\u30FC\u30D0\u30FC\u30D5\u30ED\u30FC\u304C\u767A\u751F\u3057\u307E\u3057\u305F\u3002\u64CD\u4F5C\u304C\u591A\u3059\u304E\u307E\u3059({0})\u3002"},
 
   { ER_ILLEGAL_AXIS_NAME,
      "\u4E0D\u6B63\u306A\u8EF8\u540D: {0}"},

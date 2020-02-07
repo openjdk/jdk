@@ -95,6 +95,9 @@ class JfrJavaSupport : public AllStatic {
   static bool is_excluded(jobject thread);
   static void on_thread_start(Thread* t);
 
+  static jobject get_handler(jobject clazz, TRAPS);
+  static bool set_handler(jobject clazz, jobject handler, TRAPS);
+
   // critical
   static void abort(jstring errorMsg, TRAPS);
   static void uncaught_exception(jthrowable throwable, Thread* t);

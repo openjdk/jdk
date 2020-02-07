@@ -30,8 +30,7 @@
  * @modules java.desktop
  *          jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.code
- *          jdk.compiler/com.sun.tools.javac.comp
- *          jdk.compiler/com.sun.tools.javac.main
+ *          jdk.compiler/com.sun.tools.javac.file
  *          jdk.compiler/com.sun.tools.javac.tree
  *          jdk.compiler/com.sun.tools.javac.util
  * @build combo.ComboTestHelper

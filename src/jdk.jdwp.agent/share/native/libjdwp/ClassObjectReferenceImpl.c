@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,6 +55,8 @@ reflectedType(PacketInputStream *in, PacketOutputStream *out)
     return JNI_TRUE;
 }
 
-void *ClassObjectReference_Cmds[] = { (void *)1
-    ,(void *)reflectedType
+Command ClassObjectReference_Commands[] = {
+    {reflectedType, "ReflectedType"}
 };
+
+DEBUG_DISPATCH_DEFINE_CMDSET(ClassObjectReference)

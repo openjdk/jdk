@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2018, 2020, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,11 +67,11 @@ void ShenandoahAsserts::print_obj(ShenandoahMessageBuffer& msg, oop obj) {
   ShenandoahMarkingContext* const ctx = heap->marking_context();
 
   msg.append("  " PTR_FORMAT " - klass " PTR_FORMAT " %s\n", p2i(obj), p2i(obj->klass()), obj->klass()->external_name());
-  msg.append("    %3s allocated after mark start\n", ctx->allocated_after_mark_start((HeapWord *) obj) ? "" : "not");
+  msg.append("    %3s allocated after mark start\n", ctx->allocated_after_mark_start(obj) ? "" : "not");
   msg.append("    %3s marked \n",                    ctx->is_marked(obj) ? "" : "not");
   msg.append("    %3s in collection set\n",          heap->in_collection_set(obj) ? "" : "not");
   if (heap->traversal_gc() != NULL) {
-    msg.append("    %3s in traversal set\n",         heap->traversal_gc()->traversal_set()->is_in((HeapWord*) obj) ? "" : "not");
+    msg.append("    %3s in traversal set\n",         heap->traversal_gc()->traversal_set()->is_in(obj) ? "" : "not");
   }
   msg.append("  mark:%s\n", mw_ss.as_string());
   msg.append("  region: %s", ss.as_string());
@@ -85,7 +85,7 @@ void ShenandoahAsserts::print_non_obj(ShenandoahMessageBuffer& msg, void* loc) {
     stringStream ss;
     r->print_on(&ss);
 
-    msg.append("    %3s in collection set\n",    heap->in_collection_set(loc) ? "" : "not");
+    msg.append("    %3s in collection set\n",    heap->in_collection_set_loc(loc) ? "" : "not");
     msg.append("  region: %s", ss.as_string());
   } else {
     msg.append("  outside of Java heap\n");
@@ -332,7 +332,7 @@ void ShenandoahAsserts::assert_not_in_cset(void* interior_loc, oop obj, const ch
 
 void ShenandoahAsserts::assert_not_in_cset_loc(void* interior_loc, const char* file, int line) {
   ShenandoahHeap* heap = ShenandoahHeap::heap_no_check();
-  if (heap->in_collection_set(interior_loc)) {
+  if (heap->in_collection_set_loc(interior_loc)) {
     print_failure(_safe_unknown, NULL, interior_loc, NULL, "Shenandoah assert_not_in_cset_loc failed",
                   "Interior location should not be in collection set",
                   file, line);

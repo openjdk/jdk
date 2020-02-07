@@ -58,7 +58,7 @@ void ZNMethodTableIteration::nmethods_do(NMethodClosure* cl) {
     // Claim table partition. Each partition is currently sized to span
     // two cache lines. This number is just a guess, but seems to work well.
     const size_t partition_size = (ZCacheLineSize * 2) / sizeof(ZNMethodTableEntry);
-    const size_t partition_start = MIN2(Atomic::add(&_claimed, partition_size) - partition_size, _size);
+    const size_t partition_start = MIN2(Atomic::fetch_and_add(&_claimed, partition_size), _size);
     const size_t partition_end = MIN2(partition_start + partition_size, _size);
     if (partition_start == partition_end) {
       // End of table

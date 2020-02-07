@@ -29,6 +29,7 @@ import java.lang.annotation.Annotation;
 import java.lang.annotation.Inherited;
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -58,6 +59,7 @@ import com.sun.tools.javac.comp.Env;
 import com.sun.tools.javac.jvm.*;
 import com.sun.tools.javac.jvm.PoolConstant;
 import com.sun.tools.javac.tree.JCTree;
+import com.sun.tools.javac.tree.JCTree.JCAnnotation;
 import com.sun.tools.javac.tree.JCTree.JCFieldAccess;
 import com.sun.tools.javac.tree.JCTree.JCVariableDecl;
 import com.sun.tools.javac.tree.JCTree.Tag;
@@ -1274,6 +1276,9 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
         /** the annotation metadata attached to this class */
         private AnnotationTypeMetadata annotationTypeMetadata;
 
+        /* the list of any of record components, only non empty if the class is a record
+         * and it has at least one record component
+         */
         private List<RecordComponent> recordComponents = List.nil();
 
         public ClassSymbol(long flags, Name name, Type type, Symbol owner) {
@@ -1471,15 +1476,24 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
             return Flags.asModifierSet(flags & ~DEFAULT);
         }
 
-        public RecordComponent getRecordComponent(VarSymbol field, boolean addIfMissing) {
+        public RecordComponent getRecordComponent(VarSymbol field) {
             for (RecordComponent rc : recordComponents) {
                 if (rc.name == field.name) {
                     return rc;
                 }
             }
+            return null;
+        }
+
+        public RecordComponent getRecordComponent(JCVariableDecl var, boolean addIfMissing) {
+            for (RecordComponent rc : recordComponents) {
+                if (rc.name == var.name) {
+                    return rc;
+                }
+            }
             RecordComponent rc = null;
             if (addIfMissing) {
-                recordComponents = recordComponents.append(rc = new RecordComponent(PUBLIC, field.name, field.type, field.owner));
+                recordComponents = recordComponents.append(rc = new RecordComponent(var));
             }
             return rc;
         }
@@ -1735,13 +1749,17 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
     public static class RecordComponent extends VarSymbol implements RecordComponentElement {
         public MethodSymbol accessor;
         public JCTree.JCMethodDecl accessorMeth;
+        private final List<JCAnnotation> originalAnnos;
 
         /**
          * Construct a record component, given its flags, name, type and owner.
          */
-        public RecordComponent(long flags, Name name, Type type, Symbol owner) {
-            super(flags, name, type, owner);
+        public RecordComponent(JCVariableDecl fieldDecl) {
+            super(PUBLIC, fieldDecl.sym.name, fieldDecl.sym.type, fieldDecl.sym.owner);
+            this.originalAnnos = fieldDecl.mods.annotations;
         }
+
+        public List<JCAnnotation> getOriginalAnnos() { return originalAnnos; }
 
         @Override @DefinedBy(Api.LANGUAGE_MODEL)
         @SuppressWarnings("preview")

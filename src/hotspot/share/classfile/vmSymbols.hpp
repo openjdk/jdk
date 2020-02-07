@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1566,8 +1566,6 @@ class vmSymbols: AllStatic {
     assert(_type_signatures[t] != NULL, "domain check");
     return _type_signatures[t];
   }
-  // inverse of type_signature; returns T_OBJECT if s is not recognized
-  static BasicType signature_type(const Symbol* s);
 
   static Symbol* symbol_at(SID id) {
     assert(id >= FIRST_SID && id < SID_LIMIT, "oob");

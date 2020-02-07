@@ -93,11 +93,14 @@ inline void post_membar(atomic_memory_order order) {
 
 
 template<size_t byte_size>
-struct Atomic::PlatformAdd
-  : Atomic::AddAndFetch<Atomic::PlatformAdd<byte_size> >
-{
+struct Atomic::PlatformAdd {
   template<typename D, typename I>
   D add_and_fetch(D volatile* dest, I add_value, atomic_memory_order order) const;
+
+  template<typename D, typename I>
+  D fetch_and_add(D volatile* dest, I add_value, atomic_memory_order order) const {
+    return add_and_fetch(dest, add_value, order) - add_value;
+  }
 };
 
 template<>

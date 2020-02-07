@@ -57,9 +57,6 @@ class OopsInGenClosure : public OopIterateClosure {
   // pointers must call the method below.
   template <class T> void do_barrier(T* p);
 
-  // Version for use by closures that may be called in parallel code.
-  template <class T> void par_do_barrier(T* p);
-
  public:
   OopsInGenClosure() : OopIterateClosure(NULL),
     _orig_gen(NULL), _gen(NULL), _gen_boundary(NULL), _rs(NULL) {};

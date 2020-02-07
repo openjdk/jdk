@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -233,8 +233,7 @@ methods1(PacketInputStream *in, PacketOutputStream *out,
 }
 
 static jboolean
-methods(PacketInputStream *in, PacketOutputStream *out,
-         int outputGenerics)
+methods(PacketInputStream *in, PacketOutputStream *out)
 {
     return methods1(in, out, 0);
 }
@@ -625,24 +624,26 @@ classObject(PacketInputStream *in, PacketOutputStream *out)
     return JNI_TRUE;
 }
 
-void *ReferenceType_Cmds[] = { (void *)19
-    ,(void *)signature
-    ,(void *)getClassLoader
-    ,(void *)modifiers
-    ,(void *)fields
-    ,(void *)methods
-    ,(void *)getValues
-    ,(void *)sourceFile
-    ,(void *)nestedTypes
-    ,(void *)getClassStatus
-    ,(void *)interfaces
-    ,(void *)classObject
-    ,(void *)sourceDebugExtension
-    ,(void *)signatureWithGeneric
-    ,(void *)fieldsWithGeneric
-    ,(void *)methodsWithGeneric
-    ,(void *)instances
-    ,(void *)getClassVersion
-    ,(void *)getConstantPool
-    ,(void *)getModule
+Command ReferenceType_Commands[] = {
+    {signature, "Signature"},
+    {getClassLoader, "GetClassLoader"},
+    {modifiers, "Modifiers"},
+    {fields, "Fields"},
+    {methods, "Methods"},
+    {getValues, "GetValues"},
+    {sourceFile, "SourceFile"},
+    {nestedTypes, "NestedTypes"},
+    {getClassStatus, "GetClassStatus"},
+    {interfaces, "Interfaces"},
+    {classObject, "ClassObject"},
+    {sourceDebugExtension, "SourceDebugExtension"},
+    {signatureWithGeneric, "SignatureWithGeneric"},
+    {fieldsWithGeneric, "FieldsWithGeneric"},
+    {methodsWithGeneric, "MethodsWithGeneric"},
+    {instances, "Instances"},
+    {getClassVersion, "GetClassVersion"},
+    {getConstantPool, "GetConstantPool"},
+    {getModule, "GetModule"}
 };
+
+DEBUG_DISPATCH_DEFINE_CMDSET(ReferenceType)

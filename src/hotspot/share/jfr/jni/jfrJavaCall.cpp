@@ -73,7 +73,7 @@ void JfrJavaArguments::Parameters::set_receiver(const oop receiver) {
   assert(_storage != NULL, "invariant");
   assert(receiver != NULL, "invariant");
   JavaValue value(T_OBJECT);
-  value.set_jobject((jobject)receiver);
+  value.set_jobject(cast_from_oop<jobject>(receiver));
   _storage[0] = value;
 }
 
@@ -96,7 +96,7 @@ bool JfrJavaArguments::Parameters::has_receiver() const {
 
 void JfrJavaArguments::Parameters::push_oop(const oop obj) {
   JavaValue value(T_OBJECT);
-  value.set_jobject((jobject)obj);
+  value.set_jobject(cast_from_oop<jobject>(obj));
   push(value);
 }
 

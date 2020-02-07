@@ -61,14 +61,14 @@ public:
 
 size_t G1FullGCCompactTask::G1CompactRegionClosure::apply(oop obj) {
   size_t size = obj->size();
-  HeapWord* destination = (HeapWord*)obj->forwardee();
+  HeapWord* destination = cast_from_oop<HeapWord*>(obj->forwardee());
   if (destination == NULL) {
     // Object not moving
     return size;
   }
 
   // copy object and reinit its mark
-  HeapWord* obj_addr = (HeapWord*) obj;
+  HeapWord* obj_addr = cast_from_oop<HeapWord*>(obj);
   assert(obj_addr != destination, "everything in this pass should be moving");
   Copy::aligned_conjoint_words(obj_addr, destination, size);
   oop(destination)->init_mark_raw();

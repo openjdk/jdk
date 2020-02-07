@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@ public class ClhsdbJstack {
         LingeredApp theApp = null;
         try {
             ClhsdbLauncher test = new ClhsdbLauncher();
-            theApp = withXcomp ? LingeredApp.startApp(List.of("-Xcomp"))
+            theApp = withXcomp ? LingeredApp.startApp("-Xcomp")
                                : LingeredApp.startApp();
             System.out.print("Started LingeredApp ");
             if (withXcomp) {

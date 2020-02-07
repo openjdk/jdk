@@ -284,7 +284,7 @@ oop G1ParScanThreadState::copy_to_survivor_space(G1HeapRegionAttr const region_a
   const oop obj = oop(obj_ptr);
   const oop forward_ptr = old->forward_to_atomic(obj, old_mark, memory_order_relaxed);
   if (forward_ptr == NULL) {
-    Copy::aligned_disjoint_words((HeapWord*) old, obj_ptr, word_sz);
+    Copy::aligned_disjoint_words(cast_from_oop<HeapWord*>(old), obj_ptr, word_sz);
 
     const uint young_index = from_region->young_index_in_cset();
 

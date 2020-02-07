@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,9 +59,9 @@ public class JInfoTest {
         LingeredApp app1 = new JInfoTestLingeredApp();
         LingeredApp app2 = new JInfoTestLingeredApp();
         try {
-            ArrayList<String> params = new ArrayList<String>();
-            LingeredApp.startApp(params, app1);
-            LingeredApp.startApp(params, app2);
+            String[] params = new String[0];;
+            LingeredApp.startApp(app1, params);
+            LingeredApp.startApp(app2, params);
             OutputAnalyzer output = jinfo("-flag", "MinHeapFreeRatio=1", "JInfoTestLingeredApp");
             output.shouldHaveExitValue(0);
             output = jinfo("-flag", "MinHeapFreeRatio", "JInfoTestLingeredApp");
@@ -84,9 +84,9 @@ public class JInfoTest {
         LingeredApp app1 = new JInfoTestLingeredApp();
         LingeredApp app2 = new JInfoTestLingeredApp();
         try {
-            ArrayList<String> params = new ArrayList<String>();
-            LingeredApp.startApp(params, app1);
-            LingeredApp.startApp(params, app2);
+            String[] params = new String[0];
+            LingeredApp.startApp(app1, params);
+            LingeredApp.startApp(app2, params);
             OutputAnalyzer output = jinfo("JInfoTestLingeredApp");
             output.shouldHaveExitValue(0);
             // "Runtime Environment" written once per proc
@@ -122,4 +122,3 @@ public class JInfoTest {
 // Sometime there is LingeredApp's from other test still around
 class JInfoTestLingeredApp extends LingeredApp {
 }
-

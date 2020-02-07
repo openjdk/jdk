@@ -69,8 +69,6 @@ extern Monitor* CGC_lock;                        // used for coordination betwee
 extern Monitor* STS_lock;                        // used for joining/leaving SuspendibleThreadSet.
 extern Monitor* FullGCCount_lock;                // in support of "concurrent" full gc
 extern Monitor* G1OldGCCount_lock;               // in support of "concurrent" full gc
-extern Monitor* DirtyCardQ_CBL_mon;              // Protects dirty card Q
-                                                 // completed buffer queue.
 extern Mutex*   Shared_DirtyCardQ_lock;          // Lock protecting dirty card
                                                  // queue shared by
                                                  // non-Java threads.

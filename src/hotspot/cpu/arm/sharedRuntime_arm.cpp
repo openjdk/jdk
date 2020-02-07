@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@
 #include "oops/compiledICHolder.hpp"
 #include "oops/klass.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/safepointMechanism.hpp"
 #include "runtime/vframeArray.hpp"
 #include "utilities/align.hpp"
 #include "vmreg_arm.inline.hpp"
@@ -1219,20 +1220,18 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   }
 
   // Do a safepoint check while thread is in transition state
-  InlinedAddress safepoint_state(SafepointSynchronize::address_of_state());
   Label call_safepoint_runtime, return_to_java;
   __ mov(Rtemp, _thread_in_native_trans);
-  __ ldr_literal(R2, safepoint_state);
   __ str_32(Rtemp, Address(Rthread, JavaThread::thread_state_offset()));
 
   // make sure the store is observed before reading the SafepointSynchronize state and further mem refs
   __ membar(MacroAssembler::Membar_mask_bits(MacroAssembler::StoreLoad | MacroAssembler::StoreStore), Rtemp);
 
-  __ ldr_s32(R2, Address(R2));
+  __ safepoint_poll(R2, call_safepoint_runtime);
   __ ldr_u32(R3, Address(Rthread, JavaThread::suspend_flags_offset()));
-  __ cmp(R2, SafepointSynchronize::_not_synchronized);
-  __ cond_cmp(R3, 0, eq);
+  __ cmp(R3, 0);
   __ b(call_safepoint_runtime, ne);
+
   __ bind(return_to_java);
 
   // Perform thread state transition and reguard stack yellow pages if needed
@@ -1302,8 +1301,6 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   __ call(CAST_FROM_FN_PTR(address, JavaThread::check_special_condition_for_native_trans));
   pop_result_registers(masm, ret_type);
   __ b(return_to_java);
-
-  __ bind_literal(safepoint_state);
 
   // Reguard stack pages. Save native results around a call to C runtime.
   __ bind(reguard);
@@ -1806,15 +1803,29 @@ SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, int poll_t
   oop_maps->add_gc_map(pc_offset, map);
   __ reset_last_Java_frame(Rtemp); // Rtemp free since scratched by far call
 
-  // Check for pending exception
-  __ ldr(Rtemp, Address(Rthread, Thread::pending_exception_offset()));
-  __ cmp(Rtemp, 0);
-
   if (!cause_return) {
+    if (SafepointMechanism::uses_thread_local_poll()) {
+      // If our stashed return pc was modified by the runtime we avoid touching it
+      __ ldr(R3_tmp, Address(Rthread, JavaThread::saved_exception_pc_offset()));
+      __ ldr(R2_tmp, Address(SP, RegisterSaver::LR_offset * wordSize));
+      __ cmp(R2_tmp, R3_tmp);
+      // Adjust return pc forward to step over the safepoint poll instruction
+      __ add(R2_tmp, R2_tmp, 4, eq);
+      __ str(R2_tmp, Address(SP, RegisterSaver::LR_offset * wordSize), eq);
+    }
+
+    // Check for pending exception
+    __ ldr(Rtemp, Address(Rthread, Thread::pending_exception_offset()));
+    __ cmp(Rtemp, 0);
+
     RegisterSaver::restore_live_registers(masm, false);
     __ pop(PC, eq);
     __ pop(Rexception_pc);
   } else {
+    // Check for pending exception
+    __ ldr(Rtemp, Address(Rthread, Thread::pending_exception_offset()));
+    __ cmp(Rtemp, 0);
+
     RegisterSaver::restore_live_registers(masm);
     __ bx(LR, eq);
     __ mov(Rexception_pc, LR);

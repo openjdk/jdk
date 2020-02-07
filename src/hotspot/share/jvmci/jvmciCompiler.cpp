@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,7 +61,7 @@ void JVMCICompiler::bootstrap(TRAPS) {
   if (PrintBootstrap) {
     tty->print("Bootstrapping JVMCI");
   }
-  jlong start = os::javaTimeMillis();
+  jlong start = os::javaTimeNanos();
 
   Array<Method*>* objectMethods = SystemDictionary::Object_klass()->methods();
   // Initialize compile queue with a selected set of methods.
@@ -94,7 +94,8 @@ void JVMCICompiler::bootstrap(TRAPS) {
   } while (qsize != 0);
 
   if (PrintBootstrap) {
-    tty->print_cr(" in " JLONG_FORMAT " ms (compiled %d methods)", os::javaTimeMillis() - start, _methods_compiled);
+    tty->print_cr(" in " JLONG_FORMAT " ms (compiled %d methods)",
+                  (jlong)nanos_to_millis(os::javaTimeNanos() - start), _methods_compiled);
   }
   _bootstrapping = false;
   JVMCI::compiler_runtime()->bootstrap_finished(CHECK);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,6 +102,7 @@ public abstract class AbstractDoclet implements Doclet {
         configuration.initConfiguration(docEnv);
         utils = configuration.utils;
         messages = configuration.getMessages();
+        BaseOptions options = configuration.getOptions();
 
         if (!isValidDoclet()) {
             return false;
@@ -125,16 +126,16 @@ public abstract class AbstractDoclet implements Doclet {
                     messages.error("doclet.exception.write.file",
                             e.fileName.getPath(), e.getCause());
             }
-            dumpStack(configuration.dumpOnError, e);
+            dumpStack(options.dumpOnError(), e);
 
         } catch (ResourceIOException e) {
             messages.error("doclet.exception.read.resource",
                     e.resource.getPath(), e.getCause());
-            dumpStack(configuration.dumpOnError, e);
+            dumpStack(options.dumpOnError(), e);
 
         } catch (SimpleDocletException e) {
             configuration.reporter.print(ERROR, e.getMessage());
-            dumpStack(configuration.dumpOnError, e);
+            dumpStack(options.dumpOnError(), e);
 
         } catch (InternalException e) {
             configuration.reporter.print(ERROR, e.getMessage());
@@ -200,7 +201,7 @@ public abstract class AbstractDoclet implements Doclet {
         }
         messages.notice("doclet.build_version",
             configuration.getDocletVersion());
-        ClassTree classtree = new ClassTree(configuration, configuration.nodeprecated);
+        ClassTree classtree = new ClassTree(configuration, configuration.getOptions().noDeprecated());
 
         generateClassFiles(docEnv, classtree);
 

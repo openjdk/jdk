@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,7 @@ import sun.hotspot.WhiteBox;
 public class ArchiveConsistency extends DynamicArchiveTestBase {
     public static WhiteBox wb;
     public static int int_size;        // size of int
-    public static String[] shared_region_name = {"MiscCode", "ReadWrite", "ReadOnly", "MiscData"};
+    public static String[] shared_region_name = {"MiscCode", "ReadWrite", "ReadOnly", "BitMap"};
     public static int num_regions = shared_region_name.length;
 
     public static void main(String[] args) throws Exception {

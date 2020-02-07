@@ -218,7 +218,7 @@ public class ForeignCallNode extends AbstractMemoryCheckpoint implements LIRLowe
                         (currentStateAfter.stackSize() > 1 && currentStateAfter.stackAt(currentStateAfter.stackSize() - 2) == this)) {
             // The result of this call is on the top of stack, so roll back to the previous bci.
             assert bci != BytecodeFrame.UNKNOWN_BCI : this;
-            newStateDuring = currentStateAfter.duplicateModifiedDuringCall(bci, this.getStackKind());
+            newStateDuring = currentStateAfter.duplicateModified(currentStateAfter.graph(), bci, false, true, this.getStackKind(), null, null);
         } else {
             newStateDuring = currentStateAfter;
         }

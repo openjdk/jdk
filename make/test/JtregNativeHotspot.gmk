@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -880,8 +880,10 @@ endif
 ifeq ($(call isTargetOs, windows), true)
     BUILD_HOTSPOT_JTREG_EXECUTABLES_CFLAGS_exeFPRegs := -MT
     BUILD_HOTSPOT_JTREG_EXCLUDE += exesigtest.c libterminatedThread.c
+    BUILD_HOTSPOT_JTREG_EXECUTABLES_LIBS_exejvm-test-launcher := jvm.lib
 
 else
+    BUILD_HOTSPOT_JTREG_EXECUTABLES_LIBS_exejvm-test-launcher := -ljvm
     BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libbootclssearch_agent += -lpthread
     BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libsystemclssearch_agent += -lpthread
     BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libgetsysprop001 += -lpthread

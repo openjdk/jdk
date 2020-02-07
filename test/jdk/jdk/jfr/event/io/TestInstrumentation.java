@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -106,11 +106,9 @@ public class TestInstrumentation implements ClassFileTransformer {
         "java/io/FileOutputStream::write::([B)V",
         "java/io/FileOutputStream::write::([BII)V",
         "java/net/Socket$SocketInputStream::read::()I",
-        "java/net/Socket$SocketInputStream::read::([B)I",
         "java/net/Socket$SocketInputStream::read::([BII)I",
         "java/net/Socket$SocketInputStream::close::()V",
         "java/net/Socket$SocketOutputStream::write::(I)V",
-        "java/net/Socket$SocketOutputStream::write::([B)V",
         "java/net/Socket$SocketOutputStream::write::([BII)V",
         "java/net/Socket$SocketOutputStream::close::()V",
         "java/nio/channels/FileChannel::read::([Ljava/nio/ByteBuffer;)J",

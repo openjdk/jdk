@@ -686,6 +686,7 @@ sun/security/provider/KeyStore/DKSTest.sh                       8180266 windows-
 sun/security/pkcs11/KeyStore/SecretKeysBasic.sh                 8209398 generic-all
 
 security/infra/java/security/cert/CertPathValidator/certification/ActalisCA.java  8224768 generic-all
+security/infra/java/security/cert/CertPathValidator/certification/LuxTrustCA.java 8237888 generic-all
 
 sun/security/smartcardio/TestChannel.java                       8039280 generic-all
 sun/security/smartcardio/TestConnect.java                       8039280 generic-all
@@ -930,14 +931,8 @@ javax/rmi/ssl/SSLSocketParametersTest.sh                        8162906 generic-
 
 # jdk_jfr
 
-jdk/jfr/event/io/TestInstrumentation.java                       8202142    generic-all
-jdk/jfr/api/recording/event/TestPeriod.java                     8215890    generic-all
-jdk/jfr/event/io/EvilInstrument.java                            8221331    generic-all
 jdk/jfr/event/runtime/TestNetworkUtilizationEvent.java          8228990,8229370    generic-all
 jdk/jfr/event/compiler/TestCodeSweeper.java                     8225209    generic-all
-jdk/jfr/api/consumer/recordingstream/TestSetStartTime.java      8233217    generic-all
-jdk/jfr/api/consumer/streaming/TestJVMCrash.java                8235599    windows-all
-jdk/jfr/jmx/security/TestEnoughPermission.java                  8235946    generic-all
 
 ############################################################################
 

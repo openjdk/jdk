@@ -413,12 +413,10 @@ ciKlass* ciEnv::get_klass_by_name_impl(ciKlass* accessing_klass,
 
   // Now we need to check the SystemDictionary
   Symbol* sym = name->get_symbol();
-  if (sym->char_at(0) == JVM_SIGNATURE_CLASS &&
-      sym->char_at(sym->utf8_length()-1) == JVM_SIGNATURE_ENDCLASS) {
+  if (Signature::has_envelope(sym)) {
     // This is a name from a signature.  Strip off the trimmings.
     // Call recursive to keep scope of strippedsym.
-    TempNewSymbol strippedsym = SymbolTable::new_symbol(sym->as_utf8()+1,
-                                                        sym->utf8_length()-2);
+    TempNewSymbol strippedsym = Signature::strip_envelope(sym);
     ciSymbol* strippedname = get_symbol(strippedsym);
     return get_klass_by_name_impl(accessing_klass, cpool, strippedname, require_local);
   }
@@ -466,18 +464,17 @@ ciKlass* ciEnv::get_klass_by_name_impl(ciKlass* accessing_klass,
   // we must build an array type around it.  The CI requires array klasses
   // to be loaded if their element klasses are loaded, except when memory
   // is exhausted.
-  if (sym->char_at(0) == JVM_SIGNATURE_ARRAY &&
+  if (Signature::is_array(sym) &&
       (sym->char_at(1) == JVM_SIGNATURE_ARRAY || sym->char_at(1) == JVM_SIGNATURE_CLASS)) {
     // We have an unloaded array.
     // Build it on the fly if the element class exists.
-    TempNewSymbol elem_sym = SymbolTable::new_symbol(sym->as_utf8()+1,
-                                                     sym->utf8_length()-1);
-
+    SignatureStream ss(sym, false);
+    ss.skip_array_prefix(1);
     // Get element ciKlass recursively.
     ciKlass* elem_klass =
       get_klass_by_name_impl(accessing_klass,
                              cpool,
-                             get_symbol(elem_sym),
+                             get_symbol(ss.as_symbol()),
                              require_local);
     if (elem_klass != NULL && elem_klass->is_loaded()) {
       // Now make an array for it
@@ -609,7 +606,7 @@ ciConstant ciEnv::get_constant_by_index_impl(const constantPoolHandle& cpool,
       }
       BasicType bt = T_OBJECT;
       if (cpool->tag_at(index).is_dynamic_constant())
-        bt = FieldType::basic_type(cpool->uncached_signature_ref_at(index));
+        bt = Signature::basic_type(cpool->uncached_signature_ref_at(index));
       if (is_reference_type(bt)) {
       } else {
         // we have to unbox the primitive value
@@ -791,6 +788,8 @@ Method* ciEnv::lookup_method(ciInstanceKlass* accessor,
 ciMethod* ciEnv::get_method_by_index_impl(const constantPoolHandle& cpool,
                                           int index, Bytecodes::Code bc,
                                           ciInstanceKlass* accessor) {
+  assert(cpool.not_null(), "need constant pool");
+  assert(accessor != NULL, "need origin of access");
   if (bc == Bytecodes::_invokedynamic) {
     ConstantPoolCacheEntry* cpce = cpool->invokedynamic_cp_cache_entry_at(index);
     bool is_resolved = !cpce->is_f1_null();

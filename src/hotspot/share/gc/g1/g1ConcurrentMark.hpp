@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@
 #include "gc/g1/g1HeapVerifier.hpp"
 #include "gc/g1/g1RegionMarkStatsCache.hpp"
 #include "gc/g1/heapRegionSet.hpp"
+#include "gc/shared/taskTerminator.hpp"
 #include "gc/shared/taskqueue.hpp"
 #include "gc/shared/verifyOption.hpp"
 #include "gc/shared/workgroup.hpp"
@@ -414,10 +415,10 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
   // Prints all gathered CM-related statistics
   void print_stats();
 
-  HeapWord*               finger()           { return _finger;   }
-  bool                    concurrent()       { return _concurrent; }
-  uint                    active_tasks()     { return _num_active_tasks; }
-  ParallelTaskTerminator* terminator() const { return _terminator.terminator(); }
+  HeapWord*           finger()       { return _finger;   }
+  bool                concurrent()   { return _concurrent; }
+  uint                active_tasks() { return _num_active_tasks; }
+  TaskTerminator*     terminator()   { return &_terminator; }
 
   // Claims the next available region to be scanned by a marking
   // task/thread. It might return NULL if the next region is empty or

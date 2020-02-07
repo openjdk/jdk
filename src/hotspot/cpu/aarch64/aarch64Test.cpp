@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Red Hat Inc. All rights reserved.
+ * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,10 +32,12 @@
 
 extern "C" void entry(CodeBuffer*);
 
+#ifdef ASSERT
 void aarch64TestHook()
 {
   BufferBlob* b = BufferBlob::create("aarch64Test", 500000);
   CodeBuffer code(b);
-  MacroAssembler _masm(&code);
   entry(&code);
+  BufferBlob::free(b);
 }
+#endif

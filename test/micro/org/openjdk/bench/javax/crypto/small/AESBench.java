@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@ import org.openjdk.jmh.annotations.Param;
 
 public class AESBench extends org.openjdk.bench.javax.crypto.full.AESBench {
 
-    @Param({"AES/ECB/NoPadding", "AES/CBC/NoPadding" })
+    @Param({"AES/ECB/NoPadding", "AES/ECB/PKCS5Padding", "AES/CBC/NoPadding", "AES/CBC/PKCS5Padding"})
     private String algorithm;
 
     @Param({"128"})

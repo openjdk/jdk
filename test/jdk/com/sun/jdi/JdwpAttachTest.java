@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -127,11 +127,11 @@ public class JdwpAttachTest {
 
             try {
                 LingeredApp debuggee = LingeredApp.startApp(
-                        Arrays.asList("-agentlib:jdwp=transport=dt_socket"
+                        "-agentlib:jdwp=transport=dt_socket"
                                 + ",address=" + connectAddress + ":" + port
                                 + ",server=n,suspend=n"
                                 // if failure is expected set small timeout (default is 20 sec)
-                                + (!expectedResult ? ",timeout=1000" : "")));
+                                + (!expectedResult ? ",timeout=1000" : ""));
                 debuggee.stopApp();
                 if (expectedResult) {
                     log("OK: attached as expected");

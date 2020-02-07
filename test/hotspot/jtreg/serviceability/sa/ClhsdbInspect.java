@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ public class ClhsdbInspect {
             ClhsdbLauncher test = new ClhsdbLauncher();
 
             theApp = new LingeredAppWithLock();
-            LingeredApp.startApp(null, theApp);
+            LingeredApp.startApp(theApp);
             System.out.println("Started LingeredApp with pid " + theApp.getPid());
 
             // Run the 'jstack -v' command to get the address of a Method*,

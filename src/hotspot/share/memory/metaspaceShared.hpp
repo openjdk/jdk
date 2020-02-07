@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -193,10 +193,9 @@ class MetaspaceShared : AllStatic {
     mc = 0,  // miscellaneous code for method trampolines
     rw = 1,  // read-write shared space in the heap
     ro = 2,  // read-only shared space in the heap
-    md = 3,  // miscellaneous data for initializing tables, etc.
-    bm = 4,  // relocation bitmaps (freed after file mapping is finished)
-    num_core_region = 4,
-    num_non_heap_spaces = 5,
+    bm = 3,  // relocation bitmaps (freed after file mapping is finished)
+    num_core_region = 3,
+    num_non_heap_spaces = 4,
 
     // mapped java heap regions
     first_closed_archive_heap_region = bm + 1,
@@ -271,8 +270,8 @@ class MetaspaceShared : AllStatic {
 
   static bool is_shared_dynamic(void* p) NOT_CDS_RETURN_(false);
 
-  static void allocate_cpp_vtable_clones();
-  static intptr_t* clone_cpp_vtables(intptr_t* p);
+  static char* allocate_cpp_vtable_clones();
+  static void clone_cpp_vtables(intptr_t* p);
   static void zero_cpp_vtable_clones_for_writing();
   static void patch_cpp_vtable_pointers();
   static void serialize_cloned_cpp_vtptrs(SerializeClosure* sc);
@@ -346,6 +345,7 @@ class MetaspaceShared : AllStatic {
 
   static Klass* get_relocated_klass(Klass *k, bool is_final=false);
 
+  static void allocate_cloned_cpp_vtptrs();
   static intptr_t* fix_cpp_vtable_for_dynamic_archive(MetaspaceObj::Type msotype, address obj);
   static void initialize_ptr_marker(CHeapBitMap* ptrmap);
 
@@ -357,7 +357,13 @@ class MetaspaceShared : AllStatic {
     //const bool is_windows = true; // enable this to allow testing the windows mmap semantics on Linux, etc.
     return is_windows;
   }
+
+  static void write_core_archive_regions(FileMapInfo* mapinfo);
 private:
+#if INCLUDE_CDS
+  static void write_region(FileMapInfo* mapinfo, int region_idx, DumpRegion* dump_region,
+                           bool read_only,  bool allow_exec);
+#endif
   static void read_extra_data(const char* filename, TRAPS) NOT_CDS_RETURN;
   static FileMapInfo* open_static_archive();
   static FileMapInfo* open_dynamic_archive();

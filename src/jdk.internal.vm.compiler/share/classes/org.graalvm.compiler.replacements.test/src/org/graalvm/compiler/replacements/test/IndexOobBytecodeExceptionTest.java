@@ -27,47 +27,19 @@ package org.graalvm.compiler.replacements.test;
 import java.util.ArrayList;
 import java.util.Collection;
 
+import org.graalvm.compiler.api.directives.GraalDirectives;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
 
-import org.graalvm.compiler.api.directives.GraalDirectives;
-import org.graalvm.compiler.nodes.ValueNode;
-import org.graalvm.compiler.nodes.extended.BytecodeExceptionNode.BytecodeExceptionKind;
-import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderContext;
-import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugin;
-import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins;
-
-import jdk.vm.ci.meta.ResolvedJavaMethod;
-
 @RunWith(Parameterized.class)
 public class IndexOobBytecodeExceptionTest extends BytecodeExceptionTest {
 
-    private static class Exceptions {
-
-        private static Object[] empty = new Object[0];
-
-        public static void throwOutOfBounds(int idx, int length) {
-            GraalDirectives.blackhole(empty[idx]);
-            GraalDirectives.blackhole(length);
-        }
-    }
-
-    @Override
-    protected void registerInvocationPlugins(InvocationPlugins invocationPlugins) {
-        invocationPlugins.register(new InvocationPlugin() {
-            @Override
-            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode idx, ValueNode length) {
-                return throwBytecodeException(b, BytecodeExceptionKind.OUT_OF_BOUNDS, idx, length);
-            }
-        }, Exceptions.class, "throwOutOfBounds", int.class, int.class);
-        super.registerInvocationPlugins(invocationPlugins);
-    }
-
-    public static void oobSnippet(int idx, int length) {
-        Exceptions.throwOutOfBounds(idx, length);
+    public static void oobSnippet(Object[] empty, int idx, int length) {
+        GraalDirectives.blackhole(empty[idx]);
+        GraalDirectives.blackhole(length);
     }
 
     @Parameter public int index;
@@ -85,6 +57,7 @@ public class IndexOobBytecodeExceptionTest extends BytecodeExceptionTest {
 
     @Test
     public void testOutOfBoundsException() {
-        test("oobSnippet", index, Exceptions.empty.length);
+        Object[] empty = new Object[0];
+        test("oobSnippet", empty, index, empty.length);
     }
 }

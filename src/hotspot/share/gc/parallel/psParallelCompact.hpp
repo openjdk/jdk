@@ -40,9 +40,7 @@ class PSAdaptiveSizePolicy;
 class PSYoungGen;
 class PSOldGen;
 class ParCompactionManager;
-class ParallelTaskTerminator;
 class PSParallelCompact;
-class PreGCValues;
 class MoveAndUpdateClosure;
 class RefProcTaskExecutor;
 class ParallelOldTracer;
@@ -427,7 +425,7 @@ public:
   inline size_t     block(const BlockData* block_ptr) const;
 
   void add_obj(HeapWord* addr, size_t len);
-  void add_obj(oop p, size_t len) { add_obj((HeapWord*)p, len); }
+  void add_obj(oop p, size_t len) { add_obj(cast_from_oop<HeapWord*>(p), len); }
 
   // Fill in the regions covering [beg, end) so that no data moves; i.e., the
   // destination of region n is simply the start of region n.  The argument beg
@@ -468,7 +466,7 @@ public:
   size_t     block_offset(const HeapWord* addr) const;
   size_t     addr_to_block_idx(const HeapWord* addr) const;
   size_t     addr_to_block_idx(const oop obj) const {
-    return addr_to_block_idx((HeapWord*) obj);
+    return addr_to_block_idx(cast_from_oop<HeapWord*>(obj));
   }
   inline BlockData* addr_to_block_ptr(const HeapWord* addr) const;
   inline HeapWord*  block_to_addr(size_t block) const;
@@ -485,7 +483,7 @@ public:
   HeapWord* calc_new_pointer(HeapWord* addr, ParCompactionManager* cm);
 
   HeapWord* calc_new_pointer(oop p, ParCompactionManager* cm) {
-    return calc_new_pointer((HeapWord*) p, cm);
+    return calc_new_pointer(cast_from_oop<HeapWord*>(p), cm);
   }
 
 #ifdef  ASSERT

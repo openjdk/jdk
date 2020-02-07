@@ -38,10 +38,6 @@
                    range,                                                   \
                    constraint)                                              \
                                                                             \
-  experimental(ccstr, ZPath, NULL,                                          \
-          "Filesystem path for Java heap backing storage "                  \
-          "(must be a tmpfs or a hugetlbfs filesystem)")                    \
-                                                                            \
   experimental(double, ZAllocationSpikeTolerance, 2.0,                      \
           "Allocation spike tolerance factor")                              \
                                                                             \

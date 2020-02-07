@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -186,9 +186,6 @@ public class HtmlTree extends Content {
             add(new StringContent(stringContent));
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public int charCount() {
         int n = 0;
@@ -877,9 +874,6 @@ public class HtmlTree extends Content {
         return htmlTree;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public boolean isEmpty() {
         return (!hasContent() && !hasAttrs());
@@ -957,9 +951,6 @@ public class HtmlTree extends Content {
         return (htmlTag.blockType == HtmlTag.BlockType.INLINE);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public boolean write(Writer out, boolean atNewline) throws IOException {
         if (!isInline() && !atNewline)

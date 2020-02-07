@@ -185,7 +185,7 @@ ZJavaThreadsIterator::ZJavaThreadsIterator() :
     _claimed(0) {}
 
 uint ZJavaThreadsIterator::claim() {
-  return Atomic::add(&_claimed, 1u) - 1u;
+  return Atomic::fetch_and_add(&_claimed, 1u);
 }
 
 void ZJavaThreadsIterator::threads_do(ThreadClosure* cl) {

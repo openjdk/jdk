@@ -73,9 +73,7 @@ public class TestInstanceKlassSize {
         LingeredApp app = null;
         OutputAnalyzer output = null;
         try {
-            List<String> vmArgs = new ArrayList<String>();
-            vmArgs.add("-XX:+UsePerfData");
-            vmArgs.addAll(Arrays.asList(Utils.getTestJavaOpts()));
+            String[] vmArgs = Utils.appendTestJavaOpts("-XX:+UsePerfData");
             app = LingeredApp.startApp(vmArgs);
             System.out.println ("Started LingeredApp with pid " + app.getPid());
         } catch (Exception ex) {
@@ -159,4 +157,3 @@ public class TestInstanceKlassSize {
         }
     }
 }
-

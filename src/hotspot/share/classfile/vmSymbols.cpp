@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -99,13 +99,13 @@ void vmSymbols::initialize(TRAPS) {
     _type_signatures[T_SHORT]   = short_signature();
     _type_signatures[T_BOOLEAN] = bool_signature();
     _type_signatures[T_VOID]    = void_signature();
-    // no single signatures for T_OBJECT or T_ARRAY
 #ifdef ASSERT
     for (int i = (int)T_BOOLEAN; i < (int)T_VOID+1; i++) {
       Symbol* s = _type_signatures[i];
       if (s == NULL)  continue;
-      BasicType st = signature_type(s);
-      assert(st == i, "");
+      SignatureStream ss(s, false);
+      assert(ss.type() == i, "matching signature");
+      assert(!ss.is_reference(), "no single-char signature for T_OBJECT, etc.");
     }
 #endif
   }
@@ -208,20 +208,6 @@ void vmSymbols::serialize(SerializeClosure* soc) {
                  (SID_LIMIT - FIRST_SID) * sizeof(_symbols[0]));
   soc->do_region((u_char*)_type_signatures, sizeof(_type_signatures));
 }
-
-
-BasicType vmSymbols::signature_type(const Symbol* s) {
-  assert(s != NULL, "checking");
-  if (s->utf8_length() == 1) {
-    BasicType result = char2type(s->char_at(0));
-    if (is_java_primitive(result) || result == T_VOID) {
-      assert(s == _type_signatures[result], "");
-      return result;
-    }
-  }
-  return T_OBJECT;
-}
-
 
 static int mid_hint = (int)vmSymbols::FIRST_SID+1;
 

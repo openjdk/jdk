@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -254,9 +254,6 @@ public class LinkInfoImpl extends LinkInfo {
         setContext(context);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     protected Content newContent() {
         return new ContentBuilder();
@@ -340,16 +337,11 @@ public class LinkInfoImpl extends LinkInfo {
         return this;
      }
 
-    /**
-     * {@inheritDoc}
-     */
     public Kind getContext() {
         return context;
     }
 
     /**
-     * {@inheritDoc}
-     *
      * This method sets the link attributes to the appropriate values
      * based on the context.
      *

@@ -28,11 +28,14 @@
 // Implementation of class atomic
 
 template<size_t byte_size>
-struct Atomic::PlatformAdd
-  : Atomic::FetchAndAdd<Atomic::PlatformAdd<byte_size> >
-{
+struct Atomic::PlatformAdd {
   template<typename D, typename I>
   D fetch_and_add(D volatile* dest, I add_value, atomic_memory_order /* order */) const;
+
+  template<typename D, typename I>
+  D add_and_fetch(D volatile* dest, I add_value, atomic_memory_order order) const {
+    return fetch_and_add(dest, add_value, order) + add_value;
+  }
 };
 
 template<>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2017, 2020, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,17 @@
 #define SHARE_GC_SHENANDOAH_SHENANDOAHSTRDEDUPQUEUE_INLINE_HPP
 
 #include "gc/shenandoah/shenandoahStrDedupQueue.hpp"
+#include "oops/access.hpp"
+#include "runtime/atomic.hpp"
 
+// With concurrent string dedup cleaning up, GC worker threads
+// may see oops just enqueued, so release_store and load_acquire
+// relationship needs to be established between enqueuing threads
+// and GC workers.
+// For example, when GC sees a slot (index), there must be a valid
+// (dead or live) oop.
+// Note: There is no concern if GC misses newly enqueued oops,
+// since LRB ensures they are in to-space.
 template <uint buffer_size>
 ShenandoahOopBuffer<buffer_size>::ShenandoahOopBuffer() :
   _index(0), _next(NULL) {
@@ -34,29 +44,34 @@ ShenandoahOopBuffer<buffer_size>::ShenandoahOopBuffer() :
 
 template <uint buffer_size>
 bool ShenandoahOopBuffer<buffer_size>::is_full() const {
-  return _index >= buffer_size;
+  return index_acquire() >= buffer_size;
 }
 
 template <uint buffer_size>
 bool ShenandoahOopBuffer<buffer_size>::is_empty() const {
-  return _index == 0;
+  return index_acquire() == 0;
 }
 
 template <uint buffer_size>
 uint ShenandoahOopBuffer<buffer_size>::size() const {
-  return _index;
+  return index_acquire();
 }
 
 template <uint buffer_size>
 void ShenandoahOopBuffer<buffer_size>::push(oop obj) {
   assert(!is_full(),  "Buffer is full");
-  _buf[_index ++] = obj;
+  uint idx = index_acquire();
+  RawAccess<IS_NOT_NULL>::oop_store(&_buf[idx], obj);
+  set_index_release(idx + 1);
 }
 
 template <uint buffer_size>
 oop ShenandoahOopBuffer<buffer_size>::pop() {
   assert(!is_empty(), "Buffer is empty");
-  return _buf[--_index];
+  uint idx = index_acquire() - 1;
+  oop value = NativeAccess<ON_PHANTOM_OOP_REF | AS_NO_KEEPALIVE | MO_ACQUIRE>::oop_load(&_buf[idx]);
+  set_index_release(idx);
+  return value;
 }
 
 template <uint buffer_size>
@@ -76,14 +91,25 @@ void ShenandoahOopBuffer<buffer_size>::reset() {
 }
 
 template <uint buffer_size>
+uint ShenandoahOopBuffer<buffer_size>::index_acquire() const {
+  return Atomic::load_acquire(&_index);
+}
+
+template <uint buffer_size>
+void ShenandoahOopBuffer<buffer_size>::set_index_release(uint index) {
+  return Atomic::release_store(&_index, index);
+}
+
+template <uint buffer_size>
 void ShenandoahOopBuffer<buffer_size>::unlink_or_oops_do(StringDedupUnlinkOrOopsDoClosure* cl) {
-  for (uint index = 0; index < size(); index ++) {
+  uint len = size();
+  for (uint index = 0; index < len; index ++) {
     oop* obj_addr = &_buf[index];
     if (*obj_addr != NULL) {
       if (cl->is_alive(*obj_addr)) {
         cl->keep_alive(obj_addr);
       } else {
-        *obj_addr = NULL;
+        RawAccess<MO_RELEASE>::oop_store(&_buf[index], oop());
       }
     }
   }
@@ -91,7 +117,8 @@ void ShenandoahOopBuffer<buffer_size>::unlink_or_oops_do(StringDedupUnlinkOrOops
 
 template <uint buffer_size>
 void ShenandoahOopBuffer<buffer_size>::oops_do(OopClosure* cl) {
-  for (uint index = 0; index < size(); index ++) {
+  uint len = size();
+  for (uint index = 0; index < len; index ++) {
     cl->do_oop(&_buf[index]);
   }
 }

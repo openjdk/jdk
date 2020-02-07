@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -340,4 +340,13 @@ JVM_END
 JVM_ENTRY_NO_ENV(jlong, jfr_chunk_start_nanos(JNIEnv* env, jobject jvm))
   return JfrRepository::current_chunk_start_nanos();
 JVM_END
+
+JVM_ENTRY_NO_ENV(jobject, jfr_get_handler(JNIEnv * env, jobject jvm, jobject clazz))
+  return JfrJavaSupport::get_handler(clazz, thread);
+JVM_END
+
+JVM_ENTRY_NO_ENV(jboolean, jfr_set_handler(JNIEnv * env, jobject jvm, jobject clazz, jobject handler))
+  return JfrJavaSupport::set_handler(clazz, handler, thread);
+JVM_END
+
 

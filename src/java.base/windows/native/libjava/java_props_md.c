@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -641,7 +641,8 @@ GetJavaProperties(JNIEnv* env)
          */
         LCID userDefaultLCID = GetUserDefaultLCID();
         LCID systemDefaultLCID = GetSystemDefaultLCID();
-        LCID userDefaultUILang = GetUserDefaultUILanguage();
+        LANGID userDefaultUILang = GetUserDefaultUILanguage();
+        LCID userDefaultUILCID = MAKELCID(userDefaultUILang, SORTIDFROMLCID(userDefaultLCID));
 
         {
             char * display_encoding;
@@ -655,8 +656,8 @@ GetJavaProperties(JNIEnv* env)
             // for the UI Language, if the "language" portion of those
             // two locales are the same.
             if (PRIMARYLANGID(LANGIDFROMLCID(userDefaultLCID)) ==
-                PRIMARYLANGID(LANGIDFROMLCID(userDefaultUILang))) {
-                userDefaultUILang = userDefaultLCID;
+                PRIMARYLANGID(userDefaultUILang)) {
+                userDefaultUILCID = userDefaultLCID;
             }
 
             SetupI18nProps(userDefaultLCID,
@@ -665,7 +666,7 @@ GetJavaProperties(JNIEnv* env)
                            &sprops.format_country,
                            &sprops.format_variant,
                            &sprops.encoding);
-            SetupI18nProps(userDefaultUILang,
+            SetupI18nProps(userDefaultUILCID,
                            &sprops.display_language,
                            &sprops.display_script,
                            &sprops.display_country,

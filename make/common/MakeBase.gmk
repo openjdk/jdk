@@ -525,15 +525,16 @@ DependOnVariableFileName = \
 # Param 2 - (optional) name of file to store value in
 DependOnVariableHelper = \
     $(strip \
-        $(eval -include $(call DependOnVariableFileName, $1, $2)) \
+        $(eval $1_filename := $(call DependOnVariableFileName, $1, $2)) \
+        $(if $(wildcard $($1_filename)), $(eval include $($1_filename))) \
         $(if $(call equals, $(strip $($1)), $(strip $($1_old))),,\
-          $(call MakeDir, $(dir $(call DependOnVariableFileName, $1, $2))) \
+          $(call MakeDir, $(dir $($1_filename))) \
           $(if $(findstring $(LOG_LEVEL), trace), \
               $(info NewVariable $1: >$(strip $($1))<) \
               $(info OldVariable $1: >$(strip $($1_old))<)) \
           $(call WriteFile, $1_old:=$(call DoubleDollar,$(call EscapeHash,$($1))), \
-              $(call DependOnVariableFileName, $1, $2))) \
-        $(call DependOnVariableFileName, $1, $2) \
+              $($1_filename))) \
+        $($1_filename) \
     )
 
 # Main macro

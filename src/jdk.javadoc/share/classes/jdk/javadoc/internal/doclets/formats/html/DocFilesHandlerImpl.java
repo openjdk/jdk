@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,6 +64,7 @@ public class DocFilesHandlerImpl implements DocFilesHandler {
     public final Location location;
     public final DocPath  source;
     public final HtmlConfiguration configuration;
+    private final HtmlOptions options;
     private Navigation navBar;
 
     /**
@@ -75,6 +76,7 @@ public class DocFilesHandlerImpl implements DocFilesHandler {
      */
     public DocFilesHandlerImpl(HtmlConfiguration configuration, Element element) {
         this.configuration = configuration;
+        this.options = configuration.getOptions();
         this.element = element;
 
         switch (element.getKind()) {
@@ -104,7 +106,7 @@ public class DocFilesHandlerImpl implements DocFilesHandler {
      * @throws DocFileIOException if there is a problem while copying
      *         the documentation files
      */
-
+    @Override
     public void copyDocFiles()  throws DocFileIOException {
         boolean first = true;
         for (DocFile srcdir : DocFile.list(configuration, location, source)) {
@@ -127,6 +129,7 @@ public class DocFilesHandlerImpl implements DocFilesHandler {
         }
     }
 
+    @Override
     public List<DocPath> getStylesheets() throws DocFileIOException {
         List<DocPath> stylesheets = new ArrayList<DocPath>();
         for (DocFile srcdir : DocFile.list(configuration, location, source)) {
@@ -160,7 +163,7 @@ public class DocFilesHandlerImpl implements DocFilesHandler {
                     }
                 }
             } else if (srcfile.isDirectory()) {
-                if (configuration.copydocfilesubdirs
+                if (options.copyDocfileSubdirs()
                         && !configuration.shouldExcludeDocFileDir(srcfile.getName())) {
                     DocPath dirDocPath = dstDocPath.resolve(srcfile.getName());
                     copyDirectory(srcfile, dirDocPath, first);

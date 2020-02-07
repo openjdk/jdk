@@ -79,6 +79,7 @@
 #include "gc/shared/preservedMarks.inline.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "gc/shared/referenceProcessor.inline.hpp"
+#include "gc/shared/taskTerminator.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
 #include "gc/shared/weakProcessor.inline.hpp"
 #include "gc/shared/workerPolicy.hpp"
@@ -1131,9 +1132,6 @@ void G1CollectedHeap::print_heap_after_full_collection(G1HeapTransition* heap_tr
   heap_transition->print();
   print_heap_after_gc();
   print_heap_regions();
-#ifdef TRACESPINNING
-  ParallelTaskTerminator::print_termination_counts();
-#endif
 }
 
 bool G1CollectedHeap::do_full_collection(bool explicit_gc,
@@ -2778,8 +2776,6 @@ size_t G1CollectedHeap::pending_card_num() {
   Threads::threads_do(&count_from_threads);
 
   G1DirtyCardQueueSet& dcqs = G1BarrierSet::dirty_card_queue_set();
-  dcqs.verify_num_cards();
-
   return dcqs.num_cards() + count_from_threads._cards;
 }
 
@@ -2987,6 +2983,19 @@ bool G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_
     return false;
   }
 
+  do_collection_pause_at_safepoint_helper(target_pause_time_ms);
+  if (should_upgrade_to_full_gc(gc_cause())) {
+    log_info(gc, ergo)("Attempting maximally compacting collection");
+    bool result = do_full_collection(false /* explicit gc */,
+                                     true /* clear_all_soft_refs */);
+    // do_full_collection only fails if blocked by GC locker, but
+    // we've already checked for that above.
+    assert(result, "invariant");
+  }
+  return true;
+}
+
+void G1CollectedHeap::do_collection_pause_at_safepoint_helper(double target_pause_time_ms) {
   GCIdMark gc_id_mark;
 
   SvcGCMarker sgcm(SvcGCMarker::MINOR);
@@ -3126,10 +3135,6 @@ bool G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_
 
       verify_after_young_collection(verify_type);
 
-#ifdef TRACESPINNING
-      ParallelTaskTerminator::print_termination_counts();
-#endif
-
       gc_epilogue(false);
     }
 
@@ -3174,8 +3179,6 @@ bool G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_
     // itself is released in SuspendibleThreadSet::desynchronize().
     do_concurrent_mark();
   }
-
-  return true;
 }
 
 void G1CollectedHeap::remove_self_forwarding_pointers(G1RedirtyCardsQueueSet* rdcqs) {
@@ -3465,14 +3468,14 @@ class G1STWRefProcTaskProxy: public AbstractGangTask {
   G1CollectedHeap* _g1h;
   G1ParScanThreadStateSet* _pss;
   RefToScanQueueSet* _task_queues;
-  ParallelTaskTerminator* _terminator;
+  TaskTerminator* _terminator;
 
 public:
   G1STWRefProcTaskProxy(ProcessTask& proc_task,
                         G1CollectedHeap* g1h,
                         G1ParScanThreadStateSet* per_thread_states,
                         RefToScanQueueSet *task_queues,
-                        ParallelTaskTerminator* terminator) :
+                        TaskTerminator* terminator) :
     AbstractGangTask("Process reference objects in parallel"),
     _proc_task(proc_task),
     _g1h(g1h),
@@ -3517,7 +3520,7 @@ void G1STWRefProcTaskExecutor::execute(ProcessTask& proc_task, uint ergo_workers
          "Ergonomically chosen workers (%u) should be less than or equal to active workers (%u)",
          ergo_workers, _workers->active_workers());
   TaskTerminator terminator(ergo_workers, _queues);
-  G1STWRefProcTaskProxy proc_task_proxy(proc_task, _g1h, _pss, _queues, terminator.terminator());
+  G1STWRefProcTaskProxy proc_task_proxy(proc_task, _g1h, _pss, _queues, &terminator);
 
   _workers->run_task(&proc_task_proxy, ergo_workers);
 }
@@ -3813,7 +3816,7 @@ protected:
     G1GCPhaseTimes* p = _g1h->phase_times();
 
     Ticks start = Ticks::now();
-    G1ParEvacuateFollowersClosure cl(_g1h, pss, _task_queues, _terminator.terminator(), objcopy_phase);
+    G1ParEvacuateFollowersClosure cl(_g1h, pss, _task_queues, &_terminator, objcopy_phase);
     cl.do_void();
 
     assert(pss->queue_is_empty(), "should be empty");

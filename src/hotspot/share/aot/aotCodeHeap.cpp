@@ -463,6 +463,7 @@ void AOTCodeHeap::link_shared_runtime_symbols() {
     SET_AOT_GLOBAL_SYMBOL_VALUE("_resolve_virtual_entry", address, SharedRuntime::get_resolve_virtual_call_stub());
     SET_AOT_GLOBAL_SYMBOL_VALUE("_resolve_opt_virtual_entry", address, SharedRuntime::get_resolve_opt_virtual_call_stub());
     SET_AOT_GLOBAL_SYMBOL_VALUE("_aot_deopt_blob_unpack", address, SharedRuntime::deopt_blob()->unpack());
+    SET_AOT_GLOBAL_SYMBOL_VALUE("_aot_deopt_blob_unpack_with_exception_in_tls", address, SharedRuntime::deopt_blob()->unpack_with_exception_in_tls());
     SET_AOT_GLOBAL_SYMBOL_VALUE("_aot_deopt_blob_uncommon_trap", address, SharedRuntime::deopt_blob()->uncommon_trap());
     SET_AOT_GLOBAL_SYMBOL_VALUE("_aot_ic_miss_stub", address, SharedRuntime::get_ic_miss_stub());
     SET_AOT_GLOBAL_SYMBOL_VALUE("_aot_handle_wrong_method_stub", address, SharedRuntime::get_handle_wrong_method_stub());

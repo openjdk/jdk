@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,30 +85,6 @@ void LIR_Assembler::store_parameter(Metadata* m, int offset_from_sp_in_words) {
 
 //--------------fpu register translations-----------------------
 
-
-void LIR_Assembler::set_24bit_FPU() {
-  ShouldNotReachHere();
-}
-
-void LIR_Assembler::reset_FPU() {
-  ShouldNotReachHere();
-}
-
-void LIR_Assembler::fpop() {
-  Unimplemented();
-}
-
-void LIR_Assembler::fxch(int i) {
-  Unimplemented();
-}
-
-void LIR_Assembler::fld(int i) {
-  Unimplemented();
-}
-
-void LIR_Assembler::ffree(int i) {
-  Unimplemented();
-}
 
 void LIR_Assembler::breakpoint() {
   __ breakpoint();
@@ -309,23 +285,16 @@ int LIR_Assembler::emit_deopt_handler() {
 void LIR_Assembler::return_op(LIR_Opr result) {
   // Pop the frame before safepoint polling
   __ remove_frame(initial_frame_size_in_bytes());
-
-  // mov_slow here is usually one or two instruction
-  __ mov_address(Rtemp, os::get_polling_page());
-  __ relocate(relocInfo::poll_return_type);
-  __ ldr(Rtemp, Address(Rtemp));
+  __ read_polling_page(Rtemp, relocInfo::poll_return_type);
   __ ret();
 }
 
-
 int LIR_Assembler::safepoint_poll(LIR_Opr tmp, CodeEmitInfo* info) {
-  __ mov_address(Rtemp, os::get_polling_page());
   if (info != NULL) {
     add_debug_info_for_branch(info);
   }
   int offset = __ offset();
-  __ relocate(relocInfo::poll_type);
-  __ ldr(Rtemp, Address(Rtemp));
+  __ read_polling_page(Rtemp, relocInfo::poll_type);
   return offset;
 }
 

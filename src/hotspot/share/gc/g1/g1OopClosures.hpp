@@ -152,7 +152,8 @@ protected:
 
 enum G1Barrier {
   G1BarrierNone,
-  G1BarrierCLD
+  G1BarrierCLD,
+  G1BarrierNoOptRoots  // Do not collect optional roots.
 };
 
 enum G1Mark {

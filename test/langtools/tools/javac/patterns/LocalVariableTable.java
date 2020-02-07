@@ -146,7 +146,9 @@ public class LocalVariableTable {
     @Expect({ "o", "s" })
     static class Pattern_Simple {
         public static void test(Object o) {
-            if (o instanceof String s) {}
+            if (o instanceof String s) {
+                s.length();
+            }
         }
     }
 

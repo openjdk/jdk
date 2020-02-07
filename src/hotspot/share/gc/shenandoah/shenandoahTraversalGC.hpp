@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2018, 2020, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #define SHARE_GC_SHENANDOAH_SHENANDOAHTRAVERSALGC_HPP
 
 #include "memory/allocation.hpp"
+#include "gc/shared/taskTerminator.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahHeapRegionSet.hpp"
 #include "gc/shenandoah/shenandoahTaskqueue.hpp"
@@ -52,17 +53,17 @@ public:
   template <class T, bool STRING_DEDUP, bool DEGEN, bool ATOMIC_UPDATE>
   inline void process_oop(T* p, Thread* thread, ShenandoahObjToScanQueue* queue, ShenandoahMarkingContext* const mark_context);
 
-  bool check_and_handle_cancelled_gc(ShenandoahTaskTerminator* terminator, bool sts_yield);
+  bool check_and_handle_cancelled_gc(TaskTerminator* terminator, bool sts_yield);
 
   ShenandoahObjToScanQueueSet* task_queues();
 
-  void main_loop(uint worker_id, ShenandoahTaskTerminator* terminator, bool sts_yield);
+  void main_loop(uint worker_id, TaskTerminator* terminator, bool sts_yield);
 
 private:
   void prepare_regions();
 
   template <class T>
-  void main_loop_work(T* cl, jushort* live_data, uint worker_id, ShenandoahTaskTerminator* terminator, bool sts_yield);
+  void main_loop_work(T* cl, jushort* live_data, uint worker_id, TaskTerminator* terminator, bool sts_yield);
 
   void preclean_weak_refs();
   void weak_refs_work();

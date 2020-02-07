@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,15 +25,16 @@
  * @test
  * @bug     4696488
  * @summary javadoc doesn't handle UNC paths for destination directory
- * @modules jdk.javadoc/jdk.javadoc.internal.doclets.toolkit
+ * @modules jdk.javadoc/jdk.javadoc.internal.doclets.toolkit:+open
  * @run main T4696488 T4696488.java
  */
 
-import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
+import java.lang.reflect.Method;
+import jdk.javadoc.internal.doclets.toolkit.BaseOptions;
 
 public class T4696488 {
 
-    public static void main(String... args) {
+    public static void main(String... args) throws Exception {
         System.setProperty("file.separator", "/");
         assertAddTrailingFileSep("/path/to/dir", "/path/to/dir/");
         assertAddTrailingFileSep("/path/to/dir/", "/path/to/dir/");
@@ -47,8 +48,11 @@ public class T4696488 {
         assertAddTrailingFileSep("\\\\server\\share\\path\\to\\dir\\\\", "\\\\server\\share\\path\\to\\dir\\");
     }
 
-    private static void assertAddTrailingFileSep(String input, String expectedOutput) {
-        String output = BaseConfiguration.addTrailingFileSep(input);
+    private static void assertAddTrailingFileSep(String input, String expectedOutput) throws Exception {
+        //String output = BaseOptions.addTrailingFileSep(input);
+        Method m = BaseOptions.class.getDeclaredMethod("addTrailingFileSep", String.class);
+        m.setAccessible(true);
+        String output = (String) m.invoke(null, input);
         if (!expectedOutput.equals(output)) {
             throw new Error("expected " + expectedOutput + " but was " + output);
         }

@@ -111,13 +111,13 @@ ParMarkBitMap::update_live_words_in_range_cache(ParCompactionManager* cm, HeapWo
 size_t
 ParMarkBitMap::live_words_in_range_helper(HeapWord* beg_addr, oop end_obj) const
 {
-  assert(beg_addr <= (HeapWord*)end_obj, "bad range");
+  assert(beg_addr <= cast_from_oop<HeapWord*>(end_obj), "bad range");
   assert(is_marked(end_obj), "end_obj must be live");
 
   idx_t live_bits = 0;
 
   // The bitmap routines require the right boundary to be word-aligned.
-  const idx_t end_bit = addr_to_bit((HeapWord*)end_obj);
+  const idx_t end_bit = addr_to_bit(cast_from_oop<HeapWord*>(end_obj));
   const idx_t range_end = align_range_end(end_bit);
 
   idx_t beg_bit = find_obj_beg(addr_to_bit(beg_addr), range_end);
@@ -134,8 +134,8 @@ size_t
 ParMarkBitMap::live_words_in_range_use_cache(ParCompactionManager* cm, HeapWord* beg_addr, oop end_oop) const
 {
   HeapWord* last_beg = cm->last_query_begin();
-  HeapWord* last_obj = (HeapWord*)cm->last_query_object();
-  HeapWord* end_obj  = (HeapWord*)end_oop;
+  HeapWord* last_obj = cast_from_oop<HeapWord*>(cm->last_query_object());
+  HeapWord* end_obj  = cast_from_oop<HeapWord*>(end_oop);
 
   size_t last_ret = cm->last_query_return();
   if (end_obj > last_obj) {

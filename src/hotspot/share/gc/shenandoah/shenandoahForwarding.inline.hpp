@@ -39,7 +39,7 @@ inline HeapWord* ShenandoahForwarding::get_forwardee_raw_unchecked(oop obj) {
   if (mark.is_marked()) {
     return (HeapWord*) mark.clear_lock_bits().to_pointer();
   } else {
-    return (HeapWord*) obj;
+    return cast_from_oop<HeapWord*>(obj);
   }
 }
 

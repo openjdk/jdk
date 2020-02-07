@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2013, 2020, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -168,7 +168,7 @@ oop ShenandoahBarrierSet::load_reference_barrier_mutator_work(oop obj, T* load_a
       ShenandoahHeapRegion* r = _heap->heap_region_containing(obj);
       assert(r->is_cset(), "sanity");
 
-      HeapWord* cur = (HeapWord*)obj + obj->size();
+      HeapWord* cur = cast_from_oop<HeapWord*>(obj) + obj->size();
 
       size_t count = 0;
       while ((cur < r->top()) && ctx->is_marked(oop(cur)) && (count++ < max)) {

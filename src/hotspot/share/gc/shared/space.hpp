@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,11 +69,6 @@ class Space: public CHeapObj<mtGC> {
   // Used in support of save_marks()
   HeapWord* _saved_mark_word;
 
-  // A sequential tasks done structure. This supports
-  // parallel GC, where we have threads dynamically
-  // claiming sub-tasks from a larger parallel task.
-  SequentialSubTasksDone _par_seq_tasks;
-
   Space():
     _bottom(NULL), _end(NULL) { }
 
@@ -91,7 +86,7 @@ class Space: public CHeapObj<mtGC> {
   // Returns true if this object has been allocated since a
   // generation's "save_marks" call.
   virtual bool obj_allocated_since_save_marks(const oop obj) const {
-    return (HeapWord*)obj >= saved_mark_word();
+    return cast_from_oop<HeapWord*>(obj) >= saved_mark_word();
   }
 
   // Returns a subregion of the space containing only the allocated objects in
@@ -224,9 +219,6 @@ class Space: public CHeapObj<mtGC> {
   virtual void print_short() const;
   virtual void print_short_on(outputStream* st) const;
 
-
-  // Accessor for parallel sequential tasks.
-  SequentialSubTasksDone* par_seq_tasks() { return &_par_seq_tasks; }
 
   // IF "this" is a ContiguousSpace, return it, else return NULL.
   virtual ContiguousSpace* toContiguousSpace() {

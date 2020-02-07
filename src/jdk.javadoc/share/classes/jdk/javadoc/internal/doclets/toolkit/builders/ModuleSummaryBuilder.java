@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -180,7 +180,7 @@ public class ModuleSummaryBuilder extends AbstractBuilder {
      *                           be added
      */
     protected void buildModuleDescription(Content moduleContentTree) {
-        if (!configuration.nocomment) {
+        if (!options.noComment()) {
             moduleWriter.addModuleDescription(moduleContentTree);
         }
     }
@@ -191,7 +191,7 @@ public class ModuleSummaryBuilder extends AbstractBuilder {
      * @param moduleContentTree the tree to which the module tags will be added
      */
     protected void buildModuleTags(Content moduleContentTree) {
-        if (!configuration.nocomment) {
+        if (!options.noComment()) {
             moduleWriter.addModuleTags(moduleContentTree);
         }
     }

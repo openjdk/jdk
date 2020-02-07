@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,13 +61,11 @@ public class DocPath {
         path = (p.endsWith("/") ? p.substring(0, p.length() - 1) : p);
     }
 
-    /** {@inheritDoc} */
     @Override
     public boolean equals(Object other) {
         return (other instanceof DocPath) && path.equals(((DocPath)other).path);
     }
 
-    /** {@inheritDoc} */
     @Override
     public int hashCode() {
         return path.hashCode();

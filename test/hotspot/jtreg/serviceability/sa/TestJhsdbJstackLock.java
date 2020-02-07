@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,10 +51,8 @@ public class TestJhsdbJstackLock {
         LingeredApp app = null;
 
         try {
-            List<String> vmArgs = new ArrayList<String>(Utils.getVmOptions());
-
             app = new LingeredAppWithLock();
-            LingeredApp.startApp(vmArgs, app);
+            LingeredApp.startApp(app);
             System.out.println ("Started LingeredApp with pid " + app.getPid());
 
             JDKToolLauncher launcher = JDKToolLauncher.createUsingTestJDK("jhsdb");

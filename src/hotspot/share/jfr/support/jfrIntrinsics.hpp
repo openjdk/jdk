@@ -34,7 +34,9 @@
 #include "jfr/recorder/checkpoint/types/traceid/jfrTraceIdMacros.hpp"
 
 #define JFR_TEMPLATES(template) \
-  template(jdk_jfr_internal_JVM,          "jdk/jfr/internal/JVM")
+  template(jdk_jfr_internal_JVM,                                      "jdk/jfr/internal/JVM")                     \
+  template(jdk_jfr_internal_handlers_EventHandler_signature,          "Ljdk/jfr/internal/handlers/EventHandler;") \
+  template(eventHandler_name,                                         "eventHandler")                             \
 
 #define JFR_INTRINSICS(do_intrinsic, do_class, do_name, do_signature, do_alias)                              \
   do_intrinsic(_counterTime,        jdk_jfr_internal_JVM, counterTime_name, void_long_signature, F_SN)       \

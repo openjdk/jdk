@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@ import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
 
 import jdk.javadoc.internal.doclets.toolkit.AnnotationTypeFieldWriter;
-import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
+import jdk.javadoc.internal.doclets.toolkit.BaseOptions;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.DocletException;
 import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
@@ -105,9 +105,6 @@ public class AnnotationTypeFieldBuilder extends AbstractMemberBuilder {
         return !members.isEmpty();
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void build(Content contentTree) throws DocletException {
         buildAnnotationTypeField(contentTree);
@@ -176,12 +173,12 @@ public class AnnotationTypeFieldBuilder extends AbstractMemberBuilder {
 
     /**
      * Build the comments for the member.  Do nothing if
-     * {@link BaseConfiguration#nocomment} is set to true.
+     * {@link BaseOptions#noComment} is set to true.
      *
      * @param annotationDocTree the content tree to which the documentation will be added
      */
     protected void buildMemberComments(Content annotationDocTree) {
-        if (!configuration.nocomment) {
+        if (!options.noComment()) {
             writer.addComments(currentMember, annotationDocTree);
         }
     }

@@ -61,7 +61,7 @@ void CodeInstaller::pd_patch_OopConstant(int pc_offset, JVMCIObject constant, JV
 #endif // ASSERT
   Handle obj = jvmci_env()->asConstant(constant, JVMCI_CHECK);
   jobject value = JNIHandles::make_local(obj());
-  MacroAssembler::patch_oop(pc, (address)obj());
+  MacroAssembler::patch_oop(pc, cast_from_oop<address>(obj()));
   int oop_index = _oop_recorder->find_index(value);
   RelocationHolder rspec = oop_Relocation::spec(oop_index);
   _instructions->relocate(pc, rspec);

@@ -1,6 +1,5 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -32,6 +31,7 @@ import java.util.ListResourceBundle;
   * Also you need to  update the count of messages(MAX_CODE)or
  * the count of warnings(MAX_WARNING) [ Information purpose only]
  * @xsl.usage advanced
+ * @LastModified: May 2019
  */
 public class XPATHErrorResources_zh_CN extends ListResourceBundle
 {
@@ -150,6 +150,10 @@ public class XPATHErrorResources_zh_CN extends ListResourceBundle
          "ER_FOUND_COMMA_BUT_NO_FOLLOWING_ARG";
   public static final String ER_PREDICATE_ILLEGAL_SYNTAX =
          "ER_PREDICATE_ILLEGAL_SYNTAX";
+  public static final String ER_PREDICATE_TOO_MANY_OPEN =
+         "ER_PREDICATE_TOO_MANY_OPEN";
+  public static final String ER_COMPILATION_TOO_MANY_OPERATION =
+         "ER_COMPILATION_TOO_MANY_OPERATION";
   public static final String ER_ILLEGAL_AXIS_NAME = "ER_ILLEGAL_AXIS_NAME";
   public static final String ER_UNKNOWN_NODETYPE = "ER_UNKNOWN_NODETYPE";
   public static final String ER_PATTERN_LITERAL_NEEDS_BE_QUOTED =
@@ -463,6 +467,12 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
 
   { ER_PREDICATE_ILLEGAL_SYNTAX,
       "'..[predicate]' \u6216 '.[predicate]' \u662F\u975E\u6CD5\u8BED\u6CD5\u3002\u8BF7\u6539\u7528 'self::node()[predicate]'\u3002"},
+
+  { ER_PREDICATE_TOO_MANY_OPEN,
+      "\u5BF9 {1} \u4E2D\u7684 {0} \u8FDB\u884C\u8BED\u6CD5\u5206\u6790\u65F6\u5806\u6808\u6EA2\u51FA\u3002\u672A\u7ED3\u675F\u7684\u8C13\u8BCD\u592A\u591A ({2})\u3002"},
+
+  { ER_COMPILATION_TOO_MANY_OPERATION,
+      "\u7F16\u8BD1\u8868\u8FBE\u5F0F\u65F6\u5806\u6808\u6EA2\u51FA\u3002\u8FD0\u7B97\u592A\u591A ({0})\u3002"},
 
   { ER_ILLEGAL_AXIS_NAME,
      "\u975E\u6CD5\u8F74\u540D\u79F0: {0}"},

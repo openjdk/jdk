@@ -32,8 +32,8 @@
 template <uint buffer_size>
 class ShenandoahOopBuffer : public CHeapObj<mtGC> {
 private:
-  oop   _buf[buffer_size];
-  uint  _index;
+  oop           _buf[buffer_size];
+  volatile uint _index;
   ShenandoahOopBuffer<buffer_size>* _next;
 
 public:
@@ -53,6 +53,10 @@ public:
 
   void unlink_or_oops_do(StringDedupUnlinkOrOopsDoClosure* cl);
   void oops_do(OopClosure* cl);
+
+private:
+  uint index_acquire() const;
+  void set_index_release(uint index);
 };
 
 typedef ShenandoahOopBuffer<64> ShenandoahQueueBuffer;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -714,17 +714,18 @@ class InterpreterFrameClosure : public OffsetClosure {
 };
 
 
-class InterpretedArgumentOopFinder: public SignatureInfo {
+class InterpretedArgumentOopFinder: public SignatureIterator {
  private:
   OopClosure* _f;        // Closure to invoke
   int    _offset;        // TOS-relative offset, decremented with each argument
   bool   _has_receiver;  // true if the callee has a receiver
   frame* _fr;
 
-  void set(int size, BasicType type) {
-    _offset -= size;
+  friend class SignatureIterator;  // so do_parameters_on can call do_type
+  void do_type(BasicType type) {
+    _offset -= parameter_type_word_count(type);
     if (is_reference_type(type)) oop_offset_do();
-  }
+   }
 
   void oop_offset_do() {
     oop* addr;
@@ -733,7 +734,7 @@ class InterpretedArgumentOopFinder: public SignatureInfo {
   }
 
  public:
-  InterpretedArgumentOopFinder(Symbol* signature, bool has_receiver, frame* fr, OopClosure* f) : SignatureInfo(signature), _has_receiver(has_receiver) {
+  InterpretedArgumentOopFinder(Symbol* signature, bool has_receiver, frame* fr, OopClosure* f) : SignatureIterator(signature), _has_receiver(has_receiver) {
     // compute size of arguments
     int args_size = ArgumentSizeComputer(signature).size() + (has_receiver ? 1 : 0);
     assert(!fr->is_interpreted_frame() ||
@@ -750,7 +751,7 @@ class InterpretedArgumentOopFinder: public SignatureInfo {
       --_offset;
       oop_offset_do();
     }
-    iterate_parameters();
+    do_parameters_on(this);
   }
 };
 
@@ -767,18 +768,20 @@ class InterpretedArgumentOopFinder: public SignatureInfo {
 
 
 // visits and GC's all the arguments in entry frame
-class EntryFrameOopFinder: public SignatureInfo {
+class EntryFrameOopFinder: public SignatureIterator {
  private:
   bool   _is_static;
   int    _offset;
   frame* _fr;
   OopClosure* _f;
 
-  void set(int size, BasicType type) {
+  friend class SignatureIterator;  // so do_parameters_on can call do_type
+  void do_type(BasicType type) {
+    // decrement offset before processing the type
+    _offset -= parameter_type_word_count(type);
     assert (_offset >= 0, "illegal offset");
-    if (is_reference_type(type)) oop_at_offset_do(_offset);
-    _offset -= size;
-  }
+    if (is_reference_type(type))  oop_at_offset_do(_offset);
+ }
 
   void oop_at_offset_do(int offset) {
     assert (offset >= 0, "illegal offset");
@@ -787,17 +790,17 @@ class EntryFrameOopFinder: public SignatureInfo {
   }
 
  public:
-   EntryFrameOopFinder(frame* frame, Symbol* signature, bool is_static) : SignatureInfo(signature) {
-     _f = NULL; // will be set later
-     _fr = frame;
-     _is_static = is_static;
-     _offset = ArgumentSizeComputer(signature).size() - 1; // last parameter is at index 0
-   }
+  EntryFrameOopFinder(frame* frame, Symbol* signature, bool is_static) : SignatureIterator(signature) {
+    _f = NULL; // will be set later
+    _fr = frame;
+    _is_static = is_static;
+    _offset = ArgumentSizeComputer(signature).size();  // pre-decremented down to zero
+  }
 
   void arguments_do(OopClosure* f) {
     _f = f;
-    if (!_is_static) oop_at_offset_do(_offset+1); // do the receiver
-    iterate_parameters();
+    if (!_is_static)  oop_at_offset_do(_offset); // do the receiver
+    do_parameters_on(this);
   }
 
 };
@@ -915,7 +918,7 @@ void frame::oops_code_blob_do(OopClosure* f, CodeBlobClosure* cf, const Register
     cf->do_code_blob(_cb);
 }
 
-class CompiledArgumentOopFinder: public SignatureInfo {
+class CompiledArgumentOopFinder: public SignatureIterator {
  protected:
   OopClosure*     _f;
   int             _offset;        // the current offset, incremented with each argument
@@ -926,9 +929,10 @@ class CompiledArgumentOopFinder: public SignatureInfo {
   int             _arg_size;
   VMRegPair*      _regs;        // VMReg list of arguments
 
-  void set(int size, BasicType type) {
-    if (is_reference_type(type)) handle_oop_offset();
-    _offset += size;
+  friend class SignatureIterator;  // so do_parameters_on can call do_type
+  void do_type(BasicType type) {
+    if (is_reference_type(type))  handle_oop_offset();
+    _offset += parameter_type_word_count(type);
   }
 
   virtual void handle_oop_offset() {
@@ -940,8 +944,8 @@ class CompiledArgumentOopFinder: public SignatureInfo {
   }
 
  public:
-  CompiledArgumentOopFinder(Symbol* signature, bool has_receiver, bool has_appendix, OopClosure* f, frame fr,  const RegisterMap* reg_map)
-    : SignatureInfo(signature) {
+  CompiledArgumentOopFinder(Symbol* signature, bool has_receiver, bool has_appendix, OopClosure* f, frame fr, const RegisterMap* reg_map)
+    : SignatureIterator(signature) {
 
     // initialize CompiledArgumentOopFinder
     _f         = f;
@@ -962,7 +966,7 @@ class CompiledArgumentOopFinder: public SignatureInfo {
       handle_oop_offset();
       _offset++;
     }
-    iterate_parameters();
+    do_parameters_on(this);
     if (_has_appendix) {
       handle_oop_offset();
       _offset++;

@@ -55,7 +55,7 @@ public:
 
   inline bool is_marked(oop obj) const;
 
-  inline bool allocated_after_mark_start(HeapWord* addr) const;
+  inline bool allocated_after_mark_start(oop obj) const;
 
   inline MarkBitMap* mark_bit_map();
 

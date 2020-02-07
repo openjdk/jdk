@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2014, Red Hat Inc. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020 Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
  */
 
 #include "precompiled.hpp"
-#include "asm/macroAssembler.hpp"
 #include "runtime/icache.hpp"
 
 extern void aarch64TestHook();
@@ -36,5 +35,7 @@ void ICacheStubGenerator::generate_icache_flush(
 }
 
 void ICache::initialize() {
+#ifdef ASSERT
   aarch64TestHook();
+#endif
 }

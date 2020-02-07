@@ -1762,8 +1762,11 @@ void PhaseCCP::analyze() {
         if (m->is_Call()) {
           for (DUIterator_Fast i2max, i2 = m->fast_outs(i2max); i2 < i2max; i2++) {
             Node* p = m->fast_out(i2);  // Propagate changes to uses
-            if (p->is_Proj() && p->as_Proj()->_con == TypeFunc::Control && p->outcnt() == 1) {
-              worklist.push(p->unique_out());
+            if (p->is_Proj() && p->as_Proj()->_con == TypeFunc::Control) {
+              Node* catch_node = p->find_out_with(Op_Catch);
+              if (catch_node != NULL) {
+                worklist.push(catch_node);
+              }
             }
           }
         }

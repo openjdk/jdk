@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,9 +54,7 @@ public class TestPollingInterval {
             MonitorException, URISyntaxException {
         LingeredApp app = null;
         try {
-            List<String> vmArgs = new ArrayList<String>();
-            vmArgs.add("-XX:+UsePerfData");
-            vmArgs.addAll(Utils.getVmOptions());
+            String[] vmArgs = Utils.appendTestJavaOpts("-XX:+UsePerfData");
             app = LingeredApp.startApp(vmArgs);
 
             MonitoredHost localHost = MonitoredHost.getMonitoredHost("localhost");

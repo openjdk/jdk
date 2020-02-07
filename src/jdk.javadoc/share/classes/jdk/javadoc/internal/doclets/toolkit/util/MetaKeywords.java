@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,8 @@ import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
+import jdk.javadoc.internal.doclets.toolkit.BaseOptions;
+import jdk.javadoc.internal.doclets.toolkit.Resources;
 
 /**
  * Provides methods for creating an array of class, method and
@@ -47,16 +49,17 @@ import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
  */
 public class MetaKeywords {
 
-    /**
-     * The global configuration information for this run.
-     */
-    private final BaseConfiguration config;
+    private final BaseOptions options;
+    private final Resources resources;
+    private final Utils utils;
 
     /**
      * Constructor
      */
     public MetaKeywords(BaseConfiguration configuration) {
-        config = configuration;
+        options = configuration.getOptions();
+        resources = configuration.getResources();
+        utils = configuration.utils;
     }
 
     /**
@@ -75,10 +78,10 @@ public class MetaKeywords {
         ArrayList<String> results = new ArrayList<>();
 
         // Add field and method keywords only if -keywords option is used
-        if (config.keywords) {
+        if (options.keywords()) {
             results.addAll(getClassKeyword(typeElement));
-            results.addAll(getMemberKeywords(config.utils.getFields(typeElement)));
-            results.addAll(getMemberKeywords(config.utils.getMethods(typeElement)));
+            results.addAll(getMemberKeywords(utils.getFields(typeElement)));
+            results.addAll(getMemberKeywords(utils.getMethods(typeElement)));
         }
         ((ArrayList)results).trimToSize();
         return results;
@@ -90,8 +93,8 @@ public class MetaKeywords {
      */
     protected List<String> getClassKeyword(TypeElement typeElement) {
         ArrayList<String> metakeywords = new ArrayList<>(1);
-        String cltypelower = config.utils.isInterface(typeElement) ? "interface" : "class";
-        metakeywords.add(config.utils.getFullyQualifiedName(typeElement) + " " + cltypelower);
+        String cltypelower = utils.isInterface(typeElement) ? "interface" : "class";
+        metakeywords.add(utils.getFullyQualifiedName(typeElement) + " " + cltypelower);
         return metakeywords;
     }
 
@@ -100,8 +103,8 @@ public class MetaKeywords {
      */
     public List<String> getMetaKeywords(PackageElement packageElement) {
         List<String> result = new ArrayList<>(1);
-        if (config.keywords) {
-            String pkgName = config.utils.getPackageName(packageElement);
+        if (options.keywords()) {
+            String pkgName = utils.getPackageName(packageElement);
             result.add(pkgName + " " + "package");
         }
         return result;
@@ -113,7 +116,7 @@ public class MetaKeywords {
      * @param mdle the module being documented
      */
     public List<String> getMetaKeywordsForModule(ModuleElement mdle) {
-        if (config.keywords) {
+        if (options.keywords()) {
             return Arrays.asList(mdle.getQualifiedName() + " " + "module");
         } else {
             return Collections.emptyList();
@@ -125,8 +128,8 @@ public class MetaKeywords {
      */
     public List<String> getOverviewMetaKeywords(String title, String docTitle) {
          List<String> result = new ArrayList<>(1);
-        if (config.keywords) {
-            String windowOverview = config.getResources().getText(title);
+        if (options.keywords()) {
+            String windowOverview = resources.getText(title);
             if (docTitle.length() > 0) {
                 result.add(windowOverview + ", " + docTitle);
             } else {
@@ -148,9 +151,9 @@ public class MetaKeywords {
     protected List<String> getMemberKeywords(List<? extends Element> members) {
         ArrayList<String> results = new ArrayList<>();
         for (Element member : members) {
-            String membername = config.utils.isMethod(member)
-                    ? config.utils.getSimpleName(member) + "()"
-                    : config.utils.getSimpleName(member);
+            String membername = utils.isMethod(member)
+                    ? utils.getSimpleName(member) + "()"
+                    : utils.getSimpleName(member);
             if (!results.contains(membername)) {
                 results.add(membername);
             }

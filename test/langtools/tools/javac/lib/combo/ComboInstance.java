@@ -23,9 +23,10 @@
 
 package combo;
 
-import java.lang.reflect.Method;
 import javax.tools.StandardJavaFileManager;
 import java.util.Optional;
+
+import com.sun.tools.javac.file.BaseFileManager;
 
 /**
  * This class is the common superclass of all combo test instances. It defines few helper methods
@@ -58,14 +59,7 @@ public abstract class ComboInstance<X extends ComboInstance<X>> {
             env.info().lastError = Optional.of(ex);
         } finally {
             this.env = null;
-            try {
-                Class<?> fmClass = env.fileManager().getClass();
-                Method clear = fmClass.getMethod("clear");
-                clear.setAccessible(true);
-                clear.invoke(env.fileManager());
-            } catch (Exception ex) {
-                throw new IllegalStateException(ex);
-            }
+            ((BaseFileManager) env.fileManager()).clear();
         }
     }
 

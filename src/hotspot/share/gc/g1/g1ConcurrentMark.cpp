@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,6 +49,7 @@
 #include "gc/shared/referencePolicy.hpp"
 #include "gc/shared/strongRootsScope.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
+#include "gc/shared/taskTerminator.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
 #include "gc/shared/weakProcessor.inline.hpp"
 #include "gc/shared/workerPolicy.hpp"
@@ -209,7 +210,7 @@ G1CMMarkStack::TaskQueueEntryChunk* G1CMMarkStack::allocate_new_chunk() {
     return NULL;
   }
 
-  size_t cur_idx = Atomic::add(&_hwm, 1u) - 1;
+  size_t cur_idx = Atomic::fetch_and_add(&_hwm, 1u);
   if (cur_idx >= _chunk_capacity) {
     return NULL;
   }
@@ -282,7 +283,7 @@ void G1CMRootMemRegions::reset() {
 
 void G1CMRootMemRegions::add(HeapWord* start, HeapWord* end) {
   assert_at_safepoint();
-  size_t idx = Atomic::add(&_num_root_regions, (size_t)1) - 1;
+  size_t idx = Atomic::fetch_and_add(&_num_root_regions, 1u);
   assert(idx < _max_regions, "Trying to add more root MemRegions than there is space " SIZE_FORMAT, _max_regions);
   assert(start != NULL && end != NULL && start <= end, "Start (" PTR_FORMAT ") should be less or equal to "
          "end (" PTR_FORMAT ")", p2i(start), p2i(end));
@@ -310,7 +311,7 @@ const MemRegion* G1CMRootMemRegions::claim_next() {
     return NULL;
   }
 
-  size_t claimed_index = Atomic::add(&_claimed_root_regions, (size_t)1) - 1;
+  size_t claimed_index = Atomic::fetch_and_add(&_claimed_root_regions, 1u);
   if (claimed_index < _num_root_regions) {
     return &_root_regions[claimed_index];
   }
@@ -600,7 +601,7 @@ void G1ConcurrentMark::set_concurrency(uint active_tasks) {
   _num_active_tasks = active_tasks;
   // Need to update the three data structures below according to the
   // number of active threads for this phase.
-  _terminator.terminator()->reset_for_reuse((int) active_tasks);
+  _terminator.reset_for_reuse(active_tasks);
   _first_overflow_barrier_sync.set_n_workers((int) active_tasks);
   _second_overflow_barrier_sync.set_n_workers((int) active_tasks);
 }
@@ -1728,9 +1729,8 @@ public:
   G1ObjectCountIsAliveClosure(G1CollectedHeap* g1h) : _g1h(g1h) { }
 
   bool do_object_b(oop obj) {
-    HeapWord* addr = (HeapWord*)obj;
-    return addr != NULL &&
-           (!_g1h->is_in_g1_reserved(addr) || !_g1h->is_obj_dead(obj));
+    return obj != NULL &&
+           (!_g1h->is_in_g1_reserved(obj) || !_g1h->is_obj_dead(obj));
   }
 };
 

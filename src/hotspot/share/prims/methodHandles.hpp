@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -155,7 +155,7 @@ public:
   }
   static bool is_basic_type_signature(Symbol* sig);
 
-  static void print_as_basic_type_signature_on(outputStream* st, Symbol* sig, bool keep_arrays = false, bool keep_basic_names = false);
+  static void print_as_basic_type_signature_on(outputStream* st, Symbol* sig);
 
   // decoding CONSTANT_MethodHandle constants
   enum { JVM_REF_MIN = JVM_REF_getField, JVM_REF_MAX = JVM_REF_invokeInterface };

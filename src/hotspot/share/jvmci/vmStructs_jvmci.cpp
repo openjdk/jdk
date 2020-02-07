@@ -48,6 +48,7 @@
   static_field(CompilerToVM::Data,             SharedRuntime_ic_miss_stub,             address)                                      \
   static_field(CompilerToVM::Data,             SharedRuntime_handle_wrong_method_stub, address)                                      \
   static_field(CompilerToVM::Data,             SharedRuntime_deopt_blob_unpack,        address)                                      \
+  static_field(CompilerToVM::Data,             SharedRuntime_deopt_blob_unpack_with_exception_in_tls,        address)                       \
   static_field(CompilerToVM::Data,             SharedRuntime_deopt_blob_uncommon_trap, address)                                      \
                                                                                                                                      \
   static_field(CompilerToVM::Data,             ThreadLocalAllocBuffer_alignment_reserve, size_t)                                     \

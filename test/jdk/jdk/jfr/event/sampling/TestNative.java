@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,70 +25,49 @@
 
 package jdk.jfr.event.sampling;
 
-import java.io.File;
-import java.nio.file.Paths;
 import java.time.Duration;
+import java.util.List;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.atomic.AtomicInteger;
 
-import jdk.jfr.FlightRecorder;
 import jdk.jfr.Recording;
-import jdk.jfr.consumer.RecordedEvent;
-import jdk.jfr.consumer.RecordingFile;
+import jdk.jfr.consumer.RecordedFrame;
+import jdk.jfr.consumer.RecordingStream;
+import jdk.jfr.internal.JVM;
 import jdk.test.lib.jfr.EventNames;
-import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.process.ProcessTools;
 
 /*
  * @test
  * @key jfr
  * @requires vm.hasJFR
  * @library /test/lib
- * @modules java.base/jdk.internal.misc
- * @run main/native jdk.jfr.event.sampling.TestNative
+ * @modules jdk.jfr/jdk.jfr.internal
+ * @run main jdk.jfr.event.sampling.TestNative
  */
 public class TestNative {
 
-    public final static String EVENT_SETTINGS_FILE = System.getProperty("test.src", ".") + File.separator + "sampling.jfc";
-    public final static String JFR_DUMP = "samples.jfr";
-    public final static String EXCEPTION = "No native samples found";
-    public final static String NATIVE_EVENT = EventNames.NativeMethodSample;
-    public static Recording recording;
+    final static String NATIVE_EVENT = EventNames.NativeMethodSample;
 
-    public static native void longTime();
+    static volatile boolean alive = true;
 
     public static void main(String[] args) throws Exception {
-        String lib = System.getProperty("test.nativepath");
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(true, "-Djava.library.path=" + lib, "jdk.jfr.event.sampling.TestNative$Test");
+        try (RecordingStream rs = new RecordingStream()) {
+            rs.enable(NATIVE_EVENT).withPeriod(Duration.ofMillis(1));
+            rs.onEvent(NATIVE_EVENT, e -> {
+                alive = false;
+                rs.close();
+            });
+            Thread t = new Thread(TestNative::nativeMethod);
+            t.setDaemon(true);
+            t.start();
+            rs.start();
+        }
 
-        OutputAnalyzer output = ProcessTools.executeProcess(pb);
-        output.shouldHaveExitValue(0);
-        output.stdoutShouldNotContain("No native samples found");
     }
 
-    static class Test {
-        public static void main(String[] args) throws Exception {
-            System.loadLibrary("TestNative");
-            FlightRecorder.getFlightRecorder();
-            recording = new Recording();
-            recording.setToDisk(true);
-            recording.setDestination(Paths.get(JFR_DUMP));
-            recording.enable(NATIVE_EVENT).withPeriod(Duration.ofMillis(10));
-            recording.start();
-
-            longTime();
-
-            recording.stop();
-            recording.close();
-
-            try (RecordingFile rf = new RecordingFile(Paths.get(JFR_DUMP))) {
-                while (rf.hasMoreEvents()) {
-                    RecordedEvent re = rf.readEvent();
-                    if (re.getEventType().getName().equals(NATIVE_EVENT)) {
-                        return;
-                    }
-                }
-            }
-
-            throw new Exception("No native samples found");
+    public static void nativeMethod() {
+        while (alive) {
+            JVM.getJVM().getPid();
         }
     }
 }

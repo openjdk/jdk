@@ -180,7 +180,7 @@ private:
 
       bool marked_as_dirty = Atomic::cmpxchg(&_contains[region], false, true) == false;
       if (marked_as_dirty) {
-        uint allocated = Atomic::add(&_cur_idx, 1u) - 1;
+        uint allocated = Atomic::fetch_and_add(&_cur_idx, 1u);
         _buffer[allocated] = region;
       }
     }
@@ -232,7 +232,7 @@ private:
 
     void work(uint worker_id) {
       while (_cur_dirty_regions < _regions->size()) {
-        uint next = Atomic::add(&_cur_dirty_regions, _chunk_length) - _chunk_length;
+        uint next = Atomic::fetch_and_add(&_cur_dirty_regions, _chunk_length);
         uint max = MIN2(next + _chunk_length, _regions->size());
 
         for (uint i = next; i < max; i++) {
@@ -429,7 +429,7 @@ public:
 
   uint claim_cards_to_scan(uint region, uint increment) {
     assert(region < _max_regions, "Tried to access invalid region %u", region);
-    return Atomic::add(&_card_table_scan_state[region], increment) - increment;
+    return Atomic::fetch_and_add(&_card_table_scan_state[region], increment);
   }
 
   void add_dirty_region(uint const region) {
@@ -1467,14 +1467,14 @@ class G1RebuildRemSetTask: public AbstractGangTask {
       size_t const obj_size = obj->size();
       // All non-objArrays and objArrays completely within the mr
       // can be scanned without passing the mr.
-      if (!obj->is_objArray() || mr.contains(MemRegion((HeapWord*)obj, obj_size))) {
+      if (!obj->is_objArray() || mr.contains(MemRegion(cast_from_oop<HeapWord*>(obj), obj_size))) {
         obj->oop_iterate(&_update_cl);
         return obj_size;
       }
       // This path is for objArrays crossing the given MemRegion. Only scan the
       // area within the MemRegion.
       obj->oop_iterate(&_update_cl, mr);
-      return mr.intersection(MemRegion((HeapWord*)obj, obj_size)).word_size();
+      return mr.intersection(MemRegion(cast_from_oop<HeapWord*>(obj), obj_size)).word_size();
     }
 
     // A humongous object is live (with respect to the scanning) either
@@ -1579,7 +1579,7 @@ class G1RebuildRemSetTask: public AbstractGangTask {
           assert(hr->top() == top_at_mark_start || hr->top() == top_at_rebuild_start,
                  "More than one object in the humongous region?");
           humongous_obj->oop_iterate(&_update_cl, mr);
-          return top_at_mark_start != hr->bottom() ? mr.intersection(MemRegion((HeapWord*)humongous_obj, humongous_obj->size())).byte_size() : 0;
+          return top_at_mark_start != hr->bottom() ? mr.intersection(MemRegion(cast_from_oop<HeapWord*>(humongous_obj), humongous_obj->size())).byte_size() : 0;
         } else {
           return 0;
         }
@@ -1588,7 +1588,7 @@ class G1RebuildRemSetTask: public AbstractGangTask {
       for (LiveObjIterator it(bitmap, top_at_mark_start, mr, hr->block_start(mr.start())); it.has_next(); it.move_to_next()) {
         oop obj = it.next();
         size_t scanned_size = scan_for_references(obj, mr);
-        if ((HeapWord*)obj < top_at_mark_start) {
+        if (cast_from_oop<HeapWord*>(obj) < top_at_mark_start) {
           marked_words += scanned_size;
         }
       }

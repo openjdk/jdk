@@ -30,10 +30,7 @@
  *  temporarily workaround combo tests are causing time out in several platforms
  * @library /tools/javac/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
- *          jdk.compiler/com.sun.tools.javac.code
- *          jdk.compiler/com.sun.tools.javac.comp
- *          jdk.compiler/com.sun.tools.javac.main
- *          jdk.compiler/com.sun.tools.javac.tree
+ *          jdk.compiler/com.sun.tools.javac.file
  *          jdk.compiler/com.sun.tools.javac.util
  * @build combo.ComboTestHelper
  * @compile  TypeInferenceComboTest.java

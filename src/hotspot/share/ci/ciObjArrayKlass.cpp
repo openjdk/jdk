@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,37 +108,23 @@ ciSymbol* ciObjArrayKlass::construct_array_name(ciSymbol* element_name,
                                                 int dimension) {
   EXCEPTION_CONTEXT;
   int element_len = element_name->utf8_length();
-
+  int buflen = dimension + element_len + 3;  // '['+ + 'L'? + (element) + ';'? + '\0'
+  char* name = CURRENT_THREAD_ENV->name_buffer(buflen);
+  int pos = 0;
+  for ( ; pos < dimension; pos++) {
+    name[pos] = JVM_SIGNATURE_ARRAY;
+  }
   Symbol* base_name_sym = element_name->get_symbol();
-  char* name;
 
-  if (base_name_sym->char_at(0) == JVM_SIGNATURE_ARRAY ||
-      (base_name_sym->char_at(0) == JVM_SIGNATURE_CLASS &&  // watch package name 'Lxx'
-       base_name_sym->char_at(element_len-1) == JVM_SIGNATURE_ENDCLASS)) {
-
-    int new_len = element_len + dimension + 1; // for the ['s and '\0'
-    name = CURRENT_THREAD_ENV->name_buffer(new_len);
-
-    int pos = 0;
-    for ( ; pos < dimension; pos++) {
-      name[pos] = JVM_SIGNATURE_ARRAY;
-    }
-    strncpy(name+pos, (char*)element_name->base(), element_len);
-    name[new_len-1] = '\0';
+  if (Signature::is_array(base_name_sym) ||
+      Signature::has_envelope(base_name_sym)) {
+    strncpy(&name[pos], (char*)element_name->base(), element_len);
+    name[pos + element_len] = '\0';
   } else {
-    int new_len =   3                       // for L, ;, and '\0'
-                  + dimension               // for ['s
-                  + element_len;
-
-    name = CURRENT_THREAD_ENV->name_buffer(new_len);
-    int pos = 0;
-    for ( ; pos < dimension; pos++) {
-      name[pos] = JVM_SIGNATURE_ARRAY;
-    }
     name[pos++] = JVM_SIGNATURE_CLASS;
-    strncpy(name+pos, (char*)element_name->base(), element_len);
-    name[new_len-2] = JVM_SIGNATURE_ENDCLASS;
-    name[new_len-1] = '\0';
+    strncpy(&name[pos], (char*)element_name->base(), element_len);
+    name[pos + element_len] = JVM_SIGNATURE_ENDCLASS;
+    name[pos + element_len + 1] = '\0';
   }
   return ciSymbol::make(name);
 }

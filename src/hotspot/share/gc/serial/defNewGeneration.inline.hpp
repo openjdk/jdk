@@ -83,7 +83,7 @@ inline void DefNewGeneration::FastKeepAliveClosure::do_oop_work(T* p) {
   // we set a younger_gen card if we have an older->youngest
   // generation pointer.
   oop obj = RawAccess<IS_NOT_NULL>::oop_load(p);
-  if (((HeapWord*)obj < _boundary) && GenCollectedHeap::heap()->is_in_reserved(p)) {
+  if ((cast_from_oop<HeapWord*>(obj) < _boundary) && GenCollectedHeap::heap()->is_in_reserved(p)) {
     _rs->inline_write_ref_field_gc(p, obj);
   }
 }

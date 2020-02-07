@@ -214,6 +214,10 @@ ifeq ($(call check-jvm-feature, minimal), true)
         cpCache.cpp \
         defNewGeneration.cpp \
         frame_arm.cpp \
+        frame_aarch64.cpp \
+        frame_ppc.cpp \
+        frame_s390.cpp \
+        frame_x86.cpp \
         genCollectedHeap.cpp \
         generation.cpp \
         genMarkSweep.cpp \
@@ -223,6 +227,10 @@ ifeq ($(call check-jvm-feature, minimal), true)
         heap.cpp \
         icache.cpp \
         icache_arm.cpp \
+        icache_aarch64.cpp \
+        icache_ppc.cpp \
+        icache_s390.cpp \
+        icache_x86.cpp \
         instanceKlass.cpp \
         invocationCounter.cpp \
         iterator.cpp \

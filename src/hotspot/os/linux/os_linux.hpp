@@ -219,7 +219,7 @@ class Linux {
   typedef struct bitmask* (*numa_get_membind_func_t)(void);
   typedef struct bitmask* (*numa_get_interleave_mask_func_t)(void);
   typedef long (*numa_move_pages_func_t)(int pid, unsigned long count, void **pages, const int *nodes, int *status, int flags);
-
+  typedef void (*numa_set_preferred_func_t)(int node);
   typedef void (*numa_set_bind_policy_func_t)(int policy);
   typedef int (*numa_bitmask_isbitset_func_t)(struct bitmask *bmp, unsigned int n);
   typedef int (*numa_distance_func_t)(int node1, int node2);
@@ -238,6 +238,7 @@ class Linux {
   static numa_get_membind_func_t _numa_get_membind;
   static numa_get_interleave_mask_func_t _numa_get_interleave_mask;
   static numa_move_pages_func_t _numa_move_pages;
+  static numa_set_preferred_func_t _numa_set_preferred;
   static unsigned long* _numa_all_nodes;
   static struct bitmask* _numa_all_nodes_ptr;
   static struct bitmask* _numa_nodes_ptr;
@@ -258,6 +259,7 @@ class Linux {
   static void set_numa_get_membind(numa_get_membind_func_t func) { _numa_get_membind = func; }
   static void set_numa_get_interleave_mask(numa_get_interleave_mask_func_t func) { _numa_get_interleave_mask = func; }
   static void set_numa_move_pages(numa_move_pages_func_t func) { _numa_move_pages = func; }
+  static void set_numa_set_preferred(numa_set_preferred_func_t func) { _numa_set_preferred = func; }
   static void set_numa_all_nodes(unsigned long* ptr) { _numa_all_nodes = ptr; }
   static void set_numa_all_nodes_ptr(struct bitmask **ptr) { _numa_all_nodes_ptr = (ptr == NULL ? NULL : *ptr); }
   static void set_numa_nodes_ptr(struct bitmask **ptr) { _numa_nodes_ptr = (ptr == NULL ? NULL : *ptr); }
@@ -313,6 +315,11 @@ class Linux {
       }
     } else if (_numa_interleave_memory != NULL) {
       _numa_interleave_memory(start, size, _numa_all_nodes);
+    }
+  }
+  static void numa_set_preferred(int node) {
+    if (_numa_set_preferred != NULL) {
+      _numa_set_preferred(node);
     }
   }
   static void numa_set_bind_policy(int policy) {
@@ -391,6 +398,10 @@ class Linux {
     } else {
       return false;
     }
+  }
+
+  static const GrowableArray<int>* numa_nindex_to_node() {
+    return _nindex_to_node;
   }
 };
 

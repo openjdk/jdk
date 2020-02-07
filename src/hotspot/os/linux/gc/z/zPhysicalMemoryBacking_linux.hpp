@@ -57,6 +57,8 @@ private:
   ZErrno fallocate(bool punch_hole, size_t offset, size_t length);
 
   bool commit_inner(size_t offset, size_t length);
+  size_t commit_numa_interleaved(size_t offset, size_t length);
+  size_t commit_default(size_t offset, size_t length);
 
 public:
   ZPhysicalMemoryBacking();

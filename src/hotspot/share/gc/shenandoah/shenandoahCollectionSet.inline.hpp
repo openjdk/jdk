@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2017, 2020, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,10 @@ bool ShenandoahCollectionSet::is_in(size_t region_number) const {
 
 bool ShenandoahCollectionSet::is_in(ShenandoahHeapRegion* r) const {
   return is_in(r->region_number());
+}
+
+bool ShenandoahCollectionSet::is_in(oop p) const {
+  return is_in(cast_from_oop<HeapWord*>(p));
 }
 
 bool ShenandoahCollectionSet::is_in(HeapWord* p) const {

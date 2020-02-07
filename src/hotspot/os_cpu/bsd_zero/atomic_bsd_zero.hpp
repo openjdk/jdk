@@ -160,11 +160,14 @@ static inline int arm_lock_test_and_set(int newval, volatile int *ptr) {
 #endif // ARM
 
 template<size_t byte_size>
-struct Atomic::PlatformAdd
-  : Atomic::AddAndFetch<Atomic::PlatformAdd<byte_size> >
-{
+struct Atomic::PlatformAdd {
   template<typename D, typename I>
   D add_and_fetch(D volatile* dest, I add_value, atomic_memory_order order) const;
+
+  template<typename D, typename I>
+  D fetch_and_add(D volatile* dest, I add_value, atomic_memory_order order) const {
+    return add_and_fetch(dest, add_value, order) - add_value;
+  }
 };
 
 template<>
@@ -186,7 +189,7 @@ inline D Atomic::PlatformAdd<4>::add_and_fetch(D volatile* dest, I add_value,
 }
 
 template<>
-template<typename D, typename !>
+template<typename D, typename I>
 inline D Atomic::PlatformAdd<8>::add_and_fetch(D volatile* dest, I add_value,
                                                atomic_memory_order order) const {
   STATIC_ASSERT(8 == sizeof(I));

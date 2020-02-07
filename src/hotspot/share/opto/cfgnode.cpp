@@ -1990,34 +1990,53 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
   if (in(1) != NULL && in(1)->Opcode() == Op_AddP && can_reshape) {
     // Try to undo Phi of AddP:
-    // (Phi (AddP base base y) (AddP base2 base2 y))
+    // (Phi (AddP base address offset) (AddP base2 address2 offset2))
     // becomes:
     // newbase := (Phi base base2)
-    // (AddP newbase newbase y)
+    // newaddress := (Phi address address2)
+    // newoffset := (Phi offset offset2)
+    // (AddP newbase newaddress newoffset)
     //
     // This occurs as a result of unsuccessful split_thru_phi and
     // interferes with taking advantage of addressing modes. See the
     // clone_shift_expressions code in matcher.cpp
     Node* addp = in(1);
-    const Type* type = addp->in(AddPNode::Base)->bottom_type();
-    Node* y = addp->in(AddPNode::Offset);
-    if (y != NULL && addp->in(AddPNode::Base) == addp->in(AddPNode::Address)) {
+    Node* base = addp->in(AddPNode::Base);
+    Node* address = addp->in(AddPNode::Address);
+    Node* offset = addp->in(AddPNode::Offset);
+    if (base != NULL && address != NULL && offset != NULL &&
+        !base->is_top() && !address->is_top() && !offset->is_top()) {
+      const Type* base_type = base->bottom_type();
+      const Type* address_type = address->bottom_type();
       // make sure that all the inputs are similar to the first one,
       // i.e. AddP with base == address and same offset as first AddP
       bool doit = true;
       for (uint i = 2; i < req(); i++) {
         if (in(i) == NULL ||
             in(i)->Opcode() != Op_AddP ||
-            in(i)->in(AddPNode::Base) != in(i)->in(AddPNode::Address) ||
-            in(i)->in(AddPNode::Offset) != y) {
+            in(i)->in(AddPNode::Base) == NULL ||
+            in(i)->in(AddPNode::Address) == NULL ||
+            in(i)->in(AddPNode::Offset) == NULL ||
+            in(i)->in(AddPNode::Base)->is_top() ||
+            in(i)->in(AddPNode::Address)->is_top() ||
+            in(i)->in(AddPNode::Offset)->is_top()) {
           doit = false;
           break;
         }
+        if (in(i)->in(AddPNode::Offset) != base) {
+          base = NULL;
+        }
+        if (in(i)->in(AddPNode::Offset) != offset) {
+          offset = NULL;
+        }
+        if (in(i)->in(AddPNode::Address) != address) {
+          address = NULL;
+        }
         // Accumulate type for resulting Phi
-        type = type->meet_speculative(in(i)->in(AddPNode::Base)->bottom_type());
+        base_type = base_type->meet_speculative(in(i)->in(AddPNode::Base)->bottom_type());
+        address_type = address_type->meet_speculative(in(i)->in(AddPNode::Base)->bottom_type());
       }
-      Node* base = NULL;
-      if (doit) {
+      if (doit && base == NULL) {
         // Check for neighboring AddP nodes in a tree.
         // If they have a base, use that it.
         for (DUIterator_Fast kmax, k = this->fast_outs(kmax); k < kmax; k++) {
@@ -2035,13 +2054,27 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       }
       if (doit) {
         if (base == NULL) {
-          base = new PhiNode(in(0), type, NULL);
+          base = new PhiNode(in(0), base_type, NULL);
           for (uint i = 1; i < req(); i++) {
             base->init_req(i, in(i)->in(AddPNode::Base));
           }
           phase->is_IterGVN()->register_new_node_with_optimizer(base);
         }
-        return new AddPNode(base, base, y);
+        if (address == NULL) {
+          address = new PhiNode(in(0), address_type, NULL);
+          for (uint i = 1; i < req(); i++) {
+            address->init_req(i, in(i)->in(AddPNode::Address));
+          }
+          phase->is_IterGVN()->register_new_node_with_optimizer(address);
+        }
+        if (offset == NULL) {
+          offset = new PhiNode(in(0), TypeX_X, NULL);
+          for (uint i = 1; i < req(); i++) {
+            offset->init_req(i, in(i)->in(AddPNode::Offset));
+          }
+          phase->is_IterGVN()->register_new_node_with_optimizer(offset);
+        }
+        return new AddPNode(base, address, offset);
       }
     }
   }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -574,7 +574,6 @@ public class TestSearch extends JavadocTester {
                 "script-dir/jquery-ui.min.css",
                 "script-dir/jquery-ui.structure.min.css",
                 "script-dir/jquery-ui.structure.css",
-                "script-dir/external/jquery/jquery.js",
                 "script-dir/jszip/dist/jszip.js",
                 "script-dir/jszip/dist/jszip.min.js",
                 "script-dir/jszip-utils/dist/jszip-utils.js",

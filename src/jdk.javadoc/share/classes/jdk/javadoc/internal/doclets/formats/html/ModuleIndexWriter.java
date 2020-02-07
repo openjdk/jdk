@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,11 +31,9 @@ import jdk.javadoc.internal.doclets.formats.html.markup.TableHeader;
 import java.util.*;
 
 import javax.lang.model.element.ModuleElement;
-import javax.lang.model.element.PackageElement;
 
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.Content;
@@ -110,7 +108,7 @@ public class ModuleIndexWriter extends AbstractOverviewIndexWriter {
 
             for (ModuleElement mdle : modules) {
                 if (!mdle.isUnnamed()) {
-                    if (!(configuration.nodeprecated && utils.isDeprecated(mdle))) {
+                    if (!(options.noDeprecated() && utils.isDeprecated(mdle))) {
                         Content moduleLinkContent = getModuleLink(mdle, new StringContent(mdle.getQualifiedName().toString()));
                         Content summaryContent = new ContentBuilder();
                         addSummaryComment(mdle, summaryContent);

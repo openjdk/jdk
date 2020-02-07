@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -158,9 +158,9 @@ public class ToolEnvironment {
         elementToTreePath = new HashMap<>();
     }
 
-    public void initialize(Map<ToolOption, Object> toolOpts) {
-        this.quiet = (boolean)toolOpts.getOrDefault(ToolOption.QUIET, false);
-        this.ignoreSourceErrors = (boolean)toolOpts.getOrDefault(ToolOption.IGNORE_SOURCE_ERRORS, false);
+    public void initialize(ToolOptions options) {
+        this.quiet = options.quiet();
+        this.ignoreSourceErrors = options.ignoreSourceErrors();
     }
 
     /**

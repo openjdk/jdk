@@ -57,19 +57,8 @@ template <class T> inline void OopsInGenClosure::do_barrier(T* p) {
   assert(!CompressedOops::is_null(heap_oop), "expected non-null oop");
   oop obj = CompressedOops::decode_not_null(heap_oop);
   // If p points to a younger generation, mark the card.
-  if ((HeapWord*)obj < _gen_boundary) {
+  if (cast_from_oop<HeapWord*>(obj) < _gen_boundary) {
     _rs->inline_write_ref_field_gc(p, obj);
-  }
-}
-
-template <class T> inline void OopsInGenClosure::par_do_barrier(T* p) {
-  assert(generation()->is_in_reserved(p), "expected ref in generation");
-  T heap_oop = RawAccess<>::oop_load(p);
-  assert(!CompressedOops::is_null(heap_oop), "expected non-null oop");
-  oop obj = CompressedOops::decode_not_null(heap_oop);
-  // If p points to a younger generation, mark the card.
-  if ((HeapWord*)obj < gen_boundary()) {
-    rs()->write_ref_field_gc_par(p, obj);
   }
 }
 
@@ -92,7 +81,7 @@ template <class T> inline void ScanClosure::do_oop_work(T* p) {
   // Should we copy the obj?
   if (!CompressedOops::is_null(heap_oop)) {
     oop obj = CompressedOops::decode_not_null(heap_oop);
-    if ((HeapWord*)obj < _boundary) {
+    if (cast_from_oop<HeapWord*>(obj) < _boundary) {
       assert(!_g->to()->is_in_reserved(obj), "Scanning field twice?");
       oop new_obj = obj->is_forwarded() ? obj->forwardee()
                                         : _g->copy_to_survivor_space(obj);
@@ -118,7 +107,7 @@ template <class T> inline void FastScanClosure::do_oop_work(T* p) {
   // Should we copy the obj?
   if (!CompressedOops::is_null(heap_oop)) {
     oop obj = CompressedOops::decode_not_null(heap_oop);
-    if ((HeapWord*)obj < _boundary) {
+    if (cast_from_oop<HeapWord*>(obj) < _boundary) {
       assert(!_g->to()->is_in_reserved(obj), "Scanning field twice?");
       oop new_obj = obj->is_forwarded() ? obj->forwardee()
                                         : _g->copy_to_survivor_space(obj);
@@ -142,7 +131,7 @@ template <class T> void FilteringClosure::do_oop_work(T* p) {
   T heap_oop = RawAccess<>::oop_load(p);
   if (!CompressedOops::is_null(heap_oop)) {
     oop obj = CompressedOops::decode_not_null(heap_oop);
-    if ((HeapWord*)obj < _boundary) {
+    if (cast_from_oop<HeapWord*>(obj) < _boundary) {
       _cl->do_oop(p);
     }
   }
@@ -159,7 +148,7 @@ template <class T> inline void ScanWeakRefClosure::do_oop_work(T* p) {
   oop obj = RawAccess<IS_NOT_NULL>::oop_load(p);
   // weak references are sometimes scanned twice; must check
   // that to-space doesn't already contain this object
-  if ((HeapWord*)obj < _boundary && !_g->to()->is_in_reserved(obj)) {
+  if (cast_from_oop<HeapWord*>(obj) < _boundary && !_g->to()->is_in_reserved(obj)) {
     oop new_obj = obj->is_forwarded() ? obj->forwardee()
                                       : _g->copy_to_survivor_space(obj);
     RawAccess<IS_NOT_NULL>::oop_store(p, new_obj);

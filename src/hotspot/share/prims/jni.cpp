@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -862,40 +862,29 @@ class JNI_ArgumentPusher : public SignatureIterator {
  protected:
   JavaCallArguments*  _arguments;
 
-  virtual void get_bool   () = 0;
-  virtual void get_char   () = 0;
-  virtual void get_short  () = 0;
-  virtual void get_byte   () = 0;
-  virtual void get_int    () = 0;
-  virtual void get_long   () = 0;
-  virtual void get_float  () = 0;
-  virtual void get_double () = 0;
-  virtual void get_object () = 0;
+  void push_int(jint x)         { _arguments->push_int(x); }
+  void push_long(jlong x)       { _arguments->push_long(x); }
+  void push_float(jfloat x)     { _arguments->push_float(x); }
+  void push_double(jdouble x)   { _arguments->push_double(x); }
+  void push_object(jobject x)   { _arguments->push_jobject(x); }
 
-  JNI_ArgumentPusher(Symbol* signature) : SignatureIterator(signature) {
-    this->_return_type = T_ILLEGAL;
+  void push_boolean(jboolean b) {
+    // Normalize boolean arguments from native code by converting 1-255 to JNI_TRUE and
+    // 0 to JNI_FALSE.  Boolean return values from native are normalized the same in
+    // TemplateInterpreterGenerator::generate_result_handler_for and
+    // SharedRuntime::generate_native_wrapper.
+    push_int(b == 0 ? JNI_FALSE : JNI_TRUE);
+  }
+
+  JNI_ArgumentPusher(Method* method)
+    : SignatureIterator(method->signature(),
+                        Fingerprinter(methodHandle(Thread::current(), method)).fingerprint())
+  {
     _arguments = NULL;
   }
 
  public:
-  virtual void iterate( uint64_t fingerprint ) = 0;
-
-  void set_java_argument_object(JavaCallArguments *arguments) { _arguments = arguments; }
-
-  inline void do_bool()                     { if (!is_return_type()) get_bool();   }
-  inline void do_char()                     { if (!is_return_type()) get_char();   }
-  inline void do_short()                    { if (!is_return_type()) get_short();  }
-  inline void do_byte()                     { if (!is_return_type()) get_byte();   }
-  inline void do_int()                      { if (!is_return_type()) get_int();    }
-  inline void do_long()                     { if (!is_return_type()) get_long();   }
-  inline void do_float()                    { if (!is_return_type()) get_float();  }
-  inline void do_double()                   { if (!is_return_type()) get_double(); }
-  inline void do_object(int begin, int end) { if (!is_return_type()) get_object(); }
-  inline void do_array(int begin, int end)  { if (!is_return_type()) get_object(); } // do_array uses get_object -- there is no get_array
-  inline void do_void()                     { }
-
-  JavaCallArguments* arguments()     { return _arguments; }
-  void push_receiver(Handle h)       { _arguments->push_oop(h); }
+  virtual void push_arguments_on(JavaCallArguments* arguments) = 0;
 };
 
 
@@ -903,89 +892,42 @@ class JNI_ArgumentPusherVaArg : public JNI_ArgumentPusher {
  protected:
   va_list _ap;
 
-  inline void get_bool()   {
-    // Normalize boolean arguments from native code by converting 1-255 to JNI_TRUE and
-    // 0 to JNI_FALSE.  Boolean return values from native are normalized the same in
-    // TemplateInterpreterGenerator::generate_result_handler_for and
-    // SharedRuntime::generate_native_wrapper.
-    jboolean b = va_arg(_ap, jint);
-    _arguments->push_int((jint)(b == 0 ? JNI_FALSE : JNI_TRUE));
-  }
-  inline void get_char()   { _arguments->push_int(va_arg(_ap, jint)); } // char is coerced to int when using va_arg
-  inline void get_short()  { _arguments->push_int(va_arg(_ap, jint)); } // short is coerced to int when using va_arg
-  inline void get_byte()   { _arguments->push_int(va_arg(_ap, jint)); } // byte is coerced to int when using va_arg
-  inline void get_int()    { _arguments->push_int(va_arg(_ap, jint)); }
-
-  // each of these paths is exercized by the various jck Call[Static,Nonvirtual,][Void,Int,..]Method[A,V,] tests
-
-  inline void get_long()   { _arguments->push_long(va_arg(_ap, jlong)); }
-  inline void get_float()  { _arguments->push_float((jfloat)va_arg(_ap, jdouble)); } // float is coerced to double w/ va_arg
-  inline void get_double() { _arguments->push_double(va_arg(_ap, jdouble)); }
-  inline void get_object() { _arguments->push_jobject(va_arg(_ap, jobject)); }
-
-  inline void set_ap(va_list rap) {
+  void set_ap(va_list rap) {
     va_copy(_ap, rap);
   }
 
- public:
-  JNI_ArgumentPusherVaArg(Symbol* signature, va_list rap)
-       : JNI_ArgumentPusher(signature) {
-    set_ap(rap);
-  }
-  JNI_ArgumentPusherVaArg(jmethodID method_id, va_list rap)
-      : JNI_ArgumentPusher(Method::resolve_jmethod_id(method_id)->signature()) {
-    set_ap(rap);
-  }
+  friend class SignatureIterator;  // so do_parameters_on can call do_type
+  void do_type(BasicType type) {
+    switch (type) {
+    // these are coerced to int when using va_arg
+    case T_BYTE:
+    case T_CHAR:
+    case T_SHORT:
+    case T_INT:         push_int(va_arg(_ap, jint)); break;
+    case T_BOOLEAN:     push_boolean((jboolean) va_arg(_ap, jint)); break;
 
-  // Optimized path if we have the bitvector form of signature
-  void iterate( uint64_t fingerprint ) {
-    if (fingerprint == (uint64_t)CONST64(-1)) {
-      SignatureIterator::iterate(); // Must be too many arguments
-    } else {
-      _return_type = (BasicType)((fingerprint >> static_feature_size) &
-                                  result_feature_mask);
+    // each of these paths is exercised by the various jck Call[Static,Nonvirtual,][Void,Int,..]Method[A,V,] tests
 
-      assert(fingerprint, "Fingerprint should not be 0");
-      fingerprint = fingerprint >> (static_feature_size + result_feature_size);
-      while ( 1 ) {
-        switch ( fingerprint & parameter_feature_mask ) {
-          case bool_parm:
-            get_bool();
-            break;
-          case char_parm:
-            get_char();
-            break;
-          case short_parm:
-            get_short();
-            break;
-          case byte_parm:
-            get_byte();
-            break;
-          case int_parm:
-            get_int();
-            break;
-          case obj_parm:
-            get_object();
-            break;
-          case long_parm:
-            get_long();
-            break;
-          case float_parm:
-            get_float();
-            break;
-          case double_parm:
-            get_double();
-            break;
-          case done_parm:
-            return;
-            break;
-          default:
-            ShouldNotReachHere();
-            break;
-        }
-        fingerprint >>= parameter_feature_size;
-      }
+    case T_LONG:        push_long(va_arg(_ap, jlong)); break;
+    // float is coerced to double w/ va_arg
+    case T_FLOAT:       push_float((jfloat) va_arg(_ap, jdouble)); break;
+    case T_DOUBLE:      push_double(va_arg(_ap, jdouble)); break;
+
+    case T_ARRAY:
+    case T_OBJECT:      push_object(va_arg(_ap, jobject)); break;
+    default:            ShouldNotReachHere();
     }
+  }
+
+ public:
+  JNI_ArgumentPusherVaArg(jmethodID method_id, va_list rap)
+      : JNI_ArgumentPusher(Method::resolve_jmethod_id(method_id)) {
+    set_ap(rap);
+  }
+
+  virtual void push_arguments_on(JavaCallArguments* arguments) {
+    _arguments = arguments;
+    do_parameters_on(this);
   }
 };
 
@@ -994,84 +936,34 @@ class JNI_ArgumentPusherArray : public JNI_ArgumentPusher {
  protected:
   const jvalue *_ap;
 
-  inline void get_bool()   {
-    // Normalize boolean arguments from native code by converting 1-255 to JNI_TRUE and
-    // 0 to JNI_FALSE.  Boolean return values from native are normalized the same in
-    // TemplateInterpreterGenerator::generate_result_handler_for and
-    // SharedRuntime::generate_native_wrapper.
-    jboolean b = (_ap++)->z;
-    _arguments->push_int((jint)(b == 0 ? JNI_FALSE : JNI_TRUE));
-  }
-  inline void get_char()   { _arguments->push_int((jint)(_ap++)->c); }
-  inline void get_short()  { _arguments->push_int((jint)(_ap++)->s); }
-  inline void get_byte()   { _arguments->push_int((jint)(_ap++)->b); }
-  inline void get_int()    { _arguments->push_int((jint)(_ap++)->i); }
-
-  inline void get_long()   { _arguments->push_long((_ap++)->j);  }
-  inline void get_float()  { _arguments->push_float((_ap++)->f); }
-  inline void get_double() { _arguments->push_double((_ap++)->d);}
-  inline void get_object() { _arguments->push_jobject((_ap++)->l); }
-
   inline void set_ap(const jvalue *rap) { _ap = rap; }
 
- public:
-  JNI_ArgumentPusherArray(Symbol* signature, const jvalue *rap)
-       : JNI_ArgumentPusher(signature) {
-    set_ap(rap);
+  friend class SignatureIterator;  // so do_parameters_on can call do_type
+  void do_type(BasicType type) {
+    switch (type) {
+    case T_CHAR:        push_int((_ap++)->c); break;
+    case T_SHORT:       push_int((_ap++)->s); break;
+    case T_BYTE:        push_int((_ap++)->b); break;
+    case T_INT:         push_int((_ap++)->i); break;
+    case T_BOOLEAN:     push_boolean((_ap++)->z); break;
+    case T_LONG:        push_long((_ap++)->j); break;
+    case T_FLOAT:       push_float((_ap++)->f); break;
+    case T_DOUBLE:      push_double((_ap++)->d); break;
+    case T_ARRAY:
+    case T_OBJECT:      push_object((_ap++)->l); break;
+    default:            ShouldNotReachHere();
+    }
   }
+
+ public:
   JNI_ArgumentPusherArray(jmethodID method_id, const jvalue *rap)
-      : JNI_ArgumentPusher(Method::resolve_jmethod_id(method_id)->signature()) {
+      : JNI_ArgumentPusher(Method::resolve_jmethod_id(method_id)) {
     set_ap(rap);
   }
 
-  // Optimized path if we have the bitvector form of signature
-  void iterate( uint64_t fingerprint ) {
-    if (fingerprint == (uint64_t)CONST64(-1)) {
-      SignatureIterator::iterate(); // Must be too many arguments
-    } else {
-      _return_type = (BasicType)((fingerprint >> static_feature_size) &
-                                  result_feature_mask);
-      assert(fingerprint, "Fingerprint should not be 0");
-      fingerprint = fingerprint >> (static_feature_size + result_feature_size);
-      while ( 1 ) {
-        switch ( fingerprint & parameter_feature_mask ) {
-          case bool_parm:
-            get_bool();
-            break;
-          case char_parm:
-            get_char();
-            break;
-          case short_parm:
-            get_short();
-            break;
-          case byte_parm:
-            get_byte();
-            break;
-          case int_parm:
-            get_int();
-            break;
-          case obj_parm:
-            get_object();
-            break;
-          case long_parm:
-            get_long();
-            break;
-          case float_parm:
-            get_float();
-            break;
-          case double_parm:
-            get_double();
-            break;
-          case done_parm:
-            return;
-            break;
-          default:
-            ShouldNotReachHere();
-            break;
-        }
-        fingerprint >>= parameter_feature_size;
-      }
-    }
+  virtual void push_arguments_on(JavaCallArguments* arguments) {
+    _arguments = arguments;
+    do_parameters_on(this);
   }
 };
 
@@ -1092,14 +984,13 @@ static void jni_invoke_static(JNIEnv *env, JavaValue* result, jobject receiver, 
   ResourceMark rm(THREAD);
   int number_of_parameters = method->size_of_parameters();
   JavaCallArguments java_args(number_of_parameters);
-  args->set_java_argument_object(&java_args);
 
   assert(method->is_static(), "method should be static");
 
   // Fill out JavaCallArguments object
-  args->iterate( Fingerprinter(method).fingerprint() );
+  args->push_arguments_on(&java_args);
   // Initialize result type
-  result->set_type(args->get_ret_type());
+  result->set_type(args->return_type());
 
   // Invoke the method. Result is returned as oop.
   JavaCalls::call(result, method, &java_args, CHECK);
@@ -1153,16 +1044,15 @@ static void jni_invoke_nonstatic(JNIEnv *env, JavaValue* result, jobject receive
   // the jni parser
   ResourceMark rm(THREAD);
   JavaCallArguments java_args(number_of_parameters);
-  args->set_java_argument_object(&java_args);
 
   // handle arguments
   assert(!method->is_static(), "method %s should not be static", method->name_and_sig_as_C_string());
-  args->push_receiver(h_recv); // Push jobject handle
+  java_args.push_oop(h_recv); // Push jobject handle
 
   // Fill out JavaCallArguments object
-  args->iterate( Fingerprinter(method).fingerprint() );
+  args->push_arguments_on(&java_args);
   // Initialize result type
-  result->set_type(args->get_ret_type());
+  result->set_type(args->return_type());
 
   // Invoke the method. Result is returned as oop.
   JavaCalls::call(result, method, &java_args, CHECK);
@@ -2921,6 +2811,20 @@ JNI_ENTRY(jint, jni_RegisterNatives(JNIEnv *env, jclass clazz,
 
   Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(clazz));
 
+  // There are no restrictions on native code registering native methods, which
+  // allows agents to redefine the bindings to native methods. But we issue a
+  // warning if any code running outside of the boot/platform loader is rebinding
+  // any native methods in classes loaded by the boot/platform loader.
+  Klass* caller = thread->security_get_caller_class(1);
+  bool do_warning = false;
+  oop cl = k->class_loader();
+  if (cl ==  NULL || SystemDictionary::is_platform_class_loader(cl)) {
+    // If no caller class, or caller class has a different loader, then
+    // issue a warning below.
+    do_warning = (caller == NULL) || caller->class_loader() != cl;
+  }
+
+
   for (int index = 0; index < nMethods; index++) {
     const char* meth_name = methods[index].name;
     const char* meth_sig = methods[index].signature;
@@ -2933,11 +2837,17 @@ JNI_ENTRY(jint, jni_RegisterNatives(JNIEnv *env, jclass clazz,
     TempNewSymbol  signature = SymbolTable::probe(meth_sig, (int)strlen(meth_sig));
 
     if (name == NULL || signature == NULL) {
-      ResourceMark rm;
+      ResourceMark rm(THREAD);
       stringStream st;
       st.print("Method %s.%s%s not found", k->external_name(), meth_name, meth_sig);
       // Must return negative value on failure
       THROW_MSG_(vmSymbols::java_lang_NoSuchMethodError(), st.as_string(), -1);
+    }
+
+    if (do_warning) {
+      ResourceMark rm(THREAD);
+      log_warning(jni, resolve)("Re-registering of platform native method: %s.%s%s "
+              "from code in a different classloader", k->external_name(), meth_name, meth_sig);
     }
 
     bool res = Method::register_native(k, name, signature,

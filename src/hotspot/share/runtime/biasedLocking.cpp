@@ -324,7 +324,7 @@ static HeuristicsResult update_heuristics(oop o) {
   //    and don't allow rebiasing of these objects. Disable
   //    allocation of objects of that type with the bias bit set.
   Klass* k = o->klass();
-  jlong cur_time = os::javaTimeMillis();
+  jlong cur_time = nanos_to_millis(os::javaTimeNanos());
   jlong last_bulk_revocation_time = k->last_biased_lock_bulk_revocation_time();
   int revocation_count = k->biased_lock_revocation_count();
   if ((revocation_count >= BiasedLockingBulkRebiasThreshold) &&
@@ -374,7 +374,7 @@ void BiasedLocking::bulk_revoke_at_safepoint(oop o, bool bulk_rebias, JavaThread
                           o->mark().value(),
                           o->klass()->external_name());
 
-  jlong cur_time = os::javaTimeMillis();
+  jlong cur_time = nanos_to_millis(os::javaTimeNanos());
   o->klass()->set_last_biased_lock_bulk_revocation_time(cur_time);
 
   Klass* k_o = o->klass();

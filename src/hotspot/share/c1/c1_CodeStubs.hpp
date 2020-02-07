@@ -123,6 +123,7 @@ class ConversionStub: public CodeStub {
  public:
   ConversionStub(Bytecodes::Code bytecode, LIR_Opr input, LIR_Opr result)
     : _bytecode(bytecode), _input(input), _result(result) {
+    NOT_IA32( ShouldNotReachHere(); ) // used only on x86-32
   }
 
   Bytecodes::Code bytecode() { return _bytecode; }

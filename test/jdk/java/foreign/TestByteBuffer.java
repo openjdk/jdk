@@ -394,12 +394,8 @@ public class TestByteBuffer {
     }
 
     @Test(expectedExceptions = { UnsupportedOperationException.class,
-                                 OutOfMemoryError.class })
+                                 IllegalArgumentException.class })
     public void testTooBigForByteBuffer() {
-        if (System.getProperty("sun.arch.data.model").equals("32")) {
-            throw new SkipException("32-bit Unsafe does not support this allocation size");
-        }
-
         MemorySegment.allocateNative((long) Integer.MAX_VALUE * 2).asByteBuffer();
     }
 

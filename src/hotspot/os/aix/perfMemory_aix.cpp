@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2018 SAP SE. All rights reserved.
+ * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,8 +98,8 @@ static void save_memory_to_file(char* addr, size_t size) {
 
   int result;
 
-  RESTARTABLE(::open(destfile, O_CREAT|O_WRONLY|O_TRUNC, S_IREAD|S_IWRITE),
-              result);;
+  RESTARTABLE(os::open(destfile, O_CREAT|O_WRONLY|O_TRUNC, S_IREAD|S_IWRITE),
+              result);
   if (result == OS_ERR) {
     if (PrintMiscellaneous && Verbose) {
       warning("Could not create Perfdata save file: %s: %s\n",
@@ -248,7 +248,6 @@ static bool is_directory_secure(const char* path) {
   return is_statbuf_secure(&statbuf);
 }
 
-// (Taken over from Solaris to support the O_NOFOLLOW case on AIX.)
 // Check if the given directory file descriptor is considered a secure
 // directory for the backing store files. Returns true if the directory
 // exists and is considered a secure location. Returns false if the path
@@ -290,89 +289,6 @@ static bool is_same_fsobject(int fd1, int fd2) {
   }
 }
 
-// Helper functions for open without O_NOFOLLOW which is not present on AIX 5.3/6.1.
-// We use the jdk6 implementation here.
-#ifndef O_NOFOLLOW
-// The O_NOFOLLOW oflag doesn't exist before solaris 5.10, this is to simulate that behaviour
-// was done in jdk 5/6 hotspot by Oracle this way
-static int open_o_nofollow_impl(const char* path, int oflag, mode_t mode, bool use_mode) {
-  struct stat orig_st;
-  struct stat new_st;
-  bool create;
-  int error;
-  int fd;
-  int result;
-
-  create = false;
-
-  RESTARTABLE(::lstat(path, &orig_st), result);
-
-  if (result == OS_ERR) {
-    if (errno == ENOENT && (oflag & O_CREAT) != 0) {
-      // File doesn't exist, but_we want to create it, add O_EXCL flag
-      // to make sure no-one creates it (or a symlink) before us
-      // This works as we expect with symlinks, from posix man page:
-      // 'If O_EXCL  and  O_CREAT  are set, and path names a symbolic
-      // link, open() shall fail and set errno to [EEXIST]'.
-      oflag |= O_EXCL;
-      create = true;
-    } else {
-      // File doesn't exist, and we are not creating it.
-      return OS_ERR;
-    }
-  } else {
-    // lstat success, check if existing file is a link.
-    if ((orig_st.st_mode & S_IFMT) == S_IFLNK)  {
-      // File is a symlink.
-      errno = ELOOP;
-      return OS_ERR;
-    }
-  }
-
-  if (use_mode == true) {
-    RESTARTABLE(::open(path, oflag, mode), fd);
-  } else {
-    RESTARTABLE(::open(path, oflag), fd);
-  }
-
-  if (fd == OS_ERR) {
-    return fd;
-  }
-
-  // Can't do inode checks on before/after if we created the file.
-  if (create == false) {
-    RESTARTABLE(::fstat(fd, &new_st), result);
-    if (result == OS_ERR) {
-      // Keep errno from fstat, in case close also fails.
-      error = errno;
-      ::close(fd);
-      errno = error;
-      return OS_ERR;
-    }
-
-    if (orig_st.st_dev != new_st.st_dev || orig_st.st_ino != new_st.st_ino) {
-      // File was tampered with during race window.
-      ::close(fd);
-      errno = EEXIST;
-      if (PrintMiscellaneous && Verbose) {
-        warning("possible file tampering attempt detected when opening %s", path);
-      }
-      return OS_ERR;
-    }
-  }
-
-  return fd;
-}
-
-static int open_o_nofollow(const char* path, int oflag, mode_t mode) {
-  return open_o_nofollow_impl(path, oflag, mode, true);
-}
-
-static int open_o_nofollow(const char* path, int oflag) {
-  return open_o_nofollow_impl(path, oflag, 0, false);
-}
-#endif
-
 // Open the directory of the given path and validate it.
 // Return a DIR * of the open directory.
 static DIR *open_directory_secure(const char* dirname) {
@@ -383,15 +299,7 @@ static DIR *open_directory_secure(const char* dirname) {
   // calling opendir() and is_directory_secure() does.
   int result;
   DIR *dirp = NULL;
-
-  // No O_NOFOLLOW defined at buildtime, and it is not documented for open;
-  // so provide a workaround in this case.
-#ifdef O_NOFOLLOW
   RESTARTABLE(::open(dirname, O_RDONLY|O_NOFOLLOW), result);
-#else
-  // workaround (jdk6 coding)
-  result = open_o_nofollow(dirname, O_RDONLY);
-#endif
 
   if (result == OS_ERR) {
     // Directory doesn't exist or is a symlink, so there is nothing to cleanup.
@@ -879,15 +787,7 @@ static int create_sharedmem_resources(const char* dirname, const char* filename,
   // Cannot use O_TRUNC here; truncation of an existing file has to happen
   // after the is_file_secure() check below.
   int result;
-
-  // No O_NOFOLLOW defined at buildtime, and it is not documented for open;
-  // so provide a workaround in this case.
-#ifdef O_NOFOLLOW
-  RESTARTABLE(::open(filename, O_RDWR|O_CREAT|O_NOFOLLOW, S_IREAD|S_IWRITE), result);
-#else
-  // workaround function (jdk6 code)
-  result = open_o_nofollow(filename, O_RDWR|O_CREAT, S_IREAD|S_IWRITE);
-#endif
+  RESTARTABLE(os::open(filename, O_RDWR|O_CREAT|O_NOFOLLOW, S_IREAD|S_IWRITE), result);
 
   if (result == OS_ERR) {
     if (PrintMiscellaneous && Verbose) {
@@ -944,12 +844,8 @@ static int open_sharedmem_file(const char* filename, int oflags, TRAPS) {
 
   // open the file
   int result;
-  // provide a workaround in case no O_NOFOLLOW is defined at buildtime
-#ifdef O_NOFOLLOW
-  RESTARTABLE(::open(filename, oflags), result);
-#else
-  result = open_o_nofollow(filename, oflags);
-#endif
+  RESTARTABLE(os::open(filename, oflags, 0), result);
+
   if (result == OS_ERR) {
     if (errno == ENOENT) {
       THROW_MSG_(vmSymbols::java_lang_IllegalArgumentException(),
@@ -1137,12 +1033,7 @@ static void mmap_attach_shared(const char* user, int vmid, PerfMemory::PerfMemor
   // constructs for the file and the shared memory mapping.
   if (mode == PerfMemory::PERF_MODE_RO) {
     mmap_prot = PROT_READ;
-  // No O_NOFOLLOW defined at buildtime, and it is not documented for open.
-#ifdef O_NOFOLLOW
     file_flags = O_RDONLY | O_NOFOLLOW;
-#else
-    file_flags = O_RDONLY;
-#endif
   }
   else if (mode == PerfMemory::PERF_MODE_RW) {
 #ifdef LATER

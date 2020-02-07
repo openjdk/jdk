@@ -466,7 +466,7 @@ public class Resources_zh_CN extends java.util.ListResourceBundle {
         {"migrate.keystore.warning", "\u5DF2\u5C06 \"%1$s\" \u8FC1\u79FB\u5230 %4$s\u3002\u5C06 %2$s \u5BC6\u94A5\u5E93\u4F5C\u4E3A \"%3$s\" \u8FDB\u884C\u4E86\u5907\u4EFD\u3002"},
         {"backup.keystore.warning", "\u5DF2\u5C06\u539F\u59CB\u5BC6\u94A5\u5E93 \"%1$s\" \u5907\u4EFD\u4E3A \"%3$s\"..."},
         {"importing.keystore.status", "\u6B63\u5728\u5C06\u5BC6\u94A5\u5E93 %1$s \u5BFC\u5165\u5230 %2$s..."},
-        {"keyalg.option.1.missing.warning", "\u65E0 -keyalg \u9009\u9879\u3002\u9ED8\u8BA4\u5BC6\u94A5\u7B97\u6CD5 (%s) \u662F\u4F20\u7EDF\u7B97\u6CD5\uFF0C\u4E0D\u518D\u63A8\u8350\u3002\u5728 JDK \u7684\u540E\u7EED\u53D1\u884C\u7248\u4E2D\uFF0C\u5C06\u5220\u9664\u9ED8\u8BA4\u503C\uFF0C\u60A8\u5FC5\u987B\u6307\u5B9A -keyalg \u9009\u9879\u3002"},
+        {"keyalg.option.missing.error", "\u5FC5\u987B\u6307\u5B9A -keyalg \u9009\u9879\u3002"},
 
         {"showinfo.no.option", "-showinfo \u7F3A\u5C11\u9009\u9879\u3002\u8BF7\u5C1D\u8BD5\u4F7F\u7528 \"keytool -showinfo -tls\"\u3002"},
     };

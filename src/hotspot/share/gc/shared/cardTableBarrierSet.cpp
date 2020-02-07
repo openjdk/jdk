@@ -133,7 +133,7 @@ void CardTableBarrierSet::on_slowpath_allocation_exit(JavaThread* thread, oop ne
     // following the flush above.
     assert(thread->deferred_card_mark().is_empty(), "Error");
   } else {
-    MemRegion mr((HeapWord*)new_obj, new_obj->size());
+    MemRegion mr(cast_from_oop<HeapWord*>(new_obj), new_obj->size());
     assert(!mr.is_empty(), "Error");
     if (_defer_initial_card_mark) {
       // Defer the card mark

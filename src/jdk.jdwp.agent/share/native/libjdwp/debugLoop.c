@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -117,6 +117,8 @@ debugLoop_run(void)
             PacketInputStream in;
             PacketOutputStream out;
             CommandHandler func;
+            const char *cmdSetName;
+            const char *cmdName;
 
             /* Should reply be sent to sender.
              * For error handling, assume yes, since
@@ -137,9 +139,9 @@ debugLoop_run(void)
             inStream_init(&in, p);
             outStream_initReply(&out, inStream_id(&in));
 
-            LOG_MISC(("Command set %d, command %d", cmd->cmdSet, cmd->cmd));
-
-            func = debugDispatch_getHandler(cmd->cmdSet,cmd->cmd);
+            func = debugDispatch_getHandler(cmd->cmdSet, cmd->cmd, &cmdSetName, &cmdName);
+            LOG_MISC(("Command set %s(%d), command %s(%d)",
+                      cmdSetName, cmd->cmdSet, cmdName, cmd->cmd));
             if (func == NULL) {
                 /* we've never heard of this, so I guess we
                  * haven't implemented it.
@@ -229,9 +231,13 @@ reader(jvmtiEnv* jvmti_env, JNIEnv* jni_env, void* arg)
             shouldListen = JNI_FALSE;
             notifyTransportError();
         } else {
+            const char *cmdSetName;
+            const char *cmdName;
             cmd = &packet.type.cmd;
 
-            LOG_MISC(("Command set %d, command %d", cmd->cmdSet, cmd->cmd));
+            debugDispatch_getHandler(cmd->cmdSet, cmd->cmd, &cmdSetName, &cmdName);
+            LOG_MISC(("Command set %s(%d), command %s(%d)",
+                      cmdSetName, cmd->cmdSet, cmdName, cmd->cmd));
 
             /*
              * FIXME! We need to deal with high priority

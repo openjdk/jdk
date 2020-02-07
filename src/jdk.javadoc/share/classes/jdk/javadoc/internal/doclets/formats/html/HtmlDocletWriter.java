@@ -153,6 +153,8 @@ public class HtmlDocletWriter {
      */
     public final HtmlConfiguration configuration;
 
+    protected final HtmlOptions options;
+
     protected final Utils utils;
 
     protected final Contents contents;
@@ -208,6 +210,7 @@ public class HtmlDocletWriter {
      */
     public HtmlDocletWriter(HtmlConfiguration configuration, DocPath path) {
         this.configuration = configuration;
+        this.options = configuration.getOptions();
         this.contents = configuration.contents;
         this.messages = configuration.messages;
         this.resources = configuration.resources;
@@ -259,9 +262,9 @@ public class HtmlDocletWriter {
             // append htmlstr up to start of next {@docroot}
             buf.append(htmlstr.substring(prevEnd, match));
             prevEnd = docrootMatcher.end();
-            if (configuration.docrootparent.length() > 0 && htmlstr.startsWith("/..", prevEnd)) {
+            if (options.docrootParent().length() > 0 && htmlstr.startsWith("/..", prevEnd)) {
                 // Insert the absolute link if {@docRoot} is followed by "/..".
-                buf.append(configuration.docrootparent);
+                buf.append(options.docrootParent());
                 prevEnd += 3;
             } else {
                 // Insert relative path where {@docRoot} was located
@@ -276,7 +279,7 @@ public class HtmlDocletWriter {
         return buf.toString();
     }
     //where:
-        // Note: {@docRoot} is not case sensitive when passed in w/command line option:
+        // Note: {@docRoot} is not case sensitive when passed in with a command-line option:
         private static final Pattern docrootPattern =
                 Pattern.compile(Pattern.quote("{@docroot}"), Pattern.CASE_INSENSITIVE);
 
@@ -339,7 +342,7 @@ public class HtmlDocletWriter {
      * @param htmltree the documentation tree to which the tags will be added
      */
     protected void addTagsInfo(Element e, Content htmltree) {
-        if (configuration.nocomment) {
+        if (options.noComment()) {
             return;
         }
         Content dl = new HtmlTree(HtmlTag.DL);
@@ -448,14 +451,14 @@ public class HtmlDocletWriter {
         List<DocPath> additionalStylesheets = configuration.getAdditionalStylesheets();
         additionalStylesheets.addAll(localStylesheets);
         Head head = new Head(path, configuration.docletVersion, configuration.startTime)
-                .setTimestamp(!configuration.notimestamp)
+                .setTimestamp(!options.noTimestamp())
                 .setDescription(description)
                 .setGenerator(getGenerator(getClass()))
                 .setTitle(winTitle)
-                .setCharset(configuration.charset)
+                .setCharset(options.charset())
                 .addKeywords(metakeywords)
                 .setStylesheets(configuration.getMainStylesheet(), additionalStylesheets)
-                .setIndex(configuration.createindex, mainBodyScript)
+                .setIndex(options.createIndex(), mainBodyScript)
                 .addContent(extraHeadContent);
 
         Content htmlTree = HtmlTree.HTML(configuration.getLocale().getLanguage(), head.toContent(), body);
@@ -470,8 +473,8 @@ public class HtmlDocletWriter {
      * @return the window title string
      */
     public String getWindowTitle(String title) {
-        if (configuration.windowtitle.length() > 0) {
-            title += " (" + configuration.windowtitle  + ")";
+        if (options.windowTitle().length() > 0) {
+            title += " (" + options.windowTitle() + ")";
         }
         return title;
     }
@@ -485,12 +488,12 @@ public class HtmlDocletWriter {
     public Content getUserHeaderFooter(boolean header) {
         String content;
         if (header) {
-            content = replaceDocRootDir(configuration.header);
+            content = replaceDocRootDir(options.header());
         } else {
-            if (configuration.footer.length() != 0) {
-                content = replaceDocRootDir(configuration.footer);
+            if (options.footer().length() != 0) {
+                content = replaceDocRootDir(options.footer());
             } else {
-                content = replaceDocRootDir(configuration.header);
+                content = replaceDocRootDir(options.header());
             }
         }
         Content rawContent = new RawHtml(content);
@@ -503,7 +506,7 @@ public class HtmlDocletWriter {
      * @param htmlTree the content tree to which user specified top will be added
      */
     public void addTop(Content htmlTree) {
-        Content top = new RawHtml(replaceDocRootDir(configuration.top));
+        Content top = new RawHtml(replaceDocRootDir(options.top()));
         htmlTree.add(top);
     }
 
@@ -513,7 +516,7 @@ public class HtmlDocletWriter {
      * @param htmlTree the content tree to which user specified bottom will be added
      */
     public void addBottom(Content htmlTree) {
-        Content bottom = new RawHtml(replaceDocRootDir(configuration.bottom));
+        Content bottom = new RawHtml(replaceDocRootDir(options.bottom()));
         Content small = HtmlTree.SMALL(bottom);
         Content p = HtmlTree.P(HtmlStyle.legalCopy, small);
         htmlTree.add(p);
@@ -1259,7 +1262,7 @@ public class HtmlDocletWriter {
      */
     private void addCommentTags(Element element, DocTree holderTag, List<? extends DocTree> tags, boolean depr,
             boolean first, boolean inSummary, Content htmltree) {
-        if(configuration.nocomment){
+        if (options.noComment()){
             return;
         }
         Content div;
@@ -1420,8 +1423,8 @@ public class HtmlDocletWriter {
                     for (DocTree dt : node.getValue()) {
                         if (utils.isText(dt) && isHRef) {
                             String text = ((TextTree) dt).getBody();
-                            if (text.startsWith("/..") && !configuration.docrootparent.isEmpty()) {
-                                result.add(configuration.docrootparent);
+                            if (text.startsWith("/..") && !options.docrootParent().isEmpty()) {
+                                result.add(options.docrootParent());
                                 docRootContent = new ContentBuilder();
                                 result.add(textCleanup(text.substring(3), isLastNode));
                             } else {

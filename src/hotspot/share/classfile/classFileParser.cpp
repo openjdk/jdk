@@ -665,7 +665,7 @@ void ClassFileParser::parse_constant_pool(const ClassFileStream* const stream,
             "Illegal zero length constant pool entry at %d in class %s",
             name_index, CHECK);
 
-          if (sig->char_at(0) == JVM_SIGNATURE_FUNC) {
+          if (Signature::is_method(sig)) {
             // Format check method name and signature
             verify_legal_method_name(name, CHECK);
             verify_legal_method_signature(name, sig, CHECK);
@@ -690,9 +690,8 @@ void ClassFileParser::parse_constant_pool(const ClassFileStream* const stream,
         const Symbol* const signature = cp->symbol_at(signature_ref_index);
         if (_need_verify) {
           // CONSTANT_Dynamic's name and signature are verified above, when iterating NameAndType_info.
-          // Need only to be sure signature is non-zero length and the right type.
-          if (signature->utf8_length() == 0 ||
-              signature->char_at(0) == JVM_SIGNATURE_FUNC) {
+          // Need only to be sure signature is the right type.
+          if (Signature::is_method(signature)) {
             throwIllegalSignature("CONSTANT_Dynamic", name, signature, CHECK);
           }
         }
@@ -716,8 +715,7 @@ void ClassFileParser::parse_constant_pool(const ClassFileStream* const stream,
           if (_need_verify) {
             // Field name and signature are verified above, when iterating NameAndType_info.
             // Need only to be sure signature is non-zero length and the right type.
-            if (signature->utf8_length() == 0 ||
-                signature->char_at(0) == JVM_SIGNATURE_FUNC) {
+            if (Signature::is_method(signature)) {
               throwIllegalSignature("Field", name, signature, CHECK);
             }
           }
@@ -725,8 +723,7 @@ void ClassFileParser::parse_constant_pool(const ClassFileStream* const stream,
           if (_need_verify) {
             // Method name and signature are verified above, when iterating NameAndType_info.
             // Need only to be sure signature is non-zero length and the right type.
-            if (signature->utf8_length() == 0 ||
-                signature->char_at(0) != JVM_SIGNATURE_FUNC) {
+            if (!Signature::is_method(signature)) {
               throwIllegalSignature("Method", name, signature, CHECK);
             }
           }
@@ -1723,7 +1720,7 @@ void ClassFileParser::parse_fields(const ClassFileStream* const cfs,
                         injected[n].signature_index,
                         0);
 
-      const BasicType type = FieldType::basic_type(injected[n].signature());
+      const BasicType type = Signature::basic_type(injected[n].signature());
 
       // Remember how many oops we encountered and compute allocation type
       const FieldAllocationType atype = fac->update(false, type);
@@ -2796,21 +2793,8 @@ Method* ClassFileParser::parse_method(const ClassFileStream* const cfs,
   m->set_constants(_cp);
   m->set_name_index(name_index);
   m->set_signature_index(signature_index);
-
-  ResultTypeFinder rtf(cp->symbol_at(signature_index));
-  m->constMethod()->set_result_type(rtf.type());
-
-  if (args_size >= 0) {
-    m->set_size_of_parameters(args_size);
-  } else {
-    m->compute_size_of_parameters(THREAD);
-  }
-#ifdef ASSERT
-  if (args_size >= 0) {
-    m->compute_size_of_parameters(THREAD);
-    assert(args_size == m->size_of_parameters(), "");
-  }
-#endif
+  m->compute_from_signature(cp->symbol_at(signature_index));
+  assert(args_size < 0 || args_size == m->size_of_parameters(), "");
 
   // Fill in code attribute information
   m->set_max_stack(max_stack);

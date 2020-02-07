@@ -66,7 +66,7 @@ protected:
   HeapWord* mem_allocate(Allocation& allocation) const;
 
   virtual MemRegion obj_memory_range(oop obj) const {
-    return MemRegion((HeapWord*)obj, _word_size);
+    return MemRegion(cast_from_oop<HeapWord*>(obj), _word_size);
   }
 
 public:

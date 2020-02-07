@@ -1064,7 +1064,7 @@ public:
   void work(uint worker_id) {
     ShenandoahParallelWorkerSession worker_session(worker_id);
     ShenandoahEvacOOMScope oom_evac_scope;
-    ShenandoahEvacuateUpdateRootsClosure cl;
+    ShenandoahEvacuateUpdateRootsClosure<> cl;
     MarkingCodeBlobClosure blobsCl(&cl, CodeBlobToOopClosure::FixRelocations);
     _rp->roots_do(worker_id, &cl);
   }
@@ -1252,8 +1252,8 @@ private:
         obj = fwd;
       }
       assert(oopDesc::is_oop(obj), "must be a valid oop");
-      if (!_bitmap->is_marked((HeapWord*) obj)) {
-        _bitmap->mark((HeapWord*) obj);
+      if (!_bitmap->is_marked(obj)) {
+        _bitmap->mark(obj);
         _oop_stack->push(obj);
       }
     }
@@ -1306,10 +1306,9 @@ void ShenandoahHeap::object_iterate(ObjectClosure* cl) {
   ShenandoahHeapIterationRootScanner rp;
   ObjectIterateScanRootClosure oops(&_aux_bit_map, &oop_stack);
 
-  // If we are unloading classes right now, we should not touch weak roots,
-  // on the off-chance we would evacuate them and make them live accidentally.
-  // In other cases, we have to scan all roots.
-  if (is_evacuation_in_progress() && unload_classes()) {
+  // When concurrent root is in progress, weak roots may contain dead oops, they should not be used
+  // for root scanning.
+  if (is_concurrent_root_in_progress()) {
     rp.strong_roots_do(&oops);
   } else {
     rp.roots_do(&oops);
@@ -1363,7 +1362,7 @@ public:
 
     size_t max = _heap->num_regions();
     while (_index < max) {
-      size_t cur = Atomic::add(&_index, stride) - stride;
+      size_t cur = Atomic::fetch_and_add(&_index, stride);
       size_t start = cur;
       size_t end = MIN2(cur + stride, max);
       if (start >= max) break;
@@ -1579,6 +1578,7 @@ void ShenandoahHeap::op_final_mark() {
         if (ShenandoahConcurrentRoots::should_do_concurrent_roots()) {
           types = ShenandoahRootVerifier::combine(ShenandoahRootVerifier::JNIHandleRoots, ShenandoahRootVerifier::WeakRoots);
           types = ShenandoahRootVerifier::combine(types, ShenandoahRootVerifier::CLDGRoots);
+          types = ShenandoahRootVerifier::combine(types, ShenandoahRootVerifier::StringDedupRoots);
         }
 
         if (ShenandoahConcurrentRoots::should_do_concurrent_class_unloading()) {
@@ -1655,6 +1655,7 @@ private:
   ShenandoahVMRoots<true /*concurrent*/>        _vm_roots;
   ShenandoahWeakRoots<true /*concurrent*/>      _weak_roots;
   ShenandoahClassLoaderDataRoots<true /*concurrent*/, false /*single threaded*/> _cld_roots;
+  ShenandoahConcurrentStringDedupRoots          _dedup_roots;
   bool                                          _include_weak_roots;
 
 public:
@@ -1677,9 +1678,15 @@ public:
     }
 
     {
-      ShenandoahEvacuateUpdateRootsClosure cl;
+      ShenandoahEvacuateUpdateRootsClosure<> cl;
       CLDToOopClosure clds(&cl, ClassLoaderData::_claim_strong);
       _cld_roots.cld_do(&clds);
+    }
+
+    {
+      ShenandoahForwardedIsAliveClosure is_alive;
+      ShenandoahEvacuateUpdateRootsClosure<MO_RELEASE> keep_alive;
+      _dedup_roots.oops_do(&is_alive, &keep_alive, worker_id);
     }
   }
 };

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -500,16 +500,24 @@ private:
   void sort_methods(InstanceKlass* ik) const;
   void set_symbols_permanent();
   void relocate_buffer_to_target();
-  void write_archive(char* serialized_data_start);
-  void write_regions(FileMapInfo* dynamic_info);
+  void write_archive(char* serialized_data);
 
   void init_first_dump_space(address reserved_bottom) {
     address first_space_base = reserved_bottom;
+    DumpRegion* mc_space = MetaspaceShared::misc_code_dump_space();
     DumpRegion* rw_space = MetaspaceShared::read_write_dump_space();
-    MetaspaceShared::init_shared_dump_space(rw_space, first_space_base);
-    _current_dump_space = rw_space;
+
+    // Use the same MC->RW->RO ordering as in the base archive.
+    MetaspaceShared::init_shared_dump_space(mc_space, first_space_base);
+    _current_dump_space = mc_space;
     _last_verified_top = first_space_base;
     _num_dump_regions_used = 1;
+  }
+
+  void reserve_buffers_for_trampolines() {
+    size_t n = _estimated_trampoline_bytes;
+    assert(n >= SharedRuntime::trampoline_size(), "dont want to be empty");
+    MetaspaceShared::misc_code_space_alloc(n);
   }
 
 public:
@@ -584,7 +592,10 @@ public:
     CHeapBitMap ptrmap;
     ArchivePtrMarker::initialize(&ptrmap, (address*)reserved_bottom, (address*)current_dump_space()->top());
 
-    verify_estimate_size(sizeof(DynamicArchiveHeader), "header");
+    reserve_buffers_for_trampolines();
+    verify_estimate_size(_estimated_trampoline_bytes, "Trampolines");
+
+    start_dump_space(MetaspaceShared::read_write_dump_space());
 
     log_info(cds, dynamic)("Copying %d klasses and %d symbols",
                            _klasses->length(), _symbols->length());
@@ -625,7 +636,7 @@ public:
 
     verify_estimate_size(_estimated_metsapceobj_bytes, "MetaspaceObjs");
 
-    char* serialized_data_start;
+    char* serialized_data;
     {
       set_symbols_permanent();
 
@@ -638,7 +649,7 @@ public:
       SymbolTable::write_to_archive(false);
       SystemDictionaryShared::write_to_archive(false);
 
-      serialized_data_start = ro_space->top();
+      serialized_data = ro_space->top();
       WriteClosure wc(ro_space);
       SymbolTable::serialize_shared_table_header(&wc, false);
       SystemDictionaryShared::serialize_dictionary_headers(&wc, false);
@@ -646,14 +657,7 @@ public:
 
     verify_estimate_size(_estimated_hashtable_bytes, "Hashtables");
 
-    // mc space starts ...
-    {
-      start_dump_space(MetaspaceShared::misc_code_dump_space());
-      make_trampolines();
-    }
-
-    verify_estimate_size(_estimated_trampoline_bytes, "Trampolines");
-
+    make_trampolines();
     make_klasses_shareable();
 
     {
@@ -664,7 +668,7 @@ public:
       relocate_buffer_to_target();
     }
 
-    write_archive(serialized_data_start);
+    write_archive(serialized_data);
     release_header();
 
     assert(_num_dump_regions_used == _total_dump_regions, "must be");
@@ -801,25 +805,27 @@ size_t DynamicArchiveBuilder::estimate_trampoline_size() {
 }
 
 void DynamicArchiveBuilder::make_trampolines() {
+  DumpRegion* mc_space = MetaspaceShared::misc_code_dump_space();
+  char* p = mc_space->base();
   for (int i = 0; i < _klasses->length(); i++) {
     InstanceKlass* ik = _klasses->at(i);
     Array<Method*>* methods = ik->methods();
     for (int j = 0; j < methods->length(); j++) {
       Method* m = methods->at(j);
-      address c2i_entry_trampoline =
-        (address)MetaspaceShared::misc_code_space_alloc(SharedRuntime::trampoline_size());
+      address c2i_entry_trampoline = (address)p;
+      p += SharedRuntime::trampoline_size();
+      assert(p >= mc_space->base() && p <= mc_space->top(), "must be");
       m->set_from_compiled_entry(to_target(c2i_entry_trampoline));
-      AdapterHandlerEntry** adapter_trampoline =
-        (AdapterHandlerEntry**)MetaspaceShared::misc_code_space_alloc(sizeof(AdapterHandlerEntry*));
+
+      AdapterHandlerEntry** adapter_trampoline =(AdapterHandlerEntry**)p;
+      p += sizeof(AdapterHandlerEntry*);
+      assert(p >= mc_space->base() && p <= mc_space->top(), "must be");
       *adapter_trampoline = NULL;
       m->set_adapter_trampoline(to_target(adapter_trampoline));
     }
   }
 
-  if (MetaspaceShared::misc_code_dump_space()->used() == 0) {
-    // We have nothing to archive, but let's avoid having an empty region.
-    MetaspaceShared::misc_code_space_alloc(SharedRuntime::trampoline_size());
-  }
+  guarantee(p <= mc_space->top(), "Estimate of trampoline size is insufficient");
 }
 
 void DynamicArchiveBuilder::make_klasses_shareable() {
@@ -1002,27 +1008,11 @@ void DynamicArchiveBuilder::relocate_buffer_to_target() {
   }
 }
 
-void DynamicArchiveBuilder::write_regions(FileMapInfo* dynamic_info) {
-  dynamic_info->write_region(MetaspaceShared::rw,
-                             MetaspaceShared::read_write_dump_space()->base(),
-                             MetaspaceShared::read_write_dump_space()->used(),
-                             /*read_only=*/false,/*allow_exec=*/false);
-  dynamic_info->write_region(MetaspaceShared::ro,
-                             MetaspaceShared::read_only_dump_space()->base(),
-                             MetaspaceShared::read_only_dump_space()->used(),
-                             /*read_only=*/true, /*allow_exec=*/false);
-  dynamic_info->write_region(MetaspaceShared::mc,
-                             MetaspaceShared::misc_code_dump_space()->base(),
-                             MetaspaceShared::misc_code_dump_space()->used(),
-                             /*read_only=*/false,/*allow_exec=*/true);
-  dynamic_info->write_bitmap_region(ArchivePtrMarker::ptrmap());
-}
-
-void DynamicArchiveBuilder::write_archive(char* serialized_data_start) {
+void DynamicArchiveBuilder::write_archive(char* serialized_data) {
   int num_klasses = _klasses->length();
   int num_symbols = _symbols->length();
 
-  _header->set_serialized_data_start(to_target(serialized_data_start));
+  _header->set_serialized_data(to_target(serialized_data));
 
   FileMapInfo* dynamic_info = FileMapInfo::dynamic_info();
   assert(dynamic_info != NULL, "Sanity");
@@ -1030,7 +1020,7 @@ void DynamicArchiveBuilder::write_archive(char* serialized_data_start) {
   // Now write the archived data including the file offsets.
   const char* archive_name = Arguments::GetSharedDynamicArchivePath();
   dynamic_info->open_for_write(archive_name);
-  write_regions(dynamic_info);
+  MetaspaceShared::write_core_archive_regions(dynamic_info);
   dynamic_info->set_final_requested_base((char*)Arguments::default_SharedBaseAddress());
   dynamic_info->set_header_crc(dynamic_info->compute_header_crc());
   dynamic_info->write_header();

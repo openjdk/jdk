@@ -90,7 +90,7 @@ LinearScan::LinearScan(IR* ir, LIRGenerator* gen, FrameMap* frame_map)
  , _has_call(0)
  , _interval_in_loop(0)  // initialized later with correct length
  , _scope_value_cache(0) // initialized later with correct length
-#ifdef X86
+#ifdef IA32
  , _fpu_stack_allocator(NULL)
 #endif
 {
@@ -2653,13 +2653,15 @@ int LinearScan::append_scope_value_for_operand(LIR_Opr opr, GrowableArray<ScopeV
 #endif
 
   } else if (opr->is_single_fpu()) {
-#ifdef X86
+#ifdef IA32
     // the exact location of fpu stack values is only known
     // during fpu stack allocation, so the stack allocator object
     // must be present
     assert(use_fpu_stack_allocation(), "should not have float stack values without fpu stack allocation (all floats must be SSE2)");
     assert(_fpu_stack_allocator != NULL, "must be present");
     opr = _fpu_stack_allocator->to_fpu_stack(opr);
+#elif defined(AMD64)
+    assert(false, "FPU not used on x86-64");
 #endif
 
     Location::Type loc_type = float_saved_as_double ? Location::float_in_dbl : Location::normal;
@@ -2764,7 +2766,7 @@ int LinearScan::append_scope_value_for_operand(LIR_Opr opr, GrowableArray<ScopeV
       // name for the other half.  *first and *second must represent the
       // least and most significant words, respectively.
 
-#ifdef X86
+#ifdef IA32
       // the exact location of fpu stack values is only known
       // during fpu stack allocation, so the stack allocator object
       // must be present
@@ -2773,6 +2775,9 @@ int LinearScan::append_scope_value_for_operand(LIR_Opr opr, GrowableArray<ScopeV
       opr = _fpu_stack_allocator->to_fpu_stack(opr);
 
       assert(opr->fpu_regnrLo() == opr->fpu_regnrHi(), "assumed in calculation (only fpu_regnrLo is used)");
+#endif
+#ifdef AMD64
+      assert(false, "FPU not used on x86-64");
 #endif
 #ifdef SPARC
       assert(opr->fpu_regnrLo() == opr->fpu_regnrHi() + 1, "assumed in calculation (only fpu_regnrHi is used)");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
 
   // base routine for all dispatches
   typedef enum { DispatchDefault, DispatchNormal } DispatchTableMode;
-  void dispatch_base(TosState state, DispatchTableMode table_mode, bool verifyoop = true);
+  void dispatch_base(TosState state, DispatchTableMode table_mode, bool verifyoop = true, bool generate_poll = false);
 
  public:
   InterpreterMacroAssembler(CodeBuffer* code);
@@ -160,10 +160,10 @@ class InterpreterMacroAssembler: public MacroAssembler {
   // Dispatching
   void dispatch_prolog(TosState state, int step = 0);
   void dispatch_epilog(TosState state, int step = 0);
-  void dispatch_only(TosState state);                      // dispatch by R3_bytecode
-  void dispatch_only_normal(TosState state);               // dispatch normal table by R3_bytecode
+  void dispatch_only(TosState state, bool generate_poll = false);  // dispatch by R3_bytecode
+  void dispatch_only_normal(TosState state);                       // dispatch normal table by R3_bytecode
   void dispatch_only_noverify(TosState state);
-  void dispatch_next(TosState state, int step = 0);        // load R3_bytecode from [Rbcp + step] and dispatch by R3_bytecode
+  void dispatch_next(TosState state, int step = 0, bool generate_poll = false); // load R3_bytecode from [Rbcp + step] and dispatch by R3_bytecode
 
   // jump to an invoked target
   void prepare_to_jump_from_interpreted();

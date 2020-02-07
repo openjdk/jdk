@@ -604,7 +604,10 @@ void MethodHandles::trace_method_handle(MacroAssembler* _masm, const char* adapt
   // robust stack walking implemented in trace_method_handle_stub.
 
   // save FP result, valid at some call sites (adapter_opt_return_float, ...)
-  __ increment(rsp, -2 * wordSize);
+  __ decrement(rsp, 2 * wordSize);
+#ifdef _LP64
+  __ movdbl(Address(rsp, 0), xmm0);
+#else
   if  (UseSSE >= 2) {
     __ movdbl(Address(rsp, 0), xmm0);
   } else if (UseSSE == 1) {
@@ -612,6 +615,7 @@ void MethodHandles::trace_method_handle(MacroAssembler* _masm, const char* adapt
   } else {
     __ fst_d(Address(rsp, 0));
   }
+#endif // LP64
 
   // Incoming state:
   // rcx: method handle
@@ -626,6 +630,9 @@ void MethodHandles::trace_method_handle(MacroAssembler* _masm, const char* adapt
   __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, trace_method_handle_stub_wrapper), rsp);
   __ increment(rsp, sizeof(MethodHandleStubArguments));
 
+#ifdef _LP64
+  __ movdbl(xmm0, Address(rsp, 0));
+#else
   if  (UseSSE >= 2) {
     __ movdbl(xmm0, Address(rsp, 0));
   } else if (UseSSE == 1) {
@@ -633,6 +640,7 @@ void MethodHandles::trace_method_handle(MacroAssembler* _masm, const char* adapt
   } else {
     __ fld_d(Address(rsp, 0));
   }
+#endif // LP64
   __ increment(rsp, 2 * wordSize);
 
   __ popa();

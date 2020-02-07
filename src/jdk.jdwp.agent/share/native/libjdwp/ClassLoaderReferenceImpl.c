@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,6 +71,8 @@ visibleClasses(PacketInputStream *in, PacketOutputStream *out)
     return JNI_TRUE;
 }
 
-void *ClassLoaderReference_Cmds[] = { (void *)0x1
-    ,(void *)visibleClasses
+Command ClassLoaderReference_Commands[] = {
+    {visibleClasses, "VisibleClasses"}
 };
+
+DEBUG_DISPATCH_DEFINE_CMDSET(ClassLoaderReference)

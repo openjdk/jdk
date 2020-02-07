@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -496,10 +496,6 @@ public:
     return find_java_mirror_for_type(signature, accessing_klass, Handle(), Handle(),
                                      failure_mode, THREAD);
   }
-
-
-  // fast short-cut for the one-character case:
-  static oop       find_java_mirror_for_type(char signature_char);
 
   // find a java.lang.invoke.MethodType object for a given signature
   // (asks Java to compute it if necessary, except in a compiler thread)

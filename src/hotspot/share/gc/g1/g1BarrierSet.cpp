@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,6 @@
 #include "oops/compressedOops.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
-#include "runtime/mutexLocker.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/thread.inline.hpp"
 #include "utilities/macros.hpp"
@@ -59,7 +58,7 @@ G1BarrierSet::G1BarrierSet(G1CardTable* card_table) :
   _satb_mark_queue_buffer_allocator("SATB Buffer Allocator", G1SATBBufferSize),
   _dirty_card_queue_buffer_allocator("DC Buffer Allocator", G1UpdateBufferSize),
   _satb_mark_queue_set(&_satb_mark_queue_buffer_allocator),
-  _dirty_card_queue_set(DirtyCardQ_CBL_mon, &_dirty_card_queue_buffer_allocator),
+  _dirty_card_queue_set(&_dirty_card_queue_buffer_allocator),
   _shared_dirty_card_queue(&_dirty_card_queue_set)
 {}
 

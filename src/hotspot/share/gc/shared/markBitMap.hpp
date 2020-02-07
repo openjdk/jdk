@@ -87,6 +87,7 @@ public:
 
   // Write marks.
   inline void mark(HeapWord* addr);
+  inline void mark(oop obj);
   inline void clear(HeapWord* addr);
   inline void clear(oop obj);
   inline bool par_mark(HeapWord* addr);

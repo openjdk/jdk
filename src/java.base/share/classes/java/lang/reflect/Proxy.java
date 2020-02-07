@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -298,13 +298,6 @@ public class Proxy implements java.io.Serializable {
         new ClassLoaderValue<>();
 
     /**
-     * System property to revert to generation of proxy class files for version 1.5 (V49).
-     * Set to "true" to generate v49 class file format.
-     */
-    private static final boolean PROXY_GENERATOR_V49 =
-            GetBooleanAction.privilegedGetProperty("jdk.proxy.ProxyGenerator.v49");
-
-    /**
      * the invocation handler for this proxy instance.
      * @serial
      */
@@ -541,9 +534,7 @@ public class Proxy implements java.io.Serializable {
             /*
              * Generate the specified proxy class.
              */
-            byte[] proxyClassFile = PROXY_GENERATOR_V49
-                    ? ProxyGenerator_v49.generateProxyClass(proxyName, interfaces, accessFlags)
-                    : ProxyGenerator.generateProxyClass(loader, proxyName, interfaces, accessFlags);
+            byte[] proxyClassFile = ProxyGenerator.generateProxyClass(loader, proxyName, interfaces, accessFlags);
             try {
                 Class<?> pc = JLA.defineClass(loader, proxyName, proxyClassFile,
                                               null, "__dynamic_proxy__");

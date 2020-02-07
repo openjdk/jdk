@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -188,7 +188,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
         HtmlTree bodyTree = getBody(getWindowTitle(mdle.getQualifiedName().toString()));
         Content headerContent = new ContentBuilder();
         addTop(headerContent);
-        navBar.setDisplaySummaryModuleDescLink(!utils.getFullBody(mdle).isEmpty() && !configuration.nocomment);
+        navBar.setDisplaySummaryModuleDescLink(!utils.getFullBody(mdle).isEmpty() && !options.noComment());
         navBar.setDisplaySummaryModulesLink(display(requires) || display(indirectModules));
         navBar.setDisplaySummaryPackagesLink(display(packages) || display(indirectPackages)
                 || display(indirectOpenPackages));
@@ -485,9 +485,6 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
                 .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colSecond, HtmlStyle.colLast);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void addModulesSummary(Content summaryContentTree) {
         if (display(requires) || display(indirectModules)) {
@@ -711,9 +708,6 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
         }
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void addServicesSummary(Content summaryContentTree) {
 
@@ -842,9 +836,6 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
         }
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void addModuleDescription(Content moduleContentTree) {
         if (!utils.getFullBody(mdle).isEmpty()) {
@@ -857,9 +848,6 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
         }
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void addModuleTags(Content moduleContentTree) {
         Content tree = HtmlTree.SECTION(HtmlStyle.moduleTags);
@@ -867,17 +855,11 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
         moduleContentTree.add(tree);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void addModuleContent(Content moduleContentTree) {
         bodyContents.addMainContent(moduleContentTree);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void addModuleFooter() {
         Content htmlTree = HtmlTree.FOOTER();
@@ -887,11 +869,6 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
         bodyContents.setFooter(htmlTree);
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * @throws jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException
-     */
     @Override
     public void printDocument(Content contentTree) throws DocFileIOException {
         contentTree.add(bodyContents.toContent());

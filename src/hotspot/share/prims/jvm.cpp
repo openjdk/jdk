@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2783,7 +2783,7 @@ void jio_print(const char* s, size_t len) {
   if (Arguments::vfprintf_hook() != NULL) {
     jio_fprintf(defaultStream::output_stream(), "%.*s", (int)len, s);
   } else {
-    // Make an unused local variable to avoid warning from gcc 4.x compiler.
+    // Make an unused local variable to avoid warning from gcc compiler.
     size_t count = ::write(defaultStream::output_fd(), s, (int)len);
   }
 }
@@ -2906,7 +2906,7 @@ JVM_ENTRY(void, JVM_StopThread(JNIEnv* env, jobject jthread, jobject throwable))
   bool is_alive = tlh.cv_internal_thread_to_JavaThread(jthread, &receiver, &java_thread);
   Events::log_exception(thread,
                         "JVM_StopThread thread JavaThread " INTPTR_FORMAT " as oop " INTPTR_FORMAT " [exception " INTPTR_FORMAT "]",
-                        p2i(receiver), p2i((address)java_thread), p2i(throwable));
+                        p2i(receiver), p2i(java_thread), p2i(throwable));
 
   if (is_alive) {
     // jthread refers to a live JavaThread.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2016, 2020, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,8 @@
 
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHTASKQUEUE_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHTASKQUEUE_HPP
-#include "gc/shared/owstTaskTerminator.hpp"
+
+#include "gc/shared/taskTerminator.hpp"
 #include "gc/shared/taskqueue.hpp"
 #include "memory/allocation.hpp"
 #include "runtime/atomic.hpp"
@@ -336,21 +337,6 @@ public:
   ShenandoahTerminatorTerminator(ShenandoahHeap* const heap) : _heap(heap) { }
   // return true, terminates immediately, even if there's remaining work left
   virtual bool should_exit_termination() { return _heap->cancelled_gc(); }
-};
-
-class ShenandoahTaskTerminator : public StackObj {
-private:
-  OWSTTaskTerminator* const   _terminator;
-public:
-  ShenandoahTaskTerminator(uint n_threads, TaskQueueSetSuper* queue_set);
-  ~ShenandoahTaskTerminator();
-
-  bool offer_termination(ShenandoahTerminatorTerminator* terminator) {
-    return _terminator->offer_termination(terminator);
-  }
-
-  void reset_for_reuse() { _terminator->reset_for_reuse(); }
-  bool offer_termination() { return offer_termination((ShenandoahTerminatorTerminator*)NULL); }
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHTASKQUEUE_HPP

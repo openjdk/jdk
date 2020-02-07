@@ -244,40 +244,6 @@ void ClearNoncleanCardWrapper::do_MemRegion(MemRegion mr) {
   }
 }
 
-// clean (by dirty->clean before) ==> cur_younger_gen
-// dirty                          ==> cur_youngergen_and_prev_nonclean_card
-// precleaned                     ==> cur_youngergen_and_prev_nonclean_card
-// prev-younger-gen               ==> cur_youngergen_and_prev_nonclean_card
-// cur-younger-gen                ==> cur_younger_gen
-// cur_youngergen_and_prev_nonclean_card ==> no change.
-void CardTableRS::write_ref_field_gc_par(void* field, oop new_val) {
-  volatile CardValue* entry = byte_for(field);
-  do {
-    CardValue entry_val = *entry;
-    // We put this first because it's probably the most common case.
-    if (entry_val == clean_card_val()) {
-      // No threat of contention with cleaning threads.
-      *entry = cur_youngergen_card_val();
-      return;
-    } else if (card_is_dirty_wrt_gen_iter(entry_val)
-               || is_prev_youngergen_card_val(entry_val)) {
-      // Mark it as both cur and prev youngergen; card cleaning thread will
-      // eventually remove the previous stuff.
-      CardValue new_val = cur_youngergen_and_prev_nonclean_card;
-      CardValue res = Atomic::cmpxchg(entry, entry_val, new_val);
-      // Did the CAS succeed?
-      if (res == entry_val) return;
-      // Otherwise, retry, to see the new value.
-      continue;
-    } else {
-      assert(entry_val == cur_youngergen_and_prev_nonclean_card
-             || entry_val == cur_youngergen_card_val(),
-             "should be only possibilities.");
-      return;
-    }
-  } while (true);
-}
-
 void CardTableRS::younger_refs_in_space_iterate(Space* sp,
                                                 OopsInGenClosure* cl,
                                                 uint n_threads) {
@@ -343,7 +309,7 @@ protected:
            "[_begin, _end) = [" PTR_FORMAT "," PTR_FORMAT ")",
            p2i(jp), p2i(_begin), p2i(_end));
     oop obj = RawAccess<>::oop_load(p);
-    guarantee(obj == NULL || (HeapWord*)obj >= _boundary,
+    guarantee(obj == NULL || cast_from_oop<HeapWord*>(obj) >= _boundary,
               "pointer " PTR_FORMAT " at " PTR_FORMAT " on "
               "clean card crosses boundary" PTR_FORMAT,
               p2i(obj), p2i(jp), p2i(_boundary));

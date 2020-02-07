@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2016, 2020, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,7 +80,8 @@ public:
 
   inline bool is_in(ShenandoahHeapRegion* r) const;
   inline bool is_in(size_t region_number)    const;
-  inline bool is_in(HeapWord* p)             const;
+  inline bool is_in(HeapWord* loc)           const;
+  inline bool is_in(oop obj)                 const;
 
   void print_on(outputStream* out) const;
 

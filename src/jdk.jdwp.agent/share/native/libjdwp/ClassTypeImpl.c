@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -175,9 +175,11 @@ invokeStatic(PacketInputStream *in, PacketOutputStream *out)
     return sharedInvoke(in, out);
 }
 
-void *ClassType_Cmds[] = { (void *)0x4
-    ,(void *)superclass
-    ,(void *)setValues
-    ,(void *)invokeStatic
-    ,(void *)invokeStatic
+Command ClassType_Commands[] = {
+    {superclass, "Superclass"},
+    {setValues, "SetValues"},
+    {invokeStatic, "InvokeMethod"},
+    {invokeStatic, "NewInstance"}
 };
+
+DEBUG_DISPATCH_DEFINE_CMDSET(ClassType)

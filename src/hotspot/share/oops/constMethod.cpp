@@ -67,7 +67,7 @@ ConstMethod::ConstMethod(int byte_code_size,
   set_max_locals(0);
   set_method_idnum(0);
   set_size_of_parameters(0);
-  set_result_type(T_VOID);
+  set_result_type((BasicType)0);
 }
 
 // Accessor that copies to metadata.

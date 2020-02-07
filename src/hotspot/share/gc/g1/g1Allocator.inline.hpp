@@ -158,11 +158,11 @@ inline void G1ArchiveAllocator::clear_range_archive(MemRegion range) {
 
 // Check if an object is in a closed archive region using the _archive_region_map.
 inline bool G1ArchiveAllocator::in_closed_archive_range(oop object) {
-  return _archive_region_map.get_by_address((HeapWord*)object) == G1ArchiveRegionMap::ClosedArchive;
+  return _archive_region_map.get_by_address(cast_from_oop<HeapWord*>(object)) == G1ArchiveRegionMap::ClosedArchive;
 }
 
 inline bool G1ArchiveAllocator::in_open_archive_range(oop object) {
-  return _archive_region_map.get_by_address((HeapWord*)object) == G1ArchiveRegionMap::OpenArchive;
+  return _archive_region_map.get_by_address(cast_from_oop<HeapWord*>(object)) == G1ArchiveRegionMap::OpenArchive;
 }
 
 // Check if archive object checking is enabled, to avoid calling in_open/closed_archive_range
@@ -181,7 +181,7 @@ inline bool G1ArchiveAllocator::is_open_archive_object(oop object) {
 
 inline bool G1ArchiveAllocator::is_archived_object(oop object) {
   return archive_check_enabled() &&
-         (_archive_region_map.get_by_address((HeapWord*)object) != G1ArchiveRegionMap::NoArchive);
+         (_archive_region_map.get_by_address(cast_from_oop<HeapWord*>(object)) != G1ArchiveRegionMap::NoArchive);
 }
 
 #endif // SHARE_GC_G1_G1ALLOCATOR_INLINE_HPP

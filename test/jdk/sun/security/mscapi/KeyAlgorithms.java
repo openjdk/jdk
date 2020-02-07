@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8213009
+ * @bug 8213009 8237804
  * @summary Make sure SunMSCAPI keys have correct algorithm names
  * @requires os.family == "windows"
  * @library /test/lib
@@ -42,6 +42,7 @@ public class KeyAlgorithms {
 
     public static void main(String[] arg) throws Exception {
 
+        cleanup();
         SecurityTools.keytool("-genkeypair",
                 "-storetype", "Windows-My",
                 "-keyalg", ALG,
@@ -52,13 +53,21 @@ public class KeyAlgorithms {
         try {
             test(loadKeysFromKeyStore());
         } finally {
+            cleanup();
+        }
+
+        test(generateKeys());
+    }
+
+    private static void cleanup() {
+        try {
             KeyStore ks = KeyStore.getInstance("Windows-MY");
             ks.load(null, null);
             ks.deleteEntry(ALIAS);
             ks.store(null, null);
+        } catch (Exception e) {
+            System.out.println("No such entry.");
         }
-
-        test(generateKeys());
     }
 
     static KeyPair loadKeysFromKeyStore() throws Exception {

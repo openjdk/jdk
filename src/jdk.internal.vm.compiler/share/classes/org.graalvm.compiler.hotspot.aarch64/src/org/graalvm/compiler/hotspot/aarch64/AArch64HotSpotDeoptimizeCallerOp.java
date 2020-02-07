@@ -24,7 +24,7 @@
 
 package org.graalvm.compiler.hotspot.aarch64;
 
-import static org.graalvm.compiler.hotspot.HotSpotHostBackend.UNCOMMON_TRAP_HANDLER;
+import static org.graalvm.compiler.hotspot.HotSpotHostBackend.DEOPT_BLOB_UNCOMMON_TRAP;
 
 import org.graalvm.compiler.asm.aarch64.AArch64MacroAssembler;
 import org.graalvm.compiler.hotspot.GraalHotSpotVMConfig;
@@ -47,6 +47,6 @@ public class AArch64HotSpotDeoptimizeCallerOp extends AArch64HotSpotEpilogueOp {
     @Override
     public void emitCode(CompilationResultBuilder crb, AArch64MacroAssembler masm) {
         leaveFrame(crb, masm, /* emitSafepoint */false, false);
-        AArch64Call.directJmp(crb, masm, crb.foreignCalls.lookupForeignCall(UNCOMMON_TRAP_HANDLER));
+        AArch64Call.directJmp(crb, masm, crb.foreignCalls.lookupForeignCall(DEOPT_BLOB_UNCOMMON_TRAP));
     }
 }

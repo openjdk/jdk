@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,8 @@
 #include "utilities/ticks.hpp"
 
 class ZPage;
+class ZRelocationSetSelectorGroupStats;
+class ZRelocationSetSelectorStats;
 class ZStatSampler;
 class ZStatSamplerHistory;
 struct ZStatCounterData;
@@ -418,11 +420,13 @@ public:
 //
 class ZStatRelocation : public AllStatic {
 private:
-  static size_t _relocating;
-  static bool   _success;
+  static ZRelocationSetSelectorStats _stats;
+  static bool                        _success;
+
+  static void print(const char* name, const ZRelocationSetSelectorGroupStats& group);
 
 public:
-  static void set_at_select_relocation_set(size_t relocating);
+  static void set_at_select_relocation_set(const ZRelocationSetSelectorStats& stats);
   static void set_at_relocate_end(bool success);
 
   static void print();
@@ -540,8 +544,7 @@ public:
   static void set_at_mark_end(size_t capacity,
                               size_t allocated,
                               size_t used);
-  static void set_at_select_relocation_set(size_t live,
-                                           size_t garbage,
+  static void set_at_select_relocation_set(const ZRelocationSetSelectorStats& stats,
                                            size_t reclaimed);
   static void set_at_relocate_start(size_t capacity,
                                     size_t allocated,

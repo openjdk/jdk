@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import java.util.*;
 import javax.lang.model.element.PackageElement;
 
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
+import jdk.javadoc.internal.doclets.toolkit.BaseOptions;
 import jdk.javadoc.internal.doclets.toolkit.DocletException;
 import jdk.javadoc.internal.doclets.toolkit.Messages;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
@@ -76,6 +77,7 @@ public abstract class AbstractBuilder {
      * The configuration used in this run of the doclet.
      */
     protected final BaseConfiguration configuration;
+    protected final BaseOptions options;
 
     protected final BuilderFactory builderFactory;
     protected final Messages messages;
@@ -95,6 +97,7 @@ public abstract class AbstractBuilder {
      */
     public AbstractBuilder(Context c) {
         this.configuration = c.configuration;
+        this.options = configuration.getOptions();
         this.builderFactory = configuration.getBuilderFactory();
         this.messages = configuration.getMessages();
         this.resources = configuration.getResources();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -665,20 +665,21 @@ forceEarlyReturn(PacketInputStream *in, PacketOutputStream *out)
     return JNI_TRUE;
 }
 
+Command ThreadReference_Commands[] = {
+    {name, "Name"},
+    {suspend, "Suspend"},
+    {resume, "Resume"},
+    {status, "Status"},
+    {threadGroup, "ThreadGroup"},
+    {frames, "Frames"},
+    {getFrameCount, "GetFrameCount"},
+    {ownedMonitors, "OwnedMonitors"},
+    {currentContendedMonitor, "CurrentContendedMonitor"},
+    {stop, "Stop"},
+    {interrupt, "Interrupt"},
+    {suspendCount, "SuspendCount"},
+    {ownedMonitorsWithStackDepth, "OwnedMonitorsWithStackDepth"},
+    {forceEarlyReturn, "ForceEarlyReturn"}
+};
 
-void *ThreadReference_Cmds[] = { (void *)14,
-    (void *)name,
-    (void *)suspend,
-    (void *)resume,
-    (void *)status,
-    (void *)threadGroup,
-    (void *)frames,
-    (void *)getFrameCount,
-    (void *)ownedMonitors,
-    (void *)currentContendedMonitor,
-    (void *)stop,
-    (void *)interrupt,
-    (void *)suspendCount,
-    (void *)ownedMonitorsWithStackDepth,
-    (void *)forceEarlyReturn
-    };
+DEBUG_DISPATCH_DEFINE_CMDSET(ThreadReference)

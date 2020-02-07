@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,9 +89,6 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
         super(writer);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Content getMemberSummaryHeader(TypeElement typeElement,
             Content memberSummaryTree) {
@@ -101,18 +98,12 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
         return memberTree;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void addMemberTree(Content memberSummaryTree, Content memberTree) {
         writer.addMemberTree(HtmlStyle.constructorSummary,
                 SectionName.CONSTRUCTOR_SUMMARY, memberSummaryTree, memberTree);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Content getConstructorDetailsTreeHeader(Content memberDetailsTree) {
         memberDetailsTree.add(MarkerComments.START_OF_CONSTRUCTOR_DETAILS);
@@ -123,9 +114,6 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
         return constructorDetailsTree;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Content getConstructorDocTreeHeader(ExecutableElement constructor) {
         String erasureAnchor;
@@ -140,9 +128,6 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
                 .setId(links.getName(writer.getAnchor(constructor)));
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Content getSignature(ExecutableElement constructor) {
         return new MemberSignature(constructor)
@@ -151,33 +136,21 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
                 .toContent();
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void addDeprecated(ExecutableElement constructor, Content constructorDocTree) {
         addDeprecatedInfo(constructor, constructorDocTree);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void addComments(ExecutableElement constructor, Content constructorDocTree) {
         addComment(constructor, constructorDocTree);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void addTags(ExecutableElement constructor, Content constructorDocTree) {
         writer.addTagsInfo(constructor, constructorDocTree);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Content getConstructorDetails(Content constructorDetailsTreeHeader, Content constructorDetailsTree) {
         Content constructorDetails = new ContentBuilder(constructorDetailsTreeHeader, constructorDetailsTree);
@@ -185,9 +158,6 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
                 .setId(SectionName.CONSTRUCTOR_DETAIL.getName()));
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Content getConstructorDoc(Content constructorDocTree) {
         return getMemberTree(constructorDocTree);
@@ -203,9 +173,6 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
         this.foundNonPubConstructor = foundNonPubConstructor;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void addSummaryLabel(Content memberTree) {
         Content label = HtmlTree.HEADING(Headings.TypeDeclaration.SUMMARY_HEADING,
@@ -213,9 +180,6 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
         memberTree.add(label);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public TableHeader getSummaryTableHeader(Element member) {
         if (foundNonPubConstructor) {
@@ -247,16 +211,10 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
                 .setColumnStyles(bodyRowStyles);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void addInheritedSummaryLabel(TypeElement typeElement, Content inheritedTree) {
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     protected void addSummaryType(Element member, Content tdSummaryType) {
         if (foundNonPubConstructor) {

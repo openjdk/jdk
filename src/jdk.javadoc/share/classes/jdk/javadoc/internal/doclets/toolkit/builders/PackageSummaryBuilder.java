@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -166,7 +166,7 @@ public class PackageSummaryBuilder extends AbstractBuilder {
         SortedSet<TypeElement> ilist = utils.isSpecified(packageElement)
                         ? utils.getTypeElementsAsSortedSet(utils.getInterfaces(packageElement))
                         : configuration.typeElementCatalog.interfaces(packageElement);
-        SortedSet<TypeElement> interfaces = utils.filterOutPrivateClasses(ilist, configuration.javafx);
+        SortedSet<TypeElement> interfaces = utils.filterOutPrivateClasses(ilist, options.javafx());
         if (!interfaces.isEmpty()) {
             packageWriter.addInterfaceSummary(interfaces, summaryContentTree);
         }
@@ -182,7 +182,7 @@ public class PackageSummaryBuilder extends AbstractBuilder {
         SortedSet<TypeElement> clist = utils.isSpecified(packageElement)
             ? utils.getTypeElementsAsSortedSet(utils.getOrdinaryClasses(packageElement))
             : configuration.typeElementCatalog.ordinaryClasses(packageElement);
-        SortedSet<TypeElement> classes = utils.filterOutPrivateClasses(clist, configuration.javafx);
+        SortedSet<TypeElement> classes = utils.filterOutPrivateClasses(clist, options.javafx());
         if (!classes.isEmpty()) {
             packageWriter.addClassSummary(classes, summaryContentTree);
         }
@@ -198,7 +198,7 @@ public class PackageSummaryBuilder extends AbstractBuilder {
         SortedSet<TypeElement> elist = utils.isSpecified(packageElement)
             ? utils.getTypeElementsAsSortedSet(utils.getEnums(packageElement))
             : configuration.typeElementCatalog.enums(packageElement);
-        SortedSet<TypeElement> enums = utils.filterOutPrivateClasses(elist, configuration.javafx);
+        SortedSet<TypeElement> enums = utils.filterOutPrivateClasses(elist, options.javafx());
         if (!enums.isEmpty()) {
             packageWriter.addEnumSummary(enums, summaryContentTree);
         }
@@ -214,7 +214,7 @@ public class PackageSummaryBuilder extends AbstractBuilder {
         SortedSet<TypeElement> rlist = utils.isSpecified(packageElement)
                 ? utils.getTypeElementsAsSortedSet(utils.getRecords(packageElement))
                 : configuration.typeElementCatalog.records(packageElement);
-        SortedSet<TypeElement> records = utils.filterOutPrivateClasses(rlist, configuration.javafx);
+        SortedSet<TypeElement> records = utils.filterOutPrivateClasses(rlist, options.javafx());
         if (!records.isEmpty()) {
             packageWriter.addRecordSummary(records, summaryContentTree);
         }
@@ -232,7 +232,7 @@ public class PackageSummaryBuilder extends AbstractBuilder {
                 ? utils.getTypeElementsAsSortedSet(utils.getExceptions(packageElement))
                 : configuration.typeElementCatalog.exceptions(packageElement);
         SortedSet<TypeElement> exceptions = utils.filterOutPrivateClasses(iexceptions,
-                configuration.javafx);
+                options.javafx());
         if (!exceptions.isEmpty()) {
             packageWriter.addExceptionSummary(exceptions, summaryContentTree);
         }
@@ -249,7 +249,7 @@ public class PackageSummaryBuilder extends AbstractBuilder {
             utils.isSpecified(packageElement)
                 ? utils.getTypeElementsAsSortedSet(utils.getErrors(packageElement))
                 : configuration.typeElementCatalog.errors(packageElement);
-        SortedSet<TypeElement> errors = utils.filterOutPrivateClasses(ierrors, configuration.javafx);
+        SortedSet<TypeElement> errors = utils.filterOutPrivateClasses(ierrors, options.javafx());
         if (!errors.isEmpty()) {
             packageWriter.addErrorSummary(errors, summaryContentTree);
         }
@@ -267,7 +267,7 @@ public class PackageSummaryBuilder extends AbstractBuilder {
                 ? utils.getTypeElementsAsSortedSet(utils.getAnnotationTypes(packageElement))
                 : configuration.typeElementCatalog.annotationTypes(packageElement);
         SortedSet<TypeElement> annotationTypes = utils.filterOutPrivateClasses(iannotationTypes,
-                configuration.javafx);
+                options.javafx());
         if (!annotationTypes.isEmpty()) {
             packageWriter.addAnnotationTypeSummary(annotationTypes, summaryContentTree);
         }
@@ -280,7 +280,7 @@ public class PackageSummaryBuilder extends AbstractBuilder {
      *                           be added
      */
     protected void buildPackageDescription(Content packageContentTree) {
-        if (configuration.nocomment) {
+        if (options.noComment()) {
             return;
         }
         packageWriter.addPackageDescription(packageContentTree);
@@ -292,7 +292,7 @@ public class PackageSummaryBuilder extends AbstractBuilder {
      * @param packageContentTree the tree to which the package tags will be added
      */
     protected void buildPackageTags(Content packageContentTree) {
-        if (configuration.nocomment) {
+        if (options.noComment()) {
             return;
         }
         packageWriter.addPackageTags(packageContentTree);

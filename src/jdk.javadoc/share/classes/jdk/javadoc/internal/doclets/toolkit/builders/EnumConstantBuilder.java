@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@ import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 
-import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
+import jdk.javadoc.internal.doclets.toolkit.BaseOptions;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.DocletException;
 import jdk.javadoc.internal.doclets.toolkit.EnumConstantWriter;
@@ -101,9 +101,6 @@ public class EnumConstantBuilder extends AbstractMemberBuilder {
         return !enumConstants.isEmpty();
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void build(Content contentTree) throws DocletException {
         buildEnumConstant(contentTree);
@@ -161,12 +158,12 @@ public class EnumConstantBuilder extends AbstractMemberBuilder {
 
     /**
      * Build the comments for the enum constant.  Do nothing if
-     * {@link BaseConfiguration#nocomment} is set to true.
+     * {@link BaseOptions#noComment} is set to true.
      *
      * @param enumConstantsTree the content tree to which the documentation will be added
      */
     protected void buildEnumConstantComments(Content enumConstantsTree) {
-        if (!configuration.nocomment) {
+        if (!options.noComment()) {
             writer.addComments(currentElement, enumConstantsTree);
         }
     }

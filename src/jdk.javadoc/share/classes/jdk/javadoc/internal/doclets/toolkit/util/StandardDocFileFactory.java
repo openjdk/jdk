@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -207,7 +207,8 @@ class StandardDocFileFactory extends DocFileFactory {
 
             try {
                 OutputStream out = getFileObjectForOutput(path).openOutputStream();
-                return new BufferedWriter(new OutputStreamWriter(out, configuration.docencoding));
+                String docencoding = configuration.getOptions().docEncoding();
+                return new BufferedWriter(new OutputStreamWriter(out, docencoding));
             } catch (IOException e) {
                 throw new DocFileIOException(this, DocFileIOException.Mode.WRITE, e);
             }
@@ -328,7 +329,7 @@ class StandardDocFileFactory extends DocFileFactory {
         /**
          * Resolve a relative file against the given output location.
          * @param locn Currently, only
-         * {@link DocumentationTool.Location.DOCUMENTATION_OUTPUT} is supported.
+         * {@link DocumentationTool.Location#DOCUMENTATION_OUTPUT} is supported.
          */
         @Override
         public DocFile resolveAgainst(Location locn) {

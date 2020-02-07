@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -111,7 +111,7 @@ static inline void assert_field_offset_sane(oop p, jlong field_offset) {
   if (p != NULL) {
     assert(byte_offset >= 0 && byte_offset <= (jlong)MAX_OBJECT_SIZE, "sane offset");
     if (byte_offset == (jint)byte_offset) {
-      void* ptr_plus_disp = (address)p + byte_offset;
+      void* ptr_plus_disp = cast_from_oop<address>(p) + byte_offset;
       assert(p->field_addr_raw((jint)byte_offset) == ptr_plus_disp,
              "raw [ptr+disp] must be consistent with oop::field_addr_raw");
     }
@@ -130,9 +130,9 @@ static inline void* index_oop_from_field_offset_long(oop p, jlong field_offset) 
   }
 
   if (sizeof(char*) == sizeof(jint)) {   // (this constant folds!)
-    return (address)p + (jint) byte_offset;
+    return cast_from_oop<address>(p) + (jint) byte_offset;
   } else {
-    return (address)p +        byte_offset;
+    return cast_from_oop<address>(p) +        byte_offset;
   }
 }
 
@@ -360,7 +360,8 @@ UNSAFE_ENTRY(jobject, Unsafe_AllocateInstance(JNIEnv *env, jobject unsafe, jclas
 UNSAFE_ENTRY(jlong, Unsafe_AllocateMemory0(JNIEnv *env, jobject unsafe, jlong size)) {
   size_t sz = (size_t)size;
 
-  sz = align_up(sz, HeapWordSize);
+  assert(is_aligned(sz, HeapWordSize), "sz not aligned");
+
   void* x = os::malloc(sz, mtOther);
 
   return addr_to_java(x);
@@ -369,7 +370,8 @@ UNSAFE_ENTRY(jlong, Unsafe_AllocateMemory0(JNIEnv *env, jobject unsafe, jlong si
 UNSAFE_ENTRY(jlong, Unsafe_ReallocateMemory0(JNIEnv *env, jobject unsafe, jlong addr, jlong size)) {
   void* p = addr_from_java(addr);
   size_t sz = (size_t)size;
-  sz = align_up(sz, HeapWordSize);
+
+  assert(is_aligned(sz, HeapWordSize), "sz not aligned");
 
   void* x = os::realloc(p, sz, mtOther);
 

@@ -139,6 +139,30 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_JDK_OPTIONS],
 
   AC_SUBST(ENABLE_HEADLESS_ONLY)
 
+  # should we linktime gc unused code sections in the JDK build ?
+  AC_MSG_CHECKING([linktime gc])
+  AC_ARG_ENABLE([linktime-gc], [AS_HELP_STRING([--enable-linktime-gc],
+      [linktime gc unused code sections in the JDK build @<:@disabled@:>@])])
+
+  if test "x$enable_linktime_gc" = "xyes"; then
+    ENABLE_LINKTIME_GC="true"
+    AC_MSG_RESULT([yes])
+  elif test "x$enable_linktime_gc" = "xno"; then
+    ENABLE_LINKTIME_GC="false"
+    AC_MSG_RESULT([no])
+  elif test "x$OPENJDK_TARGET_OS" = "xlinux" && test "x$OPENJDK_TARGET_CPU" = xs390x; then
+    ENABLE_LINKTIME_GC="true"
+    AC_MSG_RESULT([yes])
+  elif test "x$enable_linktime_gc" = "x"; then
+    ENABLE_LINKTIME_GC="false"
+    AC_MSG_RESULT([no])
+  else
+    AC_MSG_ERROR([--enable-linktime-gc can only take yes or no])
+  fi
+
+  AC_SUBST(ENABLE_LINKTIME_GC)
+
+
   # Should we build the complete docs, or just a lightweight version?
   AC_ARG_ENABLE([full-docs], [AS_HELP_STRING([--enable-full-docs],
       [build complete documentation @<:@enabled if all tools found@:>@])])

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,6 +54,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.ClassUseMapper;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
+import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
 
 /**
@@ -158,19 +159,21 @@ public class ClassUseWriter extends SubWriterHolderWriter {
      */
     public static void generate(HtmlConfiguration configuration, ClassTree classtree) throws DocFileIOException  {
         ClassUseMapper mapper = new ClassUseMapper(configuration, classtree);
+        boolean nodeprecated = configuration.getOptions().noDeprecated();
+        Utils utils = configuration.utils;
         for (TypeElement aClass : configuration.getIncludedTypeElements()) {
             // If -nodeprecated option is set and the containing package is marked
             // as deprecated, do not generate the class-use page. We will still generate
             // the class-use page if the class is marked as deprecated but the containing
             // package is not since it could still be linked from that package-use page.
-            if (!(configuration.nodeprecated &&
-                  configuration.utils.isDeprecated(configuration.utils.containingPackage(aClass))))
+            if (!(nodeprecated &&
+                  utils.isDeprecated(utils.containingPackage(aClass))))
                 ClassUseWriter.generate(configuration, mapper, aClass);
         }
         for (PackageElement pkg : configuration.packages) {
             // If -nodeprecated option is set and the package is marked
             // as deprecated, do not generate the package-use page.
-            if (!(configuration.nodeprecated && configuration.utils.isDeprecated(pkg)))
+            if (!(nodeprecated && utils.isDeprecated(pkg)))
                 PackageUseWriter.generate(configuration, mapper, pkg);
         }
     }

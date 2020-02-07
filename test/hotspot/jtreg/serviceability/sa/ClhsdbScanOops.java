@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,9 +46,7 @@ public class ClhsdbScanOops {
 
         try {
             ClhsdbLauncher test = new ClhsdbLauncher();
-            List<String> vmArgs = new ArrayList<String>();
-            vmArgs.add(gc);
-            theApp = LingeredApp.startApp(vmArgs);
+            theApp = LingeredApp.startApp(gc);
 
             System.out.println ("Started LingeredApp with the GC option " + gc +
                                 " and pid " + theApp.getPid());

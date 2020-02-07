@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,8 +73,8 @@ const int MAX_TRIES = 3;
  * for each adapter on the system. Returned in *adapters.
  * Buffer is malloc'd and must be freed (unless error returned)
  */
-static int getAdapters (JNIEnv *env, IP_ADAPTER_ADDRESSES **adapters) {
-    DWORD ret, flags;
+int getAdapters (JNIEnv *env, int flags, IP_ADAPTER_ADDRESSES **adapters) {
+    DWORD ret;
     IP_ADAPTER_ADDRESSES *adapterInfo;
     ULONG len;
     int try;
@@ -87,9 +87,6 @@ static int getAdapters (JNIEnv *env, IP_ADAPTER_ADDRESSES **adapters) {
     }
 
     len = BUFF_SIZE;
-    flags = GAA_FLAG_SKIP_DNS_SERVER;
-    flags |= GAA_FLAG_SKIP_MULTICAST;
-    flags |= GAA_FLAG_INCLUDE_PREFIX;
     ret = GetAdaptersAddresses(AF_UNSPEC, flags, NULL, adapterInfo, &len);
 
     for (try = 0; ret == ERROR_BUFFER_OVERFLOW && try < MAX_TRIES; ++try) {
@@ -240,7 +237,7 @@ static int ipinflen = 2048;
  */
 int getAllInterfacesAndAddresses (JNIEnv *env, netif **netifPP)
 {
-    DWORD ret;
+    DWORD ret, flags;
     MIB_IPADDRTABLE *tableP;
     IP_ADAPTER_ADDRESSES *ptr, *adapters=NULL;
     ULONG len=ipinflen, count=0;
@@ -296,7 +293,11 @@ int getAllInterfacesAndAddresses (JNIEnv *env, netif **netifPP)
         }
     }
     free(tableP);
-    ret = getAdapters (env, &adapters);
+
+    flags = GAA_FLAG_SKIP_DNS_SERVER;
+    flags |= GAA_FLAG_SKIP_MULTICAST;
+    flags |= GAA_FLAG_INCLUDE_PREFIX;
+    ret = getAdapters (env, flags, &adapters);
     if (ret != ERROR_SUCCESS) {
         goto err;
     }

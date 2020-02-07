@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,7 +86,7 @@ ciField::ciField(ciInstanceKlass* klass, int index) :
   Symbol* signature = cpool->symbol_at(sig_index);
   _signature = ciEnv::current(THREAD)->get_symbol(signature);
 
-  BasicType field_type = FieldType::basic_type(signature);
+  BasicType field_type = Signature::basic_type(signature);
 
   // If the field is a pointer type, get the klass of the
   // field.

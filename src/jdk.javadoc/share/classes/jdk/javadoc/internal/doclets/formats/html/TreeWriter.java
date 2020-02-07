@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -155,7 +155,7 @@ public class TreeWriter extends AbstractTreeWriter {
                 // is set and the package is marked as deprecated, do not include
                 // the page in the list of package hierarchies.
                 if (pkg.isUnnamed() ||
-                        (configuration.nodeprecated && utils.isDeprecated(pkg))) {
+                        (options.noDeprecated() && utils.isDeprecated(pkg))) {
                     i++;
                     continue;
                 }

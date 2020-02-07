@@ -29,8 +29,7 @@
  * @modules jdk.jdeps/com.sun.tools.classfile
  *          jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.code
- *          jdk.compiler/com.sun.tools.javac.comp
- *          jdk.compiler/com.sun.tools.javac.main
+ *          jdk.compiler/com.sun.tools.javac.file
  *          jdk.compiler/com.sun.tools.javac.jvm
  *          jdk.compiler/com.sun.tools.javac.tree
  *          jdk.compiler/com.sun.tools.javac.util

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -113,7 +113,7 @@ public class AllPackagesIndexWriter extends HtmlDocletWriter {
                 .setHeader(new TableHeader(contents.packageLabel, contents.descriptionLabel))
                 .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast);
         for (PackageElement pkg : configuration.packages) {
-            if (!(configuration.nodeprecated && utils.isDeprecated(pkg))) {
+            if (!(options.noDeprecated() && utils.isDeprecated(pkg))) {
                 Content packageLinkContent = getPackageLink(pkg, getPackageName(pkg));
                 Content summaryContent = new ContentBuilder();
                 addSummaryComment(pkg, summaryContent);

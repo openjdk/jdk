@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,24 +45,33 @@ class G1ConcurrentRefineThread: public ConcurrentGCThread {
 
   uint _worker_id;
 
-  bool _active;
-  Monitor* _monitor;
+  // _notifier and _should_notify form a single-reader / multi-writer
+  // notification mechanism.  The owning concurrent refinement thread is the
+  // single reader. The writers are (other) threads that call activate() on
+  // the thread.  The i-th concurrent refinement thread is responsible for
+  // activating thread i+1 if the number of buffers in the queue exceeds a
+  // threshold for that i+1th thread.  The 0th (primary) thread is activated
+  // by threads that add cards to the dirty card queue set when the primary
+  // thread's threshold is exceeded.  activate() is also used to wake up the
+  // threads during termination, so even the non-primary thread case is
+  // multi-writer.
+  Semaphore* _notifier;
+  volatile bool _should_notify;
+
+  // Called when no refinement work found for this thread.
+  // Returns true if should deactivate.
+  bool maybe_deactivate(bool more_work);
+
   G1ConcurrentRefine* _cr;
 
   void wait_for_completed_buffers();
 
-  void set_active(bool x) { _active = x; }
-  // Deactivate this thread.
-  void deactivate();
+  virtual void run_service();
+  virtual void stop_service();
 
-  bool is_primary() { return (_worker_id == 0); }
-
-  void run_service();
-  void stop_service();
 public:
   G1ConcurrentRefineThread(G1ConcurrentRefine* cg1r, uint worker_id);
 
-  bool is_active();
   // Activate this thread.
   void activate();
 

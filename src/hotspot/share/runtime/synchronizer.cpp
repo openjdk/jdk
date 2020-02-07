@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -117,20 +117,272 @@ int dtrace_waited_probe(ObjectMonitor* monitor, Handle obj, Thread* thr) {
 static volatile intptr_t gInflationLocks[NINFLATIONLOCKS];
 
 // global list of blocks of monitors
-PaddedObjectMonitor* volatile ObjectSynchronizer::g_block_list = NULL;
-// Global ObjectMonitor free list. Newly allocated and deflated
-// ObjectMonitors are prepended here.
-ObjectMonitor* volatile ObjectSynchronizer::g_free_list = NULL;
-// Global ObjectMonitor in-use list. When a JavaThread is exiting,
-// ObjectMonitors on its per-thread in-use list are prepended here.
-ObjectMonitor* volatile ObjectSynchronizer::g_om_in_use_list = NULL;
-int ObjectSynchronizer::g_om_in_use_count = 0;  // # on g_om_in_use_list
+PaddedObjectMonitor* ObjectSynchronizer::g_block_list = NULL;
 
-static volatile intptr_t gListLock = 0;   // protects global monitor lists
-static volatile int g_om_free_count = 0;  // # on g_free_list
-static volatile int g_om_population = 0;  // # Extant -- in circulation
+struct ObjectMonitorListGlobals {
+  char         _pad_prefix[OM_CACHE_LINE_SIZE];
+  // These are highly shared list related variables.
+  // To avoid false-sharing they need to be the sole occupants of a cache line.
+
+  // Global ObjectMonitor free list. Newly allocated and deflated
+  // ObjectMonitors are prepended here.
+  ObjectMonitor* _free_list;
+  DEFINE_PAD_MINUS_SIZE(1, OM_CACHE_LINE_SIZE, sizeof(ObjectMonitor*));
+
+  // Global ObjectMonitor in-use list. When a JavaThread is exiting,
+  // ObjectMonitors on its per-thread in-use list are prepended here.
+  ObjectMonitor* _in_use_list;
+  DEFINE_PAD_MINUS_SIZE(2, OM_CACHE_LINE_SIZE, sizeof(ObjectMonitor*));
+
+  int _free_count;    // # on free_list
+  DEFINE_PAD_MINUS_SIZE(3, OM_CACHE_LINE_SIZE, sizeof(int));
+
+  int _in_use_count;  // # on in_use_list
+  DEFINE_PAD_MINUS_SIZE(4, OM_CACHE_LINE_SIZE, sizeof(int));
+
+  int _population;    // # Extant -- in circulation
+  DEFINE_PAD_MINUS_SIZE(5, OM_CACHE_LINE_SIZE, sizeof(int));
+};
+static ObjectMonitorListGlobals om_list_globals;
 
 #define CHAINMARKER (cast_to_oop<intptr_t>(-1))
+
+
+// =====================> Spin-lock functions
+
+// ObjectMonitors are not lockable outside of this file. We use spin-locks
+// implemented using a bit in the _next_om field instead of the heavier
+// weight locking mechanisms for faster list management.
+
+#define OM_LOCK_BIT 0x1
+
+// Return true if the ObjectMonitor is locked.
+// Otherwise returns false.
+static bool is_locked(ObjectMonitor* om) {
+  return ((intptr_t)om->next_om() & OM_LOCK_BIT) == OM_LOCK_BIT;
+}
+
+// Mark an ObjectMonitor* with OM_LOCK_BIT and return it.
+static ObjectMonitor* mark_om_ptr(ObjectMonitor* om) {
+  return (ObjectMonitor*)((intptr_t)om | OM_LOCK_BIT);
+}
+
+// Return the unmarked next field in an ObjectMonitor. Note: the next
+// field may or may not have been marked with OM_LOCK_BIT originally.
+static ObjectMonitor* unmarked_next(ObjectMonitor* om) {
+  return (ObjectMonitor*)((intptr_t)om->next_om() & ~OM_LOCK_BIT);
+}
+
+// Try to lock an ObjectMonitor. Returns true if locking was successful.
+// Otherwise returns false.
+static bool try_om_lock(ObjectMonitor* om) {
+  // Get current next field without any OM_LOCK_BIT value.
+  ObjectMonitor* next = unmarked_next(om);
+  if (om->try_set_next_om(next, mark_om_ptr(next)) != next) {
+    return false;  // Cannot lock the ObjectMonitor.
+  }
+  return true;
+}
+
+// Lock an ObjectMonitor.
+static void om_lock(ObjectMonitor* om) {
+  while (true) {
+    if (try_om_lock(om)) {
+      return;
+    }
+  }
+}
+
+// Unlock an ObjectMonitor.
+static void om_unlock(ObjectMonitor* om) {
+  ObjectMonitor* next = om->next_om();
+  guarantee(((intptr_t)next & OM_LOCK_BIT) == OM_LOCK_BIT, "next=" INTPTR_FORMAT
+            " must have OM_LOCK_BIT=%x set.", p2i(next), OM_LOCK_BIT);
+
+  next = (ObjectMonitor*)((intptr_t)next & ~OM_LOCK_BIT);  // Clear OM_LOCK_BIT.
+  om->set_next_om(next);
+}
+
+// Get the list head after locking it. Returns the list head or NULL
+// if the list is empty.
+static ObjectMonitor* get_list_head_locked(ObjectMonitor** list_p) {
+  while (true) {
+    ObjectMonitor* mid = Atomic::load(list_p);
+    if (mid == NULL) {
+      return NULL;  // The list is empty.
+    }
+    if (try_om_lock(mid)) {
+      if (Atomic::load(list_p) != mid) {
+        // The list head changed before we could lock it so we have to retry.
+        om_unlock(mid);
+        continue;
+      }
+      return mid;
+    }
+  }
+}
+
+#undef OM_LOCK_BIT
+
+
+// =====================> List Management functions
+
+// Prepend a list of ObjectMonitors to the specified *list_p. 'tail' is
+// the last ObjectMonitor in the list and there are 'count' on the list.
+// Also updates the specified *count_p.
+static void prepend_list_to_common(ObjectMonitor* list, ObjectMonitor* tail,
+                                   int count, ObjectMonitor** list_p,
+                                   int* count_p) {
+  while (true) {
+    ObjectMonitor* cur = Atomic::load(list_p);
+    // Prepend list to *list_p.
+    if (!try_om_lock(tail)) {
+      // Failed to lock tail due to a list walker so try it all again.
+      continue;
+    }
+    tail->set_next_om(cur);  // tail now points to cur (and unlocks tail)
+    if (cur == NULL) {
+      // No potential race with takers or other prependers since
+      // *list_p is empty.
+      if (Atomic::cmpxchg(list_p, cur, list) == cur) {
+        // Successfully switched *list_p to the list value.
+        Atomic::add(count_p, count);
+        break;
+      }
+      // Implied else: try it all again
+    } else {
+      if (!try_om_lock(cur)) {
+        continue;  // failed to lock cur so try it all again
+      }
+      // We locked cur so try to switch *list_p to the list value.
+      if (Atomic::cmpxchg(list_p, cur, list) != cur) {
+        // The list head has changed so unlock cur and try again:
+        om_unlock(cur);
+        continue;
+      }
+      Atomic::add(count_p, count);
+      om_unlock(cur);
+      break;
+    }
+  }
+}
+
+// Prepend a newly allocated block of ObjectMonitors to g_block_list and
+// om_list_globals._free_list. Also updates om_list_globals._population
+// and om_list_globals._free_count.
+void ObjectSynchronizer::prepend_block_to_lists(PaddedObjectMonitor* new_blk) {
+  // First we handle g_block_list:
+  while (true) {
+    PaddedObjectMonitor* cur = Atomic::load(&g_block_list);
+    // Prepend new_blk to g_block_list. The first ObjectMonitor in
+    // a block is reserved for use as linkage to the next block.
+    new_blk[0].set_next_om(cur);
+    if (Atomic::cmpxchg(&g_block_list, cur, new_blk) == cur) {
+      // Successfully switched g_block_list to the new_blk value.
+      Atomic::add(&om_list_globals._population, _BLOCKSIZE - 1);
+      break;
+    }
+    // Implied else: try it all again
+  }
+
+  // Second we handle om_list_globals._free_list:
+  prepend_list_to_common(new_blk + 1, &new_blk[_BLOCKSIZE - 1], _BLOCKSIZE - 1,
+                         &om_list_globals._free_list, &om_list_globals._free_count);
+}
+
+// Prepend a list of ObjectMonitors to om_list_globals._free_list.
+// 'tail' is the last ObjectMonitor in the list and there are 'count'
+// on the list. Also updates om_list_globals._free_count.
+static void prepend_list_to_global_free_list(ObjectMonitor* list,
+                                             ObjectMonitor* tail, int count) {
+  prepend_list_to_common(list, tail, count, &om_list_globals._free_list,
+                         &om_list_globals._free_count);
+}
+
+// Prepend a list of ObjectMonitors to om_list_globals._in_use_list.
+// 'tail' is the last ObjectMonitor in the list and there are 'count'
+// on the list. Also updates om_list_globals._in_use_list.
+static void prepend_list_to_global_in_use_list(ObjectMonitor* list,
+                                               ObjectMonitor* tail, int count) {
+  prepend_list_to_common(list, tail, count, &om_list_globals._in_use_list,
+                         &om_list_globals._in_use_count);
+}
+
+// Prepend an ObjectMonitor to the specified list. Also updates
+// the specified counter.
+static void prepend_to_common(ObjectMonitor* m, ObjectMonitor** list_p,
+                              int* count_p) {
+  while (true) {
+    om_lock(m);  // Lock m so we can safely update its next field.
+    ObjectMonitor* cur = NULL;
+    // Lock the list head to guard against races with a list walker
+    // thread:
+    if ((cur = get_list_head_locked(list_p)) != NULL) {
+      // List head is now locked so we can safely switch it.
+      m->set_next_om(cur);  // m now points to cur (and unlocks m)
+      Atomic::store(list_p, m);  // Switch list head to unlocked m.
+      om_unlock(cur);
+      break;
+    }
+    // The list is empty so try to set the list head.
+    assert(cur == NULL, "cur must be NULL: cur=" INTPTR_FORMAT, p2i(cur));
+    m->set_next_om(cur);  // m now points to NULL (and unlocks m)
+    if (Atomic::cmpxchg(list_p, cur, m) == cur) {
+      // List head is now unlocked m.
+      break;
+    }
+    // Implied else: try it all again
+  }
+  Atomic::inc(count_p);
+}
+
+// Prepend an ObjectMonitor to a per-thread om_free_list.
+// Also updates the per-thread om_free_count.
+static void prepend_to_om_free_list(Thread* self, ObjectMonitor* m) {
+  prepend_to_common(m, &self->om_free_list, &self->om_free_count);
+}
+
+// Prepend an ObjectMonitor to a per-thread om_in_use_list.
+// Also updates the per-thread om_in_use_count.
+static void prepend_to_om_in_use_list(Thread* self, ObjectMonitor* m) {
+  prepend_to_common(m, &self->om_in_use_list, &self->om_in_use_count);
+}
+
+// Take an ObjectMonitor from the start of the specified list. Also
+// decrements the specified counter. Returns NULL if none are available.
+static ObjectMonitor* take_from_start_of_common(ObjectMonitor** list_p,
+                                                int* count_p) {
+  ObjectMonitor* take = NULL;
+  // Lock the list head to guard against races with a list walker
+  // thread:
+  if ((take = get_list_head_locked(list_p)) == NULL) {
+    return NULL;  // None are available.
+  }
+  ObjectMonitor* next = unmarked_next(take);
+  // Switch locked list head to next (which unlocks the list head, but
+  // leaves take locked):
+  Atomic::store(list_p, next);
+  Atomic::dec(count_p);
+  // Unlock take, but leave the next value for any lagging list
+  // walkers. It will get cleaned up when take is prepended to
+  // the in-use list:
+  om_unlock(take);
+  return take;
+}
+
+// Take an ObjectMonitor from the start of the om_list_globals._free_list.
+// Also updates om_list_globals._free_count. Returns NULL if none are
+// available.
+static ObjectMonitor* take_from_start_of_global_free_list() {
+  return take_from_start_of_common(&om_list_globals._free_list,
+                                   &om_list_globals._free_count);
+}
+
+// Take an ObjectMonitor from the start of a per-thread free-list.
+// Also updates om_free_count. Returns NULL if none are available.
+static ObjectMonitor* take_from_start_of_om_free_list(Thread* self) {
+  return take_from_start_of_common(&self->om_free_list, &self->om_free_count);
+}
 
 
 // =====================> Quick functions
@@ -240,7 +492,7 @@ bool ObjectSynchronizer::quick_enter(oop obj, Thread* self,
     // and last are the inflated Java Monitor (ObjectMonitor) checks.
     lock->set_displaced_header(markWord::unused_mark());
 
-    if (owner == NULL && Atomic::replace_if_null(&(m->_owner), self)) {
+    if (owner == NULL && m->try_set_owner_from(NULL, self) == NULL) {
       assert(m->_recursions == 0, "invariant");
       return true;
     }
@@ -517,15 +769,15 @@ void ObjectSynchronizer::notifyall(Handle obj, TRAPS) {
 // performed by the CPU(s) or platform.
 
 struct SharedGlobals {
-  char         _pad_prefix[DEFAULT_CACHE_LINE_SIZE];
+  char         _pad_prefix[OM_CACHE_LINE_SIZE];
   // These are highly shared mostly-read variables.
   // To avoid false-sharing they need to be the sole occupants of a cache line.
   volatile int stw_random;
   volatile int stw_cycle;
-  DEFINE_PAD_MINUS_SIZE(1, DEFAULT_CACHE_LINE_SIZE, sizeof(volatile int) * 2);
+  DEFINE_PAD_MINUS_SIZE(1, OM_CACHE_LINE_SIZE, sizeof(volatile int) * 2);
   // Hot RW variable -- Sequester to avoid false-sharing
   volatile int hc_sequence;
-  DEFINE_PAD_MINUS_SIZE(2, DEFAULT_CACHE_LINE_SIZE, sizeof(volatile int));
+  DEFINE_PAD_MINUS_SIZE(2, OM_CACHE_LINE_SIZE, sizeof(volatile int));
 };
 
 static SharedGlobals GVars;
@@ -888,7 +1140,7 @@ JavaThread* ObjectSynchronizer::get_lock_owner(ThreadsList * t_list, Handle h_ob
 // Visitors ...
 
 void ObjectSynchronizer::monitors_iterate(MonitorClosure* closure) {
-  PaddedObjectMonitor* block = Atomic::load_acquire(&g_block_list);
+  PaddedObjectMonitor* block = Atomic::load(&g_block_list);
   while (block != NULL) {
     assert(block->object() == CHAINMARKER, "must be a block header");
     for (int i = _BLOCKSIZE - 1; i > 0; i--) {
@@ -899,24 +1151,36 @@ void ObjectSynchronizer::monitors_iterate(MonitorClosure* closure) {
         closure->do_monitor(mid);
       }
     }
-    block = (PaddedObjectMonitor*)block->_next_om;
+    // unmarked_next() is not needed with g_block_list (no locking
+    // used with block linkage _next_om fields).
+    block = (PaddedObjectMonitor*)block->next_om();
   }
 }
 
 static bool monitors_used_above_threshold() {
-  if (g_om_population == 0) {
+  int population = Atomic::load(&om_list_globals._population);
+  if (population == 0) {
     return false;
   }
-  int monitors_used = g_om_population - g_om_free_count;
-  int monitor_usage = (monitors_used * 100LL) / g_om_population;
-  return monitor_usage > MonitorUsedDeflationThreshold;
+  if (MonitorUsedDeflationThreshold > 0) {
+    int monitors_used = population - Atomic::load(&om_list_globals._free_count);
+    int monitor_usage = (monitors_used * 100LL) / population;
+    return monitor_usage > MonitorUsedDeflationThreshold;
+  }
+  return false;
+}
+
+// Returns true if MonitorBound is set (> 0) and if the specified
+// cnt is > MonitorBound. Otherwise returns false.
+static bool is_MonitorBound_exceeded(const int cnt) {
+  const int mx = MonitorBound;
+  return mx > 0 && cnt > mx;
 }
 
 bool ObjectSynchronizer::is_cleanup_needed() {
-  if (MonitorUsedDeflationThreshold > 0) {
-    if (monitors_used_above_threshold()) {
-      return true;
-    }
+  if (monitors_used_above_threshold()) {
+    // Too many monitors in use.
+    return true;
   }
   return needs_monitor_scavenge();
 }
@@ -937,7 +1201,7 @@ void ObjectSynchronizer::oops_do(OopClosure* f) {
 
 void ObjectSynchronizer::global_used_oops_do(OopClosure* f) {
   assert(SafepointSynchronize::is_at_safepoint(), "must be at safepoint");
-  list_oops_do(g_om_in_use_list, f);
+  list_oops_do(Atomic::load(&om_list_globals._in_use_list), f);
 }
 
 void ObjectSynchronizer::thread_local_used_oops_do(Thread* thread, OopClosure* f) {
@@ -947,8 +1211,9 @@ void ObjectSynchronizer::thread_local_used_oops_do(Thread* thread, OopClosure* f
 
 void ObjectSynchronizer::list_oops_do(ObjectMonitor* list, OopClosure* f) {
   assert(SafepointSynchronize::is_at_safepoint(), "must be at safepoint");
-  ObjectMonitor* mid;
-  for (mid = list; mid != NULL; mid = mid->_next_om) {
+  // The oops_do() phase does not overlap with monitor deflation
+  // so no need to lock ObjectMonitors for the list traversal.
+  for (ObjectMonitor* mid = list; mid != NULL; mid = unmarked_next(mid)) {
     if (mid->object() != NULL) {
       f->do_oop((oop*)mid->object_addr());
     }
@@ -959,21 +1224,18 @@ void ObjectSynchronizer::list_oops_do(ObjectMonitor* list, OopClosure* f) {
 // -----------------------------------------------------------------------------
 // ObjectMonitor Lifecycle
 // -----------------------
-// Inflation unlinks monitors from the global g_free_list and
-// associates them with objects.  Deflation -- which occurs at
-// STW-time -- disassociates idle monitors from objects.  Such
-// scavenged monitors are returned to the g_free_list.
-//
-// The global list is protected by gListLock.  All the critical sections
-// are short and operate in constant-time.
+// Inflation unlinks monitors from om_list_globals._free_list or a per-thread
+// free list and associates them with objects. Deflation -- which occurs at
+// STW-time -- disassociates idle monitors from objects.
+// Such scavenged monitors are returned to the om_list_globals._free_list.
 //
 // ObjectMonitors reside in type-stable memory (TSM) and are immortal.
 //
 // Lifecycle:
-// --   unassigned and on the global free list
-// --   unassigned and on a thread's private om_free_list
+// --   unassigned and on the om_list_globals._free_list
+// --   unassigned and on a per-thread free list
 // --   assigned to an object.  The object is inflated and the mark refers
-//      to the objectmonitor.
+//      to the ObjectMonitor.
 
 
 // Constraining monitor pool growth via MonitorBound ...
@@ -993,7 +1255,7 @@ void ObjectSynchronizer::list_oops_do(ObjectMonitor* list, OopClosure* f) {
 // See also: GuaranteedSafepointInterval
 //
 // If MonitorBound is set, the boundry applies to
-//     (g_om_population - g_om_free_count)
+//     (om_list_globals._population - om_list_globals._free_count)
 // i.e., if there are not enough ObjectMonitors on the global free list,
 // then a safepoint deflation is induced. Picking a good MonitorBound value
 // is non-trivial.
@@ -1005,7 +1267,7 @@ static void InduceScavenge(Thread* self, const char * Whence) {
   // of active monitors passes the specified threshold.
   // TODO: assert thread state is reasonable
 
-  if (Atomic::xchg (&_forceMonitorScavenge, 1) == 0) {
+  if (Atomic::xchg(&_forceMonitorScavenge, 1) == 0) {
     VMThread::check_for_forced_cleanup();
   }
 }
@@ -1017,51 +1279,46 @@ ObjectMonitor* ObjectSynchronizer::om_alloc(Thread* self) {
   // scavenge costs.  As usual, we lean toward time in space-time
   // tradeoffs.
   const int MAXPRIVATE = 1024;
+  NoSafepointVerifier nsv;
+
   stringStream ss;
   for (;;) {
     ObjectMonitor* m;
 
     // 1: try to allocate from the thread's local om_free_list.
     // Threads will attempt to allocate first from their local list, then
-    // from the global list, and only after those attempts fail will the thread
-    // attempt to instantiate new monitors.   Thread-local free lists take
-    // heat off the gListLock and improve allocation latency, as well as reducing
-    // coherency traffic on the shared global list.
-    m = self->om_free_list;
+    // from the global list, and only after those attempts fail will the
+    // thread attempt to instantiate new monitors. Thread-local free lists
+    // improve allocation latency, as well as reducing coherency traffic
+    // on the shared global list.
+    m = take_from_start_of_om_free_list(self);
     if (m != NULL) {
-      self->om_free_list = m->_next_om;
-      self->om_free_count--;
       guarantee(m->object() == NULL, "invariant");
-      m->_next_om = self->om_in_use_list;
-      self->om_in_use_list = m;
-      self->om_in_use_count++;
+      prepend_to_om_in_use_list(self, m);
       return m;
     }
 
-    // 2: try to allocate from the global g_free_list
-    // CONSIDER: use muxTry() instead of muxAcquire().
-    // If the muxTry() fails then drop immediately into case 3.
+    // 2: try to allocate from the global om_list_globals._free_list
     // If we're using thread-local free lists then try
     // to reprovision the caller's free list.
-    if (g_free_list != NULL) {
+    if (Atomic::load(&om_list_globals._free_list) != NULL) {
       // Reprovision the thread's om_free_list.
       // Use bulk transfers to reduce the allocation rate and heat
       // on various locks.
-      Thread::muxAcquire(&gListLock, "om_alloc(1)");
-      for (int i = self->om_free_provision; --i >= 0 && g_free_list != NULL;) {
-        g_om_free_count--;
-        ObjectMonitor* take = g_free_list;
-        g_free_list = take->_next_om;
+      for (int i = self->om_free_provision; --i >= 0;) {
+        ObjectMonitor* take = take_from_start_of_global_free_list();
+        if (take == NULL) {
+          break;  // No more are available.
+        }
         guarantee(take->object() == NULL, "invariant");
         take->Recycle();
         om_release(self, take, false);
       }
-      Thread::muxRelease(&gListLock);
-      self->om_free_provision += 1 + (self->om_free_provision/2);
+      self->om_free_provision += 1 + (self->om_free_provision / 2);
       if (self->om_free_provision > MAXPRIVATE) self->om_free_provision = MAXPRIVATE;
 
-      const int mx = MonitorBound;
-      if (mx > 0 && (g_om_population-g_om_free_count) > mx) {
+      if (is_MonitorBound_exceeded(Atomic::load(&om_list_globals._population) -
+                                   Atomic::load(&om_list_globals._free_count))) {
         // Not enough ObjectMonitors on the global free list.
         // We can't safely induce a STW safepoint from om_alloc() as our thread
         // state may not be appropriate for such activities and callers may hold
@@ -1082,9 +1339,9 @@ ObjectMonitor* ObjectSynchronizer::om_alloc(Thread* self) {
     assert(_BLOCKSIZE > 1, "invariant");
     size_t neededsize = sizeof(PaddedObjectMonitor) * _BLOCKSIZE;
     PaddedObjectMonitor* temp;
-    size_t aligned_size = neededsize + (DEFAULT_CACHE_LINE_SIZE - 1);
+    size_t aligned_size = neededsize + (OM_CACHE_LINE_SIZE - 1);
     void* real_malloc_addr = NEW_C_HEAP_ARRAY(char, aligned_size, mtInternal);
-    temp = (PaddedObjectMonitor*)align_up(real_malloc_addr, DEFAULT_CACHE_LINE_SIZE);
+    temp = (PaddedObjectMonitor*)align_up(real_malloc_addr, OM_CACHE_LINE_SIZE);
     (void)memset((void *) temp, 0, neededsize);
 
     // Format the block.
@@ -1096,11 +1353,11 @@ ObjectMonitor* ObjectSynchronizer::om_alloc(Thread* self) {
     // look like: class Block { Block * next; int N; ObjectMonitor Body [N] ; }
 
     for (int i = 1; i < _BLOCKSIZE; i++) {
-      temp[i]._next_om = (ObjectMonitor *)&temp[i+1];
+      temp[i].set_next_om((ObjectMonitor*)&temp[i + 1]);
     }
 
     // terminate the last monitor as the end of list
-    temp[_BLOCKSIZE - 1]._next_om = NULL;
+    temp[_BLOCKSIZE - 1].set_next_om((ObjectMonitor*)NULL);
 
     // Element [0] is reserved for global list linkage
     temp[0].set_object(CHAINMARKER);
@@ -1109,24 +1366,7 @@ ObjectMonitor* ObjectSynchronizer::om_alloc(Thread* self) {
     // block in hand.  This avoids some lock traffic and redundant
     // list activity.
 
-    // Acquire the gListLock to manipulate g_block_list and g_free_list.
-    // An Oyama-Taura-Yonezawa scheme might be more efficient.
-    Thread::muxAcquire(&gListLock, "om_alloc(2)");
-    g_om_population += _BLOCKSIZE-1;
-    g_om_free_count += _BLOCKSIZE-1;
-
-    // Add the new block to the list of extant blocks (g_block_list).
-    // The very first ObjectMonitor in a block is reserved and dedicated.
-    // It serves as blocklist "next" linkage.
-    temp[0]._next_om = g_block_list;
-    // There are lock-free uses of g_block_list so make sure that
-    // the previous stores happen before we update g_block_list.
-    Atomic::release_store(&g_block_list, temp);
-
-    // Add the new string of ObjectMonitors to the global free list
-    temp[_BLOCKSIZE - 1]._next_om = g_free_list;
-    g_free_list = temp + 1;
-    Thread::muxRelease(&gListLock);
+    prepend_block_to_lists(temp);
   }
 }
 
@@ -1146,6 +1386,8 @@ void ObjectSynchronizer::om_release(Thread* self, ObjectMonitor* m,
                                     bool from_per_thread_alloc) {
   guarantee(m->header().value() == 0, "invariant");
   guarantee(m->object() == NULL, "invariant");
+  NoSafepointVerifier nsv;
+
   stringStream ss;
   guarantee((m->is_busy() | m->_recursions) == 0, "freeing in-use monitor: "
             "%s, recursions=" INTX_FORMAT, m->is_busy_to_string(&ss),
@@ -1154,27 +1396,77 @@ void ObjectSynchronizer::om_release(Thread* self, ObjectMonitor* m,
   // we have to remove 'm' from the in-use list first (as needed).
   if (from_per_thread_alloc) {
     // Need to remove 'm' from om_in_use_list.
-    ObjectMonitor* cur_mid_in_use = NULL;
-    bool extracted = false;
-    for (ObjectMonitor* mid = self->om_in_use_list; mid != NULL; cur_mid_in_use = mid, mid = mid->_next_om) {
-      if (m == mid) {
-        // extract from per-thread in-use list
-        if (mid == self->om_in_use_list) {
-          self->om_in_use_list = mid->_next_om;
-        } else if (cur_mid_in_use != NULL) {
-          cur_mid_in_use->_next_om = mid->_next_om; // maintain the current thread in-use list
+    ObjectMonitor* mid = NULL;
+    ObjectMonitor* next = NULL;
+
+    // This list walk can only race with another list walker since
+    // deflation can only happen at a safepoint so we don't have to
+    // worry about an ObjectMonitor being removed from this list
+    // while we are walking it.
+
+    // Lock the list head to avoid racing with another list walker.
+    if ((mid = get_list_head_locked(&self->om_in_use_list)) == NULL) {
+      fatal("thread=" INTPTR_FORMAT " in-use list must not be empty.", p2i(self));
+    }
+    next = unmarked_next(mid);
+    if (m == mid) {
+      // First special case:
+      // 'm' matches mid, is the list head and is locked. Switch the list
+      // head to next which unlocks the list head, but leaves the extracted
+      // mid locked:
+      Atomic::store(&self->om_in_use_list, next);
+    } else if (m == next) {
+      // Second special case:
+      // 'm' matches next after the list head and we already have the list
+      // head locked so set mid to what we are extracting:
+      mid = next;
+      // Lock mid to prevent races with a list walker:
+      om_lock(mid);
+      // Update next to what follows mid (if anything):
+      next = unmarked_next(mid);
+      // Switch next after the list head to new next which unlocks the
+      // list head, but leaves the extracted mid locked:
+      self->om_in_use_list->set_next_om(next);
+    } else {
+      // We have to search the list to find 'm'.
+      om_unlock(mid);  // unlock the list head
+      guarantee(next != NULL, "thread=" INTPTR_FORMAT ": om_in_use_list=" INTPTR_FORMAT
+                " is too short.", p2i(self), p2i(self->om_in_use_list));
+      // Our starting anchor is next after the list head which is the
+      // last ObjectMonitor we checked:
+      ObjectMonitor* anchor = next;
+      while ((mid = unmarked_next(anchor)) != NULL) {
+        if (m == mid) {
+          // We found 'm' on the per-thread in-use list so extract it.
+          om_lock(anchor);  // Lock the anchor so we can safely modify it.
+          // Update next to what follows mid (if anything):
+          next = unmarked_next(mid);
+          // Switch next after the anchor to new next which unlocks the
+          // anchor, but leaves the extracted mid locked:
+          anchor->set_next_om(next);
+          break;
+        } else {
+          anchor = mid;
         }
-        extracted = true;
-        self->om_in_use_count--;
-        break;
       }
     }
-    assert(extracted, "Should have extracted from in-use list");
+
+    if (mid == NULL) {
+      // Reached end of the list and didn't find 'm' so:
+      fatal("thread=" INTPTR_FORMAT " must find m=" INTPTR_FORMAT "on om_in_use_list="
+            INTPTR_FORMAT, p2i(self), p2i(m), p2i(self->om_in_use_list));
+    }
+
+    // At this point mid is disconnected from the in-use list so
+    // its lock no longer has any effects on the in-use list.
+    Atomic::dec(&self->om_in_use_count);
+    // Unlock mid, but leave the next value for any lagging list
+    // walkers. It will get cleaned up when mid is prepended to
+    // the thread's free list:
+    om_unlock(mid);
   }
 
-  m->_next_om = self->om_free_list;
-  self->om_free_list = m;
-  self->om_free_count++;
+  prepend_to_om_free_list(self, m);
 }
 
 // Return ObjectMonitors on a moribund thread's free and in-use
@@ -1191,59 +1483,96 @@ void ObjectSynchronizer::om_release(Thread* self, ObjectMonitor* m,
 // om_flush() is called).
 
 void ObjectSynchronizer::om_flush(Thread* self) {
-  ObjectMonitor* free_list = self->om_free_list;
-  ObjectMonitor* free_tail = NULL;
-  int free_count = 0;
-  if (free_list != NULL) {
-    ObjectMonitor* s;
-    // The thread is going away. Set 'free_tail' to the last per-thread free
-    // monitor which will be linked to g_free_list below under the gListLock.
-    stringStream ss;
-    for (s = free_list; s != NULL; s = s->_next_om) {
-      free_count++;
-      free_tail = s;
-      guarantee(s->object() == NULL, "invariant");
-      guarantee(!s->is_busy(), "must be !is_busy: %s", s->is_busy_to_string(&ss));
-    }
-    guarantee(free_tail != NULL, "invariant");
-    assert(self->om_free_count == free_count, "free-count off");
-    self->om_free_list = NULL;
-    self->om_free_count = 0;
-  }
-
-  ObjectMonitor* in_use_list = self->om_in_use_list;
-  ObjectMonitor* in_use_tail = NULL;
+  // Process the per-thread in-use list first to be consistent.
   int in_use_count = 0;
-  if (in_use_list != NULL) {
+  ObjectMonitor* in_use_list = NULL;
+  ObjectMonitor* in_use_tail = NULL;
+  NoSafepointVerifier nsv;
+
+  // This function can race with a list walker thread so we lock the
+  // list head to prevent confusion.
+  if ((in_use_list = get_list_head_locked(&self->om_in_use_list)) != NULL) {
+    // At this point, we have locked the in-use list head so a racing
+    // thread cannot come in after us. However, a racing thread could
+    // be ahead of us; we'll detect that and delay to let it finish.
+    //
     // The thread is going away, however the ObjectMonitors on the
     // om_in_use_list may still be in-use by other threads. Link
     // them to in_use_tail, which will be linked into the global
-    // in-use list g_om_in_use_list below, under the gListLock.
-    ObjectMonitor *cur_om;
-    for (cur_om = in_use_list; cur_om != NULL; cur_om = cur_om->_next_om) {
+    // in-use list (om_list_globals._in_use_list) below.
+    //
+    // Account for the in-use list head before the loop since it is
+    // already locked (by this thread):
+    in_use_tail = in_use_list;
+    in_use_count++;
+    for (ObjectMonitor* cur_om = unmarked_next(in_use_list); cur_om != NULL; cur_om = unmarked_next(cur_om)) {
+      if (is_locked(cur_om)) {
+        // cur_om is locked so there must be a racing walker thread ahead
+        // of us so we'll give it a chance to finish.
+        while (is_locked(cur_om)) {
+          os::naked_short_sleep(1);
+        }
+      }
       in_use_tail = cur_om;
       in_use_count++;
     }
     guarantee(in_use_tail != NULL, "invariant");
-    assert(self->om_in_use_count == in_use_count, "in-use count off");
-    self->om_in_use_list = NULL;
-    self->om_in_use_count = 0;
+    int l_om_in_use_count = Atomic::load(&self->om_in_use_count);
+    assert(l_om_in_use_count == in_use_count, "in-use counts don't match: "
+          "l_om_in_use_count=%d, in_use_count=%d", l_om_in_use_count, in_use_count);
+    Atomic::store(&self->om_in_use_count, 0);
+    // Clear the in-use list head (which also unlocks it):
+    Atomic::store(&self->om_in_use_list, (ObjectMonitor*)NULL);
+    om_unlock(in_use_list);
   }
 
-  Thread::muxAcquire(&gListLock, "om_flush");
+  int free_count = 0;
+  ObjectMonitor* free_list = NULL;
+  ObjectMonitor* free_tail = NULL;
+  // This function can race with a list walker thread so we lock the
+  // list head to prevent confusion.
+  if ((free_list = get_list_head_locked(&self->om_free_list)) != NULL) {
+    // At this point, we have locked the free list head so a racing
+    // thread cannot come in after us. However, a racing thread could
+    // be ahead of us; we'll detect that and delay to let it finish.
+    //
+    // The thread is going away. Set 'free_tail' to the last per-thread free
+    // monitor which will be linked to om_list_globals._free_list below.
+    //
+    // Account for the free list head before the loop since it is
+    // already locked (by this thread):
+    free_tail = free_list;
+    free_count++;
+    for (ObjectMonitor* s = unmarked_next(free_list); s != NULL; s = unmarked_next(s)) {
+      if (is_locked(s)) {
+        // s is locked so there must be a racing walker thread ahead
+        // of us so we'll give it a chance to finish.
+        while (is_locked(s)) {
+          os::naked_short_sleep(1);
+        }
+      }
+      free_tail = s;
+      free_count++;
+      guarantee(s->object() == NULL, "invariant");
+      stringStream ss;
+      guarantee(!s->is_busy(), "must be !is_busy: %s", s->is_busy_to_string(&ss));
+    }
+    guarantee(free_tail != NULL, "invariant");
+    int l_om_free_count = Atomic::load(&self->om_free_count);
+    assert(l_om_free_count == free_count, "free counts don't match: "
+           "l_om_free_count=%d, free_count=%d", l_om_free_count, free_count);
+    Atomic::store(&self->om_free_count, 0);
+    Atomic::store(&self->om_free_list, (ObjectMonitor*)NULL);
+    om_unlock(free_list);
+  }
+
   if (free_tail != NULL) {
-    free_tail->_next_om = g_free_list;
-    g_free_list = free_list;
-    g_om_free_count += free_count;
+    prepend_list_to_global_free_list(free_list, free_tail, free_count);
   }
 
   if (in_use_tail != NULL) {
-    in_use_tail->_next_om = g_om_in_use_list;
-    g_om_in_use_list = in_use_list;
-    g_om_in_use_count += in_use_count;
+    prepend_list_to_global_in_use_list(in_use_list, in_use_tail, in_use_count);
   }
-
-  Thread::muxRelease(&gListLock);
 
   LogStreamHandle(Debug, monitorinflation) lsh_debug;
   LogStreamHandle(Info, monitorinflation) lsh_info;
@@ -1284,8 +1613,7 @@ void ObjectSynchronizer::inflate_helper(oop obj) {
 }
 
 ObjectMonitor* ObjectSynchronizer::inflate(Thread* self,
-                                           oop object,
-                                           const InflateCause cause) {
+                                           oop object, const InflateCause cause) {
   // Inflate mutates the heap ...
   // Relaxing assertion for bug 6320749.
   assert(Universe::verify_in_progress() ||
@@ -1404,7 +1732,7 @@ ObjectMonitor* ObjectSynchronizer::inflate(Thread* self,
       // Note that a thread can inflate an object
       // that it has stack-locked -- as might happen in wait() -- directly
       // with CAS.  That is, we can avoid the xchg-NULL .... ST idiom.
-      m->set_owner(mark.locker());
+      m->set_owner_from(NULL, mark.locker());
       m->set_object(object);
       // TODO-FIXME: assert BasicLock->dhw != 0.
 
@@ -1516,6 +1844,7 @@ bool ObjectSynchronizer::deflate_monitor(ObjectMonitor* mid, oop obj,
   guarantee(dmw.is_neutral(), "invariant: header=" INTPTR_FORMAT, dmw.value());
 
   if (mid->is_busy()) {
+    // Easy checks are first - the ObjectMonitor is busy so no deflation.
     deflated = false;
   } else {
     // Deflate the monitor if it is no longer being used
@@ -1544,8 +1873,14 @@ bool ObjectSynchronizer::deflate_monitor(ObjectMonitor* mid, oop obj,
       // to fix the linkages in its context.
       ObjectMonitor* prevtail = *free_tail_p;
       // Should have been cleaned up by the caller:
-      assert(prevtail->_next_om == NULL, "cleaned up deflated?");
-      prevtail->_next_om = mid;
+      // Note: Should not have to lock prevtail here since we're at a
+      // safepoint and ObjectMonitors on the local free list should
+      // not be accessed in parallel.
+#ifdef ASSERT
+      ObjectMonitor* l_next_om = prevtail->next_om();
+#endif
+      assert(l_next_om == NULL, "must be NULL: _next_om=" INTPTR_FORMAT, p2i(l_next_om));
+      prevtail->set_next_om(mid);
     }
     *free_tail_p = mid;
     // At this point, mid->_next_om still refers to its current
@@ -1557,9 +1892,8 @@ bool ObjectSynchronizer::deflate_monitor(ObjectMonitor* mid, oop obj,
   return deflated;
 }
 
-// Walk a given monitor list, and deflate idle monitors
-// The given list could be a per-thread list or a global list
-// Caller acquires gListLock as needed.
+// Walk a given monitor list, and deflate idle monitors.
+// The given list could be a per-thread list or a global list.
 //
 // In the case of parallel processing of thread local monitor lists,
 // work is done by Threads::parallel_threads_do() which ensures that
@@ -1571,31 +1905,38 @@ bool ObjectSynchronizer::deflate_monitor(ObjectMonitor* mid, oop obj,
 // SafepointSynchronize::do_cleanup_tasks() in safepoint.cpp and
 // Threads::parallel_java_threads_do() in thread.cpp.
 int ObjectSynchronizer::deflate_monitor_list(ObjectMonitor** list_p,
+                                             int* count_p,
                                              ObjectMonitor** free_head_p,
                                              ObjectMonitor** free_tail_p) {
-  ObjectMonitor* mid;
-  ObjectMonitor* next;
   ObjectMonitor* cur_mid_in_use = NULL;
+  ObjectMonitor* mid = NULL;
+  ObjectMonitor* next = NULL;
   int deflated_count = 0;
 
-  for (mid = *list_p; mid != NULL;) {
+  // This list walk executes at a safepoint and does not race with any
+  // other list walkers.
+
+  for (mid = Atomic::load(list_p); mid != NULL; mid = next) {
+    next = unmarked_next(mid);
     oop obj = (oop) mid->object();
     if (obj != NULL && deflate_monitor(mid, obj, free_head_p, free_tail_p)) {
       // Deflation succeeded and already updated free_head_p and
       // free_tail_p as needed. Finish the move to the local free list
       // by unlinking mid from the global or per-thread in-use list.
-      if (mid == *list_p) {
-        *list_p = mid->_next_om;
-      } else if (cur_mid_in_use != NULL) {
-        cur_mid_in_use->_next_om = mid->_next_om; // maintain the current thread in-use list
+      if (cur_mid_in_use == NULL) {
+        // mid is the list head so switch the list head to next:
+        Atomic::store(list_p, next);
+      } else {
+        // Switch cur_mid_in_use's next field to next:
+        cur_mid_in_use->set_next_om(next);
       }
-      next = mid->_next_om;
-      mid->_next_om = NULL;  // This mid is current tail in the free_head_p list
-      mid = next;
+      // At this point mid is disconnected from the in-use list.
       deflated_count++;
+      Atomic::dec(count_p);
+      // mid is current tail in the free_head_p list so NULL terminate it:
+      mid->set_next_om(NULL);
     } else {
       cur_mid_in_use = mid;
-      mid = mid->_next_om;
     }
   }
   return deflated_count;
@@ -1621,33 +1962,33 @@ void ObjectSynchronizer::deflate_idle_monitors(DeflateMonitorCounters* counters)
     timer.start();
   }
 
-  // Prevent om_flush from changing mids in Thread dtor's during deflation
-  // And in case the vm thread is acquiring a lock during a safepoint
-  // See e.g. 6320749
-  Thread::muxAcquire(&gListLock, "deflate_idle_monitors");
-
   // Note: the thread-local monitors lists get deflated in
   // a separate pass. See deflate_thread_local_monitors().
 
-  // For moribund threads, scan g_om_in_use_list
+  // For moribund threads, scan om_list_globals._in_use_list
   int deflated_count = 0;
-  if (g_om_in_use_list) {
-    counters->n_in_circulation += g_om_in_use_count;
-    deflated_count = deflate_monitor_list((ObjectMonitor **)&g_om_in_use_list, &free_head_p, &free_tail_p);
-    g_om_in_use_count -= deflated_count;
-    counters->n_scavenged += deflated_count;
-    counters->n_in_use += g_om_in_use_count;
+  if (Atomic::load(&om_list_globals._in_use_list) != NULL) {
+    // Update n_in_circulation before om_list_globals._in_use_count is
+    // updated by deflation.
+    Atomic::add(&counters->n_in_circulation,
+                Atomic::load(&om_list_globals._in_use_count));
+
+    deflated_count = deflate_monitor_list(&om_list_globals._in_use_list,
+                                          &om_list_globals._in_use_count,
+                                          &free_head_p, &free_tail_p);
+    Atomic::add(&counters->n_in_use, Atomic::load(&om_list_globals._in_use_count));
   }
 
   if (free_head_p != NULL) {
     // Move the deflated ObjectMonitors back to the global free list.
-    guarantee(free_tail_p != NULL && counters->n_scavenged > 0, "invariant");
-    assert(free_tail_p->_next_om == NULL, "invariant");
-    // constant-time list splice - prepend scavenged segment to g_free_list
-    free_tail_p->_next_om = g_free_list;
-    g_free_list = free_head_p;
+    guarantee(free_tail_p != NULL && deflated_count > 0, "invariant");
+#ifdef ASSERT
+    ObjectMonitor* l_next_om = free_tail_p->next_om();
+#endif
+    assert(l_next_om == NULL, "must be NULL: _next_om=" INTPTR_FORMAT, p2i(l_next_om));
+    prepend_list_to_global_free_list(free_head_p, free_tail_p, deflated_count);
+    Atomic::add(&counters->n_scavenged, deflated_count);
   }
-  Thread::muxRelease(&gListLock);
   timer.stop();
 
   LogStreamHandle(Debug, monitorinflation) lsh_debug;
@@ -1670,18 +2011,16 @@ void ObjectSynchronizer::finish_deflate_idle_monitors(DeflateMonitorCounters* co
   // than a beginning to end measurement of the phase.
   log_info(safepoint, cleanup)("deflating per-thread idle monitors, %3.7f secs, monitors=%d", counters->per_thread_times, counters->per_thread_scavenged);
 
-  g_om_free_count += counters->n_scavenged;
-
   if (log_is_enabled(Debug, monitorinflation)) {
     // exit_globals()'s call to audit_and_print_stats() is done
-    // at the Info level.
+    // at the Info level and not at a safepoint.
     ObjectSynchronizer::audit_and_print_stats(false /* on_exit */);
   } else if (log_is_enabled(Info, monitorinflation)) {
-    Thread::muxAcquire(&gListLock, "finish_deflate_idle_monitors");
-    log_info(monitorinflation)("g_om_population=%d, g_om_in_use_count=%d, "
-                               "g_om_free_count=%d", g_om_population,
-                               g_om_in_use_count, g_om_free_count);
-    Thread::muxRelease(&gListLock);
+    log_info(monitorinflation)("global_population=%d, global_in_use_count=%d, "
+                               "global_free_count=%d",
+                               Atomic::load(&om_list_globals._population),
+                               Atomic::load(&om_list_globals._in_use_count),
+                               Atomic::load(&om_list_globals._free_count));
   }
 
   Atomic::store(&_forceMonitorScavenge, 0);    // Reset
@@ -1705,34 +2044,26 @@ void ObjectSynchronizer::deflate_thread_local_monitors(Thread* thread, DeflateMo
     timer.start();
   }
 
-  int deflated_count = deflate_monitor_list(thread->om_in_use_list_addr(), &free_head_p, &free_tail_p);
+  // Update n_in_circulation before om_in_use_count is updated by deflation.
+  Atomic::add(&counters->n_in_circulation, Atomic::load(&thread->om_in_use_count));
 
-  Thread::muxAcquire(&gListLock, "deflate_thread_local_monitors");
-
-  // Adjust counters
-  counters->n_in_circulation += thread->om_in_use_count;
-  thread->om_in_use_count -= deflated_count;
-  counters->n_scavenged += deflated_count;
-  counters->n_in_use += thread->om_in_use_count;
-  counters->per_thread_scavenged += deflated_count;
+  int deflated_count = deflate_monitor_list(&thread->om_in_use_list, &thread->om_in_use_count, &free_head_p, &free_tail_p);
+  Atomic::add(&counters->n_in_use, Atomic::load(&thread->om_in_use_count));
 
   if (free_head_p != NULL) {
     // Move the deflated ObjectMonitors back to the global free list.
     guarantee(free_tail_p != NULL && deflated_count > 0, "invariant");
-    assert(free_tail_p->_next_om == NULL, "invariant");
-
-    // constant-time list splice - prepend scavenged segment to g_free_list
-    free_tail_p->_next_om = g_free_list;
-    g_free_list = free_head_p;
+#ifdef ASSERT
+    ObjectMonitor* l_next_om = free_tail_p->next_om();
+#endif
+    assert(l_next_om == NULL, "must be NULL: _next_om=" INTPTR_FORMAT, p2i(l_next_om));
+    prepend_list_to_global_free_list(free_head_p, free_tail_p, deflated_count);
+    Atomic::add(&counters->n_scavenged, deflated_count);
+    Atomic::add(&counters->per_thread_scavenged, deflated_count);
   }
 
   timer.stop();
-  // Safepoint logging cares about cumulative per_thread_times and
-  // we'll capture most of the cost, but not the muxRelease() which
-  // should be cheap.
   counters->per_thread_times += timer.seconds();
-
-  Thread::muxRelease(&gListLock);
 
   LogStreamHandle(Debug, monitorinflation) lsh_debug;
   LogStreamHandle(Info, monitorinflation) lsh_info;
@@ -1784,9 +2115,7 @@ void ObjectSynchronizer::release_monitors_owned_by_thread(TRAPS) {
   assert(THREAD == JavaThread::current(), "must be current Java thread");
   NoSafepointVerifier nsv;
   ReleaseJavaMonitorsClosure rjmc(THREAD);
-  Thread::muxAcquire(&gListLock, "release_monitors_owned_by_thread");
   ObjectSynchronizer::monitors_iterate(&rjmc);
-  Thread::muxRelease(&gListLock);
   THREAD->clear_pending_exception();
 }
 
@@ -1824,6 +2153,18 @@ u_char* ObjectSynchronizer::get_gvars_stw_random_addr() {
   return (u_char*)&GVars.stw_random;
 }
 
+// This function can be called at a safepoint or it can be called when
+// we are trying to exit the VM. When we are trying to exit the VM, the
+// list walker functions can run in parallel with the other list
+// operations so spin-locking is used for safety.
+//
+// Calls to this function can be added in various places as a debugging
+// aid; pass 'true' for the 'on_exit' parameter to have in-use monitor
+// details logged at the Info level and 'false' for the 'on_exit'
+// parameter to have in-use monitor details logged at the Trace level.
+// deflate_monitor_list() no longer uses spin-locking so be careful
+// when adding audit_and_print_stats() calls at a safepoint.
+//
 void ObjectSynchronizer::audit_and_print_stats(bool on_exit) {
   assert(on_exit || SafepointSynchronize::is_at_safepoint(), "invariant");
 
@@ -1840,37 +2181,32 @@ void ObjectSynchronizer::audit_and_print_stats(bool on_exit) {
   }
   assert(ls != NULL, "sanity check");
 
-  if (!on_exit) {
-    // Not at VM exit so grab the global list lock.
-    Thread::muxAcquire(&gListLock, "audit_and_print_stats");
-  }
-
   // Log counts for the global and per-thread monitor lists:
   int chk_om_population = log_monitor_list_counts(ls);
   int error_cnt = 0;
 
   ls->print_cr("Checking global lists:");
 
-  // Check g_om_population:
-  if (g_om_population == chk_om_population) {
-    ls->print_cr("g_om_population=%d equals chk_om_population=%d",
-                 g_om_population, chk_om_population);
+  // Check om_list_globals._population:
+  if (Atomic::load(&om_list_globals._population) == chk_om_population) {
+    ls->print_cr("global_population=%d equals chk_om_population=%d",
+                 Atomic::load(&om_list_globals._population), chk_om_population);
   } else {
-    ls->print_cr("ERROR: g_om_population=%d is not equal to "
-                 "chk_om_population=%d", g_om_population,
-                 chk_om_population);
-    error_cnt++;
+    // With fine grained locks on the monitor lists, it is possible for
+    // log_monitor_list_counts() to return a value that doesn't match
+    // om_list_globals._population. So far a higher value has been
+    // seen in testing so something is being double counted by
+    // log_monitor_list_counts().
+    ls->print_cr("WARNING: global_population=%d is not equal to "
+                 "chk_om_population=%d",
+                 Atomic::load(&om_list_globals._population), chk_om_population);
   }
 
-  // Check g_om_in_use_list and g_om_in_use_count:
+  // Check om_list_globals._in_use_list and om_list_globals._in_use_count:
   chk_global_in_use_list_and_count(ls, &error_cnt);
 
-  // Check g_free_list and g_om_free_count:
+  // Check om_list_globals._free_list and om_list_globals._free_count:
   chk_global_free_list_and_count(ls, &error_cnt);
-
-  if (!on_exit) {
-    Thread::muxRelease(&gListLock);
-  }
 
   ls->print_cr("Checking per-thread lists:");
 
@@ -1893,7 +2229,7 @@ void ObjectSynchronizer::audit_and_print_stats(bool on_exit) {
     // When exiting this log output is at the Info level. When called
     // at a safepoint, this log output is at the Trace level since
     // there can be a lot of it.
-    log_in_use_monitor_details(ls, on_exit);
+    log_in_use_monitor_details(ls);
   }
 
   ls->flush();
@@ -1944,22 +2280,53 @@ void ObjectSynchronizer::chk_free_entry(JavaThread* jt, ObjectMonitor* n,
   }
 }
 
+// Lock the next ObjectMonitor for traversal and unlock the current
+// ObjectMonitor. Returns the next ObjectMonitor if there is one.
+// Otherwise returns NULL (after unlocking the current ObjectMonitor).
+// This function is used by the various list walker functions to
+// safely walk a list without allowing an ObjectMonitor to be moved
+// to another list in the middle of a walk.
+static ObjectMonitor* lock_next_for_traversal(ObjectMonitor* cur) {
+  assert(is_locked(cur), "cur=" INTPTR_FORMAT " must be locked", p2i(cur));
+  ObjectMonitor* next = unmarked_next(cur);
+  if (next == NULL) {  // Reached the end of the list.
+    om_unlock(cur);
+    return NULL;
+  }
+  om_lock(next);   // Lock next before unlocking current to keep
+  om_unlock(cur);  // from being by-passed by another thread.
+  return next;
+}
+
 // Check the global free list and count; log the results of the checks.
 void ObjectSynchronizer::chk_global_free_list_and_count(outputStream * out,
                                                         int *error_cnt_p) {
   int chk_om_free_count = 0;
-  for (ObjectMonitor* n = g_free_list; n != NULL; n = n->_next_om) {
-    chk_free_entry(NULL /* jt */, n, out, error_cnt_p);
-    chk_om_free_count++;
+  ObjectMonitor* cur = NULL;
+  if ((cur = get_list_head_locked(&om_list_globals._free_list)) != NULL) {
+    // Marked the global free list head so process the list.
+    while (true) {
+      chk_free_entry(NULL /* jt */, cur, out, error_cnt_p);
+      chk_om_free_count++;
+
+      cur = lock_next_for_traversal(cur);
+      if (cur == NULL) {
+        break;
+      }
+    }
   }
-  if (g_om_free_count == chk_om_free_count) {
-    out->print_cr("g_om_free_count=%d equals chk_om_free_count=%d",
-                  g_om_free_count, chk_om_free_count);
+  int l_free_count = Atomic::load(&om_list_globals._free_count);
+  if (l_free_count == chk_om_free_count) {
+    out->print_cr("global_free_count=%d equals chk_om_free_count=%d",
+                  l_free_count, chk_om_free_count);
   } else {
-    out->print_cr("ERROR: g_om_free_count=%d is not equal to "
-                  "chk_om_free_count=%d", g_om_free_count,
-                  chk_om_free_count);
-    *error_cnt_p = *error_cnt_p + 1;
+    // With fine grained locks on om_list_globals._free_list, it
+    // is possible for an ObjectMonitor to be prepended to
+    // om_list_globals._free_list after we started calculating
+    // chk_om_free_count so om_list_globals._free_count may not
+    // match anymore.
+    out->print_cr("WARNING: global_free_count=%d is not equal to "
+                  "chk_om_free_count=%d", l_free_count, chk_om_free_count);
   }
 }
 
@@ -1967,17 +2334,29 @@ void ObjectSynchronizer::chk_global_free_list_and_count(outputStream * out,
 void ObjectSynchronizer::chk_global_in_use_list_and_count(outputStream * out,
                                                           int *error_cnt_p) {
   int chk_om_in_use_count = 0;
-  for (ObjectMonitor* n = g_om_in_use_list; n != NULL; n = n->_next_om) {
-    chk_in_use_entry(NULL /* jt */, n, out, error_cnt_p);
-    chk_om_in_use_count++;
+  ObjectMonitor* cur = NULL;
+  if ((cur = get_list_head_locked(&om_list_globals._in_use_list)) != NULL) {
+    // Marked the global in-use list head so process the list.
+    while (true) {
+      chk_in_use_entry(NULL /* jt */, cur, out, error_cnt_p);
+      chk_om_in_use_count++;
+
+      cur = lock_next_for_traversal(cur);
+      if (cur == NULL) {
+        break;
+      }
+    }
   }
-  if (g_om_in_use_count == chk_om_in_use_count) {
-    out->print_cr("g_om_in_use_count=%d equals chk_om_in_use_count=%d", g_om_in_use_count,
-                  chk_om_in_use_count);
+  int l_in_use_count = Atomic::load(&om_list_globals._in_use_count);
+  if (l_in_use_count == chk_om_in_use_count) {
+    out->print_cr("global_in_use_count=%d equals chk_om_in_use_count=%d",
+                  l_in_use_count, chk_om_in_use_count);
   } else {
-    out->print_cr("ERROR: g_om_in_use_count=%d is not equal to chk_om_in_use_count=%d",
-                  g_om_in_use_count, chk_om_in_use_count);
-    *error_cnt_p = *error_cnt_p + 1;
+    // With fine grained locks on the monitor lists, it is possible for
+    // an exiting JavaThread to put its in-use ObjectMonitors on the
+    // global in-use list after chk_om_in_use_count is calculated above.
+    out->print_cr("WARNING: global_in_use_count=%d is not equal to chk_om_in_use_count=%d",
+                  l_in_use_count, chk_om_in_use_count);
   }
 }
 
@@ -2045,16 +2424,26 @@ void ObjectSynchronizer::chk_per_thread_free_list_and_count(JavaThread *jt,
                                                             outputStream * out,
                                                             int *error_cnt_p) {
   int chk_om_free_count = 0;
-  for (ObjectMonitor* n = jt->om_free_list; n != NULL; n = n->_next_om) {
-    chk_free_entry(jt, n, out, error_cnt_p);
-    chk_om_free_count++;
+  ObjectMonitor* cur = NULL;
+  if ((cur = get_list_head_locked(&jt->om_free_list)) != NULL) {
+    // Marked the per-thread free list head so process the list.
+    while (true) {
+      chk_free_entry(jt, cur, out, error_cnt_p);
+      chk_om_free_count++;
+
+      cur = lock_next_for_traversal(cur);
+      if (cur == NULL) {
+        break;
+      }
+    }
   }
-  if (jt->om_free_count == chk_om_free_count) {
+  int l_om_free_count = Atomic::load(&jt->om_free_count);
+  if (l_om_free_count == chk_om_free_count) {
     out->print_cr("jt=" INTPTR_FORMAT ": om_free_count=%d equals "
-                  "chk_om_free_count=%d", p2i(jt), jt->om_free_count, chk_om_free_count);
+                  "chk_om_free_count=%d", p2i(jt), l_om_free_count, chk_om_free_count);
   } else {
     out->print_cr("ERROR: jt=" INTPTR_FORMAT ": om_free_count=%d is not "
-                  "equal to chk_om_free_count=%d", p2i(jt), jt->om_free_count,
+                  "equal to chk_om_free_count=%d", p2i(jt), l_om_free_count,
                   chk_om_free_count);
     *error_cnt_p = *error_cnt_p + 1;
   }
@@ -2065,17 +2454,27 @@ void ObjectSynchronizer::chk_per_thread_in_use_list_and_count(JavaThread *jt,
                                                               outputStream * out,
                                                               int *error_cnt_p) {
   int chk_om_in_use_count = 0;
-  for (ObjectMonitor* n = jt->om_in_use_list; n != NULL; n = n->_next_om) {
-    chk_in_use_entry(jt, n, out, error_cnt_p);
-    chk_om_in_use_count++;
+  ObjectMonitor* cur = NULL;
+  if ((cur = get_list_head_locked(&jt->om_in_use_list)) != NULL) {
+    // Marked the per-thread in-use list head so process the list.
+    while (true) {
+      chk_in_use_entry(jt, cur, out, error_cnt_p);
+      chk_om_in_use_count++;
+
+      cur = lock_next_for_traversal(cur);
+      if (cur == NULL) {
+        break;
+      }
+    }
   }
-  if (jt->om_in_use_count == chk_om_in_use_count) {
+  int l_om_in_use_count = Atomic::load(&jt->om_in_use_count);
+  if (l_om_in_use_count == chk_om_in_use_count) {
     out->print_cr("jt=" INTPTR_FORMAT ": om_in_use_count=%d equals "
-                  "chk_om_in_use_count=%d", p2i(jt), jt->om_in_use_count,
+                  "chk_om_in_use_count=%d", p2i(jt), l_om_in_use_count,
                   chk_om_in_use_count);
   } else {
     out->print_cr("ERROR: jt=" INTPTR_FORMAT ": om_in_use_count=%d is not "
-                  "equal to chk_om_in_use_count=%d", p2i(jt), jt->om_in_use_count,
+                  "equal to chk_om_in_use_count=%d", p2i(jt), l_om_in_use_count,
                   chk_om_in_use_count);
     *error_cnt_p = *error_cnt_p + 1;
   }
@@ -2084,37 +2483,36 @@ void ObjectSynchronizer::chk_per_thread_in_use_list_and_count(JavaThread *jt,
 // Log details about ObjectMonitors on the in-use lists. The 'BHL'
 // flags indicate why the entry is in-use, 'object' and 'object type'
 // indicate the associated object and its type.
-void ObjectSynchronizer::log_in_use_monitor_details(outputStream * out,
-                                                    bool on_exit) {
-  if (!on_exit) {
-    // Not at VM exit so grab the global list lock.
-    Thread::muxAcquire(&gListLock, "log_in_use_monitor_details");
-  }
-
+void ObjectSynchronizer::log_in_use_monitor_details(outputStream * out) {
   stringStream ss;
-  if (g_om_in_use_count > 0) {
+  if (Atomic::load(&om_list_globals._in_use_count) > 0) {
     out->print_cr("In-use global monitor info:");
     out->print_cr("(B -> is_busy, H -> has hash code, L -> lock status)");
     out->print_cr("%18s  %s  %18s  %18s",
                   "monitor", "BHL", "object", "object type");
     out->print_cr("==================  ===  ==================  ==================");
-    for (ObjectMonitor* n = g_om_in_use_list; n != NULL; n = n->_next_om) {
-      const oop obj = (oop) n->object();
-      const markWord mark = n->header();
-      ResourceMark rm;
-      out->print(INTPTR_FORMAT "  %d%d%d  " INTPTR_FORMAT "  %s", p2i(n),
-                 n->is_busy() != 0, mark.hash() != 0, n->owner() != NULL,
-                 p2i(obj), obj->klass()->external_name());
-      if (n->is_busy() != 0) {
-        out->print(" (%s)", n->is_busy_to_string(&ss));
-        ss.reset();
-      }
-      out->cr();
-    }
-  }
+    ObjectMonitor* cur = NULL;
+    if ((cur = get_list_head_locked(&om_list_globals._in_use_list)) != NULL) {
+      // Marked the global in-use list head so process the list.
+      while (true) {
+        const oop obj = (oop) cur->object();
+        const markWord mark = cur->header();
+        ResourceMark rm;
+        out->print(INTPTR_FORMAT "  %d%d%d  " INTPTR_FORMAT "  %s", p2i(cur),
+                   cur->is_busy() != 0, mark.hash() != 0, cur->owner() != NULL,
+                   p2i(obj), obj->klass()->external_name());
+        if (cur->is_busy() != 0) {
+          out->print(" (%s)", cur->is_busy_to_string(&ss));
+          ss.reset();
+        }
+        out->cr();
 
-  if (!on_exit) {
-    Thread::muxRelease(&gListLock);
+        cur = lock_next_for_traversal(cur);
+        if (cur == NULL) {
+          break;
+        }
+      }
+    }
   }
 
   out->print_cr("In-use per-thread monitor info:");
@@ -2123,19 +2521,28 @@ void ObjectSynchronizer::log_in_use_monitor_details(outputStream * out,
                 "jt", "monitor", "BHL", "object", "object type");
   out->print_cr("==================  ==================  ===  ==================  ==================");
   for (JavaThreadIteratorWithHandle jtiwh; JavaThread *jt = jtiwh.next(); ) {
-    for (ObjectMonitor* n = jt->om_in_use_list; n != NULL; n = n->_next_om) {
-      const oop obj = (oop) n->object();
-      const markWord mark = n->header();
-      ResourceMark rm;
-      out->print(INTPTR_FORMAT "  " INTPTR_FORMAT "  %d%d%d  " INTPTR_FORMAT
-                 "  %s", p2i(jt), p2i(n), n->is_busy() != 0,
-                 mark.hash() != 0, n->owner() != NULL, p2i(obj),
-                 obj->klass()->external_name());
-      if (n->is_busy() != 0) {
-        out->print(" (%s)", n->is_busy_to_string(&ss));
-        ss.reset();
+    ObjectMonitor* cur = NULL;
+    if ((cur = get_list_head_locked(&jt->om_in_use_list)) != NULL) {
+      // Marked the global in-use list head so process the list.
+      while (true) {
+        const oop obj = (oop) cur->object();
+        const markWord mark = cur->header();
+        ResourceMark rm;
+        out->print(INTPTR_FORMAT "  " INTPTR_FORMAT "  %d%d%d  " INTPTR_FORMAT
+                   "  %s", p2i(jt), p2i(cur), cur->is_busy() != 0,
+                   mark.hash() != 0, cur->owner() != NULL, p2i(obj),
+                   obj->klass()->external_name());
+        if (cur->is_busy() != 0) {
+          out->print(" (%s)", cur->is_busy_to_string(&ss));
+          ss.reset();
+        }
+        out->cr();
+
+        cur = lock_next_for_traversal(cur);
+        if (cur == NULL) {
+          break;
+        }
       }
-      out->cr();
     }
   }
 
@@ -2149,18 +2556,22 @@ int ObjectSynchronizer::log_monitor_list_counts(outputStream * out) {
   out->print_cr("%18s  %10s  %10s  %10s",
                 "Global Lists:", "InUse", "Free", "Total");
   out->print_cr("==================  ==========  ==========  ==========");
-  out->print_cr("%18s  %10d  %10d  %10d", "",
-                g_om_in_use_count, g_om_free_count, g_om_population);
-  pop_count += g_om_in_use_count + g_om_free_count;
+  int l_in_use_count = Atomic::load(&om_list_globals._in_use_count);
+  int l_free_count = Atomic::load(&om_list_globals._free_count);
+  out->print_cr("%18s  %10d  %10d  %10d", "", l_in_use_count,
+                l_free_count, Atomic::load(&om_list_globals._population));
+  pop_count += l_in_use_count + l_free_count;
 
   out->print_cr("%18s  %10s  %10s  %10s",
                 "Per-Thread Lists:", "InUse", "Free", "Provision");
   out->print_cr("==================  ==========  ==========  ==========");
 
   for (JavaThreadIteratorWithHandle jtiwh; JavaThread *jt = jtiwh.next(); ) {
+    int l_om_in_use_count = Atomic::load(&jt->om_in_use_count);
+    int l_om_free_count = Atomic::load(&jt->om_free_count);
     out->print_cr(INTPTR_FORMAT "  %10d  %10d  %10d", p2i(jt),
-                  jt->om_in_use_count, jt->om_free_count, jt->om_free_provision);
-    pop_count += jt->om_in_use_count + jt->om_free_count;
+                  l_om_in_use_count, l_om_free_count, jt->om_free_provision);
+    pop_count += l_om_in_use_count + l_om_free_count;
   }
   return pop_count;
 }
@@ -2172,7 +2583,7 @@ int ObjectSynchronizer::log_monitor_list_counts(outputStream * out) {
 // the list of extant blocks without taking a lock.
 
 int ObjectSynchronizer::verify_objmon_isinpool(ObjectMonitor *monitor) {
-  PaddedObjectMonitor* block = Atomic::load_acquire(&g_block_list);
+  PaddedObjectMonitor* block = Atomic::load(&g_block_list);
   while (block != NULL) {
     assert(block->object() == CHAINMARKER, "must be a block header");
     if (monitor > &block[0] && monitor < &block[_BLOCKSIZE]) {
@@ -2182,7 +2593,9 @@ int ObjectSynchronizer::verify_objmon_isinpool(ObjectMonitor *monitor) {
       assert((diff % sizeof(PaddedObjectMonitor)) == 0, "must be aligned");
       return 1;
     }
-    block = (PaddedObjectMonitor*)block->_next_om;
+    // unmarked_next() is not needed with g_block_list (no locking
+    // used with block linkage _next_om fields).
+    block = (PaddedObjectMonitor*)block->next_om();
   }
   return 0;
 }

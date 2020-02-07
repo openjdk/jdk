@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,7 +76,7 @@ inline void fieldDescriptor::set_has_initialized_final_update(const bool value) 
 }
 
 inline BasicType fieldDescriptor::field_type() const {
-  return FieldType::basic_type(signature());
+  return Signature::basic_type(signature());
 }
 
 #endif // SHARE_RUNTIME_FIELDDESCRIPTOR_INLINE_HPP

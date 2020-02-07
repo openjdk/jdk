@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,6 +73,7 @@ import static javax.lang.model.element.Modifier.SYNCHRONIZED;
 public abstract class AbstractMemberWriter implements MemberSummaryWriter {
 
     protected final HtmlConfiguration configuration;
+    protected final HtmlOptions options;
     protected final Utils utils;
     protected final SubWriterHolderWriter writer;
     protected final Contents contents;
@@ -80,14 +81,11 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter {
     protected final Links links;
 
     protected final TypeElement typeElement;
-    public final boolean nodepr;
-
-    protected boolean printedSummaryHeader = false;
 
     public AbstractMemberWriter(SubWriterHolderWriter writer, TypeElement typeElement) {
         this.configuration = writer.configuration;
+        this.options = configuration.getOptions();
         this.writer = writer;
-        this.nodepr = configuration.nodeprecated;
         this.typeElement = typeElement;
         this.utils = configuration.utils;
         this.contents = configuration.contents;
@@ -380,7 +378,7 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter {
     }
 
     protected void serialWarning(Element e, String key, String a1, String a2) {
-        if (configuration.serialwarn) {
+        if (options.serialWarn()) {
             configuration.messages.warning(e, key, a1, a2);
         }
     }
@@ -598,7 +596,7 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter {
             // Name
             HtmlTree nameSpan = new HtmlTree(HtmlTag.SPAN);
             nameSpan.setStyle(HtmlStyle.memberName);
-            if (configuration.linksource) {
+            if (options.linkSource()) {
                 Content name = new StringContent(name(element));
                 writer.addSrcLink(element, name, nameSpan);
             } else {

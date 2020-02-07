@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -52,7 +53,6 @@ public class JMapHeapConfigTest {
         "MaxHeapFreeRatio",
         "MaxHeapSize",
         "NewSize",
-        "MaxNewSize",
         "OldSize",
         "NewRatio",
         "SurvivorRatio",
@@ -60,7 +60,9 @@ public class JMapHeapConfigTest {
         "CompressedClassSpaceSize",
         "G1HeapRegionSize"};
 
-    // ignoring MaxMetaspaceSize
+    // Test can't deal with negative jlongs:
+    //  ignoring MaxMetaspaceSize
+    //  ignoring MaxNewSize
 
     static final String desiredMaxHeapSize = "-Xmx128m";
 
@@ -126,7 +128,7 @@ public class JMapHeapConfigTest {
         }
 
         boolean mx_found = false;
-        List<String> jvmOptions = Utils.getVmOptions();
+        String[] jvmOptions = Utils.getTestJavaOpts();
         for (String option : jvmOptions) {
             if (option.startsWith("-Xmx")) {
                System.out.println("INFO: maximum heap size set by JTREG as " + option);
@@ -137,7 +139,7 @@ public class JMapHeapConfigTest {
 
         // Forward vm options to LingeredApp
         ArrayList<String> cmd = new ArrayList();
-        cmd.addAll(Utils.getVmOptions());
+        Collections.addAll(cmd, Utils.getTestJavaOpts());
         if (!mx_found) {
             cmd.add(desiredMaxHeapSize);
             System.out.println("INFO: maximum heap size set explicitly as " + desiredMaxHeapSize);
@@ -145,7 +147,7 @@ public class JMapHeapConfigTest {
         cmd.add("-XX:+PrintFlagsFinal");
 
         TmtoolTestScenario tmt = TmtoolTestScenario.create("jmap", "--heap");
-        int exitcode = tmt.launch(cmd);
+        int exitcode = tmt.launch(cmd.toArray(new String[0]));
         if (exitcode != 0) {
             throw new RuntimeException("Test FAILED jmap exits with non zero exit code " + exitcode);
         }

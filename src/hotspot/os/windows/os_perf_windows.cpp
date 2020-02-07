@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,7 +97,7 @@ static const int min_update_interval_millis = 500;
 */
 typedef struct {
   HQUERY query;
-  s8     lastUpdate; // Last time query was updated (current millis).
+  s8     lastUpdate; // Last time query was updated.
 } UpdateQueryS, *UpdateQueryP;
 
 
@@ -287,8 +287,8 @@ static OSReturn add_process_counter(MultiCounterQueryP query, int slot_index, co
 
 static int collect_query_data(UpdateQueryP update_query) {
   assert(update_query != NULL, "invariant");
-  const s8 now = os::javaTimeMillis();
-  if (now - update_query->lastUpdate > min_update_interval_millis) {
+  const s8 now = os::javaTimeNanos();
+  if (nanos_to_millis(now - update_query->lastUpdate) > min_update_interval_millis) {
     if (PdhDll::PdhCollectQueryData(update_query->query) != ERROR_SUCCESS) {
       return OS_ERR;
     }

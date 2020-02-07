@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -120,6 +120,12 @@ class ObjectWaiter : public StackObj {
 //     intptr_t. There's no reason to use a 64-bit type for this field
 //     in a 64-bit JVM.
 
+#ifndef OM_CACHE_LINE_SIZE
+// Use DEFAULT_CACHE_LINE_SIZE if not already specified for
+// the current build platform.
+#define OM_CACHE_LINE_SIZE DEFAULT_CACHE_LINE_SIZE
+#endif
+
 class ObjectMonitor {
   friend class ObjectSynchronizer;
   friend class ObjectWaiter;
@@ -130,20 +136,22 @@ class ObjectMonitor {
   // Enforced by the assert() in header_addr().
   volatile markWord _header;        // displaced object header word - mark
   void* volatile _object;           // backward object pointer - strong root
- public:
-  ObjectMonitor* _next_om;          // Next ObjectMonitor* linkage
  private:
   // Separate _header and _owner on different cache lines since both can
   // have busy multi-threaded access. _header and _object are set at
   // initial inflation and _object doesn't change until deflation so
   // _object is a good choice to share the cache line with _header.
-  // _next_om shares _header's cache line for pre-monitor list historical
-  // reasons. _next_om only changes if the next ObjectMonitor is deflated.
-  DEFINE_PAD_MINUS_SIZE(0, DEFAULT_CACHE_LINE_SIZE,
-                        sizeof(volatile markWord) + sizeof(void* volatile) +
-                        sizeof(ObjectMonitor *));
+  DEFINE_PAD_MINUS_SIZE(0, OM_CACHE_LINE_SIZE,
+                        sizeof(volatile markWord) + sizeof(void* volatile));
   void* volatile _owner;            // pointer to owning thread OR BasicLock
   volatile jlong _previous_owner_tid;  // thread id of the previous owner of the monitor
+  // Separate _owner and _next_om on different cache lines since
+  // both can have busy multi-threaded access. _previous_owner_tid is only
+  // changed by ObjectMonitor::exit() so it is a good choice to share the
+  // cache line with _owner.
+  DEFINE_PAD_MINUS_SIZE(1, OM_CACHE_LINE_SIZE, sizeof(void* volatile) +
+                        sizeof(volatile jlong));
+  ObjectMonitor* _next_om;          // Next ObjectMonitor* linkage
   volatile intx _recursions;        // recursion count, 0 for first entry
   ObjectWaiter* volatile _EntryList;  // Threads blocked on entry or reentry.
                                       // The list is actually composed of WaitNodes,
@@ -232,7 +240,24 @@ class ObjectMonitor {
   intptr_t  is_entered(Thread* current) const;
 
   void*     owner() const;
-  void      set_owner(void* owner);
+  // Clear _owner field; current value must match old_value.
+  void      release_clear_owner(void* old_value);
+  // Simply set _owner field to new_value; current value must match old_value.
+  void      set_owner_from(void* old_value, void* new_value);
+  // Simply set _owner field to self; current value must match basic_lock_p.
+  void      set_owner_from_BasicLock(void* basic_lock_p, Thread* self);
+  // Try to set _owner field to new_value if the current value matches
+  // old_value, using Atomic::cmpxchg(). Otherwise, does not change the
+  // _owner field. Returns the prior value of the _owner field.
+  void*     try_set_owner_from(void* old_value, void* new_value);
+
+  ObjectMonitor* next_om() const;
+  // Simply set _next_om field to new_value.
+  void set_next_om(ObjectMonitor* new_value);
+  // Try to set _next_om field to new_value if the current value matches
+  // old_value, using Atomic::cmpxchg(). Otherwise, does not change the
+  // _next_om field. Returns the prior value of the _next_om field.
+  ObjectMonitor* try_set_next_om(ObjectMonitor* old_value, ObjectMonitor* new_value);
 
   jint      waiters() const;
 

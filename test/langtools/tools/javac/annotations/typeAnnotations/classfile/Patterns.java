@@ -96,27 +96,27 @@ public class Patterns {
                               descriptor: ()V
                               flags: (0x0001) ACC_PUBLIC
                                 RuntimeInvisibleTypeAnnotations:
-                                  0: #_A_(): LOCAL_VARIABLE, {start_pc=257, length=18, index=2}
+                                  0: #_A_(): LOCAL_VARIABLE, {start_pc=206, length=11, index=2}
                                     Patterns$SimpleBindingPattern$A
-                                  1: #_CA_(#_value_=[@#_A_(),@#_A_()]): LOCAL_VARIABLE, {start_pc=297, length=19, index=3}
+                                  1: #_CA_(#_value_=[@#_A_(),@#_A_()]): LOCAL_VARIABLE, {start_pc=238, length=11, index=3}
                                     Patterns$SimpleBindingPattern$CA(
                                       value=[@Patterns$SimpleBindingPattern$A,@Patterns$SimpleBindingPattern$A]
                                     )
-                                  2: #_A_(): LOCAL_VARIABLE, {start_pc=22, length=18, index=1}
+                                  2: #_A_(): LOCAL_VARIABLE, {start_pc=21, length=11, index=1}
                                     Patterns$SimpleBindingPattern$A
-                                  3: #_CA_(#_value_=[@#_A_(),@#_A_()]): LOCAL_VARIABLE, {start_pc=62, length=18, index=1}
+                                  3: #_CA_(#_value_=[@#_A_(),@#_A_()]): LOCAL_VARIABLE, {start_pc=53, length=11, index=1}
                                     Patterns$SimpleBindingPattern$CA(
                                       value=[@Patterns$SimpleBindingPattern$A,@Patterns$SimpleBindingPattern$A]
                                     )
-                                  4: #_A_(): LOCAL_VARIABLE, {start_pc=101, length=18, index=2}
+                                  4: #_A_(): LOCAL_VARIABLE, {start_pc=84, length=11, index=2}
                                     Patterns$SimpleBindingPattern$A
-                                  5: #_CA_(#_value_=[@#_A_(),@#_A_()]): LOCAL_VARIABLE, {start_pc=141, length=19, index=3}
+                                  5: #_CA_(#_value_=[@#_A_(),@#_A_()]): LOCAL_VARIABLE, {start_pc=116, length=11, index=3}
                                     Patterns$SimpleBindingPattern$CA(
                                       value=[@Patterns$SimpleBindingPattern$A,@Patterns$SimpleBindingPattern$A]
                                     )
-                                  6: #_A_(): LOCAL_VARIABLE, {start_pc=179, length=18, index=2}
+                                  6: #_A_(): LOCAL_VARIABLE, {start_pc=145, length=11, index=2}
                                     Patterns$SimpleBindingPattern$A
-                                  7: #_CA_(#_value_=[@#_A_(),@#_A_()]): LOCAL_VARIABLE, {start_pc=219, length=19, index=3}
+                                  7: #_CA_(#_value_=[@#_A_(),@#_A_()]): LOCAL_VARIABLE, {start_pc=177, length=11, index=3}
                                     Patterns$SimpleBindingPattern$CA(
                                       value=[@Patterns$SimpleBindingPattern$A,@Patterns$SimpleBindingPattern$A]
                                     )
@@ -125,9 +125,9 @@ public class Patterns {
                               descriptor: ()V
                               flags: (0x0000)
                                 RuntimeInvisibleTypeAnnotations:
-                                  0: #_A_(): LOCAL_VARIABLE, {start_pc=17, length=18, index=2}
+                                  0: #_A_(): LOCAL_VARIABLE, {start_pc=16, length=11, index=2}
                                     Patterns$SimpleBindingPattern$A
-                                  1: #_CA_(#_value_=[@#_A_(),@#_A_()]): LOCAL_VARIABLE, {start_pc=57, length=19, index=3}
+                                  1: #_CA_(#_value_=[@#_A_(),@#_A_()]): LOCAL_VARIABLE, {start_pc=48, length=11, index=3}
                                     Patterns$SimpleBindingPattern$CA(
                                       value=[@Patterns$SimpleBindingPattern$A,@Patterns$SimpleBindingPattern$A]
                                     )
@@ -143,15 +143,15 @@ public class Patterns {
                               descriptor: ()V
                               flags: (0x0008) ACC_STATIC
                                 RuntimeInvisibleTypeAnnotations:
-                                  0: #_A_(): LOCAL_VARIABLE, {start_pc=22, length=18, index=0}
+                                  0: #_A_(): LOCAL_VARIABLE, {start_pc=21, length=11, index=0}
                                     Patterns$SimpleBindingPattern$A
-                                  1: #_CA_(#_value_=[@#_A_(),@#_A_()]): LOCAL_VARIABLE, {start_pc=61, length=18, index=0}
+                                  1: #_CA_(#_value_=[@#_A_(),@#_A_()]): LOCAL_VARIABLE, {start_pc=52, length=11, index=0}
                                     Patterns$SimpleBindingPattern$CA(
                                       value=[@Patterns$SimpleBindingPattern$A,@Patterns$SimpleBindingPattern$A]
                                     )
-                                  2: #_A_(): LOCAL_VARIABLE, {start_pc=100, length=18, index=1}
+                                  2: #_A_(): LOCAL_VARIABLE, {start_pc=83, length=11, index=1}
                                     Patterns$SimpleBindingPattern$A
-                                  3: #_CA_(#_value_=[@#_A_(),@#_A_()]): LOCAL_VARIABLE, {start_pc=137, length=18, index=2}
+                                  3: #_CA_(#_value_=[@#_A_(),@#_A_()]): LOCAL_VARIABLE, {start_pc=112, length=11, index=2}
                                     Patterns$SimpleBindingPattern$CA(
                                       value=[@Patterns$SimpleBindingPattern$A,@Patterns$SimpleBindingPattern$A]
                                     )

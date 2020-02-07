@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,7 +74,7 @@ public class SharedArchiveConsistency {
         "mc",          // MiscCode
         "rw",          // ReadWrite
         "ro",          // ReadOnly
-        "md",          // MiscData
+        "bm",          // relocation bitmaps
         "first_closed_archive",
         "last_closed_archive",
         "first_open_archive",

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -660,14 +660,14 @@ JNIEXPORT void JNICALL Java_sun_security_mscapi_CKeyStore_loadKeysOrCertificateC
                                         env->CallVoidMethod(obj, mGenKeyAndCertChain,
                                             0,
                                             name,
-                                            (jlong) hCryptProv, 0,
+                                            (jlong) hCryptProv, (jlong) 0,
                                             dwPublicKeyLength, jArrayList);
                                     } else if (buffer[0] == 'R' && buffer[2] == 'S'
                                             && buffer[4] == 'A') {
                                         env->CallVoidMethod(obj, mGenKeyAndCertChain,
                                             1,
                                             name,
-                                            (jlong) hCryptProv, 0,
+                                            (jlong) hCryptProv, (jlong) 0,
                                             dwPublicKeyLength, jArrayList);
                                     } else {
                                         dump("Unknown NCRYPT_ALGORITHM_PROPERTY", buffer, len);

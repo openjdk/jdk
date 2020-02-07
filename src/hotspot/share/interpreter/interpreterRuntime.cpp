@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1369,7 +1369,7 @@ void SignatureHandlerLibrary::add(const methodHandle& method) {
     // use slow signature handler if we can't do better
     int handler_index = -1;
     // check if we can use customized (fast) signature handler
-    if (UseFastSignatureHandlers && method->size_of_parameters() <= Fingerprinter::max_size_of_parameters) {
+    if (UseFastSignatureHandlers && method->size_of_parameters() <= Fingerprinter::fp_max_size_of_parameters) {
       // use customized signature handler
       MutexLocker mu(SignatureHandlerLibrary_lock);
       // make sure data structure is initialized

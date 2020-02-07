@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,7 +73,6 @@ Monitor* CGC_lock                     = NULL;
 Monitor* STS_lock                     = NULL;
 Monitor* FullGCCount_lock             = NULL;
 Monitor* G1OldGCCount_lock            = NULL;
-Monitor* DirtyCardQ_CBL_mon           = NULL;
 Mutex*   Shared_DirtyCardQ_lock       = NULL;
 Mutex*   MarkStackFreeList_lock       = NULL;
 Mutex*   MarkStackChunkList_lock      = NULL;
@@ -211,7 +210,6 @@ void mutex_init() {
   if (UseG1GC) {
     def(G1OldGCCount_lock          , PaddedMonitor, leaf,        true,  _safepoint_check_always);
 
-    def(DirtyCardQ_CBL_mon         , PaddedMonitor, access,      true,  _safepoint_check_never);
     def(Shared_DirtyCardQ_lock     , PaddedMutex  , access + 1,  true,  _safepoint_check_never);
 
     def(FreeList_lock              , PaddedMutex  , leaf     ,   true,  _safepoint_check_never);
@@ -228,7 +226,7 @@ void mutex_init() {
   }
   if (UseShenandoahGC) {
     def(StringDedupQueue_lock      , PaddedMonitor, leaf,        true,  _safepoint_check_never);
-    def(StringDedupTable_lock      , PaddedMutex  , leaf,        true,  _safepoint_check_never);
+    def(StringDedupTable_lock      , PaddedMutex  , leaf + 1,    true,  _safepoint_check_never);
   }
   def(ParGCRareEvent_lock          , PaddedMutex  , leaf     ,   true,  _safepoint_check_always);
   def(CGCPhaseManager_lock         , PaddedMonitor, leaf,        false, _safepoint_check_always);
@@ -329,7 +327,7 @@ void mutex_init() {
   def(NMethodSweeperStats_lock     , PaddedMutex  , special,     true,  _safepoint_check_never);
   def(ThreadsSMRDelete_lock        , PaddedMonitor, special,     true,  _safepoint_check_never);
   def(ThreadIdTableCreate_lock     , PaddedMutex  , leaf,        false, _safepoint_check_always);
-  def(SharedDecoder_lock           , PaddedMutex  , native,      false, _safepoint_check_never);
+  def(SharedDecoder_lock           , PaddedMutex  , native,      true,  _safepoint_check_never);
   def(DCmdFactory_lock             , PaddedMutex  , leaf,        true,  _safepoint_check_never);
 #if INCLUDE_NMT
   def(NMTQuery_lock                , PaddedMutex  , max_nonleaf, false, _safepoint_check_always);

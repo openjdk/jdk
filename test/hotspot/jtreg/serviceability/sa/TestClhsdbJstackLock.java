@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,10 +43,9 @@ public class TestClhsdbJstackLock {
         LingeredAppWithLock app = null;
         try {
             ClhsdbLauncher test = new ClhsdbLauncher();
-            List<String> vmArgs = new ArrayList<String>(Utils.getVmOptions());
 
             app = new LingeredAppWithLock();
-            LingeredApp.startApp(vmArgs, app);
+            LingeredApp.startApp(app);
 
             System.out.println ("Started LingeredAppWithLock with pid " + app.getPid());
 
@@ -73,4 +72,3 @@ public class TestClhsdbJstackLock {
         System.out.println("Test PASSED");
     }
 }
-

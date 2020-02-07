@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -210,8 +210,6 @@ class BufferNode {
     return offset_of(BufferNode, _buffer);
   }
 
-  static BufferNode* volatile* next_ptr(BufferNode& bn) { return &bn._next; }
-
   // Allocate a new BufferNode with the "buffer" having size elements.
   static BufferNode* allocate(size_t size);
 
@@ -219,6 +217,7 @@ class BufferNode {
   static void deallocate(BufferNode* node);
 
 public:
+  static BufferNode* volatile* next_ptr(BufferNode& bn) { return &bn._next; }
   typedef LockFreeStack<BufferNode, &next_ptr> Stack;
 
   BufferNode* next() const     { return _next;  }

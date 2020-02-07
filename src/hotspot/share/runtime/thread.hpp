@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -526,7 +526,6 @@ class Thread: public ThreadShadow {
     os::set_native_thread_name(name);
   }
 
-  ObjectMonitor** om_in_use_list_addr()          { return (ObjectMonitor **)&om_in_use_list; }
   Monitor* SR_lock() const                       { return _SR_lock; }
 
   bool has_async_exception() const { return (_suspend_flags & _has_async_exception) != 0; }

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<WixLocalization Culture="en-us" xmlns="http://schemas.microsoft.com/wix/2006/localization" Codepage="932">
-  <String Id="message.install.dir.exist">The folder [INSTALLDIR] already exist. Would you like to install to that folder anyway?</String>
-  <String Id="MainFeatureTitle">Main Feature</String>
-  <String Id="DowngradeErrorMessage">A higher version of [ProductName] is already installed. Downgrades disabled. Setup will now exit.</String>
-  <String Id="DisallowUpgradeErrorMessage">A lower version of [ProductName] is already installed. Upgrades disabled. Setup will now exit.</String>
+<WixLocalization Culture="ja-JP" xmlns="http://schemas.microsoft.com/wix/2006/localization" Codepage="932">
+  <String Id="message.install.dir.exist">フォルダ[INSTALLDIR]はすでに存在します。そのフォルダにインストールしますか?</String>
+  <String Id="MainFeatureTitle">主な機能</String>
+  <String Id="DowngradeErrorMessage">[ProductName]のより上位のバージョンがすでにインストールされています。ダウングレードは無効です。セットアップを終了します。</String>
+  <String Id="DisallowUpgradeErrorMessage">[ProductName]のより下位のバージョンがすでにインストールされています。アップグレードは無効です。セットアップを終了します。</String>
 </WixLocalization>

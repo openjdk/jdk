@@ -37,6 +37,7 @@
 
 #define __ ce->masm()->
 
+#ifndef _LP64
 float ConversionStub::float_zero = 0.0;
 double ConversionStub::double_zero = 0.0;
 
@@ -52,7 +53,6 @@ void ConversionStub::emit_code(LIR_Assembler* ce) {
     __ comisd(input()->as_xmm_double_reg(),
               ExternalAddress((address)&double_zero));
   } else {
-    LP64_ONLY(ShouldNotReachHere());
     __ push(rax);
     __ ftst();
     __ fnstsw_ax();
@@ -76,6 +76,7 @@ void ConversionStub::emit_code(LIR_Assembler* ce) {
   __ bind(do_return);
   __ jmp(_continuation);
 }
+#endif // !_LP64
 
 void CounterOverflowStub::emit_code(LIR_Assembler* ce) {
   __ bind(_entry);

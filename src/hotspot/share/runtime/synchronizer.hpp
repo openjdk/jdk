@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,13 @@
 class ObjectMonitor;
 class ThreadsList;
 
-typedef PaddedEnd<ObjectMonitor, DEFAULT_CACHE_LINE_SIZE> PaddedObjectMonitor;
+#ifndef OM_CACHE_LINE_SIZE
+// Use DEFAULT_CACHE_LINE_SIZE if not already specified for
+// the current build platform.
+#define OM_CACHE_LINE_SIZE DEFAULT_CACHE_LINE_SIZE
+#endif
+
+typedef PaddedEnd<ObjectMonitor, OM_CACHE_LINE_SIZE> PaddedObjectMonitor;
 
 struct DeflateMonitorCounters {
   int n_in_use;              // currently associated with objects
@@ -132,6 +138,7 @@ class ObjectSynchronizer : AllStatic {
 
   // For a given monitor list: global or per-thread, deflate idle monitors
   static int deflate_monitor_list(ObjectMonitor** list_p,
+                                  int* count_p,
                                   ObjectMonitor** free_head_p,
                                   ObjectMonitor** free_tail_p);
   static bool deflate_monitor(ObjectMonitor* mid, oop obj,
@@ -159,7 +166,7 @@ class ObjectSynchronizer : AllStatic {
   static void chk_per_thread_free_list_and_count(JavaThread *jt,
                                                  outputStream * out,
                                                  int *error_cnt_p);
-  static void log_in_use_monitor_details(outputStream * out, bool on_exit);
+  static void log_in_use_monitor_details(outputStream * out);
   static int  log_monitor_list_counts(outputStream * out);
   static int  verify_objmon_isinpool(ObjectMonitor *addr) PRODUCT_RETURN0;
 
@@ -168,14 +175,10 @@ class ObjectSynchronizer : AllStatic {
 
   enum { _BLOCKSIZE = 128 };
   // global list of blocks of monitors
-  static PaddedObjectMonitor* volatile g_block_list;
-  // global monitor free list
-  static ObjectMonitor* volatile g_free_list;
-  // global monitor in-use list, for moribund threads,
-  // monitors they inflated need to be scanned for deflation
-  static ObjectMonitor* volatile g_om_in_use_list;
-  // count of entries in g_om_in_use_list
-  static int g_om_in_use_count;
+  static PaddedObjectMonitor* g_block_list;
+
+  // Function to prepend new blocks to the appropriate lists:
+  static void prepend_block_to_lists(PaddedObjectMonitor* new_blk);
 
   // Process oops in all global used monitors (i.e. moribund thread's monitors)
   static void global_used_oops_do(OopClosure* f);

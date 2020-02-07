@@ -86,7 +86,7 @@ public class ExtraAttributes implements Plugin {
 
         List<String> stdout = new toolbox.JavacTask(tb)
                 .classpath(pluginJar)
-                .options("-Xplugin:ExtraAttributes")
+                .options("-XDaccessInternalAPI")
                 .outdir(Files.createDirectories(Path.of("classes")))
                 .files(tb.findJavaFiles(src))
                 .run()

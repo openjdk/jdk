@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2015, 2020, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ inline oop ShenandoahBarrierSet::resolve_forwarded_not_null(oop p) {
 }
 
 inline oop ShenandoahBarrierSet::resolve_forwarded(oop p) {
-  if (((HeapWord*) p) != NULL) {
+  if (p != NULL) {
     return resolve_forwarded_not_null(p);
   } else {
     return p;
@@ -120,7 +120,9 @@ inline oop ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_loa
   if (value != NULL) {
     ShenandoahBarrierSet *const bs = ShenandoahBarrierSet::barrier_set();
     value = bs->load_reference_barrier_native(value, addr);
-    bs->keep_alive_if_weak<decorators>(value);
+    if (value != NULL) {
+      bs->keep_alive_if_weak<decorators>(value);
+    }
   }
   return value;
 }
@@ -268,7 +270,7 @@ void ShenandoahBarrierSet::arraycopy_work(T* src, size_t count) {
     T o = RawAccess<>::oop_load(elem_ptr);
     if (!CompressedOops::is_null(o)) {
       oop obj = CompressedOops::decode_not_null(o);
-      if (HAS_FWD && cset->is_in((HeapWord *) obj)) {
+      if (HAS_FWD && cset->is_in(obj)) {
         assert(_heap->has_forwarded_objects(), "only get here with forwarded objects");
         oop fwd = resolve_forwarded_not_null(obj);
         if (EVAC && obj == fwd) {

@@ -92,7 +92,7 @@ void PSPromotionLAB::flush() {
 
 #ifdef ASSERT
   // Note that we actually DO NOT want to use the aligned header size!
-  HeapWord* elt_words = ((HeapWord*)filler_oop) + typeArrayOopDesc::header_size(T_INT);
+  HeapWord* elt_words = cast_from_oop<HeapWord*>(filler_oop) + typeArrayOopDesc::header_size(T_INT);
   Copy::fill_to_words(elt_words, array_length, 0xDEAABABE);
 #endif
 

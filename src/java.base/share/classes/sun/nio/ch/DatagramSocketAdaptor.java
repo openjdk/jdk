@@ -26,6 +26,7 @@
 package sun.nio.ch;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodHandles.Lookup;
@@ -116,7 +117,7 @@ public class DatagramSocketAdaptor
         try {
             connectInternal(new InetSocketAddress(address, port));
         } catch (SocketException x) {
-            throw new Error(x);
+            throw new UncheckedIOException(x);
         }
     }
 
@@ -132,7 +133,7 @@ public class DatagramSocketAdaptor
         try {
             dc.disconnect();
         } catch (IOException x) {
-            throw new Error(x);
+            throw new UncheckedIOException(x);
         }
     }
 

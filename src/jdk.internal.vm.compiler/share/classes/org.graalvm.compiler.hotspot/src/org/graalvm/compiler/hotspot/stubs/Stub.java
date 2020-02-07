@@ -30,7 +30,7 @@ import static org.graalvm.compiler.core.common.GraalOptions.GeneratePIC;
 import static org.graalvm.compiler.core.common.GraalOptions.RegisterPressure;
 import static org.graalvm.compiler.debug.DebugContext.DEFAULT_LOG_STREAM;
 import static org.graalvm.compiler.debug.DebugOptions.DebugStubsAndSnippets;
-import static org.graalvm.compiler.hotspot.HotSpotHostBackend.UNCOMMON_TRAP_HANDLER;
+import static org.graalvm.compiler.hotspot.HotSpotHostBackend.DEOPT_BLOB_UNCOMMON_TRAP;
 import static org.graalvm.util.CollectionsUtil.allMatch;
 
 import java.util.ListIterator;
@@ -288,7 +288,7 @@ public abstract class Stub {
             Call call = (Call) infopoint;
             assert call.target instanceof HotSpotForeignCallLinkage : this + " cannot have non runtime call: " + call.target;
             HotSpotForeignCallLinkage callLinkage = (HotSpotForeignCallLinkage) call.target;
-            assert !callLinkage.isCompiledStub() || callLinkage.getDescriptor().equals(UNCOMMON_TRAP_HANDLER) : this + " cannot call compiled stub " + callLinkage;
+            assert !callLinkage.isCompiledStub() || callLinkage.getDescriptor().equals(DEOPT_BLOB_UNCOMMON_TRAP) : this + " cannot call compiled stub " + callLinkage;
         }
         return true;
     }

@@ -246,7 +246,7 @@ void G1ParCopyClosure<barrier, do_mark_object>::do_oop_work(T* p) {
   } else {
     if (state.is_humongous()) {
       _g1h->set_humongous_is_live(obj);
-    } else if (state.is_optional()) {
+    } else if ((barrier != G1BarrierNoOptRoots) && state.is_optional()) {
       _par_scan_state->remember_root_into_optional_region(p);
     }
 

@@ -187,8 +187,8 @@ vmTestbase/nsk/jvmti/SetJNIFunctionTable/setjniftab001/TestDescription.java 8219
 
 vmTestbase/gc/lock/jni/jnilock002/TestDescription.java 8208243,8192647 generic-all
 
-vmTestbase/jit/escape/LockCoarsening/LockCoarsening001/TestDescription.java 8148743 generic-all
-vmTestbase/jit/escape/LockCoarsening/LockCoarsening002/TestDescription.java 8208259 generic-all
+vmTestbase/jit/escape/LockCoarsening/LockCoarsening001.java 8148743 generic-all
+vmTestbase/jit/escape/LockCoarsening/LockCoarsening002.java 8208259 generic-all
 
 vmTestbase/vm/mlvm/indy/func/jvmti/redefineClassInBootstrap/TestDescription.java 8013267 generic-all
 vmTestbase/vm/mlvm/meth/func/java/throwException/Test.java 8058176 generic-all

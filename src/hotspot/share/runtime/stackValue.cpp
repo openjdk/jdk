@@ -221,7 +221,7 @@ void StackValue::print_on(outputStream* st) const {
       } else {
         st->print("NULL");
       }
-      st->print(" <" INTPTR_FORMAT ">", p2i((address)_handle_value()));
+      st->print(" <" INTPTR_FORMAT ">", p2i(_handle_value()));
      break;
 
     case T_CONFLICT:

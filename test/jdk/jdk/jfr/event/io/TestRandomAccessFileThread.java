@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,26 +64,25 @@ public class TestRandomAccessFileThread {
 
     public static void main(String[] args) throws Throwable {
         File tmp = Utils.createTempFile("TestRandomAccessFileThread", ".tmp").toFile();
+        try (Recording recording = new Recording()) {
+            recording.enable(IOEvent.EVENT_FILE_READ).withThreshold(Duration.ofMillis(0));
+            recording.enable(IOEvent.EVENT_FILE_WRITE).withThreshold(Duration.ofMillis(0));
+            recording.start();
 
-        Recording recording = new Recording();
-        recording.enable(IOEvent.EVENT_FILE_READ).withThreshold(Duration.ofMillis(0));
-        recording.enable(IOEvent.EVENT_FILE_WRITE).withThreshold(Duration.ofMillis(0));
-        recording.start();
-
-        TestThread writerThread = new TestThread(new XRun() {
-            @Override
-            public void xrun() throws IOException {
-                final byte[] buf = new byte[OP_COUNT];
-                for (int i = 0; i < buf.length; ++i) {
-                    buf[i] = (byte)((i + 'a') % 255);
-                }
-                try (RandomAccessFile raf = new RandomAccessFile(tmp, "rwd")) {
-                    for(int i = 0; i < OP_COUNT; ++i) {
-                        raf.write(buf, 0, i + 1);
-                        writeCount++;
+            TestThread writerThread = new TestThread(new XRun() {
+                @Override
+                public void xrun() throws IOException {
+                    final byte[] buf = new byte[OP_COUNT];
+                    for (int i = 0; i < buf.length; ++i) {
+                        buf[i] = (byte)((i + 'a') % 255);
                     }
-                }
-            }}, "TestWriterThread");
+                    try (RandomAccessFile raf = new RandomAccessFile(tmp, "rwd")) {
+                        for(int i = 0; i < OP_COUNT; ++i) {
+                            raf.write(buf, 0, i + 1);
+                            writeCount++;
+                        }
+                    }
+                }}, "TestWriterThread");
 
             TestThread readerThread = new TestThread(new XRun() {
             @Override
@@ -118,7 +117,7 @@ public class TestRandomAccessFileThread {
                     continue;
                 }
                 logEventSummary(event);
-                if (Events.isEventType(event,IOEvent.EVENT_FILE_READ)) {
+                if (Events.isEventType(event, IOEvent.EVENT_FILE_READ)) {
                     readEvents.add(event);
                 } else {
                     writeEvents.add(event);
@@ -136,6 +135,7 @@ public class TestRandomAccessFileThread {
             Asserts.assertEquals(readEvents.size(), OP_COUNT, "Wrong number of read events");
             Asserts.assertEquals(writeEvents.size(), OP_COUNT, "Wrong number of write events");
         }
+    }
 
         private static void logEventSummary(RecordedEvent event) {
             boolean isRead = Events.isEventType(event, IOEvent.EVENT_FILE_READ);

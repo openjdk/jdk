@@ -251,7 +251,7 @@ inline oop PSPromotionManager::copy_to_survivor_space(oop o) {
     assert(new_obj != NULL, "allocation should have succeeded");
 
     // Copy obj
-    Copy::aligned_disjoint_words((HeapWord*)o, (HeapWord*)new_obj, new_obj_size);
+    Copy::aligned_disjoint_words(cast_from_oop<HeapWord*>(o), cast_from_oop<HeapWord*>(new_obj), new_obj_size);
 
     // Now we have to CAS in the header.
     // Make copy visible to threads reading the forwardee.
@@ -290,11 +290,11 @@ inline oop PSPromotionManager::copy_to_survivor_space(oop o) {
       // deallocate it, so we have to test.  If the deallocation fails,
       // overwrite with a filler object.
       if (new_obj_is_tenured) {
-        if (!_old_lab.unallocate_object((HeapWord*) new_obj, new_obj_size)) {
-          CollectedHeap::fill_with_object((HeapWord*) new_obj, new_obj_size);
+        if (!_old_lab.unallocate_object(cast_from_oop<HeapWord*>(new_obj), new_obj_size)) {
+          CollectedHeap::fill_with_object(cast_from_oop<HeapWord*>(new_obj), new_obj_size);
         }
-      } else if (!_young_lab.unallocate_object((HeapWord*) new_obj, new_obj_size)) {
-        CollectedHeap::fill_with_object((HeapWord*) new_obj, new_obj_size);
+      } else if (!_young_lab.unallocate_object(cast_from_oop<HeapWord*>(new_obj), new_obj_size)) {
+        CollectedHeap::fill_with_object(cast_from_oop<HeapWord*>(new_obj), new_obj_size);
       }
 
       // don't update this before the unallocation!

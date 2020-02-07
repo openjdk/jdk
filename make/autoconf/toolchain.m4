@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,7 @@ TOOLCHAIN_DESCRIPTION_xlc="IBM XL C/C++"
 
 # Minimum supported versions, empty means unspecified
 TOOLCHAIN_MINIMUM_VERSION_clang="3.2"
-TOOLCHAIN_MINIMUM_VERSION_gcc="4.8"
+TOOLCHAIN_MINIMUM_VERSION_gcc="5.0"
 TOOLCHAIN_MINIMUM_VERSION_microsoft="16.00.30319.01" # VS2010
 TOOLCHAIN_MINIMUM_VERSION_solstudio="5.13"
 TOOLCHAIN_MINIMUM_VERSION_xlc=""
@@ -64,10 +64,11 @@ TOOLCHAIN_MINIMUM_LD_VERSION_gcc="2.18"
 # Must have CC_VERSION_NUMBER and CXX_VERSION_NUMBER.
 # $1 - optional variable prefix for compiler and version variables (BUILD_)
 # $2 - optional variable prefix for comparable variable (OPENJDK_BUILD_)
+# $3 - optional human readable description for the type of compilers ("build " or "")
 AC_DEFUN([TOOLCHAIN_PREPARE_FOR_VERSION_COMPARISONS],
 [
   if test "x[$]$1CC_VERSION_NUMBER" != "x[$]$1CXX_VERSION_NUMBER"; then
-    AC_MSG_WARN([C and C++ compiler have different version numbers, [$]$1CC_VERSION_NUMBER vs [$]$1CXX_VERSION_NUMBER.])
+    AC_MSG_WARN([The $3C and C++ compilers have different version numbers, [$]$1CC_VERSION_NUMBER vs [$]$1CXX_VERSION_NUMBER.])
     AC_MSG_WARN([This typically indicates a broken setup, and is not supported])
   fi
 
@@ -450,9 +451,10 @@ AC_DEFUN([TOOLCHAIN_EXTRACT_COMPILER_VERSION],
     # There is no specific version flag, but all output starts with a version string.
     # First line typically looks something like:
     # Microsoft (R) 32-bit C/C++ Optimizing Compiler Version 16.00.40219.01 for 80x86
+    # but the compiler name may vary depending on locale.
     COMPILER_VERSION_OUTPUT=`"$COMPILER" 2>&1 | $GREP -v 'ERROR.*UtilTranslatePathList' | $HEAD -n 1 | $TR -d '\r'`
     # Check that this is likely to be Microsoft CL.EXE.
-    $ECHO "$COMPILER_VERSION_OUTPUT" | $GREP "Microsoft.*Compiler" > /dev/null
+    $ECHO "$COMPILER_VERSION_OUTPUT" | $GREP "Microsoft" > /dev/null
     if test $? -ne 0; then
       AC_MSG_NOTICE([The $COMPILER_NAME compiler (located as $COMPILER) does not seem to be the required $TOOLCHAIN_TYPE compiler.])
       AC_MSG_NOTICE([The result from running it was: "$COMPILER_VERSION_OUTPUT"])
@@ -997,7 +999,7 @@ AC_DEFUN_ONCE([TOOLCHAIN_SETUP_BUILD_COMPILERS],
 
     TOOLCHAIN_EXTRACT_COMPILER_VERSION(BUILD_CC, [BuildC])
     TOOLCHAIN_EXTRACT_COMPILER_VERSION(BUILD_CXX, [BuildC++])
-    TOOLCHAIN_PREPARE_FOR_VERSION_COMPARISONS([BUILD_], [OPENJDK_BUILD_])
+    TOOLCHAIN_PREPARE_FOR_VERSION_COMPARISONS([BUILD_], [OPENJDK_BUILD_], [build ])
     TOOLCHAIN_EXTRACT_LD_VERSION(BUILD_LD, [build linker])
     TOOLCHAIN_PREPARE_FOR_LD_VERSION_COMPARISONS([BUILD_], [OPENJDK_BUILD_])
   else
@@ -1013,7 +1015,7 @@ AC_DEFUN_ONCE([TOOLCHAIN_SETUP_BUILD_COMPILERS],
     BUILD_STRIP="$STRIP"
     BUILD_AR="$AR"
 
-    TOOLCHAIN_PREPARE_FOR_VERSION_COMPARISONS([], [OPENJDK_BUILD_])
+    TOOLCHAIN_PREPARE_FOR_VERSION_COMPARISONS([], [OPENJDK_BUILD_], [build ])
     TOOLCHAIN_PREPARE_FOR_LD_VERSION_COMPARISONS([BUILD_], [OPENJDK_BUILD_])
   fi
 

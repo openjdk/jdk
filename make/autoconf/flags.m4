@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,7 @@ AC_DEFUN([FLAGS_SETUP_ABI_PROFILE],
     # --- Arm-sflt CFLAGS and ASFLAGS ---
     # Armv5te is required for assembler, because pld insn used in arm32 hotspot is only in v5E and above.
     # However, there is also a GCC bug which generates unaligned strd/ldrd instructions on armv5te:
-    # https://gcc.gnu.org/bugzilla/show_bug.cgi?id=82445, and it was fixed only quite recently.
+    # https://gcc.gnu.org/bugzilla/show_bug.cgi?id=82445, and it was fixed in gcc 7.1.
     # The resulting compromise is to enable v5TE for assembler and let GCC generate code for v5T.
     if test "x$OPENJDK_TARGET_ABI_PROFILE" = xarm-vfp-sflt; then
       ARM_FLOAT_TYPE=vfp-sflt
@@ -438,7 +438,7 @@ BASIC_DEFUN_NAMED([FLAGS_C_COMPILER_CHECK_ARGUMENTS],
 
   saved_cflags="$CFLAGS"
   saved_cc="$CC"
-  CFLAGS="$CFLAGS ARG_ARGUMENT"
+  CFLAGS="$CFLAGS $CFLAGS_WARNINGS_ARE_ERRORS ARG_ARGUMENT"
   CC="$ARG_PREFIX[CC]"
   AC_LANG_PUSH([C])
   AC_COMPILE_IFELSE([AC_LANG_SOURCE([[int i;]])], [],
@@ -469,7 +469,7 @@ BASIC_DEFUN_NAMED([FLAGS_CXX_COMPILER_CHECK_ARGUMENTS],
 
   saved_cxxflags="$CXXFLAGS"
   saved_cxx="$CXX"
-  CXXFLAGS="$CXXFLAG ARG_ARGUMENT"
+  CXXFLAGS="$CXXFLAG $CFLAGS_WARNINGS_ARE_ERRORS ARG_ARGUMENT"
   CXX="$ARG_PREFIX[CXX]"
   AC_LANG_PUSH([C++])
   AC_COMPILE_IFELSE([AC_LANG_SOURCE([[int i;]])], [],

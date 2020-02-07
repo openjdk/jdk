@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@ import java.security.ProtectionDomain;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 
@@ -221,9 +222,9 @@ public interface JavaLangAccess {
     void addOpensToAllUnnamed(Module m, String pkg);
 
     /**
-     * Updates module m to open all packages returned by the given iterator.
+     * Updates module m to open all packages in the given sets.
      */
-    void addOpensToAllUnnamed(Module m, Iterator<String> packages);
+    void addOpensToAllUnnamed(Module m, Set<String> concealedPkgs, Set<String> exportedPkgs);
 
     /**
      * Updates module m to use a service.

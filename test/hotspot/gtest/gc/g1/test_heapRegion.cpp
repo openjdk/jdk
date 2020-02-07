@@ -45,7 +45,7 @@ public:
 
   virtual size_t apply(oop object) {
     _count++;
-    ensure_marked((HeapWord*) object);
+    ensure_marked(cast_from_oop<HeapWord*>(object));
     // Must return positive size to advance the iteration.
     return MinObjAlignment;
   }

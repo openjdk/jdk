@@ -4023,7 +4023,7 @@ public class JavacParser implements Parser {
             int pos = token.pos;
             JCModifiers mods = modifiersOpt();
             if (token.kind == CLASS ||
-                isRecordStart() ||
+                allowRecords && isRecordStart() ||
                 token.kind == INTERFACE ||
                 token.kind == ENUM) {
                 return List.of(classOrRecordOrInterfaceOrEnumDeclaration(mods, dc));

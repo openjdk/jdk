@@ -74,7 +74,6 @@
 #include "prims/methodHandles.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/biasedLocking.hpp"
-#include "runtime/fieldType.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
@@ -240,7 +239,7 @@ Klass* SystemDictionary::resolve_or_fail(Symbol* class_name,
 // Forwards to resolve_array_class_or_null or resolve_instance_class_or_null
 
 Klass* SystemDictionary::resolve_or_null(Symbol* class_name, Handle class_loader, Handle protection_domain, TRAPS) {
-  if (FieldType::is_array(class_name)) {
+  if (Signature::is_array(class_name)) {
     return resolve_array_class_or_null(class_name, class_loader, protection_domain, THREAD);
   } else {
     return resolve_instance_class_or_null_helper(class_name, class_loader, protection_domain, THREAD);
@@ -252,8 +251,8 @@ InstanceKlass* SystemDictionary::resolve_instance_class_or_null_helper(Symbol* c
                                                                        Handle class_loader,
                                                                        Handle protection_domain,
                                                                        TRAPS) {
-  assert(class_name != NULL && !FieldType::is_array(class_name), "must be");
-  if (FieldType::is_obj(class_name)) {
+  assert(class_name != NULL && !Signature::is_array(class_name), "must be");
+  if (Signature::has_envelope(class_name)) {
     ResourceMark rm(THREAD);
     // Ignore wrapping L and ;.
     TempNewSymbol name = SymbolTable::new_symbol(class_name->as_C_string() + 1,
@@ -274,24 +273,24 @@ Klass* SystemDictionary::resolve_array_class_or_null(Symbol* class_name,
                                                      Handle class_loader,
                                                      Handle protection_domain,
                                                      TRAPS) {
-  assert(FieldType::is_array(class_name), "must be array");
+  assert(Signature::is_array(class_name), "must be array");
+  ResourceMark rm(THREAD);
+  SignatureStream ss(class_name, false);
+  int ndims = ss.skip_array_prefix();  // skip all '['s
   Klass* k = NULL;
-  FieldArrayInfo fd;
-  // dimension and object_key in FieldArrayInfo are assigned as a side-effect
-  // of this call
-  BasicType t = FieldType::get_array_info(class_name, fd, CHECK_NULL);
-  if (t == T_OBJECT) {
-    // naked oop "k" is OK here -- we assign back into it
-    k = SystemDictionary::resolve_instance_class_or_null(fd.object_key(),
+  BasicType t = ss.type();
+  if (ss.has_envelope()) {
+    Symbol* obj_class = ss.as_symbol();
+    k = SystemDictionary::resolve_instance_class_or_null(obj_class,
                                                          class_loader,
                                                          protection_domain,
                                                          CHECK_NULL);
     if (k != NULL) {
-      k = k->array_klass(fd.dimension(), CHECK_NULL);
+      k = k->array_klass(ndims, CHECK_NULL);
     }
   } else {
     k = Universe::typeArrayKlassObj(t);
-    k = TypeArrayKlass::cast(k)->array_klass(fd.dimension(), CHECK_NULL);
+    k = TypeArrayKlass::cast(k)->array_klass(ndims, CHECK_NULL);
   }
   return k;
 }
@@ -342,7 +341,7 @@ InstanceKlass* SystemDictionary::resolve_super_or_fail(Symbol* child_name,
                                                        Handle protection_domain,
                                                        bool is_superclass,
                                                        TRAPS) {
-  assert(!FieldType::is_array(super_name), "invalid super class name");
+  assert(!Signature::is_array(super_name), "invalid super class name");
 #if INCLUDE_CDS
   if (DumpSharedSpaces) {
     // Special processing for handling UNREGISTERED shared classes.
@@ -654,8 +653,8 @@ InstanceKlass* SystemDictionary::resolve_instance_class_or_null(Symbol* name,
                                                                 Handle class_loader,
                                                                 Handle protection_domain,
                                                                 TRAPS) {
-  assert(name != NULL && !FieldType::is_array(name) &&
-         !FieldType::is_obj(name), "invalid class name");
+  assert(name != NULL && !Signature::is_array(name) &&
+         !Signature::has_envelope(name), "invalid class name");
 
   EventClassLoad class_load_start_event;
 
@@ -960,19 +959,21 @@ Klass* SystemDictionary::find_instance_or_array_klass(Symbol* class_name,
   Klass* k = NULL;
   assert(class_name != NULL, "class name must be non NULL");
 
-  if (FieldType::is_array(class_name)) {
+  if (Signature::is_array(class_name)) {
     // The name refers to an array.  Parse the name.
     // dimension and object_key in FieldArrayInfo are assigned as a
     // side-effect of this call
-    FieldArrayInfo fd;
-    BasicType t = FieldType::get_array_info(class_name, fd, CHECK_(NULL));
+    SignatureStream ss(class_name, false);
+    int ndims = ss.skip_array_prefix();  // skip all '['s
+    BasicType t = ss.type();
     if (t != T_OBJECT) {
       k = Universe::typeArrayKlassObj(t);
     } else {
-      k = SystemDictionary::find(fd.object_key(), class_loader, protection_domain, THREAD);
+      Symbol* obj_class = ss.as_symbol();
+      k = SystemDictionary::find(obj_class, class_loader, protection_domain, THREAD);
     }
     if (k != NULL) {
-      k = k->array_klass_or_null(fd.dimension());
+      k = k->array_klass_or_null(ndims);
     }
   } else {
     k = find(class_name, class_loader, protection_domain, THREAD);
@@ -2167,20 +2168,21 @@ Klass* SystemDictionary::find_constrained_instance_or_array_klass(
   // Now look to see if it has been loaded elsewhere, and is subject to
   // a loader constraint that would require this loader to return the
   // klass that is already loaded.
-  if (FieldType::is_array(class_name)) {
+  if (Signature::is_array(class_name)) {
     // For array classes, their Klass*s are not kept in the
     // constraint table. The element Klass*s are.
-    FieldArrayInfo fd;
-    BasicType t = FieldType::get_array_info(class_name, fd, CHECK_(NULL));
+    SignatureStream ss(class_name, false);
+    int ndims = ss.skip_array_prefix();  // skip all '['s
+    BasicType t = ss.type();
     if (t != T_OBJECT) {
       klass = Universe::typeArrayKlassObj(t);
     } else {
       MutexLocker mu(THREAD, SystemDictionary_lock);
-      klass = constraints()->find_constrained_klass(fd.object_key(), class_loader);
+      klass = constraints()->find_constrained_klass(ss.as_symbol(), class_loader);
     }
     // If element class already loaded, allocate array klass
     if (klass != NULL) {
-      klass = klass->array_klass_or_null(fd.dimension());
+      klass = klass->array_klass_or_null(ndims);
     }
   } else {
     MutexLocker mu(THREAD, SystemDictionary_lock);
@@ -2200,21 +2202,22 @@ bool SystemDictionary::add_loader_constraint(Symbol* class_name,
   ClassLoaderData* loader_data2 = class_loader_data(class_loader2);
 
   Symbol* constraint_name = NULL;
-  // Needs to be in same scope as constraint_name in case a Symbol is created and
-  // assigned to constraint_name.
-  FieldArrayInfo fd;
-  if (!FieldType::is_array(class_name)) {
+
+  if (!Signature::is_array(class_name)) {
     constraint_name = class_name;
   } else {
     // For array classes, their Klass*s are not kept in the
     // constraint table. The element classes are.
-    BasicType t = FieldType::get_array_info(class_name, fd, CHECK_(false));
-    // primitive types always pass
-    if (t != T_OBJECT) {
-      return true;
-    } else {
-      constraint_name = fd.object_key();
+    SignatureStream ss(class_name, false);
+    ss.skip_array_prefix();  // skip all '['s
+    if (!ss.has_envelope()) {
+      return true;     // primitive types always pass
     }
+    constraint_name = ss.as_symbol();
+    // Increment refcount to keep constraint_name alive after
+    // SignatureStream is destructed. It will be decremented below
+    // before returning.
+    constraint_name->increment_refcount();
   }
 
   Dictionary* dictionary1 = loader_data1->dictionary();
@@ -2227,8 +2230,12 @@ bool SystemDictionary::add_loader_constraint(Symbol* class_name,
     MutexLocker mu_s(THREAD, SystemDictionary_lock);
     InstanceKlass* klass1 = find_class(d_hash1, constraint_name, dictionary1);
     InstanceKlass* klass2 = find_class(d_hash2, constraint_name, dictionary2);
-    return constraints()->add_entry(constraint_name, klass1, class_loader1,
-                                    klass2, class_loader2);
+    bool result = constraints()->add_entry(constraint_name, klass1, class_loader1,
+                                           klass2, class_loader2);
+    if (Signature::is_array(class_name)) {
+      constraint_name->decrement_refcount();
+    }
+    return result;
   }
 }
 
@@ -2325,15 +2332,16 @@ Symbol* SystemDictionary::check_signature_loaders(Symbol* signature,
     return NULL;
   }
 
-  SignatureStream sig_strm(signature, is_method);
-  while (!sig_strm.is_done()) {
-    if (sig_strm.is_object()) {
-      Symbol* sig = sig_strm.as_symbol();
+  for (SignatureStream ss(signature, is_method); !ss.is_done(); ss.next()) {
+    if (ss.is_reference()) {
+      Symbol* sig = ss.as_symbol();
+      // Note: In the future, if template-like types can take
+      // arguments, we will want to recognize them and dig out class
+      // names hiding inside the argument lists.
       if (!add_loader_constraint(sig, loader1, loader2, THREAD)) {
         return sig;
       }
     }
-    sig_strm.next();
   }
   return NULL;
 }
@@ -2419,9 +2427,9 @@ static Method* unpack_method_and_appendix(Handle mname,
 Method* SystemDictionary::find_method_handle_invoker(Klass* klass,
                                                      Symbol* name,
                                                      Symbol* signature,
-                                                     Klass* accessing_klass,
-                                                     Handle *appendix_result,
-                                                     TRAPS) {
+                                                          Klass* accessing_klass,
+                                                          Handle *appendix_result,
+                                                          TRAPS) {
   assert(THREAD->can_call_java() ,"");
   Handle method_type =
     SystemDictionary::find_method_handle_type(signature, accessing_klass, CHECK_NULL);
@@ -2474,14 +2482,6 @@ static bool is_always_visible_class(oop mirror) {
           InstanceKlass::cast(klass)->is_same_class_package(SystemDictionary::MethodHandle_klass()));  // java.lang.invoke
 }
 
-
-// Return the Java mirror (java.lang.Class instance) for a single-character
-// descriptor.  This result, when available, is the same as produced by the
-// heavier API point of the same name that takes a Symbol.
-oop SystemDictionary::find_java_mirror_for_type(char signature_char) {
-  return java_lang_Class::primitive_mirror(char2type(signature_char));
-}
-
 // Find or construct the Java mirror (java.lang.Class instance) for a
 // for the given field type signature, as interpreted relative to the
 // given class loader.  Handles primitives, void, references, arrays,
@@ -2498,19 +2498,17 @@ Handle SystemDictionary::find_java_mirror_for_type(Symbol* signature,
   assert(accessing_klass == NULL || (class_loader.is_null() && protection_domain.is_null()),
          "one or the other, or perhaps neither");
 
-  Symbol* type = signature;
+  SignatureStream ss(signature, false);
 
   // What we have here must be a valid field descriptor,
   // and all valid field descriptors are supported.
   // Produce the same java.lang.Class that reflection reports.
-  if (type->utf8_length() == 1) {
+  if (ss.is_primitive() || (ss.type() == T_VOID)) {
 
     // It's a primitive.  (Void has a primitive mirror too.)
-    char ch = type->char_at(0);
-    assert(is_java_primitive(char2type(ch)) || ch == JVM_SIGNATURE_VOID, "");
-    return Handle(THREAD, find_java_mirror_for_type(ch));
+    return Handle(THREAD, java_lang_Class::primitive_mirror(ss.type()));
 
-  } else if (FieldType::is_obj(type) || FieldType::is_array(type)) {
+  } else if (ss.is_reference()) {
 
     // It's a reference type.
     if (accessing_klass != NULL) {
@@ -2519,11 +2517,11 @@ Handle SystemDictionary::find_java_mirror_for_type(Symbol* signature,
     }
     Klass* constant_type_klass;
     if (failure_mode == SignatureStream::ReturnNull) {
-      constant_type_klass = resolve_or_null(type, class_loader, protection_domain,
+      constant_type_klass = resolve_or_null(signature, class_loader, protection_domain,
                                             CHECK_(empty));
     } else {
       bool throw_error = (failure_mode == SignatureStream::NCDFError);
-      constant_type_klass = resolve_or_fail(type, class_loader, protection_domain,
+      constant_type_klass = resolve_or_fail(signature, class_loader, protection_domain,
                                             throw_error, CHECK_(empty));
     }
     if (constant_type_klass == NULL) {
@@ -2586,7 +2584,7 @@ Handle SystemDictionary::find_method_handle_type(Symbol* signature,
       // Use neutral class loader to lookup candidate classes to be placed in the cache.
       mirror = ss.as_java_mirror(Handle(), Handle(),
                                  SignatureStream::ReturnNull, CHECK_(empty));
-      if (mirror == NULL || (ss.is_object() && !is_always_visible_class(mirror))) {
+      if (mirror == NULL || (ss.is_reference() && !is_always_visible_class(mirror))) {
         // Fall back to accessing_klass context.
         can_be_cached = false;
       }

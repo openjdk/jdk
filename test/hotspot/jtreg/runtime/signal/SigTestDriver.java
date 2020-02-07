@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,7 +100,7 @@ public class SigTestDriver {
                 System.out.printf("Do execute: %s%n", cmd.toString());
 
                 ProcessBuilder pb = new ProcessBuilder(cmd);
-                pb.environment().merge(envVar, jvmLibDir().toString(),
+                pb.environment().merge(envVar, Platform.jvmLibDir().toString(),
                         (x, y) -> y + File.pathSeparator + x);
                 pb.environment().put("CLASSPATH", Utils.TEST_CLASS_PATH);
 
@@ -143,32 +143,7 @@ public class SigTestDriver {
     }
 
     private static Path libjsig() {
-        return jvmLibDir().resolve((Platform.isWindows() ? "" : "lib")
+        return Platform.jvmLibDir().resolve((Platform.isWindows() ? "" : "lib")
                 + "jsig." + Platform.sharedLibraryExt());
-    }
-
-    private static Path jvmLibDir() {
-        Path dir = Paths.get(Utils.TEST_JDK);
-        if (Platform.isWindows()) {
-            return dir.resolve("bin")
-                      .resolve(variant())
-                      .toAbsolutePath();
-        } else {
-            return dir.resolve("lib")
-                      .resolve(variant())
-                      .toAbsolutePath();
-        }
-    }
-
-    private static String variant() {
-        if (Platform.isServer()) {
-            return "server";
-        } else if (Platform.isClient()) {
-            return "client";
-        } else if (Platform.isMinimal()) {
-            return "minimal";
-        } else {
-            throw new Error("TESTBUG: unsupported vm variant");
-        }
     }
 }

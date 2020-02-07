@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,8 +52,7 @@ RegionTaskQueueSet*  ParCompactionManager::_region_array = NULL;
 GrowableArray<size_t >* ParCompactionManager::_shadow_region_array = NULL;
 Monitor*                ParCompactionManager::_shadow_region_monitor = NULL;
 
-ParCompactionManager::ParCompactionManager() :
-    _action(CopyAndUpdate) {
+ParCompactionManager::ParCompactionManager() {
 
   ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
 
@@ -115,19 +114,6 @@ void ParCompactionManager::reset_all_bitmap_query_caches() {
   }
 }
 
-bool ParCompactionManager::should_update() {
-  assert(action() != NotValid, "Action is not set");
-  return (action() == ParCompactionManager::Update) ||
-         (action() == ParCompactionManager::CopyAndUpdate) ||
-         (action() == ParCompactionManager::UpdateAndCopy);
-}
-
-bool ParCompactionManager::should_copy() {
-  assert(action() != NotValid, "Action is not set");
-  return (action() == ParCompactionManager::Copy) ||
-         (action() == ParCompactionManager::CopyAndUpdate) ||
-         (action() == ParCompactionManager::UpdateAndCopy);
-}
 
 ParCompactionManager*
 ParCompactionManager::gc_thread_compaction_manager(uint index) {

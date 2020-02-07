@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -162,7 +162,7 @@ public class TypeElementCatalog {
     private void addTypeElement(TypeElement typeElement, Map<PackageElement, SortedSet<TypeElement>> map) {
 
         PackageElement pkg = utils.containingPackage(typeElement);
-        if (utils.isSpecified(pkg) || configuration.nodeprecated && utils.isDeprecated(pkg)) {
+        if (utils.isSpecified(pkg) || configuration.getOptions().noDeprecated() && utils.isDeprecated(pkg)) {
             // No need to catalog this class if it's package is
             // specified on the command line or if -nodeprecated option is set
             return;

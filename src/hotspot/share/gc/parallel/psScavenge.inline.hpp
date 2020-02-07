@@ -49,7 +49,7 @@ inline bool PSScavenge::should_scavenge(T* p, MutableSpace* to_space) {
   if (should_scavenge(p)) {
     oop obj = RawAccess<IS_NOT_NULL>::oop_load(p);
     // Skip objects copied to to_space since the scavenge started.
-    HeapWord* const addr = (HeapWord*)obj;
+    HeapWord* const addr = cast_from_oop<HeapWord*>(obj);
     return addr < to_space_top_before_gc() || addr >= to_space->end();
   }
   return false;

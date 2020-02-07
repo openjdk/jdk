@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2019 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -975,7 +975,7 @@ int ExceptionMessageBuilder::do_instruction(int bci) {
       // Simulate the bytecode: pop the address, push the 'value' loaded
       // from the field.
       stack->pop(1 - Bytecodes::depth(code));
-      stack->push(bci, char2type((char) signature->char_at(0)));
+      stack->push(bci, Signature::basic_type(signature));
       break;
     }
 
@@ -986,8 +986,8 @@ int ExceptionMessageBuilder::do_instruction(int bci) {
       int name_and_type_index = cp->name_and_type_ref_index_at(cp_index);
       int type_index = cp->signature_ref_index_at(name_and_type_index);
       Symbol* signature = cp->symbol_at(type_index);
-      ResultTypeFinder result_type(signature);
-      stack->pop(type2size[char2type((char) signature->char_at(0))] - Bytecodes::depth(code) - 1);
+      BasicType bt = Signature::basic_type(signature);
+      stack->pop(type2size[bt] - Bytecodes::depth(code) - 1);
       break;
     }
 
@@ -1137,7 +1137,8 @@ int ExceptionMessageBuilder::get_NPE_null_slot(int bci) {
         int name_and_type_index = cp->name_and_type_ref_index_at(cp_index);
         int type_index = cp->signature_ref_index_at(name_and_type_index);
         Symbol* signature = cp->symbol_at(type_index);
-        return type2size[char2type((char) signature->char_at(0))];
+        BasicType bt = Signature::basic_type(signature);
+        return type2size[bt];
       }
     case Bytecodes::_invokevirtual:
     case Bytecodes::_invokespecial:

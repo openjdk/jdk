@@ -188,6 +188,14 @@ public:
   void oops_do(BoolObjectClosure* is_alive, OopClosure* keep_alive, uint worker_id);
 };
 
+class ShenandoahConcurrentStringDedupRoots {
+public:
+  ShenandoahConcurrentStringDedupRoots();
+  ~ShenandoahConcurrentStringDedupRoots();
+
+  void oops_do(BoolObjectClosure* is_alive, OopClosure* keep_alive, uint worker_id);
+};
+
 template <typename ITR>
 class ShenandoahCodeCacheRoots {
 private:
@@ -258,7 +266,7 @@ private:
                                                            _cld_roots;
   ShenandoahSerialWeakRoots                                _serial_weak_roots;
   ShenandoahWeakRoots<false /*concurrent*/>                _weak_roots;
-  ShenandoahStringDedupRoots                               _dedup_roots;
+  ShenandoahConcurrentStringDedupRoots                     _dedup_roots;
   ShenandoahCodeCacheRoots<ShenandoahAllCodeRootsIterator> _code_roots;
 
 public:

@@ -73,7 +73,7 @@ bool BlockLocationPrinter<CollectedHeapT>::print_location(outputStream* st, void
     narrowOop narrow_oop = (narrowOop)(uintptr_t)addr;
     oop o = CompressedOops::decode_raw(narrow_oop);
 
-    if (is_valid_obj((address)o)) {
+    if (is_valid_obj(o)) {
       st->print(UINT32_FORMAT " is a compressed pointer to object: ", narrow_oop);
       o->print_on(st);
       return true;

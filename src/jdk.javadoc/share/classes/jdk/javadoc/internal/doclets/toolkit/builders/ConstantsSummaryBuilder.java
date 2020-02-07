@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -111,10 +111,6 @@ public class ConstantsSummaryBuilder extends AbstractBuilder {
         return new ConstantsSummaryBuilder(context, writer);
     }
 
-    /**
-     * {@inheritDoc}
-     * @throws DocletException if there is a problem while building the documentation
-     */
     @Override
     public void build() throws DocletException {
         if (writer == null) {

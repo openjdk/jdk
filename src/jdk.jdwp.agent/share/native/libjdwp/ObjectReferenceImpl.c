@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -352,15 +352,17 @@ referringObjects(PacketInputStream *in, PacketOutputStream *out)
     return JNI_TRUE;
 }
 
-void *ObjectReference_Cmds[] = { (void *)10
-    ,(void *)referenceType
-    ,(void *)getValues
-    ,(void *)setValues
-    ,(void *)NULL      /* no longer used */
-    ,(void *)monitorInfo
-    ,(void *)invokeInstance
-    ,(void *)disableCollection
-    ,(void *)enableCollection
-    ,(void *)isCollected
-    ,(void *)referringObjects
-    };
+Command ObjectReference_Commands[] = {
+    {referenceType, "ReferenceType"},
+    {getValues, "GetValues"},
+    {setValues, "SetValues"},
+    {NULL, "<unused>"},
+    {monitorInfo, "MonitorInfo"},
+    {invokeInstance, "InvokeInstance"},
+    {disableCollection, "DisableCollection"},
+    {enableCollection, "EnableCollection"},
+    {isCollected, "IsCollected"},
+    {referringObjects, "ReferringObjects"}
+};
+
+DEBUG_DISPATCH_DEFINE_CMDSET(ObjectReference)

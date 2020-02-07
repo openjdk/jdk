@@ -77,6 +77,7 @@ public class SourceToHTMLConverter {
     private static final String NEW_LINE = DocletConstants.NL;
 
     private final HtmlConfiguration configuration;
+    private final HtmlOptions options;
     private final Messages messages;
     private final Resources resources;
     private final Utils utils;
@@ -94,6 +95,7 @@ public class SourceToHTMLConverter {
     private SourceToHTMLConverter(HtmlConfiguration configuration, DocletEnvironment rd,
                                   DocPath outputdir) {
         this.configuration  = configuration;
+        this.options = configuration.getOptions();
         this.messages = configuration.getMessages();
         this.resources = configuration.resources;
         this.utils = configuration.utils;
@@ -122,20 +124,20 @@ public class SourceToHTMLConverter {
         for (ModuleElement mdl : configuration.getSpecifiedModuleElements()) {
             // If -nodeprecated option is set and the module is marked as deprecated,
             // do not convert the module files to HTML.
-            if (!(configuration.nodeprecated && utils.isDeprecated(mdl)))
+            if (!(options.noDeprecated() && utils.isDeprecated(mdl)))
                 convertModule(mdl, outputdir);
         }
         for (PackageElement pkg : configuration.getSpecifiedPackageElements()) {
             // If -nodeprecated option is set and the package is marked as deprecated,
             // do not convert the package files to HTML.
-            if (!(configuration.nodeprecated && utils.isDeprecated(pkg)))
+            if (!(options.noDeprecated() && utils.isDeprecated(pkg)))
                 convertPackage(pkg, outputdir);
         }
         for (TypeElement te : configuration.getSpecifiedTypeElements()) {
             // If -nodeprecated option is set and the class is marked as deprecated
             // or the containing package is deprecated, do not convert the
             // package files to HTML.
-            if (!(configuration.nodeprecated &&
+            if (!(options.noDeprecated() &&
                   (utils.isDeprecated(te) || utils.isDeprecated(utils.containingPackage(te)))))
                 convertClass(te, outputdir);
         }
@@ -159,7 +161,7 @@ public class SourceToHTMLConverter {
             // do not convert the package files to HTML. We do not check for
             // containing package deprecation since it is already check in
             // the calling method above.
-            if (!(configuration.nodeprecated && utils.isDeprecated(te)))
+            if (!(options.noDeprecated() && utils.isDeprecated(te)))
                 convertClass((TypeElement)te, outputdir);
         }
     }
@@ -179,7 +181,7 @@ public class SourceToHTMLConverter {
         }
         for (Element elem : mdl.getEnclosedElements()) {
             if (elem instanceof PackageElement && configuration.docEnv.isIncluded(elem)
-                    && !(configuration.nodeprecated && utils.isDeprecated(elem))) {
+                    && !(options.noDeprecated() && utils.isDeprecated(elem))) {
                 convertPackage((PackageElement) elem, outputdir);
             }
         }
@@ -236,9 +238,9 @@ public class SourceToHTMLConverter {
      */
     private void writeToFile(Content body, DocPath path, TypeElement te) throws DocFileIOException {
         Head head = new Head(path, configuration.docletVersion, configuration.startTime)
-//                .setTimestamp(!configuration.notimestamp) // temporary: compatibility!
+//                .setTimestamp(!options.notimestamp) // temporary: compatibility!
                 .setTitle(resources.getText("doclet.Window_Source_title"))
-//                .setCharset(configuration.charset) // temporary: compatibility!
+//                .setCharset(options.charset) // temporary: compatibility!
                 .setDescription(HtmlDocletWriter.getDescription("source", te))
                 .setGenerator(HtmlDocletWriter.getGenerator(getClass()))
                 .addDefaultScript(false)
@@ -256,7 +258,7 @@ public class SourceToHTMLConverter {
      * @param head an HtmlTree to which the stylesheet links will be added
      */
     public void addStyleSheetProperties(Content head) {
-        String filename = configuration.stylesheetfile;
+        String filename = options.stylesheetFile();
         DocPath stylesheet;
         if (filename.length() > 0) {
             DocFile file = DocFile.createFileForInput(configuration, filename);
@@ -271,7 +273,7 @@ public class SourceToHTMLConverter {
     }
 
     protected void addStylesheets(Content tree) {
-        List<String> stylesheets = configuration.additionalStylesheets;
+        List<String> stylesheets = options.additionalStylesheets();
         if (!stylesheets.isEmpty()) {
             stylesheets.forEach((ssheet) -> {
                 DocFile file = DocFile.createFileForInput(configuration, ssheet);

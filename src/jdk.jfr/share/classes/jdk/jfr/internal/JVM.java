@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import java.util.List;
 
 import jdk.internal.HotSpotIntrinsicCandidate;
 import jdk.jfr.Event;
+import jdk.jfr.internal.handlers.EventHandler;
 
 /**
  * Interface against the JVM.
@@ -561,5 +562,25 @@ public final class JVM {
      *@return start time of the recording in nanos, -1 in case of in-memory
      */
     public native long getChunkStartNanos();
+
+    /**
+     * Stores an EventHandler to the eventHandler field of an event class.
+     *
+     * @param eventClass the class, not {@code null}
+     *
+     * @param handler the handler, may be {@code null}
+     *
+     * @return if the field could be set
+     */
+    public native boolean setHandler(Class<? extends jdk.internal.event.Event> eventClass, EventHandler handler);
+
+    /**
+     * Retrieves the EventHandler for an event class.
+     *
+     * @param eventClass the class, not {@code null}
+     *
+     * @return the handler, may be {@code null}
+     */
+    public native Object getHandler(Class<? extends jdk.internal.event.Event> eventClass);
 
 }

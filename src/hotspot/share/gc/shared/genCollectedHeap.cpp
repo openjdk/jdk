@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -676,10 +676,6 @@ void GenCollectedHeap::do_collection(bool           full,
 
     print_heap_after_gc();
   }
-
-#ifdef TRACESPINNING
-  ParallelTaskTerminator::print_termination_counts();
-#endif
 }
 
 bool GenCollectedHeap::should_do_full_collection(size_t size, bool full, bool is_tlab,
@@ -1004,7 +1000,7 @@ void GenCollectedHeap::do_full_collection(bool clear_all_soft_refs,
 }
 
 bool GenCollectedHeap::is_in_young(oop p) {
-  bool result = ((HeapWord*)p) < _old_gen->reserved().start();
+  bool result = cast_from_oop<HeapWord*>(p) < _old_gen->reserved().start();
   assert(result == _young_gen->is_in_reserved(p),
          "incorrect test - result=%d, p=" INTPTR_FORMAT, result, p2i((void*)p));
   return result;
@@ -1365,7 +1361,7 @@ oop GenCollectedHeap::handle_failed_promotion(Generation* old_gen,
   result = old_gen->expand_and_allocate(obj_size, false);
 
   if (result != NULL) {
-    Copy::aligned_disjoint_words((HeapWord*)obj, result, obj_size);
+    Copy::aligned_disjoint_words(cast_from_oop<HeapWord*>(obj), result, obj_size);
   }
   return oop(result);
 }

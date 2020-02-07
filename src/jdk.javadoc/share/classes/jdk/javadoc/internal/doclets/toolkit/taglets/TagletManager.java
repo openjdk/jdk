@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,6 +58,7 @@ import jdk.javadoc.doclet.Doclet;
 import jdk.javadoc.doclet.DocletEnvironment;
 import jdk.javadoc.doclet.Taglet.Location;
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
+import jdk.javadoc.internal.doclets.toolkit.BaseOptions;
 import jdk.javadoc.internal.doclets.toolkit.DocletElement;
 import jdk.javadoc.internal.doclets.toolkit.Messages;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
@@ -177,33 +178,31 @@ public class TagletManager {
      */
     private final boolean showTaglets;
 
+    private final String tagletPath;
+
     /**
      * Construct a new {@code TagletManager}.
-     * @param nosince true if we do not want to use @since tags.
-     * @param showversion true if we want to use @version tags.
-     * @param showauthor true if we want to use @author tags.
-     * @param javafx indicates whether javafx is active.
      * @param configuration the configuration for this taglet manager
      */
-    public TagletManager(boolean nosince, boolean showversion,
-                         boolean showauthor, boolean javafx,
-                         BaseConfiguration configuration) {
+    public TagletManager(BaseConfiguration configuration) {
         overriddenStandardTags = new HashSet<>();
         potentiallyConflictingTags = new HashSet<>();
         standardTags = new HashSet<>();
         standardTagsLowercase = new HashSet<>();
         unseenCustomTags = new HashSet<>();
         allTaglets = new LinkedHashMap<>();
-        this.nosince = nosince;
-        this.showversion = showversion;
-        this.showauthor = showauthor;
-        this.javafx = javafx;
+        BaseOptions options = configuration.getOptions();
+        this.nosince = options.noSince();
+        this.showversion = options.showVersion();
+        this.showauthor = options.showAuthor();
+        this.javafx = options.javafx();
         this.docEnv = configuration.docEnv;
         this.doclet = configuration.doclet;
         this.messages = configuration.getMessages();
         this.resources = configuration.getResources();
-        this.showTaglets = configuration.showTaglets;
+        this.showTaglets = options.showTaglets();
         this.utils = configuration.utils;
+        this.tagletPath = options.tagletPath();
         initStandardTaglets();
     }
 
@@ -230,10 +229,9 @@ public class TagletManager {
     /**
      * Initializes the location TAGLET_PATH which is used to locate the custom taglets.
      * @param fileManager the file manager to load classes and resources.
-     * @param tagletPath the path to the custom taglet.
      * @throws IOException if an error occurs while setting the location.
      */
-    public void initTagletPath(JavaFileManager fileManager, String tagletPath) throws IOException {
+    public void initTagletPath(JavaFileManager fileManager) throws IOException {
         if (fileManager instanceof StandardJavaFileManager) {
             StandardJavaFileManager sfm = (StandardJavaFileManager)fileManager;
             if (tagletPath != null) {

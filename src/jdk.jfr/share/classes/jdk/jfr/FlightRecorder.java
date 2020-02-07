@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -197,7 +197,7 @@ public final class FlightRecorder {
                 Logger.log(JFR, DEBUG, "samplethreads: " + Options.getSampleThreads());
                 Logger.log(JFR, DEBUG, "stackdepth: " + Options.getStackDepth());
                 Logger.log(JFR, DEBUG, "threadbuffersize: " + Options.getThreadBufferSize());
-                Logger.log(JFR, LogLevel.INFO, "Created repository " + Repository.getRepository().getRepositoryPath().toString());
+                Logger.log(JFR, LogLevel.INFO, "Repository base directory: " + Repository.getRepository().getBaseLocation());
                 PlatformRecorder.notifyRecorderInitialized(platformRecorder);
             }
         }

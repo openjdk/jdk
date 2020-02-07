@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2168,7 +2168,7 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
   }
 
   // continue with the bytecode @ target
-  __ dispatch_only(vtos);
+  __ dispatch_only(vtos, true);
 
   if (UseLoopCounter) {
     if (ProfileInterpreter) {
@@ -2362,7 +2362,7 @@ void TemplateTable::tableswitch() {
 
   // load the next bytecode to R3_bytecode and advance Rbcp
   __ ldrb(R3_bytecode, Address(Rbcp, Roffset, lsl, 0, pre_indexed));
-  __ dispatch_only(vtos);
+  __ dispatch_only(vtos, true);
 
 }
 
@@ -2439,7 +2439,7 @@ void TemplateTable::fast_linearswitch() {
 
   // load the next bytecode to R3_bytecode and advance Rbcp
   __ ldrb(R3_bytecode, Address(Rbcp, Roffset, lsl, 0, pre_indexed));
-  __ dispatch_only(vtos);
+  __ dispatch_only(vtos, true);
 }
 
 
@@ -2533,7 +2533,7 @@ void TemplateTable::fast_binaryswitch() {
   __ profile_switch_case(R0, i, R1, i);
   __ byteswap_u32(offset, temp1, temp2);
   __ ldrb(R3_bytecode, Address(Rbcp, offset, lsl, 0, pre_indexed));
-  __ dispatch_only(vtos);
+  __ dispatch_only(vtos, true);
 
   // default case
   __ bind(default_case);
@@ -2541,7 +2541,7 @@ void TemplateTable::fast_binaryswitch() {
   __ ldr_s32(offset, Address(array, -2*BytesPerInt));
   __ byteswap_u32(offset, temp1, temp2);
   __ ldrb(R3_bytecode, Address(Rbcp, offset, lsl, 0, pre_indexed));
-  __ dispatch_only(vtos);
+  __ dispatch_only(vtos, true);
 }
 
 

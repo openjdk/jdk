@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,7 @@ class CompilerToVM {
     static address SharedRuntime_ic_miss_stub;
     static address SharedRuntime_handle_wrong_method_stub;
     static address SharedRuntime_deopt_blob_unpack;
+    static address SharedRuntime_deopt_blob_unpack_with_exception_in_tls;
     static address SharedRuntime_deopt_blob_uncommon_trap;
 
     static size_t ThreadLocalAllocBuffer_alignment_reserve;
@@ -131,7 +132,12 @@ class JavaArgumentUnboxer : public SignatureIterator {
   Handle next_arg(BasicType expectedType);
 
  public:
-  JavaArgumentUnboxer(Symbol* signature, JavaCallArguments*  jca, arrayOop args, bool is_static) : SignatureIterator(signature) {
+  JavaArgumentUnboxer(Symbol* signature,
+                      JavaCallArguments* jca,
+                      arrayOop args,
+                      bool is_static)
+    : SignatureIterator(signature)
+  {
     this->_return_type = T_ILLEGAL;
     _jca = jca;
     _index = 0;
@@ -139,24 +145,31 @@ class JavaArgumentUnboxer : public SignatureIterator {
     if (!is_static) {
       _jca->push_oop(next_arg(T_OBJECT));
     }
-    iterate();
+    do_parameters_on(this);
     assert(_index == args->length(), "arg count mismatch with signature");
   }
 
-  inline void do_bool()   { if (!is_return_type()) _jca->push_int(next_arg(T_BOOLEAN)->bool_field(java_lang_boxing_object::value_offset_in_bytes(T_BOOLEAN))); }
-  inline void do_char()   { if (!is_return_type()) _jca->push_int(next_arg(T_CHAR)->char_field(java_lang_boxing_object::value_offset_in_bytes(T_CHAR))); }
-  inline void do_short()  { if (!is_return_type()) _jca->push_int(next_arg(T_SHORT)->short_field(java_lang_boxing_object::value_offset_in_bytes(T_SHORT))); }
-  inline void do_byte()   { if (!is_return_type()) _jca->push_int(next_arg(T_BYTE)->byte_field(java_lang_boxing_object::value_offset_in_bytes(T_BYTE))); }
-  inline void do_int()    { if (!is_return_type()) _jca->push_int(next_arg(T_INT)->int_field(java_lang_boxing_object::value_offset_in_bytes(T_INT))); }
-
-  inline void do_long()   { if (!is_return_type()) _jca->push_long(next_arg(T_LONG)->long_field(java_lang_boxing_object::value_offset_in_bytes(T_LONG))); }
-  inline void do_float()  { if (!is_return_type()) _jca->push_float(next_arg(T_FLOAT)->float_field(java_lang_boxing_object::value_offset_in_bytes(T_FLOAT))); }
-  inline void do_double() { if (!is_return_type()) _jca->push_double(next_arg(T_DOUBLE)->double_field(java_lang_boxing_object::value_offset_in_bytes(T_DOUBLE))); }
-
-  inline void do_object() { _jca->push_oop(next_arg(T_OBJECT)); }
-  inline void do_object(int begin, int end) { if (!is_return_type()) _jca->push_oop(next_arg(T_OBJECT)); }
-  inline void do_array(int begin, int end)  { if (!is_return_type()) _jca->push_oop(next_arg(T_OBJECT)); }
-  inline void do_void()                     { }
+ private:
+  friend class SignatureIterator;  // so do_parameters_on can call do_type
+  void do_type(BasicType type) {
+    if (is_reference_type(type)) {
+      _jca->push_oop(next_arg(T_OBJECT));
+      return;
+    }
+    Handle arg = next_arg(type);
+    int box_offset = java_lang_boxing_object::value_offset_in_bytes(type);
+    switch (type) {
+    case T_BOOLEAN:     _jca->push_int(arg->bool_field(box_offset));    break;
+    case T_CHAR:        _jca->push_int(arg->char_field(box_offset));    break;
+    case T_SHORT:       _jca->push_int(arg->short_field(box_offset));   break;
+    case T_BYTE:        _jca->push_int(arg->byte_field(box_offset));    break;
+    case T_INT:         _jca->push_int(arg->int_field(box_offset));     break;
+    case T_LONG:        _jca->push_long(arg->long_field(box_offset));   break;
+    case T_FLOAT:       _jca->push_float(arg->float_field(box_offset));    break;
+    case T_DOUBLE:      _jca->push_double(arg->double_field(box_offset));  break;
+    default:            ShouldNotReachHere();
+    }
+  }
 };
 
 class JNIHandleMark : public StackObj {

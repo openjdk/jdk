@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,9 @@
 #include "jfr/recorder/checkpoint/types/traceid/jfrTraceId.inline.hpp"
 #include "jfr/recorder/repository/jfrChunkWriter.hpp"
 #include "jfr/recorder/stacktrace/jfrStackTrace.hpp"
+#include "jfr/support/jfrMethodLookup.hpp"
 #include "memory/allocation.inline.hpp"
+#include "oops/instanceKlass.inline.hpp"
 #include "runtime/vframe.inline.hpp"
 
 static void copy_frames(JfrStackFrame** lhs_frames, u4 length, const JfrStackFrame* rhs_frames) {
@@ -39,11 +41,11 @@ static void copy_frames(JfrStackFrame** lhs_frames, u4 length, const JfrStackFra
   }
 }
 
-JfrStackFrame::JfrStackFrame(const traceid& id, int bci, int type, const Method* method) :
-  _method(method), _methodid(id), _line(0), _bci(bci), _type(type) {}
+JfrStackFrame::JfrStackFrame(const traceid& id, int bci, int type, const InstanceKlass* ik) :
+  _klass(ik), _methodid(id), _line(0), _bci(bci), _type(type) {}
 
-JfrStackFrame::JfrStackFrame(const traceid& id, int bci, int type, int lineno) :
-  _method(NULL), _methodid(id), _line(lineno), _bci(bci), _type(type) {}
+JfrStackFrame::JfrStackFrame(const traceid& id, int bci, int type, int lineno, const InstanceKlass* ik) :
+  _klass(ik), _methodid(id), _line(lineno), _bci(bci), _type(type) {}
 
 JfrStackTrace::JfrStackTrace(JfrStackFrame* frames, u4 max_frames) :
   _next(NULL),
@@ -200,7 +202,7 @@ bool JfrStackTrace::record_thread(JavaThread& thread, frame& frame) {
     const int lineno = method->line_number_from_bci(bci);
     // Can we determine if it's inlined?
     _hash = (_hash << 2) + (unsigned int)(((size_t)mid >> 2) + (bci << 4) + type);
-    _frames[count] = JfrStackFrame(mid, bci, type, method);
+    _frames[count] = JfrStackFrame(mid, bci, type, lineno, method->method_holder());
     st.samples_next();
     count++;
   }
@@ -211,9 +213,12 @@ bool JfrStackTrace::record_thread(JavaThread& thread, frame& frame) {
 }
 
 void JfrStackFrame::resolve_lineno() const {
-  assert(_method, "no method pointer");
+  assert(_klass, "no klass pointer");
   assert(_line == 0, "already have linenumber");
-  _line = _method->line_number_from_bci(_bci);
+  const Method* const method = JfrMethodLookup::lookup(_klass, _methodid);
+  assert(method != NULL, "invariant");
+  assert(method->method_holder() == _klass, "invariant");
+  _line = method->line_number_from_bci(_bci);
 }
 
 void JfrStackTrace::resolve_linenos() const {
@@ -252,7 +257,7 @@ bool JfrStackTrace::record_safe(JavaThread* thread, int skip) {
     }
     // Can we determine if it's inlined?
     _hash = (_hash << 2) + (unsigned int)(((size_t)mid >> 2) + (bci << 4) + type);
-    _frames[count] = JfrStackFrame(mid, bci, type, method);
+    _frames[count] = JfrStackFrame(mid, bci, type, method->method_holder());
     vfs.next();
     count++;
   }

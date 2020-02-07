@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -94,20 +94,19 @@ public final class JpsHelper {
     }
 
     /**
-     * VM arguments to start test application with.
-     * -XX:+UsePerfData is required for running the tests on embedded platforms.
-     */
-    public static final String[] VM_ARGS = {
-        "-XX:+UsePerfData", "-Xmx512m", "-Xlog:gc",
-        "-Dmultiline.prop=value1\nvalue2\r\nvalue3"
-    };
-    /**
      * VM flag to start test application with
      */
     public static final String VM_FLAG = "+DisableExplicitGC";
 
     private static File vmFlagsFile = null;
-    private static List<String> testVmArgs = null;
+    /**
+     * VM arguments to start test application with.
+     * -XX:+UsePerfData is required for running the tests on embedded platforms.
+     */
+    private static String[] testVmArgs = {
+      "-XX:+UsePerfData", "-Xmx512m", "-Xlog:gc",
+      "-Dmultiline.prop=value1\nvalue2\r\nvalue3",
+      null /* lazily initialized -XX:Flags */};
     private static File manifestFile = null;
 
     /**
@@ -127,11 +126,9 @@ public final class JpsHelper {
     /**
      * Return a list of VM arguments
      */
-    public static List<String> getVmArgs() throws IOException {
-        if (testVmArgs == null) {
-            testVmArgs = new ArrayList<>();
-            testVmArgs.addAll(Arrays.asList(VM_ARGS));
-            testVmArgs.add("-XX:Flags=" + getVmFlagsFile().getAbsolutePath());
+    public static String[] getVmArgs() throws IOException {
+        if (testVmArgs[testVmArgs.length - 1] == null) {
+            testVmArgs[testVmArgs.length - 1] = "-XX:Flags=" + getVmFlagsFile().getAbsolutePath();
         }
         return testVmArgs;
     }

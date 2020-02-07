@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,7 +59,7 @@ void G1FullGCMarkTask::work(uint worker_id) {
   }
 
   // Mark stack is populated, now process and drain it.
-  marker->complete_marking(collector()->oop_queue_set(), collector()->array_queue_set(), _terminator.terminator());
+  marker->complete_marking(collector()->oop_queue_set(), collector()->array_queue_set(), &_terminator);
 
   // This is the point where the entire marking should have completed.
   assert(marker->oop_stack()->is_empty(), "Marking should have completed");

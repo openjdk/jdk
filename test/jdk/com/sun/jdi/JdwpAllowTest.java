@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,14 +69,11 @@ public class JdwpAllowTest {
         return res;
     }
 
-    public static ArrayList<String> prepareCmd(String allowOpt) {
-         ArrayList<String> cmd = new ArrayList<>();
-
+    public static String[] prepareCmd(String allowOpt) {
          String jdwpArgs = "-agentlib:jdwp=transport=dt_socket,server=y," +
                            "suspend=n,address=*:0"
                             + (allowOpt == null ? "" : ",allow=" + allowOpt);
-         cmd.add(jdwpArgs);
-         return cmd;
+         return new String[] { jdwpArgs };
     }
 
     private static Pattern listenRegexp = Pattern.compile("Listening for transport \\b(.+)\\b at address: \\b(\\d+)\\b");
@@ -106,7 +103,7 @@ public class JdwpAllowTest {
     public static void positiveTest(String testName, String allowOpt)
         throws InterruptedException, IOException {
         System.err.println("\nStarting " + testName);
-        ArrayList<String> cmd = prepareCmd(allowOpt);
+        String[] cmd = prepareCmd(allowOpt);
 
         LingeredApp a = LingeredApp.startApp(cmd);
         int res;
@@ -124,7 +121,7 @@ public class JdwpAllowTest {
     public static void negativeTest(String testName, String allowOpt)
         throws InterruptedException, IOException {
         System.err.println("\nStarting " + testName);
-        ArrayList<String> cmd = prepareCmd(allowOpt);
+        String[] cmd = prepareCmd(allowOpt);
 
         LingeredApp a = LingeredApp.startApp(cmd);
         int res;
@@ -144,7 +141,7 @@ public class JdwpAllowTest {
     public static void badAllowOptionTest(String testName, String allowOpt)
         throws InterruptedException, IOException {
         System.err.println("\nStarting " + testName);
-        ArrayList<String> cmd = prepareCmd(allowOpt);
+        String[] cmd = prepareCmd(allowOpt);
 
         LingeredApp a;
         try {

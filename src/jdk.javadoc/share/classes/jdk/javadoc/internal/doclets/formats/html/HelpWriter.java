@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -132,7 +132,7 @@ public class HelpWriter extends HtmlDocletWriter {
         ul.setStyle(HtmlStyle.blockList);
 
         // Overview
-        if (configuration.createoverview) {
+        if (options.createOverview()) {
             Content overviewHeading = HtmlTree.HEADING(Headings.CONTENT_HEADING,
                 contents.overviewLabel);
             htmlTree = HtmlTree.SECTION(HtmlStyle.helpSection, overviewHeading);
@@ -246,7 +246,7 @@ public class HelpWriter extends HtmlDocletWriter {
         ul.add(HtmlTree.LI(HtmlStyle.blockList, htmlTree));
 
         // Class Use
-        if (configuration.classuse) {
+        if (options.classUse()) {
             Content useHead = HtmlTree.HEADING(Headings.CONTENT_HEADING,
                     contents.getContent("doclet.help.use.head"));
             htmlTree = HtmlTree.SECTION(HtmlStyle.helpSection, useHead);
@@ -257,7 +257,7 @@ public class HelpWriter extends HtmlDocletWriter {
         }
 
         // Tree
-        if (configuration.createtree) {
+        if (options.createTree()) {
             Content treeHead = HtmlTree.HEADING(Headings.CONTENT_HEADING,
                     contents.getContent("doclet.help.tree.head"));
             htmlTree = HtmlTree.SECTION(HtmlStyle.helpSection, treeHead);
@@ -275,7 +275,7 @@ public class HelpWriter extends HtmlDocletWriter {
         }
 
         // Deprecated
-        if (!(configuration.nodeprecatedlist || configuration.nodeprecated)) {
+        if (!(options.noDeprecatedList() || options.noDeprecated())) {
             Content dHead = HtmlTree.HEADING(Headings.CONTENT_HEADING,
                     contents.deprecatedAPI);
             htmlTree = HtmlTree.SECTION(HtmlStyle.helpSection, dHead);
@@ -288,9 +288,9 @@ public class HelpWriter extends HtmlDocletWriter {
         }
 
         // Index
-        if (configuration.createindex) {
+        if (options.createIndex()) {
             Content indexlink;
-            if (configuration.splitindex) {
+            if (options.splitIndex()) {
                 indexlink = links.createLink(DocPaths.INDEX_FILES.resolve(DocPaths.indexN(1)),
                         resources.getText("doclet.Index"));
             } else {

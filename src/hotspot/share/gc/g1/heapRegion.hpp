@@ -554,10 +554,10 @@ public:
   // mark performed by the collector. This returns true iff the object
   // is within the unmarked area of the region.
   bool obj_allocated_since_prev_marking(oop obj) const {
-    return (HeapWord *) obj >= prev_top_at_mark_start();
+    return cast_from_oop<HeapWord*>(obj) >= prev_top_at_mark_start();
   }
   bool obj_allocated_since_next_marking(oop obj) const {
-    return (HeapWord *) obj >= next_top_at_mark_start();
+    return cast_from_oop<HeapWord*>(obj) >= next_top_at_mark_start();
   }
 
   // Update the region state after a failed evacuation.

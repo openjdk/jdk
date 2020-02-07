@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,13 +46,13 @@ public class PropertyUtils {
     final Types typeUtils;
 
     PropertyUtils(BaseConfiguration configuration) {
-
-        javafx = configuration.javafx;
+        BaseOptions options = configuration.getOptions();
+        javafx = options.javafx();
 
         typeUtils = configuration.docEnv.getTypeUtils();
 
         // Disable strict check for JDK's without FX.
-        TypeMirror jboType = configuration.disableJavaFxStrictChecks
+        TypeMirror jboType = options.disableJavaFxStrictChecks()
                 ? null
                 : configuration.utils.getSymbol("javafx.beans.Observable");
 

@@ -10,7 +10,7 @@ CoreAmd64     org.graalvm.compiler.core.amd64.test
 CoreAarch64   org.graalvm.compiler.core.aarch64.test
 CoreJdk9      org.graalvm.compiler.core.jdk9.test
 Debug         org.graalvm.compiler.debug.test
-Graph         org.graalvm.compiler.graph.test      @requires vm.graal.enabled
+Graph         org.graalvm.compiler.graph.test
 Hotspot       org.graalvm.compiler.hotspot.test
 HotspotAarch64 org.graalvm.compiler.hotspot.aarch64.test
 HotspotAmd64  org.graalvm.compiler.hotspot.amd64.test
@@ -18,7 +18,7 @@ HotspotJdk9   org.graalvm.compiler.hotspot.jdk9.test
 HotspotSparc  org.graalvm.compiler.hotspot.sparc.test @requires vm.simpleArch == "sparcv9"
 HotspotLir    org.graalvm.compiler.hotspot.lir.test
 Loop          org.graalvm.compiler.loop.test
-Nodes         org.graalvm.compiler.nodes.test      @requires vm.graal.enabled
+Nodes         org.graalvm.compiler.nodes.test
 Options       org.graalvm.compiler.options.test
 PhasesCommon  org.graalvm.compiler.phases.common.test
 Replacements  org.graalvm.compiler.replacements.test

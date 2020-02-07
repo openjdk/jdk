@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,9 +41,6 @@ import java.util.ResourceBundle;
 public class Resources {
     public final String annotationTypeSummary;
     public final String classSummary;
-    private final BaseConfiguration configuration;
-    private final String commonBundleName;
-    private final String docletBundleName;
     public final String enumSummary;
     public final String errorSummary;
     public final String exceptionSummary;
@@ -55,21 +52,21 @@ public class Resources {
     protected ResourceBundle docletBundle;
 
     /**
-     * Creates a {@code Resources} to provide access the resource
+     * Creates a {@code Resources} object to provide access the resource
      * bundles used by a doclet.
      *
-     * @param configuration the configuration for the doclet,
-     *  to provide access the locale to be used when accessing the
-     *  names resource bundles.
+     * @param locale           the locale to be used when accessing the
+     *                         resource bundles.
      * @param commonBundleName the name of the bundle containing the strings
-     *  common to all output formats
+     *                         common to all output formats
      * @param docletBundleName the name of the bundle containing the strings
-     *  specific to a particular format
+     *                         specific to a particular format
      */
-    public Resources(BaseConfiguration configuration, String commonBundleName, String docletBundleName) {
-        this.configuration = configuration;
-        this.commonBundleName = commonBundleName;
-        this.docletBundleName = docletBundleName;
+    public Resources(Locale locale, String commonBundleName, String docletBundleName) {
+
+        this.commonBundle = ResourceBundle.getBundle(commonBundleName, locale);
+        this.docletBundle = ResourceBundle.getBundle(docletBundleName, locale);
+
         this.annotationTypeSummary = getText("doclet.Annotation_Types_Summary");
         this.classSummary = getText("doclet.Class_Summary");
         this.enumSummary = getText("doclet.Enum_Summary");
@@ -81,7 +78,7 @@ public class Resources {
     }
 
     /**
-     * Gets the string for the given key from one of the doclet's
+     * Returns the string for the given key from one of the doclet's
      * resource bundles.
      *
      * The more specific bundle is checked first;
@@ -90,18 +87,16 @@ public class Resources {
      * @param key the key for the desired string
      * @return the string for the given key
      * @throws MissingResourceException if the key is not found in either
-     *  bundle.
+     *                                  bundle.
      */
     public String getText(String key) throws MissingResourceException {
-        initBundles();
-
         if (docletBundle.containsKey(key))
             return docletBundle.getString(key);
 
         return commonBundle.getString(key);
     }
     /**
-     * Gets the string for the given key from one of the doclet's
+     * Returns the string for the given key from one of the doclet's
      * resource bundles, substituting additional arguments into
      * into the resulting string with {@link MessageFormat#format}.
      *
@@ -116,17 +111,5 @@ public class Resources {
      */
     public String getText(String key, Object... args) throws MissingResourceException {
         return MessageFormat.format(getText(key), args);
-    }
-
-    /**
-     * Lazily initializes the bundles. This is (currently) necessary because
-     * this object may be created before the locale to be used is known.
-     */
-    protected void initBundles() {
-        if (commonBundle == null) {
-            Locale locale = configuration.getLocale();
-            this.commonBundle = ResourceBundle.getBundle(commonBundleName, locale);
-            this.docletBundle = ResourceBundle.getBundle(docletBundleName, locale);
-        }
     }
 }

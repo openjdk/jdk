@@ -101,7 +101,7 @@ inline ZArrayIteratorImpl<T, parallel>::ZArrayIteratorImpl(ZArray<T>* array) :
 template <typename T, bool parallel>
 inline bool ZArrayIteratorImpl<T, parallel>::next(T* elem) {
   if (parallel) {
-    const size_t next = Atomic::add(&_next, 1u) - 1u;
+    const size_t next = Atomic::fetch_and_add(&_next, 1u);
     if (next < _array->size()) {
       *elem = _array->at(next);
       return true;

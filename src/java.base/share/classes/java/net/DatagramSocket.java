@@ -26,6 +26,7 @@
 package java.net;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.channels.DatagramChannel;
 import java.security.AccessController;
 import java.security.PrivilegedExceptionAction;
@@ -117,7 +118,8 @@ public class DatagramSocket implements java.io.Closeable {
      */
     private boolean bound = false;
     private boolean closed = false;
-    private Object closeLock = new Object();
+    private volatile boolean created;
+    private final Object closeLock = new Object();
 
     /*
      * The implementation of this DatagramSocket.
@@ -291,6 +293,9 @@ public class DatagramSocket implements java.io.Closeable {
         // create a datagram socket.
         boolean multicast = (this instanceof MulticastSocket);
         this.impl = createImpl(multicast);
+        // creates the udp socket
+        impl.create();
+        created = true;
         this.oldImpl = checkOldImpl(impl);
         if (bindaddr != null) {
             try {
@@ -391,20 +396,27 @@ public class DatagramSocket implements java.io.Closeable {
         } else {
             impl = DefaultDatagramSocketImplFactory.createDatagramSocketImpl(multicast);
         }
-        // creates a udp socket
-        impl.create();
         return impl;
     }
 
     /**
-     * Return the {@code DatagramSocketImpl} attached to this socket.
+     * Return the {@code DatagramSocketImpl} attached to this socket,
+     * creating the socket if not already created.
      *
      * @return  the {@code DatagramSocketImpl} attached to that
      *          DatagramSocket
-     * @throws SocketException never thrown
+     * @throws SocketException if creating the socket fails
      * @since 1.4
      */
-    DatagramSocketImpl getImpl() throws SocketException {
+    final DatagramSocketImpl getImpl() throws SocketException {
+        if (!created) {
+            synchronized (this) {
+                if (!created)  {
+                    impl.create();
+                    created = true;
+                }
+            }
+        }
         return impl;
     }
 
@@ -464,13 +476,17 @@ public class DatagramSocket implements java.io.Closeable {
      * Connects the socket to a remote address for this socket. When a
      * socket is connected to a remote address, packets may only be
      * sent to or received from that address. By default a datagram
-     * socket is not connected.
+     * socket is not connected. If the socket is already closed,
+     * then this method has no effect.
      *
-     * <p>If the remote destination to which the socket is connected does not
-     * exist, or is otherwise unreachable, and if an ICMP destination unreachable
-     * packet has been received for that address, then a subsequent call to
-     * send or receive may throw a PortUnreachableException. Note, there is no
-     * guarantee that the exception will be thrown.
+     * <p> If this socket is not bound then this method will first cause the
+     * socket to be bound to an address that is assigned automatically,
+     * as if invoking the {@link #bind bind} method with a parameter of
+     * {@code null}. If the remote destination to which the socket is connected
+     * does not exist, or is otherwise unreachable, and if an ICMP destination
+     * unreachable packet has been received for that address, then a subsequent
+     * call to send or receive may throw a PortUnreachableException. Note,
+     * there is no guarantee that the exception will be thrown.
      *
      * <p> If a security manager has been installed then it is invoked to check
      * access to the remote address. Specifically, if the given {@code address}
@@ -506,14 +522,19 @@ public class DatagramSocket implements java.io.Closeable {
      *         if a security manager has been installed and it does
      *         not permit access to the given remote address
      *
+     * @throws UncheckedIOException
+     *         may be thrown if connect fails, for example, if the
+     *         destination address is non-routable
+     *
      * @see #disconnect
+     *
      * @since 1.2
      */
     public void connect(InetAddress address, int port) {
         try {
             connectInternal(address, port);
         } catch (SocketException se) {
-            throw new Error("connect failed", se);
+            throw new UncheckedIOException("connect failed", se);
         }
     }
 
@@ -522,7 +543,9 @@ public class DatagramSocket implements java.io.Closeable {
      *
      * <p> If given an {@link InetSocketAddress InetSocketAddress}, this method
      * behaves as if invoking {@link #connect(InetAddress,int) connect(InetAddress,int)}
-     * with the given socket addresses IP address and port number.
+     * with the given socket addresses IP address and port number, except that the
+     * {@code SocketException} that may be raised is not wrapped in an
+     * {@code UncheckedIOException}.
      *
      * @param   addr    The remote address.
      *
@@ -554,7 +577,17 @@ public class DatagramSocket implements java.io.Closeable {
      * Disconnects the socket. If the socket is closed or not connected,
      * then this method has no effect.
      *
+     * @apiNote If this method throws an UncheckedIOException, the socket
+     *          may be left in an unspecified state. It is strongly
+     *          recommended that the socket be closed when disconnect
+     *          fails.
+     *
+     * @throws  UncheckedIOException
+     *          may be thrown if disconnect fails to dissolve the
+     *          association and restore the socket to a consistent state.
+     *
      * @see #connect
+     *
      * @since 1.2
      */
     public void disconnect() {

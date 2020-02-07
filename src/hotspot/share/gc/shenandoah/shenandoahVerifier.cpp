@@ -88,8 +88,7 @@ private:
       // For performance reasons, only fully verify non-marked field values.
       // We are here when the host object for *p is already marked.
 
-      HeapWord* addr = (HeapWord*) obj;
-      if (_map->par_mark(addr)) {
+      if (_map->par_mark(obj)) {
         verify_oop_at(p, obj);
         _stack->push(ShenandoahVerifierTask(obj));
       }
@@ -117,7 +116,7 @@ private:
       check(ShenandoahAsserts::_safe_unknown, obj, Metaspace::contains(obj_klass),
              "Object klass pointer must go to metaspace");
 
-      HeapWord *obj_addr = (HeapWord *) obj;
+      HeapWord *obj_addr = cast_from_oop<HeapWord*>(obj);
       check(ShenandoahAsserts::_safe_unknown, obj, obj_addr < obj_reg->top(),
              "Object start should be within the region");
 
@@ -181,7 +180,7 @@ private:
       check(ShenandoahAsserts::_safe_oop, obj, !fwd_reg->is_humongous(),
              "Should have no humongous forwardees");
 
-      HeapWord *fwd_addr = (HeapWord *) fwd;
+      HeapWord *fwd_addr = cast_from_oop<HeapWord *>(fwd);
       check(ShenandoahAsserts::_safe_oop, obj, fwd_addr < fwd_reg->top(),
              "Forwardee start should be within the region");
       check(ShenandoahAsserts::_safe_oop, obj, (fwd_addr + fwd->size()) <= fwd_reg->top(),
@@ -522,7 +521,7 @@ public:
                                   _options);
 
     while (true) {
-      size_t v = Atomic::add(&_claimed, 1u) - 1;
+      size_t v = Atomic::fetch_and_add(&_claimed, 1u);
       if (v < _heap->num_regions()) {
         ShenandoahHeapRegion* r = _heap->get_region(v);
         if (!r->is_humongous() && !r->is_trash()) {

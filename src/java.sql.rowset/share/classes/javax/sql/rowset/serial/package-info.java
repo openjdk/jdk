@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,11 +26,11 @@
 /**
  * Provides utility classes to allow serializable mappings between SQL types
  * and data types in the Java programming language.
- * <p> Standard JDBC <code>RowSet</code> implementations may use these utility
+ * <p> Standard JDBC {@code RowSet} implementations may use these utility
  * classes to
- * assist in the serialization of disconnected <code>RowSet</code> objects.
+ * assist in the serialization of disconnected {@code RowSet} objects.
  * This is useful
- * when  transmitting a disconnected <code>RowSet</code> object over the wire to
+ * when  transmitting a disconnected {@code RowSet} object over the wire to
  * a different VM or across layers within an application.<br>
  * </p>
  *
@@ -38,40 +38,40 @@
  * A serializable mapping in the Java programming language of an SQL ARRAY
  * value. <br>
  * <br>
- * The <code>SerialArray</code> class provides a constructor for creating a <code>SerialArray</code>
+ * The {@code SerialArray} class provides a constructor for creating a {@code SerialArray}
  * instance from an Array object, methods for getting the base type and
  * the SQL name for the base type, and methods for copying all or part of a
- * <code>SerialArray</code> object. <br>
+ * {@code SerialArray} object. <br>
  *
  * <h2>2.0 SerialBlob</h2>
  * A serializable mapping in the Java programming language of an SQL BLOB
  * value.  <br>
  * <br>
- * The <code>SerialBlob</code>class provides a constructor for creating an instance
+ * The {@code SerialBlob} class provides a constructor for creating an instance
  * from a Blob object. Note that the Blob object should have brought the SQL
- * BLOB value's data over to the client before a <code>SerialBlob</code>object
+ * BLOB value's data over to the client before a {@code SerialBlob} object
  * is constructed from it. The data of an SQL BLOB value can be materialized
- * on the client as an array of bytes (using the method <code>Blob.getBytes</code>)
- * or as a stream of uninterpreted bytes (using the method <code>Blob.getBinaryStream</code>).
+ * on the client as an array of bytes (using the method {@code Blob.getBytes})
+ * or as a stream of uninterpreted bytes (using the method {@code Blob.getBinaryStream}).
  * <br>
  * <br>
- * <code>SerialBlob</code> methods make it possible to make a copy of a <code>SerialBlob</code>
+ * {@code SerialBlob} methods make it possible to make a copy of a {@code SerialBlob}
  * object as an array of bytes or as a stream. They also make it possible
- * to locate a given pattern of bytes or a <code>Blob</code> object within a <code>SerialBlob</code>
+ * to locate a given pattern of bytes or a {@code Blob} object within a {@code SerialBlob}
  * object. <br>
  *
  * <h2>3.0 SerialClob</h2>
  * A serializable mapping in the Java programming language of an SQL CLOB
  * value.  <br>
  * <br>
- * The <code>SerialClob</code> class provides a constructor for creating an instance
- * from a <code>Clob</code> object. Note that the <code>Clob</code> object should have
- * brought the SQL CLOB value's data over to the client before a <code>SerialClob</code>
+ * The {@code SerialClob} class provides a constructor for creating an instance
+ * from a {@code Clob} object. Note that the {@code Clob} object should have
+ * brought the SQL CLOB value's data over to the client before a {@code SerialClob}
  * object is constructed from it. The data of an SQL CLOB value can be
  * materialized on the client as a stream of Unicode characters. <br>
  * <br>
- * <code>SerialClob</code> methods make it possible to get a substring from a
- * <code>SerialClob</code> object or to locate the start of a pattern of characters.
+ * {@code SerialClob} methods make it possible to get a substring from a
+ * {@code SerialClob} object or to locate the start of a pattern of characters.
  * <br>
  *
  * <h2>5.0 SerialDatalink</h2>
@@ -79,11 +79,12 @@
  * value. A DATALINK value references a file outside of the underlying data source
  * that the originating data source manages. <br>
  * <br>
- * <code>RowSet</code> implementations can use the method <code>RowSet.getURL()</code> to retrieve
- * a <code>java.net.URL</code> object, which can be used to manipulate the external data.
+ * {@code RowSet} implementations can use the method {@code RowSet.getURL()} to retrieve
+ * a {@code java.net.URL} object, which can be used to manipulate the external data.
  * <br>
- * <br>
- * &nbsp;&nbsp;<code>&nbsp;&nbsp;&nbsp; java.net.URL url = rowset.getURL(1);</code><br>
+ * <PRE>
+ *    java.net.URL url = rowset.getURL(1);
+ * </PRE>
  *
  * <h2>6.0 SerialJavaObject</h2>
  * A serializable mapping in the Java programming language of an SQL JAVA_OBJECT
@@ -94,15 +95,15 @@
  * object is not immediately serializable, this class will attempt to serialize
  * all non static members to permit the object instance state to be serialized.
  * Static or transient fields cannot be serialized and attempting to do so
- * will result in a <code>SerialException</code> being thrown. <br>
+ * will result in a {@code SerialException} being thrown. <br>
  *
  * <h2>7.0 SerialRef</h2>
  * A serializable mapping between the SQL REF type and the Java programming
  * language. <br>
  * <br>
- * The <code>SerialRef</code> class provides a constructor for creating a <code>SerialRef</code>
- * instance from a <code>Ref</code> type and provides methods for getting
- * and setting the <code>Ref</code> object type. <br>
+ * The {@code SerialRef} class provides a constructor for creating a {@code SerialRef}
+ * instance from a {@code Ref} type and provides methods for getting
+ * and setting the {@code Ref} object type. <br>
  *
  * <h2>8.0 SerialStruct</h2>
  * A serializable mapping in the Java programming language of an SQL structured
@@ -110,36 +111,36 @@
  * form, and if an attribute is itself a structured type, each of its attributes
  * that is not already serializable is mapped to a serializable form. <br>
  * <br>
- * In addition, if a <code>Map</code> object is passed to one of the constructors or
- * to the method <code>getAttributes</code>, the structured type is custom mapped
- * according to the mapping specified in the <code>Map</code> object.
+ * In addition, if a {@code Map} object is passed to one of the constructors or
+ * to the method {@code getAttributes}, the structured type is custom mapped
+ * according to the mapping specified in the {@code Map} object.
  * <br>
- * The <code>SerialStruct</code> class provides a constructor for creating an
- * instance  from a <code>Struct</code> object, a method for retrieving the SQL
+ * The {@code SerialStruct} class provides a constructor for creating an
+ * instance  from a {@code Struct} object, a method for retrieving the SQL
  * type name of the SQL structured type in the database, and methods for retrieving
  * its attribute values. <br>
  *
  * <h2>9.0 SQLInputImpl</h2>
  *   An input stream used for custom mapping user-defined types (UDTs). An
- *   <code>SQLInputImpl</code> object is an input stream that contains a stream of
+ *   {@code SQLInputImpl} object is an input stream that contains a stream of
  *   values that are
  * the attributes of a UDT. This class is used by the driver behind the scenes
- * when the method <code>getObject</code> is called on an SQL structured or distinct
- * type that has a custom mapping; a programmer never invokes <code>SQLInputImpl</code>
+ * when the method {@code getObject} is called on an SQL structured or distinct
+ * type that has a custom mapping; a programmer never invokes {@code SQLInputImpl}
  * methods directly. <br>
  *   <br>
- * The <code>SQLInputImpl</code> class provides a set of reader methods
- * analogous to the <code>ResultSet</code> getter methods. These methods make it
- * possible to read the values in an <code>SQLInputImpl</code> object. The method
- * <code>wasNull</code> is used to determine whether the last value read was SQL NULL.
+ * The {@code SQLInputImpl} class provides a set of reader methods
+ * analogous to the {@code ResultSet} getter methods. These methods make it
+ * possible to read the values in an {@code SQLInputImpl} object. The method
+ * {@code wasNull} is used to determine whether the last value read was SQL NULL.
  * <br>
  *  <br>
- * When a constructor or getter method that takes a <code>Map</code> object is called,
+ * When a constructor or getter method that takes a {@code Map} object is called,
  * the JDBC driver calls the method
- * <code>SQLData.getSQLType</code> to determine the SQL type of the UDT being custom
- * mapped. The driver  creates an instance of <code>SQLInputImpl</code>, populating it with
+ * {@code SQLData.getSQLType} to determine the SQL type of the UDT being custom
+ * mapped. The driver  creates an instance of {@code SQLInputImpl}, populating it with
  * the attributes of  the UDT. The driver then passes the input stream to the
- * method <code>SQLData.readSQL</code>,  which in turn calls the <code>SQLInputImpl</code>
+ * method {@code SQLData.readSQL},  which in turn calls the {@code SQLInputImpl}
  * methods to read the  attributes from the input stream. <br>
  *
  * <h2>10.0 SQLOutputImpl</h2>
@@ -148,16 +149,16 @@
  *  and its methods are never directly invoked by an application programmer.
  * <br>
  *   <br>
- * When an application calls the method <code>PreparedStatement.setObject</code>, the
+ * When an application calls the method {@code PreparedStatement.setObject}, the
  * driver checks to see whether the value to be written is a UDT with a custom
  * mapping. If it is, there will be an entry in a type map containing the Class
- * object for the class that implements <code>SQLData</code> for this UDT. If the
- * value to be written is an instance of <code>SQLData</code>, the driver will
- * create  an instance of <code>SQLOutputImpl</code> and pass it to the method
- * <code>SQLData.writeSQL</code>.
- * The method <code>writeSQL</code> in turn calls the appropriate <code>SQLOutputImpl</code>
- * writer methods to write data from the <code>SQLData</code> object to the
- * <code>SQLOutputImpl</code>
+ * object for the class that implements {@code SQLData} for this UDT. If the
+ * value to be written is an instance of {@code SQLData}, the driver will
+ * create  an instance of {@code SQLOutputImpl} and pass it to the method
+ * {@code SQLData.writeSQL}.
+ * The method {@code writeSQL} in turn calls the appropriate {@code SQLOutputImpl}
+ * writer methods to write data from the {@code SQLData} object to the
+ * {@code SQLOutputImpl}
  * output  stream as the representation of an SQL user-defined type.
  *
  * <h2>Custom Mapping</h2>
@@ -167,12 +168,12 @@
  * (A DISTINCT type can thought of as having one attribute.)  However, there are
  * many other possibilities, and there may be any number of different mappings.
  * <P>
- * A programmer defines the mapping by implementing the interface <code>SQLData</code>.
+ * A programmer defines the mapping by implementing the interface {@code SQLData}.
  * For example, if an SQL structured type named AUTHORS has the attributes NAME,
  * TITLE, and PUBLISHER, it could be mapped to a Java class named Authors.  The
  * Authors class could have the fields name, title, and publisher, to which the
  * attributes of AUTHORS are mapped.  In such a case, the implementation of
- * <code>SQLData</code> could look like the following:
+ * {@code SQLData} could look like the following:
  * <PRE>
  *    public class Authors implements SQLData {
  *        public String name;
@@ -200,27 +201,27 @@
  *    }
  * </PRE>
  *
- * A <code>java.util.Map</code> object is used to associate the SQL structured
- * type with its mapping to the class <code>Authors</code>. The following code fragment shows
- * how a <code>Map</code> object might be created and given an entry associating
- * <code>AUTHORS</code> and <code>Authors</code>.
+ * A {@code java.util.Map} object is used to associate the SQL structured
+ * type with its mapping to the class {@code Authors}. The following code fragment shows
+ * how a {@code Map} object might be created and given an entry associating
+ * {@code AUTHORS} and {@code Authors}.
  * <PRE>
  *     java.util.Map map = new java.util.HashMap();
  *     map.put("SCHEMA_NAME.AUTHORS", Class.forName("Authors");
  * </PRE>
  *
- * The <code>Map</code> object <i>map</i> now contains an entry with the
- * fully qualified name of the SQL structured type and the <code>Class</code>
- *  object for the class <code>Authors</code>.  It can be passed to a method
- * to tell the driver how to map <code>AUTHORS</code> to <code>Authors</code>.
+ * The {@code Map} object <i>map</i> now contains an entry with the
+ * fully qualified name of the SQL structured type and the {@code Class}
+ *  object for the class {@code Authors}.  It can be passed to a method
+ * to tell the driver how to map {@code AUTHORS} to {@code Authors}.
  * <P>
- * For a disconnected <code>RowSet</code> object, custom mapping can be done
- * only when a <code>Map</code> object is passed to the method or constructor
+ * For a disconnected {@code RowSet} object, custom mapping can be done
+ * only when a {@code Map} object is passed to the method or constructor
  * that will be doing the custom mapping.  The situation is different for
- * connected <code>RowSet</code> objects because they maintain a connection
+ * connected {@code RowSet} objects because they maintain a connection
  * with the data source.  A method that does custom mapping and is called by
- * a disconnected <code>RowSet</code> object may use the <code>Map</code>
- * object that is associated with the <code>Connection</code> object being
+ * a disconnected {@code RowSet} object may use the {@code Map}
+ * object that is associated with the {@code Connection} object being
  * used. So, in other words, if no map is specified, the connection's type
  * map can be used by default.
  */

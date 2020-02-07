@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2013, 2020, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #define SHARE_GC_SHENANDOAH_SHENANDOAHCONCURRENTMARK_HPP
 
 #include "gc/shared/taskqueue.hpp"
+#include "gc/shared/taskTerminator.hpp"
 #include "gc/shenandoah/shenandoahOopClosures.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahTaskqueue.hpp"
@@ -57,13 +58,13 @@ private:
   inline void count_liveness(jushort* live_data, oop obj);
 
   template <class T, bool CANCELLABLE>
-  void mark_loop_work(T* cl, jushort* live_data, uint worker_id, ShenandoahTaskTerminator *t);
+  void mark_loop_work(T* cl, jushort* live_data, uint worker_id, TaskTerminator *t);
 
   template <bool CANCELLABLE>
-  void mark_loop_prework(uint worker_id, ShenandoahTaskTerminator *terminator, ReferenceProcessor *rp, bool strdedup);
+  void mark_loop_prework(uint worker_id, TaskTerminator *terminator, ReferenceProcessor *rp, bool strdedup);
 
 public:
-  void mark_loop(uint worker_id, ShenandoahTaskTerminator* terminator, ReferenceProcessor *rp,
+  void mark_loop(uint worker_id, TaskTerminator* terminator, ReferenceProcessor *rp,
                  bool cancellable, bool strdedup) {
     if (cancellable) {
       mark_loop_prework<true>(worker_id, terminator, rp, strdedup);

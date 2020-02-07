@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -136,7 +136,7 @@ inline const ZVirtualMemory& ZPage::virtual_memory() const {
 
 inline uint8_t ZPage::numa_id() {
   if (_numa_id == (uint8_t)-1) {
-    _numa_id = (uint8_t)ZNUMA::memory_id(ZAddress::good(start()));
+    _numa_id = ZNUMA::memory_id(ZAddress::good(start()));
   }
 
   return _numa_id;

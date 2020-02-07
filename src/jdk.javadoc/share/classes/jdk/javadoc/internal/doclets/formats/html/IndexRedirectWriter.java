@@ -75,18 +75,18 @@ public class IndexRedirectWriter extends HtmlDocletWriter {
     private void generateIndexFile() throws DocFileIOException {
         Content htmlComment = contents.newPage;
         Head head = new Head(path, configuration.docletVersion, configuration.startTime)
-                .setTimestamp(!configuration.notimestamp)
+                .setTimestamp(!options.noTimestamp())
                 .setDescription("index redirect")
                 .setGenerator(getGenerator(getClass()))
                 .setStylesheets(configuration.getMainStylesheet(), Collections.emptyList()) // avoid reference to default stylesheet
                 .addDefaultScript(false);
 
-        String title = (configuration.windowtitle.length() > 0)
-                ? configuration.windowtitle
+        String title = (options.windowTitle().length() > 0)
+                ? options.windowTitle()
                 : resources.getText("doclet.Generated_Docs_Untitled");
 
         head.setTitle(title)
-                .setCharset(configuration.charset)
+                .setCharset(options.charset())
                 .setCanonicalLink(target);
 
         String targetPath = target.getPath();

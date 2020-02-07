@@ -141,7 +141,7 @@ class PSScavenge: AllStatic {
   // so it only checks one side of the complete predicate.
 
   inline static bool is_obj_in_young(oop o) {
-    return (HeapWord*)o >= _young_generation_boundary;
+    return cast_from_oop<HeapWord*>(o) >= _young_generation_boundary;
   }
 
   inline static bool is_obj_in_young(narrowOop o) {

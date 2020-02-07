@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,8 +35,10 @@
 #include "jfr/recorder/checkpoint/types/traceid/jfrTraceId.inline.hpp"
 #include "jfr/recorder/service/jfrOptionSet.hpp"
 #include "jfr/recorder/stacktrace/jfrStackTraceRepository.hpp"
+#include "jfr/support/jfrMethodLookup.hpp"
 #include "jfr/utilities/jfrHashtable.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
+#include "oops/instanceKlass.inline.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/thread.hpp"
@@ -108,6 +110,7 @@ void ObjectSampleCheckpoint::on_thread_exit(JavaThread* jt) {
 static GrowableArray<traceid>* unloaded_klass_set = NULL;
 
 static void add_to_unloaded_klass_set(traceid klass_id) {
+  assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
   if (unloaded_klass_set == NULL) {
     unloaded_klass_set = c_heap_allocate_array<traceid>();
   }
@@ -115,14 +118,16 @@ static void add_to_unloaded_klass_set(traceid klass_id) {
 }
 
 static void sort_unloaded_klass_set() {
+  assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
   if (unloaded_klass_set != NULL && unloaded_klass_set->length() > 1) {
     unloaded_klass_set->sort(sort_traceid);
   }
 }
 
 void ObjectSampleCheckpoint::on_klass_unload(const Klass* k) {
+  assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
   assert(k != NULL, "invariant");
-  add_to_unloaded_klass_set(TRACE_ID(k));
+  add_to_unloaded_klass_set(JfrTraceId::get(k));
 }
 
 template <typename Processor>
@@ -295,29 +300,31 @@ void ObjectSampleCheckpoint::on_rotation(const ObjectSampler* sampler, JfrStackT
   assert(JfrStream_lock->owned_by_self(), "invariant");
   assert(sampler != NULL, "invariant");
   assert(LeakProfiler::is_running(), "invariant");
+  MutexLocker lock(ClassLoaderDataGraph_lock);
+  // the lock is needed to ensure the unload lists do not grow in the middle of inspection.
   install_stack_traces(sampler, stack_trace_repo);
 }
 
-static traceid get_klass_id(traceid method_id) {
+static bool is_klass_unloaded(traceid klass_id) {
+  assert(ClassLoaderDataGraph_lock->owned_by_self(), "invariant");
+  return unloaded_klass_set != NULL && predicate(unloaded_klass_set, klass_id);
+}
+
+static bool is_processed(traceid method_id) {
   assert(method_id != 0, "invariant");
-  return method_id >> TRACE_ID_SHIFT;
-}
-
-static bool is_klass_unloaded(traceid method_id) {
-  return unloaded_klass_set != NULL && predicate(unloaded_klass_set, get_klass_id(method_id));
-}
-
-static bool is_processed(traceid id) {
-  assert(id != 0, "invariant");
   assert(id_set != NULL, "invariant");
-  return mutable_predicate(id_set, id);
+  return mutable_predicate(id_set, method_id);
 }
 
-void ObjectSampleCheckpoint::add_to_leakp_set(const Method* method, traceid method_id) {
-  if (is_processed(method_id) || is_klass_unloaded(method_id)) {
+void ObjectSampleCheckpoint::add_to_leakp_set(const InstanceKlass* ik, traceid method_id) {
+  assert(ik != NULL, "invariant");
+  if (is_processed(method_id) || is_klass_unloaded(JfrMethodLookup::klass_id(method_id))) {
     return;
   }
-  JfrTraceId::set_leakp(method);
+  const Method* const method = JfrMethodLookup::lookup(ik, method_id);
+  assert(method != NULL, "invariant");
+  assert(method->method_holder() == ik, "invariant");
+  JfrTraceId::set_leakp(ik, method);
 }
 
 void ObjectSampleCheckpoint::write_stacktrace(const JfrStackTrace* trace, JfrCheckpointWriter& writer) {
@@ -330,7 +337,7 @@ void ObjectSampleCheckpoint::write_stacktrace(const JfrStackTrace* trace, JfrChe
   for (u4 i = 0; i < trace->_nr_of_frames; ++i) {
     const JfrStackFrame& frame = trace->_frames[i];
     frame.write(writer);
-    add_to_leakp_set(frame._method, frame._methodid);
+    add_to_leakp_set(frame._klass, frame._methodid);
   }
 }
 
@@ -413,6 +420,7 @@ void ObjectSampleCheckpoint::write(const ObjectSampler* sampler, EdgeStore* edge
 }
 
 static void clear_unloaded_klass_set() {
+  assert(ClassLoaderDataGraph_lock->owned_by_self(), "invariant");
   if (unloaded_klass_set != NULL && unloaded_klass_set->is_nonempty()) {
     unloaded_klass_set->clear();
   }

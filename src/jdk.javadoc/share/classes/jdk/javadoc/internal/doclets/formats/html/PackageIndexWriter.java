@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,6 @@ import javax.lang.model.element.PackageElement;
 
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
@@ -110,7 +109,7 @@ public class PackageIndexWriter extends AbstractOverviewIndexWriter {
 
             for (PackageElement pkg : configuration.packages) {
                 if (!pkg.isUnnamed()) {
-                    if (!(configuration.nodeprecated && utils.isDeprecated(pkg))) {
+                    if (!(options.noDeprecated() && utils.isDeprecated(pkg))) {
                         Content packageLinkContent = getPackageLink(pkg, getPackageName(pkg));
                         Content summaryContent = new ContentBuilder();
                         addSummaryComment(pkg, summaryContent);

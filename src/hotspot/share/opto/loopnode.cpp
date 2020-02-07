@@ -3014,6 +3014,33 @@ void PhaseIdealLoop::build_and_optimize(LoopOptsMode mode) {
     return;
   }
 
+  if (mode == LoopOptsMaxUnroll) {
+    for (LoopTreeIterator iter(_ltree_root); !iter.done(); iter.next()) {
+      IdealLoopTree* lpt = iter.current();
+      if (lpt->is_innermost() && lpt->_allow_optimizations && !lpt->_has_call && lpt->is_counted()) {
+        lpt->compute_trip_count(this);
+        if (!lpt->do_one_iteration_loop(this) &&
+            !lpt->do_remove_empty_loop(this)) {
+          AutoNodeBudget node_budget(this);
+          if (lpt->_head->as_CountedLoop()->is_normal_loop() &&
+              lpt->policy_maximally_unroll(this)) {
+            memset( worklist.adr(), 0, worklist.Size()*sizeof(Node*) );
+            do_maximally_unroll(lpt, worklist);
+          }
+        }
+      }
+    }
+
+    C->restore_major_progress(old_progress);
+
+    _igvn.optimize();
+
+    if (C->log() != NULL) {
+      log_loop_tree(_ltree_root, _ltree_root, C->log());
+    }
+    return;
+  }
+
   if (bs->optimize_loops(this, mode, visited, nstack, worklist)) {
     _igvn.optimize();
     if (C->log() != NULL) {

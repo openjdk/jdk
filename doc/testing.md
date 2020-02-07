@@ -261,9 +261,9 @@ The timeout factor (`-timeoutFactor`).
 Defaults to 4.
 
 #### TEST_MODE
-The test mode (`-agentvm`, `-samevm` or `-othervm`).
+The test mode (`agentvm` or `othervm`).
 
-Defaults to `-agentvm`.
+Defaults to `agentvm`.
 
 #### ASSERT
 Enable asserts (`-ea -esa`, or none).

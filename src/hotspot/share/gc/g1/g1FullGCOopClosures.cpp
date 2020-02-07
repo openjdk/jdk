@@ -77,7 +77,7 @@ template <class T> void G1VerifyOopClosure::do_oop_work(T* p) {
                     p2i(obj));
       } else {
         HeapRegion* from = _g1h->heap_region_containing((HeapWord*)p);
-        HeapRegion* to   = _g1h->heap_region_containing((HeapWord*)obj);
+        HeapRegion* to   = _g1h->heap_region_containing(obj);
         yy.print_cr("Field " PTR_FORMAT " of live obj " PTR_FORMAT " in region " HR_FORMAT,
                     p2i(p), p2i(_containing_obj), HR_FORMAT_PARAMS(from));
         print_object(&yy, _containing_obj);

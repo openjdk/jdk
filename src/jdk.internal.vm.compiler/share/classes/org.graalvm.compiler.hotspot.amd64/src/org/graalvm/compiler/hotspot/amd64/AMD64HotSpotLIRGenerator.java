@@ -545,6 +545,11 @@ public class AMD64HotSpotLIRGenerator extends AMD64LIRGenerator implements HotSp
     }
 
     @Override
+    public void emitDeoptimizeWithExceptionInCaller(Value exception) {
+        append(new AMD64HotSpotDeoptimizeWithExceptionCallerOp(config, exception));
+    }
+
+    @Override
     public void beforeRegisterAllocation() {
         super.beforeRegisterAllocation();
         boolean hasDebugInfo = getResult().getLIR().hasDebugInfo();

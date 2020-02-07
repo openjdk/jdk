@@ -30,19 +30,17 @@ import java.net.*;
 
 public class SetReceiveBufferSize {
 
-  public static void main(String args[]) throws Exception {
-    boolean error = true;
-     DatagramSocket soc = null;
+    public static void main(String args[]) throws Exception {
+        boolean error = true;
 
-     try {
-       soc = new DatagramSocket();
-       soc.setReceiveBufferSize(0);
-     } catch(IllegalArgumentException e) {
-       error = false;
-     }
+        try (DatagramSocket soc = new DatagramSocket()) {
+            soc.setReceiveBufferSize(0);
+        } catch (IllegalArgumentException e) {
+            error = false;
+        }
 
-     if (error) {
-       throw new RuntimeException("Test with 0 buffer size failed!");
-     }
-  }
+        if (error) {
+            throw new RuntimeException("Test with 0 buffer size failed!");
+        }
+    }
 }

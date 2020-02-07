@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1105,6 +1105,8 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
   CDS_ONLY(nonstatic_field(FileMapInfo,        _header,                   FileMapHeader*))                                           \
   CDS_ONLY(   static_field(FileMapInfo,        _current_info,             FileMapInfo*))                                             \
   CDS_ONLY(nonstatic_field(FileMapHeader,      _space[0],                 CDSFileMapRegion))                                         \
+  CDS_ONLY(nonstatic_field(FileMapHeader,      _cloned_vtables_offset,    size_t))                                                   \
+  CDS_ONLY(nonstatic_field(FileMapHeader,      _mapped_base_address,      char*))                                                    \
   CDS_ONLY(nonstatic_field(CDSFileMapRegion,   _mapped_base,              char*))                                                    \
   CDS_ONLY(nonstatic_field(CDSFileMapRegion,   _used,                     size_t))                                                   \
                                                                                                                                      \

@@ -2191,6 +2191,11 @@ void Compile::remove_root_to_sfpts_edges(PhaseIterGVN& igvn) {
         --i;
       }
     }
+    // Parsing may have added top inputs to the root node (Path
+    // leading to the Halt node proven dead). Make sure we get a
+    // chance to clean them up.
+    igvn._worklist.push(r);
+    igvn.optimize();
   }
 }
 
@@ -2287,7 +2292,7 @@ void Compile::Optimize() {
     if (has_loops()) {
       // Cleanup graph (remove dead nodes).
       TracePhase tp("idealLoop", &timers[_t_idealLoop]);
-      PhaseIdealLoop::optimize(igvn, LoopOptsNone);
+      PhaseIdealLoop::optimize(igvn, LoopOptsMaxUnroll);
       if (major_progress()) print_method(PHASE_PHASEIDEAL_BEFORE_EA, 2);
       if (failing())  return;
     }

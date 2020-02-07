@@ -74,22 +74,11 @@ public class TestFlush {
 
         try (RecordingStream rs = new RecordingStream()) {
             rs.enable(EventNames.Flush);
-            rs.enable(EventNames.FlushStorage);
-            rs.enable(EventNames.FlushStacktrace);
-            rs.enable(EventNames.FlushStringPool);
-            rs.enable(EventNames.FlushMetadata);
-            rs.enable(EventNames.FlushTypeSet);
             rs.onEvent(e -> {
-                switch (e.getEventType().getName()) {
-                    case EventNames.Flush:
-                        flushEventAck = true;
-                    case EventNames.FlushStorage:
-                    case EventNames.FlushStacktrace:
-                    case EventNames.FlushStringPool:
-                    case EventNames.FlushMetadata:
-                    case EventNames.FlushTypeSet:
-                        validateFlushEvent(e);
-                        return;
+                if (e.getEventType().getName().equals(EventNames.Flush)) {
+                    flushEventAck = true;
+                    validateFlushEvent(e);
+                    return;
                 }
                 if (e.getEventType().getName().equals(CatEvent.class.getName())) {
                     System.out.println("Found cat!");

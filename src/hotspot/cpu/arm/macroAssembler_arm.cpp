@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2053,4 +2053,32 @@ void MacroAssembler::fast_unlock(Register Roop, Register Rbox, Register Rscratch
   bind(done);
 
 }
+
+void MacroAssembler::safepoint_poll(Register tmp1, Label& slow_path) {
+  if (SafepointMechanism::uses_thread_local_poll()) {
+    ldr_u32(tmp1, Address(Rthread, Thread::polling_page_offset()));
+    tst(tmp1, exact_log2(SafepointMechanism::poll_bit()));
+    b(slow_path, eq);
+  } else {
+    ldr_global_s32(tmp1, SafepointSynchronize::address_of_state());
+    cmp(tmp1, SafepointSynchronize::_not_synchronized);
+    b(slow_path, ne);
+  }
+}
+
+void MacroAssembler::get_polling_page(Register dest) {
+  if (SafepointMechanism::uses_thread_local_poll()) {
+    ldr(dest, Address(Rthread, Thread::polling_page_offset()));
+  } else {
+    mov_address(dest, os::get_polling_page());
+  }
+}
+
+void MacroAssembler::read_polling_page(Register dest, relocInfo::relocType rtype) {
+  get_polling_page(dest);
+  relocate(rtype);
+  ldr(dest, Address(dest));
+}
+
+
 #endif // COMPILER2

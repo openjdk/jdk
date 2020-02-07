@@ -7330,9 +7330,7 @@ void Assembler::decl(Register dst) {
  emit_int8(0x48 | dst->encoding());
 }
 
-#endif // _LP64
-
-// 64bit typically doesn't use the x87 but needs to for the trig funcs
+// 64bit doesn't use the x87
 
 void Assembler::fabs() {
   emit_int8((unsigned char)0xD9);
@@ -7767,6 +7765,7 @@ void Assembler::fldl2e() {
   emit_int8((unsigned char)0xD9);
   emit_int8((unsigned char)0xEA);
 }
+#endif // !_LP64
 
 // SSE SIMD prefix byte values corresponding to VexSimdPrefix encoding.
 static int simd_pre[4] = { 0, 0x66, 0xF3, 0xF2 };
@@ -8831,6 +8830,18 @@ void Assembler::cvtsi2ssq(XMMRegister dst, Address src) {
   attributes.set_address_attributes(/* tuple_type */ EVEX_T1S, /* input_size_in_bits */ EVEX_64bit);
   simd_prefix(dst, dst, src, VEX_SIMD_F3, VEX_OPCODE_0F, &attributes);
   emit_int8(0x2A);
+  emit_operand(dst, src);
+}
+
+void Assembler::cvttsd2siq(Register dst, Address src) {
+  NOT_LP64(assert(VM_Version::supports_sse2(), ""));
+  // F2 REX.W 0F 2C /r
+  // CVTTSD2SI r64, xmm1/m64
+  InstructionMark im(this);
+  emit_int8((unsigned char)0xF2);
+  prefix(REX_W);
+  emit_int8(0x0F);
+  emit_int8(0x2C);
   emit_operand(dst, src);
 }
 

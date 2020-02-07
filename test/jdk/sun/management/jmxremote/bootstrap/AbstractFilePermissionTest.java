@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@ import java.nio.file.Path;
 import java.nio.file.attribute.PosixFilePermission;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -164,7 +165,7 @@ public abstract class AbstractFilePermissionTest {
             final String pp = "-Dcom.sun.management.jmxremote.port=" + jdk.test.lib.Utils.getFreePort();
 
             List<String> command = new ArrayList<>();
-            command.addAll(jdk.test.lib.Utils.getVmOptions());
+            Collections.addAll(command, jdk.test.lib.Utils.getTestJavaOpts());
             command.add(mp);
             command.add(pp);
             command.add("-cp");

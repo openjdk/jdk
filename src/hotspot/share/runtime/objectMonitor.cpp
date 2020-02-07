@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -245,7 +245,7 @@ void ObjectMonitor::enter(TRAPS) {
   // and to reduce RTS->RTO cache line upgrades on SPARC and IA32 processors.
   Thread * const Self = THREAD;
 
-  void * cur = Atomic::cmpxchg(&_owner, (void*)NULL, Self);
+  void* cur = try_set_owner_from(NULL, Self);
   if (cur == NULL) {
     assert(_recursions == 0, "invariant");
     return;
@@ -260,9 +260,7 @@ void ObjectMonitor::enter(TRAPS) {
   if (Self->is_lock_owned((address)cur)) {
     assert(_recursions == 0, "internal state error");
     _recursions = 1;
-    // Commute owner from a thread-specific on-stack BasicLockObject address to
-    // a full-fledged "Thread *".
-    _owner = Self;
+    set_owner_from_BasicLock(cur, Self);  // Convert from BasicLock* to Thread*.
     return;
   }
 
@@ -403,7 +401,7 @@ void ObjectMonitor::enter(TRAPS) {
 int ObjectMonitor::TryLock(Thread * Self) {
   void * own = _owner;
   if (own != NULL) return 0;
-  if (Atomic::replace_if_null(&_owner, Self)) {
+  if (try_set_owner_from(NULL, Self) == NULL) {
     assert(_recursions == 0, "invariant");
     return 1;
   }
@@ -862,15 +860,12 @@ void ObjectMonitor::UnlinkAfterAcquire(Thread *Self, ObjectWaiter *SelfNode) {
 // of such futile wakups is low.
 
 void ObjectMonitor::exit(bool not_suspended, TRAPS) {
-  Thread * const Self = THREAD;
-  if (THREAD != _owner) {
-    if (THREAD->is_lock_owned((address) _owner)) {
-      // Transmute _owner from a BasicLock pointer to a Thread address.
-      // We don't need to hold _mutex for this transition.
-      // Non-null to Non-null is safe as long as all readers can
-      // tolerate either flavor.
+  Thread* const Self = THREAD;
+  void* cur = Atomic::load(&_owner);
+  if (THREAD != cur) {
+    if (THREAD->is_lock_owned((address)cur)) {
       assert(_recursions == 0, "invariant");
-      _owner = THREAD;
+      set_owner_from_BasicLock(cur, Self);  // Convert from BasicLock* to Thread*.
       _recursions = 0;
     } else {
       // Apparent unbalanced locking ...
@@ -914,10 +909,15 @@ void ObjectMonitor::exit(bool not_suspended, TRAPS) {
   for (;;) {
     assert(THREAD == _owner, "invariant");
 
+    // Drop the lock.
     // release semantics: prior loads and stores from within the critical section
     // must not float (reorder) past the following store that drops the lock.
-    Atomic::release_store(&_owner, (void*)NULL);   // drop the lock
-    OrderAccess::storeload();                      // See if we need to wake a successor
+    // Uses a storeload to separate release_store(owner) from the
+    // successor check. The try_set_owner() below uses cmpxchg() so
+    // we get the fence down there.
+    release_clear_owner(Self);
+    OrderAccess::storeload();
+
     if ((intptr_t(_EntryList)|intptr_t(_cxq)) == 0 || _succ != NULL) {
       return;
     }
@@ -959,7 +959,7 @@ void ObjectMonitor::exit(bool not_suspended, TRAPS) {
     // to reacquire the lock the responsibility for ensuring succession
     // falls to the new owner.
     //
-    if (!Atomic::replace_if_null(&_owner, THREAD)) {
+    if (try_set_owner_from(NULL, Self) != NULL) {
       return;
     }
 
@@ -1092,8 +1092,9 @@ void ObjectMonitor::ExitEpilog(Thread * Self, ObjectWaiter * Wakee) {
   Wakee  = NULL;
 
   // Drop the lock
-  Atomic::release_store(&_owner, (void*)NULL);
-  OrderAccess::fence();                               // ST _owner vs LD in unpark()
+  // Uses a fence to separate release_store(owner) from the LD in unpark().
+  release_clear_owner(Self);
+  OrderAccess::fence();
 
   DTRACE_MONITOR_PROBE(contended__exit, this, object(), Self);
   Trigger->unpark();
@@ -1119,10 +1120,11 @@ intx ObjectMonitor::complete_exit(TRAPS) {
 
   assert(InitDone, "Unexpectedly not initialized");
 
-  if (THREAD != _owner) {
-    if (THREAD->is_lock_owned ((address)_owner)) {
+  void* cur = Atomic::load(&_owner);
+  if (THREAD != cur) {
+    if (THREAD->is_lock_owned((address)cur)) {
       assert(_recursions == 0, "internal state error");
-      _owner = THREAD;   // Convert from basiclock addr to Thread addr
+      set_owner_from_BasicLock(cur, Self);  // Convert from BasicLock* to Thread*.
       _recursions = 0;
     }
   }
@@ -1167,11 +1169,12 @@ void ObjectMonitor::reenter(intx recursions, TRAPS) {
 // (IMSE). If there is a pending exception and the specified thread
 // is not the owner, that exception will be replaced by the IMSE.
 bool ObjectMonitor::check_owner(Thread* THREAD) {
-  if (_owner == THREAD) {
+  void* cur = Atomic::load(&_owner);
+  if (cur == THREAD) {
     return true;
   }
-  if (THREAD->is_lock_owned((address)_owner)) {
-    _owner = THREAD;  // convert from BasicLock addr to Thread addr
+  if (THREAD->is_lock_owned((address)cur)) {
+    set_owner_from_BasicLock(cur, THREAD);  // Convert from BasicLock* to Thread*.
     _recursions = 0;
     return true;
   }
@@ -1680,7 +1683,7 @@ int ObjectMonitor::TrySpin(Thread * Self) {
 
     Thread * ox = (Thread *) _owner;
     if (ox == NULL) {
-      ox = (Thread*)Atomic::cmpxchg(&_owner, (void*)NULL, Self);
+      ox = (Thread*)try_set_owner_from(NULL, Self);
       if (ox == NULL) {
         // The CAS succeeded -- this thread acquired ownership
         // Take care of some bookkeeping to exit spin state.
@@ -1984,7 +1987,7 @@ void ObjectMonitor::print_debug_style_on(outputStream* st) const {
   st->print_cr("(ObjectMonitor*) " INTPTR_FORMAT " = {", p2i(this));
   st->print_cr("  _header = " INTPTR_FORMAT, header().value());
   st->print_cr("  _object = " INTPTR_FORMAT, p2i(_object));
-  st->print_cr("  _next_om = " INTPTR_FORMAT, p2i(_next_om));
+  st->print_cr("  _next_om = " INTPTR_FORMAT, p2i(next_om()));
   st->print_cr("  _pad_buf0 = {");
   st->print_cr("    [0] = '\\0'");
   st->print_cr("    ...");

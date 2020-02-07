@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/os.hpp"
+#include "runtime/signature.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 // Basic error support
@@ -50,6 +51,20 @@ int LogMinObjAlignmentInBytes  = -1;
 uint64_t OopEncodingHeapMax = 0;
 
 // Something to help porters sleep at night
+
+#ifdef ASSERT
+BasicType char2type(int ch) {
+  switch (ch) {
+#define EACH_SIG(ch, bt, ignore) \
+    case ch: return bt;
+    SIGNATURE_TYPES_DO(EACH_SIG, ignore)
+#undef EACH_SIG
+  }
+  return T_ILLEGAL;
+}
+
+extern bool signature_constants_sane();
+#endif //ASSERT
 
 void basic_types_init() {
 #ifdef ASSERT
@@ -84,10 +99,13 @@ void basic_types_init() {
   assert(wordSize == BytesPerWord, "should be the same since they're used interchangeably");
   assert(wordSize == HeapWordSize, "should be the same since they're also used interchangeably");
 
+  assert(signature_constants_sane(), "");
+
   int num_type_chars = 0;
   for (int i = 0; i < 99; i++) {
     if (type2char((BasicType)i) != 0) {
       assert(char2type(type2char((BasicType)i)) == i, "proper inverses");
+      assert(Signature::basic_type(type2char((BasicType)i)) == i, "proper inverses");
       num_type_chars++;
     }
   }

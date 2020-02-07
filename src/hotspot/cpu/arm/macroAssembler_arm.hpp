@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1074,7 +1074,9 @@ public:
   void fast_unlock(Register obj, Register box, Register scratch, Register scratch2);
 #endif
 
-
+  void safepoint_poll(Register tmp1, Label& slow_path);
+  void get_polling_page(Register dest);
+  void read_polling_page(Register dest, relocInfo::relocType rtype);
 };
 
 

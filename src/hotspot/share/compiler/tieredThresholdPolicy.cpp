@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -304,7 +304,7 @@ void TieredThresholdPolicy::initialize() {
 #endif
 
   set_increase_threshold_at_ratio();
-  set_start_time(os::javaTimeMillis());
+  set_start_time(nanos_to_millis(os::javaTimeNanos()));
 }
 
 
@@ -404,7 +404,7 @@ CompileTask* TieredThresholdPolicy::select_task(CompileQueue* compile_queue) {
   CompileTask *max_blocking_task = NULL;
   CompileTask *max_task = NULL;
   Method* max_method = NULL;
-  jlong t = os::javaTimeMillis();
+  jlong t = nanos_to_millis(os::javaTimeNanos());
   // Iterate through the queue and find a method with a maximum rate.
   for (CompileTask* task = compile_queue->first(); task != NULL;) {
     CompileTask* next_task = task->next();
@@ -596,7 +596,7 @@ void TieredThresholdPolicy::compile(const methodHandle& mh, int bci, CompLevel l
       print_event(COMPILE, mh(), mh(), bci, level);
     }
     int hot_count = (bci == InvocationEntryBci) ? mh->invocation_count() : mh->backedge_count();
-    update_rate(os::javaTimeMillis(), mh());
+    update_rate(nanos_to_millis(os::javaTimeNanos()), mh());
     CompileBroker::compile_method(mh, bci, level, mh, hot_count, CompileTask::Reason_Tiered, thread);
   }
 }
@@ -616,7 +616,7 @@ void TieredThresholdPolicy::update_rate(jlong t, Method* m) {
 
   // We don't update the rate if we've just came out of a safepoint.
   // delta_s is the time since last safepoint in milliseconds.
-  jlong delta_s = t - SafepointTracing::end_of_last_safepoint_epoch_ms();
+  jlong delta_s = t - SafepointTracing::end_of_last_safepoint_ms();
   jlong delta_t = t - (m->prev_time() != 0 ? m->prev_time() : start_time()); // milliseconds since the last measurement
   // How many events were there since the last time?
   int event_count = m->invocation_count() + m->backedge_count();
@@ -641,7 +641,7 @@ void TieredThresholdPolicy::update_rate(jlong t, Method* m) {
 // Check if this method has been stale for a given number of milliseconds.
 // See select_task().
 bool TieredThresholdPolicy::is_stale(jlong t, jlong timeout, Method* m) {
-  jlong delta_s = t - SafepointTracing::end_of_last_safepoint_epoch_ms();
+  jlong delta_s = t - SafepointTracing::end_of_last_safepoint_ms();
   jlong delta_t = t - m->prev_time();
   if (delta_t > timeout && delta_s > timeout) {
     int event_count = m->invocation_count() + m->backedge_count();

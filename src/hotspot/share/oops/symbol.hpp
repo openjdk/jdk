@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -189,20 +189,34 @@ class Symbol : public MetaspaceObj {
   bool equals(const char* str, int len) const {
     int l = utf8_length();
     if (l != len) return false;
-    while (l-- > 0) {
-      if (str[l] != char_at(l))
-        return false;
-    }
-    assert(l == -1, "we should be at the beginning");
-    return true;
+    return contains_utf8_at(0, str, len);
   }
   bool equals(const char* str) const { return equals(str, (int) strlen(str)); }
 
   // Tests if the symbol starts with the given prefix.
-  bool starts_with(const char* prefix, int len) const;
+  bool starts_with(const char* prefix, int len) const {
+    return contains_utf8_at(0, prefix, len);
+  }
   bool starts_with(const char* prefix) const {
     return starts_with(prefix, (int) strlen(prefix));
   }
+  bool starts_with(int prefix_char) const {
+    return contains_byte_at(0, prefix_char);
+  }
+  // Tests if the symbol ends with the given suffix.
+  bool ends_with(const char* suffix, int len) const {
+    return contains_utf8_at(utf8_length() - len, suffix, len);
+  }
+  bool ends_with(const char* suffix) const {
+    return ends_with(suffix, (int) strlen(suffix));
+  }
+  bool ends_with(int suffix_char) const {
+    return contains_byte_at(utf8_length()-1, suffix_char);
+  }
+  // Tests if the symbol contains the given utf8 substring
+  // or byte at the given byte position.
+  bool contains_utf8_at(int position, const char* substring, int len) const;
+  bool contains_byte_at(int position, char code_byte) const;
 
   // Tests if the symbol starts with the given prefix.
   int index_of_at(int i, const char* str, int len) const;
