@@ -66,6 +66,13 @@ $(CLASSLIST_FILE): $(INTERIM_IMAGE_DIR)/bin/java$(EXE_SUFFIX) $(CLASSLIST_JAR)
 	$(call LogInfo, Generating $(patsubst $(OUTPUTDIR)/%, %, $@))
 	$(call LogInfo, Generating $(patsubst $(OUTPUTDIR)/%, %, $(JLI_TRACE_FILE)))
 	$(FIXPATH) $(INTERIM_IMAGE_DIR)/bin/java -XX:DumpLoadedClassList=$@.raw \
+	    -Duser.language=en -Duser.country=US \
+	    -cp $(SUPPORT_OUTPUTDIR)/classlist.jar \
+	    build.tools.classlist.HelloClasslist $(LOG_DEBUG)
+	$(GREP) -v HelloClasslist $@.raw > $(INTERIM_IMAGE_DIR)/lib/classlist
+	$(FIXPATH) $(INTERIM_IMAGE_DIR)/bin/java -Xshare:dump \
+	    -Xmx128M -Xms128M $(LOG_INFO)
+	$(FIXPATH) $(INTERIM_IMAGE_DIR)/bin/java -XX:DumpLoadedClassList=$@.raw \
 	    -Djava.lang.invoke.MethodHandle.TRACE_RESOLVE=true \
 	    -Duser.language=en -Duser.country=US \
 	    -cp $(SUPPORT_OUTPUTDIR)/classlist.jar \

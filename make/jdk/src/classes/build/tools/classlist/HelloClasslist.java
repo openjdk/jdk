@@ -99,7 +99,7 @@ public class HelloClasslist {
                 DateFormat.getDateInstance(DateFormat.DEFAULT, Locale.ROOT)
                         .format(new Date()));
 
-        LOGGER.log(Level.INFO, "New Date: " + newDate + " - old: " + oldDate);
+        LOGGER.log(Level.FINE, "New Date: " + newDate + " - old: " + oldDate);
     }
 
 }
