@@ -132,7 +132,7 @@ public final class Module implements AnnotatedElement {
         Version version = descriptor.version().orElse(null);
         String vs = Objects.toString(version, null);
         String loc = Objects.toString(uri, null);
-        String[] packages = descriptor.packages().toArray(new String[0]);
+        Object[] packages = descriptor.packages().toArray();
         defineModule0(this, isOpen, vs, loc, packages);
     }
 
@@ -1075,35 +1075,49 @@ public final class Module implements AnnotatedElement {
     {
         boolean isBootLayer = (ModuleLayer.boot() == null);
 
-        int cap = (int)(cf.modules().size() / 0.75f + 1.0f);
+        int numModules = cf.modules().size();
+        int cap = (int)(numModules / 0.75f + 1.0f);
         Map<String, Module> nameToModule = new HashMap<>(cap);
-        Map<String, ClassLoader> nameToLoader = new HashMap<>(cap);
 
-        Set<ClassLoader> loaders = new HashSet<>();
+        // to avoid repeated lookups and reduce iteration overhead, we create
+        // arrays holding correlated information about each module.
+        ResolvedModule[] resolvedModules = new ResolvedModule[numModules];
+        Module[] modules = new Module[numModules];
+        ClassLoader[] classLoaders = new ClassLoader[numModules];
+
+        resolvedModules = cf.modules().toArray(resolvedModules);
+
+        // record that we want to bind the layer to non-boot and non-platform
+        // module loaders as a final step
+        HashSet<ClassLoader> toBindLoaders = new HashSet<>(4);
         boolean hasPlatformModules = false;
 
         // map each module to a class loader
-        for (ResolvedModule resolvedModule : cf.modules()) {
-            String name = resolvedModule.name();
+        ClassLoader pcl = ClassLoaders.platformClassLoader();
+
+        for (int index = 0; index < numModules; index++) {
+            String name = resolvedModules[index].name();
             ClassLoader loader = clf.apply(name);
-            nameToLoader.put(name, loader);
-            if (loader == null || loader == ClassLoaders.platformClassLoader()) {
+
+            if (loader == null || loader == pcl) {
                 if (!(clf instanceof ModuleLoaderMap.Mapper)) {
                     throw new IllegalArgumentException("loader can't be 'null'"
                             + " or the platform class loader");
                 }
                 hasPlatformModules = true;
             } else {
-                loaders.add(loader);
+                toBindLoaders.add(loader);
             }
+
+            classLoaders[index] = loader;
         }
 
         // define each module in the configuration to the VM
-        for (ResolvedModule resolvedModule : cf.modules()) {
-            ModuleReference mref = resolvedModule.reference();
+        for (int index = 0; index < numModules; index++) {
+            ModuleReference mref = resolvedModules[index].reference();
             ModuleDescriptor descriptor = mref.descriptor();
             String name = descriptor.name();
-            ClassLoader loader = nameToLoader.get(name);
+            ClassLoader loader = classLoaders[index];
             Module m;
             if (loader == null && name.equals("java.base")) {
                 // java.base is already defined to the VM
@@ -1113,16 +1127,15 @@ public final class Module implements AnnotatedElement {
                 m = new Module(layer, loader, descriptor, uri);
             }
             nameToModule.put(name, m);
+            modules[index] = m;
         }
 
         // setup readability and exports/opens
-        for (ResolvedModule resolvedModule : cf.modules()) {
+        for (int index = 0; index < numModules; index++) {
+            ResolvedModule resolvedModule = resolvedModules[index];
             ModuleReference mref = resolvedModule.reference();
             ModuleDescriptor descriptor = mref.descriptor();
-
-            String mn = descriptor.name();
-            Module m = nameToModule.get(mn);
-            assert m != null;
+            Module m = modules[index];
 
             // reads
             Set<Module> reads = new HashSet<>();
@@ -1174,16 +1187,15 @@ public final class Module implements AnnotatedElement {
         // if there are modules defined to the boot or platform class loaders
         // then register the modules in the class loader's services catalog
         if (hasPlatformModules) {
-            ClassLoader pcl = ClassLoaders.platformClassLoader();
             ServicesCatalog bootCatalog = BootLoader.getServicesCatalog();
             ServicesCatalog pclCatalog = ServicesCatalog.getServicesCatalog(pcl);
-            for (ResolvedModule resolvedModule : cf.modules()) {
+            for (int index = 0; index < numModules; index++) {
+                ResolvedModule resolvedModule = resolvedModules[index];
                 ModuleReference mref = resolvedModule.reference();
                 ModuleDescriptor descriptor = mref.descriptor();
                 if (!descriptor.provides().isEmpty()) {
-                    String name = descriptor.name();
-                    Module m = nameToModule.get(name);
-                    ClassLoader loader = nameToLoader.get(name);
+                    Module m = modules[index];
+                    ClassLoader loader = classLoaders[index];
                     if (loader == null) {
                         bootCatalog.register(m);
                     } else if (loader == pcl) {
@@ -1194,7 +1206,7 @@ public final class Module implements AnnotatedElement {
         }
 
         // record that there is a layer with modules defined to the class loader
-        for (ClassLoader loader : loaders) {
+        for (ClassLoader loader : toBindLoaders) {
             layer.bindToLoader(loader);
         }
 
@@ -1623,7 +1635,7 @@ public final class Module implements AnnotatedElement {
                                              boolean isOpen,
                                              String version,
                                              String location,
-                                             String[] pns);
+                                             Object[] pns);
 
     // JVM_AddReadsModule
     private static native void addReads0(Module from, Module to);
