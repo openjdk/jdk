@@ -2811,6 +2811,20 @@ JNI_ENTRY(jint, jni_RegisterNatives(JNIEnv *env, jclass clazz,
 
   Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(clazz));
 
+  // There are no restrictions on native code registering native methods, which
+  // allows agents to redefine the bindings to native methods. But we issue a
+  // warning if any code running outside of the boot/platform loader is rebinding
+  // any native methods in classes loaded by the boot/platform loader.
+  Klass* caller = thread->security_get_caller_class(1);
+  bool do_warning = false;
+  oop cl = k->class_loader();
+  if (cl ==  NULL || SystemDictionary::is_platform_class_loader(cl)) {
+    // If no caller class, or caller class has a different loader, then
+    // issue a warning below.
+    do_warning = (caller == NULL) || caller->class_loader() != cl;
+  }
+
+
   for (int index = 0; index < nMethods; index++) {
     const char* meth_name = methods[index].name;
     const char* meth_sig = methods[index].signature;
@@ -2823,11 +2837,17 @@ JNI_ENTRY(jint, jni_RegisterNatives(JNIEnv *env, jclass clazz,
     TempNewSymbol  signature = SymbolTable::probe(meth_sig, (int)strlen(meth_sig));
 
     if (name == NULL || signature == NULL) {
-      ResourceMark rm;
+      ResourceMark rm(THREAD);
       stringStream st;
       st.print("Method %s.%s%s not found", k->external_name(), meth_name, meth_sig);
       // Must return negative value on failure
       THROW_MSG_(vmSymbols::java_lang_NoSuchMethodError(), st.as_string(), -1);
+    }
+
+    if (do_warning) {
+      ResourceMark rm(THREAD);
+      log_warning(jni, resolve)("Re-registering of platform native method: %s.%s%s "
+              "from code in a different classloader", k->external_name(), meth_name, meth_sig);
     }
 
     bool res = Method::register_native(k, name, signature,
