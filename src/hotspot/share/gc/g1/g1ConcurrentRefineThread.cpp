@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,9 +29,8 @@
 #include "gc/g1/g1DirtyCardQueue.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "logging/log.hpp"
-#include "memory/resourceArea.hpp"
-#include "runtime/handles.inline.hpp"
-#include "runtime/mutexLocker.hpp"
+#include "runtime/atomic.hpp"
+#include "runtime/thread.hpp"
 
 G1ConcurrentRefineThread::G1ConcurrentRefineThread(G1ConcurrentRefine* cr, uint worker_id) :
   ConcurrentGCThread(),
@@ -40,56 +39,53 @@ G1ConcurrentRefineThread::G1ConcurrentRefineThread(G1ConcurrentRefine* cr, uint 
   _total_refinement_time(),
   _total_refined_cards(0),
   _worker_id(worker_id),
-  _active(false),
-  _monitor(NULL),
+  _notifier(new Semaphore(0)),
+  _should_notify(true),
   _cr(cr)
 {
-  // Each thread has its own monitor. The i-th thread is responsible for signaling
-  // to thread i+1 if the number of buffers in the queue exceeds a threshold for this
-  // thread. Monitors are also used to wake up the threads during termination.
-  // The 0th (primary) worker is notified by mutator threads and has a special monitor.
-  if (!is_primary()) {
-    _monitor = new Monitor(Mutex::nonleaf, "Refinement monitor", true,
-                           Monitor::_safepoint_check_never);
-  } else {
-    _monitor = DirtyCardQ_CBL_mon;
-  }
-
   // set name
   set_name("G1 Refine#%d", worker_id);
   create_and_start();
 }
 
 void G1ConcurrentRefineThread::wait_for_completed_buffers() {
-  MonitorLocker ml(_monitor, Mutex::_no_safepoint_check_flag);
-  while (!should_terminate() && !is_active()) {
-    ml.wait();
+  assert(this == Thread::current(), "precondition");
+  while (Atomic::load_acquire(&_should_notify)) {
+    _notifier->wait();
   }
-}
-
-bool G1ConcurrentRefineThread::is_active() {
-  G1DirtyCardQueueSet& dcqs = G1BarrierSet::dirty_card_queue_set();
-  return is_primary() ? dcqs.process_completed_buffers() : _active;
 }
 
 void G1ConcurrentRefineThread::activate() {
-  MutexLocker x(_monitor, Mutex::_no_safepoint_check_flag);
-  if (!is_primary()) {
-    set_active(true);
-  } else {
-    G1DirtyCardQueueSet& dcqs = G1BarrierSet::dirty_card_queue_set();
-    dcqs.set_process_completed_buffers(true);
+  assert(this != Thread::current(), "precondition");
+  // Notify iff transitioning from needing activation to not.  This helps
+  // keep the semaphore count bounded and minimizes the work done by
+  // activators when the thread is already active.
+  if (Atomic::load_acquire(&_should_notify) &&
+      Atomic::cmpxchg(&_should_notify, true, false)) {
+    _notifier->signal();
   }
-  _monitor->notify();
 }
 
-void G1ConcurrentRefineThread::deactivate() {
-  MutexLocker x(_monitor, Mutex::_no_safepoint_check_flag);
-  if (!is_primary()) {
-    set_active(false);
+bool G1ConcurrentRefineThread::maybe_deactivate(bool more_work) {
+  assert(this == Thread::current(), "precondition");
+
+  if (more_work) {
+    // Suppress unnecessary notifications.
+    Atomic::release_store(&_should_notify, false);
+    return false;
+  } else if (Atomic::load_acquire(&_should_notify)) {
+    // Deactivate if no notifications since enabled (see below).
+    return true;
   } else {
-    G1DirtyCardQueueSet& dcqs = G1BarrierSet::dirty_card_queue_set();
-    dcqs.set_process_completed_buffers(false);
+    // Try for more refinement work with notifications enabled, to close
+    // race; there could be a plethora of suppressed activation attempts
+    // after we found no work but before we enable notifications here
+    // (so there could be lots of work for this thread to do), followed
+    // by a long time without activation after enabling notifications.
+    // But first, clear any pending signals to prevent accumulation.
+    while (_notifier->trywait()) {}
+    Atomic::release_store(&_should_notify, true);
+    return false;
   }
 }
 
@@ -119,14 +115,13 @@ void G1ConcurrentRefineThread::run_service() {
         }
 
         Ticks start_time = Ticks::now();
-        if (!_cr->do_refinement_step(_worker_id, &_total_refined_cards)) {
-          break;                // No cards to process.
-        }
+        bool more_work = _cr->do_refinement_step(_worker_id, &_total_refined_cards);
         _total_refinement_time += (Ticks::now() - start_time);
+
+        if (maybe_deactivate(more_work)) break;
       }
     }
 
-    deactivate();
     log_debug(gc, refine)("Deactivated worker %d, off threshold: " SIZE_FORMAT
                           ", current: " SIZE_FORMAT ", refined cards: "
                           SIZE_FORMAT ", total refined cards: " SIZE_FORMAT,
@@ -146,6 +141,5 @@ void G1ConcurrentRefineThread::run_service() {
 }
 
 void G1ConcurrentRefineThread::stop_service() {
-  MutexLocker x(_monitor, Mutex::_no_safepoint_check_flag);
-  _monitor->notify();
+  activate();
 }

@@ -2776,8 +2776,6 @@ size_t G1CollectedHeap::pending_card_num() {
   Threads::threads_do(&count_from_threads);
 
   G1DirtyCardQueueSet& dcqs = G1BarrierSet::dirty_card_queue_set();
-  dcqs.verify_num_cards();
-
   return dcqs.num_cards() + count_from_threads._cards;
 }
 

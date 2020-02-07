@@ -89,6 +89,11 @@ jint G1ConcurrentRefineThreadControl::initialize(G1ConcurrentRefine* cr, uint nu
       }
     }
   }
+
+  if (num_max_threads > 0) {
+    G1BarrierSet::dirty_card_queue_set().set_primary_refinement_thread(_threads[0]);
+  }
+
   return JNI_OK;
 }
 
@@ -108,7 +113,7 @@ void G1ConcurrentRefineThreadControl::maybe_activate_next(uint cur_worker_id) {
     _threads[worker_id] = create_refinement_thread(worker_id, false);
     thread_to_activate = _threads[worker_id];
   }
-  if (thread_to_activate != NULL && !thread_to_activate->is_active()) {
+  if (thread_to_activate != NULL) {
     thread_to_activate->activate();
   }
 }
