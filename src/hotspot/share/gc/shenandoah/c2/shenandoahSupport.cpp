@@ -58,6 +58,11 @@ bool ShenandoahBarrierC2Support::expand(Compile* C, PhaseIterGVN& igvn) {
         return false;
       }
       C->clear_major_progress();
+      if (C->range_check_cast_count() > 0) {
+        // No more loop optimizations. Remove all range check dependent CastIINodes.
+        C->remove_range_check_casts(igvn);
+        igvn.optimize();
+      }
     }
   }
   return true;
