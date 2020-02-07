@@ -104,7 +104,6 @@ extern AwtGraphicsConfigDataPtr getDefaultConfig(int screen);
 extern int awt_allocate_colors(AwtGraphicsConfigDataPtr);
 extern void awt_allocate_systemrgbcolors(jint *, int, AwtGraphicsConfigDataPtr);
 
-extern int awtJNI_GetColorForVis (JNIEnv *, jobject, AwtGraphicsConfigDataPtr);
 extern jobject awtJNI_GetColorModel(JNIEnv *, AwtGraphicsConfigDataPtr);
 extern void awtJNI_CreateColorData (JNIEnv *, AwtGraphicsConfigDataPtr, int lock);
 

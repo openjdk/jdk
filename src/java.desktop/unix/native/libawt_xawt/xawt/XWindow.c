@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1124,19 +1124,6 @@ JNIEXPORT jboolean JNICALL Java_sun_awt_X11_XWindow_x11inputMethodLookupString
 
 extern struct X11GraphicsConfigIDs x11GraphicsConfigIDs;
 
-/*
- * Class:     Java_sun_awt_X11_XWindow_getNativeColor
- * Method:    getNativeColor
- * Signature  (Ljava/awt/Color;Ljava/awt/GraphicsConfiguration;)I
- */
-JNIEXPORT jint JNICALL Java_sun_awt_X11_XWindow_getNativeColor
-(JNIEnv *env, jobject this, jobject color, jobject gc_object) {
-    AwtGraphicsConfigDataPtr adata;
-    /* fire warning because JNU_GetLongFieldAsPtr casts jlong to (void *) */
-    adata = (AwtGraphicsConfigDataPtr) JNU_GetLongFieldAsPtr(env, gc_object, x11GraphicsConfigIDs.aData);
-    return awtJNI_GetColorForVis(env, color, adata);
-}
-
 /* syncTopLevelPos() is necessary to insure that the window manager has in
  * fact moved us to our final position relative to the reParented WM window.
  * We have noted a timing window which our shell has not been moved so we
@@ -1162,84 +1149,6 @@ void syncTopLevelPos( Display *d, Window w, XWindowAttributes *winAttr ) {
              XSync(d, False);
          }
     } while (i++ < 50);
-}
-
-static Window getTopWindow(Window win, Window *rootWin)
-{
-    Window root=None, current_window=win, parent=None, *ignore_children=NULL;
-    Window prev_window=None;
-    unsigned int ignore_uint=0;
-    Status status = 0;
-
-    if (win == None) return None;
-    do {
-        status = XQueryTree(awt_display,
-                            current_window,
-                            &root,
-                            &parent,
-                            &ignore_children,
-                            &ignore_uint);
-        XFree(ignore_children);
-        if (status == 0) return None;
-        prev_window = current_window;
-        current_window = parent;
-    } while (parent != root);
-    *rootWin = root;
-    return prev_window;
-}
-
-JNIEXPORT jlong JNICALL Java_sun_awt_X11_XWindow_getTopWindow
-(JNIEnv *env, jclass clazz, jlong win, jlong rootWin) {
-    return getTopWindow((Window) win, (Window*) jlong_to_ptr(rootWin));
-}
-
-static void
-getWMInsets
-(Window window, int *left, int *top, int *right, int *bottom, int *border) {
-    // window is event->xreparent.window
-    Window topWin = None, rootWin = None, containerWindow = None;
-    XWindowAttributes winAttr, topAttr;
-    int screenX, screenY;
-    topWin = getTopWindow(window, &rootWin);
-    syncTopLevelPos(awt_display, topWin, &topAttr);
-    // (screenX, screenY) is (0,0) of the reparented window
-    // converted to screen coordinates.
-    XTranslateCoordinates(awt_display, window, rootWin,
-        0,0, &screenX, &screenY, &containerWindow);
-    *left = screenX - topAttr.x - topAttr.border_width;
-    *top  = screenY - topAttr.y - topAttr.border_width;
-    XGetWindowAttributes(awt_display, window, &winAttr);
-    *right  = topAttr.width  - ((winAttr.width)  + *left);
-    *bottom = topAttr.height - ((winAttr.height) + *top);
-    *border = topAttr.border_width;
-}
-
-JNIEXPORT void JNICALL Java_sun_awt_X11_XWindow_getWMInsets
-(JNIEnv *env, jclass clazz, jlong window, jlong left, jlong top, jlong right, jlong bottom, jlong border) {
-    getWMInsets((Window) window,
-                (int*) jlong_to_ptr(left),
-                (int*) jlong_to_ptr(top),
-                (int*) jlong_to_ptr(right),
-                (int*) jlong_to_ptr(bottom),
-                (int*) jlong_to_ptr(border));
-}
-
-static void
-getWindowBounds
-(Window window, int *x, int *y, int *width, int *height) {
-    XWindowAttributes winAttr;
-    XSync(awt_display, False);
-    XGetWindowAttributes(awt_display, window, &winAttr);
-    *x = winAttr.x;
-    *y = winAttr.y;
-    *width = winAttr.width;
-    *height = winAttr.height;
-}
-
-JNIEXPORT void JNICALL Java_sun_awt_X11_XWindow_getWindowBounds
-(JNIEnv *env, jclass clazz, jlong window, jlong x, jlong y, jlong width, jlong height) {
-    getWindowBounds((Window) window, (int*) jlong_to_ptr(x), (int*) jlong_to_ptr(y),
-                    (int*) jlong_to_ptr(width), (int*) jlong_to_ptr(height));
 }
 
 JNIEXPORT void JNICALL Java_sun_awt_X11_XWindow_setSizeHints

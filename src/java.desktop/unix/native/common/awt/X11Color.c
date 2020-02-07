@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1263,43 +1263,6 @@ jobject awtJNI_GetColorModel(JNIEnv *env, AwtGraphicsConfigDataPtr aData)
 extern jfieldID colorValueID;
 
 #ifndef HEADLESS
-int awtJNI_GetColorForVis (JNIEnv *env,jobject this, AwtGraphicsConfigDataPtr awt_data)
-{
-    int col;
-    jclass SYSCLR_class;
-
-    if (!JNU_IsNull(env,this))
-    {
-        SYSCLR_class = (*env)->FindClass(env, "java/awt/SystemColor");
-        CHECK_NULL_RETURN(SYSCLR_class, 0);
-
-        if ((*env)->IsInstanceOf(env, this, SYSCLR_class)) {
-                /* SECURITY: This is safe, because there is no way
-                 *           for client code to insert an object
-                 *           that is a subclass of SystemColor
-                 */
-                col = (int) JNU_CallMethodByName(env
-                                          ,NULL
-                                          ,this
-                                          ,"getRGB"
-                                          ,"()I").i;
-                JNU_CHECK_EXCEPTION_RETURN(env, 0);
-        } else {
-                col = (int)(*env)->GetIntField(env,this,colorValueID);
-        }
-
-        if (awt_data->awt_cmap == (Colormap) NULL) {
-            awtJNI_CreateColorData (env, awt_data, 1);
-        }
-
-        col = awt_data->AwtColorMatch(red(col), green(col), blue(col),
-                                      awt_data);
-        return col;
-    }
-
-    return 0;
-}
-
 void
 awt_allocate_systemrgbcolors (jint *rgbColors, int num_colors,
                               AwtGraphicsConfigDataPtr awtData) {
