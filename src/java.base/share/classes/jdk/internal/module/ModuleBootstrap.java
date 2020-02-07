@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -801,6 +801,7 @@ public final class ModuleBootstrap {
         }
 
         // open specific packages in the system modules
+        Set<String> emptySet = Set.of();
         for (Module m : bootLayer.modules()) {
             ModuleDescriptor descriptor = m.getDescriptor();
             String name = m.getName();
@@ -816,8 +817,8 @@ public final class ModuleBootstrap {
                 continue;
             }
 
-            Set<String> concealedPackages = concealedPackagesToOpen.getOrDefault(name, Set.of());
-            Set<String> exportedPackages = exportedPackagesToOpen.getOrDefault(name, Set.of());
+            Set<String> concealedPackages = concealedPackagesToOpen.getOrDefault(name, emptySet);
+            Set<String> exportedPackages = exportedPackagesToOpen.getOrDefault(name, emptySet);
 
             // refresh the set of concealed and exported packages if needed
             if (extraExportsOrOpens) {
@@ -850,8 +851,7 @@ public final class ModuleBootstrap {
 
             // open the packages to unnamed modules
             JavaLangAccess jla = SharedSecrets.getJavaLangAccess();
-            jla.addOpensToAllUnnamed(m, concat(concealedPackages.iterator(),
-                                               exportedPackages.iterator()));
+            jla.addOpensToAllUnnamed(m, concealedPackages, exportedPackages);
         }
 
         builder.complete();
@@ -993,25 +993,6 @@ public final class ModuleBootstrap {
             default:
                 throw new IllegalArgumentException(prefix);
         }
-    }
-
-    /**
-     * Returns an iterator that yields all elements of the first iterator
-     * followed by all the elements of the second iterator.
-     */
-    static <T> Iterator<T> concat(Iterator<T> iterator1, Iterator<T> iterator2) {
-        return new Iterator<T>() {
-            @Override
-            public boolean hasNext() {
-                return iterator1.hasNext() || iterator2.hasNext();
-            }
-            @Override
-            public T next() {
-                if (iterator1.hasNext()) return iterator1.next();
-                if (iterator2.hasNext()) return iterator2.next();
-                throw new NoSuchElementException();
-            }
-        };
     }
 
     /**

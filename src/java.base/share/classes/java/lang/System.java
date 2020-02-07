@@ -56,6 +56,7 @@ import java.util.Objects;
 import java.util.Properties;
 import java.util.PropertyPermission;
 import java.util.ResourceBundle;
+import java.util.Set;
 import java.util.function.Supplier;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
@@ -2234,8 +2235,8 @@ public final class System {
             public void addOpensToAllUnnamed(Module m, String pn) {
                 m.implAddOpensToAllUnnamed(pn);
             }
-            public void addOpensToAllUnnamed(Module m, Iterator<String> packages) {
-                m.implAddOpensToAllUnnamed(packages);
+            public void addOpensToAllUnnamed(Module m, Set<String> concealedPackages, Set<String> exportedPackages) {
+                m.implAddOpensToAllUnnamed(concealedPackages, exportedPackages);
             }
             public void addUses(Module m, Class<?> service) {
                 m.implAddUses(service);

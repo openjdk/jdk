@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -909,12 +909,12 @@ public final class Module implements AnnotatedElement {
     }
 
     /**
-     * Updates a module to open all packages returned by the given iterator to
-     * all unnamed modules.
+     * Updates a module to open all packages in the given sets to all unnamed
+     * modules.
      *
      * @apiNote Used during startup to open packages for illegal access.
      */
-    void implAddOpensToAllUnnamed(Iterator<String> iterator) {
+    void implAddOpensToAllUnnamed(Set<String> concealedPkgs, Set<String> exportedPkgs) {
         if (jdk.internal.misc.VM.isModuleSystemInited()) {
             throw new IllegalStateException("Module system already initialized");
         }
@@ -923,12 +923,17 @@ public final class Module implements AnnotatedElement {
         // the packages to all unnamed modules.
         Map<String, Set<Module>> openPackages = this.openPackages;
         if (openPackages == null) {
-            openPackages = new HashMap<>();
+            openPackages = new HashMap<>((4 * (concealedPkgs.size() + exportedPkgs.size()) / 3) + 1);
         } else {
             openPackages = new HashMap<>(openPackages);
         }
-        while (iterator.hasNext()) {
-            String pn = iterator.next();
+        implAddOpensToAllUnnamed(concealedPkgs, openPackages);
+        implAddOpensToAllUnnamed(exportedPkgs, openPackages);
+        this.openPackages = openPackages;
+    }
+
+    private void implAddOpensToAllUnnamed(Set<String> pkgs, Map<String, Set<Module>> openPackages) {
+        for (String pn : pkgs) {
             Set<Module> prev = openPackages.putIfAbsent(pn, ALL_UNNAMED_MODULE_SET);
             if (prev != null) {
                 prev.add(ALL_UNNAMED_MODULE);
@@ -937,9 +942,7 @@ public final class Module implements AnnotatedElement {
             // update VM to export the package
             addExportsToAllUnnamed0(this, pn);
         }
-        this.openPackages = openPackages;
     }
-
 
     // -- services --
 
