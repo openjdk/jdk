@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,16 @@ package java.net;
  * differently, and might arrive in any order. Packet delivery is
  * not guaranteed.
  *
+ * <p>
+ * Unless otherwise specified, passing a {@code null} argument causes
+ * a {@link NullPointerException NullPointerException} to be thrown.
+ *
+ * <p>
+ * Methods and constructors of {@code DatagramPacket} accept parameters
+ * of type {@link SocketAddress}. {@code DatagramPacket} supports
+ * {@link InetSocketAddress}, and may support additional {@code SocketAddress}
+ * sub-types.
+ *
  * @author  Pavani Diwanji
  * @author  Benjamin Renaud
  * @since   1.0
@@ -68,11 +78,15 @@ class DatagramPacket {
      * The {@code length} argument must be less than or equal to
      * {@code buf.length}.
      *
-     * @param   buf      buffer for holding the incoming datagram.
-     * @param   offset   the offset for the buffer
-     * @param   length   the number of bytes to read.
+     * @param   buf     buffer for holding the incoming datagram.
+     * @param   offset  the offset for the buffer
+     * @param   length  the number of bytes to read.
      *
-     * @since 1.2
+     * @throws  IllegalArgumentException    if the length or offset
+     *          is negative, or if the length plus the offset is
+     *          greater than the length of the packet's given buffer.
+     *
+     * @since   1.2
      */
     public DatagramPacket(byte buf[], int offset, int length) {
         setData(buf, offset, length);
@@ -87,8 +101,12 @@ class DatagramPacket {
      * The {@code length} argument must be less than or equal to
      * {@code buf.length}.
      *
-     * @param   buf      buffer for holding the incoming datagram.
-     * @param   length   the number of bytes to read.
+     * @param   buf     buffer for holding the incoming datagram.
+     * @param   length  the number of bytes to read.
+     *
+     * @throws  IllegalArgumentException    if the length is negative
+     *          or if the length is greater than the length of the
+     *          packet's given buffer.
      */
     public DatagramPacket(byte buf[], int length) {
         this (buf, 0, length);
@@ -101,14 +119,20 @@ class DatagramPacket {
      * {@code length} argument must be less than or equal to
      * {@code buf.length}.
      *
-     * @param   buf      the packet data.
-     * @param   offset   the packet data offset.
-     * @param   length   the packet data length.
-     * @param   address  the destination address.
-     * @param   port     the destination port number.
-     * @see java.net.InetAddress
+     * @param   buf     the packet data.
+     * @param   offset  the packet data offset.
+     * @param   length  the packet data length.
+     * @param   address the destination address, or {@code null}.
+     * @param   port    the destination port number.
      *
-     * @since 1.2
+     * @throws  IllegalArgumentException    if the length or offset
+     *          is negative, or if the length plus the offset is
+     *          greater than the length of the packet's given buffer,
+     *          or if the port is out of range.
+     *
+     * @see     java.net.InetAddress
+     *
+     * @since   1.2
      */
     public DatagramPacket(byte buf[], int offset, int length,
                           InetAddress address, int port) {
@@ -124,14 +148,19 @@ class DatagramPacket {
      * {@code length} argument must be less than or equal to
      * {@code buf.length}.
      *
-     * @param   buf      the packet data.
-     * @param   offset   the packet data offset.
-     * @param   length   the packet data length.
-     * @param   address  the destination socket address.
-     * @throws  IllegalArgumentException if address type is not supported
-     * @see java.net.InetAddress
+     * @param   buf     the packet data.
+     * @param   offset  the packet data offset.
+     * @param   length  the packet data length.
+     * @param   address the destination socket address.
      *
-     * @since 1.4
+     * @throws  IllegalArgumentException    if address is null or its
+     *          type is not supported, or if the length or offset is
+     *          negative, or if the length plus the offset is greater
+     *          than the length of the packet's given buffer.
+     *
+     * @see     java.net.InetAddress
+     *
+     * @since   1.4
      */
     public DatagramPacket(byte buf[], int offset, int length, SocketAddress address) {
         setData(buf, offset, length);
@@ -144,10 +173,15 @@ class DatagramPacket {
      * host. The {@code length} argument must be less than or equal
      * to {@code buf.length}.
      *
-     * @param   buf      the packet data.
-     * @param   length   the packet length.
-     * @param   address  the destination address.
-     * @param   port     the destination port number.
+     * @param   buf     the packet data.
+     * @param   length  the packet length.
+     * @param   address the destination address, or {@code null}.
+     * @param   port    the destination port number.
+     *
+     * @throws  IllegalArgumentException    if the length is negative,
+     *          or if the length is greater than the length of the
+     *          packet's given buffer, or if the port is out of range.
+     *
      * @see     java.net.InetAddress
      */
     public DatagramPacket(byte buf[], int length,
@@ -161,12 +195,18 @@ class DatagramPacket {
      * host. The {@code length} argument must be less than or equal
      * to {@code buf.length}.
      *
-     * @param   buf      the packet data.
-     * @param   length   the packet length.
-     * @param   address  the destination address.
-     * @throws  IllegalArgumentException if address type is not supported
-     * @since 1.4
+     * @param   buf     the packet data.
+     * @param   length  the packet length.
+     * @param   address the destination address.
+     *
+     * @throws  IllegalArgumentException    if address is null or its type is
+     *          not supported, or if the length is negative, or if the length
+     *          is greater than the length of the packet's given buffer, or
+     *          if the port is out of range.
+     *
      * @see     java.net.InetAddress
+     *
+     * @since   1.4
      */
     public DatagramPacket(byte buf[], int length, SocketAddress address) {
         this(buf, 0, length, address);
@@ -238,20 +278,20 @@ class DatagramPacket {
      * Set the data buffer for this packet. This sets the
      * data, length and offset of the packet.
      *
-     * @param buf the buffer to set for this packet
+     * @param   buf     the buffer to set for this packet
+     * @param   offset  the offset into the data
+     * @param   length  the length of the data
+     *          and/or the length of the buffer used to receive data
      *
-     * @param offset the offset into the data
+     * @throws  IllegalArgumentException    if the length or offset
+     *          is negative, or if the length plus the offset is
+     *          greater than the length of the packet's given buffer.
      *
-     * @param length the length of the data
-     *       and/or the length of the buffer used to receive data
+     * @see     #getData
+     * @see     #getOffset
+     * @see     #getLength
      *
-     * @throws    NullPointerException if the argument is null
-     *
-     * @see #getData
-     * @see #getOffset
-     * @see #getLength
-     *
-     * @since 1.2
+     * @since   1.2
      */
     public synchronized void setData(byte[] buf, int offset, int length) {
         /* this will check to see if buf is null */
@@ -269,9 +309,12 @@ class DatagramPacket {
     /**
      * Sets the IP address of the machine to which this datagram
      * is being sent.
-     * @param iaddr the {@code InetAddress}
+     *
+     * @param   iaddr   the {@code InetAddress}, or {@code null}.
+     *
+     * @see     #getAddress()
+     *
      * @since   1.1
-     * @see #getAddress()
      */
     public synchronized void setAddress(InetAddress iaddr) {
         address = iaddr;
@@ -280,9 +323,14 @@ class DatagramPacket {
     /**
      * Sets the port number on the remote host to which this datagram
      * is being sent.
-     * @param iport the port number
+     *
+     * @param   iport   the port number
+     *
+     * @throws  IllegalArgumentException    if the port is out of range
+     *
+     * @see     #getPort()
+     *
      * @since   1.1
-     * @see #getPort()
      */
     public synchronized void setPort(int iport) {
         if (iport < 0 || iport > 0xFFFF) {
@@ -295,12 +343,14 @@ class DatagramPacket {
      * Sets the SocketAddress (usually IP address + port number) of the remote
      * host to which this datagram is being sent.
      *
-     * @param address the {@code SocketAddress}
-     * @throws  IllegalArgumentException if address is null or is a
-     *          SocketAddress subclass not supported by this socket
+     * @param   address the {@code SocketAddress}
      *
-     * @since 1.4
-     * @see #getSocketAddress
+     * @throws  IllegalArgumentException    if address is null or is a
+     *          SocketAddress subclass not supported.
+     *
+     * @see     #getSocketAddress
+     *
+     * @since   1.4
      */
     public synchronized void setSocketAddress(SocketAddress address) {
         if (address == null || !(address instanceof InetSocketAddress))
@@ -316,9 +366,11 @@ class DatagramPacket {
      * Gets the SocketAddress (usually IP address + port number) of the remote
      * host that this packet is being sent to or is coming from.
      *
-     * @return the {@code SocketAddress}
-     * @since 1.4
-     * @see #setSocketAddress
+     * @return  the {@code SocketAddress}
+     *
+     * @see     #setSocketAddress
+     *
+     * @since   1.4
      */
     public synchronized SocketAddress getSocketAddress() {
         return new InetSocketAddress(getAddress(), getPort());
@@ -329,14 +381,12 @@ class DatagramPacket {
      * this DatagramPacket set to 0, and the length set to
      * the length of {@code buf}.
      *
-     * @param buf the buffer to set for this packet.
+     * @param   buf     the buffer to set for this packet.
      *
-     * @throws    NullPointerException if the argument is null.
+     * @see     #getLength
+     * @see     #getData
      *
-     * @see #getLength
-     * @see #getData
-     *
-     * @since 1.1
+     * @since   1.1
      */
     public synchronized void setData(byte[] buf) {
         if (buf == null) {
@@ -355,16 +405,16 @@ class DatagramPacket {
      * will be used for receiving data. The length must be lesser or
      * equal to the offset plus the length of the packet's buffer.
      *
-     * @param length the length to set for this packet.
+     * @param   length      the length to set for this packet.
      *
-     * @throws    IllegalArgumentException if the length is negative
-     * of if the length is greater than the packet's data buffer
-     * length.
+     * @throws  IllegalArgumentException    if the length is negative,
+     *          or if the length plus the offset is greater than the
+     *          length of the packet's data buffer.
      *
-     * @see #getLength
-     * @see #setData
+     * @see     #getLength
+     * @see     #setData
      *
-     * @since 1.1
+     * @since   1.1
      */
     public synchronized void setLength(int length) {
         if ((length + offset) > buf.length || length < 0 ||
