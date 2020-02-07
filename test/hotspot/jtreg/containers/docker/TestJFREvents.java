@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,11 +60,6 @@ public class TestJFREvents {
         DockerTestUtils.buildJdkDockerImage(imageName, "Dockerfile-BasicTest", "jdk-docker");
 
         try {
-            // leave one CPU for system and tools, otherwise this test may be unstable
-            int maxNrOfAvailableCpus =  availableCPUs - 1;
-            for (int i=1; i < maxNrOfAvailableCpus; i = i * 2) {
-                testCPUInfo(i, i);
-            }
 
             long MB = 1024*1024;
             testMemory("200m", "" + 200*MB);
@@ -79,18 +74,26 @@ public class TestJFREvents {
         }
     }
 
+    // This test case is currently not in use.
+    // Once new Container events are available, this test case can be used to test
+    // processor-related configuration such as active processor count (see JDK-8203359).
+    private static void cpuTestCase() throws Exception {
+            // leave one CPU for system and tools, otherwise this test may be unstable
+            int maxNrOfAvailableCpus =  availableCPUs - 1;
+            for (int i=1; i < maxNrOfAvailableCpus; i = i * 2) {
+                testCPUInfo("jdk.ContainerConfiguration", i, i);
+            }
+    }
 
-    private static void testCPUInfo(int valueToSet, int expectedValue) throws Exception {
+    private static void testCPUInfo(String eventName, int valueToSet, int expectedValue) throws Exception {
         Common.logNewTestCase("CPUInfo: --cpus = " + valueToSet);
+        String fieldName = "activeProcessorCount";
         DockerTestUtils.dockerRunJava(
                                       commonDockerOpts()
                                       .addDockerOpts("--cpus=" + valueToSet)
-                                      .addClassOptions("jdk.CPUInformation"))
-            .shouldHaveExitValue(0);
-        // The following assertion is currently disabled due to JFR reporting incorrect values.
-        // JFR reports values for the host system as opposed to values for the container.
-        // @ignore 8219999
-        // .shouldContain("cores = " + expectedValue");
+                                      .addClassOptions(eventName))
+            .shouldHaveExitValue(0)
+            .shouldContain(fieldName + " = " + expectedValue);
     }
 
 
