@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,10 +100,12 @@ public class TestHelper {
     // make a note of the golden default locale
     static final Locale DefaultLocale = Locale.getDefault();
 
-    static final String JAVA_FILE_EXT  = ".java";
-    static final String CLASS_FILE_EXT = ".class";
-    static final String JAR_FILE_EXT   = ".jar";
-    static final String EXE_FILE_EXT   = ".exe";
+    static final String JAVA_FILE_EXT   = ".java";
+    static final String CLASS_FILE_EXT  = ".class";
+    static final String JAR_FILE_EXT    = ".jar";
+    static final String EXE_FILE_EXT    = ".exe";
+    static final String MAC_DSYM_EXT    = ".dsym";
+    static final String NIX_DBGINFO_EXT = ".debuginfo";
     static final String JLDEBUG_KEY     = "_JAVA_LAUNCHER_DEBUG";
     static final String EXPECTED_MARKER = "TRACER_MARKER:About to EXEC";
     static final String TEST_PREFIX     = "###TestError###: ";
@@ -532,6 +534,43 @@ public class TestHelper {
             "}"
         };
         createFile(new File(launcherTestDir, "Main.java"), Arrays.asList(moduleCode));
+    }
+
+    static class ToolFilter implements FileFilter {
+        final List<String> exclude = new ArrayList<>();
+        protected ToolFilter(String... exclude) {
+            for (String x : exclude) {
+                String str = x + ((isWindows) ? EXE_FILE_EXT : "");
+                this.exclude.add(str.toLowerCase());
+            }
+        }
+
+        @Override
+        public boolean accept(File pathname) {
+            if (!pathname.isFile() || !pathname.canExecute()) {
+                return false;
+            }
+            String name = pathname.getName().toLowerCase();
+            if (isWindows) {
+                if (!name.endsWith(EXE_FILE_EXT)) {
+                    return false;
+                }
+            } else if (isMacOSX) {
+                if (name.endsWith(MAC_DSYM_EXT)) {
+                    return false;
+                }
+            } else {
+                if (name.endsWith(NIX_DBGINFO_EXT)) {
+                    return false;
+                }
+            }
+            for (String x : exclude) {
+                if (name.endsWith(x)) {
+                    return false;
+                }
+            }
+            return true;
+        }
     }
 
     /*

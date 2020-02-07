@@ -303,6 +303,9 @@ ENABLE_HEADLESS_ONLY := @ENABLE_HEADLESS_ONLY@
 
 ENABLE_LINKTIME_GC := @ENABLE_LINKTIME_GC@
 
+# Ship debug symbols (e.g. pdbs on Windows)
+SHIP_DEBUG_SYMBOLS := @SHIP_DEBUG_SYMBOLS@
+
 ENABLE_FULL_DOCS := @ENABLE_FULL_DOCS@
 
 # JDK_OUTPUTDIR specifies where a working jvm is built.

@@ -125,6 +125,13 @@ define SetupBundleFileBody
 	    && $(TAR) cf - -$(TAR_INCLUDE_PARAM) $$($1_$$d_LIST_FILE) \
 	        $(TAR_IGNORE_EXIT_VALUE) ) \
 	    | ( $(CD) $(SUPPORT_OUTPUTDIR)/bundles/$1/$$($1_SUBDIR) && $(TAR) xf - )$$(NEWLINE) )
+          # Rename stripped pdb files
+          ifeq ($(call isTargetOs, windows)+$(SHIP_DEBUG_SYMBOLS), true+public)
+	    for f in `$(FIND) $(SUPPORT_OUTPUTDIR)/bundles/$1/$$($1_SUBDIR) -name "*.stripped.pdb"`; do \
+	      $(ECHO) Renaming $$$${f} to $$$${f%stripped.pdb}pdb $(LOG_INFO); \
+	      $(MV) $$$${f} $$$${f%stripped.pdb}pdb; \
+	    done
+          endif
           # Unzip any zipped debuginfo files
           ifeq ($$($1_UNZIP_DEBUGINFO), true)
 	    for f in `$(FIND) $(SUPPORT_OUTPUTDIR)/bundles/$1/$$($1_SUBDIR) -name "*.diz"`; do \
@@ -183,7 +190,7 @@ endif
 
 ifneq ($(filter product-bundles% legacy-bundles, $(MAKECMDGOALS)), )
 
-  SYMBOLS_EXCLUDE_PATTERN := %.debuginfo %.diz %.pdb %.map
+  SYMBOLS_EXCLUDE_PATTERN := %.debuginfo %.diz %.map
 
   # There may be files with spaces in the names, so use ShellFindFiles
   # explicitly.
@@ -209,6 +216,21 @@ ifneq ($(filter product-bundles% legacy-bundles, $(MAKECMDGOALS)), )
     endif
   endif
 
+  # Create special filter rules when dealing with debug symbols on windows
+  ifeq ($(call isTargetOs, windows), true)
+    ifeq ($(SHIP_DEBUG_SYMBOLS), )
+      JDK_SYMBOLS_EXCLUDE_PATTERN := %.pdb
+    else
+      ifeq ($(SHIP_DEBUG_SYMBOLS), public)
+        JDK_SYMBOLS_EXCLUDE_PATTERN := \
+            $(filter-out \
+                %.stripped.pdb, \
+                $(filter %.pdb, $(ALL_JDK_FILES)) \
+            )
+      endif
+    endif
+  endif
+
   JDK_BUNDLE_FILES := \
       $(filter-out \
           $(JDK_SYMBOLS_EXCLUDE_PATTERN) \
@@ -218,13 +240,14 @@ ifneq ($(filter product-bundles% legacy-bundles, $(MAKECMDGOALS)), )
           , \
           $(ALL_JDK_FILES) \
       )
+
   JDK_SYMBOLS_BUNDLE_FILES := \
       $(filter \
           $(JDK_SYMBOLS_EXCLUDE_PATTERN) \
           $(SYMBOLS_EXCLUDE_PATTERN) \
           , \
           $(filter-out \
-              $(JDK_IMAGE_HOMEDIR)/demo/% \
+              $(JDK_IMAGE_HOMEDIR)/demo/% %.stripped.pdb \
               , \
               $(ALL_JDK_SYMBOLS_FILES) \
           ) \
@@ -242,6 +265,21 @@ ifneq ($(filter product-bundles% legacy-bundles, $(MAKECMDGOALS)), )
     ifeq ($(ZIP_EXTERNAL_DEBUG_SYMBOLS), false)
       JRE_SYMBOLS_EXCLUDE_PATTERN := $(addprefix %, \
           $(call containing, .dSYM/, $(patsubst $(JRE_IMAGE_DIR)/%, %, $(ALL_JRE_FILES))))
+    endif
+  endif
+
+  # Create special filter rules when dealing with debug symbols on windows
+  ifeq ($(call isTargetOs, windows), true)
+    ifeq ($(SHIP_DEBUG_SYMBOLS), )
+      JRE_SYMBOLS_EXCLUDE_PATTERN := %.pdb
+    else
+      ifeq ($(SHIP_DEBUG_SYMBOLS), public)
+        JRE_SYMBOLS_EXCLUDE_PATTERN := \
+            $(filter-out \
+                %.stripped.pdb, \
+                $(filter %.pdb, $(ALL_JRE_FILES)) \
+            )
+      endif
     endif
   endif
 

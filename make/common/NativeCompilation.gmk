@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -917,6 +917,9 @@ define SetupNativeCompilationBody
         ifeq ($(call isTargetOs, windows), true)
           $1_EXTRA_LDFLAGS += -debug "-pdb:$$($1_SYMBOLS_DIR)/$$($1_NOSUFFIX).pdb" \
               "-map:$$($1_SYMBOLS_DIR)/$$($1_NOSUFFIX).map"
+          ifeq ($(SHIP_DEBUG_SYMBOLS), public)
+            $1_EXTRA_LDFLAGS += "-pdbstripped:$$($1_SYMBOLS_DIR)/$$($1_NOSUFFIX).stripped.pdb"
+          endif
           $1_DEBUGINFO_FILES := $$($1_SYMBOLS_DIR)/$$($1_NOSUFFIX).pdb \
               $$($1_SYMBOLS_DIR)/$$($1_NOSUFFIX).map
 

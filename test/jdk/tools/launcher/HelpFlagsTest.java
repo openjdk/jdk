@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2018 SAP SE. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,14 +40,6 @@
  */
 
 import java.io.File;
-import java.io.FileFilter;
-import java.util.Map;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.HashSet;
-import java.util.Set;
-
 
 public class HelpFlagsTest extends TestHelper {
 
@@ -161,23 +153,6 @@ public class HelpFlagsTest extends TestHelper {
         new ToolHelpSpec("serialver",   0,   0,   0,   0,         0,    0,     1),     // none, prints help message anyways.
         new ToolHelpSpec("jpackage",    0,   1,   1,   0,         0,    1,     1),     //     -h, --help,
     };
-
-    // Returns true if the file is not a tool.
-    static boolean notATool(String file) {
-        if (isWindows && !file.endsWith(EXE_FILE_EXT))
-            return true;
-        return false;
-    }
-
-    // Returns true if tool is listed in TOOLS_NOT_TO_TEST.
-    static boolean dontTestTool(String tool) {
-        tool = tool.toLowerCase();
-        for (String x : TOOLS_NOT_TO_TEST) {
-            if (tool.toLowerCase().startsWith(x))
-                return true;
-        }
-        return false;
-    }
 
     // Returns corresponding object from jdkTools array.
     static ToolHelpSpec getToolHelpSpec(String tool) {
@@ -353,17 +328,8 @@ public class HelpFlagsTest extends TestHelper {
         // help messages. Thus it only works with english locale.
         if (!isEnglishLocale()) { return; }
 
-        for (File f : new File(JAVA_BIN).listFiles()) {
+        for (File f : new File(JAVA_BIN).listFiles(new ToolFilter(TOOLS_NOT_TO_TEST))) {
             String toolName = f.getName();
-
-            if (notATool(toolName)) {
-                continue;
-            }
-            if (dontTestTool(toolName)) {
-                System.out.println("Skipping test of tool " + toolName +
-                                   ". Tool has no help message.");
-                continue;
-            }
 
             ToolHelpSpec tool = getToolHelpSpec(toolName);
             if (tool == null) {
