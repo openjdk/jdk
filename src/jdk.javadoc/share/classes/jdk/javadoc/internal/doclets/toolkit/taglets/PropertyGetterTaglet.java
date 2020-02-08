@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,6 @@
 
 package jdk.javadoc.internal.doclets.toolkit.taglets;
 
-import java.util.List;
-
-import javax.lang.model.element.Element;
-
-import com.sun.source.doctree.DocTree;
-import jdk.javadoc.internal.doclets.toolkit.Content;
-
 /**
  * A taglet that adds the initial line of documentation to the JavaFX
  * property getters.
@@ -52,6 +45,6 @@ public class PropertyGetterTaglet extends BasePropertyTaglet {
 
     @Override
     String getText(TagletWriter tagletWriter) {
-        return tagletWriter.configuration().getResources().getText("doclet.PropertyGetter");
+        return tagletWriter.configuration().getDocResources().getText("doclet.PropertyGetter");
     }
 }

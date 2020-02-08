@@ -144,7 +144,7 @@ public class Utils {
         configuration = c;
         options = configuration.getOptions();
         messages = configuration.getMessages();
-        resources = configuration.getResources();
+        resources = configuration.getDocResources();
         elementUtils = c.docEnv.getElementUtils();
         typeUtils = c.docEnv.getTypeUtils();
         docTrees = c.docEnv.getDocTrees();

@@ -234,7 +234,7 @@ public class LinkFactoryImpl extends LinkFactory {
      * @return the tool tip for the appropriate class.
      */
     private String getClassToolTip(TypeElement typeElement, boolean isTypeLink) {
-        Resources resources = m_writer.configuration.getResources();
+        Resources resources = m_writer.configuration.getDocResources();
         if (isTypeLink) {
             return resources.getText("doclet.Href_Type_Param_Title",
                     utils.getSimpleName(typeElement));

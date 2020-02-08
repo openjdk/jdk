@@ -97,7 +97,7 @@ public class SourceToHTMLConverter {
         this.configuration  = configuration;
         this.options = configuration.getOptions();
         this.messages = configuration.getMessages();
-        this.resources = configuration.resources;
+        this.resources = configuration.docResources;
         this.utils = configuration.utils;
         this.docEnv = rd;
         this.outputdir = outputdir;

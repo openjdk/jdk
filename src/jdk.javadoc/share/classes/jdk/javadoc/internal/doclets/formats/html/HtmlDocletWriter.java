@@ -213,7 +213,7 @@ public class HtmlDocletWriter {
         this.options = configuration.getOptions();
         this.contents = configuration.contents;
         this.messages = configuration.messages;
-        this.resources = configuration.resources;
+        this.resources = configuration.docResources;
         this.links = new Links(path);
         this.utils = configuration.utils;
         this.path = path;

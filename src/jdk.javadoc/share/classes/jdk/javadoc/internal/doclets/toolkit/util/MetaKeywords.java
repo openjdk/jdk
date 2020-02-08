@@ -58,7 +58,7 @@ public class MetaKeywords {
      */
     public MetaKeywords(BaseConfiguration configuration) {
         options = configuration.getOptions();
-        resources = configuration.getResources();
+        resources = configuration.getDocResources();
         utils = configuration.utils;
     }
 

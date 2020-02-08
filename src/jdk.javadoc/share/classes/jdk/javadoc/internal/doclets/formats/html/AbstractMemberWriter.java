@@ -89,7 +89,7 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter {
         this.typeElement = typeElement;
         this.utils = configuration.utils;
         this.contents = configuration.contents;
-        this.resources = configuration.resources;
+        this.resources = configuration.docResources;
         this.links = writer.links;
     }
 

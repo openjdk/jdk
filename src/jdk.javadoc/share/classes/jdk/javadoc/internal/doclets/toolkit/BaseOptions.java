@@ -271,7 +271,7 @@ public abstract class BaseOptions {
     }
 
     public Set<? extends Option> getSupportedOptions() {
-        Resources resources = config.getResources();
+        Resources resources = config.getDocResources();
         Messages messages = config.getMessages();
         Reporter reporter = config.getReporter();
 
@@ -572,7 +572,7 @@ public abstract class BaseOptions {
             osw = new OutputStreamWriter(ost, docencoding);
         } catch (UnsupportedEncodingException exc) {
             config.reporter.print(ERROR,
-                    config.getResources().getText("doclet.Encoding_not_supported", docencoding));
+                    config.getDocResources().getText("doclet.Encoding_not_supported", docencoding));
             return false;
         } finally {
             try {

@@ -88,7 +88,7 @@ public class TagletWriterImpl extends TagletWriter {
         configuration = htmlWriter.configuration;
         options = configuration.getOptions();
         utils = configuration.utils;
-        resources = configuration.getResources();
+        resources = configuration.getDocResources();
     }
 
     @Override

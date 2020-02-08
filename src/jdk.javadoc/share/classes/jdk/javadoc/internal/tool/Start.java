@@ -733,7 +733,7 @@ public class Start {
         }
 
         if (Doclet.class.isAssignableFrom(docletClass)) {
-            messager.setLocale(locale);
+            messager.setLocale(Locale.getDefault());  // use default locale for console messages
             try {
                 Object o = docletClass.getConstructor().newInstance();
                 doclet = (Doclet) o;
@@ -818,10 +818,6 @@ public class Start {
         messager.printErrorUsingKey(key, args);
     }
 
-    void warn(String key, Object... args)  {
-        messager.printWarningUsingKey(key, args);
-    }
-
     /**
      * Get the locale if specified on the command line
      * else return null and if locale option is not used
@@ -840,22 +836,5 @@ public class Start {
             throw new ToolException(CMDERR, text);
         }
     }
-
-    /**
-     * Search the locale for specified language, specified country and
-     * specified variant.
-     */
-    private Locale searchLocale(String language, String country,
-                                String variant) {
-        for (Locale loc : Locale.getAvailableLocales()) {
-            if (loc.getLanguage().equals(language) &&
-                (country == null || loc.getCountry().equals(country)) &&
-                (variant == null || loc.getVariant().equals(variant))) {
-                return loc;
-            }
-        }
-        return null;
-    }
-
 
 }

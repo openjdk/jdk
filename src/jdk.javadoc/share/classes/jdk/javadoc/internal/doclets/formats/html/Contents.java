@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -182,7 +182,7 @@ public class Contents {
      * resources used to look up resource keys, and other details.
      */
     Contents(HtmlConfiguration configuration) {
-        this.resources = configuration.getResources();
+        this.resources = configuration.getDocResources();
 
         allClassesLabel = getNonBreakContent("doclet.All_Classes");
         allImplementedInterfacesLabel = getContent("doclet.All_Implemented_Interfaces");
