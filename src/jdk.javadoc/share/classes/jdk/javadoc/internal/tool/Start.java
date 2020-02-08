@@ -399,14 +399,14 @@ public class Start {
             Throwable t = e.getCause();
             dumpStack(t == null ? e : t);
             return ERROR;
-        } catch (OptionException toe) {
-            if (toe.message != null)
-                messager.printError(toe.message);
+        } catch (OptionException oe) {
+            if (oe.message != null)
+                messager.printError(oe.message);
 
-            toe.m.run();
-            Throwable t = toe.getCause();
-            dumpStack(t == null ? toe : t);
-            return toe.result;
+            oe.m.run();
+            Throwable t = oe.getCause();
+            dumpStack(t == null ? oe : t);
+            return oe.result;
         } catch (ToolException exc) {
             if (exc.message != null) {
                 messager.printError(exc.message);
