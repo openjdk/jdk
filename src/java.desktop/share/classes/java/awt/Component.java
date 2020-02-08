@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3633,10 +3633,6 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @since     1.0
      */
     public Image createImage(ImageProducer producer) {
-        ComponentPeer peer = this.peer;
-        if ((peer != null) && ! (peer instanceof LightweightPeer)) {
-            return peer.createImage(producer);
-        }
         return getToolkit().createImage(producer);
     }
 
@@ -3752,16 +3748,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      */
     public boolean prepareImage(Image image, int width, int height,
                                 ImageObserver observer) {
-        ComponentPeer peer = this.peer;
-        if (peer instanceof LightweightPeer) {
-            return (parent != null)
-                ? parent.prepareImage(image, width, height, observer)
-                : getToolkit().prepareImage(image, width, height, observer);
-        } else {
-            return (peer != null)
-                ? peer.prepareImage(image, width, height, observer)
-                : getToolkit().prepareImage(image, width, height, observer);
-        }
+        return getToolkit().prepareImage(image, width, height, observer);
     }
 
     /**
@@ -3824,16 +3811,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      */
     public int checkImage(Image image, int width, int height,
                           ImageObserver observer) {
-        ComponentPeer peer = this.peer;
-        if (peer instanceof LightweightPeer) {
-            return (parent != null)
-                ? parent.checkImage(image, width, height, observer)
-                : getToolkit().checkImage(image, width, height, observer);
-        } else {
-            return (peer != null)
-                ? peer.checkImage(image, width, height, observer)
-                : getToolkit().checkImage(image, width, height, observer);
-        }
+        return getToolkit().checkImage(image, width, height, observer);
     }
 
     /**

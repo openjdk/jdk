@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,15 +25,34 @@
 
 package sun.awt.X11;
 
-import java.awt.*;
-import java.awt.event.*;
+import java.awt.AWTEvent;
+import java.awt.AWTException;
+import java.awt.BufferCapabilities;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Container;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.FontMetrics;
+import java.awt.Graphics;
+import java.awt.GraphicsConfiguration;
+import java.awt.Image;
+import java.awt.Point;
+import java.awt.Rectangle;
+import java.awt.Toolkit;
+import java.awt.Window;
+import java.awt.event.ComponentEvent;
+import java.awt.event.FocusEvent;
+import java.awt.event.InputEvent;
+import java.awt.event.InvocationEvent;
+import java.awt.event.KeyEvent;
+import java.awt.event.PaintEvent;
 import java.awt.image.ColorModel;
-import java.awt.image.ImageObserver;
-import java.awt.image.ImageProducer;
 import java.awt.image.VolatileImage;
-import java.awt.peer.*;
+import java.awt.peer.ComponentPeer;
+import java.awt.peer.ContainerPeer;
+
 import sun.java2d.pipe.Region;
-import sun.awt.*;
 
 public class XEmbedChildProxyPeer implements ComponentPeer, XEventDispatcher{
     XEmbeddingContainer container;
@@ -248,11 +267,8 @@ public class XEmbedChildProxyPeer implements ComponentPeer, XEventDispatcher{
         return true;
     }
 
-    public Image                createImage(ImageProducer producer) { return null; }
     public Image                createImage(int width, int height) { return null; }
     public VolatileImage        createVolatileImage(int width, int height) { return null; }
-    public boolean              prepareImage(Image img, int w, int h, ImageObserver o) { return false; }
-    public int                  checkImage(Image img, int w, int h, ImageObserver o) { return 0; }
     public GraphicsConfiguration getGraphicsConfiguration() { return null; }
     public boolean     handlesWheelScrolling() { return true; }
     public void createBuffers(int numBuffers, BufferCapabilities caps)

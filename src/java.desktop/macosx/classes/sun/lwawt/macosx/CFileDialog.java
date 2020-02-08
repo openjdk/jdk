@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,15 +25,34 @@
 
 package sun.lwawt.macosx;
 
-import java.awt.*;
-import java.awt.event.FocusEvent.Cause;
-import java.awt.peer.*;
+import java.awt.AWTEvent;
+import java.awt.AWTException;
+import java.awt.BufferCapabilities;
 import java.awt.BufferCapabilities.FlipContents;
-import java.awt.event.*;
-import java.awt.image.*;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Dialog;
+import java.awt.Dimension;
+import java.awt.FileDialog;
+import java.awt.Font;
+import java.awt.FontMetrics;
+import java.awt.Graphics;
+import java.awt.GraphicsConfiguration;
+import java.awt.Image;
+import java.awt.Insets;
+import java.awt.Point;
+import java.awt.Window;
+import java.awt.event.FocusEvent.Cause;
+import java.awt.event.PaintEvent;
+import java.awt.image.ColorModel;
+import java.awt.image.VolatileImage;
+import java.awt.peer.ComponentPeer;
+import java.awt.peer.ContainerPeer;
+import java.awt.peer.FileDialogPeer;
+import java.io.File;
+import java.io.FilenameFilter;
 import java.security.AccessController;
 import java.util.List;
-import java.io.*;
 
 import sun.awt.AWTAccessor;
 import sun.java2d.pipe.Region;
@@ -249,22 +268,12 @@ class CFileDialog implements FileDialogPeer {
     }
 
     @Override
-    public int checkImage(Image img, int w, int h, ImageObserver o) {
-        return 0;
-    }
-
-    @Override
     public void coalescePaintEvent(PaintEvent e) {
     }
 
     @Override
     public void createBuffers(int numBuffers, BufferCapabilities caps)
             throws AWTException {
-    }
-
-    @Override
-    public Image createImage(ImageProducer producer) {
-        return null;
     }
 
     @Override
@@ -355,11 +364,6 @@ class CFileDialog implements FileDialogPeer {
 
     @Override
     public void paint(Graphics g) {
-    }
-
-    @Override
-    public boolean prepareImage(Image img, int w, int h, ImageObserver o) {
-        return false;
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,28 +31,26 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Cursor;
 import java.awt.Dimension;
+import java.awt.Event;
 import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.GraphicsConfiguration;
 import java.awt.Image;
 import java.awt.Insets;
-import java.awt.event.FocusEvent.Cause;
 import java.awt.Point;
-import java.awt.Event;
+import java.awt.Rectangle;
+import java.awt.event.FocusEvent.Cause;
 import java.awt.event.PaintEvent;
 import java.awt.image.ColorModel;
-import java.awt.image.ImageObserver;
-import java.awt.image.ImageProducer;
 import java.awt.image.VolatileImage;
 import java.awt.peer.CanvasPeer;
-import java.awt.peer.LightweightPeer;
-import java.awt.peer.PanelPeer;
 import java.awt.peer.ComponentPeer;
 import java.awt.peer.ContainerPeer;
-import java.awt.Rectangle;
-import sun.java2d.pipe.Region;
+import java.awt.peer.LightweightPeer;
+import java.awt.peer.PanelPeer;
 
+import sun.java2d.pipe.Region;
 
 /**
  * Implements the LightweightPeer interface for use in lightweight components
@@ -74,7 +72,6 @@ import sun.java2d.pipe.Region;
  * @author Timothy Prinzing
  * @author Michael Martak
  */
-
 public class NullComponentPeer implements LightweightPeer,
     CanvasPeer, PanelPeer {
 
@@ -183,20 +180,8 @@ public class NullComponentPeer implements LightweightPeer,
         return false;
     }
 
-    public Image createImage(ImageProducer producer) {
-        return null;
-    }
-
     public Image createImage(int width, int height) {
         return null;
-    }
-
-    public boolean prepareImage(Image img, int w, int h, ImageObserver o) {
-        return false;
-    }
-
-    public int  checkImage(Image img, int w, int h, ImageObserver o) {
-        return 0;
     }
 
     public Dimension preferredSize() {

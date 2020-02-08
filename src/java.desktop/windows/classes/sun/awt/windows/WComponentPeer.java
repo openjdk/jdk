@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,40 +24,53 @@
  */
 package sun.awt.windows;
 
-import java.awt.*;
-import java.awt.peer.*;
-import java.awt.image.VolatileImage;
-import sun.awt.RepaintArea;
-import sun.awt.image.SunVolatileImage;
-import sun.awt.image.ToolkitImage;
-import java.awt.image.BufferedImage;
-import java.awt.image.ImageProducer;
-import java.awt.image.ImageObserver;
-import java.awt.image.ColorModel;
-import java.awt.event.PaintEvent;
+import java.awt.AWTEvent;
+import java.awt.AWTException;
+import java.awt.BufferCapabilities;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Container;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.FontMetrics;
+import java.awt.Graphics;
+import java.awt.GraphicsConfiguration;
+import java.awt.GraphicsDevice;
+import java.awt.Image;
+import java.awt.Point;
+import java.awt.Rectangle;
+import java.awt.SystemColor;
+import java.awt.Window;
+import java.awt.dnd.DropTarget;
+import java.awt.dnd.peer.DropTargetPeer;
+import java.awt.event.FocusEvent;
+import java.awt.event.InputEvent;
 import java.awt.event.InvocationEvent;
 import java.awt.event.KeyEvent;
-import java.awt.event.FocusEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
-import java.awt.event.InputEvent;
+import java.awt.event.PaintEvent;
+import java.awt.geom.AffineTransform;
+import java.awt.image.BufferedImage;
+import java.awt.image.ColorModel;
+import java.awt.image.VolatileImage;
+import java.awt.peer.ComponentPeer;
+import java.awt.peer.ContainerPeer;
+
+import sun.awt.AWTAccessor;
+import sun.awt.PaintEventDispatcher;
+import sun.awt.RepaintArea;
+import sun.awt.SunToolkit;
 import sun.awt.Win32GraphicsConfig;
 import sun.awt.Win32GraphicsEnvironment;
+import sun.awt.event.IgnorePaintEvent;
+import sun.awt.image.SunVolatileImage;
 import sun.java2d.InvalidPipeException;
-import sun.java2d.SurfaceData;
 import sun.java2d.ScreenUpdateManager;
+import sun.java2d.SurfaceData;
 import sun.java2d.d3d.D3DSurfaceData;
 import sun.java2d.opengl.OGLSurfaceData;
 import sun.java2d.pipe.Region;
-import sun.awt.PaintEventDispatcher;
-import sun.awt.SunToolkit;
-import sun.awt.event.IgnorePaintEvent;
-
-import java.awt.dnd.DropTarget;
-import java.awt.dnd.peer.DropTargetPeer;
-import java.awt.geom.AffineTransform;
-import sun.awt.AWTAccessor;
-
 import sun.util.logging.PlatformLogger;
 
 public abstract class WComponentPeer extends WObjectPeer
@@ -751,11 +764,6 @@ public abstract class WComponentPeer extends WObjectPeer
     }
 
     @Override
-    public Image createImage(ImageProducer producer) {
-        return new ToolkitImage(producer);
-    }
-
-    @Override
     public Image createImage(int width, int height) {
         Win32GraphicsConfig gc =
             (Win32GraphicsConfig)getGraphicsConfiguration();
@@ -765,16 +773,6 @@ public abstract class WComponentPeer extends WObjectPeer
     @Override
     public VolatileImage createVolatileImage(int width, int height) {
         return new SunVolatileImage((Component)target, width, height);
-    }
-
-    @Override
-    public boolean prepareImage(Image img, int w, int h, ImageObserver o) {
-        return Toolkit.getDefaultToolkit().prepareImage(img, w, h, o);
-    }
-
-    @Override
-    public int checkImage(Image img, int w, int h, ImageObserver o) {
-        return Toolkit.getDefaultToolkit().checkImage(img, w, h, o);
     }
 
     // Object overrides

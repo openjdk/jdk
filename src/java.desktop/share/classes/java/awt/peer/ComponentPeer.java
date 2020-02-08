@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,16 +25,25 @@
 
 package java.awt.peer;
 
-import java.awt.*;
-import java.awt.event.PaintEvent;
+import java.awt.AWTEvent;
+import java.awt.AWTException;
+import java.awt.BufferCapabilities;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.EventQueue;
+import java.awt.Font;
+import java.awt.FontMetrics;
+import java.awt.Graphics;
+import java.awt.GraphicsConfiguration;
+import java.awt.Image;
+import java.awt.Point;
 import java.awt.event.FocusEvent.Cause;
+import java.awt.event.PaintEvent;
 import java.awt.image.ColorModel;
-import java.awt.image.ImageObserver;
-import java.awt.image.ImageProducer;
 import java.awt.image.VolatileImage;
 
 import sun.java2d.pipe.Region;
-
 
 /**
  * The peer interface for {@link Component}. This is the top level peer
@@ -355,18 +364,6 @@ public interface ComponentPeer {
     boolean isFocusable();
 
     /**
-     * Creates an image using the specified image producer.
-     *
-     * @param producer the image producer from which the image pixels will be
-     *        produced
-     *
-     * @return the created image
-     *
-     * @see Component#createImage(ImageProducer)
-     */
-    Image createImage(ImageProducer producer);
-
-    /**
      * Creates an empty image with the specified width and height. This is
      * generally used as a non-accelerated backbuffer for drawing onto the
      * component (e.g. by Swing).
@@ -396,38 +393,6 @@ public interface ComponentPeer {
      */
     // TODO: Include capabilities here and fix Component#createVolatileImage
     VolatileImage createVolatileImage(int width, int height);
-
-    /**
-     * Prepare the specified image for rendering on this component. This should
-     * start loading the image (if not already loaded) and create an
-     * appropriate screen representation.
-     *
-     * @param img the image to prepare
-     * @param w the width of the screen representation
-     * @param h the height of the screen representation
-     * @param o an image observer to observe the progress
-     *
-     * @return {@code true} if the image is already fully prepared,
-     *         {@code false} otherwise
-     *
-     * @see Component#prepareImage(Image, int, int, ImageObserver)
-     */
-    boolean prepareImage(Image img, int w, int h, ImageObserver o);
-
-    /**
-     * Determines the status of the construction of the screen representation
-     * of the specified image.
-     *
-     * @param img the image to check
-     * @param w the target width
-     * @param h the target height
-     * @param o the image observer to notify
-     *
-     * @return the status as bitwise ORed ImageObserver flags
-     *
-     * @see Component#checkImage(Image, int, int, ImageObserver)
-     */
-    int checkImage(Image img, int w, int h, ImageObserver o);
 
     /**
      * Returns the graphics configuration that corresponds to this component.
