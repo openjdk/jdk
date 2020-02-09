@@ -162,7 +162,8 @@ module java.base {
         jdk.jlink;
     exports jdk.internal.loader to
         java.instrument,
-        java.logging;
+        java.logging,
+        java.naming;
     exports jdk.internal.jmod to
         jdk.compiler,
         jdk.jlink;

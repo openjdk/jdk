@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,13 +26,15 @@
 package javax.naming.spi;
 
 import java.net.MalformedURLException;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.*;
-
 
 import javax.naming.*;
 import com.sun.naming.internal.VersionHelper;
 import com.sun.naming.internal.ResourceManager;
 import com.sun.naming.internal.FactoryEnumeration;
+import jdk.internal.loader.ClassLoaderValue;
 
 /**
  * This class contains methods for creating context objects
@@ -78,6 +80,9 @@ public class NamingManager {
      * Package-private; used by DirectoryManager and NamingManager.
      */
     private static ObjectFactoryBuilder object_factory_builder = null;
+
+    private static final ClassLoaderValue<InitialContextFactory> FACTORIES_CACHE =
+            new ClassLoaderValue<>();
 
     /**
      * The ObjectFactoryBuilder determines the policy used when
@@ -672,6 +677,7 @@ public class NamingManager {
      */
     public static Context getInitialContext(Hashtable<?,?> env)
         throws NamingException {
+        ClassLoader loader;
         InitialContextFactory factory = null;
 
         InitialContextFactoryBuilder builder = getInitialContextFactoryBuilder();
@@ -689,45 +695,65 @@ public class NamingManager {
                 throw ne;
             }
 
-            ServiceLoader<InitialContextFactory> loader =
-                    ServiceLoader.load(InitialContextFactory.class);
-
-            Iterator<InitialContextFactory> iterator = loader.iterator();
-            try {
-                while (iterator.hasNext()) {
-                    InitialContextFactory f = iterator.next();
-                    if (f.getClass().getName().equals(className)) {
-                        factory = f;
-                        break;
-                    }
-                }
-            } catch (ServiceConfigurationError e) {
-                NoInitialContextException ne =
-                        new NoInitialContextException(
-                                "Cannot load initial context factory "
-                                        + "'" + className + "'");
-                ne.setRootCause(e);
-                throw ne;
+            if (System.getSecurityManager() == null) {
+                loader = Thread.currentThread().getContextClassLoader();
+                if (loader == null) loader = ClassLoader.getSystemClassLoader();
+            } else {
+                PrivilegedAction<ClassLoader> pa = () -> {
+                    ClassLoader cl = Thread.currentThread().getContextClassLoader();
+                    return (cl == null) ? ClassLoader.getSystemClassLoader() : cl;
+                };
+                loader = AccessController.doPrivileged(pa);
             }
 
-            if (factory == null) {
-                try {
-                    @SuppressWarnings("deprecation")
-                    Object o = helper.loadClass(className).newInstance();
-                    factory = (InitialContextFactory) o;
-                } catch (Exception e) {
-                    NoInitialContextException ne =
-                            new NoInitialContextException(
-                                    "Cannot instantiate class: " + className);
-                    ne.setRootCause(e);
-                    throw ne;
-                }
+            var key = FACTORIES_CACHE.sub(className);
+            try {
+                factory = key.computeIfAbsent(loader, (ld, ky) -> getFactory(ky.key()));
+            } catch (FactoryInitializationError e) {
+                throw e.getCause();
             }
         } else {
             factory = builder.createInitialContextFactory(env);
         }
 
         return factory.getInitialContext(env);
+    }
+
+    private static InitialContextFactory getFactory(String className) {
+        InitialContextFactory factory;
+        try {
+            ServiceLoader<InitialContextFactory> loader =
+                    ServiceLoader.load(InitialContextFactory.class);
+
+            factory = loader
+                    .stream()
+                    .filter(p -> p.type().getName().equals(className))
+                    .findFirst()
+                    .map(ServiceLoader.Provider::get)
+                    .orElse(null);
+        } catch (ServiceConfigurationError e) {
+            NoInitialContextException ne =
+                    new NoInitialContextException(
+                            "Cannot load initial context factory "
+                                    + "'" + className + "'");
+            ne.setRootCause(e);
+            throw new FactoryInitializationError(ne);
+        }
+
+        if (factory == null) {
+            try {
+                @SuppressWarnings("deprecation")
+                Object o = helper.loadClass(className).newInstance();
+                factory = (InitialContextFactory) o;
+            } catch (Exception e) {
+                NoInitialContextException ne =
+                        new NoInitialContextException(
+                                "Cannot instantiate class: " + className);
+                ne.setRootCause(e);
+                throw new FactoryInitializationError(ne);
+            }
+        }
+        return factory;
     }
 
 
@@ -920,5 +946,19 @@ public class NamingManager {
         }
 
         return (answer != null) ? answer : obj;
+    }
+
+    private static class FactoryInitializationError extends Error {
+        @java.io.Serial
+        static final long serialVersionUID = -5805552256848841560L;
+
+        private FactoryInitializationError(NoInitialContextException cause) {
+            super(cause);
+        }
+
+        @Override
+        public NoInitialContextException getCause() {
+            return (NoInitialContextException) super.getCause();
+        }
     }
 }
