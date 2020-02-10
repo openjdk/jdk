@@ -150,6 +150,9 @@ public class Compiler {
             } else {
                 compileAtLevel(compLevel);
             }
+
+            // Make the method eligible for sweeping sooner
+            WHITE_BOX.deoptimizeMethod(method);
         }
 
         private void waitCompilation() {
