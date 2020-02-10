@@ -75,6 +75,7 @@ $(CLASSLIST_FILE): $(INTERIM_IMAGE_DIR)/bin/java$(EXE_SUFFIX) $(CLASSLIST_JAR)
 	$(FIXPATH) $(INTERIM_IMAGE_DIR)/bin/java -XX:DumpLoadedClassList=$@.raw \
 	    -Djava.lang.invoke.MethodHandle.TRACE_RESOLVE=true \
 	    -Duser.language=en -Duser.country=US \
+	    --module-path $(SUPPORT_OUTPUTDIR)/classlist.jar \
 	    -cp $(SUPPORT_OUTPUTDIR)/classlist.jar \
 	    build.tools.classlist.HelloClasslist \
 	    2> $(LINK_OPT_DIR)/stderr > $(JLI_TRACE_FILE) \
