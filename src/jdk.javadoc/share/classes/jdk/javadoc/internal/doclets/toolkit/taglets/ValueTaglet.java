@@ -77,7 +77,7 @@ public class ValueTaglet extends BaseTaglet {
 
         Element e = signature == null
                 ? holder
-                : ch.getReferencedMember(config, tag);
+                : ch.getReferencedMember(tag);
 
         return (e != null && config.utils.isVariableElement(e))
                 ? (VariableElement) e

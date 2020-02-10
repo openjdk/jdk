@@ -153,7 +153,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
             Content deprPhrase = HtmlTree.SPAN(HtmlStyle.deprecatedLabel, getDeprecatedPhrase(packageElement));
             deprDiv.add(deprPhrase);
             if (!deprs.isEmpty()) {
-                List<? extends DocTree> commentTags = ch.getDescription(configuration, deprs.get(0));
+                List<? extends DocTree> commentTags = ch.getDescription(deprs.get(0));
                 if (!commentTags.isEmpty()) {
                     addInlineDeprecatedComment(packageElement, deprs.get(0), deprDiv);
                 }

@@ -3198,7 +3198,7 @@ public class Utils {
     public DocCommentTree getDocCommentTree(Element element) {
         CommentHelper ch = commentHelperCache.get(element);
         if (ch != null) {
-            return ch.dctree;
+            return ch.dcTree;
         }
         DocCommentTree dcTree = getDocCommentTree0(element);
         if (dcTree != null) {

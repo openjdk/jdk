@@ -202,7 +202,7 @@ public class AnnotationTypeWriterImpl extends SubWriterHolderWriter
             Content div = HtmlTree.DIV(HtmlStyle.deprecationBlock, deprLabel);
             if (!deprs.isEmpty()) {
 
-                List<? extends DocTree> commentTags = ch.getDescription(configuration, deprs.get(0));
+                List<? extends DocTree> commentTags = ch.getDescription(deprs.get(0));
                 if (!commentTags.isEmpty()) {
                     addInlineDeprecatedComment(annotationType, deprs.get(0), div);
                 }

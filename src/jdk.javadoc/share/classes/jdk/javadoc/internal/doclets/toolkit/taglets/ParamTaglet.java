@@ -126,7 +126,7 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
             if (rankMap.containsKey(paramName) && rankMap.get(paramName).equals((input.tagId))) {
                 output.holder = input.element;
                 output.holderTag = tag;
-                output.inlineTags = ch.getBody(utils.configuration, tag);
+                output.inlineTags = ch.getBody(tag);
                 return;
             }
         }

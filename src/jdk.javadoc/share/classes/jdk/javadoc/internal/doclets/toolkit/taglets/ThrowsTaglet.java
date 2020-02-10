@@ -72,7 +72,7 @@ public class ThrowsTaglet extends BaseTaglet
         Element exception;
         CommentHelper ch = utils.getCommentHelper(input.element);
         if (input.tagId == null) {
-            exception = ch.getException(utils.configuration, input.docTreeInfo.docTree);
+            exception = ch.getException(input.docTreeInfo.docTree);
             input.tagId = exception == null
                     ? ch.getExceptionName(input.docTreeInfo.docTree).getSignature()
                     : utils.getFullyQualifiedName(exception);
@@ -81,12 +81,12 @@ public class ThrowsTaglet extends BaseTaglet
         }
 
         for (DocTree dt : input.utils.getThrowsTrees(input.element)) {
-            Element exc = ch.getException(utils.configuration, dt);
+            Element exc = ch.getException(dt);
             if (exc != null && (input.tagId.equals(utils.getSimpleName(exc)) ||
                  (input.tagId.equals(utils.getFullyQualifiedName(exc))))) {
                 output.holder = input.element;
                 output.holderTag = dt;
-                output.inlineTags = ch.getBody(input.utils.configuration, output.holderTag);
+                output.inlineTags = ch.getBody(output.holderTag);
                 output.tagList.add(dt);
             } else if (exception != null && exc != null &&
                     utils.isTypeElement(exc) && utils.isTypeElement(exception) &&
@@ -193,7 +193,7 @@ public class ThrowsTaglet extends BaseTaglet
                 CommentHelper ch = utils.getCommentHelper(entry.getValue());
                 Element e = entry.getValue();
                 for (DocTree dt : entry.getKey()) {
-                    Element te = ch.getException(utils.configuration, dt);
+                    Element te = ch.getException(dt);
                     String excName = ch.getExceptionName(dt).toString();
                     TypeMirror substituteType = typeSubstitutions.get(excName);
                     if ((!allowDuplicates) &&

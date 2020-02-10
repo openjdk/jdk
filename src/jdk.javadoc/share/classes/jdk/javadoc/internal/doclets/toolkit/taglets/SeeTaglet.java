@@ -60,7 +60,7 @@ public class SeeTaglet extends BaseTaglet implements InheritableTaglet {
             output.holder = input.element;
             output.holderTag = tags.get(0);
             output.inlineTags = input.isFirstSentence
-                    ? ch.getFirstSentenceTrees(input.utils.configuration, output.holderTag)
+                    ? ch.getFirstSentenceTrees(output.holderTag)
                     : ch.getReference(output.holderTag);
         }
     }
