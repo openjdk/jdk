@@ -2488,7 +2488,15 @@ const size_t minimumSymbolTableSize = 1024;
           "Start flight recording with options"))                           \
                                                                             \
   experimental(bool, UseFastUnorderedTimeStamps, false,                     \
-          "Use platform unstable time where supported for timestamps only")
+          "Use platform unstable time where supported for timestamps only") \
+                                                                            \
+  product(bool, UseNewFieldLayout, true,                                    \
+               "(Deprecated) Use new algorithm to compute field layouts")   \
+                                                                            \
+  product(bool, UseEmptySlotsInSupers, true,                                \
+                "Allow allocating fields in empty slots of super-classes")  \
+                                                                            \
+
 
 // Interface macros
 #define DECLARE_PRODUCT_FLAG(type, name, value, doc)      extern "C" type name;

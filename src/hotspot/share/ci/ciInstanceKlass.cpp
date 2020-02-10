@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -213,14 +213,19 @@ ciInstanceKlass* ciInstanceKlass::get_canonical_holder(int offset) {
   }
 
   ciInstanceKlass* self = this;
-  for (;;) {
-    assert(self->is_loaded(), "must be loaded to have size");
-    ciInstanceKlass* super = self->super();
-    if (super == NULL || super->nof_nonstatic_fields() == 0 ||
-        !super->contains_field_offset(offset)) {
-      return self;
-    } else {
-      self = super;  // return super->get_canonical_holder(offset)
+  assert(self->is_loaded(), "must be loaded to access field info");
+  ciField* field = self->get_field_by_offset(offset, false);
+  if (field != NULL) {
+    return field->holder();
+  } else {
+    for (;;) {
+      assert(self->is_loaded(), "must be loaded to have size");
+      ciInstanceKlass* super = self->super();
+      if (super == NULL || super->nof_nonstatic_fields() == 0) {
+        return self;
+      } else {
+        self = super;  // return super->get_canonical_holder(offset)
+      }
     }
   }
 }
@@ -392,6 +397,13 @@ bool ciInstanceKlass::has_finalizable_subclass() {
 }
 
 // ------------------------------------------------------------------
+// ciInstanceKlass::contains_field_offset
+bool ciInstanceKlass::contains_field_offset(int offset) {
+  VM_ENTRY_MARK;
+  return get_instanceKlass()->contains_field_offset(offset);
+}
+
+// ------------------------------------------------------------------
 // ciInstanceKlass::get_field_by_offset
 ciField* ciInstanceKlass::get_field_by_offset(int field_offset, bool is_static) {
   if (!is_static) {
@@ -457,15 +469,9 @@ int ciInstanceKlass::compute_nonstatic_fields() {
   ciInstanceKlass* super = this->super();
   GrowableArray<ciField*>* super_fields = NULL;
   if (super != NULL && super->has_nonstatic_fields()) {
-    int super_fsize  = super->nonstatic_field_size() * heapOopSize;
     int super_flen   = super->nof_nonstatic_fields();
     super_fields = super->_nonstatic_fields;
     assert(super_flen == 0 || super_fields != NULL, "first get nof_fields");
-    // See if I am no larger than my super; if so, I can use his fields.
-    if (fsize == super_fsize) {
-      _nonstatic_fields = super_fields;
-      return super_fields->length();
-    }
   }
 
   GrowableArray<ciField*>* fields = NULL;

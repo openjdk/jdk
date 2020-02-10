@@ -30,6 +30,7 @@
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/defaultMethods.hpp"
 #include "classfile/dictionary.hpp"
+#include "classfile/fieldLayoutBuilder.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/packageEntry.hpp"
@@ -60,6 +61,7 @@
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "runtime/arguments.hpp"
+#include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/os.hpp"
@@ -1686,8 +1688,12 @@ void ClassFileParser::parse_fields(const ClassFileStream* const cfs,
     field->set_allocation_type(atype);
 
     // After field is initialized with type, we can augment it with aux info
-    if (parsed_annotations.has_any_annotations())
+    if (parsed_annotations.has_any_annotations()) {
       parsed_annotations.apply_to(field);
+      if (field->is_contended()) {
+        _has_contended_fields = true;
+      }
+    }
   }
 
   int index = length;
@@ -3932,39 +3938,6 @@ const InstanceKlass* ClassFileParser::parse_super_class(ConstantPool* const cp,
   return super_klass;
 }
 
-static unsigned int compute_oop_map_count(const InstanceKlass* super,
-                                          unsigned int nonstatic_oop_map_count,
-                                          int first_nonstatic_oop_offset) {
-
-  unsigned int map_count =
-    NULL == super ? 0 : super->nonstatic_oop_map_count();
-  if (nonstatic_oop_map_count > 0) {
-    // We have oops to add to map
-    if (map_count == 0) {
-      map_count = nonstatic_oop_map_count;
-    }
-    else {
-      // Check whether we should add a new map block or whether the last one can
-      // be extended
-      const OopMapBlock* const first_map = super->start_of_nonstatic_oop_maps();
-      const OopMapBlock* const last_map = first_map + map_count - 1;
-
-      const int next_offset = last_map->offset() + last_map->count() * heapOopSize;
-      if (next_offset == first_nonstatic_oop_offset) {
-        // There is no gap bettwen superklass's last oop field and first
-        // local oop field, merge maps.
-        nonstatic_oop_map_count -= 1;
-      }
-      else {
-        // Superklass didn't end with a oop field, add extra maps
-        assert(next_offset < first_nonstatic_oop_offset, "just checking");
-      }
-      map_count += nonstatic_oop_map_count;
-    }
-  }
-  return map_count;
-}
-
 #ifndef PRODUCT
 static void print_field_layout(const Symbol* name,
                                Array<u2>* fields,
@@ -4002,18 +3975,121 @@ static void print_field_layout(const Symbol* name,
 }
 #endif
 
-// Values needed for oopmap and InstanceKlass creation
-class ClassFileParser::FieldLayoutInfo : public ResourceObj {
- public:
-  int*          nonstatic_oop_offsets;
-  unsigned int* nonstatic_oop_counts;
-  unsigned int  nonstatic_oop_map_count;
-  unsigned int  total_oop_map_count;
-  int           instance_size;
-  int           nonstatic_field_size;
-  int           static_field_size;
-  bool          has_nonstatic_fields;
-};
+OopMapBlocksBuilder::OopMapBlocksBuilder(unsigned int max_blocks) {
+  _max_nonstatic_oop_maps = max_blocks;
+  _nonstatic_oop_map_count = 0;
+  if (max_blocks == 0) {
+    _nonstatic_oop_maps = NULL;
+  } else {
+    _nonstatic_oop_maps =
+        NEW_RESOURCE_ARRAY(OopMapBlock, _max_nonstatic_oop_maps);
+    memset(_nonstatic_oop_maps, 0, sizeof(OopMapBlock) * max_blocks);
+  }
+}
+
+OopMapBlock* OopMapBlocksBuilder::last_oop_map() const {
+  assert(_nonstatic_oop_map_count > 0, "Has no oop maps");
+  return _nonstatic_oop_maps + (_nonstatic_oop_map_count - 1);
+}
+
+// addition of super oop maps
+void OopMapBlocksBuilder::initialize_inherited_blocks(OopMapBlock* blocks, unsigned int nof_blocks) {
+  assert(nof_blocks && _nonstatic_oop_map_count == 0 &&
+         nof_blocks <= _max_nonstatic_oop_maps, "invariant");
+
+  memcpy(_nonstatic_oop_maps, blocks, sizeof(OopMapBlock) * nof_blocks);
+  _nonstatic_oop_map_count += nof_blocks;
+}
+
+// collection of oops
+void OopMapBlocksBuilder::add(int offset, int count) {
+  if (_nonstatic_oop_map_count == 0) {
+    _nonstatic_oop_map_count++;
+  }
+  OopMapBlock* nonstatic_oop_map = last_oop_map();
+  if (nonstatic_oop_map->count() == 0) {  // Unused map, set it up
+    nonstatic_oop_map->set_offset(offset);
+    nonstatic_oop_map->set_count(count);
+  } else if (nonstatic_oop_map->is_contiguous(offset)) { // contiguous, add
+    nonstatic_oop_map->increment_count(count);
+  } else { // Need a new one...
+    _nonstatic_oop_map_count++;
+    assert(_nonstatic_oop_map_count <= _max_nonstatic_oop_maps, "range check");
+    nonstatic_oop_map = last_oop_map();
+    nonstatic_oop_map->set_offset(offset);
+    nonstatic_oop_map->set_count(count);
+  }
+}
+
+// general purpose copy, e.g. into allocated instanceKlass
+void OopMapBlocksBuilder::copy(OopMapBlock* dst) {
+  if (_nonstatic_oop_map_count != 0) {
+    memcpy(dst, _nonstatic_oop_maps, sizeof(OopMapBlock) * _nonstatic_oop_map_count);
+  }
+}
+
+// Sort and compact adjacent blocks
+void OopMapBlocksBuilder::compact() {
+  if (_nonstatic_oop_map_count <= 1) {
+    return;
+  }
+  /*
+   * Since field layout sneeks in oops before values, we will be able to condense
+   * blocks. There is potential to compact between super, own refs and values
+   * containing refs.
+   *
+   * Currently compaction is slightly limited due to values being 8 byte aligned.
+   * This may well change: FixMe if it doesn't, the code below is fairly general purpose
+   * and maybe it doesn't need to be.
+   */
+  qsort(_nonstatic_oop_maps, _nonstatic_oop_map_count, sizeof(OopMapBlock),
+        (_sort_Fn)OopMapBlock::compare_offset);
+  if (_nonstatic_oop_map_count < 2) {
+    return;
+  }
+
+  // Make a temp copy, and iterate through and copy back into the original
+  ResourceMark rm;
+  OopMapBlock* oop_maps_copy =
+      NEW_RESOURCE_ARRAY(OopMapBlock, _nonstatic_oop_map_count);
+  OopMapBlock* oop_maps_copy_end = oop_maps_copy + _nonstatic_oop_map_count;
+  copy(oop_maps_copy);
+  OopMapBlock* nonstatic_oop_map = _nonstatic_oop_maps;
+  unsigned int new_count = 1;
+  oop_maps_copy++;
+  while(oop_maps_copy < oop_maps_copy_end) {
+    assert(nonstatic_oop_map->offset() < oop_maps_copy->offset(), "invariant");
+    if (nonstatic_oop_map->is_contiguous(oop_maps_copy->offset())) {
+      nonstatic_oop_map->increment_count(oop_maps_copy->count());
+    } else {
+      nonstatic_oop_map++;
+      new_count++;
+      nonstatic_oop_map->set_offset(oop_maps_copy->offset());
+      nonstatic_oop_map->set_count(oop_maps_copy->count());
+    }
+    oop_maps_copy++;
+  }
+  assert(new_count <= _nonstatic_oop_map_count, "end up with more maps after compact() ?");
+  _nonstatic_oop_map_count = new_count;
+}
+
+void OopMapBlocksBuilder::print_on(outputStream* st) const {
+  st->print_cr("  OopMapBlocks: %3d  /%3d", _nonstatic_oop_map_count, _max_nonstatic_oop_maps);
+  if (_nonstatic_oop_map_count > 0) {
+    OopMapBlock* map = _nonstatic_oop_maps;
+    OopMapBlock* last_map = last_oop_map();
+    assert(map <= last_map, "Last less than first");
+    while (map <= last_map) {
+      st->print_cr("    Offset: %3d  -%3d Count: %3d", map->offset(),
+                   map->offset() + map->offset_span() - heapOopSize, map->count());
+      map++;
+    }
+  }
+}
+
+void OopMapBlocksBuilder::print_value_on(outputStream* st) const {
+  print_on(st);
+}
 
 // Layout fields and fill in FieldLayoutInfo.  Could use more refactoring!
 void ClassFileParser::layout_fields(ConstantPool* cp,
@@ -4100,16 +4176,15 @@ void ClassFileParser::layout_fields(ConstantPool* cp,
   // count[i] oops following. Before we know how many regions are required,
   // we pessimistically allocate the maps to fit all the oops into the
   // distinct regions.
-  //
-  // TODO: We add +1 to always allocate non-zero resource arrays; we need
-  // to figure out if we still need to do this.
-  unsigned int nonstatic_oop_map_count = 0;
-  unsigned int max_nonstatic_oop_maps  = fac->count[NONSTATIC_OOP] + 1;
 
-  int* nonstatic_oop_offsets = NEW_RESOURCE_ARRAY_IN_THREAD(
-            THREAD, int, max_nonstatic_oop_maps);
-  unsigned int* const nonstatic_oop_counts  = NEW_RESOURCE_ARRAY_IN_THREAD(
-            THREAD, unsigned int, max_nonstatic_oop_maps);
+  int super_oop_map_count = (_super_klass == NULL) ? 0 :_super_klass->nonstatic_oop_map_count();
+  int max_oop_map_count = super_oop_map_count + fac->count[NONSTATIC_OOP];
+
+  OopMapBlocksBuilder* nonstatic_oop_maps = new OopMapBlocksBuilder(max_oop_map_count);
+  if (super_oop_map_count > 0) {
+    nonstatic_oop_maps->initialize_inherited_blocks(_super_klass->start_of_nonstatic_oop_maps(),
+                                                    _super_klass->nonstatic_oop_map_count());
+  }
 
   int first_nonstatic_oop_offset = 0; // will be set for first oop field
 
@@ -4260,26 +4335,7 @@ void ClassFileParser::layout_fields(ConstantPool* cp,
           real_offset = next_nonstatic_oop_offset;
           next_nonstatic_oop_offset += heapOopSize;
         }
-
-        // Record this oop in the oop maps
-        if( nonstatic_oop_map_count > 0 &&
-            nonstatic_oop_offsets[nonstatic_oop_map_count - 1] ==
-            real_offset -
-            int(nonstatic_oop_counts[nonstatic_oop_map_count - 1]) *
-            heapOopSize ) {
-          // This oop is adjacent to the previous one, add to current oop map
-          assert(nonstatic_oop_map_count - 1 < max_nonstatic_oop_maps, "range check");
-          nonstatic_oop_counts[nonstatic_oop_map_count - 1] += 1;
-        } else {
-          // This oop is not adjacent to the previous one, create new oop map
-          assert(nonstatic_oop_map_count < max_nonstatic_oop_maps, "range check");
-          nonstatic_oop_offsets[nonstatic_oop_map_count] = real_offset;
-          nonstatic_oop_counts [nonstatic_oop_map_count] = 1;
-          nonstatic_oop_map_count += 1;
-          if( first_nonstatic_oop_offset == 0 ) { // Undefined
-            first_nonstatic_oop_offset = real_offset;
-          }
-        }
+        nonstatic_oop_maps->add(real_offset, 1);
         break;
       case NONSTATIC_BYTE:
         if( nonstatic_byte_space_count > 0 ) {
@@ -4392,26 +4448,7 @@ void ClassFileParser::layout_fields(ConstantPool* cp,
             next_nonstatic_padded_offset = align_up(next_nonstatic_padded_offset, heapOopSize);
             real_offset = next_nonstatic_padded_offset;
             next_nonstatic_padded_offset += heapOopSize;
-
-            // Record this oop in the oop maps
-            if( nonstatic_oop_map_count > 0 &&
-                nonstatic_oop_offsets[nonstatic_oop_map_count - 1] ==
-                real_offset -
-                int(nonstatic_oop_counts[nonstatic_oop_map_count - 1]) *
-                heapOopSize ) {
-              // This oop is adjacent to the previous one, add to current oop map
-              assert(nonstatic_oop_map_count - 1 < max_nonstatic_oop_maps, "range check");
-              nonstatic_oop_counts[nonstatic_oop_map_count - 1] += 1;
-            } else {
-              // This oop is not adjacent to the previous one, create new oop map
-              assert(nonstatic_oop_map_count < max_nonstatic_oop_maps, "range check");
-              nonstatic_oop_offsets[nonstatic_oop_map_count] = real_offset;
-              nonstatic_oop_counts [nonstatic_oop_map_count] = 1;
-              nonstatic_oop_map_count += 1;
-              if( first_nonstatic_oop_offset == 0 ) { // Undefined
-                first_nonstatic_oop_offset = real_offset;
-              }
-            }
+            nonstatic_oop_maps->add(real_offset, 1);
             break;
 
           default:
@@ -4475,9 +4512,7 @@ void ClassFileParser::layout_fields(ConstantPool* cp,
          (nonstatic_fields_count > 0), "double-check nonstatic start/end");
 
   // Number of non-static oop map blocks allocated at end of klass.
-  const unsigned int total_oop_map_count =
-    compute_oop_map_count(_super_klass, nonstatic_oop_map_count,
-                          first_nonstatic_oop_offset);
+  nonstatic_oop_maps->compact();
 
 #ifndef PRODUCT
   if (PrintFieldLayout) {
@@ -4492,57 +4527,12 @@ void ClassFileParser::layout_fields(ConstantPool* cp,
 
 #endif
   // Pass back information needed for InstanceKlass creation
-  info->nonstatic_oop_offsets = nonstatic_oop_offsets;
-  info->nonstatic_oop_counts = nonstatic_oop_counts;
-  info->nonstatic_oop_map_count = nonstatic_oop_map_count;
-  info->total_oop_map_count = total_oop_map_count;
-  info->instance_size = instance_size;
-  info->static_field_size = static_field_size;
-  info->nonstatic_field_size = nonstatic_field_size;
-  info->has_nonstatic_fields = has_nonstatic_fields;
+  info->oop_map_blocks = nonstatic_oop_maps;
+  info->_instance_size = instance_size;
+  info->_static_field_size = static_field_size;
+  info->_nonstatic_field_size = nonstatic_field_size;
+  info->_has_nonstatic_fields = has_nonstatic_fields;
 }
-
-static void fill_oop_maps(const InstanceKlass* k,
-                          unsigned int nonstatic_oop_map_count,
-                          const int* nonstatic_oop_offsets,
-                          const unsigned int* nonstatic_oop_counts) {
-
-  assert(k != NULL, "invariant");
-
-  OopMapBlock* this_oop_map = k->start_of_nonstatic_oop_maps();
-  const InstanceKlass* const super = k->superklass();
-  const unsigned int super_count = super ? super->nonstatic_oop_map_count() : 0;
-  if (super_count > 0) {
-    // Copy maps from superklass
-    OopMapBlock* super_oop_map = super->start_of_nonstatic_oop_maps();
-    for (unsigned int i = 0; i < super_count; ++i) {
-      *this_oop_map++ = *super_oop_map++;
-    }
-  }
-
-  if (nonstatic_oop_map_count > 0) {
-    if (super_count + nonstatic_oop_map_count > k->nonstatic_oop_map_count()) {
-      // The counts differ because there is no gap between superklass's last oop
-      // field and the first local oop field.  Extend the last oop map copied
-      // from the superklass instead of creating new one.
-      nonstatic_oop_map_count--;
-      nonstatic_oop_offsets++;
-      this_oop_map--;
-      this_oop_map->set_count(this_oop_map->count() + *nonstatic_oop_counts++);
-      this_oop_map++;
-    }
-
-    // Add new map blocks, fill them
-    while (nonstatic_oop_map_count-- > 0) {
-      this_oop_map->set_offset(*nonstatic_oop_offsets++);
-      this_oop_map->set_count(*nonstatic_oop_counts++);
-      this_oop_map++;
-    }
-    assert(k->start_of_nonstatic_oop_maps() + k->nonstatic_oop_map_count() ==
-           this_oop_map, "sanity");
-  }
-}
-
 
 void ClassFileParser::set_precomputed_flags(InstanceKlass* ik) {
   assert(ik != NULL, "invariant");
@@ -5498,17 +5488,17 @@ int ClassFileParser::verify_legal_method_signature(const Symbol* name,
 
 int ClassFileParser::static_field_size() const {
   assert(_field_info != NULL, "invariant");
-  return _field_info->static_field_size;
+  return _field_info->_static_field_size;
 }
 
 int ClassFileParser::total_oop_map_count() const {
   assert(_field_info != NULL, "invariant");
-  return _field_info->total_oop_map_count;
+  return _field_info->oop_map_blocks->_nonstatic_oop_map_count;
 }
 
 jint ClassFileParser::layout_size() const {
   assert(_field_info != NULL, "invariant");
-  return _field_info->instance_size;
+  return _field_info->_instance_size;
 }
 
 static void check_methods_for_intrinsics(const InstanceKlass* ik,
@@ -5652,19 +5642,19 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik, bool changed_by_loa
   set_klass_to_deallocate(ik);
 
   assert(_field_info != NULL, "invariant");
-  assert(ik->static_field_size() == _field_info->static_field_size, "sanity");
-  assert(ik->nonstatic_oop_map_count() == _field_info->total_oop_map_count,
-    "sanity");
+  assert(ik->static_field_size() == _field_info->_static_field_size, "sanity");
+  assert(ik->nonstatic_oop_map_count() == _field_info->oop_map_blocks->_nonstatic_oop_map_count,
+         "sanity");
 
   assert(ik->is_instance_klass(), "sanity");
-  assert(ik->size_helper() == _field_info->instance_size, "sanity");
+  assert(ik->size_helper() == _field_info->_instance_size, "sanity");
 
   // Fill in information already parsed
   ik->set_should_verify_class(_need_verify);
 
   // Not yet: supers are done below to support the new subtype-checking fields
-  ik->set_nonstatic_field_size(_field_info->nonstatic_field_size);
-  ik->set_has_nonstatic_fields(_field_info->has_nonstatic_fields);
+  ik->set_nonstatic_field_size(_field_info->_nonstatic_field_size);
+  ik->set_has_nonstatic_fields(_field_info->_has_nonstatic_fields);
   assert(_fac != NULL, "invariant");
   ik->set_static_oop_field_count(_fac->count[STATIC_OOP]);
 
@@ -5755,10 +5745,15 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik, bool changed_by_loa
 
   // Compute transitive closure of interfaces this class implements
   // Do final class setup
-  fill_oop_maps(ik,
-                _field_info->nonstatic_oop_map_count,
-                _field_info->nonstatic_oop_offsets,
-                _field_info->nonstatic_oop_counts);
+  OopMapBlocksBuilder* oop_map_blocks = _field_info->oop_map_blocks;
+  if (oop_map_blocks->_nonstatic_oop_map_count > 0) {
+    oop_map_blocks->copy(ik->start_of_nonstatic_oop_maps());
+  }
+
+  if (_has_contended_fields || _parsed_annotations->is_contended() ||
+      ( _super_klass != NULL && _super_klass->has_contended_annotations())) {
+    ik->set_has_contended_annotations(true);
+  }
 
   // Fill in has_finalizer, has_vanilla_constructor, and layout_helper
   set_precomputed_flags(ik);
@@ -6001,6 +5996,7 @@ ClassFileParser::ClassFileParser(ClassFileStream* stream,
   _has_nonstatic_concrete_methods(false),
   _declares_nonstatic_concrete_methods(false),
   _has_final_method(false),
+  _has_contended_fields(false),
   _has_finalizer(false),
   _has_empty_finalizer(false),
   _has_vanilla_constructor(false),
@@ -6478,7 +6474,13 @@ void ClassFileParser::post_process_parsed_stream(const ClassFileStream* const st
   assert(_parsed_annotations != NULL, "invariant");
 
   _field_info = new FieldLayoutInfo();
-  layout_fields(cp, _fac, _parsed_annotations, _field_info, CHECK);
+  if (UseNewFieldLayout) {
+    FieldLayoutBuilder lb(class_name(), super_klass(), _cp, _fields,
+                          _parsed_annotations->is_contended(), _field_info);
+    lb.build_layout();
+  } else {
+    layout_fields(cp, _fac, _parsed_annotations, _field_info, CHECK);
+  }
 
   // Compute reference typ
   _rt = (NULL ==_super_klass) ? REF_NONE : _super_klass->reference_type();

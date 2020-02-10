@@ -522,6 +522,7 @@ static SpecialFlag const special_jvm_flags[] = {
   { "AllowRedefinitionToAddDeleteMethods", JDK_Version::jdk(13), JDK_Version::undefined(), JDK_Version::undefined() },
   { "FlightRecorder",               JDK_Version::jdk(13), JDK_Version::undefined(), JDK_Version::undefined() },
   { "MonitorBound",                 JDK_Version::jdk(14), JDK_Version::jdk(15), JDK_Version::jdk(16) },
+  { "UseNewFieldLayout",            JDK_Version::jdk(15), JDK_Version::jdk(16), JDK_Version::jdk(17) },
 
   // --- Deprecated alias flags (see also aliased_jvm_flags) - sorted by obsolete_in then expired_in:
   { "DefaultMaxRAMFraction",        JDK_Version::jdk(8),  JDK_Version::undefined(), JDK_Version::undefined() },
