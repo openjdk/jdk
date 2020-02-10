@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -867,6 +867,9 @@ public:
   // Intel features
   static bool is_intel_family_core() { return is_intel() &&
                                        extended_cpu_family() == CPU_FAMILY_INTEL_CORE; }
+
+  static bool is_intel_skylake() { return is_intel_family_core() &&
+                                          extended_cpu_model() == CPU_MODEL_SKYLAKE; }
 
   static bool is_intel_tsc_synched_at_init()  {
     if (is_intel_family_core()) {
