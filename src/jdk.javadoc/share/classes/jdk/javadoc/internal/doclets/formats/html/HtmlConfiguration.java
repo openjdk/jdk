@@ -78,7 +78,7 @@ public class HtmlConfiguration extends BaseConfiguration {
      */
     public static final String HTML_DEFAULT_CHARSET = "utf-8";
 
-    public final Resources resources;
+    public final Resources docResources;
 
     /**
      * First file to appear in the right-hand frame in the generated
@@ -133,17 +133,31 @@ public class HtmlConfiguration extends BaseConfiguration {
      */
     public HtmlConfiguration(Doclet doclet, Locale locale, Reporter reporter) {
         super(doclet, locale, reporter);
-        resources = new Resources(locale,
+
+        // Use the default locale for console messages.
+        Resources msgResources = new Resources(Locale.getDefault(),
                 BaseConfiguration.sharedResourceBundleName,
                 "jdk.javadoc.internal.doclets.formats.html.resources.standard");
 
-        messages = new Messages(this);
+        // Use the provided locale for generated docs
+        // Ideally, the doc resources would be in different resource files than the
+        // message resources, so that we do not have different copies of the same resources.
+        if (locale.equals(Locale.getDefault())) {
+            docResources = msgResources;
+        } else {
+            docResources = new Resources(locale,
+                    BaseConfiguration.sharedResourceBundleName,
+                    "jdk.javadoc.internal.doclets.formats.html.resources.standard");
+        }
+
+        messages = new Messages(this, msgResources);
         contents = new Contents(this);
         options = new HtmlOptions(this);
 
         String v;
         try {
-            ResourceBundle rb = ResourceBundle.getBundle(versionBundleName, getLocale());
+            // the version bundle is not localized
+            ResourceBundle rb = ResourceBundle.getBundle(versionBundleName, Locale.getDefault());
             try {
                 v = rb.getString("release");
             } catch (MissingResourceException e) {
@@ -166,10 +180,15 @@ public class HtmlConfiguration extends BaseConfiguration {
     }
 
     @Override
-    public Resources getResources() {
-        return resources;
+    public Resources getDocResources() {
+        return docResources;
     }
 
+    /**
+     * Returns a utility object providing commonly used fragments of content.
+     *
+     * @return a utility object providing commonly used fragments of content
+     */
     public Contents getContents() {
         return contents;
     }
@@ -335,12 +354,7 @@ public class HtmlConfiguration extends BaseConfiguration {
             Character unicode = (tagLabel.length() == 0)
                     ? '*'
                     : Character.toUpperCase(tagLabel.charAt(0));
-            List<SearchIndexItem> list = tagSearchIndexMap.get(unicode);
-            if (list == null) {
-                list = new ArrayList<>();
-                tagSearchIndexMap.put(unicode, list);
-            }
-            list.add(sii);
+            tagSearchIndexMap.computeIfAbsent(unicode, k -> new ArrayList<>()).add(sii);
         }
         tagSearchIndexKeys = tagSearchIndexMap.keySet();
     }
@@ -359,7 +373,7 @@ public class HtmlConfiguration extends BaseConfiguration {
             if (options.charset() == null) {
                 options.setCharset(options.docEncoding());
             } else if (!options.charset().equals(options.docEncoding())) {
-                reporter.print(ERROR, resources.getText("doclet.Option_conflict", "-charset", "-docencoding"));
+                messages.error("doclet.Option_conflict", "-charset", "-docencoding");
                 return false;
             }
         }

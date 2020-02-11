@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "memory/referenceType.hpp"
 #include "oops/annotations.hpp"
 #include "oops/constantPool.hpp"
+#include "oops/instanceKlass.hpp"
 #include "oops/typeArrayOop.hpp"
 #include "utilities/accessFlags.hpp"
 
@@ -45,17 +46,46 @@ class InstanceKlass;
 class RecordComponent;
 class Symbol;
 class TempNewSymbol;
+class FieldLayoutBuilder;
+
+// Utility to collect and compact oop maps during layout
+class OopMapBlocksBuilder : public ResourceObj {
+ public:
+  OopMapBlock* _nonstatic_oop_maps;
+  unsigned int _nonstatic_oop_map_count;
+  unsigned int _max_nonstatic_oop_maps;
+
+  OopMapBlocksBuilder(unsigned int  max_blocks);
+  OopMapBlock* last_oop_map() const;
+  void initialize_inherited_blocks(OopMapBlock* blocks, unsigned int nof_blocks);
+  void add(int offset, int count);
+  void copy(OopMapBlock* dst);
+  void compact();
+  void print_on(outputStream* st) const;
+  void print_value_on(outputStream* st) const;
+};
+
+// Values needed for oopmap and InstanceKlass creation
+class FieldLayoutInfo : public ResourceObj {
+ public:
+  OopMapBlocksBuilder* oop_map_blocks;
+  int _instance_size;
+  int _nonstatic_field_size;
+  int _static_field_size;
+  bool  _has_nonstatic_fields;
+};
 
 // Parser for for .class files
 //
 // The bytes describing the class file structure is read from a Stream object
 
 class ClassFileParser {
+  friend class FieldLayoutBuilder;
+  friend class FieldLayout;
 
- class ClassAnnotationCollector;
- class FieldAllocationCount;
- class FieldAnnotationCollector;
- class FieldLayoutInfo;
+  class ClassAnnotationCollector;
+  class FieldAllocationCount;
+  class FieldAnnotationCollector;
 
  public:
   // The ClassFileParser has an associated "publicity" level
@@ -161,6 +191,7 @@ class ClassFileParser {
   bool _has_nonstatic_concrete_methods;
   bool _declares_nonstatic_concrete_methods;
   bool _has_final_method;
+  bool _has_contended_fields;
 
   // precomputed flags
   bool _has_finalizer;

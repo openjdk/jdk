@@ -173,8 +173,8 @@ public class SimpleTaglet extends BaseTaglet implements InheritableTaglet {
             output.holderTag = tags.get(0);
             CommentHelper ch = input.utils.getCommentHelper(output.holder);
             output.inlineTags = input.isFirstSentence
-                    ? ch.getFirstSentenceTrees(input.utils.configuration, output.holderTag)
-                    : ch.getTags(input.utils.configuration, output.holderTag);
+                    ? ch.getFirstSentenceTrees(output.holderTag)
+                    : ch.getTags(output.holderTag);
         }
     }
 

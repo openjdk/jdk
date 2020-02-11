@@ -35,7 +35,7 @@
  * 8027645 8035076 8039124 8035975 8074678 6854417 8143854 8147531 7071819
  * 8151481 4867170 7080302 6728861 6995635 6736245 4916384 6328855 6192895
  * 6345469 6988218 6693451 7006761 8140212 8143282 8158482 8176029 8184706
- * 8194667 8197462 8184692 8221431 8224789 8228352 8230829 8236034
+ * 8194667 8197462 8184692 8221431 8224789 8228352 8230829 8236034 8235812
  *
  * @library /test/lib
  * @library /lib/testlibrary/java/lang
@@ -57,7 +57,9 @@ import java.nio.CharBuffer;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.Scanner;
 import java.util.function.Function;
@@ -186,6 +188,7 @@ public class RegExTest {
         invalidGroupName();
         illegalRepetitionRange();
         surrogatePairWithCanonEq();
+        lineBreakWithQuantifier();
 
         if (failure) {
             throw new
@@ -4999,5 +5002,82 @@ public class RegExTest {
             System.out.println("Unexpected exception: " + t);
         }
         report("surrogatePairWithCanonEq");
+    }
+
+    // This test is for 8235812
+    private static void lineBreakWithQuantifier() {
+        // key:    pattern
+        // value:  lengths of input that must match the pattern
+        Map<String, List<Integer>> cases = Map.ofEntries(
+            Map.entry("\\R?",      List.of(0, 1)),
+            Map.entry("\\R*",      List.of(0, 1, 2, 3)),
+            Map.entry("\\R+",      List.of(1, 2, 3)),
+            Map.entry("\\R{0}",    List.of(0)),
+            Map.entry("\\R{1}",    List.of(1)),
+            Map.entry("\\R{2}",    List.of(2)),
+            Map.entry("\\R{3}",    List.of(3)),
+            Map.entry("\\R{0,}",   List.of(0, 1, 2, 3)),
+            Map.entry("\\R{1,}",   List.of(1, 2, 3)),
+            Map.entry("\\R{2,}",   List.of(2, 3)),
+            Map.entry("\\R{3,}",   List.of(3)),
+            Map.entry("\\R{0,0}",  List.of(0)),
+            Map.entry("\\R{0,1}",  List.of(0, 1)),
+            Map.entry("\\R{0,2}",  List.of(0, 1, 2)),
+            Map.entry("\\R{0,3}",  List.of(0, 1, 2, 3)),
+            Map.entry("\\R{1,1}",  List.of(1)),
+            Map.entry("\\R{1,2}",  List.of(1, 2)),
+            Map.entry("\\R{1,3}",  List.of(1, 2, 3)),
+            Map.entry("\\R{2,2}",  List.of(2)),
+            Map.entry("\\R{2,3}",  List.of(2, 3)),
+            Map.entry("\\R{3,3}",  List.of(3)),
+            Map.entry("\\R",       List.of(1)),
+            Map.entry("\\R\\R",    List.of(2)),
+            Map.entry("\\R\\R\\R", List.of(3))
+        );
+
+        // key:    length of input
+        // value:  all possible inputs of given length
+        Map<Integer, List<String>> inputs = new HashMap<>();
+        String[] Rs = { "\r\n", "\r", "\n",
+                        "\u000B", "\u000C", "\u0085", "\u2028", "\u2029" };
+        StringBuilder sb = new StringBuilder();
+        for (int len = 0; len <= 3; ++len) {
+            int[] idx = new int[len + 1];
+            do {
+                sb.setLength(0);
+                for (int j = 0; j < len; ++j)
+                    sb.append(Rs[idx[j]]);
+                inputs.computeIfAbsent(len, ArrayList::new).add(sb.toString());
+                idx[0]++;
+                for (int j = 0; j < len; ++j) {
+                    if (idx[j] < Rs.length)
+                        break;
+                    idx[j] = 0;
+                    idx[j+1]++;
+                }
+            } while (idx[len] == 0);
+        }
+
+        // exhaustive testing
+        for (String patStr : cases.keySet()) {
+            Pattern[] pats = patStr.endsWith("R")
+                ? new Pattern[] { Pattern.compile(patStr) }  // no quantifiers
+                : new Pattern[] { Pattern.compile(patStr),          // greedy
+                                  Pattern.compile(patStr + "?") };  // reluctant
+            Matcher m = pats[0].matcher("");
+            for (Pattern p : pats) {
+                m.usePattern(p);
+                for (int len : cases.get(patStr)) {
+                    for (String in : inputs.get(len)) {
+                        if (!m.reset(in).matches()) {
+                            failCount++;
+                            System.err.println("Expected to match '" +
+                                    in + "' =~ /" + p + "/");
+                        }
+                    }
+                }
+            }
+        }
+        report("lineBreakWithQuantifier");
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -126,7 +126,7 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
             if (rankMap.containsKey(paramName) && rankMap.get(paramName).equals((input.tagId))) {
                 output.holder = input.element;
                 output.holderTag = tag;
-                output.inlineTags = ch.getBody(utils.configuration, tag);
+                output.inlineTags = ch.getBody(tag);
                 return;
             }
         }
@@ -305,7 +305,7 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
                 case RECORD_COMPONENT: key = "doclet.RecordComponents" ; break;
                 default: throw new IllegalArgumentException(kind.toString());
             }
-            String header = writer.configuration().getResources().getText(key);
+            String header = writer.configuration().getDocResources().getText(key);
             result.add(writer.getParamHeader(header));
         }
         result.add(writer.paramTagOutput(e, paramTag, name));

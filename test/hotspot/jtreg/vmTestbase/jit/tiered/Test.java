@@ -49,7 +49,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
 public class Test {
-    private static String UNSUPPORTED_OPTION_MESSAGE = "-XX:TieredCompilation not supported in this VM";
+    private static String UNSUPPORTED_OPTION_MESSAGE = "-XX:+TieredCompilation not supported in this VM";
     private static String REGEXP = "^[0-9.]+: \\[compile level=\\d";
     public static void main(String[] args) throws Exception {
         {
@@ -59,7 +59,7 @@ public class Test {
                     "-XX:+PrintTieredEvents",
                     "-version");
             var output = new OutputAnalyzer(pb.start());
-            if (output.getStdout().contains(UNSUPPORTED_OPTION_MESSAGE)) {
+            if (output.getStderr().contains(UNSUPPORTED_OPTION_MESSAGE)) {
                 throw new SkippedException(UNSUPPORTED_OPTION_MESSAGE);
             }
             output.shouldHaveExitValue(0)

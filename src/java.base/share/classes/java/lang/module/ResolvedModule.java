@@ -79,7 +79,7 @@ public final class ResolvedModule {
      * @return The module descriptor
      */
     ModuleDescriptor descriptor() {
-        return reference().descriptor();
+        return mref.descriptor();
     }
 
     /**
@@ -93,7 +93,7 @@ public final class ResolvedModule {
      * @return The module name
      */
     public String name() {
-        return reference().descriptor().name();
+        return mref.descriptor().name();
     }
 
     /**

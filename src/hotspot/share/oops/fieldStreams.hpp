@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,6 @@ class FieldStreamBase : public StackObj {
   fieldDescriptor     _fd_buf;
 
   FieldInfo* field() const { return FieldInfo::from_field_array(_fields, _index); }
-  InstanceKlass* field_holder() const { return _constants->pool_holder(); }
 
   int init_generic_signature_start_slot() {
     int length = _fields->length();
@@ -87,6 +86,7 @@ class FieldStreamBase : public StackObj {
 
   // accessors
   int index() const                 { return _index; }
+  InstanceKlass* field_holder() const { return _constants->pool_holder(); }
 
   void next() {
     if (access_flags().field_has_generic_signature()) {

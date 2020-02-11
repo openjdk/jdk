@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,7 +81,7 @@ public class CommentUtils {
     protected CommentUtils(BaseConfiguration configuration) {
         this.configuration = configuration;
         utils = configuration.utils;
-        resources = configuration.getResources();
+        resources = configuration.getDocResources();
         trees = configuration.docEnv.getDocTrees();
         treeFactory = trees.getDocTreeFactory();
         elementUtils = configuration.docEnv.getElementUtils();

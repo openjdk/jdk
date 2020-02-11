@@ -33,14 +33,11 @@ import java.util.Set;
 import java.util.TreeSet;
 
 import com.sun.tools.doclint.DocLint;
-import jdk.javadoc.doclet.Reporter;
 import jdk.javadoc.internal.doclets.toolkit.BaseOptions;
+import jdk.javadoc.internal.doclets.toolkit.Messages;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFile;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
-
-import static javax.tools.Diagnostic.Kind.ERROR;
-import static javax.tools.Diagnostic.Kind.WARNING;
 
 /**
  * Storage for all options supported by the
@@ -199,8 +196,8 @@ public class HtmlOptions extends BaseOptions {
 
     @Override
     public Set<? extends Option> getSupportedOptions() {
-        Resources resources = config.getResources();
-        Reporter reporter = config.getReporter();
+        Messages messages = config.getMessages();
+        Resources resources = messages.getResources();
 
         List<Option> options = List.of(
                 new Option(resources, "--add-stylesheet", 1) {
@@ -255,13 +252,11 @@ public class HtmlOptions extends BaseOptions {
                     @Override
                     public boolean process(String opt,  List<String> args) {
                         if (noHelp) {
-                            reporter.print(ERROR, resources.getText("doclet.Option_conflict",
-                                    "-helpfile", "-nohelp"));
+                            messages.error("doclet.Option_conflict", "-helpfile", "-nohelp");
                             return false;
                         }
                         if (!helpFile.isEmpty()) {
-                            reporter.print(ERROR, resources.getText("doclet.Option_reuse",
-                                    "-helpfile"));
+                            messages.error("doclet.Option_reuse", "-helpfile");
                             return false;
                         }
                         helpFile = args.get(0);
@@ -281,8 +276,7 @@ public class HtmlOptions extends BaseOptions {
                     public boolean process(String opt, List<String> args) {
                         noHelp = true;
                         if (!helpFile.isEmpty()) {
-                            reporter.print(ERROR, resources.getText("doclet.Option_conflict",
-                                    "-nohelp", "-helpfile"));
+                            messages.error("doclet.Option_conflict", "-nohelp", "-helpfile");
                             return false;
                         }
                         return true;
@@ -302,8 +296,7 @@ public class HtmlOptions extends BaseOptions {
                     public boolean process(String opt,  List<String> args) {
                         createIndex = false;
                         if (splitIndex) {
-                            reporter.print(ERROR, resources.getText("doclet.Option_conflict",
-                                    "-noindex", "-splitindex"));
+                            messages.error("doclet.Option_conflict", "-noindex", "-splitindex");
                             return false;
                         }
                         return true;
@@ -323,8 +316,7 @@ public class HtmlOptions extends BaseOptions {
                     public boolean process(String opt,  List<String> args) {
                         noOverview = true;
                         if (overviewPath != null) {
-                            reporter.print(ERROR, resources.getText("doclet.Option_conflict",
-                                    "-nooverview", "-overview"));
+                            messages.error("doclet.Option_conflict", "-nooverview", "-overview");
                             return false;
                         }
                         return true;
@@ -344,8 +336,7 @@ public class HtmlOptions extends BaseOptions {
                     public boolean process(String opt,  List<String> args) {
                         overviewPath = args.get(0);
                         if (noOverview) {
-                            reporter.print(ERROR, resources.getText("doclet.Option_conflict",
-                                    "-overview", "-nooverview"));
+                            messages.error("doclet.Option_conflict", "-overview", "-nooverview");
                             return false;
                         }
                         return true;
@@ -365,8 +356,7 @@ public class HtmlOptions extends BaseOptions {
                     public boolean process(String opt, List<String> args) {
                         splitIndex = true;
                         if (!createIndex) {
-                            reporter.print(ERROR, resources.getText("doclet.Option_conflict",
-                                    "-splitindex", "-noindex"));
+                            messages.error("doclet.Option_conflict", "-splitindex", "-noindex");
                             return false;
                         }
                         return true;
@@ -418,11 +408,11 @@ public class HtmlOptions extends BaseOptions {
                     public boolean process(String opt,  List<String> args) {
                         String dopt = opt.replace("-Xdoclint:", DocLint.XMSGS_CUSTOM_PREFIX);
                         if (dopt.contains("/")) {
-                            reporter.print(ERROR, resources.getText("doclet.Option_doclint_no_qualifiers"));
+                            messages.error("doclet.Option_doclint_no_qualifiers");
                             return false;
                         }
                         if (!DocLint.isValidOption(dopt)) {
-                            reporter.print(ERROR, resources.getText("doclet.Option_doclint_invalid_arg"));
+                            messages.error("doclet.Option_doclint_invalid_arg");
                             return false;
                         }
                         doclintOpts.add(dopt);
@@ -435,7 +425,7 @@ public class HtmlOptions extends BaseOptions {
                     public boolean process(String opt,  List<String> args) {
                         String dopt = opt.replace("-Xdoclint/package:", DocLint.XCHECK_PACKAGE);
                         if (!DocLint.isValidOption(dopt)) {
-                            reporter.print(ERROR, resources.getText("doclet.Option_doclint_package_invalid_arg"));
+                            messages.error("doclet.Option_doclint_package_invalid_arg");
                             return false;
                         }
                         doclintOpts.add(dopt);
@@ -450,7 +440,7 @@ public class HtmlOptions extends BaseOptions {
                         try {
                             new URL(docrootParent);
                         } catch (MalformedURLException e) {
-                            reporter.print(ERROR, resources.getText("doclet.MalformedURL", docrootParent));
+                            messages.error("doclet.MalformedURL", docrootParent);
                             return false;
                         }
                         return true;
@@ -460,7 +450,7 @@ public class HtmlOptions extends BaseOptions {
                 new XOption(resources, "--no-frames") {
                     @Override
                     public boolean process(String opt, List<String> args) {
-                        reporter.print(WARNING, resources.getText("doclet.NoFrames_specified"));
+                        messages.warning("doclet.NoFrames_specified");
                         return true;
                     }
                 }
@@ -477,14 +467,13 @@ public class HtmlOptions extends BaseOptions {
             return false;
         }
 
-        Resources resources = config.getResources();
-        Reporter reporter = config.getReporter();
+        Messages messages = config.getMessages();
 
         // check if helpfile exists
         if (!helpFile.isEmpty()) {
             DocFile help = DocFile.createFileForInput(config, helpFile);
             if (!help.exists()) {
-                reporter.print(ERROR, resources.getText("doclet.File_not_found", helpFile));
+                messages.error("doclet.File_not_found", helpFile);
                 return false;
             }
         }
@@ -492,7 +481,7 @@ public class HtmlOptions extends BaseOptions {
         if (!stylesheetFile.isEmpty()) {
             DocFile stylesheet = DocFile.createFileForInput(config, stylesheetFile);
             if (!stylesheet.exists()) {
-                reporter.print(ERROR, resources.getText("doclet.File_not_found", stylesheetFile));
+                messages.error("doclet.File_not_found", stylesheetFile);
                 return false;
             }
         }
@@ -500,7 +489,7 @@ public class HtmlOptions extends BaseOptions {
         for (String ssheet : additionalStylesheets) {
             DocFile ssfile = DocFile.createFileForInput(config, ssheet);
             if (!ssfile.exists()) {
-                reporter.print(ERROR, resources.getText("doclet.File_not_found", ssheet));
+                messages.error("doclet.File_not_found", ssheet);
                 return false;
             }
         }

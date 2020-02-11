@@ -199,7 +199,7 @@ public class TagletManager {
         this.docEnv = configuration.docEnv;
         this.doclet = configuration.doclet;
         this.messages = configuration.getMessages();
-        this.resources = configuration.getResources();
+        this.resources = configuration.getDocResources();
         this.showTaglets = options.showTaglets();
         this.utils = configuration.utils;
         this.tagletPath = options.tagletPath();

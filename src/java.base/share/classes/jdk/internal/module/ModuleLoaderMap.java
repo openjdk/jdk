@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,13 +28,11 @@ package jdk.internal.module;
 import java.lang.module.Configuration;
 import java.lang.module.ResolvedModule;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 
 import jdk.internal.loader.ClassLoaders;
-
 
 /**
  * Supports the mapping of modules to class loaders. The set of modules mapped
@@ -46,16 +44,55 @@ public final class ModuleLoaderMap {
     /**
      * Maps the system modules to the built-in class loaders.
      */
-    public static final class Mapper implements Function<String, ClassLoader> {
-        private final Map<String, ClassLoader> map;
+    private static final class Mapper implements Function<String, ClassLoader> {
 
-        Mapper(Map<String, ClassLoader> map) {
-            this.map = map; // defensive copy not needed
+        private static final ClassLoader PLATFORM_CLASSLOADER =
+                ClassLoaders.platformClassLoader();
+        private static final ClassLoader APP_CLASSLOADER =
+                ClassLoaders.appClassLoader();
+
+        private static final Integer PLATFORM_LOADER_INDEX = 1;
+        private static final Integer APP_LOADER_INDEX      = 2;
+
+        /**
+         * Map from module to a class loader index. The index is resolved to the
+         * actual class loader in {@code apply}.
+         */
+        private final Map<String, Integer> map;
+
+        /**
+         * Creates a Mapper to map module names in the given Configuration to
+         * built-in classloaders.
+         *
+         * As a proxy for the actual classloader, we store an easily archiveable
+         * index value in the internal map. The index is stored as a boxed value
+         * so that we can cheaply do identity comparisons during bootstrap.
+         */
+        Mapper(Configuration cf) {
+            var map = new HashMap<String, Integer>();
+            for (ResolvedModule resolvedModule : cf.modules()) {
+                String mn = resolvedModule.name();
+                if (!Modules.bootModules.contains(mn)) {
+                    if (Modules.platformModules.contains(mn)) {
+                        map.put(mn, PLATFORM_LOADER_INDEX);
+                    } else {
+                        map.put(mn, APP_LOADER_INDEX);
+                    }
+                }
+            }
+            this.map = map;
         }
 
         @Override
         public ClassLoader apply(String name) {
-            return map.get(name);
+            Integer loader = map.get(name);
+            if (loader == APP_LOADER_INDEX) {
+                return APP_CLASSLOADER;
+            } else if (loader == PLATFORM_LOADER_INDEX) {
+                return PLATFORM_CLASSLOADER;
+            } else { // BOOT_LOADER_INDEX
+                return null;
+            }
         }
     }
 
@@ -63,50 +100,40 @@ public final class ModuleLoaderMap {
      * Returns the names of the modules defined to the boot loader.
      */
     public static Set<String> bootModules() {
-        // The list of boot modules generated at build time.
-        String[] BOOT_MODULES = new String[] { "@@BOOT_MODULE_NAMES@@" };
-        Set<String> bootModules = new HashSet<>(BOOT_MODULES.length);
-        for (String mn : BOOT_MODULES) {
-            bootModules.add(mn);
-        }
-        return bootModules;
+        return Modules.bootModules;
     }
 
     /**
      * Returns the names of the modules defined to the platform loader.
      */
     public static Set<String> platformModules() {
-        // The list of platform modules generated at build time.
-        String[] PLATFORM_MODULES = new String[] { "@@PLATFORM_MODULE_NAMES@@" };
-        Set<String> platformModules = new HashSet<>(PLATFORM_MODULES.length);
-        for (String mn : PLATFORM_MODULES) {
-            platformModules.add(mn);
-        }
-        return platformModules;
+        return Modules.platformModules;
+    }
+
+    private static class Modules {
+        // list of boot modules is generated at build time.
+        private static final Set<String> bootModules =
+                Set.of(new String[] { "@@BOOT_MODULE_NAMES@@" });
+
+        // list of platform modules is generated at build time.
+        private static final Set<String> platformModules =
+                Set.of(new String[] { "@@PLATFORM_MODULE_NAMES@@" });
     }
 
     /**
-     * Returns the function to map modules in the given configuration to the
+     * Returns a function to map modules in the given configuration to the
      * built-in class loaders.
      */
     static Function<String, ClassLoader> mappingFunction(Configuration cf) {
-        Set<String> bootModules = bootModules();
-        Set<String> platformModules = platformModules();
+        return new Mapper(cf);
+    }
 
-        ClassLoader platformClassLoader = ClassLoaders.platformClassLoader();
-        ClassLoader appClassLoader = ClassLoaders.appClassLoader();
-
-        Map<String, ClassLoader> map = new HashMap<>();
-        for (ResolvedModule resolvedModule : cf.modules()) {
-            String mn = resolvedModule.name();
-            if (!bootModules.contains(mn)) {
-                if (platformModules.contains(mn)) {
-                    map.put(mn, platformClassLoader);
-                } else {
-                    map.put(mn, appClassLoader);
-                }
-            }
-        }
-        return new Mapper(map);
+    /**
+     * When defining modules for a configuration, we only allow defining modules
+     * to the boot or platform classloader if the ClassLoader mapping function
+     * originate from here.
+     */
+    public static boolean isBuiltinMapper(Function<String, ClassLoader> clf) {
+        return clf instanceof Mapper;
     }
 }

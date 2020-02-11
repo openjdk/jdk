@@ -240,8 +240,8 @@ public class Group {
         Map<String, SortedSet<ModuleElement>> groupModuleMap = new HashMap<>();
         String defaultGroupName =
             (elementNameGroupMap.isEmpty() && regExpGroupMap.isEmpty())?
-                configuration.getResources().getText("doclet.Modules") :
-                configuration.getResources().getText("doclet.Other_Modules");
+                configuration.getDocResources().getText("doclet.Modules") :
+                configuration.getDocResources().getText("doclet.Other_Modules");
         // if the user has not used the default group name, add it
         if (!groupList.contains(defaultGroupName)) {
             groupList.add(defaultGroupName);
@@ -282,8 +282,8 @@ public class Group {
         Map<String, SortedSet<PackageElement>> groupPackageMap = new HashMap<>();
         String defaultGroupName =
             (elementNameGroupMap.isEmpty() && regExpGroupMap.isEmpty())?
-                configuration.getResources().getText("doclet.Packages") :
-                configuration.getResources().getText("doclet.Other_Packages");
+                configuration.getDocResources().getText("doclet.Packages") :
+                configuration.getDocResources().getText("doclet.Other_Packages");
         // if the user has not used the default group name, add it
         if (!groupList.contains(defaultGroupName)) {
             groupList.add(defaultGroupName);

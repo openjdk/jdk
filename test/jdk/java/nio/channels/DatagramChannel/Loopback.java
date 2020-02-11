@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,9 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.util.List;
 import java.util.stream.Collectors;
-import static java.net.StandardProtocolFamily.*;
+import static java.net.StandardProtocolFamily.INET;
+import static java.net.StandardProtocolFamily.INET6;
+import static java.net.StandardSocketOptions.IP_MULTICAST_IF;
 import static java.net.StandardSocketOptions.IP_MULTICAST_LOOP;
 
 import jdk.test.lib.NetworkConfiguration;
@@ -105,6 +107,9 @@ public class Loopback {
 
             System.out.format("join %s @ %s%n", group.getHostAddress(), ni.getName());
             dc.join(group, ni);
+
+            System.out.format("set outgoing multicast interface to %s%n", ni.getName());
+            dc.setOption(IP_MULTICAST_IF, ni);
 
             // -- IP_MULTICAST_LOOP enabled --
 

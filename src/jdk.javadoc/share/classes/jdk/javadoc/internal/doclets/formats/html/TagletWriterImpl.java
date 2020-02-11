@@ -88,7 +88,7 @@ public class TagletWriterImpl extends TagletWriter {
         configuration = htmlWriter.configuration;
         options = configuration.getOptions();
         utils = configuration.utils;
-        resources = configuration.getResources();
+        resources = configuration.getDocResources();
     }
 
     @Override
@@ -139,7 +139,7 @@ public class TagletWriterImpl extends TagletWriter {
                 result.add(HtmlTree.SPAN(HtmlStyle.deprecatedLabel,
                         htmlWriter.getDeprecatedPhrase(element)));
                 if (!deprs.isEmpty()) {
-                    List<? extends DocTree> commentTags = ch.getDescription(configuration, deprs.get(0));
+                    List<? extends DocTree> commentTags = ch.getDescription(deprs.get(0));
                     if (!commentTags.isEmpty()) {
                         result.add(commentTagsToOutput(null, element, commentTags, false));
                     }
@@ -150,7 +150,7 @@ public class TagletWriterImpl extends TagletWriter {
                 result.add(HtmlTree.SPAN(HtmlStyle.deprecatedLabel,
                         htmlWriter.getDeprecatedPhrase(element)));
                 if (!deprs.isEmpty()) {
-                    List<? extends DocTree> bodyTags = ch.getBody(configuration, deprs.get(0));
+                    List<? extends DocTree> bodyTags = ch.getBody(deprs.get(0));
                     Content body = commentTagsToOutput(null, element, bodyTags, false);
                     if (!body.isEmpty())
                         result.add(HtmlTree.DIV(HtmlStyle.deprecationComment, body));
@@ -191,7 +191,7 @@ public class TagletWriterImpl extends TagletWriter {
         Content nameTree = new StringContent(paramName);
         body.add(HtmlTree.CODE(defineID ? HtmlTree.SPAN_ID("param-" + paramName, nameTree) : nameTree));
         body.add(" - ");
-        List<? extends DocTree> description = ch.getDescription(configuration, paramTag);
+        List<? extends DocTree> description = ch.getDescription(paramTag);
         body.add(htmlWriter.commentTagsToContent(paramTag, element, description, false, inSummary));
         return HtmlTree.DD(body);
     }
@@ -215,7 +215,7 @@ public class TagletWriterImpl extends TagletWriter {
         result.add(HtmlTree.DT(HtmlTree.SPAN(HtmlStyle.returnLabel,
                 new StringContent(resources.getText("doclet.Returns")))));
         result.add(HtmlTree.DD(htmlWriter.commentTagsToContent(
-                returnTag, element, ch.getDescription(configuration, returnTag), false, inSummary)));
+                returnTag, element, ch.getDescription(returnTag), false, inSummary)));
         return result;
     }
 
@@ -279,7 +279,7 @@ public class TagletWriterImpl extends TagletWriter {
             if (many) {
                 body.add(", ");
             }
-            List<? extends DocTree> bodyTags = ch.getBody(configuration, simpleTag);
+            List<? extends DocTree> bodyTags = ch.getBody(simpleTag);
             body.add(htmlWriter.commentTagsToContent(simpleTag, element, bodyTags, false, inSummary));
             many = true;
         }
@@ -292,7 +292,7 @@ public class TagletWriterImpl extends TagletWriter {
         ContentBuilder result = new ContentBuilder();
         result.add(HtmlTree.DT(HtmlTree.SPAN(HtmlStyle.simpleTagLabel, new RawHtml(header))));
         CommentHelper ch = utils.getCommentHelper(element);
-        List<? extends DocTree> description = ch.getDescription(configuration, simpleTag);
+        List<? extends DocTree> description = ch.getDescription(simpleTag);
         Content body = htmlWriter.commentTagsToContent(simpleTag, element, description, false, inSummary);
         result.add(HtmlTree.DD(body));
         return result;
@@ -317,7 +317,7 @@ public class TagletWriterImpl extends TagletWriter {
     public Content throwsTagOutput(Element element, DocTree throwsTag, TypeMirror substituteType) {
         ContentBuilder body = new ContentBuilder();
         CommentHelper ch = utils.getCommentHelper(element);
-        Element exception = ch.getException(configuration, throwsTag);
+        Element exception = ch.getException(throwsTag);
         Content excName;
         if (substituteType != null) {
            excName = htmlWriter.getLink(new LinkInfoImpl(configuration, LinkInfoImpl.Kind.MEMBER,
@@ -333,7 +333,7 @@ public class TagletWriterImpl extends TagletWriter {
             excName = htmlWriter.getLink(link);
         }
         body.add(HtmlTree.CODE(excName));
-        List<? extends DocTree> description = ch.getDescription(configuration, throwsTag);
+        List<? extends DocTree> description = ch.getDescription(throwsTag);
         Content desc = htmlWriter.commentTagsToContent(throwsTag, element, description, false, inSummary);
         if (desc != null && !desc.isEmpty()) {
             body.add(" - ");

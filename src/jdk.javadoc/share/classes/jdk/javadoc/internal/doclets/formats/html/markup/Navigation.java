@@ -141,7 +141,7 @@ public class Navigation {
         this.path = path;
         this.pathToRoot = path.parent().invert();
         this.links = new Links(path);
-        this.rowListTitle = configuration.getResources().getText("doclet.Navigation");
+        this.rowListTitle = configuration.getDocResources().getText("doclet.Navigation");
         this.searchLabel = contents.getContent("doclet.search");
     }
 

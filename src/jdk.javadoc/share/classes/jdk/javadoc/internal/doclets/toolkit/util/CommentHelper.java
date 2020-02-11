@@ -28,11 +28,10 @@ package jdk.javadoc.internal.doclets.toolkit.util;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
-import javax.lang.model.element.ModuleElement;
-import javax.lang.model.element.Name;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeMirror;
@@ -84,18 +83,27 @@ import static com.sun.source.doctree.DocTree.Kind.*;
  *  deletion without notice.</b>
  */
 public class CommentHelper {
+    private final BaseConfiguration configuration;
     public final TreePath path;
-    public final DocCommentTree dctree;
+    public final DocCommentTree dcTree;
     public final Element element;
     private Element overriddenElement;
 
     public static final String SPACER = " ";
 
-    public CommentHelper(BaseConfiguration configuration, Element element, TreePath path, DocCommentTree dctree) {
-        //this.configuration = configuration;
+    /**
+     * Creates a utility class to encapsulate the contextual information for a doc comment tree.
+     *
+     * @param configuration the configuration
+     * @param element       the element for which this is a doc comment
+     * @param path          the path for the element
+     * @param dcTree        the doc comment
+     */
+    public CommentHelper(BaseConfiguration configuration, Element element, TreePath path, DocCommentTree dcTree) {
+        this.configuration = configuration;
         this.element = element;
         this.path = path;
-        this.dctree = dctree;
+        this.dcTree = dcTree;
     }
 
     public void setOverrideElement(Element ove) {
@@ -144,17 +152,18 @@ public class CommentHelper {
         }
     }
 
-    Element getElement(BaseConfiguration c, ReferenceTree rtree) {
+    Element getElement(ReferenceTree rtree) {
+        Utils utils = configuration.utils;
         // likely a synthesized tree
         if (path == null) {
             // NOTE: this code path only supports module/package/type signatures
             //       and not member signatures. For more complete support,
             //       set a suitable path and avoid this branch.
-            TypeMirror symbol = c.utils.getSymbol(rtree.getSignature());
+            TypeMirror symbol = utils.getSymbol(rtree.getSignature());
             if (symbol == null) {
                 return null;
             }
-            return  c.docEnv.getTypeUtils().asElement(symbol);
+            return configuration.docEnv.getTypeUtils().asElement(symbol);
         }
         // case A: the element contains no comments associated and
         // the comments need to be copied from ancestor
@@ -162,37 +171,37 @@ public class CommentHelper {
         // as appropriate has to be copied over.
 
         // Case A.
-        if (dctree == null && overriddenElement != null) {
-            CommentHelper ovch = c.utils.getCommentHelper(overriddenElement);
-            return ovch.getElement(c, rtree);
+        if (dcTree == null && overriddenElement != null) {
+            CommentHelper ovch = utils.getCommentHelper(overriddenElement);
+            return ovch.getElement(rtree);
         }
-        if (dctree == null) {
+        if (dcTree == null) {
             return null;
         }
-        DocTreePath docTreePath = DocTreePath.getPath(path, dctree, rtree);
+        DocTreePath docTreePath = DocTreePath.getPath(path, dcTree, rtree);
         if (docTreePath == null) {
             // Case B.
             if (overriddenElement != null) {
-                CommentHelper ovch = c.utils.getCommentHelper(overriddenElement);
-                return ovch.getElement(c, rtree);
+                CommentHelper ovch = utils.getCommentHelper(overriddenElement);
+                return ovch.getElement(rtree);
             }
             return null;
         }
-        DocTrees doctrees = c.docEnv.getDocTrees();
+        DocTrees doctrees = configuration.docEnv.getDocTrees();
         return doctrees.getElement(docTreePath);
     }
 
-    public Element getException(BaseConfiguration c, DocTree dtree) {
+    public Element getException(DocTree dtree) {
         if (dtree.getKind() == THROWS || dtree.getKind() == EXCEPTION) {
             ThrowsTree tt = (ThrowsTree)dtree;
             ReferenceTree exceptionName = tt.getExceptionName();
-            return getElement(c, exceptionName);
+            return getElement(exceptionName);
         }
         return null;
     }
 
-    public List<? extends DocTree> getDescription(BaseConfiguration c, DocTree dtree) {
-        return getTags(c, dtree);
+    public List<? extends DocTree> getDescription(DocTree dtree) {
+        return getTags(dtree);
     }
 
     public String getText(List<? extends DocTree> list) {
@@ -224,16 +233,14 @@ public class CommentHelper {
                         quote = "\"";
                         break;
                     case SINGLE:
-                        quote = "\'";
+                        quote = "'";
                         break;
                     default:
                         quote = "";
                         break;
                 }
                 sb.append(quote);
-                node.getValue().stream().forEach((dt) -> {
-                    dt.accept(this, null);
-                });
+                node.getValue().forEach(dt -> dt.accept(this, null));
                 sb.append(quote);
                 return null;
             }
@@ -259,9 +266,7 @@ public class CommentHelper {
                 }
 
                 node.getReference().accept(this, null);
-                node.getLabel().stream().forEach((dt) -> {
-                    dt.accept(this, null);
-                });
+                node.getLabel().forEach(dt -> dt.accept(this, null) );
                 return null;
             }
 
@@ -285,17 +290,13 @@ public class CommentHelper {
 
             @Override
             public Void visitSee(SeeTree node, Void p) {
-                node.getReference().stream().forEach((dt) -> {
-                    dt.accept(this, null);
-                });
+                node.getReference().forEach(dt -> dt.accept(this, null));
                 return null;
             }
 
             @Override
             public Void visitSerial(SerialTree node, Void p) {
-                node.getDescription().stream().forEach((dt) -> {
-                    dt.accept(this, null);
-                });
+                node.getDescription().forEach(dt -> dt.accept(this, null));
                 return null;
             }
 
@@ -303,9 +304,7 @@ public class CommentHelper {
             public Void visitStartElement(StartElementTree node, Void p) {
                 sb.append("<");
                 sb.append(node.getName());
-                node.getAttributes().stream().forEach((dt) -> {
-                    dt.accept(this, null);
-                });
+                node.getAttributes().forEach(dt -> dt.accept(this, null));
                 sb.append((node.isSelfClosing() ? "/>" : ">"));
                 return null;
             }
@@ -318,9 +317,7 @@ public class CommentHelper {
 
             @Override
             public Void visitUnknownBlockTag(UnknownBlockTagTree node, Void p) {
-                node.getContent().stream().forEach((dt) -> {
-                    dt.accept(this, null);
-                });
+                node.getContent().forEach(dt -> dt.accept(this, null));
                 return null;
             }
 
@@ -338,24 +335,22 @@ public class CommentHelper {
         return sb;
     }
 
-    public String getLabel(BaseConfiguration c, DocTree dtree) {
+    public String getLabel(DocTree dtree) {
         return new SimpleDocTreeVisitor<String, Void>() {
             @Override
             public String visitLink(LinkTree node, Void p) {
-                StringBuilder sb = new StringBuilder();
-                node.getLabel().stream().forEach((dt) -> {
-                    sb.append(getText(dt));
-                });
-                return sb.toString();
+                return node.getLabel().stream()
+                        .map(dt -> getText(dt))
+                        .collect(Collectors.joining());
             }
 
             @Override
             public String visitSee(SeeTree node, Void p) {
-                StringBuilder sb = new StringBuilder();
-                node.getReference().stream().filter((dt) -> (c.utils.isText(dt))).forEach((dt) -> {
-                    sb.append(((TextTree)dt).getBody());
-                });
-                return sb.toString();
+                Utils utils = configuration.utils;
+                return node.getReference().stream()
+                        .filter(utils::isText)
+                        .map(dt -> ((TextTree) dt).getBody())
+                        .collect(Collectors.joining());
             }
 
             @Override
@@ -365,22 +360,24 @@ public class CommentHelper {
         }.visit(dtree, null);
     }
 
-    public TypeElement getReferencedClass(BaseConfiguration c, DocTree dtree) {
-        Element e = getReferencedElement(c, dtree);
+    public TypeElement getReferencedClass(DocTree dtree) {
+        Utils utils = configuration.utils;
+        Element e = getReferencedElement(dtree);
         if (e == null) {
             return null;
-        } else if (c.utils.isTypeElement(e)) {
+        } else if (utils.isTypeElement(e)) {
             return (TypeElement) e;
-        } else if (!c.utils.isPackage(e)) {
-            return c.utils.getEnclosingTypeElement(e);
+        } else if (!utils.isPackage(e)) {
+            return utils.getEnclosingTypeElement(e);
         }
         return null;
     }
 
-    public String getReferencedClassName(BaseConfiguration c, DocTree dtree) {
-        Element e = getReferencedClass(c, dtree);
+    public String getReferencedClassName(DocTree dtree) {
+        Utils utils = configuration.utils;
+        Element e = getReferencedClass(dtree);
         if (e != null) {
-            return c.utils.isTypeElement(e) ? c.utils.getSimpleName(e) : null;
+            return utils.isTypeElement(e) ? utils.getSimpleName(e) : null;
         }
         String s = getReferencedSignature(dtree);
         if (s == null) {
@@ -390,12 +387,13 @@ public class CommentHelper {
         return (n == -1) ? s : s.substring(0, n);
     }
 
-    public Element getReferencedMember(BaseConfiguration c, DocTree dtree) {
-        Element e = getReferencedElement(c, dtree);
+    public Element getReferencedMember(DocTree dtree) {
+        Utils utils = configuration.utils;
+        Element e = getReferencedElement(dtree);
         if (e == null) {
             return null;
         }
-        return (c.utils.isExecutableElement(e) || c.utils.isVariableElement(e)) ? e : null;
+        return (utils.isExecutableElement(e) || utils.isVariableElement(e)) ? e : null;
     }
 
     public String getReferencedMemberName(DocTree dtree) {
@@ -407,33 +405,34 @@ public class CommentHelper {
         return (n == -1) ? null : s.substring(n + 1);
     }
 
-    public String getReferencedMemberName(BaseConfiguration c, Element e) {
+    public String getReferencedMemberName(Element e) {
         if (e == null) {
             return null;
         }
-        return c.utils.isExecutableElement(e)
-                ? c.utils.getSimpleName(e) + c.utils.makeSignature((ExecutableElement) e, true, true)
-                : c.utils.getSimpleName(e);
+        Utils utils = configuration.utils;
+        return utils.isExecutableElement(e)
+                ? utils.getSimpleName(e) + utils.makeSignature((ExecutableElement) e, true, true)
+                : utils.getSimpleName(e);
     }
 
-    public PackageElement getReferencedPackage(BaseConfiguration c, DocTree dtree) {
-        Element e = getReferencedElement(c, dtree);
+    public PackageElement getReferencedPackage(DocTree dtree) {
+        Element e = getReferencedElement(dtree);
         if (e != null) {
-            return c.utils.containingPackage(e);
+            Utils utils = configuration.utils;
+            return utils.containingPackage(e);
         }
         return null;
     }
 
-    public List<? extends DocTree> getFirstSentenceTrees(BaseConfiguration c, List<? extends DocTree> body) {
-        List<DocTree> firstSentence = c.docEnv.getDocTrees().getFirstSentence(body);
-        return firstSentence;
+    public List<? extends DocTree> getFirstSentenceTrees(List<? extends DocTree> body) {
+        return configuration.docEnv.getDocTrees().getFirstSentence(body);
     }
 
-    public List<? extends DocTree> getFirstSentenceTrees(BaseConfiguration c, DocTree dtree) {
-        return getFirstSentenceTrees(c, getBody(c, dtree));
+    public List<? extends DocTree> getFirstSentenceTrees(DocTree dtree) {
+        return getFirstSentenceTrees(getBody(dtree));
     }
 
-    private Element getReferencedElement(BaseConfiguration c, DocTree dtree) {
+    private Element getReferencedElement(DocTree dtree) {
         return new SimpleDocTreeVisitor<Element, Void>() {
             @Override
             public Element visitSee(SeeTree node, Void p) {
@@ -460,7 +459,7 @@ public class CommentHelper {
 
             @Override
             public Element visitReference(ReferenceTree node, Void p) {
-                return getElement(c, node);
+                return getElement(node);
             }
 
             @Override
@@ -480,10 +479,11 @@ public class CommentHelper {
         }.visit(dtree, null);
     }
 
-    public TypeElement getServiceType(BaseConfiguration c, DocTree dtree) {
-        Element e = getReferencedElement(c, dtree);
+    public TypeElement getServiceType(DocTree dtree) {
+        Element e = getReferencedElement(dtree);
         if (e != null) {
-            return c.utils.isTypeElement(e) ? (TypeElement) e : null;
+            Utils utils = configuration.utils;
+            return utils.isTypeElement(e) ? (TypeElement) e : null;
         }
         return null;
     }
@@ -546,11 +546,11 @@ public class CommentHelper {
             }
     }
 
-    public List<? extends DocTree> getTags(BaseConfiguration c, DocTree dtree) {
+    public List<? extends DocTree> getTags(DocTree dtree) {
         return new SimpleDocTreeVisitor<List<? extends DocTree>, Void>() {
             List<? extends DocTree> asList(String content) {
                 List<DocTree> out = new ArrayList<>();
-                out.add(c.cmtUtils.makeTextTree(content));
+                out.add(configuration.cmtUtils.makeTextTree(content));
                 return out;
             }
 
@@ -651,22 +651,22 @@ public class CommentHelper {
         }.visit(dtree, null);
     }
 
-    public List<? extends DocTree> getBody(BaseConfiguration c, DocTree dtree) {
-        return getTags(c, dtree);
+    public List<? extends DocTree> getBody(DocTree dtree) {
+        return getTags(dtree);
     }
 
     public ReferenceTree getType(DocTree dtree) {
         if (dtree.getKind() == SERIAL_FIELD) {
-            return ((SerialFieldTree)dtree).getType();
+            return ((SerialFieldTree) dtree).getType();
         } else {
             return null;
         }
     }
 
     public DocTreePath getDocTreePath(DocTree dtree) {
-        if (path == null || dctree == null || dtree == null)
+        if (path == null || dcTree == null || dtree == null)
             return null;
-        return DocTreePath.getPath(path, dctree, dtree);
+        return DocTreePath.getPath(path, dcTree, dtree);
     }
 
     public Element getOverriddenElement() {
@@ -680,7 +680,7 @@ public class CommentHelper {
      */
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder("CommentHelper{" + "path=" + path + ", dctree=" + dctree);
+        StringBuilder sb = new StringBuilder("CommentHelper{" + "path=" + path + ", dcTree=" + dcTree);
         sb.append(", element=");
         sb.append(element.getEnclosingElement());
         sb.append("::");

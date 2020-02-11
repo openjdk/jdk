@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug     8222793
+ * @bug     8222793 8238437
  * @summary Javadoc tool ignores "-locale" param and uses default locale for
  *          all messages and texts
  * @library /tools/lib
@@ -42,6 +42,7 @@ import java.util.Enumeration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.ResourceBundle;
 import java.nio.file.Files;
@@ -75,8 +76,10 @@ public class TestLocaleOption extends TestRunner {
     private Path patchDir;
     private Path srcDir;
 
-    /** Locale for the generated resource files with uppercase values. */
-    private static final String LOCALE = "en_GB_ALLCAPS";
+    /**
+     * Locale for the generated resource files with uppercase values.
+     */
+    private static final Locale ALLCAPS = Locale.forLanguageTag("en-GB-ALLCAPS");
 
     TestLocaleOption() {
         super(System.err);
@@ -91,80 +94,107 @@ public class TestLocaleOption extends TestRunner {
         srcDir = Path.of("src");
         tb.writeJavaFiles(srcDir,
                 "package p;\n"
-                + "public class HelloWorld {\n"
-                + "    public static void main(String... args) {\n"
-                + "        System.out.println(\"Hello World!\");\n"
-                + "    }\n"
-                + "}\n");
+                        + "public class HelloWorld {\n"
+                        + "    public static void main(String... args) {\n"
+                        + "        System.out.println(\"Hello World!\");\n"
+                        + "    }\n"
+                        + "}\n");
 
-        runTests(m -> new Object[] { Path.of(m.getName()) });
+        runTests(m -> new Object[]{Path.of(m.getName())});
     }
 
     @Test
-    public void testHelpDefault(Path base) {
-        String stdOut = javadoc(patchDir, "-help")
-                .writeAll()
-                .getOutput(Task.OutputKind.STDOUT);
-        checkContains(stdOut,
-                "Usage:\n"
-                +"    javadoc [options] [packagenames] [sourcefiles] [@files]");
+    public void testHelpDefault_US(Path base) {
+        testHelp(null, null);
+    }
+
+    @Test
+    public void testHelpDefault_ALLCAPS(Path base) {
+        testHelp(ALLCAPS, null);
     }
 
     @Test
     public void testHelpLocale(Path base) {
-        String stdOut = javadoc(patchDir, "-locale", LOCALE, "-help")
+        testHelp(null, ALLCAPS);
+    }
+
+    private void testHelp(Locale defaultLocale, Locale localeOption) {
+        String stdOut = javadoc(defaultLocale, localeOption, "-help")
                 .writeAll()
                 .getOutput(Task.OutputKind.STDOUT);
-        checkContains(stdOut,
-                "USAGE:\n"
-                +"    JAVADOC [OPTIONS] [PACKAGENAMES] [SOURCEFILES] [@FILES]");
+
+        if (Objects.equals(defaultLocale, ALLCAPS)) {
+            checkContains(stdOut,
+                    "USAGE:\n"
+                            + "    JAVADOC [OPTIONS] [PACKAGENAMES] [SOURCEFILES] [@FILES]");
+        } else {
+            checkContains(stdOut,
+                    "Usage:\n"
+                            + "    javadoc [options] [packagenames] [sourcefiles] [@files]");
+        }
     }
 
     @Test
-    public void testHelloWorldDefault(Path base) throws Exception {
-        Path apiDir = base.resolve("api");
-        String stdOut = javadoc(patchDir,
-                                "-sourcepath", srcDir.toString(),
-                                "-d", apiDir.toString(),
-                                "p")
-                .writeAll()
-                .getOutput(Task.OutputKind.STDOUT);
+    public void testHelloWorldDefault_US(Path base) throws Exception {
+        testHelloWorld(base, null, null);
+    }
 
-        checkContains(stdOut,
-                "Loading source files for package p...\n"
-                + "Constructing Javadoc information...");
-
-        String hw = Files.readString(apiDir.resolve("p/HelloWorld.html"));
-        checkContains(hw,
-                "<h2>Method Summary</h2>",
-                "<th class=\"colFirst\" scope=\"col\">Modifier and Type</th>",
-                "<th class=\"colSecond\" scope=\"col\">Method</th>",
-                "<th class=\"colLast\" scope=\"col\">Description</th>");
+    @Test
+    public void testHelloWorldDefault_ALLCAPS(Path base) throws Exception {
+        testHelloWorld(base, ALLCAPS, null);
     }
 
     @Test
     public void testHelloWorldLocale(Path base) throws Exception {
+        testHelloWorld(base, null, ALLCAPS);
+    }
+
+    private void testHelloWorld(Path base, Locale defaultLocale, Locale localeOption) throws Exception {
         Path apiDir = base.resolve("api");
-        String stdOut = javadoc(patchDir,
-                                "-locale", LOCALE,
+        String stdOut = javadoc(defaultLocale,
+                                localeOption,
                                 "-sourcepath", srcDir.toString(),
                                 "-d", apiDir.toString(),
                                 "p")
                 .writeAll()
                 .getOutput(Task.OutputKind.STDOUT);
 
-        checkContains(stdOut,
-                "LOADING SOURCE FILES FOR PACKAGE p...\n"
-                + "CONSTRUCTING JAVADOC INFORMATION...");
+        // check console messages
+        if (Objects.equals(defaultLocale, ALLCAPS)) {
+            checkContains(stdOut,
+                    "LOADING SOURCE FILES FOR PACKAGE p...\n"
+                            + "CONSTRUCTING JAVADOC INFORMATION...");
+        } else {
+            checkContains(stdOut,
+                    "Loading source files for package p...\n"
+                            + "Constructing Javadoc information...");
+        }
 
+        // check generated files
         String hw = Files.readString(apiDir.resolve("p/HelloWorld.html"));
-        checkContains(hw,
-                "<h2>METHOD SUMMARY</h2>",
-                "<th class=\"colFirst\" scope=\"col\">MODIFIER AND TYPE</th>",
-                "<th class=\"colSecond\" scope=\"col\">METHOD</th>",
-                "<th class=\"colLast\" scope=\"col\">DESCRIPTION</th>");
+        Locale docLocale = localeOption != null ? localeOption : defaultLocale;
+        if (Objects.equals(docLocale, ALLCAPS)) {
+            checkContains(hw,
+                    "<h2>METHOD SUMMARY</h2>",
+                    "<th class=\"colFirst\" scope=\"col\">MODIFIER AND TYPE</th>",
+                    "<th class=\"colSecond\" scope=\"col\">METHOD</th>",
+                    "<th class=\"colLast\" scope=\"col\">DESCRIPTION</th>");
+        } else {
+            checkContains(hw,
+                    "<h2>Method Summary</h2>",
+                    "<th class=\"colFirst\" scope=\"col\">Modifier and Type</th>",
+                    "<th class=\"colSecond\" scope=\"col\">Method</th>",
+                    "<th class=\"colLast\" scope=\"col\">Description</th>");
+        }
     }
 
+    /**
+     * Generates a copy of a resource bundle, with the values converted to uppercase.
+     *
+     * @param dir  the root directory in which to write the bundle
+     * @param name the name of the bundle
+     * @throws Exception if an error occurs
+     */
     private void generateBundle(Path dir, String name) throws Exception {
         Module m = Main.class.getModule();
         ResourceBundle rb = ResourceBundle.getBundle(name, m);
@@ -175,7 +205,8 @@ public class TestLocaleOption extends TestRunner {
             String value = rb.getString(key);
             p.put(key, value.toUpperCase(Locale.US));
         }
-        Path outPath = dir.resolve(name.replace(".", File.separator) + "_" + LOCALE + ".properties");
+        String localeSuffix = ALLCAPS.toString().replace("-", "_");
+        Path outPath = dir.resolve(name.replace(".", File.separator) + "_" + localeSuffix + ".properties");
         Files.createDirectories(outPath.getParent());
         try (Writer out = Files.newBufferedWriter(outPath)) {
             p.store(out, "Generated by TestLocaleOption");
@@ -183,10 +214,29 @@ public class TestLocaleOption extends TestRunner {
         }
     }
 
-    private Task.Result javadoc(Path patchDir, String... args) {
+    /**
+     * Runs javadoc, with the specified arguments,
+     * optionally specifying the default locale and locale option
+     *
+     * @param defaultLocale the default locale for the VM, or null if not specified
+     * @param localeOption  the value for the locale option, or null if not specified
+     * @param args          additional command-line args
+     * @return the task result
+     */
+    private Task.Result javadoc(Locale defaultLocale, Locale localeOption, String... args) {
         List<String> options = new ArrayList<>();
         options.add("-J--patch-module=jdk.javadoc=" + patchDir);
+        if (defaultLocale != null) {
+            options.add("-J-Duser.language=" + defaultLocale.getLanguage());
+            options.add("-J-Duser.country=" + defaultLocale.getCountry());
+            options.add("-J-Duser.variant=" + defaultLocale.getVariant());
+        }
+        if (localeOption != null) {
+            options.addAll(List.of("-locale", localeOption.toString()));
+        }
         options.addAll(List.of(args));
+        System.err.println("Options: " + options);
+
         return new JavadocTask(tb, Task.Mode.EXEC)
                 .options(options)
                 .run();

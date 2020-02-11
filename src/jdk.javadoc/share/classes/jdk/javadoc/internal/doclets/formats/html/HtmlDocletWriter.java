@@ -213,7 +213,7 @@ public class HtmlDocletWriter {
         this.options = configuration.getOptions();
         this.contents = configuration.contents;
         this.messages = configuration.messages;
-        this.resources = configuration.resources;
+        this.resources = configuration.docResources;
         this.links = new Links(path);
         this.utils = configuration.utils;
         this.path = path;
@@ -1038,14 +1038,14 @@ public class HtmlDocletWriter {
             return new RawHtml(seetext);
         }
         boolean isLinkPlain = kind == LINK_PLAIN;
-        Content label = plainOrCode(isLinkPlain, new RawHtml(ch.getLabel(configuration, see)));
+        Content label = plainOrCode(isLinkPlain, new RawHtml(ch.getLabel(see)));
 
         //The text from the @see tag.  We will output this text when a label is not specified.
         Content text = plainOrCode(kind == LINK_PLAIN, new RawHtml(seetext));
 
-        TypeElement refClass = ch.getReferencedClass(configuration, see);
-        String refClassName =  ch.getReferencedClassName(configuration, see);
-        Element refMem =       ch.getReferencedMember(configuration, see);
+        TypeElement refClass = ch.getReferencedClass(see);
+        String refClassName =  ch.getReferencedClassName(see);
+        Element refMem =       ch.getReferencedMember(see);
         String refMemName =    ch.getReferencedMemberName(see);
 
         if (refMemName == null && refMem != null) {
@@ -1053,7 +1053,7 @@ public class HtmlDocletWriter {
         }
         if (refClass == null) {
             //@see is not referencing an included class
-            PackageElement refPackage = ch.getReferencedPackage(configuration, see);
+            PackageElement refPackage = ch.getReferencedPackage(see);
             if (refPackage != null && utils.isIncluded(refPackage)) {
                 //@see is referencing an included package
                 if (label.isEmpty())
@@ -1169,7 +1169,7 @@ public class HtmlDocletWriter {
      */
     public void addInlineComment(Element element, DocTree tag, Content htmltree) {
         CommentHelper ch = utils.getCommentHelper(element);
-        List<? extends DocTree> description = ch.getDescription(configuration, tag);
+        List<? extends DocTree> description = ch.getDescription(tag);
         addCommentTags(element, tag, description, false, false, false, htmltree);
     }
 
@@ -1194,7 +1194,7 @@ public class HtmlDocletWriter {
      */
     public void addInlineDeprecatedComment(Element e, DocTree tag, Content htmltree) {
         CommentHelper ch = utils.getCommentHelper(e);
-        addCommentTags(e, ch.getBody(configuration, tag), true, false, false, htmltree);
+        addCommentTags(e, ch.getBody(tag), true, false, false, htmltree);
     }
 
     /**
@@ -1220,8 +1220,8 @@ public class HtmlDocletWriter {
 
     public void addSummaryDeprecatedComment(Element element, DocTree tag, Content htmltree) {
         CommentHelper ch = utils.getCommentHelper(element);
-        List<? extends DocTree> body = ch.getBody(configuration, tag);
-        addCommentTags(element, ch.getFirstSentenceTrees(configuration, body), true, true, true, htmltree);
+        List<? extends DocTree> body = ch.getBody(tag);
+        addCommentTags(element, ch.getFirstSentenceTrees(body), true, true, true, htmltree);
     }
 
     /**

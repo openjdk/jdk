@@ -904,6 +904,20 @@ class ImmutableCollections {
         @Override public V replace(K key, V value) { throw uoe(); }
         @Override public boolean replace(K key, V oldValue, V newValue) { throw uoe(); }
         @Override public void replaceAll(BiFunction<? super K,? super V,? extends V> f) { throw uoe(); }
+
+        /**
+         * @implNote {@code null} values are disallowed in these immutable maps,
+         * so we can improve upon the default implementation since a
+         * {@code null} return from {@code get(key)} always means the default
+         * value should be returned.
+         */
+        @Override
+        public V getOrDefault(Object key, V defaultValue) {
+            V v;
+            return ((v = get(key)) != null)
+                    ? v
+                    : defaultValue;
+        }
     }
 
     static final class Map1<K,V> extends AbstractImmutableMap<K,V> {

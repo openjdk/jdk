@@ -31,6 +31,9 @@
  */
 package build.tools.classlist;
 
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.net.InetAddress;
 import java.nio.file.FileSystems;
 import java.time.LocalDateTime;
@@ -55,19 +58,20 @@ public class HelloClasslist {
 
     private static final Logger LOGGER = Logger.getLogger("Hello");
 
-    public static void main(String ... args) {
+    public static void main(String ... args) throws Throwable {
 
         FileSystems.getDefault();
 
         List<String> strings = Arrays.asList("Hello", "World!", "From: ",
-              InetAddress.getLoopbackAddress().toString());
+                InetAddress.getLoopbackAddress().toString());
 
         String helloWorld = strings.parallelStream()
-              .map(s -> s.toLowerCase(Locale.ROOT))
-              .collect(joining(","));
+                .map(s -> s.toLowerCase(Locale.ROOT))
+                .collect(joining(","));
 
-        Stream.of(helloWorld.split(","))
-              .forEach(System.out::println);
+        Stream.of(helloWorld.split("([,x-z]{1,3})([\\s]*)"))
+                .map(String::toString)
+                .forEach(System.out::println);
 
         // Common concatenation patterns
         String SS     = String.valueOf(args.length) + String.valueOf(args.length);
@@ -83,6 +87,10 @@ public class HelloClasslist {
         String SCSCS  = String.valueOf(args.length) + "string" + String.valueOf(args.length) + "string" + String.valueOf(args.length);
         String CI     = "string" + args.length;
         String IC     = args.length + "string";
+        String SI     = String.valueOf(args.length) + args.length;
+        String IS     = args.length + String.valueOf(args.length);
+        String CIS    = "string" + args.length + String.valueOf(args.length);
+        String CSCI   = "string" + String.valueOf(args.length) + "string" + args.length;
         String CIC    = "string" + args.length + "string";
         String CICI   = "string" + args.length + "string" + args.length;
         String CJ     = "string" + System.currentTimeMillis();
@@ -99,7 +107,31 @@ public class HelloClasslist {
                 DateFormat.getDateInstance(DateFormat.DEFAULT, Locale.ROOT)
                         .format(new Date()));
 
+        // A selection of trivial and relatively common MH operations
+        invoke(MethodHandles.identity(double.class), 1.0);
+        invoke(MethodHandles.identity(int.class), 1);
+        invoke(MethodHandles.identity(String.class), "x");
+
+        invoke(handle("staticMethod_V", MethodType.methodType(void.class)));
+
         LOGGER.log(Level.FINE, "New Date: " + newDate + " - old: " + oldDate);
     }
 
+    public static void staticMethod_V() {}
+
+    private static MethodHandle handle(String name, MethodType type) throws Throwable {
+        return MethodHandles.lookup().findStatic(HelloClasslist.class, name, type);
+    }
+
+    private static Object invoke(MethodHandle mh, Object ... args) throws Throwable {
+        try {
+            for (Object o : args) {
+                mh = MethodHandles.insertArguments(mh, 0, o);
+            }
+            return mh.invoke();
+        } catch (Throwable t) {
+            LOGGER.warning("Failed to find, link and/or invoke " + mh.toString() + ": " + t.getMessage());
+            throw t;
+        }
+    }
 }

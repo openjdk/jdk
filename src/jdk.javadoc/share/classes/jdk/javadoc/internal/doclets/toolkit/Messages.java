@@ -51,14 +51,24 @@ public class Messages {
      * Creates a {@code Messages} object to provide standardized access to
      * the doclet's diagnostic reporting mechanisms.
      *
-     * @param configuration the doclet's configuration, used to access
-     *  the doclet's resources, reporter, and additional methods and state
-     *  used to filter out messages, if any, which should be suppressed.
+     * @param configuration the doclet's configuration, used to access the doclet's
+     *                      reporter, and additional methods and state used to
+     *                      filter out messages, if any, which should be suppressed.
+     * @param resources     resources for console messages and exceptions
      */
-    public Messages(BaseConfiguration configuration) {
+    public Messages(BaseConfiguration configuration, Resources resources) {
         this.configuration = configuration;
-        resources = configuration.getResources();
+        this.resources = resources;
         reporter = configuration.getReporter();
+    }
+
+    /**
+     * Returns the resources being used when generating messages.
+     *
+     * @return the resources
+     */
+    public Resources getResources() {
+        return resources;
     }
 
     // ***** Errors *****

@@ -482,7 +482,7 @@ public class SerializedFormBuilder extends AbstractBuilder {
             if (tag.getName() == null || tag.getType() == null)  // ignore malformed @serialField tags
                 continue;
             Content fieldsContentTree = fieldWriter.getFieldsContentHeader(tag.equals(tags.last()));
-            TypeElement te = ch.getReferencedClass(configuration, tag);
+            TypeElement te = ch.getReferencedClass(tag);
             String fieldType = ch.getReferencedMemberName(tag);
             if (te != null && utils.isPrimitive(te.asType())) {
                 fieldType = utils.getTypeName(te.asType(), false);

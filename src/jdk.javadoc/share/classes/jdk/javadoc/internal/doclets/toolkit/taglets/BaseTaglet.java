@@ -188,11 +188,21 @@ public class BaseTaglet implements Taglet {
                 : tree.getKind() == tagKind;
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation throws {@link UnsupportedTagletOperationException}.
+     */
     @Override
     public Content getTagletOutput(Element element, DocTree tag, TagletWriter writer) {
         throw new UnsupportedTagletOperationException("Method not supported in taglet " + getName() + ".");
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation throws {@link UnsupportedTagletOperationException}
+     */
     @Override
     public Content getTagletOutput(Element holder, TagletWriter writer) {
         throw new UnsupportedTagletOperationException("Method not supported in taglet " + getName() + ".");

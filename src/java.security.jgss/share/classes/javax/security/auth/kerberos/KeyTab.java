@@ -305,9 +305,7 @@ public final class KeyTab {
      * Checks if the keytab file exists. Implementation of this method
      * should make sure that the result matches the latest status of the
      * keytab file.
-     * <p>
-     * The caller can use the result to determine if it should fallback to
-     * another mechanism to read the keys.
+     *
      * @return true if the keytab file exists; false otherwise.
      * @throws SecurityException if a security manager exists and the read
      * access to the keytab file is not permitted

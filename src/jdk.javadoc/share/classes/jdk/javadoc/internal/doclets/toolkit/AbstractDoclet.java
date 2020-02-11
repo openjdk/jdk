@@ -151,7 +151,7 @@ public abstract class AbstractDoclet implements Doclet {
 
     private void reportInternalError(Throwable t) {
         if (getClass().equals(StandardDoclet.class) || getClass().equals(HtmlDoclet.class)) {
-            System.err.println(configuration.getResources().getText("doclet.internal.report.bug"));
+            System.err.println(configuration.getDocResources().getText("doclet.internal.report.bug"));
         }
         dumpStack(true, t);
     }

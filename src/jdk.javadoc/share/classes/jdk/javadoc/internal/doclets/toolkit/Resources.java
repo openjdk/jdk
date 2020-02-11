@@ -63,7 +63,6 @@ public class Resources {
      *                         specific to a particular format
      */
     public Resources(Locale locale, String commonBundleName, String docletBundleName) {
-
         this.commonBundle = ResourceBundle.getBundle(commonBundleName, locale);
         this.docletBundle = ResourceBundle.getBundle(docletBundleName, locale);
 

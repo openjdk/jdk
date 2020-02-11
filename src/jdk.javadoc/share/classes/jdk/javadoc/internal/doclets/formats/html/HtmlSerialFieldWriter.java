@@ -180,7 +180,7 @@ public class HtmlSerialFieldWriter extends FieldWriterImpl
     @Override
     public void addMemberDescription(VariableElement field, DocTree serialFieldTag, Content contentTree) {
         CommentHelper ch = utils.getCommentHelper(field);
-        List<? extends DocTree> description = ch.getDescription(configuration, serialFieldTag);
+        List<? extends DocTree> description = ch.getDescription(serialFieldTag);
         if (!description.isEmpty()) {
             Content serialFieldContent = new RawHtml(ch.getText(description));
             Content div = HtmlTree.DIV(HtmlStyle.block, serialFieldContent);

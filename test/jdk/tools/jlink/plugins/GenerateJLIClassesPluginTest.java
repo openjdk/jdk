@@ -29,8 +29,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import jdk.tools.jlink.internal.plugins.GenerateJLIClassesPlugin;
-
 import tests.Helper;
 import tests.JImageGenerator;
 import tests.JImageValidator;
@@ -62,32 +60,19 @@ public class GenerateJLIClassesPluginTest {
 
         helper.generateDefaultModules();
 
-        // Test that generate-jli is enabled by default
-        Result result = JImageGenerator.getJLinkTask()
-                .modulePath(helper.defaultModulePath())
-                .output(helper.createNewImageDir("generate-jli"))
-                .addMods("java.base")
-                .call();
-
-        Path image = result.assertSuccess();
-
-        JImageValidator.validate(image.resolve("lib").resolve("modules"),
-                classFilesForSpecies(GenerateJLIClassesPlugin.defaultSpecies()),
-                List.of());
-
         // Check that --generate-jli-classes=@file works as intended
         Path baseFile = Files.createTempFile("base", "trace");
         String species = "LLLLLLLLLLLLLLLLLLL";
         String fileString = "[SPECIES_RESOLVE] java.lang.invoke.BoundMethodHandle$Species_" + species + " (salvaged)\n";
         Files.write(baseFile, fileString.getBytes(Charset.defaultCharset()));
-        result = JImageGenerator.getJLinkTask()
+        Result result = JImageGenerator.getJLinkTask()
                 .modulePath(helper.defaultModulePath())
                 .output(helper.createNewImageDir("generate-jli-file"))
                 .option("--generate-jli-classes=@" + baseFile.toString())
                 .addMods("java.base")
                 .call();
 
-        image = result.assertSuccess();
+        Path image = result.assertSuccess();
 
         JImageValidator.validate(image.resolve("lib").resolve("modules"),
                 classFilesForSpecies(List.of(species)), // species should be in the image
@@ -119,8 +104,7 @@ public class GenerateJLIClassesPluginTest {
 
     private static List<String> classFilesForSpecies(Collection<String> species) {
         return species.stream()
-                .map(s -> "/java.base/java/lang/invoke/BoundMethodHandle$Species_"
-                        + GenerateJLIClassesPlugin.expandSignature(s) + ".class")
+                .map(s -> "/java.base/java/lang/invoke/BoundMethodHandle$Species_" + s + ".class")
                 .collect(Collectors.toList());
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@ import com.sun.jdi.VirtualMachine;
 import com.sun.jdi.connect.AttachingConnector;
 import com.sun.jdi.connect.Connector;
 import com.sun.jdi.connect.IllegalConnectorArgumentsException;
+import jdk.test.lib.Platform;
 import lib.jdb.Debuggee;
 
 import java.io.IOException;
@@ -51,8 +52,6 @@ import java.util.Map;
  * @run main/othervm JdwpListenTest
  */
 public class JdwpListenTest {
-
-    private static final boolean IsWindows = System.getProperty("os.name").toLowerCase().contains("windows");
 
     // Set to true to allow testing of attach from wrong address (expected to fail).
     // It's off by default as it causes test time increase and test interference (see JDK-8231915).
@@ -89,7 +88,7 @@ public class JdwpListenTest {
 
     private static void listenTest(String listenAddress, String connectAddress, boolean expectedResult)
             throws IOException {
-        log("\nTest: listen at " + listenAddress + ", attaching from " + connectAddress
+        log("\nTest: listen at " + listenAddress + ", attaching to " + connectAddress
                 + ", expected: " + (expectedResult ? "SUCCESS" : "FAILURE"));
         if (!expectedResult && !allowNegativeTesting) {
             log("SKIPPED: negative testing is disabled");
@@ -99,7 +98,7 @@ public class JdwpListenTest {
         log("Starting listening debuggee at " + listenAddress);
         try (Debuggee debuggee = Debuggee.launcher("HelloWorld").setAddress(listenAddress + ":0").launch()) {
             log("Debuggee is listening on " + listenAddress + ":" + debuggee.getAddress());
-            log("Connecting from " + connectAddress + ", expected: " + (expectedResult ? "SUCCESS" : "FAILURE"));
+            log("Connecting to " + connectAddress + ", expected: " + (expectedResult ? "SUCCESS" : "FAILURE"));
             try {
                 VirtualMachine vm = attach(connectAddress, debuggee.getAddress());
                 vm.dispose();
@@ -120,6 +119,12 @@ public class JdwpListenTest {
         list.add(addr);
     }
 
+    private static boolean isTeredo(Inet6Address addr) {
+        // Teredo prefix is 2001::/32 (i.e. first 4 bytes are 2001:0000)
+        byte[] bytes = addr.getAddress();
+        return bytes[0] == 0x20 && bytes[1] == 0x01 && bytes[2] == 0x00 && bytes[3] == 0x00;
+    }
+
     private static List<InetAddress> getAddresses() {
         List<InetAddress> result = new LinkedList<>();
         try {
@@ -138,6 +143,12 @@ public class JdwpListenTest {
                             // On other platforms test both symbolic and numeric scopes.
                             if (addr instanceof Inet6Address) {
                                 Inet6Address addr6 = (Inet6Address)addr;
+                                // Teredo clients cause intermittent errors on listen ("bind failed")
+                                // and attach ("no route to host").
+                                // Teredo is supposed to be a temporary measure, but some test machines have it.
+                                if (isTeredo(addr6)) {
+                                    continue;
+                                }
                                 NetworkInterface scopeIface = addr6.getScopedInterface();
                                 if (scopeIface != null && scopeIface.getName() != null) {
                                     // On some test machines VPN creates link local addresses
@@ -155,7 +166,7 @@ public class JdwpListenTest {
                                         throw new RuntimeException("Unexpected", e);
                                     }
 
-                                    if (IsWindows) {
+                                    if (Platform.isWindows()) {
                                         // don't add addresses with symbolic scope
                                         continue;
                                     }

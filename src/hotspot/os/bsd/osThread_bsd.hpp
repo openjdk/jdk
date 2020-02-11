@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,9 +82,7 @@
     _pthread_id = tid;
   }
 
-  void set_unique_thread_id(uint64_t id) {
-    _unique_thread_id = id;
-  }
+  void set_unique_thread_id();
 
   // ***************************************************************
   // suspension support.

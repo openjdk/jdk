@@ -375,16 +375,16 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
         });
         // Generate the map of all services listed using @provides, and the description.
         (utils.getBlockTags(mdle, DocTree.Kind.PROVIDES)).forEach((tree) -> {
-            TypeElement t = ch.getServiceType(configuration, tree);
+            TypeElement t = ch.getServiceType(tree);
             if (t != null) {
-                providesTrees.put(t, commentTagsToContent(tree, mdle, ch.getDescription(configuration, tree), false, true));
+                providesTrees.put(t, commentTagsToContent(tree, mdle, ch.getDescription(tree), false, true));
             }
         });
         // Generate the map of all services listed using @uses, and the description.
         (utils.getBlockTags(mdle, DocTree.Kind.USES)).forEach((tree) -> {
-            TypeElement t = ch.getServiceType(configuration, tree);
+            TypeElement t = ch.getServiceType(tree);
             if (t != null) {
-                usesTrees.put(t, commentTagsToContent(tree, mdle, ch.getDescription(configuration, tree), false, true));
+                usesTrees.put(t, commentTagsToContent(tree, mdle, ch.getDescription(tree), false, true));
             }
         });
     }
@@ -827,7 +827,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
             Content deprPhrase = HtmlTree.SPAN(HtmlStyle.deprecatedLabel, getDeprecatedPhrase(mdle));
             deprDiv.add(deprPhrase);
             if (!deprs.isEmpty()) {
-                List<? extends DocTree> commentTags = ch.getDescription(configuration, deprs.get(0));
+                List<? extends DocTree> commentTags = ch.getDescription(deprs.get(0));
                 if (!commentTags.isEmpty()) {
                     addInlineDeprecatedComment(mdle, deprs.get(0), deprDiv);
                 }
@@ -892,7 +892,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
             deprDiv.add(deprPhrase);
             if (!deprs.isEmpty()) {
                 CommentHelper ch = utils.getCommentHelper(pkg);
-                List<? extends DocTree> commentTags = ch.getDescription(configuration, deprs.get(0));
+                List<? extends DocTree> commentTags = ch.getDescription(deprs.get(0));
                 if (!commentTags.isEmpty()) {
                     addInlineDeprecatedComment(pkg, deprs.get(0), deprDiv);
                 }

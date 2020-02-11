@@ -34,6 +34,9 @@ import java.util.concurrent.TimeUnit;
  */
 @State(Scope.Benchmark)
 @OutputTimeUnit(TimeUnit.MICROSECONDS)
+@Fork(value = 3)
+@Warmup(iterations = 5, time = 1, timeUnit = TimeUnit.SECONDS)
+@Measurement(iterations = 5, time = 2, timeUnit = TimeUnit.SECONDS)
 public class ImmutableColls {
 
     public static String[] STRINGS = {"hi", "all", "of", "you"};
@@ -215,6 +218,13 @@ public class ImmutableColls {
                 fm2.containsValue("hi") &
                 fm3.containsValue("hi") &
                 fm4.containsValue("hi");
+    }
+
+    @Benchmark
+    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
+    public void getOrDefault(Blackhole bh) {
+        bh.consume(fm4.getOrDefault("hi", "test"));
+        bh.consume(fm4.getOrDefault("not_in_this_map", "test"));
     }
 
     public int sizeOf(List<String> list) {

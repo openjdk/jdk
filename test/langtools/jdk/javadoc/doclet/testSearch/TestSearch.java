@@ -32,6 +32,9 @@
  * @build javadoc.tester.*
  * @run main TestSearch
  */
+
+import java.util.Locale;
+
 import javadoc.tester.JavadocTester;
 
 public class TestSearch extends JavadocTester {
@@ -302,37 +305,85 @@ public class TestSearch extends JavadocTester {
     }
 
     @Test
-    public void testJapaneseLocale() {
+    public void testDefaultJapaneseLocale() {
+        Locale prev = Locale.getDefault();
+        Locale.setDefault(Locale.forLanguageTag("ja-JP"));
+        try {
+            javadoc("-d", "out-jp-default",
+                    "-Xdoclint:none",
+                    "-sourcepath", testSrc,
+                    "-use",
+                    "pkg", "pkg1", "pkg2", "pkg3");
+            checkExit(Exit.OK);
+            checkOutput(Output.OUT, true,
+                    "\u30d1\u30c3\u30b1\u30fc\u30b8pkg\u306e\u30bd\u30fc\u30b9\u30fb\u30d5\u30a1" +
+                            "\u30a4\u30eb\u3092\u8aad\u307f\u8fbc\u3093\u3067\u3044\u307e\u3059...\n",
+                    "\u30d1\u30c3\u30b1\u30fc\u30b8pkg1\u306e\u30bd\u30fc\u30b9\u30fb\u30d5\u30a1" +
+                            "\u30a4\u30eb\u3092\u8aad\u307f\u8fbc\u3093\u3067\u3044\u307e\u3059...\n");
+            checkSearchJS();
+            checkSearchIndex(true);
+        } finally {
+            Locale.setDefault(prev);
+        }
+    }
+
+    @Test
+    public void testJapaneseLocaleOption() {
         javadoc("-locale", "ja_JP",
-                "-d", "out-jp",
+                "-d", "out-jp-option",
                 "-Xdoclint:none",
                 "-sourcepath", testSrc,
                 "-use",
                 "pkg", "pkg1", "pkg2", "pkg3");
         checkExit(Exit.OK);
         checkOutput(Output.OUT, true,
-                "\u30d1\u30c3\u30b1\u30fc\u30b8pkg\u306e\u30bd\u30fc\u30b9\u30fb\u30d5\u30a1" +
-                        "\u30a4\u30eb\u3092\u8aad\u307f\u8fbc\u3093\u3067\u3044\u307e\u3059...\n",
-                "\u30d1\u30c3\u30b1\u30fc\u30b8pkg1\u306e\u30bd\u30fc\u30b9\u30fb\u30d5\u30a1" +
-                        "\u30a4\u30eb\u3092\u8aad\u307f\u8fbc\u3093\u3067\u3044\u307e\u3059...\n");
+                "Loading source files for package pkg...\n",
+                "Loading source files for package pkg1...\n");
+        checkOutput("index.html", true,
+                "<span>\u30d1\u30c3\u30b1\u30fc\u30b8</span>");
         checkSearchJS();
         checkSearchIndex(true);
     }
 
     @Test
-    public void testChineseLocale() {
+    public void testDefaultChineseLocale() {
+        Locale prev = Locale.getDefault();
+        Locale.setDefault(Locale.forLanguageTag("zh-CN"));
+        try {
+            javadoc("-d", "out-cn-default",
+                    "-Xdoclint:none",
+                    "-sourcepath", testSrc,
+                    "-use",
+                    "pkg", "pkg1", "pkg2", "pkg3");
+            checkExit(Exit.OK);
+            checkOutput(Output.OUT, true,
+                    "\u6b63\u5728\u52a0\u8f7d\u7a0b\u5e8f\u5305pkg\u7684\u6e90\u6587\u4ef6...\n",
+                    "\u6b63\u5728\u52a0\u8f7d\u7a0b\u5e8f\u5305pkg1\u7684\u6e90\u6587\u4ef6...\n",
+                    "\u6b63\u5728\u52a0\u8f7d\u7a0b\u5e8f\u5305pkg2\u7684\u6e90\u6587\u4ef6...\n",
+                    "\u6b63\u5728\u52a0\u8f7d\u7a0b\u5e8f\u5305pkg3\u7684\u6e90\u6587\u4ef6...\n");
+            checkSearchJS();
+            checkSearchIndex(true);
+        } finally {
+            Locale.setDefault(prev);
+        }
+    }
+
+    @Test
+    public void testChineseLocaleOption() {
         javadoc("-locale", "zh_CN",
-                "-d", "out-cn",
+                "-d", "out-cn-option",
                 "-Xdoclint:none",
                 "-sourcepath", testSrc,
                 "-use",
                 "pkg", "pkg1", "pkg2", "pkg3");
         checkExit(Exit.OK);
         checkOutput(Output.OUT, true,
-                "\u6b63\u5728\u52a0\u8f7d\u7a0b\u5e8f\u5305pkg\u7684\u6e90\u6587\u4ef6...\n",
-                "\u6b63\u5728\u52a0\u8f7d\u7a0b\u5e8f\u5305pkg1\u7684\u6e90\u6587\u4ef6...\n",
-                "\u6b63\u5728\u52a0\u8f7d\u7a0b\u5e8f\u5305pkg2\u7684\u6e90\u6587\u4ef6...\n",
-                "\u6b63\u5728\u52a0\u8f7d\u7a0b\u5e8f\u5305pkg3\u7684\u6e90\u6587\u4ef6...\n");
+                "Loading source files for package pkg...\n",
+                "Loading source files for package pkg1...\n",
+                "Loading source files for package pkg2...\n",
+                "Loading source files for package pkg3...\n");
+        checkOutput("index.html", true,
+                "<span>\u7a0b\u5e8f\u5305</span>");
         checkSearchJS();
         checkSearchIndex(true);
     }

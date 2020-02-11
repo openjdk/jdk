@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @summary run CTW for all classes from jdk.localedata module
+ * @summary run CTW for some classes from jdk.localedata module
  *
  * @library /test/lib / /testlibrary/ctw/src
  * @modules java.base/jdk.internal.access
@@ -35,5 +35,5 @@
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                                sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run driver/timeout=7200 sun.hotspot.tools.ctw.CtwRunner modules:jdk.localedata
+ * @run driver/timeout=7200 sun.hotspot.tools.ctw.CtwRunner modules:jdk.localedata 0% 50%
  */

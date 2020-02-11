@@ -1094,13 +1094,14 @@ public final class Module implements AnnotatedElement {
 
         // map each module to a class loader
         ClassLoader pcl = ClassLoaders.platformClassLoader();
+        boolean isModuleLoaderMapper = ModuleLoaderMap.isBuiltinMapper(clf);
 
         for (int index = 0; index < numModules; index++) {
             String name = resolvedModules[index].name();
             ClassLoader loader = clf.apply(name);
 
             if (loader == null || loader == pcl) {
-                if (!(clf instanceof ModuleLoaderMap.Mapper)) {
+                if (!isModuleLoaderMapper) {
                     throw new IllegalArgumentException("loader can't be 'null'"
                             + " or the platform class loader");
                 }

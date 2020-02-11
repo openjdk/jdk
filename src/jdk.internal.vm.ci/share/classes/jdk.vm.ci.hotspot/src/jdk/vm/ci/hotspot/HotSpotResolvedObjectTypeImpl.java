@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,8 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.nio.ByteOrder;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashMap;
 
 import jdk.vm.ci.common.JVMCIError;
@@ -61,6 +63,7 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
 
     private static final HotSpotResolvedJavaField[] NO_FIELDS = new HotSpotResolvedJavaField[0];
     private static final int METHOD_CACHE_ARRAY_CAPACITY = 8;
+    private static final SortByOffset fieldSortingMethod = new SortByOffset();
 
     /**
      * The Java class this type represents.
@@ -708,6 +711,12 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
         }
     }
 
+    static class SortByOffset implements Comparator<ResolvedJavaField> {
+        public int compare(ResolvedJavaField a, ResolvedJavaField b) {
+            return a.getOffset() - b.getOffset();
+        }
+    }
+
     @Override
     public ResolvedJavaField[] getInstanceFields(boolean includeSuperclasses) {
         if (instanceFields == null) {
@@ -727,8 +736,17 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
                 // This class does not have any instance fields of its own.
                 return NO_FIELDS;
             } else if (superClassFieldCount != 0) {
+                // Fields of the current class can be interleaved with fields of its super-classes
+                // but the array of fields to be returned must be sorted by increasing offset
+                // This code populates the array, then applies the sorting function
                 HotSpotResolvedJavaField[] result = new HotSpotResolvedJavaField[instanceFields.length - superClassFieldCount];
-                System.arraycopy(instanceFields, superClassFieldCount, result, 0, result.length);
+                int i = 0;
+                for (HotSpotResolvedJavaField f : instanceFields) {
+                    if (f.getDeclaringClass() == this) {
+                        result[i++] = f;
+                    }
+                }
+                Arrays.sort(result, fieldSortingMethod);
                 return result;
             } else {
                 // The super classes of this class do not have any instance fields.
@@ -781,23 +799,19 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
             System.arraycopy(prepend, 0, result, 0, prependLength);
         }
 
+        // Fields of the current class can be interleaved with fields of its super-classes
+        // but the array of fields to be returned must be sorted by increasing offset
+        // This code populates the array, then applies the sorting function
         int resultIndex = prependLength;
         for (int i = 0; i < index; ++i) {
             FieldInfo field = new FieldInfo(i);
             if (field.isStatic() == retrieveStaticFields) {
                 int offset = field.getOffset();
                 HotSpotResolvedJavaField resolvedJavaField = createField(field.getType(), offset, field.getAccessFlags(), i);
-
-                // Make sure the result is sorted by offset.
-                int j;
-                for (j = resultIndex - 1; j >= prependLength && result[j].getOffset() > offset; j--) {
-                    result[j + 1] = result[j];
-                }
-                result[j + 1] = resolvedJavaField;
-                resultIndex++;
+                result[resultIndex++] = resolvedJavaField;
             }
         }
-
+        Arrays.sort(result, fieldSortingMethod);
         return result;
     }
 

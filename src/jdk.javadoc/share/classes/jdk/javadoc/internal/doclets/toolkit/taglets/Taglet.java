@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -135,29 +135,28 @@ public interface Taglet {
     String getName();
 
     /**
-     * Given the <code>Tag</code> representation of this custom
-     * tag, return its Content representation, which is output
-     * to the generated page.
-     * @param holder the element holding the tag
-     * @param tag the <code>Tag</code> representation of this custom tag.
-     * @param writer a {@link TagletWriter} Taglet writer.
-     * @throws UnsupportedOperationException thrown when the method is not supported by the taglet.
-     * @return the Content representation of this <code>Tag</code>.
+     * Returns the content to be included in the generated output for an
+     * instance of a tag handled by this taglet.
+     *
+     * @param element the element for the enclosing doc comment
+     * @param tag     the tag
+     * @param writer  the taglet-writer used in this doclet
+     * @return the output for this tag
+     * @throws UnsupportedTagletOperationException thrown when the method is not supported by the taglet
      */
-    Content getTagletOutput(Element holder, DocTree tag, TagletWriter writer) throws
-            UnsupportedOperationException;
+    Content getTagletOutput(Element element, DocTree tag, TagletWriter writer) throws
+            UnsupportedTagletOperationException;
 
     /**
-     * Given an element object, check if it holds any tags of
-     * this type.  If it does, return the content representing the output.
-     * If it does not, return null.
-     * @param holder an element holding the custom tag.
-     * @param writer a {@link TagletWriter} Taglet writer.
-     * @throws UnsupportedTagletOperationException thrown when the method is not
-     *         supported by the taglet.
-     * @return the content representation of this <code>Tag</code>.
+     * Returns the content to be included in the generated output for all
+     * instances of tags handled by this taglet.
+     *
+     * @param element the element for the enclosing doc comment
+     * @param writer  the taglet-writer used in this doclet
+     * @return the output for this tag
+     * @throws UnsupportedTagletOperationException thrown when the method is not supported by the taglet
      */
-    Content getTagletOutput(Element holder, TagletWriter writer) throws
+    Content getTagletOutput(Element element, TagletWriter writer) throws
             UnsupportedTagletOperationException;
 
     class UnsupportedTagletOperationException extends UnsupportedOperationException {

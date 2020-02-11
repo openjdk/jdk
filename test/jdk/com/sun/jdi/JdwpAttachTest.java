@@ -25,6 +25,7 @@ import com.sun.jdi.Bootstrap;
 import com.sun.jdi.VirtualMachine;
 import com.sun.jdi.connect.Connector;
 import com.sun.jdi.connect.ListeningConnector;
+import jdk.test.lib.Platform;
 import jdk.test.lib.apps.LingeredApp;
 
 import java.net.Inet4Address;
@@ -33,7 +34,6 @@ import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.UnknownHostException;
-import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -53,8 +53,6 @@ import java.util.concurrent.Executors;
  * @run main/othervm JdwpAttachTest
  */
 public class JdwpAttachTest {
-
-    private static final boolean IsWindows = System.getProperty("os.name").toLowerCase().contains("windows");
 
     // Set to true to perform testing of attach from wrong address (expected to fail).
     // It's off by default as it caused significant test time increase\
@@ -115,7 +113,7 @@ public class JdwpAttachTest {
         }
         log("  Listening port: " + port);
 
-        log("  Attaching from " + connectAddress);
+        log("  Attaching to " + connectAddress);
         try {
             ExecutorService executor = Executors.newSingleThreadExecutor();
             executor.submit((Callable<Exception>)() -> {
@@ -155,6 +153,12 @@ public class JdwpAttachTest {
         list.add(addr);
     }
 
+    private static boolean isTeredo(Inet6Address addr) {
+        // Teredo prefix is 2001::/32 (i.e. first 4 bytes are 2001:0000)
+        byte[] bytes = addr.getAddress();
+        return bytes[0] == 0x20 && bytes[1] == 0x01 && bytes[2] == 0x00 && bytes[3] == 0x00;
+    }
+
     private static List<InetAddress> getAddresses() {
         List<InetAddress> result = new LinkedList<>();
         try {
@@ -173,6 +177,12 @@ public class JdwpAttachTest {
                             // On other platforms test both symbolic and numeric scopes.
                             if (addr instanceof Inet6Address) {
                                 Inet6Address addr6 = (Inet6Address)addr;
+                                // Teredo clients cause intermittent errors on listen ("bind failed")
+                                // and attach ("no route to host").
+                                // Teredo is supposed to be a temporary measure, but some test machines have it.
+                                if (isTeredo(addr6)) {
+                                    continue;
+                                }
                                 NetworkInterface scopeIface = addr6.getScopedInterface();
                                 if (scopeIface != null && scopeIface.getName() != null) {
                                     // On some test machines VPN creates link local addresses
@@ -190,7 +200,7 @@ public class JdwpAttachTest {
                                         throw new RuntimeException("Unexpected", e);
                                     }
 
-                                    if (IsWindows) {
+                                    if (Platform.isWindows()) {
                                         // don't add addresses with symbolic scope
                                         continue;
                                     }
