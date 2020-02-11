@@ -7159,7 +7159,7 @@ void Assembler::evbroadcasti64x2(XMMRegister dst, Address src, int vector_len) {
 // scalar single/double precision replicate
 
 // duplicate single precision data from src into programmed locations in dest : requires AVX512VL
-void Assembler::vpbroadcastss(XMMRegister dst, XMMRegister src, int vector_len) {
+void Assembler::vbroadcastss(XMMRegister dst, XMMRegister src, int vector_len) {
   assert(VM_Version::supports_avx(), "");
   InstructionAttr attributes(vector_len, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ true);
   int encode = vex_prefix_and_encode(dst->encoding(), 0, src->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_38, &attributes);
@@ -7167,7 +7167,7 @@ void Assembler::vpbroadcastss(XMMRegister dst, XMMRegister src, int vector_len) 
   emit_int8((unsigned char)(0xC0 | encode));
 }
 
-void Assembler::vpbroadcastss(XMMRegister dst, Address src, int vector_len) {
+void Assembler::vbroadcastss(XMMRegister dst, Address src, int vector_len) {
   assert(VM_Version::supports_avx(), "");
   assert(dst != xnoreg, "sanity");
   InstructionMark im(this);
@@ -7180,7 +7180,7 @@ void Assembler::vpbroadcastss(XMMRegister dst, Address src, int vector_len) {
 }
 
 // duplicate double precision data from src into programmed locations in dest : requires AVX512VL
-void Assembler::vpbroadcastsd(XMMRegister dst, XMMRegister src, int vector_len) {
+void Assembler::vbroadcastsd(XMMRegister dst, XMMRegister src, int vector_len) {
   assert(VM_Version::supports_avx(), "");
   InstructionAttr attributes(vector_len, /* vex_w */ VM_Version::supports_evex(), /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ true);
   attributes.set_rex_vex_w_reverted();
@@ -7189,7 +7189,7 @@ void Assembler::vpbroadcastsd(XMMRegister dst, XMMRegister src, int vector_len) 
   emit_int8((unsigned char)(0xC0 | encode));
 }
 
-void Assembler::vpbroadcastsd(XMMRegister dst, Address src, int vector_len) {
+void Assembler::vbroadcastsd(XMMRegister dst, Address src, int vector_len) {
   assert(VM_Version::supports_avx(), "");
   assert(dst != xnoreg, "sanity");
   InstructionMark im(this);

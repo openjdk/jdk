@@ -2217,10 +2217,10 @@ private:
   void evbroadcasti64x2(XMMRegister dst, Address src, int vector_len);
 
   // scalar single/double precision replicate
-  void vpbroadcastss(XMMRegister dst, XMMRegister src, int vector_len);
-  void vpbroadcastss(XMMRegister dst, Address src, int vector_len);
-  void vpbroadcastsd(XMMRegister dst, XMMRegister src, int vector_len);
-  void vpbroadcastsd(XMMRegister dst, Address src, int vector_len);
+  void vbroadcastss(XMMRegister dst, XMMRegister src, int vector_len);
+  void vbroadcastss(XMMRegister dst, Address src, int vector_len);
+  void vbroadcastsd(XMMRegister dst, XMMRegister src, int vector_len);
+  void vbroadcastsd(XMMRegister dst, Address src, int vector_len);
 
   // gpr sourced byte/word/dword/qword replicate
   void evpbroadcastb(XMMRegister dst, Register src, int vector_len);
