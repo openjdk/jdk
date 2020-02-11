@@ -5254,18 +5254,6 @@ instruct vshiftcnt(vec dst, rRegI cnt) %{
   ins_pipe( pipe_slow );
 %}
 
-instruct vshiftcntimm(vec dst, immI8 cnt, rRegI tmp) %{
-  match(Set dst cnt);
-  effect(TEMP tmp);
-  format %{ "movl    $tmp,$cnt\t"
-            "movdl   $dst,$tmp\t! load shift count" %}
-  ins_encode %{
-    __ movl($tmp$$Register, $cnt$$constant);
-    __ movdl($dst$$XMMRegister, $tmp$$Register);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
 // Byte vector shift
 instruct vshiftB(vec dst, vec src, vec shift, vec tmp, rRegI scratch) %{
   predicate(n->as_Vector()->length() <= 8);

@@ -467,7 +467,7 @@ VectorNode* VectorNode::scalar2vector(Node* s, uint vlen, const Type* opd_t) {
 }
 
 VectorNode* VectorNode::shift_count(Node* shift, Node* cnt, uint vlen, BasicType bt) {
-  assert(VectorNode::is_shift(shift) && !cnt->is_Con(), "only variable shift count");
+  assert(VectorNode::is_shift(shift), "sanity");
   // Match shift count type with shift vector type.
   const TypeVect* vt = TypeVect::make(bt, vlen);
   switch (shift->Opcode()) {
@@ -506,7 +506,7 @@ bool VectorNode::is_vector_shift(int opc) {
   }
 }
 
-bool VectorNode::is_shift_count(int opc) {
+bool VectorNode::is_vector_shift_count(int opc) {
   assert(opc > _last_machine_leaf && opc < _last_opcode, "invalid opcode");
   switch (opc) {
   case Op_RShiftCntV:
