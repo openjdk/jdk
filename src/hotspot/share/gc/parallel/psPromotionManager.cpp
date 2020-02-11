@@ -43,7 +43,7 @@
 #include "oops/compressedOops.inline.hpp"
 
 PaddedEnd<PSPromotionManager>* PSPromotionManager::_manager_array = NULL;
-OopStarTaskQueueSet*           PSPromotionManager::_stack_array_depth = NULL;
+PSPromotionManager::OopStarTaskQueueSet* PSPromotionManager::_stack_array_depth = NULL;
 PreservedMarksSet*             PSPromotionManager::_preserved_marks_set = NULL;
 PSOldGen*                      PSPromotionManager::_old_gen = NULL;
 MutableSpace*                  PSPromotionManager::_young_space = NULL;

@@ -2178,7 +2178,7 @@ public:
       AbstractGangTask("MarkFromRootsTask"),
       _strong_roots_scope(active_workers),
       _subtasks(),
-      _terminator(active_workers, ParCompactionManager::stack_array()),
+      _terminator(active_workers, ParCompactionManager::oop_task_queues()),
       _active_workers(active_workers) {
     _subtasks.set_n_threads(active_workers);
     _subtasks.set_n_tasks(ParallelRootType::sentinel);
@@ -2210,7 +2210,7 @@ public:
       AbstractGangTask("PCRefProcTask"),
       _task(task),
       _ergo_workers(ergo_workers),
-      _terminator(_ergo_workers, ParCompactionManager::stack_array()) {
+      _terminator(_ergo_workers, ParCompactionManager::oop_task_queues()) {
   }
 
   virtual void work(uint worker_id) {
@@ -2626,7 +2626,7 @@ public:
   UpdateDensePrefixAndCompactionTask(TaskQueue& tq, uint active_workers) :
       AbstractGangTask("UpdateDensePrefixAndCompactionTask"),
       _tq(tq),
-      _terminator(active_workers, ParCompactionManager::region_array()),
+      _terminator(active_workers, ParCompactionManager::region_task_queues()),
       _active_workers(active_workers) {
   }
   virtual void work(uint worker_id) {

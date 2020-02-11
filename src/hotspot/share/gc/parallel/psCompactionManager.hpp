@@ -51,17 +51,22 @@ class ParCompactionManager : public CHeapObj<mtGC> {
 
 
  private:
+  typedef GenericTaskQueue<oop, mtGC>             OopTaskQueue;
+  typedef GenericTaskQueueSet<OopTaskQueue, mtGC> OopTaskQueueSet;
+
   // 32-bit:  4K * 8 = 32KiB; 64-bit:  8K * 16 = 128KiB
   #define QUEUE_SIZE (1 << NOT_LP64(12) LP64_ONLY(13))
   typedef OverflowTaskQueue<ObjArrayTask, mtGC, QUEUE_SIZE> ObjArrayTaskQueue;
   typedef GenericTaskQueueSet<ObjArrayTaskQueue, mtGC>      ObjArrayTaskQueueSet;
   #undef QUEUE_SIZE
+  typedef OverflowTaskQueue<size_t, mtGC>             RegionTaskQueue;
+  typedef GenericTaskQueueSet<RegionTaskQueue, mtGC>  RegionTaskQueueSet;
 
   static ParCompactionManager** _manager_array;
-  static OopTaskQueueSet*       _stack_array;
-  static ObjArrayTaskQueueSet*  _objarray_queues;
+  static OopTaskQueueSet*       _oop_task_queues;
+  static ObjArrayTaskQueueSet*  _objarray_task_queues;
   static ObjectStartArray*      _start_array;
-  static RegionTaskQueueSet*    _region_array;
+  static RegionTaskQueueSet*    _region_task_queues;
   static PSOldGen*              _old_gen;
 
 private:
@@ -90,13 +95,13 @@ private:
 
   static PSOldGen* old_gen()             { return _old_gen; }
   static ObjectStartArray* start_array() { return _start_array; }
-  static OopTaskQueueSet* stack_array()  { return _stack_array; }
+  static OopTaskQueueSet* oop_task_queues()  { return _oop_task_queues; }
 
   static void initialize(ParMarkBitMap* mbm);
 
  protected:
   // Array of task queues.  Needed by the task terminator.
-  static RegionTaskQueueSet* region_array()      { return _region_array; }
+  static RegionTaskQueueSet* region_task_queues()      { return _region_task_queues; }
   OverflowTaskQueue<oop, mtGC>*  marking_stack()       { return &_marking_stack; }
 
   // Pushes onto the marking stack.  If the marking stack is full,

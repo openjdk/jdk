@@ -40,15 +40,15 @@
 #include "oops/objArrayKlass.inline.hpp"
 #include "oops/oop.inline.hpp"
 
-PSOldGen*            ParCompactionManager::_old_gen = NULL;
+PSOldGen*               ParCompactionManager::_old_gen = NULL;
 ParCompactionManager**  ParCompactionManager::_manager_array = NULL;
 
-OopTaskQueueSet*     ParCompactionManager::_stack_array = NULL;
-ParCompactionManager::ObjArrayTaskQueueSet*
-  ParCompactionManager::_objarray_queues = NULL;
+ParCompactionManager::OopTaskQueueSet*      ParCompactionManager::_oop_task_queues = NULL;
+ParCompactionManager::ObjArrayTaskQueueSet* ParCompactionManager::_objarray_task_queues = NULL;
+ParCompactionManager::RegionTaskQueueSet*   ParCompactionManager::_region_task_queues = NULL;
+
 ObjectStartArray*    ParCompactionManager::_start_array = NULL;
 ParMarkBitMap*       ParCompactionManager::_mark_bitmap = NULL;
-RegionTaskQueueSet*  ParCompactionManager::_region_array = NULL;
 GrowableArray<size_t >* ParCompactionManager::_shadow_region_array = NULL;
 Monitor*                ParCompactionManager::_shadow_region_monitor = NULL;
 
@@ -77,20 +77,20 @@ void ParCompactionManager::initialize(ParMarkBitMap* mbm) {
   assert(_manager_array == NULL, "Attempt to initialize twice");
   _manager_array = NEW_C_HEAP_ARRAY(ParCompactionManager*, parallel_gc_threads+1, mtGC);
 
-  _stack_array = new OopTaskQueueSet(parallel_gc_threads);
-  guarantee(_stack_array != NULL, "Could not allocate stack_array");
-  _objarray_queues = new ObjArrayTaskQueueSet(parallel_gc_threads);
-  guarantee(_objarray_queues != NULL, "Could not allocate objarray_queues");
-  _region_array = new RegionTaskQueueSet(parallel_gc_threads);
-  guarantee(_region_array != NULL, "Could not allocate region_array");
+  _oop_task_queues = new OopTaskQueueSet(parallel_gc_threads);
+  guarantee(_oop_task_queues != NULL, "Could not allocate oop task queues");
+  _objarray_task_queues = new ObjArrayTaskQueueSet(parallel_gc_threads);
+  guarantee(_objarray_task_queues != NULL, "Could not allocate objarray task queues");
+  _region_task_queues = new RegionTaskQueueSet(parallel_gc_threads);
+  guarantee(_region_task_queues != NULL, "Could not allocate region task queues");
 
   // Create and register the ParCompactionManager(s) for the worker threads.
   for(uint i=0; i<parallel_gc_threads; i++) {
     _manager_array[i] = new ParCompactionManager();
     guarantee(_manager_array[i] != NULL, "Could not create ParCompactionManager");
-    stack_array()->register_queue(i, _manager_array[i]->marking_stack());
-    _objarray_queues->register_queue(i, &_manager_array[i]->_objarray_stack);
-    region_array()->register_queue(i, _manager_array[i]->region_stack());
+    oop_task_queues()->register_queue(i, _manager_array[i]->marking_stack());
+    _objarray_task_queues->register_queue(i, &_manager_array[i]->_objarray_stack);
+    region_task_queues()->register_queue(i, _manager_array[i]->region_stack());
   }
 
   // The VMThread gets its own ParCompactionManager, which is not available

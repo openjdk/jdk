@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -443,9 +443,6 @@ public:
   virtual bool should_exit_termination() = 0;
 };
 
-typedef GenericTaskQueue<oop, mtGC>             OopTaskQueue;
-typedef GenericTaskQueueSet<OopTaskQueue, mtGC> OopTaskQueueSet;
-
 #ifdef _MSC_VER
 #pragma warning(push)
 // warning C4522: multiple assignment operators specified
@@ -523,11 +520,5 @@ private:
 #ifdef _MSC_VER
 #pragma warning(pop)
 #endif
-
-typedef OverflowTaskQueue<StarTask, mtGC>           OopStarTaskQueue;
-typedef GenericTaskQueueSet<OopStarTaskQueue, mtGC> OopStarTaskQueueSet;
-
-typedef OverflowTaskQueue<size_t, mtGC>             RegionTaskQueue;
-typedef GenericTaskQueueSet<RegionTaskQueue, mtGC>  RegionTaskQueueSet;
 
 #endif // SHARE_GC_SHARED_TASKQUEUE_HPP
