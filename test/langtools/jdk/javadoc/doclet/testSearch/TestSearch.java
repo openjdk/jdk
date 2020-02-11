@@ -402,15 +402,15 @@ public class TestSearch extends JavadocTester {
 
     void checkSearchIndex(boolean expectedOutput) {
         checkOutput("member-search-index.js", expectedOutput,
-                "{\"p\":\"pkg\",\"c\":\"AnotherClass\",\"l\":\"AnotherClass()\",\"url\":\"%3Cinit%3E()\"}",
-                "{\"p\":\"pkg1\",\"c\":\"RegClass\",\"l\":\"RegClass()\",\"url\":\"%3Cinit%3E()\"}",
-                "{\"p\":\"pkg2\",\"c\":\"TestError\",\"l\":\"TestError()\",\"url\":\"%3Cinit%3E()\"}",
-                "{\"p\":\"pkg\",\"c\":\"AnotherClass\",\"l\":\"method(byte[], int, String)\",\"url\":\"method(byte[],int,java.lang.String)\"}");
+                "{\"p\":\"pkg\",\"c\":\"AnotherClass\",\"l\":\"AnotherClass()\",\"u\":\"%3Cinit%3E()\"}",
+                "{\"p\":\"pkg1\",\"c\":\"RegClass\",\"l\":\"RegClass()\",\"u\":\"%3Cinit%3E()\"}",
+                "{\"p\":\"pkg2\",\"c\":\"TestError\",\"l\":\"TestError()\",\"u\":\"%3Cinit%3E()\"}",
+                "{\"p\":\"pkg\",\"c\":\"AnotherClass\",\"l\":\"method(byte[], int, String)\",\"u\":\"method(byte[],int,java.lang.String)\"}");
         checkOutput("member-search-index.js", !expectedOutput,
-                "{\"p\":\"pkg\",\"c\":\"AnotherClass\",\"l\":\"method(RegClass)\",\"url\":\"method-pkg1.RegClass-\"}",
-                "{\"p\":\"pkg2\",\"c\":\"TestClass\",\"l\":\"TestClass()\",\"url\":\"TestClass--\"}",
-                "{\"p\":\"pkg\",\"c\":\"TestError\",\"l\":\"TestError()\",\"url\":\"TestError--\"}",
-                "{\"p\":\"pkg\",\"c\":\"AnotherClass\",\"l\":\"method(byte[], int, String)\",\"url\":\"method-byte:A-int-java.lang.String-\"}");
+                "{\"p\":\"pkg\",\"c\":\"AnotherClass\",\"l\":\"method(RegClass)\",\"u\":\"method-pkg1.RegClass-\"}",
+                "{\"p\":\"pkg2\",\"c\":\"TestClass\",\"l\":\"TestClass()\",\"u\":\"TestClass--\"}",
+                "{\"p\":\"pkg\",\"c\":\"TestError\",\"l\":\"TestError()\",\"u\":\"TestError--\"}",
+                "{\"p\":\"pkg\",\"c\":\"AnotherClass\",\"l\":\"method(byte[], int, String)\",\"u\":\"method-byte:A-int-java.lang.String-\"}");
     }
 
     void checkSearchOutput(boolean expectedOutput, boolean moduleDirectoriesVar) {
@@ -745,9 +745,9 @@ public class TestSearch extends JavadocTester {
                 + "<th class=\"colLast\" scope=\"col\">Description</th>\n"
                 + "</tr>\n");
         checkOutput("type-search-index.js", true,
-                "{\"l\":\"All Classes\",\"url\":\"allclasses-index.html\"}");
+                "{\"l\":\"All Classes\",\"u\":\"allclasses-index.html\"}");
         checkOutput("package-search-index.js", true,
-                "{\"l\":\"All Packages\",\"url\":\"allpackages-index.html\"}");
+                "{\"l\":\"All Packages\",\"u\":\"allpackages-index.html\"}");
         checkOutput("index-all.html", true,
                     "<br><a href=\"allclasses-index.html\">All&nbsp;Classes</a>"
                     + "<span class=\"verticalSeparator\">|</span>"

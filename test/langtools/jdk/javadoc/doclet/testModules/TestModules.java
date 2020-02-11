@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1321,9 +1321,9 @@ public class TestModules extends JavadocTester {
                 "<div class=\"packagesSummary\">\n"
                 + "<table summary=\"Package Summary table, listing packages, and an explanation\">");
         checkOutput("type-search-index.js", true,
-                "{\"l\":\"All Classes\",\"url\":\"allclasses-index.html\"}");
+                "{\"l\":\"All Classes\",\"u\":\"allclasses-index.html\"}");
         checkOutput("package-search-index.js", true,
-                "{\"l\":\"All Packages\",\"url\":\"allpackages-index.html\"}");
+                "{\"l\":\"All Packages\",\"u\":\"allpackages-index.html\"}");
         checkOutput("index-all.html", true,
                 "<br><a href=\"allclasses-index.html\">All&nbsp;Classes</a>"
                 + "<span class=\"verticalSeparator\">|</span>"
