@@ -267,7 +267,7 @@ const size_t minimumSymbolTableSize = 1024;
           "compilation")                                                    \
                                                                             \
   product(bool, PrintVMQWaitTime, false,                                    \
-          "Print out the waiting time in VM operation queue")               \
+          "(Deprecated) Print out the waiting time in VM operation queue")  \
                                                                             \
   product(bool, MethodFlushing, true,                                       \
           "Reclamation of zombie and not-entrant methods")                  \
