@@ -33,22 +33,48 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver vm.compiler.CodeCacheInfo.Test
+ * @build sun.hotspot.WhiteBox
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ *                                sun.hotspot.WhiteBox$WhiteBoxPermission
+ * @run main/othervm
+ *      -Xmixed
+ *      -Xbootclasspath/a:.
+ *      -XX:+UnlockDiagnosticVMOptions
+ *      -XX:+WhiteBoxAPI
+ *      vm.compiler.CodeCacheInfo.Test
  */
 
 package vm.compiler.CodeCacheInfo;
 
+import sun.hotspot.WhiteBox;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
 public class Test {
-    private static String p1 = " size=\\d+Kb used=\\d+Kb max_used=\\d+Kb free=\\d+Kb\\n";
-    private static String p2 = " bounds \\[0x[0-9a-f]+, 0x[0-9a-f]+, 0x[0-9a-f]+\\]\\n";
-    private static String p3 = " total_blobs=\\d+ nmethods=\\d+ adapters=\\d+\\n";
-    private static String p4 = " compilation: enabled\\n";
+    private static final String SEG_REGEXP;
+    private static final String NOSEG_REGEXP;
 
-    private static String SEG_REGEXP = "^(CodeHeap '[^']+':" + p1 + p2 + ")+" + p3 + p4;
-    private static String NOSEG_REGEXP = "^CodeCache:" + p1 + p2 + p3 + p4;
+    static {
+        String p1 = " size=\\d+Kb used=\\d+Kb max_used=\\d+Kb free=\\d+Kb\\n";
+        String p2 = " bounds \\[0x[0-9a-f]+, 0x[0-9a-f]+, 0x[0-9a-f]+\\]\\n";
+        String p3 = " total_blobs=\\d+ nmethods=\\d+ adapters=\\d+\\n";
+        String p4 = " compilation: enabled\\n";
+
+        String segPrefix = "^(CodeHeap '[^']+':" + p1 + p2 + ")+";
+        String nosegPrefix = "^CodeCache:" + p1 + p2;
+
+        // check if AOT is enabled
+        if (WhiteBox.getWhiteBox().aotLibrariesCount() > 0) {
+            System.out.println("AOT is enabled");
+            String aotSegment = "CodeHeap 'AOT':" + p1 + p2;
+            segPrefix += aotSegment;
+            nosegPrefix += aotSegment;
+        } else {
+            System.out.println("AOT is not enabled");
+        }
+        SEG_REGEXP = segPrefix + p3 + p4;
+        NOSEG_REGEXP = nosegPrefix + p3 + p4;
+    }
 
     public static void main(String[] args) throws Exception {
         {
