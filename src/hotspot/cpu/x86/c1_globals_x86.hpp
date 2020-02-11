@@ -60,7 +60,6 @@ define_pd_global(uint64_t, MaxRAM,                    1ULL*G);
 define_pd_global(bool,   CICompileOSR,                 true );
 #endif // !TIERED
 define_pd_global(bool, UseTypeProfile,                 false);
-define_pd_global(bool, RoundFPResults,                 true );
 
 define_pd_global(bool, LIRFillDelaySlots,              false);
 define_pd_global(bool, OptimizeSinglePrecision,        true );

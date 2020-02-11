@@ -534,8 +534,7 @@ public:
   // on windows95 to take care of some unusual register constraints.
   void pd_implicit_null_fixup(MachNode *load, uint idx);
 
-  // Advertise here if the CPU requires explicit rounding operations
-  // to implement the UseStrictFP mode.
+  // Advertise here if the CPU requires explicit rounding operations to implement strictfp mode.
   static const bool strict_fp_requires_explicit_rounding;
 
   // Are floats conerted to double when stored to stack during deoptimization?

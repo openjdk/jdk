@@ -994,9 +994,6 @@ const size_t minimumSymbolTableSize = 1024;
           "proper StackOverflow handling; disable only to measure cost "    \
           "of stackbanging)")                                               \
                                                                             \
-  develop(bool, UseStrictFP, true,                                          \
-          "use strict fp if modifier strictfp is set")                      \
-                                                                            \
   develop(bool, GenerateSynchronizationCode, true,                          \
           "generate locking/unlocking code for synchronized methods and "   \
           "monitors")                                                       \

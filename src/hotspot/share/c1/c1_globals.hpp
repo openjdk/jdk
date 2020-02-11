@@ -170,9 +170,6 @@
   develop(bool, UseTableRanges, true,                                       \
           "Faster versions of lookup table using ranges")                   \
                                                                             \
-  develop_pd(bool, RoundFPResults,                                          \
-          "Indicates whether rounding is needed for floating point results")\
-                                                                            \
   develop(intx, NestedInliningSizeRatio, 90,                                \
           "Percentage of prev. allowed inline size in recursive inlining")  \
           range(0, 100)                                                     \

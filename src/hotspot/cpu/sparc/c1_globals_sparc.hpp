@@ -61,7 +61,6 @@ define_pd_global(uintx, InitialCodeCacheSize,         160*K);
 #endif // !TIERED
 
 define_pd_global(bool, UseTypeProfile,               false);
-define_pd_global(bool, RoundFPResults,               false);
 
 define_pd_global(bool, LIRFillDelaySlots,            true );
 define_pd_global(bool, OptimizeSinglePrecision,      false);

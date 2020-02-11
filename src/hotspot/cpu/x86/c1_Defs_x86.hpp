@@ -33,7 +33,7 @@ enum {
 
 // explicit rounding operations are required to implement the strictFP mode
 enum {
-  pd_strict_fp_requires_explicit_rounding = true
+  pd_strict_fp_requires_explicit_rounding = LP64_ONLY( false ) NOT_LP64 ( true )
 };
 
 

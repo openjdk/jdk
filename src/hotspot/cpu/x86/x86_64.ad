@@ -1700,9 +1700,8 @@ const bool Matcher::misaligned_doubles_ok = true;
 // No-op on amd64
 void Matcher::pd_implicit_null_fixup(MachNode *node, uint idx) {}
 
-// Advertise here if the CPU requires explicit rounding operations to
-// implement the UseStrictFP mode.
-const bool Matcher::strict_fp_requires_explicit_rounding = true;
+// Advertise here if the CPU requires explicit rounding operations to implement strictfp mode.
+const bool Matcher::strict_fp_requires_explicit_rounding = false;
 
 // Are floats conerted to double when stored to stack during deoptimization?
 // On x64 it is stored without convertion so we can use normal access.
@@ -10520,24 +10519,6 @@ instruct cmpD_imm(rRegI dst, regD src, immD con, rFlagsReg cr) %{
 %}
 
 //----------Arithmetic Conversion Instructions---------------------------------
-
-instruct roundFloat_nop(regF dst)
-%{
-  match(Set dst (RoundFloat dst));
-
-  ins_cost(0);
-  ins_encode();
-  ins_pipe(empty);
-%}
-
-instruct roundDouble_nop(regD dst)
-%{
-  match(Set dst (RoundDouble dst));
-
-  ins_cost(0);
-  ins_encode();
-  ins_pipe(empty);
-%}
 
 instruct convF2D_reg_reg(regD dst, regF src)
 %{

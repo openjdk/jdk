@@ -150,8 +150,9 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
     return cg;
   }
 
-  // Do not inline strict fp into non-strict code, or the reverse
-  if (caller->is_strict() ^ callee->is_strict()) {
+  // If explicit rounding is required, do not inline strict into non-strict code (or the reverse).
+  if (Matcher::strict_fp_requires_explicit_rounding &&
+      caller->is_strict() != callee->is_strict()) {
     allow_inline = false;
   }
 
