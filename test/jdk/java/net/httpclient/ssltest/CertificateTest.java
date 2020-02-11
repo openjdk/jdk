@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,36 +21,41 @@
  * questions.
  */
 
-import java.io.File;
+import static java.net.http.HttpClient.Builder.NO_PROXY;
+
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
-import java.net.http.HttpResponse.BodyHandlers;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.net.http.HttpResponse.BodyHandlers;
+
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLException;
-import javax.net.ssl.SSLParameters;
-import static java.net.http.HttpClient.Builder.NO_PROXY;
+
+import jdk.test.lib.security.KeyEntry;
+import jdk.test.lib.security.KeyStoreUtils;
+import jdk.test.lib.security.SSLContextBuilder;
 
 /*
  * @test
+ * @library /test/lib
  * @build Server CertificateTest
- * @run main/othervm CertificateTest good.keystore expectSuccess
- * @run main/othervm CertificateTest bad.keystore expectFailure
+ * @run main/othervm CertificateTest GOOD_CERT expectSuccess
+ * @run main/othervm CertificateTest BAD_CERT expectFailure
  * @run main/othervm
  *      -Djdk.internal.httpclient.disableHostnameVerification
- *       CertificateTest bad.keystore expectSuccess
+ *       CertificateTest BAD_CERT expectSuccess
  * @run main/othervm
  *      -Djdk.internal.httpclient.disableHostnameVerification=true
- *       CertificateTest bad.keystore expectSuccess
+ *       CertificateTest BAD_CERT expectSuccess
  * @run main/othervm
  *      -Djdk.internal.httpclient.disableHostnameVerification=false
- *       CertificateTest bad.keystore expectFailure
+ *       CertificateTest BAD_CERT expectFailure
  * @run main/othervm
  *      -Djdk.internal.httpclient.disableHostnameVerification=xxyyzz
- *       CertificateTest bad.keystore expectFailure
- * @run main/othervm CertificateTest loopback.keystore expectSuccess
+ *       CertificateTest BAD_CERT expectFailure
+ * @run main/othervm CertificateTest LOOPBACK_CERT expectSuccess
  */
 
 /**
@@ -59,25 +64,24 @@ import static java.net.http.HttpClient.Builder.NO_PROXY;
  * by the server for its own identity. Two servers on two different ports are used
  * on the remote end.
  *
- * For the "good" run the cert contains the correct hostname of the target server
+ * The GOOD_CERT cert contains the correct hostname of the target server
  * and therefore should be accepted by the cert checking code in the client.
- * For the "bad" run, the cert contains an invalid hostname, and should be rejected.
+ * The BAD_CERT cert contains an invalid hostname, and should be rejected.
+ * The LOOPBACK_CERT cert contains an invalid hostname, but it also contains a
+ * subject alternative name for IP address 127.0.0.1, so it should be accepted
+ * for this address.
  */
 public class CertificateTest {
-    static SSLContext ctx;
-    static SSLParameters params;
+
+    private static Cert cert;
     static boolean expectSuccess;
-    static String trustStoreProp;
     static Server server;
     static int port;
 
-    static String TESTSRC = System.getProperty("test.src");
     public static void main(String[] args) throws Exception
     {
         try {
-            String keystore = args[0];
-            trustStoreProp = TESTSRC + File.separatorChar + keystore;
-
+            String certName = args[0];
             String passOrFail = args[1];
 
             if (passOrFail.equals("expectSuccess")) {
@@ -85,38 +89,44 @@ public class CertificateTest {
             } else {
                 expectSuccess = false;
             }
-            server = new Server(trustStoreProp);
+
+            cert = Cert.valueOf(certName);
+            server = new Server(getSSLContext(cert));
             port = server.getPort();
-            System.setProperty("javax.net.ssl.trustStore", trustStoreProp);
-            System.setProperty("javax.net.ssl.trustStorePassword", "passphrase");
-            init();
-            test(args);
+            test(cert);
         } finally {
-            server.stop();
+            if (server != null) {
+                server.stop();
+            }
         }
     }
 
-    static void init() throws Exception
-    {
-        ctx = SSLContext.getDefault();
-        params = ctx.getDefaultSSLParameters();
-        //params.setProtocols(new String[] { "TLSv1.2" });
+    private static SSLContext getSSLContext(Cert cert) throws Exception {
+        SSLContextBuilder builder = SSLContextBuilder.builder();
+        builder.trustStore(
+                KeyStoreUtils.createTrustStore(new String[] { cert.certStr }));
+        builder.keyStore(KeyStoreUtils.createKeyStore(
+                new KeyEntry[] { new KeyEntry(cert.keyAlgo,
+                        cert.keyStr, new String[] { cert.certStr }) }));
+        return builder.build();
     }
 
-    static void test(String[] args) throws Exception
+    static void test(Cert cert) throws Exception
     {
         String uri_s;
-        if (args[0].equals("loopback.keystore"))
+        if (cert == Cert.LOOPBACK_CERT)
             uri_s = "https://127.0.0.1:" + Integer.toString(port) + "/foo";
         else
             uri_s = "https://localhost:" + Integer.toString(port) + "/foo";
         String error = null;
         Exception exception = null;
         System.out.println("Making request to " + uri_s);
+
+        SSLContext ctx = getSSLContext(cert);
         HttpClient client = HttpClient.newBuilder()
                 .proxy(NO_PROXY)
                 .sslContext(ctx)
-                .sslParameters(params)
+                .sslParameters(ctx.getDefaultSSLParameters())
                 .build();
 
         HttpRequest request = HttpRequest.newBuilder(new URI(uri_s))

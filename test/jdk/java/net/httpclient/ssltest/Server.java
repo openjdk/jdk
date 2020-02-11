@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,12 +22,10 @@
  */
 
 import com.sun.net.httpserver.*;
+
 import java.io.*;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.URI;
-import java.security.*;
-import java.util.*;
 import java.util.logging.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
@@ -44,17 +42,17 @@ public class Server {
 
     // assuming the TLS handshake succeeds, the server returns a 200 OK
     // response with a short text string.
-    public Server(String certfile) throws Exception {
+    public Server(SSLContext ctx) throws Exception {
         initLogger();
-        SSLContext ctx = getContext("TLSv1.2", certfile);
         Configurator cfg = new Configurator(ctx);
-        InetSocketAddress addr = new InetSocketAddress(InetAddress.getLoopbackAddress(),0);
+        InetSocketAddress addr = new InetSocketAddress(
+                InetAddress.getLoopbackAddress(), 0);
         server = HttpsServer.create(addr, 10);
         server.setHttpsConfigurator(cfg);
         server.createContext("/", new MyHandler());
-        server.setExecutor((exec=Executors.newCachedThreadPool()));
+        server.setExecutor((exec = Executors.newCachedThreadPool()));
         port = server.getAddress().getPort();
-        System.out.println ("Listening on port " + port);
+        System.out.println("Listening on port " + port);
         server.start();
     }
 
@@ -65,22 +63,6 @@ public class Server {
     void stop() {
         server.stop(1);
         exec.shutdownNow();
-    }
-
-    SSLContext getContext(String protocol, String certfile) throws Exception {
-        char[] passphrase = "passphrase".toCharArray();
-        KeyStore ks = KeyStore.getInstance("JKS");
-        ks.load(new FileInputStream(certfile), passphrase);
-
-        KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
-        kmf.init(ks, passphrase);
-
-        TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
-        tmf.init(ks);
-
-        SSLContext ssl = SSLContext.getInstance(protocol);
-        ssl.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
-        return ssl;
     }
 
     Logger logger;
@@ -120,7 +102,7 @@ public class Server {
             SSLParameters p = getSSLContext().getDefaultSSLParameters();
             for (String cipher : p.getCipherSuites())
                 System.out.println("Cipher: " + cipher);
-            System.err.println("PArams = " + p);
+            System.err.println("Params = " + p);
             params.setSSLParameters(p);
         }
     }
