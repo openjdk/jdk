@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,15 +77,14 @@ import sun.hotspot.gc.GC;
 public class IncompatibleOptions {
     static final String COOPS_DUMP_WARNING =
         "Cannot dump shared archive when UseCompressedOops or UseCompressedClassPointers is off";
-    static final String COOPS_EXEC_WARNING =
-        "UseCompressedOops and UseCompressedClassPointers must be on for UseSharedSpaces";
     static final String GC_WARNING =
         "Archived java heap is not supported";
     static final String OBJ_ALIGNMENT_MISMATCH =
         "The shared archive file's ObjectAlignmentInBytes of .* does not equal the current ObjectAlignmentInBytes of";
     static final String COMPACT_STRING_MISMATCH =
         "The shared archive file's CompactStrings setting .* does not equal the current CompactStrings setting";
-
+    static final String COMPRESSED_OOPS_NOT_CONSISTENT =
+        "The saved state of UseCompressedOops and UseCompressedClassPointers is different from runtime, CDS will be disabled.";
     static String appJar;
     static String[] vmOptionsPrefix = {};
 
@@ -101,9 +100,9 @@ public class IncompatibleOptions {
         appJar = JarBuilder.build("IncompatibleOptions", "HelloString");
 
         // Uncompressed OOPs
-        testDump(1, "-XX:+UseG1GC", "-XX:-UseCompressedOops", COOPS_DUMP_WARNING, true);
+        testDump(1, "-XX:+UseG1GC", "-XX:-UseCompressedOops", null, false);
         if (GC.Z.isSupported()) { // ZGC is included in build.
-            testDump(1, "-XX:+UnlockExperimentalVMOptions", "-XX:+UseZGC", COOPS_DUMP_WARNING, true);
+            testDump(1, "-XX:+UnlockExperimentalVMOptions", "-XX:+UseZGC", null, false);
         }
 
         // incompatible GCs
@@ -113,7 +112,7 @@ public class IncompatibleOptions {
         // ======= archive with compressed oops, run w/o
         testDump(5, "-XX:+UseG1GC", "-XX:+UseCompressedOops", null, false);
         testExec(5, "-XX:+UseG1GC", "-XX:-UseCompressedOops",
-                 COOPS_EXEC_WARNING, true);
+                 COMPRESSED_OOPS_NOT_CONSISTENT, true);
 
         // NOTE: No warning is displayed, by design
         // Still run, to ensure no crash or exception

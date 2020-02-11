@@ -187,6 +187,8 @@ class FileMapHeader: private CDSFileMapHeaderBase {
   uintx  _max_heap_size;            // java max heap size during dumping
   CompressedOops::Mode _narrow_oop_mode; // compressed oop encoding mode
   int     _narrow_klass_shift;      // save narrow klass base and shift
+  bool    _compressed_oops;         // save the flag UseCompressedOops
+  bool    _compressed_class_ptrs;   // save the flag UseCompressedClassPointers
   size_t  _cloned_vtables_offset;   // The address of the first cloned vtable
   size_t  _serialized_data_offset;  // Data accessed using {ReadClosure,WriteClosure}::serialize()
   size_t  _i2i_entry_code_buffers_offset;
@@ -264,7 +266,8 @@ public:
   char* mapped_base_address()              const { return _mapped_base_address; }
   bool has_platform_or_app_classes()       const { return _has_platform_or_app_classes; }
   size_t ptrmap_size_in_bits()             const { return _ptrmap_size_in_bits; }
-
+  bool compressed_oops()                   const { return _compressed_oops; }
+  bool compressed_class_pointers()         const { return _compressed_class_ptrs; }
   // FIXME: These should really return int
   jshort max_used_path_index()             const { return _max_used_path_index; }
   jshort app_module_paths_start_index()    const { return _app_module_paths_start_index; }

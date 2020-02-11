@@ -210,6 +210,8 @@ void FileMapHeader::populate(FileMapInfo* mapinfo, size_t alignment) {
   _narrow_oop_mode = CompressedOops::mode();
   _narrow_oop_base = CompressedOops::base();
   _narrow_oop_shift = CompressedOops::shift();
+  _compressed_oops = UseCompressedOops;
+  _compressed_class_ptrs = UseCompressedClassPointers;
   _max_heap_size = MaxHeapSize;
   _narrow_klass_shift = CompressedKlassPointers::shift();
   if (HeapShared::is_heap_object_archiving_allowed()) {
@@ -2039,6 +2041,14 @@ bool FileMapHeader::validate() {
   if (_allow_archiving_with_java_agent) {
     warning("This archive was created with AllowArchivingWithJavaAgent. It should be used "
             "for testing purposes only and should not be used in a production environment");
+  }
+
+  log_info(cds)("Archive was created with UseCompressedOops = %d, UseCompressedClassPointers = %d",
+                          compressed_oops(), compressed_class_pointers());
+  if (compressed_oops() != UseCompressedOops || compressed_class_pointers() != UseCompressedClassPointers) {
+    FileMapInfo::fail_continue("Unable to use shared archive.\nThe saved state of UseCompressedOops and UseCompressedClassPointers is "
+                               "different from runtime, CDS will be disabled.");
+    return false;
   }
 
   return true;

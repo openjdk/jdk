@@ -294,23 +294,21 @@ void MetaspaceShared::initialize_dumptime_shared_and_meta_spaces() {
   //   ArchiveCompactor will copy the class metadata into this space, first the RW parts,
   //   then the RO parts.
 
-  assert(UseCompressedOops && UseCompressedClassPointers,
-      "UseCompressedOops and UseCompressedClassPointers must be set");
-
   size_t max_archive_size = align_down(cds_total * 3 / 4, reserve_alignment);
   ReservedSpace tmp_class_space = _shared_rs.last_part(max_archive_size);
   CompressedClassSpaceSize = align_down(tmp_class_space.size(), reserve_alignment);
   _shared_rs = _shared_rs.first_part(max_archive_size);
 
-  // Set up compress class pointers.
-  CompressedKlassPointers::set_base((address)_shared_rs.base());
-  // Set narrow_klass_shift to be LogKlassAlignmentInBytes. This is consistent
-  // with AOT.
-  CompressedKlassPointers::set_shift(LogKlassAlignmentInBytes);
-  // Set the range of klass addresses to 4GB.
-  CompressedKlassPointers::set_range(cds_total);
-
-  Metaspace::initialize_class_space(tmp_class_space);
+  if (UseCompressedClassPointers) {
+    // Set up compress class pointers.
+    CompressedKlassPointers::set_base((address)_shared_rs.base());
+    // Set narrow_klass_shift to be LogKlassAlignmentInBytes. This is consistent
+    // with AOT.
+    CompressedKlassPointers::set_shift(LogKlassAlignmentInBytes);
+    // Set the range of klass addresses to 4GB.
+    CompressedKlassPointers::set_range(cds_total);
+    Metaspace::initialize_class_space(tmp_class_space);
+  }
   log_info(cds)("narrow_klass_base = " PTR_FORMAT ", narrow_klass_shift = %d",
                 p2i(CompressedKlassPointers::base()), CompressedKlassPointers::shift());
 
@@ -2181,8 +2179,8 @@ MapArchiveResult MetaspaceShared::map_archives(FileMapInfo* static_mapinfo, File
           // map_heap_regions() compares the current narrow oop and klass encodings
           // with the archived ones, so it must be done after all encodings are determined.
           static_mapinfo->map_heap_regions();
+          CompressedKlassPointers::set_range(CompressedClassSpaceSize);
         }
-        CompressedKlassPointers::set_range(CompressedClassSpaceSize);
       });
   } else {
     unmap_archive(static_mapinfo);

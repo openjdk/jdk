@@ -336,6 +336,8 @@ hotspot_appcds_dynamic = \
  -runtime/cds/appcds/NonExistClasspath.java \
  -runtime/cds/appcds/RelativePath.java \
  -runtime/cds/appcds/SharedArchiveConsistency.java \
+ -runtime/cds/appcds/TestCombinedCompressedFlags.java \
+ -runtime/cds/appcds/TestZGCWithCDS.java \
  -runtime/cds/appcds/UnusedCPDuringDump.java \
  -runtime/cds/appcds/VerifierTest_1B.java
 
