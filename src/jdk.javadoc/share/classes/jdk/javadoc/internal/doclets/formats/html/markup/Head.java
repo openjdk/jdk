@@ -313,11 +313,6 @@ public class Head {
                         .append(";\n")
                         .append("loadScripts(document, 'script');");
             }
-            addJQueryFile(tree, DocPaths.JSZIP_MIN);
-            addJQueryFile(tree, DocPaths.JSZIPUTILS_MIN);
-            tree.add(new RawHtml("<!--[if IE]>"));
-            addJQueryFile(tree, DocPaths.JSZIPUTILS_IE_MIN);
-            tree.add(new RawHtml("<![endif]-->"));
             addJQueryFile(tree, DocPaths.JQUERY_JS_3_4);
             addJQueryFile(tree, DocPaths.JQUERY_JS);
         }
