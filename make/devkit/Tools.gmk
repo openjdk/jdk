@@ -51,9 +51,17 @@ endif
 
 $(info ARCH=$(ARCH))
 
+KERNEL_HEADERS_RPM := kernel-headers
+
 ifeq ($(BASE_OS), OL)
-  BASE_URL := http://yum.oracle.com/repo/OracleLinux/OL6/4/base/$(ARCH)/
-  LINUX_VERSION := OL6.4
+  ifeq ($(ARCH), aarch64)
+    BASE_URL := http://yum.oracle.com/repo/OracleLinux/OL7/6/base/$(ARCH)/
+    LINUX_VERSION := OL7.6
+    KERNEL_HEADERS_RPM := kernel-uek-headers
+  else
+    BASE_URL := http://yum.oracle.com/repo/OracleLinux/OL6/4/base/$(ARCH)/
+    LINUX_VERSION := OL6.4
+  endif
 else ifeq ($(BASE_OS), Fedora)
   DEFAULT_OS_VERSION := 27
   ifeq ($(BASE_OS_VERSION), )
@@ -118,7 +126,7 @@ GDB := http://ftp.gnu.org/gnu/gdb/${gdb_ver}.tar.xz
 
 # RPMs used by all BASE_OS
 RPM_LIST := \
-    kernel-headers \
+    $(KERNEL_HEADERS_RPM) \
     glibc glibc-headers glibc-devel \
     cups-libs cups-devel \
     libX11 libX11-devel \

@@ -974,7 +974,7 @@ var getJibProfilesDependencies = function (input, common) {
         solaris_x64: "SS12u4-Solaris11u1+1.0",
         solaris_sparcv9: "SS12u6-Solaris11u3+1.0",
         windows_x64: "VS2017-15.9.16+1.0",
-        linux_aarch64: "gcc8.2.0-Fedora27+1.0",
+        linux_aarch64: "gcc8.3.0-OL7.6+1.0",
         linux_arm: "gcc8.2.0-Fedora27+1.0",
         linux_ppc64le: "gcc8.2.0-Fedora27+1.0",
         linux_s390x: "gcc8.2.0-Fedora27+1.0"
@@ -1004,9 +1004,17 @@ var getJibProfilesDependencies = function (input, common) {
         ? input.get("gnumake", "install_path") + "/cygwin/bin"
         : input.get("gnumake", "install_path") + "/bin");
 
-    var dependencies = {
-
-        boot_jdk: {
+    if (input.build_cpu == 'aarch64') {
+	boot_jdk = {
+            organization: common.organization,
+            ext: "tar.gz",
+            module: "jdk-linux_aarch64",
+            revision: "13+1.0",
+            configure_args: "--with-boot-jdk=" + common.boot_jdk_home,
+            environment_path: common.boot_jdk_home + "/bin"
+	}
+    } else {
+	boot_jdk = {
             server: "jpg",
             product: "jdk",
             version: common.boot_jdk_version,
@@ -1015,7 +1023,11 @@ var getJibProfilesDependencies = function (input, common) {
                 + boot_jdk_platform + "_bin" + boot_jdk_ext,
             configure_args: "--with-boot-jdk=" + common.boot_jdk_home,
             environment_path: common.boot_jdk_home + "/bin"
-        },
+	}
+    }
+
+    var dependencies = {
+        boot_jdk: boot_jdk,
 
         devkit: {
             organization: common.organization,
