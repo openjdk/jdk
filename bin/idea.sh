@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -113,6 +113,18 @@ if [ "x$SPEC" = "x" ] ; then
   echo "FATAL: SPEC is empty" >&2; exit 1
 fi
 
+if [ -d "$TOPLEVEL_DIR/.hg" ] ; then
+    VCS_TYPE="hg4idea"
+fi
+
+if [ -d "$TOPLEVEL_DIR/.git" ] ; then
+    VCS_TYPE="Git"
+fi
+
+if [ "x$VCS_TYPE" = "x" ] ; then
+  echo "FATAL: VCS_TYPE is empty" >&2; exit 1
+fi
+
 ### Replace template variables
 
 NUM_REPLACEMENTS=0
@@ -137,6 +149,7 @@ add_replacement() {
 }
 
 add_replacement "###MODULE_NAMES###" "$MODULE_NAMES"
+add_replacement "###VCS_TYPE###" "$VCS_TYPE"
 SPEC_DIR=`dirname $SPEC`
 if [ "x$CYGPATH" = "x" ]; then
     add_replacement "###BUILD_DIR###" "$SPEC_DIR"
