@@ -148,8 +148,8 @@ class Deoptimization : AllStatic {
   static void revoke_from_deopt_handler(JavaThread* thread, frame fr, RegisterMap* map);
 
  public:
-  // Deoptimizes a frame lazily. nmethod gets patched deopt happens on return to the frame
-  static void deoptimize(JavaThread* thread, frame fr, RegisterMap *reg_map, DeoptReason reason = Reason_constraint);
+  // Deoptimizes a frame lazily. Deopt happens on return to the frame.
+  static void deoptimize(JavaThread* thread, frame fr, DeoptReason reason = Reason_constraint);
 
 #if INCLUDE_JVMCI
   static address deoptimize_for_missing_exception_handler(CompiledMethod* cm);

@@ -834,11 +834,10 @@ class VM_WhiteBoxDeoptimizeFrames : public VM_WhiteBoxOperation {
   void doit() {
     for (JavaThreadIteratorWithHandle jtiwh; JavaThread *t = jtiwh.next(); ) {
       if (t->has_last_Java_frame()) {
-        for (StackFrameStream fst(t, UseBiasedLocking); !fst.is_done(); fst.next()) {
+        for (StackFrameStream fst(t, false); !fst.is_done(); fst.next()) {
           frame* f = fst.current();
           if (f->can_be_deoptimized() && !f->is_deoptimized_frame()) {
-            RegisterMap* reg_map = fst.register_map();
-            Deoptimization::deoptimize(t, *f, reg_map);
+            Deoptimization::deoptimize(t, *f);
             if (_make_not_entrant) {
                 CompiledMethod* cm = CodeCache::find_compiled(f->pc());
                 assert(cm != NULL, "sanity check");
