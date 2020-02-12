@@ -1,4 +1,5 @@
-/* Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+/*
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -332,25 +333,25 @@ final class P11AEADCipher extends CipherSpi {
     }
 
     private void cancelOperation() {
+        // cancel operation by finishing it; avoid killSession as some
+        // hardware vendors may require re-login
+        int bufLen = doFinalLength(0);
+        byte[] buffer = new byte[bufLen];
+        byte[] in = dataBuffer.toByteArray();
+        int inLen = in.length;
         try {
-            if (session.hasObjects() == false) {
-                session = token.killSession(session);
-                return;
+            if (encrypt) {
+                token.p11.C_Encrypt(session.id(), 0, in, 0, inLen,
+                        0, buffer, 0, bufLen);
             } else {
-                // cancel operation by finishing it
-                int bufLen = doFinalLength(0);
-                byte[] buffer = new byte[bufLen];
-
-                if (encrypt) {
-                    token.p11.C_Encrypt(session.id(), 0, buffer, 0, bufLen,
-                            0, buffer, 0, bufLen);
-                } else {
-                    token.p11.C_Decrypt(session.id(), 0, buffer, 0, bufLen,
-                            0, buffer, 0, bufLen);
-                }
+                token.p11.C_Decrypt(session.id(), 0, in, 0, inLen,
+                        0, buffer, 0, bufLen);
             }
         } catch (PKCS11Exception e) {
-            throw new ProviderException("Cancel failed", e);
+            if (encrypt) {
+                throw new ProviderException("Cancel failed", e);
+            }
+            // ignore failure for decryption
         }
     }
 
@@ -432,18 +433,21 @@ final class P11AEADCipher extends CipherSpi {
         if (!initialized) {
             return;
         }
+        initialized = false;
+
         try {
             if (session == null) {
                 return;
             }
+
             if (doCancel && token.explicitCancel) {
                 cancelOperation();
             }
         } finally {
             p11Key.releaseKeyID();
             session = token.releaseSession(session);
+            dataBuffer.reset();
         }
-        initialized = false;
     }
 
     // see JCE spec

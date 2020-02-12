@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -124,10 +124,12 @@ final class P11Mac extends MacSpi {
             return;
         }
         initialized = false;
+
         try {
             if (session == null) {
                 return;
             }
+
             if (doCancel && token.explicitCancel) {
                 cancelOperation();
             }
@@ -139,15 +141,12 @@ final class P11Mac extends MacSpi {
 
     private void cancelOperation() {
         token.ensureValid();
-        if (session.hasObjects() == false) {
-            session = token.killSession(session);
-            return;
-        } else {
-            try {
-                token.p11.C_SignFinal(session.id(), 0);
-            } catch (PKCS11Exception e) {
-                throw new ProviderException("Cancel failed", e);
-            }
+        // cancel operation by finishing it; avoid killSession as some
+        // hardware vendors may require re-login
+        try {
+            token.p11.C_SignFinal(session.id(), 0);
+        } catch (PKCS11Exception e) {
+            throw new ProviderException("Cancel failed", e);
         }
     }
 
@@ -209,7 +208,6 @@ final class P11Mac extends MacSpi {
             ensureInitialized();
             return token.p11.C_SignFinal(session.id(), 0);
         } catch (PKCS11Exception e) {
-            reset(true);
             throw new ProviderException("doFinal() failed", e);
         } finally {
             reset(false);
