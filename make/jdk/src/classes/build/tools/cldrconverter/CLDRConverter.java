@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 
 package build.tools.cldrconverter;
 
-import static build.tools.cldrconverter.Bundle.jreTimeZoneNames;
 import build.tools.cldrconverter.BundleGenerator.BundleType;
 import java.io.File;
 import java.io.IOException;
@@ -89,7 +88,9 @@ public class CLDRConverter {
     static final String ZONE_NAME_PREFIX = "timezone.displayname.";
     static final String METAZONE_ID_PREFIX = "metazone.id.";
     static final String PARENT_LOCALE_PREFIX = "parentLocale.";
+    static final String META_EMPTY_ZONE_NAME = "EMPTY_ZONE";
     static final String[] EMPTY_ZONE = {"", "", "", "", "", ""};
+    static final String META_ETCUTC_ZONE_NAME = "ETC_UTC";
 
     private static SupplementDataParseHandler handlerSuppl;
     private static LikelySubtagsParseHandler handlerLikelySubtags;
@@ -686,60 +687,6 @@ public class CLDRConverter {
     private static Map<String, Object> extractZoneNames(Map<String, Object> map, String id) {
         Map<String, Object> names = new HashMap<>();
 
-        // Copy over missing time zone ids from JRE for English locale
-        if (id.equals("en")) {
-            Map<String[], String> jreMetaMap = new HashMap<>();
-            jreTimeZoneNames.stream().forEach(e -> {
-                String tzid = (String)e[0];
-                String[] data = (String[])e[1];
-
-                if (map.get(TIMEZONE_ID_PREFIX + tzid) == null &&
-                    handlerMetaZones.get(tzid) == null ||
-                    handlerMetaZones.get(tzid) != null &&
-                    map.get(METAZONE_ID_PREFIX + handlerMetaZones.get(tzid)) == null) {
-
-                    // First, check the alias
-                    String canonID = canonicalTZMap.get(tzid);
-                    if (canonID != null && !tzid.equals(canonID)) {
-                        Object value = map.get(TIMEZONE_ID_PREFIX + canonID);
-                        if (value != null) {
-                            names.put(tzid, value);
-                            return;
-                        } else {
-                            String meta = handlerMetaZones.get(canonID);
-                            if (meta != null) {
-                                value = map.get(METAZONE_ID_PREFIX + meta);
-                                if (value != null) {
-                                    names.put(tzid, meta);
-                                    return;
-                                }
-                            }
-                        }
-                    }
-
-                    // Check the CLDR meta key
-                    Optional<Map.Entry<String, String>> cldrMeta =
-                        handlerMetaZones.getData().entrySet().stream()
-                            .filter(me ->
-                                Arrays.deepEquals(data,
-                                    (String[])map.get(METAZONE_ID_PREFIX + me.getValue())))
-                            .findAny();
-                    cldrMeta.ifPresentOrElse(meta -> names.put(tzid, meta.getValue()), () -> {
-                        // Check the JRE meta key, add if there is not.
-                        Optional<Map.Entry<String[], String>> jreMeta =
-                            jreMetaMap.entrySet().stream()
-                                .filter(jm -> Arrays.deepEquals(data, jm.getKey()))
-                                .findAny();
-                        jreMeta.ifPresentOrElse(meta -> names.put(tzid, meta.getValue()), () -> {
-                                String metaName = "JRE_" + tzid.replaceAll("[/-]", "_");
-                                names.put(METAZONE_ID_PREFIX + metaName, data);
-                                names.put(tzid, metaName);
-                        });
-                    });
-                }
-            });
-        }
-
         getAvailableZoneIds().stream().forEach(tzid -> {
             // If the tzid is deprecated, get the data for the replacement id
             String tzKey = Optional.ofNullable((String)handlerSupplMeta.get(tzid))
@@ -747,7 +694,14 @@ public class CLDRConverter {
             Object data = map.get(TIMEZONE_ID_PREFIX + tzKey);
 
             if (data instanceof String[]) {
-                names.put(tzid, data);
+                // Hack for UTC. UTC is an alias to Etc/UTC in CLDR
+                if (tzid.equals("Etc/UTC") && !map.containsKey(TIMEZONE_ID_PREFIX + "UTC")) {
+                    names.put(METAZONE_ID_PREFIX + META_ETCUTC_ZONE_NAME, data);
+                    names.put(tzid, META_ETCUTC_ZONE_NAME);
+                    names.put("UTC", META_ETCUTC_ZONE_NAME);
+                } else {
+                    names.put(tzid, data);
+                }
             } else {
                 String meta = handlerMetaZones.get(tzKey);
                 if (meta != null) {
@@ -764,23 +718,22 @@ public class CLDRConverter {
 
         // exemplar cities.
         Map<String, Object> exCities = map.entrySet().stream()
-                .filter(e -> e.getKey().startsWith(CLDRConverter.EXEMPLAR_CITY_PREFIX))
-                .collect(Collectors
-                        .toMap(Map.Entry::getKey, Map.Entry::getValue));
+            .filter(e -> e.getKey().startsWith(CLDRConverter.EXEMPLAR_CITY_PREFIX))
+            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
         names.putAll(exCities);
 
-        if (!id.equals("en") &&
-            !names.isEmpty()) {
-            // CLDR does not have UTC entry, so add it here.
-            names.put("UTC", EMPTY_ZONE);
-
-            // no metazone zones
-            Arrays.asList(handlerMetaZones.get(MetaZonesParseHandler.NO_METAZONE_KEY)
-                .split("\\s")).stream()
-                .forEach(tz -> {
-                    names.put(tz, EMPTY_ZONE);
-                });
+        // If there's no UTC entry at this point, add an empty one
+        if (!names.isEmpty() && !names.containsKey("UTC")) {
+            names.putIfAbsent(METAZONE_ID_PREFIX + META_EMPTY_ZONE_NAME, EMPTY_ZONE);
+            names.put("UTC", META_EMPTY_ZONE_NAME);
         }
+
+        // Finally some compatibility stuff
+        ZoneId.SHORT_IDS.entrySet().stream()
+            .filter(e -> !names.containsKey(e.getKey()) && names.containsKey(e.getValue()))
+            .forEach(e -> {
+                names.put(e.getKey(), names.get(e.getValue()));
+            });
 
         return names;
     }

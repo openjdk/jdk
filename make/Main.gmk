@@ -75,9 +75,6 @@ interim-langtools:
 interim-rmic:
 	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f CompileInterimRmic.gmk)
 
-interim-cldrconverter:
-	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f CopyInterimCLDRConverter.gmk)
-
 interim-tzdb:
 	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f CopyInterimTZDB.gmk)
 
@@ -92,7 +89,7 @@ buildtools-hotspot:
 	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f CompileToolsHotspot.gmk)
 
 ALL_TARGETS += buildtools-langtools interim-langtools \
-    interim-rmic interim-cldrconverter interim-tzdb buildtools-jdk buildtools-modules \
+    interim-rmic interim-tzdb buildtools-jdk buildtools-modules \
     buildtools-hotspot
 
 ################################################################################
@@ -677,7 +674,7 @@ else
 
   interim-langtools: $(INTERIM_LANGTOOLS_GENSRC_TARGETS)
 
-  buildtools-jdk: interim-langtools interim-cldrconverter interim-tzdb
+  buildtools-jdk: interim-langtools interim-tzdb
 
   buildtools-hotspot: interim-langtools
 
