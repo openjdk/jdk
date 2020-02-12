@@ -73,6 +73,8 @@ compiler/rtm/print/TestPrintPreciseRTMLockingStatistics.java 8183263 generic-x64
 
 compiler/jsr292/ContinuousCallSiteTargetChange.java 8234146 solaris-sparcv9
 
+compiler/c2/Test8004741.java 8235801 generic-all
+
 #############################################################################
 
 # :hotspot_gc
