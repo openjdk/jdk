@@ -62,9 +62,6 @@ void AbstractInterpreter::initialize() {
   if (CountBytecodes || TraceBytecodes || StopInterpreterAt) BytecodeCounter::reset();
   if (PrintBytecodeHistogram)                                BytecodeHistogram::reset();
   if (PrintBytecodePairHistogram)                            BytecodePairHistogram::reset();
-
-  InvocationCounter::reinitialize();
-
 }
 
 void AbstractInterpreter::print() {

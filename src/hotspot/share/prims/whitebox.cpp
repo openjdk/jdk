@@ -1130,8 +1130,8 @@ WB_ENTRY(void, WB_MarkMethodProfiled(JNIEnv* env, jobject o, jobject method))
   InvocationCounter* icnt = mdo->invocation_counter();
   InvocationCounter* bcnt = mdo->backedge_counter();
   // set i-counter according to TieredThresholdPolicy::is_method_profiled
-  icnt->set(InvocationCounter::wait_for_compile, Tier4MinInvocationThreshold);
-  bcnt->set(InvocationCounter::wait_for_compile, Tier4CompileThreshold);
+  icnt->set(Tier4MinInvocationThreshold);
+  bcnt->set(Tier4CompileThreshold);
 WB_END
 
 WB_ENTRY(void, WB_ClearMethodState(JNIEnv* env, jobject o, jobject method))

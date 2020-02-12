@@ -295,8 +295,8 @@ void SimpleCompPolicy::reset_counter_for_invocation_event(const methodHandle& m)
   // Set carry bit and reduce counter's value to min(count, CompileThreshold/2).
   MethodCounters* mcs = m->method_counters();
   assert(mcs != NULL, "MethodCounters cannot be NULL for profiling");
-  mcs->invocation_counter()->set_carry();
-  mcs->backedge_counter()->set_carry();
+  mcs->invocation_counter()->set_carry_and_reduce();
+  mcs->backedge_counter()->set_carry_and_reduce();
 
   assert(!m->was_never_executed(), "don't reset to 0 -- could be mistaken for never-executed");
 }
@@ -312,9 +312,9 @@ void SimpleCompPolicy::reset_counter_for_back_branch_event(const methodHandle& m
   // Don't set invocation_counter's value too low otherwise the method will
   // look like immature (ic < ~5300) which prevents the inlining based on
   // the type profiling.
-  i->set(i->state(), CompileThreshold);
+  i->set(CompileThreshold);
   // Don't reset counter too low - it is used to check if OSR method is ready.
-  b->set(b->state(), CompileThreshold / 2);
+  b->set(CompileThreshold / 2);
 }
 
 // Called at the end of the safepoint
@@ -340,7 +340,7 @@ void SimpleCompPolicy::reprofile(ScopeDesc* trap_scope, bool is_osr) {
     c = mcs->invocation_counter();
     if (is_osr) {
       // It was an OSR method, so bump the count higher.
-      c->set(c->state(), CompileThreshold);
+      c->set(CompileThreshold);
     } else {
       c->reset();
     }
@@ -355,14 +355,6 @@ void SimpleCompPolicy::delay_compilation(Method* method) {
   if (mcs != NULL) {
     mcs->invocation_counter()->decay();
     mcs->backedge_counter()->decay();
-  }
-}
-
-void SimpleCompPolicy::disable_compilation(Method* method) {
-  MethodCounters* mcs = method->method_counters();
-  if (mcs != NULL) {
-    mcs->invocation_counter()->set_state(InvocationCounter::wait_for_nothing);
-    mcs->backedge_counter()->set_state(InvocationCounter::wait_for_nothing);
   }
 }
 

@@ -1001,7 +1001,6 @@ void Method::set_not_compilable(const char* reason, int comp_level, bool report)
     if (is_c2_compile(comp_level))
       set_not_c2_compilable();
   }
-  CompilationPolicy::policy()->disable_compilation(this);
   assert(!CompilationPolicy::can_be_compiled(methodHandle(Thread::current(), this), comp_level), "sanity check");
 }
 
@@ -1028,7 +1027,6 @@ void Method::set_not_osr_compilable(const char* reason, int comp_level, bool rep
     if (is_c2_compile(comp_level))
       set_not_c2_osr_compilable();
   }
-  CompilationPolicy::policy()->disable_compilation(this);
   assert(!CompilationPolicy::can_be_osr_compiled(methodHandle(Thread::current(), this), comp_level), "sanity check");
 }
 

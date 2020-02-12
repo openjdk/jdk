@@ -379,23 +379,17 @@ CompLevel TieredThresholdPolicy::initial_compile_level(const methodHandle& metho
   return limit_level(initial_compile_level_helper(method));
 }
 
-void TieredThresholdPolicy::set_carry_if_necessary(InvocationCounter *counter) {
-  if (!counter->carry() && counter->count() > InvocationCounter::count_limit / 2) {
-    counter->set_carry_flag();
-  }
-}
-
 // Set carry flags on the counters if necessary
 void TieredThresholdPolicy::handle_counter_overflow(Method* method) {
   MethodCounters *mcs = method->method_counters();
   if (mcs != NULL) {
-    set_carry_if_necessary(mcs->invocation_counter());
-    set_carry_if_necessary(mcs->backedge_counter());
+    mcs->invocation_counter()->set_carry_on_overflow();
+    mcs->backedge_counter()->set_carry_on_overflow();
   }
   MethodData* mdo = method->method_data();
   if (mdo != NULL) {
-    set_carry_if_necessary(mdo->invocation_counter());
-    set_carry_if_necessary(mdo->backedge_counter());
+    mdo->invocation_counter()->set_carry_on_overflow();
+    mdo->backedge_counter()->set_carry_on_overflow();
   }
 }
 

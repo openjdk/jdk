@@ -71,9 +71,6 @@ public:
   // delay_compilation(method) can be called by any component of the runtime to notify the policy
   // that it's recommended to delay the compilation of this method.
   virtual void delay_compilation(Method* method) = 0;
-  // disable_compilation() is called whenever the runtime decides to disable compilation of the
-  // specified method.
-  virtual void disable_compilation(Method* method) = 0;
   // Select task is called by CompileBroker. The queue is guaranteed to have at least one
   // element and is locked. The function should select one and return it.
   virtual CompileTask* select_task(CompileQueue* compile_queue) = 0;
@@ -102,7 +99,6 @@ class SimpleCompPolicy : public CompilationPolicy {
   virtual void do_safepoint_work();
   virtual void reprofile(ScopeDesc* trap_scope, bool is_osr);
   virtual void delay_compilation(Method* method);
-  virtual void disable_compilation(Method* method);
   virtual bool is_mature(Method* method);
   virtual void initialize();
   virtual CompileTask* select_task(CompileQueue* compile_queue);
