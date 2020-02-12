@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -304,11 +304,11 @@ public class RSAPSSSignature extends SignatureSpi {
     private static void checkKeyLength(RSAKey key, int digestLen,
             int saltLen) throws SignatureException {
         if (key != null) {
-            int keyLength = getKeyLengthInBits(key) >> 3;
+            int keyLength = (getKeyLengthInBits(key) + 7) >> 3;
             int minLength = Math.addExact(Math.addExact(digestLen, saltLen), 2);
             if (keyLength < minLength) {
                 throw new SignatureException
-                    ("Key is too short, need min " + minLength);
+                    ("Key is too short, need min " + minLength + " bytes");
             }
         }
     }
@@ -429,7 +429,7 @@ public class RSAPSSSignature extends SignatureSpi {
         }
         try {
             int emBits = getKeyLengthInBits(this.privKey) - 1;
-            int emLen =(emBits + 7) >> 3;
+            int emLen = (emBits + 7) >> 3;
             int hLen = this.md.getDigestLength();
             int dbLen = emLen - hLen - 1;
             int sLen = this.sigParams.getSaltLength();
@@ -472,6 +472,7 @@ public class RSAPSSSignature extends SignatureSpi {
             // step11: set the leftmost (8emLen - emBits) bits of the leftmost
             // octet to 0
             int numZeroBits = (emLen << 3) - emBits;
+
             if (numZeroBits != 0) {
                 byte MASK = (byte) (0xff >>> numZeroBits);
                 em[0] = (byte) (em[0] & MASK);
@@ -485,15 +486,22 @@ public class RSAPSSSignature extends SignatureSpi {
     }
 
     /**
-     * Decode the signature data. Verify that the object identifier matches
-     * and return the message digest.
+     * Decode the signature data as under RFC8017 sec9.1.2 EMSA-PSS-VERIFY
      */
     private boolean decodeSignature(byte[] mHash, byte[] em)
             throws IOException {
         int hLen = mHash.length;
         int sLen = this.sigParams.getSaltLength();
-        int emLen = em.length;
         int emBits = getKeyLengthInBits(this.pubKey) - 1;
+        int emLen = (emBits + 7) >> 3;
+
+        // When key length is 8N+1 bits (N+1 bytes), emBits = 8N,
+        // emLen = N which is one byte shorter than em.length.
+        // Otherwise, emLen should be same as em.length
+        int emOfs = em.length - emLen;
+        if ((emOfs == 1) && (em[0] != 0)) {
+            return false;
+        }
 
         // step3
         if (emLen < (hLen + sLen + 2)) {
@@ -501,16 +509,17 @@ public class RSAPSSSignature extends SignatureSpi {
         }
 
         // step4
-        if (em[emLen - 1] != (byte) 0xBC) {
+        if (em[emOfs + emLen - 1] != (byte) 0xBC) {
             return false;
         }
 
         // step6: check if the leftmost (8emLen - emBits) bits of the leftmost
         // octet are 0
         int numZeroBits = (emLen << 3) - emBits;
+
         if (numZeroBits != 0) {
             byte MASK = (byte) (0xff << (8 - numZeroBits));
-            if ((em[0] & MASK) != 0) {
+            if ((em[emOfs] & MASK) != 0) {
                 return false;
             }
         }
@@ -526,7 +535,8 @@ public class RSAPSSSignature extends SignatureSpi {
         int dbLen = emLen - hLen - 1;
         try {
             MGF1 mgf1 = new MGF1(mgfDigestAlgo);
-            mgf1.generateAndXor(em, dbLen, hLen, dbLen, em, 0);
+            mgf1.generateAndXor(em, emOfs + dbLen, hLen, dbLen,
+                    em, emOfs);
         } catch (NoSuchAlgorithmException nsae) {
             throw new IOException(nsae.toString());
         }
@@ -535,12 +545,12 @@ public class RSAPSSSignature extends SignatureSpi {
         //  octet to 0
         if (numZeroBits != 0) {
             byte MASK = (byte) (0xff >>> numZeroBits);
-            em[0] = (byte) (em[0] & MASK);
+            em[emOfs] = (byte) (em[emOfs] & MASK);
         }
 
         // step10
-        int i = 0;
-        for (; i < dbLen - sLen - 1; i++) {
+        int i = emOfs;
+        for (; i < emOfs + (dbLen - sLen - 1); i++) {
             if (em[i] != 0) {
                 return false;
             }
@@ -553,13 +563,14 @@ public class RSAPSSSignature extends SignatureSpi {
         digestReset = false;
         this.md.update(mHash);
         if (sLen > 0) {
-            this.md.update(em, (dbLen - sLen), sLen);
+            this.md.update(em, emOfs + (dbLen - sLen), sLen);
         }
         byte[] digest2 = this.md.digest();
         digestReset = true;
 
         // step14
-        byte[] digestInEM = Arrays.copyOfRange(em, dbLen, emLen - 1);
+        byte[] digestInEM = Arrays.copyOfRange(em, emOfs + dbLen,
+                emOfs + emLen - 1);
         return MessageDigest.isEqual(digest2, digestInEM);
     }
 
