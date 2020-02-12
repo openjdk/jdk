@@ -276,15 +276,18 @@ policy.provider=sun.security.provider.PolicyFile
 policy.url.1=file:${java.home}/conf/security/java.policy
 policy.url.2=file:${user.home}/.java.policy
 
-# whether or not we expand properties in the policy file
-# if this is set to false, properties (${...}) will not be expanded in policy
-# files.
+# Controls whether or not properties are expanded in policy and login
+# configuration files. If set to false, properties (${...}) will not
+# be expanded in policy and login configuration files. If commented out or
+# set to an empty string, the default value is "false" for policy files and
+# "true" for login configuration files.
 #
 policy.expandProperties=true
 
-# whether or not we allow an extra policy to be passed on the command line
-# with -Djava.security.policy=somefile. Comment out this line to disable
-# this feature.
+# Controls whether or not an extra policy or login configuration file is
+# allowed to be passed on the command line with -Djava.security.policy=somefile
+# or -Djava.security.auth.login.config=somefile. If commented out or set to
+# an empty string, the default value is "false".
 #
 policy.allowSystemProperty=true
 
