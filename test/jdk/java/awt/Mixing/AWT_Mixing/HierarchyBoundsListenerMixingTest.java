@@ -35,7 +35,7 @@ import java.io.*;
 /*
  * @test
  * @key headful
- * @bug 6768230
+ * @bug 6768230 8221823
  * @summary Mixing test for HierarchyBoundsListener ancestors
  * @build FrameBorderCounter
  * @run main HierarchyBoundsListenerMixingTest

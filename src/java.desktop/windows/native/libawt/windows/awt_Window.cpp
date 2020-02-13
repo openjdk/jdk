@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2534,8 +2534,8 @@ void AwtWindow::_ReshapeFrame(void *param)
             if (!p->IsEmbeddedFrame())
             {
                 jobject peer = p->GetPeer(env);
-                int minWidth = ::GetSystemMetrics(SM_CXMIN);
-                int minHeight = ::GetSystemMetrics(SM_CYMIN);
+                int minWidth = p->ScaleDownX(::GetSystemMetrics(SM_CXMIN));
+                int minHeight = p->ScaleDownY(::GetSystemMetrics(SM_CYMIN));
                 if (w < minWidth)
                 {
                     env->SetIntField(target, AwtComponent::widthID,
@@ -3826,7 +3826,7 @@ Java_sun_awt_windows_WWindowPeer_setOpacity(JNIEnv *env, jobject self,
     os->iOpacity = iOpacity;
 
     AwtToolkit::GetInstance().SyncCall(AwtWindow::_SetOpacity, os);
-    // global refs and mds are deleted in _SetMinSize
+    // global refs and mds are deleted in _SetOpacity
 
     CATCH_BAD_ALLOC;
 }
@@ -3847,7 +3847,7 @@ Java_sun_awt_windows_WWindowPeer_setOpaqueImpl(JNIEnv *env, jobject self,
     os->isOpaque = isOpaque;
 
     AwtToolkit::GetInstance().SyncCall(AwtWindow::_SetOpaque, os);
-    // global refs and mds are deleted in _SetMinSize
+    // global refs and mds are deleted in _SetOpaque
 
     CATCH_BAD_ALLOC;
 }

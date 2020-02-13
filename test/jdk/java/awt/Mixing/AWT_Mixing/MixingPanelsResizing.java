@@ -35,7 +35,7 @@ import test.java.awt.regtesthelpers.Util;
 /*
  * @test
  * @key headful
- * @bug 6786219
+ * @bug 6786219 8221823
  * @summary Issues when resizing the frame after mixing of heavy weight & light weight components
  * @author sergey.grinev@oracle.com: area=awt.mixing
  * @library ../../regtesthelpers

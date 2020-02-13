@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -402,10 +402,8 @@ public class WWindowPeer extends WPanelPeer implements WindowPeer,
             minimumSize = ((Component)target).getMinimumSize();
         }
         if (minimumSize != null) {
-            int msw = getSysMinWidth();
-            int msh = getSysMinHeight();
-            int w = (minimumSize.width >= msw) ? minimumSize.width : msw;
-            int h = (minimumSize.height >= msh) ? minimumSize.height : msh;
+            int w = Math.max(minimumSize.width, scaleDownX(getSysMinWidth()));
+            int h = Math.max(minimumSize.height, scaleDownY(getSysMinHeight()));
             setMinSize(w, h);
         } else {
             setMinSize(0, 0);
@@ -685,6 +683,22 @@ public class WWindowPeer extends WPanelPeer implements WindowPeer,
             scaleX = (float) tx.getScaleX();
             scaleY = (float) tx.getScaleY();
         }
+    }
+
+    final int scaleUpX(int x) {
+        return Region.clipRound(x * scaleX);
+    }
+
+    final int scaleUpY(int y) {
+        return Region.clipRound(y * scaleY);
+    }
+
+    final int scaleDownX(int x) {
+        return Region.clipRound(x / scaleX);
+    }
+
+    final int scaleDownY(int y) {
+        return Region.clipRound(y / scaleY);
     }
 
     @Override

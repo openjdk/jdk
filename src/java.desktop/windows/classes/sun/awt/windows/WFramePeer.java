@@ -147,13 +147,14 @@ class WFramePeer extends WWindowPeer implements FramePeer {
     }
 
     @Override
-    public Dimension getMinimumSize() {
+    public final Dimension getMinimumSize() {
         Dimension d = new Dimension();
         if (!((Frame)target).isUndecorated()) {
-            d.setSize(getSysMinWidth(), getSysMinHeight());
+            d.setSize(scaleDownX(getSysMinWidth()),
+                      scaleDownY(getSysMinHeight()));
         }
         if (((Frame)target).getMenuBar() != null) {
-            d.height += getSysMenuHeight();
+            d.height += scaleDownY(getSysMenuHeight());
         }
         return d;
     }
