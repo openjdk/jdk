@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -162,6 +162,10 @@ void *run_native_overflow(void *p) {
   }
 
   (*env)->CallStaticVoidMethod (env, class_id, method_id, NULL);
+
+  // Initialize statics used in do_overflow
+  _kp_rec_count = 0;
+  _rec_count = 0;
 
   set_signal_handler();
   if (! setjmp(context)) {
