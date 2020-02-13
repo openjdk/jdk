@@ -387,7 +387,7 @@ void Thread::call_run() {
 
   log_debug(os, thread)("Thread " UINTX_FORMAT " stack dimensions: "
     PTR_FORMAT "-" PTR_FORMAT " (" SIZE_FORMAT "k).",
-    os::current_thread_id(), p2i(stack_base() - stack_size()),
+    os::current_thread_id(), p2i(stack_end()),
     p2i(stack_base()), stack_size()/1024);
 
   // Perform <ChildClass> initialization actions
@@ -1018,23 +1018,12 @@ void Thread::check_for_valid_safepoint_state() {
 }
 #endif // ASSERT
 
+// Check for adr in the live portion of our stack.
 bool Thread::is_in_stack(address adr) const {
   assert(Thread::current() == this, "is_in_stack can only be called from current thread");
   address end = os::current_stack_pointer();
-  // Allow non Java threads to call this without stack_base
-  if (_stack_base == NULL) return true;
-  if (stack_base() > adr && adr >= end) return true;
-
-  return false;
+  return (stack_base() > adr && adr >= end);
 }
-
-bool Thread::is_in_usable_stack(address adr) const {
-  size_t stack_guard_size = os::uses_stack_guard_pages() ? JavaThread::stack_guard_zone_size() : 0;
-  size_t usable_stack_size = _stack_size - stack_guard_size;
-
-  return ((adr < stack_base()) && (adr >= stack_base() - usable_stack_size));
-}
-
 
 // We had to move these methods here, because vm threads get into ObjectSynchronizer::enter
 // However, there is a note in JavaThread::is_lock_owned() about the VM threads not being
@@ -1829,6 +1818,14 @@ bool JavaThread::reguard_stack(void) {
   return reguard_stack(os::current_stack_pointer());
 }
 
+
+// Check for adr in the usable portion of this thread's stack.
+bool JavaThread::is_in_usable_stack(address adr) const {
+  size_t stack_guard_size = os::uses_stack_guard_pages() ? JavaThread::stack_guard_zone_size() : 0;
+  size_t usable_stack_size = _stack_size - stack_guard_size;
+
+  return ((stack_base() > adr) && (adr >= (stack_base() - usable_stack_size)));
+}
 
 void JavaThread::block_if_vm_exited() {
   if (_terminated == _vm_exited) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -177,22 +177,21 @@ bool frame::safe_for_sender(JavaThread *thread) {
   address _SP = (address) sp();
   address _FP = (address) fp();
   address _UNEXTENDED_SP = (address) unextended_sp();
-  // sp must be within the stack
-  bool sp_safe = (_SP <= thread->stack_base()) &&
-                 (_SP >= thread->stack_base() - thread->stack_size());
 
-  if (!sp_safe) {
+  // consider stack guards when trying to determine "safe" stack pointers
+  // sp must be within the usable part of the stack (not in guards)
+  if (!thread->is_in_usable_stack(_SP)) {
     return false;
   }
 
   // unextended sp must be within the stack and above or equal sp
-  bool unextended_sp_safe = (_UNEXTENDED_SP <= thread->stack_base()) &&
+  bool unextended_sp_safe = (_UNEXTENDED_SP < thread->stack_base()) &&
                             (_UNEXTENDED_SP >= _SP);
 
   if (!unextended_sp_safe) return false;
 
   // an fp must be within the stack and above (but not equal) sp
-  bool fp_safe = (_FP <= thread->stack_base()) &&
+  bool fp_safe = (_FP < thread->stack_base()) &&
                  (_FP > _SP);
 
   // We know sp/unextended_sp are safe only fp is questionable here
@@ -252,7 +251,7 @@ bool frame::safe_for_sender(JavaThread *thread) {
 
     // an fp must be within the stack and above (but not equal) current frame's _FP
 
-    bool sender_fp_safe = (sender_fp <= thread->stack_base()) &&
+    bool sender_fp_safe = (sender_fp < thread->stack_base()) &&
                    (sender_fp > _FP);
 
     if (!sender_fp_safe) {
@@ -280,7 +279,7 @@ bool frame::safe_for_sender(JavaThread *thread) {
 
       address jcw = (address)sender.entry_frame_call_wrapper();
 
-      bool jcw_safe = (jcw <= thread->stack_base()) && (jcw > sender_fp);
+      bool jcw_safe = (jcw < thread->stack_base()) && (jcw > sender_fp);
 
       return jcw_safe;
     }
@@ -672,7 +671,7 @@ bool frame::is_interpreted_frame_valid(JavaThread* thread) const {
 
   address locals =  (address) *interpreter_frame_locals_addr();
 
-  if (locals > thread->stack_base() || locals < (address) fp()) return false;
+  if (locals >= thread->stack_base() || locals < (address) fp()) return false;
 
   // We'd have to be pretty unlucky to be mislead at this point
   return true;

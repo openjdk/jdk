@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,21 +57,14 @@ bool frame::safe_for_sender(JavaThread *thread) {
   address   fp = (address)_fp;
   address   unextended_sp = (address)_unextended_sp;
 
-  static size_t stack_guard_size = os::uses_stack_guard_pages() ?
-    (JavaThread::stack_red_zone_size() + JavaThread::stack_yellow_zone_size()) : 0;
-  size_t usable_stack_size = thread->stack_size() - stack_guard_size;
-
+  // consider stack guards when trying to determine "safe" stack pointers
   // sp must be within the usable part of the stack (not in guards)
-  bool sp_safe = (sp != NULL &&
-                 (sp <= thread->stack_base()) &&
-                 (sp >= thread->stack_base() - usable_stack_size));
-
-  if (!sp_safe) {
+  if (!thread->is_in_usable_stack(sp)) {
     return false;
   }
 
   bool unextended_sp_safe = (unextended_sp != NULL &&
-                             (unextended_sp <= thread->stack_base()) &&
+                             (unextended_sp < thread->stack_base()) &&
                              (unextended_sp >= sp));
   if (!unextended_sp_safe) {
     return false;
@@ -80,7 +73,7 @@ bool frame::safe_for_sender(JavaThread *thread) {
   // We know sp/unextended_sp are safe. Only fp is questionable here.
 
   bool fp_safe = (fp != NULL &&
-                  (fp <= thread->stack_base()) &&
+                  (fp < thread->stack_base()) &&
                   fp >= sp);
 
   if (_cb != NULL ) {
@@ -148,7 +141,7 @@ bool frame::safe_for_sender(JavaThread *thread) {
       // is really a frame pointer.
 
       intptr_t *saved_fp = (intptr_t*)*(sender_sp - frame::sender_sp_offset + link_offset);
-      bool saved_fp_safe = ((address)saved_fp <= thread->stack_base()) && (saved_fp > sender_sp);
+      bool saved_fp_safe = ((address)saved_fp < thread->stack_base()) && (saved_fp > sender_sp);
 
       if (!saved_fp_safe) {
         return false;
@@ -178,7 +171,7 @@ bool frame::safe_for_sender(JavaThread *thread) {
     // Could be the call_stub
     if (StubRoutines::returns_to_call_stub(sender_pc)) {
       intptr_t *saved_fp = (intptr_t*)*(sender_sp - frame::sender_sp_offset + link_offset);
-      bool saved_fp_safe = ((address)saved_fp <= thread->stack_base()) && (saved_fp >= sender_sp);
+      bool saved_fp_safe = ((address)saved_fp < thread->stack_base()) && (saved_fp > sender_sp);
 
       if (!saved_fp_safe) {
         return false;
@@ -191,7 +184,7 @@ bool frame::safe_for_sender(JavaThread *thread) {
       // Validate the JavaCallWrapper an entry frame must have
       address jcw = (address)sender.entry_frame_call_wrapper();
 
-      bool jcw_safe = (jcw <= thread->stack_base()) && (jcw > (address)sender.fp());
+      bool jcw_safe = (jcw < thread->stack_base()) && (jcw > (address)sender.fp());
 
       return jcw_safe;
     }
@@ -501,7 +494,7 @@ bool frame::is_interpreted_frame_valid(JavaThread* thread) const {
 
   address locals =  (address) *interpreter_frame_locals_addr();
 
-  if (locals > thread->stack_base() || locals < (address) fp()) return false;
+  if (locals >= thread->stack_base() || locals < (address) fp()) return false;
 
   // We'd have to be pretty unlucky to be mislead at this point
 

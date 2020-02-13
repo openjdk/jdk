@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2542,7 +2542,7 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
           //
           PEXCEPTION_RECORD exceptionRecord = exceptionInfo->ExceptionRecord;
           address addr = (address) exceptionRecord->ExceptionInformation[1];
-          if (addr > thread->stack_reserved_zone_base() && addr < thread->stack_base()) {
+          if (thread->is_in_usable_stack(addr)) {
             addr = (address)((uintptr_t)addr &
                              (~((uintptr_t)os::vm_page_size() - (uintptr_t)1)));
             os::commit_memory((char *)addr, thread->stack_base() - addr,

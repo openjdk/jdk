@@ -687,12 +687,15 @@ class Thread: public ThreadShadow {
   // Used by fast lock support
   virtual bool is_lock_owned(address adr) const;
 
-  // Check if address is in the stack of the thread (not just for locks).
-  // Warning: the method can only be used on the running thread
+  // Check if address is in the live stack of this thread (not just for locks).
+  // Warning: can only be called by the current thread on itself.
   bool is_in_stack(address adr) const;
-  // Check if address is in the usable part of the stack (excludes protected
-  // guard pages)
-  bool is_in_usable_stack(address adr) const;
+
+  // Check if address in the stack mapped to this thread. Used mainly in
+  // error reporting (so has to include guard zone) and frame printing.
+  bool on_local_stack(address adr) const {
+    return (_stack_base > adr && adr >= stack_end());
+  }
 
   // Sets this thread as starting thread. Returns failure if thread
   // creation fails due to lack of memory, too many threads etc.
@@ -727,11 +730,6 @@ protected:
   address stack_end()  const           { return stack_base() - stack_size(); }
   void    record_stack_base_and_size();
   void    register_thread_stack_with_NMT() NOT_NMT_RETURN;
-
-  bool    on_local_stack(address adr) const {
-    // QQQ this has knowledge of direction, ought to be a stack method
-    return (_stack_base > adr && adr >= stack_end());
-  }
 
   int     lgrp_id() const        { return _lgrp_id; }
   void    set_lgrp_id(int value) { _lgrp_id = value; }
@@ -1731,6 +1729,11 @@ class JavaThread: public Thread {
     _stack_overflow_limit =
       stack_end() + MAX2(JavaThread::stack_guard_zone_size(), JavaThread::stack_shadow_zone_size());
   }
+
+  // Check if address is in the usable part of the stack (excludes protected
+  // guard pages). Can be applied to any thread and is an approximation for
+  // using is_in_stack when the query has to happen from another thread.
+  bool is_in_usable_stack(address adr) const;
 
   // Misc. accessors/mutators
   void set_do_not_unlock(void)                   { _do_not_unlock_if_synchronized = true; }
