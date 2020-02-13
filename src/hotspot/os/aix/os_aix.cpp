@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2019 SAP SE. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3720,10 +3720,18 @@ int os::open(const char *path, int oflag, int mode) {
     errno = ENAMETOOLONG;
     return -1;
   }
-  int fd;
+  // AIX 7.X now supports O_CLOEXEC too, like modern Linux; but we have to be careful, see
+  // IV90804: OPENING A FILE IN AFS WITH O_CLOEXEC FAILS WITH AN EINVAL ERROR APPLIES TO AIX 7100-04 17/04/14 PTF PECHANGE
+  int oflag_with_o_cloexec = oflag | O_CLOEXEC;
 
-  fd = ::open64(path, oflag, mode);
-  if (fd == -1) return -1;
+  int fd = ::open64(path, oflag_with_o_cloexec, mode);
+  if (fd == -1) {
+    // we might fail in the open call when O_CLOEXEC is set, so try again without (see IV90804)
+    fd = ::open64(path, oflag, mode);
+    if (fd == -1) {
+      return -1;
+    }
+  }
 
   // If the open succeeded, the file might still be a directory.
   {
@@ -3755,21 +3763,25 @@ int os::open(const char *path, int oflag, int mode) {
   //
   // - might cause an fopen in the subprocess to fail on a system
   //   suffering from bug 1085341.
-  //
-  // (Yes, the default setting of the close-on-exec flag is a Unix
-  // design flaw.)
-  //
-  // See:
-  // 1085341: 32-bit stdio routines should support file descriptors >255
-  // 4843136: (process) pipe file descriptor from Runtime.exec not being closed
-  // 6339493: (process) Runtime.exec does not close all file descriptors on Solaris 9
-#ifdef FD_CLOEXEC
-  {
+
+  // Validate that the use of the O_CLOEXEC flag on open above worked.
+  static sig_atomic_t O_CLOEXEC_is_known_to_work = 0;
+  if (O_CLOEXEC_is_known_to_work == 0) {
     int flags = ::fcntl(fd, F_GETFD);
-    if (flags != -1)
+    if (flags != -1) {
+      if ((flags & FD_CLOEXEC) != 0) {
+        O_CLOEXEC_is_known_to_work = 1;
+      } else { // it does not work
+        ::fcntl(fd, F_SETFD, flags | FD_CLOEXEC);
+        O_CLOEXEC_is_known_to_work = -1;
+      }
+    }
+  } else if (O_CLOEXEC_is_known_to_work == -1) {
+    int flags = ::fcntl(fd, F_GETFD);
+    if (flags != -1) {
       ::fcntl(fd, F_SETFD, flags | FD_CLOEXEC);
+    }
   }
-#endif
 
   return fd;
 }
