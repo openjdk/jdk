@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -383,7 +383,7 @@ final class ProxyGenerator extends ClassWriter {
      * separator, the external representation used by the Java language
      * and APIs, to a fully qualified class name that uses '/' as the
      * package separator, the representation used in the class file
-     * format (see JVMS section 4.2).
+     * format (see JVMS section {@jvms 4.2}).
      */
     private static String dotToSlash(String name) {
         return name.replace('.', '/');

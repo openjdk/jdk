@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,8 @@ import static java.lang.invoke.MethodHandleStatics.*;
  * Direct method handles may be obtained in any of these ways:
  * <ul>
  * <li>By executing an {@code ldc} instruction on a {@code CONSTANT_MethodHandle} constant.
- *     (See the Java Virtual Machine Specification, sections 4.4.8 and 5.4.3.)
+ *     (See the Java Virtual Machine Specification, sections {@jvms
+ *     4.4.8} and {@jvms 5.4.3}.)
  * <li>By calling one of the <a href="MethodHandles.Lookup.html#lookups">Lookup Factory Methods</a>,
  *     such as {@link Lookup#findVirtual Lookup.findVirtual},
  *     to resolve a symbolic reference into a method handle.

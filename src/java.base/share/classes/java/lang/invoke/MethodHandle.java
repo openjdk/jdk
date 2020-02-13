@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -222,8 +222,9 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
  * refers directly to an associated {@code CONSTANT_Methodref},
  * {@code CONSTANT_InterfaceMethodref}, or {@code CONSTANT_Fieldref}
  * constant pool entry.
- * (For full details on method handle constants,
- * see sections 4.4.8 and 5.4.3.5 of the Java Virtual Machine Specification.)
+ * (For full details on method handle constants, see sections {@jvms
+ * 4.4.8} and {@jvms 5.4.3.5} of the Java Virtual Machine
+ * Specification.)
  * <p>
  * Method handles produced by lookups or constant loads from methods or
  * constructors with the variable arity modifier bit ({@code 0x0080})

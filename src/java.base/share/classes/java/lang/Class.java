@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -374,15 +374,16 @@ public final class Class<T> implements java.io.Serializable,
      *  {@code Class.forName("Foo", true, this.getClass().getClassLoader())}
      * </blockquote>
      *
-     * Note that this method throws errors related to loading, linking or
-     * initializing as specified in Sections 12.2, 12.3 and 12.4 of <em>The
-     * Java Language Specification</em>.
+     * Note that this method throws errors related to loading, linking
+     * or initializing as specified in Sections {@jls 12.2}, {@jls
+     * 12.3}, and {@jls 12.4} of <em>The Java Language
+     * Specification</em>.
      * Note that this method does not check whether the requested class
      * is accessible to its caller.
      *
      * @param name       fully qualified name of the desired class
      * @param initialize if {@code true} the class will be initialized (which implies linking).
-     *                   See Section 12.4 of <em>The Java Language Specification</em>.
+     *                   See Section {@jls 12.4} of <em>The Java Language Specification</em>.
      * @param loader     class loader from which the class must be loaded
      * @return           class object representing the desired class
      *
@@ -660,7 +661,8 @@ public final class Class<T> implements java.io.Serializable,
      * specified {@code Class} parameter can be converted to the type
      * represented by this {@code Class} object via an identity conversion
      * or via a widening reference conversion. See <em>The Java Language
-     * Specification</em>, sections 5.1.1 and 5.1.4 , for details.
+     * Specification</em>, sections {@jls 5.1.1} and {@jls 5.1.4},
+     * for details.
      *
      * @param     cls the {@code Class} object to be checked
      * @return    the {@code boolean} value indicating whether objects of the
@@ -2399,7 +2401,7 @@ public final class Class<T> implements java.io.Serializable,
      * object represents an interface, a primitive type, an array class, or
      * void.
      *
-     * <p> See <em>The Java Language Specification</em>, section 8.2.
+     * <p> See <em>The Java Language Specification</em>, section {@jls 8.2}.
      *
      * @return  the array of {@code Constructor} objects representing all the
      *          declared constructors of this class
