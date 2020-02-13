@@ -48,6 +48,8 @@ JNIEXPORT jclass JNICALL Java_gc_g1_unloading_classloaders_JNIClassloader_loadTh
   jbyte * arrayContent = env->GetByteArrayElements(bytecode, NULL);
   jsize bytecodeLength = env->GetArrayLength(bytecode);
   jclass returnValue = env->DefineClass(classNameChar, classLoader, arrayContent, bytecodeLength);
+  env->ReleaseByteArrayElements(bytecode, arrayContent, JNI_ABORT);
+  env->ReleaseStringUTFChars(className, classNameChar);
   if (!returnValue) {
     printf("ERROR: DefineClass call returned NULL by some reason. Classloading failed.\n");
   }
@@ -56,12 +58,12 @@ JNIEXPORT jclass JNICALL Java_gc_g1_unloading_classloaders_JNIClassloader_loadTh
 }
 
  /*
-  * Class:     gc_g1_unloading_unloading_loading_ClassLoadingThread
+  * Class:     gc_g1_unloading_unloading_loading_ClassLoadingHelper
   * Method:    makeRedefinition0
   * Signature: (ILjava/lang/Class;[B)I
   */
-JNIEXPORT jint JNICALL  Java_gc_g1_unloading_loading_ClassLoadingThread_makeRedefinition0(JNIEnv *env,
-                jclass cls, jint fl, jclass redefCls, jbyteArray classBytes) {
+JNIEXPORT jint JNICALL  Java_gc_g1_unloading_loading_ClassLoadingHelper_makeRedefinition0(JNIEnv *env,
+                jclass clazz, jint fl, jclass redefCls, jbyteArray classBytes) {
     JavaVM * jvm;
     jvmtiEnv * jvmti;
     jvmtiError err;
@@ -99,15 +101,15 @@ JNIEXPORT jint JNICALL  Java_gc_g1_unloading_loading_ClassLoadingThread_makeRede
     classDef.klass = redefCls;
     classDef.class_byte_count =
         env->GetArrayLength(classBytes);
-    classDef.class_bytes = (unsigned char *)
-        env->GetByteArrayElements(classBytes,
-            NULL);
+    jbyte * class_bytes = env->GetByteArrayElements(classBytes, NULL);
+    classDef.class_bytes = (unsigned char *)class_bytes;
 
     if (fl == 2) {
         printf(">>>>>>>> Invoke RedefineClasses():\n");
         printf("\tnew class byte count=%d\n", classDef.class_byte_count);
     }
     err = jvmti->RedefineClasses(1, &classDef);
+    env->ReleaseByteArrayElements(classBytes, class_bytes, JNI_ABORT);
     if (err != JVMTI_ERROR_NONE) {
         printf("%s: Failed to call RedefineClasses():\n", __FILE__);
         printf("\tthe function returned error %d\n", err);
