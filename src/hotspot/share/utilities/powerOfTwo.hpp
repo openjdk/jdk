@@ -28,6 +28,7 @@
 #include "metaprogramming/enableIf.hpp"
 #include "metaprogramming/isIntegral.hpp"
 #include "metaprogramming/isSigned.hpp"
+#include "utilities/align.hpp"
 #include "utilities/count_leading_zeros.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -68,7 +69,7 @@ inline typename EnableIf<IsSigned<T>::value, T>::type round_up_power_of_2(T valu
   STATIC_ASSERT(IsIntegral<T>::value);
   STATIC_ASSERT(IsSigned<T>::value);
   assert(value > 0, "Invalid value");
-  if (is_power_of_2(value)) {
+  if (is_power_of_2_t(value)) {
     return value;
   }
   uint32_t lz = count_leading_zeros(value);
@@ -84,7 +85,7 @@ inline typename EnableIf<!IsSigned<T>::value, T>::type round_up_power_of_2(T val
   STATIC_ASSERT(IsIntegral<T>::value);
   STATIC_ASSERT(!IsSigned<T>::value);
   assert(value != 0, "Invalid value");
-  if (is_power_of_2(value)) {
+  if (is_power_of_2_t(value)) {
     return value;
   }
   uint32_t lz = count_leading_zeros(value);
