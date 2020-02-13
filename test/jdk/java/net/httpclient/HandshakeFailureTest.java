@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,11 +21,9 @@
  * questions.
  */
 
-import javax.net.ServerSocketFactory;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLParameters;
-import javax.net.ssl.SSLHandshakeException;
-import javax.net.ssl.SSLSocket;
+import static java.lang.System.out;
+import static java.net.http.HttpResponse.BodyHandlers.discarding;
+
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -33,23 +31,30 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketException;
 import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpClient.Version;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
-import java.net.http.HttpClient;
-import java.net.http.HttpClient.Version;
-import java.net.http.HttpResponse;
-import java.net.http.HttpRequest;
-import static java.lang.System.out;
-import static java.net.http.HttpResponse.BodyHandlers.discarding;
+
+import javax.net.ServerSocketFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLHandshakeException;
+import javax.net.ssl.SSLParameters;
+import javax.net.ssl.SSLSocket;
 
 /**
  * @test
- * @run main/othervm -Djdk.internal.httpclient.debug=true HandshakeFailureTest
+ * @run main/othervm -Djdk.internal.httpclient.debug=false HandshakeFailureTest TLSv1.2
+ * @run main/othervm -Djdk.internal.httpclient.debug=false HandshakeFailureTest TLSv1.3
  * @summary Verify SSLHandshakeException is received when the handshake fails,
- * either because the server closes ( EOF ) the connection during handshaking
- * or no cipher suite ( or similar ) can be negotiated.
+ * either because the server closes (EOF) the connection during handshaking,
+ * or no cipher suite can be negotiated (TLSv1.2) or no available authentication
+ * scheme (TLSv1.3).
  */
 // To switch on debugging use:
 // @run main/othervm -Djdk.internal.httpclient.debug=true HandshakeFailureTest
@@ -59,9 +64,13 @@ public class HandshakeFailureTest {
     // when running standalone testing.
     static final int TIMES = 10;
 
+    private static String tlsProtocol;
+
     public static void main(String[] args) throws Exception {
+        tlsProtocol = args[0];
+
         HandshakeFailureTest test = new HandshakeFailureTest();
-        List<AbstractServer> servers = List.of( new PlainServer(), new SSLServer());
+        List<AbstractServer> servers = List.of(new PlainServer(), new SSLServer());
 
         for (AbstractServer server : servers) {
             try (server) {
@@ -83,7 +92,7 @@ public class HandshakeFailureTest {
 
     static HttpClient getClient() {
         SSLParameters params = new SSLParameters();
-        params.setProtocols(new String[] {"TLSv1.2"});
+        params.setProtocols(new String[] { tlsProtocol });
         return HttpClient.newBuilder()
                 .sslParameters(params)
                 .build();
@@ -103,7 +112,7 @@ public class HandshakeFailureTest {
                 throw new RuntimeException(msg);
             } catch (IOException expected) {
                 out.printf("Client: caught expected exception: %s%n", expected);
-                checkExceptionOrCause(SSLHandshakeException.class, expected);
+                checkExceptionOrCause(expected);
             }
         }
     }
@@ -123,7 +132,7 @@ public class HandshakeFailureTest {
                 throw new RuntimeException(msg);
             } catch (IOException expected) {
                 out.printf("Client: caught expected exception: %s%n", expected);
-                checkExceptionOrCause(SSLHandshakeException.class, expected);
+                checkExceptionOrCause(expected);
             }
         }
     }
@@ -145,7 +154,7 @@ public class HandshakeFailureTest {
             } catch (CompletionException ce) {
                 Throwable expected = ce.getCause();
                 out.printf("Client: caught expected exception: %s%n", expected);
-                checkExceptionOrCause(SSLHandshakeException.class, expected);
+                checkExceptionOrCause(expected);
             }
         }
     }
@@ -169,24 +178,31 @@ public class HandshakeFailureTest {
                 ce.printStackTrace(out);
                 Throwable expected = ce.getCause();
                 out.printf("Client: caught expected exception: %s%n", expected);
-                checkExceptionOrCause(SSLHandshakeException.class, expected);
+                checkExceptionOrCause(expected);
             }
         }
     }
 
-    static void checkExceptionOrCause(Class<? extends Throwable> clazz, Throwable t) {
+    static void checkExceptionOrCause(Throwable t) {
         final Throwable original = t;
         do {
-            if (clazz.isInstance(t)) {
+            if (SSLHandshakeException.class.isInstance(t)
+                    // For TLSv1.3, possibly the server is (being) closed when
+                    // the client read the input alert. In this case, the client
+                    // just gets SocketException instead of SSLHandshakeException.
+                    || (tlsProtocol.equalsIgnoreCase("TLSv1.3")
+                            && SocketException.class.isInstance(t))) {
                 System.out.println("Found expected exception/cause: " + t);
                 return; // found
             }
         } while ((t = t.getCause()) != null);
         original.printStackTrace(System.out);
-        throw new RuntimeException("Expected " + clazz + "in " + original);
+        throw new RuntimeException(
+                "Not found expected SSLHandshakeException or SocketException in "
+                        + original);
     }
 
-    /** Common supertype for PlainServer and SSLServer. */
+    /** Common super type for PlainServer and SSLServer. */
     static abstract class AbstractServer extends Thread implements AutoCloseable {
         protected final ServerSocket ss;
         protected volatile boolean closed;
@@ -271,14 +287,15 @@ public class HandshakeFailureTest {
     }
 
     /** Emulates a server-side, using SSL Sockets, that will fail during
-     * handshaking, as there are no cipher suites in common. */
+     * handshaking, as there are no cipher suites in common (TLSv1.2)
+     * or no available authentication scheme (TLSv1.3). */
     static class SSLServer extends AbstractServer {
         static final SSLContext sslContext = createUntrustingContext();
         static final ServerSocketFactory factory = sslContext.getServerSocketFactory();
 
         static SSLContext createUntrustingContext() {
             try {
-                SSLContext sslContext = SSLContext.getInstance("TLSv1.2");
+                SSLContext sslContext = SSLContext.getInstance("TLS");
                 sslContext.init(null, null, null);
                 return sslContext;
             } catch (Throwable t) {
@@ -298,7 +315,8 @@ public class HandshakeFailureTest {
 
                     throw new AssertionError("Should not reach here");
                 } catch (SSLHandshakeException expected) {
-                    // Expected: SSLHandshakeException: no cipher suites in common
+                    // Expected: SSLHandshakeException: no cipher suites in common (TLSv1.2)
+                    // or no available authentication scheme (TLSv1.3)
                     out.printf("Server: caught expected exception: %s%n", expected);
                 } catch (IOException e) {
                     if (!closed)
