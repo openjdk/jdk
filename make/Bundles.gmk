@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -250,24 +250,96 @@ ifneq ($(filter product-bundles% legacy-bundles, $(MAKECMDGOALS)), )
       $(SYMBOLS_EXCLUDE_PATTERN), \
       $(ALL_JRE_FILES))
 
-  $(eval $(call SetupBundleFile, BUILD_JDK_BUNDLE, \
-      BUNDLE_NAME := $(JDK_BUNDLE_NAME), \
-      FILES := $(JDK_BUNDLE_FILES), \
-      SPECIAL_INCLUDES := $(JDK_SPECIAL_INCLUDES), \
-      BASE_DIRS := $(JDK_IMAGE_DIR), \
-      SUBDIR := $(JDK_BUNDLE_SUBDIR), \
-  ))
+  # On Macosx release builds, when there is a code signing certificate available,
+  # the final bundle layout can be signed.
+  SIGN_BUNDLE := false
+  ifeq ($(call isTargetOs, macosx)+$(DEBUG_LEVEL), true+release)
+    ifneq ($(CODESIGN), )
+      SIGN_BUNDLE := true
+    endif
+  endif
 
-  PRODUCT_TARGETS += $(BUILD_JDK_BUNDLE)
+  ifeq ($(SIGN_BUNDLE), true)
+    # Macosx release build and code signing available.
 
-  $(eval $(call SetupBundleFile, BUILD_JRE_BUNDLE, \
-      BUNDLE_NAME := $(JRE_BUNDLE_NAME), \
-      FILES := $(JRE_BUNDLE_FILES), \
-      BASE_DIRS := $(JRE_IMAGE_DIR), \
-      SUBDIR := $(JRE_BUNDLE_SUBDIR), \
-  ))
+    ################################################################################
+    # JDK bundle
+    $(eval $(call SetupCopyFiles, CREATE_JDK_BUNDLE_DIR_SIGNED, \
+        SRC := $(JDK_IMAGE_DIR), \
+        FILES := $(JDK_BUNDLE_FILES), \
+        DEST := $(JDK_MACOSX_BUNDLE_DIR_SIGNED), \
+    ))
 
-  LEGACY_TARGETS += $(BUILD_JRE_BUNDLE)
+    JDK_SIGNED_CODE_RESOURCES := \
+        $(JDK_MACOSX_BUNDLE_DIR_SIGNED)/$(JDK_MACOSX_CONTENTS_SUBDIR)/_CodeSignature/CodeResources
+
+    $(JDK_SIGNED_CODE_RESOURCES): $(CREATE_JDK_BUNDLE_DIR_SIGNED)
+	$(call LogWarn, Signing $(JDK_BUNDLE_NAME))
+	$(CODESIGN) -s "$(MACOSX_CODESIGN_IDENTITY)" \
+	    --timestamp --options runtime --deep --force \
+	    $(JDK_MACOSX_BUNDLE_DIR_SIGNED)/$(JDK_MACOSX_BUNDLE_TOP_DIR) $(LOG_DEBUG)
+	$(TOUCH) $@
+
+    $(eval $(call SetupBundleFile, BUILD_JDK_BUNDLE, \
+        BUNDLE_NAME := $(JDK_BUNDLE_NAME), \
+        FILES := \
+            $(CREATE_JDK_BUNDLE_DIR_SIGNED) \
+            $(JDK_SIGNED_CODE_RESOURCES), \
+        BASE_DIRS := $(JDK_MACOSX_BUNDLE_DIR_SIGNED), \
+        SUBDIR := $(JDK_BUNDLE_SUBDIR), \
+    ))
+
+    PRODUCT_TARGETS += $(BUILD_JDK_BUNDLE)
+
+    ################################################################################
+    # JRE bundle
+    $(eval $(call SetupCopyFiles, CREATE_JRE_BUNDLE_DIR_SIGNED, \
+        SRC := $(JRE_IMAGE_DIR), \
+        FILES := $(JRE_BUNDLE_FILES), \
+        DEST := $(JRE_MACOSX_BUNDLE_DIR_SIGNED), \
+    ))
+
+    JRE_SIGNED_CODE_RESOURCES := \
+        $(JRE_MACOSX_BUNDLE_DIR_SIGNED)/$(JRE_MACOSX_CONTENTS_SUBDIR)/_CodeSignature/CodeResources
+
+    $(JRE_SIGNED_CODE_RESOURCES): $(CREATE_JRE_BUNDLE_DIR_SIGNED)
+	$(call LogWarn, Signing $(JRE_BUNDLE_NAME))
+	$(CODESIGN) -s "$(MACOSX_CODESIGN_IDENTITY)" \
+	    --timestamp --options runtime --deep --force \
+	    $(JRE_MACOSX_BUNDLE_DIR_SIGNED)/$(JRE_MACOSX_BUNDLE_TOP_DIR) $(LOG_DEBUG)
+	$(TOUCH) $@
+
+    $(eval $(call SetupBundleFile, BUILD_JRE_BUNDLE, \
+        BUNDLE_NAME := $(JRE_BUNDLE_NAME), \
+        FILES := \
+            $(CREATE_JRE_BUNDLE_DIR_SIGNED) \
+            $(JRE_SIGNED_CODE_RESOURCES), \
+        BASE_DIRS := $(JRE_MACOSX_BUNDLE_DIR_SIGNED), \
+        SUBDIR := $(JRE_BUNDLE_SUBDIR), \
+    ))
+
+    LEGACY_TARGETS += $(BUILD_JRE_BUNDLE)
+  else
+    # Not a Macosx release build or code signing not available.
+    $(eval $(call SetupBundleFile, BUILD_JDK_BUNDLE, \
+        BUNDLE_NAME := $(JDK_BUNDLE_NAME), \
+        FILES := $(JDK_BUNDLE_FILES), \
+        SPECIAL_INCLUDES := $(JDK_SPECIAL_INCLUDES), \
+        BASE_DIRS := $(JDK_IMAGE_DIR), \
+        SUBDIR := $(JDK_BUNDLE_SUBDIR), \
+    ))
+
+    PRODUCT_TARGETS += $(BUILD_JDK_BUNDLE)
+
+    $(eval $(call SetupBundleFile, BUILD_JRE_BUNDLE, \
+        BUNDLE_NAME := $(JRE_BUNDLE_NAME), \
+        FILES := $(JRE_BUNDLE_FILES), \
+        BASE_DIRS := $(JRE_IMAGE_DIR), \
+        SUBDIR := $(JRE_BUNDLE_SUBDIR), \
+    ))
+
+    LEGACY_TARGETS += $(BUILD_JRE_BUNDLE)
+  endif
 
   ifeq ($(COPY_DEBUG_SYMBOLS), true)
     $(eval $(call SetupBundleFile, BUILD_JDK_SYMBOLS_BUNDLE, \
