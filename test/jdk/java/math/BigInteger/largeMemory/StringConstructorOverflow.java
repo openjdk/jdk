@@ -25,7 +25,7 @@
  * @test
  * @bug 8021204
  * @summary Test constructor BigInteger(String val, int radix) on very long string
- * @requires os.maxMemory > 8g
+ * @requires (sun.arch.data.model == "64" & os.maxMemory > 8g)
  * @run main/othervm -Xshare:off -Xmx8g StringConstructorOverflow
  * @author Dmitry Nadezhin
  */
