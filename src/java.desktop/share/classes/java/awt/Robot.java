@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,9 +90,7 @@ public class Robot {
      * @see     AWTPermission
      */
     public Robot() throws AWTException {
-        if (GraphicsEnvironment.isHeadless()) {
-            throw new AWTException("headless environment");
-        }
+        checkHeadless();
         init(GraphicsEnvironment.getLocalGraphicsEnvironment()
             .getDefaultScreenDevice());
     }
@@ -125,6 +123,7 @@ public class Robot {
      * @see     AWTPermission
      */
     public Robot(GraphicsDevice screen) throws AWTException {
+        checkHeadless();
         checkIsScreenDevice(screen);
         init(screen);
     }
@@ -161,15 +160,24 @@ public class Robot {
     }
 
     /* determine if the security policy allows Robot's to be created */
-    private void checkRobotAllowed() {
+    private static void checkRobotAllowed() {
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             security.checkPermission(AWTPermissions.CREATE_ROBOT_PERMISSION);
         }
     }
 
+    /**
+     * Check for headless state and throw {@code AWTException} if headless.
+     */
+    private static void checkHeadless() throws AWTException {
+        if (GraphicsEnvironment.isHeadless()) {
+            throw new AWTException("headless environment");
+        }
+    }
+
     /* check if the given device is a screen device */
-    private void checkIsScreenDevice(GraphicsDevice device) {
+    private static void checkIsScreenDevice(GraphicsDevice device) {
         if (device == null || device.getType() != GraphicsDevice.TYPE_RASTER_SCREEN) {
             throw new IllegalArgumentException("not a valid screen device");
         }
@@ -300,7 +308,7 @@ public class Robot {
         afterEvent();
     }
 
-    private void checkButtonsArgument(int buttons) {
+    private static void checkButtonsArgument(int buttons) {
         if ( (buttons|LEGAL_BUTTON_MASK) != LEGAL_BUTTON_MASK ) {
             throw new IllegalArgumentException("Invalid combination of button flags");
         }
@@ -359,7 +367,7 @@ public class Robot {
         afterEvent();
     }
 
-    private void checkKeycodeArgument(int keycode) {
+    private static void checkKeycodeArgument(int keycode) {
         // rather than build a big table or switch statement here, we'll
         // just check that the key isn't VK_UNDEFINED and assume that the
         // peer implementations will throw an exception for other bogus
@@ -664,7 +672,7 @@ public class Robot {
         }
     }
 
-    private void checkDelayArgument(int ms) {
+    private static void checkDelayArgument(int ms) {
         if (ms < 0 || ms > MAX_DELAY) {
             throw new IllegalArgumentException("Delay must be to 0 to 60,000ms");
         }
@@ -680,7 +688,7 @@ public class Robot {
         ((SunToolkit) Toolkit.getDefaultToolkit()).realSync();
     }
 
-    private void checkNotDispatchThread() {
+    private static void checkNotDispatchThread() {
         if (EventQueue.isDispatchThread()) {
             throw new IllegalThreadStateException("Cannot call method from the event dispatcher thread");
         }
