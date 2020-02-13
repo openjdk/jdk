@@ -43,6 +43,7 @@ private:
   typedef GrowableArray<BlockBegin*> BlockBeginList;
   typedef GrowableArray<int> IntegerStack;
 
+#ifdef ASSERT
   class Verification : public BlockClosure {
   // RangeCheckEliminator::Verification should never get instatiated on the heap.
   private:
@@ -50,6 +51,10 @@ private:
     void* operator new[](size_t size) throw();
     void operator delete(void* p) { ShouldNotReachHere(); }
     void operator delete[](void* p) { ShouldNotReachHere(); }
+
+    bool can_reach(BlockBegin *start, BlockBegin *end, BlockBegin *dont_use = NULL);
+    bool dominates(BlockBegin *dominator, BlockBegin *block);
+    bool is_backbranch_from_xhandler(BlockBegin* block);
 
     IR *_ir;
     boolArray _used;
@@ -59,9 +64,8 @@ private:
   public:
     Verification(IR *ir);
     virtual void block_do(BlockBegin *block);
-    bool can_reach(BlockBegin *start, BlockBegin *end, BlockBegin *dont_use = NULL);
-    bool dominates(BlockBegin *dominator, BlockBegin *block);
   };
+#endif
 
 public:
   // Bounds for an instruction in the form x + c which c integer

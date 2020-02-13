@@ -30,6 +30,9 @@
 #include "c1/c1_ValueMap.hpp"
 #include "ci/ciMethodData.hpp"
 #include "runtime/deoptimization.hpp"
+#ifdef ASSERT
+#include "utilities/bitMap.inline.hpp"
+#endif
 
 // Macros for the Trace and the Assertion flag
 #ifdef ASSERT
@@ -1050,6 +1053,7 @@ void RangeCheckEliminator::dump_condition_stack(BlockBegin *block) {
 }
 #endif
 
+#ifdef ASSERT
 // Verification or the IR
 RangeCheckEliminator::Verification::Verification(IR *ir) : _used(BlockBegin::number_of_blocks(), BlockBegin::number_of_blocks(), false) {
   this->_ir = ir;
@@ -1099,21 +1103,16 @@ void RangeCheckEliminator::Verification::block_do(BlockBegin *block) {
     BlockList *all_blocks = _ir->linear_scan_order();
     assert(block->number_of_preds() >= 1, "Block must have at least one predecessor");
     assert(!block->is_set(BlockBegin::exception_entry_flag), "Loop header must not be exception handler!");
-    // Sometimes, the backbranch comes from an exception handler. In
-    // this case, loop indexes/loop depths may not appear correct.
-    bool loop_through_xhandler = false;
-    for (int i = 0; i < block->number_of_exception_handlers(); i++) {
-      BlockBegin *xhandler = block->exception_handler_at(i);
-      for (int j = 0; j < block->number_of_preds(); j++) {
-        if (dominates(xhandler, block->pred_at(j)) || xhandler == block->pred_at(j)) {
-          loop_through_xhandler = true;
-        }
-      }
-    }
 
+    bool loop_through_xhandler = false;
     for (int i=0; i<block->number_of_sux(); i++) {
       BlockBegin *sux = block->sux_at(i);
-      assert(sux->loop_depth() != block->loop_depth() || sux->loop_index() == block->loop_index() || loop_through_xhandler, "Loop index has to be same");
+      if (!loop_through_xhandler) {
+        if (sux->loop_depth() == block->loop_depth() && sux->loop_index() != block->loop_index()) {
+          loop_through_xhandler = is_backbranch_from_xhandler(block);
+          assert(loop_through_xhandler, "Loop indices have to be the same if same depths but no backbranch from xhandler");
+        }
+      }
       assert(sux->loop_depth() == block->loop_depth() || sux->loop_index() != block->loop_index(), "Loop index has to be different");
     }
 
@@ -1130,6 +1129,54 @@ void RangeCheckEliminator::Verification::block_do(BlockBegin *block) {
     assert(cur->block() == block, "Block begin has to be set correctly!");
     cur = cur->next();
   }
+}
+
+// Called when a successor of a block has the same loop depth but a different loop index. This can happen if a backbranch comes from
+// an exception handler of a loop head block, for example, when a loop is only executed once on the non-exceptional path but is
+// repeated in case of an exception. In this case, the edge block->sux is not critical and was not split before.
+// Check if there is such a backbranch from an xhandler of 'block'.
+bool RangeCheckEliminator::Verification::is_backbranch_from_xhandler(BlockBegin* block) {
+  for (int i = 0; i < block->number_of_exception_handlers(); i++) {
+    BlockBegin *xhandler = block->exception_handler_at(i);
+    for (int j = 0; j < block->number_of_preds(); j++) {
+      if (dominates(xhandler, block->pred_at(j)) || xhandler == block->pred_at(j)) {
+        return true;
+      }
+    }
+  }
+
+  // In case of nested xhandlers, we need to walk through the loop (and all blocks belonging to exception handlers)
+  // to find an xhandler of 'block'.
+  if (block->number_of_exception_handlers() > 0) {
+    for (int i = 0; i < block->number_of_preds(); i++) {
+      BlockBegin* pred = block->pred_at(i);
+      if (pred->loop_index() == block->loop_index()) {
+        // Only check blocks that belong to the loop
+        // Do a BFS to find an xhandler block of 'block' starting from 'pred'
+        ResourceMark rm;
+        ResourceBitMap visited(BlockBegin::number_of_blocks());
+        BlockBeginList list;
+        list.push(pred);
+        while (!list.is_empty()) {
+          BlockBegin* next = list.pop();
+          if (!visited.at(next->block_id())) {
+            visited.set_bit(next->block_id());
+            for (int j = 0; j < block->number_of_exception_handlers(); j++) {
+               if (next == block->exception_handler_at(j)) {
+                 return true;
+               }
+            }
+            for (int j = 0; j < next->number_of_preds(); j++) {
+               if (next->pred_at(j) != block) {
+                 list.push(next->pred_at(j));
+               }
+            }
+          }
+        }
+      }
+    }
+  }
+  return false;
 }
 
 // Loop header must dominate all loop blocks
@@ -1195,6 +1242,7 @@ bool RangeCheckEliminator::Verification::can_reach(BlockBegin *start, BlockBegin
 
   return false;
 }
+#endif // ASSERT
 
 // Bound
 RangeCheckEliminator::Bound::~Bound() {
