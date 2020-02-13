@@ -60,7 +60,7 @@ CardTable::CardTable(MemRegion whole_heap, bool conc_scan) :
 
   assert(card_size <= 512, "card_size must be less than 512"); // why?
 
-  _covered   = new MemRegion[_max_covered_regions];
+  _covered = new MemRegion[_max_covered_regions];
   if (_covered == NULL) {
     vm_exit_during_initialization("Could not allocate card table covered region set.");
   }

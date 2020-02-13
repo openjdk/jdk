@@ -579,11 +579,7 @@ CardTableRS::CardTableRS(MemRegion whole_heap, bool scanned_concurrently) :
   // max_gens is really GenCollectedHeap::heap()->gen_policy()->number_of_generations()
   // (which is always 2, young & old), but GenCollectedHeap has not been initialized yet.
   uint max_gens = 2;
-  _last_cur_val_in_gen = NEW_C_HEAP_ARRAY3(CardValue, max_gens + 1,
-                         mtGC, CURRENT_PC, AllocFailStrategy::RETURN_NULL);
-  if (_last_cur_val_in_gen == NULL) {
-    vm_exit_during_initialization("Could not create last_cur_val_in_gen array.");
-  }
+  _last_cur_val_in_gen = NEW_C_HEAP_ARRAY(CardValue, max_gens + 1, mtGC);
   for (uint i = 0; i < max_gens + 1; i++) {
     _last_cur_val_in_gen[i] = clean_card_val();
   }

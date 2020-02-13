@@ -60,8 +60,7 @@ void ASPSYoungGen::initialize_virtual_space(ReservedSpace rs,
   assert(_init_gen_size != 0, "Should have a finite size");
   _virtual_space = new PSVirtualSpaceHighToLow(rs, alignment);
   if (!_virtual_space->expand_by(_init_gen_size)) {
-    vm_exit_during_initialization("Could not reserve enough space for "
-                                  "object heap");
+    vm_exit_during_initialization("Could not reserve enough space for object heap");
   }
 }
 

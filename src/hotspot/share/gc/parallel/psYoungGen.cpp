@@ -88,10 +88,6 @@ void PSYoungGen::initialize_work() {
   _from_space = new MutableSpace(virtual_space()->alignment());
   _to_space   = new MutableSpace(virtual_space()->alignment());
 
-  if (_eden_space == NULL || _from_space == NULL || _to_space == NULL) {
-    vm_exit_during_initialization("Could not allocate a young gen space");
-  }
-
   // Generation Counters - generation 0, 3 subspaces
   _gen_counters = new PSGenerationCounters("new", 0, 3, _min_gen_size,
                                            _max_gen_size, _virtual_space);

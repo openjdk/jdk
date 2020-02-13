@@ -53,9 +53,6 @@ CardGeneration::CardGeneration(ReservedSpace rs,
                                     heap_word_size(initial_byte_size));
   MemRegion committed_mr(start, heap_word_size(initial_byte_size));
   _rs->resize_covered_region(committed_mr);
-  if (_bts == NULL) {
-    vm_exit_during_initialization("Could not allocate a BlockOffsetArray");
-  }
 
   // Verify that the start and end of this generation is the start of a card.
   // If this wasn't true, a single card could span more than on generation,

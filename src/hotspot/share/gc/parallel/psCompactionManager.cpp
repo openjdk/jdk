@@ -78,16 +78,12 @@ void ParCompactionManager::initialize(ParMarkBitMap* mbm) {
   _manager_array = NEW_C_HEAP_ARRAY(ParCompactionManager*, parallel_gc_threads+1, mtGC);
 
   _oop_task_queues = new OopTaskQueueSet(parallel_gc_threads);
-  guarantee(_oop_task_queues != NULL, "Could not allocate oop task queues");
   _objarray_task_queues = new ObjArrayTaskQueueSet(parallel_gc_threads);
-  guarantee(_objarray_task_queues != NULL, "Could not allocate objarray task queues");
   _region_task_queues = new RegionTaskQueueSet(parallel_gc_threads);
-  guarantee(_region_task_queues != NULL, "Could not allocate region task queues");
 
   // Create and register the ParCompactionManager(s) for the worker threads.
   for(uint i=0; i<parallel_gc_threads; i++) {
     _manager_array[i] = new ParCompactionManager();
-    guarantee(_manager_array[i] != NULL, "Could not create ParCompactionManager");
     oop_task_queues()->register_queue(i, _manager_array[i]->marking_stack());
     _objarray_task_queues->register_queue(i, &_manager_array[i]->_objarray_stack);
     region_task_queues()->register_queue(i, _manager_array[i]->region_stack());
@@ -96,8 +92,6 @@ void ParCompactionManager::initialize(ParMarkBitMap* mbm) {
   // The VMThread gets its own ParCompactionManager, which is not available
   // for work stealing.
   _manager_array[parallel_gc_threads] = new ParCompactionManager();
-  guarantee(_manager_array[parallel_gc_threads] != NULL,
-    "Could not create ParCompactionManager");
   assert(ParallelScavengeHeap::heap()->workers().total_workers() != 0,
     "Not initialized?");
 
