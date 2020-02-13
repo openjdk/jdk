@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,8 +68,8 @@ extern "C" {
 
 #if USE_DAUDIO == TRUE
 
-/* half a minute to wait before device list is re-read */
-#define WAIT_BETWEEN_CACHE_REFRESH_MILLIS 30000
+/* 3 seconds to wait before device list is re-read */
+#define WAIT_BETWEEN_CACHE_REFRESH_MILLIS 3000
 
 /* maximum number of supported devices, playback+capture */
 #define MAX_DS_DEVICES 60
