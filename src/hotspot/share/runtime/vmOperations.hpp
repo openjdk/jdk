@@ -90,7 +90,6 @@
   template(ChangeBreakpoints)                     \
   template(GetOrSetLocal)                         \
   template(GetCurrentLocation)                    \
-  template(EnterInterpOnlyMode)                   \
   template(ChangeSingleStep)                      \
   template(HeapWalkOperation)                     \
   template(HeapIterateOperation)                  \

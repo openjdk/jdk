@@ -367,9 +367,6 @@ public:
     _depth = depth;
     _result = JVMTI_ERROR_NONE;
   }
-  // Nested operation must be allowed for the VM_EnterInterpOnlyMode that is
-  // called from the JvmtiEventControllerPrivate::recompute_thread_enabled.
-  bool allow_nested_vm_operations() const { return true; }
   VMOp_Type type() const { return VMOp_SetFramePop; }
   jvmtiError result() { return _result; }
   void doit();
