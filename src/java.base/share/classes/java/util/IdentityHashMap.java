@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -115,16 +115,18 @@ import jdk.internal.access.SharedSecrets;
  * exception for its correctness: <i>fail-fast iterators should be used only
  * to detect bugs.</i>
  *
- * <p>Implementation note: This is a simple <i>linear-probe</i> hash table,
- * as described for example in texts by Sedgewick and Knuth.  The array
- * alternates holding keys and values.  (This has better locality for large
- * tables than does using separate arrays.)  For many JRE implementations
- * and operation mixes, this class will yield better performance than
- * {@link HashMap} (which uses <i>chaining</i> rather than linear-probing).
- *
  * <p>This class is a member of the
  * <a href="{@docRoot}/java.base/java/util/package-summary.html#CollectionsFramework">
  * Java Collections Framework</a>.
+ *
+ * @implNote
+ * <p>This is a simple <i>linear-probe</i> hash table,
+ * as described for example in texts by Sedgewick and Knuth.  The array
+ * contains alternating keys and values, with keys at even indexes and values
+ * at odd indexes. (This arrangement has better locality for large
+ * tables than does using separate arrays.)  For many Java implementations
+ * and operation mixes, this class will yield better performance than
+ * {@link HashMap}, which uses <i>chaining</i> rather than linear-probing.
  *
  * @see     System#identityHashCode(Object)
  * @see     Object#hashCode()
@@ -293,7 +295,7 @@ public class IdentityHashMap<K,V>
      */
     private static int hash(Object x, int length) {
         int h = System.identityHashCode(x);
-        // Multiply by -127, and left-shift to use least bit as part of hash
+        // Multiply by -254 to use the hash LSB and to ensure index is even
         return ((h << 1) - (h << 8)) & (length - 1);
     }
 
