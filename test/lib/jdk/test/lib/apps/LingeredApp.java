@@ -357,13 +357,15 @@ public class LingeredApp {
     }
 
     private void finishApp() {
-        OutputBuffer output = getOutput();
-        String msg =
-            " LingeredApp stdout: [" + output.getStdout() + "];\n" +
-            " LingeredApp stderr: [" + output.getStderr() + "]\n" +
-            " LingeredApp exitValue = " + appProcess.exitValue();
+        if (appProcess != null) {
+            OutputBuffer output = getOutput();
+            String msg =
+                    " LingeredApp stdout: [" + output.getStdout() + "];\n" +
+                    " LingeredApp stderr: [" + output.getStderr() + "]\n" +
+                    " LingeredApp exitValue = " + appProcess.exitValue();
 
-        System.err.println(msg);
+            System.err.println(msg);
+        }
     }
 
     /**
@@ -377,12 +379,14 @@ public class LingeredApp {
         // an exception before the LA actually starts
         if (appProcess != null) {
             waitAppTerminate();
+
+            finishApp();
+
             int exitcode = appProcess.exitValue();
             if (exitcode != 0) {
                 throw new IOException("LingeredApp terminated with non-zero exit code " + exitcode);
             }
         }
-        finishApp();
     }
 
     /**
