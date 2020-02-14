@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,6 +61,46 @@ public interface TypeMirror extends javax.lang.model.AnnotatedConstruct {
 
     /**
      * Returns the {@code kind} of this type.
+     *
+     * <ul>
+     *
+     * <li> The kind of a {@linkplain PrimitiveType primitive type} is
+     * one of the kinds for which {@link TypeKind#isPrimitive} returns
+     * {@code true}.
+     *
+     * <li> The kind of a {@linkplain NullType null type} is {@link
+     * TypeKind#NULL NULL}.
+     *
+     * <li> The kind of an {@linkplain ArrayType array type} is {@link
+     * TypeKind#ARRAY ARRAY}.
+     *
+     * <li> The kind of a {@linkplain DeclaredType declared type} is
+     * {@link TypeKind#DECLARED DECLARED}.
+     *
+     * <li> The kind of an {@linkplain ErrorType error type} is {@link
+     * TypeKind#ERROR ERROR}.
+     *
+     * <li> The kind of a {@linkplain TypeVariable type variable} is
+     * {@link TypeKind#TYPEVAR TYPEVAR}.
+     *
+     * <li> The kind of a {@linkplain WildcardType wildcard type} is
+     * {@link TypeKind#WILDCARD WILDCARD}.
+     *
+     * <li> The kind of an {@linkplain ExecutableType executable type}
+     * is {@link TypeKind#EXECUTABLE EXECUTABLE}.
+     *
+     * <li> The kind of a {@linkplain NoType pseudo-type} is one
+     * of {@link TypeKind#VOID VOID}, {@link TypeKind#PACKAGE
+     * PACKAGE}, {@link TypeKind#MODULE MODULE}, or {@link
+     * TypeKind#NONE NONE}.
+     *
+     * <li> The kind of a {@linkplain UnionType union type} is {@link
+     * TypeKind#UNION UNION}.
+     *
+     * <li> The kind of an {@linkplain IntersectionType intersection
+     * type} is {@link TypeKind#INTERSECTION INTERSECTION}.
+     *
+     * </ul>
      *
      * @return the kind of this type
      */
