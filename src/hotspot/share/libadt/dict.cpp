@@ -35,9 +35,13 @@
 //------------------------------data-----------------------------------------
 // String hash tables
 #define MAXID 20
-static uint8_t initflag = 0;       // True after 1st initialization
 static const char shft[MAXID] = {1,2,3,4,5,6,7,1,2,3,4,5,6,7,1,2,3,4,5,6};
-static short xsum[MAXID];
+// Precomputed table of null character hashes
+// xsum[0] = (1 << shft[0]) + 1;
+// for(int i = 1; i < MAXID; i++) {
+//   xsum[i] = (1 << shft[i]) + 1 + xsum[i - 1];
+// }
+static const short xsum[MAXID] = {3,8,17,34,67,132,261,264,269,278,295,328,393,522,525,530,539,556,589,654};
 
 //------------------------------bucket---------------------------------------
 class bucket : public ResourceObj {
@@ -57,16 +61,6 @@ public:
 // doubling in size costs no more than a constant factor in speed.
 Dict::Dict(CmpKey initcmp, Hash inithash) : _arena(Thread::current()->resource_area()),
   _hash(inithash), _cmp(initcmp) {
-  int i;
-
-  // Precompute table of null character hashes
-  if( !initflag ) {             // Not initializated yet?
-    xsum[0] = (1<<shft[0])+1;   // Initialize
-    for(i=1; i<MAXID; i++) {
-      xsum[i] = (1<<shft[i])+1+xsum[i-1];
-    }
-    initflag = 1;               // Never again
-  }
 
   _size = 16;                   // Size is a power of 2
   _cnt = 0;                     // Dictionary is empty
@@ -76,19 +70,9 @@ Dict::Dict(CmpKey initcmp, Hash inithash) : _arena(Thread::current()->resource_a
 
 Dict::Dict(CmpKey initcmp, Hash inithash, Arena *arena, int size)
 : _arena(arena), _hash(inithash), _cmp(initcmp) {
-  int i;
+  // Size is a power of 2
+  _size = MAX2(16, round_up_power_of_2(size));
 
-  // Precompute table of null character hashes
-  if( !initflag ) {             // Not initializated yet?
-    xsum[0] = (1<<shft[0])+1;   // Initialize
-    for(i=1; i<MAXID; i++) {
-      xsum[i] = (1<<shft[i])+1+xsum[i-1];
-    }
-    initflag = 1;               // Never again
-  }
-
-  i = MAX2(16, round_up_power_of_2(size));
-  _size = i;                    // Size is a power of 2
   _cnt = 0;                     // Dictionary is empty
   _bin = (bucket*)_arena->Amalloc_4(sizeof(bucket)*_size);
   memset((void*)_bin,0,sizeof(bucket)*_size);
@@ -310,10 +294,10 @@ int hashstr(const void *t) {
   const char *s = (const char *)t;
 
   while( ((c = *s++) != '\0') && (k < MAXID-1) ) { // Get characters till null or MAXID-1
-    c = (c<<1)+1;               // Characters are always odd!
-    sum += c + (c<<shft[k++]);  // Universal hash function
+    c = (c << 1) + 1;             // Characters are always odd!
+    sum += c + (c << shft[k++]);  // Universal hash function
   }
-  return (int)((sum+xsum[k]) >> 1); // Hash key, un-modulo'd table size
+  return (int)((sum + xsum[k]) >> 1); // Hash key, un-modulo'd table size
 }
 
 //------------------------------hashptr--------------------------------------
