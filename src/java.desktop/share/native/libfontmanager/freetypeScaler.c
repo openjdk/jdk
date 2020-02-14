@@ -836,8 +836,9 @@ static jlong
         jlong pScalerContext, jlong pScaler, jint glyphCode,
         jboolean renderImage) {
 
+    static int PADBYTES = 3;
     int error, imageSize;
-    UInt16 width, height;
+    UInt16 width, height, rowBytes;
     GlyphInfo *glyphInfo;
     int renderFlags = FT_LOAD_DEFAULT, target;
     FT_GlyphSlot ftglyph;
@@ -923,6 +924,10 @@ static jlong
 
     if (renderImage) {
         width  = (UInt16) ftglyph->bitmap.width;
+        rowBytes = width;
+        if (ftglyph->bitmap.pixel_mode == FT_PIXEL_MODE_LCD) {
+           rowBytes = PADBYTES + width + PADBYTES;
+        }
         height = (UInt16) ftglyph->bitmap.rows;
             if (width > MAX_GLYPH_DIM || height > MAX_GLYPH_DIM) {
               glyphInfo = getNullGlyphImage();
@@ -930,19 +935,20 @@ static jlong
             }
      } else {
         width = 0;
+        rowBytes = 0;
         height = 0;
      }
 
 
-    imageSize = width*height;
-    glyphInfo = (GlyphInfo*) malloc(sizeof(GlyphInfo) + imageSize);
+    imageSize = rowBytes*height;
+    glyphInfo = (GlyphInfo*) calloc(sizeof(GlyphInfo) + imageSize, 1);
     if (glyphInfo == NULL) {
         glyphInfo = getNullGlyphImage();
         return ptr_to_jlong(glyphInfo);
     }
     glyphInfo->cellInfo  = NULL;
     glyphInfo->managed   = UNMANAGED_GLYPH;
-    glyphInfo->rowBytes  = width;
+    glyphInfo->rowBytes  = rowBytes;
     glyphInfo->width     = width;
     glyphInfo->height    = height;
 
@@ -950,8 +956,10 @@ static jlong
         glyphInfo->topLeftX  = (float)  ftglyph->bitmap_left;
         glyphInfo->topLeftY  = (float) -ftglyph->bitmap_top;
 
-        if (ftglyph->bitmap.pixel_mode ==  FT_PIXEL_MODE_LCD) {
+        if (ftglyph->bitmap.pixel_mode ==  FT_PIXEL_MODE_LCD && width > 0) {
             glyphInfo->width = width/3;
+            glyphInfo->topLeftX -= 1;
+            glyphInfo->width += 1;
         } else if (ftglyph->bitmap.pixel_mode ==  FT_PIXEL_MODE_LCD_V) {
             glyphInfo->height = glyphInfo->height/3;
         }
@@ -1008,8 +1016,8 @@ static jlong
             /* 3 bytes per pixel to 3 bytes per pixel */
             CopyFTSubpixelToSubpixel(ftglyph->bitmap.buffer,
                                      ftglyph->bitmap.pitch,
-                                     (void *) glyphInfo->image,
-                                     width,
+                                     (void *) (glyphInfo->image+PADBYTES),
+                                     rowBytes,
                                      width,
                                      height);
         } else if (ftglyph->bitmap.pixel_mode ==  FT_PIXEL_MODE_LCD_V) {
