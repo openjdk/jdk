@@ -627,6 +627,8 @@ java/net/DatagramSocket/SendDatagramToBadAddress.java           7143960 macosx-a
 
 java/net/ServerSocket/AcceptInheritHandle.java                  8211854 aix-ppc64
 
+java/net/httpclient/HandshakeFailureTest.java                   8238990 windows-all
+
 ############################################################################
 
 # jdk_nio
