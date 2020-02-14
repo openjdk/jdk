@@ -179,9 +179,7 @@ class StubGenerator: public StubCodeGenerator {
 
     __ mov(Rtemp, SP);
     __ push(RegisterSet(FP) | RegisterSet(LR));
-#ifndef __SOFTFP__
-    __ fstmdbd(SP, FloatRegisterSet(D8, 8), writeback);
-#endif
+    __ fpush_hardfp(FloatRegisterSet(D8, 8));
     __ stmdb(SP, RegisterSet(R0, R2) | RegisterSet(R4, R6) | RegisterSet(R8, R10) | altFP_7_11, writeback);
     __ mov(Rmethod, R3);
     __ ldmia(Rtemp, RegisterSet(R1, R3) | Rthread); // stacked arguments
@@ -243,9 +241,7 @@ class StubGenerator: public StubCodeGenerator {
 #endif
 
     __ pop(RegisterSet(R4, R6) | RegisterSet(R8, R10) | altFP_7_11);
-#ifndef __SOFTFP__
-    __ fldmiad(SP, FloatRegisterSet(D8, 8), writeback);
-#endif
+    __ fpop_hardfp(FloatRegisterSet(D8, 8));
     __ pop(RegisterSet(FP) | RegisterSet(PC));
 
     return start;

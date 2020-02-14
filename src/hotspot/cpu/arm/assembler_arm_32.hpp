@@ -963,8 +963,8 @@ class Assembler : public AbstractAssembler  {
 
   F(fldmia, 1, 1)    F(fldmfd, 1, 1)
   F(fldmdb, 1, 2)    F(fldmea, 1, 2)
-  F(fstmia, 0, 1)    F(fstmfd, 0, 1)
-  F(fstmdb, 0, 2)    F(fstmea, 0, 2)
+  F(fstmia, 0, 1)    F(fstmea, 0, 1)
+  F(fstmdb, 0, 2)    F(fstmfd, 0, 2)
 #undef F
 
   // fconst{s,d} encoding:
