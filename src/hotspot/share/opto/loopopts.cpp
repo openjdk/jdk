@@ -40,6 +40,7 @@
 #include "opto/opaquenode.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/subnode.hpp"
+#include "opto/subtypenode.hpp"
 #include "utilities/macros.hpp"
 
 //=============================================================================
@@ -656,6 +657,9 @@ Node *PhaseIdealLoop::conditional_move( Node *region ) {
   }
   assert(bol->Opcode() == Op_Bool, "Unexpected node");
   int cmp_op = bol->in(1)->Opcode();
+  if (cmp_op == Op_SubTypeCheck) { // SubTypeCheck expansion expects an IfNode
+    return NULL;
+  }
   // It is expensive to generate flags from a float compare.
   // Avoid duplicated float compare.
   if (phis > 1 && (cmp_op == Op_CmpF || cmp_op == Op_CmpD)) return NULL;

@@ -30,6 +30,7 @@
 class  AllocateNode;
 class  AllocateArrayNode;
 class  CallNode;
+class  SubTypeCheckNode;
 class  Node;
 class  PhaseIterGVN;
 
@@ -182,6 +183,8 @@ private:
                                     Node* copy_length, bool dest_uninitialized);
 
   void expand_arraycopy_node(ArrayCopyNode *ac);
+
+  void expand_subtypecheck_node(SubTypeCheckNode *check);
 
   int replace_input(Node *use, Node *oldref, Node *newref);
   void migrate_outs(Node *old, Node *target);

@@ -146,6 +146,7 @@ class StartNode;
 class State;
 class StoreNode;
 class SubNode;
+class SubTypeCheckNode;
 class Type;
 class TypeNode;
 class UnlockNode;
@@ -706,6 +707,7 @@ public:
       DEFINE_CLASS_ID(Cmp,   Sub, 0)
         DEFINE_CLASS_ID(FastLock,   Cmp, 0)
         DEFINE_CLASS_ID(FastUnlock, Cmp, 1)
+        DEFINE_CLASS_ID(SubTypeCheck,Cmp, 2)
 
     DEFINE_CLASS_ID(MergeMem, Node, 7)
     DEFINE_CLASS_ID(Bool,     Node, 8)
@@ -875,6 +877,7 @@ public:
   DEFINE_CLASS_QUERY(Start)
   DEFINE_CLASS_QUERY(Store)
   DEFINE_CLASS_QUERY(Sub)
+  DEFINE_CLASS_QUERY(SubTypeCheck)
   DEFINE_CLASS_QUERY(Type)
   DEFINE_CLASS_QUERY(Vector)
   DEFINE_CLASS_QUERY(LoadVector)

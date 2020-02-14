@@ -35,6 +35,7 @@
 #include "opto/compile.hpp"
 #include "opto/convertnode.hpp"
 #include "opto/graphKit.hpp"
+#include "opto/intrinsicnode.hpp"
 #include "opto/locknode.hpp"
 #include "opto/loopnode.hpp"
 #include "opto/macro.hpp"
@@ -46,6 +47,7 @@
 #include "opto/rootnode.hpp"
 #include "opto/runtime.hpp"
 #include "opto/subnode.hpp"
+#include "opto/subtypenode.hpp"
 #include "opto/type.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/macros.hpp"
@@ -2533,6 +2535,43 @@ void PhaseMacroExpand::expand_unlock_node(UnlockNode *unlock) {
   _igvn.replace_node(_memproj_fallthrough, mem_phi);
 }
 
+void PhaseMacroExpand::expand_subtypecheck_node(SubTypeCheckNode *check) {
+  assert(check->in(SubTypeCheckNode::Control) == NULL, "should be pinned");
+  Node* bol = check->unique_out();
+  Node* obj_or_subklass = check->in(SubTypeCheckNode::ObjOrSubKlass);
+  Node* superklass = check->in(SubTypeCheckNode::SuperKlass);
+  assert(bol->is_Bool() && bol->as_Bool()->_test._test == BoolTest::ne, "unexpected bool node");
+
+  for (DUIterator_Last imin, i = bol->last_outs(imin); i >= imin; --i) {
+    Node* iff = bol->last_out(i);
+    assert(iff->is_If(), "where's the if?");
+
+    if (iff->in(0)->is_top()) {
+      _igvn.replace_input_of(iff, 1, C->top());
+      continue;
+    }
+
+    Node* iftrue = iff->as_If()->proj_out(1);
+    Node* iffalse = iff->as_If()->proj_out(0);
+    Node* ctrl = iff->in(0);
+
+    Node* subklass = NULL;
+    if (_igvn.type(obj_or_subklass)->isa_klassptr()) {
+      subklass = obj_or_subklass;
+    } else {
+      Node* k_adr = basic_plus_adr(obj_or_subklass, oopDesc::klass_offset_in_bytes());
+      subklass = _igvn.transform(LoadKlassNode::make(_igvn, NULL, C->immutable_memory(), k_adr, TypeInstPtr::KLASS));
+    }
+
+    Node* not_subtype_ctrl = Phase::gen_subtype_check(subklass, superklass, &ctrl, NULL, _igvn);
+
+    _igvn.replace_input_of(iff, 0, C->top());
+    _igvn.replace_node(iftrue, not_subtype_ctrl);
+    _igvn.replace_node(iffalse, ctrl);
+  }
+  _igvn.replace_node(check, C->top());
+}
+
 //---------------------------eliminate_macro_nodes----------------------
 // Eliminate scalar replaced allocations and associated locks.
 void PhaseMacroExpand::eliminate_macro_nodes() {
@@ -2588,6 +2627,8 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
       case Node::Class_ArrayCopy:
         break;
       case Node::Class_OuterStripMinedLoop:
+        break;
+      case Node::Class_SubTypeCheck:
         break;
       default:
         assert(n->Opcode() == Op_LoopLimit ||
@@ -2693,6 +2734,10 @@ bool PhaseMacroExpand::expand_macro_nodes() {
       break;
     case Node::Class_ArrayCopy:
       expand_arraycopy_node(n->as_ArrayCopy());
+      assert(C->macro_count() == (old_macro_count - 1), "expansion must have deleted one node from macro list");
+      break;
+    case Node::Class_SubTypeCheck:
+      expand_subtypecheck_node(n->as_SubTypeCheck());
       assert(C->macro_count() == (old_macro_count - 1), "expansion must have deleted one node from macro list");
       break;
     }

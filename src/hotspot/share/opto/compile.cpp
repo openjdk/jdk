@@ -4239,6 +4239,9 @@ int Compile::static_subtype_check(ciKlass* superk, ciKlass* subk) {
         // Add a dependency if there is a chance of a later subclass.
         dependencies()->assert_leaf_type(ik);
       }
+      if (ik->is_abstract()) {
+        return SSC_always_false;
+      }
       return SSC_easy_test;     // (3) caller can do a simple ptr comparison
     }
   } else {
