@@ -34,6 +34,7 @@ import jdk.vm.ci.runtime.JVMCICompilerFactory;
 import jdk.vm.ci.runtime.JVMCIRuntime;
 import jdk.vm.ci.services.JVMCIPermission;
 import jdk.vm.ci.services.JVMCIServiceLocator;
+import jdk.vm.ci.services.Services;
 
 import static jdk.vm.ci.services.Services.IS_IN_NATIVE_IMAGE;
 
@@ -96,6 +97,11 @@ final class HotSpotJVMCICompilerConfig {
                         }
                     }
                     if (factory == null) {
+                        if (Services.IS_IN_NATIVE_IMAGE) {
+                            throw new JVMCIError("JVMCI compiler '%s' not found in JVMCI native library.%n" +
+                                            "Use -XX:-UseJVMCINativeLibrary when specifying a JVMCI compiler available on a class path with %s.",
+                                            compilerName, Option.Compiler.getPropertyName());
+                        }
                         throw new JVMCIError("JVMCI compiler '%s' not found", compilerName);
                     }
                 }
