@@ -685,7 +685,7 @@ public class CLDRConverter {
     }
 
     private static Map<String, Object> extractZoneNames(Map<String, Object> map, String id) {
-        Map<String, Object> names = new HashMap<>();
+        Map<String, Object> names = new TreeMap<>(KeyComparator.INSTANCE);
 
         getAvailableZoneIds().stream().forEach(tzid -> {
             // If the tzid is deprecated, get the data for the replacement id
