@@ -94,10 +94,10 @@ private:
   LIR_Opr _result;
   LIR_Opr _tmp1;
   LIR_Opr _tmp2;
-
+  bool _is_native;
 public:
-  ShenandoahLoadReferenceBarrierStub(LIR_Opr obj, LIR_Opr addr, LIR_Opr result, LIR_Opr tmp1, LIR_Opr tmp2) :
-    _obj(obj), _addr(addr), _result(result), _tmp1(tmp1), _tmp2(tmp2)
+  ShenandoahLoadReferenceBarrierStub(LIR_Opr obj, LIR_Opr addr, LIR_Opr result, LIR_Opr tmp1, LIR_Opr tmp2, bool is_native) :
+          _obj(obj), _addr(addr), _result(result), _tmp1(tmp1), _tmp2(tmp2), _is_native(is_native)
   {
     assert(_obj->is_register(), "should be register");
     assert(_addr->is_register(), "should be register");
@@ -111,6 +111,7 @@ public:
   LIR_Opr result() const { return _result; }
   LIR_Opr tmp1() const { return _tmp1; }
   LIR_Opr tmp2() const { return _tmp2; }
+  bool is_native() const { return _is_native; }
 
   virtual void emit_code(LIR_Assembler* e);
   virtual void visit(LIR_OpVisitState* visitor) {
@@ -190,13 +191,14 @@ class ShenandoahBarrierSetC1 : public BarrierSetC1 {
 private:
   CodeBlob* _pre_barrier_c1_runtime_code_blob;
   CodeBlob* _load_reference_barrier_rt_code_blob;
+  CodeBlob* _load_reference_barrier_native_rt_code_blob;
 
   void pre_barrier(LIRGenerator* gen, CodeEmitInfo* info, DecoratorSet decorators, LIR_Opr addr_opr, LIR_Opr pre_val);
 
-  LIR_Opr load_reference_barrier(LIRGenerator* gen, LIR_Opr obj, LIR_Opr addr);
+  LIR_Opr load_reference_barrier(LIRGenerator* gen, LIR_Opr obj, LIR_Opr addr, bool is_native);
   LIR_Opr storeval_barrier(LIRGenerator* gen, LIR_Opr obj, CodeEmitInfo* info, DecoratorSet decorators);
 
-  LIR_Opr load_reference_barrier_impl(LIRGenerator* gen, LIR_Opr obj, LIR_Opr addr);
+  LIR_Opr load_reference_barrier_impl(LIRGenerator* gen, LIR_Opr obj, LIR_Opr addr, bool is_native);
 
   LIR_Opr ensure_in_register(LIRGenerator* gen, LIR_Opr obj, BasicType type);
 
@@ -213,6 +215,10 @@ public:
     return _load_reference_barrier_rt_code_blob;
   }
 
+  CodeBlob* load_reference_barrier_native_rt_code_blob() {
+    assert(_load_reference_barrier_native_rt_code_blob != NULL, "");
+    return _load_reference_barrier_native_rt_code_blob;
+  }
 protected:
 
   virtual void store_at_resolved(LIRAccess& access, LIR_Opr value);
@@ -226,7 +232,6 @@ protected:
 public:
 
   virtual void generate_c1_runtime_stubs(BufferBlob* buffer_blob);
-  virtual const char* rtcall_name_for_address(address entry);
 };
 
 #endif // SHARE_GC_SHENANDOAH_C1_SHENANDOAHBARRIERSETC1_HPP
