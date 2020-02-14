@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -197,10 +197,14 @@ public class ClhsdbLauncher {
         throws Exception {
 
         if (!Platform.shouldSAAttach()) {
-            if (Platform.isOSX() && SATestUtils.canAddPrivileges()) {
-                needPrivileges = true;
+            if (Platform.isOSX()) {
+                if (Platform.isSignedOSX()) {
+                    throw new SkippedException("SA attach not expected to work. JDK is signed.");
+                } else if (SATestUtils.canAddPrivileges()) {
+                    needPrivileges = true;
+                }
             }
-            else {
+            if (!needPrivileges)  {
                // Skip the test if we don't have enough permissions to attach
                // and cannot add privileges.
                throw new SkippedException(
