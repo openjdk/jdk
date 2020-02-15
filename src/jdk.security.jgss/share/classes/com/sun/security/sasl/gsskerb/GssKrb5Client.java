@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 
 package com.sun.security.sasl.gsskerb;
 
-import java.io.IOException;
 import java.util.Map;
 import java.util.logging.Level;
 import javax.security.sasl.*;
@@ -85,7 +84,6 @@ final class GssKrb5Client extends GssKrb5Base implements SaslClient {
     private static final String MY_CLASS_NAME = GssKrb5Client.class.getName();
 
     private boolean finalHandshake = false;
-    private boolean mutual = false;       // default false
     private byte[] authzID;
 
     /**
@@ -132,7 +130,17 @@ final class GssKrb5Client extends GssKrb5Base implements SaslClient {
                 secCtx.requestCredDeleg(true);
             }
 
-            // Parse properties  to set desired context options
+            // mutual is by default true if there is a security layer
+            boolean mutual;
+            if ((allQop & INTEGRITY_ONLY_PROTECTION) != 0
+                    || (allQop & PRIVACY_PROTECTION) != 0) {
+                mutual = true;
+                secCtx.requestSequenceDet(true);
+            } else {
+                mutual = false;
+            }
+
+            // User can override default mutual flag
             if (props != null) {
                 // Mutual authentication
                 String prop = (String)props.get(Sasl.SERVER_AUTH);
