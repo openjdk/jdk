@@ -88,18 +88,24 @@ int                       InvocationCounter::InterpreterBackwardBranchLimit;
 
 void invocationCounter_init() {
 #ifdef CC_INTERP
-  InterpreterInvocationLimit = CompileThreshold << number_of_noncount_bits;
+  InvocationCounter::InterpreterInvocationLimit =
+    CompileThreshold << InvocationCounter::count_shift;
 
   // When methodData is collected, the backward branch limit is compared against a
   // methodData counter, rather than an InvocationCounter.  In the former case, we
   // don't need the shift by number_of_noncount_bits, but we do need to adjust
   // the factor by which we scale the threshold.
   if (ProfileInterpreter) {
-    InterpreterBackwardBranchLimit = (int)((int64_t)CompileThreshold * (OnStackReplacePercentage - InterpreterProfilePercentage) / 100);
+    InvocationCounter::InterpreterBackwardBranchLimit =
+      (int)((int64_t)CompileThreshold
+            * (OnStackReplacePercentage - InterpreterProfilePercentage) / 100);
   } else {
-    InterpreterBackwardBranchLimit = (int)(((int64_t)CompileThreshold * OnStackReplacePercentage / 100) << number_of_noncount_bits);
+    InvocationCounter::InterpreterBackwardBranchLimit =
+      (int)(((int64_t)CompileThreshold * OnStackReplacePercentage / 100)
+            << InvocationCounter::count_shift);
   }
 
-  assert(0 <= InterpreterBackwardBranchLimit, "OSR threshold should be non-negative");
+  assert(0 <= InvocationCounter::InterpreterBackwardBranchLimit,
+         "OSR threshold should be non-negative");
 #endif
 }
