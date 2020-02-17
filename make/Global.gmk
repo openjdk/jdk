@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -117,13 +117,14 @@ print-configurations:
         # We need a dummy rule otherwise make will complain
 	@true
 
-# This is not really a "help" target, but it is a global target, and those are
-# all contained in this file.
-run-test-prebuilt:
+test-prebuilt:
 	@( cd $(topdir) && \
 	    $(MAKE) --no-print-directory -r -R -I make/common/ -f make/RunTestsPrebuilt.gmk \
-	    run-test-prebuilt CUSTOM_MAKE_DIR=$(CUSTOM_MAKE_DIR) TEST="$(TEST)" )
+	    test-prebuilt CUSTOM_MAKE_DIR=$(CUSTOM_MAKE_DIR) TEST="$(TEST)" )
 
-ALL_GLOBAL_TARGETS := help print-configurations run-test-prebuilt
+# Alias for backwards compatibility
+run-test-prebuilt: test-prebuilt
+
+ALL_GLOBAL_TARGETS := help print-configurations test-prebuilt run-test-prebuilt
 
 .PHONY: $(ALL_GLOBAL_TARGETS)
