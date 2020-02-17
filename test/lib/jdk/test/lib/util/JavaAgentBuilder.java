@@ -73,6 +73,8 @@ public class JavaAgentBuilder {
         Manifest mf = new Manifest();
         Attributes attrs = mf.getMainAttributes();
         attrs.put(Attributes.Name.MANIFEST_VERSION, "1.0");
+        attrs.putValue("Can-Redefine-Classes", "true");
+        attrs.putValue("Can-Retransform-Classes", "true");
         attrs.putValue("Premain-Class", agentClass);
         attrs.putValue("Agent-Class", agentClass);
 

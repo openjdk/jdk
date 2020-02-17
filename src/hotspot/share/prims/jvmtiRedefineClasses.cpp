@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@
 #include "compiler/compileBroker.hpp"
 #include "interpreter/oopMapCache.hpp"
 #include "interpreter/rewriter.hpp"
+#include "jfr/jfrEvents.hpp"
 #include "logging/logStream.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/metaspaceShared.hpp"
@@ -51,6 +52,7 @@
 #include "prims/jvmtiThreadState.inline.hpp"
 #include "prims/resolvedMethodTable.hpp"
 #include "prims/methodComparator.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
@@ -70,7 +72,7 @@ int       VM_RedefineClasses::_deleted_methods_length  = 0;
 int       VM_RedefineClasses::_added_methods_length    = 0;
 bool      VM_RedefineClasses::_has_redefined_Object = false;
 bool      VM_RedefineClasses::_has_null_class_loader = false;
-
+u8        VM_RedefineClasses::_id_counter = 0;
 
 VM_RedefineClasses::VM_RedefineClasses(jint class_count,
                                        const jvmtiClassDefinition *class_defs,
@@ -83,6 +85,7 @@ VM_RedefineClasses::VM_RedefineClasses(jint class_count,
   _the_class = NULL;
   _has_redefined_Object = false;
   _has_null_class_loader = false;
+  _id = next_id();
 }
 
 static inline InstanceKlass* get_ik(jclass def) {
@@ -4294,6 +4297,15 @@ void VM_RedefineClasses::redefine_single_class(jclass the_jclass,
   }
 
   increment_class_counter((InstanceKlass *)the_class, THREAD);
+
+  if (EventClassRedefinition::is_enabled()) {
+    EventClassRedefinition event;
+    event.set_classModificationCount(java_lang_Class::classRedefinedCount(the_class->java_mirror()));
+    event.set_redefinedClass(the_class);
+    event.set_redefinitionId(_id);
+    event.commit();
+  }
+
   {
     ResourceMark rm(THREAD);
     // increment the classRedefinedCount field in the_class and in any
@@ -4307,6 +4319,7 @@ void VM_RedefineClasses::redefine_single_class(jclass the_jclass,
 
   }
   _timer_rsc_phase2.stop();
+
 } // end redefine_single_class()
 
 
@@ -4393,6 +4406,16 @@ void VM_RedefineClasses::CheckClass::do_klass(Klass* k) {
   }
 }
 
+u8 VM_RedefineClasses::next_id() {
+  while (true) {
+    u8 id = _id_counter;
+    u8 next_id = id + 1;
+    u8 result = Atomic::cmpxchg(&_id_counter, id, next_id);
+    if (result == id) {
+      return next_id;
+    }
+  }
+}
 
 void VM_RedefineClasses::dump_methods() {
   int j;

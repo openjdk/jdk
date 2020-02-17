@@ -101,6 +101,22 @@
     <Field type="ClassLoader" name="definingClassLoader" label="Defining Class Loader" />
   </Event>
 
+  <Event name="ClassRedefinition" category="Java Virtual Machine, Class Loading" label="Class Redefinition" thread="false" stackTrace="false" startTime="false">
+    <Field type="Class" name="redefinedClass" label="Redefined Class" />
+    <Field type="int" name="classModificationCount" label="Class Modification Count" description="The number of times the class has changed"/>
+    <Field type="ulong" name="redefinitionId" label="Class Redefinition Id" relation="ClassRedefinitionId"/>
+  </Event>
+
+  <Event name="RedefineClasses" category="Java Virtual Machine, Class Loading" label="Redefine Classes" thread="true" stackTrace="true">
+    <Field type="int" name="classCount" label="Class Count" />
+    <Field type="ulong" name="redefinitionId" label="Class Redefinition Id" relation="ClassRedefinitionId" />
+  </Event>
+
+  <Event name="RetransformClasses" category="Java Virtual Machine, Class Loading" label="Retransform Classes" thread="true" stackTrace="true">
+    <Field type="int" name="classCount" label="Class Count"/>
+    <Field type="ulong" name="redefinitionId" label="Class Redefinition Id" relation="ClassRedefinitionId" />
+  </Event>
+
   <Event name="ClassUnload" category="Java Virtual Machine, Class Loading" label="Class Unload" thread="true" startTime="false">
     <Field type="Class" name="unloadedClass" label="Unloaded Class" />
     <Field type="ClassLoader" name="definingClassLoader" label="Defining Class Loader" />
@@ -1236,7 +1252,8 @@
   <Relation name="CompileId" />
   <Relation name="SweepId"/>
   <Relation name="FlushId"/>
-
+  <Relation name="ClassRedefinitionId"/>
+  
   <XmlType name="Package" parameterType="const PackageEntry*" fieldType="const PackageEntry*"/>
   <XmlType name="Class" javaType="java.lang.Class" parameterType="const Klass*" fieldType="const Klass*"/>
   <XmlType name="Module"  parameterType="const ModuleEntry*" fieldType="const ModuleEntry*"/>
