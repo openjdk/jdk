@@ -38,12 +38,13 @@
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "register_s390.hpp"
+#include "registerSaver_s390.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/signature.hpp"
 #include "runtime/vframeArray.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/powerOfTwo.hpp"
 #include "vmreg_s390.inline.hpp"
-#include "registerSaver_s390.hpp"
 
 // Implementation of StubAssembler
 

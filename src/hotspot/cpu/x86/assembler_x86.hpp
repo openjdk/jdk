@@ -27,6 +27,7 @@
 
 #include "asm/register.hpp"
 #include "runtime/vm_version.hpp"
+#include "utilities/powerOfTwo.hpp"
 
 class BiasedLockingCounters;
 

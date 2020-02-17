@@ -29,6 +29,7 @@
 #include "logging/log.hpp"
 #include "runtime/globals.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/powerOfTwo.hpp"
 
 ZRelocationSetSelectorGroupStats::ZRelocationSetSelectorGroupStats() :
     _npages(0),

@@ -29,6 +29,7 @@
 #include "opto/node.hpp"
 #include "opto/regmask.hpp"
 #include "utilities/population_count.hpp"
+#include "utilities/powerOfTwo.hpp"
 
 #define RM_SIZE _RM_SIZE /* a constant private to the class RegMask */
 

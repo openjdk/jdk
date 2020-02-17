@@ -34,6 +34,7 @@
 #include "opto/mulnode.hpp"
 #include "opto/phaseX.hpp"
 #include "opto/subnode.hpp"
+#include "utilities/powerOfTwo.hpp"
 
 // Portions of code courtesy of Clifford Click
 
@@ -359,7 +360,7 @@ static Node *transform_long_divide( PhaseGVN *phase, Node *dividend, jlong divis
       // Just negate the value
       q = new SubLNode(phase->longcon(0), dividend);
     }
-  } else if ( is_power_of_2_long(d) ) {
+  } else if ( is_power_of_2(d) ) {
 
     // division by +/- a power of 2
 
@@ -377,7 +378,7 @@ static Node *transform_long_divide( PhaseGVN *phase, Node *dividend, jlong divis
       const TypeLong *andconl_t = phase->type( dividend->in(2) )->isa_long();
       if( andconl_t && andconl_t->is_con() ) {
         jlong andconl = andconl_t->get_con();
-        if( andconl < 0 && is_power_of_2_long(-andconl) && (-andconl) >= d ) {
+        if( andconl < 0 && is_power_of_2(-andconl) && (-andconl) >= d ) {
           if( (-andconl) == d ) // Remove AND if it clears bits which will be shifted
             dividend = dividend->in(1);
           needs_rounding = false;
@@ -1044,7 +1045,7 @@ Node *ModLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   Node *hook = new Node(1);
 
   // Expand mod
-  if( con >= 0 && con < max_jlong && is_power_of_2_long(con+1) ) {
+  if( con >= 0 && con < max_jlong && is_power_of_2(con+1) ) {
     uint k = exact_log2_long(con+1);  // Extract k
 
     // Basic algorithm by David Detlefs.  See fastmod_long.java for gory details.
@@ -1108,7 +1109,7 @@ Node *ModLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   int log2_con = -1;
 
   // If this is a power of two, then maybe we can mask it
-  if( is_power_of_2_long(pos_con) ) {
+  if( is_power_of_2(pos_con) ) {
     log2_con = exact_log2_long(pos_con);
 
     const Type *dt = phase->type(in(1));

@@ -48,6 +48,7 @@
 #include "runtime/stubRoutines.hpp"
 #include "utilities/align.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/powerOfTwo.hpp"
 #ifdef COMPILER2
 #include "opto/intrinsicnode.hpp"
 #endif

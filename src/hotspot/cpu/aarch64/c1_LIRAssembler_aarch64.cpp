@@ -40,8 +40,8 @@
 #include "oops/objArrayKlass.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "utilities/powerOfTwo.hpp"
 #include "vmreg_aarch64.inline.hpp"
-
 
 
 #ifndef PRODUCT
@@ -1747,7 +1747,7 @@ void LIR_Assembler::arith_op(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr
           code == lir_add ? __ add(dreg, lreg_lo, c) : __ sub(dreg, lreg_lo, c);
           break;
         case lir_div:
-          assert(c > 0 && is_power_of_2_long(c), "divisor must be power-of-2 constant");
+          assert(c > 0 && is_power_of_2(c), "divisor must be power-of-2 constant");
           if (c == 1) {
             // move lreg_lo to dreg if divisor is 1
             __ mov(dreg, lreg_lo);
@@ -1760,7 +1760,7 @@ void LIR_Assembler::arith_op(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr
           }
           break;
         case lir_rem:
-          assert(c > 0 && is_power_of_2_long(c), "divisor must be power-of-2 constant");
+          assert(c > 0 && is_power_of_2(c), "divisor must be power-of-2 constant");
           if (c == 1) {
             // move 0 to dreg if divisor is 1
             __ mov(dreg, zr);

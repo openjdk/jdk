@@ -44,6 +44,7 @@
 #include "runtime/deoptimization.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/bitMap.inline.hpp"
+#include "utilities/powerOfTwo.hpp"
 
 //----------------------------GraphKit-----------------------------------------
 // Main utility constructor.

@@ -37,6 +37,7 @@
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
+#include "utilities/powerOfTwo.hpp"
 #include "vmreg_sparc.inline.hpp"
 
 #ifdef ASSERT

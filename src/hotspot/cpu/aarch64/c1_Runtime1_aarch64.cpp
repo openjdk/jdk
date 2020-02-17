@@ -43,6 +43,7 @@
 #include "runtime/signature.hpp"
 #include "runtime/vframe.hpp"
 #include "runtime/vframeArray.hpp"
+#include "utilities/powerOfTwo.hpp"
 #include "vmreg_aarch64.inline.hpp"
 
 

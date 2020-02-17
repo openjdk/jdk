@@ -47,6 +47,7 @@
 #include "runtime/atomic.hpp"
 #include "runtime/handles.inline.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/powerOfTwo.hpp"
 #include "utilities/stack.inline.hpp"
 
 void Klass::set_java_mirror(Handle m) {

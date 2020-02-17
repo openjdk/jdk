@@ -37,6 +37,7 @@
 #include "ci/ciTypeArrayKlass.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
+#include "utilities/powerOfTwo.hpp"
 #include "vmreg_ppc.inline.hpp"
 
 #ifdef ASSERT
@@ -574,13 +575,13 @@ inline bool can_handle_logic_op_as_uimm(ValueType *type, Bytecodes::Code bc) {
 
   // see Assembler::andi
   if (bc == Bytecodes::_iand &&
-      (is_power_of_2_long(int_or_long_const+1) ||
-       is_power_of_2_long(int_or_long_const) ||
-       is_power_of_2_long(-int_or_long_const))) return true;
+      (is_power_of_2(int_or_long_const+1) ||
+       is_power_of_2(int_or_long_const) ||
+       is_power_of_2(-int_or_long_const))) return true;
   if (bc == Bytecodes::_land &&
-      (is_power_of_2_long(int_or_long_const+1) ||
-       (Assembler::is_uimm(int_or_long_const, 32) && is_power_of_2_long(int_or_long_const)) ||
-       (int_or_long_const != min_jlong && is_power_of_2_long(-int_or_long_const)))) return true;
+      (is_power_of_2(int_or_long_const+1) ||
+       (Assembler::is_uimm(int_or_long_const, 32) && is_power_of_2(int_or_long_const)) ||
+       (int_or_long_const != min_jlong && is_power_of_2(-int_or_long_const)))) return true;
 
   // special case: xor -1
   if ((bc == Bytecodes::_ixor || bc == Bytecodes::_lxor) &&

@@ -28,6 +28,7 @@
 #include "gc/z/zGlobals.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/powerOfTwo.hpp"
 
 inline bool ZAddress::is_null(uintptr_t value) {
   return value == 0;

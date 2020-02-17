@@ -47,6 +47,7 @@
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/thread.hpp"
+#include "utilities/powerOfTwo.hpp"
 #ifdef COMPILER1
 #include "c1/c1_LIRAssembler.hpp"
 #endif

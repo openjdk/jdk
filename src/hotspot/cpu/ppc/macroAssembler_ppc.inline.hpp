@@ -35,6 +35,7 @@
 #include "oops/accessDecorators.hpp"
 #include "oops/compressedOops.hpp"
 #include "runtime/safepointMechanism.hpp"
+#include "utilities/powerOfTwo.hpp"
 
 inline bool MacroAssembler::is_ld_largeoffset(address a) {
   const int inst1 = *(int *)a;
@@ -56,7 +57,7 @@ inline int MacroAssembler::get_ld_largeoffset_offset(address a) {
 }
 
 inline void MacroAssembler::round_to(Register r, int modulus) {
-  assert(is_power_of_2_long((jlong)modulus), "must be power of 2");
+  assert(is_power_of_2((jlong)modulus), "must be power of 2");
   addi(r, r, modulus-1);
   clrrdi(r, r, log2_long((jlong)modulus));
 }

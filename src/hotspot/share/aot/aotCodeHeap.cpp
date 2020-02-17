@@ -47,6 +47,7 @@
 #include "runtime/safepointVerifiers.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/vmOperations.hpp"
+#include "utilities/powerOfTwo.hpp"
 #include "utilities/sizes.hpp"
 
 bool AOTLib::_narrow_oop_shift_initialized = false;

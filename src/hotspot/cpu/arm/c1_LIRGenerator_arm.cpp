@@ -40,6 +40,7 @@
 #include "gc/shared/cardTableBarrierSet.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
+#include "utilities/powerOfTwo.hpp"
 #include "vmreg_arm.inline.hpp"
 
 #ifdef ASSERT

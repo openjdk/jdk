@@ -233,6 +233,7 @@ int main(int argc, char *argv[])
   AD.addInclude(AD._CPP_file, "runtime/sharedRuntime.hpp");
   AD.addInclude(AD._CPP_file, "runtime/stubRoutines.hpp");
   AD.addInclude(AD._CPP_file, "utilities/growableArray.hpp");
+  AD.addInclude(AD._CPP_file, "utilities/powerOfTwo.hpp");
   AD.addInclude(AD._HPP_file, "memory/allocation.hpp");
   AD.addInclude(AD._HPP_file, "oops/compressedOops.hpp");
   AD.addInclude(AD._HPP_file, "code/nativeInst.hpp");
@@ -268,6 +269,8 @@ int main(int argc, char *argv[])
   AD.addInclude(AD._DFA_file, "opto/narrowptrnode.hpp");
   AD.addInclude(AD._DFA_file, "opto/opcodes.hpp");
   AD.addInclude(AD._DFA_file, "opto/convertnode.hpp");
+  AD.addInclude(AD._DFA_file, "utilities/powerOfTwo.hpp");
+
   // Make sure each .cpp file starts with include lines:
   // files declaring and defining generators for Mach* Objects (hpp,cpp)
   // Generate the result files:

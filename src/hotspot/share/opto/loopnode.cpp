@@ -40,6 +40,7 @@
 #include "opto/mulnode.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/superword.hpp"
+#include "utilities/powerOfTwo.hpp"
 
 //=============================================================================
 //--------------------------is_cloop_ind_var-----------------------------------

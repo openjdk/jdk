@@ -27,6 +27,7 @@
 #include "runtime/os.hpp"
 #include "runtime/signature.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/powerOfTwo.hpp"
 
 // Basic error support
 

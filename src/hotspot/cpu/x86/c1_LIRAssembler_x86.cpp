@@ -38,6 +38,7 @@
 #include "runtime/frame.inline.hpp"
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "utilities/powerOfTwo.hpp"
 #include "vmreg_x86.inline.hpp"
 
 

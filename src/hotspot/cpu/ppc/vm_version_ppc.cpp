@@ -36,6 +36,7 @@
 #include "utilities/align.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/powerOfTwo.hpp"
 
 #include <sys/sysinfo.h>
 #if defined(_AIX)

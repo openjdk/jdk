@@ -988,16 +988,6 @@ inline T clamp(T value, T min, T max) {
   return MIN2(MAX2(value, min), max);
 }
 
-// true if x is a power of 2, false otherwise
-inline bool is_power_of_2(intptr_t x) {
-  return ((x != NoBits) && (mask_bits(x, x - 1) == NoBits));
-}
-
-// long version of is_power_of_2
-inline bool is_power_of_2_long(jlong x) {
-  return ((x != NoLongBits) && (mask_long_bits(x, x - 1) == NoLongBits));
-}
-
 // Returns largest i such that 2^i <= x.
 // If x == 0, the function returns -1.
 inline int log2_intptr(uintptr_t x) {
@@ -1049,18 +1039,6 @@ inline int log2_uint(uint x) {
 inline int log2_jlong(jlong x) {
   STATIC_ASSERT(sizeof(jlong) <= sizeof(julong));
   return log2_long((julong)x);
-}
-
-//* the argument must be exactly a power of 2
-inline int exact_log2(intptr_t x) {
-  assert(is_power_of_2(x), "x must be a power of 2: " INTPTR_FORMAT, x);
-  return log2_intptr(x);
-}
-
-//* the argument must be exactly a power of 2
-inline int exact_log2_long(jlong x) {
-  assert(is_power_of_2_long(x), "x must be a power of 2: " JLONG_FORMAT, x);
-  return log2_long(x);
 }
 
 inline bool is_odd (intx x) { return x & 1;      }

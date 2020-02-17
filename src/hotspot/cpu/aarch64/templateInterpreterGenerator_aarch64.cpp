@@ -49,6 +49,7 @@
 #include "runtime/timer.hpp"
 #include "runtime/vframeArray.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/powerOfTwo.hpp"
 #include <sys/types.h>
 
 #ifndef PRODUCT

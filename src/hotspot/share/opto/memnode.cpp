@@ -48,6 +48,7 @@
 #include "utilities/align.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/powerOfTwo.hpp"
 #include "utilities/vmError.hpp"
 
 // Portions of code courtesy of Clifford Click

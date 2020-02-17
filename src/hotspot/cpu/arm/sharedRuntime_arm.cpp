@@ -37,6 +37,7 @@
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/vframeArray.hpp"
 #include "utilities/align.hpp"
+#include "utilities/powerOfTwo.hpp"
 #include "vmreg_arm.inline.hpp"
 #ifdef COMPILER1
 #include "c1/c1_Runtime1.hpp"

@@ -49,6 +49,7 @@
 #include "opto/type.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/powerOfTwo.hpp"
 #if INCLUDE_G1GC
 #include "gc/g1/g1ThreadLocalData.hpp"
 #endif // INCLUDE_G1GC

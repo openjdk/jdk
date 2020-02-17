@@ -37,6 +37,7 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "vmreg_s390.inline.hpp"
+#include "utilities/powerOfTwo.hpp"
 
 #ifdef ASSERT
 #define __ gen()->lir(__FILE__, __LINE__)->

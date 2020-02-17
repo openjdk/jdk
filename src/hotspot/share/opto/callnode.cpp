@@ -42,6 +42,7 @@
 #include "opto/regmask.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/runtime.hpp"
+#include "utilities/powerOfTwo.hpp"
 
 // Portions of code courtesy of Clifford Click
 

@@ -46,6 +46,7 @@
 #include "opto/subnode.hpp"
 #include "opto/type.hpp"
 #include "runtime/handles.inline.hpp"
+#include "utilities/powerOfTwo.hpp"
 #include "utilities/xmlstream.hpp"
 
 #ifndef PRODUCT

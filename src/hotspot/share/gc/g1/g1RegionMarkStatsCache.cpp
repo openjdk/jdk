@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "gc/g1/g1RegionMarkStatsCache.inline.hpp"
 #include "memory/allocation.inline.hpp"
+#include "utilities/powerOfTwo.hpp"
 
 G1RegionMarkStatsCache::G1RegionMarkStatsCache(G1RegionMarkStats* target, uint max_regions, uint num_cache_entries) :
   _target(target),

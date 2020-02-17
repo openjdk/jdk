@@ -25,6 +25,7 @@
 #include "memory/allocation.inline.hpp"
 #include "opto/connode.hpp"
 #include "opto/vectornode.hpp"
+#include "utilities/powerOfTwo.hpp"
 
 //------------------------------VectorNode--------------------------------------
 

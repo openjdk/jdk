@@ -46,6 +46,7 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/powerOfTwo.hpp"
 
 // Implementation of AddressLiteral
 

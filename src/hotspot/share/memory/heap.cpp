@@ -28,6 +28,7 @@
 #include "runtime/os.hpp"
 #include "services/memTracker.hpp"
 #include "utilities/align.hpp"
+#include "utilities/powerOfTwo.hpp"
 
 size_t CodeHeap::header_size() {
   return sizeof(HeapBlock);

@@ -31,6 +31,7 @@
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
+#include "utilities/powerOfTwo.hpp"
 
 // ciArray
 //

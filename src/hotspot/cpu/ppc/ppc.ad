@@ -4350,7 +4350,7 @@ operand immIhi16() %{
 %}
 
 operand immInegpow2() %{
-  predicate(is_power_of_2_long((jlong) (julong) (juint) (-(n->get_int()))));
+  predicate(is_power_of_2((jlong) (julong) (juint) (-(n->get_int()))));
   match(ConI);
   op_cost(0);
   format %{ %}
@@ -4358,7 +4358,7 @@ operand immInegpow2() %{
 %}
 
 operand immIpow2minus1() %{
-  predicate(is_power_of_2_long((((jlong) (n->get_int()))+1)));
+  predicate(is_power_of_2((((jlong) (n->get_int()))+1)));
   match(ConI);
   op_cost(0);
   format %{ %}
@@ -4366,7 +4366,7 @@ operand immIpow2minus1() %{
 %}
 
 operand immIpowerOf2() %{
-  predicate(is_power_of_2_long((((jlong) (julong) (juint) (n->get_int())))));
+  predicate(is_power_of_2((((jlong) (julong) (juint) (n->get_int())))));
   match(ConI);
   op_cost(0);
   format %{ %}
@@ -4600,7 +4600,7 @@ operand immLhighest16() %{
 %}
 
 operand immLnegpow2() %{
-  predicate(is_power_of_2_long((jlong)-(n->get_long())));
+  predicate(is_power_of_2((jlong)-(n->get_long())));
   match(ConL);
   op_cost(0);
   format %{ %}
@@ -4608,7 +4608,7 @@ operand immLnegpow2() %{
 %}
 
 operand immLpow2minus1() %{
-  predicate(is_power_of_2_long((((jlong) (n->get_long()))+1)) &&
+  predicate(is_power_of_2((((jlong) (n->get_long()))+1)) &&
             (n->get_long() != (jlong)0xffffffffffffffffL));
   match(ConL);
   op_cost(0);

@@ -27,6 +27,7 @@
 #include "code/codeHeapState.hpp"
 #include "compiler/compileBroker.hpp"
 #include "runtime/sweeper.hpp"
+#include "utilities/powerOfTwo.hpp"
 
 // -------------------------
 // |  General Description  |

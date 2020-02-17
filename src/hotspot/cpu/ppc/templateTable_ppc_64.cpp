@@ -42,6 +42,7 @@
 #include "runtime/stubRoutines.hpp"
 #include "runtime/synchronizer.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/powerOfTwo.hpp"
 
 #undef __
 #define __ _masm->

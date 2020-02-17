@@ -45,6 +45,7 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
+#include "utilities/powerOfTwo.hpp"
 
 OopStorage::AllocationListEntry::AllocationListEntry() : _prev(NULL), _next(NULL) {}
 

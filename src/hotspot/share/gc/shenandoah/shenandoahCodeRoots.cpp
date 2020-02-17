@@ -34,6 +34,7 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "runtime/atomic.hpp"
+#include "utilities/powerOfTwo.hpp"
 
 ShenandoahParallelCodeCacheIterator::ShenandoahParallelCodeCacheIterator(const GrowableArray<CodeHeap*>* heaps) {
   _length = heaps->length();

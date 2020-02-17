@@ -31,6 +31,7 @@
 #include "opto/mulnode.hpp"
 #include "opto/phaseX.hpp"
 #include "opto/subnode.hpp"
+#include "utilities/powerOfTwo.hpp"
 
 // Portions of code courtesy of Clifford Click
 
@@ -306,7 +307,7 @@ Node *MulLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       Node *n2 = phase->transform(new LShiftLNode(in(1), phase->intcon(log2_long(bit2))));
       res = new AddLNode(n2, n1);
 
-    } else if (is_power_of_2_long(abs_con+1)) {
+    } else if (is_power_of_2(abs_con+1)) {
       // Sleezy: power-of-2 -1.  Next time be generic.
       julong temp = abs_con + 1;
       Node *n1 = phase->transform( new LShiftLNode(in(1), phase->intcon(log2_long(temp))));
@@ -1409,4 +1410,3 @@ const Type* FmaFNode::Value(PhaseGVN* phase) const {
 uint MulAddS2INode::hash() const {
   return (uintptr_t)in(1) + (uintptr_t)in(2) + (uintptr_t)in(3) + (uintptr_t)in(4) + Opcode();
 }
-

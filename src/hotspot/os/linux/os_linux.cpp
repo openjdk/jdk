@@ -74,6 +74,7 @@
 #include "utilities/elfFile.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/powerOfTwo.hpp"
 #include "utilities/vmError.hpp"
 
 // put OS-includes here

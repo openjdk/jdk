@@ -80,6 +80,7 @@
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/vmThread.hpp"
 #include "services/mallocTracker.hpp"
+#include "utilities/powerOfTwo.hpp"
 
 #ifdef ASSERT
 template <class T>

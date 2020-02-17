@@ -42,6 +42,7 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/thread.inline.hpp"
 #include "utilities/align.hpp"
+#include "utilities/powerOfTwo.hpp"
 
 // Implementation of InterpreterMacroAssembler
 

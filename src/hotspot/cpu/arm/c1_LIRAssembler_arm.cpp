@@ -37,6 +37,7 @@
 #include "oops/objArrayKlass.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "utilities/powerOfTwo.hpp"
 #include "vmreg_arm.inline.hpp"
 
 #define __ _masm->

@@ -31,7 +31,7 @@
 #include "opto/macro.hpp"
 #include "opto/runtime.hpp"
 #include "utilities/align.hpp"
-
+#include "utilities/powerOfTwo.hpp"
 
 void PhaseMacroExpand::insert_mem_bar(Node** ctrl, Node** mem, int opcode, Node* precedent) {
   MemBarNode* mb = MemBarNode::make(C, opcode, Compile::AliasIdxBot, precedent);

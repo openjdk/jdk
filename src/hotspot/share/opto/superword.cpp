@@ -39,6 +39,7 @@
 #include "opto/superword.hpp"
 #include "opto/vectornode.hpp"
 #include "opto/movenode.hpp"
+#include "utilities/powerOfTwo.hpp"
 
 //
 //                  S U P E R W O R D   T R A N S F O R M

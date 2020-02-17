@@ -43,6 +43,7 @@
 #include "runtime/stubRoutines.hpp"
 #include "runtime/thread.inline.hpp"
 #include "utilities/align.hpp"
+#include "utilities/powerOfTwo.hpp"
 #ifdef COMPILER2
 #include "opto/runtime.hpp"
 #endif

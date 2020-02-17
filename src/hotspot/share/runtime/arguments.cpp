@@ -54,6 +54,7 @@
 #include "utilities/align.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/powerOfTwo.hpp"
 #include "utilities/stringUtils.hpp"
 #if INCLUDE_JFR
 #include "jfr/jfr.hpp"

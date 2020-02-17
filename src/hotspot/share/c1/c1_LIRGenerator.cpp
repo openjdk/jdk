@@ -43,6 +43,7 @@
 #include "runtime/vm_version.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/powerOfTwo.hpp"
 
 #ifdef ASSERT
 #define __ gen()->lir(__FILE__, __LINE__)->

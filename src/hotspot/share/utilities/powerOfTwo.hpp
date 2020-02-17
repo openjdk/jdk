@@ -28,12 +28,28 @@
 #include "metaprogramming/enableIf.hpp"
 #include "metaprogramming/isIntegral.hpp"
 #include "metaprogramming/isSigned.hpp"
-#include "utilities/align.hpp"
 #include "utilities/count_leading_zeros.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 // Power of two convenience library.
+
+template <typename T>
+bool is_power_of_2(T x) {
+  return (x != T(0)) && ((x & (x - 1)) == T(0));
+}
+
+// Log2 of a power of 2
+inline int exact_log2(intptr_t x) {
+  assert(is_power_of_2(x), "x must be a power of 2: " INTPTR_FORMAT, x);
+  return log2_intptr(x);
+}
+
+// Log2 of a power of 2
+inline int exact_log2_long(jlong x) {
+  assert(is_power_of_2(x), "x must be a power of 2: " JLONG_FORMAT, x);
+  return log2_long(x);
+}
 
 // Round down to the closest power of two greater to or equal to the given
 // value.
@@ -69,7 +85,7 @@ inline typename EnableIf<IsSigned<T>::value, T>::type round_up_power_of_2(T valu
   STATIC_ASSERT(IsIntegral<T>::value);
   STATIC_ASSERT(IsSigned<T>::value);
   assert(value > 0, "Invalid value");
-  if (is_power_of_2_t(value)) {
+  if (is_power_of_2(value)) {
     return value;
   }
   uint32_t lz = count_leading_zeros(value);
@@ -85,7 +101,7 @@ inline typename EnableIf<!IsSigned<T>::value, T>::type round_up_power_of_2(T val
   STATIC_ASSERT(IsIntegral<T>::value);
   STATIC_ASSERT(!IsSigned<T>::value);
   assert(value != 0, "Invalid value");
-  if (is_power_of_2_t(value)) {
+  if (is_power_of_2(value)) {
     return value;
   }
   uint32_t lz = count_leading_zeros(value);

@@ -26,6 +26,7 @@
 #define SHARE_UTILITIES_ALIGN_HPP
 
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/powerOfTwo.hpp"
 
 // Signed variants of alignment helpers.  There are two versions of each, a macro
 // for use in places like enum definitions that require compile-time constant
@@ -46,17 +47,11 @@
 
 #define is_aligned_(size, alignment) (((size) & align_mask(alignment)) == 0)
 
-// Temporary declaration until this file has been restructured.
-template <typename T>
-bool is_power_of_2_t(T x) {
-  return (x != T(0)) && ((x & (x - 1)) == T(0));
-}
-
 // Helpers to align sizes and check for alignment
 
 template <typename T, typename A>
 inline T align_up(T size, A alignment) {
-  assert(is_power_of_2_t(alignment), "must be a power of 2: " UINT64_FORMAT, (uint64_t)alignment);
+  assert(is_power_of_2(alignment), "must be a power of 2: " UINT64_FORMAT, (uint64_t)alignment);
 
   T ret = align_up_(size, alignment);
   assert(is_aligned_(ret, alignment), "must be aligned: " UINT64_FORMAT, (uint64_t)ret);
@@ -66,7 +61,7 @@ inline T align_up(T size, A alignment) {
 
 template <typename T, typename A>
 inline T align_down(T size, A alignment) {
-  assert(is_power_of_2_t(alignment), "must be a power of 2: " UINT64_FORMAT, (uint64_t)alignment);
+  assert(is_power_of_2(alignment), "must be a power of 2: " UINT64_FORMAT, (uint64_t)alignment);
 
   T ret = align_down_(size, alignment);
   assert(is_aligned_(ret, alignment), "must be aligned: " UINT64_FORMAT, (uint64_t)ret);
@@ -76,7 +71,7 @@ inline T align_down(T size, A alignment) {
 
 template <typename T, typename A>
 inline bool is_aligned(T size, A alignment) {
-  assert(is_power_of_2_t(alignment), "must be a power of 2: " UINT64_FORMAT, (uint64_t)alignment);
+  assert(is_power_of_2(alignment), "must be a power of 2: " UINT64_FORMAT, (uint64_t)alignment);
 
   return is_aligned_(size, alignment);
 }

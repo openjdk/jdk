@@ -26,6 +26,7 @@
 #define CPU_ARM_MACROASSEMBLER_ARM_HPP
 
 #include "code/relocInfo.hpp"
+#include "utilities/powerOfTwo.hpp"
 
 class BiasedLockingCounters;
 

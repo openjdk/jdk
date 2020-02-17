@@ -40,6 +40,7 @@
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/safepointMechanism.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "utilities/powerOfTwo.hpp"
 
 #define __ _masm->
 
