@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -120,8 +120,8 @@ public class XECParameters {
         // set up X25519
         try {
             BigInteger p = TWO.pow(255).subtract(BigInteger.valueOf(19));
-            addParameters(255, p, 121665, (byte) 0x09, 3,
-                new int[]{1, 3, 101, 110}, NamedParameterSpec.X25519.getName(),
+            addParameters(255, p, 121665, (byte)0x09, 3,
+                "1.3.101.110", NamedParameterSpec.X25519.getName(),
                 bySize, byOid, byName);
 
         } catch (IOException ex) {
@@ -132,8 +132,8 @@ public class XECParameters {
         try {
             BigInteger p = TWO.pow(448).subtract(TWO.pow(224))
                 .subtract(BigInteger.ONE);
-            addParameters(448, p, 39081, (byte) 0x05, 2,
-                new int[]{1, 3, 101, 111}, NamedParameterSpec.X448.getName(),
+            addParameters(448, p, 39081, (byte)0x05, 2,
+                "1.3.101.111", NamedParameterSpec.X448.getName(),
                 bySize, byOid, byName);
 
         } catch (IOException ex) {
@@ -146,12 +146,12 @@ public class XECParameters {
     }
 
     private static void addParameters(int bits, BigInteger p, int a24,
-        byte basePoint, int logCofactor, int[] oidBytes, String name,
+        byte basePoint, int logCofactor, String objectId, String name,
         Map<Integer, XECParameters> bySize,
         Map<ObjectIdentifier, XECParameters> byOid,
         Map<String, XECParameters> byName) throws IOException {
 
-        ObjectIdentifier oid = new ObjectIdentifier(oidBytes);
+        ObjectIdentifier oid = new ObjectIdentifier(objectId);
         XECParameters params =
             new XECParameters(bits, p, a24, basePoint, logCofactor, oid, name);
         bySize.put(bits, params);

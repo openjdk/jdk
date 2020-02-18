@@ -135,7 +135,7 @@ public final class OCSPResponse {
     private static final Debug debug = Debug.getInstance("certpath");
     private static final boolean dump = debug != null && Debug.isOn("ocsp");
     private static final ObjectIdentifier OCSP_BASIC_RESPONSE_OID =
-        ObjectIdentifier.newInternal(new int[] { 1, 3, 6, 1, 5, 5, 7, 48, 1, 1});
+        ObjectIdentifier.of("1.3.6.1.5.5.7.48.1.1");
     private static final int CERT_STATUS_GOOD = 0;
     private static final int CERT_STATUS_REVOKED = 1;
     private static final int CERT_STATUS_UNKNOWN = 2;

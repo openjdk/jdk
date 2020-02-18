@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -190,15 +190,14 @@ public class PKCS9Attribute implements DerEncoder {
 
     static {   // static initializer for PKCS9_OIDS
         for (int i = 1; i < PKCS9_OIDS.length - 2; i++) {
-            PKCS9_OIDS[i] =
-                ObjectIdentifier.newInternal(new int[]{1,2,840,113549,1,9,i});
+            PKCS9_OIDS[i] = ObjectIdentifier.of("1.2.840.113549.1.9." + i);
         }
         // Initialize SigningCertificate and SignatureTimestampToken
         // separately (because their values are out of sequence)
         PKCS9_OIDS[PKCS9_OIDS.length - 2] =
-            ObjectIdentifier.newInternal(new int[]{1,2,840,113549,1,9,16,2,12});
+            ObjectIdentifier.of("1.2.840.113549.1.9.16.2.12");
         PKCS9_OIDS[PKCS9_OIDS.length - 1] =
-            ObjectIdentifier.newInternal(new int[]{1,2,840,113549,1,9,16,2,14});
+            ObjectIdentifier.of("1.2.840.113549.1.9.16.2.14");
 
         try {
             BYTE_ARRAY_CLASS = Class.forName("[B");
@@ -253,7 +252,7 @@ public class PKCS9Attribute implements DerEncoder {
      * that occur in PKCS9, in lower case.
      */
     private static final Hashtable<String, ObjectIdentifier> NAME_OID_TABLE =
-        new Hashtable<String, ObjectIdentifier>(18);
+        new Hashtable<String, ObjectIdentifier>(17);
 
     static { // static initializer for PCKS9_NAMES
         NAME_OID_TABLE.put("emailaddress", PKCS9_OIDS[1]);
@@ -280,7 +279,7 @@ public class PKCS9Attribute implements DerEncoder {
      * corresponding attribute value type.
      */
     private static final Hashtable<ObjectIdentifier, String> OID_NAME_TABLE =
-        new Hashtable<ObjectIdentifier, String>(16);
+        new Hashtable<ObjectIdentifier, String>(17);
     static {
         OID_NAME_TABLE.put(PKCS9_OIDS[1], EMAIL_ADDRESS_STR);
         OID_NAME_TABLE.put(PKCS9_OIDS[2], UNSTRUCTURED_NAME_STR);

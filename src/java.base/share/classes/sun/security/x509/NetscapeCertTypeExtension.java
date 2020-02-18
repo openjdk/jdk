@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,20 +69,11 @@ implements CertAttrSet<String> {
     public static final String S_MIME_CA = "s_mime_ca";
     public static final String OBJECT_SIGNING_CA = "object_signing_ca";
 
-    private static final int[] CertType_data = { 2, 16, 840, 1, 113730, 1, 1 };
-
     /**
      * Object identifier for the Netscape-Cert-Type extension.
      */
-    public static ObjectIdentifier NetscapeCertType_Id;
-
-    static {
-        try {
-            NetscapeCertType_Id = new ObjectIdentifier(CertType_data);
-        } catch (IOException ioe) {
-            // should not happen
-        }
-    }
+    public static ObjectIdentifier NetscapeCertType_Id =
+            ObjectIdentifier.of("2.16.840.1.113730.1.1");
 
     private boolean[] bitString;
 
