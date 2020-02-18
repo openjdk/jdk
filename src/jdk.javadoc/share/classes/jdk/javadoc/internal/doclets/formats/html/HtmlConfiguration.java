@@ -101,7 +101,7 @@ public class HtmlConfiguration extends BaseConfiguration {
 
     protected SortedSet<SearchIndexItem> typeSearchIndex;
 
-    protected Map<Character,List<SearchIndexItem>> tagSearchIndexMap = new HashMap<>();
+    protected Map<Character, List<SearchIndexItem>> tagSearchIndexMap = new HashMap<>();
 
     protected Set<Character> tagSearchIndexKeys;
 
@@ -329,7 +329,8 @@ public class HtmlConfiguration extends BaseConfiguration {
 
     public List<DocPath> getAdditionalStylesheets() {
         return options.additionalStylesheets().stream()
-                .map(ssf -> DocFile.createFileForInput(this, ssf)).map(file -> DocPath.create(file.getName()))
+                .map(ssf -> DocFile.createFileForInput(this, ssf))
+                .map(file -> DocPath.create(file.getName()))
                 .collect(Collectors.toList());
     }
 

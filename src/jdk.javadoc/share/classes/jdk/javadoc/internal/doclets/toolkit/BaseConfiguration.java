@@ -363,7 +363,7 @@ public abstract class BaseConfiguration {
         }
         typeElementCatalog = new TypeElementCatalog(includedTypeElements, this);
         initTagletManager(options.customTagStrs());
-        options.groupPairs().stream().forEach((grp) -> {
+        options.groupPairs().forEach(grp -> {
             if (showModules) {
                 group.checkModuleGroups(grp.first, grp.second);
             } else {

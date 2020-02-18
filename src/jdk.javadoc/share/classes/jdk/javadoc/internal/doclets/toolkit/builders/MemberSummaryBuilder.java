@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -485,15 +485,17 @@ public abstract class MemberSummaryBuilder extends AbstractMemberBuilder {
      * @param memberSummaryTree the content tree to which the documentation will be added
      */
     private void addSummary(MemberSummaryWriter writer,
-            VisibleMemberTable.Kind kind, boolean showInheritedSummary,
-            Content memberSummaryTree) {
+                            VisibleMemberTable.Kind kind,
+                            boolean showInheritedSummary,
+                            Content memberSummaryTree)
+    {
         LinkedList<Content> summaryTreeList = new LinkedList<>();
         buildSummary(writer, kind, summaryTreeList);
         if (showInheritedSummary)
             buildInheritedSummary(writer, kind, summaryTreeList);
         if (!summaryTreeList.isEmpty()) {
             Content memberTree = writer.getMemberSummaryHeader(typeElement, memberSummaryTree);
-            summaryTreeList.stream().forEach(memberTree::add);
+            summaryTreeList.forEach(memberTree::add);
             writer.addMemberTree(memberSummaryTree, memberTree);
         }
     }

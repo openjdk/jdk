@@ -391,9 +391,7 @@ public class VisibleMemberTable {
         if (utils.isUndocumentedEnclosure(te)) {
             list.addAll(lmt.getOrderedMembers(kind));
         }
-        parents.forEach(pvmt -> {
-            list.addAll(pvmt.getExtraMembers(kind));
-        });
+        parents.forEach(pvmt -> list.addAll(pvmt.getExtraMembers(kind)));
         extraMembers.put(kind, Collections.unmodifiableList(list));
     }
 
@@ -462,7 +460,8 @@ public class VisibleMemberTable {
         // Filter out members in the inherited list that are hidden
         // by this type or should not be inherited at all.
         List<Element> list = result.stream()
-                .filter(e -> allowInheritedMembers(e, kind, lmt)).collect(Collectors.toList());
+                .filter(e -> allowInheritedMembers(e, kind, lmt))
+                .collect(Collectors.toList());
 
         // Prefix local results first
         list.addAll(0, lmt.getOrderedMembers(kind));
@@ -523,7 +522,7 @@ public class VisibleMemberTable {
         // c. are hidden in the type being considered
         // see allowInheritedMethods, which performs the above actions
         List<Element> list = inheritedMethods.stream()
-                .filter(e -> allowInheritedMethods((ExecutableElement)e, overriddenByTable, lmt))
+                .filter(e -> allowInheritedMethods((ExecutableElement) e, overriddenByTable, lmt))
                 .collect(Collectors.toList());
 
         // Filter out the local methods, that do not override or simply

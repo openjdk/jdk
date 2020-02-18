@@ -273,16 +273,13 @@ public class SourceToHTMLConverter {
     }
 
     protected void addStylesheets(Content tree) {
-        List<String> stylesheets = options.additionalStylesheets();
-        if (!stylesheets.isEmpty()) {
-            stylesheets.forEach((ssheet) -> {
-                DocFile file = DocFile.createFileForInput(configuration, ssheet);
-                DocPath ssheetPath = DocPath.create(file.getName());
-                HtmlTree slink = HtmlTree.LINK("stylesheet", "text/css", relativePath.resolve(ssheetPath).getPath(),
-                        "Style");
-                tree.add(slink);
-            });
-        }
+        options.additionalStylesheets().forEach(css -> {
+            DocFile file = DocFile.createFileForInput(configuration, css);
+            DocPath cssPath = DocPath.create(file.getName());
+            HtmlTree slink = HtmlTree.LINK("stylesheet", "text/css", relativePath.resolve(cssPath).getPath(),
+                                           "Style");
+            tree.add(slink);
+        });
     }
 
     /**

@@ -258,18 +258,18 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
                 indirectModules.put(module, new StringContent(mod));
             }
         });
-        (ElementFilter.requiresIn(mdle.getDirectives())).forEach((directive) -> {
+        ElementFilter.requiresIn(mdle.getDirectives()).forEach(directive -> {
             ModuleElement m = directive.getDependency();
             if (shouldDocument(m)) {
                 if (moduleMode == ModuleMode.ALL || directive.isTransitive()) {
                     requires.put(m, new StringContent(utils.getModifiers(directive)));
-            } else {
+                } else {
                     // For api mode, just keep the public requires in dependentModules for display of
                     // indirect packages in the "Packages" section.
                     dependentModules.remove(m);
                 }
                 indirectModules.remove(m);
-        }
+            }
         });
 
         // Get all packages if module is open or if displaying concealed modules
@@ -321,50 +321,50 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
         // Get all the exported and opened packages, for the transitive closure of the module, to be displayed in
         // the indirect packages tables.
         dependentModules.forEach((module, mod) -> {
-            SortedSet<PackageElement> exportPkgList = new TreeSet<>(utils.makePackageComparator());
-            (ElementFilter.exportsIn(module.getDirectives())).forEach((directive) -> {
+            SortedSet<PackageElement> exportedPackages = new TreeSet<>(utils.makePackageComparator());
+            ElementFilter.exportsIn(module.getDirectives()).forEach(directive -> {
                 PackageElement pkg = directive.getPackage();
                 if (shouldDocument(pkg)) {
                     // Qualified exports are not displayed in API mode
                     if (moduleMode == ModuleMode.ALL || directive.getTargetModules() == null) {
-                        exportPkgList.add(pkg);
+                        exportedPackages.add(pkg);
                     }
                 }
             });
             // If none of the indirect modules have exported packages to be displayed, we should not be
             // displaying the table and so it should not be added to the map.
-            if (!exportPkgList.isEmpty()) {
-                indirectPackages.put(module, exportPkgList);
+            if (!exportedPackages.isEmpty()) {
+                indirectPackages.put(module, exportedPackages);
             }
-            SortedSet<PackageElement> openPkgList = new TreeSet<>(utils.makePackageComparator());
+            SortedSet<PackageElement> openPackages = new TreeSet<>(utils.makePackageComparator());
             if (module.isOpen()) {
-                openPkgList.addAll(utils.getModulePackageMap().getOrDefault(module, Collections.emptySet()));
+                openPackages.addAll(utils.getModulePackageMap().getOrDefault(module, Collections.emptySet()));
             } else {
-                (ElementFilter.opensIn(module.getDirectives())).forEach((directive) -> {
+                ElementFilter.opensIn(module.getDirectives()).forEach(directive -> {
                     PackageElement pkg = directive.getPackage();
                     if (shouldDocument(pkg)) {
                         // Qualified opens are not displayed in API mode
                         if (moduleMode == ModuleMode.ALL || directive.getTargetModules() == null) {
-                            openPkgList.add(pkg);
+                            openPackages.add(pkg);
                         }
                     }
                 });
             }
             // If none of the indirect modules have opened packages to be displayed, we should not be
             // displaying the table and so it should not be added to the map.
-            if (!openPkgList.isEmpty()) {
-                indirectOpenPackages.put(module, openPkgList);
+            if (!openPackages.isEmpty()) {
+                indirectOpenPackages.put(module, openPackages);
             }
         });
         // Get all the services listed as uses directive.
-        (ElementFilter.usesIn(mdle.getDirectives())).forEach((directive) -> {
+        ElementFilter.usesIn(mdle.getDirectives()).forEach(directive -> {
             TypeElement u = directive.getService();
             if (shouldDocument(u)) {
                 uses.add(u);
             }
         });
         // Get all the services and implementations listed as provides directive.
-        (ElementFilter.providesIn(mdle.getDirectives())).forEach((directive) -> {
+        ElementFilter.providesIn(mdle.getDirectives()).forEach(directive -> {
             TypeElement u = directive.getService();
             if (shouldDocument(u)) {
                 List<? extends TypeElement> implList = directive.getImplementations();
@@ -374,14 +374,14 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
             }
         });
         // Generate the map of all services listed using @provides, and the description.
-        (utils.getBlockTags(mdle, DocTree.Kind.PROVIDES)).forEach((tree) -> {
+        utils.getBlockTags(mdle, DocTree.Kind.PROVIDES).forEach(tree -> {
             TypeElement t = ch.getServiceType(tree);
             if (t != null) {
                 providesTrees.put(t, commentTagsToContent(tree, mdle, ch.getDescription(tree), false, true));
             }
         });
         // Generate the map of all services listed using @uses, and the description.
-        (utils.getBlockTags(mdle, DocTree.Kind.USES)).forEach((tree) -> {
+        utils.getBlockTags(mdle, DocTree.Kind.USES).forEach(tree -> {
             TypeElement t = ch.getServiceType(tree);
             if (t != null) {
                 usesTrees.put(t, commentTagsToContent(tree, mdle, ch.getDescription(tree), false, true));
@@ -426,7 +426,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
     private boolean displayServices(Set<TypeElement> typeElements,
                                     Map<TypeElement, Content> tagsMap) {
         return typeElements != null &&
-                typeElements.stream().anyMatch((v) -> displayServiceDirective(v, tagsMap));
+                typeElements.stream().anyMatch(v -> displayServiceDirective(v, tagsMap));
     }
 
     /*

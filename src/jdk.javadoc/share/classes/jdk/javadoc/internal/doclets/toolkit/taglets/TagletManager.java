@@ -30,10 +30,10 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -98,12 +98,12 @@ public class TagletManager {
     public static final char SIMPLE_TAGLET_OPT_SEPARATOR = ':';
 
     /**
-     * The map of all taglets.
+     * All taglets, keyed by their {@link Taglet#getName() name}.
      */
-    private final LinkedHashMap<String,Taglet> allTaglets;
+    private final LinkedHashMap<String, Taglet> allTaglets;
 
     /**
-     * Block (non-inline) taglets, grouped by Location
+     * Block (non-inline) taglets, grouped by {@link Location location}.
      */
     private Map<Location, List<Taglet>> blockTagletsByLocation;
 
@@ -181,7 +181,8 @@ public class TagletManager {
     private final String tagletPath;
 
     /**
-     * Construct a new {@code TagletManager}.
+     * Constructs a new {@code TagletManager}.
+     *
      * @param configuration the configuration for this taglet manager
      */
     public TagletManager(BaseConfiguration configuration) {
@@ -274,13 +275,11 @@ public class TagletManager {
      * @throws IOException if an error occurs while getting the service loader.
      */
     public void loadTaglets(JavaFileManager fileManager) throws IOException {
-        Iterable<? extends File> location = ((StandardJavaFileManager)fileManager).getLocation(TAGLET_PATH);
+        Iterable<? extends File> location = ((StandardJavaFileManager) fileManager).getLocation(TAGLET_PATH);
         if (location != null && location.iterator().hasNext()) {
             ServiceLoader<jdk.javadoc.doclet.Taglet> serviceLoader =
                     fileManager.getServiceLoader(TAGLET_PATH, jdk.javadoc.doclet.Taglet.class);
-            Iterator<jdk.javadoc.doclet.Taglet> iterator = serviceLoader.iterator();
-            while (iterator.hasNext()) {
-                jdk.javadoc.doclet.Taglet taglet = iterator.next();
+            for (jdk.javadoc.doclet.Taglet taglet : serviceLoader) {
                 registerTaglet(taglet);
             }
         }
@@ -366,8 +365,8 @@ public class TagletManager {
             if (name == null) {
                 continue;
             }
-            if (name.length() > 0 && name.charAt(0) == '@') {
-                name = name.substring(1, name.length());
+            if (!name.isEmpty() && name.charAt(0) == '@') {
+                name = name.substring(1);
             }
             if (! (standardTags.contains(name) || allTaglets.containsKey(name))) {
                 if (standardTagsLowercase.contains(Utils.toLowerCase(name))) {
@@ -555,7 +554,7 @@ public class TagletManager {
                 return blockTagletsByLocation.get(Location.PACKAGE);
             case OTHER:
                 if (e instanceof DocletElement) {
-                    DocletElement de = (DocletElement)e;
+                    DocletElement de = (DocletElement) e;
                     switch (de.getSubKind()) {
                         case DOCFILE:
                             return blockTagletsByLocation.get(Location.PACKAGE);
@@ -707,7 +706,7 @@ public class TagletManager {
     }
 
     private void printReportHelper(String noticeKey, Set<String> names) {
-        if (names.size() > 0) {
+        if (!names.isEmpty()) {
             StringBuilder result = new StringBuilder();
             for (String name : names) {
                 result.append(result.length() == 0 ? " " : ", ");
@@ -731,7 +730,6 @@ public class TagletManager {
         } else {
             return allTaglets.get(name);
         }
-
     }
 
     /*
@@ -740,7 +738,7 @@ public class TagletManager {
      * a need for a corresponding update to the spec.
      */
     private void showTaglets(PrintStream out) {
-        Set<Taglet> taglets = new TreeSet<>((o1, o2) -> o1.getName().compareTo(o2.getName()));
+        Set<Taglet> taglets = new TreeSet<>(Comparator.comparing(Taglet::getName));
         taglets.addAll(allTaglets.values());
 
         for (Taglet t : taglets) {
@@ -755,7 +753,7 @@ public class TagletManager {
                     + format(t.inMethod(), "method") + " "
                     + format(t.inField(), "field") + " "
                     + format(t.isInlineTag(), "inline")+ " "
-                    + format((t instanceof SimpleTaglet) && !((SimpleTaglet)t).enabled, "disabled"));
+                    + format((t instanceof SimpleTaglet) && !((SimpleTaglet) t).enabled, "disabled"));
         }
     }
 

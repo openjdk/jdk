@@ -131,17 +131,13 @@ public class LinkFactoryImpl extends LinkFactory {
                 ? utils.getComponentType(linkInfo.type)
                 : null;
         if (linkInfo.executableElement != null) {
-            linkInfo.executableElement.getTypeParameters().stream().forEach((t) -> {
-                vars.add(t.asType());
-            });
+            linkInfo.executableElement.getTypeParameters().forEach(t -> vars.add(t.asType()));
         } else if (linkInfo.type != null && utils.isDeclaredType(linkInfo.type)) {
-            ((DeclaredType)linkInfo.type).getTypeArguments().stream().forEach(vars::add);
+            vars.addAll(((DeclaredType) linkInfo.type).getTypeArguments());
         } else if (ctype != null && utils.isDeclaredType(ctype)) {
-            ((DeclaredType)ctype).getTypeArguments().stream().forEach(vars::add);
+            vars.addAll(((DeclaredType) ctype).getTypeArguments());
         } else if (linkInfo.typeElement != null) {
-            linkInfo.typeElement.getTypeParameters().stream().forEach((t) -> {
-                vars.add(t.asType());
-            });
+            linkInfo.typeElement.getTypeParameters().forEach(t -> vars.add(t.asType()));
         } else {
             // Nothing to document.
             return links;

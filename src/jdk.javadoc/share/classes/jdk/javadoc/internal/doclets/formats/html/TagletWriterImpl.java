@@ -300,7 +300,7 @@ public class TagletWriterImpl extends TagletWriter {
 
     @Override
     protected Content systemPropertyTagOutput(Element element, DocTree tag) {
-        SystemPropertyTree itt = (SystemPropertyTree)tag;
+        SystemPropertyTree itt = (SystemPropertyTree) tag;
         String tagText = itt.getPropertyName().toString();
         return HtmlTree.CODE(createAnchorAndSearchIndex(element, tagText,
                 resources.getText("doclet.System_Property"), true));
@@ -369,7 +369,10 @@ public class TagletWriterImpl extends TagletWriter {
 
     @Override
     public Content commentTagsToOutput(DocTree holderTag,
-        Element holder, List<? extends DocTree> tags, boolean isFirstSentence) {
+                                       Element holder,
+                                       List<? extends DocTree> tags,
+                                       boolean isFirstSentence)
+    {
         return htmlWriter.commentTagsToContent(holderTag, holder,
                 tags, isFirstSentence, inSummary);
     }

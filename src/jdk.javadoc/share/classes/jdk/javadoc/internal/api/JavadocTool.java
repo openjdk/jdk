@@ -75,7 +75,8 @@ public class JavadocTool implements DocumentationTool {
             DiagnosticListener<? super JavaFileObject> diagnosticListener,
             Class<?> docletClass,
             Iterable<String> options,
-            Iterable<? extends JavaFileObject> compilationUnits) {
+            Iterable<? extends JavaFileObject> compilationUnits)
+    {
         Context context = new Context();
         return getTask(out, fileManager, diagnosticListener,
                 docletClass, options, compilationUnits, context);

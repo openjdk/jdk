@@ -198,8 +198,10 @@ public class SerializedFormWriterImpl extends SubWriterHolderWriter
      *                      content will be added
      */
     @Override
-    public void addSerialUIDInfo(String header, String serialUID,
-            Content serialUidTree) {
+    public void addSerialUIDInfo(String header,
+                                 String serialUID,
+                                 Content serialUidTree)
+    {
         Content headerContent = new StringContent(header);
         serialUidTree.add(HtmlTree.DT(headerContent));
         Content serialContent = new StringContent(serialUID);
@@ -232,7 +234,8 @@ public class SerializedFormWriterImpl extends SubWriterHolderWriter
 
     @Override
     public void addPackageSerializedTree(Content serializedSummariesTree,
-            Content packageSerializedTree) {
+                                         Content packageSerializedTree)
+    {
         serializedSummariesTree.add(HtmlTree.LI(HtmlStyle.blockList, packageSerializedTree));
     }
 

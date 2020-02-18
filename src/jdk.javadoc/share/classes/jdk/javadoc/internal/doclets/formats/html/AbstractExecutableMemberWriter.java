@@ -257,7 +257,7 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
         if (!exceptions.isEmpty()) {
             Content link = writer.getLink(new LinkInfoImpl(configuration, MEMBER, exceptions.get(0)));
             htmltree.add(link);
-            for(int i = 1; i < exceptions.size(); i++) {
+            for (int i = 1; i < exceptions.size(); i++) {
                 htmltree.add(",");
                 htmltree.add(DocletConstants.NL);
                 Content exceptionLink = writer.getLink(new LinkInfoImpl(configuration, MEMBER,

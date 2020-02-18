@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@ import static jdk.javadoc.internal.tool.Main.Result.CMDERR;
 
 /**
  * Provides a mechanism for the javadoc tool to indicate an option
- * decoding issue, arising from command line error.
+ * decoding issue, arising from a command-line error.
  *
  * <p><b>This is NOT part of any supported API.
  * If you write code that depends on this, you do so at your own risk.

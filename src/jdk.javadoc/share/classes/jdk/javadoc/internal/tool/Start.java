@@ -98,7 +98,6 @@ public class Start {
     // used to determine the locale for the messager
     private Locale locale;
 
-
     /**
      * In API mode, exceptions thrown while calling the doclet are
      * propagated using ClientCodeException.
@@ -287,9 +286,9 @@ public class Start {
     // be similar to that of the java launcher: i.e. "java -help".
 
     /** The indent for the option synopsis. */
-    private static final String SMALL_INDENT = "    ";
+    private static final String SMALL_INDENT = " ".repeat(4);
     /** The automatic indent for the description. */
-    private static final String LARGE_INDENT = "                  ";
+    private static final String LARGE_INDENT = " ".repeat(18);
     /** The space allowed for the synopsis, if the description is to be shown on the same line. */
     private static final int DEFAULT_SYNOPSIS_WIDTH = 13;
     /** The nominal maximum line length, when seeing if text will fit on a line. */
@@ -339,17 +338,18 @@ public class Start {
         // Preprocess @file arguments
         try {
             argv = CommandLine.parse(argv);
-            return begin(Arrays.asList(argv), Collections.emptySet());
         } catch (IOException e) {
             error("main.cant.read", e.getMessage());
             return ERROR;
         }
+        return begin(Arrays.asList(argv), Collections.emptySet());
     }
 
-    // Called by 199 API.
+    // Called by the JSR 199 API
     public boolean begin(Class<?> docletClass,
-            Iterable<String> options,
-            Iterable<? extends JavaFileObject> fileObjects) {
+                         Iterable<String> options,
+                         Iterable<? extends JavaFileObject> fileObjects)
+    {
         this.docletClass = docletClass;
         List<String> opts = new ArrayList<>();
         for (String opt: options)
@@ -473,8 +473,9 @@ public class Start {
      * Main program - internal
      */
     private Result parseAndExecute(List<String> argList, Iterable<? extends JavaFileObject> fileObjects)
-            throws ToolException, OptionException, com.sun.tools.javac.main.Option.InvalidValueException {
-        long tm = System.currentTimeMillis();
+            throws ToolException, OptionException, com.sun.tools.javac.main.Option.InvalidValueException
+    {
+        final long startNanos = System.nanoTime();
 
         List<String> javaNames = new ArrayList<>();
 
@@ -549,8 +550,8 @@ public class Start {
 
         // We're done.
         if (options.verbose()) {
-            tm = System.currentTimeMillis() - tm;
-            messager.notice("main.done_in", Long.toString(tm));
+            long elapsedMillis = (System.nanoTime() - startNanos) / 1_000_000;
+            messager.notice("main.done_in", Long.toString(elapsedMillis));
         }
 
         return returnStatus;
@@ -645,7 +646,7 @@ public class Start {
         String userDocletName = null;
 
         // Step 1: loop through the args, set locale early on, if found.
-        for (int i = 0 ; i < argv.size() ; i++) {
+        for (int i = 0; i < argv.size(); i++) {
             String arg = argv.get(i);
             if (arg.equals(ToolOptions.DUMP_ON_ERROR)) {
                 // although this option is not needed in order to initialize the doclet,
@@ -765,7 +766,7 @@ public class Start {
 
     private void parseArgs(List<String> args, List<String> javaNames) throws ToolException,
             OptionException, com.sun.tools.javac.main.Option.InvalidValueException {
-        for (int i = 0 ; i < args.size() ; i++) {
+        for (int i = 0; i < args.size(); i++) {
             String arg = args.get(i);
             ToolOption o = options.getOption(arg);
             if (o != null) {

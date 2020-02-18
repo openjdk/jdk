@@ -80,10 +80,10 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
                      "org.omg.CORBA.Object");
 
     private static final Set<String> suppressImplementingSet
-            = Set.of( "java.lang.Cloneable",
-                    "java.lang.constant.Constable",
-                    "java.lang.constant.ConstantDesc",
-                    "java.io.Serializable");
+            = Set.of("java.lang.Cloneable",
+                     "java.lang.constant.Constable",
+                     "java.lang.constant.ConstantDesc",
+                     "java.io.Serializable");
 
     protected final TypeElement typeElement;
 
@@ -257,7 +257,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
         String sep = "";
         for (RecordComponentElement e : typeElement.getRecordComponents()) {
             content.add(sep);
-            getAnnotations(e.getAnnotationMirrors(), false).stream()
+            getAnnotations(e.getAnnotationMirrors(), false)
                     .forEach(a -> { content.add(a); content.add(" "); });
             Content link = getLink(new LinkInfoImpl(configuration, LinkInfoImpl.Kind.RECORD_COMPONENT,
                     e.asType()));
