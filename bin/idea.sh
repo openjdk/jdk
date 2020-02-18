@@ -121,10 +121,6 @@ if [ -d "$TOPLEVEL_DIR/.git" ] ; then
     VCS_TYPE="Git"
 fi
 
-if [ "x$VCS_TYPE" = "x" ] ; then
-  echo "FATAL: VCS_TYPE is empty" >&2; exit 1
-fi
-
 ### Replace template variables
 
 NUM_REPLACEMENTS=0
