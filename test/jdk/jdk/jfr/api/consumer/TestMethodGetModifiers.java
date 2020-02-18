@@ -41,6 +41,7 @@ import jdk.test.lib.jfr.SimpleEvent;
 
 /**
  * @test
+ * @summary Verifies that a recorded method has the correct modifier
  * @key jfr
  * @requires vm.hasJFR
  * @library /test/lib
@@ -49,33 +50,32 @@ import jdk.test.lib.jfr.SimpleEvent;
 public final class TestMethodGetModifiers {
 
     public static void main(String[] args) throws Throwable {
-        Recording recording = new Recording();
-        recording.start();
+        try (Recording recording = new Recording()) {
+            recording.start();
 
-        SimpleEvent ev = new SimpleEvent();
-        ev.commit();
-        recording.stop();
+            SimpleEvent ev = new SimpleEvent();
+            ev.commit();
+            recording.stop();
 
-        List<RecordedEvent> recordedEvents = Events.fromRecording(recording);
-        Events.hasEvents(recordedEvents);
-        RecordedEvent recordedEvent = recordedEvents.get(0);
+            List<RecordedEvent> recordedEvents = Events.fromRecording(recording);
+            Events.hasEvents(recordedEvents);
+            RecordedEvent recordedEvent = recordedEvents.get(0);
 
-        System.out.println("recorded event:" + recordedEvent);
+            System.out.println(recordedEvent);
 
-        RecordedStackTrace stacktrace = recordedEvent.getStackTrace();
-        List<RecordedFrame> frames = stacktrace.getFrames();
-        for (RecordedFrame frame : frames) {
-            RecordedMethod method = frame.getMethod();
-            if (method.getName().equals("main")) {
-                System.out.println("'main' method: " + method);
-                int modifiers = TestMethodGetModifiers.class.getDeclaredMethod("main", (Class<?>)String[].class).getModifiers();
-                System.out.println("modifiers: " + modifiers);
-                Asserts.assertEquals(method.getModifiers(), modifiers, "Incorrect method modifier reported");
-                RecordedClass type = method.getType();
-                assertNotNull(type, "Recorded class can not be null");
+            RecordedStackTrace stacktrace = recordedEvent.getStackTrace();
+            List<RecordedFrame> frames = stacktrace.getFrames();
+            for (RecordedFrame frame : frames) {
+                RecordedMethod method = frame.getMethod();
+                if (method.getName().equals("main")) {
+                    System.out.println("'main' method: " + method);
+                    int modifiers = TestMethodGetModifiers.class.getDeclaredMethod("main", (Class<?>)String[].class).getModifiers();
+                    System.out.println("modifiers: " + modifiers);
+                    Asserts.assertEquals(method.getModifiers(), modifiers, "Incorrect method modifier reported");
+                    RecordedClass type = method.getType();
+                    assertNotNull(type, "Recorded class can not be null");
+                }
             }
-
         }
     }
-
 }

@@ -48,31 +48,30 @@ import jdk.test.lib.jfr.Events;
 public class TestValueDescriptorRecorded {
 
     private static class MyEvent extends Event {
-
         @Label("myLabel")
         @Description("myDescription")
         int myValue;
     }
 
     public static void main(String[] args) throws Throwable {
-        Recording r = new Recording();
-        r.enable(MyEvent.class).withoutStackTrace();
-        r.start();
-        MyEvent event = new MyEvent();
-        event.commit();
-        r.stop();
+        try (Recording r = new Recording()) {
+            r.enable(MyEvent.class).withoutStackTrace();
+            r.start();
+            MyEvent event = new MyEvent();
+            event.commit();
+            r.stop();
 
-        List<RecordedEvent> events = Events.fromRecording(r);
-        Events.hasEvents(events);
-        RecordedEvent recordedEvent = events.get(0);
-
-        for (ValueDescriptor desc : recordedEvent.getFields()) {
-            if ("myValue".equals(desc.getName())) {
-                Asserts.assertEquals(desc.getLabel(), "myLabel");
-                Asserts.assertEquals(desc.getDescription(), "myDescription");
-                Asserts.assertEquals(desc.getTypeName(), int.class.getName());
-                Asserts.assertFalse(desc.isArray());
-                Asserts.assertNull(desc.getContentType());
+            List<RecordedEvent> events = Events.fromRecording(r);
+            Events.hasEvents(events);
+            RecordedEvent recordedEvent = events.get(0);
+            for (ValueDescriptor desc : recordedEvent.getFields()) {
+                if ("myValue".equals(desc.getName())) {
+                    Asserts.assertEquals(desc.getLabel(), "myLabel");
+                    Asserts.assertEquals(desc.getDescription(), "myDescription");
+                    Asserts.assertEquals(desc.getTypeName(), int.class.getName());
+                    Asserts.assertFalse(desc.isArray());
+                    Asserts.assertNull(desc.getContentType());
+                }
             }
         }
     }

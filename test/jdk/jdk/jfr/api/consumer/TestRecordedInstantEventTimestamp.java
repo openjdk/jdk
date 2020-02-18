@@ -44,17 +44,16 @@ import jdk.test.lib.jfr.SimpleEvent;
 public class TestRecordedInstantEventTimestamp {
 
     public static void main(String[] args) throws Throwable {
-        Recording r = new Recording();
-        r.start();
-        SimpleEvent s = new SimpleEvent();
-        s.commit();
-        r.stop();
+        try (Recording r = new Recording()) {
+            r.start();
+            SimpleEvent s = new SimpleEvent();
+            s.commit();
+            r.stop();
 
-        List<RecordedEvent> events = Events.fromRecording(r);
-        Events.hasEvents(events);
-        RecordedEvent event = events.get(0);
-        Asserts.assertEquals(event.getStartTime(), event.getEndTime());
-
-        r.close();
+            List<RecordedEvent> events = Events.fromRecording(r);
+            Events.hasEvents(events);
+            RecordedEvent event = events.get(0);
+            Asserts.assertEquals(event.getStartTime(), event.getEndTime());
+        }
     }
 }
