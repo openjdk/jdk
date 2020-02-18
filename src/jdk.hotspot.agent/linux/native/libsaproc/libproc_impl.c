@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -273,7 +273,7 @@ void delete_thread_info(struct ps_prochandle* ph, thread_info* thr_to_be_removed
     if (thr_to_be_removed == ph->threads) {
       ph->threads = ph->threads->next;
     } else {
-      thread_info* previous_thr;
+      thread_info* previous_thr = NULL;
       while (current_thr && current_thr != thr_to_be_removed) {
         previous_thr = current_thr;
         current_thr = current_thr->next;
