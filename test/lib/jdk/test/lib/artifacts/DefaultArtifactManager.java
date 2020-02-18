@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,23 +23,23 @@
 
 package jdk.test.lib.artifacts;
 
-import java.io.FileNotFoundException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
 public class DefaultArtifactManager implements ArtifactManager {
     @Override
     public Path resolve(Artifact artifact) throws ArtifactResolverException {
-        String name = artifact.name();
+        return resolve(artifact.name());
+    }
+
+    public Path resolve(String name) throws ArtifactResolverException {
         String location = System.getProperty(artifactProperty(name));
         if (location == null) {
-            throw new ArtifactResolverException("Couldn't automatically resolve dependency for " + name
-                    + " , revision " + artifact.revision() + "\n" +
+            throw new ArtifactResolverException("Couldn't automatically resolve dependency for " + name + "\n" +
                     "Please specify the location using " + artifactProperty(name));
         }
         return Paths.get(location);
     }
-
     private static String artifactProperty(String name) {
         return "jdk.test.lib.artifacts." + name;
     }

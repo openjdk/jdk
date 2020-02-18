@@ -88,16 +88,16 @@ public class JibArtifactManager implements ArtifactManager {
         }
     }
 
-    private Path download(String jibVersion, HashMap<String, Object> artifactDescription) throws Exception {
+    private Path download(String jibVersion, Map<String, Object> artifactDescription) throws Exception {
         return invokeInstallerMethod("download", jibVersion, artifactDescription);
     }
 
-    private Path install(String jibVersion, HashMap<String, Object> artifactDescription) throws Exception {
+    private Path install(String jibVersion, Map<String, Object> artifactDescription) throws Exception {
         return invokeInstallerMethod("install", jibVersion, artifactDescription);
     }
 
     private Path invokeInstallerMethod(String methodName, String jibVersion,
-                                       HashMap<String, Object> artifactDescription) throws Exception {
+                                       Map<String, Object> artifactDescription) throws Exception {
         // Temporarily replace the context classLoader
         Thread currentThread = Thread.currentThread();
         ClassLoader oldContextLoader = currentThread.getContextClassLoader();
@@ -113,29 +113,33 @@ public class JibArtifactManager implements ArtifactManager {
 
     @Override
     public Path resolve(Artifact artifact) throws ArtifactResolverException {
+        HashMap<String, Object> artifactDescription = new HashMap<>();
+        artifactDescription.put("module", artifact.name());
+        artifactDescription.put("organization", artifact.organization());
+        artifactDescription.put("ext", artifact.extension());
+        artifactDescription.put("revision", artifact.revision());
+        if (artifact.classifier().length() > 0) {
+            artifactDescription.put("classifier", artifact.classifier());
+        }
+        return resolve(artifact.name(), artifactDescription, artifact.unpack());
+    }
+
+    public Path resolve(String name, Map<String, Object> artifactDescription, boolean unpack)
+            throws ArtifactResolverException {
         Path path;
         // Use the DefaultArtifactManager to enable users to override locations
         try {
-            ArtifactManager manager = new DefaultArtifactManager();
-            path = manager.resolve(artifact);
+            DefaultArtifactManager manager = new DefaultArtifactManager();
+            path = manager.resolve(name);
         } catch (ArtifactResolverException e) {
             // Location hasn't been overridden, continue to automatically try to resolve the dependency
             try {
-                HashMap<String, Object> artifactDescription = new HashMap<>();
-                artifactDescription.put("module", artifact.name());
-                artifactDescription.put("organization", artifact.organization());
-                artifactDescription.put("ext", artifact.extension());
-                artifactDescription.put("revision", artifact.revision());
-                if (artifact.classifier().length() > 0) {
-                    artifactDescription.put("classifier", artifact.classifier());
-                }
-
                 path = download(jibVersion, artifactDescription);
-                if (artifact.unpack()) {
+                if (unpack) {
                     path = install(jibVersion, artifactDescription);
                 }
             } catch (Exception e2) {
-                throw new ArtifactResolverException("Failed to resolve the artifact " + artifact, e2);
+                throw new ArtifactResolverException("Failed to resolve the artifact " + name, e2);
             }
         }
         return path;
