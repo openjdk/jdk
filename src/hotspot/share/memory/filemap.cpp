@@ -1747,7 +1747,7 @@ void FileMapInfo::map_heap_regions() {
 
 bool FileMapInfo::map_heap_data(MemRegion **heap_mem, int first,
                                 int max, int* num, bool is_open_archive) {
-  MemRegion * regions = new MemRegion[max];
+  MemRegion* regions = MemRegion::create_array(max, mtInternal);
   FileMapRegion* si;
   int region_num = 0;
 
