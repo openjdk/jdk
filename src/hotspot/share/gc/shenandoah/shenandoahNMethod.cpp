@@ -237,14 +237,36 @@ void ShenandoahNMethod::assert_same_oops(bool allow_dead) {
 
   GrowableArray<oop*>* oops = detector.oops();
 
-  assert(oops->length() == oop_count(), "Must match");
-
+  int count = _oops_count;
   for (int index = 0; index < _oops_count; index ++) {
     assert(oops->contains(_oops[index]), "Must contain this oop");
   }
 
   for (oop* p = nm()->oops_begin(); p < nm()->oops_end(); p ++) {
+    if (*p == Universe::non_oop_word()) continue;
+    count++;
     assert(oops->contains(p), "Must contain this oop");
+  }
+
+  if (oops->length() < count) {
+    stringStream debug_stream;
+    debug_stream.print_cr("detected locs: %d", oops->length());
+    for (int i = 0; i < oops->length(); i++) {
+      debug_stream.print_cr("-> " PTR_FORMAT, p2i(oops->at(i)));
+    }
+    debug_stream.print_cr("recorded oops: %d", _oops_count);
+    for (int i = 0; i < _oops_count; i++) {
+      debug_stream.print_cr("-> " PTR_FORMAT, p2i(_oops[i]));
+    }
+    GrowableArray<oop*> check;
+    bool non_immed;
+    detect_reloc_oops(nm(), check, non_immed);
+    debug_stream.print_cr("check oops: %d", check.length());
+    for (int i = 0; i < check.length(); i++) {
+      debug_stream.print_cr("-> " PTR_FORMAT, p2i(check.at(i)));
+    }
+    fatal("Must match #detected: %d, #recorded: %d, #total: %d, begin: " PTR_FORMAT ", end: " PTR_FORMAT "\n%s",
+          oops->length(), _oops_count, count, p2i(nm()->oops_begin()), p2i(nm()->oops_end()), debug_stream.as_string());
   }
 }
 
@@ -277,6 +299,7 @@ void ShenandoahNMethodTable::register_nmethod(nmethod* nm) {
 
   if (data != NULL) {
     assert(contain(nm), "Must have been registered");
+    assert(nm == data->nm(), "Must be same nmethod");
     data->update();
   } else {
     data = ShenandoahNMethod::for_nmethod(nm);
