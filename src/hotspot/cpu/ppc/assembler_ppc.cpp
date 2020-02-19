@@ -81,7 +81,7 @@ int Assembler::branch_destination(int inst, int pos) {
 void Assembler::andi(Register a, Register s, const long ui16) {
   if (is_power_of_2(((jlong) ui16)+1)) {
     // pow2minus1
-    clrldi(a, s, 64-log2((((jlong) ui16)+1)));
+    clrldi(a, s, 64-log2_long((((jlong) ui16)+1)));
   } else if (is_power_of_2((jlong) ui16)) {
     // pow2
     rlwinm(a, s, 0, 31-log2_long((jlong) ui16), 31-log2_long((jlong) ui16));
