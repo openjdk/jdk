@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -259,6 +259,8 @@ public class VerifyCACerts {
         {
             // Valid until: Tue Jul 09 14:40:36 EDT 2019
             add("utnuserfirstobjectca [jdk]");
+            // Valid until: Tue May 26 00:00:00 GMT 2020
+            add("keynectisrootca [jdk]");
         }
     };
 
