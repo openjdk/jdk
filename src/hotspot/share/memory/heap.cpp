@@ -612,6 +612,9 @@ void CodeHeap::add_to_freelist(HeapBlock* a) {
   size_t  bseg = segment_for(b);
   _freelist_length++;
 
+  _blob_count--;
+  assert(_blob_count >= 0, "sanity");
+
   assert(b != _freelist, "cannot be removed twice");
 
   // Mark as free and update free space count
