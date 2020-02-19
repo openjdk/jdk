@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -287,6 +287,8 @@ public enum SourceVersion {
      * @return {@code true} if this string is a
      * syntactically valid identifier or keyword, {@code false}
      * otherwise.
+     *
+     * @jls 3.8 Identifiers
      */
     public static boolean isIdentifier(CharSequence name) {
         String id = name.toString();
@@ -311,9 +313,16 @@ public enum SourceVersion {
 
     /**
      * Returns whether or not {@code name} is a syntactically valid
-     * qualified name in the latest source version.  Unlike {@link
-     * #isIdentifier isIdentifier}, this method returns {@code false}
-     * for keywords, boolean literals, and the null literal.
+     * qualified name in the latest source version.
+     *
+     * Syntactically, a qualified name is a sequence of identifiers
+     * separated by period characters ("{@code .}"). This method
+     * splits the input string into period-separated segments and
+     * applies checks to each segment in turn.
+     *
+     * Unlike {@link #isIdentifier isIdentifier}, this method returns
+     * {@code false} for keywords, boolean literals, and the null
+     * literal in any segment.
      *
      * This method returns {@code true} for <i>restricted
      * keywords</i> and <i>restricted identifiers</i>
@@ -330,9 +339,16 @@ public enum SourceVersion {
 
     /**
      * Returns whether or not {@code name} is a syntactically valid
-     * qualified name in the given source version.  Unlike {@link
-     * #isIdentifier isIdentifier}, this method returns {@code false}
-     * for keywords, boolean literals, and the null literal.
+     * qualified name in the given source version.
+     *
+     * Syntactically, a qualified name is a sequence of identifiers
+     * separated by period characters ("{@code .}"). This method
+     * splits the input string into period-separated segments and
+     * applies checks to each segment in turn.
+     *
+     * Unlike {@link #isIdentifier isIdentifier}, this method returns
+     * {@code false} for keywords, boolean literals, and the null
+     * literal in any segment.
      *
      * This method returns {@code true} for <i>restricted
      * keywords</i> and <i>restricted identifiers</i>
