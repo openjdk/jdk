@@ -1748,6 +1748,14 @@ void FileMapInfo::map_heap_regions() {
 bool FileMapInfo::map_heap_data(MemRegion **heap_mem, int first,
                                 int max, int* num, bool is_open_archive) {
   MemRegion* regions = MemRegion::create_array(max, mtInternal);
+
+  struct Cleanup {
+    MemRegion* _regions;
+    bool _aborted;
+    Cleanup(MemRegion* regions) : _regions(regions), _aborted(true) { }
+    ~Cleanup() { if (_aborted) { FREE_C_HEAP_ARRAY(MemRegion, _regions); } }
+  } cleanup(regions);
+
   FileMapRegion* si;
   int region_num = 0;
 
@@ -1807,6 +1815,7 @@ bool FileMapInfo::map_heap_data(MemRegion **heap_mem, int first,
     }
   }
 
+  cleanup._aborted = false;
   // the shared heap data is mapped successfully
   *heap_mem = regions;
   *num = region_num;
