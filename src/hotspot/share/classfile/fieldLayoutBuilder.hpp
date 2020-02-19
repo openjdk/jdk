@@ -192,7 +192,7 @@ class FieldLayout : public ResourceObj {
   void add_field_at_offset(LayoutRawBlock* blocks, int offset, LayoutRawBlock* start = NULL);
   void add_contiguously(GrowableArray<LayoutRawBlock*>* list, LayoutRawBlock* start = NULL);
   LayoutRawBlock* insert_field_block(LayoutRawBlock* slot, LayoutRawBlock* block);
-  void reconstruct_layout(const InstanceKlass* ik);
+  bool reconstruct_layout(const InstanceKlass* ik);
   void fill_holes(const InstanceKlass* ik);
   LayoutRawBlock* insert(LayoutRawBlock* slot, LayoutRawBlock* block);
   void remove(LayoutRawBlock* block);
