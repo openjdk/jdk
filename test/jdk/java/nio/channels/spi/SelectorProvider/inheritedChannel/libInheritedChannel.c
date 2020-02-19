@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -233,10 +233,12 @@ JNIEXPORT void JNICALL Java_UnixDomainSocket_bind0
     struct sockaddr_un addr;
     const char *nameUtf = (*env)->GetStringUTFChars(env, name, NULL);
     int ret = -1;
+    int length = sizeof(addr.sun_path);
     unlink(nameUtf);
     memset(&addr, 0, sizeof(addr));
     addr.sun_family = AF_UNIX;
-    strncpy(addr.sun_path, nameUtf, strlen(nameUtf));
+    strncpy(addr.sun_path, nameUtf, length);
+    addr.sun_path[length - 1] = '\0';
     ret = bind(sock, (const struct sockaddr*)&addr, sizeof(addr));
     if (ret == -1) {
         ThrowException(env, "java/io/IOException", "socket bind error");
@@ -265,9 +267,11 @@ JNIEXPORT void JNICALL Java_UnixDomainSocket_connect0
     struct sockaddr_un addr;
     const char *nameUtf = (*env)->GetStringUTFChars(env, name, NULL);
     int ret = -1;
+    int length = sizeof(addr.sun_path);
     memset(&addr, 0, sizeof(addr));
     addr.sun_family = AF_UNIX;
-    strncpy(addr.sun_path, nameUtf, strlen(nameUtf));
+    strncpy(addr.sun_path, nameUtf, length);
+    addr.sun_path[length - 1] = '\0';
     ret = connect(fd, (const struct sockaddr*)&addr, sizeof(addr));
     if (ret == -1) {
         ThrowException(env, "java/io/IOException", "socket connect error");
