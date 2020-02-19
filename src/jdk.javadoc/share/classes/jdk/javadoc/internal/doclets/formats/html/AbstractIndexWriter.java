@@ -70,7 +70,7 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
     /**
      * The index of all the members with unicode character.
      */
-    protected IndexBuilder indexbuilder;
+    protected IndexBuilder indexBuilder;
 
     protected Navigation navBar;
 
@@ -80,13 +80,13 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
      *
      * @param configuration  The current configuration
      * @param path       Path to the file which is getting generated.
-     * @param indexbuilder Unicode based Index from {@link IndexBuilder}
+     * @param indexBuilder Unicode based Index from {@link IndexBuilder}
      */
     protected AbstractIndexWriter(HtmlConfiguration configuration,
                                   DocPath path,
-                                  IndexBuilder indexbuilder) {
+                                  IndexBuilder indexBuilder) {
         super(configuration, path);
-        this.indexbuilder = indexbuilder;
+        this.indexBuilder = indexBuilder;
         this.navBar = new Navigation(null, configuration, PageMode.INDEX, path);
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,26 +64,26 @@ public class SingleIndexWriter extends AbstractIndexWriter {
      *
      * @param configuration the configuration for this doclet
      * @param filename     Name of the index file to be generated.
-     * @param indexbuilder Unicode based Index from {@link IndexBuilder}
+     * @param indexBuilder Unicode based Index from {@link IndexBuilder}
      */
     public SingleIndexWriter(HtmlConfiguration configuration,
                              DocPath filename,
-                             IndexBuilder indexbuilder) {
-        super(configuration, filename, indexbuilder);
+                             IndexBuilder indexBuilder) {
+        super(configuration, filename, indexBuilder);
     }
 
     /**
      * Generate single index file, for all Unicode characters.
      *
      * @param configuration the configuration for this doclet
-     * @param indexbuilder IndexBuilder built by {@link IndexBuilder}
+     * @param indexBuilder IndexBuilder built by {@link IndexBuilder}
      * @throws DocFileIOException if there is a problem generating the index
      */
     public static void generate(HtmlConfiguration configuration,
-                                IndexBuilder indexbuilder) throws DocFileIOException {
+                                IndexBuilder indexBuilder) throws DocFileIOException {
         DocPath filename = DocPaths.INDEX_ALL;
         SingleIndexWriter indexgen = new SingleIndexWriter(configuration,
-                                         filename, indexbuilder);
+                                         filename, indexBuilder);
         indexgen.generateIndexFile();
     }
 
@@ -101,17 +101,17 @@ public class SingleIndexWriter extends AbstractIndexWriter {
         headerContent.add(navBar.getContent(true));
         HtmlTree divTree = new HtmlTree(HtmlTag.DIV);
         divTree.setStyle(HtmlStyle.contentContainer);
-        elements = new TreeSet<>(indexbuilder.getIndexMap().keySet());
+        elements = new TreeSet<>(indexBuilder.asMap().keySet());
         elements.addAll(configuration.tagSearchIndexKeys);
         addLinksForIndexes(divTree);
         for (Character unicode : elements) {
             if (configuration.tagSearchIndexMap.get(unicode) == null) {
-                addContents(unicode, indexbuilder.getMemberList(unicode), divTree);
-            } else if (indexbuilder.getMemberList(unicode) == null) {
+                addContents(unicode, indexBuilder.getMemberList(unicode), divTree);
+            } else if (indexBuilder.getMemberList(unicode) == null) {
                 addSearchContents(unicode, configuration.tagSearchIndexMap.get(unicode), divTree);
             } else {
-                addContents(unicode, indexbuilder.getMemberList(unicode),
-                        configuration.tagSearchIndexMap.get(unicode), divTree);
+                addContents(unicode, indexBuilder.getMemberList(unicode),
+                            configuration.tagSearchIndexMap.get(unicode), divTree);
             }
         }
         addLinksForIndexes(divTree);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,14 +68,14 @@ public class SplitIndexWriter extends AbstractIndexWriter {
      *
      * @param configuration the configuration for this doclet
      * @param path       Path to the file which is getting generated.
-     * @param indexbuilder Unicode based Index from {@link IndexBuilder}
+     * @param indexBuilder Unicode based Index from {@link IndexBuilder}
      * @param elements the collection of characters for which to generate index files
      */
     public SplitIndexWriter(HtmlConfiguration configuration,
                             DocPath path,
-                            IndexBuilder indexbuilder,
+                            IndexBuilder indexBuilder,
                             Collection<Character> elements) {
-        super(configuration, path, indexbuilder);
+        super(configuration, path, indexBuilder);
         this.indexElements = new ArrayList<>(elements);
     }
 
@@ -84,13 +84,13 @@ public class SplitIndexWriter extends AbstractIndexWriter {
      * the members starting with the particular unicode character.
      *
      * @param configuration the configuration for this doclet
-     * @param indexbuilder IndexBuilder built by {@link IndexBuilder}
+     * @param indexBuilder IndexBuilder built by {@link IndexBuilder}
      * @throws DocFileIOException if there is a problem generating the index files
      */
     public static void generate(HtmlConfiguration configuration,
-                                IndexBuilder indexbuilder) throws DocFileIOException {
+                                IndexBuilder indexBuilder) throws DocFileIOException {
         DocPath path = DocPaths.INDEX_FILES;
-        Set<Character> keys = new TreeSet<>(indexbuilder.getIndexMap().keySet());
+        Set<Character> keys = new TreeSet<>(indexBuilder.asMap().keySet());
         keys.addAll(configuration.tagSearchIndexKeys);
         ListIterator<Character> li = new ArrayList<>(keys).listIterator();
         int prev;
@@ -102,7 +102,7 @@ public class SplitIndexWriter extends AbstractIndexWriter {
             DocPath filename = DocPaths.indexN(li.nextIndex());
             SplitIndexWriter indexgen = new SplitIndexWriter(configuration,
                     path.resolve(filename),
-                    indexbuilder, keys);
+                    indexBuilder, keys);
             indexgen.generateIndexFile((Character) ch);
             if (!li.hasNext()) {
                 indexgen.createSearchIndexFiles();
@@ -134,11 +134,11 @@ public class SplitIndexWriter extends AbstractIndexWriter {
         divTree.setStyle(HtmlStyle.contentContainer);
         addLinksForIndexes(divTree);
         if (configuration.tagSearchIndexMap.get(unicode) == null) {
-            addContents(unicode, indexbuilder.getMemberList(unicode), divTree);
-        } else if (indexbuilder.getMemberList(unicode) == null) {
+            addContents(unicode, indexBuilder.getMemberList(unicode), divTree);
+        } else if (indexBuilder.getMemberList(unicode) == null) {
             addSearchContents(unicode, configuration.tagSearchIndexMap.get(unicode), divTree);
         } else {
-            addContents(unicode, indexbuilder.getMemberList(unicode),
+            addContents(unicode, indexBuilder.getMemberList(unicode),
                     configuration.tagSearchIndexMap.get(unicode), divTree);
         }
         addLinksForIndexes(divTree);

@@ -150,7 +150,6 @@ public class HtmlDoclet extends AbstractDoclet {
         if (options.classUse()) {
             ClassUseWriter.generate(configuration, classtree);
         }
-        IndexBuilder indexbuilder = new IndexBuilder(configuration, nodeprecated);
 
         if (options.createTree()) {
             TreeWriter.generate(configuration, classtree);
@@ -169,11 +168,12 @@ public class HtmlDoclet extends AbstractDoclet {
         }
 
         if (options.createIndex()) {
+            IndexBuilder indexBuilder = new IndexBuilder(configuration, nodeprecated);
             configuration.buildSearchTagIndex();
             if (options.splitIndex()) {
-                SplitIndexWriter.generate(configuration, indexbuilder);
+                SplitIndexWriter.generate(configuration, indexBuilder);
             } else {
-                SingleIndexWriter.generate(configuration, indexbuilder);
+                SingleIndexWriter.generate(configuration, indexBuilder);
             }
             AllClassesIndexWriter.generate(configuration,
                     new IndexBuilder(configuration, nodeprecated, true));

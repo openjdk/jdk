@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,20 +54,20 @@ public class AllClassesIndexWriter extends HtmlDocletWriter {
     /**
      * Index of all the classes.
      */
-    protected IndexBuilder indexbuilder;
+    protected IndexBuilder indexBuilder;
 
     /**
-     * Construct AllClassesIndexWriter object. Also initializes the indexbuilder variable in this
+     * Construct AllClassesIndexWriter object. Also initializes the indexBuilder variable in this
      * class.
      *
      * @param configuration The current configuration
      * @param filename Path to the file which is getting generated.
-     * @param indexbuilder Unicode based Index from {@link IndexBuilder}
+     * @param indexBuilder Unicode based Index from {@link IndexBuilder}
      */
     public AllClassesIndexWriter(HtmlConfiguration configuration,
-            DocPath filename, IndexBuilder indexbuilder) {
+            DocPath filename, IndexBuilder indexBuilder) {
         super(configuration, filename);
-        this.indexbuilder = indexbuilder;
+        this.indexBuilder = indexBuilder;
     }
 
     /**
@@ -134,8 +134,8 @@ public class AllClassesIndexWriter extends HtmlDocletWriter {
                 .addTab(resources.errorSummary, e -> utils.isError((TypeElement)e))
                 .addTab(resources.annotationTypeSummary, utils::isAnnotationType)
                 .setTabScript(i -> "show(" + i + ");");
-        for (Character unicode : indexbuilder.index()) {
-            for (Element element : indexbuilder.getMemberList(unicode)) {
+        for (Character unicode : indexBuilder.keys()) {
+            for (Element element : indexBuilder.getMemberList(unicode)) {
                 TypeElement typeElement = (TypeElement) element;
                 if (!utils.isCoreClass(typeElement)) {
                     continue;
