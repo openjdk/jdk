@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,9 +21,9 @@
  * questions.
  */
 
-// The LVTT entry points to a non-existant LVT entry
+// There's a duplicate LVTT entry below.
 
-class NotFoundLVTT {
+class DuplicateLVTT {
   0xCAFEBABE;
   0; // minor version
   52; // version
@@ -67,7 +67,7 @@ class NotFoundLVTT {
     Utf8 "LineNumberTable"; // #38    
     Utf8 "LocalVariableTable"; // #39    
     Utf8 "this"; // #40    
-    Utf8 "LNotFoundLVTT;"; // #41    
+    Utf8 "LDuplicateLVTT;"; // #41    
     Utf8 "main"; // #42    
     Utf8 "([Ljava/lang/String;)V"; // #43    
     Utf8 "args"; // #44    
@@ -93,7 +93,7 @@ class NotFoundLVTT {
     Utf8 "LocalVariableTypeTable"; // #64    
     Utf8 "Ljava/util/ArrayList<Ljava/lang/String;>;"; // #65    
     Utf8 "SourceFile"; // #66    
-    Utf8 "NotFoundLVTT.java"; // #67    
+    Utf8 "DuplicateLVTT.java"; // #67    
     NameAndType #35 #36; // #68    
     Utf8 "java/util/ArrayList"; // #69    
     Utf8 "me"; // #70    
@@ -121,7 +121,7 @@ class NotFoundLVTT {
     Utf8 "s="; // #92    
     Utf8 "ArrayList<String>="; // #93    
     NameAndType #102 #115; // #94    
-    Utf8 "NotFoundLVTT"; // #95    
+    Utf8 "DuplicateLVTT"; // #95    
     Utf8 "java/lang/Object"; // #96    
     Utf8 "add"; // #97    
     Utf8 "(Ljava/lang/Object;)Z"; // #98    
@@ -275,7 +275,8 @@ class NotFoundLVTT {
             ;
             Attr(#64) { // LocalVariableTypeTable
               [] { // LocalVariableTypeTable
-                38 240 62 65 11;
+                39 240 62 65 11;
+                39 240 62 65 11;
               }
             } // end LocalVariableTypeTable
           } // Attributes
@@ -289,4 +290,4 @@ class NotFoundLVTT {
       #67;
     } // end SourceFile
   } // Attributes
-} // end class NotFoundLVTT
+} // end class DuplicateLVTT

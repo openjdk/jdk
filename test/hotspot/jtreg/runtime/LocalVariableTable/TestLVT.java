@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
+ * @compile DuplicateLVT.jcod DuplicateLVTT.jcod NotFoundLVTT.jcod
  * @compile -g -XDignore.symbol.file TestLVT.java
  * @run main TestLVT
  */
@@ -43,19 +44,19 @@ public class TestLVT {
         String jarFile = System.getProperty("test.src") + "/testcase.jar";
 
         // java -cp $testSrc/testcase.jar DuplicateLVT
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-cp", jarFile, "DuplicateLVT");
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("DuplicateLVT");
         new OutputAnalyzer(pb.start())
             .shouldContain("Duplicated LocalVariableTable attribute entry for 'by' in class file DuplicateLVT")
             .shouldHaveExitValue(1);
 
         // java -cp $testclasses/testcase.jar DuplicateLVTT
-        pb = ProcessTools.createJavaProcessBuilder("-cp", jarFile, "DuplicateLVTT");
+        pb = ProcessTools.createJavaProcessBuilder("DuplicateLVTT");
         new OutputAnalyzer(pb.start())
             .shouldContain("Duplicated LocalVariableTypeTable attribute entry for 'list' in class file DuplicateLVTT")
             .shouldHaveExitValue(1);
 
         // java -cp $testclasses/testcase.jar NotFoundLVTT
-        pb = ProcessTools.createJavaProcessBuilder("-cp", jarFile, "NotFoundLVTT");
+        pb = ProcessTools.createJavaProcessBuilder("NotFoundLVTT");
         new OutputAnalyzer(pb.start())
             .shouldContain("LVTT entry for 'list' in class file NotFoundLVTT does not match any LVT entry")
             .shouldHaveExitValue(1);
