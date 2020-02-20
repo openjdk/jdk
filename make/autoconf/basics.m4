@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -415,6 +415,21 @@ AC_DEFUN([BASIC_DEPRECATED_ARG_ENABLE],
     fi
 
   fi
+])
+
+###############################################################################
+# Register an --enable-* argument as an alias for another argument.
+# $1: The name of the enable argument for the new alias, not including --enable-
+# $2: The full name of the argument of which to make this an alias, including
+#     --enable- or --with-.
+AC_DEFUN([BASIC_ALIASED_ARG_ENABLE],
+[
+  AC_ARG_ENABLE($1, [AS_HELP_STRING([--enable-$1], [alias for $2])], [
+    # Use m4 to strip initial -- from target ($2), convert - to _, prefix enable_
+    # to new alias name, and create a shell variable assignment,
+    # e.g.: enable_old_style="$enable_new_alias"
+    translit(patsubst($2, --), -, _)="$[enable_]translit($1, -, _)"
+  ])
 ])
 
 ###############################################################################

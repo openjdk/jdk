@@ -684,11 +684,14 @@ features, use `bash configure --help=short` instead.)
     (or variants) of Hotspot. Valid variants are: `server`, `client`,
     `minimal`, `core`, `zero`, `custom`. Note that not all
     variants are possible to combine in a single build.
-  * `--with-jvm-features=<feature>[,<feature>...]` - Use the specified JVM
-    features when building Hotspot. The list of features will be enabled on top
-    of the default list. For the `custom` JVM variant, this default list is
-    empty. A complete list of available JVM features can be found using `bash
-    configure --help`.
+  * `--enable-jvm-feature-<feature>` or `--disable-jvm-feature-<feature>` -
+    Include (or exclude) `<feature>` as a JVM feature in Hotspot. You can also
+    specify a list of features to be enabled, separated by space or comma, as
+    `--with-jvm-features=<feature>[,<feature>...]`. If you prefix `<feature>`
+    with a `-`, it will be disabled. These options will modify the default list
+    of features for the JVM variant(s) you are building. For the `custom` JVM
+    variant, the default list is empty. A complete list of valid JVM features
+    can be found using `bash configure --help`.
   * `--with-target-bits=<bits>` - Create a target binary suitable for running
     on a `<bits>` platform. Use this to create 32-bit output on a 64-bit build
     platform, instead of doing a full cross-compile. (This is known as a

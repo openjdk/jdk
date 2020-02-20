@@ -1,7 +1,7 @@
 #
 # ----------------------------------------------------------------------------------------------------
 #
-# Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -153,8 +153,8 @@ To build hotspot and import it into the JDK: "mx make hotspot import-hotspot"
         # JDK10 must be bootstrapped with a JDK9
         compliance = mx.JavaCompliance('9')
         jdk9 = mx.get_jdk(compliance.exactMatch, versionDescription=compliance.value)
-        cmd = ['sh', 'configure', '--with-debug-level=' + _vm.debugLevel, '--with-native-debug-symbols=external', '--disable-precompiled-headers', '--with-jvm-features=graal',
-               '--with-jvm-variants=' + _vm.jvmVariant, '--disable-warnings-as-errors', '--with-boot-jdk=' + jdk9.home, '--with-jvm-features=graal']
+        cmd = ['sh', 'configure', '--with-debug-level=' + _vm.debugLevel, '--with-native-debug-symbols=external', '--disable-precompiled-headers', '--enable-jvm-feature-graal',
+               '--with-jvm-variants=' + _vm.jvmVariant, '--disable-warnings-as-errors', '--with-boot-jdk=' + jdk9.home]
         mx.run(cmd, cwd=_get_jdk_dir())
     cmd = [mx.gmake_cmd(), 'CONF=' + _vm.debugLevel]
     if mx.get_opts().verbose:

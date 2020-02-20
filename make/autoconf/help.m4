@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -192,8 +192,8 @@ AC_DEFUN_ONCE([HELP_PRINT_ADDITIONAL_HELP_AND_EXIT],
 
     # Print available jvm features
     $PRINTF "The following JVM features are available as arguments to --with-jvm-features.\n"
-    $PRINTF "Which are valid to use depends on the target platform.\n  "
-    $PRINTF "%s " $VALID_JVM_FEATURES
+    $PRINTF "Which are valid to use depends on the target platform and JVM variant.\n  "
+    $PRINTF "%s " valid_jvm_features
     $PRINTF "\n"
 
     # And now exit directly
