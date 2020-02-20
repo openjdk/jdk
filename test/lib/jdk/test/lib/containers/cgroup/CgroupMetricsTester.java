@@ -30,7 +30,7 @@ import java.util.stream.Stream;
 
 interface CgroupMetricsTester {
 
-    public static final double ERROR_MARGIN = 0.1;
+    public static final double ERROR_MARGIN = 0.25;
     public static final String EMPTY_STR = "";
 
     public void testMemorySubsystem();
