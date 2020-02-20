@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -262,16 +262,16 @@ public class TIFFIFD extends TIFFDirectory {
     private static int readFieldValue(ImageInputStream stream,
         int type, int count, Object[] data) throws IOException {
         Object obj;
+        final int UNIT_SIZE = 1024000;
 
         switch (type) {
             case TIFFTag.TIFF_BYTE:
             case TIFFTag.TIFF_SBYTE:
             case TIFFTag.TIFF_UNDEFINED:
             case TIFFTag.TIFF_ASCII:
-                byte[] bvalues = new byte[count];
-                stream.readFully(bvalues, 0, count);
-
                 if (type == TIFFTag.TIFF_ASCII) {
+                    byte[] bvalues = new byte[count];
+                    stream.readFully(bvalues, 0, count);
                     // Can be multiple strings
                     ArrayList<String> v = new ArrayList<>();
                     boolean inString = false;
@@ -312,77 +312,295 @@ public class TIFFIFD extends TIFFDirectory {
 
                     obj = strings;
                 } else {
-                    obj = bvalues;
+                    if (count < UNIT_SIZE) {
+                        byte[] bvalues = new byte[count];
+                        stream.readFully(bvalues, 0, count);
+                        obj = bvalues;
+                    } else {
+                        int bytesToRead = count;
+                        int bytesRead = 0;
+                        List<byte[]> bufs = new ArrayList<>();
+                        while (bytesToRead != 0) {
+                            int sz = Math.min(bytesToRead, UNIT_SIZE);
+                            byte[] unit = new byte[sz];
+                            stream.readFully(unit, bytesRead, sz);
+                            bufs.add(unit);
+                            bytesRead += sz;
+                            bytesToRead -= sz;
+                        }
+                        byte[] tagData = new byte[bytesRead];
+                        int copiedBytes = 0;
+                        for (byte[] ba : bufs) {
+                            System.arraycopy(ba, 0, tagData, copiedBytes, ba.length);
+                            copiedBytes += ba.length;
+                        }
+                        obj = tagData;
+                    }
                 }
                 break;
 
             case TIFFTag.TIFF_SHORT:
-                char[] cvalues = new char[count];
-                for (int j = 0; j < count; j++) {
-                    cvalues[j] = (char) (stream.readUnsignedShort());
+                final int SHORT_TILE_SIZE =
+                    UNIT_SIZE / TIFFTag.getSizeOfType(TIFFTag.TIFF_SHORT);
+                if (count < SHORT_TILE_SIZE) {
+                    char[] cvalues = new char[count];
+                    for (int j = 0; j < count; j++) {
+                        cvalues[j] = (char) (stream.readUnsignedShort());
+                    }
+                    obj = cvalues;
+                } else {
+                    int charsToRead = count;
+                    int charsRead = 0;
+                    List<char[]> bufs = new ArrayList<>();
+                    while (charsToRead != 0) {
+                        int sz = Math.min(charsToRead, SHORT_TILE_SIZE);
+                        char[] unit = new char[sz];
+                        for (int i = 0; i < sz ; i++) {
+                            unit[i] = (char) (stream.readUnsignedShort());
+                        }
+                        bufs.add(unit);
+                        charsRead += sz;
+                        charsToRead -= sz;
+                    }
+                    char[] tagData = new char[charsRead];
+                    int copiedChars = 0;
+                    for (char[] ca : bufs) {
+                        System.arraycopy(ca, 0, tagData, copiedChars, ca.length);
+                        copiedChars += ca.length;
+                    }
+                    obj = tagData;
                 }
-                obj = cvalues;
                 break;
 
             case TIFFTag.TIFF_LONG:
             case TIFFTag.TIFF_IFD_POINTER:
-                long[] lvalues = new long[count];
-                for (int j = 0; j < count; j++) {
-                    lvalues[j] = stream.readUnsignedInt();
+                final int LONG_TILE_SIZE =
+                    UNIT_SIZE / TIFFTag.getSizeOfType(TIFFTag.TIFF_LONG);
+                if (count < LONG_TILE_SIZE) {
+                    long[] lvalues = new long[count];
+                    for (int j = 0; j < count; j++) {
+                        lvalues[j] = stream.readUnsignedInt();
+                    }
+                    obj = lvalues;
+                } else {
+                    int longsToRead = count;
+                    int longsRead = 0;
+                    List<long[]> bufs = new ArrayList<>();
+                    while (longsToRead != 0) {
+                        int sz = Math.min(longsToRead, LONG_TILE_SIZE);
+                        long[] unit = new long[sz];
+                        for (int i = 0; i < sz ; i++) {
+                            unit[i] = stream.readUnsignedInt();
+                        }
+                        bufs.add(unit);
+                        longsRead += sz;
+                        longsToRead -= sz;
+                    }
+                    long[] tagData = new long[longsRead];
+                    int copiedLongs = 0;
+                    for (long[] la : bufs) {
+                        System.arraycopy(la, 0, tagData, copiedLongs, la.length);
+                        copiedLongs += la.length;
+                    }
+                    obj = tagData;
                 }
-                obj = lvalues;
                 break;
 
             case TIFFTag.TIFF_RATIONAL:
-                long[][] llvalues = new long[count][2];
-                for (int j = 0; j < count; j++) {
-                    llvalues[j][0] = stream.readUnsignedInt();
-                    llvalues[j][1] = stream.readUnsignedInt();
+                final int RATIONAL_TILE_SIZE =
+                    UNIT_SIZE / TIFFTag.getSizeOfType(TIFFTag.TIFF_RATIONAL);
+                if (count < RATIONAL_TILE_SIZE) {
+                    long[][] llvalues = new long[count][2];
+                    for (int j = 0; j < count; j++) {
+                        llvalues[j][0] = stream.readUnsignedInt();
+                        llvalues[j][1] = stream.readUnsignedInt();
+                    }
+                    obj = llvalues;
+                } else {
+                    int rationalsToRead = count;
+                    int rationalsRead = 0;
+                    List<long[]> bufs = new ArrayList<>();
+                    while (rationalsToRead != 0) {
+                        int sz = Math.min(rationalsToRead, RATIONAL_TILE_SIZE);
+                        long[] unit = new long[sz * 2];
+                        for (int i = 0; i < (sz * 2) ; i++) {
+                            unit[i] = stream.readUnsignedInt();
+                        }
+                        bufs.add(unit);
+                        rationalsRead += sz;
+                        rationalsToRead -= sz;
+                    }
+                    long[][] tagData = new long[rationalsRead][2];
+                    int copiedRationals = 0;
+                    for (long[] la : bufs) {
+                        for (int i = 0; i < la.length; i = i + 2) {
+                            tagData[copiedRationals + i][0] = la[i];
+                            tagData[copiedRationals + i][1] = la[i + 1];
+                        }
+                        copiedRationals += (la.length / 2);
+                    }
+                    obj = tagData;
                 }
-                obj = llvalues;
                 break;
 
             case TIFFTag.TIFF_SSHORT:
-                short[] svalues = new short[count];
-                for (int j = 0; j < count; j++) {
-                    svalues[j] = stream.readShort();
+                final int SSHORT_TILE_SIZE =
+                    UNIT_SIZE / TIFFTag.getSizeOfType(TIFFTag.TIFF_SSHORT);
+                if (count < SSHORT_TILE_SIZE) {
+                    short[] svalues = new short[count];
+                    for (int j = 0; j < count; j++) {
+                        svalues[j] = stream.readShort();
+                    }
+                    obj = svalues;
+                } else {
+                    int shortsToRead = count;
+                    int shortsRead = 0;
+                    List<short[]> bufs = new ArrayList<>();
+                    while (shortsToRead != 0) {
+                        int sz = Math.min(shortsToRead, SSHORT_TILE_SIZE);
+                        short[] unit = new short[sz];
+                        stream.readFully(unit, shortsRead, sz);
+                        bufs.add(unit);
+                        shortsRead += sz;
+                        shortsToRead -= sz;
+                    }
+                    short[] tagData = new short[shortsRead];
+                    int copiedShorts = 0;
+                    for (short[] sa : bufs) {
+                        System.arraycopy(sa, 0, tagData, copiedShorts, sa.length);
+                        copiedShorts += sa.length;
+                    }
+                    obj = tagData;
                 }
-                obj = svalues;
                 break;
 
             case TIFFTag.TIFF_SLONG:
-                int[] ivalues = new int[count];
-                for (int j = 0; j < count; j++) {
-                    ivalues[j] = stream.readInt();
+                final int INT_TILE_SIZE =
+                    UNIT_SIZE / TIFFTag.getSizeOfType(TIFFTag.TIFF_SLONG);
+                if (count < INT_TILE_SIZE) {
+                    int[] ivalues = new int[count];
+                    for (int j = 0; j < count; j++) {
+                        ivalues[j] = stream.readInt();
+                    }
+                    obj = ivalues;
+                } else {
+                    int intsToRead = count;
+                    int intsRead = 0;
+                    List<int[]> bufs = new ArrayList<>();
+                    while (intsToRead != 0) {
+                        int sz = Math.min(intsToRead, INT_TILE_SIZE);
+                        int[] unit = new int[sz];
+                        stream.readFully(unit, intsToRead, sz);
+                        bufs.add(unit);
+                        intsRead += sz;
+                        intsToRead -= sz;
+                    }
+                    int[] tagData = new int[intsRead];
+                    int copiedInts = 0;
+                    for (int[] ia : bufs) {
+                        System.arraycopy(ia, 0, tagData, copiedInts, ia.length);
+                        copiedInts += ia.length;
+                    }
+                    obj = tagData;
                 }
-                obj = ivalues;
                 break;
 
             case TIFFTag.TIFF_SRATIONAL:
-                int[][] iivalues = new int[count][2];
-                for (int j = 0; j < count; j++) {
-                    iivalues[j][0] = stream.readInt();
-                    iivalues[j][1] = stream.readInt();
+                final int SRATIONAL_TILE_SIZE =
+                    UNIT_SIZE / TIFFTag.getSizeOfType(TIFFTag.TIFF_SRATIONAL);
+                if (count < SRATIONAL_TILE_SIZE) {
+                    int[][] iivalues = new int[count][2];
+                    for (int j = 0; j < count; j++) {
+                        iivalues[j][0] = stream.readInt();
+                        iivalues[j][1] = stream.readInt();
+                    }
+                    obj = iivalues;
+                } else {
+                    int srationalsToRead = count;
+                    int srationalsRead = 0;
+                    List<int[]> bufs = new ArrayList<>();
+                    while (srationalsToRead != 0) {
+                        int sz = Math.min(srationalsToRead, SRATIONAL_TILE_SIZE);
+                        int[] unit = new int[sz * 2];
+                        stream.readFully(unit, (srationalsToRead * 2), (sz * 2));
+                        bufs.add(unit);
+                        srationalsRead += sz;
+                        srationalsToRead -= sz;
+                    }
+                    int[][] tagData = new int[srationalsRead][2];
+                    int copiedSrationals = 0;
+                    for (int[] ia : bufs) {
+                        for (int i = 0; i < ia.length; i = i + 2) {
+                            tagData[copiedSrationals + i][0] = ia[i];
+                            tagData[copiedSrationals + i][1] = ia[i + 1];
+                        }
+                        copiedSrationals += (ia.length / 2);
+                    }
+                    obj = tagData;
                 }
-                obj = iivalues;
                 break;
 
             case TIFFTag.TIFF_FLOAT:
-                float[] fvalues = new float[count];
-                for (int j = 0; j < count; j++) {
-                    fvalues[j] = stream.readFloat();
+                final int FLOAT_TILE_SIZE =
+                    UNIT_SIZE / TIFFTag.getSizeOfType(TIFFTag.TIFF_FLOAT);
+                if (count < FLOAT_TILE_SIZE) {
+                    float[] fvalues = new float[count];
+                    for (int j = 0; j < count; j++) {
+                        fvalues[j] = stream.readFloat();
+                    }
+                    obj = fvalues;
+                } else {
+                    int floatsToRead = count;
+                    int floatsRead = 0;
+                    List<float[]> bufs = new ArrayList<>();
+                    while (floatsToRead != 0) {
+                        int sz = Math.min(floatsToRead, FLOAT_TILE_SIZE);
+                        float[] unit = new float[sz];
+                        stream.readFully(unit, floatsToRead, sz);
+                        bufs.add(unit);
+                        floatsRead += sz;
+                        floatsToRead -= sz;
+                    }
+                    float[] tagData = new float[floatsRead];
+                    int copiedFloats = 0;
+                    for (float[] fa : bufs) {
+                        System.arraycopy(fa, 0, tagData, copiedFloats, fa.length);
+                        copiedFloats += fa.length;
+                    }
+                    obj = tagData;
                 }
-                obj = fvalues;
                 break;
 
             case TIFFTag.TIFF_DOUBLE:
-                double[] dvalues = new double[count];
-                for (int j = 0; j < count; j++) {
-                    dvalues[j] = stream.readDouble();
+                final int DOUBLE_TILE_SIZE =
+                    UNIT_SIZE / TIFFTag.getSizeOfType(TIFFTag.TIFF_DOUBLE);
+                if (count < DOUBLE_TILE_SIZE) {
+                    double[] dvalues = new double[count];
+                    for (int j = 0; j < count; j++) {
+                        dvalues[j] = stream.readDouble();
+                    }
+                    obj = dvalues;
+                } else {
+                    int doublesToRead = count;
+                    int doublesRead = 0;
+                    List<double[]> bufs = new ArrayList<>();
+                    while (doublesToRead != 0) {
+                        int sz = Math.min(doublesToRead, DOUBLE_TILE_SIZE);
+                        double[] unit = new double[sz];
+                        stream.readFully(unit, doublesToRead, sz);
+                        bufs.add(unit);
+                        doublesRead += sz;
+                        doublesToRead -= sz;
+                    }
+                    double[] tagData = new double[doublesRead];
+                    int copiedDoubles = 0;
+                    for (double[] da : bufs) {
+                        System.arraycopy(da, 0, tagData, copiedDoubles, da.length);
+                        copiedDoubles += da.length;
+                    }
+                    obj = tagData;
                 }
-                obj = dvalues;
                 break;
-
             default:
                 obj = null;
                 break;
@@ -875,7 +1093,7 @@ public class TIFFIFD extends TIFFDirectory {
                         // If there is an error reading a baseline tag, then re-throw
                         // the exception and fail; otherwise continue with the next
                         // field.
-                        if (BaselineTIFFTagSet.getInstance().getTag(tagNumber) == null) {
+                        if (BaselineTIFFTagSet.getInstance().getTag(tagNumber) != null) {
                             throw eofe;
                         }
                     }
