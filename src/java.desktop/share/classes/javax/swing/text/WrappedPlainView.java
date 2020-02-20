@@ -466,7 +466,7 @@ public class WrappedPlainView extends BoxView implements TabExpander {
     public float nextTabStop(float x, int tabOffset) {
         if (tabSize == 0)
             return x;
-        float ntabs = (x - tabBase) / tabSize;
+        int ntabs = (int) ((x - tabBase) / tabSize);
         return tabBase + ((ntabs + 1) * tabSize);
     }
 
