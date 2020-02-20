@@ -111,7 +111,7 @@ dtrace:helper:ustack:
   copyin_offset(OFFSET_HeapBlockHeader_used);
   copyin_offset(OFFSET_oopDesc_metadata);
 
-  copyin_offset(OFFSET_Symbol_length_and_refcount);
+  copyin_offset(OFFSET_Symbol_length);
   copyin_offset(OFFSET_Symbol_body);
 
   copyin_offset(OFFSET_Method_constMethod);
@@ -463,17 +463,15 @@ dtrace:helper:ustack:
   /* The symbol is a CPSlot and has lower bit set to indicate metadata */
   this->nameSymbol &= (~1); /* remove metadata lsb */
 
-  /* Because sparc is big endian, the top half length is at the correct offset. */
   this->nameSymbolLength = copyin_uint16(this->nameSymbol +
-      OFFSET_Symbol_length_and_refcount);
+      OFFSET_Symbol_length);
 
   this->signatureSymbol = copyin_ptr(this->constantPool +
       this->signatureIndex * sizeof (pointer) + SIZE_ConstantPool);
   this->signatureSymbol &= (~1); /* remove metadata lsb */
 
-  /* Because sparc is big endian, the top half length is at the correct offset. */
   this->signatureSymbolLength = copyin_uint16(this->signatureSymbol +
-      OFFSET_Symbol_length_and_refcount);
+      OFFSET_Symbol_length);
 
   this->klassPtr = copyin_ptr(this->constantPool +
       OFFSET_ConstantPool_pool_holder);
@@ -481,9 +479,8 @@ dtrace:helper:ustack:
   this->klassSymbol = copyin_ptr(this->klassPtr +
       OFFSET_Klass_name);
 
-  /* Because sparc is big endian, the top half length is at the correct offset. */
   this->klassSymbolLength = copyin_uint16(this->klassSymbol +
-      OFFSET_Symbol_length_and_refcount);
+      OFFSET_Symbol_length);
 
   /*
    * Enough for three strings, plus the '.', plus the trailing '\0'.

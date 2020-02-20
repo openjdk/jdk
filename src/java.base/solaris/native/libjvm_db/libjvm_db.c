@@ -552,8 +552,7 @@ name_for_methodPtr(jvm_agent_t* J, uint64_t methodPtr, char * result, size_t siz
   CHECK_FAIL(err);
   // The symbol is a CPSlot and has lower bit set to indicate metadata
   nameSymbol &= (~1); // remove metadata lsb
-  // The length is in the top half of the word.
-  err = ps_pread(J->P, nameSymbol + OFFSET_Symbol_length_and_refcount, &nameSymbolLength, 2);
+  err = ps_pread(J->P, nameSymbol + OFFSET_Symbol_length, &nameSymbolLength, 2);
   CHECK_FAIL(err);
   nameString = (char*)calloc(nameSymbolLength + 1, 1);
   err = ps_pread(J->P, nameSymbol + OFFSET_Symbol_body, nameString, nameSymbolLength);
@@ -565,7 +564,7 @@ name_for_methodPtr(jvm_agent_t* J, uint64_t methodPtr, char * result, size_t siz
   err = read_pointer(J, constantPool + signatureIndex * POINTER_SIZE + SIZE_ConstantPool, &signatureSymbol);
   CHECK_FAIL(err);
   signatureSymbol &= (~1);  // remove metadata lsb
-  err = ps_pread(J->P, signatureSymbol + OFFSET_Symbol_length_and_refcount, &signatureSymbolLength, 2);
+  err = ps_pread(J->P, signatureSymbol + OFFSET_Symbol_length, &signatureSymbolLength, 2);
   CHECK_FAIL(err);
   signatureString = (char*)calloc(signatureSymbolLength + 1, 1);
   err = ps_pread(J->P, signatureSymbol + OFFSET_Symbol_body, signatureString, signatureSymbolLength);
@@ -576,7 +575,7 @@ name_for_methodPtr(jvm_agent_t* J, uint64_t methodPtr, char * result, size_t siz
   CHECK_FAIL(err);
   err = read_pointer(J, klassPtr + OFFSET_Klass_name, &klassSymbol);
   CHECK_FAIL(err);
-  err = ps_pread(J->P, klassSymbol + OFFSET_Symbol_length_and_refcount, &klassSymbolLength, 2);
+  err = ps_pread(J->P, klassSymbol + OFFSET_Symbol_length, &klassSymbolLength, 2);
   CHECK_FAIL(err);
   klassString = (char*)calloc(klassSymbolLength + 1, 1);
   err = ps_pread(J->P, klassSymbol + OFFSET_Symbol_body, klassString, klassSymbolLength);
