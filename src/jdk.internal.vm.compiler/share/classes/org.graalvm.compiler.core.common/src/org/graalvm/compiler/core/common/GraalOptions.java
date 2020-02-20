@@ -87,15 +87,6 @@ public final class GraalOptions {
     @Option(help = "The maximum length of an array that will be escape analyzed.", type = OptionType.Expert)
     public static final OptionKey<Integer> MaximumEscapeAnalysisArrayLength = new OptionKey<>(128);
 
-    @Option(help = "", type = OptionType.Debug)
-    public static final OptionKey<Boolean> PEAInliningHints = new OptionKey<>(false);
-
-    @Option(help = "", type = OptionType.Expert)
-    public static final OptionKey<Double> TailDuplicationProbability = new OptionKey<>(0.5);
-
-    @Option(help = "", type = OptionType.Expert)
-    public static final OptionKey<Integer> TailDuplicationTrivialSize = new OptionKey<>(1);
-
     @Option(help = "", type = OptionType.Expert)
     public static final OptionKey<Integer> DeoptsToDisableOptimisticOptimization = new OptionKey<>(40);
 
@@ -186,9 +177,6 @@ public final class GraalOptions {
     public static final OptionKey<Boolean> OmitHotExceptionStacktrace = new OptionKey<>(false);
 
     @Option(help = "", type = OptionType.Debug)
-    public static final OptionKey<Boolean> GenSafepoints = new OptionKey<>(true);
-
-    @Option(help = "", type = OptionType.Debug)
     public static final OptionKey<Boolean> GenLoopSafepoints = new OptionKey<>(true);
 
     @Option(help = "", type = OptionType.Debug)
@@ -243,12 +231,6 @@ public final class GraalOptions {
 
     @Option(help = "", type = OptionType.Debug)
     public static final OptionKey<Boolean> OptFloatingReads = new OptionKey<>(true);
-
-    @Option(help = "", type = OptionType.Debug)
-    public static final OptionKey<Boolean> OptEliminatePartiallyRedundantGuards = new OptionKey<>(true);
-
-    @Option(help = "", type = OptionType.Debug)
-    public static final OptionKey<Boolean> OptFilterProfiledTypes = new OptionKey<>(true);
 
     @Option(help = "", type = OptionType.Debug)
     public static final OptionKey<Boolean> OptDevirtualizeInvokesOptimistically = new OptionKey<>(true);

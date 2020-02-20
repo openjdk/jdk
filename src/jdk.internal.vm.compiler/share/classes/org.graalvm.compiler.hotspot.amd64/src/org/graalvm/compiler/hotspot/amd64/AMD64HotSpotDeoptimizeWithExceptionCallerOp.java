@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -22,6 +20,8 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
+
 package org.graalvm.compiler.hotspot.amd64;
 
 import static jdk.vm.ci.code.ValueUtil.asRegister;
@@ -47,12 +47,14 @@ final class AMD64HotSpotDeoptimizeWithExceptionCallerOp extends AMD64HotSpotEpil
 
     public static final LIRInstructionClass<AMD64HotSpotDeoptimizeWithExceptionCallerOp> TYPE = LIRInstructionClass.create(AMD64HotSpotDeoptimizeWithExceptionCallerOp.class);
     private final GraalHotSpotVMConfig config;
-    @Use(OperandFlag.REG) private Value exception;
+    @Alive(OperandFlag.REG) private Value exception;
+    @Temp(OperandFlag.REG) private Value temp;
 
     protected AMD64HotSpotDeoptimizeWithExceptionCallerOp(GraalHotSpotVMConfig config, Value exception) {
         super(TYPE);
         this.config = config;
         this.exception = exception;
+        this.temp = AMD64.rax.asValue();
     }
 
     @Override
@@ -65,11 +67,12 @@ final class AMD64HotSpotDeoptimizeWithExceptionCallerOp extends AMD64HotSpotEpil
         // Save exception oop in TLS
         masm.movq(new AMD64Address(AMD64.r15, config.threadExceptionOopOffset), exc);
         // Get return address and store it into TLS
-        masm.movq(exc, new AMD64Address(stackPointer, 0));
-        masm.movq(new AMD64Address(AMD64.r15, config.threadExceptionPcOffset), exc);
+        Register returnPC = asRegister(temp);
+        masm.movq(returnPC, new AMD64Address(stackPointer, 0));
+        masm.movq(new AMD64Address(AMD64.r15, config.threadExceptionPcOffset), returnPC);
 
         // Remove return address.
         masm.addq(stackPointer, crb.target.arch.getReturnAddressSize());
-        AMD64Call.directJmp(crb, masm, crb.foreignCalls.lookupForeignCall(DEOPT_BLOB_UNPACK_WITH_EXCEPTION_IN_TLS));
+        AMD64Call.directJmp(crb, masm, crb.foreignCalls.lookupForeignCall(DEOPT_BLOB_UNPACK_WITH_EXCEPTION_IN_TLS), null);
     }
 }

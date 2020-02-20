@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,16 +34,16 @@ import jdk.internal.vm.compiler.word.LocationIdentity;
 /**
  * This class maintains a set of known values, identified by base object, locations and offset.
  */
-public final class ReadEliminationBlockState extends EffectsBlockState<ReadEliminationBlockState> {
+public class ReadEliminationBlockState extends EffectsBlockState<ReadEliminationBlockState> {
 
     final EconomicMap<CacheEntry<?>, ValueNode> readCache;
 
-    abstract static class CacheEntry<T> {
+    public abstract static class CacheEntry<T> {
 
         public final ValueNode object;
         public final T identity;
 
-        CacheEntry(ValueNode object, T identity) {
+        protected CacheEntry(ValueNode object, T identity) {
             this.object = object;
             this.identity = identity;
         }
@@ -70,14 +70,14 @@ public final class ReadEliminationBlockState extends EffectsBlockState<ReadElimi
             return object + ":" + identity;
         }
 
-        public abstract boolean conflicts(LocationIdentity other);
+        public abstract boolean conflicts(LocationIdentity other, ValueNode index, ValueNode array);
 
         public abstract LocationIdentity getIdentity();
     }
 
-    static final class LoadCacheEntry extends CacheEntry<LocationIdentity> {
+    public static final class LoadCacheEntry extends CacheEntry<LocationIdentity> {
 
-        LoadCacheEntry(ValueNode object, LocationIdentity identity) {
+        public LoadCacheEntry(ValueNode object, LocationIdentity identity) {
             super(object, identity);
         }
 
@@ -87,7 +87,7 @@ public final class ReadEliminationBlockState extends EffectsBlockState<ReadElimi
         }
 
         @Override
-        public boolean conflicts(LocationIdentity other) {
+        public boolean conflicts(LocationIdentity other, ValueNode index, ValueNode array) {
             return identity.equals(other);
         }
 
@@ -102,11 +102,11 @@ public final class ReadEliminationBlockState extends EffectsBlockState<ReadElimi
      * identity are separate so both must be considered when looking for optimizable memory
      * accesses.
      */
-    static final class UnsafeLoadCacheEntry extends CacheEntry<ValueNode> {
+    public static final class UnsafeLoadCacheEntry extends CacheEntry<ValueNode> {
 
         private final LocationIdentity locationIdentity;
 
-        UnsafeLoadCacheEntry(ValueNode object, ValueNode location, LocationIdentity locationIdentity) {
+        public UnsafeLoadCacheEntry(ValueNode object, ValueNode location, LocationIdentity locationIdentity) {
             super(object, location);
             assert locationIdentity != null;
             this.locationIdentity = locationIdentity;
@@ -118,7 +118,7 @@ public final class ReadEliminationBlockState extends EffectsBlockState<ReadElimi
         }
 
         @Override
-        public boolean conflicts(LocationIdentity other) {
+        public boolean conflicts(LocationIdentity other, ValueNode index, ValueNode array) {
             return locationIdentity.equals(other);
         }
 
@@ -174,15 +174,23 @@ public final class ReadEliminationBlockState extends EffectsBlockState<ReadElimi
         return readCache.get(identifier);
     }
 
-    public void killReadCache() {
-        readCache.clear();
-    }
-
-    public void killReadCache(LocationIdentity identity) {
+    public void killReadCache(LocationIdentity identity, ValueNode index, ValueNode array) {
+        if (identity.isAny()) {
+            // ANY aliases with every other location
+            readCache.clear();
+            return;
+        }
         Iterator<CacheEntry<?>> iterator = readCache.getKeys().iterator();
         while (iterator.hasNext()) {
             CacheEntry<?> entry = iterator.next();
-            if (entry.conflicts(identity)) {
+            /*
+             * We cover multiple cases here but in general index and array can only be !=null for
+             * indexed nodes thus the location identity of other accesses (field and object
+             * locations) will never be the same and will never alias with array accesses.
+             *
+             * Unsafe accesses will alias if they are writing to any location.
+             */
+            if (entry.conflicts(identity, index, array)) {
                 iterator.remove();
             }
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -950,8 +950,8 @@ public class BytecodeParser implements GraphBuilderContext {
         }
         String filterValue = DebugOptions.MethodFilter.getValue(options);
         if (filterValue != null) {
-            MethodFilter[] filters = MethodFilter.parse(filterValue);
-            if (!MethodFilter.matches(filters, tmethod)) {
+            MethodFilter filter = MethodFilter.parse(filterValue);
+            if (!filter.matches(tmethod)) {
                 return 0;
             }
         }
@@ -2959,6 +2959,10 @@ public class BytecodeParser implements GraphBuilderContext {
                     bci = ((ExceptionDispatchBlock) targetBlock).deoptBci;
                 }
                 FrameStateBuilder newState = target.state.copy();
+                // Perform the same logic as is done in processBlock
+                if (targetBlock != blockMap.getUnwindBlock() && !(targetBlock instanceof ExceptionDispatchBlock)) {
+                    newState.setRethrowException(false);
+                }
                 for (BciBlock loop : exitLoops) {
                     LoopBeginNode loopBegin = (LoopBeginNode) getFirstInstruction(loop);
                     LoopExitNode loopExit = graph.add(new LoopExitNode(loopBegin));

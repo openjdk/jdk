@@ -70,6 +70,8 @@ public class GraalHotSpotVMConfig extends GraalHotSpotVMConfigBase {
     public final boolean enableContended = getFlag("EnableContended", Boolean.class);
     public final boolean restrictContended = getFlag("RestrictContended", Boolean.class);
     public final int contendedPaddingWidth = getFlag("ContendedPaddingWidth", Integer.class);
+    public final int fieldsAllocationStyle = versioned.fieldsAllocationStyle;
+    public final boolean compactFields = versioned.compactFields;
     public final boolean verifyOops = getFlag("VerifyOops", Boolean.class);
     public final boolean ciTime = getFlag("CITime", Boolean.class);
     public final boolean ciTimeEach = getFlag("CITimeEach", Boolean.class);
@@ -108,6 +110,7 @@ public class GraalHotSpotVMConfig extends GraalHotSpotVMConfigBase {
     private final boolean useSquareToLenIntrinsic = getFlag("UseSquareToLenIntrinsic", Boolean.class, false);
     public final boolean useVectorizedMismatchIntrinsic = getFlag("UseVectorizedMismatchIntrinsic", Boolean.class, false);
     public final boolean useFMAIntrinsics = getFlag("UseFMA", Boolean.class, false);
+    public final int useAVX3Threshold = getFlag("AVX3Threshold", Integer.class, 4096);
 
     public final boolean preserveFramePointer = getFlag("PreserveFramePointer", Boolean.class, false);
 
@@ -773,6 +776,8 @@ public class GraalHotSpotVMConfig extends GraalHotSpotVMConfigBase {
     public final int deoptimizationUnrollBlockFrameSizesOffset = getFieldOffset("Deoptimization::UnrollBlock::_frame_sizes", Integer.class, "intptr_t*");
     public final int deoptimizationUnrollBlockFramePcsOffset = getFieldOffset("Deoptimization::UnrollBlock::_frame_pcs", Integer.class, "address*");
     public final int deoptimizationUnrollBlockInitialInfoOffset = getFieldOffset("Deoptimization::UnrollBlock::_initial_info", Integer.class, "intptr_t");
+
+    public final boolean deoptimizationSupportLargeAccessByteArrayVirtualization = getConstant("Deoptimization::_support_large_access_byte_array_virtualization", Boolean.class, false);
 
     // Checkstyle: stop
     public final int MARKID_VERIFIED_ENTRY = getConstant("CodeInstaller::VERIFIED_ENTRY", Integer.class);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,8 @@ package org.graalvm.compiler.hotspot.replacements;
 import static jdk.vm.ci.code.MemoryBarriers.LOAD_STORE;
 import static jdk.vm.ci.code.MemoryBarriers.STORE_LOAD;
 import static jdk.vm.ci.code.MemoryBarriers.STORE_STORE;
-import static org.graalvm.compiler.hotspot.GraalHotSpotVMConfig.INJECTED_OPTIONVALUES;
-import static org.graalvm.compiler.hotspot.GraalHotSpotVMConfig.INJECTED_VMCONFIG;
+import static org.graalvm.compiler.hotspot.GraalHotSpotVMConfigBase.INJECTED_OPTIONVALUES;
+import static org.graalvm.compiler.hotspot.GraalHotSpotVMConfigBase.INJECTED_VMCONFIG;
 import static org.graalvm.compiler.hotspot.nodes.AcquiredCASLockNode.mark;
 import static org.graalvm.compiler.hotspot.nodes.BeginLockScopeNode.beginLockScope;
 import static org.graalvm.compiler.hotspot.nodes.EndLockScopeNode.endLockScope;
@@ -232,7 +232,7 @@ public class MonitorSnippets implements Snippets {
 
     @Snippet
     public static void monitorenter(Object object, KlassPointer hub, @ConstantParameter int lockDepth, @ConstantParameter Register threadRegister, @ConstantParameter Register stackPointerRegister,
-                    @ConstantParameter boolean trace, @ConstantParameter Counters counters) {
+                    @ConstantParameter boolean trace, @ConstantParameter Counters counters, @ConstantParameter boolean biasable) {
         verifyOop(object);
 
         // Load the mark word - this includes a null-check on object
@@ -247,7 +247,7 @@ public class MonitorSnippets implements Snippets {
 
         incCounter();
 
-        if (useBiasedLocking(INJECTED_VMCONFIG)) {
+        if (biasable && useBiasedLocking(INJECTED_VMCONFIG)) {
             if (tryEnterBiased(object, hub, lock, mark, threadRegister, trace, counters)) {
                 return;
             }
@@ -487,10 +487,10 @@ public class MonitorSnippets implements Snippets {
 
     @Snippet
     public static void monitorexit(Object object, @ConstantParameter int lockDepth, @ConstantParameter Register threadRegister, @ConstantParameter boolean trace,
-                    @ConstantParameter Counters counters) {
+                    @ConstantParameter Counters counters, @ConstantParameter boolean biasable) {
         trace(trace, "           object: 0x%016lx\n", Word.objectToTrackedPointer(object));
         final Word mark = loadWordFromObject(object, markOffset(INJECTED_VMCONFIG));
-        if (useBiasedLocking(INJECTED_VMCONFIG)) {
+        if (biasable && useBiasedLocking(INJECTED_VMCONFIG)) {
             // Check for biased locking unlock case, which is a no-op
             // Note: we do not have to check the thread ID for two reasons.
             // First, the interpreter checks for IllegalMonitorStateException at
@@ -754,7 +754,7 @@ public class MonitorSnippets implements Snippets {
 
         private final SnippetInfo monitorenter = snippet(MonitorSnippets.class, "monitorenter");
         private final SnippetInfo monitorexit = snippet(MonitorSnippets.class, "monitorexit", DISPLACED_MARK_WORD_LOCATION, OBJECT_MONITOR_OWNER_LOCATION, OBJECT_MONITOR_CXQ_LOCATION,
-                        OBJECT_MONITOR_ENTRY_LIST_LOCATION, OBJECT_MONITOR_RECURSION_LOCATION, OBJECT_MONITOR_SUCC_LOCATION);
+                        OBJECT_MONITOR_ENTRY_LIST_LOCATION, OBJECT_MONITOR_RECURSION_LOCATION, OBJECT_MONITOR_SUCC_LOCATION, MARK_WORD_LOCATION);
         private final SnippetInfo monitorenterStub = snippet(MonitorSnippets.class, "monitorenterStub");
         private final SnippetInfo monitorexitStub = snippet(MonitorSnippets.class, "monitorexitStub");
         private final SnippetInfo initCounter = snippet(MonitorSnippets.class, "initCounter");
@@ -787,6 +787,7 @@ public class MonitorSnippets implements Snippets {
                 args.addConst("stackPointerRegister", registers.getStackPointerRegister());
                 args.addConst("trace", isTracingEnabledForType(monitorenterNode.object()) || isTracingEnabledForMethod(graph));
                 args.addConst("counters", counters);
+                args.addConst("biasable", monitorenterNode.isBiasable());
             } else {
                 args = new Arguments(monitorenterStub, graph.getGuardsStage(), tool.getLoweringStage());
                 args.add("object", monitorenterNode.object());
@@ -812,6 +813,7 @@ public class MonitorSnippets implements Snippets {
             args.addConst("threadRegister", registers.getThreadRegister());
             args.addConst("trace", isTracingEnabledForType(monitorexitNode.object()) || isTracingEnabledForMethod(graph));
             args.addConst("counters", counters);
+            args.addConst("biasable", monitorexitNode.isBiasable());
 
             template(monitorexitNode, args).instantiate(providers.getMetaAccess(), monitorexitNode, DEFAULT_REPLACER, args);
         }

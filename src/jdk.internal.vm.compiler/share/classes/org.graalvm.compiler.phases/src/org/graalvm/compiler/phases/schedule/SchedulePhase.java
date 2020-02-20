@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,7 +81,8 @@ import org.graalvm.compiler.nodes.cfg.ControlFlowGraph;
 import org.graalvm.compiler.nodes.cfg.HIRLoop;
 import org.graalvm.compiler.nodes.cfg.LocationSet;
 import org.graalvm.compiler.nodes.memory.FloatingReadNode;
-import org.graalvm.compiler.nodes.memory.MemoryCheckpoint;
+import org.graalvm.compiler.nodes.memory.MultiMemoryKill;
+import org.graalvm.compiler.nodes.memory.SingleMemoryKill;
 import org.graalvm.compiler.nodes.spi.ValueProxy;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.Phase;
@@ -374,14 +375,14 @@ public final class SchedulePhase extends Phase {
             if (!killed.isAny()) {
                 for (Node n : subList) {
                     // Check if this node kills a node in the watch list.
-                    if (n instanceof MemoryCheckpoint.Single) {
-                        LocationIdentity identity = ((MemoryCheckpoint.Single) n).getKilledLocationIdentity();
+                    if (n instanceof SingleMemoryKill) {
+                        LocationIdentity identity = ((SingleMemoryKill) n).getKilledLocationIdentity();
                         killed.add(identity);
                         if (killed.isAny()) {
                             return;
                         }
-                    } else if (n instanceof MemoryCheckpoint.Multi) {
-                        for (LocationIdentity identity : ((MemoryCheckpoint.Multi) n).getKilledLocationIdentities()) {
+                    } else if (n instanceof MultiMemoryKill) {
+                        for (LocationIdentity identity : ((MultiMemoryKill) n).getKilledLocationIdentities()) {
                             killed.add(identity);
                             if (killed.isAny()) {
                                 return;
@@ -471,11 +472,11 @@ public final class SchedulePhase extends Phase {
         private static void checkWatchList(Block b, NodeMap<Block> nodeMap, NodeBitMap unprocessed, ArrayList<Node> result, ArrayList<FloatingReadNode> watchList, Node n) {
             if (watchList != null && !watchList.isEmpty()) {
                 // Check if this node kills a node in the watch list.
-                if (n instanceof MemoryCheckpoint.Single) {
-                    LocationIdentity identity = ((MemoryCheckpoint.Single) n).getKilledLocationIdentity();
+                if (n instanceof SingleMemoryKill) {
+                    LocationIdentity identity = ((SingleMemoryKill) n).getKilledLocationIdentity();
                     checkWatchList(watchList, identity, b, result, nodeMap, unprocessed);
-                } else if (n instanceof MemoryCheckpoint.Multi) {
-                    for (LocationIdentity identity : ((MemoryCheckpoint.Multi) n).getKilledLocationIdentities()) {
+                } else if (n instanceof MultiMemoryKill) {
+                    for (LocationIdentity identity : ((MultiMemoryKill) n).getKilledLocationIdentities()) {
                         checkWatchList(watchList, identity, b, result, nodeMap, unprocessed);
                     }
                 }
@@ -1183,11 +1184,11 @@ public final class SchedulePhase extends Phase {
         private static void printNode(Node n) {
             Formatter buf = new Formatter();
             buf.format("%s", n);
-            if (n instanceof MemoryCheckpoint.Single) {
-                buf.format(" // kills %s", ((MemoryCheckpoint.Single) n).getKilledLocationIdentity());
-            } else if (n instanceof MemoryCheckpoint.Multi) {
+            if (n instanceof SingleMemoryKill) {
+                buf.format(" // kills %s", ((SingleMemoryKill) n).getKilledLocationIdentity());
+            } else if (n instanceof MultiMemoryKill) {
                 buf.format(" // kills ");
-                for (LocationIdentity locid : ((MemoryCheckpoint.Multi) n).getKilledLocationIdentities()) {
+                for (LocationIdentity locid : ((MultiMemoryKill) n).getKilledLocationIdentities()) {
                     buf.format("%s, ", locid);
                 }
             } else if (n instanceof FloatingReadNode) {

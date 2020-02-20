@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,8 +91,8 @@ import static org.graalvm.compiler.hotspot.replacements.Log.LOG_PRIMITIVE;
 import static org.graalvm.compiler.hotspot.replacements.Log.LOG_PRINTF;
 import static org.graalvm.compiler.hotspot.replacements.MonitorSnippets.MONITORENTER;
 import static org.graalvm.compiler.hotspot.replacements.MonitorSnippets.MONITOREXIT;
-import static org.graalvm.compiler.hotspot.replacements.NewObjectSnippets.DYNAMIC_NEW_INSTANCE;
-import static org.graalvm.compiler.hotspot.replacements.NewObjectSnippets.DYNAMIC_NEW_INSTANCE_OR_NULL;
+import static org.graalvm.compiler.hotspot.replacements.HotSpotAllocationSnippets.DYNAMIC_NEW_INSTANCE;
+import static org.graalvm.compiler.hotspot.replacements.HotSpotAllocationSnippets.DYNAMIC_NEW_INSTANCE_OR_NULL;
 import static org.graalvm.compiler.hotspot.stubs.ExceptionHandlerStub.EXCEPTION_HANDLER_FOR_PC;
 import static org.graalvm.compiler.hotspot.stubs.StubUtil.VM_MESSAGE_C;
 import static org.graalvm.compiler.hotspot.stubs.UnwindExceptionToCallerStub.EXCEPTION_HANDLER_FOR_RETURN_ADDRESS;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -173,7 +173,7 @@ public class HexCodeFile {
         ps.printf("HexCode %x %s %s%n", startAddress, HexCodeFile.hexCodeString(code), SECTION_DELIM);
 
         for (JumpTable table : jumpTables) {
-            ps.printf("JumpTable %d %d %d %d %s%n", table.position, table.entrySize, table.low, table.high, SECTION_DELIM);
+            ps.printf("JumpTable %d %d %d %d %s%n", table.getPosition(), table.entrySize, table.low, table.high, SECTION_DELIM);
         }
 
         for (Map.Entry<Integer, List<String>> e : comments.entrySet()) {
@@ -247,7 +247,7 @@ public class HexCodeFile {
                 hcf.jumpTables.add(table);
             } else if (a instanceof CodeComment) {
                 CodeComment comment = (CodeComment) a;
-                hcf.addComment(comment.position, comment.value);
+                hcf.addComment(comment.getPosition(), comment.value);
             }
         }
     }

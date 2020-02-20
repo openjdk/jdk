@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ import org.graalvm.compiler.nodes.memory.address.AddressNode;
 import jdk.internal.vm.compiler.word.LocationIdentity;
 
 @NodeInfo
-public abstract class FloatingAccessNode extends FloatingGuardedNode implements Access, MemoryAccess {
+public abstract class FloatingAccessNode extends FloatingGuardedNode implements AddressableMemoryAccess, GuardedMemoryAccess, OnHeapMemoryAccess {
     public static final NodeClass<FloatingAccessNode> TYPE = NodeClass.create(FloatingAccessNode.class);
 
     @Input(InputType.Association) AddressNode address;

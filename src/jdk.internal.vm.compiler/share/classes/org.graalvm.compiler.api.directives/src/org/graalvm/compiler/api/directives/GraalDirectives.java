@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,6 +69,14 @@ public final class GraalDirectives {
      * A call to this method will never be duplicated by control flow optimizations in the compiler.
      */
     public static void controlFlowAnchor() {
+    }
+
+    /**
+     * A call to this method will assume a stable dimension array if {@code t} is a constant array
+     * and {@code i} a constant integer.
+     */
+    public static <T> T assumeStableDimension(T t, @SuppressWarnings("unused") int i) {
+        return t;
     }
 
     /**

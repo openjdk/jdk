@@ -40,15 +40,17 @@ void NativeInstruction::wrote(int offset) {
   ICache::invalidate_word(addr_at(offset));
 }
 
+#ifdef ASSERT
 void NativeLoadGot::report_and_fail() const {
-  tty->print_cr("Addr: " INTPTR_FORMAT, p2i(instruction_address()));
+  tty->print_cr("Addr: " INTPTR_FORMAT " Code: %x %x %x", p2i(instruction_address()),
+                  (has_rex ? ubyte_at(0) : 0), ubyte_at(rex_size), ubyte_at(rex_size + 1));
   fatal("not a indirect rip mov to rbx");
 }
 
 void NativeLoadGot::verify() const {
   if (has_rex) {
     int rex = ubyte_at(0);
-    if (rex != rex_prefix) {
+    if (rex != rex_prefix && rex != rex_b_prefix) {
       report_and_fail();
     }
   }
@@ -62,6 +64,7 @@ void NativeLoadGot::verify() const {
     report_and_fail();
   }
 }
+#endif
 
 intptr_t NativeLoadGot::data() const {
   return *(intptr_t *) got_address();
@@ -149,14 +152,30 @@ address NativeGotJump::destination() const {
   return *got_entry;
 }
 
+#ifdef ASSERT
+void NativeGotJump::report_and_fail() const {
+  tty->print_cr("Addr: " INTPTR_FORMAT " Code: %x %x %x", p2i(instruction_address()),
+                 (has_rex() ? ubyte_at(0) : 0), ubyte_at(rex_size()), ubyte_at(rex_size() + 1));
+  fatal("not a indirect rip jump");
+}
+
 void NativeGotJump::verify() const {
-  int inst = ubyte_at(0);
+  if (has_rex()) {
+    int rex = ubyte_at(0);
+    if (rex != rex_prefix) {
+      report_and_fail();
+    }
+  }
+  int inst = ubyte_at(rex_size());
   if (inst != instruction_code) {
-    tty->print_cr("Addr: " INTPTR_FORMAT " Code: 0x%x", p2i(instruction_address()),
-                                                        inst);
-    fatal("not a indirect rip jump");
+    report_and_fail();
+  }
+  int modrm = ubyte_at(rex_size() + 1);
+  if (modrm != modrm_code) {
+    report_and_fail();
   }
 }
+#endif
 
 void NativeCall::verify() {
   // Make sure code pattern is actually a call imm32 instruction.

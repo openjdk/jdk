@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,6 @@ import static org.graalvm.compiler.core.common.GraalOptions.GeneratePIC;
 import static org.graalvm.compiler.core.common.GraalOptions.ZapStackOnMethodEntry;
 
 import jdk.internal.vm.compiler.collections.EconomicSet;
-import org.graalvm.compiler.asm.Assembler;
 import org.graalvm.compiler.asm.Label;
 import org.graalvm.compiler.asm.amd64.AMD64Address;
 import org.graalvm.compiler.asm.amd64.AMD64Assembler.ConditionFlag;
@@ -214,7 +213,8 @@ public class AMD64HotSpotBackend extends HotSpotHostBackend implements LIRGenera
         boolean omitFrame = CanOmitFrame.getValue(options) && !frameMap.frameNeedsAllocating() && !lir.hasArgInCallerFrame() && !gen.hasForeignCall();
 
         Stub stub = gen.getStub();
-        Assembler masm = new AMD64MacroAssembler(getTarget());
+        AMD64MacroAssembler masm = new AMD64MacroAssembler(getTarget(), options);
+        masm.setCodePatchShifter(compilationResult::shiftCodePatch);
         HotSpotFrameContext frameContext = new HotSpotFrameContext(stub != null, omitFrame, config.preserveFramePointer);
         DataBuilder dataBuilder = new HotSpotDataBuilder(getCodeCache().getTarget());
         CompilationResultBuilder crb = factory.createBuilder(getCodeCache(), getForeignCalls(), frameMap, masm, dataBuilder, frameContext, options, debug, compilationResult, Register.None);
@@ -266,6 +266,7 @@ public class AMD64HotSpotBackend extends HotSpotHostBackend implements LIRGenera
                                              // c1_LIRAssembler_x86.cpp
             Register receiver = asRegister(cc.getArgument(0));
             AMD64Address src = new AMD64Address(receiver, config.hubOffset);
+            int before;
 
             if (config.useCompressedClassPointers) {
                 Register register = r10;
@@ -284,11 +285,11 @@ public class AMD64HotSpotBackend extends HotSpotHostBackend implements LIRGenera
                         }
                     }
                 }
-                asm.cmpq(inlineCacheKlass, register);
+                before = asm.cmpqAndJcc(inlineCacheKlass, register, ConditionFlag.NotEqual, null, false);
             } else {
-                asm.cmpq(inlineCacheKlass, src);
+                before = asm.cmpqAndJcc(inlineCacheKlass, src, ConditionFlag.NotEqual, null, false);
             }
-            AMD64Call.directConditionalJmp(crb, asm, getForeignCalls().lookupForeignCall(IC_MISS_HANDLER), ConditionFlag.NotEqual);
+            AMD64Call.recordDirectCall(crb, asm, getForeignCalls().lookupForeignCall(IC_MISS_HANDLER), before);
         }
 
         asm.align(config.codeEntryAlignment);
@@ -302,8 +303,8 @@ public class AMD64HotSpotBackend extends HotSpotHostBackend implements LIRGenera
             if (!frameContext.isStub) {
                 crb.recordInlineDataInCodeWithNote(new HotSpotSentinelConstant(LIRKind.value(AMD64Kind.QWORD), JavaKind.Long), HotSpotConstantLoadAction.MAKE_NOT_ENTRANT);
                 asm.movq(AMD64.rax, asm.getPlaceholder(-1));
-                asm.testq(AMD64.rax, AMD64.rax);
-                AMD64Call.directConditionalJmp(crb, asm, getForeignCalls().lookupForeignCall(WRONG_METHOD_HANDLER), ConditionFlag.NotZero);
+                int before = asm.testqAndJcc(AMD64.rax, AMD64.rax, ConditionFlag.NotZero, null, false);
+                AMD64Call.recordDirectCall(crb, asm, getForeignCalls().lookupForeignCall(WRONG_METHOD_HANDLER), before);
             }
         }
     }

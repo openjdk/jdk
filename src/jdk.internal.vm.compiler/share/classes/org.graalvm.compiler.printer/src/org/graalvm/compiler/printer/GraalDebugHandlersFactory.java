@@ -74,14 +74,16 @@ public class GraalDebugHandlersFactory implements DebugHandlersFactory {
     private static class NodeDumper implements DebugDumpHandler {
         @Override
         public void dump(DebugContext debug, Object object, String format, Object... arguments) {
-            if (object instanceof Node) {
-                Node node = (Node) object;
-                String location = GraphUtil.approxSourceLocation(node);
-                String nodeName = node.toString(Verbosity.Debugger);
-                if (location != null) {
-                    debug.log("Context obj %s (approx. location: %s)", nodeName, location);
-                } else {
-                    debug.log("Context obj %s", nodeName);
+            if (debug.isLogEnabled()) {
+                if (object instanceof Node) {
+                    Node node = (Node) object;
+                    String location = GraphUtil.approxSourceLocation(node);
+                    String nodeName = node.toString(Verbosity.Debugger);
+                    if (location != null) {
+                        debug.log("Context obj %s (approx. location: %s)", nodeName, location);
+                    } else {
+                        debug.log("Context obj %s", nodeName);
+                    }
                 }
             }
         }

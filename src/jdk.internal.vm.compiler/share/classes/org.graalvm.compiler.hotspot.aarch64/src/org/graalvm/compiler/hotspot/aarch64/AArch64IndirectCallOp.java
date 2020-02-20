@@ -24,9 +24,9 @@
 
 package org.graalvm.compiler.hotspot.aarch64;
 
-import static org.graalvm.compiler.lir.LIRInstruction.OperandFlag.REG;
 import static jdk.vm.ci.aarch64.AArch64.r12;
 import static jdk.vm.ci.code.ValueUtil.asRegister;
+import static org.graalvm.compiler.lir.LIRInstruction.OperandFlag.REG;
 
 import org.graalvm.compiler.asm.aarch64.AArch64MacroAssembler;
 import org.graalvm.compiler.hotspot.GraalHotSpotVMConfig;
@@ -73,9 +73,7 @@ final class AArch64IndirectCallOp extends IndirectCallOp {
         crb.recordMark(config.MARKID_INLINE_INVOKE);
         Register callReg = asRegister(targetAddress);
         assert !callReg.equals(METHOD);
-        int pcOffset = masm.position();
         AArch64Call.indirectCall(crb, masm, callReg, callTarget, state);
-        crb.recordInlineInvokeCallOp(pcOffset, getPosition());
     }
 
     @Override

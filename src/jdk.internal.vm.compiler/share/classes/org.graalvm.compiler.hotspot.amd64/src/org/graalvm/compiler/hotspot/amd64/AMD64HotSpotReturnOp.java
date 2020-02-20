@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ import static org.graalvm.compiler.lir.LIRInstruction.OperandFlag.REG;
 
 import org.graalvm.compiler.asm.Label;
 import org.graalvm.compiler.asm.amd64.AMD64Address;
-import org.graalvm.compiler.asm.amd64.AMD64Assembler;
+import org.graalvm.compiler.asm.amd64.AMD64Assembler.ConditionFlag;
 import org.graalvm.compiler.asm.amd64.AMD64MacroAssembler;
 import org.graalvm.compiler.core.common.spi.ForeignCallLinkage;
 import org.graalvm.compiler.hotspot.GraalHotSpotVMConfig;
@@ -83,8 +83,7 @@ final class AMD64HotSpotReturnOp extends AMD64HotSpotEpilogueBlockEndOp implemen
                 HotSpotForeignCallsProvider foreignCalls = (HotSpotForeignCallsProvider) crb.foreignCalls;
 
                 Label noReserved = new Label();
-                masm.cmpptr(rsp, new AMD64Address(r15, config.javaThreadReservedStackActivationOffset));
-                masm.jccb(AMD64Assembler.ConditionFlag.Below, noReserved);
+                masm.cmpqAndJcc(rsp, new AMD64Address(r15, config.javaThreadReservedStackActivationOffset), ConditionFlag.Below, noReserved, true);
                 // direct call to runtime without stub needs aligned stack
                 int stackAdjust = crb.target.stackAlignment - crb.target.wordSize;
                 if (stackAdjust > 0) {

@@ -90,7 +90,7 @@ public abstract class BasicObjectCloneNode extends MacroStateSplitNode implement
      *
      * If yes, then the exact type is returned, otherwise it returns null.
      */
-    protected ResolvedJavaType getConcreteType(Stamp forStamp) {
+    public ResolvedJavaType getConcreteType(Stamp forStamp) {
         if (!(forStamp instanceof ObjectStamp)) {
             return null;
         }

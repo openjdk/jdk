@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -113,11 +113,13 @@ import org.graalvm.compiler.nodes.java.MethodCallTargetNode;
 import org.graalvm.compiler.nodes.java.StoreIndexedNode;
 import org.graalvm.compiler.nodes.memory.MemoryAccess;
 import org.graalvm.compiler.nodes.memory.MemoryAnchorNode;
-import org.graalvm.compiler.nodes.memory.MemoryCheckpoint;
+import org.graalvm.compiler.nodes.memory.MemoryKill;
 import org.graalvm.compiler.nodes.memory.MemoryMap;
 import org.graalvm.compiler.nodes.memory.MemoryMapNode;
 import org.graalvm.compiler.nodes.memory.MemoryNode;
 import org.graalvm.compiler.nodes.memory.MemoryPhiNode;
+import org.graalvm.compiler.nodes.memory.MultiMemoryKill;
+import org.graalvm.compiler.nodes.memory.SingleMemoryKill;
 import org.graalvm.compiler.nodes.spi.ArrayLengthProvider;
 import org.graalvm.compiler.nodes.spi.CoreProviders;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
@@ -929,7 +931,9 @@ public class SnippetTemplate {
 
             assert checkAllVarargPlaceholdersAreDeleted(parameterCount, placeholders);
 
-            new FloatingReadPhase(true, true).apply(snippetCopy);
+            if (((StructuredGraph) replacee.graph()).isAfterFloatingReadPhase()) {
+                new FloatingReadPhase(true, true).apply(snippetCopy);
+            }
 
             if (!guardsStage.requiresValueProxies()) {
                 new RemoveValueProxyPhase().apply(snippetCopy);
@@ -1285,9 +1289,9 @@ public class SnippetTemplate {
         EconomicSet<LocationIdentity> kills = EconomicSet.create(Equivalence.DEFAULT);
         kills.addAll(memoryMap.getLocations());
 
-        if (replacee instanceof MemoryCheckpoint.Single) {
+        if (replacee instanceof SingleMemoryKill) {
             // check if some node in snippet graph also kills the same location
-            LocationIdentity locationIdentity = ((MemoryCheckpoint.Single) replacee).getKilledLocationIdentity();
+            LocationIdentity locationIdentity = ((SingleMemoryKill) replacee).getKilledLocationIdentity();
             if (locationIdentity.isAny()) {
                 assert !(memoryMap.getLastLocationAccess(any()) instanceof MemoryAnchorNode) : replacee + " kills ANY_LOCATION, but snippet does not";
                 // if the replacee kills ANY_LOCATION, the snippet can kill arbitrary locations
@@ -1296,7 +1300,7 @@ public class SnippetTemplate {
             assert kills.contains(locationIdentity) : replacee + " kills " + locationIdentity + ", but snippet doesn't contain a kill to this location";
             kills.remove(locationIdentity);
         }
-        assert !(replacee instanceof MemoryCheckpoint.Multi) : replacee + " multi not supported (yet)";
+        assert !(replacee instanceof MultiMemoryKill) : replacee + " multi not supported (yet)";
 
         // remove ANY_LOCATION if it's just a kill by the start node
         if (memoryMap.getLastLocationAccess(any()) instanceof MemoryAnchorNode) {
@@ -1507,7 +1511,7 @@ public class SnippetTemplate {
             if (returnNode != null && !(replacee instanceof ControlSinkNode)) {
                 ReturnNode returnDuplicate = (ReturnNode) duplicates.get(returnNode);
                 returnValue = returnDuplicate.result();
-                if (returnValue == null && replacee.usages().isNotEmpty() && replacee instanceof MemoryCheckpoint) {
+                if (returnValue == null && replacee.usages().isNotEmpty() && replacee instanceof MemoryKill) {
                     replacer.replace(replacee, null);
                 } else {
                     assert returnValue != null || replacee.hasNoUsages();
@@ -1790,7 +1794,7 @@ public class SnippetTemplate {
             } else if (args.info.isVarargsParameter(i)) {
                 assert args.values[i] instanceof Varargs;
                 Varargs varargs = (Varargs) args.values[i];
-                assert checkVarargs(metaAccess, method, signature, i, args.info.getParameterName(i), varargs);
+                assert checkVarargs(metaAccess, method, signature, i - offset, args.info.getParameterName(i), varargs);
             }
         }
         return true;

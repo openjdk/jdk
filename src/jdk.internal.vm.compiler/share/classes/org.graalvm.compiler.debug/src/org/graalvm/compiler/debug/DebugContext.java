@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ import static java.util.FormattableFlags.LEFT_JUSTIFY;
 import static java.util.FormattableFlags.UPPERCASE;
 import static org.graalvm.compiler.debug.DebugOptions.Count;
 import static org.graalvm.compiler.debug.DebugOptions.Counters;
+import static org.graalvm.compiler.debug.DebugOptions.DisableIntercept;
 import static org.graalvm.compiler.debug.DebugOptions.Dump;
 import static org.graalvm.compiler.debug.DebugOptions.DumpOnError;
 import static org.graalvm.compiler.debug.DebugOptions.DumpOnPhaseChange;
@@ -447,7 +448,7 @@ public final class DebugContext implements AutoCloseable {
                 }
             }
             currentConfig = new DebugConfigImpl(options, logStream, dumpHandlers, verifyHandlers);
-            currentScope = new ScopeImpl(this, Thread.currentThread());
+            currentScope = new ScopeImpl(this, Thread.currentThread(), DisableIntercept.getValue(options));
             currentScope.updateFlags(currentConfig);
             metricsEnabled = true;
         } else {

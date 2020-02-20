@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -147,19 +147,19 @@ public final class ScopeImpl implements DebugContext.Scope {
     private PrintStream output;
     private boolean interceptDisabled;
 
-    ScopeImpl(DebugContext owner, Thread thread) {
-        this(owner, thread.getName(), null, false);
+    ScopeImpl(DebugContext owner, Thread thread, boolean interceptDisabled) {
+        this(owner, thread.getName(), null, false, interceptDisabled);
     }
 
-    private ScopeImpl(DebugContext owner, String unqualifiedName, ScopeImpl parent, boolean sandbox, Object... context) {
+    private ScopeImpl(DebugContext owner, String unqualifiedName, ScopeImpl parent, boolean sandbox, boolean interceptDisabled, Object... context) {
         this.owner = owner;
         this.parent = parent;
         this.sandbox = sandbox;
         this.context = context;
         this.unqualifiedName = unqualifiedName;
+        this.interceptDisabled = interceptDisabled;
         if (parent != null) {
             emptyScope = unqualifiedName.equals("");
-            this.interceptDisabled = parent.interceptDisabled;
         } else {
             if (unqualifiedName.isEmpty()) {
                 throw new IllegalArgumentException("root scope name must be non-empty");
@@ -258,7 +258,7 @@ public final class ScopeImpl implements DebugContext.Scope {
     public ScopeImpl scope(CharSequence name, DebugConfig sandboxConfig, Object... newContextObjects) {
         ScopeImpl newScope = null;
         if (sandboxConfig != null) {
-            newScope = new ScopeImpl(owner, name.toString(), this, true, newContextObjects);
+            newScope = new ScopeImpl(owner, name.toString(), this, true, this.interceptDisabled, newContextObjects);
         } else {
             newScope = this.createChild(name.toString(), newContextObjects);
         }
@@ -376,7 +376,7 @@ public final class ScopeImpl implements DebugContext.Scope {
     }
 
     private ScopeImpl createChild(String newName, Object[] newContext) {
-        return new ScopeImpl(owner, newName, this, false, newContext);
+        return new ScopeImpl(owner, newName, this, false, this.interceptDisabled, newContext);
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,9 +45,11 @@ import org.graalvm.compiler.nodes.VirtualState;
 import org.graalvm.compiler.nodes.cfg.Block;
 import org.graalvm.compiler.nodes.cfg.HIRLoop;
 import org.graalvm.compiler.nodes.memory.FloatingReadNode;
-import org.graalvm.compiler.nodes.memory.MemoryCheckpoint;
+import org.graalvm.compiler.nodes.memory.MemoryKill;
 import org.graalvm.compiler.nodes.memory.MemoryNode;
 import org.graalvm.compiler.nodes.memory.MemoryPhiNode;
+import org.graalvm.compiler.nodes.memory.MultiMemoryKill;
+import org.graalvm.compiler.nodes.memory.SingleMemoryKill;
 import org.graalvm.compiler.phases.graph.ReentrantBlockIterator;
 import org.graalvm.compiler.phases.graph.ReentrantBlockIterator.BlockIteratorClosure;
 import jdk.internal.vm.compiler.word.LocationIdentity;
@@ -101,12 +103,12 @@ public final class ScheduleVerification extends BlockIteratorClosure<EconomicSet
             }
         }
         for (Node n : blockToNodesMap.get(block)) {
-            if (n instanceof MemoryCheckpoint) {
-                if (n instanceof MemoryCheckpoint.Single) {
-                    MemoryCheckpoint.Single single = (MemoryCheckpoint.Single) n;
+            if (n instanceof MemoryKill) {
+                if (n instanceof SingleMemoryKill) {
+                    SingleMemoryKill single = (SingleMemoryKill) n;
                     processLocation(n, single.getKilledLocationIdentity(), currentState);
-                } else if (n instanceof MemoryCheckpoint.Multi) {
-                    MemoryCheckpoint.Multi multi = (MemoryCheckpoint.Multi) n;
+                } else if (n instanceof MultiMemoryKill) {
+                    MultiMemoryKill multi = (MultiMemoryKill) n;
                     for (LocationIdentity location : multi.getKilledLocationIdentities()) {
                         processLocation(n, location, currentState);
                     }

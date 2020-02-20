@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,7 +62,6 @@ final class AMD64HotspotDirectVirtualCallOp extends DirectCallOp {
         crb.recordMark(invokeKind == InvokeKind.Virtual ? config.MARKID_INVOKEVIRTUAL : config.MARKID_INVOKEINTERFACE);
         // This must be emitted exactly like this to ensure it's patchable
         masm.movq(AMD64.rax, config.nonOopBits);
-        int offset = super.emitCall(crb, masm);
-        crb.recordInvokeVirtualOrInterfaceCallOp(offset, getPosition());
+        super.emitCall(crb, masm);
     }
 }

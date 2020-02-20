@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,6 +102,13 @@ public class SignedRemNode extends IntegerDivRemNode implements LIRLowerable {
                         return new NegateNode(new AndNode(new NegateNode(forX), ConstantNode.forIntegerStamp(stamp, constY - 1)));
                     }
                 }
+            }
+        }
+        if (self != null && self.hasNoUsages() && self.next() instanceof SignedDivNode) {
+            SignedDivNode div = (SignedDivNode) self.next();
+            if (div.x == self.x && div.y == self.y && div.getZeroCheck() == self.getZeroCheck() && div.stateBefore() == self.stateBefore()) {
+                // left over from canonicalizing ((a - a % b) / b) into (a / b)
+                return null;
             }
         }
         if (self != null && self.x == forX && self.y == forY) {

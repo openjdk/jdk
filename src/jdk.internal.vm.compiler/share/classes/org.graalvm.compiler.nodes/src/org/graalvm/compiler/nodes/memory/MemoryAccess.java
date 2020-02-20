@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,10 +34,19 @@ public interface MemoryAccess {
 
     LocationIdentity getLocationIdentity();
 
+    /**
+     *
+     * @return a {@linkplain MemoryNode} that represents the last memory state in the memory graph
+     *         for the {@linkplain LocationIdentity} returned by
+     *         {@linkplain MemoryAccess#getLocationIdentity()}
+     */
     MemoryNode getLastLocationAccess();
 
     /**
-     * @param lla the {@link MemoryNode} that represents the last kill of the location
+     * @param lla the {@link MemoryNode} that represents the last kill of the
+     *            {@linkplain LocationIdentity} returned by
+     *            {@linkplain MemoryAccess#getLocationIdentity()}
      */
     void setLastLocationAccess(MemoryNode lla);
+
 }

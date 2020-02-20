@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import static org.graalvm.compiler.core.GraalCompilerOptions.CompilationFailureA
 import org.graalvm.compiler.core.CompilationWrapper.ExceptionAction;
 import org.graalvm.compiler.core.phases.HighTier;
 import org.graalvm.compiler.core.test.GraalCompilerTest;
+import org.graalvm.compiler.debug.DebugOptions;
 import org.graalvm.compiler.hotspot.HotSpotGraalCompiler;
 import org.graalvm.compiler.options.OptionValues;
 import org.junit.Test;
@@ -49,7 +50,7 @@ public class CompileTheWorldTest extends GraalCompilerTest {
         HotSpotJVMCIRuntime runtime = HotSpotJVMCIRuntime.runtime();
         System.setProperty("CompileTheWorld.LimitModules", "java.base");
         OptionValues initialOptions = getInitialOptions();
-        OptionValues harnessOptions = new OptionValues(OptionValues.newOptionMap());
+        OptionValues harnessOptions = CompileTheWorld.loadHarnessOptions();
         int startAt = 1;
         int stopAt = 5;
         int maxClasses = Integer.MAX_VALUE;
@@ -66,7 +67,9 @@ public class CompileTheWorldTest extends GraalCompilerTest {
                         excludeMethodFilters,
                         verbose,
                         harnessOptions,
-                        new OptionValues(initialOptions, HighTier.Options.Inline, false, CompilationFailureAction, ExceptionAction.Silent));
+                        new OptionValues(initialOptions, HighTier.Options.Inline, false,
+                                        DebugOptions.DisableIntercept, true,
+                                        CompilationFailureAction, ExceptionAction.Silent));
         ctw.compile();
         assert CompilationBailoutAsFailure.getValue(initialOptions) == originalBailoutAction;
         assert CompilationFailureAction.getValue(initialOptions) == originalFailureAction;

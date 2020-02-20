@@ -519,6 +519,9 @@ public class MatchProcessor extends AbstractProcessor {
             out.println("import org.graalvm.compiler.core.gen.NodeMatchRules;");
             out.println("import org.graalvm.compiler.graph.Position;");
             for (String p : info.requiredPackages) {
+                if (p.equals(pkg)) {
+                    continue;
+                }
                 out.println("import " + p + ".*;");
             }
             out.println("");
@@ -774,7 +777,7 @@ public class MatchProcessor extends AbstractProcessor {
                 if (mirror != null) {
                     matchableNodeAnnotations = getAnnotationValueList(mirror, "value", AnnotationMirror.class);
                 } else {
-                    mirror = getAnnotation(element, getType(MATCHABLE_NODES_CLASS_NAME));
+                    mirror = getAnnotation(element, getType(MATCHABLE_NODE_CLASS_NAME));
                     if (mirror != null) {
                         matchableNodeAnnotations = Collections.singletonList(mirror);
                     } else {

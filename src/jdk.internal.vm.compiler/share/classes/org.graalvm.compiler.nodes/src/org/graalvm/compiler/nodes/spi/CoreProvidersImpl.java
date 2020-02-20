@@ -38,10 +38,10 @@ public class CoreProvidersImpl implements CoreProviders {
     protected final Replacements replacements;
     protected final StampProvider stampProvider;
     protected final ForeignCallsProvider foreignCalls;
-    protected final GCProvider gc;
+    protected final PlatformConfigurationProvider platformConfigurationProvider;
 
     protected CoreProvidersImpl(MetaAccessProvider metaAccess, ConstantReflectionProvider constantReflection, ConstantFieldProvider constantFieldProvider, LoweringProvider lowerer,
-                    Replacements replacements, StampProvider stampProvider, ForeignCallsProvider foreignCalls, GCProvider gc) {
+                    Replacements replacements, StampProvider stampProvider, ForeignCallsProvider foreignCalls, PlatformConfigurationProvider platformConfigurationProvider) {
         this.metaAccess = metaAccess;
         this.constantReflection = constantReflection;
         this.constantFieldProvider = constantFieldProvider;
@@ -49,7 +49,7 @@ public class CoreProvidersImpl implements CoreProviders {
         this.replacements = replacements;
         this.stampProvider = stampProvider;
         this.foreignCalls = foreignCalls;
-        this.gc = gc;
+        this.platformConfigurationProvider = platformConfigurationProvider;
     }
 
     @Override
@@ -88,7 +88,7 @@ public class CoreProvidersImpl implements CoreProviders {
     }
 
     @Override
-    public GCProvider getGC() {
-        return gc;
+    public PlatformConfigurationProvider getPlatformConfigurationProvider() {
+        return platformConfigurationProvider;
     }
 }

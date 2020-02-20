@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,8 +31,11 @@ import org.graalvm.compiler.core.test.MatchRuleTest;
 import org.graalvm.compiler.lir.LIR;
 import org.graalvm.compiler.lir.LIRInstruction;
 import org.graalvm.compiler.lir.amd64.AMD64Binary;
-import org.graalvm.compiler.lir.amd64.AMD64BinaryConsumer.MemoryConstOp;
 import org.graalvm.compiler.lir.amd64.AMD64BinaryConsumer.ConstOp;
+import org.graalvm.compiler.lir.amd64.AMD64BinaryConsumer.MemoryConstOp;
+import org.graalvm.compiler.lir.amd64.AMD64ControlFlow.CmpBranchOp;
+import org.graalvm.compiler.lir.amd64.AMD64ControlFlow.CmpConstBranchOp;
+import org.graalvm.compiler.lir.amd64.AMD64ControlFlow.CmpDataBranchOp;
 import org.graalvm.compiler.lir.amd64.AMD64Unary;
 import org.junit.Before;
 import org.junit.Test;
@@ -66,6 +69,10 @@ public class AMD64MatchRuleTest extends MatchRuleTest {
         for (LIRInstruction ins : lir.getLIRforBlock(lir.codeEmittingOrder()[0])) {
             if (ins instanceof MemoryConstOp && ((MemoryConstOp) ins).getOpcode().toString().equals("CMP")) {
                 assertFalse("MemoryConstOp expected only once in first block", found);
+                found = true;
+            }
+            if (ins instanceof CmpConstBranchOp || ins instanceof CmpBranchOp || ins instanceof CmpDataBranchOp) {
+                assertFalse("CMP expected only once in first block", found);
                 found = true;
             }
         }
@@ -126,6 +133,10 @@ public class AMD64MatchRuleTest extends MatchRuleTest {
         boolean found = false;
         for (LIRInstruction ins : lir.getLIRforBlock(lir.codeEmittingOrder()[0])) {
             if (ins instanceof ConstOp && ((ConstOp) ins).getOpcode().toString().equals("CMP")) {
+                assertFalse("CMP expected only once in first block", found);
+                found = true;
+            }
+            if (ins instanceof CmpConstBranchOp || ins instanceof CmpBranchOp || ins instanceof CmpDataBranchOp) {
                 assertFalse("CMP expected only once in first block", found);
                 found = true;
             }

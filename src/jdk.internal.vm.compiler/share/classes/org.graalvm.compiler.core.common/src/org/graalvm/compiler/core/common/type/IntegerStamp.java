@@ -1511,7 +1511,8 @@ public final class IntegerStamp extends PrimitiveStamp {
                                 return StampFactory.forInteger(resultBits).empty();
                             }
                             IntegerStamp stamp = (IntegerStamp) input;
-                            assert inputBits == stamp.getBits();
+                            assert inputBits == stamp.getBits() : "Input bits" + inputBits + " stamp bits " +
+                                            stamp.getBits() + " result bits " + resultBits;
                             assert inputBits <= resultBits;
 
                             if (inputBits == resultBits) {

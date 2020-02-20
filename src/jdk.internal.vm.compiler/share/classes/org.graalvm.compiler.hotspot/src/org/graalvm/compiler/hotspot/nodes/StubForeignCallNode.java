@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@ import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodeinfo.Verbosity;
 import org.graalvm.compiler.nodes.FixedWithNextNode;
 import org.graalvm.compiler.nodes.ValueNode;
-import org.graalvm.compiler.nodes.memory.MemoryCheckpoint;
+import org.graalvm.compiler.nodes.memory.MultiMemoryKill;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 import jdk.internal.vm.compiler.word.LocationIdentity;
@@ -52,7 +52,7 @@ import jdk.vm.ci.meta.Value;
  * Node for a {@linkplain ForeignCallDescriptor foreign} call from within a stub.
  */
 @NodeInfo(nameTemplate = "StubForeignCall#{p#descriptor/s}", allowedUsageTypes = Memory, cycles = CYCLES_UNKNOWN, size = SIZE_UNKNOWN)
-public final class StubForeignCallNode extends FixedWithNextNode implements LIRLowerable, MemoryCheckpoint.Multi {
+public final class StubForeignCallNode extends FixedWithNextNode implements LIRLowerable, MultiMemoryKill {
 
     public static final NodeClass<StubForeignCallNode> TYPE = NodeClass.create(StubForeignCallNode.class);
     @Input NodeInputList<ValueNode> arguments;

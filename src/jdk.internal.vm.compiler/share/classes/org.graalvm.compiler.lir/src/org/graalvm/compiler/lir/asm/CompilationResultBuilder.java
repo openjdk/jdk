@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -392,35 +392,6 @@ public class CompilationResultBuilder {
     }
 
     /**
-     * Notifies this object of a branch instruction at offset {@code pcOffset} in the code.
-     *
-     * @param isNegated negation status of the branch's condition.
-     */
-    @SuppressWarnings("unused")
-    public void recordBranch(int pcOffset, boolean isNegated) {
-    }
-
-    /**
-     * Notifies this object of a call instruction belonging to an INVOKEVIRTUAL or INVOKEINTERFACE
-     * at offset {@code pcOffset} in the code.
-     *
-     * @param nodeSourcePosition source position of the corresponding invoke.
-     */
-    @SuppressWarnings("unused")
-    public void recordInvokeVirtualOrInterfaceCallOp(int pcOffset, NodeSourcePosition nodeSourcePosition) {
-    }
-
-    /**
-     * Notifies this object of a call instruction belonging to an INLINE_INVOKE at offset
-     * {@code pcOffset} in the code.
-     *
-     * @param nodeSourcePosition source position of the corresponding invoke.
-     */
-    @SuppressWarnings("unused")
-    public void recordInlineInvokeCallOp(int pcOffset, NodeSourcePosition nodeSourcePosition) {
-    }
-
-    /**
      * Returns the integer value of any constant that can be represented by a 32-bit integer value,
      * including long constants that fit into the 32-bit range.
      */
@@ -608,7 +579,7 @@ public class CompilationResultBuilder {
                     if (codeAnnotation instanceof JumpTable) {
                         // Skip jump table. Here we assume the jump table is at the tail of the
                         // emitted code.
-                        int jumpTableStart = codeAnnotation.position;
+                        int jumpTableStart = codeAnnotation.getPosition();
                         if (jumpTableStart >= start && jumpTableStart < end) {
                             end = jumpTableStart;
                         }

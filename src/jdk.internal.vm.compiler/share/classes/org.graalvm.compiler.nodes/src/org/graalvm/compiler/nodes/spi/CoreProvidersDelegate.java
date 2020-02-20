@@ -74,7 +74,7 @@ public class CoreProvidersDelegate implements CoreProviders {
     }
 
     @Override
-    public GCProvider getGC() {
-        return providers.getGC();
+    public PlatformConfigurationProvider getPlatformConfigurationProvider() {
+        return providers.getPlatformConfigurationProvider();
     }
 }

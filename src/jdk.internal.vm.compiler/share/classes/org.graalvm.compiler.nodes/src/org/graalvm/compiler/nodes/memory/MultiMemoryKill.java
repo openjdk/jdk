@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,11 +22,23 @@
  */
 
 
-package org.graalvm.compiler.nodes.spi;
+package org.graalvm.compiler.nodes.memory;
 
-import org.graalvm.compiler.nodes.gc.BarrierSet;
+import org.graalvm.compiler.nodes.FixedNode;
+import jdk.internal.vm.compiler.word.LocationIdentity;
 
-public interface GCProvider {
-    /** Returns the barrier set that is used to insert the needed read/write barriers. */
-    BarrierSet getBarrierSet();
+/**
+ * This interface marks subclasses of {@link FixedNode} that kill multiple memory locations
+ * represented by {@linkplain LocationIdentity} at once.
+ */
+public interface MultiMemoryKill extends MemoryKill {
+
+    /**
+     * This method is used to determine which set of memory locations is killed by this node.
+     * Returning the special value {@link LocationIdentity#any()} will kill all memory locations.
+     *
+     * @return the identities of all locations killed by this node.
+     */
+    LocationIdentity[] getKilledLocationIdentities();
+
 }

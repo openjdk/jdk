@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ import org.graalvm.compiler.nodes.StateSplit;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.memory.FixedAccessNode;
 import org.graalvm.compiler.nodes.memory.LIRLowerableAccess;
-import org.graalvm.compiler.nodes.memory.MemoryCheckpoint;
+import org.graalvm.compiler.nodes.memory.SingleMemoryKill;
 import org.graalvm.compiler.nodes.memory.address.AddressNode;
 import jdk.internal.vm.compiler.word.LocationIdentity;
 
@@ -45,7 +45,7 @@ import jdk.internal.vm.compiler.word.LocationIdentity;
  * Low-level atomic compare-and-swap operation.
  */
 @NodeInfo(allowedUsageTypes = {InputType.Value, Memory})
-public abstract class AbstractCompareAndSwapNode extends FixedAccessNode implements StateSplit, LIRLowerableAccess, MemoryCheckpoint.Single {
+public abstract class AbstractCompareAndSwapNode extends FixedAccessNode implements StateSplit, LIRLowerableAccess, SingleMemoryKill {
     public static final NodeClass<AbstractCompareAndSwapNode> TYPE = NodeClass.create(AbstractCompareAndSwapNode.class);
     @Input ValueNode expectedValue;
     @Input ValueNode newValue;
@@ -90,8 +90,8 @@ public abstract class AbstractCompareAndSwapNode extends FixedAccessNode impleme
     }
 
     @Override
-    public Stamp getAccessStamp() {
-        return expectedValue.stamp(NodeView.DEFAULT).meet(newValue.stamp(NodeView.DEFAULT)).unrestricted();
+    public Stamp getAccessStamp(NodeView view) {
+        return expectedValue.stamp(view).meet(newValue.stamp(view)).unrestricted();
     }
 
     @Override

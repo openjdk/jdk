@@ -50,18 +50,18 @@ public class HotSpotProviders extends Providers {
     private final SnippetReflectionProvider snippetReflection;
     private final HotSpotWordTypes wordTypes;
     private final Plugins graphBuilderPlugins;
-    private final HotSpotGCProvider gc;
+    private final HotSpotPlatformConfigurationProvider platformConfigurationProvider;
 
     public HotSpotProviders(MetaAccessProvider metaAccess, HotSpotCodeCacheProvider codeCache, ConstantReflectionProvider constantReflection, ConstantFieldProvider constantField,
                     HotSpotForeignCallsProvider foreignCalls, LoweringProvider lowerer, Replacements replacements, SuitesProvider suites, HotSpotRegistersProvider registers,
-                    SnippetReflectionProvider snippetReflection, HotSpotWordTypes wordTypes, Plugins graphBuilderPlugins, HotSpotGCProvider gc) {
-        super(metaAccess, codeCache, constantReflection, constantField, foreignCalls, lowerer, replacements, new HotSpotStampProvider(), gc);
+                    SnippetReflectionProvider snippetReflection, HotSpotWordTypes wordTypes, Plugins graphBuilderPlugins, HotSpotPlatformConfigurationProvider platformConfigurationProvider) {
+        super(metaAccess, codeCache, constantReflection, constantField, foreignCalls, lowerer, replacements, new HotSpotStampProvider(), platformConfigurationProvider);
         this.suites = suites;
         this.registers = registers;
         this.snippetReflection = snippetReflection;
         this.wordTypes = wordTypes;
         this.graphBuilderPlugins = graphBuilderPlugins;
-        this.gc = gc;
+        this.platformConfigurationProvider = platformConfigurationProvider;
     }
 
     @Override
@@ -95,54 +95,54 @@ public class HotSpotProviders extends Providers {
     }
 
     @Override
-    public HotSpotGCProvider getGC() {
-        return gc;
+    public HotSpotPlatformConfigurationProvider getPlatformConfigurationProvider() {
+        return platformConfigurationProvider;
     }
 
     @Override
     public Providers copyWith(MetaAccessProvider substitution) {
         return new HotSpotProviders(substitution, getCodeCache(), getConstantReflection(), getConstantFieldProvider(), getForeignCalls(), getLowerer(), getReplacements(), getSuites(),
-                        getRegisters(), getSnippetReflection(), getWordTypes(), getGraphBuilderPlugins(), getGC());
+                        getRegisters(), getSnippetReflection(), getWordTypes(), getGraphBuilderPlugins(), getPlatformConfigurationProvider());
     }
 
     @Override
     public Providers copyWith(CodeCacheProvider substitution) {
         return new HotSpotProviders(getMetaAccess(), (HotSpotCodeCacheProvider) substitution, getConstantReflection(), getConstantFieldProvider(), getForeignCalls(), getLowerer(), getReplacements(),
-                        getSuites(), getRegisters(), getSnippetReflection(), getWordTypes(), getGraphBuilderPlugins(), getGC());
+                        getSuites(), getRegisters(), getSnippetReflection(), getWordTypes(), getGraphBuilderPlugins(), getPlatformConfigurationProvider());
     }
 
     @Override
     public Providers copyWith(ConstantReflectionProvider substitution) {
         return new HotSpotProviders(getMetaAccess(), getCodeCache(), substitution, getConstantFieldProvider(), getForeignCalls(), getLowerer(), getReplacements(), getSuites(),
-                        getRegisters(), getSnippetReflection(), getWordTypes(), getGraphBuilderPlugins(), getGC());
+                        getRegisters(), getSnippetReflection(), getWordTypes(), getGraphBuilderPlugins(), getPlatformConfigurationProvider());
     }
 
     @Override
     public Providers copyWith(ConstantFieldProvider substitution) {
         return new HotSpotProviders(getMetaAccess(), getCodeCache(), getConstantReflection(), substitution, getForeignCalls(), getLowerer(), getReplacements(), getSuites(),
-                        getRegisters(), getSnippetReflection(), getWordTypes(), getGraphBuilderPlugins(), getGC());
+                        getRegisters(), getSnippetReflection(), getWordTypes(), getGraphBuilderPlugins(), getPlatformConfigurationProvider());
     }
 
     @Override
     public Providers copyWith(ForeignCallsProvider substitution) {
         return new HotSpotProviders(getMetaAccess(), getCodeCache(), getConstantReflection(), getConstantFieldProvider(), (HotSpotForeignCallsProvider) substitution, getLowerer(), getReplacements(),
-                        getSuites(), getRegisters(), getSnippetReflection(), getWordTypes(), getGraphBuilderPlugins(), getGC());
+                        getSuites(), getRegisters(), getSnippetReflection(), getWordTypes(), getGraphBuilderPlugins(), getPlatformConfigurationProvider());
     }
 
     @Override
     public Providers copyWith(LoweringProvider substitution) {
         return new HotSpotProviders(getMetaAccess(), getCodeCache(), getConstantReflection(), getConstantFieldProvider(), getForeignCalls(), substitution, getReplacements(), getSuites(),
-                        getRegisters(), getSnippetReflection(), getWordTypes(), getGraphBuilderPlugins(), getGC());
+                        getRegisters(), getSnippetReflection(), getWordTypes(), getGraphBuilderPlugins(), getPlatformConfigurationProvider());
     }
 
     @Override
     public Providers copyWith(Replacements substitution) {
         return new HotSpotProviders(getMetaAccess(), getCodeCache(), getConstantReflection(), getConstantFieldProvider(), getForeignCalls(), getLowerer(), substitution, getSuites(),
-                        getRegisters(), getSnippetReflection(), getWordTypes(), getGraphBuilderPlugins(), getGC());
+                        getRegisters(), getSnippetReflection(), getWordTypes(), getGraphBuilderPlugins(), getPlatformConfigurationProvider());
     }
 
     public Providers copyWith(Plugins substitution) {
         return new HotSpotProviders(getMetaAccess(), getCodeCache(), getConstantReflection(), getConstantFieldProvider(), getForeignCalls(), getLowerer(), getReplacements(), getSuites(),
-                        getRegisters(), getSnippetReflection(), getWordTypes(), substitution, getGC());
+                        getRegisters(), getSnippetReflection(), getWordTypes(), substitution, getPlatformConfigurationProvider());
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@ package org.graalvm.compiler.core.amd64;
 import static jdk.vm.ci.code.ValueUtil.asRegister;
 import static jdk.vm.ci.code.ValueUtil.isAllocatableValue;
 import static jdk.vm.ci.code.ValueUtil.isRegister;
-import static org.graalvm.compiler.asm.amd64.AMD64Assembler.AMD64BinaryArithmetic.CMP;
+import static org.graalvm.compiler.asm.amd64.AMD64BaseAssembler.OperandSize.BYTE;
 import static org.graalvm.compiler.asm.amd64.AMD64BaseAssembler.OperandSize.DWORD;
 import static org.graalvm.compiler.asm.amd64.AMD64BaseAssembler.OperandSize.PD;
 import static org.graalvm.compiler.asm.amd64.AMD64BaseAssembler.OperandSize.PS;
@@ -78,6 +78,9 @@ import org.graalvm.compiler.lir.amd64.AMD64ByteSwapOp;
 import org.graalvm.compiler.lir.amd64.AMD64Call;
 import org.graalvm.compiler.lir.amd64.AMD64ControlFlow;
 import org.graalvm.compiler.lir.amd64.AMD64ControlFlow.BranchOp;
+import org.graalvm.compiler.lir.amd64.AMD64ControlFlow.CmpBranchOp;
+import org.graalvm.compiler.lir.amd64.AMD64ControlFlow.CmpConstBranchOp;
+import org.graalvm.compiler.lir.amd64.AMD64ControlFlow.CmpDataBranchOp;
 import org.graalvm.compiler.lir.amd64.AMD64ControlFlow.CondMoveOp;
 import org.graalvm.compiler.lir.amd64.AMD64ControlFlow.CondSetOp;
 import org.graalvm.compiler.lir.amd64.AMD64ControlFlow.FloatBranchOp;
@@ -87,6 +90,9 @@ import org.graalvm.compiler.lir.amd64.AMD64ControlFlow.HashTableSwitchOp;
 import org.graalvm.compiler.lir.amd64.AMD64ControlFlow.ReturnOp;
 import org.graalvm.compiler.lir.amd64.AMD64ControlFlow.StrategySwitchOp;
 import org.graalvm.compiler.lir.amd64.AMD64ControlFlow.TableSwitchOp;
+import org.graalvm.compiler.lir.amd64.AMD64ControlFlow.TestBranchOp;
+import org.graalvm.compiler.lir.amd64.AMD64ControlFlow.TestByteBranchOp;
+import org.graalvm.compiler.lir.amd64.AMD64ControlFlow.TestConstBranchOp;
 import org.graalvm.compiler.lir.amd64.AMD64LFenceOp;
 import org.graalvm.compiler.lir.amd64.AMD64Move;
 import org.graalvm.compiler.lir.amd64.AMD64Move.CompareAndSwapOp;
@@ -111,6 +117,7 @@ import jdk.vm.ci.code.Register;
 import jdk.vm.ci.code.RegisterValue;
 import jdk.vm.ci.code.StackSlot;
 import jdk.vm.ci.meta.AllocatableValue;
+import jdk.vm.ci.meta.Constant;
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.PlatformKind;
@@ -311,22 +318,90 @@ public abstract class AMD64LIRGenerator extends LIRGenerator {
 
     @Override
     public void emitCompareBranch(PlatformKind cmpKind, Value left, Value right, Condition cond, boolean unorderedIsTrue, LabelRef trueLabel, LabelRef falseLabel, double trueLabelProbability) {
-        Condition finalCondition = emitCompare(cmpKind, left, right, cond);
         if (cmpKind == AMD64Kind.SINGLE || cmpKind == AMD64Kind.DOUBLE) {
+            Condition finalCondition = emitCompare(cmpKind, left, right, cond);
             append(new FloatBranchOp(finalCondition, unorderedIsTrue, trueLabel, falseLabel, trueLabelProbability));
-        } else {
-            append(new BranchOp(finalCondition, trueLabel, falseLabel, trueLabelProbability));
+            return;
         }
+
+        if (LIRValueUtil.isVariable(right)) {
+            emitRawCompareBranch(OperandSize.get(cmpKind), load(right), loadNonConst(left), cond.mirror(), trueLabel, falseLabel, trueLabelProbability);
+        } else {
+            emitRawCompareBranch(OperandSize.get(cmpKind), load(left), loadNonConst(right), cond, trueLabel, falseLabel, trueLabelProbability);
+        }
+    }
+
+    private void emitRawCompareBranch(OperandSize size, Variable left, Value right, Condition cond, LabelRef trueLabel, LabelRef falseLabel, double trueLabelProbability) {
+        if (isConstantValue(right)) {
+            Constant c = LIRValueUtil.asConstant(right);
+            if (JavaConstant.isNull(c)) {
+                AMD64ArithmeticLIRGenerator arithmeticLIRGenerator = (AMD64ArithmeticLIRGenerator) arithmeticLIRGen;
+                if (arithmeticLIRGenerator.mustReplaceNullWithNullRegister(c)) {
+                    append(new CmpBranchOp(size, left, arithmeticLIRGenerator.getNullRegisterValue(), null, cond, trueLabel, falseLabel, trueLabelProbability));
+                } else {
+                    append(new TestBranchOp(size, left, left, null, cond, trueLabel, falseLabel, trueLabelProbability));
+                }
+                return;
+            } else if (c instanceof VMConstant) {
+                VMConstant vc = (VMConstant) c;
+                if (size == DWORD && !GeneratePIC.getValue(getResult().getLIR().getOptions()) && target().inlineObjects) {
+                    append(new CmpConstBranchOp(DWORD, left, vc, null, cond, trueLabel, falseLabel, trueLabelProbability));
+                } else {
+                    append(new CmpDataBranchOp(size, left, vc, cond, trueLabel, falseLabel, trueLabelProbability));
+                }
+                return;
+            } else if (c instanceof JavaConstant) {
+                JavaConstant jc = (JavaConstant) c;
+                if (jc.isDefaultForKind()) {
+                    if (size == BYTE) {
+                        append(new TestByteBranchOp(left, left, cond, trueLabel, falseLabel, trueLabelProbability));
+                    } else {
+                        append(new TestBranchOp(size, left, left, null, cond, trueLabel, falseLabel, trueLabelProbability));
+                    }
+                    return;
+                } else if (NumUtil.is32bit(jc.asLong())) {
+                    append(new CmpConstBranchOp(size, left, (int) jc.asLong(), null, cond, trueLabel, falseLabel, trueLabelProbability));
+                    return;
+                }
+            }
+        }
+
+        // fallback: load, then compare
+        append(new CmpBranchOp(size, left, asAllocatable(right), null, cond, trueLabel, falseLabel, trueLabelProbability));
     }
 
     public void emitCompareBranchMemory(AMD64Kind cmpKind, Value left, AMD64AddressValue right, LIRFrameState state, Condition cond, boolean unorderedIsTrue, LabelRef trueLabel, LabelRef falseLabel,
                     double trueLabelProbability) {
-        boolean mirrored = emitCompareMemory(cmpKind, left, right, state);
-        Condition finalCondition = mirrored ? cond.mirror() : cond;
         if (cmpKind.isXMM()) {
-            append(new FloatBranchOp(finalCondition, unorderedIsTrue, trueLabel, falseLabel, trueLabelProbability));
+            if (cmpKind == AMD64Kind.SINGLE) {
+                append(new AMD64BinaryConsumer.MemoryRMOp(SSEOp.UCOMIS, PS, asAllocatable(left), right, state));
+                append(new FloatBranchOp(cond, unorderedIsTrue, trueLabel, falseLabel, trueLabelProbability));
+            } else if (cmpKind == AMD64Kind.DOUBLE) {
+                append(new AMD64BinaryConsumer.MemoryRMOp(SSEOp.UCOMIS, PD, asAllocatable(left), right, state));
+                append(new FloatBranchOp(cond, unorderedIsTrue, trueLabel, falseLabel, trueLabelProbability));
+            } else {
+                throw GraalError.shouldNotReachHere("unexpected kind: " + cmpKind);
+            }
         } else {
-            append(new BranchOp(finalCondition, trueLabel, falseLabel, trueLabelProbability));
+            OperandSize size = OperandSize.get(cmpKind);
+            if (isConstantValue(left)) {
+                ConstantValue a = asConstantValue(left);
+                if (JavaConstant.isNull(a.getConstant())) {
+                    append(new CmpConstBranchOp(size, right, 0, state, cond.mirror(), trueLabel, falseLabel, trueLabelProbability));
+                    return;
+                } else if (a.getConstant() instanceof VMConstant && size == DWORD && target().inlineObjects) {
+                    VMConstant vc = (VMConstant) a.getConstant();
+                    append(new CmpConstBranchOp(size, right, vc, state, cond.mirror(), trueLabel, falseLabel, trueLabelProbability));
+                    return;
+                } else if (a.getConstant() instanceof JavaConstant && a.getJavaConstant().getJavaKind() != JavaKind.Object) {
+                    long value = a.getJavaConstant().asLong();
+                    if (NumUtil.is32bit(value)) {
+                        append(new CmpConstBranchOp(size, right, (int) value, state, cond.mirror(), trueLabel, falseLabel, trueLabelProbability));
+                        return;
+                    }
+                }
+            }
+            append(new CmpBranchOp(size, asAllocatable(left), right, state, cond, trueLabel, falseLabel, trueLabelProbability));
         }
     }
 
@@ -337,8 +412,22 @@ public abstract class AMD64LIRGenerator extends LIRGenerator {
 
     @Override
     public void emitIntegerTestBranch(Value left, Value right, LabelRef trueDestination, LabelRef falseDestination, double trueDestinationProbability) {
-        emitIntegerTest(left, right);
-        append(new BranchOp(Condition.EQ, trueDestination, falseDestination, trueDestinationProbability));
+        if (left.getPlatformKind().getVectorLength() > 1) {
+            append(new AMD64VectorCompareOp(VexRMOp.VPTEST, getRegisterSize(left), asAllocatable(left), asAllocatable(right)));
+            append(new BranchOp(Condition.EQ, trueDestination, falseDestination, trueDestinationProbability));
+        } else {
+            assert ((AMD64Kind) left.getPlatformKind()).isInteger();
+            OperandSize size = left.getPlatformKind() == AMD64Kind.QWORD ? QWORD : DWORD;
+            if (isJavaConstant(right) && NumUtil.is32bit(asJavaConstant(right).asLong())) {
+                append(new TestConstBranchOp(size, asAllocatable(left), (int) asJavaConstant(right).asLong(), null, Condition.EQ, trueDestination, falseDestination, trueDestinationProbability));
+            } else if (isJavaConstant(left) && NumUtil.is32bit(asJavaConstant(left).asLong())) {
+                append(new TestConstBranchOp(size, asAllocatable(right), (int) asJavaConstant(left).asLong(), null, Condition.EQ, trueDestination, falseDestination, trueDestinationProbability));
+            } else if (isAllocatableValue(right)) {
+                append(new TestBranchOp(size, asAllocatable(right), asAllocatable(left), null, Condition.EQ, trueDestination, falseDestination, trueDestinationProbability));
+            } else {
+                append(new TestBranchOp(size, asAllocatable(left), asAllocatable(right), null, Condition.EQ, trueDestination, falseDestination, trueDestinationProbability));
+            }
+        }
     }
 
     @Override
@@ -437,71 +526,6 @@ public abstract class AMD64LIRGenerator extends LIRGenerator {
     }
 
     /**
-     * This method emits the compare against memory instruction, and may reorder the operands. It
-     * returns true if it did so.
-     *
-     * @param b the right operand of the comparison
-     * @return true if the left and right operands were switched, false otherwise
-     */
-    private boolean emitCompareMemory(AMD64Kind cmpKind, Value a, AMD64AddressValue b, LIRFrameState state) {
-        OperandSize size;
-        switch (cmpKind) {
-            case BYTE:
-                size = OperandSize.BYTE;
-                break;
-            case WORD:
-                size = OperandSize.WORD;
-                break;
-            case DWORD:
-                size = OperandSize.DWORD;
-                break;
-            case QWORD:
-                size = OperandSize.QWORD;
-                break;
-            case SINGLE:
-                append(new AMD64BinaryConsumer.MemoryRMOp(SSEOp.UCOMIS, PS, asAllocatable(a), b, state));
-                return false;
-            case DOUBLE:
-                append(new AMD64BinaryConsumer.MemoryRMOp(SSEOp.UCOMIS, PD, asAllocatable(a), b, state));
-                return false;
-            default:
-                throw GraalError.shouldNotReachHere("unexpected kind: " + cmpKind);
-        }
-
-        if (isConstantValue(a)) {
-            return emitCompareMemoryConOp(size, asConstantValue(a), b, state);
-        } else {
-            return emitCompareRegMemoryOp(size, asAllocatable(a), b, state);
-        }
-    }
-
-    protected boolean emitCompareMemoryConOp(OperandSize size, ConstantValue a, AMD64AddressValue b, LIRFrameState state) {
-        if (JavaConstant.isNull(a.getConstant())) {
-            append(new AMD64BinaryConsumer.MemoryConstOp(CMP, size, b, 0, state));
-            return true;
-        } else if (a.getConstant() instanceof VMConstant && size == DWORD && target().inlineObjects) {
-            VMConstant vc = (VMConstant) a.getConstant();
-            append(new AMD64BinaryConsumer.MemoryVMConstOp(CMP.getMIOpcode(size, false), b, vc, state));
-            return true;
-        } else {
-            if (a.getConstant() instanceof JavaConstant && a.getJavaConstant().getJavaKind() != JavaKind.Object) {
-                long value = a.getJavaConstant().asLong();
-                if (NumUtil.is32bit(value)) {
-                    append(new AMD64BinaryConsumer.MemoryConstOp(CMP, size, b, (int) value, state));
-                    return true;
-                }
-            }
-            return emitCompareRegMemoryOp(size, asAllocatable(a), b, state);
-        }
-    }
-
-    private boolean emitCompareRegMemoryOp(OperandSize size, AllocatableValue a, AMD64AddressValue b, LIRFrameState state) {
-        AMD64RMOp op = CMP.getRMOpcode(size);
-        append(new AMD64BinaryConsumer.MemoryRMOp(op, size, a, b, state));
-        return false;
-    }
-
-    /**
      * This method emits the compare instruction, and may reorder the operands. It returns true if
      * it did so.
      *
@@ -559,7 +583,7 @@ public abstract class AMD64LIRGenerator extends LIRGenerator {
         RegisterValue cnt2 = AMD64.rdx.asValue(length2.getValueKind());
         emitMove(cnt1, length1);
         emitMove(cnt2, length2);
-        append(new AMD64ArrayCompareToOp(this, kind1, kind2, raxRes, array1, array2, cnt1, cnt2));
+        append(new AMD64ArrayCompareToOp(this, getAVX3Threshold(), kind1, kind2, raxRes, array1, array2, cnt1, cnt2));
         Variable result = newVariable(resultKind);
         emitMove(result, raxRes);
         return result;
@@ -587,6 +611,13 @@ public abstract class AMD64LIRGenerator extends LIRGenerator {
         return -1;
     }
 
+    /**
+     * Return the minimal array size for using AVX3 instructions.
+     */
+    protected int getAVX3Threshold() {
+        return 4096;
+    }
+
     @Override
     public Variable emitArrayIndexOf(JavaKind arrayKind, JavaKind valueKind, boolean findTwoConsecutive, Value arrayPointer, Value arrayLength, Value fromIndex, Value... searchValues) {
         Variable result = newVariable(LIRKind.value(AMD64Kind.DWORD));
@@ -605,7 +636,7 @@ public abstract class AMD64LIRGenerator extends LIRGenerator {
         emitMove(rdst, dst);
         emitMove(rlen, len);
 
-        append(new AMD64StringLatin1InflateOp(this, rsrc, rdst, rlen));
+        append(new AMD64StringLatin1InflateOp(this, getAVX3Threshold(), rsrc, rdst, rlen));
     }
 
     @Override
@@ -621,7 +652,7 @@ public abstract class AMD64LIRGenerator extends LIRGenerator {
         LIRKind reskind = LIRKind.value(AMD64Kind.DWORD);
         RegisterValue rres = AMD64.rax.asValue(reskind);
 
-        append(new AMD64StringUTF16CompressOp(this, rres, rsrc, rdst, rlen));
+        append(new AMD64StringUTF16CompressOp(this, getAVX3Threshold(), rres, rsrc, rdst, rlen));
 
         Variable res = newVariable(reskind);
         emitMove(res, rres);

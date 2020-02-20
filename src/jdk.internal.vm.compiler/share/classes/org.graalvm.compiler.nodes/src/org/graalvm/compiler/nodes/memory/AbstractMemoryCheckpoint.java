@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ import org.graalvm.compiler.nodes.StateSplit;
  * Provides an implementation of {@link StateSplit}.
  */
 @NodeInfo
-public abstract class AbstractMemoryCheckpoint extends AbstractStateSplit implements MemoryCheckpoint {
+public abstract class AbstractMemoryCheckpoint extends AbstractStateSplit implements MemoryKill {
 
     public static final NodeClass<AbstractMemoryCheckpoint> TYPE = NodeClass.create(AbstractMemoryCheckpoint.class);
 

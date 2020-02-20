@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,11 +28,10 @@ import java.util.List;
 
 import org.graalvm.compiler.nodes.ControlSplitNode;
 import org.graalvm.compiler.nodes.cfg.ControlFlowGraph;
+import org.graalvm.compiler.nodes.spi.CoreProviders;
 import org.graalvm.compiler.options.Option;
 import org.graalvm.compiler.options.OptionKey;
 import org.graalvm.compiler.options.OptionType;
-
-import jdk.vm.ci.meta.MetaAccessProvider;
 
 public interface LoopPolicies {
 
@@ -40,7 +39,7 @@ public interface LoopPolicies {
         @Option(help = "", type = OptionType.Expert) public static final OptionKey<Boolean> PeelALot = new OptionKey<>(false);
     }
 
-    boolean shouldPeel(LoopEx loop, ControlFlowGraph cfg, MetaAccessProvider metaAccess);
+    boolean shouldPeel(LoopEx loop, ControlFlowGraph cfg, CoreProviders providers);
 
     boolean shouldFullUnroll(LoopEx loop);
 

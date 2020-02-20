@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -136,6 +136,11 @@ public class AMD64HotSpotLIRGenerator extends AMD64LIRGenerator implements HotSp
     @Override
     protected int getMaxVectorSize() {
         return config.maxVectorSize;
+    }
+
+    @Override
+    protected int getAVX3Threshold() {
+        return config.useAVX3Threshold;
     }
 
     /**
@@ -645,10 +650,12 @@ public class AMD64HotSpotLIRGenerator extends AMD64LIRGenerator implements HotSp
         if (address.getValueKind().getPlatformKind() == getLIRKindTool().getNarrowOopKind().getPlatformKind()) {
             CompressEncoding encoding = config.getOopEncoding();
             Value uncompressed;
-            if (encoding.getShift() <= 3) {
+            int shift = encoding.getShift();
+            if (Scale.isScaleShiftSupported(shift)) {
                 LIRKind wordKind = LIRKind.unknownReference(target().arch.getWordKind());
-                uncompressed = new AMD64AddressValue(wordKind, getProviders().getRegisters().getHeapBaseRegister().asValue(wordKind), asAllocatable(address), Scale.fromInt(1 << encoding.getShift()),
-                                0);
+                RegisterValue heapBase = getProviders().getRegisters().getHeapBaseRegister().asValue(wordKind);
+                Scale scale = Scale.fromShift(shift);
+                uncompressed = new AMD64AddressValue(wordKind, heapBase, asAllocatable(address), scale, 0);
             } else {
                 uncompressed = emitUncompress(address, encoding, false);
             }

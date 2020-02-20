@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,7 @@ import static org.graalvm.compiler.lir.LIRValueUtil.isJavaConstant;
 
 import org.graalvm.compiler.asm.Label;
 import org.graalvm.compiler.asm.amd64.AMD64Address;
+import org.graalvm.compiler.asm.amd64.AMD64Address.Scale;
 import org.graalvm.compiler.asm.amd64.AMD64Assembler.AMD64MIOp;
 import org.graalvm.compiler.asm.amd64.AMD64Assembler.AMD64MOp;
 import org.graalvm.compiler.asm.amd64.AMD64BaseAssembler.OperandSize;
@@ -589,7 +590,7 @@ public class AMD64Move {
                 masm.movdbl(asRegister(result, AMD64Kind.DOUBLE), asRegister(input, AMD64Kind.DOUBLE));
                 break;
             default:
-                throw GraalError.shouldNotReachHere("kind=" + kind);
+                throw GraalError.shouldNotReachHere("kind=" + kind + " input=" + input + " result=" + result);
         }
     }
 
@@ -615,7 +616,7 @@ public class AMD64Move {
                 masm.movsd(dest, input);
                 break;
             default:
-                throw GraalError.shouldNotReachHere();
+                throw GraalError.shouldNotReachHere("kind=" + kind + " input=" + input + " result=" + result);
         }
     }
 
@@ -641,7 +642,7 @@ public class AMD64Move {
                 masm.movdbl(result, src);
                 break;
             default:
-                throw GraalError.shouldNotReachHere();
+                throw GraalError.shouldNotReachHere("kind=" + kind + " input=" + input + " result=" + result);
         }
     }
 
@@ -811,8 +812,13 @@ public class AMD64Move {
         @Use({REG, CONST}) private Value input;
         @Alive({REG, ILLEGAL, UNINITIALIZED}) private AllocatableValue baseRegister;
 
-        protected PointerCompressionOp(LIRInstructionClass<? extends PointerCompressionOp> type, AllocatableValue result, Value input,
-                        AllocatableValue baseRegister, CompressEncoding encoding, boolean nonNull, LIRKindTool lirKindTool) {
+        protected PointerCompressionOp(LIRInstructionClass<? extends PointerCompressionOp> type,
+                        AllocatableValue result,
+                        Value input,
+                        AllocatableValue baseRegister,
+                        CompressEncoding encoding,
+                        boolean nonNull,
+                        LIRKindTool lirKindTool) {
 
             super(type);
             this.result = result;
@@ -847,8 +853,42 @@ public class AMD64Move {
             return encoding.getShift();
         }
 
+        /**
+         * Emits code to move {@linkplain #getInput input} to {@link #getResult result}.
+         */
         protected final void move(LIRKind kind, CompilationResultBuilder crb, AMD64MacroAssembler masm) {
             AMD64Move.move((AMD64Kind) kind.getPlatformKind(), crb, masm, result, input);
+        }
+
+        /**
+         * Emits code to uncompress the compressed oop in {@code inputAndResultReg} by left shifting
+         * it {@code shift} bits, adding it to {@code baseReg} and storing the result back in
+         * {@code inputAndResultReg}.
+         */
+        public static void emitUncompressWithBaseRegister(AMD64MacroAssembler masm, Register inputAndResultReg, Register baseReg, int shift, boolean preserveFlagsRegister) {
+            emitUncompressWithBaseRegister(masm, inputAndResultReg, baseReg, inputAndResultReg, shift, preserveFlagsRegister);
+        }
+
+        /**
+         * Emits code to uncompress the compressed oop in {@code inputReg} by left shifting it
+         * {@code shift} bits, adding it to {@code baseReg} and storing the result in
+         * {@code resultReg}.
+         */
+        public static void emitUncompressWithBaseRegister(AMD64MacroAssembler masm, Register resultReg, Register baseReg, Register inputReg, int shift, boolean preserveFlagsRegister) {
+            assert !baseReg.equals(Register.None) || shift != 0 : "compression not enabled";
+            if (Scale.isScaleShiftSupported(shift)) {
+                AMD64Address.Scale scale = AMD64Address.Scale.fromShift(shift);
+                masm.leaq(resultReg, new AMD64Address(baseReg, inputReg, scale));
+            } else {
+                if (preserveFlagsRegister) {
+                    throw GraalError.shouldNotReachHere("No valid flag-effect-free instruction available to uncompress oop");
+                }
+                if (!resultReg.equals(inputReg)) {
+                    masm.movq(resultReg, inputReg);
+                }
+                masm.shlq(resultReg, shift);
+                masm.addq(resultReg, baseReg);
+            }
         }
     }
 
@@ -901,25 +941,23 @@ public class AMD64Move {
         @Override
         public void emitCode(CompilationResultBuilder crb, AMD64MacroAssembler masm) {
             Register baseReg = getBaseRegister(crb);
+            int shift = getShift();
+            Register resReg = getResultRegister();
             if (nonNull && !baseReg.equals(Register.None) && getInput() instanceof RegisterValue) {
                 Register inputReg = ((RegisterValue) getInput()).getRegister();
-                if (!inputReg.equals(getResultRegister())) {
-                    masm.leaq(getResultRegister(), new AMD64Address(baseReg, inputReg, AMD64Address.Scale.fromShift(getShift())));
+                if (!inputReg.equals(resReg)) {
+                    emitUncompressWithBaseRegister(masm, resReg, baseReg, inputReg, shift, false);
                     return;
                 }
             }
             move(lirKindTool.getNarrowOopKind(), crb, masm);
-            emitUncompressCode(masm, getResultRegister(), getShift(), baseReg, nonNull);
+            emitUncompressCode(masm, resReg, shift, baseReg, nonNull);
         }
 
         public static void emitUncompressCode(AMD64MacroAssembler masm, Register resReg, int shift, Register baseReg, boolean nonNull) {
             if (nonNull) {
                 if (!baseReg.equals(Register.None)) {
-                    if (shift != 0) {
-                        masm.leaq(resReg, new AMD64Address(baseReg, resReg, AMD64Address.Scale.fromShift(shift)));
-                    } else {
-                        masm.addq(resReg, baseReg);
-                    }
+                    emitUncompressWithBaseRegister(masm, resReg, baseReg, shift, false);
                 } else if (shift != 0) {
                     masm.shlq(resReg, shift);
                 }
@@ -974,9 +1012,8 @@ public class AMD64Move {
         @Override
         protected final void emitConversion(Register resultRegister, Register inputRegister, Register nullRegister, AMD64MacroAssembler masm) {
             if (inputRegister.equals(resultRegister)) {
-                masm.subq(inputRegister, nullRegister);
                 Label done = new Label();
-                masm.jccb(Equal, done);
+                masm.subqAndJcc(inputRegister, nullRegister, Equal, done, true);
                 masm.addq(inputRegister, nullRegister);
                 masm.bind(done);
             } else {

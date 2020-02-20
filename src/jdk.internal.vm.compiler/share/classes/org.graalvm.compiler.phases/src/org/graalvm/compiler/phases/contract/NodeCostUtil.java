@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,15 @@ public class NodeCostUtil {
 
     private static final CounterKey sizeComputationCount = DebugContext.counter("GraphCostComputationCount_Size");
     private static final CounterKey sizeVerificationCount = DebugContext.counter("GraphCostVerificationCount_Size");
+
+    public static int computeNodesSize(Iterable<Node> nodes) {
+        int size = 0;
+        for (Node n : nodes) {
+            size += n.estimatedNodeSize().value;
+        }
+        assert size >= 0;
+        return size;
+    }
 
     @SuppressWarnings("try")
     public static int computeGraphSize(StructuredGraph graph) {

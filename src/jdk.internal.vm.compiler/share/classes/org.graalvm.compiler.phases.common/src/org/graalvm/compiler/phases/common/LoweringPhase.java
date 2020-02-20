@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,7 +69,9 @@ import org.graalvm.compiler.nodes.cfg.Block;
 import org.graalvm.compiler.nodes.extended.AnchoringNode;
 import org.graalvm.compiler.nodes.extended.GuardedNode;
 import org.graalvm.compiler.nodes.extended.GuardingNode;
-import org.graalvm.compiler.nodes.memory.MemoryCheckpoint;
+import org.graalvm.compiler.nodes.memory.MemoryKill;
+import org.graalvm.compiler.nodes.memory.MultiMemoryKill;
+import org.graalvm.compiler.nodes.memory.SingleMemoryKill;
 import org.graalvm.compiler.nodes.spi.CoreProviders;
 import org.graalvm.compiler.nodes.spi.Lowerable;
 import org.graalvm.compiler.nodes.spi.LoweringProvider;
@@ -306,17 +308,17 @@ public class LoweringPhase extends BasePhase<CoreProviders> {
                 assert postLoweringMark.equals(mark) : graph + ": lowering of " + node + " produced lowerable " + n + " that should have been recursively lowered as it introduces these new nodes: " +
                                 graph.getNewNodes(postLoweringMark).snapshot();
             }
-            if (graph.isAfterFloatingReadPhase() && n instanceof MemoryCheckpoint && !(node instanceof MemoryCheckpoint) && !(node instanceof ControlSinkNode)) {
+            if (graph.isAfterFloatingReadPhase() && n instanceof MemoryKill && !(node instanceof MemoryKill) && !(node instanceof ControlSinkNode)) {
                 /*
                  * The lowering introduced a MemoryCheckpoint but the current node isn't a
                  * checkpoint. This is only OK if the locations involved don't affect the memory
                  * graph or if the new kill location doesn't connect into the existing graph.
                  */
                 boolean isAny = false;
-                if (n instanceof MemoryCheckpoint.Single) {
-                    isAny = ((MemoryCheckpoint.Single) n).getKilledLocationIdentity().isAny();
+                if (n instanceof SingleMemoryKill) {
+                    isAny = ((SingleMemoryKill) n).getKilledLocationIdentity().isAny();
                 } else {
-                    for (LocationIdentity ident : ((MemoryCheckpoint.Multi) n).getKilledLocationIdentities()) {
+                    for (LocationIdentity ident : ((MultiMemoryKill) n).getKilledLocationIdentities()) {
                         if (ident.isAny()) {
                             isAny = true;
                         }

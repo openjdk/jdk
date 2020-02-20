@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,44 +24,24 @@
 
 package org.graalvm.compiler.nodes.memory;
 
+import org.graalvm.compiler.nodes.memory.address.AddressNode;
+import jdk.internal.vm.compiler.word.LocationIdentity;
+
 /**
- * Encapsulates properties of a node describing how it accesses the heap.
+ *
+ * A special form of {@linkplain MemoryAccess} exposing the {@linkplain AddressNode} representing
+ * the {@linkplain LocationIdentity} touched by this memory access. Typically used during a later
+ * stage in the compilation pipeline.
  */
-public interface HeapAccess {
+public interface AddressableMemoryAccess extends MemoryAccess {
 
     /**
-     * The types of (write/read) barriers attached to stores.
+     * Determines if the memory touch operation represented by this node can use OS level semantics
+     * for representing the null check of the memory location with an operating system level trap.
      */
-    enum BarrierType {
-        /**
-         * Primitive access which do not necessitate barriers.
-         */
-        NONE,
-        /**
-         * Array object access.
-         */
-        ARRAY,
-        /**
-         * Field object access.
-         */
-        FIELD,
-        /**
-         * Unknown (aka field or array) object access.
-         */
-        UNKNOWN,
-        /**
-         * Weak field access (e.g. Hotspot's Reference.referent field).
-         */
-        WEAK_FIELD,
-        /**
-         * An access which requires a dynamic check for Weak field access (e.g. Hotspot's
-         * Reference.referent field).
-         */
-        MAYBE_WEAK_FIELD
-    }
+    boolean canNullCheck();
 
-    /**
-     * Gets the write barrier type for that particular access.
-     */
-    BarrierType getBarrierType();
+    AddressNode getAddress();
+
+    void setAddress(AddressNode address);
 }

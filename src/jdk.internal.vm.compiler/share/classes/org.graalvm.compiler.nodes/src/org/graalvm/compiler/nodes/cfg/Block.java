@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,8 @@ import org.graalvm.compiler.nodes.FixedWithNextNode;
 import org.graalvm.compiler.nodes.InvokeWithExceptionNode;
 import org.graalvm.compiler.nodes.LoopBeginNode;
 import org.graalvm.compiler.nodes.LoopEndNode;
-import org.graalvm.compiler.nodes.memory.MemoryCheckpoint;
+import org.graalvm.compiler.nodes.memory.MultiMemoryKill;
+import org.graalvm.compiler.nodes.memory.SingleMemoryKill;
 import jdk.internal.vm.compiler.word.LocationIdentity;
 
 public final class Block extends AbstractBlockBase<Block> {
@@ -259,11 +260,11 @@ public final class Block extends AbstractBlockBase<Block> {
     private LocationSet calcKillLocations() {
         LocationSet result = new LocationSet();
         for (FixedNode node : this.getNodes()) {
-            if (node instanceof MemoryCheckpoint.Single) {
-                LocationIdentity identity = ((MemoryCheckpoint.Single) node).getKilledLocationIdentity();
+            if (node instanceof SingleMemoryKill) {
+                LocationIdentity identity = ((SingleMemoryKill) node).getKilledLocationIdentity();
                 result.add(identity);
-            } else if (node instanceof MemoryCheckpoint.Multi) {
-                for (LocationIdentity identity : ((MemoryCheckpoint.Multi) node).getKilledLocationIdentities()) {
+            } else if (node instanceof MultiMemoryKill) {
+                for (LocationIdentity identity : ((MultiMemoryKill) node).getKilledLocationIdentities()) {
                     result.add(identity);
                 }
             }

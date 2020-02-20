@@ -29,13 +29,18 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.annotation.Annotation;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -48,6 +53,7 @@ import org.graalvm.compiler.api.replacements.Snippet.ConstantParameter;
 import org.graalvm.compiler.api.replacements.Snippet.NonNullParameter;
 import org.graalvm.compiler.api.replacements.Snippet.VarargsParameter;
 import org.graalvm.compiler.api.test.Graal;
+import org.graalvm.compiler.api.test.ModuleSupport;
 import org.graalvm.compiler.bytecode.BridgeMethodUtils;
 import org.graalvm.compiler.core.CompilerThreadFactory;
 import org.graalvm.compiler.core.common.LIRKind;
@@ -66,8 +72,13 @@ import org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration.Plugins;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins;
+import org.graalvm.compiler.nodes.java.LoadFieldNode;
 import org.graalvm.compiler.nodes.spi.CoreProviders;
+import org.graalvm.compiler.options.Option;
+import org.graalvm.compiler.options.OptionDescriptor;
+import org.graalvm.compiler.options.OptionDescriptors;
 import org.graalvm.compiler.options.OptionValues;
+import org.graalvm.compiler.options.OptionsParser;
 import org.graalvm.compiler.phases.OptimisticOptimizations;
 import org.graalvm.compiler.phases.PhaseSuite;
 import org.graalvm.compiler.phases.VerifyPhase;
@@ -78,7 +89,6 @@ import org.graalvm.compiler.phases.util.Providers;
 import org.graalvm.compiler.runtime.RuntimeProvider;
 import org.graalvm.compiler.serviceprovider.JavaVersionUtil;
 import org.graalvm.compiler.test.AddExports;
-import org.graalvm.compiler.api.test.ModuleSupport;
 import jdk.internal.vm.compiler.word.LocationIdentity;
 import org.junit.Assert;
 import org.junit.Assume;
@@ -91,6 +101,7 @@ import jdk.vm.ci.meta.JavaField;
 import jdk.vm.ci.meta.JavaMethod;
 import jdk.vm.ci.meta.JavaType;
 import jdk.vm.ci.meta.MetaAccessProvider;
+import jdk.vm.ci.meta.ResolvedJavaField;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
 import jdk.vm.ci.meta.Value;
@@ -197,10 +208,31 @@ public class CheckGraalInvariants extends GraalCompilerTest {
         @SuppressWarnings("unused")
         protected void updateVerifiers(List<VerifyPhase<CoreProviders>> verifiers) {
         }
+
+        /**
+         * Determines if {@code option} should be checked to ensure it has at least one usage.
+         */
+        public boolean shouldCheckUsage(OptionDescriptor option) {
+            Class<?> declaringClass = option.getDeclaringClass();
+            if (declaringClass.getName().equals("org.graalvm.compiler.truffle.compiler.SharedTruffleCompilerOptions")) {
+                /*
+                 * These options are aliases for Truffle runtime options whose usages are not on the
+                 * class path used when running CheckGraalInvariants.
+                 */
+                return false;
+            }
+            if (option.getOptionKey().getClass().isAnonymousClass()) {
+                /*
+                 * Probably a derived option such as
+                 * org.graalvm.compiler.debug.DebugOptions.PrintGraphFile.
+                 */
+                return false;
+            }
+            return true;
+        }
     }
 
     @Test
-    @SuppressWarnings("try")
     public void test() {
         assumeManagementLibraryIsLoadable();
         runTest(new InvariantsTool());
@@ -330,6 +362,10 @@ public class CheckGraalInvariants extends GraalCompilerTest {
                 }
             }
         }
+
+        Map<ResolvedJavaField, Set<ResolvedJavaMethod>> optionFieldUsages = initOptionFieldUsagesMap(tool, metaAccess, errors);
+        ResolvedJavaType optionDescriptorsType = metaAccess.lookupJavaType(OptionDescriptors.class);
+
         if (errors.isEmpty()) {
             // Order outer classes before the inner classes
             classNames.sort((String a, String b) -> a.compareTo(b));
@@ -373,6 +409,7 @@ public class CheckGraalInvariants extends GraalCompilerTest {
                                         graphBuilderSuite.apply(graph, context);
                                         // update phi stamps
                                         graph.getNodes().filter(PhiNode.class).forEach(PhiNode::inferStamp);
+                                        collectOptionFieldUsages(optionFieldUsages, optionDescriptorsType, method, graph);
                                         checkGraph(verifiers, context, graph);
                                     } catch (VerificationError e) {
                                         errors.add(e.getMessage());
@@ -411,6 +448,9 @@ public class CheckGraalInvariants extends GraalCompilerTest {
                 }
             }
         }
+
+        checkOptionFieldUsages(errors, optionFieldUsages);
+
         if (!errors.isEmpty()) {
             StringBuilder msg = new StringBuilder();
             String nl = String.format("%n");
@@ -421,6 +461,52 @@ public class CheckGraalInvariants extends GraalCompilerTest {
                 msg.append(e);
             }
             Assert.fail(msg.toString());
+        }
+    }
+
+    /**
+     * Initializes a map from a field annotated by {@link Option} to a set that will be used to
+     * collect methods that accesses the option field.
+     *
+     * @param tool
+     */
+    private static Map<ResolvedJavaField, Set<ResolvedJavaMethod>> initOptionFieldUsagesMap(InvariantsTool tool, MetaAccessProvider metaAccess, List<String> errors) {
+        Map<ResolvedJavaField, Set<ResolvedJavaMethod>> optionFields = new HashMap<>();
+        for (OptionDescriptors set : OptionsParser.getOptionsLoader()) {
+            for (OptionDescriptor option : set) {
+                if (tool.shouldCheckUsage(option)) {
+                    Class<?> declaringClass = option.getDeclaringClass();
+                    try {
+                        Field javaField = declaringClass.getDeclaredField(option.getFieldName());
+                        optionFields.put(metaAccess.lookupJavaField(javaField), new HashSet<>());
+                    } catch (NoSuchFieldException e) {
+                        errors.add(e.toString());
+                    }
+                }
+            }
+        }
+        return optionFields;
+    }
+
+    private static void collectOptionFieldUsages(Map<ResolvedJavaField, Set<ResolvedJavaMethod>> optionFields, ResolvedJavaType optionDescriptorsType, ResolvedJavaMethod method,
+                    StructuredGraph graph) {
+        if (!optionDescriptorsType.isAssignableFrom(method.getDeclaringClass())) {
+            for (LoadFieldNode lfn : graph.getNodes().filter(LoadFieldNode.class)) {
+
+                ResolvedJavaField field = lfn.field();
+                Set<ResolvedJavaMethod> loads = optionFields.get(field);
+                if (loads != null) {
+                    loads.add(graph.method());
+                }
+            }
+        }
+    }
+
+    private static void checkOptionFieldUsages(List<String> errors, Map<ResolvedJavaField, Set<ResolvedJavaMethod>> optionFieldUsages) {
+        for (Map.Entry<ResolvedJavaField, Set<ResolvedJavaMethod>> e : optionFieldUsages.entrySet()) {
+            if (e.getValue().isEmpty()) {
+                errors.add("No uses found for " + e.getKey().format("%H.%n"));
+            }
         }
     }
 

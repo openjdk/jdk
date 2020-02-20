@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 
 package org.graalvm.compiler.core.test;
 
+import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
 import org.graalvm.compiler.lir.LIR;
 import org.graalvm.compiler.lir.LIRInstruction;
 import org.graalvm.compiler.lir.gen.LIRGenerationResult;
@@ -59,9 +60,13 @@ public abstract class MatchRuleTest extends GraalCompilerTest {
     }
 
     protected void checkLIR(String methodName, Predicate<LIRInstruction> predicate, int expected) {
+        checkLIR(methodName, predicate, 0, expected);
+    }
+
+    protected void checkLIR(String methodName, Predicate<LIRInstruction> predicate, int blockIndex, int expected) {
         compile(getResolvedJavaMethod(methodName), null);
         int actualOpNum = 0;
-        for (LIRInstruction ins : lir.getLIRforBlock(lir.codeEmittingOrder()[0])) {
+        for (LIRInstruction ins : lir.getLIRforBlock(lir.codeEmittingOrder()[blockIndex])) {
             if (predicate.test(ins)) {
                 actualOpNum++;
             }
@@ -69,4 +74,19 @@ public abstract class MatchRuleTest extends GraalCompilerTest {
         Assert.assertEquals(expected, actualOpNum);
     }
 
+    protected void checkLIRforAll(String methodName, Predicate<LIRInstruction> predicate, int expected) {
+        compile(getResolvedJavaMethod(methodName), null);
+        int actualOpNum = 0;
+        for (AbstractBlockBase<?> block : lir.codeEmittingOrder()) {
+            if (block == null) {
+                continue;
+            }
+            for (LIRInstruction ins : lir.getLIRforBlock(block)) {
+                if (predicate.test(ins)) {
+                    actualOpNum++;
+                }
+            }
+        }
+        Assert.assertEquals(expected, actualOpNum);
+    }
 }

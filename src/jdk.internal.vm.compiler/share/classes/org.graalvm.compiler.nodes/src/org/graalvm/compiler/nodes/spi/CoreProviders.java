@@ -46,5 +46,5 @@ public interface CoreProviders {
 
     ForeignCallsProvider getForeignCalls();
 
-    GCProvider getGC();
+    PlatformConfigurationProvider getPlatformConfigurationProvider();
 }

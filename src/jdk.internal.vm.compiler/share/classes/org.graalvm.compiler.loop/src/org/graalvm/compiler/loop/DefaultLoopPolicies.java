@@ -48,12 +48,11 @@ import org.graalvm.compiler.nodes.calc.CompareNode;
 import org.graalvm.compiler.nodes.cfg.Block;
 import org.graalvm.compiler.nodes.cfg.ControlFlowGraph;
 import org.graalvm.compiler.nodes.debug.ControlFlowAnchorNode;
+import org.graalvm.compiler.nodes.spi.CoreProviders;
 import org.graalvm.compiler.options.Option;
 import org.graalvm.compiler.options.OptionKey;
 import org.graalvm.compiler.options.OptionType;
 import org.graalvm.compiler.options.OptionValues;
-
-import jdk.vm.ci.meta.MetaAccessProvider;
 
 public class DefaultLoopPolicies implements LoopPolicies {
 
@@ -72,7 +71,7 @@ public class DefaultLoopPolicies implements LoopPolicies {
     }
 
     @Override
-    public boolean shouldPeel(LoopEx loop, ControlFlowGraph cfg, MetaAccessProvider metaAccess) {
+    public boolean shouldPeel(LoopEx loop, ControlFlowGraph cfg, CoreProviders providers) {
         LoopBeginNode loopBegin = loop.loopBegin();
         double entryProbability = cfg.blockFor(loopBegin.forwardEnd()).getRelativeFrequency();
         StructuredGraph graph = cfg.graph;

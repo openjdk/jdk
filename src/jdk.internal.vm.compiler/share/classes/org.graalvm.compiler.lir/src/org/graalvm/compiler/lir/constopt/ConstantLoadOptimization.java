@@ -35,6 +35,7 @@ import java.util.Deque;
 import java.util.EnumSet;
 import java.util.List;
 
+import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
 import org.graalvm.compiler.core.common.cfg.BlockMap;
 import org.graalvm.compiler.debug.CounterKey;
@@ -59,6 +60,7 @@ import org.graalvm.compiler.options.Option;
 import org.graalvm.compiler.options.OptionType;
 
 import jdk.vm.ci.code.TargetDescription;
+import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.Constant;
 import jdk.vm.ci.meta.Value;
 import jdk.vm.ci.meta.ValueKind;
@@ -87,6 +89,7 @@ public final class ConstantLoadOptimization extends PreAllocationOptimizationPha
     private static final CounterKey phiConstantsSkipped = DebugContext.counter("ConstantLoadOptimization[PhisSkipped]");
     private static final CounterKey singleUsageConstantsSkipped = DebugContext.counter("ConstantLoadOptimization[SingleUsageSkipped]");
     private static final CounterKey usageAtDefinitionSkipped = DebugContext.counter("ConstantLoadOptimization[UsageAtDefinitionSkipped]");
+    private static final CounterKey basePointerUsagesSkipped = DebugContext.counter("ConstantLoadOptimization[BasePointerUsagesSkipped]");
     private static final CounterKey materializeAtDefinitionSkipped = DebugContext.counter("ConstantLoadOptimization[MaterializeAtDefinitionSkipped]");
     private static final CounterKey constantsOptimized = DebugContext.counter("ConstantLoadOptimization[optimized]");
 
@@ -199,7 +202,17 @@ public final class ConstantLoadOptimization extends PreAllocationOptimizationPha
                 InstructionValueConsumer loadConsumer = (instruction, value, mode, flags) -> {
                     if (isVariable(value)) {
                         Variable var = (Variable) value;
-
+                        AllocatableValue base = getBasePointer(var);
+                        if (base != null && base instanceof Variable) {
+                            if (map.remove((Variable) base) != null) {
+                                // We do not want optimize constants which are used as base
+                                // pointer. The reason is that it would require to update all
+                                // the derived Variables (LIRKind and so on)
+                                map.remove(var);
+                                basePointerUsagesSkipped.increment(debug);
+                                debug.log("skip optimizing %s because it is used as base pointer", base);
+                            }
+                        }
                         if (!phiConstants.get(var.index)) {
                             if (!defined.get(var.index)) {
                                 defined.set(var.index);
@@ -246,6 +259,15 @@ public final class ConstantLoadOptimization extends PreAllocationOptimizationPha
                     inst.visitEachAlive(useConsumer);
 
                 }
+            }
+        }
+
+        private static AllocatableValue getBasePointer(Value value) {
+            ValueKind<?> kind = value.getValueKind();
+            if (kind instanceof LIRKind) {
+                return ((LIRKind) kind).getDerivedReferenceBase();
+            } else {
+                return null;
             }
         }
 

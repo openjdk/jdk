@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,7 @@ import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.ResolvedJavaType;
+import org.graalvm.compiler.nodes.spi.VirtualizerTool;
 
 @NodeInfo(cycles = CYCLES_0, size = SIZE_0)
 public abstract class VirtualObjectNode extends ValueNode implements LIRLowerable, IterableNodeType {
@@ -133,4 +134,33 @@ public abstract class VirtualObjectNode extends ValueNode implements LIRLowerabl
     public void generate(NodeLIRBuilderTool gen) {
         // nothing to do...
     }
+
+    /**
+     * Checks that a read in a virtual object is a candidate for byte array virtualization.
+     *
+     * Virtualizing reads in byte arrays can happen iff all of these hold true:
+     * <li>The virtualized object is a virtualized byte array
+     * <li>Both the virtualized entry and the access kind are primitives
+     * <li>The number of bytes actually occupied by the entry is equal to the number of bytes of the
+     * access kind
+     */
+    public boolean canVirtualizeLargeByteArrayUnsafeRead(ValueNode entry, int index, JavaKind accessKind, VirtualizerTool tool) {
+        return (tool.canVirtualizeLargeByteArrayUnsafeAccess() || accessKind == JavaKind.Byte) &&
+                        !entry.isIllegalConstant() && entry.getStackKind() == accessKind.getStackKind() &&
+                        isVirtualByteArrayAccess(accessKind) &&
+                        accessKind.getByteCount() == ((VirtualArrayNode) this).byteArrayEntryByteCount(index, tool);
+    }
+
+    public boolean isVirtualByteArrayAccess(JavaKind accessKind) {
+        return accessKind.isPrimitive() && isVirtualByteArray();
+    }
+
+    public boolean isVirtualByteArray() {
+        return isVirtualArray() && entryCount() > 0 && entryKind(0) == JavaKind.Byte;
+    }
+
+    private boolean isVirtualArray() {
+        return this instanceof VirtualArrayNode;
+    }
+
 }

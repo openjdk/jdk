@@ -63,8 +63,5 @@ public class BytecodeParserOptions {
 
     @Option(help = "Maximum depth when inlining during bytecode parsing.", type = OptionType.Debug)
     public static final OptionKey<Integer> InlineDuringParsingMaxDepth = new OptionKey<>(10);
-
-    @Option(help = "When creating info points hide the methods of the substitutions.", type = OptionType.Debug)
-    public static final OptionKey<Boolean> HideSubstitutionStates = new OptionKey<>(false);
     // @formatter:on
 }

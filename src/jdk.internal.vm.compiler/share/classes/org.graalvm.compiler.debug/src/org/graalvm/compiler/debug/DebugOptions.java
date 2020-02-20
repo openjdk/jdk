@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -118,12 +118,12 @@ public class DebugOptions {
                     "otherwise a more human readable format is used. If not specified, metrics are dumped to the console.", type = OptionType.Debug)
     public static final OptionKey<String> AggregatedMetricsFile = new OptionKey<>(null);
 
-    @Option(help = "Only report metrics for threads whose name matches the regular expression.", type = OptionType.Debug)
-    public static final OptionKey<String> MetricsThreadFilter = new OptionKey<>(null);
     @Option(help = "Enable debug output for stub code generation and snippet preparation.", type = OptionType.Debug)
     public static final OptionKey<Boolean> DebugStubsAndSnippets = new OptionKey<>(false);
     @Option(help = "Send compiler IR to dump handlers on error.", type = OptionType.Debug)
     public static final OptionKey<Boolean> DumpOnError = new OptionKey<>(false);
+    @Option(help = "Disable intercepting exceptions in debug scopes.", type = OptionType.Debug)
+    public static final OptionKey<Boolean> DisableIntercept = new OptionKey<>(false);
     @Option(help = "Intercept also bailout exceptions", type = OptionType.Debug)
     public static final OptionKey<Boolean> InterceptBailout = new OptionKey<>(false);
     @Option(help = "Enable more verbose log output when available", type = OptionType.Debug)
@@ -165,9 +165,6 @@ public class DebugOptions {
     public static final OptionKey<Integer> PrintGraphPort = new OptionKey<>(4445);
     @Option(help = "Schedule graphs as they are dumped.", type = OptionType.Debug)
     public static final OptionKey<Boolean> PrintGraphWithSchedule = new OptionKey<>(false);
-
-    @Option(help = "Enable dumping Truffle ASTs to the IdealGraphVisualizer.", type = OptionType.Debug)
-    public static final OptionKey<Boolean> PrintTruffleTrees = new OptionKey<>(true);
 
     @Option(help = "Treat any exceptions during dumping as fatal.", type = OptionType.Debug)
     public static final OptionKey<Boolean> DumpingErrorsAreFatal = new OptionKey<>(false);

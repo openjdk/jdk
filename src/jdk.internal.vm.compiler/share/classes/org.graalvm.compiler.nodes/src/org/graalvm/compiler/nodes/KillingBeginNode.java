@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,11 +30,11 @@ import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_0;
 
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
-import org.graalvm.compiler.nodes.memory.MemoryCheckpoint;
+import org.graalvm.compiler.nodes.memory.SingleMemoryKill;
 import jdk.internal.vm.compiler.word.LocationIdentity;
 
 @NodeInfo(allowedUsageTypes = {Memory}, cycles = CYCLES_0, size = SIZE_0)
-public final class KillingBeginNode extends AbstractBeginNode implements MemoryCheckpoint.Single {
+public final class KillingBeginNode extends AbstractBeginNode implements SingleMemoryKill {
 
     public static final NodeClass<KillingBeginNode> TYPE = NodeClass.create(KillingBeginNode.class);
     protected LocationIdentity locationIdentity;

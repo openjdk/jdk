@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,8 +37,8 @@ import org.graalvm.compiler.nodes.NamedLocationIdentity;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.ValueNodeUtil;
 import org.graalvm.compiler.nodes.memory.MemoryAccess;
-import org.graalvm.compiler.nodes.memory.MemoryCheckpoint;
 import org.graalvm.compiler.nodes.memory.MemoryNode;
+import org.graalvm.compiler.nodes.memory.MultiMemoryKill;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 import jdk.internal.vm.compiler.word.LocationIdentity;
@@ -49,7 +49,7 @@ import jdk.vm.ci.meta.JavaKind;
 @NodeInfo(allowedUsageTypes = Memory, size = SIZE_512, cycles = CYCLES_UNKNOWN)
 
 public final class AMD64StringLatin1InflateNode extends FixedWithNextNode
-                implements LIRLowerable, MemoryCheckpoint.Multi, MemoryAccess {
+                implements LIRLowerable, MultiMemoryKill, MemoryAccess {
 
     public static final NodeClass<AMD64StringLatin1InflateNode> TYPE = NodeClass.create(AMD64StringLatin1InflateNode.class);
 

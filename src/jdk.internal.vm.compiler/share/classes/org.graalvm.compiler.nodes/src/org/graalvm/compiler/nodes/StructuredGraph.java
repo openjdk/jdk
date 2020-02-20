@@ -552,6 +552,8 @@ public final class StructuredGraph extends Graph implements JavaMethodContext {
     /**
      * Creates a copy of this graph.
      *
+     * If a node contains an array of objects, only shallow copy of the field is applied.
+     *
      * @param newName the name of the copy, used for debugging purposes (can be null)
      * @param duplicationMapCallback consumer of the duplication map created during the copying
      * @param debugForCopy the debug context for the graph copy. This must not be the debug for this

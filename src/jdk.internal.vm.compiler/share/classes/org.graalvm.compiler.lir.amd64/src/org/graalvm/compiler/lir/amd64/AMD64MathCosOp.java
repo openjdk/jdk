@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, Intel Corporation. All rights reserved.
  * Intel Math Library (LIBM) Source Code
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -440,8 +440,7 @@ public final class AMD64MathCosOp extends AMD64MathIntrinsicUnaryOp {
         masm.movq(xmm1, recordExternalAddress(crb, pi32Inv));          // 0x6dc9c883, 0x40245f30
         masm.andl(rax, 2147418112);
         masm.subl(rax, 808452096);
-        masm.cmpl(rax, 281346048);
-        masm.jcc(ConditionFlag.Above, block0);
+        masm.cmplAndJcc(rax, 281346048, ConditionFlag.Above, block0, false);
         masm.mulsd(xmm1, xmm0);
         masm.movdqu(xmm5, recordExternalAddress(crb, onehalf));        // 0x00000000, 0x3fe00000,
                                                                        // 0x00000000, 0x3fe00000
@@ -531,8 +530,7 @@ public final class AMD64MathCosOp extends AMD64MathIntrinsicUnaryOp {
         masm.bind(block1);
         masm.pextrw(rax, xmm0, 3);
         masm.andl(rax, 32752);
-        masm.cmpl(rax, 32752);
-        masm.jcc(ConditionFlag.Equal, block2);
+        masm.cmplAndJcc(rax, 32752, ConditionFlag.Equal, block2, false);
         masm.pextrw(rcx, xmm0, 3);
         masm.andl(rcx, 32752);
         masm.subl(rcx, 16224);
@@ -624,15 +622,13 @@ public final class AMD64MathCosOp extends AMD64MathIntrinsicUnaryOp {
         masm.addq(r9, rdx);
         masm.movl(rdx, rcx);
         masm.addl(rdx, 32);
-        masm.cmpl(rcx, 1);
-        masm.jcc(ConditionFlag.Less, block3);
+        masm.cmplAndJcc(rcx, 1, ConditionFlag.Less, block3, false);
         masm.negl(rcx);
         masm.addl(rcx, 29);
         masm.shll(r9);
         masm.movl(rdi, r9);
         masm.andl(r9, 536870911);
-        masm.testl(r9, 268435456);
-        masm.jcc(ConditionFlag.NotEqual, block4);
+        masm.testlAndJcc(r9, 268435456, ConditionFlag.NotEqual, block4, false);
         masm.shrl(r9);
         masm.movl(rbx, 0);
         masm.shlq(r9, 32);
@@ -641,14 +637,12 @@ public final class AMD64MathCosOp extends AMD64MathIntrinsicUnaryOp {
         masm.bind(block5);
 
         masm.bind(block6);
-        masm.cmpq(r9, 0);
-        masm.jcc(ConditionFlag.Equal, block7);
+        masm.cmpqAndJcc(r9, 0, ConditionFlag.Equal, block7, false);
 
         masm.bind(block8);
         masm.bsrq(r11, r9);
         masm.movl(rcx, 29);
-        masm.subl(rcx, r11);
-        masm.jcc(ConditionFlag.LessEqual, block9);
+        masm.sublAndJcc(rcx, r11, ConditionFlag.LessEqual, block9, false);
         masm.shlq(r9);
         masm.movq(rax, r10);
         masm.shlq(r10);
@@ -784,13 +778,11 @@ public final class AMD64MathCosOp extends AMD64MathIntrinsicUnaryOp {
         masm.movq(r9, r10);
         masm.movq(r10, r8);
         masm.movl(r8, 0);
-        masm.cmpq(r9, 0);
-        masm.jcc(ConditionFlag.NotEqual, block8);
+        masm.cmpqAndJcc(r9, 0, ConditionFlag.NotEqual, block8, false);
         masm.addl(rdx, 64);
         masm.movq(r9, r10);
         masm.movq(r10, r8);
-        masm.cmpq(r9, 0);
-        masm.jcc(ConditionFlag.NotEqual, block8);
+        masm.cmpqAndJcc(r9, 0, ConditionFlag.NotEqual, block8, false);
         masm.xorpd(xmm0, xmm0);
         masm.xorpd(xmm6, xmm6);
         masm.jmp(block11);
@@ -813,8 +805,7 @@ public final class AMD64MathCosOp extends AMD64MathIntrinsicUnaryOp {
         masm.orq(r9, r11);
         masm.shlq(r9);
         masm.movq(rdi, r9);
-        masm.testl(r9, Integer.MIN_VALUE);
-        masm.jcc(ConditionFlag.NotEqual, block12);
+        masm.testlAndJcc(r9, Integer.MIN_VALUE, ConditionFlag.NotEqual, block12, false);
         masm.shrl(r9);
         masm.movl(rbx, 0);
         masm.shrq(rdi, 3);
