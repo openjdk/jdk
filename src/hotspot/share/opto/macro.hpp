@@ -119,7 +119,7 @@ private:
   void expand_unlock_node(UnlockNode *unlock);
 
   // More helper methods modeled after GraphKit for array copy
-  void insert_mem_bar(Node** ctrl, Node** mem, int opcode, Node* precedent = NULL);
+  void insert_mem_bar(Node** ctrl, Node** mem, int opcode, int alias_idx = Compile::AliasIdxBot, Node* precedent = NULL);
   Node* array_element_address(Node* ary, Node* idx, BasicType elembt);
   Node* ConvI2L(Node* offset);
 
