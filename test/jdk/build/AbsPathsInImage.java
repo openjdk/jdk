@@ -197,7 +197,7 @@ public class AbsPathsInImage {
             for (byte[] searchPattern : searchPatterns) {
                 boolean found = true;
                 for (int j = 0; j < searchPattern.length; j++) {
-                    if ((i + j > data.length || data[i + j] != searchPattern[j])) {
+                    if ((i + j >= data.length || data[i + j] != searchPattern[j])) {
                         found = false;
                         break;
                     }
