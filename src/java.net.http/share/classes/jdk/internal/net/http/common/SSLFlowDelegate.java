@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -229,6 +229,10 @@ public class SSLFlowDelegate {
         return SchedulingAction.CONTINUE;
     }
 
+    protected Throwable checkForHandshake(Throwable t) {
+        return t;
+    }
+
 
     /**
      * Processing function for incoming data. Pass it thru SSLEngine.unwrap().
@@ -356,6 +360,12 @@ public class SSLFlowDelegate {
             }
         }
 
+        @Override
+        protected boolean errorCommon(Throwable throwable) {
+            throwable = SSLFlowDelegate.this.checkForHandshake(throwable);
+            return super.errorCommon(throwable);
+        }
+
         void schedule() {
             scheduler.runOrSchedule(exec);
         }
@@ -479,8 +489,9 @@ public class SSLFlowDelegate {
                             }
                         }
                     } catch (IOException ex) {
-                        errorCommon(ex);
-                        handleError(ex);
+                        Throwable cause = checkForHandshake(ex);
+                        errorCommon(cause);
+                        handleError(cause);
                         return;
                     }
                     if (handshaking && !complete) {
@@ -504,6 +515,7 @@ public class SSLFlowDelegate {
                     requestMoreDataIfNeeded();
                 }
             } catch (Throwable ex) {
+                ex = checkForHandshake(ex);
                 errorCommon(ex);
                 handleError(ex);
             }
@@ -823,6 +835,7 @@ public class SSLFlowDelegate {
                     writer.addData(HS_TRIGGER);
                 }
             } catch (Throwable ex) {
+                ex = checkForHandshake(ex);
                 errorCommon(ex);
                 handleError(ex);
             }
@@ -1127,7 +1140,7 @@ public class SSLFlowDelegate {
                 }
                 resumeActivity();
             } catch (Throwable t) {
-                handleError(t);
+                handleError(checkForHandshake(t));
             }
         });
     }

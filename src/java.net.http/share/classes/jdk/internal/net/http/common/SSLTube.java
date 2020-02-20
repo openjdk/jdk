@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLEngineResult.HandshakeStatus;
 import jdk.internal.net.http.common.SubscriberWrapper.SchedulingAction;
@@ -146,6 +147,13 @@ public class SSLTube implements FlowTube {
             // HttpConnection publisher when SSLTube::connectFlows
             // is called.
             upstreamWriter().onSubscribe(writeSubscription);
+        }
+
+        // Check whether the given exception should be wrapped
+        // in SSLHandshakeFailure exception
+        @Override
+        protected Throwable checkForHandshake(Throwable t) {
+            return SSLTube.this.checkForHandshake(t);
         }
     }
 
@@ -430,10 +438,10 @@ public class SSLTube implements FlowTube {
         private void complete(DelegateWrapper subscriberImpl, Throwable t) {
             try {
                 if (t == null) subscriberImpl.onComplete();
-                else subscriberImpl.onError(t);
+                else subscriberImpl.onError(t = checkForHandshake(t));
                 if (debug.on()) {
-                    debug.log("subscriber completed %s"
-                            + ((t == null) ? "normally" : ("with error: " + t)));
+                    debug.log("subscriber completed %s",
+                            ((t == null) ? "normally" : ("with error: " + t)));
                 }
             } finally {
                 // Error or EOF while reading:
@@ -489,7 +497,7 @@ public class SSLTube implements FlowTube {
             // onError before onSubscribe. It also prevents race conditions
             // if onError is invoked concurrently with setDelegate.
             // See setDelegate.
-
+            throwable = checkForHandshake(throwable);
             errorRef.compareAndSet(null, throwable);
             Throwable failed = errorRef.get();
             finished = true;
@@ -517,29 +525,6 @@ public class SSLTube implements FlowTube {
             onErrorImpl(throwable);
         }
 
-        private boolean handshaking() {
-            HandshakeStatus hs = engine.getHandshakeStatus();
-            return !(hs == NOT_HANDSHAKING || hs == FINISHED);
-        }
-
-        private String handshakeFailed() {
-            // sslDelegate can be null if we reach here
-            // during the initial handshake, as that happens
-            // within the SSLFlowDelegate constructor.
-            // In that case we will want to raise an exception.
-            if (handshaking()
-                    && (sslDelegate == null
-                    || !sslDelegate.closeNotifyReceived())) {
-                return "Remote host terminated the handshake";
-            }
-            // The initial handshake may not have been started yet.
-            // In which case - if we are completed before the initial handshake
-            // is started, we consider this a handshake failure as well.
-            if ("SSL_NULL_WITH_NULL_NULL".equals(engine.getSession().getCipherSuite()))
-                return "Remote host closed the channel";
-            return null;
-        }
-
         @Override
         public void onComplete() {
             assert !finished && !onCompleteReceived;
@@ -548,15 +533,9 @@ public class SSLTube implements FlowTube {
                 subscriberImpl = subscribed;
             }
 
-            String handshakeFailed = handshakeFailed();
+            Throwable handshakeFailed = checkForHandshake(null);
             if (handshakeFailed != null) {
-                if (debug.on())
-                    debug.log("handshake: %s, inbound done: %s, outbound done: %s: %s",
-                              engine.getHandshakeStatus(),
-                              engine.isInboundDone(),
-                              engine.isOutboundDone(),
-                              handshakeFailed);
-                onErrorImpl(new SSLHandshakeException(handshakeFailed));
+                onErrorImpl(handshakeFailed);
             } else if (subscriberImpl != null) {
                 onCompleteReceived = finished = true;
                 complete(subscriberImpl, null);
@@ -567,6 +546,55 @@ public class SSLTube implements FlowTube {
             // them immediately as the read scheduler will already be stopped.
             processPendingSubscriber();
         }
+    }
+
+    private boolean handshaking() {
+        HandshakeStatus hs = engine.getHandshakeStatus();
+        return !(hs == NOT_HANDSHAKING || hs == FINISHED);
+    }
+
+    private String handshakeFailed() {
+        // sslDelegate can be null if we reach here
+        // during the initial handshake, as that happens
+        // within the SSLFlowDelegate constructor.
+        // In that case we will want to raise an exception.
+        if (handshaking()
+                && (sslDelegate == null
+                || !sslDelegate.closeNotifyReceived())) {
+            return "Remote host terminated the handshake";
+        }
+        // The initial handshake may not have been started yet.
+        // In which case - if we are completed before the initial handshake
+        // is started, we consider this a handshake failure as well.
+        if ("SSL_NULL_WITH_NULL_NULL".equals(engine.getSession().getCipherSuite()))
+            return "Remote host closed the channel";
+        return null;
+    }
+
+    /**
+     * If the stream is completed before the handshake is finished, we want
+     * to forward an SSLHandshakeException downstream.
+     * If t is not null an exception will always be returned. If t is null an
+     * exception will be returned if the engine is handshaking.
+     * @param t an exception from upstream, or null.
+     * @return t or an SSLHandshakeException wrapping t, or null.
+     */
+    Throwable checkForHandshake(Throwable t) {
+        if (t instanceof SSLException) {
+            return t;
+        }
+        String handshakeFailed = handshakeFailed();
+        if (handshakeFailed == null) return t;
+        if (debug.on())
+            debug.log("handshake: %s, inbound done: %s, outbound done: %s: %s",
+                    engine.getHandshakeStatus(),
+                    engine.isInboundDone(),
+                    engine.isOutboundDone(),
+                    handshakeFailed);
+
+        SSLHandshakeException e = new SSLHandshakeException(handshakeFailed);
+        if (t != null) e.initCause(t);
+        return e;
     }
 
     @Override

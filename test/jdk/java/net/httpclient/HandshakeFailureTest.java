@@ -31,13 +31,13 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.SocketException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpClient.Version;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 
@@ -49,8 +49,8 @@ import javax.net.ssl.SSLSocket;
 
 /**
  * @test
- * @run main/othervm -Djdk.internal.httpclient.debug=false HandshakeFailureTest TLSv1.2
- * @run main/othervm -Djdk.internal.httpclient.debug=false HandshakeFailureTest TLSv1.3
+ * @run main/othervm -Djdk.internal.httpclient.debug=true HandshakeFailureTest TLSv1.2
+ * @run main/othervm -Djdk.internal.httpclient.debug=true HandshakeFailureTest TLSv1.3
  * @summary Verify SSLHandshakeException is received when the handshake fails,
  * either because the server closes (EOF) the connection during handshaking,
  * or no cipher suite can be negotiated (TLSv1.2) or no available authentication
@@ -65,9 +65,56 @@ public class HandshakeFailureTest {
     static final int TIMES = 10;
 
     private static String tlsProtocol;
+    private static int maxWsaeConnAborted;
+
+    // On Microsoft Windows, a WSAECONNABORTED error could be raised
+    // if the client side fails to retransmit a TCP packet.
+    // This could happen if for instance, the server stops reading and
+    // close the socket while the client is still trying to push
+    // data through.
+    // With TLSv1.3, and our dummy SSLServer implementation below,
+    // this can occur quite often.
+    // Our HTTP stack should automatically wrap such exceptions
+    // in SSLHandshakeException if they are raised while the handshake
+    // in progress. So it would be an error to receive WSAECONNABORTED
+    // here. This test has some special code to handle WSAECONNABORTED
+    // and fail if they reach the test code.
+    public static final String WSAECONNABORTED_MSG =
+            "An established connection was aborted by the software in your host machine";
+    public static final boolean isWindows = System.getProperty("os.name", "")
+            .toLowerCase(Locale.ROOT).contains("win");
+    public enum ExpectedExceptionType {
+        HANDSHAKE_FAILURE,
+        WSAECONNABORTED
+    }
+
+    // The exception checker is used to record how many WSAECONNABORTED
+    // have reached the test code. There should be none:
+    // (usually max should be 0)
+    static final class ExceptionChecker {
+        int count;
+        Throwable aborted = null;
+        public void check(Throwable expected) {
+            if (ExpectedExceptionType.WSAECONNABORTED == checkExceptionOrCause(expected)) {
+                count++;
+                aborted = expected;
+            }
+        }
+        public void check(int max) {
+            if (count > max) {
+                out.println("WSAECONNABORTED received too many times: " + count);
+                aborted.printStackTrace(out);
+                throw new AssertionError("WSAECONNABORTED received too many times: " + count, aborted);
+            }
+        }
+    }
 
     public static void main(String[] args) throws Exception {
         tlsProtocol = args[0];
+        // At this time, all WSAECONNABORTED exception raised during
+        // the handshake should have been wrapped in SSLHandshakeException,
+        // so we allow none to reach here.
+        maxWsaeConnAborted = 0;
 
         HandshakeFailureTest test = new HandshakeFailureTest();
         List<AbstractServer> servers = List.of(new PlainServer(), new SSLServer());
@@ -75,7 +122,7 @@ public class HandshakeFailureTest {
         for (AbstractServer server : servers) {
             try (server) {
                 out.format("%n%n------ Testing with server:%s ------%n", server);
-                URI uri = new URI("https://localhost:" + server.getPort() + "/");
+                URI uri = new URI("https://" + server.getAuthority() + "/");
 
                 test.testSyncSameClient(uri, Version.HTTP_1_1);
                 test.testSyncSameClient(uri, Version.HTTP_2);
@@ -101,6 +148,7 @@ public class HandshakeFailureTest {
     void testSyncSameClient(URI uri, Version version) throws Exception {
         out.printf("%n--- testSyncSameClient %s ---%n", version);
         HttpClient client = getClient();
+        ExceptionChecker exceptionChecker = new ExceptionChecker();
         for (int i = 0; i < TIMES; i++) {
             out.printf("iteration %d%n", i);
             HttpRequest request = HttpRequest.newBuilder(uri)
@@ -112,13 +160,15 @@ public class HandshakeFailureTest {
                 throw new RuntimeException(msg);
             } catch (IOException expected) {
                 out.printf("Client: caught expected exception: %s%n", expected);
-                checkExceptionOrCause(expected);
+                exceptionChecker.check(expected);
             }
         }
+        exceptionChecker.check(maxWsaeConnAborted);
     }
 
     void testSyncDiffClient(URI uri, Version version) throws Exception {
         out.printf("%n--- testSyncDiffClient %s ---%n", version);
+        ExceptionChecker exceptionChecker = new ExceptionChecker();
         for (int i = 0; i < TIMES; i++) {
             out.printf("iteration %d%n", i);
             // a new client each time
@@ -132,14 +182,16 @@ public class HandshakeFailureTest {
                 throw new RuntimeException(msg);
             } catch (IOException expected) {
                 out.printf("Client: caught expected exception: %s%n", expected);
-                checkExceptionOrCause(expected);
+                exceptionChecker.check(expected);
             }
         }
+        exceptionChecker.check(maxWsaeConnAborted);
     }
 
     void testAsyncSameClient(URI uri, Version version) throws Exception {
         out.printf("%n--- testAsyncSameClient %s ---%n", version);
         HttpClient client = getClient();
+        ExceptionChecker exceptionChecker = new ExceptionChecker();
         for (int i = 0; i < TIMES; i++) {
             out.printf("iteration %d%n", i);
             HttpRequest request = HttpRequest.newBuilder(uri)
@@ -154,13 +206,15 @@ public class HandshakeFailureTest {
             } catch (CompletionException ce) {
                 Throwable expected = ce.getCause();
                 out.printf("Client: caught expected exception: %s%n", expected);
-                checkExceptionOrCause(expected);
+                exceptionChecker.check(expected);
             }
         }
+        exceptionChecker.check(maxWsaeConnAborted);
     }
 
     void testAsyncDiffClient(URI uri, Version version) throws Exception {
         out.printf("%n--- testAsyncDiffClient %s ---%n", version);
+        ExceptionChecker exceptionChecker = new ExceptionChecker();
         for (int i = 0; i < TIMES; i++) {
             out.printf("iteration %d%n", i);
             // a new client each time
@@ -178,27 +232,39 @@ public class HandshakeFailureTest {
                 ce.printStackTrace(out);
                 Throwable expected = ce.getCause();
                 out.printf("Client: caught expected exception: %s%n", expected);
-                checkExceptionOrCause(expected);
+                exceptionChecker.check(expected);
             }
         }
+        exceptionChecker.check(maxWsaeConnAborted);
     }
 
-    static void checkExceptionOrCause(Throwable t) {
+    // Tells whether this exception was raised from a WSAECONNABORTED
+    // error raised in the native code.
+    static boolean isWsaeConnAborted(Throwable t) {
+        return t instanceof IOException && WSAECONNABORTED_MSG.equalsIgnoreCase(t.getMessage());
+    }
+
+    // We might allow some spurious WSAECONNABORTED exception.
+    // The decision whether to allow such errors or not is taken by
+    // the ExceptionChecker
+    static ExpectedExceptionType checkExceptionOrCause(Throwable t) {
         final Throwable original = t;
         do {
-            if (SSLHandshakeException.class.isInstance(t)
-                    // For TLSv1.3, possibly the server is (being) closed when
-                    // the client read the input alert. In this case, the client
-                    // just gets SocketException instead of SSLHandshakeException.
-                    || (tlsProtocol.equalsIgnoreCase("TLSv1.3")
-                            && SocketException.class.isInstance(t))) {
+            if (SSLHandshakeException.class.isInstance(t)) {
+                // For TLSv1.3, possibly the server is (being) closed when
+                // the client read the input alert. In this case, the client
+                // just gets SocketException instead of SSLHandshakeException.
                 System.out.println("Found expected exception/cause: " + t);
-                return; // found
+                return ExpectedExceptionType.HANDSHAKE_FAILURE;
+            }
+            if (isWindows && isWsaeConnAborted(t)) {
+                System.out.println("Found WSAECONNABORTED: " + t);
+                return ExpectedExceptionType.WSAECONNABORTED;
             }
         } while ((t = t.getCause()) != null);
         original.printStackTrace(System.out);
         throw new RuntimeException(
-                "Not found expected SSLHandshakeException or SocketException in "
+                "Not found expected SSLHandshakeException in "
                         + original);
     }
 
@@ -216,6 +282,12 @@ public class HandshakeFailureTest {
         }
 
         int getPort() { return ss.getLocalPort(); }
+
+        String getAuthority() {
+            String address = ss.getInetAddress().getHostAddress();
+            if (address.contains(":")) address = "[" + address + "]";
+            return address + ":" + ss.getLocalPort();
+        }
 
         @Override
         public void close() {
@@ -277,10 +349,24 @@ public class HandshakeFailureTest {
                     Thread.sleep(10 * (count % 10));
                     s.close(); // close without giving any reply
                 } catch (IOException e) {
-                    if (!closed)
-                        out.println("Unexpected" + e);
+                    if (!closed) {
+                        out.println("PlainServer: unexpected " + e);
+                        e.printStackTrace(out);
+                    }
                 } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
+                    if (!closed) {
+                        out.println("PlainServer: unexpected " + e);
+                        e.printStackTrace(out);
+                        throw new RuntimeException(e);
+                    }
+                    break;
+                } catch (Error | RuntimeException e) {
+                    if (!closed) {
+                        out.println("PlainServer: unexpected " + e);
+                        e.printStackTrace(out);
+                        throw new RuntimeException(e);
+                    }
+                    break;
                 }
             }
         }
@@ -317,10 +403,19 @@ public class HandshakeFailureTest {
                 } catch (SSLHandshakeException expected) {
                     // Expected: SSLHandshakeException: no cipher suites in common (TLSv1.2)
                     // or no available authentication scheme (TLSv1.3)
-                    out.printf("Server: caught expected exception: %s%n", expected);
+                    out.printf("SSLServer: caught expected exception: %s%n", expected);
                 } catch (IOException e) {
-                    if (!closed)
-                        out.printf("UNEXPECTED %s", e);
+                    if (!closed) {
+                        out.println("SSLServer: unexpected " + e);
+                        e.printStackTrace(out);
+                    }
+                } catch (Error | RuntimeException e) {
+                    if (!closed) {
+                        out.println("SSLServer: unexpected " + e);
+                        e.printStackTrace(out);
+                        throw new RuntimeException(e);
+                    }
+                    break;
                 }
             }
         }
