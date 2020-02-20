@@ -796,11 +796,7 @@ jdk.tls.disabledAlgorithms=SSLv3, RC4, DES, MD5withRSA, DH keySize < 1024, \
 # Example:
 #   jdk.tls.legacyAlgorithms=DH_anon, DES_CBC, SSL_RSA_WITH_RC4_128_MD5
 #
-jdk.tls.legacyAlgorithms= \
-        K_NULL, C_NULL, M_NULL, \
-        DH_anon, ECDH_anon, \
-        RC4_128, RC4_40, DES_CBC, DES40_CBC, \
-        3DES_EDE_CBC
+jdk.tls.legacyAlgorithms=NULL, anon, RC4, DES, 3DES_EDE_CBC
 
 #
 # The pre-defined default finite field Diffie-Hellman ephemeral (DHE)
