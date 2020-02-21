@@ -228,14 +228,6 @@ public class BasicMenuItemUI extends MenuItemUI
             arrowIcon instanceof UIResource) {
             arrowIcon = UIManager.getIcon(prefix + ".arrowIcon");
         }
-        updateCheckIcon();
-    }
-
-    /**
-     * Updates check Icon based on column layout
-     */
-    private void updateCheckIcon() {
-        String prefix = getPropertyPrefix();
 
         if (checkIcon == null ||
             checkIcon instanceof UIResource) {
@@ -1155,8 +1147,6 @@ public class BasicMenuItemUI extends MenuItemUI
                 BasicHTML.updateRenderer(lbl, text);
             } else if (name  == "iconTextGap") {
                 defaultTextIconGap = ((Number)e.getNewValue()).intValue();
-            } else if (name == "horizontalTextPosition") {
-                updateCheckIcon();
             }
         }
     }

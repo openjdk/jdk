@@ -26,10 +26,14 @@
 package com.sun.java.swing.plaf.windows;
 
 import java.awt.*;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import javax.swing.*;
 import javax.swing.plaf.*;
 import javax.swing.plaf.basic.*;
 
+import sun.swing.MenuItemCheckIconFactory;
+import sun.swing.MenuItemLayoutHelper;
 import sun.swing.SwingUtilities2;
 
 import com.sun.java.swing.plaf.windows.TMSchema.*;
@@ -49,6 +53,11 @@ import com.sun.java.swing.plaf.windows.XPStyle.*;
  */
 
 public class WindowsMenuItemUI extends BasicMenuItemUI {
+    /**
+     * The instance of {@code PropertyChangeListener}.
+     */
+    private PropertyChangeListener changeListener;
+
     final WindowsMenuItemUIAccessor accessor =
         new  WindowsMenuItemUIAccessor() {
 
@@ -66,6 +75,60 @@ public class WindowsMenuItemUI extends BasicMenuItemUI {
     };
     public static ComponentUI createUI(JComponent c) {
         return new WindowsMenuItemUI();
+    }
+
+    private void updateCheckIcon() {
+        String prefix = getPropertyPrefix();
+
+        if (checkIcon == null ||
+                checkIcon instanceof UIResource) {
+            checkIcon = UIManager.getIcon(prefix + ".checkIcon");
+            //In case of column layout, .checkIconFactory is defined for this UI,
+            //the icon is compatible with it and useCheckAndArrow() is true,
+            //then the icon is handled by the checkIcon.
+            boolean isColumnLayout = MenuItemLayoutHelper.isColumnLayout(
+                    menuItem.getComponentOrientation().isLeftToRight(), menuItem);
+            if (isColumnLayout) {
+                MenuItemCheckIconFactory iconFactory =
+                        (MenuItemCheckIconFactory) UIManager.get(prefix
+                                + ".checkIconFactory");
+                if (iconFactory != null
+                        && MenuItemLayoutHelper.useCheckAndArrow(menuItem)
+                        && iconFactory.isCompatible(checkIcon, prefix)) {
+                    checkIcon = iconFactory.getIcon(menuItem);
+                }
+            }
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected void installListeners() {
+        super.installListeners();
+        changeListener = new PropertyChangeListener() {
+            @Override
+            public void propertyChange(PropertyChangeEvent e) {
+                String name = e.getPropertyName();
+                if (name == "horizontalTextPosition") {
+                    updateCheckIcon();
+                }
+            }
+        };
+        menuItem.addPropertyChangeListener(changeListener);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected void uninstallListeners() {
+        super.uninstallListeners();
+        if (changeListener != null) {
+            menuItem.removePropertyChangeListener(changeListener);
+        }
+        changeListener = null;
     }
 
     /**
