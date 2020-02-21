@@ -2639,80 +2639,6 @@ static IfNode* gen_subtype_check_compare(Node* ctrl, Node* in1, Node* in2, BoolT
   return iff;
 }
 
-// Find the memory state for the secondary super type cache load when
-// a subtype check is expanded at macro expansion time. That field is
-// mutable so should not use immutable memory but
-// PartialSubtypeCheckNode that might modify it doesn't produce a new
-// memory state so bottom memory is the most accurate memory state to
-// hook the load with. This follows the implementation used when the
-// subtype check is expanded at parse time.
-static Node* find_bottom_mem(Node* ctrl, Compile* C) {
-  const TypePtr* adr_type = TypeKlassPtr::make(TypePtr::NotNull, C->env()->Object_klass(), Type::OffsetBot);
-  Node_Stack stack(0);
-  VectorSet seen(Thread::current()->resource_area());
-
-  Node* c = ctrl;
-  Node* mem = NULL;
-  uint iter = 0;
-  do {
-    iter++;
-    assert(iter < C->live_nodes(), "infinite loop");
-    if (c->is_Region()) {
-      for (DUIterator_Fast imax, i = c->fast_outs(imax); i < imax && mem == NULL; i++) {
-        Node* u = c->fast_out(i);
-        if (u->is_Phi() && u->bottom_type() == Type::MEMORY &&
-            (u->adr_type() == TypePtr::BOTTOM || u->adr_type() == adr_type)) {
-          mem = u;
-        }
-      }
-      if (mem == NULL) {
-        if (!seen.test_set(c->_idx)) {
-          stack.push(c, 2);
-          c = c->in(1);
-        } else {
-          Node* phi = NULL;
-          uint idx = 0;
-          for (;;) {
-            phi = stack.node();
-            idx = stack.index();
-            if (idx < phi->req()) {
-              break;
-            }
-            stack.pop();
-          }
-          c = phi->in(idx);
-          stack.set_index(idx+1);
-        }
-      }
-    } else if (c->is_Proj() && c->in(0)->adr_type() == TypePtr::BOTTOM) {
-      for (DUIterator_Fast imax, i = c->in(0)->fast_outs(imax); i < imax; i++) {
-        Node* u = c->in(0)->fast_out(i);
-        if (u->bottom_type() == Type::MEMORY && u->as_Proj()->_is_io_use == c->as_Proj()->_is_io_use) {
-          assert(mem == NULL, "");
-          mem = u;
-        }
-      }
-    } else if (c->is_CatchProj() && c->in(0)->in(0)->in(0)->adr_type() == TypePtr::BOTTOM) {
-      Node* call = c->in(0)->in(0)->in(0);
-      assert(call->is_Call(), "CatchProj with no call?");
-      CallProjections projs;
-      call->as_Call()->extract_projections(&projs, false, false);
-      if (projs.catchall_memproj == NULL) {
-        mem = projs.fallthrough_memproj;
-      } else if (c == projs.fallthrough_catchproj) {
-        mem = projs.fallthrough_memproj;
-      } else {
-        assert(c == projs.catchall_catchproj, "strange control");
-        mem = projs.catchall_memproj;
-      }
-    } else {
-      assert(!c->is_Start(), "should stop before start");
-      c = c->in(0);
-    }
-  } while (mem == NULL);
-  return mem;
-}
-
 //-------------------------------gen_subtype_check-----------------------------
 // Generate a subtyping check.  Takes as input the subtype and supertype.
 // Returns 2 values: sets the default control() to the true path and returns
@@ -2795,12 +2721,12 @@ Node* Phase::gen_subtype_check(Node* subklass, Node* superklass, Node** ctrl, No
   // cache which is mutable so can't use immutable memory.  Other
   // types load from the super-class display table which is immutable.
   Node *kmem = C->immutable_memory();
-  if (might_be_cache) {
-    assert((C->get_alias_index(TypeKlassPtr::make(TypePtr::NotNull, C->env()->Object_klass(), Type::OffsetBot)) ==
-            C->get_alias_index(gvn.type(p2)->is_ptr())), "");
-    if (mem == NULL) {
-      mem = find_bottom_mem(*ctrl, C);
-    }
+  // secondary_super_cache is not immutable but can be treated as such because:
+  // - no ideal node writes to it in a way that could cause an
+  //   incorrect/missed optimization of the following Load.
+  // - it's a cache so, worse case, not reading the latest value
+  //   wouldn't cause incorrect execution
+  if (might_be_cache && mem != NULL) {
     kmem = mem->is_MergeMem() ? mem->as_MergeMem()->memory_at(C->get_alias_index(gvn.type(p2)->is_ptr())) : mem;
   }
   Node *nkls = gvn.transform(LoadKlassNode::make(gvn, NULL, kmem, p2, gvn.type(p2)->is_ptr(), TypeKlassPtr::OBJECT_OR_NULL));
