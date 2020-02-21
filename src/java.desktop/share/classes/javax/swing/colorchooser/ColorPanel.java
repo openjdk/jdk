@@ -99,8 +99,6 @@ final class ColorPanel extends JPanel implements ActionListener {
             add(spinner.getSpinner(), gbc);
             gbc.insets.top = 5;
         }
-        setFocusTraversalPolicy(new ContainerOrderFocusTraversalPolicy());
-        setFocusTraversalPolicyProvider(true);
         setFocusable(false);
 
         this.model = model;
