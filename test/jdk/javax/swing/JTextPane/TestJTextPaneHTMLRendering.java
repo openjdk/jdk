@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8224475
+ * @bug 8224475 8238985
  * @summary Verify that JTextPane renders images properly for HTML text
  * @run main/manual TestJTextPaneHTMLRendering
  */
@@ -60,7 +60,7 @@ public class TestJTextPaneHTMLRendering {
     private static volatile boolean testResult = false;
     private static volatile CountDownLatch countDownLatch;
     private static final String INSTRUCTIONS = "INSTRUCTIONS:\n\n" +
-            "Verify that the JTextPane is filled with green arrow images.\n" +
+            "Verify that the JTextPane is filled with blue arrow images.\n" +
             "There should be 200 images (10 rows of 20 images each).\n" +
             "This test will run for 10 iterations and the current iteration\n" +
             "is being displayed at top of JTextPane. JTextpane will be\n" +
