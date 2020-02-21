@@ -207,7 +207,7 @@ AC_DEFUN_ONCE([LIB_SETUP_SOLARIS_STLPORT],
     fi
     if test -f "$STLPORT_LIB"; then
       AC_MSG_RESULT([yes, $STLPORT_LIB])
-      BASIC_FIXUP_PATH([STLPORT_LIB])
+      UTIL_FIXUP_PATH([STLPORT_LIB])
     else
       AC_MSG_RESULT([no, not found at $STLPORT_LIB, cannot build Hotspot gtests])
     fi

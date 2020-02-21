@@ -46,7 +46,7 @@ AC_DEFUN_ONCE([SRCDIRS_SETUP_IMPORT_MODULES],
       && test "x$with_import_modules" != "xno"; then
     if test -d "$with_import_modules"; then
       IMPORT_MODULES_TOPDIR="$with_import_modules"
-      BASIC_FIXUP_PATH([IMPORT_MODULES_TOPDIR])
+      UTIL_FIXUP_PATH([IMPORT_MODULES_TOPDIR])
     elif test -e "$with_import_modules"; then
       IMPORT_MODULES_TOPDIR="$CONFIGURESUPPORT_OUTPUTDIR/import-modules"
       $RM -rf "$IMPORT_MODULES_TOPDIR"

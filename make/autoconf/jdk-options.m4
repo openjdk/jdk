@@ -34,7 +34,7 @@
 AC_DEFUN_ONCE([JDKOPT_SETUP_JDK_VARIANT],
 [
   # Deprecated in JDK 12
-  BASIC_DEPRECATED_ARG_WITH([jdk-variant])
+  UTIL_DEPRECATED_ARG_WITH([jdk-variant])
 ])
 
 ###############################################################################
@@ -473,14 +473,14 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_CODE_COVERAGE],
       AC_MSG_ERROR([Invalid JCov bundle: "$JCOV_HOME/lib/jcov.jar" does not exist])
     fi
     JCOV_ENABLED="true"
-    BASIC_FIXUP_PATH(JCOV_HOME)
+    UTIL_FIXUP_PATH(JCOV_HOME)
     if test "x$with_jcov_input_jdk" != "x" ; then
       JCOV_INPUT_JDK="$with_jcov_input_jdk"
       if test ! -f "$JCOV_INPUT_JDK/bin/java$EXE_SUFFIX"; then
         AC_MSG_RESULT([fail])
         AC_MSG_ERROR([Invalid JDK bundle: "$JCOV_INPUT_JDK/bin/java$EXE_SUFFIX" does not exist])
       fi
-      BASIC_FIXUP_PATH(JCOV_INPUT_JDK)
+      UTIL_FIXUP_PATH(JCOV_INPUT_JDK)
     fi
     if test "x$with_jcov_filters" != "x" ; then
       JCOV_FILTERS="$with_jcov_filters"

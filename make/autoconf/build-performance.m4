@@ -180,7 +180,7 @@ AC_DEFUN([BPERF_SETUP_CCACHE],
       if test "x$TOOLCHAIN_PATH" != x; then
         PATH=$TOOLCHAIN_PATH:$PATH
       fi
-      BASIC_REQUIRE_PROGS(CCACHE, ccache)
+      UTIL_REQUIRE_PROGS(CCACHE, ccache)
       PATH="$OLD_PATH"
       CCACHE_VERSION=[`$CCACHE --version | head -n1 | $SED 's/[A-Za-z ]*//'`]
       CCACHE_STATUS="Active ($CCACHE_VERSION)"
@@ -288,12 +288,12 @@ AC_DEFUN([BPERF_SETUP_ICECC],
       [enable distribted compilation of native code using icecc/icecream @<:@disabled@:>@])])
 
   if test "x${enable_icecc}" = "xyes"; then
-    BASIC_REQUIRE_PROGS(ICECC_CMD, icecc)
+    UTIL_REQUIRE_PROGS(ICECC_CMD, icecc)
     old_path="$PATH"
 
     # Look for icecc-create-env in some known places
     PATH="$PATH:/usr/lib/icecc:/usr/lib64/icecc"
-    BASIC_REQUIRE_PROGS(ICECC_CREATE_ENV, icecc-create-env)
+    UTIL_REQUIRE_PROGS(ICECC_CREATE_ENV, icecc-create-env)
     # Use icecc-create-env to create a minimal compilation environment that can
     # be sent to the other hosts in the icecream cluster.
     icecc_create_env_log="${CONFIGURESUPPORT_OUTPUTDIR}/icecc/icecc_create_env.log"
@@ -308,7 +308,7 @@ AC_DEFUN([BPERF_SETUP_ICECC],
     elif test "x$TOOLCHAIN_TYPE" = "xclang"; then
       # For clang, the icecc compilerwrapper is needed. It usually resides next
       # to icecc-create-env.
-      BASIC_REQUIRE_PROGS(ICECC_WRAPPER, compilerwrapper)
+      UTIL_REQUIRE_PROGS(ICECC_WRAPPER, compilerwrapper)
       BPERF_RUN_ICECC_CREATE_ENV([--clang ${CC} ${ICECC_WRAPPER}], ${icecc_create_env_log})
     else
       AC_MSG_ERROR([Can only create icecc compiler packages for toolchain types gcc and clang])
@@ -442,7 +442,7 @@ AC_DEFUN_ONCE([BPERF_SETUP_SMART_JAVAC],
   if test "$MX_VALUE" -lt "512"; then
     MX_VALUE=512
   fi
-  ADD_JVM_ARG_IF_OK([-Xms${MS_VALUE}M -Xmx${MX_VALUE}M],SJAVAC_SERVER_JAVA_FLAGS,[$SJAVAC_SERVER_JAVA])
+  UTIL_ADD_JVM_ARG_IF_OK([-Xms${MS_VALUE}M -Xmx${MX_VALUE}M],SJAVAC_SERVER_JAVA_FLAGS,[$SJAVAC_SERVER_JAVA])
   AC_SUBST(SJAVAC_SERVER_JAVA_FLAGS)
 
   AC_ARG_ENABLE([sjavac], [AS_HELP_STRING([--enable-sjavac],

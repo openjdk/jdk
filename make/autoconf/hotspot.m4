@@ -75,7 +75,7 @@ AC_DEFUN_ONCE([HOTSPOT_SETUP_JVM_VARIANTS],
   AC_MSG_RESULT([$JVM_VARIANTS])
 
   # Check that the selected variants are valid
-  BASIC_GET_NON_MATCHING_VALUES(INVALID_VARIANTS, $JVM_VARIANTS, \
+  UTIL_GET_NON_MATCHING_VALUES(INVALID_VARIANTS, $JVM_VARIANTS, \
       $VALID_JVM_VARIANTS)
   if test "x$INVALID_VARIANTS" != x; then
     AC_MSG_NOTICE([Unknown variant(s) specified: "$INVALID_VARIANTS"])
@@ -85,7 +85,7 @@ AC_DEFUN_ONCE([HOTSPOT_SETUP_JVM_VARIANTS],
 
   # All "special" variants share the same output directory ("server")
   VALID_MULTIPLE_JVM_VARIANTS="server client minimal"
-  BASIC_GET_NON_MATCHING_VALUES(INVALID_MULTIPLE_VARIANTS, $JVM_VARIANTS, \
+  UTIL_GET_NON_MATCHING_VALUES(INVALID_MULTIPLE_VARIANTS, $JVM_VARIANTS, \
       $VALID_MULTIPLE_JVM_VARIANTS)
   if  test "x$INVALID_MULTIPLE_VARIANTS" != x && \
       test "x$BUILDING_MULTIPLE_JVM_VARIANTS" = xtrue; then
@@ -182,5 +182,5 @@ AC_DEFUN_ONCE([HOTSPOT_SETUP_MISC],
   fi
 
   # --with-cpu-port is no longer supported
-  BASIC_DEPRECATED_ARG_WITH(with-cpu-port)
+  UTIL_DEPRECATED_ARG_WITH(with-cpu-port)
 ])
