@@ -95,8 +95,9 @@ public class UUIDTest {
     private static void stringTest() throws Exception {
         for (int i=0; i<100; i++) {
             UUID u1 = UUID.randomUUID();
-            UUID u2 = UUID.fromString(u1.toString());
-            if (!u1.equals(u2))
+            UUID u2 = UUID.fromString(u1.toString().toLowerCase());
+            UUID u3 = UUID.fromString(u1.toString().toUpperCase());
+            if (!u1.equals(u2) || !u1.equals(u3))
                 throw new Exception("UUID -> string -> UUID failed");
         }
 
@@ -107,6 +108,7 @@ public class UUIDTest {
         testFromStringError("0-0-0-0-");
         testFromStringError("0-0-0-0-0-");
         testFromStringError("0-0-0-0-x");
+        testFromStringError("аааааааа-аааа-аааа-аааа-аааааааааааа");
     }
 
     private static void testFromStringError(String str) {

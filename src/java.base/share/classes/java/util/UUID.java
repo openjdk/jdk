@@ -94,6 +94,34 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
 
     private static final JavaLangAccess jla = SharedSecrets.getJavaLangAccess();
 
+    private static final byte[] nibbles = new byte[256];
+
+    static {
+        byte[] ns = nibbles;
+        java.util.Arrays.fill(ns, (byte) -1);
+        ns['0'] = 0;
+        ns['1'] = 1;
+        ns['2'] = 2;
+        ns['3'] = 3;
+        ns['4'] = 4;
+        ns['5'] = 5;
+        ns['6'] = 6;
+        ns['7'] = 7;
+        ns['8'] = 8;
+        ns['9'] = 9;
+        ns['A'] = 10;
+        ns['B'] = 11;
+        ns['C'] = 12;
+        ns['D'] = 13;
+        ns['E'] = 14;
+        ns['F'] = 15;
+        ns['a'] = 10;
+        ns['b'] = 11;
+        ns['c'] = 12;
+        ns['d'] = 13;
+        ns['e'] = 14;
+        ns['f'] = 15;
+    }
     /*
      * The random number generator used by this class to create random
      * based UUIDs. In a holder class to defer initialization until needed.
@@ -195,6 +223,48 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
      *
      */
     public static UUID fromString(String name) {
+        byte[] ns = nibbles;
+        long msb;
+        long lsb;
+        if (name.length() == 36) {
+            char ch1 = name.charAt(8);
+            char ch2 = name.charAt(13);
+            char ch3 = name.charAt(18);
+            char ch4 = name.charAt(23);
+            if (((((long) ch1) << 48) | (((long) ch2) << 32) |
+                    (((long) ch3) << 16) | ch4) == 0x2d002d002d002dL) {
+                long msb1 = parse4Nibbles(name, ns, 0);
+                long msb2 = parse4Nibbles(name, ns, 4);
+                long msb3 = parse4Nibbles(name, ns, 9);
+                long msb4 = parse4Nibbles(name, ns, 14);
+                msb = (msb1 << 48) | (msb2 << 32) | (msb3 << 16) | msb4;
+                if ((msb1 | msb2 | msb3 | msb4) >= 0) {
+                    long lsb1 = parse4Nibbles(name, ns, 0);
+                    long lsb2 = parse4Nibbles(name, ns, 4);
+                    long lsb3 = parse4Nibbles(name, ns, 9);
+                    long lsb4 = parse4Nibbles(name, ns, 14);
+                    lsb = (lsb1 << 48) | (lsb2 << 32) | (lsb3 << 16) | lsb4;
+                    if ((lsb1 | lsb2 | lsb3 | lsb4) >= 0) {
+                        return new UUID(msb, lsb);
+                    }
+                }
+            }
+        }
+        return fromString1(name);
+    }
+
+    private static long parse4Nibbles(String name, byte[] ns, int pos) {
+        char ch1 = name.charAt(pos);
+        char ch2 = name.charAt(pos + 1);
+        char ch3 = name.charAt(pos + 2);
+        char ch4 = name.charAt(pos + 3);
+        return (((((long) ch1) << 48) | (((long) ch2) << 32) |
+                (((long) ch3) << 16) | ch4) & 0xff00ff00ff00ff00L) != 0 ?
+                -1L : (ns[ch1 & 0xff] << 12) | (ns[ch2 & 0xff] << 8) |
+                (ns[ch3 & 0xff] << 4) | ns[ch4 & 0xff];
+    }
+
+    private static UUID fromString1(String name) {
         int len = name.length();
         if (len > 36) {
             throw new IllegalArgumentException("UUID string too large");
