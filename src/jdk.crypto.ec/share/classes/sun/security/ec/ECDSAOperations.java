@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import static sun.security.ec.ECOperations.IntermediateValueException;
 
 import java.security.ProviderException;
 import java.security.spec.*;
+import java.util.Arrays;
 import java.util.Optional;
 
 public class ECDSAOperations {
@@ -164,10 +165,7 @@ public class ECDSAOperations {
         IntegerModuloP r = R.asAffine().getX();
         // put r into the correct field by fully reducing to an array
         byte[] temp = new byte[length];
-        r.asByteArray(temp);
-        r = orderField.getElement(temp);
-        // store r in result
-        r.asByteArray(temp);
+        r = b2a(r, orderField, temp);
         byte[] result = new byte[2 * length];
         ArrayUtil.reverse(temp);
         System.arraycopy(temp, 0, result, 0, length);
@@ -198,5 +196,68 @@ public class ECDSAOperations {
         return result;
 
     }
+    public boolean verifySignedDigest(byte[] digest, byte[] sig, ECPoint pp) {
 
+        IntegerFieldModuloP field = ecOps.getField();
+        IntegerFieldModuloP orderField = ecOps.getOrderField();
+        int length = (orderField.getSize().bitLength() + 7) / 8;
+
+        byte[] r;
+        byte[] s;
+
+        int encodeLength = sig.length / 2;
+        if (sig.length %2 != 0 || encodeLength > length) {
+            return false;
+        } else if (encodeLength == length) {
+            r = Arrays.copyOf(sig, length);
+            s = Arrays.copyOfRange(sig, length, length * 2);
+        } else {
+            r = new byte[length];
+            s = new byte[length];
+            System.arraycopy(sig, 0, r, length - encodeLength, encodeLength);
+            System.arraycopy(sig, encodeLength, s, length - encodeLength, encodeLength);
+        }
+
+        ArrayUtil.reverse(r);
+        ArrayUtil.reverse(s);
+        IntegerModuloP ri = orderField.getElement(r);
+        IntegerModuloP si = orderField.getElement(s);
+        // z
+        int lengthE = Math.min(length, digest.length);
+        byte[] E = new byte[lengthE];
+        System.arraycopy(digest, 0, E, 0, lengthE);
+        ArrayUtil.reverse(E);
+        IntegerModuloP e = orderField.getElement(E);
+
+        IntegerModuloP sInv = si.multiplicativeInverse();
+        ImmutableIntegerModuloP u1 = e.multiply(sInv);
+        ImmutableIntegerModuloP u2 = ri.multiply(sInv);
+
+        AffinePoint pub = new AffinePoint(field.getElement(pp.getAffineX()),
+                field.getElement(pp.getAffineY()));
+
+        byte[] temp1 = new byte[length];
+        b2a(u1, orderField, temp1);
+
+        byte[] temp2 = new byte[length];
+        b2a(u2, orderField, temp2);
+
+        MutablePoint p1 = ecOps.multiply(basePoint, temp1);
+        MutablePoint p2 = ecOps.multiply(pub, temp2);
+
+        ecOps.setSum(p1, p2.asAffine());
+        IntegerModuloP result = p1.asAffine().getX();
+        result = result.additiveInverse().add(ri);
+
+        b2a(result, orderField, temp1);
+        return ECOperations.allZero(temp1);
+    }
+
+    static public ImmutableIntegerModuloP b2a(IntegerModuloP b,
+            IntegerFieldModuloP orderField, byte[] temp1) {
+        b.asByteArray(temp1);
+        ImmutableIntegerModuloP b2 = orderField.getElement(temp1);
+        b2.asByteArray(temp1);
+        return b2;
+    }
 }

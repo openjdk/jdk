@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -374,13 +374,14 @@ abstract class ECDSASignature extends SignatureSpi {
         return ECUtil.equals(sigParams, keyParams);
     }
 
-
     private byte[] signDigestImpl(ECDSAOperations ops, int seedBits,
-        byte[] digest, ECPrivateKeyImpl privImpl, SecureRandom random)
+        byte[] digest, ECPrivateKey priv, SecureRandom random)
         throws SignatureException {
 
         byte[] seedBytes = new byte[(seedBits + 7) / 8];
-        byte[] s = privImpl.getArrayS();
+        byte[] s = priv instanceof ECPrivateKeyImpl
+                ? ((ECPrivateKeyImpl)priv).getArrayS()
+                : ECUtil.sArray(priv.getS(), priv.getParams());
 
         // Attempt to create the signature in a loop that uses new random input
         // each time. The chance of failure is very small assuming the
@@ -401,13 +402,9 @@ abstract class ECDSASignature extends SignatureSpi {
     }
 
 
-    private Optional<byte[]> signDigestImpl(ECPrivateKey privateKey,
+    private Optional<byte[]> signDigestAvailable(ECPrivateKey privateKey,
         byte[] digest, SecureRandom random) throws SignatureException {
 
-        if (! (privateKey instanceof ECPrivateKeyImpl)) {
-            return Optional.empty();
-        }
-        ECPrivateKeyImpl privImpl = (ECPrivateKeyImpl) privateKey;
         ECParameterSpec params = privateKey.getParams();
 
         // seed is the key size + 64 bits
@@ -418,7 +415,7 @@ abstract class ECDSASignature extends SignatureSpi {
             return Optional.empty();
         } else {
             byte[] sig = signDigestImpl(opsOpt.get(), seedBits, digest,
-                privImpl, random);
+                privateKey, random);
             return Optional.of(sig);
         }
     }
@@ -461,7 +458,7 @@ abstract class ECDSASignature extends SignatureSpi {
         }
 
         byte[] digest = getDigestValue();
-        Optional<byte[]> sigOpt = signDigestImpl(privateKey, digest, random);
+        Optional<byte[]> sigOpt = signDigestAvailable(privateKey, digest, random);
         byte[] sig;
         if (sigOpt.isPresent()) {
             sig = sigOpt.get();
@@ -480,17 +477,6 @@ abstract class ECDSASignature extends SignatureSpi {
     @Override
     protected boolean engineVerify(byte[] signature) throws SignatureException {
 
-        byte[] w;
-        ECParameterSpec params = publicKey.getParams();
-        // DER OID
-        byte[] encodedParams = ECUtil.encodeECParameterSpec(null, params);
-
-        if (publicKey instanceof ECPublicKeyImpl) {
-            w = ((ECPublicKeyImpl) publicKey).getEncodedPublicValue();
-        } else { // instanceof ECPublicKey
-            w = ECUtil.encodePoint(publicKey.getW(), params.getCurve());
-        }
-
         byte[] sig;
         if (p1363Format) {
             sig = signature;
@@ -498,11 +484,51 @@ abstract class ECDSASignature extends SignatureSpi {
             sig = ECUtil.decodeSignature(signature);
         }
 
-        try {
-            return verifySignedDigest(sig, getDigestValue(), w, encodedParams);
-        } catch (GeneralSecurityException e) {
-            throw new SignatureException("Could not verify signature", e);
+        byte[] digest = getDigestValue();
+        Optional<Boolean> verifyOpt
+                = verifySignedDigestAvailable(publicKey, sig, digest);
+
+        if (verifyOpt.isPresent()) {
+            return verifyOpt.get();
+        } else {
+            byte[] w;
+            ECParameterSpec params = publicKey.getParams();
+            // DER OID
+            byte[] encodedParams = ECUtil.encodeECParameterSpec(null, params);
+
+            if (publicKey instanceof ECPublicKeyImpl) {
+                w = ((ECPublicKeyImpl) publicKey).getEncodedPublicValue();
+            } else { // instanceof ECPublicKey
+                w = ECUtil.encodePoint(publicKey.getW(), params.getCurve());
+            }
+
+            try {
+                return verifySignedDigest(sig, digest, w, encodedParams);
+            } catch (GeneralSecurityException e) {
+                throw new SignatureException("Could not verify signature", e);
+            }
         }
+    }
+
+    private Optional<Boolean> verifySignedDigestAvailable(
+            ECPublicKey publicKey, byte[] sig, byte[] digestValue) {
+
+        ECParameterSpec params = publicKey.getParams();
+
+        Optional<ECDSAOperations> opsOpt =
+                ECDSAOperations.forParameters(params);
+        if (opsOpt.isEmpty()) {
+            return Optional.empty();
+        } else {
+            boolean result = verifySignedDigestImpl(opsOpt.get(), digestValue,
+                    publicKey, sig);
+            return Optional.of(result);
+        }
+    }
+
+    private boolean verifySignedDigestImpl(ECDSAOperations ops,
+            byte[] digest, ECPublicKey pub, byte[] sig) {
+        return ops.verifySignedDigest(digest, sig, pub.getW());
     }
 
     // set parameter, not supported. See JCA doc

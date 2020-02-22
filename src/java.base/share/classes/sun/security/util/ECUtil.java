@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,17 @@ import java.security.spec.*;
 import java.util.Arrays;
 
 public final class ECUtil {
+
+    // Used by SunEC
+    public static byte[] sArray(BigInteger s, ECParameterSpec params) {
+        byte[] arr = s.toByteArray();
+        ArrayUtil.reverse(arr);
+        int byteLength = (params.getOrder().bitLength() + 7) / 8;
+        byte[] arrayS = new byte[byteLength];
+        int length = Math.min(byteLength, arr.length);
+        System.arraycopy(arr, 0, arrayS, 0, length);
+        return arrayS;
+    }
 
     // Used by SunPKCS11 and SunJSSE.
     public static ECPoint decodePoint(byte[] data, EllipticCurve curve)
