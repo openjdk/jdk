@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,7 @@ void InterpreterMacroAssembler::jump_to_entry(address entry) {
 void InterpreterMacroAssembler::profile_obj_type(Register obj, const Address& mdo_addr) {
   Label update, next, none;
 
-  verify_oop(obj);
+  interp_verify_oop(obj, atos);
 
   testptr(obj, obj);
   jccb(Assembler::notZero, update);
@@ -349,7 +349,7 @@ void InterpreterMacroAssembler::load_earlyret_value(TosState state) {
   switch (state) {
     case atos: movptr(rax, oop_addr);
                movptr(oop_addr, (int32_t)NULL_WORD);
-               verify_oop(rax, state);              break;
+               interp_verify_oop(rax, state);         break;
     case ltos: movptr(rax, val_addr);                 break;
     case btos:                                   // fall through
     case ztos:                                   // fall through
@@ -370,7 +370,7 @@ void InterpreterMacroAssembler::load_earlyret_value(TosState state) {
   switch (state) {
     case atos: movptr(rax, oop_addr);
                movptr(oop_addr, NULL_WORD);
-               verify_oop(rax, state);                break;
+               interp_verify_oop(rax, state);         break;
     case ltos:
                movl(rdx, val_addr1);               // fall through
     case btos:                                     // fall through
@@ -656,11 +656,11 @@ void InterpreterMacroAssembler::pop(TosState state) {
   case vtos: /* nothing to do */        break;
   default:   ShouldNotReachHere();
   }
-  verify_oop(rax, state);
+  interp_verify_oop(rax, state);
 }
 
 void InterpreterMacroAssembler::push(TosState state) {
-  verify_oop(rax, state);
+  interp_verify_oop(rax, state);
   switch (state) {
   case atos: push_ptr();                break;
   case btos:
@@ -722,7 +722,7 @@ void InterpreterMacroAssembler::pop(TosState state) {
     case vtos: /* nothing to do */                           break;
     default  : ShouldNotReachHere();
   }
-  verify_oop(rax, state);
+  interp_verify_oop(rax, state);
 }
 
 
@@ -745,7 +745,7 @@ void InterpreterMacroAssembler::push_d() {
 
 
 void InterpreterMacroAssembler::push(TosState state) {
-  verify_oop(rax, state);
+  interp_verify_oop(rax, state);
   switch (state) {
     case atos: push_ptr(rax); break;
     case btos:                                               // fall through
@@ -844,7 +844,7 @@ void InterpreterMacroAssembler::dispatch_base(TosState state,
     bind(L);
   }
   if (verifyoop) {
-    verify_oop(rax, state);
+    interp_verify_oop(rax, state);
   }
 
   address* const safepoint_table = Interpreter::safept_table(state);
@@ -1959,9 +1959,9 @@ void InterpreterMacroAssembler::profile_switch_case(Register index,
 
 
 
-void InterpreterMacroAssembler::verify_oop(Register reg, TosState state) {
+void InterpreterMacroAssembler::_interp_verify_oop(Register reg, TosState state, const char* file, int line) {
   if (state == atos) {
-    MacroAssembler::verify_oop(reg);
+    MacroAssembler::_verify_oop(reg, "broken oop", file, line);
   }
 }
 
