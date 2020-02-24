@@ -87,7 +87,6 @@ public class TestHighUsage {
     public static void main(String[] args) throws Exception {
         ProcessTools.executeTestJvm(new String[]{ "-XX:+UnlockExperimentalVMOptions",
                                                   "-XX:+UseZGC",
-                                                  "-XX:+UnlockDiagnosticVMOptions",
                                                   "-XX:-ZProactive",
                                                   "-Xms128M",
                                                   "-Xmx128M",

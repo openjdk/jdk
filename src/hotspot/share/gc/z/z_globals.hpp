@@ -51,6 +51,9 @@
   experimental(uint, ZCollectionInterval, 0,                                \
           "Force GC at a fixed time interval (in seconds)")                 \
                                                                             \
+  experimental(bool, ZProactive, true,                                      \
+          "Enable proactive GC cycles")                                     \
+                                                                            \
   experimental(bool, ZUncommit, true,                                       \
           "Uncommit unused memory")                                         \
                                                                             \
@@ -61,9 +64,6 @@
   diagnostic(uint, ZStatisticsInterval, 10,                                 \
           "Time between statistics print outs (in seconds)")                \
           range(1, (uint)-1)                                                \
-                                                                            \
-  diagnostic(bool, ZProactive, true,                                        \
-          "Enable proactive GC cycles")                                     \
                                                                             \
   diagnostic(bool, ZVerifyViews, false,                                     \
           "Verify heap view accesses")                                      \
