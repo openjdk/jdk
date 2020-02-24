@@ -3659,7 +3659,14 @@ static void post_thread_start_event(const JavaThread* jt) {
   EventThreadStart event;
   if (event.should_commit()) {
     event.set_thread(JFR_THREAD_ID(jt));
-    event.commit();
+    event.set_parentThread((traceid)0);
+    if (EventThreadStart::is_stacktrace_enabled()) {
+      jt->jfr_thread_local()->set_cached_stack_trace_id((traceid)0);
+      event.commit();
+      jt->jfr_thread_local()->clear_cached_stack_trace();
+    } else {
+      event.commit();
+    }
   }
 }
 

@@ -94,6 +94,7 @@
 #endif
 
 #include <errno.h>
+#include <jfr/recorder/jfrRecorder.hpp>
 
 /*
   NOTE about use of any ctor or function call that can trigger a safepoint/GC:
@@ -2881,6 +2882,15 @@ JVM_ENTRY(void, JVM_StartThread(JNIEnv* env, jobject jthread))
     THROW_MSG(vmSymbols::java_lang_OutOfMemoryError(),
               os::native_thread_creation_failed_msg());
   }
+
+#if INCLUDE_JFR
+  if (JfrRecorder::is_recording() && EventThreadStart::is_enabled() &&
+      EventThreadStart::is_stacktrace_enabled()) {
+    JfrThreadLocal* tl = native_thread->jfr_thread_local();
+    // skip Thread.start() and Thread.start0()
+    tl->set_cached_stack_trace_id(JfrStackTraceRepository::record(thread, 2));
+  }
+#endif
 
   Thread::start(native_thread);
 

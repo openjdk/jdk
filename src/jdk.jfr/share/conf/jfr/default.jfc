@@ -54,6 +54,7 @@
 
     <event name="jdk.ThreadStart">
       <setting name="enabled">true</setting>
+      <setting name="stackTrace">true</setting>
     </event>
 
     <event name="jdk.ThreadEnd">

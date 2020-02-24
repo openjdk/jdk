@@ -52,6 +52,7 @@ class JfrThreadLocal {
   volatile jint _entering_suspend_flag;
   bool _excluded;
   bool _dead;
+  traceid _parent_trace_id;
 
   JfrBuffer* install_native_buffer() const;
   JfrBuffer* install_java_buffer() const;
@@ -126,6 +127,10 @@ class JfrThreadLocal {
 
   void set_thread_id(traceid thread_id) {
     _trace_id = thread_id;
+  }
+
+  traceid parent_thread_id() const {
+    return _parent_trace_id;
   }
 
   void set_cached_stack_trace_id(traceid id, unsigned int hash = 0) {
