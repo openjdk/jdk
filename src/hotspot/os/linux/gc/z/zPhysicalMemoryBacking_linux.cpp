@@ -137,16 +137,12 @@ ZPhysicalMemoryBacking::ZPhysicalMemoryBacking() :
   _block_size = buf.f_bsize;
   _available = buf.f_bavail * _block_size;
 
-  // Make sure we're on a supported filesystem
-  if (!is_tmpfs() && !is_hugetlbfs()) {
-    log_error(gc)("Backing file must be located on a %s or a %s filesystem",
-                  ZFILESYSTEM_TMPFS, ZFILESYSTEM_HUGETLBFS);
-    return;
-  }
+  log_info(gc, init)("Heap Backing Filesystem: %s (0x" UINT64_FORMAT_X ")",
+                     is_tmpfs() ? ZFILESYSTEM_TMPFS : is_hugetlbfs() ? ZFILESYSTEM_HUGETLBFS : "other", _filesystem);
 
   // Make sure the filesystem type matches requested large page type
   if (ZLargePages::is_transparent() && !is_tmpfs()) {
-    log_error(gc)("-XX:+UseTransparentHugePages can only be enable when using a %s filesystem",
+    log_error(gc)("-XX:+UseTransparentHugePages can only be enabled when using a %s filesystem",
                   ZFILESYSTEM_TMPFS);
     return;
   }
@@ -169,10 +165,22 @@ ZPhysicalMemoryBacking::ZPhysicalMemoryBacking() :
     return;
   }
 
-  const size_t expected_block_size = is_tmpfs() ? os::vm_page_size() : os::large_page_size();
-  if (expected_block_size != _block_size) {
+  if (ZLargePages::is_explicit() && os::large_page_size() != ZGranuleSize) {
+    log_error(gc)("Incompatible large page size configured " SIZE_FORMAT " (expected " SIZE_FORMAT ")",
+                  os::large_page_size(), ZGranuleSize);
+    return;
+  }
+
+  // Make sure the filesystem block size is compatible
+  if (ZGranuleSize % _block_size != 0) {
+    log_error(gc)("Filesystem backing the heap has incompatible block size (" SIZE_FORMAT ")",
+                  _block_size);
+    return;
+  }
+
+  if (is_hugetlbfs() && _block_size != ZGranuleSize) {
     log_error(gc)("%s filesystem has unexpected block size " SIZE_FORMAT " (expected " SIZE_FORMAT ")",
-                  is_tmpfs() ? ZFILESYSTEM_TMPFS : ZFILESYSTEM_HUGETLBFS, _block_size, expected_block_size);
+                  ZFILESYSTEM_HUGETLBFS, _block_size, ZGranuleSize);
     return;
   }
 
@@ -195,7 +203,7 @@ int ZPhysicalMemoryBacking::create_mem_fd(const char* name) const {
     return -1;
   }
 
-  log_info(gc, init)("Heap backed by file: /memfd:%s", filename);
+  log_info(gc, init)("Heap Backing File: /memfd:%s", filename);
 
   return fd;
 }
@@ -231,7 +239,7 @@ int ZPhysicalMemoryBacking::create_file_fd(const char* name) const {
       return -1;
     }
 
-    log_info(gc, init)("Heap backed by file: %s/#" UINT64_FORMAT, mountpoint.get(), (uint64_t)stat_buf.st_ino);
+    log_info(gc, init)("Heap Backing File: %s/#" UINT64_FORMAT, mountpoint.get(), (uint64_t)stat_buf.st_ino);
 
     return fd_anon;
   }
@@ -257,7 +265,7 @@ int ZPhysicalMemoryBacking::create_file_fd(const char* name) const {
     return -1;
   }
 
-  log_info(gc, init)("Heap backed by file: %s", filename);
+  log_info(gc, init)("Heap Backing File: %s", filename);
 
   return fd;
 }
