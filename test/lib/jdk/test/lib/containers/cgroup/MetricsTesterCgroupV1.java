@@ -38,11 +38,15 @@ import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
-import jdk.internal.platform.Metrics;
+import jdk.internal.platform.CgroupSubsystem;
 import jdk.internal.platform.CgroupV1Metrics;
+import jdk.internal.platform.Metrics;
+import jdk.test.lib.Asserts;
 
 public class MetricsTesterCgroupV1 implements CgroupMetricsTester {
 
+    // Aliased for readability
+    private static final long RETVAL_UNAVAILABLE = CgroupSubsystem.LONG_RETVAL_UNLIMITED;
     private static long unlimited_minimum = 0x7FFFFFFFFF000000L;
     long startSysVal;
     long startUserVal;
@@ -127,9 +131,6 @@ public class MetricsTesterCgroupV1 implements CgroupMetricsTester {
         startUserVal = metrics.getCpuUserUsage();
         startUsage = metrics.getCpuUsage();
         startPerCpu = metrics.getPerCpuUsage();
-        if (startPerCpu == null) {
-            startPerCpu = new long[0];
-        }
 
         try {
             Stream<String> lines = Files.lines(Paths.get("/proc/self/mountinfo"));
@@ -159,11 +160,11 @@ public class MetricsTesterCgroupV1 implements CgroupMetricsTester {
 
     private static long getLongValueFromFile(Controller subSystem, String fileName) {
         String data = getFileContents(subSystem, fileName);
-        return (data == null || data.isEmpty()) ? 0L : convertStringToLong(data);
+        return (data == null || data.isEmpty()) ? RETVAL_UNAVAILABLE : convertStringToLong(data);
     }
 
     private static long convertStringToLong(String strval) {
-        return CgroupMetricsTester.convertStringToLong(strval, Long.MAX_VALUE);
+        return CgroupMetricsTester.convertStringToLong(strval, RETVAL_UNAVAILABLE, Long.MAX_VALUE);
     }
 
     private static long getLongValueFromFile(Controller subSystem, String metric, String subMetric) {
@@ -175,12 +176,12 @@ public class MetricsTesterCgroupV1 implements CgroupMetricsTester {
                 return convertStringToLong(strval);
             }
         }
-        return 0L;
+        return RETVAL_UNAVAILABLE;
     }
 
     private static double getDoubleValueFromFile(Controller subSystem, String fileName) {
         String data = getFileContents(subSystem, fileName);
-        return data.isEmpty() ? 0.0 : Double.parseDouble(data);
+        return data == null || data.isEmpty() ? RETVAL_UNAVAILABLE : Double.parseDouble(data);
     }
 
     private static void fail(Controller system, String metric, long oldVal, long testVal) {
@@ -203,6 +204,13 @@ public class MetricsTesterCgroupV1 implements CgroupMetricsTester {
         CgroupMetricsTester.warn(system.value, metric, oldVal, testVal);
     }
 
+    private Long[] boxedArrayOrNull(long[] primitiveArray) {
+        if (primitiveArray == null) {
+            return null;
+        }
+        return LongStream.of(primitiveArray).boxed().toArray(Long[]::new);
+    }
+
     public void testMemorySubsystem() {
         CgroupV1Metrics metrics = (CgroupV1Metrics)Metrics.systemMetrics();
 
@@ -215,7 +223,7 @@ public class MetricsTesterCgroupV1 implements CgroupMetricsTester {
 
         oldVal = metrics.getMemoryLimit();
         newVal = getLongValueFromFile(Controller.MEMORY, "memory.limit_in_bytes");
-        newVal = newVal > unlimited_minimum ? -1L : newVal;
+        newVal = newVal > unlimited_minimum ? CgroupSubsystem.LONG_RETVAL_UNLIMITED : newVal;
         if (!CgroupMetricsTester.compareWithErrorMargin(oldVal, newVal)) {
             fail(Controller.MEMORY, "memory.limit_in_bytes", oldVal, newVal);
         }
@@ -241,7 +249,7 @@ public class MetricsTesterCgroupV1 implements CgroupMetricsTester {
 
         oldVal = metrics.getKernelMemoryLimit();
         newVal = getLongValueFromFile(Controller.MEMORY, "memory.kmem.limit_in_bytes");
-        newVal = newVal > unlimited_minimum ? -1L : newVal;
+        newVal = newVal > unlimited_minimum ? CgroupSubsystem.LONG_RETVAL_UNLIMITED : newVal;
         if (!CgroupMetricsTester.compareWithErrorMargin(oldVal, newVal)) {
             fail(Controller.MEMORY, "memory.kmem.limit_in_bytes", oldVal, newVal);
         }
@@ -267,7 +275,7 @@ public class MetricsTesterCgroupV1 implements CgroupMetricsTester {
 
         oldVal = metrics.getTcpMemoryLimit();
         newVal = getLongValueFromFile(Controller.MEMORY, "memory.kmem.tcp.limit_in_bytes");
-        newVal = newVal > unlimited_minimum ? -1L : newVal;
+        newVal = newVal > unlimited_minimum ? CgroupSubsystem.LONG_RETVAL_UNLIMITED: newVal;
         if (!CgroupMetricsTester.compareWithErrorMargin(oldVal, newVal)) {
             fail(Controller.MEMORY, "memory.kmem.tcp.limit_in_bytes", oldVal, newVal);
         }
@@ -293,7 +301,7 @@ public class MetricsTesterCgroupV1 implements CgroupMetricsTester {
 
         oldVal = metrics.getMemoryAndSwapLimit();
         newVal = getLongValueFromFile(Controller.MEMORY, "memory.memsw.limit_in_bytes");
-        newVal = newVal > unlimited_minimum ? -1L : newVal;
+        newVal = newVal > unlimited_minimum ? CgroupSubsystem.LONG_RETVAL_UNLIMITED : newVal;
         if (!CgroupMetricsTester.compareWithErrorMargin(oldVal, newVal)) {
             fail(Controller.MEMORY, "memory.memsw.limit_in_bytes", oldVal, newVal);
         }
@@ -312,7 +320,7 @@ public class MetricsTesterCgroupV1 implements CgroupMetricsTester {
 
         oldVal = metrics.getMemorySoftLimit();
         newVal = getLongValueFromFile(Controller.MEMORY, "memory.soft_limit_in_bytes");
-        newVal = newVal > unlimited_minimum ? -1L : newVal;
+        newVal = newVal > unlimited_minimum ? CgroupSubsystem.LONG_RETVAL_UNLIMITED : newVal;
         if (!CgroupMetricsTester.compareWithErrorMargin(oldVal, newVal)) {
             fail(Controller.MEMORY, "memory.soft_limit_in_bytes", oldVal, newVal);
         }
@@ -337,20 +345,22 @@ public class MetricsTesterCgroupV1 implements CgroupMetricsTester {
         }
 
         String newValsStr = getFileContents(Controller.CPUACCT, "cpuacct.usage_percpu");
-        Long[] newVals = new Long[0];
+        Long[] newVals = null;
         if (newValsStr != null) {
             newVals = Stream.of(newValsStr
                 .split("\\s+"))
                 .map(Long::parseLong)
                 .toArray(Long[]::new);
         }
-        long[] oldValsPrim = metrics.getPerCpuUsage();
-        Long[] oldVals = LongStream.of(oldValsPrim == null ? new long[0] : oldValsPrim)
-                                    .boxed().toArray(Long[]::new);
-        for (int i = 0; i < oldVals.length; i++) {
-            if (!CgroupMetricsTester.compareWithErrorMargin(oldVals[i], newVals[i])) {
-                warn(Controller.CPUACCT, "cpuacct.usage_percpu", oldVals[i], newVals[i]);
+        Long[] oldVals = boxedArrayOrNull(metrics.getPerCpuUsage());
+        if (oldVals != null) {
+            for (int i = 0; i < oldVals.length; i++) {
+                if (!CgroupMetricsTester.compareWithErrorMargin(oldVals[i], newVals[i])) {
+                    warn(Controller.CPUACCT, "cpuacct.usage_percpu", oldVals[i], newVals[i]);
+                }
             }
+        } else {
+            Asserts.assertNull(newVals, Controller.CPUACCT.value() + "cpuacct.usage_percpu not both null");
         }
 
         oldVal = metrics.getCpuUserUsage();
@@ -408,13 +418,13 @@ public class MetricsTesterCgroupV1 implements CgroupMetricsTester {
 
     public void testCpuSets() {
         CgroupV1Metrics metrics = (CgroupV1Metrics)Metrics.systemMetrics();
-        Integer[] oldVal = Arrays.stream(metrics.getCpuSetCpus()).boxed().toArray(Integer[]::new);
-        Arrays.sort(oldVal);
+        Integer[] oldVal = CgroupMetricsTester.boxedArrayOrNull(metrics.getCpuSetCpus());
+        oldVal = CgroupMetricsTester.sortAllowNull(oldVal);
 
         String cpusstr = getFileContents(Controller.CPUSET, "cpuset.cpus");
         // Parse range string in the format 1,2-6,7
         Integer[] newVal = CgroupMetricsTester.convertCpuSetsToArray(cpusstr);
-        Arrays.sort(newVal);
+        newVal = CgroupMetricsTester.sortAllowNull(newVal);
         if (Arrays.compare(oldVal, newVal) != 0) {
             fail(Controller.CPUSET, "cpuset.cpus", Arrays.toString(oldVal),
                 Arrays.toString(newVal));
@@ -422,24 +432,21 @@ public class MetricsTesterCgroupV1 implements CgroupMetricsTester {
 
         int [] cpuSets = metrics.getEffectiveCpuSetCpus();
 
-        // Skip this test if this metric is not supported on this platform
-        if (cpuSets.length != 0) {
-            oldVal = Arrays.stream(cpuSets).boxed().toArray(Integer[]::new);
-            Arrays.sort(oldVal);
-            cpusstr = getFileContents(Controller.CPUSET, "cpuset.effective_cpus");
-            newVal = CgroupMetricsTester.convertCpuSetsToArray(cpusstr);
-            Arrays.sort(newVal);
-            if (Arrays.compare(oldVal, newVal) != 0) {
-                fail(Controller.CPUSET, "cpuset.effective_cpus", Arrays.toString(oldVal),
-                        Arrays.toString(newVal));
-            }
+        oldVal = CgroupMetricsTester.boxedArrayOrNull(cpuSets);
+        oldVal = CgroupMetricsTester.sortAllowNull(oldVal);
+        cpusstr = getFileContents(Controller.CPUSET, "cpuset.effective_cpus");
+        newVal = CgroupMetricsTester.convertCpuSetsToArray(cpusstr);
+        newVal = CgroupMetricsTester.sortAllowNull(newVal);
+        if (Arrays.compare(oldVal, newVal) != 0) {
+            fail(Controller.CPUSET, "cpuset.effective_cpus", Arrays.toString(oldVal),
+                    Arrays.toString(newVal));
         }
 
-        oldVal = Arrays.stream(metrics.getCpuSetMems()).boxed().toArray(Integer[]::new);
-        Arrays.sort(oldVal);
+        oldVal = CgroupMetricsTester.boxedArrayOrNull(metrics.getCpuSetMems());
+        oldVal = CgroupMetricsTester.sortAllowNull(oldVal);
         cpusstr = getFileContents(Controller.CPUSET, "cpuset.mems");
         newVal = CgroupMetricsTester.convertCpuSetsToArray(cpusstr);
-        Arrays.sort(newVal);
+        newVal = CgroupMetricsTester.sortAllowNull(newVal);
         if (Arrays.compare(oldVal, newVal) != 0) {
             fail(Controller.CPUSET, "cpuset.mems", Arrays.toString(oldVal),
                     Arrays.toString(newVal));
@@ -447,17 +454,14 @@ public class MetricsTesterCgroupV1 implements CgroupMetricsTester {
 
         int [] cpuSetMems = metrics.getEffectiveCpuSetMems();
 
-        // Skip this test if this metric is not supported on this platform
-        if (cpuSetMems.length != 0) {
-            oldVal = Arrays.stream(cpuSetMems).boxed().toArray(Integer[]::new);
-            Arrays.sort(oldVal);
-            cpusstr = getFileContents(Controller.CPUSET, "cpuset.effective_mems");
-            newVal = CgroupMetricsTester.convertCpuSetsToArray(cpusstr);
-            Arrays.sort(newVal);
-            if (Arrays.compare(oldVal, newVal) != 0) {
-                fail(Controller.CPUSET, "cpuset.effective_mems", Arrays.toString(oldVal),
-                        Arrays.toString(newVal));
-            }
+        oldVal = CgroupMetricsTester.boxedArrayOrNull(cpuSetMems);
+        oldVal = CgroupMetricsTester.sortAllowNull(oldVal);
+        cpusstr = getFileContents(Controller.CPUSET, "cpuset.effective_mems");
+        newVal = CgroupMetricsTester.convertCpuSetsToArray(cpusstr);
+        newVal = CgroupMetricsTester.sortAllowNull(newVal);
+        if (Arrays.compare(oldVal, newVal) != 0) {
+            fail(Controller.CPUSET, "cpuset.effective_mems", Arrays.toString(oldVal),
+                    Arrays.toString(newVal));
         }
 
         double oldValue = metrics.getCpuSetMemoryPressure();
@@ -498,9 +502,6 @@ public class MetricsTesterCgroupV1 implements CgroupMetricsTester {
         long newUserVal = metrics.getCpuUserUsage();
         long newUsage = metrics.getCpuUsage();
         long[] newPerCpu = metrics.getPerCpuUsage();
-        if (newPerCpu == null) {
-            newPerCpu = new long[0];
-        }
 
         // system/user CPU usage counters may be slowly increasing.
         // allow for equal values for a pass
@@ -518,16 +519,22 @@ public class MetricsTesterCgroupV1 implements CgroupMetricsTester {
             fail(Controller.CPU, "getCpuUsage", newUsage, startUsage);
         }
 
-        boolean success = false;
-        for (int i = 0; i < startPerCpu.length; i++) {
-            if (newPerCpu[i] > startPerCpu[i]) {
-                success = true;
-                break;
+        if (startPerCpu != null) {
+            boolean success = false;
+            for (int i = 0; i < startPerCpu.length; i++) {
+                if (newPerCpu[i] > startPerCpu[i]) {
+                    success = true;
+                    break;
+                }
             }
+            if (!success) {
+                fail(Controller.CPU, "getPerCpuUsage", Arrays.toString(newPerCpu),
+                                                       Arrays.toString(startPerCpu));
+            }
+        } else {
+            Asserts.assertNull(newPerCpu, Controller.CPU.value() + " getPerCpuUsage not both null");
         }
 
-        if(!success) fail(Controller.CPU, "getPerCpuUsage", Arrays.toString(newPerCpu),
-                Arrays.toString(startPerCpu));
     }
 
     public void testMemoryUsage() throws Exception {

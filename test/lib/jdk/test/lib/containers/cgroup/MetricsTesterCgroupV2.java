@@ -32,12 +32,12 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import jdk.internal.platform.CgroupSubsystem;
 import jdk.internal.platform.Metrics;
 
 public class MetricsTesterCgroupV2 implements CgroupMetricsTester {
 
     private static final long UNLIMITED = -1;
+    private static final long NOT_AVAILABLE = -1;
     private static final UnifiedController UNIFIED = new UnifiedController();
     private static final String MAX = "max";
     private static final int PER_CPU_SHARES = 1024;
@@ -125,7 +125,7 @@ public class MetricsTesterCgroupV2 implements CgroupMetricsTester {
             String value = keyValues[1];
             return convertStringToLong(value);
         } catch (IOException e) {
-            return 0;
+            return NOT_AVAILABLE;
         }
     }
 
@@ -152,7 +152,7 @@ public class MetricsTesterCgroupV2 implements CgroupMetricsTester {
 
     private long getCpuShares(String file) {
         long rawVal = getLongValueFromFile(file);
-        if (rawVal == 0 || rawVal == 100) {
+        if (rawVal == NOT_AVAILABLE || rawVal == 100) {
             return UNLIMITED;
         }
         int shares = (int)rawVal;
@@ -200,7 +200,14 @@ public class MetricsTesterCgroupV2 implements CgroupMetricsTester {
     }
 
     private long convertStringToLong(String val) {
-        return CgroupMetricsTester.convertStringToLong(val, UNLIMITED);
+        return CgroupMetricsTester.convertStringToLong(val, NOT_AVAILABLE, UNLIMITED);
+    }
+
+    private long nanosOrUnlimited(long micros) {
+        if (micros < 0) {
+            return UNLIMITED;
+        }
+        return TimeUnit.MICROSECONDS.toNanos(micros);
     }
 
     @Override
@@ -256,20 +263,20 @@ public class MetricsTesterCgroupV2 implements CgroupMetricsTester {
     public void testCpuAccounting() {
         Metrics metrics = Metrics.systemMetrics();
         long oldVal = metrics.getCpuUsage();
-        long newVal = TimeUnit.MICROSECONDS.toNanos(getLongValueEntryFromFile("cpu.stat", "usage_usec"));
+        long newVal = nanosOrUnlimited(getLongValueEntryFromFile("cpu.stat", "usage_usec"));
 
         if (!CgroupMetricsTester.compareWithErrorMargin(oldVal, newVal)) {
             warn("cpu.stat[usage_usec]", oldVal, newVal);
         }
 
         oldVal = metrics.getCpuUserUsage();
-        newVal = TimeUnit.MICROSECONDS.toNanos(getLongValueEntryFromFile("cpu.stat", "user_usec"));
+        newVal = nanosOrUnlimited(getLongValueEntryFromFile("cpu.stat", "user_usec"));
         if (!CgroupMetricsTester.compareWithErrorMargin(oldVal, newVal)) {
             warn("cpu.stat[user_usec]", oldVal, newVal);
         }
 
         oldVal = metrics.getCpuSystemUsage();
-        newVal = TimeUnit.MICROSECONDS.toNanos(getLongValueEntryFromFile("cpu.stat", "system_usec"));
+        newVal = nanosOrUnlimited(getLongValueEntryFromFile("cpu.stat", "system_usec"));
         if (!CgroupMetricsTester.compareWithErrorMargin(oldVal, newVal)) {
             warn("cpu.stat[system_usec]", oldVal, newVal);
         }
@@ -309,7 +316,7 @@ public class MetricsTesterCgroupV2 implements CgroupMetricsTester {
         }
 
         oldVal = metrics.getCpuThrottledTime();
-        newVal = TimeUnit.MICROSECONDS.toNanos(getLongValueEntryFromFile("cpu.stat", "throttled_usec"));
+        newVal = nanosOrUnlimited(getLongValueEntryFromFile("cpu.stat", "throttled_usec"));
         if (!CgroupMetricsTester.compareWithErrorMargin(oldVal, newVal)) {
             fail("cpu.stat[throttled_usec]", oldVal, newVal);
         }
@@ -318,60 +325,47 @@ public class MetricsTesterCgroupV2 implements CgroupMetricsTester {
     @Override
     public void testCpuSets() {
         Metrics metrics = Metrics.systemMetrics();
-        int[] cpus = mapNullToEmpty(metrics.getCpuSetCpus());
-        Integer[] oldVal = Arrays.stream(cpus).boxed().toArray(Integer[]::new);
-        Arrays.sort(oldVal);
+        Integer[] oldVal = CgroupMetricsTester.boxedArrayOrNull(metrics.getCpuSetCpus());
+        oldVal = CgroupMetricsTester.sortAllowNull(oldVal);
 
         String cpusstr = getStringVal("cpuset.cpus");
         // Parse range string in the format 1,2-6,7
         Integer[] newVal = CgroupMetricsTester.convertCpuSetsToArray(cpusstr);
-        Arrays.sort(newVal);
+        newVal = CgroupMetricsTester.sortAllowNull(newVal);
         if (Arrays.compare(oldVal, newVal) != 0) {
             fail("cpuset.cpus", Arrays.toString(oldVal),
                                 Arrays.toString(newVal));
         }
 
-        cpus = mapNullToEmpty(metrics.getEffectiveCpuSetCpus());
-        oldVal = Arrays.stream(cpus).boxed().toArray(Integer[]::new);
-        Arrays.sort(oldVal);
+        oldVal = CgroupMetricsTester.boxedArrayOrNull(metrics.getEffectiveCpuSetCpus());
+        oldVal = CgroupMetricsTester.sortAllowNull(oldVal);
         cpusstr = getStringVal("cpuset.cpus.effective");
         newVal = CgroupMetricsTester.convertCpuSetsToArray(cpusstr);
-        Arrays.sort(newVal);
+        newVal = CgroupMetricsTester.sortAllowNull(newVal);
         if (Arrays.compare(oldVal, newVal) != 0) {
             fail("cpuset.cpus.effective", Arrays.toString(oldVal),
                                           Arrays.toString(newVal));
         }
 
-        cpus = mapNullToEmpty(metrics.getCpuSetMems());
-        oldVal = Arrays.stream(cpus).boxed().toArray(Integer[]::new);
-        Arrays.sort(oldVal);
+        oldVal = CgroupMetricsTester.boxedArrayOrNull(metrics.getCpuSetMems());
+        oldVal = CgroupMetricsTester.sortAllowNull(oldVal);
         cpusstr = getStringVal("cpuset.mems");
         newVal = CgroupMetricsTester.convertCpuSetsToArray(cpusstr);
-        Arrays.sort(newVal);
+        newVal = CgroupMetricsTester.sortAllowNull(newVal);
         if (Arrays.compare(oldVal, newVal) != 0) {
             fail("cpuset.mems", Arrays.toString(oldVal),
                                 Arrays.toString(newVal));
         }
 
-        cpus = mapNullToEmpty(metrics.getEffectiveCpuSetMems());
-        oldVal = Arrays.stream(cpus).boxed().toArray(Integer[]::new);
-        Arrays.sort(oldVal);
+        oldVal = CgroupMetricsTester.boxedArrayOrNull(metrics.getEffectiveCpuSetMems());
+        oldVal = CgroupMetricsTester.sortAllowNull(oldVal);
         cpusstr = getStringVal("cpuset.mems.effective");
         newVal = CgroupMetricsTester.convertCpuSetsToArray(cpusstr);
-        Arrays.sort(newVal);
+        newVal = CgroupMetricsTester.sortAllowNull(newVal);
         if (Arrays.compare(oldVal, newVal) != 0) {
             fail("cpuset.mems.effective", Arrays.toString(oldVal),
                                           Arrays.toString(newVal));
         }
-    }
-
-    private int[] mapNullToEmpty(int[] cpus) {
-        if (cpus == null) {
-            // Not available. For sake of testing continue with an
-            // empty array.
-            cpus = new int[0];
-        }
-        return cpus;
     }
 
     @Override
@@ -462,7 +456,7 @@ public class MetricsTesterCgroupV2 implements CgroupMetricsTester {
                         return accumulator;
                     }).collect(Collectors.summingLong(e -> e));
         } catch (IOException e) {
-            return CgroupSubsystem.LONG_RETVAL_UNLIMITED;
+            return NOT_AVAILABLE;
         }
     }
 }

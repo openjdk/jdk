@@ -24,6 +24,7 @@
 import java.util.Arrays;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+
 import jdk.internal.platform.Metrics;
 
 public class MetricsCpuTester {
@@ -96,7 +97,7 @@ public class MetricsCpuTester {
         }
 
         // Check to see if this metric is supported on this platform
-        if (effectiveCpus.length != 0) {
+        if (effectiveCpus != null) {
             if (!Arrays.equals(ipCpuSet, effectiveCpus)) {
                 throw new RuntimeException("Effective Cpusets not equal, expected : "
                         + Arrays.toString(ipCpuSet) + ", got : "
@@ -131,7 +132,7 @@ public class MetricsCpuTester {
         }
 
         // Check to see if this metric is supported on this platform
-        if (effectiveMems.length != 0) {
+        if (effectiveMems != null) {
             if (!Arrays.equals(ipCpuSet, effectiveMems)) {
                 throw new RuntimeException("Effective mem nodes not equal, expected : "
                         + Arrays.toString(ipCpuSet) + ", got : "

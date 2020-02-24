@@ -23,10 +23,13 @@
 
 import java.util.Arrays;
 
-import jdk.internal.platform.Metrics;
 import jdk.internal.platform.CgroupV1Metrics;
+import jdk.internal.platform.Metrics;
 
 public class MetricsMemoryTester {
+
+    public static final long UNLIMITED = -1;
+
     public static void main(String[] args) {
         System.out.println(Arrays.toString(args));
         switch (args[0]) {
@@ -115,13 +118,13 @@ public class MetricsMemoryTester {
             System.out.println("TEST PASSED!!!");
             long limit = getMemoryValue(value);
             long kmemlimit = mCgroupV1.getKernelMemoryLimit();
-            if (kmemlimit != 0 && limit != kmemlimit) {
+            if (kmemlimit != UNLIMITED && limit != kmemlimit) {
                 throw new RuntimeException("Kernel Memory limit not equal, expected : ["
                         + limit + "]" + ", got : ["
                         + kmemlimit + "]");
             }
         } else {
-            throw new RuntimeException("oomKillFlag test not supported for cgroups v2");
+            throw new RuntimeException("kernel memory limit test not supported for cgroups v2");
         }
     }
 
