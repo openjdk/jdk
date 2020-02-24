@@ -78,34 +78,6 @@ void Symbol::set_permanent() {
   _hash_and_refcount =  pack_hash_and_refcount(extract_hash(_hash_and_refcount), PERM_REFCOUNT);
 }
 
-
-// ------------------------------------------------------------------
-// Symbol::contains_byte_at
-//
-// Tests if the symbol contains the given byte at the given position.
-bool Symbol::contains_byte_at(int position, char code_byte) const {
-  if (position < 0)  return false;  // can happen with ends_with
-  if (position >= utf8_length()) return false;
-  return code_byte == char_at(position);
-}
-
-// ------------------------------------------------------------------
-// Symbol::contains_utf8_at
-//
-// Tests if the symbol contains the given utf8 substring
-// at the given byte position.
-bool Symbol::contains_utf8_at(int position, const char* substring, int len) const {
-  assert(len >= 0 && substring != NULL, "substring must be valid");
-  if (len <= 1)
-    return len == 0 || contains_byte_at(position, substring[0]);
-  if (position < 0)  return false;  // can happen with ends_with
-  if (position + len > utf8_length()) return false;
-  if (memcmp((char*)base() + position, substring, len) == 0)
-    return true;
-  else
-    return false;
-}
-
 // ------------------------------------------------------------------
 // Symbol::index_of
 //

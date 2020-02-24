@@ -232,7 +232,6 @@ class SignatureIterator: public ResourceObj {
   // bitfields from the fingerprint.  Otherwise, the
   // symbol is parsed.
   template<typename T> inline void do_parameters_on(T* callback); // iterates over parameters only
-  void skip_parameters();   // skips over parameters to find return type
   BasicType return_type();  // computes the value on the fly if necessary
 
   static bool fp_is_static(fingerprint_t fingerprint) {
@@ -478,8 +477,6 @@ class SignatureStream : public StackObj {
   Symbol*      _previous_name;    // cache the previously looked up symbol to avoid lookups
   GrowableArray<Symbol*>* _names; // symbols created while parsing that need to be dereferenced
 
-  inline int scan_non_primitive(BasicType type);
-
   Symbol* find_symbol();
 
   enum { _s_field = 0, _s_method = 1, _s_method_return = 3 };
@@ -487,9 +484,9 @@ class SignatureStream : public StackObj {
     _state |= -2;   // preserve s_method bit
     assert(is_done(), "Unable to set state to done");
   }
+  int scan_type(BasicType bt);
 
  public:
-  bool is_method_signature() const               { return (_state & (int)_s_method) != 0; }
   bool at_return_type() const                    { return _state == (int)_s_method_return; }
   bool is_done() const                           { return _state < 0; }
   void next();
@@ -504,8 +501,6 @@ class SignatureStream : public StackObj {
 
   const u1* raw_bytes() const  { return _signature->bytes() + _begin; }
   int       raw_length() const { return _end - _begin; }
-  int       raw_begin() const  { return _begin; }
-  int       raw_end() const    { return _end; }
   int raw_symbol_begin() const { return _begin + (has_envelope() ? 1 : 0); }
   int raw_symbol_end() const   { return _end  -  (has_envelope() ? 1 : 0); }
   char raw_char_at(int i) const {
@@ -541,7 +536,27 @@ class SignatureStream : public StackObj {
   // (The argument is clipped to array_prefix_length(),
   // and if it ends up as zero this call is a nop.
   // The default is value skips all brackets '['.)
-  int skip_array_prefix(int prefix_length = 9999);
+ private:
+  int skip_whole_array_prefix();
+ public:
+  int skip_array_prefix(int max_skip_length) {
+    if (_type != T_ARRAY) {
+      return 0;
+    }
+     if (_array_prefix > max_skip_length) {
+      // strip some but not all levels of T_ARRAY
+      _array_prefix -= max_skip_length;
+      _begin += max_skip_length;
+      return max_skip_length;
+    }
+    return skip_whole_array_prefix();
+  }
+  int skip_array_prefix() {
+    if (_type != T_ARRAY) {
+      return 0;
+    }
+    return skip_whole_array_prefix();
+  }
 
   // free-standing lookups (bring your own CL/PD pair)
   enum FailureMode { ReturnNull, NCDFError, CachedOrNull };

@@ -97,7 +97,7 @@ class ClassLoaderData;
 
 // Set _refcount to PERM_REFCOUNT to prevent the Symbol from being freed.
 #ifndef PERM_REFCOUNT
-#define PERM_REFCOUNT ((1 << 16) - 1)
+#define PERM_REFCOUNT 0xffff
 #endif
 
 class Symbol : public MetaspaceObj {
@@ -113,7 +113,7 @@ class Symbol : public MetaspaceObj {
   u1 _body[2];
 
   enum {
-    max_symbol_length = (1 << 16) -1
+    max_symbol_length = 0xffff
   };
 
   static int byte_size(int length) {
@@ -165,7 +165,7 @@ class Symbol : public MetaspaceObj {
   bool try_increment_refcount();
   void increment_refcount();
   void decrement_refcount();
-  bool is_permanent() {
+  bool is_permanent() const {
     return (refcount() == PERM_REFCOUNT);
   }
   void set_permanent();
@@ -210,12 +210,24 @@ class Symbol : public MetaspaceObj {
     return ends_with(suffix, (int) strlen(suffix));
   }
   bool ends_with(int suffix_char) const {
-    return contains_byte_at(utf8_length()-1, suffix_char);
+    return contains_byte_at(utf8_length() - 1, suffix_char);
   }
+
   // Tests if the symbol contains the given utf8 substring
-  // or byte at the given byte position.
-  bool contains_utf8_at(int position, const char* substring, int len) const;
-  bool contains_byte_at(int position, char code_byte) const;
+  // at the given byte position.
+  bool contains_utf8_at(int position, const char* substring, int len) const {
+    assert(len >= 0 && substring != NULL, "substring must be valid");
+    if (position < 0)  return false;  // can happen with ends_with
+    if (position + len > utf8_length()) return false;
+    return (memcmp((char*)base() + position, substring, len) == 0);
+  }
+
+  // Tests if the symbol contains the given byte at the given position.
+  bool contains_byte_at(int position, char code_byte) const {
+    if (position < 0)  return false;  // can happen with ends_with
+    if (position >= utf8_length()) return false;
+    return code_byte == char_at(position);
+  }
 
   // Tests if the symbol starts with the given prefix.
   int index_of_at(int i, const char* str, int len) const;
