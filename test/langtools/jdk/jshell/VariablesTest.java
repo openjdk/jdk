@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8144903 8177466 8191842 8211694 8213725
+ * @bug 8144903 8177466 8191842 8211694 8213725 8239536
  * @summary Tests for EvaluationState.variables
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -466,6 +466,15 @@ public class VariablesTest extends KullaTesting {
         assertVarDisplayName("var v6 = new Runnable() { public void run() { } };", "<anonymous class implementing Runnable>");
     }
 
+    public void varType() {
+        assertEval("import java.util.*;");
+        var firstVar = varKey(assertEval("var v1 = List.of(1);", added(VALID)));
+        assertEval("import list.List;", DiagCheck.DIAG_OK, DiagCheck.DIAG_ERROR, added(VALID),
+                                        ste(firstVar, VALID, RECOVERABLE_NOT_DEFINED, true, MAIN_SNIPPET));
+        assertEval("var v2 = java.util.List.of(1);", added(VALID));
+        assertEval("v2", "[1]");
+    }
+
     public void varDeclNoInit() {
         assertVarDeclNoInit("byte", "b",  "0");
         assertVarDeclNoInit("short", "h",  "0");
@@ -579,6 +588,10 @@ public class VariablesTest extends KullaTesting {
                 "\n" +
                 "public interface J<T> {\n" +
                 "   public List<T> get();\n" +
+                "}\n",
+                "package list;\n" +
+                "\n" +
+                "public class List {\n" +
                 "}\n");
         String tpath = compiler.getPath(path).toString();
         setUp(b -> b
