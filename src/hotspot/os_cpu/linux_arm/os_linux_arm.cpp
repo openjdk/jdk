@@ -336,7 +336,7 @@ extern "C" int JVM_handle_linux_signal(int sig, siginfo_t* info,
         return 1;
       }
       // check if fault address is within thread stack
-      if (thread->on_local_stack(addr)) {
+      if (thread->is_in_full_stack(addr)) {
         // stack overflow
         if (thread->in_stack_yellow_reserved_zone(addr)) {
           thread->disable_stack_yellow_reserved_zone();

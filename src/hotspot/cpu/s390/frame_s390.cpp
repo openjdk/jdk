@@ -66,18 +66,15 @@ bool frame::safe_for_sender(JavaThread *thread) {
   }
 
   // Unextended sp must be within the stack
-  bool unextended_sp_safe = (unextended_sp < thread->stack_base());
-
-  if (!unextended_sp_safe) {
+  if (!thread->is_in_full_stack(unextended_sp)) {
     return false;
   }
 
   // An fp must be within the stack and above (but not equal) sp.
-  bool fp_safe = (fp < thread->stack_base()) && (fp > sp);
+  bool fp_safe = thread->is_in_stack_range_excl(fp, sp);
   // An interpreter fp must be within the stack and above (but not equal) sp.
   // Moreover, it must be at least the size of the z_ijava_state structure.
-  bool fp_interp_safe = (fp < thread->stack_base()) && (fp > sp) &&
-    ((fp - sp) >= z_ijava_state_size);
+  bool fp_interp_safe = fp_safe && ((fp - sp) >= z_ijava_state_size);
 
   // We know sp/unextended_sp are safe, only fp is questionable here
 
@@ -136,7 +133,7 @@ bool frame::safe_for_sender(JavaThread *thread) {
 
     // sender_fp must be within the stack and above (but not
     // equal) current frame's fp.
-    if (sender_fp >= thread->stack_base() || sender_fp <= fp) {
+    if (!thread->is_in_stack_range_excl(sender_fp, fp)) {
         return false;
     }
 

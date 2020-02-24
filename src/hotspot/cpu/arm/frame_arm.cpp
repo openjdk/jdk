@@ -63,18 +63,13 @@ bool frame::safe_for_sender(JavaThread *thread) {
     return false;
   }
 
-  bool unextended_sp_safe = (unextended_sp != NULL &&
-                             (unextended_sp < thread->stack_base()) &&
-                             (unextended_sp >= sp));
-  if (!unextended_sp_safe) {
+  if (!thread->is_in_stack_range_incl(unextended_sp, sp)) {
     return false;
   }
 
   // We know sp/unextended_sp are safe. Only fp is questionable here.
 
-  bool fp_safe = (fp != NULL &&
-                  (fp < thread->stack_base()) &&
-                  fp >= sp);
+  bool fp_safe = thread->is_in_stack_range_incl(fp, sp);
 
   if (_cb != NULL ) {
 
@@ -118,7 +113,7 @@ bool frame::safe_for_sender(JavaThread *thread) {
 
       sender_sp = _unextended_sp + _cb->frame_size();
       // Is sender_sp safe?
-      if ((address)sender_sp >= thread->stack_base()) {
+      if (!thread->is_in_full_stack((address)sender_sp)) {
         return false;
       }
       // With our calling conventions, the return_address should
@@ -141,9 +136,7 @@ bool frame::safe_for_sender(JavaThread *thread) {
       // is really a frame pointer.
 
       intptr_t *saved_fp = (intptr_t*)*(sender_sp - frame::sender_sp_offset + link_offset);
-      bool saved_fp_safe = ((address)saved_fp < thread->stack_base()) && (saved_fp > sender_sp);
-
-      if (!saved_fp_safe) {
+      if (!thread->is_in_stack_range_excl((address)saved_fp, (address)sender_sp)) {
         return false;
       }
 
@@ -171,9 +164,7 @@ bool frame::safe_for_sender(JavaThread *thread) {
     // Could be the call_stub
     if (StubRoutines::returns_to_call_stub(sender_pc)) {
       intptr_t *saved_fp = (intptr_t*)*(sender_sp - frame::sender_sp_offset + link_offset);
-      bool saved_fp_safe = ((address)saved_fp < thread->stack_base()) && (saved_fp > sender_sp);
-
-      if (!saved_fp_safe) {
+      if (!thread->is_in_stack_range_excl((address)saved_fp, (address)sender_sp)) {
         return false;
       }
 
@@ -184,9 +175,7 @@ bool frame::safe_for_sender(JavaThread *thread) {
       // Validate the JavaCallWrapper an entry frame must have
       address jcw = (address)sender.entry_frame_call_wrapper();
 
-      bool jcw_safe = (jcw < thread->stack_base()) && (jcw > (address)sender.fp());
-
-      return jcw_safe;
+      return thread->is_in_stack_range_excl(jcw, (address)sender.fp());
     }
 
     // If the frame size is 0 something (or less) is bad because every nmethod has a non-zero frame size
@@ -493,12 +482,7 @@ bool frame::is_interpreted_frame_valid(JavaThread* thread) const {
   // validate locals
 
   address locals =  (address) *interpreter_frame_locals_addr();
-
-  if (locals >= thread->stack_base() || locals < (address) fp()) return false;
-
-  // We'd have to be pretty unlucky to be mislead at this point
-
-  return true;
+  return thread->is_in_stack_range_incl(locals, (address)fp());
 }
 
 BasicType frame::interpreter_frame_result(oop* oop_result, jvalue* value_result) {

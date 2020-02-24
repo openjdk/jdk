@@ -539,13 +539,6 @@ void os::breakpoint() {
   BREAKPOINT;
 }
 
-bool os::Solaris::valid_stack_address(Thread* thread, address sp) {
-  address  stackStart  = (address)thread->stack_base();
-  address  stackEnd    = (address)(stackStart - (address)thread->stack_size());
-  if (sp < stackStart && sp >= stackEnd) return true;
-  return false;
-}
-
 extern "C" void breakpoint() {
   // use debugger to set breakpoint here
 }

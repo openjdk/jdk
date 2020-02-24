@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 20209, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -326,7 +326,7 @@ inline static bool checkOverflow(sigcontext* uc,
                                  JavaThread* thread,
                                  address* stub) {
   // check if fault address is within thread stack
-  if (thread->on_local_stack(addr)) {
+  if (thread->is_in_full_stack(addr)) {
     // stack overflow
     if (thread->in_stack_yellow_reserved_zone(addr)) {
       thread->disable_stack_yellow_reserved_zone();

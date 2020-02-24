@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -119,7 +119,6 @@ class Solaris {
 
   static address handler_start, handler_end; // start and end pc of thr_sighndlrinfo
 
-  static bool valid_stack_address(Thread* thread, address sp);
   static bool valid_ucontext(Thread* thread, const ucontext_t* valid, const ucontext_t* suspect);
   static const ucontext_t* get_valid_uc_in_signal_handler(Thread* thread,
                                                     const ucontext_t* uc);

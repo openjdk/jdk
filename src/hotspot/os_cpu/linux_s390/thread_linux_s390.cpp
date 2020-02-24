@@ -63,7 +63,7 @@ bool JavaThread::pd_get_top_frame_for_profiling(frame* fr_addr, void* ucontext, 
 
     if (ret_frame.is_interpreted_frame()) {
       frame::z_ijava_state* istate = ret_frame.ijava_state_unchecked();
-      if (on_local_stack((address)istate)) {
+      if (is_in_full_stack((address)istate)) {
         return false;
       }
       const Method *m = (const Method*)(istate->method);

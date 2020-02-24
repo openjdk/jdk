@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -120,12 +120,12 @@ bool os::Solaris::valid_ucontext(Thread* thread, const ucontext_t* valid, const 
   }
 
   if (thread->is_Java_thread()) {
-    if (!valid_stack_address(thread, (address)suspect)) {
+    if (!thread->is_in_full_stack((address)suspect)) {
       DEBUG_ONLY(tty->print_cr("valid_ucontext: uc_link not in thread stack");)
       return false;
     }
     address _sp   = (address)((intptr_t)suspect->uc_mcontext.gregs[REG_SP] + STACK_BIAS);
-    if (!valid_stack_address(thread, _sp) ||
+    if (!thread->is_in_full_stack(_sp) ||
         !frame::is_valid_stack_pointer(((JavaThread*)thread)->base_of_stack_pointer(), (intptr_t*)_sp)) {
       DEBUG_ONLY(tty->print_cr("valid_ucontext: stackpointer not in thread stack");)
       return false;

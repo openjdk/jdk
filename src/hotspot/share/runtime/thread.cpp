@@ -1018,20 +1018,13 @@ void Thread::check_for_valid_safepoint_state() {
 }
 #endif // ASSERT
 
-// Check for adr in the live portion of our stack.
-bool Thread::is_in_stack(address adr) const {
-  assert(Thread::current() == this, "is_in_stack can only be called from current thread");
-  address end = os::current_stack_pointer();
-  return (stack_base() > adr && adr >= end);
-}
-
 // We had to move these methods here, because vm threads get into ObjectSynchronizer::enter
 // However, there is a note in JavaThread::is_lock_owned() about the VM threads not being
 // used for compilation in the future. If that change is made, the need for these methods
 // should be revisited, and they should be removed if possible.
 
 bool Thread::is_lock_owned(address adr) const {
-  return on_local_stack(adr);
+  return is_in_full_stack(adr);
 }
 
 bool Thread::set_as_starting_thread() {
@@ -1816,15 +1809,6 @@ bool JavaThread::reguard_stack(address cur_sp) {
 
 bool JavaThread::reguard_stack(void) {
   return reguard_stack(os::current_stack_pointer());
-}
-
-
-// Check for adr in the usable portion of this thread's stack.
-bool JavaThread::is_in_usable_stack(address adr) const {
-  size_t stack_guard_size = os::uses_stack_guard_pages() ? JavaThread::stack_guard_zone_size() : 0;
-  size_t usable_stack_size = _stack_size - stack_guard_size;
-
-  return ((stack_base() > adr) && (adr >= (stack_base() - usable_stack_size)));
 }
 
 void JavaThread::block_if_vm_exited() {

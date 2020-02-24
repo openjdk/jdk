@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,8 +58,9 @@ void UnhandledOops::dump_oops(UnhandledOops *list) {
 static Thread* unhandled_oop_print = NULL;
 
 void UnhandledOops::register_unhandled_oop(oop* op, address pc) {
-  if (!_thread->is_in_stack((address)op))
+  if (!_thread->is_in_live_stack((address)op)) {
     return;
+  }
 
   _level++;
   if (unhandled_oop_print == _thread) {
@@ -96,7 +97,7 @@ void UnhandledOops::allow_unhandled_oop(oop* op) {
 // oop list.  All oops given are assumed to be on the list.  If not,
 // there's a bug in the unhandled oop detector.
 void UnhandledOops::unregister_unhandled_oop(oop* op) {
-  if (!_thread->is_in_stack((address)op)) return;
+  if (!_thread->is_in_live_stack((address)op)) return;
 
   if (unhandled_oop_print == _thread) {
     for (int i=0; i < _level; i++) tty->print(" ");
@@ -117,7 +118,7 @@ void UnhandledOops::clear_unhandled_oops() {
     // If an entry is on the unhandled oop list but isn't on the stack
     // anymore, it must not have gotten unregistered properly and it's a bug
     // in the unhandled oop generator.
-    if(!_thread->is_in_stack((address)entry._oop_ptr)) {
+    if (!_thread->is_in_live_stack((address)entry._oop_ptr)) {
       tty->print_cr("oop_ptr is " INTPTR_FORMAT, p2i(entry._oop_ptr));
       tty->print_cr("thread is " INTPTR_FORMAT " from pc " INTPTR_FORMAT,
                      p2i(_thread), p2i(entry._pc));

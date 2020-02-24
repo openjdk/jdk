@@ -185,14 +185,12 @@ bool frame::safe_for_sender(JavaThread *thread) {
   }
 
   // unextended sp must be within the stack and above or equal sp
-  bool unextended_sp_safe = (_UNEXTENDED_SP < thread->stack_base()) &&
-                            (_UNEXTENDED_SP >= _SP);
-
-  if (!unextended_sp_safe) return false;
+  if (!thread->is_in_stack_range_incl(_UNEXTENDED_SP, _SP)) {
+    return false;
+  }
 
   // an fp must be within the stack and above (but not equal) sp
-  bool fp_safe = (_FP < thread->stack_base()) &&
-                 (_FP > _SP);
+  bool fp_safe = thread->is_in_stack_range_excl(_FP, _SP);
 
   // We know sp/unextended_sp are safe only fp is questionable here
 
@@ -251,10 +249,7 @@ bool frame::safe_for_sender(JavaThread *thread) {
 
     // an fp must be within the stack and above (but not equal) current frame's _FP
 
-    bool sender_fp_safe = (sender_fp < thread->stack_base()) &&
-                   (sender_fp > _FP);
-
-    if (!sender_fp_safe) {
+    if (!thread->is_in_stack_range_excl(sender_fp, _FP)) {
       return false;
     }
 
@@ -276,12 +271,9 @@ bool frame::safe_for_sender(JavaThread *thread) {
 
     if (sender.is_entry_frame()) {
       // Validate the JavaCallWrapper an entry frame must have
-
       address jcw = (address)sender.entry_frame_call_wrapper();
 
-      bool jcw_safe = (jcw < thread->stack_base()) && (jcw > sender_fp);
-
-      return jcw_safe;
+      return thread->is_in_stack_range_excl(jcw, sender_fp);
     }
 
     // If the frame size is 0 something (or less) is bad because every nmethod has a non-zero frame size
@@ -670,11 +662,7 @@ bool frame::is_interpreted_frame_valid(JavaThread* thread) const {
   // validate locals
 
   address locals =  (address) *interpreter_frame_locals_addr();
-
-  if (locals >= thread->stack_base() || locals < (address) fp()) return false;
-
-  // We'd have to be pretty unlucky to be mislead at this point
-  return true;
+  return thread->is_in_stack_range_incl(locals, (address)fp());
 }
 
 

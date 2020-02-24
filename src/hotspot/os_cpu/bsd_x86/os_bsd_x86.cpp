@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -520,7 +520,7 @@ JVM_handle_bsd_signal(int sig,
       address addr = (address) info->si_addr;
 
       // check if fault address is within thread stack
-      if (thread->on_local_stack(addr)) {
+      if (thread->is_in_full_stack(addr)) {
         // stack overflow
         if (thread->in_stack_yellow_reserved_zone(addr)) {
           if (thread->thread_state() == _thread_in_Java) {

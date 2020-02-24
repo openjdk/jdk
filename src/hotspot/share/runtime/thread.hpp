@@ -684,17 +684,42 @@ class Thread: public ThreadShadow {
   // jvmtiRedefineClasses support
   void metadata_handles_do(void f(Metadata*));
 
+ private:
+  // Check if address is within the given range of this thread's
+  // stack:  stack_base() > adr >/>= limit
+  // The check is inclusive of limit if passed true, else exclusive.
+  bool is_in_stack_range(address adr, address limit, bool inclusive) const {
+    assert(stack_base() > limit && limit >= stack_end(), "limit is outside of stack");
+    return stack_base() > adr && (inclusive ? adr >= limit : adr > limit);
+  }
+
+ public:
   // Used by fast lock support
   virtual bool is_lock_owned(address adr) const;
 
+  // Check if address is within the given range of this thread's
+  // stack:  stack_base() > adr >= limit
+  bool is_in_stack_range_incl(address adr, address limit) const {
+    return is_in_stack_range(adr, limit, true);
+  }
+
+  // Check if address is within the given range of this thread's
+  // stack:  stack_base() > adr > limit
+  bool is_in_stack_range_excl(address adr, address limit) const {
+    return is_in_stack_range(adr, limit, false);
+  }
+
+  // Check if address is in the stack mapped to this thread. Used mainly in
+  // error reporting (so has to include guard zone) and frame printing.
+  bool is_in_full_stack(address adr) const {
+    return is_in_stack_range_incl(adr, stack_end());
+  }
+
   // Check if address is in the live stack of this thread (not just for locks).
   // Warning: can only be called by the current thread on itself.
-  bool is_in_stack(address adr) const;
-
-  // Check if address in the stack mapped to this thread. Used mainly in
-  // error reporting (so has to include guard zone) and frame printing.
-  bool on_local_stack(address adr) const {
-    return (_stack_base > adr && adr >= stack_end());
+  bool is_in_live_stack(address adr) const {
+    assert(Thread::current() == this, "is_in_live_stack can only be called from current thread");
+    return is_in_stack_range_incl(adr, os::current_stack_pointer());
   }
 
   // Sets this thread as starting thread. Returns failure if thread
@@ -1649,7 +1674,7 @@ class JavaThread: public Thread {
     assert(_stack_reserved_zone_size == 0, "This should be called only once.");
     _stack_reserved_zone_size = s;
   }
-  address stack_reserved_zone_base() {
+  address stack_reserved_zone_base() const {
     return (address)(stack_end() +
                      (stack_red_zone_size() + stack_yellow_zone_size() + stack_reserved_zone_size()));
   }
@@ -1732,8 +1757,10 @@ class JavaThread: public Thread {
 
   // Check if address is in the usable part of the stack (excludes protected
   // guard pages). Can be applied to any thread and is an approximation for
-  // using is_in_stack when the query has to happen from another thread.
-  bool is_in_usable_stack(address adr) const;
+  // using is_in_live_stack when the query has to happen from another thread.
+  bool is_in_usable_stack(address adr) const {
+    return is_in_stack_range_incl(adr, stack_reserved_zone_base());
+  }
 
   // Misc. accessors/mutators
   void set_do_not_unlock(void)                   { _do_not_unlock_if_synchronized = true; }

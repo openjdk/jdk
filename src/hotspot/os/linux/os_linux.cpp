@@ -718,7 +718,6 @@ void os::Linux::expand_stack_to(address bottom) {
 bool os::Linux::manually_expand_stack(JavaThread * t, address addr) {
   assert(t!=NULL, "just checking");
   assert(t->osthread()->expanding_stack(), "expand should be set");
-  assert(t->stack_base() != NULL, "stack_base was not initialized");
 
   if (t->is_in_usable_stack(addr)) {
     sigset_t mask_all, old_sigset;

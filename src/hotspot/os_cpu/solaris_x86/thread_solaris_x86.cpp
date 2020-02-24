@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,12 +84,12 @@ bool JavaThread::pd_get_top_frame(frame* fr_addr,
 
   // If sp and fp are nonsense just leave them out
 
-  if (!jt->on_local_stack((address)ret_sp)) {
+  if (!jt->is_in_full_stack((address)ret_sp)) {
     ret_sp = NULL;
     ret_fp = NULL;
   } else {
     // sp is reasonable is fp reasonable?
-    if ((address)ret_fp >= jt->stack_base() || ret_fp < ret_sp) {
+    if (!jt->is_in_stack_range_incl((address)ret_fp, ret_sp)) {
       ret_fp = NULL;
     }
   }
@@ -102,4 +102,3 @@ bool JavaThread::pd_get_top_frame(frame* fr_addr,
 }
 
 void JavaThread::cache_global_variables() { }
-
