@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,8 +46,12 @@
 #include "opto/subnode.hpp"
 #include "opto/type.hpp"
 #include "runtime/handles.inline.hpp"
+#include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include "utilities/xmlstream.hpp"
+#ifdef X86
+#include "c2_intelJccErratum_x86.hpp"
+#endif
 
 #ifndef PRODUCT
 #define DEBUG_ARG(x) , x
@@ -140,6 +144,13 @@ void Compile::Output() {
   // Otherwise liveness based spilling will fail
   BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
   bs->late_barrier_analysis();
+
+#ifdef X86
+  if (VM_Version::has_intel_jcc_erratum()) {
+    int extra_padding = IntelJccErratum::tag_affected_machnodes(this, _cfg, _regalloc);
+    buf_sizes._code += extra_padding;
+  }
+#endif
 
   // Complete sizing of codebuffer
   CodeBuffer* cb = init_buffer(buf_sizes);
@@ -279,6 +290,13 @@ void Compile::shorten_branches(uint* blk_starts, BufferSizingData& buf_sizes) {
       if (nj->is_Mach()) {
         MachNode *mach = nj->as_Mach();
         blk_size += (mach->alignment_required() - 1) * relocInfo::addr_unit(); // assume worst case padding
+#ifdef X86
+        if (VM_Version::has_intel_jcc_erratum() && IntelJccErratum::is_jcc_erratum_branch(block, mach, j)) {
+          // Conservatively add worst case padding
+          blk_size += IntelJccErratum::largest_jcc_size();
+        }
+#endif
+
         reloc_size += mach->reloc();
         if (mach->is_MachCall()) {
           // add size information for trampoline stub
@@ -1223,6 +1241,12 @@ void Compile::fill_buffer(CodeBuffer* cb, uint* blk_starts) {
           // Avoid back to back some instructions.
           padding = nop_size;
         }
+#ifdef X86
+        if (mach->flags() & Node::Flag_intel_jcc_erratum) {
+          assert(padding == 0, "can't have contradicting padding requirements");
+          padding = IntelJccErratum::compute_padding(current_offset, mach, block, j, _regalloc);
+        }
+#endif
 
         if (padding > 0) {
           assert((padding % nop_size) == 0, "padding is not a multiple of NOP size");

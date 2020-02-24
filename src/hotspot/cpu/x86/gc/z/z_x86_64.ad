@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -30,16 +30,29 @@ source_hpp %{
 
 source %{
 
+#include "c2_intelJccErratum_x86.hpp"
+
 static void z_load_barrier(MacroAssembler& _masm, const MachNode* node, Address ref_addr, Register ref, Register tmp, bool weak) {
   ZLoadBarrierStubC2* const stub = ZLoadBarrierStubC2::create(node, ref_addr, ref, tmp, weak);
-  __ testptr(ref, Address(r15_thread, ZThreadLocalData::address_bad_mask_offset()));
-  __ jcc(Assembler::notZero, *stub->entry());
+  {
+    IntelJccErratumAlignment intel_alignment(_masm, 10 /* jcc_size */);
+    __ testptr(ref, Address(r15_thread, ZThreadLocalData::address_bad_mask_offset()));
+    __ jcc(Assembler::notZero, *stub->entry());
+  }
   __ bind(*stub->continuation());
 }
 
-static void z_load_barrier_slow_path(MacroAssembler& _masm, const MachNode* node, Address ref_addr, Register ref, Register tmp) {
+static void z_load_barrier_cmpxchg(MacroAssembler& _masm, const MachNode* node, Address ref_addr, Register ref, Register tmp, Label& good) {
   ZLoadBarrierStubC2* const stub = ZLoadBarrierStubC2::create(node, ref_addr, ref, tmp, false /* weak */);
-  __ jmp(*stub->entry());
+  {
+    IntelJccErratumAlignment intel_alignment(_masm, 10 /* jcc_size */);
+    __ testptr(ref, Address(r15_thread, ZThreadLocalData::address_bad_mask_offset()));
+    __ jcc(Assembler::zero, good);
+  }
+  {
+    IntelJccErratumAlignment intel_alignment(_masm, 5 /* jcc_size */);
+    __ jmp(*stub->entry());
+  }
   __ bind(*stub->continuation());
 }
 
@@ -101,9 +114,7 @@ instruct zCompareAndExchangeP(memory mem, rax_RegP oldval, rRegP newval, rRegP t
     __ cmpxchgptr($newval$$Register, $mem$$Address);
     if (barrier_data() != ZLoadBarrierElided) {
       Label good;
-      __ testptr($oldval$$Register, Address(r15_thread, ZThreadLocalData::address_bad_mask_offset()));
-      __ jcc(Assembler::zero, good);
-      z_load_barrier_slow_path(_masm, this, $mem$$Address, $oldval$$Register, $tmp$$Register);
+      z_load_barrier_cmpxchg(_masm, this, $mem$$Address, $oldval$$Register, $tmp$$Register, good);
       __ movptr($oldval$$Register, $tmp$$Register);
       __ lock();
       __ cmpxchgptr($newval$$Register, $mem$$Address);
@@ -133,9 +144,7 @@ instruct zCompareAndSwapP(rRegI res, memory mem, rRegP newval, rRegP tmp, rFlags
     __ cmpxchgptr($newval$$Register, $mem$$Address);
     if (barrier_data() != ZLoadBarrierElided) {
       Label good;
-      __ testptr($oldval$$Register, Address(r15_thread, ZThreadLocalData::address_bad_mask_offset()));
-      __ jcc(Assembler::zero, good);
-      z_load_barrier_slow_path(_masm, this, $mem$$Address, $oldval$$Register, $tmp$$Register);
+      z_load_barrier_cmpxchg(_masm, this, $mem$$Address, $oldval$$Register, $tmp$$Register, good);
       __ movptr($oldval$$Register, $tmp$$Register);
       __ lock();
       __ cmpxchgptr($newval$$Register, $mem$$Address);

@@ -293,6 +293,8 @@ protected:
   static int _model;
   static int _stepping;
 
+  static bool _has_intel_jcc_erratum;
+
   static address   _cpuinfo_segv_addr; // address of instruction which causes SEGV
   static address   _cpuinfo_cont_addr; // address of instruction after the one which causes SEGV
 
@@ -498,6 +500,8 @@ enum Extended_Family {
     uint result = threads_per_core();
     return result;
   }
+
+  static bool compute_has_intel_jcc_erratum();
 
   static uint64_t feature_flags() {
     uint64_t result = 0;
@@ -888,6 +892,12 @@ public:
     }
     return false;
   }
+
+  // This checks if the JVM is potentially affected by an erratum on Intel CPUs (SKX102)
+  // that causes unpredictable behaviour when jcc crosses 64 byte boundaries. Its microcode
+  // mitigation causes regressions when jumps or fused conditional branches cross or end at
+  // 32 byte boundaries.
+  static bool has_intel_jcc_erratum() { return _has_intel_jcc_erratum; }
 
   // AMD features
   static bool supports_3dnow_prefetch()    { return (_features & CPU_3DNOW_PREFETCH) != 0; }
