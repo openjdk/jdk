@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,11 +26,10 @@
 package jdk.javadoc.internal.doclets.toolkit.util;
 
 /**
- * Abstraction for simple relative URIs, consisting of a path,
- * an optional query, and an optional fragment. DocLink objects can
- * be created by the constructors below or from a DocPath using the
- * convenience methods, {@link DocPath#fragment fragment} and
- * {@link DocPath#query query}.
+ * Abstraction for simple relative URIs, consisting of a path and an
+ * optional fragment. DocLink objects can be created by the constructors
+ * below or from a DocPath using the convenience
+ * {@link DocPath#fragment fragment} method.
  *
  *  <p><b>This is NOT part of any supported API.
  *  If you write code that depends on this, you do so at your own risk.
@@ -40,7 +39,6 @@ package jdk.javadoc.internal.doclets.toolkit.util;
  */
 public class DocLink {
     final DocPath path;
-    final String query;
     final String fragment;
 
     /**
@@ -49,7 +47,7 @@ public class DocLink {
      * @return the DocLink
      */
     public static DocLink fragment(String fragment) {
-        return new DocLink((DocPath) null, (String) null, fragment);
+        return new DocLink((DocPath) null, fragment);
     }
 
     /**
@@ -57,31 +55,28 @@ public class DocLink {
      * @param path the path
      */
     public DocLink(DocPath path) {
-        this(path, null, null);
+        this(path, null);
     }
 
     /**
-     * Creates a DocLink representing the URI {@code path?query#fragment}.
+     * Creates a DocLink representing the URI {@code path#fragment}.
      * Any of the component parts may be null.
      * @param path the path
-     * @param query the query
      * @param fragment the fragment
      */
-    public DocLink(DocPath path, String query, String fragment) {
+    public DocLink(DocPath path, String fragment) {
         this.path = path;
-        this.query = query;
         this.fragment = fragment;
     }
 
     /**
-     * Creates a DocLink representing the URI {@code path?query#fragment}.
+     * Creates a DocLink representing the URI {@code path#fragment}.
      * Any of the component parts may be null.
      * @param path the path
-     * @param query the query
      * @param fragment the fragment
      */
-    public DocLink(String path, String query, String fragment) {
-        this(DocPath.create(path), query, fragment);
+    public DocLink(String path, String fragment) {
+        this(DocPath.create(path), fragment);
     }
 
     /**
@@ -101,10 +96,10 @@ public class DocLink {
 
         DocPath newPath = base.relativize(path);
         // avoid generating an empty link by using the basename of the path if necessary
-        if (newPath.isEmpty() && isEmpty(query) && isEmpty(fragment)) {
+        if (newPath.isEmpty() && isEmpty(fragment)) {
             newPath = path.basename();
         }
-        return new DocLink(newPath, query, fragment);
+        return new DocLink(newPath, fragment);
     }
 
     // return true if the path begins <letters>://
@@ -121,21 +116,19 @@ public class DocLink {
     }
 
     /**
-     * Returns the link in the form "path?query#fragment", omitting any empty
+     * Returns the link in the form "path#fragment", omitting any empty
      * components.
      * @return the string
      */
     @Override
     public String toString() {
         // common fast path
-        if (path != null && isEmpty(query) && isEmpty(fragment))
+        if (path != null && isEmpty(fragment))
             return path.getPath();
 
         StringBuilder sb = new StringBuilder();
         if (path != null)
             sb.append(path.getPath());
-        if (!isEmpty(query))
-            sb.append("?").append(query);
         if (!isEmpty(fragment))
             sb.append("#").append(fragment);
         return sb.toString();

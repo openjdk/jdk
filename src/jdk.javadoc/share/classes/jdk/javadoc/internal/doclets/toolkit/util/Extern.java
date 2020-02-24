@@ -190,7 +190,7 @@ public class Extern {
         DocPath p = fnd.relative ?
                 relativepath.resolve(fnd.path).resolve(filename) :
                 fnd.path.resolve(filename);
-        return new DocLink(p, "is-external=true", memberName);
+        return new DocLink(p, memberName);
     }
 
     /**

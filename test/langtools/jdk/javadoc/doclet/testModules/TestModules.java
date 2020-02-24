@@ -1246,13 +1246,13 @@ public class TestModules extends JavadocTester {
 
     void checkLinkOffline() {
         checkOutput("moduleB/testpkg3mdlB/package-summary.html", true,
-                "<a href=\"https://docs.oracle.com/javase/9/docs/api/java.base/java/lang/String.html?is-external=true\" "
+                "<a href=\"https://docs.oracle.com/javase/9/docs/api/java.base/java/lang/String.html\" "
                 + "title=\"class or interface in java.lang\" class=\"externalLink\"><code>Link to String Class</code></a>");
         checkOutput("moduleB/testpkg3mdlB/package-summary.html", true,
-                "<a href=\"https://docs.oracle.com/javase/9/docs/api/java.base/java/lang/package-summary.html?is-external=true\" "
+                "<a href=\"https://docs.oracle.com/javase/9/docs/api/java.base/java/lang/package-summary.html\" "
                 + "class=\"externalLink\"><code>Link to java.lang package</code></a>");
         checkOutput("moduleB/testpkg3mdlB/package-summary.html", true,
-                "<a href=\"https://docs.oracle.com/javase/9/docs/api/java.base/module-summary.html?is-external=true\" "
+                "<a href=\"https://docs.oracle.com/javase/9/docs/api/java.base/module-summary.html\" "
                 + "class=\"externalLink\"><code>Link to java.base module</code></a>");
     }
 
