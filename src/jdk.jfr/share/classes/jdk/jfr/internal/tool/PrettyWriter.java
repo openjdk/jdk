@@ -235,14 +235,16 @@ public final class PrettyWriter extends EventPrintWriter {
         List<RecordedFrame> frames = stackTrace.getFrames();
         indent();
         int i = 0;
-        while (i < frames.size() && i < getStackDepth()) {
+        int depth = 0;
+        while (i < frames.size() && depth < getStackDepth()) {
             RecordedFrame frame = frames.get(i);
-            if (frame.isJavaFrame()) {
+            if (frame.isJavaFrame() && !frame.getMethod().isHidden()) {
                 printIndent();
                 printValue(frame, null, "");
                 println();
-                i++;
+                depth++;
             }
+            i++;
         }
         if (stackTrace.isTruncated() || i == getStackDepth()) {
             printIndent();
