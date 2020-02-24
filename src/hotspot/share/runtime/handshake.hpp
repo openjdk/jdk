@@ -27,8 +27,8 @@
 
 #include "memory/allocation.hpp"
 #include "memory/iterator.hpp"
-#include "runtime/flags/flagSetting.hpp"
 #include "runtime/semaphore.hpp"
+#include "utilities/autoRestore.hpp"
 
 class HandshakeOperation;
 class JavaThread;
@@ -92,7 +92,7 @@ public:
 
   void process_by_self() {
     if (!_thread_in_process_handshake) {
-      FlagSetting fs(_thread_in_process_handshake, true);
+      AutoModifyRestore<bool> temporarily(_thread_in_process_handshake, true);
       process_self_inner();
     }
   }

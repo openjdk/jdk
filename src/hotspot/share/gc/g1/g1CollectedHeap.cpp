@@ -95,13 +95,13 @@
 #include "oops/compressedOops.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
-#include "runtime/flags/flagSetting.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/align.hpp"
+#include "utilities/autoRestore.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/stack.inline.hpp"
@@ -1940,7 +1940,7 @@ void G1CollectedHeap::allocate_dummy_regions() {
 
   // _filler_array_max_size is set to humongous object threshold
   // but temporarily change it to use CollectedHeap::fill_with_object().
-  SizeTFlagSetting fs(_filler_array_max_size, word_size);
+  AutoModifyRestore<size_t> temporarily(_filler_array_max_size, word_size);
 
   for (uintx i = 0; i < G1DummyRegionsPerGC; ++i) {
     // Let's use the existing mechanism for the allocation

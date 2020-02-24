@@ -64,7 +64,6 @@
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/deoptimization.hpp"
-#include "runtime/flags/flagSetting.hpp"
 #include "runtime/flags/jvmFlagConstraintList.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"
@@ -77,6 +76,7 @@
 #include "runtime/vmOperations.hpp"
 #include "services/memoryService.hpp"
 #include "utilities/align.hpp"
+#include "utilities/autoRestore.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/events.hpp"
@@ -298,7 +298,7 @@ void initialize_basic_type_klass(Klass* k, TRAPS) {
 void Universe::genesis(TRAPS) {
   ResourceMark rm(THREAD);
 
-  { FlagSetting fs(_bootstrapping, true);
+  { AutoModifyRestore<bool> temporarily(_bootstrapping, true);
 
     { MutexLocker mc(THREAD, Compile_lock);
 

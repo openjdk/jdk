@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,28 +22,35 @@
  *
  */
 
-#ifndef SHARE_RUNTIME_FLAGS_FLAGSETTING_HPP
-#define SHARE_RUNTIME_FLAGS_FLAGSETTING_HPP
+#ifndef SHARE_UTILITIES_AUTORESTORE_HPP
+#define SHARE_UTILITIES_AUTORESTORE_HPP
 
-#include "utilities/autoRestore.hpp"
+#include "memory/allocation.hpp"
 
-// Legacy use of FlagSetting and UIntFlagSetting to temporarily change a debug
-// flag/option in the current (local) scope.
+// A simplistic template providing a general save-restore pattern through a
+// local auto/stack object (scope).
 //
-// Example:
-// {
-//   FlagSetting temporarily(DebugThisAndThat, true);
-//   . . .
-// }
+template<typename T> class AutoSaveRestore : public StackObj {
+public:
+  AutoSaveRestore(T &loc) : _loc(loc) {
+    _value = loc;
+  }
+  ~AutoSaveRestore() {
+    _loc = _value;
+  }
+private:
+  T &_loc;
+  T _value;
+};
+
+// A simplistic template providing a general modify-restore pattern through a
+// local auto/stack object (scope).
 //
-// The previous/original value is restored when leaving the scope.
+template<typename T> class AutoModifyRestore : private AutoSaveRestore<T> {
+public:
+  AutoModifyRestore(T &loc, T value) : AutoSaveRestore<T>(loc) {
+    loc = value;
+  }
+};
 
-typedef AutoModifyRestore<bool> FlagSetting;
-typedef AutoModifyRestore<uint> UIntFlagSetting;
-
-// Legacy use of FLAG_GUARD. Retained in the code to help identify use-cases
-// that should be addressed when this file is removed.
-
-#define FLAG_GUARD(f) f ## _guard(f)
-
-#endif // SHARE_RUNTIME_FLAGS_FLAGSETTING_HPP
+#endif // SHARE_UTILITIES_AUTORESTORE_HPP
