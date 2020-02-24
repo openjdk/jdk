@@ -636,6 +636,12 @@ public class GenerateJfrFiles {
             }
             out.write("  }");
         }
+
+        // Avoid clash with static commit() method
+        if (event.fields.isEmpty()) {
+            return;
+        }
+
         out.write("");
         StringJoiner sj = new StringJoiner(",\n                     ");
         if (event.startTime) {
