@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,6 +75,7 @@ import test.java.time.AbstractTest;
 
 /**
  * Test.
+ * @bug 8239520
  */
 @Test
 public class TestDateTimeValueRange extends AbstractTest {
@@ -138,6 +139,11 @@ public class TestDateTimeValueRange extends AbstractTest {
         ValueRange.of(1, 31, 28);
     }
 
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void test_of_longlonglong_minGtSmallestMax() {
+        ValueRange.of(5, 2, 10);
+    }
+
     //-----------------------------------------------------------------------
     // of(long,long,long,long)
     //-----------------------------------------------------------------------
@@ -178,6 +184,11 @@ public class TestDateTimeValueRange extends AbstractTest {
                 {2, 1, 28, 31},
                 {2, 1, 31, 28},
                 {12, 13, 1, 2},
+
+                {10, 11, 0, 12}, // smallest minimum is greater than the smallest maximum
+                {0, 1, 11, 10}, // smallest maximum is greater than the largest maximum
+                {0, 11, 1, 10}, // largest minimum is greater than the largest maximum
+                {1, 0, 10, 11}, // smallest minimum is greater than the largest minimum
         };
     }
 

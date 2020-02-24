@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -145,6 +145,9 @@ public final class ValueRange implements Serializable {
      *  or the smallest maximum is greater than the largest maximum
      */
     public static ValueRange of(long min, long maxSmallest, long maxLargest) {
+        if (min > maxSmallest) {
+            throw new IllegalArgumentException("Minimum value must be less than smallest maximum value");
+        }
         return of(min, min, maxSmallest, maxLargest);
     }
 
@@ -160,8 +163,9 @@ public final class ValueRange implements Serializable {
      * @return the ValueRange for smallest min, largest min, smallest max, largest max, not null
      * @throws IllegalArgumentException if
      *     the smallest minimum is greater than the smallest maximum,
-     *  or the smallest maximum is greater than the largest maximum
-     *  or the largest minimum is greater than the largest maximum
+     *  or the smallest maximum is greater than the largest maximum,
+     *  or the largest minimum is greater than the largest maximum,
+     *  or the smallest minimum is greater than the largest minimum
      */
     public static ValueRange of(long minSmallest, long minLargest, long maxSmallest, long maxLargest) {
         if (minSmallest > minLargest) {
@@ -171,7 +175,10 @@ public final class ValueRange implements Serializable {
             throw new IllegalArgumentException("Smallest maximum value must be less than largest maximum value");
         }
         if (minLargest > maxLargest) {
-            throw new IllegalArgumentException("Minimum value must be less than maximum value");
+            throw new IllegalArgumentException("Largest minimum value must be less than largest maximum value");
+        }
+        if (minSmallest > maxSmallest) {
+            throw new IllegalArgumentException("Smallest minimum value must be less than smallest maximum value");
         }
         return new ValueRange(minSmallest, minLargest, maxSmallest, maxLargest);
     }
