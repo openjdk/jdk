@@ -1334,14 +1334,23 @@ void PhaseMacroExpand::expand_allocate_common(
   if (!allocation_has_use) {
     InitializeNode* init = alloc->initialization();
     if (init != NULL) {
-      yank_initalize_node(init);
-      assert(init->outcnt() == 0, "all uses must be deleted");
-      _igvn.remove_dead_node(init);
+      init->remove(&_igvn);
     }
     if (expand_fast_path && (initial_slow_test == NULL)) {
       // Remove allocation node and return.
       // Size is a non-negative constant -> no initial check needed -> directly to fast path.
       // Also, no usages -> empty fast path -> no fall out to slow path -> nothing left.
+#ifndef PRODUCT
+      if (PrintEliminateAllocations) {
+        tty->print("NotUsed ");
+        Node* res = alloc->proj_out_or_null(TypeFunc::Parms);
+        if (res != NULL) {
+          res->dump();
+        } else {
+          alloc->dump();
+        }
+      }
+#endif
       yank_alloc_node(alloc);
       return;
     }
@@ -1579,6 +1588,16 @@ void PhaseMacroExpand::yank_alloc_node(AllocateNode* alloc) {
   Node* i_o  = alloc->in(TypeFunc::I_O);
 
   extract_call_projections(alloc);
+  if (_resproj != NULL) {
+    for (DUIterator_Fast imax, i = _resproj->fast_outs(imax); i < imax; i++) {
+      Node* use = _resproj->fast_out(i);
+      use->isa_MemBar()->remove(&_igvn);
+      --imax;
+      --i; // back up iterator
+    }
+    assert(_resproj->outcnt() == 0, "all uses must be deleted");
+    _igvn.remove_dead_node(_resproj);
+  }
   if (_fallthroughcatchproj != NULL) {
     migrate_outs(_fallthroughcatchproj, ctrl);
     _igvn.remove_dead_node(_fallthroughcatchproj);
@@ -1608,6 +1627,14 @@ void PhaseMacroExpand::yank_alloc_node(AllocateNode* alloc) {
     _igvn.rehash_node_delayed(_ioproj_catchall);
     _ioproj_catchall->set_req(0, top());
   }
+#ifndef PRODUCT
+  if (PrintEliminateAllocations) {
+    if (alloc->is_AllocateArray()) {}
+      tty->print_cr("++++ Eliminated: %d AllocateArray", alloc->_idx);
+    } else {
+      tty->print_cr("++++ Eliminated: %d Allocate", alloc->_idx);
+    }
+#endif
   _igvn.remove_dead_node(alloc);
 }
 
@@ -1709,26 +1736,6 @@ void PhaseMacroExpand::expand_dtrace_alloc_probe(AllocateNode* alloc, Node* oop,
     transform_later(ctrl);
     rawmem = new ProjNode(call, TypeFunc::Memory);
     transform_later(rawmem);
-  }
-}
-
-// Remove InitializeNode without use
-void PhaseMacroExpand::yank_initalize_node(InitializeNode* initnode) {
-  assert(initnode->proj_out_or_null(TypeFunc::Parms) == NULL, "No uses allowed");
-
-  Node* ctrl_out  = initnode->proj_out_or_null(TypeFunc::Control);
-  Node* mem_out   = initnode->proj_out_or_null(TypeFunc::Memory);
-
-  // Move all uses of each to
-  if (ctrl_out != NULL ) {
-    migrate_outs(ctrl_out, initnode->in(TypeFunc::Control));
-    _igvn.remove_dead_node(ctrl_out);
-  }
-
-  // Move all uses of each to
-  if (mem_out != NULL ) {
-    migrate_outs(mem_out, initnode->in(TypeFunc::Memory));
-    _igvn.remove_dead_node(mem_out);
   }
 }
 
