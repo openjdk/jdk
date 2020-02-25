@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@ import jdk.jfr.AnnotationElement;
 import jdk.jfr.DataAmount;
 import jdk.jfr.Frequency;
 import jdk.jfr.MemoryAddress;
+import jdk.jfr.Name;
 import jdk.jfr.Percentage;
 import jdk.jfr.ValueDescriptor;
 import jdk.jfr.consumer.RecordedClass;
@@ -143,15 +144,17 @@ public final class PrettyWriter extends EventPrintWriter {
 
     private void printAnnotations(int commentIndex, List<AnnotationElement> annotations) {
         for (AnnotationElement a : annotations) {
-            printIndent();
-            print("@");
-            print(makeSimpleType(a.getTypeName()));
-            List<ValueDescriptor> vs = a.getValueDescriptors();
-            if (!vs.isEmpty()) {
-                printAnnotation(a);
-                printCommentRef(commentIndex, a.getTypeId());
-            } else {
-                println();
+            if (!Name.class.getName().equals(a.getTypeName())) {
+                printIndent();
+                print("@");
+                print(makeSimpleType(a.getTypeName()));
+                List<ValueDescriptor> vs = a.getValueDescriptors();
+                if (!vs.isEmpty()) {
+                    printAnnotation(a);
+                    printCommentRef(commentIndex, a.getTypeId());
+                } else {
+                    println();
+                }
             }
         }
     }
