@@ -25,9 +25,9 @@
  * @test
  * @bug 8237581
  * @summary Testing allocation expansion when there is no use of the allocation
- * @run main/othervm -Xbatch -XX:+PrintCompilation -XX:+PrintEliminateAllocations -XX:CompileCommand=compileonly,compiler.allocation.TestAllocation::test*
+ * @run main/othervm -Xbatch -XX:+IgnoreUnrecognizedVMOptions -XX:+PrintCompilation -XX:+PrintEliminateAllocations -XX:CompileCommand=compileonly,compiler.allocation.TestAllocation::test*
  *                   compiler.allocation.TestAllocation
- * @run main/othervm -Xbatch -XX:+PrintCompilation -XX:+PrintEliminateAllocations -XX:-DoEscapeAnalysis -XX:CompileCommand=compileonly,compiler.allocation.TestAllocation::test*
+ * @run main/othervm -Xbatch -XX:+IgnoreUnrecognizedVMOptions -XX:+PrintCompilation -XX:+PrintEliminateAllocations -XX:-DoEscapeAnalysis -XX:CompileCommand=compileonly,compiler.allocation.TestAllocation::test*
  *                   compiler.allocation.TestAllocation
  */
 
