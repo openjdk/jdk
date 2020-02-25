@@ -96,6 +96,27 @@ AC_DEFUN([UTIL_DEFUN_NAMED],
 ])
 
 ###############################################################################
+# Assert that a programmatic condition holds. If not, exit with an error message.
+# Check that two strings are equal.
+#
+# $1: The actual string found
+# $2: The expected string
+# $3: An message to print in case of failure [optional]
+#
+AC_DEFUN([UTIL_ASSERT_STRING_EQUALS],
+[
+  ASSERTION_MSG="m4_normalize([$3])"
+  if test "x[$1]" != "x[$2]"; then
+    $ECHO Assertion failed: Actual value '[$1]' \("[$1]"\) did not match \
+        expected value '[$2]' \("[$2]"\)
+    if test "x$ASSERTION_MSG" != x; then
+      $ECHO Assertion message: "$ASSERTION_MSG"
+    fi
+    exit 1
+  fi
+])
+
+###############################################################################
 # Check if a list of space-separated words are selected only from a list of
 # space-separated legal words. Typical use is to see if a user-specified
 # set of words is selected from a set of legal words.
