@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1374,7 +1374,7 @@ LRESULT AwtComponent::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
       {
             HDC hDC;
             // First, release the DCs scheduled for deletion
-            ReleaseDCList(GetHWnd(), passiveDCList);
+            ReleaseDCList(passiveDCList);
 
             GetDCReturnStruct *returnStruct = new GetDCReturnStruct;
             returnStruct->gdiLimitReached = FALSE;
@@ -1402,7 +1402,7 @@ LRESULT AwtComponent::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
       {
             HDC hDC = (HDC)wParam;
             MoveDCToPassiveList(hDC, GetHWnd());
-            ReleaseDCList(GetHWnd(), passiveDCList);
+            ReleaseDCList(passiveDCList);
             mr = mrConsume;
             break;
       }
@@ -1411,7 +1411,7 @@ LRESULT AwtComponent::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
             // Called during Component destruction.  Gets current list of
             // DC's associated with Component and releases each DC.
             ReleaseDCList(GetHWnd(), activeDCList);
-            ReleaseDCList(GetHWnd(), passiveDCList);
+            ReleaseDCList(passiveDCList);
             mr = mrConsume;
             break;
       }
@@ -7436,6 +7436,19 @@ DCItem *DCList::RemoveAllDCs(HWND hWnd)
     return newListPtr;
 }
 
+/**
+ * Remove all DCs from the DC list.  Return the list of those
+ * DC's to the caller (which will then probably want to
+ * call ReleaseDC() for the returned DCs).
+ */
+DCItem *DCList::RemoveAllDCs()
+{
+    listLock.Enter();
+    DCItem *newListPtr = head;
+    head = NULL;
+    listLock.Leave();
+    return newListPtr;
+}
 
 /**
  * Realize palettes of all existing HDC objects
@@ -7458,8 +7471,7 @@ void MoveDCToPassiveList(HDC hDC, HWND hWnd) {
     }
 }
 
-void ReleaseDCList(HWND hwnd, DCList &list) {
-    DCItem *removedDCs = list.RemoveAllDCs(hwnd);
+static void ReleaseDCList(DCItem *removedDCs) {
     while (removedDCs) {
         DCItem *tmpDCList = removedDCs;
         DASSERT(::GetObjectType(tmpDCList->hDC) == OBJ_DC);
@@ -7472,4 +7484,12 @@ void ReleaseDCList(HWND hwnd, DCList &list) {
         removedDCs = removedDCs->next;
         delete tmpDCList;
     }
+}
+
+void ReleaseDCList(HWND hwnd, DCList &list) {
+    ReleaseDCList(list.RemoveAllDCs(hwnd));
+}
+
+void ReleaseDCList(DCList &list) {
+    ReleaseDCList(list.RemoveAllDCs());
 }
