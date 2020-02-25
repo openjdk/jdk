@@ -245,7 +245,7 @@ AC_DEFUN([UTIL_ALIASED_ARG_ENABLE],
     # Use m4 to strip initial -- from target ($2), convert - to _, prefix enable_
     # to new alias name, and create a shell variable assignment,
     # e.g.: enable_old_style="$enable_new_alias"
-    translit(patsubst($2, --), -, _)="$[enable_]translit($1, -, _)"
+    m4_translit(m4_bpatsubst($2, --), -, _)="$[enable_]m4_translit($1, -, _)"
   ])
 ])
 

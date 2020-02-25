@@ -180,21 +180,25 @@ AC_DEFUN_ONCE([HELP_PRINT_ADDITIONAL_HELP_AND_EXIT],
   if test "x$CONFIGURE_PRINT_ADDITIONAL_HELP" != x; then
 
     # Print available toolchains
-    $PRINTF "The following toolchains are available as arguments to --with-toolchain-type.\n"
-    $PRINTF "Which are valid to use depends on the build platform.\n"
+    $PRINTF "The following toolchains are valid as arguments to --with-toolchain-type.\n"
+    $PRINTF "Which are available to use depends on the build platform.\n"
     for toolchain in $VALID_TOOLCHAINS_all; do
       # Use indirect variable referencing
       toolchain_var_name=TOOLCHAIN_DESCRIPTION_$toolchain
       TOOLCHAIN_DESCRIPTION=${!toolchain_var_name}
-      $PRINTF "  %-10s  %s\n" $toolchain "$TOOLCHAIN_DESCRIPTION"
+      $PRINTF "  %-22s  %s\n" $toolchain "$TOOLCHAIN_DESCRIPTION"
     done
     $PRINTF "\n"
 
-    # Print available jvm features
-    $PRINTF "The following JVM features are available as arguments to --with-jvm-features.\n"
-    $PRINTF "Which are valid to use depends on the target platform and JVM variant.\n  "
-    $PRINTF "%s " valid_jvm_features
-    $PRINTF "\n"
+    # Print available JVM features
+    $PRINTF "The following JVM features are valid as arguments to --with-jvm-features.\n"
+    $PRINTF "Which are available to use depends on the environment and JVM variant.\n"
+    m4_foreach(FEATURE, m4_split(jvm_features_valid), [
+      # Create an m4 variable containing the description for FEATURE.
+      m4_define(FEATURE_DESCRIPTION, [jvm_feature_desc_]m4_translit(FEATURE, -, _))
+      $PRINTF "  %-22s  %s\n" FEATURE "FEATURE_DESCRIPTION"
+      m4_undefine([FEATURE_DESCRIPTION])
+    ])
 
     # And now exit directly
     exit 0

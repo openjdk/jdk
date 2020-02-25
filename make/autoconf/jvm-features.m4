@@ -41,7 +41,7 @@
 # We need these as m4 defines to be able to loop over them using m4 later on.
 
 # All valid JVM features, regardless of platform
-define(jvm_features_valid, m4_normalize( \
+m4_define(jvm_features_valid, m4_normalize( \
     ifdef([custom_jvm_features_valid], custom_jvm_features_valid) \
     \
     aot cds compiler1 compiler2 dtrace epsilongc g1gc graal jfr jni-check \
@@ -50,10 +50,35 @@ define(jvm_features_valid, m4_normalize( \
 ))
 
 # Deprecated JVM features (these are ignored, but with a warning)
-define(jvm_features_deprecated, m4_normalize(
+m4_define(jvm_features_deprecated, m4_normalize(
     cmsgc trace \
 ))
 
+# Feature descriptions
+m4_define(jvm_feature_desc_aot, [enable ahead of time compilation (AOT)])
+m4_define(jvm_feature_desc_cds, [enable class data sharing (CDS)])
+m4_define(jvm_feature_desc_compiler1, [enable hotspot compiler C1])
+m4_define(jvm_feature_desc_compiler2, [enable hotspot compiler C2])
+m4_define(jvm_feature_desc_dtrace, [enable dtrace support])
+m4_define(jvm_feature_desc_epsilongc, [include the epsilon (no-op) garbage collector])
+m4_define(jvm_feature_desc_g1gc, [include the G1 garbage collector])
+m4_define(jvm_feature_desc_graal, [enable Graal (jdk.internal.vm.compiler)])
+m4_define(jvm_feature_desc_jfr, [enable JDK Flight Recorder (JFR)])
+m4_define(jvm_feature_desc_jni_check, [enable -Xcheck:jni support])
+m4_define(jvm_feature_desc_jvmci, [enable JVM Compiler Interface (JVMCI)])
+m4_define(jvm_feature_desc_jvmti, [enable Java Virtual Machine Tool Interface (JVM TI)])
+m4_define(jvm_feature_desc_link_time_opt, [enable link time optimization])
+m4_define(jvm_feature_desc_management, [enable java.lang.management API support])
+m4_define(jvm_feature_desc_minimal, [support building variant 'minimal'])
+m4_define(jvm_feature_desc_nmt, [include native memory tracking (NMT)])
+m4_define(jvm_feature_desc_parallelgc, [include the parallel garbage collector])
+m4_define(jvm_feature_desc_serialgc, [include the serial garbage collector])
+m4_define(jvm_feature_desc_services, [enable diagnostic services and client attaching])
+m4_define(jvm_feature_desc_shenandoahgc, [include the Shenandoah garbage collector])
+m4_define(jvm_feature_desc_static_build, [build static library instead of dynamic])
+m4_define(jvm_feature_desc_vm_structs, [export JVM structures to the Serviceablility Agent])
+m4_define(jvm_feature_desc_zero, [support building variant 'zero'])
+m4_define(jvm_feature_desc_zgc, [include the Z garbage collector])
 
 ###############################################################################
 # Parse command line options for JVM feature selection. After this function
@@ -110,12 +135,13 @@ AC_DEFUN_ONCE([JVM_FEATURES_PARSE_OPTIONS],
   # Then check for features using the "--enable-jvm-feature-<feature>" syntax.
   # Using m4, loop over all features with the variable FEATURE.
   m4_foreach(FEATURE, m4_split(jvm_features_valid), [
-    AC_ARG_ENABLE(jvm-feature-FEATURE, AS_HELP_STRING(
-        [--enable-jvm-feature-FEATURE], [enable jvm feature 'FEATURE']))
-
     # Create an m4 variable containing a shell variable name (like
-    # "enable_jvm_feature_static_build").
-    define(FEATURE_SHELL, [enable_jvm_feature_]translit(FEATURE, -, _))
+    # "enable_jvm_feature_static_build"), and the description.
+    m4_define(FEATURE_SHELL, [enable_jvm_feature_]m4_translit(FEATURE, -, _))
+    m4_define(FEATURE_DESCRIPTION, [jvm_feature_desc_]m4_translit(FEATURE, -, _))
+
+    AC_ARG_ENABLE(jvm-feature-FEATURE, AS_HELP_STRING(
+        [--enable-jvm-feature-FEATURE], [enable jvm feature 'FEATURE' (FEATURE_DESCRIPTION)]))
 
     if test "x$FEATURE_SHELL" = xyes; then
       JVM_FEATURES_ENABLED="$JVM_FEATURES_ENABLED FEATURE"
@@ -125,22 +151,23 @@ AC_DEFUN_ONCE([JVM_FEATURES_PARSE_OPTIONS],
       AC_MSG_ERROR([Invalid value for --enable-jvm-feature-FEATURE: '$FEATURE_SHELL'])
     fi
 
-    undefine([FEATURE_SHELL])
+    m4_undefine([FEATURE_SHELL])
+    m4_undefine([FEATURE_DESCRIPTION])
   ])
 
   # Likewise, check for deprecated arguments.
   m4_foreach(FEATURE, m4_split(jvm_features_deprecated), [
     AC_ARG_ENABLE(jvm-feature-FEATURE, AS_HELP_STRING(
-        [--enable-jvm-feature-FEATURE], [enable jvm feature 'FEATURE'
-         (deprecated)]))
+        [--enable-jvm-feature-FEATURE], 
+        [Deprecated. Option is kept for backwards compatibility and is ignored]))
 
-    define(FEATURE_SHELL, [enable_jvm_feature_]translit(FEATURE, -, _))
+    m4_define(FEATURE_SHELL, [enable_jvm_feature_]m4_translit(FEATURE, -, _))
 
     if test "x$FEATURE_SHELL" != x; then
       AC_MSG_WARN([Deprecated JVM feature, will be ignored: --enable-jvm-feature-FEATURE])
     fi
 
-    undefine([FEATURE_SHELL])
+    m4_undefine([FEATURE_SHELL])
   ])
 
   # Warn if the user has both enabled and disabled a feature
