@@ -45,8 +45,8 @@ m4_define(jvm_features_valid, m4_normalize( \
     ifdef([custom_jvm_features_valid], custom_jvm_features_valid) \
     \
     aot cds compiler1 compiler2 dtrace epsilongc g1gc graal jfr jni-check \
-    jvmci jvmti link-time-opt management minimal nmt parallelgc serialgc \
-    services shenandoahgc static-build vm-structs zero zgc \
+    jvmci jvmti link-time-opt management minimal nmt opt-size parallelgc \
+    serialgc services shenandoahgc static-build vm-structs zero zgc \
 ))
 
 # Deprecated JVM features (these are ignored, but with a warning)
@@ -71,6 +71,7 @@ m4_define(jvm_feature_desc_link_time_opt, [enable link time optimization])
 m4_define(jvm_feature_desc_management, [enable java.lang.management API support])
 m4_define(jvm_feature_desc_minimal, [support building variant 'minimal'])
 m4_define(jvm_feature_desc_nmt, [include native memory tracking (NMT)])
+m4_define(jvm_feature_desc_opt_size, [optimize the JVM library for size])
 m4_define(jvm_feature_desc_parallelgc, [include the parallel garbage collector])
 m4_define(jvm_feature_desc_serialgc, [include the serial garbage collector])
 m4_define(jvm_feature_desc_services, [enable diagnostic services and client attaching])
@@ -476,23 +477,25 @@ AC_DEFUN([JVM_FEATURES_PREPARE_VARIANT],
 
   # Check which features should be off by default for this JVM variant.
   if test "x$variant" = "xclient"; then
-    JVM_FEATURES_VARIANT_FILTER="aot compiler2 graal jvmci link-time-opt"
+    JVM_FEATURES_VARIANT_FILTER="aot compiler2 graal jvmci link-time-opt opt-size"
   elif test "x$variant" = "xminimal"; then
     JVM_FEATURES_VARIANT_FILTER="aot cds compiler2 dtrace epsilongc g1gc \
         graal jfr jni-check jvmci jvmti management nmt parallelgc services \
         shenandoahgc vm-structs zgc"
-    if test "x$OPENJDK_TARGET_CPU" != xarm ; then
+    if test "x$OPENJDK_TARGET_CPU" = xarm ; then
+      JVM_FEATURES_VARIANT_FILTER="$JVM_FEATURES_VARIANT_FILTER opt-size"
+    else
       # Only arm-32 should have link-time-opt enabled as default.
       JVM_FEATURES_VARIANT_FILTER="$JVM_FEATURES_VARIANT_FILTER \
           link-time-opt"
     fi
   elif test "x$variant" = "xcore"; then
     JVM_FEATURES_VARIANT_FILTER="aot compiler1 compiler2 graal jvmci \
-        link-time-opt"
+        link-time-opt opt-size"
   elif test "x$variant" = "xzero"; then
-    JVM_FEATURES_VARIANT_FILTER="jfr link-time-opt"
+    JVM_FEATURES_VARIANT_FILTER="jfr link-time-opt opt-size"
   else
-    JVM_FEATURES_VARIANT_FILTER="link-time-opt"
+    JVM_FEATURES_VARIANT_FILTER="link-time-opt opt-size"
   fi
 ])
 
