@@ -181,12 +181,12 @@ ShenandoahRootProcessor::ShenandoahRootProcessor(ShenandoahPhaseTimings::Phase p
 
 ShenandoahRootEvacuator::ShenandoahRootEvacuator(uint n_workers,
                                                  ShenandoahPhaseTimings::Phase phase,
-                                                 bool include_concurrent_roots,
-                                                 bool include_concurrent_code_roots) :
+                                                 bool stw_roots_processing,
+                                                 bool stw_class_unloading) :
   ShenandoahRootProcessor(phase),
   _thread_roots(n_workers > 1),
-  _include_concurrent_roots(include_concurrent_roots),
-  _include_concurrent_code_roots(include_concurrent_code_roots) {
+  _stw_roots_processing(stw_roots_processing),
+  _stw_class_unloading(stw_class_unloading) {
 }
 
 void ShenandoahRootEvacuator::roots_do(uint worker_id, OopClosure* oops) {
@@ -199,15 +199,15 @@ void ShenandoahRootEvacuator::roots_do(uint worker_id, OopClosure* oops) {
 
   _serial_roots.oops_do(oops, worker_id);
   _serial_weak_roots.weak_oops_do(oops, worker_id);
-  if (_include_concurrent_roots) {
-    CLDToOopClosure clds(oops, ClassLoaderData::_claim_strong);
+  if (_stw_roots_processing) {
     _vm_roots.oops_do<OopClosure>(oops, worker_id);
-    _cld_roots.cld_do(&clds, worker_id);
     _weak_roots.oops_do<OopClosure>(oops, worker_id);
     _dedup_roots.oops_do(&always_true, oops, worker_id);
   }
 
-  if (_include_concurrent_code_roots) {
+  if (_stw_class_unloading) {
+    CLDToOopClosure clds(oops, ClassLoaderData::_claim_strong);
+    _cld_roots.cld_do(&clds, worker_id);
     _code_roots.code_blobs_do(codes_cl, worker_id);
     _thread_roots.oops_do(oops, NULL, worker_id);
   } else {

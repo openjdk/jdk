@@ -180,19 +180,30 @@ public:
   }
 };
 
-class ShenandoahSATBThreadsClosure : public ThreadClosure {
+class ShenandoahSATBAndRemarkCodeRootsThreadsClosure : public ThreadClosure {
 private:
   ShenandoahSATBBufferClosure* _satb_cl;
+  MarkingCodeBlobClosure*      _code_cl;
   uintx _claim_token;
 
 public:
-  ShenandoahSATBThreadsClosure(ShenandoahSATBBufferClosure* satb_cl) :
-    _satb_cl(satb_cl),
+  ShenandoahSATBAndRemarkCodeRootsThreadsClosure(ShenandoahSATBBufferClosure* satb_cl, MarkingCodeBlobClosure* code_cl) :
+    _satb_cl(satb_cl), _code_cl(code_cl),
     _claim_token(Threads::thread_claim_token()) {}
 
   void do_thread(Thread* thread) {
     if (thread->claim_threads_do(true, _claim_token)) {
       ShenandoahThreadLocalData::satb_mark_queue(thread).apply_closure_and_empty(_satb_cl);
+      if (_code_cl != NULL && thread->is_Java_thread()) {
+        // In theory it should not be neccessary to explicitly walk the nmethods to find roots for concurrent marking
+        // however the liveness of oops reachable from nmethods have very complex lifecycles:
+        // * Alive if on the stack of an executing method
+        // * Weakly reachable otherwise
+        // Some objects reachable from nmethods, such as the class loader (or klass_holder) of the receiver should be
+        // live by the SATB invariant but other oops recorded in nmethods may behave differently.
+        JavaThread* jt = (JavaThread*)thread;
+        jt->nmethods_do(_code_cl);
+      }
     }
   }
 };
@@ -212,6 +223,14 @@ public:
     ShenandoahHeap* heap = ShenandoahHeap::heap();
 
     ShenandoahParallelWorkerSession worker_session(worker_id);
+    ReferenceProcessor* rp;
+    if (heap->process_references()) {
+      rp = heap->ref_processor();
+      shenandoah_assert_rp_isalive_installed();
+    } else {
+      rp = NULL;
+    }
+
     // First drain remaining SATB buffers.
     // Notice that this is not strictly necessary for mark-compact. But since
     // it requires a StrongRootsScope around the task, we need to claim the
@@ -219,19 +238,27 @@ public:
     // full-gc.
     {
       ShenandoahObjToScanQueue* q = _cm->get_queue(worker_id);
+
       ShenandoahSATBBufferClosure cl(q);
       SATBMarkQueueSet& satb_mq_set = ShenandoahBarrierSet::satb_mark_queue_set();
       while (satb_mq_set.apply_closure_to_completed_buffer(&cl));
-      ShenandoahSATBThreadsClosure tc(&cl);
-      Threads::threads_do(&tc);
-    }
 
-    ReferenceProcessor* rp;
-    if (heap->process_references()) {
-      rp = heap->ref_processor();
-      shenandoah_assert_rp_isalive_installed();
-    } else {
-      rp = NULL;
+      if (heap->unload_classes() && !ShenandoahConcurrentRoots::can_do_concurrent_class_unloading()) {
+        if (heap->has_forwarded_objects()) {
+          ShenandoahMarkResolveRefsClosure resolve_mark_cl(q, rp);
+          MarkingCodeBlobClosure blobsCl(&resolve_mark_cl, !CodeBlobToOopClosure::FixRelocations);
+          ShenandoahSATBAndRemarkCodeRootsThreadsClosure tc(&cl, &blobsCl);
+          Threads::threads_do(&tc);
+        } else {
+          ShenandoahMarkRefsClosure mark_cl(q, rp);
+          MarkingCodeBlobClosure blobsCl(&mark_cl, !CodeBlobToOopClosure::FixRelocations);
+          ShenandoahSATBAndRemarkCodeRootsThreadsClosure tc(&cl, &blobsCl);
+          Threads::threads_do(&tc);
+        }
+      } else {
+        ShenandoahSATBAndRemarkCodeRootsThreadsClosure tc(&cl, NULL);
+        Threads::threads_do(&tc);
+      }
     }
 
     if (heap->is_degenerated_gc_in_progress()) {

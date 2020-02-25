@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2019, 2020, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,12 +45,12 @@
 
 class ShenandoahIsUnloadingOopClosure : public OopClosure {
 private:
-  ShenandoahMarkingContext*    _marking_context;
-  bool                         _is_unloading;
+  ShenandoahMarkingContext* const _marking_context;
+  bool                            _is_unloading;
 
 public:
   ShenandoahIsUnloadingOopClosure() :
-    _marking_context(ShenandoahHeap::heap()->marking_context()),
+    _marking_context(ShenandoahHeap::heap()->complete_marking_context()),
     _is_unloading(false) {
   }
 
@@ -61,7 +61,6 @@ public:
 
     const oop o = RawAccess<>::oop_load(p);
     if (!CompressedOops::is_null(o) &&
-        _marking_context->is_complete() &&
         !_marking_context->is_marked(o)) {
       _is_unloading = true;
     }
@@ -80,7 +79,7 @@ class ShenandoahIsUnloadingBehaviour : public IsUnloadingBehaviour {
 public:
   virtual bool is_unloading(CompiledMethod* method) const {
     nmethod* const nm = method->as_nmethod();
-    guarantee(ShenandoahHeap::heap()->is_concurrent_root_in_progress(), "Only this phase");
+    assert(ShenandoahHeap::heap()->is_concurrent_root_in_progress(), "Only for this phase");
     ShenandoahNMethod* data = ShenandoahNMethod::gc_data(nm);
     ShenandoahReentrantLocker locker(data->lock());
     ShenandoahIsUnloadingOopClosure cl;
