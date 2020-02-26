@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,25 @@ template <class E> class LinkedListNode : public ResourceObj {
   E                       _data;  // embedded content
   LinkedListNode<E>*      _next;  // next entry
 
+  // Select member function 'bool U::equals(const U&) const' if 'U' is of class
+  // type. This works because of the "Substitution Failure Is Not An Error"
+  // (SFINAE) rule. Notice that this version of 'equal' will also be chosen for
+  // class types which don't define a corresponding 'equals()' method (and will
+  // result in a compilation error for them). It is not easily possible to
+  // specialize this 'equal()' function exclusively for class types which define
+  // the correct 'equals()' function because that function can be in a base
+  // class, a dependent base class or have a compatible but slightly different
+  // signature.
+  template <class U>
+  static bool equal(const U& a, const U& b, bool (U::*t)(const U&) const) {
+    return a.equals(b);
+  }
+
+  template <class U>
+  static bool equal(const U& a, const U& b, ...) {
+    return a == b;
+  }
+
  protected:
   LinkedListNode() : _next(NULL) { }
 
@@ -51,6 +70,10 @@ template <class E> class LinkedListNode : public ResourceObj {
 
   E*  data() { return &_data; }
   const E* peek() const { return &_data; }
+
+  bool equals(const E& t) const {
+    return equal<E>(_data, t, NULL);
+  }
 };
 
 // A linked list interface. It does not specify
@@ -59,9 +82,11 @@ template <class E> class LinkedListNode : public ResourceObj {
 template <class E> class LinkedList : public ResourceObj {
  protected:
   LinkedListNode<E>*    _head;
+  NONCOPYABLE(LinkedList<E>);
 
  public:
   LinkedList() : _head(NULL) { }
+  virtual ~LinkedList() {}
 
   inline void set_head(LinkedListNode<E>* h) { _head = h; }
   inline LinkedListNode<E>* head() const     { return _head; }
@@ -182,7 +207,7 @@ template <class E, ResourceObj::allocation_type T = ResourceObj::C_HEAP,
 
   virtual LinkedListNode<E>* find_node(const E& e) {
     LinkedListNode<E>* p = this->head();
-    while (p != NULL && !p->peek()->equals(e)) {
+    while (p != NULL && !p->equals(e)) {
       p = p->next();
     }
     return p;
@@ -229,7 +254,7 @@ template <class E, ResourceObj::allocation_type T = ResourceObj::C_HEAP,
      LinkedListNode<E>* prev = NULL;
 
      while (tmp != NULL) {
-       if (tmp->peek()->equals(e)) {
+       if (tmp->equals(e)) {
          return remove_after(prev);
        }
        prev = tmp;
@@ -401,16 +426,21 @@ template <class E, int (*FUNC)(const E&, const E&),
 // Iterates all entries in the list
 template <class E> class LinkedListIterator : public StackObj {
  private:
-  LinkedListNode<E>* _p;
-  bool               _is_empty;
+  mutable LinkedListNode<E>* _p;
+
  public:
-  LinkedListIterator(LinkedListNode<E>* head) : _p(head) {
-    _is_empty = (head == NULL);
+  LinkedListIterator(LinkedListNode<E>* head) : _p(head) {}
+
+  bool is_empty() const { return _p == NULL; }
+
+  E* next() {
+    if (_p == NULL) return NULL;
+    E* e = _p->data();
+    _p = _p->next();
+    return e;
   }
 
-  bool is_empty() const { return _is_empty; }
-
-  const E* next() {
+  const E* next() const {
     if (_p == NULL) return NULL;
     const E* e = _p->peek();
     _p = _p->next();
