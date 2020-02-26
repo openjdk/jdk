@@ -1230,28 +1230,20 @@ class ObjectIterateScanRootClosure : public BasicOopIterateClosure {
 private:
   MarkBitMap* _bitmap;
   Stack<oop,mtGC>* _oop_stack;
+  ShenandoahHeap* const _heap;
+  ShenandoahMarkingContext* const _marking_context;
 
   template <class T>
   void do_oop_work(T* p) {
     T o = RawAccess<>::oop_load(p);
     if (!CompressedOops::is_null(o)) {
       oop obj = CompressedOops::decode_not_null(o);
-      oop fwd = (oop) ShenandoahForwarding::get_forwardee_raw_unchecked(obj);
-      if (fwd == NULL) {
-        // There is an odd interaction with VM_HeapWalkOperation, see jvmtiTagMap.cpp.
-        //
-        // That operation walks the reachable objects on its own, storing the marking
-        // wavefront in the object marks. When it is done, it calls the CollectedHeap
-        // to iterate over all objects to clean up the mess. When it reaches here,
-        // the Shenandoah fwdptr resolution code encounters the marked objects with
-        // NULL forwardee. Trying to act on that would crash the VM. Or fail the
-        // asserts, should we go for resolve_forwarded_pointer(obj).
-        //
-        // Therefore, we have to dodge it by doing the raw access to forwardee, and
-        // assuming the object had no forwardee, if that thing is NULL.
-      } else {
-        obj = fwd;
+      if (_heap->is_concurrent_root_in_progress() && !_marking_context->is_marked(obj)) {
+        // There may be dead oops in weak roots in concurrent root phase, do not touch them.
+        return;
       }
+      obj = ShenandoahBarrierSet::resolve_forwarded_not_null(obj);
+
       assert(oopDesc::is_oop(obj), "must be a valid oop");
       if (!_bitmap->is_marked(obj)) {
         _bitmap->mark(obj);
@@ -1261,7 +1253,8 @@ private:
   }
 public:
   ObjectIterateScanRootClosure(MarkBitMap* bitmap, Stack<oop,mtGC>* oop_stack) :
-    _bitmap(bitmap), _oop_stack(oop_stack) {}
+    _bitmap(bitmap), _oop_stack(oop_stack), _heap(ShenandoahHeap::heap()),
+    _marking_context(_heap->marking_context()) {}
   void do_oop(oop* p)       { do_oop_work(p); }
   void do_oop(narrowOop* p) { do_oop_work(p); }
 };
@@ -1307,13 +1300,7 @@ void ShenandoahHeap::object_iterate(ObjectClosure* cl) {
   ShenandoahHeapIterationRootScanner rp;
   ObjectIterateScanRootClosure oops(&_aux_bit_map, &oop_stack);
 
-  // When concurrent root is in progress, weak roots may contain dead oops, they should not be used
-  // for root scanning.
-  if (is_concurrent_root_in_progress()) {
-    rp.strong_roots_do(&oops);
-  } else {
-    rp.roots_do(&oops);
-  }
+  rp.roots_do(&oops);
 
   // Work through the oop stack to traverse heap.
   while (! oop_stack.is_empty()) {

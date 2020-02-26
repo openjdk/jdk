@@ -140,7 +140,7 @@ oop ShenandoahBarrierSet::load_reference_barrier_mutator_work(oop obj, T* load_a
   assert(ShenandoahLoadRefBarrier, "should be enabled");
   shenandoah_assert_in_cset(load_addr, obj);
 
-  oop fwd = resolve_forwarded_not_null(obj);
+  oop fwd = resolve_forwarded_not_null_mutator(obj);
   if (obj == fwd) {
     assert(_heap->is_gc_in_progress_mask(ShenandoahHeap::EVACUATION | ShenandoahHeap::TRAVERSAL),
            "evac should be in progress");
@@ -173,7 +173,7 @@ oop ShenandoahBarrierSet::load_reference_barrier_mutator_work(oop obj, T* load_a
       size_t count = 0;
       while ((cur < r->top()) && ctx->is_marked(oop(cur)) && (count++ < max)) {
         oop cur_oop = oop(cur);
-        if (cur_oop == resolve_forwarded_not_null(cur_oop)) {
+        if (cur_oop == resolve_forwarded_not_null_mutator(cur_oop)) {
           _heap->evacuate_object(cur_oop, thread);
         }
         cur = cur + cur_oop->size();
