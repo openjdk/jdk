@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2347,11 +2347,8 @@ run:
 
           case JVM_CONSTANT_Dynamic:
             {
-              oop result = constants->resolved_references()->obj_at(index);
-              if (result == NULL) {
-                CALL_VM(InterpreterRuntime::resolve_ldc(THREAD, (Bytecodes::Code) opcode), handle_exception);
-                result = THREAD->vm_result();
-              }
+              CALL_VM(InterpreterRuntime::resolve_ldc(THREAD, (Bytecodes::Code) opcode), handle_exception);
+              oop result = THREAD->vm_result();
               VERIFY_OOP(result);
 
               jvalue value;
@@ -2391,11 +2388,8 @@ run:
 
           case JVM_CONSTANT_Dynamic:
             {
-              oop result = constants->resolved_references()->obj_at(index);
-              if (result == NULL) {
-                CALL_VM(InterpreterRuntime::resolve_ldc(THREAD, (Bytecodes::Code) opcode), handle_exception);
-                result = THREAD->vm_result();
-              }
+              CALL_VM(InterpreterRuntime::resolve_ldc(THREAD, (Bytecodes::Code) opcode), handle_exception);
+              oop result = THREAD->vm_result();
               VERIFY_OOP(result);
 
               jvalue value;
