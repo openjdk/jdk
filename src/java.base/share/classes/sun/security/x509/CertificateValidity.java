@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,10 @@ public class CertificateValidity implements CertAttrSet<String> {
     public static final String NAME = "validity";
     public static final String NOT_BEFORE = "notBefore";
     public static final String NOT_AFTER = "notAfter";
-    private static final long YR_2050 = 2524636800000L;
+    /**
+     * YR_2050 date and time set to Jan01 00:00 2050 GMT
+     */
+    static final long YR_2050 = 2524608000000L;
 
     // Private data members
     private Date        notBefore;
