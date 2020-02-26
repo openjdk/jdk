@@ -178,10 +178,6 @@ class G1DirtyCardQueueSet: public PtrQueueSet {
     PausedBuffers();
     DEBUG_ONLY(~PausedBuffers();)
 
-    // Test whether there are any paused lists.
-    // Thread-safe, but the answer may change immediately.
-    bool is_empty() const;
-
     // Thread-safe add the buffer to paused list for next safepoint.
     // precondition: not at safepoint.
     // precondition: does not have paused buffers from a previous safepoint.
@@ -228,7 +224,6 @@ class G1DirtyCardQueueSet: public PtrQueueSet {
 
   // Thread-safe add a buffer to paused list for next safepoint.
   // precondition: not at safepoint.
-  // precondition: does not have paused buffers from a previous safepoint.
   void record_paused_buffer(BufferNode* node);
   void enqueue_paused_buffers_aux(const HeadTail& paused);
   // Thread-safe transfer paused buffers for previous safepoints to the queue.

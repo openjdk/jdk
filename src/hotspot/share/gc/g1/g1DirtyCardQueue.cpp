@@ -228,19 +228,17 @@ void G1DirtyCardQueueSet::enqueue_completed_buffer(BufferNode* cbn) {
 }
 
 BufferNode* G1DirtyCardQueueSet::get_completed_buffer(size_t stop_at) {
-  enqueue_previous_paused_buffers();
-
-  // Check for insufficient cards to satisfy request.  We only do this once,
-  // up front, rather than on each iteration below, since the test is racy
-  // regardless of when we do it.
-  if (Atomic::load_acquire(&_num_cards) <= stop_at) {
+  if (Atomic::load_acquire(&_num_cards) < stop_at) {
     return NULL;
   }
 
   BufferNode* result = _completed.pop();
-  if (result != NULL) {
-    Atomic::sub(&_num_cards, buffer_size() - result->index());
+  if (result == NULL) {         // Unlikely if no paused buffers.
+    enqueue_previous_paused_buffers();
+    result = _completed.pop();
+    if (result == NULL) return NULL;
   }
+  Atomic::sub(&_num_cards, buffer_size() - result->index());
   return result;
 }
 
@@ -298,31 +296,24 @@ G1DirtyCardQueueSet::PausedBuffers::PausedBuffers() : _plist(NULL) {}
 
 #ifdef ASSERT
 G1DirtyCardQueueSet::PausedBuffers::~PausedBuffers() {
-  assert(is_empty(), "invariant");
+  assert(Atomic::load(&_plist) == NULL, "invariant");
 }
 #endif // ASSERT
-
-bool G1DirtyCardQueueSet::PausedBuffers::is_empty() const {
-  return Atomic::load(&_plist) == NULL;
-}
 
 void G1DirtyCardQueueSet::PausedBuffers::add(BufferNode* node) {
   assert_not_at_safepoint();
   PausedList* plist = Atomic::load_acquire(&_plist);
-  if (plist != NULL) {
-    // Already have a next list, so use it.  We know it's a next list because
-    // of the precondition that take_previous() has already been called.
-    assert(plist->is_next(), "invariant");
-  } else {
+  if (plist == NULL) {
     // Try to install a new next list.
     plist = new PausedList();
     PausedList* old_plist = Atomic::cmpxchg(&_plist, (PausedList*)NULL, plist);
     if (old_plist != NULL) {
-      // Some other thread installed a new next list. Use it instead.
+      // Some other thread installed a new next list.  Use it instead.
       delete plist;
       plist = old_plist;
     }
   }
+  assert(plist->is_next(), "invariant");
   plist->add(node);
 }
 
@@ -366,6 +357,8 @@ G1DirtyCardQueueSet::HeadTail G1DirtyCardQueueSet::PausedBuffers::take_all() {
 void G1DirtyCardQueueSet::record_paused_buffer(BufferNode* node) {
   assert_not_at_safepoint();
   assert(node->next() == NULL, "precondition");
+  // Ensure there aren't any paused buffers from a previous safepoint.
+  enqueue_previous_paused_buffers();
   // Cards for paused buffers are included in count, to contribute to
   // notification checking after the coming safepoint if it doesn't GC.
   // Note that this means the queue's _num_cards differs from the number
@@ -384,25 +377,7 @@ void G1DirtyCardQueueSet::enqueue_paused_buffers_aux(const HeadTail& paused) {
 
 void G1DirtyCardQueueSet::enqueue_previous_paused_buffers() {
   assert_not_at_safepoint();
-  // The fast-path still satisfies the precondition for record_paused_buffer
-  // and PausedBuffers::add, even with a racy test.  If there are paused
-  // buffers from a previous safepoint, is_empty() will return false; there
-  // will have been a safepoint between recording and test, so there can't be
-  // a false negative (is_empty() returns true) while such buffers are present.
-  // If is_empty() is false, there are two cases:
-  //
-  // (1) There were paused buffers from a previous safepoint.  A concurrent
-  // caller may take and enqueue them first, but that's okay; the precondition
-  // for a possible later record_paused_buffer by this thread will still hold.
-  //
-  // (2) There are paused buffers for a requested next safepoint.
-  //
-  // In each of those cases some effort may be spent detecting and dealing
-  // with those circumstances; any wasted effort in such cases is expected to
-  // be well compensated by the fast path.
-  if (!_paused.is_empty()) {
-    enqueue_paused_buffers_aux(_paused.take_previous());
-  }
+  enqueue_paused_buffers_aux(_paused.take_previous());
 }
 
 void G1DirtyCardQueueSet::enqueue_all_paused_buffers() {
