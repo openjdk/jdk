@@ -337,7 +337,7 @@
   experimental(uint, ShenandoahParallelSafepointThreads, 4,                 \
           "Number of parallel threads used for safepoint prolog/epilog")    \
                                                                             \
-  experimental(bool, ShenandoahPreclean, true,                              \
+  diagnostic(bool, ShenandoahPreclean, true,                                \
           "Do concurrent preclean phase before final mark: process "        \
           "definitely alive references to avoid dealing with them during "  \
           "pause.")                                                         \
@@ -363,10 +363,10 @@
   diagnostic(bool, ShenandoahLoadRefBarrier, true,                          \
           "Turn on/off load-reference barriers in Shenandoah")              \
                                                                             \
-  experimental(bool, ShenandoahConcurrentScanCodeRoots, true,               \
+  diagnostic(bool, ShenandoahConcurrentScanCodeRoots, true,                 \
           "Scan code roots concurrently, instead of during a pause")        \
                                                                             \
-  experimental(uintx, ShenandoahCodeRootsStyle, 2,                          \
+  diagnostic(uintx, ShenandoahCodeRootsStyle, 2,                            \
           "Use this style to scan code cache:"                              \
           " 0 - sequential iterator;"                                       \
           " 1 - parallel iterator;"                                         \
@@ -383,7 +383,7 @@
   develop(bool, ShenandoahVerifyOptoBarriers, false,                        \
           "Verify no missing barriers in C2")                               \
                                                                             \
-  experimental(bool, ShenandoahLoopOptsAfterExpansion, true,                \
+  diagnostic(bool, ShenandoahLoopOptsAfterExpansion, true,                  \
           "Attempt more loop opts after barrier expansion")                 \
                                                                             \
   diagnostic(bool, ShenandoahSelfFixing, true,                              \
