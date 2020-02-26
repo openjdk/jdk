@@ -2074,15 +2074,24 @@ const bool Matcher::match_rule_supported(int opcode) {
   return ret_value; // Per default match rules are supported.
 }
 
+// Identify extra cases that we might want to provide match rules for vector nodes and
+// other intrinsics guarded with vector length (vlen) and element type (bt).
 const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType bt) {
+  if (!match_rule_supported(opcode)) {
+    return false;
+  }
 
-  // TODO
-  // identify extra cases that we might want to provide match rules for
-  // e.g. Op_ vector nodes and other intrinsics while guarding with vlen
-  bool ret_value = match_rule_supported(opcode);
-  // Add rules here.
+  // Special cases which require vector length
+  switch (opcode) {
+    case Op_MulAddVS2VI: {
+      if (vlen != 4) {
+        return false;
+      }
+      break;
+    }
+  }
 
-  return ret_value;  // Per default match rules are supported.
+  return true; // Per default match rules are supported.
 }
 
 const bool Matcher::has_predicated_vectors(void) {
@@ -10555,6 +10564,22 @@ instruct smnegL(iRegLNoSp dst, iRegIorL2I src1, iRegIorL2I src2, immL0 zero) %{
   ins_pipe(imac_reg_reg);
 %}
 
+// Combined Multiply-Add Shorts into Integer (dst = src1 * src2 + src3 * src4)
+
+instruct muladdS2I(iRegINoSp dst, iRegIorL2I src1, iRegIorL2I src2, iRegIorL2I src3, iRegIorL2I src4) %{
+  match(Set dst (MulAddS2I (Binary src1 src2) (Binary src3 src4)));
+
+  ins_cost(INSN_COST * 5);
+  format %{ "mulw  rscratch1, $src1, $src2\n\t"
+            "maddw $dst, $src3, $src4, rscratch1" %}
+
+  ins_encode %{
+    __ mulw(rscratch1, as_Register($src1$$reg), as_Register($src2$$reg));
+    __ maddw(as_Register($dst$$reg), as_Register($src3$$reg), as_Register($src4$$reg), rscratch1); %}
+
+  ins_pipe(imac_reg_reg);
+%}
+
 // Integer Divide
 
 instruct divI(iRegINoSp dst, iRegIorL2I src1, iRegIorL2I src2) %{
@@ -16931,6 +16956,30 @@ instruct vmls2D(vecX dst, vecX src1, vecX src2) %{
     __ fmls(as_FloatRegister($dst$$reg), __ T2D,
             as_FloatRegister($src1$$reg),
             as_FloatRegister($src2$$reg));
+  %}
+  ins_pipe(vmuldiv_fp128);
+%}
+
+// --------------- Vector Multiply-Add Shorts into Integer --------------------
+
+instruct vmuladdS2I(vecX dst, vecX src1, vecX src2, vecX tmp) %{
+  predicate(n->in(1)->bottom_type()->is_vect()->element_basic_type() == T_SHORT);
+  match(Set dst (MulAddVS2VI src1 src2));
+  ins_cost(INSN_COST);
+  effect(TEMP tmp);
+  format %{ "smullv  $tmp, $src1, $src2\t# vector (4H)\n\t"
+            "smullv  $dst, $src1, $src2\t# vector (8H)\n\t"
+            "addpv   $dst, $tmp, $dst\t# vector (4S)\n\t" %}
+  ins_encode %{
+    __ smullv(as_FloatRegister($tmp$$reg), __ T4H,
+              as_FloatRegister($src1$$reg),
+              as_FloatRegister($src2$$reg));
+    __ smullv(as_FloatRegister($dst$$reg), __ T8H,
+              as_FloatRegister($src1$$reg),
+              as_FloatRegister($src2$$reg));
+    __ addpv(as_FloatRegister($dst$$reg), __ T4S,
+             as_FloatRegister($tmp$$reg),
+             as_FloatRegister($dst$$reg));
   %}
   ins_pipe(vmuldiv_fp128);
 %}
