@@ -169,7 +169,6 @@ public class HtmlDoclet extends AbstractDoclet {
 
         if (options.createIndex()) {
             IndexBuilder indexBuilder = new IndexBuilder(configuration, nodeprecated);
-            configuration.buildSearchTagIndex();
             if (options.splitIndex()) {
                 SplitIndexWriter.generate(configuration, indexBuilder);
             } else {

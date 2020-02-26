@@ -91,19 +91,7 @@ public class HtmlConfiguration extends BaseConfiguration {
      */
     public TypeElement currentTypeElement = null;  // Set this TypeElement in the ClassWriter.
 
-    protected SortedSet<SearchIndexItem> memberSearchIndex;
-
-    protected SortedSet<SearchIndexItem> moduleSearchIndex;
-
-    protected SortedSet<SearchIndexItem> packageSearchIndex;
-
-    protected SortedSet<SearchIndexItem> tagSearchIndex;
-
-    protected SortedSet<SearchIndexItem> typeSearchIndex;
-
-    protected Map<Character, List<SearchIndexItem>> tagSearchIndexMap = new HashMap<>();
-
-    protected Set<Character> tagSearchIndexKeys;
+    protected SearchIndexItems searchItems;
 
     public final Contents contents;
 
@@ -349,17 +337,6 @@ public class HtmlConfiguration extends BaseConfiguration {
         return (e == null || workArounds.haveDocLint());
     }
 
-    protected void buildSearchTagIndex() {
-        for (SearchIndexItem sii : tagSearchIndex) {
-            String tagLabel = sii.getLabel();
-            Character unicode = (tagLabel.length() == 0)
-                    ? '*'
-                    : Character.toUpperCase(tagLabel.charAt(0));
-            tagSearchIndexMap.computeIfAbsent(unicode, k -> new ArrayList<>()).add(sii);
-        }
-        tagSearchIndexKeys = tagSearchIndexMap.keySet();
-    }
-
     @Override
     protected boolean finishOptionSettings0() throws DocletException {
         if (options.docEncoding() == null) {
@@ -384,10 +361,6 @@ public class HtmlConfiguration extends BaseConfiguration {
     @Override
     protected void initConfiguration(DocletEnvironment docEnv) {
         super.initConfiguration(docEnv);
-        memberSearchIndex = new TreeSet<>(utils.makeGenericSearchIndexComparator());
-        moduleSearchIndex = new TreeSet<>(utils.makeGenericSearchIndexComparator());
-        packageSearchIndex = new TreeSet<>(utils.makeGenericSearchIndexComparator());
-        tagSearchIndex = new TreeSet<>(utils.makeGenericSearchIndexComparator());
-        typeSearchIndex = new TreeSet<>(utils.makeTypeSearchIndexComparator());
+        searchItems = new SearchIndexItems(utils);
     }
 }

@@ -102,16 +102,16 @@ public class SingleIndexWriter extends AbstractIndexWriter {
         HtmlTree divTree = new HtmlTree(HtmlTag.DIV);
         divTree.setStyle(HtmlStyle.contentContainer);
         elements = new TreeSet<>(indexBuilder.asMap().keySet());
-        elements.addAll(configuration.tagSearchIndexKeys);
+        elements.addAll(tagSearchIndexMap.keySet());
         addLinksForIndexes(divTree);
         for (Character unicode : elements) {
-            if (configuration.tagSearchIndexMap.get(unicode) == null) {
+            if (tagSearchIndexMap.get(unicode) == null) {
                 addContents(unicode, indexBuilder.getMemberList(unicode), divTree);
             } else if (indexBuilder.getMemberList(unicode) == null) {
-                addSearchContents(unicode, configuration.tagSearchIndexMap.get(unicode), divTree);
+                addSearchContents(unicode, tagSearchIndexMap.get(unicode), divTree);
             } else {
                 addContents(unicode, indexBuilder.getMemberList(unicode),
-                            configuration.tagSearchIndexMap.get(unicode), divTree);
+                            tagSearchIndexMap.get(unicode), divTree);
             }
         }
         addLinksForIndexes(divTree);
@@ -137,22 +137,22 @@ public class SingleIndexWriter extends AbstractIndexWriter {
      * @param contentTree the content tree to which the links for indexes will be added
      */
     protected void addLinksForIndexes(Content contentTree) {
-        for (Object ch : elements) {
+        for (Character ch : elements) {
             String unicode = ch.toString();
             contentTree.add(
                     links.createLink(getNameForIndex(unicode),
-                            new StringContent(unicode)));
+                                     new StringContent(unicode)));
             contentTree.add(Entity.NO_BREAK_SPACE);
         }
         contentTree.add(new HtmlTree(HtmlTag.BR));
         contentTree.add(links.createLink(DocPaths.ALLCLASSES_INDEX,
-                contents.allClassesLabel));
+                                         contents.allClassesLabel));
         if (!configuration.packages.isEmpty()) {
             contentTree.add(getVerticalSeparator());
             contentTree.add(links.createLink(DocPaths.ALLPACKAGES_INDEX,
-                    contents.allPackagesLabel));
+                                             contents.allPackagesLabel));
         }
-        if (!configuration.tagSearchIndex.isEmpty()) {
+        if (!searchItems.get(SearchIndexItem.Category.SEARCH_TAGS).isEmpty()) {
             contentTree.add(getVerticalSeparator());
             contentTree.add(links.createLink(DocPaths.SYSTEM_PROPERTIES, contents.systemPropertiesLabel));
         }

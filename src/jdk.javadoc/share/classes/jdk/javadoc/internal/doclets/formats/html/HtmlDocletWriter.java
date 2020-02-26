@@ -153,6 +153,8 @@ public class HtmlDocletWriter {
      */
     public final HtmlConfiguration configuration;
 
+    protected final SearchIndexItems searchItems;
+
     protected final HtmlOptions options;
 
     protected final Utils utils;
@@ -210,6 +212,7 @@ public class HtmlDocletWriter {
      */
     public HtmlDocletWriter(HtmlConfiguration configuration, DocPath path) {
         this.configuration = configuration;
+        this.searchItems = configuration.searchItems;
         this.options = configuration.getOptions();
         this.contents = configuration.contents;
         this.messages = configuration.messages;

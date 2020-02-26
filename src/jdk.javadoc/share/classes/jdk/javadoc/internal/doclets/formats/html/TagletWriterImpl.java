@@ -470,7 +470,7 @@ public class TagletWriterImpl extends TagletWriter {
                     }
                 }.visit(element);
                 si.setCategory(SearchIndexItem.Category.SEARCH_TAGS);
-                configuration.tagSearchIndex.add(si);
+                configuration.searchItems.add(si);
             }
         }
         return result;

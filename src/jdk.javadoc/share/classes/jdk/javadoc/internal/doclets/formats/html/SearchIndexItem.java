@@ -101,6 +101,10 @@ public class SearchIndexItem {
         return description;
     }
 
+    protected Category getCategory() {
+        return category;
+    }
+
     public void setSystemProperty(boolean value) {
         systemProperty = value;
     }
