@@ -377,9 +377,6 @@
           "Turn it off for maximum compatibility with reflection or JNI "   \
           "code that manipulates final fields.")                            \
                                                                             \
-  experimental(bool, ShenandoahCommonGCStateLoads, false,                   \
-         "Enable commonming for GC state loads in generated code.")         \
-                                                                            \
   develop(bool, ShenandoahVerifyOptoBarriers, false,                        \
           "Verify no missing barriers in C2")                               \
                                                                             \

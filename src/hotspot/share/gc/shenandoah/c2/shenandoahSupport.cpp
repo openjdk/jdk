@@ -151,31 +151,6 @@ bool ShenandoahBarrierC2Support::has_safepoint_between(Node* start, Node* stop, 
   return false;
 }
 
-bool ShenandoahBarrierC2Support::try_common_gc_state_load(Node *n, PhaseIdealLoop *phase) {
-  assert(is_gc_state_load(n), "inconsistent");
-  Node* addp = n->in(MemNode::Address);
-  Node* dominator = NULL;
-  for (DUIterator_Fast imax, i = addp->fast_outs(imax); i < imax; i++) {
-    Node* u = addp->fast_out(i);
-    assert(is_gc_state_load(u), "inconsistent");
-    if (u != n && phase->is_dominator(u->in(0), n->in(0))) {
-      if (dominator == NULL) {
-        dominator = u;
-      } else {
-        if (phase->dom_depth(u->in(0)) < phase->dom_depth(dominator->in(0))) {
-          dominator = u;
-        }
-      }
-    }
-  }
-  if (dominator == NULL || has_safepoint_between(n->in(0), dominator->in(0), phase)) {
-    return false;
-  }
-  phase->igvn().replace_node(n, dominator);
-
-  return true;
-}
-
 #ifdef ASSERT
 bool ShenandoahBarrierC2Support::verify_helper(Node* in, Node_Stack& phis, VectorSet& visited, verify_type t, bool trace, Unique_Node_List& barriers_used) {
   assert(phis.size() == 0, "");
@@ -1966,7 +1941,6 @@ IfNode* ShenandoahBarrierC2Support::find_unswitching_candidate(const IdealLoopTr
 
 void ShenandoahBarrierC2Support::optimize_after_expansion(VectorSet &visited, Node_Stack &stack, Node_List &old_new, PhaseIdealLoop* phase) {
   Node_List heap_stable_tests;
-  Node_List gc_state_loads;
   stack.push(phase->C->start(), 0);
   do {
     Node* n = stack.node();
@@ -1980,25 +1954,11 @@ void ShenandoahBarrierC2Support::optimize_after_expansion(VectorSet &visited, No
       }
     } else {
       stack.pop();
-      if (ShenandoahCommonGCStateLoads && is_gc_state_load(n)) {
-        gc_state_loads.push(n);
-      }
       if (n->is_If() && is_heap_stable_test(n)) {
         heap_stable_tests.push(n);
       }
     }
   } while (stack.size() > 0);
-
-  bool progress;
-  do {
-    progress = false;
-    for (uint i = 0; i < gc_state_loads.size(); i++) {
-      Node* n = gc_state_loads.at(i);
-      if (n->outcnt() != 0) {
-        progress |= try_common_gc_state_load(n, phase);
-      }
-    }
-  } while (progress);
 
   for (uint i = 0; i < heap_stable_tests.size(); i++) {
     Node* n = heap_stable_tests.at(i);
