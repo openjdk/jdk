@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -630,17 +630,11 @@ final class StringLatin1 {
 
     public static String stripLeading(byte[] value) {
         int left = indexOfNonWhitespace(value);
-        if (left == value.length) {
-            return "";
-        }
         return (left != 0) ? newString(value, left, value.length - left) : null;
     }
 
     public static String stripTrailing(byte[] value) {
         int right = lastIndexOfNonWhitespace(value);
-        if (right == 0) {
-            return "";
-        }
         return (right != value.length) ? newString(value, 0, right) : null;
     }
 
@@ -764,6 +758,9 @@ final class StringLatin1 {
     }
 
     public static String newString(byte[] val, int index, int len) {
+        if (len == 0) {
+            return "";
+        }
         return new String(Arrays.copyOfRange(val, index, index + len),
                           LATIN1);
     }

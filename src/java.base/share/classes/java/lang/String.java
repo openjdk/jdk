@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1819,7 +1819,7 @@ public final class String
      * @param   src         the characters being searched.
      * @param   srcCoder    coder handles the mapping between bytes/chars
      * @param   srcCount    count of the source string.
-     * @param   tgt         the characters being searched for.
+     * @param   tgtStr      the characters being searched for.
      * @param   fromIndex   the index to begin searching from.
      */
     static int lastIndexOf(byte[] src, byte srcCoder, int srcCount,
@@ -1900,10 +1900,10 @@ public final class String
     public String substring(int beginIndex, int endIndex) {
         int length = length();
         checkBoundsBeginEnd(beginIndex, endIndex, length);
-        int subLen = endIndex - beginIndex;
         if (beginIndex == 0 && endIndex == length) {
             return this;
         }
+        int subLen = endIndex - beginIndex;
         return isLatin1() ? StringLatin1.newString(value, beginIndex, subLen)
                           : StringUTF16.newString(value, beginIndex, subLen);
     }
