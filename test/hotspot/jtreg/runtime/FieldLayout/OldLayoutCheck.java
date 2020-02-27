@@ -28,7 +28,7 @@
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @requires vm.bits == "64" & vm.gc != "Z"
+ * @requires vm.bits == "64" & vm.opt.final.UseCompressedOops == true & vm.gc != "Z"
  * @run main/othervm -XX:+UseCompressedClassPointers -XX:-UseEmptySlotsInSupers OldLayoutCheck
  */
 
