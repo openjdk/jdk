@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,7 +95,7 @@ public class ToolGuide implements Taglet {
             return "";
 
         StringBuilder sb = new StringBuilder();
-        sb.append("<dt class=\"simpleTagLabel\">Tool Guides:</dt>\n")
+        sb.append("<dt>Tool Guides:</dt>\n")
                 .append("<dd>");
 
         boolean needComma = false;

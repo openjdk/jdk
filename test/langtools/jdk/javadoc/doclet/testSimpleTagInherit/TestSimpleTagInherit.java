@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,9 +59,9 @@ public class TestSimpleTagInherit extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("p/TestClass.html", true,
-                "<dt><span class=\"simpleTagLabel\"><em>Custom:</em></span></dt>\n"
+                "<dt><em>Custom:</em></dt>\n"
                 + "<dd>doc for BaseClass class</dd>",
-                "<dt><span class=\"simpleTagLabel\"><em>Custom:</em></span></dt>\n"
+                "<dt><em>Custom:</em></dt>\n"
                 + "<dd>doc for BaseClass method</dd>");
     }
 }

@@ -64,8 +64,8 @@ public class TestClassCrossReferences extends JavadocTester {
                 + "title=\"class or interface in java.math\" class=\"externalLink\"><code>Link to external member gcd</code></a>",
                 "<a href=\"" + uri + "javax/tools/SimpleJavaFileObject.html#uri\" "
                 + "title=\"class or interface in javax.tools\" class=\"externalLink\"><code>Link to external member URI</code></a>",
-                "<dl>\n"
-                + "<dt><span class=\"overrideSpecifyLabel\">Overrides:</span></dt>\n"
+                "<dl class=\"notes\">\n"
+                + "<dt>Overrides:</dt>\n"
                 + "<dd><code>toString</code>&nbsp;in class&nbsp;<code>java.lang.Object</code></dd>\n"
                 + "</dl>");
     }

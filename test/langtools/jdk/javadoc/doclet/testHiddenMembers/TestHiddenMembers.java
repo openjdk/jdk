@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 4492178
- * @summary Test to make sure that hidden overriden members are not
+ * @summary Test to make sure that hidden overridden members are not
  * documented as inherited.
  * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -56,7 +56,7 @@ public class TestHiddenMembers extends JavadocTester {
                 "pkg");
         checkExit(Exit.OK);
 
-        // We should not inherit any members from BaseClass because they are all overriden and hidden
+        // We should not inherit any members from BaseClass because they are all overridden and hidden
         // (declared as private).
         // TODO: check normal case of generated tags: upper case of lower case
         checkOutput("pkg/SubClass.html", false,

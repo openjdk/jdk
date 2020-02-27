@@ -62,7 +62,7 @@ public class TestHref extends JavadocTester {
                 //{@link} test.
                 "Link: <a href=\"C1.html#method(int,int,java.util.ArrayList)\">",
                 //@see test.
-                "See Also:</span></dt>\n"
+                "See Also:</dt>\n"
                 + "<dd><a href=\"C1.html#method(int,int,java.util.ArrayList)\">"
         );
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,14 +92,14 @@ public class TestInterface extends JavadocTester {
                 + "<div class=\"inheritance\">pkg.Child&lt;CE&gt;</div>\n"
                 + "</div>\n</div>",
                 //Make sure "Specified By" has substituted type parameters.
-                "<dt><span class=\"overrideSpecifyLabel\">Specified by:</span></dt>\n"
+                "<dt>Specified by:</dt>\n"
                 + "<dd><code><a href=\"Interface.html#method()\">method</a>"
                 + "</code>&nbsp;in interface&nbsp;<code>"
                 + "<a href=\"Interface.html\" title=\"interface in pkg\">"
                 + "Interface</a>&lt;<a href=\"Child.html\" title=\"type parameter in Child\">"
                 + "CE</a>&gt;</code></dd>",
                 //Make sure "Overrides" has substituted type parameters.
-                "<dt><span class=\"overrideSpecifyLabel\">Overrides:</span></dt>\n"
+                "<dt>Overrides:</dt>\n"
                 + "<dd><code><a href=\"Parent.html#method()\">method</a>"
                 + "</code>&nbsp;in class&nbsp;<code><a href=\"Parent.html\" "
                 + "title=\"class in pkg\">Parent</a>&lt;<a href=\"Child.html\" "
@@ -120,7 +120,7 @@ public class TestInterface extends JavadocTester {
         checkOutput("pkg/ClassWithStaticMembers.html", false,
                 //Make sure "Specified By" does not appear on class documentation when
                 //the method is a static method in the interface.
-                "<dt><span class=\"overrideSpecifyLabel\">Specified by:</span></dt>\n");
+                "<dt>Specified by:</dt>\n");
 
         checkOutput("pkg/ClassWithStaticMembers.html", true,
                 "<section class=\"detail\" id=\"f\">\n"
@@ -162,7 +162,7 @@ public class TestInterface extends JavadocTester {
 
         checkOutput("pkg1/Child.html", true,
             // Ensure the correct Overrides in the inheritance hierarchy is reported
-            "<span class=\"overrideSpecifyLabel\">Overrides:</span></dt>\n" +
+            "<dt>Overrides:</dt>\n" +
             "<dd><code><a href=\"GrandParent.html#method1()\">method1</a></code>" +
             "&nbsp;in class&nbsp;" +
             "<code><a href=\"GrandParent.html\" title=\"class in pkg1\">GrandParent</a>" +

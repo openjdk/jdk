@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      4904037 8026567
+ * @bug      4904037 8026567 8239804
  * @summary  The constructor comments should be surrounded by
  *           <dl></dl>.  Check for this in the output.
  * @library  ../../lib
@@ -51,8 +51,8 @@ public class TestConstructorIndent extends JavadocTester {
         checkOutput("C.html", true,
                 "<div class=\"block\">"
                 + "This is just a simple constructor.</div>\n"
-                + "<dl>\n"
-                + "<dt><span class=\"paramLabel\">Parameters:</span></dt>\n"
+                + "<dl class=\"notes\">\n"
+                + "<dt>Parameters:</dt>\n"
                 + "<dd><code>i</code> - a param.</dd>\n"
                 + "</dl>");
     }

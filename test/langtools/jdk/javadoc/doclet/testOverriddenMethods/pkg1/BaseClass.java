@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@ package pkg1;
 public class BaseClass {
 
   /*************************************************
-   * A public method that can be overriden.
+   * A public method that can be overridden.
    *
    */
   public void publicMethod() {}
@@ -34,21 +34,21 @@ public class BaseClass {
 
   /*************************************************
    * A package private method that can only
-   * be overriden by sub classes in the same package.
+   * be overridden by sub classes in the same package.
    *
    */
   void packagePrivateMethod() {}
 
   /*************************************************
-   * A private that cannot be overriden.
+   * A private that cannot be overridden.
    *
    */
   private void privateMethod() {}
 
   /**
-   * These comments will be copied to the overriden method.
+   * These comments will be copied to the overridden method.
    */
-  public void overridenMethodWithDocsToCopy() {}
+  public void overriddenMethodWithDocsToCopy() {}
 
   /**
    * @deprecated func1 deprecated

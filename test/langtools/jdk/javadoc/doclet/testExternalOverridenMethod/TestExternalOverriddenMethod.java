@@ -24,22 +24,22 @@
 /*
  * @test
  * @bug 4857717 8025633 8026567 8164407 8182765 8205593
- * @summary Test to make sure that externally overriden and implemented methods
+ * @summary Test to make sure that externally overridden and implemented methods
  * are documented properly.  The method should still include "implements" or
  * "overrides" documentation even though the method is external.
  * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build javadoc.tester.* TestExternalOverridenMethod
- * @run main TestExternalOverridenMethod
+ * @build javadoc.tester.* TestExternalOverriddenMethod
+ * @run main TestExternalOverriddenMethod
  */
 import javadoc.tester.JavadocTester;
 
-public class TestExternalOverridenMethod extends JavadocTester {
+public class TestExternalOverriddenMethod extends JavadocTester {
 
     static final String uri = "http://java.sun.com/j2se/1.4.1/docs/api";
 
     public static void main(String... args) throws Exception {
-        TestExternalOverridenMethod tester = new TestExternalOverridenMethod();
+        TestExternalOverriddenMethod tester = new TestExternalOverriddenMethod();
         tester.runTests();
     }
 
@@ -53,12 +53,12 @@ public class TestExternalOverridenMethod extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("pkg/XReader.html", true,
-                "<dt><span class=\"overrideSpecifyLabel\">Overrides:</span></dt>\n"
+                "<dt>Overrides:</dt>\n"
                 + "<dd><code><a href=\"" + uri + "/java/io/FilterReader.html#read()\" "
                 + "title=\"class or interface in java.io\" class=\"externalLink\">read</a></code>&nbsp;in class&nbsp;<code>"
                 + "<a href=\"" + uri + "/java/io/FilterReader.html\" "
                 + "title=\"class or interface in java.io\" class=\"externalLink\">FilterReader</a></code></dd>",
-                "<dt><span class=\"overrideSpecifyLabel\">Specified by:</span></dt>\n"
+                "<dt>Specified by:</dt>\n"
                 + "<dd><code><a href=\"" + uri + "/java/io/DataInput.html#readInt()\" "
                 + "title=\"class or interface in java.io\" class=\"externalLink\">readInt</a></code>&nbsp;in interface&nbsp;<code>"
                 + "<a href=\"" + uri + "/java/io/DataInput.html\" "

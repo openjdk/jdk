@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -114,8 +114,8 @@ public class TestOverrideMethods  extends JavadocTester {
                 "Classes.GP.html#m0()\">m0",
 
                 // Check method details for override
-                "overrideSpecifyLabel",
-                "Overrides:",
+                "<dl class=\"notes\">\n"
+                + "<dt>Overrides:",
                 "Classes.GP.html#m7()\">m7",
                 "in class",
                 "Classes.GP.html",
@@ -173,7 +173,7 @@ public class TestOverrideMethods  extends JavadocTester {
         // Make sure the static methods in the super interface
         // do not make it to this interface
         checkOutput("pkg5/Interfaces.D.html", false,
-            "msd", "msn");
+                "msd", "msn");
 
         checkOrder("pkg5/Interfaces.D.html",
                 "Start of links <p>",

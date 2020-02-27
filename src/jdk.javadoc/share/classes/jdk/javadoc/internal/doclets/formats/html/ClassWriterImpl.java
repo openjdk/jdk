@@ -351,7 +351,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
             Content paramInfo = (new ParamTaglet()).getTagletOutput(typeElement,
                     getTagletWriterInstance(false));
             if (!paramInfo.isEmpty()) {
-                classInfoTree.add(HtmlTree.DL(paramInfo));
+                classInfoTree.add(HtmlTree.DL(paramInfo).setStyle(HtmlStyle.notes));
             }
         }
     }

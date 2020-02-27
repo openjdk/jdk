@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,7 +66,7 @@ public class TestMultiInheritance extends JavadocTester {
                 + "<a href=\"I3.html\" title=\"interface in pkg3\">"
                 + "I3</a>");
 
-        // Method foo() is NOT inherited from I4 because it is overriden by I3.
+        // Method foo() is NOT inherited from I4 because it is overridden by I3.
 
         checkOutput("pkg3/I1.html", false,
                 "Methods inherited from interface&nbsp;pkg3."

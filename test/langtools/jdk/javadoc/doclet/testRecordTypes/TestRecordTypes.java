@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      8225055
+ * @bug      8225055 8239804
  * @summary  Record types
  * @library  /tools/lib ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -136,8 +136,8 @@ public class TestRecordTypes extends JavadocTester {
         checkOutput("p/R.html", true,
                 "<h1 title=\"Record R\" class=\"title\">Record R</h1>",
                 "public record <span class=\"typeNameLabel\">R</span>",
-                "<dl>\n"
-                + "<dt><span class=\"paramLabel\">Record Components:</span></dt>\n"
+                "<dl class=\"notes\">\n"
+                + "<dt>Record Components:</dt>\n"
                 + "<dd><code><span id=\"param-r1\">r1</span></code> - This is a component.</dd>\n"
                 + "</dl>",
                 "<code><span class=\"memberNameLink\"><a href=\"#%3Cinit%3E(int)\">R</a></span>&#8203;(int&nbsp;r1)</code>");
@@ -163,10 +163,10 @@ public class TestRecordTypes extends JavadocTester {
         checkOutput("p/R.html", true,
                 "<h1 title=\"Record R\" class=\"title\">Record R&lt;T&gt;</h1>",
                 "public record <span class=\"typeNameLabel\">R&lt;T&gt;</span>",
-                "<dl>\n"
-                + "<dt><span class=\"paramLabel\">Type Parameters:</span></dt>\n"
+                "<dl class=\"notes\">\n"
+                + "<dt>Type Parameters:</dt>\n"
                 + "<dd><code>T</code> - This is a type parameter.</dd>\n"
-                + "<dt><span class=\"paramLabel\">Record Components:</span></dt>\n"
+                + "<dt>Record Components:</dt>\n"
                 + "<dd><code><span id=\"param-r1\">r1</span></code> - This is a component.</dd>\n"
                 + "</dl>",
                 "<code><span class=\"memberNameLink\"><a href=\"#%3Cinit%3E(int)\">R</a></span>&#8203;(int&nbsp;r1)</code>");

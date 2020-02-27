@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      4764045 8004825 8026567 8191030 8204330
+ * @bug      4764045 8004825 8026567 8191030 8204330 8239804
  * @summary  This test ensures that the value tag works in all
  *           use cases, the tests are explained below.
  * @library ../../lib
@@ -85,7 +85,7 @@ public class TestValueTag extends JavadocTester {
 
         checkOutput("pkg1/CustomTagUsage.html", true,
                 // Test @value tag used with custom tag.
-                "<dt><span class=\"simpleTagLabel\">Todo:</span></dt>\n" +
+                "<dt>Todo:</dt>\n" +
                 "<dd>the value of this constant is 55.</dd>");
 
         checkOutput(Output.OUT, true,

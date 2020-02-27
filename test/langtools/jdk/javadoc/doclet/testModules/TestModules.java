@@ -27,7 +27,7 @@
  *      8168766 8168688 8162674 8160196 8175799 8174974 8176778 8177562 8175218
  *      8175823 8166306 8178043 8181622 8183511 8169819 8074407 8183037 8191464
  *      8164407 8192007 8182765 8196200 8196201 8196202 8196202 8205593 8202462
- *      8184205 8219060 8223378 8234746
+ *      8184205 8219060 8223378 8234746 8239804
  * @summary Test modules support in javadoc.
  * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -600,22 +600,22 @@ public class TestModules extends JavadocTester {
                 "Member Link: <a href=\"testpkgmdltags/TestClassInModuleTags.html#"
                 + "testMethod(java.lang.String)\"><code>testMethod(String)</code></a>.",
                 "Package Link: <a href=\"testpkgmdltags/package-summary.html\"><code>testpkgmdltags</code></a>.",
-                "<dt><span class=\"simpleTagLabel\">Since:</span></dt>\n"
+                "<dt>Since:</dt>\n"
                 + "<dd>JDK 9</dd>",
-                "<dt><span class=\"seeLabel\">See Also:</span></dt>\n"
+                "<dt>See Also:</dt>\n"
                 + "<dd>\"Test see tag\", \n"
                 + "<a href=\"testpkgmdltags/TestClassInModuleTags.html\" title=\"class in testpkgmdltags\"><code>"
                 + "TestClassInModuleTags</code></a></dd>",
-                "<dt><span class=\"simpleTagLabel\">Regular Tag:</span></dt>\n"
+                "<dt>Regular Tag:</dt>\n"
                 + "<dd>Just a regular simple tag.</dd>",
-                "<dt><span class=\"simpleTagLabel\">Module Tag:</span></dt>\n"
+                "<dt>Module Tag:</dt>\n"
                 + "<dd>Just a simple module tag.</dd>",
-                "<dt><span class=\"simpleTagLabel\">Version:</span></dt>\n"
+                "<dt>Version:</dt>\n"
                 + "<dd>1.0</dd>",
-                "<dt><span class=\"simpleTagLabel\">Author:</span></dt>\n"
+                "<dt>Author:</dt>\n"
                 + "<dd>Alice</dd>");
         checkOutput("moduletags/testpkgmdltags/TestClassInModuleTags.html", false,
-                "<dt><span class=\"simpleTagLabel\">Module Tag:</span></dt>\n"
+                "<dt>Module Tag:</dt>\n"
                 + "<dd>Just a simple module tag.</dd>");
     }
 

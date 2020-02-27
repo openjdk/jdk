@@ -107,10 +107,10 @@ public abstract class TagletWriter {
     /**
      * Return the header for the param tags.
      *
-     * @param header the header to display.
-     * @return the header for the param tags.
+     * @param kind the kind of header that is required
+     * @return the header for the param tags
      */
-    protected abstract Content getParamHeader(String header);
+    protected abstract Content getParamHeader(ParamTaglet.ParamKind kind);
 
     /**
      * Return the output for param tags.

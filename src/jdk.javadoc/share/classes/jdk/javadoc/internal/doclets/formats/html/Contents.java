@@ -151,13 +151,16 @@ public class Contents {
     public final Content packageLabel;
     public final Content package_;
     public final Content packagesLabel;
+    public final Content parameters;
     public final Content properties;
     public final Content propertyLabel;
     public final Content propertyDetailsLabel;
     public final Content propertySummaryLabel;
     public final Content record;
+    public final Content recordComponents;
     public final Content referencedIn;
-    public final Content seeLabel;
+    public final Content returns;
+    public final Content seeAlso;
     public final Content serializedForm;
     public final Content servicesLabel;
     public final Content specifiedByLabel;
@@ -166,8 +169,10 @@ public class Contents {
     public final Content summaryLabel;
     public final Content systemPropertiesLabel;
     public final Content systemPropertiesSummaryLabel;
+    public final Content throws_;
     public final Content treeLabel;
     public final Content typeLabel;
+    public final Content typeParameters;
     public final Content useLabel;
     public final Content valueLabel;
 
@@ -282,13 +287,16 @@ public class Contents {
         packageLabel = getContent("doclet.Package");
         package_ = getContent("doclet.package");
         packagesLabel = getContent("doclet.Packages");
+        parameters = getContent("doclet.Parameters");
         properties = getContent("doclet.Properties");
         propertyLabel = getContent("doclet.Property");
         propertyDetailsLabel = getContent("doclet.Property_Detail");
         propertySummaryLabel = getContent("doclet.Property_Summary");
         record = getContent("doclet.Record");
+        recordComponents = getContent("doclet.RecordComponents");
         referencedIn = getContent("doclet.ReferencedIn");
-        seeLabel = getContent("doclet.See");
+        returns = getContent("doclet.Returns");
+        seeAlso = getContent("doclet.See_Also");
         serializedForm = getContent("doclet.Serialized_Form");
         servicesLabel = getContent("doclet.Services");
         specifiedByLabel = getContent("doclet.Specified_By");
@@ -297,8 +305,10 @@ public class Contents {
         summaryLabel = getContent("doclet.Summary");
         systemPropertiesLabel = getContent("doclet.systemProperties");
         systemPropertiesSummaryLabel = getContent("doclet.systemPropertiesSummary");
+        throws_ = getContent("doclet.Throws");
         treeLabel = getContent("doclet.Tree");
         typeLabel = getContent("doclet.Type");
+        typeParameters = getContent("doclet.TypeParameters");
         useLabel = getContent("doclet.navClassUse");
         valueLabel = getContent("doclet.Value");
 

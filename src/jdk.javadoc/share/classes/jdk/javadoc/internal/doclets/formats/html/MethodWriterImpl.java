@@ -241,36 +241,48 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
         addModifierAndType(meth, utils.getReturnType(typeElement, meth), tdSummaryType);
     }
 
+    /**
+     * Adds "overrides" or "specified by" information about a method (if appropriate)
+     * into a definition list.
+     *
+     * @param writer         the writer for the element
+     * @param overriddenType the superclass
+     * @param method         the method
+     * @param dl             the list in which to add the information.
+     */
     protected static void addOverridden(HtmlDocletWriter writer,
-            TypeMirror overriddenType, ExecutableElement method, Content dl) {
+                                        TypeMirror overriddenType,
+                                        ExecutableElement method,
+                                        Content dl) {
         if (writer.options.noComment()) {
             return;
         }
         Utils utils = writer.utils;
-        Contents contents = writer.contents;
         TypeElement holder = utils.getEnclosingTypeElement(method);
-        if (!(utils.isPublic(holder) ||
-            utils.isLinkable(holder))) {
+        if (!(utils.isPublic(holder) || utils.isLinkable(holder))) {
             //This is an implementation detail that should not be documented.
             return;
         }
-        if (utils.isIncluded(holder) && ! utils.isIncluded(method)) {
+        if (utils.isIncluded(holder) && !utils.isIncluded(method)) {
             //The class is included but the method is not.  That means that it
             //is not visible so don't document this.
             return;
         }
-        Content label = contents.overridesLabel;
-        LinkInfoImpl.Kind context = LinkInfoImpl.Kind.METHOD_OVERRIDES;
 
         if (method != null) {
+            Contents contents = writer.contents;
+            Content label;
+            LinkInfoImpl.Kind context;
             if (utils.isAbstract(holder) && utils.isAbstract(method)){
                 //Abstract method is implemented from abstract class,
                 //not overridden
                 label = contents.specifiedByLabel;
                 context = LinkInfoImpl.Kind.METHOD_SPECIFIED_BY;
+            } else {
+                label = contents.overridesLabel;
+                context = LinkInfoImpl.Kind.METHOD_OVERRIDES;
             }
-            Content dt = HtmlTree.DT(HtmlTree.SPAN(HtmlStyle.overrideSpecifyLabel, label));
-            dl.add(dt);
+            dl.add(HtmlTree.DT(label));
             Content overriddenTypeLink =
                     writer.getLink(new LinkInfoImpl(writer.configuration, context, overriddenType));
             Content codeOverriddenTypeLink = HtmlTree.CODE(overriddenTypeLink);
@@ -281,15 +293,24 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
             Content codeMethLink = HtmlTree.CODE(methlink);
             Content dd = HtmlTree.DD(codeMethLink);
             dd.add(Entity.NO_BREAK_SPACE);
-            dd.add(writer.contents.inClass);
+            dd.add(contents.inClass);
             dd.add(Entity.NO_BREAK_SPACE);
             dd.add(codeOverriddenTypeLink);
             dl.add(dd);
         }
     }
 
+    /**
+     * Adds "implements" information for a method (if appropriate)
+     * into a definition list.
+     *
+     * @param writer the writer for the method
+     * @param method the method
+     * @param dl     the definition list
+     */
     protected static void addImplementsInfo(HtmlDocletWriter writer,
-            ExecutableElement method, Content dl) {
+                                            ExecutableElement method,
+                                            Content dl) {
         Utils utils = writer.utils;
         if (utils.isStatic(method) || writer.options.noComment()) {
             return;
@@ -306,8 +327,7 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
             Content intfaclink = writer.getLink(new LinkInfoImpl(
                     writer.configuration, LinkInfoImpl.Kind.METHOD_SPECIFIED_BY, intfac));
             Content codeIntfacLink = HtmlTree.CODE(intfaclink);
-            Content dt = HtmlTree.DT(HtmlTree.SPAN(HtmlStyle.overrideSpecifyLabel, contents.specifiedByLabel));
-            dl.add(dt);
+            dl.add(HtmlTree.DT(contents.specifiedByLabel));
             Content methlink = writer.getDocLink(
                     LinkInfoImpl.Kind.MEMBER, implementedMeth,
                     implementedMeth.getSimpleName(), false);

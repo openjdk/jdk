@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@ public class TestConstructors extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("pkg1/Outer.html", true,
-                "<dt><span class=\"seeLabel\">See Also:</span></dt>\n"
+                "<dt>See Also:</dt>\n"
                 + "<dd><a href=\"Outer.Inner.html#%3Cinit%3E()\"><code>Inner()</code></a>, \n"
                 + "<a href=\"Outer.Inner.html#%3Cinit%3E(int)\"><code>Inner(int)</code></a>, \n"
                 + "<a href=\"Outer.Inner.NestedInner.html#%3Cinit%3E()\"><code>NestedInner()</code></a>, \n"

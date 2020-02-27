@@ -200,7 +200,7 @@ public class HtmlSerialFieldWriter extends FieldWriterImpl
         TagletWriter.genTagOutput(configuration.tagletManager, field,
                 configuration.tagletManager.getBlockTaglets(field),
                 writer.getTagletWriterInstance(false), tagContent);
-        Content dlTags = new HtmlTree(HtmlTag.DL);
+        Content dlTags = new HtmlTree(HtmlTag.DL).setStyle(HtmlStyle.notes);
         dlTags.add(tagContent);
         contentTree.add(dlTags);  // TODO: what if empty?
     }

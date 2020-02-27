@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,8 +56,8 @@ public class TestProperty extends JavadocTester {
                 + "&nbsp;<span class=\"memberName\">goodProperty</span></div>\n"
                 + "<div class=\"block\">This is an Object property where the "
                 + "Object is a single Object.</div>\n"
-                + "<dl>\n"
-                + "<dt><span class=\"seeLabel\">See Also:</span></dt>\n"
+                + "<dl class=\"notes\">\n"
+                + "<dt>See Also:</dt>\n"
                 + "<dd><a href=\"#getGood()\"><code>getGood()</code></a>, \n"
                 + "<a href=\"#setGood(pkg.MyObj)\">"
                 + "<code>setGood(MyObj)</code></a></dd>\n"
@@ -69,8 +69,8 @@ public class TestProperty extends JavadocTester {
                 + "&nbsp;<span class=\"memberName\">badProperty</span></div>\n"
                 + "<div class=\"block\">This is an Object property where the "
                 + "Object is an array.</div>\n"
-                + "<dl>\n"
-                + "<dt><span class=\"seeLabel\">See Also:</span></dt>\n"
+                + "<dl class=\"notes\">\n"
+                + "<dt>See Also:</dt>\n"
                 + "<dd><a href=\"#getBad()\"><code>getBad()</code></a>, \n"
                 + "<a href=\"#setBad(pkg.MyObj%5B%5D)\">"
                 + "<code>setBad(MyObj[])</code></a></dd>\n"
@@ -101,8 +101,8 @@ public class TestProperty extends JavadocTester {
                 + "<span class=\"memberName\">listProperty</span></div>\n"
                 + "<div class=\"block\">This is an Object property where the "
                 + "Object is a single <code>List&lt;T&gt;</code>.</div>\n"
-                + "<dl>\n"
-                + "<dt><span class=\"seeLabel\">See Also:</span></dt>\n"
+                + "<dl class=\"notes\">\n"
+                + "<dt>See Also:</dt>\n"
                 + "<dd><a href=\"#getList()\">"
                 + "<code>getList()</code></a>, \n"
                 + "<a href=\"#setList(java.util.List)\">"

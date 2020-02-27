@@ -342,13 +342,13 @@ public class HtmlDocletWriter {
      * Adds the tags information.
      *
      * @param e the Element for which the tags will be generated
-     * @param htmltree the documentation tree to which the tags will be added
+     * @param htmlTree the documentation tree to which the tags will be added
      */
-    protected void addTagsInfo(Element e, Content htmltree) {
+    protected void addTagsInfo(Element e, Content htmlTree) {
         if (options.noComment()) {
             return;
         }
-        Content dl = new HtmlTree(HtmlTag.DL);
+        Content dl = new HtmlTree(HtmlTag.DL).setStyle(HtmlStyle.notes);
         if (utils.isExecutableElement(e) && !utils.isConstructor(e)) {
             addMethodInfo((ExecutableElement)e, dl);
         }
@@ -357,7 +357,7 @@ public class HtmlDocletWriter {
             configuration.tagletManager.getBlockTaglets(e),
                 getTagletWriterInstance(false), output);
         dl.add(output);
-        htmltree.add(dl);
+        htmlTree.add(dl);
     }
 
     /**

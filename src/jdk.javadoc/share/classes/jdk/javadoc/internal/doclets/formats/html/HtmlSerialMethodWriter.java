@@ -159,7 +159,7 @@ public class HtmlSerialMethodWriter extends MethodWriterImpl implements
         TagletWriter.genTagOutput(tagletManager, member,
             tagletManager.getSerializedFormTaglets(),
             writer.getTagletWriterInstance(false), tagContent);
-        Content dlTags = new HtmlTree(HtmlTag.DL);
+        Content dlTags = new HtmlTree(HtmlTag.DL).setStyle(HtmlStyle.notes);
         dlTags.add(tagContent);
         methodsContentTree.add(dlTags);
         if (name(member).compareTo("writeExternal") == 0
