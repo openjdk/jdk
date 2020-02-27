@@ -2,76 +2,96 @@
 
 ### Mozilla ECC Notice
 
-This notice is provided with respect to Elliptic Curve Cryptography,
-which is included with JRE, JDK, and OpenJDK.
+You are receiving a 
+[copy](http://hg.openjdk.java.net/jdk/jdk/file/tip/src/jdk.crypto.ec/share/native/libsunec/impl)
+of the Elliptic Curve Cryptography library in source form or object code.
 
-You are receiving a [copy](http://hg.openjdk.java.net/jdk9/jdk9/jdk/file/tip/src/jdk.crypto.ec/share/native/libsunec/impl)
-of the Elliptic Curve Cryptography library in source
-form with the JDK and OpenJDK source distributions, and as object code in
-the JRE & JDK runtimes.
-<pre>
-In the case of the JRE & JDK runtimes, the terms of the Oracle license do
-NOT apply to the Elliptic Curve Cryptography library; it is licensed under the
-following license, separately from Oracle's JDK & JRE.  If you do not wish to
-install the Elliptic Curve Cryptography library, you may delete the
-Elliptic Curve Cryptography library:
-   - On Solaris and Linux systems: delete $(JAVA_HOME)/lib/libsunec.so
-   - On Mac OSX systems: delete $(JAVA_HOME)/lib/libsunec.dylib
-   - On Windows systems: delete $(JAVA_HOME)\bin\sunec.dll
+```
+The terms of the Oracle license do NOT apply to the Elliptic Curve Cryptography
+library; it is licensed under the following license, separately from the Oracle 
+programs you received.  If you do not wish to install the Elliptic Curve 
+Cryptography library, you may delete the Elliptic Curve Cryptography library by 
+removing:
 
-</pre>
+      Solaris:  $(JAVA_HOME)/lib/libsunec.so
+      Linux:    $(JAVA_HOME)/lib/libsunec.so
+      macOS:    $(JAVA_HOME)/lib/libsunec.dylib
+      Windows:  $(JAVA_HOME)\bin\sunec.dll
 
-### Written Offer for Source Code
-<pre>
+```
 
-For third party technology that you receive from Oracle in binary form 
-which is licensed under an open source license that gives you the right
-to receive the source code for that binary, you can obtain a copy of 
-the applicable source code from this page:
-    http://hg.openjdk.java.net/jdk9/jdk9/jdk/file/tip/src/jdk.crypto.ec/share/native/libsunec/impl
+#### Mozilla ECC Library Removal Impact
+```
+The Java Cryptographic Service SunEC Provider uses the Mozilla ECC library.  If 
+this native library is removed, the following algorithms will no longer be 
+available from the SunEC provider using the JCA/JCE APIs:
 
-If the source code for the technology was not provided to you with the 
-binary, you can also receive a copy of the source code on physical 
-media by submitting a written request to:
+      KeyPairGenerator:  EC
+      KeyAgreement:      ECDH
+      Signature:         names that include *withECDSA* 
 
-   Oracle America, Inc.
-   Attn: Associate General Counsel,
-   Development and Engineering Legal
-   500 Oracle Parkway, 10th Floor
-   Redwood Shores, CA 94065
+```
 
-Or, you may send an email to Oracle using the form at:
+#### Written Offer for Source Code
 
-http://www.oracle.com/goto/opensourcecode/request
+```
+For third party technology that you receive from Oracle in binary form which 
+is licensed under an open source license that gives you the right to receive 
+the source code for that binary, you can also receive a copy of the source 
+code on physical media by submitting a written request to:
+
+        Oracle America, Inc. 
+        Attn: Associate General Counsel, 
+        Development and Engineering Legal 
+        500 Oracle Parkway, 10th Floor 
+        Redwood Shores, CA 94065
 
 Your request should include:
+```
 
-  - The name of the component or binary file(s) for which you are requesting the source code
+* The name of the component or binary file(s) for which you are requesting 
+  the source code
+* The name and version number of the Oracle product containing the binary
+* The date you received the Oracle product
+* Your name
+* Your company name (if applicable)
+* Your return mailing address and email and 
+* A telephone number in the event we need to reach you.
 
-  - The name and version number of the Oracle product containing the binary
+```
+We may charge you a fee to cover the cost of physical media and processing.
+Your request must be sent (i) within three (3) years of the date you received
+the Oracle product that included the component or binary file(s) that are the
+subject of your request, or (ii) in the case of code licensed under the GPL
+v3, for as long as Oracle offers spare parts or customer support for that
+product model.
 
-  - The date you received the Oracle product
+```
 
-  - Your name
+### Mozilla ECC License
+```
+Software distributed under the License is distributed on an "AS IS" basis,
+WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+for the specific language governing rights and limitations under the
+License.
 
-  - Your company name (if applicable)
+The Original Code is the Elliptic Curve Cryptography library.
 
-  - Your return mailing address and email and
+The Initial Developer of the Original Code is
+Sun Microsystems, Inc.
+Portions created by the Initial Developer are Copyright (C) 2003
+the Initial Developer. All Rights Reserved.
 
-  - A telephone number in the event we need to reach you.
+Contributor(s):
+Dr Vipul Gupta  and
+Douglas Stebila, Sun Microsystems Laboratories
 
-We may charge you a fee to cover the cost of physical media and processing. 
-Your request must be sent (i) within three (3) years of the date you 
-received the Oracle product that included the component or binary 
-file(s) that are the subject of your request, or (ii) in the case of 
-code licensed under the GPL v3, for as long as Oracle offers spare 
-parts or customer support for that product model.
+The Elliptic Curve Cryptography Library is subject to GNU Lesser Public License 
+Version 2.1.  
+```
 
-</pre>
-
-### LGPL 2.1
-<pre>
-
+#### LGPL 2.1
+```
                   GNU LESSER GENERAL PUBLIC LICENSE
                        Version 2.1, February 1999
 
@@ -559,7 +579,8 @@ convey the exclusion of warranty; and each file should have at least the
 
     You should have received a copy of the GNU Lesser General Public
     License along with this library; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+    Foundation, Inc., 51 Franklin Street, Fifth Floor, 
+    Boston, MA  02110-1301  USA
 
 Also add information on how to contact you by electronic and paper mail.
 
@@ -575,4 +596,5 @@ necessary.  Here is a sample; alter the names:
 
 That's all there is to it!
 
-</pre>
+```
+
