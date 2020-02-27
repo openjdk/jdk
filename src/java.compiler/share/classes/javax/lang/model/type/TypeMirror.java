@@ -138,6 +138,39 @@ public interface TypeMirror extends javax.lang.model.AnnotatedConstruct {
     String toString();
 
     /**
+     * {@inheritDoc}
+     *
+     * <p>Note that any annotations returned by this method are type
+     * annotations.
+     *
+     * @since 8
+     */
+    @Override
+    List<? extends AnnotationMirror> getAnnotationMirrors();
+
+    /**
+     * {@inheritDoc}
+     *
+     * <p>Note that any annotation returned by this method is a type
+     * annotation.
+     *
+     * @since 8
+     */
+    @Override
+    <A extends Annotation> A getAnnotation(Class<A> annotationType);
+
+    /**
+     * {@inheritDoc}
+     *
+     * <p>Note that any annotations returned by this method are type
+     * annotations.
+     *
+     * @since 8
+     */
+    @Override
+    <A extends Annotation> A[] getAnnotationsByType(Class<A> annotationType);
+
+    /**
      * Applies a visitor to this type.
      *
      * @param <R> the return type of the visitor's methods

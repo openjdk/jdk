@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -513,6 +513,9 @@ public interface Elements {
     /**
      * Returns all annotations <i>present</i> on an element, whether
      * directly present or present via inheritance.
+     *
+     * <p>Note that any annotations returned by this method are
+     * declaration annotations.
      *
      * @param e  the element being examined
      * @return all annotations of the element

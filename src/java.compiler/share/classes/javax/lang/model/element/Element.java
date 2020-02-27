@@ -35,7 +35,6 @@ import java.util.Set;
 import javax.lang.model.type.*;
 import javax.lang.model.util.*;
 
-
 /**
  * Represents a program element such as a module, package, class, or method.
  * Each element represents a static, language-level construct
@@ -268,13 +267,15 @@ public interface Element extends javax.lang.model.AnnotatedConstruct {
     @Override
     int hashCode();
 
-
     /**
      * {@inheritDoc}
      *
-     * <p> To get inherited annotations as well, use {@link
+     * <p>To get inherited annotations as well, use {@link
      * Elements#getAllAnnotationMirrors(Element)
      * getAllAnnotationMirrors}.
+     *
+     * <p>Note that any annotations returned by this method are
+     * declaration annotations.
      *
      * @since 1.6
      */
@@ -283,10 +284,25 @@ public interface Element extends javax.lang.model.AnnotatedConstruct {
 
     /**
      * {@inheritDoc}
+     *
+     * <p>Note that any annotation returned by this method is a
+     * declaration annotation.
+     *
      * @since 1.6
      */
     @Override
     <A extends Annotation> A getAnnotation(Class<A> annotationType);
+
+    /**
+     * {@inheritDoc}
+     *
+     * <p>Note that any annotations returned by this method are
+     * declaration annotations.
+     *
+     * @since 8
+     */
+    @Override
+    <A extends Annotation> A[] getAnnotationsByType(Class<A> annotationType);
 
     /**
      * Applies a visitor to this element.
