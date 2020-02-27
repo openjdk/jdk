@@ -195,6 +195,7 @@ vmTestbase/jit/escape/LockCoarsening/LockCoarsening002.java 8208259 generic-all
 vmTestbase/vm/mlvm/indy/func/jvmti/redefineClassInBootstrap/TestDescription.java 8013267 generic-all
 vmTestbase/vm/mlvm/meth/func/java/throwException/Test.java 8058176 generic-all
 vmTestbase/vm/mlvm/meth/func/jdi/breakpointOtherStratum/Test.java 8208257,8058176 generic-all
+vmTestbase/vm/mlvm/meth/stress/compiler/deoptimize/Test.java#id1 8058176 generic-all
 vmTestbase/vm/mlvm/meth/stress/compiler/i2c_c2i/Test.java 8058176 generic-all
 vmTestbase/vm/mlvm/meth/stress/compiler/sequences/Test.java 8058176 generic-all
 vmTestbase/vm/mlvm/meth/stress/gc/callSequencesDuringGC/Test.java 8058176 generic-all
