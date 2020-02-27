@@ -915,6 +915,8 @@ com/sun/jdi/RepStep.java                                        8043571 generic-
 
 com/sun/jdi/NashornPopFrameTest.java                            8225620 generic-all
 
+com/sun/jdi/InvokeHangTest.java                                 8218463 linux-all
+
 ############################################################################
 
 # jdk_time
