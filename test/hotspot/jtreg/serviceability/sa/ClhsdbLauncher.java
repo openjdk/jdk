@@ -113,15 +113,22 @@ public class ClhsdbLauncher {
             throw new RuntimeException("CLHSDB command must be provided\n");
         }
 
-        // Enable verbose exception tracing so we see the full exception backtrace
-        // when there is a failure. We need to insert this command into the start
-        // of the commands list. We can't just issue the "verbose true" command seperately
+        // We want to execute clhsdb "echo" and "verbose" commands before the
+        // requested commands. We can't just issue these commands separately
         // because code below won't work correctly if all executed commands are
-        // not in the commands list. And since it's immutable, we need to allocate
-        // a mutable one.
+        // not in the commands list. Since the commands list is immutable, we
+        // need to allocate a mutable one that we can add the extra commands too.
         List<String> savedCommands = commands;
         commands = new java.util.LinkedList<String>();
+
+        // Enable echoing of all commands so we see them in the output.
+        commands.add("echo true");
+
+        // Enable verbose exception tracing so we see the full exception backtrace
+        // when there is a failure.
         commands.add("verbose true");
+
+        // Now add all the original commands after the "echo" and "verbose" commands.
         commands.addAll(savedCommands);
 
         try (OutputStream out = toolProcess.getOutputStream()) {
