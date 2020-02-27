@@ -1629,11 +1629,12 @@ void PhaseMacroExpand::yank_alloc_node(AllocateNode* alloc) {
   }
 #ifndef PRODUCT
   if (PrintEliminateAllocations) {
-    if (alloc->is_AllocateArray()) {}
+    if (alloc->is_AllocateArray()) {
       tty->print_cr("++++ Eliminated: %d AllocateArray", alloc->_idx);
     } else {
       tty->print_cr("++++ Eliminated: %d Allocate", alloc->_idx);
     }
+  }
 #endif
   _igvn.remove_dead_node(alloc);
 }
