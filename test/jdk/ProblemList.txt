@@ -948,6 +948,8 @@ com/sun/jndi/dns/ConfigTests/PortUnreachable.java               7164518 macosx-a
 
 javax/rmi/ssl/SSLSocketParametersTest.sh                        8162906 generic-all
 
+javax/script/Test7.java                                         8239361 generic-all
+
 ############################################################################
 
 # jdk_jfr
