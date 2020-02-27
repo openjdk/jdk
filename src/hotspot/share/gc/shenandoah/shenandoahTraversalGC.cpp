@@ -571,8 +571,6 @@ void ShenandoahTraversalGC::concurrent_traversal_collection() {
 }
 
 void ShenandoahTraversalGC::final_traversal_collection() {
-  _heap->make_parsable(true);
-
   if (!_heap->cancelled_gc()) {
 #if COMPILER2_OR_JVMCI
     DerivedPointerTable::clear();
@@ -605,6 +603,11 @@ void ShenandoahTraversalGC::final_traversal_collection() {
     // No more marking expected
     _heap->set_concurrent_traversal_in_progress(false);
     _heap->mark_complete_marking_context();
+
+    // A rare case, TLAB/GCLAB is initialized from an empty region without
+    // any live data, the region can be trashed and may be uncommitted in later code,
+    // that results the TLAB/GCLAB not usable. Retire them here.
+    _heap->make_parsable(true);
 
     _heap->parallel_cleaning(false);
     fixup_roots();
