@@ -349,9 +349,9 @@ Klass* ClassListParser::load_current_class(TRAPS) {
       // delegate to the correct loader (boot, platform or app) depending on
       // the class name.
 
-      Handle s = java_lang_String::create_from_symbol(class_name_symbol, CHECK_0);
+      Handle s = java_lang_String::create_from_symbol(class_name_symbol, CHECK_NULL);
       // ClassLoader.loadClass() wants external class name format, i.e., convert '/' chars to '.'
-      Handle ext_class_name = java_lang_String::externalize_classname(s, CHECK_0);
+      Handle ext_class_name = java_lang_String::externalize_classname(s, CHECK_NULL);
       Handle loader = Handle(THREAD, SystemDictionary::java_system_loader());
 
       JavaCalls::call_virtual(&result,

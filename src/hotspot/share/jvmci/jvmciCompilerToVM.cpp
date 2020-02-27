@@ -534,7 +534,7 @@ C2V_VMENTRY_NULL(jobject, lookupType, (JNIEnv* env, jobject, jstring jname, jcla
   }
 
   if (resolve) {
-    resolved_klass = SystemDictionary::resolve_or_null(class_name, class_loader, protection_domain, CHECK_0);
+    resolved_klass = SystemDictionary::resolve_or_null(class_name, class_loader, protection_domain, CHECK_NULL);
     if (resolved_klass == NULL) {
       JVMCI_THROW_MSG_NULL(ClassNotFoundException, str);
     }
@@ -543,7 +543,7 @@ C2V_VMENTRY_NULL(jobject, lookupType, (JNIEnv* env, jobject, jstring jname, jcla
       // This is a name from a signature.  Strip off the trimmings.
       // Call recursive to keep scope of strippedsym.
       TempNewSymbol strippedsym = Signature::strip_envelope(class_name);
-      resolved_klass = SystemDictionary::find(strippedsym, class_loader, protection_domain, CHECK_0);
+      resolved_klass = SystemDictionary::find(strippedsym, class_loader, protection_domain, CHECK_NULL);
     } else if (Signature::is_array(class_name)) {
       SignatureStream ss(class_name, false);
       int ndim = ss.skip_array_prefix();
@@ -552,15 +552,15 @@ C2V_VMENTRY_NULL(jobject, lookupType, (JNIEnv* env, jobject, jstring jname, jcla
         resolved_klass = SystemDictionary::find(strippedsym,
                                                 class_loader,
                                                 protection_domain,
-                                                CHECK_0);
+                                                CHECK_NULL);
         if (!resolved_klass.is_null()) {
-          resolved_klass = resolved_klass->array_klass(ndim, CHECK_0);
+          resolved_klass = resolved_klass->array_klass(ndim, CHECK_NULL);
         }
       } else {
-        resolved_klass = TypeArrayKlass::cast(Universe::typeArrayKlassObj(ss.type()))->array_klass(ndim, CHECK_0);
+        resolved_klass = TypeArrayKlass::cast(Universe::typeArrayKlassObj(ss.type()))->array_klass(ndim, CHECK_NULL);
       }
     } else {
-      resolved_klass = SystemDictionary::find(class_name, class_loader, protection_domain, CHECK_0);
+      resolved_klass = SystemDictionary::find(class_name, class_loader, protection_domain, CHECK_NULL);
     }
   }
   JVMCIObject result = JVMCIENV->get_jvmci_type(resolved_klass, JVMCI_CHECK_NULL);
@@ -704,8 +704,8 @@ C2V_VMENTRY_NULL(jobject, resolveFieldInPool, (JNIEnv* env, jobject, jobject jvm
   Bytecodes::Code code = (Bytecodes::Code)(((int) opcode) & 0xFF);
   fieldDescriptor fd;
   methodHandle mh(THREAD, (jvmci_method != NULL) ? JVMCIENV->asMethod(jvmci_method) : NULL);
-  LinkInfo link_info(cp, index, mh, CHECK_0);
-  LinkResolver::resolve_field(fd, link_info, Bytecodes::java_code(code), false, CHECK_0);
+  LinkInfo link_info(cp, index, mh, CHECK_NULL);
+  LinkResolver::resolve_field(fd, link_info, Bytecodes::java_code(code), false, CHECK_NULL);
   JVMCIPrimitiveArray info = JVMCIENV->wrap(info_handle);
   if (info.is_null() || JVMCIENV->get_length(info) != 3) {
     JVMCI_ERROR_NULL("info must not be null and have a length of 3");
@@ -1825,7 +1825,7 @@ C2V_VMENTRY_0(jboolean, isInternedString, (JNIEnv* env, jobject, jobject object)
     return false;
   }
   int len;
-  jchar* name = java_lang_String::as_unicode_string(str(), len, CHECK_0);
+  jchar* name = java_lang_String::as_unicode_string(str(), len, CHECK_false);
   return (StringTable::lookup(name, len) != NULL);
 C2V_END
 

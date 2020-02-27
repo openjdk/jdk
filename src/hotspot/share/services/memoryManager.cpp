@@ -69,9 +69,9 @@ instanceOop MemoryManager::get_memory_manager_instance(TRAPS) {
   if (mgr_obj == NULL) {
     // It's ok for more than one thread to execute the code up to the locked region.
     // Extra manager instances will just be gc'ed.
-    Klass* k = Management::sun_management_ManagementFactoryHelper_klass(CHECK_0);
+    Klass* k = Management::sun_management_ManagementFactoryHelper_klass(CHECK_NULL);
 
-    Handle mgr_name = java_lang_String::create_from_str(name(), CHECK_0);
+    Handle mgr_name = java_lang_String::create_from_str(name(), CHECK_NULL);
 
     JavaValue result(T_OBJECT);
     JavaCallArguments args;
@@ -80,7 +80,7 @@ instanceOop MemoryManager::get_memory_manager_instance(TRAPS) {
     Symbol* method_name = NULL;
     Symbol* signature = NULL;
     if (is_gc_memory_manager()) {
-      Klass* extKlass = Management::com_sun_management_internal_GarbageCollectorExtImpl_klass(CHECK_0);
+      Klass* extKlass = Management::com_sun_management_internal_GarbageCollectorExtImpl_klass(CHECK_NULL);
       // com.sun.management.GarbageCollectorMXBean is in jdk.management module which may not be present.
       if (extKlass != NULL) {
         k = extKlass;
@@ -102,7 +102,7 @@ instanceOop MemoryManager::get_memory_manager_instance(TRAPS) {
                            method_name,
                            signature,
                            &args,
-                           CHECK_0);
+                           CHECK_NULL);
 
     instanceOop m = (instanceOop) result.get_jobject();
     instanceHandle mgr(THREAD, m);

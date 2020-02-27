@@ -1482,19 +1482,19 @@ bool VM_RedefineClasses::merge_constant_pools(const constantPoolHandle& old_cp,
       case JVM_CONSTANT_Long:
         // just copy the entry to *merge_cp_p, but double and long take
         // two constant pool entries
-        ConstantPool::copy_entry_to(old_cp, old_i, *merge_cp_p, old_i, CHECK_0);
+        ConstantPool::copy_entry_to(old_cp, old_i, *merge_cp_p, old_i, CHECK_false);
         old_i++;
         break;
 
       default:
         // just copy the entry to *merge_cp_p
-        ConstantPool::copy_entry_to(old_cp, old_i, *merge_cp_p, old_i, CHECK_0);
+        ConstantPool::copy_entry_to(old_cp, old_i, *merge_cp_p, old_i, CHECK_false);
         break;
       }
     } // end for each old_cp entry
 
-    ConstantPool::copy_operands(old_cp, *merge_cp_p, CHECK_0);
-    (*merge_cp_p)->extend_operands(scratch_cp, CHECK_0);
+    ConstantPool::copy_operands(old_cp, *merge_cp_p, CHECK_false);
+    (*merge_cp_p)->extend_operands(scratch_cp, CHECK_false);
 
     // We don't need to sanity check that *merge_cp_length_p is within
     // *merge_cp_p bounds since we have the minimum on-entry check above.
@@ -1528,7 +1528,7 @@ bool VM_RedefineClasses::merge_constant_pools(const constantPoolHandle& old_cp,
       }
 
       bool match = scratch_cp->compare_entry_to(scratch_i, *merge_cp_p,
-        scratch_i, CHECK_0);
+        scratch_i, CHECK_false);
       if (match) {
         // found a match at the same index so nothing more to do
         continue;
@@ -1543,7 +1543,7 @@ bool VM_RedefineClasses::merge_constant_pools(const constantPoolHandle& old_cp,
       }
 
       int found_i = scratch_cp->find_matching_entry(scratch_i, *merge_cp_p,
-        CHECK_0);
+        CHECK_false);
       if (found_i != 0) {
         guarantee(found_i != scratch_i,
           "compare_entry_to() and find_matching_entry() do not agree");
@@ -1564,7 +1564,7 @@ bool VM_RedefineClasses::merge_constant_pools(const constantPoolHandle& old_cp,
       // No match found so we have to append this entry and any unique
       // referenced entries to *merge_cp_p.
       append_entry(scratch_cp, scratch_i, merge_cp_p, merge_cp_length_p,
-        CHECK_0);
+        CHECK_false);
     }
   }
 
@@ -1592,7 +1592,7 @@ bool VM_RedefineClasses::merge_constant_pools(const constantPoolHandle& old_cp,
       }
 
       int found_i =
-        scratch_cp->find_matching_entry(scratch_i, *merge_cp_p, CHECK_0);
+        scratch_cp->find_matching_entry(scratch_i, *merge_cp_p, CHECK_false);
       if (found_i != 0) {
         // Found a matching entry somewhere else in *merge_cp_p so
         // just need a mapping entry.
@@ -1603,7 +1603,7 @@ bool VM_RedefineClasses::merge_constant_pools(const constantPoolHandle& old_cp,
       // No match found so we have to append this entry and any unique
       // referenced entries to *merge_cp_p.
       append_entry(scratch_cp, scratch_i, merge_cp_p, merge_cp_length_p,
-        CHECK_0);
+        CHECK_false);
     }
 
     log_debug(redefine, class, constantpool)

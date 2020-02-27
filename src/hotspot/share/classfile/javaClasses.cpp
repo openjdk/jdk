@@ -296,7 +296,7 @@ Handle java_lang_String::create_from_unicode(const jchar* unicode, int length, T
 }
 
 oop java_lang_String::create_oop_from_unicode(const jchar* unicode, int length, TRAPS) {
-  Handle h_obj = create_from_unicode(unicode, length, CHECK_0);
+  Handle h_obj = create_from_unicode(unicode, length, CHECK_NULL);
   return h_obj();
 }
 
@@ -343,7 +343,7 @@ Handle java_lang_String::create_from_str(const char* utf8_str, TRAPS) {
 }
 
 oop java_lang_String::create_oop_from_str(const char* utf8_str, TRAPS) {
-  Handle h_obj = create_from_str(utf8_str, CHECK_0);
+  Handle h_obj = create_from_str(utf8_str, CHECK_NULL);
   return h_obj();
 }
 
@@ -1441,7 +1441,7 @@ void java_lang_Class::set_source_file(oop java_class, oop source_file) {
 oop java_lang_Class::create_basic_type_mirror(const char* basic_type_name, BasicType type, TRAPS) {
   // This should be improved by adding a field at the Java level or by
   // introducing a new VM klass (see comment in ClassFileParser)
-  oop java_class = InstanceMirrorKlass::cast(SystemDictionary::Class_klass())->allocate_instance(NULL, CHECK_0);
+  oop java_class = InstanceMirrorKlass::cast(SystemDictionary::Class_klass())->allocate_instance(NULL, CHECK_NULL);
   if (type != T_VOID) {
     Klass* aklass = Universe::typeArrayKlassObj(type);
     assert(aklass != NULL, "correct bootstrap");
@@ -2647,13 +2647,13 @@ oop java_lang_StackTraceElement::create(const methodHandle& method, int bci, TRA
   InstanceKlass* k = SystemDictionary::StackTraceElement_klass();
   assert(k != NULL, "must be loaded in 1.4+");
   if (k->should_be_initialized()) {
-    k->initialize(CHECK_0);
+    k->initialize(CHECK_NULL);
   }
 
-  Handle element = k->allocate_instance_handle(CHECK_0);
+  Handle element = k->allocate_instance_handle(CHECK_NULL);
 
   int version = method->constants()->version();
-  fill_in(element, method->method_holder(), method, version, bci, method->name(), CHECK_0);
+  fill_in(element, method->method_holder(), method, version, bci, method->name(), CHECK_NULL);
   return element();
 }
 
@@ -3399,13 +3399,13 @@ oop java_lang_boxing_object::initialize_and_allocate(BasicType type, TRAPS) {
   Klass* k = SystemDictionary::box_klass(type);
   if (k == NULL)  return NULL;
   InstanceKlass* ik = InstanceKlass::cast(k);
-  if (!ik->is_initialized())  ik->initialize(CHECK_0);
+  if (!ik->is_initialized())  ik->initialize(CHECK_NULL);
   return ik->allocate_instance(THREAD);
 }
 
 
 oop java_lang_boxing_object::create(BasicType type, jvalue* value, TRAPS) {
-  oop box = initialize_and_allocate(type, CHECK_0);
+  oop box = initialize_and_allocate(type, CHECK_NULL);
   if (box == NULL)  return NULL;
   switch (type) {
     case T_BOOLEAN:
@@ -4036,9 +4036,9 @@ oop java_security_AccessControlContext::create(objArrayHandle context, bool isPr
   assert(_isPrivileged_offset != 0, "offsets should have been initialized");
   assert(_isAuthorized_offset != -1, "offsets should have been initialized");
   // Ensure klass is initialized
-  SystemDictionary::AccessControlContext_klass()->initialize(CHECK_0);
+  SystemDictionary::AccessControlContext_klass()->initialize(CHECK_NULL);
   // Allocate result
-  oop result = SystemDictionary::AccessControlContext_klass()->allocate_instance(CHECK_0);
+  oop result = SystemDictionary::AccessControlContext_klass()->allocate_instance(CHECK_NULL);
   // Fill in values
   result->obj_field_put(_context_offset, context());
   result->obj_field_put(_privilegedContext_offset, privileged_context());

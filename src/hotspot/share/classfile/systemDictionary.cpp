@@ -1918,7 +1918,7 @@ bool SystemDictionary::resolve_wk_klass(WKID id, TRAPS) {
   InstanceKlass** klassp = &_well_known_klasses[id];
 
   if ((*klassp) == NULL) {
-    Klass* k = resolve_or_fail(symbol, true, CHECK_0);
+    Klass* k = resolve_or_fail(symbol, true, CHECK_false);
     (*klassp) = InstanceKlass::cast(k);
   }
   return ((*klassp) != NULL);

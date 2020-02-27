@@ -979,7 +979,7 @@ bool SystemDictionaryShared::add_unregistered_class(InstanceKlass* k, TRAPS) {
     bool isnew = _loaded_unregistered_classes.put(name, true);
     assert(isnew, "sanity");
     MutexLocker mu_r(THREAD, Compile_lock); // add_to_hierarchy asserts this.
-    SystemDictionary::add_to_hierarchy(k, CHECK_0);
+    SystemDictionary::add_to_hierarchy(k, CHECK_false);
     return true;
   }
 }

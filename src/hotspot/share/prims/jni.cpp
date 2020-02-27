@@ -2540,7 +2540,7 @@ JNI_ENTRY(Return, \
   Return ret = NULL;\
   DT_RETURN_MARK(New##Result##Array, Return, (const Return&)ret);\
 \
-  oop obj= oopFactory::Allocator(len, CHECK_0); \
+  oop obj= oopFactory::Allocator(len, CHECK_NULL); \
   ret = (Return) JNIHandles::make_local(env, obj); \
   return ret;\
 JNI_END

@@ -558,7 +558,7 @@ JVM_ENTRY(jstring, JVM_GetExtendedNPEMessage(JNIEnv *env, jthrowable throwable))
   stringStream ss;
   bool ok = BytecodeUtils::get_NPE_message_at(&ss, method, bci);
   if (ok) {
-    oop result = java_lang_String::create_oop_from_str(ss.base(), CHECK_0);
+    oop result = java_lang_String::create_oop_from_str(ss.base(), CHECK_NULL);
     return (jstring) JNIHandles::make_local(env, result);
   } else {
     return NULL;
