@@ -42,28 +42,4 @@ public:
     ~ShenandoahWorkerTimingsTracker();
 };
 
-
-class ShenandoahTerminationTimingsTracker : public StackObj {
-private:
-  double _start_time;
-  uint   _worker_id;
-
-public:
-  ShenandoahTerminationTimingsTracker(uint worker_id);
-  ~ShenandoahTerminationTimingsTracker();
-};
-
-// Tracking termination time in specific GC phase
-class ShenandoahTerminationTracker : public StackObj {
-private:
-  ShenandoahPhaseTimings::Phase _phase;
-
-  static ShenandoahPhaseTimings::Phase _current_termination_phase;
-public:
-  ShenandoahTerminationTracker(ShenandoahPhaseTimings::Phase phase);
-  ~ShenandoahTerminationTracker();
-
-  static ShenandoahPhaseTimings::Phase current_termination_phase() { return _current_termination_phase; }
-};
-
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHTIMINGTRACKER_HPP
