@@ -87,16 +87,6 @@ public:
   ~ShenandoahGCPauseMark();
 };
 
-class ShenandoahAllocTrace : public StackObj {
-private:
-  double _start;
-  size_t _size;
-  ShenandoahAllocRequest::Type _alloc_type;
-public:
-  ShenandoahAllocTrace(size_t words_size, ShenandoahAllocRequest::Type alloc_type);
-  ~ShenandoahAllocTrace();
-};
-
 class ShenandoahSafepoint : public AllStatic {
 public:
   // check if Shenandoah GC safepoint is in progress
