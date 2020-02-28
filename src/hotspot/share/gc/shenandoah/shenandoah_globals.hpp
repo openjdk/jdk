@@ -235,10 +235,6 @@
           "evacuation reserve/waste is incorrect, at the risk that "        \
           "application allocations run out of memory too early.")           \
                                                                             \
-  experimental(uintx, ShenandoahEvacAssist, 10,                             \
-          "How many objects to evacuate on LRB assist path. "               \
-          "Use zero to disable.")                                           \
-                                                                            \
   experimental(bool, ShenandoahPacing, true,                                \
           "Pace application allocations to give GC chance to start "        \
           "and complete before allocation failure is reached.")             \
