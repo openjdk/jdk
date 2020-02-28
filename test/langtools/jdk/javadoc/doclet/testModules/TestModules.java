@@ -872,7 +872,7 @@ public class TestModules extends JavadocTester {
 
     void checkModulesInSearch(boolean found) {
         checkOutput("index-all.html", found,
-                "<dl>\n"
+                "<dl class=\"index\">\n"
                 + "<dt><a href=\"moduleA/module-summary.html\">moduleA</a> - module moduleA</dt>\n"
                 + "<dd>\n"
                 + "<div class=\"block\">This is a test description for the moduleA module with a Search "
@@ -883,7 +883,7 @@ public class TestModules extends JavadocTester {
                 + "<div class=\"block\">This is a test description for the moduleB module.</div>\n"
                 + "</dd>\n"
                 + "</dl>",
-                "<dl>\n"
+                "<dl class=\"index\">\n"
                 + "<dt><span class=\"searchTagLink\"><a href=\"moduleB/module-summary.html#search_word\">"
                 + "search_word</a></span> - Search tag in module moduleB</dt>\n"
                 + "<dd>&nbsp;</dd>\n"
@@ -1226,7 +1226,7 @@ public class TestModules extends JavadocTester {
                 + "</div>");
         checkOutput("index-all.html", found,
                 "<h2 class=\"title\" id=\"I:T\">T</h2>\n"
-                + "<dl>\n"
+                + "<dl class=\"index\">\n"
                 + "<dt><a href=\"test.moduleFullName/module-summary.html\">test.moduleFullName</a> - module test.moduleFullName</dt>\n"
                 + "<dd>\n"
                 + "<div class=\"block\">This is a test description for the test.moduleFullName.</div>\n"
@@ -1236,7 +1236,7 @@ public class TestModules extends JavadocTester {
                 + "<h1 title=\"Module\" class=\"title\">Module&nbsp;moduleFullName</h1>\n"
                 + "</div>");
         checkOutput("index-all.html", !found,
-                "<dl>\n"
+                "<dl class=\"index\">\n"
                 + "<dt><a href=\"test.moduleFullName/module-summary.html\">moduleFullName</a> - module moduleFullName</dt>\n"
                 + "<dd>\n"
                 + "<div class=\"block\">This is a test description for the test.moduleFullName.</div>\n"

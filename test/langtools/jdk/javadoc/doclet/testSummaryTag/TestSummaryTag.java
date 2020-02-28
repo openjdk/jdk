@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@ public class TestSummaryTag extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("index-all.html", true,
-            "<dl>\n"
+            "<dl class=\"index\">\n"
             + "<dt><span class=\"memberNameLink\"><a href=\"p1/A.html#m()\">m()"
             + "</a></span> - Method in class p1.<a href=\"p1/A.html\" title=\"class in p1\">A</a></dt>\n"
             + "<dd>\n"

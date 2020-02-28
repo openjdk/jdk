@@ -309,14 +309,24 @@ public class HtmlTree extends Content {
     }
 
     /**
-     * Generates a DL tag with some content.
+     * Generates a DL tag with a given style.
      *
-     * @param body content for the tag
+     * @param style the style
      * @return an HtmlTree object for the DL tag
      */
-    public static HtmlTree DL(Content body) {
-        HtmlTree htmltree = new HtmlTree(HtmlTag.DL, nullCheck(body));
-        return htmltree;
+    public static HtmlTree DL(HtmlStyle style) {
+        return new HtmlTree(HtmlTag.DL).setStyle(style);
+    }
+
+    /**
+     * Generates a DL tag with some content.
+     *
+     * @param style the style for the tag
+     * @param body  content for the tag
+     * @return an HtmlTree object for the DL tag
+     */
+    public static HtmlTree DL(HtmlStyle style, Content body) {
+        return new HtmlTree(HtmlTag.DL, nullCheck(body)).setStyle(style);
     }
 
     /**

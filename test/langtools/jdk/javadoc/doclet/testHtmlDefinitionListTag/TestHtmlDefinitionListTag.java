@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 6786690 6820360 8025633 8026567 8175200 8183511 8186332 8074407 8182765
+ *      8230136
  * @summary This test verifies the nesting of definition list tags.
  * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -46,9 +47,6 @@ public class TestHtmlDefinitionListTag extends JavadocTester {
 
     @Test
     public void test_Comment_Deprecated() {
-//        tester.run(ARGS1, TEST_ALL, NEGATED_TEST_NO_C5);
-//        tester.runTestsOnHTML(NO_TEST,  NEGATED_TEST_C5);
-//        tester.runTestsOnHTML(TEST_CMNT_DEPR, NO_TEST);
         javadoc("-Xdoclint:none",
                 "-d", "out-1",
                 "-sourcepath", testSrc,
@@ -60,9 +58,6 @@ public class TestHtmlDefinitionListTag extends JavadocTester {
 
     @Test
     public void test_NoComment_Deprecated() {
-//        tester.run(ARGS2, TEST_ALL, NEGATED_TEST_NO_C5);
-//        tester.runTestsOnHTML(NO_TEST,  NEGATED_TEST_C5);
-//        tester.runTestsOnHTML(NO_TEST, TEST_CMNT_DEPR);
         javadoc("-Xdoclint:none",
                 "-d", "out-2",
                 "-nocomment",
@@ -75,8 +70,6 @@ public class TestHtmlDefinitionListTag extends JavadocTester {
 
     @Test
     public void test_Comment_NoDeprecated() {
-//        tester.run(ARGS3, TEST_ALL, NEGATED_TEST_NO_C5);
-//        tester.runTestsOnHTML(TEST_NODEPR, TEST_NOCMNT_NODEPR);
         javadoc("-Xdoclint:none",
                 "-d", "out-3",
                 "-nodeprecated",
@@ -90,8 +83,6 @@ public class TestHtmlDefinitionListTag extends JavadocTester {
 
     @Test
     public void testNoCommentNoDeprecated() {
-//        tester.run(ARGS4, TEST_ALL, NEGATED_TEST_NO_C5);
-//        tester.runTestsOnHTML(TEST_NOCMNT_NODEPR, TEST_CMNT_DEPR);
         javadoc("-Xdoclint:none",
                 "-d", "out-4",
                 "-nocomment",
@@ -114,7 +105,7 @@ public class TestHtmlDefinitionListTag extends JavadocTester {
                 "extends java.lang.Object\n" +
                 "implements java.io.Serializable</pre>");
         checkOutput("pkg1/C4.html", true,
-                "<dl>\n" +
+                "<dl class=\"notes\">\n" +
                 "<dt>Default:</dt>\n" +
                 "<dd>true</dd>\n" +
                 "</dl>");

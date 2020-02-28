@@ -191,7 +191,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
         // Interface generic parameter substitution
         // Signature of subclass that has type parameters.
         checkOutput("pkg/TypeParameters.html", true,
-                "<dl>\n"
+                "<dl class=\"notes\">\n"
                 + "<dt>All Implemented Interfaces:</dt>\n"
                 + "<dd><code><a href=\"SubInterface.html\" title=\"interface in pkg\">"
                 + "SubInterface</a>&lt;E&gt;</code>, <code><a href=\"SuperInterface.html\" "
@@ -199,13 +199,13 @@ public class TestNewLanguageFeatures extends JavadocTester {
                 + "</dl>");
 
         checkOutput("pkg/SuperInterface.html", true,
-                "<dl>\n"
+                "<dl class=\"notes\">\n"
                 + "<dt>All Known Subinterfaces:</dt>\n"
                 + "<dd><code><a href=\"SubInterface.html\" title=\"interface in pkg\">"
                 + "SubInterface</a>&lt;V&gt;</code></dd>\n"
                 + "</dl>");
         checkOutput("pkg/SubInterface.html", true,
-                "<dl>\n"
+                "<dl class=\"notes\">\n"
                 + "<dt>All Superinterfaces:</dt>\n"
                 + "<dd><code><a href=\"SuperInterface.html\" title=\"interface in pkg\">"
                 + "SuperInterface</a>&lt;V&gt;</code></dd>\n"

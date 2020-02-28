@@ -71,7 +71,7 @@ public class TestInterface extends JavadocTester {
                 "<div class=\"memberSignature\"><span class=\"modifiers\">static final</span>&nbsp;"
                 + "<span class=\"returnType\">int</span>&nbsp;<span class=\"memberName\">field</span></div>",
                 // Make sure known implementing class list is correct and omits type parameters.
-                "<dl>\n"
+                "<dl class=\"notes\">\n"
                 + "<dt>All Known Implementing Classes:</dt>\n"
                 + "<dd><code><a href=\"Child.html\" title=\"class in pkg\">Child"
                 + "</a></code>, <code><a href=\"Parent.html\" title=\"class in pkg\">Parent"
@@ -80,7 +80,7 @@ public class TestInterface extends JavadocTester {
 
         checkOutput("pkg/Child.html", true,
                 // Make sure "All Implemented Interfaces": has substituted type parameters
-                "<dl>\n"
+                "<dl class=\"notes\">\n"
                 + "<dt>All Implemented Interfaces:</dt>\n"
                 + "<dd><code><a href=\"Interface.html\" title=\"interface in pkg\">"
                 + "Interface</a>&lt;CE&gt;</code></dd>\n"
@@ -106,8 +106,8 @@ public class TestInterface extends JavadocTester {
                 + "title=\"type parameter in Child\">CE</a>&gt;</code></dd>");
 
         checkOutput("pkg/Parent.html", true,
-                //Make sure "Direct Know Subclasses" omits type parameters
-                "<dl>\n"
+                //Make sure "Direct Known Subclasses" omits type parameters
+                "<dl class=\"notes\">\n"
                 + "<dt>Direct Known Subclasses:</dt>\n"
                 + "<dd><code><a href=\"Child.html\" title=\"class in pkg\">Child"
                 + "</a></code></dd>\n"

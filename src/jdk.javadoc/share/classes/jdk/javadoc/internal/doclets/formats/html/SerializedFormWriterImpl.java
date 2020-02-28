@@ -184,7 +184,7 @@ public class SerializedFormWriterImpl extends SubWriterHolderWriter
      */
     @Override
     public Content getSerialUIDInfoHeader() {
-        return new HtmlTree(HtmlTag.DL).setStyle(HtmlStyle.nameValue);
+        return HtmlTree.DL(HtmlStyle.nameValue);
     }
 
     /**

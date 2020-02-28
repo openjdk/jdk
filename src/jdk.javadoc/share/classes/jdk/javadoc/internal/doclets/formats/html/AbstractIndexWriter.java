@@ -111,7 +111,7 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
         addHeading(uc, contentTree);
         // Display the list only if there are elements to be displayed.
         if (!memberlist.isEmpty()) {
-            Content dl = new HtmlTree(HtmlTag.DL);
+            HtmlTree dl = HtmlTree.DL(HtmlStyle.index);
             for (Element element : memberlist) {
                 addDescription(dl, element);
             }
@@ -124,7 +124,7 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
         addHeading(uc, contentTree);
         // Display the list only if there are elements to be displayed.
         if (!searchList.isEmpty()) {
-            Content dl = new HtmlTree(HtmlTag.DL);
+            HtmlTree dl = HtmlTree.DL(HtmlStyle.index);
             for (SearchIndexItem sii : searchList) {
                 addDescription(sii, dl);
             }
@@ -139,7 +139,7 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
         int searchListSize = searchList.size();
         int i = 0;
         int j = 0;
-        Content dl = new HtmlTree(HtmlTag.DL);
+        HtmlTree dl = HtmlTree.DL(HtmlStyle.index);
         while (i < memberListSize && j < searchListSize) {
             Element elem = memberlist.get(i);
             String name = (utils.isModule(elem))

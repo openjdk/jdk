@@ -82,13 +82,12 @@ public class AnnotationTypeOptionalMemberWriterImpl extends
     @Override
     public void addDefaultValueInfo(Element member, Content annotationDocTree) {
         if (utils.isAnnotationType(member)) {
-            ExecutableElement ee = (ExecutableElement)member;
+            ExecutableElement ee = (ExecutableElement) member;
             AnnotationValue value = ee.getDefaultValue();
             if (value != null) {
-                Content dt = HtmlTree.DT(contents.default_);
-                Content dl = HtmlTree.DL(dt);
-                Content dd = HtmlTree.DD(new StringContent(value.toString()));
-                dl.add(dd);
+                Content dl = HtmlTree.DL(HtmlStyle.notes);
+                dl.add(HtmlTree.DT(contents.default_));
+                dl.add(HtmlTree.DD(new StringContent(value.toString())));
                 annotationDocTree.add(dl);
             }
         }

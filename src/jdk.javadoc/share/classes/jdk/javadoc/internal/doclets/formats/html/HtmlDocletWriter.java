@@ -348,7 +348,7 @@ public class HtmlDocletWriter {
         if (options.noComment()) {
             return;
         }
-        Content dl = new HtmlTree(HtmlTag.DL).setStyle(HtmlStyle.notes);
+        HtmlTree dl = HtmlTree.DL(HtmlStyle.notes);
         if (utils.isExecutableElement(e) && !utils.isConstructor(e)) {
             addMethodInfo((ExecutableElement)e, dl);
         }

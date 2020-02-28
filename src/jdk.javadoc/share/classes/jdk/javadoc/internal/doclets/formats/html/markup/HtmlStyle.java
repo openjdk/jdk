@@ -79,6 +79,7 @@ public enum HtmlStyle {
     hierarchy,
     horizontal,
     implementationLabel,
+    index,
     inheritance,
     inheritedList,
     interfaceName,
