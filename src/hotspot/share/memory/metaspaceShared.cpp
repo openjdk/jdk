@@ -463,6 +463,9 @@ void MetaspaceShared::serialize(SerializeClosure* soc) {
   SystemDictionaryShared::serialize_dictionary_headers(soc);
 
   InstanceMirrorKlass::serialize_offsets(soc);
+
+  // Dump/restore well known classes (pointers)
+  SystemDictionaryShared::serialize_well_known_klasses(soc);
   soc->do_tag(--tag);
 
   serialize_cloned_cpp_vtptrs(soc);

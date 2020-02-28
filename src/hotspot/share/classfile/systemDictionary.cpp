@@ -1336,11 +1336,16 @@ InstanceKlass* SystemDictionary::load_shared_class(InstanceKlass* ik,
     ik->restore_unshareable_info(loader_data, protection_domain, CHECK_NULL);
   }
 
+  load_shared_class_misc(ik, loader_data, CHECK_NULL);
+  return ik;
+}
+
+void SystemDictionary::load_shared_class_misc(InstanceKlass* ik, ClassLoaderData* loader_data, TRAPS) {
   ik->print_class_load_logging(loader_data, NULL, NULL);
 
   // For boot loader, ensure that GetSystemPackage knows that a class in this
   // package was loaded.
-  if (class_loader.is_null()) {
+  if (loader_data->is_the_null_class_loader_data()) {
     int path_index = ik->shared_classpath_index();
     ResourceMark rm(THREAD);
     ClassLoader::add_package(ik->name()->as_C_string(), path_index, THREAD);
@@ -1372,8 +1377,6 @@ InstanceKlass* SystemDictionary::load_shared_class(InstanceKlass* ik,
       }
     }
   }
-
-  return ik;
 }
 #endif // INCLUDE_CDS
 
@@ -1785,7 +1788,9 @@ InstanceKlass* SystemDictionary::find_class(Symbol* class_name, ClassLoaderData*
 
 void SystemDictionary::add_to_hierarchy(InstanceKlass* k, TRAPS) {
   assert(k != NULL, "just checking");
-  assert_locked_or_safepoint(Compile_lock);
+  if (Universe::is_fully_initialized()) {
+    assert_locked_or_safepoint(Compile_lock);
+  }
 
   k->set_init_state(InstanceKlass::loaded);
   // make sure init_state store is already done.
@@ -1798,7 +1803,9 @@ void SystemDictionary::add_to_hierarchy(InstanceKlass* k, TRAPS) {
 
   // Now flush all code that depended on old class hierarchy.
   // Note: must be done *after* linking k into the hierarchy (was bug 12/9/97)
-  CodeCache::flush_dependents_on(k);
+  if (Universe::is_fully_initialized()) {
+    CodeCache::flush_dependents_on(k);
+  }
 }
 
 // ----------------------------------------------------------------------------
@@ -1911,13 +1918,53 @@ bool SystemDictionary::is_well_known_klass(Symbol* class_name) {
 }
 #endif
 
+void SystemDictionary::quick_resolve(InstanceKlass* klass, ClassLoaderData* loader_data, Handle domain, TRAPS) {
+  assert(!Universe::is_fully_initialized(), "We can make short cuts only during VM initialization");
+  assert(klass->is_shared(), "Must be shared class");
+  if (klass->class_loader_data() != NULL) {
+    return;
+  }
+
+  // add super and interfaces first
+  Klass* super = klass->super();
+  if (super != NULL && super->class_loader_data() == NULL) {
+    assert(super->is_instance_klass(), "Super should be instance klass");
+    quick_resolve(InstanceKlass::cast(super), loader_data, domain, CHECK);
+  }
+
+  Array<InstanceKlass*>* ifs = klass->local_interfaces();
+  for (int i = 0; i < ifs->length(); i++) {
+    InstanceKlass* ik = ifs->at(i);
+    if (ik->class_loader_data()  == NULL) {
+      quick_resolve(ik, loader_data, domain, CHECK);
+    }
+  }
+
+  klass->restore_unshareable_info(loader_data, domain, THREAD);
+  load_shared_class_misc(klass, loader_data, CHECK);
+  Dictionary* dictionary = loader_data->dictionary();
+  unsigned int hash = dictionary->compute_hash(klass->name());
+  dictionary->add_klass(hash, klass->name(), klass);
+  add_to_hierarchy(klass, CHECK);
+  assert(klass->is_loaded(), "Must be in at least loaded state");
+}
+
 bool SystemDictionary::resolve_wk_klass(WKID id, TRAPS) {
   assert(id >= (int)FIRST_WKID && id < (int)WKID_LIMIT, "oob");
   int sid = wk_init_info[id - FIRST_WKID];
   Symbol* symbol = vmSymbols::symbol_at((vmSymbols::SID)sid);
   InstanceKlass** klassp = &_well_known_klasses[id];
 
-  if ((*klassp) == NULL) {
+  if (UseSharedSpaces && !JvmtiExport::should_post_class_prepare()) {
+    InstanceKlass* k = *klassp;
+    assert(k->is_shared_boot_class(), "must be");
+
+    ClassLoaderData* loader_data = ClassLoaderData::the_null_class_loader_data();
+    quick_resolve(k, loader_data, Handle(), CHECK_false);
+    return true;
+  }
+
+  if (!is_wk_klass_loaded(*klassp)) {
     Klass* k = resolve_or_fail(symbol, true, CHECK_false);
     (*klassp) = InstanceKlass::cast(k);
   }
@@ -1936,7 +1983,7 @@ void SystemDictionary::resolve_wk_klasses_until(WKID limit_id, WKID &start_id, T
 }
 
 void SystemDictionary::resolve_well_known_classes(TRAPS) {
-  assert(WK_KLASS(Object_klass) == NULL, "well-known classes should only be initialized once");
+  assert(!Object_klass_loaded(), "well-known classes should only be initialized once");
 
   // Create the ModuleEntry for java.base.  This call needs to be done here,
   // after vmSymbols::initialize() is called but before any classes are pre-loaded.
@@ -1984,10 +2031,6 @@ void SystemDictionary::resolve_well_known_classes(TRAPS) {
   java_lang_Class::compute_offsets();
 
   // Fixup mirrors for classes loaded before java.lang.Class.
-  // These calls iterate over the objects currently in the perm gen
-  // so calling them at this point is matters (not before when there
-  // are fewer objects and not later after there are more objects
-  // in the perm gen.
   Universe::initialize_basic_type_mirrors(CHECK);
   Universe::fixup_mirrors(CHECK);
 

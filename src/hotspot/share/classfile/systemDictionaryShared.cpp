@@ -1410,6 +1410,12 @@ void SystemDictionaryShared::serialize_dictionary_headers(SerializeClosure* soc,
   }
 }
 
+void SystemDictionaryShared::serialize_well_known_klasses(SerializeClosure* soc) {
+  for (int i = FIRST_WKID; i < WKID_LIMIT; i++) {
+    soc->do_ptr((void**)&_well_known_klasses[i]);
+  }
+}
+
 const RunTimeSharedClassInfo*
 SystemDictionaryShared::find_record(RunTimeSharedDictionary* static_dict, RunTimeSharedDictionary* dynamic_dict, Symbol* name) {
   if (!UseSharedSpaces || !name->is_shared()) {

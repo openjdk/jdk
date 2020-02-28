@@ -387,13 +387,15 @@ public:
     resolve_wk_klasses_until((WKID) limit, start_id, THREAD);
   }
 public:
+  #define WK_KLASS(name) _well_known_klasses[SystemDictionary::WK_KLASS_ENUM_NAME(name)]
+
   #define WK_KLASS_DECLARE(name, symbol) \
     static InstanceKlass* name() { return check_klass(_well_known_klasses[WK_KLASS_ENUM_NAME(name)]); } \
     static InstanceKlass** name##_addr() {                                                              \
       return &_well_known_klasses[SystemDictionary::WK_KLASS_ENUM_NAME(name)];                          \
     }                                                                                                   \
     static bool name##_is_loaded() {                                                                    \
-      return _well_known_klasses[SystemDictionary::WK_KLASS_ENUM_NAME(name)] != NULL;                   \
+      return is_wk_klass_loaded(WK_KLASS(name));                                                        \
     }
   WK_KLASSES_DO(WK_KLASS_DECLARE);
   #undef WK_KLASS_DECLARE
@@ -408,9 +410,6 @@ public:
     return &_well_known_klasses[id];
   }
   static void well_known_klasses_do(MetaspaceClosure* it);
-
-  // Local definition for direct access to the private array:
-  #define WK_KLASS(name) _well_known_klasses[SystemDictionary::WK_KLASS_ENUM_NAME(name)]
 
   static InstanceKlass* box_klass(BasicType t) {
     assert((uint)t < T_VOID+1, "range check");
@@ -431,12 +430,16 @@ protected:
     return ClassLoaderData::class_loader_data(class_loader());
   }
 
+  static bool is_wk_klass_loaded(InstanceKlass* klass) {
+    return !(klass == NULL || !klass->is_loaded());
+  }
+
 public:
-  static bool Parameter_klass_loaded()      { return WK_KLASS(reflect_Parameter_klass) != NULL; }
-  static bool Class_klass_loaded()          { return WK_KLASS(Class_klass) != NULL; }
-  static bool Cloneable_klass_loaded()      { return WK_KLASS(Cloneable_klass) != NULL; }
-  static bool Object_klass_loaded()         { return WK_KLASS(Object_klass) != NULL; }
-  static bool ClassLoader_klass_loaded()    { return WK_KLASS(ClassLoader_klass) != NULL; }
+  static bool Object_klass_loaded()         { return is_wk_klass_loaded(WK_KLASS(Object_klass));             }
+  static bool Class_klass_loaded()          { return is_wk_klass_loaded(WK_KLASS(Class_klass));              }
+  static bool Cloneable_klass_loaded()      { return is_wk_klass_loaded(WK_KLASS(Cloneable_klass));          }
+  static bool Parameter_klass_loaded()      { return is_wk_klass_loaded(WK_KLASS(reflect_Parameter_klass));  }
+  static bool ClassLoader_klass_loaded()    { return is_wk_klass_loaded(WK_KLASS(ClassLoader_klass));        }
 
   // Returns java system loader
   static oop java_system_loader();
@@ -596,6 +599,8 @@ protected:
                                           Handle protection_domain,
                                           const ClassFileStream *cfs,
                                           TRAPS);
+  // Second part of load_shared_class
+  static void load_shared_class_misc(InstanceKlass* ik, ClassLoaderData* loader_data, TRAPS);
   static InstanceKlass* load_shared_boot_class(Symbol* class_name,
                                                TRAPS);
   static InstanceKlass* load_instance_class(Symbol* class_name, Handle class_loader, TRAPS);
@@ -628,6 +633,8 @@ protected:
 
   // Resolve well-known classes so they can be used like SystemDictionary::String_klass()
   static void resolve_well_known_classes(TRAPS);
+  // quick resolve using CDS for well-known classes only.
+  static void quick_resolve(InstanceKlass* klass, ClassLoaderData* loader_data, Handle domain, TRAPS);
 
   // Class loader constraints
   static void check_constraints(unsigned int hash,
