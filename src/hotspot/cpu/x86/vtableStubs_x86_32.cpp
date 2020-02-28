@@ -97,7 +97,7 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
     start_pc = __ pc();
     // check offset vs vtable length
     __ cmpl(Address(rax, Klass::vtable_length_offset()), vtable_index*vtableEntry::size());
-    slop_delta  = 6 - (__ pc() - start_pc);  // cmpl varies in length, depending on data
+    slop_delta  = 10 - (__ pc() - start_pc);  // cmpl varies in length, depending on data
     slop_bytes += slop_delta;
     assert(slop_delta >= 0, "negative slop(%d) encountered, adjust code size estimate!", slop_delta);
 
