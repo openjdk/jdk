@@ -89,7 +89,7 @@ bool JavaThread::pd_get_top_frame(frame* fr_addr,
     ret_fp = NULL;
   } else {
     // sp is reasonable is fp reasonable?
-    if (!jt->is_in_stack_range_incl((address)ret_fp, ret_sp)) {
+    if (!jt->is_in_stack_range_incl((address)ret_fp, (address)ret_sp)) {
       ret_fp = NULL;
     }
   }
