@@ -105,6 +105,10 @@ public final class KeychainStore extends KeyStoreSpi {
 
     private static final Debug debug = Debug.getInstance("keystore");
 
+    static {
+        jdk.internal.loader.BootLoader.loadLibrary("osxsecurity");
+    }
+
     private static void permissionCheck() {
         SecurityManager sec = System.getSecurityManager();
 
