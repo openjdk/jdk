@@ -1556,7 +1556,6 @@ vmTestbase_vm_gc_quick = \
   vmTestbase/gc/gctests/StringGC/StringGC.java \
   vmTestbase/gc/gctests/StringInternGC/StringInternGC.java \
   vmTestbase/gc/gctests/ReferencesGC/ReferencesGC.java \
-  vmTestbase/vm/gc/kind/parOld/TestDescription.java \
   vmTestbase/gc/lock/jni/jnilock001/TestDescription.java \
   vmTestbase/gc/lock/jniref/jnireflock04/TestDescription.java \
   vmTestbase/gc/lock/jvmti/alloc/jvmtialloclock02/TestDescription.java \
