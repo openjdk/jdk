@@ -233,13 +233,6 @@ public class ObjectHeap {
     }
     visitor.prologue(totalSize);
 
-    CollectedHeap heap = VM.getVM().getUniverse().heap();
-
-    if (heap instanceof GenCollectedHeap) {
-      GenCollectedHeap genHeap = (GenCollectedHeap) heap;
-      Generation genOld = genHeap.getGen(1);
-    }
-
     for (int i = 0; i < liveRegions.size(); i += 2) {
       Address bottom = (Address) liveRegions.get(i);
       Address top    = (Address) liveRegions.get(i+1);
