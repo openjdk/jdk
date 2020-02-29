@@ -1378,6 +1378,37 @@ void SystemDictionary::load_shared_class_misc(InstanceKlass* ik, ClassLoaderData
     }
   }
 }
+
+void SystemDictionary::quick_resolve(InstanceKlass* klass, ClassLoaderData* loader_data, Handle domain, TRAPS) {
+  assert(!Universe::is_fully_initialized(), "We can make short cuts only during VM initialization");
+  assert(klass->is_shared(), "Must be shared class");
+  if (klass->class_loader_data() != NULL) {
+    return;
+  }
+
+  // add super and interfaces first
+  Klass* super = klass->super();
+  if (super != NULL && super->class_loader_data() == NULL) {
+    assert(super->is_instance_klass(), "Super should be instance klass");
+    quick_resolve(InstanceKlass::cast(super), loader_data, domain, CHECK);
+  }
+
+  Array<InstanceKlass*>* ifs = klass->local_interfaces();
+  for (int i = 0; i < ifs->length(); i++) {
+    InstanceKlass* ik = ifs->at(i);
+    if (ik->class_loader_data()  == NULL) {
+      quick_resolve(ik, loader_data, domain, CHECK);
+    }
+  }
+
+  klass->restore_unshareable_info(loader_data, domain, THREAD);
+  load_shared_class_misc(klass, loader_data, CHECK);
+  Dictionary* dictionary = loader_data->dictionary();
+  unsigned int hash = dictionary->compute_hash(klass->name());
+  dictionary->add_klass(hash, klass->name(), klass);
+  add_to_hierarchy(klass, CHECK);
+  assert(klass->is_loaded(), "Must be in at least loaded state");
+}
 #endif // INCLUDE_CDS
 
 InstanceKlass* SystemDictionary::load_instance_class(Symbol* class_name, Handle class_loader, TRAPS) {
@@ -1918,43 +1949,13 @@ bool SystemDictionary::is_well_known_klass(Symbol* class_name) {
 }
 #endif
 
-void SystemDictionary::quick_resolve(InstanceKlass* klass, ClassLoaderData* loader_data, Handle domain, TRAPS) {
-  assert(!Universe::is_fully_initialized(), "We can make short cuts only during VM initialization");
-  assert(klass->is_shared(), "Must be shared class");
-  if (klass->class_loader_data() != NULL) {
-    return;
-  }
-
-  // add super and interfaces first
-  Klass* super = klass->super();
-  if (super != NULL && super->class_loader_data() == NULL) {
-    assert(super->is_instance_klass(), "Super should be instance klass");
-    quick_resolve(InstanceKlass::cast(super), loader_data, domain, CHECK);
-  }
-
-  Array<InstanceKlass*>* ifs = klass->local_interfaces();
-  for (int i = 0; i < ifs->length(); i++) {
-    InstanceKlass* ik = ifs->at(i);
-    if (ik->class_loader_data()  == NULL) {
-      quick_resolve(ik, loader_data, domain, CHECK);
-    }
-  }
-
-  klass->restore_unshareable_info(loader_data, domain, THREAD);
-  load_shared_class_misc(klass, loader_data, CHECK);
-  Dictionary* dictionary = loader_data->dictionary();
-  unsigned int hash = dictionary->compute_hash(klass->name());
-  dictionary->add_klass(hash, klass->name(), klass);
-  add_to_hierarchy(klass, CHECK);
-  assert(klass->is_loaded(), "Must be in at least loaded state");
-}
-
 bool SystemDictionary::resolve_wk_klass(WKID id, TRAPS) {
   assert(id >= (int)FIRST_WKID && id < (int)WKID_LIMIT, "oob");
   int sid = wk_init_info[id - FIRST_WKID];
   Symbol* symbol = vmSymbols::symbol_at((vmSymbols::SID)sid);
   InstanceKlass** klassp = &_well_known_klasses[id];
 
+#if INCLUDE_CDS
   if (UseSharedSpaces && !JvmtiExport::should_post_class_prepare()) {
     InstanceKlass* k = *klassp;
     assert(k->is_shared_boot_class(), "must be");
@@ -1963,6 +1964,7 @@ bool SystemDictionary::resolve_wk_klass(WKID id, TRAPS) {
     quick_resolve(k, loader_data, Handle(), CHECK_false);
     return true;
   }
+#endif // INCLUDE_CDS
 
   if (!is_wk_klass_loaded(*klassp)) {
     Klass* k = resolve_or_fail(symbol, true, CHECK_false);

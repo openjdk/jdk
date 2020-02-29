@@ -634,7 +634,7 @@ protected:
   // Resolve well-known classes so they can be used like SystemDictionary::String_klass()
   static void resolve_well_known_classes(TRAPS);
   // quick resolve using CDS for well-known classes only.
-  static void quick_resolve(InstanceKlass* klass, ClassLoaderData* loader_data, Handle domain, TRAPS);
+  static void quick_resolve(InstanceKlass* klass, ClassLoaderData* loader_data, Handle domain, TRAPS) NOT_CDS_RETURN;
 
   // Class loader constraints
   static void check_constraints(unsigned int hash,
