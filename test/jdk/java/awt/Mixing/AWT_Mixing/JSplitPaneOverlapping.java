@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -119,12 +119,12 @@ public class JSplitPaneOverlapping extends OverlappingTestBase {
         robot.mousePress(InputEvent.BUTTON1_MASK);
         robot.mouseMove(splitterLoc.x - 50, splitterLoc.y);
         Color c = robot.getPixelColor(splitterLoc.x - 50, splitterLoc.y);
+        robot.mouseRelease(InputEvent.BUTTON1_MASK);
+
         System.out.println("Actual: "+c+", (not) expected: "+AWT_VERIFY_COLOR+" at "+(splitterLoc.x - 50)+", "+ splitterLoc.y);
         if (!ignoreFail && c.equals(AWT_VERIFY_COLOR)) {
             fail("The JSplitPane drag-n-drop image did not pass pixel color check and is overlapped");
         }
-        robot.mouseRelease(InputEvent.BUTTON1_MASK);
-
         clickAndBlink(robot, splitterLoc);
 
         return clicked;

@@ -155,7 +155,7 @@ java/awt/KeyboardFocusmanager/TypeAhead/TestDialogTypeAhead.java 8198626 macosx-
 java/awt/Mixing/AWT_Mixing/HierarchyBoundsListenerMixingTest.java 8049405 macosx-all
 java/awt/Mixing/AWT_Mixing/OpaqueOverlappingChoice.java 8048171 generic-all
 java/awt/Mixing/AWT_Mixing/JMenuBarOverlapping.java 8159451 linux-all,windows-all,macosx-all
-java/awt/Mixing/AWT_Mixing/JSplitPaneOverlapping.java 8194765 generic-all
+java/awt/Mixing/AWT_Mixing/JSplitPaneOverlapping.java 6986109 generic-all
 java/awt/Mixing/AWT_Mixing/JInternalFrameMoveOverlapping.java 6986109 windows-all
 java/awt/Mixing/AWT_Mixing/MixingPanelsResizing.java 8049405 generic-all
 java/awt/Mixing/AWT_Mixing/JComboBoxOverlapping.java 8049405 macosx-all

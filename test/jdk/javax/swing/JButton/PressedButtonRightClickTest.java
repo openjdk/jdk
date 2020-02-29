@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,7 +89,9 @@ public class PressedButtonRightClickTest {
         testRobot.delay(1000);
 
         // Test whether the button is still pressed
-        if (myButton.getModel().isPressed() == false) {
+        boolean pressed = myButton.getModel().isPressed();
+        testRobot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+        if (!pressed) {
             disposeTestUI();
             throw new RuntimeException("Test Failed!");
         }
@@ -107,6 +109,7 @@ public class PressedButtonRightClickTest {
         myFrame.add(myButton, BorderLayout.CENTER);
         myFrame.setSize(400, 300);
         myFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        myFrame.setLocationRelativeTo(null);
         myFrame.setVisible(true);
     }
 }
