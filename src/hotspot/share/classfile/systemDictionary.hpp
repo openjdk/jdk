@@ -600,7 +600,7 @@ protected:
                                           const ClassFileStream *cfs,
                                           TRAPS);
   // Second part of load_shared_class
-  static void load_shared_class_misc(InstanceKlass* ik, ClassLoaderData* loader_data, TRAPS);
+  static void load_shared_class_misc(InstanceKlass* ik, ClassLoaderData* loader_data, TRAPS) NOT_CDS_RETURN;
   static InstanceKlass* load_shared_boot_class(Symbol* class_name,
                                                TRAPS);
   static InstanceKlass* load_instance_class(Symbol* class_name, Handle class_loader, TRAPS);
