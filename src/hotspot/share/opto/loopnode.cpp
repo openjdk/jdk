@@ -2658,21 +2658,21 @@ void PhaseIdealLoop::collect_potentially_useful_predicates(
     LoopNode* lpn = loop->_head->as_Loop();
     Node* entry = lpn->in(LoopNode::EntryControl);
     Node* predicate_proj = find_predicate(entry); // loop_limit_check first
-    if (predicate_proj != NULL ) { // right pattern that can be used by loop predication
+    if (predicate_proj != NULL) { // right pattern that can be used by loop predication
       assert(entry->in(0)->in(1)->in(1)->Opcode() == Op_Opaque1, "must be");
-      useful_predicates.push(entry->in(0)->in(1)->in(1)); // good one
-      entry = skip_loop_predicates(entry);
-    }
-    predicate_proj = find_predicate(entry); // Predicate
-    if (predicate_proj != NULL ) {
       useful_predicates.push(entry->in(0)->in(1)->in(1)); // good one
       entry = skip_loop_predicates(entry);
     }
     if (UseProfiledLoopPredicate) {
       predicate_proj = find_predicate(entry); // Predicate
-      if (predicate_proj != NULL ) {
+      if (predicate_proj != NULL) {
         useful_predicates.push(entry->in(0)->in(1)->in(1)); // good one
+        entry = skip_loop_predicates(entry);
       }
+    }
+    predicate_proj = find_predicate(entry); // Predicate
+    if (predicate_proj != NULL) {
+      useful_predicates.push(entry->in(0)->in(1)->in(1)); // good one
     }
   }
 

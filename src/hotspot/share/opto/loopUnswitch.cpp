@@ -156,7 +156,7 @@ void PhaseIdealLoop::do_unswitching(IdealLoopTree *loop, Node_List &old_new) {
   if (predicate != NULL) {
     entry = skip_loop_predicates(entry);
   }
-  if (predicate != NULL && UseLoopPredicate) {
+  if (predicate != NULL && UseProfiledLoopPredicate) {
     // We may have two predicates, find first.
     Node* n = find_predicate(entry);
     if (n != NULL) {
@@ -164,7 +164,7 @@ void PhaseIdealLoop::do_unswitching(IdealLoopTree *loop, Node_List &old_new) {
       entry = skip_loop_predicates(entry);
     }
   }
-  if (predicate != NULL && UseProfiledLoopPredicate) {
+  if (predicate != NULL && UseLoopPredicate) {
     entry = find_predicate(entry);
     if (entry != NULL) predicate = entry;
   }
