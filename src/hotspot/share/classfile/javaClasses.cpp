@@ -4782,9 +4782,9 @@ void JavaClasses::compute_hard_coded_offsets() {
 // Compute non-hard-coded field offsets of all the classes in this file
 void JavaClasses::compute_offsets() {
   if (UseSharedSpaces) {
-    assert(JvmtiExport::is_early_phase() && !(JvmtiExport::should_post_class_file_load_hook() &&
-                                              JvmtiExport::has_early_class_hook_env()),
-           "JavaClasses::compute_offsets() must be called in early JVMTI phase.");
+    JVMTI_ONLY(assert(JvmtiExport::is_early_phase() && !(JvmtiExport::should_post_class_file_load_hook() &&
+                                                         JvmtiExport::has_early_class_hook_env()),
+                      "JavaClasses::compute_offsets() must be called in early JVMTI phase."));
     // None of the classes used by the rest of this function can be replaced by
     // JMVTI ClassFileLoadHook.
     // We are safe to use the archived offsets, which have already been restored

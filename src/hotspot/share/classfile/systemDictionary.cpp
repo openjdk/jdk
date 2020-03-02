@@ -2070,8 +2070,8 @@ void SystemDictionary::resolve_well_known_classes(TRAPS) {
 
 #ifdef ASSERT
   if (UseSharedSpaces) {
-    assert(JvmtiExport::is_early_phase(),
-           "All well known classes must be resolved in JVMTI early phase");
+    JVMTI_ONLY(assert(JvmtiExport::is_early_phase(),
+                      "All well known classes must be resolved in JVMTI early phase"));
     for (int i = FIRST_WKID; i < last; i++) {
       InstanceKlass* k = _well_known_klasses[i];
       assert(k->is_shared(), "must not be replaced by JVMTI class file load hook");
