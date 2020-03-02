@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,14 @@
  * @run     main SystemBgColorTest
  */
 
-import java.awt.*;
-import java.awt.image.*;
+import java.awt.AlphaComposite;
+import java.awt.Color;
+import java.awt.Graphics2D;
+import java.awt.Image;
+import java.awt.SystemColor;
+import java.awt.image.BufferedImage;
+import java.awt.image.DataBuffer;
+import java.awt.image.IndexColorModel;
 
 public class SystemBgColorTest {
     public static final int TESTW = 10;
@@ -109,12 +115,20 @@ public class SystemBgColorTest {
     }
 
     public static void test(Image src, BufferedImage dst, Color bg) {
-        Graphics g = dst.getGraphics();
+        Graphics2D g = (Graphics2D) dst.getGraphics();
+        g.setComposite(AlphaComposite.Src);
         g.setColor(Color.white);
         g.fillRect(0, 0, TESTW, TESTH);
         g.drawImage(src, 0, 0, bg, null);
-        if (dst.getRGB(0, 0) != bg.getRGB()) {
-            error("bad bg pixel for: "+bg);
+        int dstRGB = dst.getRGB(0, 0);
+        int bgRGB = bg.getRGB();
+        if (!dst.getColorModel().hasAlpha()) {
+            bgRGB |= 0xFF000000;
+        }
+        if (dstRGB != bgRGB) {
+            System.err.println("Actual: " + Integer.toHexString(dstRGB));
+            System.err.println("Expected: " + Integer.toHexString(bgRGB));
+            error("bad bg pixel for: " + bg);
         }
     }
 }
