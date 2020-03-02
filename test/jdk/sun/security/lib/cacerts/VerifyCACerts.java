@@ -261,6 +261,12 @@ public class VerifyCACerts {
             add("utnuserfirstobjectca [jdk]");
             // Valid until: Tue May 26 00:00:00 GMT 2020
             add("keynectisrootca [jdk]");
+            // Valid until: Sat May 30 10:38:31 GMT 2020
+            add("addtrustexternalca [jdk]");
+            // Valid until: Sat May 30 10:48:38 GMT 2020
+            add("addtrustclass1ca [jdk]");
+            // Valid until: Sat May 30 10:44:50 GMT 2020
+            add("addtrustqualifiedca [jdk]");
         }
     };
 
