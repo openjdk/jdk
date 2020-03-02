@@ -34,6 +34,10 @@ public:
    */
   static inline oop get_forwardee(oop obj);
 
+  /* Gets forwardee from the given object. Only from mutator thread.
+   */
+  static inline oop get_forwardee_mutator(oop obj);
+
   /* Returns the raw value from forwardee slot.
    */
   static inline HeapWord* get_forwardee_raw(oop obj);

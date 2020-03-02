@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -153,12 +153,7 @@ public final class ECPrivateKeyImpl extends PKCS8Key implements ECPrivateKey {
 
     public byte[] getArrayS() {
         if (arrayS == null) {
-            byte[] arr = getS().toByteArray();
-            ArrayUtil.reverse(arr);
-            int byteLength = (params.getOrder().bitLength() + 7) / 8;
-            arrayS = new byte[byteLength];
-            int length = Math.min(byteLength, arr.length);
-            System.arraycopy(arr, 0, arrayS, 0, length);
+            arrayS = ECUtil.sArray(getS(), params);
         }
         return arrayS.clone();
     }

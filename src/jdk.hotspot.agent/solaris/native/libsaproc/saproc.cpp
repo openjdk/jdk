@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1184,7 +1184,12 @@ JNIEXPORT jlong JNICALL Java_sun_jvm_hotspot_debugger_proc_ProcDebuggerLocal_loo
    }
 
    const char* symbolName_cstr = env->GetStringUTFChars(symbolName, &isCopy);
-   CHECK_EXCEPTION_(0);
+   if (env->ExceptionOccurred()) {
+     if (objectName_cstr != PR_OBJ_EVERY) {
+       env->ReleaseStringUTFChars(objectName, objectName_cstr);
+     }
+     return 0;
+   }
 
    psaddr_t symbol_addr = (psaddr_t) 0;
    ps_pglobal_lookup((struct ps_prochandle*) p_ps_prochandle,  objectName_cstr,

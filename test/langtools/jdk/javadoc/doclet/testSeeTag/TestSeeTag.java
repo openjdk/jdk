@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      8017191 8182765 8200432
+ * @bug      8017191 8182765 8200432 8239804
  * @summary  Javadoc is confused by at-link to imported classes outside of the set of generated packages
  * @library  ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -49,8 +49,8 @@ public class TestSeeTag extends JavadocTester {
 
         checkOutput("pkg/Test.html", true,
             "<code>List</code>",
-            "<dl>\n"
-            + "<dt><span class=\"seeLabel\">See Also:</span></dt>\n"
+            "<dl class=\"notes\">\n"
+            + "<dt>See Also:</dt>\n"
             + "<dd><a href=\"Test.InnerOne.html#foo()\"><code>Test.InnerOne.foo()</code></a>, \n"
             + "<a href=\"Test.InnerOne.html#bar(java.lang.Object)\"><code>Test.InnerOne.bar(Object)</code></a>, \n"
             + "<a href=\"http://docs.oracle.com/javase/7/docs/technotes/tools/windows/javadoc.html#see\">Javadoc</a>, \n"
@@ -75,8 +75,8 @@ public class TestSeeTag extends JavadocTester {
         checkExit(Exit.ERROR);
 
         checkOutput("badref/Test.html", true,
-                "<dl>\n"
-                + "<dt><span class=\"seeLabel\">See Also:</span></dt>\n"
+                "<dl class=\"notes\">\n"
+                + "<dt>See Also:</dt>\n"
                 + "<dd><code>Object</code>, \n"
                 + "<code>Foo<String></code></dd>\n"
                 + "</dl>");

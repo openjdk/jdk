@@ -49,21 +49,19 @@ public class TestSingleRecordedEvent {
     }
 
     public static void main(String[] args) throws Throwable {
-        Recording r = new Recording();
-        r.start();
-        // Commit a single event to the recording
-        MyEvent event = new MyEvent();
-        event.commit();
-        r.stop();
-        List<RecordedEvent> events = Events.fromRecording(r);
-        Events.hasEvents(events);
+        try (Recording r = new Recording()) {
+            r.start();
+            // Commit a single event to the recording
+            MyEvent event = new MyEvent();
+            event.commit();
+            r.stop();
+            List<RecordedEvent> events = Events.fromRecording(r);
+            Events.hasEvents(events);
 
-        // Should be 1 event only
-        Asserts.assertEquals(events.size(), 1);
-
-        RecordedEvent recordedEvent = events.get(0);
-
-        // Event description should be the same
-        Asserts.assertEquals(recordedEvent.getEventType().getDescription(), "MyDescription");
+            // Should be 1 event only
+            Asserts.assertEquals(events.size(), 1);
+            RecordedEvent recordedEvent = events.get(0);
+            Asserts.assertEquals(recordedEvent.getEventType().getDescription(), "MyDescription");
+        }
     }
 }

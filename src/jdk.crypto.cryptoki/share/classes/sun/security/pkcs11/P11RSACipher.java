@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -247,10 +247,12 @@ final class P11RSACipher extends CipherSpi {
             return;
         }
         initialized = false;
+
         try {
             if (session == null) {
                 return;
             }
+
             if (doCancel && token.explicitCancel) {
                 cancelOperation();
             }
@@ -264,36 +266,33 @@ final class P11RSACipher extends CipherSpi {
     // state variables such as "initialized"
     private void cancelOperation() {
         token.ensureValid();
-        if (session.hasObjects() == false) {
-            session = token.killSession(session);
-            return;
-        } else {
-            try {
-                PKCS11 p11 = token.p11;
-                int inLen = maxInputSize;
-                int outLen = buffer.length;
-                long sessId = session.id();
-                switch (mode) {
-                case MODE_ENCRYPT:
-                    p11.C_Encrypt(sessId, 0, buffer, 0, inLen, 0, buffer, 0, outLen);
-                    break;
-                case MODE_DECRYPT:
-                    p11.C_Decrypt(sessId, 0, buffer, 0, inLen, 0, buffer, 0, outLen);
-                    break;
-                case MODE_SIGN:
-                    byte[] tmpBuffer = new byte[maxInputSize];
-                    p11.C_Sign(sessId, tmpBuffer);
-                    break;
-                case MODE_VERIFY:
-                    p11.C_VerifyRecover(sessId, buffer, 0, inLen, buffer,
-                            0, outLen);
-                    break;
-                default:
-                    throw new ProviderException("internal error");
-                }
-            } catch (PKCS11Exception e) {
-                // XXX ensure this always works, ignore error
+        // cancel operation by finishing it; avoid killSession as some
+        // hardware vendors may require re-login
+        try {
+            PKCS11 p11 = token.p11;
+            int inLen = maxInputSize;
+            int outLen = buffer.length;
+            long sessId = session.id();
+            switch (mode) {
+            case MODE_ENCRYPT:
+                p11.C_Encrypt(sessId, 0, buffer, 0, inLen, 0, buffer, 0, outLen);
+                break;
+            case MODE_DECRYPT:
+                p11.C_Decrypt(sessId, 0, buffer, 0, inLen, 0, buffer, 0, outLen);
+                break;
+            case MODE_SIGN:
+                byte[] tmpBuffer = new byte[maxInputSize];
+                p11.C_Sign(sessId, tmpBuffer);
+                break;
+            case MODE_VERIFY:
+                p11.C_VerifyRecover(sessId, buffer, 0, inLen, buffer,
+                        0, outLen);
+                break;
+            default:
+                throw new ProviderException("internal error");
             }
+        } catch (PKCS11Exception e) {
+            // XXX ensure this always works, ignore error
         }
     }
 
@@ -362,6 +361,7 @@ final class P11RSACipher extends CipherSpi {
     private int implDoFinal(byte[] out, int outOfs, int outLen)
             throws BadPaddingException, IllegalBlockSizeException {
         if (bufOfs > maxInputSize) {
+            reset(true);
             throw new IllegalBlockSizeException("Data must not be longer "
                 + "than " + maxInputSize + " bytes");
         }

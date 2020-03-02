@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -407,10 +407,12 @@ final class P11Cipher extends CipherSpi {
             return;
         }
         initialized = false;
+
         try {
             if (session == null) {
                 return;
             }
+
             if (doCancel && token.explicitCancel) {
                 cancelOperation();
             }
@@ -424,22 +426,21 @@ final class P11Cipher extends CipherSpi {
 
     private void cancelOperation() {
         token.ensureValid();
-        if (session.hasObjects() == false) {
-            session = token.killSession(session);
-            return;
-        } else {
-            try {
-                // cancel operation by finishing it
-                int bufLen = doFinalLength(0);
-                byte[] buffer = new byte[bufLen];
-                if (encrypt) {
-                    token.p11.C_EncryptFinal(session.id(), 0, buffer, 0, bufLen);
-                } else {
-                    token.p11.C_DecryptFinal(session.id(), 0, buffer, 0, bufLen);
-                }
-            } catch (PKCS11Exception e) {
+        // cancel operation by finishing it; avoid killSession as some
+        // hardware vendors may require re-login
+        try {
+            int bufLen = doFinalLength(0);
+            byte[] buffer = new byte[bufLen];
+            if (encrypt) {
+                token.p11.C_EncryptFinal(session.id(), 0, buffer, 0, bufLen);
+            } else {
+                token.p11.C_DecryptFinal(session.id(), 0, buffer, 0, bufLen);
+            }
+        } catch (PKCS11Exception e) {
+            if (encrypt) {
                 throw new ProviderException("Cancel failed", e);
             }
+            // ignore failure for decryption
         }
     }
 

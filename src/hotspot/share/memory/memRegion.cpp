@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,19 +102,10 @@ MemRegion MemRegion::minus(const MemRegion mr2) const {
   return MemRegion();
 }
 
-void* MemRegion::operator new(size_t size) throw() {
-  return (address)AllocateHeap(size, mtGC, CURRENT_PC,
-    AllocFailStrategy::RETURN_NULL);
-}
-
-void* MemRegion::operator new [](size_t size) throw() {
-  return (address)AllocateHeap(size, mtGC, CURRENT_PC,
-    AllocFailStrategy::RETURN_NULL);
-}
-void  MemRegion::operator delete(void* p) {
-  FreeHeap(p);
-}
-
-void  MemRegion::operator delete [](void* p) {
-  FreeHeap(p);
+MemRegion* MemRegion::create_array(uint length, MEMFLAGS flags) {
+  MemRegion* result = NEW_C_HEAP_ARRAY(MemRegion, length, flags);
+  for (uint i = 0; i < length; i++) {
+    ::new (&result[i]) MemRegion();
+  }
+  return result;
 }

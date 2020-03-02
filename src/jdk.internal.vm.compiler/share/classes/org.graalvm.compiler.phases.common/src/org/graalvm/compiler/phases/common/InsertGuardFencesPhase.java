@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ import org.graalvm.compiler.nodes.NamedLocationIdentity;
 import org.graalvm.compiler.nodes.PiNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.extended.MultiGuardNode;
-import org.graalvm.compiler.nodes.memory.Access;
+import org.graalvm.compiler.nodes.memory.MemoryAccess;
 import org.graalvm.compiler.phases.Phase;
 
 import jdk.vm.ci.meta.DeoptimizationReason;
@@ -133,8 +133,8 @@ public class InsertGuardFencesPhase extends Phase {
                         if (!((PiNode) usage).piStamp().equals(POSITIVE_ARRAY_INDEX_STAMP)) {
                             return false;
                         }
-                    } else if (usage instanceof Access) {
-                        if (!NamedLocationIdentity.isArrayLocation(((Access) usage).getLocationIdentity())) {
+                    } else if (usage instanceof MemoryAccess) {
+                        if (!NamedLocationIdentity.isArrayLocation(((MemoryAccess) usage).getLocationIdentity())) {
                             return false;
                         }
                     } else {

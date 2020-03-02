@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -270,8 +270,7 @@ public class GeneralSubtrees implements Cloneable {
                 newName = new GeneralName(new IPAddressName((byte[])null));
                 break;
             case GeneralNameInterface.NAME_OID:
-                newName = new GeneralName
-                    (new OIDName(new ObjectIdentifier((int[])null)));
+                newName = new GeneralName(new OIDName(""));
                 break;
             default:
                 throw new IOException

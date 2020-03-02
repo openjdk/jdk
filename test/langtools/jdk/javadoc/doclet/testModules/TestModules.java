@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  *      8168766 8168688 8162674 8160196 8175799 8174974 8176778 8177562 8175218
  *      8175823 8166306 8178043 8181622 8183511 8169819 8074407 8183037 8191464
  *      8164407 8192007 8182765 8196200 8196201 8196202 8196202 8205593 8202462
- *      8184205 8219060 8223378 8234746
+ *      8184205 8219060 8223378 8234746 8239804
  * @summary Test modules support in javadoc.
  * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -600,22 +600,22 @@ public class TestModules extends JavadocTester {
                 "Member Link: <a href=\"testpkgmdltags/TestClassInModuleTags.html#"
                 + "testMethod(java.lang.String)\"><code>testMethod(String)</code></a>.",
                 "Package Link: <a href=\"testpkgmdltags/package-summary.html\"><code>testpkgmdltags</code></a>.",
-                "<dt><span class=\"simpleTagLabel\">Since:</span></dt>\n"
+                "<dt>Since:</dt>\n"
                 + "<dd>JDK 9</dd>",
-                "<dt><span class=\"seeLabel\">See Also:</span></dt>\n"
+                "<dt>See Also:</dt>\n"
                 + "<dd>\"Test see tag\", \n"
                 + "<a href=\"testpkgmdltags/TestClassInModuleTags.html\" title=\"class in testpkgmdltags\"><code>"
                 + "TestClassInModuleTags</code></a></dd>",
-                "<dt><span class=\"simpleTagLabel\">Regular Tag:</span></dt>\n"
+                "<dt>Regular Tag:</dt>\n"
                 + "<dd>Just a regular simple tag.</dd>",
-                "<dt><span class=\"simpleTagLabel\">Module Tag:</span></dt>\n"
+                "<dt>Module Tag:</dt>\n"
                 + "<dd>Just a simple module tag.</dd>",
-                "<dt><span class=\"simpleTagLabel\">Version:</span></dt>\n"
+                "<dt>Version:</dt>\n"
                 + "<dd>1.0</dd>",
-                "<dt><span class=\"simpleTagLabel\">Author:</span></dt>\n"
+                "<dt>Author:</dt>\n"
                 + "<dd>Alice</dd>");
         checkOutput("moduletags/testpkgmdltags/TestClassInModuleTags.html", false,
-                "<dt><span class=\"simpleTagLabel\">Module Tag:</span></dt>\n"
+                "<dt>Module Tag:</dt>\n"
                 + "<dd>Just a simple module tag.</dd>");
     }
 
@@ -872,7 +872,7 @@ public class TestModules extends JavadocTester {
 
     void checkModulesInSearch(boolean found) {
         checkOutput("index-all.html", found,
-                "<dl>\n"
+                "<dl class=\"index\">\n"
                 + "<dt><a href=\"moduleA/module-summary.html\">moduleA</a> - module moduleA</dt>\n"
                 + "<dd>\n"
                 + "<div class=\"block\">This is a test description for the moduleA module with a Search "
@@ -883,7 +883,7 @@ public class TestModules extends JavadocTester {
                 + "<div class=\"block\">This is a test description for the moduleB module.</div>\n"
                 + "</dd>\n"
                 + "</dl>",
-                "<dl>\n"
+                "<dl class=\"index\">\n"
                 + "<dt><span class=\"searchTagLink\"><a href=\"moduleB/module-summary.html#search_word\">"
                 + "search_word</a></span> - Search tag in module moduleB</dt>\n"
                 + "<dd>&nbsp;</dd>\n"
@@ -1226,7 +1226,7 @@ public class TestModules extends JavadocTester {
                 + "</div>");
         checkOutput("index-all.html", found,
                 "<h2 class=\"title\" id=\"I:T\">T</h2>\n"
-                + "<dl>\n"
+                + "<dl class=\"index\">\n"
                 + "<dt><a href=\"test.moduleFullName/module-summary.html\">test.moduleFullName</a> - module test.moduleFullName</dt>\n"
                 + "<dd>\n"
                 + "<div class=\"block\">This is a test description for the test.moduleFullName.</div>\n"
@@ -1236,7 +1236,7 @@ public class TestModules extends JavadocTester {
                 + "<h1 title=\"Module\" class=\"title\">Module&nbsp;moduleFullName</h1>\n"
                 + "</div>");
         checkOutput("index-all.html", !found,
-                "<dl>\n"
+                "<dl class=\"index\">\n"
                 + "<dt><a href=\"test.moduleFullName/module-summary.html\">moduleFullName</a> - module moduleFullName</dt>\n"
                 + "<dd>\n"
                 + "<div class=\"block\">This is a test description for the test.moduleFullName.</div>\n"
@@ -1246,13 +1246,13 @@ public class TestModules extends JavadocTester {
 
     void checkLinkOffline() {
         checkOutput("moduleB/testpkg3mdlB/package-summary.html", true,
-                "<a href=\"https://docs.oracle.com/javase/9/docs/api/java.base/java/lang/String.html?is-external=true\" "
+                "<a href=\"https://docs.oracle.com/javase/9/docs/api/java.base/java/lang/String.html\" "
                 + "title=\"class or interface in java.lang\" class=\"externalLink\"><code>Link to String Class</code></a>");
         checkOutput("moduleB/testpkg3mdlB/package-summary.html", true,
-                "<a href=\"https://docs.oracle.com/javase/9/docs/api/java.base/java/lang/package-summary.html?is-external=true\" "
+                "<a href=\"https://docs.oracle.com/javase/9/docs/api/java.base/java/lang/package-summary.html\" "
                 + "class=\"externalLink\"><code>Link to java.lang package</code></a>");
         checkOutput("moduleB/testpkg3mdlB/package-summary.html", true,
-                "<a href=\"https://docs.oracle.com/javase/9/docs/api/java.base/module-summary.html?is-external=true\" "
+                "<a href=\"https://docs.oracle.com/javase/9/docs/api/java.base/module-summary.html\" "
                 + "class=\"externalLink\"><code>Link to java.base module</code></a>");
     }
 
@@ -1321,9 +1321,9 @@ public class TestModules extends JavadocTester {
                 "<div class=\"packagesSummary\">\n"
                 + "<table summary=\"Package Summary table, listing packages, and an explanation\">");
         checkOutput("type-search-index.js", true,
-                "{\"l\":\"All Classes\",\"url\":\"allclasses-index.html\"}");
+                "{\"l\":\"All Classes\",\"u\":\"allclasses-index.html\"}");
         checkOutput("package-search-index.js", true,
-                "{\"l\":\"All Packages\",\"url\":\"allpackages-index.html\"}");
+                "{\"l\":\"All Packages\",\"u\":\"allpackages-index.html\"}");
         checkOutput("index-all.html", true,
                 "<br><a href=\"allclasses-index.html\">All&nbsp;Classes</a>"
                 + "<span class=\"verticalSeparator\">|</span>"

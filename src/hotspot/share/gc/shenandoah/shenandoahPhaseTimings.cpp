@@ -44,7 +44,6 @@ const char* ShenandoahPhaseTimings::_phase_names[] = {
 ShenandoahPhaseTimings::ShenandoahPhaseTimings() : _policy(NULL) {
   uint max_workers = MAX2(ConcGCThreads, ParallelGCThreads);
   _worker_times = new ShenandoahWorkerTimings(max_workers);
-  _termination_times = new ShenandoahTerminationTimings(max_workers);
   _policy = ShenandoahHeap::heap()->shenandoah_policy();
   assert(_policy != NULL, "Can not be NULL");
 }
@@ -165,30 +164,3 @@ void ShenandoahWorkerTimings::print() const {
     _gc_par_phases[i]->print_summary_on(tty);
   }
 }
-
-
-ShenandoahTerminationTimings::ShenandoahTerminationTimings(uint max_gc_threads) {
-  _gc_termination_phase = new WorkerDataArray<double>("Task Termination (ms):", max_gc_threads);
-}
-
-void ShenandoahTerminationTimings::record_time_secs(uint worker_id, double secs) {
-  if (_gc_termination_phase->get(worker_id) == WorkerDataArray<double>::uninitialized()) {
-    _gc_termination_phase->set(worker_id, secs);
-  } else {
-    // worker may re-enter termination phase
-    _gc_termination_phase->add(worker_id, secs);
-  }
-}
-
-void ShenandoahTerminationTimings::print() const {
-  _gc_termination_phase->print_summary_on(tty);
-}
-
-double ShenandoahTerminationTimings::average() const {
-  return _gc_termination_phase->average();
-}
-
-void ShenandoahTerminationTimings::reset() {
-  _gc_termination_phase->reset();
-}
-

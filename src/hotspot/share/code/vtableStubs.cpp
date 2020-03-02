@@ -38,6 +38,7 @@
 #include "runtime/mutexLocker.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/align.hpp"
+#include "utilities/powerOfTwo.hpp"
 #ifdef COMPILER2
 #include "opto/matcher.hpp"
 #endif
@@ -128,7 +129,7 @@ void VtableStubs::initialize() {
   {
     MutexLocker ml(VtableStubs_lock, Mutex::_no_safepoint_check_flag);
     assert(_number_of_vtable_stubs == 0, "potential performance bug: VtableStubs initialized more than once");
-    assert(is_power_of_2(N), "N must be a power of 2");
+    assert(is_power_of_2(int(N)), "N must be a power of 2");
     for (int i = 0; i < N; i++) {
       _table[i] = NULL;
     }

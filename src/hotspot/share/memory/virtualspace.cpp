@@ -32,6 +32,7 @@
 #include "runtime/os.inline.hpp"
 #include "services/memTracker.hpp"
 #include "utilities/align.hpp"
+#include "utilities/powerOfTwo.hpp"
 
 // ReservedSpace
 

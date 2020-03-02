@@ -25,7 +25,9 @@
  * @test
  * @bug 8237581
  * @summary Testing allocation expansion when there is no use of the allocation
- * @run main/othervm -Xbatch -XX:CompileCommand=compileonly,compiler.allocation.TestAllocation::
+ * @run main/othervm -Xbatch -XX:+IgnoreUnrecognizedVMOptions -XX:+PrintCompilation -XX:+PrintEliminateAllocations -XX:CompileCommand=compileonly,compiler.allocation.TestAllocation::test*
+ *                   compiler.allocation.TestAllocation
+ * @run main/othervm -Xbatch -XX:+IgnoreUnrecognizedVMOptions -XX:+PrintCompilation -XX:+PrintEliminateAllocations -XX:-DoEscapeAnalysis -XX:CompileCommand=compileonly,compiler.allocation.TestAllocation::test*
  *                   compiler.allocation.TestAllocation
  */
 
@@ -39,6 +41,12 @@ public class TestAllocation {
     public int testUnknownPositiveArrayLength() {
         Payload w = new Payload(17, size);
         return w.i + w.ba.length;
+    }
+
+    public int testStoreCapture() {
+        byte[] bs = new byte[1];
+        bs[0] = 1;
+        return bs.length;
     }
 
     public int testUnknownNegativeArrayLength() {
@@ -58,6 +66,13 @@ public class TestAllocation {
 
     public int testConstantPositiveArrayLength() {
         Payload w = new Payload(173, 10);
+        return w.i + w.ba.length;
+    }
+
+    public int testConstantPositiveArrayLength2() {
+        Payload w = new Payload(173, 10);
+        w.i = 17;
+        w.ba = new byte[10];
         return w.i + w.ba.length;
     }
 
@@ -91,7 +106,9 @@ public class TestAllocation {
             test.testUnknownPositiveArrayLength();
             test.testUnknownNegativeArrayLength();
             test.testConstantPositiveArrayLength();
+            test.testConstantPositiveArrayLength2();
             test.testConstantNegativeArrayLength();
+            test.testStoreCapture();
         }
     }
 }

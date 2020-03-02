@@ -38,6 +38,7 @@
 #include "runtime/atomic.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/safepointVerifiers.hpp"
+#include "utilities/powerOfTwo.hpp"
 
 //
 // List of deduplication table entries. Links table

@@ -55,6 +55,7 @@ import org.graalvm.compiler.nodes.calc.PointerEqualsNode;
 import org.graalvm.compiler.nodes.calc.ReinterpretNode;
 import org.graalvm.compiler.nodes.calc.RightShiftNode;
 import org.graalvm.compiler.nodes.calc.SignExtendNode;
+import org.graalvm.compiler.nodes.calc.SqrtNode;
 import org.graalvm.compiler.nodes.calc.SubNode;
 import org.graalvm.compiler.nodes.calc.UnsignedRightShiftNode;
 import org.graalvm.compiler.nodes.calc.XorNode;
@@ -101,6 +102,7 @@ import jdk.vm.ci.meta.Value;
 @MatchableNode(nodeClass = LogicCompareAndSwapNode.class, inputs = {"address", "expectedValue", "newValue"})
 @MatchableNode(nodeClass = ValueCompareAndSwapNode.class, inputs = {"address", "expectedValue", "newValue"})
 @MatchableNode(nodeClass = RightShiftNode.class, inputs = {"x", "y"}, ignoresSideEffects = true)
+@MatchableNode(nodeClass = SqrtNode.class, inputs = {"value"}, ignoresSideEffects = true)
 public abstract class NodeMatchRules {
 
     NodeLIRBuilder lirBuilder;

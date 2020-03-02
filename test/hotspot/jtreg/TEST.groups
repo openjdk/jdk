@@ -195,7 +195,6 @@ tier1_gc_1 = \
   :gc_epsilon \
   gc/g1/ \
   -gc/g1/ihop/TestIHOPErgo.java
-  -gc/g1/TestTimelyCompaction.java
 
 tier1_gc_2 = \
   gc/ \
@@ -336,6 +335,8 @@ hotspot_appcds_dynamic = \
  -runtime/cds/appcds/NonExistClasspath.java \
  -runtime/cds/appcds/RelativePath.java \
  -runtime/cds/appcds/SharedArchiveConsistency.java \
+ -runtime/cds/appcds/TestCombinedCompressedFlags.java \
+ -runtime/cds/appcds/TestZGCWithCDS.java \
  -runtime/cds/appcds/UnusedCPDuringDump.java \
  -runtime/cds/appcds/VerifierTest_1B.java
 

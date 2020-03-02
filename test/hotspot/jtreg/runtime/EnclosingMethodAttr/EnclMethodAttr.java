@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
  * @summary Check attribute_length of EnclosingMethod attribute
  * @modules java.base/jdk.internal.misc
  *          java.management
+ * @compile EnclMethTest.jcod
  * @run main EnclMethodAttr
  */
 
@@ -41,8 +42,7 @@ public class EnclMethodAttr {
 
     public static void main(String args[]) throws Throwable {
         System.out.println("Regression test for bug 8044738");
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-            "-jar", testsrc + File.separator + "enclMethodAttr.jar");
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("EnclMethTest");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldContain("java.lang.ClassFormatError: Wrong EnclosingMethod");
     }

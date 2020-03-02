@@ -210,6 +210,8 @@ void FileMapHeader::populate(FileMapInfo* mapinfo, size_t alignment) {
   _narrow_oop_mode = CompressedOops::mode();
   _narrow_oop_base = CompressedOops::base();
   _narrow_oop_shift = CompressedOops::shift();
+  _compressed_oops = UseCompressedOops;
+  _compressed_class_ptrs = UseCompressedClassPointers;
   _max_heap_size = MaxHeapSize;
   _narrow_klass_shift = CompressedKlassPointers::shift();
   if (HeapShared::is_heap_object_archiving_allowed()) {
@@ -1745,7 +1747,15 @@ void FileMapInfo::map_heap_regions() {
 
 bool FileMapInfo::map_heap_data(MemRegion **heap_mem, int first,
                                 int max, int* num, bool is_open_archive) {
-  MemRegion * regions = new MemRegion[max];
+  MemRegion* regions = MemRegion::create_array(max, mtInternal);
+
+  struct Cleanup {
+    MemRegion* _regions;
+    bool _aborted;
+    Cleanup(MemRegion* regions) : _regions(regions), _aborted(true) { }
+    ~Cleanup() { if (_aborted) { FREE_C_HEAP_ARRAY(MemRegion, _regions); } }
+  } cleanup(regions);
+
   FileMapRegion* si;
   int region_num = 0;
 
@@ -1805,6 +1815,7 @@ bool FileMapInfo::map_heap_data(MemRegion **heap_mem, int first,
     }
   }
 
+  cleanup._aborted = false;
   // the shared heap data is mapped successfully
   *heap_mem = regions;
   *num = region_num;
@@ -2039,6 +2050,14 @@ bool FileMapHeader::validate() {
   if (_allow_archiving_with_java_agent) {
     warning("This archive was created with AllowArchivingWithJavaAgent. It should be used "
             "for testing purposes only and should not be used in a production environment");
+  }
+
+  log_info(cds)("Archive was created with UseCompressedOops = %d, UseCompressedClassPointers = %d",
+                          compressed_oops(), compressed_class_pointers());
+  if (compressed_oops() != UseCompressedOops || compressed_class_pointers() != UseCompressedClassPointers) {
+    FileMapInfo::fail_continue("Unable to use shared archive.\nThe saved state of UseCompressedOops and UseCompressedClassPointers is "
+                               "different from runtime, CDS will be disabled.");
+    return false;
   }
 
   return true;

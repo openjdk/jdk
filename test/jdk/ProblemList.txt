@@ -564,6 +564,7 @@ java/beans/Introspector/8132566/OverridePropertyInfoTest.java   8132565 generic-
 java/beans/Introspector/8132566/OverrideUserDefPropertyInfoTest.java 8132565 generic-all
 
 java/beans/XMLEncoder/Test6570354.java 8015593 macosx-all
+java/beans/XMLEncoder/Test4625418.java 8239965 generic-all
 
 ############################################################################
 
@@ -624,6 +625,7 @@ java/net/MulticastSocket/SetGetNetworkInterfaceTest.java        8219083 windows-
 java/net/DatagramSocket/SendDatagramToBadAddress.java           7143960 macosx-all
 
 java/net/ServerSocket/AcceptInheritHandle.java                  8211854 aix-ppc64
+
 
 ############################################################################
 
@@ -911,6 +913,8 @@ com/sun/jdi/RepStep.java                                        8043571 generic-
 
 com/sun/jdi/NashornPopFrameTest.java                            8225620 generic-all
 
+com/sun/jdi/InvokeHangTest.java                                 8218463 linux-all
+
 ############################################################################
 
 # jdk_time
@@ -941,6 +945,8 @@ com/sun/jndi/ldap/DeadSSLLdapTimeoutTest.java                   8169942 linux-i5
 com/sun/jndi/dns/ConfigTests/PortUnreachable.java               7164518 macosx-all
 
 javax/rmi/ssl/SSLSocketParametersTest.sh                        8162906 generic-all
+
+javax/script/Test7.java                                         8239361 generic-all
 
 ############################################################################
 

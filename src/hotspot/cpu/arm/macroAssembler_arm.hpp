@@ -26,6 +26,7 @@
 #define CPU_ARM_MACROASSEMBLER_ARM_HPP
 
 #include "code/relocInfo.hpp"
+#include "utilities/powerOfTwo.hpp"
 
 class BiasedLockingCounters;
 
@@ -433,6 +434,26 @@ public:
 
   void fpops(FloatRegister fd, AsmCondition cond = al) {
     fldmias(SP, FloatRegisterSet(fd), writeback, cond);
+  }
+
+  void fpush(FloatRegisterSet reg_set) {
+    fstmdbd(SP, reg_set, writeback);
+  }
+
+  void fpop(FloatRegisterSet reg_set) {
+    fldmiad(SP, reg_set, writeback);
+  }
+
+  void fpush_hardfp(FloatRegisterSet reg_set) {
+#ifndef __SOFTFP__
+    fpush(reg_set);
+#endif
+  }
+
+  void fpop_hardfp(FloatRegisterSet reg_set) {
+#ifndef __SOFTFP__
+    fpop(reg_set);
+#endif
   }
 
   // Order access primitives

@@ -471,7 +471,7 @@ void ArchDesc::buildDFA(FILE* fp) {
 
 
 class dfa_shared_preds {
-  enum { count = 4 };
+  enum { count = 3 IA32_ONLY( + 1 ) };
 
   static bool        _found[count];
   static const char* _type [count];
@@ -582,15 +582,10 @@ public:
   }
 };
 // shared predicates, _var and _pred entry should be the same length
-bool         dfa_shared_preds::_found[dfa_shared_preds::count]
-  = { false, false, false, false };
-const char*  dfa_shared_preds::_type[dfa_shared_preds::count]
-  = { "int", "jlong", "intptr_t", "bool" };
-const char*  dfa_shared_preds::_var [dfa_shared_preds::count]
-  = { "_n_get_int__", "_n_get_long__", "_n_get_intptr_t__", "Compile__current____select_24_bit_instr__" };
-const char*  dfa_shared_preds::_pred[dfa_shared_preds::count]
-  = { "n->get_int()", "n->get_long()", "n->get_intptr_t()", "Compile::current()->select_24_bit_instr()" };
-
+bool         dfa_shared_preds::_found[dfa_shared_preds::count] = { false,          false,           false               IA32_ONLY(COMMA false)  };
+const char*  dfa_shared_preds::_type [dfa_shared_preds::count] = { "int",          "jlong",         "intptr_t"          IA32_ONLY(COMMA "bool") };
+const char*  dfa_shared_preds::_var  [dfa_shared_preds::count] = { "_n_get_int__", "_n_get_long__", "_n_get_intptr_t__" IA32_ONLY(COMMA "Compile__current____select_24_bit_instr__") };
+const char*  dfa_shared_preds::_pred [dfa_shared_preds::count] = { "n->get_int()", "n->get_long()", "n->get_intptr_t()" IA32_ONLY(COMMA "Compile::current()->select_24_bit_instr()") };
 
 void ArchDesc::gen_dfa_state_body(FILE* fp, Dict &minimize, ProductionState &status, Dict &operands_chained_from, int i) {
   // Start the body of each Op_XXX sub-dfa with a clean state.

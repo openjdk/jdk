@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,6 +84,7 @@ import org.graalvm.compiler.nodes.calc.IntegerEqualsNode;
 import org.graalvm.compiler.nodes.calc.IsNullNode;
 import org.graalvm.compiler.nodes.calc.LeftShiftNode;
 import org.graalvm.compiler.nodes.calc.NarrowNode;
+import org.graalvm.compiler.nodes.calc.ReinterpretNode;
 import org.graalvm.compiler.nodes.calc.RightShiftNode;
 import org.graalvm.compiler.nodes.calc.SignExtendNode;
 import org.graalvm.compiler.nodes.calc.SubNode;
@@ -127,17 +128,17 @@ import org.graalvm.compiler.nodes.java.StoreIndexedNode;
 import org.graalvm.compiler.nodes.java.UnsafeCompareAndExchangeNode;
 import org.graalvm.compiler.nodes.java.UnsafeCompareAndSwapNode;
 import org.graalvm.compiler.nodes.java.ValueCompareAndSwapNode;
-import org.graalvm.compiler.nodes.memory.HeapAccess.BarrierType;
+import org.graalvm.compiler.nodes.memory.OnHeapMemoryAccess.BarrierType;
 import org.graalvm.compiler.nodes.memory.ReadNode;
 import org.graalvm.compiler.nodes.memory.VolatileReadNode;
 import org.graalvm.compiler.nodes.memory.WriteNode;
 import org.graalvm.compiler.nodes.memory.address.AddressNode;
 import org.graalvm.compiler.nodes.memory.address.IndexAddressNode;
 import org.graalvm.compiler.nodes.memory.address.OffsetAddressNode;
-import org.graalvm.compiler.nodes.spi.GCProvider;
 import org.graalvm.compiler.nodes.spi.Lowerable;
 import org.graalvm.compiler.nodes.spi.LoweringProvider;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
+import org.graalvm.compiler.nodes.spi.PlatformConfigurationProvider;
 import org.graalvm.compiler.nodes.type.StampTool;
 import org.graalvm.compiler.nodes.util.GraphUtil;
 import org.graalvm.compiler.nodes.virtual.AllocatedObjectNode;
@@ -373,12 +374,12 @@ public abstract class DefaultJavaLoweringProvider implements LoweringProvider {
         GraphUtil.removeFixedWithUnusedInputs(n);
     }
 
-    protected AddressNode createOffsetAddress(StructuredGraph graph, ValueNode object, long offset) {
+    public AddressNode createOffsetAddress(StructuredGraph graph, ValueNode object, long offset) {
         ValueNode o = ConstantNode.forIntegerKind(target.wordJavaKind, offset, graph);
         return graph.unique(new OffsetAddressNode(object, o));
     }
 
-    protected AddressNode createFieldAddress(StructuredGraph graph, ValueNode object, ResolvedJavaField field) {
+    public AddressNode createFieldAddress(StructuredGraph graph, ValueNode object, ResolvedJavaField field) {
         int offset = fieldOffset(field);
         if (offset >= 0) {
             return createOffsetAddress(graph, object, offset);
@@ -616,7 +617,7 @@ public abstract class DefaultJavaLoweringProvider implements LoweringProvider {
     protected void lowerMonitorEnterNode(MonitorEnterNode monitorEnter, LoweringTool tool, StructuredGraph graph) {
         ValueNode object = createNullCheckedValue(monitorEnter.object(), monitorEnter, tool);
         ValueNode hub = graph.addOrUnique(LoadHubNode.create(object, tool.getStampProvider(), tool.getMetaAccess(), tool.getConstantReflection()));
-        RawMonitorEnterNode rawMonitorEnter = graph.add(new RawMonitorEnterNode(object, hub, monitorEnter.getMonitorId()));
+        RawMonitorEnterNode rawMonitorEnter = graph.add(new RawMonitorEnterNode(object, hub, monitorEnter.getMonitorId(), monitorEnter.isBiasable()));
         rawMonitorEnter.setStateBefore(monitorEnter.stateBefore());
         rawMonitorEnter.setStateAfter(monitorEnter.stateAfter());
         graph.replaceFixedWithFixed(monitorEnter, rawMonitorEnter);
@@ -674,7 +675,7 @@ public abstract class DefaultJavaLoweringProvider implements LoweringProvider {
      * @param tool utility for performing the lowering
      */
     protected void lowerUnsafeLoadNode(RawLoadNode load, LoweringTool tool) {
-        GCProvider gc = tool.getProviders().getGC();
+        PlatformConfigurationProvider gc = tool.getProviders().getPlatformConfigurationProvider();
         StructuredGraph graph = load.graph();
         if (load instanceof GuardedUnsafeLoadNode) {
             GuardedUnsafeLoadNode guardedLoad = (GuardedUnsafeLoadNode) load;
@@ -705,7 +706,7 @@ public abstract class DefaultJavaLoweringProvider implements LoweringProvider {
         }
     }
 
-    protected ReadNode createUnsafeRead(GCProvider gc, StructuredGraph graph, RawLoadNode load, GuardingNode guard) {
+    protected ReadNode createUnsafeRead(PlatformConfigurationProvider gc, StructuredGraph graph, RawLoadNode load, GuardingNode guard) {
         boolean compressible = load.accessKind() == JavaKind.Object;
         JavaKind readKind = load.accessKind();
         Stamp loadStamp = loadStamp(load.stamp(NodeView.DEFAULT), readKind, compressible);
@@ -836,7 +837,8 @@ public abstract class DefaultJavaLoweringProvider implements LoweringProvider {
 
                             // Truffle requires some leniency in terms of what can be put where:
                             assert valueKind.getStackKind() == entryKind.getStackKind() ||
-                                            (valueKind == JavaKind.Long || valueKind == JavaKind.Double || (valueKind == JavaKind.Int && virtual instanceof VirtualArrayNode));
+                                            (valueKind == JavaKind.Long || valueKind == JavaKind.Double || (valueKind == JavaKind.Int && virtual instanceof VirtualArrayNode) ||
+                                                            (valueKind == JavaKind.Float && virtual instanceof VirtualArrayNode));
                             AddressNode address = null;
                             BarrierType barrierType = null;
                             if (virtual instanceof VirtualInstanceNode) {
@@ -851,7 +853,7 @@ public abstract class DefaultJavaLoweringProvider implements LoweringProvider {
                                 barrierType = arrayInitializationBarrier(entryKind);
                             }
                             if (address != null) {
-                                WriteNode write = new WriteNode(address, LocationIdentity.init(), implicitStoreConvert(graph, entryKind, value), barrierType, false);
+                                WriteNode write = new WriteNode(address, LocationIdentity.init(), arrayImplicitStoreConvert(graph, entryKind, value, commit, virtual, valuePos), barrierType, false);
                                 graph.addAfterFixed(newObject, graph.add(write));
                             }
                         }
@@ -894,7 +896,7 @@ public abstract class DefaultJavaLoweringProvider implements LoweringProvider {
                 }
             }
 
-            finishAllocatedObjects(tool, commit, allocations);
+            finishAllocatedObjects(tool, commit, commit, allocations);
             graph.removeFixed(commit);
 
             for (AbstractNewObjectNode recursiveLowering : recursiveLowerings) {
@@ -912,12 +914,14 @@ public abstract class DefaultJavaLoweringProvider implements LoweringProvider {
         return new NewArrayNode(((VirtualArrayNode) virtual).componentType(), length, true);
     }
 
-    public void finishAllocatedObjects(LoweringTool tool, CommitAllocationNode commit, ValueNode[] allocations) {
+    public void finishAllocatedObjects(LoweringTool tool, FixedWithNextNode insertAfter, CommitAllocationNode commit, ValueNode[] allocations) {
+        FixedWithNextNode insertionPoint = insertAfter;
         StructuredGraph graph = commit.graph();
         for (int objIndex = 0; objIndex < commit.getVirtualObjects().size(); objIndex++) {
             FixedValueAnchorNode anchor = graph.add(new FixedValueAnchorNode(allocations[objIndex]));
             allocations[objIndex] = anchor;
-            graph.addBeforeFixed(commit, anchor);
+            graph.addAfterFixed(insertionPoint, anchor);
+            insertionPoint = anchor;
         }
         /*
          * Note that the FrameState that is assigned to these MonitorEnterNodes isn't the correct
@@ -943,7 +947,8 @@ public abstract class DefaultJavaLoweringProvider implements LoweringProvider {
                 assert lastDepth < monitorId.getLockDepth();
                 lastDepth = monitorId.getLockDepth();
                 MonitorEnterNode enter = graph.add(new MonitorEnterNode(allocations[objIndex], monitorId));
-                graph.addBeforeFixed(commit, enter);
+                graph.addAfterFixed(insertionPoint, enter);
+                insertionPoint = enter;
                 if (enters == null) {
                     enters = new ArrayList<>();
                 }
@@ -966,7 +971,7 @@ public abstract class DefaultJavaLoweringProvider implements LoweringProvider {
             }
         }
         assert commit.hasNoUsages();
-        insertAllocationBarrier(commit, graph);
+        insertAllocationBarrier(insertAfter, commit, graph);
     }
 
     /**
@@ -974,7 +979,7 @@ public abstract class DefaultJavaLoweringProvider implements LoweringProvider {
      * include the {@link MemoryBarriers#LOAD_STORE} required for final fields if any final fields
      * are being written, as if {@link FinalFieldBarrierNode} were emitted.
      */
-    private static void insertAllocationBarrier(CommitAllocationNode commit, StructuredGraph graph) {
+    private static void insertAllocationBarrier(FixedWithNextNode insertAfter, CommitAllocationNode commit, StructuredGraph graph) {
         int barrier = MemoryBarriers.STORE_STORE;
         outer: for (VirtualObjectNode vobj : commit.getVirtualObjects()) {
             for (ResolvedJavaField field : vobj.type().getInstanceFields(true)) {
@@ -984,24 +989,24 @@ public abstract class DefaultJavaLoweringProvider implements LoweringProvider {
                 }
             }
         }
-        graph.addAfterFixed(commit, graph.add(new MembarNode(barrier, LocationIdentity.init())));
+        graph.addAfterFixed(insertAfter, graph.add(new MembarNode(barrier, LocationIdentity.init())));
     }
 
     /**
      * @param field the field whose barrier type should be returned
      */
-    protected BarrierType fieldLoadBarrierType(ResolvedJavaField field) {
+    public BarrierType fieldLoadBarrierType(ResolvedJavaField field) {
         return BarrierType.NONE;
     }
 
-    protected BarrierType fieldStoreBarrierType(ResolvedJavaField field) {
+    public BarrierType fieldStoreBarrierType(ResolvedJavaField field) {
         if (getStorageKind(field) == JavaKind.Object) {
             return BarrierType.FIELD;
         }
         return BarrierType.NONE;
     }
 
-    protected BarrierType arrayStoreBarrierType(JavaKind elementKind) {
+    public BarrierType arrayStoreBarrierType(JavaKind elementKind) {
         if (elementKind == JavaKind.Object) {
             return BarrierType.ARRAY;
         }
@@ -1113,6 +1118,36 @@ public abstract class DefaultJavaLoweringProvider implements LoweringProvider {
                 return new ZeroExtendNode(value, 32);
         }
         return value;
+    }
+
+    public ValueNode arrayImplicitStoreConvert(StructuredGraph graph,
+                    JavaKind entryKind,
+                    ValueNode value,
+                    CommitAllocationNode commit,
+                    VirtualObjectNode virtual,
+                    int valuePos) {
+        if (!virtual.isVirtualByteArray()) {
+            return implicitStoreConvert(graph, entryKind, value);
+        }
+        // A virtual entry in a byte array can span multiple bytes. This shortens the entry to fit
+        // in its declared size.
+        int entryIndex = valuePos + 1;
+        int bytes = 1;
+        while (entryIndex < commit.getValues().size() && commit.getValues().get(entryIndex).isIllegalConstant()) {
+            bytes++;
+            entryIndex++;
+        }
+        assert bytes <= value.getStackKind().getByteCount();
+        ValueNode entry = value;
+        if (value.getStackKind() == JavaKind.Float) {
+            entry = graph.addOrUnique(ReinterpretNode.create(JavaKind.Int, entry, NodeView.DEFAULT));
+        } else if (value.getStackKind() == JavaKind.Double) {
+            entry = graph.addOrUnique(ReinterpretNode.create(JavaKind.Long, entry, NodeView.DEFAULT));
+        }
+        if (bytes < value.getStackKind().getByteCount()) {
+            entry = graph.unique(new NarrowNode(entry, bytes << 3));
+        }
+        return entry;
     }
 
     public final ValueNode implicitStoreConvert(StructuredGraph graph, JavaKind kind, ValueNode value) {

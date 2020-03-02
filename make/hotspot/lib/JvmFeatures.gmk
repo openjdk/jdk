@@ -186,95 +186,95 @@ ifeq ($(call check-jvm-feature, link-time-opt), true)
   JVM_LDFLAGS_FEATURES += -O3 -flto -fuse-linker-plugin -fno-strict-aliasing
 endif
 
-ifeq ($(call check-jvm-feature, minimal), true)
-  ifeq ($(call check-jvm-feature, link-time-opt), false)
-    JVM_OPTIMIZATION := SIZE
-    OPT_SPEED_SRC := \
-        allocation.cpp \
-        assembler.cpp \
-        barrierSet.cpp \
-        basicLock.cpp \
-        biasedLocking.cpp \
-        bytecode.cpp \
-        bytecodeInterpreter.cpp \
-        c1_Compilation.cpp \
-        c1_Compiler.cpp \
-        c1_GraphBuilder.cpp \
-        c1_LinearScan.cpp \
-        c1_LIR.cpp \
-        ciEnv.cpp \
-        ciObjectFactory.cpp \
-        codeBlob.cpp \
-        constantPool.cpp \
-        constMethod.cpp \
-        classLoader.cpp \
-        classLoaderData.cpp \
-        classFileParser.cpp \
-        classFileStream.cpp \
-        cpCache.cpp \
-        defNewGeneration.cpp \
-        frame_arm.cpp \
-        frame_aarch64.cpp \
-        frame_ppc.cpp \
-        frame_s390.cpp \
-        frame_x86.cpp \
-        genCollectedHeap.cpp \
-        generation.cpp \
-        genMarkSweep.cpp \
-        growableArray.cpp \
-        handles.cpp \
-        hashtable.cpp \
-        heap.cpp \
-        icache.cpp \
-        icache_arm.cpp \
-        icache_aarch64.cpp \
-        icache_ppc.cpp \
-        icache_s390.cpp \
-        icache_x86.cpp \
-        instanceKlass.cpp \
-        invocationCounter.cpp \
-        iterator.cpp \
-        javaCalls.cpp \
-        javaClasses.cpp \
-        jniFastGetField_arm.cpp \
-        jvm.cpp \
-        linkResolver.cpp \
-        klass.cpp \
-        klassVtable.cpp \
-        markSweep.cpp \
-        memRegion.cpp \
-        memoryPool.cpp \
-        method.cpp \
-        methodHandles.cpp \
-        methodHandles_arm.cpp \
-        methodLiveness.cpp \
-        metaspace.cpp \
-        mutex.cpp \
-        mutexLocker.cpp \
-        nativeLookup.cpp \
-        objArrayKlass.cpp \
-        os_linux.cpp \
-        os_linux_arm.cpp \
-        resourceArea.cpp \
-        rewriter.cpp \
-        sharedRuntime.cpp \
-        signature.cpp \
-        space.cpp \
-        stackMapTable.cpp \
-        symbolTable.cpp \
-        systemDictionary.cpp \
-        symbol.cpp \
-        synchronizer.cpp \
-        timer.cpp \
-        typeArrayKlass.cpp \
-        unsafe.cpp \
-        utf8.cpp \
-        vmSymbols.cpp \
-        #
+ifeq ($(call check-jvm-feature, opt-size), true)
+  JVM_OPTIMIZATION := SIZE
+  OPT_SPEED_SRC := \
+      allocation.cpp \
+      assembler.cpp \
+      barrierSet.cpp \
+      basicLock.cpp \
+      biasedLocking.cpp \
+      bytecode.cpp \
+      bytecodeInterpreter.cpp \
+      c1_Compilation.cpp \
+      c1_Compiler.cpp \
+      c1_GraphBuilder.cpp \
+      c1_LinearScan.cpp \
+      c1_LIR.cpp \
+      ciEnv.cpp \
+      ciObjectFactory.cpp \
+      codeBlob.cpp \
+      constantPool.cpp \
+      constMethod.cpp \
+      classLoader.cpp \
+      classLoaderData.cpp \
+      classFileParser.cpp \
+      classFileStream.cpp \
+      cpCache.cpp \
+      defNewGeneration.cpp \
+      frame_arm.cpp \
+      frame_aarch64.cpp \
+      frame_ppc.cpp \
+      frame_s390.cpp \
+      frame_x86.cpp \
+      genCollectedHeap.cpp \
+      generation.cpp \
+      genMarkSweep.cpp \
+      growableArray.cpp \
+      handles.cpp \
+      hashtable.cpp \
+      heap.cpp \
+      icache.cpp \
+      icache_arm.cpp \
+      icache_aarch64.cpp \
+      icache_ppc.cpp \
+      icache_s390.cpp \
+      icache_x86.cpp \
+      instanceKlass.cpp \
+      invocationCounter.cpp \
+      iterator.cpp \
+      javaCalls.cpp \
+      javaClasses.cpp \
+      jniFastGetField_arm.cpp \
+      jvm.cpp \
+      linkResolver.cpp \
+      klass.cpp \
+      klassVtable.cpp \
+      markSweep.cpp \
+      memRegion.cpp \
+      memoryPool.cpp \
+      method.cpp \
+      methodHandles.cpp \
+      methodHandles_arm.cpp \
+      methodLiveness.cpp \
+      metaspace.cpp \
+      mutex.cpp \
+      mutexLocker.cpp \
+      nativeLookup.cpp \
+      objArrayKlass.cpp \
+      os_linux.cpp \
+      os_linux_arm.cpp \
+      resourceArea.cpp \
+      rewriter.cpp \
+      sharedRuntime.cpp \
+      signature.cpp \
+      space.cpp \
+      stackMapTable.cpp \
+      symbolTable.cpp \
+      systemDictionary.cpp \
+      symbol.cpp \
+      synchronizer.cpp \
+      timer.cpp \
+      typeArrayKlass.cpp \
+      unsafe.cpp \
+      utf8.cpp \
+      vmSymbols.cpp \
+      #
 
-    $(foreach s, $(OPT_SPEED_SRC), \
-        $(eval BUILD_LIBJVM_$s_OPTIMIZATION := HIGHEST_JVM))
+  $(foreach s, $(OPT_SPEED_SRC), \
+      $(eval BUILD_LIBJVM_$s_OPTIMIZATION := HIGHEST_JVM))
 
+  ifneq ($(filter $(TOOLCHAIN_TYPE), gcc clang), )
     BUILD_LIBJVM_systemDictionary.cpp_CXXFLAGS := -fno-optimize-sibling-calls
   endif
 endif

@@ -35,6 +35,7 @@
 #include "runtime/globals_extension.hpp"
 #include "runtime/java.hpp"
 #include "utilities/defaultStream.hpp"
+#include "utilities/powerOfTwo.hpp"
 
 static const double MaxRamFractionForYoung = 0.8;
 

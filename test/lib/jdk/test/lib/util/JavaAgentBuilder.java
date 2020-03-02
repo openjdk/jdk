@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,8 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.Map;
+import java.util.HashMap;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
 
@@ -53,11 +55,24 @@ public class JavaAgentBuilder {
      * @param args[1]    file name of the agent jar to be created
      * @throws IOException
      */
-    public static void main(String... args) throws IOException {
+    public static void main(String... args) throws Exception {
         String agentClass = args[0];
         String agentJar = args[1];
         System.out.println("Building " + agentJar + " with agent class " + agentClass);
-        build(agentClass, agentJar);
+
+        build(agentClass, agentJar, parseExtraAttrs(args));
+    }
+
+    private static Map<String,String> parseExtraAttrs(String[] args) throws Exception {
+        Map<String,String> attrs = new HashMap<>();
+        for (int i = 2; i < args.length; i++) {
+            String[] parts = args[i].split(":");
+            if (parts.length != 2) {
+                throw new IllegalArgumentException("Extra attributes should be of format 'key:value'");
+            }
+            attrs.put(parts[0],parts[1]);
+        }
+        return attrs;
     }
 
     /**
@@ -70,11 +85,30 @@ public class JavaAgentBuilder {
      * @throws IOException
      */
     public static void build(String agentClass, String agentJar) throws IOException {
+        build(agentClass, agentJar, new HashMap<String, String>());
+    }
+
+    /**
+     * Build a java agent jar file with a given agent class.
+     * The agent class will be added as both premain class and agent class.
+     *
+     * @param agentClass fully qualified name of an agent class
+     * @param agentJar   file name of the agent jar to be created
+     *                   the file will be placed in a current work directory
+     * @param extraAttrs additional manifest attributes
+     * @throws IOException
+     */
+    public static void build(String agentClass, String agentJar,
+                             Map<String, String> extraAttrs) throws IOException {
         Manifest mf = new Manifest();
         Attributes attrs = mf.getMainAttributes();
         attrs.put(Attributes.Name.MANIFEST_VERSION, "1.0");
+        attrs.putValue("Can-Redefine-Classes", "true");
+        attrs.putValue("Can-Retransform-Classes", "true");
         attrs.putValue("Premain-Class", agentClass);
         attrs.putValue("Agent-Class", agentClass);
+
+        extraAttrs.forEach( (k,v) -> attrs.putValue(k,v));
 
         Path jarFile = Paths.get(".", agentJar);
         String testClasses = Utils.TEST_CLASSES;

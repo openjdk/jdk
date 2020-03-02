@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -319,14 +319,14 @@ $(function() {
                 if (ui.item.category === catModules) {
                     url += "module-summary.html";
                 } else if (ui.item.category === catPackages) {
-                    if (ui.item.url) {
-                        url = ui.item.url;
+                    if (ui.item.u) {
+                        url = ui.item.u;
                     } else {
-                    url += ui.item.l.replace(/\./g, '/') + "/package-summary.html";
+                        url += ui.item.l.replace(/\./g, '/') + "/package-summary.html";
                     }
                 } else if (ui.item.category === catTypes) {
-                    if (ui.item.url) {
-                        url = ui.item.url;
+                    if (ui.item.u) {
+                        url = ui.item.u;
                     } else if (ui.item.p === "<Unnamed>") {
                         url += ui.item.l + ".html";
                     } else {
@@ -338,8 +338,8 @@ $(function() {
                     } else {
                         url += ui.item.p.replace(/\./g, '/') + "/" + ui.item.c + ".html" + "#";
                     }
-                    if (ui.item.url) {
-                        url += ui.item.url;
+                    if (ui.item.u) {
+                        url += ui.item.u;
                     } else {
                         url += ui.item.l;
                     }

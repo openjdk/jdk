@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,8 +76,15 @@ Java_java_util_zip_Deflater_init(JNIEnv *env, jclass cls, jint level,
     }
 }
 
+static void throwInternalErrorHelper(JNIEnv *env, z_stream *strm, const char *fixmsg) {
+    const char *msg = NULL;
+    msg = (strm->msg != NULL) ? strm->msg : fixmsg;
+    JNU_ThrowInternalError(env, msg);
+}
+
 static void checkSetDictionaryResult(JNIEnv *env, jlong addr, jint res)
 {
+    z_stream *strm = (z_stream *) jlong_to_ptr(addr);
     switch (res) {
     case Z_OK:
         break;
@@ -85,7 +92,7 @@ static void checkSetDictionaryResult(JNIEnv *env, jlong addr, jint res)
         JNU_ThrowIllegalArgumentException(env, 0);
         break;
     default:
-        JNU_ThrowInternalError(env, ((z_stream *)jlong_to_ptr(addr))->msg);
+        throwInternalErrorHelper(env, strm, "unknown error in checkSetDictionaryResult");
         break;
     }
 }
@@ -157,7 +164,7 @@ static jlong checkDeflateStatus(JNIEnv *env, jlong addr,
             outputUsed = outputLen - strm->avail_out;
             break;
         default:
-            JNU_ThrowInternalError(env, strm->msg);
+            throwInternalErrorHelper(env, strm, "unknown error in checkDeflateStatus, setParams case");
             return 0;
         }
     } else {
@@ -171,7 +178,7 @@ static jlong checkDeflateStatus(JNIEnv *env, jlong addr,
             outputUsed = outputLen - strm->avail_out;
             break;
         default:
-            JNU_ThrowInternalError(env, strm->msg);
+            throwInternalErrorHelper(env, strm, "unknown error in checkDeflateStatus");
             return 0;
         }
     }
@@ -289,7 +296,7 @@ JNIEXPORT void JNICALL
 Java_java_util_zip_Deflater_reset(JNIEnv *env, jclass cls, jlong addr)
 {
     if (deflateReset((z_stream *)jlong_to_ptr(addr)) != Z_OK) {
-        JNU_ThrowInternalError(env, 0);
+        JNU_ThrowInternalError(env, "deflateReset failed");
     }
 }
 
@@ -297,7 +304,7 @@ JNIEXPORT void JNICALL
 Java_java_util_zip_Deflater_end(JNIEnv *env, jclass cls, jlong addr)
 {
     if (deflateEnd((z_stream *)jlong_to_ptr(addr)) == Z_STREAM_ERROR) {
-        JNU_ThrowInternalError(env, 0);
+        JNU_ThrowInternalError(env, "deflateEnd failed");
     } else {
         free((z_stream *)jlong_to_ptr(addr));
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1102,104 +1102,83 @@ public class X500Name implements GeneralNameInterface, Principal {
      * Includes all those specified in RFC 5280 as MUST or SHOULD
      * be recognized
      */
-    private static final int[] commonName_data = { 2, 5, 4, 3 };
-    private static final int[] SURNAME_DATA = { 2, 5, 4, 4 };
-    private static final int[] SERIALNUMBER_DATA = { 2, 5, 4, 5 };
-    private static final int[] countryName_data = { 2, 5, 4, 6 };
-    private static final int[] localityName_data = { 2, 5, 4, 7 };
-    private static final int[] stateName_data = { 2, 5, 4, 8 };
-    private static final int[] streetAddress_data = { 2, 5, 4, 9 };
-    private static final int[] orgName_data = { 2, 5, 4, 10 };
-    private static final int[] orgUnitName_data = { 2, 5, 4, 11 };
-    private static final int[] title_data = { 2, 5, 4, 12 };
-    private static final int[] GIVENNAME_DATA = { 2, 5, 4, 42 };
-    private static final int[] INITIALS_DATA = { 2, 5, 4, 43 };
-    private static final int[] GENERATIONQUALIFIER_DATA = { 2, 5, 4, 44 };
-    private static final int[] DNQUALIFIER_DATA = { 2, 5, 4, 46 };
-
-    private static final int[] ipAddress_data = { 1, 3, 6, 1, 4, 1, 42, 2, 11, 2, 1 };
-    private static final int[] DOMAIN_COMPONENT_DATA =
-        { 0, 9, 2342, 19200300, 100, 1, 25 };
-    private static final int[] userid_data =
-        { 0, 9, 2342, 19200300, 100, 1, 1 };
-
 
     // OID for the "CN=" attribute, denoting a person's common name.
     public static final ObjectIdentifier commonName_oid =
-            ObjectIdentifier.newInternal(commonName_data);
+            ObjectIdentifier.of("2.5.4.3");
+
+    // OID for the "SURNAME=" attribute, denoting a person's surname.
+    public static final ObjectIdentifier SURNAME_OID =
+            ObjectIdentifier.of("2.5.4.4");
 
     // OID for the "SERIALNUMBER=" attribute, denoting a serial number for.
     // a name. Do not confuse with PKCS#9 issuerAndSerialNumber or the
     // certificate serial number.
     public static final ObjectIdentifier SERIALNUMBER_OID =
-            ObjectIdentifier.newInternal(SERIALNUMBER_DATA);
+            ObjectIdentifier.of("2.5.4.5");
 
     // OID for the "C=" attribute, denoting a country.
     public static final ObjectIdentifier countryName_oid =
-            ObjectIdentifier.newInternal(countryName_data);
+            ObjectIdentifier.of("2.5.4.6");
 
     // OID for the "L=" attribute, denoting a locality (such as a city).
     public static final ObjectIdentifier localityName_oid =
-            ObjectIdentifier.newInternal(localityName_data);
-
-    // OID for the "O=" attribute, denoting an organization name.
-    public static final ObjectIdentifier orgName_oid =
-            ObjectIdentifier.newInternal(orgName_data);
-
-    // OID for the "OU=" attribute, denoting an organizational unit name.
-    public static final ObjectIdentifier orgUnitName_oid =
-            ObjectIdentifier.newInternal(orgUnitName_data);
+            ObjectIdentifier.of("2.5.4.7");
 
     // OID for the "S=" attribute, denoting a state (such as Delaware).
     public static final ObjectIdentifier stateName_oid =
-            ObjectIdentifier.newInternal(stateName_data);
+            ObjectIdentifier.of("2.5.4.8");
 
     // OID for the "STREET=" attribute, denoting a street address.
     public static final ObjectIdentifier streetAddress_oid =
-            ObjectIdentifier.newInternal(streetAddress_data);
+            ObjectIdentifier.of("2.5.4.9");
+
+    // OID for the "O=" attribute, denoting an organization name.
+    public static final ObjectIdentifier orgName_oid =
+            ObjectIdentifier.of("2.5.4.10");
+
+    // OID for the "OU=" attribute, denoting an organizational unit name.
+    public static final ObjectIdentifier orgUnitName_oid =
+            ObjectIdentifier.of("2.5.4.11");
 
     // OID for the "T=" attribute, denoting a person's title.
     public static final ObjectIdentifier title_oid =
-            ObjectIdentifier.newInternal(title_data);
+            ObjectIdentifier.of("2.5.4.12");
+
+    // OID for the "GIVENNAME=" attribute, denoting a person's given name.
+    public static final ObjectIdentifier GIVENNAME_OID =
+            ObjectIdentifier.of("2.5.4.42");
+
+    // OID for the "INITIALS=" attribute, denoting a person's initials.
+    public static final ObjectIdentifier INITIALS_OID =
+            ObjectIdentifier.of("2.5.4.43");
+
+    // OID for the "GENERATION=" attribute, denoting Jr., II, etc.
+    public static final ObjectIdentifier GENERATIONQUALIFIER_OID =
+            ObjectIdentifier.of("2.5.4.44");
 
     // OID for the "DNQUALIFIER=" or "DNQ=" attribute, denoting DN
     // disambiguating information.
     public static final ObjectIdentifier DNQUALIFIER_OID =
-            ObjectIdentifier.newInternal(DNQUALIFIER_DATA);
-
-    // OID for the "SURNAME=" attribute, denoting a person's surname.
-    public static final ObjectIdentifier SURNAME_OID =
-            ObjectIdentifier.newInternal(SURNAME_DATA);
-
-    // OID for the "GIVENNAME=" attribute, denoting a person's given name.
-    public static final ObjectIdentifier GIVENNAME_OID =
-            ObjectIdentifier.newInternal(GIVENNAME_DATA);
-
-    // OID for the "INITIALS=" attribute, denoting a person's initials.
-    public static final ObjectIdentifier INITIALS_OID =
-            ObjectIdentifier.newInternal(INITIALS_DATA);
-
-    // OID for the "GENERATION=" attribute, denoting Jr., II, etc.
-    public static final ObjectIdentifier GENERATIONQUALIFIER_OID =
-            ObjectIdentifier.newInternal(GENERATIONQUALIFIER_DATA);
+            ObjectIdentifier.of("2.5.4.46");
 
     // OIDs from other sources which show up in X.500 names we
     // expect to deal with often.
     //
     // OID for "IP=" IP address attributes, used with SKIP.
     public static final ObjectIdentifier ipAddress_oid =
-            ObjectIdentifier.newInternal(ipAddress_data);
+            ObjectIdentifier.of("1.3.6.1.4.1.42.2.11.2.1");
 
     // Domain component OID from RFC 1274, RFC 2247, RFC 5280.
     //
-    // OID for "DC=" domain component attributes, used with DNSNames in DN
+    // OID for "DC=" domain component attributes.used with DNSNames in DN
     // format.
     public static final ObjectIdentifier DOMAIN_COMPONENT_OID =
-            ObjectIdentifier.newInternal(DOMAIN_COMPONENT_DATA);
+            ObjectIdentifier.of("0.9.2342.19200300.100.1.25");
 
     // OID for "UID=" denoting a user id, defined in RFCs 1274 & 2798.
     public static final ObjectIdentifier userid_oid =
-            ObjectIdentifier.newInternal(userid_data);
+            ObjectIdentifier.of("0.9.2342.19200300.100.1.1");
 
     /**
      * Return constraint type:<ul>

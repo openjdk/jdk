@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,50 +38,36 @@ import sun.security.util.*;
 public class ContentInfo {
 
     // pkcs7 pre-defined content types
-    private static int[]  pkcs7 = {1, 2, 840, 113549, 1, 7};
-    private static int[]   data = {1, 2, 840, 113549, 1, 7, 1};
-    private static int[]  sdata = {1, 2, 840, 113549, 1, 7, 2};
-    private static int[]  edata = {1, 2, 840, 113549, 1, 7, 3};
-    private static int[] sedata = {1, 2, 840, 113549, 1, 7, 4};
-    private static int[]  ddata = {1, 2, 840, 113549, 1, 7, 5};
-    private static int[] crdata = {1, 2, 840, 113549, 1, 7, 6};
-    private static int[] nsdata = {2, 16, 840, 1, 113730, 2, 5};
-    // timestamp token (id-ct-TSTInfo) from RFC 3161
-    private static int[] tstInfo = {1, 2, 840, 113549, 1, 9, 16, 1, 4};
-    // this is for backwards-compatibility with JDK 1.1.x
-    private static final int[] OLD_SDATA = {1, 2, 840, 1113549, 1, 7, 2};
-    private static final int[] OLD_DATA = {1, 2, 840, 1113549, 1, 7, 1};
-    public static ObjectIdentifier PKCS7_OID;
-    public static ObjectIdentifier DATA_OID;
-    public static ObjectIdentifier SIGNED_DATA_OID;
-    public static ObjectIdentifier ENVELOPED_DATA_OID;
-    public static ObjectIdentifier SIGNED_AND_ENVELOPED_DATA_OID;
-    public static ObjectIdentifier DIGESTED_DATA_OID;
-    public static ObjectIdentifier ENCRYPTED_DATA_OID;
-    public static ObjectIdentifier OLD_SIGNED_DATA_OID;
-    public static ObjectIdentifier OLD_DATA_OID;
-    public static ObjectIdentifier NETSCAPE_CERT_SEQUENCE_OID;
-    public static ObjectIdentifier TIMESTAMP_TOKEN_INFO_OID;
+    public static ObjectIdentifier PKCS7_OID =
+            ObjectIdentifier.of("1.2.840.113549.1.7");
+    public static ObjectIdentifier DATA_OID =
+            ObjectIdentifier.of("1.2.840.113549.1.7.1");
+    public static ObjectIdentifier SIGNED_DATA_OID =
+            ObjectIdentifier.of("1.2.840.113549.1.7.2");
+    public static ObjectIdentifier ENVELOPED_DATA_OID =
+            ObjectIdentifier.of("1.2.840.113549.1.7.3");
+    public static ObjectIdentifier SIGNED_AND_ENVELOPED_DATA_OID =
+            ObjectIdentifier.of("1.2.840.113549.1.7.4");
+    public static ObjectIdentifier DIGESTED_DATA_OID =
+            ObjectIdentifier.of("1.2.840.113549.1.7.5");
+    public static ObjectIdentifier ENCRYPTED_DATA_OID =
+            ObjectIdentifier.of("1.2.840.113549.1.7.6");
 
-    static {
-        PKCS7_OID =  ObjectIdentifier.newInternal(pkcs7);
-        DATA_OID = ObjectIdentifier.newInternal(data);
-        SIGNED_DATA_OID = ObjectIdentifier.newInternal(sdata);
-        ENVELOPED_DATA_OID = ObjectIdentifier.newInternal(edata);
-        SIGNED_AND_ENVELOPED_DATA_OID = ObjectIdentifier.newInternal(sedata);
-        DIGESTED_DATA_OID = ObjectIdentifier.newInternal(ddata);
-        ENCRYPTED_DATA_OID = ObjectIdentifier.newInternal(crdata);
-        OLD_SIGNED_DATA_OID = ObjectIdentifier.newInternal(OLD_SDATA);
-        OLD_DATA_OID = ObjectIdentifier.newInternal(OLD_DATA);
-        /**
-         * The ASN.1 systax for the Netscape Certificate Sequence
-         * data type is defined
-         * <a href=http://wp.netscape.com/eng/security/comm4-cert-download.html>
-         * here.</a>
-         */
-        NETSCAPE_CERT_SEQUENCE_OID = ObjectIdentifier.newInternal(nsdata);
-        TIMESTAMP_TOKEN_INFO_OID = ObjectIdentifier.newInternal(tstInfo);
-    }
+    // this is for backwards-compatibility with JDK 1.1.x
+    public static ObjectIdentifier OLD_SIGNED_DATA_OID =
+            ObjectIdentifier.of("1.2.840.1113549.1.7.2");
+    public static ObjectIdentifier OLD_DATA_OID =
+            ObjectIdentifier.of("1.2.840.1113549.1.7.1");
+
+    // The ASN.1 systax for the Netscape Certificate Sequence data type is
+    // defined at:
+    //      http://wp.netscape.com/eng/security/comm4-cert-download.html
+    public static ObjectIdentifier NETSCAPE_CERT_SEQUENCE_OID =
+            ObjectIdentifier.of("2.16.840.1.113730.2.5");
+
+    // timestamp token (id-ct-TSTInfo) from RFC 3161
+    public static ObjectIdentifier TIMESTAMP_TOKEN_INFO_OID =
+            ObjectIdentifier.of("1.2.840.113549.1.9.16.1.4");
 
     ObjectIdentifier contentType;
     DerValue content; // OPTIONAL

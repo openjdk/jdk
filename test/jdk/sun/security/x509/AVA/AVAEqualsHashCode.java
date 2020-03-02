@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,13 +40,11 @@ public class AVAEqualsHashCode {
 
    public static void main(String[] args) throws Exception {
 
-        int data[] = { 1, 2, 840, 113549, 2, 5 };
-
         // encode
         String name = "CN=eve s. dropper";
         X500Name dn = new X500Name(name);
         DerOutputStream deros = new DerOutputStream();
-        ObjectIdentifier oid = new ObjectIdentifier(data);
+        ObjectIdentifier oid = new ObjectIdentifier("1.2.840.113549.2.5");
 
         dn.encode(deros);
         byte[] ba = deros.toByteArray();

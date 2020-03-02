@@ -1799,8 +1799,8 @@ jint G1CollectedHeap::initialize() {
   // Create the G1ConcurrentMark data structure and thread.
   // (Must do this late, so that "max_regions" is defined.)
   _cm = new G1ConcurrentMark(this, prev_bitmap_storage, next_bitmap_storage);
-  if (_cm == NULL || !_cm->completed_initialization()) {
-    vm_shutdown_during_initialization("Could not create/initialize G1ConcurrentMark");
+  if (!_cm->completed_initialization()) {
+    vm_shutdown_during_initialization("Could not initialize G1ConcurrentMark");
     return JNI_ENOMEM;
   }
   _cm_thread = _cm->cm_thread();

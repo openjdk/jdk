@@ -43,7 +43,7 @@
  * <p>The key abstraction introduced in this package is <em>stream</em>.  The
  * classes {@link java.util.stream.Stream}, {@link java.util.stream.IntStream},
  * {@link java.util.stream.LongStream}, and {@link java.util.stream.DoubleStream}
- * are streams over objects and the primitive {@code int}, {@code long} and
+ * are streams over objects and the primitive {@code int}, {@code long}, and
  * {@code double} types.  Streams differ from collections in several ways:
  *
  * <ul>
@@ -176,7 +176,7 @@
  * do:
  *
  * <pre>{@code
- *     int sumOfWeights = widgets.<b>parallelStream()</b>
+ *     int sumOfWeights = widgets.parallelStream()
  *                               .filter(b -> b.getColor() == RED)
  *                               .mapToInt(b -> b.getWeight())
  *                               .sum();
@@ -242,7 +242,7 @@
  *     String s = sl.collect(joining(" "));
  * }</pre>
  *
- * First a list is created consisting of two strings: "one"; and "two". Then a
+ * First a list is created consisting of two strings: "one" and "two". Then a
  * stream is created from that list. Next the list is modified by adding a third
  * string: "three". Finally the elements of the stream are collected and joined
  * together. Since the list was modified before the terminal {@code collect}
@@ -344,7 +344,7 @@
  * parallelization:
  *
  * <pre>{@code
- *     List<String>results =
+ *     List<String> results =
  *         stream.filter(s -> pattern.matcher(s).matches())
  *               .collect(Collectors.toList());  // No side-effects!
  * }</pre>

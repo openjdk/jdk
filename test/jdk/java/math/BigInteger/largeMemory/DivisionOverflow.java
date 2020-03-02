@@ -25,7 +25,7 @@
  * @test
  * @bug 8022780
  * @summary Test division of large values
- * @requires os.maxMemory > 8g
+ * @requires (sun.arch.data.model == "64" & os.maxMemory > 8g)
  * @run main/othervm -Xshare:off -Xmx8g DivisionOverflow
  * @author Dmitry Nadezhin
  */

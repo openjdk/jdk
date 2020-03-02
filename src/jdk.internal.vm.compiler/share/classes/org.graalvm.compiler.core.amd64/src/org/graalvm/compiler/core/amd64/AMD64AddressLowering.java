@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,10 +93,9 @@ public class AMD64AddressLowering extends AddressLowering {
             LeftShiftNode shift = (LeftShiftNode) ret.getIndex();
             if (shift.getY().isConstant()) {
                 int amount = ret.getScale().log2 + shift.getY().asJavaConstant().asInt();
-                Scale scale = Scale.fromShift(amount);
-                if (scale != null) {
+                if (Scale.isScaleShiftSupported(amount)) {
                     ret.setIndex(shift.getX());
-                    ret.setScale(scale);
+                    ret.setScale(Scale.fromShift(amount));
                     return true;
                 }
             }

@@ -261,25 +261,45 @@ bool ShenandoahHeuristics::should_degenerate_cycle() {
   return _degenerated_cycles_in_a_row <= ShenandoahFullGCThreshold;
 }
 
+void ShenandoahHeuristics::adjust_penalty(intx step) {
+  assert(0 <= _gc_time_penalties && _gc_time_penalties <= 100,
+          "In range before adjustment: " INTX_FORMAT, _gc_time_penalties);
+
+  intx new_val = _gc_time_penalties + step;
+  if (new_val < 0) {
+    new_val = 0;
+  }
+  if (new_val > 100) {
+    new_val = 100;
+  }
+  _gc_time_penalties = new_val;
+
+  assert(0 <= _gc_time_penalties && _gc_time_penalties <= 100,
+          "In range after adjustment: " INTX_FORMAT, _gc_time_penalties);
+}
+
 void ShenandoahHeuristics::record_success_concurrent() {
   _degenerated_cycles_in_a_row = 0;
   _successful_cycles_in_a_row++;
 
   _gc_time_history->add(time_since_last_gc());
   _gc_times_learned++;
-  _gc_time_penalties -= MIN2<size_t>(_gc_time_penalties, Concurrent_Adjust);
+
+  adjust_penalty(Concurrent_Adjust);
 }
 
 void ShenandoahHeuristics::record_success_degenerated() {
   _degenerated_cycles_in_a_row++;
   _successful_cycles_in_a_row = 0;
-  _gc_time_penalties += Degenerated_Penalty;
+
+  adjust_penalty(Degenerated_Penalty);
 }
 
 void ShenandoahHeuristics::record_success_full() {
   _degenerated_cycles_in_a_row = 0;
   _successful_cycles_in_a_row++;
-  _gc_time_penalties += Full_Penalty;
+
+  adjust_penalty(Full_Penalty);
 }
 
 void ShenandoahHeuristics::record_allocation_failure_gc() {

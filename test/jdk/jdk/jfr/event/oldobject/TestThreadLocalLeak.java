@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,14 +57,18 @@ public class TestThreadLocalLeak {
     public static void main(String[] args) throws Exception {
         WhiteBox.setWriteAllObjectSamples(true);
 
-        try (Recording r = new Recording()) {
-            r.enable(EventNames.OldObjectSample).withStackTrace().with("cutoff", "infinity");
-            r.start();
-            allocateThreadLocal();
-            r.stop();
-            List<RecordedEvent> events = Events.fromRecording(r);
-            if (OldObjects.countMatchingEvents(events, ThreadLocalObject[].class, null, null, -1, "allocateThreadLocal") == 0) {
-                throw new Exception("Could not find thread local object " + ThreadLocalObject.class);
+        while (true) {
+            try (Recording r = new Recording()) {
+                r.enable(EventNames.OldObjectSample).withStackTrace().with("cutoff", "infinity");
+                r.start();
+                allocateThreadLocal();
+                r.stop();
+                List<RecordedEvent> events = Events.fromRecording(r);
+                if (OldObjects.countMatchingEvents(events, ThreadLocalObject[].class, null, null, -1, "allocateThreadLocal") > 0) {
+                    return;
+                }
+                System.out.println("Failed to find ThreadLocalObject leak. Retrying.");
+                threadLocal.get().clear();
             }
         }
     }

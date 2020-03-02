@@ -27,6 +27,7 @@ package org.graalvm.compiler.core.common;
 import static org.graalvm.compiler.serviceprovider.GraalUnsafeAccess.getUnsafe;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 
 import org.graalvm.compiler.debug.GraalError;
@@ -146,9 +147,40 @@ public class Fields {
                 }
             } else {
                 Object obj = UNSAFE.getObject(from, offset);
+                if (obj != null && type.isArray()) {
+                    if (type.getComponentType().isPrimitive()) {
+                        obj = copyObjectAsArray(obj);
+                    } else {
+                        obj = ((Object[]) obj).clone();
+                    }
+                }
                 UNSAFE.putObject(to, offset, trans == null ? obj : trans.apply(index, obj));
             }
         }
+    }
+
+    private static Object copyObjectAsArray(Object obj) {
+        Object objCopy;
+        if (obj instanceof int[]) {
+            objCopy = Arrays.copyOf((int[]) obj, ((int[]) obj).length);
+        } else if (obj instanceof short[]) {
+            objCopy = Arrays.copyOf((short[]) obj, ((short[]) obj).length);
+        } else if (obj instanceof long[]) {
+            objCopy = Arrays.copyOf((long[]) obj, ((long[]) obj).length);
+        } else if (obj instanceof float[]) {
+            objCopy = Arrays.copyOf((float[]) obj, ((float[]) obj).length);
+        } else if (obj instanceof double[]) {
+            objCopy = Arrays.copyOf((double[]) obj, ((double[]) obj).length);
+        } else if (obj instanceof boolean[]) {
+            objCopy = Arrays.copyOf((boolean[]) obj, ((boolean[]) obj).length);
+        } else if (obj instanceof byte[]) {
+            objCopy = Arrays.copyOf((byte[]) obj, ((byte[]) obj).length);
+        } else if (obj instanceof char[]) {
+            objCopy = Arrays.copyOf((char[]) obj, ((char[]) obj).length);
+        } else {
+            throw GraalError.shouldNotReachHere();
+        }
+        return objCopy;
     }
 
     /**

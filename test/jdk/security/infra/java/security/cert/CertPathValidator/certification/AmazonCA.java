@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 8233223
+ * @key intermittent
  * @summary Interoperability tests with Amazon's CA1, CA2, CA3, and CA4
  * @build ValidatePathWithParams
  * @run main/othervm -Djava.security.debug=certpath AmazonCA OCSP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,20 +53,20 @@ public class TestJavaFX extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("pkg1/C.html", true,
-                "<dt><span class=\"seeLabel\">See Also:</span></dt>\n"
+                "<dt>See Also:</dt>\n"
                 + "<dd><a href=\"#getRate()\"><code>getRate()</code></a>, \n"
                 + "<a href=\"#setRate(double)\"><code>setRate(double)</code></a></dd>",
                 "<div class=\"memberSignature\"><span class=\"modifiers\">public final</span>&nbsp;"
                 + "<span class=\"returnType\">void</span>&nbsp;<span class=\"memberName\">setRate</span>&#8203;"
                 + "(<span class=\"arguments\">double&nbsp;value)</span></div>\n"
                 + "<div class=\"block\">Sets the value of the property rate.</div>\n"
-                + "<dl>\n"
-                + "<dt><span class=\"simpleTagLabel\">Property description:</span></dt>",
+                + "<dl class=\"notes\">\n"
+                + "<dt>Property description:</dt>",
                 "<div class=\"memberSignature\"><span class=\"modifiers\">public final</span>&nbsp;"
                 + "<span class=\"returnType\">double</span>&nbsp;<span class=\"memberName\">getRate</span>()</div>\n"
                 + "<div class=\"block\">Gets the value of the property rate.</div>\n"
-                + "<dl>\n"
-                + "<dt><span class=\"simpleTagLabel\">Property description:</span></dt>",
+                + "<dl class=\"notes\">\n"
+                + "<dt>Property description:</dt>",
                 "<td class=\"colFirst\"><code><a href=\"C.DoubleProperty.html\" "
                 + "title=\"class in pkg1\">C.DoubleProperty</a></code></td>\n"
                 + "<th class=\"colSecond\" scope=\"row\"><code><span class=\"memberNameLink\">"
@@ -75,12 +75,12 @@ public class TestJavaFX extends JavadocTester {
                 + "<div class=\"block\">Defines the direction/speed at which the "
                 + "<code>Timeline</code> is expected to\n"
                 + " be played.</div>\n</td>",
-                "<span class=\"simpleTagLabel\">Default value:</span>",
-                "<span class=\"simpleTagLabel\">Since:</span></dt>\n"
+                "<dt>Default value:</dt>",
+                "<dt>Since:</dt>\n"
                 + "<dd>JavaFX 8.0</dd>",
                 "<p>Sets the value of the property <code>Property</code>",
                 "<p>Gets the value of the property <code>Property</code>",
-                "<span class=\"simpleTagLabel\">Property description:</span>",
+                "<dt>Property description:</dt>",
                 "<th class=\"colSecond\" scope=\"row\"><code><span class=\"memberNameLink\">"
                 + "<a href=\"#setTestMethodProperty()\">"
                 + "setTestMethodProperty</a></span>()</code></th>",
@@ -105,20 +105,20 @@ public class TestJavaFX extends JavadocTester {
                 + "<span class=\"returnType\">void</span>&nbsp;<span class=\"memberName\">setPaused</span>&#8203;"
                 + "(<span class=\"arguments\">boolean&nbsp;value)</span></div>\n"
                 + "<div class=\"block\">Sets the value of the property paused.</div>\n"
-                + "<dl>\n"
-                + "<dt><span class=\"simpleTagLabel\">Property description:</span></dt>\n"
+                + "<dl class=\"notes\">\n"
+                + "<dt>Property description:</dt>\n"
                 + "<dd>Defines if paused. The second line.</dd>\n"
-                + "<dt><span class=\"simpleTagLabel\">Default value:</span></dt>\n"
+                + "<dt>Default value:</dt>\n"
                 + "<dd>false</dd>",
                 "<section class=\"detail\" id=\"isPaused()\">\n"
                 + "<h3>isPaused</h3>\n"
                 + "<div class=\"memberSignature\"><span class=\"modifiers\">public final</span>&nbsp;"
                 + "<span class=\"returnType\">double</span>&nbsp;<span class=\"memberName\">isPaused</span>()</div>\n"
                 + "<div class=\"block\">Gets the value of the property paused.</div>\n"
-                + "<dl>\n"
-                + "<dt><span class=\"simpleTagLabel\">Property description:</span></dt>\n"
+                + "<dl class=\"notes\">\n"
+                + "<dt>Property description:</dt>\n"
                 + "<dd>Defines if paused. The second line.</dd>\n"
-                + "<dt><span class=\"simpleTagLabel\">Default value:</span></dt>\n"
+                + "<dt>Default value:</dt>\n"
                 + "<dd>false</dd>",
                 "<section class=\"detail\" id=\"rateProperty\">\n"
                 + "<h3>rate</h3>\n"
@@ -134,26 +134,26 @@ public class TestJavaFX extends JavadocTester {
                 + "<span class=\"returnType\">void</span>&nbsp;<span class=\"memberName\">setRate</span>&#8203;"
                 + "(<span class=\"arguments\">double&nbsp;value)</span></div>\n"
                 + "<div class=\"block\">Sets the value of the property rate.</div>\n"
-                + "<dl>\n"
-                + "<dt><span class=\"simpleTagLabel\">Property description:</span></dt>\n"
+                + "<dl class=\"notes\">\n"
+                + "<dt>Property description:</dt>\n"
                 + "<dd>Defines the direction/speed at which the <code>Timeline</code> is expected to\n"
                 + " be played. This is the second line.</dd>\n"
-                + "<dt><span class=\"simpleTagLabel\">Default value:</span></dt>\n"
+                + "<dt>Default value:</dt>\n"
                 + "<dd>11</dd>\n"
-                + "<dt><span class=\"simpleTagLabel\">Since:</span></dt>\n"
+                + "<dt>Since:</dt>\n"
                 + "<dd>JavaFX 8.0</dd>",
                 "<section class=\"detail\" id=\"getRate()\">\n"
                 + "<h3>getRate</h3>\n"
                 + "<div class=\"memberSignature\"><span class=\"modifiers\">public final</span>&nbsp;"
                 + "<span class=\"returnType\">double</span>&nbsp;<span class=\"memberName\">getRate</span>()</div>\n"
                 + "<div class=\"block\">Gets the value of the property rate.</div>\n"
-                + "<dl>\n"
-                + "<dt><span class=\"simpleTagLabel\">Property description:</span></dt>\n"
+                + "<dl class=\"notes\">\n"
+                + "<dt>Property description:</dt>\n"
                 + "<dd>Defines the direction/speed at which the <code>Timeline</code> is expected to\n"
                 + " be played. This is the second line.</dd>\n"
-                + "<dt><span class=\"simpleTagLabel\">Default value:</span></dt>\n"
+                + "<dt>Default value:</dt>\n"
                 + "<dd>11</dd>\n"
-                + "<dt><span class=\"simpleTagLabel\">Since:</span></dt>\n"
+                + "<dt>Since:</dt>\n"
                 + "<dd>JavaFX 8.0</dd>",
                 "<section class=\"propertySummary\" id=\"property.summary\">\n"
                 + "<h2>Property Summary</h2>\n"

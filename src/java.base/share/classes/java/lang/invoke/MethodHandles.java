@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -318,7 +318,8 @@ public class MethodHandles {
      * use cases for methods, constructors, and fields.
      * Each method handle created by a factory method is the functional
      * equivalent of a particular <em>bytecode behavior</em>.
-     * (Bytecode behaviors are described in section 5.4.3.5 of the Java Virtual Machine Specification.)
+     * (Bytecode behaviors are described in section {@jvms 5.4.3.5} of
+     * the Java Virtual Machine Specification.)
      * Here is a summary of the correspondence between these factory methods and
      * the behavior of the resulting method handles:
      * <table class="striped">
@@ -502,7 +503,8 @@ public class MethodHandles {
      * If the desired member is {@code protected}, the usual JVM rules apply,
      * including the requirement that the lookup class must either be in the
      * same package as the desired member, or must inherit that member.
-     * (See the Java Virtual Machine Specification, sections 4.9.2, 5.4.3.5, and 6.4.)
+     * (See the Java Virtual Machine Specification, sections {@jvms
+     * 4.9.2}, {@jvms 5.4.3.5}, and {@jvms 6.4}.)
      * In addition, if the desired member is a non-static field or method
      * in a different package, the resulting method handle may only be applied
      * to objects of the lookup class or one of its subclasses.
@@ -515,7 +517,7 @@ public class MethodHandles {
      * that the receiver argument must match both the resolved method <em>and</em>
      * the current class.  Again, this requirement is enforced by narrowing the
      * type of the leading parameter to the resulting method handle.
-     * (See the Java Virtual Machine Specification, section 4.10.1.9.)
+     * (See the Java Virtual Machine Specification, section {@jmvs 4.10.1.9}.)
      * <p>
      * The JVM represents constructors and static initializer blocks as internal methods
      * with special names ({@code "<init>"} and {@code "<clinit>"}).
@@ -525,7 +527,8 @@ public class MethodHandles {
      * <p>
      * If the relationship between nested types is expressed directly through the
      * {@code NestHost} and {@code NestMembers} attributes
-     * (see the Java Virtual Machine Specification, sections 4.7.28 and 4.7.29),
+     * (see the Java Virtual Machine Specification, sections {@jvms
+     * 4.7.28} and {@jvms 4.7.29}),
      * then the associated {@code Lookup} object provides direct access to
      * the lookup class and all of its nestmates
      * (see {@link java.lang.Class#getNestHost Class.getNestHost}).

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,26 +97,41 @@ public class ObjectState {
 
     /**
      * Ensure that if an {@link JavaConstant#forIllegal() illegal value} is seen that the previous
-     * value is a double word value.
+     * value is a double word value, or a primitive in a byte array.
      */
     public static boolean checkIllegalValues(ValueNode[] values) {
         if (values != null) {
-            for (int v = 1; v < values.length; v++) {
-                checkIllegalValue(values, v);
+            for (int v = 1; v < values.length;) {
+                v += checkIllegalValue(values, v);
             }
         }
         return true;
     }
 
-    /**
-     * Ensure that if an {@link JavaConstant#forIllegal() illegal value} is seen that the previous
-     * value is a double word value.
-     */
-    public static boolean checkIllegalValue(ValueNode[] values, int v) {
-        if (v > 0 && values[v].isConstant() && values[v].asConstant().equals(JavaConstant.forIllegal())) {
-            assert values[v - 1].getStackKind().needsTwoSlots();
+    public static int checkIllegalValue(ValueNode[] values, int v) {
+        int res = 1;
+        if (v > 0 && values[v].isIllegalConstant()) {
+            assert values[v - 1].getStackKind().needsTwoSlots() || (res = checkByteArrayIllegal(values, v)) != -1;
         }
-        return true;
+        return res;
+    }
+
+    private static int checkByteArrayIllegal(ValueNode[] values, int valuePos) {
+        int bytes = 1;
+        int i = valuePos - bytes;
+        while (i > 0 && values[i].isIllegalConstant()) {
+            i = valuePos - ++bytes;
+        }
+        assert i >= 0 && values[i].getStackKind().isPrimitive();
+        int j = valuePos + 1;
+        ValueNode value = values[i];
+        int totalBytes = value.getStackKind().getByteCount();
+        // Stamps erase the actual kind of a value. totalBytes is therefore not reliable.
+        while (j < values.length && values[i].isIllegalConstant()) {
+            j++;
+        }
+        assert j - i <= totalBytes;
+        return j - valuePos;
     }
 
     public EscapeObjectState createEscapeObjectState(DebugContext debug, VirtualObjectNode virtual) {

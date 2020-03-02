@@ -28,6 +28,7 @@
 #include "opto/multnode.hpp"
 #include "opto/node.hpp"
 #include "opto/phase.hpp"
+#include "utilities/powerOfTwo.hpp"
 
 // Optimization - Graph Style
 
@@ -499,7 +500,10 @@ class PhaseCFG : public Phase {
 
   CFGLoop* create_loop_tree();
   bool is_dominator(Node* dom_node, Node* node);
-
+  bool is_CFG(Node* n);
+  bool is_control_proj_or_safepoint(Node* n);
+  Block* find_block_for_node(Node* n);
+  bool is_dominating_control(Node* dom_ctrl, Node* n);
   #ifndef PRODUCT
   bool _trace_opto_pipelining;  // tracing flag
   #endif

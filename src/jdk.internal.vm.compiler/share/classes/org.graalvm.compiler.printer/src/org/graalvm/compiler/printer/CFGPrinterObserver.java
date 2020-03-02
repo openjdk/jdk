@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -209,14 +209,17 @@ public class CFGPrinterObserver implements DebugDumpHandler {
             } else if (object instanceof ScheduleResult) {
                 cfgPrinter.printSchedule(message, (ScheduleResult) object);
             } else if (object instanceof StructuredGraph) {
+                StructuredGraph graph = (StructuredGraph) object;
                 if (cfgPrinter.cfg == null) {
-                    StructuredGraph graph = (StructuredGraph) object;
                     ScheduleResult scheduleResult = GraalDebugHandlersFactory.tryGetSchedule(debug, graph);
                     if (scheduleResult != null) {
                         cfgPrinter.cfg = scheduleResult.getCFG();
                     }
                 }
                 if (cfgPrinter.cfg != null) {
+                    if (graph.nodeIdCount() > cfgPrinter.cfg.getNodeToBlock().capacity()) {
+                        cfgPrinter.cfg = ControlFlowGraph.compute(graph, true, true, true, false);
+                    }
                     cfgPrinter.printCFG(message, cfgPrinter.cfg.getBlocks(), true);
                 }
             } else if (object instanceof CompilationResult) {

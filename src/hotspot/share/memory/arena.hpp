@@ -28,6 +28,7 @@
 #include "memory/allocation.hpp"
 #include "runtime/globals.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/powerOfTwo.hpp"
 
 #include <new>
 

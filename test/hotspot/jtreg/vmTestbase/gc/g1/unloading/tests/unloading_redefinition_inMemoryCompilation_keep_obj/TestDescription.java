@@ -53,8 +53,8 @@
  *      -Xlog:gc:gc.log
  *      -XX:-UseGCOverheadLimit
  *      gc.g1.unloading.UnloadingTest
- *      -redefineClasses
- *      -inMemoryCompilation
+ *      -redefineClasses true
+ *      -inMemoryCompilation true
  *      -keep object
  *      -numberOfChecksLimit 4
  *      -stressTime 180

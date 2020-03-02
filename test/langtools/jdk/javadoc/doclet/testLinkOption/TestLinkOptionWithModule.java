@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,7 +76,7 @@ public class TestLinkOptionWithModule extends JavadocTester {
 
         checkExit(Exit.OK);
         checkOutput("com.ex2/com/ex2/B.html", true,
-                "<a href=\"../../../../out1a/com.ex1/com/ex1/A.html?is-external=true\" "
+                "<a href=\"../../../../out1a/com.ex1/com/ex1/A.html\" "
                 + "title=\"class or interface in com.ex1\" class=\"externalLink\">A</a>");
     }
 
@@ -95,7 +95,7 @@ public class TestLinkOptionWithModule extends JavadocTester {
 
         checkExit(Exit.OK);
         checkOutput("com/ex2/B.html", true,
-                "<a href=\"../../../out2a/com/ex1/A.html?is-external=true\" title=\"class or interface in com.ex1\" "
+                "<a href=\"../../../out2a/com/ex1/A.html\" title=\"class or interface in com.ex1\" "
                 + "class=\"externalLink\">A</a>");
     }
 

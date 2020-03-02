@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2019, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -25,8 +25,6 @@
 
 package org.graalvm.compiler.nodes.gc;
 
-import java.lang.ref.Reference;
-
 import org.graalvm.compiler.core.common.type.AbstractObjectStamp;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.nodes.NodeView;
@@ -37,35 +35,23 @@ import org.graalvm.compiler.nodes.extended.RawLoadNode;
 import org.graalvm.compiler.nodes.java.AbstractCompareAndSwapNode;
 import org.graalvm.compiler.nodes.java.LoweredAtomicReadAndWriteNode;
 import org.graalvm.compiler.nodes.memory.FixedAccessNode;
-import org.graalvm.compiler.nodes.memory.HeapAccess;
-import org.graalvm.compiler.nodes.memory.HeapAccess.BarrierType;
+import org.graalvm.compiler.nodes.memory.OnHeapMemoryAccess.BarrierType;
 import org.graalvm.compiler.nodes.memory.ReadNode;
 import org.graalvm.compiler.nodes.memory.WriteNode;
 import org.graalvm.compiler.nodes.memory.address.AddressNode;
 import org.graalvm.compiler.nodes.type.StampTool;
 
 import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.MetaAccessProvider;
-import jdk.vm.ci.meta.ResolvedJavaField;
 import jdk.vm.ci.meta.ResolvedJavaType;
 
 public class G1BarrierSet implements BarrierSet {
 
-    private final long referentFieldOffset;
     private final ResolvedJavaType referenceType;
+    private final long referentFieldOffset;
 
-    public G1BarrierSet(MetaAccessProvider metaAccess) {
-        this.referenceType = metaAccess.lookupJavaType(Reference.class);
-        int offset = -1;
-        for (ResolvedJavaField field : referenceType.getInstanceFields(true)) {
-            if (field.getName().equals("referent")) {
-                offset = field.getOffset();
-            }
-        }
-        if (offset == 1) {
-            throw new GraalError("Can't find Reference.referent field");
-        }
-        this.referentFieldOffset = offset;
+    public G1BarrierSet(ResolvedJavaType referenceType, long referentFieldOffset) {
+        this.referenceType = referenceType;
+        this.referentFieldOffset = referentFieldOffset;
     }
 
     @Override
@@ -117,7 +103,7 @@ public class G1BarrierSet implements BarrierSet {
     }
 
     private static void addReadNodeBarriers(ReadNode node) {
-        if (node.getBarrierType() == HeapAccess.BarrierType.WEAK_FIELD || node.getBarrierType() == BarrierType.MAYBE_WEAK_FIELD) {
+        if (node.getBarrierType() == BarrierType.WEAK_FIELD || node.getBarrierType() == BarrierType.MAYBE_WEAK_FIELD) {
             StructuredGraph graph = node.graph();
             G1ReferentFieldReadBarrier barrier = graph.add(new G1ReferentFieldReadBarrier(node.getAddress(), node, node.getBarrierType() == BarrierType.MAYBE_WEAK_FIELD));
             graph.addAfterFixed(node, barrier);
@@ -125,7 +111,7 @@ public class G1BarrierSet implements BarrierSet {
     }
 
     private void addWriteBarriers(FixedAccessNode node, ValueNode writtenValue, ValueNode expectedValue, boolean doLoad, boolean nullCheck) {
-        HeapAccess.BarrierType barrierType = node.getBarrierType();
+        BarrierType barrierType = node.getBarrierType();
         switch (barrierType) {
             case NONE:
                 // nothing to do
@@ -142,7 +128,7 @@ public class G1BarrierSet implements BarrierSet {
                         addG1PreWriteBarrier(node, node.getAddress(), expectedValue, doLoad, nullCheck, graph);
                     }
                     if (writeRequiresPostBarrier(node, writtenValue)) {
-                        boolean precise = barrierType != HeapAccess.BarrierType.FIELD;
+                        boolean precise = barrierType != BarrierType.FIELD;
                         addG1PostWriteBarrier(node, node.getAddress(), writtenValue, precise, graph);
                     }
                 }

@@ -31,6 +31,7 @@
 #include "classfile/vmSymbols.hpp"
 #include "interpreter/bytecodeStream.hpp"
 #include "interpreter/interpreter.hpp"
+#include "jfr/jfrEvents.hpp"
 #include "jvmtifiles/jvmtiEnv.hpp"
 #include "logging/log.hpp"
 #include "logging/logConfiguration.hpp"
@@ -446,9 +447,16 @@ JvmtiEnv::RetransformClasses(jint class_count, const jclass* classes) {
     }
     class_definitions[index].klass              = jcls;
   }
+  EventRetransformClasses event;
   VM_RedefineClasses op(class_count, class_definitions, jvmti_class_load_kind_retransform);
   VMThread::execute(&op);
-  return (op.check_error());
+  jvmtiError error = op.check_error();
+  if (error == JVMTI_ERROR_NONE) {
+    event.set_classCount(class_count);
+    event.set_redefinitionId(op.id());
+    event.commit();
+  }
+  return error;
 } /* end RetransformClasses */
 
 
@@ -457,9 +465,16 @@ JvmtiEnv::RetransformClasses(jint class_count, const jclass* classes) {
 jvmtiError
 JvmtiEnv::RedefineClasses(jint class_count, const jvmtiClassDefinition* class_definitions) {
 //TODO: add locking
+  EventRedefineClasses event;
   VM_RedefineClasses op(class_count, class_definitions, jvmti_class_load_kind_redefine);
   VMThread::execute(&op);
-  return (op.check_error());
+  jvmtiError error = op.check_error();
+  if (error == JVMTI_ERROR_NONE) {
+    event.set_classCount(class_count);
+    event.set_redefinitionId(op.id());
+    event.commit();
+  }
+  return error;
 } /* end RedefineClasses */
 
 

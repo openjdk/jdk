@@ -56,42 +56,43 @@ import jdk.test.lib.jfr.Events;
 public final class TestHiddenMethod {
 
     public static void main(String[] args) throws Throwable {
-        Recording recording = new Recording();
-        recording.enable(MyEvent.class).withThreshold(Duration.ofMillis(0));
-        recording.start();
+        try (Recording recording = new Recording()) {
+            recording.enable(MyEvent.class).withThreshold(Duration.ofMillis(0));
+            recording.start();
 
-        // Commit event with hidden methods
-        ScriptEngineManager manager = new ScriptEngineManager();
-        ScriptEngine engine = manager.getEngineByName("nashorn");
-        engine.eval(
-                "function emit() {"
-                + "  print('About to emit event from Javascript');"
-                + "  var TestEvent = Java.type(\"jdk.jfr.api.consumer.TestHiddenMethod$MyEvent\");"
-                + "  var event = new TestEvent;"
-                + "  event.begin();"
-                + "  event.end();"
-                + "  event.commit();"
-                + "  print('Event emitted from Javascript!');"
-                + "}"
-                + "emit();");
+            // Commit event with hidden methods
+            ScriptEngineManager manager = new ScriptEngineManager();
+            ScriptEngine engine = manager.getEngineByName("nashorn");
+            engine.eval(
+                    "function emit() {"
+                    + "  print('About to emit event from Javascript');"
+                    + "  var TestEvent = Java.type(\"jdk.jfr.api.consumer.TestHiddenMethod$MyEvent\");"
+                    + "  var event = new TestEvent;"
+                    + "  event.begin();"
+                    + "  event.end();"
+                    + "  event.commit();"
+                    + "  print('Event emitted from Javascript!');"
+                    + "}"
+                    + "emit();");
 
-        // Commit event with visible method
-        MyEvent visible = new MyEvent();
-        visible.begin();
-        visible.end();
-        visible.commit();
-        recording.stop();
+            // Commit event with visible method
+            MyEvent visible = new MyEvent();
+            visible.begin();
+            visible.end();
+            visible.commit();
+            recording.stop();
 
-        List<RecordedEvent> events = Events.fromRecording(recording);
-        assertEquals(2, events.size(), "Expected two events");
-        RecordedEvent hiddenEvent = events.get(0);
-        RecordedEvent visibleEvent = events.get(1);
+            List<RecordedEvent> events = Events.fromRecording(recording);
+            assertEquals(2, events.size(), "Expected two events");
+            RecordedEvent hiddenEvent = events.get(0);
+            RecordedEvent visibleEvent = events.get(1);
 
-        System.out.println("hiddenEvent:" + hiddenEvent);
-        System.out.println("visibleEvent:" + visibleEvent);
+            System.out.println("hiddenEvent:" + hiddenEvent);
+            System.out.println("visibleEvent:" + visibleEvent);
 
-        assertTrue(hasHiddenStackFrame(hiddenEvent), "No hidden frame in hidden event: " + hiddenEvent);
-        assertFalse(hasHiddenStackFrame(visibleEvent), "Hidden frame in visible event: " + visibleEvent);
+            assertTrue(hasHiddenStackFrame(hiddenEvent), "No hidden frame in hidden event: " + hiddenEvent);
+            assertFalse(hasHiddenStackFrame(visibleEvent), "Hidden frame in visible event: " + visibleEvent);
+        }
     }
 
     private static boolean hasHiddenStackFrame(RecordedEvent event) throws Throwable {
@@ -108,5 +109,4 @@ public final class TestHiddenMethod {
 
     public static class MyEvent extends Event {
     }
-
 }

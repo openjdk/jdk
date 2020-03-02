@@ -35,6 +35,7 @@ import javax.lang.model.element.PackageElement;
 import javax.lang.model.type.TypeMirror;
 import javax.tools.FileObject;
 import java.lang.annotation.Annotation;
+import java.util.List;
 import java.util.Set;
 
 public interface DocletElement extends Element {
@@ -65,12 +66,12 @@ public interface DocletElement extends Element {
     }
 
     @Override
-    default java.util.List<? extends Element> getEnclosedElements() {
+    default List<? extends Element> getEnclosedElements() {
         throw new UnsupportedOperationException("Unsupported method");
     }
 
     @Override
-    default java.util.List<? extends AnnotationMirror> getAnnotationMirrors() {
+    default List<? extends AnnotationMirror> getAnnotationMirrors() {
         throw new UnsupportedOperationException("Unsupported method");
     }
 
@@ -92,13 +93,14 @@ public interface DocletElement extends Element {
     /**
      * Returns the anchoring package element, in the case of a
      * module element, this is the module's unnamed package.
+     *
      * @return the anchor element.
      */
     PackageElement getPackageElement();
 
     /**
      * Returns the file object associated with this special
-     * element such as overview.html, doc-file/foo.html.
+     * element such as {@code overview.html}, {@code doc-files/foo.html}.
      * @return the file object
      */
     FileObject getFileObject();

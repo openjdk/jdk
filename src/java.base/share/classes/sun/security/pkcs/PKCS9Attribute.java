@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@ import java.io.OutputStream;
 import java.security.cert.CertificateException;
 import java.util.Locale;
 import java.util.Date;
-import java.util.Hashtable;
+import java.util.HashMap;
 import sun.security.x509.CertificateExtensions;
 import sun.security.util.Debug;
 import sun.security.util.DerEncoder;
@@ -190,15 +190,14 @@ public class PKCS9Attribute implements DerEncoder {
 
     static {   // static initializer for PKCS9_OIDS
         for (int i = 1; i < PKCS9_OIDS.length - 2; i++) {
-            PKCS9_OIDS[i] =
-                ObjectIdentifier.newInternal(new int[]{1,2,840,113549,1,9,i});
+            PKCS9_OIDS[i] = ObjectIdentifier.of("1.2.840.113549.1.9." + i);
         }
         // Initialize SigningCertificate and SignatureTimestampToken
         // separately (because their values are out of sequence)
         PKCS9_OIDS[PKCS9_OIDS.length - 2] =
-            ObjectIdentifier.newInternal(new int[]{1,2,840,113549,1,9,16,2,12});
+            ObjectIdentifier.of("1.2.840.113549.1.9.16.2.12");
         PKCS9_OIDS[PKCS9_OIDS.length - 1] =
-            ObjectIdentifier.newInternal(new int[]{1,2,840,113549,1,9,16,2,14});
+            ObjectIdentifier.of("1.2.840.113549.1.9.16.2.14");
 
         try {
             BYTE_ARRAY_CLASS = Class.forName("[B");
@@ -248,12 +247,12 @@ public class PKCS9Attribute implements DerEncoder {
                                 "SignatureTimestampToken";
 
     /**
-     * Hashtable mapping names and variant names of supported
+     * HashMap mapping names and variant names of supported
      * attributes to their OIDs. This table contains all name forms
      * that occur in PKCS9, in lower case.
      */
-    private static final Hashtable<String, ObjectIdentifier> NAME_OID_TABLE =
-        new Hashtable<String, ObjectIdentifier>(18);
+    private static final HashMap<String, ObjectIdentifier> NAME_OID_TABLE =
+        new HashMap<String, ObjectIdentifier>(17);
 
     static { // static initializer for PCKS9_NAMES
         NAME_OID_TABLE.put("emailaddress", PKCS9_OIDS[1]);
@@ -276,11 +275,11 @@ public class PKCS9Attribute implements DerEncoder {
     };
 
     /**
-     * Hashtable mapping attribute OIDs defined in PKCS9 to the
+     * HashMap mapping attribute OIDs defined in PKCS9 to the
      * corresponding attribute value type.
      */
-    private static final Hashtable<ObjectIdentifier, String> OID_NAME_TABLE =
-        new Hashtable<ObjectIdentifier, String>(16);
+    private static final HashMap<ObjectIdentifier, String> OID_NAME_TABLE =
+        new HashMap<ObjectIdentifier, String>(17);
     static {
         OID_NAME_TABLE.put(PKCS9_OIDS[1], EMAIL_ADDRESS_STR);
         OID_NAME_TABLE.put(PKCS9_OIDS[2], UNSTRUCTURED_NAME_STR);
@@ -316,7 +315,10 @@ public class PKCS9Attribute implements DerEncoder {
         {DerValue.tag_UtcTime},     // SigningTime
         {DerValue.tag_Sequence},    // Countersignature
         {DerValue.tag_PrintableString,
-         DerValue.tag_T61String},   // ChallengePassword
+         DerValue.tag_T61String,
+         DerValue.tag_BMPString,
+         DerValue.tag_UniversalString,
+         DerValue.tag_UTF8String},   // ChallengePassword
         {DerValue.tag_PrintableString,
          DerValue.tag_T61String},   // UnstructuredAddress
         {DerValue.tag_SetOf},       // ExtendedCertificateAttributes
@@ -509,9 +511,8 @@ public class PKCS9Attribute implements DerEncoder {
 
         // check for illegal element tags
         Byte tag;
-        for (int i=0; i < elems.length; i++) {
-            tag = elems[i].tag;
-
+        for (DerValue elem : elems) {
+            tag = elem.tag;
             if (indexOf(tag, PKCS9_VALUE_TAGS[index], 0) == -1)
                 throwTagException(tag);
         }
@@ -600,6 +601,7 @@ public class PKCS9Attribute implements DerEncoder {
      * <code>PrintableString</code>s, without checking whether they
      * should be encoded as <code>T61String</code>s.
      */
+    @Override
     public void derEncode(OutputStream out) throws IOException {
         DerOutputStream temp = new DerOutputStream();
         temp.putOID(oid);
@@ -788,6 +790,7 @@ public class PKCS9Attribute implements DerEncoder {
     /**
      * Returns a string representation of this attribute.
      */
+    @Override
     public String toString() {
         StringBuilder sb = new StringBuilder(100);
 
@@ -813,13 +816,12 @@ public class PKCS9Attribute implements DerEncoder {
             boolean first = true;
             Object[] values = (Object[]) value;
 
-            for (int j=0; j < values.length; j++) {
+            for (Object curVal : values) {
                 if (first)
                     first = false;
                 else
                     sb.append(", ");
-
-                sb.append(values[j].toString());
+                sb.append(curVal.toString());
             }
             return sb.toString();
         }

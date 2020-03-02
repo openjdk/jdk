@@ -25,7 +25,6 @@
 
 package jdk.javadoc.internal.doclets.toolkit;
 
-import javax.lang.model.element.Element;
 import javax.lang.model.element.PackageElement;
 import javax.tools.FileObject;
 

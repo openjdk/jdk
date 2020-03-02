@@ -40,6 +40,7 @@
 #include "opto/mulnode.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/superword.hpp"
+#include "utilities/powerOfTwo.hpp"
 
 //=============================================================================
 //--------------------------is_cloop_ind_var-----------------------------------
@@ -4088,7 +4089,7 @@ Node *PhaseIdealLoop::get_late_ctrl( Node *n, Node *early ) {
           }
         } else {
           Node *sctrl = has_ctrl(s) ? get_ctrl(s) : s->in(0);
-          assert(sctrl != NULL || s->outcnt() == 0, "must have control");
+          assert(sctrl != NULL || !s->is_reachable_from_root(), "must have control");
           if (sctrl != NULL && !sctrl->is_top() && C->can_alias(s->adr_type(), load_alias_idx) && is_dominator(early, sctrl)) {
             LCA = dom_lca_for_get_late_ctrl(LCA, sctrl, n);
           }

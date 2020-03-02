@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -794,8 +794,9 @@ public class AMD64ArithmeticLIRGenerator extends ArithmeticLIRGenerator implemen
          * Conversions between integer to floating point types require moves between CPU and FPU
          * registers.
          */
-        AMD64Kind fromKind = (AMD64Kind) from.getPlatformKind();
-        switch ((AMD64Kind) to.getPlatformKind()) {
+        AMD64Kind fromKind = scalarKind((AMD64Kind) from.getPlatformKind());
+        AMD64Kind toKind = scalarKind((AMD64Kind) to.getPlatformKind());
+        switch (toKind) {
             case DWORD:
                 switch (fromKind) {
                     case SINGLE:
@@ -821,7 +822,21 @@ public class AMD64ArithmeticLIRGenerator extends ArithmeticLIRGenerator implemen
                 }
                 break;
         }
-        throw GraalError.shouldNotReachHere();
+        throw GraalError.shouldNotReachHere(toKind + " " + fromKind);
+    }
+
+    private static AMD64Kind scalarKind(AMD64Kind kind) {
+        AMD64Kind resultKind = kind;
+        if (kind.isXMM() && kind.getVectorLength() > 1) {
+            if (kind.getSizeInBytes() == AMD64Kind.SINGLE.getSizeInBytes()) {
+                resultKind = AMD64Kind.SINGLE;
+            } else if (kind.getSizeInBytes() == AMD64Kind.DOUBLE.getSizeInBytes()) {
+                resultKind = AMD64Kind.DOUBLE;
+            } else {
+                GraalError.shouldNotReachHere("no equal size scalar kind for " + kind);
+            }
+        }
+        return resultKind;
     }
 
     @Override
@@ -1263,9 +1278,13 @@ public class AMD64ArithmeticLIRGenerator extends ArithmeticLIRGenerator implemen
         }
     }
 
-    private boolean mustReplaceNullWithNullRegister(Constant nullConstant) {
+    public boolean mustReplaceNullWithNullRegister(Constant nullConstant) {
         /* Uncompressed null pointers only */
         return nullRegisterValue != null && JavaConstant.NULL_POINTER.equals(nullConstant);
+    }
+
+    public AllocatableValue getNullRegisterValue() {
+        return nullRegisterValue;
     }
 
     @Override

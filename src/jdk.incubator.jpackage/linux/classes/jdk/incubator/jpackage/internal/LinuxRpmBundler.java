@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,7 +108,7 @@ public class LinuxRpmBundler extends LinuxPackageBundler {
     public final static String TOOL_RPM = "rpm";
     public final static String TOOL_RPMBUILD = "rpmbuild";
     public final static DottedVersion TOOL_RPMBUILD_MIN_VERSION = DottedVersion.lazy(
-            "4.0");
+            "4.10");
 
     public LinuxRpmBundler() {
         super(PACKAGE_NAME);

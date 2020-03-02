@@ -92,10 +92,9 @@ public:
   size_t word_size() const { return _word_size; }
 
   bool is_empty() const { return word_size() == 0; }
-  void* operator new(size_t size) throw();
-  void* operator new [](size_t size) throw();
-  void  operator delete(void* p);
-  void  operator delete [](void* p);
+
+  // Creates and initializes an array of MemRegions of the given length.
+  static MemRegion* create_array(uint length, MEMFLAGS flags);
 };
 
 // For iteration over MemRegion's.

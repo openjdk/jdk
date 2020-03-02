@@ -72,11 +72,7 @@ jint G1ConcurrentRefineThreadControl::initialize(G1ConcurrentRefine* cr, uint nu
   _cr = cr;
   _num_max_threads = num_max_threads;
 
-  _threads = NEW_C_HEAP_ARRAY_RETURN_NULL(G1ConcurrentRefineThread*, num_max_threads, mtGC);
-  if (_threads == NULL) {
-    vm_shutdown_during_initialization("Could not allocate thread holder array.");
-    return JNI_ENOMEM;
-  }
+  _threads = NEW_C_HEAP_ARRAY(G1ConcurrentRefineThread*, num_max_threads, mtGC);
 
   for (uint i = 0; i < num_max_threads; i++) {
     if (UseDynamicNumberOfGCThreads && i != 0 /* Always start first thread. */) {
@@ -303,13 +299,6 @@ G1ConcurrentRefine* G1ConcurrentRefine::create(jint* ecode) {
                                                   yellow_zone,
                                                   red_zone,
                                                   min_yellow_zone_size);
-
-  if (cr == NULL) {
-    *ecode = JNI_ENOMEM;
-    vm_shutdown_during_initialization("Could not create G1ConcurrentRefine");
-    return NULL;
-  }
-
   *ecode = cr->initialize();
   return cr;
 }

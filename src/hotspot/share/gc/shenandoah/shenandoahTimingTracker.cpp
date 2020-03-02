@@ -31,8 +31,6 @@
 #include "runtime/os.hpp"
 
 
-ShenandoahPhaseTimings::Phase ShenandoahTerminationTracker::_current_termination_phase = ShenandoahPhaseTimings::_num_phases;
-
 ShenandoahWorkerTimingsTracker::ShenandoahWorkerTimingsTracker(ShenandoahWorkerTimings* worker_times,
                                                               ShenandoahPhaseTimings::GCParPhases phase, uint worker_id) :
   _phase(phase), _worker_times(worker_times), _worker_id(worker_id) {
@@ -53,44 +51,3 @@ ShenandoahWorkerTimingsTracker::~ShenandoahWorkerTimingsTracker() {
   }
 }
 
-ShenandoahTerminationTimingsTracker::ShenandoahTerminationTimingsTracker(uint worker_id) :
-  _worker_id(worker_id)  {
-  if (ShenandoahTerminationTrace) {
-    _start_time = os::elapsedTime();
-  }
-}
-
-ShenandoahTerminationTimingsTracker::~ShenandoahTerminationTimingsTracker() {
-  if (ShenandoahTerminationTrace) {
-    ShenandoahHeap::heap()->phase_timings()->termination_times()->record_time_secs(_worker_id, os::elapsedTime() - _start_time);
-  }
-}
-
-ShenandoahTerminationTracker::ShenandoahTerminationTracker(ShenandoahPhaseTimings::Phase phase) : _phase(phase) {
-  assert(_current_termination_phase == ShenandoahPhaseTimings::_num_phases, "Should be invalid");
-  assert(phase == ShenandoahPhaseTimings::termination ||
-         phase == ShenandoahPhaseTimings::final_traversal_gc_termination ||
-         phase == ShenandoahPhaseTimings::full_gc_mark_termination ||
-         phase == ShenandoahPhaseTimings::conc_termination ||
-         phase == ShenandoahPhaseTimings::conc_traversal_termination ||
-         phase == ShenandoahPhaseTimings::weakrefs_termination ||
-         phase == ShenandoahPhaseTimings::full_gc_weakrefs_termination,
-         "Only these phases");
-
-  assert(!Thread::current()->is_Worker_thread() &&
-             (Thread::current()->is_VM_thread() ||
-              Thread::current()->is_ConcurrentGC_thread()),
-        "Called from wrong thread");
-
-  _current_termination_phase = phase;
-  ShenandoahHeap::heap()->phase_timings()->termination_times()->reset();
-}
-
-ShenandoahTerminationTracker::~ShenandoahTerminationTracker() {
-  assert(_phase == _current_termination_phase, "Can not change phase");
-  ShenandoahPhaseTimings* phase_times = ShenandoahHeap::heap()->phase_timings();
-
-  double t = phase_times->termination_times()->average();
-  phase_times->record_phase_time(_phase, t);
-  debug_only(_current_termination_phase = ShenandoahPhaseTimings::_num_phases;)
-}

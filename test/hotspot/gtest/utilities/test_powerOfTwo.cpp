@@ -32,6 +32,40 @@ template <typename T> T max_pow2() {
   return max_val - (max_val >> 1);
 }
 
+template <typename T> static void test_is_power_of_2() {
+  EXPECT_FALSE(is_power_of_2(T(0)));
+  EXPECT_FALSE(is_power_of_2(~T(0)));
+
+  // Test true
+  for (T i = max_pow2<T>(); i > 0; i = (i >> 1)) {
+    EXPECT_TRUE(is_power_of_2(i)) << "value = " << T(i);
+  }
+
+  // Test one less
+  for (T i = max_pow2<T>(); i > 2; i = (i >> 1)) {
+    EXPECT_FALSE(is_power_of_2(i - 1)) << "value = " << T(i - 1);
+  }
+
+  // Test one more
+  for (T i = max_pow2<T>(); i > 1; i = (i >> 1)) {
+    EXPECT_FALSE(is_power_of_2(i + 1)) << "value = " << T(i + 1);
+  }
+}
+
+TEST(power_of_2, is_power_of_2) {
+  test_is_power_of_2<int8_t>();
+  test_is_power_of_2<int16_t>();
+  test_is_power_of_2<int32_t>();
+  test_is_power_of_2<int64_t>();
+  test_is_power_of_2<int8_t>();
+  test_is_power_of_2<int16_t>();
+  test_is_power_of_2<int32_t>();
+  test_is_power_of_2<int64_t>();
+
+  test_is_power_of_2<jint>();
+  test_is_power_of_2<jlong>();
+}
+
 template <typename T> void round_up_power_of_2() {
   EXPECT_EQ(round_up_power_of_2(T(1)), T(1)) << "value = " << T(1);
   EXPECT_EQ(round_up_power_of_2(T(2)), T(2)) << "value = " << T(2);

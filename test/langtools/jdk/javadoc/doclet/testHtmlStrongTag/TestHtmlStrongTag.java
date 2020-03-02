@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@ public class TestHtmlStrongTag extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("pkg1/C1.html", true,
-            "<span class=\"seeLabel\">See Also:</span>");
+            "<dl class=\"notes\">\n<dt>See Also:</dt>");
 
         checkOutput("pkg1/C1.html", false,
             "<STRONG>Method Summary</STRONG>",

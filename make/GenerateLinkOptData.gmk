@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -103,6 +103,17 @@ $(eval $(call SetupCopyFiles, COPY_CLASSLIST, \
 ))
 
 TARGETS += $(COPY_CLASSLIST)
+
+# In case of shipping public debug symbols on windows, there is another temporary
+# location from where jmods are compiled - need to deploy classlist there, too.
+ifeq ($(call isTargetOs, windows)+$(SHIP_DEBUG_SYMBOLS), true+public)
+  $(eval $(call SetupCopyFiles, COPY_CLASSLIST_TO_FILTERED, \
+      FILES := $(CLASSLIST_FILE), \
+      DEST := $(SUPPORT_OUTPUTDIR)/modules_libs_filtered/java.base, \
+  ))
+
+  TARGETS += $(COPY_CLASSLIST_TO_FILTERED)
+endif
 
 # Copy the default_jli_trace.txt file into jdk.jlink
 $(eval $(call SetupCopyFiles, COPY_JLI_TRACE, \

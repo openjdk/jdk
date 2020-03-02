@@ -309,15 +309,25 @@ public class RecordCompilationTests extends CompilationTestCase {
                         "record R(List<String> list) { # }",
                 "R(List list) { this.list = list; }");
 
-        // ctor should not add checked exceptions
+        // canonical ctor should not throw checked exceptions
         assertFail("compiler.err.invalid.canonical.constructor.in.record",
                    "record R() { # }",
                    "public R() throws Exception { }");
 
-        // not even checked exceptions
+        // same for compact
+        assertFail("compiler.err.invalid.canonical.constructor.in.record",
+                "record R() { # }",
+                "public R throws Exception { }");
+
+        // not even unchecked exceptions
         assertFail("compiler.err.invalid.canonical.constructor.in.record",
                 "record R() { # }",
                  "public R() throws IllegalArgumentException { }");
+
+        // ditto
+        assertFail("compiler.err.invalid.canonical.constructor.in.record",
+                "record R() { # }",
+                "public R throws IllegalArgumentException { }");
 
         // If types match, names must match
         assertFail("compiler.err.invalid.canonical.constructor.in.record",

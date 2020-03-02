@@ -1094,7 +1094,7 @@ void Compile::Init(int aliaslevel) {
   _matcher = NULL;  // filled in later
   _cfg     = NULL;  // filled in later
 
-  set_24_bit_selection_and_mode(Use24BitFP, false);
+  IA32_ONLY( set_24_bit_selection_and_mode(true, false); )
 
   _node_note_array = NULL;
   _default_node_notes = NULL;
@@ -3713,14 +3713,16 @@ bool Compile::final_graph_reshaping() {
     }
   }
 
+#ifdef IA32
   // If original bytecodes contained a mixture of floats and doubles
   // check if the optimizer has made it homogenous, item (3).
-  if( Use24BitFPMode && Use24BitFP && UseSSE == 0 &&
+  if (UseSSE == 0 &&
       frc.get_float_count() > 32 &&
       frc.get_double_count() == 0 &&
       (10 * frc.get_call_count() < frc.get_float_count()) ) {
-    set_24_bit_selection_and_mode( false,  true );
+    set_24_bit_selection_and_mode(false, true);
   }
+#endif // IA32
 
   set_java_calls(frc.get_java_call_count());
   set_inner_loops(frc.get_inner_loop_count());
@@ -4236,6 +4238,9 @@ int Compile::static_subtype_check(ciKlass* superk, ciKlass* subk) {
       if (!ik->is_final()) {
         // Add a dependency if there is a chance of a later subclass.
         dependencies()->assert_leaf_type(ik);
+      }
+      if (ik->is_abstract()) {
+        return SSC_always_false;
       }
       return SSC_easy_test;     // (3) caller can do a simple ptr comparison
     }

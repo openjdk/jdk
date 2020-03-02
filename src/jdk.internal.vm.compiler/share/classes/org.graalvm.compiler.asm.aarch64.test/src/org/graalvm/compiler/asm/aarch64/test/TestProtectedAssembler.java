@@ -323,8 +323,8 @@ class TestProtectedAssembler extends AArch64Assembler {
     }
 
     @Override
-    protected void ror(int size, Register dst, Register src1, Register src2) {
-        super.ror(size, dst, src1, src2);
+    protected void rorv(int size, Register dst, Register src1, Register src2) {
+        super.rorv(size, dst, src1, src2);
     }
 
     @Override

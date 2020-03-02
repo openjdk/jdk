@@ -979,7 +979,7 @@ bool SystemDictionaryShared::add_unregistered_class(InstanceKlass* k, TRAPS) {
     bool isnew = _loaded_unregistered_classes.put(name, true);
     assert(isnew, "sanity");
     MutexLocker mu_r(THREAD, Compile_lock); // add_to_hierarchy asserts this.
-    SystemDictionary::add_to_hierarchy(k, CHECK_0);
+    SystemDictionary::add_to_hierarchy(k, CHECK_false);
     return true;
   }
 }
@@ -1407,6 +1407,12 @@ void SystemDictionaryShared::serialize_dictionary_headers(SerializeClosure* soc,
   } else {
     _dynamic_builtin_dictionary.serialize_header(soc);
     _dynamic_unregistered_dictionary.serialize_header(soc);
+  }
+}
+
+void SystemDictionaryShared::serialize_well_known_klasses(SerializeClosure* soc) {
+  for (int i = FIRST_WKID; i < WKID_LIMIT; i++) {
+    soc->do_ptr((void**)&_well_known_klasses[i]);
   }
 }
 

@@ -778,6 +778,7 @@ void LIR_Assembler::build_frame() {
 
 
 void LIR_Assembler::roundfp_op(LIR_Opr src, LIR_Opr tmp, LIR_Opr dest, bool pop_fpu_stack) {
+  assert(strict_fp_requires_explicit_rounding, "not required");
   assert((src->is_single_fpu() && dest->is_single_stack()) ||
          (src->is_double_fpu() && dest->is_double_stack()),
          "round_fp: rounds register -> stack location");

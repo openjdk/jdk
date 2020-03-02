@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,35 +57,25 @@ bool frame::safe_for_sender(JavaThread *thread) {
   address   unextended_sp = (address)_unextended_sp;
 
   // consider stack guards when trying to determine "safe" stack pointers
-  static size_t stack_guard_size = os::uses_stack_guard_pages() ?
-    JavaThread::stack_red_zone_size() + JavaThread::stack_yellow_zone_size() : 0;
-  size_t usable_stack_size = thread->stack_size() - stack_guard_size;
-
   // sp must be within the usable part of the stack (not in guards)
-  bool sp_safe = (sp < thread->stack_base()) &&
-                 (sp >= thread->stack_base() - usable_stack_size);
-
-
-  if (!sp_safe) {
+  if (!thread->is_in_usable_stack(sp)) {
     return false;
   }
 
   // unextended sp must be within the stack and above or equal sp
-  bool unextended_sp_safe = (unextended_sp < thread->stack_base()) &&
-                            (unextended_sp >= sp);
-
-  if (!unextended_sp_safe) {
+  if (!thread->is_in_stack_range_incl(unextended_sp, sp)) {
     return false;
   }
 
   // an fp must be within the stack and above (but not equal) sp
   // second evaluation on fp+ is added to handle situation where fp is -1
-  bool fp_safe = (fp < thread->stack_base() && (fp > sp) && (((fp + (return_addr_offset * sizeof(void*))) < thread->stack_base())));
+  bool fp_safe = thread->is_in_stack_range_excl(fp, sp) &&
+                 thread->is_in_full_stack(fp + (return_addr_offset * sizeof(void*)));
 
   // We know sp/unextended_sp are safe only fp is questionable here
 
   // If the current frame is known to the code cache then we can attempt to
-  // to construct the sender and do some validation of it. This goes a long way
+  // construct the sender and do some validation of it. This goes a long way
   // toward eliminating issues when we get in frame construction code
 
   if (_cb != NULL ) {
@@ -142,7 +132,7 @@ bool frame::safe_for_sender(JavaThread *thread) {
 
       sender_sp = _unextended_sp + _cb->frame_size();
       // Is sender_sp safe?
-      if ((address)sender_sp >= thread->stack_base()) {
+      if (!thread->is_in_full_stack((address)sender_sp)) {
         return false;
       }
       sender_unextended_sp = sender_sp;
@@ -160,9 +150,7 @@ bool frame::safe_for_sender(JavaThread *thread) {
       // only if the sender is interpreted/call_stub (c1 too?) are we certain that the saved ebp
       // is really a frame pointer.
 
-      bool saved_fp_safe = ((address)saved_fp < thread->stack_base()) && (saved_fp > sender_sp);
-
-      if (!saved_fp_safe) {
+      if (!thread->is_in_stack_range_excl((address)saved_fp, (address)sender_sp)) {
         return false;
       }
 
@@ -197,9 +185,7 @@ bool frame::safe_for_sender(JavaThread *thread) {
 
     // Could be the call_stub
     if (StubRoutines::returns_to_call_stub(sender_pc)) {
-      bool saved_fp_safe = ((address)saved_fp < thread->stack_base()) && (saved_fp > sender_sp);
-
-      if (!saved_fp_safe) {
+      if (!thread->is_in_stack_range_excl((address)saved_fp, (address)sender_sp)) {
         return false;
       }
 
@@ -210,9 +196,7 @@ bool frame::safe_for_sender(JavaThread *thread) {
       // Validate the JavaCallWrapper an entry frame must have
       address jcw = (address)sender.entry_frame_call_wrapper();
 
-      bool jcw_safe = (jcw < thread->stack_base()) && (jcw > (address)sender.fp());
-
-      return jcw_safe;
+      return thread->is_in_stack_range_excl(jcw, (address)sender.fp());
     }
 
     CompiledMethod* nm = sender_blob->as_compiled_method_or_null();
@@ -552,11 +536,7 @@ bool frame::is_interpreted_frame_valid(JavaThread* thread) const {
   // validate locals
 
   address locals =  (address) *interpreter_frame_locals_addr();
-
-  if (locals > thread->stack_base() || locals < (address) fp()) return false;
-
-  // We'd have to be pretty unlucky to be mislead at this point
-  return true;
+  return thread->is_in_stack_range_incl(locals, (address)fp());
 }
 
 BasicType frame::interpreter_frame_result(oop* oop_result, jvalue* value_result) {

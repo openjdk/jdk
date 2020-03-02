@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,6 @@ import java.util.function.Predicate;
 
 import javax.lang.model.element.Element;
 
-import jdk.javadoc.internal.doclets.formats.html.Contents;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 
 /**
@@ -468,7 +467,7 @@ public class Table {
         thead.add(header.toContent());
         tableContent.add(thead);
         Content tbody = new HtmlTree(HtmlTag.TBODY);
-        bodyRows.forEach(row -> tbody.add(row));
+        bodyRows.forEach(tbody::add);
         tableContent.add(tbody);
         return tableContent;
     }

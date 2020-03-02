@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2019, Google Inc. All rights reserved.
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <gnu/libc-version.h>
 
 // Declare the thread local variable(s) in the main executable. This can be
 // used to demonstrate the issues associated with the on-stack static TLS blocks
@@ -53,6 +54,19 @@ JNIEnv* create_vm(JavaVM **jvm, char* argTLS) {
     return env;
 }
 
+// glibc 2.15 introduced __pthread_get_minstack
+int glibc_has_pthread_get_minstack() {
+  const char* glibc_vers = gnu_get_libc_version();
+  const int glibc_vers_major = atoi(glibc_vers);
+  const int glibc_vers_minor = atoi(strchr(glibc_vers, '.') + 1);;
+  printf("GNU libc version: %s\n", glibc_vers);
+  if ((glibc_vers_major > 2) || ((glibc_vers_major == 2) && (glibc_vers_minor >= 15))) {
+    return 1;
+  }
+  printf("This version does not provide __pthread_get_minstack\n");
+  return 0;
+}
+
 int run(jboolean addTLS) {
     JavaVM *jvm;
     jclass testClass;
@@ -61,6 +75,10 @@ int run(jboolean addTLS) {
     int res = -1;
 
     if (addTLS) {
+      if (!glibc_has_pthread_get_minstack()) {
+        printf("Skipping the test.\n");
+        return 0;
+      }
       argTLS = "-XX:+AdjustStackSizeForTLS";
     } else {
       argTLS = "-XX:-AdjustStackSizeForTLS"; // default

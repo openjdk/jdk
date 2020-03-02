@@ -31,7 +31,6 @@
 
 class ShenandoahCollectorPolicy;
 class ShenandoahWorkerTimings;
-class ShenandoahTerminationTimings;
 class outputStream;
 
 #define SHENANDOAH_GC_PHASE_DO(f)                                                       \
@@ -92,10 +91,8 @@ class outputStream;
   f(update_finish_queues,                           "    U: Finish Queues")             \
                                                                                         \
   f(finish_queues,                                  "  Finish Queues")                  \
-  f(termination,                                    "    Termination")                  \
   f(weakrefs,                                       "  Weak References")                \
   f(weakrefs_process,                               "    Process")                      \
-  f(weakrefs_termination,                           "      Termination")                \
   f(purge,                                          "  System Purge")                   \
   f(purge_class_unload,                             "    Unload Classes")               \
   f(purge_par,                                      "    Parallel Cleanup")             \
@@ -244,7 +241,6 @@ class outputStream;
   f(final_traversal_gc_string_dedup_table_roots,     "    TF: Dedup Table Roots")       \
   f(final_traversal_gc_string_dedup_queue_roots,     "    TF: Dedup Queue Roots")       \
   f(final_traversal_gc_finish_queues,                "    TF: Finish Queues")           \
-  f(final_traversal_gc_termination,                  "    TF:   Termination")           \
                                                                                         \
   /* Per-thread timer block, should have "roots" counters in consistent order */        \
   f(final_traversal_update_roots,                       "  Update Roots")               \
@@ -300,10 +296,8 @@ class outputStream;
                                                                                         \
   f(full_gc_mark,                                    "  Mark")                          \
   f(full_gc_mark_finish_queues,                      "    Finish Queues")               \
-  f(full_gc_mark_termination,                        "      Termination")               \
   f(full_gc_weakrefs,                                "    Weak References")             \
   f(full_gc_weakrefs_process,                        "      Process")                   \
-  f(full_gc_weakrefs_termination,                    "        Termination")             \
   f(full_gc_purge,                                   "    System Purge")                \
   f(full_gc_purge_class_unload,                      "      Unload Classes")            \
   f(full_gc_purge_par,                               "    Parallel Cleanup")            \
@@ -322,14 +316,12 @@ class outputStream;
   /* Longer concurrent phases at the end */                                             \
   f(conc_reset,                                      "Concurrent Reset")                \
   f(conc_mark,                                       "Concurrent Marking")              \
-  f(conc_termination,                                "  Termination")                   \
   f(conc_preclean,                                   "Concurrent Precleaning")          \
   f(conc_roots,                                      "Concurrent Roots")                \
   f(conc_evac,                                       "Concurrent Evacuation")           \
   f(conc_update_refs,                                "Concurrent Update Refs")          \
   f(conc_cleanup,                                    "Concurrent Cleanup")              \
   f(conc_traversal,                                  "Concurrent Traversal")            \
-  f(conc_traversal_termination,                      "  Termination")                   \
                                                                                         \
   f(conc_uncommit,                                   "Concurrent Uncommit")             \
                                                                                         \
@@ -390,7 +382,6 @@ private:
   static const char*  _phase_names[_num_phases];
 
   ShenandoahWorkerTimings*      _worker_times;
-  ShenandoahTerminationTimings* _termination_times;
 
   ShenandoahCollectorPolicy* _policy;
 
@@ -398,7 +389,6 @@ public:
   ShenandoahPhaseTimings();
 
   ShenandoahWorkerTimings* const worker_times() const { return _worker_times; }
-  ShenandoahTerminationTimings* const termination_times() const { return _termination_times; }
 
   // record phase start
   void record_phase_start(Phase phase);
@@ -435,21 +425,6 @@ public:
 
   double average(uint i) const;
   void reset(uint i);
-  void print() const;
-};
-
-class ShenandoahTerminationTimings : public CHeapObj<mtGC> {
-private:
-  WorkerDataArray<double>* _gc_termination_phase;
-public:
-  ShenandoahTerminationTimings(uint max_gc_threads);
-
-  // record the time a phase took in seconds
-  void record_time_secs(uint worker_i, double secs);
-
-  double average() const;
-  void reset();
-
   void print() const;
 };
 

@@ -37,21 +37,18 @@
 #include "runtime/os.hpp"
 #include "utilities/utf8.hpp"
 
-uint32_t Symbol::pack_length_and_refcount(int length, int refcount) {
-  STATIC_ASSERT(max_symbol_length == ((1 << 16) - 1));
+uint32_t Symbol::pack_hash_and_refcount(short hash, int refcount) {
   STATIC_ASSERT(PERM_REFCOUNT == ((1 << 16) - 1));
-  assert(length >= 0, "negative length");
-  assert(length <= max_symbol_length, "too long symbol");
   assert(refcount >= 0, "negative refcount");
   assert(refcount <= PERM_REFCOUNT, "invalid refcount");
-  uint32_t hi = length;
+  uint32_t hi = hash;
   uint32_t lo = refcount;
   return (hi << 16) | lo;
 }
 
 Symbol::Symbol(const u1* name, int length, int refcount) {
-  _length_and_refcount =  pack_length_and_refcount(length, refcount);
-  _identity_hash = (short)os::random();
+  _hash_and_refcount =  pack_hash_and_refcount((short)os::random(), refcount);
+  _length = length;
   _body[0] = 0;  // in case length == 0
   for (int i = 0; i < length; i++) {
     byte_at_put(i, name[i]);
@@ -78,35 +75,7 @@ void Symbol::operator delete(void *p) {
 void Symbol::set_permanent() {
   // This is called at a safepoint during dumping of a dynamic CDS archive.
   assert(SafepointSynchronize::is_at_safepoint(), "must be at a safepoint");
-  _length_and_refcount =  pack_length_and_refcount(length(), PERM_REFCOUNT);
-}
-
-
-// ------------------------------------------------------------------
-// Symbol::contains_byte_at
-//
-// Tests if the symbol contains the given byte at the given position.
-bool Symbol::contains_byte_at(int position, char code_byte) const {
-  if (position < 0)  return false;  // can happen with ends_with
-  if (position >= utf8_length()) return false;
-  return code_byte == char_at(position);
-}
-
-// ------------------------------------------------------------------
-// Symbol::contains_utf8_at
-//
-// Tests if the symbol contains the given utf8 substring
-// at the given byte position.
-bool Symbol::contains_utf8_at(int position, const char* substring, int len) const {
-  assert(len >= 0 && substring != NULL, "substring must be valid");
-  if (len <= 1)
-    return len == 0 || contains_byte_at(position, substring[0]);
-  if (position < 0)  return false;  // can happen with ends_with
-  if (position + len > utf8_length()) return false;
-  if (memcmp((char*)base() + position, substring, len) == 0)
-    return true;
-  else
-    return false;
+  _hash_and_refcount =  pack_hash_and_refcount(extract_hash(_hash_and_refcount), PERM_REFCOUNT);
 }
 
 // ------------------------------------------------------------------
@@ -282,7 +251,7 @@ void Symbol::print_as_signature_external_parameters(outputStream *os) {
 // a thread could be concurrently removing the Symbol.  This is used during SymbolTable
 // lookup to avoid reviving a dead Symbol.
 bool Symbol::try_increment_refcount() {
-  uint32_t found = _length_and_refcount;
+  uint32_t found = _hash_and_refcount;
   while (true) {
     uint32_t old_value = found;
     int refc = extract_refcount(old_value);
@@ -291,7 +260,7 @@ bool Symbol::try_increment_refcount() {
     } else if (refc == 0) {
       return false; // dead, can't revive.
     } else {
-      found = Atomic::cmpxchg(&_length_and_refcount, old_value, old_value + 1);
+      found = Atomic::cmpxchg(&_hash_and_refcount, old_value, old_value + 1);
       if (found == old_value) {
         return true; // successfully updated.
       }
@@ -321,7 +290,7 @@ void Symbol::increment_refcount() {
 // to check the value after attempting to decrement so that if another
 // thread increments to PERM_REFCOUNT the value is not decremented.
 void Symbol::decrement_refcount() {
-  uint32_t found = _length_and_refcount;
+  uint32_t found = _hash_and_refcount;
   while (true) {
     uint32_t old_value = found;
     int refc = extract_refcount(old_value);
@@ -334,7 +303,7 @@ void Symbol::decrement_refcount() {
 #endif
       return;
     } else {
-      found = Atomic::cmpxchg(&_length_and_refcount, old_value, old_value - 1);
+      found = Atomic::cmpxchg(&_hash_and_refcount, old_value, old_value - 1);
       if (found == old_value) {
         return;  // successfully updated.
       }
@@ -344,7 +313,7 @@ void Symbol::decrement_refcount() {
 }
 
 void Symbol::make_permanent() {
-  uint32_t found = _length_and_refcount;
+  uint32_t found = _hash_and_refcount;
   while (true) {
     uint32_t old_value = found;
     int refc = extract_refcount(old_value);
@@ -357,8 +326,8 @@ void Symbol::make_permanent() {
 #endif
       return;
     } else {
-      int len = extract_length(old_value);
-      found = Atomic::cmpxchg(&_length_and_refcount, old_value, pack_length_and_refcount(len, PERM_REFCOUNT));
+      int hash = extract_hash(old_value);
+      found = Atomic::cmpxchg(&_hash_and_refcount, old_value, pack_hash_and_refcount(hash, PERM_REFCOUNT));
       if (found == old_value) {
         return;  // successfully updated.
       }

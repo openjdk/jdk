@@ -54,7 +54,6 @@ private:
   static Node* dom_mem(Node* mem, Node* ctrl, int alias, Node*& mem_ctrl, PhaseIdealLoop* phase);
   static Node* no_branches(Node* c, Node* dom, bool allow_one_proj, PhaseIdealLoop* phase);
   static bool is_heap_state_test(Node* iff, int mask);
-  static bool try_common_gc_state_load(Node *n, PhaseIdealLoop *phase);
   static bool has_safepoint_between(Node* start, Node* stop, PhaseIdealLoop *phase);
   static Node* find_bottom_mem(Node* ctrl, PhaseIdealLoop* phase);
   static void follow_barrier_uses(Node* n, Node* ctrl, Unique_Node_List& uses, PhaseIdealLoop* phase);

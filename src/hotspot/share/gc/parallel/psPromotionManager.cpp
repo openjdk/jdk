@@ -43,7 +43,7 @@
 #include "oops/compressedOops.inline.hpp"
 
 PaddedEnd<PSPromotionManager>* PSPromotionManager::_manager_array = NULL;
-OopStarTaskQueueSet*           PSPromotionManager::_stack_array_depth = NULL;
+PSPromotionManager::OopStarTaskQueueSet* PSPromotionManager::_stack_array_depth = NULL;
 PreservedMarksSet*             PSPromotionManager::_preserved_marks_set = NULL;
 PSOldGen*                      PSPromotionManager::_old_gen = NULL;
 MutableSpace*                  PSPromotionManager::_young_space = NULL;
@@ -60,10 +60,8 @@ void PSPromotionManager::initialize() {
   // and make sure that the first instance starts at a cache line.
   assert(_manager_array == NULL, "Attempt to initialize twice");
   _manager_array = PaddedArray<PSPromotionManager, mtGC>::create_unfreeable(promotion_manager_num);
-  guarantee(_manager_array != NULL, "Could not initialize promotion manager");
 
   _stack_array_depth = new OopStarTaskQueueSet(ParallelGCThreads);
-  guarantee(_stack_array_depth != NULL, "Could not initialize promotion manager");
 
   // Create and register the PSPromotionManager(s) for the worker threads.
   for(uint i=0; i<ParallelGCThreads; i++) {
@@ -74,7 +72,6 @@ void PSPromotionManager::initialize() {
 
   assert(_preserved_marks_set == NULL, "Attempt to initialize twice");
   _preserved_marks_set = new PreservedMarksSet(true /* in_c_heap */);
-  guarantee(_preserved_marks_set != NULL, "Could not initialize preserved marks set");
   _preserved_marks_set->init(promotion_manager_num);
   for (uint i = 0; i < promotion_manager_num; i += 1) {
     _manager_array[i].register_preserved_marks(_preserved_marks_set->get(i));

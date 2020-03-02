@@ -36,6 +36,7 @@
 #include "runtime/thread.inline.hpp"
 #include "utilities/align.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/powerOfTwo.hpp"
 #if INCLUDE_G1GC
 #include "gc/g1/jvmFlagConstraintsG1.hpp"
 #endif

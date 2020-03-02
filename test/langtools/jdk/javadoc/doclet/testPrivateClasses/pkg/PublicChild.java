@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@ import java.util.*;
 public class PublicChild extends PrivateParent
     implements PrivateInterface {
 
-    public <T extends List, V> PublicChild methodOverridenFromParent(
+    public <T extends List, V> PublicChild methodOverriddenFromParent(
             char[] p1, int p2, T p3, V p4, List<String> p5)
     throws Exception {
         return this;

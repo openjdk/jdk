@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,8 +71,6 @@ javax.crypto.interfaces.DHPrivateKey, Serializable {
 
     // the private-value length (optional)
     private int l;
-
-    private int DH_data[] = { 1, 2, 840, 113549, 1, 3, 1 };
 
     /**
      * Make a DH private key out of a private value <code>x</code>, a prime
@@ -220,7 +218,7 @@ javax.crypto.interfaces.DHPrivateKey, Serializable {
                 DerOutputStream algid = new DerOutputStream();
 
                 // store OID
-                algid.putOID(new ObjectIdentifier(DH_data));
+                algid.putOID(DHPublicKey.DH_OID);
                 // encode parameters
                 DerOutputStream params = new DerOutputStream();
                 params.putInteger(this.p);

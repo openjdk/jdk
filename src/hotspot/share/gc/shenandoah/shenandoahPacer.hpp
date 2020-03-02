@@ -74,6 +74,9 @@ public:
   void setup_for_updaterefs();
   void setup_for_traversal();
 
+  void setup_for_reset();
+  void setup_for_preclean();
+
   inline void report_mark(size_t words);
   inline void report_evac(size_t words);
   inline void report_updaterefs(size_t words);

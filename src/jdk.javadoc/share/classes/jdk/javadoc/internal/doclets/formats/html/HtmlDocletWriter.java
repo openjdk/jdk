@@ -153,6 +153,8 @@ public class HtmlDocletWriter {
      */
     public final HtmlConfiguration configuration;
 
+    protected final SearchIndexItems searchItems;
+
     protected final HtmlOptions options;
 
     protected final Utils utils;
@@ -203,13 +205,14 @@ public class HtmlDocletWriter {
     Map<String, Integer> indexAnchorTable = new HashMap<>();
 
     /**
-     * Constructor to construct the HtmlStandardWriter object.
+     * Creates an {@code HtmlDocletWriter}.
      *
      * @param configuration the configuration for this doclet
      * @param path the file to be generated.
      */
     public HtmlDocletWriter(HtmlConfiguration configuration, DocPath path) {
         this.configuration = configuration;
+        this.searchItems = configuration.searchItems;
         this.options = configuration.getOptions();
         this.contents = configuration.contents;
         this.messages = configuration.messages;
@@ -339,13 +342,13 @@ public class HtmlDocletWriter {
      * Adds the tags information.
      *
      * @param e the Element for which the tags will be generated
-     * @param htmltree the documentation tree to which the tags will be added
+     * @param htmlTree the documentation tree to which the tags will be added
      */
-    protected void addTagsInfo(Element e, Content htmltree) {
+    protected void addTagsInfo(Element e, Content htmlTree) {
         if (options.noComment()) {
             return;
         }
-        Content dl = new HtmlTree(HtmlTag.DL);
+        HtmlTree dl = HtmlTree.DL(HtmlStyle.notes);
         if (utils.isExecutableElement(e) && !utils.isConstructor(e)) {
             addMethodInfo((ExecutableElement)e, dl);
         }
@@ -354,7 +357,7 @@ public class HtmlDocletWriter {
             configuration.tagletManager.getBlockTaglets(e),
                 getTagletWriterInstance(false), output);
         dl.add(output);
-        htmltree.add(dl);
+        htmlTree.add(dl);
     }
 
     /**
@@ -1324,8 +1327,11 @@ public class HtmlDocletWriter {
      * @param isFirstSentence  true if text is first sentence
      * @return a Content object
      */
-    public Content commentTagsToContent(DocTree holderTag, Element element,
-            List<? extends DocTree> tags, boolean isFirstSentence) {
+    public Content commentTagsToContent(DocTree holderTag,
+                                        Element element,
+                                        List<? extends DocTree> tags,
+                                        boolean isFirstSentence)
+    {
         return commentTagsToContent(holderTag, element, tags, isFirstSentence, false);
     }
 
@@ -1343,9 +1349,12 @@ public class HtmlDocletWriter {
      * @param inSummary       if the comment tags are added into the summary section
      * @return a Content object
      */
-    public Content commentTagsToContent(DocTree holderTag, Element element,
-            List<? extends DocTree> trees, boolean isFirstSentence, boolean inSummary) {
-
+    public Content commentTagsToContent(DocTree holderTag,
+                                        Element element,
+                                        List<? extends DocTree> trees,
+                                        boolean isFirstSentence,
+                                        boolean inSummary)
+    {
         final Content result = new ContentBuilder() {
             @Override
             public void add(CharSequence text) {
@@ -1409,7 +1418,7 @@ public class HtmlDocletWriter {
                             quote = "\"";
                             break;
                         case SINGLE:
-                            quote = "\'";
+                            quote = "'";
                             break;
                         default:
                             quote = "";

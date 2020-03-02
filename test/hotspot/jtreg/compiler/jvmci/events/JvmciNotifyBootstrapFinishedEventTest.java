@@ -47,12 +47,12 @@
  *      compiler.jvmci.common.JVMCIHelpers$EmptyVMEventListener
  * @run main/othervm -XX:+UnlockExperimentalVMOptions
  *     -Djvmci.Compiler=EmptyCompiler -Xbootclasspath/a:.
- *     -XX:+UseJVMCICompiler -XX:-BootstrapJVMCI
+ *     -XX:+UseJVMCICompiler -XX:-BootstrapJVMCI -XX:-UseJVMCINativeLibrary
  *     -Dcompiler.jvmci.events.JvmciNotifyBootstrapFinishedEventTest.bootstrap=false
  *     compiler.jvmci.events.JvmciNotifyBootstrapFinishedEventTest
  * @run main/othervm -XX:+UnlockExperimentalVMOptions
  *     -Djvmci.Compiler=EmptyCompiler -Xbootclasspath/a:.
- *     -XX:+UseJVMCICompiler -XX:+BootstrapJVMCI
+ *     -XX:+UseJVMCICompiler -XX:+BootstrapJVMCI -XX:-UseJVMCINativeLibrary
  *     -Dcompiler.jvmci.events.JvmciNotifyBootstrapFinishedEventTest.bootstrap=true
  *     compiler.jvmci.events.JvmciNotifyBootstrapFinishedEventTest
  */

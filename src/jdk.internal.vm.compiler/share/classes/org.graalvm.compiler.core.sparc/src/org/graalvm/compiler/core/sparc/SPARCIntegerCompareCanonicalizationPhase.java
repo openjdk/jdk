@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ import jdk.vm.ci.meta.JavaConstant;
  * is not 32 or 64 bit into either a 32 or 64 bit compare by sign extending the input values.
  *
  * Why we do this in the HIR instead in the LIR? This enables the pattern matcher
- * {@link SPARCNodeMatchRules#signExtend(SignExtendNode, org.graalvm.compiler.nodes.memory.Access)}
+ * {@link SPARCNodeMatchRules#signExtend(SignExtendNode, org.graalvm.compiler.nodes.memory.AddressableMemoryAccess)}
  * to do it's job and replace loads with sign extending ones.
  */
 public class SPARCIntegerCompareCanonicalizationPhase extends Phase {

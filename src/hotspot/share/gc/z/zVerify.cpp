@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@
 
 #define BAD_OOP_ARG(o, p)   "Bad oop " PTR_FORMAT " found at " PTR_FORMAT, p2i(o), p2i(p)
 
-static void verify_oop(oop* p) {
+static void z_verify_oop(oop* p) {
   const oop o = RawAccess<>::oop_load(p);
   if (o != NULL) {
     const uintptr_t addr = ZOop::to_address(o);
@@ -45,7 +45,7 @@ static void verify_oop(oop* p) {
   }
 }
 
-static void verify_possibly_weak_oop(oop* p) {
+static void z_verify_possibly_weak_oop(oop* p) {
   const oop o = RawAccess<>::oop_load(p);
   if (o != NULL) {
     const uintptr_t addr = ZOop::to_address(o);
@@ -57,7 +57,7 @@ static void verify_possibly_weak_oop(oop* p) {
 class ZVerifyRootClosure : public ZRootsIteratorClosure {
 public:
   virtual void do_oop(oop* p) {
-    verify_oop(p);
+    z_verify_oop(p);
   }
 
   virtual void do_oop(narrowOop*) {
@@ -76,11 +76,11 @@ public:
 
   virtual void do_oop(oop* p) {
     if (_verify_weaks) {
-      verify_possibly_weak_oop(p);
+      z_verify_possibly_weak_oop(p);
     } else {
       // We should never encounter finalizable oops through strong
       // paths. This assumes we have only visited strong roots.
-      verify_oop(p);
+      z_verify_oop(p);
     }
   }
 

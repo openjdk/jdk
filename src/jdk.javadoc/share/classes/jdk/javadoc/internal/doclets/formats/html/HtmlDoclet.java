@@ -150,7 +150,6 @@ public class HtmlDoclet extends AbstractDoclet {
         if (options.classUse()) {
             ClassUseWriter.generate(configuration, classtree);
         }
-        IndexBuilder indexbuilder = new IndexBuilder(configuration, nodeprecated);
 
         if (options.createTree()) {
             TreeWriter.generate(configuration, classtree);
@@ -169,11 +168,11 @@ public class HtmlDoclet extends AbstractDoclet {
         }
 
         if (options.createIndex()) {
-            configuration.buildSearchTagIndex();
+            IndexBuilder indexBuilder = new IndexBuilder(configuration, nodeprecated);
             if (options.splitIndex()) {
-                SplitIndexWriter.generate(configuration, indexbuilder);
+                SplitIndexWriter.generate(configuration, indexBuilder);
             } else {
-                SingleIndexWriter.generate(configuration, indexbuilder);
+                SingleIndexWriter.generate(configuration, indexBuilder);
             }
             AllClassesIndexWriter.generate(configuration,
                     new IndexBuilder(configuration, nodeprecated, true));
@@ -223,12 +222,6 @@ public class HtmlDoclet extends AbstractDoclet {
                 "jquery-ui.min.css",
                 "jquery-ui.structure.min.css",
                 "jquery-ui.structure.css",
-                "jszip/dist/jszip.js",
-                "jszip/dist/jszip.min.js",
-                "jszip-utils/dist/jszip-utils.js",
-                "jszip-utils/dist/jszip-utils.min.js",
-                "jszip-utils/dist/jszip-utils-ie.js",
-                "jszip-utils/dist/jszip-utils-ie.min.js",
                 "images/ui-bg_glass_65_dadada_1x400.png",
                 "images/ui-icons_454545_256x240.png",
                 "images/ui-bg_glass_95_fef1ec_1x400.png",

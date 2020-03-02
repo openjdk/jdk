@@ -1516,8 +1516,7 @@ void Matcher::pd_implicit_null_fixup(MachNode *node, uint idx) {
   node->_opnds[opcnt] = new_memory;
 }
 
-// Advertise here if the CPU requires explicit rounding operations
-// to implement the UseStrictFP mode.
+// Advertise here if the CPU requires explicit rounding operations to implement strictfp mode.
 const bool Matcher::strict_fp_requires_explicit_rounding = true;
 
 // Are floats conerted to double when stored to stack during deoptimization?

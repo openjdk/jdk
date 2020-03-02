@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,13 +33,10 @@ import sun.security.util.ObjectIdentifier;
 public class OidEquals {
     public static void main(String[] args) throws Exception {
         ObjectIdentifier oid1 = new ObjectIdentifier("1.3.6.1.4.1.42.2.17");
-        ObjectIdentifier oid2 =
-                new ObjectIdentifier(new int[]{1, 3, 6, 1, 4, 1, 42, 2, 17});
-        ObjectIdentifier oid3 = new ObjectIdentifier("1.2.3.4");
+        ObjectIdentifier oid2 = new ObjectIdentifier("1.2.3.4");
 
         assertEquals(oid1, oid1);
-        assertEquals(oid1, oid2);
-        assertNotEquals(oid1, oid3);
+        assertNotEquals(oid1, oid2);
         assertNotEquals(oid1, "1.3.6.1.4.1.42.2.17");
 
         System.out.println("Tests passed.");

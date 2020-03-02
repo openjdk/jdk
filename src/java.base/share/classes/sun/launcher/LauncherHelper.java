@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,10 +45,10 @@ import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
 import java.lang.module.Configuration;
 import java.lang.module.ModuleDescriptor;
-import java.lang.module.ModuleDescriptor.Requires;
 import java.lang.module.ModuleDescriptor.Exports;
 import java.lang.module.ModuleDescriptor.Opens;
 import java.lang.module.ModuleDescriptor.Provides;
+import java.lang.module.ModuleDescriptor.Requires;
 import java.lang.module.ModuleFinder;
 import java.lang.module.ModuleReference;
 import java.lang.module.ResolvedModule;
@@ -62,8 +62,8 @@ import java.nio.charset.Charset;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.text.Normalizer;
 import java.text.MessageFormat;
+import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -119,6 +119,7 @@ public final class LauncherHelper {
 
     private static final String defaultBundleName =
             "sun.launcher.resources.launcher";
+
     private static class ResourceBundleHolder {
         private static final ResourceBundle RB =
                 ResourceBundle.getBundle(defaultBundleName);
@@ -323,89 +324,108 @@ public final class LauncherHelper {
             return;
         }
 
+        final long longRetvalNotSupported = -2;
+
         ostream.println(INDENT + "Provider: " + c.getProvider());
         ostream.println(INDENT + "Effective CPU Count: " + c.getEffectiveCpuCount());
-        ostream.println(INDENT + "CPU Period: " + c.getCpuPeriod() +
-               (c.getCpuPeriod() == -1 ? "" : "us"));
-        ostream.println(INDENT + "CPU Quota: " + c.getCpuQuota() +
-               (c.getCpuQuota() == -1 ? "" : "us"));
-        ostream.println(INDENT + "CPU Shares: " + c.getCpuShares());
+        ostream.println(formatCpuVal(c.getCpuPeriod(), INDENT + "CPU Period: ", longRetvalNotSupported));
+        ostream.println(formatCpuVal(c.getCpuQuota(), INDENT + "CPU Quota: ", longRetvalNotSupported));
+        ostream.println(formatCpuVal(c.getCpuShares(), INDENT + "CPU Shares: ", longRetvalNotSupported));
 
         int cpus[] = c.getCpuSetCpus();
-        ostream.println(INDENT + "List of Processors, "
-                + cpus.length + " total: ");
+        if (cpus != null) {
+            ostream.println(INDENT + "List of Processors, "
+                    + cpus.length + " total: ");
 
-        ostream.print(INDENT);
-        for (int i = 0; i < cpus.length; i++) {
-            ostream.print(cpus[i] + " ");
-        }
-        if (cpus.length > 0) {
-            ostream.println("");
+            ostream.print(INDENT);
+            for (int i = 0; i < cpus.length; i++) {
+                ostream.print(cpus[i] + " ");
+            }
+            if (cpus.length > 0) {
+                ostream.println("");
+            }
+        } else {
+            ostream.println(INDENT + "List of Processors: N/A");
         }
 
         cpus = c.getEffectiveCpuSetCpus();
-        ostream.println(INDENT + "List of Effective Processors, "
-                + cpus.length + " total: ");
+        if (cpus != null) {
+            ostream.println(INDENT + "List of Effective Processors, "
+                    + cpus.length + " total: ");
 
-        ostream.print(INDENT);
-        for (int i = 0; i < cpus.length; i++) {
-            ostream.print(cpus[i] + " ");
-        }
-        if (cpus.length > 0) {
-            ostream.println("");
+            ostream.print(INDENT);
+            for (int i = 0; i < cpus.length; i++) {
+                ostream.print(cpus[i] + " ");
+            }
+            if (cpus.length > 0) {
+                ostream.println("");
+            }
+        } else {
+            ostream.println(INDENT + "List of Effective Processors: N/A");
         }
 
         int mems[] = c.getCpuSetMems();
-        ostream.println(INDENT + "List of Memory Nodes, "
-                + mems.length + " total: ");
+        if (mems != null) {
+            ostream.println(INDENT + "List of Memory Nodes, "
+                    + mems.length + " total: ");
 
-        ostream.print(INDENT);
-        for (int i = 0; i < mems.length; i++) {
-            ostream.print(mems[i] + " ");
-        }
-        if (mems.length > 0) {
-            ostream.println("");
+            ostream.print(INDENT);
+            for (int i = 0; i < mems.length; i++) {
+                ostream.print(mems[i] + " ");
+            }
+            if (mems.length > 0) {
+                ostream.println("");
+            }
+        } else {
+            ostream.println(INDENT + "List of Memory Nodes: N/A");
         }
 
         mems = c.getEffectiveCpuSetMems();
-        ostream.println(INDENT + "List of Available Memory Nodes, "
-                + mems.length + " total: ");
+        if (mems != null) {
+            ostream.println(INDENT + "List of Available Memory Nodes, "
+                    + mems.length + " total: ");
 
-        ostream.print(INDENT);
-        for (int i = 0; i < mems.length; i++) {
-            ostream.print(mems[i] + " ");
+            ostream.print(INDENT);
+            for (int i = 0; i < mems.length; i++) {
+                ostream.print(mems[i] + " ");
+            }
+            if (mems.length > 0) {
+                ostream.println("");
+            }
+        } else {
+            ostream.println(INDENT + "List of Available Memory Nodes: N/A");
         }
-        if (mems.length > 0) {
-            ostream.println("");
-        }
-
-        ostream.println(INDENT + "CPUSet Memory Pressure Enabled: "
-                + c.isCpuSetMemoryPressureEnabled());
 
         long limit = c.getMemoryLimit();
-        ostream.println(INDENT + "Memory Limit: " +
-                ((limit >= 0) ? SizePrefix.scaleValue(limit) : "Unlimited"));
+        ostream.println(formatLimitString(limit, INDENT + "Memory Limit: ", longRetvalNotSupported));
 
         limit = c.getMemorySoftLimit();
-        ostream.println(INDENT + "Memory Soft Limit: " +
-                ((limit >= 0) ? SizePrefix.scaleValue(limit) : "Unlimited"));
+        ostream.println(formatLimitString(limit, INDENT + "Memory Soft Limit: ", longRetvalNotSupported));
 
         limit = c.getMemoryAndSwapLimit();
-        ostream.println(INDENT + "Memory & Swap Limit: " +
-                ((limit >= 0) ? SizePrefix.scaleValue(limit) : "Unlimited"));
-
-        limit = c.getKernelMemoryLimit();
-        ostream.println(INDENT + "Kernel Memory Limit: " +
-                ((limit >= 0) ? SizePrefix.scaleValue(limit) : "Unlimited"));
-
-        limit = c.getTcpMemoryLimit();
-        ostream.println(INDENT + "TCP Memory Limit: " +
-                ((limit >= 0) ? SizePrefix.scaleValue(limit) : "Unlimited"));
-
-        ostream.println(INDENT + "Out Of Memory Killer Enabled: "
-                + c.isMemoryOOMKillEnabled());
+        ostream.println(formatLimitString(limit, INDENT + "Memory & Swap Limit: ", longRetvalNotSupported));
 
         ostream.println("");
+    }
+
+    private static String formatLimitString(long limit, String prefix, long unavailable) {
+        if (limit >= 0) {
+            return prefix + SizePrefix.scaleValue(limit);
+        } else if (limit == unavailable) {
+            return prefix + "N/A";
+        } else {
+            return prefix + "Unlimited";
+        }
+    }
+
+    private static String formatCpuVal(long cpuVal, String prefix, long unavailable) {
+        if (cpuVal >= 0) {
+            return prefix + cpuVal + "us";
+        } else if (cpuVal == unavailable) {
+            return prefix + "N/A";
+        } else {
+            return prefix + cpuVal;
+        }
     }
 
     private enum SizePrefix {

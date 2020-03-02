@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,7 +71,7 @@ public class TestLinkOption extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("pkg/C.html", true,
-                "<a href=\"" + url + "java/lang/String.html?is-external=true\" "
+                "<a href=\"" + url + "java/lang/String.html\" "
                 + "title=\"class or interface in java.lang\" class=\"externalLink\"><code>Link to String Class</code></a>",
                 //Make sure the parameters are formatted properly when the -link option is used.
                 "(int&nbsp;p1,\n"
@@ -79,18 +79,18 @@ public class TestLinkOption extends JavadocTester {
                 + "int&nbsp;p3)",
                 "(int&nbsp;p1,\n"
                 + "int&nbsp;p2,\n"
-                + "<a href=\"" + url + "java/lang/Object.html?is-external=true\" title=\"class or interface in java.lang\" class=\"externalLink\">"
+                + "<a href=\"" + url + "java/lang/Object.html\" title=\"class or interface in java.lang\" class=\"externalLink\">"
                 + "Object</a>&nbsp;p3)");
 
         checkOutput("pkg/B.html", true,
                 "<div class=\"block\">A method with html tag the method "
-                + "<a href=\"" + url + "java/lang/ClassLoader.html?is-external=true#getSystemClassLoader()\""
+                + "<a href=\"" + url + "java/lang/ClassLoader.html#getSystemClassLoader()\""
                 + " title=\"class or interface in java.lang\" class=\"externalLink\"><code><b>getSystemClassLoader()</b>"
                 + "</code></a> as the parent class loader.</div>",
                 "<div class=\"block\">is equivalent to invoking <code>"
                 + "<a href=\"#createTempFile(java.lang.String,java.lang.String,java.io.File)\">"
                 + "<code>createTempFile(prefix,&nbsp;suffix,&nbsp;null)</code></a></code>.</div>",
-                "<a href=\"" + url + "java/lang/String.html?is-external=true\" "
+                "<a href=\"" + url + "java/lang/String.html\" "
                 + "title=\"class or interface in java.lang\" class=\"externalLink\">Link-Plain to String Class</a>",
                 "<code><b>getSystemClassLoader()</b></code>",
                 "<code>createTempFile(prefix,&nbsp;suffix,&nbsp;null)</code>",
@@ -107,7 +107,7 @@ public class TestLinkOption extends JavadocTester {
 
         checkOutput("mylib/lang/StringBuilderChild.html", true,
                 "<pre>public abstract class <span class=\"typeNameLabel\">StringBuilderChild</span>\n"
-                + "extends <a href=\"" + url + "java/lang/Object.html?is-external=true\" "
+                + "extends <a href=\"" + url + "java/lang/Object.html\" "
                 + "title=\"class or interface in java.lang\" class=\"externalLink\">Object</a></pre>"
         );
 
@@ -121,7 +121,7 @@ public class TestLinkOption extends JavadocTester {
                 "pkg2");
         checkExit(Exit.OK);
         checkOutput("pkg2/C2.html", true,
-            "This is a link to <a href=\"../../" + out1 + "/pkg/C.html?is-external=true\" " +
+            "This is a link to <a href=\"../../" + out1 + "/pkg/C.html\" " +
             "title=\"class or interface in pkg\" class=\"externalLink\"><code>Class C</code></a>."
         );
 
@@ -150,10 +150,10 @@ public class TestLinkOption extends JavadocTester {
                 + "extends java.lang.Object</pre>\n"
                 + "<div class=\"block\">Test links.\n"
                 + " <br>\n"
-                + " <a href=\"../../out2/pkg2/C2.html?is-external=true\" "
+                + " <a href=\"../../out2/pkg2/C2.html\" "
                 + "title=\"class or interface in pkg2\" class=\"externalLink\"><code>link to pkg2.C2</code></a>\n"
                 + " <br>\n"
-                + " <a href=\"../../out1/mylib/lang/StringBuilderChild.html?is-external=true\" "
+                + " <a href=\"../../out1/mylib/lang/StringBuilderChild.html\" "
                 + "title=\"class or interface in mylib.lang\" class=\"externalLink\">"
                 + "<code>link to mylib.lang.StringBuilderChild</code></a>.</div>\n"
         );
@@ -171,10 +171,10 @@ public class TestLinkOption extends JavadocTester {
                         + "extends java.lang.Object</pre>\n"
                         + "<div class=\"block\">Test links.\n"
                         + " <br>\n"
-                        + " <a href=\"../../copy/out2/pkg2/C2.html?is-external=true\" "
+                        + " <a href=\"../../copy/out2/pkg2/C2.html\" "
                         + "title=\"class or interface in pkg2\" class=\"externalLink\"><code>link to pkg2.C2</code></a>\n"
                         + " <br>\n"
-                        + " <a href=\"../../copy/out1/mylib/lang/StringBuilderChild.html?is-external=true\" "
+                        + " <a href=\"../../copy/out1/mylib/lang/StringBuilderChild.html\" "
                         + "title=\"class or interface in mylib.lang\" class=\"externalLink\">"
                         + "<code>link to mylib.lang.StringBuilderChild</code></a>.</div>\n"
         );

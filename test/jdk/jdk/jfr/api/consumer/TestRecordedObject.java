@@ -377,14 +377,15 @@ public class TestRecordedObject {
     }
 
     private static RecordedObject makeRecordedObject() throws IOException {
-        Recording r = new Recording();
-        r.start();
-        EventWithValues t = new EventWithValues();
-        t.commit();
-        r.stop();
-        List<RecordedEvent> events = Events.fromRecording(r);
-        Events.hasEvents(events);
-        return events.get(0);
+        try (Recording r = new Recording()) {
+            r.start();
+            EventWithValues t = new EventWithValues();
+            t.commit();
+            r.stop();
+            List<RecordedEvent> events = Events.fromRecording(r);
+            Events.hasEvents(events);
+            return events.get(0);
+        }
     }
 
     private static Set<String> createAll() {

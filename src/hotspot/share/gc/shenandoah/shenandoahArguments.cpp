@@ -192,15 +192,6 @@ void ShenandoahArguments::initialize() {
     FLAG_SET_DEFAULT(TLABAllocationWeight, 90);
   }
 
-  // Shenandoah needs more C2 nodes to compile some methods with lots of barriers.
-  // NodeLimitFudgeFactor needs to stay the same relative to MaxNodeLimit.
-#ifdef COMPILER2
-  if (FLAG_IS_DEFAULT(MaxNodeLimit)) {
-    FLAG_SET_DEFAULT(MaxNodeLimit, MaxNodeLimit * 3);
-    FLAG_SET_DEFAULT(NodeLimitFudgeFactor, NodeLimitFudgeFactor * 3);
-  }
-#endif
-
   // Make sure safepoint deadlocks are failing predictably. This sets up VM to report
   // fatal error after 10 seconds of wait for safepoint syncronization (not the VM
   // operation itself). There is no good reason why Shenandoah would spend that

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,25 +29,23 @@ import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_1;
 
 import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.core.common.type.StampFactory;
-import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.nodeinfo.InputType;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.FrameState;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.StateSplit;
 import org.graalvm.compiler.nodes.ValueNode;
-import org.graalvm.compiler.nodes.ValueNodeUtil;
 import org.graalvm.compiler.nodes.extended.GuardingNode;
 import org.graalvm.compiler.nodes.memory.address.AddressNode;
 import jdk.internal.vm.compiler.word.LocationIdentity;
 
 @NodeInfo(allowedUsageTypes = {InputType.Memory, InputType.Guard}, cycles = CYCLES_2, size = SIZE_1)
-public abstract class AbstractWriteNode extends FixedAccessNode implements StateSplit, MemoryCheckpoint.Single, MemoryAccess, GuardingNode {
+public abstract class AbstractWriteNode extends FixedAccessNode implements StateSplit, SingleMemoryKill, GuardingNode {
 
     public static final NodeClass<AbstractWriteNode> TYPE = NodeClass.create(AbstractWriteNode.class);
     @Input ValueNode value;
     @OptionalInput(InputType.State) FrameState stateAfter;
-    @OptionalInput(InputType.Memory) Node lastLocationAccess;
 
     @Override
     public FrameState stateAfter() {
@@ -80,17 +78,5 @@ public abstract class AbstractWriteNode extends FixedAccessNode implements State
         return (type == InputType.Guard && getNullCheck()) ? true : super.isAllowedUsageType(type);
     }
 
-    @Override
-    public MemoryNode getLastLocationAccess() {
-        return (MemoryNode) lastLocationAccess;
-    }
-
-    @Override
-    public void setLastLocationAccess(MemoryNode lla) {
-        Node newLla = ValueNodeUtil.asNode(lla);
-        updateUsages(lastLocationAccess, newLla);
-        lastLocationAccess = newLla;
-    }
-
-    public abstract Stamp getAccessStamp();
+    public abstract Stamp getAccessStamp(NodeView view);
 }

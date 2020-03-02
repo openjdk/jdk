@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,14 @@
 package org.graalvm.compiler.nodes.extended;
 
 import org.graalvm.compiler.core.common.type.Stamp;
-import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.StateSplit;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.memory.AbstractWriteNode;
 import org.graalvm.compiler.nodes.memory.MemoryAccess;
-import org.graalvm.compiler.nodes.memory.MemoryCheckpoint;
+import org.graalvm.compiler.nodes.memory.SingleMemoryKill;
 import org.graalvm.compiler.nodes.memory.address.AddressNode;
 import org.graalvm.compiler.nodes.spi.Lowerable;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
@@ -45,7 +45,7 @@ import jdk.vm.ci.meta.JavaKind;
  * write barriers, implicit conversions and optionally oop compression.
  */
 @NodeInfo(nameTemplate = "JavaWrite#{p#location/s}")
-public final class JavaWriteNode extends AbstractWriteNode implements Lowerable, StateSplit, MemoryAccess, MemoryCheckpoint.Single {
+public final class JavaWriteNode extends AbstractWriteNode implements Lowerable, StateSplit, MemoryAccess, SingleMemoryKill {
 
     public static final NodeClass<JavaWriteNode> TYPE = NodeClass.create(JavaWriteNode.class);
     protected final JavaKind writeKind;
@@ -76,12 +76,12 @@ public final class JavaWriteNode extends AbstractWriteNode implements Lowerable,
     }
 
     @Override
-    public Stamp getAccessStamp() {
-        return StampFactory.forKind(writeKind);
+    public LocationIdentity getKilledLocationIdentity() {
+        return getLocationIdentity();
     }
 
     @Override
-    public LocationIdentity getKilledLocationIdentity() {
-        return getLocationIdentity();
+    public Stamp getAccessStamp(NodeView view) {
+        return value().stamp(view);
     }
 }

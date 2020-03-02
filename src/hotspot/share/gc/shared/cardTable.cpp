@@ -51,30 +51,19 @@ CardTable::CardTable(MemRegion whole_heap, bool conc_scan) :
   _byte_map(NULL),
   _byte_map_base(NULL),
   _cur_covered_regions(0),
-  _covered(NULL),
-  _committed(NULL),
+  _covered(MemRegion::create_array(_max_covered_regions, mtGC)),
+  _committed(MemRegion::create_array(_max_covered_regions, mtGC)),
   _guard_region()
 {
   assert((uintptr_t(_whole_heap.start())  & (card_size - 1))  == 0, "heap must start at card boundary");
   assert((uintptr_t(_whole_heap.end()) & (card_size - 1))  == 0, "heap must end at card boundary");
 
   assert(card_size <= 512, "card_size must be less than 512"); // why?
-
-  _covered   = new MemRegion[_max_covered_regions];
-  if (_covered == NULL) {
-    vm_exit_during_initialization("Could not allocate card table covered region set.");
-  }
 }
 
 CardTable::~CardTable() {
-  if (_covered) {
-    delete[] _covered;
-    _covered = NULL;
-  }
-  if (_committed) {
-    delete[] _committed;
-    _committed = NULL;
-  }
+  FREE_C_HEAP_ARRAY(MemRegion, _covered);
+  FREE_C_HEAP_ARRAY(MemRegion, _committed);
 }
 
 void CardTable::initialize() {
@@ -87,10 +76,6 @@ void CardTable::initialize() {
   HeapWord* high_bound = _whole_heap.end();
 
   _cur_covered_regions = 0;
-  _committed = new MemRegion[_max_covered_regions];
-  if (_committed == NULL) {
-    vm_exit_during_initialization("Could not allocate card table committed region set.");
-  }
 
   const size_t rs_align = _page_size == (size_t) os::vm_page_size() ? 0 :
     MAX2(_page_size, (size_t) os::vm_allocation_granularity());

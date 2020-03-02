@@ -32,6 +32,7 @@
 # compilers and related tools that are used.
 ########################################################################
 
+m4_include([toolchain_windows.m4])
 
 # All valid toolchains, regardless of platform (used by help.m4)
 VALID_TOOLCHAINS_all="gcc clang solstudio xlc microsoft"
@@ -92,7 +93,7 @@ AC_DEFUN([TOOLCHAIN_PREPARE_FOR_VERSION_COMPARISONS],
 #   IF_AT_LEAST:   block to run if the compiler is at least this version (>=)
 #   IF_OLDER_THAN:   block to run if the compiler is older than this version (<)
 #   PREFIX:   Optional variable prefix for compiler to compare version for (OPENJDK_BUILD_)
-BASIC_DEFUN_NAMED([TOOLCHAIN_CHECK_COMPILER_VERSION],
+UTIL_DEFUN_NAMED([TOOLCHAIN_CHECK_COMPILER_VERSION],
     [*VERSION PREFIX IF_AT_LEAST IF_OLDER_THAN], [$@],
 [
   # Need to assign to a variable since m4 is blocked from modifying parts in [].
@@ -143,7 +144,7 @@ AC_DEFUN([TOOLCHAIN_PREPARE_FOR_LD_VERSION_COMPARISONS],
 #   IF_AT_LEAST:   block to run if the compiler is at least this version (>=)
 #   IF_OLDER_THAN:   block to run if the compiler is older than this version (<)
 #   PREFIX:   Optional variable prefix for compiler to compare version for (OPENJDK_BUILD_)
-BASIC_DEFUN_NAMED([TOOLCHAIN_CHECK_LINKER_VERSION],
+UTIL_DEFUN_NAMED([TOOLCHAIN_CHECK_LINKER_VERSION],
     [*VERSION PREFIX IF_AT_LEAST IF_OLDER_THAN], [$@],
 [
   # Need to assign to a variable since m4 is blocked from modifying parts in [].
@@ -349,8 +350,8 @@ AC_DEFUN_ONCE([TOOLCHAIN_PRE_DETECTION],
     if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.wsl"; then
       # Append VS_PATH. In WSL, VS_PATH will not contain the WSL env path needed
       # for using basic Unix tools, so need to keep the original PATH.
-      BASIC_APPEND_TO_PATH(PATH, $VS_PATH)
-      BASIC_APPEND_TO_PATH(WSLENV, "PATH/l:LIB:INCLUDE")
+      UTIL_APPEND_TO_PATH(PATH, $VS_PATH)
+      UTIL_APPEND_TO_PATH(WSLENV, "PATH/l:LIB:INCLUDE")
       export WSLENV
     else
       # Reset path to VS_PATH. It will include everything that was on PATH at the time we
@@ -580,12 +581,12 @@ AC_DEFUN([TOOLCHAIN_FIND_COMPILER],
   fi
 
   # Now we have a compiler binary in $1. Make sure it's okay.
-  BASIC_FIXUP_EXECUTABLE($1)
+  UTIL_FIXUP_EXECUTABLE($1)
   TEST_COMPILER="[$]$1"
 
   AC_MSG_CHECKING([resolved symbolic links for $1])
   SYMLINK_ORIGINAL="$TEST_COMPILER"
-  BASIC_REMOVE_SYMBOLIC_LINKS(SYMLINK_ORIGINAL)
+  UTIL_REMOVE_SYMBOLIC_LINKS(SYMLINK_ORIGINAL)
   if test "x$TEST_COMPILER" = "x$SYMLINK_ORIGINAL"; then
     AC_MSG_RESULT([no symlink])
   else
@@ -716,9 +717,9 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_CORE],
   # Setup the preprocessor (CPP and CXXCPP)
   #
   AC_PROG_CPP
-  BASIC_FIXUP_EXECUTABLE(CPP)
+  UTIL_FIXUP_EXECUTABLE(CPP)
   AC_PROG_CXXCPP
-  BASIC_FIXUP_EXECUTABLE(CXXCPP)
+  UTIL_FIXUP_EXECUTABLE(CXXCPP)
 
   #
   # Setup the linker (LD)
@@ -728,7 +729,7 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_CORE],
     # Make sure we reject /usr/bin/link (as determined in CYGWIN_LINK), which is
     # a cygwin program for something completely different.
     AC_CHECK_PROG([LD], [link$EXE_SUFFIX],[link$EXE_SUFFIX],,, [$CYGWIN_LINK])
-    BASIC_FIXUP_EXECUTABLE(LD)
+    UTIL_FIXUP_EXECUTABLE(LD)
     # Verify that we indeed succeeded with this trick.
     AC_MSG_CHECKING([if the found link.exe is actually the Visual Studio linker])
     "$LD" --version > /dev/null
@@ -746,8 +747,8 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_CORE],
     LD="$CC"
     LDCXX="$CXX"
     # jaotc expects 'ld' as the linker rather than the compiler.
-    BASIC_CHECK_TOOLS([LD_JAOTC], ld)
-    BASIC_FIXUP_EXECUTABLE(LD_JAOTC)
+    UTIL_CHECK_TOOLS([LD_JAOTC], ld)
+    UTIL_FIXUP_EXECUTABLE(LD_JAOTC)
   fi
   AC_SUBST(LD)
   AC_SUBST(LD_JAOTC)
@@ -769,8 +770,8 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_CORE],
   # Setup the assembler (AS)
   #
   if test "x$OPENJDK_TARGET_OS" = xsolaris; then
-    BASIC_PATH_PROGS(AS, as)
-    BASIC_FIXUP_EXECUTABLE(AS)
+    UTIL_PATH_PROGS(AS, as)
+    UTIL_FIXUP_EXECUTABLE(AS)
     if test "x$AS" = x; then
       AC_MSG_ERROR([Solaris assembler (as) is required. Please install via "pkg install pkg:/developer/assembler".])
     fi
@@ -787,11 +788,11 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_CORE],
     # The corresponding ar tool is lib.exe (used to create static libraries)
     AC_CHECK_PROG([AR], [lib$EXE_SUFFIX],[lib$EXE_SUFFIX],,,)
   elif test "x$TOOLCHAIN_TYPE" = xgcc; then
-    BASIC_CHECK_TOOLS(AR, ar gcc-ar)
+    UTIL_CHECK_TOOLS(AR, ar gcc-ar)
   else
-    BASIC_CHECK_TOOLS(AR, ar)
+    UTIL_CHECK_TOOLS(AR, ar)
   fi
-  BASIC_FIXUP_EXECUTABLE(AR)
+  UTIL_FIXUP_EXECUTABLE(AR)
 ])
 
 # Setup additional tools that is considered a part of the toolchain, but not the
@@ -800,22 +801,22 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_CORE],
 AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_EXTRA],
 [
   if test "x$OPENJDK_TARGET_OS" = "xmacosx"; then
-    BASIC_PATH_PROGS(LIPO, lipo)
-    BASIC_FIXUP_EXECUTABLE(LIPO)
-    BASIC_REQUIRE_PROGS(OTOOL, otool)
-    BASIC_FIXUP_EXECUTABLE(OTOOL)
-    BASIC_REQUIRE_PROGS(INSTALL_NAME_TOOL, install_name_tool)
-    BASIC_FIXUP_EXECUTABLE(INSTALL_NAME_TOOL)
+    UTIL_PATH_PROGS(LIPO, lipo)
+    UTIL_FIXUP_EXECUTABLE(LIPO)
+    UTIL_REQUIRE_PROGS(OTOOL, otool)
+    UTIL_FIXUP_EXECUTABLE(OTOOL)
+    UTIL_REQUIRE_PROGS(INSTALL_NAME_TOOL, install_name_tool)
+    UTIL_FIXUP_EXECUTABLE(INSTALL_NAME_TOOL)
   fi
 
   if test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
     AC_CHECK_PROG([MT], [mt$EXE_SUFFIX], [mt$EXE_SUFFIX],,, [/usr/bin/mt])
-    BASIC_FIXUP_EXECUTABLE(MT)
+    UTIL_FIXUP_EXECUTABLE(MT)
     # Setup the resource compiler (RC)
     AC_CHECK_PROG([RC], [rc$EXE_SUFFIX], [rc$EXE_SUFFIX],,, [/usr/bin/rc])
-    BASIC_FIXUP_EXECUTABLE(RC)
+    UTIL_FIXUP_EXECUTABLE(RC)
     AC_CHECK_PROG([DUMPBIN], [dumpbin$EXE_SUFFIX], [dumpbin$EXE_SUFFIX],,,)
-    BASIC_FIXUP_EXECUTABLE(DUMPBIN)
+    UTIL_FIXUP_EXECUTABLE(DUMPBIN)
     # We need to check for 'msbuild.exe' because at the place where we expect to
     # find 'msbuild.exe' there's also a directory called 'msbuild' and configure
     # won't find the 'msbuild.exe' executable in that case (and the
@@ -827,22 +828,22 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_EXTRA],
   fi
 
   if test "x$OPENJDK_TARGET_OS" = xsolaris; then
-    BASIC_PATH_PROGS(STRIP, strip)
-    BASIC_FIXUP_EXECUTABLE(STRIP)
-    BASIC_PATH_PROGS(NM, nm)
-    BASIC_FIXUP_EXECUTABLE(NM)
-    BASIC_PATH_PROGS(GNM, gnm)
-    BASIC_FIXUP_EXECUTABLE(GNM)
+    UTIL_PATH_PROGS(STRIP, strip)
+    UTIL_FIXUP_EXECUTABLE(STRIP)
+    UTIL_PATH_PROGS(NM, nm)
+    UTIL_FIXUP_EXECUTABLE(NM)
+    UTIL_PATH_PROGS(GNM, gnm)
+    UTIL_FIXUP_EXECUTABLE(GNM)
   elif test "x$OPENJDK_TARGET_OS" != xwindows; then
     # FIXME: we should unify this with the solaris case above.
-    BASIC_CHECK_TOOLS(STRIP, strip)
-    BASIC_FIXUP_EXECUTABLE(STRIP)
+    UTIL_CHECK_TOOLS(STRIP, strip)
+    UTIL_FIXUP_EXECUTABLE(STRIP)
     if test "x$TOOLCHAIN_TYPE" = xgcc; then
-      BASIC_CHECK_TOOLS(NM, nm gcc-nm)
+      UTIL_CHECK_TOOLS(NM, nm gcc-nm)
     else
-      BASIC_CHECK_TOOLS(NM, nm)
+      UTIL_CHECK_TOOLS(NM, nm)
     fi
-    BASIC_FIXUP_EXECUTABLE(NM)
+    UTIL_FIXUP_EXECUTABLE(NM)
     GNM="$NM"
     AC_SUBST(GNM)
   fi
@@ -850,10 +851,10 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_EXTRA],
   # objcopy is used for moving debug symbols to separate files when
   # full debug symbols are enabled.
   if test "x$OPENJDK_TARGET_OS" = xsolaris || test "x$OPENJDK_TARGET_OS" = xlinux; then
-    BASIC_CHECK_TOOLS(OBJCOPY, [gobjcopy objcopy])
+    UTIL_CHECK_TOOLS(OBJCOPY, [gobjcopy objcopy])
     # Only call fixup if objcopy was found.
     if test -n "$OBJCOPY"; then
-      BASIC_FIXUP_EXECUTABLE(OBJCOPY)
+      UTIL_FIXUP_EXECUTABLE(OBJCOPY)
       if test "x$OPENJDK_BUILD_OS" = xsolaris; then
         # objcopy prior to 2.21.1 on solaris is broken and is not usable.
         # Rewrite objcopy version output to VALID_VERSION or BAD_VERSION.
@@ -894,18 +895,18 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_EXTRA],
     fi
   fi
 
-  BASIC_CHECK_TOOLS(OBJDUMP, [gobjdump objdump])
+  UTIL_CHECK_TOOLS(OBJDUMP, [gobjdump objdump])
   if test "x$OBJDUMP" != x; then
-    # Only used for compare.sh; we can live without it. BASIC_FIXUP_EXECUTABLE
+    # Only used for compare.sh; we can live without it. UTIL_FIXUP_EXECUTABLE
     # bails if argument is missing.
-    BASIC_FIXUP_EXECUTABLE(OBJDUMP)
+    UTIL_FIXUP_EXECUTABLE(OBJDUMP)
   fi
 
   case $TOOLCHAIN_TYPE in
     gcc|clang|solstudio)
-      BASIC_CHECK_TOOLS(CXXFILT, [c++filt])
-      BASIC_CHECK_NONEMPTY(CXXFILT)
-      BASIC_FIXUP_EXECUTABLE(CXXFILT)
+      UTIL_CHECK_TOOLS(CXXFILT, [c++filt])
+      UTIL_CHECK_NONEMPTY(CXXFILT)
+      UTIL_FIXUP_EXECUTABLE(CXXFILT)
       ;;
   esac
 ])
@@ -933,7 +934,7 @@ AC_DEFUN_ONCE([TOOLCHAIN_SETUP_BUILD_COMPILERS],
       if test ! -d "$with_build_devkit"; then
         AC_MSG_ERROR([--with-build-devkit points to non existing dir: $with_build_devkit])
       else
-        BASIC_FIXUP_PATH([with_build_devkit])
+        UTIL_FIXUP_PATH([with_build_devkit])
         BUILD_DEVKIT_ROOT="$with_build_devkit"
         # Check for a meta data info file in the root of the devkit
         if test -f "$BUILD_DEVKIT_ROOT/devkit.info"; then
@@ -977,18 +978,18 @@ AC_DEFUN_ONCE([TOOLCHAIN_SETUP_BUILD_COMPILERS],
     # FIXME: we should list the discovered compilers as an exclude pattern!
     # If we do that, we can do this detection before POST_DETECTION, and still
     # find the build compilers in the tools dir, if needed.
-    BASIC_REQUIRE_PROGS(BUILD_CC, [cl cc gcc])
-    BASIC_FIXUP_EXECUTABLE(BUILD_CC)
-    BASIC_REQUIRE_PROGS(BUILD_CXX, [cl CC g++])
-    BASIC_FIXUP_EXECUTABLE(BUILD_CXX)
-    BASIC_PATH_PROGS(BUILD_NM, nm gcc-nm)
-    BASIC_FIXUP_EXECUTABLE(BUILD_NM)
-    BASIC_PATH_PROGS(BUILD_AR, ar gcc-ar)
-    BASIC_FIXUP_EXECUTABLE(BUILD_AR)
-    BASIC_PATH_PROGS(BUILD_OBJCOPY, objcopy)
-    BASIC_FIXUP_EXECUTABLE(BUILD_OBJCOPY)
-    BASIC_PATH_PROGS(BUILD_STRIP, strip)
-    BASIC_FIXUP_EXECUTABLE(BUILD_STRIP)
+    UTIL_REQUIRE_PROGS(BUILD_CC, [cl cc gcc])
+    UTIL_FIXUP_EXECUTABLE(BUILD_CC)
+    UTIL_REQUIRE_PROGS(BUILD_CXX, [cl CC g++])
+    UTIL_FIXUP_EXECUTABLE(BUILD_CXX)
+    UTIL_PATH_PROGS(BUILD_NM, nm gcc-nm)
+    UTIL_FIXUP_EXECUTABLE(BUILD_NM)
+    UTIL_PATH_PROGS(BUILD_AR, ar gcc-ar)
+    UTIL_FIXUP_EXECUTABLE(BUILD_AR)
+    UTIL_PATH_PROGS(BUILD_OBJCOPY, objcopy)
+    UTIL_FIXUP_EXECUTABLE(BUILD_OBJCOPY)
+    UTIL_PATH_PROGS(BUILD_STRIP, strip)
+    UTIL_FIXUP_EXECUTABLE(BUILD_STRIP)
     # Assume the C compiler is the assembler
     BUILD_AS="$BUILD_CC -c"
     # Just like for the target compiler, use the compiler as linker
@@ -1082,7 +1083,7 @@ AC_DEFUN_ONCE([TOOLCHAIN_SETUP_JTREG],
   elif test "x$with_jtreg" != xyes && test "x$with_jtreg" != x; then
     # An explicit path is specified, use it.
     JT_HOME="$with_jtreg"
-    BASIC_FIXUP_PATH([JT_HOME])
+    UTIL_FIXUP_PATH([JT_HOME])
     if test ! -d "$JT_HOME"; then
       AC_MSG_ERROR([jtreg home directory from --with-jtreg=$with_jtreg does not exist])
     fi
@@ -1122,7 +1123,7 @@ AC_DEFUN_ONCE([TOOLCHAIN_SETUP_JTREG],
     if test "x$JT_HOME" = x; then
       # JT_HOME is not set in environment, or was deemed invalid.
       # Try to find jtreg on path
-      BASIC_PATH_PROGS(JTREGEXE, jtreg)
+      UTIL_PATH_PROGS(JTREGEXE, jtreg)
       if test "x$JTREGEXE" != x; then
         # That's good, now try to derive JT_HOME
         JT_HOME=`(cd $($DIRNAME $JTREGEXE)/.. && pwd)`
@@ -1148,8 +1149,8 @@ AC_DEFUN_ONCE([TOOLCHAIN_SETUP_JTREG],
     fi
   fi
 
-  BASIC_FIXUP_EXECUTABLE(JTREGEXE)
-  BASIC_FIXUP_PATH(JT_HOME)
+  UTIL_FIXUP_EXECUTABLE(JTREGEXE)
+  UTIL_FIXUP_PATH(JT_HOME)
   AC_SUBST(JT_HOME)
   AC_SUBST(JTREGEXE)
 ])

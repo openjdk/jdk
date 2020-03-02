@@ -39,6 +39,7 @@
 #include "runtime/frame.inline.hpp"
 #include "runtime/safepointMechanism.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "utilities/powerOfTwo.hpp"
 #include "vmreg_s390.inline.hpp"
 
 #define __ _masm->
@@ -1798,7 +1799,7 @@ void LIR_Assembler::arithmetic_idiv(LIR_Code code, LIR_Opr left, LIR_Opr right, 
   if (left->is_double_cpu()) {
     // 64 bit integer case
     assert(left->is_double_cpu(), "left must be register");
-    assert(right->is_double_cpu() || is_power_of_2_long(right->as_jlong()),
+    assert(right->is_double_cpu() || is_power_of_2(right->as_jlong()),
            "right must be register or power of 2 constant");
     assert(result->is_double_cpu(), "result must be register");
 

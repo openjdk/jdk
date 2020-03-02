@@ -97,7 +97,7 @@ class ClassLoaderData;
 
 // Set _refcount to PERM_REFCOUNT to prevent the Symbol from being freed.
 #ifndef PERM_REFCOUNT
-#define PERM_REFCOUNT ((1 << 16) - 1)
+#define PERM_REFCOUNT 0xffff
 #endif
 
 class Symbol : public MetaspaceObj {
@@ -106,15 +106,14 @@ class Symbol : public MetaspaceObj {
 
  private:
 
-  // This is an int because it needs atomic operation on the refcount.  Mask length
+  // This is an int because it needs atomic operation on the refcount.  Mask hash
   // in high half word. length is the number of UTF8 characters in the symbol
-  volatile uint32_t _length_and_refcount;
-  short _identity_hash;
+  volatile uint32_t _hash_and_refcount;
+  u2 _length;
   u1 _body[2];
 
   enum {
-    // max_symbol_length must fit into the top 16 bits of _length_and_refcount
-    max_symbol_length = (1 << 16) -1
+    max_symbol_length = 0xffff
   };
 
   static int byte_size(int length) {
@@ -137,11 +136,11 @@ class Symbol : public MetaspaceObj {
 
   void  operator delete(void* p);
 
-  static int extract_length(uint32_t value)   { return value >> 16; }
+  static short extract_hash(uint32_t value)   { return (short)(value >> 16); }
   static int extract_refcount(uint32_t value) { return value & 0xffff; }
-  static uint32_t pack_length_and_refcount(int length, int refcount);
+  static uint32_t pack_hash_and_refcount(short hash, int refcount);
 
-  int length() const   { return extract_length(_length_and_refcount); }
+  int length() const   { return _length; }
 
  public:
   // Low-level access (used with care, since not GC-safe)
@@ -157,16 +156,16 @@ class Symbol : public MetaspaceObj {
   static int max_length() { return max_symbol_length; }
   unsigned identity_hash() const {
     unsigned addr_bits = (unsigned)((uintptr_t)this >> (LogMinObjAlignmentInBytes + 3));
-    return ((unsigned)_identity_hash & 0xffff) |
+    return ((unsigned)extract_hash(_hash_and_refcount) & 0xffff) |
            ((addr_bits ^ (length() << 8) ^ (( _body[0] << 8) | _body[1])) << 16);
   }
 
   // Reference counting.  See comments above this class for when to use.
-  int refcount() const { return extract_refcount(_length_and_refcount); }
+  int refcount() const { return extract_refcount(_hash_and_refcount); }
   bool try_increment_refcount();
   void increment_refcount();
   void decrement_refcount();
-  bool is_permanent() {
+  bool is_permanent() const {
     return (refcount() == PERM_REFCOUNT);
   }
   void set_permanent();
@@ -211,12 +210,24 @@ class Symbol : public MetaspaceObj {
     return ends_with(suffix, (int) strlen(suffix));
   }
   bool ends_with(int suffix_char) const {
-    return contains_byte_at(utf8_length()-1, suffix_char);
+    return contains_byte_at(utf8_length() - 1, suffix_char);
   }
+
   // Tests if the symbol contains the given utf8 substring
-  // or byte at the given byte position.
-  bool contains_utf8_at(int position, const char* substring, int len) const;
-  bool contains_byte_at(int position, char code_byte) const;
+  // at the given byte position.
+  bool contains_utf8_at(int position, const char* substring, int len) const {
+    assert(len >= 0 && substring != NULL, "substring must be valid");
+    if (position < 0)  return false;  // can happen with ends_with
+    if (position + len > utf8_length()) return false;
+    return (memcmp((char*)base() + position, substring, len) == 0);
+  }
+
+  // Tests if the symbol contains the given byte at the given position.
+  bool contains_byte_at(int position, char code_byte) const {
+    if (position < 0)  return false;  // can happen with ends_with
+    if (position >= utf8_length()) return false;
+    return code_byte == char_at(position);
+  }
 
   // Tests if the symbol starts with the given prefix.
   int index_of_at(int i, const char* str, int len) const;

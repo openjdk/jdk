@@ -173,7 +173,7 @@ public class ElementsTable {
     // specified elements
     private Set<ModuleElement> specifiedModuleElements = new LinkedHashSet<>();
     private Set<PackageElement> specifiedPackageElements = new LinkedHashSet<>();
-    private Set<TypeElement> specifiedTypeElements =new LinkedHashSet<>();
+    private Set<TypeElement> specifiedTypeElements = new LinkedHashSet<>();
 
     // included elements
     private Set<ModuleElement> includedModuleElements = null;
@@ -421,20 +421,18 @@ public class ElementsTable {
             }
             mlist.add(m);
             ModuleSymbol msym = syms.enterModule(names.fromString(m));
-            specifiedModuleElements.add((ModuleElement) msym);
+            specifiedModuleElements.add(msym);
         }
 
         // scan for modules with qualified packages
         cmdLinePackages.stream()
-                .filter((mpkg) -> (mpkg.hasModule()))
-                .forEachOrdered((mpkg) -> {
-                    mlist.add(mpkg.moduleName);
-        });
+                .filter(ModulePackage::hasModule)
+                .forEachOrdered(mpkg -> mlist.add(mpkg.moduleName));
 
         // scan for modules with qualified subpackages
         options.subpackages().stream()
             .map(ModulePackage::new)
-            .forEachOrdered((mpkg) -> {
+            .forEachOrdered(mpkg -> {
                 subPackages.add(mpkg);
                 if (mpkg.hasModule()) {
                     mlist.add(mpkg.moduleName);
@@ -481,7 +479,7 @@ public class ElementsTable {
     ElementsTable packages(Collection<String> packageNames) {
         packageNames.stream()
             .map(ModulePackage::new)
-            .forEachOrdered((mpkg) -> cmdLinePackages.add(mpkg));
+            .forEachOrdered(mpkg -> cmdLinePackages.add(mpkg));
         return this;
     }
 
@@ -502,11 +500,9 @@ public class ElementsTable {
     private void computeSubpackages() throws ToolException {
         options.excludes().stream()
                 .map(ModulePackage::new)
-                .forEachOrdered((mpkg) -> excludePackages.add(mpkg));
+                .forEachOrdered(mpkg -> excludePackages.add(mpkg));
 
-        excludePackages.forEach((p) -> {
-            getEntry(p).excluded = true;
-        });
+        excludePackages.forEach(p -> getEntry(p).excluded = true);
 
         for (ModulePackage modpkg : subPackages) {
             List<Location> locs = getLocation(modpkg);
@@ -721,11 +717,9 @@ public class ElementsTable {
         // process types
         Set<TypeElement> iclasses = new LinkedHashSet<>();
         // add all types enclosed in expanded modules and packages
-        ipackages.forEach((pkg) -> {
-            addAllClasses(iclasses, pkg);
-        });
+        ipackages.forEach(pkg -> addAllClasses(iclasses, pkg));
         // add all types and its nested types
-        specifiedTypeElements.forEach((klass) -> {
+        specifiedTypeElements.forEach(klass -> {
             ModuleElement mdle = toolEnv.elements.getModuleOf(klass);
             if (mdle != null && !mdle.isUnnamed())
                 imodules.add(mdle);
@@ -748,7 +742,7 @@ public class ElementsTable {
         computeSubpackages();
 
         Set<PackageElement> packlist = new LinkedHashSet<>();
-        cmdLinePackages.forEach((modpkg) -> {
+        cmdLinePackages.forEach(modpkg -> {
             PackageElement pkg;
             if (modpkg.hasModule()) {
                 ModuleElement mdle = toolEnv.elements.getModuleElement(modpkg.moduleName);
@@ -772,8 +766,8 @@ public class ElementsTable {
      */
     private void computeSpecifiedTypes() throws ToolException {
         Set<TypeElement> classes = new LinkedHashSet<>();
-          classDecList.forEach((def) -> {
-            TypeElement te = (TypeElement) def.sym;
+          classDecList.forEach(def -> {
+            TypeElement te = def.sym;
             if (te != null) {
                 addAllClasses(classes, te, true);
             }

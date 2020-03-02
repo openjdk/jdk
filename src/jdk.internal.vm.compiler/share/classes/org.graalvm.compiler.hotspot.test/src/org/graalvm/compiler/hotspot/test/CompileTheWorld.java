@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,7 +74,6 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 import jdk.internal.vm.compiler.collections.EconomicMap;
 import jdk.internal.vm.compiler.collections.UnmodifiableMapCursor;
@@ -83,7 +82,6 @@ import org.graalvm.compiler.bytecode.Bytecodes;
 import org.graalvm.compiler.core.CompilerThreadFactory;
 import org.graalvm.compiler.core.phases.HighTier;
 import org.graalvm.compiler.core.test.ReflectionOptionDescriptors;
-import org.graalvm.compiler.debug.DebugOptions;
 import org.graalvm.compiler.debug.GlobalMetrics;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.debug.MethodFilter;
@@ -192,11 +190,15 @@ public final class CompileTheWorld {
      */
     private final int maxClasses;
 
-    /** Only compile methods matching one of the filters in this array if the array is non-null. */
-    private final MethodFilter[] methodFilters;
+    /** Only compile methods matching this filter if the filter is non-null. */
+    private final MethodFilter methodFilter;
 
-    /** Exclude methods matching one of the filters in this array if the array is non-null. */
-    private final MethodFilter[] excludeMethodFilters;
+    /**
+     * Exclude methods matching this filter if the filter is non-null. This is used by mx to exclude
+     * some methods, while users are expected to use positive or negative filters in
+     * {@link #methodFilter} instead.
+     */
+    private final MethodFilter excludeMethodFilter;
 
     // Counters
     private int classFileCounter = 0;
@@ -345,8 +347,8 @@ public final class CompileTheWorld {
      * @param startAt index of the class file to start compilation at
      * @param stopAt index of the class file to stop compilation at
      * @param maxClasses maximum number of classes to process
-     * @param methodFilters
-     * @param excludeMethodFilters
+     * @param methodFilters filters describing the methods to compile
+     * @param excludeMethodFilters filters describing the methods not to compile
      * @param harnessOptions values for {@link CompileTheWorld.Options}
      * @param compilerOptions option values used by the compiler
      */
@@ -367,8 +369,8 @@ public final class CompileTheWorld {
         this.startAt = Math.max(startAt, 1);
         this.stopAt = Math.max(stopAt, 1);
         this.maxClasses = Math.max(maxClasses, 1);
-        this.methodFilters = methodFilters == null || methodFilters.isEmpty() ? null : MethodFilter.parse(methodFilters);
-        this.excludeMethodFilters = excludeMethodFilters == null || excludeMethodFilters.isEmpty() ? null : MethodFilter.parse(excludeMethodFilters);
+        this.methodFilter = methodFilters == null ? null : MethodFilter.parse(methodFilters);
+        this.excludeMethodFilter = excludeMethodFilters == null ? null : MethodFilter.parse(excludeMethodFilters);
         this.verbose = verbose;
         this.harnessOptions = harnessOptions;
 
@@ -379,8 +381,6 @@ public final class CompileTheWorld {
         CompilationBailoutAsFailure.putIfAbsent(compilerOptionsMap, true);
         CompilationFailureAction.putIfAbsent(compilerOptionsMap, Print);
 
-        // By default only report statistics for the CTW threads themselves
-        DebugOptions.MetricsThreadFilter.putIfAbsent(compilerOptionsMap, "^CompileTheWorld");
         this.compilerOptions = new OptionValues(compilerOptionsMap);
     }
 
@@ -645,10 +645,10 @@ public final class CompileTheWorld {
     }
 
     private boolean isClassIncluded(String className) {
-        if (methodFilters != null && !MethodFilter.matchesClassName(methodFilters, className)) {
+        if (methodFilter != null && !methodFilter.matchesClassName(className)) {
             return false;
         }
-        if (excludeMethodFilters != null && MethodFilter.matchesClassName(excludeMethodFilters, className)) {
+        if (excludeMethodFilter != null && excludeMethodFilter.matchesClassName(className)) {
             return false;
         }
         return true;
@@ -742,14 +742,14 @@ public final class CompileTheWorld {
                     continue;
                 }
 
-                if (methodFilters == null || methodFilters.length == 0) {
+                if (methodFilter == null || methodFilter.matchesNothing()) {
                     println("CompileTheWorld : Compiling all classes in " + entry);
                 } else {
-                    String include = Arrays.asList(methodFilters).stream().map(MethodFilter::toString).collect(Collectors.joining(", "));
+                    String include = methodFilter.toString();
                     println("CompileTheWorld : Compiling all methods in " + entry + " matching one of the following filters: " + include);
                 }
-                if (excludeMethodFilters != null && excludeMethodFilters.length > 0) {
-                    String exclude = Arrays.asList(excludeMethodFilters).stream().map(MethodFilter::toString).collect(Collectors.joining(", "));
+                if (excludeMethodFilter != null && !excludeMethodFilter.matchesNothing()) {
+                    String exclude = excludeMethodFilter.toString();
                     println("CompileTheWorld : Excluding all methods matching one of the following filters: " + exclude);
                 }
                 println();
@@ -925,10 +925,10 @@ public final class CompileTheWorld {
 
     @SuppressWarnings("try")
     private void compileMethod(HotSpotResolvedJavaMethod method, LibGraalParams libgraal) throws InterruptedException, ExecutionException {
-        if (methodFilters != null && !MethodFilter.matches(methodFilters, method)) {
+        if (methodFilter != null && !methodFilter.matches(method)) {
             return;
         }
-        if (excludeMethodFilters != null && MethodFilter.matches(excludeMethodFilters, method)) {
+        if (excludeMethodFilter != null && excludeMethodFilter.matches(method)) {
             return;
         }
         Future<?> task = threadPool.submit(new Runnable() {
@@ -1034,7 +1034,7 @@ public final class CompileTheWorld {
         }
         GraalHotSpotVMConfig c = compiler.getGraalRuntime().getVMConfig();
         if (c.dontCompileHugeMethods && javaMethod.getCodeSize() > c.hugeMethodLimit) {
-            println(verbose || methodFilters != null,
+            println(verbose || methodFilter != null,
                             String.format("CompileTheWorld (%d) : Skipping huge method %s (use -XX:-DontCompileHugeMethods or -XX:HugeMethodLimit=%d to include it)", classFileCounter,
                                             javaMethod.format("%H.%n(%p):%r"),
                                             javaMethod.getCodeSize()));

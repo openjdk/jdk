@@ -29,6 +29,7 @@
 #include "runtime/globals.hpp"
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/task.hpp"
+#include "utilities/powerOfTwo.hpp"
 
 JVMFlag::Error ObjectAlignmentInBytesConstraintFunc(intx value, bool verbose) {
   if (!is_power_of_2(value)) {

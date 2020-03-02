@@ -45,9 +45,9 @@ public class Symbol extends VMObject {
 
   private static synchronized void initialize(TypeDataBase db) throws WrongTypeException {
     Type type  = db.lookupType("Symbol");
-    lengthAndRefcount = type.getCIntegerField("_length_and_refcount");
+    lengthField = type.getCIntegerField("_length");
     baseOffset = type.getField("_body").getOffset();
-    idHash = type.getCIntegerField("_identity_hash");
+    idHashAndRefcount = type.getCIntegerField("_hash_and_refcount");
   }
 
   public static Symbol create(Address addr) {
@@ -66,19 +66,18 @@ public class Symbol extends VMObject {
   private static long baseOffset; // tells where the array part starts
 
   // Fields
-  private static CIntegerField lengthAndRefcount;
+  private static CIntegerField lengthField;
+  // idHash is a short packed into the high bits of a 32-bit integer with refcount
+  private static CIntegerField idHashAndRefcount;
 
   // Accessors for declared fields
   public long getLength() {
-    long i = lengthAndRefcount.getValue(this.addr);
-    return (i >> 16) & 0xffff;
+    return lengthField.getValue(this.addr);
   }
 
   public byte getByteAt(long index) {
     return addr.getJByteAt(baseOffset + index);
   }
-  // _identity_hash is a short
-  private static CIntegerField idHash;
 
   public long identityHash() {
     long addr_value = getAddress().asLongValue();
@@ -87,7 +86,8 @@ public class Symbol extends VMObject {
     int  length = (int)getLength();
     int  byte0 = getByteAt(0);
     int  byte1 = getByteAt(1);
-    long id_hash = 0xffffL & (long)idHash.getValue(this.addr);
+    long id_hash = (long)idHashAndRefcount.getValue(this.addr);
+    id_hash = (id_hash >> 16) & 0xffff;
     return (id_hash |
       ((addr_bits ^ (length << 8) ^ ((byte0 << 8) | byte1)) << 16)) & 0xffffffffL;
   }

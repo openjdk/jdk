@@ -69,7 +69,8 @@ s loaded by null classloader.
       This behavior can be adjusted with "-compilationLevel" and "-compilationNumber" options. First
 one has self-explaining name, latter sets number of optimization/deoptimozation of each class.
   - Next aspect is class redefinition.
-      You can enable classes redefinition with "-redefineClasses" flag.
+      You can enable classes redefinition with "-redefineClasses" flag. Valid options are "true" and
+"false".
 
 Test implementation details:
   Test supposed to be ran with G1 gc and -XX:+ExplicitGCProvokesConcurrent option. In the end of exec

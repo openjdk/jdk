@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ import org.graalvm.compiler.nodes.gc.G1PostWriteBarrier;
 import org.graalvm.compiler.nodes.gc.G1PreWriteBarrier;
 import org.graalvm.compiler.nodes.gc.G1ReferentFieldReadBarrier;
 import org.graalvm.compiler.nodes.gc.SerialWriteBarrier;
-import org.graalvm.compiler.nodes.memory.HeapAccess;
+import org.graalvm.compiler.nodes.memory.OnHeapMemoryAccess.BarrierType;
 import org.graalvm.compiler.nodes.memory.ReadNode;
 import org.graalvm.compiler.nodes.memory.WriteNode;
 import org.graalvm.compiler.nodes.memory.address.OffsetAddressNode;
@@ -317,13 +317,13 @@ public class WriteBarrierAdditionTest extends HotSpotGraalCompilerTest {
         }
         for (WriteNode write : graph.getNodes().filter(WriteNode.class)) {
             if (config.useG1GC) {
-                if (write.getBarrierType() != HeapAccess.BarrierType.NONE) {
+                if (write.getBarrierType() != BarrierType.NONE) {
                     Assert.assertEquals(1, write.successors().count());
                     Assert.assertTrue(write.next() instanceof G1PostWriteBarrier);
                     Assert.assertTrue(write.predecessor() instanceof G1PreWriteBarrier || write.getLocationIdentity().isImmutable());
                 }
             } else {
-                if (write.getBarrierType() != HeapAccess.BarrierType.NONE) {
+                if (write.getBarrierType() != BarrierType.NONE) {
                     Assert.assertEquals(1, write.successors().count());
                     Assert.assertTrue(write.next() instanceof SerialWriteBarrier);
                 }
@@ -331,14 +331,14 @@ public class WriteBarrierAdditionTest extends HotSpotGraalCompilerTest {
         }
 
         for (ReadNode read : graph.getNodes().filter(ReadNode.class)) {
-            if (read.getBarrierType() != HeapAccess.BarrierType.NONE) {
+            if (read.getBarrierType() != BarrierType.NONE) {
                 if (read.getAddress() instanceof OffsetAddressNode) {
                     JavaConstant constDisp = ((OffsetAddressNode) read.getAddress()).getOffset().asJavaConstant();
                     if (constDisp != null) {
                         Assert.assertEquals(referentOffset(getMetaAccess()), constDisp.asLong());
                     }
                 }
-                Assert.assertTrue(HeapAccess.BarrierType.WEAK_FIELD == read.getBarrierType() || HeapAccess.BarrierType.MAYBE_WEAK_FIELD == read.getBarrierType());
+                Assert.assertTrue(BarrierType.WEAK_FIELD == read.getBarrierType() || BarrierType.MAYBE_WEAK_FIELD == read.getBarrierType());
                 if (config.useG1GC) {
                     Assert.assertTrue(read.next() instanceof G1ReferentFieldReadBarrier);
                 }

@@ -38,6 +38,7 @@
 #include "runtime/frame.inline.hpp"
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "utilities/powerOfTwo.hpp"
 #include "vmreg_x86.inline.hpp"
 
 
@@ -908,11 +909,6 @@ void LIR_Assembler::reg2reg(LIR_Opr src, LIR_Opr dest) {
   } else if (dest->is_double_xmm() && !src->is_double_xmm()) {
     __ fstp_d(Address(rsp, 0));
     __ movdbl(dest->as_xmm_double_reg(), Address(rsp, 0));
-
-  // move between fpu-registers (no instruction necessary because of fpu-stack)
-  } else if (dest->is_single_fpu() || dest->is_double_fpu()) {
-    assert(src->is_single_fpu() || src->is_double_fpu(), "must match");
-    assert(src->fpu() == dest->fpu(), "currently should be nothing to do");
 #endif // !_LP64
 
     // move between xmm-registers
@@ -922,6 +918,13 @@ void LIR_Assembler::reg2reg(LIR_Opr src, LIR_Opr dest) {
   } else if (dest->is_double_xmm()) {
     assert(src->is_double_xmm(), "must match");
     __ movdbl(dest->as_xmm_double_reg(), src->as_xmm_double_reg());
+
+#ifndef _LP64
+    // move between fpu-registers (no instruction necessary because of fpu-stack)
+  } else if (dest->is_single_fpu() || dest->is_double_fpu()) {
+    assert(src->is_single_fpu() || src->is_double_fpu(), "must match");
+    assert(src->fpu() == dest->fpu(), "currently should be nothing to do");
+#endif // !_LP64
 
   } else {
     ShouldNotReachHere();
@@ -1595,6 +1598,7 @@ void LIR_Assembler::emit_opConvert(LIR_OpConvert* op) {
       __ movl(Address(rsp, BytesPerWord), src->as_register_hi());
       __ fild_d(Address(rsp, 0));
       // float result is rounded later through spilling
+      break;
 
     case Bytecodes::_f2i:
     case Bytecodes::_d2i:

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@ import javax.annotation.processing.*;
 import javax.lang.model.*;
 import javax.lang.model.element.*;
 
-@SupportedAnnotationTypes({"java.lang.SuppressWarnings", "*"})
+@SupportedAnnotationTypes({"java.base/java.lang.SuppressWarnings", "*"})
 public class AnnoProc extends AbstractProcessor {
     public boolean process(Set<? extends TypeElement> elems, RoundEnvironment renv) {
         return true;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
 package jdk.jfr.tool;
 
 import java.nio.file.Path;
+import java.util.HashSet;
+import java.util.Set;
 
 import jdk.jfr.EventType;
 import jdk.jfr.consumer.RecordingFile;
@@ -58,6 +60,19 @@ public class TestMetadata {
                 name = name.substring(name.lastIndexOf(".") + 1);
                 output.shouldContain(name);
             }
+        }
+        Set<String> annotations = new HashSet<>();
+        int lineNumber = 1;
+        for (String line : output.asLines()) {
+            if (line.startsWith("@")) {
+                if (annotations.contains(line)) {
+                    throw new Exception("Line " + lineNumber + ":" +  line + " repeats annotation");
+                }
+                annotations.add(line);
+            } else {
+                annotations.clear();
+            }
+            lineNumber++;
         }
     }
 }

@@ -51,7 +51,7 @@ AC_DEFUN_ONCE([LIB_TESTS_SETUP_GRAALUNIT],
     fi
   fi
 
-  BASIC_FIXUP_PATH([GRAALUNIT_LIB])
+  UTIL_FIXUP_PATH([GRAALUNIT_LIB])
   AC_SUBST(GRAALUNIT_LIB)
 ])
 
@@ -77,7 +77,7 @@ AC_DEFUN_ONCE([LIB_TESTS_SETUP_JMH],
       AC_MSG_RESULT([no, error])
       AC_MSG_ERROR([$JMH_HOME does not exist or is not a directory])
     fi
-    BASIC_FIXUP_PATH([JMH_HOME])
+    UTIL_FIXUP_PATH([JMH_HOME])
 
     jar_names="jmh-core jmh-generator-annprocess jopt-simple commons-math3"
     for jar in $jar_names; do

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,7 +64,7 @@ public class TestLinkTaglet extends JavadocTester {
                 + " Link to another inner class: <a href=\"C.InnerC2.html\" title=\"class in pkg\"><code>C.InnerC2</code></a>");
 
         checkOutput("pkg/C.InnerC2.html", true,
-                "<dl>\n"
+                "<dl class=\"notes\">\n"
                 + "<dt>Enclosing class:</dt>\n"
                 + "<dd><a href=\"C.html\" title=\"class in pkg\">C</a></dd>\n"
                 + "</dl>");

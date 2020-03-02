@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -125,6 +125,13 @@ define SetupBundleFileBody
 	    && $(TAR) cf - -$(TAR_INCLUDE_PARAM) $$($1_$$d_LIST_FILE) \
 	        $(TAR_IGNORE_EXIT_VALUE) ) \
 	    | ( $(CD) $(SUPPORT_OUTPUTDIR)/bundles/$1/$$($1_SUBDIR) && $(TAR) xf - )$$(NEWLINE) )
+          # Rename stripped pdb files
+          ifeq ($(call isTargetOs, windows)+$(SHIP_DEBUG_SYMBOLS), true+public)
+	    for f in `$(FIND) $(SUPPORT_OUTPUTDIR)/bundles/$1/$$($1_SUBDIR) -name "*.stripped.pdb"`; do \
+	      $(ECHO) Renaming $$$${f} to $$$${f%stripped.pdb}pdb $(LOG_INFO); \
+	      $(MV) $$$${f} $$$${f%stripped.pdb}pdb; \
+	    done
+          endif
           # Unzip any zipped debuginfo files
           ifeq ($$($1_UNZIP_DEBUGINFO), true)
 	    for f in `$(FIND) $(SUPPORT_OUTPUTDIR)/bundles/$1/$$($1_SUBDIR) -name "*.diz"`; do \
@@ -183,7 +190,7 @@ endif
 
 ifneq ($(filter product-bundles% legacy-bundles, $(MAKECMDGOALS)), )
 
-  SYMBOLS_EXCLUDE_PATTERN := %.debuginfo %.diz %.pdb %.map
+  SYMBOLS_EXCLUDE_PATTERN := %.debuginfo %.diz %.map
 
   # There may be files with spaces in the names, so use ShellFindFiles
   # explicitly.
@@ -209,6 +216,21 @@ ifneq ($(filter product-bundles% legacy-bundles, $(MAKECMDGOALS)), )
     endif
   endif
 
+  # Create special filter rules when dealing with debug symbols on windows
+  ifeq ($(call isTargetOs, windows), true)
+    ifeq ($(SHIP_DEBUG_SYMBOLS), )
+      JDK_SYMBOLS_EXCLUDE_PATTERN := %.pdb
+    else
+      ifeq ($(SHIP_DEBUG_SYMBOLS), public)
+        JDK_SYMBOLS_EXCLUDE_PATTERN := \
+            $(filter-out \
+                %.stripped.pdb, \
+                $(filter %.pdb, $(ALL_JDK_FILES)) \
+            )
+      endif
+    endif
+  endif
+
   JDK_BUNDLE_FILES := \
       $(filter-out \
           $(JDK_SYMBOLS_EXCLUDE_PATTERN) \
@@ -218,13 +240,14 @@ ifneq ($(filter product-bundles% legacy-bundles, $(MAKECMDGOALS)), )
           , \
           $(ALL_JDK_FILES) \
       )
+
   JDK_SYMBOLS_BUNDLE_FILES := \
       $(filter \
           $(JDK_SYMBOLS_EXCLUDE_PATTERN) \
           $(SYMBOLS_EXCLUDE_PATTERN) \
           , \
           $(filter-out \
-              $(JDK_IMAGE_HOMEDIR)/demo/% \
+              $(JDK_IMAGE_HOMEDIR)/demo/% %.stripped.pdb \
               , \
               $(ALL_JDK_SYMBOLS_FILES) \
           ) \
@@ -245,29 +268,116 @@ ifneq ($(filter product-bundles% legacy-bundles, $(MAKECMDGOALS)), )
     endif
   endif
 
+  # Create special filter rules when dealing with debug symbols on windows
+  ifeq ($(call isTargetOs, windows), true)
+    ifeq ($(SHIP_DEBUG_SYMBOLS), )
+      JRE_SYMBOLS_EXCLUDE_PATTERN := %.pdb
+    else
+      ifeq ($(SHIP_DEBUG_SYMBOLS), public)
+        JRE_SYMBOLS_EXCLUDE_PATTERN := \
+            $(filter-out \
+                %.stripped.pdb, \
+                $(filter %.pdb, $(ALL_JRE_FILES)) \
+            )
+      endif
+    endif
+  endif
+
   JRE_BUNDLE_FILES := $(filter-out \
       $(JRE_SYMBOLS_EXCLUDE_PATTERN) \
       $(SYMBOLS_EXCLUDE_PATTERN), \
       $(ALL_JRE_FILES))
 
-  $(eval $(call SetupBundleFile, BUILD_JDK_BUNDLE, \
-      BUNDLE_NAME := $(JDK_BUNDLE_NAME), \
-      FILES := $(JDK_BUNDLE_FILES), \
-      SPECIAL_INCLUDES := $(JDK_SPECIAL_INCLUDES), \
-      BASE_DIRS := $(JDK_IMAGE_DIR), \
-      SUBDIR := $(JDK_BUNDLE_SUBDIR), \
-  ))
+  # On Macosx release builds, when there is a code signing certificate available,
+  # the final bundle layout can be signed.
+  SIGN_BUNDLE := false
+  ifeq ($(call isTargetOs, macosx)+$(DEBUG_LEVEL), true+release)
+    ifneq ($(CODESIGN), )
+      SIGN_BUNDLE := true
+    endif
+  endif
 
-  PRODUCT_TARGETS += $(BUILD_JDK_BUNDLE)
+  ifeq ($(SIGN_BUNDLE), true)
+    # Macosx release build and code signing available.
 
-  $(eval $(call SetupBundleFile, BUILD_JRE_BUNDLE, \
-      BUNDLE_NAME := $(JRE_BUNDLE_NAME), \
-      FILES := $(JRE_BUNDLE_FILES), \
-      BASE_DIRS := $(JRE_IMAGE_DIR), \
-      SUBDIR := $(JRE_BUNDLE_SUBDIR), \
-  ))
+    ################################################################################
+    # JDK bundle
+    $(eval $(call SetupCopyFiles, CREATE_JDK_BUNDLE_DIR_SIGNED, \
+        SRC := $(JDK_IMAGE_DIR), \
+        FILES := $(JDK_BUNDLE_FILES), \
+        DEST := $(JDK_MACOSX_BUNDLE_DIR_SIGNED), \
+    ))
 
-  LEGACY_TARGETS += $(BUILD_JRE_BUNDLE)
+    JDK_SIGNED_CODE_RESOURCES := \
+        $(JDK_MACOSX_BUNDLE_DIR_SIGNED)/$(JDK_MACOSX_CONTENTS_SUBDIR)/_CodeSignature/CodeResources
+
+    $(JDK_SIGNED_CODE_RESOURCES): $(CREATE_JDK_BUNDLE_DIR_SIGNED)
+	$(call LogWarn, Signing $(JDK_BUNDLE_NAME))
+	$(CODESIGN) -s "$(MACOSX_CODESIGN_IDENTITY)" \
+	    --timestamp --options runtime --deep --force \
+	    $(JDK_MACOSX_BUNDLE_DIR_SIGNED)/$(JDK_MACOSX_BUNDLE_TOP_DIR) $(LOG_DEBUG)
+	$(TOUCH) $@
+
+    $(eval $(call SetupBundleFile, BUILD_JDK_BUNDLE, \
+        BUNDLE_NAME := $(JDK_BUNDLE_NAME), \
+        FILES := \
+            $(CREATE_JDK_BUNDLE_DIR_SIGNED) \
+            $(JDK_SIGNED_CODE_RESOURCES), \
+        BASE_DIRS := $(JDK_MACOSX_BUNDLE_DIR_SIGNED), \
+        SUBDIR := $(JDK_BUNDLE_SUBDIR), \
+    ))
+
+    PRODUCT_TARGETS += $(BUILD_JDK_BUNDLE)
+
+    ################################################################################
+    # JRE bundle
+    $(eval $(call SetupCopyFiles, CREATE_JRE_BUNDLE_DIR_SIGNED, \
+        SRC := $(JRE_IMAGE_DIR), \
+        FILES := $(JRE_BUNDLE_FILES), \
+        DEST := $(JRE_MACOSX_BUNDLE_DIR_SIGNED), \
+    ))
+
+    JRE_SIGNED_CODE_RESOURCES := \
+        $(JRE_MACOSX_BUNDLE_DIR_SIGNED)/$(JRE_MACOSX_CONTENTS_SUBDIR)/_CodeSignature/CodeResources
+
+    $(JRE_SIGNED_CODE_RESOURCES): $(CREATE_JRE_BUNDLE_DIR_SIGNED)
+	$(call LogWarn, Signing $(JRE_BUNDLE_NAME))
+	$(CODESIGN) -s "$(MACOSX_CODESIGN_IDENTITY)" \
+	    --timestamp --options runtime --deep --force \
+	    $(JRE_MACOSX_BUNDLE_DIR_SIGNED)/$(JRE_MACOSX_BUNDLE_TOP_DIR) $(LOG_DEBUG)
+	$(TOUCH) $@
+
+    $(eval $(call SetupBundleFile, BUILD_JRE_BUNDLE, \
+        BUNDLE_NAME := $(JRE_BUNDLE_NAME), \
+        FILES := \
+            $(CREATE_JRE_BUNDLE_DIR_SIGNED) \
+            $(JRE_SIGNED_CODE_RESOURCES), \
+        BASE_DIRS := $(JRE_MACOSX_BUNDLE_DIR_SIGNED), \
+        SUBDIR := $(JRE_BUNDLE_SUBDIR), \
+    ))
+
+    LEGACY_TARGETS += $(BUILD_JRE_BUNDLE)
+  else
+    # Not a Macosx release build or code signing not available.
+    $(eval $(call SetupBundleFile, BUILD_JDK_BUNDLE, \
+        BUNDLE_NAME := $(JDK_BUNDLE_NAME), \
+        FILES := $(JDK_BUNDLE_FILES), \
+        SPECIAL_INCLUDES := $(JDK_SPECIAL_INCLUDES), \
+        BASE_DIRS := $(JDK_IMAGE_DIR), \
+        SUBDIR := $(JDK_BUNDLE_SUBDIR), \
+    ))
+
+    PRODUCT_TARGETS += $(BUILD_JDK_BUNDLE)
+
+    $(eval $(call SetupBundleFile, BUILD_JRE_BUNDLE, \
+        BUNDLE_NAME := $(JRE_BUNDLE_NAME), \
+        FILES := $(JRE_BUNDLE_FILES), \
+        BASE_DIRS := $(JRE_IMAGE_DIR), \
+        SUBDIR := $(JRE_BUNDLE_SUBDIR), \
+    ))
+
+    LEGACY_TARGETS += $(BUILD_JRE_BUNDLE)
+  endif
 
   ifeq ($(COPY_DEBUG_SYMBOLS), true)
     $(eval $(call SetupBundleFile, BUILD_JDK_SYMBOLS_BUNDLE, \

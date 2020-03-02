@@ -261,20 +261,15 @@ void G1CMMarkStack::set_empty() {
 }
 
 G1CMRootMemRegions::G1CMRootMemRegions(uint const max_regions) :
-    _root_regions(NULL),
+    _root_regions(MemRegion::create_array(max_regions, mtGC)),
     _max_regions(max_regions),
     _num_root_regions(0),
     _claimed_root_regions(0),
     _scan_in_progress(false),
-    _should_abort(false) {
-  _root_regions = new MemRegion[_max_regions];
-  if (_root_regions == NULL) {
-    vm_exit_during_initialization("Could not allocate root MemRegion set.");
-  }
-}
+    _should_abort(false) { }
 
 G1CMRootMemRegions::~G1CMRootMemRegions() {
-  delete[] _root_regions;
+  FREE_C_HEAP_ARRAY(MemRegion, _root_regions);
 }
 
 void G1CMRootMemRegions::reset() {

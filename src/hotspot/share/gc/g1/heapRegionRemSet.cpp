@@ -92,14 +92,7 @@ OtherRegionsTable::OtherRegionsTable(Mutex* m) :
     _fine_eviction_stride = _max_fine_entries / _fine_eviction_sample_size;
   }
 
-  _fine_grain_regions = NEW_C_HEAP_ARRAY3(PerRegionTablePtr, _max_fine_entries,
-                        mtGC, CURRENT_PC, AllocFailStrategy::RETURN_NULL);
-
-  if (_fine_grain_regions == NULL) {
-    vm_exit_out_of_memory(sizeof(void*)*_max_fine_entries, OOM_MALLOC_ERROR,
-                          "Failed to allocate _fine_grain_entries.");
-  }
-
+  _fine_grain_regions = NEW_C_HEAP_ARRAY(PerRegionTablePtr, _max_fine_entries, mtGC);
   for (size_t i = 0; i < _max_fine_entries; i++) {
     _fine_grain_regions[i] = NULL;
   }

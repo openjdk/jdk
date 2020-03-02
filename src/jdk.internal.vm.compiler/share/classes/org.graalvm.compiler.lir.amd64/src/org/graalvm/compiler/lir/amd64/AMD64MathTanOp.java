@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, Intel Corporation. All rights reserved.
  * Intel Math Library (LIBM) Source Code
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -51,6 +51,7 @@ import static org.graalvm.compiler.lir.amd64.AMD64HotSpotHelper.recordExternalAd
 import org.graalvm.compiler.asm.Label;
 import org.graalvm.compiler.asm.amd64.AMD64Address;
 import org.graalvm.compiler.asm.amd64.AMD64Assembler;
+import org.graalvm.compiler.asm.amd64.AMD64Assembler.ConditionFlag;
 import org.graalvm.compiler.asm.amd64.AMD64MacroAssembler;
 import org.graalvm.compiler.lir.LIRInstructionClass;
 import org.graalvm.compiler.lir.asm.ArrayDataPointerConstant;
@@ -579,8 +580,7 @@ public final class AMD64MathTanOp extends AMD64MathIntrinsicUnaryOp {
         masm.pextrw(rax, xmm0, 3);
         masm.andl(rax, 32767);
         masm.subl(rax, 16314);
-        masm.cmpl(rax, 270);
-        masm.jcc(AMD64Assembler.ConditionFlag.Above, block0);
+        masm.cmplAndJcc(rax, 270, ConditionFlag.Above, block0, false);
         masm.movdqu(xmm5, recordExternalAddress(crb, onehalf));        // 0x00000000, 0x3fe00000,
                                                                        // 0x00000000, 0x3fe00000
         masm.movdqu(xmm6, recordExternalAddress(crb, mul16));          // 0x00000000, 0x40300000,
@@ -701,11 +701,9 @@ public final class AMD64MathTanOp extends AMD64MathIntrinsicUnaryOp {
         masm.jcc(AMD64Assembler.ConditionFlag.Greater, block1);
         masm.pextrw(rax, xmm0, 3);
         masm.movl(rdx, rax);
-        masm.andl(rax, 32752);
-        masm.jcc(AMD64Assembler.ConditionFlag.Equal, block2);
+        masm.andlAndJcc(rax, 32752, ConditionFlag.Equal, block2, false);
         masm.andl(rdx, 32767);
-        masm.cmpl(rdx, 15904);
-        masm.jcc(AMD64Assembler.ConditionFlag.Below, block3);
+        masm.cmplAndJcc(rdx, 15904, ConditionFlag.Below, block3, false);
         masm.movdqu(xmm2, xmm0);
         masm.movdqu(xmm3, xmm0);
         masm.movq(xmm1, recordExternalAddress(crb, q11));              // 0xb8fe4d77, 0x3f82609a
@@ -738,8 +736,7 @@ public final class AMD64MathTanOp extends AMD64MathIntrinsicUnaryOp {
         masm.bind(block1);
         masm.pextrw(rax, xmm0, 3);
         masm.andl(rax, 32752);
-        masm.cmpl(rax, 32752);
-        masm.jcc(AMD64Assembler.ConditionFlag.Equal, block4);
+        masm.cmplAndJcc(rax, 32752, ConditionFlag.Equal, block4, false);
         masm.pextrw(rcx, xmm0, 3);
         masm.andl(rcx, 32752);
         masm.subl(rcx, 16224);
@@ -831,15 +828,13 @@ public final class AMD64MathTanOp extends AMD64MathIntrinsicUnaryOp {
         masm.addq(r9, rdx);
         masm.movl(rdx, rcx);
         masm.addl(rdx, 32);
-        masm.cmpl(rcx, 0);
-        masm.jcc(AMD64Assembler.ConditionFlag.Less, block5);
+        masm.cmplAndJcc(rcx, 0, ConditionFlag.Less, block5, false);
         masm.negl(rcx);
         masm.addl(rcx, 29);
         masm.shll(r9);
         masm.movl(rdi, r9);
         masm.andl(r9, 1073741823);
-        masm.testl(r9, 536870912);
-        masm.jcc(AMD64Assembler.ConditionFlag.NotEqual, block6);
+        masm.testlAndJcc(r9, 536870912, ConditionFlag.NotEqual, block6, false);
         masm.shrl(r9);
         masm.movl(rbx, 0);
         masm.shlq(r9, 32);
@@ -848,14 +843,12 @@ public final class AMD64MathTanOp extends AMD64MathIntrinsicUnaryOp {
         masm.bind(block7);
 
         masm.bind(block8);
-        masm.cmpq(r9, 0);
-        masm.jcc(AMD64Assembler.ConditionFlag.Equal, block9);
+        masm.cmpqAndJcc(r9, 0, ConditionFlag.Equal, block9, false);
 
         masm.bind(block10);
         masm.bsrq(r11, r9);
         masm.movl(rcx, 29);
-        masm.subl(rcx, r11);
-        masm.jcc(AMD64Assembler.ConditionFlag.LessEqual, block11);
+        masm.sublAndJcc(rcx, r11, ConditionFlag.LessEqual, block11, false);
         masm.shlq(r9);
         masm.movq(rax, r10);
         masm.shlq(r10);
@@ -1036,13 +1029,11 @@ public final class AMD64MathTanOp extends AMD64MathIntrinsicUnaryOp {
         masm.movq(r9, r10);
         masm.movq(r10, r8);
         masm.movl(r8, 0);
-        masm.cmpq(r9, 0);
-        masm.jcc(AMD64Assembler.ConditionFlag.NotEqual, block10);
+        masm.cmpqAndJcc(r9, 0, ConditionFlag.NotEqual, block10, false);
         masm.addl(rdx, 64);
         masm.movq(r9, r10);
         masm.movq(r10, r8);
-        masm.cmpq(r9, 0);
-        masm.jcc(AMD64Assembler.ConditionFlag.NotEqual, block10);
+        masm.cmpqAndJcc(r9, 0, ConditionFlag.NotEqual, block10, false);
         masm.jmp(block12);
 
         masm.bind(block11);
@@ -1064,8 +1055,7 @@ public final class AMD64MathTanOp extends AMD64MathIntrinsicUnaryOp {
         masm.orq(r9, r11);
         masm.shlq(r9);
         masm.movq(rdi, r9);
-        masm.testl(r9, Integer.MIN_VALUE);
-        masm.jcc(AMD64Assembler.ConditionFlag.NotEqual, block13);
+        masm.testlAndJcc(r9, Integer.MIN_VALUE, ConditionFlag.NotEqual, block13, false);
         masm.shrl(r9);
         masm.movl(rbx, 0);
         masm.shrq(rdi, 2);

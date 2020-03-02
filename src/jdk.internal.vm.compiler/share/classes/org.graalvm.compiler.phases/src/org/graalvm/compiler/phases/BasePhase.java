@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,13 +24,16 @@
 
 package org.graalvm.compiler.phases;
 
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 
+import jdk.internal.vm.compiler.collections.EconomicMap;
 import org.graalvm.compiler.debug.CounterKey;
 import org.graalvm.compiler.debug.DebugCloseable;
 import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.DebugOptions;
 import org.graalvm.compiler.debug.MemUseTrackerKey;
+import org.graalvm.compiler.debug.MethodFilter;
 import org.graalvm.compiler.debug.TimerKey;
 import org.graalvm.compiler.graph.Graph;
 import org.graalvm.compiler.graph.Graph.Mark;
@@ -46,6 +49,8 @@ import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.contract.NodeCostUtil;
 import org.graalvm.compiler.phases.contract.PhaseSizeContract;
 
+import jdk.vm.ci.meta.JavaMethod;
+
 /**
  * Base class for all compiler phases. Subclasses should be stateless. There will be one global
  * instance for each compiler phase that is shared for all compilations. VM-, target- and
@@ -57,6 +62,8 @@ public abstract class BasePhase<C> implements PhaseSizeContract {
         // @formatter:off
         @Option(help = "Verify before - after relation of the relative, computed, code size of a graph", type = OptionType.Debug)
         public static final OptionKey<Boolean> VerifyGraalPhasesSize = new OptionKey<>(false);
+        @Option(help = "Exclude certain phases from compilation, either unconditionally or with a method filter", type = OptionType.Debug)
+        public static final OptionKey<String> CompilationExcludePhases = new OptionKey<>(null);
         // @formatter:on
     }
 
@@ -178,6 +185,11 @@ public abstract class BasePhase<C> implements PhaseSizeContract {
     @SuppressWarnings("try")
     protected final void apply(final StructuredGraph graph, final C context, final boolean dumpGraph) {
         graph.checkCancellation();
+
+        if (ExcludePhaseFilter.exclude(graph.getOptions(), this, graph.asJavaMethod())) {
+            return;
+        }
+
         DebugContext debug = graph.getDebug();
         try (DebugCloseable a = timer.start(debug); DebugContext.Scope s = debug.scope(getClass(), this); DebugCloseable c = memUseTracker.start(debug)) {
             int sizeBefore = 0;
@@ -294,5 +306,91 @@ public abstract class BasePhase<C> implements PhaseSizeContract {
     @Override
     public float codeSizeIncrease() {
         return 1.25f;
+    }
+
+    private static final class ExcludePhaseFilter {
+
+        /**
+         * Contains the excluded phases and the corresponding methods to exclude.
+         */
+        private EconomicMap<Pattern, MethodFilter> filters;
+
+        /**
+         * Cache instances of this class to avoid parsing the same option string more than once.
+         */
+        private static ConcurrentHashMap<String, ExcludePhaseFilter> instances;
+
+        static {
+            instances = new ConcurrentHashMap<>();
+        }
+
+        /**
+         * Determines whether the phase should be excluded from running on the given method based on
+         * the given option values.
+         */
+        protected static boolean exclude(OptionValues options, BasePhase<?> phase, JavaMethod method) {
+            String compilationExcludePhases = PhaseOptions.CompilationExcludePhases.getValue(options);
+            if (compilationExcludePhases == null) {
+                return false;
+            } else {
+                return getInstance(compilationExcludePhases).exclude(phase, method);
+            }
+        }
+
+        /**
+         * Gets an instance of this class for the given option values. This will typically be a
+         * cached instance.
+         */
+        private static ExcludePhaseFilter getInstance(String compilationExcludePhases) {
+            return instances.computeIfAbsent(compilationExcludePhases, excludePhases -> ExcludePhaseFilter.parse(excludePhases));
+        }
+
+        /**
+         * Determines whether the given phase should be excluded from running on the given method.
+         */
+        protected boolean exclude(BasePhase<?> phase, JavaMethod method) {
+            if (method == null) {
+                return false;
+            }
+            String phaseName = phase.getClass().getSimpleName();
+            for (Pattern excludedPhase : filters.getKeys()) {
+                if (excludedPhase.matcher(phaseName).matches()) {
+                    return filters.get(excludedPhase).matches(method);
+                }
+            }
+            return false;
+        }
+
+        /**
+         * Creates a phase filter based on a specification string. The string is a colon-separated
+         * list of phase names or {@code phase_name=filter} pairs. Phase names match any phase of
+         * which they are a substring. Filters follow {@link MethodFilter} syntax.
+         */
+        private static ExcludePhaseFilter parse(String compilationExcludePhases) {
+            EconomicMap<Pattern, MethodFilter> filters = EconomicMap.create();
+            String[] parts = compilationExcludePhases.trim().split(":");
+            for (String part : parts) {
+                String phaseName;
+                MethodFilter methodFilter;
+                if (part.contains("=")) {
+                    String[] pair = part.split("=");
+                    if (pair.length != 2) {
+                        throw new IllegalArgumentException("expected phase_name=filter pair in: " + part);
+                    }
+                    phaseName = pair[0];
+                    methodFilter = MethodFilter.parse(pair[1]);
+                } else {
+                    phaseName = part;
+                    methodFilter = MethodFilter.matchAll();
+                }
+                Pattern phasePattern = Pattern.compile(".*" + MethodFilter.createGlobString(phaseName) + ".*");
+                filters.put(phasePattern, methodFilter);
+            }
+            return new ExcludePhaseFilter(filters);
+        }
+
+        private ExcludePhaseFilter(EconomicMap<Pattern, MethodFilter> filters) {
+            this.filters = filters;
+        }
     }
 }

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,6 @@ $(eval $(call IncludeCustomExtension, CompileTools.gmk))
 # Use += to be able to add to this from a custom extension
 BUILD_TOOLS_SRC_DIRS += \
     $(TOPDIR)/make/jdk/src/classes \
-    $(BUILDTOOLS_OUTPUTDIR)/interim_cldrconverter_classes \
     $(BUILDTOOLS_OUTPUTDIR)/interim_tzdb_classes \
     #
 

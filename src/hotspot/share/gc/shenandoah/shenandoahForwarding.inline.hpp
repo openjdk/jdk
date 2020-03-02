@@ -28,6 +28,7 @@
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahForwarding.hpp"
 #include "oops/markWord.inline.hpp"
+#include "runtime/thread.hpp"
 
 inline HeapWord* ShenandoahForwarding::get_forwardee_raw(oop obj) {
   shenandoah_assert_in_heap(NULL, obj);
@@ -35,11 +36,32 @@ inline HeapWord* ShenandoahForwarding::get_forwardee_raw(oop obj) {
 }
 
 inline HeapWord* ShenandoahForwarding::get_forwardee_raw_unchecked(oop obj) {
+  // JVMTI and JFR code use mark words for marking objects for their needs.
+  // On this path, we can encounter the "marked" object, but with NULL
+  // fwdptr. That object is still not forwarded, and we need to return
+  // the object itself.
   markWord mark = obj->mark_raw();
   if (mark.is_marked()) {
-    return (HeapWord*) mark.clear_lock_bits().to_pointer();
+    HeapWord* fwdptr = (HeapWord*) mark.clear_lock_bits().to_pointer();
+    if (fwdptr != NULL) {
+      return fwdptr;
+    }
+  }
+  return cast_from_oop<HeapWord*>(obj);
+}
+
+inline oop ShenandoahForwarding::get_forwardee_mutator(oop obj) {
+  // Same as above, but mutator thread cannot ever see NULL forwardee.
+  shenandoah_assert_correct(NULL, obj);
+  assert(Thread::current()->is_Java_thread(), "Must be a mutator thread");
+
+  markWord mark = obj->mark_raw();
+  if (mark.is_marked()) {
+    HeapWord* fwdptr = (HeapWord*) mark.clear_lock_bits().to_pointer();
+    assert(fwdptr != NULL, "Forwarding pointer is never null here");
+    return cast_to_oop(fwdptr);
   } else {
-    return cast_from_oop<HeapWord*>(obj);
+    return obj;
   }
 }
 

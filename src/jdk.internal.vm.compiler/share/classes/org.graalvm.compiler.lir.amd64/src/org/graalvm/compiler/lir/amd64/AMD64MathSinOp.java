@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, Intel Corporation. All rights reserved.
  * Intel Math Library (LIBM) Source Code
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -458,8 +458,7 @@ public final class AMD64MathSinOp extends AMD64MathIntrinsicUnaryOp {
         masm.movq(xmm2, recordExternalAddress(crb, shifter));          // 0x00000000, 0x43380000
         masm.andl(rax, 2147418112);
         masm.subl(rax, 808452096);
-        masm.cmpl(rax, 281346048);
-        masm.jcc(ConditionFlag.Above, block0);
+        masm.cmplAndJcc(rax, 281346048, ConditionFlag.Above, block0, false);
         masm.mulsd(xmm1, xmm0);
         masm.movdqu(xmm5, recordExternalAddress(crb, onehalf));        // 0x00000000, 0x3fe00000,
                                                                        // 0x00000000, 0x3fe00000
@@ -549,8 +548,7 @@ public final class AMD64MathSinOp extends AMD64MathIntrinsicUnaryOp {
         masm.bind(block0);
         masm.jcc(ConditionFlag.Greater, block1);
         masm.shrl(rax, 20);
-        masm.cmpl(rax, 3325);
-        masm.jcc(ConditionFlag.NotEqual, block2);
+        masm.cmplAndJcc(rax, 3325, ConditionFlag.NotEqual, block2, false);
         masm.mulsd(xmm0, recordExternalAddress(crb, allOnes));         // 0xffffffff, 0x3fefffff
         masm.jmp(block14);
 
@@ -564,8 +562,7 @@ public final class AMD64MathSinOp extends AMD64MathIntrinsicUnaryOp {
         masm.bind(block1);
         masm.pextrw(rax, xmm0, 3);
         masm.andl(rax, 32752);
-        masm.cmpl(rax, 32752);
-        masm.jcc(ConditionFlag.Equal, block3);
+        masm.cmplAndJcc(rax, 32752, ConditionFlag.Equal, block3, false);
         masm.pextrw(rcx, xmm0, 3);
         masm.andl(rcx, 32752);
         masm.subl(rcx, 16224);
@@ -657,15 +654,13 @@ public final class AMD64MathSinOp extends AMD64MathIntrinsicUnaryOp {
         masm.addq(r9, AMD64.rdx);
         masm.movl(rdx, rcx);
         masm.addl(rdx, 32);
-        masm.cmpl(rcx, 1);
-        masm.jcc(ConditionFlag.Less, block4);
+        masm.cmplAndJcc(rcx, 1, ConditionFlag.Less, block4, false);
         masm.negl(rcx);
         masm.addl(rcx, 29);
         masm.shll(r9);
         masm.movl(rdi, r9);
         masm.andl(r9, 536870911);
-        masm.testl(r9, 268435456);
-        masm.jcc(ConditionFlag.NotEqual, block5);
+        masm.testlAndJcc(r9, 268435456, ConditionFlag.NotEqual, block5, false);
         masm.shrl(r9);
         masm.movl(rbx, 0);
         masm.shlq(r9, 32);
@@ -675,14 +670,12 @@ public final class AMD64MathSinOp extends AMD64MathIntrinsicUnaryOp {
 
         masm.bind(block7);
 
-        masm.cmpq(r9, 0);
-        masm.jcc(ConditionFlag.Equal, block8);
+        masm.cmpqAndJcc(r9, 0, ConditionFlag.Equal, block8, false);
 
         masm.bind(block9);
         masm.bsrq(r11, r9);
         masm.movl(rcx, 29);
-        masm.subl(rcx, r11);
-        masm.jcc(ConditionFlag.LessEqual, block10);
+        masm.sublAndJcc(rcx, r11, ConditionFlag.LessEqual, block10, false);
         masm.shlq(r9);
         masm.movq(AMD64.rax, r10);
         masm.shlq(r10);
@@ -817,13 +810,11 @@ public final class AMD64MathSinOp extends AMD64MathIntrinsicUnaryOp {
         masm.movq(r9, r10);
         masm.movq(r10, r8);
         masm.movl(r8, 0);
-        masm.cmpq(r9, 0);
-        masm.jcc(ConditionFlag.NotEqual, block9);
+        masm.cmpqAndJcc(r9, 0, ConditionFlag.NotEqual, block9, false);
         masm.addl(rdx, 64);
         masm.movq(r9, r10);
         masm.movq(r10, r8);
-        masm.cmpq(r9, 0);
-        masm.jcc(ConditionFlag.NotEqual, block9);
+        masm.cmpqAndJcc(r9, 0, ConditionFlag.NotEqual, block9, false);
         masm.xorpd(xmm0, xmm0);
         masm.xorpd(xmm6, xmm6);
         masm.jmp(block12);
@@ -847,8 +838,7 @@ public final class AMD64MathSinOp extends AMD64MathIntrinsicUnaryOp {
         masm.orq(r9, r11);
         masm.shlq(r9);
         masm.movq(rdi, r9);
-        masm.testl(r9, Integer.MIN_VALUE);
-        masm.jcc(ConditionFlag.NotEqual, block13);
+        masm.testlAndJcc(r9, Integer.MIN_VALUE, ConditionFlag.NotEqual, block13, false);
         masm.shrl(r9);
         masm.movl(rbx, 0);
         masm.shrq(rdi, 3);

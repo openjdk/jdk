@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -160,7 +160,7 @@ public final class ZoneOffsetTransitionRule implements Serializable {
      * @param dayOfWeek  the required day-of-week, null if the month-day should not be changed
      * @param time  the cutover time in the 'before' offset, not null
      * @param timeEndOfDay  whether the time is midnight at the end of day
-     * @param timeDefnition  how to interpret the cutover
+     * @param timeDefinition  how to interpret the cutover
      * @param standardOffset  the standard offset in force at the cutover, not null
      * @param offsetBefore  the offset before the cutover, not null
      * @param offsetAfter  the offset after the cutover, not null
@@ -175,13 +175,13 @@ public final class ZoneOffsetTransitionRule implements Serializable {
             DayOfWeek dayOfWeek,
             LocalTime time,
             boolean timeEndOfDay,
-            TimeDefinition timeDefnition,
+            TimeDefinition timeDefinition,
             ZoneOffset standardOffset,
             ZoneOffset offsetBefore,
             ZoneOffset offsetAfter) {
         Objects.requireNonNull(month, "month");
         Objects.requireNonNull(time, "time");
-        Objects.requireNonNull(timeDefnition, "timeDefnition");
+        Objects.requireNonNull(timeDefinition, "timeDefinition");
         Objects.requireNonNull(standardOffset, "standardOffset");
         Objects.requireNonNull(offsetBefore, "offsetBefore");
         Objects.requireNonNull(offsetAfter, "offsetAfter");
@@ -194,7 +194,7 @@ public final class ZoneOffsetTransitionRule implements Serializable {
         if (time.getNano() != 0) {
             throw new IllegalArgumentException("Time's nano-of-second must be zero");
         }
-        return new ZoneOffsetTransitionRule(month, dayOfMonthIndicator, dayOfWeek, time, timeEndOfDay, timeDefnition, standardOffset, offsetBefore, offsetAfter);
+        return new ZoneOffsetTransitionRule(month, dayOfMonthIndicator, dayOfWeek, time, timeEndOfDay, timeDefinition, standardOffset, offsetBefore, offsetAfter);
     }
 
     /**
@@ -207,7 +207,7 @@ public final class ZoneOffsetTransitionRule implements Serializable {
      * @param dayOfWeek  the required day-of-week, null if the month-day should not be changed
      * @param time  the cutover time in the 'before' offset, not null
      * @param timeEndOfDay  whether the time is midnight at the end of day
-     * @param timeDefnition  how to interpret the cutover
+     * @param timeDefinition  how to interpret the cutover
      * @param standardOffset  the standard offset in force at the cutover, not null
      * @param offsetBefore  the offset before the cutover, not null
      * @param offsetAfter  the offset after the cutover, not null
@@ -220,7 +220,7 @@ public final class ZoneOffsetTransitionRule implements Serializable {
             DayOfWeek dayOfWeek,
             LocalTime time,
             boolean timeEndOfDay,
-            TimeDefinition timeDefnition,
+            TimeDefinition timeDefinition,
             ZoneOffset standardOffset,
             ZoneOffset offsetBefore,
             ZoneOffset offsetAfter) {
@@ -230,7 +230,7 @@ public final class ZoneOffsetTransitionRule implements Serializable {
         this.dow = dayOfWeek;
         this.time = time;
         this.timeEndOfDay = timeEndOfDay;
-        this.timeDefinition = timeDefnition;
+        this.timeDefinition = timeDefinition;
         this.standardOffset = standardOffset;
         this.offsetBefore = offsetBefore;
         this.offsetAfter = offsetAfter;

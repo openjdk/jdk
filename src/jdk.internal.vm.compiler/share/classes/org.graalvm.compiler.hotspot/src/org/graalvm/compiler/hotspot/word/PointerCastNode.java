@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,8 @@ import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_0;
 import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeClass;
+import org.graalvm.compiler.graph.spi.Canonicalizable;
+import org.graalvm.compiler.graph.spi.CanonicalizerTool;
 import org.graalvm.compiler.hotspot.word.HotSpotOperation.HotspotOpcode;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.NodeView;
@@ -45,14 +47,22 @@ import jdk.vm.ci.meta.Value;
  * {@link HotspotOpcode#TO_KLASS_POINTER} operations.
  */
 @NodeInfo(cycles = CYCLES_0, size = SIZE_0)
-public final class PointerCastNode extends FloatingNode implements LIRLowerable, Node.ValueNumberable {
+public final class PointerCastNode extends FloatingNode implements Canonicalizable, LIRLowerable, Node.ValueNumberable {
 
     public static final NodeClass<PointerCastNode> TYPE = NodeClass.create(PointerCastNode.class);
     @Input ValueNode input;
 
-    public PointerCastNode(Stamp stamp, ValueNode input) {
+    protected PointerCastNode(Stamp stamp, ValueNode input) {
         super(TYPE, stamp);
         this.input = input;
+    }
+
+    public static ValueNode create(Stamp stamp, ValueNode input) {
+        ValueNode canonicalNode = canonicalize(stamp, input);
+        if (canonicalNode != null) {
+            return canonicalNode;
+        }
+        return new PointerCastNode(stamp, input);
     }
 
     public ValueNode getInput() {
@@ -65,5 +75,25 @@ public final class PointerCastNode extends FloatingNode implements LIRLowerable,
         assert value.getValueKind().equals(generator.getLIRGeneratorTool().getLIRKind(stamp(NodeView.DEFAULT))) : "PointerCastNode shouldn't change the LIRKind";
 
         generator.setResult(this, value);
+    }
+
+    @Override
+    public Node canonical(CanonicalizerTool tool) {
+        ValueNode canonicalNode = canonicalize(this.stamp, this.input);
+        if (canonicalNode != null) {
+            return canonicalNode;
+        }
+        return this;
+    }
+
+    private static ValueNode canonicalize(Stamp stamp, ValueNode input) {
+        // Replace useless cascade of casts (e.g., in the allocation snippets)
+        if (input instanceof PointerCastNode) {
+            PointerCastNode pointerCast = (PointerCastNode) input;
+            if (pointerCast.input.stamp(NodeView.DEFAULT).equals(stamp)) {
+                return pointerCast.input;
+            }
+        }
+        return null;
     }
 }

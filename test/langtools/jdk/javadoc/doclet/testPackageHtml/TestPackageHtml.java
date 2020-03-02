@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,7 +59,7 @@ public class TestPackageHtml extends JavadocTester {
                 "pkg2", "pkg3", "pkg4");
         checkExit(Exit.OK);
         checkOutput("index-all.html", true,
-              "<dl>\n"
+              "<dl class=\"index\">\n"
                       + "<dt><a href=\"pkg2/package-summary.html\">pkg2</a> - package pkg2</dt>\n"
                       + "<dt><a href=\"pkg3/package-summary.html\">pkg3</a> - package pkg3</dt>\n"
                       + "<dd>\n"

@@ -64,7 +64,7 @@ public class AnnotationTypeFieldWriterImpl extends AbstractMemberWriter
 
     @Override
     public Content getMemberSummaryHeader(TypeElement typeElement,
-            Content memberSummaryTree) {
+                                          Content memberSummaryTree) {
         memberSummaryTree.add(
                 MarkerComments.START_OF_ANNOTATION_TYPE_FIELD_SUMMARY);
         Content memberTree = new ContentBuilder();

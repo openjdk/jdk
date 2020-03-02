@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,9 +87,11 @@ public class HotSpotSuitesProvider extends SuitesProviderBase {
         if (ImmutableCode.getValue(options)) {
             // lowering introduces class constants, therefore it must be after lowering
             ret.getHighTier().appendPhase(new LoadJavaMirrorWithKlassPhase(config));
+
             if (VerifyPhases.getValue(options)) {
                 ret.getHighTier().appendPhase(new AheadOfTimeVerificationPhase());
             }
+
             if (GeneratePIC.getValue(options)) {
                 ListIterator<BasePhase<? super HighTierContext>> highTierLowering = ret.getHighTier().findPhase(LoweringPhase.class);
                 highTierLowering.previous();

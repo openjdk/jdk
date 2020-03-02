@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,7 +62,7 @@ final class ForeignGotCallSiteRelocationSymbol extends CallSiteRelocationSymbol 
     }
 
     private static int addPltJump(DataBuilder dataBuilder) {
-        ELFMacroAssembler masm = ELFMacroAssembler.getELFMacroAssembler(dataBuilder.getBackend().getTarget());
+        ELFMacroAssembler masm = ELFMacroAssembler.getELFMacroAssembler(dataBuilder.getBackend().getTarget(), dataBuilder.getBackend().getRuntime().getOptions());
         byte[] code = masm.getPLTJumpCode(); // It includes alignment nops.
         int size = masm.currentEndOfInstruction();
         dataBuilder.getBinaryContainer().appendCodeBytes(code, 0, code.length);

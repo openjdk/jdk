@@ -177,6 +177,31 @@ void ShenandoahPacer::setup_for_idle() {
                      tax);
 }
 
+/*
+ * There is no useful notion of progress for these operations. To avoid stalling
+ * the allocators unnecessarily, allow them to run unimpeded.
+ */
+
+void ShenandoahPacer::setup_for_preclean() {
+  assert(ShenandoahPacing, "Only be here when pacing is enabled");
+
+  size_t initial = _heap->max_capacity();
+  restart_with(initial, 1.0);
+
+  log_info(gc, ergo)("Pacer for Precleaning. Non-Taxable: " SIZE_FORMAT "%s",
+                     byte_size_in_proper_unit(initial), proper_unit_for_byte_size(initial));
+}
+
+void ShenandoahPacer::setup_for_reset() {
+  assert(ShenandoahPacing, "Only be here when pacing is enabled");
+
+  size_t initial = _heap->max_capacity();
+  restart_with(initial, 1.0);
+
+  log_info(gc, ergo)("Pacer for Reset. Non-Taxable: " SIZE_FORMAT "%s",
+                     byte_size_in_proper_unit(initial), proper_unit_for_byte_size(initial));
+}
+
 size_t ShenandoahPacer::update_and_get_progress_history() {
   if (_progress == -1) {
     // First initialization, report some prior

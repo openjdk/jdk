@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2019, Arm Limited. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Arm Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,7 +67,7 @@ public class AArch64ElideL2ITest extends AArch64MatchRuleTest {
     @Test
     public void testAddWithTwoNarrow() {
         test("addWithTwoNarrow", 0x80000000L, 6L);
-        checkLIR("addWithTwoNarrow", predicate, 1);
+        checkLIR("addWithTwoNarrow", predicate, 0);
     }
 
     public int subSingleL2I(int m, long n) {

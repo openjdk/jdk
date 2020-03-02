@@ -32,6 +32,7 @@
 #include "runtime/safepointVerifiers.hpp"
 #include "utilities/align.hpp"
 #include "utilities/copy.hpp"
+#include "utilities/powerOfTwo.hpp"
 #include "utilities/xmlstream.hpp"
 
 // The structure of a CodeSection:

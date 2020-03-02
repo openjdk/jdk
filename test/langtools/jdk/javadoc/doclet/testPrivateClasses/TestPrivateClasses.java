@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,7 +73,7 @@ public class TestPrivateClasses extends JavadocTester {
                 + "<span class=\"returnType\">void</span>&nbsp;<span class=\"memberName\">"
                 + "methodInheritedFromParent</span>&#8203;(<span class=\"arguments\">int&nbsp;p1)</span>\n"
                 + "                               throws <span class=\"exceptions\">java.lang.Exception</span></div>",
-                "<dl>\n"
+                "<dl class=\"notes\">\n"
                 + "<dt>All Implemented Interfaces:</dt>\n"
                 + "<dd><code><a href=\"PublicInterface.html\" title=\"interface in pkg\">"
                 + "PublicInterface</a></code></dd>\n"
@@ -111,7 +111,7 @@ public class TestPrivateClasses extends JavadocTester {
                 "<a href=\"#methodInterface(int)\">"
                 + "methodInterface</a>",
                 //Make sure implemented interfaces from private superclass are inherited
-                "<dl>\n"
+                "<dl class=\"notes\">\n"
                 + "<dt>All Known Implementing Classes:</dt>\n"
                 + "<dd><code><a href=\"PublicChild.html\" title=\"class in pkg\">"
                 + "PublicChild</a></code></dd>\n"
@@ -159,13 +159,13 @@ public class TestPrivateClasses extends JavadocTester {
                 "<a href=\"PrivateParent.html#methodInheritedFromParent(int)\">"
                 + "methodInheritedFromParent</a>",
                 // Should document that a method overrides method from private class.
-                "<dt><span class=\"overrideSpecifyLabel\">Overrides:</span></dt>\n"
-                + "<dd><code><a href=\"PrivateParent.html#methodOverridenFromParent(char%5B%5D,int,T,V,java.util.List)\">"
-                + "methodOverridenFromParent</a></code>&nbsp;in class&nbsp;<code>"
+                "<dt>Overrides:</dt>\n"
+                + "<dd><code><a href=\"PrivateParent.html#methodOverriddenFromParent(char%5B%5D,int,T,V,java.util.List)\">"
+                + "methodOverriddenFromParent</a></code>&nbsp;in class&nbsp;<code>"
                 + "<a href=\"PrivateParent.html\" title=\"class in pkg\">"
                 + "PrivateParent</a></code></dd>",
                 // Should document that a method is specified by private interface.
-                "<dt><span class=\"overrideSpecifyLabel\">Specified by:</span></dt>\n"
+                "<dt>Specified by:</dt>\n"
                 + "<dd><code><a href=\"PrivateInterface.html#methodInterface(int)\">"
                 + "methodInterface</a></code>&nbsp;in interface&nbsp;<code>"
                 + "<a href=\"PrivateInterface.html\" title=\"interface in pkg\">"
@@ -174,7 +174,7 @@ public class TestPrivateClasses extends JavadocTester {
                 "Description copied from",
                 // Extend documented private classes or interfaces
                 "extends",
-                "<dl>\n"
+                "<dl class=\"notes\">\n"
                 + "<dt>All Implemented Interfaces:</dt>\n"
                 + "<dd><code><a href=\"PrivateInterface.html\" title=\"interface in pkg\">"
                 + "PrivateInterface</a></code>, "
@@ -198,7 +198,7 @@ public class TestPrivateClasses extends JavadocTester {
                 "extends",
                 "All Superinterfaces",
                 //Make sure implemented interfaces from private superclass are inherited
-                "<dl>\n"
+                "<dl class=\"notes\">\n"
                 + "<dt>All Known Implementing Classes:</dt>\n"
                 + "<dd><code><a href=\"PrivateParent.html\" title=\"class in pkg\">"
                 + "PrivateParent</a></code>, "
@@ -216,7 +216,7 @@ public class TestPrivateClasses extends JavadocTester {
                 //with generic parameters has been implemented.
                 "<span class=\"descfrmTypeLabel\">Description copied from interface:&nbsp;<code>"
                 + "<a href=\"I.html#hello(T)\">I</a></code></span>",
-                "<dt><span class=\"overrideSpecifyLabel\">Specified by:</span></dt>\n"
+                "<dt>Specified by:</dt>\n"
                 + "<dd><code><a href=\"I.html#hello(T)\">hello</a></code>"
                 + "&nbsp;in interface&nbsp;<code>"
                 + "<a href=\"I.html\" title=\"interface in pkg2\">I</a>"

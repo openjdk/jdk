@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,22 +50,22 @@ InterpreterRuntime::SignatureHandlerGenerator::SignatureHandlerGenerator(
 
 #ifdef SHARING_FAST_NATIVE_FINGERPRINTS
 // mapping from SignatureIterator param to (common) type of parsing
-static const u1 shared_type[] = {
-  (u1) SignatureIterator::int_parm, // bool
-  (u1) SignatureIterator::int_parm, // byte
-  (u1) SignatureIterator::int_parm, // char
-  (u1) SignatureIterator::int_parm, // short
-  (u1) SignatureIterator::int_parm, // int
-  (u1) SignatureIterator::long_parm, // long
+static const BasicType shared_type[] = {
+  T_INT,    // bool
+  T_INT,    // char
 #ifndef __ABI_HARD__
-  (u1) SignatureIterator::int_parm, // float, passed as int
-  (u1) SignatureIterator::long_parm, // double, passed as long
+  T_INT,    // float, passed as int
+  T_LONG,   // double, passed as long
 #else
-  (u1) SignatureIterator::float_parm, // float
-  (u1) SignatureIterator::double_parm, // double
+  T_FLOAT,  // float
+  T_DOUBLE, // double
 #endif
-  (u1) SignatureIterator::obj_parm, // obj
-  (u1) SignatureIterator::done_parm // done
+  T_INT,    // byte
+  T_INT,    // short
+  T_INT,    // int
+  T_LONG,   // long
+  T_OBJECT, // obj
+  T_OBJECT, // array
 };
 
 uint64_t InterpreterRuntime::normalize_fast_native_fingerprint(uint64_t fingerprint) {
@@ -73,37 +73,33 @@ uint64_t InterpreterRuntime::normalize_fast_native_fingerprint(uint64_t fingerpr
     // special signature used when the argument list cannot be encoded in a 64 bits value
     return fingerprint;
   }
-  int shift = SignatureIterator::static_feature_size;
-  uint64_t result = fingerprint & ((1 << shift) - 1);
-  fingerprint >>= shift;
+  int shift = SignatureIterator::fp_static_feature_size;
+  SignatureIterator::fingerprint_t result = fingerprint & ((1 << shift) - 1);
 
-  BasicType ret_type = (BasicType) (fingerprint & SignatureIterator::result_feature_mask);
+  BasicType ret_type = SignatureIterator::fp_return_type(fingerprint);
   // For ARM, the fast signature handler only needs to know whether
   // the return value must be unboxed. T_OBJECT and T_ARRAY need not
   // be distinguished from each other and all other return values
   // behave like integers with respect to the handler except T_BOOLEAN
   // which must be mapped to the range 0..1.
-  bool unbox = (ret_type == T_OBJECT) || (ret_type == T_ARRAY);
-  if (unbox) {
+  if (is_reference_type(ret_type)) {
     ret_type = T_OBJECT;
   } else if (ret_type != T_BOOLEAN) {
     ret_type = T_INT;
   }
-  result |= ((uint64_t) ret_type) << shift;
-  shift += SignatureIterator::result_feature_size;
-  fingerprint >>= SignatureIterator::result_feature_size;
+  result |= ((SignatureIterator::fingerprint_t) ret_type) << shift;
+  shift += SignatureIterator::fp_result_feature_size;
 
+  SignatureIterator::fingerprint_t unaccumulator = SignatureIterator::fp_start_parameters(fingerprint);
   while (true) {
-    uint32_t type = (uint32_t) (fingerprint & SignatureIterator::parameter_feature_mask);
-    if (type == SignatureIterator::done_parm) {
-      result |= ((uint64_t) SignatureIterator::done_parm) << shift;
+    BasicType type = SignatureIterator::fp_next_parameter(unaccumulator);
+    if (type == (BasicType)SignatureIterator::fp_parameters_done) {
       return result;
     }
-    assert((type >= SignatureIterator::bool_parm) && (type <= SignatureIterator::obj_parm), "check fingerprint encoding");
-    int shared = shared_type[type - SignatureIterator::bool_parm];
-    result |= ((uint64_t) shared) << shift;
-    shift += SignatureIterator::parameter_feature_size;
-    fingerprint >>= SignatureIterator::parameter_feature_size;
+    assert(SignatureIterator::fp_is_valid_type(type), "garbled fingerprint");
+    BasicType shared = shared_type[type - T_BOOLEAN];
+    result |= ((SignatureIterator::fingerprint_t) shared) << shift;
+    shift += SignatureIterator::fp_parameter_feature_size;
   }
 }
 #endif // SHARING_FAST_NATIVE_FINGERPRINTS
@@ -222,7 +218,7 @@ void InterpreterRuntime::SignatureHandlerGenerator::pass_double() {
 void InterpreterRuntime::SignatureHandlerGenerator::generate(uint64_t fingerprint) {
   iterate(fingerprint);
 
-  BasicType result_type = SignatureIterator::return_type(fingerprint);
+  BasicType result_type = SignatureIterator::fp_return_type(fingerprint);
 
   address result_handler = Interpreter::result_handler(result_type);
 

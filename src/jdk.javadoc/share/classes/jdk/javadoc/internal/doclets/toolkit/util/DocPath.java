@@ -210,16 +210,7 @@ public class DocPath {
      * @return the link
      */
     public DocLink fragment(String fragment) {
-        return new DocLink(path, null, fragment);
-    }
-
-    /**
-     * Creates a DocLink formed from this path and a query string.
-     * @param query the query string
-     * @return the link
-     */
-    public DocLink query(String query) {
-        return new DocLink(path, query, null);
+        return new DocLink(path, fragment);
     }
 
     /**

@@ -39,7 +39,7 @@ import java.util.Set;
  * Although the class and all methods are public, use of this class is
  * limited because only trusted code can obtain instances of it.
  *
- * <em>Note:</em> It is the resposibility of the caller to make sure
+ * <em>Note:</em> It is the responsibility of the caller to make sure
  * arguments are checked before methods of this class are
  * called. While some rudimentary checks are performed on the input,
  * the checks are best effort and when performance is an overriding
@@ -439,7 +439,7 @@ public final class Unsafe {
      * aligned for all value types.  Dispose of this memory by calling {@link
      * #freeMemory}, or resize it with {@link #reallocateMemory}.
      *
-     * <em>Note:</em> It is the resposibility of the caller to make
+     * <em>Note:</em> It is the responsibility of the caller to make
      * sure arguments are checked before the methods are called. While
      * some rudimentary checks are performed on the input, the checks
      * are best effort and when performance is an overriding priority,
@@ -471,7 +471,7 @@ public final class Unsafe {
      * #reallocateMemory}.  The address passed to this method may be null, in
      * which case an allocation will be performed.
      *
-     * <em>Note:</em> It is the resposibility of the caller to make
+     * <em>Note:</em> It is the responsibility of the caller to make
      * sure arguments are checked before the methods are called. While
      * some rudimentary checks are performed on the input, the checks
      * are best effort and when performance is an overriding priority,
@@ -507,7 +507,7 @@ public final class Unsafe {
      * If the effective address and length are (resp.) even modulo 4 or 2,
      * the stores take place in units of 'int' or 'short'.
      *
-     * <em>Note:</em> It is the resposibility of the caller to make
+     * <em>Note:</em> It is the responsibility of the caller to make
      * sure arguments are checked before the methods are called. While
      * some rudimentary checks are performed on the input, the checks
      * are best effort and when performance is an overriding priority,
@@ -552,7 +552,7 @@ public final class Unsafe {
      * If the effective addresses and length are (resp.) even modulo 4 or 2,
      * the transfer takes place in units of 'int' or 'short'.
      *
-     * <em>Note:</em> It is the resposibility of the caller to make
+     * <em>Note:</em> It is the responsibility of the caller to make
      * sure arguments are checked before the methods are called. While
      * some rudimentary checks are performed on the input, the checks
      * are best effort and when performance is an overriding priority,
@@ -589,7 +589,7 @@ public final class Unsafe {
      * #allocateMemory} or {@link #reallocateMemory}.  The address passed to
      * this method may be null, in which case no action is taken.
      *
-     * <em>Note:</em> It is the resposibility of the caller to make
+     * <em>Note:</em> It is the responsibility of the caller to make
      * sure arguments are checked before the methods are called. While
      * some rudimentary checks are performed on the input, the checks
      * are best effort and when performance is an overriding priority,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
@@ -386,7 +385,6 @@ public class ShortResponseBody {
                 if (ee.getCause() instanceof IOException) {
                     IOException ioe = (IOException) ee.getCause();
                     out.println("Caught expected exception:" + ioe);
-                    String msg = ioe.getMessage();
 
                     List<String> expectedMessages = new ArrayList<>();
                     expectedMessages.add(expectedMsg);
@@ -714,7 +712,6 @@ public class ShortResponseBody {
         SSLContext.setDefault(sslContext);
 
         sslParameters = new SSLParameters();
-        sslParameters.setProtocols(new String[] {"TLSv1.2"});
 
         closeImmediatelyServer = new PlainCloseImmediatelyServer();
         httpURIClsImed = "http://" + serverAuthority(closeImmediatelyServer)

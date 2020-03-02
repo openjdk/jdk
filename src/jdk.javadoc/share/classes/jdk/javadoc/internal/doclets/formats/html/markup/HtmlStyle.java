@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,6 +79,7 @@ public enum HtmlStyle {
     hierarchy,
     horizontal,
     implementationLabel,
+    index,
     inheritance,
     inheritedList,
     interfaceName,
@@ -103,7 +104,7 @@ public enum HtmlStyle {
     navListSearch,
     navPadding,
     nestedClassSummary,
-    overrideSpecifyLabel,
+    notes,
     overviewSummary,
     packages,
     packageDescription,
@@ -111,22 +112,18 @@ public enum HtmlStyle {
     packageLabelInType,
     packagesSummary,
     packageUses,
-    paramLabel,
     propertyDetails,
     propertySummary,
     providesSummary,
     requiresSummary,
-    returnLabel,
     returnType,
     rowColor,
     searchTagLink,
     searchTagResult,
-    seeLabel,
     serializedFormContainer,
     serializedPackageContainer,
     serializedClassDetails,
     servicesSummary,
-    simpleTagLabel,
     skipNav,
     sourceContainer,
     sourceLineNo,

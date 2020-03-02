@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,9 @@ import org.graalvm.compiler.nodes.calc.FloatingNode;
 import org.graalvm.compiler.nodes.calc.UnpackEndianHalfNode;
 import org.graalvm.compiler.nodes.java.MonitorIdNode;
 import org.graalvm.compiler.nodes.spi.LoweringProvider;
+import org.graalvm.compiler.nodes.spi.PlatformConfigurationProvider;
 import org.graalvm.compiler.nodes.spi.VirtualizerTool;
+import org.graalvm.compiler.nodes.virtual.VirtualArrayNode;
 import org.graalvm.compiler.nodes.virtual.VirtualInstanceNode;
 import org.graalvm.compiler.nodes.virtual.VirtualObjectNode;
 import org.graalvm.compiler.options.OptionValues;
@@ -60,6 +62,7 @@ class VirtualizerToolImpl implements VirtualizerTool, CanonicalizerTool {
     private final MetaAccessProvider metaAccess;
     private final ConstantReflectionProvider constantReflection;
     private final ConstantFieldProvider constantFieldProvider;
+    private final PlatformConfigurationProvider platformConfigurationProvider;
     private final PartialEscapeClosure<?> closure;
     private final Assumptions assumptions;
     private final OptionValues options;
@@ -67,11 +70,13 @@ class VirtualizerToolImpl implements VirtualizerTool, CanonicalizerTool {
     private final LoweringProvider loweringProvider;
     private ConstantNode illegalConstant;
 
-    VirtualizerToolImpl(MetaAccessProvider metaAccess, ConstantReflectionProvider constantReflection, ConstantFieldProvider constantFieldProvider, PartialEscapeClosure<?> closure,
-                    Assumptions assumptions, OptionValues options, DebugContext debug, LoweringProvider loweringProvider) {
+    VirtualizerToolImpl(MetaAccessProvider metaAccess, ConstantReflectionProvider constantReflection, ConstantFieldProvider constantFieldProvider,
+                    PlatformConfigurationProvider platformConfigurationProvider, PartialEscapeClosure<?> closure, Assumptions assumptions, OptionValues options, DebugContext debug,
+                    LoweringProvider loweringProvider) {
         this.metaAccess = metaAccess;
         this.constantReflection = constantReflection;
         this.constantFieldProvider = constantFieldProvider;
+        this.platformConfigurationProvider = platformConfigurationProvider;
         this.closure = closure;
         this.assumptions = assumptions;
         this.options = options;
@@ -131,6 +136,7 @@ class VirtualizerToolImpl implements VirtualizerTool, CanonicalizerTool {
         ValueNode newValue = closure.getAliasAndResolve(state, value);
         getDebug().log(DebugContext.DETAILED_LEVEL, "Setting entry %d in virtual object %s %s results in %s", index, virtual.getObjectId(), virtual, state.getObjectState(virtual.getObjectId()));
         ValueNode oldValue = getEntry(virtual, index);
+        boolean oldIsIllegal = oldValue.isIllegalConstant();
         boolean canVirtualize = entryKind == accessKind || (entryKind == accessKind.getStackKind() && virtual instanceof VirtualInstanceNode);
         if (!canVirtualize) {
             assert entryKind != JavaKind.Long || newValue != null;
@@ -154,6 +160,19 @@ class VirtualizerToolImpl implements VirtualizerTool, CanonicalizerTool {
                     assert nextIndex == index + 1 : "expected to be sequential";
                     getDebug().log(DebugContext.DETAILED_LEVEL, "virtualizing %s for double word stored in two ints", current);
                 }
+            } else if (canVirtualizeLargeByteArrayUnsafeWrite(virtual, accessKind, offset)) {
+                /*
+                 * Special case: Allow storing any primitive inside a byte array, as long as there
+                 * is enough room left, and all accesses and subsequent writes are on the exact
+                 * position of the first write, and of the same kind.
+                 *
+                 * Any other access results in materialization.
+                 */
+                int accessLastIndex = virtual.entryIndexForOffset(getMetaAccess(), offset + accessKind.getByteCount() - 1, JavaKind.Byte);
+                if (accessLastIndex != -1 && !oldIsIllegal && canStoreOverOldValue((VirtualArrayNode) virtual, oldValue, accessKind, index)) {
+                    canVirtualize = true;
+                    getDebug().log(DebugContext.DETAILED_LEVEL, "virtualizing %s for %s word stored in byte array", current, accessKind);
+                }
             }
         }
 
@@ -172,14 +191,20 @@ class VirtualizerToolImpl implements VirtualizerTool, CanonicalizerTool {
                     addNode(secondHalf);
                     state.setEntry(virtual.getObjectId(), index + 1, secondHalf);
                 }
+            } else if (canVirtualizeLargeByteArrayUnsafeWrite(virtual, accessKind, offset)) {
+                for (int i = index + 1; i < index + accessKind.getByteCount(); i++) {
+                    state.setEntry(virtual.getObjectId(), i, getIllegalConstant());
+                }
             }
-            if (oldValue.isConstant() && oldValue.asConstant().equals(JavaConstant.forIllegal())) {
-                // Storing into second half of double, so replace previous value
-                ValueNode previous = getEntry(virtual, index - 1);
-                getDebug().log(DebugContext.DETAILED_LEVEL, "virtualizing %s producing first half of double word value %s", current, previous);
-                ValueNode firstHalf = UnpackEndianHalfNode.create(previous, true, NodeView.DEFAULT);
-                addNode(firstHalf);
-                state.setEntry(virtual.getObjectId(), index - 1, firstHalf);
+            if (oldIsIllegal) {
+                if (entryKind == JavaKind.Int) {
+                    // Storing into second half of double, so replace previous value
+                    ValueNode previous = getEntry(virtual, index - 1);
+                    getDebug().log(DebugContext.DETAILED_LEVEL, "virtualizing %s producing first half of double word value %s", current, previous);
+                    ValueNode firstHalf = UnpackEndianHalfNode.create(previous, true, NodeView.DEFAULT);
+                    addNode(firstHalf);
+                    state.setEntry(virtual.getObjectId(), index - 1, firstHalf);
+                }
             }
             return true;
         }
@@ -188,10 +213,52 @@ class VirtualizerToolImpl implements VirtualizerTool, CanonicalizerTool {
         return false;
     }
 
-    private ValueNode getIllegalConstant() {
+    private boolean canStoreOverOldValue(VirtualArrayNode virtual, ValueNode oldValue, JavaKind accessKind, int index) {
+        if (!oldValue.getStackKind().isPrimitive()) {
+            return false;
+        }
+        if (isEntryDefaults(virtual, accessKind.getByteCount(), index)) {
+            return true;
+        }
+        return accessKind.getByteCount() == virtual.byteArrayEntryByteCount(index, this);
+    }
+
+    private boolean canVirtualizeLargeByteArrayUnsafeWrite(VirtualObjectNode virtual, JavaKind accessKind, long offset) {
+        return canVirtualizeLargeByteArrayUnsafeAccess() && virtual.isVirtualByteArrayAccess(accessKind) &&
+                        /*
+                         * Require aligned writes. Some architectures do not support recovering
+                         * writes to unaligned offsets. Since most use cases for this optimization
+                         * will write to reasonable offsets, disabling the optimization for
+                         * unreasonable ones is not that big an issue.
+                         */
+                        ((offset % accessKind.getByteCount()) == 0);
+    }
+
+    int getVirtualByteCount(ValueNode[] entries, int startIndex) {
+        int pos = startIndex + 1;
+        while (pos < entries.length && entries[pos].getStackKind() == JavaKind.Illegal) {
+            pos++;
+        }
+        return pos - startIndex;
+    }
+
+    boolean isEntryDefaults(ObjectState object, int byteCount, int index) {
+        for (int i = index; i < index + byteCount; i++) {
+            if (!object.getEntry(i).isDefaultConstant()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    boolean isEntryDefaults(VirtualObjectNode virtual, int byteCount, int index) {
+        return isEntryDefaults(state.getObjectState(virtual), byteCount, index);
+    }
+
+    public ValueNode getIllegalConstant() {
         if (illegalConstant == null) {
-            illegalConstant = ConstantNode.forConstant(JavaConstant.forIllegal(), getMetaAccess());
-            addNode(illegalConstant);
+            /* Try not to spawn a second illegal constant in the graph. */
+            illegalConstant = ConstantNode.forConstant(JavaConstant.forIllegal(), getMetaAccess(), closure.cfg.graph);
         }
         return illegalConstant;
     }
@@ -302,6 +369,14 @@ class VirtualizerToolImpl implements VirtualizerTool, CanonicalizerTool {
     @Override
     public ConstantReflectionProvider getConstantReflection() {
         return constantReflection;
+    }
+
+    @Override
+    public boolean canVirtualizeLargeByteArrayUnsafeAccess() {
+        if (platformConfigurationProvider != null) {
+            return platformConfigurationProvider.canVirtualizeLargeByteArrayAccess();
+        }
+        return false;
     }
 
     @Override

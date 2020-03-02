@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3153,13 +3153,6 @@ void ClassVerifier::verify_return_value(
 // The verifier creates symbols which are substrings of Symbols.
 // These are stored in the verifier until the end of verification so that
 // they can be reference counted.
-Symbol* ClassVerifier::create_temporary_symbol(const Symbol *s, int begin,
-                                               int end) {
-  const char* name = (const char*)s->base() + begin;
-  int length = end - begin;
-  return create_temporary_symbol(name, length);
-}
-
 Symbol* ClassVerifier::create_temporary_symbol(const char *name, int length) {
   // Quick deduplication check
   if (_previous_symbol != NULL && _previous_symbol->equals(name, length)) {

@@ -478,6 +478,9 @@ class Argument {
 
 
 class RegistersForDebugging : public StackObj {
+ private:
+  static const RegistersForDebugging& _dummy; // not ODR-used so not defined
+
  public:
   intptr_t i[8], l[8], o[8], g[8];
   float    f[32];
@@ -485,12 +488,12 @@ class RegistersForDebugging : public StackObj {
 
   void print(outputStream* s);
 
-  static int i_offset(int j) { return offset_of(RegistersForDebugging, i[j]); }
-  static int l_offset(int j) { return offset_of(RegistersForDebugging, l[j]); }
-  static int o_offset(int j) { return offset_of(RegistersForDebugging, o[j]); }
-  static int g_offset(int j) { return offset_of(RegistersForDebugging, g[j]); }
-  static int f_offset(int j) { return offset_of(RegistersForDebugging, f[j]); }
-  static int d_offset(int j) { return offset_of(RegistersForDebugging, d[j / 2]); }
+  static int i_offset(int j) { return offset_of(RegistersForDebugging, i) + j * sizeof(_dummy.i[0]); }
+  static int l_offset(int j) { return offset_of(RegistersForDebugging, l) + j * sizeof(_dummy.l[0]); }
+  static int o_offset(int j) { return offset_of(RegistersForDebugging, o) + j * sizeof(_dummy.o[0]); }
+  static int g_offset(int j) { return offset_of(RegistersForDebugging, g) + j * sizeof(_dummy.g[0]); }
+  static int f_offset(int j) { return offset_of(RegistersForDebugging, f) + j * sizeof(_dummy.f[0]); }
+  static int d_offset(int j) { return offset_of(RegistersForDebugging, d) + (j / 2) * sizeof(_dummy.d[0]); }
 
   // gen asm code to save regs
   static void save_registers(MacroAssembler* a);

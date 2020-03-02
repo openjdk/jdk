@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -456,7 +456,6 @@ class ClassVerifier : public StackObj {
   // their reference counts need to be decremented when the verifier object
   // goes out of scope.  Since these symbols escape the scope in which they're
   // created, we can't use a TempNewSymbol.
-  Symbol* create_temporary_symbol(const Symbol* s, int begin, int end);
   Symbol* create_temporary_symbol(const char *s, int length);
   Symbol* create_temporary_symbol(Symbol* s) {
     if (s == _previous_symbol) {

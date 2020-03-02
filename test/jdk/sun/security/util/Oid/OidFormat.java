@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,52 +85,6 @@ public class OidFormat {
 
         for (String s: goodOids) {
             testGood(s);
-        }
-
-        int[][] goodInts = {
-            {0,0}, {0,1}, {1,0}, {1,2},
-            {0,39}, {1,39}, {2,47}, {2,40,3,6}, {2,100,3}, {2,123456,3},
-            {1,2,3}, {1,2,3445},
-            {1,3,6,1,4,1,42,2,17},
-        };
-
-        for (int[] is: goodInts) {
-            testGood(is);
-        }
-
-        int[][] badInts = new int[][] {
-            {0}, {1}, {2},
-            {3,1,1}, {3}, {4},
-            {1,40}, {1,111,1},
-            {-1,2}, {0,-2}, {1,-2}, {2,-2},
-            {1,2,-3,4}, {1,2,3,-4},
-        };
-
-        for (int[] is: badInts) {
-            testBad(is);
-        }
-
-    }
-
-    static void testBad(int[] ints) throws Exception {
-        System.err.println("Trying " + Arrays.toString(ints));
-        try {
-            new ObjectIdentifier(ints);
-            throw new Exception("should be invalid ObjectIdentifier");
-        } catch (IOException ioe) {
-            System.err.println(ioe);
-        }
-    }
-
-    static void testGood(int[] ints) throws Exception {
-        System.err.println("Trying " + Arrays.toString(ints));
-        ObjectIdentifier oid = new ObjectIdentifier(ints);
-        DerOutputStream os = new DerOutputStream();
-        os.putOID(oid);
-        DerInputStream is = new DerInputStream(os.toByteArray());
-        ObjectIdentifier oid2 = is.getOID();
-        if (!oid.equals(oid2)) {
-            throw new Exception("Test DER I/O fails: " + oid + " and " + oid2);
         }
     }
 

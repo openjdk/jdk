@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,11 +24,13 @@
 /*
  * @test
  * @bug 8231950
+ * @summary keytool -ext camel-case shorthand not working
  * @modules java.base/sun.security.tools.keytool
+ *          java.base/sun.security.tools.keytool:open
  *          java.base/sun.security.util
  *          java.base/sun.security.x509
  * @compile -XDignore.symbol.file ExtOptionCamelCase.java
- * @summary keytool -ext camel-case shorthand not working
+ * @run main ExtOptionCamelCase
  */
 
 import sun.security.tools.keytool.Main;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2018 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -266,7 +266,7 @@ JVM_handle_aix_signal(int sig, siginfo_t* info, void* ucVoid, int abort_if_unrec
   if (thread != NULL) {
 
     // Handle ALL stack overflow variations here
-    if (sig == SIGSEGV && thread->on_local_stack(addr)) {
+    if (sig == SIGSEGV && thread->is_in_full_stack(addr)) {
       // stack overflow
       //
       // If we are in a yellow zone and we are inside java, we disable the yellow zone and

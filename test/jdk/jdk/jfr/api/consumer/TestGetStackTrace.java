@@ -31,7 +31,6 @@ import static jdk.test.lib.Asserts.assertNull;
 import static jdk.test.lib.Asserts.assertTrue;
 
 import java.util.List;
-import java.util.function.Consumer;
 
 import jdk.jfr.Recording;
 import jdk.jfr.consumer.RecordedEvent;
@@ -53,27 +52,26 @@ import jdk.test.lib.jfr.SimpleEvent;
 public class TestGetStackTrace {
 
     public static void main(String[] args) throws Throwable {
-        testStackTrace(r -> r.enable(SimpleEvent.class), TestGetStackTrace::assertNoStackTrace);
-        testStackTrace(r -> r.enable(SimpleEvent.class).withoutStackTrace(), TestGetStackTrace::assertStackTrace);
+        testWithoutStackTrace(recordEvent("stackTrace", "false"));
+        testWithStackTrace(recordEvent("stackTrace", "true"));
     }
 
-    private static void testStackTrace(Consumer<Recording> recordingConfigurer, Consumer<RecordedEvent> asserter) throws Throwable {
-        Recording r = new Recording();
-        recordingConfigurer.accept(r);
-        r.start();
-        SimpleEvent event = new SimpleEvent();
-        event.commit();
-        r.stop();
-        List<RecordedEvent> events = Events.fromRecording(r);
-        r.close();
-        Events.hasEvents(events);
+    private static RecordedEvent recordEvent(String key, String value) throws Throwable {
+        try (Recording r = new Recording()) {
+            r.enable(SimpleEvent.class).with(key, value);
+            r.start();
+            SimpleEvent event = new SimpleEvent();
+            event.commit();
+            r.stop();
+            return Events.fromRecording(r).get(0);
+        }
     }
 
-    private static void assertNoStackTrace(RecordedEvent re) {
+    private static void testWithoutStackTrace(RecordedEvent re) {
         assertNull(re.getStackTrace());
     }
 
-    private static void assertStackTrace(RecordedEvent re) {
+    private static void testWithStackTrace(RecordedEvent re) {
         assertNotNull(re.getStackTrace());
         RecordedStackTrace strace = re.getStackTrace();
         assertEquals(strace.isTruncated(), false);

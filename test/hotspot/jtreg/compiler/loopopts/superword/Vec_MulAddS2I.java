@@ -24,8 +24,7 @@
 /**
  * @test
  * @bug 8214751
- * @summary Add C2 x86 Superword support for VNNI VPDPWSSD Instruction
- * @requires os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64"
+ * @summary Test operations in C2 MulAddS2I and MulAddVS2VI nodes.
  *
  * @run main/othervm -XX:LoopUnrollLimit=250
  *      -XX:CompileThresholdScaling=0.1

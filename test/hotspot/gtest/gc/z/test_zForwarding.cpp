@@ -40,10 +40,6 @@ class ZForwardingTest : public Test {
 public:
   // Helper functions
 
-  static bool is_power_of_2(size_t value) {
-    return ::is_power_of_2((intptr_t)value);
-  }
-
   class SequenceToFromIndex : AllStatic {
   public:
     static uintptr_t even(size_t sequence_number) {
@@ -60,7 +56,7 @@ public:
   // Test functions
 
   static void setup(ZForwarding* forwarding) {
-    EXPECT_PRED1(is_power_of_2, forwarding->_entries.length()) << CAPTURE(forwarding->_entries.length());
+    EXPECT_PRED1(is_power_of_2<size_t>, forwarding->_entries.length()) << CAPTURE(forwarding->_entries.length());
   }
 
   static void find_empty(ZForwarding* forwarding) {

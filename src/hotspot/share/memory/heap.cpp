@@ -28,6 +28,7 @@
 #include "runtime/os.hpp"
 #include "services/memTracker.hpp"
 #include "utilities/align.hpp"
+#include "utilities/powerOfTwo.hpp"
 
 size_t CodeHeap::header_size() {
   return sizeof(HeapBlock);
@@ -610,6 +611,9 @@ void CodeHeap::add_to_freelist(HeapBlock* a) {
   FreeBlock* b = (FreeBlock*)a;
   size_t  bseg = segment_for(b);
   _freelist_length++;
+
+  _blob_count--;
+  assert(_blob_count >= 0, "sanity");
 
   assert(b != _freelist, "cannot be removed twice");
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,8 @@
  */
 
 /* @test
- * @bug 6371437 6371422 6371416 6371619 5058184 6371431 6639450 6569191 6577466 8212794 8220281
+ * @bug 6371437 6371422 6371416 6371619 5058184 6371431 6639450 6569191 6577466
+ *      8212794 8220281 8235834
  * @summary Check if the problems reported in above bugs have been fixed
  * @modules jdk.charsets
  */
@@ -323,6 +324,64 @@ public class TestIBMBugs {
         }
     }
 
+    // Following test data is for 8235834
+    private static final byte[] byteIBM943c2b = new byte[] {
+        (byte)0x81, (byte)0x5C, (byte)0x81, (byte)0x60,
+        (byte)0x81, (byte)0x61, (byte)0x81, (byte)0x7C,
+        (byte)0x88, (byte)0xA0, (byte)0x89, (byte)0x8B,
+        (byte)0x89, (byte)0xA8, (byte)0x8A, (byte)0x9A,
+        (byte)0x8B, (byte)0xA0, (byte)0x8B, (byte)0xEB,
+        (byte)0x8C, (byte)0x71, (byte)0x8C, (byte)0x74,
+        (byte)0x8C, (byte)0xB2, (byte)0x8D, (byte)0x8D,
+        (byte)0x8D, (byte)0xF2, (byte)0x8E, (byte)0xC6,
+        (byte)0x8F, (byte)0x4A, (byte)0x8F, (byte)0xD3,
+        (byte)0x8F, (byte)0xDD, (byte)0x90, (byte)0xE4,
+        (byte)0x91, (byte)0x7E, (byte)0x91, (byte)0x89,
+        (byte)0x91, (byte)0xCB, (byte)0x92, (byte)0x5C,
+        (byte)0x92, (byte)0xCD, (byte)0x93, (byte)0x55,
+        (byte)0x93, (byte)0x5E, (byte)0x93, (byte)0x98,
+        (byte)0x93, (byte)0xC0, (byte)0x94, (byte)0x58,
+        (byte)0x94, (byte)0x8D, (byte)0x94, (byte)0xAC,
+        (byte)0x94, (byte)0xAE, (byte)0x96, (byte)0x6A,
+        (byte)0x96, (byte)0xCB, (byte)0x97, (byte)0x89,
+        (byte)0x98, (byte)0x58, (byte)0x9B, (byte)0xA0,
+        (byte)0x9D, (byte)0xB7, (byte)0x9E, (byte)0x94,
+        (byte)0xE3, (byte)0x79, (byte)0xE4, (byte)0x45,
+        (byte)0xE8, (byte)0xF6, (byte)0xFA, (byte)0x55,
+        (byte)0xFA, (byte)0x59,
+    };
+
+    private static final String strIBM943c2b1 =
+        "\u2015\uFF5E\u2225\uFF0D\u555E\u7130\u9DD7\u5699" +
+        "\u4FE0\u8EC0\u7E6B\u8346\u9E7C\u9EB4\u6805\u5C62" +
+        "\u7E61\u8523\u91AC\u87EC\u6414\u7626\u9A52\u7C1E" +
+        "\u6451\u5861\u985A\u79B1\u7006\u56CA\u525D\u6F51" +
+        "\u91B1\u9830\u9EB5\u840A\u881F\u5C5B\u6522\u688E" +
+        "\u7E48\u8141\u9839\uFFE4\uF86F";
+
+    private static final String strIBM943c2b2 =
+        "\u2014\u301C\u2016\u2212\u5516\u7114\u9D0E\u565B" +
+        "\u4FA0\u8EAF\u7E4B\u834A\u9E78\u9EB9\u67F5\u5C61" +
+        "\u7E4D\u848B\u91A4\u8749\u63BB\u75E9\u9A28\u7BAA" +
+        "\u63B4\u586B\u985B\u7977\u6D9C\u56A2\u5265\u6E8C" +
+        "\u9197\u982C\u9EBA\u83B1\u874B\u5C4F\u6505\u688D" +
+        "\u7E66\u80FC\u983D\u00A6\u2116";
+
+    private static void bug8235834 () throws Exception {
+        // 8235834 affects IBM-943 and IBM-943C encoder.
+        // The decoded results of the corresponding characters of IBM-943
+        // and IBM-943C is the same.
+        for (String csName : new String[] {"x-IBM943", "x-IBM943C"}) {
+            Charset cs = Charset.forName(csName);
+            if (!Arrays.equals(byteIBM943c2b, strIBM943c2b1.getBytes(cs))) {
+                throw new Exception(csName+" failed to encode");
+            }
+            if (!strIBM943c2b2.equals(new String(byteIBM943c2b, cs))) {
+                throw new Exception(csName+" failed to round-trip conversion");
+            }
+        }
+    }
+
     public static void main (String[] args) throws Exception {
         bug6577466();
         // need to be tested before any other IBM949C test case
@@ -337,5 +396,6 @@ public class TestIBMBugs {
         bug8212794();
         bug8213618();
         bug8220281();
+        bug8235834();
     }
 }

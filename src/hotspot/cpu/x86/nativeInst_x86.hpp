@@ -455,9 +455,10 @@ class NativeLoadGot: public NativeInstruction {
   static const bool has_rex = false;
   static const int rex_size = 0;
 #endif
-public:
+
   enum Intel_specific_constants {
     rex_prefix = 0x48,
+    rex_b_prefix = 0x49,
     instruction_code = 0x8b,
     modrm_rbx_code = 0x1d,
     modrm_rax_code = 0x05,
@@ -465,11 +466,16 @@ public:
     offset_offset = 2 + rex_size
   };
 
-  address instruction_address() const { return addr_at(0); }
-  address rip_offset_address() const { return addr_at(offset_offset); }
   int rip_offset() const { return int_at(offset_offset); }
   address return_address() const { return addr_at(instruction_length); }
   address got_address() const { return return_address() + rip_offset(); }
+
+#ifdef ASSERT
+  void report_and_fail() const;
+  address instruction_address() const { return addr_at(0); }
+#endif
+
+public:
   address next_instruction_address() const { return return_address(); }
   intptr_t data() const;
   void set_data(intptr_t data) {
@@ -477,9 +483,7 @@ public:
     *addr = data;
   }
 
-  void verify() const;
-private:
-  void report_and_fail() const;
+  DEBUG_ONLY( void verify() const );
 };
 
 inline NativeLoadGot* nativeLoadGot_at(address addr) {
@@ -607,27 +611,37 @@ inline NativeGeneralJump* nativeGeneralJump_at(address address) {
 }
 
 class NativeGotJump: public NativeInstruction {
-public:
   enum Intel_specific_constants {
+    rex_prefix = 0x41,
     instruction_code = 0xff,
-    instruction_offset = 0,
+    modrm_code = 0x25,
     instruction_size = 6,
     rip_offset = 2
   };
 
-  void verify() const;
-  address instruction_address() const { return addr_at(instruction_offset); }
-  address destination() const;
-  address return_address() const { return addr_at(instruction_size); }
-  int got_offset() const { return (jint) int_at(rip_offset); }
-  address got_address() const { return return_address() + got_offset(); }
-  address next_instruction_address() const { return addr_at(instruction_size); }
-  bool is_GotJump() const { return ubyte_at(0) == instruction_code; }
+  bool has_rex() const { return ubyte_at(0) == rex_prefix; }
+  int rex_size() const { return has_rex() ? 1 : 0; }
 
+  address return_address() const { return addr_at(instruction_size + rex_size()); }
+  int got_offset() const { return (jint) int_at(rip_offset + rex_size()); }
+
+#ifdef ASSERT
+  void report_and_fail() const;
+  address instruction_address() const { return addr_at(0); }
+#endif
+
+public:
+  address got_address() const { return return_address() + got_offset(); }
+  address next_instruction_address() const { return return_address(); }
+  bool is_GotJump() const { return ubyte_at(rex_size()) == instruction_code; }
+
+  address destination() const;
   void set_jump_destination(address dest)  {
     address *got_entry = (address *) got_address();
     *got_entry = dest;
   }
+
+  DEBUG_ONLY( void verify() const; )
 };
 
 inline NativeGotJump* nativeGotJump_at(address addr) {

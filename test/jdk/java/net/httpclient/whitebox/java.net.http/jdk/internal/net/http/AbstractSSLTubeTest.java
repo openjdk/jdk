@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -126,6 +126,7 @@ public class AbstractSSLTubeTest extends AbstractRandomTest {
     protected static class EndSubscriber implements FlowTube.TubeSubscriber {
 
         private static final int REQUEST_WINDOW = 13;
+        private static final int SIZEOF_LONG = 8;
 
         private final long nbytes;
         private final AtomicLong counter = new AtomicLong();
@@ -133,12 +134,16 @@ public class AbstractSSLTubeTest extends AbstractRandomTest {
         private final CountDownLatch allBytesReceived;
         private volatile Flow.Subscription subscription;
         private long unfulfilled;
+        private final ByteBuffer carry; // used if buffers don't break at long boundaries.
+
 
         EndSubscriber(long nbytes, CompletableFuture<?> completion,
                       CountDownLatch allBytesReceived) {
             this.nbytes = nbytes;
             this.completion = completion;
             this.allBytesReceived = allBytesReceived;
+            this.carry = ByteBuffer.allocate(SIZEOF_LONG);
+            carry.position(carry.limit());
         }
 
         @Override
@@ -159,6 +164,56 @@ public class AbstractSSLTubeTest extends AbstractRandomTest {
             return sb.toString();
         }
 
+        // Check whether we need bytes from the next buffer to read
+        // the next long. If yes, drains the current buffer into the
+        // carry and returns true. If no and the current buffer
+        // or the carry have enough bytes to read a long, return
+        // false.
+        private boolean requiresMoreBytes(ByteBuffer buf) {
+            // First see if the carry contains some left over bytes
+            // from the previous buffer
+            if (carry.hasRemaining()) {
+                // If so fills up the carry, if we can
+                while (carry.hasRemaining() && buf.hasRemaining()) {
+                    carry.put(buf.get());
+                }
+                if (!carry.hasRemaining()) {
+                    // The carry is full: we can use it.
+                    carry.flip();
+                    return false;
+                } else {
+                    // There was not enough bytes to fill the carry,
+                    // continue with next buffer.
+                    assert !buf.hasRemaining();
+                    return true;
+                }
+            } else if (buf.remaining() < SIZEOF_LONG) {
+                // The carry is empty and the current buffer doesn't
+                // have enough bytes: drains it into the carry.
+                carry.clear();
+                carry.put(buf);
+                assert carry.hasRemaining();
+                assert !buf.hasRemaining();
+                // We still need more bytes from the next buffer.
+                return true;
+            }
+            // We have enough bytes to read a long. No need
+            // to read from next buffer.
+            assert buf.remaining() >= SIZEOF_LONG;
+            return false;
+        }
+
+        private long readNextLong(ByteBuffer buf) {
+            // either the carry is ready to use (it must have 8 bytes to read)
+            // or it must be used up and at the limit.
+            assert !carry.hasRemaining() || carry.remaining() == SIZEOF_LONG;
+            // either we have a long in the carry, or we have enough bytes in the buffer
+            assert carry.remaining() == SIZEOF_LONG || buf.remaining() >= SIZEOF_LONG;
+
+            ByteBuffer source = carry.hasRemaining() ? carry : buf;
+            return source.getLong();
+        }
+
         @Override
         public void onNext(List<ByteBuffer> buffers) {
             if (--unfulfilled == (REQUEST_WINDOW / 2)) {
@@ -176,7 +231,17 @@ public class AbstractSSLTubeTest extends AbstractRandomTest {
 
             for (ByteBuffer buf : buffers) {
                 while (buf.hasRemaining()) {
-                    long n = buf.getLong();
+                    // first check if we have enough bytes to
+                    // read a long. If not, place the bytes in
+                    // the carry and continue with next buffer.
+                    if (requiresMoreBytes(buf)) continue;
+
+                    // either we have a long in the carry, or we have
+                    // enough bytes in the buffer to read a long.
+                    long n = readNextLong(buf);
+
+                    assert !carry.hasRemaining();
+
                     if (currval > (TOTAL_LONGS - 50)) {
                         System.out.println("End: " + currval);
                     }
@@ -225,7 +290,6 @@ public class AbstractSSLTubeTest extends AbstractRandomTest {
         SSLContext context = (new SimpleSSLContext()).get();
         SSLEngine engine = context.createSSLEngine();
         SSLParameters params = context.getSupportedSSLParameters();
-        params.setProtocols(new String[]{"TLSv1.2"}); // TODO: This is essential. Needs to be protocol impl
         if (client) {
             params.setApplicationProtocols(new String[]{"proto1", "proto2"}); // server will choose proto2
         } else {

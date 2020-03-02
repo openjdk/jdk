@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,7 @@ const size_t ON_STACK_BUFFER_LENGTH = 128;
 
 inline bool symbol_equals_compact_hashtable_entry(Symbol* value, const char* key, int len) {
   if (value->equals(key, len)) {
-    assert(value->refcount() == PERM_REFCOUNT, "must be shared");
+    assert(value->is_permanent(), "must be shared");
     return true;
   } else {
     return false;
@@ -139,10 +139,10 @@ public:
   static void free_node(void* memory, Value const& value) {
     // We get here because #1 some threads lost a race to insert a newly created Symbol
     // or #2 we're cleaning up unused symbol.
-    // If #1, then the symbol can be either permanent (refcount==PERM_REFCOUNT),
+    // If #1, then the symbol can be either permanent,
     // or regular newly created one (refcount==1)
     // If #2, then the symbol is dead (refcount==0)
-    assert((value->refcount() == PERM_REFCOUNT) || (value->refcount() == 1) || (value->refcount() == 0),
+    assert(value->is_permanent() || (value->refcount() == 1) || (value->refcount() == 0),
            "refcount %d", value->refcount());
     if (value->refcount() == 1) {
       value->decrement_refcount();
@@ -176,7 +176,7 @@ void SymbolTable::create_table ()  {
 }
 
 void SymbolTable::delete_symbol(Symbol* sym) {
-  if (sym->refcount() == PERM_REFCOUNT) {
+  if (sym->is_permanent()) {
     MutexLocker ml(SymbolArena_lock, Mutex::_no_safepoint_check_flag); // Protect arena
     // Deleting permanent symbol should not occur very often (insert race condition),
     // so log it.

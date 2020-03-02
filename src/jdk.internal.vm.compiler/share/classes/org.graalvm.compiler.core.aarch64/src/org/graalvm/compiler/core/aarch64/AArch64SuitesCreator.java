@@ -46,6 +46,11 @@ public class AArch64SuitesCreator extends DefaultSuitesCreator {
         this.insertReadReplacementBeforePositions = insertReadReplacementBeforePositions;
     }
 
+    public AArch64SuitesCreator(CompilerConfiguration compilerConfiguration, List<Class<? extends Phase>> insertReadReplacementBeforePositions) {
+        super(compilerConfiguration);
+        this.insertReadReplacementBeforePositions = insertReadReplacementBeforePositions;
+    }
+
     @Override
     public Suites createSuites(OptionValues options) {
         Suites suites = super.createSuites(options);

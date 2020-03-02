@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -1049,7 +1049,7 @@ define SetupRunSpecialTestBody
   else ifeq ($$($1_TEST_NAME), make)
     $1_TEST_COMMAND_LINE := \
         ($(CD) $(TOPDIR)/test/make && $(MAKE) $(MAKE_ARGS) -f \
-        TestMake.gmk $$($1_TEST_ARGS))
+        TestMake.gmk $$($1_TEST_ARGS) TEST_SUPPORT_DIR="$$($1_TEST_SUPPORT_DIR)")
   else
     $$(error Invalid special test specification: $$($1_TEST_NAME))
   endif

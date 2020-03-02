@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,10 +78,10 @@ public class TestDockerCpuMetrics {
 
             int[] cpuSetMems = Metrics.systemMetrics().getCpuSetMems();
             String memNodes = null;
-            if (cpuSetMems.length > 1) {
+            if (cpuSetMems != null && cpuSetMems.length > 1) {
                 int endNode = (cpuSetMems[cpuSetMems.length - 1] - cpuSetMems[0]) / 2 + cpuSetMems[0];
                 memNodes = cpuSetMems[0] + "-" + endNode;
-            } else if (cpuSetMems.length == 1) {
+            } else if (cpuSetMems != null && cpuSetMems.length == 1) {
                 memNodes = cpuSetMems[0] + "";
             }
 

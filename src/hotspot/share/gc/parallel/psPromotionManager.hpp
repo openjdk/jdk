@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,6 +56,9 @@ class PSPromotionManager {
   friend class PSRefProcTask;
 
  private:
+  typedef OverflowTaskQueue<StarTask, mtGC>           OopStarTaskQueue;
+  typedef GenericTaskQueueSet<OopStarTaskQueue, mtGC> OopStarTaskQueueSet;
+
   static PaddedEnd<PSPromotionManager>* _manager_array;
   static OopStarTaskQueueSet*           _stack_array_depth;
   static PreservedMarksSet*             _preserved_marks_set;

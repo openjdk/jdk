@@ -562,10 +562,12 @@ h1.hidden {
     margin:0 10px 5px 0;
     color:#474747;
 }
+dl.notes > dt {
+    font-weight:bold;
+}
 .deprecatedLabel, .descfrmTypeLabel, .implementationLabel, .memberNameLabel, .memberNameLink,
 .moduleLabelInPackage, .moduleLabelInType, .overrideSpecifyLabel, .packageLabelInType,
-.packageHierarchyLabel, .paramLabel, .returnLabel, .seeLabel, .simpleTagLabel,
-.throwsLabel, .typeNameLabel, .typeNameLink, .searchTagLink {
+.packageHierarchyLabel, .typeNameLabel, .typeNameLink, .searchTagLink {
     font-weight:bold;
 }
 .deprecationComment, .emphasizedPhrase, .interfaceName {

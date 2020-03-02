@@ -42,6 +42,7 @@
 #include "runtime/vframeArray.hpp"
 #include "utilities/align.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/powerOfTwo.hpp"
 #include "vmreg_ppc.inline.hpp"
 
 // Implementation of StubAssembler

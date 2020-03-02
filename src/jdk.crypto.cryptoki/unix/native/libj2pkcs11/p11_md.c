@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  */
 
 /* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
@@ -93,7 +93,6 @@ JNIEXPORT void JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_connect
     }
     TRACE1("DEBUG: connect to PKCS#11 module: %s ... ", libraryNameStr);
 
-
     /*
      * Load the PKCS #11 DLL
      */
@@ -119,6 +118,7 @@ JNIEXPORT void JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_connect
         free(exceptionMessage);
         return;
     }
+    (*env)->ReleaseStringUTFChars(env, jPkcs11ModulePath, libraryNameStr);
 
     /*
      * Get function pointer to C_GetFunctionList
@@ -156,7 +156,6 @@ JNIEXPORT void JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_connect
     globalPKCS11ImplementationReference = (*env)->NewGlobalRef(env, obj);
     putModuleEntry(env, globalPKCS11ImplementationReference, moduleData);
 
-    (*env)->ReleaseStringUTFChars(env, jPkcs11ModulePath, libraryNameStr);
     TRACE0("FINISHED\n");
 
     if(ckAssertReturnValueOK(env, rv) != CK_ASSERT_OK) { return; }

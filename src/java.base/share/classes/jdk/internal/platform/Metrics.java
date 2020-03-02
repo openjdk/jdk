@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,9 +56,7 @@ public interface Metrics {
      */
     public static Metrics systemMetrics() {
         try {
-            // We currently only support cgroupv1
-            Class<?> c = Class.forName("jdk.internal.platform.cgroupv1.Metrics");
-            @SuppressWarnings("unchecked")
+            Class<?> c = Class.forName("jdk.internal.platform.CgroupMetrics");
             Method m = c.getMethod("getInstance");
             return (Metrics) m.invoke(null);
         } catch (ClassNotFoundException e) {
@@ -74,7 +72,7 @@ public interface Metrics {
      *
      * @implNote
      * Metrics are currently only supported Linux.
-     * The provider for Linux is cgroupsv1.
+     * The provider for Linux is cgroups (version 1 or 2).
      *
      * @return The name of the provider.
      *
@@ -90,7 +88,8 @@ public interface Metrics {
      * Returns the aggregate time, in nanoseconds, consumed by all
      * tasks in the Isolation Group.
      *
-     * @return Time in nanoseconds or 0L if metric is not available.
+     * @return Time in nanoseconds, -1 if unknown or
+     *         -2 if the metric is not supported.
      *
      */
     public long getCpuUsage();
@@ -106,7 +105,7 @@ public interface Metrics {
      *
      * @return long array of time values.  The size of the array is equal
      *         to the total number of physical processors in the system. If
-     *         this metric is not available, a zero length array will be
+     *         this metric is not supported or not available, null will be
      *         returned.
      *
      */
@@ -116,7 +115,8 @@ public interface Metrics {
      * Returns the aggregate user time, in nanoseconds, consumed by all
      * tasks in the Isolation Group.
      *
-     * @return User time in nanoseconds or 0L if metric is not available.
+     * @return User time in nanoseconds, -1 if the metric is not available or
+     *         -2 if the metric is not supported.
      *
      */
     public long getCpuUserUsage();
@@ -125,7 +125,8 @@ public interface Metrics {
      * Returns the aggregate system time, in nanoseconds, consumed by
      * all tasks in the Isolation Group.
      *
-     * @return System time in nanoseconds or 0L if metric is not available.
+     * @return System time in nanoseconds, -1 if the metric is not available or
+     *         -2 if the metric is not supported.
      *
      */
     public long getCpuSystemUsage();
@@ -138,7 +139,8 @@ public interface Metrics {
      * Returns the length of the scheduling period, in
      * microseconds, for processes within the Isolation Group.
      *
-     * @return time in microseconds or 0L if metric is not available.
+     * @return time in microseconds, -1 if the metric is not available or
+     *         -2 if the metric is not supported.
      *
      */
     public long getCpuPeriod();
@@ -148,7 +150,8 @@ public interface Metrics {
      * during each scheduling period for all tasks in the Isolation
      * Group.
      *
-     * @return time in microseconds or -1 if the quota is unlimited.
+     * @return time in microseconds, -1 if the quota is unlimited or
+     *         -2 if not supported.
      *
      */
     public long getCpuQuota();
@@ -167,17 +170,18 @@ public interface Metrics {
      * each process.  To request 2 CPUS worth of execution time, CPU shares
      * would be set to 2048.
      *
-     * @return shares value or -1 if no share set.
+     * @return shares value, -1 if the metric is not available or
+     *         -2 if cpu shares are not supported.
      *
      */
     public long getCpuShares();
 
     /**
      * Returns the number of time-slice periods that have elapsed if
-     * a CPU quota has been setup for the Isolation Group; otherwise
-     * returns 0.
+     * a CPU quota has been setup for the Isolation Group
      *
-     * @return count of elapsed periods or 0 if the quota is unlimited.
+     * @return count of elapsed periods, -1 if the metric is not available
+     *         or -2 if the metric is not supported.
      *
      */
     public long getCpuNumPeriods();
@@ -187,7 +191,8 @@ public interface Metrics {
      * been throttled or limited due to the group exceeding its quota
      * if a CPU quota has been setup for the Isolation Group.
      *
-     * @return count of throttled periods or 0 if the quota is unlimited.
+     * @return count of throttled periods, -1 if the metric is not available or
+     *         -2 if it is not supported.
      *
      */
     public long getCpuNumThrottled();
@@ -197,7 +202,8 @@ public interface Metrics {
      * group has been throttled or limited due to the group exceeding
      * its quota if a CPU quota has been setup for the Isolation Group.
      *
-     * @return Throttled time in nanoseconds or 0 if the quota is unlimited.
+     * @return Throttled time in nanoseconds, -1 if the metric is not available
+     *         or -2 if it is not supported.
      *
      */
     public long getCpuThrottledTime();
@@ -229,8 +235,8 @@ public interface Metrics {
      * may be offline.  To get the current online CPUs, use
      * {@link getEffectiveCpuSetCpus()}.
      *
-     * @return An array of available CPUs or a zero length array
-     *         if the metric is not available.
+     * @return An array of available CPUs. Returns null if the metric is not
+     *         available or the metric is not supported.
      *
      */
     public int[] getCpuSetCpus();
@@ -241,8 +247,8 @@ public interface Metrics {
      * array is equal to the total number of CPUs and the elements in
      * the array are the physical CPU numbers.
      *
-     * @return An array of available and online CPUs or a zero length
-     *         array if the metric is not available.
+     * @return An array of available and online CPUs. Returns null
+     *         if the metric is not available or the metric is not supported.
      *
      */
     public int[] getEffectiveCpuSetCpus();
@@ -255,8 +261,8 @@ public interface Metrics {
      * may be offline.  To get the current online memory nodes, use
      * {@link getEffectiveCpuSetMems()}.
      *
-     * @return An array of available memory nodes or a zero length array
-     *         if the metric is not available.
+     * @return An array of available memory nodes or null
+     *         if the metric is not available or is not supported.
      *
      */
     public int[] getCpuSetMems();
@@ -267,32 +273,11 @@ public interface Metrics {
      * array is equal to the total number of nodes and the elements in
      * the array are the physical node numbers.
      *
-     * @return An array of available and online nodes or a zero length
-     *         array if the metric is not available.
+     * @return An array of available and online nodes or null
+     *         if the metric is not available or is not supported.
      *
      */
     public int[] getEffectiveCpuSetMems();
-
-    /**
-     * Returns the (attempts per second * 1000), if enabled, that the
-     * operating system tries to satisfy a memory request for any
-     * process in the current Isolation Group when no free memory is
-     * readily available.  Use {@link #isCpuSetMemoryPressureEnabled()} to
-     * determine if this support is enabled.
-     *
-     * @return Memory pressure or 0 if not enabled or metric is not
-     *         available.
-     *
-     */
-    public double getCpuSetMemoryPressure();
-
-    /**
-     * Returns the state of the memory pressure detection support.
-     *
-     * @return true if the support is available and enabled, otherwise false.
-     *
-     */
-    public boolean isCpuSetMemoryPressureEnabled();
 
     /*****************************************************************
      * Memory Subsystem
@@ -302,8 +287,9 @@ public interface Metrics {
      * Returns the number of times that user memory requests in the
      * Isolation Group have exceeded the memory limit.
      *
-     * @return The number of exceeded requests or 0 if none or metric
-     *         is not available.
+     * @return The number of exceeded requests or -1 if the metric
+     *         is not available. Returns -2 if the metric is not
+     *         supported.
      *
      */
     public long getMemoryFailCount();
@@ -312,163 +298,53 @@ public interface Metrics {
      * Returns the maximum amount of physical memory, in bytes, that
      * can be allocated in the Isolation Group.
      *
-     * @return The maximum amount of memory in bytes or -1 if either
-     *         there is no limit set or this metric is not available.
+     * @return The maximum amount of memory in bytes or -1 if
+     *         there is no limit or -2 if this metric is not supported.
      *
      */
     public long getMemoryLimit();
 
     /**
-     * Returns the largest amount of physical memory, in bytes, that
-     * have been allocated in the Isolation Group.
-     *
-     * @return The largest amount of memory in bytes or 0 if this
-     *         metric is not available.
-     *
-     */
-    public long getMemoryMaxUsage();
-
-    /**
      * Returns the amount of physical memory, in bytes, that is currently
      * allocated in the current Isolation Group.
      *
-     * @return The amount of memory in bytes allocated or 0 if this
-     *         metric is not available.
+     * @return The amount of memory in bytes allocated or -1 if
+     *         the metric is not available or -2 if the metric is not
+     *         supported.
      *
      */
     public long getMemoryUsage();
 
     /**
-     * Returns the number of times that kernel memory requests in the
-     * Isolation Group have exceeded the kernel memory limit.
-     *
-     * @return The number of exceeded requests or 0 if none or metric
-     *         is not available.
-     *
-     */
-    public long getKernelMemoryFailCount();
-
-    /**
-     * Returns the maximum amount of kernel physical memory, in bytes, that
-     * can be allocated in the Isolation Group.
-     *
-     * @return The maximum amount of memory in bytes or -1 if either
-     *         there is no limit set or this metric is not available.
-     *
-     */
-    public long getKernelMemoryLimit();
-
-    /**
-     * Returns the largest amount of kernel physical memory, in bytes, that
-     * have been allocated in the Isolation Group.
-     *
-     * @return The largest amount of memory in bytes or 0 if this
-     *         metric is not available.
-     *
-     */
-    public long getKernelMemoryMaxUsage();
-
-    /**
-     * Returns the amount of kernel physical memory, in bytes, that
-     * is currently allocated in the current Isolation Group.
-     *
-     * @return The amount of memory in bytes allocated or 0 if this
-     *         metric is not available.
-     *
-     */
-    public long getKernelMemoryUsage();
-
-    /**
-     * Returns the number of times that networking memory requests in the
-     * Isolation Group have exceeded the kernel memory limit.
-     *
-     * @return The number of exceeded requests or 0 if none or metric
-     *         is not available.
-     *
-     */
-    public long getTcpMemoryFailCount();
-
-    /**
-     * Returns the maximum amount of networking physical memory, in bytes,
-     * that can be allocated in the Isolation Group.
-     *
-     * @return The maximum amount of memory in bytes or -1 if either
-     *         there is no limit set or this metric is not available.
-     *
-     */
-    public long getTcpMemoryLimit();
-
-    /**
-     * Returns the largest amount of networking physical memory, in bytes,
-     * that have been allocated in the Isolation Group.
-     *
-     * @return The largest amount of memory in bytes or 0 if this
-     *         metric is not available.
-     *
-     */
-    public long getTcpMemoryMaxUsage();
-
-    /**
      * Returns the amount of networking physical memory, in bytes, that
      * is currently allocated in the current Isolation Group.
      *
-     * @return The amount of memory in bytes allocated or 0 if this
-     *         metric is not available.
+     * @return The amount of memory in bytes allocated or -1 if the metric
+     *         is not available. Returns -2 if this metric is not supported.
      *
      */
     public long getTcpMemoryUsage();
 
     /**
-     * Returns the number of times that user memory requests in the
-     * Isolation Group have exceeded the memory + swap limit.
-     *
-     * @return The number of exceeded requests or 0 if none or metric
-     *         is not available.
-     *
-     */
-    public long getMemoryAndSwapFailCount();
-
-    /**
      * Returns the maximum amount of physical memory and swap space,
      * in bytes, that can be allocated in the Isolation Group.
      *
-     * @return The maximum amount of memory in bytes or -1 if either
-     *         there is no limit set or this metric is not available.
+     * @return The maximum amount of memory in bytes or -1 if
+     *         there is no limit set or -2 if this metric is not supported.
      *
      */
     public long getMemoryAndSwapLimit();
 
     /**
-     * Returns the largest amount of physical memory and swap space,
-     * in bytes, that have been allocated in the Isolation Group.
-     *
-     * @return The largest amount of memory in bytes or 0 if this
-     *         metric is not available.
-     *
-     */
-    public long getMemoryAndSwapMaxUsage();
-
-    /**
      * Returns the amount of physical memory and swap space, in bytes,
      * that is currently allocated in the current Isolation Group.
      *
-     * @return The amount of memory in bytes allocated or 0 if this
-     *         metric is not available.
+     * @return The amount of memory in bytes allocated or -1 if
+     *         the metric is not available. Returns -2 if this metric is not
+     *         supported.
      *
      */
     public long getMemoryAndSwapUsage();
-
-    /**
-     * Returns the state of the Operating System Out of Memory termination
-     * policy.
-     *
-     * @return Returns true if operating system will terminate processes
-     *         in the Isolation Group that exceed the amount of available
-     *         memory, otherwise false.  Flase will be returned if this
-     *         capability is not available on the current operating system.
-     *
-     */
-    public boolean isMemoryOOMKillEnabled();
 
     /**
      * Returns the hint to the operating system that allows groups
@@ -478,8 +354,8 @@ public interface Metrics {
      *
      * @return The minimum amount of physical memory, in bytes, that the
      *         operating system will try to maintain under low memory
-     *         conditions.  If this metric is not available, 0 will be
-     *         returned.
+     *         conditions.  If this metric is not available, -1 will be
+     *         returned. Returns -2 if the metric is not supported.
      *
      */
     public long getMemorySoftLimit();
@@ -492,7 +368,8 @@ public interface Metrics {
      * Returns the number of block I/O requests to the disk that have been
      * issued by the Isolation Group.
      *
-     * @return The count of requests or 0 if this metric is not available.
+     * @return The count of requests or -1 if the metric is not available.
+     *         Returns -2 if this metric is not supported.
      *
      */
     public long getBlkIOServiceCount();
@@ -501,7 +378,8 @@ public interface Metrics {
      * Returns the number of block I/O bytes that have been transferred
      * to/from the disk by the Isolation Group.
      *
-     * @return The number of bytes transferred or 0 if this metric is not available.
+     * @return The number of bytes transferred or -1 if the metric is not
+     *         available. Returns -2 if this metric is not supported.
      *
      */
     public long getBlkIOServiced();

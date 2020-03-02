@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,10 @@ import jdk.jfr.consumer.RecordingFile;
 import jdk.test.lib.Asserts;
 import jdk.jfr.consumer.RecordedClass;
 import jdk.jfr.consumer.RecordedEvent;
+import jdk.jfr.consumer.RecordedFrame;
+import jdk.jfr.consumer.RecordedMethod;
 import jdk.jfr.consumer.RecordedObject;
+import jdk.jfr.consumer.RecordedStackTrace;
 import jdk.jfr.consumer.RecordedThread;
 import jdk.jfr.consumer.RecordedThreadGroup;
 
@@ -362,5 +365,22 @@ public class Events {
             }
         }
         return false;
+    }
+
+    public static void assertFrame(RecordedEvent event, Class<?> expectedClass, String expectedMethodName) {
+        RecordedStackTrace stackTrace = event.getStackTrace();
+        Asserts.assertNotNull(stackTrace, "Missing stack trace");
+        for (RecordedFrame frame : stackTrace.getFrames()) {
+            if (frame.isJavaFrame()) {
+                RecordedMethod method = frame.getMethod();
+                RecordedClass type = method.getType();
+                if (expectedClass.getName().equals(type.getName())) {
+                    if (expectedMethodName.equals(method.getName())) {
+                        return;
+                    }
+                }
+            }
+        }
+        Asserts.fail("Expected " + expectedClass.getName() + "::"+ expectedMethodName + " in stack trace");
     }
 }

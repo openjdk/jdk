@@ -1,4 +1,5 @@
-# Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+#
+# Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -58,12 +59,58 @@ $(call FillFindCache, \
 )
 
 ifneq ($(LIBS_DIR), )
-  JMOD_FLAGS += --libs $(LIBS_DIR)
   DEPS += $(call FindFiles, $(LIBS_DIR))
+  ifeq ($(call isTargetOs, windows)+$(SHIP_DEBUG_SYMBOLS), true+public)
+    # For public debug symbols on Windows, we have to use stripped pdbs and rename them
+    rename_stripped = $(patsubst %.stripped.pdb,%.pdb,$1)
+    LIBS_DIR_FILTERED := $(subst modules_libs,modules_libs_filtered, $(LIBS_DIR))
+    FILES_LIBS := $(filter-out %.pdb, $(call FindFiles, $(LIBS_DIR))) \
+        $(filter %.stripped.pdb, $(call FindFiles, $(LIBS_DIR)))
+    $(eval $(call SetupCopyFiles, COPY_FILTERED_LIBS, \
+        SRC := $(LIBS_DIR), \
+        DEST := $(LIBS_DIR_FILTERED), \
+        FILES := $(FILES_LIBS), \
+        NAME_MACRO := rename_stripped, \
+    ))
+    DEPS += $(COPY_FILTERED_LIBS)
+    JMOD_FLAGS += --libs $(LIBS_DIR_FILTERED)
+  else
+    JMOD_FLAGS += --libs $(LIBS_DIR)
+  endif
 endif
 ifneq ($(CMDS_DIR), )
-  JMOD_FLAGS += --cmds $(CMDS_DIR)
   DEPS += $(call FindFiles, $(CMDS_DIR))
+  ifeq ($(call isTargetOs, windows)+$(SHIP_DEBUG_SYMBOLS), true+public)
+    # For public debug symbols on Windows, we have to use stripped pdbs, rename them
+    # and filter out a few launcher pdbs where there's a lib that goes by the same name
+    rename_stripped = $(patsubst %.stripped.pdb,%.pdb,$1)
+    CMDS_DIR_FILTERED := $(subst modules_cmds,modules_cmds_filtered, $(CMDS_DIR))
+    FILES_CMDS := $(filter-out %.pdb, $(call FindFiles, $(CMDS_DIR))) \
+        $(filter-out %jimage.stripped.pdb %jpackage.stripped.pdb %java.stripped.pdb, \
+            $(filter %.stripped.pdb, $(call FindFiles, $(CMDS_DIR))))
+    $(eval $(call SetupCopyFiles, COPY_FILTERED_CMDS, \
+        SRC := $(CMDS_DIR), \
+        DEST := $(CMDS_DIR_FILTERED), \
+        FILES := $(FILES_CMDS), \
+        NAME_MACRO := rename_stripped, \
+    ))
+    DEPS += $(COPY_FILTERED_CMDS)
+    JMOD_FLAGS += --cmds $(CMDS_DIR_FILTERED)
+  else ifeq ($(call isTargetOs, windows)+$(SHIP_DEBUG_SYMBOLS), true+full)
+    # For full debug symbols on Windows, we have to filter out a few launcher pdbs
+    # where there's a lib that goes by the same name
+    CMDS_DIR_FILTERED := $(subst modules_cmds,modules_cmds_filtered, $(CMDS_DIR))
+    $(eval $(call SetupCopyFiles, COPY_FILTERED_CMDS, \
+        SRC := $(CMDS_DIR), \
+        DEST := $(CMDS_DIR_FILTERED), \
+        FILES := $(filter-out %jimage.pdb %jpackage.pdb %java.pdb, \
+            $(call FindFiles, $(CMDS_DIR))), \
+    ))
+    DEPS += $(COPY_FILTERED_CMDS)
+    JMOD_FLAGS += --cmds $(CMDS_DIR_FILTERED)
+  else
+    JMOD_FLAGS += --cmds $(CMDS_DIR)
+  endif
 endif
 ifneq ($(CONF_DIR), )
   JMOD_FLAGS += --config $(CONF_DIR)
@@ -159,7 +206,15 @@ ifeq ($(INTERIM_JMOD), true)
   INTERIM_MSG := interim$(SPACE)
 endif
 
-JMOD_FLAGS += --exclude '**{_the.*,_*.marker,*.diz,*.debuginfo,*.dSYM/**,*.dSYM,*.pdb,*.map}'
+ifeq ($(call isTargetOs, windows), true)
+  ifeq ($(SHIP_DEBUG_SYMBOLS), )
+    JMOD_FLAGS += --exclude '**{_the.*,_*.marker,*.diz,*.pdb,*.map}'
+  else
+    JMOD_FLAGS += --exclude '**{_the.*,_*.marker,*.diz,*.map}'
+  endif
+else
+  JMOD_FLAGS += --exclude '**{_the.*,_*.marker,*.diz,*.debuginfo,*.dSYM/**,*.dSYM}'
+endif
 
 # Create jmods in the support dir and then move them into place to keep the
 # module path in $(IMAGES_OUTPUTDIR)/jmods valid at all times.

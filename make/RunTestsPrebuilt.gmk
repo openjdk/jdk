@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -336,7 +336,7 @@ SPEC := $(NEW_SPEC)
 
 default: all
 
-run-test-prebuilt:
+test-prebuilt:
         # Need to make sure the failure logs output dir exists since
         # ExecuteWithLog is called in RunTests.gmk. The PrepareFailureLogs macro
         # is unfortunately not available at this point.
@@ -351,6 +351,6 @@ run-test-prebuilt:
 	@cd $(TOPDIR) && $(MAKE) $(MAKE_ARGS) -f make/RunTests.gmk run-test \
 	    TEST="$(TEST)"
 
-all: run-test-prebuilt
+all: test-prebuilt
 
-.PHONY: default all
+.PHONY: default all test-prebuilt

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,8 +70,8 @@ public class TestMemberInheritance extends JavadocTester {
 
         checkOutput("pkg/BaseClass.html", true,
                 // Test overriding/implementing methods with generic parameters.
-                "<dl>\n"
-                + "<dt><span class=\"overrideSpecifyLabel\">Specified by:</span></dt>\n"
+                "<dl class=\"notes\">\n"
+                + "<dt>Specified by:</dt>\n"
                 + "<dd><code><a href=\"BaseInterface.html#getAnnotation(java.lang.Class)\">"
                 + "getAnnotation</a></code>&nbsp;in interface&nbsp;<code>"
                 + "<a href=\"BaseInterface.html\" title=\"interface in pkg\">"
@@ -132,7 +132,7 @@ public class TestMemberInheritance extends JavadocTester {
                 + "java.lang.IllegalStateException</span></div>");
 
         checkOutput("pkg2/DocumentedNonGenericChild.html", true,
-                "<dt><span class=\"throwsLabel\">Throws:</span></dt>\n"
+                "<dt>Throws:</dt>\n"
                 + "<dd><code>java.lang.InterruptedException</code> - a generic error</dd>\n"
                 + "<dd><code>java.lang.IllegalStateException</code> - illegal state</dd>\n"
                 + "<dd><code>java.lang.IllegalArgumentException</code></dd>");

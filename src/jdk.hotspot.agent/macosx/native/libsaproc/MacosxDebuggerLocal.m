@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -243,7 +243,12 @@ jlong lookupByNameIncore(
     CHECK_EXCEPTION_(0);
   }
   symbolName_cstr = (*env)->GetStringUTFChars(env, symbolName, &isCopy);
-  CHECK_EXCEPTION_(0);
+  if ((*env)->ExceptionOccurred(env)) {
+    if (objectName_cstr != NULL) {
+      (*env)->ReleaseStringUTFChars(env, objectName, objectName_cstr);
+    }
+    return 0;
+  }
 
   print_debug("look for %s \n", symbolName_cstr);
   addr = (jlong) lookup_symbol(ph, objectName_cstr, symbolName_cstr);
@@ -963,7 +968,10 @@ Java_sun_jvm_hotspot_debugger_bsd_BsdDebuggerLocal_attach0__Ljava_lang_String_2L
   execName_cstr = (*env)->GetStringUTFChars(env, execName, &isCopy);
   CHECK_EXCEPTION;
   coreName_cstr = (*env)->GetStringUTFChars(env, coreName, &isCopy);
-  CHECK_EXCEPTION;
+  if ((*env)->ExceptionOccurred(env)) {
+    (*env)->ReleaseStringUTFChars(env, execName, execName_cstr);
+    return;
+  }
 
   print_debug("attach: %s %s\n", execName_cstr, coreName_cstr);
 

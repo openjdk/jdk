@@ -37,6 +37,7 @@
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/vframeArray.hpp"
 #include "utilities/align.hpp"
+#include "utilities/powerOfTwo.hpp"
 #include "vmreg_arm.inline.hpp"
 #ifdef COMPILER1
 #include "c1/c1_Runtime1.hpp"
@@ -133,14 +134,14 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm,
   __ push(SAVED_BASE_REGS);
   if (HaveVFP) {
     if (VM_Version::has_vfp3_32()) {
-      __ fstmdbd(SP, FloatRegisterSet(D16, 16), writeback);
+      __ fpush(FloatRegisterSet(D16, 16));
     } else {
       if (FloatRegisterImpl::number_of_registers > 32) {
         assert(FloatRegisterImpl::number_of_registers == 64, "nb fp registers should be 64");
         __ sub(SP, SP, 32 * wordSize);
       }
     }
-    __ fstmdbd(SP, FloatRegisterSet(D0, 16), writeback);
+    __ fpush(FloatRegisterSet(D0, 16));
   } else {
     __ sub(SP, SP, fpu_save_size * wordSize);
   }
@@ -174,9 +175,9 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm,
 
 void RegisterSaver::restore_live_registers(MacroAssembler* masm, bool restore_lr) {
   if (HaveVFP) {
-    __ fldmiad(SP, FloatRegisterSet(D0, 16), writeback);
+    __ fpop(FloatRegisterSet(D0, 16));
     if (VM_Version::has_vfp3_32()) {
-      __ fldmiad(SP, FloatRegisterSet(D16, 16), writeback);
+      __ fpop(FloatRegisterSet(D16, 16));
     } else {
       if (FloatRegisterImpl::number_of_registers > 32) {
         assert(FloatRegisterImpl::number_of_registers == 64, "nb fp registers should be 64");
@@ -221,26 +222,21 @@ static void push_param_registers(MacroAssembler* masm, int fp_regs_in_arguments)
   // R1-R3 arguments need to be saved, but we push 4 registers for 8-byte alignment
   __ push(RegisterSet(R0, R3));
 
-#ifdef __ABI_HARD__
   // preserve arguments
   // Likely not needed as the locking code won't probably modify volatile FP registers,
   // but there is no way to guarantee that
   if (fp_regs_in_arguments) {
     // convert fp_regs_in_arguments to a number of double registers
     int double_regs_num = (fp_regs_in_arguments + 1) >> 1;
-    __ fstmdbd(SP, FloatRegisterSet(D0, double_regs_num), writeback);
+    __ fpush_hardfp(FloatRegisterSet(D0, double_regs_num));
   }
-#endif // __ ABI_HARD__
 }
 
 static void pop_param_registers(MacroAssembler* masm, int fp_regs_in_arguments) {
-#ifdef __ABI_HARD__
   if (fp_regs_in_arguments) {
     int double_regs_num = (fp_regs_in_arguments + 1) >> 1;
-    __ fldmiad(SP, FloatRegisterSet(D0, double_regs_num), writeback);
+    __ fpop_hardfp(FloatRegisterSet(D0, double_regs_num));
   }
-#endif // __ABI_HARD__
-
   __ pop(RegisterSet(R0, R3));
 }
 
@@ -462,11 +458,13 @@ static void patch_callers_callsite(MacroAssembler *masm) {
   // Pushing an even number of registers for stack alignment.
   // Selecting R9, which had to be saved anyway for some platforms.
   __ push(RegisterSet(R0, R3) | R9 | LR);
+  __ fpush_hardfp(FloatRegisterSet(D0, 8));
 
   __ mov(R0, Rmethod);
   __ mov(R1, LR);
   __ call(CAST_FROM_FN_PTR(address, SharedRuntime::fixup_callers_callsite));
 
+  __ fpop_hardfp(FloatRegisterSet(D0, 8));
   __ pop(RegisterSet(R0, R3) | R9 | LR);
 
   __ bind(skip);

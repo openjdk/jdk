@@ -123,4 +123,5 @@ public final class ObjectCloneNode extends BasicObjectCloneNode {
         assert getConcreteType(stamp(NodeView.DEFAULT)) == null;
         return null;
     }
+
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 6786690 6820360 8025633 8026567 8175200 8183511 8186332 8074407 8182765
+ *      8230136
  * @summary This test verifies the nesting of definition list tags.
  * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -46,9 +47,6 @@ public class TestHtmlDefinitionListTag extends JavadocTester {
 
     @Test
     public void test_Comment_Deprecated() {
-//        tester.run(ARGS1, TEST_ALL, NEGATED_TEST_NO_C5);
-//        tester.runTestsOnHTML(NO_TEST,  NEGATED_TEST_C5);
-//        tester.runTestsOnHTML(TEST_CMNT_DEPR, NO_TEST);
         javadoc("-Xdoclint:none",
                 "-d", "out-1",
                 "-sourcepath", testSrc,
@@ -60,9 +58,6 @@ public class TestHtmlDefinitionListTag extends JavadocTester {
 
     @Test
     public void test_NoComment_Deprecated() {
-//        tester.run(ARGS2, TEST_ALL, NEGATED_TEST_NO_C5);
-//        tester.runTestsOnHTML(NO_TEST,  NEGATED_TEST_C5);
-//        tester.runTestsOnHTML(NO_TEST, TEST_CMNT_DEPR);
         javadoc("-Xdoclint:none",
                 "-d", "out-2",
                 "-nocomment",
@@ -75,8 +70,6 @@ public class TestHtmlDefinitionListTag extends JavadocTester {
 
     @Test
     public void test_Comment_NoDeprecated() {
-//        tester.run(ARGS3, TEST_ALL, NEGATED_TEST_NO_C5);
-//        tester.runTestsOnHTML(TEST_NODEPR, TEST_NOCMNT_NODEPR);
         javadoc("-Xdoclint:none",
                 "-d", "out-3",
                 "-nodeprecated",
@@ -90,8 +83,6 @@ public class TestHtmlDefinitionListTag extends JavadocTester {
 
     @Test
     public void testNoCommentNoDeprecated() {
-//        tester.run(ARGS4, TEST_ALL, NEGATED_TEST_NO_C5);
-//        tester.runTestsOnHTML(TEST_NOCMNT_NODEPR, TEST_CMNT_DEPR);
         javadoc("-Xdoclint:none",
                 "-d", "out-4",
                 "-nocomment",
@@ -114,7 +105,7 @@ public class TestHtmlDefinitionListTag extends JavadocTester {
                 "extends java.lang.Object\n" +
                 "implements java.io.Serializable</pre>");
         checkOutput("pkg1/C4.html", true,
-                "<dl>\n" +
+                "<dl class=\"notes\">\n" +
                 "<dt>Default:</dt>\n" +
                 "<dd>true</dd>\n" +
                 "</dl>");
@@ -139,7 +130,9 @@ public class TestHtmlDefinitionListTag extends JavadocTester {
         for (String f: files) {
             checkOutput(f, false,
                     "<dl></dl>",
-                    "<dl>\n</dl>");
+                    "<dl>\n</dl>",
+                    "<dl class=\"notes\"></dl>",
+                    "<dl class=\"notes\">\n</dl>");
         }
     }
 
@@ -148,82 +141,76 @@ public class TestHtmlDefinitionListTag extends JavadocTester {
         // serialized form should have properly nested definition list tags
         // enclosing comments, tags and deprecated information.
         checkOutput("pkg1/package-summary.html", expectFound,
-                "<dl>\n" +
-                "<dt><span class=\"simpleTagLabel\">Since:</span></dt>\n" +
+                "<dl class=\"notes\">\n" +
+                "<dt>Since:</dt>\n" +
                 "<dd>JDK1.0</dd>\n" +
                 "</dl>");
 
         checkOutput("pkg1/C1.html", expectFound,
-                "<dl>\n"
-                + "<dt><span class=\"simpleTagLabel\">Since:</span></dt>\n"
+                "<dl class=\"notes\">\n"
+                + "<dt>Since:</dt>\n"
                 + "<dd>JDK1.0</dd>\n"
-                + "<dt><span class=\"seeLabel\">See Also:</span></dt>\n"
+                + "<dt>See Also:</dt>\n"
                 + "<dd><a href=\"C2.html\" title=\"class in pkg1\"><code>"
                 + "C2</code></a>, \n"
                 + "<a href=\"../serialized-form.html#pkg1.C1\">"
                 + "Serialized Form</a></dd>\n"
                 + "</dl>",
-                "<dl>\n"
-                + "<dt><span class=\"simpleTagLabel\">Since:</span></dt>\n"
+                "<dl class=\"notes\">\n"
+                + "<dt>Since:</dt>\n"
                 + "<dd>1.4</dd>\n"
-                + "<dt><span class=\"seeLabel\">See Also:</span></dt>\n"
+                + "<dt>See Also:</dt>\n"
                 + "<dd><a href=\"#setUndecorated(boolean)\">"
                 + "<code>setUndecorated(boolean)</code></a></dd>\n"
                 + "</dl>",
-                "<dl>\n"
-                + "<dt><span class=\"paramLabel\">Parameters:</span></dt>\n"
+                "<dl class=\"notes\">\n"
+                + "<dt>Parameters:</dt>\n"
                 + "<dd><code>title</code> - the title</dd>\n"
                 + "<dd><code>test</code> - boolean value"
                 + "</dd>\n"
-                + "<dt><span class=\"throwsLabel\">Throws:</span></dt>\n"
+                + "<dt>Throws:</dt>\n"
                 + "<dd><code>java.lang.IllegalArgumentException</code> - if the "
                 + "<code>owner</code>'s\n"
                 + "     <code>GraphicsConfiguration</code> is not from a screen "
                 + "device</dd>\n"
                 + "<dd><code>HeadlessException</code></dd>\n"
                 + "</dl>",
-                "<dl>\n"
-                + "<dt><span class=\"paramLabel\">Parameters:</span></dt>\n"
+                "<dl class=\"notes\">\n"
+                + "<dt>Parameters:</dt>\n"
                 + "<dd><code>undecorated"
                 + "</code> - <code>true</code> if no decorations are\n"
                 + "         to be enabled;\n"
                 + "         <code>false</code> "
                 + "if decorations are to be enabled.</dd>\n"
-                + "<dt><span class=\"simpleTagLabel\">Since:"
-                + "</span></dt>\n"
+                + "<dt>Since:</dt>\n"
                 + "<dd>1.4</dd>\n"
-                + "<dt><span class=\"seeLabel\">See Also:</span></dt>\n"
+                + "<dt>See Also:</dt>\n"
                 + "<dd>"
                 + "<a href=\"#readObject()\"><code>readObject()"
                 + "</code></a></dd>\n"
                 + "</dl>",
-                "<dl>\n"
-                + "<dt><span class=\"throwsLabel\">Throws:</span></dt>\n"
+                "<dl class=\"notes\">\n"
+                + "<dt>Throws:</dt>\n"
                 + "<dd><code>java.io.IOException</code></dd>\n"
-                + "<dt><span class=\"seeLabel\">See Also:"
-                + "</span></dt>\n"
+                + "<dt>See Also:</dt>\n"
                 + "<dd><a href=\"#setUndecorated(boolean)\">"
                 + "<code>setUndecorated(boolean)</code></a></dd>\n"
                 + "</dl>");
 
         checkOutput("pkg1/C2.html", expectFound,
-                "<dl>\n"
-                + "<dt><span class=\"paramLabel\">Parameters:"
-                + "</span></dt>\n"
+                "<dl class=\"notes\">\n"
+                + "<dt>Parameters:</dt>\n"
                 + "<dd><code>set</code> - boolean</dd>\n"
-                + "<dt><span class=\"simpleTagLabel\">"
-                + "Since:</span></dt>\n"
+                + "<dt>Since:</dt>\n"
                 + "<dd>1.4</dd>\n"
                 + "</dl>");
 
         checkOutput("serialized-form.html", expectFound,
-                "<dl>\n"
-                + "<dt><span class=\"throwsLabel\">Throws:</span>"
-                + "</dt>\n"
+                "<dl class=\"notes\">\n"
+                + "<dt>Throws:</dt>\n"
                 + "<dd><code>"
                 + "java.io.IOException</code></dd>\n"
-                + "<dt><span class=\"seeLabel\">See Also:</span>"
-                + "</dt>\n"
+                + "<dt>See Also:</dt>\n"
                 + "<dd><a href=\"pkg1/C1.html#setUndecorated(boolean)\">"
                 + "<code>C1.setUndecorated(boolean)</code></a></dd>\n"
                 + "</dl>",
@@ -235,11 +222,10 @@ public class TestHtmlDefinitionListTag extends JavadocTester {
                 + "<div class=\"block\">This field indicates whether the C1 is "
                 + "undecorated.</div>\n"
                 + "&nbsp;\n"
-                + "<dl>\n"
-                + "<dt><span class=\"simpleTagLabel\">Since:</span></dt>\n"
+                + "<dl class=\"notes\">\n"
+                + "<dt>Since:</dt>\n"
                 + "<dd>1.4</dd>\n"
-                + "<dt><span class=\"seeLabel\">See Also:</span>"
-                + "</dt>\n"
+                + "<dt>See Also:</dt>\n"
                 + "<dd><a href=\"pkg1/C1.html#setUndecorated(boolean)\">"
                 + "<code>C1.setUndecorated(boolean)</code></a></dd>\n"
                 + "</dl>",
@@ -249,9 +235,8 @@ public class TestHtmlDefinitionListTag extends JavadocTester {
                 + "<code>setUndecorated(boolean)</code></a>.</div>\n"
                 + "</div>\n"
                 + "<div class=\"block\">Reads the object stream.</div>\n"
-                + "<dl>\n"
-                + "<dt><span class=\"throwsLabel\">Throws:"
-                + "</span></dt>\n"
+                + "<dl class=\"notes\">\n"
+                + "<dt>Throws:</dt>\n"
                 + "<dd><code>java.io.IOException</code></dd>\n"
                 + "</dl>",
                 "<span class=\"deprecatedLabel\">Deprecated.</span>"
@@ -266,18 +251,16 @@ public class TestHtmlDefinitionListTag extends JavadocTester {
         // should display properly nested definition list tags for comments, tags
         // and deprecated information.
         checkOutput("pkg1/package-summary.html", true,
-                "<dl>\n" +
-                "<dt><span class=\"simpleTagLabel\">Since:</span></dt>\n" +
+                "<dl class=\"notes\">\n" +
+                "<dt>Since:</dt>\n" +
                 "<dd>JDK1.0</dd>\n" +
                 "</dl>");
 
         checkOutput("pkg1/C1.html", true,
-                "<dl>\n" +
-                "<dt><span class=\"simpleTagLabel\">Since:</span>" +
-                "</dt>\n" +
+                "<dl class=\"notes\">\n" +
+                "<dt>Since:</dt>\n" +
                 "<dd>JDK1.0</dd>\n" +
-                "<dt><span class=\"seeLabel\">See Also:" +
-                "</span></dt>\n" +
+                "<dt>See Also:</dt>\n" +
                 "<dd><a href=\"C2.html\" title=\"class in pkg1\">" +
                 "<code>C2</code></a>, \n" +
                 "<a href=\"../serialized-form.html#pkg1.C1\">" +
@@ -285,14 +268,12 @@ public class TestHtmlDefinitionListTag extends JavadocTester {
                 "</dl>");
 
         checkOutput("pkg1/C1.html", true,
-                "<dl>\n"
-                + "<dt><span class=\"paramLabel\">Parameters:"
-                + "</span></dt>\n"
+                "<dl class=\"notes\">\n"
+                + "<dt>Parameters:</dt>\n"
                 + "<dd><code>title</code> - the title</dd>\n"
                 + "<dd><code>"
                 + "test</code> - boolean value</dd>\n"
-                + "<dt><span class=\"throwsLabel\">Throws:"
-                + "</span></dt>\n"
+                + "<dt>Throws:</dt>\n"
                 + "<dd><code>java.lang.IllegalArgumentException"
                 + "</code> - if the <code>owner</code>'s\n"
                 + "     <code>GraphicsConfiguration"
@@ -300,38 +281,34 @@ public class TestHtmlDefinitionListTag extends JavadocTester {
                 + "<dd><code>"
                 + "HeadlessException</code></dd>\n"
                 + "</dl>",
-                "<dl>\n"
-                + "<dt><span class=\"paramLabel\">Parameters:"
-                + "</span></dt>\n"
+                "<dl class=\"notes\">\n"
+                + "<dt>Parameters:</dt>\n"
                 + "<dd><code>undecorated</code> - <code>true</code>"
                 + " if no decorations are\n"
                 + "         to be enabled;\n"
                 + "         <code>false</code> if decorations are to be enabled."
                 + "</dd>\n"
-                + "<dt><span class=\"simpleTagLabel\">Since:</span></dt>\n"
+                + "<dt>Since:</dt>\n"
                 + "<dd>1.4</dd>\n"
-                + "<dt><span class=\"seeLabel\">See Also:</span></dt>\n"
+                + "<dt>See Also:</dt>\n"
                 + "<dd><a href=\"#readObject()\">"
                 + "<code>readObject()</code></a></dd>\n"
                 + "</dl>",
-                "<dl>\n"
-                + "<dt><span class=\"throwsLabel\">Throws:</span>"
-                + "</dt>\n"
+                "<dl class=\"notes\">\n"
+                + "<dt>Throws:</dt>\n"
                 + "<dd><code>java.io.IOException</code></dd>\n"
-                + "<dt>"
-                + "<span class=\"seeLabel\">See Also:</span></dt>\n"
+                + "<dt>See Also:</dt>\n"
                 + "<dd><a href=\"#setUndecorated(boolean)\">"
                 + "<code>setUndecorated(boolean)</code></a></dd>\n"
                 + "</dl>");
 
         checkOutput("serialized-form.html", true,
-                "<dl>\n"
-                + "<dt><span class=\"throwsLabel\">Throws:</span>"
+                "<dl class=\"notes\">\n"
+                + "<dt>Throws:"
                 + "</dt>\n"
                 + "<dd><code>"
                 + "java.io.IOException</code></dd>\n"
-                + "<dt><span class=\"seeLabel\">See Also:</span>"
-                + "</dt>\n"
+                + "<dt>See Also:</dt>\n"
                 + "<dd><a href=\"pkg1/C1.html#setUndecorated(boolean)\">"
                 + "<code>C1.setUndecorated(boolean)</code></a></dd>\n"
                 + "</dl>",
@@ -343,11 +320,10 @@ public class TestHtmlDefinitionListTag extends JavadocTester {
                 + "<div class=\"block\">This field indicates whether the C1 is "
                 + "undecorated.</div>\n"
                 + "&nbsp;\n"
-                + "<dl>\n"
-                + "<dt><span class=\"simpleTagLabel\">Since:</span></dt>\n"
+                + "<dl class=\"notes\">\n"
+                + "<dt>Since:</dt>\n"
                 + "<dd>1.4</dd>\n"
-                + "<dt><span class=\"seeLabel\">See Also:</span>"
-                + "</dt>\n"
+                + "<dt>See Also:</dt>\n"
                 + "<dd><a href=\"pkg1/C1.html#setUndecorated(boolean)\">"
                 + "<code>C1.setUndecorated(boolean)</code></a></dd>\n"
                 + "</dl>",
@@ -357,9 +333,8 @@ public class TestHtmlDefinitionListTag extends JavadocTester {
                 + "<code>setUndecorated(boolean)</code></a>.</div>\n"
                 + "</div>\n"
                 + "<div class=\"block\">Reads the object stream.</div>\n"
-                + "<dl>\n"
-                + "<dt><span class=\"throwsLabel\">Throws:"
-                + "</span></dt>\n"
+                + "<dl class=\"notes\">\n"
+                + "<dt>Throws:</dt>\n"
                 + "<dd><code>java.io.IOException</code></dd>\n"
                 + "</dl>",
                 "<span class=\"deprecatedLabel\">Deprecated.</span>"

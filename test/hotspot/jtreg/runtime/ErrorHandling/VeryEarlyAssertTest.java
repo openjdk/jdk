@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, SAP. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -49,8 +49,6 @@ public class VeryEarlyAssertTest {
 
 
     ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-            "-Xmx64M",
-            "-XX:-CreateCoredumpOnCrash",
             "-version");
     Map<String, String> env = pb.environment();
     env.put("HOTSPOT_FATAL_ERROR_DURING_DYNAMIC_INITIALIZATION", "1");
@@ -87,7 +85,7 @@ public class VeryEarlyAssertTest {
     };
     int currentPattern = 0;
 
-    String lastLine = null;
+    boolean endMarkerFound = false;
     while ((line = br.readLine()) != null) {
       if (currentPattern < pattern.length) {
         if (pattern[currentPattern].matcher(line).matches()) {
@@ -95,7 +93,10 @@ public class VeryEarlyAssertTest {
           currentPattern++;
         }
       }
-      lastLine = line;
+      if (line.equals("END.")) {
+        endMarkerFound = true;
+        break;
+      }
     }
     br.close();
 
@@ -103,7 +104,7 @@ public class VeryEarlyAssertTest {
       throw new RuntimeException("hs-err file incomplete (first missing pattern: " + currentPattern + ")");
     }
 
-    if (!lastLine.equals("END.")) {
+    if (!endMarkerFound) {
       throw new RuntimeException("hs-err file incomplete (missing END marker.)");
     } else {
       System.out.println("End marker found.");
@@ -114,5 +115,3 @@ public class VeryEarlyAssertTest {
   }
 
 }
-
-

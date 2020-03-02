@@ -273,7 +273,6 @@ public:
   ShenandoahHeapIterationRootScanner();
 
   void roots_do(OopClosure* cl);
-  void strong_roots_do(OopClosure* cl);
 };
 
 // Evacuate all roots at a safepoint

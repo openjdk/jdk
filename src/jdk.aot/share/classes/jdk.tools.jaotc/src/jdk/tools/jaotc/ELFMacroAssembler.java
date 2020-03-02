@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 
 package jdk.tools.jaotc;
 
+import org.graalvm.compiler.options.OptionValues;
+
 import jdk.tools.jaotc.aarch64.AArch64ELFMacroAssembler;
 import jdk.tools.jaotc.amd64.AMD64ELFMacroAssembler;
 import jdk.vm.ci.aarch64.AArch64;
@@ -34,10 +36,10 @@ import jdk.vm.ci.code.TargetDescription;
 
 public interface ELFMacroAssembler {
 
-    static ELFMacroAssembler getELFMacroAssembler(TargetDescription target) {
+    static ELFMacroAssembler getELFMacroAssembler(TargetDescription target, OptionValues optionValues) {
         Architecture architecture = target.arch;
         if (architecture instanceof AMD64) {
-            return new AMD64ELFMacroAssembler(target);
+            return new AMD64ELFMacroAssembler(target, optionValues);
         } else if (architecture instanceof AArch64) {
             return new AArch64ELFMacroAssembler(target);
         } else {

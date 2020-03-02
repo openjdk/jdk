@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,13 +43,15 @@ import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
 import org.graalvm.compiler.lir.sparc.SPARCAddressValue;
 import org.graalvm.compiler.nodes.DeoptimizingNode;
 import org.graalvm.compiler.nodes.IfNode;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.CompareNode;
 import org.graalvm.compiler.nodes.calc.SignExtendNode;
 import org.graalvm.compiler.nodes.calc.ZeroExtendNode;
 import org.graalvm.compiler.nodes.java.LogicCompareAndSwapNode;
-import org.graalvm.compiler.nodes.memory.Access;
+import org.graalvm.compiler.nodes.memory.AddressableMemoryAccess;
 import org.graalvm.compiler.nodes.memory.LIRLowerableAccess;
+import org.graalvm.compiler.nodes.memory.MemoryAccess;
 
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.Value;
@@ -64,7 +66,7 @@ public class SPARCNodeMatchRules extends NodeMatchRules {
         super(gen);
     }
 
-    protected LIRFrameState getState(Access access) {
+    protected LIRFrameState getState(MemoryAccess access) {
         if (access instanceof DeoptimizingNode) {
             return state((DeoptimizingNode) access);
         }
@@ -72,10 +74,10 @@ public class SPARCNodeMatchRules extends NodeMatchRules {
     }
 
     protected LIRKind getLirKind(LIRLowerableAccess access) {
-        return gen.getLIRKind(access.getAccessStamp());
+        return gen.getLIRKind(access.getAccessStamp(NodeView.DEFAULT));
     }
 
-    private ComplexMatchResult emitSignExtendMemory(Access access, int fromBits, int toBits) {
+    private ComplexMatchResult emitSignExtendMemory(AddressableMemoryAccess access, int fromBits, int toBits) {
         assert fromBits <= toBits && toBits <= 64;
         SPARCKind toKind = null;
         SPARCKind fromKind = null;
@@ -103,7 +105,7 @@ public class SPARCNodeMatchRules extends NodeMatchRules {
         };
     }
 
-    private ComplexMatchResult emitZeroExtendMemory(Access access, int fromBits, int toBits) {
+    private ComplexMatchResult emitZeroExtendMemory(AddressableMemoryAccess access, int fromBits, int toBits) {
         assert fromBits <= toBits && toBits <= 64;
         SPARCKind toKind = null;
         SPARCKind fromKind = null;
@@ -135,14 +137,14 @@ public class SPARCNodeMatchRules extends NodeMatchRules {
     @MatchRule("(SignExtend Read=access)")
     @MatchRule("(SignExtend FloatingRead=access)")
     @MatchRule("(SignExtend VolatileRead=access)")
-    public ComplexMatchResult signExtend(SignExtendNode root, Access access) {
+    public ComplexMatchResult signExtend(SignExtendNode root, AddressableMemoryAccess access) {
         return emitSignExtendMemory(access, root.getInputBits(), root.getResultBits());
     }
 
     @MatchRule("(ZeroExtend Read=access)")
     @MatchRule("(ZeroExtend FloatingRead=access)")
     @MatchRule("(ZeroExtend VolatileRead=access)")
-    public ComplexMatchResult zeroExtend(ZeroExtendNode root, Access access) {
+    public ComplexMatchResult zeroExtend(ZeroExtendNode root, AddressableMemoryAccess access) {
         return emitZeroExtendMemory(access, root.getInputBits(), root.getResultBits());
     }
 

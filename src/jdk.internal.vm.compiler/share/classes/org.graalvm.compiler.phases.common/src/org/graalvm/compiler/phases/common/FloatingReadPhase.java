@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,12 +62,14 @@ import org.graalvm.compiler.nodes.memory.FloatingAccessNode;
 import org.graalvm.compiler.nodes.memory.FloatingReadNode;
 import org.graalvm.compiler.nodes.memory.MemoryAccess;
 import org.graalvm.compiler.nodes.memory.MemoryAnchorNode;
-import org.graalvm.compiler.nodes.memory.MemoryCheckpoint;
+import org.graalvm.compiler.nodes.memory.MemoryKill;
 import org.graalvm.compiler.nodes.memory.MemoryMap;
 import org.graalvm.compiler.nodes.memory.MemoryMapNode;
 import org.graalvm.compiler.nodes.memory.MemoryNode;
 import org.graalvm.compiler.nodes.memory.MemoryPhiNode;
+import org.graalvm.compiler.nodes.memory.MultiMemoryKill;
 import org.graalvm.compiler.nodes.memory.ReadNode;
+import org.graalvm.compiler.nodes.memory.SingleMemoryKill;
 import org.graalvm.compiler.nodes.util.GraphUtil;
 import org.graalvm.compiler.phases.Phase;
 import org.graalvm.compiler.phases.common.util.EconomicSetNodeEventListener;
@@ -141,7 +143,7 @@ public class FloatingReadPhase extends Phase {
 
     @Override
     public float codeSizeIncrease() {
-        return 1.25f;
+        return 1.50f;
     }
 
     /**
@@ -166,10 +168,10 @@ public class FloatingReadPhase extends Phase {
     }
 
     protected void processNode(FixedNode node, EconomicSet<LocationIdentity> currentState) {
-        if (node instanceof MemoryCheckpoint.Single) {
-            processIdentity(currentState, ((MemoryCheckpoint.Single) node).getKilledLocationIdentity());
-        } else if (node instanceof MemoryCheckpoint.Multi) {
-            for (LocationIdentity identity : ((MemoryCheckpoint.Multi) node).getKilledLocationIdentities()) {
+        if (node instanceof SingleMemoryKill) {
+            processIdentity(currentState, ((SingleMemoryKill) node).getKilledLocationIdentity());
+        } else if (node instanceof MultiMemoryKill) {
+            for (LocationIdentity identity : ((MultiMemoryKill) node).getKilledLocationIdentities()) {
                 processIdentity(currentState, identity);
             }
         }
@@ -281,6 +283,10 @@ public class FloatingReadPhase extends Phase {
 
     }
 
+    public static boolean nodeOfMemoryType(Node node) {
+        return !(node instanceof MemoryKill) || (node instanceof SingleMemoryKill ^ node instanceof MultiMemoryKill);
+    }
+
     private static boolean checkNoImmutableLocations(EconomicSet<LocationIdentity> keys) {
         keys.forEach(t -> {
             assert t.isMutable();
@@ -324,12 +330,12 @@ public class FloatingReadPhase extends Phase {
             if (createFloatingReads && node instanceof FloatableAccessNode) {
                 processFloatable((FloatableAccessNode) node, state);
             }
-            if (node instanceof MemoryCheckpoint.Single) {
-                processCheckpoint((MemoryCheckpoint.Single) node, state);
-            } else if (node instanceof MemoryCheckpoint.Multi) {
-                processCheckpoint((MemoryCheckpoint.Multi) node, state);
+            if (node instanceof SingleMemoryKill) {
+                processCheckpoint((SingleMemoryKill) node, state);
+            } else if (node instanceof MultiMemoryKill) {
+                processCheckpoint((MultiMemoryKill) node, state);
             }
-            assert MemoryCheckpoint.TypeAssertion.correctType(node) : node;
+            assert nodeOfMemoryType(node) : node;
 
             if (createMemoryMapNodes && node instanceof ReturnNode) {
                 ((ReturnNode) node).setMemoryMap(node.graph().unique(new MemoryMapNode(state.getMap())));
@@ -366,17 +372,17 @@ public class FloatingReadPhase extends Phase {
             }
         }
 
-        private static void processCheckpoint(MemoryCheckpoint.Single checkpoint, MemoryMapImpl state) {
+        private static void processCheckpoint(SingleMemoryKill checkpoint, MemoryMapImpl state) {
             processIdentity(checkpoint.getKilledLocationIdentity(), checkpoint, state);
         }
 
-        private static void processCheckpoint(MemoryCheckpoint.Multi checkpoint, MemoryMapImpl state) {
+        private static void processCheckpoint(MultiMemoryKill checkpoint, MemoryMapImpl state) {
             for (LocationIdentity identity : checkpoint.getKilledLocationIdentities()) {
                 processIdentity(identity, checkpoint, state);
             }
         }
 
-        private static void processIdentity(LocationIdentity identity, MemoryCheckpoint checkpoint, MemoryMapImpl state) {
+        private static void processIdentity(LocationIdentity identity, MemoryKill checkpoint, MemoryMapImpl state) {
             if (identity.isAny()) {
                 state.getMap().clear();
             }
@@ -417,7 +423,7 @@ public class FloatingReadPhase extends Phase {
                  * side it needs to choose by putting in the location identity on both successors.
                  */
                 InvokeWithExceptionNode invoke = (InvokeWithExceptionNode) node.predecessor();
-                result.getMap().put(invoke.getKilledLocationIdentity(), (MemoryCheckpoint) node);
+                result.getMap().put(invoke.getKilledLocationIdentity(), (MemoryKill) node);
             }
             return result;
         }

@@ -94,6 +94,7 @@
 #endif
 
 #include <errno.h>
+#include <jfr/recorder/jfrRecorder.hpp>
 
 /*
   NOTE about use of any ctor or function call that can trigger a safepoint/GC:
@@ -557,7 +558,7 @@ JVM_ENTRY(jstring, JVM_GetExtendedNPEMessage(JNIEnv *env, jthrowable throwable))
   stringStream ss;
   bool ok = BytecodeUtils::get_NPE_message_at(&ss, method, bci);
   if (ok) {
-    oop result = java_lang_String::create_oop_from_str(ss.base(), CHECK_0);
+    oop result = java_lang_String::create_oop_from_str(ss.base(), CHECK_NULL);
     return (jstring) JNIHandles::make_local(env, result);
   } else {
     return NULL;
@@ -2882,6 +2883,15 @@ JVM_ENTRY(void, JVM_StartThread(JNIEnv* env, jobject jthread))
               os::native_thread_creation_failed_msg());
   }
 
+#if INCLUDE_JFR
+  if (JfrRecorder::is_recording() && EventThreadStart::is_enabled() &&
+      EventThreadStart::is_stacktrace_enabled()) {
+    JfrThreadLocal* tl = native_thread->jfr_thread_local();
+    // skip Thread.start() and Thread.start0()
+    tl->set_cached_stack_trace_id(JfrStackTraceRepository::record(thread, 2));
+  }
+#endif
+
   Thread::start(native_thread);
 
 JVM_END
@@ -3371,6 +3381,7 @@ JVM_ENTRY_NO_ENV(void*, JVM_LoadLibrary(const char* name))
 
     THROW_HANDLE_0(h_exception);
   }
+  log_info(library)("Loaded library %s, handle " INTPTR_FORMAT, name, p2i(load_result));
   return load_result;
 JVM_END
 
@@ -3378,12 +3389,17 @@ JVM_END
 JVM_LEAF(void, JVM_UnloadLibrary(void* handle))
   JVMWrapper("JVM_UnloadLibrary");
   os::dll_unload(handle);
+  log_info(library)("Unloaded library with handle " INTPTR_FORMAT, p2i(handle));
 JVM_END
 
 
 JVM_LEAF(void*, JVM_FindLibraryEntry(void* handle, const char* name))
   JVMWrapper("JVM_FindLibraryEntry");
-  return os::dll_lookup(handle, name);
+  void* find_result = os::dll_lookup(handle, name);
+  log_info(library)("%s %s in library with handle " INTPTR_FORMAT,
+                    find_result != NULL ? "Found" : "Failed to find",
+                    name, p2i(handle));
+  return find_result;
 JVM_END
 
 

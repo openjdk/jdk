@@ -49,9 +49,9 @@ public class LoopPeelingPhase extends LoopPhase<LoopPolicies> {
             try (DebugContext.Scope s = debug.scope("peeling", data.getCFG())) {
                 for (LoopEx loop : data.outerFirst()) {
                     if (loop.canDuplicateLoop() && loop.loopBegin().getLoopEndCount() > 0) {
-                        if (LoopPolicies.Options.PeelALot.getValue(graph.getOptions()) || getPolicies().shouldPeel(loop, data.getCFG(), context.getMetaAccess())) {
+                        if (LoopPolicies.Options.PeelALot.getValue(graph.getOptions()) || getPolicies().shouldPeel(loop, data.getCFG(), context)) {
                             debug.log("Peeling %s", loop);
-                            PEELED.add(debug, 1);
+                            PEELED.increment(debug);
                             LoopTransformations.peel(loop);
                             debug.dump(DebugContext.DETAILED_LEVEL, graph, "Peeling %s", loop);
                         }
@@ -66,6 +66,6 @@ public class LoopPeelingPhase extends LoopPhase<LoopPolicies> {
 
     @Override
     public float codeSizeIncrease() {
-        return 5.0f;
+        return 10.0f;
     }
 }

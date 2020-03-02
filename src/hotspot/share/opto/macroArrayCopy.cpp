@@ -31,7 +31,7 @@
 #include "opto/macro.hpp"
 #include "opto/runtime.hpp"
 #include "utilities/align.hpp"
-
+#include "utilities/powerOfTwo.hpp"
 
 void PhaseMacroExpand::insert_mem_bar(Node** ctrl, Node** mem, int opcode, Node* precedent) {
   MemBarNode* mb = MemBarNode::make(C, opcode, Compile::AliasIdxBot, precedent);
@@ -524,7 +524,7 @@ Node* PhaseMacroExpand::generate_arraycopy(ArrayCopyNode *ac, AllocateArrayNode*
       // Test S[] against D[], not S against D, because (probably)
       // the secondary supertype cache is less busy for S[] than S.
       // This usually only matters when D is an interface.
-      Node* not_subtype_ctrl = Phase::gen_subtype_check(src_klass, dest_klass, ctrl, mem, &_igvn);
+      Node* not_subtype_ctrl = Phase::gen_subtype_check(src_klass, dest_klass, ctrl, mem, _igvn);
       // Plug failing path into checked_oop_disjoint_arraycopy
       if (not_subtype_ctrl != top()) {
         Node* local_ctrl = not_subtype_ctrl;

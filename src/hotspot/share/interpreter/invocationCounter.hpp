@@ -29,36 +29,26 @@
 #include "utilities/exceptions.hpp"
 
 // InvocationCounters are used to trigger actions when a limit (threshold) is reached.
-// For different states, different limits and actions can be defined in the initialization
-// routine of InvocationCounters.
 //
-// Implementation notes: For space reasons, state & counter are both encoded in one word,
-// The state is encoded using some of the least significant bits, the counter is using the
-// more significant bits. The counter is incremented before a method is activated and an
+// The counter is incremented before a method is activated and an
 // action is triggered when count() > limit().
 
 class InvocationCounter {
   friend class VMStructs;
   friend class JVMCIVMStructs;
   friend class ciReplay;
- private:                             // bit no: |31  3|  2  | 1 0 |
-  unsigned int _counter;              // format: [count|carry|state]
+ private:              // bit no: |31  1|  0  |
+  uint _counter;       // format: [count|carry|
 
   enum PrivateConstants {
-    number_of_state_bits = 2,
-    number_of_carry_bits = 1,
-    number_of_noncount_bits = number_of_state_bits + number_of_carry_bits,
-    state_limit          = nth_bit(number_of_state_bits),
-    count_grain          = nth_bit(number_of_state_bits + number_of_carry_bits),
-    carry_mask           = right_n_bits(number_of_carry_bits) << number_of_state_bits,
-    state_mask           = right_n_bits(number_of_state_bits),
-    status_mask          = right_n_bits(number_of_state_bits + number_of_carry_bits),
-    count_mask           = ((int)(-1) ^ status_mask)
+    number_of_carry_bits    = 1,
+    number_of_noncount_bits = number_of_carry_bits,
+    count_grain             = nth_bit(number_of_carry_bits),
+    carry_mask              = right_n_bits(number_of_carry_bits),
+    count_mask              = ((int)(-1) ^ carry_mask)
   };
 
  public:
-  typedef address (*Action)(const methodHandle& method, TRAPS);
-
   enum PublicConstants {
     count_increment      = count_grain,          // use this value to increment the 32bit _counter word
     count_mask_value     = count_mask,           // use this value to mask the backedge counter
@@ -67,30 +57,31 @@ class InvocationCounter {
     count_limit          = nth_bit(number_of_count_bits - 1)
   };
 
-  enum State {
-    wait_for_nothing,                            // do nothing when count() > limit()
-    wait_for_compile,                            // introduce nmethod when count() > limit()
-    number_of_states                             // must be <= state_limit
-  };
-
   // Manipulation
-  void reset();                                  // sets state to wait state
-  void init();                                   // sets state into original state
-  void set_state(State state);                   // sets state and initializes counter correspondingly
-  inline void set(State state, int count);       // sets state and counter
-  inline void decay();                           // decay counter (divide by two)
-  void set_carry();                              // set the sticky carry bit
-  void set_carry_flag()                          {  _counter |= carry_mask; }
-
-  int raw_counter()                              { return _counter; }
+  void reset();
+  void init();
+  void decay();                                  // decay counter (divide by two)
+  void set_carry_and_reduce();                   // set the sticky carry bit
+  void set_carry_on_overflow();
+  void set(uint count);
+  void increment()                 { _counter += count_increment; }
 
   // Accessors
-  State  state() const                           { return (State)(_counter & state_mask); }
-  bool   carry() const                           { return (_counter & carry_mask) != 0; }
-  int    limit() const                           { return CompileThreshold; }
-  Action action() const                          { return _action[state()]; }
-  int    count() const                           { return _counter >> number_of_noncount_bits; }
+  bool carry() const               { return (_counter & carry_mask) != 0; }
+  uint count() const               { return _counter >> number_of_noncount_bits; }
+  uint limit() const               { return CompileThreshold; }
+  uint raw_counter() const         { return _counter; }
 
+  void print();
+
+private:
+  void set_carry()                   {  _counter |= carry_mask; }
+  uint extract_carry(uint raw) const { return (raw & carry_mask); }
+  uint extract_count(uint raw) const { return raw >> number_of_noncount_bits; }
+  void update(uint new_count);
+  void set(uint count, uint carry);
+
+public:
 #ifdef CC_INTERP
   static int InterpreterInvocationLimit;        // CompileThreshold scaled for interpreter use
   static int InterpreterBackwardBranchLimit;    // A separate threshold for on stack replacement
@@ -100,47 +91,16 @@ class InvocationCounter {
   // Checks sum of invocation_counter and backedge_counter as the template interpreter does.
   bool reached_InvocationLimit(InvocationCounter *back_edge_count) const {
     return (_counter & count_mask) + (back_edge_count->_counter & count_mask) >=
-           (unsigned int) InterpreterInvocationLimit;
+           (uint) InterpreterInvocationLimit;
   }
   bool reached_BackwardBranchLimit(InvocationCounter *back_edge_count) const {
     return (_counter & count_mask) + (back_edge_count->_counter & count_mask) >=
-           (unsigned int) InterpreterBackwardBranchLimit;
+           (uint) InterpreterBackwardBranchLimit;
   }
 #endif // CC_INTERP
 
-  void increment()                               { _counter += count_increment; }
-
-
-  // Printing
-  void   print();
-  void   print_short();
-
   // Miscellaneous
   static ByteSize counter_offset()               { return byte_offset_of(InvocationCounter, _counter); }
-  static void reinitialize();
-
- private:
-  static int         _init  [number_of_states];  // the counter limits
-  static Action      _action[number_of_states];  // the actions
-
-  static void        def(State state, int init, Action action);
-  static const char* state_as_string(State state);
-  static const char* state_as_short_string(State state);
 };
-
-inline void InvocationCounter::set(State state, int count) {
-  assert(0 <= state && state < number_of_states, "illegal state");
-  int carry = (_counter & carry_mask);    // the carry bit is sticky
-  _counter = (count << number_of_noncount_bits) | carry | state;
-}
-
-inline void InvocationCounter::decay() {
-  int c = count();
-  int new_count = c >> 1;
-  // prevent from going to zero, to distinguish from never-executed methods
-  if (c > 0 && new_count == 0) new_count = 1;
-  set(state(), new_count);
-}
-
 
 #endif // SHARE_INTERPRETER_INVOCATIONCOUNTER_HPP

@@ -43,6 +43,7 @@
 #include "memory/iterator.hpp"
 #include "memory/resourceArea.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/powerOfTwo.hpp"
 
 ZNMethodTableEntry* ZNMethodTable::_table = NULL;
 size_t ZNMethodTable::_size = 0;

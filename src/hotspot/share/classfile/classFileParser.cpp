@@ -5274,7 +5274,7 @@ const char* ClassFileParser::skip_over_field_signature(const char* signature,
           if (!legal) {
             classfile_parse_error("Class name is empty or contains illegal character "
                                   "in descriptor in class file %s",
-                                  CHECK_0);
+                                  CHECK_NULL);
             return NULL;
           }
           return signature + newlen + 1;
@@ -5286,7 +5286,7 @@ const char* ClassFileParser::skip_over_field_signature(const char* signature,
       array_dim++;
       if (array_dim > 255) {
         // 4277370: array descriptor is valid only if it represents 255 or fewer dimensions.
-        classfile_parse_error("Array type descriptor has more than 255 dimensions in class file %s", CHECK_0);
+        classfile_parse_error("Array type descriptor has more than 255 dimensions in class file %s", CHECK_NULL);
       }
       // The rest of what's there better be a legal signature
       signature++;

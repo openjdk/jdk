@@ -64,9 +64,6 @@ void ReferenceProcessor::init_statics() {
   } else {
     _default_soft_ref_policy = new LRUCurrentHeapPolicy();
   }
-  if (_always_clear_soft_ref_policy == NULL || _default_soft_ref_policy == NULL) {
-    vm_exit_during_initialization("Could not allocate reference policy object");
-  }
   guarantee(RefDiscoveryPolicy == ReferenceBasedDiscovery ||
             RefDiscoveryPolicy == ReferentBasedDiscovery,
             "Unrecognized RefDiscoveryPolicy");

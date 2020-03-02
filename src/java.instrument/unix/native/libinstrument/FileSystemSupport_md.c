@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,15 +34,6 @@
  */
 
 #define slash           '/'
-
-char pathSeparator() {
-    return ':';
-}
-
-/* Filenames are case senstitive */
-int filenameStrcmp(const char* s1, const char* s2) {
-  return strcmp(s1, s2);
-}
 
 char* basePath(const char* path) {
     char* last = strrchr(path, slash);

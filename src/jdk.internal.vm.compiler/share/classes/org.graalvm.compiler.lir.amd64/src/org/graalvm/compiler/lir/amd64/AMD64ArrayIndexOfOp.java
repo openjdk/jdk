@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,7 @@ import org.graalvm.compiler.asm.amd64.AMD64Address;
 import org.graalvm.compiler.asm.amd64.AMD64Address.Scale;
 import org.graalvm.compiler.asm.amd64.AMD64Assembler;
 import org.graalvm.compiler.asm.amd64.AMD64Assembler.AMD64RMOp;
+import org.graalvm.compiler.asm.amd64.AMD64Assembler.ConditionFlag;
 import org.graalvm.compiler.asm.amd64.AMD64Assembler.VexMoveOp;
 import org.graalvm.compiler.asm.amd64.AMD64Assembler.VexRMIOp;
 import org.graalvm.compiler.asm.amd64.AMD64Assembler.VexRMOp;
@@ -201,16 +202,14 @@ public final class AMD64ArrayIndexOfOp extends AMD64LIRInstruction {
         asm.leaq(index, new AMD64Address(fromIndex, vectorSize + (findTwoConsecutive ? 1 : 0)));
 
         // check if vector vector load is in bounds
-        asm.cmpq(index, arrayLength);
-        asm.jccb(AMD64Assembler.ConditionFlag.LessEqual, runVectorized);
+        asm.cmpqAndJcc(index, arrayLength, ConditionFlag.LessEqual, runVectorized, true);
 
         // search range is smaller than vector size, do element-wise comparison
 
         // index = fromIndex (+ 1 if findTwoConsecutive)
         asm.subq(index, vectorSize);
         // check if enough array slots remain
-        asm.cmpq(index, arrayLength);
-        asm.jccb(AMD64Assembler.ConditionFlag.GreaterEqual, elementWiseNotFound);
+        asm.cmpqAndJcc(index, arrayLength, ConditionFlag.GreaterEqual, elementWiseNotFound, true);
         // compare one-by-one
         asm.bind(elementWiseLoop);
         // check for match
@@ -229,6 +228,7 @@ public final class AMD64ArrayIndexOfOp extends AMD64LIRInstruction {
                 } else {
                     AMD64Assembler.AMD64BinaryArithmetic.CMP.getRMOpcode(cmpSize).emit(asm, cmpSize, cmpResult[0], asRegister(searchValue[i]));
                 }
+                // TODO (yz) the preceding cmp instruction may be fused with the following jcc
                 asm.jccb(AMD64Assembler.ConditionFlag.Equal, elementWiseFound);
             }
         } else {
@@ -239,14 +239,14 @@ public final class AMD64ArrayIndexOfOp extends AMD64LIRInstruction {
                 } else {
                     AMD64Assembler.AMD64BinaryArithmetic.CMP.getRMOpcode(cmpSize).emit(asm, cmpSize, asRegister(searchValue[i]), arrayAddr);
                 }
+                // TODO (yz) the preceding cmp instruction may be fused with the following jcc
                 asm.jccb(AMD64Assembler.ConditionFlag.Equal, elementWiseFound);
             }
         }
         // adjust index
         asm.incrementq(index, 1);
         // continue loop
-        asm.cmpq(index, arrayLength);
-        asm.jccb(AMD64Assembler.ConditionFlag.Less, elementWiseLoop);
+        asm.cmpqAndJcc(index, arrayLength, ConditionFlag.Less, elementWiseLoop, true);
 
         asm.bind(elementWiseNotFound);
         asm.xorq(index, index);
@@ -285,8 +285,7 @@ public final class AMD64ArrayIndexOfOp extends AMD64LIRInstruction {
         asm.addq(index, bulkSize);
 
         // check if there are enough array slots remaining for the bulk loop
-        asm.cmpq(index, arrayLength);
-        asm.jccb(AMD64Assembler.ConditionFlag.Greater, skipBulkVectorLoop);
+        asm.cmpqAndJcc(index, arrayLength, ConditionFlag.Greater, skipBulkVectorLoop, true);
 
         emitAlign(crb, asm);
         asm.bind(bulkVectorLoop);
@@ -295,8 +294,7 @@ public final class AMD64ArrayIndexOfOp extends AMD64LIRInstruction {
         // adjust index
         asm.addq(index, bulkSize);
         // check if there are enough array slots remaining for the bulk loop
-        asm.cmpq(index, arrayLength);
-        asm.jccb(AMD64Assembler.ConditionFlag.LessEqual, bulkVectorLoop);
+        asm.cmpqAndJcc(index, arrayLength, ConditionFlag.LessEqual, bulkVectorLoop, true);
 
         asm.bind(skipBulkVectorLoop);
         if ((findTwoConsecutive && nVectors == 2) || nVectors == 1) {
@@ -319,8 +317,7 @@ public final class AMD64ArrayIndexOfOp extends AMD64LIRInstruction {
             // compare
             emitVectorCompare(asm, vectorCompareKind, findTwoConsecutive ? 2 : 1, arrayPtr, index, vecCmp, vecArray, cmpResult, vectorFound, true, false);
             // check if there are enough array slots remaining for the loop
-            asm.cmpq(index, arrayLength);
-            asm.jccb(AMD64Assembler.ConditionFlag.Less, singleVectorLoop);
+            asm.cmpqAndJcc(index, arrayLength, ConditionFlag.Less, singleVectorLoop, true);
         }
 
         asm.movl(index, -1);
@@ -368,8 +365,7 @@ public final class AMD64ArrayIndexOfOp extends AMD64LIRInstruction {
             // find offset 0
             asm.bsfq(cmpResult[1], cmpResult[1]);
             // check if second result is also a match
-            asm.testq(cmpResult[0], cmpResult[0]);
-            asm.jccb(AMD64Assembler.ConditionFlag.Zero, minResultDone);
+            asm.testqAndJcc(cmpResult[0], cmpResult[0], ConditionFlag.Zero, minResultDone, true);
             // find offset 1
             asm.bsfq(cmpResult[0], cmpResult[0]);
             asm.addq(cmpResult[0], valueKind.getByteCount());
@@ -538,7 +534,7 @@ public final class AMD64ArrayIndexOfOp extends AMD64LIRInstruction {
                     emitPOR(asm, getVectorSize(), vecArray[base], vecArray[base + 2]);
                 }
                 emitMOVMSK(asm, getVectorSize(), cmpResult[0], vecArray[base]);
-                emitJnz(asm, cmpResult[0], vectorFound[nVectors - (i + 1)], shortJmp);
+                asm.testlAndJcc(cmpResult[0], cmpResult[0], ConditionFlag.NotZero, vectorFound[nVectors - (i + 1)], shortJmp);
             }
         } else {
             for (int i = 0; i < nVectors; i += 2) {
@@ -546,18 +542,9 @@ public final class AMD64ArrayIndexOfOp extends AMD64LIRInstruction {
                 emitVectorCompareInst(asm, kind, getVectorSize(), vecArray[i + 1], vecCmp[0]);
                 emitMOVMSK(asm, getVectorSize(), cmpResult[1], vecArray[i]);
                 emitMOVMSK(asm, getVectorSize(), cmpResult[0], vecArray[i + 1]);
-                emitJnz(asm, cmpResult[1], vectorFound[nVectors - (i + 1)], shortJmp);
-                emitJnz(asm, cmpResult[0], vectorFound[nVectors - (i + 2)], shortJmp);
+                asm.testlAndJcc(cmpResult[1], cmpResult[1], ConditionFlag.NotZero, vectorFound[nVectors - (i + 1)], shortJmp);
+                asm.testlAndJcc(cmpResult[0], cmpResult[0], ConditionFlag.NotZero, vectorFound[nVectors - (i + 2)], shortJmp);
             }
-        }
-    }
-
-    private static void emitJnz(AMD64MacroAssembler asm, Register cond, Label tgt, boolean shortJmp) {
-        asm.testl(cond, cond);
-        if (shortJmp) {
-            asm.jccb(AMD64Assembler.ConditionFlag.NotZero, tgt);
-        } else {
-            asm.jcc(AMD64Assembler.ConditionFlag.NotZero, tgt);
         }
     }
 

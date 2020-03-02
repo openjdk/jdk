@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,7 @@ import org.graalvm.compiler.api.replacements.SnippetReflectionProvider;
 import org.graalvm.compiler.core.common.calc.Condition;
 import org.graalvm.compiler.core.common.calc.Condition.CanonicalizedCondition;
 import org.graalvm.compiler.core.common.calc.UnsignedMath;
+import org.graalvm.compiler.core.common.type.IntegerStamp;
 import org.graalvm.compiler.core.common.type.ObjectStamp;
 import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.core.common.type.StampFactory;
@@ -113,7 +114,7 @@ import org.graalvm.compiler.nodes.java.LoadFieldNode;
 import org.graalvm.compiler.nodes.java.RegisterFinalizerNode;
 import org.graalvm.compiler.nodes.java.UnsafeCompareAndExchangeNode;
 import org.graalvm.compiler.nodes.java.UnsafeCompareAndSwapNode;
-import org.graalvm.compiler.nodes.memory.HeapAccess;
+import org.graalvm.compiler.nodes.memory.OnHeapMemoryAccess.BarrierType;
 import org.graalvm.compiler.nodes.memory.address.IndexAddressNode;
 import org.graalvm.compiler.nodes.spi.Replacements;
 import org.graalvm.compiler.nodes.type.StampTool;
@@ -255,7 +256,7 @@ public class StandardGraphBuilderPlugins {
                 @Override
                 public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode arg1, ValueNode arg2) {
                     b.addPush(JavaKind.Char, new JavaReadNode(JavaKind.Char, new IndexAddressNode(arg1, arg2, JavaKind.Byte), NamedLocationIdentity.getArrayLocation(JavaKind.Byte),
-                                    HeapAccess.BarrierType.NONE, false));
+                                    BarrierType.NONE, false));
                     return true;
                 }
             });
@@ -263,7 +264,7 @@ public class StandardGraphBuilderPlugins {
                 @Override
                 public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode arg1, ValueNode arg2, ValueNode arg3) {
                     b.add(new JavaWriteNode(JavaKind.Char, new IndexAddressNode(arg1, arg2, JavaKind.Byte), NamedLocationIdentity.getArrayLocation(JavaKind.Byte), arg3,
-                                    HeapAccess.BarrierType.NONE, false));
+                                    BarrierType.NONE, false));
                     return true;
                 }
             });
@@ -1264,6 +1265,23 @@ public class StandardGraphBuilderPlugins {
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode a) {
                 b.addPush(JavaKind.Int, new SideEffectNode(a));
                 return true;
+            }
+        });
+        r.register2("assumeStableDimension", Object.class, int.class, new InvocationPlugin() {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode array, ValueNode dimension) {
+                if (array instanceof ConstantNode && b.getMetaAccess().lookupJavaType(array.asJavaConstant()).isArray()) {
+                    if (dimension instanceof ConstantNode && dimension.stamp(NodeView.DEFAULT) instanceof IntegerStamp) {
+                        int stableDim = dimension.asJavaConstant().asInt();
+                        ConstantNode c = ConstantNode.forConstant(array.asJavaConstant(), stableDim, false, b.getMetaAccess());
+                        b.addPush(JavaKind.Object, c);
+                        return true;
+                    }
+                }
+                throw GraalError.shouldNotReachHere("Illegal usage of stable array intrinsic assumeStableDimension(array, dimension): " +
+                                "This compiler intrinsic can only be used iff array is a constant node (i.e., constant field) and iff " +
+                                "dimension is a constant int. It will replace the constant array with a new constant that additionally sets the stable" +
+                                "dimensions to the int parameter supplied.");
             }
         });
         r.register2("injectBranchProbability", double.class, boolean.class, new InvocationPlugin() {

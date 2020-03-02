@@ -172,14 +172,14 @@ void Fingerprinter::compute_fingerprint_and_return_type(bool static_flag) {
 
 // Implementation of SignatureStream
 
-static inline int decode_signature_char(int ch) {
+static inline BasicType decode_signature_char(int ch) {
   switch (ch) {
 #define EACH_SIG(ch, bt, ignore) \
     case ch: return bt;
     SIGNATURE_TYPES_DO(EACH_SIG, ignore)
 #undef EACH_SIG
   }
-  return 0;
+  return (BasicType)0;
 }
 
 SignatureStream::SignatureStream(const Symbol* signature,
@@ -188,28 +188,29 @@ SignatureStream::SignatureStream(const Symbol* signature,
          "method signature required");
   _signature = signature;
   _limit = signature->utf8_length();
-  int oz = (is_method ? 1 : 0);
+  int oz = (is_method ? _s_method : _s_field);
   _state = oz;
-  assert(_state == (int)(is_method ? _s_method : _s_field), "signature state incorrectly set");
   _begin = _end = oz; // skip first '(' in method signatures
   _array_prefix = 0;  // just for definiteness
-  _previous_name = NULL;
+
+  // assigning java/lang/Object to _previous_name means we can
+  // avoid a number of NULL checks in the parser
+  _previous_name = vmSymbols::java_lang_Object();
   _names = NULL;
   next();
 }
 
 SignatureStream::~SignatureStream() {
   // decrement refcount for names created during signature parsing
+  _previous_name->decrement_refcount();
   if (_names != NULL) {
     for (int i = 0; i < _names->length(); i++) {
       _names->at(i)->decrement_refcount();
     }
-  } else if (_previous_name != NULL && !_previous_name->is_permanent()) {
-    _previous_name->decrement_refcount();
   }
 }
 
-inline int SignatureStream::scan_non_primitive(BasicType type) {
+inline int SignatureStream::scan_type(BasicType type) {
   const u1* base = _signature->bytes();
   int end = _end;
   int limit = _limit;
@@ -217,22 +218,24 @@ inline int SignatureStream::scan_non_primitive(BasicType type) {
   switch (type) {
   case T_OBJECT:
     tem = (const u1*) memchr(&base[end], JVM_SIGNATURE_ENDCLASS, limit - end);
-    end = (tem == NULL ? limit : tem+1 - base);
-    break;
+    return (tem == NULL ? limit : tem + 1 - base);
 
   case T_ARRAY:
     while ((end < limit) && ((char)base[end] == JVM_SIGNATURE_ARRAY)) { end++; }
     _array_prefix = end - _end;  // number of '[' chars just skipped
-    if (Signature::has_envelope(base[end++])) {
-      tem = (const u1*) memchr(&base[end], JVM_SIGNATURE_ENDCLASS, limit - end);
-      end = (tem == NULL ? limit : tem+1 - base);
-      break;
+    if (Signature::has_envelope(base[end])) {
+      tem = (const u1 *) memchr(&base[end], JVM_SIGNATURE_ENDCLASS, limit - end);
+      return (tem == NULL ? limit : tem + 1 - base);
     }
-    break;
+    // Skipping over a single character for a primitive type.
+    assert(is_java_primitive(decode_signature_char(base[end])), "only primitives expected");
+    return end + 1;
 
-  default : ShouldNotReachHere();
+  default:
+    // Skipping over a single character for a primitive type (or void).
+    assert(!is_reference_type(type), "only primitives or void expected");
+    return end + 1;
   }
-  return end;
 }
 
 void SignatureStream::next() {
@@ -241,50 +244,33 @@ void SignatureStream::next() {
   if (_end >= len) { set_done(); return; }
   _begin = _end;
   int ch = sig->char_at(_begin);
-  int btcode = decode_signature_char(ch);
-  if (btcode == 0) {
-    guarantee(ch == JVM_SIGNATURE_ENDFUNC, "bad signature char %c/%d", ch, ch);
+  if (ch == JVM_SIGNATURE_ENDFUNC) {
     assert(_state == _s_method, "must be in method");
     _state = _s_method_return;
     _begin = ++_end;
     if (_end >= len) { set_done(); return; }
     ch = sig->char_at(_begin);
-    btcode = decode_signature_char(ch);
   }
-  BasicType bt = (BasicType) btcode;
+  BasicType bt = decode_signature_char(ch);
   assert(ch == type2char(bt), "bad signature char %c/%d", ch, ch);
   _type = bt;
-  if (!is_reference_type(bt)) {
-    // Skip over a single character for a primitive type (or void).
-    _end++;
-    return;
-  }
-  _end = scan_non_primitive(bt);
+  _end = scan_type(bt);
 }
 
-int SignatureStream::skip_array_prefix(int max_skip_length) {
-  if (_type != T_ARRAY) {
-    return 0;
-  }
-  if (_array_prefix > max_skip_length) {
-    // strip some but not all levels of T_ARRAY
-    _array_prefix -= max_skip_length;
-    _begin += max_skip_length;
-    return max_skip_length;
-  }
+int SignatureStream::skip_whole_array_prefix() {
+  assert(_type == T_ARRAY, "must be");
+
   // we are stripping all levels of T_ARRAY,
   // so we must decode the next character
   int whole_array_prefix = _array_prefix;
   int new_begin = _begin + whole_array_prefix;
   _begin = new_begin;
   int ch = _signature->char_at(new_begin);
-  int btcode = decode_signature_char(ch);
-  BasicType bt = (BasicType) btcode;
+  BasicType bt = decode_signature_char(ch);
   assert(ch == type2char(bt), "bad signature char %c/%d", ch, ch);
   _type = bt;
   assert(bt != T_VOID && bt != T_ARRAY, "bad signature type");
-  // Don't bother to call scan_non_primitive, since it won't
-  // change the value of _end.
+  // Don't bother to re-scan, since it won't change the value of _end.
   return whole_array_prefix;
 }
 
@@ -317,9 +303,9 @@ bool Signature::is_valid_array_signature(const Symbol* sig) {
 }
 
 BasicType Signature::basic_type(int ch) {
-  int btcode = decode_signature_char(ch);
+  BasicType btcode = decode_signature_char(ch);
   if (btcode == 0)  return T_ILLEGAL;
-  return (BasicType) btcode;
+  return btcode;
 }
 
 static const int jl_len = 10, object_len = 6, jl_object_len = jl_len + object_len;
@@ -365,7 +351,7 @@ Symbol* SignatureStream::find_symbol() {
   }
 
   Symbol* name = _previous_name;
-  if (name != NULL && name->equals(symbol_chars, len)) {
+  if (name->equals(symbol_chars, len)) {
     return name;
   }
 
@@ -375,18 +361,11 @@ Symbol* SignatureStream::find_symbol() {
 
   // Only allocate the GrowableArray for the _names buffer if more than
   // one name is being processed in the signature.
-  if (_previous_name != NULL &&
-      !_previous_name->is_permanent() &&
-      !name->is_permanent() &&
-      _names == NULL) {
-    _names =  new GrowableArray<Symbol*>(10);
-    _names->push(_previous_name);
-  }
-  if (!name->is_permanent() && _previous_name != NULL) {
+  if (!_previous_name->is_permanent()) {
     if (_names == NULL) {
       _names = new GrowableArray<Symbol*>(10);
     }
-    _names->push(name);  // save new symbol for decrementing later
+    _names->push(_previous_name);
   }
   _previous_name = name;
   return name;

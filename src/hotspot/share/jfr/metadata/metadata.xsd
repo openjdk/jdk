@@ -45,7 +45,7 @@
           <xs:element maxOccurs="unbounded" name="Event">
             <xs:complexType>
               <xs:sequence>
-                <xs:element maxOccurs="unbounded" name="Field">
+                <xs:element minOccurs="0" maxOccurs="unbounded" name="Field">
                   <xs:complexType>
                     <xs:attribute name="type" type="xs:NMTOKEN" use="required" />
                     <xs:attribute name="struct" type="xs:boolean" use="optional" />

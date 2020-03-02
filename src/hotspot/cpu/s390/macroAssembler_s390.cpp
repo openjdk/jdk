@@ -55,6 +55,7 @@
 #include "runtime/stubRoutines.hpp"
 #include "utilities/events.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/powerOfTwo.hpp"
 
 #include <ucontext.h>
 

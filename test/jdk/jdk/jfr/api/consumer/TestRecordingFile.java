@@ -74,24 +74,23 @@ public class TestRecordingFile {
     private final static long METADATA_OFFSET = 24;
 
     public static void main(String[] args) throws Throwable {
+        Path valid = Utils.createTempFile("three-event-recording", ".jfr");
 
         // create some recording data
-        Recording r = new Recording();
-        r.enable(TestEvent1.class).withoutStackTrace();
-        r.enable(TestEvent2.class).withoutStackTrace();
-        r.enable(TestEvent3.class).withoutStackTrace();
-        r.start();
-        TestEvent1 t1 = new TestEvent1();
-        t1.commit();
-        TestEvent2 t2 = new TestEvent2();
-        t2.commit();
-        TestEvent3 t3 = new TestEvent3();
-        t3.commit();
-        r.stop();
-        Path valid = Utils.createTempFile("three-event-recording", ".jfr");
-        r.dump(valid);
-        r.close();
-
+        try (Recording r = new Recording()) {
+            r.enable(TestEvent1.class).withoutStackTrace();
+            r.enable(TestEvent2.class).withoutStackTrace();
+            r.enable(TestEvent3.class).withoutStackTrace();
+            r.start();
+            TestEvent1 t1 = new TestEvent1();
+            t1.commit();
+            TestEvent2 t2 = new TestEvent2();
+            t2.commit();
+            TestEvent3 t3 = new TestEvent3();
+            t3.commit();
+            r.stop();
+            r.dump(valid);
+        }
         Path brokenWithZeros = createBrokenWIthZeros(valid);
         Path brokenMetadata = createBrokenMetadata(valid);
         // prepare event sets

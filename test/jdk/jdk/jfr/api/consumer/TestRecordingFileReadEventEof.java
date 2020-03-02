@@ -44,19 +44,19 @@ import jdk.test.lib.jfr.SimpleEvent;
 public class TestRecordingFileReadEventEof {
 
     public static void main(String[] args) throws Throwable {
-        Recording r = new Recording();
-        r.start();
-        SimpleEvent t = new SimpleEvent();
-        t.commit();
-        r.stop();
-        RecordingFile file = Events.copyTo(r);
-        r.close();
-        file.readEvent();
-        try {
+        try (Recording r = new Recording()) {
+            r.start();
+            SimpleEvent t = new SimpleEvent();
+            t.commit();
+            r.stop();
+            RecordingFile file = Events.copyTo(r);
             file.readEvent();
-            Asserts.fail("Expected EOFException not thrown");
-        } catch (EOFException x) {
-            // OK, as expected
+            try {
+                file.readEvent();
+                Asserts.fail("Expected EOFException not thrown");
+            } catch (EOFException x) {
+                // OK, as expected
+            }
         }
     }
 }

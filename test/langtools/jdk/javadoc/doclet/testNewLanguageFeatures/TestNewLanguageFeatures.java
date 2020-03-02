@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,12 +88,12 @@ public class TestNewLanguageFeatures extends JavadocTester {
                 "The string must match <i>exactly</i> an identifier used to declare an\n" +
                 "enum constant in this type.  (Extraneous whitespace characters are \n" +
                 "not permitted.)</div>\n" +
-                "<dl>\n" +
-                "<dt><span class=\"paramLabel\">Parameters:</span></dt>\n" +
+                "<dl class=\"notes\">\n" +
+                "<dt>Parameters:</dt>\n" +
                 "<dd><code>name</code> - the name of the enum constant to be returned.</dd>\n" +
-                "<dt><span class=\"returnLabel\">Returns:</span></dt>\n" +
+                "<dt>Returns:</dt>\n" +
                 "<dd>the enum constant with the specified name</dd>\n" +
-                "<dt><span class=\"throwsLabel\">Throws:</span></dt>\n" +
+                "<dt>Throws:</dt>\n" +
                 "<dd><code>java.lang.IllegalArgumentException</code> - if this enum type has no " +
                 "constant with the specified name</dd>\n" +
                 "<dd><code>java.lang.NullPointerException</code> - if the argument is null</dd>");
@@ -112,12 +112,12 @@ public class TestNewLanguageFeatures extends JavadocTester {
                 // Make sure the header is correct.
                 "Class TypeParameters&lt;E&gt;</h1>",
                 // Check class type parameters section.
-                "<dt><span class=\"paramLabel\">Type Parameters:</span></dt>\n"
+                "<dt>Type Parameters:</dt>\n"
                 + "<dd><code>E</code> - "
                 + "the type parameter for this class.",
                 // Type parameters in @see/@link
-                "<dl>\n"
-                + "<dt><span class=\"seeLabel\">See Also:</span></dt>\n"
+                "<dl class=\"notes\">\n"
+                + "<dt>See Also:</dt>\n"
                 + "<dd>"
                 + "<a href=\"TypeParameters.html\" title=\"class in pkg\">"
                 + "<code>TypeParameters</code></a></dd>\n"
@@ -126,7 +126,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
                 "(<a href=\"TypeParameters.html\" title=\"type "
                 + "parameter in TypeParameters\">E</a>&nbsp;param)",
                 // Method type parameter section.
-                "<span class=\"paramLabel\">Type Parameters:</span></dt>\n"
+                "<dt>Type Parameters:</dt>\n"
                 + "<dd><code>T</code> - This is the first "
                 + "type parameter.</dd>\n"
                 + "<dd><code>V</code> - This is the second type "
@@ -191,7 +191,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
         // Interface generic parameter substitution
         // Signature of subclass that has type parameters.
         checkOutput("pkg/TypeParameters.html", true,
-                "<dl>\n"
+                "<dl class=\"notes\">\n"
                 + "<dt>All Implemented Interfaces:</dt>\n"
                 + "<dd><code><a href=\"SubInterface.html\" title=\"interface in pkg\">"
                 + "SubInterface</a>&lt;E&gt;</code>, <code><a href=\"SuperInterface.html\" "
@@ -199,13 +199,13 @@ public class TestNewLanguageFeatures extends JavadocTester {
                 + "</dl>");
 
         checkOutput("pkg/SuperInterface.html", true,
-                "<dl>\n"
+                "<dl class=\"notes\">\n"
                 + "<dt>All Known Subinterfaces:</dt>\n"
                 + "<dd><code><a href=\"SubInterface.html\" title=\"interface in pkg\">"
                 + "SubInterface</a>&lt;V&gt;</code></dd>\n"
                 + "</dl>");
         checkOutput("pkg/SubInterface.html", true,
-                "<dl>\n"
+                "<dl class=\"notes\">\n"
                 + "<dt>All Superinterfaces:</dt>\n"
                 + "<dd><code><a href=\"SuperInterface.html\" title=\"interface in pkg\">"
                 + "SuperInterface</a>&lt;V&gt;</code></dd>\n"

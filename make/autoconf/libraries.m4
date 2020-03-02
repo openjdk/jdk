@@ -196,7 +196,7 @@ AC_DEFUN_ONCE([LIB_SETUP_MISC_LIBS],
 ################################################################################
 AC_DEFUN_ONCE([LIB_SETUP_SOLARIS_STLPORT],
 [
-  if test "$OPENJDK_TARGET_OS" = "solaris" && test "x$BUILD_GTEST" = "xtrue"; then
+  if test "x$OPENJDK_TARGET_OS" = "xsolaris"; then
     # Find the root of the Solaris Studio installation from the compiler path
     SOLARIS_STUDIO_DIR="$(dirname $CC)/.."
     STLPORT_LIB="$SOLARIS_STUDIO_DIR/lib/stlport4$OPENJDK_TARGET_CPU_ISADIR/libstlport.so.1"
@@ -207,10 +207,9 @@ AC_DEFUN_ONCE([LIB_SETUP_SOLARIS_STLPORT],
     fi
     if test -f "$STLPORT_LIB"; then
       AC_MSG_RESULT([yes, $STLPORT_LIB])
-      BASIC_FIXUP_PATH([STLPORT_LIB])
+      UTIL_FIXUP_PATH([STLPORT_LIB])
     else
-      AC_MSG_RESULT([no, not found at $STLPORT_LIB])
-      AC_MSG_ERROR([Failed to find libstlport.so.1, cannot build Hotspot gtests])
+      AC_MSG_RESULT([no, not found at $STLPORT_LIB, cannot build Hotspot gtests])
     fi
     AC_SUBST(STLPORT_LIB)
   fi

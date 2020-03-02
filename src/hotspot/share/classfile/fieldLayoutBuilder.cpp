@@ -134,13 +134,12 @@ void FieldLayout::initialize_instance_layout(const InstanceKlass* super_klass) {
     _start = _blocks;
     insert(first_empty_block(), new LayoutRawBlock(LayoutRawBlock::RESERVED, instanceOopDesc::base_offset_in_bytes()));
   } else {
-    reconstruct_layout(super_klass);
+    bool has_fields = reconstruct_layout(super_klass);
     fill_holes(super_klass);
-    if (UseEmptySlotsInSupers && !super_klass->has_contended_annotations()) {
-      _start = _blocks; // Setting _start to _blocks instead of _last would allow subclasses
-                        // to allocate fields in empty slots of their super classes
+    if ((UseEmptySlotsInSupers && !super_klass->has_contended_annotations()) || !has_fields) {
+      _start = _blocks;  // start allocating fields from the first empty block
     } else {
-      _start = _last;
+      _start = _last;    // append fields at the end of the reconstructed layout
     }
   }
 }
@@ -294,13 +293,15 @@ LayoutRawBlock* FieldLayout::insert_field_block(LayoutRawBlock* slot, LayoutRawB
   return block;
 }
 
-void FieldLayout::reconstruct_layout(const InstanceKlass* ik) {
+bool FieldLayout::reconstruct_layout(const InstanceKlass* ik) {
+  bool has_instance_fields = false;
   GrowableArray<LayoutRawBlock*>* all_fields = new GrowableArray<LayoutRawBlock*>(32);
   while (ik != NULL) {
     for (AllFieldStream fs(ik->fields(), ik->constants()); !fs.done(); fs.next()) {
       BasicType type = Signature::basic_type(fs.signature());
       // distinction between static and non-static fields is missing
       if (fs.access_flags().is_static()) continue;
+      has_instance_fields = true;
       int size = type2aelembytes(type);
       // INHERITED blocks are marked as non-reference because oop_maps are handled by their holder class
       LayoutRawBlock* block = new LayoutRawBlock(fs.index(), LayoutRawBlock::INHERITED, size, size, false);
@@ -322,6 +323,7 @@ void FieldLayout::reconstruct_layout(const InstanceKlass* ik) {
     _last = b;
   }
   _start = _blocks;
+  return has_instance_fields;
 }
 
 // Called during the reconstruction of a layout, after fields from super
@@ -353,7 +355,7 @@ void FieldLayout::fill_holes(const InstanceKlass* super_klass) {
   // If the super class has @Contended annotation, a padding block is
   // inserted at the end to ensure that fields from the subclasses won't share
   // the cache line of the last field of the contended class
-  if (super_klass->has_contended_annotations()) {
+  if (super_klass->has_contended_annotations() && ContendedPaddingWidth > 0) {
     LayoutRawBlock* p = new LayoutRawBlock(LayoutRawBlock::PADDING, ContendedPaddingWidth);
     p->set_offset(b->offset() + b->size());
     b->set_next_block(p);

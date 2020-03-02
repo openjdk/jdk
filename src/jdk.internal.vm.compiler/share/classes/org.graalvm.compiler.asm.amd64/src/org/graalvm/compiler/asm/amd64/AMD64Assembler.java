@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,10 @@ package org.graalvm.compiler.asm.amd64;
 import static jdk.vm.ci.amd64.AMD64.CPU;
 import static jdk.vm.ci.amd64.AMD64.MASK;
 import static jdk.vm.ci.amd64.AMD64.XMM;
+import static jdk.vm.ci.amd64.AMD64.r12;
+import static jdk.vm.ci.amd64.AMD64.r13;
+import static jdk.vm.ci.amd64.AMD64.rbp;
+import static jdk.vm.ci.amd64.AMD64.rsp;
 import static jdk.vm.ci.amd64.AMD64.CPUFeature.AVX512BW;
 import static jdk.vm.ci.amd64.AMD64.CPUFeature.AVX512CD;
 import static jdk.vm.ci.amd64.AMD64.CPUFeature.AVX512DQ;
@@ -84,6 +88,10 @@ import org.graalvm.compiler.asm.amd64.AMD64Address.Scale;
 import org.graalvm.compiler.asm.amd64.AVXKind.AVXSize;
 import org.graalvm.compiler.core.common.calc.Condition;
 import org.graalvm.compiler.debug.GraalError;
+import org.graalvm.compiler.options.Option;
+import org.graalvm.compiler.options.OptionKey;
+import org.graalvm.compiler.options.OptionType;
+import org.graalvm.compiler.options.OptionValues;
 
 import jdk.vm.ci.amd64.AMD64;
 import jdk.vm.ci.amd64.AMD64.CPUFeature;
@@ -96,11 +104,38 @@ import jdk.vm.ci.code.TargetDescription;
  */
 public class AMD64Assembler extends AMD64BaseAssembler {
 
+    public static class Options {
+        // @formatter:off
+        @Option(help = "Force branch instructions to align with 32-bytes boundary, to mitigate the jcc erratum. " +
+                "See https://www.intel.com/content/dam/support/us/en/documents/processors/mitigations-jump-conditional-code-erratum.pdf for more details.", type = OptionType.User)
+        public static final OptionKey<Boolean> UseBranchesWithin32ByteBoundary = new OptionKey<>(false);
+        // @formatter:on
+    }
+
+    private final boolean useBranchesWithin32ByteBoundary;
+
+    public interface CodePatchShifter {
+        void shift(int pos, int bytesToShift);
+    }
+
+    protected CodePatchShifter codePatchShifter = null;
+
+    public AMD64Assembler(TargetDescription target) {
+        super(target);
+        useBranchesWithin32ByteBoundary = false;
+    }
+
     /**
      * Constructs an assembler for the AMD64 architecture.
      */
-    public AMD64Assembler(TargetDescription target) {
+    public AMD64Assembler(TargetDescription target, OptionValues optionValues) {
         super(target);
+        useBranchesWithin32ByteBoundary = Options.UseBranchesWithin32ByteBoundary.getValue(optionValues);
+    }
+
+    public void setCodePatchShifter(CodePatchShifter codePatchShifter) {
+        assert this.codePatchShifter == null : "overwriting existing value";
+        this.codePatchShifter = codePatchShifter;
     }
 
     /**
@@ -251,8 +286,8 @@ public class AMD64Assembler extends AMD64BaseAssembler {
         protected final int prefix2;
         protected final int op;
 
-        private final boolean dstIsByte;
-        private final boolean srcIsByte;
+        final boolean dstIsByte;
+        final boolean srcIsByte;
 
         private final OpAssertion assertion;
         private final CPUFeature feature;
@@ -359,11 +394,11 @@ public class AMD64Assembler extends AMD64BaseAssembler {
             }
         }
 
-        protected final int immediateSize(OperandSize size) {
+        public final int immediateSize(OperandSize size) {
             if (immIsByte) {
                 return 1;
             } else {
-                return size.getBytes();
+                return size.immediateSize();
             }
         }
     }
@@ -605,7 +640,7 @@ public class AMD64Assembler extends AMD64BaseAssembler {
     /**
      * Opcodes with operand order of M.
      */
-    public static class AMD64MOp extends AMD64Op {
+    public static final class AMD64MOp extends AMD64Op {
         // @formatter:off
         public static final AMD64MOp NOT  = new AMD64MOp("NOT",  0xF7, 2);
         public static final AMD64MOp NEG  = new AMD64MOp("NEG",  0xF7, 3);
@@ -622,11 +657,7 @@ public class AMD64Assembler extends AMD64BaseAssembler {
         private final int ext;
 
         protected AMD64MOp(String opcode, int op, int ext) {
-            this(opcode, 0, op, ext);
-        }
-
-        protected AMD64MOp(String opcode, int prefix, int op, int ext) {
-            this(opcode, prefix, op, ext, OpAssertion.WordOrLargerAssertion);
+            this(opcode, 0, op, ext, OpAssertion.WordOrLargerAssertion);
         }
 
         protected AMD64MOp(String opcode, int op, int ext, OpAssertion assertion) {
@@ -638,13 +669,13 @@ public class AMD64Assembler extends AMD64BaseAssembler {
             this.ext = ext;
         }
 
-        public final void emit(AMD64Assembler asm, OperandSize size, Register dst) {
+        public void emit(AMD64Assembler asm, OperandSize size, Register dst) {
             assert verify(asm, size, dst, null);
             emitOpcode(asm, size, getRXB(null, dst), 0, dst.encoding);
             asm.emitModRM(ext, dst);
         }
 
-        public final void emit(AMD64Assembler asm, OperandSize size, AMD64Address dst) {
+        public void emit(AMD64Assembler asm, OperandSize size, AMD64Address dst) {
             assert verify(asm, size, null, null);
             emitOpcode(asm, size, getRXB(null, dst), 0, 0);
             asm.emitOperandHelper(ext, dst, 0);
@@ -1915,9 +1946,7 @@ public class AMD64Assembler extends AMD64BaseAssembler {
     }
 
     public final void decl(AMD64Address dst) {
-        prefix(dst);
-        emitByte(0xFF);
-        emitOperandHelper(1, dst, 0);
+        DEC.emit(this, DWORD, dst);
     }
 
     public final void divsd(Register dst, Register src) {
@@ -1937,26 +1966,98 @@ public class AMD64Assembler extends AMD64BaseAssembler {
     }
 
     public final void incl(AMD64Address dst) {
-        prefix(dst);
-        emitByte(0xFF);
-        emitOperandHelper(0, dst, 0);
+        INC.emit(this, DWORD, dst);
+    }
+
+    public static final int JCC_ERRATUM_MITIGATION_BOUNDARY = 0x20;
+    public static final int OPCODE_IN_BYTES = 1;
+    public static final int MODRM_IN_BYTES = 1;
+
+    protected static int getPrefixInBytes(OperandSize size, Register dst, boolean dstIsByte) {
+        boolean needsRex = needsRex(dst, dstIsByte);
+        if (size == WORD) {
+            return needsRex ? 2 : 1;
+        }
+        return size == QWORD || needsRex ? 1 : 0;
+    }
+
+    protected static int getPrefixInBytes(OperandSize size, AMD64Address src) {
+        boolean needsRex = needsRex(src.getBase()) || needsRex(src.getIndex());
+        if (size == WORD) {
+            return needsRex ? 2 : 1;
+        }
+        return size == QWORD || needsRex ? 1 : 0;
+    }
+
+    protected static int getPrefixInBytes(OperandSize size, Register dst, boolean dstIsByte, Register src, boolean srcIsByte) {
+        boolean needsRex = needsRex(dst, dstIsByte) || needsRex(src, srcIsByte);
+        if (size == WORD) {
+            return needsRex ? 2 : 1;
+        }
+        return size == QWORD || needsRex ? 1 : 0;
+    }
+
+    protected static int getPrefixInBytes(OperandSize size, Register dst, boolean dstIsByte, AMD64Address src) {
+        boolean needsRex = needsRex(dst, dstIsByte) || needsRex(src.getBase()) || needsRex(src.getIndex());
+        if (size == WORD) {
+            return needsRex ? 2 : 1;
+        }
+        return size == QWORD || needsRex ? 1 : 0;
+    }
+
+    protected boolean mayCrossBoundary(int opStart, int opEnd) {
+        return (opStart / JCC_ERRATUM_MITIGATION_BOUNDARY) != ((opEnd - 1) / JCC_ERRATUM_MITIGATION_BOUNDARY) || (opEnd % JCC_ERRATUM_MITIGATION_BOUNDARY) == 0;
+    }
+
+    private static int bytesUntilBoundary(int pos) {
+        return JCC_ERRATUM_MITIGATION_BOUNDARY - (pos % JCC_ERRATUM_MITIGATION_BOUNDARY);
+    }
+
+    protected boolean ensureWithinBoundary(int opStart) {
+        if (useBranchesWithin32ByteBoundary) {
+            assert !mayCrossBoundary(opStart, position());
+        }
+        return true;
+    }
+
+    protected final void testAndAlign(int bytesToEmit) {
+        if (useBranchesWithin32ByteBoundary) {
+            int beforeNextOp = position();
+            int afterNextOp = beforeNextOp + bytesToEmit;
+            if (mayCrossBoundary(beforeNextOp, afterNextOp)) {
+                int bytesToShift = bytesUntilBoundary(beforeNextOp);
+                nop(bytesToShift);
+                if (codePatchShifter != null) {
+                    codePatchShifter.shift(beforeNextOp, bytesToShift);
+                }
+            }
+        }
     }
 
     public void jcc(ConditionFlag cc, int jumpTarget, boolean forceDisp32) {
-        int shortSize = 2;
-        int longSize = 6;
+        final int shortSize = 2;
+        final int longSize = 6;
+
         long disp = jumpTarget - position();
         if (!forceDisp32 && isByte(disp - shortSize)) {
-            // 0111 tttn #8-bit disp
-            emitByte(0x70 | cc.getValue());
-            emitByte((int) ((disp - shortSize) & 0xFF));
-        } else {
-            // 0000 1111 1000 tttn #32-bit disp
-            assert isInt(disp - longSize) : "must be 32bit offset (call4)";
-            emitByte(0x0F);
-            emitByte(0x80 | cc.getValue());
-            emitInt((int) (disp - longSize));
+            testAndAlign(shortSize);
+            // After alignment, isByte(disp - shortSize) might not hold. Need to check again.
+            disp = jumpTarget - position();
+            if (isByte(disp - shortSize)) {
+                // 0111 tttn #8-bit disp
+                emitByte(0x70 | cc.getValue());
+                emitByte((int) ((disp - shortSize) & 0xFF));
+                return;
+            }
         }
+
+        // 0000 1111 1000 tttn #32-bit disp
+        assert forceDisp32 || isInt(disp - longSize) : "must be 32bit offset (call4)";
+        testAndAlign(longSize);
+        disp = jumpTarget - position();
+        emitByte(0x0F);
+        emitByte(0x80 | cc.getValue());
+        emitInt((int) (disp - longSize));
     }
 
     public final void jcc(ConditionFlag cc, Label l) {
@@ -1964,6 +2065,7 @@ public class AMD64Assembler extends AMD64BaseAssembler {
         if (l.isBound()) {
             jcc(cc, l.position(), false);
         } else {
+            testAndAlign(6);
             // Note: could eliminate cond. jumps to this jump if condition
             // is the same however, seems to be rather unlikely case.
             // Note: use jccb() if label to be bound is very close to get
@@ -1973,14 +2075,14 @@ public class AMD64Assembler extends AMD64BaseAssembler {
             emitByte(0x80 | cc.getValue());
             emitInt(0);
         }
-
     }
 
     public final void jccb(ConditionFlag cc, Label l) {
+        final int shortSize = 2;
+        testAndAlign(shortSize);
         if (l.isBound()) {
-            int shortSize = 2;
             int entry = l.position();
-            assert isByte(entry - (position() + shortSize)) : "Dispacement too large for a short jmp";
+            assert isByte(entry - (position() + shortSize)) : "Displacement too large for a short jmp";
             long disp = entry - position();
             // 0111 tttn #8-bit disp
             emitByte(0x70 | cc.getValue());
@@ -1992,17 +2094,46 @@ public class AMD64Assembler extends AMD64BaseAssembler {
         }
     }
 
-    public final void jmp(int jumpTarget, boolean forceDisp32) {
-        int shortSize = 2;
-        int longSize = 5;
-        long disp = jumpTarget - position();
-        if (!forceDisp32 && isByte(disp - shortSize)) {
-            emitByte(0xEB);
-            emitByte((int) ((disp - shortSize) & 0xFF));
+    public final void jcc(ConditionFlag cc, Label branchTarget, boolean isShortJmp) {
+        if (branchTarget == null) {
+            // jump to placeholder
+            jcc(cc, 0, true);
+        } else if (isShortJmp) {
+            jccb(cc, branchTarget);
         } else {
-            emitByte(0xE9);
-            emitInt((int) (disp - longSize));
+            jcc(cc, branchTarget);
         }
+    }
+
+    /**
+     * Emit a jmp instruction given a known target address.
+     *
+     * @return the position where the jmp instruction starts.
+     */
+    public final int jmp(int jumpTarget, boolean forceDisp32) {
+        final int shortSize = 2;
+        final int longSize = 5;
+        // For long jmp, the jmp instruction will cross the jcc-erratum-mitigation-boundary when the
+        // current position is between [0x1b, 0x1f]. For short jmp [0x1e, 0x1f], which is covered by
+        // the long jmp triggering range.
+        if (!forceDisp32) {
+            // We first align the next jmp assuming it will be short jmp.
+            testAndAlign(shortSize);
+            int pos = position();
+            long disp = jumpTarget - pos;
+            if (isByte(disp - shortSize)) {
+                emitByte(0xEB);
+                emitByte((int) ((disp - shortSize) & 0xFF));
+                return pos;
+            }
+        }
+
+        testAndAlign(longSize);
+        int pos = position();
+        long disp = jumpTarget - pos;
+        emitByte(0xE9);
+        emitInt((int) (disp - longSize));
+        return pos;
     }
 
     @Override
@@ -2014,28 +2145,84 @@ public class AMD64Assembler extends AMD64BaseAssembler {
             // we can't yet know where the label will be bound. If you're sure that
             // the forward jump will not run beyond 256 bytes, use jmpb to
             // force an 8-bit displacement.
-
+            testAndAlign(5);
             l.addPatchAt(position(), this);
             emitByte(0xE9);
             emitInt(0);
         }
     }
 
-    public final void jmp(Register entry) {
+    protected final void jmpWithoutAlignment(Register entry) {
         prefix(entry);
         emitByte(0xFF);
         emitModRM(4, entry);
     }
 
+    public final void jmp(Register entry) {
+        int bytesToEmit = needsRex(entry) ? 3 : 2;
+        testAndAlign(bytesToEmit);
+        int beforeJmp = position();
+        jmpWithoutAlignment(entry);
+        assert beforeJmp + bytesToEmit == position();
+    }
+
     public final void jmp(AMD64Address adr) {
+        int bytesToEmit = getPrefixInBytes(DWORD, adr) + OPCODE_IN_BYTES + addressInBytes(adr);
+        testAndAlign(bytesToEmit);
+        int beforeJmp = position();
         prefix(adr);
         emitByte(0xFF);
         emitOperandHelper(AMD64.rsp, adr, 0);
+        assert beforeJmp + bytesToEmit == position();
+    }
+
+    /**
+     * This method should be synchronized with
+     * {@link AMD64BaseAssembler#emitOperandHelper(Register, AMD64Address, int)}}.
+     */
+    protected static int addressInBytes(AMD64Address addr) {
+        Register base = addr.getBase();
+        Register index = addr.getIndex();
+        int disp = addr.getDisplacement();
+
+        if (base.equals(AMD64.rip)) {
+            return 5;
+        } else if (base.isValid()) {
+            final boolean isZeroDisplacement = disp == 0 && !base.equals(rbp) && !base.equals(r13);
+            if (index.isValid()) {
+                if (isZeroDisplacement) {
+                    return 2;
+                } else if (isByte(disp)) {
+                    return 3;
+                } else {
+                    return 6;
+                }
+            } else if (base.equals(rsp) || base.equals(r12)) {
+                if (disp == 0) {
+                    return 2;
+                } else if (isByte(disp)) {
+                    return 3;
+                } else {
+                    return 6;
+                }
+            } else {
+                if (isZeroDisplacement) {
+                    return 1;
+                } else if (isByte(disp)) {
+                    return 2;
+                } else {
+                    return 5;
+                }
+            }
+        } else {
+            return 6;
+        }
     }
 
     public final void jmpb(Label l) {
+        final int shortSize = 2;
+        testAndAlign(shortSize);
         if (l.isBound()) {
-            int shortSize = 2;
             // Displacement is relative to byte just after jmpb instruction
             int displacement = l.position() - position() - shortSize;
             GraalError.guarantee(isByte(displacement), "Displacement too large to be encoded as a byte: %d", displacement);
@@ -2998,8 +3185,10 @@ public class AMD64Assembler extends AMD64BaseAssembler {
 
     public final void ret(int imm16) {
         if (imm16 == 0) {
+            testAndAlign(1);
             emitByte(0xC3);
         } else {
+            testAndAlign(3);
             emitByte(0xC2);
             emitShort(imm16);
         }
@@ -3089,24 +3278,18 @@ public class AMD64Assembler extends AMD64BaseAssembler {
         // 8bit operands
         if (dst.encoding == 0) {
             emitByte(0xA9);
+            emitInt(imm32);
         } else {
-            prefix(dst);
-            emitByte(0xF7);
-            emitModRM(0, dst);
+            AMD64MIOp.TEST.emit(this, DWORD, dst, imm32);
         }
-        emitInt(imm32);
     }
 
     public final void testl(Register dst, Register src) {
-        prefix(dst, src);
-        emitByte(0x85);
-        emitModRM(dst, src);
+        AMD64RMOp.TEST.emit(this, DWORD, dst, src);
     }
 
     public final void testl(Register dst, AMD64Address src) {
-        prefix(src, dst);
-        emitByte(0x85);
-        emitOperandHelper(dst, src, 0);
+        AMD64RMOp.TEST.emit(this, DWORD, dst, src);
     }
 
     public final void unpckhpd(Register dst, Register src) {
@@ -3141,16 +3324,12 @@ public class AMD64Assembler extends AMD64BaseAssembler {
 
     public final void decl(Register dst) {
         // Use two-byte form (one-byte form is a REX prefix in 64-bit mode)
-        prefix(dst);
-        emitByte(0xFF);
-        emitModRM(1, dst);
+        DEC.emit(this, DWORD, dst);
     }
 
     public final void incl(Register dst) {
         // Use two-byte form (one-byte from is a REX prefix in 64-bit mode)
-        prefix(dst);
-        emitByte(0xFF);
-        emitModRM(0, dst);
+        INC.emit(this, DWORD, dst);
     }
 
     public final void addq(Register dst, int imm32) {
@@ -3267,9 +3446,7 @@ public class AMD64Assembler extends AMD64BaseAssembler {
 
     public final void decq(Register dst) {
         // Use two-byte form (one-byte form is a REX prefix in 64-bit mode)
-        prefixq(dst);
-        emitByte(0xFF);
-        emitModRM(1, dst);
+        DEC.emit(this, QWORD, dst);
     }
 
     public final void decq(AMD64Address dst) {
@@ -3286,9 +3463,7 @@ public class AMD64Assembler extends AMD64BaseAssembler {
     public final void incq(Register dst) {
         // Don't use it directly. Use Macroincrementq() instead.
         // Use two-byte form (one-byte from is a REX prefix in 64-bit mode)
-        prefixq(dst);
-        emitByte(0xFF);
-        emitModRM(0, dst);
+        INC.emit(this, QWORD, dst);
     }
 
     public final void incq(AMD64Address dst) {
@@ -3486,9 +3661,7 @@ public class AMD64Assembler extends AMD64BaseAssembler {
     }
 
     public final void testq(Register dst, Register src) {
-        prefixq(dst, src);
-        emitByte(0x85);
-        emitModRM(dst, src);
+        AMD64RMOp.TEST.emit(this, QWORD, dst, src);
     }
 
     public final void btrq(Register src, int imm8) {
@@ -3962,6 +4135,14 @@ public class AMD64Assembler extends AMD64BaseAssembler {
         evexPrefix(dst, Register.None, Register.None, src, AVXSize.ZMM, P_F3, M_0F, W1, Z0, B0);
         emitByte(0x6F);
         emitOperandHelper(dst, src, 0, EVEXTuple.FVM.getDisp8ScalingFactor(AVXSize.ZMM));
+    }
+
+    public final void evmovdqu64(AMD64Address dst, Register src) {
+        assert supports(CPUFeature.AVX512F);
+        assert inRC(XMM, src);
+        evexPrefix(src, Register.None, Register.None, dst, AVXSize.ZMM, P_F3, M_0F, W1, Z0, B0);
+        emitByte(0x7F);
+        emitOperandHelper(src, dst, 0, EVEXTuple.FVM.getDisp8ScalingFactor(AVXSize.ZMM));
     }
 
     // Insn: VPMOVZXBW zmm1, m256

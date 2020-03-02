@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2017, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,12 +26,14 @@
 
 package org.graalvm.compiler.core.aarch64;
 
-import org.graalvm.compiler.asm.aarch64.AArch64Address;
+import org.graalvm.compiler.asm.aarch64.AArch64Address.AddressingMode;
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.NumUtil;
 import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.AddNode;
+import org.graalvm.compiler.nodes.calc.LeftShiftNode;
+import org.graalvm.compiler.nodes.calc.ZeroExtendNode;
 import org.graalvm.compiler.nodes.memory.address.AddressNode;
 import org.graalvm.compiler.nodes.memory.address.OffsetAddressNode;
 import org.graalvm.compiler.phases.common.AddressLoweringByUsePhase;
@@ -41,9 +43,15 @@ import jdk.vm.ci.meta.JavaConstant;
 
 public class AArch64AddressLoweringByUse extends AddressLoweringByUsePhase.AddressLoweringByUse {
     private AArch64LIRKindTool kindtool;
+    private boolean supportsDerivedReference;
 
     public AArch64AddressLoweringByUse(AArch64LIRKindTool kindtool) {
+        this(kindtool, true);
+    }
+
+    public AArch64AddressLoweringByUse(AArch64LIRKindTool kindtool, boolean supportsDerivedReference) {
         this.kindtool = kindtool;
+        this.supportsDerivedReference = supportsDerivedReference;
     }
 
     @Override
@@ -76,8 +84,8 @@ public class AArch64AddressLoweringByUse extends AddressLoweringByUsePhase.Addre
         return base.graph().unique(ret);
     }
 
-    protected boolean improve(AArch64Kind kind, AArch64AddressNode ret) {
-        AArch64Address.AddressingMode mode = ret.getAddressingMode();
+    private boolean improve(AArch64Kind kind, AArch64AddressNode ret) {
+        AddressingMode mode = ret.getAddressingMode();
         // if we have already set a displacement or set to base only mode then we are done
         if (isDisplacementMode(mode) || isBaseOnlyMode(mode)) {
             return false;
@@ -128,8 +136,8 @@ public class AArch64AddressLoweringByUse extends AddressLoweringByUsePhase.Addre
                         ValueNode child = add.getX();
                         if (child.isJavaConstant() && child.asJavaConstant().getJavaKind().isNumericInteger()) {
                             long newDisp = disp + child.asJavaConstant().asLong();
-                            AArch64Address.AddressingMode newMode = immediateMode(kind, newDisp);
-                            if (newMode != AArch64Address.AddressingMode.REGISTER_OFFSET) {
+                            AddressingMode newMode = immediateMode(kind, newDisp);
+                            if (newMode != AddressingMode.REGISTER_OFFSET) {
                                 disp = newDisp;
                                 mode = newMode;
                                 base = add.getY();
@@ -140,8 +148,8 @@ public class AArch64AddressLoweringByUse extends AddressLoweringByUsePhase.Addre
                             child = add.getY();
                             if (child.isJavaConstant() && child.asJavaConstant().getJavaKind().isNumericInteger()) {
                                 long newDisp = disp + child.asJavaConstant().asLong();
-                                AArch64Address.AddressingMode newMode = immediateMode(kind, newDisp);
-                                if (newMode != AArch64Address.AddressingMode.REGISTER_OFFSET) {
+                                AddressingMode newMode = immediateMode(kind, newDisp);
+                                if (newMode != AddressingMode.REGISTER_OFFSET) {
                                     disp = newDisp;
                                     mode = newMode;
                                     base = add.getX();
@@ -159,12 +167,54 @@ public class AArch64AddressLoweringByUse extends AddressLoweringByUsePhase.Addre
                     } else {
                         // reset to base register only
                         ret.setIndex(null);
-                        ret.setDisplacement(0, 1, AArch64Address.AddressingMode.BASE_REGISTER_ONLY);
+                        ret.setDisplacement(0, 1, AddressingMode.BASE_REGISTER_ONLY);
                     }
                     return true;
                 }
             }
         }
+
+        // We try to convert (OffsetAddress base (Add (LeftShift (Ext i) k) #imm))
+        // to (AArch64AddressNode (AArch64PointerAdd (base (LeftShift (Ext i) k)) #imm)
+        if (supportsDerivedReference && index != null && index instanceof AddNode && index.getStackKind().isNumericInteger()) {
+            ValueNode x = ((AddNode) index).getX();
+            ValueNode y = ((AddNode) index).getY();
+            ValueNode objHeadOffset = null;
+            ValueNode scaledIndex = null;
+            if (x.isConstant()) {
+                objHeadOffset = x;
+                scaledIndex = y;
+            } else if (y.isConstant()) {
+                objHeadOffset = y;
+                scaledIndex = x;
+            }
+
+            if (scaledIndex == null || objHeadOffset == null) {
+                return false;
+            }
+
+            ZeroExtendNode wordIndex = null;
+            if (scaledIndex instanceof LeftShiftNode) {
+                ValueNode var = ((LeftShiftNode) scaledIndex).getX();
+                ValueNode amount = ((LeftShiftNode) scaledIndex).getY();
+                if (amount.isConstant() && var instanceof ZeroExtendNode) {
+                    int s = amount.asJavaConstant().asInt();
+                    if (s >= 0 && s <= 4) {
+                        wordIndex = (ZeroExtendNode) var;
+                    }
+                }
+            } else if (scaledIndex instanceof ZeroExtendNode) {
+                wordIndex = (ZeroExtendNode) scaledIndex;
+            }
+
+            if (wordIndex != null) {
+                AArch64PointerAddNode addP = base.graph().unique(new AArch64PointerAddNode(base, scaledIndex));
+                ret.setBase(addP);
+                ret.setIndex(objHeadOffset);
+                return true;
+            }
+        }
+
         // nope cannot improve this any more
         return false;
     }
@@ -180,7 +230,7 @@ public class AArch64AddressLoweringByUse extends AddressLoweringByUsePhase.Addre
         return (AArch64Kind) lirKind.getPlatformKind();
     }
 
-    private static AArch64Address.AddressingMode immediateMode(AArch64Kind kind, long value) {
+    private static AddressingMode immediateMode(AArch64Kind kind, long value) {
         if (kind != null) {
             int size = kind.getSizeInBytes();
             // this next test should never really fail
@@ -189,32 +239,32 @@ public class AArch64AddressLoweringByUse extends AddressLoweringByUsePhase.Addre
                 // assert value % size == 0
                 // we can try for a 12 bit scaled offset
                 if (NumUtil.isUnsignedNbit(12, encodedValue)) {
-                    return AArch64Address.AddressingMode.IMMEDIATE_SCALED;
+                    return AddressingMode.IMMEDIATE_SCALED;
                 }
             }
         }
 
         // we can try for a 9 bit unscaled offset
         if (NumUtil.isSignedNbit(9, value)) {
-            return AArch64Address.AddressingMode.IMMEDIATE_UNSCALED;
+            return AddressingMode.IMMEDIATE_UNSCALED;
         }
 
         // nope this index needs to be passed via offset register
-        return AArch64Address.AddressingMode.REGISTER_OFFSET;
+        return AddressingMode.REGISTER_OFFSET;
     }
 
-    private static int computeScaleFactor(AArch64Kind kind, AArch64Address.AddressingMode mode) {
-        if (mode == AArch64Address.AddressingMode.IMMEDIATE_SCALED) {
+    private static int computeScaleFactor(AArch64Kind kind, AddressingMode mode) {
+        if (mode == AddressingMode.IMMEDIATE_SCALED) {
             return kind.getSizeInBytes();
         }
         return 1;
     }
 
-    boolean isBaseOnlyMode(AArch64Address.AddressingMode addressingMode) {
-        return addressingMode == AArch64Address.AddressingMode.BASE_REGISTER_ONLY;
+    boolean isBaseOnlyMode(AddressingMode addressingMode) {
+        return addressingMode == AddressingMode.BASE_REGISTER_ONLY;
     }
 
-    private static boolean isDisplacementMode(AArch64Address.AddressingMode addressingMode) {
+    private static boolean isDisplacementMode(AddressingMode addressingMode) {
         switch (addressingMode) {
             case IMMEDIATE_POST_INDEXED:
             case IMMEDIATE_PRE_INDEXED:

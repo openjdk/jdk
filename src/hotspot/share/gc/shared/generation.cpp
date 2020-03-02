@@ -79,9 +79,6 @@ void Generation::ref_processor_init() {
   assert(!_reserved.is_empty(), "empty generation?");
   _span_based_discoverer.set_span(_reserved);
   _ref_processor = new ReferenceProcessor(&_span_based_discoverer);    // a vanilla reference processor
-  if (_ref_processor == NULL) {
-    vm_exit_during_initialization("Could not allocate ReferenceProcessor object");
-  }
 }
 
 void Generation::print() const { print_on(tty); }

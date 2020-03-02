@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -122,10 +122,10 @@ public class TestRedirectLinks extends JavadocTester {
                 "pkg");
         checkExit(Exit.OK);
         checkOutput("pkg/B.html", true,
-                "<a href=\"" + apiURL + "/java.base/java/lang/String.html?is-external=true\" "
+                "<a href=\"" + apiURL + "/java.base/java/lang/String.html\" "
                         + "title=\"class or interface in java.lang\" class=\"externalLink\">Link-Plain to String Class</a>");
         checkOutput("pkg/C.html", true,
-                "<a href=\"" + apiURL + "/java.base/java/lang/Object.html?is-external=true\" "
+                "<a href=\"" + apiURL + "/java.base/java/lang/Object.html\" "
                         + "title=\"class or interface in java.lang\" class=\"externalLink\">Object</a>");
     }
 
@@ -216,10 +216,10 @@ public class TestRedirectLinks extends JavadocTester {
             checkOutput(Output.OUT, true,
                     "javadoc: warning - URL " + oldURL + "/element-list was redirected to " + newURL + "/element-list");
             checkOutput("mC/p5/C5.html", true,
-                    "extends <a href=\"" + oldURL + "/mA/p1/C1.html?is-external=true\" " +
+                    "extends <a href=\"" + oldURL + "/mA/p1/C1.html\" " +
                             "title=\"class or interface in p1\" class=\"externalLink\">C1</a>");
             checkOutput("mC/p6/C6.html", true,
-                    "<a href=\"" + oldURL + "/mB/p4/C4.html?is-external=true\" " +
+                    "<a href=\"" + oldURL + "/mB/p4/C4.html\" " +
                             "title=\"class or interface in p4\" class=\"externalLink\">C4</a>");
         } finally {
             if (oldServer != null) {

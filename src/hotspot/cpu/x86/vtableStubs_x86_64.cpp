@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,7 +97,7 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
     // VTABLE TODO: find upper bound for call_VM length.
     start_pc = __ pc();
     __ call_VM(noreg, CAST_FROM_FN_PTR(address, bad_compiled_vtable_index), j_rarg0, rbx);
-    slop_delta  = 480 - (__ pc() - start_pc);
+    slop_delta  = 550 - (__ pc() - start_pc);
     slop_bytes += slop_delta;
     assert(slop_delta >= 0, "negative slop(%d) encountered, adjust code size estimate!", slop_delta);
     __ bind(L);

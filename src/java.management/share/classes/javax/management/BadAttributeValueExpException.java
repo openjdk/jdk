@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@ public class BadAttributeValueExpException extends Exception   {
      * for example, the string value can be the return of {@code attribute.toString()}
      */
     @SuppressWarnings("serial") // See handling in constructor and readObject
-    private Object val;
+    private String val;
 
     /**
      * Constructs a BadAttributeValueExpException using the specified Object to
@@ -72,19 +72,8 @@ public class BadAttributeValueExpException extends Exception   {
         ObjectInputStream.GetField gf = ois.readFields();
         Object valObj = gf.get("val", null);
 
-        if (valObj == null) {
-            val = null;
-        } else if (valObj instanceof String) {
-            val= valObj;
-        } else if (System.getSecurityManager() == null
-                || valObj instanceof Long
-                || valObj instanceof Integer
-                || valObj instanceof Float
-                || valObj instanceof Double
-                || valObj instanceof Byte
-                || valObj instanceof Short
-                || valObj instanceof Boolean) {
-            val = valObj.toString();
+        if (valObj instanceof String || valObj == null) {
+            val = (String)valObj;
         } else { // the serialized object is from a version without JDK-8019292 fix
             val = System.identityHashCode(valObj) + "@" + valObj.getClass().getName();
         }

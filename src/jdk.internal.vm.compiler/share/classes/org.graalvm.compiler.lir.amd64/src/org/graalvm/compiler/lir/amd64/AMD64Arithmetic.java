@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,8 +83,8 @@ public enum AMD64Arithmetic {
             masm.fprem();
             masm.fwait();
             masm.fnstswAX();
-            masm.testl(AMD64.rax, 0x400);
-            masm.jcc(ConditionFlag.NotZero, label);
+            masm.testlAndJcc(AMD64.rax, 0x400, ConditionFlag.NotZero, label, false);
+
             masm.fxch(1);
             masm.fpop();
 

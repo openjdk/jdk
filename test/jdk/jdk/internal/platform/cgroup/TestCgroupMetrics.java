@@ -43,14 +43,7 @@ public class TestCgroupMetrics {
         }
 
         MetricsTester metricsTester = new MetricsTester();
-        metricsTester.setup();
-        metricsTester.testCpuAccounting();
-        metricsTester.testCpuSchedulingMetrics();
-        metricsTester.testCpuSets();
-        metricsTester.testMemorySubsystem();
-        metricsTester.testBlkIO();
-        metricsTester.testCpuConsumption();
-        metricsTester.testMemoryUsage();
+        metricsTester.testAll(metrics);
         System.out.println("TEST PASSED!!!");
     }
 

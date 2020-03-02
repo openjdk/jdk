@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8153716 8143955 8151754 8150382 8153920 8156910 8131024 8160089 8153897 8167128 8154513 8170015 8170368 8172102 8172103  8165405 8173073 8173848 8174041 8173916 8174028 8174262 8174797 8177079 8180508 8177466 8172154 8192979 8191842 8198573 8198801 8210596 8210959 8215099 8199623 8236715
+ * @bug 8153716 8143955 8151754 8150382 8153920 8156910 8131024 8160089 8153897 8167128 8154513 8170015 8170368 8172102 8172103  8165405 8173073 8173848 8174041 8173916 8174028 8174262 8174797 8177079 8180508 8177466 8172154 8192979 8191842 8198573 8198801 8210596 8210959 8215099 8199623 8236715 8239536
  * @summary Simple jshell tool tests
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
@@ -911,5 +911,21 @@ public class ToolSimpleTest extends ReplToolTesting {
                 (a) -> assertCommandOutputContains(a, "new R(0)",
                         "|  attempted to use record R which cannot be instantiated or its methods invoked until variable j is declared")
         );
+    }
+
+    @Test
+    public void testImportChange() {
+        for (String feedback : new String[] {"verbose", "normal"}) {
+            test(
+                    (a) -> assertCommandOutputContains(a, "/set feedback " + feedback, "|  Feedback mode: " + feedback),
+                    (a) -> assertCommand(a, "import java.util.*", ""),
+                    (a) -> assertCommandOutputContains(a, "var v1 = List.of(1);", "v1 ==> [1]"),
+                    (a) -> assertCommandOutputContains(a, "import java.awt.List;",
+                            "|    update replaced variable v1 which cannot be referenced until this error is corrected:"),
+                    (a) -> assertCommandOutputContains(a, "var b = java.util.List.of(\"bb\")",
+                            "b ==> [bb]"),
+                    (a) -> assertCommandOutputContains(a, "b", "b ==> [bb]")
+            );
+        }
     }
 }

@@ -143,6 +143,11 @@ public class MetricsCpuTester {
 
     private static void testCpuShares(long shares) {
         Metrics metrics = Metrics.systemMetrics();
+        if ("cgroupv2".equals(metrics.getProvider()) && shares < 1024) {
+            // Adjust input shares for < 1024 cpu shares as the
+            // impl. rounds up to the next multiple of 1024
+            shares = 1024;
+        }
         long newShares = metrics.getCpuShares();
         if (newShares != shares) {
             throw new RuntimeException("CPU shares not equal, expected : ["

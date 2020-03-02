@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ import jdk.vm.ci.hotspot.HotSpotVMConfigStore;
  *
  * Fields are grouped according to the most recent JBS issue showing why they are versioned.
  *
- * JDK Version: 14+
+ * JDK Version: 15+
  */
 final class GraalHotSpotVMConfigVersioned extends HotSpotVMConfigAccess {
 
@@ -92,4 +92,8 @@ final class GraalHotSpotVMConfigVersioned extends HotSpotVMConfigAccess {
 
     // JDK-8220049
     boolean threadLocalHandshakes = true;
+
+    // JDK-8236224
+    boolean compactFields = true;
+    int fieldsAllocationStyle = 1;
 }

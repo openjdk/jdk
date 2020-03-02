@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,7 @@ import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.graph.spi.Canonicalizable;
-import org.graalvm.compiler.nodes.memory.MemoryCheckpoint;
+import org.graalvm.compiler.nodes.memory.MemoryKill;
 import org.graalvm.compiler.nodes.spi.Virtualizable;
 
 public class NodeCostDumpUtil {
@@ -170,7 +170,7 @@ public class NodeCostDumpUtil {
     }
 
     private static boolean memoryCheckPoint(Class<?> c) {
-        return MemoryCheckpoint.class.isAssignableFrom(c);
+        return MemoryKill.class.isAssignableFrom(c);
     }
 
     private static void initAllClasses(final Path root, ClassLoader classLoader, HashSet<Class<?>> classes) {

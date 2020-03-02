@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,7 @@ import jdk.vm.ci.services.Services;
 
 public final class HotSpotGraalCompilerFactory extends HotSpotJVMCICompilerFactory {
 
-    private static MethodFilter[] graalCompileOnlyFilter;
+    private static MethodFilter graalCompileOnlyFilter;
     private static boolean compileGraalWithC1Only;
 
     private IsGraalPredicate isGraalPredicate;
@@ -97,8 +97,8 @@ public final class HotSpotGraalCompilerFactory extends HotSpotJVMCICompilerFacto
         compileGraalWithC1Only = Options.CompileGraalWithC1Only.getValue(options) && !IS_IN_NATIVE_IMAGE;
         String optionValue = Options.GraalCompileOnly.getValue(options);
         if (optionValue != null) {
-            MethodFilter[] filter = MethodFilter.parse(optionValue);
-            if (filter.length == 0) {
+            MethodFilter filter = MethodFilter.parse(optionValue);
+            if (filter.matchesNothing()) {
                 filter = null;
             }
             graalCompileOnlyFilter = filter;
@@ -191,10 +191,8 @@ public final class HotSpotGraalCompilerFactory extends HotSpotJVMCICompilerFacto
             String javaClassName = method.getDeclaringClass().toJavaName();
             String name = method.getName();
             Signature signature = method.getSignature();
-            for (MethodFilter filter : graalCompileOnlyFilter) {
-                if (filter.matches(javaClassName, name, signature)) {
-                    return false;
-                }
+            if (graalCompileOnlyFilter.matches(javaClassName, name, signature)) {
+                return false;
             }
             return true;
         }

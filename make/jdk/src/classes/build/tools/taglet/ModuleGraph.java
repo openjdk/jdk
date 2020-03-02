@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,9 +73,7 @@ public class ModuleGraph implements Taglet {
                 + getImage(moduleName, imageFile, -1, true)
                 + "</span>";
         }
-        return "<dt>"
-            + "<span class=\"simpleTagLabel\">Module Graph:</span>\n"
-            + "</dt>"
+        return "<dt>Module Graph:</dt>"
             + "<dd>"
             + "<a class=moduleGraph href=\"" + imageFile + "\">"
             + getImage(moduleName, imageFile, thumbnailHeight, false)

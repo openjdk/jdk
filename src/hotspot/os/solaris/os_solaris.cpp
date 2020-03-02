@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -537,13 +537,6 @@ void os::init_system_properties_values() {
 
 void os::breakpoint() {
   BREAKPOINT;
-}
-
-bool os::Solaris::valid_stack_address(Thread* thread, address sp) {
-  address  stackStart  = (address)thread->stack_base();
-  address  stackEnd    = (address)(stackStart - (address)thread->stack_size());
-  if (sp < stackStart && sp >= stackEnd) return true;
-  return false;
 }
 
 extern "C" void breakpoint() {
@@ -3934,12 +3927,10 @@ jint os::init_2(void) {
       size_t lgrp_num = os::numa_get_leaf_groups(lgrp_ids, lgrp_limit);
       FREE_C_HEAP_ARRAY(int, lgrp_ids);
       if (lgrp_num < 2) {
-        // There's only one locality group, disable NUMA.
-        UseNUMA = false;
+        // There's only one locality group, disable NUMA unless
+        // user explicilty forces NUMA optimizations on single-node/UMA systems
+        UseNUMA = ForceNUMA;
       }
-    }
-    if (!UseNUMA && ForceNUMA) {
-      UseNUMA = true;
     }
   }
 

@@ -159,9 +159,9 @@ public class HtmlSerialMethodWriter extends MethodWriterImpl implements
         TagletWriter.genTagOutput(tagletManager, member,
             tagletManager.getSerializedFormTaglets(),
             writer.getTagletWriterInstance(false), tagContent);
-        Content dlTags = new HtmlTree(HtmlTag.DL);
-        dlTags.add(tagContent);
-        methodsContentTree.add(dlTags);
+        HtmlTree dl = HtmlTree.DL(HtmlStyle.notes);
+        dl.add(tagContent);
+        methodsContentTree.add(dl);
         if (name(member).compareTo("writeExternal") == 0
                 && utils.getSerialDataTrees(member).isEmpty()) {
             serialWarning(member, "doclet.MissingSerialDataTag",

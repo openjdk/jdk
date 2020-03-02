@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,6 +76,7 @@ import org.graalvm.compiler.hotspot.replacements.AssertionSnippets;
 import org.graalvm.compiler.hotspot.replacements.ClassGetHubNode;
 import org.graalvm.compiler.hotspot.replacements.FastNotifyNode;
 import org.graalvm.compiler.hotspot.replacements.HashCodeSnippets;
+import org.graalvm.compiler.hotspot.replacements.HotSpotAllocationSnippets;
 import org.graalvm.compiler.hotspot.replacements.HotSpotG1WriteBarrierSnippets;
 import org.graalvm.compiler.hotspot.replacements.HotSpotSerialWriteBarrierSnippets;
 import org.graalvm.compiler.hotspot.replacements.HubGetClassNode;
@@ -84,7 +85,6 @@ import org.graalvm.compiler.hotspot.replacements.InstanceOfSnippets;
 import org.graalvm.compiler.hotspot.replacements.KlassLayoutHelperNode;
 import org.graalvm.compiler.hotspot.replacements.LoadExceptionObjectSnippets;
 import org.graalvm.compiler.hotspot.replacements.MonitorSnippets;
-import org.graalvm.compiler.hotspot.replacements.NewObjectSnippets;
 import org.graalvm.compiler.hotspot.replacements.ObjectCloneSnippets;
 import org.graalvm.compiler.hotspot.replacements.ObjectSnippets;
 import org.graalvm.compiler.hotspot.replacements.StringToBytesSnippets;
@@ -153,7 +153,7 @@ import org.graalvm.compiler.nodes.java.NewInstanceNode;
 import org.graalvm.compiler.nodes.java.NewMultiArrayNode;
 import org.graalvm.compiler.nodes.java.RawMonitorEnterNode;
 import org.graalvm.compiler.nodes.memory.FloatingReadNode;
-import org.graalvm.compiler.nodes.memory.HeapAccess.BarrierType;
+import org.graalvm.compiler.nodes.memory.OnHeapMemoryAccess.BarrierType;
 import org.graalvm.compiler.nodes.memory.ReadNode;
 import org.graalvm.compiler.nodes.memory.WriteNode;
 import org.graalvm.compiler.nodes.memory.address.AddressNode;
@@ -193,7 +193,7 @@ public abstract class DefaultHotSpotLoweringProvider extends DefaultJavaLowering
     protected final HotSpotConstantReflectionProvider constantReflection;
 
     protected InstanceOfSnippets.Templates instanceofSnippets;
-    protected NewObjectSnippets.Templates newObjectSnippets;
+    protected HotSpotAllocationSnippets.Templates allocationSnippets;
     protected MonitorSnippets.Templates monitorSnippets;
     protected HotSpotSerialWriteBarrierSnippets.Templates serialWriteBarrierSnippets;
     protected HotSpotG1WriteBarrierSnippets.Templates g1WriteBarrierSnippets;
@@ -225,7 +225,7 @@ public abstract class DefaultHotSpotLoweringProvider extends DefaultJavaLowering
 
         assert target == providers.getCodeCache().getTarget();
         instanceofSnippets = new InstanceOfSnippets.Templates(options, factories, runtime, providers, target);
-        newObjectSnippets = new NewObjectSnippets.Templates(options, factories, runtime, providers, target, config);
+        allocationSnippets = new HotSpotAllocationSnippets.Templates(options, factories, runtime, providers, target, config);
         monitorSnippets = new MonitorSnippets.Templates(options, factories, runtime, providers, target, config.useFastLocking);
         g1WriteBarrierSnippets = new HotSpotG1WriteBarrierSnippets.Templates(options, factories, runtime, providers, target, config);
         serialWriteBarrierSnippets = new HotSpotSerialWriteBarrierSnippets.Templates(options, factories, runtime, providers, target, config);
@@ -310,7 +310,7 @@ public abstract class DefaultHotSpotLoweringProvider extends DefaultJavaLowering
                 }
             } else if (n instanceof NewInstanceNode) {
                 if (graph.getGuardsStage().areFrameStatesAtDeopts()) {
-                    newObjectSnippets.lower((NewInstanceNode) n, registers, tool);
+                    allocationSnippets.lower((NewInstanceNode) n, tool);
                 }
             } else if (n instanceof DynamicNewInstanceNode) {
                 DynamicNewInstanceNode newInstanceNode = (DynamicNewInstanceNode) n;
@@ -320,11 +320,11 @@ public abstract class DefaultHotSpotLoweringProvider extends DefaultJavaLowering
                     newInstanceNode.setClassClass(classClass);
                 }
                 if (graph.getGuardsStage().areFrameStatesAtDeopts()) {
-                    newObjectSnippets.lower(newInstanceNode, registers, tool);
+                    allocationSnippets.lower(newInstanceNode, tool);
                 }
             } else if (n instanceof NewArrayNode) {
                 if (graph.getGuardsStage().areFrameStatesAtDeopts()) {
-                    newObjectSnippets.lower((NewArrayNode) n, registers, tool);
+                    allocationSnippets.lower((NewArrayNode) n, tool);
                 }
             } else if (n instanceof DynamicNewArrayNode) {
                 DynamicNewArrayNode dynamicNewArrayNode = (DynamicNewArrayNode) n;
@@ -334,11 +334,11 @@ public abstract class DefaultHotSpotLoweringProvider extends DefaultJavaLowering
                     dynamicNewArrayNode.setVoidClass(voidClass);
                 }
                 if (graph.getGuardsStage().areFrameStatesAtDeopts()) {
-                    newObjectSnippets.lower(dynamicNewArrayNode, registers, tool);
+                    allocationSnippets.lower(dynamicNewArrayNode, tool);
                 }
             } else if (n instanceof VerifyHeapNode) {
                 if (graph.getGuardsStage().areFrameStatesAtDeopts()) {
-                    newObjectSnippets.lower((VerifyHeapNode) n, registers, tool);
+                    allocationSnippets.lower((VerifyHeapNode) n, tool);
                 }
             } else if (n instanceof RawMonitorEnterNode) {
                 if (graph.getGuardsStage().areFrameStatesAtDeopts()) {
@@ -368,7 +368,7 @@ public abstract class DefaultHotSpotLoweringProvider extends DefaultJavaLowering
                 g1WriteBarrierSnippets.lower((G1ArrayRangePostWriteBarrier) n, tool);
             } else if (n instanceof NewMultiArrayNode) {
                 if (graph.getGuardsStage().areFrameStatesAtDeopts()) {
-                    newObjectSnippets.lower((NewMultiArrayNode) n, tool);
+                    allocationSnippets.lower((NewMultiArrayNode) n, tool);
                 }
             } else if (n instanceof LoadExceptionObjectNode) {
                 exceptionObjectSnippets.lower((LoadExceptionObjectNode) n, registers, tool);
@@ -414,7 +414,7 @@ public abstract class DefaultHotSpotLoweringProvider extends DefaultJavaLowering
             } else if (n instanceof ProfileNode) {
                 profileSnippets.lower((ProfileNode) n, tool);
             } else if (n instanceof KlassBeingInitializedCheckNode) {
-                newObjectSnippets.lower((KlassBeingInitializedCheckNode) n, registers, tool);
+                allocationSnippets.lower((KlassBeingInitializedCheckNode) n, tool);
             } else if (n instanceof FastNotifyNode) {
                 if (graph.getGuardsStage() == GuardsStage.AFTER_FSA) {
                     objectSnippets.lower(n, tool);
@@ -781,7 +781,7 @@ public abstract class DefaultHotSpotLoweringProvider extends DefaultJavaLowering
     }
 
     @Override
-    protected BarrierType fieldLoadBarrierType(ResolvedJavaField f) {
+    public BarrierType fieldLoadBarrierType(ResolvedJavaField f) {
         HotSpotResolvedJavaField loadField = (HotSpotResolvedJavaField) f;
         if (loadField.getJavaKind() == JavaKind.Object && metaAccess.lookupJavaType(Reference.class).equals(loadField.getDeclaringClass()) &&
                         loadField.getName().equals("referent")) {

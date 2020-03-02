@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,79 +29,13 @@ var typeSearchIndex;
 var memberSearchIndex;
 var tagSearchIndex;
 function loadScripts(doc, tag) {
-    createElem(doc, tag, 'script-dir/jszip/dist/jszip.js');
-    createElem(doc, tag, 'script-dir/jszip-utils/dist/jszip-utils.js');
-    if (window.navigator.userAgent.indexOf('MSIE ') > 0 || window.navigator.userAgent.indexOf('Trident/') > 0 ||
-            window.navigator.userAgent.indexOf('Edge/') > 0) {
-        createElem(doc, tag, 'script-dir/jszip-utils/dist/jszip-utils-ie.js');
-    }
     createElem(doc, tag, 'search.js');
 
-    $.get(pathtoroot + "module-search-index.zip")
-            .done(function() {
-                JSZipUtils.getBinaryContent(pathtoroot + "module-search-index.zip", function(e, data) {
-                    JSZip.loadAsync(data).then(function(zip){
-                        zip.file("module-search-index.json").async("text").then(function(content){
-                            moduleSearchIndex = JSON.parse(content);
-                        });
-                    });
-                });
-            });
-    $.get(pathtoroot + "package-search-index.zip")
-            .done(function() {
-                JSZipUtils.getBinaryContent(pathtoroot + "package-search-index.zip", function(e, data) {
-                    JSZip.loadAsync(data).then(function(zip){
-                        zip.file("package-search-index.json").async("text").then(function(content){
-                            packageSearchIndex = JSON.parse(content);
-                        });
-                    });
-                });
-            });
-    $.get(pathtoroot + "type-search-index.zip")
-            .done(function() {
-                JSZipUtils.getBinaryContent(pathtoroot + "type-search-index.zip", function(e, data) {
-                    JSZip.loadAsync(data).then(function(zip){
-                        zip.file("type-search-index.json").async("text").then(function(content){
-                            typeSearchIndex = JSON.parse(content);
-                        });
-                    });
-                });
-            });
-    $.get(pathtoroot + "member-search-index.zip")
-            .done(function() {
-                JSZipUtils.getBinaryContent(pathtoroot + "member-search-index.zip", function(e, data) {
-                    JSZip.loadAsync(data).then(function(zip){
-                        zip.file("member-search-index.json").async("text").then(function(content){
-                            memberSearchIndex = JSON.parse(content);
-                        });
-                    });
-                });
-            });
-    $.get(pathtoroot + "tag-search-index.zip")
-            .done(function() {
-                JSZipUtils.getBinaryContent(pathtoroot + "tag-search-index.zip", function(e, data) {
-                    JSZip.loadAsync(data).then(function(zip){
-                        zip.file("tag-search-index.json").async("text").then(function(content){
-                            tagSearchIndex = JSON.parse(content);
-                        });
-                    });
-                });
-            });
-    if (!moduleSearchIndex) {
-        createElem(doc, tag, 'module-search-index.js');
-    }
-    if (!packageSearchIndex) {
-        createElem(doc, tag, 'package-search-index.js');
-    }
-    if (!typeSearchIndex) {
-        createElem(doc, tag, 'type-search-index.js');
-    }
-    if (!memberSearchIndex) {
-        createElem(doc, tag, 'member-search-index.js');
-    }
-    if (!tagSearchIndex) {
-        createElem(doc, tag, 'tag-search-index.js');
-    }
+    createElem(doc, tag, 'module-search-index.js');
+    createElem(doc, tag, 'package-search-index.js');
+    createElem(doc, tag, 'type-search-index.js');
+    createElem(doc, tag, 'member-search-index.js');
+    createElem(doc, tag, 'tag-search-index.js');
 }
 
 function createElem(doc, tag, path) {

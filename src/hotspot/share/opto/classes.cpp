@@ -46,6 +46,7 @@
 #include "opto/opaquenode.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/subnode.hpp"
+#include "opto/subtypenode.hpp"
 #include "opto/vectornode.hpp"
 #include "utilities/macros.hpp"
 #if INCLUDE_SHENANDOAHGC

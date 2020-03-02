@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -162,9 +162,12 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
      * @param isFirst true if its the first link being documented
      * @param linksTree the content tree to which the summary will be added
      */
-    public void addInheritedMemberSummary(AbstractMemberWriter mw, TypeElement typeElement,
-            Element member, boolean isFirst, Content linksTree) {
-        if (! isFirst) {
+    public void addInheritedMemberSummary(AbstractMemberWriter mw,
+                                          TypeElement typeElement,
+                                          Element member,
+                                          boolean isFirst,
+                                          Content linksTree) {
+        if (!isFirst) {
             linksTree.add(", ");
         }
         mw.addInheritedSummaryLink(typeElement, member, linksTree);

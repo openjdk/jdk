@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -555,7 +555,9 @@ public class AArch64Move {
                     crb.recordInlineDataInCode(input);
                     masm.mov(dst, 0xDEADDEADDEADDEADL, true);
                 } else {
-                    masm.ldr(64, dst, (AArch64Address) crb.recordDataReferenceInCode(input, 8));
+                    crb.recordDataReferenceInCode(input, 8);
+                    AArch64Address address = AArch64Address.createScaledImmediateAddress(dst, 0x0);
+                    masm.adrpLdr(64, dst, address);
                 }
                 break;
             default:

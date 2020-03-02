@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,57 +90,28 @@ import sun.security.util.*;
  *
  * </pre>
  */
-
 abstract class PBES2Parameters extends AlgorithmParametersSpi {
 
-    private static final int pkcs5PBKDF2[] =
-                                        {1, 2, 840, 113549, 1, 5, 12};
-    private static final int pkcs5PBES2[] =
-                                        {1, 2, 840, 113549, 1, 5, 13};
-    private static final int hmacWithSHA1[] =
-                                        {1, 2, 840, 113549, 2, 7};
-    private static final int hmacWithSHA224[] =
-                                        {1, 2, 840, 113549, 2, 8};
-    private static final int hmacWithSHA256[] =
-                                        {1, 2, 840, 113549, 2, 9};
-    private static final int hmacWithSHA384[] =
-                                        {1, 2, 840, 113549, 2, 10};
-    private static final int hmacWithSHA512[] =
-                                        {1, 2, 840, 113549, 2, 11};
-    private static final int aes128CBC[] =
-                                        {2, 16, 840, 1, 101, 3, 4, 1, 2};
-    private static final int aes192CBC[] =
-                                        {2, 16, 840, 1, 101, 3, 4, 1, 22};
-    private static final int aes256CBC[] =
-                                        {2, 16, 840, 1, 101, 3, 4, 1, 42};
-
-    private static ObjectIdentifier pkcs5PBKDF2_OID;
-    private static ObjectIdentifier pkcs5PBES2_OID;
-    private static ObjectIdentifier hmacWithSHA1_OID;
-    private static ObjectIdentifier hmacWithSHA224_OID;
-    private static ObjectIdentifier hmacWithSHA256_OID;
-    private static ObjectIdentifier hmacWithSHA384_OID;
-    private static ObjectIdentifier hmacWithSHA512_OID;
-    private static ObjectIdentifier aes128CBC_OID;
-    private static ObjectIdentifier aes192CBC_OID;
-    private static ObjectIdentifier aes256CBC_OID;
-
-    static {
-        try {
-            pkcs5PBKDF2_OID = new ObjectIdentifier(pkcs5PBKDF2);
-            pkcs5PBES2_OID = new ObjectIdentifier(pkcs5PBES2);
-            hmacWithSHA1_OID = new ObjectIdentifier(hmacWithSHA1);
-            hmacWithSHA224_OID = new ObjectIdentifier(hmacWithSHA224);
-            hmacWithSHA256_OID = new ObjectIdentifier(hmacWithSHA256);
-            hmacWithSHA384_OID = new ObjectIdentifier(hmacWithSHA384);
-            hmacWithSHA512_OID = new ObjectIdentifier(hmacWithSHA512);
-            aes128CBC_OID = new ObjectIdentifier(aes128CBC);
-            aes192CBC_OID = new ObjectIdentifier(aes192CBC);
-            aes256CBC_OID = new ObjectIdentifier(aes256CBC);
-        } catch (IOException ioe) {
-            // should not happen
-        }
-    }
+    private static ObjectIdentifier pkcs5PBKDF2_OID =
+            ObjectIdentifier.of("1.2.840.113549.1.5.12");
+    private static ObjectIdentifier pkcs5PBES2_OID =
+            ObjectIdentifier.of("1.2.840.113549.1.5.13");
+    private static ObjectIdentifier hmacWithSHA1_OID =
+            ObjectIdentifier.of("1.2.840.113549.2.7");
+    private static ObjectIdentifier hmacWithSHA224_OID =
+            ObjectIdentifier.of("1.2.840.113549.2.8");
+    private static ObjectIdentifier hmacWithSHA256_OID =
+            ObjectIdentifier.of("1.2.840.113549.2.9");
+    private static ObjectIdentifier hmacWithSHA384_OID =
+            ObjectIdentifier.of("1.2.840.113549.2.10");
+    private static ObjectIdentifier hmacWithSHA512_OID =
+            ObjectIdentifier.of("1.2.840.113549.2.11");
+    private static ObjectIdentifier aes128CBC_OID =
+            ObjectIdentifier.of("2.16.840.1.101.3.4.1.2");
+    private static ObjectIdentifier aes192CBC_OID =
+            ObjectIdentifier.of("2.16.840.1.101.3.4.1.22");
+    private static ObjectIdentifier aes256CBC_OID =
+            ObjectIdentifier.of("2.16.840.1.101.3.4.1.42");
 
     // the PBES2 algorithm name
     private String pbes2AlgorithmName = null;

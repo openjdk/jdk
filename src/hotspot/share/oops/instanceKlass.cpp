@@ -1153,7 +1153,9 @@ int  InstanceKlass::nof_implementors() const {
 //
 // The _implementor field only exists for interfaces.
 void InstanceKlass::add_implementor(Klass* k) {
-  assert_lock_strong(Compile_lock);
+  if (Universe::is_fully_initialized()) {
+    assert_lock_strong(Compile_lock);
+  }
   assert(is_interface(), "not interface");
   // Filter out my subinterfaces.
   // (Note: Interfaces are never on the subklass list.)

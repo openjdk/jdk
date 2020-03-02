@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,7 +90,7 @@ public class HighTier extends BaseTier<HighTierContext> {
             appendPhase(new IterativeConditionalEliminationPhase(canonicalizer, false));
         }
 
-        LoopPolicies loopPolicies = createLoopPolicies();
+        LoopPolicies loopPolicies = createLoopPolicies(options);
         appendPhase(new LoopFullUnrollPhase(canonicalizer, loopPolicies));
 
         if (LoopPeeling.getValue(options)) {
@@ -117,7 +117,7 @@ public class HighTier extends BaseTier<HighTierContext> {
     }
 
     @Override
-    public LoopPolicies createLoopPolicies() {
+    public LoopPolicies createLoopPolicies(OptionValues options) {
         return new DefaultLoopPolicies();
     }
 }

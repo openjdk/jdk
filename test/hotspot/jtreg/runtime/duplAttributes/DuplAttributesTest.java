@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
  * @summary Throw exceptions when duplicate attributes are detected.
  * @modules java.base/jdk.internal.misc
  *          java.management
+ * @compile DuplAttributes.jcod
  * @run main DuplAttributesTest
  */
 
@@ -40,8 +41,7 @@ public class DuplAttributesTest {
     static final String testsrc = System.getProperty("test.src");
 
     public static void runTest(String test, String result) throws Throwable {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-            "-cp", testsrc + File.separator + "test.jar", test);
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(test);
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldContain("java.lang.ClassFormatError: Multiple " + result);
     }

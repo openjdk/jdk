@@ -35,7 +35,7 @@ public class WriteBarrierAdditionPhase extends BasePhase<MidTierContext> {
     @SuppressWarnings("try")
     @Override
     protected void run(StructuredGraph graph, MidTierContext context) {
-        BarrierSet barrierSet = context.getGC().getBarrierSet();
+        BarrierSet barrierSet = context.getPlatformConfigurationProvider().getBarrierSet();
         for (FixedAccessNode n : graph.getNodes().filter(FixedAccessNode.class)) {
             try (DebugCloseable scope = n.graph().withNodeSourcePosition(n)) {
                 barrierSet.addBarriers(n);

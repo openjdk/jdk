@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,9 +27,11 @@ package jdk.javadoc.internal.doclets.formats.html;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Set;
+import java.util.SortedSet;
 import java.util.TreeSet;
 
 import jdk.javadoc.internal.doclets.formats.html.markup.BodyContents;
@@ -68,14 +70,14 @@ public class SplitIndexWriter extends AbstractIndexWriter {
      *
      * @param configuration the configuration for this doclet
      * @param path       Path to the file which is getting generated.
-     * @param indexbuilder Unicode based Index from {@link IndexBuilder}
+     * @param indexBuilder Unicode based Index from {@link IndexBuilder}
      * @param elements the collection of characters for which to generate index files
      */
     public SplitIndexWriter(HtmlConfiguration configuration,
                             DocPath path,
-                            IndexBuilder indexbuilder,
+                            IndexBuilder indexBuilder,
                             Collection<Character> elements) {
-        super(configuration, path, indexbuilder);
+        super(configuration, path, indexBuilder);
         this.indexElements = new ArrayList<>(elements);
     }
 
@@ -84,26 +86,24 @@ public class SplitIndexWriter extends AbstractIndexWriter {
      * the members starting with the particular unicode character.
      *
      * @param configuration the configuration for this doclet
-     * @param indexbuilder IndexBuilder built by {@link IndexBuilder}
+     * @param indexBuilder IndexBuilder built by {@link IndexBuilder}
      * @throws DocFileIOException if there is a problem generating the index files
      */
     public static void generate(HtmlConfiguration configuration,
-                                IndexBuilder indexbuilder) throws DocFileIOException {
+                                IndexBuilder indexBuilder) throws DocFileIOException {
         DocPath path = DocPaths.INDEX_FILES;
-        Set<Character> keys = new TreeSet<>(indexbuilder.getIndexMap().keySet());
-        keys.addAll(configuration.tagSearchIndexKeys);
+        SortedSet<Character> keys = new TreeSet<>(indexBuilder.asMap().keySet());
+        Collection<SearchIndexItem> searchItems =
+                configuration.searchItems.get(SearchIndexItem.Category.SEARCH_TAGS);
+        keys.addAll(buildSearchTagIndex(searchItems).keySet());
         ListIterator<Character> li = new ArrayList<>(keys).listIterator();
-        int prev;
-        int next;
         while (li.hasNext()) {
-            prev = (li.hasPrevious()) ? li.previousIndex() + 1 : -1;
-            Object ch = li.next();
-            next = (li.hasNext()) ? li.nextIndex() + 1 : -1;
+            Character ch = li.next();
             DocPath filename = DocPaths.indexN(li.nextIndex());
             SplitIndexWriter indexgen = new SplitIndexWriter(configuration,
-                    path.resolve(filename),
-                    indexbuilder, keys);
-            indexgen.generateIndexFile((Character) ch);
+                                                             path.resolve(filename),
+                                                             indexBuilder, keys);
+            indexgen.generateIndexFile(ch);
             if (!li.hasNext()) {
                 indexgen.createSearchIndexFiles();
             }
@@ -133,13 +133,13 @@ public class SplitIndexWriter extends AbstractIndexWriter {
         HtmlTree divTree = new HtmlTree(HtmlTag.DIV);
         divTree.setStyle(HtmlStyle.contentContainer);
         addLinksForIndexes(divTree);
-        if (configuration.tagSearchIndexMap.get(unicode) == null) {
-            addContents(unicode, indexbuilder.getMemberList(unicode), divTree);
-        } else if (indexbuilder.getMemberList(unicode) == null) {
-            addSearchContents(unicode, configuration.tagSearchIndexMap.get(unicode), divTree);
+        if (tagSearchIndexMap.get(unicode) == null) {
+            addContents(unicode, indexBuilder.getMemberList(unicode), divTree);
+        } else if (indexBuilder.getMemberList(unicode) == null) {
+            addSearchContents(unicode, tagSearchIndexMap.get(unicode), divTree);
         } else {
-            addContents(unicode, indexbuilder.getMemberList(unicode),
-                    configuration.tagSearchIndexMap.get(unicode), divTree);
+            addContents(unicode, indexBuilder.getMemberList(unicode),
+                        tagSearchIndexMap.get(unicode), divTree);
         }
         addLinksForIndexes(divTree);
         main.add(divTree);
@@ -170,16 +170,16 @@ public class SplitIndexWriter extends AbstractIndexWriter {
         }
         contentTree.add(new HtmlTree(HtmlTag.BR));
         contentTree.add(links.createLink(pathToRoot.resolve(DocPaths.ALLCLASSES_INDEX),
-                contents.allClassesLabel));
+                                         contents.allClassesLabel));
         if (!configuration.packages.isEmpty()) {
             contentTree.add(getVerticalSeparator());
             contentTree.add(links.createLink(pathToRoot.resolve(DocPaths.ALLPACKAGES_INDEX),
-                    contents.allPackagesLabel));
+                                             contents.allPackagesLabel));
         }
-        if (!configuration.tagSearchIndex.isEmpty()) {
+        if (!searchItems.get(SearchIndexItem.Category.SEARCH_TAGS).isEmpty()) {
             contentTree.add(getVerticalSeparator());
             contentTree.add(links.createLink(pathToRoot.resolve(DocPaths.SYSTEM_PROPERTIES),
-                    contents.systemPropertiesLabel));
+                                             contents.systemPropertiesLabel));
         }
     }
 }

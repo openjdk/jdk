@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,15 +70,15 @@ public:
 };
 
 inline bool ParCompactionManager::steal(int queue_num, oop& t) {
-  return stack_array()->steal(queue_num, t);
+  return oop_task_queues()->steal(queue_num, t);
 }
 
 inline bool ParCompactionManager::steal_objarray(int queue_num, ObjArrayTask& t) {
-  return _objarray_queues->steal(queue_num, t);
+  return _objarray_task_queues->steal(queue_num, t);
 }
 
 inline bool ParCompactionManager::steal(int queue_num, size_t& region) {
-  return region_array()->steal(queue_num, region);
+  return region_task_queues()->steal(queue_num, region);
 }
 
 inline void ParCompactionManager::push(oop obj) {

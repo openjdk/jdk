@@ -664,7 +664,7 @@ void IdealGraphPrinter::print_method(const char *name, int level) {
 // Print current ideal graph
 void IdealGraphPrinter::print(const char *name, Node *node) {
 
-  if (!_current_method || !_should_send_method) return;
+  if (!_current_method || !_should_send_method || node == NULL) return;
 
   // Warning, unsafe cast?
   _chaitin = (PhaseChaitin *)C->regalloc();

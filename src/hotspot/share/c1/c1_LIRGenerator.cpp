@@ -43,6 +43,7 @@
 #include "runtime/vm_version.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/powerOfTwo.hpp"
 
 #ifdef ASSERT
 #define __ gen()->lir(__FILE__, __LINE__)->
@@ -899,13 +900,19 @@ void LIRGenerator::arraycopy_helper(Intrinsic* x, int* flagsp, ciArrayKlass** ex
 LIR_Opr LIRGenerator::round_item(LIR_Opr opr) {
   assert(opr->is_register(), "why spill if item is not register?");
 
-  if (RoundFPResults && UseSSE < 1 && opr->is_single_fpu()) {
-    LIR_Opr result = new_register(T_FLOAT);
-    set_vreg_flag(result, must_start_in_memory);
-    assert(opr->is_register(), "only a register can be spilled");
-    assert(opr->value_type()->is_float(), "rounding only for floats available");
-    __ roundfp(opr, LIR_OprFact::illegalOpr, result);
-    return result;
+  if (strict_fp_requires_explicit_rounding) {
+#ifdef IA32
+    if (UseSSE < 1 && opr->is_single_fpu()) {
+      LIR_Opr result = new_register(T_FLOAT);
+      set_vreg_flag(result, must_start_in_memory);
+      assert(opr->is_register(), "only a register can be spilled");
+      assert(opr->value_type()->is_float(), "rounding only for floats available");
+      __ roundfp(opr, LIR_OprFact::illegalOpr, result);
+      return result;
+    }
+#else
+    Unimplemented();
+#endif // IA32
   }
   return opr;
 }
@@ -1951,6 +1958,8 @@ void LIRGenerator::do_Throw(Throw* x) {
 
 
 void LIRGenerator::do_RoundFP(RoundFP* x) {
+  assert(strict_fp_requires_explicit_rounding, "not required");
+
   LIRItem input(x->input(), this);
   input.load_item();
   LIR_Opr input_opr = input.result();

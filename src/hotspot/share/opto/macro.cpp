@@ -35,6 +35,7 @@
 #include "opto/compile.hpp"
 #include "opto/convertnode.hpp"
 #include "opto/graphKit.hpp"
+#include "opto/intrinsicnode.hpp"
 #include "opto/locknode.hpp"
 #include "opto/loopnode.hpp"
 #include "opto/macro.hpp"
@@ -46,9 +47,11 @@
 #include "opto/rootnode.hpp"
 #include "opto/runtime.hpp"
 #include "opto/subnode.hpp"
+#include "opto/subtypenode.hpp"
 #include "opto/type.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/powerOfTwo.hpp"
 #if INCLUDE_G1GC
 #include "gc/g1/g1ThreadLocalData.hpp"
 #endif // INCLUDE_G1GC
@@ -1331,14 +1334,23 @@ void PhaseMacroExpand::expand_allocate_common(
   if (!allocation_has_use) {
     InitializeNode* init = alloc->initialization();
     if (init != NULL) {
-      yank_initalize_node(init);
-      assert(init->outcnt() == 0, "all uses must be deleted");
-      _igvn.remove_dead_node(init);
+      init->remove(&_igvn);
     }
     if (expand_fast_path && (initial_slow_test == NULL)) {
       // Remove allocation node and return.
       // Size is a non-negative constant -> no initial check needed -> directly to fast path.
       // Also, no usages -> empty fast path -> no fall out to slow path -> nothing left.
+#ifndef PRODUCT
+      if (PrintEliminateAllocations) {
+        tty->print("NotUsed ");
+        Node* res = alloc->proj_out_or_null(TypeFunc::Parms);
+        if (res != NULL) {
+          res->dump();
+        } else {
+          alloc->dump();
+        }
+      }
+#endif
       yank_alloc_node(alloc);
       return;
     }
@@ -1576,6 +1588,16 @@ void PhaseMacroExpand::yank_alloc_node(AllocateNode* alloc) {
   Node* i_o  = alloc->in(TypeFunc::I_O);
 
   extract_call_projections(alloc);
+  if (_resproj != NULL) {
+    for (DUIterator_Fast imax, i = _resproj->fast_outs(imax); i < imax; i++) {
+      Node* use = _resproj->fast_out(i);
+      use->isa_MemBar()->remove(&_igvn);
+      --imax;
+      --i; // back up iterator
+    }
+    assert(_resproj->outcnt() == 0, "all uses must be deleted");
+    _igvn.remove_dead_node(_resproj);
+  }
   if (_fallthroughcatchproj != NULL) {
     migrate_outs(_fallthroughcatchproj, ctrl);
     _igvn.remove_dead_node(_fallthroughcatchproj);
@@ -1605,6 +1627,15 @@ void PhaseMacroExpand::yank_alloc_node(AllocateNode* alloc) {
     _igvn.rehash_node_delayed(_ioproj_catchall);
     _ioproj_catchall->set_req(0, top());
   }
+#ifndef PRODUCT
+  if (PrintEliminateAllocations) {
+    if (alloc->is_AllocateArray()) {
+      tty->print_cr("++++ Eliminated: %d AllocateArray", alloc->_idx);
+    } else {
+      tty->print_cr("++++ Eliminated: %d Allocate", alloc->_idx);
+    }
+  }
+#endif
   _igvn.remove_dead_node(alloc);
 }
 
@@ -1706,26 +1737,6 @@ void PhaseMacroExpand::expand_dtrace_alloc_probe(AllocateNode* alloc, Node* oop,
     transform_later(ctrl);
     rawmem = new ProjNode(call, TypeFunc::Memory);
     transform_later(rawmem);
-  }
-}
-
-// Remove InitializeNode without use
-void PhaseMacroExpand::yank_initalize_node(InitializeNode* initnode) {
-  assert(initnode->proj_out_or_null(TypeFunc::Parms) == NULL, "No uses allowed");
-
-  Node* ctrl_out  = initnode->proj_out_or_null(TypeFunc::Control);
-  Node* mem_out   = initnode->proj_out_or_null(TypeFunc::Memory);
-
-  // Move all uses of each to
-  if (ctrl_out != NULL ) {
-    migrate_outs(ctrl_out, initnode->in(TypeFunc::Control));
-    _igvn.remove_dead_node(ctrl_out);
-  }
-
-  // Move all uses of each to
-  if (mem_out != NULL ) {
-    migrate_outs(mem_out, initnode->in(TypeFunc::Memory));
-    _igvn.remove_dead_node(mem_out);
   }
 }
 
@@ -2532,6 +2543,43 @@ void PhaseMacroExpand::expand_unlock_node(UnlockNode *unlock) {
   _igvn.replace_node(_memproj_fallthrough, mem_phi);
 }
 
+void PhaseMacroExpand::expand_subtypecheck_node(SubTypeCheckNode *check) {
+  assert(check->in(SubTypeCheckNode::Control) == NULL, "should be pinned");
+  Node* bol = check->unique_out();
+  Node* obj_or_subklass = check->in(SubTypeCheckNode::ObjOrSubKlass);
+  Node* superklass = check->in(SubTypeCheckNode::SuperKlass);
+  assert(bol->is_Bool() && bol->as_Bool()->_test._test == BoolTest::ne, "unexpected bool node");
+
+  for (DUIterator_Last imin, i = bol->last_outs(imin); i >= imin; --i) {
+    Node* iff = bol->last_out(i);
+    assert(iff->is_If(), "where's the if?");
+
+    if (iff->in(0)->is_top()) {
+      _igvn.replace_input_of(iff, 1, C->top());
+      continue;
+    }
+
+    Node* iftrue = iff->as_If()->proj_out(1);
+    Node* iffalse = iff->as_If()->proj_out(0);
+    Node* ctrl = iff->in(0);
+
+    Node* subklass = NULL;
+    if (_igvn.type(obj_or_subklass)->isa_klassptr()) {
+      subklass = obj_or_subklass;
+    } else {
+      Node* k_adr = basic_plus_adr(obj_or_subklass, oopDesc::klass_offset_in_bytes());
+      subklass = _igvn.transform(LoadKlassNode::make(_igvn, NULL, C->immutable_memory(), k_adr, TypeInstPtr::KLASS));
+    }
+
+    Node* not_subtype_ctrl = Phase::gen_subtype_check(subklass, superklass, &ctrl, NULL, _igvn);
+
+    _igvn.replace_input_of(iff, 0, C->top());
+    _igvn.replace_node(iftrue, not_subtype_ctrl);
+    _igvn.replace_node(iffalse, ctrl);
+  }
+  _igvn.replace_node(check, C->top());
+}
+
 //---------------------------eliminate_macro_nodes----------------------
 // Eliminate scalar replaced allocations and associated locks.
 void PhaseMacroExpand::eliminate_macro_nodes() {
@@ -2587,6 +2635,8 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
       case Node::Class_ArrayCopy:
         break;
       case Node::Class_OuterStripMinedLoop:
+        break;
+      case Node::Class_SubTypeCheck:
         break;
       default:
         assert(n->Opcode() == Op_LoopLimit ||
@@ -2692,6 +2742,10 @@ bool PhaseMacroExpand::expand_macro_nodes() {
       break;
     case Node::Class_ArrayCopy:
       expand_arraycopy_node(n->as_ArrayCopy());
+      assert(C->macro_count() == (old_macro_count - 1), "expansion must have deleted one node from macro list");
+      break;
+    case Node::Class_SubTypeCheck:
+      expand_subtypecheck_node(n->as_SubTypeCheck());
       assert(C->macro_count() == (old_macro_count - 1), "expansion must have deleted one node from macro list");
       break;
     }

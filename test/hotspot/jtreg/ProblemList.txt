@@ -73,6 +73,8 @@ compiler/rtm/print/TestPrintPreciseRTMLockingStatistics.java 8183263 generic-x64
 
 compiler/jsr292/ContinuousCallSiteTargetChange.java 8234146 solaris-sparcv9
 
+compiler/c2/Test8004741.java 8235801 generic-all
+
 #############################################################################
 
 # :hotspot_gc
@@ -125,6 +127,7 @@ serviceability/sa/ClhsdbWhere.java 8193639 solaris-all
 serviceability/sa/DeadlockDetectionTest.java 8193639 solaris-all
 serviceability/sa/JhsdbThreadInfoTest.java 8193639 solaris-all
 serviceability/sa/jmap-hprof/JMapHProfLargeHeapTest.java 8193639 solaris-all
+serviceability/sa/sadebugd/DebugdConnectTest.java 8239062 macosx-x64 
 serviceability/sa/TestClassDump.java 8193639 solaris-all
 serviceability/sa/TestClhsdbJstackLock.java 8193639 solaris-all
 serviceability/sa/TestCpoolForInvokeDynamic.java 8193639 solaris-all
@@ -193,6 +196,7 @@ vmTestbase/jit/escape/LockCoarsening/LockCoarsening002.java 8208259 generic-all
 vmTestbase/vm/mlvm/indy/func/jvmti/redefineClassInBootstrap/TestDescription.java 8013267 generic-all
 vmTestbase/vm/mlvm/meth/func/java/throwException/Test.java 8058176 generic-all
 vmTestbase/vm/mlvm/meth/func/jdi/breakpointOtherStratum/Test.java 8208257,8058176 generic-all
+vmTestbase/vm/mlvm/meth/stress/compiler/deoptimize/Test.java#id1 8058176 generic-all
 vmTestbase/vm/mlvm/meth/stress/compiler/i2c_c2i/Test.java 8058176 generic-all
 vmTestbase/vm/mlvm/meth/stress/compiler/sequences/Test.java 8058176 generic-all
 vmTestbase/vm/mlvm/meth/stress/gc/callSequencesDuringGC/Test.java 8058176 generic-all

@@ -436,7 +436,8 @@ public class AArch64ArithmeticLIRGenerator extends ArithmeticLIRGenerator implem
 
     @Override
     public Value emitMathSqrt(Value input) {
-        assert input.getPlatformKind() == AArch64Kind.DOUBLE;
+        assert input.getPlatformKind() == AArch64Kind.DOUBLE ||
+                        input.getPlatformKind() == AArch64Kind.SINGLE;
         return emitUnary(AArch64ArithmeticOp.SQRT, input);
     }
 

@@ -26,6 +26,7 @@
 #include "gc/z/zMarkStackAllocator.hpp"
 #include "logging/log.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/powerOfTwo.hpp"
 
 ZMarkStripe::ZMarkStripe() :
     _published(),

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4651598 8026567
+ * @bug 4651598 8026567 8239804
  * @summary Javadoc wrongly inserts </DD> tags when using multiple @author tags
  * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -54,11 +54,12 @@ public class AuthorDD extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("p1/C1.html", true,
+                "<dl class=\"notes\">",
                 // Test single @since tag:
-                "<dt><span class=\"simpleTagLabel\">Since:</span></dt>\n"
+                "<dt>Since:</dt>\n"
                 + "<dd>JDK 1.0</dd>",
                 // Test multiple @author tags:
-                "<dt><span class=\"simpleTagLabel\">Author:</span></dt>\n"
+                "<dt>Author:</dt>\n"
                 + "<dd>Alice, Bob, Eve</dd>");
     }
 }

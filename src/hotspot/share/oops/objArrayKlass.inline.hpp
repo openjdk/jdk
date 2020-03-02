@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,7 +101,7 @@ void ObjArrayKlass::oop_oop_iterate_bounded(oop obj, OopClosureType* closure, Me
 // for objArrayOops.
 template <typename T, class OopClosureType>
 void ObjArrayKlass::oop_oop_iterate_range(objArrayOop a, OopClosureType* closure, int start, int end) {
-  T* low = start == 0 ? cast_from_oop<T*>(a) : a->obj_at_addr_raw<T>(start);
+  T* low = (T*)a->base_raw() + start;
   T* high = (T*)a->base_raw() + end;
 
   oop_oop_iterate_elements_bounded<T>(a, closure, low, high);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1758,7 +1758,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
             pkg = s;
         } else {
             String moduleName = s.substring(0, slash);
-            if (!SourceVersion.isIdentifier(moduleName)) {
+            if (!SourceVersion.isName(moduleName)) {
                 return warnAndNoMatches(s, p, log, lint);
             }
             module = Pattern.quote(moduleName + "/");

@@ -140,47 +140,12 @@ oop ShenandoahBarrierSet::load_reference_barrier_mutator_work(oop obj, T* load_a
   assert(ShenandoahLoadRefBarrier, "should be enabled");
   shenandoah_assert_in_cset(load_addr, obj);
 
-  oop fwd = resolve_forwarded_not_null(obj);
+  oop fwd = resolve_forwarded_not_null_mutator(obj);
   if (obj == fwd) {
     assert(_heap->is_gc_in_progress_mask(ShenandoahHeap::EVACUATION | ShenandoahHeap::TRAVERSAL),
            "evac should be in progress");
-
-    ShenandoahEvacOOMScope oom_evac_scope;
-
-    Thread* thread = Thread::current();
-    oop res_oop = _heap->evacuate_object(obj, thread);
-
-    // Since we are already here and paid the price of getting through runtime call adapters
-    // and acquiring oom-scope, it makes sense to try and evacuate more adjacent objects,
-    // thus amortizing the overhead. For sparsely live heaps, scan costs easily dominate
-    // total assist costs, and can introduce a lot of evacuation latency. This is why we
-    // only scan for _nearest_ N objects, regardless if they are eligible for evac or not.
-    // The scan itself should also avoid touching the non-marked objects below TAMS, because
-    // their metadata (notably, klasses) may be incorrect already.
-
-    size_t max = ShenandoahEvacAssist;
-    if (max > 0) {
-      // Traversal is special: it uses incomplete marking context, because it coalesces evac with mark.
-      // Other code uses complete marking context, because evac happens after the mark.
-      ShenandoahMarkingContext* ctx = _heap->is_concurrent_traversal_in_progress() ?
-                                      _heap->marking_context() : _heap->complete_marking_context();
-
-      ShenandoahHeapRegion* r = _heap->heap_region_containing(obj);
-      assert(r->is_cset(), "sanity");
-
-      HeapWord* cur = cast_from_oop<HeapWord*>(obj) + obj->size();
-
-      size_t count = 0;
-      while ((cur < r->top()) && ctx->is_marked(oop(cur)) && (count++ < max)) {
-        oop cur_oop = oop(cur);
-        if (cur_oop == resolve_forwarded_not_null(cur_oop)) {
-          _heap->evacuate_object(cur_oop, thread);
-        }
-        cur = cur + cur_oop->size();
-      }
-    }
-
-    fwd = res_oop;
+    ShenandoahEvacOOMScope scope;
+    fwd = _heap->evacuate_object(obj, Thread::current());
   }
 
   if (load_addr != NULL && fwd != obj) {

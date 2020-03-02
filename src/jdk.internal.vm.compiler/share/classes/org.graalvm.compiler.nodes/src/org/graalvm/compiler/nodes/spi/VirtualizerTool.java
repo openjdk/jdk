@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -168,6 +168,15 @@ public interface VirtualizerTool {
      * @return true if materialization happened, false if not.
      */
     boolean ensureMaterialized(VirtualObjectNode virtualObject);
+
+    /**
+     *
+     * Returns whether deoptimization can recover from virtualizing large unsafe accesses to a byte
+     * array.
+     *
+     * @return true if deoptimization can recover, false if not.
+     */
+    boolean canVirtualizeLargeByteArrayUnsafeAccess();
 
     OptionValues getOptions();
 
