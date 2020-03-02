@@ -27,4 +27,4 @@
 
 #include "jni.h"
 
-JNIEXPORT void JNICALL Java_LoadLibraryClass_nTest(JNIEnv* env, jclass jclazz) { }
+JNIEXPORT void JNICALL Java_LoadLibraryTest_00024LoadLibraryClass_nTest__(JNIEnv* env, jclass jclazz) { }
