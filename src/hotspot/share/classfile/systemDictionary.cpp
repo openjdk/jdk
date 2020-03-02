@@ -969,8 +969,7 @@ Klass* SystemDictionary::find_instance_or_array_klass(Symbol* class_name,
     if (t != T_OBJECT) {
       k = Universe::typeArrayKlassObj(t);
     } else {
-      Symbol* obj_class = ss.as_symbol();
-      k = SystemDictionary::find(obj_class, class_loader, protection_domain, THREAD);
+      k = SystemDictionary::find(ss.as_symbol(), class_loader, protection_domain, THREAD);
     }
     if (k != NULL) {
       k = k->array_klass_or_null(ndims);
@@ -2527,8 +2526,8 @@ static bool is_always_visible_class(oop mirror) {
           InstanceKlass::cast(klass)->is_same_class_package(SystemDictionary::MethodHandle_klass()));  // java.lang.invoke
 }
 
-// Find or construct the Java mirror (java.lang.Class instance) for a
-// for the given field type signature, as interpreted relative to the
+// Find or construct the Java mirror (java.lang.Class instance) for
+// the given field type signature, as interpreted relative to the
 // given class loader.  Handles primitives, void, references, arrays,
 // and all other reflectable types, except method types.
 // N.B.  Code in reflection should use this entry point.
@@ -2538,57 +2537,33 @@ Handle SystemDictionary::find_java_mirror_for_type(Symbol* signature,
                                                    Handle protection_domain,
                                                    SignatureStream::FailureMode failure_mode,
                                                    TRAPS) {
-  Handle empty;
-
   assert(accessing_klass == NULL || (class_loader.is_null() && protection_domain.is_null()),
          "one or the other, or perhaps neither");
-
-  SignatureStream ss(signature, false);
 
   // What we have here must be a valid field descriptor,
   // and all valid field descriptors are supported.
   // Produce the same java.lang.Class that reflection reports.
-  if (ss.is_primitive() || (ss.type() == T_VOID)) {
+  if (accessing_klass != NULL) {
+    class_loader      = Handle(THREAD, accessing_klass->class_loader());
+    protection_domain = Handle(THREAD, accessing_klass->protection_domain());
+  }
+  ResolvingSignatureStream ss(signature, class_loader, protection_domain, false);
+  oop mirror_oop = ss.as_java_mirror(failure_mode, CHECK_NH);
+  if (mirror_oop == NULL) {
+    return Handle();  // report failure this way
+  }
+  Handle mirror(THREAD, mirror_oop);
 
-    // It's a primitive.  (Void has a primitive mirror too.)
-    return Handle(THREAD, java_lang_Class::primitive_mirror(ss.type()));
-
-  } else if (ss.is_reference()) {
-
-    // It's a reference type.
-    if (accessing_klass != NULL) {
-      class_loader      = Handle(THREAD, accessing_klass->class_loader());
-      protection_domain = Handle(THREAD, accessing_klass->protection_domain());
-    }
-    Klass* constant_type_klass;
-    if (failure_mode == SignatureStream::ReturnNull) {
-      constant_type_klass = resolve_or_null(signature, class_loader, protection_domain,
-                                            CHECK_(empty));
-    } else {
-      bool throw_error = (failure_mode == SignatureStream::NCDFError);
-      constant_type_klass = resolve_or_fail(signature, class_loader, protection_domain,
-                                            throw_error, CHECK_(empty));
-    }
-    if (constant_type_klass == NULL) {
-      return Handle();  // report failure this way
-    }
-    Handle mirror(THREAD, constant_type_klass->java_mirror());
-
+  if (accessing_klass != NULL) {
     // Check accessibility, emulating ConstantPool::verify_constant_pool_resolve.
-    if (accessing_klass != NULL) {
-      Klass* sel_klass = constant_type_klass;
+    Klass* sel_klass = java_lang_Class::as_Klass(mirror());
+    if (sel_klass != NULL) {
       bool fold_type_to_class = true;
       LinkResolver::check_klass_accessability(accessing_klass, sel_klass,
-                                              fold_type_to_class, CHECK_(empty));
+                                              fold_type_to_class, CHECK_NH);
     }
-
-    return mirror;
-
   }
-
-  // Fall through to an error.
-  assert(false, "unsupported mirror syntax");
-  THROW_MSG_(vmSymbols::java_lang_InternalError(), "unsupported mirror syntax", empty);
+  return mirror;
 }
 
 
