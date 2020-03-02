@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,16 +42,14 @@ import java.nio.channels.FileChannel;
 import java.security.AccessController;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Map.Entry;
 
 import sun.java2d.Disposer;
 import sun.java2d.DisposerRecord;
+import sun.security.action.GetPropertyAction;
 
 /**
  * TrueTypeFont is not called SFntFont because it is not expected
@@ -748,8 +746,7 @@ public class TrueTypeFont extends FileFont {
 
         if (FontUtilities.isWindows) {
             defaultCodePage =
-                java.security.AccessController.doPrivileged(
-                   new sun.security.action.GetPropertyAction("file.encoding"));
+                AccessController.doPrivileged(new GetPropertyAction("file.encoding"));
         } else {
             if (languages.length != codePages.length) {
                 throw new InternalError("wrong code pages array length");
@@ -814,15 +811,15 @@ public class TrueTypeFont extends FileFont {
         }
 
         int range1 = buffer.getInt(78); /* ulCodePageRange1 */
-        int range2 = buffer.getInt(82); /* ulCodePageRange2 */
+        // int range2 = buffer.getInt(82); /* ulCodePageRange2 */
 
         /* This test is too stringent for Arial on Solaris (and perhaps
          * other fonts). Arial has at least one reserved bit set for an
          * unknown reason.
          */
-//         if (((range1 & reserved_bits1) | (range2 & reserved_bits2)) != 0) {
-//             return false;
-//         }
+        // if (((range1 & reserved_bits1) | (range2 & reserved_bits2)) != 0) {
+        //     return false;
+        // }
 
         for (int em=0; em<encoding_mapping.length; em++) {
             if (encoding_mapping[em].equals(encoding)) {
@@ -1382,7 +1379,7 @@ public class TrueTypeFont extends FileFont {
             return;
         }
 
-        Map<String, Short> map = new HashMap<String, Short>(200);
+        Map<String, Short> map = new HashMap<>(200);
 
         // the following statements are derived from the langIDMap
         // in src/windows/native/java/lang/java_props_md.c using the following
@@ -1620,7 +1617,6 @@ public class TrueTypeFont extends FileFont {
      * needed.
      */
     protected void initAllNames(int requestedID, HashSet<String> names) {
-
         byte[] name = new byte[256];
         ByteBuffer buffer = getTableBuffer(nameTag);
 
@@ -1642,7 +1638,7 @@ public class TrueTypeFont extends FileFont {
                     continue; // skip over this record.
                 }
                 short encodingID = sbuffer.get();
-                short langID     = sbuffer.get();
+                /* short langID = */ sbuffer.get();
                 short nameID     = sbuffer.get();
                 int   nameLen    = ((int) sbuffer.get()) & 0xffff;
                 int   namePtr    = (((int) sbuffer.get()) & 0xffff) + stringPtr;
