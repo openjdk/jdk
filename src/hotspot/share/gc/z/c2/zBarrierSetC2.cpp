@@ -233,22 +233,6 @@ static const TypeFunc* clone_type() {
   return TypeFunc::make(domain, range);
 }
 
-// Node n is pointing to the start of oop payload - return base pointer
-static Node* get_base_for_arracycopy_clone(PhaseMacroExpand* phase, Node* n) {
-  // This would normally be handled by optimizations, but the type system
-  // checks get confused when it thinks it already has a base pointer.
-  const int base_offset = BarrierSetC2::arraycopy_payload_base_offset(false);
-
-  if (n->is_AddP() &&
-      n->in(AddPNode::Offset)->is_Con() &&
-      n->in(AddPNode::Offset)->get_long() == base_offset) {
-    assert(n->in(AddPNode::Base) == n->in(AddPNode::Address), "Sanity check");
-    return n->in(AddPNode::Base);
-  } else {
-    return phase->basic_plus_adr(n, phase->longcon(-base_offset));
-  }
-}
-
 void ZBarrierSetC2::clone_at_expansion(PhaseMacroExpand* phase, ArrayCopyNode* ac) const {
   Node* const src = ac->in(ArrayCopyNode::Src);
   if (ac->is_clone_array()) {
@@ -258,24 +242,16 @@ void ZBarrierSetC2::clone_at_expansion(PhaseMacroExpand* phase, ArrayCopyNode* a
   }
 
   // Clone instance
-  assert(ac->is_clone_inst(), "Sanity check");
-
   Node* const ctrl       = ac->in(TypeFunc::Control);
   Node* const mem        = ac->in(TypeFunc::Memory);
   Node* const dst        = ac->in(ArrayCopyNode::Dest);
-  Node* const src_offset = ac->in(ArrayCopyNode::SrcPos);
-  Node* const dst_offset = ac->in(ArrayCopyNode::DestPos);
   Node* const size       = ac->in(ArrayCopyNode::Length);
 
-  assert(src_offset == NULL, "Should be null");
-  assert(dst_offset == NULL, "Should be null");
+  assert(ac->is_clone_inst(), "Sanity check");
   assert(size->bottom_type()->is_long(), "Should be long");
 
-  // The src and dst point to the object payload rather than the object base
-  Node* const src_base = get_base_for_arracycopy_clone(phase, src);
-  Node* const dst_base = get_base_for_arracycopy_clone(phase, dst);
-
-  // The size must also be increased to match the instance size
+  // The native clone we are calling here expects the instance size in words
+  // Add header/offset size to payload size to get instance size.
   Node* const base_offset = phase->longcon(arraycopy_payload_base_offset(false) >> LogBytesPerLong);
   Node* const full_size = phase->transform_later(new AddLNode(size, base_offset));
 
@@ -285,8 +261,8 @@ void ZBarrierSetC2::clone_at_expansion(PhaseMacroExpand* phase, ArrayCopyNode* a
                                            ZBarrierSetRuntime::clone_addr(),
                                            "ZBarrierSetRuntime::clone",
                                            TypeRawPtr::BOTTOM,
-                                           src_base,
-                                           dst_base,
+                                           src,
+                                           dst,
                                            full_size,
                                            phase->top());
   phase->transform_later(call);

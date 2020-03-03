@@ -653,7 +653,7 @@ int BarrierSetC2::arraycopy_payload_base_offset(bool is_array) {
   // Exclude the header but include array length to copy by 8 bytes words.
   // Can't use base_offset_in_bytes(bt) since basic type is unknown.
   int base_off = is_array ? arrayOopDesc::length_offset_in_bytes() :
-                 instanceOopDesc::base_offset_in_bytes();
+                            instanceOopDesc::base_offset_in_bytes();
   // base_off:
   // 8  - 32-bit VM
   // 12 - 64-bit VM, compressed klass
@@ -674,17 +674,11 @@ int BarrierSetC2::arraycopy_payload_base_offset(bool is_array) {
 
 void BarrierSetC2::clone(GraphKit* kit, Node* src_base, Node* dst_base, Node* size, bool is_array) const {
   int base_off = arraycopy_payload_base_offset(is_array);
-  Node* payload_src = kit->basic_plus_adr(src_base,  base_off);
-  Node* payload_dst = kit->basic_plus_adr(dst_base, base_off);
-
-  // Compute the length also, if needed:
   Node* payload_size = size;
-  payload_size = kit->gvn().transform(new SubXNode(payload_size, kit->MakeConX(base_off)));
-  payload_size = kit->gvn().transform(new URShiftXNode(payload_size, kit->intcon(LogBytesPerLong) ));
-
-  const TypePtr* raw_adr_type = TypeRawPtr::BOTTOM;
-
-  ArrayCopyNode* ac = ArrayCopyNode::make(kit, false, payload_src, NULL, payload_dst, NULL, payload_size, true, false);
+  Node* offset = kit->MakeConX(base_off);
+  payload_size = kit->gvn().transform(new SubXNode(payload_size, offset));
+  payload_size = kit->gvn().transform(new URShiftXNode(payload_size, kit->intcon(LogBytesPerLong)));
+  ArrayCopyNode* ac = ArrayCopyNode::make(kit, false, src_base, offset,  dst_base, offset, payload_size, true, false);
   if (is_array) {
     ac->set_clone_array();
   } else {
@@ -692,6 +686,7 @@ void BarrierSetC2::clone(GraphKit* kit, Node* src_base, Node* dst_base, Node* si
   }
   Node* n = kit->gvn().transform(ac);
   if (n == ac) {
+    const TypePtr* raw_adr_type = TypeRawPtr::BOTTOM;
     ac->_adr_type = TypeRawPtr::BOTTOM;
     kit->set_predefined_output_for_runtime_call(ac, ac->in(TypeFunc::Memory), raw_adr_type);
   } else {
@@ -837,18 +832,16 @@ void BarrierSetC2::clone_at_expansion(PhaseMacroExpand* phase, ArrayCopyNode* ac
   Node* dest_offset = ac->in(ArrayCopyNode::DestPos);
   Node* length = ac->in(ArrayCopyNode::Length);
 
-  assert (src_offset == NULL,  "for clone offsets should be null");
-  assert (dest_offset == NULL, "for clone offsets should be null");
+  Node* payload_src = phase->basic_plus_adr(src, src_offset);
+  Node* payload_dst = phase->basic_plus_adr(dest, dest_offset);
 
   const char* copyfunc_name = "arraycopy";
-  address     copyfunc_addr =
-          phase->basictype2arraycopy(T_LONG, NULL, NULL,
-                              true, copyfunc_name, true);
+  address     copyfunc_addr = phase->basictype2arraycopy(T_LONG, NULL, NULL, true, copyfunc_name, true);
 
   const TypePtr* raw_adr_type = TypeRawPtr::BOTTOM;
   const TypeFunc* call_type = OptoRuntime::fast_arraycopy_Type();
 
-  Node* call = phase->make_leaf_call(ctrl, mem, call_type, copyfunc_addr, copyfunc_name, raw_adr_type, src, dest, length XTOP);
+  Node* call = phase->make_leaf_call(ctrl, mem, call_type, copyfunc_addr, copyfunc_name, raw_adr_type, payload_src, payload_dst, length XTOP);
   phase->transform_later(call);
 
   phase->igvn().replace_node(ac, call);
