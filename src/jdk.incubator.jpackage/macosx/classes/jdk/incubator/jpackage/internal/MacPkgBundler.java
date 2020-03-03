@@ -510,6 +510,20 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
         return "pkg";
     }
 
+    private static boolean isValidBundleIdentifier(String id) {
+        for (int i = 0; i < id.length(); i++) {
+            char a = id.charAt(i);
+            // We check for ASCII codes first which we accept. If check fails,
+            // check if it is acceptable extended ASCII or unicode character.
+            if ((a >= 'A' && a <= 'Z') || (a >= 'a' && a <= 'z')
+                    || (a >= '0' && a <= '9') || (a == '-' || a == '.')) {
+                continue;
+            }
+            return false;
+        }
+        return true;
+    }
+
     @Override
     public boolean validate(Map<String, ? super Object> params)
             throws ConfigException {
@@ -520,11 +534,18 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
             // we are not interested in return code, only possible exception
             validateAppImageAndBundeler(params);
 
-            if (MAC_CF_BUNDLE_IDENTIFIER.fetchFrom(params) == null) {
+            String identifier = MAC_CF_BUNDLE_IDENTIFIER.fetchFrom(params);
+            if (identifier == null) {
                 throw new ConfigException(
                         I18N.getString("message.app-image-requires-identifier"),
                         I18N.getString(
                             "message.app-image-requires-identifier.advice"));
+            }
+            if (!isValidBundleIdentifier(identifier)) {
+                throw new ConfigException(
+                        MessageFormat.format(I18N.getString(
+                        "message.invalid-identifier"), identifier),
+                        I18N.getString("message.invalid-identifier.advice"));
             }
 
             // reject explicitly set sign to true and no valid signature key

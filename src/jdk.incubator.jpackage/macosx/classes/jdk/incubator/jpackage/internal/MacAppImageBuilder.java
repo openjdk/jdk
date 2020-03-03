@@ -111,7 +111,15 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
                             return identifier;
                         }
 
-                        return IDENTIFIER.fetchFrom(params);
+                        identifier = IDENTIFIER.fetchFrom(params);
+                        if (identifier != null) {
+                            return identifier;
+                        }
+                        // the IDENTIFIER (above) will default to derive from
+                        // the main-class, in case there is no main-class
+                        // (such as runtime installer) revert to the name.
+                        // any of these could be invalid, so check later.
+                        return APP_NAME.fetchFrom(params);
                     },
                     (s, p) -> s);
 
