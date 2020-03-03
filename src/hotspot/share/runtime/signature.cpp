@@ -373,7 +373,9 @@ Symbol* SignatureStream::find_symbol() {
 
 Klass* SignatureStream::as_klass(Handle class_loader, Handle protection_domain,
                                  FailureMode failure_mode, TRAPS) {
-  if (!is_reference())  return NULL;
+  if (!is_reference()) {
+    return NULL;
+  }
   Symbol* name = as_symbol();
   Klass* k = NULL;
   if (failure_mode == ReturnNull) {
@@ -401,10 +403,13 @@ Klass* SignatureStream::as_klass(Handle class_loader, Handle protection_domain,
 
 oop SignatureStream::as_java_mirror(Handle class_loader, Handle protection_domain,
                                     FailureMode failure_mode, TRAPS) {
-  if (!is_reference())
+  if (!is_reference()) {
     return Universe::java_mirror(type());
+  }
   Klass* klass = as_klass(class_loader, protection_domain, failure_mode, CHECK_NULL);
-  if (klass == NULL)  return NULL;
+  if (klass == NULL) {
+    return NULL;
+  }
   return klass->java_mirror();
 }
 
@@ -412,6 +417,52 @@ void SignatureStream::skip_to_return_type() {
   while (!at_return_type()) {
     next();
   }
+}
+
+ResolvingSignatureStream::ResolvingSignatureStream(Symbol* signature,
+                                                   Handle class_loader,
+                                                   Handle protection_domain,
+                                                   bool is_method)
+  : SignatureStream(signature, is_method),
+    _class_loader(class_loader), _protection_domain(protection_domain)
+{
+  initialize_load_origin(NULL);
+}
+
+ResolvingSignatureStream::ResolvingSignatureStream(Symbol* signature, Klass* load_origin, bool is_method)
+  : SignatureStream(signature, is_method)
+{
+  assert(load_origin != NULL, "");
+  initialize_load_origin(load_origin);
+}
+
+ResolvingSignatureStream::ResolvingSignatureStream(const Method* method)
+  : SignatureStream(method->signature(), true)
+{
+  initialize_load_origin(method->method_holder());
+}
+
+ResolvingSignatureStream::ResolvingSignatureStream(fieldDescriptor& field)
+  : SignatureStream(field.signature(), false)
+{
+  initialize_load_origin(field.field_holder());
+}
+
+void ResolvingSignatureStream::cache_handles(TRAPS) {
+  assert(_load_origin != NULL, "");
+  _class_loader = Handle(THREAD, _load_origin->class_loader());
+  _protection_domain = Handle(THREAD, _load_origin->protection_domain());
+}
+
+Klass* ResolvingSignatureStream::as_klass_if_loaded(TRAPS) {
+  Klass* klass = as_klass(CachedOrNull, THREAD);
+  // SD::find does not trigger loading, so there should be no throws
+  // Still, bad things can happen, so we CHECK_NULL and ask callers
+  // to do likewise.
+  if (HAS_PENDING_EXCEPTION) {
+    CLEAR_PENDING_EXCEPTION;
+  }
+  return klass;
 }
 
 #ifdef ASSERT

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4173528 5068772 8148936
+ * @bug 4173528 5068772 8148936 8196334
  * @summary Unit tests for java.util.UUID
  * @key randomness
  * @run main/othervm -XX:+CompactStrings UUIDTest
@@ -95,8 +95,9 @@ public class UUIDTest {
     private static void stringTest() throws Exception {
         for (int i=0; i<100; i++) {
             UUID u1 = UUID.randomUUID();
-            UUID u2 = UUID.fromString(u1.toString());
-            if (!u1.equals(u2))
+            UUID u2 = UUID.fromString(u1.toString().toLowerCase());
+            UUID u3 = UUID.fromString(u1.toString().toUpperCase());
+            if (!u1.equals(u2) || !u1.equals(u3))
                 throw new Exception("UUID -> string -> UUID failed");
         }
 
