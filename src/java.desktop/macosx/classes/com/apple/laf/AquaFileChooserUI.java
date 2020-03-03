@@ -906,7 +906,8 @@ public class AquaFileChooserUI extends FileChooserUI {
 
             final Object value = pane.getValue();
 
-            if (value == null || value.equals(cancelButtonText)) {
+            if (value == null || value.equals(cancelButtonText)
+                    || value.equals(JOptionPane.CLOSED_OPTION)) {
                 return null;
             }
             return pane.getInputValue();
