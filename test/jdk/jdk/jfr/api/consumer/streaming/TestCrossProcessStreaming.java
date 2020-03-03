@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
 package jdk.jfr.api.consumer.streaming;
 
 import java.nio.file.Files;
@@ -33,9 +32,11 @@ import java.time.Instant;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import com.sun.tools.attach.VirtualMachine;
 import jdk.jfr.Event;
+import jdk.jfr.Name;
 import jdk.jfr.Recording;
 import jdk.jfr.consumer.EventStream;
 import jdk.test.lib.Asserts;
@@ -53,148 +54,126 @@ import jdk.test.lib.process.ProcessTools;
  * @run main jdk.jfr.api.consumer.streaming.TestCrossProcessStreaming
  */
 
+// Test Sequence:
+// 1. Main starts a child process "Event-Producer"
+// 2. Producer process produces TestEvent1 (first batch).
+// 3. Main process consumes the event stream until pre-defined number of events is consumed.
+// 4. Main process signals to child process to start producing the 2nd batch of events (TestEvent2).
+// 5. The second batch is produced for pre-defined number of flush intervals.
+// 6. Once the main process detects the pre-defined number of flush intervals, it signals
+//    to the producer process to exit.
+// 7. Producer process communicates the number of events in 2nd batch then exits.
+// 8. Main process verifies that number of events in 2nd batch arrived as expected, and that
+//    producer process exited w/o error.
+//
+//    The sequence of steps 2-5 ensures that the stream can be consumed simultaneously
+//    as the producer process is producing events.
 public class TestCrossProcessStreaming {
-    static String MAIN_STARTED_TOKEN = "MAIN_STARTED";
-
-    public static class TestEvent extends Event {
+    @Name("Batch1")
+    public static class TestEvent1 extends Event {
     }
-
+    @Name("Batch2")
+    public static class TestEvent2 extends Event {
+    }
+    @Name("Result")
     public static class ResultEvent extends Event {
-        int nrOfEventsProduced;
+        int batch1Count;
+        int batch2Count;
     }
-
-    public static class EventProducer {
-        public static void main(String... args) throws Exception {
-            CrossProcessSynchronizer sync = new CrossProcessSynchronizer();
-            log(MAIN_STARTED_TOKEN);
-
-            long pid = ProcessHandle.current().pid();
-            int nrOfEvents = 0;
-            boolean exitRequested = false;
-            while (!exitRequested) {
-                TestEvent e = new TestEvent();
-                e.commit();
-                nrOfEvents++;
-                if (nrOfEvents % 1000 == 0) {
-                    Thread.sleep(100);
-                    exitRequested = CrossProcessSynchronizer.exitRequested(pid);
-                }
-            }
-
-            ResultEvent re = new ResultEvent();
-            re.nrOfEventsProduced = nrOfEvents;
-            re.commit();
-
-            log("Number of TestEvents generated: " + nrOfEvents);
-        }
-    }
-
-
-    static class CrossProcessSynchronizer {
-        static void requestExit(long pid) throws Exception {
-            Files.createFile(file(pid));
-       }
-
-        static boolean exitRequested(long pid) throws Exception {
-            return Files.exists(file(pid));
-        }
-
-        static Path file(long pid) {
-            return Paths.get(".", "exit-requested-" + pid);
-        }
-    }
-
-
-    static class ConsumedEvents {
-        AtomicInteger total = new AtomicInteger(0);
-        AtomicInteger whileProducerAlive = new AtomicInteger(0);
-        AtomicInteger produced = new AtomicInteger(-1);
-    }
-
 
     public static void main(String... args) throws Exception {
-        Process p = startProducerProcess("normal");
-        String repo = getJfrRepository(p);
+        Process process = EventProducer.start();
+        Path repo = getJfrRepository(process);
 
-        ConsumedEvents ce = consumeEvents(p, repo);
-
-        p.waitFor();
-        Asserts.assertEquals(p.exitValue(), 0,
-                             "Process exited abnormally, exitValue = " + p.exitValue());
-
-        Asserts.assertEquals(ce.total.get(), ce.produced.get(), "Some events were lost");
-
-        // Expected that some portion of events emitted by the producer are delivered
-        // to the consumer while producer is still alive, at least one event for certain.
-        // Assertion below is disabled due to: JDK-8235206
-        // Asserts.assertLTE(1, ce.whileProducerAlive.get(),
-        //                   "Too few events are delivered while producer is alive");
-    }
-
-    static Process startProducerProcess(String extraParam) throws Exception {
-        ProcessBuilder pb =
-            ProcessTools.createJavaProcessBuilder(false,
-                                                  "-XX:StartFlightRecording",
-                                                  EventProducer.class.getName(),
-                                                  extraParam);
-        Process p = ProcessTools.startProcess("Event-Producer", pb,
-                                              line -> line.equals(MAIN_STARTED_TOKEN),
-                                              0, TimeUnit.SECONDS);
-        return p;
-    }
-
-    static String getJfrRepository(Process p) throws Exception {
-        String repo = null;
-
-        // It may take little bit of time for the observed process to set the property after
-        // the process starts, therefore read the property in a loop.
-        while (repo == null) {
-            VirtualMachine vm = VirtualMachine.attach(String.valueOf(p.pid()));
-            repo = vm.getSystemProperties().getProperty("jdk.jfr.repository");
-            vm.detach();
+        // Consume 1000 events in a first batch
+        CountDownLatch consumed = new CountDownLatch(1000);
+        try (EventStream es = EventStream.openRepository(repo)) {
+            es.onEvent("Batch1", e -> consumed.countDown());
+            es.setStartTime(Instant.EPOCH); // read from start
+            es.startAsync();
+            consumed.await();
         }
 
-        log("JFR repository = " + repo);
-        return repo;
+        signal("second-batch");
+
+        // Consume events until 'exit' signal.
+        AtomicInteger total = new AtomicInteger();
+        AtomicInteger produced = new AtomicInteger(-1);
+        AtomicReference<Exception> exception = new AtomicReference();
+        try (EventStream es = EventStream.openRepository(repo)) {
+            es.onEvent("Batch2", e -> {
+                    try {
+                        if (total.incrementAndGet() == 1000)  {
+                            signal("exit");
+                        }
+                    } catch (Exception exc) {
+                        exception.set(exc);
+                    }
+            });
+            es.onEvent("Result",e -> {
+                produced.set(e.getInt("batch2Count"));
+                es.close();
+            });
+            es.setStartTime(Instant.EPOCH);
+            es.start();
+        }
+        process.waitFor();
+
+        if (exception.get() != null) {
+            throw exception.get();
+        }
+        Asserts.assertEquals(process.exitValue(), 0, "Incorrect exit value");
+        Asserts.assertEquals(total.get(), produced.get(), "Missing events");
     }
 
-    static ConsumedEvents consumeEvents(Process p, String repo) throws Exception {
-        ConsumedEvents result = new ConsumedEvents();
+    static class EventProducer {
+        static Process start() throws Exception {
+            String[] args = {"-XX:StartFlightRecording", EventProducer.class.getName()};
+            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(false, args);
+            return ProcessTools.startProcess("Event-Producer", pb);
+        }
 
-        // wait for couple of JFR stream flushes before concluding the test
-        CountDownLatch flushed = new CountDownLatch(2);
+        public static void main(String... args) throws Exception {
+            ResultEvent rs = new ResultEvent();
+            rs.batch1Count = emit(TestEvent1.class, "second-batch");
+            rs.batch2Count = emit(TestEvent2.class, "exit");
+            rs.commit();
+        }
 
-        // consume events produced by another process via event stream
-        try (EventStream es = EventStream.openRepository(Paths.get(repo))) {
-                es.onEvent(TestEvent.class.getName(),
-                           e -> {
-                               result.total.incrementAndGet();
-                               if (p.isAlive()) {
-                                   result.whileProducerAlive.incrementAndGet();
-                               }
-                           });
-
-                es.onEvent(ResultEvent.class.getName(),
-                           e -> result.produced.set(e.getInt("nrOfEventsProduced")));
-
-                es.onFlush( () -> flushed.countDown() );
-
-                // Setting start time to the beginning of the Epoch is a good way to start
-                // reading the stream from the very beginning.
-                es.setStartTime(Instant.EPOCH);
-                es.startAsync();
-
-                // await for certain number of flush events before concluding the test case
-                flushed.await();
-                CrossProcessSynchronizer.requestExit(p.pid());
-
-                es.awaitTermination();
+        static int emit(Class<? extends Event> eventClass, String termination) throws Exception {
+            int count = 0;
+            while (true) {
+                Event event = eventClass.getConstructor().newInstance();
+                event.commit();
+                count++;
+                if (count % 1000 == 0) {
+                    Thread.sleep(100);
+                    if (signalCheck(termination)) {
+                        System.out.println("Events generated: " + count);
+                        return count;
+                    }
+                }
             }
-
-        return result;
+        }
     }
 
-    private static final void log(String msg) {
-        System.out.println(msg);
+    static void signal(String name) throws Exception {
+        Files.createFile(Paths.get(".", name));
+    }
+
+    static boolean signalCheck(String name) throws Exception {
+        return Files.exists(Paths.get(".", name));
+    }
+
+    static Path getJfrRepository(Process p) throws Exception {
+        VirtualMachine vm = VirtualMachine.attach(String.valueOf(p.pid()));
+        while (true) {
+            String repo = vm.getSystemProperties().getProperty("jdk.jfr.repository");
+            if (repo != null) {
+                vm.detach();
+                System.out.println("JFR repository: " + repo);
+                return Paths.get(repo);
+            }
+        }
     }
 }
