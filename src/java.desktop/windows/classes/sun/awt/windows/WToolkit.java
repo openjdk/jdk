@@ -60,7 +60,6 @@ import java.awt.Point;
 import java.awt.PopupMenu;
 import java.awt.PrintJob;
 import java.awt.RenderingHints;
-import java.awt.Robot;
 import java.awt.ScrollPane;
 import java.awt.Scrollbar;
 import java.awt.SystemTray;
@@ -553,11 +552,11 @@ public final class WToolkit extends SunToolkit implements Runnable {
     }
 
     @Override
-    public RobotPeer createRobot(Robot target, GraphicsDevice screen) {
-        // (target is unused for now)
-        // Robot's don't need to go in the peer map since
-        // they're not Component's
-        return new WRobotPeer(screen);
+    public RobotPeer createRobot(GraphicsDevice screen) throws AWTException {
+        if (screen instanceof Win32GraphicsDevice) {
+            return new WRobotPeer();
+        }
+        return super.createRobot(screen);
     }
 
     public WEmbeddedFramePeer createEmbeddedFrame(WEmbeddedFrame target) {

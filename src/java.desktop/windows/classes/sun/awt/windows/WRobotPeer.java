@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 
 package sun.awt.windows;
 
-import java.awt.GraphicsDevice;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.peer.RobotPeer;
@@ -33,9 +32,6 @@ import java.awt.peer.RobotPeer;
 import sun.java2d.SunGraphicsEnvironment;
 
 final class WRobotPeer implements RobotPeer {
-
-    WRobotPeer(GraphicsDevice screen) {
-    }
 
     public native void mouseMoveImpl(int x, int y);
     @Override
