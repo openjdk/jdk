@@ -24,12 +24,11 @@
 /*
  * @test
  * @key headful
- * @bug 8007220 8204161
- * @summary The popup menu is not added to the tray icon after it was added to tray
- * @run main/manual AddPopupAfterShowTest
+ * @bug 6272324 8204161
+ * @summary Tests that clicking TrayIcon with middle button generates events.
+ * @run main/manual MiddleButtonEventTest
  */
 
-import java.awt.AWTException;
 import java.awt.Button;
 import java.awt.Color;
 import java.awt.event.WindowAdapter;
@@ -39,34 +38,37 @@ import java.awt.Frame;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
-import java.awt.Image;
-import java.awt.Graphics2D;
+import java.awt.Graphics;
 import java.awt.event.ActionEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.awt.TextArea;
+import java.awt.Toolkit;
 import java.awt.TrayIcon;
 import java.awt.Panel;
-import java.awt.PopupMenu;
-import java.awt.RenderingHints;
-import java.awt.MenuItem;
 import java.awt.SystemTray;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-public class AddPopupAfterShowTest {
+public class MiddleButtonEventTest {
 
     private static final Frame instructionFrame = new Frame();
     private static TrayIcon trayIcon = null;
-
+    private static final String INSTRUCTIONS = "INSTRUCTIONS:\n\n" +
+            "Tests that clicking TrayIcon with middle button generates events.\n"+
+            "When the test is started you will see three-color icon in the " +
+            "system tray.\n Click on it with the middle mouse button:\n" +
+            "- MOUSE_PRESSED, MOUSE_RELEASED, MOUSE_CLICKED events should be\n"+
+            "  generated for the middle button.\n" +
+            "  If so, the test passed, otherwise failed.";
+    private static final TextArea eventOutputArea = new TextArea("", 5, 50,
+                                                    TextArea.SCROLLBARS_BOTH);
     private static volatile boolean testResult = false;
     private static volatile CountDownLatch countDownLatch;
-    private static final String INSTRUCTIONS = "INSTRUCTIONS:\n\n" +
-            "1) The red circle icon was added to the system tray.\n"+
-            "2) Check that a popup menu is opened when the icon is clicked.\n"+
-            "3) If true the test is passed, otherwise failed.";
 
     public static void main(String[] args) throws Exception {
         if (!SystemTray.isSupported()) {
-            System.out.println("The System Tray is not supported," +
+            System.out.println("The System Tray is not supported, " +
                     "so this test can not be run in this scenario.");
             return;
         }
@@ -125,6 +127,10 @@ public class AddPopupAfterShowTest {
         gbc.gridy = 2;
         mainControlPanel.add(resultButtonPanel, gbc);
 
+        gbc.gridx = 0;
+        gbc.gridy = 3;
+        mainControlPanel.add(eventOutputArea, gbc);
+
         instructionFrame.addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosing(WindowEvent e) {
@@ -139,59 +145,41 @@ public class AddPopupAfterShowTest {
     }
 
     private static void createTestUI() throws Exception {
-        trayIcon = new TrayIcon(createTrayIconImage());
+        BufferedImage im = new BufferedImage(16, 16,
+                BufferedImage.TYPE_INT_ARGB);
+        Graphics gr = im.createGraphics();
+        gr.setColor(Color.white);
+        gr.fillRect(0, 0, 16, 5);
+        gr.setColor(Color.blue);
+        gr.fillRect(0, 5, 16, 10);
+        gr.setColor(Color.red);
+        gr.fillRect(0, 10, 16, 16);
+
+        trayIcon = new TrayIcon(im);
         trayIcon.setImageAutoSize(true);
-        // Add tray icon to system tray *before* adding popup menu
-        // to demonstrate buggy behaviour
+        trayIcon.addMouseListener(new MouseAdapter() {
+            public void mousePressed(MouseEvent e) {
+                printEventStr(e.toString());
+            }
+
+            public void mouseReleased(MouseEvent e) {
+                printEventStr(e.toString());
+            }
+
+            public void mouseClicked(MouseEvent e) {
+                printEventStr(e.toString());
+            }
+        });
         SystemTray.getSystemTray().add(trayIcon);
-        trayIcon.setPopupMenu(createTrayIconPopupMenu());
-    }
-
-    private static Image createTrayIconImage() {
-        /**
-         * Create a small image of a red circle to use as the icon
-         * for the tray icon
-         */
-        int trayIconImageSize = 32;
-        final BufferedImage trayImage = new BufferedImage(trayIconImageSize,
-                trayIconImageSize, BufferedImage.TYPE_INT_ARGB);
-        final Graphics2D trayImageGraphics =
-                (Graphics2D) trayImage.getGraphics();
-
-        trayImageGraphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
-                RenderingHints.VALUE_ANTIALIAS_ON);
-
-        trayImageGraphics.setColor(new Color(255, 255, 255, 0));
-        trayImageGraphics.fillRect(0, 0, trayImage.getWidth(),
-                trayImage.getHeight());
-
-        trayImageGraphics.setColor(Color.red);
-
-        int trayIconImageInset = 4;
-        trayImageGraphics.fillOval(trayIconImageInset,
-                trayIconImageInset,
-                trayImage.getWidth() - 2 * trayIconImageInset,
-                trayImage.getHeight() - 2 * trayIconImageInset);
-
-        trayImageGraphics.setColor(Color.darkGray);
-
-        trayImageGraphics.drawOval(trayIconImageInset,
-                trayIconImageInset,
-                trayImage.getWidth() - 2 * trayIconImageInset,
-                trayImage.getHeight() - 2 * trayIconImageInset);
-
-        return trayImage;
-    }
-
-    private static PopupMenu createTrayIconPopupMenu() {
-        final PopupMenu trayIconPopupMenu = new PopupMenu();
-        final MenuItem popupMenuItem = new MenuItem("TEST PASSED!");
-        trayIconPopupMenu.add(popupMenuItem);
-        return trayIconPopupMenu;
     }
 
     private static void disposeUI() {
         SystemTray.getSystemTray().remove(trayIcon);
         instructionFrame.dispose();
+    }
+
+    private static void printEventStr(String msg) {
+        eventOutputArea.append(msg + "\n");
+        System.out.println(msg);
     }
 }
