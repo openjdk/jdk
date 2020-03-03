@@ -23,13 +23,14 @@
 
 /**
  * @test
- * @library /runtime/testlibrary
+ * @library /test/lib
  * @modules java.base/jdk.internal.misc
  * @modules java.compiler
  * @run main/othervm/timeout=200 -Xmx1g FragmentMetaspace
  */
 
 import java.io.IOException;
+import jdk.test.lib.classloader.GeneratingCompilingClassLoader;
 
 /**
  * Test that tries to fragment the native memory used by class loaders.
@@ -53,7 +54,7 @@ public class FragmentMetaspace {
         long startTime = System.currentTimeMillis();
         for (int i = 0; System.currentTimeMillis() < startTime + time && i < iterations; ++i) {
             try {
-                GeneratedClassLoader gcl = new GeneratedClassLoader();
+                GeneratingCompilingClassLoader gcl = new GeneratingCompilingClassLoader();
 
                 // getGeneratedClasses throws a RuntimeException in cases where
                 // the javac exit code is not 0. If the original reason for the exception is

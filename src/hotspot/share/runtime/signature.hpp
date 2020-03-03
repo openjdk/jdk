@@ -564,6 +564,52 @@ class SignatureStream : public StackObj {
   oop as_java_mirror(Handle class_loader, Handle protection_domain, FailureMode failure_mode, TRAPS);
 };
 
+// Specialized SignatureStream: used for invoking SystemDictionary to either find
+//                              or resolve the underlying type when iterating over a
+//                              Java descriptor (or parts of it).
+class ResolvingSignatureStream : public SignatureStream {
+  Klass*       _load_origin;
+  bool         _handles_cached;
+  Handle       _class_loader;       // cached when needed
+  Handle       _protection_domain;  // cached when needed
+
+  void initialize_load_origin(Klass* load_origin) {
+    _load_origin = load_origin;
+    _handles_cached = (load_origin == NULL);
+  }
+  void need_handles(TRAPS) {
+    if (!_handles_cached) {
+      cache_handles(THREAD);
+      _handles_cached = true;
+    }
+  }
+  void cache_handles(TRAPS);
+
+ public:
+  ResolvingSignatureStream(Symbol* signature, Klass* load_origin, bool is_method = true);
+  ResolvingSignatureStream(Symbol* signature, Handle class_loader, Handle protection_domain, bool is_method = true);
+  ResolvingSignatureStream(const Method* method);
+  ResolvingSignatureStream(fieldDescriptor& field);
+
+  Klass* load_origin()            { return _load_origin; }
+  Handle class_loader(TRAPS)      { need_handles(THREAD); return _class_loader; }
+  Handle protection_domain(TRAPS) { need_handles(THREAD); return _protection_domain; }
+
+  Klass* as_klass_if_loaded(TRAPS);
+  Klass* as_klass(FailureMode failure_mode, TRAPS) {
+    need_handles(THREAD);
+    return SignatureStream::as_klass(_class_loader, _protection_domain,
+                                     failure_mode, THREAD);
+  }
+  oop as_java_mirror(FailureMode failure_mode, TRAPS) {
+    if (is_reference()) {
+      need_handles(THREAD);
+    }
+    return SignatureStream::as_java_mirror(_class_loader, _protection_domain,
+                                           failure_mode, THREAD);
+  }
+};
+
 // Here is how all the SignatureIterator classes invoke the
 // SignatureStream engine to do their parsing.
 template<typename T> inline

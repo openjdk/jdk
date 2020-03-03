@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,6 +20,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package jdk.test.lib.classloader;
 
 import java.io.DataInputStream;
 import java.io.ByteArrayOutputStream;
@@ -38,7 +39,7 @@ import javax.tools.ToolProvider;
  * Some efforts are made to make the class instances unique and of not insignificant
  * size.
  */
-public class GeneratedClassLoader extends ClassLoader {
+public class GeneratingCompilingClassLoader extends ClassLoader {
     /**
      * Holds a pair of class bytecodes and class name (for use with defineClass).
      */
@@ -59,7 +60,7 @@ public class GeneratedClassLoader extends ClassLoader {
      * the generated classes.
      */
     private static boolean deleteFiles = Boolean.parseBoolean(
-        System.getProperty("GeneratedClassLoader.deleteFiles", "true"));
+        System.getProperty("GeneratingCompilingClassLoader.deleteFiles", "true"));
 
     private static String bigstr =
         "Lorem ipsum dolor sit amet, consectetur adipiscing elit. "
@@ -86,7 +87,7 @@ public class GeneratedClassLoader extends ClassLoader {
     private JavaCompiler javac;
     private String nameBase;
 
-    public GeneratedClassLoader() {
+    public GeneratingCompilingClassLoader() {
         javac = ToolProvider.getSystemJavaCompiler();
         nameBase = "TestSimpleClass";
     }

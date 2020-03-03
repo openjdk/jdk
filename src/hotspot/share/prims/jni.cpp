@@ -3681,7 +3681,8 @@ extern const struct JNIInvokeInterface_ jni_InvokeInterface;
 
 // Global invocation API vars
 volatile int vm_created = 0;
-// Indicate whether it is safe to recreate VM
+// Indicate whether it is safe to recreate VM. Recreation is only
+// possible after a failed initial creation attempt in some cases.
 volatile int safe_to_recreate_vm = 1;
 struct JavaVM_ main_vm = {&jni_InvokeInterface};
 
@@ -3751,8 +3752,14 @@ static jint JNI_CreateJavaVM_inner(JavaVM **vm, void **penv, void *args) {
   if (Atomic::xchg(&vm_created, 1) == 1) {
     return JNI_EEXIST;   // already created, or create attempt in progress
   }
+
+  // If a previous creation attempt failed but can be retried safely,
+  // then safe_to_recreate_vm will have been reset to 1 after being
+  // cleared here. If a previous creation attempt succeeded and we then
+  // destroyed that VM, we will be prevented from trying to recreate
+  // the VM in the same process, as the value will still be 0.
   if (Atomic::xchg(&safe_to_recreate_vm, 0) == 0) {
-    return JNI_ERR;  // someone tried and failed and retry not allowed.
+    return JNI_ERR;
   }
 
   assert(vm_created == 1, "vm_created is true during the creation");
@@ -3945,9 +3952,14 @@ static jint attach_current_thread(JavaVM *vm, void **penv, void *_args, bool dae
 
   Thread* t = Thread::current_or_null();
   if (t != NULL) {
-    // If the thread has been attached this operation is a no-op
-    *(JNIEnv**)penv = ((JavaThread*) t)->jni_environment();
-    return JNI_OK;
+    // If executing from an atexit hook we may be in the VMThread.
+    if (t->is_Java_thread()) {
+      // If the thread has been attached this operation is a no-op
+      *(JNIEnv**)penv = ((JavaThread*) t)->jni_environment();
+      return JNI_OK;
+    } else {
+      return JNI_ERR;
+    }
   }
 
   // Create a thread and mark it as attaching so it will be skipped by the
@@ -4045,7 +4057,7 @@ static jint attach_current_thread(JavaVM *vm, void **penv, void *_args, bool dae
 jint JNICALL jni_AttachCurrentThread(JavaVM *vm, void **penv, void *_args) {
   HOTSPOT_JNI_ATTACHCURRENTTHREAD_ENTRY(vm, penv, _args);
   if (vm_created == 0) {
-  HOTSPOT_JNI_ATTACHCURRENTTHREAD_RETURN((uint32_t) JNI_ERR);
+    HOTSPOT_JNI_ATTACHCURRENTTHREAD_RETURN((uint32_t) JNI_ERR);
     return JNI_ERR;
   }
 
@@ -4058,18 +4070,30 @@ jint JNICALL jni_AttachCurrentThread(JavaVM *vm, void **penv, void *_args) {
 
 jint JNICALL jni_DetachCurrentThread(JavaVM *vm)  {
   HOTSPOT_JNI_DETACHCURRENTTHREAD_ENTRY(vm);
+  if (vm_created == 0) {
+    HOTSPOT_JNI_DETACHCURRENTTHREAD_RETURN(JNI_ERR);
+    return JNI_ERR;
+  }
 
   JNIWrapper("DetachCurrentThread");
 
+  Thread* current = Thread::current_or_null();
+
   // If the thread has already been detached the operation is a no-op
-  if (Thread::current_or_null() == NULL) {
+  if (current == NULL) {
     HOTSPOT_JNI_DETACHCURRENTTHREAD_RETURN(JNI_OK);
     return JNI_OK;
   }
 
+  // If executing from an atexit hook we may be in the VMThread.
+  if (!current->is_Java_thread()) {
+    HOTSPOT_JNI_DETACHCURRENTTHREAD_RETURN((uint32_t) JNI_ERR);
+    return JNI_ERR;
+  }
+
   VM_Exit::block_if_vm_exited();
 
-  JavaThread* thread = JavaThread::current();
+  JavaThread* thread = (JavaThread*) current;
   if (thread->has_last_Java_frame()) {
     HOTSPOT_JNI_DETACHCURRENTTHREAD_RETURN((uint32_t) JNI_ERR);
     // Can't detach a thread that's running java, that can't work.

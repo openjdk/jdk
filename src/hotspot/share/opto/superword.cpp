@@ -2259,48 +2259,12 @@ void SuperWord::co_locate_pack(Node_List* pk) {
         _igvn.replace_input_of(ld, MemNode::Memory, upper_insert_pt);
       }
     }
-  } else if (pk->at(0)->is_Load()) { //load
-    // all loads in the pack should have the same memory state. By default,
+  } else if (pk->at(0)->is_Load()) { // Load pack
+    // All loads in the pack should have the same memory state. By default,
     // we use the memory state of the last load. However, if any load could
     // not be moved down due to the dependence constraint, we use the memory
     // state of the first load.
-    Node* last_mem  = pk->at(0)->in(MemNode::Memory);
-    Node* first_mem = last_mem;
-    // Walk the memory graph from the current first load until the
-    // start of the loop and check if nodes on the way are memory
-    // edges of loads in the pack. The last one we encounter is the
-    // first load.
-    for (Node* current = first_mem; in_bb(current); current = current->is_Phi() ? current->in(LoopNode::EntryControl) : current->in(MemNode::Memory)) {
-     assert(current->is_Mem() || (current->is_Phi() && current->in(0) == bb()), "unexpected memory");
-     for (uint i = 1; i < pk->size(); i++) {
-        Node* ld = pk->at(i);
-        if (ld->in(MemNode::Memory) == current) {
-          first_mem = current;
-          break;
-        }
-      }
-    }
-    // Find the last load by going over the pack again and walking
-    // the memory graph from the loads of the pack to the memory of
-    // the first load. If we encounter the memory of the current last
-    // load, then we started from further down in the memory graph and
-    // the load we started from is the last load. Check for dependence
-    // constraints in that loop as well.
-    bool schedule_last = true;
-    for (uint i = 0; i < pk->size(); i++) {
-      Node* ld = pk->at(i);
-      for (Node* current = ld->in(MemNode::Memory); current != first_mem; current = current->in(MemNode::Memory)) {
-        assert(current->is_Mem() && in_bb(current), "unexpected memory");
-        if (current->in(MemNode::Memory) == last_mem) {
-          last_mem = ld->in(MemNode::Memory);
-        }
-        if (!independent(current, ld)) {
-          schedule_last = false; // a later store depends on this load
-        }
-      }
-    }
-
-    Node* mem_input = schedule_last ? last_mem : first_mem;
+    Node* mem_input = pick_mem_state(pk);
     _igvn.hash_delete(mem_input);
     // Give each load the same memory state
     for (uint i = 0; i < pk->size(); i++) {
@@ -2308,6 +2272,75 @@ void SuperWord::co_locate_pack(Node_List* pk) {
       _igvn.replace_input_of(ld, MemNode::Memory, mem_input);
     }
   }
+}
+
+// Finds the first and last memory state and then picks either of them by checking dependence constraints.
+// If a store is dependent on an earlier load then we need to pick the memory state of the first load and cannot
+// pick the memory state of the last load.
+Node* SuperWord::pick_mem_state(Node_List* pk) {
+  Node* first_mem = find_first_mem_state(pk);
+  Node* last_mem  = find_last_mem_state(pk, first_mem);
+
+  for (uint i = 0; i < pk->size(); i++) {
+    Node* ld = pk->at(i);
+    for (Node* current = last_mem; current != ld->in(MemNode::Memory); current = current->in(MemNode::Memory)) {
+      assert(current->is_Mem() && in_bb(current), "unexpected memory");
+      assert(current != first_mem, "corrupted memory graph");
+      if (!independent(current, ld)) {
+#ifdef ASSERT
+        // Added assertion code since no case has been observed that should pick the first memory state.
+        // Remove the assertion code whenever we find a (valid) case that really needs the first memory state.
+        pk->dump();
+        first_mem->dump();
+        last_mem->dump();
+        current->dump();
+        ld->dump();
+        ld->in(MemNode::Memory)->dump();
+        assert(false, "never observed that first memory should be picked");
+#endif
+        return first_mem; // A later store depends on this load, pick memory state of first load
+      }
+    }
+  }
+  return last_mem;
+}
+
+// Walk the memory graph from the current first load until the
+// start of the loop and check if nodes on the way are memory
+// edges of loads in the pack. The last one we encounter is the
+// first load.
+Node* SuperWord::find_first_mem_state(Node_List* pk) {
+  Node* first_mem = pk->at(0)->in(MemNode::Memory);
+  for (Node* current = first_mem; in_bb(current); current = current->is_Phi() ? current->in(LoopNode::EntryControl) : current->in(MemNode::Memory)) {
+    assert(current->is_Mem() || (current->is_Phi() && current->in(0) == bb()), "unexpected memory");
+    for (uint i = 1; i < pk->size(); i++) {
+      Node* ld = pk->at(i);
+      if (ld->in(MemNode::Memory) == current) {
+        first_mem = current;
+        break;
+      }
+    }
+  }
+  return first_mem;
+}
+
+// Find the last load by going over the pack again and walking
+// the memory graph from the loads of the pack to the memory of
+// the first load. If we encounter the memory of the current last
+// load, then we started from further down in the memory graph and
+// the load we started from is the last load.
+Node* SuperWord::find_last_mem_state(Node_List* pk, Node* first_mem) {
+  Node* last_mem = pk->at(0)->in(MemNode::Memory);
+  for (uint i = 0; i < pk->size(); i++) {
+    Node* ld = pk->at(i);
+    for (Node* current = ld->in(MemNode::Memory); current != first_mem; current = current->in(MemNode::Memory)) {
+      assert(current->is_Mem() && in_bb(current), "unexpected memory");
+      if (current->in(MemNode::Memory) == last_mem) {
+        last_mem = ld->in(MemNode::Memory);
+      }
+    }
+  }
+  return last_mem;
 }
 
 #ifndef PRODUCT

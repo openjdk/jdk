@@ -481,6 +481,10 @@ class SuperWord : public ResourceObj {
   // Within a store pack, schedule stores together by moving out the sandwiched memory ops according
   // to dependence info; and within a load pack, move loads down to the last executed load.
   void co_locate_pack(Node_List* p);
+  Node* pick_mem_state(Node_List* pk);
+  Node* find_first_mem_state(Node_List* pk);
+  Node* find_last_mem_state(Node_List* pk, Node* first_mem);
+
   // Convert packs into vector node operations
   void output();
   // Create a vector operand for the nodes in pack p for operand: in(opd_idx)
