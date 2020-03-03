@@ -44,6 +44,7 @@ import static javax.accessibility.AccessibleContext.ACCESSIBLE_STATE_PROPERTY;
 import static javax.accessibility.AccessibleContext.ACCESSIBLE_TABLE_MODEL_CHANGED;
 import static javax.accessibility.AccessibleContext.ACCESSIBLE_TEXT_PROPERTY;
 import static javax.accessibility.AccessibleContext.ACCESSIBLE_NAME_PROPERTY;
+import static javax.accessibility.AccessibleContext.ACCESSIBLE_VALUE_PROPERTY;
 
 import javax.accessibility.AccessibleRole;
 import javax.accessibility.AccessibleState;
@@ -106,13 +107,6 @@ class CAccessible extends CFRetainedResource implements Accessible {
             AccessibleContext ac = ((Accessible)c).getAccessibleContext();
             ac.addPropertyChangeListener(new AXChangeNotifier());
         }
-        if (c instanceof JProgressBar) {
-            JProgressBar pb = (JProgressBar) c;
-            pb.addChangeListener(new AXProgressChangeNotifier());
-        } else if (c instanceof JSlider) {
-            JSlider slider = (JSlider) c;
-            slider.addChangeListener(new AXProgressChangeNotifier());
-        }
     }
 
     private class AXChangeNotifier implements PropertyChangeListener {
@@ -173,17 +167,18 @@ class CAccessible extends CFRetainedResource implements Accessible {
                     if (e.getSource() instanceof JTabbedPane) {
                         titleChanged(ptr);
                     }
+                } else if (name.compareTo(ACCESSIBLE_VALUE_PROPERTY) == 0) {
+                    AccessibleRole thisRole = accessible.getAccessibleContext()
+                                                        .getAccessibleRole();
+                    if (thisRole == AccessibleRole.SLIDER ||
+                            thisRole == AccessibleRole.PROGRESS_BAR) {
+                        valueChanged(ptr);
+                    }
                 }
             }
         }
     }
 
-    private class AXProgressChangeNotifier implements ChangeListener {
-        @Override
-        public void stateChanged(ChangeEvent e) {
-            if (ptr != 0) valueChanged(ptr);
-        }
-    }
 
     static Accessible getSwingAccessible(final Accessible a) {
         return (a instanceof CAccessible) ? ((CAccessible)a).accessible : a;
