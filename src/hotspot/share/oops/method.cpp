@@ -1175,9 +1175,11 @@ void Method::link_method(const methodHandle& h_method, TRAPS) {
   // If the code cache is full, we may reenter this function for the
   // leftover methods that weren't linked.
   if (is_shared()) {
+#ifdef ASSERT
     address entry = Interpreter::entry_for_cds_method(h_method);
     assert(entry != NULL && entry == _i2i_entry,
            "should be correctly set during dump time");
+#endif
     if (adapter() != NULL) {
       return;
     }
