@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -429,8 +429,8 @@ final class NewSessionTicket {
                 hc.handshakeOutput.flush();
             }
 
-            if (hc instanceof PostHandshakeContext) {
-                ((PostHandshakeContext) hc).finish();
+            if (hc.negotiatedProtocol.useTLS13PlusSpec()) {
+                hc.conContext.finishPostHandshake();
             }
 
             // The message has been delivered.
