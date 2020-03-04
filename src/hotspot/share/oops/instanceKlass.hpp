@@ -1268,7 +1268,6 @@ public:
     assert(DumpSharedSpaces, "only call this when dumping archive");
     _init_state = initialization_error;
   }
-  bool check_sharing_error_state();
 
 private:
   // initialization state

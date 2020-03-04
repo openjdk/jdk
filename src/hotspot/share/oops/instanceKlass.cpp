@@ -763,7 +763,7 @@ bool InstanceKlass::link_class_or_fail(TRAPS) {
 }
 
 bool InstanceKlass::link_class_impl(TRAPS) {
-  if (DumpSharedSpaces && is_in_error_state()) {
+  if (DumpSharedSpaces && SystemDictionaryShared::has_class_failed_verification(this)) {
     // This is for CDS dumping phase only -- we use the in_error_state to indicate that
     // the class has failed verification. Throwing the NoClassDefFoundError here is just
     // a convenient way to stop repeat attempts to verify the same (bad) class.
@@ -2373,12 +2373,10 @@ void InstanceKlass::metaspace_pointers_do(MetaspaceClosure* it) {
 void InstanceKlass::remove_unshareable_info() {
   Klass::remove_unshareable_info();
 
-  if (is_in_error_state()) {
+  if (SystemDictionaryShared::has_class_failed_verification(this)) {
     // Classes are attempted to link during dumping and may fail,
     // but these classes are still in the dictionary and class list in CLD.
-    // Check in_error state first because in_error is > linked state, so
-    // is_linked() is true.
-    // If there's a linking error, there is nothing else to remove.
+    // If the class has failed verification, there is nothing else to remove.
     return;
   }
 
@@ -2471,38 +2469,6 @@ void InstanceKlass::restore_unshareable_info(ClassLoaderData* loader_data, Handl
   if (UseBiasedLocking && BiasedLocking::enabled()) {
     set_prototype_header(markWord::biased_locking_prototype());
   }
-}
-
-// returns true IFF is_in_error_state() has been changed as a result of this call.
-bool InstanceKlass::check_sharing_error_state() {
-  assert(DumpSharedSpaces, "should only be called during dumping");
-  bool old_state = is_in_error_state();
-
-  if (!is_in_error_state()) {
-    bool bad = false;
-    for (InstanceKlass* sup = java_super(); sup; sup = sup->java_super()) {
-      if (sup->is_in_error_state()) {
-        bad = true;
-        break;
-      }
-    }
-    if (!bad) {
-      Array<InstanceKlass*>* interfaces = transitive_interfaces();
-      for (int i = 0; i < interfaces->length(); i++) {
-        InstanceKlass* iface = interfaces->at(i);
-        if (iface->is_in_error_state()) {
-          bad = true;
-          break;
-        }
-      }
-    }
-
-    if (bad) {
-      set_in_error_state();
-    }
-  }
-
-  return (old_state != is_in_error_state());
 }
 
 void InstanceKlass::set_class_loader_type(s2 loader_type) {

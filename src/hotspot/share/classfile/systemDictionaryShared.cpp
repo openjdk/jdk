@@ -76,6 +76,7 @@ public:
   };
 
   InstanceKlass*               _klass;
+  bool                         _failed_verification;
   int                          _id;
   int                          _clsfile_size;
   int                          _clsfile_crc32;
@@ -84,6 +85,7 @@ public:
 
   DumpTimeSharedClassInfo() {
     _klass = NULL;
+    _failed_verification = false;
     _id = -1;
     _clsfile_size = -1;
     _clsfile_crc32 = -1;
@@ -124,7 +126,15 @@ public:
 
   bool is_excluded() {
     // _klass may become NULL due to DynamicArchiveBuilder::set_to_null
-    return _excluded || _klass == NULL;
+    return _excluded || _failed_verification || _klass == NULL;
+  }
+
+  void set_failed_verification() {
+    _failed_verification = true;
+  }
+
+  bool failed_verification() {
+    return _failed_verification;
   }
 };
 
@@ -1108,9 +1118,9 @@ bool SystemDictionaryShared::should_be_excluded(InstanceKlass* k) {
     return true;
   }
   if (k->init_state() < InstanceKlass::linked) {
-    // In static dumping, we will attempt to link all classes. Those that fail to link will
-    // be marked as in error state.
-    assert(DynamicDumpSharedSpaces, "must be");
+    // In CDS dumping, we will attempt to link all classes. Those that fail to link will
+    // be recorded in DumpTimeSharedClassInfo.
+    Arguments::assert_is_dumping_archive();
 
     // TODO -- rethink how this can be handled.
     // We should try to link ik, however, we can't do it here because
@@ -1118,7 +1128,11 @@ bool SystemDictionaryShared::should_be_excluded(InstanceKlass* k) {
     // 2. linking a class may cause other classes to be loaded, which means
     //    a custom ClassLoader.loadClass() may be called, at a point where the
     //    class loader doesn't expect it.
-    warn_excluded(k, "Not linked");
+    if (has_class_failed_verification(k)) {
+      warn_excluded(k, "Failed verification");
+    } else {
+      warn_excluded(k, "Not linked");
+    }
     return true;
   }
   if (k->major_version() < 50 /*JAVA_6_VERSION*/) {
@@ -1185,6 +1199,22 @@ bool SystemDictionaryShared::is_excluded_class(InstanceKlass* k) {
   assert(_no_class_loading_should_happen, "sanity");
   Arguments::assert_is_dumping_archive();
   return find_or_allocate_info_for(k)->is_excluded();
+}
+
+void SystemDictionaryShared::set_class_has_failed_verification(InstanceKlass* ik) {
+  Arguments::assert_is_dumping_archive();
+  find_or_allocate_info_for(ik)->set_failed_verification();
+}
+
+bool SystemDictionaryShared::has_class_failed_verification(InstanceKlass* ik) {
+  Arguments::assert_is_dumping_archive();
+  if (_dumptime_table == NULL) {
+    assert(DynamicDumpSharedSpaces, "sanity");
+    assert(ik->is_shared(), "must be a shared class in the static archive");
+    return false;
+  }
+  DumpTimeSharedClassInfo* p = _dumptime_table->get(ik);
+  return (p == NULL) ? false : p->failed_verification();
 }
 
 class IterateDumpTimeSharedClassTable : StackObj {
