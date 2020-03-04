@@ -317,9 +317,6 @@
           "Forcefully flush non-empty SATB buffers at this interval. "      \
           "Time is in milliseconds.")                                       \
                                                                             \
-  experimental(uint, ShenandoahParallelSafepointThreads, 4,                 \
-          "Number of parallel threads used for safepoint prolog/epilog")    \
-                                                                            \
   diagnostic(bool, ShenandoahPreclean, true,                                \
           "Do concurrent preclean phase before final mark: process "        \
           "definitely alive references to avoid dealing with them during "  \
