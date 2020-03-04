@@ -67,14 +67,16 @@ public class ClassHistogramTest {
          * ...
          */
 
+        String moduleRegex = "\\(java.base(?:@\\S*)?\\)";
+
         /* Require at least one java.lang.Class */
-        output.shouldMatch("^\\s+\\d+:\\s+\\d+\\s+\\d+\\s+java.lang.Class \\(java.base@\\S*\\)\\s*$");
+        output.shouldMatch("^\\s+\\d+:\\s+\\d+\\s+\\d+\\s+java.lang.Class " + moduleRegex + "\\s*$");
 
         /* Require at least one java.lang.String */
-        output.shouldMatch("^\\s+\\d+:\\s+\\d+\\s+\\d+\\s+java.lang.String \\(java.base@\\S*\\)\\s*$");
+        output.shouldMatch("^\\s+\\d+:\\s+\\d+\\s+\\d+\\s+java.lang.String " + moduleRegex + "\\s*$");
 
         /* Require at least one java.lang.Object */
-        output.shouldMatch("^\\s+\\d+:\\s+\\d+\\s+\\d+\\s+java.lang.Object \\(java.base@\\S*\\)\\s*$");
+        output.shouldMatch("^\\s+\\d+:\\s+\\d+\\s+\\d+\\s+java.lang.Object " + moduleRegex + "\\s*$");
 
         /* Require at exactly one TestClass[] */
         output.shouldMatch("^\\s+\\d+:\\s+1\\s+\\d+\\s+" +
