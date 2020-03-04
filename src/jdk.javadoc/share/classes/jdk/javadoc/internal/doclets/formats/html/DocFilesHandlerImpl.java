@@ -208,7 +208,7 @@ public class DocFilesHandlerImpl implements DocFilesHandler {
         docletWriter.addBottom(footer);
         htmlContent.add(new BodyContents()
                 .setHeader(headerContent)
-                .addMainContent(HtmlTree.DIV(HtmlStyle.contentContainer, pageContent))
+                .addMainContent(pageContent)
                 .setFooter(footer)
                 .toContent());
         docletWriter.printHtmlDocument(Collections.emptyList(), null, localTagsContent, Collections.emptyList(), htmlContent);

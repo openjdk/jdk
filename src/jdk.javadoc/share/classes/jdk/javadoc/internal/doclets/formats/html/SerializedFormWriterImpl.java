@@ -225,9 +225,7 @@ public class SerializedFormWriterImpl extends SubWriterHolderWriter
      */
     @Override
     public void addSerializedContent(Content serializedTreeContent) {
-        HtmlTree divContent = HtmlTree.DIV(HtmlStyle.serializedFormContainer,
-                serializedTreeContent);
-        bodyContents.addMainContent(divContent);
+        bodyContents.addMainContent(serializedTreeContent);
     }
 
     @Override

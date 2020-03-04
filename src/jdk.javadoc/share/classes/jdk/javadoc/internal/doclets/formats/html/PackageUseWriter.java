@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -125,14 +125,13 @@ public class PackageUseWriter extends SubWriterHolderWriter {
      */
     protected void generatePackageUseFile() throws DocFileIOException {
         HtmlTree body = getPackageUseHeader();
-        HtmlTree div = new HtmlTree(HtmlTag.DIV);
-        div.setStyle(HtmlStyle.contentContainer);
+        Content mainContent = new ContentBuilder();
         if (usingPackageToUsedClasses.isEmpty()) {
-            div.add(contents.getContent("doclet.ClassUse_No.usage.of.0", utils.getPackageName(packageElement)));
+            mainContent.add(contents.getContent("doclet.ClassUse_No.usage.of.0", utils.getPackageName(packageElement)));
         } else {
-            addPackageUse(div);
+            addPackageUse(mainContent);
         }
-        bodyContents.addMainContent(div);
+        bodyContents.addMainContent(mainContent);
         HtmlTree footer = HtmlTree.FOOTER();
         navBar.setUserFooter(getUserHeaderFooter(false));
         footer.add(navBar.getContent(false));

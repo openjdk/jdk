@@ -219,15 +219,14 @@ public class ClassUseWriter extends SubWriterHolderWriter {
      */
     protected void generateClassUseFile() throws DocFileIOException {
         HtmlTree body = getClassUseHeader();
-        HtmlTree div = new HtmlTree(HtmlTag.DIV);
-        div.setStyle(HtmlStyle.classUseContainer);
+        Content mainContent = new ContentBuilder();
         if (pkgSet.size() > 0) {
-            addClassUse(div);
+            addClassUse(mainContent);
         } else {
-            div.add(contents.getContent("doclet.ClassUse_No.usage.of.0",
+            mainContent.add(contents.getContent("doclet.ClassUse_No.usage.of.0",
                     utils.getFullyQualifiedName(typeElement)));
         }
-        bodyContents.addMainContent(div);
+        bodyContents.addMainContent(mainContent);
         HtmlTree footer = HtmlTree.FOOTER();
         navBar.setUserFooter(getUserHeaderFooter(false));
         footer.add(navBar.getContent(false));

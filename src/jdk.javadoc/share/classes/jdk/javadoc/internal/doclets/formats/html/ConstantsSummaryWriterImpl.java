@@ -149,9 +149,7 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
 
     @Override
     public Content getConstantSummaries() {
-        HtmlTree summariesDiv = new HtmlTree(HtmlTag.DIV);
-        summariesDiv.setStyle(HtmlStyle.constantValuesContainer);
-        return summariesDiv;
+        return new ContentBuilder();
     }
 
     @Override

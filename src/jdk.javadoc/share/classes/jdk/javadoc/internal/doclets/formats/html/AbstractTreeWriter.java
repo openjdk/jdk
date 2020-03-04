@@ -103,14 +103,14 @@ public abstract class AbstractTreeWriter extends HtmlDocletWriter {
      * @param sset classes which are at the most base level, all the
      * other classes in this run will derive from these classes
      * @param heading heading for the tree
-     * @param div the content tree to which the tree will be added
+     * @param content the content tree to which the tree will be added
      */
-    protected void addTree(SortedSet<TypeElement> sset, String heading, HtmlTree div) {
-        addTree(sset, heading, div, false);
+    protected void addTree(SortedSet<TypeElement> sset, String heading, Content content) {
+        addTree(sset, heading, content, false);
     }
 
     protected void addTree(SortedSet<TypeElement> sset, String heading,
-                           HtmlTree div, boolean isEnums) {
+                           Content content, boolean isEnums) {
         if (!sset.isEmpty()) {
             TypeElement firstTypeElement = sset.first();
             Content headingContent = contents.getContent(heading);
@@ -119,7 +119,7 @@ public abstract class AbstractTreeWriter extends HtmlDocletWriter {
             HtmlTree htmlTree = HtmlTree.SECTION(HtmlStyle.hierarchy, sectionHeading);
             addLevelInfo(!utils.isInterface(firstTypeElement) ? firstTypeElement : null,
                     sset, isEnums, htmlTree);
-            div.add(htmlTree);
+            content.add(htmlTree);
         }
     }
 

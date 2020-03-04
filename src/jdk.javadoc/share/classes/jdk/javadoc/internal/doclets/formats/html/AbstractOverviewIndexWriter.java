@@ -97,10 +97,7 @@ public abstract class AbstractOverviewIndexWriter extends HtmlDocletWriter {
     protected void addOverviewHeader(Content main) {
         addConfigurationTitle(main);
         if (!utils.getFullBody(configuration.overviewElement).isEmpty()) {
-            HtmlTree div = new HtmlTree(HtmlTag.DIV);
-            div.setStyle(HtmlStyle.contentContainer);
-            addOverviewComment(div);
-            main.add(div);
+            addOverviewComment(main);
         }
     }
 

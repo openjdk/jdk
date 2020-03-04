@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8210047 8199892 8215599 8223378
+ * @bug 8210047 8199892 8215599 8223378 8239817
  * @summary some pages contains content outside of landmark region
  * @library /tools/lib ../../lib
  * @modules
@@ -132,8 +132,8 @@ public class TestHtmlLandmarkRegions extends JavadocTester {
         checkOrder("pkg1/doc-files/s.html",
                 "<header role=\"banner\" class=\"flexHeader\">\n"
                 + "<nav role=\"navigation\">\n",
-                "<main role=\"main\">\n"
-                + "<div class=\"contentContainer\">A sample doc file",
+                "<main role=\"main\">"
+                + "A sample doc file",
                 "<footer role=\"contentinfo\">\n"
                 + "<nav role=\"navigation\">"
                 );

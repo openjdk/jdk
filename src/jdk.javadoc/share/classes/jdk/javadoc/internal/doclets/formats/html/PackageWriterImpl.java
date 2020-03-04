@@ -134,9 +134,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
 
     @Override
     public Content getContentHeader() {
-        HtmlTree div = new HtmlTree(HtmlTag.DIV);
-        div.setStyle(HtmlStyle.contentContainer);
-        return div;
+        return new ContentBuilder();
     }
 
     /**

@@ -99,22 +99,21 @@ public class SingleIndexWriter extends AbstractIndexWriter {
         addTop(headerContent);
         navBar.setUserHeader(getUserHeaderFooter(true));
         headerContent.add(navBar.getContent(true));
-        HtmlTree divTree = new HtmlTree(HtmlTag.DIV);
-        divTree.setStyle(HtmlStyle.contentContainer);
+        Content mainContent = new ContentBuilder();
         elements = new TreeSet<>(indexBuilder.asMap().keySet());
         elements.addAll(tagSearchIndexMap.keySet());
-        addLinksForIndexes(divTree);
+        addLinksForIndexes(mainContent);
         for (Character unicode : elements) {
             if (tagSearchIndexMap.get(unicode) == null) {
-                addContents(unicode, indexBuilder.getMemberList(unicode), divTree);
+                addContents(unicode, indexBuilder.getMemberList(unicode), mainContent);
             } else if (indexBuilder.getMemberList(unicode) == null) {
-                addSearchContents(unicode, tagSearchIndexMap.get(unicode), divTree);
+                addSearchContents(unicode, tagSearchIndexMap.get(unicode), mainContent);
             } else {
                 addContents(unicode, indexBuilder.getMemberList(unicode),
-                            tagSearchIndexMap.get(unicode), divTree);
+                            tagSearchIndexMap.get(unicode), mainContent);
             }
         }
-        addLinksForIndexes(divTree);
+        addLinksForIndexes(mainContent);
         HtmlTree footer = HtmlTree.FOOTER();
         navBar.setUserFooter(getUserHeaderFooter(false));
         footer.add(navBar.getContent(false));
@@ -124,7 +123,7 @@ public class SingleIndexWriter extends AbstractIndexWriter {
                 .addMainContent(HtmlTree.DIV(HtmlStyle.header,
                         HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING,
                                 contents.getContent("doclet.Index"))))
-                .addMainContent(divTree)
+                .addMainContent(mainContent)
                 .setFooter(footer)
                 .toContent());
         createSearchIndexFiles();

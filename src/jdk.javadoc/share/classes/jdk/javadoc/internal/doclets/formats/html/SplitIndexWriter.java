@@ -130,19 +130,18 @@ public class SplitIndexWriter extends AbstractIndexWriter {
         main.add(HtmlTree.DIV(HtmlStyle.header,
                 HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING,
                         contents.getContent("doclet.Index"))));
-        HtmlTree divTree = new HtmlTree(HtmlTag.DIV);
-        divTree.setStyle(HtmlStyle.contentContainer);
-        addLinksForIndexes(divTree);
+        Content mainContent = new ContentBuilder();
+        addLinksForIndexes(mainContent);
         if (tagSearchIndexMap.get(unicode) == null) {
-            addContents(unicode, indexBuilder.getMemberList(unicode), divTree);
+            addContents(unicode, indexBuilder.getMemberList(unicode), mainContent);
         } else if (indexBuilder.getMemberList(unicode) == null) {
-            addSearchContents(unicode, tagSearchIndexMap.get(unicode), divTree);
+            addSearchContents(unicode, tagSearchIndexMap.get(unicode), mainContent);
         } else {
             addContents(unicode, indexBuilder.getMemberList(unicode),
-                        tagSearchIndexMap.get(unicode), divTree);
+                        tagSearchIndexMap.get(unicode), mainContent);
         }
-        addLinksForIndexes(divTree);
-        main.add(divTree);
+        addLinksForIndexes(mainContent);
+        main.add(mainContent);
         HtmlTree footer = HtmlTree.FOOTER();
         navBar.setUserFooter(getUserHeaderFooter(false));
         footer.add(navBar.getContent(false));

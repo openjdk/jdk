@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,13 +108,10 @@ public class PackageTreeWriter extends AbstractTreeWriter {
             addLinkToMainTree(div);
         }
         mainContent.add(div);
-        HtmlTree divTree = new HtmlTree(HtmlTag.DIV);
-        divTree.setStyle(HtmlStyle.contentContainer);
-        addTree(classtree.baseClasses(), "doclet.Class_Hierarchy", divTree);
-        addTree(classtree.baseInterfaces(), "doclet.Interface_Hierarchy", divTree);
-        addTree(classtree.baseAnnotationTypes(), "doclet.Annotation_Type_Hierarchy", divTree);
-        addTree(classtree.baseEnums(), "doclet.Enum_Hierarchy", divTree, true);
-        mainContent.add(divTree);
+        addTree(classtree.baseClasses(), "doclet.Class_Hierarchy", mainContent);
+        addTree(classtree.baseInterfaces(), "doclet.Interface_Hierarchy", mainContent);
+        addTree(classtree.baseAnnotationTypes(), "doclet.Annotation_Type_Hierarchy", mainContent);
+        addTree(classtree.baseEnums(), "doclet.Enum_Hierarchy", mainContent, true);
         bodyContents.addMainContent(mainContent);
         HtmlTree footer = HtmlTree.FOOTER();
         navBar.setUserFooter(getUserHeaderFooter(false));

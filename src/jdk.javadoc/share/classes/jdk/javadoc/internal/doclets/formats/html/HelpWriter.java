@@ -346,11 +346,9 @@ public class HelpWriter extends HtmlDocletWriter {
         htmlTree.add(searchRefer);
         ul.add(HtmlTree.LI(HtmlStyle.blockList, htmlTree));
 
-        Content divContent = HtmlTree.DIV(HtmlStyle.contentContainer, ul);
-        divContent.add(new HtmlTree(HtmlTag.HR));
-        Content footnote = HtmlTree.SPAN(HtmlStyle.emphasizedPhrase,
-                contents.getContent("doclet.help.footnote"));
-        divContent.add(footnote);
-        contentTree.add(divContent);
+        contentTree.add(ul);
+        contentTree.add(new HtmlTree(HtmlTag.HR));
+        contentTree.add(HtmlTree.SPAN(HtmlStyle.emphasizedPhrase,
+                contents.getContent("doclet.help.footnote")));
     }
 }

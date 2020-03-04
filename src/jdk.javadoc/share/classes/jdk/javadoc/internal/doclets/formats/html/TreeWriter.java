@@ -115,13 +115,10 @@ public class TreeWriter extends AbstractTreeWriter {
         addPackageTreeLinks(div);
         Content mainContent = new ContentBuilder();
         mainContent.add(div);
-        HtmlTree divTree = new HtmlTree(HtmlTag.DIV);
-        divTree.setStyle(HtmlStyle.contentContainer);
-        addTree(classtree.baseClasses(), "doclet.Class_Hierarchy", divTree);
-        addTree(classtree.baseInterfaces(), "doclet.Interface_Hierarchy", divTree);
-        addTree(classtree.baseAnnotationTypes(), "doclet.Annotation_Type_Hierarchy", divTree);
-        addTree(classtree.baseEnums(), "doclet.Enum_Hierarchy", divTree, true);
-        mainContent.add(divTree);
+        addTree(classtree.baseClasses(), "doclet.Class_Hierarchy", mainContent);
+        addTree(classtree.baseInterfaces(), "doclet.Interface_Hierarchy", mainContent);
+        addTree(classtree.baseAnnotationTypes(), "doclet.Annotation_Type_Hierarchy", mainContent);
+        addTree(classtree.baseEnums(), "doclet.Enum_Hierarchy", mainContent, true);
         HtmlTree footerTree = HtmlTree.FOOTER();
         navBar.setUserFooter(getUserHeaderFooter(false));
         footerTree.add(navBar.getContent(false));

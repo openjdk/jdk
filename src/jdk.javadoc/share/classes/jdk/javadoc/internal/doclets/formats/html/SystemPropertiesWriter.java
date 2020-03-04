@@ -98,15 +98,14 @@ public class SystemPropertiesWriter extends HtmlDocletWriter {
         navBar.setUserHeader(getUserHeaderFooter(true));
         header.add(navBar.getContent(true));
         bodyTree.add(header);
-        HtmlTree div = new HtmlTree(HtmlTag.DIV);
-        div.setStyle(HtmlStyle.systemPropertiesContainer);
-        addSystemProperties(div);
+        Content mainContent = new ContentBuilder();
+        addSystemProperties(mainContent);
         Content titleContent = new StringContent(resources.getText("doclet.systemProperties"));
         Content pHeading = HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING, true,
                 HtmlStyle.title, titleContent);
         Content headerDiv = HtmlTree.DIV(HtmlStyle.header, pHeading);
         mainTree.add(headerDiv);
-        mainTree.add(div);
+        mainTree.add(mainContent);
         bodyTree.add(mainTree);
         Content footer = HtmlTree.FOOTER();
         navBar.setUserFooter(getUserHeaderFooter(false));

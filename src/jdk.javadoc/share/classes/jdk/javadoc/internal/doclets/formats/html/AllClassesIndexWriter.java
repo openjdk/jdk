@@ -149,9 +149,7 @@ public class AllClassesIndexWriter extends HtmlDocletWriter {
         Content headerDiv = HtmlTree.DIV(HtmlStyle.header, pHeading);
         content.add(headerDiv);
         if (!table.isEmpty()) {
-            HtmlTree div = new HtmlTree(HtmlTag.DIV, table.toContent());
-            div.setStyle(HtmlStyle.allClassesContainer);
-            content.add(div);
+            content.add(table.toContent());
             if (table.needsScript()) {
                 getMainBodyScript().append(table.getScript());
             }

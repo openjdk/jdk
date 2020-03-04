@@ -283,8 +283,7 @@ public class DeprecatedListWriter extends SubWriterHolderWriter {
         HtmlTree body = getHeader();
         bodyContents.addMainContent(getContentsList(deprapi));
         String memberTableSummary;
-        HtmlTree div = new HtmlTree(HtmlTag.DIV);
-        div.setStyle(HtmlStyle.contentContainer);
+        Content content = new ContentBuilder();
         for (DeprElementKind kind : DeprElementKind.values()) {
             if (deprapi.hasDocumentation(kind)) {
                 memberTableSummary = resources.getText("doclet.Member_Table_Summary",
@@ -293,10 +292,10 @@ public class DeprecatedListWriter extends SubWriterHolderWriter {
                 TableHeader memberTableHeader = new TableHeader(
                         contents.getContent(getHeaderKey(kind)), contents.descriptionLabel);
                 addDeprecatedAPI(deprapi.getSet(kind), getAnchorName(kind),
-                            getHeadingKey(kind), memberTableSummary, memberTableHeader, div);
+                            getHeadingKey(kind), memberTableSummary, memberTableHeader, content);
             }
         }
-        bodyContents.addMainContent(div);
+        bodyContents.addMainContent(content);
         HtmlTree htmlTree = HtmlTree.FOOTER();
         navBar.setUserFooter(getUserHeaderFooter(false));
         htmlTree.add(navBar.getContent(false));

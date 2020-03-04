@@ -472,20 +472,16 @@ public class TestModules extends JavadocTester {
                 + "word <span id=\"search_word\" class=\"searchTagResult\">search_word</span> with no description.</div>");
         checkOutput("index.html", found,
                 "</script>\n"
-                + "<div class=\"contentContainer\">\n"
                 + "<div class=\"block\">The overview summary page header.</div>\n"
                 + "</div>\n"
-                + "<div class=\"contentContainer\">\n"
                 + "<div class=\"overviewSummary\">\n"
                 + "<table summary=\"Module Summary table, listing modules, and an explanation\">\n"
                 + "<caption><span>Modules</span><span class=\"tabEnd\">&nbsp;</span></caption>");
         checkOutput("index.html", false,
                 "</table>\n"
                 + "</div>\n"
-                + "<div class=\"contentContainer\">\n"
                 + "<div class=\"block\">The overview summary page header.</div>\n"
                 + "</div>\n"
-                + "<div class=\"contentContainer\">\n"
                 + "<div class=\"overviewSummary\">\n"
                 + "<table summary=\"Module Summary table, listing modules, and an explanation\">\n"
                 + "<caption><span>Modules</span><span class=\"tabEnd\">&nbsp;</span></caption>");
@@ -493,15 +489,18 @@ public class TestModules extends JavadocTester {
 
     void checkNoDescription(boolean found) {
         checkOutput("moduleA/module-summary.html", found,
-                "<div class=\"contentContainer\">\n"
+                "<div class=\"header\">\n"
+                + "<p>@Deprecated(forRemoval=true)\n"
+                + "</p>\n"
+                + "<h1 title=\"Module\" class=\"title\">Module&nbsp;moduleA</h1>\n"
+                + "</div>"
                 + "<ul class=\"blockList\">\n"
                 + "<li class=\"blockList\">\n"
                 + "<ul class=\"blockList\">\n"
                 + "<li class=\"blockList\">\n"
                 + "<!-- ============ PACKAGES SUMMARY =========== -->");
         checkOutput("moduleB/module-summary.html", found,
-                "<div class=\"contentContainer\">\n"
-                + "<ul class=\"blockList\">\n"
+                "<ul class=\"blockList\">\n"
                 + "<li class=\"blockList\">\n"
                 + "<ul class=\"blockList\">\n"
                 + "<li class=\"blockList\">\n"
@@ -528,10 +527,7 @@ public class TestModules extends JavadocTester {
                 + "</header>\n"
                 + "<div class=\"flexContent\">\n"
                 + "<main role=\"main\">\n"
-                + "<div class=\"contentContainer\">\n"
                 + "<div class=\"block\">The overview summary page header.</div>\n"
-                + "</div>\n"
-                + "<div class=\"contentContainer\">\n"
                 + "<div class=\"overviewSummary\">\n<table>\n"
                 + "<caption><span>Modules</span><span class=\"tabEnd\">&nbsp;</span></caption>");
         checkOutput("index.html", false,
@@ -539,24 +535,31 @@ public class TestModules extends JavadocTester {
                 + "</div>\n"
                 + "</main>\n"
                 + "<main role=\"main\">\n"
-                + "<div class=\"contentContainer\">\n"
                 + "<div class=\"block\">The overview summary page header.</div>\n"
                 + "</div>\n"
-                + "<div class=\"contentContainer\">\n"
                 + "<div class=\"overviewSummary\">\n<table>\n"
                 + "<caption><span>Modules</span><span class=\"tabEnd\">&nbsp;</span></caption>");
     }
 
     void checkHtml5NoDescription(boolean found) {
         checkOutput("moduleA/module-summary.html", found,
-                "<div class=\"contentContainer\">\n"
+                "<div class=\"header\">\n"
+                + "<p>@Deprecated(forRemoval=true)\n"
+                + "</p>\n"
+                + "<h1 title=\"Module\" class=\"title\">Module&nbsp;moduleA</h1>\n"
+                + "</div>\n"
                 + "<section class=\"summary\">\n"
                 + "<ul class=\"blockList\">\n"
                 + "<li class=\"blockList\">\n"
                 + "<section class=\"packagesSummary\" id=\"packages.summary\">\n"
                 + "<!-- ============ PACKAGES SUMMARY =========== -->");
         checkOutput("moduleB/module-summary.html", found,
-                "<div class=\"contentContainer\">\n"
+                "<p><a href=\"testpkgmdlB/AnnotationType.html\" title=\"annotation in testpkgmdlB\">@AnnotationType</a>"
+                + "(<a href=\"testpkgmdlB/AnnotationType.html#optional()\">optional</a>=\"Module Annotation\",\n"
+                + "                <a href=\"testpkgmdlB/AnnotationType.html#required()\">required</a>=2016)\n"
+                + "</p>\n"
+                + "<h1 title=\"Module\" class=\"title\">Module&nbsp;moduleB</h1>\n"
+                + "</div>\n"
                 + "<section class=\"summary\">\n"
                 + "<ul class=\"blockList\">\n"
                 + "<li class=\"blockList\">\n"
@@ -655,10 +658,8 @@ public class TestModules extends JavadocTester {
                 + "</thead>",
                 "</table>\n"
                 + "</div>\n"
-                + "<div class=\"contentContainer\">\n"
                 + "<div class=\"block\">The overview summary page header.</div>\n"
                 + "</div>\n"
-                + "<div class=\"contentContainer\">\n"
                 + "<div class=\"overviewSummary\">\n"
                 + "<table summary=\"Package Summary table, listing packages, and an explanation\">\n"
                 + "<caption><span>Packages</span><span class=\"tabEnd\">&nbsp;</span></caption>");
@@ -673,10 +674,8 @@ public class TestModules extends JavadocTester {
                 + "</tr>\n"
                 + "</thead>\n",
                 "</script>\n"
-                + "<div class=\"contentContainer\">\n"
                 + "<div class=\"block\">The overview summary page header.</div>\n"
                 + "</div>\n"
-                + "<div class=\"contentContainer\">\n"
                 + "<div class=\"overviewSummary\">\n"
                 + "<table summary=\"Package Summary table, listing packages, and an explanation\">\n"
                 + "<caption><span>Packages</span><span class=\"tabEnd\">&nbsp;</span></caption>");
@@ -720,10 +719,9 @@ public class TestModules extends JavadocTester {
                 + "</div>\n"
                 + "</main>\n"
                 + "<main role=\"main\">\n"
-                + "<div class=\"contentContainer\">\n"
                 + "<div class=\"block\">The overview summary page header.</div>\n"
                 + "</div>\n"
-                + "<div class=\"contentContainer\"><a id=\"Packages\">\n"
+                + "<a id=\"Packages\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
                 + "<div class=\"overviewSummary\">\n"
@@ -742,10 +740,7 @@ public class TestModules extends JavadocTester {
                 + "</header>\n"
                 + "<div class=\"flexContent\">\n"
                 + "<main role=\"main\">\n"
-                + "<div class=\"contentContainer\">\n"
                 + "<div class=\"block\">The overview summary page header.</div>\n"
-                + "</div>\n"
-                + "<div class=\"contentContainer\">\n"
                 + "<div class=\"overviewSummary\">\n<table>\n"
                 + "<caption><span>Packages</span><span class=\"tabEnd\">&nbsp;</span></caption>");
     }
@@ -1115,8 +1110,7 @@ public class TestModules extends JavadocTester {
 
     void checkGroupOption() {
         checkOutput("index.html", true,
-                "<div class=\"contentContainer\">\n"
-                + "<div class=\"overviewSummary\">\n"
+                "<div class=\"overviewSummary\">\n"
                 + "<div role=\"tablist\" aria-orientation=\"horizontal\"><button role=\"tab\""
                 + " aria-selected=\"true\" aria-controls=\"overviewSummary_tabpanel\" tabindex=\"0\""
                 + " onkeydown=\"switchTab(event)\" id=\"t0\" class=\"activeTableTab\">All Modules</button>"
@@ -1178,10 +1172,7 @@ public class TestModules extends JavadocTester {
 
     void checkUnnamedModuleGroupOption() {
         checkOutput("index.html", true,
-                "<div class=\"contentContainer\">\n"
-                + "<div class=\"block\">The overview summary page header.</div>\n"
-                + "</div>\n"
-                + "<div class=\"contentContainer\">\n"
+                "<div class=\"block\">The overview summary page header.</div>\n"
                 + "<div class=\"overviewSummary\">\n"
                 + "<div role=\"tablist\" aria-orientation=\"horizontal\"><button role=\"tab\""
                 + " aria-selected=\"true\" aria-controls=\"overviewSummary_tabpanel\" tabindex=\"0\""

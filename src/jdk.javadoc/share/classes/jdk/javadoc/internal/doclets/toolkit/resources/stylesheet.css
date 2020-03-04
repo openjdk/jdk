@@ -239,11 +239,6 @@ ul.subNavList li {
 /*
  * Styles for page header and footer.
  */
-.header {
-    clear:both;
-    margin:0 20px;
-    padding:5px 0 0 0;
-}
 .title {
     color:#2c4557;
     margin:10px 0;
@@ -281,30 +276,29 @@ body.class-declaration .summary .inheritedList h2 {
 /*
  * Styles for page layout containers.
  */
-.contentContainer, .sourceContainer, .classUseContainer, .serializedFormContainer, .constantValuesContainer,
-.allClassesContainer, .allPackagesContainer, .systemPropertiesContainer {
+main {
     clear:both;
     padding:10px 20px;
     position:relative;
 }
-.contentContainer .description dl dt, .contentContainer .details dl dt, .serializedFormContainer dl dt {
+dl.notes > dt {
     font-size:12px;
     font-weight:bold;
     margin:10px 0 0 0;
     color:#4E4E4E;
 }
-.contentContainer .description dl dd, .contentContainer .details dl dd, .serializedFormContainer dl dd {
+dl.notes > dd {
     margin:5px 0 10px 0px;
     font-size:14px;
     font-family:'DejaVu Serif', Georgia, "Times New Roman", Times, serif;
 }
-.serializedFormContainer dl.nameValue dt {
+dl.nameValue > dt {
     margin-left:1px;
     font-size:1.1em;
     display:inline;
     font-weight:bold;
 }
-.serializedFormContainer dl.nameValue dd {
+dl.nameValue > dd {
     margin:0 0 0 1px;
     font-size:1.1em;
     display:inline;
@@ -561,9 +555,6 @@ h1.hidden {
     display:block;
     margin:0 10px 5px 0;
     color:#474747;
-}
-dl.notes > dt {
-    font-weight:bold;
 }
 .deprecatedLabel, .descfrmTypeLabel, .implementationLabel, .memberNameLabel, .memberNameLink,
 .moduleLabelInPackage, .moduleLabelInType, .overrideSpecifyLabel, .packageLabelInType,
