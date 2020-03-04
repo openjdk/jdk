@@ -817,7 +817,7 @@ public class JavacParser implements Parser {
     JCExpression term() {
         JCExpression t = term1();
         if ((mode & EXPR) != 0 &&
-            token.kind == EQ || PLUSEQ.compareTo(token.kind) <= 0 && token.kind.compareTo(GTGTGTEQ) <= 0)
+            (token.kind == EQ || PLUSEQ.compareTo(token.kind) <= 0 && token.kind.compareTo(GTGTGTEQ) <= 0))
             return termRest(t);
         else
             return t;
