@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -248,23 +248,26 @@ public class ModuleFinder {
         }
 
         ModuleSymbol msym = syms.enterModule(name);
-        msym.module_info.classfile = fo;
-        if (fileManager.hasLocation(StandardLocation.PATCH_MODULE_PATH) && name != names.error) {
-            msym.patchLocation = fileManager.getLocationForModule(StandardLocation.PATCH_MODULE_PATH, name.toString());
 
-            if (msym.patchLocation != null) {
-                JavaFileObject patchFO = getModuleInfoFromLocation(StandardLocation.CLASS_OUTPUT, Kind.CLASS);
-                patchFO = preferredFileObject(getModuleInfoFromLocation(msym.patchLocation, Kind.CLASS), patchFO);
-                patchFO = preferredFileObject(getModuleInfoFromLocation(msym.patchLocation, Kind.SOURCE), patchFO);
+        if (msym.module_info.classfile == null) {
+            msym.module_info.classfile = fo;
+            if (fileManager.hasLocation(StandardLocation.PATCH_MODULE_PATH) && name != names.error) {
+                msym.patchLocation = fileManager.getLocationForModule(StandardLocation.PATCH_MODULE_PATH, name.toString());
 
-                if (patchFO != null) {
-                    msym.module_info.classfile = patchFO;
+                if (msym.patchLocation != null) {
+                    JavaFileObject patchFO = getModuleInfoFromLocation(StandardLocation.CLASS_OUTPUT, Kind.CLASS);
+                    patchFO = preferredFileObject(getModuleInfoFromLocation(msym.patchLocation, Kind.CLASS), patchFO);
+                    patchFO = preferredFileObject(getModuleInfoFromLocation(msym.patchLocation, Kind.SOURCE), patchFO);
+
+                    if (patchFO != null) {
+                        msym.module_info.classfile = patchFO;
+                    }
                 }
             }
-        }
 
-        msym.completer = Completer.NULL_COMPLETER;
-        classFinder.fillIn(msym.module_info);
+            msym.completer = Completer.NULL_COMPLETER;
+            classFinder.fillIn(msym.module_info);
+        }
 
         return msym;
     }

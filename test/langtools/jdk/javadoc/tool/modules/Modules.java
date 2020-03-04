@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8159305 8166127 8175860 8176481
+ * @bug 8159305 8166127 8175860 8176481 8239575
  * @summary Tests primarily the module graph computations.
  * @modules
  *      jdk.javadoc/jdk.javadoc.internal.api
@@ -653,4 +653,21 @@ public class Modules extends ModuleTestBase {
                 .write(src);
 
     }
+
+    @Test
+    public void testSingleModuleOptionWithSourcePathAndAnnotatedModule(Path base) throws Exception {
+        Path src = base.resolve("src");
+        Path mod = Paths.get(src.toString(), "m1");
+        tb.writeJavaFiles(mod,
+                "@Deprecated module m1 { exports p; }",
+                "package p; public class C { }",
+                "package p; public class P { }");
+        execTask("--source-path", mod.toString(),
+                 "--module", "m1");
+        checkModulesSpecified("m1");
+        checkPackagesIncluded("p");
+        checkTypesIncluded("p.C");
+        checkTypesIncluded("p.P");
+    }
+
 }
