@@ -1718,8 +1718,33 @@ class ZipFileSystem extends FileSystem {
             byte[] buf = null;
             Entry e;
 
+            final IndexNode manifestInode = inodes.get(
+                    IndexNode.keyOf(getBytes("/META-INF/MANIFEST.MF")));
+            final Iterator<IndexNode> inodeIterator = inodes.values().iterator();
+            boolean manifestProcessed = false;
+
             // write loc
-            for (IndexNode inode : inodes.values()) {
+            while (inodeIterator.hasNext()) {
+                final IndexNode inode;
+
+                // write the manifest inode (if any) first so that
+                // java.util.jar.JarInputStream can find it
+                if (manifestInode == null) {
+                    inode = inodeIterator.next();
+                } else {
+                    if (manifestProcessed) {
+                        // advance to next node, filtering out the manifest
+                        // which was already written
+                        inode = inodeIterator.next();
+                        if (inode == manifestInode) {
+                            continue;
+                        }
+                    } else {
+                        inode = manifestInode;
+                        manifestProcessed = true;
+                    }
+                }
+
                 if (inode instanceof Entry) {    // an updated inode
                     e = (Entry)inode;
                     try {
