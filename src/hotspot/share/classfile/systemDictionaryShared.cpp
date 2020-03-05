@@ -1171,10 +1171,10 @@ void SystemDictionaryShared::validate_before_archiving(InstanceKlass* k) {
   guarantee(info != NULL, "Class %s must be entered into _dumptime_table", name);
   guarantee(!info->is_excluded(), "Should not attempt to archive excluded class %s", name);
   if (is_builtin(k)) {
-    guarantee(k->loader_type() != 0,
+    guarantee(!k->is_shared_unregistered_class(),
               "Class loader type must be set for BUILTIN class %s", name);
   } else {
-    guarantee(k->loader_type() == 0,
+    guarantee(k->is_shared_unregistered_class(),
               "Class loader type must not be set for UNREGISTERED class %s", name);
   }
 }

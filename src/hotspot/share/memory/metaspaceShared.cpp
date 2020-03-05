@@ -1852,7 +1852,7 @@ bool MetaspaceShared::try_link_class(InstanceKlass* ik, TRAPS) {
   if (ik->init_state() < InstanceKlass::linked &&
       !SystemDictionaryShared::has_class_failed_verification(ik)) {
     bool saved = BytecodeVerificationLocal;
-    if (ik->loader_type() == 0 && ik->class_loader() == NULL) {
+    if (ik->is_shared_unregistered_class() && ik->class_loader() == NULL) {
       // The verification decision is based on BytecodeVerificationRemote
       // for non-system classes. Since we are using the NULL classloader
       // to load non-system classes for customized class loaders during dumping,

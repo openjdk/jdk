@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -245,7 +245,7 @@ void ClassLoaderExt::record_result(const s2 classpath_index,
     ClassLoaderExt::set_max_used_path_index(classpath_index);
   }
   result->set_shared_classpath_index(classpath_index);
-  result->set_class_loader_type(classloader_type);
+  result->set_shared_class_loader_type(classloader_type);
 }
 
 // Load the class of the given name from the location given by path. The path is specified by

@@ -318,7 +318,7 @@ InstanceKlass* ClassListParser::load_class_from_source(Symbol* class_name, TRAPS
 
     // This tells JVM_FindLoadedClass to not find this class.
     k->set_shared_classpath_index(UNREGISTERED_INDEX);
-    k->clear_class_loader_type();
+    k->clear_shared_class_loader_type();
   }
 
   return k;

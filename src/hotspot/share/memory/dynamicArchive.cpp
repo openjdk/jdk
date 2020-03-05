@@ -841,13 +841,13 @@ void DynamicArchiveBuilder::make_klasses_shareable() {
     InstanceKlass* ik = _klasses->at(i);
     ClassLoaderData *cld = ik->class_loader_data();
     if (cld->is_boot_class_loader_data()) {
-      ik->set_class_loader_type(ClassLoader::BOOT_LOADER);
+      ik->set_shared_class_loader_type(ClassLoader::BOOT_LOADER);
     }
     else if (cld->is_platform_class_loader_data()) {
-      ik->set_class_loader_type(ClassLoader::PLATFORM_LOADER);
+      ik->set_shared_class_loader_type(ClassLoader::PLATFORM_LOADER);
     }
     else if (cld->is_system_class_loader_data()) {
-      ik->set_class_loader_type(ClassLoader::APP_LOADER);
+      ik->set_shared_class_loader_type(ClassLoader::APP_LOADER);
     }
 
     MetaspaceShared::rewrite_nofast_bytecodes_and_calculate_fingerprints(Thread::current(), ik);

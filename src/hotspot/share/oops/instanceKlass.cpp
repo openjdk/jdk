@@ -2471,7 +2471,7 @@ void InstanceKlass::restore_unshareable_info(ClassLoaderData* loader_data, Handl
   }
 }
 
-void InstanceKlass::set_class_loader_type(s2 loader_type) {
+void InstanceKlass::set_shared_class_loader_type(s2 loader_type) {
   switch (loader_type) {
   case ClassLoader::BOOT_LOADER:
     _misc_flags |= _misc_is_shared_boot_class;

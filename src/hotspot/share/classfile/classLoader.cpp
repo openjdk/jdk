@@ -1361,7 +1361,7 @@ void ClassLoader::record_result(InstanceKlass* ik, const ClassFileStream* stream
     if (loader == NULL) {
       // JFR classes
       ik->set_shared_classpath_index(0);
-      ik->set_class_loader_type(ClassLoader::BOOT_LOADER);
+      ik->set_shared_class_loader_type(ClassLoader::BOOT_LOADER);
     }
     return;
   }
