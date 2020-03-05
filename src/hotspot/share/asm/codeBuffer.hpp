@@ -200,9 +200,38 @@ class CodeSection {
   }
 
   // Code emission
-  void emit_int8 ( int8_t  x)  { *((int8_t*)  end()) = x; set_end(end() + sizeof(int8_t)); }
-  void emit_int16( int16_t x)  { *((int16_t*) end()) = x; set_end(end() + sizeof(int16_t)); }
-  void emit_int32( int32_t x)  { *((int32_t*) end()) = x; set_end(end() + sizeof(int32_t)); }
+  void emit_int8(int8_t x1) {
+    address curr = end();
+    *((int8_t*)  curr++) = x1;
+    set_end(curr);
+  }
+
+  void emit_int16(int16_t x) { *((int16_t*) end()) = x; set_end(end() + sizeof(int16_t)); }
+  void emit_int16(int8_t x1, int8_t x2) {
+    address curr = end();
+    *((int8_t*)  curr++) = x1;
+    *((int8_t*)  curr++) = x2;
+    set_end(curr);
+  }
+
+  void emit_int24(int8_t x1, int8_t x2, int8_t x3)  {
+    address curr = end();
+    *((int8_t*)  curr++) = x1;
+    *((int8_t*)  curr++) = x2;
+    *((int8_t*)  curr++) = x3;
+    set_end(curr);
+  }
+
+  void emit_int32(int32_t x) { *((int32_t*) end()) = x; set_end(end() + sizeof(int32_t)); }
+  void emit_int32(int8_t x1, int8_t x2, int8_t x3, int8_t x4)  {
+    address curr = end();
+    *((int8_t*)  curr++) = x1;
+    *((int8_t*)  curr++) = x2;
+    *((int8_t*)  curr++) = x3;
+    *((int8_t*)  curr++) = x4;
+    set_end(curr);
+  }
+
   void emit_int64( int64_t x)  { *((int64_t*) end()) = x; set_end(end() + sizeof(int64_t)); }
 
   void emit_float( jfloat  x)  { *((jfloat*)  end()) = x; set_end(end() + sizeof(jfloat)); }
