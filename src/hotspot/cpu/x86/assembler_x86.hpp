@@ -664,27 +664,32 @@ private:
   class InstructionAttr *_attributes;
 
   // 64bit prefixes
-  int prefix_and_encode(int reg_enc, bool byteinst = false);
-  int prefixq_and_encode(int reg_enc);
+  void prefix(Register reg);
+  void prefix(Register dst, Register src, Prefix p);
+  void prefix(Register dst, Address adr, Prefix p);
 
+  void prefix(Address adr);
+  void prefix(Address adr, Register reg,  bool byteinst = false);
+  void prefix(Address adr, XMMRegister reg);
+
+  int prefix_and_encode(int reg_enc, bool byteinst = false);
   int prefix_and_encode(int dst_enc, int src_enc) {
     return prefix_and_encode(dst_enc, false, src_enc, false);
   }
   int prefix_and_encode(int dst_enc, bool dst_is_byte, int src_enc, bool src_is_byte);
-  int prefixq_and_encode(int dst_enc, int src_enc);
 
-  void prefix(Register reg);
-  void prefix(Register dst, Register src, Prefix p);
-  void prefix(Register dst, Address adr, Prefix p);
-  void prefix(Address adr);
+  // Some prefixq variants always emit exactly one prefix byte, so besides a
+  // prefix-emitting method we provide a method to get the prefix byte to emit,
+  // which can then be folded into a byte stream.
+  int8_t get_prefixq(Address adr);
+  int8_t get_prefixq(Address adr, Register reg);
+
   void prefixq(Address adr);
-
-  void prefix(Address adr, Register reg,  bool byteinst = false);
-  void prefix(Address adr, XMMRegister reg);
   void prefixq(Address adr, Register reg);
   void prefixq(Address adr, XMMRegister reg);
 
-  void prefetch_prefix(Address src);
+  int prefixq_and_encode(int reg_enc);
+  int prefixq_and_encode(int dst_enc, int src_enc);
 
   void rex_prefix(Address adr, XMMRegister xreg,
                   VexSimdPrefix pre, VexOpcode opc, bool rex_w);
