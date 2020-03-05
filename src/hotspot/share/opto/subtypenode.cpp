@@ -34,13 +34,17 @@ const Type* SubTypeCheckNode::sub(const Type* sub_t, const Type* super_t) const 
   ciKlass* superk = super_t->is_klassptr()->klass();
   ciKlass* subk   = sub_t->isa_klassptr() ? sub_t->is_klassptr()->klass() : sub_t->is_oopptr()->klass();
 
-  bool xsuperk = super_t->is_klassptr()->klass_is_exact();
   bool xsubk = sub_t->isa_klassptr() ? sub_t->is_klassptr()->klass_is_exact() : sub_t->is_oopptr()->klass_is_exact();
 
   // Similar to logic in CmpPNode::sub()
+
+  // Interfaces can't be trusted unless the subclass is an exact
+  // interface (it can then only be a constant) or the subclass is an
+  // exact array of interfaces (a newly allocated array of interfaces
+  // for instance)
   if (superk && subk &&
       superk->is_loaded() && !superk->is_interface() &&
-      subk->is_loaded() && !subk->is_interface() &&
+      subk->is_loaded() && (!subk->is_interface() || xsubk) &&
       (!superk->is_obj_array_klass() ||
        !superk->as_obj_array_klass()->base_element_klass()->is_interface()) &&
       (!subk->is_obj_array_klass() ||
@@ -50,10 +54,15 @@ const Type* SubTypeCheckNode::sub(const Type* sub_t, const Type* super_t) const 
     if (superk->equals(subk)) {
       // skip
     } else if (superk->is_subtype_of(subk)) {
+      // If the subclass is exact then the superclass is a subtype of
+      // the subclass. Given they're no equals, that subtype check can
+      // only fail.
       unrelated_classes = xsubk;
     } else if (subk->is_subtype_of(superk)) {
       // skip
     } else {
+      // Neither class subtypes the other: they are unrelated and this
+      // type check is known to fail.
       unrelated_classes = true;
     }
     if (unrelated_classes) {
