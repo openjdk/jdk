@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -154,11 +154,15 @@ static s4 get_flags(const T* ptr) {
 
 static bool is_unsafe_anonymous(const Klass* klass) {
   assert(klass != NULL, "invariant");
-  return klass->is_instance_klass() && ((const InstanceKlass*)klass)->is_unsafe_anonymous();
+  assert(!klass->is_objArray_klass(), "invariant");
+  return klass->is_instance_klass() && InstanceKlass::cast(klass)->is_unsafe_anonymous();
 }
 
 static ClassLoaderData* get_cld(const Klass* klass) {
   assert(klass != NULL, "invariant");
+  if (klass->is_objArray_klass()) {
+    klass = ObjArrayKlass::cast(klass)->bottom_klass();
+  }
   return is_unsafe_anonymous(klass) ?
     InstanceKlass::cast(klass)->unsafe_anonymous_host()->class_loader_data() : klass->class_loader_data();
 }
@@ -183,21 +187,10 @@ static int write_klass(JfrCheckpointWriter* writer, KlassPtr klass, bool leakp) 
   assert(writer != NULL, "invariant");
   assert(_artifacts != NULL, "invariant");
   assert(klass != NULL, "invariant");
-  traceid pkg_id = 0;
-  KlassPtr theklass = klass;
-  if (theklass->is_objArray_klass()) {
-    const ObjArrayKlass* obj_arr_klass = ObjArrayKlass::cast(klass);
-    theklass = obj_arr_klass->bottom_klass();
-  }
-  if (theklass->is_instance_klass()) {
-    pkg_id = package_id(theklass, leakp);
-  } else {
-    assert(theklass->is_typeArray_klass(), "invariant");
-  }
   writer->write(artifact_id(klass));
   writer->write(cld_id(get_cld(klass), leakp));
   writer->write(mark_symbol(klass, leakp));
-  writer->write(pkg_id);
+  writer->write(package_id(klass, leakp));
   writer->write(get_flags(klass));
   return 1;
 }
@@ -391,7 +384,7 @@ class PackageFieldSelector {
   typedef PkgPtr TypePtr;
   static TypePtr select(KlassPtr klass) {
     assert(klass != NULL, "invariant");
-    return ((InstanceKlass*)klass)->package();
+    return klass->package();
   }
 };
 
