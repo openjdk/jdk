@@ -231,7 +231,7 @@ Relocation* RelocIterator::reloc() {
   APPLY_TO_RELOCATIONS(EACH_TYPE);
   #undef EACH_TYPE
   assert(t == relocInfo::none, "must be padding");
-  return new(_rh) Relocation();
+  return new(_rh) Relocation(t);
 }
 
 
@@ -260,12 +260,7 @@ RelocationHolder RelocationHolder::plus(int offset) const {
   return (*this);
 }
 
-
-void Relocation::guarantee_size() {
-  guarantee(false, "Make _relocbuf bigger!");
-}
-
-    // some relocations can compute their own values
+// some relocations can compute their own values
 address Relocation::value() {
   ShouldNotReachHere();
   return NULL;
