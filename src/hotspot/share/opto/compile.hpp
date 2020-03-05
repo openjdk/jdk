@@ -603,7 +603,6 @@ class Compile : public Phase {
   ExceptionHandlerTable _handler_table;         // Table of native-code exception handlers
   ImplicitExceptionTable _inc_table;            // Table of implicit null checks in native code
   OopMapSet*            _oop_map_set;           // Table of oop maps (one for each safepoint location)
-  static int            _CompiledZap_count;     // counter compared against CompileZap[First/Last]
   BufferBlob*           _scratch_buffer_blob;   // For temporary code buffers.
   relocInfo*            _scratch_locs_memory;   // For temporary code buffers.
   int                   _scratch_const_size;    // For temporary code buffers.
@@ -1164,7 +1163,6 @@ class Compile : public Phase {
   OopMapSet*        oop_map_set()               { return _oop_map_set; }
   DebugInformationRecorder* debug_info()        { return env()->debug_info(); }
   Dependencies*     dependencies()              { return env()->dependencies(); }
-  static int        CompiledZap_count()         { return _CompiledZap_count; }
   BufferBlob*       scratch_buffer_blob()       { return _scratch_buffer_blob; }
   void         init_scratch_buffer_blob(int const_size);
   void        clear_scratch_buffer_blob();
