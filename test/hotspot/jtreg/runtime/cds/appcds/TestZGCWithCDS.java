@@ -14,6 +14,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 import jtreg.SkippedException;
 
 import sun.hotspot.gc.GC;
+import sun.hotspot.code.Compiler;
 
 public class TestZGCWithCDS {
     public final static String HELLO = "Hello World";
@@ -28,6 +29,8 @@ public class TestZGCWithCDS {
          // Platform must support ZGC
          if (!GC.Z.isSupported()) {
              throw new SkippedException("Platform does not support ZGC, skipped");
+         } else if (Compiler.isGraalEnabled()) {
+             throw new SkippedException("Graal does not support ZGC, skipped");
          }
 
          String helloJar = JarBuilder.build("hello", "Hello");
