@@ -127,6 +127,9 @@ TEST FAILURE</code></pre>
 <p>The simplest way to run tests with JCov coverage report is to use the special target <code>jcov-test</code> instead of <code>test</code>, e.g. <code>make jcov-test TEST=jdk_lang</code>. This will make sure the JCov image is built, and that JCov reporting is enabled.</p>
 <p>The JCov report is stored in <code>build/$BUILD/test-results/jcov-output</code>.</p>
 <p>Please note that running with JCov reporting can be very memory intensive.</p>
+<h4 id="jcov_diff_changeset">JCOV_DIFF_CHANGESET</h4>
+<p>While collecting code coverage with JCov, it is also possible to find coverage for only recently changed code. JCOV_DIFF_CHANGESET specifies a source revision. A textual report will be generated showing coverage of the diff between the specified revision and the repository tip.</p>
+<p>The report is stored in <code>build/$BUILD/test-results/jcov-output/diff_coverage_report</code> file.</p>
 <h3 id="jtreg-keywords">JTReg keywords</h3>
 <h4 id="jobs-1">JOBS</h4>
 <p>The test concurrency (<code>-concurrency</code>).</p>
