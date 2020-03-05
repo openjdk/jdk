@@ -30,6 +30,7 @@
  * @summary Negative compilation tests, and positive compilation (smoke) tests for records
  * @library /lib/combo /tools/lib /tools/javac/lib
  * @modules
+ *      jdk.compiler/com.sun.tools.javac.api
  *      jdk.compiler/com.sun.tools.javac.code
  *      jdk.compiler/com.sun.tools.javac.util
  *      jdk.jdeps/com.sun.tools.classfile
@@ -86,9 +87,11 @@ import com.sun.tools.classfile.RuntimeVisibleParameterAnnotations_attribute;
 import com.sun.tools.classfile.RuntimeVisibleTypeAnnotations_attribute;
 import com.sun.tools.classfile.TypeAnnotation;
 
+import com.sun.tools.javac.api.ClientCodeWrapper.DiagnosticSourceUnwrapper;
 import com.sun.tools.javac.code.Attribute.TypeCompound;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
+import com.sun.tools.javac.util.JCDiagnostic;
 
 import org.testng.annotations.Test;
 import tools.javac.combo.CompilationTestCase;
@@ -169,7 +172,15 @@ public class RecordCompilationTests extends CompilationTestCase {
                 "record record(int x) { }",
                 "enum record { A, B }",
                 "class R<record> { }")) {
-            assertFail("compiler.err.restricted.type.not.allowed", s);
+            assertFail(
+                    "compiler.err.restricted.type.not.allowed",
+                    diagWrapper -> {
+                        JCDiagnostic diagnostic = ((DiagnosticSourceUnwrapper)diagWrapper).d;
+                        Object[] args = diagnostic.getArgs();
+                        Assert.check(args.length == 2);
+                        Assert.check(args[1].toString().equals("JDK14"));
+                    },
+                    s);
         }
     }
 

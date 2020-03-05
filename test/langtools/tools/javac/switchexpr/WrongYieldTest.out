@@ -1,4 +1,4 @@
-WrongYieldTest.java:39:11: compiler.err.restricted.type.not.allowed: yield, 13
+WrongYieldTest.java:39:11: compiler.err.restricted.type.not.allowed: yield, 14
 WrongYieldTest.java:45:5: compiler.err.restricted.type.not.allowed.here: yield
 WrongYieldTest.java:123:15: compiler.err.restricted.type.not.allowed.here: yield
 WrongYieldTest.java:136:9: compiler.err.invalid.yield

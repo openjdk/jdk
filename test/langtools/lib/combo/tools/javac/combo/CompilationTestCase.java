@@ -27,6 +27,10 @@ package tools.javac.combo;
 import java.io.File;
 import java.io.IOException;
 
+import java.util.function.Consumer;
+
+import javax.tools.Diagnostic;
+
 import org.testng.ITestResult;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.Test;
@@ -99,5 +103,9 @@ public class CompilationTestCase extends JavacTemplateTestBase {
 
     protected void assertFail(String expectedDiag, String... constructs) {
         assertCompile(expandMarkers(constructs), () -> assertCompileFailed(expectedDiag), false);
+    }
+
+    protected void assertFail(String expectedDiag, Consumer<Diagnostic<?>> diagConsumer, String... constructs) {
+        assertCompile(expandMarkers(constructs), () -> assertCompileFailed(expectedDiag, diagConsumer), false);
     }
 }
