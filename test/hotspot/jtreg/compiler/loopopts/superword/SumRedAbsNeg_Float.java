@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,45 +31,45 @@
  *      -XX:CompileThresholdScaling=0.1
  *      -XX:+SuperWordReductions
  *      -XX:LoopMaxUnroll=2
- *      compiler.loopopts.superword.SumRedAbsNeg_Double
+ *      compiler.loopopts.superword.SumRedAbsNeg_Float
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:LoopUnrollLimit=250
  *      -XX:CompileThresholdScaling=0.1
  *      -XX:-SuperWordReductions
  *      -XX:LoopMaxUnroll=2
- *      compiler.loopopts.superword.SumRedAbsNeg_Double
+ *      compiler.loopopts.superword.SumRedAbsNeg_Float
  *
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:LoopUnrollLimit=250
  *      -XX:CompileThresholdScaling=0.1
  *      -XX:+SuperWordReductions
  *      -XX:LoopMaxUnroll=4
- *      compiler.loopopts.superword.SumRedAbsNeg_Double
+ *      compiler.loopopts.superword.SumRedAbsNeg_Float
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:LoopUnrollLimit=250
  *      -XX:CompileThresholdScaling=0.1
  *      -XX:-SuperWordReductions
  *      -XX:LoopMaxUnroll=4
- *      compiler.loopopts.superword.SumRedAbsNeg_Double
+ *      compiler.loopopts.superword.SumRedAbsNeg_Float
  *
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:LoopUnrollLimit=250
  *      -XX:CompileThresholdScaling=0.1
  *      -XX:+SuperWordReductions
  *      -XX:LoopMaxUnroll=8
- *      compiler.loopopts.superword.SumRedAbsNeg_Double
+ *      compiler.loopopts.superword.SumRedAbsNeg_Float
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:LoopUnrollLimit=250
  *      -XX:CompileThresholdScaling=0.1
  *      -XX:-SuperWordReductions
  *      -XX:LoopMaxUnroll=8
- *      compiler.loopopts.superword.SumRedAbsNeg_Double
+ *      compiler.loopopts.superword.SumRedAbsNeg_Float
  *
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:LoopUnrollLimit=250
  *      -XX:CompileThresholdScaling=0.1
  *      -XX:+SuperWordReductions
  *      -XX:LoopMaxUnroll=16
- *      compiler.loopopts.superword.SumRedAbsNeg_Double
+ *      compiler.loopopts.superword.SumRedAbsNeg_Float
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:LoopUnrollLimit=250
  *      -XX:CompileThresholdScaling=0.1
  *      -XX:-SuperWordReductions
  *      -XX:LoopMaxUnroll=16
- *      compiler.loopopts.superword.SumRedAbsNeg_Double
+ *      compiler.loopopts.superword.SumRedAbsNeg_Float
  */
 
 package compiler.loopopts.superword;
