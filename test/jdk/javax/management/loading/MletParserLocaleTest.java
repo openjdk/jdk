@@ -29,7 +29,7 @@
  *
  * @run clean MletParserLocaleTest
  * @run build MletParserLocaleTest
- * @run main/othervm/timeout=5 MletParserLocaleTest mlet4.html
+ * @run main/othervm MletParserLocaleTest mlet4.html
  */
 
 import java.io.File;

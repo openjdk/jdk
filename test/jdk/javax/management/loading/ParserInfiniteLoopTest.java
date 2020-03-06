@@ -32,9 +32,9 @@
  *
  * @run clean ParserInfiniteLoopTest
  * @run build ParserInfiniteLoopTest
- * @run main/othervm/timeout=5 ParserInfiniteLoopTest mlet1.html
- * @run main/othervm/timeout=5 ParserInfiniteLoopTest mlet2.html
- * @run main/othervm/timeout=5 ParserInfiniteLoopTest mlet3.html
+ * @run main/othervm ParserInfiniteLoopTest mlet1.html
+ * @run main/othervm ParserInfiniteLoopTest mlet2.html
+ * @run main/othervm ParserInfiniteLoopTest mlet3.html
  */
 
 import java.io.File;
