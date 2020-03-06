@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,13 @@
 /**
  * Defines the AWT and Swing user interface toolkits, plus APIs for
  * accessibility, audio, imaging, printing, and JavaBeans.
+ * <p>
+ * The documentation in this module includes links to external overviews,
+ * tutorials, examples, guides, media format specifications, and other similar
+ * documentation. These links are meant to be informative to the reader and
+ * nothing more. Information at these external resources, no matter the hosting
+ * or the author, is not part of Java Platform API specification unless
+ * explicitly stated to be so.
  *
  * @uses java.awt.im.spi.InputMethodDescriptor
  * @uses javax.accessibility.AccessibilityProvider
