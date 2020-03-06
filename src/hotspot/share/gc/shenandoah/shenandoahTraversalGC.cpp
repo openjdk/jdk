@@ -605,8 +605,11 @@ void ShenandoahTraversalGC::final_traversal_collection() {
     // that results the TLAB/GCLAB not usable. Retire them here.
     _heap->make_parsable(true);
 
-    _heap->parallel_cleaning(false);
+    // Do this fixup before the call to parallel_cleaning to ensure that all
+    // forwarded objects (including those that are no longer in the cset) are
+    // updated by the time we do weak root processing.
     fixup_roots();
+    _heap->parallel_cleaning(false);
 
     _heap->set_has_forwarded_objects(false);
 
