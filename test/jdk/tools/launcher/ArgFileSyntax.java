@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8027634 8210810
+ * @bug 8027634 8210810 8240629
  * @summary Verify syntax of argument file
  * @build TestHelper
  * @run main ArgFileSyntax
@@ -36,7 +36,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class ArgFileSyntax extends TestHelper {
@@ -213,8 +212,26 @@ public class ArgFileSyntax extends TestHelper {
         scratch.add(bag + "'" + filling + "\\\\aaa\\\\'");
         scratch.add(ver);
         rv.add(List.of(scratch, List.of(bag + filling + "\\aaa\\", ver)));
-
         return rv;
+    }
+
+    // 8240629: end or start comment at boundary
+    @Test
+    public void test8240629() throws IOException {
+        char[] data = new char[ARG_FILE_PARSER_BUF_SIZE];
+        data[0] = '#';
+        Arrays.fill(data, 1, data.length, '0');
+
+        int need = ARG_FILE_PARSER_BUF_SIZE - System.lineSeparator().length();
+        // Comment end before, at, after boundary
+        for (int count = need - 1; count <= need + 1 ; count++) {
+            String commentAtBoundary = String.valueOf(data, 0, count);
+            List<String> content = new ArrayList<>();
+            content.add(commentAtBoundary);
+            content.add("# start a new comment at boundary");
+            content.add("-Dfoo=bar");
+            verifyParsing(content, List.of("-Dfoo=bar"));
+        }
     }
 
     // ensure the arguments in the file are read in correctly
