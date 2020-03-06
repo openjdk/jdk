@@ -240,7 +240,6 @@ void OtherRegionsTable::add_reference(OopOrNarrowOopStar from, uint tid) {
   // OtherRegionsTable for why this is OK.
   assert(prt != NULL, "Inv");
 
-  bool added = prt->add_reference(from);
   if (prt->add_reference(from)) {
     num_added_by_coarsening++;
   }
