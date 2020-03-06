@@ -231,10 +231,6 @@ public:
     ValueIn
   };
 
-  enum Strength {
-    NONE, STRONG
-  };
-
 private:
   bool _native;
 
@@ -257,7 +253,7 @@ public:
   virtual uint hash() const;
   virtual bool cmp( const Node &n ) const;
 
-  Strength get_barrier_strength();
+  bool is_redundant();
   CallStaticJavaNode* pin_and_expand_null_check(PhaseIterGVN& igvn);
 
 private:
