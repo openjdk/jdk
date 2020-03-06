@@ -1264,12 +1264,6 @@ public:
  public:
   u2 idnum_allocated_count() const      { return _idnum_allocated_count; }
 
-public:
-  void set_in_error_state() {
-    assert(DumpSharedSpaces, "only call this when dumping archive");
-    _init_state = initialization_error;
-  }
-
 private:
   // initialization state
   void set_init_state(ClassState state);

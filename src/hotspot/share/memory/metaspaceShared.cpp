@@ -1702,13 +1702,22 @@ class LinkSharedClassesClosure : public KlassClosure {
   void do_klass(Klass* k) {
     if (k->is_instance_klass()) {
       InstanceKlass* ik = InstanceKlass::cast(k);
-      // Link the class to cause the bytecodes to be rewritten and the
-      // cpcache to be created. Class verification is done according
-      // to -Xverify setting.
-      _made_progress |= MetaspaceShared::try_link_class(ik, THREAD);
-      guarantee(!HAS_PENDING_EXCEPTION, "exception in link_class");
+      // For dynamic CDS dump, only link classes loaded by the builtin class loaders.
+      bool do_linking = DumpSharedSpaces ? true : !ik->is_shared_unregistered_class();
+      if (do_linking) {
+        // Link the class to cause the bytecodes to be rewritten and the
+        // cpcache to be created. Class verification is done according
+        // to -Xverify setting.
+        _made_progress |= MetaspaceShared::try_link_class(ik, THREAD);
+        guarantee(!HAS_PENDING_EXCEPTION, "exception in link_class");
 
-      ik->constants()->resolve_class_constants(THREAD);
+        if (DumpSharedSpaces) {
+          // The following function is used to resolve all Strings in the statically
+          // dumped classes to archive all the Strings. The archive heap is not supported
+          // for the dynamic archive.
+          ik->constants()->resolve_class_constants(THREAD);
+        }
+      }
     }
   }
 };
@@ -1848,7 +1857,7 @@ int MetaspaceShared::preload_classes(const char* class_list_path, TRAPS) {
 
 // Returns true if the class's status has changed
 bool MetaspaceShared::try_link_class(InstanceKlass* ik, TRAPS) {
-  assert(DumpSharedSpaces, "should only be called during dumping");
+  Arguments::assert_is_dumping_archive();
   if (ik->init_state() < InstanceKlass::linked &&
       !SystemDictionaryShared::has_class_failed_verification(ik)) {
     bool saved = BytecodeVerificationLocal;
