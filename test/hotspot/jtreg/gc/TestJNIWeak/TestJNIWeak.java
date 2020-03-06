@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,15 +21,14 @@
  * questions.
  */
 
-package gc.g1.TestJNIWeakG1;
+package gc.TestJNIWeak;
 
 /* @test
  * @bug 8166188 8178813
  * @summary Test return of JNI weak global refs during concurrent
- * marking, verifying the use of the G1 load barrier to keep the
+ * marking, verifying the use of the load barrier to keep the
  * referent alive.
  * @key gc
- * @requires vm.gc.G1
  * @modules java.base
  * @library /test/lib
  * @build sun.hotspot.WhiteBox
@@ -38,25 +37,24 @@ package gc.g1.TestJNIWeakG1;
  * @run main/othervm/native
  *    -Xbootclasspath/a:.
  *    -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *    -XX:+UseG1GC -XX:MaxTenuringThreshold=2
  *    -Xint
- *    gc.g1.TestJNIWeakG1.TestJNIWeakG1
+ *    gc.TestJNIWeak.TestJNIWeak
  * @run main/othervm/native
  *    -Xbootclasspath/a:.
  *    -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *    -XX:+UseG1GC -XX:MaxTenuringThreshold=2
  *    -Xcomp
- *    gc.g1.TestJNIWeakG1.TestJNIWeakG1
+ *    gc.TestJNIWeak.TestJNIWeak
  */
 
+import sun.hotspot.gc.GC;
 import sun.hotspot.WhiteBox;
-
+import jtreg.SkippedException;
 import java.lang.ref.Reference;
 
-public final class TestJNIWeakG1 {
+public final class TestJNIWeak {
 
     static {
-        System.loadLibrary("TestJNIWeakG1");
+        System.loadLibrary("TestJNIWeak");
     }
 
     private static final WhiteBox WB = WhiteBox.getWhiteBox();
@@ -82,7 +80,7 @@ public final class TestJNIWeakG1 {
     // native call return value handling path (when resolve is false).
     private boolean resolve = true;
 
-    TestJNIWeakG1(boolean resolve) {
+    TestJNIWeak(boolean resolve) {
         this.resolve = resolve;
     }
 
@@ -107,10 +105,10 @@ public final class TestJNIWeakG1 {
         testObject = null;
     }
 
-    // Repeatedly perform young-only GC until o is in the old generation.
+    // Repeatedly perform full GC until o is in the old generation.
     private void gcUntilOld(Object o) {
         while (!WB.isObjectInOldGen(o)) {
-            WB.youngGC();
+            WB.fullGC();
         }
     }
 
@@ -131,7 +129,7 @@ public final class TestJNIWeakG1 {
         System.out.println("running checkSanity");
         try {
             // Inhibit concurrent GC during this check.
-            WB.requestConcurrentGCPhase("IDLE");
+            WB.concurrentGCAcquireControl();
 
             int value = 5;
             try {
@@ -142,8 +140,7 @@ public final class TestJNIWeakG1 {
             }
 
         } finally {
-            // Remove request.
-            WB.requestConcurrentGCPhase("ANY");
+            WB.concurrentGCReleaseControl();
         }
     }
 
@@ -157,16 +154,16 @@ public final class TestJNIWeakG1 {
                 checkValue(value);
                 gcUntilOld(testObject);
                 // Run a concurrent collection after object is old.
-                WB.requestConcurrentGCPhase("CONCURRENT_CYCLE");
-                WB.requestConcurrentGCPhase("IDLE");
+                WB.concurrentGCAcquireControl();
+                WB.concurrentGCRunTo(WB.AFTER_MARKING_STARTED);
+                WB.concurrentGCRunToIdle();
                 // Verify weak ref still has expected value.
                 checkValue(value);
             } finally {
                 forget();
             }
         } finally {
-            // Remove request.
-            WB.requestConcurrentGCPhase("ANY");
+            WB.concurrentGCReleaseControl();
         }
     }
 
@@ -180,13 +177,14 @@ public final class TestJNIWeakG1 {
                 checkValue(value);
                 gcUntilOld(testObject);
                 // Run a concurrent collection after object is old.
-                WB.requestConcurrentGCPhase("CONCURRENT_CYCLE");
-                WB.requestConcurrentGCPhase("IDLE");
+                WB.concurrentGCAcquireControl();
+                WB.concurrentGCRunTo(WB.AFTER_MARKING_STARTED);
+                WB.concurrentGCRunToIdle();
                 checkValue(value);
                 testObject = null;
                 // Run a concurrent collection after strong ref removed.
-                WB.requestConcurrentGCPhase("CONCURRENT_CYCLE");
-                WB.requestConcurrentGCPhase("IDLE");
+                WB.concurrentGCRunTo(WB.AFTER_MARKING_STARTED);
+                WB.concurrentGCRunToIdle();
                 // Verify weak ref cleared as expected.
                 Object recorded = getObject();
                 if (recorded != null) {
@@ -196,8 +194,7 @@ public final class TestJNIWeakG1 {
                 forget();
             }
         } finally {
-            // Remove request.
-            WB.requestConcurrentGCPhase("ANY");
+            WB.concurrentGCReleaseControl();
         }
     }
 
@@ -212,11 +209,11 @@ public final class TestJNIWeakG1 {
                 checkValue(value);
                 gcUntilOld(testObject);
                 // Block concurrent cycle until we're ready.
-                WB.requestConcurrentGCPhase("IDLE");
+                WB.concurrentGCAcquireControl();
                 checkValue(value);
                 testObject = null; // Discard strong ref
-                // Run through mark_from_roots.
-                WB.requestConcurrentGCPhase("BEFORE_REMARK");
+                // Run through most of marking
+                WB.concurrentGCRunTo(WB.BEFORE_MARKING_COMPLETED);
                 // Fetch weak ref'ed object.  Should be kept alive now.
                 Object recovered = getObject();
                 if (recovered == null) {
@@ -224,7 +221,7 @@ public final class TestJNIWeakG1 {
                 }
                 // Finish collection, including reference processing.
                 // Block any further cycles while we finish check.
-                WB.requestConcurrentGCPhase("IDLE");
+                WB.concurrentGCRunToIdle();
                 // Fetch weak ref'ed object.  Referent is manifestly
                 // live in recovered; the earlier fetch should have
                 // kept it alive through collection, so weak ref
@@ -241,8 +238,7 @@ public final class TestJNIWeakG1 {
                 forget();
             }
         } finally {
-            // Remove request.
-            WB.requestConcurrentGCPhase("ANY");
+            WB.concurrentGCReleaseControl();
         }
     }
 
@@ -255,13 +251,18 @@ public final class TestJNIWeakG1 {
     }
 
     public static void main(String[] args) throws Exception {
+        if (!WB.supportsConcurrentGCBreakpoints()) {
+            throw new SkippedException(
+                GC.selected().name() + " doesn't support concurrent GC breakpoints");
+        }
+
         // Perform check with direct jweak resolution.
         System.out.println("Check with jweak resolved");
-        new TestJNIWeakG1(true).check();
+        new TestJNIWeak(true).check();
 
         // Perform check with implicit jweak resolution by native
         // call's return value handling.
         System.out.println("Check with jweak returned");
-        new TestJNIWeakG1(false).check();
+        new TestJNIWeak(false).check();
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #include "gc/shared/gcId.hpp"
 #include "gc/shared/gcLocker.hpp"
 #include "gc/shared/isGCActiveMark.hpp"
+#include "gc/z/zBreakpoint.hpp"
 #include "gc/z/zCollectedHeap.hpp"
 #include "gc/z/zDriver.hpp"
 #include "gc/z/zHeap.inline.hpp"
@@ -260,6 +261,11 @@ void ZDriver::collect(GCCause::Cause cause) {
     _gc_locker_port.signal();
     break;
 
+  case GCCause::_wb_breakpoint:
+    ZBreakpoint::start_gc();
+    _gc_cycle_port.send_async(cause);
+    break;
+
   default:
     // Other causes not supported
     fatal("Unsupported GC cause (%s)", GCCause::to_string(cause));
@@ -292,7 +298,9 @@ void ZDriver::pause_mark_start() {
 
 void ZDriver::concurrent_mark() {
   ZStatTimer timer(ZPhaseConcurrentMark);
+  ZBreakpoint::at_after_marking_started();
   ZHeap::heap()->mark(true /* initial */);
+  ZBreakpoint::at_before_marking_completed();
 }
 
 bool ZDriver::pause_mark_end() {
@@ -417,6 +425,8 @@ void ZDriver::run_service() {
       continue;
     }
 
+    ZBreakpoint::at_before_gc();
+
     // Run GC
     gc(cause);
 
@@ -425,6 +435,8 @@ void ZDriver::run_service() {
 
     // Check for out of memory condition
     check_out_of_memory();
+
+    ZBreakpoint::at_after_gc();
   }
 }
 

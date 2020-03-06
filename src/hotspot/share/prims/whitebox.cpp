@@ -35,6 +35,7 @@
 #include "compiler/compilationPolicy.hpp"
 #include "compiler/methodMatcher.hpp"
 #include "compiler/directivesParser.hpp"
+#include "gc/shared/concurrentGCBreakpoints.hpp"
 #include "gc/shared/gcConfig.hpp"
 #include "gc/shared/genArguments.hpp"
 #include "gc/shared/genCollectedHeap.hpp"
@@ -394,15 +395,27 @@ WB_ENTRY(jlong, WB_GetHeapAlignment(JNIEnv* env, jobject o))
   return (jlong)HeapAlignment;
 WB_END
 
-WB_ENTRY(jboolean, WB_SupportsConcurrentGCPhaseControl(JNIEnv* env, jobject o))
-  return Universe::heap()->supports_concurrent_phase_control();
+WB_ENTRY(jboolean, WB_SupportsConcurrentGCBreakpoints(JNIEnv* env, jobject o))
+  return Universe::heap()->supports_concurrent_gc_breakpoints();
 WB_END
 
-WB_ENTRY(jboolean, WB_RequestConcurrentGCPhase(JNIEnv* env, jobject o, jstring name))
-  Handle h_name(THREAD, JNIHandles::resolve(name));
+WB_ENTRY(void, WB_ConcurrentGCAcquireControl(JNIEnv* env, jobject o))
+  ConcurrentGCBreakpoints::acquire_control();
+WB_END
+
+WB_ENTRY(void, WB_ConcurrentGCReleaseControl(JNIEnv* env, jobject o))
+  ConcurrentGCBreakpoints::release_control();
+WB_END
+
+WB_ENTRY(void, WB_ConcurrentGCRunToIdle(JNIEnv* env, jobject o))
+  ConcurrentGCBreakpoints::run_to_idle();
+WB_END
+
+WB_ENTRY(jboolean, WB_ConcurrentGCRunTo(JNIEnv* env, jobject o, jobject at))
+  Handle h_name(THREAD, JNIHandles::resolve(at));
   ResourceMark rm;
   const char* c_name = java_lang_String::as_utf8_string(h_name());
-  return Universe::heap()->request_concurrent_phase(c_name);
+  return ConcurrentGCBreakpoints::run_to(c_name);
 WB_END
 
 #if INCLUDE_G1GC
@@ -2440,9 +2453,12 @@ static JNINativeMethod methods[] = {
   {CC"isGCSupported",             CC"(I)Z",           (void*)&WB_IsGCSupported},
   {CC"isGCSelected",              CC"(I)Z",           (void*)&WB_IsGCSelected},
   {CC"isGCSelectedErgonomically", CC"()Z",            (void*)&WB_IsGCSelectedErgonomically},
-  {CC"supportsConcurrentGCPhaseControl", CC"()Z",     (void*)&WB_SupportsConcurrentGCPhaseControl},
-  {CC"requestConcurrentGCPhase0", CC"(Ljava/lang/String;)Z",
-                                                      (void*)&WB_RequestConcurrentGCPhase},
+  {CC"supportsConcurrentGCBreakpoints", CC"()Z",      (void*)&WB_SupportsConcurrentGCBreakpoints},
+  {CC"concurrentGCAcquireControl0", CC"()V",          (void*)&WB_ConcurrentGCAcquireControl},
+  {CC"concurrentGCReleaseControl0", CC"()V",          (void*)&WB_ConcurrentGCReleaseControl},
+  {CC"concurrentGCRunToIdle0",    CC"()V",            (void*)&WB_ConcurrentGCRunToIdle},
+  {CC"concurrentGCRunTo0",        CC"(Ljava/lang/String;)Z",
+                                                      (void*)&WB_ConcurrentGCRunTo},
   {CC"checkLibSpecifiesNoexecstack", CC"(Ljava/lang/String;)Z",
                                                       (void*)&WB_CheckLibSpecifiesNoexecstack},
   {CC"isContainerized",           CC"()Z",            (void*)&WB_IsContainerized },

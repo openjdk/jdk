@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 
 /*
- * Native support for TestJNIWeakG1 test.
+ * Native support for TestJNIWeak test.
  */
 
 #include "jni.h"
@@ -30,13 +30,13 @@
 static jweak registered = NULL;
 
 JNIEXPORT void JNICALL
-Java_gc_g1_TestJNIWeakG1_TestJNIWeakG1_registerObject(JNIEnv* env, jclass jclazz, jobject value) {
+Java_gc_TestJNIWeak_TestJNIWeak_registerObject(JNIEnv* env, jclass jclazz, jobject value) {
   // assert registered == NULL
   registered = (*env)->NewWeakGlobalRef(env, value);
 }
 
 JNIEXPORT void JNICALL
-Java_gc_g1_TestJNIWeakG1_TestJNIWeakG1_unregisterObject(JNIEnv* env, jclass jclazz) {
+Java_gc_TestJNIWeak_TestJNIWeak_unregisterObject(JNIEnv* env, jclass jclazz) {
   if (registered != NULL) {
     (*env)->DeleteWeakGlobalRef(env, registered);
     registered = NULL;
@@ -45,14 +45,14 @@ Java_gc_g1_TestJNIWeakG1_TestJNIWeakG1_unregisterObject(JNIEnv* env, jclass jcla
 
 // Directly return jweak, to be resolved by native call's return value handling.
 JNIEXPORT jobject JNICALL
-Java_gc_g1_TestJNIWeakG1_TestJNIWeakG1_getReturnedWeak(JNIEnv* env, jclass jclazz) {
+Java_gc_TestJNIWeak_TestJNIWeak_getReturnedWeak(JNIEnv* env, jclass jclazz) {
   // assert registered != NULL
   return registered;
 }
 
 // Directly resolve jweak and return the result.
 JNIEXPORT jobject JNICALL
-Java_gc_g1_TestJNIWeakG1_TestJNIWeakG1_getResolvedWeak(JNIEnv* env, jclass jclazz) {
+Java_gc_TestJNIWeak_TestJNIWeak_getResolvedWeak(JNIEnv* env, jclass jclazz) {
   // assert registered != NULL
   return (*env)->NewLocalRef(env, registered);
 }

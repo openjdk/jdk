@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,7 @@
 #include "gc/g1/g1YoungGenSizer.hpp"
 #include "gc/g1/heapRegion.inline.hpp"
 #include "gc/g1/heapRegionRemSet.hpp"
+#include "gc/shared/concurrentGCBreakpoints.hpp"
 #include "gc/shared/gcPolicyCounters.hpp"
 #include "logging/logStream.hpp"
 #include "runtime/arguments.hpp"
@@ -1057,15 +1058,23 @@ void G1Policy::decide_on_conc_mark_initiation() {
   if (collector_state()->initiate_conc_mark_if_possible()) {
     // We had noticed on a previous pause that the heap occupancy has
     // gone over the initiating threshold and we should start a
-    // concurrent marking cycle. So we might initiate one.
+    // concurrent marking cycle.  Or we've been explicitly requested
+    // to start a concurrent marking cycle.  Either way, we initiate
+    // one if not inhibited for some reason.
 
-    if (!about_to_start_mixed_phase() && collector_state()->in_young_only_phase()) {
+    GCCause::Cause cause = _g1h->gc_cause();
+    if ((cause != GCCause::_wb_breakpoint) &&
+        ConcurrentGCBreakpoints::is_controlled()) {
+      log_debug(gc, ergo)("Do not initiate concurrent cycle (whitebox controlled)");
+    } else if (!about_to_start_mixed_phase() && collector_state()->in_young_only_phase()) {
       // Initiate a new initial mark if there is no marking or reclamation going on.
       initiate_conc_mark();
       log_debug(gc, ergo)("Initiate concurrent cycle (concurrent cycle initiation requested)");
-    } else if (_g1h->is_user_requested_concurrent_full_gc(_g1h->gc_cause())) {
-      // Initiate a user requested initial mark. An initial mark must be young only
-      // GC, so the collector state must be updated to reflect this.
+    } else if (_g1h->is_user_requested_concurrent_full_gc(cause) ||
+               (cause == GCCause::_wb_breakpoint)) {
+      // Initiate a user requested initial mark or run_to a breakpoint.
+      // An initial mark must be young only GC, so the collector state
+      // must be updated to reflect this.
       collector_state()->set_in_young_only_phase(true);
       collector_state()->set_in_young_gc_before_mixed(false);
 
@@ -1076,7 +1085,8 @@ void G1Policy::decide_on_conc_mark_initiation() {
       clear_collection_set_candidates();
       abort_time_to_mixed_tracking();
       initiate_conc_mark();
-      log_debug(gc, ergo)("Initiate concurrent cycle (user requested concurrent cycle)");
+      log_debug(gc, ergo)("Initiate concurrent cycle (%s requested concurrent cycle)",
+                          (cause == GCCause::_wb_breakpoint) ? "run_to breakpoint" : "user");
     } else {
       // The concurrent marking thread is still finishing up the
       // previous cycle. If we start one right now the two cycles

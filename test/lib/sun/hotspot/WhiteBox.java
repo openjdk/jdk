@@ -411,33 +411,77 @@ public class WhiteBox {
   // Force Full GC
   public native void fullGC();
 
-  // Returns true if the current GC supports control of its concurrent
-  // phase via requestConcurrentGCPhase().  If false, a request will
-  // always fail.
-  public native boolean supportsConcurrentGCPhaseControl();
+  // Returns true if the current GC supports concurrent collection control.
+  public native boolean supportsConcurrentGCBreakpoints();
 
-  // Attempt to put the collector into the indicated concurrent phase,
-  // and attempt to remain in that state until a new request is made.
-  //
-  // Returns immediately if already in the requested phase.
-  // Otherwise, waits until the phase is reached.
-  //
-  // Throws IllegalStateException if unsupported by the current collector.
-  // Throws NullPointerException if phase is null.
-  // Throws IllegalArgumentException if phase is not valid for the current collector.
-  public void requestConcurrentGCPhase(String phase) {
-    if (!supportsConcurrentGCPhaseControl()) {
-      throw new IllegalStateException("Concurrent GC phase control not supported");
-    } else if (phase == null) {
-      throw new NullPointerException("null phase");
-    } else if (!requestConcurrentGCPhase0(phase)) {
-      throw new IllegalArgumentException("Unknown concurrent GC phase: " + phase);
+  private void checkConcurrentGCBreakpointsSupported() {
+    if (!supportsConcurrentGCBreakpoints()) {
+      throw new UnsupportedOperationException("Concurrent GC breakpoints not supported");
     }
   }
 
-  // Helper for requestConcurrentGCPhase().  Returns true if request
-  // succeeded, false if the phase is invalid.
-  private native boolean requestConcurrentGCPhase0(String phase);
+  private native void concurrentGCAcquireControl0();
+  private native void concurrentGCReleaseControl0();
+  private native void concurrentGCRunToIdle0();
+  private native boolean concurrentGCRunTo0(String breakpoint);
+
+  private static boolean concurrentGCIsControlled = false;
+  private void checkConcurrentGCIsControlled() {
+    if (!concurrentGCIsControlled) {
+      throw new IllegalStateException("Not controlling concurrent GC");
+    }
+  }
+
+  // All collectors supporting concurrent GC breakpoints are expected
+  // to provide at least the following breakpoints.
+  public final String AFTER_MARKING_STARTED = "AFTER MARKING STARTED";
+  public final String BEFORE_MARKING_COMPLETED = "BEFORE MARKING COMPLETED";
+
+  public void concurrentGCAcquireControl() {
+    checkConcurrentGCBreakpointsSupported();
+    if (concurrentGCIsControlled) {
+      throw new IllegalStateException("Already controlling concurrent GC");
+    }
+    concurrentGCAcquireControl0();
+    concurrentGCIsControlled = true;
+  }
+
+  public void concurrentGCReleaseControl() {
+    checkConcurrentGCBreakpointsSupported();
+    concurrentGCReleaseControl0();
+    concurrentGCIsControlled = false;
+  }
+
+  // Keep concurrent GC idle.  Release from breakpoint.
+  public void concurrentGCRunToIdle() {
+    checkConcurrentGCBreakpointsSupported();
+    checkConcurrentGCIsControlled();
+    concurrentGCRunToIdle0();
+  }
+
+  // Allow concurrent GC to run to breakpoint.
+  // Throws IllegalStateException if reached end of cycle first.
+  public void concurrentGCRunTo(String breakpoint) {
+    concurrentGCRunTo(breakpoint, true);
+  }
+
+  // Allow concurrent GC to run to breakpoint.
+  // Returns true if reached breakpoint.  If reached end of cycle first,
+  // then throws IllegalStateException if errorIfFail is true, returning
+  // false otherwise.
+  public boolean concurrentGCRunTo(String breakpoint, boolean errorIfFail) {
+    checkConcurrentGCBreakpointsSupported();
+    checkConcurrentGCIsControlled();
+    if (breakpoint == null) {
+      throw new NullPointerException("null breakpoint");
+    } else if (concurrentGCRunTo0(breakpoint)) {
+      return true;
+    } else if (errorIfFail) {
+      throw new IllegalStateException("Missed requested breakpoint \"" + breakpoint + "\"");
+    } else {
+      return false;
+    }
+  }
 
   // Method tries to start concurrent mark cycle.
   // It returns false if CM Thread is always in concurrent cycle.

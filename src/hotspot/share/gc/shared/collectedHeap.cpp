@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -162,14 +162,8 @@ void CollectedHeap::trace_heap_after_gc(const GCTracer* gc_tracer) {
   trace_heap(GCWhen::AfterGC, gc_tracer);
 }
 
-// WhiteBox API support for concurrent collectors.  These are the
-// default implementations, for collectors which don't support this
-// feature.
-bool CollectedHeap::supports_concurrent_phase_control() const {
-  return false;
-}
-
-bool CollectedHeap::request_concurrent_phase(const char* phase) {
+// Default implementation, for collectors that don't support the feature.
+bool CollectedHeap::supports_concurrent_gc_breakpoints() const {
   return false;
 }
 

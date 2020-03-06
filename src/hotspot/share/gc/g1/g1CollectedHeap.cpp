@@ -66,6 +66,7 @@
 #include "gc/g1/heapRegion.inline.hpp"
 #include "gc/g1/heapRegionRemSet.hpp"
 #include "gc/g1/heapRegionSet.inline.hpp"
+#include "gc/shared/concurrentGCBreakpoints.hpp"
 #include "gc/shared/gcBehaviours.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
 #include "gc/shared/gcId.hpp"
@@ -2003,6 +2004,7 @@ bool G1CollectedHeap::should_do_concurrent_full_gc(GCCause::Cause cause) {
   switch (cause) {
     case GCCause::_g1_humongous_allocation: return true;
     case GCCause::_g1_periodic_collection:  return G1PeriodicGCInvokesConcurrent;
+    case GCCause::_wb_breakpoint:           return true;
     default:                                return is_user_requested_concurrent_full_gc(cause);
   }
 }
@@ -2173,24 +2175,42 @@ bool G1CollectedHeap::try_collect_concurrently(GCCause::Cause cause,
       old_marking_completed_after = _old_marking_cycles_completed;
     }
 
-    if (!GCCause::is_user_requested_gc(cause)) {
+    if (cause == GCCause::_wb_breakpoint) {
+      if (op.gc_succeeded()) {
+        LOG_COLLECT_CONCURRENTLY_COMPLETE(cause, true);
+        return true;
+      }
+      // When _wb_breakpoint there can't be another cycle or deferred.
+      assert(!op.cycle_already_in_progress(), "invariant");
+      assert(!op.whitebox_attached(), "invariant");
+      // Concurrent cycle attempt might have been cancelled by some other
+      // collection, so retry.  Unlike other cases below, we want to retry
+      // even if cancelled by a STW full collection, because we really want
+      // to start a concurrent cycle.
+      if (old_marking_started_before != old_marking_started_after) {
+        LOG_COLLECT_CONCURRENTLY(cause, "ignoring STW full GC");
+        old_marking_started_before = old_marking_started_after;
+      }
+    } else if (!GCCause::is_user_requested_gc(cause)) {
       // For an "automatic" (not user-requested) collection, we just need to
       // ensure that progress is made.
       //
       // Request is finished if any of
       // (1) the VMOp successfully performed a GC,
       // (2) a concurrent cycle was already in progress,
-      // (3) a new cycle was started (by this thread or some other), or
-      // (4) a Full GC was performed.
-      // Cases (3) and (4) are detected together by a change to
+      // (3) whitebox is controlling concurrent cycles,
+      // (4) a new cycle was started (by this thread or some other), or
+      // (5) a Full GC was performed.
+      // Cases (4) and (5) are detected together by a change to
       // _old_marking_cycles_started.
       //
-      // Note that (1) does not imply (3).  If we're still in the mixed
+      // Note that (1) does not imply (4).  If we're still in the mixed
       // phase of an earlier concurrent collection, the request to make the
       // collection an initial-mark won't be honored.  If we don't check for
       // both conditions we'll spin doing back-to-back collections.
       if (op.gc_succeeded() ||
           op.cycle_already_in_progress() ||
+          op.whitebox_attached() ||
           (old_marking_started_before != old_marking_started_after)) {
         LOG_COLLECT_CONCURRENTLY_COMPLETE(cause, true);
         return true;
@@ -2244,11 +2264,23 @@ bool G1CollectedHeap::try_collect_concurrently(GCCause::Cause cause,
       // a new cycle was started.
       assert(!op.gc_succeeded(), "invariant");
 
-      // If VMOp failed because a cycle was already in progress, it is now
-      // complete.  But it didn't finish this user-requested GC, so try
-      // again.
       if (op.cycle_already_in_progress()) {
+        // If VMOp failed because a cycle was already in progress, it
+        // is now complete.  But it didn't finish this user-requested
+        // GC, so try again.
         LOG_COLLECT_CONCURRENTLY(cause, "retry after in-progress");
+        continue;
+      } else if (op.whitebox_attached()) {
+        // If WhiteBox wants control, wait for notification of a state
+        // change in the controller, then try again.  Don't wait for
+        // release of control, since collections may complete while in
+        // control.  Note: This won't recognize a STW full collection
+        // while waiting; we can't wait on multiple monitors.
+        LOG_COLLECT_CONCURRENTLY(cause, "whitebox control stall");
+        MonitorLocker ml(ConcurrentGCBreakpoints::monitor());
+        if (ConcurrentGCBreakpoints::is_controlled()) {
+          ml.wait();
+        }
         continue;
       }
     }
@@ -2256,8 +2288,8 @@ bool G1CollectedHeap::try_collect_concurrently(GCCause::Cause cause,
     // Collection failed and should be retried.
     assert(op.transient_failure(), "invariant");
 
-    // If GCLocker is active, wait until clear before retrying.
     if (GCLocker::is_active_and_needs_gc()) {
+      // If GCLocker is active, wait until clear before retrying.
       LOG_COLLECT_CONCURRENTLY(cause, "gc-locker stall");
       GCLocker::stall_until_clear();
     }
@@ -2453,12 +2485,8 @@ void G1CollectedHeap::verify(VerifyOption vo) {
   _verifier->verify(vo);
 }
 
-bool G1CollectedHeap::supports_concurrent_phase_control() const {
+bool G1CollectedHeap::supports_concurrent_gc_breakpoints() const {
   return true;
-}
-
-bool G1CollectedHeap::request_concurrent_phase(const char* phase) {
-  return _cm_thread->request_concurrent_phase(phase);
 }
 
 bool G1CollectedHeap::is_heterogeneous_heap() const {
@@ -3178,6 +3206,7 @@ void G1CollectedHeap::do_collection_pause_at_safepoint_helper(double target_paus
     // Note: of course, the actual marking work will not start until the safepoint
     // itself is released in SuspendibleThreadSet::desynchronize().
     do_concurrent_mark();
+    ConcurrentGCBreakpoints::notify_idle_to_active();
   }
 }
 
