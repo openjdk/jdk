@@ -296,7 +296,7 @@ class MetaspaceShared : AllStatic {
   }
 
   static bool try_link_class(InstanceKlass* ik, TRAPS);
-  static void link_and_cleanup_shared_classes(TRAPS);
+  static void link_and_cleanup_shared_classes(TRAPS) NOT_CDS_RETURN;
 
 #if INCLUDE_CDS
   static ReservedSpace reserve_shared_space(size_t size, char* requested_address = NULL);
