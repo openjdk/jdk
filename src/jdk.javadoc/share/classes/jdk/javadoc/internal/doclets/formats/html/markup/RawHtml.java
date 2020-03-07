@@ -52,28 +52,6 @@ public class RawHtml extends Content {
         rawHtmlContent = rawHtml.toString();
     }
 
-    /**
-     * This method is not supported by the class.
-     *
-     * @param content content that needs to be added
-     * @throws UnsupportedOperationException always
-     */
-    @Override
-    public void add(Content content) {
-        throw new UnsupportedOperationException();
-    }
-
-    /**
-     * This method is not supported by the class.
-     *
-     * @param stringContent string content that needs to be added
-     * @throws UnsupportedOperationException always
-     */
-    @Override
-    public void add(CharSequence stringContent) {
-        throw new UnsupportedOperationException();
-    }
-
     @Override
     public boolean isEmpty() {
         return rawHtmlContent.isEmpty();

@@ -52,16 +52,6 @@ public class Entity extends Content {
     }
 
     @Override
-    public void add(Content content) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void add(CharSequence stringContent) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public boolean write(Writer writer, boolean atNewline) throws IOException {
         writer.write(text);
         return false;

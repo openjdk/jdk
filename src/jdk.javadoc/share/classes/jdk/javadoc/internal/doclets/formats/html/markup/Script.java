@@ -108,15 +108,11 @@ public class Script  {
         ScriptContent scriptContent = new ScriptContent(sb);
         HtmlTree tree = new HtmlTree(HtmlTag.SCRIPT) {
             @Override
-            public void add(CharSequence s) {
-                throw new UnsupportedOperationException();
-            }
-            @Override
-            public void add(Content c) {
+            public HtmlTree add(Content c) {
                 if (c != scriptContent) {
                     throw new IllegalArgumentException();
                 }
-                super.add(scriptContent);
+                return super.add(scriptContent);
             }
         };
         tree.put(HtmlAttr.TYPE, "text/javascript");
@@ -200,13 +196,9 @@ public class Script  {
         }
 
         @Override
-        public void add(Content content) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void add(CharSequence code) {
+        public ScriptContent add(CharSequence code) {
             sb.append(code);
+            return this;
         }
 
         @Override

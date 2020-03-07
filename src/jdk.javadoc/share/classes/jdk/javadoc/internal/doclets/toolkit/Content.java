@@ -59,17 +59,36 @@ public abstract class Content {
 
     /**
      * Adds content to the existing content.
+     * This is an optional operation.
      *
-     * @param content content that needs to be added
+     * @implSpec This implementation throws {@linkplain UnsupportedOperationException}.
+     *
+     * @param content content to be added
+     * @return this object
+     * @throws UnsupportedOperationException if this operation is not supported by
+     *                                       a particular implementation
+     * @throws IllegalArgumentException      if the content is not suitable to be added
      */
-    public abstract void add(Content content);
+    public Content add(Content content) {
+        throw new UnsupportedOperationException();
+    }
 
     /**
      * Adds a string content to the existing content.
+     * This is an optional operation.
+     *
+     * @implSpec
+     * This implementation throws {@linkplain UnsupportedOperationException}.
      *
      * @param stringContent the string content to be added
+     * @return this object
+     * @throws UnsupportedOperationException if this operation is not supported by
+     *                                       a particular implementation
+     * @throws IllegalArgumentException      if the content is not suitable to be added
      */
-    public abstract void add(CharSequence stringContent);
+    public Content add(CharSequence stringContent) {
+        throw new UnsupportedOperationException();
+    }
 
     /**
      * Writes content to a writer.

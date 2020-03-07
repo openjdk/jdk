@@ -50,29 +50,6 @@ public class FixedStringContent extends Content {
         string = Entity.escapeHtmlChars(content);
     }
 
-    /**
-     * This method is not supported by the class.
-     *
-     * @param content content that needs to be added
-     * @throws UnsupportedOperationException always
-     */
-    @Override
-    public void add(Content content) {
-        throw new UnsupportedOperationException();
-    }
-
-    /**
-     * Adds content for the StringContent object.  The method escapes
-     * HTML characters for the string content that is added.
-     *
-     * @param strContent string content to be added
-     * @throws UnsupportedOperationException always
-     */
-    @Override
-    public void add(CharSequence strContent) {
-        throw new UnsupportedOperationException();
-    }
-
     @Override
     public boolean isEmpty() {
         return string.isEmpty();

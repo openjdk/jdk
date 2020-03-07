@@ -150,20 +150,19 @@ public class HtmlTree extends Content {
     /**
      * Adds content for the HTML tag.
      *
-     * @param tagContent tag content to be added
+     * @param content content to be added
      */
     @Override
-    public void add(Content tagContent) {
-        if (tagContent instanceof ContentBuilder) {
-            for (Content c: ((ContentBuilder)tagContent).contents) {
-                add(c);
-            }
+    public HtmlTree add(Content content) {
+        if (content instanceof ContentBuilder) {
+            ((ContentBuilder) content).contents.forEach(this::add);
         }
-        else if (tagContent == HtmlTree.EMPTY || tagContent.isValid()) {
-            if (content.isEmpty())
-                content = new ArrayList<>();
-            content.add(tagContent);
+        else if (content == HtmlTree.EMPTY || content.isValid()) {
+            if (this.content.isEmpty())
+                this.content = new ArrayList<>();
+            this.content.add(content);
         }
+        return this;
     }
 
     /**
@@ -174,16 +173,19 @@ public class HtmlTree extends Content {
      * @param stringContent string content that needs to be added
      */
     @Override
-    public void add(CharSequence stringContent) {
+    public HtmlTree add(CharSequence stringContent) {
         if (!content.isEmpty()) {
             Content lastContent = content.get(content.size() - 1);
             if (lastContent instanceof StringContent)
                 lastContent.add(stringContent);
-            else
+            else {
                 add(new StringContent(stringContent));
+            }
         }
-        else
+        else {
             add(new StringContent(stringContent));
+        }
+        return this;
     }
 
     @Override

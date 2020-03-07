@@ -288,7 +288,7 @@ public class Table {
     }
 
     /**
-     * Add a row of data to the table.
+     * Adds a row of data to the table.
      * Each item of content should be suitable for use as the content of a
      * {@code <th>} or {@code <td>} cell.
      * This method should not be used when the table has tabs: use a method
@@ -301,7 +301,7 @@ public class Table {
     }
 
     /**
-     * Add a row of data to the table.
+     * Adds a row of data to the table.
      * Each item of content should be suitable for use as the content of a
      * {@code <th>} or {@code <td> cell}.
      * This method should not be used when the table has tabs: use a method
@@ -314,14 +314,14 @@ public class Table {
     }
 
     /**
-     * Add a row of data to the table.
+     * Adds a row of data to the table.
      * Each item of content should be suitable for use as the content of a
      * {@code <th>} or {@code <td>} cell.
      *
      * If tabs have been added to the table, the specified element will be used
      * to determine whether the row should be displayed when any particular tab
      * is selected, using the predicate specified when the tab was
-     * {@link #add(String,Predicate) added}.
+     * {@link #addTab(String,Predicate) added}.
      *
      * @param element the element
      * @param contents the contents for the row
@@ -333,14 +333,14 @@ public class Table {
     }
 
     /**
-     * Add a row of data to the table.
+     * Adds a row of data to the table.
      * Each item of content should be suitable for use as the content of a
      * {@code <th>} or {@code <td>} cell.
      *
      * If tabs have been added to the table, the specified element will be used
      * to determine whether the row should be displayed when any particular tab
      * is selected, using the predicate specified when the tab was
-     * {@link #add(String,Predicate) added}.
+     * {@link #addTab(String,Predicate) added}.
      *
      * @param element the element
      * @param contents the contents for the row

@@ -48,28 +48,30 @@ public class ContentBuilder extends Content {
     }
 
     @Override
-    public void add(Content content) {
+    public ContentBuilder add(Content content) {
         nullCheck(content);
         ensureMutableContents();
         if (content instanceof ContentBuilder) {
             contents.addAll(((ContentBuilder) content).contents);
         } else
             contents.add(content);
+        return this;
     }
 
     @Override
-    public void add(CharSequence text) {
-        if (text.length() == 0)
-            return;
-        ensureMutableContents();
-        Content c = contents.isEmpty() ? null : contents.get(contents.size() - 1);
-        StringContent sc;
-        if (c != null && c instanceof StringContent) {
-            sc = (StringContent) c;
-        } else {
-            contents.add(sc = new StringContent());
+    public ContentBuilder add(CharSequence text) {
+        if (text.length() > 0) {
+            ensureMutableContents();
+            Content c = contents.isEmpty() ? null : contents.get(contents.size() - 1);
+            StringContent sc;
+            if (c != null && c instanceof StringContent) {
+                sc = (StringContent) c;
+            } else {
+                contents.add(sc = new StringContent());
+            }
+            sc.add(text);
         }
-        sc.add(text);
+        return this;
     }
 
     @Override
