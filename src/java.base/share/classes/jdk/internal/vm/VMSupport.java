@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,16 @@ package jdk.internal.vm;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.nio.charset.CharacterCodingException;
+import java.nio.charset.CoderResult;
+import java.nio.charset.CodingErrorAction;
+import java.nio.charset.StandardCharsets;
+import java.util.Date;
 import java.util.Properties;
-import java.util.Set;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
 import java.util.jar.Attributes;
@@ -57,18 +65,52 @@ public class VMSupport {
      */
     private static byte[] serializePropertiesToByteArray(Properties p) throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream(4096);
+        PrintWriter bw = new PrintWriter(new OutputStreamWriter(out, "8859_1"));
 
-        Properties props = new Properties();
+        bw.println("#" + new Date().toString());
 
-        // stringPropertyNames() returns a snapshot of the property keys
-        Set<String> keyset = p.stringPropertyNames();
-        for (String key : keyset) {
-            String value = p.getProperty(key);
-            props.put(key, value);
+        try {
+            for (String key : p.stringPropertyNames()) {
+                String val = p.getProperty(key);
+                key = toISO88591(toEscapeSpecialChar(toEscapeSpace(key)));
+                val = toISO88591(toEscapeSpecialChar(val));
+                bw.println(key + "=" + val);
+            }
+        } catch (CharacterCodingException e) {
+            throw new RuntimeException(e);
         }
+        bw.flush();
 
-        props.store(out, null);
         return out.toByteArray();
+    }
+
+    private static String toEscapeSpecialChar(String source) {
+        return source.replace("\t", "\\t").replace("\n", "\\n").replace("\r", "\\r").replace("\f", "\\f");
+    }
+
+    private static String toEscapeSpace(String source) {
+        return source.replace(" ", "\\ ");
+    }
+
+    private static String toISO88591(String source) throws CharacterCodingException {
+        var charBuf = CharBuffer.wrap(source);
+        // 6 is 2 bytes for '\\u' as String and 4 bytes for code point.
+        var byteBuf = ByteBuffer.allocate(charBuf.length() * 6);
+        var encoder = StandardCharsets.ISO_8859_1
+                .newEncoder()
+                .onUnmappableCharacter(CodingErrorAction.REPORT);
+
+        CoderResult result;
+        do {
+            result = encoder.encode(charBuf, byteBuf, false);
+            if (result.isUnmappable()) {
+                byteBuf.put(String.format("\\u%04X", (int)charBuf.get()).getBytes());
+            } else if (result.isError()) {
+                result.throwException();
+            }
+        } while (result.isError());
+
+        return new String(byteBuf.array(), 0, byteBuf.position());
     }
 
     public static byte[] serializePropertiesToByteArray() throws IOException {
