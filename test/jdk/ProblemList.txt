@@ -564,7 +564,6 @@ java/beans/Introspector/8132566/OverridePropertyInfoTest.java   8132565 generic-
 java/beans/Introspector/8132566/OverrideUserDefPropertyInfoTest.java 8132565 generic-all
 
 java/beans/XMLEncoder/Test6570354.java 8015593 macosx-all
-java/beans/XMLEncoder/Test4625418.java 8239965 generic-all
 
 ############################################################################
 
