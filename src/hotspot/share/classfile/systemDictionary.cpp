@@ -1260,25 +1260,6 @@ bool SystemDictionary::check_shared_class_super_type(InstanceKlass* child, Insta
                                                      bool is_superclass, TRAPS) {
   assert(super_type->is_shared(), "must be");
 
-  // Quick check if the super type has been already loaded.
-  // + Don't do it for unregistered classes -- they can be unloaded so
-  //   super_type->class_loader_data() could be stale.
-  // + Don't take the lock if loader data is NULL.
-  if (!super_type->is_shared_unregistered_class() && super_type->class_loader_data() != NULL) {
-    MutexLocker mu1(THREAD, SystemDictionary_lock);
-    // Read loader_data again inside the lock for thread safety
-    ClassLoaderData* loader_data = super_type->class_loader_data();
-    if (loader_data != NULL) {
-      Symbol* name = super_type->name();
-      Dictionary* dictionary = loader_data->dictionary();
-      unsigned int d_hash = dictionary->compute_hash(name);
-      if (SystemDictionary::find_class(d_hash, name, dictionary) != super_type) {
-        return true;
-      }
-    }
-  }
-
-  // Not sure if super type is loaded. Do it the slow way.
   Klass *found = resolve_super_or_fail(child->name(), super_type->name(),
                                        class_loader, protection_domain, is_superclass, CHECK_0);
   if (found == super_type) {
