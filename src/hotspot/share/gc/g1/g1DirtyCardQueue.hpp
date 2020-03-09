@@ -44,6 +44,10 @@ protected:
 public:
   G1DirtyCardQueue(G1DirtyCardQueueSet* qset);
 
+  // Flush before destroying; queue may be used to capture pending work while
+  // doing something else, with auto-flush on completion.
+  ~G1DirtyCardQueue();
+
   // Process queue entries and release resources.
   void flush() { flush_impl(); }
 

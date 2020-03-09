@@ -50,6 +50,10 @@ G1DirtyCardQueue::G1DirtyCardQueue(G1DirtyCardQueueSet* qset) :
   PtrQueue(qset, true /* active */)
 { }
 
+G1DirtyCardQueue::~G1DirtyCardQueue() {
+  flush();
+}
+
 void G1DirtyCardQueue::handle_completed_buffer() {
   assert(_buf != NULL, "precondition");
   BufferNode* node = BufferNode::make_node_from_buffer(_buf, index());
