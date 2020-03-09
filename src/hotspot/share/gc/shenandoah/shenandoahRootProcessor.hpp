@@ -31,6 +31,7 @@
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahSharedVariables.hpp"
+#include "gc/shenandoah/shenandoahUtils.hpp"
 #include "memory/iterator.hpp"
 
 class ShenandoahSerialRoot {
@@ -221,9 +222,9 @@ class ShenandoahRootProcessor : public StackObj {
 private:
   ShenandoahHeap* const               _heap;
   const ShenandoahPhaseTimings::Phase _phase;
+  const ShenandoahGCWorkerPhase       _worker_phase;
 public:
   ShenandoahRootProcessor(ShenandoahPhaseTimings::Phase phase);
-  ~ShenandoahRootProcessor();
 
   ShenandoahHeap* heap() const { return _heap; }
 };
