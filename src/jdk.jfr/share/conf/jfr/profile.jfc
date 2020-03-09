@@ -573,6 +573,11 @@
       <setting name="enabled">true</setting>
       <setting name="period">endChunk</setting>
     </event>
+	
+    <event name="jdk.ProcessStart">
+      <setting name="enabled">true</setting>
+      <setting name="stackTrace">true</setting>
+    </event>
 
     <event name="jdk.NetworkUtilization">
       <setting name="enabled">true</setting>

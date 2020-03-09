@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -177,6 +177,8 @@ public class TestDefaultConfigurations {
         insertSetting(doc, EventNames.TLSHandshake, "threshold", "0 ns");
         insertSetting(doc, EventNames.X509Certificate, "threshold", "0 ns");
         insertSetting(doc, EventNames.X509Validation, "threshold", "0 ns");
+        insertSetting(doc, EventNames.ProcessStart, "threshold", "0 ns");
+
         return doc;
     }
 
