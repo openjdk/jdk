@@ -2091,7 +2091,7 @@ bool IdealLoopTree::beautify_loops( PhaseIdealLoop *phase ) {
   // If I am a shared header (multiple backedges), peel off the many
   // backedges into a private merge point and use the merge point as
   // the one true backedge.
-  if( _head->req() > 3 ) {
+  if (_head->req() > 3 && !_irreducible) {
     // Merge the many backedges into a single backedge but leave
     // the hottest backedge as separate edge for the following peel.
     merge_many_backedges( phase );
