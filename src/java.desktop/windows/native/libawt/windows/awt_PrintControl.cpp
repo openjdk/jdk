@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -696,6 +696,7 @@ BOOL AwtPrintControl::InitPrintDialog(JNIEnv *env,
             }
             ::GlobalUnlock(pd.hDevNames);
         }
+        JNU_ReleaseStringPlatformChars(env, printerName, getName);
 
         if (!samePrinter) {
             LPTSTR foundPrinter = NULL;
