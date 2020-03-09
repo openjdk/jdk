@@ -88,3 +88,7 @@ void ShenandoahObjToScanQueueSet::reset_taskqueue_stats() {
   }
 }
 #endif // TASKQUEUE_STATS
+
+bool ShenandoahTerminatorTerminator::should_exit_termination() {
+  return _heap->cancelled_gc();
+}
