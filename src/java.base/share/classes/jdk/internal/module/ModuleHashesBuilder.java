@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ import java.util.ArrayDeque;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
+import java.util.TreeMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -98,7 +99,7 @@ public class ModuleHashesBuilder {
         // the modules to record the hashes - it is the first matching
         // module and has not been hashed during the traversal.
         Set<String> mods = new HashSet<>();
-        Map<String, ModuleHashes> hashes = new HashMap<>();
+        Map<String, ModuleHashes> hashes = new TreeMap<>();
         builder.build()
                .orderedNodes()
                .filter(mn -> roots.contains(mn) && !mods.contains(mn))
