@@ -242,6 +242,10 @@ public interface EventStream extends AutoCloseable {
     /**
      * Releases all resources associated with this stream.
      * <p>
+     * If a stream is started, asynchronously or synchronously, it is stopped
+     * immediately or after the next flush. This method does <em>NOT</em>
+     * guarantee that all registered actions are completed before return.
+     * <p>
      * Closing a previously closed stream has no effect.
      */
     void close();
@@ -320,6 +324,8 @@ public interface EventStream extends AutoCloseable {
      * Start processing of actions.
      * <p>
      * Actions are performed in the current thread.
+     * <p>
+     * To stop the stream, use the {@code #close()} method.
      *
      * @throws IllegalStateException if the stream is already started or closed
      */
@@ -329,6 +335,8 @@ public interface EventStream extends AutoCloseable {
      * Start asynchronous processing of actions.
      * <p>
      * Actions are performed in a single separate thread.
+     * <p>
+     * To stop the stream, use the {@code #close()} method.
      *
      * @throws IllegalStateException if the stream is already started or closed
      */
