@@ -327,14 +327,12 @@ inline bool ShenandoahHeap::requires_marking(const void* entry) const {
 
 inline bool ShenandoahHeap::in_collection_set(oop p) const {
   assert(collection_set() != NULL, "Sanity");
-  assert(is_in(p), "should be in heap");
   return collection_set()->is_in(p);
 }
 
 inline bool ShenandoahHeap::in_collection_set_loc(void* p) const {
   assert(collection_set() != NULL, "Sanity");
-  assert(is_in(p), "should be in heap");
-  return collection_set()->is_in((HeapWord*)p);
+  return collection_set()->is_in_loc(p);
 }
 
 inline bool ShenandoahHeap::is_stable() const {
