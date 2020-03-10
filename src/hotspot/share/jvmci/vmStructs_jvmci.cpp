@@ -728,7 +728,8 @@
 #ifdef X86
 
 #define VM_STRUCTS_CPU(nonstatic_field, static_field, unchecked_nonstatic_field, volatile_nonstatic_field, nonproduct_nonstatic_field, c2_nonstatic_field, unchecked_c1_static_field, unchecked_c2_static_field) \
-  volatile_nonstatic_field(JavaFrameAnchor, _last_Java_fp, intptr_t*)
+  volatile_nonstatic_field(JavaFrameAnchor, _last_Java_fp, intptr_t*) \
+  static_field(VM_Version, _has_intel_jcc_erratum, bool)
 
 #define VM_INT_CONSTANTS_CPU(declare_constant, declare_preprocessor_constant, declare_c1_constant, declare_c2_constant, declare_c2_preprocessor_constant) \
   LP64_ONLY(declare_constant(frame::arg_reg_save_area_bytes))       \
