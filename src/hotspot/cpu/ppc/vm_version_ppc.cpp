@@ -192,8 +192,6 @@ void VM_Version::initialize() {
   _supports_atomic_getset8 = true;
   _supports_atomic_getadd8 = true;
 
-  UseSSE = 0; // Only on x86 and x64
-
   intx cache_line_size = L1_data_cache_line_size();
 
   if (PowerArchitecturePPC64 >= 9) {

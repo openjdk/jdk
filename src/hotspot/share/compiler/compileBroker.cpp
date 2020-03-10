@@ -1328,6 +1328,7 @@ nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
   // do the compilation
   if (method->is_native()) {
     if (!PreferInterpreterNativeStubs || method->is_method_handle_intrinsic()) {
+#ifdef X86
       // The following native methods:
       //
       // java.lang.Float.intBitsToFloat
@@ -1349,6 +1350,7 @@ nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
             method->intrinsic_id() == vmIntrinsics::_doubleToRawLongBits))) {
         return NULL;
       }
+#endif // X86
 
       // To properly handle the appendix argument for out-of-line calls we are using a small trampoline that
       // pops off the appendix argument and jumps to the target (see gen_special_dispatch in SharedRuntime).

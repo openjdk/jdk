@@ -1295,14 +1295,6 @@ const bool Matcher::match_rule_supported(int opcode) {
         return false;
       }
       break;
-    case Op_AddReductionVF:
-    case Op_AddReductionVD:
-    case Op_MulReductionVF:
-    case Op_MulReductionVD:
-      if (UseSSE < 1) { // requires at least SSE
-        return false;
-      }
-      break;
     case Op_SqrtVD:
     case Op_SqrtVF:
       if (UseAVX < 1) { // enabled for AVX only
@@ -1335,14 +1327,6 @@ const bool Matcher::match_rule_supported(int opcode) {
       break;
     case Op_OnSpinWait:
       if (VM_Version::supports_on_spin_wait() == false) {
-        return false;
-      }
-      break;
-    case Op_MulAddVS2VI:
-    case Op_RShiftVL:
-    case Op_AbsVD:
-    case Op_NegVD:
-      if (UseSSE < 2) {
         return false;
       }
       break;
@@ -1381,6 +1365,24 @@ const bool Matcher::match_rule_supported(int opcode) {
         return false; // 128bit vroundpd is not available
       }
       break;
+#ifndef _LP64
+    case Op_AddReductionVF:
+    case Op_AddReductionVD:
+    case Op_MulReductionVF:
+    case Op_MulReductionVD:
+      if (UseSSE < 1) { // requires at least SSE
+        return false;
+      }
+      break;
+    case Op_MulAddVS2VI:
+    case Op_RShiftVL:
+    case Op_AbsVD:
+    case Op_NegVD:
+      if (UseSSE < 2) {
+        return false;
+      }
+      break;
+#endif // !LP64
   }
   return true;  // Match rules are supported by default.
 }

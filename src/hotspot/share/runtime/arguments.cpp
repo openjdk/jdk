@@ -545,6 +545,9 @@ static SpecialFlag const special_jvm_flags[] = {
   { "UseParallelOldGC",              JDK_Version::jdk(14),     JDK_Version::jdk(15), JDK_Version::jdk(16) },
   { "CompactFields",                 JDK_Version::jdk(14),     JDK_Version::jdk(15), JDK_Version::jdk(16) },
   { "FieldsAllocationStyle",         JDK_Version::jdk(14),     JDK_Version::jdk(15), JDK_Version::jdk(16) },
+#ifndef X86
+  { "UseSSE",                        JDK_Version::undefined(), JDK_Version::jdk(15), JDK_Version::jdk(16) },
+#endif // !X86
 
 #ifdef TEST_VERIFY_SPECIAL_JVM_FLAGS
   // These entries will generate build errors.  Their purpose is to test the macros.

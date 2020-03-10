@@ -367,6 +367,7 @@ static OopMap* generate_oop_map(StubAssembler* sasm, int num_rt_args,
 #endif
 
   if (save_fpu_registers) {
+#ifndef _LP64
     if (UseSSE < 2) {
       int fpu_off = float_regs_as_doubles_off;
       for (int n = 0; n < FrameMap::nof_fpu_regs; n++) {
@@ -379,7 +380,18 @@ static OopMap* generate_oop_map(StubAssembler* sasm, int num_rt_args,
         fpu_off += 2;
       }
       assert(fpu_off == fpu_state_off, "incorrect number of fpu stack slots");
+
+      if (UseSSE == 1) {
+        int xmm_off = xmm_regs_as_doubles_off;
+        for (int n = 0; n < FrameMap::nof_fpu_regs; n++) {
+          VMReg xmm_name_0 = as_XMMRegister(n)->as_VMReg();
+          map->set_callee_saved(VMRegImpl::stack2reg(xmm_off + num_rt_args), xmm_name_0);
+          xmm_off += 2;
+        }
+        assert(xmm_off == float_regs_as_doubles_off, "incorrect number of xmm registers");
+      }
     }
+#endif // !LP64
 
     if (UseSSE >= 2) {
       int xmm_off = xmm_regs_as_doubles_off;
@@ -392,15 +404,6 @@ static OopMap* generate_oop_map(StubAssembler* sasm, int num_rt_args,
             map->set_callee_saved(VMRegImpl::stack2reg(xmm_off + 1 + num_rt_args), xmm_name_0->next());
           }
         }
-        xmm_off += 2;
-      }
-      assert(xmm_off == float_regs_as_doubles_off, "incorrect number of xmm registers");
-
-    } else if (UseSSE == 1) {
-      int xmm_off = xmm_regs_as_doubles_off;
-      for (int n = 0; n < FrameMap::nof_fpu_regs; n++) {
-        VMReg xmm_name_0 = as_XMMRegister(n)->as_VMReg();
-        map->set_callee_saved(VMRegImpl::stack2reg(xmm_off + num_rt_args), xmm_name_0);
         xmm_off += 2;
       }
       assert(xmm_off == float_regs_as_doubles_off, "incorrect number of xmm registers");
@@ -454,6 +457,16 @@ void C1_MacroAssembler::save_live_registers_no_oop_map(bool save_fpu_registers) 
         __ fstp_d(Address(rsp, float_regs_as_doubles_off * VMRegImpl::stack_slot_size + offset));
         offset += 8;
       }
+
+      if (UseSSE == 1) {
+        // save XMM registers as float because double not supported without SSE2(num MMX == num fpu)
+        int offset = 0;
+        for (int n = 0; n < FrameMap::nof_fpu_regs; n++) {
+          XMMRegister xmm_name = as_XMMRegister(n);
+          __ movflt(Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + offset), xmm_name);
+          offset += 8;
+        }
+      }
     }
 #endif // !_LP64
 
@@ -475,16 +488,6 @@ void C1_MacroAssembler::save_live_registers_no_oop_map(bool save_fpu_registers) 
         __ movdbl(Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + offset), xmm_name);
         offset += 8;
       }
-#ifndef _LP64
-    } else if (UseSSE == 1) {
-      // save XMM registers as float because double not supported without SSE2(num MMX == num fpu)
-      int offset = 0;
-      for (int n = 0; n < FrameMap::nof_fpu_regs; n++) {
-        XMMRegister xmm_name = as_XMMRegister(n);
-        __ movflt(Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + offset), xmm_name);
-        offset += 8;
-      }
-#endif // !_LP64
     }
   }
 

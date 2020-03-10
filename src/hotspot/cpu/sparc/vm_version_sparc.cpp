@@ -68,8 +68,6 @@ void VM_Version::initialize() {
     }
   }
 
-  UseSSE = false;                   // Only used on x86 and x64.
-
   _supports_cx8 = true;             // All SPARC V9 implementations.
   _supports_atomic_getset4 = true;  // Using the 'swap' instruction.
 
