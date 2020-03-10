@@ -62,7 +62,6 @@ inline bool PerRegionTable::add_reference(OopOrNarrowOopStar from) {
 inline void PerRegionTable::init(HeapRegion* hr, bool clear_links_to_all_list) {
   if (clear_links_to_all_list) {
     set_next(NULL);
-    set_prev(NULL);
   }
   _collision_list_next = NULL;
   _occupied = 0;
