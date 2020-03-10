@@ -3227,21 +3227,12 @@ instruct ReplS_reg(vec dst, rRegI src) %{
 %}
 
 instruct ReplS_mem(vec dst, memory mem) %{
-  predicate(VM_Version::supports_avx()); // use VEX-encoded pshuflw to relax 16-byte alignment restriction on the source
+  predicate(VM_Version::supports_avx2());
   match(Set dst (ReplicateS (LoadS mem)));
   format %{ "replicateS $dst,$mem" %}
   ins_encode %{
-    uint vlen = vector_length(this);
-    if (VM_Version::supports_avx2()) {
-      int vlen_enc = vector_length_encoding(this);
-      __ vpbroadcastw($dst$$XMMRegister, $mem$$Address, vlen_enc);
-    } else {
-      __ pshuflw($dst$$XMMRegister, $mem$$Address, 0x00);
-      if (vlen >= 8) {
-        assert(vlen == 8, "sanity");
-        __ punpcklqdq($dst$$XMMRegister, $dst$$XMMRegister);
-      }
-    }
+    int vlen_enc = vector_length_encoding(this);
+    __ vpbroadcastw($dst$$XMMRegister, $mem$$Address, vlen_enc);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -3308,13 +3299,13 @@ instruct ReplI_reg(vec dst, rRegI src) %{
 %}
 
 instruct ReplI_mem(vec dst, memory mem) %{
-  predicate(VM_Version::supports_avx()); // use VEX-encoded pshufd to relax 16-byte alignment restriction on the source
   match(Set dst (ReplicateI (LoadI mem)));
   format %{ "replicateI $dst,$mem" %}
   ins_encode %{
     uint vlen = vector_length(this);
     if (vlen <= 4) {
-      __ pshufd($dst$$XMMRegister, $mem$$Address, 0x00);
+      __ movdl($dst$$XMMRegister, $mem$$Address);
+      __ pshufd($dst$$XMMRegister, $dst$$XMMRegister, 0x00);
     } else {
       assert(VM_Version::supports_avx2(), "sanity");
       int vector_len = vector_length_encoding(this);
@@ -3515,13 +3506,13 @@ instruct ReplF_reg(vec dst, vlRegF src) %{
 %}
 
 instruct ReplF_mem(vec dst, memory mem) %{
-  predicate(VM_Version::supports_avx()); // use VEX-encoded pshufd to relax 16-byte alignment restriction on the source
   match(Set dst (ReplicateF (LoadF mem)));
   format %{ "replicateF $dst,$mem" %}
   ins_encode %{
     uint vlen = vector_length(this);
     if (vlen <= 4) {
-      __ pshufd($dst$$XMMRegister, $mem$$Address, 0x00);
+      __ movdl($dst$$XMMRegister, $mem$$Address);
+      __ pshufd($dst$$XMMRegister, $dst$$XMMRegister, 0x00);
     } else {
       assert(VM_Version::supports_avx(), "sanity");
       int vector_len = vector_length_encoding(this);
@@ -3569,13 +3560,13 @@ instruct ReplD_reg(vec dst, vlRegD src) %{
 %}
 
 instruct ReplD_mem(vec dst, memory mem) %{
-  predicate(VM_Version::supports_avx()); // use VEX-encoded pshufd to relax 16-byte alignment restriction on the source
   match(Set dst (ReplicateD (LoadD mem)));
   format %{ "replicateD $dst,$mem" %}
   ins_encode %{
     uint vlen = vector_length(this);
     if (vlen == 2) {
-      __ pshufd($dst$$XMMRegister, $mem$$Address, 0x44);
+      __ movq($dst$$XMMRegister, $mem$$Address);
+      __ pshufd($dst$$XMMRegister, $dst$$XMMRegister, 0x44);
     } else {
       assert(VM_Version::supports_avx(), "sanity");
       int vector_len = vector_length_encoding(this);
