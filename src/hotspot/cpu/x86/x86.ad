@@ -3124,14 +3124,12 @@ instruct storeV(memory mem, vec src) %{
 
 // Replicate byte scalar to be vector
 instruct ReplB_reg(vec dst, rRegI src) %{
-  predicate((n->as_Vector()->length() <= 32) ||
-            (n->as_Vector()->length() == 64 && VM_Version::supports_avx512bw())); // AVX512BW for 512bit byte instructions
   match(Set dst (ReplicateB src));
   format %{ "replicateB $dst,$src" %}
   ins_encode %{
     uint vlen = vector_length(this);
     if (vlen == 64 || VM_Version::supports_avx512vlbw()) { // AVX512VL for <512bit operands
-      assert(VM_Version::supports_avx512bw(), "required");
+      assert(VM_Version::supports_avx512bw(), "required"); // 512-bit byte vectors assume AVX512BW
       int vlen_enc = vector_length_encoding(this);
       __ evpbroadcastb($dst$$XMMRegister, $src$$Register, vlen_enc);
     } else {
@@ -3141,7 +3139,7 @@ instruct ReplB_reg(vec dst, rRegI src) %{
       if (vlen >= 16) {
         __ punpcklqdq($dst$$XMMRegister, $dst$$XMMRegister);
         if (vlen >= 32) {
-          assert(vlen == 32, "sanity"); // vlen == 64 && !AVX512BW is covered by ReplB_reg_leg
+          assert(vlen == 32, "sanity");
           __ vinserti128_high($dst$$XMMRegister, $dst$$XMMRegister);
         }
       }
@@ -3150,29 +3148,11 @@ instruct ReplB_reg(vec dst, rRegI src) %{
   ins_pipe( pipe_slow );
 %}
 
-instruct ReplB_reg_leg(legVec dst, rRegI src) %{
-  predicate(n->as_Vector()->length() == 64 && !VM_Version::supports_avx512bw()); // AVX512BW for 512bit byte instructions
-  match(Set dst (ReplicateB src));
-  format %{ "replicateB $dst,$src" %}
-  ins_encode %{
-    assert(UseAVX > 2, "required");
-    __ movdl($dst$$XMMRegister, $src$$Register);
-    __ punpcklbw($dst$$XMMRegister, $dst$$XMMRegister);
-    __ pshuflw($dst$$XMMRegister, $dst$$XMMRegister, 0x00);
-    __ punpcklqdq($dst$$XMMRegister, $dst$$XMMRegister);
-    __ vinserti128_high($dst$$XMMRegister, $dst$$XMMRegister);
-    __ vinserti64x4($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister, 0x1);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
 instruct ReplB_mem(vec dst, memory mem) %{
-  predicate((n->as_Vector()->length() <= 32 && VM_Version::supports_avx512vlbw()) || // AVX512VL for <512bit operands
-            (n->as_Vector()->length() == 64 && VM_Version::supports_avx512bw()));    // AVX512BW for 512bit byte instructions
+  predicate(VM_Version::supports_avx2());
   match(Set dst (ReplicateB (LoadB mem)));
   format %{ "replicateB $dst,$mem" %}
   ins_encode %{
-    assert(UseAVX > 2, "required");
     int vector_len = vector_length_encoding(this);
     __ vpbroadcastb($dst$$XMMRegister, $mem$$Address, vector_len);
   %}
@@ -3180,8 +3160,6 @@ instruct ReplB_mem(vec dst, memory mem) %{
 %}
 
 instruct ReplB_imm(vec dst, immI con) %{
-  predicate((n->as_Vector()->length() <= 32) ||
-            (n->as_Vector()->length() == 64 && VM_Version::supports_avx512bw())); // AVX512BW for 512bit byte instructions
   match(Set dst (ReplicateB con));
   format %{ "replicateB $dst,$con" %}
   ins_encode %{
@@ -3192,31 +3170,15 @@ instruct ReplB_imm(vec dst, immI con) %{
     } else {
       __ movq($dst$$XMMRegister, const_addr);
       if (vlen >= 16) {
-        if (vlen == 64 || VM_Version::supports_avx512vlbw()) { // AVX512VL for <512bit operands
+        if (VM_Version::supports_avx2()) {
           int vlen_enc = vector_length_encoding(this);
-          __ vpbroadcastb($dst$$XMMRegister, $dst$$XMMRegister, vlen_enc);
+          __ vpbroadcastq($dst$$XMMRegister, $dst$$XMMRegister, vlen_enc);
         } else {
+          assert(vlen == 16, "sanity");
           __ punpcklqdq($dst$$XMMRegister, $dst$$XMMRegister);
-          if (vlen >= 32) {
-             assert(vlen == 32, "sanity");// vlen == 64 && !AVX512BW is covered by ReplB_imm_leg
-            __ vinserti128_high($dst$$XMMRegister, $dst$$XMMRegister);
-          }
         }
       }
     }
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-instruct ReplB_imm_leg(legVec dst, immI con) %{
-  predicate(n->as_Vector()->length() == 64 && !VM_Version::supports_avx512bw());
-  match(Set dst (ReplicateB con));
-  format %{ "replicateB $dst,$con" %}
-  ins_encode %{
-    __ movq($dst$$XMMRegister, $constantaddress(replicate8_imm($con$$constant, 1)));
-    __ punpcklqdq($dst$$XMMRegister, $dst$$XMMRegister);
-    __ vinserti128_high($dst$$XMMRegister, $dst$$XMMRegister);
-    __ vinserti64x4($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister, 0x1);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -3241,14 +3203,12 @@ instruct ReplB_zero(vec dst, immI0 zero) %{
 // ====================ReplicateS=======================================
 
 instruct ReplS_reg(vec dst, rRegI src) %{
-  predicate((n->as_Vector()->length() <= 16) ||
-            (n->as_Vector()->length() == 32 && VM_Version::supports_avx512bw())); // AVX512BW for 512bit instructions on shorts
   match(Set dst (ReplicateS src));
   format %{ "replicateS $dst,$src" %}
   ins_encode %{
     uint vlen = vector_length(this);
     if (vlen == 32 || VM_Version::supports_avx512vlbw()) { // AVX512VL for <512bit operands
-      assert(VM_Version::supports_avx512bw(), "required");
+      assert(VM_Version::supports_avx512bw(), "required"); // 512-bit short vectors assume AVX512BW
       int vlen_enc = vector_length_encoding(this);
       __ evpbroadcastw($dst$$XMMRegister, $src$$Register, vlen_enc);
     } else {
@@ -3257,108 +3217,57 @@ instruct ReplS_reg(vec dst, rRegI src) %{
       if (vlen >= 8) {
         __ punpcklqdq($dst$$XMMRegister, $dst$$XMMRegister);
         if (vlen >= 16) {
-          assert(vlen == 16, "sanity"); // vlen == 32 && !AVX512BW is covered by ReplS_reg_leg
+          assert(vlen == 16, "sanity");
           __ vinserti128_high($dst$$XMMRegister, $dst$$XMMRegister);
         }
       }
     }
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-instruct ReplS_reg_leg(legVec dst, rRegI src) %{
-  predicate(n->as_Vector()->length() == 32 && !VM_Version::supports_avx512bw());
-  match(Set dst (ReplicateS src));
-  format %{ "replicateS $dst,$src" %}
-  ins_encode %{
-    __ movdl($dst$$XMMRegister, $src$$Register);
-    __ pshuflw($dst$$XMMRegister, $dst$$XMMRegister, 0x00);
-    __ punpcklqdq($dst$$XMMRegister, $dst$$XMMRegister);
-    __ vinserti128_high($dst$$XMMRegister, $dst$$XMMRegister);
-    __ vinserti64x4($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister, 0x1);
   %}
   ins_pipe( pipe_slow );
 %}
 
 instruct ReplS_mem(vec dst, memory mem) %{
-  predicate((n->as_Vector()->length() >= 4  &&
-             n->as_Vector()->length() <= 16 && VM_Version::supports_avx()) ||
-            (n->as_Vector()->length() == 32 && VM_Version::supports_avx512bw())); // AVX512BW for 512bit instructions on shorts
+  predicate(VM_Version::supports_avx()); // use VEX-encoded pshuflw to relax 16-byte alignment restriction on the source
   match(Set dst (ReplicateS (LoadS mem)));
   format %{ "replicateS $dst,$mem" %}
   ins_encode %{
     uint vlen = vector_length(this);
-    if (vlen == 32 || VM_Version::supports_avx512vlbw()) { // AVX512VL for <512bit operands
-      assert(VM_Version::supports_avx512bw(), "required");
+    if (VM_Version::supports_avx2()) {
       int vlen_enc = vector_length_encoding(this);
       __ vpbroadcastw($dst$$XMMRegister, $mem$$Address, vlen_enc);
     } else {
       __ pshuflw($dst$$XMMRegister, $mem$$Address, 0x00);
       if (vlen >= 8) {
+        assert(vlen == 8, "sanity");
         __ punpcklqdq($dst$$XMMRegister, $dst$$XMMRegister);
-        if (vlen >= 16) {
-          assert(vlen == 16, "sanity"); // vlen == 32 && !AVX512BW is covered by ReplS_mem_leg
-          __ vinserti128_high($dst$$XMMRegister, $dst$$XMMRegister);
-        }
       }
     }
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-instruct ReplS_mem_leg(legVec dst, memory mem) %{
-  predicate(n->as_Vector()->length() == 32 && !VM_Version::supports_avx512bw());
-  match(Set dst (ReplicateS (LoadS mem)));
-  format %{ "replicateS $dst,$mem" %}
-  ins_encode %{
-    __ pshuflw($dst$$XMMRegister, $mem$$Address, 0x00);
-    __ punpcklqdq($dst$$XMMRegister, $dst$$XMMRegister);
-    __ vinserti128_high($dst$$XMMRegister, $dst$$XMMRegister);
-    __ vinserti64x4($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister, 0x1);
   %}
   ins_pipe( pipe_slow );
 %}
 
 instruct ReplS_imm(vec dst, immI con) %{
-  predicate((n->as_Vector()->length() <= 16) ||
-            (n->as_Vector()->length() == 32 && VM_Version::supports_avx512bw())); // AVX512BW for 512bit instructions on shorts
   match(Set dst (ReplicateS con));
   format %{ "replicateS $dst,$con" %}
   ins_encode %{
     uint vlen = vector_length(this);
-    InternalAddress constaddr = $constantaddress(replicate8_imm($con$$constant, 2));
+    InternalAddress const_addr = $constantaddress(replicate8_imm($con$$constant, 2));
     if (vlen == 2) {
-      __ movdl($dst$$XMMRegister, constaddr);
+      __ movdl($dst$$XMMRegister, const_addr);
     } else {
-      __ movq($dst$$XMMRegister, constaddr);
-      if (vlen == 32 || VM_Version::supports_avx512vlbw() ) { // AVX512VL for <512bit operands
-        assert(VM_Version::supports_avx512bw(), "required");
-        int vlen_enc = vector_length_encoding(this);
-        __ vpbroadcastw($dst$$XMMRegister, $dst$$XMMRegister, vlen_enc);
-      } else {
-        __ movq($dst$$XMMRegister, constaddr);
-        __ punpcklqdq($dst$$XMMRegister, $dst$$XMMRegister);
-        if (vlen >= 16) {
-          assert(vlen == 16, "sanity"); // vlen == 32 && !AVX512BW is covered by ReplS_imm_leg
-          __ vinserti128_high($dst$$XMMRegister, $dst$$XMMRegister);
+      __ movq($dst$$XMMRegister, const_addr);
+      if (vlen >= 8) {
+        if (VM_Version::supports_avx2()) {
+          int vlen_enc = vector_length_encoding(this);
+          __ vpbroadcastw($dst$$XMMRegister, $dst$$XMMRegister, vlen_enc);
+        } else {
+          assert(vlen == 8, "sanity");
+          __ punpcklqdq($dst$$XMMRegister, $dst$$XMMRegister);
         }
       }
     }
   %}
   ins_pipe( fpu_reg_reg );
-%}
-
-instruct ReplS_imm_leg(legVec dst, immI con) %{
-  predicate(n->as_Vector()->length() == 32 && !VM_Version::supports_avx512bw());
-  match(Set dst (ReplicateS con));
-  format %{ "replicateS $dst,$con" %}
-  ins_encode %{
-    __ movq($dst$$XMMRegister, $constantaddress(replicate8_imm($con$$constant, 2)));
-    __ punpcklqdq($dst$$XMMRegister, $dst$$XMMRegister);
-    __ vinserti128_high($dst$$XMMRegister, $dst$$XMMRegister);
-    __ vinserti64x4($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister, 0x1);
-  %}
-  ins_pipe( pipe_slow );
 %}
 
 instruct ReplS_zero(vec dst, immI0 zero) %{
@@ -3406,13 +3315,10 @@ instruct ReplI_mem(vec dst, memory mem) %{
     uint vlen = vector_length(this);
     if (vlen <= 4) {
       __ pshufd($dst$$XMMRegister, $mem$$Address, 0x00);
-    } else if (vlen == 16 || VM_Version::supports_avx512vl()) { // AVX512VL for <512bit operands
+    } else {
+      assert(VM_Version::supports_avx2(), "sanity");
       int vector_len = vector_length_encoding(this);
       __ vpbroadcastd($dst$$XMMRegister, $mem$$Address, vector_len);
-    } else {
-      assert(vlen == 8, "sanity");
-      __ pshufd($dst$$XMMRegister, $mem$$Address, 0x00);
-      __ vinserti128_high($dst$$XMMRegister, $dst$$XMMRegister);
     }
   %}
   ins_pipe( pipe_slow );
@@ -3423,20 +3329,17 @@ instruct ReplI_imm(vec dst, immI con) %{
   format %{ "replicateI $dst,$con" %}
   ins_encode %{
     uint vlen = vector_length(this);
-    InternalAddress constaddr = $constantaddress(replicate8_imm($con$$constant, 4));
-    if (vlen == 2) {
-      __ movq($dst$$XMMRegister, constaddr);
-    } else if (vlen == 16 || VM_Version::supports_avx512vl()) { // AVX512VL for <512bit operands
-      int vector_len = vector_length_encoding(this);
-      __ movq($dst$$XMMRegister, constaddr);
-      __ vpbroadcastd($dst$$XMMRegister, $dst$$XMMRegister, vector_len);
-    } else {
-      __ movq($dst$$XMMRegister, constaddr);
-      __ punpcklqdq($dst$$XMMRegister, $dst$$XMMRegister);
-      if (vlen >= 8) {
-        assert(vlen == 8, "sanity");
-        __ vinserti128_high($dst$$XMMRegister, $dst$$XMMRegister);
+    InternalAddress const_addr = $constantaddress(replicate8_imm($con$$constant, 4));
+    if (vlen <= 4) {
+      __ movq($dst$$XMMRegister, const_addr);
+      if (vlen == 4) {
+        __ punpcklqdq($dst$$XMMRegister, $dst$$XMMRegister);
       }
+    } else {
+      assert(VM_Version::supports_avx2(), "sanity");
+      int vector_len = vector_length_encoding(this);
+      __ movq($dst$$XMMRegister, const_addr);
+      __ vpbroadcastd($dst$$XMMRegister, $dst$$XMMRegister, vector_len);
     }
   %}
   ins_pipe( pipe_slow );
@@ -3546,14 +3449,10 @@ instruct ReplL_mem(vec dst, memory mem) %{
     if (vlen == 2) {
       __ movq($dst$$XMMRegister, $mem$$Address);
       __ punpcklqdq($dst$$XMMRegister, $dst$$XMMRegister);
-    } else if (vlen == 8 || VM_Version::supports_avx512vl()) { // AVX512VL for <512bit operands
+    } else {
+      assert(VM_Version::supports_avx2(), "sanity");
       int vlen_enc = vector_length_encoding(this);
       __ vpbroadcastq($dst$$XMMRegister, $mem$$Address, vlen_enc);
-    } else {
-      assert(vlen == 4, "sanity");
-      __ movq($dst$$XMMRegister, $mem$$Address);
-      __ punpcklqdq($dst$$XMMRegister, $dst$$XMMRegister);
-      __ vinserti128_high($dst$$XMMRegister, $dst$$XMMRegister);
     }
   %}
   ins_pipe( pipe_slow );
@@ -3569,15 +3468,11 @@ instruct ReplL_imm(vec dst, immL con) %{
     if (vlen == 2) {
       __ movq($dst$$XMMRegister, const_addr);
       __ punpcklqdq($dst$$XMMRegister, $dst$$XMMRegister);
-    } else if (vlen == 8 || VM_Version::supports_avx512vl()) { // AVX512VL for <512bit operands
+    } else {
+      assert(VM_Version::supports_avx2(), "sanity");
       int vlen_enc = vector_length_encoding(this);
       __ movq($dst$$XMMRegister, const_addr);
       __ vpbroadcastq($dst$$XMMRegister, $dst$$XMMRegister, vlen_enc);
-    } else {
-      assert(vlen == 4, "sanity");
-      __ movq($dst$$XMMRegister, const_addr);
-      __ punpcklqdq($dst$$XMMRegister, $dst$$XMMRegister);
-      __ vinserti128_high($dst$$XMMRegister, $dst$$XMMRegister);
     }
   %}
   ins_pipe( pipe_slow );
@@ -3607,9 +3502,9 @@ instruct ReplF_reg(vec dst, vlRegF src) %{
     uint vlen = vector_length(this);
     if (vlen <= 4) {
       __ pshufd($dst$$XMMRegister, $src$$XMMRegister, 0x00);
-    } else if (vlen == 16 || VM_Version::supports_avx512vl()) { // AVX512VL for <512bit operands
+   } else if (VM_Version::supports_avx2()) {
       int vector_len = vector_length_encoding(this);
-      __ vbroadcastss($dst$$XMMRegister, $src$$XMMRegister, vector_len);
+      __ vbroadcastss($dst$$XMMRegister, $src$$XMMRegister, vector_len); // reg-to-reg variant requires AVX2
     } else {
       assert(vlen == 8, "sanity");
       __ pshufd($dst$$XMMRegister, $src$$XMMRegister, 0x00);
@@ -3627,13 +3522,10 @@ instruct ReplF_mem(vec dst, memory mem) %{
     uint vlen = vector_length(this);
     if (vlen <= 4) {
       __ pshufd($dst$$XMMRegister, $mem$$Address, 0x00);
-    } else if (vlen == 16 || VM_Version::supports_avx512vl()) { // AVX512VL for <512bit operands
+    } else {
+      assert(VM_Version::supports_avx(), "sanity");
       int vector_len = vector_length_encoding(this);
       __ vbroadcastss($dst$$XMMRegister, $mem$$Address, vector_len);
-    } else {
-      assert(vlen == 8, "sanity");
-      __ pshufd($dst$$XMMRegister, $mem$$Address, 0x00);
-      __ vinsertf128_high($dst$$XMMRegister, $dst$$XMMRegister);
     }
   %}
   ins_pipe( pipe_slow );
@@ -3664,9 +3556,9 @@ instruct ReplD_reg(vec dst, vlRegD src) %{
     uint vlen = vector_length(this);
     if (vlen == 2) {
       __ pshufd($dst$$XMMRegister, $src$$XMMRegister, 0x44);
-    } else if (vlen == 8 || VM_Version::supports_avx512vl()) { // AVX512VL for <512bit operands
+    } else if (VM_Version::supports_avx2()) {
       int vector_len = vector_length_encoding(this);
-      __ vbroadcastsd($dst$$XMMRegister, $src$$XMMRegister, vector_len);
+      __ vbroadcastsd($dst$$XMMRegister, $src$$XMMRegister, vector_len); // reg-to-reg variant requires AVX2
     } else {
       assert(vlen == 4, "sanity");
       __ pshufd($dst$$XMMRegister, $src$$XMMRegister, 0x44);
@@ -3684,13 +3576,10 @@ instruct ReplD_mem(vec dst, memory mem) %{
     uint vlen = vector_length(this);
     if (vlen == 2) {
       __ pshufd($dst$$XMMRegister, $mem$$Address, 0x44);
-    } else if (vlen == 8 || VM_Version::supports_avx512vl()) { // AVX512VL for <512bit operands
+    } else {
+      assert(VM_Version::supports_avx(), "sanity");
       int vector_len = vector_length_encoding(this);
       __ vbroadcastsd($dst$$XMMRegister, $mem$$Address, vector_len);
-    } else {
-      assert(vlen == 4, "sanity");
-      __ pshufd($dst$$XMMRegister, $mem$$Address, 0x44);
-      __ vinsertf128_high($dst$$XMMRegister, $dst$$XMMRegister);
     }
   %}
   ins_pipe( pipe_slow );
