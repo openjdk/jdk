@@ -69,7 +69,7 @@ public class ClhsdbCDSJstackPrintAll {
                 throw new SkippedException("Could not determine the UseSharedSpaces value");
             }
 
-            if (!useSharedSpacesOutput.contains("true")) {
+            if (useSharedSpacesOutput.contains("UseSharedSpaces = false")) {
                 // CDS archive is not mapped. Skip the rest of the test.
                 LingeredApp.stopApp(theApp);
                 throw new SkippedException("The CDS archive is not mapped");
