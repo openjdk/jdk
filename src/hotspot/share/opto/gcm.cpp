@@ -707,6 +707,19 @@ Block* PhaseCFG::insert_anti_dependences(Block* LCA, Node* load, bool verify) {
         // instead of control + memory.
         if (mstore->ideal_Opcode() == Op_SafePoint)
           continue;
+
+        // Check if the store is a membar on which the load is control dependent.
+        // Inserting an anti-dependency between that membar and the load would
+        // create a cycle that causes local scheduling to fail.
+        if (mstore->isa_MachMemBar()) {
+          Node* dom = load->find_exact_control(load->in(0));
+          while (dom != NULL && dom != dom->in(0) && dom != mstore) {
+            dom = dom->in(0);
+          }
+          if (dom == mstore) {
+            continue;
+          }
+        }
       } else {
         // Some raw memory, such as the load of "top" at an allocation,
         // can be control dependent on the previous safepoint. See
