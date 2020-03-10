@@ -663,9 +663,12 @@ public final class WToolkit extends SunToolkit implements Runnable {
     static ColorModel screenmodel;
 
     @Override
-    public Insets getScreenInsets(GraphicsConfiguration gc)
-    {
-        return getScreenInsets(((Win32GraphicsDevice) gc.getDevice()).getScreen());
+    public Insets getScreenInsets(final GraphicsConfiguration gc) {
+        GraphicsDevice gd = gc.getDevice();
+        if (!(gd instanceof Win32GraphicsDevice)) {
+            return super.getScreenInsets(gc);
+        }
+        return getScreenInsets(((Win32GraphicsDevice) gd).getScreen());
     }
 
     @Override

@@ -102,7 +102,6 @@ import javax.swing.UIManager;
 import com.apple.laf.AquaMenuBarUI;
 import sun.awt.AWTAccessor;
 import sun.awt.AppContext;
-import sun.awt.CGraphicsConfig;
 import sun.awt.CGraphicsDevice;
 import sun.awt.LightweightFrame;
 import sun.awt.PlatformGraphicsInfo;
@@ -479,7 +478,11 @@ public final class LWCToolkit extends LWToolkit {
 
     @Override
     public Insets getScreenInsets(final GraphicsConfiguration gc) {
-        return ((CGraphicsConfig) gc).getDevice().getScreenInsets();
+        GraphicsDevice gd = gc.getDevice();
+        if (!(gd instanceof CGraphicsDevice)) {
+            return super.getScreenInsets(gc);
+        }
+        return ((CGraphicsDevice)gd).getScreenInsets();
     }
 
     @Override

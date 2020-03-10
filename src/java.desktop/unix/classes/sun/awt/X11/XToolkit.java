@@ -857,11 +857,10 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
      * _NET_WORKAREA may start at point x1,y1 and end at point x2,y2.
      */
     @Override
-    public Insets getScreenInsets(GraphicsConfiguration gc)
-    {
-        XNETProtocol netProto = XWM.getWM().getNETProtocol();
-        if ((netProto == null) || !netProto.active())
-        {
+    public Insets getScreenInsets(final GraphicsConfiguration gc) {
+        GraphicsDevice gd = gc.getDevice();
+        XNETProtocol np = XWM.getWM().getNETProtocol();
+        if (np == null || !(gd instanceof X11GraphicsDevice) || !np.active()) {
             return super.getScreenInsets(gc);
         }
 
