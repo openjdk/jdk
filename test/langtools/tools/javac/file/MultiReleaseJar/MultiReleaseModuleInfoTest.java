@@ -29,7 +29,7 @@
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
  * @build toolbox.ToolBox toolbox.JarTask toolbox.JavacTask
- * @run main MutliReleaseModuleInfoTest
+ * @run main MultiReleaseModuleInfoTest
  */
 
 import java.nio.file.Paths;
@@ -49,7 +49,7 @@ import toolbox.Task;
 import toolbox.ToolBox;
 
 
-public class MutliReleaseModuleInfoTest {
+public class MultiReleaseModuleInfoTest {
 
     private final String service_mi =
             "module service {\n" +
@@ -82,7 +82,7 @@ public class MutliReleaseModuleInfoTest {
     private final ToolBox tb = new ToolBox();
 
     public static void main(String [] args) throws Exception {
-        new MutliReleaseModuleInfoTest().runTest();
+        new MultiReleaseModuleInfoTest().runTest();
     }
 
     private void runTest() throws Exception {
