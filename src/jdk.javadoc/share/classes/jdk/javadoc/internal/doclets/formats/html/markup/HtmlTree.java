@@ -188,6 +188,17 @@ public class HtmlTree extends Content {
         return this;
     }
 
+    /**
+     * Adds each of a list of content items.
+     *
+     * @param list the list
+     * @return this object
+     */
+    public HtmlTree add(List<? extends Content> list) {
+        list.forEach(this::add);
+        return this;
+    }
+
     @Override
     public int charCount() {
         int n = 0;
@@ -329,6 +340,16 @@ public class HtmlTree extends Content {
      */
     public static HtmlTree DL(HtmlStyle style, Content body) {
         return new HtmlTree(HtmlTag.DL, nullCheck(body)).setStyle(style);
+    }
+
+    /**
+     * Generates a DIV tag with the style class attributes.
+     *
+     * @param styleClass stylesheet class for the tag
+     * @return an HtmlTree object for the DIV tag
+     */
+    public static HtmlTree DIV(HtmlStyle styleClass) {
+        return new HtmlTree(HtmlTag.DIV).setStyle(styleClass);
     }
 
     /**

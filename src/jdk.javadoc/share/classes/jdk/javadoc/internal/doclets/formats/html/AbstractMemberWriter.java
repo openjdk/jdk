@@ -360,7 +360,7 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter {
                 writer.addSummaryLinkComment(this, element, desc);
                 useTable.addRow(summaryType, typeContent, desc);
             }
-            contentTree.add(useTable.toContent());
+            contentTree.add(useTable);
         }
     }
 
@@ -453,7 +453,7 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter {
         if (table.needsScript()) {
             writer.getMainBodyScript().append(table.getScript());
         }
-        return table.toContent();
+        return table;
     }
 
     /**

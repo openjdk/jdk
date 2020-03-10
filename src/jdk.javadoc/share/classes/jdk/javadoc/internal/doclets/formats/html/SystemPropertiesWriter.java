@@ -26,10 +26,8 @@ package jdk.javadoc.internal.doclets.formats.html;
 
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.Navigation;
-import jdk.javadoc.internal.doclets.formats.html.markup.Navigation.PageMode;
+import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.formats.html.markup.Table;
 import jdk.javadoc.internal.doclets.formats.html.markup.TableHeader;
@@ -69,7 +67,7 @@ public class SystemPropertiesWriter extends HtmlDocletWriter {
      */
     public SystemPropertiesWriter(HtmlConfiguration configuration, DocPath filename) {
         super(configuration, filename);
-        this.navBar = new Navigation(null, configuration, PageMode.SYSTEMPROPERTIES, path);
+        this.navBar = new Navigation(null, configuration, PageMode.SYSTEM_PROPERTIES, path);
     }
 
     /**
@@ -96,7 +94,7 @@ public class SystemPropertiesWriter extends HtmlDocletWriter {
         HtmlTree header = HtmlTree.HEADER();
         addTop(header);
         navBar.setUserHeader(getUserHeaderFooter(true));
-        header.add(navBar.getContent(true));
+        header.add(navBar.getContent(Navigation.Position.TOP));
         bodyTree.add(header);
         Content mainContent = new ContentBuilder();
         addSystemProperties(mainContent);
@@ -109,7 +107,7 @@ public class SystemPropertiesWriter extends HtmlDocletWriter {
         bodyTree.add(mainTree);
         Content footer = HtmlTree.FOOTER();
         navBar.setUserFooter(getUserHeaderFooter(false));
-        footer.add(navBar.getContent(false));
+        footer.add(navBar.getContent(Navigation.Position.BOTTOM));
         addBottom(footer);
         bodyTree.add(footer);
         printHtmlDocument(null, "system properties", bodyTree);
@@ -142,7 +140,7 @@ public class SystemPropertiesWriter extends HtmlDocletWriter {
             }
             table.addRow(propertyName, separatedReferenceLinks);
         }
-        content.add(table.toContent());
+        content.add(table);
     }
 
     private Map<String, List<SearchIndexItem>> groupSystemProperties() {

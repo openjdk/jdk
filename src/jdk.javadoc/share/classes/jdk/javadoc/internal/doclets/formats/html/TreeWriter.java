@@ -34,8 +34,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.Navigation;
-import jdk.javadoc.internal.doclets.formats.html.markup.Navigation.PageMode;
+import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.ClassTree;
@@ -121,12 +120,11 @@ public class TreeWriter extends AbstractTreeWriter {
         addTree(classtree.baseEnums(), "doclet.Enum_Hierarchy", mainContent, true);
         HtmlTree footerTree = HtmlTree.FOOTER();
         navBar.setUserFooter(getUserHeaderFooter(false));
-        footerTree.add(navBar.getContent(false));
+        footerTree.add(navBar.getContent(Navigation.Position.BOTTOM));
         addBottom(footerTree);
         body.add(bodyContents
                 .addMainContent(mainContent)
-                .setFooter(footerTree)
-                .toContent());
+                .setFooter(footerTree));
         printHtmlDocument(null, "class tree", body);
     }
 
@@ -180,7 +178,7 @@ public class TreeWriter extends AbstractTreeWriter {
         Content headerContent = new ContentBuilder();
         addTop(headerContent);
         navBar.setUserHeader(getUserHeaderFooter(true));
-        headerContent.add(navBar.getContent(true));
+        headerContent.add(navBar.getContent(Navigation.Position.TOP));
         bodyContents.setHeader(headerContent);
         return bodyTree;
     }

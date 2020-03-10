@@ -25,6 +25,8 @@
 
 package jdk.javadoc.internal.doclets.formats.html.markup;
 
+import java.io.IOException;
+import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -41,8 +43,7 @@ import javax.lang.model.element.Element;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 
 /**
- * A builder for HTML tables, such as the summary tables for various
- * types of element.
+ * An HTML table, such as the summary tables for various kinds of element.
  *
  * <p>The table should be used in three phases:
  * <ol>
@@ -58,7 +59,7 @@ import jdk.javadoc.internal.doclets.toolkit.Content;
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
  */
-public class Table {
+public class Table extends Content {
     private final HtmlStyle tableStyle;
     private Content caption;
     private Map<String, Predicate<Element>> tabMap;
@@ -399,12 +400,17 @@ public class Table {
         return bodyRows.isEmpty();
     }
 
+    @Override
+    public boolean write(Writer out, boolean atNewline) throws IOException {
+        return toContent().write(out, atNewline);
+    }
+
     /**
      * Returns the HTML for the table.
      *
      * @return the HTML
      */
-    public Content toContent() {
+    private Content toContent() {
         HtmlTree mainDiv = new HtmlTree(HtmlTag.DIV);
         mainDiv.setStyle(tableStyle);
         if (id != null) {
@@ -464,7 +470,7 @@ public class Table {
     private Content getTableBody() {
         ContentBuilder tableContent = new ContentBuilder();
         Content thead = new HtmlTree(HtmlTag.THEAD);
-        thead.add(header.toContent());
+        thead.add(header);
         tableContent.add(thead);
         Content tbody = new HtmlTree(HtmlTag.TBODY);
         bodyRows.forEach(tbody::add);

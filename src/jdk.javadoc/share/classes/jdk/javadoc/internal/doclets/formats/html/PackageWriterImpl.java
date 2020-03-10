@@ -39,8 +39,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.Navigation;
-import jdk.javadoc.internal.doclets.formats.html.markup.Navigation.PageMode;
+import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.formats.html.markup.Table;
 import jdk.javadoc.internal.doclets.formats.html.markup.TableHeader;
@@ -106,7 +105,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
                 contents.moduleLabel);
         navBar.setNavLinkModule(linkContent);
         navBar.setUserHeader(getUserHeaderFooter(true));
-        headerContent.add(navBar.getContent(true));
+        headerContent.add(navBar.getContent(Navigation.Position.TOP));
         HtmlTree div = new HtmlTree(HtmlTag.DIV);
         div.setStyle(HtmlStyle.header);
         if (configuration.showModules) {
@@ -235,7 +234,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
                 }
                 table.addRow(classLink, description);
             }
-            Content li = HtmlTree.LI(HtmlStyle.blockList, table.toContent());
+            Content li = HtmlTree.LI(HtmlStyle.blockList, table);
             summaryContentTree.add(li);
         }
     }
@@ -266,7 +265,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
     public void addPackageFooter() {
         Content htmlTree = HtmlTree.FOOTER();
         navBar.setUserFooter(getUserHeaderFooter(false));
-        htmlTree.add(navBar.getContent(false));
+        htmlTree.add(navBar.getContent(Navigation.Position.BOTTOM));
         addBottom(htmlTree);
         bodyContents.setFooter(htmlTree);
     }
@@ -275,7 +274,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
     public void printDocument(Content contentTree) throws DocFileIOException {
         String description = getDescription("declaration", packageElement);
         List<DocPath> localStylesheets = getLocalStylesheets(packageElement);
-        contentTree.add(bodyContents.toContent());
+        contentTree.add(bodyContents);
         printHtmlDocument(configuration.metakeywords.getMetaKeywords(packageElement),
                 description, localStylesheets, contentTree);
     }

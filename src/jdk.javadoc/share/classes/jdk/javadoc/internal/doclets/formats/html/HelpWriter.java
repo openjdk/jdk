@@ -30,8 +30,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.Navigation;
-import jdk.javadoc.internal.doclets.formats.html.markup.Navigation.PageMode;
+import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
@@ -95,18 +94,17 @@ public class HelpWriter extends HtmlDocletWriter {
         Content headerContent = new ContentBuilder();
         addTop(headerContent);
         navBar.setUserHeader(getUserHeaderFooter(true));
-        headerContent.add(navBar.getContent(true));
+        headerContent.add(navBar.getContent(Navigation.Position.TOP));
         ContentBuilder helpFileContent = new ContentBuilder();
         addHelpFileContents(helpFileContent);
         HtmlTree footer = HtmlTree.FOOTER();
         navBar.setUserFooter(getUserHeaderFooter(false));
-        footer.add(navBar.getContent(false));
+        footer.add(navBar.getContent(Navigation.Position.BOTTOM));
         addBottom(footer);
         body.add(new BodyContents()
                 .setHeader(headerContent)
                 .addMainContent(helpFileContent)
-                .setFooter(footer)
-                .toContent());
+                .setFooter(footer));
         printHtmlDocument(null, "help", body);
     }
 

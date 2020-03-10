@@ -125,7 +125,7 @@ public class SplitIndexWriter extends AbstractIndexWriter {
         Content headerContent = new ContentBuilder();
         addTop(headerContent);
         navBar.setUserHeader(getUserHeaderFooter(true));
-        headerContent.add(navBar.getContent(true));
+        headerContent.add(navBar.getContent(Navigation.Position.TOP));
         Content main = new ContentBuilder();
         main.add(HtmlTree.DIV(HtmlStyle.header,
                 HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING,
@@ -144,13 +144,12 @@ public class SplitIndexWriter extends AbstractIndexWriter {
         main.add(mainContent);
         HtmlTree footer = HtmlTree.FOOTER();
         navBar.setUserFooter(getUserHeaderFooter(false));
-        footer.add(navBar.getContent(false));
+        footer.add(navBar.getContent(Navigation.Position.BOTTOM));
         addBottom(footer);
         body.add(new BodyContents()
                 .setHeader(headerContent)
                 .addMainContent(main)
-                .setFooter(footer)
-                .toContent());
+                .setFooter(footer));
         String description = "index: " + unicode;
         printHtmlDocument(null, description, body);
     }

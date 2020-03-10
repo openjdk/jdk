@@ -109,7 +109,7 @@ public class IndexRedirectWriter extends HtmlDocletWriter {
         HtmlTree main = HtmlTree.MAIN(bodyContent);
         body.add(main);
 
-        Content htmlTree = HtmlTree.HTML(configuration.getLocale().getLanguage(), head.toContent(), body);
+        Content htmlTree = HtmlTree.HTML(configuration.getLocale().getLanguage(), head, body);
         HtmlDocument htmlDocument = new HtmlDocument(htmlComment, htmlTree);
         htmlDocument.write(DocFile.createFileForOutput(configuration, path));
     }

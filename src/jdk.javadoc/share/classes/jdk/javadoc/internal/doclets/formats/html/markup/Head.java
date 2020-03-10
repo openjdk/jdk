@@ -25,6 +25,8 @@
 
 package jdk.javadoc.internal.doclets.formats.html.markup;
 
+import java.io.IOException;
+import java.io.Writer;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -37,7 +39,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 
 /**
- * A builder for HTML HEAD elements.
+ * An HTML {@code <head>} element.
  *
  * Many methods return the current object, to facilitate fluent builder-style usage.
  *
@@ -46,7 +48,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
  */
-public class Head {
+public class Head extends Content {
     private final String docletVersion;
     private final Date generatedDate;
     private final DocPath pathToRoot;
@@ -229,11 +231,28 @@ public class Head {
     }
 
     /**
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation always returns {@code false}.
+     *
+     * @return {@code false}
+     */
+    @Override
+    public boolean isEmpty() {
+        return false;
+    }
+
+    @Override
+    public boolean write(Writer out, boolean atNewline) throws IOException {
+        return toContent().write(out, atNewline);
+    }
+
+    /**
      * Returns the HTML for the HEAD element.
      *
      * @return the HTML
      */
-    public Content toContent() {
+    private Content toContent() {
         HtmlTree tree = new HtmlTree(HtmlTag.HEAD);
         tree.add(getGeneratedBy(showTimestamp, generatedDate));
         tree.add(HtmlTree.TITLE(title));

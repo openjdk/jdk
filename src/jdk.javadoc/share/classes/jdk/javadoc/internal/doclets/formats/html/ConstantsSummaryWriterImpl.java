@@ -39,8 +39,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.Navigation;
-import jdk.javadoc.internal.doclets.formats.html.markup.Navigation.PageMode;
+import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.formats.html.markup.Table;
 import jdk.javadoc.internal.doclets.formats.html.markup.TableHeader;
@@ -92,7 +91,7 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
         this.configuration = configuration;
         constantsTableHeader = new TableHeader(
                 contents.modifierAndTypeLabel, contents.constantFieldLabel, contents.valueLabel);
-        this.navBar = new Navigation(null, configuration, PageMode.CONSTANTVALUES, path);
+        this.navBar = new Navigation(null, configuration, PageMode.CONSTANT_VALUES, path);
     }
 
     @Override
@@ -102,7 +101,7 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
         Content headerContent = new ContentBuilder();
         addTop(headerContent);
         navBar.setUserHeader(getUserHeaderFooter(true));
-        headerContent.add(navBar.getContent(true));
+        headerContent.add(navBar.getContent(Navigation.Position.TOP));
         bodyContents.setHeader(headerContent);
         return bodyTree;
     }
@@ -215,7 +214,7 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
         for (VariableElement field : fields) {
             table.addRow(getTypeColumn(field), getNameColumn(field), getValue(field));
         }
-        Content li = HtmlTree.LI(HtmlStyle.blockList, table.toContent());
+        Content li = HtmlTree.LI(HtmlStyle.blockList, table);
         classConstantTree.add(li);
     }
 
@@ -277,14 +276,14 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
     public void addFooter() {
         Content htmlTree = HtmlTree.FOOTER();
         navBar.setUserFooter(getUserHeaderFooter(false));
-        htmlTree.add(navBar.getContent(false));
+        htmlTree.add(navBar.getContent(Navigation.Position.BOTTOM));
         addBottom(htmlTree);
         bodyContents.setFooter(htmlTree);
     }
 
     @Override
     public void printDocument(Content contentTree) throws DocFileIOException {
-        contentTree.add(bodyContents.toContent());
+        contentTree.add(bodyContents);
         printHtmlDocument(null, "summary of constants", contentTree);
     }
 }

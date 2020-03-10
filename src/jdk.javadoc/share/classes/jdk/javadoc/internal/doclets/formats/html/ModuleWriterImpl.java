@@ -48,8 +48,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.Navigation;
-import jdk.javadoc.internal.doclets.formats.html.markup.Navigation.PageMode;
+import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
 import jdk.javadoc.internal.doclets.formats.html.markup.RawHtml;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.formats.html.markup.Table;
@@ -194,7 +193,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
                 || display(indirectOpenPackages));
         navBar.setDisplaySummaryServicesLink(displayServices(uses, usesTrees) || displayServices(provides.keySet(), providesTrees));
         navBar.setUserHeader(getUserHeaderFooter(true));
-        headerContent.add(navBar.getContent(true));
+        headerContent.add(navBar.getContent(Navigation.Position.TOP));
         HtmlTree div = new HtmlTree(HtmlTag.DIV);
         div.setStyle(HtmlStyle.header);
         Content annotationContent = new HtmlTree(HtmlTag.P);
@@ -501,7 +500,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
                 Table table = getTable3(caption, tableSummary, HtmlStyle.requiresSummary,
                             requiresTableHeader);
                 addModulesList(requires, table);
-                section.add(table.toContent());
+                section.add(table);
             }
             // Display indirect modules table in both "api" and "all" mode.
             if (display(indirectModules)) {
@@ -513,7 +512,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
                 Table amrTable = getTable3(amrCaption, amrTableSummary, HtmlStyle.requiresSummary,
                             requiresTableHeader);
                 addModulesList(indirectModules, amrTable);
-                section.add(amrTable.toContent());
+                section.add(amrTable);
             }
             summaryContentTree.add(HtmlTree.LI(HtmlStyle.blockList, section));
         }
@@ -552,14 +551,14 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
                 Table aepTable = getTable2(new StringContent(aepText),
                         HtmlStyle.packagesSummary, indirectPackagesHeader);
                 addIndirectPackages(aepTable, indirectPackages);
-                section.add(aepTable.toContent());
+                section.add(aepTable);
             }
             if (display(indirectOpenPackages)) {
                 String aopText = resources.getText("doclet.Indirect_Opens_Summary");
                 Table aopTable = getTable2(new StringContent(aopText), HtmlStyle.packagesSummary,
                         indirectPackagesHeader);
                 addIndirectPackages(aopTable, indirectOpenPackages);
-                section.add(aopTable.toContent());
+                section.add(aopTable);
             }
             summaryContentTree.add(HtmlTree.LI(HtmlStyle.blockList, section));
         }
@@ -646,7 +645,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
             table.addRow(pkg, row);
         }
 
-        li.add(table.toContent());
+        li.add(table);
         if (table.needsScript()) {
             mainBodyScript.append(table.getScript());
         }
@@ -724,7 +723,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
                         usesProvidesTableHeader);
                 addProvidesList(table);
                 if (!table.isEmpty()) {
-                    section.add(table.toContent());
+                    section.add(table);
                 }
             }
             if (haveUses){
@@ -733,7 +732,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
                         usesProvidesTableHeader);
                 addUsesList(table);
                 if (!table.isEmpty()) {
-                    section.add(table.toContent());
+                    section.add(table);
                 }
             }
             summaryContentTree.add(HtmlTree.LI(HtmlStyle.blockList, section));
@@ -862,14 +861,14 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
     public void addModuleFooter() {
         Content htmlTree = HtmlTree.FOOTER();
         navBar.setUserFooter(getUserHeaderFooter(false));
-        htmlTree.add(navBar.getContent(false));
+        htmlTree.add(navBar.getContent(Navigation.Position.BOTTOM));
         addBottom(htmlTree);
         bodyContents.setFooter(htmlTree);
     }
 
     @Override
     public void printDocument(Content contentTree) throws DocFileIOException {
-        contentTree.add(bodyContents.toContent());
+        contentTree.add(bodyContents);
         printHtmlDocument(configuration.metakeywords.getMetaKeywordsForModule(mdle),
                 getDescription("declaration", mdle), getLocalStylesheets(mdle), contentTree);
     }

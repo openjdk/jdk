@@ -32,8 +32,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.Navigation;
-import jdk.javadoc.internal.doclets.formats.html.markup.Navigation.PageMode;
+import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.ClassTree;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
@@ -115,10 +114,10 @@ public class PackageTreeWriter extends AbstractTreeWriter {
         bodyContents.addMainContent(mainContent);
         HtmlTree footer = HtmlTree.FOOTER();
         navBar.setUserFooter(getUserHeaderFooter(false));
-        footer.add(navBar.getContent(false));
+        footer.add(navBar.getContent(Navigation.Position.BOTTOM));
         addBottom(footer);
         bodyContents.setFooter(footer);
-        body.add(bodyContents.toContent());
+        body.add(bodyContents);
         printHtmlDocument(null, getDescription("tree", packageElement), body);
     }
 
@@ -137,7 +136,7 @@ public class PackageTreeWriter extends AbstractTreeWriter {
                 contents.moduleLabel);
         navBar.setNavLinkModule(linkContent);
         navBar.setUserHeader(getUserHeaderFooter(true));
-        headerContent.add(navBar.getContent(true));
+        headerContent.add(navBar.getContent(Navigation.Position.TOP));
         bodyContents.setHeader(headerContent);
         return bodyTree;
     }

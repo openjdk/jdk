@@ -38,8 +38,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.Navigation;
-import jdk.javadoc.internal.doclets.formats.html.markup.Navigation.PageMode;
+import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.formats.html.markup.Table;
 import jdk.javadoc.internal.doclets.formats.html.markup.TableHeader;
@@ -134,10 +133,10 @@ public class PackageUseWriter extends SubWriterHolderWriter {
         bodyContents.addMainContent(mainContent);
         HtmlTree footer = HtmlTree.FOOTER();
         navBar.setUserFooter(getUserHeaderFooter(false));
-        footer.add(navBar.getContent(false));
+        footer.add(navBar.getContent(Navigation.Position.BOTTOM));
         addBottom(footer);
         bodyContents.setFooter(footer);
-        body.add(bodyContents.toContent());
+        body.add(bodyContents);
         printHtmlDocument(null,
                 getDescription("use", packageElement),
                 body);
@@ -182,7 +181,7 @@ public class PackageUseWriter extends SubWriterHolderWriter {
             }
             table.addRow(packageLink, summary);
         }
-        contentTree.add(table.toContent());
+        contentTree.add(table);
     }
 
     /**
@@ -220,7 +219,7 @@ public class PackageUseWriter extends SubWriterHolderWriter {
 
                 table.addRow(typeContent, summary);
             }
-            section.add(table.toContent());
+            section.add(table);
             ul.add(HtmlTree.LI(HtmlStyle.blockList, section));
         }
         Content li = HtmlTree.SECTION(HtmlStyle.packageUses, ul);
@@ -243,7 +242,7 @@ public class PackageUseWriter extends SubWriterHolderWriter {
                 contents.moduleLabel);
         navBar.setNavLinkModule(linkContent);
         navBar.setUserHeader(getUserHeaderFooter(true));
-        headerContent.add(navBar.getContent(true));
+        headerContent.add(navBar.getContent(Navigation.Position.TOP));
         ContentBuilder headingContent = new ContentBuilder();
         headingContent.add(contents.getContent("doclet.ClassUse_Title", packageText));
         headingContent.add(new HtmlTree(HtmlTag.BR));

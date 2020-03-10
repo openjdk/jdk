@@ -98,7 +98,7 @@ public class SingleIndexWriter extends AbstractIndexWriter {
         Content headerContent = new ContentBuilder();
         addTop(headerContent);
         navBar.setUserHeader(getUserHeaderFooter(true));
-        headerContent.add(navBar.getContent(true));
+        headerContent.add(navBar.getContent(Navigation.Position.TOP));
         Content mainContent = new ContentBuilder();
         elements = new TreeSet<>(indexBuilder.asMap().keySet());
         elements.addAll(tagSearchIndexMap.keySet());
@@ -116,7 +116,7 @@ public class SingleIndexWriter extends AbstractIndexWriter {
         addLinksForIndexes(mainContent);
         HtmlTree footer = HtmlTree.FOOTER();
         navBar.setUserFooter(getUserHeaderFooter(false));
-        footer.add(navBar.getContent(false));
+        footer.add(navBar.getContent(Navigation.Position.BOTTOM));
         addBottom(footer);
         body.add(new BodyContents()
                 .setHeader(headerContent)
@@ -124,8 +124,7 @@ public class SingleIndexWriter extends AbstractIndexWriter {
                         HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING,
                                 contents.getContent("doclet.Index"))))
                 .addMainContent(mainContent)
-                .setFooter(footer)
-                .toContent());
+                .setFooter(footer));
         createSearchIndexFiles();
         printHtmlDocument(null, "index", body);
     }

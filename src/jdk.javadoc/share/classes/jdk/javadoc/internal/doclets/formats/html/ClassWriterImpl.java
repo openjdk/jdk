@@ -47,8 +47,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlAttr;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.Navigation;
-import jdk.javadoc.internal.doclets.formats.html.markup.Navigation.PageMode;
+import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.ClassWriter;
 import jdk.javadoc.internal.doclets.toolkit.Content;
@@ -115,7 +114,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
         navBar.setNavLinkModule(linkContent);
         navBar.setMemberSummaryBuilder(configuration.getBuilderFactory().getMemberSummaryBuilder(this));
         navBar.setUserHeader(getUserHeaderFooter(true));
-        headerContent.add(navBar.getContent(true));
+        headerContent.add(navBar.getContent(Navigation.Position.TOP));
         HtmlTree div = new HtmlTree(HtmlTag.DIV);
         div.setStyle(HtmlStyle.header);
         if (configuration.showModules) {
@@ -161,7 +160,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
         bodyContents.addMainContent(MarkerComments.END_OF_CLASS_DATA);
         Content htmlTree = HtmlTree.FOOTER();
         navBar.setUserFooter(getUserHeaderFooter(false));
-        htmlTree.add(navBar.getContent(false));
+        htmlTree.add(navBar.getContent(Navigation.Position.BOTTOM));
         addBottom(htmlTree);
         bodyContents.setFooter(htmlTree);
     }
@@ -171,7 +170,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
         String description = getDescription("declaration", typeElement);
         PackageElement pkg = utils.containingPackage(typeElement);
         List<DocPath> localStylesheets = getLocalStylesheets(pkg);
-        contentTree.add(bodyContents.toContent());
+        contentTree.add(bodyContents);
         printHtmlDocument(configuration.metakeywords.getMetaKeywords(typeElement),
                 description, localStylesheets, contentTree);
     }

@@ -22,7 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.javadoc.internal.doclets.formats.html.markup;
+package jdk.javadoc.internal.doclets.formats.html;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -35,12 +35,14 @@ import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 
-import jdk.javadoc.internal.doclets.formats.html.AbstractMemberWriter;
-import jdk.javadoc.internal.doclets.formats.html.Contents;
-import jdk.javadoc.internal.doclets.formats.html.HtmlConfiguration;
-import jdk.javadoc.internal.doclets.formats.html.HtmlOptions;
-import jdk.javadoc.internal.doclets.formats.html.MarkerComments;
-import jdk.javadoc.internal.doclets.formats.html.SectionName;
+import jdk.javadoc.internal.doclets.formats.html.markup.Comment;
+import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
+import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlAttr;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
+import jdk.javadoc.internal.doclets.formats.html.markup.Links;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.builders.MemberSummaryBuilder;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFile;
@@ -85,19 +87,19 @@ public class Navigation {
     private static final Content EMPTY_COMMENT = new Comment(" ");
 
     public enum PageMode {
-        ALLCLASSES,
-        ALLPACKAGES,
+        ALL_CLASSES,
+        ALL_PACKAGES,
         CLASS,
-        CONSTANTVALUES,
+        CONSTANT_VALUES,
         DEPRECATED,
-        DOCFILE,
+        DOC_FILE,
         HELP,
         INDEX,
         MODULE,
         OVERVIEW,
         PACKAGE,
-        SERIALIZEDFORM,
-        SYSTEMPROPERTIES,
+        SERIALIZED_FORM,
+        SYSTEM_PROPERTIES,
         TREE,
         USE;
     }
@@ -322,11 +324,11 @@ public class Navigation {
                     addHelpLink(tree);
                 }
                 break;
-            case ALLCLASSES:
-            case ALLPACKAGES:
-            case CONSTANTVALUES:
-            case SERIALIZEDFORM:
-            case SYSTEMPROPERTIES:
+            case ALL_CLASSES:
+            case ALL_PACKAGES:
+            case CONSTANT_VALUES:
+            case SERIALIZED_FORM:
+            case SYSTEM_PROPERTIES:
                 addOverviewLink(tree);
                 addModuleLink(tree);
                 addPackageLink(tree);
@@ -337,7 +339,7 @@ public class Navigation {
                 addIndexLink(tree);
                 addHelpLink(tree);
                 break;
-            case DOCFILE:
+            case DOC_FILE:
                 addOverviewLink(tree);
                 addModuleOfElementLink(tree);
                 addContentToTree(tree, navLinkPackage);
@@ -906,67 +908,88 @@ public class Navigation {
     /**
      * Get the navigation content.
      *
-     * @param top true if the top navigation bar is to be printed
+     * @param posn the position for the navigation bar
      * @return the navigation contents
      */
-    public Content getContent(boolean top) {
+    public Content getContent(Position posn) {
         if (options.noNavbar()) {
             return new ContentBuilder();
         }
         Content tree = HtmlTree.NAV();
+
         HtmlTree navDiv = new HtmlTree(HtmlTag.DIV);
         Content skipNavLinks = contents.getContent("doclet.Skip_navigation_links");
-        if (top) {
-            tree.add(Position.TOP.startOfNav());
-            navDiv.setStyle(HtmlStyle.topNav)
-                    .setId(SectionName.NAVBAR_TOP.getName())
-                    .add(HtmlTree.DIV(HtmlStyle.skipNav,
-                            links.createLink(SectionName.SKIP_NAVBAR_TOP, skipNavLinks,
-                                    skipNavLinks.toString(), "")));
-        } else {
-            tree.add(Position.BOTTOM.startOfNav());
-            navDiv.setStyle(HtmlStyle.bottomNav)
-                    .setId(SectionName.NAVBAR_BOTTOM.getName())
-                    .add(HtmlTree.DIV(HtmlStyle.skipNav,
-                            links.createLink(SectionName.SKIP_NAVBAR_BOTTOM, skipNavLinks,
-                                    skipNavLinks.toString(), "")));
+        SectionName navListSection;
+        Content aboutContent;
+        boolean addSearch;
+        switch (posn) {
+            case TOP:
+                tree.add(Position.TOP.startOfNav());
+                navDiv.setStyle(HtmlStyle.topNav)
+                        .setId(SectionName.NAVBAR_TOP.getName())
+                        .add(HtmlTree.DIV(HtmlStyle.skipNav,
+                                links.createLink(SectionName.SKIP_NAVBAR_TOP, skipNavLinks,
+                                        skipNavLinks.toString(), "")));
+                navListSection = SectionName.NAVBAR_TOP_FIRSTROW;
+                aboutContent = userHeader;
+                addSearch = options.createIndex();
+                break;
+
+            case BOTTOM:
+                tree.add(Position.BOTTOM.startOfNav());
+                navDiv.setStyle(HtmlStyle.bottomNav)
+                        .setId(SectionName.NAVBAR_BOTTOM.getName())
+                        .add(HtmlTree.DIV(HtmlStyle.skipNav,
+                                links.createLink(SectionName.SKIP_NAVBAR_BOTTOM, skipNavLinks,
+                                        skipNavLinks.toString(), "")));
+                navListSection = SectionName.NAVBAR_BOTTOM_FIRSTROW;
+                aboutContent = userFooter;
+                addSearch = false;
+                break;
+
+            default:
+                throw new Error();
         }
-        HtmlTree navList = new HtmlTree(HtmlTag.UL);
-        navList.setId(top ? SectionName.NAVBAR_TOP_FIRSTROW.getName()
-                          : SectionName.NAVBAR_BOTTOM_FIRSTROW.getName());
-        navList.setStyle(HtmlStyle.navList);
-        navList.put(HtmlAttr.TITLE, rowListTitle);
+
+        HtmlTree navList = new HtmlTree(HtmlTag.UL)
+                .setId(navListSection.getName())
+                .setStyle(HtmlStyle.navList)
+                .put(HtmlAttr.TITLE, rowListTitle);
         addMainNavLinks(navList);
         navDiv.add(navList);
-        Content aboutDiv = HtmlTree.DIV(HtmlStyle.aboutLanguage, top ? userHeader : userFooter);
+        Content aboutDiv = HtmlTree.DIV(HtmlStyle.aboutLanguage, aboutContent);
         navDiv.add(aboutDiv);
         tree.add(navDiv);
-        HtmlTree subDiv = new HtmlTree(HtmlTag.DIV);
-        subDiv.setStyle(HtmlStyle.subNav);
+
+        HtmlTree subDiv = new HtmlTree(HtmlTag.DIV).setStyle(HtmlStyle.subNav);
+
         HtmlTree div = new HtmlTree(HtmlTag.DIV);
         // Add the summary links if present.
-        HtmlTree ulNavSummary = new HtmlTree(HtmlTag.UL);
-        ulNavSummary.setStyle(HtmlStyle.subNavList);
+        HtmlTree ulNavSummary = new HtmlTree(HtmlTag.UL).setStyle(HtmlStyle.subNavList);
         addSummaryLinks(ulNavSummary);
         div.add(ulNavSummary);
         // Add the detail links if present.
-        HtmlTree ulNavDetail = new HtmlTree(HtmlTag.UL);
-        ulNavDetail.setStyle(HtmlStyle.subNavList);
+        HtmlTree ulNavDetail = new HtmlTree(HtmlTag.UL).setStyle(HtmlStyle.subNavList);
         addDetailLinks(ulNavDetail);
         div.add(ulNavDetail);
         subDiv.add(div);
-        if (top && options.createIndex()) {
+
+        if (addSearch) {
             addSearch(subDiv);
         }
         tree.add(subDiv);
-        if (top) {
-            tree.add(Position.TOP.endOfNav());
-            tree.add(HtmlTree.SPAN(HtmlStyle.skipNav, EMPTY_COMMENT)
-                    .setId(SectionName.SKIP_NAVBAR_TOP.getName()));
-        } else {
-            tree.add(Position.BOTTOM.endOfNav());
-            tree.add(HtmlTree.SPAN(HtmlStyle.skipNav, EMPTY_COMMENT)
-                    .setId(SectionName.SKIP_NAVBAR_BOTTOM.getName()));
+
+        switch (posn) {
+            case TOP:
+                tree.add(Position.TOP.endOfNav());
+                tree.add(HtmlTree.SPAN(HtmlStyle.skipNav, EMPTY_COMMENT)
+                        .setId(SectionName.SKIP_NAVBAR_TOP.getName()));
+                break;
+
+            case BOTTOM:
+                tree.add(Position.BOTTOM.endOfNav());
+                tree.add(HtmlTree.SPAN(HtmlStyle.skipNav, EMPTY_COMMENT)
+                        .setId(SectionName.SKIP_NAVBAR_BOTTOM.getName()));
         }
         return tree;
     }

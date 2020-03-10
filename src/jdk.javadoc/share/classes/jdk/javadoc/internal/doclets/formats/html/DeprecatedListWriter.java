@@ -41,8 +41,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.Navigation;
-import jdk.javadoc.internal.doclets.formats.html.markup.Navigation.PageMode;
+import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.DeprecatedAPIListBuilder;
@@ -298,11 +297,11 @@ public class DeprecatedListWriter extends SubWriterHolderWriter {
         bodyContents.addMainContent(content);
         HtmlTree htmlTree = HtmlTree.FOOTER();
         navBar.setUserFooter(getUserHeaderFooter(false));
-        htmlTree.add(navBar.getContent(false));
+        htmlTree.add(navBar.getContent(Navigation.Position.BOTTOM));
         addBottom(htmlTree);
         bodyContents.setFooter(htmlTree);
         String description = "deprecated elements";
-        body.add(bodyContents.toContent());
+        body.add(bodyContents);
         printHtmlDocument(null, description, body);
     }
 
@@ -355,7 +354,7 @@ public class DeprecatedListWriter extends SubWriterHolderWriter {
         Content headerContent = new ContentBuilder();
         addTop(headerContent);
         navBar.setUserHeader(getUserHeaderFooter(true));
-        headerContent.add(navBar.getContent(true));
+        headerContent.add(navBar.getContent(Navigation.Position.TOP));
         bodyContents.setHeader(headerContent);
         return bodyTree;
     }
@@ -402,7 +401,7 @@ public class DeprecatedListWriter extends SubWriterHolderWriter {
                 }
                 table.addRow(link, desc);
             }
-            Content li = HtmlTree.LI(HtmlStyle.blockList, table.toContent());
+            Content li = HtmlTree.LI(HtmlStyle.blockList, table);
             Content ul = HtmlTree.UL(HtmlStyle.blockList, li);
             contentTree.add(ul);
         }

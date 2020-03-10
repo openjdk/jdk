@@ -245,8 +245,7 @@ public class SourceToHTMLConverter {
                 .setGenerator(HtmlDocletWriter.getGenerator(getClass()))
                 .addDefaultScript(false)
                 .setStylesheets(configuration.getMainStylesheet(), configuration.getAdditionalStylesheets());
-        Content htmlTree = HtmlTree.HTML(configuration.getLocale().getLanguage(),
-                head.toContent(), body);
+        Content htmlTree = HtmlTree.HTML(configuration.getLocale().getLanguage(), head, body);
         HtmlDocument htmlDocument = new HtmlDocument(htmlTree);
         messages.notice("doclet.Generating_0", path.getPath());
         htmlDocument.write(DocFile.createFileForOutput(configuration, path));
