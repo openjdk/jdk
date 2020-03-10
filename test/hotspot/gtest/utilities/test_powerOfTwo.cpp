@@ -36,6 +36,10 @@ template <typename T> static void test_is_power_of_2() {
   EXPECT_FALSE(is_power_of_2(T(0)));
   EXPECT_FALSE(is_power_of_2(~T(0)));
 
+  if (IsSigned<T>::value) {
+    EXPECT_FALSE(is_power_of_2(std::numeric_limits<T>::min()));
+  }
+
   // Test true
   for (T i = max_pow2<T>(); i > 0; i = (i >> 1)) {
     EXPECT_TRUE(is_power_of_2(i)) << "value = " << T(i);

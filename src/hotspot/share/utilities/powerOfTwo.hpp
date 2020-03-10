@@ -36,7 +36,7 @@
 
 template <typename T>
 bool is_power_of_2(T x) {
-  return (x != T(0)) && ((x & (x - 1)) == T(0));
+  return (x > T(0)) && ((x & (x - 1)) == T(0));
 }
 
 // Log2 of a power of 2

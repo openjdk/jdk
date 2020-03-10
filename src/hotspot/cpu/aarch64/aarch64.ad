@@ -14936,7 +14936,7 @@ instruct cmpI_branch_sign(cmpOpLtGe cmp, iRegIorL2I op1, immI0 op2, label labl) 
 
 instruct cmpL_branch_bit(cmpOpEqNe cmp, iRegL op1, immL op2, immL0 op3, label labl) %{
   match(If cmp (CmpL (AndL op1 op2) op3));
-  predicate(is_power_of_2(n->in(2)->in(1)->in(2)->get_long()));
+  predicate(is_power_of_2((julong)n->in(2)->in(1)->in(2)->get_long()));
   effect(USE labl);
 
   ins_cost(BRANCH_COST);
@@ -14944,7 +14944,7 @@ instruct cmpL_branch_bit(cmpOpEqNe cmp, iRegL op1, immL op2, immL0 op3, label la
   ins_encode %{
     Label* L = $labl$$label;
     Assembler::Condition cond = (Assembler::Condition)$cmp$$cmpcode;
-    int bit = exact_log2($op2$$constant);
+    int bit = exact_log2_long($op2$$constant);
     __ tbr(cond, $op1$$Register, bit, *L);
   %}
   ins_pipe(pipe_cmp_branch);
@@ -14953,7 +14953,7 @@ instruct cmpL_branch_bit(cmpOpEqNe cmp, iRegL op1, immL op2, immL0 op3, label la
 
 instruct cmpI_branch_bit(cmpOpEqNe cmp, iRegIorL2I op1, immI op2, immI0 op3, label labl) %{
   match(If cmp (CmpI (AndI op1 op2) op3));
-  predicate(is_power_of_2(n->in(2)->in(1)->in(2)->get_int()));
+  predicate(is_power_of_2((juint)n->in(2)->in(1)->in(2)->get_int()));
   effect(USE labl);
 
   ins_cost(BRANCH_COST);
@@ -14961,7 +14961,7 @@ instruct cmpI_branch_bit(cmpOpEqNe cmp, iRegIorL2I op1, immI op2, immI0 op3, lab
   ins_encode %{
     Label* L = $labl$$label;
     Assembler::Condition cond = (Assembler::Condition)$cmp$$cmpcode;
-    int bit = exact_log2($op2$$constant);
+    int bit = exact_log2((juint)$op2$$constant);
     __ tbr(cond, $op1$$Register, bit, *L);
   %}
   ins_pipe(pipe_cmp_branch);
@@ -15001,7 +15001,7 @@ instruct far_cmpI_branch_sign(cmpOpLtGe cmp, iRegIorL2I op1, immI0 op2, label la
 
 instruct far_cmpL_branch_bit(cmpOpEqNe cmp, iRegL op1, immL op2, immL0 op3, label labl) %{
   match(If cmp (CmpL (AndL op1 op2) op3));
-  predicate(is_power_of_2(n->in(2)->in(1)->in(2)->get_long()));
+  predicate(is_power_of_2((julong)n->in(2)->in(1)->in(2)->get_long()));
   effect(USE labl);
 
   ins_cost(BRANCH_COST);
@@ -15009,7 +15009,7 @@ instruct far_cmpL_branch_bit(cmpOpEqNe cmp, iRegL op1, immL op2, immL0 op3, labe
   ins_encode %{
     Label* L = $labl$$label;
     Assembler::Condition cond = (Assembler::Condition)$cmp$$cmpcode;
-    int bit = exact_log2($op2$$constant);
+    int bit = exact_log2_long($op2$$constant);
     __ tbr(cond, $op1$$Register, bit, *L, /*far*/true);
   %}
   ins_pipe(pipe_cmp_branch);
@@ -15017,7 +15017,7 @@ instruct far_cmpL_branch_bit(cmpOpEqNe cmp, iRegL op1, immL op2, immL0 op3, labe
 
 instruct far_cmpI_branch_bit(cmpOpEqNe cmp, iRegIorL2I op1, immI op2, immI0 op3, label labl) %{
   match(If cmp (CmpI (AndI op1 op2) op3));
-  predicate(is_power_of_2(n->in(2)->in(1)->in(2)->get_int()));
+  predicate(is_power_of_2((juint)n->in(2)->in(1)->in(2)->get_int()));
   effect(USE labl);
 
   ins_cost(BRANCH_COST);
@@ -15025,7 +15025,7 @@ instruct far_cmpI_branch_bit(cmpOpEqNe cmp, iRegIorL2I op1, immI op2, immI0 op3,
   ins_encode %{
     Label* L = $labl$$label;
     Assembler::Condition cond = (Assembler::Condition)$cmp$$cmpcode;
-    int bit = exact_log2($op2$$constant);
+    int bit = exact_log2((juint)$op2$$constant);
     __ tbr(cond, $op1$$Register, bit, *L, /*far*/true);
   %}
   ins_pipe(pipe_cmp_branch);
