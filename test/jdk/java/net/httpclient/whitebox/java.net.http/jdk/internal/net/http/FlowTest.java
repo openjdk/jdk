@@ -80,7 +80,6 @@ public class FlowTest extends AbstractRandomTest {
         SSLEngine engineClient = ctx.createSSLEngine();
         SSLParameters params = ctx.getSupportedSSLParameters();
         params.setApplicationProtocols(new String[]{"proto1", "proto2"}); // server will choose proto2
-        params.setProtocols(new String[]{"TLSv1.2"}); // TODO: This is essential. Needs to be protocol impl
         engineClient.setSSLParameters(params);
         engineClient.setUseClientMode(true);
         completion = new CompletableFuture<>();
