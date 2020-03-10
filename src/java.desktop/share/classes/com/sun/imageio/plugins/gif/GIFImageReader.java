@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -350,6 +350,10 @@ public class GIFImageReader extends ImageReader {
                     int off = 0;
                     while (left > 0) {
                         int nbytes = stream.read(block, off, left);
+                        if (nbytes == -1) {
+                            throw new IIOException("Invalid block length for " +
+                                    "LZW encoded image data");
+                        }
                         off += nbytes;
                         left -= nbytes;
                     }
@@ -930,6 +934,10 @@ public class GIFImageReader extends ImageReader {
             int off = 0;
             while (left > 0) {
                 int nbytes = stream.read(block, off, left);
+                if (nbytes == -1) {
+                    throw new IIOException("Invalid block length for " +
+                            "LZW encoded image data");
+                }
                 left -= nbytes;
                 off += nbytes;
             }
