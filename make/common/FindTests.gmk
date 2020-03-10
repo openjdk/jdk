@@ -52,9 +52,11 @@ JTREG_TESTROOTS += $(addprefix $(TOPDIR)/test/, hotspot/jtreg jdk langtools nash
 JTREG_ROOT_FILES := $(addsuffix /TEST.ROOT, $(JTREG_TESTROOTS))
 JTREG_GROUP_FILES :=
 $(foreach root, $(JTREG_TESTROOTS), \
-  $(eval include $(root)/TEST.ROOT) \
-  $(eval $(root)_JTREG_GROUP_FILES := $$(addprefix $(root)/, $$(groups))) \
-  $(eval JTREG_GROUP_FILES += $$($(root)_JTREG_GROUP_FILES)) \
+  $(if $(wildcard $(root)/TEST.ROOT), \
+    $(eval include $(root)/TEST.ROOT) \
+    $(eval $(root)_JTREG_GROUP_FILES := $$(addprefix $(root)/, $$(groups))) \
+    $(eval JTREG_GROUP_FILES += $$($(root)_JTREG_GROUP_FILES)) \
+   ) \
 )
 
 # Cache the expensive to calculate test names in a generated makefile.
