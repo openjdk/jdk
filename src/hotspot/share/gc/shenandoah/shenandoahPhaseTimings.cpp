@@ -59,7 +59,6 @@ void ShenandoahPhaseTimings::record_phase_time(Phase phase, double time) {
   if (!_policy->is_at_shutdown()) {
     _timing_data[phase].add(time);
   }
-  ShenandoahHeap::heap()->heuristics()->record_phase_time(phase, time);
 }
 
 void ShenandoahPhaseTimings::record_workers_start(Phase phase) {

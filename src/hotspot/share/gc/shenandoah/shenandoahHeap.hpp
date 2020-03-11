@@ -376,7 +376,6 @@ public:
   // call the entry method below
   void vmop_entry_init_mark();
   void vmop_entry_final_mark();
-  void vmop_entry_final_evac();
   void vmop_entry_init_updaterefs();
   void vmop_entry_final_updaterefs();
   void vmop_entry_init_traversal();
@@ -388,7 +387,6 @@ public:
   // and workers for net VM operation
   void entry_init_mark();
   void entry_final_mark();
-  void entry_final_evac();
   void entry_init_updaterefs();
   void entry_final_updaterefs();
   void entry_init_traversal();
@@ -412,7 +410,6 @@ private:
   // Actual work for the phases
   void op_init_mark();
   void op_final_mark();
-  void op_final_evac();
   void op_init_updaterefs();
   void op_final_updaterefs();
   void op_init_traversal();

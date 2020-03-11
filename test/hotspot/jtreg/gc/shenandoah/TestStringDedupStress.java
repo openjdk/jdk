@@ -72,30 +72,6 @@
  * @run main/othervm -Xmx1g -Xlog:gc+stats -Xlog:gc -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseStringDeduplication
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=compact
  *      TestStringDedupStress
- *
- * @run main/othervm -Xmx1g -Xlog:gc+stats -Xlog:gc -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseStringDeduplication
- *      -XX:+UseShenandoahGC
- *      -XX:ShenandoahUpdateRefsEarly=off
- *      -DtargetStrings=3000000
- *      TestStringDedupStress
- *
- * @run main/othervm -Xmx1g -Xlog:gc+stats -Xlog:gc -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseStringDeduplication
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=compact
- *      -XX:ShenandoahUpdateRefsEarly=off
- *      -DtargetStrings=2000000
- *      TestStringDedupStress
- *
- * @run main/othervm -Xmx1g -Xlog:gc+stats -Xlog:gc -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseStringDeduplication
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=aggressive
- *      -XX:ShenandoahUpdateRefsEarly=off
- *      -DtargetStrings=2000000
- *      TestStringDedupStress
- *
- * @run main/othervm -Xmx1g -Xlog:gc+stats -Xlog:gc -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseStringDeduplication
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=aggressive
- *      -XX:ShenandoahUpdateRefsEarly=off -XX:+ShenandoahOOMDuringEvacALot
- *      -DtargetStrings=2000000
- *      TestStringDedupStress
  */
 
  /*

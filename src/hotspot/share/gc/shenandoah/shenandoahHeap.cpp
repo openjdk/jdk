@@ -1586,25 +1586,6 @@ void ShenandoahHeap::op_final_mark() {
   }
 }
 
-void ShenandoahHeap::op_final_evac() {
-  assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "Should be at safepoint");
-
-  set_evacuation_in_progress(false);
-
-  {
-    ShenandoahGCPhase phase(ShenandoahPhaseTimings::final_evac_retire_gclabs);
-    retire_and_reset_gclabs();
-  }
-
-  if (ShenandoahVerify) {
-    verifier()->verify_after_evacuation();
-  }
-
-  if (VerifyAfterGC) {
-    Universe::verify();
-  }
-}
-
 void ShenandoahHeap::op_conc_evac() {
   ShenandoahEvacuationTask task(this, _collection_set, true);
   workers()->run_task(&task);
@@ -2647,15 +2628,6 @@ void ShenandoahHeap::vmop_entry_final_mark() {
   VMThread::execute(&op); // jump to entry_final_mark under safepoint
 }
 
-void ShenandoahHeap::vmop_entry_final_evac() {
-  TraceCollectorStats tcs(monitoring_support()->stw_collection_counters());
-  ShenandoahGCPhase total(ShenandoahPhaseTimings::total_pause_gross);
-  ShenandoahGCPhase phase(ShenandoahPhaseTimings::final_evac_gross);
-
-  VM_ShenandoahFinalEvac op;
-  VMThread::execute(&op); // jump to entry_final_evac under safepoint
-}
-
 void ShenandoahHeap::vmop_entry_init_updaterefs() {
   TraceCollectorStats tcs(monitoring_support()->stw_collection_counters());
   ShenandoahGCPhase total(ShenandoahPhaseTimings::total_pause_gross);
@@ -2741,16 +2713,6 @@ void ShenandoahHeap::entry_final_mark() {
                               "final marking");
 
   op_final_mark();
-}
-
-void ShenandoahHeap::entry_final_evac() {
-  ShenandoahGCPhase total_phase(ShenandoahPhaseTimings::total_pause);
-  ShenandoahGCPhase phase(ShenandoahPhaseTimings::final_evac);
-  static const char* msg = "Pause Final Evac";
-  GCTraceTime(Info, gc) time(msg, gc_timer());
-  EventMark em("%s", msg);
-
-  op_final_evac();
 }
 
 void ShenandoahHeap::entry_init_updaterefs() {
@@ -3050,20 +3012,13 @@ void ShenandoahHeap::deduplicate_string(oop str) {
 }
 
 const char* ShenandoahHeap::init_mark_event_message() const {
-  bool update_refs = has_forwarded_objects();
+  assert(!has_forwarded_objects(), "Should not have forwarded objects here");
+
   bool proc_refs = process_references();
   bool unload_cls = unload_classes();
 
-  if (update_refs && proc_refs && unload_cls) {
-    return "Pause Init Mark (update refs) (process weakrefs) (unload classes)";
-  } else if (update_refs && proc_refs) {
-    return "Pause Init Mark (update refs) (process weakrefs)";
-  } else if (update_refs && unload_cls) {
-    return "Pause Init Mark (update refs) (unload classes)";
-  } else if (proc_refs && unload_cls) {
+  if (proc_refs && unload_cls) {
     return "Pause Init Mark (process weakrefs) (unload classes)";
-  } else if (update_refs) {
-    return "Pause Init Mark (update refs)";
   } else if (proc_refs) {
     return "Pause Init Mark (process weakrefs)";
   } else if (unload_cls) {
@@ -3074,20 +3029,13 @@ const char* ShenandoahHeap::init_mark_event_message() const {
 }
 
 const char* ShenandoahHeap::final_mark_event_message() const {
-  bool update_refs = has_forwarded_objects();
+  assert(!has_forwarded_objects(), "Should not have forwarded objects here");
+
   bool proc_refs = process_references();
   bool unload_cls = unload_classes();
 
-  if (update_refs && proc_refs && unload_cls) {
-    return "Pause Final Mark (update refs) (process weakrefs) (unload classes)";
-  } else if (update_refs && proc_refs) {
-    return "Pause Final Mark (update refs) (process weakrefs)";
-  } else if (update_refs && unload_cls) {
-    return "Pause Final Mark (update refs) (unload classes)";
-  } else if (proc_refs && unload_cls) {
+  if (proc_refs && unload_cls) {
     return "Pause Final Mark (process weakrefs) (unload classes)";
-  } else if (update_refs) {
-    return "Pause Final Mark (update refs)";
   } else if (proc_refs) {
     return "Pause Final Mark (process weakrefs)";
   } else if (unload_cls) {
@@ -3098,20 +3046,13 @@ const char* ShenandoahHeap::final_mark_event_message() const {
 }
 
 const char* ShenandoahHeap::conc_mark_event_message() const {
-  bool update_refs = has_forwarded_objects();
+  assert(!has_forwarded_objects(), "Should not have forwarded objects here");
+
   bool proc_refs = process_references();
   bool unload_cls = unload_classes();
 
-  if (update_refs && proc_refs && unload_cls) {
-    return "Concurrent marking (update refs) (process weakrefs) (unload classes)";
-  } else if (update_refs && proc_refs) {
-    return "Concurrent marking (update refs) (process weakrefs)";
-  } else if (update_refs && unload_cls) {
-    return "Concurrent marking (update refs) (unload classes)";
-  } else if (proc_refs && unload_cls) {
+  if (proc_refs && unload_cls) {
     return "Concurrent marking (process weakrefs) (unload classes)";
-  } else if (update_refs) {
-    return "Concurrent marking (update refs)";
   } else if (proc_refs) {
     return "Concurrent marking (process weakrefs)";
   } else if (unload_cls) {

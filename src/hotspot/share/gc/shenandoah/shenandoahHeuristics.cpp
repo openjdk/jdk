@@ -63,8 +63,6 @@ int ShenandoahHeuristics::compare_by_alloc_seq_descending(RegionData a, RegionDa
 }
 
 ShenandoahHeuristics::ShenandoahHeuristics() :
-  _update_refs_early(false),
-  _update_refs_adaptive(false),
   _region_data(NULL),
   _region_data_size(0),
   _degenerated_cycles_in_a_row(0),
@@ -77,19 +75,6 @@ ShenandoahHeuristics::ShenandoahHeuristics() :
   _gc_time_history(new TruncatedSeq(5)),
   _metaspace_oom()
 {
-  if (strcmp(ShenandoahUpdateRefsEarly, "on") == 0 ||
-      strcmp(ShenandoahUpdateRefsEarly, "true") == 0 ) {
-    _update_refs_early = true;
-  } else if (strcmp(ShenandoahUpdateRefsEarly, "off") == 0 ||
-             strcmp(ShenandoahUpdateRefsEarly, "false") == 0 ) {
-    _update_refs_early = false;
-  } else if (strcmp(ShenandoahUpdateRefsEarly, "adaptive") == 0) {
-    _update_refs_adaptive = true;
-    _update_refs_early = true;
-  } else {
-    vm_exit_during_initialization("Unknown -XX:ShenandoahUpdateRefsEarly option: %s", ShenandoahUpdateRefsEarly);
-  }
-
   // No unloading during concurrent mark? Communicate that to heuristics
   if (!ClassUnloadingWithConcurrentMark) {
     FLAG_SET_DEFAULT(ShenandoahUnloadClassesFrequency, 0);
@@ -227,14 +212,6 @@ void ShenandoahHeuristics::record_cycle_start() {
 
 void ShenandoahHeuristics::record_cycle_end() {
   _last_cycle_end = os::elapsedTime();
-}
-
-void ShenandoahHeuristics::record_phase_time(ShenandoahPhaseTimings::Phase phase, double secs) {
-  // Do nothing
-}
-
-bool ShenandoahHeuristics::should_start_update_refs() {
-  return _update_refs_early;
 }
 
 bool ShenandoahHeuristics::should_start_gc() const {

@@ -316,19 +316,18 @@ void ShenandoahControlThread::service_concurrent_normal_cycle(GCCause::Cause cau
   // If second allocation failure happens during Degenerated GC cycle (for example, when GC
   // tries to evac something and no memory is available), cycle degrades to Full GC.
   //
-  // There are also two shortcuts through the normal cycle: a) immediate garbage shortcut, when
+  // There are also a shortcut through the normal cycle: immediate garbage shortcut, when
   // heuristics says there are no regions to compact, and all the collection comes from immediately
-  // reclaimable regions; b) coalesced UR shortcut, when heuristics decides to coalesce UR with the
-  // mark from the next cycle.
+  // reclaimable regions.
   //
   // ................................................................................................
   //
   //                                    (immediate garbage shortcut)                Concurrent GC
   //                             /-------------------------------------------\
-  //                             |                       (coalesced UR)      v
-  //                             |                  /----------------------->o
-  //                             |                  |                        |
-  //                             |                  |                        v
+  //                             |                                           |
+  //                             |                                           |
+  //                             |                                           |
+  //                             |                                           v
   // [START] ----> Conc Mark ----o----> Conc Evac --o--> Conc Update-Refs ---o----> [END]
   //                   |                    |                 |              ^
   //                   | (af)               | (af)            | (af)         |
@@ -392,22 +391,15 @@ void ShenandoahControlThread::service_concurrent_normal_cycle(GCCause::Cause cau
     heap->entry_evac();
     if (check_cancellation_or_degen(ShenandoahHeap::_degenerated_evac)) return;
 
-    // Perform update-refs phase, if required. This phase can be skipped if heuristics
-    // decides to piggy-back the update-refs on the next marking cycle. On either path,
-    // we need to turn off evacuation: either in init-update-refs, or in final-evac.
-    if (heap->heuristics()->should_start_update_refs()) {
-      heap->vmop_entry_init_updaterefs();
-      heap->entry_updaterefs();
-      if (check_cancellation_or_degen(ShenandoahHeap::_degenerated_updaterefs)) return;
+    // Perform update-refs phase.
+    heap->vmop_entry_init_updaterefs();
+    heap->entry_updaterefs();
+    if (check_cancellation_or_degen(ShenandoahHeap::_degenerated_updaterefs)) return;
 
-      heap->vmop_entry_final_updaterefs();
+    heap->vmop_entry_final_updaterefs();
 
-      // Update references freed up collection set, kick the cleanup to reclaim the space.
-      heap->entry_cleanup();
-
-    } else {
-      heap->vmop_entry_final_evac();
-    }
+    // Update references freed up collection set, kick the cleanup to reclaim the space.
+    heap->entry_cleanup();
   }
 
   // Cycle is complete

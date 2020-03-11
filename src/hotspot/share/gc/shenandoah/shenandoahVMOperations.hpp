@@ -33,7 +33,6 @@
 //   - VM_ShenandoahInitMark: initiate concurrent marking
 //   - VM_ShenandoahReferenceOperation:
 //       - VM_ShenandoahFinalMarkStartEvac: finish up concurrent marking, and start evacuation
-//       - VM_ShenandoahFinalEvac: finish concurrent evacuation
 //       - VM_ShenandoahInitUpdateRefs: initiate update references
 //       - VM_ShenandoahFinalUpdateRefs: finish up update references
 //       - VM_ShenandoahFullGC: do full GC
@@ -67,14 +66,6 @@ public:
   VM_ShenandoahFinalMarkStartEvac() : VM_ShenandoahReferenceOperation() {};
   VM_Operation::VMOp_Type type() const { return VMOp_ShenandoahFinalMarkStartEvac; }
   const char* name()             const { return "Shenandoah Final Mark and Start Evacuation"; }
-  virtual  void doit();
-};
-
-class VM_ShenandoahFinalEvac: public VM_ShenandoahOperation {
-public:
-  VM_ShenandoahFinalEvac() : VM_ShenandoahOperation() {};
-  VM_Operation::VMOp_Type type() const { return VMOp_ShenandoahFinalEvac; }
-  const char* name()             const { return "Shenandoah Final Evacuation"; }
   virtual  void doit();
 };
 
