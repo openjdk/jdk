@@ -36,7 +36,7 @@
 
 import javax.net.ssl.*;
 import java.io.*;
-import java.net.InetAddress;
+import java.net.*;
 
 public class SSLExceptionForIOIssue implements SSLContextTemplate {
 
@@ -139,7 +139,7 @@ public class SSLExceptionForIOIssue implements SSLContextTemplate {
             } catch (SSLProtocolException | SSLHandshakeException sslhe) {
                 clientException = sslhe;
                 System.err.println("unexpected client exception: " + sslhe);
-            } catch (SSLException ssle) {
+            } catch (SSLException | SocketTimeoutException ssle) {
                 // the expected exception, ignore it
                 System.err.println("expected client exception: " + ssle);
             } catch (Exception e) {
