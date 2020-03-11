@@ -105,7 +105,7 @@ public class AnnotationTypeRequiredMemberWriterImpl extends AbstractMemberWriter
     public Content getAnnotationDocTreeHeader(Element member) {
         String simpleName = name(member);
         Content annotationDocTree = new ContentBuilder();
-        Content heading = new HtmlTree(Headings.TypeDeclaration.MEMBER_HEADING,
+        Content heading = HtmlTree.HEADING(Headings.TypeDeclaration.MEMBER_HEADING,
                 new StringContent(simpleName));
         annotationDocTree.add(heading);
         return HtmlTree.SECTION(HtmlStyle.detail, annotationDocTree)

@@ -141,7 +141,7 @@ public class AllClassesIndexWriter extends HtmlDocletWriter {
             }
         }
         Content titleContent = contents.allClassesLabel;
-        Content pHeading = HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING, true,
+        Content pHeading = HtmlTree.HEADING_TITLE(Headings.PAGE_TITLE_HEADING,
                 HtmlStyle.title, titleContent);
         Content headerDiv = HtmlTree.DIV(HtmlStyle.header, pHeading);
         content.add(headerDiv);

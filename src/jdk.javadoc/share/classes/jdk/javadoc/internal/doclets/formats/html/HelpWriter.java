@@ -118,7 +118,7 @@ public class HelpWriter extends HtmlDocletWriter {
      */
     protected void addHelpFileContents(Content contentTree) {
         // Heading
-        Content heading = HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING, false, HtmlStyle.title,
+        Content heading = HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING, HtmlStyle.title,
                 contents.getContent("doclet.help.main_heading"));
         Content div = HtmlTree.DIV(HtmlStyle.header, heading);
         Content intro = HtmlTree.DIV(HtmlStyle.subTitle,

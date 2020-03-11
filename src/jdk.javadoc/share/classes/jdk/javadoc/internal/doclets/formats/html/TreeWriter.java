@@ -108,7 +108,7 @@ public class TreeWriter extends AbstractTreeWriter {
     public void generateTreeFile() throws DocFileIOException {
         HtmlTree body = getTreeHeader();
         Content headContent = contents.hierarchyForAllPackages;
-        Content heading = HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING, false,
+        Content heading = HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING,
                 HtmlStyle.title, headContent);
         Content div = HtmlTree.DIV(HtmlStyle.header, heading);
         addPackageTreeLinks(div);

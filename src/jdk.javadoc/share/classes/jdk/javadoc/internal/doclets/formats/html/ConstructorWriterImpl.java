@@ -118,7 +118,7 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
     public Content getConstructorDocTreeHeader(ExecutableElement constructor) {
         String erasureAnchor;
         Content constructorDocTree = new ContentBuilder();
-        HtmlTree heading = new HtmlTree(Headings.TypeDeclaration.MEMBER_HEADING,
+        HtmlTree heading = HtmlTree.HEADING(Headings.TypeDeclaration.MEMBER_HEADING,
                 new StringContent(name(constructor)));
         if ((erasureAnchor = getErasureAnchor(constructor)) != null) {
             heading.setId(erasureAnchor);

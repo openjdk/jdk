@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 import jdk.javadoc.internal.doclets.toolkit.Content;
 
@@ -49,7 +50,7 @@ public class ContentBuilder extends Content {
 
     @Override
     public ContentBuilder add(Content content) {
-        nullCheck(content);
+        Objects.requireNonNull(content);
         ensureMutableContents();
         if (content instanceof ContentBuilder) {
             contents.addAll(((ContentBuilder) content).contents);

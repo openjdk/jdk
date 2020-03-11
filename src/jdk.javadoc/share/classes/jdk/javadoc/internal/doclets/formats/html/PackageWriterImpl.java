@@ -120,7 +120,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
         Content annotationContent = new HtmlTree(HtmlTag.P);
         addAnnotationInfo(packageElement, annotationContent);
         div.add(annotationContent);
-        Content tHeading = HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING, true,
+        Content tHeading = HtmlTree.HEADING_TITLE(Headings.PAGE_TITLE_HEADING,
                 HtmlStyle.title, contents.packageLabel);
         tHeading.add(Entity.NO_BREAK_SPACE);
         Content packageHead = new StringContent(heading);

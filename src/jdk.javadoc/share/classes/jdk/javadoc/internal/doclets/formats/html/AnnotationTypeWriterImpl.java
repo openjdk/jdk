@@ -109,7 +109,7 @@ public class AnnotationTypeWriterImpl extends SubWriterHolderWriter
         }
         LinkInfoImpl linkInfo = new LinkInfoImpl(configuration,
                 LinkInfoImpl.Kind.CLASS_HEADER, annotationType);
-        Content heading = HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING, true,
+        Content heading = HtmlTree.HEADING_TITLE(Headings.PAGE_TITLE_HEADING,
                 HtmlStyle.title, new StringContent(header));
         heading.add(getTypeParameterLinks(linkInfo));
         div.add(heading);

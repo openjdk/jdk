@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -123,16 +123,5 @@ public abstract class Content {
      */
     public int charCount() {
         return 0;
-    }
-
-    /**
-     * Checks for null values.
-     *
-     * @param <T> the type of the item being checked
-     * @param t reference type to check for null values
-     * @return the reference type if not null or else throws a null pointer exception
-     */
-    protected static <T> T nullCheck(T t) {
-        return Objects.requireNonNull(t);
     }
 }

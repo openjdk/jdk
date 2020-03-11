@@ -114,7 +114,7 @@ public abstract class AbstractTreeWriter extends HtmlDocletWriter {
         if (!sset.isEmpty()) {
             TypeElement firstTypeElement = sset.first();
             Content headingContent = contents.getContent(heading);
-            Content sectionHeading = HtmlTree.HEADING(Headings.CONTENT_HEADING, true,
+            Content sectionHeading = HtmlTree.HEADING_TITLE(Headings.CONTENT_HEADING,
                     headingContent);
             HtmlTree htmlTree = HtmlTree.SECTION(HtmlStyle.hierarchy, sectionHeading);
             addLevelInfo(!utils.isInterface(firstTypeElement) ? firstTypeElement : null,

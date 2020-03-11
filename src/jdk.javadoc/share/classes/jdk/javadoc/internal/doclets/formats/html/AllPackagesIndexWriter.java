@@ -82,7 +82,7 @@ public class AllPackagesIndexWriter extends HtmlDocletWriter {
         Content mainContent = new ContentBuilder();
         addPackages(mainContent);
         Content titleContent = contents.allPackagesLabel;
-        Content pHeading = HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING, true,
+        Content pHeading = HtmlTree.HEADING_TITLE(Headings.PAGE_TITLE_HEADING,
                 HtmlStyle.title, titleContent);
         Content headerDiv = HtmlTree.DIV(HtmlStyle.header, pHeading);
         Content footer = HtmlTree.FOOTER();

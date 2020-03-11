@@ -79,7 +79,7 @@ public class SerializedFormWriterImpl extends SubWriterHolderWriter
         navBar.setUserHeader(getUserHeaderFooter(true));
         headerContent.add(navBar.getContent(Navigation.Position.TOP));
         Content h1Content = new StringContent(header);
-        Content heading = HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING, true,
+        Content heading = HtmlTree.HEADING_TITLE(Headings.PAGE_TITLE_HEADING,
                 HtmlStyle.title, h1Content);
         Content div = HtmlTree.DIV(HtmlStyle.header, heading);
         bodyContents.setHeader(headerContent)
@@ -117,7 +117,7 @@ public class SerializedFormWriterImpl extends SubWriterHolderWriter
      */
     @Override
     public Content getPackageHeader(String packageName) {
-        Content heading = HtmlTree.HEADING(Headings.SerializedForm.PACKAGE_HEADING, true,
+        Content heading = HtmlTree.HEADING_TITLE(Headings.SerializedForm.PACKAGE_HEADING,
                 contents.packageLabel);
         heading.add(Entity.NO_BREAK_SPACE);
         heading.add(packageName);

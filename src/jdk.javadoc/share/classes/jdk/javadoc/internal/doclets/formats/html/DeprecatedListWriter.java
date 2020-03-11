@@ -329,11 +329,11 @@ public class DeprecatedListWriter extends SubWriterHolderWriter {
      */
     public Content getContentsList(DeprecatedAPIListBuilder deprapi) {
         Content headContent = contents.deprecatedAPI;
-        Content heading = HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING, true,
+        Content heading = HtmlTree.HEADING_TITLE(Headings.PAGE_TITLE_HEADING,
                 HtmlStyle.title, headContent);
         Content div = HtmlTree.DIV(HtmlStyle.header, heading);
         Content headingContent = contents.contentsHeading;
-        div.add(HtmlTree.HEADING(Headings.CONTENT_HEADING, true,
+        div.add(HtmlTree.HEADING_TITLE(Headings.CONTENT_HEADING,
                 headingContent));
         Content ul = new HtmlTree(HtmlTag.UL);
         for (DeprElementKind kind : DeprElementKind.values()) {

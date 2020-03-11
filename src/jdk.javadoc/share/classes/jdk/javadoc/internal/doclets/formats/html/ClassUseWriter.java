@@ -439,8 +439,8 @@ public class ClassUseWriter extends SubWriterHolderWriter {
         headingContent.add(contents.getContent("doclet.ClassUse_Title", cltype));
         headingContent.add(new HtmlTree(HtmlTag.BR));
         headingContent.add(clname);
-        Content heading = HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING,
-                true, HtmlStyle.title, headingContent);
+        Content heading = HtmlTree.HEADING_TITLE(Headings.PAGE_TITLE_HEADING,
+                HtmlStyle.title, headingContent);
         Content div = HtmlTree.DIV(HtmlStyle.header, heading);
         bodyContents.setHeader(headerContent).addMainContent(div);
         return bodyTree;

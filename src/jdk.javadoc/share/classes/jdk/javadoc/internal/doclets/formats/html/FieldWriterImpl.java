@@ -90,7 +90,7 @@ public class FieldWriterImpl extends AbstractMemberWriter
     @Override
     public Content getFieldDocTreeHeader(VariableElement field) {
         Content fieldTree = new ContentBuilder();
-        Content heading = new HtmlTree(Headings.TypeDeclaration.MEMBER_HEADING,
+        Content heading = HtmlTree.HEADING(Headings.TypeDeclaration.MEMBER_HEADING,
                 new StringContent(name(field)));
         fieldTree.add(heading);
         return HtmlTree.SECTION(HtmlStyle.detail, fieldTree).setId(name(field));

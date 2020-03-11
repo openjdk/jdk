@@ -286,30 +286,6 @@ public class HtmlDocletWriter {
         private static final Pattern docrootPattern =
                 Pattern.compile(Pattern.quote("{@docroot}"), Pattern.CASE_INSENSITIVE);
 
-    /**
-     * Get the script to show or hide the All classes link.
-     *
-     * @param id id of the element to show or hide
-     * @return a content tree for the script
-     */
-    public Content getAllClassesLinkScript(String id) {
-        Script script = new Script("<!--\n" +
-                "  allClassesLink = document.getElementById(")
-                .appendStringLiteral(id)
-                .append(");\n" +
-                "  if(window==top) {\n" +
-                "    allClassesLink.style.display = \"block\";\n" +
-                "  }\n" +
-                "  else {\n" +
-                "    allClassesLink.style.display = \"none\";\n" +
-                "  }\n" +
-                "  //-->\n");
-        Content div = HtmlTree.DIV(script.asContent());
-        Content div_noscript = HtmlTree.DIV(contents.noScriptMessage);
-        Content noScript = HtmlTree.NOSCRIPT(div_noscript);
-        div.add(noScript);
-        return div;
-    }
 
     /**
      * Add method information.

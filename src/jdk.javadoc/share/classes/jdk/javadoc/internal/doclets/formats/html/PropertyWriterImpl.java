@@ -82,7 +82,7 @@ public class PropertyWriterImpl extends AbstractMemberWriter
     @Override
     public Content getPropertyDocTreeHeader(ExecutableElement property) {
         Content propertyDocTree = new ContentBuilder();
-        Content heading = new HtmlTree(Headings.TypeDeclaration.MEMBER_HEADING,
+        Content heading = HtmlTree.HEADING(Headings.TypeDeclaration.MEMBER_HEADING,
                 new StringContent(utils.getPropertyLabel(name(property))));
         propertyDocTree.add(heading);
         return HtmlTree.SECTION(HtmlStyle.detail, propertyDocTree)

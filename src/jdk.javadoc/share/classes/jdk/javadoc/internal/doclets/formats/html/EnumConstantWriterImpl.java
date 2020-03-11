@@ -89,7 +89,7 @@ public class EnumConstantWriterImpl extends AbstractMemberWriter
     public Content getEnumConstantsTreeHeader(VariableElement enumConstant,
             Content enumConstantsDetailsTree) {
         Content enumConstantsTree = new ContentBuilder();
-        HtmlTree heading = new HtmlTree(Headings.TypeDeclaration.MEMBER_HEADING,
+        HtmlTree heading = HtmlTree.HEADING(Headings.TypeDeclaration.MEMBER_HEADING,
                 new StringContent(name(enumConstant)));
         enumConstantsTree.add(heading);
         return HtmlTree.SECTION(HtmlStyle.detail, enumConstantsTree)

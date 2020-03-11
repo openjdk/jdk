@@ -100,7 +100,7 @@ public class PackageTreeWriter extends AbstractTreeWriter {
         Content mainContent = new ContentBuilder();
         Content headContent = contents.getContent("doclet.Hierarchy_For_Package",
                 utils.getPackageName(packageElement));
-        Content heading = HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING, false,
+        Content heading = HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING,
                 HtmlStyle.title, headContent);
         Content div = HtmlTree.DIV(HtmlStyle.header, heading);
         if (configuration.packages.size() > 1) {

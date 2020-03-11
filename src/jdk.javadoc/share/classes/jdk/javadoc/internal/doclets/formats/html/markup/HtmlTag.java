@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,7 +60,6 @@ public enum HtmlTag {
     HR(BlockType.BLOCK, EndTag.NOEND),
     HTML(BlockType.OTHER, EndTag.END),
     I(BlockType.INLINE, EndTag.END),
-    IFRAME(BlockType.OTHER, EndTag.END),
     IMG(BlockType.INLINE, EndTag.NOEND),
     INPUT(BlockType.BLOCK, EndTag.NOEND),
     LABEL(BlockType.INLINE, EndTag.END),

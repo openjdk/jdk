@@ -201,7 +201,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
         div.add(annotationContent);
         Content label = mdle.isOpen() && (configuration.docEnv.getModuleMode() == ModuleMode.ALL)
                 ? contents.openModuleLabel : contents.moduleLabel;
-        Content tHeading = HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING, true,
+        Content tHeading = HtmlTree.HEADING_TITLE(Headings.PAGE_TITLE_HEADING,
                 HtmlStyle.title, label);
         tHeading.add(Entity.NO_BREAK_SPACE);
         Content moduleHead = new RawHtml(heading);

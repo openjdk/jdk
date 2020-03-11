@@ -103,7 +103,7 @@ public class AnnotationTypeFieldWriterImpl extends AbstractMemberWriter
     @Override
     public Content getAnnotationDocTreeHeader(Element member) {
         Content annotationDocTree = new ContentBuilder();
-        Content heading = new HtmlTree(Headings.TypeDeclaration.MEMBER_HEADING,
+        Content heading = HtmlTree.HEADING(Headings.TypeDeclaration.MEMBER_HEADING,
                 new StringContent(name(member)));
         annotationDocTree.add(heading);
         return HtmlTree.SECTION(HtmlStyle.detail, annotationDocTree).setId(name(member));

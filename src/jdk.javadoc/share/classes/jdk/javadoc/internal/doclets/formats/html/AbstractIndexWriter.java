@@ -177,7 +177,7 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
     protected void addHeading(Character uc, Content contentTree) {
         String unicode = uc.toString();
         Content headContent = new StringContent(unicode);
-        HtmlTree heading = HtmlTree.HEADING(Headings.CONTENT_HEADING, false,
+        HtmlTree heading = HtmlTree.HEADING(Headings.CONTENT_HEADING,
                 HtmlStyle.title, headContent);
         heading.setId(getNameForIndex(unicode));
         contentTree.add(heading);

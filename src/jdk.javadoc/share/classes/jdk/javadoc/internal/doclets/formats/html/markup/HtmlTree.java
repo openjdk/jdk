@@ -27,21 +27,34 @@ package jdk.javadoc.internal.doclets.formats.html.markup;
 
 import java.io.IOException;
 import java.io.Writer;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.BitSet;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlAttr.Role;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.DocletConstants;
 
 /**
- * Class for generating HTML tree for javadoc output.
+ * A tree node representing an HTML element, containing the name of the element,
+ * a collection of attributes, and content.
+ *
+ * Except where otherwise stated, all methods in this class will throw
+ * {@code NullPointerException} for any arguments that are {@code null}
+ * or that are arrays or collections that contain {@code null}.
+ *
+ * Many methods in this class return {@code this}, to enable a series
+ * of chained method calls on a single object.
+ *
+ * Terminology: An HTML element is typically composed of a start tag, some
+ * enclosed content and typically an end tag. The start tag contains any
+ * attributes for the element. See:
+ * <a href="https://en.wikipedia.org/wiki/HTML_element">HTML element</a>.
  *
  *  <p><b>This is NOT part of any supported API.
  *  If you write code that depends on this, you do so at your own risk.
@@ -50,107 +63,97 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocletConstants;
  */
 public class HtmlTree extends Content {
 
+    /**
+     * The kind of tag for the HTML element.
+     * This value is never {@code null}.
+     */
     public final HtmlTag htmlTag;
-    private Map<HtmlAttr,String> attrs = Collections.emptyMap();
-    private List<Content> content = Collections.emptyList();
+
+    /**
+     * The attributes for the HTML element.
+     * The keys and values in this map are never {@code null}.
+     */
+    private Map<HtmlAttr, String> attrs = Map.of();
+
+    /**
+     * The enclosed content ("inner HTML") for this HTML element.
+     * The items in this list are never null.
+     */
+    private List<Content> content = List.of();
+
+    /**
+     * A sentinel value to explicitly indicate empty content.
+     */
     public static final Content EMPTY = new StringContent("");
 
     /**
-     * Constructor to construct HtmlTree object.
+     * Creates an {@code HTMLTree} object with a given kind of tag.
      *
-     * @param tag HTML tag for the HtmlTree object
+     * @param tag the kind of tag
      */
     public HtmlTree(HtmlTag tag) {
-        htmlTag = nullCheck(tag);
+        htmlTag = Objects.requireNonNull(tag);
     }
 
     /**
-     * Constructor to construct HtmlTree object.
+     * Adds an attribute.
      *
-     * @param tag HTML tag for the HtmlTree object
-     * @param contents contents to be added to the tree
-     */
-    public HtmlTree(HtmlTag tag, Content... contents) {
-        this(tag);
-        for (Content c: contents)
-            add(c);
-    }
-
-    /**
-     * Constructor to construct HtmlTree object.
-     *
-     * @param tag HTML tag for the HtmlTree object
-     * @param contents contents to be added to the tree
-     */
-    public HtmlTree(HtmlTag tag, List<Content> contents) {
-        this(tag);
-        for (Content c: contents)
-            add(c);
-    }
-
-    /**
-     * Adds an attribute for the HTML tag.
-     *
-     * @param attrName name of the attribute
-     * @param attrValue value of the attribute
+     * @param attrName  the name of the attribute
+     * @param attrValue the value of the attribute
      * @return this object
      */
     public HtmlTree put(HtmlAttr attrName, String attrValue) {
         if (attrs.isEmpty())
             attrs = new LinkedHashMap<>(3);
-        attrs.put(nullCheck(attrName), Entity.escapeHtmlChars(attrValue));
+        attrs.put(Objects.requireNonNull(attrName), Entity.escapeHtmlChars(attrValue));
         return this;
     }
 
     /**
-     * Sets the "id" attribute for this tag.
+     * Sets the {@code id} attribute.
      *
-     * @param id the value for the id attribute
+     * @param id the value for the attribute
      * @return this object
      */
     public HtmlTree setId(String id) {
-        put(HtmlAttr.ID, id);
-        return this;
+        return put(HtmlAttr.ID, id);
     }
 
     /**
-     * Sets the "title" attribute for this tag.
-     * Any HTML tags in the content will be removed.
+     * Sets the {@code title} attribute.
+     * Any nested start or end tags in the content will be removed.
      *
      * @param body the content for the title attribute
      * @return this object
      */
     public HtmlTree setTitle(Content body) {
-        put(HtmlAttr.TITLE, stripHtml(body));
-        return this;
+        return put(HtmlAttr.TITLE, stripHtml(body));
     }
 
     /**
-     * Sets the "role" attribute for this tag.
+     * Sets the {@code role} attribute.
      *
      * @param role the role
      * @return this object
      */
     public HtmlTree setRole(Role role) {
-        put(HtmlAttr.ROLE, role.toString());
-        return this;
+        return put(HtmlAttr.ROLE, role.toString());
     }
 
     /**
-     * Sets the style for the HTML tag.
+     * Sets the {@code class} attribute.
      *
-     * @param style style to be added
+     * @param style the value for the attribute
      * @return this object
      */
     public HtmlTree setStyle(HtmlStyle style) {
-        put(HtmlAttr.CLASS, style.toString());
-        return this;
+        return put(HtmlAttr.CLASS, style.toString());
     }
 
     /**
-     * Adds content for the HTML tag.
+     * Adds additional content for the HTML element.
      *
-     * @param content content to be added
+     * @param content the content
      */
     @Override
     public HtmlTree add(Content content) {
@@ -158,6 +161,7 @@ public class HtmlTree extends Content {
             ((ContentBuilder) content).contents.forEach(this::add);
         }
         else if (content == HtmlTree.EMPTY || content.isValid()) {
+            // quietly avoid adding empty or invalid nodes (except EMPTY)
             if (this.content.isEmpty())
                 this.content = new ArrayList<>();
             this.content.add(content);
@@ -166,9 +170,11 @@ public class HtmlTree extends Content {
     }
 
     /**
-     * Adds String content to the HTML tree. If the last content member
-     * added is a StringContent, append the string to that StringContent or else
-     * create a new StringContent and add it to the HTML tree.
+     * Adds text content for the HTML element.
+     *
+     * If the last content member that was added is a {@code StringContent},
+     * appends the string to that item; otherwise, creates and uses a new {@code StringContent}
+     * for the new text content.
      *
      * @param stringContent string content that needs to be added
      */
@@ -202,8 +208,9 @@ public class HtmlTree extends Content {
     @Override
     public int charCount() {
         int n = 0;
-        for (Content c : content)
+        for (Content c : content) {
             n += c.charCount();
+        }
         return n;
     }
 
@@ -260,7 +267,7 @@ public class HtmlTree extends Content {
     public static String encodeURL(String url) {
         BitSet nonEncodingChars = MAIN_CHARS;
         StringBuilder sb = new StringBuilder();
-        for (byte c : url.getBytes(Charset.forName("UTF-8"))) {
+        for (byte c : url.getBytes(StandardCharsets.UTF_8)) {
             if (c == '?' || c == '#') {
                 sb.append((char) c);
                 // switch to the more restrictive set inside
@@ -276,634 +283,557 @@ public class HtmlTree extends Content {
     }
 
     /**
-     * Generates an HTML anchor tag.
+     * Creates an HTML {@code A} element.
      *
-     * @param ref reference url for the anchor tag
-     * @param body content for the anchor tag
-     * @return an HtmlTree object
+     * @param ref the value for the {@code href} attribute}
+     * @param body the content for element
+     * @return the element
      */
     public static HtmlTree A(String ref, Content body) {
-        HtmlTree htmltree = new HtmlTree(HtmlTag.A, nullCheck(body));
-        htmltree.put(HtmlAttr.HREF, encodeURL(ref));
-        return htmltree;
+        return new HtmlTree(HtmlTag.A)
+                .put(HtmlAttr.HREF, encodeURL(ref))
+                .add(body);
     }
 
     /**
-     * Generates a CAPTION tag with some content.
+     * Creates an HTML {@code CAPTION} element with the given content.
      *
-     * @param body content for the tag
-     * @return an HtmlTree object for the CAPTION tag
+     * @param body content for the element
+     * @return the element
      */
     public static HtmlTree CAPTION(Content body) {
-        HtmlTree htmltree = new HtmlTree(HtmlTag.CAPTION, nullCheck(body));
-        return htmltree;
+        return new HtmlTree(HtmlTag.CAPTION)
+                .add(body);
     }
 
     /**
-     * Generates a CODE tag with some content.
+     * Creates an HTML {@code CODE} element with the given content.
      *
-     * @param body content for the tag
-     * @return an HtmlTree object for the CODE tag
+     * @param body content for the element
+     * @return the element
      */
     public static HtmlTree CODE(Content body) {
-        HtmlTree htmltree = new HtmlTree(HtmlTag.CODE, nullCheck(body));
-        return htmltree;
+        return new HtmlTree(HtmlTag.CODE)
+                .add(body);
     }
 
     /**
-     * Generates a DD tag with some content.
+     * Creates an HTML {@code DD} element with the given content.
      *
-     * @param body content for the tag
-     * @return an HtmlTree object for the DD tag
+     * @param body content for the element
+     * @return the element
      */
     public static HtmlTree DD(Content body) {
-        HtmlTree htmltree = new HtmlTree(HtmlTag.DD, nullCheck(body));
-        return htmltree;
+        return new HtmlTree(HtmlTag.DD)
+                .add(body);
     }
 
     /**
-     * Generates a DL tag with a given style.
+     * Creates an HTML {@code DL} element with the given style.
      *
      * @param style the style
-     * @return an HtmlTree object for the DL tag
+     * @return the element
      */
     public static HtmlTree DL(HtmlStyle style) {
-        return new HtmlTree(HtmlTag.DL).setStyle(style);
+        return new HtmlTree(HtmlTag.DL)
+                .setStyle(style);
     }
 
     /**
-     * Generates a DL tag with some content.
+     * Creates an HTML {@code DL} element with the given style and content.
      *
-     * @param style the style for the tag
-     * @param body  content for the tag
-     * @return an HtmlTree object for the DL tag
+     * @param style the style
+     * @param body  the content
+     * @return the element
      */
     public static HtmlTree DL(HtmlStyle style, Content body) {
-        return new HtmlTree(HtmlTag.DL, nullCheck(body)).setStyle(style);
+        return new HtmlTree(HtmlTag.DL)
+                .setStyle(style)
+                .add(body);
     }
 
     /**
-     * Generates a DIV tag with the style class attributes.
+     * Creates an HTML {@code DIV} element with the given style.
      *
-     * @param styleClass stylesheet class for the tag
-     * @return an HtmlTree object for the DIV tag
+     * @param style the style
+     * @return the element
      */
-    public static HtmlTree DIV(HtmlStyle styleClass) {
-        return new HtmlTree(HtmlTag.DIV).setStyle(styleClass);
+    public static HtmlTree DIV(HtmlStyle style) {
+        return new HtmlTree(HtmlTag.DIV)
+                .setStyle(style);
     }
 
     /**
-     * Generates a DIV tag with the style class attributes. It also encloses
-     * a content.
+     * Creates an HTML {@code DIV} element with the given style and content.
      *
-     * @param styleClass stylesheet class for the tag
-     * @param body content for the tag
-     * @return an HtmlTree object for the DIV tag
+     * @param style the style
+     * @param body  the content
+     * @return the element
      */
-    public static HtmlTree DIV(HtmlStyle styleClass, Content body) {
-        HtmlTree htmltree = new HtmlTree(HtmlTag.DIV, nullCheck(body));
-        if (styleClass != null)
-            htmltree.setStyle(styleClass);
-        return htmltree;
+    public static HtmlTree DIV(HtmlStyle style, Content body) {
+        return new HtmlTree(HtmlTag.DIV)
+                .setStyle(style)
+                .add(body);
     }
 
     /**
-     * Generates a DIV tag with some content.
+     * Creates an HTML {@code DIV} element with the given content.
      *
-     * @param body content for the tag
-     * @return an HtmlTree object for the DIV tag
+     * @param body the content
+     * @return the element
      */
     public static HtmlTree DIV(Content body) {
-        return DIV(null, body);
+        return new HtmlTree(HtmlTag.DIV)
+                .add(body);
     }
 
     /**
-     * Generates a DT tag with some content.
+     * Creates an HTML {@code DT} element with the given content.
      *
-     * @param body content for the tag
-     * @return an HtmlTree object for the DT tag
+     * @param body the content
+     * @return the element
      */
     public static HtmlTree DT(Content body) {
-        HtmlTree htmltree = new HtmlTree(HtmlTag.DT, nullCheck(body));
-        return htmltree;
+        return new HtmlTree(HtmlTag.DT)
+                .add(body);
     }
 
     /**
-     * Generates a FOOTER tag with role attribute.
+     * Creates an HTML {@code FOOTER} element.
+     * The role is set to {@code contentinfo}.
      *
-     * @return an HtmlTree object for the FOOTER tag
+     * @return the element
      */
     public static HtmlTree FOOTER() {
-        HtmlTree htmltree = new HtmlTree(HtmlTag.FOOTER);
-        htmltree.setRole(Role.CONTENTINFO);
-        return htmltree;
+        return new HtmlTree(HtmlTag.FOOTER)
+                .setRole(Role.CONTENTINFO);
     }
 
     /**
-     * Generates a HEADER tag with role attribute.
+     * Creates an HTML {@code HEADER} element.
+     * The role is set to {@code banner}.
      *
-     * @return an HtmlTree object for the HEADER tag
+     * @return the element
      */
     public static HtmlTree HEADER() {
-        HtmlTree htmltree = new HtmlTree(HtmlTag.HEADER);
-        htmltree.setRole(Role.BANNER);
-        return htmltree;
+        return new HtmlTree(HtmlTag.HEADER)
+                .setRole(Role.BANNER);
     }
 
     /**
-     * Generates a heading tag (h1 to h6) with the title and style class attributes. It also encloses
-     * a content.
+     * Creates an HTML heading element with the given content.
      *
-     * @param headingTag the heading tag to be generated
-     * @param printTitle true if title for the tag needs to be printed else false
-     * @param styleClass stylesheet class for the tag
-     * @param body content for the tag
-     * @return an HtmlTree object for the tag
-     */
-    public static HtmlTree HEADING(HtmlTag headingTag, boolean printTitle,
-            HtmlStyle styleClass, Content body) {
-        HtmlTree htmltree = new HtmlTree(headingTag, nullCheck(body));
-        if (printTitle)
-            htmltree.setTitle(body);
-        if (styleClass != null)
-            htmltree.setStyle(styleClass);
-        return htmltree;
-    }
-
-    /**
-     * Generates a heading tag (h1 to h6) with style class attribute. It also encloses
-     * a content.
-     *
-     * @param headingTag the heading tag to be generated
-     * @param styleClass stylesheet class for the tag
-     * @param body content for the tag
-     * @return an HtmlTree object for the tag
-     */
-    public static HtmlTree HEADING(HtmlTag headingTag, HtmlStyle styleClass, Content body) {
-        return HEADING(headingTag, false, styleClass, body);
-    }
-
-    /**
-     * Generates a heading tag (h1 to h6) with the title attribute. It also encloses
-     * a content.
-     *
-     * @param headingTag the heading tag to be generated
-     * @param printTitle true if the title for the tag needs to be printed else false
-     * @param body content for the tag
-     * @return an HtmlTree object for the tag
-     */
-    public static HtmlTree HEADING(HtmlTag headingTag, boolean printTitle, Content body) {
-        return HEADING(headingTag, printTitle, null, body);
-    }
-
-    /**
-     * Generates a heading tag (h1 to h6)  with some content.
-     *
-     * @param headingTag the heading tag to be generated
-     * @param body content for the tag
-     * @return an HtmlTree object for the tag
+     * @param headingTag the tag for the heading
+     * @param body       the content
+     * @return the element
      */
     public static HtmlTree HEADING(HtmlTag headingTag, Content body) {
-        return HEADING(headingTag, false, null, body);
+        return new HtmlTree(checkHeading(headingTag))
+                .add(body);
     }
 
     /**
-     * Generates an HTML tag with lang attribute. It also adds head and body
-     * content to the HTML tree.
+     * Creates an HTML heading element with the given style and content.
      *
-     * @param lang language for the HTML document
-     * @param head head for the HTML tag
-     * @param body body for the HTML tag
-     * @return an HtmlTree object for the HTML tag
+     * @param headingTag the tag for the heading
+     * @param style      the stylesheet class
+     * @param body       the content
+     * @return the element
+     */
+    public static HtmlTree HEADING(HtmlTag headingTag, HtmlStyle style, Content body) {
+        return new HtmlTree(checkHeading(headingTag))
+                .setStyle(style)
+                .add(body);
+    }
+
+    /**
+     * Creates an HTML heading element with the given style and content.
+     * The {@code title} attribute is set from the content.
+     *
+     * @param headingTag the tag for the heading
+     * @param style      the stylesheet class
+     * @param body       the content
+     * @return the element
+     */
+    public static HtmlTree HEADING_TITLE(HtmlTag headingTag,
+                                         HtmlStyle style, Content body) {
+        return new HtmlTree(checkHeading(headingTag))
+                .setTitle(body)
+                .setStyle(style)
+                .add(body);
+    }
+
+    /**
+     * Creates an HTML heading element with the given style and content.
+     * The {@code title} attribute is set from the content.
+     *
+     * @param headingTag the tag for the heading
+     * @param body       the content
+     * @return the element
+     */
+    public static HtmlTree HEADING_TITLE(HtmlTag headingTag, Content body) {
+        return new HtmlTree(checkHeading(headingTag))
+                .setTitle(body)
+                .add(body);
+    }
+
+    private static HtmlTag checkHeading(HtmlTag headingTag) {
+        switch (headingTag) {
+            case H1: case H2: case H3: case H4: case H5: case H6:
+                return headingTag;
+            default:
+                throw new IllegalArgumentException(headingTag.toString());
+        }
+    }
+
+    /**
+     * Craetes an HTML {@code HTML} element with the given {@code lang} attribute,
+     * and {@code HEAD} and {@code BODY} contents.
+     *
+     * @param lang the value for the {@code lang} attribute
+     * @param head the {@code HEAD} element
+     * @param body the {@code BODY} element
+     * @return the {@code HTML} element
      */
     public static HtmlTree HTML(String lang, Content head, Content body) {
-        HtmlTree htmltree = new HtmlTree(HtmlTag.HTML, nullCheck(head), nullCheck(body));
-        htmltree.put(HtmlAttr.LANG, nullCheck(lang));
-        return htmltree;
+        return new HtmlTree(HtmlTag.HTML)
+                .put(HtmlAttr.LANG, lang)
+                .add(head)
+                .add(body);
     }
 
     /**
-     * Generates a IFRAME tag.
+     * Creates an HTML {@code INPUT} element with the given id and initial value.
+     * The element as marked as initially disabled.
      *
-     * @param src the url of the document to be shown in the frame
-     * @param name specifies the name of the frame
-     * @param title the title for the frame
-     * @return an HtmlTree object for the IFRAME tag
-     */
-    public static HtmlTree IFRAME(String src, String name, String title) {
-        HtmlTree htmltree = new HtmlTree(HtmlTag.IFRAME);
-        htmltree.put(HtmlAttr.SRC, nullCheck(src));
-        htmltree.put(HtmlAttr.NAME, nullCheck(name));
-        htmltree.put(HtmlAttr.TITLE, nullCheck(title));
-        return htmltree;
-    }
-
-    /**
-     * Generates a INPUT tag with some id.
-     *
-     * @param type the type of input
-     * @param id id for the tag
-     * @param value value for the tag
-     * @return an HtmlTree object for the INPUT tag
+     * @param type  the type of input
+     * @param id    the id
+     * @param value the initial value
+     * @return the element
      */
     public static HtmlTree INPUT(String type, String id, String value) {
-        HtmlTree htmltree = new HtmlTree(HtmlTag.INPUT);
-        htmltree.put(HtmlAttr.TYPE, nullCheck(type));
-        htmltree.put(HtmlAttr.ID, nullCheck(id));
-        htmltree.put(HtmlAttr.VALUE, nullCheck(value));
-        htmltree.put(HtmlAttr.DISABLED, "disabled");
-        return htmltree;
+        return new HtmlTree(HtmlTag.INPUT)
+                .put(HtmlAttr.TYPE, type)
+                .put(HtmlAttr.ID, id)
+                .put(HtmlAttr.VALUE, value)
+                .put(HtmlAttr.DISABLED, "disabled");
     }
 
     /**
-     * Generates a LABEL tag with some content.
+     * Creates an HTML {@code LABEL} element with the given content.
      *
-     * @param forLabel value of "for" attribute of the LABEL tag
-     * @param body content for the tag
-     * @return an HtmlTree object for the LABEL tag
+     * @param forLabel the value of the {@code for} attribute
+     * @param body     the content
+     * @return the element
      */
     public static HtmlTree LABEL(String forLabel, Content body) {
-        HtmlTree htmltree = new HtmlTree(HtmlTag.LABEL, nullCheck(body));
-        htmltree.put(HtmlAttr.FOR, nullCheck(forLabel));
-        return htmltree;
+        return new HtmlTree(HtmlTag.LABEL)
+                .put(HtmlAttr.FOR, forLabel)
+                .add(body);
     }
 
     /**
-     * Generates a LI tag with some content.
+     * Creates an HTML {@code LI} element with the given content.
      *
-     * @param body content for the tag
-     * @return an HtmlTree object for the LI tag
+     * @param body the content
+     * @return the element
      */
     public static HtmlTree LI(Content body) {
-        return LI(null, body);
+        return new HtmlTree(HtmlTag.LI)
+                .add(body);
     }
 
     /**
-     * Generates a LI tag with some content.
+     * Creates an HTML {@code LI} element with the given style and the given content.
      *
-     * @param styleClass style for the tag
-     * @param body content for the tag
-     * @return an HtmlTree object for the LI tag
+     * @param style the style
+     * @param body  the content
+     * @return the element
      */
-    public static HtmlTree LI(HtmlStyle styleClass, Content body) {
-        HtmlTree htmltree = new HtmlTree(HtmlTag.LI, nullCheck(body));
-        if (styleClass != null)
-            htmltree.setStyle(styleClass);
-        return htmltree;
+    public static HtmlTree LI(HtmlStyle style, Content body) {
+        return LI(body)
+                .setStyle(style);
     }
 
     /**
-     * Generates a LINK tag with the rel, type, href and title attributes.
+     * Creates an HTML {@code LINK} tag with the given attributes.
      *
-     * @param rel relevance of the link
-     * @param type type of link
-     * @param href the path for the link
-     * @param title title for the link
-     * @return an HtmlTree object for the LINK tag
+     * @param rel   the relevance of the link: the {@code rel} attribute
+     * @param type  the type of link: the {@code type} attribute
+     * @param href  the path for the link: the {@code href} attribute
+     * @param title title for the link: the {@code title} attribute
+     * @return the element
      */
     public static HtmlTree LINK(String rel, String type, String href, String title) {
-        HtmlTree htmltree = new HtmlTree(HtmlTag.LINK);
-        htmltree.put(HtmlAttr.REL, nullCheck(rel));
-        htmltree.put(HtmlAttr.TYPE, nullCheck(type));
-        htmltree.put(HtmlAttr.HREF, nullCheck(href));
-        htmltree.put(HtmlAttr.TITLE, nullCheck(title));
-        return htmltree;
+        return new HtmlTree(HtmlTag.LINK)
+                .put(HtmlAttr.REL, rel)
+                .put(HtmlAttr.TYPE, type)
+                .put(HtmlAttr.HREF, href)
+                .put(HtmlAttr.TITLE, title);
     }
 
     /**
-     * Generates a MAIN tag with role attribute.
+     * Creates an HTML {@code MAIN} element.
+     * The role is set to {@code main}.
      *
-     * @return an HtmlTree object for the MAIN tag
+     * @return the element
      */
     public static HtmlTree MAIN() {
-        HtmlTree htmltree = new HtmlTree(HtmlTag.MAIN);
-        htmltree.setRole(Role.MAIN);
-        return htmltree;
+        return new HtmlTree(HtmlTag.MAIN)
+                .setRole(Role.MAIN);
     }
 
     /**
-     * Generates a MAIN tag with role attribute and some content.
+     * Creates an HTML {@code MAIN} element with the given content.
+     * The role is set to {@code main}.
      *
-     * @param body content of the MAIN tag
-     * @return an HtmlTree object for the MAIN tag
+     * @return the element
      */
     public static HtmlTree MAIN(Content body) {
-        HtmlTree htmltree = new HtmlTree(HtmlTag.MAIN, nullCheck(body));
-        htmltree.setRole(Role.MAIN);
-        return htmltree;
+        return new HtmlTree(HtmlTag.MAIN)
+                .setRole(Role.MAIN)
+                .add(body);
     }
 
     /**
-     * Generates a META tag with the http-equiv, content and charset attributes.
+     * Creates an HTML {@code META} element with {@code http-equiv} and {@code content} attributes.
      *
-     * @param httpEquiv http equiv attribute for the META tag
-     * @param content type of content
-     * @param charSet character set used
-     * @return an HtmlTree object for the META tag
+     * @param httpEquiv the value for the {@code http-equiv} attribute
+     * @param content   the type of content, to be used in the {@code content} attribute
+     * @param charset   the character set for the document, to be used in the {@code content} attribute
+     * @return the element
      */
-    public static HtmlTree META(String httpEquiv, String content, String charSet) {
-        HtmlTree htmltree = new HtmlTree(HtmlTag.META);
-        String contentCharset = content + "; charset=" + charSet;
-        htmltree.put(HtmlAttr.HTTP_EQUIV, nullCheck(httpEquiv));
-        htmltree.put(HtmlAttr.CONTENT, contentCharset);
-        return htmltree;
+    public static HtmlTree META(String httpEquiv, String content, String charset) {
+        return new HtmlTree(HtmlTag.META)
+                .put(HtmlAttr.HTTP_EQUIV, httpEquiv)
+                .put(HtmlAttr.CONTENT, content + "; charset=" + charset);
     }
 
     /**
-     * Generates a META tag with the name and content attributes.
+     * Creates an HTML {@code META} element with {@code name} and {@code content} attributes.
      *
-     * @param name name attribute
-     * @param content type of content
-     * @return an HtmlTree object for the META tag
+     * @param name    the value for the {@code name} attribute
+     * @param content the value for the {@code content} attribute
+     * @return the element
      */
     public static HtmlTree META(String name, String content) {
-        HtmlTree htmltree = new HtmlTree(HtmlTag.META);
-        htmltree.put(HtmlAttr.NAME, nullCheck(name));
-        htmltree.put(HtmlAttr.CONTENT, nullCheck(content));
-        return htmltree;
+        return new HtmlTree(HtmlTag.META)
+                .put(HtmlAttr.NAME, name)
+                .put(HtmlAttr.CONTENT, content);
     }
 
     /**
-     * Generates a NAV tag with the role attribute.
+     * Creates an HTML {@code NAV} element.
+     * The role is set to {@code navigation}.
      *
-     * @return an HtmlTree object for the NAV tag
+     * @return the element
      */
     public static HtmlTree NAV() {
-        HtmlTree htmltree = new HtmlTree(HtmlTag.NAV);
-        htmltree.setRole(Role.NAVIGATION);
-        return htmltree;
+        return new HtmlTree(HtmlTag.NAV)
+                .setRole(Role.NAVIGATION);
     }
 
     /**
-     * Generates a NOSCRIPT tag with some content.
+     * Creates an HTML {@code NOSCRIPT} element with some content.
      *
-     * @param body content of the noscript tag
-     * @return an HtmlTree object for the NOSCRIPT tag
+     * @param body the content
+     * @return the element
      */
     public static HtmlTree NOSCRIPT(Content body) {
-        HtmlTree htmltree = new HtmlTree(HtmlTag.NOSCRIPT, nullCheck(body));
-        return htmltree;
+        return new HtmlTree(HtmlTag.NOSCRIPT)
+                .add(body);
     }
 
     /**
-     * Generates a P tag with some content.
+     * Creates an HTML {@code P} element with some content.
      *
-     * @param body content of the Paragraph tag
-     * @return an HtmlTree object for the P tag
+     * @param body the content
+     * @return the element
      */
     public static HtmlTree P(Content body) {
-        return P(null, body);
+        return new HtmlTree(HtmlTag.P)
+                .add(body);
     }
 
     /**
-     * Generates a P tag with some content.
+     * Creates an HTML {@code P} element with the given style and some content.
      *
-     * @param styleClass style of the Paragraph tag
-     * @param body content of the Paragraph tag
-     * @return an HtmlTree object for the P tag
+     * @param style the style
+     * @param body  the content
+     * @return the element
      */
-    public static HtmlTree P(HtmlStyle styleClass, Content body) {
-        HtmlTree htmltree = new HtmlTree(HtmlTag.P, nullCheck(body));
-        if (styleClass != null)
-            htmltree.setStyle(styleClass);
-        return htmltree;
+    public static HtmlTree P(HtmlStyle style, Content body) {
+        return P(body)
+                .setStyle(style);
     }
 
     /**
-     * Generates a SCRIPT tag with the type and src attributes.
+     * Creates an HTML {@code SCRIPT} element with some script content.
+     * The type of the script is set to {@code text/javascript}.
      *
-     * @param src the path for the script
-     * @return an HtmlTree object for the SCRIPT tag
+     * @param src the content
+     * @return the element
      */
     public static HtmlTree SCRIPT(String src) {
-        HtmlTree htmltree = new HtmlTree(HtmlTag.SCRIPT);
-        htmltree.put(HtmlAttr.TYPE, "text/javascript");
-        htmltree.put(HtmlAttr.SRC, nullCheck(src));
-        return htmltree;
+        return new HtmlTree(HtmlTag.SCRIPT)
+                .put(HtmlAttr.TYPE, "text/javascript")
+                .put(HtmlAttr.SRC, src);
+
     }
 
     /**
-     * Generates a SECTION tag with style class attribute.
+     * Creates an HTML {@code SECTION} element with the given style.
      *
-     * @param styleClass the style class for the tag
-     * @return an HtmlTree object for the SECTION tag
+     * @param style the style
+     * @return the element
      */
-    public static HtmlTree SECTION(HtmlStyle styleClass) {
-        HtmlTree htmlTree = new HtmlTree(HtmlTag.SECTION);
-        htmlTree.setStyle(styleClass);
-        return htmlTree;
+    public static HtmlTree SECTION(HtmlStyle style) {
+        return new HtmlTree(HtmlTag.SECTION)
+                .setStyle(style);
     }
 
     /**
-     * Generates a SECTION tag with style class attribute and some content.
+     * Creates an HTML {@code SECTION} element with the given style and some content.
      *
-     * @param styleClass the style class for the tag
-     * @param body content of the section tag
-     * @return an HtmlTree object for the SECTION tag
+     * @param style the style
+     * @param body  the content
+     * @return the element
      */
-    public static HtmlTree SECTION(HtmlStyle styleClass, Content body) {
-        HtmlTree htmlTree = new HtmlTree(HtmlTag.SECTION, nullCheck(body));
-        if (styleClass != null) {
-            htmlTree.setStyle(styleClass);
-        }
-        return htmlTree;
+    public static HtmlTree SECTION(HtmlStyle style, Content body) {
+        return new HtmlTree(HtmlTag.SECTION)
+                .setStyle(style)
+                .add(body);
     }
 
     /**
-     * Generates a SMALL tag with some content.
+     * Creates an HTML {@code SMALL} element with some content.
      *
-     * @param body content for the tag
-     * @return an HtmlTree object for the SMALL tag
+     * @param body  the content
+     * @return the element
      */
     public static HtmlTree SMALL(Content body) {
-        HtmlTree htmltree = new HtmlTree(HtmlTag.SMALL, nullCheck(body));
-        return htmltree;
+        return new HtmlTree(HtmlTag.SMALL)
+                .add(body);
     }
 
     /**
-     * Generates a SPAN tag with some content.
+     * Creates an HTML {@code SPAN} element with some content.
      *
-     * @param body content for the tag
-     * @return an HtmlTree object for the SPAN tag
+     * @param body  the content
+     * @return the element
      */
     public static HtmlTree SPAN(Content body) {
-        return SPAN(null, body);
+        return new HtmlTree(HtmlTag.SPAN)
+                .add(body);
     }
 
     /**
-     * Generates a SPAN tag with style class attribute and some content.
+     * Creates an HTML {@code SPAN} element with the given style and some content.
      *
-     * @param styleClass style class for the tag
-     * @param body content for the tag
-     * @return an HtmlTree object for the SPAN tag
+     * @param styleClass the style
+     * @param body       the content
+     * @return the element
      */
     public static HtmlTree SPAN(HtmlStyle styleClass, Content body) {
-        HtmlTree htmltree = new HtmlTree(HtmlTag.SPAN, nullCheck(body));
-        if (styleClass != null)
-            htmltree.setStyle(styleClass);
-        return htmltree;
+        return SPAN(body)
+                .setStyle(styleClass);
     }
 
     /**
-     * Generates an SPAN tag with id attribute and a body.
+     * Creates an HTML {@code SPAN} element with the given id and some content.
      *
-     * @param id id for the tag
-     * @param body body for the tag
-     * @return an HtmlTree object for the SPAN tag
+     * @param id    the id
+     * @param body  the content
+     * @return the element
      */
     public static HtmlTree SPAN_ID(String id, Content body) {
-        HtmlTree htmltree = new HtmlTree(HtmlTag.SPAN, nullCheck(body));
-        htmltree.put(HtmlAttr.ID, nullCheck(id));
-        return htmltree;
+        return new HtmlTree(HtmlTag.SPAN)
+                .setId(id)
+                .add(body);
     }
 
     /**
-     * Generates a SPAN tag with id and style class attributes. It also encloses
-     * a content.
+     * Creates an HTML {@code SPAN} element with the given id and style, and some content.
      *
-     * @param id the id for the tag
-     * @param styleClass stylesheet class for the tag
-     * @param body content for the tag
-     * @return an HtmlTree object for the SPAN tag
+     * @param id    the id
+     * @param style the style
+     * @param body  the content
+     * @return the element
      */
-    public static HtmlTree SPAN(String id, HtmlStyle styleClass, Content body) {
-        HtmlTree htmltree = new HtmlTree(HtmlTag.SPAN, nullCheck(body));
-        htmltree.put(HtmlAttr.ID, nullCheck(id));
-        if (styleClass != null)
-            htmltree.setStyle(styleClass);
-        return htmltree;
+    public static HtmlTree SPAN(String id, HtmlStyle style, Content body) {
+        return new HtmlTree(HtmlTag.SPAN)
+                .setId(id)
+                .setStyle(style)
+                .add(body);
     }
 
     /**
-     * Generates a Table tag with style class and summary attributes and some content.
+     * Creates an HTML {@code TD} element with the given style and some content.
      *
-     * @param styleClass style of the table
-     * @param summary summary for the table
-     * @param body content for the table
-     * @return an HtmlTree object for the TABLE tag
+     * @param style the style
+     * @param body  the content
+     * @return the element
      */
-    public static HtmlTree TABLE(HtmlStyle styleClass, String summary, Content body) {
-        HtmlTree htmltree = new HtmlTree(HtmlTag.TABLE, nullCheck(body));
-        if (styleClass != null)
-            htmltree.setStyle(styleClass);
-        htmltree.put(HtmlAttr.SUMMARY, nullCheck(summary));
-        return htmltree;
+    public static HtmlTree TD(HtmlStyle style, Content body) {
+        return new HtmlTree(HtmlTag.TD)
+                .setStyle(style)
+                .add(body);
     }
 
     /**
-     * Generates a Table tag with style class attribute and some content.
+     * Creates an HTML {@code TH} element with the given style and scope, and some content.
      *
-     * @param styleClass style of the table
-     * @param body content for the table
-     * @return an HtmlTree object for the TABLE tag
+     * @param style the style
+     * @param scope the value for the {@code scope} attribute
+     * @param body  the content
+     * @return the element
      */
-    public static HtmlTree TABLE(HtmlStyle styleClass, Content body) {
-        HtmlTree htmltree = new HtmlTree(HtmlTag.TABLE, nullCheck(body));
-        if (styleClass != null) {
-            htmltree.setStyle(styleClass);
-        }
-        return htmltree;
+    public static HtmlTree TH(HtmlStyle style, String scope, Content body) {
+        return new HtmlTree(HtmlTag.TH)
+                .setStyle(style)
+                .put(HtmlAttr.SCOPE, scope)
+                .add(body);
     }
 
     /**
-     * Generates a TD tag with style class attribute and some content.
+     * Creates an HTML {@code TH} element with the given scope, and some content.
      *
-     * @param styleClass style for the tag
-     * @param body content for the tag
-     * @return an HtmlTree object for the TD tag
-     */
-    public static HtmlTree TD(HtmlStyle styleClass, Content body) {
-        HtmlTree htmltree = new HtmlTree(HtmlTag.TD, nullCheck(body));
-        if (styleClass != null)
-            htmltree.setStyle(styleClass);
-        return htmltree;
-    }
-
-    /**
-     * Generates a TD tag for an HTML table with some content.
-     *
-     * @param body content for the tag
-     * @return an HtmlTree object for the TD tag
-     */
-    public static HtmlTree TD(Content body) {
-        return TD(null, body);
-    }
-
-    /**
-     * Generates a TH tag with style class and scope attributes and some content.
-     *
-     * @param styleClass style for the tag
-     * @param scope scope of the tag
-     * @param body content for the tag
-     * @return an HtmlTree object for the TH tag
-     */
-    public static HtmlTree TH(HtmlStyle styleClass, String scope, Content body) {
-        HtmlTree htmltree = new HtmlTree(HtmlTag.TH, nullCheck(body));
-        if (styleClass != null)
-            htmltree.setStyle(styleClass);
-        htmltree.put(HtmlAttr.SCOPE, nullCheck(scope));
-        return htmltree;
-    }
-
-    /**
-     * Generates a TH tag with scope attribute and some content.
-     *
-     * @param scope scope of the tag
-     * @param body content for the tag
-     * @return an HtmlTree object for the TH tag
+     * @param scope the value for the {@code scope} attribute
+     * @param body  the content
+     * @return the element
      */
     public static HtmlTree TH(String scope, Content body) {
-        return TH(null, scope, body);
+        return new HtmlTree(HtmlTag.TH)
+                .put(HtmlAttr.SCOPE, scope)
+                .add(body);
     }
 
     /**
-     * Generates a TH tag with style class, scope attribute and some content.
+     * Creates an HTML {@code TITLE} element with some content.
      *
-     * @param styleClass style for the tag
-     * @param body content for the tag
-     * @return an HtmlTree object for the TH tag
-     */
-    public static HtmlTree TH_ROW_SCOPE(HtmlStyle styleClass, Content body) {
-        return TH(styleClass, "row", body);
-    }
-
-    /**
-     * Generates a TITLE tag with some content.
-     *
-     * @param body content for the tag
-     * @return an HtmlTree object for the TITLE tag
+     * @param body the content
+     * @return the element
      */
     public static HtmlTree TITLE(String body) {
-        HtmlTree htmltree = new HtmlTree(HtmlTag.TITLE, new StringContent(body));
-        return htmltree;
+        return new HtmlTree(HtmlTag.TITLE)
+            .add(body);
     }
 
     /**
-     * Generates a TR tag for an HTML table with some content.
+     * Creates an HTML {@code UL} element with the given style and some content.
      *
-     * @param body content for the tag
-     * @return an HtmlTree object for the TR tag
+     * @param style the style
+     * @param first the initial content
+     * @param more  additional content
+     * @return the element
      */
-    public static HtmlTree TR(Content body) {
-        HtmlTree htmltree = new HtmlTree(HtmlTag.TR, nullCheck(body));
-        return htmltree;
-    }
-
-    /**
-     * Generates a UL tag with the style class attribute and some content.
-     *
-     * @param styleClass style for the tag
-     * @param first initial content to be added
-     * @param more a series of additional content nodes to be added
-     * @return an HtmlTree object for the UL tag
-     */
-    public static HtmlTree UL(HtmlStyle styleClass, Content first, Content... more) {
-        HtmlTree htmlTree = new HtmlTree(HtmlTag.UL);
-        htmlTree.add(nullCheck(first));
+    public static HtmlTree UL(HtmlStyle style, Content first, Content... more) {
+        HtmlTree htmlTree = new HtmlTree(HtmlTag.UL)
+                .setStyle(style);
+        htmlTree.add(first);
         for (Content c : more) {
-            htmlTree.add(nullCheck(c));
+            htmlTree.add(c);
         }
-        htmlTree.setStyle(nullCheck(styleClass));
         return htmlTree;
     }
 
@@ -950,25 +880,23 @@ public class HtmlTree extends Content {
     @Override
     public boolean isValid() {
         switch (htmlTag) {
-            case A :
-                return (hasAttr(HtmlAttr.NAME) || hasAttr(HtmlAttr.ID) || (hasAttr(HtmlAttr.HREF) && hasContent()));
-            case BR :
+            case A:
+                return (hasAttr(HtmlAttr.ID) || (hasAttr(HtmlAttr.HREF) && hasContent()));
+            case BR:
                 return (!hasContent() && (!hasAttrs() || hasAttr(HtmlAttr.CLEAR)));
-            case IFRAME :
-                return (hasAttr(HtmlAttr.SRC) && !hasContent());
-            case HR :
+            case HR:
             case INPUT:
                 return (!hasContent());
-            case IMG :
+            case IMG:
                 return (hasAttr(HtmlAttr.SRC) && hasAttr(HtmlAttr.ALT) && !hasContent());
-            case LINK :
+            case LINK:
                 return (hasAttr(HtmlAttr.HREF) && !hasContent());
-            case META :
+            case META:
                 return (hasAttr(HtmlAttr.CONTENT) && !hasContent());
-            case SCRIPT :
+            case SCRIPT:
                 return ((hasAttr(HtmlAttr.TYPE) && hasAttr(HtmlAttr.SRC) && !hasContent()) ||
                         (hasAttr(HtmlAttr.TYPE) && hasContent()));
-            case SPAN :
+            case SPAN:
                 return (hasAttr(HtmlAttr.ID) || hasContent());
             default :
                 return hasContent();
@@ -1033,7 +961,7 @@ public class HtmlTree extends Content {
     private static String stripHtml(Content body) {
         String rawString = body.toString();
         // remove HTML tags
-        rawString = rawString.replaceAll("\\<.*?>", " ");
+        rawString = rawString.replaceAll("<.*?>", " ");
         // consolidate multiple spaces between a word to a single space
         rawString = rawString.replaceAll("\\b\\s{2,}\\b", " ");
         // remove extra whitespaces

@@ -140,7 +140,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
                 LinkInfoImpl.Kind.CLASS_HEADER, typeElement);
         //Let's not link to ourselves in the header.
         linkInfo.linkToSelf = false;
-        Content heading = HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING, true,
+        Content heading = HtmlTree.HEADING_TITLE(Headings.PAGE_TITLE_HEADING,
                 HtmlStyle.title, new StringContent(header));
         heading.add(getTypeParameterLinks(linkInfo));
         div.add(heading);

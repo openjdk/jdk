@@ -208,7 +208,7 @@ public class Table extends Content {
      *
      * @param evenRowStyle  the style to use for even-numbered rows
      * @param oddRowStyle   the style to use for odd-numbered rows
-     * @return
+     * @return this object
      */
     public Table setStripedStyles(HtmlStyle evenRowStyle, HtmlStyle oddRowStyle) {
         stripedStyles = Arrays.asList(evenRowStyle, oddRowStyle);
@@ -549,8 +549,8 @@ public class Table extends Content {
     }
 
     private HtmlTree getCaption(Content title) {
-        return new HtmlTree(HtmlTag.CAPTION,
-                HtmlTree.SPAN(title),
-                HtmlTree.SPAN(tabEnd, Entity.NO_BREAK_SPACE));
+        return new HtmlTree(HtmlTag.CAPTION)
+                .add(HtmlTree.SPAN(title))
+                .add(HtmlTree.SPAN(tabEnd, Entity.NO_BREAK_SPACE));
     }
 }
