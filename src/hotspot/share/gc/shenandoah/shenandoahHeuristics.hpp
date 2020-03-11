@@ -78,9 +78,6 @@ protected:
     uint64_t _seqnum_last_alloc;
   } RegionData;
 
-  bool _update_refs_early;
-  bool _update_refs_adaptive;
-
   RegionData* _region_data;
   size_t _region_data_size;
 
@@ -128,11 +125,7 @@ public:
 
   virtual void record_cycle_end();
 
-  virtual void record_phase_time(ShenandoahPhaseTimings::Phase phase, double secs);
-
   virtual bool should_start_gc() const;
-
-  virtual bool should_start_update_refs();
 
   virtual bool should_degenerate_cycle();
 

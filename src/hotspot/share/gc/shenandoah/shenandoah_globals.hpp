@@ -78,10 +78,6 @@
           " *) traversal - traversal GC (single-pass)"                      \
           " *) passive   - disable concurrent GC, do stop-the-world GC")    \
                                                                             \
-  experimental(ccstr, ShenandoahUpdateRefsEarly, "adaptive",                \
-          "Run a separate concurrent reference updating phase after"        \
-          "concurrent evacuation. Possible values: 'on', 'off', 'adaptive'")\
-                                                                            \
   experimental(uintx, ShenandoahRefProcFrequency, 5,                        \
           "How often should (weak, soft, etc) references be processed. "    \
           "References get processed at every Nth GC cycle. Set to zero "    \
@@ -127,18 +123,6 @@
           "number of candidate regions for collection set. Setting this "   \
           "threshold to 100% effectively disables this shortcut.")          \
           range(0,100)                                                      \
-                                                                            \
-  experimental(uintx, ShenandoahMergeUpdateRefsMinGap, 100,                 \
-          "If GC is currently running in separate update-refs mode "        \
-          "this numbers gives the threshold when to switch to "             \
-          "merged update-refs mode. Number is percentage relative to"       \
-          "duration(marking)+duration(update-refs).")                       \
-                                                                            \
-  experimental(uintx, ShenandoahMergeUpdateRefsMaxGap, 200,                 \
-          "If GC is currently running in merged update-refs mode "          \
-          "this numbers gives the threshold when to switch to "             \
-          "separate update-refs mode. Number is percentage relative "       \
-          "to duration(marking)+duration(update-refs).")                    \
                                                                             \
   experimental(uintx, ShenandoahGuaranteedGCInterval, 5*60*1000,            \
           "Most heuristics would guarantee a concurrent GC cycle at "       \
