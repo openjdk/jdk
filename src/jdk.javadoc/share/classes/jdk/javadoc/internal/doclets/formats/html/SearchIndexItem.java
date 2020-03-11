@@ -25,6 +25,8 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
+import javax.lang.model.element.Element;
+
 /**
  * Index item for search.
  *
@@ -40,7 +42,14 @@ public class SearchIndexItem {
         PACKAGES,
         TYPES,
         MEMBERS,
-        SEARCH_TAGS
+        /**
+         * The category of items corresponding to {@code {@index}} tags.
+         */
+        INDEX,
+        /**
+         * The category of items corresponding to {@code {@systemProperty}} tags.
+         */
+        SYSTEM_PROPERTY
     }
 
     private Category category;
@@ -51,7 +60,7 @@ public class SearchIndexItem {
     private String containingClass = "";
     private String holder = "";
     private String description = "";
-    private boolean systemProperty;
+    private Element element;
 
     public void setLabel(String l) {
         label = l;
@@ -105,12 +114,12 @@ public class SearchIndexItem {
         return category;
     }
 
-    public void setSystemProperty(boolean value) {
-        systemProperty = value;
+    public void setElement(Element element) {
+        this.element = element;
     }
 
-    public boolean isSystemProperty() {
-        return systemProperty;
+    public Element getElement() {
+        return element;
     }
 
     @Override
@@ -155,7 +164,8 @@ public class SearchIndexItem {
                 }
                 item.append("}");
                 break;
-            case SEARCH_TAGS:
+            case INDEX:
+            case SYSTEM_PROPERTY:
                 item.append("{")
                         .append("\"l\":\"").append(label).append("\",")
                         .append("\"h\":\"").append(holder).append("\",");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 5076751 8234746
- * @summary System properties documentation needed in javadocs
+ * @summary System properties documentation needed in javadoc
  * @library /tools/lib ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
  * @build javadoc.tester.* toolbox.ToolBox builder.ClassBuilder

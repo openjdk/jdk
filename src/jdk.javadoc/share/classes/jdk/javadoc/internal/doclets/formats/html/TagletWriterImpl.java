@@ -41,6 +41,7 @@ import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.IndexTree;
 import com.sun.source.doctree.ParamTree;
 import com.sun.source.doctree.SystemPropertyTree;
+import jdk.javadoc.internal.doclets.formats.html.SearchIndexItem.Category;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
@@ -48,6 +49,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.RawHtml;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.Content;
+import jdk.javadoc.internal.doclets.toolkit.DocFileElement;
 import jdk.javadoc.internal.doclets.toolkit.DocletElement;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
 import jdk.javadoc.internal.doclets.toolkit.builders.SerializedFormBuilder;
@@ -401,7 +403,6 @@ public class TagletWriterImpl extends TagletWriter {
             result = HtmlTree.SPAN(anchorName, HtmlStyle.searchTagResult, new StringContent(tagText));
             if (options.createIndex() && !tagText.isEmpty()) {
                 SearchIndexItem si = new SearchIndexItem();
-                si.setSystemProperty(isSystemProperty);
                 si.setLabel(tagText);
                 si.setDescription(desc);
                 si.setUrl(htmlWriter.path.getPath() + "#" + anchorName);
@@ -446,6 +447,7 @@ public class TagletWriterImpl extends TagletWriter {
                     public Void visitUnknown(Element e, Void p) {
                         if (e instanceof DocletElement) {
                             DocletElement de = (DocletElement) e;
+                            si.setElement(de);
                             switch (de.getSubKind()) {
                                 case OVERVIEW:
                                     si.setHolder(resources.getText("doclet.Overview"));
@@ -468,7 +470,7 @@ public class TagletWriterImpl extends TagletWriter {
                         return null;
                     }
                 }.visit(element);
-                si.setCategory(SearchIndexItem.Category.SEARCH_TAGS);
+                si.setCategory(isSystemProperty ? Category.SYSTEM_PROPERTY : Category.INDEX);
                 configuration.searchItems.add(si);
             }
         }

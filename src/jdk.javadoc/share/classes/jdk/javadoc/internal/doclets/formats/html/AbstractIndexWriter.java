@@ -27,11 +27,12 @@ package jdk.javadoc.internal.doclets.formats.html;
 
 import java.io.IOException;
 import java.io.Writer;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
@@ -41,6 +42,7 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.util.SimpleElementVisitor14;
 
 import com.sun.source.doctree.DocTree;
+import jdk.javadoc.internal.doclets.formats.html.SearchIndexItem.Category;
 import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
@@ -92,8 +94,9 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
         super(configuration, path);
         this.indexBuilder = indexBuilder;
         this.navBar = new Navigation(null, configuration, PageMode.INDEX, path);
-        Collection<SearchIndexItem> items =
-                searchItems.get(SearchIndexItem.Category.SEARCH_TAGS);
+        Stream<SearchIndexItem> items =
+                searchItems.itemsOfCategories(Category.INDEX, Category.SYSTEM_PROPERTY)
+                        .sorted(utils.makeGenericSearchIndexComparator());
         this.tagSearchIndexMap = buildSearchTagIndex(items);
     }
 
@@ -229,7 +232,7 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
         String moduleName = utils.getFullyQualifiedName(mdle);
         Content link = getModuleLink(mdle, new StringContent(moduleName));
         si.setLabel(moduleName);
-        si.setCategory(SearchIndexItem.Category.MODULES);
+        si.setCategory(Category.MODULES);
         Content dt = HtmlTree.DT(link);
         dt.add(" - ");
         dt.add(contents.module_);
@@ -253,7 +256,7 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
             si.setContainingModule(utils.getFullyQualifiedName(utils.containingModule(pkg)));
         }
         si.setLabel(utils.getPackageName(pkg));
-        si.setCategory(SearchIndexItem.Category.PACKAGES);
+        si.setCategory(Category.PACKAGES);
         Content dt = HtmlTree.DT(link);
         dt.add(" - ");
         dt.add(contents.package_);
@@ -276,7 +279,7 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
                         LinkInfoImpl.Kind.INDEX, typeElement).strong(true));
         si.setContainingPackage(utils.getPackageName(utils.containingPackage(typeElement)));
         si.setLabel(utils.getSimpleName(typeElement));
-        si.setCategory(SearchIndexItem.Category.TYPES);
+        si.setCategory(Category.TYPES);
         Content dt = HtmlTree.DT(link);
         dt.add(" - ");
         addClassInfo(typeElement, dt);
@@ -324,7 +327,7 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
         }  else {
             si.setLabel(name);
         }
-        si.setCategory(SearchIndexItem.Category.MEMBERS);
+        si.setCategory(Category.MEMBERS);
         Content span = HtmlTree.SPAN(HtmlStyle.memberNameLink,
                 getDocLink(LinkInfoImpl.Kind.INDEX, member, name));
         Content dt = HtmlTree.DT(span);
@@ -431,32 +434,32 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
     protected void createSearchIndexFiles() throws DocFileIOException {
         if (configuration.showModules) {
             createSearchIndexFile(DocPaths.MODULE_SEARCH_INDEX_JS,
-                                  searchItems.get(SearchIndexItem.Category.MODULES),
+                                  searchItems.itemsOfCategories(Category.MODULES),
                                   "moduleSearchIndex");
         }
         if (!configuration.packages.isEmpty()) {
             SearchIndexItem si = new SearchIndexItem();
-            si.setCategory(SearchIndexItem.Category.PACKAGES);
+            si.setCategory(Category.PACKAGES);
             si.setLabel(resources.getText("doclet.All_Packages"));
             si.setUrl(DocPaths.ALLPACKAGES_INDEX.getPath());
             searchItems.add(si);
         }
         createSearchIndexFile(DocPaths.PACKAGE_SEARCH_INDEX_JS,
-                              searchItems.get(SearchIndexItem.Category.PACKAGES),
+                              searchItems.itemsOfCategories(Category.PACKAGES),
                               "packageSearchIndex");
         SearchIndexItem si = new SearchIndexItem();
-        si.setCategory(SearchIndexItem.Category.TYPES);
+        si.setCategory(Category.TYPES);
         si.setLabel(resources.getText("doclet.All_Classes"));
         si.setUrl(DocPaths.ALLCLASSES_INDEX.getPath());
         searchItems.add(si);
         createSearchIndexFile(DocPaths.TYPE_SEARCH_INDEX_JS,
-                              searchItems.get(SearchIndexItem.Category.TYPES),
+                              searchItems.itemsOfCategories(Category.TYPES),
                               "typeSearchIndex");
         createSearchIndexFile(DocPaths.MEMBER_SEARCH_INDEX_JS,
-                              searchItems.get(SearchIndexItem.Category.MEMBERS),
+                              searchItems.itemsOfCategories(Category.MEMBERS),
                               "memberSearchIndex");
         createSearchIndexFile(DocPaths.TAG_SEARCH_INDEX_JS,
-                              searchItems.get(SearchIndexItem.Category.SEARCH_TAGS),
+                              searchItems.itemsOfCategories(Category.INDEX, Category.SYSTEM_PROPERTY),
                               "tagSearchIndex");
     }
 
@@ -469,16 +472,18 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
      * @throws DocFileIOException if there is a problem creating the search index file
      */
     protected void createSearchIndexFile(DocPath searchIndexJS,
-                                         Collection<SearchIndexItem> searchIndex,
+                                         Stream<SearchIndexItem> searchIndex,
                                          String varName)
             throws DocFileIOException
     {
         // The file needs to be created even if there are no searchIndex items
         // File could be written straight-through, without an intermediate StringBuilder
-        if (!searchIndex.isEmpty()) {
+        Iterator<SearchIndexItem> index = searchIndex.iterator();
+        if (index.hasNext()) {
             StringBuilder searchVar = new StringBuilder("[");
             boolean first = true;
-            for (SearchIndexItem item : searchIndex) {
+            while (index.hasNext()) {
+                SearchIndexItem item = index.next();
                 if (first) {
                     searchVar.append(item.toString());
                     first = false;
@@ -498,17 +503,13 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
         }
     }
 
-    protected static Map<Character, List<SearchIndexItem>> buildSearchTagIndex(
-            Collection<? extends SearchIndexItem> searchItems)
+    private static Map<Character, List<SearchIndexItem>> buildSearchTagIndex(
+            Stream<? extends SearchIndexItem> searchItems)
     {
-        Map<Character, List<SearchIndexItem>> map = new HashMap<>();
-        for (SearchIndexItem sii : searchItems) {
-            String tagLabel = sii.getLabel();
-            Character unicode = (tagLabel.length() == 0)
-                    ? '*'
-                    : Character.toUpperCase(tagLabel.charAt(0));
-            map.computeIfAbsent(unicode, k -> new ArrayList<>()).add(sii);
-        }
-        return map;
+        return searchItems.collect(Collectors.groupingBy(i -> keyCharacter(i.getLabel())));
+    }
+
+    protected static Character keyCharacter(String s) {
+        return s.isEmpty() ? '*' : Character.toUpperCase(s.charAt(0));
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -386,7 +386,7 @@ public class TestMetadata extends JavadocTester {
         switch (s) {
             case PACKAGES:
                 tb.writeJavaFiles(src,
-                    "/** Package pA. */ package pA;",
+                    "/** Package pA. {@systemProperty exampleProperty} */ package pA;",
                     "/** Class pA.CA. */ package pA; public class CA { }",
                     "/** Anno pA.Anno, */ package pA; public @interface Anno { }",
                     "/** Serializable pA.Ser, */ package pA; public class Ser implements java.io.Serializable { }",

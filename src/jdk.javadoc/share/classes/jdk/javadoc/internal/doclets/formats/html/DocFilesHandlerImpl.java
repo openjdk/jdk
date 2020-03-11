@@ -28,7 +28,6 @@ package jdk.javadoc.internal.doclets.formats.html;
 import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.EndElementTree;
 import com.sun.source.doctree.StartElementTree;
-import com.sun.source.doctree.TextTree;
 import com.sun.source.util.DocTreeFactory;
 import com.sun.tools.doclint.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.BodyContents;
@@ -266,37 +265,8 @@ public class DocFilesHandlerImpl implements DocFilesHandler {
     }
 
     private String getWindowTitle(HtmlDocletWriter docletWriter, Element element) {
-        List<? extends DocTree> preamble = configuration.utils.getPreamble(element);
-        StringBuilder sb = new StringBuilder();
-        boolean titleFound = false;
-        loop:
-        for (DocTree dt : preamble) {
-            switch (dt.getKind()) {
-                case START_ELEMENT:
-                    StartElementTree nodeStart = (StartElementTree)dt;
-                    if (Utils.toLowerCase(nodeStart.getName().toString()).equals("title")) {
-                        titleFound = true;
-                    }
-                    break;
-
-                case END_ELEMENT:
-                    EndElementTree nodeEnd = (EndElementTree)dt;
-                    if (Utils.toLowerCase(nodeEnd.getName().toString()).equals("title")) {
-                        break loop;
-                    }
-                    break;
-
-                case TEXT:
-                    TextTree nodeText = (TextTree)dt;
-                    if (titleFound)
-                        sb.append(nodeText.getBody());
-                    break;
-
-                default:
-                    // do nothing
-            }
-        }
-        return docletWriter.getWindowTitle(sb.toString().trim());
+        String t = configuration.utils.getHTMLTitle(element);
+        return docletWriter.getWindowTitle(t);
     }
 
     private static class DocFileWriter extends HtmlDocletWriter {

@@ -227,7 +227,6 @@ class APITest {
             "script.js",
             "search.js",
             "stylesheet.css",
-            "system-properties.html",
             "type-search-index.js"
     ));
 
