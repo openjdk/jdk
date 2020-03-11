@@ -53,7 +53,7 @@ m4_include([util_windows.m4])
 AC_DEFUN([UTIL_DEFUN_NAMED],
 [
   AC_DEFUN($1, [
-    m4_foreach(arg, m4_split($2), [
+    m4_foreach(arg, m4_split(m4_normalize($2)), [
       m4_if(m4_bregexp(arg, [^\*]), -1,
         [
           m4_set_add(legal_named_args, arg)
@@ -66,11 +66,12 @@ AC_DEFUN([UTIL_DEFUN_NAMED],
     ])
 
     m4_foreach([arg], [$3], [
+      m4_if(m4_bregexp(arg, [: ]), -1, m4_define([arg], m4_bpatsubst(arg, [:], [: ])))
       m4_define(arg_name, m4_substr(arg, 0, m4_bregexp(arg, [: ])))
-      m4_set_contains(legal_named_args, arg_name, [],[AC_MSG_ERROR([Internal error: arg_name is not a valid named argument to [$1]. Valid arguments are 'm4_set_contents(legal_named_args, [ ])'.])])
+      m4_set_contains(legal_named_args, arg_name, [],[AC_MSG_ERROR([Internal error: m4_if(arg_name, , arg, arg_name) is not a valid named argument to [$1]. Valid arguments are 'm4_set_contents(defined_args, [ ]) m4_set_contents(legal_named_args, [ ])'.])])
       m4_set_remove(required_named_args, arg_name)
       m4_set_remove(legal_named_args, arg_name)
-      m4_pushdef([ARG_][]arg_name, m4_substr(arg, m4_incr(m4_incr(m4_bregexp(arg, [: ])))))
+      m4_pushdef([ARG_][]arg_name, m4_bpatsubst(m4_substr(arg, m4_incr(m4_incr(m4_bregexp(arg, [: ])))), [^\s*], []))
       m4_set_add(defined_args, arg_name)
       m4_undefine([arg_name])
     ])
@@ -97,6 +98,27 @@ AC_DEFUN([UTIL_DEFUN_NAMED],
 
 ###############################################################################
 # Assert that a programmatic condition holds. If not, exit with an error message.
+# Check that a shell expression gives return code 0
+#
+# $1: The shell expression to evaluate
+# $2: A message to describe the expression in case of failure
+# $2: An message to print in case of failure [optional]
+#
+AC_DEFUN([UTIL_ASSERT_SHELL_TEST],
+[
+  ASSERTION_MSG="m4_normalize([$3])"
+  if $1; then
+    $ECHO Assertion failed: $2
+    if test "x$3" != x; then
+      $ECHO Assertion message: "$3"
+    fi
+    exit 1
+  fi
+])
+
+
+###############################################################################
+# Assert that a programmatic condition holds. If not, exit with an error message.
 # Check that two strings are equal.
 #
 # $1: The actual string found
@@ -105,15 +127,50 @@ AC_DEFUN([UTIL_DEFUN_NAMED],
 #
 AC_DEFUN([UTIL_ASSERT_STRING_EQUALS],
 [
-  ASSERTION_MSG="m4_normalize([$3])"
-  if test "x[$1]" != "x[$2]"; then
-    $ECHO Assertion failed: Actual value '[$1]' \("[$1]"\) did not match \
-        expected value '[$2]' \("[$2]"\)
-    if test "x$ASSERTION_MSG" != x; then
-      $ECHO Assertion message: "$ASSERTION_MSG"
-    fi
-    exit 1
-  fi
+  UTIL_ASSERT_SHELL_TEST(
+      [test "x[$1]" != "x[$2]"],
+      [Actual value '[$1]' \("[$1]"\) did not match expected value '[$2]' \("[$2]"\)],
+      $3)
+])
+
+###############################################################################
+# Assert that a programmatic condition holds. If not, exit with an error message.
+# Check that two strings not are equal.
+#
+# $1: The actual string found
+# $2: The expected string
+# $3: An message to print in case of failure [optional]
+#
+AC_DEFUN([UTIL_ASSERT_STRING_NOT_EQUALS],
+[
+  UTIL_ASSERT_SHELL_TEST(
+      [test "x[$1]" = "x[$2]"],
+      [Actual value '[$1]' \("[$1]"\) unexpectedly matched '[$2]' \("[$2]"\)],
+      $3)
+])
+
+###############################################################################
+# Assert that a programmatic condition holds. If not, exit with an error message.
+# Check that the given expression evaluates to the string 'true'
+#
+# $1: The expression to evaluate
+# $2: An message to print in case of failure [optional]
+#
+AC_DEFUN([UTIL_ASSERT_TRUE],
+[
+  UTIL_ASSERT_STRING_EQUALS($1, true, $3)
+])
+
+###############################################################################
+# Assert that a programmatic condition holds. If not, exit with an error message.
+# Check that the given expression does not evaluate to the string 'true'
+#
+# $1: The expression to evaluate
+# $2: An message to print in case of failure [optional]
+#
+AC_DEFUN([UTIL_ASSERT_NOT_TRUE],
+[
+  UTIL_ASSERT_STRING_NOT_EQUALS($1, true, $3)
 ])
 
 ###############################################################################
@@ -247,6 +304,143 @@ AC_DEFUN([UTIL_ALIASED_ARG_ENABLE],
     # e.g.: enable_old_style="$enable_new_alias"
     m4_translit(m4_bpatsubst($2, --), -, _)="$[enable_]m4_translit($1, -, _)"
   ])
+])
+
+###############################################################################
+# Creates a command-line option using the --enable-* pattern. Will return a
+# value of 'true' or 'false' in the RESULT variable, depending on whether the
+# option was enabled or not by the user. The option can not be turned on if it
+# is not available, as specified by AVAILABLE and/or AVAILABLE_CHECK.
+#
+# Arguments:
+#   NAME: The base name of this option (i.e. what follows --enable-). Required.
+#   RESULT: The name of the variable to set to the result. Defaults to
+#     <NAME in uppercase>_RESULT.
+#   DEFAULT: The default value for this option. Can be true, false or auto.
+#     Defaults to true.
+#   AVAILABLE: If true, this option is allowed to be selected. Defaults to true.
+#   DESC: A description of this option. Defaults to a generic and unhelpful
+#     string.
+#   DEFAULT_DESC: A message describing the default value, for the help. Defaults
+#     to the literal value of DEFAULT.
+#   CHECKING_MSG: The message to present to user when checking this option.
+#     Defaults to a generic message.
+#   CHECK_AVAILABLE: An optional code block to execute to determine if the
+#     option should be available. Must set AVAILABLE to 'false' if not.
+#   IF_GIVEN:  An optional code block to execute if the option was given on the
+#     command line (regardless of the value).
+#   IF_ENABLED:  An optional code block to execute if the option is turned on.
+#   IF_DISABLED:  An optional code block to execute if the option is turned off.
+#
+UTIL_DEFUN_NAMED([UTIL_ARG_ENABLE],
+    [*NAME RESULT DEFAULT AVAILABLE DESC DEFAULT_DESC CHECKING_MSG
+    CHECK_AVAILABLE IF_GIVEN IF_ENABLED IF_DISABLED], [$@],
+[
+  ##########################
+  # Part 1: Set up m4 macros
+  ##########################
+
+  # If DEFAULT is not specified, set it to 'true'.
+  m4_define([ARG_DEFAULT], m4_if(ARG_DEFAULT, , true, ARG_DEFAULT))
+
+  # If AVAILABLE is not specified, set it to 'true'.
+  m4_define([ARG_AVAILABLE], m4_if(ARG_AVAILABLE, , true, ARG_AVAILABLE))
+
+  # If DEFAULT_DESC is not specified, calculate it from DEFAULT.
+  m4_define([ARG_DEFAULT_DESC], m4_if(ARG_DEFAULT_DESC, , m4_if(ARG_DEFAULT, true, enabled, m4_if(ARG_DEFAULT, false, disabled, ARG_DEFAULT)), ARG_DEFAULT_DESC))
+
+  # If RESULT is not specified, set it to 'ARG_NAME[_ENABLED]'.
+  m4_define([ARG_RESULT], m4_if(ARG_RESULT, , m4_translit(ARG_NAME, [a-z-], [A-Z_])[_ENABLED], ARG_RESULT))
+  # Construct shell variable names for the option
+  m4_define(ARG_OPTION, [enable_]m4_translit(ARG_NAME, [-], [_]))
+  m4_define(ARG_GIVEN, m4_translit(ARG_NAME, [a-z-], [A-Z_])[_GIVEN])
+
+  # If DESC is not specified, set it to a generic description.
+  m4_define([ARG_DESC], m4_if(ARG_DESC, , [Enable the ARG_NAME feature], m4_normalize(ARG_DESC)))
+
+  # If CHECKING_MSG is not specified, set it to a generic description.
+  m4_define([ARG_CHECKING_MSG], m4_if(ARG_CHECKING_MSG, , [for --enable-ARG_NAME], ARG_CHECKING_MSG))
+
+  # If the code blocks are not given, set them to the empty statements to avoid
+  # tripping up bash.
+  m4_define([ARG_CHECK_AVAILABLE], m4_if(ARG_CHECK_AVAILABLE, , :, ARG_CHECK_AVAILABLE))
+  m4_define([ARG_IF_GIVEN], m4_if(ARG_IF_GIVEN, , :, ARG_IF_GIVEN))
+  m4_define([ARG_IF_ENABLED], m4_if(ARG_IF_ENABLED, , :, ARG_IF_ENABLED))
+  m4_define([ARG_IF_DISABLED], m4_if(ARG_IF_DISABLED, , :, ARG_IF_DISABLED))
+
+  ##########################
+  # Part 2: Set up autoconf shell code
+  ##########################
+
+  # Check that DEFAULT has a valid value
+  if test "[x]ARG_DEFAULT" != xtrue && test "[x]ARG_DEFAULT" != xfalse && \
+      test "[x]ARG_DEFAULT" != xauto ; then
+    AC_MSG_ERROR([Internal error: Argument DEFAULT to [UTIL_ARG_ENABLE] can only be true, false or auto, was: 'ARG_DEFAULT'])
+  fi
+
+  # Check that AVAILABLE has a valid value
+  if test "[x]ARG_AVAILABLE" != xtrue && test "[x]ARG_AVAILABLE" != xfalse; then
+    AC_MSG_ERROR([Internal error: Argument AVAILABLE to [UTIL_ARG_ENABLE] can only be true or false, was: 'ARG_AVAILABLE'])
+  fi
+
+  AC_ARG_ENABLE(ARG_NAME, AS_HELP_STRING([--enable-]ARG_NAME,
+      [ARG_DESC [ARG_DEFAULT_DESC]]), [ARG_GIVEN=true], [ARG_GIVEN=false])
+
+  # Check if the option is available
+  AVAILABLE=ARG_AVAILABLE
+  # Run the available check block (if any), which can overwrite AVAILABLE.
+  ARG_CHECK_AVAILABLE
+
+  # Check if the option should be turned on
+  AC_MSG_CHECKING(ARG_CHECKING_MSG)
+  if test x$ARG_GIVEN = xfalse; then
+    if test ARG_DEFAULT = auto; then
+      # If not given, and default is auto, set it to true iff it's available.
+      ARG_RESULT=$AVAILABLE
+      REASON="from default 'auto'"
+    else
+      ARG_RESULT=ARG_DEFAULT
+      REASON="default"
+    fi
+  else
+    if test x$ARG_OPTION = xyes; then
+      ARG_RESULT=true
+      REASON="from command line"
+    elif test x$ARG_OPTION = xno; then
+      ARG_RESULT=false
+      REASON="from command line"
+    elif test x$ARG_OPTION = xauto; then
+      if test ARG_DEFAULT = auto; then
+        # If both given and default is auto, set it to true iff it's available.
+        ARG_RESULT=$AVAILABLE
+      else
+        ARG_RESULT=ARG_DEFAULT
+      fi
+      REASON="from command line 'auto'"
+    else
+      AC_MSG_ERROR([Option [--enable-]ARG_NAME can only be 'yes', 'no' or 'auto'])
+    fi
+  fi
+
+  if test x$ARG_RESULT = xtrue; then
+    AC_MSG_RESULT([enabled, $REASON])
+    if test x$AVAILABLE = xfalse; then
+      AC_MSG_ERROR([Option [--enable-]ARG_NAME is not available])
+    fi
+  else
+    AC_MSG_RESULT([disabled, $REASON])
+  fi
+
+  # Execute result payloads, if present
+  if test x$ARG_GIVEN = xtrue; then
+    ARG_IF_GIVEN
+  fi
+
+  if test x$ARG_RESULT = xtrue; then
+    ARG_IF_ENABLED
+  else
+    ARG_IF_DISABLED
+  fi
 ])
 
 ###############################################################################

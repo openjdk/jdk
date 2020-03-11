@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -563,11 +563,14 @@ AC_DEFUN_ONCE([PLATFORM_SETUP_OPENJDK_BUILD_AND_TARGET],
 
 AC_DEFUN([PLATFORM_CHECK_DEPRECATION],
 [
-  AC_ARG_ENABLE(deprecated-ports, [AS_HELP_STRING([--enable-deprecated-ports@<:@=yes/no@:>@],
-       [Suppress the error when configuring for a deprecated port @<:@no@:>@])])
+  UTIL_ARG_ENABLE(NAME: deprecated-ports, DEFAULT: false,
+      RESULT: ENABLE_DEPRECATED_PORTS,
+      DESC: [suppress the error when configuring for a deprecated port])
 
-  if test "x$OPENJDK_TARGET_OS" = xsolaris || (test "x$OPENJDK_TARGET_CPU_ARCH" = xsparc && test "x$with_jvm_variants" != xzero); then
-    if test "x$enable_deprecated_ports" = "xyes"; then
+  if test "x$OPENJDK_TARGET_OS" = xsolaris || \
+      (test "x$OPENJDK_TARGET_CPU_ARCH" = xsparc && \
+      test "x$with_jvm_variants" != xzero); then
+    if test "x$ENABLE_DEPRECATED_PORTS" = "xtrue"; then
       AC_MSG_WARN([The Solaris and SPARC ports are deprecated and may be removed in a future release.])
     else
       AC_MSG_ERROR(m4_normalize([The Solaris and SPARC ports are deprecated and may be removed in a
