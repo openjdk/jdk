@@ -141,7 +141,7 @@ AC_DEFUN([FLAGS_SETUP_WARNINGS],
 
   UTIL_ARG_ENABLE(NAME: warnings-as-errors, DEFAULT: $WARNINGS_AS_ERRORS_DEFAULT,
       RESULT: WARNINGS_AS_ERRORS,
-      DEFAULT_DESC: [auto]
+      DEFAULT_DESC: [auto],
       DESC: [consider native warnings to be an error])
   AC_SUBST(WARNINGS_AS_ERRORS)
 

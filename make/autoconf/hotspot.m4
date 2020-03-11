@@ -140,7 +140,7 @@ AC_DEFUN_ONCE([HOTSPOT_ENABLE_DISABLE_GTEST],
 
   UTIL_ARG_ENABLE(NAME: hotspot-gtest, DEFAULT: auto,
       RESULT: BUILD_GTEST, AVAILABLE: $GTEST_AVAILABLE,
-      DEFAULT_DESC: [enabled if possible to build]
+      DEFAULT_DESC: [enabled if possible to build],
       DESC: [enable building of the Hotspot unit tests])
   AC_SUBST(BUILD_GTEST)
 ])
