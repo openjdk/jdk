@@ -1,0 +1,12 @@
+language: java
+
+dist: xenial
+
+jdk:
+    - openjdk13
+
+script:
+  - echo ${JAVA_HOME}
+  - ${JAVA_HOME}/bin/java -version
+  - sh configure
+  - make images LOG=debug
