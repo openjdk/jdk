@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -330,15 +330,22 @@ JNIEXPORT int
 JDK_Canonicalize(const char *orig, char *out, int len) {
     wchar_t* wpath = NULL;
     wchar_t* wresult = NULL;
-    size_t conv;
-    size_t path_len = strlen(orig);
+    int wpath_len;
     int ret = -1;
 
-    if ((wpath = (wchar_t*) malloc(sizeof(wchar_t) * (path_len + 1))) == NULL) {
+    /* Get required buffer size to convert to Unicode */
+    wpath_len = MultiByteToWideChar(CP_THREAD_ACP, MB_ERR_INVALID_CHARS,
+                                    orig, -1, NULL, 0);
+    if (wpath_len == 0) {
         goto finish;
     }
 
-    if (mbstowcs_s(&conv, wpath, path_len + 1, orig, path_len) != 0) {
+    if ((wpath = (wchar_t*) malloc(sizeof(wchar_t) * wpath_len)) == NULL) {
+        goto finish;
+    }
+
+    if (MultiByteToWideChar(CP_THREAD_ACP, MB_ERR_INVALID_CHARS,
+                            orig, -1, wpath, wpath_len) == 0) {
         goto finish;
     }
 
@@ -350,7 +357,8 @@ JDK_Canonicalize(const char *orig, char *out, int len) {
         goto finish;
     }
 
-    if (wcstombs_s(&conv, out, (size_t) len, wresult, (size_t) (len - 1)) != 0) {
+    if (WideCharToMultiByte(CP_THREAD_ACP, 0,
+                            wresult, -1, out, len, NULL, NULL) == 0) {
         goto finish;
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -404,11 +404,17 @@ WideString Platform::MultibyteStringToWideString(const char* value) {
         return result;
     }
 
-    mbstowcs_s(&count, NULL, 0, value, _TRUNCATE);
+    count = MultiByteToWideChar(CP_THREAD_ACP, MB_ERR_INVALID_CHARS,
+                                value, -1, NULL, 0);
 
     if (count > 0) {
-        result.data = new wchar_t[count + 1];
-        mbstowcs_s(&result.length, result.data, count, value, count);
+        result.data = new wchar_t[count];
+        result.length = MultiByteToWideChar(CP_THREAD_ACP, MB_ERR_INVALID_CHARS,
+                                            value, -1, result.data, (int)count);
+        if (result.length == 0) {
+            delete[] result.data;
+            result.data = NULL;
+        }
     }
 
     return result;
