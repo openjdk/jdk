@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,14 +41,18 @@ bool is_power_of_2(T x) {
 
 // Log2 of a power of 2
 inline int exact_log2(intptr_t x) {
-  assert(is_power_of_2(x), "x must be a power of 2: " INTPTR_FORMAT, x);
-  return log2_intptr(x);
+  assert(is_power_of_2((uintptr_t)x), "x must be a power of 2: " INTPTR_FORMAT, x);
+
+  const int bits = sizeof x * BitsPerByte;
+  return bits - count_leading_zeros(x) - 1;
 }
 
 // Log2 of a power of 2
 inline int exact_log2_long(jlong x) {
-  assert(is_power_of_2(x), "x must be a power of 2: " JLONG_FORMAT, x);
-  return log2_long(x);
+  assert(is_power_of_2((julong)x), "x must be a power of 2: " JLONG_FORMAT, x);
+
+  const int bits = sizeof x * BitsPerByte;
+  return bits - count_leading_zeros(x) - 1;
 }
 
 // Round down to the closest power of two greater to or equal to the given

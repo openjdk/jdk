@@ -70,6 +70,25 @@ TEST(power_of_2, is_power_of_2) {
   test_is_power_of_2<jlong>();
 }
 
+TEST(power_of_2, exact_log2) {
+  {
+    uintptr_t j = 1;
+#ifdef _LP64
+    for (int i = 0; i < 64; i++, j <<= 1) {
+#else
+    for (int i = 0; i < 32; i++, j <<= 1) {
+#endif
+      EXPECT_EQ(i, exact_log2(j));
+    }
+  }
+  {
+    julong j = 1;
+    for (int i = 0; i < 64; i++, j <<= 1) {
+      EXPECT_EQ(i, exact_log2_long(j));
+    }
+  }
+}
+
 template <typename T> void round_up_power_of_2() {
   EXPECT_EQ(round_up_power_of_2(T(1)), T(1)) << "value = " << T(1);
   EXPECT_EQ(round_up_power_of_2(T(2)), T(2)) << "value = " << T(2);
