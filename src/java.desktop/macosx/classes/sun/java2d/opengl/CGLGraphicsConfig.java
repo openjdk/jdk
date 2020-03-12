@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,13 +64,9 @@ import static sun.java2d.opengl.OGLSurfaceData.TEXTURE;
 public final class CGLGraphicsConfig extends CGraphicsConfig
     implements OGLGraphicsConfig
 {
-    //private static final int kOpenGLSwapInterval =
-    // RuntimeOptions.getCurrentOptions().OpenGLSwapInterval;
-    private static final int kOpenGLSwapInterval = 0; // TODO
     private static boolean cglAvailable;
     private static ImageCapabilities imageCaps = new CGLImageCaps();
 
-    private int pixfmt;
     private BufferCapabilities bufferCaps;
     private long pConfigInfo;
     private ContextCapabilities oglCaps;
@@ -79,8 +75,7 @@ public final class CGLGraphicsConfig extends CGraphicsConfig
     private final int maxTextureSize;
 
     private static native boolean initCGL();
-    private static native long getCGLConfigInfo(int displayID, int visualnum,
-                                                int swapInterval);
+    private static native long getCGLConfigInfo();
     private static native int getOGLCapabilities(long configInfo);
 
     /**
@@ -95,12 +90,9 @@ public final class CGLGraphicsConfig extends CGraphicsConfig
         cglAvailable = initCGL();
     }
 
-    private CGLGraphicsConfig(CGraphicsDevice device, int pixfmt,
-                              long configInfo, int maxTextureSize,
-                              ContextCapabilities oglCaps) {
+    private CGLGraphicsConfig(CGraphicsDevice device, long configInfo,
+                              int maxTextureSize, ContextCapabilities oglCaps) {
         super(device);
-
-        this.pixfmt = pixfmt;
         this.pConfigInfo = configInfo;
         this.oglCaps = oglCaps;
         this.maxTextureSize = maxTextureSize;
@@ -125,8 +117,7 @@ public final class CGLGraphicsConfig extends CGraphicsConfig
                                          OGLSurfaceData.TEXTURE);
     }
 
-    public static CGLGraphicsConfig getConfig(CGraphicsDevice device,
-                                              int displayID, int pixfmt)
+    public static CGLGraphicsConfig getConfig(CGraphicsDevice device)
     {
         if (!cglAvailable) {
             return null;
@@ -142,7 +133,7 @@ public final class CGLGraphicsConfig extends CGraphicsConfig
             // surfaces/contexts, so we should first invalidate the current
             // Java-level context and flush the queue...
             OGLContext.invalidateCurrentContext();
-            cfginfo = getCGLConfigInfo(displayID, pixfmt, kOpenGLSwapInterval);
+            cfginfo = getCGLConfigInfo();
             if (cfginfo != 0L) {
                 textureSize = nativeGetMaxTextureSize();
                 // 7160609: GL still fails to create a square texture of this
@@ -163,7 +154,7 @@ public final class CGLGraphicsConfig extends CGraphicsConfig
 
         int oglCaps = getOGLCapabilities(cfginfo);
         ContextCapabilities caps = new OGLContextCaps(oglCaps, ids[0]);
-        return new CGLGraphicsConfig(device, pixfmt, cfginfo, textureSize, caps);
+        return new CGLGraphicsConfig(device, cfginfo, textureSize, caps);
     }
 
     public static boolean isCGLAvailable() {
@@ -253,8 +244,7 @@ public final class CGLGraphicsConfig extends CGraphicsConfig
 
     @Override
     public String toString() {
-        String display = getDevice().getIDstring();
-        return ("CGLGraphicsConfig[" + display + ", pixfmt=" + pixfmt + "]");
+        return ("CGLGraphicsConfig[" + getDevice().getIDstring() + "]");
     }
 
     @Override

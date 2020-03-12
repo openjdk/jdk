@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,10 +32,6 @@
 #import "OGLContext.h"
 #import <Cocoa/Cocoa.h>
 
-@interface GraphicsConfigUtil : NSObject {}
-+ (void) _getCGLConfigInfo: (NSMutableArray *)argValue;
-@end
-
 // REMIND: Using an NSOpenGLPixelBuffer as the scratch surface has been
 // problematic thus far (seeing garbage and flickering when switching
 // between an NSView and the scratch surface), so the following enables
@@ -50,20 +46,12 @@
 
 /**
  * The CGLGraphicsConfigInfo structure contains information specific to a
- * given CGLGraphicsConfig (pixel format).
- *
- *     jint screen;
- * The screen and PixelFormat for the associated CGLGraphicsConfig.
- *
- *     NSOpenGLPixelFormat *pixfmt;
- * The pixel format of the native NSOpenGL context.
+ * given CGLGraphicsConfig.
  *
  *     OGLContext *context;
  * The context associated with this CGLGraphicsConfig.
  */
 typedef struct _CGLGraphicsConfigInfo {
-    jint                screen;
-    NSOpenGLPixelFormat *pixfmt;
     OGLContext          *context;
 } CGLGraphicsConfigInfo;
 
