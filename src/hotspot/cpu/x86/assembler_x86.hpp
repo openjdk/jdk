@@ -885,6 +885,17 @@ private:
 
   void mov(Register dst, Register src);
 
+#ifdef _LP64
+  // support caching the result of some routines
+
+  // must be called before pusha(), popa(), vzeroupper() - checked with asserts
+  static void precompute_instructions();
+
+  void pusha_uncached();
+  void popa_uncached();
+#endif
+  void vzeroupper_uncached();
+
   void pusha();
   void popa();
 

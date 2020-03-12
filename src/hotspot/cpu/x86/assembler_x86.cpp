@@ -7290,7 +7290,7 @@ void Assembler::evpclmulqdq(XMMRegister dst, XMMRegister nds, XMMRegister src, i
   emit_int8((unsigned char)mask);
 }
 
-void Assembler::vzeroupper() {
+void Assembler::vzeroupper_uncached() {
   if (VM_Version::supports_vzeroupper()) {
     InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ true, /* no_mask_reg */ true, /* uses_vl */ false);
     (void)vex_prefix_and_encode(0, 0, 0, VEX_SIMD_NONE, VEX_OPCODE_0F, &attributes);
@@ -7300,6 +7300,10 @@ void Assembler::vzeroupper() {
 
 #ifndef _LP64
 // 32bit only pieces of the assembler
+
+void Assembler::vzeroupper() {
+  vzeroupper_uncached();
+}
 
 void Assembler::cmp_literal32(Register src1, int32_t imm32, RelocationHolder const& rspec) {
   // NO PREFIX AS NEVER 64BIT
@@ -9250,27 +9254,6 @@ void Assembler::orq(Register dst, Register src) {
   emit_arith(0x0B, 0xC0, dst, src);
 }
 
-void Assembler::popa() { // 64bit
-  movq(r15, Address(rsp, 0));
-  movq(r14, Address(rsp, wordSize));
-  movq(r13, Address(rsp, 2 * wordSize));
-  movq(r12, Address(rsp, 3 * wordSize));
-  movq(r11, Address(rsp, 4 * wordSize));
-  movq(r10, Address(rsp, 5 * wordSize));
-  movq(r9,  Address(rsp, 6 * wordSize));
-  movq(r8,  Address(rsp, 7 * wordSize));
-  movq(rdi, Address(rsp, 8 * wordSize));
-  movq(rsi, Address(rsp, 9 * wordSize));
-  movq(rbp, Address(rsp, 10 * wordSize));
-  // skip rsp
-  movq(rbx, Address(rsp, 12 * wordSize));
-  movq(rdx, Address(rsp, 13 * wordSize));
-  movq(rcx, Address(rsp, 14 * wordSize));
-  movq(rax, Address(rsp, 15 * wordSize));
-
-  addq(rsp, 16 * wordSize);
-}
-
 void Assembler::popcntq(Register dst, Address src) {
   assert(VM_Version::supports_popcnt(), "must support");
   InstructionMark im(this);
@@ -9297,7 +9280,103 @@ void Assembler::popq(Address dst) {
   emit_operand(rax, dst);
 }
 
+// Precomputable: popa, pusha, vzeroupper
+
+// The result of these routines are invariant from one invocation to another
+// invocation for the duration of a run. Caching the result on bootstrap
+// and copying it out on subsequent invocations can thus be beneficial
+static bool     precomputed = false;
+
+static u_char* popa_code  = NULL;
+static int     popa_len   = 0;
+
+static u_char* pusha_code = NULL;
+static int     pusha_len  = 0;
+
+static u_char* vzup_code  = NULL;
+static int     vzup_len   = 0;
+
+void Assembler::precompute_instructions() {
+  assert(!Universe::is_fully_initialized(), "must still be single threaded");
+  guarantee(!precomputed, "only once");
+  precomputed = true;
+  ResourceMark rm;
+
+  // Make a temporary buffer big enough for the routines we're capturing
+  int size = 256;
+  char* tmp_code = NEW_RESOURCE_ARRAY(char, size);
+  CodeBuffer buffer((address)tmp_code, size);
+  MacroAssembler masm(&buffer);
+
+  address begin_popa  = masm.code_section()->end();
+  masm.popa_uncached();
+  address end_popa    = masm.code_section()->end();
+  masm.pusha_uncached();
+  address end_pusha   = masm.code_section()->end();
+  masm.vzeroupper_uncached();
+  address end_vzup    = masm.code_section()->end();
+
+  // Save the instructions to permanent buffers.
+  popa_len = (int)(end_popa - begin_popa);
+  popa_code = NEW_C_HEAP_ARRAY(u_char, popa_len, mtInternal);
+  memcpy(popa_code, begin_popa, popa_len);
+
+  pusha_len = (int)(end_pusha - end_popa);
+  pusha_code = NEW_C_HEAP_ARRAY(u_char, pusha_len, mtInternal);
+  memcpy(pusha_code, end_popa, pusha_len);
+
+  vzup_len = (int)(end_vzup - end_pusha);
+  if (vzup_len > 0) {
+    vzup_code = NEW_C_HEAP_ARRAY(u_char, vzup_len, mtInternal);
+    memcpy(vzup_code, end_pusha, vzup_len);
+  } else {
+    vzup_code = pusha_code; // dummy
+  }
+
+  assert(masm.code()->total_oop_size() == 0 &&
+         masm.code()->total_metadata_size() == 0 &&
+         masm.code()->total_relocation_size() == 0,
+         "pre-computed code can't reference oops, metadata or contain relocations");
+}
+
+static void emit_copy(CodeSection* code_section, u_char* src, int src_len) {
+  assert(src != NULL, "code to copy must have been pre-computed");
+  assert(code_section->limit() - code_section->end() > src_len, "code buffer not large enough");
+  address end = code_section->end();
+  memcpy(end, src, src_len);
+  code_section->set_end(end + src_len);
+}
+
+void Assembler::popa() { // 64bit
+  emit_copy(code_section(), popa_code, popa_len);
+}
+
+void Assembler::popa_uncached() { // 64bit
+  movq(r15, Address(rsp, 0));
+  movq(r14, Address(rsp, wordSize));
+  movq(r13, Address(rsp, 2 * wordSize));
+  movq(r12, Address(rsp, 3 * wordSize));
+  movq(r11, Address(rsp, 4 * wordSize));
+  movq(r10, Address(rsp, 5 * wordSize));
+  movq(r9,  Address(rsp, 6 * wordSize));
+  movq(r8,  Address(rsp, 7 * wordSize));
+  movq(rdi, Address(rsp, 8 * wordSize));
+  movq(rsi, Address(rsp, 9 * wordSize));
+  movq(rbp, Address(rsp, 10 * wordSize));
+  // skip rsp
+  movq(rbx, Address(rsp, 12 * wordSize));
+  movq(rdx, Address(rsp, 13 * wordSize));
+  movq(rcx, Address(rsp, 14 * wordSize));
+  movq(rax, Address(rsp, 15 * wordSize));
+
+  addq(rsp, 16 * wordSize);
+}
+
 void Assembler::pusha() { // 64bit
+  emit_copy(code_section(), pusha_code, pusha_len);
+}
+
+void Assembler::pusha_uncached() { // 64bit
   // we have to store original rsp.  ABI says that 128 bytes
   // below rsp are local scratch.
   movq(Address(rsp, -5 * wordSize), rsp);
@@ -9320,6 +9399,10 @@ void Assembler::pusha() { // 64bit
   movq(Address(rsp, 2 * wordSize), r13);
   movq(Address(rsp, wordSize), r14);
   movq(Address(rsp, 0), r15);
+}
+
+void Assembler::vzeroupper() {
+  emit_copy(code_section(), vzup_code, vzup_len);
 }
 
 void Assembler::pushq(Address src) {

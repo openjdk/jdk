@@ -562,7 +562,10 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     __ jcc(Assembler::equal, L_wrapup);
     __ cmpl(rcx, 0x00080650);              // If it is Future Xeon Phi
     __ jcc(Assembler::equal, L_wrapup);
-    __ vzeroupper();
+    // vzeroupper() will use a pre-computed instruction sequence that we
+    // can't compute until after we've determined CPU capabilities. Use
+    // uncached variant here directly to be able to bootstrap correctly
+    __ vzeroupper_uncached();
 #   undef __
   }
 };
@@ -1833,6 +1836,9 @@ void VM_Version::initialize() {
                                      g.generate_get_cpu_info());
 
   get_processor_features();
+
+  LP64_ONLY(Assembler::precompute_instructions();)
+
   if (cpu_family() > 4) { // it supports CPUID
     check_virtualizations();
   }
