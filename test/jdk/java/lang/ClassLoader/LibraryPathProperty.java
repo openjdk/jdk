@@ -28,7 +28,7 @@
  *          Quoted entries should get unquoted on Windows.
  *          Empty entries should be replaced with dot.
  * @library /test/lib
- * @modules java.base/java.lang:open
+ * @modules java.base/jdk.internal.loader:open
  * @build jdk.test.lib.Platform
  * @run main LibraryPathProperty
  */
@@ -44,7 +44,7 @@ public class LibraryPathProperty {
     static Method method;
 
     public static void main(String[] args) throws Throwable {
-        Class<?> klass = Class.forName("java.lang.ClassLoaderHelper");
+        Class<?> klass = Class.forName("jdk.internal.loader.ClassLoaderHelper");
         method = klass.getDeclaredMethod("parsePath", String.class);
         method.setAccessible(true);
 

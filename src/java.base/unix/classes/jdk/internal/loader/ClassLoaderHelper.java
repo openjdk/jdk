@@ -23,7 +23,7 @@
  * questions.
  */
 
-package java.lang;
+package jdk.internal.loader;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -36,15 +36,10 @@ class ClassLoaderHelper {
      * Returns an alternate path name for the given file
      * such that if the original pathname did not exist, then the
      * file may be located at the alternate location.
-     * For mac, this replaces the final .dylib suffix with .jnilib
+     * For most platforms, this behavior is not supported and returns null.
      */
     static File mapAlternativeName(File lib) {
-        String name = lib.toString();
-        int index = name.lastIndexOf('.');
-        if (index < 0) {
-            return null;
-        }
-        return new File(name.substring(0, index) + ".jnilib");
+        return null;
     }
 
     /**

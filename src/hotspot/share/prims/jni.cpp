@@ -397,13 +397,13 @@ JNI_ENTRY(jclass, jni_FindClass(JNIEnv *env, const char *name))
     // Special handling to make sure JNI_OnLoad and JNI_OnUnload are executed
     // in the correct class context.
     if (k->class_loader() == NULL &&
-        k->name() == vmSymbols::java_lang_ClassLoader_NativeLibrary()) {
+        k->name() == vmSymbols::jdk_internal_loader_NativeLibraries()) {
       JavaValue result(T_OBJECT);
       JavaCalls::call_static(&result, k,
                              vmSymbols::getFromClass_name(),
                              vmSymbols::void_class_signature(),
                              CHECK_NULL);
-      // When invoked from JNI_OnLoad, NativeLibrary::getFromClass returns
+      // When invoked from JNI_OnLoad, NativeLibraries::getFromClass returns
       // a non-NULL Class object.  When invoked from JNI_OnUnload,
       // it will return NULL to indicate no context.
       oop mirror = (oop) result.get_jobject();

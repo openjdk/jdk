@@ -34,7 +34,6 @@ import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
 import java.security.AccessControlContext;
 import java.security.ProtectionDomain;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -312,12 +311,4 @@ public interface JavaLangAccess {
      * @param cause set t's cause to new value
      */
     void setCause(Throwable t, Throwable cause);
-
-    /**
-     * Privileged System.loadLibrary
-     *
-     * @param caller on behalf of which the library is being loaded
-     * @param library name of the library to load
-     */
-    void loadLibrary(Class<?> caller, String library);
 }
