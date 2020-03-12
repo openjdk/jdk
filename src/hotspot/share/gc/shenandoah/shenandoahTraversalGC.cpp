@@ -314,6 +314,7 @@ void ShenandoahTraversalGC::prepare_regions() {
   ShenandoahMarkingContext* const ctx = _heap->marking_context();
   for (size_t i = 0; i < num_regions; i++) {
     ShenandoahHeapRegion* region = _heap->get_region(i);
+    region->set_update_watermark(region->top());
     if (_heap->is_bitmap_slice_committed(region)) {
       if (_traversal_set.is_in(i)) {
         ctx->capture_top_at_mark_start(region);

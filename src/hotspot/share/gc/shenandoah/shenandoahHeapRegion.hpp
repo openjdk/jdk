@@ -261,7 +261,7 @@ private:
   volatile size_t _live_data;
   volatile size_t _critical_pins;
 
-  HeapWord* _update_watermark;
+  HeapWord* volatile _update_watermark;
 
   // Claim some space at the end to protect next region
   DEFINE_PAD_MINUS_SIZE(0, DEFAULT_CACHE_LINE_SIZE, 0);
@@ -432,12 +432,12 @@ public:
 
   HeapWord* get_update_watermark() const {
     assert(bottom() <= _update_watermark && _update_watermark <= top(), "within bounds");
-    return _update_watermark;
+    return Atomic::load_acquire(&_update_watermark);
   }
 
   void set_update_watermark(HeapWord* w) {
     assert(bottom() <= w && w <= top(), "within bounds");
-    _update_watermark = w;
+    Atomic::release_store(&_update_watermark, w);
   }
 
 private:

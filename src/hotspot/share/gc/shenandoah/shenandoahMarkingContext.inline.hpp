@@ -42,6 +42,10 @@ inline bool ShenandoahMarkingContext::is_marked(oop obj) const {
 
 inline bool ShenandoahMarkingContext::allocated_after_mark_start(oop obj) const {
   HeapWord* addr = cast_from_oop<HeapWord*>(obj);
+  return allocated_after_mark_start(addr);
+}
+
+inline bool ShenandoahMarkingContext::allocated_after_mark_start(HeapWord* addr) const {
   uintx index = ((uintx) addr) >> ShenandoahHeapRegion::region_size_bytes_shift();
   HeapWord* top_at_mark_start = _top_at_mark_starts[index];
   bool alloc_after_mark_start = addr >= top_at_mark_start;
