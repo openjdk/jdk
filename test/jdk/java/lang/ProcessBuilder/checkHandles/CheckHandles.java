@@ -31,8 +31,8 @@ import java.lang.ProcessHandle;
  * @test
  * @bug 8239893
  * @summary Verify that handles for processes that terminate do not accumulate
- * @requires (os.family == "windows")
- * @run main/native CheckHandles
+ * @requires ((os.family == "windows") & (vm.compMode != "Xcomp"))
+ * @run main/othervm/native -Xint CheckHandles
  */
 public class CheckHandles {
 
@@ -43,46 +43,77 @@ public class CheckHandles {
         System.loadLibrary("CheckHandles");
 
         System.out.println("mypid: " + ProcessHandle.current().pid());
-        long minHandles = Long.MAX_VALUE;
-        long maxHandles = 0L;
+
+        // Warmup the process launch mechanism and vm to stabilize the number of handles in use
+        int MAX_WARMUP = 20;
+        long prevCount = getProcessHandleCount();
+        for (int i = 0; i < MAX_WARMUP; i++) {
+            oneProcess();
+            System.gc();        // an opportunity to close unreferenced handles
+            sleep(10);
+
+            long count = getProcessHandleCount();
+            if (count < 0)
+                throw new AssertionError("getProcessHandleCount failed");
+            System.out.println("warmup handle delta: " + (count - prevCount));
+            prevCount = count;
+        }
+        System.out.println("Warmup done");
+        System.out.println();
+
+        prevCount = getProcessHandleCount();
+        long startHandles = prevCount;
+        long maxHandles = startHandles;
         int MAX_SPAWN = 50;
         for (int i = 0; i < MAX_SPAWN; i++) {
-            try {
-                Process testProcess = new ProcessBuilder("cmd", "/c", "dir").start();
+            oneProcess();
+            System.gc();        // an opportunity to close unreferenced handles
+            sleep(10);
 
-                Thread outputConsumer = new Thread(() -> consumeStream(testProcess.pid(), testProcess.getInputStream()));
-                outputConsumer.setDaemon(true);
-                outputConsumer.start();
-                Thread errorConsumer = new Thread(() -> consumeStream(testProcess.pid(), testProcess.getErrorStream()));
-                errorConsumer.setDaemon(true);
-                errorConsumer.start();
-
-                testProcess.waitFor();
-                System.gc();
-                outputConsumer.join();
-                errorConsumer.join();
-                long count = getProcessHandleCount();
-                if (count < 0)
-                    throw new AssertionError("getProcessHandleCount failed");
-                minHandles =  Math.min(minHandles, count);
-                maxHandles =  Math.max(maxHandles, count);
-            } catch (IOException | InterruptedException e) {
-                e.printStackTrace();
-                throw e;
-            }
+            long count = getProcessHandleCount();
+            if (count < 0)
+                throw new AssertionError("getProcessHandleCount failed");
+            System.out.println("handle delta: " + (count - prevCount));
+            prevCount = count;
+            maxHandles = Math.max(maxHandles, count);
         }
-        final long ERROR_PERCENT = 10;
-        final long ERROR_THRESHOLD = // 10% increase over min to passing max
-                minHandles + ((minHandles + ERROR_PERCENT - 1) / ERROR_PERCENT);
+
+        System.out.println("Processes started: " + MAX_SPAWN);
+        System.out.println("startHandles: " + startHandles);
+        System.out.println("maxHandles:   " + maxHandles);
+
+        final float ERROR_PERCENT = 10.0f;   // allowable extra handles
+        final long ERROR_THRESHOLD = startHandles + Math.round(startHandles * ERROR_PERCENT / 100.0f);
         if (maxHandles >= ERROR_THRESHOLD) {
-            System.out.println("Processes started: " + MAX_SPAWN);
-            System.out.println("minhandles: " + minHandles);
-            System.out.println("maxhandles: " + maxHandles);
             throw new AssertionError("Handle use increased by more than " + ERROR_PERCENT + " percent.");
         }
     }
 
-    private static void consumeStream(long pid, InputStream inputStream) {
+    /**
+     * Start a single process and consume its output.
+     */
+    private static void oneProcess() {
+        try {
+
+            Process testProcess = new ProcessBuilder("cmd", "/c", "dir").start();
+
+            Thread outputConsumer = new Thread(() -> consumeStream(testProcess.getInputStream()));
+            outputConsumer.setDaemon(true);
+            outputConsumer.start();
+            Thread errorConsumer = new Thread(() -> consumeStream(testProcess.getErrorStream()));
+            errorConsumer.setDaemon(true);
+            errorConsumer.start();
+
+            testProcess.waitFor();
+            outputConsumer.join();
+            errorConsumer.join();
+        } catch (IOException | InterruptedException e) {
+            e.printStackTrace();
+            throw new RuntimeException("Exception", e);
+        }
+    }
+
+    private static void consumeStream(InputStream inputStream) {
         BufferedReader reader = null;
         try {
             int lines = 0;
@@ -100,6 +131,14 @@ public class CheckHandles {
                     e.printStackTrace();
                 }
             }
+        }
+    }
+
+    private static void sleep(long millis) {
+        try {
+            Thread.sleep(millis);
+        } catch (InterruptedException ie) {
+            // ignore
         }
     }
 }
