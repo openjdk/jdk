@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1884,6 +1884,7 @@ static int getMacFromDevice
     int fd;
     dl_phys_addr_req_t dlpareq;
     dl_phys_addr_ack_t *dlpaack;
+    dl_error_ack_t     *dlerack;
     struct strbuf msg;
     char buf[128];
     int flags = 0;
@@ -1918,6 +1919,19 @@ static int getMacFromDevice
         JNU_ThrowByNameWithMessageAndLastError
             (env, JNU_JAVANETPKG "SocketException", "getmsg() failed");
         return -1;
+    }
+
+    if (dlpaack->dl_primitive == DL_ERROR_ACK) {
+        dlerack = (dl_error_ack_t *)buf;
+        if (dlerack->dl_error_primitive != DL_PHYS_ADDR_REQ) {
+            JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException",
+                           "Couldn't obtain physical address\n");
+            return -1;
+        }
+        if (dlerack->dl_errno == DL_UNSUPPORTED) {
+            // fallback to lookup in the ARP table
+            return 0;
+        }
     }
 
     if (msg.len < DL_PHYS_ADDR_ACK_SIZE || dlpaack->dl_primitive != DL_PHYS_ADDR_ACK) {
