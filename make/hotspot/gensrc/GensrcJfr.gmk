@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@ JFR_TOOLS_OUTPUTDIR := $(JVM_VARIANT_OUTPUTDIR)/buildtools/tools_classes
 
 $(eval $(call SetupJavaCompiler, GENERATE_JFRBYTECODE, \
     JAVAC := $(JAVAC), \
-    FLAGS := $(DISABLE_WARNINGS), \
+    FLAGS := -Xlint:all -Werror, \
     SERVER_DIR := $(SJAVAC_SERVER_DIR), \
     SERVER_JVM := $(SJAVAC_SERVER_JAVA), \
     DISABLE_SJAVAC := true, \
@@ -41,6 +41,7 @@ $(eval $(call SetupJavaCompilation, BUILD_JFR_TOOLS, \
     SETUP := GENERATE_JFRBYTECODE, \
     SRC := $(JFR_TOOLS_SRCDIR), \
     BIN := $(JFR_TOOLS_OUTPUTDIR), \
+    DISABLED_WARNINGS := try, \
 ))
 
 TARGETS += $(BUILD_JFR_TOOLS)

@@ -80,7 +80,7 @@ java.datatransfer_COPY += flavormap.properties
 ################################################################################
 
 java.desktop_ADD_JAVAC_FLAGS += -Xdoclint:all/protected,-reference \
-    '-Xdoclint/package:java.*,javax.*' -Xlint:exports \
+    '-Xdoclint/package:java.*,javax.*' \
     --doclint-format html4
 java.desktop_COPY += .gif .png .wav .txt .xml .css .pf
 java.desktop_CLEAN += iio-plugin.properties cursors.properties
@@ -245,7 +245,6 @@ java.transaction.xa_ADD_JAVAC_FLAGS += -Xdoclint:all/protected '-Xdoclint/packag
 ################################################################################
 
 java.sql_ADD_JAVAC_FLAGS += -Xdoclint:all/protected '-Xdoclint/package:java.*,javax.*'
-java.sql_SETUP := GENERATE_JDKBYTECODE_NOWARNINGS
 
 ################################################################################
 
@@ -270,7 +269,7 @@ java.xml_CLEAN += .properties
 
 ################################################################################
 
-java.naming_ADD_JAVAC_FLAGS += -Xdoclint:all/protected,-accessibility '-Xdoclint/package:java.*,javax.*' -Xlint:-exports
+java.naming_ADD_JAVAC_FLAGS += -Xdoclint:all/protected,-accessibility '-Xdoclint/package:java.*,javax.*'
 java.naming_CLEAN += jndiprovider.properties
 
 ################################################################################
@@ -304,7 +303,8 @@ jdk.compiler_CLEAN_FILES += $(wildcard \
 
 ################################################################################
 
-jdk.hotspot.agent_ADD_JAVAC_FLAGS += $(DISABLE_WARNINGS),-overrides
+jdk.hotspot.agent_DISABLED_WARNINGS += deprecation rawtypes serial unchecked \
+    cast static overrides fallthrough
 jdk.hotspot.agent_COPY += .gif .png sa.js .properties
 
 ################################################################################
@@ -341,17 +341,17 @@ jdk.jartool_ADD_JAVAC_FLAGS += -XDstringConcat=inline
 
 ################################################################################
 
-jdk.scripting.nashorn_ADD_JAVAC_FLAGS += $(DISABLE_WARNINGS),-overrides
+jdk.scripting.nashorn_DISABLED_WARNINGS += removal
 jdk.scripting.nashorn_COPY := .properties .js
 
 ################################################################################
 
-jdk.scripting.nashorn.shell_ADD_JAVAC_FLAGS += $(DISABLE_WARNINGS),-overrides
+jdk.scripting.nashorn.shell_DISABLED_WARNINGS += removal
 jdk.scripting.nashorn.shell_COPY += .js .properties
 
 ################################################################################
 
-jdk.rmic_SETUP := GENERATE_JDKBYTECODE_NOWARNINGS
+jdk.rmic_DISABLED_WARNINGS += deprecation
 jdk.rmic_CLEAN += .properties
 
 ################################################################################
@@ -431,7 +431,7 @@ jdk.internal.jvmstat_COPY += aliasmap
 # The exports are needed since JVMCI is dynamically exported (see
 # jdk.vm.ci.services.internal.ReflectionAccessJDK::openJVMCITo).
 
-jdk.internal.vm.ci_ADD_JAVAC_FLAGS += -parameters -Xlint:-exports -XDstringConcat=inline
+jdk.internal.vm.ci_ADD_JAVAC_FLAGS += -parameters -XDstringConcat=inline
 
 ################################################################################
 
@@ -536,13 +536,9 @@ jdk.localedata_EXCLUDE_FILES += sun/text/resources/ext/BreakIteratorRules_th.jav
 jdk.localedata_KEEP_ALL_TRANSLATIONS := true
 ################################################################################
 
-# There is an issue in sjavac that triggers a warning in jdk.jfr that isn't
-# triggered without sjavac.
-ifeq ($(ENABLE_SJAVAC), yes)
-  jdk.jfr_SETUP := GENERATE_JDKBYTECODE_NOWARNINGS
-endif
+jdk.jfr_DISABLED_WARNINGS += exports
 jdk.jfr_COPY := .xsd .xml .dtd
-jdk.jfr_ADD_JAVAC_FLAGS := -XDstringConcat=inline -Xlint:-exports
+jdk.jfr_ADD_JAVAC_FLAGS := -XDstringConcat=inline
 
 ################################################################################
 # If this is an imported module that has prebuilt classes, only compile

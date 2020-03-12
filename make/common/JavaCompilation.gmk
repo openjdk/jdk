@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -154,6 +154,7 @@ endef
 #   SETUP:=must point to a previously setup java compiler, for example: SETUP:=BOOTJAVAC
 #   JVM:=path to ..bin/java
 #   ADD_JAVAC_FLAGS:=javac flags to append to the default ones.
+#   DISABLED_WARNINGS:=list of Xlint warnings that should be disabled
 #   SRC:=one or more directories to search for sources. The order of the source roots
 #        is significant. The first found file of a certain name has priority.
 #   BIN:=store classes here
@@ -198,9 +199,15 @@ define SetupJavaCompilationBody
     $1_FLAGS := -g
   endif
   $1_FLAGS += $$($$($1_SETUP)_FLAGS) $$($1_ADD_JAVAC_FLAGS) $(JAVAC_FLAGS)
+
+  ifneq ($$($1_DISABLED_WARNINGS), )
+    $1_FLAGS += -Xlint:$$(call CommaList, $$(addprefix -, $$($1_DISABLED_WARNINGS)))
+  endif
+
   ifneq ($$($1_CLASSPATH), )
     $1_FLAGS += -cp $$(call PathList, $$($1_CLASSPATH))
   endif
+
   ifeq ($$($1_JAVAC),)
     $$(error The Java compilation $1 refers to a non-existant java compiler setup $$($1_SETUP))
   endif

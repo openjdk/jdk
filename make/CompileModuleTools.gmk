@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,7 @@ $(eval $(call SetupJavaCompilation,BUILD_JIGSAW_TOOLS, \
                 build/tools/jigsaw, \
     COPY := .properties .html, \
     BIN := $(TOOLS_CLASSES_DIR), \
+    DISABLED_WARNINGS := fallthrough, \
     ADD_JAVAC_FLAGS := \
         --add-modules jdk.jdeps \
         --add-exports java.base/jdk.internal.module=ALL-UNNAMED \

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -77,6 +77,7 @@ $(eval $(call SetupJavaCompilation, BUILD_INDIFY, \
     SETUP := GENERATE_OLDBYTECODE, \
     SRC := $(TOPDIR)/test/jdk/java/lang/invoke, \
     INCLUDE_FILES := indify/Indify.java, \
+    DISABLED_WARNINGS := rawtypes unchecked serial deprecation, \
     BIN := $(MICROBENCHMARK_TOOLS_CLASSES), \
 ))
 
@@ -88,7 +89,8 @@ $(eval $(call SetupJavaCompiler, MICROBENCHMARK_JAVA_COMPILER, \
     JVM := $(JAVA) --add-modules jdk.unsupported --limit-modules java.management, \
     JAVAC := $(NEW_JAVAC), \
     DISABLE_SJAVAC := true, \
-    FLAGS := --upgrade-module-path $(JDK_OUTPUTDIR)/modules --system none $(DISABLE_WARNINGS), \
+    FLAGS := --upgrade-module-path $(JDK_OUTPUTDIR)/modules --system none \
+        -Xlint:all -Werror, \
     SERVER_DIR := $(SJAVAC_SERVER_DIR), \
     SERVER_JVM := $(SJAVAC_SERVER_JAVA), \
 ))
@@ -96,7 +98,8 @@ $(eval $(call SetupJavaCompiler, MICROBENCHMARK_JAVA_COMPILER, \
 # Build microbenchmark suite for the current JDK
 $(eval $(call SetupJavaCompilation, BUILD_JDK_MICROBENCHMARK, \
     SETUP := MICROBENCHMARK_JAVA_COMPILER, \
-    ADD_JAVAC_FLAGS := -cp $(MICROBENCHMARK_CLASSPATH) -Xlint -Xlint:-processing -Werror, \
+    ADD_JAVAC_FLAGS := -cp $(MICROBENCHMARK_CLASSPATH), \
+    DISABLED_WARNINGS := processing rawtypes cast serial deprecation, \
     SRC := $(MICROBENCHMARK_SRC), \
     BIN := $(MICROBENCHMARK_CLASSES), \
 ))

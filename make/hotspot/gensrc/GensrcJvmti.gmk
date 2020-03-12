@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ JVMTI_TOOLS_OUTPUTDIR := $(JVM_VARIANT_OUTPUTDIR)/tools/jvmti
 
 $(eval $(call SetupJavaCompiler, GENERATE_OLDBYTECODE, \
     JAVAC := $(JAVAC), \
-    FLAGS := $(DISABLE_WARNINGS), \
+    FLAGS := -Xlint:all -Werror, \
     SERVER_DIR := $(SJAVAC_SERVER_DIR), \
     SERVER_JVM := $(SJAVAC_SERVER_JAVA), \
     DISABLE_SJAVAC := true, \
@@ -43,6 +43,7 @@ $(eval $(call SetupJavaCompiler, GENERATE_OLDBYTECODE, \
 $(eval $(call SetupJavaCompilation, BUILD_JVMTI_TOOLS, \
     SETUP := GENERATE_OLDBYTECODE, \
     SRC := $(JVMTI_TOOLS_SRCDIR), \
+    DISABLED_WARNINGS := rawtypes cast, \
     INCLUDE_FILES := jvmtiGen.java jvmtiEnvFill.java, \
     BIN := $(JVMTI_TOOLS_OUTPUTDIR), \
 ))

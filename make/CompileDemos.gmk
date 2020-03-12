@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -94,6 +94,7 @@ COPY_TO_IMAGE := *.html *.txt *.png *.xml README*
 # EXTRA_MANIFEST_ATTR   Extra manifest attribute
 # SKIP_COMPILATION   Skip Java compilation iff true
 # DISABLE_SJAVAC   Passed to SetupJavaCompilation
+# DISABLED_WARNINGS Additional disabled warnings
 SetupBuildDemo = $(NamedParamsMacroTemplate)
 define SetupBuildDemoBody
   ifeq ($$($1_SRC_DIR), )
@@ -135,6 +136,7 @@ define SetupBuildDemoBody
         EXTRA_MANIFEST_ATTR := $$($1_EXTRA_MANIFEST_ATTR), \
         SRCZIP := $(SUPPORT_OUTPUTDIR)/demos/image/$$($1_DEMO_SUBDIR)/$1/src.zip, \
         EXCLUDE_FILES := $$($1_EXCLUDE_FILES), \
+        DISABLED_WARNINGS := $$($1_DISABLED_WARNINGS), \
         DISABLE_SJAVAC := $$($1_DISABLE_SJAVAC), \
     ))
 
@@ -173,35 +175,42 @@ $(BUILD_DEMO_CodePointIM_JAR): $(CODEPOINT_METAINF_SERVICE_FILE)
 
 $(eval $(call SetupBuildDemo, FileChooserDemo, \
     DEMO_SUBDIR := jfc, \
+    DISABLED_WARNINGS := rawtypes deprecation unchecked, \
 ))
 
 $(eval $(call SetupBuildDemo, SwingSet2, \
     DEMO_SUBDIR := jfc, \
     EXTRA_COPY_TO_JAR := .java, \
     EXTRA_MANIFEST_ATTR := SplashScreen-Image: resources/images/splash.png, \
+    DISABLED_WARNINGS := rawtypes deprecation unchecked static serial cast, \
     DISABLE_SJAVAC := true, \
 ))
 
 $(eval $(call SetupBuildDemo, Font2DTest, \
+    DISABLED_WARNINGS := rawtypes deprecation unchecked serial cast, \
     DEMO_SUBDIR := jfc, \
 ))
 
 $(eval $(call SetupBuildDemo, J2Ddemo, \
     DEMO_SUBDIR := jfc, \
     MAIN_CLASS := java2d.J2Ddemo, \
+    DISABLED_WARNINGS := rawtypes deprecation unchecked cast, \
     JAR_NAME := J2Ddemo, \
 ))
 
 $(eval $(call SetupBuildDemo, Metalworks, \
+    DISABLED_WARNINGS := rawtypes unchecked, \
     DEMO_SUBDIR := jfc, \
 ))
 
 $(eval $(call SetupBuildDemo, Notepad, \
+    DISABLED_WARNINGS := rawtypes, \
     DEMO_SUBDIR := jfc, \
 ))
 
 $(eval $(call SetupBuildDemo, Stylepad, \
     DEMO_SUBDIR := jfc, \
+    DISABLED_WARNINGS := rawtypes unchecked, \
     EXTRA_SRC_DIR := $(DEMO_SHARE_SRC)/jfc/Notepad, \
     EXCLUDE_FILES := $(DEMO_SHARE_SRC)/jfc/Notepad/README.txt, \
 ))
@@ -211,6 +220,7 @@ $(eval $(call SetupBuildDemo, SampleTree, \
 ))
 
 $(eval $(call SetupBuildDemo, TableExample, \
+    DISABLED_WARNINGS := rawtypes unchecked deprecation, \
     DEMO_SUBDIR := jfc, \
 ))
 
