@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,20 +25,55 @@
 
 package com.apple.laf;
 
-import java.awt.*;
-import java.awt.event.*;
+import java.awt.Color;
+import java.awt.Container;
+import java.awt.Dimension;
+import java.awt.Graphics;
+import java.awt.Insets;
+import java.awt.LayoutManager;
+import java.awt.Rectangle;
+import java.awt.event.ActionEvent;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
+import java.awt.event.KeyEvent;
 
-import javax.accessibility.*;
-import javax.swing.*;
+import javax.accessibility.Accessible;
+import javax.accessibility.AccessibleContext;
+import javax.accessibility.AccessibleState;
+import javax.swing.AbstractAction;
+import javax.swing.Action;
+import javax.swing.ActionMap;
+import javax.swing.ComboBoxEditor;
+import javax.swing.InputMap;
+import javax.swing.JButton;
+import javax.swing.JComboBox;
+import javax.swing.JComponent;
+import javax.swing.JList;
+import javax.swing.JRootPane;
+import javax.swing.JTextField;
+import javax.swing.KeyStroke;
+import javax.swing.ListCellRenderer;
+import javax.swing.ListModel;
+import javax.swing.LookAndFeel;
+import javax.swing.SwingUtilities;
 import javax.swing.border.Border;
-import javax.swing.event.*;
-import javax.swing.plaf.*;
-import javax.swing.plaf.basic.*;
-import com.apple.laf.ClientPropertyApplicator.Property;
-import apple.laf.JRSUIConstants.Size;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
+import javax.swing.plaf.ActionMapUIResource;
+import javax.swing.plaf.ComboBoxUI;
+import javax.swing.plaf.ComponentUI;
+import javax.swing.plaf.ListUI;
+import javax.swing.plaf.UIResource;
+import javax.swing.plaf.basic.BasicComboBoxEditor;
+import javax.swing.plaf.basic.BasicComboBoxUI;
+import javax.swing.plaf.basic.ComboPopup;
 
+import apple.laf.JRSUIConstants.Size;
 import com.apple.laf.AquaUtilControlSize.Sizeable;
 import com.apple.laf.AquaUtils.RecyclableSingleton;
+import com.apple.laf.ClientPropertyApplicator.Property;
 
 // Inspired by MetalComboBoxUI, which also has a combined text-and-arrow button for noneditables
 public class AquaComboBoxUI extends BasicComboBoxUI implements Sizeable {
@@ -86,6 +121,11 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements Sizeable {
 
     protected void uninstallComponents() {
         getApplicator().removeFrom(comboBox);
+        // AquaButtonUI install some listeners to all parents, which means that
+        // we need to uninstall UI here to remove those listeners, because after
+        // we remove them from ComboBox we lost the latest reference to them,
+        // and our standard uninstallUI machinery will not call them.
+        arrowButton.getUI().uninstallUI(arrowButton);
         super.uninstallComponents();
     }
 

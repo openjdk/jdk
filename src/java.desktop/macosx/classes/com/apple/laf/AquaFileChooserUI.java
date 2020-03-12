@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,22 +25,90 @@
 
 package com.apple.laf;
 
-import java.awt.*;
-import java.awt.datatransfer.*;
-import java.awt.dnd.*;
-import java.awt.event.*;
-import java.beans.*;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.ComponentOrientation;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.Font;
+import java.awt.FontMetrics;
+import java.awt.Graphics;
+import java.awt.Insets;
+import java.awt.Point;
+import java.awt.Rectangle;
+import java.awt.Toolkit;
+import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.Transferable;
+import java.awt.dnd.DnDConstants;
+import java.awt.dnd.DropTarget;
+import java.awt.dnd.DropTargetAdapter;
+import java.awt.dnd.DropTargetDragEvent;
+import java.awt.dnd.DropTargetDropEvent;
+import java.awt.event.ActionEvent;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
+import java.awt.event.KeyEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.net.URI;
 import java.text.DateFormat;
-import java.util.*;
+import java.util.Date;
+import java.util.Locale;
+import java.util.Objects;
+import java.util.Vector;
 
-import javax.swing.*;
+import javax.swing.AbstractAction;
+import javax.swing.AbstractListModel;
+import javax.swing.Action;
+import javax.swing.Box;
+import javax.swing.BoxLayout;
+import javax.swing.ComboBoxModel;
+import javax.swing.DefaultListSelectionModel;
+import javax.swing.Icon;
+import javax.swing.JButton;
+import javax.swing.JComboBox;
+import javax.swing.JComponent;
+import javax.swing.JDialog;
+import javax.swing.JFileChooser;
+import javax.swing.JLabel;
+import javax.swing.JList;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JRootPane;
+import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
+import javax.swing.JTable;
+import javax.swing.JTextField;
+import javax.swing.KeyStroke;
+import javax.swing.ListCellRenderer;
+import javax.swing.ListSelectionModel;
+import javax.swing.ScrollPaneConstants;
+import javax.swing.SwingConstants;
+import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
 import javax.swing.border.Border;
-import javax.swing.event.*;
-import javax.swing.filechooser.*;
-import javax.swing.plaf.*;
-import javax.swing.table.*;
+import javax.swing.event.AncestorEvent;
+import javax.swing.event.AncestorListener;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
+import javax.swing.filechooser.FileFilter;
+import javax.swing.filechooser.FileSystemView;
+import javax.swing.filechooser.FileView;
+import javax.swing.plaf.ComponentUI;
+import javax.swing.plaf.FileChooserUI;
+import javax.swing.plaf.UIResource;
+import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.table.JTableHeader;
+import javax.swing.table.TableCellRenderer;
+import javax.swing.table.TableColumn;
+import javax.swing.table.TableColumnModel;
 
 import sun.swing.SwingUtilities2;
 
@@ -168,7 +236,6 @@ public class AquaFileChooserUI extends FileChooserUI {
         if (propertyChangeListener != null) {
             fc.addPropertyChangeListener(propertyChangeListener);
         }
-        if (model != null) fc.addPropertyChangeListener(model);
 
         ancestorListener = new AncestorListener(){
             public void ancestorAdded(final AncestorEvent e) {
@@ -196,6 +263,7 @@ public class AquaFileChooserUI extends FileChooserUI {
             fc.removePropertyChangeListener(propertyChangeListener);
         }
         fFileList.removeMouseListener(doubleClickListener);
+        fc.removePropertyChangeListener(filterComboBoxModel);
         fc.removePropertyChangeListener(model);
         fc.unregisterKeyboardAction(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0));
         fc.removeAncestorListener(ancestorListener);
@@ -1741,7 +1809,17 @@ public class AquaFileChooserUI extends FileChooserUI {
         return fButtonActions[which];
     }
 
-    public void uninstallComponents(final JFileChooser fc) { //$ Metal (on which this is based) doesn't uninstall its components.
+    public void uninstallComponents(final JFileChooser fc) {
+        // AquaButtonUI install some listeners to all parents, which means that
+        // we need to uninstall UI here to remove those listeners, because after
+        // we remove them from FileChooser we lost the latest reference to them,
+        // and our standard uninstallUI machinery will not call them.
+        fApproveButton.getUI().uninstallUI(fApproveButton);
+        fOpenButton.getUI().uninstallUI(fOpenButton);
+        fNewFolderButton.getUI().uninstallUI(fNewFolderButton);
+        fCancelButton.getUI().uninstallUI(fCancelButton);
+        directoryComboBox.getUI().uninstallUI(directoryComboBox);
+        filterComboBox.getUI().uninstallUI(filterComboBox);
     }
 
     // Consistent with the AppKit NSSavePanel, clicks on a file (not a directory) should populate the text field
