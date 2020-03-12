@@ -282,6 +282,7 @@ main {
     position:relative;
 }
 dl.notes > dt {
+    font-family: 'DejaVu Sans', Arial, Helvetica, sans-serif;
     font-size:12px;
     font-weight:bold;
     margin:10px 0 0 0;

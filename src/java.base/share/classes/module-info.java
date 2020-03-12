@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,8 @@
 /**
  * Defines the foundational APIs of the Java SE Platform.
  *
- * <dl>
- * <dt class="simpleTagLabel" style="font-family:'DejaVu Sans', Arial, Helvetica, sans serif">Providers:</dt>
+ * <dl class="notes">
+ * <dt>Providers:</dt>
  * <dd> The JDK implementation of this module provides an implementation of
  *      the {@index jrt jrt} {@linkplain java.nio.file.spi.FileSystemProvider
  *      file system provider} to enumerate and read the class and resource

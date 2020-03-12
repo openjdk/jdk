@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,8 @@
  * Defines the {@linkplain javax.management.remote.rmi RMI connector}
  * for the Java Management Extensions (JMX) Remote API.
  *
- * <dl>
- * <dt class="simpleTagLabel" style="font-family:'DejaVu Sans', Arial, Helvetica, sans serif">Providers:</dt>
+ * <dl class="notes">
+ * <dt>Providers:</dt>
  * <dd>This module provides the
  * {@link javax.management.remote.JMXConnectorProvider} service,
  * which creates JMX connector clients using the RMI protocol.
