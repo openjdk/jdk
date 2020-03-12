@@ -62,6 +62,8 @@ public class TestZGCWithCDS {
                    .exec(helloJar,
                          "-XX:+UnlockExperimentalVMOptions",
                          "-XX:-UseZGC",
+                         "-XX:+UseCompressedOops",           // in case turned off by vmoptions
+                         "-XX:+UseCompressedClassPointers",  // by jtreg
                          "-Xlog:cds",
                          "Hello");
          out.shouldContain(UNABLE_TO_USE_ARCHIVE);

@@ -40,6 +40,7 @@ serviceability/sa/ClhsdbThread.java                           8220624   generic-
 serviceability/sa/ClhsdbWhere.java                            8220624   generic-all
 serviceability/sa/DeadlockDetectionTest.java                  8220624   generic-all
 serviceability/sa/JhsdbThreadInfoTest.java                    8220624   generic-all
+serviceability/sa/ClhsdbCDSCore.java                          8220624   generic-all
 serviceability/sa/TestClhsdbJstackLock.java                   8220624   generic-all
 serviceability/sa/TestHeapDumpForInvokeDynamic.java           8220624   generic-all
 serviceability/sa/TestHeapDumpForLargeArray.java              8220624   generic-all

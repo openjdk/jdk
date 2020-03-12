@@ -29,6 +29,7 @@
  *          E.g. use compressed oops for creating and archive, but then
  *               execute w/o compressed oops
  * @requires vm.cds
+ * @requires !vm.gc.Z
  * @library /test/lib
  * @compile test-classes/Hello.java
  * @run driver CommandLineFlagComboNegative

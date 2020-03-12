@@ -2003,12 +2003,6 @@ WB_END
 
 WB_ENTRY(jboolean, WB_IsCDSIncludedInVmBuild(JNIEnv* env))
 #if INCLUDE_CDS
-# ifdef _LP64
-    if (!UseCompressedOops || !UseCompressedClassPointers) {
-      // On 64-bit VMs, CDS is supported only with compressed oops/pointers
-      return false;
-    }
-# endif // _LP64
   return true;
 #else
   return false;
