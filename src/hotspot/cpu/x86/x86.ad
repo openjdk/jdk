@@ -1262,7 +1262,7 @@ const bool Matcher::match_rule_supported(int opcode) {
       }
       break;
     case Op_PopCountVI:
-      if (!UsePopCountInstruction || !VM_Version::supports_vpopcntdq()) {
+      if (!UsePopCountInstruction || !VM_Version::supports_avx512_vpopcntdq()) {
         return false;
       }
       break;
@@ -5666,7 +5666,7 @@ instruct vmuladdS2I_reg_avx(vec dst, vec src1, vec src2) %{
 // --------------------------------- Vector Multiply Add Add ----------------------------------
 
 instruct vmuladdaddS2I_reg(vec dst, vec src1, vec src2) %{
-  predicate(VM_Version::supports_vnni());
+  predicate(VM_Version::supports_avx512_vnni());
   match(Set dst (AddVI (MulAddVS2VI src1 src2) dst));
   format %{ "evpdpwssd $dst,$src1,$src2\t! muladdadd packedStoI" %}
   ins_encode %{

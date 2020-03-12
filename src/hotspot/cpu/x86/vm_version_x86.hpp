@@ -338,17 +338,18 @@ protected:
 #define CPU_AVX512VL ((uint64_t)UCONST64(0x200000000)) // EVEX instructions with smaller vector length
 #define CPU_SHA ((uint64_t)UCONST64(0x400000000))      // SHA instructions
 #define CPU_FMA ((uint64_t)UCONST64(0x800000000))      // FMA instructions
-#define CPU_VZEROUPPER ((uint64_t)UCONST64(0x1000000000))       // Vzeroupper instruction
-#define CPU_AVX512_VPOPCNTDQ ((uint64_t)UCONST64(0x2000000000)) // Vector popcount
-#define CPU_AVX512_VPCLMULQDQ ((uint64_t)UCONST64(0x4000000000)) //Vector carryless multiplication
-#define CPU_VAES ((uint64_t)UCONST64(0x8000000000))    // Vector AES instructions
-#define CPU_VNNI ((uint64_t)UCONST64(0x10000000000))   // Vector Neural Network Instructions
+#define CPU_VZEROUPPER ((uint64_t)UCONST64(0x1000000000))        // Vzeroupper instruction
+#define CPU_AVX512_VPOPCNTDQ ((uint64_t)UCONST64(0x2000000000))  // Vector popcount
+#define CPU_AVX512_VPCLMULQDQ ((uint64_t)UCONST64(0x4000000000)) // Vector carryless multiplication
+#define CPU_AVX512_VAES ((uint64_t)UCONST64(0x8000000000))       // Vector AES instructions
+#define CPU_AVX512_VNNI ((uint64_t)UCONST64(0x10000000000))      // Vector Neural Network Instructions
+#define CPU_AVX512_VBMI2 ((uint64_t)UCONST64(0x100000000000))    // VBMI2 shift left double instructions
 
 #define CPU_FLUSH ((uint64_t)UCONST64(0x20000000000))  // flush instruction
 #define CPU_FLUSHOPT ((uint64_t)UCONST64(0x40000000000)) // flushopt instruction
 #define CPU_CLWB ((uint64_t)UCONST64(0x80000000000))   // clwb instruction
-#define CPU_VBMI2 ((uint64_t)UCONST64(0x100000000000))   // VBMI2 shift left double instructions
 
+// NB! When adding new CPU feature detection consider updating feature string in VM_Version::get_processor_features().
 
 enum Extended_Family {
     // AMD
@@ -570,11 +571,11 @@ enum Extended_Family {
         if (_cpuid_info.sef_cpuid7_ecx.bits.avx512_vpclmulqdq != 0)
           result |= CPU_AVX512_VPCLMULQDQ;
         if (_cpuid_info.sef_cpuid7_ecx.bits.vaes != 0)
-          result |= CPU_VAES;
+          result |= CPU_AVX512_VAES;
         if (_cpuid_info.sef_cpuid7_ecx.bits.avx512_vnni != 0)
-          result |= CPU_VNNI;
+          result |= CPU_AVX512_VNNI;
         if (_cpuid_info.sef_cpuid7_ecx.bits.avx512_vbmi2 != 0)
-          result |= CPU_VBMI2;
+          result |= CPU_AVX512_VBMI2;
       }
     }
     if (_cpuid_info.sef_cpuid7_ebx.bits.bmi1 != 0)
@@ -862,11 +863,11 @@ public:
   static bool supports_sha()        { return (_features & CPU_SHA) != 0; }
   static bool supports_fma()        { return (_features & CPU_FMA) != 0 && supports_avx(); }
   static bool supports_vzeroupper() { return (_features & CPU_VZEROUPPER) != 0; }
-  static bool supports_vpopcntdq()  { return (_features & CPU_AVX512_VPOPCNTDQ) != 0; }
+  static bool supports_avx512_vpopcntdq()  { return (_features & CPU_AVX512_VPOPCNTDQ) != 0; }
   static bool supports_avx512_vpclmulqdq() { return (_features & CPU_AVX512_VPCLMULQDQ) != 0; }
-  static bool supports_vaes()       { return (_features & CPU_VAES) != 0; }
-  static bool supports_vnni()       { return (_features & CPU_VNNI) != 0; }
-  static bool supports_vbmi2()      { return (_features & CPU_VBMI2) != 0; }
+  static bool supports_avx512_vaes()       { return (_features & CPU_AVX512_VAES) != 0; }
+  static bool supports_avx512_vnni()       { return (_features & CPU_AVX512_VNNI) != 0; }
+  static bool supports_avx512_vbmi2()      { return (_features & CPU_AVX512_VBMI2) != 0; }
 
   // Intel features
   static bool is_intel_family_core() { return is_intel() &&
