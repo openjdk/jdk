@@ -1531,6 +1531,13 @@ void ShenandoahHeap::op_final_mark() {
         verifier()->verify_before_evacuation();
       }
 
+      // Remember limit for updating refs. It's guaranteed that we get no from-space-refs written
+      // from here on.
+      for (uint i = 0; i < num_regions(); i++) {
+        ShenandoahHeapRegion* r = get_region(i);
+        r->set_update_watermark(r->top());
+      }
+
       set_evacuation_in_progress(true);
       // From here on, we need to update references.
       set_has_forwarded_objects(true);
@@ -2391,13 +2398,13 @@ private:
     ShenandoahHeapRegion* r = _regions->next();
     ShenandoahMarkingContext* const ctx = _heap->complete_marking_context();
     while (r != NULL) {
-      HeapWord* top_at_start_ur = r->concurrent_iteration_safe_limit();
-      assert (top_at_start_ur >= r->bottom(), "sanity");
+      HeapWord* update_watermark = r->get_update_watermark();
+      assert (update_watermark >= r->bottom(), "sanity");
       if (r->is_active() && !r->is_cset()) {
-        _heap->marked_object_oop_iterate(r, &cl, top_at_start_ur);
+        _heap->marked_object_oop_iterate(r, &cl, update_watermark);
       }
       if (ShenandoahPacing) {
-        _heap->pacer()->report_updaterefs(pointer_delta(top_at_start_ur, r->bottom()));
+        _heap->pacer()->report_updaterefs(pointer_delta(update_watermark, r->bottom()));
       }
       if (_heap->check_cancelled_gc_and_yield(_concurrent)) {
         return;
@@ -2435,10 +2442,6 @@ void ShenandoahHeap::op_init_updaterefs() {
     ShenandoahGCPhase phase(ShenandoahPhaseTimings::init_update_refs_prepare);
 
     make_parsable(true);
-    for (uint i = 0; i < num_regions(); i++) {
-      ShenandoahHeapRegion* r = get_region(i);
-      r->set_concurrent_iteration_safe_limit(r->top());
-    }
 
     // Reset iterator.
     _update_refs_iterator.reset();
