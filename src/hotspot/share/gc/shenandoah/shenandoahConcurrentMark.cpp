@@ -84,12 +84,10 @@ template<UpdateRefsMode UPDATE_REFS>
 class ShenandoahInitMarkRootsTask : public AbstractGangTask {
 private:
   ShenandoahAllRootScanner* _rp;
-  bool _process_refs;
 public:
-  ShenandoahInitMarkRootsTask(ShenandoahAllRootScanner* rp, bool process_refs) :
+  ShenandoahInitMarkRootsTask(ShenandoahAllRootScanner* rp) :
     AbstractGangTask("Shenandoah init mark roots task"),
-    _rp(rp),
-    _process_refs(process_refs) {
+    _rp(rp) {
   }
 
   void work(uint worker_id) {
@@ -268,12 +266,12 @@ void ShenandoahConcurrentMark::mark_roots(ShenandoahPhaseTimings::Phase root_pha
   task_queues()->reserve(nworkers);
 
   if (heap->has_forwarded_objects()) {
-    ShenandoahInitMarkRootsTask<RESOLVE> mark_roots(&root_proc, _heap->process_references());
+    ShenandoahInitMarkRootsTask<RESOLVE> mark_roots(&root_proc);
     workers->run_task(&mark_roots);
   } else {
     // No need to update references, which means the heap is stable.
     // Can save time not walking through forwarding pointers.
-    ShenandoahInitMarkRootsTask<NONE> mark_roots(&root_proc, _heap->process_references());
+    ShenandoahInitMarkRootsTask<NONE> mark_roots(&root_proc);
     workers->run_task(&mark_roots);
   }
 

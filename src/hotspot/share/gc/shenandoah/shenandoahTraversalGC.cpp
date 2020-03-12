@@ -162,8 +162,6 @@ class ShenandoahInitTraversalCollectionTask : public AbstractGangTask {
 private:
   ShenandoahCSetRootScanner* _rp;
   ShenandoahHeap* _heap;
-  ShenandoahCsetCodeRootsIterator* _cset_coderoots;
-  ShenandoahStringDedupRoots       _dedup_roots;
 
 public:
   ShenandoahInitTraversalCollectionTask(ShenandoahCSetRootScanner* rp) :
