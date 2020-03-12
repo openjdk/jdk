@@ -71,7 +71,7 @@ public class Balls extends AnimatingControlsSurface {
     private boolean active;
     protected Ball[] balls = new Ball[colors.length];
     protected boolean clearToggle;
-    protected JComboBox combo;
+    protected JComboBox<String> combo;
 
     public Balls() {
         setBackground(WHITE);
@@ -279,7 +279,7 @@ public class Balls extends AnimatingControlsSurface {
             addTool("B", demo.balls[4].isSelected);
             addTool("I", demo.balls[5].isSelected);
             addTool("V", demo.balls[6].isSelected);
-            add(combo = new JComboBox());
+            add(combo = new JComboBox<>());
             combo.addItem("10");
             combo.addItem("20");
             combo.addItem("30");

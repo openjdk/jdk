@@ -188,20 +188,20 @@ public class ImageOps extends ControlsSurface implements ChangeListener {
     static class DemoControls extends CustomControls implements ActionListener {
 
         ImageOps demo;
-        JComboBox imgCombo, opsCombo;
+        JComboBox<String> imgCombo, opsCombo;
         Font font = new Font(Font.SERIF, Font.PLAIN, 10);
 
         @SuppressWarnings("LeakingThisInConstructor")
         public DemoControls(ImageOps demo) {
             super(demo.name);
             this.demo = demo;
-            add(imgCombo = new JComboBox());
+            add(imgCombo = new JComboBox<>());
             imgCombo.setFont(font);
             for (String name : ImageOps.imgName) {
                 imgCombo.addItem(name);
             }
             imgCombo.addActionListener(this);
-            add(opsCombo = new JComboBox());
+            add(opsCombo = new JComboBox<>());
             opsCombo.setFont(font);
             for (String name : ImageOps.opsName) {
                 opsCombo.addItem(name);

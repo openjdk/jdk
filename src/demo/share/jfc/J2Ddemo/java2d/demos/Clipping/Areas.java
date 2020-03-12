@@ -151,7 +151,6 @@ public class Areas extends ControlsSurface {
 
         Areas demo;
         JToolBar toolbar;
-        JComboBox combo;
 
         public DemoControls(Areas demo) {
             super(demo.name);

@@ -91,7 +91,7 @@ public final class TableSorter extends TableMap {
     }
 
     public int compareRowsByColumn(int row1, int row2, int column) {
-        Class type = model.getColumnClass(column);
+        Class<?> type = model.getColumnClass(column);
         TableModel data = model;
 
         // Check for nulls
@@ -339,7 +339,7 @@ public final class TableSorter extends TableMap {
                 int column = tableView.convertColumnIndexToModel(viewColumn);
                 if (e.getClickCount() == 1 && column != -1) {
                     System.out.println("Sorting ...");
-                    int shiftPressed = e.getModifiers() & InputEvent.SHIFT_MASK;
+                    int shiftPressed = e.getModifiersEx() & InputEvent.SHIFT_DOWN_MASK;
                     boolean ascending = (shiftPressed == 0);
                     sorter.sortByColumn(column, ascending);
                 }

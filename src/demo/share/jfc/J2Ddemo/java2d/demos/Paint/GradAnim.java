@@ -266,13 +266,13 @@ public class GradAnim extends AnimatingControlsSurface {
     class DemoControls extends CustomControls implements ActionListener {
 
         GradAnim demo;
-        JComboBox combo;
+        JComboBox<String> combo;
 
         @SuppressWarnings("LeakingThisInConstructor")
         public DemoControls(GradAnim demo) {
             super(demo.name);
             this.demo = demo;
-            combo = new JComboBox();
+            combo = new JComboBox<>();
             combo.addActionListener(this);
             combo.addItem("2-color GradientPaint");
             combo.addItem("3-color LinearGradientPaint");

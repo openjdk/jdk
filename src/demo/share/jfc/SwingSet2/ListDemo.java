@@ -59,7 +59,7 @@ import java.net.*;
  * @author Jeff Dinkins
  */
 public class ListDemo extends DemoModule {
-    JList list;
+    JList<String> list;
 
     JPanel prefixList;
     JPanel suffixList;
@@ -69,7 +69,7 @@ public class ListDemo extends DemoModule {
 
     GeneratedListModel listModel;
 
-    Vector checkboxes = new Vector();
+    Vector<JCheckBox> checkboxes = new Vector<>();
 
     /**
      * main method allows us to run as a standalone demo.
@@ -103,7 +103,7 @@ public class ListDemo extends DemoModule {
         centerPanel.add(Box.createRigidArea(HGAP30));
 
         // Create the list
-        list = new JList();
+        list = new JList<>();
         list.setCellRenderer(new CompanyLogoListCellRenderer());
         listModel = new GeneratedListModel(this);
         list.setModel(listModel);
@@ -293,12 +293,12 @@ public class ListDemo extends DemoModule {
     }
 
 
-    class GeneratedListModel extends AbstractListModel {
+    class GeneratedListModel extends AbstractListModel<String> {
         ListDemo demo;
         Permuter permuter;
 
-        public Vector prefix = new Vector();
-        public Vector suffix = new Vector();
+        public Vector<String> prefix = new Vector<>();
+        public Vector<String> suffix = new Vector<>();
 
         public GeneratedListModel (ListDemo demo) {
             this.demo = demo;
@@ -337,7 +337,7 @@ public class ListDemo extends DemoModule {
             return prefix.size() * suffix.size();
         }
 
-        public Object getElementAt(int index) {
+        public String getElementAt(int index) {
             if(permuter == null) {
                 update();
             }
@@ -363,7 +363,7 @@ public class ListDemo extends DemoModule {
 
     class CompanyLogoListCellRenderer extends DefaultListCellRenderer {
        public Component getListCellRendererComponent(
-            JList list,
+            JList<?> list,
             Object value,
             int index,
             boolean isSelected,

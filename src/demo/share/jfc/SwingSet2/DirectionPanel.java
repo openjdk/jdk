@@ -92,9 +92,9 @@ public class DirectionPanel extends JPanel {
     }
 
     public void setSelection( String selection  ) {
-        Enumeration e = group.getElements();
+        Enumeration<AbstractButton> e = group.getElements();
         while( e.hasMoreElements() ) {
-            JRadioButton b = (JRadioButton)e.nextElement();
+            AbstractButton b = e.nextElement();
             if( b.getActionCommand().equals(selection) ) {
                b.setSelected(true);
             }
@@ -147,10 +147,7 @@ public class DirectionPanel extends JPanel {
             getAccessibleContext().setAccessibleName(direction);
             getAccessibleContext().setAccessibleDescription(description);
             setSelected(selected);
-        }
-
-        public boolean isFocusTraversable() {
-            return false;
+            setFocusable(false);
         }
 
         public void setBorder(Border b) {

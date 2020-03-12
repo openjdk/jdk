@@ -162,7 +162,7 @@ public final class MetalworksPrefs extends JDialog {
 
         JPanel protoPanel = new JPanel();
         JLabel protoLabel = new JLabel("Protocol");
-        JComboBox protocol = new JComboBox();
+        JComboBox<String> protocol = new JComboBox<>();
         protocol.addItem("SMTP");
         protocol.addItem("IMAP");
         protocol.addItem("Other...");
@@ -171,7 +171,7 @@ public final class MetalworksPrefs extends JDialog {
 
         JPanel attachmentPanel = new JPanel();
         JLabel attachmentLabel = new JLabel("Attachments");
-        JComboBox attach = new JComboBox();
+        JComboBox<String> attach = new JComboBox<>();
         attach.addItem("Download Always");
         attach.addItem("Ask size > 1 Meg");
         attach.addItem("Ask size > 5 Meg");

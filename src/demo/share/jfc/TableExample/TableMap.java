@@ -94,7 +94,7 @@ public class TableMap extends AbstractTableModel implements TableModelListener {
     }
 
     @Override
-    public Class getColumnClass(int aColumn) {
+    public Class<?> getColumnClass(int aColumn) {
         return model.getColumnClass(aColumn);
     }
 

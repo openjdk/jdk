@@ -94,7 +94,7 @@ public final class Tools extends JPanel implements ActionListener,
     protected boolean focus;
     public JToggleButton toggleB;
     public JButton printB;
-    public JComboBox screenCombo;
+    public JComboBox<String> screenCombo;
     public JToggleButton renderB, aliasB;
     public JToggleButton textureB, compositeB;
     public JButton startStopB;
@@ -167,7 +167,7 @@ public final class Tools extends JPanel implements ActionListener,
             toolbar.setPreferredSize(new Dimension(6*25, 26));
         }
 
-        screenCombo = new JComboBox();
+        screenCombo = new JComboBox<>();
         screenCombo.setPreferredSize(new Dimension(100, 18));
         screenCombo.setFont(font);
         for (String name : GlobalControls.screenNames) {

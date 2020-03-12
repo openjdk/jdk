@@ -64,7 +64,7 @@ public class DemoPanel extends JPanel {
         try {
             if (obj instanceof String) {
                 className = (String) obj;
-                obj = Class.forName(className).newInstance();
+                obj = Class.forName(className).getDeclaredConstructor().newInstance();
             }
             if (obj instanceof Component) {
                 add((Component) obj);

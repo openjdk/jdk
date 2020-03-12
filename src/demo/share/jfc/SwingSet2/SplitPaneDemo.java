@@ -165,7 +165,7 @@ public class SplitPaneDemo extends DemoModule {
         JLabel                   label;
 
         divSize = new JTextField();
-        divSize.setText(new Integer(splitPane.getDividerSize()).toString());
+        divSize.setText(Integer.toString(splitPane.getDividerSize()));
         divSize.setColumns(5);
         divSize.getAccessibleContext().setAccessibleName(getString("SplitPaneDemo.divider_size"));
         divSize.addActionListener(new ActionListener() {

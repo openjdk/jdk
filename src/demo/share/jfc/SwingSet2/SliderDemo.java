@@ -164,7 +164,9 @@ public class SliderDemo extends DemoModule {
         s.setPaintLabels( true );
         s.setSnapToTicks( true );
 
-        s.getLabelTable().put(new Integer(11), new JLabel(new Integer(11).toString(), JLabel.CENTER));
+        @SuppressWarnings("unchecked")
+        Dictionary<Object, Object> labelTable = s.getLabelTable();
+        labelTable.put(Integer.valueOf(11), new JLabel(Integer.valueOf(11).toString(), JLabel.CENTER));
         s.setLabelTable( s.getLabelTable() );
 
         s.getAccessibleContext().setAccessibleName(getString("SliderDemo.minorticks"));

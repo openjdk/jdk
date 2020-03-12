@@ -72,7 +72,7 @@ public class OldJTable extends JTable
         return addColumn(columnIdentifier, width, null, null, null);
     }
 
-    public TableColumn addColumn(Object columnIdentifier, List columnData) {
+    public TableColumn addColumn(Object columnIdentifier, List<?> columnData) {
         return addColumn(columnIdentifier, -1, null, null, columnData);
     }
 
@@ -86,7 +86,7 @@ public class OldJTable extends JTable
 
     public TableColumn addColumn(Object columnIdentifier, int width,
                                  TableCellRenderer renderer,
-                                 TableCellEditor editor, List columnData) {
+                                 TableCellEditor editor, List<?> columnData) {
         checkDefaultTableModel();
 
         // Set up the model side first
@@ -112,7 +112,7 @@ public class OldJTable extends JTable
         ((DefaultTableModel)getModel()).addRow(rowData);
     }
 
-    public void addRow(List rowData) {
+    public void addRow(List<?> rowData) {
         checkDefaultTableModel();
         ((DefaultTableModel)getModel()).addRow(rowData.toArray());
     }
@@ -132,7 +132,7 @@ public class OldJTable extends JTable
         ((DefaultTableModel)getModel()).insertRow(rowIndex, rowData);
     }
 
-    public void insertRow(int rowIndex, List rowData) {
+    public void insertRow(int rowIndex, List<?> rowData) {
         checkDefaultTableModel();
         ((DefaultTableModel)getModel()).insertRow(rowIndex, rowData.toArray());
     }
@@ -142,7 +142,7 @@ public class OldJTable extends JTable
         ((DefaultTableModel)getModel()).setNumRows(newSize);
     }
 
-    public void setDataVector(Object[][] newData, List columnIds) {
+    public void setDataVector(Object[][] newData, List<?> columnIds) {
         checkDefaultTableModel();
         ((DefaultTableModel)getModel()).setDataVector(
                 newData, columnIds.toArray());

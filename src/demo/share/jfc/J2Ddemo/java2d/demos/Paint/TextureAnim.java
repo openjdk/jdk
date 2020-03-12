@@ -299,7 +299,7 @@ public final class TextureAnim extends AnimatingControlsSurface {
 
         TextureAnim demo;
         JToolBar toolbar;
-        JComboBox combo;
+        JComboBox<String> combo;
         JMenu menu;
         JMenuItem[] menuitems;
         int iconSize = 20;
@@ -318,7 +318,7 @@ public final class TextureAnim extends AnimatingControlsSurface {
             addTool("RO", "rotate", false);
             addTool("SX", "shear x", false);
             addTool("SY", "shear y", false);
-            add(combo = new JComboBox());
+            add(combo = new JComboBox<>());
             combo.addActionListener(this);
             combo.addItem("8");
             combo.addItem("16");

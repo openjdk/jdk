@@ -57,13 +57,13 @@ public class ComboBoxDemo extends DemoModule implements ActionListener {
     Face face;
     JLabel faceLabel;
 
-    JComboBox hairCB;
-    JComboBox eyesCB;
-    JComboBox mouthCB;
+    JComboBox<?> hairCB;
+    JComboBox<?> eyesCB;
+    JComboBox<?> mouthCB;
 
-    JComboBox presetCB;
+    JComboBox<?> presetCB;
 
-    Hashtable parts = new Hashtable();
+    Hashtable<String, Object> parts = new Hashtable<>();
 
     /**
      * main method allows us to run as a standalone demo.
@@ -111,28 +111,31 @@ public class ComboBoxDemo extends DemoModule implements ActionListener {
 
         JLabel l = (JLabel) comboBoxPanel.add(new JLabel(getString("ComboBoxDemo.presets")));
         l.setAlignmentX(JLabel.LEFT_ALIGNMENT);
-        presetCB = (JComboBox) comboBoxPanel.add(createPresetComboBox());
+        presetCB = createPresetComboBox();
         presetCB.setAlignmentX(JComboBox.LEFT_ALIGNMENT);
         l.setLabelFor(presetCB);
+        comboBoxPanel.add(presetCB);
         comboBoxPanel.add(Box.createRigidArea(VGAP30));
 
         l = (JLabel) comboBoxPanel.add(new JLabel(getString("ComboBoxDemo.hair_description")));
         l.setAlignmentX(JLabel.LEFT_ALIGNMENT);
-        hairCB = (JComboBox) comboBoxPanel.add(createHairComboBox());
+        hairCB = createHairComboBox();
         hairCB.setAlignmentX(JComboBox.LEFT_ALIGNMENT);
         l.setLabelFor(hairCB);
+        comboBoxPanel.add(hairCB);
         comboBoxPanel.add(Box.createRigidArea(VGAP15));
 
         l = (JLabel) comboBoxPanel.add(new JLabel(getString("ComboBoxDemo.eyes_description")));
         l.setAlignmentX(JLabel.LEFT_ALIGNMENT);
-        eyesCB = (JComboBox) comboBoxPanel.add(createEyesComboBox());
+        eyesCB = createEyesComboBox();
         eyesCB.setAlignmentX(JComboBox.LEFT_ALIGNMENT);
         l.setLabelFor(eyesCB);
+        comboBoxPanel.add(eyesCB);
         comboBoxPanel.add(Box.createRigidArea(VGAP15));
 
         l = (JLabel) comboBoxPanel.add(new JLabel(getString("ComboBoxDemo.mouth_description")));
         l.setAlignmentX(JLabel.LEFT_ALIGNMENT);
-        mouthCB = (JComboBox) comboBoxPanel.add(createMouthComboBox());
+        mouthCB = (JComboBox<?>) comboBoxPanel.add(createMouthComboBox());
         mouthCB.setAlignmentX(JComboBox.LEFT_ALIGNMENT);
         l.setLabelFor(mouthCB);
         comboBoxPanel.add(Box.createRigidArea(VGAP15));
@@ -217,36 +220,36 @@ public class ComboBoxDemo extends DemoModule implements ActionListener {
         return face;
     }
 
-    JComboBox createHairComboBox() {
-        JComboBox cb = new JComboBox();
+    JComboBox<String> createHairComboBox() {
+        JComboBox<String> cb = new JComboBox<>();
         fillComboBox(cb);
         cb.addActionListener(this);
         return cb;
     }
 
-    JComboBox createEyesComboBox() {
-        JComboBox cb = new JComboBox();
+    JComboBox<String> createEyesComboBox() {
+        JComboBox<String> cb = new JComboBox<>();
         fillComboBox(cb);
         cb.addActionListener(this);
         return cb;
     }
 
-    JComboBox createNoseComboBox() {
-        JComboBox cb = new JComboBox();
+    JComboBox<String> createNoseComboBox() {
+        JComboBox<String> cb = new JComboBox<>();
         fillComboBox(cb);
         cb.addActionListener(this);
         return cb;
     }
 
-    JComboBox createMouthComboBox() {
-        JComboBox cb = new JComboBox();
+    JComboBox<String> createMouthComboBox() {
+        JComboBox<String> cb = new JComboBox<>();
         fillComboBox(cb);
         cb.addActionListener(this);
         return cb;
     }
 
-    JComboBox createPresetComboBox() {
-        JComboBox cb = new JComboBox();
+    JComboBox<String> createPresetComboBox() {
+        JComboBox<String> cb = new JComboBox<>();
         cb.addItem(getString("ComboBoxDemo.preset1"));
         cb.addItem(getString("ComboBoxDemo.preset2"));
         cb.addItem(getString("ComboBoxDemo.preset3"));
@@ -261,7 +264,7 @@ public class ComboBoxDemo extends DemoModule implements ActionListener {
         return cb;
     }
 
-    void fillComboBox(JComboBox cb) {
+    void fillComboBox(JComboBox<String> cb) {
         cb.addItem(getString("ComboBoxDemo.brent"));
         cb.addItem(getString("ComboBoxDemo.georges"));
         cb.addItem(getString("ComboBoxDemo.hans"));
@@ -279,15 +282,15 @@ public class ComboBoxDemo extends DemoModule implements ActionListener {
 
     public void actionPerformed(ActionEvent e) {
         if(e.getSource() == hairCB) {
-            String name = (String) parts.get((String) hairCB.getSelectedItem());
+            String name = (String) parts.get(hairCB.getSelectedItem());
             face.setHair((ImageIcon) parts.get(name + "hair"));
             faceLabel.repaint();
         } else if(e.getSource() == eyesCB) {
-            String name = (String) parts.get((String) eyesCB.getSelectedItem());
+            String name = (String) parts.get(eyesCB.getSelectedItem());
             face.setEyes((ImageIcon) parts.get(name + "eyes"));
             faceLabel.repaint();
         } else if(e.getSource() == mouthCB) {
-            String name = (String) parts.get((String) mouthCB.getSelectedItem());
+            String name = (String) parts.get(mouthCB.getSelectedItem());
             face.setMouth((ImageIcon) parts.get(name + "mouth"));
             faceLabel.repaint();
         } else if(e.getSource() == presetCB) {

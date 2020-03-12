@@ -125,12 +125,6 @@ public class JDBCAdapter extends AbstractTableModel {
         connection.close();
     }
 
-    @Override
-    protected void finalize() throws Throwable {
-        close();
-        super.finalize();
-    }
-
     //////////////////////////////////////////////////////////////////////////
     //
     //             Implementation of the TableModel Interface

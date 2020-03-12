@@ -60,7 +60,6 @@ import java.util.logging.Logger;
 import java2d.AnimatingControlsSurface;
 import java2d.CustomControls;
 import javax.swing.AbstractButton;
-import javax.swing.JComboBox;
 import javax.swing.JToggleButton;
 import javax.swing.JToolBar;
 
@@ -320,7 +319,6 @@ public class BezierScroller extends AnimatingControlsSurface {
 
         BezierScroller demo;
         JToolBar toolbar;
-        JComboBox combo;
 
         public DemoControls(BezierScroller demo) {
             super(demo.name);

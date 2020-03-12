@@ -51,7 +51,7 @@ import java.net.*;
  *
  * @author Jeff Dinkins
  */
-public class DemoModule extends JApplet {
+public class DemoModule extends JFrame {
 
     // The preferred size of the demo
     private int PREFERRED_WIDTH = 680;
@@ -190,7 +190,7 @@ public class DemoModule extends JApplet {
         frame.getContentPane().add(getDemoPanel(), BorderLayout.CENTER);
         getDemoPanel().setPreferredSize(new Dimension(PREFERRED_WIDTH, PREFERRED_HEIGHT));
         frame.pack();
-        frame.show();
+        frame.setVisible(true);
     }
 
     public JPanel createHorizontalPanel(boolean threeD) {

@@ -61,12 +61,12 @@ public class ButtonDemo extends DemoModule implements ChangeListener {
     JPanel radioButtonPanel = new JPanel();
     JPanel toggleButtonPanel = new JPanel();
 
-    Vector buttons = new Vector();
-    Vector checkboxes = new Vector();
-    Vector radiobuttons = new Vector();
-    Vector togglebuttons = new Vector();
+    Vector<Component> buttons = new Vector<>();
+    Vector<Component> checkboxes = new Vector<>();
+    Vector<Component> radiobuttons = new Vector<>();
+    Vector<Component> togglebuttons = new Vector<>();
 
-    Vector currentControls = buttons;
+    Vector<Component> currentControls = buttons;
 
     JButton button;
     JCheckBox check;
@@ -466,12 +466,12 @@ public class ButtonDemo extends DemoModule implements ChangeListener {
                     String command = cb.getActionCommand();
                     if(command == "Enabled") {
                         for(int i = 0; i < currentControls.size(); i++) {
-                            c = (Component) currentControls.elementAt(i);
+                            c = currentControls.elementAt(i);
                             c.setEnabled(cb.isSelected());
                             c.invalidate();
                         }
                     } else if(command == "PaintBorder") {
-                        c = (Component) currentControls.elementAt(0);
+                        c = currentControls.elementAt(0);
                         if(c instanceof AbstractButton) {
                             for(int i = 0; i < currentControls.size(); i++) {
                                 b = (AbstractButton) currentControls.elementAt(i);
@@ -480,7 +480,7 @@ public class ButtonDemo extends DemoModule implements ChangeListener {
                             }
                         }
                     } else if(command == "PaintFocus") {
-                        c = (Component) currentControls.elementAt(0);
+                        c = currentControls.elementAt(0);
                         if(c instanceof AbstractButton) {
                             for(int i = 0; i < currentControls.size(); i++) {
                                 b = (AbstractButton) currentControls.elementAt(i);
@@ -489,7 +489,7 @@ public class ButtonDemo extends DemoModule implements ChangeListener {
                             }
                         }
                     } else if(command == "ContentFilled") {
-                        c = (Component) currentControls.elementAt(0);
+                        c = currentControls.elementAt(0);
                         if(c instanceof AbstractButton) {
                             for(int i = 0; i < currentControls.size(); i++) {
                                 b = (AbstractButton) currentControls.elementAt(i);
@@ -549,7 +549,7 @@ public class ButtonDemo extends DemoModule implements ChangeListener {
         }
     }
 
-    public Vector getCurrentControls() {
+    public Vector<Component> getCurrentControls() {
         return currentControls;
     }
 }

@@ -59,9 +59,9 @@ import java.util.Hashtable;
  * @author Jeff Dinkins
  */
 public class ExampleFileView extends FileView {
-    private Hashtable icons = new Hashtable(5);
-    private Hashtable fileDescriptions = new Hashtable(5);
-    private Hashtable typeDescriptions = new Hashtable(5);
+    private Hashtable<String, Icon> icons = new Hashtable<>(5);
+    private Hashtable<File, String> fileDescriptions = new Hashtable<>(5);
+    private Hashtable<String, String> typeDescriptions = new Hashtable<>(5);
 
     /**
      * The name of the file.  Do nothing special here. Let
@@ -85,7 +85,7 @@ public class ExampleFileView extends FileView {
      * @see FileView#getDescription
      */
     public String getDescription(File f) {
-        return (String) fileDescriptions.get(f);
+        return fileDescriptions.get(f);
     };
 
     /**
@@ -111,7 +111,7 @@ public class ExampleFileView extends FileView {
      * @see FileView#getTypeDescription
      */
     public String getTypeDescription(File f) {
-        return (String) typeDescriptions.get(getExtension(f));
+        return typeDescriptions.get(getExtension(f));
     }
 
     /**
@@ -149,7 +149,7 @@ public class ExampleFileView extends FileView {
         Icon icon = null;
         String extension = getExtension(f);
         if(extension != null) {
-            icon = (Icon) icons.get(extension);
+            icon = icons.get(extension);
         }
         return icon;
     }

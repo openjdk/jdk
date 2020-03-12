@@ -75,27 +75,27 @@ public class TableExample4 {
         final String[] names = { "First Name", "Last Name", "Favorite Color",
             "Favorite Number", "Vegetarian" };
         final Object[][] data = {
-            { "Mark", "Andrews", "Red", new Integer(2), Boolean.TRUE },
-            { "Tom", "Ball", "Blue", new Integer(99), Boolean.FALSE },
-            { "Alan", "Chung", "Green", new Integer(838), Boolean.FALSE },
-            { "Jeff", "Dinkins", "Turquois", new Integer(8), Boolean.TRUE },
-            { "Amy", "Fowler", "Yellow", new Integer(3), Boolean.FALSE },
-            { "Brian", "Gerhold", "Green", new Integer(0), Boolean.FALSE },
-            { "James", "Gosling", "Pink", new Integer(21), Boolean.FALSE },
-            { "David", "Karlton", "Red", new Integer(1), Boolean.FALSE },
-            { "Dave", "Kloba", "Yellow", new Integer(14), Boolean.FALSE },
-            { "Peter", "Korn", "Purple", new Integer(12), Boolean.FALSE },
-            { "Phil", "Milne", "Purple", new Integer(3), Boolean.FALSE },
-            { "Dave", "Moore", "Green", new Integer(88), Boolean.FALSE },
-            { "Hans", "Muller", "Maroon", new Integer(5), Boolean.FALSE },
-            { "Rick", "Levenson", "Blue", new Integer(2), Boolean.FALSE },
-            { "Tim", "Prinzing", "Blue", new Integer(22), Boolean.FALSE },
-            { "Chester", "Rose", "Black", new Integer(0), Boolean.FALSE },
-            { "Ray", "Ryan", "Gray", new Integer(77), Boolean.FALSE },
-            { "Georges", "Saab", "Red", new Integer(4), Boolean.FALSE },
-            { "Willie", "Walker", "Phthalo Blue", new Integer(4), Boolean.FALSE },
-            { "Kathy", "Walrath", "Blue", new Integer(8), Boolean.FALSE },
-            { "Arnaud", "Weber", "Green", new Integer(44), Boolean.FALSE }
+            { "Mark", "Andrews", "Red", Integer.valueOf(2), Boolean.TRUE },
+            { "Tom", "Ball", "Blue", Integer.valueOf(99), Boolean.FALSE },
+            { "Alan", "Chung", "Green", Integer.valueOf(838), Boolean.FALSE },
+            { "Jeff", "Dinkins", "Turquois", Integer.valueOf(8), Boolean.TRUE },
+            { "Amy", "Fowler", "Yellow", Integer.valueOf(3), Boolean.FALSE },
+            { "Brian", "Gerhold", "Green", Integer.valueOf(0), Boolean.FALSE },
+            { "James", "Gosling", "Pink", Integer.valueOf(21), Boolean.FALSE },
+            { "David", "Karlton", "Red", Integer.valueOf(1), Boolean.FALSE },
+            { "Dave", "Kloba", "Yellow", Integer.valueOf(14), Boolean.FALSE },
+            { "Peter", "Korn", "Purple", Integer.valueOf(12), Boolean.FALSE },
+            { "Phil", "Milne", "Purple", Integer.valueOf(3), Boolean.FALSE },
+            { "Dave", "Moore", "Green", Integer.valueOf(88), Boolean.FALSE },
+            { "Hans", "Muller", "Maroon", Integer.valueOf(5), Boolean.FALSE },
+            { "Rick", "Levenson", "Blue", Integer.valueOf(2), Boolean.FALSE },
+            { "Tim", "Prinzing", "Blue", Integer.valueOf(22), Boolean.FALSE },
+            { "Chester", "Rose", "Black", Integer.valueOf(0), Boolean.FALSE },
+            { "Ray", "Ryan", "Gray", Integer.valueOf(77), Boolean.FALSE },
+            { "Georges", "Saab", "Red", Integer.valueOf(4), Boolean.FALSE },
+            { "Willie", "Walker", "Phthalo Blue", Integer.valueOf(4), Boolean.FALSE },
+            { "Kathy", "Walrath", "Blue", Integer.valueOf(8), Boolean.FALSE },
+            { "Arnaud", "Weber", "Green", Integer.valueOf(44), Boolean.FALSE }
         };
 
         // Create a model of the data.
@@ -123,7 +123,7 @@ public class TableExample4 {
             }
 
             @Override
-            public Class getColumnClass(int c) {
+            public Class<?> getColumnClass(int c) {
                 return getValueAt(0, c).getClass();
             }
 
@@ -147,7 +147,7 @@ public class TableExample4 {
         tableView.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
 
         // Create a combo box to show that you can use one in a table.
-        JComboBox comboBox = new JComboBox();
+        JComboBox<String> comboBox = new JComboBox<>();
         comboBox.addItem("Red");
         comboBox.addItem("Orange");
         comboBox.addItem("Yellow");

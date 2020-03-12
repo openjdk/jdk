@@ -75,8 +75,8 @@ public class TableDemo extends DemoModule {
     JSlider     interCellSpacingSlider;
     JSlider     rowHeightSlider;
 
-    JComboBox   selectionModeComboBox = null;
-    JComboBox   resizeModeComboBox = null;
+    JComboBox<String>   selectionModeComboBox = null;
+    JComboBox<String>   resizeModeComboBox = null;
 
     JLabel      headerLabel;
     JLabel      footerLabel;
@@ -126,7 +126,7 @@ public class TableDemo extends DemoModule {
         JPanel printPanel = new JPanel(new ColumnLayout());
 
         getDemoPanel().add(controlPanel, BorderLayout.NORTH);
-        Vector relatedComponents = new Vector();
+        Vector<JComponent> relatedComponents = new Vector<>();
 
 
         // check box panel
@@ -245,7 +245,7 @@ public class TableDemo extends DemoModule {
         selectMode.setBorder(new TitledBorder(getString("TableDemo.selection_mode")));
 
 
-        selectionModeComboBox = new JComboBox() {
+        selectionModeComboBox = new JComboBox<>() {
             public Dimension getMaximumSize() {
                 return getPreferredSize();
             }
@@ -256,7 +256,7 @@ public class TableDemo extends DemoModule {
         selectionModeComboBox.setSelectedIndex(tableView.getSelectionModel().getSelectionMode());
         selectionModeComboBox.addItemListener(new ItemListener() {
             public void itemStateChanged(ItemEvent e) {
-                JComboBox source = (JComboBox)e.getSource();
+                JComboBox<?> source = (JComboBox<?>)e.getSource();
                 tableView.setSelectionMode(source.getSelectedIndex());
             }
         });
@@ -272,7 +272,7 @@ public class TableDemo extends DemoModule {
         resizeMode.setBorder(new TitledBorder(getString("TableDemo.autoresize_mode")));
 
 
-        resizeModeComboBox = new JComboBox() {
+        resizeModeComboBox = new JComboBox<>() {
             public Dimension getMaximumSize() {
                 return getPreferredSize();
             }
@@ -285,7 +285,7 @@ public class TableDemo extends DemoModule {
         resizeModeComboBox.setSelectedIndex(tableView.getAutoResizeMode());
         resizeModeComboBox.addItemListener(new ItemListener() {
             public void itemStateChanged(ItemEvent e) {
-                JComboBox source = (JComboBox)e.getSource();
+                JComboBox<?> source = (JComboBox<?>)e.getSource();
                 tableView.setAutoResizeMode(source.getSelectedIndex());
             }
         });
@@ -367,7 +367,7 @@ public class TableDemo extends DemoModule {
      *
      * @param components The list of objects that are related
      */
-    void buildAccessibleGroup(Vector components) {
+    void buildAccessibleGroup(Vector<JComponent> components) {
 
         AccessibleContext context = null;
         int numComponents = components.size();
@@ -492,55 +492,55 @@ public class TableDemo extends DemoModule {
 
         // Create the dummy data (a few rows of names)
         final Object[][] data = {
-          {"Mike", "Albers",      green,       getString("TableDemo.brazil"), new Double(44.0), strawberry},
-          {"Mark", "Andrews",     blue,        getString("TableDemo.curse"), new Double(3), grapes},
-          {"Brian", "Beck",       black,       getString("TableDemo.bluesbros"), new Double(2.7182818285), raspberry},
-          {"Lara", "Bunni",       red,         getString("TableDemo.airplane"), new Double(15), strawberry},
-          {"Roger", "Brinkley",   blue,        getString("TableDemo.man"), new Double(13), peach},
-          {"Brent", "Christian",  black,       getString("TableDemo.bladerunner"), new Double(23), broccoli},
-          {"Mark", "Davidson",    darkgreen,   getString("TableDemo.brazil"), new Double(27), asparagus},
-          {"Jeff", "Dinkins",     blue,        getString("TableDemo.ladyvanishes"), new Double(8), kiwi},
-          {"Ewan", "Dinkins",     yellow,      getString("TableDemo.bugs"), new Double(2), strawberry},
-          {"Amy", "Fowler",       violet,      getString("TableDemo.reservoir"), new Double(3), raspberry},
-          {"Hania", "Gajewska",   purple,      getString("TableDemo.jules"), new Double(5), raspberry},
-          {"David", "Geary",      blue,        getString("TableDemo.pulpfiction"), new Double(3), watermelon},
-//        {"James", "Gosling",    pink,        getString("TableDemo.tennis"), new Double(21), donut},
-          {"Eric", "Hawkes",      blue,        getString("TableDemo.bladerunner"), new Double(.693), pickle},
-          {"Shannon", "Hickey",   green,       getString("TableDemo.shawshank"), new Double(2), grapes},
-          {"Earl", "Johnson",     green,       getString("TableDemo.pulpfiction"), new Double(8), carrot},
-          {"Robi", "Khan",        green,       getString("TableDemo.goodfellas"), new Double(89), apple},
-          {"Robert", "Kim",       blue,        getString("TableDemo.mohicans"), new Double(655321), strawberry},
-          {"Janet", "Koenig",     turquoise,   getString("TableDemo.lonestar"), new Double(7), peach},
-          {"Jeff", "Kesselman",   blue,        getString("TableDemo.stuntman"), new Double(17), pineapple},
-          {"Onno", "Kluyt",       orange,      getString("TableDemo.oncewest"), new Double(8), broccoli},
-          {"Peter", "Korn",       sunpurple,   getString("TableDemo.musicman"), new Double(12), sparegrass},
+          {"Mike", "Albers",      green,       getString("TableDemo.brazil"), Double.valueOf(44.0), strawberry},
+          {"Mark", "Andrews",     blue,        getString("TableDemo.curse"), Double.valueOf(3), grapes},
+          {"Brian", "Beck",       black,       getString("TableDemo.bluesbros"), Double.valueOf(2.7182818285), raspberry},
+          {"Lara", "Bunni",       red,         getString("TableDemo.airplane"), Double.valueOf(15), strawberry},
+          {"Roger", "Brinkley",   blue,        getString("TableDemo.man"), Double.valueOf(13), peach},
+          {"Brent", "Christian",  black,       getString("TableDemo.bladerunner"), Double.valueOf(23), broccoli},
+          {"Mark", "Davidson",    darkgreen,   getString("TableDemo.brazil"), Double.valueOf(27), asparagus},
+          {"Jeff", "Dinkins",     blue,        getString("TableDemo.ladyvanishes"), Double.valueOf(8), kiwi},
+          {"Ewan", "Dinkins",     yellow,      getString("TableDemo.bugs"), Double.valueOf(2), strawberry},
+          {"Amy", "Fowler",       violet,      getString("TableDemo.reservoir"), Double.valueOf(3), raspberry},
+          {"Hania", "Gajewska",   purple,      getString("TableDemo.jules"), Double.valueOf(5), raspberry},
+          {"David", "Geary",      blue,        getString("TableDemo.pulpfiction"), Double.valueOf(3), watermelon},
+//        {"James", "Gosling",    pink,        getString("TableDemo.tennis"), Double.valueOf(21), donut},
+          {"Eric", "Hawkes",      blue,        getString("TableDemo.bladerunner"), Double.valueOf(.693), pickle},
+          {"Shannon", "Hickey",   green,       getString("TableDemo.shawshank"), Double.valueOf(2), grapes},
+          {"Earl", "Johnson",     green,       getString("TableDemo.pulpfiction"), Double.valueOf(8), carrot},
+          {"Robi", "Khan",        green,       getString("TableDemo.goodfellas"), Double.valueOf(89), apple},
+          {"Robert", "Kim",       blue,        getString("TableDemo.mohicans"), Double.valueOf(655321), strawberry},
+          {"Janet", "Koenig",     turquoise,   getString("TableDemo.lonestar"), Double.valueOf(7), peach},
+          {"Jeff", "Kesselman",   blue,        getString("TableDemo.stuntman"), Double.valueOf(17), pineapple},
+          {"Onno", "Kluyt",       orange,      getString("TableDemo.oncewest"), Double.valueOf(8), broccoli},
+          {"Peter", "Korn",       sunpurple,   getString("TableDemo.musicman"), Double.valueOf(12), sparegrass},
 
-          {"Rick", "Levenson",    black,       getString("TableDemo.harold"), new Double(1327), raspberry},
-          {"Brian", "Lichtenwalter", jfcblue,  getString("TableDemo.fifthelement"), new Double(22), pear},
-          {"Malini", "Minasandram", beige,     getString("TableDemo.joyluck"), new Double(9), corn},
-          {"Michael", "Martak",   green,       getString("TableDemo.city"), new Double(3), strawberry},
-          {"David", "Mendenhall", forestgreen, getString("TableDemo.schindlerslist"), new Double(7), peach},
-          {"Phil", "Milne",       suspectpink, getString("TableDemo.withnail"), new Double(3), banana},
-          {"Lynn", "Monsanto",    cybergreen,  getString("TableDemo.dasboot"), new Double(52), peach},
-          {"Hans", "Muller",      rustred,     getString("TableDemo.eraserhead"), new Double(0), pineapple},
-          {"Joshua", "Outwater",  blue,        getString("TableDemo.labyrinth"), new Double(3), pineapple},
-          {"Tim", "Prinzing",     blue,        getString("TableDemo.firstsight"), new Double(69), pepper},
-          {"Raj", "Premkumar",    jfcblue2,    getString("TableDemo.none"), new Double(7), broccoli},
-          {"Howard", "Rosen",     green,       getString("TableDemo.defending"), new Double(7), strawberry},
+          {"Rick", "Levenson",    black,       getString("TableDemo.harold"), Double.valueOf(1327), raspberry},
+          {"Brian", "Lichtenwalter", jfcblue,  getString("TableDemo.fifthelement"), Double.valueOf(22), pear},
+          {"Malini", "Minasandram", beige,     getString("TableDemo.joyluck"), Double.valueOf(9), corn},
+          {"Michael", "Martak",   green,       getString("TableDemo.city"), Double.valueOf(3), strawberry},
+          {"David", "Mendenhall", forestgreen, getString("TableDemo.schindlerslist"), Double.valueOf(7), peach},
+          {"Phil", "Milne",       suspectpink, getString("TableDemo.withnail"), Double.valueOf(3), banana},
+          {"Lynn", "Monsanto",    cybergreen,  getString("TableDemo.dasboot"), Double.valueOf(52), peach},
+          {"Hans", "Muller",      rustred,     getString("TableDemo.eraserhead"), Double.valueOf(0), pineapple},
+          {"Joshua", "Outwater",  blue,        getString("TableDemo.labyrinth"), Double.valueOf(3), pineapple},
+          {"Tim", "Prinzing",     blue,        getString("TableDemo.firstsight"), Double.valueOf(69), pepper},
+          {"Raj", "Premkumar",    jfcblue2,    getString("TableDemo.none"), Double.valueOf(7), broccoli},
+          {"Howard", "Rosen",     green,       getString("TableDemo.defending"), Double.valueOf(7), strawberry},
           {"Ray", "Ryan",         black,       getString("TableDemo.buckaroo"),
-           new Double(3.141592653589793238462643383279502884197169399375105820974944), banana},
-          {"Georges", "Saab",     aqua,        getString("TableDemo.bicycle"), new Double(290), cantaloupe},
-          {"Tom", "Santos",       blue,        getString("TableDemo.spinaltap"), new Double(241), pepper},
-          {"Rich", "Schiavi",     blue,        getString("TableDemo.repoman"), new Double(0xFF), pepper},
-          {"Nancy", "Schorr",     green,       getString("TableDemo.fifthelement"), new Double(47), watermelon},
-          {"Keith", "Sprochi",    darkgreen,   getString("TableDemo.2001"), new Double(13), watermelon},
-          {"Matt", "Tucker",      eblue,       getString("TableDemo.starwars"), new Double(2), broccoli},
-          {"Dmitri", "Trembovetski", red,      getString("TableDemo.aliens"), new Double(222), tomato},
-          {"Scott", "Violet",     violet,      getString("TableDemo.raiders"), new Double(-97), banana},
-          {"Kathy", "Walrath",    darkgreen,   getString("TableDemo.thinman"), new Double(8), pear},
-          {"Nathan", "Walrath",   black,       getString("TableDemo.chusingura"), new Double(3), grapefruit},
-          {"Steve", "Wilson",     green,       getString("TableDemo.raiders"), new Double(7), onion},
-          {"Kathleen", "Zelony",  gray,        getString("TableDemo.dog"), new Double(13), grapes}
+           Double.valueOf(3.141592653589793238462643383279502884197169399375105820974944), banana},
+          {"Georges", "Saab",     aqua,        getString("TableDemo.bicycle"), Double.valueOf(290), cantaloupe},
+          {"Tom", "Santos",       blue,        getString("TableDemo.spinaltap"), Double.valueOf(241), pepper},
+          {"Rich", "Schiavi",     blue,        getString("TableDemo.repoman"), Double.valueOf(0xFF), pepper},
+          {"Nancy", "Schorr",     green,       getString("TableDemo.fifthelement"), Double.valueOf(47), watermelon},
+          {"Keith", "Sprochi",    darkgreen,   getString("TableDemo.2001"), Double.valueOf(13), watermelon},
+          {"Matt", "Tucker",      eblue,       getString("TableDemo.starwars"), Double.valueOf(2), broccoli},
+          {"Dmitri", "Trembovetski", red,      getString("TableDemo.aliens"), Double.valueOf(222), tomato},
+          {"Scott", "Violet",     violet,      getString("TableDemo.raiders"), Double.valueOf(-97), banana},
+          {"Kathy", "Walrath",    darkgreen,   getString("TableDemo.thinman"), Double.valueOf(8), pear},
+          {"Nathan", "Walrath",   black,       getString("TableDemo.chusingura"), Double.valueOf(3), grapefruit},
+          {"Steve", "Wilson",     green,       getString("TableDemo.raiders"), Double.valueOf(7), onion},
+          {"Kathleen", "Zelony",  gray,        getString("TableDemo.dog"), Double.valueOf(13), grapes}
         };
 
         // Create a model of the data.
@@ -549,7 +549,7 @@ public class TableDemo extends DemoModule {
             public int getRowCount() { return data.length;}
             public Object getValueAt(int row, int col) {return data[row][col];}
             public String getColumnName(int column) {return names[column];}
-            public Class getColumnClass(int c) {return getValueAt(0, c).getClass();}
+            public Class<?> getColumnClass(int c) {return getValueAt(0, c).getClass();}
             public boolean isCellEditable(int row, int col) {return col != 5;}
             public void setValueAt(Object aValue, int row, int column) { data[row][column] = aValue; }
          };
@@ -557,7 +557,7 @@ public class TableDemo extends DemoModule {
 
         // Create the table
         tableView = new JTable(dataModel);
-        TableRowSorter sorter = new TableRowSorter(dataModel);
+        TableRowSorter<TableModel> sorter = new TableRowSorter<>(dataModel);
         tableView.setRowSorter(sorter);
 
         // Show colors by rendering them in their own color.
@@ -575,7 +575,7 @@ public class TableDemo extends DemoModule {
         };
 
         // Create a combo box to show that you can use one in a table.
-        JComboBox comboBox = new JComboBox();
+        JComboBox<NamedColor> comboBox = new JComboBox<>();
         comboBox.addItem(aqua);
         comboBox.addItem(beige);
         comboBox.addItem(black);

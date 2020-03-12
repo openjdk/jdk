@@ -59,9 +59,9 @@ public class InternalFrameDemo extends DemoModule {
     ImageIcon icon1, icon2, icon3, icon4;
     ImageIcon smIcon1, smIcon2, smIcon3, smIcon4;
 
-    public Integer FIRST_FRAME_LAYER  = new Integer(1);
-    public Integer DEMO_FRAME_LAYER   = new Integer(2);
-    public Integer PALETTE_LAYER     = new Integer(3);
+    public Integer FIRST_FRAME_LAYER  = Integer.valueOf(1);
+    public Integer DEMO_FRAME_LAYER   = Integer.valueOf(2);
+    public Integer PALETTE_LAYER     = Integer.valueOf(3);
 
     public int FRAME0_X        = 15;
     public int FRAME0_Y        = 280;

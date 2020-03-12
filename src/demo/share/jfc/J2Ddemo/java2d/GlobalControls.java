@@ -63,7 +63,7 @@ public class GlobalControls extends JPanel implements ItemListener,
         "USHORT_x555_RGB", "BYTE_GRAY", "USHORT_GRAY",
         "BYTE_BINARY", "BYTE_INDEXED", "BYTE_BINARY 2 bit", "BYTE_BINARY 4 bit",
         "INT_RGBx", "USHORT_555x_RGB" };
-    public final JComboBox screenCombo;
+    public final JComboBox<String> screenCombo;
     public TextureChooser texturechooser;
     public JCheckBox aliasCB, renderCB, toolBarCB;
     public JCheckBox compositeCB, textureCB;
@@ -83,7 +83,7 @@ public class GlobalControls extends JPanel implements ItemListener,
         textureCB = createCheckBox("Texture", false, 2);
         compositeCB = createCheckBox("AlphaComposite", false, 3);
 
-        screenCombo = new JComboBox();
+        screenCombo = new JComboBox<>();
         screenCombo.setPreferredSize(new Dimension(120, 18));
         screenCombo.setLightWeightPopupEnabled(true);
         screenCombo.setFont(font);

@@ -136,7 +136,7 @@ public class FileChooserDemo extends JPanel implements ActionListener {
     private JRadioButton openRadioButton;
     private JRadioButton saveRadioButton;
     private JRadioButton customButton;
-    private JComboBox lafComboBox;
+    private JComboBox<SupportedLaF> lafComboBox;
     private JRadioButton justFilesRadioButton;
     private JRadioButton justDirectoriesRadioButton;
     private JRadioButton bothFilesAndDirectoriesRadioButton;
@@ -158,7 +158,7 @@ public class FileChooserDemo extends JPanel implements ActionListener {
         for (UIManager.LookAndFeelInfo lafInfo : installedLafs) {
             try {
                 Class<?> lnfClass = Class.forName(lafInfo.getClassName());
-                LookAndFeel laf = (LookAndFeel) (lnfClass.newInstance());
+                LookAndFeel laf = (LookAndFeel) (lnfClass.getDeclaredConstructor().newInstance());
                 if (laf.isSupportedLookAndFeel()) {
                     String name = lafInfo.getName();
                     SupportedLaF supportedLaF = new SupportedLaF(name, laf);
@@ -292,7 +292,7 @@ public class FileChooserDemo extends JPanel implements ActionListener {
         showButton.setMnemonic('s');
 
         // Create laf combo box
-        lafComboBox = new JComboBox(supportedLaFs.toArray());
+        lafComboBox = new JComboBox<>(supportedLaFs.toArray(new SupportedLaF[0]));
         lafComboBox.setSelectedItem(nimbusLaF);
         lafComboBox.setEditable(false);
         lafComboBox.addActionListener(optionListener);
@@ -729,7 +729,7 @@ public class FileChooserDemo extends JPanel implements ActionListener {
                     frame.pack();
                 } catch (UnsupportedLookAndFeelException exc) {
                     // This should not happen because we already checked
-                    ((DefaultComboBoxModel) lafComboBox.getModel()).
+                    ((DefaultComboBoxModel<?>) lafComboBox.getModel()).
                             removeElement(supportedLaF);
                 }
             }

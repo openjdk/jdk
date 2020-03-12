@@ -71,12 +71,7 @@ public class SwingSet2 extends JPanel {
 
     void loadDemos() {
         for(int i = 0; i < demos.length;) {
-            if(isApplet() && demos[i].equals("FileChooserDemo")) {
-               // don't load the file chooser demo if we are
-               // an applet
-            } else {
-               loadDemo(demos[i]);
-            }
+            loadDemo(demos[i]);
             i++;
         }
     }
@@ -126,9 +121,6 @@ public class SwingSet2 extends JPanel {
     // Used only if swingset is an application
     private JFrame frame = null;
 
-    // Used only if swingset is an applet
-    private SwingSet2Applet applet = null;
-
     // To debug or not to debug, that is the question
     private boolean DEBUG = true;
     private int debugCounter = 0;
@@ -151,27 +143,21 @@ public class SwingSet2 extends JPanel {
 
     private boolean dragEnabled = false;
 
-    public SwingSet2(SwingSet2Applet applet) {
-        this(applet, null);
+    public SwingSet2() {
+        this(null);
     }
 
     /**
      * SwingSet2 Constructor
      */
-    public SwingSet2(SwingSet2Applet applet, GraphicsConfiguration gc) {
-
-        // Note that applet may be null if this is started as an application
-        this.applet = applet;
-
+    public SwingSet2(GraphicsConfiguration gc) {
         String lafClassName = UIManager.getLookAndFeel().getClass().getName();
         lookAndFeelData = getInstalledLookAndFeelData();
         currentLookAndFeel = Arrays.stream(lookAndFeelData)
                 .filter(laf -> lafClassName.equals(laf.className))
                 .findFirst().get();
 
-        if (!isApplet()) {
-            frame = createFrame(gc);
-        }
+        frame = createFrame(gc);
 
         // set the layout
         setLayout(new BorderLayout());
@@ -198,7 +184,7 @@ public class SwingSet2 extends JPanel {
         SwingUtilities.invokeLater(() -> {
             // Create SwingSet on the default monitor
             UIManager.put("swing.boldMetal", Boolean.FALSE);
-            SwingSet2 swingset = new SwingSet2(null, GraphicsEnvironment.
+            SwingSet2 swingset = new SwingSet2(GraphicsEnvironment.
                                          getLocalGraphicsEnvironment().
                                          getDefaultScreenDevice().
                                          getDefaultConfiguration());
@@ -218,11 +204,7 @@ public class SwingSet2 extends JPanel {
 
         menuBar = createMenus();
 
-    if (isApplet()) {
-        applet.setJMenuBar(menuBar);
-    } else {
         frame.setJMenuBar(menuBar);
-    }
 
         // creates popup menu accessible via keyboard
         popupMenu = createPopupMenu();
@@ -309,13 +291,11 @@ public class SwingSet2 extends JPanel {
                        "FileMenu.save_as_accessible_description", null);
 
 
-        if(!isApplet()) {
-            fileMenu.addSeparator();
+        fileMenu.addSeparator();
 
-            createMenuItem(fileMenu, "FileMenu.exit_label", "FileMenu.exit_mnemonic",
-                           "FileMenu.exit_accessible_description", new ExitAction(this)
-            );
-        }
+        createMenuItem(fileMenu, "FileMenu.exit_label", "FileMenu.exit_mnemonic",
+                       "FileMenu.exit_accessible_description", new ExitAction(this)
+        );
 
         // Create these menu items for the first SwingSet only.
         if (numSSs == 0) {
@@ -431,7 +411,6 @@ public class SwingSet2 extends JPanel {
 
 
         // ***** create the multiscreen menu, if we have multiple screens
-    if (!isApplet()) {
         GraphicsDevice[] screens = GraphicsEnvironment.
                                     getLocalGraphicsEnvironment().
                                     getScreenDevices();
@@ -449,7 +428,6 @@ public class SwingSet2 extends JPanel {
                 createMultiscreenMenuItem(multiScreenMenu, i);
             }
         }
-    }
 
         return menuBar;
     }
@@ -578,7 +556,7 @@ public class SwingSet2 extends JPanel {
 
         // register key binding to activate popup menu
         InputMap map = getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
-        map.put(KeyStroke.getKeyStroke(KeyEvent.VK_F10, InputEvent.SHIFT_MASK),
+        map.put(KeyStroke.getKeyStroke(KeyEvent.VK_F10, InputEvent.SHIFT_DOWN_MASK),
                 "postMenuAction");
         map.put(KeyStroke.getKeyStroke(KeyEvent.VK_CONTEXT_MENU, 0), "postMenuAction");
         getActionMap().put("postMenuAction", new ActivatePopupMenuAction(this, popup));
@@ -659,37 +637,34 @@ public class SwingSet2 extends JPanel {
 
 
     /**
-     * Bring up the SwingSet2 demo by showing the frame (only
-     * applicable if coming up as an application, not an applet);
+     * Bring up the SwingSet2 demo by showing the frame
      */
     public void showSwingSet2() {
-        if(!isApplet() && getFrame() != null) {
-            // put swingset in a frame and show it
-            JFrame f = getFrame();
-            f.setTitle(getString("Frame.title"));
-            f.getContentPane().add(this, BorderLayout.CENTER);
-            f.pack();
+        // put swingset in a frame and show it
+        JFrame f = getFrame();
+        f.setTitle(getString("Frame.title"));
+        f.getContentPane().add(this, BorderLayout.CENTER);
+        f.pack();
 
-            Rectangle screenRect = f.getGraphicsConfiguration().getBounds();
-            Insets screenInsets = Toolkit.getDefaultToolkit().getScreenInsets(
-                    f.getGraphicsConfiguration());
+        Rectangle screenRect = f.getGraphicsConfiguration().getBounds();
+        Insets screenInsets = Toolkit.getDefaultToolkit().getScreenInsets(
+                f.getGraphicsConfiguration());
 
-            // Make sure we don't place the demo off the screen.
-            int centerWidth = screenRect.width < f.getSize().width ?
-                    screenRect.x :
-                    screenRect.x + screenRect.width/2 - f.getSize().width/2;
-            int centerHeight = screenRect.height < f.getSize().height ?
-                    screenRect.y :
-                    screenRect.y + screenRect.height/2 - f.getSize().height/2;
+        // Make sure we don't place the demo off the screen.
+        int centerWidth = screenRect.width < f.getSize().width ?
+                screenRect.x :
+                screenRect.x + screenRect.width/2 - f.getSize().width/2;
+        int centerHeight = screenRect.height < f.getSize().height ?
+                screenRect.y :
+                screenRect.y + screenRect.height/2 - f.getSize().height/2;
 
-            centerHeight = centerHeight < screenInsets.top ?
-                    screenInsets.top : centerHeight;
+        centerHeight = centerHeight < screenInsets.top ?
+                screenInsets.top : centerHeight;
 
-            f.setLocation(centerWidth, centerHeight);
-            f.show();
-            numSSs++;
-            swingSets.add(this);
-        }
+        f.setLocation(centerWidth, centerHeight);
+        f.setVisible(true);
+        numSSs++;
+        swingSets.add(this);
     }
 
     // *******************************************************
@@ -703,29 +678,14 @@ public class SwingSet2 extends JPanel {
         setStatus(getString("Status.loading") + getString(classname + ".name"));
         DemoModule demo = null;
         try {
-            Class demoClass = Class.forName(classname);
-            Constructor demoConstructor = demoClass.getConstructor(new Class[]{SwingSet2.class});
+            Class<?> demoClass = Class.forName(classname);
+            Constructor<?> demoConstructor = demoClass.getConstructor(new Class[]{SwingSet2.class});
             demo = (DemoModule) demoConstructor.newInstance(new Object[]{this});
             addDemo(demo);
         } catch (Exception e) {
             System.out.println("Error occurred loading demo: " + classname);
         }
     }
-
-    /**
-     * Determines if this is an applet or application
-     */
-    public boolean isApplet() {
-        return (applet != null);
-    }
-
-    /**
-     * Returns the applet instance
-     */
-    public SwingSet2Applet getApplet() {
-        return applet;
-    }
-
 
     /**
      * Returns the frame instance
@@ -763,8 +723,6 @@ public class SwingSet2 extends JPanel {
         if(contentPane == null) {
             if(getFrame() != null) {
                 contentPane = getFrame().getContentPane();
-            } else if (getApplet() != null) {
-                contentPane = getApplet().getContentPane();
             }
         }
         return contentPane;
@@ -886,15 +844,11 @@ public class SwingSet2 extends JPanel {
     }
 
     private void updateThisSwingSet() {
-        if (isApplet()) {
-            SwingUtilities.updateComponentTreeUI(getApplet());
+        JFrame frame = getFrame();
+        if (frame == null) {
+            SwingUtilities.updateComponentTreeUI(this);
         } else {
-            JFrame frame = getFrame();
-            if (frame == null) {
-                SwingUtilities.updateComponentTreeUI(this);
-            } else {
-                SwingUtilities.updateComponentTreeUI(frame);
-            }
+            SwingUtilities.updateComponentTreeUI(frame);
         }
 
         SwingUtilities.updateComponentTreeUI(popupMenu);
@@ -909,12 +863,8 @@ public class SwingSet2 extends JPanel {
     public void updateLookAndFeel() {
         try {
             UIManager.setLookAndFeel(currentLookAndFeel.className);
-            if (isApplet()) {
-                updateThisSwingSet();
-            } else {
-                for (SwingSet2 ss : swingSets) {
-                    ss.updateThisSwingSet();
-                }
+            for (SwingSet2 ss : swingSets) {
+                ss.updateThisSwingSet();
             }
         } catch (Exception ex) {
             System.out.println("Failed loading L&F: " + currentLookAndFeel);
@@ -1142,12 +1092,8 @@ public class SwingSet2 extends JPanel {
 
         public void actionPerformed(ActionEvent e) {
             boolean dragEnabled = ((JCheckBoxMenuItem)e.getSource()).isSelected();
-            if (isApplet()) {
-                setDragEnabled(dragEnabled);
-            } else {
-                for (SwingSet2 ss : swingSets) {
-                    ss.setDragEnabled(dragEnabled);
-                }
+            for (SwingSet2 ss : swingSets) {
+                ss.setDragEnabled(dragEnabled);
             }
         }
     }
@@ -1208,12 +1154,8 @@ public class SwingSet2 extends JPanel {
                 button.addActionListener(new OkAction(aboutBox));
             }
             aboutBox.pack();
-            if (isApplet()) {
-                aboutBox.setLocationRelativeTo(getApplet());
-            } else {
-                aboutBox.setLocationRelativeTo(getFrame());
-            }
-            aboutBox.show();
+            aboutBox.setLocationRelativeTo(getFrame());
+            aboutBox.setVisible(true);
         }
     }
 
@@ -1231,13 +1173,13 @@ public class SwingSet2 extends JPanel {
                                    getScreenDevices();
             if (screen == ALL_SCREENS) {
                 for (int i = 0; i < gds.length; i++) {
-                    SwingSet2 swingset = new SwingSet2(null,
+                    SwingSet2 swingset = new SwingSet2(
                                   gds[i].getDefaultConfiguration());
                     swingset.setDragEnabled(dragEnabled);
                 }
             }
             else {
-                SwingSet2 swingset = new SwingSet2(null,
+                SwingSet2 swingset = new SwingSet2(
                              gds[screen].getDefaultConfiguration());
                 swingset.setDragEnabled(dragEnabled);
             }

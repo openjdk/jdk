@@ -255,8 +255,8 @@ public class Stylepad extends Notepad {
         w.loadDocument();
     }
 
-    JComboBox createFamilyChoices() {
-        JComboBox b = new JComboBox();
+    JComboBox<String> createFamilyChoices() {
+        JComboBox<String> b = new JComboBox<>();
         String[] fontNames = GraphicsEnvironment.getLocalGraphicsEnvironment().
                 getAvailableFontFamilyNames();
         for (String fontName : fontNames) {

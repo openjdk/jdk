@@ -163,7 +163,7 @@ public class OptionPaneDemo extends DemoModule {
                 message[0] = getString("OptionPaneDemo.componentmessage");
                 message[1] = new JTextField(getString("OptionPaneDemo.componenttextfield"));
 
-                JComboBox cb = new JComboBox();
+                JComboBox<String> cb = new JComboBox<>();
                 cb.addItem(getString("OptionPaneDemo.component_cb1"));
                 cb.addItem(getString("OptionPaneDemo.component_cb2"));
                 cb.addItem(getString("OptionPaneDemo.component_cb3"));

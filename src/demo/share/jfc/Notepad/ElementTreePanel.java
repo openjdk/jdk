@@ -115,7 +115,7 @@ public class ElementTreePanel extends JPanel implements CaretListener,
 
                 if (as != null) {
                     StringBuilder retBuffer = new StringBuilder("[");
-                    Enumeration names = as.getAttributeNames();
+                    Enumeration<?> names = as.getAttributeNames();
 
                     while (names.hasMoreElements()) {
                         Object nextName = names.nextElement();

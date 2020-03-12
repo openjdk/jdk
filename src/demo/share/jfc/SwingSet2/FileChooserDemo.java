@@ -273,7 +273,7 @@ public class FileChooserDemo extends DemoModule {
                 dialog.getContentPane().add(custom, BorderLayout.CENTER);
                 dialog.pack();
                 dialog.setLocationRelativeTo(getDemoPanel());
-                dialog.show();
+                dialog.setVisible(true);
             }
         };
         return createButton(a);

@@ -51,8 +51,8 @@ import java2d.AnimatingSurface;
 public class Tree extends AnimatingSurface {
 
     private char theC = 'A';
-    private Character theT = new Character(theC);
-    private Character theR = new Character((char) (theC + 1));
+    private Character theT = Character.valueOf(theC);
+    private Character theR = Character.valueOf((char) (theC + 1));
 
     public Tree() {
         setBackground(WHITE);
@@ -65,9 +65,9 @@ public class Tree extends AnimatingSurface {
     @Override
     public void step(int w, int h) {
         setSleepAmount(4000);
-        theT = new Character(theC = ((char) (theC + 1)));
-        theR = new Character((char) (theC + 1));
-        if (theR.compareTo(new Character('z')) == 0) {
+        theT = Character.valueOf(theC = ((char) (theC + 1)));
+        theR = Character.valueOf((char) (theC + 1));
+        if (theR.compareTo(Character.valueOf('z')) == 0) {
             theC = 'A';
         }
     }

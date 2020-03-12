@@ -104,7 +104,7 @@ public class LayoutControlPanel extends JPanel implements SwingConstants {
         // Make sure the controls' text position and label alignment match
         // the initial value of the associated direction panel.
         for(int i = 0; i < demo.getCurrentControls().size(); i++) {
-            Component c = (Component) demo.getCurrentControls().elementAt(i);
+            Component c = demo.getCurrentControls().elementAt(i);
             setPosition(c, RIGHT, CENTER);
             setAlignment(c,CENTER,CENTER);
         }
@@ -173,7 +173,7 @@ public class LayoutControlPanel extends JPanel implements SwingConstants {
             }
 
             for(int i = 0; i < demo.getCurrentControls().size(); i++) {
-                Component c = (Component) demo.getCurrentControls().elementAt(i);
+                Component c = demo.getCurrentControls().elementAt(i);
                 int hPos, vPos, hAlign, vAlign;
                 if( c instanceof AbstractButton ) {
                    hPos = ((AbstractButton)c).getHorizontalTextPosition();
@@ -228,7 +228,7 @@ public class LayoutControlPanel extends JPanel implements SwingConstants {
                     hPos = RIGHT; vPos = BOTTOM;
             }
             for(int i = 0; i < demo.getCurrentControls().size(); i++) {
-                Component c = (Component) demo.getCurrentControls().elementAt(i);
+                Component c = demo.getCurrentControls().elementAt(i);
                 setPosition(c, hPos, vPos);
             }
             demo.invalidate();
@@ -267,7 +267,7 @@ public class LayoutControlPanel extends JPanel implements SwingConstants {
                     hPos = RIGHT; vPos = BOTTOM;
             }
             for(int i = 0; i < demo.getCurrentControls().size(); i++) {
-                Component c = (Component) demo.getCurrentControls().elementAt(i);
+                Component c = demo.getCurrentControls().elementAt(i);
                 setAlignment(c,hPos,vPos);
                 c.invalidate();
             }
